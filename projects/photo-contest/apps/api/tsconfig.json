@@ -1,14 +1,14 @@
 {
   "extends": "@side/typescript-config/base",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "outDir": "dist",
-    "rootDir": "src",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.mts"],
+  // 옛 dist 기반 통합 테스트는 test/api로 옮긴 뒤 지운다. 그때까지 타입 검사에서만 뺀다.
+  "exclude": ["test/integration/**"]
 }

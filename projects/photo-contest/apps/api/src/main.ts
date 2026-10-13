@@ -1,10 +1,14 @@
 import './instrumentation';
+
 import { createApp } from './bootstrap';
+import { apiHost, apiPort } from './config/env';
+
 async function main() {
   const app = await createApp();
-  await app.listen(Number(process.env.PORT ?? 4200), process.env.API_HOST ?? '127.0.0.1');
+  await app.listen(apiPort(), apiHost());
 }
-main().catch((error) => {
+
+main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
