@@ -23,7 +23,6 @@ type Submission {
   createdAt: DateTime!
   "대회가 끝난 뒤에만 공개"
   voteCount: Int
-  "좋아요 수(항상 공개). 좋아요·취소와 같은 트랜잭션에서 갱신되는 컬럼을 그대로 읽는다"
   likeCount: Int!
   likedByMe: Boolean!
   "관리자에게만 공개"
@@ -38,28 +37,9 @@ type UploadTicket {
   expiresAt: DateTime!
 }
 
-"Relay 연결의 한 칸. cursor는 다음 페이지를 받을 때 after로 넘기는 불투명한 문자열이다."
-type SubmissionEdge {
-  cursor: String!
-  node: Submission!
-}
-
-"Relay PageInfo. 앞으로만 이어 받으므로 hasPreviousPage는 after를 넘겼는지를 뜻한다."
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
-type SubmissionConnection {
-  edges: [SubmissionEdge!]!
-  pageInfo: PageInfo!
-}
-
 type Query {
-  "커서(keyset) 기반 사진 목록. first는 1~48. 관리자가 아니면 숨긴 사진을 제외한다. 커서는 같은 정렬에서만 쓸 수 있다."
-  submissions(contestId: ID!, first: Int = 24, after: String, sort: SubmissionSort = NEWEST): SubmissionConnection!
+  "관리자가 아니면 숨긴 사진을 제외한다"
+  submissions(contestId: ID!, offset: Int = 0, limit: Int = 24, sort: SubmissionSort = NEWEST): [Submission!]!
 }
 
 type Mutation {
