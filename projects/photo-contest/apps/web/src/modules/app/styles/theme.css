@@ -1,0 +1,115 @@
+/* 디자인 토큰. 화면은 임의 hex·px 대신 이 토큰으로 만든다. */
+@theme {
+  /* 모든 화면이 가운데 휴대폰 열 하나라 분기점은 하나만 둔다. */
+  --breakpoint-*: initial;
+  --breakpoint-pc: 540px;
+  --max-width-app: 540px;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', 'Malgun Gothic',
+    system-ui, sans-serif;
+
+  --color-*: initial;
+  --color-brand: #316447;
+  --color-brand-strong: #204c34;
+  --color-brand-soft: #e7eddf;
+  --color-accent: #f1cc64;
+  --color-accent-soft: #f6e9bb;
+  --color-accent-ink: #7a5a12;
+  --color-ink: #252922;
+  --color-muted: #6c7167;
+  --color-subtle: #a0a396;
+  --color-line: #e5e6dd;
+  --color-line-strong: #d3d7c9;
+  --color-surface: #ffffff;
+  --color-sunken: #f6f7f0;
+  --color-canvas: #f3f2ec;
+  --color-background: #fbfaf7;
+  --color-danger: #aa443d;
+  --color-danger-soft: #f8eae5;
+  --color-info: #3f6377;
+  --color-info-soft: #e2edf1;
+  --color-neutral-soft: #eeeee8;
+  --color-gold: #d9ad35;
+  --color-silver: #a9b0b6;
+  --color-bronze: #c08b5c;
+  --color-kakao: #fee500;
+  --color-on-brand: #ffffff;
+  --color-scrim: rgb(23 35 18 / 0.45);
+
+  /* 크기·줄 높이·굵기·자간을 한 토큰으로 묶는다. */
+  --text-*: initial;
+  --text-display: 1.75rem;
+  --text-display--line-height: 1.3;
+  --text-display--font-weight: 800;
+  --text-display--letter-spacing: -0.04em;
+  --text-title-lg: 1.375rem;
+  --text-title-lg--line-height: 1.35;
+  --text-title-lg--font-weight: 700;
+  --text-title-lg--letter-spacing: -0.03em;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.4;
+  --text-title--font-weight: 700;
+  --text-title--letter-spacing: -0.02em;
+  --text-subtitle: 1rem;
+  --text-subtitle--line-height: 1.45;
+  --text-subtitle--font-weight: 600;
+  --text-subtitle--letter-spacing: -0.01em;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6;
+  --text-body--font-weight: 400;
+  --text-body--letter-spacing: -0.005em;
+  /* 입력 글자. iOS가 포커스 때 화면을 확대하지 않도록 16px 아래로 내리지 않는다. */
+  --text-input: 1rem;
+  --text-input--line-height: 1.5;
+  --text-input--font-weight: 400;
+  --text-input--letter-spacing: -0.005em;
+  --text-button: 1rem;
+  --text-button--line-height: 1.25;
+  --text-button--font-weight: 700;
+  --text-button--letter-spacing: -0.01em;
+  --text-label: 0.875rem;
+  --text-label--line-height: 1.45;
+  --text-label--font-weight: 600;
+  --text-label--letter-spacing: -0.005em;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.45;
+  --text-caption--font-weight: 400;
+  --text-caption--letter-spacing: 0;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.35;
+  --text-micro--font-weight: 600;
+  --text-micro--letter-spacing: 0.02em;
+
+  --radius-badge: 6px;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+
+  --shadow-app: 0 0 0 1px rgb(37 41 34 / 0.04), 0 12px 40px rgb(37 41 34 / 0.08);
+  --shadow-card: 0 1px 2px rgb(37 41 34 / 0.06);
+  --shadow-sheet: 0 -12px 40px rgb(23 35 18 / 0.18);
+  --shadow-toast: 0 8px 24px rgb(23 35 18 / 0.22);
+
+  --z-index-app-bar: 20;
+  --z-index-bottom-nav: 20;
+  --z-index-sticky-cta: 20;
+  --z-index-sheet: 40;
+  --z-index-dialog: 50;
+  --z-index-toast: 60;
+
+  /* 고정 높이와 최소 터치 영역 */
+  --spacing-app-bar: 60px;
+  --spacing-bottom-nav: 76px;
+  --spacing-cta: 50px;
+  --spacing-touch: 44px;
+
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* 유틸리티가 아니라 var()로만 읽는 값이라 항상 내보낸다. */
+@theme static {
+  /* 브라우저에서는 웹이, 앱 WebView에서는 네이티브 SafeAreaView가 안전 영역을 맡는다(이때 env()는 0). */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
