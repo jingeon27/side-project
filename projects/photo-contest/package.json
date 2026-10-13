@@ -10,11 +10,12 @@
     "db:migrate": "node --env-file-if-exists=.env scripts/task.mjs @photo-contest/api db:migrate",
     "codegen": "yarn workspace @photo-contest/web codegen",
     "build": "node --env-file-if-exists=.env scripts/task.mjs @photo-contest/api build && node --env-file-if-exists=.env scripts/task.mjs @photo-contest/web build",
-    "typecheck": "yarn workspace @photo-contest/api typecheck && yarn workspace @photo-contest/web typecheck && yarn workspace @photo-contest/e2e typecheck",
     "lint": "eslint .",
-    "test": "yarn workspace @photo-contest/api test && yarn workspace @photo-contest/web test",
-    "test:integration": "node --env-file-if-exists=.env scripts/task.mjs @photo-contest/api test:integration",
-    "test:e2e": "node --env-file-if-exists=.env scripts/task.mjs @photo-contest/e2e test",
+    "typecheck": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run typecheck",
+    "test": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run test",
+    "test:unit": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run test:unit",
+    "test:api": "yarn workspaces foreach -A --include '@photo-contest/*' run test:api",
+    "test:e2e": "yarn workspaces foreach -A --include '@photo-contest/*' run test:e2e",
     "check": "yarn lint && yarn typecheck && yarn test"
   },
   "devDependencies": {
