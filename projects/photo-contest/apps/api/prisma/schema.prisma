@@ -89,6 +89,7 @@ model Submission {
   caption String
   uploadId String @unique
   hidden Boolean @default(false)
+  likeCount Int @default(0)
   createdAt DateTime @default(now())
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -98,6 +99,7 @@ model Submission {
   likes Like[]
   @@unique([contestId, authorId])
   @@index([contestId, createdAt])
+  @@index([contestId, likeCount, createdAt])
 }
 model Vote {
   id String @id @default(cuid())

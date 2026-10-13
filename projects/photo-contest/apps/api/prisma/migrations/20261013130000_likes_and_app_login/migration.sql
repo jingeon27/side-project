@@ -1,6 +1,9 @@
 -- AlterTable
 ALTER TABLE "OAuthAttempt" ADD COLUMN     "appChallenge" TEXT;
 
+-- AlterTable
+ALTER TABLE "Submission" ADD COLUMN     "likeCount" INTEGER NOT NULL DEFAULT 0;
+
 -- CreateTable
 CREATE TABLE "Like" (
     "submissionId" TEXT NOT NULL,
@@ -25,6 +28,9 @@ CREATE INDEX "Like_userId_idx" ON "Like"("userId");
 
 -- CreateIndex
 CREATE INDEX "AppLoginTicket_expiresAt_idx" ON "AppLoginTicket"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "Submission_contestId_likeCount_createdAt_idx" ON "Submission"("contestId", "likeCount", "createdAt");
 
 -- AddForeignKey
 ALTER TABLE "Like" ADD CONSTRAINT "Like_submissionId_fkey" FOREIGN KEY ("submissionId") REFERENCES "Submission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
