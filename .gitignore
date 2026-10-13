@@ -12,3 +12,8 @@
 **/*.tsbuildinfo
 **/.DS_Store
 **/generated/prisma/
+**/.e2e-build/
+# next dev/build가 distDir에 맞춰 다시 쓴다(create-next-app 기본값과 같다).
+**/next-env.d.ts
+**/.expo/
+**/.expo-export-check/
