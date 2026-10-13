@@ -1,0 +1,48 @@
+{
+  "name": "side",
+  "private": true,
+  "packageManager": "yarn@4.17.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "projects/*",
+    "projects/*/apps/*",
+    "projects/*/e2e",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:photo-contest": "yarn workspace @side/photo-contest dev",
+    "build": "yarn workspaces foreach -A --include \"@side/*\" run build",
+    "build:photo-contest": "yarn workspace @side/photo-contest build",
+    "typecheck": "yarn workspaces foreach -A --include \"@side/*\" run typecheck",
+    "test": "yarn workspaces foreach -A --include \"@side/*\" run test",
+    "test:photo-contest": "yarn workspace @side/photo-contest test",
+    "test:photo-contest:integration": "yarn workspace @side/photo-contest test:integration",
+    "test:photo-contest:e2e": "yarn workspace @side/photo-contest test:e2e",
+    "check": "yarn workspaces foreach -A --include \"@side/*\" run check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.0"
+  },
+  "dependenciesMeta": {
+    "@embedded-postgres/darwin-arm64": {
+      "built": true
+    },
+    "@embedded-postgres/darwin-x64": {
+      "built": true
+    },
+    "@embedded-postgres/linux-arm64": {
+      "built": true
+    },
+    "@embedded-postgres/linux-x64": {
+      "built": true
+    },
+    "@embedded-postgres/windows-x64": {
+      "built": true
+    }
+  }
+}

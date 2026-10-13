@@ -1,0 +1,64 @@
+fragment GroupOverview on Group {
+  id
+  name
+  role
+  members {
+    user {
+      id
+      nickname
+    }
+    role
+  }
+  contests {
+    id
+    title
+    phase
+    startsAt
+    submissionEndsAt
+    endsAt
+  }
+}
+query MyGroups {
+  myGroups {
+    ...GroupOverview
+  }
+}
+query Group($id: ID!) {
+  group(id: $id) {
+    ...GroupOverview
+    inviteToken
+  }
+}
+mutation CreateGroup($name: String!) {
+  createGroup(name: $name) {
+    ...GroupOverview
+  }
+}
+mutation JoinGroup($token: String!) {
+  joinGroup(token: $token) {
+    ...GroupOverview
+  }
+}
+mutation CreateContest(
+  $groupId: ID!
+  $title: String!
+  $startsAt: DateTime!
+  $submissionEndsAt: DateTime!
+  $endsAt: DateTime!
+) {
+  createContest(
+    groupId: $groupId
+    title: $title
+    startsAt: $startsAt
+    submissionEndsAt: $submissionEndsAt
+    endsAt: $endsAt
+  ) {
+    id
+    groupId
+    title
+    phase
+    startsAt
+    submissionEndsAt
+    endsAt
+  }
+}

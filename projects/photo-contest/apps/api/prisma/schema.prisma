@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "../generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(cuid())
+  nickname String
+  avatar String?
+  provider String
+  providerId String
+  memberships GroupMember[]
+  sessions Session[]
+  submissions Submission[]
+  votes Vote[]
+  uploads Upload[]
+  reports Report[]
+  createdAt DateTime @default(now())
+  @@unique([provider, providerId])
+}
+model Session {
+  tokenHash String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model OAuthAttempt {
+  stateHash String @id
+  provider String
+  verifier String
+  expiresAt DateTime
+}
+model Group {
+  id String @id @default(cuid())
+  name String
+  inviteHash String @unique
+  inviteToken String
+  createdAt DateTime @default(now())
+  members GroupMember[]
+  contests Contest[]
+}
+model GroupMember {
+  groupId String
+  userId String
+  role String @default("MEMBER")
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+  @@id([groupId, userId])
+  @@index([userId])
+}
+model Contest {
+  completionTrackedAt DateTime?
+  id String @id @default(cuid())
+  groupId String
+  title String
+  startsAt DateTime
+  submissionEndsAt DateTime
+  endsAt DateTime
+  createdAt DateTime @default(now())
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+  votes Vote[]
+  uploads Upload[]
+  @@index([groupId, createdAt])
+}
+model Upload {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  contestId String
+  expiresAt DateTime
+  imageKey String? @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  submission Submission?
+}
+model Submission {
+  id String @id @default(cuid())
+  contestId String
+  authorId String
+  caption String
+  uploadId String @unique
+  hidden Boolean @default(false)
+  createdAt DateTime @default(now())
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  upload Upload @relation(fields: [uploadId], references: [id])
+  votes Vote[]
+  reports Report[]
+  @@unique([contestId, authorId])
+  @@index([contestId, createdAt])
+}
+model Vote {
+  id String @id @default(cuid())
+  contestId String
+  submissionId String
+  voterId String
+  createdAt DateTime @default(now())
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  voter User @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  @@unique([contestId, voterId])
+  @@index([submissionId])
+}
+model Report {
+  id String @id @default(cuid())
+  submissionId String
+  reporterId String
+  reason String
+  createdAt DateTime @default(now())
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  @@unique([submissionId, reporterId])
+}
+model AnalyticsEvent {
+  id String @id
+  type String
+  userId String?
+  properties Json
+  createdAt DateTime @default(now())
+  deliveredAt DateTime?
+  @@index([deliveredAt, createdAt])
+}

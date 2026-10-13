@@ -1,0 +1,51 @@
+name: Photo Contest
+on:
+  push:
+    paths:
+      [
+        'projects/photo-contest/**',
+        'packages/**',
+        'package.json',
+        'yarn.lock',
+        '.yarnrc.yml',
+        '.github/workflows/photo-contest.yml',
+      ]
+  pull_request:
+    paths:
+      [
+        'projects/photo-contest/**',
+        'packages/**',
+        'package.json',
+        'yarn.lock',
+        '.yarnrc.yml',
+        '.github/workflows/photo-contest.yml',
+      ]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_USER: contest, POSTGRES_PASSWORD: contest, POSTGRES_DB: photo_contest }
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd "pg_isready -U contest -d photo_contest"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://contest:contest@127.0.0.1:55432/photo_contest?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn workspace @side/photo-contest db:generate
+      - run: yarn workspace @side/photo-contest codegen
+      - run: yarn format:check && yarn workspace @side/photo-contest check
+      - run: yarn test:photo-contest:integration
+      - run: yarn build:photo-contest
+      - run: yarn workspace @photo-contest/e2e exec playwright install --with-deps chromium
+      - run: yarn test:photo-contest:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: photo-contest-playwright, path: projects/photo-contest/e2e/playwright-report/ }

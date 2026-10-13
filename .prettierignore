@@ -1,0 +1,14 @@
+yarn.lock
+**/node_modules
+**/.next
+**/dist
+**/.data
+**/generated
+**/playwright-report
+**/test-results
+**/*.tsbuildinfo
+**/next-env.d.ts
+**/AGENTS.md
+**/.claude
+**/prisma/migrations
+**/src/shared/api/generated.ts

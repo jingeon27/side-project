@@ -1,0 +1,12 @@
+node_modules/
+.yarn/
+.next/
+dist/
+coverage/
+.env
+.env.local
+.data/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
