@@ -1,0 +1,9 @@
+type Vote {
+  id: ID!
+  contestId: ID!
+  submissionId: ID!
+}
+
+type Mutation {
+  castVote(contestId: ID!, submissionId: ID!): Vote!
+}

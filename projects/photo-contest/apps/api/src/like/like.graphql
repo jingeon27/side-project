@@ -1,0 +1,6 @@
+type Mutation {
+  "이미 좋아요한 사진이면 그대로 둔다. 자기 사진과 숨긴 사진은 거부한다"
+  likeSubmission(submissionId: ID!): Submission!
+  "좋아요하지 않은 사진이면 그대로 둔다"
+  unlikeSubmission(submissionId: ID!): Submission!
+}
