@@ -1,10 +1,24 @@
 'use client';
-import { useEffect } from 'react';
+
 import { captureException } from '@sentry/browser';
-import { ErrorNotice } from '@/shared/ui/states';
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+import { useEffect } from 'react';
+
+import { ErrorState } from '@/modules/shared/ui/@core/error-state';
+
+export default function RouteError({
+  error,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) {
   useEffect(() => {
     captureException(error);
   }, [error]);
-  return <ErrorNotice message="화면을 불러오지 못했습니다." retry={reset} />;
+
+  return (
+    <div className="flex flex-1 flex-col justify-center">
+      <ErrorState title="화면을 불러오지 못했어요" message="잠시 후 다시 시도해 주세요." onRetry={retry} />
+    </div>
+  );
 }

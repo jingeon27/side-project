@@ -1,11 +1,18 @@
-import Link from 'next/link';
+import { ImageOff } from 'lucide-react';
+
+import { ROUTES } from '@/modules/shared/constants/routes';
+import { ButtonLink } from '@/modules/shared/ui/@core/button';
+import { EmptyState } from '@/modules/shared/ui/@core/empty-state';
+
 export default function NotFound() {
   return (
-    <div className="empty">
-      <h1>페이지를 찾을 수 없어요</h1>
-      <Link className="button button-primary" href="/">
-        내 그룹으로 돌아가기
-      </Link>
+    <div className="flex flex-1 flex-col justify-center">
+      <EmptyState
+        icon={<ImageOff className="size-6" />}
+        title="페이지를 찾을 수 없어요"
+        description="주소가 바뀌었거나 볼 수 없는 화면이에요."
+        action={<ButtonLink href={ROUTES.HOME}>홈으로 가기</ButtonLink>}
+      />
     </div>
   );
 }
