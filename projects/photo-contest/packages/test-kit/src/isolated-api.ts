@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-import { assertLocalDatabase, isolatedSchemaName, schemaUrl } from './database';
+import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl } from './database';
 import { loadProjectEnv } from './env';
 import { PROJECT_ROOT, SERVE_TEST_API_BIN } from './paths';
 
@@ -45,9 +45,7 @@ export async function startIsolatedApi({
   env = {},
 }: IStartIsolatedApiOptions): Promise<IIsolatedApi> {
   loadProjectEnv();
-  const baseUrl = process.env.DATABASE_URL;
-  if (!baseUrl) throw new Error('DATABASE_URL이 필요합니다. projects/photo-contest/.env를 확인하세요.');
-  assertLocalDatabase(baseUrl);
+  const baseUrl = resolveTestDatabaseUrl();
   const schema = isolatedSchemaName(prefix);
   const child = spawn(process.execPath, [SERVE_TEST_API_BIN], {
     stdio: 'inherit',

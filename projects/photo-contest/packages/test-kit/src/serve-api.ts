@@ -34,6 +34,7 @@ async function main() {
       ...process.env,
       NODE_ENV: 'development',
       ENABLE_DEV_LOGIN: 'true',
+      ENABLE_TEST_API: 'true',
       API_HOST: '127.0.0.1',
       DATABASE_URL: url,
       STORAGE_BACKEND: 'local',

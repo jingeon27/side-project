@@ -4,6 +4,7 @@ export {
   createIsolatedDatabase,
   dropIsolatedDatabase,
   isolatedSchemaName,
+  resolveTestDatabaseUrl,
   schemaUrl,
 } from './database';
 export { apiWebServer, prepareE2eDatabase } from './e2e';

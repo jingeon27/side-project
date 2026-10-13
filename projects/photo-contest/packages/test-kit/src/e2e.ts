@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { assertLocalDatabase, isolatedSchemaName, schemaUrl } from './database';
+import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl } from './database';
 import { loadProjectEnv } from './env';
 import { PROJECT_ROOT, SERVE_TEST_API_BIN } from './paths';
 
@@ -19,9 +19,7 @@ export interface IE2eDatabase {
  */
 export function prepareE2eDatabase(prefix: string): IE2eDatabase {
   loadProjectEnv();
-  const baseUrl = process.env.PC_E2E_BASE_DATABASE_URL ?? process.env.DATABASE_URL;
-  if (!baseUrl) throw new Error('DATABASE_URL이 필요합니다. projects/photo-contest/.env를 확인하세요.');
-  assertLocalDatabase(baseUrl);
+  const baseUrl = process.env.PC_E2E_BASE_DATABASE_URL ?? resolveTestDatabaseUrl();
   process.env.PC_E2E_BASE_DATABASE_URL = baseUrl;
   process.env.PC_E2E_SCHEMA ??= isolatedSchemaName(prefix);
   const schema = process.env.PC_E2E_SCHEMA;
