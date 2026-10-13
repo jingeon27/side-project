@@ -15,9 +15,9 @@ import {
 import type { INativeRouter, TNativeCapabilities } from '@photo-contest/bridge/native';
 import type { Page } from '@playwright/test';
 
-import { createCapabilities } from '@/modules/features/bridge/lib/create-capabilities';
-import type { ICapabilityDependencies } from '@/modules/features/bridge/lib/create-capabilities';
-import { toWebPath } from '@/modules/features/navigation/lib/deep-link';
+import { createCapabilities } from '@/features/bridge/lib/create-capabilities';
+import type { ICapabilityDependencies } from '@/features/bridge/lib/create-capabilities';
+import { toWebPath } from '@/features/navigation/lib/deep-link';
 
 import { E2E_APP_SCHEME, E2E_APP_VERSION, E2E_WEB_ORIGIN } from './e2e-env';
 

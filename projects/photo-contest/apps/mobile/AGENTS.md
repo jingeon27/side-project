@@ -13,7 +13,7 @@
 - `metro.config.js`는 두지 않는다. Expo 기본 설정이 워크스페이스(브리지·zod)를 찾는다(`bundle:check`로 확인).
 - `package.json`의 `"type": "module"`은 Playwright가 test-kit(ESM, `import.meta`)을 읽기 위해 필요하다.
 
-## 구조 (`src/modules`)
+## 구조 (`src`)
 
 - `app`: `App.tsx`(첫 링크 읽기 → 웹 셸, 최소 버전 미달이면 업데이트 화면), 스플래시 제어, `providers`(SafeAreaProvider, 오류 경계).
 - `pages/web-shell`: `@page/WebShellPageTemplate`, `model`(WebView 이벤트·브리지·뒤로 가기·AppState 훅), `ui`(LoadingOverlay, OfflineView), `lib`(순수 판단).
