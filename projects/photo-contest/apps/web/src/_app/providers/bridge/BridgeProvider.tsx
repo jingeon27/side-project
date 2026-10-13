@@ -3,7 +3,7 @@
 import type { IWebBridge } from '@photo-contest/bridge/web';
 import type { ReactNode } from 'react';
 
-import { BridgeContext, getWebBridge } from '@/modules/shared/model/bridge';
+import { BridgeContext, getWebBridge } from '@/shared/model/bridge';
 
 import { useBridgeLifecycle } from './bridge-lifecycle.hook';
 

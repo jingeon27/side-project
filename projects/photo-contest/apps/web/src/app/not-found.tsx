@@ -1,8 +1,8 @@
 import { ImageOff } from 'lucide-react';
 
-import { ROUTES } from '@/modules/shared/constants/routes';
-import { ButtonLink } from '@/modules/shared/ui/@core/button';
-import { EmptyState } from '@/modules/shared/ui/@core/empty-state';
+import { ROUTES } from '@/shared/constants/routes';
+import { ButtonLink } from '@/shared/ui/@core/button';
+import { EmptyState } from '@/shared/ui/@core/empty-state';
 
 export default function NotFound() {
   return (

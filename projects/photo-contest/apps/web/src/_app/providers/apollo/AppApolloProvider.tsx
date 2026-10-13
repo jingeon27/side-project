@@ -3,8 +3,8 @@
 import { ApolloClient, ApolloNextAppProvider, InMemoryCache } from '@apollo/client-integration-nextjs';
 import type { ReactNode } from 'react';
 
-import { createAppLink } from '@/modules/shared/api/apollo-link.helper';
-import { toast } from '@/modules/shared/model/toast';
+import { createAppLink } from '@/shared/api/apollo-link.helper';
+import { toast } from '@/shared/model/toast';
 
 import { APP_TYPE_POLICIES } from './app.type-policies';
 

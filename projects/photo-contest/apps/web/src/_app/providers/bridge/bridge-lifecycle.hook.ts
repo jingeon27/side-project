@@ -12,7 +12,7 @@ import {
   resolveBackAction,
   routeHistoryStore,
   useAppRouter,
-} from '@/modules/shared/model/router';
+} from '@/shared/model/router';
 
 const currentPath = () => `${window.location.pathname}${window.location.search}`;
 

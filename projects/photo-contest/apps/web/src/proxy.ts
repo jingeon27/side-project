@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { match } from 'ts-pattern';
 
-import { decideAuthGate } from '@/modules/shared/lib/auth-gate.helper';
+import { decideAuthGate } from '@/shared/lib/auth-gate.helper';
 
 /**
  * 멤버 전용 화면에 세션 쿠키 없이 들어오면 `/?next=<원래 경로>`로 보낸다.

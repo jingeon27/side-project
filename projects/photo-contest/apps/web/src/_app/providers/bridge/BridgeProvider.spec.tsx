@@ -9,9 +9,9 @@ import type { IWebBridge, TBridgeWindow } from '@photo-contest/bridge/web';
 import { render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { routeHistoryStore } from '@/modules/shared/model/router';
-import { hasOpenOverlay, pushOverlayEntry } from '@/modules/shared/model/router/overlay-history.store';
-import { registerParentRoute } from '@/modules/shared/model/router/parent-route.store';
+import { routeHistoryStore } from '@/shared/model/router';
+import { hasOpenOverlay, pushOverlayEntry } from '@/shared/model/router/overlay-history.store';
+import { registerParentRoute } from '@/shared/model/router/parent-route.store';
 
 import { BridgeProvider } from './BridgeProvider';
 

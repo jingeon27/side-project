@@ -3,7 +3,7 @@
 import { captureException } from '@sentry/browser';
 import { useEffect } from 'react';
 
-import { ErrorState } from '@/modules/shared/ui/@core/error-state';
+import { ErrorState } from '@/shared/ui/@core/error-state';
 
 export default function RouteError({
   error,

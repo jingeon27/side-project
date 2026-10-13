@@ -3,9 +3,9 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 
-import { AppProviders } from '@/modules/app/providers';
-import '@/modules/app/styles/tailwind.css';
-import { APP_MAIN_ID, APP_ROOT_ID, THEME_COLOR } from '@/modules/shared/constants/layout';
+import { AppProviders } from '@/_app/providers';
+import '@/_app/styles/tailwind.css';
+import { APP_MAIN_ID, APP_ROOT_ID, THEME_COLOR } from '@/shared/constants/layout';
 
 export const metadata: Metadata = {
   title: { default: '웃긴순간 — 우리끼리 사진 대회', template: '%s · 웃긴순간' },

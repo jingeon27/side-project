@@ -3,7 +3,7 @@
 import { OverlayProvider } from 'overlay-kit';
 import type { ReactNode } from 'react';
 
-import { ToastProvider } from '@/modules/shared/ui/@core/toast';
+import { ToastProvider } from '@/shared/ui/@core/toast';
 
 import { AppApolloProvider } from './apollo/AppApolloProvider';
 import { BridgeProvider } from './bridge/BridgeProvider';

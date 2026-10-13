@@ -20,63 +20,63 @@ const ruleTester = new RuleTester({
 ruleTester.run('layer-imports', plugin.rules['layer-imports'], {
   valid: [
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
-      code: "import { cn } from '@/modules/shared/lib/cn.helper';",
+      filename: file('features/group/ui/GroupCard.tsx'),
+      code: "import { cn } from '@/shared/lib/cn.helper';",
     },
     {
-      filename: file('modules/pages/group/@page/GroupPageTemplate.tsx'),
-      code: "import { BottomNav } from '@/modules/widgets/bottom-nav';",
+      filename: file('_pages/group/@page/GroupPageTemplate.tsx'),
+      code: "import { BottomNav } from '@/widgets/bottom-nav';",
     },
     {
-      filename: file('modules/app/providers/AppProviders.tsx'),
-      code: "import { groupTypePolicies } from '@/modules/features/group';",
+      filename: file('_app/providers/AppProviders.tsx'),
+      code: "import { groupTypePolicies } from '@/features/group';",
     },
     {
-      filename: file('modules/shared/ui/@core/button/Button.tsx'),
+      filename: file('shared/ui/@core/button/Button.tsx'),
       code: "import { cn } from '../../../lib/cn.helper';",
     },
     {
       filename: file('app/groups/[id]/page.tsx'),
-      code: "import { GroupPage } from '@/modules/pages/group';",
+      code: "import { GroupPage } from '@/_pages/group';",
     },
-    { filename: file('app/layout.tsx'), code: "import '@/modules/app/styles/tailwind.css';" },
+    { filename: file('app/layout.tsx'), code: "import '@/_app/styles/tailwind.css';" },
     {
       filename: file('app/groups/[id]/page.tsx'),
-      code: "import { PreloadQuery } from '@/modules/shared/api/apollo-client.server';",
+      code: "import { PreloadQuery } from '@/shared/api/apollo-client.server';",
     },
     {
       filename: file('proxy.ts'),
-      code: "import { decideAuthGate } from '@/modules/shared/lib/auth-gate.helper';",
+      code: "import { decideAuthGate } from '@/shared/lib/auth-gate.helper';",
     },
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
+      filename: file('features/group/ui/GroupCard.tsx'),
       code: "import { useQuery } from '@apollo/client/react';",
     },
   ],
   invalid: [
     {
-      filename: file('modules/shared/lib/x.helper.ts'),
-      code: "import { submissionTypePolicies } from '@/modules/features/submission';",
+      filename: file('shared/lib/x.helper.ts'),
+      code: "import { submissionTypePolicies } from '@/features/submission';",
       errors: [{ messageId: 'upward' }],
     },
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
+      filename: file('features/group/ui/GroupCard.tsx'),
       code: "import { BottomNav } from '../../../widgets/bottom-nav';",
       errors: [{ messageId: 'upward' }],
     },
     {
-      filename: file('modules/widgets/bottom-nav/ui/BottomNav.tsx'),
-      code: "export { HomePage } from '@/modules/pages/home';",
+      filename: file('widgets/bottom-nav/ui/BottomNav.tsx'),
+      code: "export { HomePage } from '@/_pages/home';",
       errors: [{ messageId: 'upward' }],
     },
     {
-      filename: file('modules/pages/home/@page/HomePageTemplate.tsx'),
-      code: "const providers = import('@/modules/app/providers');",
+      filename: file('_pages/home/@page/HomePageTemplate.tsx'),
+      code: "const providers = import('@/_app/providers');",
       errors: [{ messageId: 'upward' }],
     },
     {
       filename: file('app/page.tsx'),
-      code: "import { CreateGroupBottomSheet } from '@/modules/features/group';",
+      code: "import { CreateGroupBottomSheet } from '@/features/group';",
       errors: [{ messageId: 'route' }],
     },
   ],
@@ -85,61 +85,61 @@ ruleTester.run('layer-imports', plugin.rules['layer-imports'], {
 ruleTester.run('slice-public-api', plugin.rules['slice-public-api'], {
   valid: [
     {
-      filename: file('modules/pages/group/@page/GroupPageTemplate.tsx'),
-      code: "import { GroupBanner } from '@/modules/features/group';",
+      filename: file('_pages/group/@page/GroupPageTemplate.tsx'),
+      code: "import { GroupBanner } from '@/features/group';",
     },
     {
-      filename: file('modules/pages/group/@page/GroupPageTemplate.tsx'),
-      code: "import { GroupBanner } from '@/modules/features/group/index';",
+      filename: file('_pages/group/@page/GroupPageTemplate.tsx'),
+      code: "import { GroupBanner } from '@/features/group/index';",
     },
     {
-      filename: file('modules/features/contest/ui/ContestCard.tsx'),
-      code: "import type { TGroupRole } from '@/modules/features/group/types/group.type';",
+      filename: file('features/contest/ui/ContestCard.tsx'),
+      code: "import type { TGroupRole } from '@/features/group/types/group.type';",
     },
     {
-      filename: file('modules/features/contest/ui/ContestCard.spec.tsx'),
-      code: "import { groupMock } from '@/modules/features/group/mocks/group.mock';",
+      filename: file('features/contest/ui/ContestCard.spec.tsx'),
+      code: "import { groupMock } from '@/features/group/mocks/group.mock';",
     },
     {
-      filename: file('modules/pages/group/@page/model/x.ts'),
-      code: "import { createGroupSchema } from '@/modules/features/group/model/group.schema';",
+      filename: file('_pages/group/@page/model/x.ts'),
+      code: "import { createGroupSchema } from '@/features/group/model/group.schema';",
     },
     {
-      filename: file('modules/pages/group/@page/GroupPage.tsx'),
-      code: "import { loadGroup } from '@/modules/features/group/api/group.server';",
+      filename: file('_pages/group/@page/GroupPage.tsx'),
+      code: "import { loadGroup } from '@/features/group/api/group.server';",
     },
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
+      filename: file('features/group/ui/GroupCard.tsx'),
       code: "import { groupTypePolicies } from '../model/group.type-policies';",
     },
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
-      code: "import { Button } from '@/modules/shared/ui/@core/button';",
+      filename: file('features/group/ui/GroupCard.tsx'),
+      code: "import { Button } from '@/shared/ui/@core/button';",
     },
   ],
   invalid: [
     {
-      filename: file('modules/pages/group/@page/GroupPageTemplate.tsx'),
-      code: "import { GroupBanner } from '@/modules/features/group/ui/GroupBanner';",
+      filename: file('_pages/group/@page/GroupPageTemplate.tsx'),
+      code: "import { GroupBanner } from '@/features/group/ui/GroupBanner';",
       errors: [{ messageId: 'deep' }],
     },
     {
-      filename: file('modules/features/contest/ui/ContestCard.tsx'),
+      filename: file('features/contest/ui/ContestCard.tsx'),
       code: "import { groupTypePolicies } from '../../group/model/group.type-policies';",
       errors: [{ messageId: 'deep' }],
     },
     {
-      filename: file('modules/app/providers/AppProviders.tsx'),
-      code: "export { BottomNav } from '@/modules/widgets/bottom-nav/ui/BottomNav';",
+      filename: file('_app/providers/AppProviders.tsx'),
+      code: "export { BottomNav } from '@/widgets/bottom-nav/ui/BottomNav';",
       errors: [{ messageId: 'deep' }],
     },
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
-      code: "import { groupTypePolicies } from '@/modules/features/group';",
+      filename: file('features/group/ui/GroupCard.tsx'),
+      code: "import { groupTypePolicies } from '@/features/group';",
       errors: [{ messageId: 'ownBarrel' }],
     },
     {
-      filename: file('modules/features/group/ui/GroupCard.tsx'),
+      filename: file('features/group/ui/GroupCard.tsx'),
       code: "import { groupTypePolicies } from '..';",
       errors: [{ messageId: 'ownBarrel' }],
     },
@@ -149,18 +149,18 @@ ruleTester.run('slice-public-api', plugin.rules['slice-public-api'], {
 ruleTester.run('no-cross-page', plugin.rules['no-cross-page'], {
   valid: [
     {
-      filename: file('modules/pages/group/@page/GroupPageTemplate.tsx'),
+      filename: file('_pages/group/@page/GroupPageTemplate.tsx'),
       code: "import { GroupHeader } from './ui/GroupHeader';",
     },
     {
       filename: file('app/groups/[id]/page.tsx'),
-      code: "import { GroupPage } from '@/modules/pages/group';",
+      code: "import { GroupPage } from '@/_pages/group';",
     },
   ],
   invalid: [
     {
-      filename: file('modules/pages/contest/@page/ContestPageTemplate.tsx'),
-      code: "import { GroupPage } from '@/modules/pages/group';",
+      filename: file('_pages/contest/@page/ContestPageTemplate.tsx'),
+      code: "import { GroupPage } from '@/_pages/group';",
       errors: [{ messageId: 'crossPage' }],
     },
   ],

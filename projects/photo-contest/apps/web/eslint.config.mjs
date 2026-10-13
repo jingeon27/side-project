@@ -11,7 +11,7 @@ export default defineConfig([
   globalIgnores([
     '.next/**',
     'next-env.d.ts',
-    'src/modules/shared/api/generated.ts',
+    'src/shared/api/generated.ts',
     'playwright-report/**',
     'test-results/**',
     'coverage/**',

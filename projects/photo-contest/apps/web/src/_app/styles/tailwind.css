@@ -2,7 +2,7 @@
 @import './theme.css';
 @import './globals.css';
 
-@source '../../../**/*.{ts,tsx}';
+@source '../../**/*.{ts,tsx}';
 
 /* 서버가 User-Agent로 붙인 <html data-app> 아래에서만 적용한다. 화면 모양에만 쓴다. */
 @custom-variant in-app (&:where([data-app], [data-app] *));

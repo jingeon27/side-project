@@ -1,11 +1,14 @@
-// 이 앱 전용 FSD 경계 규칙. src/modules의 레이어(app → pages → widgets → features → shared)와
+// 이 앱 전용 FSD 경계 규칙. src 바로 아래 레이어(_app → _pages → widgets → features → shared)와
 // Next 라우트(src/app)의 import 방향, slice 공개 API(index.ts), 화면 slice 사이 import를 검사한다.
+// _app·_pages의 밑줄은 Next의 app·pages 라우터 폴더와 겹치지 않게 하려는 것이다.
 import path from 'node:path';
 
 const SRC_DIR = path.resolve(import.meta.dirname, '../src');
 
 /** 위에 있을수록 큰 값. 자기보다 아래 레이어만 import할 수 있다. */
 const LAYER_RANK = { routes: 5, app: 4, pages: 3, widgets: 2, features: 1, shared: 0 };
+/** src 아래 폴더 이름 → 레이어 */
+const LAYER_DIRS = { _app: 'app', _pages: 'pages', widgets: 'widgets', features: 'features', shared: 'shared' };
 const SLICED_LAYERS = new Set(['pages', 'widgets', 'features']);
 /** Next 라우트는 화면(pages)과 앱 조립(app), 기반(shared)만 쓴다. */
 const ROUTE_IMPORTABLE_LAYERS = new Set(['app', 'pages', 'shared']);
@@ -17,7 +20,7 @@ const ROOT_FILES = new Set(['proxy', 'instrumentation', 'instrumentation-client'
 const stripExtension = (file) => file.replace(/\.(d\.)?[cm]?[jt]sx?$/, '');
 
 /**
- * src 기준 경로를 레이어·slice로 나눈다. src/modules와 src/app 밖(옛 위치 등)은 null.
+ * src 기준 경로를 레이어·slice로 나눈다. 레이어 폴더와 src/app 밖은 null.
  * @param {string} absolutePath
  */
 export function locate(absolutePath) {
@@ -26,10 +29,10 @@ export function locate(absolutePath) {
   const parts = stripExtension(relative).split(path.sep);
   if (parts[0] === 'app' || (parts.length === 1 && ROOT_FILES.has(parts[0])))
     return { layer: 'routes', slice: null, rest: parts };
-  if (parts[0] !== 'modules' || !(parts[1] in LAYER_RANK) || parts[1] === 'routes') return null;
-  const layer = parts[1];
-  if (!SLICED_LAYERS.has(layer)) return { layer, slice: null, rest: parts.slice(2) };
-  return { layer, slice: parts[2] ?? null, rest: parts.slice(3) };
+  const layer = Object.hasOwn(LAYER_DIRS, parts[0] ?? '') ? LAYER_DIRS[parts[0]] : null;
+  if (!layer) return null;
+  if (!SLICED_LAYERS.has(layer)) return { layer, slice: null, rest: parts.slice(1) };
+  return { layer, slice: parts[1] ?? null, rest: parts.slice(2) };
 }
 
 /**

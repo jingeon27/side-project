@@ -1,4 +1,4 @@
-import { Skeleton } from '@/modules/shared/ui/@core/skeleton';
+import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 export default function Loading() {
   return (

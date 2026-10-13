@@ -9,7 +9,7 @@ const request = vi.hoisted(() => ({ userAgent: '' }));
 vi.mock('next/headers', () => ({
   headers: async () => new Headers({ 'user-agent': request.userAgent }),
 }));
-vi.mock('@/modules/app/providers', () => ({
+vi.mock('@/_app/providers', () => ({
   AppProviders: ({ children }: { children: unknown }) => children,
 }));
 

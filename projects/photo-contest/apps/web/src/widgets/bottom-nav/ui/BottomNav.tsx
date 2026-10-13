@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-import { ROUTES } from '@/modules/shared/constants/routes';
-import { cn } from '@/modules/shared/lib/cn.helper';
+import { ROUTES } from '@/shared/constants/routes';
+import { cn } from '@/shared/lib/cn.helper';
 
 function NavItem({
   href,
