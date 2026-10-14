@@ -36,6 +36,8 @@ corepack yarn dev:photo-contest
 
 ## 검증
 
+별도 터미널에서 `corepack yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.
+
 ```sh
 corepack yarn workspace @side/photo-contest check
 corepack yarn workspace @photo-contest/web lint
