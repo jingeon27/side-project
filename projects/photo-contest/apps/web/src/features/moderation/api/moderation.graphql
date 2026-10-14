@@ -1,0 +1,17 @@
+# 숨긴 사진을 정규화 캐시에 표시할 때 쓰는 조각
+fragment SubmissionVisibility on Submission {
+  id
+  hidden
+}
+
+mutation ReportSubmission($submissionId: ID!, $reason: String!) {
+  reportSubmission(submissionId: $submissionId, reason: $reason)
+}
+
+mutation HideSubmission($submissionId: ID!) {
+  hideSubmission(submissionId: $submissionId)
+}
+
+mutation DeleteSubmission($submissionId: ID!) {
+  deleteSubmission(submissionId: $submissionId)
+}

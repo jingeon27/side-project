@@ -1,0 +1,49 @@
+# 피드·결과·숨긴 사진 카드가 같이 쓰는 사진 필드. voteCount는 대회가 끝난 뒤, 신고는 관리자에게만 온다.
+fragment SubmissionCard on Submission {
+  id
+  contestId
+  caption
+  imageUrl
+  hidden
+  createdAt
+  voteCount
+  likeCount
+  likedByMe
+  reportCount
+  author {
+    id
+    nickname
+    avatar
+  }
+  reports {
+    id
+    reason
+    createdAt
+  }
+}
+
+# 대회·정렬마다 하나인 offset 목록. 더 불러올 때는 offset만 지금까지 받은 수로 바꿔 이어 받는다(offsetLimitPagination이 합친다).
+query Submissions($contestId: ID!, $sort: SubmissionSort!, $offset: Int!, $limit: Int!) {
+  submissions(contestId: $contestId, sort: $sort, offset: $offset, limit: $limit) {
+    ...SubmissionCard
+  }
+}
+
+mutation RequestUpload($contestId: ID!) {
+  requestUploadUrl(contestId: $contestId) {
+    id
+    url
+    expiresAt
+  }
+}
+
+mutation CreateSubmission($contestId: ID!, $uploadId: ID!, $caption: String!, $rightsConfirmed: Boolean!) {
+  createSubmission(
+    contestId: $contestId
+    uploadId: $uploadId
+    caption: $caption
+    rightsConfirmed: $rightsConfirmed
+  ) {
+    ...SubmissionCard
+  }
+}

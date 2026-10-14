@@ -1,0 +1,41 @@
+# 그룹 화면 대회 목록과 대회 화면 상단에 같이 쓰는 필드
+fragment ContestListItem on Contest {
+  id
+  groupId
+  title
+  phase
+  startsAt
+  submissionEndsAt
+  endsAt
+}
+
+query Contest($id: ID!) {
+  contest(id: $id) {
+    ...ContestListItem
+    isAdmin
+    mySubmissionId
+    votedSubmissionId
+    submissionCount
+    hiddenSubmissions {
+      ...SubmissionCard
+    }
+  }
+}
+
+mutation CreateContest(
+  $groupId: ID!
+  $title: String!
+  $startsAt: DateTime!
+  $submissionEndsAt: DateTime!
+  $endsAt: DateTime!
+) {
+  createContest(
+    groupId: $groupId
+    title: $title
+    startsAt: $startsAt
+    submissionEndsAt: $submissionEndsAt
+    endsAt: $endsAt
+  ) {
+    ...ContestListItem
+  }
+}

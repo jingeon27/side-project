@@ -1,0 +1,49 @@
+# 홈 그룹 카드: 이름, 내 역할, 멤버 수, 최근 대회 단계
+fragment GroupCard on Group {
+  id
+  name
+  role
+  members {
+    role
+    user {
+      id
+    }
+  }
+  contests {
+    id
+    title
+    phase
+  }
+}
+
+query MyGroups {
+  myGroups {
+    ...GroupCard
+  }
+}
+
+query Group($id: ID!) {
+  group(id: $id) {
+    id
+    name
+    role
+    inviteToken
+    members {
+      role
+      user {
+        id
+        nickname
+        avatar
+      }
+    }
+    contests {
+      ...ContestListItem
+    }
+  }
+}
+
+mutation CreateGroup($name: String!) {
+  createGroup(name: $name) {
+    ...GroupCard
+  }
+}
