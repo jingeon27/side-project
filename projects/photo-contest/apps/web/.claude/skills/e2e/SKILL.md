@@ -18,22 +18,13 @@ description: 웹(apps/web)의 Playwright e2e를 작성·실행할 때(휴대폰 
 
 - webServer는 두 개다: `apiWebServer({ port: 4320, webOrigin: 'http://localhost:3320', database: prepareE2eDatabase('web_e2e') })`(`@photo-contest/test-kit`)와 이 앱의 `next dev -p 3320`. Next는 env `NEXT_DIST_DIR=.next/e2e`(사용자 개발 서버의 `.next` 잠금과 겹치지 않게), `API_URL=http://127.0.0.1:4320`, `WEB_ORIGIN=http://localhost:3320`, url `http://localhost:3320/backend/health`(rewrite까지 확인), `reuseExistingServer: false`, timeout 180s.
 - 설정이 test-kit `loadProjectEnv()`로 프로젝트 `.env`를 읽어 webServer에 물려주므로 `NEXT_PUBLIC_SENTRY_DSN`·`NEXT_PUBLIC_AMPLITUDE_API_KEY`는 env에서 빈 값으로 덮는다. 아니면 e2e가 Sentry·Amplitude로 보낸다.
-- `e2e/support/env.ts`는 포트·URL의 단일 출처다. `e2e/support/test.ts`는 Next 개발 오버레이(`nextjs-portal`)를 숨기고, `pageerror`를 모아 테스트 끝에 빈 배열을 단언하고, `signIn(page, nickname)`을 준다. 모든 spec은 `@playwright/test` 대신 여기서 `test`·`expect`를 import한다.
+- `e2e/support/env.ts`는 포트·URL의 단일 출처다. `e2e/support/test.ts`는 Next 개발 오버레이(`nextjs-portal`)를 숨기고, `pageerror`를 모아 테스트 끝에 빈 배열을 단언하고, `signIn(nickname)` fixture를 준다. 모든 spec은 `@playwright/test` 대신 여기서 `test`·`expect`를 import한다.
 
 ## 쓰는 법
 
-- `signIn`은 `page.request.post('/backend/auth/dev', { headers: { Origin: 'http://localhost:3320' }, data: { nickname } })`로 한다. `page.request`는 브라우저 컨텍스트와 쿠키를 같이 쓰고, Origin이 없으면 API가 403을 준다. 모든 spec이 한 격리 스키마를 쓰므로 닉네임은 테스트마다 고유하게 만든다.
-- 사용자가 둘 이상이면 `browser.newContext()`마다 `signIn`한다. 화면으로 확인할 게 아닌 준비(그룹·대회·사진)는 test-kit `devLogin`·`graphqlRequest`·`createTestImage`로 API에서 바로 만든다(본보기 `apps/mobile/e2e/support/seed.ts`). 다른 앱의 코드는 import하지 않는다.
-- 단계는 서버 시각으로 계산되므로 DB에서 마감 시각을 옮긴 뒤 `page.reload()`한다. 순서(`startsAt < submissionEndsAt < endsAt`)는 DB가 검사하지 않으니 직접 지킨다(필드는 `apps/api/prisma/schema.prisma`).
-
-```ts
-const db = createDatabaseClient(process.env.PC_E2E_DATABASE_URL!);
-try {
-  await db.contest.update({ where: { id: contestId }, data: { submissionEndsAt: new Date(Date.now() - 1_000) } });
-} finally {
-  await db.$disconnect();
-}
-```
+- `signIn`은 `e2e/support/test.ts`의 authenticate를 통해 test-kit createTestUser(`/testing/users`)로 세션을 만들고 브라우저 컨텍스트의 HttpOnly 쿠키로 넣는다. 테스트 API의 Origin은 e2e WEB_ORIGIN이다.
+- 준비용 그룹·대회·사진은 제품 GraphQL·업로드 API, 단계는 moveTestContest(`/testing/contests/:id/phase`), 외부 로그인 성공 콜백은 createTestAppLoginTicket을 쓴다. DB를 직접 수정하지 않는다.
+- 단계 이동 후에는 page.reload 또는 대회 상태 새로고침으로 서버 상태를 다시 읽는다. 자동 단계 전환 테스트는 페이지를 그대로 두고 30초 주기 갱신에 따른 화면 변화를 기다리는 단언으로 확인한다.
 
 - 사진은 `page.getByLabel('사진 선택').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: await createTestImage() })`로 올린다.
 - 선택자는 역할·접근성 이름으로 쓴다(`getByRole('button', { name: '사진 제출하기' })`, `getByLabel('사진 설명')`). 클래스·DOM 구조로 찾지 않고, `waitForTimeout` 대신 `await expect(locator).toBeVisible()` 같은 기다리는 단언을 쓴다.

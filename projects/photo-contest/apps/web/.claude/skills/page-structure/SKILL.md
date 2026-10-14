@@ -26,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 }
 ```
 
-4. 템플릿은 같은 Document와 완전히 같은 variables로 `useSuspenseQuery`를 부른다. 하나라도 다르면 SSR에서 새 요청이 나가 `createNoNetworkLink`가 오류를 던지고, 화면은 클라이언트 렌더링으로 떨어진다(`apollo` 스킬). Suspense를 따로 두지 않으면 `src/app/loading.tsx`가 fallback이고, 던진 오류는 `src/app/error.tsx`가 받는다. 만료 세션(UNAUTHENTICATED)·권한 없음(NOT_FOUND)을 화면 안에서 나누려면 훅에 `errorPolicy: 'all'`을 주고 `getErrorCode(error)`로 분기한다.
+4. 템플릿은 같은 Document와 완전히 같은 variables로 `useQuery`를 부르고 로딩·오류를 화면 안에서 처리한다. 설치된 `@apollo/client-integration-nextjs/README.md`의 Preloading 절에서 확인하듯 `PreloadQuery`는 `useQuery`에도 요청을 전달하고 중복 요청을 막는다. `useSuspenseQuery`로 스트리밍 렌더링을 선택하면 같은 사전 조회가 필수이며 `src/app/loading.tsx`·`error.tsx`가 로딩·오류를 받는다(`apollo` 스킬). 만료 세션(UNAUTHENTICATED)·권한 없음(FORBIDDEN)은 `errorPolicy: 'all'`과 `getErrorCode(error)`로 분기한다.
 5. 화면 뼈대: 루트 `flex flex-1 flex-col`(`main#pc-main`이 이미 `min-h-dvh flex-col`) → `TopAppBar` → 본문 `flex-1` → 마지막 자식으로 `StickyCta` 또는 `BottomNav`.
 
 ## 멤버 전용 화면
