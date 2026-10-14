@@ -1,3 +1,4 @@
+import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 import { ERROR_CODE, fail } from '../common/errors';
@@ -89,17 +90,17 @@ function nicknameOf(value: string | undefined) {
   return (trimmed ? trimmed : DEFAULT_NICKNAME).slice(0, TEXT_LIMIT.NICKNAME);
 }
 
-/** provider 프로필에서 계정 식별자만 꺼낸다. 이메일로 다른 provider 계정을 합치지 않는다. */
-export function identityOf(provider: TOAuthProviderName, profile: unknown): IOAuthIdentity | undefined {
-  if (provider === OAUTH_PROVIDER.GOOGLE) {
-    const parsed = googleProfileSchema.safeParse(profile);
-    if (!parsed.success) return undefined;
-    return {
-      providerId: parsed.data.sub,
-      nickname: nicknameOf(parsed.data.name),
-      avatar: parsed.data.picture,
-    };
-  }
+function googleIdentity(profile: unknown): IOAuthIdentity | undefined {
+  const parsed = googleProfileSchema.safeParse(profile);
+  if (!parsed.success) return undefined;
+  return {
+    providerId: parsed.data.sub,
+    nickname: nicknameOf(parsed.data.name),
+    avatar: parsed.data.picture,
+  };
+}
+
+function kakaoIdentity(profile: unknown): IOAuthIdentity | undefined {
   const parsed = kakaoProfileSchema.safeParse(profile);
   if (!parsed.success) return undefined;
   return {
@@ -107,4 +108,12 @@ export function identityOf(provider: TOAuthProviderName, profile: unknown): IOAu
     nickname: nicknameOf(parsed.data.properties?.nickname),
     avatar: parsed.data.properties?.profile_image,
   };
+}
+
+/** provider 프로필에서 계정 식별자만 꺼낸다. 이메일로 다른 provider 계정을 합치지 않는다. */
+export function identityOf(provider: TOAuthProviderName, profile: unknown): IOAuthIdentity | undefined {
+  return match(provider)
+    .with(OAUTH_PROVIDER.GOOGLE, () => googleIdentity(profile))
+    .with(OAUTH_PROVIDER.KAKAO, () => kakaoIdentity(profile))
+    .exhaustive();
 }

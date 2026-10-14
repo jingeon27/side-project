@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import { s3Settings, storageBackend, storageDir } from '../config/env';
 import { LocalPhotoStore } from './local-photo-store';
@@ -24,7 +25,13 @@ export class PhotoStorage {
   }
 
   private store(): IPhotoStore {
-    if (storageBackend() === 'local') return new LocalPhotoStore(storageDir());
+    return match(storageBackend())
+      .with('local', () => new LocalPhotoStore(storageDir()))
+      .with('s3', () => this.s3Store())
+      .exhaustive();
+  }
+
+  private s3Store(): S3PhotoStore {
     const settings = s3Settings();
     const signature = JSON.stringify(settings);
     // S3 클라이언트는 연결을 재사용하도록 설정이 같으면 계속 쓴다.
