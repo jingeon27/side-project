@@ -5,6 +5,14 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 
 import fsdBoundaries from './eslint/fsd-boundaries.mjs';
 
+// `const [open, setOpen] = useState(...)`, `const [error, setError] = useState('')`처럼
+// 오버레이 열림·mutation 오류를 컴포넌트 상태로 복제하는 선언(첫 이름이 open/isOpen/…Open, error/…Error)
+const OVERLAY_OR_ERROR_STATE = '/^(open|error|\\w+Open|\\w+Error)$/';
+const USE_STATE_MESSAGE =
+  '오버레이 열림·mutation 오류를 useState로 들고 있지 않습니다. 시트·대화상자는 여는 쪽에서 ' +
+  'overlay.open(({ isOpen, close, unmount }) => <XxxBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />)으로 열고 ' +
+  'props(IBottomSheetControlProps)로 받으세요. mutation 진행·실패는 useMutation의 loading/error와 공통 ErrorLink 토스트로 처리합니다.';
+
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
@@ -34,6 +42,17 @@ export default defineConfig([
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-unused-expressions': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `VariableDeclarator[id.type='ArrayPattern'][id.elements.0.name=${OVERLAY_OR_ERROR_STATE}][init.callee.name='useState']`,
+          message: USE_STATE_MESSAGE,
+        },
+        {
+          selector: `VariableDeclarator[id.type='ArrayPattern'][id.elements.0.name=${OVERLAY_OR_ERROR_STATE}][init.callee.property.name='useState']`,
+          message: USE_STATE_MESSAGE,
+        },
+      ],
     },
   },
   {
