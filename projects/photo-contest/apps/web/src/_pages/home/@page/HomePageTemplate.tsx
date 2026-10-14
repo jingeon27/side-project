@@ -49,6 +49,7 @@ export function HomePageTemplate() {
           <LoginPanel />
         ) : (
           <section className="flex flex-col gap-4">
+            <p className="text-caption text-muted">{me.data.me.nickname}님의 그룹</p>
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-title text-ink">내 그룹</h2>
               <Button size="md" onClick={handleCreateGroup}>
