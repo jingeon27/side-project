@@ -1,5 +1,7 @@
 import { contestTypePolicies } from '@/features/contest';
 import { groupTypePolicies } from '@/features/group';
+import { inviteTypePolicies } from '@/features/invite';
+import { rankingTypePolicies } from '@/features/ranking';
 import { submissionTypePolicies } from '@/features/submission';
 import { mergeTypePolicies } from '@/shared/api/type-policies.helper';
 
@@ -8,4 +10,6 @@ export const APP_TYPE_POLICIES = mergeTypePolicies(
   groupTypePolicies,
   contestTypePolicies,
   submissionTypePolicies,
+  inviteTypePolicies,
+  rankingTypePolicies,
 );
