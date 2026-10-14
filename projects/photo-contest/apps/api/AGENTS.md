@@ -14,6 +14,7 @@
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·업로드(`POST /uploads/:token`)·사진 조회(`GET /photos/:id`)·sharp 변환 |
 | `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·OAuth 시도·앱 로그인 티켓) — 테스트는 `SchedulerService.runOnce()` |
 | `health/` | `GET /health`(DB), `GET /app/config`(모바일 최소·최신 버전) |
+| `monitoring/` | Sentry 옵션(DSN 없으면 init 안 함, PII 제거 `beforeSend`)과 `reportUnexpectedError()`(원문 대신 오류 종류·code·호출 위치 + 태그) |
 
 ## 규칙
 
@@ -22,7 +23,9 @@
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
 - 닫힌 집합 분기는 ts-pattern `exhaustive()`, 일반 유틸은 es-toolkit.
-- Amplitude로 보내지 않는다. 이벤트는 같은 트랜잭션에서 `AnalyticsEvent`에 기록만 하고 개인정보(닉네임·캡션·토큰)를 넣지 않는다. Sentry는 예상하지 못한 오류만.
+- 사진 목록은 offset/limit(`pageRange`)이고 정렬 마지막 기준은 id다. 좋아요 수는 읽을 때 `_count`로 센다 — 카운터 컬럼이나 커서를 두지 않는다.
+- Amplitude로 보내지 않는다. 이벤트는 같은 트랜잭션에서 `AnalyticsEvent`에 기록만 하고 개인정보(닉네임·캡션·토큰)를 넣지 않는다.
+- Sentry는 예상하지 못한 오류만: GraphQL `INTERNAL_SERVER_ERROR`는 `internal-error.plugin`이 operationName 태그로, REST 5xx는 `ApiExceptionFilter`가 라우트 패턴 태그로 보낸다. 업무 오류는 `fail()`로 던져 4xx로 끝나게 하고, 직접 보고할 때도 `captureException` 대신 `reportUnexpectedError()`를 쓴다.
 - Prisma 스키마를 바꾸면 마이그레이션을 추가하고 `db:generate`. 파괴적 변경은 피한다. 개발 DB에는 사용자가 `db:migrate`로 적용한다.
 
 ## 빌드·실행
@@ -35,6 +38,6 @@
 | 스크립트 | 내용 |
 | --- | --- |
 | `test` · `test:unit` | Vitest `unit`: `src/**/*.spec.ts`(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
-| `test:api` | Vitest `api`: `test/api/**/*.spec.ts`. globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test:api` | Vitest `api`: `test/api/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
