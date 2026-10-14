@@ -47,6 +47,11 @@ export function apiWebServer({ port, webOrigin, database, env = {} }: IApiWebSer
     stdout: 'pipe' as const,
     stderr: 'pipe' as const,
     env: {
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CLIENT_SECRET: '',
+      KAKAO_CLIENT_ID: '',
+      KAKAO_CLIENT_SECRET: '',
+      SENTRY_DSN: '',
       ...env,
       DATABASE_URL: database.baseUrl,
       PC_E2E_SCHEMA: database.schema,

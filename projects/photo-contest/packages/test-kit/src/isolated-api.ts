@@ -51,6 +51,11 @@ export async function startIsolatedApi({
     stdio: 'inherit',
     env: {
       ...process.env,
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CLIENT_SECRET: '',
+      KAKAO_CLIENT_ID: '',
+      KAKAO_CLIENT_SECRET: '',
+      SENTRY_DSN: '',
       ...env,
       DATABASE_URL: baseUrl,
       PC_E2E_SCHEMA: schema,
