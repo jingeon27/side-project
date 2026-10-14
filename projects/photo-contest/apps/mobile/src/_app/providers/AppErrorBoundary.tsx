@@ -1,9 +1,10 @@
 import { Component } from 'react';
-import type { ReactNode } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS } from '@/shared/config/theme';
+import { captureError } from '@/shared/lib/monitoring/monitoring';
 
 import { hideSplashScreen } from '../model/use-splash-screen';
 
@@ -47,9 +48,10 @@ export class AppErrorBoundary extends Component<IAppErrorBoundaryProps, IAppErro
     return { hasError: true };
   }
 
-  componentDidCatch() {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     // 스플래시가 닫히기 전에 실패하면 안내 화면이 가려진다.
     hideSplashScreen();
+    captureError(error, info.componentStack);
   }
 
   handleRestart = () => {
