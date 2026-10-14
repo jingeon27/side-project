@@ -1,6 +1,11 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 
-import { createDatabaseClient, createTestImage, devLogin, graphqlRequest } from '@photo-contest/test-kit';
+import {
+  createTestAppLoginTicket,
+  createTestImage,
+  createTestUser,
+  graphqlRequest,
+} from '@photo-contest/test-kit';
 import type { BrowserContext } from '@playwright/test';
 
 import { E2E_API_URL, E2E_WEB_ORIGIN } from './e2e-env';
@@ -24,9 +29,9 @@ async function gql<TData>(cookie: string, query: string, variables: Record<strin
   return result.data;
 }
 
-/** 개발 로그인으로 사용자를 만들고 세션 Cookie(`contest_session=...`)를 돌려준다. */
+/** 테스트 API로 사용자를 만들고 세션 Cookie(`contest_session=...`)를 돌려준다. */
 export function signUp(nickname: string) {
-  return devLogin(E2E_API_URL, { nickname, origin: E2E_WEB_ORIGIN });
+  return createTestUser(E2E_API_URL, { nickname, origin: E2E_WEB_ORIGIN });
 }
 
 /** API에서 받은 세션을 웹 origin 쿠키로 넣어 브라우저를 로그인 상태로 만든다. */
@@ -107,26 +112,9 @@ export async function seedContestWithMemberPhoto() {
 }
 
 /**
- * 소셜 로그인 콜백 대신 앱 로그인 티켓을 직접 만든다. 실제 provider 없이 앱 → 웹 교환(/auth/app/exchange)을 검증한다.
+ * 테스트 API로 외부 로그인 성공 콜백의 티켓을 만든다. 실제 provider 없이 앱 → 웹 교환(/auth/app/exchange)을 검증한다.
  * challenge는 앱이 인증 세션 주소(app_challenge)에 실은 값이다.
  */
 export async function issueAppLoginTicket(challenge: string, nickname = uniqueNickname('구글')) {
-  const db = createDatabaseClient(process.env.PC_E2E_DATABASE_URL!);
-  try {
-    const user = await db.user.create({
-      data: { nickname, provider: 'google', providerId: `e2e-${randomBytes(8).toString('hex')}` },
-    });
-    const code = randomBytes(32).toString('base64url');
-    await db.appLoginTicket.create({
-      data: {
-        codeHash: createHash('sha256').update(code).digest('hex'),
-        userId: user.id,
-        challenge,
-        expiresAt: new Date(Date.now() + 2 * 60_000),
-      },
-    });
-    return { code, nickname };
-  } finally {
-    await db.$disconnect();
-  }
+  return createTestAppLoginTicket(E2E_API_URL, { nickname, challenge, origin: E2E_WEB_ORIGIN });
 }
