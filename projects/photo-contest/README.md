@@ -75,6 +75,12 @@ Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<prov
 
 ## 앱별 테스트
 
+로컬에서는 별도 터미널에서 테스트 DB를 시작합니다. `db:test:local`은 `.data/test-postgres`·55434·`photo_contest_test`를 사용해 개발 DB와 분리합니다. 포트를 바꾸면 `.env`의 `LOCAL_TEST_POSTGRES_PORT`와 `TEST_DATABASE_URL`도 함께 바꾸세요.
+
+```sh
+corepack yarn workspace @side/photo-contest db:test:local
+```
+
 | 앱     | `test`                   | `test:api`                                | `test:e2e`                                                   |
 | ------ | ------------------------ | ----------------------------------------- | ------------------------------------------------------------ |
 | API    | 순수 규칙·사진 처리 unit | 없음                                      | Vitest + supertest + 실제 PostgreSQL, `test/e2e`             |

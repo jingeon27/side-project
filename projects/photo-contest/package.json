@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env scripts/dev.mjs",
     "db:local": "node --env-file-if-exists=.env --import tsx scripts/local-postgres.ts",
+    "db:test:local": "node --env-file-if-exists=.env --import tsx scripts/local-postgres.ts --test",
     "db:generate": "yarn workspace @photo-contest/api db:generate",
     "db:migrate": "node --env-file-if-exists=.env scripts/task.mjs @photo-contest/api db:migrate",
     "codegen": "yarn workspace @photo-contest/web codegen",
