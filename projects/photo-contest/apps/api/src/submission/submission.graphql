@@ -1,0 +1,48 @@
+enum SubmissionSort {
+  "최신순"
+  NEWEST
+  "오래된순"
+  OLDEST
+  "좋아요순, 같으면 최신순"
+  MOST_LIKED
+}
+
+type Report {
+  id: ID!
+  reason: String!
+  createdAt: DateTime!
+}
+
+type Submission {
+  id: ID!
+  contestId: ID!
+  author: User!
+  caption: String!
+  imageUrl: String!
+  hidden: Boolean!
+  createdAt: DateTime!
+  "대회가 끝난 뒤에만 공개"
+  voteCount: Int
+  likeCount: Int!
+  likedByMe: Boolean!
+  "관리자에게만 공개"
+  reportCount: Int
+  "관리자에게만 공개"
+  reports: [Report!]
+}
+
+type UploadTicket {
+  id: ID!
+  url: String!
+  expiresAt: DateTime!
+}
+
+type Query {
+  "관리자가 아니면 숨긴 사진을 제외한다"
+  submissions(contestId: ID!, offset: Int = 0, limit: Int = 24, sort: SubmissionSort = NEWEST): [Submission!]!
+}
+
+type Mutation {
+  requestUploadUrl(contestId: ID!): UploadTicket!
+  createSubmission(contestId: ID!, uploadId: ID!, caption: String!, rightsConfirmed: Boolean!): Submission!
+}

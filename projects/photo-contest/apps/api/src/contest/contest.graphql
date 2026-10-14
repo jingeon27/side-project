@@ -1,0 +1,50 @@
+enum Phase {
+  UPCOMING
+  SUBMISSION
+  VOTING
+  COMPLETED
+}
+
+type Contest {
+  id: ID!
+  groupId: ID!
+  title: String!
+  startsAt: DateTime!
+  submissionEndsAt: DateTime!
+  endsAt: DateTime!
+  "서버 시각 기준 단계"
+  phase: Phase!
+  "조회한 사용자가 그룹 관리자인지"
+  isAdmin: Boolean!
+  mySubmissionId: ID
+  "조회한 사용자가 투표한 사진 ID"
+  votedSubmissionId: ID
+  "숨기지 않은 사진 수"
+  submissionCount: Int!
+  "관리자에게만 숨긴 사진을 준다. 일반 멤버에게는 빈 배열"
+  hiddenSubmissions: [Submission!]!
+}
+
+type Result {
+  "득표수가 같으면 같은 순위 (1, 1, 3)"
+  rank: Int!
+  submission: Submission!
+  voteCount: Int!
+  winner: Boolean!
+}
+
+type Query {
+  contest(id: ID!): Contest!
+  "종료된 대회만. 득표순"
+  contestResults(contestId: ID!): [Result!]!
+}
+
+type Mutation {
+  createContest(
+    groupId: ID!
+    title: String!
+    startsAt: DateTime!
+    submissionEndsAt: DateTime!
+    endsAt: DateTime!
+  ): Contest!
+}

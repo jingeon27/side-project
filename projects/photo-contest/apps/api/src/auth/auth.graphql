@@ -1,0 +1,10 @@
+type User {
+  id: ID!
+  nickname: String!
+  avatar: String
+}
+
+type Query {
+  "로그인한 사용자. 로그인하지 않았으면 null"
+  me: User
+}

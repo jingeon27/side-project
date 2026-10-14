@@ -1,4 +1,11 @@
-import { HomePage } from '@/_pages/home/@page/home-page';
+import { HomePageTemplate } from '@/_pages/home';
+import { PreloadQuery } from '@/shared/api/apollo-client.server';
+import { MeDocument } from '@/shared/api/generated';
+
 export default function Page() {
-  return <HomePage />;
+  return (
+    <PreloadQuery query={MeDocument}>
+      <HomePageTemplate />
+    </PreloadQuery>
+  );
 }

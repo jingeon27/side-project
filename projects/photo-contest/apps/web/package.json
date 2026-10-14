@@ -1,32 +1,42 @@
 {
   "name": "@photo-contest/web",
   "private": true,
+  "type": "module",
   "version": "0.0.0",
   "scripts": {
     "dev": "next dev -p 3200",
     "build": "next build",
     "start": "next start -p 3200",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "codegen": "graphql-codegen --config codegen.ts"
+    "lint": "eslint .",
+    "codegen": "graphql-codegen --config codegen.ts",
+    "test": "vitest run --project unit --project ui",
+    "test:unit": "vitest run --project unit",
+    "test:api": "vitest run --project api",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.47.4",
     "@apollo/client": "^4.0.0",
     "@apollo/client-integration-nextjs": "^0.14.5",
     "@base-ui/react": "^1.9.0",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@hookform/resolvers": "^5.4.0",
-    "@sentry/browser": "^10.0.0",
+    "@photo-contest/bridge": "workspace:*",
+    "@sentry/nextjs": "^11.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "es-toolkit": "^1.52.0",
     "graphql": "^16.11.0",
     "lucide-react": "^1.23.0",
     "next": "16.4.0",
+    "overlay-kit": "^1.9.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.81.0",
     "rxjs": "^7.8.2",
     "tailwind-merge": "^3.6.0",
+    "ts-pattern": "^5.9.0",
     "zod": "^4.4.0"
   },
   "devDependencies": {
@@ -34,6 +44,8 @@
     "@graphql-codegen/typed-document-node": "^6.0.0",
     "@graphql-codegen/typescript": "^5.0.0",
     "@graphql-codegen/typescript-operations": "^5.0.0",
+    "@photo-contest/test-kit": "workspace:*",
+    "@playwright/test": "^1.64.0",
     "@side/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.0",
     "@testing-library/dom": "^10.4.1",
@@ -43,10 +55,13 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "eslint": "^9.39.0",
+    "eslint-config-next": "16.4.0",
     "graphql": "^16.11.0",
     "jsdom": "^29.0.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.9.0",
+    "typescript-eslint": "^8.50.0",
     "vitest": "^4.1.0"
   }
 }

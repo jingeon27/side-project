@@ -1,0 +1,7 @@
+.expo/
+.expo-export-check/
+# expo prebuild 결과물. 네이티브 설정은 app.config.ts가 원본이다.
+android/
+ios/
+playwright-report/
+test-results/

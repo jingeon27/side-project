@@ -1,0 +1,22 @@
+# 로그인하지 않아도 볼 수 있다. joinedGroupId는 로그인한 멤버일 때만 온다.
+query InvitePreview($token: String!) {
+  invitePreview(token: $token) {
+    groupName
+    memberCount
+    ownerNickname
+    joinedGroupId
+  }
+}
+
+mutation JoinGroup($token: String!) {
+  joinGroup(token: $token) {
+    ...GroupCard
+  }
+}
+
+mutation RegenerateInviteLink($groupId: ID!) {
+  regenerateInviteLink(groupId: $groupId) {
+    id
+    inviteToken
+  }
+}

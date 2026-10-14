@@ -12,3 +12,6 @@ yarn.lock
 **/.claude
 **/prisma/migrations
 **/src/shared/api/generated.ts
+**/.e2e-build
+**/.expo
+**/.expo-export-check

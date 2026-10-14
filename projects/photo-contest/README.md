@@ -1,158 +1,103 @@
 # 웃긴순간
 
-친구들과 비공개 그룹을 만들고 사진 한 장씩 제출한 뒤, 한 표로 우승작을 뽑는 사진 대회 MVP.
-기획 원본은 `docs/product-plan.md`.
+친구들과 비공개 그룹을 만들고 사진 한 장씩 제출한 뒤 한 표로 우승작을 뽑는 서비스입니다. 웹과 Expo WebView 앱이 같은 HttpOnly 세션과 GraphQL API를 사용합니다.
 
-## 로컬 실행
+## 실행
 
-Node.js **22.12 이상**(검증: 24.19)과 Corepack/Yarn 4.17이 필요합니다.
-기존 시스템 Node 18에서는 Next.js를 실행할 수 없습니다.
+Node.js 24(`.nvmrc`)·Corepack·Yarn 4.17을 사용합니다. 저장소 루트에서 실행하세요.
 
 ```sh
-cd side
-# 저장소 루트에서 의존성을 설치합니다.
-corepack enable
-corepack yarn install
+corepack yarn install --immutable
 cp projects/photo-contest/.env.example projects/photo-contest/.env
 corepack yarn workspace @side/photo-contest db:generate
 corepack yarn workspace @side/photo-contest codegen
-```
-
-터미널 1에서 개발 PostgreSQL을 실행합니다. 다른 프로젝트의 DB를 사용하거나 초기화하지 않습니다.
-
-```sh
 corepack yarn workspace @side/photo-contest db:local
-# 또는: docker compose -f projects/photo-contest/docker-compose.yml up -d postgres
 ```
 
-터미널 2에서 마이그레이션을 적용하고 두 앱을 실행합니다.
+별도 터미널에서 해당 개발 DB에 마이그레이션을 적용하고 서버를 시작합니다.
 
 ```sh
 corepack yarn workspace @side/photo-contest db:migrate
 corepack yarn dev:photo-contest
 ```
 
-- 웹: **http://localhost:3200**
-- GraphQL API: http://127.0.0.1:4200/graphql (브라우저에서는 `/backend/graphql` 프록시 사용)
-- 로컬 DB: 127.0.0.1:55432, 개발 데이터는 `projects/photo-contest/.data/postgres`
-- 로컬 사진: `projects/photo-contest/.data/photos`
+- 웹: http://localhost:3200
+- API: http://127.0.0.1:4200, 브라우저에서는 같은 origin의 `/backend/*` 프록시로 호출
+- 기본 로컬 DB: 55432. `LOCAL_POSTGRES_PORT`와 `DATABASE_URL`을 함께 바꿔 프로젝트별로 분리
+- DB·사진: 프로젝트 `.data/postgres`·`.data/photos`
 
-`NODE_ENV=development`와 `ENABLE_DEV_LOGIN=true`인 경우에만 닉네임으로 체험할 수 있습니다.
-닉네임이 같으면 같은 개발 계정입니다. 별도의 브라우저 프로필/시크릿 창에서 다른 닉네임으로 친구 계정을 만들고,
-관리자의 초대 링크로 그룹에 가입하세요. 운영에서는 개발 로그인이 차단됩니다.
+`NODE_ENV=development`와 `ENABLE_DEV_LOGIN=true`가 모두 있어야 닉네임 로그인이 열립니다. 같은 닉네임은 같은 개발 계정입니다. 다른 브라우저 프로필에서 친구 계정으로 초대 링크를 열어보세요.
 
-## 구현된 기능
+## 구성과 기능
 
-- 카카오·Google OAuth Authorization Code + state/PKCE, HttpOnly 세션, 로그아웃
-- 그룹 생성·초대 링크·가입·멤버 목록, 관리자와 일반 멤버의 권한 분리
-- 대회 생성, 서버 시계 기준 제출/투표/종료 자동 전환
-- 1인 1장 사진 제출, 실제 파일 포맷 검사, 40MP/10MB 제한, WebP 변환·메타데이터 제거
-- 비공개 사진 조회, 24장 단위 페이지네이션, 이미지 지연 로딩
-- 자기 사진/숨긴 사진 투표 금지, 1인 1표 DB unique + Serializable 트랜잭션
-- Apollo 정규화 캐시, 투표 낙관적 업데이트와 실패 롤백
-- 종료 전 득표수 비공개, 공동 우승, 결과와 지난 대회 기록
-- 사진 신고, 관리자 신고 내용 확인·숨김·삭제
-- 반응형 화면, 폼 검증, 로딩·빈 화면·실패 상태, 키보드로 사용하는 다이얼로그
-- 제품 이벤트 DB outbox, 선택적 Amplitude 전송, 선택적 Sentry 오류 수집
-- 만료된 세션·OAuth 요청·미제출 사진 정리
+| 앱·패키지           | 역할                                                                          |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 6·PostgreSQL          |
+| `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 홈·MY·그룹·초대·대회 |
+| `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크      |
+| `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                              |
+| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·fixture 준비                                   |
 
-`app`은 라우팅, `_pages`는 화면, `features`는 도메인 작업, `shared`는 기반 코드를 담당합니다.
-계획의 pnpm/Radix 대신 현재 저장소 규칙에 맞춰 **Yarn/Base UI**를 사용합니다.
+그룹은 비공개이며 모든 멤버가 초대 링크를 공유할 수 있고, 관리자만 재발급·대회 생성·사진 숨김/삭제를 수행합니다. 1인 1장·1인 1표는 DB unique와 Serializable 재시도로 보장합니다. 좋아요 수는 항상, 득표수는 종료 후에만 공개합니다. 공동 우승·무투표·그룹 순위·지난 대회를 지원합니다.
 
-## 인증과 운영 환경
+사진 목록은 정렬별 `offsetLimitPagination`으로 24장씩 받습니다. 좋아요·투표는 Apollo의 낙관적 응답과 실패 롤백을 사용합니다. 사진을 숨기거나 삭제하면 목록의 offset이 달라지므로 첫 페이지부터 다시 받습니다. 사용자 변경은 문서 이동으로 캐시를 버립니다.
 
-`projects/photo-contest/.env.example`에 필요한 변수가 있습니다. OAuth 앱에 아래 callback을 정확히 등록하세요.
+진행 중인 대회 정보는 로그인한 사용자에게 30초마다 갱신해 마감 이후 화면을 전환합니다. 사진 목록은 주기적으로 조회하지 않습니다.
 
-```text
-https://YOUR_WEB_DOMAIN/backend/auth/google/callback
-https://YOUR_WEB_DOMAIN/backend/auth/kakao/callback
-```
+## 모바일 앱
 
-로컬이면 `http://localhost:3200`을 사용합니다. Google은 client ID/secret,
-카카오는 REST API 키와 앱에서 활성화한 client secret을 설정합니다.
-OAuth 구현은 provider 응답을 대체한 경계 테스트를 포함하며, **실제 provider 계정 인증은 별도 설정 후 검증해야 합니다**.
-카카오 설정은 [공식 REST API 문서](https://developers.kakao.com/docs/ko/kakaologin/rest-api)를 참고하세요.
-
-운영에서는 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, 영속 사진 저장소가 필요합니다.
-API는 127.0.0.1에 바인딩됩니다. 서로 다른 컨테이너로 배포할 경우 명시적으로 `API_HOST`를 설정하고,
-웹 프록시에서만 API에 접근하도록 네트워크를 구성하세요. 브라우저 요청은 웹과 같은 origin을 사용합니다.
+Expo Go 대신 dev client 또는 스토어 빌드를 사용합니다.
 
 ```sh
-corepack yarn workspace @side/photo-contest db:generate
-corepack yarn workspace @side/photo-contest codegen
-corepack yarn workspace @side/photo-contest db:migrate
+APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android
+APP_VARIANT=development corepack yarn workspace @photo-contest/mobile ios
+corepack yarn workspace @photo-contest/mobile start
+corepack yarn workspace @photo-contest/mobile bundle:check
+```
+
+`EXPO_PUBLIC_WEB_ORIGIN`을 웹 주소로 설정하고 Android 에뮬레이터에서는 `adb reverse tcp:3200 tcp:3200`을 사용합니다. 쿠키는 WebView가 보관합니다. Google 로그인을 WebView에서 열지 않고 시스템 브라우저·PKCE·일회용 코드 교환으로 처리합니다. 최소 버전 확인 실패는 시작을 막지 않습니다.
+
+## 인증·저장소·모니터링
+
+Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<provider>/callback`입니다. 실제 OAuth 앱과 계정으로 하는 인증은 별도 설정 후 확인해야 합니다.
+
+운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, 영속 `STORAGE_DIR` 또는 private S3 호환 버킷이 필요합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
+
+파일은 일회용 업로드 주소로 API에 전송합니다. API가 실제 형식·40MP·10MB를 검사하고 1600px WebP로 바꾸며 메타데이터를 제거합니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. S3/R2 어댑터는 실제 버킷 권한으로 별도 검증해야 합니다.
+
+| 앱     | 오류 수집                                               | 사용자 행동 측정                |
+| ------ | ------------------------------------------------------- | ------------------------------- |
+| API    | `SENTRY_DSN`, 내부 GraphQL 오류·REST 5xx·주기 작업 실패 | 도메인 이벤트를 DB에만 기록     |
+| 웹     | `NEXT_PUBLIC_SENTRY_DSN`, 서버는 `SENTRY_DSN` 우선      | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
+| 모바일 | `EXPO_PUBLIC_SENTRY_DSN`                                | `EXPO_PUBLIC_AMPLITUDE_API_KEY` |
+
+키가 없으면 전송하지 않습니다. 요청·쿠키·사용자 정보를 제거하고 분석 속성에 닉네임·설명·초대 토큰을 넣지 않습니다. 앱과 웹은 브리지의 기기 ID로 분석 사용자를 연결합니다. 실제 Sentry·Amplitude 프로젝트 수신은 별도 확인이 필요합니다.
+
+## 앱별 테스트
+
+| 앱     | `test`                   | `test:api`                                | `test:e2e`                                                   |
+| ------ | ------------------------ | ----------------------------------------- | ------------------------------------------------------------ |
+| API    | 순수 규칙·사진 처리 unit | 없음                                      | Vitest + supertest + 실제 PostgreSQL, `test/e2e`             |
+| 웹     | unit·실제 폼/캐시 UI     | 생성 GraphQL 문서를 격리 API에 실행(4321) | Pixel 7·iPhone 15(WebKit)·데스크톱·가짜 앱, 웹 3320/API 4320 |
+| 모바일 | unit·UI                  | 앱 설정·상태 API(4331)                    | Android/iOS 가짜 WebView와 실제 웹, 웹 3330/API 4330         |
+| bridge | 자체 Vitest              | 없음                                      | 없음                                                         |
+
+```sh
+corepack yarn workspace @side/photo-contest check
+corepack yarn workspace @photo-contest/web lint
+corepack yarn workspace @photo-contest/mobile lint
+corepack yarn workspace @side/photo-contest test:api
+corepack yarn workspace @photo-contest/web exec playwright install chromium webkit
+corepack yarn workspace @side/photo-contest test:e2e
+corepack yarn workspace @photo-contest/test-kit check:cleanup
 corepack yarn build:photo-contest
-# API와 웹은 각각 해당 workspace의 start 스크립트로 실행
-```
-
-SSR에서 인증 Cookie는 서버 안에서만 GraphQL 요청으로 전달됩니다.
-브라우저로 직렬화하는 데이터와 공유 캐시에 세션 원문을 넣지 않습니다.
-계정 변경 시 문서 전체를 다시 로드하여 Apollo 캐시를 폐기합니다.
-
-## 사진 저장소
-
-기본 `STORAGE_BACKEND=local`은 private 디렉터리를 사용합니다. 운영에서는 이 경로에 영속 볼륨이 필요합니다.
-`STORAGE_BACKEND=s3`이면 S3/R2/MinIO 호환 **private 버킷**을 사용합니다.
-`S3_BUCKET`, `S3_REGION`, 선택적 `S3_ENDPOINT`, AWS credentials를 설정하세요.
-버킷의 공개 읽기는 비활성화하고 API 계정에 해당 버킷의 Get/Put/DeleteObject 권한만 부여합니다.
-
-브라우저는 짧게 유효한 일회용 업로드 URL로 **API에 직접** 파일을 전송합니다.
-API가 사진을 검증·변환한 다음 저장하며, 파일 읽기도 매번 그룹 멤버십을 검사합니다.
-기획의 S3 presigned URL로 원본을 직접 올리는 방식은 채택하지 않았습니다.
-작은 베타에서는 검증되지 않은 원본을 외부 저장소에 올리지 않는 구조가 간단하기 때문입니다.
-S3 구현은 어댑터를 제공하지만 실제 버킷 credentials로 검증하지 않았습니다.
-
-숨김은 관리자가 다시 볼 수 있게 보관하고, 삭제는 제출·연결 투표·신고를 제거한 뒤 파일을 제거합니다.
-파일 제거에 실패하거나 업로드가 중단된 경우 백그라운드 작업이 정리를 재시도합니다.
-
-## 관측
-
-`AnalyticsEvent`는 성공한 변경과 같은 DB 트랜잭션에서 기록합니다.
-`group_created`, `group_joined`, `contest_created`, `submission_created`, `vote_cast`,
-`contest_completed`, `result_viewed`, `next_contest_joined`를 지원합니다.
-결과 조회는 사용자/대회당 최초 1회, 다음 대회 재참여는 이전 종료 대회에 제출한 사용자의 새 제출로 정의합니다.
-종료 이벤트는 약 1분 이내에 생성하며 `participants >= 3`인 대회를 `activeContest=true`로 기록합니다.
-
-`AMPLITUDE_API_KEY`가 비어 있으면 이벤트는 DB에만 남습니다.
-설정하면 1분마다 미전송 이벤트를 전달하고, 실패 시 다음 주기에 재시도합니다.
-`insert_id`로 중복 전달을 식별합니다. EU 프로젝트이면 `AMPLITUDE_REGION=EU`.
-사진, 설명, 닉네임, 이메일은 전송하지 않습니다.
-
-`SENTRY_DSN`은 API, `NEXT_PUBLIC_SENTRY_DSN`은 웹 오류 수집을 활성화합니다.
-사용자·Cookie·요청 본문·breadcrumb 수집을 끄고 오류만 보냅니다. 웹 DSN은 빌드 시 설정해야 합니다.
-키 없는 로컬에서는 외부 서비스에 전송하지 않습니다. 실제 프로젝트 대시보드에서 수신 확인은 별도입니다.
-
-## 검증
-
-```sh
-corepack yarn workspace @side/photo-contest check                 # ESLint + TypeScript + unit/UI
 corepack yarn format:check
-corepack yarn build:photo-contest
-DATABASE_URL='postgresql://contest:contest@127.0.0.1:55432/photo_contest?schema=public' corepack yarn test:photo-contest:integration
-corepack yarn workspace @photo-contest/e2e install:browser
-corepack yarn test:photo-contest:e2e               # .env의 개발 DATABASE_URL 사용
 ```
 
-통합/E2E 테스트는 지정된 DB에 임의 이름의 **격리 스키마**를 만들고 종료 시 그 스키마만 제거합니다.
-운영 DB에 실행하지 마세요. E2E는 별도 포트 **3320/4320**으로 두 앱을 띄웁니다.
-기존 서버를 재사용하거나 중지하지 않습니다. Playwright 결과는 `projects/photo-contest/e2e/playwright-report/`, 화면 캡처는 해당 워크스페이스의 `.data/`.
-CI 정의는 `.github/workflows/photo-contest.yml`이며 독립 저장소로 가져올 때 사용할 수 있습니다.
-`side`는 자체 Git 저장소이며 `origin`은 `https://github.com/jingeon27/side.git`입니다.
+모든 DB 레인은 `TEST_DATABASE_URL`을 우선 사용하고, 비어 있으면 로컬 `DATABASE_URL`만 허용합니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마·사진 폴더를 제거합니다. 검증용 API는 `.e2e-build`, Next는 `.next/e2e`·`.next/e2e-mobile`을 써 개발 서버와 겹치지 않습니다.
 
-## 베타 출시 후 할 일
+`/testing/users`(사용자+세션), `/testing/contests/:id/phase`(단계 이동), `/testing/app-login-tickets`(외부 성공 콜백 대체)은 `NODE_ENV=test`와 `ENABLE_TEST_API=true`에서만 열립니다. 개발·운영에서 활성화하면 서버가 시작을 거부합니다. 테스트 하네스가 설정하므로 개발 `.env`에서 켤 필요가 없습니다. 웹·모바일의 테스트 데이터는 이 API와 제품 API로 준비합니다.
 
-배포 계정·OAuth 앱·S3 버킷·관측 프로젝트 설정과 실제 로그인 확인이 필요합니다.
-5개 그룹 모집, 2회 대회 운영, 인터뷰, 퍼널 분석, 개선 전후 성능 측정은 실제 사용자와 진행할 단계입니다.
-결과 공유 카드·댓글·알림·공개 그룹은 기획대로 MVP 범위에서 제외했습니다.
-제품 실험과 정책 결정은 [구현 기록](docs/implementation.md)에 정리했습니다.
+보고서·trace는 각 앱의 `playwright-report`·`test-results`, 화면 캡처는 웹 앱의 `.data/screens`에 남습니다. CI는 앱별 레인과 WebKit 설치·테스트 DB·종료 후 정리 검사를 실행합니다.
 
-## 테스트 소유권
-
-- API unit: `apps/api/src/**/*.spec.ts`, 설정 `apps/api/vitest.config.mts`
-- API integration: `apps/api/test/integration`, 설정 `apps/api/vitest.integration.config.mts`
-- 웹 unit/UI: `apps/web/src/**/*.spec.ts(x)`, 설정 `apps/web/vitest.config.mts`
-- E2E: `e2e/tests`, 설정 `e2e/playwright.config.ts`
-
-Vitest와 Playwright 의존성은 각각 위 워크스페이스에 선언합니다. 저장소 루트에는 테스트 파일이나 러너 설정을 두지 않습니다.
-
-로컬 `.env`에서 `LOCAL_POSTGRES_PORT`와 `DATABASE_URL`을 함께 바꾸면 DB 포트를 분리할 수 있습니다. 현재 이전한 개발 DB는 55433을 사용합니다.
+실제 네이티브 빌드·실기기의 키보드/갤러리/시스템 공유 시트와 외부 OAuth는 브라우저 테스트로 대체되지 않습니다. 제품 가설·베타 사용자 모집은 [기획](docs/product-plan.md), 코드와 검증 결과는 [구현 기록](docs/implementation.md)을 참고하세요.

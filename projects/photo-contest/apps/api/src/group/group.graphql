@@ -1,0 +1,54 @@
+enum GroupRole {
+  OWNER
+  MEMBER
+}
+
+type Member {
+  user: User!
+  role: GroupRole!
+}
+
+"종료된 대회만 집계한다. 우승 횟수와 받은 표가 같으면 같은 순위"
+type LeaderboardEntry {
+  rank: Int!
+  user: User!
+  wins: Int!
+  votesReceived: Int!
+  likesReceived: Int!
+  submissions: Int!
+}
+
+type Group {
+  id: ID!
+  name: String!
+  "조회한 사용자의 역할"
+  role: GroupRole!
+  "그룹 멤버 누구나 공유할 수 있는 초대 토큰"
+  inviteToken: String!
+  members: [Member!]!
+  "최근 대회 50개, 최신순"
+  contests: [Contest!]!
+  leaderboard: [LeaderboardEntry!]!
+}
+
+type InvitePreview {
+  groupName: String!
+  memberCount: Int!
+  ownerNickname: String!
+  "로그인한 사용자가 이미 멤버이면 그룹 ID, 아니면 null"
+  joinedGroupId: ID
+}
+
+type Query {
+  myGroups: [Group!]!
+  group(id: ID!): Group!
+  "로그인하지 않아도 초대 토큰으로 그룹을 미리 본다"
+  invitePreview(token: String!): InvitePreview!
+}
+
+type Mutation {
+  createGroup(name: String!): Group!
+  joinGroup(token: String!): Group!
+  "관리자만. 이전 초대 링크는 더 이상 쓸 수 없다"
+  regenerateInviteLink(groupId: ID!): Group!
+}

@@ -1,14 +1,4 @@
-import { init } from '@sentry/node';
-if (process.env.SENTRY_DSN)
-  init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV,
-    sendDefaultPii: false,
-    defaultIntegrations: false,
-    beforeSend(event) {
-      delete event.request;
-      delete event.user;
-      delete event.breadcrumbs;
-      return event;
-    },
-  });
+import { initSentry } from './monitoring/sentry';
+
+// main.ts가 가장 먼저 import해 다른 모듈보다 먼저 오류 보고를 준비한다.
+initSentry();

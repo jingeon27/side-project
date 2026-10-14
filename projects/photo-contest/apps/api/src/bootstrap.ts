@@ -1,54 +1,42 @@
 import 'reflect-metadata';
+
+import type { INestApplication, LogLevel } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
-import type { Request, Response, NextFunction } from 'express';
 import { json, raw } from 'express';
-import cookieParser from 'cookie-parser';
-import { GraphQLError } from 'graphql';
+
 import { AppModule } from './app.module';
-import { webOrigin } from './auth.service';
-@Catch(GraphQLError)
-class HttpGraphqlFilter implements ExceptionFilter {
-  catch(error: GraphQLError, host: ArgumentsHost) {
-    if (host.getType<string>() === 'graphql') return error;
-    const codes: Record<string, number> = {
-      UNAUTHENTICATED: 401,
-      FORBIDDEN: 403,
-      NOT_FOUND: 404,
-      CONFLICT: 409,
-      UNAVAILABLE: 503,
-    };
-    host
-      .switchToHttp()
-      .getResponse<Response>()
-      .status(codes[String(error.extensions.code)] ?? 400)
-      .json({ message: error.message });
-  }
+import { ApiExceptionFilter } from './common/http/api-exception.filter';
+import { bodyParserErrorHandler } from './common/http/body-parser-error.middleware';
+import { noStore } from './common/http/no-store.middleware';
+import { originGuard } from './common/http/origin-guard.middleware';
+import { assertProductionConfig, assertTestingConfig, isTest } from './config/env';
+import { MAX_JSON_BODY, MAX_UPLOAD_BODY } from './config/limits';
+
+const UPLOAD_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log'];
+
+export interface ICreateAppOptions {
+  /** 지정하지 않으면 NODE_ENV=test에서만 로그를 끈다. */
+  logger?: false | LogLevel[];
 }
-export async function createApp() {
-  if (
-    process.env.NODE_ENV === 'production' &&
-    (!process.env.WEB_ORIGIN?.startsWith('https://') ||
-      !process.env.DATABASE_URL ||
-      !(process.env.STORAGE_BACKEND === 's3' ? process.env.S3_BUCKET : process.env.STORAGE_DIR))
-  )
-    throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and persistent STORAGE_DIR.');
+
+/**
+ * 미들웨어와 필터만 연결하고 listen은 하지 않는다(테스트는 app.getHttpServer()에 직접 요청한다).
+ * 순서: no-store → Origin 검사(본문을 읽기 전에 거절) → 본문 파서(/uploads만 raw) → 파서 오류 응답.
+ */
+export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INestApplication> {
+  assertTestingConfig();
+  assertProductionConfig();
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
-    logger: process.env.NODE_ENV === 'test' ? false : ['error', 'warn', 'log'],
+    logger: logger ?? (isTest() ? false : LOG_LEVELS),
   });
-  app.use(cookieParser());
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('Cache-Control', 'private, no-store');
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers.origin !== webOrigin()) {
-      res.status(403).json({ message: '허용되지 않은 요청 출처입니다.' });
-      return;
-    }
-    next();
-  });
-  app.use('/uploads', raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '10mb' }));
-  app.use(json({ limit: '64kb' }));
-  app.useGlobalFilters(new HttpGraphqlFilter());
+  app.use(noStore);
+  app.use(originGuard);
+  app.use('/uploads', raw({ type: UPLOAD_CONTENT_TYPES, limit: MAX_UPLOAD_BODY }));
+  app.use(json({ limit: MAX_JSON_BODY }));
+  app.use(bodyParserErrorHandler);
+  app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));
   app.enableShutdownHooks();
   await app.init();
   return app;

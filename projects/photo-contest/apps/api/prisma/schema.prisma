@@ -18,6 +18,8 @@ model User {
   votes Vote[]
   uploads Upload[]
   reports Report[]
+  likes Like[]
+  appLoginTickets AppLoginTicket[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
 }
@@ -32,6 +34,7 @@ model OAuthAttempt {
   stateHash String @id
   provider String
   verifier String
+  appChallenge String?
   expiresAt DateTime
 }
 model Group {
@@ -92,6 +95,7 @@ model Submission {
   upload Upload @relation(fields: [uploadId], references: [id])
   votes Vote[]
   reports Report[]
+  likes Like[]
   @@unique([contestId, authorId])
   @@index([contestId, createdAt])
 }
@@ -116,6 +120,23 @@ model Report {
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
   @@unique([submissionId, reporterId])
+}
+model Like {
+  submissionId String
+  userId String
+  createdAt DateTime @default(now())
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([submissionId, userId])
+  @@index([userId])
+}
+model AppLoginTicket {
+  codeHash String @id
+  userId String
+  challenge String
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
 }
 model AnalyticsEvent {
   id String @id

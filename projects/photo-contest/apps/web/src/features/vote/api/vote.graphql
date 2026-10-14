@@ -1,0 +1,13 @@
+# 투표 결과를 대회(Contest:id)에 적을 때 쓰는 조각
+fragment ContestVote on Contest {
+  id
+  votedSubmissionId
+}
+
+mutation CastVote($contestId: ID!, $submissionId: ID!) {
+  castVote(contestId: $contestId, submissionId: $submissionId) {
+    id
+    contestId
+    submissionId
+  }
+}

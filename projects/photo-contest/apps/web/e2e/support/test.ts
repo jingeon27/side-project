@@ -1,0 +1,51 @@
+import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
+import { test as base, expect } from '@playwright/test';
+import type { BrowserContext } from '@playwright/test';
+
+import { API_URL, WEB_ORIGIN } from './env';
+
+export async function authenticate(context: BrowserContext, nickname: string) {
+  const cookie = await createTestUser(API_URL, { nickname, origin: WEB_ORIGIN });
+  await context.addCookies([
+    {
+      name: 'contest_session',
+      value: cookie.slice('contest_session='.length),
+      url: WEB_ORIGIN,
+      httpOnly: true,
+      sameSite: 'Lax',
+    },
+  ]);
+  return cookie;
+}
+
+export async function seedGroup(cookie: string, name: string) {
+  const result = await graphqlRequest<{ createGroup: { id: string; inviteToken: string } }>(API_URL, {
+    cookie,
+    origin: WEB_ORIGIN,
+    query: 'mutation($name: String!) { createGroup(name: $name) { id inviteToken } }',
+    variables: { name },
+  });
+  if (!result.data || result.errors?.length) throw new Error(JSON.stringify(result.errors));
+  return result.data.createGroup;
+}
+
+export const test = base.extend<{ signIn: (nickname: string) => Promise<string> }>({
+  page: async ({ page }, provide) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript(() =>
+      document.addEventListener('DOMContentLoaded', () => {
+        const style = document.createElement('style');
+        style.textContent = 'nextjs-portal{display:none!important}';
+        document.head.append(style);
+      }),
+    );
+    await provide(page);
+    expect(errors).toEqual([]);
+  },
+  signIn: async ({ context }, provide) => {
+    await provide((nickname) => authenticate(context, nickname));
+  },
+});
+
+export { expect };

@@ -1,0 +1,18 @@
+# 좋아요 응답은 바뀐 사진을 돌려줘 정규화 캐시(Submission:id)를 바로 갱신한다.
+fragment SubmissionLike on Submission {
+  id
+  likeCount
+  likedByMe
+}
+
+mutation LikeSubmission($submissionId: ID!) {
+  likeSubmission(submissionId: $submissionId) {
+    ...SubmissionLike
+  }
+}
+
+mutation UnlikeSubmission($submissionId: ID!) {
+  unlikeSubmission(submissionId: $submissionId) {
+    ...SubmissionLike
+  }
+}
