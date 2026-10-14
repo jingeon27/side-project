@@ -29,9 +29,9 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: 'api',
+          name: 'e2e',
           environment: 'node',
-          include: ['test/api/**/*.{spec,test}.ts'],
+          include: ['test/e2e/**/*.{spec,test}.ts'],
           globalSetup: ['test/support/global-setup.ts'],
           setupFiles: ['test/support/setup.ts'],
           // 파일들이 격리 스키마 하나를 함께 쓰므로 순서대로 실행한다.

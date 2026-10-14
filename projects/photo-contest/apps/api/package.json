@@ -11,7 +11,7 @@
     "db:migrate": "prisma migrate deploy",
     "test": "vitest run --project unit",
     "test:unit": "vitest run --project unit",
-    "test:api": "vitest run --project api"
+    "test:e2e": "vitest run --project e2e"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
