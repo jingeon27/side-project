@@ -4,6 +4,7 @@ import { useQuery } from '@apollo/client/react';
 import { Share2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { overlay } from 'overlay-kit';
+import { useEffect } from 'react';
 
 import { LoginPanel } from '@/features/auth';
 import { PhaseBadge, getPhaseDeadline, getPhaseGuide } from '@/features/contest';
@@ -41,6 +42,15 @@ export function ContestPageTemplate({ id }: { id: string }) {
   const shareActions = useShareActions();
   const contest = query.data?.contest;
   const viewer = me.data?.me;
+  const phase = contest?.phase;
+  const viewerId = viewer?.id;
+  const { startPolling, stopPolling } = query;
+  useEffect(() => {
+    // 마감이 지나도 페이지를 다시 열지 않고 투표·결과로 넘어가게 한다. 사진 피드는 polling하지 않는다.
+    if (viewerId && phase && phase !== Phase.Completed) startPolling(30_000);
+    else stopPolling();
+    return stopPolling;
+  }, [phase, viewerId, startPolling, stopPolling]);
   if (getErrorCode(query.error) === ERROR_CODE.Unauthenticated || viewer === null)
     return (
       <div className="flex flex-1 flex-col">
