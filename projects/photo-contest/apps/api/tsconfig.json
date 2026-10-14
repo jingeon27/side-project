@@ -8,7 +8,5 @@
     "emitDecoratorMetadata": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "*.mts"],
-  // 옛 dist 기반 통합 테스트는 test/api로 옮긴 뒤 지운다. 그때까지 타입 검사에서만 뺀다.
-  "exclude": ["test/integration/**"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.mts"]
 }
