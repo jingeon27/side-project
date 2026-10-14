@@ -1,7 +1,15 @@
 import { globSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { Kind, NoUnusedFragmentsRule, buildASTSchema, concatAST, parse, specifiedRules, validate } from 'graphql';
+import {
+  Kind,
+  NoUnusedFragmentsRule,
+  buildASTSchema,
+  concatAST,
+  parse,
+  specifiedRules,
+  validate,
+} from 'graphql';
 import type { DefinitionNode, DocumentNode, OperationDefinitionNode } from 'graphql';
 import { describe, expect, it } from 'vitest';
 

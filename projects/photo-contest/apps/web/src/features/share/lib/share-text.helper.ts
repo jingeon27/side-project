@@ -12,7 +12,11 @@ export interface IShareWinner {
 }
 
 const truncate = (value: string, max: number) =>
-  Array.from(value).length > max ? `${Array.from(value).slice(0, max - 1).join('')}…` : value;
+  Array.from(value).length > max
+    ? `${Array.from(value)
+        .slice(0, max - 1)
+        .join('')}…`
+    : value;
 
 const describeWinner = ({ nickname, caption }: IShareWinner, captionMax: number) =>
   `${nickname}님의 ‘${truncate(caption.trim(), captionMax)}’`;
@@ -20,7 +24,8 @@ const describeWinner = ({ nickname, caption }: IShareWinner, captionMax: number)
 function buildWinnerLine(title: string, winners: readonly IShareWinner[], captionMax: number) {
   const [first] = winners;
   if (!first) return `🏆 ${title} 우승작 없이 마무리`;
-  if (winners.length === 1) return `🏆 ${title} 우승: ${describeWinner(first, captionMax)} (${first.voteCount}표)`;
+  if (winners.length === 1)
+    return `🏆 ${title} 우승: ${describeWinner(first, captionMax)} (${first.voteCount}표)`;
   const named = winners.slice(0, MAX_NAMED_WINNERS).map((winner) => describeWinner(winner, captionMax));
   const rest = winners.length - named.length;
   return `🏆 ${title} 공동 우승: ${named.join(', ')}${rest > 0 ? ` 외 ${rest}명` : ''} (각 ${first.voteCount}표)`;

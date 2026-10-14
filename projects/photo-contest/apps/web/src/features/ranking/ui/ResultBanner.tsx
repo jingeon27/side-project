@@ -7,7 +7,10 @@ export function ResultBanner({ winnerCount }: { winnerCount: number }) {
   const headline = getResultHeadline(winnerCount);
   return (
     <section className="flex items-start gap-3 rounded-card bg-accent-soft p-4 text-ink">
-      <span aria-hidden className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-ink">
+      <span
+        aria-hidden
+        className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-ink"
+      >
         <Trophy className="size-6" />
       </span>
       <div className="min-w-0">

@@ -143,9 +143,14 @@ describe('CreateContestBottomSheet', () => {
         '/contests/contest-new',
       ]),
     );
-    expect(trackEvent).toHaveBeenCalledWith('contest_created', { group_id: 'group-1', contest_id: 'contest-new' });
+    expect(trackEvent).toHaveBeenCalledWith('contest_created', {
+      group_id: 'group-1',
+      contest_id: 'contest-new',
+    });
     expect(
-      client.readQuery({ query: GroupDocument, variables: { id: 'group-1' } })?.group.contests.map((item) => item.id),
+      client
+        .readQuery({ query: GroupDocument, variables: { id: 'group-1' } })
+        ?.group.contests.map((item) => item.id),
     ).toEqual(['contest-new']);
   });
 });

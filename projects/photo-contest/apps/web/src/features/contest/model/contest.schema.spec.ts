@@ -9,7 +9,10 @@ const issuesOf = (input: Record<string, string>) => {
 
 describe('createContestSchema', () => {
   it('기본값은 바로 제출할 수 있어야 하고 ISO 시각으로 바뀌어야 한다', () => {
-    const defaults = { ...buildContestDefaults(new Date('2026-10-14T03:00:00.000Z')), title: ' 가을 사진전 ' };
+    const defaults = {
+      ...buildContestDefaults(new Date('2026-10-14T03:00:00.000Z')),
+      title: ' 가을 사진전 ',
+    };
     const result = createContestSchema.parse(defaults);
     expect(result).toEqual({
       title: '가을 사진전',

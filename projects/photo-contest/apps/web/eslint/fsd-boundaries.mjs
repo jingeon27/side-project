@@ -8,7 +8,13 @@ const SRC_DIR = path.resolve(import.meta.dirname, '../src');
 /** 위에 있을수록 큰 값. 자기보다 아래 레이어만 import할 수 있다. */
 const LAYER_RANK = { routes: 5, app: 4, pages: 3, widgets: 2, features: 1, shared: 0 };
 /** src 아래 폴더 이름 → 레이어 */
-const LAYER_DIRS = { _app: 'app', _pages: 'pages', widgets: 'widgets', features: 'features', shared: 'shared' };
+const LAYER_DIRS = {
+  _app: 'app',
+  _pages: 'pages',
+  widgets: 'widgets',
+  features: 'features',
+  shared: 'shared',
+};
 const SLICED_LAYERS = new Set(['pages', 'widgets', 'features']);
 /** Next 라우트는 화면(pages)과 앱 조립(app), 기반(shared)만 쓴다. */
 const ROUTE_IMPORTABLE_LAYERS = new Set(['app', 'pages', 'shared']);

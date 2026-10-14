@@ -13,7 +13,12 @@ import type { IImageCodec } from './image.helper';
 
 const file = (name: string, type: string, size = 1024) => new File([new Uint8Array(size)], name, { type });
 
-function codec({ width = 4000, height = 3000, decodes = true, encoded = new Blob(['jpeg']) as Blob | null } = {}) {
+function codec({
+  width = 4000,
+  height = 3000,
+  decodes = true,
+  encoded = new Blob(['jpeg']) as Blob | null,
+} = {}) {
   const close = vi.fn();
   const encodeJpeg = vi.fn(async () => encoded);
   const value: IImageCodec = {
@@ -67,14 +72,17 @@ describe('prepareUploadImage', () => {
   });
 
   it('디코드하지 못한 HEIC는 JPEG/PNG/WebP로 바꾸라고 알려야 한다', async () => {
-    await expect(prepareUploadImage(file('IMG_1.HEIC', 'image/heic'), codec({ decodes: false }).value)).rejects.toEqual(
-      new ImagePrepareError(IMAGE_MESSAGE.HeicUnsupported),
-    );
+    await expect(
+      prepareUploadImage(file('IMG_1.HEIC', 'image/heic'), codec({ decodes: false }).value),
+    ).rejects.toEqual(new ImagePrepareError(IMAGE_MESSAGE.HeicUnsupported));
   });
 
   it('줄이지 못한 원본이 10MB를 넘으면 알려야 한다', async () => {
     await expect(
-      prepareUploadImage(file('huge.jpg', 'image/jpeg', UPLOAD_MAX_BYTES + 1), codec({ decodes: false }).value),
+      prepareUploadImage(
+        file('huge.jpg', 'image/jpeg', UPLOAD_MAX_BYTES + 1),
+        codec({ decodes: false }).value,
+      ),
     ).rejects.toThrow(IMAGE_MESSAGE.TooLarge);
   });
 

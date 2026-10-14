@@ -60,7 +60,12 @@ function renderCard({
     <ApolloProvider client={client}>
       <BridgeContext value={bridge}>
         <OverlayProvider>
-          <InviteCard groupId="group-1" groupName="웃음 연구소" inviteToken="token-1" canRegenerate={canRegenerate} />
+          <InviteCard
+            groupId="group-1"
+            groupName="웃음 연구소"
+            inviteToken="token-1"
+            canRegenerate={canRegenerate}
+          />
         </OverlayProvider>
       </BridgeContext>
     </ApolloProvider>,
@@ -94,7 +99,10 @@ describe('InviteCard', () => {
     await user.click(screen.getByRole('button', { name: '친구 초대하기' }));
 
     await waitFor(() =>
-      expect(trackEvent).toHaveBeenCalledWith('invite_link_shared', { group_id: 'group-1', method: 'native' }),
+      expect(trackEvent).toHaveBeenCalledWith('invite_link_shared', {
+        group_id: 'group-1',
+        method: 'native',
+      }),
     );
     expect(fake.calls).toEqual([
       {
@@ -105,7 +113,9 @@ describe('InviteCard', () => {
   });
 
   it('앱 안에서는 앱 클립보드로 복사하고 안내해야 한다', async () => {
-    fake = installFakeNativeApp(window, { capabilities: { 'clipboard.copy': async () => ({ copied: true }) } });
+    fake = installFakeNativeApp(window, {
+      capabilities: { 'clipboard.copy': async () => ({ copied: true }) },
+    });
     const { user } = renderCard({ bridge: createWebBridge(window) });
 
     await user.click(screen.getByRole('button', { name: '링크 복사' }));
@@ -123,7 +133,10 @@ describe('InviteCard', () => {
     await user.click(screen.getByRole('button', { name: '친구 초대하기' }));
 
     await waitFor(() =>
-      expect(trackEvent).toHaveBeenCalledWith('invite_link_shared', { group_id: 'group-1', method: 'web_share' }),
+      expect(trackEvent).toHaveBeenCalledWith('invite_link_shared', {
+        group_id: 'group-1',
+        method: 'web_share',
+      }),
     );
     expect(share).toHaveBeenCalledWith(expect.objectContaining({ url: INVITE_URL }));
     expect(toast.success).not.toHaveBeenCalled();
@@ -138,7 +151,10 @@ describe('InviteCard', () => {
 
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('초대 링크를 복사했어요'));
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining(INVITE_URL));
-    expect(trackEvent).toHaveBeenCalledWith('invite_link_shared', { group_id: 'group-1', method: 'clipboard' });
+    expect(trackEvent).toHaveBeenCalledWith('invite_link_shared', {
+      group_id: 'group-1',
+      method: 'clipboard',
+    });
   });
 
   it('클립보드 API가 없으면 숨긴 입력 선택 복사로 대신해야 한다', async () => {
@@ -149,7 +165,10 @@ describe('InviteCard', () => {
 
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('초대 링크를 복사했어요'));
     expect(document.execCommand).toHaveBeenCalledWith('copy');
-    expect(trackEvent).toHaveBeenCalledWith('invite_link_copied', { group_id: 'group-1', method: 'clipboard' });
+    expect(trackEvent).toHaveBeenCalledWith('invite_link_copied', {
+      group_id: 'group-1',
+      method: 'clipboard',
+    });
   });
 
   it('복사할 방법이 없으면 직접 복사하라고 안내하고 이벤트를 보내지 않아야 한다', async () => {

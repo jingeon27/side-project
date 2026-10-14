@@ -55,7 +55,8 @@ function renderSync(me: MeQuery['me']) {
 
 const authEvents = () =>
   posted.filter(
-    (message) => typeof message === 'object' && message !== null && Reflect.get(message, 'type') === 'auth.changed',
+    (message) =>
+      typeof message === 'object' && message !== null && Reflect.get(message, 'type') === 'auth.changed',
   );
 
 beforeEach(() => {

@@ -25,7 +25,13 @@ type TVoteState = 'selected' | 'mine' | 'voted' | 'hidden' | 'open';
  * 투표 단계의 사진마다 붙는 버튼. 1인 1표, 내 사진·숨긴 사진에는 투표할 수 없다.
  * 누르는 즉시 "내가 뽑은 사진"으로 바꾸고(낙관적 votedSubmissionId), 서버가 거절하면 Apollo가 되돌린다(안내는 ErrorLink 토스트).
  */
-export function VoteButton({ contestId, submissionId, votedSubmissionId, isMine, isHidden }: IVoteButtonProps) {
+export function VoteButton({
+  contestId,
+  submissionId,
+  votedSubmissionId,
+  isMine,
+  isHidden,
+}: IVoteButtonProps) {
   const [castVote, { loading }] = useMutation(CastVoteDocument, {
     variables: { contestId, submissionId },
     optimisticResponse: {

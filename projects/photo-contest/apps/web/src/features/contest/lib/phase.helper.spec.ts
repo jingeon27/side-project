@@ -23,7 +23,10 @@ describe('phase.helper', () => {
 
   it('단계마다 기다리는 시각을 골라야 한다', () => {
     expect(getPhaseDeadline(Phase.Upcoming, DATES)).toEqual({ label: '시작', at: DATES.startsAt });
-    expect(getPhaseDeadline(Phase.Submission, DATES)).toEqual({ label: '사진 마감', at: DATES.submissionEndsAt });
+    expect(getPhaseDeadline(Phase.Submission, DATES)).toEqual({
+      label: '사진 마감',
+      at: DATES.submissionEndsAt,
+    });
     expect(getPhaseDeadline(Phase.Voting, DATES)).toEqual({ label: '투표 마감', at: DATES.endsAt });
     expect(getPhaseDeadline(Phase.Completed, DATES)).toEqual({ label: '종료', at: DATES.endsAt });
   });

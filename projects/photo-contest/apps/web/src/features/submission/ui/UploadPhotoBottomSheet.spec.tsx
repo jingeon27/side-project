@@ -57,7 +57,8 @@ const SUBMISSION: SubmissionCardFragment = {
   reports: null,
 };
 
-const png = (name = 'moment.png') => new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' });
+const png = (name = 'moment.png') =>
+  new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' });
 
 const successMocks = (): MockLink.MockedResponse[] => [
   {
@@ -76,7 +77,12 @@ const successMocks = (): MockLink.MockedResponse[] => [
   {
     request: {
       query: CreateSubmissionDocument,
-      variables: { contestId: 'contest-1', uploadId: 'upload-1', caption: '고양이 기지개', rightsConfirmed: true },
+      variables: {
+        contestId: 'contest-1',
+        uploadId: 'upload-1',
+        caption: '고양이 기지개',
+        rightsConfirmed: true,
+      },
     },
     result: { data: { createSubmission: SUBMISSION } },
   },
@@ -118,7 +124,12 @@ function renderSheet(mocks: MockLink.MockedResponse[] = [], { withFeed = false }
           type="button"
           onClick={() =>
             overlay.open(({ isOpen, close, unmount }) => (
-              <UploadPhotoBottomSheet contestId="contest-1" isOpen={isOpen} onClose={close} unmount={unmount} />
+              <UploadPhotoBottomSheet
+                contestId="contest-1"
+                isOpen={isOpen}
+                onClose={close}
+                unmount={unmount}
+              />
             ))
           }
         >
@@ -147,7 +158,13 @@ beforeEach(() => {
   vi.spyOn(toast, 'success');
   vi.spyOn(toast, 'error');
   let sequence = 0;
-  vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => `blob:preview-${++sequence}`), revokeObjectURL: vi.fn() }));
+  vi.stubGlobal(
+    'URL',
+    Object.assign(URL, {
+      createObjectURL: vi.fn(() => `blob:preview-${++sequence}`),
+      revokeObjectURL: vi.fn(),
+    }),
+  );
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -184,7 +201,10 @@ describe('UploadPhotoBottomSheet', () => {
     const input = screen.getByLabelText('사진 선택');
 
     await user.upload(input, png('first.png'));
-    expect(await screen.findByRole('img', { name: '고른 사진 미리보기' })).toHaveAttribute('src', 'blob:preview-1');
+    expect(await screen.findByRole('img', { name: '고른 사진 미리보기' })).toHaveAttribute(
+      'src',
+      'blob:preview-1',
+    );
     await user.upload(input, png('second.png'));
 
     expect(screen.getByRole('img', { name: '고른 사진 미리보기' })).toHaveAttribute('src', 'blob:preview-2');
@@ -196,7 +216,10 @@ describe('UploadPhotoBottomSheet', () => {
   it('브라우저가 읽지 못하는 HEIC는 바꿔서 올리라고 사진 칸에 알려야 한다', async () => {
     const { user } = await openSheet(successMocks());
 
-    await user.upload(screen.getByLabelText('사진 선택'), new File(['heic'], 'IMG_0001.HEIC', { type: 'image/heic' }));
+    await user.upload(
+      screen.getByLabelText('사진 선택'),
+      new File(['heic'], 'IMG_0001.HEIC', { type: 'image/heic' }),
+    );
     await user.type(screen.getByLabelText('사진 설명'), '고양이 기지개');
     await user.click(screen.getByRole('checkbox'));
     await submit(user);
@@ -217,7 +240,9 @@ describe('UploadPhotoBottomSheet', () => {
     expect(uploads).toEqual([{ url: '/backend/uploads/ticket-1', contentType: 'image/png' }]);
     expect(toast.success).toHaveBeenCalledWith('사진을 제출했어요', expect.anything());
     expect(trackEvent).toHaveBeenCalledWith('photo_submitted', { contest_id: 'contest-1' });
-    expect(client.readQuery({ query: ContestDocument, variables: { id: 'contest-1' } })?.contest).toMatchObject({
+    expect(
+      client.readQuery({ query: ContestDocument, variables: { id: 'contest-1' } })?.contest,
+    ).toMatchObject({
       mySubmissionId: 'photo-1',
       submissionCount: 1,
     });

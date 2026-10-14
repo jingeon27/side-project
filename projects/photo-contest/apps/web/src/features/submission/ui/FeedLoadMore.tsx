@@ -26,7 +26,8 @@ export function FeedLoadMore({ hasMore, loading, onLoadMore }: IFeedLoadMoreProp
     if (!hasMore || !target || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting) && !latest.current.loading) latest.current.onLoadMore();
+        if (entries.some((entry) => entry.isIntersecting) && !latest.current.loading)
+          latest.current.onLoadMore();
       },
       // 한 화면쯤 남았을 때 미리 불러온다.
       { rootMargin: '0px 0px 600px 0px' },

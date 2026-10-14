@@ -31,7 +31,11 @@ interface IDecodedImage {
 /** 브라우저 기능(디코드·인코드). 테스트에서 바꿔 끼운다. */
 export interface IImageCodec<TImage extends IDecodedImage = IDecodedImage> {
   decode: (file: Blob) => Promise<TImage>;
-  encodeJpeg: (image: TImage, size: { width: number; height: number }, quality: number) => Promise<Blob | null>;
+  encodeJpeg: (
+    image: TImage,
+    size: { width: number; height: number },
+    quality: number,
+  ) => Promise<Blob | null>;
 }
 
 export interface IPreparedImage {
@@ -78,7 +82,11 @@ export async function prepareUploadImage<TImage extends IDecodedImage>(
     return keepOriginal(file);
   }
   try {
-    const blob = await codec.encodeJpeg(image, fitWithin(image.width, image.height, UPLOAD_MAX_SIDE), UPLOAD_JPEG_QUALITY);
+    const blob = await codec.encodeJpeg(
+      image,
+      fitWithin(image.width, image.height, UPLOAD_MAX_SIDE),
+      UPLOAD_JPEG_QUALITY,
+    );
     return blob ? { body: blob, contentType: 'image/jpeg' } : keepOriginal(file);
   } finally {
     image.close();

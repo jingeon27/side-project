@@ -10,7 +10,9 @@ import {
 describe('buildResultShareText', () => {
   it('우승작이 하나면 닉네임·캡션·득표수를 적어야 한다', () => {
     expect(
-      buildResultShareText('이번 주 웃긴 사진', [{ nickname: '진건', caption: '고양이 기지개', voteCount: 3 }]),
+      buildResultShareText('이번 주 웃긴 사진', [
+        { nickname: '진건', caption: '고양이 기지개', voteCount: 3 },
+      ]),
     ).toBe('🏆 이번 주 웃긴 사진 우승: 진건님의 ‘고양이 기지개’ (3표)');
   });
 
@@ -24,7 +26,11 @@ describe('buildResultShareText', () => {
   });
 
   it('공동 우승이 많으면 세 명까지만 이름을 적어야 한다', () => {
-    const winners = ['가', '나', '다', '라', '마'].map((nickname) => ({ nickname, caption: '사진', voteCount: 1 }));
+    const winners = ['가', '나', '다', '라', '마'].map((nickname) => ({
+      nickname,
+      caption: '사진',
+      voteCount: 1,
+    }));
     expect(buildResultShareText('대회', winners)).toBe(
       '🏆 대회 공동 우승: 가님의 ‘사진’, 나님의 ‘사진’, 다님의 ‘사진’ 외 2명 (각 1표)',
     );

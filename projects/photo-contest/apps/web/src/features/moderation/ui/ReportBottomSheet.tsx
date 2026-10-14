@@ -21,7 +21,13 @@ interface IReportBottomSheetProps extends IBottomSheetControlProps {
 }
 
 /** 일반 멤버의 사진 신고. 같은 사람의 중복 신고는 서버가 한 건으로 남긴다. */
-export function ReportBottomSheet({ contestId, submissionId, isOpen, onClose, unmount }: IReportBottomSheetProps) {
+export function ReportBottomSheet({
+  contestId,
+  submissionId,
+  isOpen,
+  onClose,
+  unmount,
+}: IReportBottomSheetProps) {
   const form = useZodForm(reportSchema, { defaultValues: { reason: '' } });
   const [reportSubmission, { loading }] = useMutation(ReportSubmissionDocument, {
     onCompleted: () => {

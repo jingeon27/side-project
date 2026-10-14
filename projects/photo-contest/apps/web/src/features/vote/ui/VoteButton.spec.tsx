@@ -72,7 +72,10 @@ function renderFeed(mocks: MockLink.MockedResponse[]) {
 }
 
 const card = (id: string) => screen.getByRole('article', { name: id });
-const voteRequest = { query: CastVoteDocument, variables: { contestId: 'contest-1', submissionId: 'photo-a' } };
+const voteRequest = {
+  query: CastVoteDocument,
+  variables: { contestId: 'contest-1', submissionId: 'photo-a' },
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -85,7 +88,9 @@ describe('VoteButton', () => {
       {
         request: voteRequest,
         result: {
-          data: { castVote: { __typename: 'Vote', id: 'vote-1', contestId: 'contest-1', submissionId: 'photo-a' } },
+          data: {
+            castVote: { __typename: 'Vote', id: 'vote-1', contestId: 'contest-1', submissionId: 'photo-a' },
+          },
         },
         delay: 30,
       },
@@ -97,16 +102,18 @@ describe('VoteButton', () => {
     expect(screen.getByRole('button', { name: '투표 완료' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '내 사진에는 투표할 수 없어요' })).toBeDisabled();
     await waitFor(() => expect(trackEvent).toHaveBeenCalledWith('vote_cast', { contest_id: 'contest-1' }));
-    expect(client.readQuery({ query: ContestDocument, variables: { id: 'contest-1' } })?.contest.votedSubmissionId).toBe(
-      'photo-a',
-    );
+    expect(
+      client.readQuery({ query: ContestDocument, variables: { id: 'contest-1' } })?.contest.votedSubmissionId,
+    ).toBe('photo-a');
   });
 
   it('투표가 실패하면 낙관적 투표를 되돌리고 다시 누를 수 있어야 한다', async () => {
     const { user, client } = renderFeed([
       {
         request: voteRequest,
-        result: { errors: [{ message: '요청이 겹쳤습니다. 다시 시도해 주세요.', extensions: { code: 'CONFLICT' } }] },
+        result: {
+          errors: [{ message: '요청이 겹쳤습니다. 다시 시도해 주세요.', extensions: { code: 'CONFLICT' } }],
+        },
         delay: 30,
       },
     ]);

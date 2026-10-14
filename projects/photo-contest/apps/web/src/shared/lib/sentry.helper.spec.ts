@@ -16,9 +16,9 @@ describe('sentry.helper', () => {
   });
 
   it('서버는 SENTRY_DSN을 먼저 쓰고 없으면 공개 DSN을 써야 한다', () => {
-    expect(resolveServerSentryDsn({ SENTRY_DSN: 'https://server', NEXT_PUBLIC_SENTRY_DSN: 'https://public' })).toBe(
-      'https://server',
-    );
+    expect(
+      resolveServerSentryDsn({ SENTRY_DSN: 'https://server', NEXT_PUBLIC_SENTRY_DSN: 'https://public' }),
+    ).toBe('https://server');
     expect(resolveServerSentryDsn({ NEXT_PUBLIC_SENTRY_DSN: 'https://public' })).toBe('https://public');
   });
 

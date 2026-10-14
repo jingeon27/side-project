@@ -23,7 +23,12 @@ interface ICreateContestBottomSheetProps extends IBottomSheetControlProps {
 }
 
 /** 관리자가 새 사진 대회를 연다. 열면 그룹 대회 목록에 넣고 대회 화면으로 간다. */
-export function CreateContestBottomSheet({ groupId, isOpen, onClose, unmount }: ICreateContestBottomSheetProps) {
+export function CreateContestBottomSheet({
+  groupId,
+  isOpen,
+  onClose,
+  unmount,
+}: ICreateContestBottomSheetProps) {
   const router = useAppRouter();
   // 시트를 열 때마다 새로 그려지므로 그때 시각으로 기본값을 한 번 정한다.
   const [defaultValues] = useState(() => buildContestDefaults(new Date()));
@@ -50,7 +55,10 @@ export function CreateContestBottomSheet({ groupId, isOpen, onClose, unmount }: 
   const { errors } = form.formState;
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
-      <BottomSheet.Header title="새 사진 대회 열기" description="제출 기간이 끝나면 투표가 자동으로 시작돼요." />
+      <BottomSheet.Header
+        title="새 사진 대회 열기"
+        description="제출 기간이 끝나면 투표가 자동으로 시작돼요."
+      />
       <BottomSheet.Content>
         <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <TextField

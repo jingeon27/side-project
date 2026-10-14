@@ -39,7 +39,12 @@ export function LikeButton({ submission, isMine }: ILikeButtonProps) {
   const [unlikeSubmission, unlikeState] = useMutation(UnlikeSubmissionDocument, {
     variables: { submissionId: id },
     optimisticResponse: {
-      unlikeSubmission: { __typename: 'Submission', id, likeCount: Math.max(0, likeCount - 1), likedByMe: false },
+      unlikeSubmission: {
+        __typename: 'Submission',
+        id,
+        likeCount: Math.max(0, likeCount - 1),
+        likedByMe: false,
+      },
     },
     onCompleted: () => trackEvent(ANALYTICS_EVENT.PhotoUnliked, { contest_id: contestId, submission_id: id }),
   });

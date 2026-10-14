@@ -34,9 +34,17 @@ export const createContestSchema = z
         message: '사진 제출 마감은 시작보다 뒤여야 해요.',
       });
     if (!(end > submissionEnd))
-      context.addIssue({ code: 'custom', path: ['endsAt'], message: '투표 마감은 사진 제출 마감보다 뒤여야 해요.' });
+      context.addIssue({
+        code: 'custom',
+        path: ['endsAt'],
+        message: '투표 마감은 사진 제출 마감보다 뒤여야 해요.',
+      });
     else if (end - start > MAX_CONTEST_DAYS * DAY)
-      context.addIssue({ code: 'custom', path: ['endsAt'], message: '대회는 최대 90일 동안 진행할 수 있어요.' });
+      context.addIssue({
+        code: 'custom',
+        path: ['endsAt'],
+        message: '대회는 최대 90일 동안 진행할 수 있어요.',
+      });
     return { title: value.title, startsAt, submissionEndsAt, endsAt };
   });
 

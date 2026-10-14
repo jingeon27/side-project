@@ -121,7 +121,10 @@ describe('LikeButton', () => {
     const pressed = screen.getByRole('button', { name: '좋아요 4개' });
     expect(pressed).toHaveAttribute('aria-pressed', 'true');
     await waitFor(() =>
-      expect(trackEvent).toHaveBeenCalledWith('photo_liked', { contest_id: 'contest-1', submission_id: 'photo-1' }),
+      expect(trackEvent).toHaveBeenCalledWith('photo_liked', {
+        contest_id: 'contest-1',
+        submission_id: 'photo-1',
+      }),
     );
     expect(screen.getByRole('button', { name: '좋아요 4개' })).toHaveAttribute('aria-pressed', 'true');
   });
@@ -164,7 +167,10 @@ describe('LikeButton', () => {
 
     expect(screen.getByRole('button', { name: '좋아요 3개' })).toHaveAttribute('aria-pressed', 'false');
     await waitFor(() =>
-      expect(trackEvent).toHaveBeenCalledWith('photo_unliked', { contest_id: 'contest-1', submission_id: 'photo-1' }),
+      expect(trackEvent).toHaveBeenCalledWith('photo_unliked', {
+        contest_id: 'contest-1',
+        submission_id: 'photo-1',
+      }),
     );
   });
 
@@ -190,6 +196,8 @@ describe('LikeButton', () => {
 
     await user.click(screen.getByRole('button', { name: '좋아요 3개' }));
 
-    await waitFor(() => expect(fake?.calls).toEqual([{ type: 'haptics.impact', payload: { style: 'light' } }]));
+    await waitFor(() =>
+      expect(fake?.calls).toEqual([{ type: 'haptics.impact', payload: { style: 'light' } }]),
+    );
   });
 });

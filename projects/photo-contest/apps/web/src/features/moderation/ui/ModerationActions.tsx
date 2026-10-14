@@ -26,13 +26,20 @@ interface IModerationActionsProps {
 }
 
 /** 사진 카드 아래 관리 줄. 관리자에게는 신고 수·내용과 숨기기·삭제를, 일반 멤버에게는 신고를 보여 준다. */
-export function ModerationActions({ submission, contestId, isAdmin, isMine, isCompleted }: IModerationActionsProps) {
+export function ModerationActions({
+  submission,
+  contestId,
+  isAdmin,
+  isMine,
+  isCompleted,
+}: IModerationActionsProps) {
   const refetchQueries = moderationRefetchQueries(contestId, isCompleted);
   const [hideSubmission, hideState] = useMutation(HideSubmissionDocument, {
     variables: { submissionId: submission.id },
     update: (cache) => markSubmissionHidden(cache, submission.id),
     refetchQueries,
-    onCompleted: () => toast.success('사진을 숨겼어요', { description: '숨긴 사진 관리에서 확인할 수 있어요.' }),
+    onCompleted: () =>
+      toast.success('사진을 숨겼어요', { description: '숨긴 사진 관리에서 확인할 수 있어요.' }),
   });
   const [deleteSubmission] = useMutation(DeleteSubmissionDocument, {
     variables: { submissionId: submission.id },

@@ -43,7 +43,10 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
 
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
-      <BottomSheet.Header title="우리만의 그룹 만들기" description="친구를 초대하고 첫 사진 대회를 열어보세요." />
+      <BottomSheet.Header
+        title="우리만의 그룹 만들기"
+        description="친구를 초대하고 첫 사진 대회를 열어보세요."
+      />
       <BottomSheet.Content>
         <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
           <TextField

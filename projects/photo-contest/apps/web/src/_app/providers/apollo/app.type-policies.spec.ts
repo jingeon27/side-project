@@ -43,7 +43,10 @@ interface ISubmissionsData {
 
 const submission = (id: string) => ({ __typename: 'Submission' as const, id, caption: `사진 ${id}` });
 
-function writePage(cache: InMemoryCache, { sort, offset, ids }: { sort: string; offset: number; ids: string[] }) {
+function writePage(
+  cache: InMemoryCache,
+  { sort, offset, ids }: { sort: string; offset: number; ids: string[] },
+) {
   cache.writeQuery({
     query: SUBMISSIONS,
     variables: { contestId: 'c1', sort, offset, limit: 2 },
@@ -53,7 +56,10 @@ function writePage(cache: InMemoryCache, { sort, offset, ids }: { sort: string; 
 
 const readIds = (cache: InMemoryCache, sort: string) =>
   cache
-    .readQuery<ISubmissionsData>({ query: SUBMISSIONS, variables: { contestId: 'c1', sort, offset: 0, limit: 2 } })
+    .readQuery<ISubmissionsData>({
+      query: SUBMISSIONS,
+      variables: { contestId: 'c1', sort, offset: 0, limit: 2 },
+    })
     ?.submissions.map(({ id }) => id);
 
 describe('APP_TYPE_POLICIES', () => {

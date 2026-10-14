@@ -172,7 +172,10 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
   return (
     <section
       aria-labelledby={headingId}
-      className={cn('flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-card', className)}
+      className={cn(
+        'flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-card',
+        className,
+      )}
     >
       <div>
         <p className="text-micro text-brand">친구들과 시작하는 작은 대회</p>
@@ -182,7 +185,10 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         <p className="mt-1 text-body text-muted">초대받은 그룹에서만 사진을 볼 수 있어요.</p>
       </div>
       {loginFailed ? (
-        <p role="alert" className="flex items-start gap-2 rounded-control bg-danger-soft p-3 text-label text-danger">
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-control bg-danger-soft p-3 text-label text-danger"
+        >
           <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           소셜 로그인에 실패했습니다. 다시 시도해 주세요.
         </p>

@@ -32,7 +32,12 @@ interface IUploadPhotoBottomSheetProps extends IBottomSheetControlProps {
  * 내 사진 제출: 브라우저에서 줄이기 → 일회용 업로드 주소 받기 → 원본 올리기 → 제출 만들기.
  * 사진을 고르면 미리 보여 주고(시트가 사라지면 미리보기 주소를 풀어 준다), 제출하면 시트를 닫고 피드에 바로 보인다.
  */
-export function UploadPhotoBottomSheet({ contestId, isOpen, onClose, unmount }: IUploadPhotoBottomSheetProps) {
+export function UploadPhotoBottomSheet({
+  contestId,
+  isOpen,
+  onClose,
+  unmount,
+}: IUploadPhotoBottomSheetProps) {
   const photoErrorId = useId();
   const rightsErrorId = useId();
   const previewUrlRef = useRef<string | null>(null);
@@ -106,9 +111,7 @@ export function UploadPhotoBottomSheet({ contestId, isOpen, onClose, unmount }: 
             name="photo"
             render={({ field }) => (
               <div className="flex flex-col gap-1.5">
-                <label
-                  className="relative flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-card border-2 border-dashed border-line-strong bg-sunken text-muted transition-colors has-focus-visible:border-brand has-focus-visible:outline-3 has-focus-visible:outline-accent hover:bg-neutral-soft"
-                >
+                <label className="relative flex aspect-square w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-card border-2 border-dashed border-line-strong bg-sunken text-muted transition-colors has-focus-visible:border-brand has-focus-visible:outline-3 has-focus-visible:outline-accent hover:bg-neutral-soft">
                   <input
                     ref={field.ref}
                     name={field.name}
@@ -178,7 +181,9 @@ export function UploadPhotoBottomSheet({ contestId, isOpen, onClose, unmount }: 
                 className="mt-0.5 size-5 shrink-0 accent-brand"
                 {...form.register('rightsConfirmed')}
               />
-              <span>이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다. 그룹 멤버에게만 공개됩니다.</span>
+              <span>
+                이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다. 그룹 멤버에게만 공개됩니다.
+              </span>
             </label>
             {errors.rightsConfirmed ? (
               <p id={rightsErrorId} role="alert" className="text-caption text-danger">
