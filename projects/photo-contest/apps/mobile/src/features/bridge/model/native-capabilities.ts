@@ -47,7 +47,9 @@ export function createNativeDependencies(): ICapabilityDependencies {
   };
 }
 
-/** 앱이 웹에 제공하는 브리지 기능 전체 */
-export function createNativeCapabilities(): Required<TNativeCapabilities> {
-  return createCapabilities(createNativeDependencies());
+/** 앱이 웹에 제공하는 브리지 기능 전체. onOutcome으로 공유·소셜 로그인 결과를 받는다. */
+export function createNativeCapabilities(
+  onOutcome?: ICapabilityDependencies['onOutcome'],
+): Required<TNativeCapabilities> {
+  return createCapabilities({ ...createNativeDependencies(), onOutcome });
 }

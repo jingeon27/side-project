@@ -30,6 +30,7 @@ function createFakeDependencies(platform: ICapabilityDependencies['platform'] = 
     sha256: vi.fn<ICapabilityDependencies['sha256']>(
       async (text) => new Uint8Array(createHash('sha256').update(text).digest()),
     ),
+    onOutcome: vi.fn<NonNullable<ICapabilityDependencies['onOutcome']>>(),
   } satisfies ICapabilityDependencies;
 }
 
@@ -80,6 +81,20 @@ describe('share.open', () => {
     await expect(capabilities['share.open']({ url: 'https://contest.example/' })).resolves.toEqual({
       shared: false,
     });
+  });
+
+  it('공유 결과를 completed 또는 dismissed로 알려야 한다', async () => {
+    const deps = createFakeDependencies();
+    const capabilities = createCapabilities(deps);
+
+    await capabilities['share.open']({ url: 'https://contest.example/invite/abc' });
+    deps.share.mockResolvedValue({ action: 'dismissedAction' });
+    await capabilities['share.open']({ url: 'https://contest.example/invite/abc' });
+
+    expect(deps.onOutcome.mock.calls).toEqual([
+      [{ type: 'share', status: 'completed' }],
+      [{ type: 'share', status: 'dismissed' }],
+    ]);
   });
 });
 
@@ -262,6 +277,70 @@ describe('auth.socialLogin', () => {
     await expect(capabilities['auth.socialLogin']({ provider: 'google' })).rejects.toMatchObject({
       code: 'CANCELLED',
       message: '로그인을 취소했습니다.',
+    });
+  });
+});
+
+describe('auth.socialLogin 결과 기록', () => {
+  it('시작과 결과(성공·취소·실패)를 provider와 함께 알려야 한다', async () => {
+    const deps = createFakeDependencies();
+    const capabilities = createCapabilities(deps);
+
+    await capabilities['auth.socialLogin']({ provider: 'kakao' });
+    deps.openAuthSession.mockResolvedValueOnce({ type: 'dismiss' });
+    await capabilities['auth.socialLogin']({ provider: 'google' }).catch(() => undefined);
+    deps.openAuthSession.mockResolvedValueOnce({
+      type: 'success',
+      url: `${CALLBACK_URL}?error=login_failed`,
+    });
+    await capabilities['auth.socialLogin']({ provider: 'google' }).catch(() => undefined);
+    deps.openAuthSession.mockRejectedValueOnce(new Error('already open'));
+    await capabilities['auth.socialLogin']({ provider: 'kakao' }).catch(() => undefined);
+
+    expect(deps.onOutcome.mock.calls.map(([outcome]) => outcome)).toEqual([
+      { type: 'social-login', provider: 'kakao', status: 'started' },
+      { type: 'social-login', provider: 'kakao', status: 'succeeded' },
+      { type: 'social-login', provider: 'google', status: 'started' },
+      { type: 'social-login', provider: 'google', status: 'cancelled' },
+      { type: 'social-login', provider: 'google', status: 'started' },
+      { type: 'social-login', provider: 'google', status: 'failed' },
+      { type: 'social-login', provider: 'kakao', status: 'started' },
+      { type: 'social-login', provider: 'kakao', status: 'failed' },
+    ]);
+  });
+
+  it('진행 중에 다시 눌러 무시한 요청은 새 시도로 기록하지 않아야 한다', async () => {
+    let finish: (value: { type: string; url?: string }) => void = () => undefined;
+    const deps = createFakeDependencies();
+    deps.openAuthSession.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const capabilities = createCapabilities(deps);
+
+    const first = capabilities['auth.socialLogin']({ provider: 'google' });
+    await capabilities['auth.socialLogin']({ provider: 'google' }).catch(() => undefined);
+    await vi.waitFor(() => expect(deps.openAuthSession).toHaveBeenCalledTimes(1));
+    finish({ type: 'success', url: `${CALLBACK_URL}?code=${LOGIN_CODE}` });
+    await first;
+
+    expect(deps.onOutcome.mock.calls.map(([outcome]) => outcome.status)).toEqual(['started', 'succeeded']);
+  });
+
+  it('결과를 기록하다 실패해도 웹에 보낼 결과는 그대로여야 한다', async () => {
+    const deps = createFakeDependencies();
+    deps.onOutcome.mockImplementation(() => {
+      throw new Error('analytics unavailable');
+    });
+    const capabilities = createCapabilities(deps);
+
+    await expect(capabilities['auth.socialLogin']({ provider: 'google' })).resolves.toMatchObject({
+      code: LOGIN_CODE,
+    });
+    await expect(capabilities['share.open']({ url: 'https://contest.example/' })).resolves.toEqual({
+      shared: true,
     });
   });
 });

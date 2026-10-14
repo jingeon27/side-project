@@ -11,9 +11,19 @@ import {
   buildSocialLoginUrl,
   readAuthCallback,
 } from './social-login';
+import type { TSocialProvider } from './social-login';
 
 type TImpactStyle = 'light' | 'medium' | 'heavy';
 type TNotificationType = 'success' | 'warning' | 'error';
+
+/** 분석에 남길 기능 결과. 어떤 도구로 보낼지는 기능을 쓰는 화면이 정한다. */
+export type TCapabilityOutcome =
+  | { type: 'share'; status: 'completed' | 'dismissed' }
+  | {
+      type: 'social-login';
+      provider: TSocialProvider;
+      status: 'started' | 'succeeded' | 'cancelled' | 'failed';
+    };
 
 /** 플랫폼 기능. 앱은 expo 모듈로, 테스트와 E2E는 기록용 가짜로 채운다. */
 export interface ICapabilityDependencies {
@@ -32,6 +42,8 @@ export interface ICapabilityDependencies {
   openAuthSession: (url: string, redirectUrl: string) => Promise<{ type: string; url?: string }>;
   randomBytes: (count: number) => Uint8Array;
   sha256: (text: string) => Promise<Uint8Array>;
+  /** 공유·소셜 로그인 결과. 없으면 기록하지 않는다. */
+  onOutcome?: (outcome: TCapabilityOutcome) => void;
 }
 
 /** 웹은 link.open을 10초만 기다린다. iOS 브라우저는 닫혀야 끝나므로 열렸는지만 잠깐 보고 답한다. */
@@ -42,9 +54,38 @@ function wait(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+function isCancelled(error: unknown) {
+  return error instanceof NativeCapabilityError && error.code === BRIDGE_ERROR_CODE.Cancelled;
+}
+
 /** 웹 요청(브리지 기능)을 플랫폼 기능으로 처리한다. 판단만 하고 실제 동작은 주입받는다. */
 export function createCapabilities(deps: ICapabilityDependencies): Required<TNativeCapabilities> {
   let isLoginInProgress = false;
+
+  function report(outcome: TCapabilityOutcome) {
+    try {
+      deps.onOutcome?.(outcome);
+    } catch {
+      // 기록이 실패해도 웹에 보낼 로그인·공유 결과는 그대로 둔다.
+    }
+  }
+
+  async function runSocialLogin(provider: TSocialProvider) {
+    const verifier = encodeBase64Url(deps.randomBytes(PKCE_VERIFIER_BYTES));
+    const challenge = encodeBase64Url(await deps.sha256(verifier));
+    const callbackUrl = buildAuthCallbackUrl(deps.appScheme);
+    const result = await deps
+      .openAuthSession(buildSocialLoginUrl(deps.apiBase, provider, challenge), callbackUrl)
+      .catch(() => {
+        throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Failed, LOGIN_FAILED_MESSAGE);
+      });
+    if (result.type === 'cancel' || result.type === 'dismiss')
+      throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Cancelled, '로그인을 취소했습니다.');
+    const callback =
+      result.type === 'success' && result.url ? readAuthCallback(result.url, callbackUrl) : null;
+    if (callback && 'code' in callback) return { code: callback.code, verifier };
+    throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Failed, LOGIN_FAILED_MESSAGE);
+  }
 
   return {
     'share.open': async ({ url, title, text }) => {
@@ -54,7 +95,9 @@ export function createCapabilities(deps: ICapabilityDependencies): Required<TNat
           ? { url, title, message: text }
           : { title, message: text ? `${text}\n${url}` : url };
       const result = await deps.share(content, { dialogTitle: title, subject: title });
-      return { shared: result.action === 'sharedAction' };
+      const shared = result.action === 'sharedAction';
+      report({ type: 'share', status: shared ? 'completed' : 'dismissed' });
+      return { shared };
     },
     'clipboard.copy': async ({ text }) => {
       if (!(await deps.copyText(text)))
@@ -78,25 +121,18 @@ export function createCapabilities(deps: ICapabilityDependencies): Required<TNat
       return { opened: settled?.type !== 'locked' };
     },
     'auth.socialLogin': async ({ provider }) => {
-      // 두 번 누르면 두 번째는 조용히 무시되도록 CANCELLED로 답한다.
+      // 두 번 누르면 두 번째는 조용히 무시되도록 CANCELLED로 답한다. 새 시도가 아니라서 기록하지 않는다.
       if (isLoginInProgress)
         throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Cancelled, '이미 로그인을 진행하고 있습니다.');
       isLoginInProgress = true;
+      report({ type: 'social-login', provider, status: 'started' });
       try {
-        const verifier = encodeBase64Url(deps.randomBytes(PKCE_VERIFIER_BYTES));
-        const challenge = encodeBase64Url(await deps.sha256(verifier));
-        const callbackUrl = buildAuthCallbackUrl(deps.appScheme);
-        const result = await deps
-          .openAuthSession(buildSocialLoginUrl(deps.apiBase, provider, challenge), callbackUrl)
-          .catch(() => {
-            throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Failed, LOGIN_FAILED_MESSAGE);
-          });
-        if (result.type === 'cancel' || result.type === 'dismiss')
-          throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Cancelled, '로그인을 취소했습니다.');
-        const callback =
-          result.type === 'success' && result.url ? readAuthCallback(result.url, callbackUrl) : null;
-        if (callback && 'code' in callback) return { code: callback.code, verifier };
-        throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Failed, LOGIN_FAILED_MESSAGE);
+        const result = await runSocialLogin(provider);
+        report({ type: 'social-login', provider, status: 'succeeded' });
+        return result;
+      } catch (error) {
+        report({ type: 'social-login', provider, status: isCancelled(error) ? 'cancelled' : 'failed' });
+        throw error;
       } finally {
         isLoginInProgress = false;
       }
