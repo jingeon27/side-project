@@ -89,3 +89,12 @@
 - 개발 서버 포트(3200/4200/55433)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
 - 웹 화면의 선택자는 `e2e/support/web-screens.ts`에만 둔다.
 - 네이티브 빌드·실기기 확인(키보드가 입력창을 가리는지, 소셜 로그인 복귀, 파일 업로드)은 이 테스트들이 대신하지 못한다.
+
+## 앱 스킬
+
+- `.claude/skills/webview-shell/SKILL.md`: WebView·탐색·딥링크·뒤로 가기·복구.
+- `.claude/skills/native-capability/SKILL.md`: 공유·복사·햅틱·시스템 브라우저·소셜 로그인.
+- `.claude/skills/mobile-test/SKILL.md`: unit/UI/API·실제 웹과 가짜 OS 경계.
+- `.claude/skills/release/SKILL.md`: dev client·빌드·환경변수·버전·Sentry 설정.
+
+e2e의 사용자·로그인 티켓은 테스트 API로 준비하고 DB를 직접 수정하지 않는다. 웹/앱 Sentry·Amplitude 키를 비우며 pageerror를 검사한다. iOS에서는 Android 하드웨어 뒤로 가기 케이스만 실행하지 않는다.
