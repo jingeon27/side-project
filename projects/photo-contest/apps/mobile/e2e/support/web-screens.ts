@@ -14,7 +14,7 @@ export const webScreens = {
     page.getByRole('button', { name: /초대.*(공유|보내기)|초대하기/ }).first(),
   /** 그룹 화면의 초대 링크 복사 */
   inviteCopyButton: (page: Page) => page.getByRole('button', { name: /링크 복사|복사/ }).first(),
-  likeButton: (page: Page) => page.getByRole('button', { name: /좋아요/ }).first(),
+  likeButton: (page: Page) => page.getByRole('button', { name: /^좋아요 [\d,]+개$/ }).first(),
   toast: (page: Page) => page.getByRole('status').or(page.getByRole('alert')),
   /** 홈에서 바텀시트를 여는 버튼 */
   createGroupButton: (page: Page) => page.getByRole('button', { name: /그룹 만들기/ }).first(),
