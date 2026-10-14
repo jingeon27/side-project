@@ -10,7 +10,7 @@ export {
 export { apiWebServer, prepareE2eDatabase } from './e2e';
 export type { IE2eDatabase } from './e2e';
 export { loadProjectEnv } from './env';
-export { devLogin, graphqlRequest } from './http';
+export { createTestAppLoginTicket, createTestUser, devLogin, graphqlRequest, moveTestContest } from './http';
 export type { IGraphqlResponse } from './http';
 export { createTestImage } from './image';
 export { startIsolatedApi } from './isolated-api';

@@ -32,8 +32,8 @@ async function main() {
     stdio: 'inherit',
     env: {
       ...process.env,
-      NODE_ENV: 'development',
-      ENABLE_DEV_LOGIN: 'true',
+      NODE_ENV: 'test',
+      ENABLE_DEV_LOGIN: 'false',
       ENABLE_TEST_API: 'true',
       API_HOST: '127.0.0.1',
       DATABASE_URL: url,
