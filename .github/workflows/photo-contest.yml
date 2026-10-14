@@ -20,19 +20,22 @@ on:
         '.yarnrc.yml',
         '.github/workflows/photo-contest.yml',
       ]
+permissions:
+  contents: read
 jobs:
-  check:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:18-alpine
-        env: { POSTGRES_USER: contest, POSTGRES_PASSWORD: contest, POSTGRES_DB: photo_contest }
+        env: { POSTGRES_USER: contest, POSTGRES_PASSWORD: contest, POSTGRES_DB: photo_contest_test }
         ports: ['55432:5432']
         options: >-
-          --health-cmd "pg_isready -U contest -d photo_contest"
+          --health-cmd "pg_isready -U contest -d photo_contest_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://contest:contest@127.0.0.1:55432/photo_contest?schema=public
+      TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55432/photo_contest_test?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,11 +44,52 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
-      - run: yarn format:check && yarn workspace @side/photo-contest check
-      - run: yarn test:photo-contest:integration
+      - run: yarn format:check
+      - run: yarn workspace @side/photo-contest check
+      - run: yarn workspace @photo-contest/web lint && yarn workspace @photo-contest/mobile lint
+      - run: yarn workspace @photo-contest/api test:e2e
+      - run: yarn workspace @photo-contest/web test:api
+      - run: yarn workspace @photo-contest/mobile test:api
       - run: yarn build:photo-contest
-      - run: yarn workspace @photo-contest/e2e exec playwright install --with-deps chromium
-      - run: yarn test:photo-contest:e2e
+      - name: Check test schema cleanup
+        if: always()
+        run: yarn workspace @photo-contest/test-kit check:cleanup
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [web, mobile]
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_USER: contest, POSTGRES_PASSWORD: contest, POSTGRES_DB: photo_contest_test }
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd "pg_isready -U contest -d photo_contest_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      CI: 'true'
+      TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55432/photo_contest_test?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn workspace @side/photo-contest db:generate
+      - run: yarn workspace @side/photo-contest codegen
+      - run: yarn workspace @photo-contest/${{ matrix.app }} exec playwright install --with-deps chromium webkit
+      - run: yarn workspace @photo-contest/${{ matrix.app }} test:e2e
+      - name: Check test schema cleanup
+        if: always()
+        run: yarn workspace @photo-contest/test-kit check:cleanup
       - uses: actions/upload-artifact@v4
-        if: failure()
-        with: { name: photo-contest-playwright, path: projects/photo-contest/e2e/playwright-report/ }
+        if: always()
+        with:
+          name: photo-contest-${{ matrix.app }}-playwright
+          path: |
+            projects/photo-contest/apps/${{ matrix.app }}/playwright-report/
+            projects/photo-contest/apps/${{ matrix.app }}/test-results/
+            projects/photo-contest/apps/${{ matrix.app }}/.data/screens/
