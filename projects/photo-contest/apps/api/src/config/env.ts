@@ -23,10 +23,6 @@ const RESERVED_SCHEMES = new Set([
   'ws',
   'wss',
 ]);
-const AMPLITUDE_ENDPOINT = {
-  US: 'https://api2.amplitude.com/2/httpapi',
-  EU: 'https://api.eu.amplitude.com/2/httpapi',
-} as const;
 
 export type TStorageBackend = 'local' | 's3';
 export type TOAuthProviderName = 'google' | 'kakao';
@@ -130,14 +126,6 @@ export function s3Settings(): IS3Settings {
 export function oauthCredentials(provider: TOAuthProviderName): IOAuthCredentials {
   const prefix = provider.toUpperCase();
   return { clientId: optional(`${prefix}_CLIENT_ID`), clientSecret: optional(`${prefix}_CLIENT_SECRET`) };
-}
-
-export function amplitudeApiKey() {
-  return optional('AMPLITUDE_API_KEY');
-}
-
-export function amplitudeEndpoint() {
-  return process.env.AMPLITUDE_REGION === 'EU' ? AMPLITUDE_ENDPOINT.EU : AMPLITUDE_ENDPOINT.US;
 }
 
 export function sentryDsn() {

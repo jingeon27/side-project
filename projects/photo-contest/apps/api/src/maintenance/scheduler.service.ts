@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
-import { AnalyticsDeliveryService } from '../analytics/analytics-delivery.service';
 import { ContestCompletionService } from '../analytics/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { MaintenanceService } from './maintenance.service';
 
-/** 정리 → 종료 기록 → 전송을 주기마다 한 번씩, 앞선 실행과 겹치지 않게 돌린다. */
+/** 정리 → 종료 기록을 주기마다 한 번씩, 앞선 실행과 겹치지 않게 돌린다. */
 @Injectable()
 export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   private timer?: NodeJS.Timeout;
@@ -16,7 +15,6 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly maintenance: MaintenanceService,
     private readonly completion: ContestCompletionService,
-    private readonly delivery: AnalyticsDeliveryService,
   ) {}
 
   onModuleInit() {
@@ -63,11 +61,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async runSteps() {
-    const steps = [
-      () => this.maintenance.cleanup(),
-      () => this.completion.recordCompletedContests(),
-      () => this.delivery.deliver(),
-    ];
+    const steps = [() => this.maintenance.cleanup(), () => this.completion.recordCompletedContests()];
     const failures: unknown[] = [];
     for (const step of steps) {
       try {
