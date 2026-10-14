@@ -13,15 +13,3 @@ export function siblingLoader<TKey, TValue>(
     return (await pending).get(key) ?? fallback;
   };
 }
-
-/** 배열을 키별 Map으로 묶는다. 입력 순서를 유지한다. */
-export function groupBy<TItem, TKey>(items: readonly TItem[], keyOf: (item: TItem) => TKey) {
-  const groups = new Map<TKey, TItem[]>();
-  for (const item of items) {
-    const key = keyOf(item);
-    const group = groups.get(key);
-    if (group) group.push(item);
-    else groups.set(key, [item]);
-  }
-  return groups;
-}

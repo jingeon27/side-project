@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { uniq } from 'es-toolkit';
 
 import { CLEANUP_BATCH_SIZE } from '../config/limits';
 import { Database } from '../database/database.service';
@@ -34,10 +35,10 @@ export class ContestCompletionService {
             select: { voterId: true },
           }),
         ]);
-        const participants = new Set([
+        const participants = uniq([
           ...submissions.map((submission) => submission.authorId),
           ...votes.map((vote) => vote.voterId),
-        ]).size;
+        ]).length;
         await recordEvent(tx, {
           id: `completed:${contest.id}`,
           type: ANALYTICS_EVENT.CONTEST_COMPLETED,

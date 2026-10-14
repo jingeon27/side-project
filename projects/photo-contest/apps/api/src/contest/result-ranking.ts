@@ -1,4 +1,4 @@
-import { compareText } from '../common/sort';
+import { maxBy, orderBy } from 'es-toolkit';
 
 export interface IRankableSubmission {
   id: string;
@@ -15,21 +15,21 @@ export interface IRankedResult<TItem extends IRankableSubmission> {
   winner: boolean;
 }
 
-function compareResults(a: IRankableSubmission, b: IRankableSubmission) {
-  return (
-    b.voteCount - a.voteCount ||
-    b.likeCount - a.likeCount ||
-    a.createdAt.getTime() - b.createdAt.getTime() ||
-    compareText(a.id, b.id)
-  );
-}
-
-/** 득표순 경쟁 순위. 같은 순위 안에서는 좋아요 많은 순, 먼저 낸 순이다. */
+/** 득표순 경쟁 순위. 같은 순위 안에서는 좋아요 많은 순, 먼저 낸 순이다(마지막은 id로 고정). */
 export function rankResults<TItem extends IRankableSubmission>(
   items: readonly TItem[],
 ): IRankedResult<TItem>[] {
-  const topVotes = Math.max(0, ...items.map((item) => item.voteCount));
-  const sorted = [...items].sort(compareResults);
+  const topVotes = maxBy(items, (item) => item.voteCount)?.voteCount ?? 0;
+  const sorted = orderBy(
+    items,
+    [
+      (item) => item.voteCount,
+      (item) => item.likeCount,
+      (item) => item.createdAt.getTime(),
+      (item) => item.id,
+    ],
+    ['desc', 'desc', 'asc', 'asc'],
+  );
   const results: IRankedResult<TItem>[] = [];
   sorted.forEach((item, index) => {
     const previous = results[index - 1];

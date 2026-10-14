@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Contest } from '../../generated/prisma';
 import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
-import { groupBy, siblingLoader } from '../common/batch';
+import { siblingLoader } from '../common/batch';
 import { fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
@@ -204,12 +205,11 @@ export class ContestService {
       include: submissionInclude(viewerId, true),
       orderBy: submissionOrderBy(SUBMISSION_SORT.NEWEST),
     });
-    const grouped = groupBy(rows, (row) => row.contestId);
-    return new Map(
-      [...grouped].map(([contestId, items]) => [
-        contestId,
+    const hiddenByContest = mapValues(
+      groupBy(rows, (row) => row.contestId),
+      (items, contestId) =>
         items.map((row) => presentSubmission(row, { completed: completed.has(contestId), admin: true })),
-      ]),
     );
+    return new Map(Object.entries(hiddenByContest));
   }
 }

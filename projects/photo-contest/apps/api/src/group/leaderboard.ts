@@ -1,4 +1,4 @@
-import { compareText } from '../common/sort';
+import { groupBy, mapValues, maxBy, orderBy, sumBy, uniqBy } from 'es-toolkit';
 
 export interface ILeaderboardUser {
   id: string;
@@ -24,19 +24,6 @@ export interface ILeaderboardEntry<TUser extends ILeaderboardUser> {
 
 type TLeaderboardTotals<TUser extends ILeaderboardUser> = Omit<ILeaderboardEntry<TUser>, 'rank'>;
 
-function compareEntries<TUser extends ILeaderboardUser>(
-  a: TLeaderboardTotals<TUser>,
-  b: TLeaderboardTotals<TUser>,
-) {
-  return (
-    b.wins - a.wins ||
-    b.votesReceived - a.votesReceived ||
-    b.likesReceived - a.likesReceived ||
-    compareText(a.user.nickname, b.user.nickname) ||
-    compareText(a.user.id, b.user.id)
-  );
-}
-
 function sameRank<TUser extends ILeaderboardUser>(
   a: TLeaderboardTotals<TUser>,
   b: TLeaderboardTotals<TUser>,
@@ -52,29 +39,38 @@ function sameRank<TUser extends ILeaderboardUser>(
 export function buildLeaderboard<TUser extends ILeaderboardUser>(
   submissions: readonly ILeaderboardSubmission<TUser>[],
 ): ILeaderboardEntry<TUser>[] {
-  const topVotes = new Map<string, number>();
-  for (const submission of submissions)
-    topVotes.set(
-      submission.contestId,
-      Math.max(topVotes.get(submission.contestId) ?? 0, submission.voteCount),
-    );
-  const totals = new Map<string, TLeaderboardTotals<TUser>>();
-  for (const submission of submissions) {
-    const top = topVotes.get(submission.contestId) ?? 0;
-    const total = totals.get(submission.user.id) ?? {
-      user: submission.user,
-      wins: 0,
-      votesReceived: 0,
-      likesReceived: 0,
-      submissions: 0,
+  const topVotes = mapValues(
+    groupBy(submissions, (submission) => submission.contestId),
+    (items) => maxBy(items, (submission) => submission.voteCount)?.voteCount ?? 0,
+  );
+  const isWinner = (submission: ILeaderboardSubmission<TUser>) =>
+    submission.voteCount > 0 && submission.voteCount === topVotes[submission.contestId];
+  const byUser = groupBy(submissions, (submission) => submission.user.id);
+  const users = uniqBy(
+    submissions.map((submission) => submission.user),
+    (user) => user.id,
+  );
+  const totals = users.map((user): TLeaderboardTotals<TUser> => {
+    const mine = byUser[user.id] ?? [];
+    return {
+      user,
+      wins: mine.filter(isWinner).length,
+      votesReceived: sumBy(mine, (submission) => submission.voteCount),
+      likesReceived: sumBy(mine, (submission) => submission.likeCount),
+      submissions: mine.length,
     };
-    total.wins += top > 0 && submission.voteCount === top ? 1 : 0;
-    total.votesReceived += submission.voteCount;
-    total.likesReceived += submission.likeCount;
-    total.submissions += 1;
-    totals.set(submission.user.id, total);
-  }
-  const sorted = [...totals.values()].sort(compareEntries);
+  });
+  const sorted = orderBy(
+    totals,
+    [
+      (total) => total.wins,
+      (total) => total.votesReceived,
+      (total) => total.likesReceived,
+      (total) => total.user.nickname,
+      (total) => total.user.id,
+    ],
+    ['desc', 'desc', 'desc', 'asc', 'asc'],
+  );
   const entries: ILeaderboardEntry<TUser>[] = [];
   sorted.forEach((total, index) => {
     const previous = entries[index - 1];

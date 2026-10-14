@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Group } from '../../generated/prisma';
 import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
 import type { IUserView } from '../auth/user-view';
-import { groupBy, siblingLoader } from '../common/batch';
+import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
@@ -184,13 +185,11 @@ export class GroupService {
       select: { groupId: true, role: true, user: { select: USER_VIEW_SELECT } },
       orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
     });
-    const grouped = groupBy(rows, (row) => row.groupId);
-    return new Map(
-      [...grouped].map(([groupId, members]) => [
-        groupId,
-        members.map((member) => ({ user: member.user, role: toGroupRole(member.role) })),
-      ]),
+    const membersByGroup = mapValues(
+      groupBy(rows, (row) => row.groupId),
+      (members) => members.map((member) => ({ user: member.user, role: toGroupRole(member.role) })),
     );
+    return new Map(Object.entries(membersByGroup));
   }
 
   private toNode(row: IGroupWithRole): IGroupNode {
