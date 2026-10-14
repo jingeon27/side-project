@@ -5,8 +5,8 @@ import { NestFactory } from '@nestjs/core';
 import { json, raw } from 'express';
 
 import { AppModule } from './app.module';
+import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { bodyParserErrorHandler } from './common/http/body-parser-error.middleware';
-import { GraphqlHttpExceptionFilter } from './common/http/graphql-http-exception.filter';
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
 import { assertProductionConfig, isTest } from './config/env';
@@ -35,7 +35,7 @@ export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INe
   app.use('/uploads', raw({ type: UPLOAD_CONTENT_TYPES, limit: MAX_UPLOAD_BODY }));
   app.use(json({ limit: MAX_JSON_BODY }));
   app.use(bodyParserErrorHandler);
-  app.useGlobalFilters(new GraphqlHttpExceptionFilter());
+  app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));
   app.enableShutdownHooks();
   await app.init();
   return app;

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { captureException } from '@sentry/node';
 
 import { AnalyticsDeliveryService } from '../analytics/analytics-delivery.service';
 import { ContestCompletionService } from '../analytics/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
+import { reportUnexpectedError } from '../monitoring/sentry';
 import { MaintenanceService } from './maintenance.service';
 
 /** 정리 → 종료 기록 → 전송을 주기마다 한 번씩, 앞선 실행과 겹치지 않게 돌린다. */
@@ -59,7 +59,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private handleTick() {
     if (this.running) return;
-    this.runOnce().catch((error: unknown) => captureException(error));
+    this.runOnce().catch((error: unknown) => reportUnexpectedError(error, { job: 'maintenance' }));
   }
 
   private async runSteps() {
@@ -77,7 +77,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
       }
     }
     const [first, ...rest] = failures;
-    for (const error of rest) captureException(error);
+    for (const error of rest) reportUnexpectedError(error, { job: 'maintenance' });
     if (failures.length) throw first;
   }
 }

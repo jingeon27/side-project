@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { captureException } from '@sentry/node';
 import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';
 import { z } from 'zod';
@@ -21,6 +20,7 @@ import {
   TEXT_LIMIT,
 } from '../config/limits';
 import { Database } from '../database/database.service';
+import { reportUnexpectedError } from '../monitoring/sentry';
 import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
 import { accessTokenOf, identityOf, OAUTH_PROVIDER, oauthProvider } from './oauth-provider';
 import type { IOAuthIdentity, IOAuthProvider } from './oauth-provider';
@@ -36,6 +36,9 @@ const MESSAGE = {
   PROFILE_UNAVAILABLE: '프로필을 확인할 수 없습니다.',
   IDENTITY_UNAVAILABLE: '사용자를 확인할 수 없습니다.',
 } as const;
+
+// Sentry 태그용 라우트 패턴. 실제 경로에는 provider가 들어간다.
+const OAUTH_CALLBACK_ROUTE = 'GET /auth/:provider/callback';
 
 // 앱이 만든 S256 challenge: base64url(SHA-256(verifier))
 const APP_CHALLENGE = new RegExp(`^[A-Za-z0-9_-]{${PKCE_CHALLENGE_LENGTH}}$`);
@@ -168,7 +171,8 @@ export class AuthService {
       await this.sessions.start(res, user.id);
       return `${webOrigin()}/`;
     } catch (error) {
-      if (!(error instanceof GraphQLError)) captureException(error);
+      // 콜백은 4xx 대신 리다이렉트하므로 예상하지 못한 오류(provider 통신·DB)만 따로 보고한다.
+      if (!(error instanceof GraphQLError)) reportUnexpectedError(error, { route: OAUTH_CALLBACK_ROUTE });
       return attempt?.appChallenge
         ? appCallbackUrl({ error: 'login_failed' })
         : `${webOrigin()}/?loginError=1`;

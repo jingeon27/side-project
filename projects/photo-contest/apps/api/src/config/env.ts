@@ -144,6 +144,20 @@ export function sentryDsn() {
   return optional('SENTRY_DSN');
 }
 
+export function sentryEnvironment() {
+  return optional('NODE_ENV') ?? 'development';
+}
+
+export function sentryRelease() {
+  return optional('SENTRY_RELEASE');
+}
+
+/** 0~1 사이 숫자가 아니면 0(추적하지 않음) */
+export function sentryTracesSampleRate() {
+  const rate = Number(optional('SENTRY_TRACES_SAMPLE_RATE'));
+  return Number.isFinite(rate) && rate >= 0 && rate <= 1 ? rate : 0;
+}
+
 /** 운영에서 설정이 빠지면 조용히 기본값으로 뜨지 않고 시작을 멈춘다. */
 export function assertProductionConfig() {
   if (!isProduction()) return;
