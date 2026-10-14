@@ -15,13 +15,15 @@
 
 ## 구조 (`src`)
 
-- `app`: `App.tsx`(첫 링크 읽기 → 웹 셸, 최소 버전 미달이면 업데이트 화면), 스플래시 제어, `providers`(SafeAreaProvider, 오류 경계).
-- `pages/web-shell`: `@page/WebShellPageTemplate`, `model`(WebView 이벤트·브리지·뒤로 가기·AppState 훅), `ui`(LoadingOverlay, OfflineView), `lib`(순수 판단).
-- `pages/update-required`: 최소 버전보다 낮은 앱. 웹을 열지 않는다.
-- `features/bridge`: `lib/create-capabilities.ts`(순수, 플랫폼 기능 주입), `model/native-capabilities.ts`(expo 모듈 연결).
-- `features/navigation`: `navigation-policy`(onShouldStartLoadWithRequest), `deep-link`(URL → 웹 경로), `back-press`.
+- `_app`: `App.tsx`(첫 링크·분석 기기 ID를 읽고 app_opened를 보낸 뒤 웹 셸, 최소 버전 미달이면 업데이트 화면), 스플래시 제어, `providers`(SafeAreaProvider, 오류 경계). `index.ts`가 Sentry를 켜고 루트를 감싼다.
+- `_pages/web-shell`: `@page/WebShellPageTemplate`, `model`(WebView 이벤트·브리지·뒤로 가기·AppState 훅), `ui`(LoadingOverlay, OfflineView), `lib`(순수 판단, `shell-events.ts`는 기능 결과·실패 → 분석 이벤트·Sentry 태그).
+- `_pages/update-required`: 최소 버전보다 낮은 앱. 웹을 열지 않는다.
+- `features/bridge`: `lib/create-capabilities.ts`(순수, 플랫폼 기능 주입, 공유·소셜 로그인 결과를 `onOutcome`으로 알린다), `model/native-capabilities.ts`(expo 모듈 연결).
+- `features/navigation`: `navigation-policy`(onShouldStartLoadWithRequest), `deep-link`(URL → 웹 경로, path_template), `back-press`, `read-initial-link`.
 - `features/app-config`: `/app/config`·`/health` 호출과 zod 스키마, 버전 비교.
-- `shared`: `config/env.ts`, `config/theme.ts`(웹 토큰 색), `lib`.
+- `features/analytics`: `config/events.ts`(이벤트 카탈로그), `lib/create-analytics.ts`(순수, SDK 주입), `model/analytics.ts`(Amplitude 연결).
+- `shared`: `config/env.ts`, `config/theme.ts`(웹 토큰 색), `lib`(`monitoring/`은 Sentry 연결).
+- 기능(feature)끼리는 서로 import하지 않는다. 분석 연결은 화면(`_pages`)·앱(`_app`)이 한다.
 
 ## 동작 규칙
 
@@ -44,7 +46,27 @@
 | 앱 → 웹 요청 | `navigation.back` | Android 뒤로 가기. 800ms 안에 `handled`가 아니면 WebView `goBack`, 기록이 없으면 앱 종료 |
 | 앱 → 웹 알림 | `app.state` | background에 다녀왔을 때만 `background`/`active`(iOS inactive 무시) |
 | 앱 → 웹 알림 | `navigation.open` | 딥링크 경로 |
-| 웹 → 앱 알림 | `app.ready` / `navigation.changed` / `auth.changed` | 로딩·스플래시 닫기 / 재생성할 주소 기억 / 없음(세션은 쿠키) |
+| 웹 → 앱 알림 | `app.ready` / `navigation.changed` / `auth.changed` | 로딩·스플래시 닫기 / 재생성할 주소 기억 / 분석 사용자 식별만(세션은 쿠키) |
+
+## 모니터링·분석
+
+- Sentry: `EXPO_PUBLIC_SENTRY_DSN`이 없으면 초기화하지 않고 루트도 감싸지 않는다. `sendDefaultPii: false`, 보내기 전에 user·request를 지우고 브레드크럼은 `data`를 뺀다(만들 때도). 오류 경계가 잡은 렌더 오류는 `captureException`, WebView 문제는 warning 메시지(아래 표의 이름 + 태그).
+- 소스맵: `@sentry/react-native/expo` 플러그인에 조직·프로젝트를 넣지 않는다. 릴리스 빌드에서 올리려면 빌드 환경에 `SENTRY_AUTH_TOKEN`·`SENTRY_ORG`·`SENTRY_PROJECT`를 둔다. 토큰 없이 릴리스 빌드하면 `SENTRY_DISABLE_AUTO_UPLOAD=true`를 함께 준다(없으면 Xcode·Gradle 업로드 단계가 실패한다). Debug 빌드는 올리지 않는다.
+- Amplitude: `EXPO_PUBLIC_AMPLITUDE_API_KEY`가 없으면 아무것도 보내지 않는다. 자동 수집(세션·화면·수명 주기)과 광고 식별자(adid·appSetId·idfv)는 끈다.
+- 기기 ID: 시작할 때 초기화를 최대 1.5초 기다려 기기 ID를 브리지 앱 정보 `analyticsDeviceId`로 웹에 넘긴다. 늦거나 실패하면 빼고 연다(웹은 자기 ID를 쓴다).
+- 사용자: 웹 `auth.changed`의 `userId`로 `setUserId`, 식별된 사용자가 있을 때 `signedIn: false`면 `reset`(기기 ID가 바뀌고 웹은 다음 실행 때 새 ID를 받는다). 비로그인 상태를 다시 알리는 것만으로는 reset하지 않는다.
+- 속성에 닉네임·캡션·초대 토큰·이메일·URL을 넣지 않는다. 경로는 `/`, `/invite/:token`, `/groups/:id`, `/contests/:id`만 보낸다.
+
+| 이벤트 | 보내는 때 | 속성 |
+| --- | --- | --- |
+| `app_opened` | 프로세스가 뜬 뒤 첫 링크를 읽었을 때 한 번 | `source`: `launch` / `deep_link` |
+| `app_foregrounded` | background → active (iOS inactive 제외, Android는 공유 시트·로그인 브라우저에서 돌아올 때도) | 없음 |
+| `deep_link_opened` | 앱을 연 링크, 실행 중 들어온 링크 | `path_template` |
+| `social_login_started` / `_succeeded` / `_cancelled` / `_failed` | `auth.socialLogin`. succeeded는 앱 로그인 코드를 받았을 때(세션 교환 성공은 웹 `login_succeeded`), 진행 중 중복 요청은 기록하지 않는다 | `provider` |
+| `native_share_completed` / `native_share_dismissed` | `share.open` 결과. Android는 OS가 결과를 주지 않아 항상 completed | 없음 |
+| `update_required_shown` | 업데이트 화면을 보였을 때 | `minimum_version` |
+| `webview_load_failed` | 오프라인 화면을 띄운 메인 문서 오류(4xx·이동 취소 제외). Sentry 태그 `status`·`error_code`·`error_domain` | `status`: 5xx 상태 코드, 연결 오류는 0 |
+| `webview_process_terminated` | iOS 콘텐츠 프로세스 종료(reload)·Android 렌더러 종료(재생성). Sentry 태그 `process`·`did_crash` | 없음 |
 
 ## 소셜 로그인 핸드오프
 
@@ -59,7 +81,7 @@
 
 | 스크립트 | 내용 | 서버 |
 | --- | --- | --- |
-| `test` | vitest `unit`(node, `src/**/*.spec.ts`) + `ui`(jsdom, `src/**/*.spec.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈은 `vitest.setup.ts`의 대역) | 없음 |
+| `test` | vitest `unit`(node, `src/**/*.spec.ts`) + `ui`(jsdom, `src/**/*.spec.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
 | `test:api` | vitest `api`(`src/**/*.api.spec.ts`). `vitest.api-setup.ts`가 test-kit 격리 API를 띄운다 | API :4331, webOrigin `http://localhost:3331`, 스키마 `mobile_api_*` |
 | `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`) |
 | `bundle:check` | `expo export --platform android`로 Metro 번들이 만들어지는지 확인하고 결과 폴더를 지운다 | 없음 |
