@@ -10,7 +10,8 @@
     "photo-contest-test-api": "./bin/serve-test-api.mjs"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:cleanup": "node --import tsx scripts/check-cleanup.ts"
   },
   "dependencies": {
     "@photo-contest/api": "workspace:*",
