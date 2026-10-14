@@ -57,6 +57,16 @@ export function isTest() {
   return process.env.NODE_ENV === 'test';
 }
 
+export function testingApiEnabled() {
+  return isTest() && process.env.ENABLE_TEST_API === 'true';
+}
+
+/** 테스트 fixture를 만드는 엔드포인트가 개발·운영 서버에 열리는 설정은 시작부터 거절한다. */
+export function assertTestingConfig() {
+  if (process.env.ENABLE_TEST_API === 'true' && !isTest())
+    throw new Error('ENABLE_TEST_API requires NODE_ENV=test.');
+}
+
 export function apiPort() {
   return Number(process.env.PORT ?? 4200);
 }

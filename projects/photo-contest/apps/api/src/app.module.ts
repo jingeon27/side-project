@@ -15,6 +15,7 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
+import { TestingModule } from './testing/testing.module';
 import { VoteModule } from './vote/vote.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { VoteModule } from './vote/vote.module';
     ModerationModule,
     MaintenanceModule,
     HealthModule,
+    TestingModule,
   ],
   providers: [DateTimeScalar],
 })
