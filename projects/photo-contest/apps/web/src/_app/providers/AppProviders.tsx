@@ -3,8 +3,10 @@
 import { OverlayProvider } from 'overlay-kit';
 import type { ReactNode } from 'react';
 
+import { AuthSessionSync } from '@/features/auth';
 import { ToastProvider } from '@/shared/ui/@core/toast';
 
+import { AnalyticsTracker } from './analytics/AnalyticsTracker';
 import { AppApolloProvider } from './apollo/AppApolloProvider';
 import { BridgeProvider } from './bridge/BridgeProvider';
 import { RouteHistoryTracker } from './navigation/RouteHistoryTracker';
@@ -17,6 +19,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <ToastProvider>
           <OverlayProvider>
             <RouteHistoryTracker />
+            {/* 분석 초기화가 로그인 사용자 설정(AuthSessionSync)보다 먼저 돌도록 앞에 둔다. */}
+            <AnalyticsTracker />
+            <AuthSessionSync />
             {children}
           </OverlayProvider>
         </ToastProvider>
