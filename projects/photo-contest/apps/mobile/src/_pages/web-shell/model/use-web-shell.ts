@@ -4,6 +4,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
 
+import { applyAnalyticsAuth, trackEvent } from '@/features/analytics/model/analytics';
+import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
 import { createNativeCapabilities } from '@/features/bridge/model/native-capabilities';
 import { isRelativeWebPath } from '@/features/navigation/lib/deep-link';
 import { decideNavigation, decideOpenWindow } from '@/features/navigation/lib/navigation-policy';
@@ -11,10 +13,18 @@ import { LINK_OPTIONS, toWebUrl } from '@/features/navigation/model/link-options
 import { openExternalUrl } from '@/features/navigation/model/open-external';
 import { useDeepLinkEvents } from '@/features/navigation/model/use-deep-link-events';
 import { WEB_ORIGIN } from '@/shared/config/env';
+import { captureWarning } from '@/shared/lib/monitoring/monitoring';
 import { useLatest } from '@/shared/lib/use-latest';
 
 import { startsNewDocument } from '../lib/document-load';
 import { isOfflineHttpError, isOfflineLoadError } from '../lib/load-error';
+import {
+  describeLoadFailure,
+  describeProcessTermination,
+  toCapabilityEvent,
+  toDeepLinkEvent,
+} from '../lib/shell-events';
+import type { IShellFailureReport } from '../lib/shell-events';
 import { useAndroidBackPress } from './use-android-back-press';
 import { useAppStateEvents } from './use-app-state-events';
 import { useWebShellBridge } from './use-web-shell-bridge';
@@ -26,6 +36,8 @@ interface IUseWebShellOptions {
   /** 처음 열 웹 경로 (`/`, `/invite/abc` 등) */
   initialPath: string;
   appVersion: string;
+  /** 웹 분석 SDK가 같은 기기 ID를 쓰도록 앱 정보에 싣는다. 없으면 null */
+  analyticsDeviceId: string | null;
   /** 첫 화면이 그려졌거나 그릴 수 없을 때. 스플래시를 닫는다. 여러 번 불릴 수 있다. */
   onReady: () => void;
 }
@@ -34,10 +46,20 @@ function isWebOriginUrl(url: string) {
   return originOf(url) === originOf(WEB_ORIGIN);
 }
 
+function trackCapabilityOutcome(outcome: TCapabilityOutcome) {
+  trackEvent(toCapabilityEvent(outcome));
+}
+
+/** 사용자는 오프라인 화면이나 다시 불러오기로만 겪는 문제라 분석 이벤트와 Sentry 경고로 함께 남긴다. */
+function reportShellFailure({ event, tags }: IShellFailureReport) {
+  trackEvent(event);
+  captureWarning(event.name, tags);
+}
+
 /** 웹 셸 화면의 상태와 WebView 이벤트 처리. 화면은 이 결과를 그대로 WebView에 넘긴다. */
-export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOptions) {
+export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onReady }: IUseWebShellOptions) {
   const [channel] = useState(createWebViewChannel);
-  const [capabilities] = useState(createNativeCapabilities);
+  const [capabilities] = useState(() => createNativeCapabilities(trackCapabilityOutcome));
   const [sourceUrl, setSourceUrl] = useState(() => toWebUrl(initialPath));
   /** 바꾸면 WebView를 새로 만든다. Android 렌더러가 죽으면 기존 WebView는 다시 쓸 수 없다. */
   const [webViewKey, setWebViewKey] = useState(0);
@@ -54,11 +76,15 @@ export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOp
     onReadyRef.current();
   }, [onReadyRef]);
 
-  const showOffline = useCallback(() => {
-    isWebReadyRef.current = false;
-    setHasLoadError(true);
-    finishLoading();
-  }, [finishLoading]);
+  const showOffline = useCallback(
+    (failure: IShellFailureReport) => {
+      reportShellFailure(failure);
+      isWebReadyRef.current = false;
+      setHasLoadError(true);
+      finishLoading();
+    },
+    [finishLoading],
+  );
 
   const router = useWebShellBridge({
     channel,
@@ -72,8 +98,8 @@ export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOp
       onNavigationChanged: ({ path }) => {
         if (isRelativeWebPath(path)) currentUrlRef.current = toWebUrl(path);
       },
-      // 세션은 WebView 쿠키가 맡아 앱이 따로 들고 있을 상태가 없다.
-      onAuthChanged: () => undefined,
+      // 세션은 WebView 쿠키가 맡는다. 앱은 분석 사용자 식별만 웹 로그인 상태에 맞춘다.
+      onAuthChanged: applyAnalyticsAuth,
     },
   });
 
@@ -102,7 +128,16 @@ export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOp
     setWebViewKey((key) => key + 1);
   }, []);
 
-  useDeepLinkEvents(openPath);
+  const handleDeepLink = useCallback(
+    (path: string) => {
+      const event = toDeepLinkEvent(path);
+      if (event) trackEvent(event);
+      openPath(path);
+    },
+    [openPath],
+  );
+
+  useDeepLinkEvents(handleDeepLink);
   useAppStateEvents({ router, isWebReady: () => isWebReadyRef.current });
   useAndroidBackPress({
     router,
@@ -119,8 +154,9 @@ export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOp
         appVersion,
         protocolVersion: PROTOCOL_VERSION,
         capabilities: Object.keys(capabilities),
+        analyticsDeviceId: analyticsDeviceId ?? undefined,
       }),
-    [appVersion, capabilities, platform],
+    [analyticsDeviceId, appVersion, capabilities, platform],
   );
 
   const handleShouldStartLoadWithRequest = useCallback<TWebViewHandler<'onShouldStartLoadWithRequest'>>(
@@ -179,14 +215,17 @@ export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOp
     (event) => {
       // WebView 기본 오류 화면(영문)을 띄우지 않는다. 연결 문제일 때만 오프라인 화면으로 바꾼다.
       event.preventDefault();
-      if (isOfflineLoadError(event.nativeEvent, WEB_ORIGIN)) showOffline();
+      const { code, domain } = event.nativeEvent;
+      if (isOfflineLoadError(event.nativeEvent, WEB_ORIGIN))
+        showOffline(describeLoadFailure({ status: 0, code, domain }));
     },
     [showOffline],
   );
 
   const handleHttpError = useCallback<TWebViewHandler<'onHttpError'>>(
     ({ nativeEvent }) => {
-      if (isOfflineHttpError(nativeEvent, WEB_ORIGIN)) showOffline();
+      if (isOfflineHttpError(nativeEvent, WEB_ORIGIN))
+        showOffline(describeLoadFailure({ status: nativeEvent.statusCode }));
     },
     [showOffline],
   );
@@ -195,12 +234,16 @@ export function useWebShell({ initialPath, appVersion, onReady }: IUseWebShellOp
     TWebViewHandler<'onContentProcessDidTerminate'>
   >(() => {
     // iOS는 웹 콘텐츠 프로세스가 끝나면 빈 화면이 된다. 같은 WebView에서 다시 불러오면 된다.
+    reportShellFailure(describeProcessTermination({ process: 'content' }));
     isWebReadyRef.current = false;
     channel.reload();
   }, [channel]);
 
   const handleRenderProcessGone = useCallback<TWebViewHandler<'onRenderProcessGone'>>(
-    () => recreateWebView(),
+    ({ nativeEvent }) => {
+      reportShellFailure(describeProcessTermination({ process: 'render', didCrash: nativeEvent.didCrash }));
+      recreateWebView();
+    },
     [recreateWebView],
   );
 

@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
+import { trackEvent } from '@/features/analytics/model/analytics';
 import { openExternalUrl } from '@/features/navigation/model/open-external';
 import { COLORS } from '@/shared/config/theme';
 
@@ -24,6 +26,13 @@ export function UpdateRequiredPageTemplate({
   useEffect(() => {
     onShown();
   }, [onShown]);
+
+  useEffect(() => {
+    trackEvent({
+      name: ANALYTICS_EVENT.UpdateRequiredShown,
+      properties: { minimum_version: minimumVersion },
+    });
+  }, [minimumVersion]);
 
   function handleOpenStore() {
     if (storeUrl) void openExternalUrl(storeUrl, null);

@@ -14,6 +14,8 @@ const ORIGIN_WHITELIST = ['*'];
 interface IWebShellPageTemplateProps {
   initialPath: string;
   appVersion: string;
+  /** 웹 분석 SDK와 함께 쓸 네이티브 기기 ID. 분석을 켜지 않았으면 null */
+  analyticsDeviceId: string | null;
   onReady: () => void;
 }
 
@@ -21,9 +23,14 @@ interface IWebShellPageTemplateProps {
  * 웹 전체를 WebView 하나로 보여 준다. 안전 영역은 네이티브가 맡아 웹의 env(safe-area-inset-*)는 0이 된다.
  * 세션은 WebView 쿠키가 맡고, 화면 이동 기록은 웹이 가진다.
  */
-export function WebShellPageTemplate({ initialPath, appVersion, onReady }: IWebShellPageTemplateProps) {
+export function WebShellPageTemplate({
+  initialPath,
+  appVersion,
+  analyticsDeviceId,
+  onReady,
+}: IWebShellPageTemplateProps) {
   const { attachWebView, webViewKey, sourceUrl, isLoading, hasLoadError, handleRetry, webViewProps } =
-    useWebShell({ initialPath, appVersion, onReady });
+    useWebShell({ initialPath, appVersion, analyticsDeviceId, onReady });
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.root}>

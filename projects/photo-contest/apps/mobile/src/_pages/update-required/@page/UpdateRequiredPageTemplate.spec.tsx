@@ -1,3 +1,4 @@
+import { track } from '@amplitude/analytics-react-native';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { openURL } from 'expo-linking';
 import { describe, expect, it, vi } from 'vitest';
@@ -19,6 +20,8 @@ describe('UpdateRequiredPageTemplate', () => {
     expect(screen.getByRole('heading', { name: '새 버전으로 업데이트해 주세요' })).toBeTruthy();
     expect(screen.getByText('현재 버전 1.0.0 · 필요한 버전 1.2.0 이상')).toBeTruthy();
     expect(onShown).toHaveBeenCalled();
+    expect(track).toHaveBeenCalledTimes(1);
+    expect(track).toHaveBeenCalledWith('update_required_shown', { minimum_version: '1.2.0' });
 
     fireEvent.click(screen.getByRole('button', { name: '업데이트하기' }));
 
