@@ -1,10 +1,11 @@
 import { useApolloClient } from '@apollo/client/react';
 import type { IWebBridge } from '@photo-contest/bridge/web';
-import { setTag } from '@sentry/browser';
+import { setTags } from '@sentry/nextjs';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { match } from 'ts-pattern';
 
+import { buildSentryClientTags } from '@/shared/lib/sentry.helper';
 import {
   closeTopOverlay,
   getParentRoute,
@@ -29,7 +30,7 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
   const notifiedPathname = useRef<string | null>(null);
 
   useEffect(() => {
-    setTag('client', bridge?.app ? 'app' : 'web');
+    setTags(buildSentryClientTags(bridge?.app ?? null));
   }, [bridge]);
 
   useEffect(() => {
