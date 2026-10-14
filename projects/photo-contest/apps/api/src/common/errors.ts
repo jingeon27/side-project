@@ -1,4 +1,5 @@
 import { GraphQLError } from 'graphql';
+import { match } from 'ts-pattern';
 
 export const ERROR_CODE = {
   BAD_USER_INPUT: 'BAD_USER_INPUT',
@@ -28,20 +29,25 @@ export const ERROR_MESSAGE = {
   INTERNAL: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
 } as const;
 
-const HTTP_STATUS: Record<string, number> = {
-  [ERROR_CODE.UNAUTHENTICATED]: 401,
-  [ERROR_CODE.FORBIDDEN]: 403,
-  [ERROR_CODE.NOT_FOUND]: 404,
-  [ERROR_CODE.CONFLICT]: 409,
-  [ERROR_CODE.RATE_LIMITED]: 429,
-  [ERROR_CODE.UNAVAILABLE]: 503,
-};
-
 export function fail(message: string, code: TErrorCode = ERROR_CODE.BAD_USER_INPUT): never {
   throw new GraphQLError(message, { extensions: { code } });
 }
 
-/** HTTP 엔드포인트에서 GraphQL 오류 code를 상태 코드로 바꾼다. 나머지는 400. */
-export function httpStatusOf(code: unknown) {
-  return (typeof code === 'string' ? HTTP_STATUS[code] : undefined) ?? 400;
+export function isErrorCode(code: unknown): code is TErrorCode {
+  return typeof code === 'string' && Object.hasOwn(ERROR_CODE, code);
+}
+
+/** HTTP 엔드포인트에서 GraphQL 오류 code를 상태 코드로 바꾼다. 우리 code가 아니면 400. */
+export function httpStatusOf(code: unknown): number {
+  if (!isErrorCode(code)) return 400;
+  return match(code)
+    .with(ERROR_CODE.BAD_USER_INPUT, () => 400)
+    .with(ERROR_CODE.UNAUTHENTICATED, () => 401)
+    .with(ERROR_CODE.FORBIDDEN, () => 403)
+    .with(ERROR_CODE.NOT_FOUND, () => 404)
+    .with(ERROR_CODE.CONFLICT, () => 409)
+    .with(ERROR_CODE.RATE_LIMITED, () => 429)
+    .with(ERROR_CODE.INTERNAL_SERVER_ERROR, () => 500)
+    .with(ERROR_CODE.UNAVAILABLE, () => 503)
+    .exhaustive();
 }
