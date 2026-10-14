@@ -1,6 +1,12 @@
 import type { ApolloCache } from '@apollo/client';
 
-import { ContestDocument, ContestResultsDocument, SubmissionVisibilityFragmentDoc } from '@/shared/api/generated';
+import { resetSubmissionFeeds } from '@/features/submission';
+import {
+  ContestDocument,
+  ContestResultsDocument,
+  SubmissionVisibilityFragmentDoc,
+  SubmissionsDocument,
+} from '@/shared/api/generated';
 
 const submissionId = (cache: ApolloCache, id: string) => cache.identify({ __typename: 'Submission', id });
 
@@ -9,6 +15,7 @@ export function markSubmissionHidden(cache: ApolloCache, id: string) {
   cache.updateFragment({ id: submissionId(cache, id), fragment: SubmissionVisibilityFragmentDoc }, (data) =>
     data ? { ...data, hidden: true } : data,
   );
+  resetSubmissionFeeds(cache);
 }
 
 /**
@@ -17,12 +24,14 @@ export function markSubmissionHidden(cache: ApolloCache, id: string) {
  */
 export function evictSubmission(cache: ApolloCache, id: string) {
   cache.evict({ id: submissionId(cache, id) });
+  resetSubmissionFeeds(cache);
   cache.gc();
 }
 
-/** 숨기기·삭제 뒤 다시 받을 쿼리: 대회(사진 수·숨긴 사진 목록)와 끝난 대회의 결과 */
+/** 숨기기·삭제 뒤 사진 목록·대회 정보·종료 결과를 다시 받는다. */
 export function moderationRefetchQueries(contestId: string, isCompleted: boolean) {
   return [
+    SubmissionsDocument,
     { query: ContestDocument, variables: { id: contestId } },
     ...(isCompleted ? [{ query: ContestResultsDocument, variables: { contestId } }] : []),
   ];

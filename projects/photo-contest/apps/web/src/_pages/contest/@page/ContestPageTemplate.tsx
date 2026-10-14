@@ -137,7 +137,12 @@ export function ContestPageTemplate({ id }: { id: string }) {
                 trackEvent(ANALYTICS_EVENT.PhotoSortChanged, { contest_id: id, sort: next });
               }}
             />
-            <ContestFeed key={sort} contest={contest} viewerId={viewer.id} sort={sort} />
+            <ContestFeed
+              key={`${sort}:${contest.submissionCount}`}
+              contest={contest}
+              viewerId={viewer.id}
+              sort={sort}
+            />
           </>
         )}
         {contest.isAdmin && contest.hiddenSubmissions.length ? (

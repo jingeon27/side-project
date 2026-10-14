@@ -42,7 +42,14 @@ const photo = (id: string, overrides: Partial<SubmissionCardFragment> = {}): Sub
   likedByMe: false,
   reportCount: 1,
   author: { __typename: 'User', id: 'author-1', nickname: '수아', avatar: null },
-  reports: [{ __typename: 'Report', id: 'report-1', reason: '동의 없이 올린 사진', createdAt: '2026-10-14T05:00:00.000Z' }],
+  reports: [
+    {
+      __typename: 'Report',
+      id: 'report-1',
+      reason: '동의 없이 올린 사진',
+      createdAt: '2026-10-14T05:00:00.000Z',
+    },
+  ],
   ...overrides,
 });
 
@@ -65,7 +72,7 @@ const contest = (overrides: Partial<ContestQuery['contest']> = {}): ContestQuery
 
 /** 피드처럼 숨긴 사진을 빼고 그린다. */
 function Feed({ isAdmin }: { isAdmin: boolean }) {
-  const { data } = useQuery(SubmissionsDocument, { variables: FEED, fetchPolicy: 'cache-only' });
+  const { data } = useQuery(SubmissionsDocument, { variables: FEED });
   return (
     <ul>
       {data?.submissions
@@ -95,7 +102,13 @@ function renderFeed({ isAdmin, mocks = [] }: { isAdmin: boolean; mocks?: MockLin
   client.writeQuery({
     query: SubmissionsDocument,
     variables: FEED,
-    data: { submissions: [photo('photo-a'), photo('photo-b'), photo('photo-mine', { author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null } })] },
+    data: {
+      submissions: [
+        photo('photo-a'),
+        photo('photo-b'),
+        photo('photo-mine', { author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null } }),
+      ],
+    },
   });
   render(
     <ApolloProvider client={client}>
@@ -151,7 +164,10 @@ describe('ModerationActions', () => {
       isAdmin: false,
       mocks: [
         {
-          request: { query: ReportSubmissionDocument, variables: { submissionId: 'photo-a', reason: '동의 없이 올린 사진' } },
+          request: {
+            query: ReportSubmissionDocument,
+            variables: { submissionId: 'photo-a', reason: '동의 없이 올린 사진' },
+          },
           result: { data: { reportSubmission: true } },
         },
       ],
@@ -170,8 +186,24 @@ describe('ModerationActions', () => {
     const { user, client } = renderFeed({
       isAdmin: true,
       mocks: [
-        { request: { query: HideSubmissionDocument, variables: { submissionId: 'photo-a' } }, result: { data: { hideSubmission: true } } },
+        {
+          request: { query: HideSubmissionDocument, variables: { submissionId: 'photo-a' } },
+          result: { data: { hideSubmission: true } },
+        },
         contestRefetch({ submissionCount: 1, hiddenSubmissions: [photo('photo-a', { hidden: true })] }),
+        {
+          request: { query: SubmissionsDocument, variables: FEED },
+          result: {
+            data: {
+              submissions: [
+                photo('photo-b'),
+                photo('photo-mine', {
+                  author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
+                }),
+              ],
+            },
+          },
+        },
       ],
     });
     const card = item('photo-a 캡션');
@@ -180,10 +212,13 @@ describe('ModerationActions', () => {
 
     await user.click(within(card).getByRole('button', { name: '숨기기' }));
 
-    await waitFor(() => expect(screen.queryByRole('listitem', { name: 'photo-a 캡션' })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole('listitem', { name: 'photo-a 캡션' })).not.toBeInTheDocument(),
+    );
     await waitFor(() =>
       expect(
-        client.readQuery({ query: ContestDocument, variables: { id: 'contest-1' } })?.contest.hiddenSubmissions,
+        client.readQuery({ query: ContestDocument, variables: { id: 'contest-1' } })?.contest
+          .hiddenSubmissions,
       ).toHaveLength(1),
     );
     expect(toast.success).toHaveBeenCalledWith('사진을 숨겼어요', expect.anything());
@@ -198,6 +233,19 @@ describe('ModerationActions', () => {
           result: { data: { deleteSubmission: true } },
         },
         contestRefetch({ submissionCount: 1 }),
+        {
+          request: { query: SubmissionsDocument, variables: FEED },
+          result: {
+            data: {
+              submissions: [
+                photo('photo-a'),
+                photo('photo-mine', {
+                  author: { __typename: 'User', id: 'viewer', nickname: '나', avatar: null },
+                }),
+              ],
+            },
+          },
+        },
       ],
     });
 
@@ -207,7 +255,9 @@ describe('ModerationActions', () => {
 
     // 대화상자가 닫혀야 뒤 화면이 다시 보조기기에 드러난다.
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(screen.queryByRole('listitem', { name: 'photo-b 캡션' })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole('listitem', { name: 'photo-b 캡션' })).not.toBeInTheDocument(),
+    );
     expect(screen.getByRole('listitem', { name: 'photo-a 캡션' })).toBeVisible();
     expect(toast.success).toHaveBeenCalledWith('사진을 삭제했어요');
   });

@@ -30,7 +30,7 @@ export function ContestFeed({ contest, viewerId, sort }: IContestFeedProps) {
   });
   // 마지막 페이지를 받았는지만 기억한다. 사진 목록 자체는 Apollo 캐시에서 읽는다.
   const [hasNextPage, setHasNextPage] = useState(true);
-  const photos = data?.submissions ?? [];
+  const photos = data?.submissions.filter((submission) => !submission.hidden) ?? [];
   const loading = networkStatus !== NetworkStatus.ready;
   const handleLoadMore = async () => {
     if (loading || !hasNextPage) return;
@@ -101,7 +101,7 @@ export function ContestFeed({ contest, viewerId, sort }: IContestFeedProps) {
       ))}
       {error ? <ErrorState message={getErrorMessage(error)} onRetry={handleLoadMore} /> : null}
       <FeedLoadMore
-        hasMore={hasNextPage && photos.length >= FEED_PAGE_SIZE}
+        hasMore={hasNextPage && photos.length >= FEED_PAGE_SIZE && photos.length < contest.submissionCount}
         loading={loading}
         onLoadMore={handleLoadMore}
       />
