@@ -10,6 +10,13 @@ export interface ILinkOptions {
 const LINK_ROUTES = ['invite', 'groups', 'contests'] as const;
 type TLinkRoute = (typeof LINK_ROUTES)[number];
 
+/** 분석에 보내는 경로 모양. 초대 토큰과 ID 값은 보내지 않는다. */
+const LINK_TEMPLATES = {
+  invite: '/invite/:token',
+  groups: '/groups/:id',
+  contests: '/contests/:id',
+} as const satisfies Record<TLinkRoute, string>;
+
 /** 토큰·ID에는 안전 문자만 받는다. `..`, `%2F`, 공백 같은 값으로 다른 경로를 만들지 못하게 한다. */
 const SAFE_SEGMENT = /^[A-Za-z0-9_-]{1,128}$/;
 /** React Native의 URL 구현이 불완전해 생성자 대신 정규식으로 나눈다. */
@@ -55,4 +62,12 @@ export function toWebPath(url: string, { webOrigin, appScheme }: ILinkOptions) {
   const rest = stripQueryAndHash(url.match(HTTP_URL_PARTS)?.[1] ?? '');
   if (rest === '' || rest === '/') return '/';
   return rest.startsWith('/') ? pathFromSegments(rest.slice(1)) : null;
+}
+
+/** toWebPath가 만든 경로를 분석용 path_template(`/groups/:id`)으로 바꾼다. 링크 경로가 아니면 null. */
+export function toLinkTemplate(path: string) {
+  if (path === '/') return '/';
+  const linkPath = path.startsWith('/') ? pathFromSegments(path.slice(1)) : null;
+  const route = linkPath?.split('/')[1];
+  return route && isLinkRoute(route) ? LINK_TEMPLATES[route] : null;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isRelativeWebPath, toWebPath } from './deep-link';
+import { isRelativeWebPath, toLinkTemplate, toWebPath } from './deep-link';
 
 const OPTIONS = { webOrigin: 'https://contest.example', appScheme: 'photocontest' };
 
@@ -72,5 +72,22 @@ describe('isRelativeWebPath', () => {
     expect(isRelativeWebPath('groups/1')).toBe(false);
     expect(isRelativeWebPath('/a b')).toBe(false);
     expect(isRelativeWebPath(`/${'a'.repeat(2048)}`)).toBe(false);
+  });
+});
+
+describe('toLinkTemplate', () => {
+  it('링크 경로의 토큰과 ID를 자리 표시자로 바꿔야 한다', () => {
+    expect(toLinkTemplate('/')).toBe('/');
+    expect(toLinkTemplate('/invite/AbC_12-x')).toBe('/invite/:token');
+    expect(toLinkTemplate('/groups/cm1group0001')).toBe('/groups/:id');
+    expect(toLinkTemplate('/contests/42')).toBe('/contests/:id');
+  });
+
+  it('딥링크로 만들 수 없는 경로는 null이어야 한다', () => {
+    expect(toLinkTemplate('/me')).toBeNull();
+    expect(toLinkTemplate('/groups/1/contests')).toBeNull();
+    expect(toLinkTemplate('/invite/a b')).toBeNull();
+    expect(toLinkTemplate('groups/1')).toBeNull();
+    expect(toLinkTemplate('')).toBeNull();
   });
 });
