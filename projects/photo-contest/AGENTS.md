@@ -25,12 +25,16 @@
 - 패키지를 추가하면 Yarn 24시간 격리 게이트를 통과한 버전인지 확인한다. 모바일은 Expo가 고정한 버전(`expo install` 기준)을 따른다.
 - Next.js API는 설치된 `node_modules/next/dist/docs`에서 확인한다. Expo·React Native 라이브러리는 설치된 타입 정의를 기준으로 한다.
 
+## 제품 방향
+
+상시 갤러리 커뮤니티다. 제품 표기는 갤러리이며 내부 Group 모델·/groups URL은 호환을 위해 유지한다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 갤러리 전체의 최신 게시물과 이달의 인기(KST)를, MY는 내 갤러리 목록·생성을 제공한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest·Submission은 이전 링크·데이터 호환용이다.
+
 ## 정해진 결정
 
 - 인증: HttpOnly 쿠키 `contest_session` 하나. API는 cookie-parser 없이 요청 `Cookie` 헤더를 직접 파싱하고 요청당 한 번만 조회한다. 웹 `proxy.ts`는 요청 쿠키로 멤버 전용 화면을 막고, SSR은 요청의 Cookie 헤더를 API로만 넘긴다. 앱 WebView도 같은 쿠키를 쓰고 토큰을 네이티브로 넘기지 않는다.
 - 앱 소셜 로그인: Google이 WebView 로그인을 막으므로 시스템 브라우저 + PKCE + 일회용 코드 교환(`/auth/app/exchange`).
 - 모니터링: API는 Sentry만(도메인 이벤트는 DB에만 기록), 웹·모바일은 Sentry + Amplitude. 키가 없으면 아무것도 보내지 않는다.
-- 좋아요 수는 항상 공개, 득표수는 대회 종료 후 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 관리자만.
+- 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 관리자만. 게시물은 작성자와 관리자만 삭제한다. 기존 대회의 득표수는 종료 후 공개한다.
 - 서버 상태는 Apollo(정규화 캐시가 단일 출처). TanStack Query로 바꾸지 않는다.
 
 ## 스킬 (관련 작업 전에 해당 파일 전체를 읽는다)

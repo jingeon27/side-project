@@ -21,6 +21,8 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - feature slice 세그먼트: `api/<domain>.graphql`, `model/<domain>.cache.ts`·`<domain>.type-policies.ts`·`<domain>.schema.ts`·`*.hook.ts`, `lib/*.helper.ts`, `types/`, `ui/`, `index.ts`(쓰는 이름만 명시 export). slice 안에서는 상대 경로로, 자기 배럴을 import하지 않는다.
 - 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
 
+현재 제품의 갤러리는 상시 게시판이다. 홈은 전체 가입 갤러리의 최신 게시물·이달의 인기, MY는 갤러리 목록·생성이다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
+
 ## 상태
 
 - 서버 상태는 Apollo 정규화 캐시가 단일 출처다. 받은 데이터를 useState로 복제하지 않는다. 자식에는 DTO 대신 id를 넘기고 같은 Document/fragment로 다시 읽는다.
