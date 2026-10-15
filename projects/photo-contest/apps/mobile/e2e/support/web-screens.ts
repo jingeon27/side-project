@@ -5,6 +5,9 @@ import type { Page } from '@playwright/test';
  * 역할과 접근성 이름으로 찾는다.
  */
 export const webScreens = {
+  myPageLink: (page: Page) => page.getByRole('link', { name: 'MY', exact: true }),
+  profileHeading: (page: Page, nickname: string) =>
+    page.getByRole('heading', { name: nickname, exact: true }),
   /** 서버가 앱 User-Agent를 보고 붙이는 표식 */
   appMarker: (page: Page) => page.locator('html[data-app]'),
   socialLoginButton: (page: Page, provider: 'google' | 'kakao') =>
@@ -16,7 +19,7 @@ export const webScreens = {
   inviteCopyButton: (page: Page) => page.getByRole('button', { name: /링크 복사|복사/ }).first(),
   likeButton: (page: Page) => page.getByRole('button', { name: /^좋아요 [\d,]+개$/ }).first(),
   toast: (page: Page) => page.getByRole('status').or(page.getByRole('alert')),
-  /** 홈에서 바텀시트를 여는 버튼 */
+  /** 마이페이지에서 그룹 생성 시트를 여는 버튼 */
   createGroupButton: (page: Page) => page.getByRole('button', { name: /그룹 만들기/ }).first(),
   dialog: (page: Page) => page.getByRole('dialog'),
 };
