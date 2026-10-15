@@ -51,7 +51,7 @@ function ToastList() {
 }
 
 /**
- * toast.success/error/info로 띄운 알림을 그린다. 휴대폰 열(#pc-main) 하단 가운데, 하단 탭·고정 CTA 위에 뜬다
+ * toast.success/error/info로 띄운 알림을 그린다. 콘텐츠 하단 가운데, 하단 탭·고정 CTA 위에 뜬다
  * (globals.css의 --toast-bottom).
  */
 export function ToastProvider({ children }: { children: ReactNode }) {

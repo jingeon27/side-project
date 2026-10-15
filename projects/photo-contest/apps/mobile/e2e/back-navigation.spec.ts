@@ -14,13 +14,14 @@ test.describe('Android 뒤로 가기', () => {
     page,
     nativeHost,
   }) => {
+    await webScreens.myPageLink(page).click();
     await webScreens.createGroupButton(page).click();
     await expect(webScreens.dialog(page)).toBeVisible();
 
     await expect(nativeHost.requestBack()).resolves.toEqual({ handled: true });
 
     await expect(webScreens.dialog(page)).toBeHidden();
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/me');
   });
 
   test('홈에서 더 돌아갈 화면이 없으면 웹이 처리하지 않아야 한다(handled false)', async ({ nativeHost }) => {

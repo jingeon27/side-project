@@ -22,7 +22,7 @@ test(
   { tag: '@ios' },
   async ({ page, browser, signIn }) => {
     await signIn('통합-방장');
-    await page.goto('/');
+    await page.goto('/me');
     await page.getByRole('button', { name: '그룹 만들기' }).click();
     await page.getByRole('dialog').getByLabel('그룹 이름').fill('통합 모임');
     await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();

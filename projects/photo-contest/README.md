@@ -30,13 +30,13 @@ corepack yarn dev:photo-contest
 
 ## 구성과 기능
 
-| 앱·패키지           | 역할                                                                          |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 6·PostgreSQL          |
-| `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 홈·MY·그룹·초대·대회 |
-| `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크      |
-| `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                              |
-| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·fixture 준비                                   |
+| 앱·패키지           | 역할                                                                                           |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 6·PostgreSQL                           |
+| `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 통합 사진 피드·MY 그룹 관리·반응형 웹 |
+| `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                       |
+| `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                               |
+| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·fixture 준비                                                    |
 
 그룹은 비공개이며 모든 멤버가 초대 링크를 공유할 수 있고, 관리자만 재발급·대회 생성·사진 숨김/삭제를 수행합니다. 1인 1장·1인 1표는 DB unique와 Serializable 재시도로 보장합니다. 좋아요 수는 항상, 득표수는 종료 후에만 공개합니다. 공동 우승·무투표·그룹 순위·지난 대회를 지원합니다.
 
@@ -74,6 +74,12 @@ Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<prov
 키가 없으면 전송하지 않습니다. 요청·쿠키·사용자 정보를 제거하고 분석 속성에 닉네임·설명·초대 토큰을 넣지 않습니다. 앱과 웹은 브리지의 기기 ID로 분석 사용자를 연결합니다. 실제 Sentry·Amplitude 프로젝트 수신은 별도 확인이 필요합니다.
 
 ## 앱별 테스트
+
+로컬에서는 별도 터미널에서 테스트 DB를 시작합니다. `db:test:local`은 `.data/test-postgres`·55434·`photo_contest_test`를 사용해 개발 DB와 분리합니다. 포트를 바꾸면 `.env`의 `LOCAL_TEST_POSTGRES_PORT`와 `TEST_DATABASE_URL`도 함께 바꾸세요.
+
+```sh
+corepack yarn workspace @side/photo-contest db:test:local
+```
 
 | 앱     | `test`                   | `test:api`                                | `test:e2e`                                                   |
 | ------ | ------------------------ | ----------------------------------------- | ------------------------------------------------------------ |

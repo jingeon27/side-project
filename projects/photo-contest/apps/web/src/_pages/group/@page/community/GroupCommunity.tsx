@@ -1,0 +1,23 @@
+'use client';
+
+import type { TGroupQueryRef } from '../model/group-query.type';
+
+import { useReadQuery } from '@apollo/client/react';
+
+import { MemberList } from '@/features/group';
+import { GroupLeaderboard } from '@/features/ranking';
+
+export function GroupCommunity({ groupRef, viewerId }: { groupRef: TGroupQueryRef; viewerId: string }) {
+  const { data } = useReadQuery(groupRef);
+  if (!data) return null;
+  const { group } = data;
+  return (
+    <>
+      <GroupLeaderboard groupId={group.id} viewerId={viewerId} />
+      <section>
+        <h2 className="mb-3 text-title text-ink">함께하는 친구 {group.members.length}명</h2>
+        <MemberList members={group.members} viewerId={viewerId} />
+      </section>
+    </>
+  );
+}

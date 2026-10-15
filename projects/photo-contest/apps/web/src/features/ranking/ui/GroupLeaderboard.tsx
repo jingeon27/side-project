@@ -1,16 +1,18 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
+import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
+import type { QueryRef } from '@apollo/client/react';
 import { Trophy } from 'lucide-react';
 import { useId } from 'react';
+import { match } from 'ts-pattern';
 
 import { GroupLeaderboardDocument } from '@/shared/api/generated';
+import type { GroupLeaderboardQuery } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
-import { getErrorMessage } from '@/shared/model/error';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
-import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import { countByRank, getMedalTone, getRankLabel } from '../lib/ranking.helper';
@@ -21,53 +23,31 @@ const MEDAL_CLASS_NAME = {
   bronze: 'bg-bronze text-ink',
 } as const;
 
-interface IGroupLeaderboardProps {
-  groupId: string;
+function LeaderboardContent({
+  rankingRef,
+  viewerId,
+}: {
+  rankingRef: QueryRef<GroupLeaderboardQuery>;
   viewerId?: string;
-}
-
-/**
- * 그룹 순위(명예의 전당). 끝난 대회만 모아 우승 횟수 → 받은 표 → 받은 좋아요 순으로 매긴다.
- * 그룹 화면과 따로 불러와 순위 계산이 늦거나 실패해도 그룹 화면은 먼저 보인다.
- */
-export function GroupLeaderboard({ groupId, viewerId }: IGroupLeaderboardProps) {
-  const headingId = useId();
-  const { data, loading, error, refetch } = useQuery(GroupLeaderboardDocument, { variables: { groupId } });
-  const entries = data?.group.leaderboard ?? [];
+}) {
+  const {
+    data: {
+      group: { leaderboard: entries },
+    },
+  } = useReadQuery(rankingRef);
   const rankCounts = countByRank(entries);
-
-  const renderBody = () => {
-    if (!data && loading)
-      return (
-        <div role="status" aria-label="그룹 순위를 불러오는 중" className="flex flex-col gap-2">
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-        </div>
-      );
-    if (!data && error)
-      return (
-        <ErrorState
-          className="py-6"
-          title="그룹 순위를 불러오지 못했어요"
-          message={getErrorMessage(error)}
-          onRetry={() => {
-            refetch().catch(() => undefined);
-          }}
-        />
-      );
-    if (entries.length === 0)
-      return (
-        <EmptyState
-          className="py-6"
-          icon={<Trophy className="size-6" />}
-          title="아직 순위가 없어요"
-          description="대회가 끝나면 우승 횟수와 받은 표로 순위를 매겨요."
-        />
-      );
-    return (
+  return match(entries)
+    .with([], () => (
+      <EmptyState
+        className="py-6"
+        icon={<Trophy className="size-6" />}
+        title="아직 순위가 없어요"
+        description="대회가 끝나면 우승 횟수와 받은 표로 순위를 매겨요."
+      />
+    ))
+    .otherwise((rows) => (
       <ol className="flex flex-col divide-y divide-line">
-        {entries.map((entry) => {
+        {rows.map((entry) => {
           const medal = getMedalTone(entry.rank);
           return (
             <li key={entry.user.id} className="flex min-h-16 items-center gap-3 py-2">
@@ -96,9 +76,12 @@ export function GroupLeaderboard({ groupId, viewerId }: IGroupLeaderboardProps) 
           );
         })}
       </ol>
-    );
-  };
+    ));
+}
 
+export function GroupLeaderboard({ groupId, viewerId }: { groupId: string; viewerId?: string }) {
+  const headingId = useId();
+  const [rankingRef, { refetch }] = useBackgroundQuery(GroupLeaderboardDocument, { variables: { groupId } });
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <div>
@@ -107,7 +90,20 @@ export function GroupLeaderboard({ groupId, viewerId }: IGroupLeaderboardProps) 
           그룹 순위
         </h2>
       </div>
-      {renderBody()}
+      <AsyncBoundary
+        resetKey={groupId}
+        errorTitle="그룹 순위를 불러오지 못했어요"
+        onRetry={refetch}
+        fallback={
+          <div role="status" aria-label="그룹 순위를 불러오는 중" className="flex flex-col gap-2">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        }
+      >
+        <LeaderboardContent rankingRef={rankingRef} viewerId={viewerId} />
+      </AsyncBoundary>
     </section>
   );
 }

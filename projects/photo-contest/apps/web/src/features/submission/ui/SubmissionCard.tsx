@@ -8,7 +8,7 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { Badge } from '@/shared/ui/@core/badge';
 
 interface ISubmissionCardProps {
-  submission: SubmissionCardFragment;
+  submission: Pick<SubmissionCardFragment, 'caption' | 'imageUrl' | 'hidden' | 'author'>;
   viewerId: string;
   /** 첫 화면의 첫 장만 먼저 불러온다. */
   isPriority?: boolean;
@@ -22,6 +22,7 @@ interface ISubmissionCardProps {
   actions?: ReactNode;
   /** 신고·숨기기·삭제 줄 */
   moderation?: ReactNode;
+  header?: ReactNode;
 }
 
 /**
@@ -37,6 +38,7 @@ export function SubmissionCard({
   stats,
   actions,
   moderation,
+  header,
 }: ISubmissionCardProps) {
   const captionId = useId();
   const isMine = submission.author.id === viewerId;
@@ -51,13 +53,14 @@ export function SubmissionCard({
         submission.hidden && 'opacity-80',
       )}
     >
+      {header}
       <div className="relative aspect-square bg-sunken">
         <Image
           src={submission.imageUrl}
           alt={submission.caption}
           fill
           unoptimized
-          sizes="(max-width: 540px) 100vw, 540px"
+          sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 400px"
           loading={isPriority ? 'eager' : 'lazy'}
           fetchPriority={isPriority ? 'high' : 'auto'}
           className="object-cover"

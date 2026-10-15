@@ -43,8 +43,8 @@ describe('작은 표시 요소', () => {
         <button type="button">사진 제출하기</button>
       </StickyCta>,
     );
-    expect(screen.getByRole('button', { name: '사진 제출하기' }).parentElement).toHaveAttribute(
-      'data-sticky-cta',
-    );
+    expect(
+      screen.getByRole('button', { name: '사진 제출하기' }).closest('[data-sticky-cta]'),
+    ).toHaveAttribute('data-sticky-cta');
   });
 });

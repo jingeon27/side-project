@@ -1,9 +1,12 @@
 /* 디자인 토큰. 화면은 임의 hex·px 대신 이 토큰으로 만든다. */
 @theme {
-  /* 모든 화면이 가운데 휴대폰 열 하나라 분기점은 하나만 둔다. */
+  /* 휴대폰은 한 열, 태블릿은 두 열, 데스크톱은 넓은 웹 레이아웃을 쓴다. */
   --breakpoint-*: initial;
   --breakpoint-pc: 540px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1024px;
   --max-width-app: 540px;
+  --max-width-web: 1200px;
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', 'Malgun Gothic',

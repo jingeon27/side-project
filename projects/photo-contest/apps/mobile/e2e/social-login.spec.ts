@@ -65,6 +65,7 @@ test.describe('앱 소셜 로그인 핸드오프', () => {
     await expect(nativeHost.waitForEvent('auth.changed')).resolves.toEqual({ signedIn: true });
     const cookies = await context.cookies(E2E_WEB_ORIGIN);
     expect(cookies.find((cookie) => cookie.name === 'contest_session')?.httpOnly).toBe(true);
-    await expect(page.getByText(nickname).first()).toBeVisible();
+    await webScreens.myPageLink(page).click();
+    await expect(webScreens.profileHeading(page, nickname)).toBeVisible();
   });
 });

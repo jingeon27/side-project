@@ -11,6 +11,7 @@ describe('cn', () => {
     expect(cn('px-4 text-body', 'px-2', 'text-caption')).toBe('px-2 text-caption');
     expect(cn('rounded-card', 'rounded-control')).toBe('rounded-control');
     expect(cn('z-app-bar', 'z-sheet')).toBe('z-sheet');
+    expect(cn('max-w-app', 'max-w-web')).toBe('max-w-web');
   });
 
   it('거짓 값은 무시해야 한다', () => {

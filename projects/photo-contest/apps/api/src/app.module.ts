@@ -8,6 +8,7 @@ import { DateTimeScalar } from './common/graphql/date-time.scalar';
 import { graphqlOptions } from './common/graphql/graphql-options';
 import { ContestModule } from './contest/contest.module';
 import { DatabaseModule } from './database/database.module';
+import { FeedModule } from './feed/feed.module';
 import { GroupModule } from './group/group.module';
 import { HealthModule } from './health/health.module';
 import { LikeModule } from './like/like.module';
@@ -28,6 +29,7 @@ import { VoteModule } from './vote/vote.module';
     GroupModule,
     ContestModule,
     SubmissionModule,
+    FeedModule,
     LikeModule,
     VoteModule,
     ModerationModule,

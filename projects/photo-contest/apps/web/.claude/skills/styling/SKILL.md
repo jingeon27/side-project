@@ -1,6 +1,6 @@
 ---
 name: styling
-description: 웹(apps/web)에서 Tailwind 4 클래스·디자인 토큰을 쓰거나 theme.css·globals.css·cn()을 고칠 때, 그리고 540px 앱 열·dvh·안전 영역·고정 요소·z-index·터치 영역·사진 표시 같은 모바일 레이아웃을 다룰 때 사용한다.
+description: 웹(apps/web)의 Tailwind 4·디자인 토큰, 휴대폰·태블릿·데스크톱 반응형 레이아웃, 안전 영역·고정 요소·오버레이·터치 영역·사진 표시를 다룰 때 사용한다.
 ---
 
 원칙은 `frontend` 스킬의 "모바일 레이아웃"이다. 아래는 이 앱 설정에서 생기는 함정과 쓰는 값이다.
@@ -11,7 +11,7 @@ description: 웹(apps/web)에서 Tailwind 4 클래스·디자인 토큰을 쓰�
 - `src/_app/styles/theme.css`가 기본 색·글자 크기·분기점을 지운다(`--color-*`·`--text-*`·`--breakpoint-*: initial`). `bg-white`·`text-gray-500`·`text-sm`·`md:`는 오류 없이 아무 스타일도 만들지 않는다. 있는 값:
   - 색: `brand`(`-strong`·`-soft`) `accent`(`-soft`·`-ink`) `ink` `muted` `subtle` `line`(`-strong`) `surface` `sunken` `canvas` `background` `danger`(`-soft`) `info`(`-soft`) `neutral-soft` `gold` `silver` `bronze` `kakao` `on-brand` `scrim`
   - 글자: `text-display|title-lg|title|subtitle|body|input|button|label|caption|micro`(크기·줄 높이·굵기·자간 한 묶음)
-  - `rounded-badge|control|card|sheet`, `shadow-app|card|sheet|toast`, `h-app-bar`(60) `h-bottom-nav`(76) `h-cta`(50) `size-touch`(44), `max-w-app`(540). 기본 spacing(`p-4`·`gap-2`)은 그대로 있다.
+  - `rounded-badge|control|card|sheet`, `shadow-app|card|sheet|toast`, `h-app-bar`(60) `h-bottom-nav`(76) `h-cta`(50) `size-touch`(44), `max-w-app`(시트·폼 540)·`max-w-web`(웹 1200). 기본 spacing(`p-4`·`gap-2`)은 그대로 있다.
 - 토큰을 더하면 `@theme`에 넣고, 글자·모서리·그림자·spacing·z·max-w 토큰이면 `src/shared/lib/cn.helper.ts`의 `extendTailwindMerge`에도 등록하고 `cn.helper.spec.ts`에 케이스를 더한다. 빠지면 tailwind-merge가 `cn('text-title', 'text-ink')`에서 하나를 지운다. `var()`로만 읽는 값은 `@theme static`에 둔다.
 - `src/_app/styles/globals.css`는 `@layer base`만, 100줄 이하로 둔다. 화면·컴포넌트 스타일을 넣지 않는다. 앱바 배경(`--color-surface`)을 바꾸면 `src/shared/constants/layout.ts`의 `THEME_COLOR`도 바꾼다.
 - 합치기는 `cn()`(`@/shared/lib/cn.helper`, 뒤에 온 값이 이긴다). `!` 유틸(`p-0!`·`!p-0`), 임의 hex(`bg-[#fff]`), 색 inline style은 쓰지 않는다. 토큰이 있는 값(색·글자·모서리·그림자·z·높이)을 임의 값으로 쓰지 않는다.
@@ -19,8 +19,8 @@ description: 웹(apps/web)에서 Tailwind 4 클래스·디자인 토큰을 쓰�
 
 ## 레이아웃
 
-- 화면은 `main#pc-main`(`src/app/layout.tsx`, `max-w-app`) 안의 `flex flex-1 flex-col` 한 열이다. 위아래 고정 바는 `sticky`인 `TopAppBar`·`StickyCta`·`BottomNav`를 그대로 쓴다. `fixed`는 뷰포트 기준이라 데스크톱에서 열을 벗어나므로, 꼭 써야 하면 `inset-x-0 mx-auto w-full max-w-app`에 `getOverlayContainer()` portal을 함께 쓴다.
-- 분기점은 `pc:`(540px 이상) 하나다. 데스크톱도 같은 열이라 열 안 레이아웃은 분기하지 않는다. `w-screen`·`100vw`는 가로 넘침을 만든다.
+- 화면은 `main#pc-main`(`src/app/layout.tsx`, `max-w-web`) 안에 그린다. 위아래 고정 바는 `sticky`인 `TopAppBar`·`StickyCta`·`BottomNav`를 쓴다. 데스크톱 시트·폼·CTA·토스트는 전체 웹 폭으로 늘리지 않고 읽기 쉬운 폭을 유지한다. 오버레이 portal은 `getOverlayContainer()`를 쓴다.
+- 사진 목록은 1열 → `tablet:`(768px 이상) 2열 → `desktop:`(1024px 이상) 3열이다. 데스크톱에서는 상단바 메뉴를 보이고 하단 탭은 숨긴다. `pc:`(540px)는 기존 호환 토큰이다. `w-screen`·`100vw`는 가로 넘침을 만든다.
 - 높이는 `dvh`(`min-h-dvh`, `max-h-[90dvh]`)로 쓰고 `h-screen`·`min-h-screen`·`100vh`는 쓰지 않는다.
 - 안전 영역: 위 고정 요소는 `pt-(--safe-top)`, 아래 고정 요소는 `pb-[calc(16px+var(--safe-bottom))]`. 앱 WebView에서는 네이티브가 맡아 `env()`가 0이므로 `in-app:`으로 안전 영역을 다시 만지지 않는다. `in-app:`(`html[data-app]`)은 앱 설치 안내 숨김 같은 표면 차이에만 쓴다.
 - 입력 중 숨길 하단 요소는 `keyboard-open:hidden`(터치 기기 + 글자 입력 포커스). 새 하단 고정 바를 만들지 말고 `StickyCta`를 쓴다. 토스트 위치(`--toast-bottom`)가 `[data-sticky-cta]`·`[data-bottom-nav]`를 보고 비켜 간다.
@@ -33,7 +33,7 @@ description: 웹(apps/web)에서 Tailwind 4 클래스·디자인 토큰을 쓰�
 
 ## 사진
 
-- 비공개 사진(쿠키 인증)은 `next/image`에 `unoptimized`를 준다(Next 이미지 최적화는 사용자 쿠키 없이 받아 실패한다). `aspect-square` 상자, `sizes="(max-width: 540px) 100vw, 540px"`, 첫 화면 첫 장만 `priority`.
+- 비공개 사진(쿠키 인증)은 `next/image`에 `unoptimized`를 준다(Next 이미지 최적화는 사용자 쿠키 없이 받아 실패한다). `aspect-square` 상자와 실제 열 폭에 맞는 `sizes`를 쓰고 첫 화면 첫 장만 우선 로드한다.
 
 ## 확인
 

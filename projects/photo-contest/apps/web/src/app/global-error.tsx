@@ -23,7 +23,7 @@ export default function GlobalError({
       <body>
         <title>웃긴순간</title>
         <div className="flex min-h-dvh justify-center bg-canvas">
-          <main className="flex min-h-dvh w-full max-w-app flex-col justify-center bg-surface shadow-app">
+          <main className="flex min-h-dvh w-full max-w-web flex-col justify-center bg-surface shadow-app">
             <ErrorState
               title="화면을 불러오지 못했어요"
               message="잠시 후 다시 시도해 주세요."

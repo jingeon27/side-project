@@ -15,7 +15,7 @@ export function StickyCta({ children, className }: { children: ReactNode; classN
         className,
       )}
     >
-      {children}
+      <div className="mx-auto w-full desktop:max-w-app">{children}</div>
     </div>
   );
 }

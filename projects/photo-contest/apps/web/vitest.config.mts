@@ -20,7 +20,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.spec.ts', 'eslint/**/*.spec.ts'],
+          include: ['src/**/*.{spec,test}.ts', 'eslint/**/*.{spec,test}.ts'],
           exclude: ['src/**/*.api.spec.ts'],
         },
       },
@@ -29,7 +29,7 @@ export default defineConfig({
         test: {
           name: 'ui',
           environment: 'jsdom',
-          include: ['src/**/*.spec.tsx'],
+          include: ['src/**/*.{spec,test}.tsx'],
           setupFiles: ['./vitest.setup.ts'],
         },
       },

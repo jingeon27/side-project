@@ -33,7 +33,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 
 ## 모바일 레이아웃
 
-- 모든 화면은 가운데 앱 열(`#pc-root` > `main#pc-main`, `max-w-app` 540px)에 그린다. 오버레이는 `#pc-main` 안에 띄운다. 접두사 없는 클래스가 휴대폰 화면이고 브레이크포인트는 `pc`(540px) 하나다.
+- 화면은 `#pc-root` > `main#pc-main`의 반응형 웹 영역(`max-w-web` 1200px)에 그린다. 사진은 기본 1열, `tablet:`(768px) 2열, `desktop:`(1024px) 3열이다. 데스크톱은 상단 메뉴, 그보다 좁으면 하단 탭을 쓴다. 오버레이는 `#pc-main` 안에 띄우고 시트·폼은 `max-w-app`(540px)로 제한한다.
 - 높이는 dvh(100vh·min-h-screen 금지). 안전 영역은 브라우저에서 웹이 `env(safe-area-inset-*)`로, 앱 WebView에서는 네이티브가 맡는다(웹이 따로 하지 않는다).
 - 누를 영역 44px 이상(주 버튼 50px), 탭 피드백은 `active:`. 입력 글자 16px 이상(iOS 확대 방지). 확대(pinch)는 막지 않는다.
 - 공통 조각: `TopAppBar`(뒤로 가기·제목·액션), `StickyCta`(하단 고정 주 버튼, safe-bottom), `BottomNav`(홈·MY 화면에만, 입력 중 숨김), `BottomSheet`, `ConfirmDialog`, `Toast`, `Skeleton`·`EmptyState`·`ErrorState`.
