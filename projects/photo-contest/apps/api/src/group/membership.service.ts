@@ -54,6 +54,19 @@ export class MembershipService {
     return member;
   }
 
+  async accessiblePost(userId: string, postId: string, client: TDatabaseClient = this.db) {
+    const post = await client.post.findUnique({
+      where: { id: postId },
+      include: { upload: true, legacySubmission: { select: { hidden: true } } },
+    });
+    if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    const member = await this.requireMember(userId, post.groupId, client);
+    const admin = isOwner(member);
+    if ((post.hidden || post.legacySubmission?.hidden) && !admin)
+      fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    return { post, admin };
+  }
+
   /** 대회가 없으면 NOT_FOUND, 그룹 멤버(owner면 관리자)가 아니면 FORBIDDEN */
   async accessibleContest(
     userId: string,

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import { match } from 'ts-pattern';
+
 import { Injectable } from '@nestjs/common';
 
 import { s3Settings, storageBackend, storageDir } from '../config/env';
@@ -26,7 +28,12 @@ export class MediaStorage {
     return this.store().delete(mediaKey(key));
   }
   private store() {
-    if (storageBackend() === 'local') return new LocalPhotoStore(storageDir());
+    return match(storageBackend())
+      .with('local', () => new LocalPhotoStore(storageDir()))
+      .with('s3', () => this.s3Store())
+      .exhaustive();
+  }
+  private s3Store() {
     const settings = s3Settings();
     const signature = JSON.stringify(settings);
     if (this.s3?.signature !== signature) this.s3 = { signature, store: new S3PhotoStore(settings) };

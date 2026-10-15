@@ -1,0 +1,38 @@
+enum PostKind {
+  PHOTO
+  VIDEO
+}
+enum PostSort {
+  NEWEST
+  MONTHLY_POPULAR
+}
+type GalleryPost {
+  id: ID!
+  groupId: ID!
+  groupName: String!
+  title: String!
+  body: String!
+  author: User!
+  createdAt: DateTime!
+  kind: PostKind!
+  mediaUrl: String!
+  likeCount: Int!
+  likedByMe: Boolean!
+  canDelete: Boolean!
+}
+extend type Query {
+  galleryPosts(groupId: ID, sort: PostSort = NEWEST, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+}
+extend type Mutation {
+  requestPostUpload(groupId: ID!): UploadTicket!
+  createPost(
+    groupId: ID!
+    uploadId: ID!
+    title: String!
+    body: String
+    rightsConfirmed: Boolean!
+  ): GalleryPost!
+  likePost(postId: ID!): GalleryPost!
+  unlikePost(postId: ID!): GalleryPost!
+  deletePost(postId: ID!): Boolean!
+}

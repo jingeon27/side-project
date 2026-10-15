@@ -45,3 +45,9 @@ export const CLEANUP_BATCH_SIZE = 100;
 export const OAUTH_PROVIDER_TIMEOUT_MS = 10 * SECOND_MS;
 export const SERIALIZABLE_ATTEMPTS = 4;
 export const GRAPHQL_MAX_DEPTH = 8;
+
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const MAX_MEDIA_BODY = '100mb';
+export const MAX_VIDEO_SECONDS = 300;
+export const POST_TITLE_LIMIT = 80;
+export const POST_BODY_LIMIT = 5000;

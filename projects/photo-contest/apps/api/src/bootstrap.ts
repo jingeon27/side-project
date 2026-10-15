@@ -10,7 +10,7 @@ import { bodyParserErrorHandler } from './common/http/body-parser-error.middlewa
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
 import { assertProductionConfig, assertTestingConfig, isTest } from './config/env';
-import { MAX_JSON_BODY, MAX_UPLOAD_BODY } from './config/limits';
+import { MAX_JSON_BODY, MAX_UPLOAD_BODY, MAX_MEDIA_BODY } from './config/limits';
 
 const UPLOAD_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log'];
@@ -34,6 +34,13 @@ export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INe
   app.use(noStore);
   app.use(originGuard);
   app.use('/uploads', raw({ type: UPLOAD_CONTENT_TYPES, limit: MAX_UPLOAD_BODY }));
+  app.use(
+    '/post-uploads',
+    raw({
+      type: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'],
+      limit: MAX_MEDIA_BODY,
+    }),
+  );
   app.use(json({ limit: MAX_JSON_BODY }));
   app.use(bodyParserErrorHandler);
   app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));
