@@ -26,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 }
 ```
 
-4. 템플릿은 같은 Document와 완전히 같은 variables로 `useQuery`를 부르고 로딩·오류를 화면 안에서 처리한다. 설치된 `@apollo/client-integration-nextjs/README.md`의 Preloading 절에서 확인하듯 `PreloadQuery`는 `useQuery`에도 요청을 전달하고 중복 요청을 막는다. `useSuspenseQuery`로 스트리밍 렌더링을 선택하면 같은 사전 조회가 필수이며 `src/app/loading.tsx`·`error.tsx`가 로딩·오류를 받는다(`apollo` 스킬). 만료 세션(UNAUTHENTICATED)·권한 없음(FORBIDDEN)은 `errorPolicy: 'all'`과 `getErrorCode(error)`로 분기한다.
+4. 조회 부모는 같은 Document·variables로 `useBackgroundQuery`를 시작하고 `refetch`를 소유한다. 섹션 자식은 `QueryRef`를 받아 `useReadQuery`로 읽고, 둘 사이의 `AsyncBoundary`가 로딩·실패·재시도를 처리한다. 홈 그룹 목록·그룹 순위·대회 피드/결과처럼 독립 조회는 경계도 나누어 상단바와 다른 기능을 유지한다(`apollo` 스킬). 인증은 `ViewerBoundary`를 쓰며, 만료 세션·권한 없음·잘못된 초대처럼 예상되는 응답은 `errorPolicy: 'all'`과 `getErrorCode(error)`로 읽는 컴포넌트에서 처리한다. React 오류 경계는 SSR 예외를 잡지 못하므로 예상 오류를 던지지 않는다.
 5. 화면 뼈대: 루트 `flex flex-1 flex-col`(`main#pc-main`이 이미 `min-h-dvh flex-col`) → `TopAppBar` → 본문 `flex-1` → 마지막 자식으로 `StickyCta` 또는 `BottomNav`.
 
 ## 멤버 전용 화면
