@@ -1,6 +1,6 @@
 import { E2E_WEB_ORIGIN } from './support/e2e-env';
 import { expect, test } from './support/fixtures';
-import { seedContestWithMemberPhoto, seedGroup, signInBrowser, signUp, uniqueNickname } from './support/seed';
+import { seedGalleryWithMemberPost, seedGroup, signInBrowser, signUp, uniqueNickname } from './support/seed';
 import { webScreens } from './support/web-screens';
 
 test.describe('웹 → 앱 기능', () => {
@@ -15,6 +15,7 @@ test.describe('웹 → 앱 기능', () => {
     await page.goto(`/groups/${group.id}`);
     await nativeHost.waitForEvent('app.ready');
 
+    await webScreens.galleryMembers(page).click();
     await webScreens.inviteShareButton(page).click();
 
     await expect.poll(() => nativeHost.calls.map((call) => call.type)).toContain('share.open');
@@ -31,6 +32,7 @@ test.describe('웹 → 앱 기능', () => {
     await page.goto(`/groups/${group.id}`);
     await nativeHost.waitForEvent('app.ready');
 
+    await webScreens.galleryMembers(page).click();
     await webScreens.inviteCopyButton(page).click();
 
     await expect.poll(() => nativeHost.platform.copiedTexts).toHaveLength(1);
@@ -43,9 +45,9 @@ test.describe('웹 → 앱 기능', () => {
     context,
     nativeHost,
   }) => {
-    const { ownerCookie, contest } = await seedContestWithMemberPhoto();
+    const { ownerCookie, group } = await seedGalleryWithMemberPost();
     await signInBrowser(context, ownerCookie);
-    await page.goto(`/contests/${contest.id}`);
+    await page.goto(`/groups/${group.id}`);
     await nativeHost.waitForEvent('app.ready');
 
     await webScreens.likeButton(page).click();

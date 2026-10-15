@@ -111,6 +111,31 @@ export async function seedContestWithMemberPhoto() {
   return { ownerCookie, memberCookie, group, contest, submission };
 }
 
+/** 기간 없는 갤러리와 회원의 게시물을 실제 업로드 API로 만든다. */
+export async function seedGalleryWithMemberPost() {
+  const ownerCookie = await signUp(uniqueNickname('방장'));
+  const memberCookie = await signUp(uniqueNickname('회원'));
+  const group = await seedGroup(ownerCookie);
+  await joinGroup(memberCookie, group.inviteToken);
+  const { requestPostUpload: ticket } = await gql<{ requestPostUpload: { id: string; url: string } }>(
+    memberCookie,
+    'mutation($groupId:ID!){requestPostUpload(groupId:$groupId){id url}}',
+    { groupId: group.id },
+  );
+  const response = await fetch(E2E_API_URL + ticket.url.replace(/^\/backend/, ''), {
+    method: 'POST',
+    headers: { Cookie: memberCookie, Origin: E2E_WEB_ORIGIN, 'Content-Type': 'image/png' },
+    body: new Uint8Array(await createTestImage()),
+  });
+  if (!response.ok) throw new Error('게시물 업로드 실패');
+  await gql(
+    memberCookie,
+    'mutation($groupId:ID!,$uploadId:ID!){createPost(groupId:$groupId,uploadId:$uploadId,title:"고양이가 놀란 순간",rightsConfirmed:true){id}}',
+    { groupId: group.id, uploadId: ticket.id },
+  );
+  return { ownerCookie, memberCookie, group };
+}
+
 /**
  * 테스트 API로 외부 로그인 성공 콜백의 티켓을 만든다. 실제 provider 없이 앱 → 웹 교환(/auth/app/exchange)을 검증한다.
  * challenge는 앱이 인증 세션 주소(app_challenge)에 실은 값이다.
