@@ -15,7 +15,7 @@ interface IGroupCardProps {
   latestContest?: ReactNode;
 }
 
-/** 홈의 내 그룹 카드. 카드 전체가 그룹 화면 링크다. */
+/** 마이페이지의 내 그룹 카드. 카드 전체가 그룹 화면 링크다. */
 export function GroupCard({ group, latestContest }: IGroupCardProps) {
   return (
     <Link

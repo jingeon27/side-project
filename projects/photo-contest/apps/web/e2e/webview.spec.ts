@@ -69,8 +69,9 @@ test('가짜 앱 WebView에서도 로그인 교환·초대 공유·뒤로 가기
     await page.goto('/');
     await expect.poll(() => events).toContain('app.ready');
     await page.getByRole('button', { name: /구글|Google/ }).click();
-    await expect(page.getByRole('heading', { name: '내 그룹' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '최신 사진' })).toBeVisible();
     expect((await context.cookies()).find(({ name }) => name === 'contest_session')?.httpOnly).toBe(true);
+    await page.getByRole('link', { name: 'MY', exact: true }).click();
     await page.getByRole('button', { name: '그룹 만들기' }).click();
     await page.getByRole('dialog').getByLabel('그룹 이름').fill('웹뷰 모임');
     await expect(router.requestWeb('navigation.back', {}, { timeoutMs: 800 })).resolves.toEqual({

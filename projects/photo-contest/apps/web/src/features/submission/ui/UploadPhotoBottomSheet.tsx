@@ -102,7 +102,7 @@ export function UploadPhotoBottomSheet({
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
         title="내 웃긴 순간 제출하기"
-        description="한 대회에 한 장만 제출할 수 있어요. 신중하게 골라주세요."
+        description="직접 찍은 사진도 합성도 환영해요. 한 대회에 한 장만 제출할 수 있어요."
       />
       <BottomSheet.Content>
         <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">

@@ -9,7 +9,7 @@ import { match } from 'ts-pattern';
 import { PhaseBadge } from '@/features/contest';
 import { CreateGroupBottomSheet, GroupCard } from '@/features/group';
 import { MyGroupsDocument } from '@/shared/api/generated';
-import type { MeQuery, MyGroupsQuery } from '@/shared/api/generated';
+import type { MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
@@ -32,7 +32,7 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
       />
     ))
     .otherwise((groups) => (
-      <div className="flex flex-col gap-3">
+      <div className="grid gap-3 tablet:grid-cols-2">
         {groups.map((group) => {
           const latest = group.contests[0];
           return (
@@ -54,12 +54,10 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
     ));
 }
 
-export function MyGroupsSection({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
-  const { data } = useReadQuery(viewerRef);
+export function MyGroupsSection() {
   const [groupsRef, { refetch }] = useBackgroundQuery(MyGroupsDocument);
   return (
     <section className="flex flex-col gap-4">
-      <p className="text-caption text-muted">{data.me?.nickname}님의 그룹</p>
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-title text-ink">내 그룹</h2>
         <Button size="md" onClick={handleCreateGroup}>
