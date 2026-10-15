@@ -3,6 +3,7 @@
 import { useMutation } from '@apollo/client/react';
 
 import { prependMyGroup } from '@/features/group';
+import { resetPhotoFeed } from '@/features/feed';
 import { JoinGroupDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
@@ -15,7 +16,10 @@ export function JoinGroupButton({ token }: { token: string }) {
   const [joinGroup, { loading, data }] = useMutation(JoinGroupDocument, {
     variables: { token },
     update: (cache, { data: result }) => {
-      if (result) prependMyGroup(cache, result.joinGroup);
+      if (result) {
+        prependMyGroup(cache, result.joinGroup);
+        resetPhotoFeed(cache);
+      }
     },
     onCompleted: ({ joinGroup: group }) => {
       trackEvent(ANALYTICS_EVENT.GroupJoined, { group_id: group.id });

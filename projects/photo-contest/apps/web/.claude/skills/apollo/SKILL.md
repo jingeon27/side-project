@@ -27,6 +27,7 @@ description: 웹(apps/web)에서 GraphQL 문서를 쓰고 codegen하거나, Apol
 - `submissions(contestId, offset, limit, sort)` 정책은 `offsetLimitPagination(['contestId', 'sort'])`(`@apollo/client/utilities`) 한 줄이다. 자리 계산·중복 제거 merge를 직접 만들지 않는다.
 - 변수는 `{ contestId, sort, offset: 0, limit: 24 }`처럼 sort까지 늘 적는다(생략과 `NEWEST`는 다른 캐시 목록이 된다). 다음 페이지는 `fetchMore({ variables: { offset: data.submissions.length } })`이고, 마지막 응답이 `limit`보다 적거나 불러오는 중이면 부르지 않는다. 화면 끝 sentinel과 "사진 더 보기" 버튼이 같은 함수를 부른다.
 - 피드는 polling하지 않는다. 새로고침·앱 복귀·내 사진 제출·숨김/삭제 후 다시 받는다. 진행 중인 대회 정보만 로그인한 사용자에게 30초마다 갱신하며 종료·로그아웃 때 멈춘다.
+- 홈의 `myPhotoFeed(offset, limit)`는 모든 내 그룹의 공개 사진을 전체 최신순으로 합친 목록이다. `features/feed`가 `offsetLimitPagination()` 정책과 `resetPhotoFeed`를 소유한다. 가입·제출·숨김·삭제 후 캐시를 비워 이전 목록이 남지 않게 한다. 홈은 `MyPhotoFeedDocument`, MY는 `MyGroupsDocument`를 RSC에서 같은 변수로 사전 조회한다.
 - 이 정책은 받은 페이지를 `offset` 자리에 덮어쓰고 나머지는 그대로 둔다. 사진 숨김/삭제로 offset이 밀리면 `resetSubmissionFeeds` helper로 모든 정렬 목록을 비우고 `SubmissionsDocument`를 다시 조회한다. 삭제는 엔티티도 evict하고 gc한다. 대회 사진 수·숨긴 목록과 종료 결과는 `moderationRefetchQueries`로 다시 받으며 사진 수 변경 시 화면의 다음 페이지 상태를 초기화한다.
 - 피드 조회에는 `refetchWritePolicy: 'overwrite'`를 지정해 첫 페이지 갱신 뒤 예전 뒷페이지가 남지 않게 한다. 관리자의 숨긴 사진도 원본 응답 길이에 포함되므로 offset은 필터 전 길이로 계산한다. 반면 `submissionCount`는 공개 사진 수이므로 마지막 페이지 판단은 공개 카드 수로 한다. 첫 페이지가 모두 숨긴 사진이어도 다음 페이지 조작부를 남긴다. 추가 조회·새로고침은 `useTransition`으로 감싸 기존 사진과 조작부를 유지한다.
 
