@@ -23,7 +23,7 @@ const CONTEST: ContestQuery['contest'] = {
   isAdmin: true,
   mySubmissionId: null,
   votedSubmissionId: null,
-  submissionCount: 30,
+  submissionCount: 24,
   hiddenSubmissions: [],
 };
 const VARIABLES = { contestId: 'contest', sort: SubmissionSort.Newest, offset: 0, limit: 24 };
@@ -57,7 +57,11 @@ function Harness() {
     </>
   );
 }
-function setup(extraMocks: MockLink.MockedResponse[] = []) {
+function setup(
+  extraMocks: MockLink.MockedResponse[] = [],
+  initialPhotos = Array.from({ length: 24 }, (_, index) => photo(index)),
+  visibleCount = CONTEST.submissionCount,
+) {
   const client = new ApolloClient({
     cache: new InMemoryCache({ typePolicies: submissionTypePolicies }),
     link: new MockLink([
@@ -69,11 +73,15 @@ function setup(extraMocks: MockLink.MockedResponse[] = []) {
       ...extraMocks,
     ]),
   });
-  client.writeQuery({ query: ContestDocument, variables: { id: 'contest' }, data: { contest: CONTEST } });
+  client.writeQuery({
+    query: ContestDocument,
+    variables: { id: 'contest' },
+    data: { contest: { ...CONTEST, submissionCount: visibleCount } },
+  });
   client.writeQuery({
     query: SubmissionsDocument,
     variables: VARIABLES,
-    data: { submissions: Array.from({ length: 24 }, (_, index) => photo(index)) },
+    data: { submissions: initialPhotos },
   });
   render(
     <ApolloProvider client={client}>
@@ -116,5 +124,17 @@ describe('사진 피드 조회 맥락', () => {
     await waitFor(() => expect(screen.queryByText('사진-29')).not.toBeInTheDocument());
     expect(screen.getByText('사진-6')).toBeVisible();
     expect(screen.getByRole('heading', { name: '대회 안내' })).toBeVisible();
+  });
+
+  it('첫 페이지가 모두 숨긴 사진이어도 남은 공개 사진을 불러올 수 있어야 한다', async () => {
+    const { user } = setup(
+      [],
+      Array.from({ length: 24 }, (_, index) => ({ ...photo(index), hidden: true })),
+      6,
+    );
+    await user.click(await screen.findByRole('button', { name: '사진 더 보기' }));
+    expect(await screen.findByText('사진-29')).toBeVisible();
+    expect(screen.queryByText('사진-0')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '사진 더 보기' })).not.toBeInTheDocument();
   });
 });

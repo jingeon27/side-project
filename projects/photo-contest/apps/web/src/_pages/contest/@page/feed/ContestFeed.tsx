@@ -55,6 +55,9 @@ function FeedContent({
   if (!context) return null;
   const { contest } = context;
   const photos = data.submissions.filter((submission) => !submission.hidden);
+  // submissionCount는 공개 사진 수다. 요청 offset과 달리 끝 여부는 공개 카드 수로 판단한다.
+  const hasMore =
+    hasNextPage && data.submissions.length >= FEED_PAGE_SIZE && photos.length < contest.submissionCount;
   const handleLoadMore = () => {
     if (pending || !hasNextPage) return;
     startTransition(async () => {
@@ -76,7 +79,7 @@ function FeedContent({
         /* 피드 경계가 재시도를 제공한다. */
       }
     });
-  if (!photos.length)
+  if (!photos.length && !hasMore)
     return (
       <EmptyState title="아직 사진이 없어요" description="사진을 제출하면 친구들과 함께 볼 수 있어요." />
     );
@@ -116,15 +119,7 @@ function FeedContent({
           }
         />
       ))}
-      <FeedLoadMore
-        hasMore={
-          hasNextPage &&
-          data.submissions.length >= FEED_PAGE_SIZE &&
-          data.submissions.length < contest.submissionCount
-        }
-        loading={pending}
-        onLoadMore={handleLoadMore}
-      />
+      <FeedLoadMore hasMore={hasMore} loading={pending} onLoadMore={handleLoadMore} />
     </div>
   );
 }
