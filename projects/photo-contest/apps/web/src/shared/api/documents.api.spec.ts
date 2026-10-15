@@ -1,9 +1,22 @@
-import { createTestImage, createTestUser, graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
+import {
+  createTestImage,
+  createTestVideo,
+  createTestUser,
+  graphqlRequest,
+  moveTestContest,
+} from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
+  CreatePostDocument,
+  DeletePostDocument,
+  GalleryPostsDocument,
+  LikePostDocument,
+  UnlikePostDocument,
+  PostSort,
+  RequestPostUploadDocument,
   CastVoteDocument,
   ContestDocument,
   ContestResultsDocument,
@@ -232,6 +245,48 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       (await ok(MyPhotoFeedDocument, owner, { offset: 0, limit: 24 })).myPhotoFeed.some(
         ({ id }) => id === newer.photo.id,
       ),
+    ).toBe(false);
+  });
+  it('기간 없는 사진·동영상 게시물과 이달의 인기·관리자 삭제 문서가 실행돼야 한다', async () => {
+    const variables = { groupId, sort: PostSort.Newest, offset: 0, limit: 24 };
+    const created = [];
+    for (const video of [false, true]) {
+      const ticket = (await ok(RequestPostUploadDocument, member, { groupId })).requestPostUpload;
+      const response = await fetch(url + ticket.url.replace(/^\/backend/, ''), {
+        method: 'POST',
+        headers: { Cookie: member, Origin: origin, 'Content-Type': video ? 'video/mp4' : 'image/png' },
+        body: new Uint8Array(video ? await createTestVideo() : await createTestImage()),
+      });
+      expect(response.status).toBe(201);
+      const post = (
+        await ok(CreatePostDocument, member, {
+          groupId,
+          uploadId: ticket.id,
+          title: video ? '움직이는 순간' : '합성도 환영',
+          body: '상시 게시물',
+          rightsConfirmed: true,
+        })
+      ).createPost;
+      expect(post.kind).toBe(video ? 'VIDEO' : 'PHOTO');
+      created.push(post);
+    }
+    const photo = created[0];
+    if (!photo) throw new Error('사진 준비 실패');
+    expect((await ok(GalleryPostsDocument, owner, variables)).galleryPosts.map((p) => p.id)).toEqual(
+      created.map((p) => p.id).reverse(),
+    );
+    expect((await ok(LikePostDocument, owner, { postId: photo.id })).likePost.likeCount).toBe(1);
+    expect(
+      (await ok(GalleryPostsDocument, owner, { ...variables, sort: PostSort.MonthlyPopular })).galleryPosts[0]
+        ?.id,
+    ).toBe(photo.id);
+    expect((await ok(UnlikePostDocument, owner, { postId: photo.id })).unlikePost.likeCount).toBe(0);
+    expect((await execute(GalleryPostsDocument, outsider, variables)).errors?.[0]?.extensions?.code).toBe(
+      'FORBIDDEN',
+    );
+    await ok(DeletePostDocument, owner, { postId: photo.id });
+    expect(
+      (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),
     ).toBe(false);
   });
 });

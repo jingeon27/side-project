@@ -1,0 +1,59 @@
+fragment GalleryPostCard on GalleryPost {
+  id
+  groupId
+  groupName
+  title
+  body
+  kind
+  mediaUrl
+  createdAt
+  likeCount
+  likedByMe
+  canDelete
+  author {
+    id
+    nickname
+    avatar
+  }
+}
+query GalleryPosts($groupId: ID, $sort: PostSort!, $offset: Int!, $limit: Int!) {
+  galleryPosts(groupId: $groupId, sort: $sort, offset: $offset, limit: $limit) {
+    ...GalleryPostCard
+  }
+}
+mutation RequestPostUpload($groupId: ID!) {
+  requestPostUpload(groupId: $groupId) {
+    id
+    url
+  }
+}
+mutation CreatePost(
+  $groupId: ID!
+  $uploadId: ID!
+  $title: String!
+  $body: String
+  $rightsConfirmed: Boolean!
+) {
+  createPost(
+    groupId: $groupId
+    uploadId: $uploadId
+    title: $title
+    body: $body
+    rightsConfirmed: $rightsConfirmed
+  ) {
+    ...GalleryPostCard
+  }
+}
+mutation LikePost($postId: ID!) {
+  likePost(postId: $postId) {
+    ...GalleryPostCard
+  }
+}
+mutation UnlikePost($postId: ID!) {
+  unlikePost(postId: $postId) {
+    ...GalleryPostCard
+  }
+}
+mutation DeletePost($postId: ID!) {
+  deletePost(postId: $postId)
+}
