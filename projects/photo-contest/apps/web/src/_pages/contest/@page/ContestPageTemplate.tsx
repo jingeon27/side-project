@@ -1,189 +1,108 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
-import { Share2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { overlay } from 'overlay-kit';
-import { useEffect } from 'react';
+import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
+import { match } from 'ts-pattern';
 
-import { LoginPanel } from '@/features/auth';
-import { PhaseBadge, getPhaseDeadline, getPhaseGuide } from '@/features/contest';
-import { ModerationActions } from '@/features/moderation';
-import { buildContestShareText, useShareActions } from '@/features/share';
-import { SubmissionCard, UploadPhotoBottomSheet } from '@/features/submission';
-import { ContestDocument, MeDocument, Phase } from '@/shared/api/generated';
+import { LoginPanel, ViewerBoundary } from '@/features/auth';
+import { ContestDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { formatDateTime } from '@/shared/lib/format.helper';
-import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
-import { replaceSearchParams } from '@/shared/model/router';
-import { Button } from '@/shared/ui/@core/button';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
-import { IconButton } from '@/shared/ui/@core/icon-button';
-import { SegmentedControl } from '@/shared/ui/@core/segmented-control';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { StickyCta } from '@/shared/ui/@core/sticky-cta';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { ContestFeed } from './feed/ContestFeed';
-import { contestSearchSchema } from './model/contest-search.schema';
-import { ContestResults } from './results/ContestResults';
+import { ContestHeader } from './header/ContestHeader';
+import { ContestGuide } from './guide/ContestGuide';
+import { ContestPhaseSync } from './phase/ContestPhaseSync';
+import { ContestStage } from './phase/ContestStage';
+import { ContestSubmissionCta } from './submission/ContestSubmissionCta';
+import { HiddenPhotos } from './moderation/HiddenPhotos';
+import type { TContestQueryRef } from './model/contest-query.type';
 
-const SORT_OPTIONS = [
-  { value: 'latest', label: '최신순' },
-  { value: 'popular', label: '좋아요순' },
-] as const;
-
-export function ContestPageTemplate({ id }: { id: string }) {
-  const me = useQuery(MeDocument);
-  const query = useQuery(ContestDocument, { variables: { id }, errorPolicy: 'all' });
-  const searchParams = useSearchParams();
-  const { sort } = contestSearchSchema.parse({ sort: searchParams.get('sort') ?? undefined });
-  const shareActions = useShareActions();
-  const contest = query.data?.contest;
-  const viewer = me.data?.me;
-  const phase = contest?.phase;
-  const viewerId = viewer?.id;
-  const { startPolling, stopPolling } = query;
-  useEffect(() => {
-    // 마감이 지나도 페이지를 다시 열지 않고 투표·결과로 넘어가게 한다. 사진 피드는 polling하지 않는다.
-    if (viewerId && phase && phase !== Phase.Completed) startPolling(30_000);
-    else stopPolling();
-    return stopPolling;
-  }, [phase, viewerId, startPolling, stopPolling]);
-  if (getErrorCode(query.error) === ERROR_CODE.Unauthenticated || viewer === null)
-    return (
-      <div className="flex flex-1 flex-col">
-        <TopAppBar title="대회" backHref={ROUTES.HOME} />
-        <div className="p-4">
-          <LoginPanel nextPath={ROUTES.CONTEST(id)} />
-        </div>
+function ContestLoading() {
+  return (
+    <>
+      <TopAppBar title="대회" backHref={ROUTES.HOME} />
+      <Skeleton className="m-4 h-48" />
+    </>
+  );
+}
+function ContestFailure({ id, error, retry }: { id: string; error: unknown; retry: () => void }) {
+  return (
+    <>
+      <TopAppBar title="대회" backHref={ROUTES.HOME} />
+      <div className="p-4">
+        {match(getErrorCode(error))
+          .with(ERROR_CODE.Unauthenticated, () => <LoginPanel nextPath={ROUTES.CONTEST(id)} />)
+          .otherwise(() => (
+            <ErrorState message={getErrorMessage(error)} onRetry={retry} />
+          ))}
       </div>
-    );
-  if (!contest || !viewer)
-    return (
-      <div className="flex flex-1 flex-col">
-        <TopAppBar title="대회" backHref={ROUTES.HOME} />
-        {query.error || me.error ? (
-          <ErrorState
-            message={getErrorMessage(query.error ?? me.error)}
-            onRetry={() => {
-              query.refetch().catch(() => undefined);
-              me.refetch().catch(() => undefined);
-            }}
-          />
-        ) : (
-          <Skeleton className="m-4 h-48" />
-        )}
+    </>
+  );
+}
+function ContestContent({
+  id,
+  contestRef,
+  viewerId,
+  retry,
+}: {
+  id: string;
+  contestRef: TContestQueryRef;
+  viewerId: string;
+  retry: () => void;
+}) {
+  const { data, error } = useReadQuery(contestRef);
+  if (!data) return <ContestFailure id={id} error={error} retry={retry} />;
+  return (
+    <>
+      <ContestPhaseSync contestRef={contestRef} />
+      <ContestHeader contestRef={contestRef} />
+      <div className="flex flex-1 flex-col gap-5 p-4">
+        <ContestGuide contestRef={contestRef} />
+        <ContestStage contestRef={contestRef} viewerId={viewerId} />
+        <HiddenPhotos contestRef={contestRef} viewerId={viewerId} />
       </div>
-    );
-  const deadline = getPhaseDeadline(contest.phase, contest);
-  const guide = getPhaseGuide({
-    phase: contest.phase,
-    hasSubmitted: Boolean(contest.mySubmissionId),
-    hasVoted: Boolean(contest.votedSubmissionId),
+      <ContestSubmissionCta contestRef={contestRef} />
+    </>
+  );
+}
+function ContestQuerySection({ id, viewerId }: { id: string; viewerId: string }) {
+  const [contestRef, { refetch }] = useBackgroundQuery(ContestDocument, {
+    variables: { id },
+    errorPolicy: 'all',
   });
-  const handleShare = async () => {
-    const method = await shareActions.share(
-      `${window.location.origin}${ROUTES.CONTEST(id)}`,
-      {
-        title: '웃긴순간 사진 대회',
-        text: buildContestShareText(contest.title),
-      },
-      { copied: '대회 링크를 복사했어요' },
-    );
-    if (method) trackEvent(ANALYTICS_EVENT.ContestShared, { contest_id: id, method });
+  const handleRetry = () => {
+    void refetch().catch(() => undefined);
   };
-  const handleSubmitPhoto = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
-      <UploadPhotoBottomSheet contestId={id} isOpen={isOpen} onClose={close} unmount={unmount} />
-    ));
+  return (
+    <AsyncBoundary
+      resetKey={id}
+      fallback={<ContestLoading />}
+      onRetry={refetch}
+      renderError={(error, retry) => <ContestFailure id={id} error={error} retry={retry} />}
+    >
+      <ContestContent id={id} contestRef={contestRef} viewerId={viewerId} retry={handleRetry} />
+    </AsyncBoundary>
+  );
+}
+export function ContestPageTemplate({ id }: { id: string }) {
   return (
     <div className="flex flex-1 flex-col">
-      <TopAppBar
-        title={contest.title}
-        backHref={ROUTES.GROUP(contest.groupId)}
-        actions={
-          <IconButton label="대회 공유" onClick={handleShare}>
-            <Share2 className="size-5" />
-          </IconButton>
-        }
-      />
-      <div className="flex flex-1 flex-col gap-5 p-4">
-        <section className="rounded-card bg-brand-soft p-4">
-          <PhaseBadge phase={contest.phase} />
-          <h2 className="mt-3 text-title text-ink">{guide.title}</h2>
-          <p className="mt-1 text-body text-muted">{guide.description}</p>
-          <p className="mt-3 text-caption text-muted">
-            {deadline.label} {formatDateTime(deadline.at)}
-          </p>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2"
-            onClick={() => {
-              query.refetch().catch(() => undefined);
-            }}
-          >
-            대회 상태 새로고침
-          </Button>
-        </section>
-        {contest.phase === Phase.Completed ? (
-          <ContestResults
-            key={id}
-            contestId={id}
-            title={contest.title}
-            viewerId={viewer.id}
-            isAdmin={contest.isAdmin}
-          />
-        ) : contest.phase === Phase.Upcoming ? null : (
+      <ViewerBoundary
+        guest={
           <>
-            <SegmentedControl
-              label="사진 정렬"
-              value={sort}
-              options={SORT_OPTIONS}
-              onValueChange={(next) => {
-                replaceSearchParams({ sort: next });
-                trackEvent(ANALYTICS_EVENT.PhotoSortChanged, { contest_id: id, sort: next });
-              }}
-            />
-            <ContestFeed
-              key={`${sort}:${contest.submissionCount}`}
-              contest={contest}
-              viewerId={viewer.id}
-              sort={sort}
-            />
+            <TopAppBar title="대회" backHref={ROUTES.HOME} />
+            <div className="p-4">
+              <LoginPanel nextPath={ROUTES.CONTEST(id)} />
+            </div>
           </>
-        )}
-        {contest.isAdmin && contest.hiddenSubmissions.length ? (
-          <section className="flex flex-col gap-4">
-            <h2 className="text-title text-ink">숨긴 사진</h2>
-            {contest.hiddenSubmissions.map((submission) => (
-              <SubmissionCard
-                key={submission.id}
-                submission={submission}
-                viewerId={viewer.id}
-                moderation={
-                  <ModerationActions
-                    submission={submission}
-                    contestId={id}
-                    isAdmin
-                    isMine={submission.author.id === viewer.id}
-                    isCompleted={contest.phase === Phase.Completed}
-                  />
-                }
-              />
-            ))}
-          </section>
-        ) : null}
-      </div>
-      {contest.phase === Phase.Submission ? (
-        <StickyCta>
-          <Button fullWidth disabled={Boolean(contest.mySubmissionId)} onClick={handleSubmitPhoto}>
-            {contest.mySubmissionId ? '사진 제출 완료' : '사진 제출하기'}
-          </Button>
-        </StickyCta>
-      ) : null}
+        }
+        fallback={<ContestLoading />}
+      >
+        {(viewerId) => <ContestQuerySection id={id} viewerId={viewerId} />}
+      </ViewerBoundary>
     </div>
   );
 }

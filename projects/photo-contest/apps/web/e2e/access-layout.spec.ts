@@ -8,6 +8,7 @@ test('열어둔 대회는 서버 단계가 바뀌면 새로고침 없이 투표 
   page,
   signIn,
 }) => {
+  test.setTimeout(110_000);
   const cookie = await signIn('자동전환-관리자');
   const group = await seedGroup(cookie, '자동전환 모임');
   const now = Date.now();
@@ -30,7 +31,38 @@ test('열어둔 대회는 서버 단계가 바뀌면 새로고침 없이 투표 
   await expect(page.getByText('시작 예정', { exact: true })).toBeVisible();
   await moveTestContest(API_URL, { contestId, phase: 'VOTING', origin: WEB_ORIGIN });
   await expect(page.getByText('투표 진행 중', { exact: true })).toBeVisible({ timeout: 35_000 });
+  await moveTestContest(API_URL, { contestId, phase: 'COMPLETED', origin: WEB_ORIGIN });
+  await expect(page.getByText('대회 종료', { exact: true })).toBeVisible({ timeout: 35_000 });
+  await expect(page.getByRole('button', { name: '결과 공유하기' })).toBeVisible();
 });
+
+test(
+  '홈과 MY의 사용자 정보는 브라우저 JS 실행 전 서버 HTML에 있어야 한다',
+  { tag: '@ios' },
+  async ({ page, signIn }) => {
+    await signIn('SSR 사용자');
+    const readServerText = async (path: string) => {
+      const response = await page.request.get(path);
+      expect(response.status()).toBe(200);
+      return page.evaluate(
+        (html) => {
+          const document = new DOMParser().parseFromString(html, 'text/html');
+          return {
+            text: Array.from(document.querySelectorAll('h1,h2,h3,p')).map((element) => element.textContent),
+            errors: document.querySelectorAll('template[data-dgst]').length,
+          };
+        },
+        await response.text(),
+      );
+    };
+    const home = await readServerText('/');
+    expect(home.text).toContain('SSR 사용자님의 그룹');
+    expect(home.errors).toBe(0);
+    const me = await readServerText('/me');
+    expect(me.text).toContain('SSR 사용자');
+    expect(me.errors).toBe(0);
+  },
+);
 
 test(
   '로그인 게이트와 공개 초대는 사적인 그룹 내용을 노출하지 않아야 한다',
