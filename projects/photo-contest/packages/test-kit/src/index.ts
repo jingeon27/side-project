@@ -16,3 +16,4 @@ export { createTestImage } from './image';
 export { startIsolatedApi } from './isolated-api';
 export type { IIsolatedApi } from './isolated-api';
 export { API_ROOT, PROJECT_ROOT } from './paths';
+export { createTestVideo } from './video';
