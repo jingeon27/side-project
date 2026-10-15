@@ -84,8 +84,14 @@ function FeedContent({
       <EmptyState title="아직 사진이 없어요" description="사진을 제출하면 친구들과 함께 볼 수 있어요." />
     );
   return (
-    <div className="flex flex-col gap-4">
-      <Button variant="ghost" size="sm" loading={pending} onClick={handleRefresh}>
+    <div className="grid items-start gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="col-span-full justify-self-start"
+        loading={pending}
+        onClick={handleRefresh}
+      >
         사진 새로고침
       </Button>
       {photos.map((submission, index) => (
@@ -119,7 +125,9 @@ function FeedContent({
           }
         />
       ))}
-      <FeedLoadMore hasMore={hasMore} loading={pending} onLoadMore={handleLoadMore} />
+      <div className="col-span-full">
+        <FeedLoadMore hasMore={hasMore} loading={pending} onLoadMore={handleLoadMore} />
+      </div>
     </div>
   );
 }

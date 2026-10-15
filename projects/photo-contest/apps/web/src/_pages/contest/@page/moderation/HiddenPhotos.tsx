@@ -13,8 +13,8 @@ export function HiddenPhotos({ contestRef, viewerId }: { contestRef: TContestQue
   if (!data || !data.contest.isAdmin || !data.contest.hiddenSubmissions.length) return null;
   const { contest } = data;
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-title text-ink">숨긴 사진</h2>
+    <section className="grid items-start gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      <h2 className="col-span-full text-title text-ink">숨긴 사진</h2>
       {contest.hiddenSubmissions.map((submission) => (
         <SubmissionCard
           key={submission.id}

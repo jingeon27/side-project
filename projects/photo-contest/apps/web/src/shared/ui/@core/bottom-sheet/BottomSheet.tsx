@@ -35,11 +35,11 @@ function Root({ isOpen, onClose, unmount, children, className }: IBottomSheetRoo
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal container={getOverlayContainer()}>
           <Drawer.Backdrop className="fixed inset-0 z-sheet bg-scrim opacity-[calc(1-var(--drawer-swipe-progress))] transition-opacity duration-[450ms] ease-sheet data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:duration-0" />
-          <Drawer.Viewport className="fixed inset-0 z-sheet flex items-end justify-center pb-[var(--drawer-keyboard-inset,0px)]">
+          <Drawer.Viewport className="fixed inset-0 z-sheet flex items-end justify-center pb-[var(--drawer-keyboard-inset,0px)] desktop:items-center desktop:px-6">
             <Drawer.Popup
               className={cn(
                 'flex max-h-[calc(100dvh-var(--safe-top)-var(--drawer-keyboard-inset,0px)-24px)] w-full max-w-app flex-col',
-                'rounded-t-sheet bg-surface text-ink shadow-sheet outline-none',
+                'rounded-t-sheet bg-surface text-ink shadow-sheet outline-none desktop:rounded-sheet',
                 '[transform:translateY(var(--drawer-swipe-movement-y))] transition-transform duration-[450ms] ease-sheet',
                 'data-ending-style:[transform:translateY(100%)] data-starting-style:[transform:translateY(100%)] data-swiping:select-none',
                 className,

@@ -66,9 +66,11 @@ function ResultsContent({
     if (method) trackEvent(ANALYTICS_EVENT.ResultShared, { contest_id: contest.id, method });
   };
   return (
-    <div className="flex flex-col gap-4">
-      <ResultBanner winnerCount={winners.length} />
-      <Button variant="secondary" onClick={handleShare}>
+    <div className="grid items-start gap-4 tablet:grid-cols-2 desktop:grid-cols-3">
+      <div className="col-span-full">
+        <ResultBanner winnerCount={winners.length} />
+      </div>
+      <Button variant="secondary" className="col-span-full justify-self-start" onClick={handleShare}>
         <Share2 aria-hidden className="size-4" />
         결과 공유하기
       </Button>

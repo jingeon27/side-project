@@ -1,4 +1,4 @@
-/** 레이아웃 셸의 DOM id. 오버레이는 휴대폰 열(#pc-main) 안에 띄운다. */
+/** 레이아웃 셸의 DOM id. 오버레이는 콘텐츠 영역(#pc-main) 안에 띄운다. */
 export const APP_ROOT_ID = 'pc-root';
 export const APP_MAIN_ID = 'pc-main';
 

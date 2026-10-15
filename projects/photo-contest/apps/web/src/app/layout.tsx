@@ -27,11 +27,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="ko" data-app={app?.appVersion}>
       <body>
-        {/* 데스크톱에서도 앱 WebView와 같은 가운데 휴대폰 열 하나로 보여 준다. */}
         <div id={APP_ROOT_ID} className="flex min-h-dvh justify-center bg-canvas">
           <main
             id={APP_MAIN_ID}
-            className="relative flex min-h-dvh w-full max-w-app flex-col bg-surface shadow-app"
+            className="relative flex min-h-dvh w-full max-w-web flex-col bg-surface shadow-app"
           >
             <AppProviders>{children}</AppProviders>
           </main>

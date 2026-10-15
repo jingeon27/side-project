@@ -44,7 +44,7 @@ export function BottomNav() {
     <nav
       aria-label="주요 메뉴"
       data-bottom-nav
-      className="sticky bottom-0 z-bottom-nav mt-auto shrink-0 border-t border-line bg-surface pb-(--safe-bottom) keyboard-open:hidden"
+      className="sticky bottom-0 z-bottom-nav mt-auto shrink-0 border-t border-line bg-surface pb-(--safe-bottom) desktop:hidden keyboard-open:hidden"
     >
       <ul className="grid h-bottom-nav grid-cols-2">
         <li>

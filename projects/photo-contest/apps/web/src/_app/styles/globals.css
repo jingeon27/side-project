@@ -65,6 +65,12 @@
     --toast-bottom: calc(var(--spacing-bottom-nav) + 12px + var(--safe-bottom));
   }
 
+  @media (width >= 1024px) {
+    #pc-main:has([data-bottom-nav]) {
+      --toast-bottom: calc(16px + var(--safe-bottom));
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     ::before,
