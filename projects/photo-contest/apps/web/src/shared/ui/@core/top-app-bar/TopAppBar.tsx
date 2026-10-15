@@ -16,23 +16,28 @@ function DesktopNavigation() {
   const pathname = usePathname();
   return (
     <nav aria-label="주요 메뉴" className="hidden items-center gap-2 desktop:flex">
-      {[
-        { href: ROUTES.HOME, label: '홈' },
-        { href: ROUTES.ME, label: 'MY' },
-      ].map(({ href, label }) => (
-        <Link
-          key={href}
-          href={href}
-          aria-current={pathname === href ? 'page' : undefined}
-          className={cn(
-            'flex min-h-touch items-center rounded-control px-5 text-label transition-colors active:bg-sunken',
-            pathname === href ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-sunken hover:text-ink',
-          )}
-        >
-          {label}
-        </Link>
-      ))}
+      <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
+        홈
+      </NavigationLink>
+      <NavigationLink href={ROUTES.ME} active={pathname === ROUTES.ME}>
+        MY
+      </NavigationLink>
     </nav>
+  );
+}
+
+function NavigationLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'flex min-h-touch items-center rounded-control px-5 text-label transition-colors active:bg-sunken',
+        active ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-sunken hover:text-ink',
+      )}
+    >
+      {children}
+    </Link>
   );
 }
 
