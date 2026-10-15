@@ -1,0 +1,13 @@
+type PhotoFeedItem {
+  id: ID!
+  groupId: ID!
+  groupName: String!
+  contestTitle: String!
+  phase: Phase!
+  submission: Submission!
+}
+
+type Query {
+  "가입한 모든 그룹의 공개 사진을 제출 시각 최신순으로 모은다. 숨긴 사진은 관리자에게도 표시하지 않는다."
+  myPhotoFeed(offset: Int = 0, limit: Int = 24): [PhotoFeedItem!]!
+}

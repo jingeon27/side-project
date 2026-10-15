@@ -28,6 +28,12 @@ interface IAccessOptions {
 export class MembershipService {
   constructor(private readonly db: Database) {}
 
+  /** 여러 그룹을 합친 조회도 멤버십 범위를 먼저 고정한다. */
+  async memberGroupIds(userId: string): Promise<string[]> {
+    const memberships = await this.db.groupMember.findMany({ where: { userId }, select: { groupId: true } });
+    return memberships.map(({ groupId }) => groupId);
+  }
+
   async requireMember(
     userId: string,
     groupId: string,
