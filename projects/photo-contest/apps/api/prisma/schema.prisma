@@ -20,6 +20,9 @@ model User {
   reports Report[]
   likes Like[]
   appLoginTickets AppLoginTicket[]
+  posts Post[]
+  postUploads PostUpload[]
+  postLikes PostLike[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
 }
@@ -45,6 +48,8 @@ model Group {
   createdAt DateTime @default(now())
   members GroupMember[]
   contests Contest[]
+  posts Post[]
+  postUploads PostUpload[]
 }
 model GroupMember {
   groupId String
@@ -93,6 +98,7 @@ model Submission {
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   upload Upload @relation(fields: [uploadId], references: [id])
+  galleryPost Post?
   votes Vote[]
   reports Report[]
   likes Like[]
@@ -146,4 +152,46 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
   deliveredAt DateTime?
   @@index([deliveredAt, createdAt])
+}
+
+model PostUpload {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  groupId String
+  expiresAt DateTime
+  storageKey String? @unique
+  kind String @default("PHOTO")
+  contentType String @default("image/webp")
+  byteSize Int @default(0)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  post Post?
+  @@index([expiresAt])
+}
+model Post {
+  id String @id @default(cuid())
+  groupId String
+  authorId String
+  uploadId String @unique
+  title String
+  body String @default("")
+  hidden Boolean @default(false)
+  createdAt DateTime @default(now())
+  legacySubmissionId String? @unique
+  legacySubmission Submission? @relation(fields: [legacySubmissionId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  upload PostUpload @relation(fields: [uploadId], references: [id])
+  likes PostLike[]
+  @@index([groupId, createdAt, id])
+}
+model PostLike {
+  postId String
+  userId String
+  createdAt DateTime @default(now())
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([postId, userId])
+  @@index([userId])
 }
