@@ -9,7 +9,7 @@ import { match } from 'ts-pattern';
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { InviteCard } from '@/features/invite';
 import { isGroupOwner } from '@/features/group';
-import { GroupDocument } from '@/shared/api/generated';
+import { GalleryDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -17,10 +17,10 @@ import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { GroupContests } from './contests/GroupContests';
+import { CreatePostButton, GalleryBoard } from '@/features/post';
 import { GroupCommunity } from './community/GroupCommunity';
 
-function GroupFrame({ title = '그룹', children }: { title?: string; children: ReactNode }) {
+function GroupFrame({ title = '갤러리', children }: { title?: string; children: ReactNode }) {
   return (
     <>
       <TopAppBar title={title} backHref={ROUTES.HOME} />
@@ -64,19 +64,36 @@ function GroupContent({
   const group = data.group;
   return (
     <GroupFrame title={group.name}>
-      <InviteCard
-        groupId={group.id}
-        groupName={group.name}
-        inviteToken={group.inviteToken}
-        canRegenerate={isGroupOwner(group.role)}
-      />
-      <GroupContests groupRef={groupRef} />
-      <GroupCommunity groupRef={groupRef} viewerId={viewerId} />
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-card bg-sunken p-5">
+        <div>
+          <p className="text-label text-brand">{group.members.length}명이 함께하는 갤러리</p>
+          <p className="mt-2 text-body text-muted">
+            사진도 동영상도, 합성도 환영해요. 언제든 웃긴 순간을 남겨보세요.
+          </p>
+        </div>
+        <CreatePostButton groupId={group.id} />
+      </section>
+      <GalleryBoard groupId={group.id} />
+      <GalleryBoard groupId={group.id} popular />
+      <details className="rounded-card border border-line p-4">
+        <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
+          초대와 갤러리 멤버
+        </summary>
+        <div className="mt-4 flex flex-col gap-6">
+          <InviteCard
+            groupId={group.id}
+            groupName={group.name}
+            inviteToken={group.inviteToken}
+            canRegenerate={isGroupOwner(group.role)}
+          />
+          <GroupCommunity groupRef={groupRef} viewerId={viewerId} />
+        </div>
+      </details>
     </GroupFrame>
   );
 }
 function GroupQuerySection({ id, viewerId }: { id: string; viewerId: string }) {
-  const [groupRef, { refetch }] = useBackgroundQuery(GroupDocument, {
+  const [groupRef, { refetch }] = useBackgroundQuery(GalleryDocument, {
     variables: { id },
     errorPolicy: 'all',
   });

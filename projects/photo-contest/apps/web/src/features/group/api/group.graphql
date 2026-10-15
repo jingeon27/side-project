@@ -1,4 +1,4 @@
-# 홈 그룹 카드: 이름, 내 역할, 멤버 수, 최근 대회 단계
+# MY 갤러리 카드: 이름, 내 역할, 멤버 수
 fragment GroupCard on Group {
   id
   name
@@ -8,11 +8,6 @@ fragment GroupCard on Group {
     user {
       id
     }
-  }
-  contests {
-    id
-    title
-    phase
   }
 }
 
@@ -45,5 +40,22 @@ query Group($id: ID!) {
 mutation CreateGroup($name: String!) {
   createGroup(name: $name) {
     ...GroupCard
+  }
+}
+
+query Gallery($id: ID!) {
+  group(id: $id) {
+    id
+    name
+    role
+    inviteToken
+    members {
+      role
+      user {
+        id
+        nickname
+        avatar
+      }
+    }
   }
 }

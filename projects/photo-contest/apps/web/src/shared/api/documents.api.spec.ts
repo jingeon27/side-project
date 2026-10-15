@@ -25,6 +25,7 @@ import {
   CreateSubmissionDocument,
   DeleteSubmissionDocument,
   GroupDocument,
+  GalleryDocument,
   GroupLeaderboardDocument,
   HideSubmissionDocument,
   InvitePreviewDocument,
@@ -248,6 +249,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     ).toBe(false);
   });
   it('기간 없는 사진·동영상 게시물과 이달의 인기·관리자 삭제 문서가 실행돼야 한다', async () => {
+    expect((await ok(GalleryDocument, member, { id: groupId })).group.name).toBe('문서 계약 그룹');
     const variables = { groupId, sort: PostSort.Newest, offset: 0, limit: 24 };
     const created = [];
     for (const video of [false, true]) {

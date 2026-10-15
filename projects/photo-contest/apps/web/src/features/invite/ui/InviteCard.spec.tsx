@@ -88,8 +88,8 @@ afterEach(() => {
 describe('InviteCard', () => {
   it('읽기 전용 입력에 절대 초대 주소를 보여 줘야 한다', () => {
     renderCard();
-    expect(screen.getByRole('textbox', { name: '그룹 초대 링크' })).toHaveValue(INVITE_URL);
-    expect(screen.getByRole('textbox', { name: '그룹 초대 링크' })).toHaveAttribute('readonly');
+    expect(screen.getByRole('textbox', { name: '갤러리 초대 링크' })).toHaveValue(INVITE_URL);
+    expect(screen.getByRole('textbox', { name: '갤러리 초대 링크' })).toHaveAttribute('readonly');
   });
 
   it('앱 안에서는 앱 공유 시트로 초대 주소를 보내야 한다', async () => {

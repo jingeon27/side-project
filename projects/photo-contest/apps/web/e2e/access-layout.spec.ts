@@ -56,11 +56,11 @@ test(
       );
     };
     const home = await readServerText('/');
-    expect(home.text).toContain('아직 올라온 사진이 없어요');
+    expect(home.text).toContain('아직 올라온 게시물이 없어요');
     expect(home.errors).toBe(0);
     const me = await readServerText('/me');
     expect(me.text).toContain('SSR 사용자');
-    expect(me.text).toContain('내 그룹');
+    expect(me.text).toContain('내 갤러리');
     expect(me.errors).toBe(0);
   },
 );
@@ -110,7 +110,7 @@ test(
   async ({ page, signIn }, testInfo) => {
     await signIn('레이아웃-사용자');
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: '최신 사진' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const main = await page.locator('#pc-main').boundingBox();
     expect(main?.width).toBeLessThanOrEqual(1200);
@@ -126,7 +126,7 @@ test(
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-home.png`, fullPage: true });
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page.getByRole('heading', { name: '레이아웃-사용자' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '내 그룹' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '내 갤러리' })).toBeVisible();
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await expect(page).toHaveURL(WEB_ORIGIN + '/');
     await expect(page.getByRole('button', { name: /구글|Google/ })).toBeVisible();

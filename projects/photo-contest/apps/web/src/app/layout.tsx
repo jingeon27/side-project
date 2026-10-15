@@ -8,8 +8,8 @@ import '@/_app/styles/tailwind.css';
 import { APP_MAIN_ID, APP_ROOT_ID, THEME_COLOR } from '@/shared/constants/layout';
 
 export const metadata: Metadata = {
-  title: { default: '웃긴순간 — 우리끼리 사진 대회', template: '%s · 웃긴순간' },
-  description: '친구들과 비공개 사진 대회를 열고 최고의 순간을 뽑아보세요.',
+  title: { default: '웃긴순간 — 우리끼리 웃긴순간 갤러리', template: '%s · 웃긴순간' },
+  description: '사진·동영상·합성으로 웃긴 순간을 나누는 우리끼리 갤러리.',
 };
 
 // 사진을 확대해 봐야 하므로 확대는 막지 않는다. 노치·홈 인디케이터 영역까지 그리고 안전 영역은 CSS env()로 비킨다.

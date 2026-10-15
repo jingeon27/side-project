@@ -1,6 +1,5 @@
 import { ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 
 import type { GroupCardFragment } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -11,12 +10,10 @@ import { isGroupOwner } from '../lib/group.helper';
 
 interface IGroupCardProps {
   group: GroupCardFragment;
-  /** 최근 대회 줄(단계 배지 + 제목). 화면이 대회 기능으로 채운다. */
-  latestContest?: ReactNode;
 }
 
 /** 마이페이지의 내 그룹 카드. 카드 전체가 그룹 화면 링크다. */
-export function GroupCard({ group, latestContest }: IGroupCardProps) {
+export function GroupCard({ group }: IGroupCardProps) {
   return (
     <Link
       href={ROUTES.GROUP(group.id)}
@@ -37,7 +34,7 @@ export function GroupCard({ group, latestContest }: IGroupCardProps) {
           <Users aria-hidden className="size-3.5" />
           {formatCount(group.members.length)}명의 친구
         </span>
-        {latestContest ?? <span className="text-caption text-muted">첫 대회를 기다리고 있어요</span>}
+        <span className="text-caption text-muted">사진·동영상으로 나누는 웃긴 순간</span>
       </span>
       <ChevronRight aria-hidden className="size-5 shrink-0 text-subtle" />
     </Link>

@@ -1,91 +1,83 @@
-import { createTestImage, moveTestContest } from '@photo-contest/test-kit';
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import type { Page } from '@playwright/test';
 
-import { API_URL, WEB_ORIGIN } from './support/env';
 import { authenticate, expect, test } from './support/test';
 
-async function submitPhoto(page: Page, caption: string) {
-  await page.getByRole('button', { name: '사진 제출하기', exact: true }).click();
-  const sheet = page.getByRole('dialog');
-  await sheet
-    .getByLabel('사진 선택', { exact: true })
-    .setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: await createTestImage() });
-  await sheet.getByLabel('사진 설명').fill(caption);
+async function writePost(page: Page, title: string, video = false) {
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+  await sheet.getByLabel('제목', { exact: true }).fill(title);
+  await sheet.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+    name: video ? 'clip.mp4' : 'photo.png',
+    mimeType: video ? 'video/mp4' : 'image/png',
+    buffer: video ? await createTestVideo() : await createTestImage(),
+  });
+  await sheet.getByLabel('내용', { exact: true }).fill('합성도 환영하는 상시 갤러리');
   await sheet.getByRole('checkbox').check();
-  await sheet.getByRole('button', { name: '사진 제출하기', exact: true }).click();
+  await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
   await expect(sheet).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '사진 제출 완료' })).toBeDisabled();
+  await expect(
+    page.getByRole('region', { name: '최신 게시물', exact: true }).getByRole('article', { name: title }),
+  ).toBeVisible();
 }
 
 test(
-  '그룹 생성부터 친구 가입·사진 제출·좋아요·투표·결과까지 이어져야 한다',
-  { tag: '@ios' },
+  '갤러리 생성·초대·여러 사진과 동영상·이달의 인기·관리자 삭제가 이어져야 한다',
+  { tag: ['@ios', '@desktop'] },
   async ({ page, browser, signIn }) => {
-    await signIn('통합-방장');
+    await signIn('통합 관리자');
     await page.goto('/me');
-    await page.getByRole('button', { name: '그룹 만들기' }).click();
-    await page.getByRole('dialog').getByLabel('그룹 이름').fill('통합 모임');
-    await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();
+    await page.getByRole('button', { name: '갤러리 만들기', exact: true }).click();
+    await page.getByRole('dialog').getByLabel('갤러리 이름').fill('언제나 웃긴 갤러리');
+    await page.getByRole('dialog').getByRole('button', { name: '갤러리 만들기', exact: true }).click();
     await expect(page).toHaveURL(/\/groups\/[^/]+$/);
-    const invite = await page.getByLabel('그룹 초대 링크').inputValue();
-    await page.getByRole('button', { name: '대회 만들기', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('대회 제목').fill('통합 대회');
-    await page.getByRole('dialog').getByRole('button', { name: '대회 열기' }).click();
-    await expect(page).toHaveURL(/\/contests\/[^/]+$/);
-    const contestId = new URL(page.url()).pathname.split('/').at(-1) ?? '';
-    await submitPhoto(page, '방장의 웃긴 순간');
+    const galleryUrl = page.url();
+    await expect(page.getByRole('button', { name: '대회 만들기', exact: true })).toHaveCount(0);
+    await page.getByText('초대와 갤러리 멤버', { exact: true }).click();
+    const invite = await page.getByLabel('갤러리 초대 링크').inputValue();
+    await writePost(page, '첫 번째 합성');
+    await writePost(page, '두 번째 순간');
 
     const friendContext = await browser.newContext({ viewport: { width: 393, height: 851 } });
     try {
-      await authenticate(friendContext, '통합-친구');
+      await authenticate(friendContext, '통합 회원');
       const friend = await friendContext.newPage();
       await friend.goto(invite);
       await friend.getByRole('button', { name: '초대 수락하고 가입하기' }).click();
-      await expect(friend).toHaveURL(/\/groups\/[^/]+$/);
-      await expect(friend.getByRole('button', { name: '대회 만들기', exact: true })).toHaveCount(0);
-      await friend.getByRole('link', { name: /통합 대회/ }).click();
-      await submitPhoto(friend, '친구의 웃긴 순간');
-      const ownerPhoto = friend.getByRole('article', { name: '방장의 웃긴 순간' });
-      await ownerPhoto.getByRole('button', { name: '좋아요 0개' }).click();
-      await expect(ownerPhoto.getByRole('button', { name: '좋아요 1개' })).toHaveAttribute(
+      await expect(friend).toHaveURL(galleryUrl);
+      await writePost(friend, '움직이는 웃음', true);
+      const latest = friend.getByRole('region', { name: '최신 게시물', exact: true });
+      const videoPost = latest.getByRole('article', { name: '움직이는 웃음' });
+      const video = videoPost.locator('video');
+      await video.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() => video.evaluate((el: HTMLVideoElement) => el.readyState))
+        .toBeGreaterThanOrEqual(1);
+      await video.evaluate((el: HTMLVideoElement) => el.play());
+      await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(0);
+      await video.evaluate((el: HTMLVideoElement) => {
+        el.pause();
+        el.currentTime = 0.3;
+      });
+      const photo = latest.getByRole('article', { name: '첫 번째 합성' });
+      await photo.getByRole('button', { name: '첫 번째 합성 좋아요' }).click();
+      await expect(photo.getByRole('button', { name: '첫 번째 합성 좋아요' })).toHaveAttribute(
         'aria-pressed',
         'true',
       );
-      await moveTestContest(API_URL, { contestId, phase: 'VOTING', origin: WEB_ORIGIN });
-      await friend.reload();
-      await ownerPhoto.getByRole('button', { name: '이 사진에 한 표!' }).click();
-      await expect(ownerPhoto.getByRole('button', { name: '내가 뽑은 사진' })).toBeDisabled();
-      await expect(
-        friend
-          .getByRole('article', { name: '친구의 웃긴 순간' })
-          .getByRole('button', { name: '내 사진에는 투표할 수 없어요' }),
-      ).toBeDisabled();
+      await expect(photo.getByRole('button', { name: '첫 번째 합성 삭제' })).toHaveCount(0);
+      const popular = friend.getByRole('region', { name: '이달의 인기', exact: true });
+      await expect(popular.getByRole('article').first()).toHaveAccessibleName('첫 번째 합성');
       await page.reload();
-      await page
-        .getByRole('article', { name: '친구의 웃긴 순간' })
-        .getByRole('button', { name: '숨기기' })
+      const ownerLatest = page.getByRole('region', { name: '최신 게시물', exact: true });
+      await ownerLatest
+        .getByRole('article', { name: '움직이는 웃음' })
+        .getByRole('button', { name: '움직이는 웃음 삭제' })
         .click();
-      await expect(page.getByRole('heading', { name: '숨긴 사진' })).toBeVisible();
-      await expect(page.getByRole('article', { name: '친구의 웃긴 순간' })).toHaveCount(1);
-      await expect(page.getByRole('article', { name: '친구의 웃긴 순간' })).toHaveAttribute(
-        'data-hidden',
-        'true',
-      );
-      await moveTestContest(API_URL, { contestId, phase: 'COMPLETED', origin: WEB_ORIGIN });
-      await page.reload();
-      await expect(page.getByRole('heading', { name: '이번 대회 최고의 웃음!' })).toBeVisible();
-      await expect(page.getByRole('article', { name: '방장의 웃긴 순간' })).toHaveAttribute(
-        'data-winner',
-        'true',
-      );
-      await expect(
-        page.getByRole('article', { name: '방장의 웃긴 순간' }).getByText('1표', { exact: true }),
-      ).toBeVisible();
-      await expect(page.getByRole('button', { name: '사진 제출하기', exact: true })).toHaveCount(0);
-      await page.getByRole('button', { name: '뒤로 가기' }).click();
-      await expect(page).toHaveURL(/\/groups\/[^/]+$/);
-      await expect(page.getByRole('heading', { name: '그룹 순위' })).toBeVisible();
-      await expect(page.getByText('우승 1회 · 받은 표 1 · 좋아요 1')).toBeVisible();
+      await page.getByRole('alertdialog').getByRole('button', { name: '게시물 삭제하기' }).click();
+      await expect(page.getByRole('article', { name: '움직이는 웃음' })).toHaveCount(0);
+      await friend.reload();
+      await expect(friend.getByRole('article', { name: '움직이는 웃음' })).toHaveCount(0);
     } finally {
       await friendContext.close();
     }
