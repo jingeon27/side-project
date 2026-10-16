@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Article } from '@/entities/article/model/types';
 import { ArticleCard } from '@/entities/article/ui/article-card';
 import { ArticleSearch } from '@/features/article-search/ui/article-search';
+import { matchesArticleSearch } from '@/features/article-search/lib/matches-article-search';
 import { CategoryFilter, type Category } from '@/features/category-filter/ui/category-filter';
 import { labels, type UiLocale } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
@@ -23,8 +24,6 @@ export function BlogFeed({
   const t = labels(locale);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category | 'all'>(fixedCategory ?? 'all');
-  const [tag, setTag] = useState(fixedTag ?? 'all');
-  const tags = useMemo(() => [...new Set(articles.flatMap((article) => article.tags))].sort(), [articles]);
   const counts = useMemo(
     () =>
       articles.reduce<Record<string, number>>(
@@ -37,22 +36,25 @@ export function BlogFeed({
       ),
     [articles],
   );
-  const filtered = articles.filter(
+  const searchArticles = articles.filter(
     (article) =>
-      (category === 'all' || article.category === category) &&
-      (tag === 'all' || article.tags.includes(tag)) &&
-      article.title.toLocaleLowerCase(locale).includes(query.trim().toLocaleLowerCase(locale)),
+      (category === 'all' || article.category === category) && (!fixedTag || article.tags.includes(fixedTag)),
   );
+  const filtered = searchArticles.filter((article) => matchesArticleSearch(article, query, locale));
   useEffect(() => {
     if (!query.trim()) return;
     const timer = setTimeout(() => trackEvent('search_performed', { has_query: true }), 600);
     return () => clearTimeout(timer);
   }, [query]);
-  const isFiltered = Boolean(query || (category !== 'all' && !fixedCategory) || (tag !== 'all' && !fixedTag));
+  const isFiltered = Boolean(query || (category !== 'all' && !fixedCategory));
+  const resetFilters = () => {
+    setQuery('');
+    setCategory(fixedCategory ?? 'all');
+  };
   return (
     <div className="blog-feed">
       <div className="feed-search">
-        <ArticleSearch locale={locale} value={query} onChange={setQuery} />
+        <ArticleSearch locale={locale} value={query} onChange={setQuery} articles={searchArticles} />
       </div>
       {!fixedCategory && (
         <CategoryFilter
@@ -69,41 +71,11 @@ export function BlogFeed({
         <p aria-live="polite">
           <strong>{filtered.length}</strong> {t.blog.results}
         </p>
-        <div className="feed-toolbar-controls">
-          {isFiltered && (
-            <button
-              type="button"
-              className="text-button reset-filters"
-              onClick={() => {
-                setQuery('');
-                setCategory(fixedCategory ?? 'all');
-                setTag(fixedTag ?? 'all');
-              }}
-            >
-              {t.common.clearFilters}
-            </button>
-          )}
-          {tags.length > 0 && !fixedTag && (
-            <label className="tag-select">
-              <span>{t.common.tags}</span>
-              <select
-                value={tag}
-                onChange={(event) => {
-                  setTag(event.target.value);
-                  trackEvent('tag_selected', { tag_id: event.target.value });
-                }}
-                aria-label={t.common.tags}
-              >
-                <option value="all">{t.common.all}</option>
-                {tags.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
+        {isFiltered && (
+          <button type="button" className="text-button reset-filters" onClick={resetFilters}>
+            {t.common.clearFilters}
+          </button>
+        )}
       </div>
       {filtered.length ? (
         <div className="article-list">
@@ -116,15 +88,7 @@ export function BlogFeed({
           <h2>{articles.length ? t.common.noResults : t.common.empty}</h2>
           <p>{articles.length ? t.common.noResultsDescription : t.common.emptyDescription}</p>
           {articles.length ? (
-            <button
-              type="button"
-              className="text-link"
-              onClick={() => {
-                setQuery('');
-                setCategory(fixedCategory ?? 'all');
-                setTag(fixedTag ?? 'all');
-              }}
-            >
+            <button type="button" className="text-link" onClick={resetFilters}>
               {t.common.clearFilters}
             </button>
           ) : (

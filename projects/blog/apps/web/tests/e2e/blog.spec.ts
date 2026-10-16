@@ -15,7 +15,7 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.getByRole('navigation').getByRole('link', { name: ko.nav.blog, exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/blog$/);
-  await page.getByRole('searchbox', { name: ko.common.search }).fill(article.title);
+  await page.getByRole('combobox', { name: ko.common.search }).fill(article.title);
   await expect(page.locator('.article-list .article-row')).toHaveCount(1);
   await page.getByRole('link', { name: article.title, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: article.title })).toBeVisible();
@@ -26,6 +26,66 @@ test('browse home, search articles, open detail, and visit About', async ({ page
     'mailto:jingeon27@gmail.com',
   );
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
+});
+
+test('unified suggestions apply an exact tag without requiring it in the title', async ({ page }) => {
+  await page.goto('/ko/blog');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
+  await search.click();
+  await expect(search).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await expect(page.getByRole('option', { name: /^#/ })).toHaveCount(0);
+
+  const tag = 'react';
+  const partialMatches = articles.filter(
+    (entry) => entry.title.toLowerCase().includes(tag) || entry.tags.some((value) => value.includes(tag)),
+  );
+  const exactMatches = articles.filter((entry) => entry.tags.includes(tag));
+  expect(exactMatches.some((entry) => !entry.title.toLowerCase().includes(tag))).toBe(true);
+  await search.fill('ReAcT');
+  await expect(page.locator('.article-list .article-row')).toHaveCount(partialMatches.length);
+  const suggestions = page.getByRole('listbox');
+  const bounds = await suggestions.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByRole('option', { name: '#react', exact: true }).click();
+  await expect(search).toHaveValue('#react');
+  await expect(search).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page.locator('.article-list .article-row')).toHaveCount(exactMatches.length);
+  for (const match of exactMatches) {
+    await expect(page.getByRole('link', { name: match.title, exact: true })).toBeVisible();
+  }
+  await page.getByRole('button', { name: ko.common.clear, exact: true }).click();
+  await expect(search).toHaveValue('');
+  await expect(page.locator('.article-list .article-row')).toHaveCount(articles.length);
+});
+
+test('Command and Control shortcuts open search, Escape closes it, and Enter opens an article', async ({
+  page,
+}) => {
+  await page.goto('/ko/blog');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  for (const shortcut of ['Meta+k', 'Control+k']) {
+    await page.keyboard.press(shortcut);
+    await expect(search).toBeFocused();
+    await expect(search).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(search).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+  }
+  await search.fill(article.title);
+  const option = page.getByRole('option', { name: article.title, exact: true });
+  await expect(option).toBeVisible();
+  await search.press('ArrowDown');
+  await expect(option).toHaveAttribute('aria-selected', 'true');
+  await search.press('Enter');
+  await expect(page).toHaveURL(new RegExp(`${encodeURIComponent(article.slug)}$`));
+  await expect(page.getByRole('heading', { name: article.title, level: 1 })).toBeVisible();
 });
 
 test('category and tag routes only show matching content', async ({ page }) => {

@@ -10,7 +10,8 @@
 
 ## 구현한 기능
 
-- Home / Blog / About, 카테고리 4종, 태그, 제목 검색과 필터, 최신순 목록
+- Home / Blog / About, 카테고리 4종, 제목·태그 통합 검색과 카테고리 필터, 최신순 목록
+- inline cmdk combobox, Cmd/Ctrl+K 검색 포커스와 키보드 탐색. 입력 중 태그를 최대 5개 제안하고, 태그 선택은 `#tag` 정확 필터를 적용하며 글 선택은 상세로 이동
 - 독립적인 언어별 MDX와 SEO JSON, 안정적인 콘텐츠 ID와 고정 slug
 - 메타데이터·SEO·번역 존재·MDX 컴파일·내부 링크·이미지·301 대상 검증
 - 정적으로 분석 가능한 MDX import registry와 빌드 시 생성한 검색 인덱스
@@ -55,3 +56,9 @@ Vercel 프로젝트 생성·도메인 연결·Git 연동 배포와 GA4 속성·S
 최신 `develop`에 재기반하고 Yarn이 양쪽 lockfile을 병합한 뒤 immutable 설치를 확인했다. 블로그 앱의 `hoistingLimits: workspaces` 설정으로 ESLint·Vitest 실행 경로를 격리했다. Sentry 11의 `dataCollection`과 `beforeSendSpan`에 맞춰 설정하고, 서버·Edge·브라우저의 DSN 유무별 초기화와 streaming span 개인정보 필터를 검증했다.
 
 콘텐츠·TypeScript·ESLint·Prettier, Vitest **41개**, Production build(정적 페이지 **98개**), Playwright **24개**를 다시 통과했다. 위 Lighthouse 수치는 2026-10-16의 화면 검증 결과다. 외부 서비스 연결과 실제 배포는 수행하지 않았다.
+
+## 통합 검색 검증 (2026-10-17)
+
+제목 검색과 태그 드롭다운을 하나의 cmdk combobox로 합쳤다. 제목이나 태그 일부로 글을 찾고, 입력 중 제안하는 태그를 선택하면 해당 태그와 정확히 일치하는 글만 남긴다. 태그 제안은 최대 5개로 제한하며 글 제안보다 먼저 표시한다. Cmd/Ctrl+K, 방향키, Enter, Escape와 입력 지우기를 지원한다.
+
+Immutable 설치, 콘텐츠·TypeScript·ESLint·Prettier, Vitest **55개**, Production build(정적 페이지 **98개**), 데스크톱·모바일 Playwright **28개**를 통과했다. 기존 검색·카테고리·태그 범위와 제목에 없는 태그 검색, 한글 조합 중 Enter, 키보드 초기화, 제안 개수와 ARIA 연결을 확인했다. 원문 MDX와 게시글 SEO는 변경하지 않았다.
