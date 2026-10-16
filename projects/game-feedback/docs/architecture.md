@@ -56,6 +56,16 @@ Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, 
 
 공통 패키지는 자체 lint·타입·UI 테스트를 소유한다. 양쪽 CI는 공통 패키지 check를 실행하고 공유 packages 변경에도 두 앱을 검증한다. 두 웹의 개발 서버·DB를 섞지 않는다.
 
+## 서버 렌더링과 검색 메타데이터
+
+`shared/seo`는 정적 페이지별 title·description·keywords와 canonical·Open Graph·Twitter, 구조화 데이터 직렬화·색인 정책을 소유한다. `features/*/api/*.server.ts`의 REST 조회를 `index.server.ts`에서 명시적으로 공개하며 client barrel과 분리한다. `_pages/post/index.server.tsx`와 `_pages/profile/index.server.tsx`는 같은 React request cache를 페이지와 `generateMetadata`에서 재사용한다. `src/app`은 이 진입점을 재수출한다. 공개 origin은 환경설정만 신뢰한다.
+
+서버 transport는 SDK의 요청별 `baseUrl`로 고정된 API origin에 접근하고 Game Feedback 세션 cookie 하나만 전달한다. SDK의 Zod 파싱·fallback·no-store는 그대로 적용하며 전역 fetch 교체나 요청 간 세션 cache를 사용하지 않는다. 서버 세션은 `ServiceProviders` 안의 경계에서 준비해 QueryClient의 초기 세션을 만들고, 상세 초기 데이터는 동일 viewer일 때만 사용한다. 계정이 자동 갱신되는 경우에도 이전 요청 취소·private cache 제거 이후 새 세션을 확정하며 늦게 도착한 결과가 최신 로그인/로그아웃을 덮어쓰지 않는다.
+
+`GET /api/users/:id`는 공개 author·가입 시각·보이는 요청/답변/도움됨 수만 반환한다. role·Google subject·약관·세션·운영 검증 시각은 공개하지 않는다. 작성글은 기존 `GET /api/posts?authorId=...`의 cursor 흐름을 사용한다. 공개/차단/비데모 사용자 필터를 기존 UserVisibilityService와 공유하며 숨김·삭제된 부모 게시글의 답변도 집계하지 않는다. DB schema 변경은 없다.
+
+`DiscussionForumPosting`은 실제 게시글·보이는 답변/댓글, `ProfilePage`는 공개 프로필의 실제 활동 값을 사용한다. JSON-LD의 `<`·줄 구분자를 이스케이프해 사용자 본문이 script를 닫지 못하게 한다. `/og`, `/robots.txt`, `/sitemap.xml`은 `_app/seo`가 구현하고 예약 라우트는 어댑터만 둔다. 활성화된 sitemap은 인증 cookie 없이 공개 목록을 순회하며 최대 500 page/50,000 URL 범위와 cursor 진행을 검증한다.
+
 ## Mobile WebView 구성
 
 `apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host와 PKCE 시스템 인증을 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.

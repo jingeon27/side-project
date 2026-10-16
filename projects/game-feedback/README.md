@@ -69,6 +69,16 @@ APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
 
 [모바일 실행·테스트 가이드](apps/mobile/README.md)에 origin 설정, 시스템 브라우저 Google 로그인, 뒤로 가기·딥링크·연결 복구와 실기기 확인 범위를 정리했다.
 
+## 게시글·공개 프로필과 SEO
+
+게시글 상세는 `/ko/posts/<id>`, 공개 플레이어 프로필은 `/ko/users/<id>`다. 설정의 공개 프로필 링크 또는 피드·게시글·답변·댓글의 작성자 이름에서 프로필로 이동하고 공개 요청·답변·도움됨 수와 작성글을 확인한다. 프로필 작성글은 실제 링크로 다음 페이지를 제공한다. 두 상세 페이지의 본문·제목·작성자 정보는 JavaScript 없이도 서버 HTML에 포함된다.
+
+피드·가이드·약관·개인정보·문의·채팅·알림·설정에는 각각 title·description·keywords·canonical·Open Graph·Twitter 메타데이터를 둔다. 게시글은 실제 제목·요약·작성/수정 시각과 `DiscussionForumPosting`, 프로필은 닉네임·활동 수와 `ProfilePage`/`Person` 구조화 데이터를 생성한다. 공통 공유 이미지는 `/og`의 1200×630 PNG다. 없는/숨긴/삭제한 콘텐츠와 차단 상대는 메타데이터 조회에서도 404로 처리한다.
+
+`GAME_FEEDBACK_SITE_URL`에는 서비스의 실제 공개 origin을 설정한다. 호스트 요청 헤더를 대표 도메인으로 사용하지 않는다. `GAME_FEEDBACK_INDEXING=true`, production, HTTPS, 데모 비활성 조건이 모두 충족될 때 공개 페이지의 색인·robots·sitemap을 연다. 기본 알파·개발·데모·테스트는 noindex이며 채팅·알림·설정과 테스트 계정 상세는 항상 noindex다. 실제 검색 공개·Search Console 등록은 배포와 별도다.
+
+번역이 준비되지 않은 `/en`·`/ja`는 같은 내용의 `/ko`를 canonical로 지정하고 번역된 페이지처럼 hreflang을 광고하지 않는다. 검색·탭 URL은 피드의 대표 주소를 사용하고, 내용이 달라지는 프로필 cursor 페이지는 해당 URL을 canonical로 유지한다. sitemap은 공개 요청과 해당 작성자의 프로필을 중복 없이 싣고 개인 경로·테스트 계정은 제외한다. 대규모 목록에는 분할 sitemap이 필요하며 현재 범위를 넘거나 cursor가 반복되면 불완전한 XML을 성공으로 반환하지 않는다.
+
 ## 데이터 격리
 
 개발 DB는 `127.0.0.1:55442/game_feedback`, 테스트 DB는 `127.0.0.1:55444/game_feedback_test`이며 서비스 전용 `game_feedback` 역할을 쓴다. bootstrap 관리자 자격 증명은 프로젝트 `.data`에만 저장하고 앱에 전달하지 않는다. 앱 역할에는 superuser·DB 생성·역할 생성 권한이 없다. DB의 TCP 연결은 loopback으로 한정한다.

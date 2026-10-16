@@ -237,6 +237,30 @@ Web 소유 UI 검증을 위해 저장소의 기존 Testing Library·jsdom 버전
 
 이전 head `3136eb9`의 Game Feedback Actions는 통과했다. 같은 head의 Photo Contest verify는 Web/Mobile에서 `command not found: vitest`로 실패했고 브라우저 두 레인은 통과했다. 로컬 bin 조회에서도 기존 Photo Workspace의 실행 경로 문제를 확인했다. 이번 오류 경계 변경에는 다른 앱 코드·설정 수정을 포함하지 않는다. 최종 테스트 스키마 0개를 확인하고 소유 테스트 DB를 중지했다. 개발 Web/API 200·고정 계정 3개·기존 게시글 6개 보존도 확인했다.
 
+## 페이지별 SEO와 공개 플레이어 프로필
+
+피드·가이드·약관·개인정보·문의·채팅·알림·설정의 title·description·keywords·canonical·Open Graph·Twitter 메타데이터를 각각 정의했다. 게시글 상세의 기존 client-only 조회를 서버 렌더링·초기 query 데이터로 연결해 JavaScript 없이 제목·본문·답변·댓글을 볼 수 있게 했다. 실제 게시글 제목·본문 요약·작성자·게시/수정 시각으로 article 메타데이터와 `DiscussionForumPosting` JSON-LD를 생성한다. 수정 완료 시 router refresh로 현재 문서의 메타 제목도 갱신한다.
+
+`/[locale]/users/[id]`에는 공개 프로필과 작성글 목록을 추가했다. 닉네임·서비스 인증/테스트 표시·대표 태그·가입일과 보이는 요청/답변/도움됨 수를 보여주고 `ProfilePage`/`Person` JSON-LD와 profile OG 메타데이터를 생성한다. 게시글·답변·댓글·피드의 작성자 이름이 프로필로 연결된다. 카드의 상세 이동과 작성자 링크를 서로 중첩하지 않고 기존 카드 클릭 영역을 유지한다. 작성글 cursor 페이지는 서버 HTML의 실제 링크로 이동할 수 있다. 모바일의 안전한 딥링크 목록에도 users 경로를 추가했다.
+
+API에는 `GET /api/users/:id`와 기존 `/api/posts`의 authorId 필터를 추가했다. 사용자 내부 subject·권한·검증 시각·약관은 공개 프로필 응답에 포함하지 않는다. 기존 공개/차단/비데모 사용자 규칙을 적용하고, 숨김·삭제된 부모의 답변도 활동 집계에서 제외한다. 없는·차단된·숨긴·삭제된 대상은 metadata 조회에서도 404다. REST Zod→OpenAPI→Orval 경로를 재생성했으며 JSON operation은 43개다. 새 프로필 응답도 SDK에서 실제 검증한다. DB schema·Migration은 변경하지 않았다.
+
+서버 요청마다 SDK baseUrl·AbortSignal을 전달하며 Game Feedback cookie 하나만 고정 API origin에 보낸다. 전역 fetch 교체 없이 Zod 검증·fallback·no-store를 유지하고 React cache는 request 안의 metadata/화면 중복 조회만 줄인다. 세션 초기화는 서비스 오류 경계 안에서 수행한다. 초기 snapshot은 같은 viewer일 때만 사용하며 자동 세션 조회도 이전 요청 취소·private cache 제거 후 새 세션을 확정한다. 이 과정에서 발견한 자동 계정 전환의 잔여 cache 경로를 고쳐 느린 profile 재조회 중 이전 계정 snapshot이 다시 보이지 않게 했다. 서버·브라우저의 가입일 표시는 Asia/Seoul로 일치시켰다.
+
+색인은 실제 HTTPS origin·production·명시적 indexing=true·demo=false를 함께 요구한다. 알파·개발·데모는 기본 noindex이며 개인 채팅/알림/설정과 테스트 계정 상세는 항상 제외한다. 미번역 en/ja 경로는 ko canonical을 사용한다. `/og`의 PNG와 `/robots.txt`·`/sitemap.xml`을 추가했고 sitemap은 공개 목록·작성자만 중복 없이 순회한다. origin은 환경설정에서만 읽으며 사용자 Host 헤더를 반영하지 않는다. JSON-LD는 script 종료 문자와 Unicode 줄 구분자를 이스케이프한다. 500 cursor page/50,000 URL을 넘는 목록에는 분할 sitemap이 필요하며 범위 초과·API 실패·반복 cursor를 빈/불완전한 성공 응답으로 숨기지 않는다.
+
+| 검증                       | 결과                                                                                                                                           |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| API Vitest+Supertest       | 8개 파일·58개 통과. 공개 응답 필드·활동 집계·작성자 cursor·숨김/삭제·양방향 차단·비데모 접근 포함                                              |
+| SDK Vitest                 | 3개 파일·32개 통과. 새 프로필 응답, 필수 ID 거부, 비공개 필드 제거, 요청별 server origin·cookie 분리 포함                                      |
+| Web Vitest                 | 11개 파일·35개 통과. metadata·색인 조건·JSON-LD 탈출·공개 sitemap 순회/실패·cookie allowlist·자동 계정 전환 포함                               |
+| Web Playwright             | 전체 20개 통과(약 1.1분). JS 비활성 crawler의 8개 화면 메타, 상세/프로필 HTML·JSON-LD·404, 차단된 metadata, 느린 계정 전환, 수정 후 title 포함 |
+| Mobile Vitest / Playwright | 25개 / Android Chromium·iOS WebKit host 6개 통과(36.4초)                                                                                       |
+| 후속 UI 검사               | 카드 링크 표현 변경 후 폼·SEO 7개 재검증 통과(30.6초)                                                                                          |
+| 정적 검사·빌드             | 집계 타입/FSD lint·API/Web production build·Android/iOS Metro export 통과                                                                      |
+
+구현은 설치된 Next 16.4 metadata·robots·sitemap 문서와 [Google DiscussionForumPosting](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum), [ProfilePage](https://developers.google.com/search/docs/appearance/structured-data/profile-page), [meta 지원 문서](https://developers.google.com/search/docs/crawling-indexing/special-tags)를 참고했다. 키워드 태그를 추가한 것을 검색 순위 보장으로 표현하지 않는다. 실제 공개 도메인·Search Console 등록·Google 색인/리치 결과·외부 OAuth·네이티브 실기기 검증은 수행하지 않았다. 기본 비공개 알파 상태를 유지한다. 재생성 대상 73개 파일의 hash가 재생성 전후 일치했고, 전체 format·diff 검사도 통과했다. 최종 소유 테스트 스키마 0개와 개발 고정 계정 3개·게시글 6개 보존을 확인했다. 소유 테스트 DB를 중지했고 개발 홈·게시글·공개 프로필·robots 응답 200과 메타데이터를 확인했다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

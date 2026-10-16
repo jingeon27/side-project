@@ -12,6 +12,8 @@ corepack yarn workspace @game-feedback/sdk test
 
 앱의 `features/<domain>/api`에서는 `@game-feedback/sdk`의 생성 함수를 호출한다. Orval의 `schemas.type: zod`, `fetch.runtimeValidation`, `includeZodSchemaInArguments`가 응답 스키마를 자동 연결한다. 생성된 `.zod.ts`·client·validation 파일은 직접 수정하지 않는다. 호출자가 options로 스키마를 덮어쓸 수 없으며, transport는 스키마 없는 요청을 거부한다. 검증을 우회하던 raw API helper는 공개 API에서 제거했다.
 
+서버 컴포넌트의 요청은 생성 함수의 options에 `baseUrl`과 필요한 header·AbortSignal을 전달할 수 있다. 이 값은 요청별이며 전역 설정이나 fetch를 교체하지 않는다. `baseUrl`·Zod schema 옵션은 실제 fetch init에 전달하지 않고, 브라우저의 기본 상대 `/api` URL·credentials·no-store 동작을 유지한다. Web의 server-only 어댑터는 신뢰한 API origin과 Game Feedback 세션 cookie만 전달한다. 공개 프로필도 같은 생성·검증 경로를 사용한다.
+
 ## 응답 fallback 정책
 
 서버 계약은 엄격하게 유지한다. SDK의 `src/response/fallback-policy.ts`가 스키마에 선언된 표시 필드에만 Zod `.catch(...)` 정책을 적용한 뒤 원래 응답 스키마로 전체를 다시 검증한다. 필드 이름이 같아도 fallback이 그 필드의 계약을 만족하지 않으면 적용하지 않는다. 원본 입력은 수정하지 않는다.
