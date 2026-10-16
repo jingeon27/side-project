@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   ChatMessageInputSchema,
   ChatReadInputSchema,
@@ -7,11 +7,15 @@ import {
   type ChatMessage,
   type Conversation,
 } from '@game-feedback/contracts';
-import { Prisma, type PrismaClient } from './generated/prisma';
-import { ApiError, decodeCursor, encodeCursor } from './security';
-import { GameService, type SessionRequest } from './service';
+import { Prisma, PrismaClient } from '../generated/prisma';
+import { ApiError } from '../common/http/api-error';
+import { decodeCursor, encodeCursor } from '../common/pagination';
+import { parse } from '../common/validation';
+import { requireUser } from '../auth/session-access';
+import type { SessionRequest } from '../auth/session.types';
+import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { ChatEvents } from './chat.events';
-import { authorDto, authorSelect } from './users';
+import { authorDto, authorSelect } from '../users/user.presenter';
 
 const userSelect = authorSelect;
 const conversationInclude = {
@@ -22,12 +26,6 @@ const messageInclude = { sender: { select: authorSelect } } as const;
 type ConversationRow = Prisma.ChatConversationGetPayload<{ include: typeof conversationInclude }>;
 type MessageRow = Prisma.ChatMessageGetPayload<{ include: typeof messageInclude }>;
 
-function parse<T>(schema: z.ZodType<T>, input: unknown): T {
-  const result = schema.safeParse(input);
-  if (!result.success)
-    throw new ApiError(400, 'VALIDATION_ERROR', result.error.issues[0]?.message ?? '입력값을 확인해주세요.');
-  return result.data;
-}
 function messageDto(row: MessageRow): ChatMessage {
   return {
     id: row.id,
@@ -56,13 +54,13 @@ function unreadWhere(row: ConversationRow, userId: string): Prisma.ChatMessageWh
   };
 }
 
+@Injectable()
 export class ChatService {
-  readonly db: PrismaClient;
   constructor(
-    private readonly game: GameService,
-    private readonly events: ChatEvents,
+    @Inject(PrismaClient) readonly db: PrismaClient,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(ChatEvents) private readonly events: ChatEvents,
   ) {
-    this.db = game.db;
     events.canAccess = async (userId, id) => {
       try {
         await this.visible(userId, id);
@@ -71,6 +69,20 @@ export class ChatService {
         return false;
       }
     };
+  }
+  private async excluded(userId: string) {
+    const demoAuthors = this.config.demoMode
+      ? []
+      : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
+    const blocks = await this.db.block.findMany({
+      where: { OR: [{ userId }, { blockedUserId: userId }] },
+    });
+    return [
+      ...new Set([
+        ...demoAuthors.map((user) => user.id),
+        ...blocks.map((block) => (block.userId === userId ? block.blockedUserId : block.userId)),
+      ]),
+    ];
   }
   private async blocked(
     userId: string,
@@ -98,7 +110,7 @@ export class ChatService {
     });
     if (!row) throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
     const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
-    if ((!this.game.options.demoMode && peer.demoKey) || (await this.blocked(userId, peer.id, db))) {
+    if ((!this.config.demoMode && peer.demoKey) || (await this.blocked(userId, peer.id, db))) {
       throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
     }
     return row;
@@ -124,16 +136,12 @@ export class ChatService {
     };
   }
   async create(req: SessionRequest, input: unknown) {
-    const user = this.game.requireUser(req);
+    const user = requireUser(req);
     const { recipientId } = parse(ConversationInputSchema, input);
     if (recipientId === user.id)
       throw new ApiError(400, 'CANNOT_CHAT_SELF', '자신에게 메시지를 보낼 수 없습니다.');
     const peer = await this.db.user.findUnique({ where: { id: recipientId }, select: userSelect });
-    if (
-      !peer ||
-      (!this.game.options.demoMode && peer.demoKey) ||
-      (await this.blocked(user.id, recipientId))
-    ) {
+    if (!peer || (!this.config.demoMode && peer.demoKey) || (await this.blocked(user.id, recipientId))) {
       throw new ApiError(404, 'RECIPIENT_UNAVAILABLE', '이 사용자와 대화를 시작할 수 없습니다.');
     }
     const [firstUserId, secondUserId] = [user.id, recipientId].sort();
@@ -159,10 +167,10 @@ export class ChatService {
     return this.dto(row, user.id);
   }
   async list(req: SessionRequest) {
-    const user = this.game.requireUser(req);
+    const user = requireUser(req);
     const query = parse(ListQuerySchema, req.query);
     const cursor = decodeCursor(query.cursor);
-    const excluded = await this.game.excluded(req);
+    const excluded = await this.excluded(user.id);
     const base: Prisma.ChatConversationWhereInput = {
       OR: [{ firstUserId: user.id }, { secondUserId: user.id }],
       firstUserId: { notIn: excluded },
@@ -203,7 +211,7 @@ export class ChatService {
     };
   }
   async messages(req: SessionRequest, id: string) {
-    const user = this.game.requireUser(req);
+    const user = requireUser(req);
     const conversation = await this.visible(user.id, id);
     const query = parse(ListQuerySchema, req.query);
     const cursor = decodeCursor(query.cursor);
@@ -231,7 +239,7 @@ export class ChatService {
     };
   }
   async send(req: SessionRequest, id: string, input: unknown) {
-    const user = this.game.requireUser(req);
+    const user = requireUser(req);
     const body = parse(ChatMessageInputSchema, input);
     // Authorization precedes idempotency lookup so UUID reuse cannot reveal another conversation.
     await this.visible(user.id, id);
@@ -286,7 +294,7 @@ export class ChatService {
     return messageDto(result.message);
   }
   async read(req: SessionRequest, id: string, input: unknown) {
-    const user = this.game.requireUser(req);
+    const user = requireUser(req);
     const { messageId } = parse(ChatReadInputSchema, input);
     const result = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;

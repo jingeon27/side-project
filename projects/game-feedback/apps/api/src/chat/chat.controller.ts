@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req, Sse } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { ChatEvents } from './chat.events';
-import type { SessionRequest } from './service';
+import type { SessionRequest } from '../auth/session.types';
 
 @Controller('api')
 export class ChatController {

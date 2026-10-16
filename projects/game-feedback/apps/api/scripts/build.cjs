@@ -1,7 +1,15 @@
 const { spawnSync } = require('node:child_process');
-const { cpSync } = require('node:fs');
-const result = spawnSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', 'tsconfig.json'], {
-  stdio: 'inherit',
-});
+const { cpSync, rmSync } = require('node:fs');
+const { join } = require('node:path');
+const apiDir = join(__dirname, '..');
+const outputDir = join(apiDir, 'dist');
+rmSync(outputDir, { recursive: true, force: true });
+const result = spawnSync(
+  process.execPath,
+  [require.resolve('typescript/bin/tsc'), '-p', join(apiDir, 'tsconfig.json')],
+  {
+    stdio: 'inherit',
+  },
+);
 if (result.status !== 0) process.exit(result.status ?? 1);
-cpSync('src/generated/prisma', 'dist/generated/prisma', { recursive: true });
+cpSync(join(apiDir, 'src/generated/prisma'), join(outputDir, 'generated/prisma'), { recursive: true });

@@ -1,18 +1,20 @@
 import { Observable, type Subscriber } from 'rxjs';
-import type { MessageEvent } from '@nestjs/common';
-import type { PrismaClient } from './generated/prisma';
-import type { SessionRequest } from './service';
-import { ApiError } from './security';
+import { Inject, Injectable, type MessageEvent, type OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '../generated/prisma';
+import type { SessionRequest } from '../auth/session.types';
+import { ApiError } from '../common/http/api-error';
+import { APP_CONFIG, type AppConfig } from '../config/app.config';
 
 type Client = { userId: string; sessionHash: string; subscriber: Subscriber<MessageEvent> };
 
 /** Per-process invalidation stream. Private content is always fetched through authenticated REST. */
-export class ChatEvents {
+@Injectable()
+export class ChatEvents implements OnModuleDestroy {
   private readonly clients = new Set<Client>();
   canAccess: (userId: string, conversationId: string) => Promise<boolean> = async () => false;
   constructor(
-    private readonly db: PrismaClient,
-    private readonly demoMode: boolean,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   private async authenticated(client: Client): Promise<boolean> {
@@ -24,7 +26,7 @@ export class ChatEvents {
       !!session?.user &&
       session.userId === client.userId &&
       session.expiresAt.getTime() > Date.now() &&
-      (this.demoMode || !session.user.demoKey)
+      (this.config.demoMode || !session.user.demoKey)
     );
   }
   stream(req: SessionRequest): Observable<MessageEvent> {
@@ -81,5 +83,8 @@ export class ChatEvents {
   }
   closeAll() {
     for (const client of this.clients) client.subscriber.complete();
+  }
+  onModuleDestroy() {
+    this.closeAll();
   }
 }
