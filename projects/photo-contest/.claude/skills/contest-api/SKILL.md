@@ -22,6 +22,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 세션은 HttpOnly 쿠키 `contest_session` 하나(43자 base64url). cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 4KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
 - `session.service`가 요청당 한 번만 조회한다(WeakMap). GraphQL·REST 모두 `@Viewer()`/`@OptionalViewer()`를 쓴다. Authorization 헤더는 보지 않는다.
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
+- 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
 - OAuth(Google·카카오): state + PKCE, 시도 10분, 콜백은 항상 302. 다른 provider의 이메일로 계정을 합치지 않는다. 개발 로그인은 NODE_ENV=development && ENABLE_DEV_LOGIN=true에서만, 운영은 fail-closed.
 - 앱 핸드오프: `/auth/<provider>?app_challenge=<43자>`면 콜백에서 세션 쿠키를 만들지 않고 2분짜리 AppLoginTicket(코드 해시·challenge) 후 `<MOBILE_APP_SCHEME>://auth/callback?code=`로 보낸다. `POST /auth/app/exchange {code, verifier}`는 base64url(SHA-256(verifier))를 timingSafeEqual로 비교하고 한 번만 소비한다. 실패는 모두 403 같은 메시지. 틀린 verifier는 티켓을 소비하지 않는다.
 
@@ -30,6 +31,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 현재 제품은 Post·PostUpload·PostLike다. 갤러리는 종료되지 않으며 대회 없이 여러 번 등록한다.
 - galleryPosts의 groupId가 없으면 가입한 모든 갤러리, 있으면 해당 멤버십을 검사한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
 - 작성자와 OWNER만 삭제한다. 파일도 매 요청 멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
+- 웹 업로드는 GraphQL Upload scalar·multipart middleware와 uploadPostMedia mutation을 사용한다. 티켓 소유·만료·멤버십을 먼저 검사하고 스트림 크기를 제한한다. 기존 REST 업로드도 같은 검증·저장 로직을 쓴다.
 - /post-uploads는 5분 일회용 해시 티켓, 원본 100MB 상한이다. 사진은 기존 sharp 변환을 재사용하고 동영상은 MediaInfo WASM으로 컨테이너·코덱·시간을 검사한다. MP4 H.264/AAC·WebM VP8/VP9+Opus/Vorbis, 5분 이하.
 - /media/:id는 비공개 no-store 스트리밍·byte Range 206/416을 지원한다. 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
 - 생성·좋아요·삭제 도메인 이벤트는 같은 DB 트랜잭션에 ID·종류만 기록한다.

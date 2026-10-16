@@ -14,7 +14,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 | `src/features` | 서버 도메인 slice(group, contest, submission, like, vote, moderation, invite, share…) | `@/features/…` |
 | `src/shared` | 도메인 없는 기반(api, ui/@core, model, lib, constants) | `@/shared/…` |
 
-- 의존 방향은 `_app → _pages → widgets → features → shared`. 위로 import하지 않는다. 다른 slice는 `index.ts`로만, 화면 slice끼리는 import하지 않는다. `apps/web/eslint/fsd-boundaries.mjs`가 막는다(`types/`·`mocks/`·`*.schema`·`*.server`만 깊은 import 허용).
+- 의존 방향은 `_app → _pages → widgets → features → shared`. 위로 import하지 않는다. 다른 slice는 `index.ts`로만, 화면 slice끼리는 import하지 않는다. 저장소 루트의 `packages/eslint-config/src/fsd.mjs`가 막는다(`types/`·`mocks/`·`*.schema`·`*.server`만 깊은 import 허용).
 - `_app`·`_pages`의 밑줄은 Next `app`·`pages` 라우터와 겹치지 않게 하려는 것이다.
 - 배치: 한 화면에서만 → `_pages/<screen>`, 도메인 + 두 화면 이상 → `features/<domain>`, 도메인 없음 → `shared`. 두 번째 사용처가 생기기 전에 미리 내리지 않는다.
 - 화면 slice: `@page/<Screen>PageTemplate.tsx`가 조립하고, 화면 전용 조각은 `@page/ui`, `@page/bottom-sheet`, `@page/model`, 섹션 폴더(`@page/results/` 등)에 둔다. 하위 화면이 같이 쓰는 것만 `@ui`·`@model`·`@lib`로 올린다.
@@ -22,6 +22,10 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
 
 현재 제품의 갤러리는 상시 게시판이다. 홈은 전체 가입 갤러리의 최신 게시물·이달의 인기, MY는 갤러리 목록·생성이다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
+
+## 이벤트 핸들러
+
+한 곳에서만 쓰는 핸들러는 `onClick={async () => { … }}`처럼 JSX prop에 인라인으로 선언한다. 폼도 `onSubmit={form.handleSubmit(async (values) => { … })}`로 연결한다. 여러 곳에서 재사용할 때만 `handle*` 함수로 분리한다. 콜백 prop 이름은 `on*`를 쓴다.
 
 ## 상태
 

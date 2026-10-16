@@ -11,6 +11,7 @@ projects/photo-contest/
   packages/test-kit/ # 격리 DB·API·테스트 fixture 도구
   docs/
 packages/typescript-config/
+packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
 
 루트·프로젝트의 검사 명령은 앱과 패키지에 위임합니다. 테스트 러너·설정·파일·의존성은 각 앱 또는 패키지가 소유합니다. 화면 없는 API의 e2e는 Vitest·supertest로 실행하며, 공용 e2e 워크스페이스는 없습니다.
@@ -41,6 +42,7 @@ corepack yarn dev:photo-contest
 별도 터미널에서 `corepack yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.
 
 ```sh
+corepack yarn workspace @side/eslint-config check
 corepack yarn workspace @side/photo-contest check
 corepack yarn workspace @photo-contest/web lint
 corepack yarn workspace @photo-contest/mobile lint

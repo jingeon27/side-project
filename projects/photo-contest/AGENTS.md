@@ -16,8 +16,9 @@
 
 ## 공통 규칙
 
+- else 문은 쓰지 않는다. 가드·조기 반환이나 ts-pattern으로 분기한다. 공용 ESLint 규칙과 RuleTester fixture는 저장소의 `packages/eslint-config`가 소유한다.
 - named export, 명시적 re-export. `export *` 금지. Next 라우트·설정 파일만 default export.
-- 컴포넌트와 공개 함수는 function 선언, 내부 함수는 arrow. 이벤트 핸들러는 `handle*`, props 콜백은 `on*`.
+- 컴포넌트와 공개 함수는 function 선언, 내부 함수는 arrow. 한 곳에서만 쓰는 이벤트 핸들러는 JSX prop에 인라인으로 선언한다. 여러 곳에서 재사용할 때만 함수로 분리하며, 분리한 핸들러는 `handle*`, props 콜백은 `on*`로 이름 짓는다.
 - `interface I*`, `type T*`. enum 대신 `as const`. `any`와 non-null `!` 금지(테스트 제외).
 - 주석은 코드가 말하지 못하는 '왜'만 짧게 한국어로.
 - 생성 파일은 손으로 고치지 않는다: GraphQL 타입은 `codegen`, Prisma client는 `db:generate`.

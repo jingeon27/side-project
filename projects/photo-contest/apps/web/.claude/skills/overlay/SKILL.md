@@ -5,12 +5,18 @@ description: 웹(apps/web)에서 바텀시트·확인 대화상자를 만들거�
 
 ## 열기
 
-- 여는 쪽의 클릭 핸들러에서 overlay-kit으로 한 줄로 연다. 열림 상태를 컴포넌트가 들지 않는다.
+- 한 번만 쓰는 열기 동작은 버튼의 `onClick`에 `overlay.open`을 직접 선언한다. 여러 곳에서 재사용할 때만 핸들러를 분리한다. 열림 상태를 컴포넌트가 들지 않는다.
 
 ```tsx
-overlay.open(({ isOpen, close, unmount }) => (
-  <XxxBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} contestId={contestId} />
-));
+<Button
+  onClick={() =>
+    overlay.open(({ isOpen, close, unmount }) => (
+      <XxxBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} contestId={contestId} />
+    ))
+  }
+>
+  열기
+</Button>
 ```
 
 - `unmount`를 꼭 넘긴다. 시트는 닫힘 애니메이션이 끝나면 이것을 불러 자신을 지운다. 빠지면 닫힌 시트가 `OverlayProvider`에 계속 남는다.

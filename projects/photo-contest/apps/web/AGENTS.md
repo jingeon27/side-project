@@ -21,6 +21,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `features`: 인증·갤러리·post(상시 게시물·영상·인기·삭제)·초대·공유와 기존 대회 호환 기능.
 - `shared`: 생성 GraphQL 문서·API 링크·router/error/form/bridge 기반·UI.
 
+아이디·비밀번호 가입/로그인은 RHF/Zod 폼과 GraphQL useMutation을 쓰며 구글·카카오 OAuth도 제공한다. 설정을 못 불러와도 직접 로그인 폼은 사용할 수 있다. 업로드는 UploadHttpLink와 파일 mutation을 쓰고 컴포넌트에서 fetch를 호출하지 않는다.
+
+공용 lint와 FSD 규칙은 저장소 `packages/eslint-config`에 있고 RuleTester의 실제 fixture 파일로 검증한다. else 없이 가드·조기 반환·ts-pattern으로 분기하며, 한 번 쓰는 이벤트는 JSX에 인라인으로 선언한다.
+
 서버 상태는 Apollo 캐시, 입력은 RHF·Zod, 오버레이는 overlay-kit이다. mutation 오류·시트 열림을 useState로 복제하지 않는다. RSC Cookie는 서버 API 모듈에서만 읽어 요청 헤더에 보내고 클라이언트에 넘기지 않는다.
 
 홈은 `GalleryPostsDocument`로 가입한 모든 갤러리의 사진·동영상을 최신순으로 보여 주며 이달의 인기도 독립 조회한다. 갤러리 목록·생성은 MY에 둔다. 갤러리 정보는 대회 필드가 없는 `GalleryDocument`로 조회한다. 웹 폭은 최대 1200px이고 사진은 휴대폰 1열·태블릿(768px 이상) 2열·데스크톱(1024px 이상) 3열이다. 시트·입력 폼은 읽기 쉬운 폭을 유지한다. 직접 찍은 사진·동영상·합성을 환영한다. 갤러리는 상시 운영하며 대회·마감일 없이 여러 게시물을 올린다. 고정 메뉴와 정렬 항목은 JSX로 직접 선언한다.

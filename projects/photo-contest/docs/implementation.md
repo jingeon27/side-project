@@ -1,6 +1,6 @@
 # 웃긴순간 구현 기록
 
-2026-10-15 기준. 현재 제품은 기간 없는 갤러리 커뮤니티다. 실사용·전환율·재방문 성과는 아직 측정하지 않았다.
+2026-10-16 기준. 현재 제품은 기간 없는 갤러리 커뮤니티다. 실사용·전환율·재방문 성과는 아직 측정하지 않았다.
 
 ## 제품과 구조
 
@@ -18,6 +18,8 @@ Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이
 
 `/media/:id`는 요청마다 멤버십을 검사하고 no-store·nosniff와 byte Range 206/416을 지원한다. 로컬·S3 저장소에서 스트리밍해 탐색할 때 파일 전체를 메모리에 올리지 않는다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
 
+웹의 파일 전송은 requestPostUpload → uploadPostMedia → createPost mutation이다. Apollo UploadHttpLink가 Blob/File을 multipart로 전송한다. 이전 사진 제출도 uploadSubmissionPhoto mutation을 사용한다. API는 Origin·세션·티켓 소유/만료·멤버십을 확인하고 크기가 제한된 스트림을 실제 사진/동영상 검사로 넘긴다. REST 업로드는 호환용으로 같은 저장 로직을 쓴다.
+
 ## 웹의 조회와 상태
 
 최신·인기·갤러리 정보는 각각 QueryRef와 Suspense/오류 경계를 갖는다. RSC PreloadQuery가 같은 문서와 변수로 미리 준비한다. 갤러리 정보는 대회 필드가 없는 GalleryDocument로 조회한다. 인증은 ViewerBoundary, 닫힌 상태 분기는 ts-pattern을 사용한다.
@@ -28,14 +30,20 @@ Apollo는 `offsetLimitPagination(['groupId', 'sort'])`으로 목록을 분리한
 
 ## 인증·모바일·모니터링
 
-HttpOnly 세션과 Origin 검사, OAuth state/PKCE, 앱의 일회용 로그인 교환을 유지한다. 파일과 글의 접근 권한은 서버가 확인한다. 도메인 이벤트는 같은 트랜잭션에 ID·종류만 기록한다. API는 Sentry, 웹·앱은 Sentry·Amplitude를 사용하며 키가 없으면 전송하지 않는다.
+직접 정한 아이디·비밀번호로 가입·로그인할 수 있다. 아이디는 소문자로 정규화하고 PasswordCredential에 salt를 쓴 scrypt 해시만 저장한다. 등록·로그인은 GraphQL mutation으로 같은 HttpOnly 세션을 발급하며 이전 요청 세션을 폐기한다. AuthAttempt의 DB 증가로 반복 요청을 제한하고 만료 버킷을 정리한다. 없는 아이디와 틀린 비밀번호는 같은 오류·해시 검증 비용으로 처리한다. 구글·카카오 OAuth state/PKCE와 앱의 일회용 로그인 교환도 유지한다. 로컬에 OAuth 키는 없으므로 실제 제공자 계정 인증은 키 설정 후 검증한다. 파일과 글의 접근 권한은 서버가 확인한다. 도메인 이벤트는 같은 트랜잭션에 ID·종류만 기록한다. API는 Sentry, 웹·앱은 Sentry·Amplitude를 사용하며 키가 없으면 전송하지 않는다.
 
 Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크·뒤로 가기·복귀를 연결한다. 모바일의 공유·복사 테스트는 펼침 영역을 열고, 햅틱 테스트는 새 갤러리 게시물의 좋아요를 사용한다.
 
+## 공용 린트와 오버레이
+
+저장소 packages/eslint-config가 else 금지·컴포넌트 fetch 금지·React 핸들러 규칙과 앱 경로를 주입받는 FSD 규칙을 제공한다. RuleTester는 실제 fixture 파일과 cases.json을 읽으며 패키지 자체 Vitest에서 실행한다. 웹·모바일·프로젝트 설정이 이 패키지를 소비하고 CI가 패키지 검사도 실행한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
+
+시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
+
 ## 검증
 
-- Vitest 697개: API unit 58·실제 PostgreSQL/supertest 184, 웹 unit/UI 268·실제 문서 계약 6, 모바일 unit/UI 137·API 9, bridge 35.
-- Playwright 41개(웹 17·모바일 24) 통과. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 웹 Chrome·WebKit·데스크톱·가짜 앱과 모바일 Android/iOS 가짜 WebView에서 갤러리 생성·초대·사진/동영상 등록·좋아요·인기 정렬·관리자 삭제, 접근 제한·반응형·SSR·앱 기능을 검사한다. 실제 MP4를 재생하고 currentTime·탐색을 확인한다.
+- Vitest 723개: API unit 63·실제 PostgreSQL/supertest 193, 웹 unit/UI 238·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 41.
+- Playwright 47개(웹 23·모바일 24) 통과. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 웹 Chrome·WebKit·데스크톱·가짜 앱과 모바일 Android/iOS 가짜 WebView에서 갤러리 생성·초대·사진/동영상 등록·좋아요·인기 정렬·관리자 삭제, 접근 제한·반응형·SSR·앱 기능을 검사한다. 실제 MP4를 재생하고 currentTime·탐색을 확인한다.
 - codegen·타입 검사·lint와 웹 프로덕션 빌드를 검사한다. 테스트 러너와 설정은 각 앱이 소유하고 전용 DB의 임시 스키마·별도 서버 포트를 사용한다.
 - 기존 대회 API·이전 URL의 단계·정렬·권한 테스트도 유지한다. 새 갤러리에는 이 흐름을 노출하지 않는다.
 
@@ -45,4 +53,4 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 개발 환경 반영
 
-현재 변경은 별도 worktree와 생성 Prisma client에서 검증했다. 개발 DB의 public 스키마에는 자동 적용하지 않는다. `20261015090000_gallery_posts`를 개발 DB에 적용한 뒤 API·웹을 반영해야 새 갤러리 화면이 동작한다. 테스트 DB는 개발 DB와 다른 55434의 photo_contest_test이며 각 레인이 임시 스키마를 만들고 정리한다.
+갤러리 마이그레이션은 앞선 전체 실행 요청에 따라 개발 환경에 반영했다. 직접 가입 기능은 `20261016090000_password_login`으로 PasswordCredential·AuthAttempt 테이블만 추가하며 기존 사용자와 게시물을 보존한다. 실행 요청에 따라 개발 DB에도 적용해 현재 웹에서 직접 가입할 수 있다. 새 환경에서는 db:migrate 후 실행한다. 테스트 DB는 개발 DB와 다른 55434의 photo_contest_test이며 각 레인이 임시 스키마를 만들고 정리한다.
