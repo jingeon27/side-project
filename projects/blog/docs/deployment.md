@@ -60,7 +60,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 3. 브라우저·서버·source map에 같은 release 식별자를 사용합니다. 서버는 명시적 release가 없으면 Vercel commit SHA를 사용합니다.
 4. Preview에서 의도적인 테스트 오류를 발생시켜 브라우저와 서버 이벤트 수신을 확인한 뒤 테스트 코드를 제거합니다. 사용자 데이터가 포함되지 않는지 이벤트 payload를 확인합니다.
 
-오류 이벤트에서 user, request body·headers·cookies·query string을 제거합니다. 이메일, Bearer 값, URL query·fragment와 민감한 이름의 속성을 필터링합니다. 기본 PII 전송·Replay는 비활성화하고 운영 trace sampling은 10%로 설정합니다. 예상 가능한 Next.js 404 오류는 전송 대상에서 제외합니다. [Sentry Next.js 설정](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/)
+오류 이벤트에서 user, request body·headers·cookies·query string을 제거합니다. 이메일, Bearer 값, URL query·fragment와 민감한 이름의 속성을 필터링합니다. Sentry 11의 `dataCollection`에서 사용자 정보·쿠키·양방향 HTTP 헤더/본문·URL query·AI 입력/출력·DB 데이터·큐·GraphQL 문서/변수·stack 변수와 소스 문맥 수집을 명시적으로 끕니다. 기본 span streaming을 사용하며 `beforeSendSpan`으로 개별 span도 필터링합니다(`beforeSendTransaction`은 streaming에서 호출되지 않음). Replay는 비활성화하고 운영 trace sampling은 10%로 설정합니다. 예상 가능한 Next.js 404 오류는 전송 대상에서 제외합니다. [Sentry 11 마이그레이션](https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md#senddefaultpii-is-replaced-by-datacollection)
 
 ## 배포 후 확인
 

@@ -49,3 +49,9 @@ Lighthouse 13.5.0으로 로컬 production 서버를 검사했다. 모바일 412�
 ## 외부 설정
 
 Vercel 프로젝트 생성·도메인 연결·Git 연동 배포와 GA4 속성·Search Console 소유권 확인·Sentry 실제 이벤트 수신은 외부 계정 설정이 필요하다. 이번 작업에서 실제 운영 배포를 수행하지 않았다. [설정 절차](deployment.md)에 필요한 환경변수와 검증 방법을 정리했다. 운영 사용자의 Core Web Vitals는 실제 배포 후 확인해야 한다.
+
+## PR 준비 재검증 (2026-10-17)
+
+최신 `develop`에 재기반하고 Yarn이 양쪽 lockfile을 병합한 뒤 immutable 설치를 확인했다. 블로그 앱의 `hoistingLimits: workspaces` 설정으로 ESLint·Vitest 실행 경로를 격리했다. Sentry 11의 `dataCollection`과 `beforeSendSpan`에 맞춰 설정하고, 서버·Edge·브라우저의 DSN 유무별 초기화와 streaming span 개인정보 필터를 검증했다.
+
+콘텐츠·TypeScript·ESLint·Prettier, Vitest **41개**, Production build(정적 페이지 **98개**), Playwright **24개**를 다시 통과했다. 위 Lighthouse 수치는 2026-10-16의 화면 검증 결과다. 외부 서비스 연결과 실제 배포는 수행하지 않았다.

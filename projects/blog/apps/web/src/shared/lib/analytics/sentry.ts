@@ -1,4 +1,33 @@
-const privateKey = /authorization|cookie|password|secret|token|email|ip_address|user_id|search_query/i;
+import type { init } from '@sentry/nextjs';
+
+type SentryOptions = Parameters<typeof init>[0];
+
+const privateKey =
+  /authorization|cookie|password|secret|token|email|ip_address|user_id|search_query|^user(?:\.|$)|^http\.(?:request|response)\.(?:header|body)|^url\.(?:query|fragment)|^gen_ai\.(?:input|output|prompt|completion)|^db\.(?:statement|query\.text|query\.parameters)|^messaging\.message\.(?:body|payload)|^graphql\.(?:document|variables)|^code\.function\.parameters/i;
+
+// Sentry 11 collects these categories by default; explicitly opt out on every runtime.
+export const sentryPrivacyOptions = {
+  dataCollection: {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: { request: false, response: false },
+    httpBodies: [],
+    urlQueryParams: false,
+    genAI: { inputs: false, outputs: false },
+    databaseQueryData: false,
+    queues: false,
+    graphQL: { document: false, variables: false },
+    stackFrameVariables: false,
+    frameContextLines: 0,
+  },
+  traceLifecycle: 'stream',
+  beforeSend: scrubSentryEvent,
+  beforeSendSpan: scrubSentrySpan,
+  beforeBreadcrumb: scrubSentryBreadcrumb,
+} satisfies Pick<
+  SentryOptions,
+  'dataCollection' | 'traceLifecycle' | 'beforeSend' | 'beforeSendSpan' | 'beforeBreadcrumb'
+>;
 
 function redactString(value: string): string {
   return value
@@ -43,4 +72,10 @@ export function scrubSentryEvent<T>(event: T): T | null {
 
 export function scrubSentryBreadcrumb<T>(breadcrumb: T): T {
   return scrub(breadcrumb) as T;
+}
+
+// Streaming spans bypass beforeSendTransaction in Sentry 11. Scrub their names,
+// attributes and links before each span is sent, while preserving trace identity.
+export function scrubSentrySpan<T>(span: T): T {
+  return scrub(span) as T;
 }
