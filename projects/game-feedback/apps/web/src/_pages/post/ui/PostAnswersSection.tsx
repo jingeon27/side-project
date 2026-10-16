@@ -1,6 +1,6 @@
 import { MessageSquare } from 'lucide-react';
 import { AnswerCard } from '@/features/answer';
-import { UserBadges } from '@/features/user';
+import { AuthorLink, UserBadges } from '@/features/user';
 import type { Answer, Post } from '@/shared/api';
 import { ContentActions } from './ContentActions';
 import { AnswerComposer } from './AnswerComposer';
@@ -31,6 +31,7 @@ export function PostAnswersSection({ post, answers, userId, locale }: IPostAnswe
         <AnswerCard
           key={answer.id}
           answer={answer}
+          authorName={<AuthorLink author={answer.author} locale={locale} />}
           authorContent={<UserBadges author={answer.author} />}
           actions={
             <ContentActions

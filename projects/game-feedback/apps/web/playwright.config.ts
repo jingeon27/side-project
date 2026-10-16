@@ -63,6 +63,8 @@ export default defineConfig({
         NODE_ENV: 'development',
         GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4301',
         NEXT_DIST_DIR: '.next/e2e',
+        GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
+        GAME_FEEDBACK_INDEXING: 'false',
       },
       reuseExistingServer: false,
       timeout: 90_000,

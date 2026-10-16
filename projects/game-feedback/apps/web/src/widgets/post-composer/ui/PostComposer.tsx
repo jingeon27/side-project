@@ -83,6 +83,10 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
             : await create.mutateAsync({ body: values });
           onOpenChange(false);
           notify(post ? '요청을 수정했어요.' : '피드백 요청을 올렸어요. 새로운 시선을 기다려보세요!');
+          if (post) {
+            router.refresh();
+            return;
+          }
           router.push(`/${locale}/posts/${result.id}`);
         } catch {
           /* Mutation errors remain visible and the draft stays in the form. */

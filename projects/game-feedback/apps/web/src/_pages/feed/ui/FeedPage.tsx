@@ -6,7 +6,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Plus, MessageSquare, Sparkles, ArrowRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { postListOptions, PostCard } from '@/features/post';
-import { UserBadges } from '@/features/user';
+import { AuthorLink, UserBadges } from '@/features/user';
 import { Deck } from '@/features/game-profile';
 import { PostComposer } from '@/widgets/post-composer';
 import { openOverlay, ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
@@ -126,6 +126,7 @@ function FeedContent({ locale }: { locale: string }) {
               <PostCard
                 post={post}
                 href={`/${locale}/posts/${post.id}`}
+                authorName={<AuthorLink author={post.author} locale={locale} />}
                 authorContent={<UserBadges author={post.author} compact />}
                 deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
               />

@@ -3,7 +3,7 @@ import { Button } from '@side/design-system';
 import { Send, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { CommentItem, useCreateCommentMutation } from '@/features/comment';
-import { UserBadges } from '@/features/user';
+import { AuthorLink, UserBadges } from '@/features/user';
 import type { Comment, Post } from '@/shared/api';
 import { ErrorNotice, useNotify } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
@@ -28,6 +28,7 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
         <CommentItem
           key={comment.id}
           comment={comment}
+          authorName={<AuthorLink author={comment.author} locale={locale} />}
           authorContent={<UserBadges author={comment.author} compact />}
           actions={
             <ContentActions

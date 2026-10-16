@@ -6,5 +6,5 @@ export function timeAgo(value: string): string {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}일 전`;
-  return new Date(value).toLocaleDateString('ko-KR');
+  return new Date(value).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
 }

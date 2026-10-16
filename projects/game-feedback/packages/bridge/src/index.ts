@@ -8,7 +8,7 @@ export const WebPathSchema = z
   .string()
   .max(512)
   .regex(
-    /^\/(ko|en|ja)(\/(messages|settings|notifications|guide|terms|privacy|contact)|\/posts\/[A-Za-z0-9_-]{1,128})?\/?(\?conversation=[A-Za-z0-9_-]{1,128})?$/,
+    /^\/(ko|en|ja)(\/(messages|settings|notifications|guide|terms|privacy|contact)|\/(posts|users)\/[A-Za-z0-9_-]{1,128})?\/?(\?conversation=[A-Za-z0-9_-]{1,128})?$/,
   );
 const ticket = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const WebMessageSchema = z.discriminatedUnion('type', [

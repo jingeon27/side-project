@@ -9,16 +9,19 @@ interface IPostCardProps {
   post: Post;
   href: string;
   authorContent?: ReactNode;
+  authorName?: ReactNode;
   deck?: ReactNode;
 }
-export function PostCard({ post, href, authorContent, deck }: IPostCardProps) {
+export function PostCard({ post, href, authorContent, authorName, deck }: IPostCardProps) {
   return (
-    <Link href={href} className="post-card">
+    <article className="post-card">
       <div className="post-topline">
         <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
         <span className="post-time">{timeAgo(post.createdAt)}</span>
       </div>
-      <h3>{post.title}</h3>
+      <Link href={href} className="post-title-link">
+        <h3>{post.title}</h3>
+      </Link>
       <p className="post-excerpt">{post.body}</p>
       {post.gameProfile && (
         <div className="post-game-info">
@@ -34,7 +37,7 @@ export function PostCard({ post, href, authorContent, deck }: IPostCardProps) {
       <div className="post-bottom">
         <span className="post-author">
           <Avatar name={post.author.nickname} size="small" />
-          <strong>{post.author.nickname}</strong>
+          <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
           <span className="post-author-game">클래시 로얄</span>
         </span>
@@ -44,6 +47,6 @@ export function PostCard({ post, href, authorContent, deck }: IPostCardProps) {
           <ArrowUpRight size={15} />
         </span>
       </div>
-    </Link>
+    </article>
   );
 }

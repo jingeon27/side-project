@@ -2,19 +2,21 @@
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
-import { SessionProvider, useSession } from '@/features/auth';
+import { SessionProvider, sessionOptions, useSession } from '@/features/auth';
 import { AuthOnboarding, openLoginDialog } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
+import type { Session } from '@/shared/api';
 import { NativeBridge } from './NativeBridge';
 import { ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 
-export function Providers({ children }: { children: ReactNode }) {
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: { queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: true } },
-      }),
-  );
+export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
+  const [client] = useState(() => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: true } },
+    });
+    if (initialSession) queryClient.setQueryData(sessionOptions().queryKey, initialSession);
+    return queryClient;
+  });
   return (
     <QueryClientProvider client={client}>
       <ServiceErrorBoundary title="서비스 연결">

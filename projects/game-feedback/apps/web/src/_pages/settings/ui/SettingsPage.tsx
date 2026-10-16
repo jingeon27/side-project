@@ -80,7 +80,13 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
           <div>
             <h2>{session.user.nickname}</h2>
             <UserBadges author={session.user} />
-            <p>{new Date(session.user.createdAt).toLocaleDateString('ko-KR')}부터 함께 플레이 중</p>
+            <p>
+              {new Date(session.user.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}부터
+              함께 플레이 중
+            </p>
+            <Link className="text-button" href={`/${locale}/users/${session.user.id}`}>
+              공개 프로필 보기 →
+            </Link>
           </div>
           <span className="status-pill resolved">
             {session.user.role === 'ADMIN' ? '운영자' : '플레이어'}

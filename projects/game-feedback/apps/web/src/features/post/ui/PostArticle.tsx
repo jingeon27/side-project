@@ -7,10 +7,11 @@ import { PostStatus } from './PostStatus';
 interface IPostArticleProps {
   post: Post;
   authorContent?: ReactNode;
+  authorName?: ReactNode;
   actions?: ReactNode;
   profile?: ReactNode;
 }
-export function PostArticle({ post, authorContent, actions, profile }: IPostArticleProps) {
+export function PostArticle({ post, authorContent, authorName, actions, profile }: IPostArticleProps) {
   return (
     <article className="detail-card">
       <div className="post-topline">
@@ -21,7 +22,7 @@ export function PostArticle({ post, authorContent, actions, profile }: IPostArti
       <div className="detail-author">
         <Avatar name={post.author.nickname} />
         <div>
-          <strong>{post.author.nickname}</strong>
+          <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
           <span>
             {timeAgo(post.createdAt)}

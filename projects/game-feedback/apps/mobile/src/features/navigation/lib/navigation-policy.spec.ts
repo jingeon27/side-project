@@ -15,6 +15,7 @@ describe('WebView navigation and deep links', () => {
     expect(isSameOrigin('https://feedback.example.evil/', origin)).toBe(false);
   });
   it('accepts known custom-scheme routes and rejects unsafe route IDs', () => {
+    expect(toWebPath('gamefeedback://ko/users/player_123', origin)).toBe('/ko/users/player_123');
     expect(toWebPath('gamefeedback://ko/posts/post_123', origin)).toBe('/ko/posts/post_123');
     expect(toWebPath(`${origin}/en/messages?conversation=chat-1`, origin)).toBe(
       '/en/messages?conversation=chat-1',

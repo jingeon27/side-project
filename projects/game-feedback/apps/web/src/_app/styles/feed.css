@@ -331,7 +331,17 @@
     flex-direction: column;
     gap: 13px;
   }
+  .post-title-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .post-card .author-profile-link {
+    position: relative;
+    z-index: 1;
+  }
   .post-card {
+    position: relative;
     display: block;
     background: var(--color-surface);
     border: 1px solid var(--color-line);

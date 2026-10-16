@@ -1,4 +1,4 @@
-export { postListOptions, postDetailOptions } from './model/post.options';
+export { postListOptions, postDetailOptions, userPostListOptions } from './model/post.options';
 export {
   useCreatePostMutation,
   useUpdatePostMutation,

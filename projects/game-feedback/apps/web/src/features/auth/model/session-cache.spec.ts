@@ -1,8 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@/shared/api';
 import { sessionOptions } from './auth.options';
 import { clearAuthenticatedSession, replaceSession, refreshSession } from './session-cache';
+const { loadSession } = vi.hoisted(() => ({ loadSession: vi.fn() }));
+vi.mock('../api/auth.api', () => ({ fetchSession: loadSession, fetchTestAccounts: vi.fn() }));
+afterEach(() => loadSession.mockReset());
 
 const signedInSession: Session = {
   user: {
@@ -103,6 +106,63 @@ describe('native foreground session refresh', () => {
     finish(signedInSession);
     await pending;
     expect(client.getQueryData(sessionOptions().queryKey)?.user).toBeNull();
+    client.clear();
+  });
+});
+
+describe('automatic session query reconciliation', () => {
+  it('cancels private requests and removes previous viewer snapshots before committing an automatic identity change', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(sessionOptions().queryKey, signedInSession);
+    client.setQueryData(['profile-snapshot'], { text: 'old viewer data' });
+    let aborted = false;
+    const pending = client
+      .fetchQuery({
+        queryKey: ['private-in-flight'],
+        queryFn: ({ signal }) =>
+          new Promise((_resolve, reject) =>
+            signal.addEventListener('abort', () => {
+              aborted = true;
+              reject(new Error('cancelled'));
+            }),
+          ),
+      })
+      .catch(() => undefined);
+    const next = {
+      ...signedInSession,
+      user: signedInSession.user ? { ...signedInSession.user, id: 'bob' } : null,
+    };
+    loadSession.mockResolvedValueOnce(next);
+    const observed: string[] = [];
+    const unsubscribe = client.getQueryCache().subscribe(() => {
+      if (client.getQueryData<Session>(sessionOptions().queryKey)?.user?.id === 'bob') {
+        expect(client.getQueryData(['profile-snapshot'])).toBeUndefined();
+        observed.push('bob');
+      }
+    });
+    await client.fetchQuery(sessionOptions());
+    await pending;
+    expect(aborted).toBe(true);
+    expect(observed.length).toBeGreaterThan(0);
+    unsubscribe();
+    client.clear();
+  });
+  it('ignores an automatic response superseded by a more recent session write', async () => {
+    const client = new QueryClient();
+    client.setQueryData(sessionOptions().queryKey, signedInSession);
+    let finish: (session: Session) => void = () => {};
+    loadSession.mockImplementationOnce(
+      () =>
+        new Promise<Session>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const pending = client.fetchQuery(sessionOptions());
+    const loggedOut = { ...signedInSession, user: null };
+    client.setQueryData(sessionOptions().queryKey, loggedOut);
+    finish(signedInSession);
+    await pending;
+    expect(client.getQueryData<Session>(sessionOptions().queryKey)?.user).toBeNull();
     client.clear();
   });
 });

@@ -6,10 +6,11 @@ import { timeAgo } from '@/shared/lib/date';
 interface IAnswerCardProps {
   answer: Answer;
   authorContent?: ReactNode;
+  authorName?: ReactNode;
   actions?: ReactNode;
   helpfulControl?: ReactNode;
 }
-export function AnswerCard({ answer, authorContent, actions, helpfulControl }: IAnswerCardProps) {
+export function AnswerCard({ answer, authorContent, authorName, actions, helpfulControl }: IAnswerCardProps) {
   return (
     <article className={`answer-card ${answer.helpful ? 'helpful-answer' : ''}`}>
       {answer.helpful && (
@@ -21,7 +22,7 @@ export function AnswerCard({ answer, authorContent, actions, helpfulControl }: I
       <div className="detail-author">
         <Avatar name={answer.author.nickname} />
         <div>
-          <strong>{answer.author.nickname}</strong>
+          <strong>{authorName ?? answer.author.nickname}</strong>
           {authorContent}
           <span>
             {timeAgo(answer.createdAt)}

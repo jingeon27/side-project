@@ -1,3 +1,4 @@
+import { staticPageMetadata } from '@/shared/seo';
 import { MessagesPage as MessagesScreen } from '@/_pages/messages';
 export default async function MessagesPage({
   params,
@@ -10,4 +11,8 @@ export default async function MessagesPage({
     query = await searchParams;
   const conversationId = typeof query.conversation === 'string' ? query.conversation : undefined;
   return <MessagesScreen locale={locale} conversationId={conversationId} />;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  return staticPageMetadata('messages', (await params).locale);
 }

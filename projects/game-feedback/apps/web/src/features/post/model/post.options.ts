@@ -20,3 +20,12 @@ export function postDetailOptions(id?: string) {
     staleTime: 15_000,
   });
 }
+
+export function userPostListOptions(authorId?: string, cursor = '') {
+  return queryOptions({
+    queryKey: [...postListOptions().queryKey, 'author', authorId, cursor],
+    queryFn: authorId
+      ? () => fetchPostList({ authorId, limit: 12, ...(cursor ? { cursor } : {}) })
+      : skipToken,
+  });
+}

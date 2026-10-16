@@ -23,7 +23,7 @@ export function useSession() {
   return context;
 }
 export function SessionProvider({ children, onLogin }: ISessionProviderProps) {
-  const { data: session, isPending } = useQuery(sessionOptions());
+  const { data: session, isPending } = useQuery({ ...sessionOptions(), refetchOnMount: 'always' });
   const notify = useNotify();
   return (
     <SessionContext.Provider value={{ session, loading: isPending, login: onLogin, notify }}>
