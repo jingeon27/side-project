@@ -141,8 +141,11 @@ export function createWebBridge(win: TBridgeWindow | undefined): IWebBridge {
         return;
       }
       const result = WEB_REQUEST[request.type].result.safeParse(message.result);
-      if (result.success) request.resolve(result.data);
-      else request.reject(new BridgeError(BRIDGE_ERROR_CODE.Invalid, '앱 응답 형식이 올바르지 않습니다.'));
+      if (result.success) {
+        request.resolve(result.data);
+        return;
+      }
+      request.reject(new BridgeError(BRIDGE_ERROR_CODE.Invalid, '앱 응답 형식이 올바르지 않습니다.'));
       return;
     }
     if (message.kind === 'event') {
