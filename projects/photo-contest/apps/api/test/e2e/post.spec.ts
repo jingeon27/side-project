@@ -7,7 +7,18 @@ import { koreanMonth } from '../../src/post/post-order';
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../support/app';
 import { createGroup } from '../support/fixtures';
 
-const FIELDS = 'id groupId title body kind mediaUrl likeCount likedByMe canDelete author { id }';
+const FIELDS = 'id groupId title body kind mediaUrl likeCount commentCount likedByMe canDelete author { id }';
+const COMMENT_FIELDS = 'id postId body createdAt canDelete author { id nickname avatar }';
+const COMMENTS = `query($id:ID!,$offset:Int,$limit:Int){postComments(postId:$id,offset:$offset,limit:$limit){${COMMENT_FIELDS}}}`;
+const CREATE_COMMENT = `mutation($id:ID!,$body:String!){createPostComment(postId:$id,body:$body){${COMMENT_FIELDS}}}`;
+const DELETE_COMMENT = 'mutation($id:ID!){deletePostComment(commentId:$id)}';
+interface IComment {
+  id: string;
+  postId: string;
+  body: string;
+  canDelete: boolean;
+  author: { id: string; nickname: string; avatar: string | null };
+}
 const LIST = `query($groupId:ID,$sort:PostSort,$offset:Int,$limit:Int){galleryPosts(groupId:$groupId,sort:$sort,offset:$offset,limit:$limit){${FIELDS}}}`;
 interface IPost {
   id: string;
@@ -16,6 +27,7 @@ interface IPost {
   kind: string;
   mediaUrl: string;
   likeCount: number;
+  commentCount: number;
   likedByMe: boolean;
   canDelete: boolean;
 }
@@ -210,5 +222,122 @@ describe('상시 갤러리 게시물', () => {
       (await api.http().get(post.mediaUrl.replace('/backend', '')).set('Cookie', owner.cookie)).status,
     ).toBe(404);
     await api.gqlOk(member.cookie, del, { id: (await create(member, '직접 삭제')).id });
+  });
+
+  it('댓글을 작성·조회하고 실제 개수를 집계하며 작성자와 관리자만 삭제해야 한다', async () => {
+    const post = await create(owner, '댓글 권한');
+    const { createPostComment: comment } = await api.gqlOk<{ createPostComment: IComment }>(
+      member.cookie,
+      CREATE_COMMENT,
+      { id: post.id, body: '  웃긴 순간\n같이 웃어요  ' },
+    );
+    expect(comment).toMatchObject({
+      postId: post.id,
+      body: '웃긴 순간\n같이 웃어요',
+      canDelete: true,
+      author: { id: member.id },
+    });
+    expect((await list(owner, { groupId })).find(({ id }) => id === post.id)?.commentCount).toBe(1);
+    const peer = await api.signIn('댓글 다른 회원');
+    const group = await api.db.group.findUniqueOrThrow({ where: { id: groupId } });
+    await api.gqlOk(peer.cookie, 'mutation($token:String!){joinGroup(token:$token){id}}', {
+      token: group.inviteToken,
+    });
+    expect(
+      (await api.gqlOk<{ postComments: IComment[] }>(peer.cookie, COMMENTS, { id: post.id })).postComments[0]
+        ?.canDelete,
+    ).toBe(false);
+    expect((await api.gqlFail(peer.cookie, DELETE_COMMENT, { id: comment.id })).code).toBe('FORBIDDEN');
+    await api.gqlOk(member.cookie, DELETE_COMMENT, { id: comment.id });
+    const next = await api.gqlOk<{ createPostComment: IComment }>(member.cookie, CREATE_COMMENT, {
+      id: post.id,
+      body: '관리자 삭제 확인',
+    });
+    await api.gqlOk(owner.cookie, DELETE_COMMENT, { id: next.createPostComment.id });
+    expect((await list(owner, { groupId })).find(({ id }) => id === post.id)?.commentCount).toBe(0);
+    expect((await api.gqlFail(member.cookie, DELETE_COMMENT, { id: comment.id })).code).toBe('NOT_FOUND');
+  });
+
+  it('비로그인·외부인은 댓글을 읽거나 쓰거나 삭제할 수 없어야 한다', async () => {
+    const post = await create(member, '댓글 접근 제한');
+    const { createPostComment: comment } = await api.gqlOk<{ createPostComment: IComment }>(
+      member.cookie,
+      CREATE_COMMENT,
+      { id: post.id, body: '멤버끼리만' },
+    );
+    for (const cookie of [undefined, outsider.cookie]) {
+      const code = cookie ? 'FORBIDDEN' : 'UNAUTHENTICATED';
+      expect((await api.gqlFail(cookie, COMMENTS, { id: post.id })).code).toBe(code);
+      expect((await api.gqlFail(cookie, CREATE_COMMENT, { id: post.id, body: '침입' })).code).toBe(code);
+      expect((await api.gqlFail(cookie, DELETE_COMMENT, { id: comment.id })).code).toBe(code);
+    }
+  });
+
+  it('공백·너무 긴 댓글과 잘못된 페이지 인자를 거부해야 한다', async () => {
+    const post = await create(member, '댓글 검증');
+    for (const body of ['', '  \n ', '가'.repeat(1001)])
+      expect((await api.gqlFail(member.cookie, CREATE_COMMENT, { id: post.id, body })).code).toBe(
+        'BAD_USER_INPUT',
+      );
+    for (const variables of [{ offset: -1 }, { limit: 0 }, { limit: 49 }])
+      expect((await api.gqlFail(member.cookie, COMMENTS, { id: post.id, ...variables })).code).toBe(
+        'BAD_USER_INPUT',
+      );
+    expect((await api.gqlFail(member.cookie, COMMENTS, { id: 'missing' })).code).toBe('NOT_FOUND');
+    expect((await api.gqlFail(member.cookie, CREATE_COMMENT, { id: 'missing', body: '없는 글' })).code).toBe(
+      'NOT_FOUND',
+    );
+  });
+
+  it('댓글은 같은 작성 시각에도 ID까지 최신순으로 정렬하고 페이지를 나눠야 한다', async () => {
+    const post = await create(member, '댓글 페이지');
+    const ids: string[] = [];
+    for (const body of ['하나', '둘', '셋'])
+      ids.push(
+        (
+          await api.gqlOk<{ createPostComment: IComment }>(member.cookie, CREATE_COMMENT, {
+            id: post.id,
+            body,
+          })
+        ).createPostComment.id,
+      );
+    await api.db.postComment.updateMany({
+      where: { postId: post.id },
+      data: { createdAt: new Date('2026-10-17T00:00:00Z') },
+    });
+    const page = await api.gqlOk<{ postComments: IComment[] }>(member.cookie, COMMENTS, {
+      id: post.id,
+      limit: 2,
+    });
+    const tail = await api.gqlOk<{ postComments: IComment[] }>(member.cookie, COMMENTS, {
+      id: post.id,
+      offset: 2,
+      limit: 2,
+    });
+    expect([...page.postComments, ...tail.postComments].map(({ id }) => id)).toEqual(ids.sort().reverse());
+  });
+
+  it('숨긴 글의 댓글도 멤버에게 노출하지 않고 게시물 삭제 시 댓글을 함께 지워야 한다', async () => {
+    const post = await create(member, '숨긴 댓글');
+    const { createPostComment: comment } = await api.gqlOk<{ createPostComment: IComment }>(
+      member.cookie,
+      CREATE_COMMENT,
+      { id: post.id, body: '숨겨질 댓글' },
+    );
+    await api.db.post.update({ where: { id: post.id }, data: { hidden: true } });
+    expect((await api.gqlFail(member.cookie, COMMENTS, { id: post.id })).code).toBe('NOT_FOUND');
+    expect((await api.gqlFail(member.cookie, CREATE_COMMENT, { id: post.id, body: '금지' })).code).toBe(
+      'NOT_FOUND',
+    );
+    expect((await api.gqlFail(member.cookie, DELETE_COMMENT, { id: comment.id })).code).toBe('NOT_FOUND');
+    expect(
+      (await api.gqlOk<{ postComments: IComment[] }>(owner.cookie, COMMENTS, { id: post.id })).postComments,
+    ).toHaveLength(1);
+    await api.gqlOk(owner.cookie, 'mutation($id:ID!){deletePost(postId:$id)}', { id: post.id });
+    expect(await api.db.postComment.count({ where: { postId: post.id } })).toBe(0);
+    const event = await api.db.analyticsEvent.findUniqueOrThrow({
+      where: { id: `comment-created:${comment.id}` },
+    });
+    expect(event.properties).toEqual({ postId: post.id, commentId: comment.id });
   });
 });

@@ -43,7 +43,7 @@ function postInclude(userId: string) {
     group: { select: { name: true, members: { where: { userId }, select: { role: true } } } },
     author: true,
     upload: true,
-    _count: { select: { likes: true } },
+    _count: { select: { likes: true, comments: true } },
     likes: { where: { userId }, select: { userId: true } },
   } satisfies Prisma.PostInclude;
 }
@@ -60,6 +60,7 @@ function present(row: TPostRow, userId: string) {
     kind: row.upload.kind,
     mediaUrl: `/backend/media/${row.id}`,
     likeCount: row._count.likes,
+    commentCount: row._count.comments,
     likedByMe: row.likes.length > 0,
     canDelete: row.authorId === userId || row.group.members.some(isOwner),
   };

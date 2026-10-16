@@ -5,10 +5,12 @@ import { MediaProcessor } from './media-processor';
 import { PostController } from './post.controller';
 import { PostResolver } from './post.resolver';
 import { PostService } from './post.service';
+import { PostCommentResolver } from './post-comment.resolver';
+import { PostCommentService } from './post-comment.service';
 
 @Module({
   imports: [GroupModule],
-  providers: [PostService, PostResolver, MediaProcessor],
+  providers: [PostService, PostResolver, PostCommentService, PostCommentResolver, MediaProcessor],
   controllers: [PostController],
 })
 export class PostModule {}
