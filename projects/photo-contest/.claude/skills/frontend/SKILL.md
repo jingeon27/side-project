@@ -14,7 +14,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 | `src/features` | 서버 도메인 slice(group, contest, submission, like, vote, moderation, invite, share…) | `@/features/…` |
 | `src/shared` | 도메인 없는 기반(api, ui/@core, model, lib, constants) | `@/shared/…` |
 
-- 의존 방향은 `_app → _pages → widgets → features → shared`. 위로 import하지 않는다. 다른 slice는 `index.ts`로만, 화면 slice끼리는 import하지 않는다. 저장소 루트의 `packages/eslint-config/src/fsd.mjs`가 막는다(`types/`·`mocks/`·`*.schema`·`*.server`만 깊은 import 허용).
+- 의존 방향은 `_app → _pages → widgets → features → shared`. 위로 import하지 않는다. 다른 slice는 `index.ts`로만, 화면 slice끼리는 import하지 않는다. 저장소 루트의 `packages/eslint-config/src/fsd.ts`가 막는다(`types/`·`mocks/`·`*.schema`·`*.server`만 깊은 import 허용).
 - `_app`·`_pages`의 밑줄은 Next `app`·`pages` 라우터와 겹치지 않게 하려는 것이다.
 - 배치: 한 화면에서만 → `_pages/<screen>`, 도메인 + 두 화면 이상 → `features/<domain>`, 도메인 없음 → `shared`. 두 번째 사용처가 생기기 전에 미리 내리지 않는다.
 - 화면 slice: `@page/<Screen>PageTemplate.tsx`가 조립하고, 화면 전용 조각은 `@page/ui`, `@page/bottom-sheet`, `@page/model`, 섹션 폴더(`@page/results/` 등)에 둔다. 하위 화면이 같이 쓰는 것만 `@ui`·`@model`·`@lib`로 올린다.

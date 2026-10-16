@@ -36,7 +36,7 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 공용 린트와 오버레이
 
-저장소 packages/eslint-config가 else 금지·컴포넌트 fetch 금지·React 핸들러 규칙과 앱 경로를 주입받는 FSD 규칙을 제공한다. RuleTester는 실제 fixture 파일과 cases.json을 읽으며 패키지 자체 Vitest에서 실행한다. 웹·모바일·프로젝트 설정이 이 패키지를 소비하고 CI가 패키지 검사도 실행한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
+저장소 packages/eslint-config가 else 금지·컴포넌트 fetch 금지·React 핸들러 규칙과 앱 경로를 주입받는 FSD 규칙을 제공한다. 규칙·FSD 플러그인과 앱별 eslint.config.ts는 TypeScript이며 AST·메시지 ID·설정 타입을 검사한다. 설정은 각 워크스페이스의 Jiti가 로드하고 프로젝트 루트 설정도 tsconfig.lint.json으로 확인한다. TypeScript RuleTester는 실제 fixture 파일과 cases.json을 읽으며 패키지 자체 Vitest에서 실행한다. 웹·모바일·프로젝트 설정이 이 패키지를 소비하고 CI가 패키지 검사도 실행한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
 
 시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
 
