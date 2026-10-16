@@ -4845,6 +4845,7 @@ __metadata:
     expo-status-bar: "npm:~57.0.1"
     expo-system-ui: "npm:~57.0.4"
     expo-web-browser: "npm:~57.0.3"
+    jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
     react: "npm:19.2.3"
     react-dom: "npm:19.2.3"
@@ -4909,6 +4910,7 @@ __metadata:
     eslint: "npm:^9.39.0"
     eslint-config-next: "npm:16.4.0"
     graphql: "npm:^16.11.0"
+    jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
     lucide-react: "npm:^1.23.0"
     next: "npm:16.4.0"
@@ -6102,6 +6104,7 @@ __metadata:
     "@typescript-eslint/utils": "npm:8.71.1"
     eslint: "npm:^9.39.0"
     eslint-plugin-react: "npm:7.37.5"
+    jiti: "npm:^2.6.1"
     typescript: "npm:^5.9.0"
     typescript-eslint: "npm:^8.50.0"
     vitest: "npm:^4.1.0"
@@ -6121,6 +6124,7 @@ __metadata:
     embedded-postgres: "npm:18.4.0-beta.17"
     eslint: "npm:^9.39.0"
     eslint-config-next: "npm:16.4.0"
+    jiti: "npm:^2.6.1"
     tsx: "npm:^4.20.0"
     typescript: "npm:^5.9.0"
     typescript-eslint: "npm:^8.50.0"
@@ -12040,7 +12044,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jiti@npm:^2.0.0, jiti@npm:^2.3.0, jiti@npm:^2.4.2, jiti@npm:^2.7.0":
+"jiti@npm:^2.0.0, jiti@npm:^2.3.0, jiti@npm:^2.4.2, jiti@npm:^2.6.1, jiti@npm:^2.7.0":
   version: 2.7.0
   resolution: "jiti@npm:2.7.0"
   bin:

@@ -24,6 +24,7 @@
     "@typescript-eslint/utils": "8.71.1",
     "eslint": "^9.39.0",
     "eslint-plugin-react": "7.37.5",
+    "jiti": "^2.6.1",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.50.0",
     "vitest": "^4.1.0"
