@@ -51,13 +51,6 @@ export function ArticleReader({
             <TableOfContents entries={article.toc} locale={article.locale} />
           </div>
           <article className="article-prose">{children}</article>
-          {article.sourceUrl && (
-            <p className="article-source">
-              <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="source-link">
-                {t.article.source}
-              </a>
-            </p>
-          )}
           {(previous || next) && (
             <nav
               className="article-pagination"
