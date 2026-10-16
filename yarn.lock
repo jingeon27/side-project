@@ -2059,7 +2059,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:9.39.5, @eslint/js@npm:^9.39.0":
+"@eslint/js@npm:9.39.5":
   version: 9.39.5
   resolution: "@eslint/js@npm:9.39.5"
   checksum: 10c0/49894e98ba313a7d3bfb1b20d55c0f9826be45a7db876fd84e533ac7f101b1d95b51cd22c6a6db3a45066b9c0d068c31b4a22fa0db8a6cc8744a25540efdb824
@@ -4831,7 +4831,6 @@ __metadata:
     "@types/node": "npm:^24.0.0"
     "@types/react": "npm:~19.2.0"
     eslint: "npm:^9.39.0"
-    eslint-config-expo: "npm:~57.0.2"
     expo: "npm:~57.0.28"
     expo-application: "npm:~57.0.3"
     expo-build-properties: "npm:~57.0.22"
@@ -4854,7 +4853,6 @@ __metadata:
     react-native-web: "npm:~0.21.0"
     react-native-webview: "npm:13.16.1"
     typescript: "npm:^5.9.0"
-    typescript-eslint: "npm:^8.50.0"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
   languageName: unknown
@@ -4909,7 +4907,6 @@ __metadata:
     clsx: "npm:^2.1.1"
     es-toolkit: "npm:^1.52.0"
     eslint: "npm:^9.39.0"
-    eslint-config-next: "npm:16.4.0"
     graphql: "npm:^16.11.0"
     jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
@@ -4924,7 +4921,6 @@ __metadata:
     tailwindcss: "npm:^4.1.0"
     ts-pattern: "npm:^5.9.0"
     typescript: "npm:^5.9.0"
-    typescript-eslint: "npm:^8.50.0"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
   languageName: unknown
@@ -6120,17 +6116,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@side/photo-contest@workspace:projects/photo-contest"
   dependencies:
-    "@eslint/js": "npm:^9.39.0"
     "@side/eslint-config": "workspace:*"
     "@types/node": "npm:^24.0.0"
     concurrently: "npm:^9.2.0"
     embedded-postgres: "npm:18.4.0-beta.17"
     eslint: "npm:^9.39.0"
-    eslint-config-next: "npm:16.4.0"
     jiti: "npm:^2.6.1"
     tsx: "npm:^4.20.0"
     typescript: "npm:^5.9.0"
-    typescript-eslint: "npm:^8.50.0"
   languageName: unknown
   linkType: soft
 
