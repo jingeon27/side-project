@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.mjs",
-    "./react": "./src/react.mjs",
-    "./fsd": "./src/fsd.mjs"
+    ".": "./src/index.ts",
+    "./react": "./src/react.ts",
+    "./fsd": "./src/fsd.ts"
   },
   "scripts": {
     "lint": "eslint .",

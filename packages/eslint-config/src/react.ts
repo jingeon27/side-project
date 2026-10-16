@@ -1,4 +1,6 @@
-import { coreConfig } from './index.mjs';
+import type { Linter } from 'eslint';
+
+import { coreConfig } from './index';
 
 /** React 플러그인은 Next·Expo 등 각 앱의 프레임워크 설정이 제공한다. */
 export const reactConfig = [
@@ -16,4 +18,4 @@ export const reactConfig = [
       'side/no-component-fetch': 'error',
     },
   },
-];
+] satisfies Linter.Config[];

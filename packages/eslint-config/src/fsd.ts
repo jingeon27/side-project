@@ -1,39 +1,55 @@
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { ESLint } from 'eslint';
+
+import type { IRuleContext } from './rule.type';
+
 import path from 'node:path';
 
-export function createFsdPlugin(srcDir) {
+export function createFsdPlugin(srcDir: string) {
   const SRC_DIR = path.resolve(srcDir);
 
   /** 위에 있을수록 큰 값. 자기보다 아래 레이어만 import할 수 있다. */
-  const LAYER_RANK = { routes: 5, app: 4, pages: 3, widgets: 2, features: 1, shared: 0 };
+  const LAYER_RANK = { routes: 5, app: 4, pages: 3, widgets: 2, features: 1, shared: 0 } as const;
+  type TLayer = keyof typeof LAYER_RANK;
+  interface ILocation {
+    layer: TLayer;
+    slice: string | null;
+    rest: string[];
+  }
+  interface IImportReference {
+    node: TSESTree.StringLiteral;
+    source: string;
+    importer: ILocation;
+    target: ILocation;
+  }
   /** src 아래 폴더 이름 → 레이어 */
-  const LAYER_DIRS = {
+  const LAYER_DIRS: Readonly<Record<string, TLayer | undefined>> = {
     _app: 'app',
     _pages: 'pages',
     widgets: 'widgets',
     features: 'features',
     shared: 'shared',
   };
-  const SLICED_LAYERS = new Set(['pages', 'widgets', 'features']);
+  const SLICED_LAYERS = new Set<TLayer>(['pages', 'widgets', 'features']);
   /** Next 라우트는 화면(pages)과 앱 조립(app), 기반(shared)만 쓴다. */
-  const ROUTE_IMPORTABLE_LAYERS = new Set(['app', 'pages', 'shared']);
+  const ROUTE_IMPORTABLE_LAYERS = new Set<TLayer>(['app', 'pages', 'shared']);
   /** 다른 slice가 index.ts를 거치지 않고 가져와도 되는 것: 타입, 테스트 목, 폼 스키마, 서버 전용 모듈 */
   const PUBLIC_SEGMENTS = new Set(['types', 'mocks']);
   const PUBLIC_FILE = /\.(schema|server)$/;
   const ROOT_FILES = new Set(['proxy', 'instrumentation', 'instrumentation-client']);
 
-  const stripExtension = (file) => file.replace(/\.(d\.)?[cm]?[jt]sx?$/, '');
+  const stripExtension = (file: string) => file.replace(/\.(d\.)?[cm]?[jt]sx?$/, '');
 
   /**
    * src 기준 경로를 레이어·slice로 나눈다. 레이어 폴더와 src/app 밖은 null.
-   * @param {string} absolutePath
    */
-  function locate(absolutePath) {
+  function locate(absolutePath: string): ILocation | null {
     const relative = path.relative(SRC_DIR, absolutePath);
     if (relative.startsWith('..') || path.isAbsolute(relative)) return null;
     const parts = stripExtension(relative).split(path.sep);
-    if (parts[0] === 'app' || (parts.length === 1 && ROOT_FILES.has(parts[0])))
+    if (parts[0] === 'app' || (parts.length === 1 && ROOT_FILES.has(parts[0] ?? '')))
       return { layer: 'routes', slice: null, rest: parts };
-    const layer = Object.hasOwn(LAYER_DIRS, parts[0] ?? '') ? LAYER_DIRS[parts[0]] : null;
+    const layer = LAYER_DIRS[parts[0] ?? ''];
     if (!layer) return null;
     if (!SLICED_LAYERS.has(layer)) return { layer, slice: null, rest: parts.slice(1) };
     return { layer, slice: parts[1] ?? null, rest: parts.slice(2) };
@@ -41,23 +57,28 @@ export function createFsdPlugin(srcDir) {
 
   /**
    * import 문자열을 절대 경로로 바꾼다. 패키지 import는 null.
-   * @param {string} source
-   * @param {string} filename
    */
-  function resolveImport(source, filename) {
+  function resolveImport(source: string, filename: string): string | null {
     if (source.startsWith('@/')) return path.join(SRC_DIR, source.slice(2));
     if (source === '.' || source === '..' || source.startsWith('./') || source.startsWith('../'))
       return path.resolve(path.dirname(filename), source);
     return null;
   }
 
-  const isBarrel = (rest) => rest.length === 0 || (rest.length === 1 && rest[0] === 'index');
-  const isPublicDeepImport = (rest) =>
+  const isBarrel = (rest: readonly string[]) =>
+    rest.length === 0 || (rest.length === 1 && rest[0] === 'index');
+  const isPublicDeepImport = (rest: readonly string[]) =>
     PUBLIC_SEGMENTS.has(rest[0] ?? '') || PUBLIC_FILE.test(rest[rest.length - 1] ?? '');
 
   /** 파일의 모든 import·re-export·동적 import 문자열에 check를 적용한다. */
-  function createImportVisitor(context, check) {
-    const visit = (node, sourceNode) => {
+  function createImportVisitor(
+    context: Pick<TSESLint.RuleContext<string, []>, 'filename'>,
+    check: (reference: IImportReference) => void,
+  ): Pick<
+    TSESLint.RuleListener,
+    'ImportDeclaration' | 'ExportNamedDeclaration' | 'ExportAllDeclaration' | 'ImportExpression'
+  > {
+    const visit = (sourceNode: TSESTree.Node | null | undefined) => {
       if (!sourceNode || sourceNode.type !== 'Literal' || typeof sourceNode.value !== 'string') return;
       const importer = locate(context.filename);
       const targetPath = resolveImport(sourceNode.value, context.filename);
@@ -67,14 +88,12 @@ export function createFsdPlugin(srcDir) {
       check({ node: sourceNode, source: sourceNode.value, importer, target });
     };
     return {
-      ImportDeclaration: (node) => visit(node, node.source),
-      ExportNamedDeclaration: (node) => visit(node, node.source),
-      ExportAllDeclaration: (node) => visit(node, node.source),
-      ImportExpression: (node) => visit(node, node.source),
+      ImportDeclaration: (node) => visit(node.source),
+      ExportNamedDeclaration: (node) => visit(node.source),
+      ExportAllDeclaration: (node) => visit(node.source),
+      ImportExpression: (node) => visit(node.source),
     };
   }
-
-  /** @type {import('eslint').Rule.RuleModule} */
   const layerImports = {
     meta: {
       type: 'problem',
@@ -88,7 +107,7 @@ export function createFsdPlugin(srcDir) {
           'Next 라우트는 화면(pages)·app·shared만 import합니다. {{target}}은 화면 slice를 거쳐 쓰세요: {{source}}',
       },
     },
-    create: (context) =>
+    create: (context: IRuleContext<'upward' | 'route'>) =>
       createImportVisitor(context, ({ node, source, importer, target }) => {
         if (importer.layer === 'routes') {
           if (target.layer !== 'routes' && !ROUTE_IMPORTABLE_LAYERS.has(target.layer))
@@ -102,9 +121,7 @@ export function createFsdPlugin(srcDir) {
             data: { importer: importer.layer, target: target.layer, source },
           });
       }),
-  };
-
-  /** @type {import('eslint').Rule.RuleModule} */
+  } satisfies TSESLint.RuleModule<'upward' | 'route', []>;
   const slicePublicApi = {
     meta: {
       type: 'problem',
@@ -119,7 +136,7 @@ export function createFsdPlugin(srcDir) {
           '자기 slice의 index.ts를 import하면 순환 참조가 생깁니다. 상대 경로로 직접 가져오세요: {{source}}',
       },
     },
-    create: (context) =>
+    create: (context: IRuleContext<'deep' | 'ownBarrel'>) =>
       createImportVisitor(context, ({ node, source, importer, target }) => {
         if (!SLICED_LAYERS.has(target.layer) || !target.slice) return;
         const sameSlice = importer.layer === target.layer && importer.slice === target.slice;
@@ -134,9 +151,7 @@ export function createFsdPlugin(srcDir) {
             data: { layer: target.layer, slice: target.slice, source },
           });
       }),
-  };
-
-  /** @type {import('eslint').Rule.RuleModule} */
+  } satisfies TSESLint.RuleModule<'deep' | 'ownBarrel', []>;
   const noCrossPage = {
     meta: {
       type: 'problem',
@@ -149,7 +164,7 @@ export function createFsdPlugin(srcDir) {
         crossPage: 'pages/{{importer}}에서 다른 화면 pages/{{target}}을 import할 수 없습니다: {{source}}',
       },
     },
-    create: (context) =>
+    create: (context: IRuleContext<'crossPage'>) =>
       createImportVisitor(context, ({ node, source, importer, target }) => {
         if (importer.layer === 'pages' && target.layer === 'pages' && importer.slice !== target.slice)
           context.report({
@@ -158,9 +173,7 @@ export function createFsdPlugin(srcDir) {
             data: { importer: importer.slice, target: target.slice, source },
           });
       }),
-  };
-
-  /** @type {{ meta: { name: string; version: string }; rules: Record<'layer-imports' | 'slice-public-api' | 'no-cross-page', import('eslint').Rule.RuleModule> }} */
+  } satisfies TSESLint.RuleModule<'crossPage', []>;
   const plugin = {
     meta: { name: 'fsd-boundaries', version: '1.0.0' },
     rules: {
@@ -168,7 +181,7 @@ export function createFsdPlugin(srcDir) {
       'slice-public-api': slicePublicApi,
       'no-cross-page': noCrossPage,
     },
-  };
+  } satisfies ESLint.Plugin;
 
   return plugin;
 }
