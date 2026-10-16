@@ -38,7 +38,7 @@ const group = (id: string, name: string): GroupCardFragment => ({
 function renderSheet(mocks: MockLink.MockedResponse[] = []) {
   const user = userEvent.setup();
   const client = new ApolloClient({ cache: new InMemoryCache(), link: new MockLink(mocks) });
-  client.writeQuery({ query: MyGroupsDocument, data: { myGroups: [group('group-old', '예전 갤러리')] } });
+  client.writeQuery({ query: MyGroupsDocument, data: { myGroups: [group('group-old', '예전 그룹')] } });
   render(
     <ApolloProvider client={client}>
       <OverlayProvider>
@@ -50,12 +50,12 @@ function renderSheet(mocks: MockLink.MockedResponse[] = []) {
             ))
           }
         >
-          갤러리 만들기
+          그룹 만들기
         </button>
       </OverlayProvider>
     </ApolloProvider>,
   );
-  return { user, client, opener: screen.getByRole('button', { name: '갤러리 만들기' }) };
+  return { user, client, opener: screen.getByRole('button', { name: '그룹 만들기' }) };
 }
 
 const navigatedTo = () => [...router.push.mock.calls, ...router.replace.mock.calls].map(([href]) => href);
@@ -72,21 +72,21 @@ describe('CreateGroupBottomSheet', () => {
   it('빈 이름을 제출하면 오류를 보여 주고 요청하지 않아야 한다', async () => {
     const { user, opener } = renderSheet();
     await user.click(opener);
-    const sheet = await screen.findByRole('dialog', { name: '우리만의 갤러리 만들기' });
+    const sheet = await screen.findByRole('dialog', { name: '우리만의 그룹 만들기' });
 
-    await user.click(screen.getAllByRole('button', { name: '갤러리 만들기' }).at(-1) ?? sheet);
+    await user.click(screen.getAllByRole('button', { name: '그룹 만들기' }).at(-1) ?? sheet);
 
-    expect(await screen.findByText('갤러리 이름을 입력해 주세요.')).toBeVisible();
-    expect(screen.getByLabelText('갤러리 이름')).toHaveAttribute('aria-invalid', 'true');
-    await user.type(screen.getByLabelText('갤러리 이름'), '웃음 메이트');
-    expect(screen.getByLabelText('갤러리 이름')).toHaveValue('웃음 메이트');
+    expect(await screen.findByText('그룹 이름을 입력해 주세요.')).toBeVisible();
+    expect(screen.getByLabelText('그룹 이름')).toHaveAttribute('aria-invalid', 'true');
+    await user.type(screen.getByLabelText('그룹 이름'), '웃음 메이트');
+    expect(screen.getByLabelText('그룹 이름')).toHaveValue('웃음 메이트');
     expect(navigatedTo()).toEqual([]);
   });
 
   it('Escape로 닫으면 시트를 연 버튼으로 포커스가 돌아가야 한다', async () => {
     const { user, opener } = renderSheet();
     await user.click(opener);
-    await screen.findByRole('dialog', { name: '우리만의 갤러리 만들기' });
+    await screen.findByRole('dialog', { name: '우리만의 그룹 만들기' });
 
     await user.keyboard('{Escape}');
 
@@ -94,7 +94,7 @@ describe('CreateGroupBottomSheet', () => {
     await waitFor(() => expect(opener).toHaveFocus());
   });
 
-  it('만들면 홈 목록 맨 앞에 넣고 새 갤러리 화면으로 가야 한다', async () => {
+  it('만들면 홈 목록 맨 앞에 넣고 새 그룹 화면으로 가야 한다', async () => {
     const created = group('group-new', '웃음 연구소');
     const { user, opener, client } = renderSheet([
       {
@@ -103,9 +103,9 @@ describe('CreateGroupBottomSheet', () => {
       },
     ]);
     await user.click(opener);
-    await screen.findByRole('dialog', { name: '우리만의 갤러리 만들기' });
+    await screen.findByRole('dialog', { name: '우리만의 그룹 만들기' });
 
-    await user.type(screen.getByLabelText('갤러리 이름'), '  웃음 연구소  ');
+    await user.type(screen.getByLabelText('그룹 이름'), '  웃음 연구소  ');
     await user.keyboard('{Enter}');
 
     await waitFor(() => expect(navigatedTo()).toEqual(['/groups/group-new']));

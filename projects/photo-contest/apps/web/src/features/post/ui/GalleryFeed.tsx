@@ -20,7 +20,7 @@ export function GalleryFeed({ groupId }: { groupId?: string }) {
           <p className="mt-6 hidden text-caption leading-relaxed text-subtle desktop:block">
             혼자 보기 아까운 순간들.
             <br />
-            갤러리의 친구들과 나눠보세요.
+            그룹의 친구들과 나눠보세요.
           </p>
         </aside>
       </div>

@@ -20,8 +20,8 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
     .with([], () => (
       <EmptyState
         icon={<Users className="size-6" />}
-        title="아직 참여한 갤러리가 없어요"
-        description="갤러리를 만들거나 친구의 초대 링크로 참여해 보세요."
+        title="아직 참여한 그룹이 없어요"
+        description="그룹을 만들거나 친구의 초대 링크로 참여해 보세요."
       />
     ))
     .otherwise((groups) => (
@@ -38,7 +38,7 @@ export function MyGroupsSection() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-title text-ink">내 갤러리</h2>
+        <h2 className="text-title text-ink">내 그룹</h2>
         <Button
           size="md"
           onClick={() => {
@@ -48,7 +48,7 @@ export function MyGroupsSection() {
           }}
         >
           <Plus aria-hidden className="size-4" />
-          갤러리 만들기
+          그룹 만들기
         </Button>
       </div>
       <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={refetch}>

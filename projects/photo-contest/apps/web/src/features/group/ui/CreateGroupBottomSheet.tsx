@@ -17,7 +17,7 @@ import { createGroupSchema } from '../model/group.schema';
 
 const FORM_ID = 'create-group-form';
 
-/** 갤러리 만들기. 만들면 홈 목록에 넣고 새 갤러리 화면으로 간다. 실패는 공통 토스트가 알린다. */
+/** 그룹 만들기. 만들면 홈 목록에 넣고 새 그룹 화면으로 간다. 실패는 공통 토스트가 알린다. */
 export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomSheetControlProps) {
   const router = useAppRouter();
   const form = useZodForm(createGroupSchema, { defaultValues: { name: '' } });
@@ -36,7 +36,7 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
-        title="우리만의 갤러리 만들기"
+        title="우리만의 그룹 만들기"
         description="기간 제한 없이 사진과 동영상으로 웃긴 순간을 나눠보세요."
       />
       <BottomSheet.Content>
@@ -53,7 +53,7 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
         >
           <TextField
             required
-            label="갤러리 이름"
+            label="그룹 이름"
             placeholder="예: 웃음 참기 연구소"
             autoComplete="off"
             enterKeyHint="done"
@@ -64,7 +64,7 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
       </BottomSheet.Content>
       <BottomSheet.Footer>
         <Button type="submit" form={FORM_ID} fullWidth loading={loading}>
-          갤러리 만들기
+          그룹 만들기
         </Button>
       </BottomSheet.Footer>
     </BottomSheet.Root>

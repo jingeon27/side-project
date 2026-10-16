@@ -43,7 +43,7 @@ export function CreatePostBottomSheet({
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
-        title="갤러리에 글쓰기"
+        title="그룹에 글쓰기"
         description="사진도 동영상도, 직접 찍은 순간도 합성도 환영해요."
       />
       <BottomSheet.Content>
@@ -96,7 +96,7 @@ export function CreatePostBottomSheet({
               {...form.register('rightsConfirmed')}
             />
             <span>
-              <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 갤러리
+              <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹
               멤버에게 공개됩니다.
             </span>
           </label>

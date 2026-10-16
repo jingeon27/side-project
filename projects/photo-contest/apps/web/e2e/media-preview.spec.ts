@@ -8,7 +8,7 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page, signIn }, testInfo) => {
     const cookie = await signIn('미리보기 회원');
-    const group = await seedGroup(cookie, '미리보기 갤러리');
+    const group = await seedGroup(cookie, '미리보기 그룹');
     const first = {
       name: 'landscape.png',
       mimeType: 'image/png',
@@ -22,7 +22,7 @@ test(
     await page.goto(`/groups/${group.id}`);
     const opener = page.getByRole('button', { name: '글쓰기', exact: true });
     await opener.click();
-    const sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+    const sheet = page.getByRole('dialog', { name: '그룹에 글쓰기' });
     const picker = sheet.getByLabel('사진·동영상 선택', { exact: true });
     const image = sheet.getByRole('img', { name: '선택한 사진 미리보기', exact: true });
     const fileChooser = page.waitForEvent('filechooser');

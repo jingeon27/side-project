@@ -11,7 +11,7 @@ import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useAppRouter } from '@/shared/model/router';
 import { Button } from '@/shared/ui/@core/button';
 
-/** 초대 수락. 가입하면 홈 목록에 넣고 갤러리 화면으로 바꿔 간다(뒤로 가기가 초대 화면으로 돌아오지 않게). */
+/** 초대 수락. 가입하면 홈 목록에 넣고 그룹 화면으로 바꿔 간다(뒤로 가기가 초대 화면으로 돌아오지 않게). */
 export function JoinGroupButton({ token }: { token: string }) {
   const router = useAppRouter();
   const [joinGroup, { loading, data }] = useMutation(JoinGroupDocument, {
@@ -30,7 +30,7 @@ export function JoinGroupButton({ token }: { token: string }) {
   });
 
   return (
-    // 갤러리 화면으로 옮겨 가는 동안 다시 누르지 못하게 가입한 뒤에도 진행 중으로 둔다.
+    // 그룹 화면으로 옮겨 가는 동안 다시 누르지 못하게 가입한 뒤에도 진행 중으로 둔다.
     <Button
       fullWidth
       loading={loading || Boolean(data)}

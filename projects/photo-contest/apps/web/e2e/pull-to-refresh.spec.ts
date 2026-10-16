@@ -50,7 +50,7 @@ test(
   { tag: '@ios' },
   async ({ page, signIn, browserName }) => {
     const cookie = await signIn('당겨서 갱신 회원');
-    const group = await seedGroup(cookie, '당겨서 갱신 갤러리');
+    const group = await seedGroup(cookie, '당겨서 갱신 그룹');
     await seedPost(cookie, group.id, '처음 보인 순간');
     await page.goto('/');
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });

@@ -11,7 +11,7 @@ test(
   async ({ page, signIn }, testInfo) => {
     const owner = await signIn('댓글 관리자');
     const member = await createTestUser(API_URL, { nickname: '댓글 친구', origin: WEB_ORIGIN });
-    const group = await seedGroup(owner, '댓글 갤러리');
+    const group = await seedGroup(owner, '댓글 그룹');
     await productRequest(member, 'mutation($token:String!){joinGroup(token:$token){id}}', {
       token: group.inviteToken,
     });
@@ -55,7 +55,7 @@ test(
 
 test('댓글의 다음 페이지와 새 댓글 작성 뒤 목록을 정확히 이어 받아야 한다', async ({ page, signIn }) => {
   const cookie = await signIn('댓글 페이지 회원');
-  const group = await seedGroup(cookie, '댓글 페이지 갤러리');
+  const group = await seedGroup(cookie, '댓글 페이지 그룹');
   const postId = await seedPost(cookie, group.id, '댓글 많은 순간');
   for (let index = 0; index < 25; index++)
     await productRequest(

@@ -64,7 +64,7 @@ export function getPhaseGuide({ phase, hasSubmitted, hasVoted }: IPhaseGuideInpu
     }))
     .with({ phase: Phase.Submission }, () => ({
       title: '이번 대회의 주인공이 되어보세요',
-      description: '갤러리 속 숨겨둔 한 장, 지금 꺼내볼까요? 한 사람당 사진 한 장이에요.',
+      description: '사진첩 속 숨겨둔 한 장, 지금 꺼내볼까요? 한 사람당 사진 한 장이에요.',
     }))
     .with({ phase: Phase.Voting, hasVoted: true }, () => ({
       title: '투표 완료!',

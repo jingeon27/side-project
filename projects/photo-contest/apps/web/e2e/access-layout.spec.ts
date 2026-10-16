@@ -60,7 +60,7 @@ test(
     expect(home.errors).toBe(0);
     const me = await readServerText('/me');
     expect(me.text).toContain('SSR 사용자');
-    expect(me.text).toContain('내 갤러리');
+    expect(me.text).toContain('내 그룹');
     expect(me.errors).toBe(0);
   },
 );
@@ -127,7 +127,7 @@ test(
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-home.png`, fullPage: true });
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page.getByRole('heading', { name: '레이아웃-사용자' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '내 갤러리' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '내 그룹' })).toBeVisible();
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await expect(page).toHaveURL(WEB_ORIGIN + '/');
     await expect(page.getByRole('button', { name: /구글|Google/ })).toBeVisible();

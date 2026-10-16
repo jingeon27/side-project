@@ -116,7 +116,7 @@ export function PostCommentsBottomSheet({
   });
   return (
     <BottomSheet.Root {...controls}>
-      <BottomSheet.Header title="댓글" description="갤러리 멤버끼리 이야기를 나눠보세요." />
+      <BottomSheet.Header title="댓글" description="그룹 멤버끼리 이야기를 나눠보세요." />
       <BottomSheet.Content>
         <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-32 w-full" />}>
           <CommentList commentsRef={commentsRef} postId={postId} />

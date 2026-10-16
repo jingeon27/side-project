@@ -5,11 +5,11 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page, signIn }) => {
     const cookie = await signIn('시트 회귀 회원');
-    const group = await seedGroup(cookie, '시트 확인 갤러리');
+    const group = await seedGroup(cookie, '시트 확인 그룹');
     await page.goto(`/groups/${group.id}`);
     const opener = page.getByRole('button', { name: '글쓰기', exact: true });
     await opener.click();
-    let sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+    let sheet = page.getByRole('dialog', { name: '그룹에 글쓰기' });
     await expect(sheet).toBeVisible();
     const viewport = page.viewportSize();
     if (!viewport) throw new Error('viewport missing');
@@ -43,7 +43,7 @@ test(
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(opener).toBeFocused();
     await opener.click();
-    sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+    sheet = page.getByRole('dialog', { name: '그룹에 글쓰기' });
     await expect(sheet.getByLabel('제목', { exact: true })).toHaveValue('');
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);

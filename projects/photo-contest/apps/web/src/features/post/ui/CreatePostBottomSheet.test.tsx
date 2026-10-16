@@ -57,7 +57,7 @@ async function openSheet() {
     </StrictMode>,
   );
   await user.click(screen.getByRole('button', { name: '글쓰기' }));
-  await screen.findByRole('dialog', { name: '갤러리에 글쓰기' });
+  await screen.findByRole('dialog', { name: '그룹에 글쓰기' });
   return { user, input: screen.getByLabelText('사진·동영상 선택') };
 }
 
@@ -109,7 +109,7 @@ describe('선택한 게시물 파일 미리보기', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-2');
     await user.click(screen.getByRole('button', { name: '글쓰기' }));
-    await screen.findByRole('dialog', { name: '갤러리에 글쓰기' });
+    await screen.findByRole('dialog', { name: '그룹에 글쓰기' });
     expect(screen.queryByRole('figure', { name: '선택한 파일 미리보기' })).not.toBeInTheDocument();
   });
 

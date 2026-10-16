@@ -32,7 +32,7 @@ function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][nu
   };
 }
 const VARIABLES: GalleryPostsQueryVariables = { groupId: null, sort: PostSort.Newest, offset: 0, limit: 2 };
-describe('갤러리 게시물 캐시', () => {
+describe('그룹 게시물 캐시', () => {
   it('댓글 페이지를 게시물별로 나누고 첫 페이지 갱신은 이전 뒷페이지를 대체해야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });
     const write = (postId: string, offset: number, id: string, overwrite = false) =>
@@ -67,7 +67,7 @@ describe('갤러리 게시물 캐시', () => {
     expect(read('a')).toEqual(['a-fresh']);
     expect(read('b')).toEqual(['b-new']);
   });
-  it('전체 최신·각 갤러리·이달 인기의 offset 목록을 섞지 않아야 한다', () => {
+  it('전체 최신·각 그룹·이달 인기의 offset 목록을 섞지 않아야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });
     const write = (variables: GalleryPostsQueryVariables, ids: string[]) =>
       cache.writeQuery({

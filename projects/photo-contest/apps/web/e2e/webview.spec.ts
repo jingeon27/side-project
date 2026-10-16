@@ -72,17 +72,17 @@ test('가짜 앱 WebView에서도 로그인 교환·초대 공유·뒤로 가기
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
     expect((await context.cookies()).find(({ name }) => name === 'contest_session')?.httpOnly).toBe(true);
     await page.getByRole('link', { name: 'MY', exact: true }).click();
-    await page.getByRole('button', { name: '갤러리 만들기' }).click();
-    await page.getByRole('dialog').getByLabel('갤러리 이름').fill('웹뷰 모임');
+    await page.getByRole('button', { name: '그룹 만들기' }).click();
+    await page.getByRole('dialog').getByLabel('그룹 이름').fill('웹뷰 모임');
     await expect(router.requestWeb('navigation.back', {}, { timeoutMs: 800 })).resolves.toEqual({
       handled: true,
     });
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.getByRole('button', { name: '갤러리 만들기' }).click();
-    await page.getByRole('dialog').getByLabel('갤러리 이름').fill('웹뷰 모임');
-    await page.getByRole('dialog').getByRole('button', { name: '갤러리 만들기', exact: true }).click();
+    await page.getByRole('button', { name: '그룹 만들기' }).click();
+    await page.getByRole('dialog').getByLabel('그룹 이름').fill('웹뷰 모임');
+    await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();
     await expect(page).toHaveURL(/\/groups\/[^/]+$/);
-    await page.getByText('초대와 갤러리 멤버', { exact: true }).click();
+    await page.getByText('초대와 그룹 멤버', { exact: true }).click();
     await page.getByRole('button', { name: '친구 초대하기' }).click();
     await page.getByRole('button', { name: '링크 복사', exact: true }).click();
     expect(calls).toEqual(['auth.socialLogin', 'share.open', 'clipboard.copy']);

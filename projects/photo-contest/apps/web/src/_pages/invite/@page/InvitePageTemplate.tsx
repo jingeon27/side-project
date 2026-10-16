@@ -49,7 +49,7 @@ function InviteContent({
       </section>
       {match(preview.joinedGroupId)
         .with(P.string, (groupId) => (
-          <ButtonLink href={ROUTES.GROUP(groupId)}>이미 가입한 갤러리으로 이동</ButtonLink>
+          <ButtonLink href={ROUTES.GROUP(groupId)}>이미 가입한 그룹으로 이동</ButtonLink>
         ))
         .with(null, () => (
           <ViewerBoundary

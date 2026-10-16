@@ -20,7 +20,7 @@ import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { CreatePostButton, GalleryFeed } from '@/features/post';
 import { GroupCommunity } from './community/GroupCommunity';
 
-function GroupFrame({ title = '갤러리', children }: { title?: string; children: ReactNode }) {
+function GroupFrame({ title = '그룹', children }: { title?: string; children: ReactNode }) {
   return (
     <>
       <TopAppBar title={title} backHref={ROUTES.HOME} />
@@ -73,7 +73,7 @@ function GroupContent({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-title-lg text-ink">{group.name}</p>
-          <p className="mt-1 text-label text-ink">{group.members.length}명이 함께하는 갤러리</p>
+          <p className="mt-1 text-label text-ink">{group.members.length}명이 함께하는 그룹</p>
           <p className="mt-2 text-caption text-muted">사진도 동영상도, 합성도 환영해요.</p>
         </div>
         <CreatePostButton groupId={group.id} />
@@ -81,7 +81,7 @@ function GroupContent({
       <GalleryFeed groupId={group.id} />
       <details className="rounded-card border border-line p-4">
         <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
-          초대와 갤러리 멤버
+          초대와 그룹 멤버
         </summary>
         <div className="mt-4 flex flex-col gap-6">
           <InviteCard

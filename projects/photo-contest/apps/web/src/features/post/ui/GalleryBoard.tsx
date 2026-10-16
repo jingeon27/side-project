@@ -44,7 +44,7 @@ function BoardContent({
           <EmptyState
             icon={<Camera className="size-6" />}
             title={popular ? '이달의 첫 웃음을 기다려요' : '아직 올라온 게시물이 없어요'}
-            description="갤러리에 사진이나 동영상을 올려보세요. 합성도 환영해요."
+            description="그룹에 사진이나 동영상을 올려보세요. 합성도 환영해요."
           />
         ))
         .otherwise((posts) => (
