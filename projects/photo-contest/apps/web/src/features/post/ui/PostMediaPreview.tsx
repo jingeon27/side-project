@@ -4,7 +4,16 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/shared/ui/@core/button';
-export function PostMediaPreview({ file, src, onRemove }: { file: File; src: string; onRemove: () => void }) {
+
+interface IPostMediaPreviewProps {
+  file: File;
+  src: string;
+  disabled?: boolean;
+  onReplace: () => void;
+  onRemove: () => void;
+}
+
+export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: IPostMediaPreviewProps) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const videoRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -49,11 +58,23 @@ export function PostMediaPreview({ file, src, onRemove }: { file: File; src: str
           />
         )}
       </div>
-      <figcaption className="flex items-center justify-between gap-3">
+      <figcaption className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="min-w-0 text-caption wrap-break-word text-muted">{file.name}</span>
-        <Button type="button" variant="ghost" size="md" onClick={onRemove}>
-          선택한 파일 제거
-        </Button>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Button type="button" variant="secondary" size="md" disabled={disabled} onClick={onReplace}>
+            파일 바꾸기
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            disabled={disabled}
+            aria-label="선택한 파일 제거"
+            onClick={onRemove}
+          >
+            제거
+          </Button>
+        </div>
       </figcaption>
       {status === 'loading' ? (
         <p role="status" className="text-caption text-muted">

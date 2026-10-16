@@ -129,10 +129,20 @@ describe('선택한 게시물 파일 미리보기', () => {
   });
 
   it('디코드 실패를 알리고 새 파일을 선택하면 실패한 미리보기를 교체해야 한다', async () => {
-    const view = render(<PostMediaPreview file={photo()} src="blob:first" onRemove={() => {}} />);
+    const view = render(
+      <PostMediaPreview file={photo()} src="blob:first" onReplace={() => {}} onRemove={() => {}} />,
+    );
     fireEvent.error(await screen.findByRole('img', { name: '선택한 사진 미리보기' }));
     expect(await screen.findByText(/미리보기를 열 수 없어요/)).toBeVisible();
-    view.rerender(<PostMediaPreview key="next" file={video()} src="blob:second" onRemove={() => {}} />);
+    view.rerender(
+      <PostMediaPreview
+        key="next"
+        file={video()}
+        src="blob:second"
+        onReplace={() => {}}
+        onRemove={() => {}}
+      />,
+    );
     const player = await screen.findByLabelText('선택한 동영상 미리보기');
     fireEvent.loadedData(player);
     expect(screen.queryByText(/미리보기를 열 수 없어요/)).not.toBeInTheDocument();
