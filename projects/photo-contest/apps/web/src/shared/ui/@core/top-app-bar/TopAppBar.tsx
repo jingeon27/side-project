@@ -9,6 +9,7 @@ import { cn } from '../../../lib/cn.helper';
 import { ROUTES } from '../../../constants/routes';
 import { useBackNavigation } from '../../../model/router';
 import { IconButton } from '../icon-button';
+import { LegalLinks } from '../legal-links';
 
 const APP_BAR_CLASS_NAME = 'sticky top-0 z-app-bar shrink-0 border-b border-line bg-surface pt-(--safe-top)';
 
@@ -35,6 +36,7 @@ function DesktopNavigation() {
         <div className="mt-auto px-3 text-caption text-subtle">
           <p className="text-label text-muted">가볍게 올리고, 같이 웃어요.</p>
           <p className="mt-2">사진 · 동영상 · 합성</p>
+          <LegalLinks className="mt-3 gap-x-2" />
           <p className="mt-6 text-micro">© 웃긴순간</p>
         </div>
       </nav>

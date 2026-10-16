@@ -2,6 +2,7 @@
 
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { ROUTES } from '@/shared/constants/routes';
+import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
@@ -22,6 +23,10 @@ export function MePageTemplate() {
             <div className="flex flex-col gap-8">
               <MyProfile viewerRef={viewerRef} />
               <MyGroupsSection />
+              <div className="border-t border-line pt-4">
+                <h2 className="text-label text-ink">서비스 안내</h2>
+                <LegalLinks />
+              </div>
             </div>
           )}
         </ViewerBoundary>

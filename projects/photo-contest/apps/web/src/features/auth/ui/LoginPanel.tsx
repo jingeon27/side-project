@@ -18,6 +18,7 @@ import { getErrorMessage } from '@/shared/model/error';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
+import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 
@@ -199,6 +200,10 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         ))
         .with({ status: 'ready' }, ({ config }) => <LoginMethods config={config} nextPath={next} />)
         .exhaustive()}
+      <div className="border-t border-line pt-3">
+        <p className="text-caption text-muted">서비스 이용에 관한 안내를 확인해 주세요.</p>
+        <LegalLinks />
+      </div>
     </section>
   );
 }
