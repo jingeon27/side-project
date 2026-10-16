@@ -13,7 +13,7 @@ export default defineConfig([
     '**/playwright-report/**',
     '**/test-results/**',
     '**/.e2e-build/**',
-    // 웹·모바일은 각 앱의 eslint.config.mjs가 검사한다.
+    // 웹·모바일은 각 앱의 eslint.config.ts가 검사한다.
     'apps/web/**',
     'apps/mobile/**',
   ]),
