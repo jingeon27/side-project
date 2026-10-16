@@ -2,7 +2,7 @@
 import { Button } from '@side/design-system';
 import { ArrowUpRight, MessageCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
-import { LoadingState } from '@/shared/ui';
+import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { ChatConnectionStatus } from './ChatConnectionStatus';
 import { ChatWelcome } from './ChatWelcome';
 import { ConversationPane } from './ConversationPane';
@@ -42,14 +42,22 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
         <ChatConnectionStatus />
       </div>
       <div className={`chat-workspace ${conversationId ? 'has-conversation' : ''}`}>
-        <ConversationSidebar userId={userId} conversationId={conversationId} locale={locale} />
+        <ServiceErrorBoundary title="대화 목록" resetKey={userId} fallbackClassName="conversation-sidebar">
+          <ConversationSidebar userId={userId} conversationId={conversationId} locale={locale} />
+        </ServiceErrorBoundary>
         {conversationId ? (
-          <ConversationPane
-            key={`${userId}:${conversationId}`}
-            conversationId={conversationId}
-            userId={userId}
-            locale={locale}
-          />
+          <ServiceErrorBoundary
+            title="대화창"
+            resetKey={`${userId}:${conversationId}`}
+            fallbackClassName="conversation-pane"
+          >
+            <ConversationPane
+              key={`${userId}:${conversationId}`}
+              conversationId={conversationId}
+              userId={userId}
+              locale={locale}
+            />
+          </ServiceErrorBoundary>
         ) : (
           <ChatWelcome locale={locale} />
         )}

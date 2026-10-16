@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "node scripts/test.mjs"
   },
   "dependencies": {
     "@game-feedback/bridge": "workspace:*",

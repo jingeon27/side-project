@@ -1,13 +1,12 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { overlay } from 'overlay-kit';
 import { Flag, Pencil, Trash2, ShieldBan } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { StartChatLink } from '@/widgets/start-chat';
 import { PostComposer } from '@/widgets/post-composer';
 import { BlockUserDialog } from '@/widgets/moderation';
 import type { Author, Post } from '@/shared/api';
-import { useNotify } from '@/shared/ui';
+import { openOverlay, useNotify } from '@/shared/ui';
 import { ContentEditDialog } from './ContentEditDialog';
 import { ContentDeleteDialog } from './ContentDeleteDialog';
 import { ReportDialog } from './ReportDialog';
@@ -30,7 +29,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         <button
           className="text-button"
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => {
+            openOverlay(({ isOpen, close, unmount }) => {
               const onOpenChange = (next: boolean) => {
                 if (next) return;
                 close();
@@ -56,7 +55,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         <button
           className="text-button danger-text"
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
+            openOverlay(({ isOpen, close, unmount }) => (
               <ContentDeleteDialog
                 open={isOpen}
                 onOpenChange={(next) => {
@@ -87,7 +86,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
             login();
             return;
           }
-          overlay.open(({ isOpen, close, unmount }) => (
+          openOverlay(({ isOpen, close, unmount }) => (
             <ReportDialog
               open={isOpen}
               onOpenChange={(next) => {
@@ -111,7 +110,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
             login();
             return;
           }
-          overlay.open(({ isOpen, close, unmount }) => (
+          openOverlay(({ isOpen, close, unmount }) => (
             <BlockUserDialog
               author={author}
               open={isOpen}

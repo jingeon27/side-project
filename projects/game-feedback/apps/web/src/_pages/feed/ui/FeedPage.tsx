@@ -3,14 +3,13 @@ import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { Suspense, useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { overlay } from 'overlay-kit';
 import { ArrowUpRight, Plus, MessageSquare, Sparkles, ArrowRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { postListOptions, PostCard } from '@/features/post';
 import { UserBadges } from '@/features/user';
 import { Deck } from '@/features/game-profile';
 import { PostComposer } from '@/widgets/post-composer';
-import { ErrorNotice, LoadingState } from '@/shared/ui';
+import { openOverlay, ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { useFeedFilters } from '../model/use-feed-filters';
 import { FeedHero } from './FeedHero';
 import { FeedFilters } from './FeedFilters';
@@ -53,7 +52,7 @@ function FeedContent({ locale }: { locale: string }) {
       login();
       return;
     }
-    overlay.open(({ isOpen, close, unmount }) => (
+    openOverlay(({ isOpen, close, unmount }) => (
       <PostComposer
         locale={locale}
         open={isOpen}
@@ -123,13 +122,14 @@ function FeedContent({ locale }: { locale: string }) {
         )}
         <div className="post-list">
           {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              href={`/${locale}/posts/${post.id}`}
-              authorContent={<UserBadges author={post.author} compact />}
-              deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
-            />
+            <ServiceErrorBoundary key={post.id} title="피드백 카드" resetKey={post.id}>
+              <PostCard
+                post={post}
+                href={`/${locale}/posts/${post.id}`}
+                authorContent={<UserBadges author={post.author} compact />}
+                deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
+              />
+            </ServiceErrorBoundary>
           ))}
         </div>
         <div ref={sentinel} className="feed-sentinel" />

@@ -1,11 +1,12 @@
 'use client';
+import { openOverlay } from '@/shared/ui';
 import { useEffect } from 'react';
 import { overlay } from 'overlay-kit';
 import { useSession } from '@/features/auth';
 import { LoginDialog } from '../ui/LoginDialog';
 
 export function openLoginDialog() {
-  overlay.open(
+  openOverlay(
     ({ isOpen, close, unmount }) => (
       <LoginDialog
         open={isOpen}
@@ -29,7 +30,7 @@ export function AuthOnboarding() {
   useEffect(() => {
     if (!pending) return;
     // 서버의 가입 대기 상태를 외부 overlay store와 연결하고 화면 종료 시 해제한다.
-    const id = overlay.open(
+    const id = openOverlay(
       ({ isOpen, close, unmount }) => (
         <LoginDialog
           open={isOpen}

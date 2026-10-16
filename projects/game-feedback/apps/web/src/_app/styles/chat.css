@@ -18,6 +18,7 @@
   .chat-layout {
     grid-template-columns: 190px minmax(0, 1fr);
   }
+  .chat-layout > .shell-player-sidebar,
   .chat-layout > .right-sidebar {
     display: none;
   }

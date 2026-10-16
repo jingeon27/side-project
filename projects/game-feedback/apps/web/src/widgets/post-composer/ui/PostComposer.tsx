@@ -3,7 +3,6 @@ import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { overlay } from 'overlay-kit';
 import { LoaderCircle, ArrowUpRight, Plus, Info } from 'lucide-react';
 import { categoryOptions } from '@/features/category';
 import { useSession } from '@/features/auth';
@@ -11,7 +10,7 @@ import { useCreatePostMutation, useUpdatePostMutation } from '@/features/post';
 import { gameAccountListOptions, Deck } from '@/features/game-profile';
 import { ConnectProfile } from '@/widgets/game-profile';
 import type { Category, GameProfile, Post } from '@/shared/api';
-import { Modal, Field, ErrorNotice, LoadingState, useNotify } from '@/shared/ui';
+import { openOverlay, Modal, Field, ErrorNotice, LoadingState, useNotify } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { postComposerSchema } from '../model/post-composer.schema';
 interface IPostComposerProps {
@@ -156,7 +155,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
               className="button outline full"
               type="button"
               onClick={() =>
-                overlay.open(({ isOpen, close, unmount }) => (
+                openOverlay(({ isOpen, close, unmount }) => (
                   <Modal
                     open={isOpen}
                     onOpenChange={(next) => {

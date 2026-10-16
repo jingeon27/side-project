@@ -5,7 +5,7 @@ import { overlay } from 'overlay-kit';
 import { chatMessageOptions } from '@/features/chat';
 import { BlockUserDialog } from '@/widgets/moderation';
 import type { Author } from '@/shared/api';
-import { useNotify } from '@/shared/ui';
+import { openOverlay, useNotify } from '@/shared/ui';
 
 interface IChatBlockOptions {
   userId: string;
@@ -27,7 +27,7 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
   );
 
   function handleBlock(author: Author) {
-    dialogId.current = overlay.open(({ isOpen, close, unmount }) => (
+    dialogId.current = openOverlay(({ isOpen, close, unmount }) => (
       <BlockUserDialog
         author={author}
         open={isOpen}

@@ -6,7 +6,7 @@ import { SessionProvider, useSession } from '@/features/auth';
 import { AuthOnboarding, openLoginDialog } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 import { NativeBridge } from './NativeBridge';
-import { ToastProvider } from '@/shared/ui';
+import { ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -17,11 +17,13 @@ export function Providers({ children }: { children: ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
-      <ToastProvider>
-        <SessionProvider onLogin={openLoginDialog}>
-          <SessionContent>{children}</SessionContent>
-        </SessionProvider>
-      </ToastProvider>
+      <ServiceErrorBoundary title="서비스 연결">
+        <ToastProvider>
+          <SessionProvider onLogin={openLoginDialog}>
+            <SessionContent>{children}</SessionContent>
+          </SessionProvider>
+        </ToastProvider>
+      </ServiceErrorBoundary>
     </QueryClientProvider>
   );
 }
@@ -30,8 +32,12 @@ function SessionContent({ children }: { children: ReactNode }) {
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
-      <NativeBridge />
-      <AuthOnboarding />
+      <ServiceErrorBoundary title="앱 연결">
+        <NativeBridge />
+      </ServiceErrorBoundary>
+      <ServiceErrorBoundary title="회원가입 안내">
+        <AuthOnboarding />
+      </ServiceErrorBoundary>
     </OverlayProvider>
   );
 }

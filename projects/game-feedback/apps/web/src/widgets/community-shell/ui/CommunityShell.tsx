@@ -8,6 +8,7 @@ import { useSession } from '@/features/auth';
 import { notificationSummaryOptions } from '@/features/notification';
 import { conversationBadgeOptions } from '@/features/chat';
 import { useChatConnection } from '@/widgets/chat-realtime';
+import { ServiceErrorBoundary } from '@/shared/ui';
 import { Topbar } from './Topbar';
 import { LeftSidebar } from './LeftSidebar';
 import { PlayerSidebar } from './PlayerSidebar';
@@ -25,9 +26,12 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
   const chatUnread = conversations?.unreadCount ?? 0;
   const unread = notifications?.unreadCount ?? 0;
   const home = `/${locale}`;
+  const userKey = session?.user?.id ?? 'anonymous';
   return (
     <>
-      <Topbar home={home} path={path} chatUnread={chatUnread} unread={unread} />
+      <ServiceErrorBoundary title="상단 메뉴" resetKey={userKey}>
+        <Topbar home={home} path={path} chatUnread={chatUnread} unread={unread} />
+      </ServiceErrorBoundary>
       {locale !== 'ko' && (
         <div className="language-banner">
           <Globe2 size={16} />
@@ -40,11 +44,25 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
         </div>
       )}
       <div className={`site-grid ${path.endsWith('/messages') ? 'chat-layout' : ''}`}>
-        <LeftSidebar home={home} path={path} unread={unread} chatUnread={chatUnread} />
-        <main className="main-content">{children}</main>
-        <PlayerSidebar home={home} />
+        <div className="shell-left-sidebar">
+          <ServiceErrorBoundary title="탐색 메뉴" resetKey={userKey}>
+            <LeftSidebar home={home} path={path} unread={unread} chatUnread={chatUnread} />
+          </ServiceErrorBoundary>
+        </div>
+        <main className="main-content">
+          <ServiceErrorBoundary title="이 화면" resetKey={`${userKey}:${path}`} refreshOnRetry>
+            {children}
+          </ServiceErrorBoundary>
+        </main>
+        <div className="shell-player-sidebar">
+          <ServiceErrorBoundary title="플레이어 프로필" resetKey={userKey}>
+            <PlayerSidebar home={home} />
+          </ServiceErrorBoundary>
+        </div>
       </div>
-      <MobileNav home={home} path={path} chatUnread={chatUnread} />
+      <ServiceErrorBoundary title="하단 메뉴" resetKey={userKey}>
+        <MobileNav home={home} path={path} chatUnread={chatUnread} />
+      </ServiceErrorBoundary>
     </>
   );
 }

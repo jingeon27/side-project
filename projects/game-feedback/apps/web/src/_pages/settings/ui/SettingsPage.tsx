@@ -2,21 +2,20 @@
 import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { overlay } from 'overlay-kit';
 import { Gamepad2, Plus, LogOut, Trash2, ShieldBan, ArrowUpRight, Globe2 } from 'lucide-react';
 import { useSession, useLogout } from '@/features/auth';
 import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
 import { blockListOptions, useUnblockUser, UserBadges } from '@/features/user';
 import { TestAccountPicker } from '@/widgets/authentication';
 import { ConnectProfile } from '@/widgets/game-profile';
-import { Avatar, ErrorNotice, LoadingState, Modal } from '@/shared/ui';
+import { openOverlay, Avatar, ErrorNotice, LoadingState, Modal } from '@/shared/ui';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 
 interface ISettingsPageProps {
   locale: string;
 }
 function openProfileConnection() {
-  overlay.open(({ isOpen, close, unmount }) => (
+  openOverlay(({ isOpen, close, unmount }) => (
     <Modal
       open={isOpen}
       onOpenChange={(open) => {
@@ -37,7 +36,7 @@ function openProfileConnection() {
   ));
 }
 function openAccountDeletion() {
-  overlay.open(({ isOpen, close, unmount }) => (
+  openOverlay(({ isOpen, close, unmount }) => (
     <DeleteAccountDialog
       open={isOpen}
       onClose={() => {

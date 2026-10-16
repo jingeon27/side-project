@@ -7,7 +7,7 @@ import { postDetailOptions, PostArticle } from '@/features/post';
 import { useSession } from '@/features/auth';
 import { UserBadges } from '@/features/user';
 import { ProfileSnapshot } from '@/features/game-profile';
-import { ErrorNotice, LoadingState } from '@/shared/ui';
+import { ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { usePostRead } from '../model/use-post-read.hook';
 import { ContentActions } from './ContentActions';
 import { PostAnswersSection } from './PostAnswersSection';
@@ -37,14 +37,22 @@ export function PostPage({ id, locale }: IPostPageProps) {
         <ArrowLeft size={16} />
         피드백 라운지
       </Link>
-      <PostArticle
-        post={post}
-        authorContent={<UserBadges author={post.author} />}
-        actions={<ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />}
-        profile={post.gameProfile && <ProfileSnapshot profile={post.gameProfile} />}
-      />
-      <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
-      <PostCommentsSection post={post} comments={comments} locale={locale} />
+      <ServiceErrorBoundary title="게시글" resetKey={id}>
+        <PostArticle
+          post={post}
+          authorContent={<UserBadges author={post.author} />}
+          actions={
+            <ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />
+          }
+          profile={post.gameProfile && <ProfileSnapshot profile={post.gameProfile} />}
+        />
+      </ServiceErrorBoundary>
+      <ServiceErrorBoundary title="답변" resetKey={id}>
+        <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
+      </ServiceErrorBoundary>
+      <ServiceErrorBoundary title="댓글" resetKey={id}>
+        <PostCommentsSection post={post} comments={comments} locale={locale} />
+      </ServiceErrorBoundary>
     </>
   );
 }
