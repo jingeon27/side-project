@@ -1,7 +1,28 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
+import { useLayoutEffect, useSyncExternalStore } from 'react';
 import { labels, type UiLocale } from '@/shared/config/labels';
+
+type Theme = 'light' | 'dark';
+
+function getPreferredTheme(): Theme {
+  try {
+    const saved = localStorage.getItem('blog-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch {
+    /* Use the current document or system preference when storage is unavailable. */
+  }
+  const current = document.documentElement.dataset.theme;
+  if (current === 'light' || current === 'dark') return current;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+  window.dispatchEvent(new Event('blog-theme-change'));
+}
 
 function subscribe(callback: () => void) {
   window.addEventListener('blog-theme-change', callback);
@@ -10,17 +31,21 @@ function subscribe(callback: () => void) {
 const getTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
 export function ThemeSwitch({ locale }: { locale: UiLocale }) {
+  const pathname = usePathname();
   const theme = useSyncExternalStore(subscribe, getTheme, () => 'light');
+  useLayoutEffect(() => {
+    // Locale navigation replaces document attributes without rerunning the initial theme script.
+    applyTheme(getPreferredTheme());
+  }, [locale, pathname]);
+
   function toggle() {
     const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    document.documentElement.style.colorScheme = next;
     try {
       localStorage.setItem('blog-theme', next);
     } catch {
       /* Reading works without storage. */
     }
-    window.dispatchEvent(new Event('blog-theme-change'));
+    applyTheme(next);
   }
   return (
     <button

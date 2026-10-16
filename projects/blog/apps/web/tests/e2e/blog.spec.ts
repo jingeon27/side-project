@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import index from '../../src/entities/article/lib/index.json' with { type: 'json' };
 import ko from '../../messages/ko.json' with { type: 'json' };
 import en from '../../messages/en.json' with { type: 'json' };
@@ -8,6 +8,24 @@ import { readFileSync } from 'node:fs';
 const articles = index.filter((article) => article.locale === 'ko');
 const article = articles.find((entry) => entry.toc.length > 0) || articles[0]!;
 const articlePath = `/ko/blog/${encodeURIComponent(article.slug)}`;
+
+async function expectSelectedTheme(
+  page: Page,
+  locale: 'ko' | 'en',
+  selected: 'light' | 'dark',
+  background: string,
+) {
+  const html = page.locator('html');
+  await expect(html).toHaveAttribute('data-theme', selected);
+  await expect.poll(() => html.evaluate((element) => element.style.colorScheme)).toBe(selected);
+  await expect(html).toHaveCSS('color-scheme', selected);
+  await expect(page.locator('body')).toHaveCSS('background-color', background);
+  await expect(page.getByRole('button', { name: (locale === 'ko' ? ko : en).nav.theme })).toHaveAttribute(
+    'aria-pressed',
+    String(selected === 'dark'),
+  );
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('blog-theme'))).toBe(selected);
+}
 
 test('browse home, search articles, open detail, and visit About', async ({ page }) => {
   await page.goto('/ko');
@@ -242,6 +260,73 @@ test('theme persists and the layout stays inside the viewport', async ({ page })
     expect(article.toc.some((entry) => entry.id === headingId)).toBe(true);
   }
 });
+
+for (const { system, selected } of [
+  { system: 'light', selected: 'dark' },
+  { system: 'dark', selected: 'light' },
+] as const) {
+  test(`the selected ${selected} theme survives language navigation with an OS ${system} preference`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await page.emulateMedia({ colorScheme: system });
+    await page.goto('/ko');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', system);
+    const themeSwitch = page.getByRole('button', { name: ko.nav.theme });
+    await expect(themeSwitch).toHaveAttribute('aria-pressed', String(system === 'dark'));
+    await themeSwitch.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', selected);
+    const background = await page
+      .locator('body')
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    await expectSelectedTheme(page, 'ko', selected, background);
+
+    for (const suffix of ['', '/blog', '/about']) {
+      if (suffix) {
+        await page
+          .getByRole('navigation')
+          .getByRole('link', {
+            name: suffix === '/blog' ? ko.nav.blog : ko.nav.about,
+            exact: true,
+          })
+          .click();
+        await expect(page).toHaveURL(new RegExp(`/ko${suffix}$`));
+        await expectSelectedTheme(page, 'ko', selected, background);
+      }
+      for (const [from, to] of [
+        ['ko', 'en'],
+        ['en', 'ko'],
+      ] as const) {
+        await page
+          .getByRole('button', {
+            name: new RegExp(`^${(from === 'ko' ? ko : en).nav.language}:`),
+          })
+          .click();
+        await expect(page).toHaveURL(new RegExp(`/${to}${suffix}$`));
+        await expect(page.locator('html')).toHaveAttribute('lang', to);
+        await expectSelectedTheme(page, to, selected, background);
+      }
+    }
+
+    const untranslated = articles.find((entry) => !('en' in entry.translations));
+    if (untranslated) {
+      await page.getByRole('navigation').getByRole('link', { name: ko.nav.blog, exact: true }).click();
+      await expect(page).toHaveURL(/\/ko\/blog$/);
+      await page.getByRole('link', { name: untranslated.title, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`${encodeURIComponent(untranslated.slug)}$`));
+      await page.getByRole('button', { name: new RegExp(`^${ko.nav.language}:`) }).click();
+      await expect(page.getByRole('status')).toContainText(ko.common.translationMissing);
+      await expectSelectedTheme(page, 'ko', selected, background);
+      await page.getByRole('link', { name: ko.common.translationList, exact: true }).click();
+      await expect(page).toHaveURL(/\/en\/blog$/);
+      await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+      await expectSelectedTheme(page, 'en', selected, background);
+      await page.getByRole('button', { name: new RegExp(`^${en.nav.language}:`) }).click();
+      await expect(page).toHaveURL(/\/ko\/blog$/);
+      await expectSelectedTheme(page, 'ko', selected, background);
+    }
+  });
+}
 
 test('unknown pages, slugs, categories, tags and unsupported locales return 404', async ({ request }) => {
   for (const path of [
