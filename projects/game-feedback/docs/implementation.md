@@ -273,6 +273,18 @@ Web Vitest 11개 파일·37개, 타입 검사·FSD lint, 별도 출력 경로의
 
 정리 보완 후 Web Playwright 전체 20개가 통과했다(약 1.3분). 전체 변경 파일의 Prettier·diff 검사도 통과했다. 잔여 `gf_test_*` 스키마 0개를 확인하고 소유 테스트 DB를 중지했다. 이번 변경은 API·SDK·Mobile·의존성·공통 파일을 수정하지 않아 해당 레인의 검증을 반복하지 않았다.
 
+## Framer Motion 인터랙션
+
+Web에 `framer-motion` 14.3.0을 추가했다. `shared/motion`이 `LazyMotion`·`domAnimation`·`m`·전환 시간과 모션 선호 구독을 소유하며 Provider에서 앱 전체에 연결한다. 공통 디자인 시스템의 Button을 render prop으로 조합한 `MotionButton`을 홈 CTA·피드백 작성·채팅 전송에 사용한다. 색·크기·포커스·disabled·submit 동작은 공통 Button이 담당한다. 루트 lockfile에는 Web 의존성 연결과 Framer Motion·motion-dom·motion-utils 3개 항목만 추가했으며 기존 해석·다른 앱 manifest는 변경하지 않았다. `install --immutable`도 통과했다.
+
+피드 카드가 처음 viewport에 들어올 때 짧게 나타나고 마우스로 올리면 3px 올라간다. 필터 탭의 밑줄, 버튼의 hover/press, 서버가 확인한 도움됨 아이콘, 새 채팅 메시지와 완료 알림에 짧은 전환을 적용했다. 기본 전환은 200ms, 도움됨 아이콘은 280ms다. 서버 HTML의 카드와 프로필은 처음부터 보이며 키보드 탐색은 실제 링크와 버튼을 사용한다. 채팅은 기존 기록을 다시 재생하지 않고 새로 추가된 마지막 메시지에만 진입 모션을 주며 기존 스크롤 높이·읽음 경계를 유지한다.
+
+`MotionConfig`의 사용자 설정과 `useSyncExternalStore`의 media query 구독으로 모션 줄이기를 반영한다. 서버 snapshot은 모션을 줄이는 상태로 고정해 hydration을 맞추고 브라우저 설정이 바뀌면 구독 결과를 갱신한다. 카드의 불필요한 tap 포커스를 제거하고 도움됨 버튼의 tabindex를 명시했다. 완료 알림은 사라지는 즉시 status 역할·접근성을 내려 반복 안내와 닫기 중 조작을 막으며 중앙 정렬을 유지한다. 구현은 [Motion LazyMotion](https://motion.dev/docs/react-lazy-motion)·[MotionConfig](https://motion.dev/docs/react-motion-config)·[AnimatePresence](https://motion.dev/docs/react-animate-presence)와 설치된 Next Client Component 문서를 참고했다.
+
+Web Vitest 37개·타입·FSD lint가 통과했다. 전체 Web Playwright 22개가 통과했으며(약 1.4분), 새 2개 사례는 일반/모션 줄이기 환경에서 카드 hover·실행 중 설정 변경·탭 URL/밑줄·키보드 Enter/Escape와 포커스 복귀·도움됨의 서버 확정·모바일 알림 중앙/닫기·가로 넘침·console/hydration 오류를 검증한다. 기존 계정 전환·모달·채팅·오류 복구와 JS 비활성 SEO 검증도 함께 통과했다. 390px 화면 캡처에서 알림 위치와 내용도 확인했다.
+
+Android Chromium·iOS WebKit의 Mobile host 6개도 통과했다(36.2초). 별도 출력 경로의 Web production build와 마지막 모션 줄이기 전환 보완 후 브라우저 2개 재검증도 통과했다(16초). 변경 파일 Prettier·diff 검사, 잔여 테스트 스키마 0개를 확인했고 소유 테스트 DB를 중지했다. 네이티브 dev client·실기기 확인은 이 검증에 포함하지 않는다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
