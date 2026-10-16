@@ -35,17 +35,17 @@ function Root({ isOpen, onClose, unmount, children, className }: IBottomSheetRoo
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal container={getOverlayContainer()}>
           <Drawer.Backdrop className="fixed inset-0 z-sheet bg-scrim opacity-[calc(1-var(--drawer-swipe-progress))] transition-opacity duration-[450ms] ease-sheet data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:duration-0" />
-          <Drawer.Viewport className="fixed inset-0 z-sheet flex items-end justify-center pb-[var(--drawer-keyboard-inset,0px)] desktop:items-center desktop:px-6">
+          <Drawer.Viewport className="fixed inset-0 z-sheet flex items-end pb-[var(--drawer-keyboard-inset,0px)]">
             <Drawer.Popup
               className={cn(
-                'flex max-h-[calc(100dvh-var(--safe-top)-var(--drawer-keyboard-inset,0px)-24px)] w-full max-w-app flex-col',
-                'overflow-hidden rounded-t-sheet bg-surface text-ink shadow-sheet outline-none desktop:rounded-sheet',
+                'flex max-h-[calc(100dvh-var(--safe-top)-var(--drawer-keyboard-inset,0px)-24px)] w-full flex-col',
+                'overflow-hidden rounded-t-sheet bg-surface text-ink shadow-sheet outline-none',
                 '[transform:translateY(var(--drawer-swipe-movement-y))] transition-transform duration-[450ms] ease-sheet',
                 'data-ending-style:[transform:translateY(100%)] data-starting-style:[transform:translateY(100%)] data-swiping:select-none',
                 className,
               )}
             >
-              <div aria-hidden className="flex shrink-0 justify-center pt-2.5 pb-1 desktop:hidden">
+              <div aria-hidden className="flex shrink-0 justify-center pt-2.5 pb-1">
                 <span className="h-1 w-10 rounded-full bg-line-strong" />
               </div>
               {children}

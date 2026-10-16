@@ -17,10 +17,23 @@ test(
     await expect
       .poll(async () => {
         const box = await sheet.boundingBox();
-        return Boolean(box && box.y >= 0 && box.y + box.height <= 501 && box.width <= 540);
+        return Boolean(
+          box &&
+          box.y >= 0 &&
+          box.y + box.height <= 501 &&
+          Math.abs(box.width - viewport.width) <= 1 &&
+          Math.abs(box.x) <= 1,
+        );
       })
       .toBe(true);
     const content = sheet.locator('[data-bottom-sheet-content]');
+    await expect(sheet.getByLabel('제목', { exact: true })).toHaveAttribute('required', '');
+    await expect(sheet.getByLabel('사진·동영상 선택', { exact: true })).toHaveAttribute(
+      'aria-required',
+      'true',
+    );
+    await expect(sheet.getByLabel('내용', { exact: true })).not.toHaveAttribute('required');
+    await expect(sheet.getByRole('checkbox')).toHaveAttribute('required', '');
     expect(await content.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     await content.evaluate((el) => {
       el.scrollTop = el.scrollHeight;
