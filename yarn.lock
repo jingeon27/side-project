@@ -6104,6 +6104,8 @@ __metadata:
     "@typescript-eslint/rule-tester": "npm:8.71.1"
     "@typescript-eslint/utils": "npm:8.71.1"
     eslint: "npm:^9.39.0"
+    eslint-config-expo: "npm:~57.0.2"
+    eslint-config-next: "npm:16.4.0"
     eslint-plugin-react: "npm:7.37.5"
     jiti: "npm:^2.6.1"
     typescript: "npm:^5.9.0"
