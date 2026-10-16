@@ -2,7 +2,7 @@
 
 한국어·영어 UI와 Git 기반 MDX 콘텐츠를 지원하는 개인 기술 블로그입니다. Next.js 16, React 19, next-intl, Shiki를 사용합니다. 별도 API나 데이터베이스는 필요하지 않습니다.
 
-기존 `resume/blog` 항목과 연결되는 **공개 티스토리 글**을 이관했습니다. 공개된 본문과 발행 시각을 기준으로 가져왔으며, 원문 링크와 검증 기록은 [마이그레이션 문서](docs/migration.md)에 있습니다. 영어 본문은 작성되지 않았으므로 영어 목록에 빈 상태를 표시하며 한국어 본문을 영어 URL로 공개하지 않습니다.
+기존 `resume/blog` 항목과 연결되는 **공개 티스토리 글 27편**을 이관하고, 편집한 한국어 본문을 기준으로 영문 번역 27편을 추가했습니다. 제목·설명·본문·목차·이미지 설명은 언어별로 제공하며, 같은 글에서 언어를 전환할 수 있습니다. 원문 링크와 검증 기록은 [마이그레이션 문서](docs/migration.md)에 있습니다.
 
 ## 로컬 실행
 
@@ -15,7 +15,7 @@ cp projects/blog/apps/web/.env.example projects/blog/apps/web/.env.local
 yarn workspace @blog/web dev
 ```
 
-`http://localhost:3100/ko`에 접속합니다. `/en`, `/ko/blog`, `/ko/about`, `/rss/ko`, `/rss/en`, `/sitemap.xml`도 지원합니다. GA와 Sentry 환경변수가 없으면 외부 분석·오류 수집을 초기화하지 않습니다.
+`http://localhost:3100/ko`에 접속합니다. `/en/blog`에서 영문 글 목록을 볼 수 있습니다. `/en`, `/ko/blog`, `/ko/about`, `/rss/ko`, `/rss/en`, `/sitemap.xml`도 지원합니다. GA와 Sentry 환경변수가 없으면 외부 분석·오류 수집을 초기화하지 않습니다.
 
 ## 검증
 
@@ -29,7 +29,7 @@ yarn workspace @blog/web exec playwright install chromium
 yarn workspace @blog/web test:e2e
 ```
 
-Playwright는 빌드한 서버를 별도 포트 `3101`에서 실행합니다. 실행 중인 개발 서버를 재사용하거나 종료하지 않습니다. 콘텐츠 생성기는 메타데이터·SEO·MDX·내부 링크·리다이렉트를 검증하고 정적 import registry를 생성합니다. 단위 테스트에는 실제 번역이 있는 임시 콘텐츠 fixture를 사용하고, 공개 콘텐츠의 영어 버전은 만들지 않습니다.
+Playwright는 빌드한 서버를 별도 포트 `3101`에서 실행합니다. 실행 중인 개발 서버를 재사용하거나 종료하지 않습니다. 콘텐츠 생성기는 메타데이터·SEO·MDX·내부 링크·리다이렉트를 검증하고 정적 import registry를 생성합니다. 번역 테스트는 두 언어의 코드·이미지·제목 구조·표 크기와 언어별 링크를 확인합니다. 번역이 없는 글의 처리도 별도 fixture로 검증합니다.
 
 ## 콘텐츠 작성
 

@@ -186,25 +186,48 @@ test('article SEO matches canonical, language availability, and structured data'
     new RegExp(`${expectedImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
   );
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', article.description);
-  if (!('en' in article.translations))
-    await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveCount(0);
+  for (const [locale, slug] of Object.entries(article.translations))
+    await expect(page.locator(`link[rel="alternate"][hreflang="${locale}"]`)).toHaveAttribute(
+      'href',
+      new RegExp(`/${locale}/blog/${encodeURIComponent(slug)}$`),
+    );
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(jsonLd.some((value) => value.includes('BlogPosting') && value.includes('BreadcrumbList'))).toBe(
     true,
   );
 });
 
-test('an unavailable translation has an explicit notice and target language list', async ({ page }) => {
-  const untranslated = articles.find((entry) => !('en' in entry.translations));
-  test.skip(!untranslated, 'All published posts have an English translation.');
-  await page.goto(`/ko/blog/${encodeURIComponent(untranslated!.slug)}`);
-  await page.getByRole('button', { name: /언어 변경/ }).click();
-  await expect(page.getByRole('status')).toContainText(ko.common.translationMissing);
-  await page.getByRole('link', { name: ko.common.translationList }).click();
-  await expect(page).toHaveURL(/\/en\/blog$/);
+test('English search opens a full translation and language switching preserves the article', async ({
+  page,
+}) => {
+  const english = index.filter((entry) => entry.locale === 'en');
+  const translated = english.find((entry) => entry.id === article.id)!;
+  await page.goto('/en/blog');
+  await expect(page.locator('.article-list .article-row')).toHaveCount(english.length);
+  await page.getByRole('combobox', { name: en.common.search }).fill(translated.title);
+  await expect(page.locator('.article-list .article-row')).toHaveCount(1);
+  await page.getByRole('link', { name: translated.title, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/en/blog/${translated.slug}$`));
+  await expect(page.getByRole('heading', { level: 1, name: translated.title })).toBeVisible();
+  await expect(page.locator('.article-prose')).toBeVisible();
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', translated.description);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    new RegExp(`/en/blog/${translated.slug}$`),
+  );
+  await page.getByRole('button', { name: new RegExp(`^${en.nav.language}:`) }).click();
+  await expect(page).toHaveURL(new RegExp(`/ko/blog/${encodeURIComponent(article.slug)}$`));
+  await expect(page.getByRole('heading', { level: 1, name: article.title })).toBeVisible();
+  await page.getByRole('button', { name: new RegExp(`^${ko.nav.language}:`) }).click();
+  await expect(page).toHaveURL(new RegExp(`/en/blog/${translated.slug}$`));
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  if (!index.some((entry) => entry.locale === 'en'))
-    await expect(page.getByRole('heading', { name: en.common.empty })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: translated.title })).toBeVisible();
+  const firstHeading = translated.toc[0]!;
+  const mobileToc = page.locator('.toc-mobile:visible').first();
+  if (await mobileToc.count()) await mobileToc.locator('summary').click();
+  await page.locator(`a[href="#${firstHeading.id}"]:visible`).first().click();
+  await expect(page.locator('.article-prose').locator(`[id="${firstHeading.id}"]`)).toBeVisible();
+  await expect.poll(() => page.evaluate(() => location.hash.slice(1))).toBe(firstHeading.id);
 });
 
 test('TOC links target the real heading and update the URL fragment', async ({ page }) => {
@@ -325,6 +348,16 @@ for (const { system, selected } of [
       }
     }
 
+    const translated = index.find((entry) => entry.locale === 'en' && entry.id === article.id)!;
+    await page.goto(articlePath);
+    await expectSelectedTheme(page, 'ko', selected, background);
+    await page.getByRole('button', { name: new RegExp(`^${ko.nav.language}:`) }).click();
+    await expect(page).toHaveURL(new RegExp(`/en/blog/${translated.slug}$`));
+    await expectSelectedTheme(page, 'en', selected, background);
+    await page.getByRole('button', { name: new RegExp(`^${en.nav.language}:`) }).click();
+    await expect(page).toHaveURL(new RegExp(`/ko/blog/${encodeURIComponent(article.slug)}$`));
+    await expectSelectedTheme(page, 'ko', selected, background);
+
     const untranslated = articles.find((entry) => !('en' in entry.translations));
     if (untranslated) {
       await page.getByRole('navigation').getByRole('link', { name: ko.nav.blog, exact: true }).click();
@@ -379,7 +412,10 @@ test('sitemap, robots, both feeds and OG image are publicly readable', async ({ 
   const articleImage = await request.get(`/og/ko/${article.id}`);
   expect(articleImage.ok()).toBe(true);
   expect(articleImage.headers()['content-type']).toContain('image/png');
-  expect((await request.get(`/og/en/${article.id}`)).status()).toBe(404);
+  const englishImage = await request.get(`/og/en/${article.id}`);
+  expect(englishImage.ok()).toBe(true);
+  expect(englishImage.headers()['content-type']).toContain('image/png');
+  expect((await request.get('/og/en/missing-article')).status()).toBe(404);
   expect((await request.get('/rss/fr')).status()).toBe(404);
 });
 
@@ -393,9 +429,9 @@ test('keyboard users can skip navigation to the main content', async ({ page }) 
 });
 
 test('every published article serves its complete reading page', async ({ request }) => {
-  for (const entry of articles) {
-    const response = await request.get(`/ko/blog/${encodeURIComponent(entry.slug)}`);
-    expect(response.status(), entry.id).toBe(200);
-    expect(await response.text(), entry.id).toContain('<article class="article-prose">');
+  for (const entry of index) {
+    const response = await request.get(`/${entry.locale}/blog/${encodeURIComponent(entry.slug)}`);
+    expect(response.status(), `${entry.id}/${entry.locale}`).toBe(200);
+    expect(await response.text(), `${entry.id}/${entry.locale}`).toContain('<article class="article-prose">');
   }
 });

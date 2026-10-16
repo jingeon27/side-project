@@ -63,10 +63,20 @@ describe('multilingual SEO', () => {
       )
       .sort();
     expect(actual).toEqual(expected);
-    for (const entry of entries) {
-      if (entry.url.includes('/ko/blog/') && entry.lastModified)
-        expect(entry.alternates?.languages).not.toHaveProperty('en');
-    }
+    for (const locale of ['ko', 'en'] as const)
+      for (const article of getArticles(locale)) {
+        const entry = entries.find(
+          (candidate) =>
+            candidate.url === `${siteUrl.origin}/${locale}/blog/${encodeURIComponent(article.slug)}`,
+        )!;
+        for (const language of ['ko', 'en'] as const) {
+          const slug = article.translations[language];
+          if (slug)
+            expect(entry.alternates?.languages?.[language]).toBe(
+              `${siteUrl.origin}/${language}/blog/${encodeURIComponent(slug)}`,
+            );
+        }
+      }
     expect(entries.some((entry) => entry.url.endsWith('/ko/blog/category/engineering'))).toBe(true);
   });
   it('escapes RSS values and includes only the requested language', () => {
@@ -75,12 +85,18 @@ describe('multilingual SEO', () => {
     expect(xml).not.toContain('English only');
     expect(xml).toContain('Thu, 01 Oct 2026 01:00:00 GMT');
   });
-  it('returns an empty English feed and rejects unsupported feed locales', async () => {
-    const empty = await rssRoute(new Request('http://localhost/rss/en'), {
+  it('publishes translated English posts in its feed and rejects unsupported feed locales', async () => {
+    const response = await rssRoute(new Request('http://localhost/rss/en'), {
       params: Promise.resolve({ locale: 'en' }),
     });
-    expect(empty.headers.get('content-type')).toContain('application/rss+xml');
-    expect(await empty.text()).not.toContain('<item>');
+    expect(response.headers.get('content-type')).toContain('application/rss+xml');
+    const xml = await response.text();
+    const articles = getArticles('en');
+    expect(articles.length).toBeGreaterThan(0);
+    expect(xml.match(/<item>/g)).toHaveLength(articles.length);
+    for (const article of articles)
+      expect(xml).toContain(`${siteUrl.origin}/en/blog/${encodeURIComponent(article.slug)}`);
+    expect(xml).not.toContain('/ko/blog/');
     expect(
       (await rssRoute(new Request('http://localhost/rss/fr'), { params: Promise.resolve({ locale: 'fr' }) }))
         .status,

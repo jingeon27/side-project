@@ -1,0 +1,147 @@
+When I joined, our Electron collection app retrieved applicant information from several recruiting platforms. This was applicant data the company was authorized to access through its corporate accounts. Login methods and DOM structures differed, but the overall sequence was the same: log in, check duplicates, save applicants, and upload resumes. Each platform file owned the entire sequence, so changing a shared behavior meant editing several files.
+
+## Every platform file repeated the same workflow
+
+One platform-specific function performed all of the following work.
+
+```text
+로그인
+  -> 목록 수집
+  -> 중복 확인
+  -> 지원자 등록
+  -> 파일 다운로드 및 업로드
+```
+
+Adding a platform meant copying an existing file and changing selectors and exception handling. That made it increasingly difficult to distinguish shared logic from platform-specific logic.
+
+A month after joining, I was about to copy another platform file myself. Adding the fourth platform that way would also create a fourth copy of the common flow after login.
+
+## Decide which change belongs in which file
+
+I was reading the backend team's NestJS code and learning why Controllers and Services were separate. I borrowed that distinction to divide the files by three reasons for change.
+
+- Change the Controller when the IPC request changes.
+- Change CrawlingService when the overall processing order changes.
+- Change a platform's adapter when its DOM or login method changes.
+
+## Removing NestJS while keeping the boundaries
+
+I tried putting NestJS itself on top of these boundaries. The CTO rejected adding that much framework weight to Electron's main process. Five days after introducing it, I removed the dependency and kept the boundaries. The final structure has neither decorators nor a DI container.
+
+The files still follow the same rule: a particular reason for change should lead to a particular place. I retained module boundaries and constructor injection, with a Factory assembling dependencies explicitly.
+
+Here is how each role works.
+
+## The Controller receives IPC requests
+
+I treated Electron's `ipcMain` handler as an entry point similar to an HTTP Controller. Platform names and some identifiers in the example have been changed.
+
+```typescript
+const createCrawlingService =
+  (puppeteer: PuppeteerService) =>
+  (platform: Platform) =>
+    new CrawlingService(puppeteer, platform);
+
+export function createCrawlingController(puppeteer: PuppeteerService) {
+  const createService = createCrawlingService(puppeteer);
+
+  return {
+    collect({ platform }: { platform: Platform }) {
+      return createService(platform).collect();
+    },
+  };
+}
+
+const controller = createCrawlingController(puppeteer);
+ipcMain.handle('crawl', (_event, req) => controller.collect(req));
+```
+
+The Controller creates the Service for the requested platform and delegates execution. It does not need login or DOM parsing rules, and it does not maintain a platform list. Adding a platform therefore does not require changing the Controller.
+
+## The Service owns the processing order
+
+```typescript
+export class CrawlingService {
+  constructor(
+    private readonly puppeteer: PuppeteerService,
+    private readonly platform: Platform,) {}
+
+  async collect() {
+    // 예외 처리와 page 정리는 생략
+    const config = CRAWLING_HANDLERS[this.platform];
+    const page = await this.puppeteer.open(config.pages.recruit);
+
+    await config.login(page);
+
+    const processor = new config.Processor({ page });
+    await processor.collectCandidates();
+    await processor.removeDuplicates();
+    await processor.saveCandidates();
+    await processor.uploadResumes();
+  }
+}
+```
+
+Passing PuppeteerService through the constructor was inspired by NestJS constructor injection. The Factory shown above creates the instance directly; no container injects it automatically. `CRAWLING_HANDLERS` is defined in the next section.
+
+## Abstract classes and configuration hold platform differences
+
+```tsx
+abstract class CandidateProcessor {
+  abstract collectCandidates(): Promise<void>;
+  abstract removeDuplicates(): Promise<void>;
+  abstract saveCandidates(): Promise<void>;
+  abstract uploadResumes(): Promise<void>;
+}
+
+interface CrawlingHandler {
+  pages: { recruit: string };
+  login: (page: Page) => Promise<void>;
+  Processor: new (args: { page: Page }) => CandidateProcessor;
+}
+
+const CRAWLING_HANDLERS = {
+  platformA: {
+    pages: PLATFORM_A_PAGES,
+    login: loginPlatformA,
+    Processor: PlatformAProcessor,
+  },
+  platformB: {
+    pages: PLATFORM_B_PAGES,
+    login: loginPlatformB,
+    Processor: PlatformBProcessor,
+  },
+  platformC: {
+    pages: PLATFORM_C_PAGES,
+    login: loginPlatformC,
+    Processor: PlatformCProcessor,
+  },
+} as const satisfies Record<Platform, CrawlingHandler>;
+```
+
+The abstract classes enforce the set of methods a platform must implement at compile time. CrawlingService decides their execution order. The configuration object connects implementation classes and helper functions in one place, somewhat like a NestJS Module, but without runtime DI or decorators.
+
+The Processor constructor type in this example was rewritten later. My implementation at the time used `any` there.
+
+## Adding two platforms without copying their predecessors
+
+After the split, CrawlingService held the shared sequence, while each implementation contained its own selectors and exception handling. The structural refactoring commit touched 14 files, with a net reduction of 140 lines. Adding more platforms was the practical test of the structure.
+
+- One platform provided resumes as encrypted ZIP files. Another required two-factor authentication and pagination, plus its own education and employment extraction and duplicate-applicant handling. I added both by implementing their platform classes and registering them in the configuration object, without copying an existing platform file.
+- I caught errors per applicant so that one failed collection did not stop the remaining applicants.
+
+IPC changes, shared collection-order changes, and site DOM changes now end in different files. Being able to add those two platforms without copying the existing workflow was evidence that the division was useful.
+
+## Testable boundaries without automated tests
+
+I did not leave automated tests or performance measurements for this refactoring.
+
+A structure that permits tests is different from one that actually has them. Puppeteer can now be replaced through a constructor boundary, but CrawlingService still reads `CRAWLING_HANDLERS` directly from a module. Platform login functions and Processors remain statically coupled.
+
+## References
+
+- [NestJS: Providers](https://docs.nestjs.com/providers) — constructor injection and the container's role
+- [NestJS: Modules](https://docs.nestjs.com/modules)
+- [Electron: Inter-Process Communication](https://www.electronjs.org/docs/latest/tutorial/ipc) — receiving requests with ipcMain.handle
+- [TypeScript Handbook: abstract Classes and Members](https://www.typescriptlang.org/docs/handbook/2/classes.html#abstract-classes-and-members)
+- Related: [Waiting for Puppeteer requests and responses](/en/blog/puppeteer-event-lifecycle) — a problem downloading password-protected files in the same collection app

@@ -1,0 +1,113 @@
+I often see code where a field name is correct but its value has the wrong type, or where incompatible props are passed together. These are four patterns I use at work to catch those combinations during type checking.
+
+## 1. satisfies: check compatibility while preserving inference
+
+`satisfies` does not create a new type for a value. It checks that the value meets a type while retaining the value's more specific inferred type.
+
+```typescript
+type RouteName = 'home' | 'profile' | 'settings';
+
+const ROUTES = {
+  home: '/',
+  profile: '/profile',
+  settings: '/settings',
+} as const satisfies Record<RouteName, `/${string}`>;
+
+ROUTES.profile;
+// '/profile'로 추론된다.
+```
+
+Annotating a variable directly with `Record<RouteName, string>` can widen its values to `string`. With `satisfies`, I can check for missing keys and invalid values while preserving literal information.
+
+```typescript
+const LABELS = {
+  normal: '일반 결제',
+  coupon: '쿠폰 결제',
+  // cancel 누락 시 컴파일 오류
+} as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
+```
+
+## 2. T | undefined and an optional property mean different things
+
+```typescript
+interface Example {
+  requiredKey: number | undefined;
+  optionalKey?: number;
+}
+
+const a: Example = {
+  requiredKey: undefined,
+};
+```
+
+Both properties can read as `number | undefined`, but constructing the object carries different requirements.
+
+- `requiredKey` must exist, and its value may be `undefined`.
+- `optionalKey` may be omitted entirely.
+
+With `exactOptionalPropertyTypes` enabled, that distinction is stricter. To explicitly assign `undefined` to `optionalKey?: number`, its type must include `number | undefined`.
+
+## 3. Connect a value and its callback with a generic
+
+```tsx
+interface SelectProps<T extends string> {
+  value: T;
+  onValueChange: (value: T) => void;
+}
+
+function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
+  return <button onClick={() => onValueChange(value)}>{value}</button>;
+}
+```
+
+If the caller supplies a specific union for `value`, the callback argument is inferred as the same union.
+
+```tsx
+type PaymentMethod = 'normal' | 'coupon';
+
+<Select<PaymentMethod>
+  value="coupon"
+  onValueChange={(method) => {
+    // method: 'normal' | 'coupon'
+  }}
+/>;
+```
+
+A single generic expresses that relationship instead of declaring each prop independently as `string`.
+
+## 4. Express mutually exclusive props with a union
+
+When a component must allow exactly one of two usage patterns, a union using `never` makes that requirement explicit.
+
+```tsx
+type ControlledProps<T extends string> = {
+  value: T;
+  onValueChange: (value: T) => void;
+  label?: never;
+};
+
+type LabelOnlyProps = {
+  label: string;
+  value?: never;
+  onValueChange?: never;
+};
+
+type Props<T extends string> = ControlledProps<T> | LabelOnlyProps;
+
+function Field<T extends string>(props: Props<T>) {
+  if ('label' in props) return <span>{props.label}</span>;
+  return <button onClick={() => props.onValueChange(props.value)}>{props.value}</button>;
+}
+```
+
+```tsx
+<Field label="읽기 전용" />;                         // 가능
+<Field value="active" onValueChange={() => {}} />; // 가능
+<Field label="잘못된 조합" value="active" />;      // 컴파일 오류
+```
+
+Function overloads are useful for describing call signatures. For modeling valid React props, a discriminated union or a `never`-based XOR also lets the implementation narrow the types safely.
+
+I use `satisfies` to retain a value's specific type, and generics or unions to express relationships between props. For optional properties, I check separately whether the value may be `undefined` and whether the key itself may be omitted.
+
+References: [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html), [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)
