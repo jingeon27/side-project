@@ -1,7 +1,7 @@
 'use client';
 
 import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { Camera, RefreshCw, Sparkles } from 'lucide-react';
+import { Camera, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { match } from 'ts-pattern';
 
@@ -25,7 +25,7 @@ function BoardContent({
   popular: boolean;
 }) {
   const { data } = useReadQuery(postsRef);
-  const { fetchMore, refetch } = useQueryRefHandlers(postsRef);
+  const { fetchMore } = useQueryRefHandlers(postsRef);
   const [hasMore, setHasMore] = useState(true);
   const [pending, startTransition] = useTransition();
   const firstId = data.galleryPosts[0]?.id;
@@ -38,28 +38,7 @@ function BoardContent({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="absolute top-0 right-0 flex items-center">
-        <p className="sr-only">{popular ? '이번 달에 올라온 글 · 좋아요순' : '사진·동영상 · 최신순'}</p>
-        <Button
-          variant="ghost"
-          size="md"
-          className="px-2"
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                await refetch();
-                setHasMore(true);
-              } catch {
-                /* 경계에서 재시도한다. */
-              }
-            })
-          }
-          loading={pending}
-        >
-          <RefreshCw aria-hidden className="size-4" />
-          <span className={popular ? 'sr-only' : undefined}>새로고침</span>
-        </Button>
-      </div>
+      <p className="sr-only">{popular ? '이번 달에 올라온 글 · 좋아요순' : '사진·동영상 · 최신순'}</p>
       {match(data.galleryPosts)
         .with([], () => (
           <EmptyState
@@ -120,8 +99,8 @@ export function GalleryBoard({ groupId, popular = false }: { groupId?: string; p
     >
       <h2
         className={cn(
-          'flex min-h-touch items-center gap-2 pr-28 text-subtitle text-ink',
-          popular ? 'pr-12' : 'border-b border-line pb-3',
+          'flex min-h-touch items-center gap-2 text-subtitle text-ink',
+          !popular && 'border-b border-line pb-3',
         )}
       >
         {popular ? <Sparkles aria-hidden className="size-4 text-muted" /> : null}
