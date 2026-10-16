@@ -39,6 +39,15 @@ function RequiredDialog() {
 }
 
 describe('Dialog', () => {
+  it('uses the close label supplied by the consuming application', async () => {
+    render(
+      <Dialog open onOpenChange={vi.fn()} title="Language" closeLabel="Close">
+        <p>English content</p>
+      </Dialog>,
+    );
+    expect(await screen.findByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '닫기' })).not.toBeInTheDocument();
+  });
   it('입력과 중첩 대화상자를 사용할 수 있고 닫은 뒤 연 버튼으로 포커스를 돌려야 한다', async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();

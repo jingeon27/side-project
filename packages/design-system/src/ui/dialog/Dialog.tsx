@@ -13,6 +13,7 @@ export interface IDialogProps {
   description?: ReactNode;
   children: ReactNode;
   dismissible?: boolean;
+  closeLabel?: string;
   container?: ComponentProps<typeof BaseDialog.Portal>['container'];
   onOpenChangeComplete?: (open: boolean) => void;
   className?: string;
@@ -26,6 +27,7 @@ export function Dialog({
   description,
   children,
   dismissible = true,
+  closeLabel = '닫기',
   container,
   onOpenChangeComplete,
   className,
@@ -56,7 +58,7 @@ export function Dialog({
               ) : null}
             </div>
             {dismissible ? (
-              <BaseDialog.Close render={<IconButton label="닫기" className="absolute top-3 right-3" />}>
+              <BaseDialog.Close render={<IconButton label={closeLabel} className="absolute top-3 right-3" />}>
                 <svg
                   aria-hidden
                   viewBox="0 0 24 24"
