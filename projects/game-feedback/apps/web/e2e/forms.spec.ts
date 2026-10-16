@@ -29,7 +29,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   await postEditor.getByRole('button', { name: '수정 완료', exact: true }).click();
   await expect(postEditor).not.toBeVisible();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-  await expect(page).toHaveTitle(`${title} · 플레이메이트`);
+  await expect(page).toHaveTitle(`${title} | 플레이메이트`);
 
   const commentBody = `방금 수정한 요청에 댓글을 남겨요. ${suffix}`;
   await page.getByRole('textbox', { name: '댓글 내용', exact: true }).fill(commentBody);

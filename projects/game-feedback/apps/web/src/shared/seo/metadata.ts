@@ -32,8 +32,8 @@ export function createPageMetadata({
   const allowed = indexable && !privatePage && !isTestAccount;
   const url = pageUrl(path);
   const text = excerpt(description);
-  const fullTitle = `${excerpt(title, 80)} · ${SITE_NAME}`;
-  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: 'Game Feedback · 플레이메이트' }];
+  const fullTitle = `${excerpt(title, 80)} | ${SITE_NAME}`;
+  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: 'Game Feedback | 플레이메이트' }];
   return {
     title: excerpt(title, 80),
     description: text,
@@ -80,7 +80,7 @@ export const pageContent = {
   },
   privacy: {
     title: '개인정보 처리 안내',
-    description: '플레이메이트의 계정·게시글·채팅 정보 처리와 보유·삭제에 관한 안내입니다.',
+    description: '플레이메이트의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.',
     keywords: ['개인정보 처리', '계정 삭제'],
   },
   contact: {
@@ -96,7 +96,7 @@ export const pageContent = {
   },
   notifications: {
     title: '내 알림',
-    description: '내 피드백 요청에 도착한 답변·댓글·도움됨 알림을 확인하세요.',
+    description: '내 피드백 요청에 도착한 답변, 댓글, 도움됨 알림을 확인하세요.',
     keywords: ['피드백 알림'],
     privatePage: true,
   },

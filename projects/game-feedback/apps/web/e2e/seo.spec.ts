@@ -25,7 +25,7 @@ test('every screen serves page-specific metadata without JavaScript and private 
       ['/settings', '내 프로필 설정'],
     ] as const) {
       await page.goto(`${origin}/ko${path}`);
-      await expect(page).toHaveTitle(`${title} · 플레이메이트`);
+      await expect(page).toHaveTitle(`${title} | 플레이메이트`);
       await expect(page.locator('head meta[name="description"]')).toHaveAttribute('content', /.+/);
       await expect(page.locator('head meta[name="keywords"]')).toHaveAttribute('content', /클래시 로얄/);
       await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
@@ -90,7 +90,7 @@ test('post content, discussion markup, author profile and authored posts are ser
     const page = await context.newPage();
     const response = await page.goto(`${origin}/ko/posts/sample-post-0`);
     expect(response?.status()).toBe(200);
-    await expect(page).toHaveTitle(`${detail.post.title} · 플레이메이트`);
+    await expect(page).toHaveTitle(`${detail.post.title} | 플레이메이트`);
     await expect(page.getByRole('heading', { name: detail.post.title, level: 1 })).toBeVisible();
     await expect(page.locator('.detail-card .prose-body')).toHaveText(detail.post.body);
     await expect(page.locator('head meta[property="og:type"]')).toHaveAttribute('content', 'article');
@@ -110,7 +110,7 @@ test('post content, discussion markup, author profile and authored posts are ser
       author: { url: 'https://feedback.example/ko/users/sample-user-0' },
     });
     await page.locator('.detail-card').getByRole('link', { name: '새벽의호그 프로필' }).click();
-    await expect(page).toHaveTitle('새벽의호그 플레이어 프로필 · 플레이메이트');
+    await expect(page).toHaveTitle('새벽의호그 플레이어 프로필 | 플레이메이트');
     await expect(page.getByRole('heading', { name: '새벽의호그', exact: true, level: 1 })).toBeVisible();
     await expect(page.locator('.post-card').first()).toBeVisible();
     const profile = JSON.parse(

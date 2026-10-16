@@ -1,8 +1,9 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Gamepad2, Plus, LogOut, Trash2, ShieldBan, ArrowUpRight, Globe2 } from 'lucide-react';
+import { Gamepad2, Plus, LogOut, Trash2, ShieldBan, ArrowUpRight } from 'lucide-react';
 import { useSession, useLogout } from '@/features/auth';
 import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
 import { blockListOptions, useUnblockUser, UserBadges } from '@/features/user';
@@ -10,6 +11,7 @@ import { TestAccountPicker } from '@/widgets/authentication';
 import { ConnectProfile } from '@/widgets/game-profile';
 import { openOverlay, Avatar, ErrorNotice, LoadingState, Modal } from '@/shared/ui';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { LanguageSettings } from './LanguageSettings';
 
 interface ISettingsPageProps {
   locale: string;
@@ -47,6 +49,7 @@ function openAccountDeletion() {
   ));
 }
 export function SettingsPage({ locale }: ISettingsPageProps) {
+  const { t, locale: textLocale } = useI18n();
   const { session, login, loading } = useSession();
   const accounts = useQuery(gameAccountListOptions(session?.user?.id));
   const blocks = useQuery(blockListOptions(session?.user?.id));
@@ -55,24 +58,27 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
   if (loading) return <LoadingState />;
   if (!session?.user)
     return (
-      <div className="empty-feed">
-        <span>
-          <Gamepad2 size={30} />
-        </span>
-        <h1>나의 플레이 공간</h1>
-        <p>로그인하고 게임 프로필과 계정을 관리하세요.</p>
-        <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
-          로그인 / 시작하기
-          <ArrowUpRight size={16} />
-        </Button>
-      </div>
+      <>
+        <LanguageSettings />
+        <div className="empty-feed">
+          <span>
+            <Gamepad2 size={30} />
+          </span>
+          <h1>{t('나의 플레이 공간')}</h1>
+          <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
+          <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
+            {t('로그인 / 시작하기')}
+            <ArrowUpRight size={16} />
+          </Button>
+        </div>
+      </>
     );
   return (
     <>
       <div className="page-heading">
         <span className="section-eyebrow">MY PLAYER</span>
-        <h1>나의 플레이 공간</h1>
-        <p>프로필부터 계정까지, 필요한 설정을 한곳에서.</p>
+        <h1>{t('나의 플레이 공간')}</h1>
+        <p>{t('프로필부터 계정까지, 필요한 설정을 한곳에서.')}</p>
       </div>
       <section className="settings-card">
         <div className="settings-profile">
@@ -81,15 +87,18 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
             <h2>{session.user.nickname}</h2>
             <UserBadges author={session.user} />
             <p>
-              {new Date(session.user.createdAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}부터
-              함께 플레이 중
+              {t('{date}부터 함께 플레이 중', {
+                date: new Date(session.user.createdAt).toLocaleDateString(textLocale, {
+                  timeZone: 'Asia/Seoul',
+                }),
+              })}
             </p>
             <Link className="text-button" href={`/${locale}/users/${session.user.id}`}>
-              공개 프로필 보기 →
+              {t('공개 프로필 보기 →')}
             </Link>
           </div>
           <span className="status-pill resolved">
-            {session.user.role === 'ADMIN' ? '운영자' : '플레이어'}
+            {session.user.role === 'ADMIN' ? t('운영자') : t('플레이어')}
           </span>
         </div>
       </section>
@@ -102,16 +111,17 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         <div className="section-title-row">
           <h2>
             <Gamepad2 size={20} />
-            게임 프로필
+            {t('게임 프로필')}
           </h2>
           <button className="text-button" onClick={openProfileConnection}>
             <Plus size={16} />
-            프로필 연결
+            {t('프로필 연결')}
           </button>
         </div>
         <p className="muted small">
-          프로필을 연결하면 피드백 요청에 현재 덱과 트로피를 첨부할 수 있어요. 계정 소유권은 인증되지
-          않습니다.
+          {t(
+            '프로필을 연결하면 피드백 요청에 현재 덱과 트로피를 첨부할 수 있어요. 계정 소유권은 인증되지 않습니다.',
+          )}
         </p>
         {accounts.isPending && <LoadingState />}
         <ErrorNotice message={accounts.error?.message} />
@@ -124,12 +134,15 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         <div className="section-title-row">
           <h2>
             <ShieldBan size={19} />
-            차단한 사용자
+            {t('차단한 사용자')}
           </h2>
-          <span className="small muted">{blocks.data?.length ?? 0}명</span>
+          <span className="small muted">
+            {blocks.data?.length ?? 0}
+            {t('명')}
+          </span>
         </div>
         <ErrorNotice message={blocks.error?.message ?? unblock.error?.message} />
-        {blocks.data?.length === 0 && <p className="muted small">차단한 사용자가 없어요.</p>}
+        {blocks.data?.length === 0 && <p className="muted small">{t('차단한 사용자가 없어요.')}</p>}
         {blocks.data?.map((person) => (
           <div className="blocked-user" key={person.id}>
             <Avatar name={person.nickname} size="small" />
@@ -143,36 +156,23 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
               disabled={unblock.isPending}
               onClick={() => unblock.mutate({ userId: person.id })}
             >
-              차단 해제
+              {t('차단 해제')}
             </Button>
           </div>
         ))}
       </section>
-      <section className="settings-card">
-        <h2>
-          <Globe2 size={19} />
-          언어
-        </h2>
-        <p className="muted small">현재 한국어를 우선 지원해요. 다른 언어는 번역 준비 중입니다.</p>
-        <div className="locale-links">
-          <Link href="/ko" className={locale === 'ko' ? 'active' : ''}>
-            한국어
-          </Link>
-          <Link href="/en">English · 준비 중</Link>
-          <Link href="/ja">日本語 · 準備中</Link>
-        </div>
-      </section>
+      <LanguageSettings />
       <section className="settings-card account-settings">
-        <h2>계정 관리</h2>
+        <h2>{t('계정 관리')}</h2>
         <ErrorNotice message={logout.error?.message} />
         <button className="settings-action" disabled={logout.isPending} onClick={() => logout.mutate()}>
           <LogOut size={18} />
-          <span>로그아웃</span>
+          <span>{t('로그아웃')}</span>
           <ArrowUpRight size={16} />
         </button>
         <button className="settings-action danger-text" onClick={openAccountDeletion}>
           <Trash2 size={18} />
-          <span>회원 탈퇴</span>
+          <span>{t('회원 탈퇴')}</span>
           <ArrowUpRight size={16} />
         </button>
       </section>
