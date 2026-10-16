@@ -1,0 +1,195 @@
+{
+  "site": {
+    "title": "김진건 | Engineering Blog",
+    "description": "개발하면서 겪은 문제와 선택, 검증한 내용을 기록합니다.",
+    "keywords": ["Software Engineer", "React", "Next.js", "TypeScript", "개발 블로그"]
+  },
+  "pages": {
+    "home": {
+      "title": "홈",
+      "description": "개발 경험과 생각을 기록하는 김진건의 블로그입니다."
+    },
+    "blog": {
+      "title": "블로그",
+      "description": "개발 경험, 배운 것과 일하며 정리한 생각을 공유합니다."
+    },
+    "about": {
+      "title": "소개",
+      "description": "Software Engineer 김진건의 연락처와 GitHub입니다."
+    }
+  },
+  "posts": {
+    "puppeteer-event-lifecycle": {
+      "title": "Puppeteer의 request와 response를 함께 기다리기: closure보다 중요했던 수명 관리",
+      "slug": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
+      "description": "Electron과 Puppeteer로 크롤링 기능을 만들면서 한 페이지의 서로 다른 이벤트에서 정보를 모아야 했다. 요청 이벤트에서는 API 호출에 필요한 header가 나오고, 응답 이벤트에서는 파일을 여는 데 필요한 값이 나왔다. 두 값이 모두 준비된 뒤 다음 단계로 넘어가야 했다.",
+      "keywords": ["closure", "electron", "javascript", "puppeteer", "typescript"]
+    },
+    "electron-module-boundaries": {
+      "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
+      "slug": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
+      "description": "플랫폼마다 로그인부터 이력서 업로드까지 같은 흐름이 복제돼 있어서, 새 플랫폼을 붙이면 공통 흐름도 한 벌 더 늘어나는 상태였어요. 이 흐름을 IPC 진입점, 공통 처리 순서, 플랫폼별 구현으로 나눴고, 함께 넣으려던 NestJS는 CTO 반려로 걷어내 Factory가 직접 조립하…",
+      "keywords": [
+        "javascript",
+        "nextjs",
+        "react",
+        "tanstack-query",
+        "typescript",
+        "리펙토링",
+        "electron",
+        "nestjs",
+        "architecture"
+      ]
+    },
+    "query-key-factory": {
+      "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
+      "slug": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
+      "description": "후보자 메모를 고친 뒤 어떤 쿼리를 무효화해야 하는지 문자열 검색으로 찾던 상황에서 시작해요. query key와 queryFn을 함께 정의하고 무효화 범위를 드러낸 과정, 직접 만드는 팩토리라는 대안과 라이브러리 의존 비용을 적어요. 상세 아래 쿼리를 묶었을 때 갱신 범위가 넓어…",
+      "keywords": ["tanstack-query", "typescript", "query-key"]
+    },
+    "typescript-patterns": {
+      "title": "실무에서 자주 쓰는 TypeScript 패턴 네 가지",
+      "slug": "실무에서-자주-쓰는-typescript-패턴-네-가지",
+      "description": "TypeScript 문법을 많이 쓰는 것보다, 데이터가 가질 수 없는 상태를 타입으로 줄이는 데 도움이 되는 패턴을 자주 사용한다. 그중 실무에서 반복해서 쓴 네 가지를 정리했다.",
+      "keywords": ["typescript", "react"]
+    },
+    "nextjs-tanstack-query-ssr": {
+      "title": "Next.js App Router에서 TanStack Query를 SSR과 함께 쓰는 방법",
+      "slug": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
+      "description": "Next.js 15 App Router와 TanStack Query v5를 기준으로 한다.",
+      "keywords": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"]
+    },
+    "reservation-form-state": {
+      "title": "예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정",
+      "slug": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
+      "description": "복지몰의 예약 폼에서 가족을 추가하면 날짜 선택이 어긋나는 버그가 있었어요. 원인은 같은 값을 React Query 캐시, Zustand 스토어, 컴포넌트 로컬 상태가 나눠 갖던 구조였어요. 그래서 서버 값은 React Query가, 제출 전 작성값은 React Hook Form이…",
+      "keywords": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"]
+    },
+    "review-like-optimistic-update": {
+      "title": "리뷰 좋아요 Optimistic Update: 여러 캐시를 함께 갱신하고 실패 시 복구하기",
+      "slug": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
+      "description": "이 글은 프로젝트에서 사용한 TanStack Query v5 기준으로 작성했다.",
+      "keywords": ["tanstack-query", "optimistic-update", "react"]
+    },
+    "nextjs-seo-prefetch": {
+      "title": "Next.js App Router에서 prefetch를 기다려야 하는 경우",
+      "slug": "nextjs-app-router에서-prefetch를-기다려야-하는-경우",
+      "description": "예약 상세 페이지의 초기 HTML에 병원 데이터가 포함되지 않는 문제를 확인하면서 prefetchQuery 호출을 살펴봤다.",
+      "keywords": ["nextjs", "tanstack-query", "seo", "ssr"]
+    },
+    "review-form-funnel": {
+      "title": "3단계 리뷰 작성 폼의 역할을 RHF·Zod·퍼널로 다시 나눈 과정",
+      "slug": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
+      "description": "리뷰 작성 화면에 필드 하나를 추가하려면 값, 오류 문구, 다음 단계로 넘어가는 조건을 여러 파일에서 함께 바꿔야 했어요. 화면은 세 단계로 이어져요.",
+      "keywords": ["react-hook-form", "zod", "react", "state-management"]
+    },
+    "typed-program-form": {
+      "title": "두 관리자 앱의 프로그램 폼을 만드는 과정",
+      "slug": "두-관리자-앱의-프로그램-폼을-만드는-과정",
+      "description": "Back-Office와 병원 관리자가 함께 쓰는 프로그램 폼을 정리한 과정이에요. 처음에는 필드 이름과 입력 컴포넌트를 모았고, 그 뒤에는 typed form과 변환 테스트를 더했어요. 지금 사용하는 구조를 기준으로, 어느 부분을 공유하고 어느 부분을 따로 두었는지 설명할게요.",
+      "keywords": ["react-hook-form", "typescript", "zod", "architecture"]
+    },
+    "cross-domain-token-handoff": {
+      "title": "정산 서비스를 별도 호스트로 분리하며 도메인 간 토큰 전달을 설계한 과정",
+      "slug": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
+      "description": "단일 Next.js 코드베이스에서 정산을 별도 호스트로 분리하고, URL에 담던 토큰을 전용 핸드오프 라우트에서 BFF로 폼 POST하도록 바꾼 기록이다. 아직 구현하지 않은 Origin 검증과 nonce 기반 CSP는 보강안으로 구분했다. 마지막에는 잘못된 matcher와 Nex…",
+      "keywords": ["nextjs", "authentication", "bff", "security"]
+    },
+    "chatbot-message-layer": {
+      "title": "우리 백엔드가 못 건드리는 영역에서 AI 상담 챗봇 붙이기",
+      "slug": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
+      "description": "우리 서비스(쇼핑몰)에 AI 상담 챗봇을 붙이는 일을 했다. 그런데 챗봇이 쓰는 백엔드는 우리(프론트) 팀이 만들지도, 고치지도 못하는 영역이었다. 우리는 그 위에 화면만 얹는 역할이었다.",
+      "keywords": ["react", "typescript", "sse", "chatbot"]
+    },
+    "sitemap-api-boundaries": {
+      "title": "동적 사이트맵을 만들며 공개 API와 인증 API의 경계를 나눈 과정",
+      "slug": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
+      "description": "회사·서비스 이름과 내부 사용자 정의 식별자는 역할 중심의 가명으로 바꿨다. 예제의 호출 구조·캐시 시간값·관찰 결과는 실제 변경을 기준으로 한다.",
+      "keywords": ["nextjs", "seo", "sitemap", "cache"]
+    },
+    "payment-coupon-branches": {
+      "title": "결제 내역에 쿠폰 결제를 추가하며 분기를 한곳으로 모은 과정",
+      "slug": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
+      "description": "시술 결제 내역은 결제수단 하나만 보고 화면을 결정할 수 없었다. 다음 값이 함께 작용했다.",
+      "keywords": ["typescript", "refactoring", "react", "payment"]
+    },
+    "fsd-layer-boundaries": {
+      "title": "FSD 폴더는 다 있었는데 새 파일을 어디에 둘지 설명하기 어려웠어요",
+      "slug": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
+      "description": "새 파일 하나를 추가할 때마다 같은 질문에서 막혔어요. 이건 entity인가, feature인가? 폴더는 다 있었어요. 복지몰에는 entities·features·widgets·pages가 다 있었고, 관리자 서비스 모노레포는 pages만 없는 채로 같은 레이어 문서를 따르고 있었…",
+      "keywords": ["fsd", "architecture", "refactoring", "nextjs"]
+    },
+    "prototype-working-rules": {
+      "title": "프로토타입을 실사용 서비스로 옮기며 작업 규칙을 먼저 만든 이유",
+      "slug": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
+      "description": "검증용 SPA 프로토타입을 실사용 서비스로 옮기는 작업을 맡았다. 실제 운영 단계에서는 SSR, SEO, 다국어, 폼 검증, 관리자 화면과 배포 검증까지 필요했다. 정적 page와 form이 반복될 것이 분명했기 때문에 Claude Code에 화면 하나씩 설명하기 전에 작업 규칙부…",
+      "keywords": ["react", "nextjs", "architecture", "ai-workflow"]
+    },
+    "testing-standards": {
+      "title": "테스트 코드를 도입하면서 세운 기준",
+      "slug": "테스트-코드를-도입하면서-세운-기준",
+      "description": "테스트를 도입한 뒤 실제 화면과 서버에서 확인하며 기준을 보완했어요",
+      "keywords": ["testing", "vitest", "playwright", "react"]
+    },
+    "declarative-code": {
+      "title": "선언적으로 코드를 쓰는 기준",
+      "slug": "선언적으로-코드를-쓰는-기준",
+      "description": "저는 코드를 읽고 검토하는 데 시간을 많이 쓰는 편인데요. 화면에서 잘 동작하더라도 조건 하나가 빠져 있거나, 서로 맞춰야 하는 상태가 따로 관리되는 경우가 있어요. 이런 부분은 코드를 읽다가 발견하기도 해서, 평소에도 읽기 편한 구조를 유지하려고 해요.",
+      "keywords": ["typescript", "react", "refactoring", "declarative-programming"]
+    },
+    "nextjs-server-client-issues": {
+      "title": "Nextjs를 사용하면서 겪었던 이슈들",
+      "slug": "nextjs를-사용하면서-겪었던-이슈들",
+      "description": "프로덕션 전용 캐시 회귀를 계기로 URL 상태의 소유권을 다시 나눴어요",
+      "keywords": ["nextjs", "react", "cache", "react-hook-form"]
+    },
+    "error-boundary-recovery": {
+      "title": "오류는 남기고 화면은 덜 잃게 만든 에러 처리 개편",
+      "slug": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
+      "description": "관리자 서비스 모노레포의 세 앱에서 목록 하나가 실패해도 메뉴까지 사라지지 않게 Error Boundary를 나눈 과정이에요. 원인은 앱 루트의 바운더리 하나가 모든 조회 오류를 받고, 라우트가 직접 조회해서 더 작은 바운더리를 걸 자리조차 없던 구조였어요. 그래서 바운더리를 복구…",
+      "keywords": ["react", "error-boundary", "zod", "observability"]
+    },
+    "low-effort-success": {
+      "title": "가장 값진 성공은 노력이 적은 성공입니다",
+      "slug": "가장-값진-성공은-노력이-적은-성공입니다",
+      "description": "이런 질문을 받았습니다. 네 가지 경험을 값진 순서대로 세워 보라는 것이었습니다.",
+      "keywords": ["reflection", "ai-workflow", "productivity"]
+    },
+    "sentry-observability": {
+      "title": "Sentry로 에러 수집부터 Web Vitals·MCP·릴리스까지 연결한 과정",
+      "slug": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
+      "description": "오류를 많이 모으는 대신 사용자에게 영향을 주는 신호를 남기는 관측 체계",
+      "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"]
+    },
+    "plan-gated-ai-workflow": {
+      "title": "AI가 코드를 잘 짜기 시작했는데 제가 덜 바빠지지는 않았어요",
+      "slug": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
+      "description": "AI가 만든 코드를 전부 읽으면서도 같은 지적을 반복하던 때부터, plan 승인·실제 화면·테스트·합쳐진 diff로 검토 시점을 더하고 반복되는 판단을 skill·lint·테스트에 남기기까지의 과정이에요. 두 저장소에서 아직 끝나지 않은 것도 같이 적어요.",
+      "keywords": ["ai-workflow", "testing", "eslint", "worktree"]
+    },
+    "zod-assertion-boundaries": {
+      "title": "타입 단언을 걷어내며 Zod를 경계마다 다르게 배치한 기준",
+      "slug": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
+      "description": "API 응답은 관측하고, URL은 복구하고, 폼은 차단하고, 외부 값은 검증 결과로 좁혔습니다. 타입 단언을 무조건 Zod로 바꾼 것이 아니라 값의 출처와 실패했을 때 사용자가 할 수 있는 행동에 따라 검증 정책을 나눈 과정, 그리고 스키마 불일치 로그를 실제 수정으로 연결한 흐름…",
+      "keywords": ["zod", "typescript", "validation", "error-handling"]
+    },
+    "bottom-sheet-drag-crash": {
+      "title": "Sentry가 잡아 준 Bottom Sheet 드래그 크래시, 원인 경로가 사라진 버전으로 올리기까지",
+      "slug": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
+      "description": "운영 Sentry에 시트를 드래그하다 놓는 순간 화면이 멈추는 오류가 잡혔어요. 확인 당시 같은 원인으로 묶은 오류 그룹 두 개에서 23건이 났고, 영향을 받은 사용자는 17명이었는데요. 개발하면서는 한 번도 만나지 못한 오류였어요. 그런데 스택 추적에서 예외가 난 위치는 전부 r…",
+      "keywords": ["sentry", "react", "debugging", "react-modal-sheet"]
+    },
+    "health-check-program": {
+      "title": "기존 프로그램 구조에 건강검진을 들이며 화면을 나눈 기준",
+      "slug": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
+      "description": "외부 사이트와 전화 문의로 따로 돌던 건강검진을 복지몰·병원 관리자·Back-Office 안에서 처리하도록 개발한 과정을 적었어요. 검진 구성은 여러 화면이 같은 값을 읽게 하고, 비급여와 다른 상세·신청 흐름은 화면을 나눴어요. 선택 검사와 결제 실패 후 돌아오는 동작도 함께 다…",
+      "keywords": ["react", "react-hook-form", "architecture", "payment"]
+    },
+    "reading-ai-code": {
+      "title": "저는 코드를 읽어요",
+      "slug": "저는-코드를-읽어요",
+      "description": "저저번 스프린트에서 코드 확인을 생략했는데, 핫픽스가 많이 발생했어요. 그 뒤 다시 diff를 읽고 있어요. 어떤 변경을 읽는지, 코드에서 무엇을 확인하는지, AI 덕분에 구조를 바꾸기 쉬워진 지금도 코드 확인이 필요한 이유를 적었어요.",
+      "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
+    }
+  }
+}

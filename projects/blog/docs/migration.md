@@ -1,0 +1,85 @@
+# Tistory 콘텐츠 마이그레이션
+
+2026-10-16에 공개 상태인 [Tistory 블로그](https://jingeon27.tistory.com/)와 `resume/blog`의 글 목록을 대조해 한국어 글 27편을 옮겼다. 공개 사이트의 sitemap에 실린 URL에서 로그인 없이 본문 전체가 열리고, 로컬에 대응하는 파일이 있는 글만 포함했다.
+
+본문과 제목은 당시 공개된 Tistory HTML을 기준으로 한다. 로컬 수정본은 공개 글과의 대응을 확인하는 데만 사용했다. 수정본의 비공개 변경 내용이나 초안을 본문에 합치지 않았다. 영어 공개 번역본은 없어 `en.mdx`와 영어 게시글 SEO는 만들지 않았다. 영어 UI의 공통 SEO는 별도로 제공한다.
+
+## 저장 구조
+
+- `apps/web/content/posts/{contentId}/meta.json`: 공개 발행 시각, 수정 시각, 분류, 태그와 원문 URL.
+- `apps/web/content/posts/{contentId}/ko.mdx`: 공개된 본문 전체. 원문의 코드, 표, 목록, 인용과 그림 설명을 유지했다.
+- `apps/web/seo/ko.json`: 공개 제목과 제목에서 만든 한국어 URL, 설명, 검색어.
+- `apps/web/seo/en.json`: 영어 UI의 사이트와 페이지 SEO. 게시글 목록은 비어 있다.
+- `apps/web/public/images/posts/{contentId}/`: 본문이 사용하는 공개 이미지 32장. 원격 이미지의 만료되는 서명 URL을 런타임에 사용하지 않는다.
+- [migration-manifest.json](migration-manifest.json): 원문 URL, 콘텐츠 ID, 대응 파일명, 공개 발행 시각, 코드 블록과 이미지의 SHA-256.
+
+날짜는 Tistory의 `article:published_time`과 `article:modified_time`에 기록된 시간대 포함 ISO 값을 그대로 보존했다. 콘텐츠 ID는 파일과 번역의 공통 식별자이며 공개 URL은 언어별 SEO의 slug로 정한다. 기존 글을 합치거나 날짜를 마이그레이션 날짜로 바꾸지 않았다.
+
+## 공개 글 대응표
+
+Tistory 번호와 로컬 수정본 번호는 29번부터 다르다. 아래 표의 번호는 공개 URL을 뜻한다.
+
+| 공개 URL                                | 콘텐츠 ID                       | `resume/blog` 대응 파일                            |
+| --------------------------------------- | ------------------------------- | -------------------------------------------------- |
+| [/4](https://jingeon27.tistory.com/4)   | `puppeteer-event-lifecycle`     | `revised/post-04-puppeteer-closure.md`             |
+| [/5](https://jingeon27.tistory.com/5)   | `electron-module-boundaries`    | `revised/post-05-electron-nestjs-inspired.md`      |
+| [/6](https://jingeon27.tistory.com/6)   | `query-key-factory`             | `revised/post-06-query-key-factory.md`             |
+| [/7](https://jingeon27.tistory.com/7)   | `typescript-patterns`           | `revised/post-07-typescript-patterns.md`           |
+| [/8](https://jingeon27.tistory.com/8)   | `nextjs-tanstack-query-ssr`     | `revised/post-08-next-tanstack-query.md`           |
+| [/11](https://jingeon27.tistory.com/11) | `reservation-form-state`        | `revised/post-11-reservation-form.md`              |
+| [/12](https://jingeon27.tistory.com/12) | `review-like-optimistic-update` | `revised/post-12-review-like-optimistic-update.md` |
+| [/14](https://jingeon27.tistory.com/14) | `nextjs-seo-prefetch`           | `revised/post-14-next-seo-prefetch.md`             |
+| [/15](https://jingeon27.tistory.com/15) | `review-form-funnel`            | `revised/post-15-review-form.md`                   |
+| [/18](https://jingeon27.tistory.com/18) | `typed-program-form`            | `revised/post-18-program-form.md`                  |
+| [/19](https://jingeon27.tistory.com/19) | `cross-domain-token-handoff`    | `revised/post-19-cross-domain-token.md`            |
+| [/20](https://jingeon27.tistory.com/20) | `chatbot-message-layer`         | `revised/post-20-chatbot-message-layer.md`         |
+| [/21](https://jingeon27.tistory.com/21) | `sitemap-api-boundaries`        | `revised/post-21-sitemap-cache.md`                 |
+| [/22](https://jingeon27.tistory.com/22) | `payment-coupon-branches`       | `revised/post-22-payment-coupon.md`                |
+| [/23](https://jingeon27.tistory.com/23) | `fsd-layer-boundaries`          | `revised/post-23-fsd-2-1.md`                       |
+| [/24](https://jingeon27.tistory.com/24) | `prototype-working-rules`       | `revised/post-24-prototype-rules.md`               |
+| [/25](https://jingeon27.tistory.com/25) | `testing-standards`             | `revised/post-25-test-suite-rebuild.md`            |
+| [/26](https://jingeon27.tistory.com/26) | `declarative-code`              | `revised/post-26-declarative-code.md`              |
+| [/27](https://jingeon27.tistory.com/27) | `nextjs-server-client-issues`   | `revised/post-27-next-server-to-client.md`         |
+| [/28](https://jingeon27.tistory.com/28) | `error-boundary-recovery`       | `revised/post-28-error-boundary.md`                |
+| [/29](https://jingeon27.tistory.com/29) | `low-effort-success`            | `revised/post-33-low-effort-success.md`            |
+| [/30](https://jingeon27.tistory.com/30) | `sentry-observability`          | `revised/post-30-sentry-pii-hardening.md`          |
+| [/31](https://jingeon27.tistory.com/31) | `plan-gated-ai-workflow`        | `revised/post-34-plan-gated-ai-workflow.md`        |
+| [/32](https://jingeon27.tistory.com/32) | `zod-assertion-boundaries`      | `revised/post-35-zod-assertion-boundaries.md`      |
+| [/33](https://jingeon27.tistory.com/33) | `bottom-sheet-drag-crash`       | `revised/post-36-sentry-bottom-sheet-crash.md`     |
+| [/34](https://jingeon27.tistory.com/34) | `health-check-program`          | `revised/post-new-health-check-program.md`         |
+| [/35](https://jingeon27.tistory.com/35) | `reading-ai-code`               | `revised/post-new-reading-ai-code.md`              |
+
+## 제외한 로컬 파일
+
+아래 파일은 대응하는 공개 글을 확인하지 못해 옮기지 않았다. 이 목록은 공개 여부를 다시 확인하기 위한 파일명 기록이며, 내용은 복사하지 않았다.
+
+- `revised/post-29-eslint-rule-fixture.md`
+- `revised/post-31-strength-and-blind-spot.md`
+- `revised/post-32-convention-to-lint.md`
+- `revised/post-new-analytics-integrity.md`
+- `revised/post-new-temporary-open-day.md`
+- `revised/post-new-dont-rush.md`
+- `revised/post-new-product-metrics.md`
+- `revised/post-new-crawler-view-seo.md`
+
+`resume/blog` 루트의 작업본, 검토 문서, 디자인 미리보기와 그림 원본도 별도 게시글로 생성하지 않았다. 대응하는 공개 글의 이미지는 공개 페이지에서 내려받았다.
+
+## 변환과 확인
+
+Tistory의 표현용 HTML을 Markdown과 MDX로 바꿨다. 코드 블록은 fence로, 표는 GFM 표로, 인용은 blockquote로 변환했다. 본문의 중괄호와 HTML처럼 보이는 일반 텍스트를 이스케이프하고, 스크립트와 이벤트 속성은 가져오지 않았다. Tistory의 자동 언어 판별은 TypeScript 예제를 다른 언어로 분류한 경우가 많아 코드 형태를 보고 `typescript`, `tsx`, `json`, `yaml`, `bash`, `text` 중에서 지정했다.
+
+이번에 옮긴 공개 글을 가리키는 Tistory 링크만 `/ko/blog/{slug}`로 바꿨다. 외부 자료와 대상에 없는 Tistory 링크는 원래 주소를 유지했다. 공개 태그가 있으면 정규화해 보존하고, 글에서 다루는 기술의 탐색 태그를 보완했다. 태그는 소문자와 하이픈을 사용한다. 대부분 `engineering`이며, 공개 29번과 35번은 `perspectives`로 분류했다.
+
+공개 원문의 문단, 제목, 목록 항목, 표 셀, 코드 블록과 그림 설명을 변환본과 대조해 빠진 본문이 없는지 확인했다. 코드 블록과 이미지 개수도 글별로 대조했다. MDX 컴파일과 콘텐츠 계약 검증은 앱의 콘텐츠 검사에 포함된다.
+
+가져온 MDX는 저장소 루트의 `.prettierignore`에서 제외했다. 코드 예제에 포매터를 적용하면 공개 원문과 달라질 수 있어 들여쓰기와 코드 내부의 빈 줄을 그대로 보존한다. 마이그레이션 무결성 테스트는 코드 블록 180개의 원문 SHA-256과 이미지 32개의 SHA-256을 확인하며, 이미지 대체 텍스트에 HTML 엔티티 표기가 남는 회귀도 검사한다.
+
+## 재실행
+
+프로젝트 루트에서 실행한다. Python 3와 `beautifulsoup4`가 필요하다.
+
+```bash
+python3 apps/web/scripts/migrate-tistory.py --resume-blog /path/to/resume/blog
+```
+
+스크립트에는 검토한 27개의 공개 URL과 대응 파일명만 명시돼 있다. 매번 공개 sitemap에 URL이 있는지와 로컬 대응 파일이 존재하는지를 확인하고, 본문은 공개 페이지에서만 읽는다. 새 글이나 초안을 자동으로 찾거나 발행하지 않는다. 원문이 바뀌면 생성된 MDX, SEO와 이미지 diff를 검토한다. 검토한 공개 HTML 캐시를 재사용하려면 `--cache-dir /path/to/public-html-cache`를 지정할 수 있다. 캐시와 로컬 저장소는 결과물에 포함하지 않는다.

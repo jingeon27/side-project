@@ -1,0 +1,22 @@
+{
+  "site": {
+    "title": "Jingeon Kim | Engineering Blog",
+    "description": "Notes on software engineering, decisions and verification.",
+    "keywords": ["Software Engineering", "React", "Next.js", "TypeScript"]
+  },
+  "pages": {
+    "home": {
+      "title": "Home",
+      "description": "Engineering experiences and perspectives by Jingeon Kim."
+    },
+    "blog": {
+      "title": "Blog",
+      "description": "Engineering experiences, learning and perspectives."
+    },
+    "about": {
+      "title": "About",
+      "description": "Contact information and GitHub for software engineer Jingeon Kim."
+    }
+  },
+  "posts": {}
+}

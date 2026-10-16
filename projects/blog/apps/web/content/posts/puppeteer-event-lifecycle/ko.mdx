@@ -1,0 +1,151 @@
+Electron과 Puppeteer로 크롤링 기능을 만들면서 한 페이지의 서로 다른 이벤트에서 정보를 모아야 했다. 요청 이벤트에서는 API 호출에 필요한 header가 나오고, 응답 이벤트에서는 파일을 여는 데 필요한 값이 나왔다. 두 값이 모두 준비된 뒤 다음 단계로 넘어가야 했다.
+
+처음에는 외부 변수에 값을 넣고 1초마다 확인했다.
+
+```typescript
+let result: PreInfo | undefined;
+
+page.on('request', (request) => {
+  result = readRequest(request);
+});
+
+await page.reload();
+
+while (result === undefined) {
+  await delay(1_000);
+}
+```
+
+동작은 했지만 문제가 있었다.
+
+- 함수를 다시 호출할 때마다 listener가 누적됐다.
+- 원하는 이벤트가 오지 않으면 영원히 기다렸다.
+- if (result)로 검사하면 0, false, 빈 문자열처럼 유효한 값도 완료로 처리하지 못했다.
+- request와 response callback이 같은 변수를 덮어쓸 수 있었다.
+- listener를 등록하기 전에 reload하면 빠른 이벤트를 놓칠 수 있었다.
+
+핵심은 closure를 썼다는 사실보다 **이벤트 구독의 시작과 끝을 Promise 수명에 맞추는 것**이었다.
+
+## 이벤트를 기다리는 공통 함수
+
+```tsx
+import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
+
+type MaybePromise<T> = T | Promise<T>;
+
+interface WaitForPreInfoOptions<T> {
+  page: Page;
+  timeoutMs?: number;
+  onRequest?: (request: HTTPRequest) => MaybePromise<T | undefined>;
+  onResponse?: (response: HTTPResponse) => MaybePromise<T | undefined>;
+}
+
+export function waitForPreInfo<T>({
+  page,
+  timeoutMs = 10_000,
+  onRequest,
+  onResponse,
+}: WaitForPreInfoOptions<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      page.off('request', handleRequest);
+      page.off('response', handleResponse);
+    };
+
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const fail = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const consume = async (result: MaybePromise<T | undefined>) => {
+      try {
+        const value = await result;
+        if (value !== undefined) finish(value);
+      } catch (error) {
+        fail(error);
+      }
+    };
+
+    const handleRequest = (request: HTTPRequest) => {
+      if (onRequest) void consume(onRequest(request));
+    };
+
+    const handleResponse = (response: HTTPResponse) => {
+      if (onResponse) void consume(onResponse(response));
+    };
+
+    page.on('request', handleRequest);
+    page.on('response', handleResponse);
+
+    timer = setTimeout(() => {
+      fail(new Error(`필요한 네트워크 정보를 ${timeoutMs}ms 안에 찾지 못했습니다.`));
+    }, timeoutMs);
+
+    void page.reload({ waitUntil: 'networkidle2' }).catch(fail);
+  });
+}
+```
+
+이 함수는 처음으로 유효한 결과를 반환한 callback에서 완료된다. 완료, 실패, timeout 어느 경로에서도 listener를 제거한다.
+
+## closure로 두 이벤트의 값을 합치기
+
+request와 response가 각각 절반의 정보만 주는 경우에는 작은 collector를 만든다.
+
+```typescript
+interface SitePreInfo {
+  headers: Record<string, string>;
+  filePassword: string;
+}
+
+function createSitePreInfoCollector() {
+  let headers: Record<string, string> | undefined;
+  let filePassword: string | undefined;
+
+  const getResult = (): SitePreInfo | undefined => {
+    if (headers === undefined || filePassword === undefined) return undefined;
+    return { headers, filePassword };
+  };
+
+  return {
+    onRequest(request: HTTPRequest) {
+      if (!request.url().includes('/target-api')) return undefined;
+      headers = request.headers();
+      return getResult();
+    },
+
+    async onResponse(response: HTTPResponse) {
+      if (!response.url().includes('/file-info')) return undefined;
+      const body = (await response.json()) as { password?: string };
+      filePassword = body.password;
+      return getResult();
+    },
+  };
+}
+
+const collector = createSitePreInfoCollector();
+const preInfo = await waitForPreInfo({
+  page,
+  onRequest: collector.onRequest,
+  onResponse: collector.onResponse,
+});
+```
+
+closure는 headers와 filePassword를 외부에서 직접 수정하지 못하게 가두고, 두 값이 모두 모였을 때만 완성된 객체를 내보낸다.
+
+## 정리
+
+이 작업에서 closure는 여러 비동기 callback이 한 번의 수집 상태를 공유하게 해줬다. 하지만 운영 코드에서 더 중요했던 것은 listener cleanup, timeout, 명시적인 완료 조건이었다. 이벤트 기반 코드는 값을 어떻게 저장할지만큼 **언제 구독을 끝낼지**를 함께 설계해야 했다.

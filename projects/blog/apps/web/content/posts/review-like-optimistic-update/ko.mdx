@@ -1,0 +1,296 @@
+> 이 글은 프로젝트에서 사용한 TanStack Query v5 기준으로 작성했다.
+
+병원 리뷰는 목록과 상세 화면 등 여러 위치에서 같은 데이터를 보여준다. 기존 좋아요 기능은 각 ReviewItem이 isLiked와 likeCount를 로컬 상태로 복사해 관리했다.
+
+```tsx
+function ReviewItem({ review }: { review: Review }) {
+  const [isLiked, setIsLiked] = useState(review.like);
+  const [likeCount, setLikeCount] = useState(review.likeCnt);
+
+  const handleChange = async (checked: boolean) => {
+    const previous = { isLiked, likeCount };
+
+    setIsLiked(checked);
+    setLikeCount((count) => count + (checked ? 1 : -1));
+
+    try {
+      await fetchReviewLike({
+        reviewId: review.reviewId,
+        feedbackType: checked ? 'LIKE' : 'UNLIKE',
+      });
+    } catch {
+      setIsLiked(previous.isLiked);
+      setLikeCount(previous.likeCount);
+    }
+  };
+
+  return <LikeSwitch like={isLiked} likeCnt={likeCount} onChange={handleChange} />;
+}
+```
+
+버튼은 바로 반응했지만, 이 방식에는 두 가지 문제가 있었다.
+
+- 같은 리뷰를 보여주는 목록과 상세 화면이 서로 다른 로컬 상태를 가졌다.
+- 요청 실패 시 각 컴포넌트가 자기 상태만 복구하므로 다른 화면과 값이 어긋날 수 있었다.
+
+서버에서 받은 리뷰를 이미 TanStack Query 캐시에 저장하고 있었기 때문에, 컴포넌트에 같은 값을 다시 복사하기보다 캐시를 화면이 구독하는 값으로 삼는 편이 자연스러웠다.
+
+## 먼저 바로잡은 오해: TanStack Query가 자동으로 롤백하지는 않는다
+
+onMutate에서 setQueryData를 호출했다고 해서 TanStack Query가 이전 캐시를 자동 저장하고 복구해 주는 것은 아니다.
+
+캐시를 직접 낙관적으로 바꾼다면 다음 과정도 직접 작성해야 한다.
+
+1. 진행 중인 refetch를 취소한다.
+2. 변경 전 캐시를 snapshot으로 저장한다.
+3. 캐시를 낙관적으로 변경한다.
+4. onMutate에서 snapshot을 반환한다.
+5. 요청이 실패하면 onError에서 snapshot을 다시 넣는다.
+6. 성공과 실패 모두 invalidateQueries로 서버 값과 재동기화한다.
+
+공식 문서도 onMutate가 반환한 값을 onError에서 사용해 직접 복구하는 흐름을 안내한다.
+
+## Query Key의 범위를 먼저 정하기
+
+리뷰 목록은 병원과 페이지 크기에 따라 여러 캐시가 생기고, 상세 리뷰는 별도의 캐시를 사용한다.
+
+```typescript
+const reviewKeys = {
+  all: ['review'] as const,
+  infinite: ['review', 'infinite'] as const,
+  detail: (reviewId: number) =>
+    ['review', 'fetchReviewsById', reviewId] as const,
+};
+```
+
+예를 들어 다음 쿼리는 파라미터가 달라도 모두 reviewKeys.infinite에 포함된다.
+
+```text
+['review', 'infinite', { hospitalId: 1, size: 3 }]
+['review', 'infinite', { hospitalId: 1, size: 20 }]
+['review', 'infinite', { hospitalId: 2, size: 10 }]
+```
+
+이 계층이 있어야 특정 size를 하드코딩하지 않고 현재 캐시에 존재하는 리뷰 목록을 함께 찾을 수 있다.
+
+## 리뷰 한 건을 바꾸는 순수 함수
+
+목록과 상세에서 같은 계산을 사용하도록 리뷰 한 건의 변경 규칙을 먼저 분리했다.
+
+```tsx
+import type { InfiniteData, QueryKey } from '@tanstack/react-query';
+
+type Review = TReviewDTO;
+type ReviewInfiniteData = InfiniteData<
+  TGlobalListResponse<TReviewDTO[]>
+>;
+type ReviewDetailResponse = TGlobalResponse<TReviewDetailDTO>;
+
+type ReviewLikeVariables = {
+  reviewId: number;
+  feedbackType: 'LIKE' | 'UNLIKE';
+};
+
+function updateReviewLike<T extends Review>(
+  review: T,
+  { reviewId, feedbackType }: ReviewLikeVariables,
+): T {
+  if (review.reviewId !== reviewId) return review;
+
+  const nextLike = feedbackType === 'LIKE';
+
+  // 같은 상태를 다시 반영할 때 숫자가 중복으로 변하지 않게 한다.
+  if (review.like === nextLike) return review;
+
+  return {
+    ...review,
+    like: nextLike,
+    likeCnt: Math.max(0, review.likeCnt + (nextLike ? 1 : -1)),
+  };
+}
+```
+
+목록 응답의 각 페이지에는 이 함수를 적용한다.
+
+```typescript
+function updateReviewList(
+  oldData: ReviewInfiniteData | undefined,
+  variables: ReviewLikeVariables,) {
+  if (!oldData) return oldData;
+
+  return {
+    ...oldData,
+    pages: oldData.pages.map((page) => ({
+      ...page,
+      data: {
+        ...page.data,
+        list: page.data.list.map((review) =>
+          updateReviewLike(review, variables),
+        ),
+      },
+    })),
+  };
+}
+```
+
+## 목록과 상세 캐시를 snapshot으로 남기기
+
+좋아요 요청이 실패했을 때 목록만 되돌리거나 상세만 되돌리면 화면마다 값이 달라진다. 따라서 onMutate에서 두 종류의 캐시를 모두 저장한다.
+
+```tsx
+type ReviewLikeContext = {
+  listSnapshots: Array<[
+    QueryKey,
+    ReviewInfiniteData | undefined,
+  ]>;
+  detailKey: QueryKey;
+  detailSnapshot: ReviewDetailResponse | undefined;
+};
+
+export function useReviewLike() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<
+    void,
+    Error,
+    ReviewLikeVariables,
+    ReviewLikeContext
+  >({
+    mutationKey: ['fetchReviewLike'],
+    mutationFn: fetchReviewLike,
+
+    onMutate: async (variables) => {
+      const detailKey = reviewKeys.detail(variables.reviewId);
+
+      // 이미 진행 중인 refetch가 낙관적 값을 덮지 않게 한다.
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: reviewKeys.infinite }),
+        queryClient.cancelQueries({ queryKey: detailKey }),
+      ]);
+
+      const listSnapshots =
+        queryClient.getQueriesData<ReviewInfiniteData>({
+          queryKey: reviewKeys.infinite,
+        });
+
+      const detailSnapshot =
+        queryClient.getQueryData<ReviewDetailResponse>(detailKey);
+
+      queryClient.setQueriesData<ReviewInfiniteData>(
+        { queryKey: reviewKeys.infinite },
+        (oldData) => updateReviewList(oldData, variables),
+      );
+
+      queryClient.setQueryData<ReviewDetailResponse>(
+        detailKey,
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            data: updateReviewLike(oldData.data, variables),
+          };
+        },
+      );
+
+      return {
+        listSnapshots,
+        detailKey,
+        detailSnapshot,
+      };
+    },
+
+    onError: (error, _variables, context) => {
+      context?.listSnapshots.forEach(([queryKey, oldData]) => {
+        queryClient.setQueryData(queryKey, oldData);
+      });
+
+      if (context) {
+        queryClient.setQueryData(
+          context.detailKey,
+          context.detailSnapshot,
+        );
+      }
+
+      toast.warning(SafedocError.getMessage(error));
+    },
+
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: reviewKeys.all }),
+  });
+
+  return {
+    handleLike: mutation.mutateAsync,
+    isLikePending: mutation.isPending,
+  };
+}
+```
+
+onSettled에서 invalidateQueries의 Promise를 반환하면 재검증이 끝날 때까지 mutation의 pending 상태도 유지할 수 있다.
+
+## getQueriesData가 해주는 일과 해주지 않는 일
+
+getQueriesData(&#123; queryKey: reviewKeys.infinite &#125;)는 해당 prefix로 **현재 캐시에 존재하는 쿼리**를 반환한다. 새로운 목록 캐시를 만들거나 앞으로 생길 화면까지 자동으로 동기화하는 기능은 아니다.
+
+따라서 다음 조건이 필요하다.
+
+- 목록 query key가 같은 계층 규칙을 따라야 한다.
+- 상세처럼 다른 key를 쓰는 캐시는 별도로 갱신해야 한다.
+- 좋아요 정보를 보여주는 새로운 캐시가 생기면 optimistic update 대상인지 검토해야 한다.
+- 마지막에는 서버 값을 다시 조회해 클라이언트 계산을 검증해야 한다.
+
+getQueriesData의 장점은 모든 화면을 자동으로 알아내는 데 있지 않다. 파라미터가 다른 **현재의 목록 캐시들을 query key 규칙으로 찾을 수 있다는 점**에 있다.
+
+## 연속 클릭은 별도의 문제다
+
+Optimistic Update가 한 번의 요청을 빠르게 보이게 해준다고 해서 동시성까지 자동으로 해결되지는 않는다. 사용자가 좋아요와 취소를 연속으로 누르면 요청이 보낸 순서와 다른 순서로 끝날 수 있다.
+
+이 화면에서는 요청 중 같은 버튼을 다시 누르지 못하게 하는 방법이 가장 단순하다.
+
+```tsx
+const { handleLike, isLikePending } = useReviewLike();
+
+<LikeSwitch
+  {...review}
+  disabled={isLikePending}
+  onChange={(checked) =>
+    handleLike({
+      reviewId: review.reviewId,
+      feedbackType: checked ? 'LIKE' : 'UNLIKE',
+    })
+  }
+/>
+```
+
+연속 조작을 허용해야 한다면 review ID별 요청 직렬화, 마지막 의도만 반영하는 방식, 서버의 멱등성까지 함께 설계해야 한다. 이는 캐시 snapshot만으로 해결되는 문제가 아니다.
+
+## 확인해야 할 테스트
+
+이 로직은 성공 경로보다 실패와 여러 캐시가 겹치는 경우가 중요하다.
+
+1. 좋아요 직후 목록의 아이콘과 숫자가 API 응답 전에 바뀐다.
+2. size가 다른 여러 목록 캐시에 같은 리뷰가 있으면 모두 바뀐다.
+3. 상세 캐시가 존재하면 목록과 상세가 함께 바뀐다.
+4. API가 실패하면 모든 목록과 상세가 각각의 snapshot으로 돌아간다.
+5. 진행 중이던 refetch가 optimistic value를 중간에 덮지 않는다.
+6. 같은 상태를 중복 반영해도 좋아요 수가 두 번 증가하거나 음수가 되지 않는다.
+7. 재검증 후 화면이 서버의 최종 값과 일치한다.
+
+## 정리
+
+이 작업의 핵심은 좋아요 숫자를 빨리 바꾸는 것만이 아니었다. 같은 리뷰를 보여주는 여러 화면이 로컬 상태를 따로 가지지 않고, TanStack Query 캐시를 공통된 UI 데이터로 구독하게 만든 일이었다.
+
+다만 캐시가 서버를 대신하는 최종 진실은 아니다. 낙관적 업데이트는 사용자의 의도를 먼저 투영한 값이고, 실패하면 직접 복구해야 하며, 마지막에는 서버 데이터로 재검증해야 한다.
+
+정리하면 리뷰 좋아요의 흐름은 다음과 같다.
+
+```text
+사용자 입력
+  -> 관련 refetch 취소
+  -> 목록과 상세 cache snapshot 저장
+  -> 목록과 상세 cache 즉시 변경
+  -> 요청 실패 시 snapshot 직접 복구
+  -> 성공/실패 후 서버 데이터 재검증
+```
+
+참고: [TanStack Query Optimistic Updates](https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates)
