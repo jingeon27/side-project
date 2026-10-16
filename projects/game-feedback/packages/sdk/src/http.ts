@@ -1,34 +1,47 @@
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly errorCode: string,
-    message: string,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
+import { z } from 'zod';
+import { ApiError } from './api-error';
+import { applyResponseFallbacks } from './response/fallback-policy';
+import { ApiResponseValidationError } from './response/validation-error';
+export { ApiError } from './api-error';
+
+const errorPayloadSchema = z
+  .object({
+    errorCode: z
+      .string()
+      .regex(/^[A-Z][A-Z0-9_]{0,99}$/)
+      .catch('REQUEST_FAILED'),
+    message: z.string().trim().min(1).max(500).catch('요청을 처리하지 못했습니다.'),
+  })
+  .catch({ errorCode: 'REQUEST_FAILED', message: '요청을 처리하지 못했습니다.' });
+interface IApiFetchOptions<T> extends RequestInit {
+  schema?: z.ZodType<T>;
 }
 
-export async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const headers = new Headers(options.headers);
-  if (typeof options.body === 'string' && !headers.has('Content-Type'))
+export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}): Promise<T> {
+  const { schema, ...requestOptions } = options;
+  if (!schema) throw new ApiError(0, 'RESPONSE_SCHEMA_REQUIRED', '응답 검증 스키마가 필요합니다.');
+  const headers = new Headers(requestOptions.headers);
+  if (typeof requestOptions.body === 'string' && !headers.has('Content-Type'))
     headers.set('Content-Type', 'application/json');
   const response = await fetch(url, {
-    ...options,
+    ...requestOptions,
     credentials: 'include',
     cache: 'no-store',
     headers,
   });
-  if (response.status === 204) return undefined as T;
-  const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error =
-      payload && typeof payload === 'object' ? (payload as { errorCode?: string; message?: string }) : {};
-    throw new ApiError(
-      response.status,
-      error.errorCode ?? 'REQUEST_FAILED',
-      error.message ?? '요청을 처리하지 못했습니다.',
-    );
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    if (response.ok) throw new ApiResponseValidationError(response.status);
+    payload = null;
   }
-  return payload as T;
+  if (!response.ok) {
+    const error = errorPayloadSchema.parse(payload);
+    throw new ApiError(response.status, error.errorCode, error.message);
+  }
+  const result = schema.safeParse(applyResponseFallbacks(schema, payload));
+  if (!result.success) throw new ApiResponseValidationError(response.status, result.error.issues);
+  return result.data;
 }

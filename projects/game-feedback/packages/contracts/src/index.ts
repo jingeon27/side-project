@@ -1,18 +1,22 @@
 import { z } from 'zod';
 
-export const ErrorSchema = z.object({ errorCode: z.string(), message: z.string() });
+const ResponseIdSchema = z.string().min(1).max(100);
+const ResponseTimestampSchema = z.iso.datetime();
+const ResponseCountSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+
+export const ErrorSchema = z.object({ errorCode: z.string(), message: z.string().min(1) });
 export const OkSchema = z.object({ ok: z.literal(true) });
 export const AuthorSchema = z.object({
-  id: z.string(),
-  nickname: z.string(),
+  id: ResponseIdSchema,
+  nickname: z.string().min(1),
   isVerified: z.boolean(),
   supercellTag: z.string().nullable(),
   isTestAccount: z.boolean(),
 });
 export const UserSchema = AuthorSchema.extend({
   role: z.enum(['USER', 'ADMIN']),
-  createdAt: z.string(),
-  verifiedAt: z.string().nullable(),
+  createdAt: ResponseTimestampSchema,
+  verifiedAt: ResponseTimestampSchema.nullable(),
 });
 export const TestAccountSchema = AuthorSchema.extend({
   role: z.enum(['USER', 'ADMIN']),
@@ -25,89 +29,92 @@ export const VerificationInputSchema = z.object({ isVerified: z.boolean() }).str
 export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
 export const CategorySchema = z.object({
-  id: z.string(),
-  slug: z.string(),
-  name: z.string(),
+  id: ResponseIdSchema,
+  slug: z.string().min(1),
+  name: z.string().min(1),
   active: z.boolean(),
 });
 export const CardSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  level: z.number(),
+  id: z.number().int().positive(),
+  name: z.string().min(1),
+  level: ResponseCountSchema,
   iconUrl: z.string().nullable(),
 });
 export const GameProfileSchema = z.object({
-  playerTag: z.string(),
-  name: z.string(),
-  trophies: z.number(),
-  bestTrophies: z.number(),
-  arena: z.string(),
+  playerTag: z.string().min(1),
+  name: z.string().min(1),
+  trophies: ResponseCountSchema,
+  bestTrophies: ResponseCountSchema,
+  arena: z.string().min(1),
   clan: z.string().nullable(),
   deck: z.array(CardSchema),
   verification: z.literal('UNVERIFIED'),
   source: z.enum(['SUPERCELL', 'DEMO']),
-  fetchedAt: z.string(),
+  fetchedAt: ResponseTimestampSchema,
 });
 export const PostSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  body: z.string(),
-  categoryId: z.string(),
+  id: ResponseIdSchema,
+  title: z.string().min(1),
+  body: z.string().min(1),
+  categoryId: ResponseIdSchema,
   category: CategorySchema,
   author: AuthorSchema,
   gameProfile: GameProfileSchema.nullable(),
-  answerCount: z.number(),
-  helpfulCount: z.number(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  answerCount: ResponseCountSchema,
+  helpfulCount: ResponseCountSchema,
+  createdAt: ResponseTimestampSchema,
+  updatedAt: ResponseTimestampSchema,
 });
 export const AnswerSchema = z.object({
-  id: z.string(),
-  postId: z.string(),
-  body: z.string(),
+  id: ResponseIdSchema,
+  postId: ResponseIdSchema,
+  body: z.string().min(1),
   author: AuthorSchema,
   helpful: z.boolean(),
-  readAt: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  readAt: ResponseTimestampSchema.nullable(),
+  createdAt: ResponseTimestampSchema,
+  updatedAt: ResponseTimestampSchema,
 });
 export const CommentSchema = z.object({
-  id: z.string(),
-  postId: z.string(),
-  body: z.string(),
+  id: ResponseIdSchema,
+  postId: ResponseIdSchema,
+  body: z.string().min(1),
   author: AuthorSchema,
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: ResponseTimestampSchema,
+  updatedAt: ResponseTimestampSchema,
 });
 export const NotificationSchema = z.object({
-  id: z.string(),
+  id: ResponseIdSchema,
   type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT']),
-  postId: z.string(),
-  answerId: z.string().nullable(),
-  message: z.string(),
-  readAt: z.string().nullable(),
-  createdAt: z.string(),
+  postId: ResponseIdSchema,
+  answerId: ResponseIdSchema.nullable(),
+  message: z.string().min(1),
+  readAt: ResponseTimestampSchema.nullable(),
+  createdAt: ResponseTimestampSchema,
 });
-export const PostListSchema = z.object({ items: z.array(PostSchema), nextCursor: z.string().nullable() });
+export const PostListSchema = z.object({
+  items: z.array(PostSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
   answers: z.array(AnswerSchema),
   comments: z.array(CommentSchema),
 });
 export const AdminReportSchema = z.object({
-  id: z.string(),
-  reporterId: z.string(),
+  id: ResponseIdSchema,
+  reporterId: ResponseIdSchema,
   targetType: z.string(),
-  targetId: z.string(),
+  targetId: ResponseIdSchema,
   reason: z.string(),
   detail: z.string().nullable(),
   status: z.string(),
-  createdAt: z.string(),
+  createdAt: ResponseTimestampSchema,
 });
 export const NotificationListSchema = z.object({
   items: z.array(NotificationSchema),
-  unreadCount: z.number(),
-  nextCursor: z.string().nullable(),
+  unreadCount: ResponseCountSchema,
+  nextCursor: z.string().min(1).nullable(),
 });
 export const SessionSchema = z.object({
   user: UserSchema.nullable(),
@@ -116,30 +123,30 @@ export const SessionSchema = z.object({
   needsOnboarding: z.boolean(),
 });
 export const ChatMessageSchema = z.object({
-  id: z.string(),
-  conversationId: z.string(),
+  id: ResponseIdSchema,
+  conversationId: ResponseIdSchema,
   sender: AuthorSchema,
-  body: z.string(),
-  createdAt: z.string(),
-  clientMessageId: z.string(),
+  body: z.string().min(1),
+  createdAt: ResponseTimestampSchema,
+  clientMessageId: z.uuid(),
 });
 export const ConversationSchema = z.object({
-  id: z.string(),
+  id: ResponseIdSchema,
   peer: AuthorSchema,
   lastMessage: ChatMessageSchema.nullable(),
-  unreadCount: z.number(),
-  updatedAt: z.string(),
-  peerLastReadAt: z.string().nullable(),
+  unreadCount: ResponseCountSchema,
+  updatedAt: ResponseTimestampSchema,
+  peerLastReadAt: ResponseTimestampSchema.nullable(),
 });
 export const ConversationListSchema = z.object({
   items: z.array(ConversationSchema),
-  nextCursor: z.string().nullable(),
-  unreadCount: z.number(),
+  nextCursor: z.string().min(1).nullable(),
+  unreadCount: ResponseCountSchema,
 });
 export const ChatMessageListSchema = z.object({
   conversation: ConversationSchema,
   items: z.array(ChatMessageSchema),
-  nextCursor: z.string().nullable(),
+  nextCursor: z.string().min(1).nullable(),
 });
 export const ConversationInputSchema = z.object({ recipientId: z.string().min(1).max(100) }).strict();
 export const ChatMessageInputSchema = z

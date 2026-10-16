@@ -5,11 +5,12 @@ export default defineConfig({
     input: '../../apps/api/openapi.json',
     output: {
       target: './src/generated/client.ts',
-      schemas: './src/generated/models',
+      schemas: { path: './src/generated/models', type: 'zod' },
       client: 'fetch',
       clean: true,
       override: {
-        fetch: { includeHttpResponseReturnType: false, forceSuccessResponse: true },
+        fetch: { includeHttpResponseReturnType: false, forceSuccessResponse: true, runtimeValidation: true },
+        includeZodSchemaInArguments: true,
         mutator: { path: './src/http.ts', name: 'apiFetch' },
       },
     },

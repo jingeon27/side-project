@@ -1,4 +1,5 @@
-export { ApiError, apiFetch } from './http';
+export { ApiError } from './api-error';
+export { ApiResponseValidationError, type IResponseIssue } from './response/validation-error';
 export {
   exchangeAppLogin,
   getHealth,

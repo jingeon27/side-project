@@ -4,48 +4,54 @@
  * Game Feedback API
  * OpenAPI spec version: 0.1.0
  */
-import type {
+import {
+  z as zod
+} from 'zod';
+
+import {
   Answer,
-  AnswerInput,
-  AppExchangeInput,
-  BlockInput,
   Category,
-  CategoryInput,
   ChatMessage,
-  ChatMessageInput,
   ChatMessageList,
-  ChatReadInput,
   Comment,
-  CommentInput,
   Conversation,
-  ConversationInput,
   ConversationList,
-  DemoInput,
-  GameAccountInput,
   GameProfile,
-  HelpfulInput,
-  HideInput,
   ListBlocks200Item,
   ListCategories200Item,
-  ListChatMessagesParams,
-  ListConversationsParams,
   ListGameAccounts200Item,
-  ListNotificationsParams,
-  ListPostsParams,
   ListReports200Item,
   NotificationList,
   Ok,
-  OnboardInput,
   Post,
   PostDetail,
-  PostInput,
   PostList,
-  PostPatch,
-  ReportInput,
   Session,
   TestAccountList,
+  User
+} from './models';
+import type {
+  AnswerInput,
+  AppExchangeInput,
+  BlockInput,
+  CategoryInput,
+  ChatMessageInput,
+  ChatReadInput,
+  CommentInput,
+  ConversationInput,
+  DemoInput,
+  GameAccountInput,
+  HelpfulInput,
+  HideInput,
+  ListChatMessagesParams,
+  ListConversationsParams,
+  ListNotificationsParams,
+  ListPostsParams,
+  OnboardInput,
+  PostInput,
+  PostPatch,
+  ReportInput,
   TestLoginInput,
-  User,
   VerificationInput
 } from './models';
 
@@ -79,7 +85,8 @@ return apiFetch<Session>(getExchangeAppLoginUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(appExchangeInput)
+    body: JSON.stringify(appExchangeInput),
+    schema: Session
   }
 );}
 
@@ -100,7 +107,8 @@ export const listTestAccounts = async ( options?: Parameters<typeof apiFetch>[1]
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: TestAccountList
   }
 );}
 
@@ -135,7 +143,8 @@ return apiFetch<Session>(getTestAccountLoginUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(testLoginInput)
+    body: JSON.stringify(testLoginInput),
+    schema: Session
   }
 );}
 
@@ -171,7 +180,8 @@ return apiFetch<User>(getSetUserVerificationUrl(id),
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(verificationInput)
+    body: JSON.stringify(verificationInput),
+    schema: User
   }
 );}
 
@@ -199,7 +209,8 @@ export const listConversations = async (params?: ListConversationsParams, option
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: ConversationList
   }
 );}
 
@@ -234,7 +245,8 @@ return apiFetch<Conversation>(getCreateConversationUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(conversationInput)
+    body: JSON.stringify(conversationInput),
+    schema: Conversation
   }
 );}
 
@@ -264,7 +276,8 @@ export const listChatMessages = async (id: string,
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: ChatMessageList
   }
 );}
 
@@ -300,7 +313,8 @@ return apiFetch<ChatMessage>(getSendChatMessageUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(chatMessageInput)
+    body: JSON.stringify(chatMessageInput),
+    schema: ChatMessage
   }
 );}
 
@@ -336,7 +350,8 @@ return apiFetch<Ok>(getReadConversationUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(chatReadInput)
+    body: JSON.stringify(chatReadInput),
+    schema: Ok
   }
 );}
 
@@ -357,7 +372,8 @@ export const getHealth = async ( options?: Parameters<typeof apiFetch>[1]): Prom
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -378,7 +394,8 @@ export const listReports = async ( options?: Parameters<typeof apiFetch>[1]): Pr
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: zod.array(ListReports200Item)
   }
 );}
 
@@ -399,7 +416,8 @@ export const getSession = async ( options?: Parameters<typeof apiFetch>[1]): Pro
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: Session
   }
 );}
 
@@ -434,7 +452,8 @@ return apiFetch<Session>(getDemoLoginUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(demoInput)
+    body: JSON.stringify(demoInput),
+    schema: Session
   }
 );}
 
@@ -469,7 +488,8 @@ return apiFetch<Session>(getOnboardUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(onboardInput)
+    body: JSON.stringify(onboardInput),
+    schema: Session
   }
 );}
 
@@ -490,7 +510,8 @@ export const logout = async ( options?: Parameters<typeof apiFetch>[1]): Promise
     ...options,
     method: 'POST'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -511,7 +532,8 @@ export const deleteAccount = async ( options?: Parameters<typeof apiFetch>[1]): 
     ...options,
     method: 'DELETE'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -532,7 +554,8 @@ export const listCategories = async ( options?: Parameters<typeof apiFetch>[1]):
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: zod.array(ListCategories200Item)
   }
 );}
 
@@ -560,7 +583,8 @@ export const listPosts = async (params?: ListPostsParams, options?: Parameters<t
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: PostList
   }
 );}
 
@@ -595,7 +619,8 @@ return apiFetch<Post>(getCreatePostUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(postInput)
+    body: JSON.stringify(postInput),
+    schema: Post
   }
 );}
 
@@ -616,7 +641,8 @@ export const getPost = async (id: string, options?: Parameters<typeof apiFetch>[
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: PostDetail
   }
 );}
 
@@ -652,7 +678,8 @@ return apiFetch<Post>(getUpdatePostUrl(id),
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(postPatch)
+    body: JSON.stringify(postPatch),
+    schema: Post
   }
 );}
 
@@ -673,7 +700,8 @@ export const deletePost = async (id: string, options?: Parameters<typeof apiFetc
     ...options,
     method: 'DELETE'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -709,7 +737,8 @@ return apiFetch<Answer>(getCreateAnswerUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(answerInput)
+    body: JSON.stringify(answerInput),
+    schema: Answer
   }
 );}
 
@@ -745,7 +774,8 @@ return apiFetch<Answer>(getUpdateAnswerUrl(id),
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(answerInput)
+    body: JSON.stringify(answerInput),
+    schema: Answer
   }
 );}
 
@@ -766,7 +796,8 @@ export const deleteAnswer = async (id: string, options?: Parameters<typeof apiFe
     ...options,
     method: 'DELETE'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -802,7 +833,8 @@ return apiFetch<Answer>(getMarkHelpfulUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(helpfulInput)
+    body: JSON.stringify(helpfulInput),
+    schema: Answer
   }
 );}
 
@@ -823,7 +855,8 @@ export const readAnswers = async (id: string, options?: Parameters<typeof apiFet
     ...options,
     method: 'POST'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -859,7 +892,8 @@ return apiFetch<Comment>(getCreateCommentUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(commentInput)
+    body: JSON.stringify(commentInput),
+    schema: Comment
   }
 );}
 
@@ -895,7 +929,8 @@ return apiFetch<Comment>(getUpdateCommentUrl(id),
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(commentInput)
+    body: JSON.stringify(commentInput),
+    schema: Comment
   }
 );}
 
@@ -916,7 +951,8 @@ export const deleteComment = async (id: string, options?: Parameters<typeof apiF
     ...options,
     method: 'DELETE'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -937,7 +973,8 @@ export const getGameProfile = async (playerTag: string, options?: Parameters<typ
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: GameProfile
   }
 );}
 
@@ -958,7 +995,8 @@ export const listGameAccounts = async ( options?: Parameters<typeof apiFetch>[1]
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: zod.array(ListGameAccounts200Item)
   }
 );}
 
@@ -993,7 +1031,8 @@ return apiFetch<GameProfile>(getSaveGameAccountUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(gameAccountInput)
+    body: JSON.stringify(gameAccountInput),
+    schema: GameProfile
   }
 );}
 
@@ -1021,7 +1060,8 @@ export const listNotifications = async (params?: ListNotificationsParams, option
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: NotificationList
   }
 );}
 
@@ -1042,7 +1082,8 @@ export const readNotification = async (id: string, options?: Parameters<typeof a
     ...options,
     method: 'POST'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -1063,7 +1104,8 @@ export const readAllNotifications = async ( options?: Parameters<typeof apiFetch
     ...options,
     method: 'POST'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -1098,7 +1140,8 @@ return apiFetch<Ok>(getCreateReportUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(reportInput)
+    body: JSON.stringify(reportInput),
+    schema: Ok
   }
 );}
 
@@ -1119,7 +1162,8 @@ export const listBlocks = async ( options?: Parameters<typeof apiFetch>[1]): Pro
     ...options,
     method: 'GET'
 
-
+    ,
+    schema: zod.array(ListBlocks200Item)
   }
 );}
 
@@ -1154,7 +1198,8 @@ return apiFetch<Ok>(getBlockUserUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(blockInput)
+    body: JSON.stringify(blockInput),
+    schema: Ok
   }
 );}
 
@@ -1175,7 +1220,8 @@ export const unblockUser = async (id: string, options?: Parameters<typeof apiFet
     ...options,
     method: 'DELETE'
 
-
+    ,
+    schema: Ok
   }
 );}
 
@@ -1210,7 +1256,8 @@ return apiFetch<Category>(getCreateCategoryUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(categoryInput)
+    body: JSON.stringify(categoryInput),
+    schema: Category
   }
 );}
 
@@ -1245,6 +1292,7 @@ return apiFetch<Ok>(getHideContentUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(hideInput)
+    body: JSON.stringify(hideInput),
+    schema: Ok
   }
 );}
