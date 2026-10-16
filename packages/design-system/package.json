@@ -15,7 +15,7 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "node scripts/test.mjs",
     "check": "yarn lint && yarn typecheck && yarn test"
   },
   "dependencies": {
