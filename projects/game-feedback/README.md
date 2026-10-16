@@ -15,13 +15,21 @@ cp projects/game-feedback/.env.example projects/game-feedback/.env
 corepack yarn workspace @side/game-feedback dev:demo
 ```
 
-명시적 데모 실행은 외부 자격 증명 없이 가짜 로그인과 게임 프로필을 사용한다. Web은 <http://localhost:3300/ko>, API는 <http://localhost:4300>이다. Ctrl+C는 이 실행이 시작한 API와 Web을 종료한다. 로컬 PostgreSQL 데이터와 소유 프로세스는 유지되며 다음 명령으로 중지한다.
+명시적 데모 실행은 외부 자격 증명 없이 가짜 로그인과 게임 프로필을 사용한다. Web 진입점은 <http://localhost:3300/>, API는 <http://localhost:4300>이다. 첫 방문 언어는 브라우저 설정을 따른다. 한국어로 바로 보려면 <http://localhost:3300/ko>를 사용한다. Ctrl+C는 이 실행이 시작한 API와 Web을 종료한다. 로컬 PostgreSQL 데이터와 소유 프로세스는 유지되며 다음 명령으로 중지한다.
 
 ```sh
 corepack yarn workspace @side/game-feedback db:stop
 ```
 
 실제 Google/Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 데모 샘플은 명시적 데모 실행에만 추가한다.
+
+## 언어와 반응형 화면
+
+첫 진입 `/`는 저장한 언어를 우선하고, 자동 선택이면 기기나 브라우저의 `Accept-Language`에서 한국어, 영어, 일본어를 선택한다. 지원하는 언어가 없으면 영어를 사용한다. 위치 권한이나 IP 조회는 사용하지 않는다. `/ko`, `/en`, `/ja`로 전달된 링크는 해당 언어와 상세 경로를 유지한다.
+
+상단 지구본 또는 프로필 설정의 **언어**에서 **기기 설정에 맞춤**, **한국어**, **English**, **日本語**를 선택한다. 로그인 없이 바꿀 수 있고 선택은 서비스 전용 `gf_language` 쿠키에 저장되어 새로고침과 다음 접속에도 적용된다. 설정은 브라우저와 앱 WebView별로 저장하며 계정 간 동기화하지 않는다. 메뉴, 피드, 게시글 작성과 답변, 프로필, 채팅 등 주요 화면의 문구와 날짜 표시는 선택한 언어를 사용한다. 사용자 닉네임, 게시글과 메시지 원문은 자동 번역하지 않는다. 가이드와 약관 등 안내 본문은 한국어 원문임을 알리고 `lang="ko"`를 지정한다. 기존 원문 기준 canonical 정책을 유지한다.
+
+모바일은 한 열, 태블릿과 데스크톱은 기존 여러 열 배치를 사용한다. 모바일 채팅 상세에서는 상단 공통 메뉴와 하단 탭을 숨기고 대화 헤더의 뒤로 가기로 목록에 복귀한다. 입력창과 모달은 visual viewport 높이를 따라가며 Safe Area를 반영한다. 입력 글자는 16px, 하단 메뉴와 주요 언어 선택은 최소 44px 조작 영역을 사용한다. 게시글과 프로필의 긴 내용은 화면 안에서 줄바꿈한다.
 
 ## 고정 테스트 계정으로 확인하기
 

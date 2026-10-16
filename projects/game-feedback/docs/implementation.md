@@ -307,6 +307,30 @@ Web과 Mobile이 `packages/bridge`의 `appRoutes`·`resolveAppRoute`·`WebPathSc
 
 `install --immutable --mode=skip-build`, Game Feedback 집계 타입·Web/Mobile FSD lint, 공통 DS check(9개), Web Vitest 41개·Mobile Vitest 28개·SDK Vitest 32개가 통과했다. 전체 저장소 format과 diff 검사, 별도 `.next/merge-build` 출력의 Web production build, Android/iOS Metro export도 통과했다. 제품 코드·REST 계약·DB 변경이 없어 API DB 테스트와 브라우저 E2E는 이번 충돌 해결에서 반복하지 않았다.
 
+## 언어 설정과 모바일 반응형
+
+서비스 문구와 접근성 이름, SEO 제목의 가운데 점 구분을 문장과 쉼표 또는 제목의 `|`로 정리했다. 닉네임, 게시글, 답변과 메시지 원문은 변경하지 않는다. 테스트 계정의 서버 제공 설명만 화면에서 구분 문자를 정리한다.
+
+`shared/i18n`이 지원 locale과 사전, 기기 설정 감지, 언어 쿠키와 React context를 소유한다. 새 패키지나 계정/DB 필드를 추가하지 않았다. `/` 진입 시 저장한 `gf_language`의 수동 선택을 우선하고 자동 선택이면 `Accept-Language`의 우선순위와 지역 태그에서 ko/en/ja를 선택한다. 지원 언어가 없으면 en이다. 정밀 위치 권한과 IP 조회는 사용하지 않는다. locale이 명시된 공유 경로는 그대로 존중한다. Proxy는 locale을 검증해 요청 헤더에 전달하고 서버 HTML의 lang도 실제 경로와 맞춘다.
+
+로그인 전에도 설정과 상단 지구본에서 자동 선택, 한국어, English, 日本語를 고를 수 있다. 쿠키는 브라우저/WebView별로 저장하며 계정 간 동기화하지 않는다. 경로를 replace로 바꾸고 상세 ID, 검색과 cursor query를 유지한다. 새로고침과 다음 `/` 진입에도 수동 선택이 기기 설정보다 우선한다. 메뉴, 피드, 게시글과 댓글/답변 폼, 프로필, 채팅, 알림, 가입/설정, 오류 복구 등 주요 문구와 날짜 표시를 사전에 연결했다. 사용자 콘텐츠는 번역하지 않으며 가이드/약관 등 긴 안내는 한국어 원문 안내와 `lang="ko"`를 표시한다. 원문 콘텐츠를 기준으로 하던 기존 canonical과 JSON-LD 정책은 보존한다.
+
+Mobile의 최초 주소를 `/ko`에서 `/`로 바꿔 저장한 설정과 기기 언어를 적용한다. 최초 redirect 전의 문서 주소를 한국어로 저장하지 않으며, 이후 복구는 실제 locale과 query를 유지한다. 모바일 채팅 상세는 전용 전체 높이 화면으로 표시하고 공통 상단 메뉴/하단 탭을 숨긴다. 목록으로 돌아가면 탭을 복원한다. visual viewport의 resize와 scroll에 맞춰 높이/상단 좌표를 갱신해 키보드가 차지하는 공간을 제외한다. Safe Area, 16px 입력 글자와 44px 하단 메뉴/언어 선택 영역, 긴 내용 줄바꿈과 유동 레이아웃을 적용했다. 소개 영역은 글과 장식을 별도 grid 열로 나누고 모바일은 장식을 숨겨 번역 문구와 겹치지 않게 한다.
+
+공통 파일 변경은 `packages/design-system` Dialog의 선택적 `closeLabel`과 해당 테스트다. 기본 닫기 이름과 포커스/키보드 동작은 유지하며 Game Feedback만 현재 언어의 닫기 이름을 전달한다. 공통 색, 폰트, 버튼, Dialog 표현을 앱에서 복제하지 않는다. 모바일 Dialog의 visual viewport 배치만 앱에서 조정한다.
+
+집계 타입 검사와 Web/Mobile FSD lint, Web Vitest 51개와 Mobile Vitest 29개, DS check 10개와 Photo Contest Web unit/UI 238개가 통과했다. Photo Web의 기존 `vitest` bin 누락은 선언된 패키지를 Node로 해석해 unit/ui CLI를 실행했으며 앱 설정은 수정하지 않았다. Web Playwright 전체 30개(약 2.1분)와 Android Chromium/iOS WebKit host 전체 12개(40.3초)가 통과했다. 자동 언어의 JS 비활성 최초 진입/필터 유지, 로그인 전 수동 선택/새 문서 복원/자동 재설정, WebView 언어 복원과 320/390/768/1440px의 주요 페이지, 모달 폭, 채팅 입력과 420px 높이 축소, 목록/탭 복귀를 검증했다. 새 화면 테스트는 공개 화면을 먼저 확인하고 private 동작 직전에 실제 테스트 계정으로 로그인해 같은 계정의 불필요한 반복 요청을 줄인다. 제품 요청 제한은 완화하지 않았다.
+
+모바일 캡처에서 영문 소개와 장식의 겹침을 발견해 grid와 모바일 장식 숨김을 보완한 뒤 반응형/모션 6개를 재검증했다(46.5초). 320px 일본어 설정, 390px 영문 피드와 1440px 데스크톱 캡처를 확인했고 브라우저 pageerror도 없었다. 별도 `.next/locale-build`의 Web production build와 Android/iOS Metro export가 통과했다. 잔여 소유 테스트 스키마 0개를 확인하고 소유 테스트 DB를 중지했다. API, REST 계약, DB schema와 의존성은 변경하지 않았다. OS 키보드와 실기기, 서명 빌드는 별도 확인 대상이다.
+
+## WebView 채널과 외부 상태 구독
+
+`_pages/web-shell/model/web-view-channel.ts`의 `WebViewChannel` class가 WebView 참조, 마지막 복구 URL과 history, 로딩/연결 오류/모달/source/key snapshot을 소유한다. `useWebShell`은 셸마다 하나의 채널을 만들고 `useSyncExternalStore`로 구독한다. native host와 OS lifecycle 연결은 훅에 두고 중복된 화면 useState를 제거했다. 채널의 subscribe, getSnapshot과 ref callback은 인스턴스에 바인딩되어 있으며 변경이 없으면 동일한 immutable snapshot을 반환한다. 구독 해제는 React가 관리하고 ref 해제 후에는 네이티브 명령을 보내지 않는다.
+
+준비된 문서의 location은 복구 주소에만 기록해 SPA 탐색을 문서 reload로 바꾸지 않는다. 준비 전 딥링크는 source로 반영한다. 재시도/Android renderer 복구는 마지막 URL과 새 key를 함께 반영하고 교체된 WebView의 history를 지운다. iOS content 종료는 로딩 상태를 복원한 뒤 reload한다. Android back 대기, 모달 우선 처리, hash 이동 구분과 인증 메시지의 origin/세대 검증을 유지한다.
+
+Mobile Vitest는 9개 파일 34개가 통과했다. snapshot 참조 안정성/중복 알림 방지/구독 해제, 채널 인스턴스 분리, warm URL과 문서 source 분리, 복구 상태의 일괄 반영을 검증한다. RN Web UI에서 로딩/모달 상태의 구독 반영, OS listener 중복 설치 방지와 언마운트 후 WebView ref 해제를 확인했다. Mobile 타입 검사와 FSD lint, Android/iOS Metro export, 실제 native host를 연결한 Android Chromium/iOS WebKit E2E 12개 재검증(39.3초)과 전체 저장소 Prettier 검사도 통과했다. 잔여 소유 테스트 스키마 0개를 확인하고 테스트 DB만 중지했다. dev client/실기기 검증은 포함하지 않는다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
