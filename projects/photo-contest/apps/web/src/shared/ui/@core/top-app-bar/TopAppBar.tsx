@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, ChevronLeft } from 'lucide-react';
+import { Aperture, ChevronLeft, House, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -15,14 +15,30 @@ const APP_BAR_CLASS_NAME = 'sticky top-0 z-app-bar shrink-0 border-b border-line
 function DesktopNavigation() {
   const pathname = usePathname();
   return (
-    <nav aria-label="주요 메뉴" className="hidden items-center gap-2 desktop:flex">
-      <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
-        홈
-      </NavigationLink>
-      <NavigationLink href={ROUTES.ME} active={pathname === ROUTES.ME}>
-        MY
-      </NavigationLink>
-    </nav>
+    <aside className="absolute inset-y-0 left-0 z-app-bar hidden w-48 border-r border-line bg-surface desktop:block">
+      <nav aria-label="주요 메뉴" className="sticky top-0 flex h-dvh flex-col gap-2 px-4 py-8">
+        <Link
+          href={ROUTES.HOME}
+          aria-label="웃긴순간 홈"
+          className="mb-10 flex min-h-touch items-center gap-2 px-3 text-title-lg tracking-tighter text-ink active:opacity-60"
+        >
+          <Aperture aria-hidden className="size-6" />
+          웃긴순간
+        </Link>
+        <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
+          <House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />홈
+        </NavigationLink>
+        <NavigationLink href={ROUTES.ME} active={pathname === ROUTES.ME}>
+          <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
+          MY
+        </NavigationLink>
+        <div className="mt-auto px-3 text-caption text-subtle">
+          <p className="text-label text-muted">가볍게 올리고, 같이 웃어요.</p>
+          <p className="mt-2">사진 · 동영상 · 합성</p>
+          <p className="mt-6 text-micro">© 웃긴순간</p>
+        </div>
+      </nav>
+    </aside>
   );
 }
 
@@ -32,8 +48,8 @@ function NavigationLink({ href, active, children }: { href: string; active: bool
       href={href}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex min-h-touch items-center rounded-control px-5 text-label transition-colors active:bg-sunken',
-        active ? 'bg-brand-soft text-brand' : 'text-muted hover:bg-sunken hover:text-ink',
+        'flex min-h-touch items-center gap-4 rounded-control px-3 py-3 text-body transition-colors hover:bg-sunken active:bg-neutral-soft',
+        active ? 'font-bold text-ink' : 'text-ink',
       )}
     >
       {children}
@@ -63,37 +79,38 @@ function BackButton({ href }: { href: string }) {
 /** 화면 상단 앱바(60px). 뒤로 가기 + 제목 + 오른쪽 행동. */
 export function TopAppBar({ title, backHref, actions, className }: ITopAppBarProps) {
   return (
-    <header className={cn(APP_BAR_CLASS_NAME, className)}>
-      <div className="flex h-app-bar items-center gap-1 px-2 desktop:h-bottom-nav desktop:gap-4 desktop:px-6">
-        {backHref ? <BackButton href={backHref} /> : null}
-        <h1 className={cn('line-clamp-1 min-w-0 flex-1 text-title text-ink', backHref ? 'px-1' : 'px-3')}>
-          {title}
-        </h1>
-        {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
-        <DesktopNavigation />
-      </div>
-    </header>
+    <>
+      <DesktopNavigation />
+      <header className={cn(APP_BAR_CLASS_NAME, className)}>
+        <div className="flex h-app-bar items-center gap-1 px-2 desktop:gap-4 desktop:px-6">
+          {backHref ? <BackButton href={backHref} /> : null}
+          <h1 className={cn('line-clamp-1 min-w-0 flex-1 text-title text-ink', backHref ? 'px-1' : 'px-3')}>
+            {title}
+          </h1>
+          {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
+        </div>
+      </header>
+    </>
   );
 }
 
 /** 홈 화면의 브랜드 앱바 */
 export function BrandAppBar({ actions, className }: { actions?: ReactNode; className?: string }) {
   return (
-    <header className={cn(APP_BAR_CLASS_NAME, className)}>
-      <div className="flex h-app-bar items-center gap-2 px-4 desktop:h-bottom-nav desktop:px-8">
-        <h1 className="flex min-w-0 flex-1 items-center gap-2 text-title text-ink">
-          <span
-            aria-hidden
-            className="flex size-9 items-center justify-center rounded-control bg-brand text-on-brand"
-          >
-            <Camera className="size-5" />
+    <>
+      <DesktopNavigation />
+      <header className={cn(APP_BAR_CLASS_NAME, className)}>
+        <div className="flex h-app-bar items-center gap-2 px-4 desktop:px-8">
+          <h1 className="flex min-w-0 flex-1 items-center gap-2 text-title-lg tracking-tighter text-ink desktop:text-title">
+            <Aperture aria-hidden className="size-6 desktop:hidden" />
+            웃긴순간
+          </h1>
+          <span className="text-caption text-muted">
+            사진도, 동영상도. <span className="text-ink">합성도 환영</span>
           </span>
-          웃긴순간
-          <span className="rounded-badge bg-accent px-1.5 py-0.5 text-micro text-accent-ink">BETA</span>
-        </h1>
-        {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
-        <DesktopNavigation />
-      </div>
-    </header>
+          {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
+        </div>
+      </header>
+    </>
   );
 }

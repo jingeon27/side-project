@@ -30,7 +30,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <div id={APP_ROOT_ID} className="flex min-h-dvh justify-center bg-canvas">
           <main
             id={APP_MAIN_ID}
-            className="relative flex min-h-dvh w-full max-w-web flex-col bg-surface shadow-app"
+            className="relative flex min-h-dvh w-full max-w-web flex-col bg-surface desktop:pl-48"
           >
             <AppProviders>{children}</AppProviders>
           </main>

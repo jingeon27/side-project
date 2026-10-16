@@ -1,6 +1,6 @@
 /* 디자인 토큰. 화면은 임의 hex·px 대신 이 토큰으로 만든다. */
 @theme {
-  /* 휴대폰은 한 열, 태블릿은 두 열, 데스크톱은 넓은 웹 레이아웃을 쓴다. */
+  /* 피드 폭을 유지하고 데스크톱부터 양쪽 메뉴·인기 영역을 더한다. */
   --breakpoint-*: initial;
   --breakpoint-pc: 540px;
   --breakpoint-tablet: 768px;
@@ -13,32 +13,32 @@
     system-ui, sans-serif;
 
   --color-*: initial;
-  --color-brand: #316447;
-  --color-brand-strong: #204c34;
-  --color-brand-soft: #e7eddf;
-  --color-accent: #f1cc64;
-  --color-accent-soft: #f6e9bb;
-  --color-accent-ink: #7a5a12;
-  --color-ink: #252922;
-  --color-muted: #6c7167;
-  --color-subtle: #a0a396;
-  --color-line: #e5e6dd;
-  --color-line-strong: #d3d7c9;
+  --color-brand: #101010;
+  --color-brand-strong: #363636;
+  --color-brand-soft: #f5f5f5;
+  --color-accent: #ff9b42;
+  --color-accent-soft: #fff3e8;
+  --color-accent-ink: #995014;
+  --color-ink: #101010;
+  --color-muted: #737373;
+  --color-subtle: #a3a3a3;
+  --color-line: #ebebeb;
+  --color-line-strong: #dbdbdb;
   --color-surface: #ffffff;
-  --color-sunken: #f6f7f0;
-  --color-canvas: #f3f2ec;
-  --color-background: #fbfaf7;
-  --color-danger: #aa443d;
-  --color-danger-soft: #f8eae5;
-  --color-info: #3f6377;
-  --color-info-soft: #e2edf1;
-  --color-neutral-soft: #eeeee8;
+  --color-sunken: #fafafa;
+  --color-canvas: #ffffff;
+  --color-background: #ffffff;
+  --color-danger: #d32f43;
+  --color-danger-soft: #fff0f1;
+  --color-info: #7050dc;
+  --color-info-soft: #f1edff;
+  --color-neutral-soft: #f2f2f2;
   --color-gold: #d9ad35;
   --color-silver: #a9b0b6;
   --color-bronze: #c08b5c;
   --color-kakao: #fee500;
   --color-on-brand: #ffffff;
-  --color-scrim: rgb(23 35 18 / 0.45);
+  --color-scrim: rgb(0 0 0 / 0.5);
 
   /* 크기·줄 높이·굵기·자간을 한 토큰으로 묶는다. */
   --text-*: initial;
@@ -67,9 +67,9 @@
   --text-input--line-height: 1.5;
   --text-input--font-weight: 400;
   --text-input--letter-spacing: -0.005em;
-  --text-button: 1rem;
+  --text-button: 0.875rem;
   --text-button--line-height: 1.25;
-  --text-button--font-weight: 700;
+  --text-button--font-weight: 600;
   --text-button--letter-spacing: -0.01em;
   --text-label: 0.875rem;
   --text-label--line-height: 1.45;
@@ -85,14 +85,14 @@
   --text-micro--letter-spacing: 0.02em;
 
   --radius-badge: 6px;
-  --radius-control: 12px;
-  --radius-card: 16px;
-  --radius-sheet: 24px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-sheet: 20px;
 
-  --shadow-app: 0 0 0 1px rgb(37 41 34 / 0.04), 0 12px 40px rgb(37 41 34 / 0.08);
-  --shadow-card: 0 1px 2px rgb(37 41 34 / 0.06);
-  --shadow-sheet: 0 -12px 40px rgb(23 35 18 / 0.18);
-  --shadow-toast: 0 8px 24px rgb(23 35 18 / 0.22);
+  --shadow-app: 0 0 0 1px rgb(0 0 0 / 0.04);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.03);
+  --shadow-sheet: 0 8px 48px rgb(0 0 0 / 0.16);
+  --shadow-toast: 0 8px 24px rgb(0 0 0 / 0.16);
 
   --z-index-app-bar: 20;
   --z-index-bottom-nav: 20;

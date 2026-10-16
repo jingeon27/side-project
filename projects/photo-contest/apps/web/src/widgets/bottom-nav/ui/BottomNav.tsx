@@ -25,7 +25,7 @@ function NavItem({
       aria-current={isActive ? 'page' : undefined}
       className={cn(
         'flex h-full flex-col items-center justify-center gap-1 text-micro transition-colors active:bg-sunken',
-        isActive ? 'text-brand' : 'text-muted hover:text-ink',
+        isActive ? 'font-bold text-ink' : 'text-muted hover:text-ink',
       )}
     >
       {icon}
@@ -51,7 +51,7 @@ export function BottomNav() {
           <NavItem
             href={ROUTES.HOME}
             label="홈"
-            icon={<House aria-hidden className="size-6" />}
+            icon={<House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />}
             isActive={pathname === ROUTES.HOME}
           />
         </li>
@@ -59,7 +59,9 @@ export function BottomNav() {
           <NavItem
             href={ROUTES.ME}
             label="MY"
-            icon={<UserRound aria-hidden className="size-6" />}
+            icon={
+              <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
+            }
             isActive={pathname === ROUTES.ME}
           />
         </li>
