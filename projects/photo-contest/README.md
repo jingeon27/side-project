@@ -50,6 +50,14 @@ corepack yarn dev:photo-contest
 
 기존 대회 사진·숨김·작성 시각·좋아요는 `20261015090000_gallery_posts`가 그룹 게시물로 복사합니다. 기존 테이블과 대회 URL은 보존합니다. 새 그룹의 작성 흐름은 대회나 마감일에 의존하지 않습니다. 개발 DB에는 검토 후 위 `db:migrate` 명령을 실행하세요.
 
+인기 순위는 사진 밖의 제목 옆에, 기존 대회 순위는 사진 아래에 표시합니다. favicon은 기존 조리개 브랜드 아이콘을 사용한 `apps/web/src/app/icon.svg`이며 Next.js가 아이콘 메타데이터를 생성합니다.
+
+## 서비스 정책
+
+이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 로그인 없이 읽을 수 있습니다. 로그인 화면·MY·데스크톱 메뉴에서 연결하며, 운영자 김진건과 문의처 jingeon27@gmail.com은 `apps/web/src/_pages/legal/@page/model/policy.ts`에서 관리합니다.
+
+두 문서는 검토용 초안입니다. 계정·미디어·인증 정보의 처리는 현재 구현을 기준으로 설명합니다. 정식 공개 전 실제 호스팅·저장소·분석 서비스의 위탁·국외 이전, 문의·운영 이력·백업 보관 기간과 아동 개인정보 처리 기준을 확인해 확정해야 합니다. 작성 시 [개인정보보호위원회의 2026년 개인정보 처리방침 작성지침](https://pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS074&nttId=12021)을 참고했습니다.
+
 ## 모바일 앱
 
 Expo Go 대신 dev client 또는 스토어 빌드를 사용합니다.
