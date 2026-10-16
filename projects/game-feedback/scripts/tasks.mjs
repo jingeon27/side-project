@@ -47,6 +47,7 @@ export async function runTask(task) {
     await prerequisites();
     if (env.TEST_DATABASE_URL) await local('db.mjs', ['start', '--test']);
     await workspace('api', 'test', { NODE_ENV: 'test' });
+    await workspace('sdk', 'test');
     await workspace('web', 'test');
     await workspace('mobile', 'test');
   } else if (task === 'test:e2e' || task === 'test:mobile:e2e') {

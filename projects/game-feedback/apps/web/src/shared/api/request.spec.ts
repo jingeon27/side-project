@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ApiResponseValidationError } from '@game-feedback/sdk';
 import { ApiError, withApiError } from './request';
 
 describe('REST error presentation boundary', () => {
@@ -18,5 +19,15 @@ describe('REST error presentation boundary', () => {
     );
     const cancelled = new DOMException('The operation was aborted', 'AbortError');
     await expect(withApiError(Promise.reject(cancelled))).rejects.toBe(cancelled);
+  });
+});
+
+it('shows a distinct response validation error instead of the network fallback', async () => {
+  const failure = new ApiResponseValidationError(200);
+  await expect(withApiError(Promise.reject(failure))).rejects.toBe(failure);
+  await expect(withApiError(Promise.reject(failure))).rejects.toMatchObject({
+    status: 200,
+    errorCode: 'INVALID_API_RESPONSE',
+    message: '서버 응답을 확인하지 못했어요. 새로고침 후 내용을 확인해 주세요.',
   });
 });
