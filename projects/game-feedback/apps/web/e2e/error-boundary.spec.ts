@@ -4,6 +4,10 @@ import type { ChatMessageList, PostDetail } from '@game-feedback/contracts';
 const origin = 'http://127.0.0.1:3301';
 const marker = '2001-02-03T04:05:06.000Z';
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'wait' });
+});
+
 async function injectDateRenderFailure(page: Page) {
   // The browser owns fault injection; the application has no test-only crash switch.
   await page.addInitScript((timestamp) => {

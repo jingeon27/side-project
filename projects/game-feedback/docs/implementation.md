@@ -261,6 +261,18 @@ API에는 `GET /api/users/:id`와 기존 `/api/posts`의 authorId 필터를 추�
 
 구현은 설치된 Next 16.4 metadata·robots·sitemap 문서와 [Google DiscussionForumPosting](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum), [ProfilePage](https://developers.google.com/search/docs/appearance/structured-data/profile-page), [meta 지원 문서](https://developers.google.com/search/docs/crawling-indexing/special-tags)를 참고했다. 키워드 태그를 추가한 것을 검색 순위 보장으로 표현하지 않는다. 실제 공개 도메인·Search Console 등록·Google 색인/리치 결과·외부 OAuth·네이티브 실기기 검증은 수행하지 않았다. 기본 비공개 알파 상태를 유지한다. 재생성 대상 73개 파일의 hash가 재생성 전후 일치했고, 전체 format·diff 검사도 통과했다. 최종 소유 테스트 스키마 0개와 개발 고정 계정 3개·게시글 6개 보존을 확인했다. 소유 테스트 DB를 중지했고 개발 홈·게시글·공개 프로필·robots 응답 200과 메타데이터를 확인했다.
 
+## canonical과 JSON-LD 보완
+
+기존 페이지별 canonical과 게시글 `DiscussionForumPosting`·프로필 `ProfilePage`/`Person` JSON-LD에 홈·공개 안내 페이지의 구조화 데이터를 보완했다. 홈·가이드·약관·개인정보·문의는 하나의 `WebSite` 노드와 페이지별 `WebPage`(문의는 `ContactPage`)를 연결한다. 공통 SEO 모듈에서 metadata와 같은 경로·제목·설명을 사용하며 미번역 en/ja도 ko canonical과 일치한다. 채팅·알림·설정에는 개인 정보를 담는 JSON-LD를 생성하지 않는다. 설치된 Next JSON-LD 가이드와 [Schema.org WebSite](https://schema.org/WebSite)·[WebPage](https://schema.org/WebPage)·[ContactPage](https://schema.org/ContactPage)를 확인했다.
+
+프로필 JSON-LD에 명시적인 url·페이지 이름·설명·언어를 추가했다. 작성글 cursor가 있으면 `ProfilePage`의 url·ID는 현재 canonical을 따르고, 같은 사용자를 나타내는 `Person`의 ID·url은 기본 공개 프로필 주소를 유지한다. JSON-LD script 종료 문자 이스케이프와 기본 알파 noindex 정책은 유지한다.
+
+Web Vitest 11개 파일·37개, 타입 검사·FSD lint, 별도 출력 경로의 production build가 통과했다. JavaScript를 끈 crawler E2E 4개에서 공개 페이지의 JSON-LD·canonical 일치, private 화면의 구조화 데이터 제외, 미번역 경로·추적 query 정규화, 게시글·프로필·404·차단 접근·계정 전환을 확인했다(21.4초). 빌드와 동시 실행한 첫 브라우저 검증은 기존 계정 전환 사례가 시간 초과되어 빌드 종료 후 별도 실행으로 재검증했다. 개발 서버의 홈·문의·게시글·프로필도 200과 실제 canonical·JSON-LD 출력을 확인했다.
+
+이전 head `b137d65`의 Game Feedback CI는 format·계약 생성·DS·집계 검사·단위 테스트·빌드를 통과했으나 Web E2E에서 실패했다. 로그에는 성공한 채팅 오류 주입 사례의 `route.fetch`가 테스트 종료 후 거부되어 다음 사례에 실패가 전파된 것으로 기록되어 있다. 응답 오염·오류 경계 테스트의 afterEach에서 [Playwright unrouteAll](https://playwright.dev/docs/api/class-page#page-unroute-all)의 `behavior: 'wait'`로 실행 중인 handler를 완료한 뒤 page를 닫도록 보완했다. 실패를 무시하는 catch나 재시도를 추가하지 않았다.
+
+정리 보완 후 Web Playwright 전체 20개가 통과했다(약 1.3분). 전체 변경 파일의 Prettier·diff 검사도 통과했다. 잔여 `gf_test_*` 스키마 0개를 확인하고 소유 테스트 DB를 중지했다. 이번 변경은 API·SDK·Mobile·의존성·공통 파일을 수정하지 않아 해당 레인의 검증을 반복하지 않았다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

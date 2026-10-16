@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 import type { PostList } from '@game-feedback/contracts';
 const postsRoute = /\/api\/posts(?:\?.*)?$/;
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'wait' });
+});
+
 test('malformed display fields use safe fallbacks before a feed card is rendered', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
