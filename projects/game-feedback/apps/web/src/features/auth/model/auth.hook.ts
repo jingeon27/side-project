@@ -1,8 +1,17 @@
 'use client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNotify } from '@/shared/ui';
-import { deleteMembership, postDemoLogin, postLogout, postOnboarding, postTestLogin } from '../api/auth.api';
-import { clearAuthenticatedSession, replaceSession } from './session-cache';
+import { requestNativeLogin } from '@/shared/native';
+import {
+  fetchSession,
+  postAppExchange,
+  deleteMembership,
+  postDemoLogin,
+  postLogout,
+  postOnboarding,
+  postTestLogin,
+} from '../api/auth.api';
+import { clearAuthenticatedSession, replaceSession, refreshSession } from './session-cache';
 
 export function useDemoLogin() {
   const client = useQueryClient();
@@ -58,4 +67,22 @@ export function useDeleteAccount() {
       notify('회원 탈퇴가 완료되었어요.');
     },
   });
+}
+
+export function useNativeLogin() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const ticket = await requestNativeLogin();
+      return ticket ? postAppExchange(ticket) : null;
+    },
+    onSuccess: async (session) => {
+      if (session) await replaceSession(client, session);
+    },
+  });
+}
+
+export function useRefreshSession() {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: () => refreshSession(client, fetchSession) });
 }

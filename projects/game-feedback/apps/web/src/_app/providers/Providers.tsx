@@ -5,6 +5,7 @@ import { OverlayProvider } from 'overlay-kit';
 import { SessionProvider, useSession } from '@/features/auth';
 import { AuthOnboarding, openLoginDialog } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
+import { NativeBridge } from './NativeBridge';
 import { ToastProvider } from '@/shared/ui';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -29,6 +30,7 @@ function SessionContent({ children }: { children: ReactNode }) {
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
+      <NativeBridge />
       <AuthOnboarding />
     </OverlayProvider>
   );

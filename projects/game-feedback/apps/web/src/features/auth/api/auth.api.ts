@@ -1,4 +1,5 @@
 import {
+  exchangeAppLogin,
   getSession,
   demoLogin,
   onboard,
@@ -30,4 +31,8 @@ export function deleteMembership() {
 }
 export function fetchTestAccounts({ signal }: { signal?: AbortSignal } = {}): Promise<TestAccountList> {
   return withApiError(listTestAccounts({ signal }));
+}
+
+export function postAppExchange(body: { code: string; verifier: string }): Promise<Session> {
+  return withApiError(exchangeAppLogin(body));
 }

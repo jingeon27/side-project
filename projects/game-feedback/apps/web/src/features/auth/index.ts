@@ -2,6 +2,8 @@ export { SessionProvider, useSession } from './ui/SessionProvider';
 export { sessionOptions, testAccountListOptions } from './model/auth.options';
 export { replaceSession } from './model/session-cache';
 export {
+  useRefreshSession,
+  useNativeLogin,
   useDemoLogin,
   useCompleteOnboarding,
   useTestAccountLogin,

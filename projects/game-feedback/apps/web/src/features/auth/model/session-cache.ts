@@ -17,3 +17,18 @@ export async function clearAuthenticatedSession(client: QueryClient) {
     needsOnboarding: false,
   });
 }
+
+export async function refreshSession(client: QueryClient, loadSession: () => Promise<Session>) {
+  const options = sessionOptions();
+  const previous = client.getQueryData(options.queryKey);
+  const session = await loadSession();
+  // Login/logout completed while the resume request was in flight.
+  if (client.getQueryData(options.queryKey) !== previous) return;
+  if (previous?.user?.id !== session.user?.id || previous?.needsOnboarding !== session.needsOnboarding) {
+    await replaceSession(client, session);
+    await client.invalidateQueries();
+    return;
+  }
+  client.setQueryData(options.queryKey, session);
+  await client.invalidateQueries();
+}

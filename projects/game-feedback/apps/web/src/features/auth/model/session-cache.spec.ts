@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import type { Session } from '@/shared/api';
 import { sessionOptions } from './auth.options';
-import { clearAuthenticatedSession, replaceSession } from './session-cache';
+import { clearAuthenticatedSession, replaceSession, refreshSession } from './session-cache';
 
 const signedInSession: Session = {
   user: {
@@ -67,6 +67,42 @@ describe('session identity cache boundary', () => {
       needsOnboarding: false,
     });
     expect(client.getQueryCache().getAll()).toHaveLength(1);
+    client.clear();
+  });
+});
+
+describe('native foreground session refresh', () => {
+  it('clears previous private data when the WebView cookie has changed identity', async () => {
+    const client = new QueryClient();
+    client.setQueryData(sessionOptions().queryKey, signedInSession);
+    client.setQueryData(['private-history', 'alice'], { body: '이전 비공개 메시지' });
+    const next = {
+      ...signedInSession,
+      user: signedInSession.user ? { ...signedInSession.user, id: 'bob' } : null,
+    };
+    await refreshSession(client, async () => next);
+    expect(client.getQueryData(['private-history', 'alice'])).toBeUndefined();
+    expect(client.getQueryData(sessionOptions().queryKey)).toEqual(next);
+    client.clear();
+  });
+  it('keeps same-identity queries available for refresh and ignores an older resume response after logout', async () => {
+    const client = new QueryClient();
+    client.setQueryData(sessionOptions().queryKey, signedInSession);
+    client.setQueryData(['private-history', 'alice'], { body: '유지할 현재 데이터' });
+    await refreshSession(client, async () => signedInSession);
+    expect(client.getQueryState(['private-history', 'alice'])?.isInvalidated).toBe(true);
+    let finish: (session: Session) => void = () => undefined;
+    const pending = refreshSession(
+      client,
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    await clearAuthenticatedSession(client);
+    finish(signedInSession);
+    await pending;
+    expect(client.getQueryData(sessionOptions().queryKey)?.user).toBeNull();
     client.clear();
   });
 });

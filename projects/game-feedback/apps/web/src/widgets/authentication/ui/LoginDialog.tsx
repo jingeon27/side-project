@@ -1,8 +1,10 @@
 'use client';
+import type { FormEvent } from 'react';
+import { isNativeApp } from '@/shared/native';
 import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { ArrowRight, Gamepad2, LoaderCircle, ShieldCheck } from 'lucide-react';
-import { useCompleteOnboarding, useDemoLogin, useSession } from '@/features/auth';
+import { useCompleteOnboarding, useDemoLogin, useSession, useNativeLogin } from '@/features/auth';
 import type { Session } from '@/shared/api';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field, Modal } from '@/shared/ui';
@@ -24,6 +26,7 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
   const form = useZodForm(loginFormSchema, {
     defaultValues: { nickname: '', acceptedTerms: false, ageConfirmed: false },
   });
+  const nativeLogin = useNativeLogin();
   const demo = useDemoLogin();
   const onboarding = useCompleteOnboarding();
   const joining = session?.needsOnboarding ?? false;
@@ -38,6 +41,15 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
       return;
     }
     demo.mutate({ nickname: values.nickname }, { onSuccess });
+  };
+  const handleGoogleLogin = (event: FormEvent<HTMLFormElement>) => {
+    if (!isNativeApp()) return;
+    event.preventDefault();
+    nativeLogin.mutate(undefined, {
+      onSuccess: (result) => {
+        if (result) onSuccess();
+      },
+    });
   };
   return (
     <Modal
@@ -56,18 +68,19 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
       )}
       {!joining && (
         <>
-          <form action="/api/auth/google" method="get">
+          <form action="/api/auth/google" method="get" onSubmit={handleGoogleLogin}>
             <Button
               variant="secondary"
               size="md"
               className="button google-button"
               type="submit"
-              disabled={session && !session.googleConfigured}
+              disabled={nativeLogin.isPending || (session && !session.googleConfigured)}
             >
               <span className="google-letter">G</span>Google로 시작하기
               <ArrowRight size={17} />
             </Button>
           </form>
+          <ErrorNotice message={nativeLogin.error?.message} />
           <p className="muted small">
             {session && !session.googleConfigured
               ? 'Google 로그인 연결 준비 중 · 데모로 먼저 둘러보세요.'
