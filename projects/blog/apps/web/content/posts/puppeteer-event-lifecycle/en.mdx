@@ -1,0 +1,151 @@
+In an Electron data collection app, I needed to wait for both Puppeteer's request and response events. The request supplied headers for the next API call; the response supplied a value needed to open a downloaded file. The next task could start only after both were ready.
+
+My first implementation stored the result in an outer variable and checked it once a second.
+
+```typescript
+let result: PreInfo | undefined;
+
+page.on('request', (request) => {
+  result = readRequest(request);
+});
+
+await page.reload();
+
+while (result === undefined) {
+  await delay(1_000);
+}
+```
+
+It worked, but several things could go wrong.
+
+- Calling the function again accumulated listeners.
+- If the expected event never arrived, it waited forever.
+- A check such as `if (result)` treated valid values like `0`, `false`, and an empty string as unfinished.
+- The request and response callbacks could overwrite the same variable.
+- Reloading before registering the listeners could miss fast events.
+
+I wrapped the wait in a Promise and removed the listeners on every exit path: success, failure, and timeout.
+
+## A shared function for waiting on events
+
+```tsx
+import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
+
+type MaybePromise<T> = T | Promise<T>;
+
+interface WaitForPreInfoOptions<T> {
+  page: Page;
+  timeoutMs?: number;
+  onRequest?: (request: HTTPRequest) => MaybePromise<T | undefined>;
+  onResponse?: (response: HTTPResponse) => MaybePromise<T | undefined>;
+}
+
+export function waitForPreInfo<T>({
+  page,
+  timeoutMs = 10_000,
+  onRequest,
+  onResponse,
+}: WaitForPreInfoOptions<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      if (timer) clearTimeout(timer);
+      page.off('request', handleRequest);
+      page.off('response', handleResponse);
+    };
+
+    const finish = (value: T) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const fail = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const consume = async (result: MaybePromise<T | undefined>) => {
+      try {
+        const value = await result;
+        if (value !== undefined) finish(value);
+      } catch (error) {
+        fail(error);
+      }
+    };
+
+    const handleRequest = (request: HTTPRequest) => {
+      if (onRequest) void consume(onRequest(request));
+    };
+
+    const handleResponse = (response: HTTPResponse) => {
+      if (onResponse) void consume(onResponse(response));
+    };
+
+    page.on('request', handleRequest);
+    page.on('response', handleResponse);
+
+    timer = setTimeout(() => {
+      fail(new Error(`필요한 네트워크 정보를 ${timeoutMs}ms 안에 찾지 못했습니다.`));
+    }, timeoutMs);
+
+    void page.reload({ waitUntil: 'networkidle2' }).catch(fail);
+  });
+}
+```
+
+The function resolves when a callback first returns a valid result. It removes its listeners whether it completes, fails, or times out.
+
+## Combining two events with a closure
+
+When request and response each provide half the information, a small collector can combine them.
+
+```typescript
+interface SitePreInfo {
+  headers: Record<string, string>;
+  filePassword: string;
+}
+
+function createSitePreInfoCollector() {
+  let headers: Record<string, string> | undefined;
+  let filePassword: string | undefined;
+
+  const getResult = (): SitePreInfo | undefined => {
+    if (headers === undefined || filePassword === undefined) return undefined;
+    return { headers, filePassword };
+  };
+
+  return {
+    onRequest(request: HTTPRequest) {
+      if (!request.url().includes('/target-api')) return undefined;
+      headers = request.headers();
+      return getResult();
+    },
+
+    async onResponse(response: HTTPResponse) {
+      if (!response.url().includes('/file-info')) return undefined;
+      const body = (await response.json()) as { password?: string };
+      filePassword = body.password;
+      return getResult();
+    },
+  };
+}
+
+const collector = createSitePreInfoCollector();
+const preInfo = await waitForPreInfo({
+  page,
+  onRequest: collector.onRequest,
+  onResponse: collector.onResponse,
+});
+```
+
+The closure keeps `headers` and `filePassword` from being changed directly by outside code. It returns a complete object only after both values have arrived.
+
+## What mattered in production
+
+The closure let several asynchronous callbacks share the state of one collection attempt. Listener cleanup, a timeout, and an explicit completion condition mattered just as much. When designing event-driven code, I needed to decide when the subscription ends as well as where to store its values.

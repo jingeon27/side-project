@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker
+      id="arrow"
+      viewBox="0 0 10 10"
+      refX="8"
+      refY="5"
+      markerWidth="7"
+      markerHeight="7"
+      orient="auto-start-reverse"
+    >
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#64748b" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="42" y="66" width="202" height="230" rx="8" fill="#ffffff" stroke="#334155" stroke-width="2.5" />
+  <text
+    x="66"
+    y="100"
+    fill="#334155"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    server
+  </text>
+  <rect x="65" y="124" width="156" height="54" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5" />
+  <text
+    x="143.0"
+    y="157.0"
+    fill="#2563eb"
+    font-size="18"
+    text-anchor="middle"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    query()
+  </text>
+  <rect x="65" y="202" width="156" height="68" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2.5" />
+  <text
+    x="143.0"
+    y="242.0"
+    fill="#0f766e"
+    font-size="18"
+    text-anchor="middle"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    cache
+  </text>
+  <path
+    d="M246 180H392"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <text
+    x="264"
+    y="158"
+    fill="#64748b"
+    font-size="16"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    hydrate
+  </text>
+  <rect x="398" y="66" width="200" height="230" rx="8" fill="#ffffff" stroke="#334155" stroke-width="2.5" />
+  <text
+    x="422"
+    y="100"
+    fill="#334155"
+    font-size="18"
+    text-anchor="start"
+    font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+  >
+    client
+  </text>
+  <rect x="421" y="124" width="154" height="146" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5" />
+  <path
+    d="M442 157H554"
+    fill="none"
+    stroke="#2563eb"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M442 190H523"
+    fill="none"
+    stroke="#2563eb"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M442 223H540"
+    fill="none"
+    stroke="#2563eb"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

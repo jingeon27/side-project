@@ -1,0 +1,268 @@
+Hospital administrators register programs and request review. Back-Office staff inspect those requests and approve or reject them. They work on the same programs, so many inputs overlap, but submission does different things.
+
+Initially, the two apps had separate FormItems. Inputs such as recommended patients, treatment equipment, and precautions also appeared in the sub-treatment template editor. Changing a shared input meant checking whether every screen had been updated.
+
+Combining the forms was not straightforward. Back-Office has operational notes and visibility settings; hospital administrators supply requester and review-request details. Mapping API responses into inputs and turning edits into request bodies are separate concerns too.
+
+![The two apps need slightly different values for the same program. Input values in this diagram are examples.](/images/posts/typed-program-form/01.png)
+
+*The two apps need slightly different values for the same program. Input values in this diagram are examples.*
+
+I separated pieces with different reasons to change: common value types, shared inputs, API/form conversions, and loading sub-treatment templates. Each app retained its own review and submission flow.
+
+The examples include only the relevant code. Internal identifiers for hospitals have been renamed to `partner`.
+
+## From shared field names to typed values
+
+At first, an enum gathered field names. That helped align scattered strings, but correct names did not guarantee correct values. A string assigned to `price`, or an incorrectly handled `getFieldValue` result, could still slip through.
+
+The shared program form and each app's form now use `createTypedForm<T>()`. This wrapper accepts a value type once and applies it to Item, List, useForm, useFormInstance, and useWatch.
+
+```tsx
+// 공유 패키지
+export const ProgramForm = createTypedForm<IProgramFormCommon>();
+
+// Back-Office 앱: 공통 값에 운영·검수 전용 값을 더해요.
+export interface IProgramInspectionClient extends IProgramFormCommon {
+  memo?: string;
+  hidePrice?: boolean | null;
+  rejectReason?: string;
+  // 나머지 앱 전용 필드 생략
+}
+
+export const ProgramInspectionForm =
+  createTypedForm<IProgramInspectionClient>();
+```
+
+Shared FormItems use ProgramForm; app-specific fields use that app's ProgramInspectionForm. This does not create two form instances or copies of values. Both use the same Ant Design Form context, with different permitted field scopes in code.
+
+```typescript
+const form = ProgramForm.useFormInstance();
+
+const name = form.getFieldValue('programName'); // string
+const price = form.getFieldValue('price');     // number
+
+form.setFieldValue('price', 100000);
+form.setFieldsValue({ programName: '프로그램명', price: 100000 });
+
+// 아래 두 호출은 타입 검사에서 걸려요.
+form.getFieldValue('programNmae');
+form.setFieldValue('price', '100000');
+```
+
+The requirement was to connect a permitted field name with its value type. `TFieldNamePath<T>` restricts names and nested paths; `TPathValue<T, P>` finds the value type at a path.
+
+```tsx
+// TFieldNamePath<T>와 TDeepPartial<T>의 구현은 생략했어요.
+type TPathValue<T, P> =
+  P extends keyof T
+    ? T[P]
+    : P extends readonly [infer K, ...infer Rest]
+      ? K extends keyof T
+        ? Rest extends []
+          ? T[K]
+          : TPathValue<T[K], Rest>
+        : never
+      : never;
+
+// 인스턴스에서 제공하는 메서드의 타입
+interface ITypedFieldAccess<T> {
+  getFieldValue: <P extends TFieldNamePath<T>>(
+    name: P,) => TPathValue<T, P>;
+
+  setFieldValue: <P extends TFieldNamePath<T>>(
+    name: P,
+    value: TPathValue<T, P> | undefined,) => void;
+}
+```
+
+`infer` splits the first path element from the rest and follows the path to find its type. `setFieldsValue` accepts `TDeepPartial<T>` for partial nested updates. `useWatch` includes `undefined` because a field may not have been registered yet.
+
+Assertions needed to connect Ant Design remain inside the wrapper. Callers use an API linking field names to value types instead of asserting return values again.
+
+![Shared and app-specific types also govern the methods that read and write their fields.](/images/posts/typed-program-form/02.png)
+
+*Shared and app-specific types also govern the methods that read and write their fields.*
+
+## Share inputs and leave assembly with the caller
+
+The template editor and program form share inputs for recommended patients, treatment highlights, equipment, procedure, and precautions.
+
+Highlights differ. Templates register both an icon and text; programs retain the imported icon and edit only the text. Instead of adding more options to a shared component, I separated the list from the inputs inside each row.
+
+```typescript
+// 하위 시술 템플릿 편집: 아이콘과 문구를 함께 입력해요.
+<ProcedureHighlight.FormList>
+  {({ field, index }) => (
+    <>
+      <ProcedureHighlight.Image field={field} />
+      <ProcedureHighlight.Input field={field} index={index} />
+    </>
+  )}
+</ProcedureHighlight.FormList>
+
+// 프로그램 폼: 문구만 수정해요.
+<ProcedureHighlight.FormList>
+  {({ field, index }) => (
+    <ProcedureHighlight.Input field={field} index={index} />
+  )}
+</ProcedureHighlight.FormList>
+```
+
+FormList owns the toggle and list. The caller chooses each row's inputs. Recommended patients and procedures share the same implementation. Equipment and precautions provide default assembly while also exposing the pieces needed by callers.
+
+Some shared template inputs still use the original Ant Design Form. The typed program API and compound input structure serve different purposes: one limits field access, while the other defines how inputs can be reused.
+
+![Only inputs with different behavior are assembled differently; the others share one implementation.](/images/posts/typed-program-form/03.png)
+
+*Only inputs with different behavior are assembled differently; the others share one implementation.*
+
+Common inputs know nothing about review-request or approval APIs. The app owns `onFinish` and request buttons. Hospital requests and Back-Office approvals do not live in the same component.
+
+## Keep the server's representation out of inputs
+
+API responses and form values have different purposes. The server groups template items by type and adds `orderNo`. The form needs convenient row insertion and removal, and represents images as an upload component's file list.
+
+I therefore separated response-to-form and form-to-request functions. Input components handle only the shape needed for editing.
+
+```text
+API 응답 → 응답 변환 함수 → 폼 값 → 요청 변환 함수 → API 요청
+                            ↑
+                   FormItem은 이 모양만 다뤄요.
+```
+
+The apps share inputs and value contracts while retaining different submission flows. Conversion functions handle the API/input mismatch instead of repeating it inside components.
+
+Images illustrate this well. Converting a server image into UploadFile retains the original asset in `response`. Newly uploaded files put their response in the same place, so submission does not need separate handling for old and new images.
+
+Thumbnails and custom images currently use `UploadFile<TCommonAsset>`. The upload response generic preserves the asset type through reads of `response.id`.
+
+```tsx
+type TProgramClientImage = UploadFile<TCommonAsset>;
+
+// 저장된 이미지도 업로드 컴포넌트가 사용하는 형태로 바꿔요.
+function convertCommonAssetToUploadFile<T extends TImageFileInfo>(
+  asset: T,
+): UploadFile & { response: T } {
+  return {
+    uid: String(asset.id),
+    name: asset.originalFileName || asset.fileName,
+    status: 'done',
+    url: asset.src,
+    response: asset,
+  };
+}
+```
+
+Request construction explicitly selects fields rather than spreading the entire form. Thumbnails become image IDs and dates become strings. Screen-only previous prices and input modes stay out. Health-check configuration added later is edited in this form but saved by a separate API, so it is excluded from the program request too.
+
+Template conversions follow several rules.
+
+- Sort response items by `orderNo`; edit them in array order.
+- For title-only sections, remove empty rows and renumber on submission. Do not apply that filter to image sections.
+- Pair before-and-after photos by `orderNo`, not array index, to make one form row. Split them into two equally numbered arrays for the request.
+- Distinguish `null` or `undefined` from an empty array. An absent section disables its toggle; an empty array keeps the toggle on and displays an initial row.
+- Draft and final requests treat empty sections differently. Drafts may retain empty arrays; review and registration requests omit empty sections.
+
+![The shared editing shape is separated from the shape required by each request.](/images/posts/typed-program-form/04.png)
+
+*The shared editing shape is separated from the shape required by each request.*
+
+## Separate initial loading from category changes
+
+Filling saved program values on opening a detail is different from loading a default template after a category change. An initial query response must not keep overwriting ongoing edits.
+
+The review-detail container mounts the form after required queries finish and initial values can be built. Moving to another record in the same drawer calls `resetFields()` when initial values change. Passing a later asynchronous response to `initialValues` does not reinitialize an existing instance.
+
+SyncTreatmentSub loads the sub-treatment template. It reads treatment and sub-treatment IDs from the form, using `skipToken` in query options so the query runs only when both exist.
+
+The current effect checks the query result and touched fields. It checks both IDs' touched state to cover switching sub-items within the same treatment.
+
+```typescript
+const form = ProgramForm.useFormInstance();
+
+const treatmentId =
+  ProgramForm.useWatch(['treatmentId'], form) ||
+  form.getFieldValue(['treatmentId']);
+const treatmentSubId =
+  ProgramForm.useWatch(['treatmentSubId'], form) ||
+  form.getFieldValue(['treatmentSubId']);
+
+const { data } = useQuery(
+  treatmentSubDetailQueryOptions({ treatmentId, treatmentSubId }),
+);
+
+const isTouchedTreatmentId = form.isFieldsTouched(['treatmentId']);
+const isTouchedTreatmentSubId = form.isFieldsTouched(['treatmentSubId']);
+
+useEffect(() => {
+  if (!data || !(isTouchedTreatmentId || isTouchedTreatmentSubId)) return;
+
+  // 실제 구현은 추천 대상·특장점·장비·과정·주의사항을 갱신해요.
+  const { recommendedTargets } = data.data;
+  form.setFieldValue(
+    'recommendedTarget',
+    isEmpty(recommendedTargets)
+      ? INITIAL_RECOMMENDED_TARGET
+      : recommendedTargets?.map((title) => ({ title })),
+  );
+}, [data, form, isTouchedTreatmentId, isTouchedTreatmentSubId]);
+```
+
+Synchronization is limited to five template sections. It leaves manually entered extra benefits and before-and-after photos alone. This component also converts the query response to form values, avoiding repeated fetching and updates in each input component.
+
+![Query conditions, application conditions, and updated fields can be inspected in one place.](/images/posts/typed-program-form/05.png)
+
+*Query conditions, application conditions, and updated fields can be inspected in one place.*
+
+## Preserve conversion rules in tests
+
+The first form had no tests fixing conversion inputs and outputs. Both apps now have tests for their conversion helpers, program requests, review requests, and draft conversions.
+
+These go beyond checking that a converted value exists. They verify that unordered before-and-after images pair by sequence, a separate ID is used when an image object lacks one, and a deleted thumbnail is submitted as `null`.
+
+This is a shortened version of an actual conversion test. `createClientForm` fills the remaining defaults.
+
+```typescript
+it('빈 제목을 거른 뒤 남은 순서대로 순번을 매긴다', () => {
+  const form = createClientForm({
+    isRecommended: SAFEDOC_PROVIDED_TYPE.SafedocProvided,
+    recommendedTarget: [
+      { title: '' },
+      { title: '30대' },
+      { title: '40대' },
+    ],
+  });
+
+  const result = getDetailImageInspection(form);
+  const templates = result[PROGRAM_DETAIL_TEMPLATE_TYPE.SafedocTemplate].templates;
+
+  expect(templates.RECOMMENDED_TARGET).toEqual([
+    { type: 'RECOMMENDED_TARGET', orderNo: 0, title: '30대' },
+    { type: 'RECOMMENDED_TARGET', orderNo: 1, title: '40대' },
+  ]);
+});
+```
+
+Image-bearing highlights must not be removed merely because their title is empty. That difference is tested too. Draft tests separately verify that an array emptied by filtering blank titles is still sent.
+
+Type checking validates names and values accessed through the typed API. Conversion tests validate the request shape. A correct type and a correct payload are different checks.
+
+![Inputs share one instance. Field access and submitted data are checked in different places.](/images/posts/typed-program-form/06.png)
+
+*Inputs share one instance. Field access and submitted data are checked in different places.*
+
+## Follow the reason for a change
+
+For a program field change, I now inspect its form type and FormItem first. For an API change, I inspect conversions and their tests. Inputs used across both apps and the template editor change in shared components; review and submission flows change in their own apps.
+
+I wanted values to reveal their types, shared inputs to avoid importing another screen's submission flow, and conversion changes to have clear checks. Gathering field names was only the start; value types and conversion tests completed more of that work.
+
+A typed form restricts field paths and value types at call sites. It does not guarantee actual server values or asynchronous browser behavior. Conversion tests cover data rules; the sequence from loading through editing to submission is checked separately in the UI.
+
+## References
+
+- [Ant Design 5 Form: field and form-instance APIs](https://5x.ant.design/components/form/)
+- [TypeScript Conditional Types: conditional types and infer](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
+- [Notes on declarative code](/en/blog/declarative-code)
+- [Rebuilding the testing approach](/en/blog/testing-standards)

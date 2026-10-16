@@ -1,0 +1,18 @@
+{
+  "name": "@side/blog",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "yarn workspace @blog/web dev",
+    "start": "yarn workspace @blog/web start",
+    "build": "yarn workspace @blog/web build",
+    "content:generate": "yarn workspace @blog/web content:generate",
+    "content:validate": "yarn workspace @blog/web content:validate",
+    "typecheck": "yarn workspace @blog/web typecheck",
+    "lint": "yarn workspace @blog/web lint",
+    "test": "yarn workspace @blog/web test",
+    "test:e2e": "yarn workspace @blog/web test:e2e",
+    "check": "yarn workspace @blog/web check"
+  }
+}

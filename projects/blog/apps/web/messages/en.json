@@ -1,0 +1,98 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "about": "About",
+    "skip": "Skip to content",
+    "theme": "Switch color theme",
+    "language": "Change language",
+    "siteTitle": "Jingeon Kim"
+  },
+  "common": {
+    "all": "All",
+    "articles": "posts",
+    "readMore": "Read post",
+    "allArticles": "All posts",
+    "backToBlog": "Back to posts",
+    "minutes": "min read",
+    "published": "Published",
+    "updated": "Updated",
+    "search": "Search titles or tags",
+    "searchPlaceholder": "Search titles or tags",
+    "searchArticles": "Posts",
+    "searchTags": "Tags",
+    "searchSuggestions": "Search results",
+    "searchEmpty": "No results found.",
+    "searchHint": "Use arrow keys to move and Enter to select.",
+    "clear": "Clear search",
+    "category": "Category",
+    "tags": "Tags",
+    "clearFilters": "Reset filters",
+    "noResults": "No articles match your search.",
+    "noResultsDescription": "Try another title, tag or category.",
+    "empty": "No posts yet.",
+    "emptyDescription": "You can read the Korean posts.",
+    "koreanArticles": "Read Korean posts",
+    "translationMissing": "This post hasn't been translated yet.",
+    "translationList": "View posts in this language",
+    "close": "Close",
+    "rss": "Subscribe via RSS",
+    "email": "Email",
+    "github": "GitHub"
+  },
+  "home": {
+    "title": "Jingeon Kim's blog",
+    "description": "I write about problems I encounter while developing software and what I learn along the way.",
+    "latest": "Recent posts",
+    "explore": "Categories"
+  },
+  "blog": {
+    "title": "Posts",
+    "categoryDescription": "Posts in this category.",
+    "tagDescription": "Posts with this tag.",
+    "results": "posts",
+    "filterLabel": "Filter posts"
+  },
+  "categories": {
+    "engineering": "Engineering",
+    "til": "TIL",
+    "perspectives": "Perspectives",
+    "misc": "Miscellaneous"
+  },
+  "categoryDescriptions": {
+    "engineering": "Problems solved while developing software",
+    "til": "Things I have learned",
+    "perspectives": "Thoughts on software and work",
+    "misc": "Other posts"
+  },
+  "article": {
+    "contents": "On this page",
+    "share": "Share",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "shareFailed": "Could not copy the link.",
+    "copyCode": "Copy code",
+    "related": "Related articles",
+    "previous": "Previous post",
+    "next": "Next post"
+  },
+  "about": {
+    "title": "Jingeon Kim",
+    "description": "I'm a software engineer. I use this blog to write about development problems and things I have learned.",
+    "contact": "Contact"
+  },
+  "notFound": {
+    "title": "This page could not be found.",
+    "description": "Check the address or return to the blog.",
+    "home": "Back to home"
+  },
+  "analytics": {
+    "title": "Visitor analytics",
+    "message": "With your consent, Google Analytics cookies help measure visits and reading activity. Raw search queries are never sent.",
+    "allow": "Allow",
+    "deny": "Decline",
+    "preferences": "Analytics settings",
+    "revoke": "Withdraw consent",
+    "close": "Close"
+  }
+}

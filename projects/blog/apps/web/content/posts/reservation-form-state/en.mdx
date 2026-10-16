@@ -1,0 +1,247 @@
+Adding a family member to a reservation form left date selection behaving as though the old number of family members still applied. The screen only selected dates, times, and participants, yet three places held copies of the same values.
+
+- React Query cached the family list from the server.
+- Zustand stored participants and dates again.
+- The component's local state also held the newly selected date.
+
+Changing one meant synchronizing the other two. I left the server family list in React Query, moved selection and preferred date/time to React Hook Form, and gathered submission conditions in a Zod schema.
+
+## Where the complexity came from
+
+The old store held both form values and validation results.
+
+```tsx
+type BookingDraftStore = {
+  form: Partial<BookingFormValues>;
+  isValid: boolean;
+  updateParticipant: (
+    memberId: number,
+    values: Partial<ParticipantDraft>,) => void;
+  applyScheduleToAll: (date: string, time: string) => void;
+};
+```
+
+Every action therefore had to rerun validation explicitly.
+
+```typescript
+updateParticipant: (memberId, values) =>
+  set((state) => {
+    // 값 수정
+    state.isValid = validateDraft(state.form);
+  });
+```
+
+All actions did so at the time, but omitting that call from a future action could leave current values with an outdated submit-button state. Adding or deleting a family member also required separately synchronizing the React Query cache and Zustand array.
+
+![Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.](/images/posts/reservation-form-state/01.png)
+
+*Before refactoring, each person's selection and preferred date/time existed in both React Query and Zustand. Preferred dates also appeared in component-local state.*
+
+Adding a member backed up existing IDs, refetched, restored selections and dates, and supplied a date to the new member. The store received that person only after selection, so the same person's dates could change independently in two places.
+
+The complexity came from server data and ongoing edits being jointly owned by two stores, rather than from Zustand itself.
+
+## Reassigning ownership
+
+I defined these roles.
+
+- React Query: the server's family list
+- React Hook Form: reservation values edited before submission
+- Zod: conditions for a valid submission
+- Local state: temporary UI values, such as the date picker's display or a sheet's unconfirmed selection, that are passed to the form on confirmation
+
+![After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.](/images/posts/reservation-form-state/02.png)
+
+*After refactoring, edits are written only to the form. A synchronization hook aligns its array when the server list changes.*
+
+React Query owns family and member information. The form owns selection and preferred dates. The schema derives submission validity from those values. Local state retains only the picker's displayed date/time and unconfirmed choices in a person's date sheet. The overlay library opens and closes sheets.
+
+Each value has one owner. The server decides who the family members are and their names; the form adds selection and preferred dates to that list. The form lives within the reservation screen, so I placed a FormProvider on the page instead of using a global store.
+
+The page creates the form through a shared hook, renamed `useSchemaForm`, which connects `zodResolver`. Initial values contain an empty array. A synchronization hook inside the participant selector, renamed ParticipantSelector, fills it from the server list.
+
+```tsx
+function BookingPage() {
+  const methods = useSchemaForm({
+    schema: BookingFormSchema,
+    defaultValues: {
+      participants: [],
+    },
+  });
+
+  // handleScheduleSelect는 아래 '날짜 일괄 적용' 절에서 다룬다.
+
+  return (
+    <FormProvider {...methods}>
+      <ScheduleSection onSelect={handleScheduleSelect} />
+      <ParticipantSelector />
+      <RequestNoteField />
+      <TermsSection />
+      <SubmitButton />
+    </FormProvider>
+  );
+}
+```
+
+![After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.](/images/posts/reservation-form-state/03.png)
+
+*After a time is selected, the form copies the common date/time to every participant. The application button becomes available when all schema conditions pass.*
+
+Ownership is split by field within one array: the server owns membership and names, while the user owns selection and preferred dates. The request includes every person, even unselected ones, with their selection flag.
+
+Screen-specific code clearing the Zustand store also disappeared. The reservation page creates the form, so its in-progress values disappear with it when the screen is left.
+
+## Derive validation from values
+
+This is the reservation schema.
+
+```typescript
+const ParticipantSchema = z.object({
+  memberId: z.number(),
+  selected: z.boolean(),
+  name: z.string(),
+  preferredDate: z.string({ message: '희망 날짜를 입력해 주세요.' }),
+  preferredTime: z.string({ message: '희망 시간을 입력해 주세요.' }),
+});
+
+export const BookingFormSchema = z
+  .object({
+    requestNote: z.string().max(200, '최대 200자까지 입력할 수 있어요.').optional(),
+    participants: z
+      .array(ParticipantSchema)
+      .min(1, '가족 예약이 최소 한 명 이상 있어야 합니다.')
+      .default([]),
+    preferredDate: z.string(),
+    preferredTime: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.participants.some((participant) => participant.selected)) return;
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['participants'],
+      message: '최소 한 명은 예약 대상이어야 합니다.',
+    });
+  });
+```
+
+Each person's date and time need only be strings. The common `preferredDate` and `preferredTime` check whether a date and time have been selected. They remain empty until time selection finishes, preventing submission.
+
+I now read `formState.isValid` rather than storing validity separately. The same schema defines error locations and messages. This screen still communicates invalidity only through a disabled button, without displaying individual field messages.
+
+The code does not make the validation timing explicit, however. `useSchemaForm` connects `zodResolver` but sets no `mode`, and the caller supplies none. The date handler calls `setValue` without `shouldValidate`; checkboxes and individual date edits use `useFieldArray.update`. When a component subscribes to `isValid`, React Hook Form recalculates validity for registered or Controller-connected input changes even under the default submit mode. A standalone `setValue` without `shouldValidate` does not trigger that calculation. Here the date handler and synchronization hook replace the entire `participants` array managed by useFieldArray, and `update` changes that array too. The button follows because useFieldArray recalculates validity after its array changes. I confirmed this in the React Hook Form 7.56 source.
+
+A future path that changes only date fields with `setValue`, leaving the array untouched, could recreate the old problem: current values with an outdated button. Unspecified validation timing remains debt. The caller should select a `mode` or pass `shouldValidate` to the relevant updates.
+
+## Follow server list changes in the form array
+
+Adding or removing a family member changes the server list and must be reflected in ongoing edits. One synchronization hook called by the participant selector owns this. `useBookingParticipants` combines member information and the family query, placing the member first; it returns `null` until member information exists.
+
+```tsx
+// 새 칸을 만드는 함수: 서버 값에 폼의 공통 희망 일시를 붙인다.
+function useParticipantInitializer(control: Control<BookingFormValues>) {
+  const preferredDate = useWatch({ control, name: 'preferredDate' }) ?? '';
+  const preferredTime = useWatch({ control, name: 'preferredTime' }) ?? '';
+
+  const initParticipant = useCallback(
+    (override: Partial<Participant> = {}) =>
+      <T extends { memberId: number; name: string }>(base: T) => ({
+        ...base,
+        preferredDate,
+        preferredTime,
+        ...override,
+      }),
+    [preferredDate, preferredTime],
+  );
+
+  return { initParticipant };
+}
+
+function useSyncParticipants() {
+  const { control, setValue } = useFormContext<BookingFormValues>();
+  const current = useWatch({ control, name: 'participants' });
+  const serverParticipants = useBookingParticipants();
+  const { initParticipant } = useParticipantInitializer(control);
+
+  useEffect(() => {
+    if (serverParticipants === null) return;
+
+    // 처음: 서버 목록 전체로 채운다.
+    if (current.length === 0) {
+      setValue('participants', serverParticipants.map(initParticipant()));
+      return;
+    }
+    // 서버 목록이 짧아졌다: 서버에 남은 사람만 남긴다.
+    if (current.length > serverParticipants.length) {
+      setValue(
+        'participants',
+        intersectionBy(current, serverParticipants, (p) => p.memberId),
+      );
+      return;
+    }
+    // 서버 목록이 길어졌다: 폼에 없는 사람을 선택한 채로 뒤에 붙인다.
+    if (current.length < serverParticipants.length) {
+      setValue('participants', [
+        ...current,
+        ...differenceBy(serverParticipants, current, (p) => p.memberId).map(
+          initParticipant({ selected: true }),
+        ),
+      ]);
+    }
+  }, [serverParticipants, current, initParticipant, setValue]);
+}
+```
+
+The server list determines membership. The form preserves existing selections and dates. The member is selected initially, previously registered family members start unselected, and newly added family members arrive selected. The server defaults and `selected: true` in the addition branch implement those requirements. `initParticipant` supplies the common preferred date/time stored in the form, so adding a person after choosing a date no longer leaves only that person out of sync.
+
+![Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.](/images/posts/reservation-form-state/04.png)
+
+*Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.*
+
+Equal lengths leave the array unchanged. Handlers within the form, rather than the synchronization hook, directly update selections and preferred dates.
+
+## Apply a common date inside the form
+
+The picker emits the date and time together only after time selection. The page handler updates the common fields and every participant.
+
+```typescript
+const handleScheduleSelect = useCallback(
+  ({ date, time }: { date: string; time: string }) => {
+    const participants = methods.getValues('participants');
+
+    // 날짜·시간 형식 변환은 생략
+    methods.setValue(
+      'participants',
+      participants.map(initParticipant({ preferredDate: date, preferredTime: time })),
+    );
+    methods.setValue('preferredDate', date);
+    methods.setValue('preferredTime', time);
+  },
+  [methods, initParticipant],
+);
+```
+
+Passing the new date/time as overrides to `initParticipant` changes each entry's date without changing selection. What once wrote dates to a cache, store, and local state is now one form update. After a common time is chosen, each person's card gets a change action. Confirming their sheet uses the field array's `update` for that person alone. Choosing another common date/time overwrites those individual edits too.
+
+Only the participant-list component calls `useFieldArray`. The page's date handler and synchronization hook replace the array through `setValue`. They specify neither `shouldDirty` nor `shouldValidate`, so button updates still rely on the field-array behavior described above.
+
+## A shorter file did not mean all the logic disappeared
+
+ParticipantSelector went from 519 lines to 55. More precisely, I deleted the old 519-line file and created a 55-line file elsewhere. The work is now split into the selector at 55 lines, a family-selection child at 172, and a server-list synchronization hook at 61. The 140-line Zustand store was removed. The entire feature therefore did not shrink by 464 lines. The useful change is that each piece has clearer inputs and outputs, and one file no longer coordinates three stores.
+
+React Hook Form introduced costs too.
+
+- Custom inputs need Controller connections.
+- The server list and editing array still need synchronization.
+- `setValue` requires decisions about validation and dirty state, which this form does not make explicit.
+
+I have not added automated tests for synchronization yet.
+
+Describing this as “519 lines became 55” misses the cause of the bug: three stores shared ownership of the same values. With one owner per value, validation is derived from values and the form follows the server's membership list. New family members inherit the common preferred date/time, removing the old mismatch path. Manual validation after every action, the Zustand store, and screen cleanup code are gone. Explicit validation timing and synchronization tests are still needed to finish these boundaries.
+
+## References
+
+- [React Hook Form: formState](https://react-hook-form.com/docs/useform/formstate)
+- [React Hook Form: setValue](https://react-hook-form.com/docs/useform/setvalue)
+- [React Hook Form: useFieldArray](https://react-hook-form.com/docs/usefieldarray)
+- [Zod 3: superRefine](https://v3.zod.dev/?id=superrefine)

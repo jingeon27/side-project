@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="40" y="57" width="140" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="110"
+    y="91"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    client
+  </text>
+  <rect x="40" y="155" width="140" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="110"
+    y="189"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    server
+  </text>
+  <rect x="40" y="253" width="140" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="110"
+    y="287"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    edge
+  </text>
+  <path
+    d="M183 85H220V181H263"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M183 183H220V181H263"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M183 281H220V181H263"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="273" y="120" width="158" height="122" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="352"
+    y="155"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="18"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    sanitize
+  </text>
+  <text
+    x="352"
+    y="189"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="14"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    URL / cookie
+  </text>
+  <text
+    x="352"
+    y="218"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="14"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    body / span
+  </text>
+  <path
+    d="M435 181H483"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="495" y="144" width="112" height="74" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2" />
+  <text
+    x="551"
+    y="187"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="18"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    Sentry
+  </text>
+</svg>

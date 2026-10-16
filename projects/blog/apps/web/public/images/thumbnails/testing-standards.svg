@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="43" y="52" width="164" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="125"
+    y="86"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    function
+  </text>
+  <rect x="43" y="152" width="164" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="125"
+    y="186"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    form
+  </text>
+  <rect x="43" y="252" width="164" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="125"
+    y="286"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    browser
+  </text>
+  <path
+    d="M212 80H307"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M212 180H307"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M212 280H307"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="320" y="52" width="276" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="458"
+    y="86"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    input → output
+  </text>
+  <rect x="320" y="152" width="276" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="458"
+    y="186"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    submit → MSW
+  </text>
+  <rect x="320" y="252" width="276" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="458"
+    y="286"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    navigate → assert
+  </text>
+  <text
+    x="258"
+    y="67"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="13"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    unit
+  </text>
+  <text
+    x="258"
+    y="167"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="13"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    UI
+  </text>
+  <text
+    x="258"
+    y="267"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="13"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    E2E
+  </text>
+</svg>

@@ -1,0 +1,137 @@
+[
+  {
+    "source": "/35",
+    "destination": "/ko/blog/저는-코드를-읽어요",
+    "statusCode": 301
+  },
+  {
+    "source": "/34",
+    "destination": "/ko/blog/기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
+    "statusCode": 301
+  },
+  {
+    "source": "/33",
+    "destination": "/ko/blog/sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
+    "statusCode": 301
+  },
+  {
+    "source": "/32",
+    "destination": "/ko/blog/타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
+    "statusCode": 301
+  },
+  {
+    "source": "/31",
+    "destination": "/ko/blog/ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
+    "statusCode": 301
+  },
+  {
+    "source": "/30",
+    "destination": "/ko/blog/sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/29",
+    "destination": "/ko/blog/가장-값진-성공은-노력이-적은-성공입니다",
+    "statusCode": 301
+  },
+  {
+    "source": "/28",
+    "destination": "/ko/blog/오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
+    "statusCode": 301
+  },
+  {
+    "source": "/27",
+    "destination": "/ko/blog/nextjs를-사용하면서-겪었던-이슈들",
+    "statusCode": 301
+  },
+  {
+    "source": "/26",
+    "destination": "/ko/blog/선언적으로-코드를-쓰는-기준",
+    "statusCode": 301
+  },
+  {
+    "source": "/25",
+    "destination": "/ko/blog/테스트-코드를-도입하면서-세운-기준",
+    "statusCode": 301
+  },
+  {
+    "source": "/24",
+    "destination": "/ko/blog/프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
+    "statusCode": 301
+  },
+  {
+    "source": "/22",
+    "destination": "/ko/blog/결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/23",
+    "destination": "/ko/blog/fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
+    "statusCode": 301
+  },
+  {
+    "source": "/20",
+    "destination": "/ko/blog/우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
+    "statusCode": 301
+  },
+  {
+    "source": "/21",
+    "destination": "/ko/blog/동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/19",
+    "destination": "/ko/blog/정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/18",
+    "destination": "/ko/blog/두-관리자-앱의-프로그램-폼을-만드는-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/15",
+    "destination": "/ko/blog/3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/14",
+    "destination": "/ko/blog/nextjs-app-router에서-prefetch를-기다려야-하는-경우",
+    "statusCode": 301
+  },
+  {
+    "source": "/12",
+    "destination": "/ko/blog/리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
+    "statusCode": 301
+  },
+  {
+    "source": "/11",
+    "destination": "/ko/blog/예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
+    "statusCode": 301
+  },
+  {
+    "source": "/8",
+    "destination": "/ko/blog/nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
+    "statusCode": 301
+  },
+  {
+    "source": "/7",
+    "destination": "/ko/blog/실무에서-자주-쓰는-typescript-패턴-네-가지",
+    "statusCode": 301
+  },
+  {
+    "source": "/6",
+    "destination": "/ko/blog/tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
+    "statusCode": 301
+  },
+  {
+    "source": "/5",
+    "destination": "/ko/blog/nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
+    "statusCode": 301
+  },
+  {
+    "source": "/4",
+    "destination": "/ko/blog/puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
+    "statusCode": 301
+  }
+]

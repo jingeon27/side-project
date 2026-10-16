@@ -1,0 +1,62 @@
+name: Blog
+
+on:
+  push:
+    paths:
+      - 'projects/blog/**'
+      - 'packages/typescript-config/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.github/workflows/blog.yml'
+  pull_request:
+    paths:
+      - 'projects/blog/**'
+      - 'packages/typescript-config/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.github/workflows/blog.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blog-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      SITE_URL: http://127.0.0.1:3101
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      - run: yarn install --immutable
+      - name: Generate and validate content and SEO
+        run: |
+          yarn workspace @blog/web content:generate
+          yarn workspace @blog/web content:validate
+      - run: yarn workspace @blog/web typecheck
+      - run: yarn workspace @blog/web lint
+      - run: yarn workspace @blog/web test
+      - run: yarn workspace @blog/web build
+      - run: yarn workspace @blog/web exec playwright install --with-deps chromium
+      - run: yarn workspace @blog/web test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: blog-playwright
+          path: |
+            projects/blog/apps/web/playwright-report/
+            projects/blog/apps/web/test-results/
+          if-no-files-found: ignore

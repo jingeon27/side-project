@@ -1,0 +1,258 @@
+{
+  "/images/covers/nextjs-server-client-issues.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/plan-gated-ai-workflow.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/reading-ai-code.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/sentry-observability.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/testing-standards.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/posts/health-check-program/01.png": {
+    "width": 1520,
+    "height": 2206
+  },
+  "/images/posts/health-check-program/02.png": {
+    "width": 1520,
+    "height": 1896
+  },
+  "/images/posts/health-check-program/03.png": {
+    "width": 1520,
+    "height": 1294
+  },
+  "/images/posts/health-check-program/04.png": {
+    "width": 1520,
+    "height": 1200
+  },
+  "/images/posts/health-check-program/05.png": {
+    "width": 1520,
+    "height": 1434
+  },
+  "/images/posts/nextjs-server-client-issues/01.jpg": {
+    "width": 1440,
+    "height": 960
+  },
+  "/images/posts/payment-coupon-branches/01.png": {
+    "width": 1520,
+    "height": 1828
+  },
+  "/images/posts/payment-coupon-branches/02.png": {
+    "width": 1520,
+    "height": 2276
+  },
+  "/images/posts/payment-coupon-branches/03.png": {
+    "width": 1520,
+    "height": 2018
+  },
+  "/images/posts/payment-coupon-branches/04.png": {
+    "width": 1520,
+    "height": 2150
+  },
+  "/images/posts/plan-gated-ai-workflow/01.jpg": {
+    "width": 1440,
+    "height": 823
+  },
+  "/images/posts/plan-gated-ai-workflow/02.png": {
+    "width": 1520,
+    "height": 1650
+  },
+  "/images/posts/plan-gated-ai-workflow/03.png": {
+    "width": 1520,
+    "height": 1990
+  },
+  "/images/posts/plan-gated-ai-workflow/04.png": {
+    "width": 1520,
+    "height": 2388
+  },
+  "/images/posts/plan-gated-ai-workflow/05.png": {
+    "width": 1520,
+    "height": 2126
+  },
+  "/images/posts/plan-gated-ai-workflow/06.png": {
+    "width": 1520,
+    "height": 1312
+  },
+  "/images/posts/plan-gated-ai-workflow/07.png": {
+    "width": 1520,
+    "height": 1982
+  },
+  "/images/posts/reading-ai-code/01.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/posts/reservation-form-state/01.png": {
+    "width": 1520,
+    "height": 2092
+  },
+  "/images/posts/reservation-form-state/02.png": {
+    "width": 1520,
+    "height": 2068
+  },
+  "/images/posts/reservation-form-state/03.png": {
+    "width": 1520,
+    "height": 1818
+  },
+  "/images/posts/reservation-form-state/04.png": {
+    "width": 1520,
+    "height": 1464
+  },
+  "/images/posts/review-form-funnel/01.png": {
+    "width": 1520,
+    "height": 1908
+  },
+  "/images/posts/review-form-funnel/02.png": {
+    "width": 1520,
+    "height": 2282
+  },
+  "/images/posts/sentry-observability/01.jpg": {
+    "width": 1440,
+    "height": 960
+  },
+  "/images/posts/testing-standards/01.jpg": {
+    "width": 1440,
+    "height": 751
+  },
+  "/images/posts/typed-program-form/01.png": {
+    "width": 1468,
+    "height": 3000
+  },
+  "/images/posts/typed-program-form/02.png": {
+    "width": 1520,
+    "height": 2140
+  },
+  "/images/posts/typed-program-form/03.png": {
+    "width": 1459,
+    "height": 3000
+  },
+  "/images/posts/typed-program-form/04.png": {
+    "width": 1122,
+    "height": 3000
+  },
+  "/images/posts/typed-program-form/05.png": {
+    "width": 1520,
+    "height": 2530
+  },
+  "/images/posts/typed-program-form/06.png": {
+    "width": 1520,
+    "height": 2988
+  },
+  "/images/thumbnails/bottom-sheet-drag-crash.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/chatbot-message-layer.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/cross-domain-token-handoff.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/declarative-code.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/electron-module-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/error-boundary-recovery.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/fsd-layer-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/health-check-program.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/low-effort-success.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/nextjs-seo-prefetch.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/nextjs-server-client-issues.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/nextjs-tanstack-query-ssr.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/payment-coupon-branches.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/plan-gated-ai-workflow.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/prototype-working-rules.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/puppeteer-event-lifecycle.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/query-key-factory.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/reading-ai-code.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/reservation-form-state.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/review-form-funnel.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/review-like-optimistic-update.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/sentry-observability.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/sitemap-api-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/testing-standards.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/typed-program-form.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/typescript-patterns.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/zod-assertion-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  }
+}

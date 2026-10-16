@@ -1,0 +1,209 @@
+Adding coupons to treatment payment records made me revisit the screen's existing branches. The payment method alone could not decide where to show coupon selection. These values all mattered.
+
+- Payment method: on-site payment, cancellation, or coupon
+- Payment status: processing, pending, or complete
+- Whether the record had been saved on the server
+- Whether a coupon was selected and its discount amount
+
+The service records a cancellation as a separate transaction. It adds a payment record whose method is cancellation rather than modifying the original payment.
+
+I initially expected to add one coupon type and one renderer. In practice, changing the expected payment amount had to clear the coupon, and the display differed before and after saving. Some views also needed to show the on-site amount and coupon usage together.
+
+I considered modeling every state with a discriminated union, but the server DTO was one structure with enums and optional fields, and unknown values needed a fallback. I kept the actual server contract and gathered the scattered decisions into a few places.
+
+The examples reduce payment methods and statuses to three each. The actual DTO has eight methods and six statuses. The diagrams use the actual names.
+
+## Separate the server DTO from the form model
+
+The server returned a single DTO like this.
+
+```typescript
+interface PaymentHistoryResponse {
+  id?: number | null;
+  method: 'NORMAL' | 'CANCEL' | 'COUPON';
+  status: 'PROCESSING' | 'WAITING' | 'COMPLETED';
+  paymentAmount: number;
+  paymentDate?: string | null;
+  memberCouponId?: number | null;
+  couponName?: string | null;
+}
+```
+
+Because that is the API's contract, I did not assert it into a different union on the client. I added the computed value needed only during editing to a separate form model.
+
+```typescript
+interface PaymentHistoryFormValue extends PaymentHistoryResponse {
+  couponDiscountAmount?: number | null;
+}
+```
+
+`couponDiscountAmount` previews the final payment amount and does not exist in the server's payment-record DTO. I first declared it on the response DTO on June 23, then moved it to a form-only type the following afternoon. The form model extends the server DTO with this one field. Confirmation requests select the required fields from the coupon row by name, so neither the discount amount nor coupon name is sent.
+
+```typescript
+// 확정 전 예약 상세의 결제 내역은 화면이 만든 쿠폰 행 하나뿐이다.
+const couponPayment = payments.find(({ method }) => method === 'COUPON');
+if (!couponPayment) return;
+
+confirmReservation({
+  reservationId,
+  paymentAmount: couponPayment.paymentAmount,
+  paymentDate: couponPayment.paymentDate,
+  memberCouponId: couponPayment.memberCouponId,
+  // 견적 금액·내원일·메모는 폼의 다른 칸에서 채운다.
+});
+```
+
+Coupon reservation payments are confirmed from reservation details in the hospital admin app. Before confirmation, the form contains only one screen-created coupon row. Its payment array is therefore narrowed to a one-element tuple in the reservation detail form type.
+
+I did not add a separate form-to-request mapper. There is one optional form-only field, and the request-building code excludes it by explicitly selecting the fields to send.
+
+![The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.](/images/posts/payment-coupon-branches/01.png)
+
+*The form array contains server records and pending or coupon rows created by the screen. Only the coupon discount amount is absent from the payment DTO; confirmation selects the required fields from the coupon row.*
+
+A saved coupon-payment row is not displayed separately. Its amount is read inside the on-site payment row for the same transaction.
+
+## Put screen states in a table
+
+Before adding conditions to components, I listed the screen states that needed distinct treatment.
+
+| Saved | Method | Status | Screen |
+| --- | --- | --- | --- |
+| No | Coupon | Processing | Coupon selection and expected payment amount |
+| No | Other | Processing | Standard payment inputs |
+| Yes | On-site | Complete | Completion details and linked coupon |
+| Yes | Cancellation | Complete | Cancellation details |
+| Yes | Other | Pending/processing | Standard pending details |
+
+Visibility and color helpers predated coupons. I wrote the color helper in March 2026 and extracted visibility in April while moving payment-record UI from the hospital admin and Back-Office apps to a shared package. I added coupon conditions to those functions and rewrote detail selection to branch first on saved state, as in the table.
+
+![Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.](/images/posts/payment-coupon-branches/02.png)
+
+*Visibility, dot color, header, expansion, and details make five separate decisions for one payment row. The table shows their outputs according to saved state, method, and status.*
+
+Details check `id` first. Even when choosing a payment date changes the status to complete, inputs remain until saving. The header and dot color follow status immediately, so a row can briefly show both a “payment complete” tag and editable inputs.
+
+## Gather visibility rules in a domain function
+
+```typescript
+const VISIBLE_STATUSES = ['COMPLETED', 'PROCESSING', 'WAITING'] as const;
+// as const만 쓰면 includes의 인자가 'NORMAL' | 'CANCEL'로 좁혀져
+// payment.method를 받지 못하므로, 원소 타입을 method 전체 union으로 선언한다.
+const VISIBLE_METHODS: readonly PaymentHistoryResponse['method'][] = [
+  'NORMAL',
+  'CANCEL',
+];
+
+function isVisiblePayment(payment: PaymentHistoryResponse | undefined) {
+  if (!payment) return false;
+
+  const isVisibleOnsitePayment =
+    VISIBLE_STATUSES.includes(payment.status) &&
+    VISIBLE_METHODS.includes(payment.method);
+
+  const isEditingCoupon =
+    payment.method === 'COUPON' && payment.id == null;
+
+  return isVisibleOnsitePayment || isEditingCoupon;
+}
+```
+
+A saved coupon row is shown through its linked completed on-site payment, so it does not appear separately on the timeline. I had already extracted this condition from a JSX filter callback in April, and added the coupon condition there. On the afternoon of June 24, the first coupon condition selected rows in processing status. The next morning, when I grouped rendering by saved state, I changed visibility to use the presence of `id` too.
+
+## Select the renderer in one place
+
+```tsx
+import { P, match } from 'ts-pattern';
+
+const isCanceledPayment = (payment: PaymentHistoryResponse | undefined) =>
+  payment?.method === 'CANCEL' && payment.status === 'COMPLETED';
+
+const isCompletedNormalPayment = (payment: PaymentHistoryResponse | undefined) =>
+  payment?.method === 'NORMAL' && payment.status === 'COMPLETED';
+
+function PaymentHistoryDescriptions({ field }: { field: FormListFieldData }) {
+  const form = paymentForm.useFormInstance();
+  const payment = paymentForm.useWatch(['payments', field.name], form);
+
+  return (
+    match(payment)
+      // 미저장: 값이 없거나 id가 없다. 그 안에서 결제수단을 본다.
+      .with(P.union(P.nullish, { id: P.optional(P.nullish) }), (unsaved) =>
+        match(unsaved)
+          .with({ method: 'COUPON' }, () => <CouponDescriptions field={field} />)
+          .otherwise(() => <WaitingDescriptions field={field} />),
+      )
+      // 저장됨: 취소 → 완료 → 그 외
+      .when(isCanceledPayment, () => <CanceledDescriptions field={field} />)
+      .when(isCompletedNormalPayment, () => <CompletedDescriptions field={field} />)
+      .otherwise(() => <WaitingDescriptions field={field} />)
+  );
+}
+```
+
+`paymentForm` is a renamed wrapper around antd Form with the payment form's field types. `useFormInstance` and `useWatch` are the original antd APIs. `field` is the item information from antd Form.List, and `field.name` is the payment array index.
+
+`ts-pattern` does not catch every omission here. The input is not a complete discriminated union, and the final `.otherwise()` permits a fallback. The compiler will not catch every missing UI for a new method. What changed was readability: the earlier conditions mixed status for coupons with ID and status for other rows. One `match`, grouped first by saved state, now shows which component each row reaches.
+
+Compile-time exhaustiveness would require parsing the API response into a client domain union and using `.exhaustive()`. I did not expand the work that far given the server contract and impact on existing screens.
+
+## Keep coupon behavior in its own component
+
+```tsx
+function CouponDescriptions({ field }: { field: FormListFieldData }) {
+  const { message } = App.useApp();
+  const form = paymentForm.useFormInstance();
+  const paymentAmount = paymentForm.useWatch(['payments', field.name, 'paymentAmount'], form);
+  const memberCouponId = paymentForm.useWatch(['payments', field.name, 'memberCouponId'], form);
+  const couponDiscountAmount =
+    paymentForm.useWatch(['payments', field.name, 'couponDiscountAmount'], form) ?? 0;
+
+  const finalAmount = (paymentAmount ?? 0) - couponDiscountAmount;
+
+  // 금액은 Form.Item이 폼에 쓰고, 여기서는 적용된 쿠폰만 푼다.
+  const handlePaymentAmountChange = () => {
+    if (memberCouponId == null) return;
+
+    form.setFields([
+      { name: ['payments', field.name, 'memberCouponId'], value: null },
+      { name: ['payments', field.name, 'couponName'], value: null },
+      { name: ['payments', field.name, 'couponDiscountAmount'], value: 0 },
+    ]);
+    message.info('총 결제 예정 금액이 변경되어 적용된 쿠폰이 초기화되었습니다.');
+  };
+
+  return (
+    <>
+      <CouponSelector field={field} />
+      <Form.Item name={[field.name, 'paymentAmount']} noStyle>
+        <InputNumber onChange={handlePaymentAmountChange} />
+      </Form.Item>
+      <FinalAmount value={finalAmount} />
+    </>
+  );
+}
+```
+
+`setFields` is also the original antd API. The form owns editable values, so the detail component receives a `field` pointing to the current form path rather than an old `payment` snapshot. It reads the current values from the form.
+
+The standard payment component does not know coupon clearing or discount calculations. The timeline and header likewise do not know the selection modal's details.
+
+![Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.](/images/posts/payment-coupon-branches/03.png)
+
+*Changing the total expected amount before confirmation immediately clears the coupon and shows a notice. After confirmation, completion details find the linked coupon-payment row and display it in the same field order.*
+
+While a row is expanded, the amount label keeps a tooltip visible: changing the total expected amount clears the applied coupon. Changing the amount clears it immediately and shows a notice. I added clearing and the tooltip on June 24, the notice on June 25, and renamed “on-site payment amount” to “total expected payment amount” on July 1. The user decides whether to choose another coupon; the modal also offers “do not use a coupon.”
+
+## What changed and what remains
+
+On the morning of June 24, I first added an `if` to the existing renderer. That afternoon I split details into separate files and moved the conditions to `ts-pattern`, but retained the old order, still mixing ID and status. The following morning I grouped by saved state. The current renderer retains that structure.
+
+The existing visibility helper gained the coupon rule. Rendering now branches in one `match`, starting with saved state. The coupon component owns selection, clearing, and amount calculation, and the editing-only discount amount is excluded from confirmation requests.
+
+A new payment method still requires changing the renderer, so I would not call this an implementation of OCP. The places that need changing have become more predictable.
+
+![Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.](/images/posts/payment-coupon-branches/04.png)
+
+*Five if branches on the first day became a match grouped by saved state the next day. The lower table lists the places changed to support coupons.*
+
+Even one coupon feature changed the method enum, response type, visibility, renderer, completion details, both apps' payment totals and settlement details, and the hospital admin confirmation code. Dot color and header needed no changes because coupons fell back to the gray dot and pending header, but future methods still need those outputs checked. There are no tests for these combinations yet. The next task is table-driven tests for payment method × status × saved state.

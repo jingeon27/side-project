@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <rect x="42" y="54" width="182" height="62" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="133"
+    y="91"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    server list
+  </text>
+  <path
+    d="M227 85H315"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="328" y="54" width="270" height="62" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="463"
+    y="91"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    sync by memberId
+  </text>
+  <path
+    d="M463 120V164"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <rect x="234" y="179" width="364" height="136" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2" />
+  <text
+    x="416"
+    y="212"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="18"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    form values
+  </text>
+  <text
+    x="260"
+    y="248"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="start"
+    fill="#334155"
+  >
+    memberId
+  </text>
+  <text
+    x="389"
+    y="248"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="start"
+    fill="#334155"
+  >
+    selected
+  </text>
+  <text
+    x="500"
+    y="248"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="start"
+    fill="#334155"
+  >
+    date
+  </text>
+  <text
+    x="260"
+    y="285"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="start"
+    fill="#334155"
+  >
+    A / B / C
+  </text>
+  <text
+    x="425"
+    y="285"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="18"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    ✓
+  </text>
+  <text
+    x="530"
+    y="285"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    06-12
+  </text>
+  <rect x="42" y="214" width="142" height="62" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="113"
+    y="251"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="14"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    common date
+  </text>
+  <path
+    d="M188 245H219"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+</svg>
