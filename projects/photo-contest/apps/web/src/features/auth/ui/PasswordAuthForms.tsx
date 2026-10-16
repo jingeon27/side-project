@@ -127,16 +127,16 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
 export function PasswordAuthForms({ nextPath }: { nextPath: string }) {
   return (
     <Tabs.Root defaultValue="login" className="flex flex-col gap-4">
-      <Tabs.List aria-label="아이디 로그인 방식" className="flex rounded-control bg-sunken p-1">
+      <Tabs.List aria-label="아이디 로그인 방식" className="flex border-b border-line">
         <Tabs.Tab
           value="login"
-          className="min-h-touch flex-1 rounded-control text-label data-active:bg-surface data-active:text-brand"
+          className="min-h-touch flex-1 border-b-2 border-transparent text-label text-muted data-active:border-ink data-active:text-ink active:bg-sunken"
         >
           로그인
         </Tabs.Tab>
         <Tabs.Tab
           value="register"
-          className="min-h-touch flex-1 rounded-control text-label data-active:bg-surface data-active:text-brand"
+          className="min-h-touch flex-1 border-b-2 border-transparent text-label text-muted data-active:border-ink data-active:text-ink active:bg-sunken"
         >
           회원가입
         </Tabs.Tab>

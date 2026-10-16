@@ -159,13 +159,13 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
     <section
       aria-labelledby={headingId}
       className={cn(
-        'flex flex-col gap-4 rounded-card border border-line bg-surface p-5 shadow-card',
+        'flex flex-col gap-5 rounded-card border border-line bg-surface p-6 tablet:p-8',
         className,
       )}
     >
-      <div>
-        <p className="text-micro text-brand">친구들과 나누는 웃긴 순간</p>
-        <h2 id={headingId} className="mt-1 text-title-lg text-ink">
+      <div className="pb-2 text-center">
+        <p className="text-caption text-muted">친구들과 나누는 웃긴 순간</p>
+        <h2 id={headingId} className="mt-2 text-title-lg text-ink">
           로그인하고 함께 웃어요.
         </h2>
         <p className="mt-1 text-body text-muted">초대받은 갤러리에서만 사진을 볼 수 있어요.</p>

@@ -20,12 +20,12 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
     .with([], () => (
       <EmptyState
         icon={<Users className="size-6" />}
-        title="아직 참여한 갤러리이 없어요"
-        description="갤러리을 만들거나 친구의 초대 링크로 참여해 보세요."
+        title="아직 참여한 갤러리가 없어요"
+        description="갤러리를 만들거나 친구의 초대 링크로 참여해 보세요."
       />
     ))
     .otherwise((groups) => (
-      <div className="grid gap-3 tablet:grid-cols-2">
+      <div className="grid gap-4 tablet:grid-cols-2">
         {groups.map((group) => (
           <GroupCard key={group.id} group={group} />
         ))}

@@ -17,11 +17,11 @@ export function GroupCard({ group }: IGroupCardProps) {
   return (
     <Link
       href={ROUTES.GROUP(group.id)}
-      className="flex items-center gap-3 rounded-card border border-line bg-surface p-4 shadow-card transition-colors hover:bg-sunken active:bg-sunken"
+      className="flex items-center gap-4 rounded-control border border-line bg-surface p-5 transition-colors hover:bg-sunken active:bg-neutral-soft"
     >
       <span
         aria-hidden
-        className="flex size-12 shrink-0 items-center justify-center rounded-control bg-brand-soft text-title text-brand-strong"
+        className="flex size-14 shrink-0 items-center justify-center rounded-full border border-line bg-sunken text-title text-ink"
       >
         {Array.from(group.name.trim())[0] ?? '?'}
       </span>
