@@ -15,7 +15,7 @@
     "@game-feedback/contracts": "workspace:*",
     "@game-feedback/sdk": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
-    "@radix-ui/react-dialog": "^1.1.15",
+    "@side/design-system": "workspace:*",
     "@tanstack/react-query": "^5.90.0",
     "es-toolkit": "^1.52.0",
     "lucide-react": "^0.468.0",
