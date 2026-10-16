@@ -40,7 +40,6 @@ export function ArticleReader({
               {t.categories[article.category]}
             </Link>
             <h1>{article.title}</h1>
-            <p className="article-deck">{article.description}</p>
             <div className="article-heading-bottom">
               <ArticleMeta article={article} showUpdated />
               <ArticleShare locale={article.locale} contentId={article.id} title={article.title} />
