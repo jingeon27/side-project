@@ -18,8 +18,8 @@ test(
       token: second.inviteToken,
     });
     await seedPost(viewer, first.id, '먼저 올라온 순간');
-    await seedPost(viewer, first.id, '중간에 올라온 순간');
-    await seedPost(friend, second.id, '가장 최근의 순간');
+    await seedPost(viewer, first.id, '중간에 올라온 순간', { color: '#000000' });
+    await seedPost(friend, second.id, '가장 최근의 순간', { color: '#ffffff' });
     await seedPost(friend, privateGroup.id, '노출되면 안 되는 순간');
 
     await page.goto('/');

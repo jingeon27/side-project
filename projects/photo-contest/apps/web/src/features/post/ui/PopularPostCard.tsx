@@ -36,8 +36,9 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
               <Play aria-hidden className="size-5" />
             </span>
           )}
-          <span className="absolute top-1 left-1 flex size-5 items-center justify-center rounded-badge bg-surface text-micro text-ink shadow-card">
+          <span className="absolute top-1 left-1 flex size-6 items-center justify-center rounded-badge bg-ink text-caption font-semibold text-on-brand shadow-card ring-1 ring-surface/80">
             {rank}
+            <span className="sr-only">위</span>
           </span>
         </span>
         <span className="flex w-full min-w-0 flex-col gap-0.5">
