@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import { BackLink } from '@/shared/navigation';
+import { appRoutes } from '@game-feedback/bridge';
 import { ArrowLeft } from 'lucide-react';
 import { match } from 'ts-pattern';
 import { infoTitles, type TInfoKind } from '../model/info';
@@ -10,10 +11,10 @@ import { ContactContent } from './ContactContent';
 export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) {
   return (
     <>
-      <Link className="back-link" href={`/${locale}`}>
+      <BackLink className="back-link" href={appRoutes.feed(locale)}>
         <ArrowLeft size={16} />
         피드백 라운지
-      </Link>
+      </BackLink>
       <article className="info-card">
         <span className="section-eyebrow">
           {kind === 'guide' ? 'PLAY BETTER, TOGETHER' : 'COMMUNITY & TRUST'}

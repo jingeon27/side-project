@@ -3,17 +3,20 @@ import { UserBadges } from '@/features/user';
 import type { Conversation } from '@/shared/api';
 import { timeAgo } from '@/shared/lib/date';
 import { Avatar } from '@/shared/ui';
+import { appRoutes } from '@game-feedback/bridge';
 
 interface IConversationRowProps {
   conversation: Conversation;
   selected: boolean;
   locale: string;
+  replace: boolean;
 }
 
-export function ConversationRow({ conversation, selected, locale }: IConversationRowProps) {
+export function ConversationRow({ conversation, selected, locale, replace }: IConversationRowProps) {
   return (
     <Link
-      href={`/${locale}/messages?conversation=${encodeURIComponent(conversation.id)}`}
+      href={appRoutes.conversation(locale, conversation.id)}
+      replace={replace}
       scroll={false}
       className={`conversation-row ${selected ? 'selected' : ''}`}
       data-testid={`conversation-${conversation.id}`}

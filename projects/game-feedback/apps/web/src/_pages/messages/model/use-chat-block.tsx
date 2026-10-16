@@ -6,6 +6,7 @@ import { chatMessageOptions } from '@/features/chat';
 import { BlockUserDialog } from '@/widgets/moderation';
 import type { Author } from '@/shared/api';
 import { openOverlay, useNotify } from '@/shared/ui';
+import { appRoutes } from '@game-feedback/bridge';
 
 interface IChatBlockOptions {
   userId: string;
@@ -38,7 +39,7 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
         }}
         onBlocked={() => {
           client.removeQueries(chatMessageOptions(userId, conversationId));
-          router.replace(`/${locale}/messages`, { scroll: false });
+          router.replace(appRoutes.messages(locale), { scroll: false });
           notify('사용자를 차단했어요. 더 이상 메시지를 주고받을 수 없어요.');
         }}
       />

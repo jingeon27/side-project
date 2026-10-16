@@ -13,6 +13,7 @@ import type { Category, GameProfile, Post } from '@/shared/api';
 import { openOverlay, Modal, Field, ErrorNotice, LoadingState, useNotify } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { postComposerSchema } from '../model/post-composer.schema';
+import { appRoutes } from '@game-feedback/bridge';
 interface IPostComposerProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -87,7 +88,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
             router.refresh();
             return;
           }
-          router.push(`/${locale}/posts/${result.id}`);
+          router.push(appRoutes.post(locale, result.id));
         } catch {
           /* Mutation errors remain visible and the draft stays in the form. */
         }

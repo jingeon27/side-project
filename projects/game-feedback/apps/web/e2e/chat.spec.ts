@@ -75,8 +75,8 @@ test('two players exchange persistent private messages live, with unread and rea
       .getByRole('button', { name: `${author.user.nickname}님과 채팅하기`, exact: true })
       .first()
       .click();
-    await expect(coachPage).toHaveURL(/\/ko\/messages\?conversation=/);
-    const conversationId = new URL(coachPage.url()).searchParams.get('conversation');
+    await expect(coachPage).toHaveURL(/\/ko\/messages\/[^/?]+$/);
+    const conversationId = new URL(coachPage.url()).pathname.split('/').at(-1);
     expect(conversationId).toBeTruthy();
     const first = await send(coachPage, `상대 건물 카드가 빠졌을 때 호그로 압박해 보세요. ${suffix}`);
     await expect(authorPage.getByRole('link', { name: '채팅 1개', exact: true })).toBeVisible();

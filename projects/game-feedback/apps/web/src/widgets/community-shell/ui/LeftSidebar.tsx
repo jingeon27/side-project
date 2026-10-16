@@ -1,5 +1,6 @@
-import Link from 'next/link';
+import { TabLink as Link } from '@/shared/navigation';
 import { MessageSquareText, ChevronRight, Bell, MessageCircle, Crown } from 'lucide-react';
+import { resolveAppRoute } from '@game-feedback/bridge';
 interface ILeftSidebarProps {
   home: string;
   path: string;
@@ -7,22 +8,23 @@ interface ILeftSidebarProps {
   chatUnread: number;
 }
 export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProps) {
-  const isHome = path === home;
+  const tab = resolveAppRoute(path)?.tab;
   return (
     <aside className="left-sidebar">
       <div className="sidebar-label">둘러보기</div>
-      <Link className={`side-link ${isHome ? 'selected' : ''}`} href={home}>
+      <Link className={`side-link ${tab === 'feed' ? 'selected' : ''}`} href={home} replace>
         <MessageSquareText size={19} />
         전체 피드백
         <ChevronRight size={16} />
       </Link>
       <Link
-        className={`side-link ${path.endsWith('/notifications') ? 'selected' : ''}`}
+        className={`side-link ${tab === 'notifications' ? 'selected' : ''}`}
+        replace
         href={`${home}/notifications`}
       >
         <Bell size={19} />내 알림{unread > 0 && <span className="count-badge">{unread}</span>}
       </Link>
-      <Link className={`side-link ${path.endsWith('/messages') ? 'selected' : ''}`} href={`${home}/messages`}>
+      <Link className={`side-link ${tab === 'messages' ? 'selected' : ''}`} href={`${home}/messages`} replace>
         <MessageCircle size={19} />
         채팅{chatUnread > 0 && <span className="count-badge">{chatUnread}</span>}
       </Link>

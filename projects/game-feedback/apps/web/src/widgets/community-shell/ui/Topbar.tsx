@@ -1,6 +1,7 @@
 'use client';
 import { Button } from '@side/design-system';
-import Link from 'next/link';
+import { TabLink as Link } from '@/shared/navigation';
+import { resolveAppRoute } from '@game-feedback/bridge';
 import { Gamepad2, ArrowUpRight, MessageCircle, Bell } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { Avatar } from '@/shared/ui';
@@ -12,7 +13,7 @@ interface ITopbarProps {
 }
 export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
   const { session, login: handleLogin } = useSession();
-  const isHome = path === home;
+  const isHome = resolveAppRoute(path)?.tab === 'feed';
   return (
     <header className="topbar">
       <div className="topbar-inner">

@@ -47,6 +47,7 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
                 key={item.id}
                 conversation={item}
                 selected={conversationId === item.id}
+                replace={Boolean(conversationId)}
                 locale={locale}
               />
             ))}

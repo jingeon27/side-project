@@ -9,6 +9,8 @@ import { notificationSummaryOptions } from '@/features/notification';
 import { conversationBadgeOptions } from '@/features/chat';
 import { useChatConnection } from '@/widgets/chat-realtime';
 import { ServiceErrorBoundary } from '@/shared/ui';
+import { RouteViewport } from '@/shared/navigation';
+import { resolveAppRoute } from '@game-feedback/bridge';
 import { Topbar } from './Topbar';
 import { LeftSidebar } from './LeftSidebar';
 import { PlayerSidebar } from './PlayerSidebar';
@@ -43,17 +45,17 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
           <Link href="/ko">한국어로 보기</Link>
         </div>
       )}
-      <div className={`site-grid ${path.endsWith('/messages') ? 'chat-layout' : ''}`}>
+      <div className={`site-grid ${resolveAppRoute(path)?.tab === 'messages' ? 'chat-layout' : ''}`}>
         <div className="shell-left-sidebar">
           <ServiceErrorBoundary title="탐색 메뉴" resetKey={userKey}>
             <LeftSidebar home={home} path={path} unread={unread} chatUnread={chatUnread} />
           </ServiceErrorBoundary>
         </div>
-        <main className="main-content">
-          <ServiceErrorBoundary title="이 화면" resetKey={`${userKey}:${path}`} refreshOnRetry>
+        <RouteViewport>
+          <ServiceErrorBoundary title="이 화면" resetKey={userKey} refreshOnRetry>
             {children}
           </ServiceErrorBoundary>
-        </main>
+        </RouteViewport>
         <div className="shell-player-sidebar">
           <ServiceErrorBoundary title="플레이어 프로필" resetKey={userKey}>
             <PlayerSidebar home={home} />

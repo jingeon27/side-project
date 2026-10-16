@@ -11,6 +11,8 @@ import { useChatScroll } from '../model/use-chat-scroll';
 import { useVisibleRead } from '../model/use-visible-read';
 import { ChatComposer } from './ChatComposer';
 import { ChatHistory } from './ChatHistory';
+import { BackLink } from '@/shared/navigation';
+import { appRoutes } from '@game-feedback/bridge';
 
 interface IConversationPaneProps {
   conversationId: string;
@@ -78,14 +80,15 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
   return (
     <section className="conversation-pane" aria-label={`${conversation.peer.nickname}님과의 대화`}>
       <header className="conversation-heading">
-        <Link
-          href={`/${locale}/messages`}
+        <BackLink
+          href={appRoutes.messages(locale)}
+          parentOnly
           scroll={false}
           className="icon-button chat-back"
           aria-label="대화 목록으로 돌아가기"
         >
           <ArrowLeft size={19} />
-        </Link>
+        </BackLink>
         <Avatar name={conversation.peer.nickname} />
         <div>
           <h2>{conversation.peer.nickname}</h2>

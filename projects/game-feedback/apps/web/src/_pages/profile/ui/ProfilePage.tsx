@@ -8,6 +8,8 @@ import { Deck } from '@/features/game-profile';
 import { StartChatLink } from '@/widgets/start-chat';
 import type { PublicProfile, PostList } from '@/shared/api';
 import { Avatar, ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { BackLink } from '@/shared/navigation';
+import { appRoutes } from '@game-feedback/bridge';
 interface IProfilePageProps {
   id: string;
   locale: string;
@@ -38,9 +40,9 @@ export function ProfilePage({
   const { author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
-      <Link className="back-link" href={`/${locale}`}>
+      <BackLink className="back-link" href={appRoutes.feed(locale)}>
         ← 피드백 라운지
-      </Link>
+      </BackLink>
       <section className="settings-card public-profile" aria-label="플레이어 프로필">
         <div className="settings-profile">
           <Avatar name={author.nickname} size="large" />

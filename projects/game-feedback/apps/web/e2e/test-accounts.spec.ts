@@ -68,8 +68,8 @@ test('prepared accounts can write posts and comments, switch identities, and exc
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
   await expect(page.getByText(responseComment, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '새벽의호그님과 채팅하기', exact: true }).first().click();
-  await expect(page).toHaveURL(/\/ko\/messages\?conversation=/);
-  const roomId = new URL(page.url()).searchParams.get('conversation');
+  await expect(page).toHaveURL(/\/ko\/messages\/[^/?]+$/);
+  const roomId = new URL(page.url()).pathname.split('/').at(-1);
   const chatBody = `테스트 계정 전환 후 보낸 1:1 메시지입니다. ${suffix}`;
   await page.getByRole('textbox', { name: '메시지 내용' }).fill(chatBody);
   const delivery = page.waitForResponse(

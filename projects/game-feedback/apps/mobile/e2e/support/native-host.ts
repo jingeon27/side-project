@@ -16,6 +16,9 @@ export async function installNativeHost(page: Page) {
   let ready = false;
   let closed = false;
   let loginResult: TLoginResult | null = null;
+  let currentPath = '';
+  let rootBacks = 0;
+  let overlayOpen = false;
   const host = createNativeHost({
     origin: ORIGIN,
     send: (message) => {
@@ -24,7 +27,15 @@ export async function installNativeHost(page: Page) {
     onReady: () => {
       ready = true;
     },
-    onLocation: () => undefined,
+    onLocation: (path) => {
+      currentPath = path;
+    },
+    onRootBack: () => {
+      rootBacks += 1;
+    },
+    onOverlayChange: (open) => {
+      overlayOpen = open;
+    },
     login: () =>
       loginResult
         ? Promise.resolve(loginResult)
@@ -52,6 +63,9 @@ export async function installNativeHost(page: Page) {
     messages,
     authSessions,
     isReady: () => ready,
+    currentPath: () => currentPath,
+    rootBacks: () => rootBacks,
+    hasOverlay: () => overlayOpen,
     requestBack: host.back,
     state: host.state,
     openDeepLink(url: string) {

@@ -1,5 +1,6 @@
 import { staticPageMetadata } from '@/shared/seo';
-import { MessagesPage as MessagesScreen } from '@/_pages/messages';
+import { notFound, redirect } from 'next/navigation';
+import { appRoutes, RouteIdSchema } from '@game-feedback/bridge';
 export default async function MessagesPage({
   params,
   searchParams,
@@ -9,8 +10,12 @@ export default async function MessagesPage({
 }) {
   const { locale } = await params,
     query = await searchParams;
-  const conversationId = typeof query.conversation === 'string' ? query.conversation : undefined;
-  return <MessagesScreen locale={locale} conversationId={conversationId} />;
+  if (query.conversation !== undefined) {
+    const id = RouteIdSchema.safeParse(query.conversation);
+    if (!id.success) notFound();
+    redirect(appRoutes.conversation(locale, id.data));
+  }
+  return null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {

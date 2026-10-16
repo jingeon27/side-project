@@ -1,6 +1,5 @@
 'use client';
 import { ButtonLink } from '@side/design-system/next';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { postDetailOptions, PostArticle } from '@/features/post';
@@ -13,6 +12,8 @@ import { usePostRead } from '../model/use-post-read.hook';
 import { ContentActions } from './ContentActions';
 import { PostAnswersSection } from './PostAnswersSection';
 import { PostCommentsSection } from './PostCommentsSection';
+import { BackLink } from '@/shared/navigation';
+import { appRoutes } from '@game-feedback/bridge';
 interface IPostPageProps {
   id: string;
   locale: string;
@@ -40,10 +41,10 @@ export function PostPage({ id, locale, initialDetail, initialViewerId }: IPostPa
   const { post, answers, comments } = detail.data;
   return (
     <>
-      <Link className="back-link" href={`/${locale}`}>
+      <BackLink className="back-link" href={appRoutes.feed(locale)}>
         <ArrowLeft size={16} />
         피드백 라운지
-      </Link>
+      </BackLink>
       <ServiceErrorBoundary title="게시글" resetKey={id}>
         <PostArticle
           post={post}

@@ -63,7 +63,10 @@ test('native back closes the web dialog, deep links keep the document, and foreg
   expect(nativeHost.openDeepLink('gamefeedback://ko/guide')).toBe(true);
   await expect(page).toHaveURL(/\/ko\/guide$/);
   expect(nativeHost.openDeepLink('gamefeedback://ko/posts/%2Fetc')).toBe(false);
-  expect(await nativeHost.requestBack()).toBe(false);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page).toHaveURL(/\/ko$/);
+  expect(await nativeHost.requestBack()).toBe(true);
+  expect(nativeHost.rootBacks()).toBe(1);
   const result = await page.request.post('/api/auth/test-login', {
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-user-3' },

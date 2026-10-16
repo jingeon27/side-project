@@ -3,6 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { LoaderCircle, MessageCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { chatError, useCreateConversationMutation } from '@/features/chat';
+import { appRoutes } from '@game-feedback/bridge';
 
 interface IStartChatLinkProps {
   userId: string;
@@ -22,7 +23,7 @@ export function StartChatLink({ userId, nickname }: IStartChatLinkProps) {
     }
     mutation.mutate(userId, {
       onSuccess: (conversation) => {
-        router.push(`/${locale}/messages?conversation=${encodeURIComponent(conversation.id)}`);
+        router.push(appRoutes.conversation(locale, conversation.id));
       },
       onError: (error) => notify(chatError(error)),
     });
