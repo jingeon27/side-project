@@ -1,0 +1,111 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Writing",
+    "about": "About",
+    "skip": "Skip to content",
+    "theme": "Switch color theme",
+    "language": "Change language"
+  },
+  "common": {
+    "all": "All",
+    "articles": "entries",
+    "readMore": "Read article",
+    "allArticles": "View all writing",
+    "backToBlog": "Back to writing",
+    "minutes": "min read",
+    "published": "Published",
+    "updated": "Updated",
+    "search": "Search by title",
+    "searchPlaceholder": "What are you curious about?",
+    "clear": "Clear search",
+    "category": "Category",
+    "tags": "Tags",
+    "clearFilters": "Reset filters",
+    "noResults": "No articles match your search.",
+    "noResultsDescription": "Try another title or choose a different category.",
+    "empty": "No English articles yet.",
+    "emptyDescription": "Articles are written independently in each language. Explore the Korean journal in the meantime.",
+    "koreanArticles": "Read in Korean",
+    "translationMissing": "A translation of this article is not available yet.",
+    "translationList": "Browse writing in the selected language",
+    "close": "Close",
+    "rss": "Subscribe via RSS",
+    "email": "Email",
+    "github": "GitHub"
+  },
+  "home": {
+    "eyebrow": "JINGEON · ENGINEERING JOURNAL",
+    "title": "Solve problems.\nLeave a reference.",
+    "description": "Problems encountered while building software, and the reasons behind each decision. Notes on engineering, learning, and the occasional thought.",
+    "role": "Software Engineer",
+    "latest": "Recent writing",
+    "latestDescription": "Stories from things experienced, tested, and learned.",
+    "explore": "Explore by topic",
+    "index": "The writing archive",
+    "about": "About this journal"
+  },
+  "blog": {
+    "eyebrow": "THE ARCHIVE",
+    "title": "Notes in progress",
+    "description": "A collection of engineering experiences, small discoveries, and perspectives on building software.",
+    "categoryDescription": "Experiences and discoveries on this topic.",
+    "tagDescription": "Writing filed under this tag.",
+    "results": "articles",
+    "filterLabel": "Filter writing"
+  },
+  "categories": {
+    "engineering": "Engineering",
+    "til": "TIL",
+    "perspectives": "Perspectives",
+    "misc": "Miscellaneous"
+  },
+  "categoryDescriptions": {
+    "engineering": "Finding and working through problems",
+    "til": "Something newly learned",
+    "perspectives": "Thoughts on software and work",
+    "misc": "Other things worth keeping"
+  },
+  "article": {
+    "contents": "On this page",
+    "share": "Share",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "shareFailed": "Could not copy the link.",
+    "copyCode": "Copy code",
+    "source": "Original on Tistory",
+    "related": "Keep reading",
+    "previous": "Previous article",
+    "next": "Next article",
+    "writtenBy": "Written by",
+    "end": "Thanks for reading.",
+    "endDescription": "May this experience offer a small clue for your next problem."
+  },
+  "about": {
+    "eyebrow": "ABOUT THIS JOURNAL",
+    "title": "Hello,\nI’m a software engineer.",
+    "description": "I work to understand the problems in front of me and make better decisions. This is where I keep what I learn and think along the way.",
+    "note": "Specific context over perfect answers. The reasons behind a decision matter as much as its outcome.",
+    "contact": "Let’s talk",
+    "contactDescription": "Have a thought about an article or something you would like to discuss? Feel free to get in touch."
+  },
+  "footer": {
+    "description": "Experience recorded. A reference for the next decision.",
+    "copyright": "Software Engineer. Built with care.",
+    "top": "Back to top"
+  },
+  "notFound": {
+    "title": "This page could not be found.",
+    "description": "The address may have changed, or the page has not been written yet.",
+    "home": "Back to home"
+  },
+  "analytics": {
+    "title": "Visitor analytics",
+    "message": "With your consent, Google Analytics cookies help measure visits and reading activity. Raw search queries are never sent.",
+    "allow": "Allow",
+    "deny": "Decline",
+    "preferences": "Analytics settings",
+    "revoke": "Withdraw consent",
+    "close": "Close"
+  }
+}
