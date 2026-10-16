@@ -16,6 +16,7 @@ projects/game-feedback/
   packages/contracts/ # Zod 서버 검증 · OpenAPI 계약
   packages/sdk/    # Orval API Client · 응답 검증 스키마
   docs/
+packages/design-system/ # 두 웹이 공유하는 Base UI·토큰·스타일·cn, 자체 Vitest
 packages/typescript-config/
 packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
@@ -53,6 +54,14 @@ corepack yarn workspace @side/game-feedback dev:demo
 ```
 
 웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
+
+## 공통 디자인 시스템
+
+[설계와 사용법](packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.
+
+```sh
+corepack yarn workspace @side/design-system check
+```
 
 ## 검증
 

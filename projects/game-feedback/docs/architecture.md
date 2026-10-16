@@ -2,13 +2,13 @@
 
 `jingeon27/side-project`의 `develop`을 기준으로 기존 Workspace 안에 `projects/game-feedback`를 추가한다. 저장소의 Node.js 24, Yarn 4.17.0과 `node-modules` linker를 유지한다. 루트 Workspace는 이미 `projects/*`, 하위 앱·패키지, 공용 `packages/*`를 포함한다.
 
-| Workspace                  | 역할                                                                               |
-| -------------------------- | ---------------------------------------------------------------------------------- |
-| `@side/game-feedback`      | 안전한 로컬 DB·실행·검증 명령                                                      |
-| `@game-feedback/web`       | Next.js App Router, React, Tailwind, Radix Dialog, TanStack Query, React Hook Form |
-| `@game-feedback/api`       | NestJS + Express, Zod 검증, Prisma, 외부 제공자 인터페이스                         |
-| `@game-feedback/contracts` | 서버 요청 검증 및 공유 데이터 계약                                                 |
-| `@game-feedback/sdk`       | OpenAPI에서 Orval로 생성한 클라이언트 및 스키마                                    |
+| Workspace                  | 역할                                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| `@side/game-feedback`      | 안전한 로컬 DB·실행·검증 명령                                                          |
+| `@game-feedback/web`       | Next.js App Router, React, 공통 디자인 시스템·Base UI, TanStack Query, React Hook Form |
+| `@game-feedback/api`       | NestJS + Express, Zod 검증, Prisma, 외부 제공자 인터페이스                             |
+| `@game-feedback/contracts` | 서버 요청 검증 및 공유 데이터 계약                                                     |
+| `@game-feedback/sdk`       | OpenAPI에서 Orval로 생성한 클라이언트 및 스키마                                        |
 
 집계 패키지는 `test`, `build`, `typecheck`, `check`를 앱·패키지 명령에 위임한다. API가 DB URL 가드·단위·PostgreSQL 통합 테스트를 소유하고 Web이 캐시 경계 Vitest와 Playwright를 소유한다. 테스트 러너와 파일을 루트 또는 프로젝트 집계에 두지 않는다. 실행기는 Corepack이 선택한 저장소 Yarn을 사용하며 버전별 `.yarn/releases` 경로를 가정하지 않는다.
 
@@ -29,9 +29,19 @@ Safedoc React·Usermall·Global의 실제 구조와 현재 저장소의 공통 E
 
 `features/<domain>/api`에서 REST IO를 수행하고 `model/*.options.ts`에서 query options와 키를 정의한다. UI는 options factory를 `useQuery`/`useInfiniteQuery`에 직접 전달하며 같은 factory로 cache를 무효화한다. mutation 훅은 원본 TanStack 결과를 반환하고, 화면이 성공 후 이동·닫기를 담당한다. 사용자별 조회는 사용자 ID로 scope를 나누고 불완전한 인자의 조회에는 skipToken을 사용한다.
 
-서버·세션 상태는 TanStack Query, 폼은 RHF와 Zod, 모달은 overlay-kit을 사용한다. 기존 Radix Dialog의 접근성·스타일을 유지하며 열림 boolean과 별도 mutation pending/error 상태를 복제하지 않는다. es-toolkit은 query prefix 구성, ts-pattern은 명시적인 화면 분기에 사용한다. 서버 데이터를 Zustand 등 별도 store에 복사하지 않는다. 사용자 ID별 OverlayProvider가 모달 상태를 소유해 다른 탭의 계정 전환·로그아웃 후 이전 계정의 초안·탈퇴 확인 입력을 폐기하고 SSE도 같은 수명으로 종료한다. 브라우저의 REST·HttpOnly 쿠키·SSE 계약과 Orval 생성 경로는 유지한다.
+서버·세션 상태는 TanStack Query, 폼은 RHF와 Zod, 모달은 overlay-kit을 사용한다. 공통 Base UI Dialog로 접근성·스타일을 조합하며 열림 boolean과 별도 mutation pending/error 상태를 복제하지 않는다. es-toolkit은 query prefix 구성, ts-pattern은 명시적인 화면 분기에 사용한다. 서버 데이터를 Zustand 등 별도 store에 복사하지 않는다. 사용자 ID별 OverlayProvider가 모달 상태를 소유해 다른 탭의 계정 전환·로그아웃 후 이전 계정의 초안·탈퇴 확인 입력을 폐기하고 SSE도 같은 수명으로 종료한다. 브라우저의 REST·HttpOnly 쿠키·SSE 계약과 Orval 생성 경로는 유지한다.
 
 slice 외부 import는 public `index.ts`를 통한다. 공통 Next·FSD lint가 레이어 방향·공개 API·페이지 간 참조와 컴포넌트/핸들러 규칙을 검사하고, Web 로컬 규칙이 inline query-key·enum·타입 이름을 검사한다. 이 lint는 집계 check와 기존 CI에서 실행한다.
+
+## 공통 디자인 시스템
+
+`packages/design-system`의 `@side/design-system`을 Photo Contest 웹과 함께 사용한다. 색·타이포·간격·모서리·그림자·포커스·터치 영역과 `cn` 충돌 규칙은 이 패키지가 소유한다. Photo Contest의 흑백 기본 UI와 오렌지 강조색을 공통 토큰으로 사용하며 앱 이름·게임 정보·화면 레이아웃은 각 앱에 남긴다.
+
+공통 Button·IconButton·TextField·TextArea·FormField·Avatar·Badge·Spinner·Dialog를 named export로 제공한다. Next 전용 ButtonLink는 `/next`, CSS는 `/styles.css`로 공개한다. 공유 CSS는 자체 UI 소스의 Tailwind 검색도 선언해 소비 앱에서 패키지 클래스가 누락되지 않도록 한다. 프레임워크별 라우팅·서버 상태·인증·오버레이 수명은 공통 패키지에 넣지 않는다.
+
+Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, CSS 진입점은 `src/_app/styles/tailwind.css`다. 앱별 CSS는 화면 도메인별로 분리하고 공통 색·버튼·입력·모달 스타일을 재정의하지 않는다. Photo Contest는 기존 public UI 경로에서 공통 구현을 re-export하고, 브라우저 뒤로 가기·WebView·portal 위치가 결합된 시트·확인창 동작은 앱에서 유지한다.
+
+공통 패키지는 자체 lint·타입·UI 테스트를 소유한다. 양쪽 CI는 공통 패키지 check를 실행하고 공유 packages 변경에도 두 앱을 검증한다. 두 웹의 개발 서버·DB를 섞지 않는다.
 
 ## API 모듈 구성
 
