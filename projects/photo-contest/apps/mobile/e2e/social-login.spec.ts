@@ -65,7 +65,15 @@ test.describe('앱 소셜 로그인 핸드오프', () => {
     await expect(nativeHost.waitForEvent('auth.changed')).resolves.toEqual({ signedIn: true });
     const cookies = await context.cookies(E2E_WEB_ORIGIN);
     expect(cookies.find((cookie) => cookie.name === 'contest_session')?.httpOnly).toBe(true);
+    // 첫 알림은 문서 이동 전이다. 새 문서가 세션을 읽고 사용자 ID를 알린 뒤 메뉴를 누른다.
+    await expect
+      .poll(() => nativeHost.events)
+      .toContainEqual({
+        type: 'auth.changed',
+        payload: { signedIn: true, userId: expect.any(String) },
+      });
     await webScreens.myPageLink(page).click();
+    await expect(page).toHaveURL(`${E2E_WEB_ORIGIN}/me`);
     await expect(webScreens.profileHeading(page, nickname)).toBeVisible();
   });
 });
