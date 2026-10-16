@@ -9,6 +9,7 @@ export * from './adminReport';
 export * from './answer';
 export * from './answerAuthor';
 export * from './answerInput';
+export * from './appExchangeInput';
 export * from './author';
 export * from './blockInput';
 export * from './card';

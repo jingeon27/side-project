@@ -1,5 +1,6 @@
 export { ApiError, apiFetch } from './http';
 export {
+  exchangeAppLogin,
   getHealth,
   getSession,
   demoLogin,

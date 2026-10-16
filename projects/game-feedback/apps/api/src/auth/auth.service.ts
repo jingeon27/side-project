@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { DemoInputSchema, OnboardInputSchema, TestLoginInputSchema } from '@game-feedback/contracts';
 import type { SessionRequest } from './session.types';
+import { AppAuthService } from './app-auth.service';
 import { SessionService } from './session.service';
 import { requireUser } from './session-access';
 import { parse } from '../common/validation';
@@ -20,6 +21,7 @@ export class AuthService {
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(AppAuthService) private readonly appAuth: AppAuthService,
   ) {}
   async demo(req: SessionRequest, res: Response, body: unknown) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
@@ -74,11 +76,23 @@ export class AuthService {
   async google(req: Request, res: Response) {
     if (!this.config.identityProvider)
       throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', 'Google 로그인이 아직 설정되지 않았습니다.');
+    const appChallenge = req.query.app_challenge;
+    if (
+      appChallenge !== undefined &&
+      (typeof appChallenge !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(appChallenge))
+    )
+      throw new ApiError(400, 'APP_CHALLENGE_INVALID', '로그인 요청을 확인할 수 없습니다.');
     const state = token(),
       nonce = token(),
       verifier = token();
     await this.db.oAuthAttempt.create({
-      data: { stateHash: hash(state), nonce, verifier, expiresAt: new Date(Date.now() + 1000 * 60 * 10) },
+      data: {
+        stateHash: hash(state),
+        nonce,
+        verifier,
+        appChallenge,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 10),
+      },
     });
     setCookie(res, 'gamefeedback_oauth', state, 1000 * 60 * 10, this.config.production);
     const challenge = createHash('sha256').update(verifier).digest('base64url');
@@ -103,10 +117,24 @@ export class AuthService {
     if (consumed.count !== 1)
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 이미 사용되었습니다.');
     setCookie(res, 'gamefeedback_oauth', '', 0, this.config.production);
-    const subject = await this.config.identityProvider.exchange(code, attempt.verifier, attempt.nonce);
+    let subject: string;
+    try {
+      subject = await this.config.identityProvider.exchange(code, attempt.verifier, attempt.nonce);
+    } catch (error) {
+      if (attempt.appChallenge) {
+        res.redirect('gamefeedback://auth/callback?error=login_failed');
+        return;
+      }
+      throw error;
+    }
     const user = await this.db.user.findUnique({ where: { googleSubject: subject } });
     if (user && process.env.GF_ADMIN_GOOGLE_SUB === subject && user.role !== 'ADMIN') {
       await this.db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
+    }
+    if (attempt.appChallenge) {
+      const ticket = await this.appAuth.issueTicket(subject, attempt.appChallenge);
+      res.redirect(`gamefeedback://auth/callback?code=${ticket}`);
+      return;
     }
     await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : subject);
     res.redirect(`${this.config.webOrigin}/ko${user ? '' : '?onboard=1'}`);

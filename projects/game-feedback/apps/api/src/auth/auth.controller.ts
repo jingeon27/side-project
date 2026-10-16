@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { AppAuthService } from './app-auth.service';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
@@ -8,6 +9,7 @@ import type { SessionRequest } from './session.types';
 export class AuthController {
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
+    @Inject(AppAuthService) private readonly appAuth: AppAuthService,
     @Inject(SessionService) private readonly sessions: SessionService,
   ) {}
 
@@ -41,6 +43,16 @@ export class AuthController {
   @Get('auth/google/callback')
   googleCallback(@Req() req: SessionRequest, @Res() res: Response) {
     return this.auth.googleCallback(req, res);
+  }
+
+  @Post('auth/app/exchange')
+  @HttpCode(200)
+  exchangeAppLogin(
+    @Req() req: SessionRequest,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body: unknown,
+  ) {
+    return this.appAuth.exchange(req, res, body);
   }
 
   @Post('auth/onboard')

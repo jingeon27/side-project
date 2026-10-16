@@ -6,6 +6,32 @@
  */
 import * as zod from 'zod';
 
+export const exchangeAppLoginBodyCodeRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+export const exchangeAppLoginBodyVerifierRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const ExchangeAppLoginBody = zod.object({
+  "code": zod.string().regex(exchangeAppLoginBodyCodeRegExp),
+  "verifier": zod.string().regex(exchangeAppLoginBodyVerifierRegExp)
+})
+
+export const ExchangeAppLoginResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "nickname": zod.string(),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "createdAt": zod.string(),
+  "verifiedAt": zod.string().nullable()
+}),zod.null()]),
+  "demoMode": zod.boolean(),
+  "googleConfigured": zod.boolean(),
+  "needsOnboarding": zod.boolean()
+})
+
+
 export const ListTestAccountsResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string(),

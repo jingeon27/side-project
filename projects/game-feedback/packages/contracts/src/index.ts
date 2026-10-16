@@ -164,6 +164,12 @@ export const NicknameSchema = z
 export const OnboardInputSchema = z
   .object({ nickname: NicknameSchema, acceptedTerms: z.literal(true), ageConfirmed: z.literal(true) })
   .strict();
+export const AppExchangeInputSchema = z
+  .object({
+    code: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    verifier: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  })
+  .strict();
 export const DemoInputSchema = z.object({ nickname: NicknameSchema }).strict();
 export const PostInputSchema = z
   .object({
@@ -230,6 +236,7 @@ export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
 
 export const schemas = {
+  AppExchangeInput: AppExchangeInputSchema,
   TestAccount: TestAccountSchema,
   TestAccountList: TestAccountListSchema,
   TestLoginInput: TestLoginInputSchema,
@@ -279,6 +286,13 @@ export type OperationSpec = {
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
+  {
+    method: 'post',
+    path: '/api/auth/app/exchange',
+    id: 'exchangeAppLogin',
+    body: AppExchangeInputSchema,
+    response: SessionSchema,
+  },
   { method: 'get', path: '/api/auth/test-accounts', id: 'listTestAccounts', response: TestAccountListSchema },
   {
     method: 'post',

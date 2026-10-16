@@ -23,7 +23,12 @@ describe('request rate limits across shared network addresses', () => {
   it('keeps anonymous and authentication attempts scoped to IP', () => {
     const anonymous = requestRateBucket(request);
     expect(anonymous.key).toBe('read:ip:127.0.0.1');
-    for (const path of ['/api/auth/demo', '/api/auth/test-login/', '/api/auth/google']) {
+    for (const path of [
+      '/api/auth/demo',
+      '/api/auth/test-login/',
+      '/api/auth/google',
+      '/api/auth/app/exchange',
+    ]) {
       const first = requestRateBucket({ ...request, path, userId: 'alice' });
       const second = requestRateBucket({ ...request, path, userId: 'bob' });
       expect(first).toEqual({ key: 'auth:ip:127.0.0.1', limit: 30 });

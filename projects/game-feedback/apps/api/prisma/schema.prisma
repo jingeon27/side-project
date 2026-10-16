@@ -43,10 +43,18 @@ model Session {
   @@index([expiresAt])
 }
 model OAuthAttempt {
+  appChallenge String?
   stateHash String @id
   nonce String
   verifier String
   expiresAt DateTime
+}
+model AppLoginTicket {
+  codeHash String @id
+  challenge String
+  subject String
+  expiresAt DateTime
+  @@index([expiresAt])
 }
 model Category {
   id String @id @default(cuid())

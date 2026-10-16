@@ -5,6 +5,7 @@ const authAttempts = new Set([
   '/api/auth/onboard',
   '/api/auth/google',
   '/api/auth/google/callback',
+  '/api/auth/app/exchange',
 ]);
 
 export function requestRateBucket(request: RequestIdentity): { key: string; limit: number } {

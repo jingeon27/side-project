@@ -10,6 +10,44 @@
     }
   ],
   "paths": {
+    "/api/auth/app/exchange": {
+      "post": {
+        "operationId": "exchangeAppLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppExchangeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/test-accounts": {
       "get": {
         "operationId": "listTestAccounts",
@@ -1767,6 +1805,24 @@
   },
   "components": {
     "schemas": {
+      "AppExchangeInput": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "verifier": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          }
+        },
+        "required": [
+          "code",
+          "verifier"
+        ],
+        "additionalProperties": false
+      },
       "TestAccount": {
         "type": "object",
         "properties": {

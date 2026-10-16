@@ -30,9 +30,13 @@ export class ChatLifecycleMiddleware implements NestMiddleware {
         if (res.statusCode !== 200 || !userId) return;
         if (
           req.method === 'POST' &&
-          ['/api/auth/logout', '/api/auth/demo', '/api/auth/test-login', '/api/auth/onboard'].includes(
-            req.path,
-          ) &&
+          [
+            '/api/auth/logout',
+            '/api/auth/demo',
+            '/api/auth/test-login',
+            '/api/auth/onboard',
+            '/api/auth/app/exchange',
+          ].includes(req.path) &&
           sessionHash
         )
           this.events.closeSession(sessionHash);
