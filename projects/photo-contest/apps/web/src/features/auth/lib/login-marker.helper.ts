@@ -2,7 +2,7 @@ import type { TLoginMethod } from '@/shared/model/analytics';
 
 const PENDING_LOGIN_KEY = 'photo-contest:pending-login';
 const NOTIFIED_USER_KEY = 'photo-contest:auth-notified-user';
-const LOGIN_METHODS = new Set<string>(['google', 'kakao', 'dev']);
+const LOGIN_METHODS = new Set<string>(['google', 'kakao', 'dev', 'password']);
 
 export interface IPendingLogin {
   method: TLoginMethod;
@@ -63,7 +63,7 @@ export function readNotifiedUserId() {
 export function saveNotifiedUserId(userId: string | null) {
   try {
     if (userId) storage()?.setItem(NOTIFIED_USER_KEY, userId);
-    else storage()?.removeItem(NOTIFIED_USER_KEY);
+    if (!userId) storage()?.removeItem(NOTIFIED_USER_KEY);
   } catch {
     // 다음 문서에서 한 번 더 알릴 뿐이다.
   }

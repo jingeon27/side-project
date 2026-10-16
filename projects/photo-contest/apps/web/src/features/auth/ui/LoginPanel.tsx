@@ -2,7 +2,6 @@
 
 import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
 import { BridgeError } from '@photo-contest/bridge/web';
-import type { IWebBridge } from '@photo-contest/bridge/web';
 import { CircleAlert, MessageCircle, RotateCw } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useId, useTransition } from 'react';
@@ -14,7 +13,6 @@ import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
 import { cn } from '@/shared/lib/cn.helper';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
 import { ANALYTICS_EVENT, flushAnalytics, trackEvent } from '@/shared/model/analytics';
-import type { TLoginMethod } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { getErrorMessage } from '@/shared/model/error';
 import { useZodForm } from '@/shared/model/form';
@@ -25,6 +23,8 @@ import { TextField } from '@/shared/ui/@core/text-field';
 
 import { exchangeAppLogin, requestDevLogin } from '../api/auth-request.helper';
 import type { TAuthConfig } from '../api/auth-request.helper';
+import { PasswordAuthForms } from './PasswordAuthForms';
+import { completeLogin } from '../lib/complete-login.helper';
 import { savePendingLogin } from '../lib/login-marker.helper';
 import { retryAuthConfig, useAuthConfig } from '../model/auth-config.store';
 import { devLoginSchema } from '../model/login.schema';
@@ -46,35 +46,27 @@ const DEV_LOGIN_FAILED = '로그인하지 못했어요. 다시 시도해 주세�
 const isCancelled = (error: unknown) =>
   error instanceof BridgeError && error.code === BRIDGE_ERROR_CODE.Cancelled;
 
-/**
- * 세션 쿠키를 받은 뒤 공통 마무리. 앱에 로그인을 알리고, 다음 문서가 성공 이벤트를 보내도록 표시를 남긴 뒤
- * 문서를 새로 연다(이전 사용자의 Apollo 캐시를 통째로 버린다). 사용자 ID는 다음 문서가 Me를 확인하고 알린다.
- */
-const completeLogin = (bridge: IWebBridge | null, method: TLoginMethod, nextPath: string) => {
-  bridge?.notify('auth.changed', { signedIn: true });
-  savePendingLogin({ method, next: nextPath });
-  navigateDocument(nextPath);
-};
-
 function DevLoginForm({ nextPath }: { nextPath: string }) {
   const bridge = useBridge();
   const form = useZodForm(devLoginSchema, { defaultValues: { nickname: '' } });
 
-  const handleSubmit = form.handleSubmit(async ({ nickname }) => {
-    try {
-      await requestDevLogin(nickname);
-    } catch (error) {
-      toast.error(getErrorMessage(error, DEV_LOGIN_FAILED));
-      return;
-    }
-    completeLogin(bridge, 'dev', nextPath);
-  });
-
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3 border-t border-line pt-4">
+    <form
+      onSubmit={form.handleSubmit(async ({ nickname }) => {
+        try {
+          await requestDevLogin(nickname);
+        } catch (error) {
+          toast.error(getErrorMessage(error, DEV_LOGIN_FAILED));
+          return;
+        }
+        completeLogin(bridge, 'dev', nextPath);
+      })}
+      noValidate
+      className="flex flex-col gap-3 border-t border-line pt-4"
+    >
       <p className="text-caption text-muted">로컬 체험용 로그인</p>
       <TextField
-        label="닉네임"
+        label="체험 닉네임"
         placeholder="예: 진건"
         autoComplete="nickname"
         enterKeyHint="go"
@@ -115,12 +107,6 @@ function LoginMethods({ config, nextPath }: { config: TAuthConfig; nextPath: str
       navigateDocument(BACKEND_ROUTES.AUTH_PROVIDER(provider));
     });
 
-  if (!config.google && !config.kakao && !config.developmentLogin)
-    return (
-      <p role="status" className="rounded-control bg-sunken p-3 text-body text-muted">
-        로그인 준비 중입니다. 운영자에게 문의해 주세요.
-      </p>
-    );
   return (
     <div className="flex flex-col gap-4">
       {config.google || config.kakao ? (
@@ -184,6 +170,7 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         </h2>
         <p className="mt-1 text-body text-muted">초대받은 갤러리에서만 사진을 볼 수 있어요.</p>
       </div>
+      <PasswordAuthForms nextPath={next} />
       {loginFailed ? (
         <p
           role="alert"
