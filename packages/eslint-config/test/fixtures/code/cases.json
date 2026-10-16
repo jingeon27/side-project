@@ -1,0 +1,61 @@
+{
+  "no-else": {
+    "valid": [
+      {
+        "file": "no-else/valid/guard.ts"
+      },
+      {
+        "file": "no-else/valid/literal.ts"
+      }
+    ],
+    "invalid": [
+      {
+        "file": "no-else/invalid/else.ts",
+        "errors": [
+          {
+            "messageId": "noElse"
+          }
+        ]
+      },
+      {
+        "file": "no-else/invalid/chain.ts",
+        "errors": [
+          {
+            "messageId": "noElse"
+          },
+          {
+            "messageId": "noElse"
+          }
+        ]
+      }
+    ]
+  },
+  "no-component-fetch": {
+    "valid": [
+      {
+        "file": "no-component-fetch/valid/request.ts"
+      },
+      {
+        "file": "no-component-fetch/valid/Component.tsx"
+      }
+    ],
+    "invalid": [
+      {
+        "file": "no-component-fetch/invalid/Fetch.tsx",
+        "errors": [
+          {
+            "messageId": "mutation"
+          }
+        ]
+      },
+      {
+        "file": "no-component-fetch/invalid/Window.tsx",
+        "errors": [
+          {
+            "messageId": "mutation"
+          }
+        ]
+      }
+    ]
+  }
+}

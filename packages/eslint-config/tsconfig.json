@@ -1,0 +1,12 @@
+{
+  "extends": "@side/typescript-config/base",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "include": ["src/**/*.mjs", "test/**/*.spec.ts", "vitest.config.mts"]
+}
