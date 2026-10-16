@@ -1,11 +1,13 @@
 import type { Linter } from 'eslint';
+import react from 'eslint-plugin-react';
 
-import { coreConfig } from './index';
+import { baseConfig } from './base';
 
-/** React 플러그인은 Next·Expo 등 각 앱의 프레임워크 설정이 제공한다. */
-export const reactConfig = [
-  coreConfig,
+export const reactConfig: Linter.Config[] = [
+  ...baseConfig,
   {
+    plugins: { react },
+    settings: { react: { version: 'detect' } },
     rules: {
       'react/function-component-definition': [
         'error',
@@ -18,4 +20,4 @@ export const reactConfig = [
       'side/no-component-fetch': 'error',
     },
   },
-] satisfies Linter.Config[];
+];

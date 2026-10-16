@@ -1,19 +1,19 @@
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
+import type { TSESLint } from '@typescript-eslint/utils';
 
-import type { IRuleContext } from '../rule.type';
-
-export const noElse = {
+export const noElse: TSESLint.RuleModule<'noElse', []> = {
+  defaultOptions: [],
   meta: {
     type: 'suggestion',
+    docs: { description: 'else 대신 가드와 조기 반환으로 분기한다.' },
     schema: [],
     messages: { noElse: 'else 대신 early return이나 독립된 조건문을 사용하세요.' },
   },
-  create(context: IRuleContext<'noElse'>) {
+  create(context) {
     return {
-      IfStatement(node: TSESTree.IfStatement) {
+      IfStatement(node) {
         if (!node.alternate) return;
         context.report({ node: node.alternate, messageId: 'noElse' });
       },
     };
   },
-} satisfies TSESLint.RuleModule<'noElse', []>;
+};

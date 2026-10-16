@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
+    "./base": "./src/base.ts",
     "./react": "./src/react.ts",
-    "./fsd": "./src/fsd.ts"
+    "./next": "./src/next.ts",
+    "./expo": "./src/expo.ts",
+    "./fsd-boundaries": "./src/fsd-boundaries.ts"
   },
   "scripts": {
     "lint": "eslint .",
