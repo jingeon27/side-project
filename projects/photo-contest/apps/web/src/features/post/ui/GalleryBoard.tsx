@@ -33,31 +33,28 @@ function BoardContent({
       setHasMore(true);
     previous.current = { firstId, count: data.galleryPosts.length };
   }, [firstId, data.galleryPosts.length]);
-  const handleMore = () =>
-    startTransition(async () => {
-      try {
-        const result = await fetchMore({ variables: { offset: data.galleryPosts.length } });
-        setHasMore(result.data.galleryPosts.length === limit);
-      } catch {
-        /* 경계에서 재시도한다. */
-      }
-    });
-  const handleRefresh = () =>
-    startTransition(async () => {
-      try {
-        await refetch();
-        setHasMore(true);
-      } catch {
-        /* 경계에서 재시도한다. */
-      }
-    });
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-caption text-muted">
           {popular ? '이번 달에 올라온 글 · 좋아요순' : '사진·동영상 · 최신순'}
         </p>
-        <Button variant="ghost" size="sm" onClick={handleRefresh} loading={pending}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            startTransition(async () => {
+              try {
+                await refetch();
+                setHasMore(true);
+              } catch {
+                /* 경계에서 재시도한다. */
+              }
+            })
+          }
+          loading={pending}
+        >
           <RefreshCw aria-hidden className="size-4" />
           새로고침
         </Button>
@@ -77,7 +74,20 @@ function BoardContent({
           </div>
         ))}
       {!popular && hasMore && data.galleryPosts.length >= limit ? (
-        <Button variant="secondary" onClick={handleMore} loading={pending}>
+        <Button
+          variant="secondary"
+          onClick={() =>
+            startTransition(async () => {
+              try {
+                const result = await fetchMore({ variables: { offset: data.galleryPosts.length } });
+                setHasMore(result.data.galleryPosts.length === limit);
+              } catch {
+                /* 경계에서 재시도한다. */
+              }
+            })
+          }
+          loading={pending}
+        >
           게시물 더 보기
         </Button>
       ) : null}

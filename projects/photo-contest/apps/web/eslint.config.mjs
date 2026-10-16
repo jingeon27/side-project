@@ -3,7 +3,10 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
-import fsdBoundaries from './eslint/fsd-boundaries.mjs';
+import { fileURLToPath } from 'node:url';
+import { reactConfig } from '@side/eslint-config/react';
+import { createFsdPlugin } from '@side/eslint-config/fsd';
+const fsdBoundaries = createFsdPlugin(fileURLToPath(new URL('./src', import.meta.url)));
 
 // `const [open, setOpen] = useState(...)`, `const [error, setError] = useState('')`처럼
 // 오버레이 열림·mutation 오류를 컴포넌트 상태로 복제하는 선언(첫 이름이 open/isOpen/…Open, error/…Error)
@@ -16,6 +19,7 @@ const USE_STATE_MESSAGE =
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
+  ...reactConfig,
   globalIgnores([
     '.next/**',
     'next-env.d.ts',
@@ -31,13 +35,8 @@ export default defineConfig([
       'fsd/layer-imports': 'error',
       'fsd/slice-public-api': 'error',
       'fsd/no-cross-page': 'error',
-      'react/function-component-definition': [
-        'error',
-        { namedComponents: 'function-declaration', unnamedComponents: 'arrow-function' },
-      ],
       'react/jsx-no-useless-fragment': ['error', { allowExpressions: true }],
       'react/jsx-pascal-case': 'error',
-      'react/jsx-handler-names': ['error', { eventHandlerPrefix: 'handle', eventHandlerPropPrefix: 'on' }],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],

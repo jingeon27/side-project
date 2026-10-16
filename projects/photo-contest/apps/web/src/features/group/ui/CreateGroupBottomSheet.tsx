@@ -33,14 +33,6 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
     },
   });
 
-  const handleSubmit = form.handleSubmit(async ({ name }) => {
-    try {
-      await createGroup({ variables: { name } });
-    } catch {
-      // 실패는 ErrorLink가 토스트로 알린다. 입력을 고쳐 다시 시도할 수 있게 시트를 열어 둔다.
-    }
-  });
-
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
@@ -48,7 +40,17 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
         description="기간 제한 없이 사진과 동영상으로 웃긴 순간을 나눠보세요."
       />
       <BottomSheet.Content>
-        <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(async ({ name }) => {
+            try {
+              await createGroup({ variables: { name } });
+            } catch {
+              // 실패는 ErrorLink가 토스트로 알린다. 입력을 고쳐 다시 시도할 수 있게 시트를 열어 둔다.
+            }
+          })}
+          noValidate
+        >
           <TextField
             label="갤러리 이름"
             placeholder="예: 웃음 참기 연구소"

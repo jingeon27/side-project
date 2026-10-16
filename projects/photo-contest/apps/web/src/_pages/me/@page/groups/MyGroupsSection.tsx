@@ -14,12 +14,6 @@ import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
-function handleCreateGroup() {
-  overlay.open(({ isOpen, close, unmount }) => (
-    <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
-  ));
-}
-
 function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) {
   const { data } = useReadQuery(groupsRef);
   return match(data.myGroups)
@@ -45,7 +39,14 @@ export function MyGroupsSection() {
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-title text-ink">내 갤러리</h2>
-        <Button size="md" onClick={handleCreateGroup}>
+        <Button
+          size="md"
+          onClick={() => {
+            overlay.open(({ isOpen, close, unmount }) => (
+              <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
+            ));
+          }}
+        >
           <Plus aria-hidden className="size-4" />
           갤러리 만들기
         </Button>

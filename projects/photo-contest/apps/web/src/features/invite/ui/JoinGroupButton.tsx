@@ -29,17 +29,19 @@ export function JoinGroupButton({ token }: { token: string }) {
     },
   });
 
-  const handleJoin = async () => {
-    try {
-      await joinGroup();
-    } catch {
-      // 실패는 ErrorLink가 토스트로 알린다.
-    }
-  };
-
   return (
     // 갤러리 화면으로 옮겨 가는 동안 다시 누르지 못하게 가입한 뒤에도 진행 중으로 둔다.
-    <Button fullWidth loading={loading || Boolean(data)} onClick={handleJoin}>
+    <Button
+      fullWidth
+      loading={loading || Boolean(data)}
+      onClick={async () => {
+        try {
+          await joinGroup();
+        } catch {
+          // 실패는 ErrorLink가 토스트로 알린다.
+        }
+      }}
+    >
       초대 수락하고 가입하기
     </Button>
   );

@@ -41,29 +41,7 @@ export function PostCard({ id }: { id: string }) {
     awaitRefetchQueries: true,
   });
   if (!complete) return null;
-  const handleLike = async () => {
-    try {
-      await (post.likedByMe ? unlike : like)({ variables: { postId: id } });
-    } catch {
-      /* ErrorLink가 알린다. */
-    }
-  };
-  const handleDelete = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
-      <ConfirmDialog
-        isOpen={isOpen}
-        onClose={close}
-        unmount={unmount}
-        title="게시물을 삭제할까요?"
-        description="사진·동영상과 좋아요가 함께 삭제됩니다."
-        confirmLabel="게시물 삭제하기"
-        tone="danger"
-        onConfirm={async () => {
-          await remove({ variables: { postId: id } });
-          toast.success('게시물을 삭제했어요');
-        }}
-      />
-    ));
+
   return (
     <article
       className="min-w-0 overflow-hidden rounded-card border border-line bg-surface shadow-card"
@@ -122,7 +100,13 @@ export function PostCard({ id }: { id: string }) {
             aria-label={`${post.title} 좋아요`}
             aria-pressed={post.likedByMe}
             loading={likeState.loading || unlikeState.loading}
-            onClick={handleLike}
+            onClick={async () => {
+              try {
+                await (post.likedByMe ? unlike : like)({ variables: { postId: id } });
+              } catch {
+                /* ErrorLink가 알린다. */
+              }
+            }}
           >
             <Heart aria-hidden className={post.likedByMe ? 'size-4 fill-brand text-brand' : 'size-4'} />
             {post.likeCount}
@@ -133,7 +117,23 @@ export function PostCard({ id }: { id: string }) {
               size="sm"
               className="ml-auto text-danger"
               aria-label={`${post.title} 삭제`}
-              onClick={handleDelete}
+              onClick={() =>
+                overlay.open(({ isOpen, close, unmount }) => (
+                  <ConfirmDialog
+                    isOpen={isOpen}
+                    onClose={close}
+                    unmount={unmount}
+                    title="게시물을 삭제할까요?"
+                    description="사진·동영상과 좋아요가 함께 삭제됩니다."
+                    confirmLabel="게시물 삭제하기"
+                    tone="danger"
+                    onConfirm={async () => {
+                      await remove({ variables: { postId: id } });
+                      toast.success('게시물을 삭제했어요');
+                    }}
+                  />
+                ))
+              }
             >
               <Trash2 aria-hidden className="size-4" />
               삭제

@@ -12,7 +12,10 @@ export function useBackNavigation(parentHref: string) {
   const router = useAppRouter();
   useParentRoute(parentHref);
   return useCallback(() => {
-    if (routeHistoryStore.getDepth() > 0) router.back();
-    else router.push(parentHref);
+    if (routeHistoryStore.getDepth() > 0) {
+      router.back();
+      return;
+    }
+    router.push(parentHref);
   }, [router, parentHref]);
 }

@@ -9,8 +9,11 @@ import { pickOverlayState } from './overlay-history.store';
 export function replaceSearchParams(updates: Record<string, string | null | undefined>) {
   const url = new URL(window.location.href);
   for (const [key, value] of Object.entries(updates)) {
-    if (isNil(value)) url.searchParams.delete(key);
-    else url.searchParams.set(key, value);
+    if (isNil(value)) {
+      url.searchParams.delete(key);
+      continue;
+    }
+    url.searchParams.set(key, value);
   }
   window.history.replaceState(
     pickOverlayState(window.history.state),
