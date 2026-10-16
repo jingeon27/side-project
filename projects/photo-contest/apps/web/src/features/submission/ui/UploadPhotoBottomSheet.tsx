@@ -6,9 +6,13 @@ import Image from 'next/image';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 
-import { CreateSubmissionDocument, RequestUploadDocument, SubmissionsDocument } from '@/shared/api/generated';
+import {
+  CreateSubmissionDocument,
+  RequestUploadDocument,
+  SubmissionsDocument,
+  UploadSubmissionPhotoDocument,
+} from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
-import { RequestError, ensureOk, getErrorMessage } from '@/shared/model/error';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
@@ -45,6 +49,7 @@ export function UploadPhotoBottomSheet({
   const form = useZodForm(uploadPhotoSchema, {
     defaultValues: { photo: null, caption: '', rightsConfirmed: false },
   });
+  const [uploadPhoto] = useMutation(UploadSubmissionPhotoDocument);
   const [requestUpload] = useMutation(RequestUploadDocument);
   const [createSubmission] = useMutation(CreateSubmissionDocument, {
     update: (cache, { data }) => {
@@ -73,30 +78,6 @@ export function UploadPhotoBottomSheet({
     setPreviewUrl(previewUrlRef.current);
   };
 
-  const handleSubmit = form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
-    try {
-      const image = await prepareUploadImage(photo, browserImageCodec);
-      const { data } = await requestUpload({ variables: { contestId } });
-      if (!data) return;
-      await ensureOk(
-        await fetch(data.requestUploadUrl.url, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': image.contentType },
-          body: image.body,
-        }),
-      );
-      await createSubmission({
-        variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
-      });
-    } catch (error) {
-      // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
-      if (error instanceof ImagePrepareError)
-        form.setError('photo', { message: error.message }, { shouldFocus: true });
-      else if (error instanceof RequestError) toast.error(getErrorMessage(error));
-    }
-  });
-
   const { errors, isSubmitting } = form.formState;
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
@@ -105,7 +86,26 @@ export function UploadPhotoBottomSheet({
         description="직접 찍은 사진도 합성도 환영해요. 한 대회에 한 장만 제출할 수 있어요."
       />
       <BottomSheet.Content>
-        <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
+            try {
+              const image = await prepareUploadImage(photo, browserImageCodec);
+              const { data } = await requestUpload({ variables: { contestId } });
+              if (!data) return;
+              await uploadPhoto({ variables: { uploadId: data.requestUploadUrl.id, file: image.body } });
+              await createSubmission({
+                variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
+              });
+            } catch (error) {
+              // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
+              if (error instanceof ImagePrepareError)
+                form.setError('photo', { message: error.message }, { shouldFocus: true });
+            }
+          })}
+          noValidate
+          className="flex flex-col gap-4"
+        >
           <Controller
             control={form.control}
             name="photo"

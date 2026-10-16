@@ -1,13 +1,16 @@
 'use client';
 
-import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
 import { Controller, useWatch } from 'react-hook-form';
 import { useId } from 'react';
 
 import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '@/features/submission';
-import { CreatePostDocument, GalleryPostsDocument, RequestPostUploadDocument } from '@/shared/api/generated';
-import { ensureOk, RequestError, getErrorMessage } from '@/shared/model/error';
+import {
+  CreatePostDocument,
+  GalleryPostsDocument,
+  RequestPostUploadDocument,
+  UploadPostMediaDocument,
+} from '@/shared/api/generated';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
@@ -30,42 +33,14 @@ export function CreatePostBottomSheet({
     defaultValues: { title: '', body: '', media: null, rightsConfirmed: false },
   });
   const media = useWatch({ control: form.control, name: 'media' });
+  const [uploadMedia] = useMutation(UploadPostMediaDocument);
   const [requestUpload] = useMutation(RequestPostUploadDocument);
   const [createPost] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
     refetchQueries: [GalleryPostsDocument],
     awaitRefetchQueries: true,
   });
-  const handleSubmit = form.handleSubmit(async ({ title, body, media: file, rightsConfirmed }) => {
-    try {
-      const content = file.type.startsWith('video/')
-        ? { body: file, contentType: file.type }
-        : await prepareUploadImage(file, browserImageCodec);
-      const { data } = await requestUpload({ variables: { groupId } });
-      if (!data) return;
-      await ensureOk(
-        await fetch(data.requestPostUpload.url, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': content.contentType },
-          body: content.body,
-        }),
-      );
-      await createPost({
-        variables: { groupId, uploadId: data.requestPostUpload.id, title, body, rightsConfirmed },
-      });
-      toast.success('게시물을 올렸어요');
-      onClose();
-    } catch (error) {
-      if (error instanceof ImagePrepareError)
-        form.setError('media', { message: error.message }, { shouldFocus: true });
-      else if (
-        error instanceof RequestError ||
-        (!CombinedGraphQLErrors.is(error) && !ServerError.is(error) && !ServerParseError.is(error))
-      )
-        toast.error(getErrorMessage(error));
-    }
-  });
+
   const { errors, isSubmitting } = form.formState;
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
@@ -74,7 +49,29 @@ export function CreatePostBottomSheet({
         description="사진도 동영상도, 직접 찍은 순간도 합성도 환영해요."
       />
       <BottomSheet.Content>
-        <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          id={formId}
+          noValidate
+          onSubmit={form.handleSubmit(async ({ title, body, media: file, rightsConfirmed }) => {
+            try {
+              const content = file.type.startsWith('video/')
+                ? { body: file, contentType: file.type }
+                : await prepareUploadImage(file, browserImageCodec);
+              const { data } = await requestUpload({ variables: { groupId } });
+              if (!data) return;
+              await uploadMedia({ variables: { uploadId: data.requestPostUpload.id, file: content.body } });
+              await createPost({
+                variables: { groupId, uploadId: data.requestPostUpload.id, title, body, rightsConfirmed },
+              });
+              toast.success('게시물을 올렸어요');
+              onClose();
+            } catch (error) {
+              if (error instanceof ImagePrepareError)
+                form.setError('media', { message: error.message }, { shouldFocus: true });
+            }
+          })}
+          className="flex flex-col gap-4"
+        >
           <TextField label="제목" maxLength={80} error={errors.title?.message} {...form.register('title')} />
           <Controller
             control={form.control}
