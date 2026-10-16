@@ -1,0 +1,43 @@
+name: Game Feedback
+
+on:
+  pull_request:
+    paths:
+      - 'projects/game-feedback/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/game-feedback.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'projects/game-feedback/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/game-feedback.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn format:check
+      - run: yarn workspace @side/game-feedback codegen
+      - name: Check generated API contract
+        run: git diff --exit-code -- projects/game-feedback/apps/api/openapi.json projects/game-feedback/packages/sdk/src/generated
+      - run: yarn check:game-feedback
+      - run: yarn test:game-feedback
+      - run: yarn build:game-feedback
+      - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium
+      - run: yarn workspace @side/game-feedback test:e2e
+      - name: Stop owned test database
+        if: always()
+        run: yarn workspace @side/game-feedback db:test:stop

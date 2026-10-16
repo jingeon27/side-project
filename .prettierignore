@@ -15,3 +15,5 @@ yarn.lock
 **/.e2e-build
 **/.expo
 **/.expo-export-check
+projects/game-feedback/docs/mvp-plan-v4.md
+projects/game-feedback/apps/api/openapi.json

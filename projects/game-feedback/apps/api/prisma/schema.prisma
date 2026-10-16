@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(cuid())
+  googleSubject String? @unique
+  demoKey String? @unique
+  nickname String
+  isVerified Boolean @default(false)
+  verifiedAt DateTime?
+  supercellTag String?
+  role String @default("USER")
+  termsVersion String
+  termsAcceptedAt DateTime @default(now())
+  ageConfirmed Boolean
+  createdAt DateTime @default(now())
+  chatAsFirst ChatConversation[] @relation("chatFirst")
+  chatAsSecond ChatConversation[] @relation("chatSecond")
+  chatMessages ChatMessage[]
+  sessions Session[]
+  gameAccounts GameAccount[]
+  posts Post[]
+  answers Answer[]
+  comments Comment[]
+  notifications Notification[]
+  reports Report[]
+  blocks Block[] @relation("blocker")
+  blockedBy Block[] @relation("blocked")
+}
+model Session {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pendingSubject String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+model OAuthAttempt {
+  stateHash String @id
+  nonce String
+  verifier String
+  expiresAt DateTime
+}
+model Category {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  active Boolean @default(true)
+  posts Post[]
+}
+model GameAccount {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  playerTag String
+  profile Json
+  updatedAt DateTime @updatedAt
+  @@unique([userId,playerTag])
+}
+model Post {
+  id String @id @default(cuid())
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  categoryId String
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+  title String
+  body String
+  gameProfile Json?
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  answers Answer[]
+  comments Comment[]
+  notifications Notification[]
+  @@index([createdAt,id])
+  @@index([categoryId,createdAt])
+}
+model Answer {
+  id String @id @default(cuid())
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  body String
+  helpful Boolean @default(false)
+  readAt DateTime?
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+}
+model Comment {
+  id String @id @default(cuid())
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  body String
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+}
+model Notification {
+  id String @id @default(cuid())
+  actorId String?
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  answerId String?
+  type String
+  message String
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId,createdAt,id])
+}
+model Report {
+  id String @id @default(cuid())
+  reporterId String
+  reporter User @relation(fields:[reporterId],references:[id],onDelete:Cascade)
+  targetType String
+  targetId String
+  reason String
+  detail String?
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  @@unique([reporterId,targetType,targetId])
+}
+model Block {
+  id String @id @default(cuid())
+  userId String
+  user User @relation("blocker",fields:[userId],references:[id],onDelete:Cascade)
+  blockedUserId String
+  blockedUser User @relation("blocked",fields:[blockedUserId],references:[id],onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId,blockedUserId])
+}
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String
+  action String
+  targetType String
+  targetId String
+  detail String
+  createdAt DateTime @default(now())
+}
+
+model ChatConversation {
+  id String @id @default(cuid())
+  firstUserId String
+  firstUser User @relation("chatFirst", fields:[firstUserId], references:[id], onDelete:Cascade)
+  secondUserId String
+  secondUser User @relation("chatSecond", fields:[secondUserId], references:[id], onDelete:Cascade)
+  firstReadAt DateTime?
+  firstReadId String?
+  secondReadAt DateTime?
+  secondReadId String?
+  updatedAt DateTime @default(now())
+  messages ChatMessage[]
+  @@unique([firstUserId,secondUserId])
+  @@index([firstUserId,updatedAt,id])
+  @@index([secondUserId,updatedAt,id])
+}
+model ChatMessage {
+  id String @id @default(cuid())
+  conversationId String
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  senderId String
+  sender User @relation(fields:[senderId],references:[id],onDelete:Cascade)
+  clientMessageId String
+  body String
+  createdAt DateTime @default(now())
+  @@unique([senderId,clientMessageId])
+  @@index([conversationId,createdAt,id])
+}
