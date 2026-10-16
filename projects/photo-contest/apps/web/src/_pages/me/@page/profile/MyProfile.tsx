@@ -13,14 +13,12 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
   if (!viewer) return null;
   return (
     <section className="flex flex-wrap items-center gap-6 border-b border-line pb-8 tablet:gap-10 tablet:px-6">
-      <div className="rounded-full bg-linear-to-tr from-accent via-danger to-info p-1">
-        <Avatar
-          name={viewer.nickname}
-          src={viewer.avatar}
-          size="lg"
-          className="size-24 border-4 border-surface text-display tablet:size-32"
-        />
-      </div>
+      <Avatar
+        name={viewer.nickname}
+        src={viewer.avatar}
+        size="lg"
+        className="size-20 text-display tablet:size-24"
+      />
       <div className="flex min-w-0 flex-1 flex-col items-start gap-4">
         <div>
           <p className="mb-1 text-caption text-muted">나의 프로필</p>

@@ -19,26 +19,31 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
     <article aria-label={post.title} className="min-w-0">
       <Link
         href={ROUTES.GROUP(post.groupId)}
-        className="group flex min-w-0 flex-col items-center gap-2 rounded-control text-center transition-opacity hover:opacity-75 active:opacity-60 desktop:flex-row desktop:text-left"
+        className="flex min-w-0 flex-col gap-2.5 rounded-card transition-opacity hover:opacity-75 active:opacity-60 desktop:flex-row desktop:items-center"
       >
-        <span className="relative flex size-16 shrink-0 rounded-full bg-linear-to-tr from-accent via-danger to-info p-0.5">
-          <span className="relative size-full overflow-hidden rounded-full border-2 border-surface bg-sunken">
-            {post.kind === PostKind.Photo ? (
-              <Image src={post.mediaUrl} alt="" fill unoptimized sizes="64px" className="object-cover" />
-            ) : (
-              <span className="flex size-full items-center justify-center bg-neutral-soft text-ink">
-                <Play aria-hidden className="size-5" />
-              </span>
-            )}
-          </span>
-          <span className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-surface bg-brand text-micro text-on-brand">
+        <span className="relative aspect-4/3 w-full shrink-0 overflow-hidden rounded-control bg-sunken desktop:size-16 desktop:aspect-square">
+          {post.kind === PostKind.Photo ? (
+            <Image
+              src={post.mediaUrl}
+              alt=""
+              fill
+              unoptimized
+              sizes="(min-width: 1024px) 64px, (min-width: 768px) 224px, 33vw"
+              className="object-cover"
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center bg-neutral-soft text-ink">
+              <Play aria-hidden className="size-5" />
+            </span>
+          )}
+          <span className="absolute top-1 left-1 flex size-5 items-center justify-center rounded-badge bg-surface text-micro text-ink shadow-card">
             {rank}
           </span>
         </span>
         <span className="flex w-full min-w-0 flex-col gap-0.5">
           <span className="truncate text-label text-ink">{post.title}</span>
-          <span className="hidden truncate text-caption text-muted desktop:block">{post.groupName}</span>
-          <span className="flex items-center justify-center gap-1 text-micro text-muted desktop:justify-start">
+          <span className="truncate text-caption text-muted">{post.groupName}</span>
+          <span className="flex items-center gap-1 text-caption text-muted">
             <Heart aria-hidden className="size-3" />
             좋아요 {formatCount(post.likeCount)}개
           </span>
