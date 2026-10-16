@@ -36,13 +36,13 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 공용 린트와 오버레이
 
-저장소 packages/eslint-config가 else 금지·컴포넌트 fetch 금지·React 핸들러 규칙과 앱 경로를 주입받는 FSD 규칙을 제공한다. 규칙·FSD 플러그인과 앱별 eslint.config.ts는 TypeScript이며 AST·메시지 ID·설정 타입을 검사한다. 설정은 각 워크스페이스의 Jiti가 로드하고 프로젝트 루트 설정도 tsconfig.lint.json으로 확인한다. TypeScript RuleTester는 실제 fixture 파일과 cases.json을 읽으며 패키지 자체 Vitest에서 실행한다. 웹·모바일·프로젝트 설정이 이 패키지를 소비하고 CI가 패키지 검사도 실행한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
+저장소 packages/eslint-config의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 바로 옆 <규칙>.spec.ts에서 실제 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/lib가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
 
 시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
 
 ## 검증
 
-- Vitest 723개: API unit 63·실제 PostgreSQL/supertest 193, 웹 unit/UI 238·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 41.
+- Vitest 727개: API unit 63·실제 PostgreSQL/supertest 193, 웹 unit/UI 238·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 45.
 - Playwright 47개(웹 23·모바일 24) 통과. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 웹 Chrome·WebKit·데스크톱·가짜 앱과 모바일 Android/iOS 가짜 WebView에서 갤러리 생성·초대·사진/동영상 등록·좋아요·인기 정렬·관리자 삭제, 접근 제한·반응형·SSR·앱 기능을 검사한다. 실제 MP4를 재생하고 currentTime·탐색을 확인한다.
 - codegen·타입 검사·lint와 웹 프로덕션 빌드를 검사한다. 테스트 러너와 설정은 각 앱이 소유하고 전용 DB의 임시 스키마·별도 서버 포트를 사용한다.
 - 기존 대회 API·이전 URL의 단계·정렬·권한 테스트도 유지한다. 새 갤러리에는 이 흐름을 노출하지 않는다.
