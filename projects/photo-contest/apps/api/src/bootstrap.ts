@@ -11,7 +11,14 @@ import { bodyParserErrorHandler } from './common/http/body-parser-error.middlewa
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
 import { assertProductionConfig, assertTestingConfig, isTest } from './config/env';
-import { MAX_JSON_BODY, MAX_UPLOAD_BODY, MAX_MEDIA_BODY, MAX_VIDEO_BYTES, MAX_GRAPHQL_FIELD_BYTES, MAX_GRAPHQL_UPLOAD_FILES } from './config/limits';
+import {
+  MAX_JSON_BODY,
+  MAX_UPLOAD_BODY,
+  MAX_MEDIA_BODY,
+  MAX_VIDEO_BYTES,
+  MAX_GRAPHQL_FIELD_BYTES,
+  MAX_GRAPHQL_UPLOAD_FILES,
+} from './config/limits';
 
 const UPLOAD_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log'];
@@ -36,7 +43,11 @@ export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INe
   app.use(originGuard);
   app.use(
     '/graphql',
-    graphqlUploadExpress({ maxFileSize: MAX_VIDEO_BYTES, maxFiles: MAX_GRAPHQL_UPLOAD_FILES, maxFieldSize: MAX_GRAPHQL_FIELD_BYTES }),
+    graphqlUploadExpress({
+      maxFileSize: MAX_VIDEO_BYTES,
+      maxFiles: MAX_GRAPHQL_UPLOAD_FILES,
+      maxFieldSize: MAX_GRAPHQL_FIELD_BYTES,
+    }),
   );
   app.use('/uploads', raw({ type: UPLOAD_CONTENT_TYPES, limit: MAX_UPLOAD_BODY }));
   app.use(
