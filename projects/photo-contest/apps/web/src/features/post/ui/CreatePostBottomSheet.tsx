@@ -1,8 +1,9 @@
 'use client';
 
 import { useMutation } from '@apollo/client/react';
+import { ImagePlus } from 'lucide-react';
 import { Controller, useWatch } from 'react-hook-form';
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '@/features/submission';
 import {
@@ -19,6 +20,7 @@ import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-fi
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
+import { PostMediaPreview } from './PostMediaPreview';
 
 export function CreatePostBottomSheet({
   groupId,
@@ -28,11 +30,26 @@ export function CreatePostBottomSheet({
 }: IBottomSheetControlProps & { groupId: string }) {
   const formId = useId();
   const mediaErrorId = useId();
+  const mediaHelpId = useId();
   const rightsErrorId = useId();
+  const previewUrlRef = useRef<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const form = useZodForm(postSchema, {
     defaultValues: { title: '', body: '', media: null, rightsConfirmed: false },
   });
   const media = useWatch({ control: form.control, name: 'media' });
+  useEffect(
+    () => () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    },
+    [],
+  );
+  const handlePreviewChange = (file: File | null) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current =
+      file && postSchema.shape.media.safeParse(file).success ? URL.createObjectURL(file) : null;
+    setPreviewUrl(previewUrlRef.current);
+  };
   const [uploadMedia] = useMutation(UploadPostMediaDocument);
   const [requestUpload] = useMutation(RequestPostUploadDocument);
   const [createPost] = useMutation(CreatePostDocument, {
@@ -84,7 +101,7 @@ export function CreatePostBottomSheet({
             name="media"
             render={({ field }) => (
               <div className="flex flex-col gap-2">
-                <label className="flex min-h-touch cursor-pointer flex-col gap-2 rounded-control border border-dashed border-line-strong bg-sunken p-4 text-body text-ink">
+                <label className="flex min-h-touch cursor-pointer flex-col gap-2 rounded-control border border-dashed border-line-strong bg-sunken p-4 text-body text-ink transition-colors has-focus-visible:border-brand has-focus-visible:outline-3 has-focus-visible:outline-accent hover:bg-neutral-soft active:bg-neutral-soft">
                   <span>
                     사진·동영상 선택
                     <FieldRequirement required />
@@ -99,15 +116,23 @@ export function CreatePostBottomSheet({
                     onBlur={() => field.onBlur()}
                     disabled={isSubmitting}
                     aria-invalid={Boolean(errors.media)}
-                    aria-describedby={errors.media ? mediaErrorId : undefined}
+                    aria-describedby={errors.media ? `${mediaHelpId} ${mediaErrorId}` : mediaHelpId}
                     onChange={(event) => {
-                      field.onChange(event.currentTarget.files?.[0] ?? null);
+                      const file = event.currentTarget.files?.[0];
                       event.currentTarget.value = '';
+                      if (!file) return;
+                      field.onChange(file);
+                      handlePreviewChange(file);
+                      void form.trigger('media');
                     }}
-                    className="max-w-full text-caption"
+                    className="sr-only"
                   />
-                  <span className="text-caption text-muted">
-                    {media?.name ?? '사진은 자동으로 줄여요. 동영상 MP4(H.264)·WebM · 100MB · 5분 이하'}
+                  <span className="flex min-h-touch items-center gap-2 text-label text-ink">
+                    <ImagePlus aria-hidden className="size-5" />
+                    {media ? '파일 바꾸기' : '파일 선택'}
+                  </span>
+                  <span id={mediaHelpId} className="text-caption text-muted">
+                    사진은 자동으로 줄여요. 동영상 MP4(H.264)·WebM · 100MB · 5분 이하
                   </span>
                 </label>
                 {errors.media ? (
@@ -118,6 +143,17 @@ export function CreatePostBottomSheet({
               </div>
             )}
           />
+          {media && previewUrl ? (
+            <PostMediaPreview
+              key={previewUrl}
+              file={media}
+              src={previewUrl}
+              onRemove={() => {
+                handlePreviewChange(null);
+                form.setValue('media', null, { shouldValidate: true, shouldDirty: true });
+              }}
+            />
+          ) : null}
           <TextArea
             label="내용"
             rows={4}

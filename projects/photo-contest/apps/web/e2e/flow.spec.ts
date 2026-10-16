@@ -12,6 +12,16 @@ async function writePost(page: Page, title: string, video = false) {
     mimeType: video ? 'video/mp4' : 'image/png',
     buffer: video ? await createTestVideo() : await createTestImage(),
   });
+  if (video) {
+    const preview = sheet.getByLabel('선택한 동영상 미리보기', { exact: true });
+    await expect
+      .poll(() => preview.evaluate((el: HTMLVideoElement) => el.readyState))
+      .toBeGreaterThanOrEqual(2);
+  }
+  if (!video) {
+    const preview = sheet.getByRole('img', { name: '선택한 사진 미리보기', exact: true });
+    await expect.poll(() => preview.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+  }
   await sheet.getByLabel('내용', { exact: true }).fill('합성도 환영하는 상시 갤러리');
   await sheet.getByRole('checkbox').check();
   await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
