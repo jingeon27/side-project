@@ -57,3 +57,7 @@ mutation UnlikePost($postId: ID!) {
 mutation DeletePost($postId: ID!) {
   deletePost(postId: $postId)
 }
+
+mutation UploadPostMedia($uploadId: ID!, $file: Upload!) {
+  uploadPostMedia(uploadId: $uploadId, file: $file)
+}

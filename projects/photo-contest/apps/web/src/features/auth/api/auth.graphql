@@ -5,3 +5,18 @@ query Me {
     avatar
   }
 }
+
+mutation RegisterWithPassword($loginId: String!, $password: String!, $nickname: String!) {
+  registerWithPassword(loginId: $loginId, password: $password, nickname: $nickname) {
+    id
+    nickname
+    avatar
+  }
+}
+mutation LoginWithPassword($loginId: String!, $password: String!) {
+  loginWithPassword(loginId: $loginId, password: $password) {
+    id
+    nickname
+    avatar
+  }
+}

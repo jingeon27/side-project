@@ -47,3 +47,7 @@ mutation CreateSubmission($contestId: ID!, $uploadId: ID!, $caption: String!, $r
     ...SubmissionCard
   }
 }
+
+mutation UploadSubmissionPhoto($uploadId: ID!, $file: Upload!) {
+  uploadSubmissionPhoto(uploadId: $uploadId, file: $file)
+}

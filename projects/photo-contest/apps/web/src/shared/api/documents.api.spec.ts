@@ -5,12 +5,18 @@ import {
   graphqlRequest,
   moveTestContest,
 } from '@photo-contest/test-kit';
+import { ApolloClient, InMemoryCache } from '@apollo/client';
+import UploadHttpLink from 'apollo-upload-client/UploadHttpLink.mjs';
 import { print } from 'graphql';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
   CreatePostDocument,
+  UploadPostMediaDocument,
+  UploadSubmissionPhotoDocument,
+  RegisterWithPasswordDocument,
+  LoginWithPasswordDocument,
   DeletePostDocument,
   GalleryPostsDocument,
   LikePostDocument,
@@ -63,14 +69,35 @@ async function ok<TData, TVariables extends Record<string, unknown>>(
   return result.data;
 }
 
+async function uploadMutation<TData, TVariables extends Record<string, unknown>>(
+  document: TypedDocumentNode<TData, TVariables>,
+  cookie: string,
+  variables: TVariables,
+) {
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: new UploadHttpLink({
+      uri: `${url}/graphql`,
+      headers: { Cookie: cookie, Origin: origin, 'Apollo-Require-Preflight': 'true' },
+    }),
+  });
+  try {
+    return await client.mutate({ mutation: document, variables });
+  } finally {
+    client.stop();
+  }
+}
+
 async function submit(cookie: string, contestId: string, caption: string) {
   const { requestUploadUrl: ticket } = await ok(RequestUploadDocument, cookie, { contestId });
-  const uploaded = await fetch(`${url}${ticket.url.replace(/^\/backend/, '')}`, {
-    method: 'POST',
-    headers: { Cookie: cookie, Origin: origin, 'Content-Type': 'image/png' },
-    body: new Uint8Array(await createTestImage()),
-  });
-  expect(uploaded.status).toBe(201);
+  expect(
+    (
+      await uploadMutation(UploadSubmissionPhotoDocument, cookie, {
+        uploadId: ticket.id,
+        file: new File([new Uint8Array(await createTestImage())], 'image.png', { type: 'image/png' }),
+      })
+    ).data?.uploadSubmissionPhoto,
+  ).toBe(true);
   return (
     await ok(CreateSubmissionDocument, cookie, {
       contestId,
@@ -107,6 +134,26 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     contestId = contest.createContest.id;
   });
 
+  it('직접 가입·로그인 문서가 개발 로그인 없이도 실행돼야 한다', async () => {
+    const variables = {
+      loginId: 'document_account',
+      password: '기억할 수 있는 나만의 긴 비밀번호',
+      nickname: '직접 가입',
+    };
+    const registered = (await ok(RegisterWithPasswordDocument, undefined, variables)).registerWithPassword;
+    expect(
+      (
+        await ok(LoginWithPasswordDocument, undefined, {
+          loginId: 'DOCUMENT_ACCOUNT',
+          password: variables.password,
+        })
+      ).loginWithPassword.id,
+    ).toBe(registered.id);
+    expect(
+      (await execute(LoginWithPasswordDocument, undefined, { loginId: variables.loginId, password: 'wrong' }))
+        .errors?.[0]?.extensions?.code,
+    ).toBe('UNAUTHENTICATED');
+  });
   it('사용자·그룹·초대 문서가 실제 세션과 멤버십을 반영해야 한다', async () => {
     expect((await ok(MeDocument, owner, {})).me?.nickname).toBe('문서-관리자');
     expect((await ok(MeDocument, undefined, {})).me).toBeNull();
@@ -254,12 +301,15 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     const created = [];
     for (const video of [false, true]) {
       const ticket = (await ok(RequestPostUploadDocument, member, { groupId })).requestPostUpload;
-      const response = await fetch(url + ticket.url.replace(/^\/backend/, ''), {
-        method: 'POST',
-        headers: { Cookie: member, Origin: origin, 'Content-Type': video ? 'video/mp4' : 'image/png' },
-        body: new Uint8Array(video ? await createTestVideo() : await createTestImage()),
+      const uploaded = await uploadMutation(UploadPostMediaDocument, member, {
+        uploadId: ticket.id,
+        file: new File(
+          [new Uint8Array(video ? await createTestVideo() : await createTestImage())],
+          video ? 'video.mp4' : 'image.png',
+          { type: video ? 'video/mp4' : 'image/png' },
+        ),
       });
-      expect(response.status).toBe(201);
+      expect(uploaded.data?.uploadPostMedia).toBe(true);
       const post = (
         await ok(CreatePostDocument, member, {
           groupId,
