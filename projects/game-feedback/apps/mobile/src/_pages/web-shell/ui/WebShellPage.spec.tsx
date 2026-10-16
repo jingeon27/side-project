@@ -26,6 +26,18 @@ afterEach(() => {
   Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
 });
 describe('mobile WebView shell', () => {
+  it('keeps the automatic language entry when the first document is recreated before redirect', () => {
+    render(<WebShellPage />);
+    act(() =>
+      currentWebViewProps().onNavigationStateChange?.({
+        ...event().nativeEvent,
+        url: 'https://feedback.example/',
+        navigationType: 'other',
+      }),
+    );
+    act(() => currentWebViewProps().onRenderProcessGone?.(event({ didCrash: true })));
+    expect(currentWebViewProps().source).toEqual({ uri: 'https://feedback.example/' });
+  });
   it('disables swipe history while an overlay is open and remembers normalized query locations', () => {
     render(<WebShellPage />);
     act(() =>
@@ -47,7 +59,7 @@ describe('mobile WebView shell', () => {
   it('owns safe-area chrome and enables cookie persistence, strict policy and early bootstrap', () => {
     render(<WebShellPage />);
     const props = currentWebViewProps();
-    expect(props.source).toEqual({ uri: url });
+    expect(props.source).toEqual({ uri: 'https://feedback.example/' });
     expect(props.originWhitelist).toEqual(['*']);
     expect(props.sharedCookiesEnabled).toBe(true);
     expect(props.thirdPartyCookiesEnabled).toBe(true);
@@ -212,5 +224,25 @@ describe('mobile WebView shell', () => {
     expect(fakeWebView.handle.injectJavaScript).toHaveBeenCalledTimes(2);
     rendered.unmount();
     expect(remove).toHaveBeenCalledOnce();
+  });
+  it('subscribes to channel updates without reinstalling OS listeners and detaches the WebView on unmount', () => {
+    const states = vi.spyOn(AppState, 'addEventListener');
+    const rendered = render(<WebShellPage />);
+    expect(screen.getByLabelText('페이지 불러오는 중')).toBeTruthy();
+    act(() => currentWebViewProps().onMessage?.(event({ data: JSON.stringify({ type: 'ready' }) })));
+    expect(screen.queryByLabelText('페이지 불러오는 중')).toBeNull();
+    act(() =>
+      currentWebViewProps().onMessage?.(
+        event({ data: JSON.stringify({ type: 'navigation-state', overlayOpen: true }) }),
+      ),
+    );
+    expect(currentWebViewProps().allowsBackForwardNavigationGestures).toBe(false);
+    expect(ExpoLinking.addEventListener).toHaveBeenCalledOnce();
+    expect(states).toHaveBeenCalledOnce();
+
+    const reload = currentWebViewProps().onContentProcessDidTerminate;
+    rendered.unmount();
+    act(() => reload?.(event()));
+    expect(fakeWebView.handle.reload).not.toHaveBeenCalled();
   });
 });

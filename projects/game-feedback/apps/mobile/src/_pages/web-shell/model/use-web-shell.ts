@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { BackHandler, Linking, Platform } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
 import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge';
@@ -6,16 +6,15 @@ import { createNativeHost, nativeLogin } from '@/features/bridge';
 import { decideNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
 import { APP_VERSION, WEB_ORIGIN } from '@/shared/config/env';
 import { isLoadFailure } from '../lib/load-error';
-import { createWebViewChannel } from './web-view-channel';
+import { WebViewChannel } from './web-view-channel';
 import { useShellLifecycle } from './use-shell-lifecycle';
 
 export function useWebShell() {
-  const [channel] = useState(() => createWebViewChannel(`${WEB_ORIGIN}/ko`));
-  const [sourceUrl, setSourceUrl] = useState(`${WEB_ORIGIN}/ko`);
-  const [webViewKey, setWebViewKey] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [offline, setOffline] = useState(false);
-  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [channel] = useState(() => new WebViewChannel(`${WEB_ORIGIN}/`));
+  const { sourceUrl, webViewKey, loading, offline, overlayOpen } = useSyncExternalStore(
+    channel.subscribe,
+    channel.getSnapshot,
+  );
   const [host] = useState(() =>
     createNativeHost({
       origin: WEB_ORIGIN,
@@ -24,8 +23,8 @@ export function useWebShell() {
       onLocation: (path) => {
         channel.rememberUrl(`${WEB_ORIGIN}${path}`);
       },
-      onReady: () => setLoading(false),
-      onOverlayChange: setOverlayOpen,
+      onReady: channel.finishLoading,
+      onOverlayChange: channel.setOverlayOpen,
       onRootBack: () => BackHandler.exitApp(),
     }),
   );
@@ -36,7 +35,7 @@ export function useWebShell() {
         const path = toWebPath(url, WEB_ORIGIN);
         if (!path) return;
         channel.rememberUrl(`${WEB_ORIGIN}${path}`);
-        if (!host.open(path)) setSourceUrl(channel.currentUrl());
+        if (!host.open(path)) channel.loadCurrentDocument();
       },
       onState: host.state,
       onBack: host.back,
@@ -53,15 +52,11 @@ export function useWebShell() {
   useShellLifecycle(lifecycle);
   function recreate() {
     host.reset();
-    setOffline(false);
-    setLoading(true);
-    setSourceUrl(channel.currentUrl());
-    setWebViewKey((value) => value + 1);
+    channel.recreate();
   }
   function fail() {
     host.reset();
-    setLoading(false);
-    setOffline(true);
+    channel.fail();
   }
   function navigate(url: string, newWindow = false) {
     const decision = decideNavigation(url, WEB_ORIGIN);
@@ -95,13 +90,14 @@ export function useWebShell() {
     onMessage: (event) => host.receive(event.nativeEvent.data, event.nativeEvent.url),
     onNavigationStateChange: (state) => {
       channel.rememberHistory(state.canGoBack);
-      const path = toWebPath(state.url, WEB_ORIGIN);
+      const path =
+        state.url === WEB_ORIGIN || state.url === `${WEB_ORIGIN}/` ? null : toWebPath(state.url, WEB_ORIGIN);
       if (path) channel.rememberUrl(`${WEB_ORIGIN}${path}`);
     },
     onLoadStart: (event) => {
       if (Platform.OS === 'ios' && channel.startsDocument(event.nativeEvent.url)) host.reset();
     },
-    onLoadEnd: () => setLoading(false),
+    onLoadEnd: channel.finishLoading,
     onError: (event) => {
       event.preventDefault();
       if (isSameOrigin(event.nativeEvent.url, WEB_ORIGIN) && isLoadFailure(event.nativeEvent)) fail();
