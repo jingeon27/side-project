@@ -1,4 +1,9 @@
-import { parseWebMessage, type TLoginResult, type TNativeMessage } from '@game-feedback/bridge';
+import {
+  parseWebMessage,
+  WebPathSchema,
+  type TLoginResult,
+  type TNativeMessage,
+} from '@game-feedback/bridge';
 
 interface IHostOptions {
   origin: string;
@@ -6,6 +11,8 @@ interface IHostOptions {
   login: () => Promise<TLoginResult>;
   onLocation: (path: string) => void;
   onReady?: () => void;
+  onOverlayChange?: (open: boolean) => void;
+  onRootBack?: () => void;
 }
 export function createNativeHost(options: IHostOptions) {
   let ready = false;
@@ -24,7 +31,8 @@ export function createNativeHost(options: IHostOptions) {
     reset() {
       ready = false;
       generation += 1;
-      finishBack(false);
+      options.onOverlayChange?.(false);
+      finishBack(true);
     },
     receive(data: string, sourceUrl: string) {
       if (!(sourceUrl === options.origin || sourceUrl.startsWith(`${options.origin}/`))) return;
@@ -35,7 +43,15 @@ export function createNativeHost(options: IHostOptions) {
         options.onReady?.();
       }
       if (message.type === 'location') options.onLocation(message.path);
-      if (message.type === 'back-result' && back?.id === message.id) finishBack(message.handled);
+      if (message.type === 'navigation-state') options.onOverlayChange?.(message.overlayOpen);
+      if (message.type === 'back-result' && back?.id === message.id) {
+        if (message.atRoot && !message.handled && options.onRootBack) {
+          options.onRootBack();
+          finishBack(true);
+          return;
+        }
+        finishBack(message.handled);
+      }
       if (message.type === 'auth-request') {
         if (authPending) {
           options.send({ type: 'auth-result', id: message.id, status: 'cancelled' });
@@ -53,8 +69,9 @@ export function createNativeHost(options: IHostOptions) {
       }
     },
     open(path: string) {
-      if (!ready) return false;
-      options.send({ type: 'open', path });
+      const parsed = WebPathSchema.safeParse(path);
+      if (!ready || !parsed.success) return false;
+      options.send({ type: 'open', path: parsed.data });
       return true;
     },
     state(state: 'active' | 'background') {

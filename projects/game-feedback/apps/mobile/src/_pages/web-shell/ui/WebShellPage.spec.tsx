@@ -26,6 +26,24 @@ afterEach(() => {
   Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
 });
 describe('mobile WebView shell', () => {
+  it('disables swipe history while an overlay is open and remembers normalized query locations', () => {
+    render(<WebShellPage />);
+    act(() =>
+      currentWebViewProps().onMessage?.(
+        event({ data: JSON.stringify({ type: 'navigation-state', overlayOpen: true }) }),
+      ),
+    );
+    expect(currentWebViewProps().allowsBackForwardNavigationGestures).toBe(false);
+    act(() =>
+      currentWebViewProps().onMessage?.(
+        event({ data: JSON.stringify({ type: 'location', path: '/ko?tab=unanswered&q=hog' }) }),
+      ),
+    );
+    act(() => currentWebViewProps().onError?.(event({ code: -1009, description: 'offline' })));
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+    expect(currentWebViewProps().source).toEqual({ uri: 'https://feedback.example/ko?tab=unanswered&q=hog' });
+    expect(currentWebViewProps().allowsBackForwardNavigationGestures).toBe(true);
+  });
   it('owns safe-area chrome and enables cookie persistence, strict policy and early bootstrap', () => {
     render(<WebShellPage />);
     const props = currentWebViewProps();

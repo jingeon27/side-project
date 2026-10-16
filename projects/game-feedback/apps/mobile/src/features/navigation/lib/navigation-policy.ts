@@ -16,7 +16,13 @@ export function toWebPath(url: string, origin: string): string | null {
       ? `/${url.slice(APP_SCHEME.length + 3)}`
       : null;
   if (candidate === null) return null;
-  const result = WebPathSchema.safeParse(candidate || '/ko');
+  const normalized =
+    candidate === '' || candidate === '/'
+      ? '/ko'
+      : candidate.startsWith('/?')
+        ? `/ko${candidate.slice(1)}`
+        : candidate;
+  const result = WebPathSchema.safeParse(normalized);
   return result.success ? result.data : null;
 }
 export type TNavigation =

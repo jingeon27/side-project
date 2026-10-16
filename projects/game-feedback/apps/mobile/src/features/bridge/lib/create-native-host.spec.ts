@@ -13,6 +13,31 @@ function setup() {
 }
 afterEach(() => vi.useRealTimers());
 describe('native bridge boundary', () => {
+  it('reports overlay gestures and exits only for a matching root-back response', async () => {
+    const onOverlayChange = vi.fn();
+    const onRootBack = vi.fn();
+    const send = vi.fn();
+    const host = createNativeHost({
+      origin,
+      send,
+      login: async () => ({ status: 'cancelled' }),
+      onLocation: vi.fn(),
+      onOverlayChange,
+      onRootBack,
+    });
+    const receive = (message: unknown) => host.receive(JSON.stringify(message), `${origin}/ko`);
+    receive({ type: 'ready' });
+    receive({ type: 'navigation-state', overlayOpen: true });
+    expect(onOverlayChange).toHaveBeenLastCalledWith(true);
+    const back = host.back();
+    receive({ type: 'back-result', id: 'wrong', handled: false, atRoot: true });
+    expect(onRootBack).not.toHaveBeenCalled();
+    receive({ type: 'back-result', id: send.mock.calls.at(-1)?.[0].id, handled: false, atRoot: true });
+    expect(await back).toBe(true);
+    expect(onRootBack).toHaveBeenCalledOnce();
+    host.reset();
+    expect(onOverlayChange).toHaveBeenLastCalledWith(false);
+  });
   it('ignores untrusted frames, malformed envelopes and unsafe paths', () => {
     const ctx = setup();
     ctx.receive({ type: 'auth-request', id: 'x' }, `${origin}.evil/ko`);
@@ -46,7 +71,7 @@ describe('native bridge boundary', () => {
     expect(await timed).toBe(false);
     const cancelled = host.back();
     host.reset();
-    expect(await cancelled).toBe(false);
+    expect(await cancelled).toBe(true);
     expect(host.open('/ko')).toBe(false);
   });
   it('serializes native auth and discards results from replaced documents', async () => {

@@ -1,7 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
+import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
 const origin = 'https://feedback.example';
 describe('WebView navigation and deep links', () => {
+  it('shares nested chat paths and preserves only route-owned query state', () => {
+    for (const locale of ['ko', 'en', 'ja']) {
+      const feed = appRoutes.feed(locale, { q: '호그 덱', tab: 'unanswered' });
+      expect(toWebPath(`${origin}${feed}`, origin)).toBe(feed);
+      expect(resolveAppRoute(feed)).toMatchObject({ screen: 'feed', tab: 'feed', parent: null });
+      const profile = appRoutes.profile(locale, 'user-1', 'opaque+/=');
+      expect(toWebPath(`gamefeedback:/${profile}`, origin)).toBe(profile);
+      expect(WebPathSchema.parse(`/${locale}/messages?conversation=room-1`)).toBe(
+        appRoutes.conversation(locale, 'room-1'),
+      );
+      expect(resolveAppRoute(appRoutes.conversation(locale, 'room-1'))).toMatchObject({
+        screen: 'conversation',
+        parent: appRoutes.messages(locale),
+      });
+    }
+    expect(WebPathSchema.parse('/ko?q=hog&utm_source=app')).toBe('/ko?q=hog');
+    for (const path of [
+      '/ko?x=%XX',
+      '/ko?q=a&q=b',
+      '/ko/messages?conversation=a&conversation=b',
+      '/ko?q=' + 'x'.repeat(101),
+      '/ko/users/user-1?cursor=' + 'x'.repeat(201),
+    ])
+      expect(WebPathSchema.safeParse(path).success).toBe(false);
+  });
   it('keeps only exact origins in the WebView', () => {
     for (const url of [origin, `${origin}/ko/posts/abc`, 'about:blank'])
       expect(decideNavigation(url, origin).action).toBe('allow');
@@ -17,9 +43,7 @@ describe('WebView navigation and deep links', () => {
   it('accepts known custom-scheme routes and rejects unsafe route IDs', () => {
     expect(toWebPath('gamefeedback://ko/users/player_123', origin)).toBe('/ko/users/player_123');
     expect(toWebPath('gamefeedback://ko/posts/post_123', origin)).toBe('/ko/posts/post_123');
-    expect(toWebPath(`${origin}/en/messages?conversation=chat-1`, origin)).toBe(
-      '/en/messages?conversation=chat-1',
-    );
+    expect(toWebPath(`${origin}/en/messages?conversation=chat-1`, origin)).toBe('/en/messages/chat-1');
     for (const path of ['../settings', '%2Fetc', '한글', 'x'.repeat(129), 'a b', 'a#b'])
       expect(toWebPath(`gamefeedback://ko/posts/${path}`, origin)).toBeNull();
     for (const url of [

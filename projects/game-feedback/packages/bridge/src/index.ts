@@ -1,20 +1,20 @@
 import { z } from 'zod';
+import { WebPathSchema } from './routes';
+export { appRoutes, resolveAppRoute, RouteIdSchema, WebPathSchema } from './routes';
+export type { IAppRoute, TAppScreen, TAppTab } from './routes';
 
 export const BRIDGE_EVENT = 'game-feedback:native';
 export const APP_SCHEME = 'gamefeedback';
 export const APP_CALLBACK = `${APP_SCHEME}://auth/callback`;
 const id = z.string().min(1).max(100);
-export const WebPathSchema = z
-  .string()
-  .max(512)
-  .regex(
-    /^\/(ko|en|ja)(\/(messages|settings|notifications|guide|terms|privacy|contact)|\/(posts|users)\/[A-Za-z0-9_-]{1,128})?\/?(\?conversation=[A-Za-z0-9_-]{1,128})?$/,
-  );
 const ticket = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const WebMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('ready') }).strict(),
   z.object({ type: z.literal('location'), path: WebPathSchema }).strict(),
-  z.object({ type: z.literal('back-result'), id, handled: z.boolean() }).strict(),
+  z
+    .object({ type: z.literal('back-result'), id, handled: z.boolean(), atRoot: z.boolean().optional() })
+    .strict(),
+  z.object({ type: z.literal('navigation-state'), overlayOpen: z.boolean() }).strict(),
   z.object({ type: z.literal('auth-request'), id }).strict(),
 ]);
 export const NativeMessageSchema = z.union([

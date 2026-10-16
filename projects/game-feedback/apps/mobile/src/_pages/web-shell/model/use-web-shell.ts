@@ -15,6 +15,7 @@ export function useWebShell() {
   const [webViewKey, setWebViewKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
   const [host] = useState(() =>
     createNativeHost({
       origin: WEB_ORIGIN,
@@ -24,6 +25,8 @@ export function useWebShell() {
         channel.rememberUrl(`${WEB_ORIGIN}${path}`);
       },
       onReady: () => setLoading(false),
+      onOverlayChange: setOverlayOpen,
+      onRootBack: () => BackHandler.exitApp(),
     }),
   );
   useEffect(() => () => host.reset(), [host]);
@@ -64,8 +67,7 @@ export function useWebShell() {
     const decision = decideNavigation(url, WEB_ORIGIN);
     if (decision.action === 'allow') {
       if (newWindow && isSameOrigin(url, WEB_ORIGIN)) {
-        channel.rememberUrl(url);
-        setSourceUrl(url);
+        lifecycle.openLink(url);
       }
       return !newWindow;
     }
@@ -84,7 +86,7 @@ export function useWebShell() {
     injectedJavaScript: buildBootstrapScript(APP_VERSION),
     contentInsetAdjustmentBehavior: 'never',
     webviewDebuggingEnabled: __DEV__,
-    allowsBackForwardNavigationGestures: true,
+    allowsBackForwardNavigationGestures: !overlayOpen,
     pullToRefreshEnabled: true,
     onShouldStartLoadWithRequest: (request) => navigate(request.url),
     onOpenWindow: (event) => {
@@ -93,7 +95,8 @@ export function useWebShell() {
     onMessage: (event) => host.receive(event.nativeEvent.data, event.nativeEvent.url),
     onNavigationStateChange: (state) => {
       channel.rememberHistory(state.canGoBack);
-      if (isSameOrigin(state.url, WEB_ORIGIN)) channel.rememberUrl(state.url);
+      const path = toWebPath(state.url, WEB_ORIGIN);
+      if (path) channel.rememberUrl(`${WEB_ORIGIN}${path}`);
     },
     onLoadStart: (event) => {
       if (Platform.OS === 'ios' && channel.startsDocument(event.nativeEvent.url)) host.reset();
