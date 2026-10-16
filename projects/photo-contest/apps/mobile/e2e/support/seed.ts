@@ -111,7 +111,7 @@ export async function seedContestWithMemberPhoto() {
   return { ownerCookie, memberCookie, group, contest, submission };
 }
 
-/** 기간 없는 갤러리와 회원의 게시물을 실제 업로드 API로 만든다. */
+/** 기간 없는 그룹과 회원의 게시물을 실제 업로드 API로 만든다. */
 export async function seedGalleryWithMemberPost() {
   const ownerCookie = await signUp(uniqueNickname('방장'));
   const memberCookie = await signUp(uniqueNickname('회원'));
