@@ -14,6 +14,29 @@
 
 브라우저는 같은 출처의 `/api`를 호출하고 Next의 rewrite가 API로 전달한다. 이 구조로 HttpOnly 세션 쿠키와 OAuth callback이 Web 출처에 머문다. 로컬 Web은 3300, API는 4300이다. 비공개 알파에서는 한국어 콘텐츠를 우선하고 다른 locale의 준비 상태를 안내한다.
 
+## API 모듈 구성
+
+`apps/api/src/app.ts`는 애플리케이션 생성·HTTP 설정·미들웨어 등록·초기화만 담당한다. `AppModule.register(options)`는 실행별 설정을 만들고 DatabaseModule과 12개 도메인 모듈을 조합한다. 도메인은 Controller에서 요청을 받고 Service에서 업무 동작을 수행하며, 공용 응답 presenter와 외부 제공자 구현도 소유 도메인에 둔다.
+
+| 도메인          | 책임                                                        |
+| --------------- | ----------------------------------------------------------- |
+| `auth`          | Google·데모 인증, 가입, 세션 생성·조회·교체·종료, 계정 삭제 |
+| `users`         | 사용자 인증 표시, 공개 사용자 presenter, 조회 제외 사용자   |
+| `posts`         | 요청 CRUD와 상세·목록·답변 읽음                             |
+| `answers`       | 피드백 답변 CRUD와 도움됨                                   |
+| `comments`      | 일반 댓글 CRUD                                              |
+| `categories`    | 활성 카테고리 조회와 관리자 생성                            |
+| `game-profiles` | 게임 프로필 제공자, 조회·연결과 대표 태그 저장              |
+| `notifications` | 알림 조회와 읽음                                            |
+| `blocks`        | 사용자 차단·해제와 차단 목록                                |
+| `moderation`    | 콘텐츠 신고·숨김과 관리자 신고 조회                         |
+| `chat`          | 대화·메시지·읽음, SSE와 채팅 연결 수명                      |
+| `health`        | DB 연결 상태 확인                                           |
+
+`config`는 AppConfig와 `APP_CONFIG` 토큰, `database`는 전용 PrismaClient와 소유권에 따른 종료를 제공한다. `common`에는 검증·페이지네이션·HTTP 오류·쿠키·출처 검사 등 도메인에 의존하지 않는 공통 처리를 둔다. 인증 권한 검사는 `auth/session-access.ts`의 상태 없는 함수가 요청의 세션을 확인한다. 기존 `security.ts`는 이전 테스트·seed 소비자를 위한 export 호환 진입점이며 구현을 담지 않는다.
+
+Service는 명시적인 `@Inject` 토큰으로 PrismaClient·AppConfig·필요한 도메인 Service를 받는다. ModerationService는 PostsService·AnswersService·CommentsService의 기존 접근 검사를 호출하며, 도메인 전반을 포괄하는 GameService는 사용하지 않는다. HTTP 경로·상태·오류 코드·SQL·트랜잭션과 생성 계약은 유지한다.
+
 ## 인증과 도메인
 
 Google 제공자는 OAuth code를 검증해 `sub`를 서비스 계정과 연결한다. scope는 `openid`만 사용하며 공개 이름·사진·이메일을 자동 수집하지 않는다. 닉네임은 서비스 가입 입력으로 정하고 재로그인에도 유지한다. 세션은 HttpOnly 쿠키 `gamefeedback_session`으로 전달한다. production 쿠키는 HTTPS/Secure 설정을 전제로 한다.
@@ -36,11 +59,15 @@ API는 `GET /api/auth/test-accounts`, `POST /api/auth/test-login`과 관리자 �
 
 읽음 요청은 필수 `messageId` 경계를 가진다. 서버는 그 메시지가 해당 대화에 속하는지 확인하고 경계를 앞으로만 이동한다. 요청 처리 중 도착한 더 최신 메시지는 이 경계에 포함하지 않는다. 이벤트 스트림은 세션 쿠키로 인증하고 로그아웃·세션 만료·탈퇴 후 종료한다. 차단 후에는 대화 노출과 전송을 모두 거부한다.
 
+ApiAccessMiddleware가 세션을 읽은 다음 ChatLifecycleMiddleware가 현재 사용자·세션 토큰과 탈퇴 시 대화 상대를 컨트롤러 실행 전에 보존한다. 상태 200의 응답이 완료된 뒤 세션 교체·로그아웃·탈퇴의 스트림 종료와 차단 변경 갱신을 전달한다. ChatEvents는 모듈 종료 시 `onModuleDestroy`에서 모든 SSE를 닫는다.
+
 채팅 본문을 제3자 이벤트·오류 로그에 첨부하지 않는다. SSE 상태는 단일 API 프로세스 내에서 전달하므로 다중 인스턴스 배포에는 공유 pub/sub와 재연결·순서·중복 처리를 별도 검증해야 한다. 원본 첫 Migration은 유지하고 `202610160002_chat`의 추가 SQL로 확장한다.
 
 ## DB 경계
 
 Prisma schema, Client, Migration은 `apps/api`에만 속한다. 서비스 DB와 역할은 `game_feedback` 전용이다. 테스트는 별도 서버/DB의 `gf_test_` 임시 스키마로 격리한다. PostgreSQL bootstrap 관리자와 앱 역할은 분리하고 앱 역할의 superuser/createdb/createrole 권한을 거부한다.
+
+DatabaseModule은 실행별 AppConfig와 PrismaClient를 컨테이너에 제공한다. 직접 만든 Client만 애플리케이션 종료 시 연결을 끊고, 테스트 등 외부에서 주입한 Client의 종료 권한은 호출자에게 남긴다. ChatEvents의 스트림 정리가 끝난 뒤 `onApplicationShutdown`에서 소유 DB 연결을 정리한다.
 
 로컬 DB 관리자는 `.data/postgres-dev`와 `.data/postgres-test`만 관리한다. TCP loopback과 고정 전용 포트를 사용한다. 임의 포트 프로세스를 종료하지 않는다. 시작한 DB 소유 프로세스는 랜덤 토큰으로만 제어하며 관리자 비밀과 제어 메타데이터는 Git에서 제외한다.
 
