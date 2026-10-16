@@ -33,9 +33,39 @@ test('every screen serves page-specific metadata without JavaScript and private 
         `https://feedback.example/ko${path}`,
       );
       await expect(page.locator('head meta[name="robots"]')).toHaveAttribute('content', /noindex/);
-      if (['/messages', '/notifications', '/settings'].includes(path))
+      const structuredData = page.locator('script[type="application/ld+json"]');
+      if (['/messages', '/notifications', '/settings'].includes(path)) {
         await expect(page.locator('head meta[name="robots"]')).toHaveAttribute('content', /nofollow/);
+        await expect(structuredData).toHaveCount(0);
+        continue;
+      }
+      await expect(structuredData).toHaveCount(1);
+      const graph = JSON.parse((await structuredData.textContent()) || '{}');
+      expect(graph).toMatchObject({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            '@id': 'https://feedback.example/#website',
+            url: 'https://feedback.example/',
+          },
+          {
+            '@type': path === '/contact' ? 'ContactPage' : 'WebPage',
+            url: `https://feedback.example/ko${path}`,
+            isPartOf: { '@id': 'https://feedback.example/#website' },
+          },
+        ],
+      });
     }
+    await page.goto(`${origin}/ja/contact?utm_source=test`);
+    await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://feedback.example/ko/contact',
+    );
+    const translated = JSON.parse(
+      (await page.locator('script[type="application/ld+json"]').textContent()) || '{}',
+    );
+    expect(translated['@graph'][1].url).toBe('https://feedback.example/ko/contact');
     const image = await context.request.get(`${origin}/og`);
     expect(image.ok()).toBe(true);
     expect(image.headers()['content-type']).toContain('image/png');
@@ -64,6 +94,10 @@ test('post content, discussion markup, author profile and authored posts are ser
     await expect(page.getByRole('heading', { name: detail.post.title, level: 1 })).toBeVisible();
     await expect(page.locator('.detail-card .prose-body')).toHaveText(detail.post.body);
     await expect(page.locator('head meta[property="og:type"]')).toHaveAttribute('content', 'article');
+    await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      'https://feedback.example/ko/posts/sample-post-0',
+    );
     const discussion = JSON.parse(
       (await page.locator('script[type="application/ld+json"]').textContent()) || '{}',
     );
@@ -71,6 +105,8 @@ test('post content, discussion markup, author profile and authored posts are ser
       '@type': 'DiscussionForumPosting',
       headline: detail.post.title,
       text: detail.post.body,
+      url: 'https://feedback.example/ko/posts/sample-post-0',
+      mainEntityOfPage: 'https://feedback.example/ko/posts/sample-post-0',
       author: { url: 'https://feedback.example/ko/users/sample-user-0' },
     });
     await page.locator('.detail-card').getByRole('link', { name: '새벽의호그 프로필' }).click();
@@ -82,8 +118,10 @@ test('post content, discussion markup, author profile and authored posts are ser
     );
     expect(profile).toMatchObject({
       '@type': 'ProfilePage',
+      url: 'https://feedback.example/ko/users/sample-user-0',
       mainEntity: { '@type': 'Person', name: '새벽의호그' },
     });
+    await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute('href', profile.url);
     await expect(page.locator('head meta[property="og:type"]')).toHaveAttribute('content', 'profile');
     for (const path of ['/ko/posts/missing-post', '/ko/users/missing-user']) {
       const missing = await page.goto(`${origin}${path}`);

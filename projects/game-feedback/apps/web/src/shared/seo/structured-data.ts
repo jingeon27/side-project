@@ -1,5 +1,41 @@
 import type { PostDetail, PublicProfile } from '@/shared/api';
 import { pageUrl, excerpt } from './config';
+import { pageContent, SITE_NAME, staticPagePath, type TStaticPage } from './metadata';
+const publicPageTypes = {
+  feed: 'WebPage',
+  guide: 'WebPage',
+  terms: 'WebPage',
+  privacy: 'WebPage',
+  contact: 'ContactPage',
+} as const satisfies Partial<Record<TStaticPage, string>>;
+export type TPublicStaticPage = keyof typeof publicPageTypes;
+export function publicPageStructuredData(kind: TPublicStaticPage, locale: string) {
+  const homeUrl = pageUrl('/');
+  const url = pageUrl(staticPagePath(kind, locale));
+  const content = pageContent[kind];
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': `${homeUrl}#website`,
+        url: homeUrl,
+        name: SITE_NAME,
+        description: pageContent.feed.description,
+        inLanguage: 'ko',
+      },
+      {
+        '@type': publicPageTypes[kind],
+        '@id': `${url}#webpage`,
+        url,
+        name: `${content.title} · ${SITE_NAME}`,
+        description: content.description,
+        inLanguage: 'ko',
+        isPartOf: { '@id': `${homeUrl}#website` },
+      },
+    ],
+  };
+}
 function person(author: { id: string; nickname: string }) {
   return {
     '@type': 'Person',
@@ -34,11 +70,18 @@ export function postStructuredData(detail: PostDetail) {
 export function profileDescription(profile: PublicProfile) {
   return `${profile.author.nickname}님의 클래시 로얄 플레이어 프로필. 공개 피드백 요청 ${profile.postCount}개, 답변 ${profile.answerCount}개, 도움됨 ${profile.helpfulCount}개를 확인하세요.`;
 }
-export function profileStructuredData(profile: PublicProfile) {
+export function profileStructuredData(profile: PublicProfile, cursor?: string) {
+  const url = pageUrl(
+    `/ko/users/${encodeURIComponent(profile.author.id)}${cursor !== undefined ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+  );
   return {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    '@id': pageUrl(`/ko/users/${encodeURIComponent(profile.author.id)}`),
+    '@id': url,
+    url,
+    name: `${profile.author.nickname} 플레이어 프로필 · ${SITE_NAME}`,
+    description: excerpt(profileDescription(profile)),
+    inLanguage: 'ko',
     dateCreated: profile.joinedAt,
     mainEntity: {
       ...person(profile.author),

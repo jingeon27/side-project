@@ -3,8 +3,10 @@ export { createPageMetadata, staticPageMetadata, pageContent, SITE_NAME } from '
 export type { TStaticPage } from './metadata';
 export {
   postStructuredData,
+  publicPageStructuredData,
   profileStructuredData,
   profileDescription,
   serializeJsonLd,
 } from './structured-data';
 export { JsonLd } from './JsonLd';
+export { PublicPageJsonLd } from './PublicPageJsonLd';

@@ -34,7 +34,7 @@ export async function ProfileRoute({ params, searchParams }: IProfileRouteProps)
   ]);
   return (
     <>
-      <JsonLd data={profileStructuredData(initialProfile)} />
+      <JsonLd data={profileStructuredData(initialProfile, query.cursor)} />
       <ProfilePage
         id={id}
         locale={locale}

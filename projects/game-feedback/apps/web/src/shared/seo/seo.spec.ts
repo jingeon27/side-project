@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveSeoConfig, canonicalPath, excerpt } from './config';
 import { createPageMetadata, pageContent, staticPageMetadata } from './metadata';
-import { serializeJsonLd } from './structured-data';
+import { profileStructuredData, publicPageStructuredData, serializeJsonLd } from './structured-data';
 afterEach(() => vi.unstubAllEnvs());
 describe('SEO metadata and visibility', () => {
   const production = {
@@ -60,6 +60,55 @@ describe('SEO metadata and visibility', () => {
       createPageMetadata({ title: '프로필', description: '프로필', path: '/en/users/user-1?cursor=abc' })
         .alternates?.canonical,
     ).toBe('https://feedback.example/ko/users/user-1?cursor=abc');
+  });
+  it('connects public pages to one site and uses the metadata canonical across untranslated routes', () => {
+    vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
+    for (const locale of ['ko', 'en', 'ja']) {
+      for (const kind of ['feed', 'guide', 'terms', 'privacy', 'contact'] as const) {
+        const data = publicPageStructuredData(kind, locale);
+        const [site, page] = data['@graph'];
+        expect(site).toMatchObject({
+          '@type': 'WebSite',
+          '@id': 'https://feedback.example/#website',
+          url: 'https://feedback.example/',
+          name: '플레이메이트',
+        });
+        expect(page).toMatchObject({
+          '@type': kind === 'contact' ? 'ContactPage' : 'WebPage',
+          url: staticPageMetadata(kind, locale).alternates?.canonical,
+          inLanguage: 'ko',
+          isPartOf: { '@id': site?.['@id'] },
+        });
+      }
+    }
+  });
+  it('keeps the person identity stable while profile pages preserve their canonical cursor', () => {
+    vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
+    const profile = {
+      author: {
+        id: 'user-1',
+        nickname: '플레이어',
+        isVerified: false,
+        isTestAccount: false,
+        supercellTag: null,
+      },
+      joinedAt: '2026-10-16T00:00:00.000Z',
+      postCount: 2,
+      answerCount: 3,
+      helpfulCount: 1,
+    };
+    for (const cursor of [undefined, '', 'opaque+/= cursor']) {
+      const data = profileStructuredData(profile, cursor);
+      const path = `/ja/users/user-1${cursor !== undefined ? `?cursor=${encodeURIComponent(cursor)}` : ''}`;
+      const canonical = createPageMetadata({ title: '프로필', description: '프로필', path }).alternates
+        ?.canonical;
+      expect(data.url).toBe(canonical);
+      expect(data['@id']).toBe(canonical);
+      expect(data.mainEntity).toMatchObject({
+        '@id': 'https://feedback.example/ko/users/user-1#person',
+        url: 'https://feedback.example/ko/users/user-1',
+      });
+    }
   });
   it('escapes JSON-LD script terminators while preserving original content and Unicode', () => {
     const payload = { text: '</script><script>alert("x")</script> 한글 😀 \u2028 \u2029' };

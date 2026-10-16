@@ -108,6 +108,9 @@ export const pageContent = {
   },
 } as const;
 export type TStaticPage = keyof typeof pageContent;
+export function staticPagePath(kind: TStaticPage, locale: string) {
+  return `/${locale}${kind === 'feed' ? '' : `/${kind}`}`;
+}
 export function staticPageMetadata(kind: TStaticPage, locale: string): Metadata {
-  return createPageMetadata({ ...pageContent[kind], path: `/${locale}${kind === 'feed' ? '' : `/${kind}`}` });
+  return createPageMetadata({ ...pageContent[kind], path: staticPagePath(kind, locale) });
 }
