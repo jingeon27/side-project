@@ -1,9 +1,12 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Trophy, ArrowUpRight, MessageSquare } from 'lucide-react';
 import type { Post } from '@/shared/api';
 import { Avatar } from '@/shared/ui';
 import { timeAgo } from '@/shared/lib/date';
+import { m, useMotionPreference } from '@/shared/motion';
 import { PostStatus } from './PostStatus';
 interface IPostCardProps {
   post: Post;
@@ -13,8 +16,15 @@ interface IPostCardProps {
   deck?: ReactNode;
 }
 export function PostCard({ post, href, authorContent, authorName, deck }: IPostCardProps) {
+  const reducedMotion = useMotionPreference();
   return (
-    <article className="post-card">
+    <m.article
+      className="post-card"
+      initial={false}
+      whileInView={reducedMotion ? undefined : { opacity: [0.8, 1], y: [8, 0] }}
+      viewport={{ once: true, amount: 0.15 }}
+      whileHover={reducedMotion ? undefined : { y: -3 }}
+    >
       <div className="post-topline">
         <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
         <span className="post-time">{timeAgo(post.createdAt)}</span>
@@ -47,6 +57,6 @@ export function PostCard({ post, href, authorContent, authorName, deck }: IPostC
           <ArrowUpRight size={15} />
         </span>
       </div>
-    </article>
+    </m.article>
   );
 }

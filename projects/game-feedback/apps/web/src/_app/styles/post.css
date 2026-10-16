@@ -1,4 +1,7 @@
 @layer components {
+  .helpful-icon {
+    display: inline-flex;
+  }
   .page-heading {
     margin: 7px 0 30px;
   }

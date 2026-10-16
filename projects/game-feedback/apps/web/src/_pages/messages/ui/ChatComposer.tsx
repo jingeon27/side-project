@@ -1,4 +1,4 @@
-import { Button } from '@side/design-system';
+import { MotionButton } from '@/shared/ui';
 import { LoaderCircle, Send } from 'lucide-react';
 import { chatError } from '@/features/chat';
 import { useChatComposer } from '../model/use-chat-composer';
@@ -56,7 +56,7 @@ export function ChatComposer({
           disabled={mutation.isPending}
           onKeyDown={handleKeyDown}
         />
-        <Button
+        <MotionButton
           variant="primary"
           size="md"
           className="button dark"
@@ -65,7 +65,7 @@ export function ChatComposer({
           aria-label={mutation.isError ? '다시 보내기' : '보내기'}
         >
           {mutation.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
-        </Button>
+        </MotionButton>
       </form>
       <div className="chat-compose-hint">
         <span>Enter로 보내기 · Shift + Enter로 줄바꿈</span>

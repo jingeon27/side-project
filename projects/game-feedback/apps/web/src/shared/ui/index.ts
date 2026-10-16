@@ -7,3 +7,4 @@ export { ToastProvider, useNotify } from './ToastProvider';
 export { ErrorRecovery } from './ErrorRecovery';
 export { ServiceErrorBoundary } from './ServiceErrorBoundary';
 export { openOverlay } from './open-overlay';
+export { MotionButton } from './MotionButton';

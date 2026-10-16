@@ -1,6 +1,7 @@
 import { LoaderCircle, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { ChatMessage, Conversation } from '@/shared/api';
+import { AnimatePresence, m, useMotionPreference } from '@/shared/motion';
 import { MessageBubble } from './MessageBubble';
 
 interface IChatHistoryProps {
@@ -24,6 +25,7 @@ export function ChatHistory({
   onScroll,
   onLoadOlder,
 }: IChatHistoryProps) {
+  const reducedMotion = useMotionPreference();
   return (
     <div
       className="chat-message-scroll"
@@ -46,33 +48,39 @@ export function ChatHistory({
           <span>대화의 시작이에요. 먼저 가볍게 인사해보세요.</span>
         </div>
       )}
-      {messages.map((message, index) => {
-        const previous = messages[index - 1];
-        const newDay =
-          !previous ||
-          new Date(previous.createdAt).toDateString() !== new Date(message.createdAt).toDateString();
-        return (
-          <div key={message.id}>
-            {newDay && (
-              <div className="chat-date">
-                <span>
-                  {new Date(message.createdAt).toLocaleDateString('ko-KR', {
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'short',
-                  })}
-                </span>
-              </div>
-            )}
-            <MessageBubble
-              message={message}
-              mine={message.sender.id === userId}
-              index={index}
-              peerLastReadAt={conversation.peerLastReadAt}
-            />
-          </div>
-        );
-      })}
+      <AnimatePresence initial={false}>
+        {messages.map((message, index) => {
+          const previous = messages[index - 1];
+          const newDay =
+            !previous ||
+            new Date(previous.createdAt).toDateString() !== new Date(message.createdAt).toDateString();
+          return (
+            <m.div
+              key={message.id}
+              initial={index === messages.length - 1 && !reducedMotion ? { opacity: 0.6, y: 6 } : false}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {newDay && (
+                <div className="chat-date">
+                  <span>
+                    {new Date(message.createdAt).toLocaleDateString('ko-KR', {
+                      month: 'long',
+                      day: 'numeric',
+                      weekday: 'short',
+                    })}
+                  </span>
+                </div>
+              )}
+              <MessageBubble
+                message={message}
+                mine={message.sender.id === userId}
+                index={index}
+                peerLastReadAt={conversation.peerLastReadAt}
+              />
+            </m.div>
+          );
+        })}
+      </AnimatePresence>
       {messages.length === 0 && (
         <div className="conversation-first-message">
           <MessageCircle size={33} />

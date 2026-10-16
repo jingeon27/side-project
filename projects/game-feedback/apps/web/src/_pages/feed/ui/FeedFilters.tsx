@@ -1,4 +1,5 @@
-import { Button } from '@side/design-system';
+import { MotionButton } from '@/shared/ui';
+import { m } from '@/shared/motion';
 import { Clock3, Crown, MessageSquare, Plus, Search, SlidersHorizontal } from 'lucide-react';
 
 interface IFeedFiltersProps {
@@ -23,10 +24,16 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
             </span>
           </h2>
         </div>
-        <Button variant="primary" size="md" type="submit" className="button primary" onClick={onCompose}>
+        <MotionButton
+          variant="primary"
+          size="md"
+          type="submit"
+          className="button primary"
+          onClick={onCompose}
+        >
           <Plus size={17} />
           피드백 요청
-        </Button>
+        </MotionButton>
       </div>
       <div className="game-filter">
         <span className="game-filter-icon">
@@ -46,6 +53,13 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
           >
             <Clock3 size={16} />
             최신 피드백
+            <m.span
+              aria-hidden="true"
+              className="feed-tab-indicator"
+              initial={false}
+              animate={{ scaleX: tab === 'latest' ? 1 : 0 }}
+              style={{ originX: 0 }}
+            />
           </button>
           <button
             role="tab"
@@ -56,6 +70,13 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
             <MessageSquare size={16} />
             답변을 기다려요
             <span className="tab-dot" />
+            <m.span
+              aria-hidden="true"
+              className="feed-tab-indicator"
+              initial={false}
+              animate={{ scaleX: tab === 'unanswered' ? 1 : 0 }}
+              style={{ originX: 0 }}
+            />
           </button>
         </div>
         <div className="sort-label">
