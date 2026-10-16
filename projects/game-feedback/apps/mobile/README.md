@@ -28,6 +28,7 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이며 앱�
 - 같은 Web origin만 내부에서 연다. 다른 HTTP(S)·전화·이메일 링크는 OS로 보내고 실행 가능한 URL·로컬 파일 URL은 거부한다. 새 창에도 동일한 정책을 적용한다.
 - Android 뒤로 가기: 웹 모달을 먼저 닫고, 800ms 안에 처리되지 않으면 WebView history로 돌아간 뒤 기록이 없으면 종료한다. iOS 스와이프는 WebView 기록을 사용한다.
 - `gamefeedback://ko/posts/<id>`, `gamefeedback://ko/messages?conversation=<id>`, `gamefeedback://ko/settings`처럼 알려진 경로를 받는다. `en`·`ja`도 같은 화면 경로를 허용한다. HTTPS universal/app link의 OS 등록은 운영 도메인이 정해진 뒤 추가한다.
+- 셸 렌더 오류는 서비스 경계에서 복구 화면을 표시한다. 재시도는 기존 OS listener·host를 정리한 새 WebView로 초기 화면을 열고 HttpOnly 쿠키 저장소를 유지한다. 웹의 기능 오류는 웹 내부 경계에서 처리한다.
 - 메인 문서 연결 실패·5xx는 다시 시도 화면을 연다. 4xx는 웹이 표시한다. 다시 시도·Android renderer 종료는 마지막 주소로 WebView를 재생성하고 iOS content 종료는 reload한다.
 - 웹 준비 메시지 이전에는 딥링크를 문서 주소로, 이후에는 Next router 이동으로 전달한다. background에서 active로 돌아오면 세션을 먼저 확인하고 필요한 캐시를 갱신한다.
 

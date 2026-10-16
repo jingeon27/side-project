@@ -35,6 +35,17 @@ Safedoc React·Usermall·Global의 실제 구조와 현재 저장소의 공통 E
 
 slice 외부 import는 public `index.ts`를 통한다. 공통 Next·FSD lint가 레이어 방향·공개 API·페이지 간 참조와 컴포넌트/핸들러 규칙을 검사하고, Web 로컬 규칙이 inline query-key·enum·타입 이름을 검사한다. 이 lint는 집계 check와 기존 CI에서 실행한다.
 
+## 서비스 오류 경계
+
+Web의 `shared/ui/ServiceErrorBoundary`는 설치된 Next 16.4의 `catchError`와 TanStack `QueryErrorResetBoundary`를 조합한다. Next의 redirect·notFound 제어 흐름은 프레임워크로 넘긴다. `ErrorRecovery`는 공통 디자인 시스템의 버튼과 토큰으로 영역 이름·재시도만 표시하고 예외 본문·응답 payload를 노출하지 않는다.
+
+- `CommunityShell`의 본문·상단/하단 메뉴·양쪽 사이드바를 독립 경계로 나눈다. 본문은 계정·경로로 reset하며 Server Component도 포함하므로 재시도에 route refresh를 사용한다. `[locale]/error.tsx`는 셸 안쪽 라우트의 마지막 복구 경계이며 예약 라우트 파일은 `_app/errors`를 재수출한다.
+- 피드 카드, 게시글·답변·댓글, 채팅 목록·대화창은 각각 실패한 영역만 재생성한다. 계정·대화 ID가 바뀌면 이전 오류 상태를 폐기한다. 대화 목록 실패 시 건강한 대화창의 초안과 상태는 유지된다. 채팅 오류 화면도 기존 반응형 레이아웃과 목록/대화창 표시 규칙을 따른다.
+- 모든 overlay controller는 `openOverlay`로 연다. provider 아래에 그려지는 포털도 별도 경계로 감싸며 controller 렌더 자체의 오류도 잡는다. 실패한 창은 공통 Dialog에서 재시도·닫기를 제공하고 본문과 다른 창을 유지한다. NativeBridge·가입 안내도 각각 경계를 두며 세션 Provider에는 서비스 복구 경계를 둔다.
+- Mobile은 SafeAreaProvider 안에서 WebShellPage를 네이티브 경계로 감싼다. 렌더 오류 시 셸을 unmount해 OS listener·host를 정리하고 재시도에 서비스 초기 화면으로 재생성한다. 쿠키 저장소를 삭제하지 않는다. 문서 연결·renderer/content process 오류는 기존 WebView 복구가 별도로 처리한다.
+
+React 경계는 렌더·라이프사이클 오류를 담당한다. REST 응답 검증·조회·mutation·폼 제출·SSE 연결의 예상 가능한 오류는 기존 도메인 처리에 남기며 전역 `throwOnError`로 바꾸지 않는다. 복구 callback이 실패하면 같은 오류 화면 안에서 재시도할 수 있고 다른 cache를 일괄 삭제하지 않는다.
+
 ## 공통 디자인 시스템
 
 `packages/design-system`의 `@side/design-system`을 Photo Contest 웹과 함께 사용한다. 색·타이포·간격·모서리·그림자·포커스·터치 영역과 `cn` 충돌 규칙은 이 패키지가 소유한다. Photo Contest의 흑백 기본 UI와 오렌지 강조색을 공통 토큰으로 사용하며 앱 이름·게임 정보·화면 레이아웃은 각 앱에 남긴다.
