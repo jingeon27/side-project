@@ -87,8 +87,11 @@ export function createAnalytics({ apiKey, sdk, startTimeoutMs = START_TIMEOUT_MS
     track: (event: TAnalyticsEvent) => {
       if (!apiKey) return;
       safely(() => {
-        if ('properties' in event) sdk.track(event.name, event.properties);
-        else sdk.track(event.name);
+        if ('properties' in event) {
+          sdk.track(event.name, event.properties);
+          return;
+        }
+        sdk.track(event.name);
       });
     },
     applyAuth: (payload: TWebEventPayload<'auth.changed'>) => {

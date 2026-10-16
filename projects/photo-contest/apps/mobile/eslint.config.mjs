@@ -1,3 +1,4 @@
+import { reactConfig } from '@side/eslint-config/react';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import expoConfig from 'eslint-config-expo/flat.js';
@@ -24,6 +25,7 @@ export default defineConfig([
     'test-results/**',
   ]),
   expoConfig,
+  ...reactConfig,
   {
     settings: {
       // `@/*` 경로와 워크스페이스 패키지의 exports(@photo-contest/bridge/native)를 tsconfig 기준으로 찾는다.
@@ -62,11 +64,6 @@ export default defineConfig([
         { selector: 'ExportAllDeclaration', message: 'export * 대신 필요한 이름만 내보낸다.' },
         { selector: 'TSEnumDeclaration', message: 'enum 대신 as const 객체를 쓴다.' },
       ],
-      'react/function-component-definition': [
-        'error',
-        { namedComponents: 'function-declaration', unnamedComponents: 'arrow-function' },
-      ],
-      'react/jsx-handler-names': ['error', { eventHandlerPrefix: 'handle', eventHandlerPropPrefix: 'on' }],
     },
   },
   {
