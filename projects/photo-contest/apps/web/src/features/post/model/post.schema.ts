@@ -20,3 +20,6 @@ export const postSchema = z.object({
     ),
   rightsConfirmed: z.boolean().refine((value) => value, '공유할 권리와 촬영된 사람의 동의를 확인해 주세요.'),
 });
+
+export type TPostInput = z.input<typeof postSchema>;
+export type TPostValues = z.output<typeof postSchema>;
