@@ -31,7 +31,7 @@ interface IPost {
   likedByMe: boolean;
   canDelete: boolean;
 }
-describe('상시 갤러리 게시물', () => {
+describe('상시 그룹 게시물', () => {
   let api: ITestApi,
     owner: ITestUser,
     member: ITestUser,
@@ -78,11 +78,11 @@ describe('상시 갤러리 게시물', () => {
   };
   beforeAll(async () => {
     api = await createTestApp();
-    owner = await api.signIn('갤러리 관리자');
-    member = await api.signIn('갤러리 회원');
-    outsider = await api.signIn('갤러리 외부인');
-    groupId = (await createGroup(api, owner, '상시 갤러리', [member])).id;
-    otherId = (await createGroup(api, outsider, '외부 갤러리')).id;
+    owner = await api.signIn('그룹 관리자');
+    member = await api.signIn('그룹 회원');
+    outsider = await api.signIn('그룹 외부인');
+    groupId = (await createGroup(api, owner, '상시 그룹', [member])).id;
+    otherId = (await createGroup(api, outsider, '외부 그룹')).id;
   });
   afterAll(async () => {
     await api?.close();
@@ -171,7 +171,7 @@ describe('상시 갤러리 게시물', () => {
       (await api.http().get(path).set('Cookie', owner.cookie).set('Range', 'bytes=999999-')).status,
     ).toBe(416);
   });
-  it('외부인·다른 갤러리의 업로드와 조작한 동영상은 거부하고 티켓을 재사용할 수 없어야 한다', async () => {
+  it('외부인·다른 그룹의 업로드와 조작한 동영상은 거부하고 티켓을 재사용할 수 없어야 한다', async () => {
     expect((await api.gqlFail(outsider.cookie, LIST, { groupId })).code).toBe('FORBIDDEN');
     const grant = await ticket(member);
     expect((await upload(outsider, grant, await createTestImage())).status).toBe(403);

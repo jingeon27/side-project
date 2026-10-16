@@ -218,7 +218,7 @@ export class PostService {
     const upload = await this.db.atomic(async (tx) => {
       const { post, admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
       if (!admin && post.authorId !== viewer.id)
-        fail('작성자와 갤러리 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
+        fail('작성자와 그룹 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
       await tx.post.delete({ where: { id: postId } });
       await recordEvent(tx, {
         id: `post-deleted:${postId}`,

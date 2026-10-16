@@ -74,7 +74,7 @@ export class PostCommentService {
       if (!row) fail('댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       const { admin } = await this.membership.accessiblePost(viewer.id, row.postId, tx);
       if (!admin && row.authorId !== viewer.id)
-        fail('작성자와 갤러리 관리자만 댓글을 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
+        fail('작성자와 그룹 관리자만 댓글을 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
       await tx.postComment.delete({ where: { id: commentId } });
       await recordEvent(tx, {
         id: `comment-deleted:${commentId}`,
