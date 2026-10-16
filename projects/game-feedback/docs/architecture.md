@@ -114,7 +114,7 @@ Migration 실행 전 URL의 protocol, hostname, port, database, role, schema와 
 
 ## API 계약과 갱신
 
-Zod 서버 검증 스키마를 OpenAPI에 연결하고 Orval로 SDK와 검증 스키마를 생성한다. 안정적인 `errorCode`를 오류 응답에 포함하고 사용자 문구는 UI에서 선택한다. 생성 결과 차이는 계약 변경의 일부로 검토한다.
+Zod 서버 검증 스키마를 OpenAPI에 연결하고 Orval로 SDK와 검증 스키마를 생성한다. 안정적인 `errorCode`를 오류 응답에 포함하고 사용자 문구는 UI에서 선택한다. Orval은 Zod 모델과 각 요청의 응답 스키마를 함께 생성하며 SDK transport가 실제 JSON을 검증한다. 표시 필드의 명시적 `.catch` fallback 이후 원래 계약으로 재검증하고 필수 ID·권한·세션·커서·날짜·본문·목록 오류는 `INVALID_API_RESPONSE`로 구분한다. [필드별 정책](../packages/sdk/README.md)은 SDK가 소유한다. 생성 결과 차이는 계약 변경의 일부로 검토한다.
 
 초기 사용자 콘텐츠에는 Next.js 데이터 캐시를 적용하지 않는다. Mutation 성공 후 TanStack Query의 관련 query를 갱신하고 재방문·포커스 복귀 때 새 상태를 조회한다. Cache Tags는 실제 성능 측정 후 검토한다.
 

@@ -43,17 +43,17 @@ corepack yarn workspace @side/game-feedback db:stop
 
 모든 명령은 저장소 루트에서 실행한다.
 
-| 명령 뒤의 작업                                                                   | 실행 내용                                                               |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임    |
-| `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, Web Vitest, Mobile Vitest 단위·UI 테스트          |
-| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web·Mobile 소유 Playwright 테스트                     |
-| `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export             |
-| `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                 |
-| `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                              |
-| `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                          |
-| `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                             |
+| 명령 뒤의 작업                                                                   | 실행 내용                                                                     |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed       |
+| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임          |
+| `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트 |
+| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web·Mobile 소유 Playwright 테스트                           |
+| `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                   |
+| `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                       |
+| `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                    |
+| `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                |
+| `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                                   |
 
 ## 모바일 WebView 앱
 
@@ -81,6 +81,7 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 - [제품과 범위](docs/product.md)
 - [구조와 데이터 흐름](docs/architecture.md)
+- [REST 응답 Zod 검증·fallback 정책](packages/sdk/README.md)
 - [구현 상태와 검증 범위](docs/implementation.md)
 - [결정 기록](docs/decisions/0001-project-isolation.md)
 - [Yarn 및 실행 방식](docs/decisions/0002-node-modules-runtime.md)
