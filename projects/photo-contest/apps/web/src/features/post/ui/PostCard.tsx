@@ -44,19 +44,17 @@ export function PostCard({ id }: { id: string }) {
   if (!complete) return null;
 
   return (
-    <article className="min-w-0 border-b border-line bg-surface pb-5" aria-label={post.title}>
+    <article className="min-w-0 border-b border-line bg-surface pb-6" aria-label={post.title}>
       <div className="flex items-center gap-3 pb-3">
-        <span className="flex shrink-0 rounded-full bg-linear-to-tr from-accent via-danger to-info p-0.5">
-          <Avatar name={post.author.nickname} src={post.author.avatar} className="border-2 border-surface" />
-        </span>
+        <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" />
         <div className="flex min-w-0 flex-1 flex-col">
-          <p className="truncate text-label text-ink">{post.author.nickname}</p>
           <Link
             href={ROUTES.GROUP(post.groupId)}
-            className="relative w-fit max-w-full truncate text-caption text-muted before:absolute before:inset-x-0 before:-inset-y-3 hover:text-ink active:opacity-60"
+            className="relative w-fit max-w-full truncate text-label text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-muted active:opacity-60"
           >
             {post.groupName}
           </Link>
+          <p className="truncate text-caption text-muted">{post.author.nickname}</p>
         </div>
         {post.kind === PostKind.Video ? (
           <Video aria-label="동영상" className="size-4 shrink-0 text-muted" />
@@ -89,6 +87,7 @@ export function PostCard({ id }: { id: string }) {
           </Button>
         ) : null}
       </div>
+      <h3 className="mb-3 wrap-break-word text-title text-ink">{post.title}</h3>
       {match(post.kind)
         .with(PostKind.Video, () => (
           <video
@@ -97,11 +96,11 @@ export function PostCard({ id }: { id: string }) {
             playsInline
             preload="metadata"
             aria-label={post.title}
-            className="aspect-square w-full rounded-control bg-sunken object-contain"
+            className="aspect-square w-full rounded-card bg-sunken object-contain"
           />
         ))
         .with(PostKind.Photo, () => (
-          <div className="relative aspect-square overflow-hidden rounded-control bg-sunken">
+          <div className="relative aspect-square overflow-hidden rounded-card bg-sunken">
             <Image
               src={post.mediaUrl}
               alt={post.title}
@@ -113,11 +112,14 @@ export function PostCard({ id }: { id: string }) {
           </div>
         ))
         .exhaustive()}
-      <div className="flex flex-col gap-2 pt-2">
+      {post.body ? (
+        <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
+      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4">
         <Button
-          variant="ghost"
+          variant="secondary"
           size="md"
-          className="-ml-3 self-start gap-2 px-3"
+          className="gap-2 rounded-full border-line px-3"
           aria-label={`${post.title} 좋아요`}
           aria-pressed={post.likedByMe}
           loading={likeState.loading || unlikeState.loading}
@@ -132,20 +134,11 @@ export function PostCard({ id }: { id: string }) {
           <Heart
             aria-hidden
             strokeWidth={1.7}
-            className={post.likedByMe ? 'size-6 fill-danger text-danger' : 'size-6'}
+            className={post.likedByMe ? 'size-4 fill-danger text-danger' : 'size-4'}
           />
-          <span className="text-label">좋아요 {formatCount(post.likeCount)}개</span>
+          <span className="text-caption">좋아요 {formatCount(post.likeCount)}개</span>
         </Button>
-        <h3 className="wrap-break-word text-label text-ink">{post.title}</h3>
-        {post.body ? (
-          <details className="text-body text-ink">
-            <summary className="min-h-touch cursor-pointer content-center text-caption text-muted">
-              내용 보기
-            </summary>
-            <p className="whitespace-pre-wrap wrap-break-word">{post.body}</p>
-          </details>
-        ) : null}
-        <p className="text-micro text-muted">
+        <p className="text-caption text-muted">
           <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>
         </p>
       </div>
