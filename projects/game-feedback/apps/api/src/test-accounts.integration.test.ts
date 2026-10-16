@@ -105,6 +105,117 @@ describe.skipIf(!testDatabaseUrl)(
       }
     }, 15000);
 
+    it('serves only public profile fields and hides test identities outside demo mode', async () => {
+      const profile = (await supertest(app.getHttpServer()).get(`/api/users/${coachId}`).expect(200)).body;
+      expect(profile.author).toMatchObject({
+        id: coachId,
+        nickname: '덱연구소',
+        isVerified: true,
+        isTestAccount: true,
+      });
+      expect(Object.keys(profile).sort()).toEqual([
+        'answerCount',
+        'author',
+        'helpfulCount',
+        'joinedAt',
+        'postCount',
+      ]);
+      expect(Object.keys(profile.author).sort()).toEqual([
+        'id',
+        'isTestAccount',
+        'isVerified',
+        'nickname',
+        'supercellTag',
+      ]);
+      expect(profile.joinedAt).toBeTypeOf('string');
+      await supertest(normalApp.getHttpServer()).get(`/api/users/${coachId}`).expect(404);
+      await supertest(app.getHttpServer()).get('/api/users/missing-user').expect(404);
+    });
+
+    it('counts and paginates only visible authored posts and answers under visible parents', async () => {
+      const anonymous = supertest(app.getHttpServer());
+      const before = (await anonymous.get(`/api/users/${coachId}`)).body;
+      const created = await db.post.createManyAndReturn({
+        data: [
+          {
+            authorId: coachId,
+            categoryId: 'clash-royale',
+            title: '공개 프로필 요청 첫째',
+            body: '프로필 조회 검증을 위한 공개 요청 본문입니다.',
+          },
+          {
+            authorId: coachId,
+            categoryId: 'clash-royale',
+            title: '공개 프로필 요청 둘째',
+            body: '프로필 조회 검증을 위한 공개 요청 본문입니다.',
+          },
+          {
+            authorId: coachId,
+            categoryId: 'clash-royale',
+            title: '숨긴 요청',
+            body: '검색에 노출하지 않는 본문입니다.',
+            hidden: true,
+          },
+          {
+            authorId: coachId,
+            categoryId: 'clash-royale',
+            title: '삭제한 요청',
+            body: '검색에 노출하지 않는 본문입니다.',
+            deletedAt: new Date(),
+          },
+        ],
+        select: { id: true },
+      });
+      try {
+        await db.answer.createMany({
+          data: [
+            { postId: created[0].id, authorId: coachId, body: '공개 답변', helpful: true },
+            { postId: created[0].id, authorId: coachId, body: '숨긴 답변', hidden: true, helpful: true },
+            { postId: created[2].id, authorId: coachId, body: '숨긴 부모의 답변', helpful: true },
+            { postId: created[3].id, authorId: coachId, body: '삭제한 부모의 답변', helpful: true },
+          ],
+        });
+        const after = (await anonymous.get(`/api/users/${coachId}`)).body;
+        expect(after.postCount).toBe(before.postCount + 2);
+        expect(after.answerCount).toBe(before.answerCount + 1);
+        expect(after.helpfulCount).toBe(before.helpfulCount + 1);
+        const first = (await anonymous.get('/api/posts').query({ authorId: coachId, limit: 1 }).expect(200))
+          .body;
+        const second = (
+          await anonymous
+            .get('/api/posts')
+            .query({ authorId: coachId, limit: 1, cursor: first.nextCursor })
+            .expect(200)
+        ).body;
+        expect(first.items[0].author.id).toBe(coachId);
+        expect(second.items[0].author.id).toBe(coachId);
+        expect(first.items[0].id).not.toBe(second.items[0].id);
+        const all = (await anonymous.get('/api/posts').query({ authorId: coachId, limit: 50 })).body.items;
+        expect(
+          all.some((post: { id: string }) => post.id === created[2].id || post.id === created[3].id),
+        ).toBe(false);
+        expect(all.every((post: { author: { id: string } }) => post.author.id === coachId)).toBe(true);
+      } finally {
+        await db.post.deleteMany({ where: { id: { in: created.map((post) => post.id) } } });
+      }
+    });
+
+    it('applies bidirectional blocking to public profiles and authored post lists', async () => {
+      await choose(requester, requesterId).expect(200);
+      await choose(coach, coachId).expect(200);
+      await coach.post('/api/blocks').set('Origin', origin).send({ blockedUserId: requesterId }).expect(200);
+      try {
+        await requester.get(`/api/users/${coachId}`).expect(404);
+        await coach.get(`/api/users/${requesterId}`).expect(404);
+        expect((await requester.get('/api/posts').query({ authorId: coachId })).body.items).toEqual([]);
+        await supertest(app.getHttpServer()).get(`/api/users/${coachId}`).expect(200);
+      } finally {
+        await coach.delete(`/api/blocks/${requesterId}`).set('Origin', origin).expect(200);
+        await requester.post('/api/auth/logout').set('Origin', origin).expect(200);
+        await coach.post('/api/auth/logout').set('Origin', origin).expect(200);
+      }
+    });
+
     it('lists exactly the fixed test identities and labels the verified coach as a test account', async () => {
       const catalog = (await requester.get('/api/auth/test-accounts').expect(200)).body;
       expect(catalog.items.map((user: { id: string }) => user.id).sort()).toEqual(

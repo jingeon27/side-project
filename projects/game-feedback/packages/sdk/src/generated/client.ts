@@ -26,6 +26,7 @@ import {
   Post,
   PostDetail,
   PostList,
+  PublicProfile,
   Session,
   TestAccountList,
   User
@@ -56,6 +57,28 @@ import type {
 } from './models';
 
 import { apiFetch } from '../http';
+export const getGetPublicProfileUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}`
+}
+
+export const getPublicProfile = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<PublicProfile> => {
+
+  return apiFetch<PublicProfile>(getGetPublicProfileUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: PublicProfile
+  }
+);}
+
+
+
 export const getExchangeAppLoginUrl = () => {
 
 

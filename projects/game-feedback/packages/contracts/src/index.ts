@@ -28,6 +28,14 @@ export const TestLoginInputSchema = z.object({ accountId: z.string().min(1).max(
 export const VerificationInputSchema = z.object({ isVerified: z.boolean() }).strict();
 export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
+export const PublicProfileSchema = z.object({
+  author: AuthorSchema,
+  joinedAt: ResponseTimestampSchema,
+  postCount: ResponseCountSchema,
+  answerCount: ResponseCountSchema,
+  helpfulCount: ResponseCountSchema,
+});
+export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 export const CategorySchema = z.object({
   id: ResponseIdSchema,
   slug: z.string().min(1),
@@ -220,6 +228,7 @@ export const HideInputSchema = z
   })
   .strict();
 export const ListQuerySchema = z.object({
+  authorId: z.string().min(1).max(100).optional(),
   cursor: z.string().max(200).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(12),
   category: z.string().max(80).optional(),
@@ -258,6 +267,7 @@ export const schemas = {
   AdminReport: AdminReportSchema,
   Error: ErrorSchema,
   Ok: OkSchema,
+  PublicProfile: PublicProfileSchema,
   User: UserSchema,
   Author: AuthorSchema,
   Category: CategorySchema,
@@ -293,6 +303,7 @@ export type OperationSpec = {
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
+  { method: 'get', path: '/api/users/{id}', id: 'getPublicProfile', response: PublicProfileSchema },
   {
     method: 'post',
     path: '/api/auth/app/exchange',

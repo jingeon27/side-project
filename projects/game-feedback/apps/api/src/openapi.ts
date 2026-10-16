@@ -30,6 +30,7 @@ export function createOpenApi() {
           { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 12 } },
           ...(operation.id === 'listPosts'
             ? [
+                { name: 'authorId', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 100 } },
                 { name: 'category', in: 'query', schema: { type: 'string' } },
                 { name: 'unanswered', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
                 { name: 'q', in: 'query', schema: { type: 'string' } },

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import {
   getSession,
+  getPublicProfile,
   getHealth,
   getPost,
   listChatMessages,
@@ -24,6 +25,35 @@ function respond(payload: unknown, status = 200) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('generated REST client response validation', () => {
+  it('validates public profiles and strips undeclared private fields', async () => {
+    const profile = {
+      author: postFixture().post.author,
+      joinedAt: '2026-10-17T00:00:00.000Z',
+      postCount: 2,
+      answerCount: 3,
+      helpfulCount: 1,
+    };
+    respond({ ...profile, role: 'ADMIN', googleSubject: 'must-not-pass-through' });
+    expect(await getPublicProfile('player-1')).toEqual(profile);
+    respond({ ...profile, author: { ...profile.author, id: 42 } });
+    await expect(getPublicProfile('player-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
+  });
+  it('uses a per-request server origin without leaking transport options or changing browser requests', async () => {
+    const fixture = sessionFixture();
+    const fetcher = respond(fixture);
+    await getSession({
+      baseUrl: 'https://api.example',
+      headers: { Cookie: 'gamefeedback_session=test-only' },
+    });
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.example/api/session');
+    expect(fetcher.mock.calls[0]?.[1]).not.toHaveProperty('baseUrl');
+    expect(new Headers(fetcher.mock.calls[0]?.[1]?.headers).get('Cookie')).toBe(
+      'gamefeedback_session=test-only',
+    );
+    await getSession();
+    expect(fetcher.mock.calls[1]?.[0]).toBe('/api/session');
+    expect(new Headers(fetcher.mock.calls[1]?.[1]?.headers).has('Cookie')).toBe(false);
+  });
   it('returns parsed data, strips unknown keys and keeps credentials, headers and AbortSignal', async () => {
     const fixture = sessionFixture();
     const fetcher = respond({ ...fixture, unexpected: 'discard me' });

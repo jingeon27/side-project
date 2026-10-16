@@ -9,10 +9,13 @@ import * as zod from 'zod';
 export const listPostsParamsLimitDefault = 12;
 export const listPostsParamsLimitMax = 50;
 
+export const listPostsParamsAuthorIdMax = 100;
+
 
 export const ListPostsParams = zod.object({
   "cursor": zod.string().optional(),
   "limit": zod.int().min(1).max(listPostsParamsLimitMax).default(listPostsParamsLimitDefault),
+  "authorId": zod.string().min(1).max(listPostsParamsAuthorIdMax).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
   "q": zod.string().optional()

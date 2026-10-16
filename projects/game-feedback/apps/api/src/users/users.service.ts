@@ -5,11 +5,38 @@ import type { SessionRequest } from '../auth/session.types';
 import { requireAdmin } from '../auth/session-access';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
-import { userDto } from './user.presenter';
+import { ACTIVE_CONTENT } from '../common/content';
+import { UserVisibilityService } from './user-visibility.service';
+import { authorDto, authorSelect, userDto } from './user.presenter';
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(PrismaClient) private readonly db: PrismaClient) {}
+  constructor(
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
+  ) {}
+  async profile(req: SessionRequest, id: string) {
+    const excluded = await this.visibility.excluded(req);
+    const user = await this.db.user.findFirst({
+      where: { id, NOT: { id: { in: excluded } } },
+      select: { ...authorSelect, createdAt: true },
+    });
+    if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+    const postVisibility = { ...ACTIVE_CONTENT, authorId: { notIn: excluded } };
+    const answerVisibility = { authorId: id, ...ACTIVE_CONTENT, post: postVisibility };
+    const [postCount, answerCount, helpfulCount] = await Promise.all([
+      this.db.post.count({ where: { ...postVisibility, authorId: id } }),
+      this.db.answer.count({ where: answerVisibility }),
+      this.db.answer.count({ where: { ...answerVisibility, helpful: true } }),
+    ]);
+    return {
+      author: authorDto(user),
+      joinedAt: user.createdAt.toISOString(),
+      postCount,
+      answerCount,
+      helpfulCount,
+    };
+  }
   async setVerification(req: SessionRequest, id: string, body: unknown) {
     const admin = requireAdmin(req),
       input = parse(VerificationInputSchema, body);

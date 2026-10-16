@@ -47,7 +47,7 @@ export class PostsService {
       excluded = await this.visibility.excluded(req);
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_CONTENT,
-      authorId: { notIn: excluded },
+      authorId: { notIn: excluded, ...(q.authorId ? { equals: q.authorId } : {}) },
       ...(q.category ? { category: { slug: q.category } } : {}),
       ...(q.unanswered === 'true'
         ? { answers: { none: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } } } }

@@ -15,15 +15,16 @@ const errorPayloadSchema = z
   .catch({ errorCode: 'REQUEST_FAILED', message: '요청을 처리하지 못했습니다.' });
 interface IApiFetchOptions<T> extends RequestInit {
   schema?: z.ZodType<T>;
+  baseUrl?: string;
 }
 
 export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}): Promise<T> {
-  const { schema, ...requestOptions } = options;
+  const { schema, baseUrl, ...requestOptions } = options;
   if (!schema) throw new ApiError(0, 'RESPONSE_SCHEMA_REQUIRED', '응답 검증 스키마가 필요합니다.');
   const headers = new Headers(requestOptions.headers);
   if (typeof requestOptions.body === 'string' && !headers.has('Content-Type'))
     headers.set('Content-Type', 'application/json');
-  const response = await fetch(url, {
+  const response = await fetch(baseUrl ? new URL(url, baseUrl).toString() : url, {
     ...requestOptions,
     credentials: 'include',
     cache: 'no-store',

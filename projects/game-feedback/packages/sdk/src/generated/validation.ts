@@ -6,6 +6,40 @@
  */
 import * as zod from 'zod';
 
+export const GetPublicProfileParams = zod.object({
+  "id": zod.string()
+})
+
+export const getPublicProfileResponseAuthorIdMax = 100;
+
+
+export const getPublicProfileResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getPublicProfileResponsePostCountMin = 0;
+export const getPublicProfileResponsePostCountMax = 9007199254740991;
+
+export const getPublicProfileResponseAnswerCountMin = 0;
+export const getPublicProfileResponseAnswerCountMax = 9007199254740991;
+
+export const getPublicProfileResponseHelpfulCountMin = 0;
+export const getPublicProfileResponseHelpfulCountMax = 9007199254740991;
+
+
+
+export const GetPublicProfileResponse = zod.object({
+  "author": zod.object({
+  "id": zod.string().min(1).max(getPublicProfileResponseAuthorIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean()
+}),
+  "joinedAt": zod.iso.datetime({"offset":true}).regex(getPublicProfileResponseJoinedAtRegExp),
+  "postCount": zod.int().min(getPublicProfileResponsePostCountMin).max(getPublicProfileResponsePostCountMax),
+  "answerCount": zod.int().min(getPublicProfileResponseAnswerCountMin).max(getPublicProfileResponseAnswerCountMax),
+  "helpfulCount": zod.int().min(getPublicProfileResponseHelpfulCountMin).max(getPublicProfileResponseHelpfulCountMax)
+})
+
+
 export const exchangeAppLoginBodyCodeRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
 export const exchangeAppLoginBodyVerifierRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
 
@@ -547,11 +581,14 @@ export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
 export const listPostsQueryLimitDefault = 12;
 export const listPostsQueryLimitMax = 50;
 
+export const listPostsQueryAuthorIdMax = 100;
+
 
 
 export const ListPostsQueryParams = zod.object({
   "cursor": zod.string().optional(),
   "limit": zod.int().min(1).max(listPostsQueryLimitMax).default(listPostsQueryLimitDefault),
+  "authorId": zod.string().min(1).max(listPostsQueryAuthorIdMax).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
   "q": zod.string().optional()

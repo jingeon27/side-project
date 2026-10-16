@@ -3,6 +3,7 @@ export { ApiResponseValidationError, type IResponseIssue } from './response/vali
 export {
   exchangeAppLogin,
   getHealth,
+  getPublicProfile,
   getSession,
   demoLogin,
   onboard,

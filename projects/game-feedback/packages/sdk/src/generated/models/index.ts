@@ -58,6 +58,7 @@ export * from './postDetail.zod';
 export * from './postInput.zod';
 export * from './postList.zod';
 export * from './postPatch.zod';
+export * from './publicProfile.zod';
 export * from './readConversationBody.zod';
 export * from './reportInput.zod';
 export * from './saveGameAccountBody.zod';
