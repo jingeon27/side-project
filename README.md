@@ -10,6 +10,12 @@ projects/photo-contest/
   packages/bridge/ # 앱↔웹 계약, 자체 Vitest
   packages/test-kit/ # 격리 DB·API·테스트 fixture 도구
   docs/
+projects/game-feedback/
+  apps/api/        # NestJS · REST · Prisma, 격리 PostgreSQL · Vitest · supertest
+  apps/web/        # Next.js, 피드백 · 1:1 채팅 · Playwright
+  packages/contracts/ # Zod 서버 검증 · OpenAPI 계약
+  packages/sdk/    # Orval API Client · 응답 검증 스키마
+  docs/
 packages/typescript-config/
 packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
@@ -36,6 +42,17 @@ corepack yarn dev:photo-contest
 ```
 
 웹은 http://localhost:3200, API는 http://127.0.0.1:4200입니다. 기존 DB의 포트는 해당 프로젝트 `.env`를 따릅니다. [웃긴순간 실행·운영 문서](projects/photo-contest/README.md)를 참고하세요.
+
+## Game Feedback
+
+플레이메이트는 클래시로얄 피드백 요청·답변·댓글과 영속 1:1 채팅을 제공하는 비공개 알파입니다. 데모에서는 고정된 플레이어·인증 코치·운영자 테스트 계정으로 전환할 수 있습니다.
+
+```sh
+cp projects/game-feedback/.env.example projects/game-feedback/.env
+corepack yarn workspace @side/game-feedback dev:demo
+```
+
+웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
 
 ## 검증
 
