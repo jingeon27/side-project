@@ -15,7 +15,7 @@ import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
-import { TextArea, TextField } from '@/shared/ui/@core/text-field';
+import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
@@ -72,16 +72,26 @@ export function CreatePostBottomSheet({
           })}
           className="flex flex-col gap-4"
         >
-          <TextField label="제목" maxLength={80} error={errors.title?.message} {...form.register('title')} />
+          <TextField
+            label="제목"
+            required
+            maxLength={80}
+            error={errors.title?.message}
+            {...form.register('title')}
+          />
           <Controller
             control={form.control}
             name="media"
             render={({ field }) => (
               <div className="flex flex-col gap-2">
                 <label className="flex min-h-touch cursor-pointer flex-col gap-2 rounded-control border border-dashed border-line-strong bg-sunken p-4 text-body text-ink">
-                  사진·동영상 선택
+                  <span>
+                    사진·동영상 선택
+                    <FieldRequirement required />
+                  </span>
                   <input
                     type="file"
+                    aria-required="true"
                     accept="image/*,.heic,.heif,video/mp4,video/webm"
                     aria-label="사진·동영상 선택"
                     ref={field.ref}
@@ -119,12 +129,16 @@ export function CreatePostBottomSheet({
           <label className="flex min-h-touch items-start gap-3 text-body text-ink">
             <input
               type="checkbox"
+              required
               className="mt-1 size-5 shrink-0 accent-brand"
               aria-invalid={Boolean(errors.rightsConfirmed)}
               aria-describedby={errors.rightsConfirmed ? rightsErrorId : undefined}
               {...form.register('rightsConfirmed')}
             />
-            공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 갤러리 멤버에게 공개됩니다.
+            <span>
+              <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 갤러리
+              멤버에게 공개됩니다.
+            </span>
           </label>
           {errors.rightsConfirmed ? (
             <p id={rightsErrorId} role="alert" className="text-caption text-danger">

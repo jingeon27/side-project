@@ -51,6 +51,7 @@ export function ReportBottomSheet({
       <BottomSheet.Content>
         <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
           <TextArea
+            required
             label="신고 이유"
             placeholder="예: 동의 없이 올린 사진이에요."
             maxLength={500}

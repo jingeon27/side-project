@@ -66,6 +66,7 @@ function DevLoginForm({ nextPath }: { nextPath: string }) {
     >
       <p className="text-caption text-muted">로컬 체험용 로그인</p>
       <TextField
+        required
         label="체험 닉네임"
         placeholder="예: 진건"
         autoComplete="nickname"

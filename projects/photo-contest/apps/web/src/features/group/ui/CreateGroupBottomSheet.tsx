@@ -52,6 +52,7 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
           noValidate
         >
           <TextField
+            required
             label="갤러리 이름"
             placeholder="예: 웃음 참기 연구소"
             autoComplete="off"

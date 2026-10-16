@@ -2,6 +2,7 @@ import { Field } from '@base-ui/react/field';
 import type { ComponentProps } from 'react';
 
 import { cn } from '../../../lib/cn.helper';
+import { FieldRequirement } from './FieldRequirement';
 
 const CONTROL_CLASS_NAME = cn(
   'w-full rounded-control border border-line-strong bg-surface px-3.5 text-input text-ink outline-none transition-colors',
@@ -42,7 +43,10 @@ export function TextField({ label, description, error, className, ...inputProps 
       disabled={inputProps.disabled}
       className={cn('flex flex-col gap-1.5', className)}
     >
-      <Field.Label className="text-label text-ink">{label}</Field.Label>
+      <div className="flex items-center gap-1">
+        <Field.Label className="text-label text-ink">{label}</Field.Label>
+        <FieldRequirement required={inputProps.required} />
+      </div>
       <Field.Control {...inputProps} className={cn(CONTROL_CLASS_NAME, 'h-12')} />
       <FieldMessages description={description} error={error} />
     </Field.Root>
@@ -66,8 +70,12 @@ export function TextArea({
       disabled={textareaProps.disabled}
       className={cn('flex flex-col gap-1.5', className)}
     >
-      <Field.Label className="text-label text-ink">{label}</Field.Label>
+      <div className="flex items-center gap-1">
+        <Field.Label className="text-label text-ink">{label}</Field.Label>
+        <FieldRequirement required={textareaProps.required} />
+      </div>
       <Field.Control
+        required={textareaProps.required}
         render={
           <textarea {...textareaProps} rows={rows} className={cn(CONTROL_CLASS_NAME, 'resize-none py-3')} />
         }

@@ -36,6 +36,7 @@ function PasswordLoginForm({ nextPath }: { nextPath: string }) {
       })}
     >
       <TextField
+        required
         label="아이디"
         autoComplete="username"
         autoCapitalize="none"
@@ -45,6 +46,7 @@ function PasswordLoginForm({ nextPath }: { nextPath: string }) {
         {...form.register('loginId')}
       />
       <TextField
+        required
         label="비밀번호"
         type="password"
         autoComplete="current-password"
@@ -87,6 +89,7 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
       })}
     >
       <TextField
+        required
         label="아이디"
         description="영문·숫자·밑줄 3~24자. 대소문자는 구분하지 않아요."
         autoComplete="username"
@@ -97,6 +100,7 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
         {...form.register('loginId')}
       />
       <TextField
+        required
         label="닉네임"
         autoComplete="nickname"
         maxLength={24}
@@ -104,6 +108,7 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
         {...form.register('nickname')}
       />
       <TextField
+        required
         label="비밀번호"
         type="password"
         description="15~128자. 문장처럼 길게 만들어도 좋아요."
