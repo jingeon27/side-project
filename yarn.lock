@@ -2739,6 +2739,7 @@ __metadata:
     "@types/node": "npm:^24.0.0"
     orval: "npm:8.43.0"
     typescript: "npm:~5.9.3"
+    vitest: "npm:^4.1.0"
     zod: "npm:^4.1.12"
   languageName: unknown
   linkType: soft
