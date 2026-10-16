@@ -1,6 +1,5 @@
 import { reactConfig } from '@side/eslint-config/react';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+import { parser as tsParser, plugin as tsPlugin } from 'typescript-eslint';
 import expoConfig from 'eslint-config-expo/flat.js';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
