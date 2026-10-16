@@ -12,7 +12,7 @@
 | `database/` · `storage/` | 전역 모듈. `Database.atomic()`(Serializable 재시도), 비공개 사진 저장소(local·S3) |
 | `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·개발 로그인·로그아웃·OAuth·앱 로그인 교환, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `@Viewer()`/`@OptionalViewer()` |
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·업로드(`POST /uploads/:token`)·사진 조회(`GET /photos/:id`)·sharp 변환 |
-| `post/` | 상시 갤러리 사진·동영상 게시물, KST 이달의 인기, 좋아요·작성자/관리자 삭제, GraphQL multipart 일회용 업로드·비공개 byte Range 스트리밍 |
+| `post/` | 상시 갤러리 사진·동영상 게시물, 멤버 전용 댓글·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, GraphQL multipart 일회용 업로드·비공개 byte Range 스트리밍 |
 | `feed/` | `myPhotoFeed`: 가입한 모든 그룹의 공개 사진을 전체 최신순(createdAt·id desc)으로 offset 조회. 홈에는 관리자도 숨긴 사진·신고 정보를 받지 않는다 |
 | `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·OAuth 시도·앱 로그인 티켓) — 테스트는 `SchedulerService.runOnce()` |
 | `testing/` | NODE_ENV=test와 ENABLE_TEST_API=true에서만 사용자·세션·단계·외부 콜백 티켓 fixture를 만든다 |

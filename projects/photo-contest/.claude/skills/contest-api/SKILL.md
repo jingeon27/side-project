@@ -28,12 +28,13 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 ## 상시 갤러리 게시물
 
-- 현재 제품은 Post·PostUpload·PostLike다. 갤러리는 종료되지 않으며 대회 없이 여러 번 등록한다.
+- 현재 제품은 Post·PostUpload·PostLike·PostComment다. 갤러리는 종료되지 않으며 대회 없이 여러 번 등록한다.
 - galleryPosts의 groupId가 없으면 가입한 모든 갤러리, 있으면 해당 멤버십을 검사한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
 - 작성자와 OWNER만 삭제한다. 파일도 매 요청 멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
 - 웹 업로드는 GraphQL Upload scalar·multipart middleware와 uploadPostMedia mutation을 사용한다. 티켓 소유·만료·멤버십을 먼저 검사하고 스트림 크기를 제한한다. 기존 REST 업로드도 같은 검증·저장 로직을 쓴다.
 - /post-uploads는 5분 일회용 해시 티켓, 원본 100MB 상한이다. 사진은 기존 sharp 변환을 재사용하고 동영상은 MediaInfo WASM으로 컨테이너·코덱·시간을 검사한다. MP4 H.264/AAC·WebM VP8/VP9+Opus/Vorbis, 5분 이하.
 - /media/:id는 비공개 no-store 스트리밍·byte Range 206/416을 지원한다. 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
+- 댓글은 accessiblePost로 같은 멤버십·숨김 규칙을 적용한다. 본문은 trim 후 1~1000자, 최신순(createdAt·id desc) offset 목록이다. 작성자·관리자만 삭제하며 개수는 게시물 조회의 _count로 함께 구한다. 댓글 내용은 이벤트에 넣지 않는다.
 - 생성·좋아요·삭제 도메인 이벤트는 같은 DB 트랜잭션에 ID·종류만 기록한다.
 
 ## 기존 대회 호환 규칙

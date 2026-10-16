@@ -55,7 +55,7 @@ onConfirm={async () => {
 
 ## 새 종류의 오버레이
 
-- Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 데스크톱에서도 540px 열(`#pc-main`) 안에 뜬다. z-index는 `z-sheet`·`z-dialog` 토큰.
+- Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 오버레이가 앱의 provider와 기록 안에서 동작한다. 바텀시트는 모든 화면에서 아래에 붙고 브라우저 너비를 채운다. z-index는 `z-sheet`·`z-dialog` 토큰.
 - 포커스는 닫힐 때 Base UI가 열기 전 포커스 요소로 돌려준다. 그러니 effect가 아니라 연 버튼의 클릭 핸들러에서 연다.
 
 ## 테스트 (ui 레인)
