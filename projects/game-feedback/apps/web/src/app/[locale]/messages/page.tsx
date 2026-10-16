@@ -1,4 +1,4 @@
-import { ChatScreen } from '@/components/chat';
+import { MessagesPage as MessagesScreen } from '@/_pages/messages';
 export default async function MessagesPage({
   params,
   searchParams,
@@ -9,5 +9,5 @@ export default async function MessagesPage({
   const { locale } = await params,
     query = await searchParams;
   const conversationId = typeof query.conversation === 'string' ? query.conversation : undefined;
-  return <ChatScreen locale={locale} conversationId={conversationId} />;
+  return <MessagesScreen locale={locale} conversationId={conversationId} />;
 }

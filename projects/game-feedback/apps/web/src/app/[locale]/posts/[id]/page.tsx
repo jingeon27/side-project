@@ -1,5 +1,5 @@
-import { PostDetail } from '@/components/post-detail';
+import { PostPage as PostScreen } from '@/_pages/post';
 export default async function PostPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
   const { locale, id } = await params;
-  return <PostDetail id={id} locale={locale} />;
+  return <PostScreen id={id} locale={locale} />;
 }

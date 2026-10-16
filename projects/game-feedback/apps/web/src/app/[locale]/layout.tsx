@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Shell } from '@/components/shell';
+import { CommunityShell } from '@/_app';
 export default async function LocaleLayout({
   children,
   params,
@@ -9,5 +9,5 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
   if (!['ko', 'ja', 'en'].includes(locale)) notFound();
-  return <Shell locale={locale}>{children}</Shell>;
+  return <CommunityShell locale={locale}>{children}</CommunityShell>;
 }

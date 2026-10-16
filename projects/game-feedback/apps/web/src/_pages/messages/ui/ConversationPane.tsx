@@ -1,0 +1,120 @@
+import Link from 'next/link';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { ArrowDown, ArrowLeft, RefreshCw, ShieldBan } from 'lucide-react';
+import { chatError, chatMessageOptions } from '@/features/chat';
+import { UserBadges } from '@/features/user';
+import { Avatar, ErrorNotice, LoadingState } from '@/shared/ui';
+import { useChatConnection } from '@/widgets/chat-realtime';
+import { useChatBlock } from '../model/use-chat-block';
+import { useChatScroll } from '../model/use-chat-scroll';
+import { useVisibleRead } from '../model/use-visible-read';
+import { ChatComposer } from './ChatComposer';
+import { ChatHistory } from './ChatHistory';
+
+interface IConversationPaneProps {
+  conversationId: string;
+  userId: string;
+  locale: string;
+}
+
+export function ConversationPane({ conversationId, userId, locale }: IConversationPaneProps) {
+  const connection = useChatConnection();
+  const query = useInfiniteQuery({
+    ...chatMessageOptions(userId, conversationId),
+    refetchInterval: connection === 'live' ? false : 10_000,
+  });
+  const conversation = query.data?.pages[0]?.conversation;
+  const newestFirst = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const messages = [...new Map(newestFirst.map((message) => [message.id, message])).values()].reverse();
+  const unavailable = query.isError || !conversation;
+  const scroll = useChatScroll({
+    messageStamp: messages.map((message) => message.id).join(','),
+    newestId: newestFirst[0]?.id ?? '',
+    pending: query.isPending,
+    unavailable,
+    fetchingOlder: query.isFetchingNextPage,
+  });
+  const read = useVisibleRead({
+    userId,
+    conversationId,
+    visibleBoundary: scroll.visibleBoundary,
+    unavailable,
+  });
+  const { handleBlock } = useChatBlock({ userId, conversationId, locale });
+
+  function handleLoadOlder() {
+    scroll.handleCaptureHistory();
+    void query.fetchNextPage();
+  }
+
+  if (query.isPending)
+    return (
+      <section className="conversation-pane">
+        <LoadingState text="메시지를 불러오고 있어요" />
+      </section>
+    );
+  if (query.isError || !conversation)
+    return (
+      <section className="conversation-pane chat-unavailable">
+        <ShieldBan size={32} />
+        <h2>지금은 이 대화를 열 수 없어요</h2>
+        <ErrorNotice message={chatError(query.error)} />
+        <button className="button outline" onClick={() => query.refetch()}>
+          <RefreshCw size={15} />
+          다시 확인
+        </button>
+        <Link className="text-button" href={`/${locale}/messages`}>
+          대화 목록으로 돌아가기 →
+        </Link>
+      </section>
+    );
+  return (
+    <section className="conversation-pane" aria-label={`${conversation.peer.nickname}님과의 대화`}>
+      <header className="conversation-heading">
+        <Link
+          href={`/${locale}/messages`}
+          scroll={false}
+          className="icon-button chat-back"
+          aria-label="대화 목록으로 돌아가기"
+        >
+          <ArrowLeft size={19} />
+        </Link>
+        <Avatar name={conversation.peer.nickname} />
+        <div>
+          <h2>{conversation.peer.nickname}</h2>
+          <UserBadges author={conversation.peer} compact />
+          <p>플레이어와 나누는 1:1 대화</p>
+        </div>
+        <button className="text-button" onClick={() => handleBlock(conversation.peer)}>
+          <ShieldBan size={13} />
+          차단
+        </button>
+      </header>
+      <ChatHistory
+        conversation={conversation}
+        messages={messages}
+        userId={userId}
+        scroller={scroll.scroller}
+        hasOlder={query.hasNextPage}
+        fetchingOlder={query.isFetchingNextPage}
+        onScroll={scroll.handleScroll}
+        onLoadOlder={handleLoadOlder}
+      />
+      {scroll.unseen && (
+        <button className="chat-new-messages" onClick={scroll.handleScrollLatest}>
+          새 메시지가 도착했어요
+          <ArrowDown size={14} />
+        </button>
+      )}
+      <ChatComposer
+        userId={userId}
+        conversationId={conversationId}
+        unavailable={unavailable}
+        readFailed={read.mutation.isError}
+        onRetryRead={read.handleRetryRead}
+        onSent={scroll.handleSent}
+        onUnavailable={() => query.refetch()}
+      />
+    </section>
+  );
+}

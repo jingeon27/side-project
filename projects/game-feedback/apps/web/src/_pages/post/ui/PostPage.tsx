@@ -1,0 +1,49 @@
+'use client';
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
+import { postDetailOptions, PostArticle } from '@/features/post';
+import { useSession } from '@/features/auth';
+import { UserBadges } from '@/features/user';
+import { ProfileSnapshot } from '@/features/game-profile';
+import { ErrorNotice, LoadingState } from '@/shared/ui';
+import { usePostRead } from '../model/use-post-read.hook';
+import { ContentActions } from './ContentActions';
+import { PostAnswersSection } from './PostAnswersSection';
+import { PostCommentsSection } from './PostCommentsSection';
+interface IPostPageProps {
+  id: string;
+  locale: string;
+}
+export function PostPage({ id, locale }: IPostPageProps) {
+  const { session } = useSession(),
+    detail = useQuery(postDetailOptions(id));
+  usePostRead(detail.data, session?.user?.id);
+  if (detail.isPending) return <LoadingState text="플레이 이야기를 불러오고 있어요" />;
+  if (detail.isError || !detail.data)
+    return (
+      <div className="state-box">
+        <ErrorNotice message={detail.error?.message || '피드백 요청을 찾을 수 없어요.'} />
+        <Link className="button dark" href={`/${locale}`}>
+          라운지로 돌아가기
+        </Link>
+      </div>
+    );
+  const { post, answers, comments } = detail.data;
+  return (
+    <>
+      <Link className="back-link" href={`/${locale}`}>
+        <ArrowLeft size={16} />
+        피드백 라운지
+      </Link>
+      <PostArticle
+        post={post}
+        authorContent={<UserBadges author={post.author} />}
+        actions={<ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />}
+        profile={post.gameProfile && <ProfileSnapshot profile={post.gameProfile} />}
+      />
+      <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
+      <PostCommentsSection post={post} comments={comments} locale={locale} />
+    </>
+  );
+}

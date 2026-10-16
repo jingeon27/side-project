@@ -1,0 +1,42 @@
+'use client';
+import { useWatch } from 'react-hook-form';
+import { useDeleteAccount } from '@/features/auth';
+import { useZodForm } from '@/shared/model/form';
+import { ErrorNotice, Field, Modal } from '@/shared/ui';
+import { deleteAccountSchema } from '../model/settings.schema';
+
+interface IDeleteAccountDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps) {
+  const form = useZodForm(deleteAccountSchema, { defaultValues: { confirmation: '' } });
+  const confirmation = useWatch({ control: form.control, name: 'confirmation' });
+  const deletion = useDeleteAccount();
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+      title="플레이메이트를 떠나시겠어요?"
+      description="계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요."
+    >
+      <form
+        className="form-stack"
+        onSubmit={form.handleSubmit(() => deletion.mutate(undefined, { onSuccess: onClose }))}
+      >
+        <Field label="계속하려면 '탈퇴'를 입력해 주세요">
+          <input {...form.register('confirmation')} placeholder="탈퇴" required />
+        </Field>
+        <ErrorNotice message={form.formState.errors.confirmation?.message ?? deletion.error?.message} />
+        <button className="button danger full" disabled={confirmation !== '탈퇴' || deletion.isPending}>
+          계정 영구 삭제하기
+        </button>
+        <button className="button outline full" type="button" onClick={onClose}>
+          계속 함께하기
+        </button>
+      </form>
+    </Modal>
+  );
+}
