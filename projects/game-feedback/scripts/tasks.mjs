@@ -39,22 +39,27 @@ export async function runTask(task) {
     await workspace('sdk', 'codegen');
   } else if (task === 'check') {
     await prerequisites();
-    for (const name of ['contracts', 'api', 'sdk', 'web']) await workspace(name, 'typecheck');
+    for (const name of ['contracts', 'api', 'sdk', 'bridge', 'web', 'mobile'])
+      await workspace(name, 'typecheck');
     await workspace('web', 'lint');
+    await workspace('mobile', 'lint');
   } else if (task === 'test') {
     await prerequisites();
     if (env.TEST_DATABASE_URL) await local('db.mjs', ['start', '--test']);
     await workspace('api', 'test', { NODE_ENV: 'test' });
     await workspace('web', 'test');
-  } else if (task === 'test:e2e') {
+    await workspace('mobile', 'test');
+  } else if (task === 'test:e2e' || task === 'test:mobile:e2e') {
     await prerequisites();
     await local('db.mjs', ['start', '--test']);
-    await workspace('web', 'test:e2e');
+    if (task === 'test:e2e') await workspace('web', 'test:e2e');
+    await workspace('mobile', 'test:e2e');
   } else if (task === 'build') {
     await prerequisites();
     await workspace('api', 'build', { NODE_ENV: 'production' });
     await workspace('web', 'build', { NODE_ENV: 'production' });
-  } else throw new Error('Usage: tasks.mjs setup|codegen|check|test|test:e2e|build');
+    await workspace('mobile', 'bundle:check');
+  } else throw new Error('Usage: tasks.mjs setup|codegen|check|test|test:e2e|test:mobile:e2e|build');
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {

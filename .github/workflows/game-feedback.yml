@@ -23,7 +23,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,7 +39,7 @@ jobs:
       - run: yarn check:game-feedback
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
-      - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium
+      - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
       - run: yarn workspace @side/game-feedback test:e2e
       - name: Stop owned test database
         if: always()

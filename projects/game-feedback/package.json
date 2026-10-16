@@ -22,7 +22,11 @@
     "test": "node scripts/tasks.mjs test",
     "test:e2e": "node scripts/tasks.mjs test:e2e",
     "codegen": "node scripts/tasks.mjs codegen",
-    "build": "node scripts/tasks.mjs build"
+    "build": "node scripts/tasks.mjs build",
+    "test:mobile:e2e": "node scripts/tasks.mjs test:mobile:e2e",
+    "mobile:start": "yarn workspace @game-feedback/mobile start",
+    "mobile:android": "yarn workspace @game-feedback/mobile android",
+    "mobile:ios": "yarn workspace @game-feedback/mobile ios"
   },
   "devDependencies": {
     "embedded-postgres": "18.4.0-beta.17"
