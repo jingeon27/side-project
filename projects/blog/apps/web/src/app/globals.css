@@ -582,13 +582,36 @@ svg {
   font-weight: 600;
 }
 .article-list {
-  border-top: 1px solid var(--line-strong);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px 28px;
 }
 .article-row {
   display: flex;
-  align-items: flex-start;
-  padding: 26px 0;
+  flex-direction: column;
+  min-width: 0;
+  gap: 18px;
+  padding-bottom: 26px;
   border-bottom: 1px solid var(--line);
+}
+.article-thumbnail-link {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+.article-thumbnail {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--surface);
+}
+.article-thumbnail img {
+  object-fit: cover;
+}
+.article-thumbnail--contain img {
+  object-fit: contain;
+  padding: 16px;
 }
 .article-row-content {
   min-width: 0;
@@ -598,8 +621,13 @@ svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   margin-bottom: 9px;
+}
+.article-row-top .article-meta {
+  font-size: 11px;
+  gap: 8px;
 }
 .category-label {
   color: var(--accent);
@@ -627,10 +655,8 @@ svg {
   line-height: 1.55;
 }
 .article-row h3 a {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 22px;
+  display: block;
+  overflow-wrap: anywhere;
 }
 .article-row h3 a:hover {
   color: var(--accent);
@@ -1137,18 +1163,6 @@ html:not([data-theme='dark']) .code-block span {
   margin-top: 0;
   margin-bottom: 24px;
 }
-.related-section .article-row h3 {
-  font-size: 17px;
-}
-.related-section .article-row-top .article-meta {
-  font-size: 11px;
-}
-.related-section .article-row-content > p {
-  font-size: 13px;
-}
-.related-section .article-row {
-  padding: 24px 0;
-}
 
 /* About */
 .about-page {
@@ -1402,27 +1416,24 @@ html:not([data-theme='dark']) .code-block span {
     right: -34px;
     width: min(300px, calc(100vw - 44px));
   }
+  .article-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
   .article-row {
-    padding: 24px 0;
+    gap: 16px;
+    padding-bottom: 24px;
   }
   .article-row-top {
     margin-bottom: 7px;
-    gap: 12px;
   }
   .article-row .category-label {
     font-size: 11px;
-  }
-  .article-row .article-meta {
-    font-size: 11px;
-    gap: 10px;
   }
   .article-row h3 {
     font-size: 18px;
     letter-spacing: -0.04em;
     line-height: 1.6;
-  }
-  .article-row h3 a {
-    gap: 10px;
   }
   .article-row-content > p {
     font-size: 13px;
@@ -1592,9 +1603,6 @@ html:not([data-theme='dark']) .code-block span {
     font-size: 22px;
     margin-bottom: 20px;
   }
-  .related-section .article-row h3 {
-    font-size: 16px;
-  }
   .about-intro {
     padding: 54px 0 45px;
   }
@@ -1701,7 +1709,6 @@ html:not([data-theme='dark']) .code-block span {
     gap: 15px;
   }
   .article-row-top {
-    flex-wrap: wrap;
     row-gap: 3px;
   }
   .article-heading h1 {

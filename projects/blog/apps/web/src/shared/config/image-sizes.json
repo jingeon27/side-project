@@ -126,5 +126,73 @@
   "/images/posts/typed-program-form/06.png": {
     "width": 1520,
     "height": 2988
+  },
+  "/images/thumbnails/bottom-sheet-drag-crash.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/chatbot-message-layer.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/cross-domain-token-handoff.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/declarative-code.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/electron-module-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/error-boundary-recovery.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/fsd-layer-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/low-effort-success.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/nextjs-seo-prefetch.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/nextjs-tanstack-query-ssr.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/prototype-working-rules.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/puppeteer-event-lifecycle.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/query-key-factory.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/review-like-optimistic-update.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/sitemap-api-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/typescript-patterns.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/zod-assertion-boundaries.svg": {
+    "width": 640,
+    "height": 360
   }
 }

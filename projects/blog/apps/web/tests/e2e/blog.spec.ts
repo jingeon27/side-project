@@ -28,6 +28,32 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
+test('cover, article diagram, and fallback thumbnails load without breaking title links or mobile layout', async ({
+  page,
+}) => {
+  await page.goto('/ko/blog');
+  const search = page.getByRole('combobox', { name: ko.common.search });
+  for (const id of ['reading-ai-code', 'health-check-program', 'bottom-sheet-drag-crash']) {
+    const entry = articles.find((candidate) => candidate.id === id)!;
+    expect(entry, id).toBeDefined();
+    await search.fill(entry.title);
+    await search.press('Escape');
+    await expect(search).toHaveAttribute('aria-expanded', 'false');
+    const row = page.locator('.article-list .article-row');
+    await expect(row).toHaveCount(1);
+    const image = row.locator('img');
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0))
+      .toBe(true);
+    const title = row.locator('h3').getByRole('link', { name: entry.title, exact: true });
+    await expect(title).toBeVisible();
+    expect(decodeURIComponent((await title.getAttribute('href'))!)).toBe(`/ko/blog/${entry.slug}`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  }
+});
+
 test('unified suggestions apply an exact tag without requiring it in the title', async ({ page }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });

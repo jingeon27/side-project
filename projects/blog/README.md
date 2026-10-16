@@ -41,6 +41,8 @@ Playwright는 빌드한 서버를 별도 포트 `3101`에서 실행합니다. �
 
 MDX에는 `Summary`, `Decision`, `Callout`, `Figure`, `CodeBlock`을 사용할 수 있습니다. Markdown 코드 블록은 Shiki로 강조됩니다. `##`·`###` 제목으로 목차를 생성하며 heading과 목차에는 같은 anchor 규칙을 적용합니다.
 
+목록 썸네일은 `meta.json`의 `coverImage`를 우선 사용합니다. 별도 커버가 없으면 `apps/web/src/entities/article/lib/article-thumbnails.ts`에서 지정한 본문 그림이나 주제 도해를 표시합니다. 새 글에 맞는 이미지를 지정하려면 `coverImage` 또는 이 매핑을 추가합니다. 도해 파일은 `apps/web/public/images/thumbnails/`에 둡니다.
+
 Slug는 제목을 고쳐도 유지합니다. 공개 URL을 변경해야 하면 `apps/web/content/redirects.json`에 `{ "locale": "ko", "from": "old-slug", "to": "new-slug" }`을 추가합니다. 기존 URL에서 새 URL로 301을 반환하며 대상 글이 실제로 존재하는지 생성 단계에서 검사합니다.
 
 카테고리는 `engineering`, `til`, `perspectives`, `misc` 네 가지입니다. UI 문구는 `messages`, SEO는 `seo`, 본문은 `content/posts`에서 관리합니다. 코드 구조는 `app → widgets → features → entities → shared`이며 범용 `components/` 디렉터리는 만들지 않습니다.
