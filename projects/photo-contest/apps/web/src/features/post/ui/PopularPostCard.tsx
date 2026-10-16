@@ -36,17 +36,19 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
               <Play aria-hidden className="size-5" />
             </span>
           )}
-          <span className="absolute top-1 left-1 flex size-6 items-center justify-center rounded-badge bg-ink text-caption font-semibold text-on-brand shadow-card ring-1 ring-surface/80">
+        </span>
+        <span className="flex w-full min-w-0 items-start gap-2">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-badge bg-ink text-caption font-semibold text-on-brand">
             {rank}
             <span className="sr-only">위</span>
           </span>
-        </span>
-        <span className="flex w-full min-w-0 flex-col gap-0.5">
-          <span className="truncate text-label text-ink">{post.title}</span>
-          <span className="truncate text-caption text-muted">{post.groupName}</span>
-          <span className="flex items-center gap-1 text-caption text-muted">
-            <Heart aria-hidden className="size-3" />
-            좋아요 {formatCount(post.likeCount)}개
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-label text-ink">{post.title}</span>
+            <span className="truncate text-caption text-muted">{post.groupName}</span>
+            <span className="flex items-center gap-1 text-caption text-muted">
+              <Heart aria-hidden className="size-3" />
+              좋아요 {formatCount(post.likeCount)}개
+            </span>
           </span>
         </span>
       </Link>
