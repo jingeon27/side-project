@@ -75,6 +75,67 @@ describe('상시 갤러리 게시물', () => {
   afterAll(async () => {
     await api?.close();
   });
+  const multipart = async (
+    cookie: string | undefined,
+    uploadId: string,
+    bytes: Buffer,
+    contentType = 'image/png',
+    origin = TEST_WEB_ORIGIN,
+  ) => {
+    const req = api.http().post('/graphql').set('Origin', origin).set('Apollo-Require-Preflight', 'true');
+    if (cookie) req.set('Cookie', cookie);
+    return req
+      .field(
+        'operations',
+        JSON.stringify({
+          query: 'mutation($uploadId:ID!,$file:Upload!){uploadPostMedia(uploadId:$uploadId,file:$file)}',
+          variables: { uploadId, file: null },
+        }),
+      )
+      .field('map', JSON.stringify({ '0': ['variables.file'] }))
+      .attach('0', bytes, { filename: 'upload', contentType });
+  };
+  it('GraphQL multipart로 실제 사진·동영상을 올리고 재사용은 거절해야 한다', async () => {
+    for (const video of [false, true]) {
+      const grant = await ticket(member);
+      const res = await multipart(
+        member.cookie,
+        grant.id,
+        video ? await createTestVideo() : await createTestImage(),
+        video ? 'video/mp4' : 'image/png',
+      );
+      expect(res.body).toEqual({ data: { uploadPostMedia: true } });
+      const stored = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
+      expect(stored.kind).toBe(video ? 'VIDEO' : 'PHOTO');
+      expect(stored.storageKey).toBeTruthy();
+      expect(
+        (await multipart(member.cookie, grant.id, await createTestImage())).body.errors[0].extensions.code,
+      ).toBe('FORBIDDEN');
+    }
+  });
+  it('multipart도 인증·티켓 소유자·Origin·실제 파일 내용을 검사해야 한다', async () => {
+    const grant = await ticket(member);
+    const image = await createTestImage();
+    expect((await multipart(undefined, grant.id, image)).body.errors[0].extensions.code).toBe(
+      'UNAUTHENTICATED',
+    );
+    expect((await multipart(owner.cookie, grant.id, image)).body.errors[0].extensions.code).toBe('FORBIDDEN');
+    expect(
+      (await multipart(member.cookie, grant.id, image, 'image/png', 'https://evil.example')).status,
+    ).toBe(403);
+    expect(
+      (await multipart(member.cookie, grant.id, Buffer.from('fake image'))).body.errors[0].extensions.code,
+    ).toBe('BAD_USER_INPUT');
+    expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).storageKey).toBeNull();
+    const malformed = await api
+      .http()
+      .post('/graphql')
+      .set('Origin', TEST_WEB_ORIGIN)
+      .set('Apollo-Require-Preflight', 'true')
+      .field('operations', 'broken json');
+    expect(malformed.status).toBe(400);
+    expect(malformed.body.message).toBeTruthy();
+  });
   it('대회와 날짜 없이 같은 회원이 여러 사진·동영상을 올릴 수 있어야 한다', async () => {
     const a = await create(member, '첫 사진');
     const b = await create(member, '두 번째 사진');

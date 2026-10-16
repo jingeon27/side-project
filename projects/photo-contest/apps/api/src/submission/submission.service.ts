@@ -1,7 +1,13 @@
+import type { FileUpload } from 'graphql-upload/processRequest.mjs';
+
+import type { Prisma } from '../../generated/prisma';
+
 import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
+import { readUpload } from '../common/graphql/read-upload';
+import { MAX_UPLOAD_BYTES } from '../config/limits';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
@@ -111,12 +117,28 @@ export class SubmissionService {
    * 업로드 티켓 원문으로 받은 사진을 변환해 저장한다. 티켓은 한 번만 쓸 수 있다.
    * 티켓 주인이 아니거나 이미 썼거나 만료됐으면 FORBIDDEN.
    */
-  async upload(viewer: IViewer, token: string, body: unknown): Promise<void> {
-    const grant = await this.db.upload.findUnique({ where: { tokenHash: sha256Hex(token) } });
+  async upload(viewer: IViewer, token: string, body: unknown) {
+    const grant = await this.uploadGrant(viewer, { tokenHash: sha256Hex(token) });
+    await this.saveUpload(grant, body);
+  }
+
+  async uploadFile(viewer: IViewer, uploadId: string, file: Promise<FileUpload>) {
+    const grant = await this.uploadGrant(viewer, { id: uploadId });
+    const content = await readUpload(file, MAX_UPLOAD_BYTES);
+    await this.saveUpload(grant, content.body);
+    return true;
+  }
+
+  private async uploadGrant(viewer: IViewer, where: Prisma.UploadWhereUniqueInput) {
+    const grant = await this.db.upload.findUnique({ where });
     if (!grant || grant.userId !== viewer.id || grant.imageKey || grant.expiresAt < new Date())
       fail(MESSAGE.UPLOAD_REJECTED, ERROR_CODE.FORBIDDEN);
     const { contest } = await this.membership.accessibleContest(viewer.id, grant.contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
+    return grant;
+  }
+
+  private async saveUpload(grant: Awaited<ReturnType<SubmissionService['uploadGrant']>>, body: unknown) {
     const image = await processPhoto(body);
     const imageKey = createPhotoKey();
     await this.storage.put(imageKey, image);

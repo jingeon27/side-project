@@ -53,7 +53,7 @@ export class PostController {
         'Content-Range': `bytes ${range.start}-${range.end}/${file.size}`,
         'Content-Length': String(range.end - range.start + 1),
       });
-    else res.set('Content-Length', String(stream.size));
+    if (!range) res.set('Content-Length', String(stream.size));
     try {
       await pipeline(stream.body, res);
     } catch (error) {

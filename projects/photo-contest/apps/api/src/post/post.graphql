@@ -1,3 +1,5 @@
+scalar Upload
+
 enum PostKind {
   PHOTO
   VIDEO
@@ -24,6 +26,7 @@ extend type Query {
   galleryPosts(groupId: ID, sort: PostSort = NEWEST, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
 }
 extend type Mutation {
+  uploadPostMedia(uploadId: ID!, file: Upload!): Boolean!
   requestPostUpload(groupId: ID!): UploadTicket!
   createPost(
     groupId: ID!

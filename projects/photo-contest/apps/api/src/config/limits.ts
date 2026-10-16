@@ -51,3 +51,6 @@ export const MAX_MEDIA_BODY = '100mb';
 export const MAX_VIDEO_SECONDS = 300;
 export const POST_TITLE_LIMIT = 80;
 export const POST_BODY_LIMIT = 5000;
+
+export const MAX_GRAPHQL_FIELD_BYTES = 64 * 1024;
+export const MAX_GRAPHQL_UPLOAD_FILES = 1;

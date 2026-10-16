@@ -1,8 +1,12 @@
+import type { FileUpload } from 'graphql-upload/processRequest.mjs';
+
 import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
+import { readUpload } from '../common/graphql/read-upload';
+import { MAX_VIDEO_BYTES } from '../config/limits';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
@@ -115,10 +119,30 @@ export class PostService {
     return { id: upload.id, expiresAt: upload.expiresAt, url: `/backend/post-uploads/${token}` };
   }
   async upload(viewer: IViewer, token: string, body: unknown, contentType: string) {
-    const grant = await this.db.postUpload.findUnique({ where: { tokenHash: sha256Hex(token) } });
+    const grant = await this.uploadGrant(viewer, { tokenHash: sha256Hex(token) });
+    await this.saveUpload(grant, body, contentType);
+  }
+
+  async uploadFile(viewer: IViewer, uploadId: string, file: Promise<FileUpload>) {
+    const grant = await this.uploadGrant(viewer, { id: uploadId });
+    const content = await readUpload(file, MAX_VIDEO_BYTES);
+    await this.saveUpload(grant, content.body, content.contentType);
+    return true;
+  }
+
+  private async uploadGrant(viewer: IViewer, where: Prisma.PostUploadWhereUniqueInput) {
+    const grant = await this.db.postUpload.findUnique({ where });
     if (!grant || grant.userId !== viewer.id || grant.storageKey || grant.expiresAt <= new Date())
       fail('업로드 요청이 만료되었거나 유효하지 않습니다.', ERROR_CODE.FORBIDDEN);
     await this.membership.requireMember(viewer.id, grant.groupId);
+    return grant;
+  }
+
+  private async saveUpload(
+    grant: Awaited<ReturnType<PostService['uploadGrant']>>,
+    body: unknown,
+    contentType: string,
+  ) {
     const media = await this.processor.process(body, contentType);
     const key = createMediaKey(media.extension);
     await this.storage.put(key, media.body, media.contentType);
@@ -177,7 +201,7 @@ export class PostService {
           create: { postId, userId: viewer.id },
           update: {},
         });
-      else await tx.postLike.deleteMany({ where: { postId, userId: viewer.id } });
+      if (!liked) await tx.postLike.deleteMany({ where: { postId, userId: viewer.id } });
       if (liked)
         await recordEvent(tx, {
           id: `post-like:${postId}:${viewer.id}`,
