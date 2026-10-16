@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'projects/game-feedback/**'
+      - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
       - '.github/workflows/game-feedback.yml'
@@ -11,6 +12,7 @@ on:
     branches: [main, develop]
     paths:
       - 'projects/game-feedback/**'
+      - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
       - '.github/workflows/game-feedback.yml'
@@ -33,6 +35,7 @@ jobs:
       - run: yarn workspace @side/game-feedback codegen
       - name: Check generated API contract
         run: git diff --exit-code -- projects/game-feedback/apps/api/openapi.json projects/game-feedback/packages/sdk/src/generated
+      - run: yarn workspace @side/design-system check
       - run: yarn check:game-feedback
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
