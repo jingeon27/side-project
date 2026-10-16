@@ -20,7 +20,7 @@ description: 웹(apps/web)의 Tailwind 4·디자인 토큰, 휴대폰·태블릿
 ## 레이아웃
 
 - 화면은 `main#pc-main`(`src/app/layout.tsx`, `max-w-web`) 안에 그린다. 위아래 고정 바는 `sticky`인 `TopAppBar`·`StickyCta`·`BottomNav`를 쓴다. 데스크톱 시트·폼·CTA·토스트는 전체 웹 폭으로 늘리지 않고 읽기 쉬운 폭을 유지한다. 오버레이 portal은 `getOverlayContainer()`를 쓴다.
-- 사진 목록은 1열 → `tablet:`(768px 이상) 2열 → `desktop:`(1024px 이상) 3열이다. 데스크톱에서는 상단바 메뉴를 보이고 하단 탭은 숨긴다. `pc:`(540px)는 기존 호환 토큰이다. `w-screen`·`100vw`는 가로 넘침을 만든다.
+- 상시 게시물은 최대 540px의 큰 1열 피드다. 데스크톱(1024px 이상)은 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진이며 하단 탭은 숨긴다. 모바일·태블릿은 하단 탭과 가로 인기 사진을 쓴다. 이전 대회 피드의 격자는 유지한다. `pc:`(540px)는 기존 호환 토큰이다. `w-screen`·`100vw`는 가로 넘침을 만든다.
 - 높이는 `dvh`(`min-h-dvh`, `max-h-[90dvh]`)로 쓰고 `h-screen`·`min-h-screen`·`100vh`는 쓰지 않는다.
 - 안전 영역: 위 고정 요소는 `pt-(--safe-top)`, 아래 고정 요소는 `pb-[calc(16px+var(--safe-bottom))]`. 앱 WebView에서는 네이티브가 맡아 `env()`가 0이므로 `in-app:`으로 안전 영역을 다시 만지지 않는다. `in-app:`(`html[data-app]`)은 앱 설치 안내 숨김 같은 표면 차이에만 쓴다.
 - 입력 중 숨길 하단 요소는 `keyboard-open:hidden`(터치 기기 + 글자 입력 포커스). 새 하단 고정 바를 만들지 말고 `StickyCta`를 쓴다. 토스트 위치(`--toast-bottom`)가 `[data-sticky-cta]`·`[data-bottom-nav]`를 보고 비켜 간다.
