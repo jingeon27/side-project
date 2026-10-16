@@ -1,0 +1,29 @@
+{
+  "name": "@side/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./react": "./src/react.mjs",
+    "./fsd": "./src/fsd.mjs"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "yarn lint && yarn typecheck && yarn test"
+  },
+  "peerDependencies": {
+    "eslint": "^9.39.0"
+  },
+  "devDependencies": {
+    "@side/typescript-config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react": "7.37.5",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.50.0",
+    "vitest": "^4.1.0"
+  }
+}
