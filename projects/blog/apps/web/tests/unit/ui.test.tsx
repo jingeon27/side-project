@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ArticleCard } from '@/entities/article/ui/article-card';
+import { ArticleMeta } from '@/entities/article/ui/article-meta';
 import type { Article } from '@/entities/article/model/types';
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
 import { LocaleSwitch } from '@/features/locale-switch/ui/locale-switch';
@@ -83,6 +84,28 @@ describe('article discovery', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
+
+  it.each([
+    ['ko', '2026년 10월 1일', '2026년 10월 17일'],
+    ['en', 'Oct 1, 2026', 'Oct 17, 2026'],
+  ] as const)(
+    'keeps Korean publication and revision dates after midnight in %s',
+    (locale, published, updated) => {
+      const entry = {
+        ...article,
+        locale,
+        publishedAt: '2026-10-01T00:10:00+09:00',
+        updatedAt: '2026-10-17T01:15:00+09:00',
+      };
+      const { container } = render(<ArticleMeta article={entry} showUpdated />);
+      const dates = container.querySelectorAll('time');
+      expect(dates).toHaveLength(2);
+      expect(dates[0]).toHaveTextContent(published);
+      expect(dates[0]).toHaveAttribute('datetime', entry.publishedAt);
+      expect(dates[1]).toHaveTextContent(updated);
+      expect(dates[1]).toHaveAttribute('datetime', entry.updatedAt);
+    },
+  );
 
   it('shows linked article metadata, category, and tags', () => {
     render(<ArticleCard article={article} />);
