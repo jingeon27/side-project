@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@game-feedback/bridge": "workspace:*",
     "@game-feedback/contracts": "workspace:*",
     "@game-feedback/sdk": "workspace:*",
     "@hookform/resolvers": "^5.2.2",

@@ -1,0 +1,48 @@
+{
+  "name": "@game-feedback/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  },
+  "scripts": {
+    "start": "expo start --dev-client --port 8082",
+    "android": "expo run:android --port 8082",
+    "ios": "expo run:ios --port 8082",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "bundle:check": "node scripts/bundle-check.mjs"
+  },
+  "dependencies": {
+    "@game-feedback/bridge": "workspace:*",
+    "expo": "~57.0.28",
+    "expo-build-properties": "~57.0.22",
+    "expo-crypto": "~57.0.4",
+    "expo-dev-client": "~57.0.20",
+    "expo-linking": "~57.0.12",
+    "expo-status-bar": "~57.0.1",
+    "expo-web-browser": "~57.0.3",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-webview": "13.16.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@side/eslint-config": "workspace:*",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "~19.2.0",
+    "eslint": "^9.39.0",
+    "jiti": "^2.6.1",
+    "jsdom": "^29.0.0",
+    "react-dom": "19.2.3",
+    "react-native-web": "~0.21.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

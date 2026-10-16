@@ -2683,12 +2683,52 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@game-feedback/bridge@workspace:*, @game-feedback/bridge@workspace:projects/game-feedback/packages/bridge":
+  version: 0.0.0-use.local
+  resolution: "@game-feedback/bridge@workspace:projects/game-feedback/packages/bridge"
+  dependencies:
+    typescript: "npm:~5.9.3"
+    zod: "npm:^4.1.12"
+  languageName: unknown
+  linkType: soft
+
 "@game-feedback/contracts@workspace:*, @game-feedback/contracts@workspace:projects/game-feedback/packages/contracts":
   version: 0.0.0-use.local
   resolution: "@game-feedback/contracts@workspace:projects/game-feedback/packages/contracts"
   dependencies:
     typescript: "npm:~5.9.3"
     zod: "npm:^4.1.12"
+  languageName: unknown
+  linkType: soft
+
+"@game-feedback/mobile@workspace:projects/game-feedback/apps/mobile":
+  version: 0.0.0-use.local
+  resolution: "@game-feedback/mobile@workspace:projects/game-feedback/apps/mobile"
+  dependencies:
+    "@game-feedback/bridge": "workspace:*"
+    "@playwright/test": "npm:1.64.0"
+    "@side/eslint-config": "workspace:*"
+    "@testing-library/dom": "npm:^10.4.1"
+    "@testing-library/react": "npm:^16.3.0"
+    "@types/react": "npm:~19.2.0"
+    eslint: "npm:^9.39.0"
+    expo: "npm:~57.0.28"
+    expo-build-properties: "npm:~57.0.22"
+    expo-crypto: "npm:~57.0.4"
+    expo-dev-client: "npm:~57.0.20"
+    expo-linking: "npm:~57.0.12"
+    expo-status-bar: "npm:~57.0.1"
+    expo-web-browser: "npm:~57.0.3"
+    jiti: "npm:^2.6.1"
+    jsdom: "npm:^29.0.0"
+    react: "npm:19.2.3"
+    react-dom: "npm:19.2.3"
+    react-native: "npm:0.86.3"
+    react-native-safe-area-context: "npm:~5.7.0"
+    react-native-web: "npm:~0.21.0"
+    react-native-webview: "npm:13.16.1"
+    typescript: "npm:^5.9.0"
+    vitest: "npm:^4.1.0"
   languageName: unknown
   linkType: soft
 
@@ -2707,6 +2747,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/web@workspace:projects/game-feedback/apps/web"
   dependencies:
+    "@game-feedback/bridge": "workspace:*"
     "@game-feedback/contracts": "workspace:*"
     "@game-feedback/sdk": "workspace:*"
     "@hookform/resolvers": "npm:^5.2.2"
