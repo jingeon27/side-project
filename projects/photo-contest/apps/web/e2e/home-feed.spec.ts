@@ -49,16 +49,24 @@ test(
         .locator('[data-photo-feed]')
         .evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(' ').length);
     if (testInfo.project.name === 'desktop-chrome') {
-      expect(await columnCount()).toBe(3);
+      expect(await columnCount()).toBe(1);
       expect((await page.locator('#pc-main').boundingBox())?.width).toBeGreaterThan(1000);
+      const feed = await latest.boundingBox();
+      const popular = await page.getByRole('region', { name: '이달의 인기', exact: true }).boundingBox();
+      expect(feed?.width).toBeLessThanOrEqual(540);
+      if (!feed || !popular) throw new Error('피드와 인기 사진이 보여야 한다');
+      expect(popular.x).toBeGreaterThan(feed.x + feed.width);
       await mkdir('.data/screens', { recursive: true });
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: '.data/screens/desktop-photo-feed.png', fullPage: true });
       await page.setViewportSize({ width: 820, height: 1180 });
-      expect(await columnCount()).toBe(2);
+      expect(await columnCount()).toBe(1);
+      expect((await latest.boundingBox())?.width).toBeLessThanOrEqual(540);
       await page.setViewportSize({ width: 390, height: 844 });
     }
     expect(await columnCount()).toBe(1);
+    const image = await newest.getByRole('img', { name: '가장 최근의 순간' }).boundingBox();
+    expect(image?.width).toBeGreaterThan(300);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await mkdir('.data/screens', { recursive: true });
     await page.evaluate(() => window.scrollTo(0, 0));

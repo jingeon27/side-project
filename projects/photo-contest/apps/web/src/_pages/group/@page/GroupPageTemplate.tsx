@@ -17,14 +17,14 @@ import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { CreatePostButton, GalleryBoard } from '@/features/post';
+import { CreatePostButton, GalleryFeed } from '@/features/post';
 import { GroupCommunity } from './community/GroupCommunity';
 
 function GroupFrame({ title = '갤러리', children }: { title?: string; children: ReactNode }) {
   return (
     <>
       <TopAppBar title={title} backHref={ROUTES.HOME} />
-      <div className="flex flex-col gap-8 p-4">{children}</div>
+      <div className="flex flex-col gap-8 px-4 py-6 tablet:px-8">{children}</div>
     </>
   );
 }
@@ -64,17 +64,21 @@ function GroupContent({
   const group = data.group;
   return (
     <GroupFrame title={group.name}>
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-card bg-sunken p-5">
-        <div>
-          <p className="text-label text-brand">{group.members.length}명이 함께하는 갤러리</p>
-          <p className="mt-2 text-body text-muted">
-            사진도 동영상도, 합성도 환영해요. 언제든 웃긴 순간을 남겨보세요.
-          </p>
+      <section className="flex flex-wrap items-center gap-4 border-b border-line pb-6 tablet:gap-6">
+        <span
+          aria-hidden
+          className="flex size-20 shrink-0 items-center justify-center rounded-full border border-line bg-sunken text-display text-ink"
+        >
+          {Array.from(group.name.trim())[0] ?? '?'}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-title-lg text-ink">{group.name}</p>
+          <p className="mt-1 text-label text-ink">{group.members.length}명이 함께하는 갤러리</p>
+          <p className="mt-2 text-caption text-muted">사진도 동영상도, 합성도 환영해요.</p>
         </div>
         <CreatePostButton groupId={group.id} />
       </section>
-      <GalleryBoard groupId={group.id} />
-      <GalleryBoard groupId={group.id} popular />
+      <GalleryFeed groupId={group.id} />
       <details className="rounded-card border border-line p-4">
         <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
           초대와 갤러리 멤버
