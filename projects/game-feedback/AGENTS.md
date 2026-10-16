@@ -33,7 +33,7 @@
 - API 계약은 서버 Zod 스키마 → OpenAPI → Orval 순서로 생성한다. 생성 파일을 손으로 고치지 않는다.
 - 변경 범위에 맞는 검사만 수행한다. `check`, `test`, `test:e2e`, `build`, 계약 생성 결과 검사를 선택한다.
 - 프로젝트 집계는 `test`, `build`, `typecheck`, `check`를 정의하고 앱·패키지 명령에 위임한다.
-- 테스트 파일·Vitest/Playwright 설정·러너 의존성은 API/Web 또는 해당 패키지가 소유한다. 루트·프로젝트 집계와 공통 e2e Workspace에 두지 않는다. DB URL 가드 테스트도 API가 소유한다.
+- 테스트 파일·Vitest/Playwright 설정·러너 의존성은 API/Web/Mobile 또는 해당 패키지가 소유한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest unit/UI+Playwright native host로 검증한다. 루트·프로젝트 집계와 공통 e2e Workspace에 두지 않는다. DB URL 가드 테스트도 API가 소유한다.
 - 루트 Prettier 설정을 사용해 변경 파일의 format을 검사한다. 사용자 제공 원본 계획은 수정하지 않는다.
 - 이전 저장소에서 얻은 테스트 결과를 현재 저장소의 검증으로 기록하지 않는다. 환경과 실제 실행 결과를 구분한다.
 - 로컬 테스트 및 커밋 절차는 `.claude/skills/game-feedback-test/SKILL.md`, `.claude/skills/game-feedback-commit/SKILL.md`를 참고한다.

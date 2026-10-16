@@ -1,6 +1,6 @@
 # Game Feedback
 
-클래시로얄 플레이어가 자신의 덱과 고민을 올리고, 다른 사용자의 피드백을 받아 `도움됨`으로 표시하는 웹 서비스다. 한국어 중심의 비공개 알파를 구현하며 `/ko`, `/ja`, `/en` 경로를 준비한다. 공개 베타·모바일·추가 게임은 후속 단계다.
+클래시로얄 플레이어가 자신의 덱과 고민을 올리고, 다른 사용자의 피드백을 받아 `도움됨`으로 표시하는 웹 서비스다. 한국어 중심의 비공개 알파를 구현하며 `/ko`, `/ja`, `/en` 경로를 준비한다. Expo WebView 모바일 앱도 같은 화면을 사용하며 공개 베타·추가 게임은 후속 단계다.
 
 작성자와 1:1 대화를 시작하고 채팅함에서 이어 갈 수 있다. 대화와 메시지는 PostgreSQL에 보존하며 새 메시지·읽음 변경은 인증된 SSE 연결로 갱신한다. 상대 차단은 대화 조회와 메시지 전송에도 적용한다. 현재 구현·검증 상태는 [구현 기록](docs/implementation.md)에 구분해 남긴다.
 
@@ -46,14 +46,28 @@ corepack yarn workspace @side/game-feedback db:stop
 | 명령 뒤의 작업                                                                   | 실행 내용                                                               |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Web 타입 및 Web FSD·코드 규칙 lint 검사 위임               |
-| `corepack yarn workspace @side/game-feedback test`                               | API DB 가드·통합 테스트 및 Web 캐시 경계 단위 테스트                    |
-| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 소유 브라우저 테스트                              |
-| `corepack yarn workspace @side/game-feedback build`                              | Game Feedback API/Web production build                                  |
+| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임    |
+| `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, Web Vitest, Mobile Vitest 단위·UI 테스트          |
+| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web·Mobile 소유 Playwright 테스트                     |
+| `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export             |
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                 |
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                              |
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                          |
 | `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                             |
+
+## 모바일 WebView 앱
+
+`apps/mobile`은 Expo dev client로 실행하며 웹의 테스트 계정·게시글·댓글·채팅·공통 디자인을 그대로 사용한다. Metro는 8082, Android/iOS E2E는 Web 3302·API 4302와 별도 `gf_test_mobile_*` 스키마를 사용한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest 단위·UI와 Playwright native host 검증을 소유한다.
+
+```sh
+# 웹 데모 실행 후 별도 터미널에서
+adb reverse tcp:3300 tcp:3300
+APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:android
+# iOS
+APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
+```
+
+[모바일 실행·테스트 가이드](apps/mobile/README.md)에 origin 설정, 시스템 브라우저 Google 로그인, 뒤로 가기·딥링크·연결 복구와 실기기 확인 범위를 정리했다.
 
 ## 데이터 격리
 

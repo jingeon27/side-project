@@ -7,6 +7,8 @@
 | `@side/game-feedback`      | 안전한 로컬 DB·실행·검증 명령                                                          |
 | `@game-feedback/web`       | Next.js App Router, React, 공통 디자인 시스템·Base UI, TanStack Query, React Hook Form |
 | `@game-feedback/api`       | NestJS + Express, Zod 검증, Prisma, 외부 제공자 인터페이스                             |
+| `@game-feedback/mobile`    | Expo 57·React Native WebView 셸, 앱 탐색·인증·연결 복구                                |
+| `@game-feedback/bridge`    | Web/Mobile 메시지의 Zod 계약·bootstrap·dispatch                                        |
 | `@game-feedback/contracts` | 서버 요청 검증 및 공유 데이터 계약                                                     |
 | `@game-feedback/sdk`       | OpenAPI에서 Orval로 생성한 클라이언트 및 스키마                                        |
 
@@ -42,6 +44,14 @@ slice 외부 import는 public `index.ts`를 통한다. 공통 Next·FSD lint가 
 Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, CSS 진입점은 `src/_app/styles/tailwind.css`다. 앱별 CSS는 화면 도메인별로 분리하고 공통 색·버튼·입력·모달 스타일을 재정의하지 않는다. Photo Contest는 기존 public UI 경로에서 공통 구현을 re-export하고, 브라우저 뒤로 가기·WebView·portal 위치가 결합된 시트·확인창 동작은 앱에서 유지한다.
 
 공통 패키지는 자체 lint·타입·UI 테스트를 소유한다. 양쪽 CI는 공통 패키지 check를 실행하고 공유 packages 변경에도 두 앱을 검증한다. 두 웹의 개발 서버·DB를 섞지 않는다.
+
+## Mobile WebView 구성
+
+`apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host와 PKCE 시스템 인증을 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.
+
+세션 쿠키는 WebView에만 남는다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급한다. WebView가 verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한다. 그 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 앱 교환으로 세션을 바꾸면 이전 SSE도 종료한다. Migration `202610170004_mobile_login`은 OAuthAttempt에 선택 필드와 독립 티켓 테이블만 추가한다.
+
+API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mobile은 Vitest unit/UI와 실제 웹/API를 쓰는 Android/iOS Playwright host가 소유한다. Mobile E2E의 3302/4302·`.next/e2e-mobile`·`gf_test_mobile_*`는 Web E2E의 3301/4301과 분리한다. 실제 네이티브 모듈·서명·스토어 배포는 브라우저 테스트 범위 밖이다.
 
 ## API 모듈 구성
 

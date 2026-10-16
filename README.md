@@ -12,7 +12,9 @@ projects/photo-contest/
   docs/
 projects/game-feedback/
   apps/api/        # NestJS · REST · Prisma, 격리 PostgreSQL · Vitest · supertest
-  apps/web/        # Next.js, 피드백 · 1:1 채팅 · Playwright
+  apps/web/        # Next.js, 피드백 · 1:1 채팅 · Vitest + Playwright
+  apps/mobile/     # Expo WebView, Vitest unit/UI + Playwright
+  packages/bridge/ # Game Feedback 앱↔웹 메시지 계약
   packages/contracts/ # Zod 서버 검증 · OpenAPI 계약
   packages/sdk/    # Orval API Client · 응답 검증 스키마
   docs/
@@ -53,7 +55,7 @@ cp projects/game-feedback/.env.example projects/game-feedback/.env
 corepack yarn workspace @side/game-feedback dev:demo
 ```
 
-웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
+웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. [모바일 앱](projects/game-feedback/apps/mobile/README.md)은 이 웹을 Expo WebView로 열며 Metro 8082를 사용합니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
 
 ## 공통 디자인 시스템
 
