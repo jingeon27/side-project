@@ -1,4 +1,4 @@
-TypeScript 문법을 많이 쓰는 것보다, 데이터가 가질 수 없는 상태를 타입으로 줄이는 데 도움이 되는 패턴을 자주 사용한다. 그중 실무에서 반복해서 쓴 네 가지를 정리했다.
+필드 이름이 맞아도 값 타입이 틀리거나, 함께 쓸 수 없는 props가 동시에 들어오는 코드를 종종 본다. 이런 조합을 타입 검사에서 걸러내려고 실무에서 반복해서 쓴 패턴 네 가지를 모았다.
 
 ## 1. satisfies: 검사는 하되 추론은 유지하기
 
@@ -108,11 +108,6 @@ function Field<T extends string>(props: Props<T>) {
 
 함수 overload는 호출 시그니처를 설명할 때 유용하지만, React props의 가능한 상태를 모델링할 때는 discriminated union이나 never 기반 XOR가 구현부까지 안전하게 좁혀진다.
 
-## 정리
-
-- satisfies는 타입 호환성을 검사하면서 구체적인 추론을 보존한다.
-- optional property는 값의 undefined 여부뿐 아니라 key의 존재 여부를 표현한다.
-- 제네릭은 서로 연관된 prop의 타입 관계를 유지한다.
-- 배타적인 props는 union으로 불가능한 조합을 제거한다.
+값의 구체적인 타입을 유지할 때는 satisfies를, prop 사이의 관계를 표현할 때는 제네릭이나 union을 사용한다. optional property를 정할 때는 값이 undefined일 수 있는지와 key를 생략할 수 있는지를 따로 확인한다.
 
 참고: [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html), [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)

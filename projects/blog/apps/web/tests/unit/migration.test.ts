@@ -29,10 +29,22 @@ describe('published Tistory migration artifacts', () => {
     }
   });
 
-  it('keeps public image bytes and readable alt text through HTML entity conversion', async () => {
+  it('preserves archived image bytes and only uses explicitly recorded editorial replacements', async () => {
     const manifest = JSON.parse(
       await readFile(path.join(root, '../../docs/migration-manifest.json'), 'utf8'),
     ) as { posts: MigratedPost[] };
+    const replacements = JSON.parse(
+      await readFile(path.join(root, 'content/image-replacements.json'), 'utf8'),
+    ) as Record<string, string>;
+    const originalPaths = new Set(manifest.posts.flatMap((post) => post.images.map((image) => image.path)));
+    for (const [original, replacement] of Object.entries(replacements)) {
+      expect(originalPaths.has(original), original).toBe(true);
+      expect(replacement).toMatch(/^\/images\/covers\/[a-z0-9-]+\.png$/);
+      const bytes = await readFile(path.join(root, 'public', replacement));
+      expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      expect(bytes.readUInt32BE(16)).toBeGreaterThan(0);
+      expect(bytes.readUInt32BE(20)).toBeGreaterThan(0);
+    }
     for (const post of manifest.posts) {
       const source = await readFile(path.join(root, 'content/posts', post.contentId, 'ko.mdx'), 'utf8');
       const { tree } = analyzeMdx(source);
@@ -43,7 +55,11 @@ describe('published Tistory migration artifacts', () => {
       expect(
         images.map((image) => image.url),
         post.sourceUrl,
-      ).toEqual(post.images.map((image) => image.path));
+      ).toEqual(
+        post.images.map((image) =>
+          Object.hasOwn(replacements, image.path) ? replacements[image.path] : image.path,
+        ),
+      );
       for (const image of images) {
         // Regression: data-alt="조회&middot;화면" became literal "&middot;"
         // after Markdown decoded the importer-generated "&amp;middot;".

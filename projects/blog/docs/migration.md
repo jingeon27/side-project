@@ -2,7 +2,7 @@
 
 2026-10-16에 공개 상태인 [Tistory 블로그](https://jingeon27.tistory.com/)와 `resume/blog`의 글 목록을 대조해 한국어 글 27편을 옮겼다. 공개 사이트의 sitemap에 실린 URL에서 로그인 없이 본문 전체가 열리고, 로컬에 대응하는 파일이 있는 글만 포함했다.
 
-본문과 제목은 당시 공개된 Tistory HTML을 기준으로 한다. 로컬 수정본은 공개 글과의 대응을 확인하는 데만 사용했다. 수정본의 비공개 변경 내용이나 초안을 본문에 합치지 않았다. 영어 공개 번역본은 없어 `en.mdx`와 영어 게시글 SEO는 만들지 않았다. 영어 UI의 공통 SEO는 별도로 제공한다.
+최초 본문과 제목은 당시 공개된 Tistory HTML을 기준으로 가져왔다. 로컬 수정본은 공개 글과의 대응을 확인하는 데만 사용했다. 수정본의 비공개 변경 내용이나 초안을 본문에 합치지 않았다. 이후 요청받은 문장·이미지 수정은 이 저장소의 MDX에 반영한다. 영어 공개 번역본은 없어 `en.mdx`와 영어 게시글 SEO는 만들지 않았다. 영어 UI의 공통 SEO는 별도로 제공한다.
 
 ## 저장 구조
 
@@ -10,10 +10,13 @@
 - `apps/web/content/posts/{contentId}/ko.mdx`: 공개된 본문 전체. 원문의 코드, 표, 목록, 인용과 그림 설명을 유지했다.
 - `apps/web/seo/ko.json`: 공개 제목과 제목에서 만든 한국어 URL, 설명, 검색어.
 - `apps/web/seo/en.json`: 영어 UI의 사이트와 페이지 SEO. 게시글 목록은 비어 있다.
-- `apps/web/public/images/posts/{contentId}/`: 본문이 사용하는 공개 이미지 32장. 원격 이미지의 만료되는 서명 URL을 런타임에 사용하지 않는다.
+- `apps/web/public/images/posts/{contentId}/`: 처음 가져온 공개 이미지 32장의 원본 보관본. 원격 이미지의 만료되는 서명 URL을 런타임에 사용하지 않는다.
+- `apps/web/public/images/thumbnails/`: 글별 기술 도해 SVG 27장. 새 커버의 원본도 여기에 있다.
+- `apps/web/public/images/covers/`: 본문·메타데이터에서 사용하는 새 커버 PNG 5장. 해당 SVG를 1280×720으로 렌더링했다.
+- `apps/web/content/image-replacements.json`: 기존 이미지 경로와 교체한 커버 경로의 대응표.
 - [migration-manifest.json](migration-manifest.json): 원문 URL, 콘텐츠 ID, 대응 파일명, 공개 발행 시각, 코드 블록과 이미지의 SHA-256.
 
-날짜는 Tistory의 `article:published_time`과 `article:modified_time`에 기록된 시간대 포함 ISO 값을 그대로 보존했다. 콘텐츠 ID는 파일과 번역의 공통 식별자이며 공개 URL은 언어별 SEO의 slug로 정한다. 기존 글을 합치거나 날짜를 마이그레이션 날짜로 바꾸지 않았다.
+최초 이관에서는 Tistory의 `article:published_time`과 `article:modified_time`에 기록된 시간대 포함 ISO 값을 보존했다. 이후 편집한 글은 발행일을 유지하고 `updatedAt`에 편집 시각을 기록한다. 화면의 날짜는 한국 시간을 기준으로 표시한다. 콘텐츠 ID는 파일과 번역의 공통 식별자이며 공개 URL은 언어별 SEO의 slug로 정한다. 기존 글을 합치거나 발행일을 마이그레이션 날짜로 바꾸지 않았다.
 
 ## 공개 글 대응표
 
@@ -75,6 +78,8 @@ Tistory의 표현용 HTML을 Markdown과 MDX로 바꿨다. 코드 블록은 fenc
 가져온 MDX는 저장소 루트의 `.prettierignore`에서 제외했다. 코드 예제에 포매터를 적용하면 공개 원문과 달라질 수 있어 들여쓰기와 코드 내부의 빈 줄을 그대로 보존한다. 마이그레이션 무결성 테스트는 코드 블록 180개의 원문 SHA-256과 이미지 32개의 SHA-256을 확인하며, 이미지 대체 텍스트에 HTML 엔티티 표기가 남는 회귀도 검사한다.
 
 ## 재실행
+
+아래 스크립트는 최초 가져오기용이다. 재실행하면 이후 수정한 문장, 표 헤더, 이미지 경로와 메타데이터를 덮어쓰므로 편집본 위에서 바로 실행하지 않는다. 별도 임시 경로에서 가져온 뒤 변경 내용을 검토해 필요한 부분만 반영한다.
 
 프로젝트 루트에서 실행한다. Python 3와 `beautifulsoup4`가 필요하다.
 

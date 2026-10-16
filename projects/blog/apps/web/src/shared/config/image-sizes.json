@@ -1,4 +1,24 @@
 {
+  "/images/covers/nextjs-server-client-issues.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/plan-gated-ai-workflow.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/reading-ai-code.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/sentry-observability.png": {
+    "width": 1280,
+    "height": 720
+  },
+  "/images/covers/testing-standards.png": {
+    "width": 1280,
+    "height": 720
+  },
   "/images/posts/health-check-program/01.png": {
     "width": 1520,
     "height": 2206
@@ -155,6 +175,10 @@
     "width": 640,
     "height": 360
   },
+  "/images/thumbnails/health-check-program.svg": {
+    "width": 640,
+    "height": 360
+  },
   "/images/thumbnails/low-effort-success.svg": {
     "width": 640,
     "height": 360
@@ -163,7 +187,19 @@
     "width": 640,
     "height": 360
   },
+  "/images/thumbnails/nextjs-server-client-issues.svg": {
+    "width": 640,
+    "height": 360
+  },
   "/images/thumbnails/nextjs-tanstack-query-ssr.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/payment-coupon-branches.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/plan-gated-ai-workflow.svg": {
     "width": 640,
     "height": 360
   },
@@ -179,11 +215,35 @@
     "width": 640,
     "height": 360
   },
+  "/images/thumbnails/reading-ai-code.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/reservation-form-state.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/review-form-funnel.svg": {
+    "width": 640,
+    "height": 360
+  },
   "/images/thumbnails/review-like-optimistic-update.svg": {
     "width": 640,
     "height": 360
   },
+  "/images/thumbnails/sentry-observability.svg": {
+    "width": 640,
+    "height": 360
+  },
   "/images/thumbnails/sitemap-api-boundaries.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/testing-standards.svg": {
+    "width": 640,
+    "height": 360
+  },
+  "/images/thumbnails/typed-program-form.svg": {
     "width": 640,
     "height": 360
   },

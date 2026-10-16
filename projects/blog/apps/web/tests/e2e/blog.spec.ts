@@ -46,9 +46,7 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
-test('cover, article diagram, and fallback thumbnails load without breaking title links or mobile layout', async ({
-  page,
-}) => {
+test('cover and SVG thumbnails load without breaking title links or mobile layout', async ({ page }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });
   for (const id of ['reading-ai-code', 'health-check-program', 'bottom-sheet-drag-crash']) {
@@ -68,6 +66,25 @@ test('cover, article diagram, and fallback thumbnails load without breaking titl
     const title = row.locator('h3').getByRole('link', { name: entry.title, exact: true });
     await expect(title).toBeVisible();
     expect(decodeURIComponent((await title.getAttribute('href'))!)).toBe(`/ko/blog/${entry.slug}`);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  }
+});
+
+test('edited article covers load in the body and match the social preview image', async ({ page }) => {
+  for (const entry of articles.filter((candidate) => candidate.coverImage)) {
+    await page.goto(`/ko/blog/${encodeURIComponent(entry.slug)}`);
+    const image = page.locator('.article-prose img').first();
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0))
+      .toBe(true);
+    const source = new URL((await image.getAttribute('src'))!, page.url());
+    expect(source.searchParams.get('url') || source.pathname).toBe(entry.coverImage);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      'content',
+      new RegExp(`${entry.coverImage!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+    );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
 });

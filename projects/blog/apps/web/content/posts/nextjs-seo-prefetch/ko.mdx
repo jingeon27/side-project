@@ -1,4 +1,4 @@
-예약 상세 페이지의 초기 HTML에 병원 데이터가 포함되지 않는 문제를 확인하면서 prefetchQuery 호출을 살펴봤다.
+예약 상세를 브라우저로 열면 병원 정보가 보였지만, 서버가 보낸 초기 HTML에는 데이터가 없었다. 서버 컴포넌트의 prefetchQuery 호출과 dehydrate 시점을 따라가 봤다.
 
 ```tsx
 void queryClient.prefetchQuery(hospitalOptions(hospitalId));
@@ -75,10 +75,9 @@ return (
 
 따라서 판단 기준은 void 자체가 아니다.
 
-상황 선택
-
-| 초기 HTML에 반드시 필요한 핵심 데이터 | await prefetchQuery |
+| 상황 | 선택 |
 | --- | --- |
+| 초기 HTML에 반드시 필요한 핵심 데이터 | await prefetchQuery |
 | 서버에서 not-found나 오류를 결정해야 하는 데이터 | await prefetchQuery |
 | 화면 일부를 Suspense로 늦게 보여줘도 되는 데이터 | pending dehydration + streaming |
 | interaction 뒤에만 필요한 데이터 | client query |
