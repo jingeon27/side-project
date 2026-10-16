@@ -1,0 +1,163 @@
+> Company and service names and custom internal identifiers have been replaced with role-based examples. Call structure, cache durations, and observations reflect the actual changes.
+
+The sitemap needed branch details, branch products, category searches, announcements, and content-detail URLs. Building that list required several public APIs, and new products had to appear without waiting for another deployment.
+
+There were three options.
+
+- Build the complete URL list on every request.
+- Build it only during deployment.
+- Cache the result and regenerate it after an interval.
+
+I chose caching so each crawler visit would not repeat every API request, using Next.js Cache Components and `use cache`. This article uses Next.js 16. These APIs require `cacheComponents: true` in next.config.
+
+I established a cacheable call boundary but did not finish the entire generator. The remaining metadata, full-list fetching, and failure-handling issues are described separately below.
+
+## Place a cache boundary around the sitemap
+
+```typescript
+import type { MetadataRoute } from 'next';
+import { cacheLife, cacheTag } from 'next/cache';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  'use cache';
+  cacheLife('days');
+  cacheTag('public-index');
+
+  const [locationIds, items, announcementIds, categoryPaths, filterPaths] = await Promise.all([
+    getAllLocationIds(),
+    getAllItems(),
+    getAllAnnouncementIds(),
+    getAllCategoryPaths(),
+    loadFilterPaths(),
+  ]);
+
+  // 항목 변환 코드는 생략
+  return [
+    ...toLocationEntries(locationIds),
+    ...toItemEntries(items),
+    ...toAnnouncementEntries(announcementIds),
+    ...toCategoryEntries(categoryPaths),
+    ...toFilterEntries(filterPaths),
+  ];
+}
+```
+
+The data sources are independent, so they are queried concurrently.
+
+`cacheLife('days')` is not a daily cron job. The days profile uses a five-minute stale period, one-day revalidation, and one-week expiry. Stale controls how long the client Router Cache reuses a result without checking the server. After the one-day revalidation period, an incoming request triggers background regeneration. This is request-driven caching with daily revalidation.
+
+`sitemap.ts` is already a special cached Route Handler unless it uses request-time APIs or dynamic configuration. Here `use cache` explicitly defines the function boundary within Cache Components and selects the days profile.
+
+Durations alone do not guarantee production cache hits. Default runtime caches are per-process memory when self-hosted and may not survive between serverless requests. Shared results across instances require a platform's persistent cache or a shared cacheHandler. Crawler API calls fall only when requests reuse the same store.
+
+The code also has a sitemap cache tag, renamed `public-index` here. No `revalidateTag` or `updateTag` call uses the actual tag, so it currently provides no invalidation path. It should either be removed or connected to explicit content-change callers.
+
+## Implicit cookie access prevented caching
+
+The old Axios interceptor searched for access tokens on both server and client. Sitemap APIs need no authentication, but an interceptor reading `cookies()` introduces request-specific dynamic data that cannot run inside this cache boundary. Avoiding cookies alone does not make the cache safe: tenant, Host, locale, and preview-header differences must become arguments in the key, and public responses must be checked for private data.
+
+The original rule, “do not read tokens on the server,” later proved too broad when authenticated SSR queries such as member-specific benefit pricing appeared. The current rules are:
+
+- Server-side public queries do not read cookies by default.
+- Only member-specific SSR callers explicitly request authentication.
+- Calls with `includeServerAuth: true` depend on cookies() and stay outside public cache boundaries.
+
+```typescript
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    includeServerAuth?: boolean;
+  }
+}
+
+async function readAuthToken(includeServerAuth: boolean) {
+  if (typeof window === 'undefined') {
+    if (!includeServerAuth) return null;
+
+    const { cookies } = await import('next/headers');
+    return (await cookies()).get('auth_token')?.value ?? null;
+  }
+
+  return readCookieValue('auth_token');
+}
+```
+
+The caller default is false.
+
+```text
+// 사이트맵: 공개 응답이므로 서버 쿠키를 읽지 않는다.
+fetchPublicSummary();
+
+// SSR 프리페치: 혜택 상태·적용가가 회원별 응답이므로 쿠키 사용을 명시한다.
+fetchPublicSummary({
+  includeServerAuth: true,
+});
+```
+
+The second call cannot be placed inside public `use cache` because it reads cookies(). A separate fetch wrapper's `cache: 'no-store'` applies only to Next's extended fetch, not Axios. The boolean flag is an interim mechanism callers can misuse. Server-only public and authenticated clients and a browser client should eventually be separated at module boundaries.
+
+The client branch inserts a zero-millisecond asynchronous delay before calling a cookie-reading Server Function. This defers a render-time dispatch to the next macrotask; it is not a documented guarantee of bypassing an action queue or achieving parallelism. It is separate debt to revisit with BFF and token policies.
+
+## Inaccurate sitemap metadata
+
+Current code applies one generation timestamp as every item's `lastModified` and assigns priority by page type.
+
+```typescript
+const lastModified = new Date();
+
+const itemEntries = items.map(({ locationId, itemId }) => ({
+  url: `${PUBLIC_ORIGIN}/locations/${locationId}/items/${itemId}`,
+  lastModified,
+  priority: ENTRY_PRIORITY.Detail,
+}));
+```
+
+Generation time is not content modification time. The product-list DTO has no modification timestamp. Branch, announcement, and recommended-content responses have fields with differing names and meanings, but current helpers discard them and retain only IDs and paths. Each timestamp needs verification; only supported entries should receive lastModified. Google also ignores priority and changefreq, so the current priority levels do not help it.
+
+This is unfinished work: use genuine modification times where APIs provide them and supply only URLs elsewhere.
+
+## Full-list queries and partial failures remain transitional
+
+Branch and product helpers first request one item to learn the total, then send that total as the page size to retrieve everything. Each helper returns `[]` on error.
+
+```typescript
+async function getAllLocationIds() {
+  try {
+    const { data: countSummary } = await fetchLocationList({
+      pageNumber: 1,
+      pageSize: 1,
+    });
+    if (!countSummary.totalCount) return [];
+
+    const { data: pageResult } = await fetchLocationList({
+      pageNumber: 1,
+      pageSize: countSummary.totalCount,
+    });
+    return pageResult.items.map(({ id }) => id);
+  } catch {
+    return [];
+  }
+}
+```
+
+This can exceed API page-size limits and grows the response continuously. Worse, one failed source does not fail Promise.all, so a sitemap missing URLs can be cached as a success. Pagination and failing generation when a critical source fails remain follow-up work.
+
+Offset pagination can still duplicate or omit entries while data changes. Without cursor or snapshot APIs, it needs stable sorting, ID deduplication, and limits on iterations and pages. Near 50,000 URLs or 50 MB uncompressed, the result must be split with a sitemap index.
+
+Throwing errors does not always preserve a previous result. Background revalidation of a stale entry can serve old data, but a cold start, miss, or expiry can fail the sitemap response itself.
+
+Current helpers pre-escape query strings as XML. Assuming Next.js does not escape them without checking final serialization can miss double escaping. An integration test should parse the generated XML and verify each URL is escaped exactly once.
+
+Measurements are also missing.
+
+- Total entries and counts by type
+- Change rate from the previous generation
+- Generation time and request duration/failure per source
+- Cache hit rate and origin API request count
+
+I have not measured these or changes in crawling. The verified result is limited to changing authentication defaults and revalidation policy so public calls can enter the cache boundary.
+
+## Completed work and remaining debt
+
+Public sitemap queries no longer read cookies by default, and the days revalidation policy is explicit. Generation-time lastModified, priority, total-as-page-size requests, errors converted to empty arrays, and manual XML escaping remain. This records the cacheable boundary and the accuracy and observability work still needed.
+
+References: [Next.js use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache), [Next.js cacheLife](https://nextjs.org/docs/app/api-reference/functions/cacheLife), [Google sitemap guide](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap)

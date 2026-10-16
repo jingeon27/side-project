@@ -1,0 +1,225 @@
+My first rule for reducing type assertions was simple: put a Zod schema wherever `as` becomes necessary. Changing actual code showed that rule was only partly right.
+
+Some values already had known types but were reasserted because a library callback was loosely typed. Others, such as API responses and URLs, were unknown at runtime. The first group needed repaired type flow; the second needed runtime validation. Wrapping both in Zod would add unnecessary work.
+
+I revised the criterion:
+
+> When an assertion appears, first find the value's source. Repair type flow for values already established inside the code; create runtime boundaries for values entering from outside the application.
+
+I applied this to API responses, URL conditions, forms, type guards, and external-library callbacks. Even with the same Zod, each boundary needed different failure handling.
+
+## Not every assertion became Zod
+
+For example, a data-table cell callback received a broadly typed first argument, while its second argument—the whole row—retained the data source's type.
+
+```typescript
+// 느슨한 셀 값을 다시 단언하지 않습니다.
+render: (_, record) => STATUS_LABEL[record.status]
+```
+
+Reading the already typed `record.status` made more sense than validating the cell again. Shared components missing generics gained them; values that could genuinely be null received corrected types and rendering branches.
+
+Other values came from outside code and could not become safe through type edits alone.
+
+- Server API responses
+- URL parameters edited by users or retained in old links
+- User-entered form values
+- Decoded tokens, stream events, and external callback values
+
+A generic such as `jwtDecode<Claims>(token)` does not verify that its result is Claims. That is a runtime boundary for Zod.
+
+```typescript
+const claimsSchema = z.object({ role: z.enum(ROLES) });
+
+try {
+  const { role } = claimsSchema.parse(jwtDecode(token));
+  return ALLOWED_ROLES.includes(role);
+} catch {
+  return false;
+}
+```
+
+Where corrupted values already had a defined failure path, I used `parse` to block them. I could not immediately apply the same policy to every production API response.
+
+## Observe mismatches in existing API responses first
+
+I added a schema-checking layer to 76 API functions and 316 call sites. It currently does not return parsed data.
+
+```tsx
+export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T>): T {
+  const result = schema.safeParse(response.data);
+
+  if (!result.success) {
+    reportOnce({
+      code: 'RESPONSE_SCHEMA_MISMATCH',
+      request: `${response.config.method} ${response.config.url}`,
+      issues: result.error.issues,
+    });
+  }
+
+  return response.data;
+}
+```
+
+Despite the name `parseApiResponse`, a valid response passes through untouched. On mismatch, it logs field paths and still returns the original response.
+
+This was a migration over already working screens. Zod objects strip undeclared keys by default. Assuming every contract was perfectly captured and replacing responses with `result.data` could delete fields missing from a new schema and break existing UI.
+
+I also did not want one auxiliary field mismatch among 50 list items to remove the entire list. Policies such as field defaults may be appropriate later, but were not settled.
+
+Logs retain only information needed to investigate.
+
+- HTTP method and request path from Axios config
+- Screen path and application
+- Mismatched field paths, error codes, and messages
+- Only the first 20 issues to limit log size
+
+Callers do not repeat a request name as a string. Actual request information avoids logs retaining obsolete names after endpoint changes. The same request/field mismatch is sent once per session so repeated list warnings do not obscure other incidents.
+
+This has a clear limit.
+
+> A boundary returning original API values detects contract mismatches but does not prevent invalid values reaching consumers.
+
+This is not complete runtime type safety. It preserves behavior while collecting actual contract differences, allowing confirmed schemas to move toward strict parsing. New APIs, authentication, and stream events with isolated failure scopes use parsed results from the beginning.
+
+## Make validation logs input to a fix
+
+Observational validation does little without someone reviewing its logs. I connected SCHEMA_MISMATCH reports to a correction workflow.
+
+```text
+SCHEMA_MISMATCH 로그
+  → 요청 경로와 앱으로 호출부·스키마 특정
+  → OpenAPI 계약과 실제 응답 대조
+  → 프론트 스키마 오류 / 서버 스펙 위반 / 판단 불가로 분류
+  → 프론트 오류만 스키마와 파생 타입 수정
+  → 계약 테스트와 뮤테이션 체크
+  → 리뷰·검증 후 PR 반영
+```
+
+The goal is not merely to remove a warning. If the actual response violates OpenAPI, I do not silently add `.nullish()` to the frontend schema. I classify a server-contract violation and stop the frontend fix. If an anyOf response union was modeled with only one member, I model both and add contract tests for both.
+
+This found unpaginated lists, bodyless action responses, and APIs with two successful response shapes that a single envelope schema falsely rejected. Validation exposed the frontend's misunderstandings as well as server defects.
+
+## Recover only invalid URL fields
+
+URLs differ from API responses. Users can edit them or follow old links. One bad search condition should not make the entire screen fail.
+
+Initially, one object-level safeParse fell back to default conditions. An invalid status then erased a valid keyword, page, and detail-drawer ID too.
+
+Schemas whose fields can recover independently now have per-field fallbacks.
+
+```typescript
+const searchParamsSchema = z.object({
+  pageNumber: z.coerce.number().int().positive().catch(1),
+  status: z.enum(STATUSES).optional().catch(undefined),
+  keyword: z.string().optional().catch(undefined),
+  id: z.coerce.number().optional().catch(undefined),
+});
+
+const params = useTypedQueryParams({ schema: searchParamsSchema });
+```
+
+An unknown status is dropped while the keyword and detail screen remain. Whole-object fallback stays as the final safeguard against an unexpected structure. Screens rebuilding URLs for sharing or tabs explicitly use `.passthrough()` so they do not silently remove parameters their schema does not own.
+
+This changes observability. Whole-object safeParse failures log mismatches, but a field's `.catch` recovers and makes object parsing succeed, leaving no log in the current implementation. Old links do not accumulate errors, but invalid-value frequency becomes unknown. Parameters that require tracking must avoid `.catch` and record failure at the object boundary.
+
+## Block invalid forms because users can correct them
+
+Forms let users correct their values. Invalid input therefore blocks submission and displays a reason on the relevant field, rather than passing originals through or replacing them with defaults.
+
+User-facing forms connect React Hook Form and zodResolver, using schemas as the source of input types and submission conditions.
+
+```tsx
+function useZodForm<TSchema extends z.ZodType>({ schema, ...options }: Options<TSchema>) {
+  return useForm<z.infer<TSchema>>({
+    ...options,
+    resolver: zodResolver(schema),
+  });
+}
+```
+
+Reservation and review step forms have per-step schemas so fields in a future step do not block the current one.
+
+Admin search forms differ. I did not replace all Ant Design submission validation with Zod. `createSearchFilter(schema)` narrows field names through z.infer and uses the same schema for URL reading. Field typos fail at compile time; external URL values recover at runtime. Zod's role follows the actual boundary, even when both are called forms.
+
+## Derive narrowing from validation results
+
+A custom guard like this was one of the most dangerous assertions.
+
+```typescript
+function isCompletedPayment(value: unknown): value is CompletedPayment {
+  return value != null;
+}
+```
+
+Regardless of what the body checks, the compiler trusts CompletedPayment when true is returned. New type fields can leave the predicate unchanged, letting declarations and checking logic drift independently.
+
+For classification alone, I return schema success without claiming type narrowing.
+
+```typescript
+const completedPaymentSchema = z.object({
+  method: z.literal('NORMAL'),
+  status: z.literal('COMPLETED'),
+});
+
+function isCompletedPayment(value: unknown): boolean {
+  return completedPaymentSchema.safeParse(value).success;
+}
+```
+
+When validated data is needed, I use safeParse's `data` instead of hand-declaring another `value is T` predicate.
+
+```typescript
+const result = completedPaymentSchema.safeParse(value);
+if (!result.success) return;
+
+useCompletedPayment(result.data);
+```
+
+Unknown tab or sort keys returned as strings by UI libraries can be ignored with `z.enum(...).optional().catch(undefined)` where that behavior is appropriate. Already narrowed row data is not revalidated. I first distinguish runtime evidence from established type flow.
+
+## Failure policy depends on the boundary's consumer
+
+The roles differ even with the same tool.
+
+| Boundary | Result used | Failure handling | Reason |
+| --- | --- | --- | --- |
+| Existing API responses | Original values | Log and pass through | Avoid breaking working screens during introduction |
+| New APIs, auth, streams | Parsed values | Fail the request or event | Failure scope can be isolated |
+| URL conditions | Parsed values | Field fallback or object fallback plus logging | Preserve valid conditions from old links |
+| User forms | Parsed values | Block submission and explain the field | Users can correct input |
+| External-library values | Depends on context | Ignore, fall back, or block | Match the value's impact |
+
+A schema mismatch and a decision to stop the screen are separate questions. Sharing a validation tool does not require one failure behavior.
+
+## Test policies beyond successful parsing
+
+Accepting valid input alone cannot verify these boundaries. Tests focus on failure behavior.
+
+- Does an API mismatch preserve the original object and undeclared fields?
+- Does the log contain actual request method/path rather than a caller label?
+- Does a new server enum value report the precise field path?
+- Are bodyless success and unpaginated lists recognized as valid contracts?
+- Is an identical mismatch logged once per session?
+- Does one invalid URL enum preserve keyword, page, and detail ID?
+- Does invalid form input block submission with a correctable error?
+
+After correcting schemas, I temporarily restored old definitions and checked that new tests failed. Fixtures changed incorrectly alongside schemas can otherwise keep tests green. Where possible, response mocks use satisfies and contract tests. Contracts available on a real dev server are not considered verified by mocks alone.
+
+## Remaining limits
+
+- Observational API boundaries do not block bad values. Return types still trust Axios generics; confirmed contracts should progressively return parsed results.
+- Log deduplication is per session. Counts approximate affected sessions rather than exact mismatch events.
+- Per-field catch preserves UI but silently discards bad values. It is inappropriate when frequency must be known or silent recovery is dangerous, as with payments or permissions.
+- A schema source does not eliminate differences between OpenAPI and frontend schemas. Real-server contract tests and mismatch logs expose that gap.
+- Some custom guards remain where validation is too costly or supplements external-library typing. Tests fix which fields they check.
+
+## The policies left at each boundary
+
+Existing APIs are observed first to reduce rollout risk. URLs preserve usable conditions while recovering. Forms block values users can fix. Authentication and streams use parsed data where failure can be isolated. Problems solvable through internal type flow do not gain Zod.
+
+The guiding question became:
+
+> Where did this value come from, whom would validation failure affect, and at what scope can it be recovered?
+
+Schemas execute that decision. Connecting mismatch logs back to contract tests and fixes made this an operational boundary rather than a one-off assertion cleanup.

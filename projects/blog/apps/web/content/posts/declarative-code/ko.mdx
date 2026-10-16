@@ -1,0 +1,322 @@
+코드 리뷰에서 빠진 조건이나 중복된 상태를 찾으려면, 먼저 화면이 어떻게 구성되고 값이 어디서 오는지 알아야 해요. 조회 순서와 세부 계산이 JSX 사이에 섞여 있으면 이 흐름을 파악하는 데 오래 걸려요.
+
+제가 선언적 코드를 선호하는 이유도 비슷해요. 컴포넌트를 열었을 때 화면 구성이 먼저 보이고, 자세한 동작이 궁금하면 해당 부분으로 들어가서 읽을 수 있었으면 해요. 조회 순서나 상태를 맞추는 과정부터 따라가야 화면을 이해할 수 있는 코드는 읽는 데 손이 많이 가더라고요.
+
+작업하면서 자주 쓰게 된 방식들을 정리해 봤어요. 에이전트가 같은 방식으로 작성할 수 있도록 skills에도 적어 둔 내용이에요. 예제는 필요한 부분만 가져왔고 내부 이름은 일부 바꿨어요.
+
+## 컴포넌트를 나눌 때
+
+컴포넌트를 나눌 때는 한 화면을 비슷한 크기의 단위로 읽을 수 있는지 봐요. 추상화 수준을 맞춘다고 표현하는 부분인데요.
+
+리뷰 상세라면 리뷰 정보, 결제 정보, 방문 인증 자료, 변경 이력 정도로 나눌 수 있어요. 그런데 앞의 두 부분만 분리하면 이런 코드가 돼요. 비교를 위해 줄인 예제예요.
+
+```tsx
+<>
+  <ReviewInfoDescriptions review={review} />
+  <ReviewPaymentDescriptions review={review} />
+
+  <Divider>방문 인증 자료</Divider>
+  <Image.PreviewGroup>
+    {review.receipts.map((receipt) => (
+      <Image key={receipt.fileId} src={receipt.url} />
+    ))}
+  </Image.PreviewGroup>
+
+  <Divider>히스토리</Divider>
+  <Timeline items={historyItems} />
+</>
+```
+
+리뷰 정보와 결제 정보는 이름만 읽고 넘어갈 수 있는데, 방문 인증 자료부터는 이미지 하나를 어떻게 그리는지 읽게 돼요. 같은 return 안에서도 읽는 단위가 달라져요.
+
+지금 리뷰 상세에서는 이 부분을 이렇게 나눴어요.
+
+```tsx
+<>
+  <ReviewInfoDescriptions review={detailInfo.review} />
+  <ReviewPaymentDescriptions review={detailInfo.review} />
+  <ReviewReceiptImages receipts={detailInfo.review.receipts} />
+  <ReviewHistoryTimeline histories={detailInfo.reviewHistoryList} />
+</>
+```
+
+여기서는 화면에 어떤 내용이 있는지 보고, 방문 인증 자료가 궁금하면 ReviewReceiptImages를 읽으면 돼요. 제목도 이미지와 함께 그 안에 뒀어요. 제목은 부모에 있고 내용은 자식에 있으면, 그 부분을 수정할 때 두 파일을 같이 보게 되거든요.
+
+그 부분에서만 쓰는 핸들러나 계산도 같이 옮겨요. JSX만 옮기고 나머지가 부모에 남아 있으면 분리한 효과가 별로 없어요. 이런 화면 전용 컴포넌트는 한 곳에서만 쓰더라도 만드는 편이에요.
+
+## 조회도 필요한 곳에서
+
+조회를 어디에 둘지도 같이 봐요. 부모가 데이터를 전부 받아서 내려주면 자식이 하나 늘 때마다 부모에서 챙길 조회와 props가 늘어요. 중간 컴포넌트가 자기는 쓰지도 않는 값을 넘겨주는 경우도 생기고요.
+
+Back-Office의 정산 요약은 통계, 입금 내역, 지점별 내역으로 나눠져 있어요. 페이지에서는 병원 ID를 넘기고 세 부분을 배치해요.
+
+```tsx
+<>
+  <QueryErrorBoundary variant="section">
+    <SettlementSummaryStatsDescription partnerId={partnerId} />
+  </QueryErrorBoundary>
+  <QueryErrorBoundary variant="section">
+    <SettlementSummaryDepositTable partnerId={partnerId} />
+  </QueryErrorBoundary>
+  <QueryErrorBoundary variant="section">
+    <SettlementSummaryBranchTable partnerId={partnerId} />
+  </QueryErrorBoundary>
+</>
+```
+
+통계에서 필요한 병원 정보는 통계 컴포넌트가 조회해요. 지점별 표를 보여줘야 하는지도 그 표에서 판단해요. 부모에는 어떤 표가 들어가는지만 남아 있어요.
+
+셋 다 정산 요약을 읽는 건 같아서, URL의 조회 조건을 연결하는 부분은 useSettlementSummary로 모았어요. 각 컴포넌트가 이 훅을 호출하고 같은 queryKey의 캐시를 구독해요. 파라미터를 각자 적다가 한 곳만 달라지는 것도 피하려고 했어요.
+
+조회가 안쪽에 있으면 에러 바운더리도 필요한 부분에 둘 수 있어요. 표 하나의 조회 오류 때문에 페이지 전체를 가리지 않도록 나눈 과정은 [에러 처리 개편 글](/ko/blog/오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편)에 적었어요.
+
+물론 부모가 선택한 행이나 임시 입력값은 props로 넘겨요. 다시 조회해서 얻을 수 있는 값인지, 부모가 관리해야 하는 화면 상태인지 구분해서 두는 편이에요.
+
+## 고정된 UI와 데이터 목록
+
+복지몰 검색에는 지역, 진료과, 쿠폰, 이벤트 같은 Chip이 있는데요. 지역과 진료과를 누르면 Bottom Sheet이 열리고, 혜택은 누를 때마다 선택과 해제가 바뀌어요. 탭에 따라 나오는 항목도 달라요.
+
+예전에는 라벨과 클릭 동작, 선택 상태, 노출 조건을 설정 배열에 넣었어요. 아래 코드가 그 배열을 받아서 Chip을 그렸어요.
+
+```tsx
+return FILTER_CHIPS_CONFIG
+  .filter((config) => !config.visible || config.visible(currentTab, isFilterSearch))
+  .map((config) => (
+    <Chip
+      key={config.key}
+      hasArrow={config.hasArrow}
+      pressed={config.pressed(filterState)}
+      onClick={() => config.onClick(handleOpenFilter, handleBenefitToggle)}
+    >
+      {typeof config.label === 'function'
+        ? config.label(filterState)
+        : config.label}
+    </Chip>
+  ));
+```
+
+프로그램 탭에 어떤 Chip이 나오는지 알고 싶어도 이 코드만으로는 알 수 없어요. 배열에 있는 항목들의 visible을 하나씩 봐야 해요. 쿠폰에만 아이콘을 넣으려면 그걸 표현할 설정도 추가해야 하고요.
+
+그래서 Chip마다 컴포넌트를 만들고, 탭별로 무엇을 보여줄지는 따로 적었어요.
+
+```tsx
+const FILTER_CONFIG: Record<SearchFilterCase, ComponentType<IFilterChipProps>[]> = {
+  partner_filter: [
+    RegionChip, DepartmentChip, CouponChip, HasEventChip,
+    NewPartnerChip, PartnerInfoChip, TreatmentTimeChip,
+  ],
+  partner_integrated: [
+    RegionChip, DepartmentIdsChip, CouponChip, HasEventChip,
+    NewPartnerChip, PartnerInfoChip, TreatmentTimeChip,
+  ],
+  program_filter: [
+    RegionChip, DepartmentChip, CouponChip, TodayDiscountChip, HasEventChip,
+  ],
+  program_integrated: [
+    RegionChip, DepartmentIdsChip, CouponChip,
+  ],
+};
+```
+
+이제 프로그램 탭의 통합 검색은 program\_integrated를 보면 돼요. 다른 탭에도 쿠폰을 넣으려면 해당 배열에 CouponChip을 추가해요.
+
+쿠폰이 선택됐을 때의 스타일은 여기서 정해요. 다른 혜택과 같은 토글 동작은 BenefitChip을 같이 쓰고요.
+
+```tsx
+function CouponChip(_: IFilterChipProps) {
+  return (
+    <BenefitChip
+      benefit="couponDiscount"
+      className="data-[state=on]:text-body-md-semibold"
+    />
+  );
+}
+```
+
+탭이나 메뉴처럼 항목이 정해져 있으면 JSX에 직접 나열하는 편이에요. 검색 Chip은 탭별 조합이 있어서 컴포넌트 배열로 뒀지만, 배열 안에서 각 Chip의 동작까지 정의하지는 않아요.
+
+서버에서 받아오는 목록은 당연히 map을 써요. 모양은 같은데 데이터만 다른 경우에도 그렇고요. 고정된 버튼 몇 개를 그리려고 라벨, 콜백, 노출 조건을 전부 설정 객체에 넣으면 오히려 볼 게 많아져서 잘 쓰지 않아요.
+
+## 검색 필터를 공통으로 만들면서
+
+관리자 서비스의 검색 필터에서도 비슷한 문제가 있었어요. 날짜 입력이 consultationDate라는 key를 보고 상담일의 필드명을 골랐거든요.
+
+```typescript
+const isConsultationDate = filter.key === 'consultationDate';
+const startKey = isConsultationDate ? 'consultationStartDt' : 'reservationStartDt';
+const endKey = isConsultationDate ? 'consultationEndDt' : 'reservationEndDt';
+```
+
+공통 날짜 입력인데 예약 관리 화면의 필드명을 알고 있었어요. 다른 종류의 날짜가 생기면 이 분기도 수정해야 해요. 그래서 시작일과 종료일의 필드명을 직접 받게 바꿨어요.
+
+```tsx
+const SearchFilter = createSearchFilter(
+  reservationSearchParamsSchema,
+  RESERVATION_SEARCH_PARAMS_FALLBACK,
+);
+
+<SearchFilter
+  onSubmit={handleSearch}
+  defaultValues={{
+    keywordType: 'UNIFIED',
+    reservationDateSearchType: RESERVATION_DATE_SEARCH_TYPE.RegDtm,
+  }}
+>
+  <SearchFilter.Keyword
+    name="keyword"
+    typeName="keywordType"
+    options={SEARCH_KEYWORD_TYPES}
+  />
+  <SearchFilter.Fields>
+    <SearchFilter.DateRange
+      label="상담일"
+      startName="consultationStartDt"
+      endName="consultationEndDt"
+    />
+    <SearchFilter.DateRange
+      label="예약일"
+      startName="reservationStartDt"
+      endName="reservationEndDt"
+      typeName="reservationDateSearchType"
+      typeOptions={RESERVATION_DATE_SEARCH_TYPES}
+    />
+  </SearchFilter.Fields>
+</SearchFilter>
+```
+
+여기서는 상담일과 예약일이 어떤 필드에 연결되는지 바로 볼 수 있어요. 폼을 만들고, URL에서 값을 채우고, 초기화하는 부분은 SearchFilter가 처리해요. 화면마다 달라지는 필터 구성과 검색 제출은 화면별 컴포넌트에 두고요.
+
+필드명에 오타가 나면 타입 오류로 확인할 수 있어요. createSearchFilter가 Zod 스키마에서 타입을 추론하고, createTypedForm이 그 타입의 필드 경로를 검사하거든요. URL 값도 같은 스키마로 읽어요.
+
+검색 필터는 여러 화면에서 같은 폼 동작을 써서 이렇게 묶었어요. 한 화면에서만 필요한 기능이라면 먼저 그 화면 안에서 해결해요. 옵션을 하나 더 열 때마다 다른 사용처도 살펴봐야 하니까요. 폼 타입을 다룬 구현은 [프로그램 폼 글](/ko/blog/두-관리자-앱의-프로그램-폼을-만드는-과정)에 적었어요.
+
+## 값을 만드는 코드
+
+복지몰에서는 소속 인증을 마치면 발급된 쿠폰팩을 보여줘요. 위에는 ‘최대 N만원 혜택’을 표시하고, 아래에는 쿠폰 종류별 할인 조건과 보유 수량을 보여주는데요. 이때 정액 쿠폰의 할인 금액과 정률 쿠폰의 할인율을 그대로 더할 수는 없어요. 같은 종류의 쿠폰이 여러 장 발급된 경우도 구분해야 하고요.
+
+쿠폰 한 장의 최대 할인액부터 정했어요. 정액 쿠폰은 할인 금액을 쓰고, 정률 쿠폰은 할인 상한액을 써요.
+
+```typescript
+import { sumBy, uniqBy } from 'es-toolkit';
+import { match } from 'ts-pattern';
+
+const getCouponMaxDiscount = (coupon: TMemberCouponDTO) =>
+  match(coupon.discountType)
+    .with(COUPON_DISCOUNT_TYPE.Percentage, () => coupon.maxDiscountAmount)
+    .with(COUPON_DISCOUNT_TYPE.Fixed, () => coupon.discountValue)
+    .exhaustive();
+
+export const getCouponPackMaxBenefitManwon = (coupons: TMemberCouponDTO[]) => {
+  const listedCoupons = uniqBy(coupons, (coupon) => coupon.couponTemplateId);
+
+  return Math.floor(sumBy(listedCoupons, getCouponMaxDiscount) / 10000);
+};
+```
+
+이 화면의 헤더는 쿠폰 종류별 최대 할인액을 한 번씩 합산해요. 같은 템플릿의 쿠폰은 목록에서도 한 줄로 보여주기 때문에, uniqBy로 한 장씩 남긴 뒤 계산했어요. 예를 들어 3만원 정액 쿠폰이 두 장 있고 다른 종류의 정률 쿠폰은 최대 2만 5천원까지 할인된다면, 헤더에는 ‘최대 5만원’을 표시해요. 쿠폰팩의 종류별 혜택을 소개하는 금액이라, 실제 결제에 적용되는 할인액과는 계산 기준이 달라요.
+
+getCouponMaxDiscount에서는 할인 유형에 따른 규칙만 읽으면 돼요. 쿠폰팩 계산에서는 어떤 쿠폰을 합산하고 어떤 단위로 표시하는지만 보면 되고요. 정률 쿠폰의 상한액을 고르는 분기가 합산 과정에 섞이지 않도록 나눴어요. match는 각 경우에 사용할 값을 바로 반환하고, .exhaustive()로 빠진 할인 유형이 있는지도 타입 검사에서 확인해요.
+
+같은 종류의 쿠폰을 한 줄로 보여준다고 수량까지 버리는 건 아니에요. 목록에 필요한 값은 따로 만들어요.
+
+```typescript
+import { countBy, uniqBy } from 'es-toolkit';
+
+export const groupCouponsByTemplate = (coupons: TMemberCouponDTO[]): TCouponGroup[] => {
+  const countByTemplate = countBy(coupons, (coupon) => coupon.couponTemplateId);
+
+  return uniqBy(coupons, (coupon) => coupon.couponTemplateId).map((coupon) => ({
+    coupon,
+    count: countByTemplate[coupon.couponTemplateId],
+  }));
+};
+```
+
+countBy로 수량을 세고, 종류별로 남긴 쿠폰에 그 수량을 붙여요. 화면에서는 이 결과를 받아 할인 조건과 ‘2장’ 같은 수량을 그리면 돼요. JSX 안에서 다시 같은 쿠폰을 찾거나 수를 세지 않아요.
+
+저는 이런 계산을 읽을 때 반복문의 인덱스나 누적값보다, 무엇을 기준으로 묶고 어떤 값을 더하는지가 먼저 보였으면 해요. uniqBy, countBy, sumBy처럼 하는 일이 분명한 함수는 그 의도를 드러내기 좋았어요. 반복 횟수를 줄이기 위한 선택이라기보다는, 계산 규칙을 읽고 확인하기 위한 선택이에요.
+
+### 같은 값을 두 번 관리하지 않기
+
+복지몰의 검색 조건은 URL에 있어요. Chip의 선택 상태도 여기서 계산하면 돼요.
+
+```typescript
+const currentParams = useTypedQueryParams({
+  schema: keywordSearchParamsSchema,
+});
+
+const filterState = useMemo(
+  () => urlParamsToFilterState(currentParams),
+  [currentParams],
+);
+```
+
+예전에는 URL 값을 state에 복사하고 effect로 맞췄는데, 지금은 URL에서 바로 계산해요. Chip을 누르면 URL이 바뀌고 선택 상태도 그 값을 따라가요. 별도로 맞춰줘야 할 상태가 줄어든 거예요. [React의 상태 설계 문서](https://react.dev/learn/choosing-the-state-structure#avoid-redundant-state)에서도 이런 중복 상태를 다뤄요.
+
+Bottom Sheet에서 고르는 중인 값은 폼에 따로 둬요. 선택하는 도중에 목록까지 바뀌면 안 되고, ‘적용하기’를 눌렀을 때 URL에 넣어야 하니까요. 이건 같은 값을 복사해서 맞추는 경우와 달라요.
+
+## 조회 조건을 적어 두기
+
+조회는 queryOptions에 queryKey와 함수를 묶고, 컴포넌트에서 useQuery로 호출해요. 아래처럼 ID가 없을 때 조회하지 않는 조건도 함께 적어요. 클라이언트 조회에서 쓰는 패턴이에요.
+
+```typescript
+export const programDetailOptions = (programId?: number) =>
+  queryOptions({
+    queryKey: compact(['fetchProgramDetail', programId]),
+    queryFn: programId ? () => fetchProgramDetail({ programId }) : skipToken,
+  });
+```
+
+```typescript
+const { data, isLoading } = useQuery(programDetailOptions(programId));
+```
+
+컴포넌트에서는 ID만 넘겨요. 언제 요청하고 결과를 어디에 저장할지 따로 작성하지 않아도 돼요. 조회 함수도 ID가 있는 쪽에서만 만들어지니 programId! 같은 단언이 필요 없어요.
+
+useQuery를 한 번 호출하고 그대로 돌려주는 훅은 잘 만들지 않아요. 실제 조회를 보려고 파일을 하나 더 열게 되니까요. 반환값까지 일부만 골라서 내보내면 나중에 refetch나 isFetching이 필요할 때 훅도 수정해야 해요. 앞의 useSettlementSummary처럼 URL의 조건을 연결하거나 여러 조회를 묶을 일이 있으면 훅을 둬요.
+
+수동 refetch가 필요하면 skipToken인 상태에서는 실행할 함수가 없다는 점을 봐야 해요. 그 경우에는 enabled로 조건을 두는 식으로 작성해요. 차이는 [TanStack Query 문서](https://tanstack.com/query/latest/docs/framework/react/guides/disabling-queries)에 설명돼 있어요.
+
+## 테스트를 읽을 때
+
+테스트는 이름만 봐도 어떤 동작을 확인하는지 알 수 있게 써요. 내용을 읽을 때도 준비한 값, 실행한 동작, 기대 결과를 바로 볼 수 있었으면 해요.
+
+검색 필터에서 선택한 혜택을 해제하는 테스트예요.
+
+```typescript
+it('켜져 있던 혜택 칩을 다시 누르면 그 파라미터만 빼야 한다', () => {
+  const result = renderSearchFilter(
+    'q=검색어&tab=partner&todayDiscount=true&hasEvent=true',
+  );
+
+  result.current.toggleBenefit('todayDiscount');
+
+  expect(writtenParams()).toEqual({
+    q: '검색어',
+    tab: 'partner',
+    hasEvent: 'true',
+  });
+});
+```
+
+renderSearchFilter는 경로 mock과 Query 캐시를 준비해요. writtenParams는 History API에 쓴 URL을 읽어주고요. 반복되는 준비는 이 정도로 묶고, 토글할 혜택과 기대 결과는 테스트에 직접 적어요.
+
+여기서 hasEvent도 비교한 건 다른 혜택까지 지워지면 안 되기 때문이에요. todayDiscount가 없어졌는지만 확인하면 그 조건은 놓칠 수 있어요. 행동과 검증까지 헬퍼에 넣어버리면 테스트를 읽을 때 이런 부분을 확인하기 어려워요.
+
+새 기능의 동작 명세는 \*.spec에 BDD 형식으로 적고, 운영이나 QA에서 발견한 오류는 \*.test에 재현해요. 입력값만 다른 같은 동작이라면 it.each를 써요. 동작 자체가 다르면 각각 적는 편이고요.
+
+## 반복되는 판단은 남겨 두기
+
+리뷰하다 같은 부분을 다시 고치게 되면 skills도 같이 수정해요. 추상화 수준을 맞추는 기준이나, 조회를 어디에 둘지 같은 내용들이 그렇게 쌓였어요. 코드만 고치면 다음 작업에서도 같은 형태로 나올 수 있으니까요. lint로 검사할 수 있는 건 규칙으로 옮겨요.
+
+에이전트가 구현한 코드를 볼 때도 이런 부분을 확인해요. 화면의 구성과 세부 구현이 섞여 있지는 않은지, 관련된 조회와 동작이 따로 떨어져 있지는 않은지요.
+
+코드가 짧아졌어도 이해하려고 여러 파일을 더 따라가야 한다면 다시 살펴보는 편이에요. 저는 결국 읽고 확인하기 편한 코드를 만들고 싶어요. 직접 수정할 때도 편하고, 리뷰하면서 놓친 조건을 찾기에도 그쪽이 낫다고 생각해요.
+
+## 참고
+
+- [React: Choosing the State Structure](https://react.dev/learn/choosing-the-state-structure#avoid-redundant-state)
+- [TanStack Query: Disabling/Pausing Queries](https://tanstack.com/query/latest/docs/framework/react/guides/disabling-queries)
+- [es-toolkit: uniqBy](https://es-toolkit.dev/reference/array/uniqBy.html)
+- [es-toolkit: sumBy](https://es-toolkit.dev/reference/math/sumBy.html)
+- [ts-pattern: exhaustive](https://github.com/gvergnaud/ts-pattern#exhaustive)

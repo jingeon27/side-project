@@ -1,0 +1,195 @@
+{
+  "site": {
+    "title": "김진건의 블로그",
+    "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다.",
+    "keywords": ["Software Engineer", "React", "Next.js", "TypeScript", "개발 블로그"]
+  },
+  "pages": {
+    "home": {
+      "title": "홈",
+      "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다."
+    },
+    "blog": {
+      "title": "글 목록",
+      "description": "개발 경험과 공부한 내용을 정리한 글입니다."
+    },
+    "about": {
+      "title": "소개",
+      "description": "소프트웨어 엔지니어 김진건의 이메일과 GitHub입니다."
+    }
+  },
+  "posts": {
+    "puppeteer-event-lifecycle": {
+      "title": "Puppeteer의 request와 response를 함께 기다리기: closure보다 중요했던 수명 관리",
+      "slug": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",
+      "description": "Puppeteer의 request와 response를 함께 기다리면서 이벤트 누락, listener 누적과 무한 대기를 막은 과정.",
+      "keywords": ["closure", "electron", "javascript", "puppeteer", "typescript"]
+    },
+    "electron-module-boundaries": {
+      "title": "NestJS의 책임 분리를 참고해 Electron 수집 앱을 나눈 기준",
+      "slug": "nestjs의-책임-분리를-참고해-electron-수집-앱을-나눈-기준",
+      "description": "플랫폼마다 복제된 Electron 수집 코드를 IPC 진입점, 공통 처리 순서와 플랫폼별 구현으로 나눴다.",
+      "keywords": [
+        "javascript",
+        "nextjs",
+        "react",
+        "tanstack-query",
+        "typescript",
+        "리펙토링",
+        "electron",
+        "nestjs",
+        "architecture"
+      ]
+    },
+    "query-key-factory": {
+      "title": "TanStack Query v4의 query key를 Query Key Factory로 정리한 이유",
+      "slug": "tanstack-query-v4의-query-key를-query-key-factory로-정리한-이유",
+      "description": "query key와 조회 함수를 한곳에 모으고, mutation에서 갱신할 캐시 범위를 드러낸 과정.",
+      "keywords": ["tanstack-query", "typescript", "query-key"]
+    },
+    "typescript-patterns": {
+      "title": "실무에서 자주 쓰는 TypeScript 패턴 네 가지",
+      "slug": "실무에서-자주-쓰는-typescript-패턴-네-가지",
+      "description": "satisfies, optional property, 제네릭과 배타적인 props로 값 사이의 관계를 타입에 표현하기.",
+      "keywords": ["typescript", "react"]
+    },
+    "nextjs-tanstack-query-ssr": {
+      "title": "Next.js App Router에서 TanStack Query를 SSR과 함께 쓰는 방법",
+      "slug": "nextjs-app-router에서-tanstack-query를-ssr과-함께-쓰는-방법",
+      "description": "서버 요청별 QueryClient와 브라우저 캐시를 나누고, prefetch부터 hydration까지 연결하는 방법.",
+      "keywords": ["app-router", "nextjs", "react-query", "tanstack-query", "ssr"]
+    },
+    "reservation-form-state": {
+      "title": "예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정",
+      "slug": "예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정",
+      "description": "가족을 추가하면 날짜가 어긋나던 예약 폼에서 서버 목록과 작성 중인 값의 저장 위치를 나눴다.",
+      "keywords": ["typescript", "react", "zod", "react-hook-form", "nextjs", "zustand"]
+    },
+    "review-like-optimistic-update": {
+      "title": "리뷰 좋아요 Optimistic Update: 여러 캐시를 함께 갱신하고 실패 시 복구하기",
+      "slug": "리뷰-좋아요-optimistic-update-여러-캐시를-함께-갱신하고-실패-시-복구하기",
+      "description": "리뷰 좋아요를 목록과 상세 캐시에 함께 반영하고, 요청 실패 시 이전 값으로 복구하는 방법.",
+      "keywords": ["tanstack-query", "optimistic-update", "react"]
+    },
+    "nextjs-seo-prefetch": {
+      "title": "Next.js App Router에서 prefetch를 기다려야 하는 경우",
+      "slug": "nextjs-app-router에서-prefetch를-기다려야-하는-경우",
+      "description": "브라우저에는 보이지만 초기 HTML에는 빠진 데이터를 확인하고 prefetch를 기다릴 조건을 정했다.",
+      "keywords": ["nextjs", "tanstack-query", "seo", "ssr"]
+    },
+    "review-form-funnel": {
+      "title": "3단계 리뷰 작성 폼의 역할을 RHF·Zod·퍼널로 다시 나눈 과정",
+      "slug": "3단계-리뷰-작성-폼의-역할을-rhfzod퍼널로-다시-나눈-과정",
+      "description": "리뷰 작성의 입력값, 검증과 단계 이동을 나누고 다중 선택 UI를 Bottom Sheet로 옮긴 과정.",
+      "keywords": ["react-hook-form", "zod", "react", "state-management"]
+    },
+    "typed-program-form": {
+      "title": "두 관리자 앱의 프로그램 폼을 만드는 과정",
+      "slug": "두-관리자-앱의-프로그램-폼을-만드는-과정",
+      "description": "두 관리자 앱의 입력은 공유하고, typed form과 변환 함수로 값 접근과 제출 데이터를 나눴다.",
+      "keywords": ["react-hook-form", "typescript", "zod", "architecture"]
+    },
+    "cross-domain-token-handoff": {
+      "title": "정산 서비스를 별도 호스트로 분리하며 도메인 간 토큰 전달을 설계한 과정",
+      "slug": "정산-서비스를-별도-호스트로-분리하며-도메인-간-토큰-전달을-설계한-과정",
+      "description": "정산 호스트로 토큰을 넘기는 방식을 URL에서 폼 POST로 바꾸고, 전용 BFF에 모은 과정과 남은 보안 과제.",
+      "keywords": ["nextjs", "authentication", "bff", "security"]
+    },
+    "chatbot-message-layer": {
+      "title": "우리 백엔드가 못 건드리는 영역에서 AI 상담 챗봇 붙이기",
+      "slug": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
+      "description": "수정할 수 없는 두 백엔드의 SSE를 하나의 상담 화면에 연결하며 메시지와 연결 수명을 정리했다.",
+      "keywords": ["react", "typescript", "sse", "chatbot"]
+    },
+    "sitemap-api-boundaries": {
+      "title": "동적 사이트맵을 만들며 공개 API와 인증 API의 경계를 나눈 과정",
+      "slug": "동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정",
+      "description": "사이트맵의 공개 API가 암묵적으로 쿠키를 읽던 경로를 분리하고 캐시와 재검증 기준을 정했다.",
+      "keywords": ["nextjs", "seo", "sitemap", "cache"]
+    },
+    "payment-coupon-branches": {
+      "title": "결제 내역에 쿠폰 결제를 추가하며 분기를 한곳으로 모은 과정",
+      "slug": "결제-내역에-쿠폰-결제를-추가하며-분기를-한곳으로-모은-과정",
+      "description": "쿠폰을 추가하며 결제수단, 처리 상태와 저장 여부에 흩어진 화면 분기를 한곳에 모았다.",
+      "keywords": ["typescript", "refactoring", "react", "payment"]
+    },
+    "fsd-layer-boundaries": {
+      "title": "FSD 폴더는 다 있었는데 새 파일을 어디에 둘지 설명하기 어려웠어요",
+      "slug": "fsd-폴더는-다-있었는데-새-파일을-어디에-둘지-설명하기-어려웠어요",
+      "description": "새 파일의 위치를 설명하기 어려웠던 두 프로젝트에서 레이어와 화면의 경계를 다시 나눈 기록.",
+      "keywords": ["fsd", "architecture", "refactoring", "nextjs"]
+    },
+    "prototype-working-rules": {
+      "title": "프로토타입을 실사용 서비스로 옮기며 작업 규칙을 먼저 만든 이유",
+      "slug": "프로토타입을-실사용-서비스로-옮기며-작업-규칙을-먼저-만든-이유",
+      "description": "SPA 프로토타입을 실사용 서비스로 옮기며 계획, 구현, 검증과 리뷰 기준을 작업 규칙에 남겼다.",
+      "keywords": ["react", "nextjs", "architecture", "ai-workflow"]
+    },
+    "testing-standards": {
+      "title": "테스트 코드를 도입하면서 세운 기준",
+      "slug": "테스트-코드를-도입하면서-세운-기준",
+      "description": "제품 코드 대신 테스트가 제출을 처리하고, Mock이 잘못된 요청을 받아 주던 문제를 겪으며 검증 기준을 고쳤다.",
+      "keywords": ["testing", "vitest", "playwright", "react"]
+    },
+    "declarative-code": {
+      "title": "선언적으로 코드를 쓰는 기준",
+      "slug": "선언적으로-코드를-쓰는-기준",
+      "description": "화면 구성과 세부 구현을 나누고, 조회와 상태를 필요한 곳에 두어 읽고 검토하기 쉬운 코드를 만드는 기준.",
+      "keywords": ["typescript", "react", "refactoring", "declarative-programming"]
+    },
+    "nextjs-server-client-issues": {
+      "title": "Nextjs를 사용하면서 겪었던 이슈들",
+      "slug": "nextjs를-사용하면서-겪었던-이슈들",
+      "description": "라우터 캐시, 프록시 matcher와 오래된 서버 액션에서 겪은 오류를 고치며 URL과 폼 상태의 역할을 나눴다.",
+      "keywords": ["nextjs", "react", "cache", "react-hook-form"]
+    },
+    "error-boundary-recovery": {
+      "title": "오류는 남기고 화면은 덜 잃게 만든 에러 처리 개편",
+      "slug": "오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편",
+      "description": "조회 하나가 실패해도 메뉴와 나머지 입력이 남도록 Error Boundary를 복구할 화면 단위로 나눴다.",
+      "keywords": ["react", "error-boundary", "zod", "observability"]
+    },
+    "low-effort-success": {
+      "title": "가장 값진 성공은 노력이 적은 성공입니다",
+      "slug": "가장-값진-성공은-노력이-적은-성공입니다",
+      "description": "성공과 실패를 노력의 유무 대신 비용으로 바라보며, 다음 시도에 드는 노력을 줄이는 방향을 생각했다.",
+      "keywords": ["reflection", "ai-workflow", "productivity"]
+    },
+    "sentry-observability": {
+      "title": "Sentry로 에러 수집부터 Web Vitals·MCP·릴리스까지 연결한 과정",
+      "slug": "sentry로-에러-수집부터-web-vitalsmcp릴리스까지-연결한-과정",
+      "description": "Next.js 세 런타임의 오류를 모으고, SDK 옵션과 실제 전송 내용을 대조해 민감 정보와 잡음을 걸렀다.",
+      "keywords": ["sentry", "nextjs", "observability", "web-vitals", "security"]
+    },
+    "plan-gated-ai-workflow": {
+      "title": "AI가 코드를 잘 짜기 시작했는데 제가 덜 바빠지지는 않았어요",
+      "slug": "ai가-코드를-잘-짜기-시작했는데-제가-덜-바빠지지는-않았어요",
+      "description": "AI 작업의 계획, 화면, 테스트와 최종 diff를 검토하고 반복되는 판단을 문서와 검사 규칙에 남겼다.",
+      "keywords": ["ai-workflow", "testing", "eslint", "worktree"]
+    },
+    "zod-assertion-boundaries": {
+      "title": "타입 단언을 걷어내며 Zod를 경계마다 다르게 배치한 기준",
+      "slug": "타입-단언을-걷어내며-zod를-경계마다-다르게-배치한-기준",
+      "description": "타입 단언을 줄이면서 API 응답, URL, 폼과 외부 값에 서로 다른 검증 실패 정책을 적용했다.",
+      "keywords": ["zod", "typescript", "validation", "error-handling"]
+    },
+    "bottom-sheet-drag-crash": {
+      "title": "Sentry가 잡아 준 Bottom Sheet 드래그 크래시, 원인 경로가 사라진 버전으로 올리기까지",
+      "slug": "sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지",
+      "description": "Sentry의 드래그 크래시를 라이브러리 소스까지 추적하고, 26개 사용처를 유지하며 메이저 버전을 올렸다.",
+      "keywords": ["sentry", "react", "debugging", "react-modal-sheet"]
+    },
+    "health-check-program": {
+      "title": "기존 프로그램 구조에 건강검진을 들이며 화면을 나눈 기준",
+      "slug": "기존-프로그램-구조에-건강검진을-들이며-화면을-나눈-기준",
+      "description": "기존 비급여 프로그램에 건강검진을 추가하며 등록, 조회, 검사 선택과 신청·결제 흐름을 나눴다.",
+      "keywords": ["react", "react-hook-form", "architecture", "payment"]
+    },
+    "reading-ai-code": {
+      "title": "저는 코드를 읽어요",
+      "slug": "저는-코드를-읽어요",
+      "description": "코드를 읽지 않았던 스프린트의 핫픽스 이후, 에이전트의 구현과 테스트에서 직접 확인하는 내용을 정리했다.",
+      "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
+    }
+  }
+}

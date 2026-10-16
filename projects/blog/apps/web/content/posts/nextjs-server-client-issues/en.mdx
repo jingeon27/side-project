@@ -1,0 +1,237 @@
+![URL changes, cookie handling, and form initialization follow separate paths suited to their behavior.](/images/covers/nextjs-server-client-issues.png)
+
+*URL changes, cookie handling, and form initialization follow separate paths suited to their behavior.*
+
+I encountered three Next.js problems, in Router Cache, proxy, and Server Actions. Their causes differed. Router Cache and action issues led me to move behavior to the client; the proxy needed a narrower matcher and a pinned version.
+
+Forms exposed state-ownership problems too. Making the URL authoritative erased unfinished search edits, while framework state preservation in the portal retained submitted inputs from July into early August. This records the fixes and remaining costs.
+
+## Search conditions changed, but the address did not
+
+In staging, Back-Office lists sometimes ignored search. Choosing conditions and submitting left the list unchanged. It worked after entering without conditions, but failed after refreshing or opening a shared URL already containing them.
+
+`router.replace` ran without changing the address.
+
+These routes do not read searchParams on the server; lists query entirely on the client. Router Cache used the search string consumed by server rendering rather than the request URL. That was empty for these routes. A request for /a?foo=bar therefore populated the slot for /a, with the original request URL stored inside. A later router.replace('/a') hit that slot and restored the old search string to the address and useSearchParams().
+
+Upstream [#92187](https://github.com/vercel/next.js/issues/92187) and [#91658](https://github.com/vercel/next.js/issues/91658) reported the same symptom. This explanation follows the fix in [#94144](https://github.com/vercel/next.js/pull/94144).
+
+I initially thought a detail Drawer failed to close because it waited on a server round trip. Wrapping close in useTransition did not address it, and I reverted that the same day. Entry paths explained why the same cache issue also affected closing.
+
+- Opening details from a list had a recently cached parameter-free address and appeared normal.
+- Entering details directly left only prefetched ?id=… row addresses, which returned after removing the parameter.
+
+Finding a useful check took time. New tests passed and looked reasonable on inspection. Neither jsdom nor the development server reproduced this production Router Cache behavior.
+
+I switched to `pnpm build && pnpm start`. On August 13, 2026, six of seven checked Back-Office lists left the address unchanged after search. Upstream reports also identified production-only reproduction.
+
+The fix used native history. I added two functions to a shared hook and moved search, reset, and detail close to them.
+
+```typescript
+/**
+ * 쿼리 파라미터만 바뀐 주소로 바꾼다.
+ *
+ * `router.replace` 를 쓰면 안 된다. 이 화면들은 서버 렌더에서 searchParams 를 읽지 않아
+ * 라우터 캐시가 검색 문자열과 무관하게 재사용되고, 그 과정에서 캐시에 담긴 주소가 그대로 커밋된다.
+ */
+export function replaceUrl(url: string) {
+  window.history.replaceState(null, '', url);
+}
+
+/** 뒤로가기로 되돌아갈 조건 변경(검색 등)은 엔트리를 남긴다. */
+export function pushUrl(url: string) {
+  window.history.pushState(null, '', url);
+}
+```
+
+Native history integrates with Next.js, updating usePathname and useSearchParams immediately. These screens had no new server-rendered data to request.
+
+An E2E now opens a restored Drawer after refresh, holds RSC requests, and closes it. It fails if close waits for the server. Because it uses the dev server, it protects server-independent closing rather than reproducing the cache bug itself. That is the recorded post-fix verification; I have no record of rechecking all six lists in the same production build afterward.
+
+### This works because the client queries the list
+
+Client components derive query conditions from the address and call useQuery. Changing the URL changes the key and makes the client fetch again. That permits updating the address without server navigation.
+
+If the server fetched results and passed them as props, replaceState would change only the address, leaving the list unchanged. That architecture requires server navigation for new results.
+
+### History API remains a design choice
+
+A fixed Next.js version makes router.replace work, but does not make it the best choice for these screens.
+
+Router navigation for a same-path query change can produce a fresh server-rendered RSC payload on a cache miss. A list change then adds network/parsing work and server rendering, repeated through filters and tabs.
+
+History API changes the address without that round trip. Queries subscribing to the address fetch only the required data.
+
+For same-path conditions the server does not read, I retain History API across versions. The cache bug prompted the change, but fixing it does not justify reverting the design.
+
+## The version containing one fix introduced another problem
+
+The search-cache bug was fixed in 16.3.0. Core Changes listed #94144, changing the cache key to the request URL's search string.
+
+But 16.3 had already driven the admin monorepo back to 16.2.x. We upgraded from 14.2 on August 5 and downgraded to 16.2.12 two days later.
+
+Starting in 16.3.0, Turbopack serialized moduleLoading.crossOrigin in the client reference manifest as the string none rather than null after the option became an enum.
+
+```text
+16.2.12  "moduleLoading":{"prefix":"","crossOrigin":null}
+16.3.0   "moduleLoading":{"prefix":"","crossOrigin":"none"}
+```
+
+React Flight turns any string other than use-credentials into the empty anonymous value. SSR-preinitialized client component script chunks therefore gained crossorigin="" even without a configured crossOrigin, and browsers fetched them in CORS mode.
+
+- Issue: [#96831](https://github.com/vercel/next.js/issues/96831)
+- Fix: [#97164](https://github.com/vercel/next.js/pull/97164)
+
+The fix omits the field for CrossOrigin::None rather than restoring null. It merged to canary on August 12, 2026, entering v16.3.1-canary.14. The stable v16.3.1 I inspected lacked that omission in its source, retaining the symptom from 16.3.0.
+
+The portal later upgraded for another reason. Its September 16.3.6 build lacked the manifest field and the empty crossorigin script attribute.
+
+Our trigger differed from upstream's cross-origin assetPrefix/CDN case. We used no assetPrefix; our proxy created the cross-origin requests.
+
+Hospital admin forces certain routes onto another host through proxy, renamed from middleware in Next.js 16. Its matcher also caught _next bundles and redirected them to the original host. Combined with crossorigin="", CORS blocked them. The deployed redirect behavior had existed since 14.2 with the same matcher; local mode skipped host enforcement, hiding it. Version 16.3 exposed it.
+
+The root fix excluded static paths such as _next from the matcher. Only page routes needed host enforcement. The failure no longer reproduced after that because the cross-origin redirect disappeared.
+
+I still left the admin monorepo on 16.2.x temporarily. Other apps or configurations might recreate the conditions, and remaining on a version without the attribute cost less until a stable upstream fix was available.
+
+Version upgrades and URL design became separate decisions. Same-path query updates remain on History API. I will revisit that if requirements make the router responsible for those changes, rather than because a version changes.
+
+## Server Actions failed in long-open tabs
+
+Hospital admin's update notice uses a cookie to decide visibility. The inherited cookie was httpOnly and secure, so Server Actions read and wrote it.
+
+After deployment, old tabs called an action ID absent from the new build and received 404. Action IDs are tied to build artifacts and usually change on deployment. [The documentation](https://nextjs.org/docs/app/guides/server-actions#deployment-considerations) also describes rotation at up to 14-day intervals without source changes. To users, the notice simply stopped closing.
+
+That day, a hotfix reloaded the page after action failure because retrying the old bundle could not recover.
+
+Next.js also supports deploymentId to turn a deployment mismatch into hard navigation. Its guidance includes rolling deployments and retryable handling of this failure. These approaches do not revive old IDs. Our decision was where cookie access should live.
+
+One option was a Route Handler: an /api/... path is independent of build IDs and can retain httpOnly. Another was client-side access, removing httpOnly.
+
+We chose client access because access-token cookies had moved there two days earlier. The interceptor reads them on every request, and we wanted to avoid a Server Action round trip each time. We aligned the notice cookie with that approach. Tokens below are renamed sessionToken for access and renewalToken for refresh.
+
+That rationale does not hold for the notice alone, which is not read on every request. A Route Handler could have removed its 404 while retaining httpOnly. Treating both cookies alike introduced unnecessary exposure; I record it as debt.
+
+Changing cookies in a Server Action also rerenders the current route and returns its RSC payload with the action result. That is not a full browser refresh or UI unmount; client state remains. It still attaches a server render to closing one notice. I did not measure that cost and cannot claim it caused substantial load. I considered the round trip unnecessary.
+
+The token changes were:
+
+- Remove Server Action reads that returned tokens for client Authorization headers. A Route Handler now handles refresh as a BFF.
+- Keep renewalToken httpOnly; the browser sends it to refresh and the handler reads it.
+- Attempt refresh once when sessionToken is absent instead of immediately logging out. Old httpOnly access cookies cannot be read by the client, so otherwise valid previous sessions would break after rollout.
+
+Cookie identity creates another trap. Names, domains, and paths distinguish cookies. Different paths or domains can leave old and new values simultaneously present and sent. Direct document.cookie without a path defaults to the current document's path, potentially differing from the server's. The client may see the new token while the server picks the old one. That is a stale-token case, not an absent-token case, so the fallback misses it.
+
+Our code did not encounter that combination: Next.js cookies().set and js-cookie both defaulted to / and neither specified a domain. Instead, scripts could not overwrite the old httpOnly notice cookie. The refresh handler can replace sessionToken with Set-Cookie, but client-only notice code can neither read nor replace its old cookie. Reusing its name would leave users who closed the notice before deployment unable to close it for a day. I used a new name and let the old one-day cookie expire.
+
+The missing-token refresh fallback is a migration measure. It should be removed after old httpOnly sessions expire. Without a removal criterion, missing access tokens become ordinary and session expiry effectively depends only on renewalToken.
+
+### Additional exposure from client-readable tokens
+
+Any script with access to page cookies can read sessionToken, including third-party tags, bundled dependencies, and extensions with relevant access. Exposure is broader than a successful XSS. Observability tooling collecting cookies or request headers can also send a token to a third party without a separate vulnerability.
+
+Shorter token expiry only reduces the window. If page code can invoke refresh, an attacker with that access can too, making practical exposure closer to renewalToken lifetime.
+
+An httpOnly renewalToken does not make refresh immune. Page code can invoke a route that the browser authenticates with the cookie. Checking whether any server endpoint returns that cookie's value is also necessary before assuming it never reaches JavaScript.
+
+No further mitigations have been added yet: neither shorter expiry nor refresh restrictions. We obtained build-independent paths for notice and token access, but accepted this unfinished work.
+
+## The form did not follow the authoritative URL
+
+Once query conditions live in the address, the form must follow it too. Initially it was populated only on entry.
+
+```typescript
+// 진입 시점의 주소가 폼의 초기값이다. 이후 주소 변경은 폼을 건드리지 않는다.
+const [initialValues] = useState(() => ({ ...defaultValues, ...currentParams }));
+```
+
+The list reads the address every render, while the form does not. Back navigation restored list conditions but left the latest input in the search bar.
+
+I reset the form when the address changes. rc-field-form does not update stored values merely because initialValues changes.
+
+```typescript
+// currentParams 는 매 렌더 새 객체라, 내용이 달라졌을 때만 초기값을 다시 만든다.
+const paramsKey = JSON.stringify(currentParams);
+const initialValues = useMemo(() => ({ ...defaultValues, ...currentParams }), [paramsKey]);
+
+useEffect(() => {
+  form.resetFields();
+}, [form, initialValues]);
+```
+
+The reset still watches all parameters, including page number and detail ID that the form does not own.
+
+Typing without submitting, then opening and closing a Drawer, changes id and erases the unfinished input. Pagination does the same. I knew about this when implementing synchronization and initially recorded it as a tradeoff. I now consider it avoidable by narrowing the trigger. I reproduced it locally but did not commit that test.
+
+The planned fix is to watch only form-owned keys and centralize the existing distinction between form and address-only keys. It is not implemented yet.
+
+## Framework state preservation kept submitted forms alive
+
+The user-facing portal had the opposite problem. Enabling Cache Components in June for sitemap costs also enabled route-state preservation.
+
+Next.js hides previous pages with React Activity rather than unmounting them. Their display:none DOM and React state remain. [The documentation](https://nextjs.org/docs/app/guides/preserving-ui-state) describes retaining up to three recent routes before evicting older ones.
+
+Reservation and consultation forms therefore retained submitted values after going back.
+
+I fixed this in the shared form hook, used by every input form except one search filter. `useSchemaForm` is a publication alias. July's first approach reset when a screen became visible; on August 5 I changed it to:
+
+```tsx
+export function useSchemaForm({ schema, ...props }) {
+  const form = useForm({ ...props, resolver: zodResolver(schema) });
+  const { reset } = form;
+
+  // Cache Components 는 떠난 라우트를 언마운트하지 않고 <Activity> 로 숨겨 입력값을 그대로 보존한다.
+  // 폼은 들어올 때마다 새로 시작해야 하므로 화면이 숨겨질 때 초기값으로 되돌린다.
+  useIsomorphicLayoutEffect(() => reset, [reset]);
+
+  return form;
+}
+```
+
+The cleanup is reset itself. React runs cleanup when Activity hides a component, as on unmount, so hiding becomes the reset point.
+
+Layout-effect timing matters. Resetting on reveal briefly displayed old values, which happened with the July approach. react-use's useIsomorphicLayoutEffect uses useLayoutEffect in the browser.
+
+The target is mounting-time defaultValues, not an empty form. Reservation entry preselects the best-benefit coupon; empty reset would delete it. Forms whose defaults depend on server data therefore mount only after that data is ready.
+
+Hook tests cover:
+
+- Entered values are retained while in use.
+- Rerender alone does not clear input.
+- Cleanup restores initial values.
+- Restoration uses defaults rather than an empty form.
+
+Reservation E2E also checks leaving and returning, forward navigation, and reentry after submission. Old inputs must disappear and the best coupon must be selected again.
+
+I considered bfcacheId as a key, but [its documentation](https://nextjs.org/docs/app/api-reference/functions/use-router#bfcacheid) showed why that would not work here.
+
+> bfcacheId changes when push or replace creates a new segment; it remains for back/forward navigation, router.refresh(), and search-only or hash-only navigation.
+
+Submitting pushes away from the form without recreating its segment. Back restores that same segment, retaining bfcacheId and its key. Pushing a new form from a completion screen can create a new segment, but the guidance still favors an explicit reset or data-derived key in new code, reserving bfcacheId as a last resort.
+
+## Conditions for removing workarounds
+
+All four items remained as of September 28, 2026.
+
+- Upgrade after a stable release contains the manifest fix. The 16.3.6 artifact met that condition, but admin was still pinned to 16.2.x.
+- Remove the refresh fallback after old httpOnly sessionToken sessions expire.
+- Limit form resets to form-owned keys.
+- Move the notice cookie to a Route Handler and restore httpOnly.
+
+History API is not on that list. It avoids an unnecessary round trip for same-path query data the server does not read, independently of the Router Cache bug.
+
+CORS and form initialization both failed where otherwise reasonable decisions met. This did not eliminate framework dependencies, but clarified which behavior belongs to the framework and which I must manage.
+
+## References
+
+- [vercel/next.js #92187](https://github.com/vercel/next.js/issues/92187), [#91658](https://github.com/vercel/next.js/issues/91658) — incorrect search parameters in Router Cache
+- [Next.js PR #94144](https://github.com/vercel/next.js/pull/94144) — request-URL search as cache key, in 16.3.0
+- [Next.js #96831](https://github.com/vercel/next.js/issues/96831), [PR #97164](https://github.com/vercel/next.js/pull/97164) — crossOrigin manifest serialization
+- [Next.js: window.history.pushState](https://nextjs.org/docs/app/getting-started/linking-and-navigating#windowhistorypushstate)
+- [Next.js: Server Action deployment considerations](https://nextjs.org/docs/app/guides/server-actions#deployment-considerations)
+- [Next.js: version skew and deploymentId](https://nextjs.org/docs/app/guides/self-hosting#version-skew)
+- [Next.js: preserving UI state](https://nextjs.org/docs/app/guides/preserving-ui-state)
+- [Next.js: bfcacheId](https://nextjs.org/docs/app/api-reference/functions/use-router#bfcacheid)
+- Related: [Moving reservation drafts to React Hook Form](/en/blog/reservation-form-state) — a caller of the shared form hook
+- Related: [Public and authenticated sitemap API boundaries](/en/blog/sitemap-api-boundaries) — why Cache Components was enabled
+- Related: [Error boundaries that preserve more of the screen](/en/blog/error-boundary-recovery) — URL-opened Drawers and recovery

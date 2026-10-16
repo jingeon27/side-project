@@ -299,6 +299,14 @@ Web과 Mobile이 `packages/bridge`의 `appRoutes`·`resolveAppRoute`·`WebPathSc
 
 별도 `.next/navigation-build` 출력 경로의 Web production build와 Android/iOS Metro export가 통과했다. 변경 파일 Prettier·diff 검사, 잔여 소유 테스트 스키마 0개·소유 테스트 DB 중지와 데이터 보존을 확인했다. 개발 홈·중첩 채팅 경로·API health는 200이며 고정 계정 3개·기존 게시글 6개를 보존했다. API·SDK·REST 계약·DB·의존성은 이번 경로 변경에서 수정하지 않아 해당 테스트를 반복하지 않았다. 네이티브 dev client·실기기·서명 빌드 검증은 포함하지 않는다. 경로별 정책은 [Mobile README](../apps/mobile/README.md#경로와-화면-전환)에도 정리한다.
 
+## develop 병합 충돌 해결
+
+`feat/game-feedback`의 `209e094`에 최신 `develop`의 `13ca201`을 merge해 PR #4의 충돌을 해결했다. `.prettierignore`에는 블로그 원문 MDX와 Game Feedback 계획 원문·생성 OpenAPI의 제외 규칙을 모두 보존했다. `yarn.lock`은 Yarn 4.17의 충돌 해결과 lockfile 갱신 모드로 두 프로젝트의 의존성을 함께 반영했다. 강제 push나 기본 브랜치 변경은 사용하지 않는다.
+
+병합 전 기능 브랜치의 descriptor 2,132개와 develop의 2,297개를 병합 후 2,417개와 각각 대조해 누락·resolution 변경 0개를 확인했다. npm 항목의 체크섬·의존 관계를 포함한 전체 metadata 변경도 0개다. 블로그 파일은 develop과 동일하고, Game Feedback·공통 패키지 소스는 병합 전 기능 브랜치와 동일하다. Photo Contest의 develop 변경도 merge로 수용했다.
+
+`install --immutable --mode=skip-build`, Game Feedback 집계 타입·Web/Mobile FSD lint, 공통 DS check(9개), Web Vitest 41개·Mobile Vitest 28개·SDK Vitest 32개가 통과했다. 전체 저장소 format과 diff 검사, 별도 `.next/merge-build` 출력의 Web production build, Android/iOS Metro export도 통과했다. 제품 코드·REST 계약·DB 변경이 없어 API DB 테스트와 브라우저 E2E는 이번 충돌 해결에서 반복하지 않았다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

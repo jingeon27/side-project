@@ -1,0 +1,98 @@
+{
+  "nav": {
+    "home": "홈",
+    "blog": "글",
+    "about": "소개",
+    "skip": "본문으로 건너뛰기",
+    "theme": "화면 테마 바꾸기",
+    "language": "언어 변경",
+    "siteTitle": "김진건"
+  },
+  "common": {
+    "all": "전체",
+    "articles": "개의 글",
+    "readMore": "글 읽기",
+    "allArticles": "전체 글 보기",
+    "backToBlog": "글 목록으로",
+    "minutes": "분",
+    "published": "발행",
+    "updated": "수정",
+    "search": "제목 또는 태그 검색",
+    "searchPlaceholder": "제목 또는 태그 검색",
+    "searchArticles": "글",
+    "searchTags": "태그",
+    "searchSuggestions": "검색 결과",
+    "searchEmpty": "검색 결과가 없습니다.",
+    "searchHint": "방향키로 이동하고 Enter로 선택하세요.",
+    "clear": "검색 지우기",
+    "category": "카테고리",
+    "tags": "태그",
+    "clearFilters": "필터 초기화",
+    "noResults": "조건에 맞는 글이 없습니다.",
+    "noResultsDescription": "다른 검색어나 카테고리를 선택해 보세요.",
+    "empty": "아직 글이 없습니다.",
+    "emptyDescription": "다른 카테고리의 글을 확인해 보세요.",
+    "koreanArticles": "한국어 글 보기",
+    "translationMissing": "아직 번역하지 않은 글입니다.",
+    "translationList": "해당 언어의 글 목록 보기",
+    "close": "닫기",
+    "rss": "RSS 구독",
+    "email": "이메일",
+    "github": "GitHub"
+  },
+  "home": {
+    "title": "김진건의 블로그",
+    "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다.",
+    "latest": "최근 글",
+    "explore": "카테고리"
+  },
+  "blog": {
+    "title": "글 목록",
+    "categoryDescription": "이 카테고리의 글입니다.",
+    "tagDescription": "이 태그가 붙은 글입니다.",
+    "results": "개의 글",
+    "filterLabel": "글 필터"
+  },
+  "categories": {
+    "engineering": "개발 경험",
+    "til": "TIL",
+    "perspectives": "생각과 관점",
+    "misc": "기타"
+  },
+  "categoryDescriptions": {
+    "engineering": "개발하면서 해결한 문제",
+    "til": "공부한 내용",
+    "perspectives": "개발과 일에 대한 생각",
+    "misc": "그 밖의 글"
+  },
+  "article": {
+    "contents": "이 글의 목차",
+    "share": "공유",
+    "copyLink": "링크 복사",
+    "copied": "복사했습니다",
+    "shareFailed": "링크를 복사하지 못했습니다.",
+    "copyCode": "코드 복사",
+    "related": "관련 글",
+    "previous": "이전 글",
+    "next": "다음 글"
+  },
+  "about": {
+    "title": "김진건",
+    "description": "소프트웨어 엔지니어입니다. 개발하면서 겪은 문제와 배운 내용을 이 블로그에 정리합니다.",
+    "contact": "연락처"
+  },
+  "notFound": {
+    "title": "페이지를 찾을 수 없습니다.",
+    "description": "주소를 확인해 주세요.",
+    "home": "홈으로 돌아가기"
+  },
+  "analytics": {
+    "title": "방문 통계",
+    "message": "동의하면 Google Analytics 쿠키를 사용해 방문과 글 읽기 통계를 수집합니다. 검색어 원문은 전송하지 않습니다.",
+    "allow": "동의",
+    "deny": "거부",
+    "preferences": "통계 설정",
+    "revoke": "동의 철회",
+    "close": "닫기"
+  }
+}

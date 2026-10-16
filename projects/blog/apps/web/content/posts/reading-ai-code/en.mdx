@@ -1,0 +1,126 @@
+![A diagram of reviewing state, request conditions, and tests in changed code.](/images/covers/reading-ai-code.png)
+
+*A diagram of reviewing state, request conditions, and tests in changed code.*
+
+Two sprints ago, I tried focusing on screen behavior without reading the code an agent produced. I thought working behavior would be enough, but many hotfixes followed. Since then, I have been reading diffs again for features and refactoring.
+
+Agents can still produce small features or refactorings that meet my expectations without any edits from me. Accepting code without changing it and accepting it without reading it have turned out to be different decisions.
+
+## I do not reread every mechanical change line by line
+
+I review changes differently depending on their nature. Formatting, behavior-preserving lint fixes, or moving files to an agreed location while changing only import paths call for scope checks and suitable verification rather than rereading every existing line.
+
+A task labeled “apply lint” or “move folders” is not automatically mechanical. Changing branches or execution order to satisfy lint changes behavior. File moves that alter server/client boundaries or module initialization also deserve closer inspection.
+
+For features and refactoring, I read the diff to understand inputs, state ownership, and request conditions. I do not reread the whole repository every time. I inspect what changed in a flow I already know, then follow callers and connected code when necessary.
+
+Refactoring can change data and state handling while the screen looks identical. Initialization timing, state retained after going back, and failed-request behavior are difficult to verify by clicking only the happy path.
+
+## Some results no longer need my edits
+
+I could not delegate this way from the beginning. For about half a year, I referred to [Compound Engineering](https://every.to/guides/compound-engineering), strengthening skills, AGENTS.md, and lint whenever results missed my intent. A correction in one task became a criterion for the next.
+
+Rules decidable from code, such as folder locations and import direction, went into lint. Context-dependent choices about state and abstraction stayed in skills and AGENTS.md. Tests fixed expected behavior and previously discovered bugs.
+
+The current flow is:
+
+```text
+티켓·plan 검토
+→ 테스트 작성
+→ 에이전트 구현·에이전트 코드 리뷰
+→ 변경분 테스트·lint·typecheck
+→ 제 diff 리뷰·dev 화면에서 동작 확인
+→ 전체 CI(테스트·knip·lint)
+→ QA 더블 체크 요청
+```
+
+After the first four stages, I sometimes find nothing to edit. Agents tend to do well when scope is small and a similar repository pattern exists. I see this as a combination of better models and the criteria I have kept recording in the repository.
+
+I read the tests too. Expected behavior for new features goes into BDD-style `*.spec` files, where I check that component requirements are covered. Production and QA bugs are reproduced in `*.test`. For a new test pattern, I deliberately break product code to see whether the test fails.
+
+Documenting criteria does not ensure that an agent always follows them. Its code still comes from a probabilistic model. After agent review, I compare requirements with the implementation myself.
+
+## Small changes and large features need different attention
+
+Good results on small tasks make it tempting to stop reading code. Those tasks also have small diffs, though. Reading a few files to compare requirements and existing patterns does not take long.
+
+Large features make review expensive. Screens, state, APIs, and effects on existing behavior all grow together. No large feature I have delegated has finished completely from one instruction. Even when an agent submitted it as complete, reading it exposed work to redo.
+
+I read submitted diffs and tests, identify deviations from requirements or repository rules, and return them for revision. Then I check the revised result. Large features repeat this cycle. An agent reporting completion does not mean my review is finished.
+
+When converting the benefits portal's Bottom Sheet into a compound structure, I trusted the generated code and existing review process. The header ended up in the body's scroll region, so scrolling moved the title too. Later, while upgrading the library to address a drag crash, I carried that structure forward. I read the diff and checked heights and snap positions, but missed whether the title stayed fixed while scrolling.
+
+Reading code had still missed incorrect screen behavior. Since then I separately check interactions such as scrolling and dragging, and leave browser tests to catch recurrences. [The detailed fix is in another article.](/en/blog/bottom-sheet-drag-crash)
+
+## Finding conditions before clicking through the screen
+
+Reading code checks more than conventions. It can expose faulty conditions or data flow before execution.
+
+When adding temporary opening dates, I changed both the input screen and the logic deciding bookable dates. A hospital's temporary opening must permit reservations even on its usual day off.
+
+This shortened example shows what happens if the new condition is merely appended after the old closure check. Date comparisons and response handling are omitted, and names have been changed.
+
+```typescript
+if (isPastDate(day)) return false;
+if (isWeeklyClosed(day)) return false;
+if (hasTemporaryOpening(day)) return true;
+return !isTemporarilyClosed(day);
+```
+
+All the conditions exist, but their order is wrong.
+
+Returning `false` for the usual day off prevents the temporary-opening condition from ever running. Clicking only regular opening days can miss it. Reading the code lets me ask whether that condition is reachable.
+
+```typescript
+if (isPastDate(day)) return false;
+if (hasTemporaryOpening(day)) return true;
+if (isWeeklyClosed(day)) return false;
+return !isTemporarilyClosed(day);
+```
+
+The actual implementation now blocks past dates first, then checks temporary openings before weekly and temporary closures. The server sends temporary openings and closures in one array, so code treating every entry as a closure also needed to distinguish their types. Legacy entries without `type` still count as closures.
+
+This was a potential bug while adding a feature, not a report of temporary-opening reservations being blocked in production. Tests cover selecting a temporary opening on a usual day off, allowing it even when a temporary closure overlaps, and continuing to reject past dates.
+
+Checking only whether a new condition exists misses its interaction with old conditions and data meanings. Reading identifies those cases before tests and screen verification. That is why I consider it an inexpensive form of verification.
+
+## Review can overlap implementation
+
+Reading a large diff takes time, but I can use the time while an agent implements or verifies work.
+
+While an agent handles another task or revisions, I read an already submitted diff or follow existing code relevant to the next change. That time helps me understand both code and business context.
+
+In my current work, reading code does not feel as though it stops everything else. Implementation and review can overlap. My review could still become a bottleneck if tasks grow larger or cover unfamiliar areas.
+
+I also need to understand and explain the change. Fast implementation is not finished work for me if I do not know what changed.
+
+## Larger structural changes have become easier
+
+AI has also reduced the effort of reorganizing folders or changing shared component interfaces. Those decisions require updating many files and callers, even after the direction is settled.
+
+I now define the criteria, delegate the implementation, and check whether the submitted result follows them. Applying the same pattern across many files is less burdensome, making larger structural changes more practical.
+
+That makes it easier to keep the repository close to the structure I want: one fitting current product needs, with clear state and data responsibilities and changes that are easy to read and verify. I choose the direction and reread the agent's migration result.
+
+## Why I maintain readable structure
+
+I care a lot about code hygiene. I use knip to find unused code and put repeated checks into lint and skills. Different names or locations for the same role make me search for ownership before I can check behavior.
+
+The same concern drives cohesion, coupling, context boundaries, and consistent abstraction levels within functions. Chasing state changes across files or mixing UI behavior with data conversions makes important conditions easier to miss.
+
+Consistent names and structure give agents examples and help me understand the code. Familiar shapes alone are insufficient: similar names for different roles, or hidden branches introduced to shorten code, can make review harder. I check whether I can explain each part's role and execution conditions.
+
+Readability helps me understand the result and find problems in less time. Reading is part of verification.
+
+For mechanical changes without behavior changes, I focus on scope and results. For features and refactoring, I read changed product code and tests. I return incomplete large features for revision. Passing tests, code review, and actual screen checks remain separate steps.
+
+At first, I thought better generated code might remove the need to read it. Now I see it as reducing my editing time. It has not removed the need to understand it.
+
+AI helps me implement quickly and maintain the structure I want. I still decide whether the structure fits and whether this implementation follows it. I delegate implementation, then read the code as part of verification.
+
+## References
+
+- [Every: Compound Engineering](https://every.to/guides/compound-engineering)
+- Related: [Better AI code has not made me less busy](/en/blog/plan-gated-ai-workflow)
+- Related: [The testing criteria I rebuilt](/en/blog/testing-standards)
+- Related: [What I missed while fixing a Bottom Sheet drag crash](/en/blog/bottom-sheet-drag-crash)

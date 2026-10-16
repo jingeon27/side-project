@@ -16,9 +16,11 @@ async function writePost(page: Page, title: string, video = false) {
   await sheet.getByRole('checkbox').check();
   await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
   await expect(sheet).toHaveCount(0);
-  await expect(
-    page.getByRole('region', { name: '최신 게시물', exact: true }).getByRole('article', { name: title }),
-  ).toBeVisible();
+  const post = page
+    .getByRole('region', { name: '최신 게시물', exact: true })
+    .getByRole('article', { name: title });
+  await expect(post).toBeVisible();
+  await expect(post.getByText('합성도 환영하는 상시 갤러리', { exact: true })).toBeVisible();
 }
 
 test(

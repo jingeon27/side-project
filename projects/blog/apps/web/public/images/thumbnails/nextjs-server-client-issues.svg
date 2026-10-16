@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#94a3b8" stroke-width="1.7" />
+    </marker>
+  </defs>
+  <rect width="640" height="360" fill="#f8fafc" />
+  <text
+    x="130"
+    y="55"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    source
+  </text>
+  <text
+    x="460"
+    y="55"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="15"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    update
+  </text>
+  <rect x="48" y="80" width="162" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="129"
+    y="114"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    URL
+  </text>
+  <rect x="48" y="166" width="162" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="129"
+    y="200"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    cookie
+  </text>
+  <rect x="48" y="252" width="162" height="56" rx="8" fill="white" stroke="#334155" stroke-width="2" />
+  <text
+    x="129"
+    y="286"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#334155"
+  >
+    form
+  </text>
+  <rect x="338" y="80" width="254" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="465"
+    y="114"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    History API
+  </text>
+  <rect x="338" y="166" width="254" height="56" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="2" />
+  <text
+    x="465"
+    y="200"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#0f766e"
+  >
+    Route Handler
+  </text>
+  <rect x="338" y="252" width="254" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2" />
+  <text
+    x="465"
+    y="286"
+    font-family="ui-monospace, SFMono-Regular, Consolas, sans-serif"
+    font-size="17"
+    text-anchor="middle"
+    fill="#2563eb"
+  >
+    reset(defaults)
+  </text>
+  <path
+    d="M215 108H325"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M215 194H325"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+  <path
+    d="M215 280H325"
+    fill="none"
+    stroke="#94a3b8"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    marker-end="url(#arrow)"
+  />
+</svg>
