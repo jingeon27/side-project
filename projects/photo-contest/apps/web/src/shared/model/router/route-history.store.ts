@@ -60,7 +60,7 @@ export const routeHistoryStore = {
   /** 경로가 바뀐 뒤 한 번 부른다. */
   record: (pathname: string) => {
     if (traversedPathname === pathname) depth = Math.max(0, depth - 1);
-    else if (expected !== 'replace') depth += 1;
+    if (traversedPathname !== pathname && expected !== 'replace') depth += 1;
     expected = null;
     traversedPathname = null;
     persist();

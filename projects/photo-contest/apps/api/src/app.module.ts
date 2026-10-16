@@ -14,6 +14,7 @@ import { HealthModule } from './health/health.module';
 import { LikeModule } from './like/like.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { PostModule } from './post/post.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
 import { TestingModule } from './testing/testing.module';
@@ -30,6 +31,7 @@ import { VoteModule } from './vote/vote.module';
     ContestModule,
     SubmissionModule,
     FeedModule,
+    PostModule,
     LikeModule,
     VoteModule,
     ModerationModule,

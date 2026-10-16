@@ -2,6 +2,7 @@ import { ApolloServerPluginCacheControlDisabled } from '@apollo/server/plugin/di
 import type { ApolloDriverConfig } from '@nestjs/apollo';
 import type { GraphQLFormattedError } from 'graphql';
 import depthLimit from 'graphql-depth-limit';
+import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 
 import { isProduction } from '../../config/env';
 import { GRAPHQL_MAX_DEPTH } from '../../config/limits';
@@ -28,6 +29,7 @@ export function graphqlOptions(): ApolloDriverConfig {
     graphiql: false,
     introspection: !isProduction(),
     csrfPrevention: true,
+    resolvers: { Upload: GraphQLUpload },
     plugins: [
       // 기본 cache control 플러그인이 no-store 미들웨어의 `private, no-store`를 `no-store`로 덮어쓴다.
       ApolloServerPluginCacheControlDisabled(),

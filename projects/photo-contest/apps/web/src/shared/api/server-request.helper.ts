@@ -21,7 +21,7 @@ export function buildServerRequestHeaders(
 ) {
   const headers = new Headers(init);
   if (cookie) headers.set('cookie', cookie);
-  else headers.delete('cookie');
+  if (!cookie) headers.delete('cookie');
   headers.set('origin', webOrigin);
   headers.set('apollo-require-preflight', 'true');
   return headers;

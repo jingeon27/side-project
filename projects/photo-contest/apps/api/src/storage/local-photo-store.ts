@@ -1,4 +1,5 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { IPhotoStore } from './photo-store';
@@ -18,6 +19,12 @@ export class LocalPhotoStore implements IPhotoStore {
 
   get(key: string) {
     return readFile(resolve(this.directory, key));
+  }
+
+  async stream(key: string, range?: { start: number; end: number }) {
+    const path = resolve(this.directory, key);
+    const { size } = await stat(path);
+    return { body: createReadStream(path, range), size };
   }
 
   async delete(key: string) {

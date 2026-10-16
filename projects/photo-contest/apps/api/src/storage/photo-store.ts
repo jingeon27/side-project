@@ -1,6 +1,8 @@
+import type { Readable } from 'node:stream';
+
 export interface IPhotoStore {
-  put(key: string, body: Buffer): Promise<void>;
+  put(key: string, body: Buffer, contentType?: string): Promise<void>;
   get(key: string): Promise<Buffer>;
-  /** 없는 키는 조용히 넘어간다. */
+  stream(key: string, range?: { start: number; end: number }): Promise<{ body: Readable; size: number }>;
   delete(key: string): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider, useQuery } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
@@ -13,8 +13,10 @@ import {
   RequestUploadDocument,
   SubmissionSort,
   SubmissionsDocument,
+  UploadSubmissionPhotoDocument,
 } from '@/shared/api/generated';
 import type { ContestQuery, SubmissionCardFragment } from '@/shared/api/generated';
+import { createErrorToastLink } from '@/shared/api/apollo-link.helper';
 import { trackEvent } from '@/shared/model/analytics';
 import { toast } from '@/shared/model/toast';
 
@@ -61,6 +63,26 @@ const png = (name = 'moment.png') =>
   new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' });
 
 const successMocks = (): MockLink.MockedResponse[] => [
+  {
+    request: {
+      query: UploadSubmissionPhotoDocument,
+      variables: (variables) => variables.uploadId === 'upload-1' && variables.file instanceof Blob,
+    },
+    result: (variables) => {
+      uploads.push({ uploadId: variables.uploadId, contentType: variables.file.type });
+      if (uploadStatus >= 400)
+        return {
+          errors: [
+            {
+              message: '10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.',
+              extensions: { code: 'BAD_USER_INPUT' },
+            },
+          ],
+        };
+      return { data: { uploadSubmissionPhoto: true } };
+    },
+  },
+
   {
     request: { query: RequestUploadDocument, variables: { contestId: 'contest-1' } },
     result: {
@@ -109,12 +131,15 @@ function FeedProbe() {
   );
 }
 
-let uploads: Array<{ url: string; contentType: string | null }>;
+let uploads: Array<{ uploadId: string; contentType: string }>;
 let uploadStatus: number;
 
 function renderSheet(mocks: MockLink.MockedResponse[] = [], { withFeed = false } = {}) {
   const user = userEvent.setup();
-  const client = new ApolloClient({ cache: new InMemoryCache(), link: new MockLink(mocks) });
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
+    link: ApolloLink.from([createErrorToastLink((message) => toast.error(message)), new MockLink(mocks)]),
+  });
   client.writeQuery({ query: ContestDocument, variables: { id: 'contest-1' }, data: { contest: CONTEST } });
   render(
     <ApolloProvider client={client}>
@@ -163,17 +188,6 @@ beforeEach(() => {
     Object.assign(URL, {
       createObjectURL: vi.fn(() => `blob:preview-${++sequence}`),
       revokeObjectURL: vi.fn(),
-    }),
-  );
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      uploads.push({ url: String(input), contentType: new Headers(init?.headers).get('content-type') });
-      return uploadStatus < 400
-        ? new Response(JSON.stringify({ uploaded: true }), { status: uploadStatus })
-        : new Response(JSON.stringify({ message: '10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.' }), {
-            status: uploadStatus,
-          });
     }),
   );
 });
@@ -237,7 +251,7 @@ describe('UploadPhotoBottomSheet', () => {
     await submit(user);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(uploads).toEqual([{ url: '/backend/uploads/ticket-1', contentType: 'image/png' }]);
+    expect(uploads).toEqual([{ uploadId: 'upload-1', contentType: 'image/png' }]);
     expect(toast.success).toHaveBeenCalledWith('사진을 제출했어요', expect.anything());
     expect(trackEvent).toHaveBeenCalledWith('photo_submitted', { contest_id: 'contest-1' });
     expect(

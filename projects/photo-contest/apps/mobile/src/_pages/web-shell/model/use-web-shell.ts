@@ -164,7 +164,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       const decision = decideNavigation({ url, isTopFrame }, LINK_OPTIONS);
       if (decision.action === 'allow') return true;
       if (decision.action === 'open-in-web') openPath(decision.path);
-      else if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
+      if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
       return false;
     },
     [openPath],
@@ -174,7 +174,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
     ({ nativeEvent }) => {
       const decision = decideOpenWindow(nativeEvent.targetUrl, LINK_OPTIONS);
       if (decision.action === 'open-in-web') openPath(decision.path);
-      else if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
+      if (decision.action === 'open-external') void openExternalUrl(decision.url, decision.fallbackUrl);
     },
     [openPath],
   );

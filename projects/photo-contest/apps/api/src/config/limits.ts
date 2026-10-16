@@ -45,3 +45,22 @@ export const CLEANUP_BATCH_SIZE = 100;
 export const OAUTH_PROVIDER_TIMEOUT_MS = 10 * SECOND_MS;
 export const SERIALIZABLE_ATTEMPTS = 4;
 export const GRAPHQL_MAX_DEPTH = 8;
+
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const MAX_MEDIA_BODY = '100mb';
+export const MAX_VIDEO_SECONDS = 300;
+export const POST_TITLE_LIMIT = 80;
+export const POST_BODY_LIMIT = 5000;
+
+export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MAX_LENGTH = 128;
+export const PASSWORD_SCRYPT = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 } as const;
+export const PASSWORD_KEY_BYTES = 64;
+export const PASSWORD_SALT_BYTES = 16;
+export const AUTH_ATTEMPT_WINDOW_MS = 15 * MINUTE_MS;
+export const AUTH_LOGIN_IP_LIMIT = 30;
+export const AUTH_LOGIN_ID_LIMIT = 10;
+export const AUTH_REGISTER_IP_LIMIT = 5;
+
+export const MAX_GRAPHQL_FIELD_BYTES = 64 * 1024;
+export const MAX_GRAPHQL_UPLOAD_FILES = 1;

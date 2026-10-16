@@ -39,13 +39,13 @@ function Root({ isOpen, onClose, unmount, children, className }: IBottomSheetRoo
             <Drawer.Popup
               className={cn(
                 'flex max-h-[calc(100dvh-var(--safe-top)-var(--drawer-keyboard-inset,0px)-24px)] w-full max-w-app flex-col',
-                'rounded-t-sheet bg-surface text-ink shadow-sheet outline-none desktop:rounded-sheet',
+                'overflow-hidden rounded-t-sheet bg-surface text-ink shadow-sheet outline-none desktop:rounded-sheet',
                 '[transform:translateY(var(--drawer-swipe-movement-y))] transition-transform duration-[450ms] ease-sheet',
                 'data-ending-style:[transform:translateY(100%)] data-starting-style:[transform:translateY(100%)] data-swiping:select-none',
                 className,
               )}
             >
-              <div aria-hidden className="flex shrink-0 justify-center pt-2.5 pb-1">
+              <div aria-hidden className="flex shrink-0 justify-center pt-2.5 pb-1 desktop:hidden">
                 <span className="h-1 w-10 rounded-full bg-line-strong" />
               </div>
               {children}
@@ -82,7 +82,10 @@ function Header({ title, description }: IBottomSheetHeaderProps) {
 /** 시트에서 이 부분만 스크롤된다. */
 function Content({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <Drawer.Content className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5', className)}>
+    <Drawer.Content
+      data-bottom-sheet-content
+      className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5', className)}
+    >
       {children}
     </Drawer.Content>
   );

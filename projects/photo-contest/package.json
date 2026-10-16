@@ -12,7 +12,7 @@
     "codegen": "yarn workspace @photo-contest/web codegen",
     "build": "node --env-file-if-exists=.env scripts/task.mjs @photo-contest/api build && node --env-file-if-exists=.env scripts/task.mjs @photo-contest/web build",
     "lint": "eslint .",
-    "typecheck": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run typecheck",
+    "typecheck": "tsc --project tsconfig.lint.json && yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run typecheck",
     "test": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run test",
     "test:unit": "yarn workspaces foreach -A -p -j 2 --include '@photo-contest/*' run test:unit",
     "test:api": "yarn workspaces foreach -A --include '@photo-contest/*' run test:api",
@@ -20,14 +20,13 @@
     "check": "yarn lint && yarn typecheck && yarn test"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.0",
+    "@side/eslint-config": "workspace:*",
     "@types/node": "^24.0.0",
     "concurrently": "^9.2.0",
     "embedded-postgres": "18.4.0-beta.17",
     "eslint": "^9.39.0",
-    "eslint-config-next": "16.4.0",
+    "jiti": "^2.6.1",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0",
-    "typescript-eslint": "^8.50.0"
+    "typescript": "^5.9.0"
   }
 }

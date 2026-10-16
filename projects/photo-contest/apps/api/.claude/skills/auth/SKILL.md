@@ -7,11 +7,19 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 
 ## 요청 한 건의 경로
 
-1. `src/bootstrap.ts` `createApp()`: `noStore` → `originGuard` → `/uploads` raw → `json` → `bodyParserErrorHandler` → 라우트(파이프에서 세션 조회). 본문·세션을 읽는 새 미들웨어는 `originGuard` 뒤에 둔다 — 그래야 다른 Origin은 비로그인이어도 401보다 403이 먼저다.
+1. `src/bootstrap.ts` `createApp()`: `noStore` → `originGuard` → `/graphql` multipart → `/uploads`·`/post-uploads` raw → `json` → `bodyParserErrorHandler` → 라우트(파이프에서 세션 조회). 본문·세션을 읽는 새 미들웨어는 `originGuard` 뒤에 둔다 — 그래야 다른 Origin은 비로그인이어도 401보다 403이 먼저다.
 2. `src/common/http/origin-guard.middleware.ts`: GET·HEAD·OPTIONS 밖은 `req.headers.origin === webOrigin()`일 때만 통과한다(403 `ERROR_MESSAGE.FORBIDDEN_ORIGIN`). 경로별 예외를 두지 않고, 상태를 바꾸는 엔드포인트를 GET으로 만들지 않는다(OAuth 시작·콜백은 브라우저 이동이라 GET이고 state 쿠키 + PKCE가 지킨다). GraphQL은 여기에 Apollo `csrfPrevention`이 더해진다.
 3. `src/common/http/cookie-header.ts`의 `readCookie(header, name)`만 쿠키를 읽는다. cookie-parser가 없어 `req.cookies`는 undefined다. `Authorization` 헤더를 읽는 코드를 더하지 않는다.
 4. `src/auth/session.service.ts`: 값이 43자 base64url이 아니면 DB를 보지 않는다. `viewer(req)`는 `WeakMap<Request, Promise>`로 요청당 한 번 조회하고 만료 세션은 오류 없이 null, `requireViewer(req)`는 UNAUTHENTICATED. 세션은 `start(res, userId)`·`end(req, res)`로만 만들고 지운다 — DB에는 `sha256Hex(token)`만, 쿠키는 `authCookieOptions()`(지울 때도 같은 옵션이어야 브라우저가 지운다).
 5. `src/auth/viewer.decorator.ts`: `@Viewer()`·`@OptionalViewer()`가 `requestOf(context)`로 Express `req`를 꺼내고 파이프가 `SessionService`를 부른다(GraphQL context도 `createGraphqlContext`가 같은 `req`를 넘긴다). `AuthModule`이 `@Global`이므로 다른 모듈은 데코레이터만 쓰고 쿠키·`SessionService`를 직접 읽지 않는다.
+
+## 아이디·비밀번호 로그인
+
+- `PasswordAuthService`의 `registerWithPassword`·`loginWithPassword` GraphQL mutation이 기존 `SessionService`로 같은 쿠키를 발급한다. 성공 시 요청의 이전 세션을 폐기한다.
+- 아이디는 trim·소문자 처리한 영문/숫자/밑줄 3~24자, 닉네임 1~24자다. 가입 비밀번호는 15~128자로 앞뒤 공백·유니코드를 바꾸지 않는다.
+- User와 1:1인 PasswordCredential에 아이디·scrypt-v1 해시를 둔다. salt 16바이트, N=32768·r=8·p=3·64바이트 결과이며 timingSafeEqual로 비교한다. 없는 아이디도 같은 scrypt 비용을 쓴다. 비밀번호·해시는 GraphQL·이벤트·로그·Sentry에 싣지 않는다.
+- AuthAttempt는 15분 버킷의 IP/아이디를 SHA-256 키로만 저장하고 DB upsert 증가로 여러 API 인스턴스에도 제한한다. 가입 IP 5회, 로그인 IP 30회·아이디 10회이며 만료 행은 maintenance가 지운다. IP는 Express가 확인한 요청 주소를 사용하고 클라이언트의 전달 헤더를 직접 신뢰하지 않는다.
+- 비밀번호 계정을 OAuth 이메일과 합치지 않는다. 검증은 `test/e2e/password-auth.spec.ts`와 `src/auth/password.spec.ts`를 함께 확인한다.
 
 ## 개발 로그인
 

@@ -1,4 +1,5 @@
-import { ApolloLink, HttpLink } from '@apollo/client';
+import { ApolloLink } from '@apollo/client';
+import UploadHttpLink from 'apollo-upload-client/UploadHttpLink.mjs';
 import { ErrorLink } from '@apollo/client/link/error';
 import { OperationTypeNode } from 'graphql';
 import { throwError } from 'rxjs';
@@ -33,7 +34,7 @@ export function createErrorToastLink(notify: (message: string) => void) {
 
 /** 브라우저용. 같은 origin의 `/backend` 프록시로 보내고 세션 쿠키는 브라우저가 붙인다. */
 export function createBrowserHttpLink() {
-  return new HttpLink({
+  return new UploadHttpLink({
     uri: BACKEND_ROUTES.GRAPHQL,
     credentials: 'same-origin',
     headers: { 'Apollo-Require-Preflight': 'true' },

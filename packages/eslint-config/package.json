@@ -1,0 +1,41 @@
+{
+  "name": "@side/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./src/base.ts",
+    "./react": "./src/react.ts",
+    "./next": "./src/next.ts",
+    "./expo": "./src/expo.ts",
+    "./fsd-boundaries": "./src/fsd-boundaries.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "yarn lint && yarn typecheck && yarn test"
+  },
+  "peerDependencies": {
+    "eslint": "^9.39.0"
+  },
+  "devDependencies": {
+    "@side/typescript-config": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@typescript-eslint/rule-tester": "8.71.1",
+    "@typescript-eslint/utils": "8.71.1",
+    "eslint": "^9.39.0",
+    "jiti": "^2.6.1",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  },
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  },
+  "dependencies": {
+    "eslint-config-expo": "~57.0.2",
+    "eslint-config-next": "16.4.0",
+    "eslint-plugin-react": "7.37.5",
+    "typescript-eslint": "^8.50.0"
+  }
+}

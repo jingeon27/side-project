@@ -12,14 +12,15 @@ export const webScreens = {
   appMarker: (page: Page) => page.locator('html[data-app]'),
   socialLoginButton: (page: Page, provider: 'google' | 'kakao') =>
     page.getByRole('button', { name: provider === 'google' ? /google|구글/i : /kakao|카카오/i }),
-  /** 그룹 화면의 초대 링크 공유 */
+  galleryMembers: (page: Page) => page.getByText('초대와 갤러리 멤버', { exact: true }),
+  /** 갤러리 화면의 초대 링크 공유 */
   inviteShareButton: (page: Page) =>
     page.getByRole('button', { name: /초대.*(공유|보내기)|초대하기/ }).first(),
   /** 그룹 화면의 초대 링크 복사 */
   inviteCopyButton: (page: Page) => page.getByRole('button', { name: /링크 복사|복사/ }).first(),
-  likeButton: (page: Page) => page.getByRole('button', { name: /^좋아요 [\d,]+개$/ }).first(),
+  likeButton: (page: Page) => page.getByRole('button', { name: / 좋아요$/ }).first(),
   toast: (page: Page) => page.getByRole('status').or(page.getByRole('alert')),
   /** 마이페이지에서 그룹 생성 시트를 여는 버튼 */
-  createGroupButton: (page: Page) => page.getByRole('button', { name: /그룹 만들기/ }).first(),
+  createGroupButton: (page: Page) => page.getByRole('button', { name: /갤러리 만들기/ }).first(),
   dialog: (page: Page) => page.getByRole('dialog'),
 };

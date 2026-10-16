@@ -38,7 +38,7 @@ export function useAndroidBackPress(options: IUseAndroidBackPressOptions) {
       void resolveBackPress(askWeb, () => optionsRef.current.canGoBack()).then((action) => {
         isPending = false;
         if (action === 'go-back') optionsRef.current.goBack();
-        else if (action === 'exit') BackHandler.exitApp();
+        if (action === 'exit') BackHandler.exitApp();
       });
       return true;
     }

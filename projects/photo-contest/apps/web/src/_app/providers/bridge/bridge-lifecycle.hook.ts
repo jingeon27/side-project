@@ -36,7 +36,7 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
   useEffect(() => {
     if (!bridge) return;
     if (notifiedPathname.current === null) bridge.notify('app.ready', { path: currentPath() });
-    else if (notifiedPathname.current !== pathname)
+    if (notifiedPathname.current !== null && notifiedPathname.current !== pathname)
       bridge.notify('navigation.changed', { path: currentPath() });
     notifiedPathname.current = pathname;
   }, [bridge, pathname]);

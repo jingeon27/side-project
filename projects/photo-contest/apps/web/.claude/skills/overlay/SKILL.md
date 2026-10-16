@@ -5,17 +5,23 @@ description: 웹(apps/web)에서 바텀시트·확인 대화상자를 만들거�
 
 ## 열기
 
-- 여는 쪽의 클릭 핸들러에서 overlay-kit으로 한 줄로 연다. 열림 상태를 컴포넌트가 들지 않는다.
+- 한 번만 쓰는 열기 동작은 버튼의 `onClick`에 `overlay.open`을 직접 선언한다. 여러 곳에서 재사용할 때만 핸들러를 분리한다. 열림 상태를 컴포넌트가 들지 않는다.
 
 ```tsx
-overlay.open(({ isOpen, close, unmount }) => (
-  <XxxBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} contestId={contestId} />
-));
+<Button
+  onClick={() =>
+    overlay.open(({ isOpen, close, unmount }) => (
+      <XxxBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} contestId={contestId} />
+    ))
+  }
+>
+  열기
+</Button>
 ```
 
 - `unmount`를 꼭 넘긴다. 시트는 닫힘 애니메이션이 끝나면 이것을 불러 자신을 지운다. 빠지면 닫힌 시트가 `OverlayProvider`에 계속 남는다.
 - 결과 값이 필요할 때만 `overlay.openAsync<T>`를 쓴다. 고른 값은 `close(value)`로 돌려주고 `onClose={() => close(<취소 값>)}`을 넘겨, 뒤로 가기·스와이프·Esc로 닫혀도 Promise가 끝나게 한다.
-- `useState`로 열림(`open`·`isOpen`·`…Open`)이나 오류(`error`·`…Error`)를 들지 않는다(`eslint.config.mjs`의 `no-restricted-syntax`). 진행·실패는 `useMutation`의 `loading`·`error`와 ErrorLink 토스트로 보여 준다.
+- `useState`로 열림(`open`·`isOpen`·`…Open`)이나 오류(`error`·`…Error`)를 들지 않는다(`eslint.config.ts`의 `no-restricted-syntax`). 진행·실패는 `useMutation`의 `loading`·`error`와 ErrorLink 토스트로 보여 준다.
 
 ## 시트 만들기
 

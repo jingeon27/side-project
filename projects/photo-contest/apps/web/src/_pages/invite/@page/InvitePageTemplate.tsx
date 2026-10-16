@@ -43,12 +43,13 @@ function InviteContent({
         <Users aria-hidden className="size-10 text-brand" />
         <h2 className="break-words text-title-lg text-ink">{preview.groupName}</h2>
         <p className="text-body text-muted">
-          {preview.ownerNickname}님이 기다리고 있어요. 친구 {preview.memberCount}명과 사진 대회를 즐겨보세요.
+          {preview.ownerNickname}님이 기다리고 있어요. 친구 {preview.memberCount}명과 사진과 동영상을
+          나눠보세요.
         </p>
       </section>
       {match(preview.joinedGroupId)
         .with(P.string, (groupId) => (
-          <ButtonLink href={ROUTES.GROUP(groupId)}>이미 가입한 그룹으로 이동</ButtonLink>
+          <ButtonLink href={ROUTES.GROUP(groupId)}>이미 가입한 갤러리으로 이동</ButtonLink>
         ))
         .with(null, () => (
           <ViewerBoundary

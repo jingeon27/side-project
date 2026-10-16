@@ -102,8 +102,11 @@ export function createNativeRouter({
           : errorResponse(id, BRIDGE_ERROR_CODE.Failed, '앱 응답을 만들지 못했습니다.'),
       );
     } catch (error) {
-      if (error instanceof NativeCapabilityError) send(errorResponse(id, error.code, error.message));
-      else send(errorResponse(id, BRIDGE_ERROR_CODE.Failed, '요청을 처리하지 못했습니다.'));
+      if (error instanceof NativeCapabilityError) {
+        send(errorResponse(id, error.code, error.message));
+        return;
+      }
+      send(errorResponse(id, BRIDGE_ERROR_CODE.Failed, '요청을 처리하지 못했습니다.'));
     }
   }
 
@@ -134,11 +137,13 @@ export function createNativeRouter({
         return;
       }
       const result = NATIVE_REQUEST[request.type].result.safeParse(message.result);
-      if (result.success) request.resolve(result.data);
-      else
-        request.reject(
-          new NativeCapabilityError(BRIDGE_ERROR_CODE.Invalid, '웹 응답 형식이 올바르지 않습니다.'),
-        );
+      if (result.success) {
+        request.resolve(result.data);
+        return;
+      }
+      request.reject(
+        new NativeCapabilityError(BRIDGE_ERROR_CODE.Invalid, '웹 응답 형식이 올바르지 않습니다.'),
+      );
     },
     requestWeb: (type, payload, options) => {
       const id = createMessageId();

@@ -105,8 +105,11 @@ export function createCapabilities(deps: ICapabilityDependencies): Required<TNat
       return { copied: true };
     },
     'haptics.impact': async ({ style }) => {
-      if (style === 'success' || style === 'warning' || style === 'error') await deps.notify(style);
-      else await deps.impact(style);
+      if (style === 'success' || style === 'warning' || style === 'error') {
+        await deps.notify(style);
+        return {};
+      }
+      await deps.impact(style);
       return {};
     },
     'link.open': async ({ url }) => {

@@ -17,7 +17,7 @@ import { createGroupSchema } from '../model/group.schema';
 
 const FORM_ID = 'create-group-form';
 
-/** 그룹 만들기. 만들면 홈 목록에 넣고 새 그룹 화면으로 간다. 실패는 공통 토스트가 알린다. */
+/** 갤러리 만들기. 만들면 홈 목록에 넣고 새 갤러리 화면으로 간다. 실패는 공통 토스트가 알린다. */
 export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomSheetControlProps) {
   const router = useAppRouter();
   const form = useZodForm(createGroupSchema, { defaultValues: { name: '' } });
@@ -33,24 +33,26 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
     },
   });
 
-  const handleSubmit = form.handleSubmit(async ({ name }) => {
-    try {
-      await createGroup({ variables: { name } });
-    } catch {
-      // 실패는 ErrorLink가 토스트로 알린다. 입력을 고쳐 다시 시도할 수 있게 시트를 열어 둔다.
-    }
-  });
-
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
-        title="우리만의 그룹 만들기"
-        description="친구를 초대하고 첫 사진 대회를 열어보세요."
+        title="우리만의 갤러리 만들기"
+        description="기간 제한 없이 사진과 동영상으로 웃긴 순간을 나눠보세요."
       />
       <BottomSheet.Content>
-        <form id={FORM_ID} onSubmit={handleSubmit} noValidate>
+        <form
+          id={FORM_ID}
+          onSubmit={form.handleSubmit(async ({ name }) => {
+            try {
+              await createGroup({ variables: { name } });
+            } catch {
+              // 실패는 ErrorLink가 토스트로 알린다. 입력을 고쳐 다시 시도할 수 있게 시트를 열어 둔다.
+            }
+          })}
+          noValidate
+        >
           <TextField
-            label="그룹 이름"
+            label="갤러리 이름"
             placeholder="예: 웃음 참기 연구소"
             autoComplete="off"
             enterKeyHint="done"
@@ -61,7 +63,7 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
       </BottomSheet.Content>
       <BottomSheet.Footer>
         <Button type="submit" form={FORM_ID} fullWidth loading={loading}>
-          그룹 만들기
+          갤러리 만들기
         </Button>
       </BottomSheet.Footer>
     </BottomSheet.Root>

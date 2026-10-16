@@ -46,8 +46,11 @@ export function createMonitoring({ dsn, sdk }: ICreateMonitoringOptions) {
     },
     captureError: (error: unknown, componentStack?: string | null) => {
       if (!dsn) return;
-      if (componentStack) sdk.captureException(error, { contexts: { react: { componentStack } } });
-      else sdk.captureException(error);
+      if (componentStack) {
+        sdk.captureException(error, { contexts: { react: { componentStack } } });
+        return;
+      }
+      sdk.captureException(error);
     },
   };
 }

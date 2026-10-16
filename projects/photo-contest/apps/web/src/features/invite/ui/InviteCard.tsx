@@ -27,7 +27,7 @@ const COPIED_MESSAGE = '초대 링크를 복사했어요';
 const subscribeNothing = () => () => undefined;
 
 /**
- * 그룹 초대 카드(모든 멤버). 공유는 앱 공유 시트 → Web Share → 복사 순서로, 복사는 앱 클립보드 → 브라우저 순서로 한다.
+ * 갤러리 초대 카드(모든 멤버). 공유는 앱 공유 시트 → Web Share → 복사 순서로, 복사는 앱 클립보드 → 브라우저 순서로 한다.
  * 관리자는 링크를 새로 만들 수 있고, 그러면 이전 링크로는 가입할 수 없다.
  */
 export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: IInviteCardProps) {
@@ -48,33 +48,6 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
     },
   });
 
-  const handleShare = async () => {
-    const method = await shareActions.share(
-      inviteUrl,
-      { title: '웃긴순간 그룹 초대', text: buildInviteShareText(groupName) },
-      { copied: COPIED_MESSAGE },
-    );
-    if (method) trackEvent(ANALYTICS_EVENT.InviteLinkShared, { group_id: groupId, method });
-  };
-
-  const handleCopy = async () => {
-    const method = await shareActions.copy(inviteUrl, { copied: COPIED_MESSAGE });
-    if (method) trackEvent(ANALYTICS_EVENT.InviteLinkCopied, { group_id: groupId, method });
-  };
-
-  const handleRegenerate = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
-      <ConfirmDialog
-        isOpen={isOpen}
-        onClose={close}
-        unmount={unmount}
-        title="초대 링크를 새로 만들까요?"
-        description="지금 링크는 더 이상 쓸 수 없어요. 새 링크를 친구들에게 다시 보내 주세요."
-        confirmLabel="새 링크 만들기"
-        onConfirm={() => regenerateInviteLink()}
-      />
-    ));
-
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3 rounded-card bg-brand-soft p-4">
       <div>
@@ -86,24 +59,58 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="primary" size="md" onClick={handleShare}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={async () => {
+            const method = await shareActions.share(
+              inviteUrl,
+              { title: '웃긴순간 갤러리 초대', text: buildInviteShareText(groupName) },
+              { copied: COPIED_MESSAGE },
+            );
+            if (method) trackEvent(ANALYTICS_EVENT.InviteLinkShared, { group_id: groupId, method });
+          }}
+        >
           <Share2 aria-hidden className="size-4" />
           친구 초대하기
         </Button>
-        <Button variant="secondary" onClick={handleCopy}>
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            const method = await shareActions.copy(inviteUrl, { copied: COPIED_MESSAGE });
+            if (method) trackEvent(ANALYTICS_EVENT.InviteLinkCopied, { group_id: groupId, method });
+          }}
+        >
           <Copy aria-hidden className="size-4" />
           링크 복사
         </Button>
       </div>
       <input
-        aria-label="그룹 초대 링크"
+        aria-label="갤러리 초대 링크"
         readOnly
         value={inviteUrl}
         onFocus={(event) => event.currentTarget.select()}
         className="h-11 w-full rounded-control border border-line-strong bg-surface px-3 text-caption text-muted outline-none focus:border-brand"
       />
       {canRegenerate ? (
-        <Button variant="ghost" size="sm" className="self-start text-muted" onClick={handleRegenerate}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start text-muted"
+          onClick={() =>
+            overlay.open(({ isOpen, close, unmount }) => (
+              <ConfirmDialog
+                isOpen={isOpen}
+                onClose={close}
+                unmount={unmount}
+                title="초대 링크를 새로 만들까요?"
+                description="지금 링크는 더 이상 쓸 수 없어요. 새 링크를 친구들에게 다시 보내 주세요."
+                confirmLabel="새 링크 만들기"
+                onConfirm={() => regenerateInviteLink()}
+              />
+            ))
+          }
+        >
           <RefreshCw aria-hidden className="size-4" />
           링크 새로 만들기
         </Button>

@@ -43,6 +43,7 @@ type Query {
 }
 
 type Mutation {
+  uploadSubmissionPhoto(uploadId: ID!, file: Upload!): Boolean!
   requestUploadUrl(contestId: ID!): UploadTicket!
   createSubmission(contestId: ID!, uploadId: ID!, caption: String!, rightsConfirmed: Boolean!): Submission!
 }

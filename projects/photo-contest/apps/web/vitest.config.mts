@@ -20,7 +20,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.{spec,test}.ts', 'eslint/**/*.{spec,test}.ts'],
+          include: ['src/**/*.{spec,test}.ts'],
           exclude: ['src/**/*.api.spec.ts'],
         },
       },

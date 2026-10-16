@@ -1,6 +1,6 @@
 # 웃긴순간
 
-친구들과 비공개 그룹을 만들고 사진 한 장씩 제출한 뒤 한 표로 우승작을 뽑는 서비스입니다. 웹과 Expo WebView 앱이 같은 HttpOnly 세션과 GraphQL API를 사용합니다.
+친구들과 갤러리를 만들고 사진·동영상·합성으로 웃긴 순간을 나누는 커뮤니티입니다. 갤러리는 종료일 없이 유지되며 멤버는 여러 게시물을 올릴 수 있습니다. 웹과 Expo WebView 앱이 같은 HttpOnly 세션과 GraphQL API를 사용합니다.
 
 ## 실행
 
@@ -30,19 +30,23 @@ corepack yarn dev:photo-contest
 
 ## 구성과 기능
 
-| 앱·패키지           | 역할                                                                                           |
-| ------------------- | ---------------------------------------------------------------------------------------------- |
-| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 6·PostgreSQL                           |
-| `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 통합 사진 피드·MY 그룹 관리·반응형 웹 |
-| `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                       |
-| `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                               |
-| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·fixture 준비                                                    |
+| 앱·패키지           | 역할                                                                                               |
+| ------------------- | -------------------------------------------------------------------------------------------------- |
+| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 6·PostgreSQL                               |
+| `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 통합 게시물 피드·MY 갤러리 관리·반응형 웹 |
+| `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                           |
+| `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                                   |
+| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·MP4·fixture 준비                                                    |
 
-그룹은 비공개이며 모든 멤버가 초대 링크를 공유할 수 있고, 관리자만 재발급·대회 생성·사진 숨김/삭제를 수행합니다. 1인 1장·1인 1표는 DB unique와 Serializable 재시도로 보장합니다. 좋아요 수는 항상, 득표수는 종료 후에만 공개합니다. 공동 우승·무투표·그룹 순위·지난 대회를 지원합니다.
+갤러리는 멤버 전용이며 초대 링크로 가입합니다. 모든 멤버가 초대 링크를 공유하고 관리자만 재발급할 수 있습니다. 홈은 가입한 모든 갤러리의 사진·동영상을 최신순으로 모읍니다. MY에서 내 갤러리를 보고 새 갤러리를 만듭니다. 갤러리에서 제목·내용과 파일을 올리며, 게시물은 작성자와 관리자가 삭제할 수 있습니다.
 
-사진 목록은 정렬별 `offsetLimitPagination`으로 24장씩 받습니다. 좋아요·투표는 Apollo의 낙관적 응답과 실패 롤백을 사용합니다. 사진을 숨기거나 삭제하면 목록의 offset이 달라지므로 첫 페이지부터 다시 받습니다. 사용자 변경은 문서 이동으로 캐시를 버립니다.
+‘이달의 인기’는 한국 시간 기준 이번 달에 올라온 게시물 중 좋아요가 많은 순서로 3개를 보여 줍니다. 동률이면 작성 시각·ID 내림차순입니다. 최신 게시물은 24개씩 더 불러옵니다. 갤러리·정렬별 Apollo 캐시를 분리하고 가입·작성·삭제 뒤 목록을 다시 받습니다.
 
-진행 중인 대회 정보는 로그인한 사용자에게 30초마다 갱신해 마감 이후 화면을 전환합니다. 사진 목록은 주기적으로 조회하지 않습니다.
+사진은 JPEG/PNG/WebP를 실제 디코딩해 최대 1600px WebP로 저장합니다. 브라우저가 읽을 수 있는 HEIC도 업로드 전에 변환합니다. 동영상은 실제 컨테이너·코덱·재생 시간을 검사하며 MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원합니다. 파일은 비공개로 저장하고 재생·탐색의 byte Range 요청에도 매번 멤버십을 검사합니다. 사용하지 않은 업로드와 삭제 실패 파일은 정리 작업이 재시도합니다.
+
+웹은 최대 1200px이며 게시물은 최대 540px의 큰 1열 피드입니다. 흑백 UI·그라데이션 프로필 링을 사용하고, 데스크톱은 왼쪽 고정 메뉴와 오른쪽 인기 사진, 모바일·태블릿은 하단 메뉴와 가로 인기 사진을 보여 줍니다. 최신·인기 조회는 별도 Suspense/실패 경계를 가지며 RSC에서 미리 준비합니다. 고정 메뉴와 정렬 항목은 JSX로 직접 선언합니다.
+
+기존 대회 사진·숨김·작성 시각·좋아요는 `20261015090000_gallery_posts`가 갤러리 게시물로 복사합니다. 기존 테이블과 대회 URL은 보존합니다. 새 갤러리의 작성 흐름은 대회나 마감일에 의존하지 않습니다. 개발 DB에는 검토 후 위 `db:migrate` 명령을 실행하세요.
 
 ## 모바일 앱
 
@@ -59,11 +63,13 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 
 ## 인증·저장소·모니터링
 
-Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<provider>/callback`입니다. 실제 OAuth 앱과 계정으로 하는 인증은 별도 설정 후 확인해야 합니다.
+로그인 화면에서 직접 정한 아이디·비밀번호로 회원가입하거나 로그인할 수 있습니다. 아이디는 영문·숫자·밑줄 3~24자로 대소문자를 구분하지 않으며, 가입 비밀번호는 15~128자입니다. 서버는 임의 salt를 쓴 scrypt 해시만 저장하고 기존 HttpOnly 세션 쿠키를 발급합니다. 반복 시도는 DB에서 제한합니다.
+
+소셜 로그인은 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`을 `.env`에 설정하면 사용할 수 있습니다. 미설정 수단은 화면에서 숨깁니다. Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<provider>/callback`입니다. 실제 OAuth 앱과 계정으로 하는 인증은 별도 설정 후 확인해야 합니다.
 
 운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, 영속 `STORAGE_DIR` 또는 private S3 호환 버킷이 필요합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
 
-파일은 일회용 업로드 주소로 API에 전송합니다. API가 실제 형식·40MP·10MB를 검사하고 1600px WebP로 바꾸며 메타데이터를 제거합니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. S3/R2 어댑터는 실제 버킷 권한으로 별도 검증해야 합니다.
+웹은 일회용 티켓을 받은 뒤 GraphQL Upload mutation으로 파일을 전송합니다. Apollo UploadHttpLink가 multipart 요청과 쿠키를 처리합니다. 기존 업로드 REST 경로는 이전 클라이언트 호환용으로 유지합니다. API가 실제 형식·40MP·10MB를 검사하고 1600px WebP로 바꾸며 메타데이터를 제거합니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. S3/R2 어댑터는 실제 버킷 권한으로 별도 검증해야 합니다.
 
 | 앱     | 오류 수집                                               | 사용자 행동 측정                |
 | ------ | ------------------------------------------------------- | ------------------------------- |
@@ -72,6 +78,8 @@ Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<prov
 | 모바일 | `EXPO_PUBLIC_SENTRY_DSN`                                | `EXPO_PUBLIC_AMPLITUDE_API_KEY` |
 
 키가 없으면 전송하지 않습니다. 요청·쿠키·사용자 정보를 제거하고 분석 속성에 닉네임·설명·초대 토큰을 넣지 않습니다. 앱과 웹은 브리지의 기기 ID로 분석 사용자를 연결합니다. 실제 Sentry·Amplitude 프로젝트 수신은 별도 확인이 필요합니다.
+
+공용 ESLint 설정은 저장소 `packages/eslint-config`에 있습니다. `corepack yarn workspace @side/eslint-config check`로 else·컴포넌트 fetch·오버레이 상태 금지와 FSD·인라인 핸들러 규칙의 RuleTester fixture를 검증합니다.
 
 ## 앱별 테스트
 
