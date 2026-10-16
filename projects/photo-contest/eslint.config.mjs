@@ -1,3 +1,4 @@
+import { coreConfig } from '@side/eslint-config';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 export default defineConfig([
@@ -17,6 +18,7 @@ export default defineConfig([
     'apps/mobile/**',
   ]),
   ...tseslint.configs.recommended,
+  coreConfig,
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
