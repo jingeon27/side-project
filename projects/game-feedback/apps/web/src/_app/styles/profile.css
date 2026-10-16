@@ -1,0 +1,483 @@
+@layer components {
+  .profile-card {
+    padding: 21px 21px 17px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .profile-illustration {
+    height: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: var(--color-ink);
+    margin: 6px 0 3px;
+  }
+  .profile-illustration > svg {
+    transform: rotate(-12deg);
+    position: relative;
+    background: var(--color-sunken);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sheet);
+    padding: 13px;
+    width: 73px;
+    height: 68px;
+    box-shadow: 4px 6px 0 var(--color-line-strong);
+  }
+  .profile-card > h3 {
+    font-size: var(--text-body);
+    letter-spacing: -0.6px;
+    text-align: center;
+    margin: 2px 0 9px;
+  }
+  .profile-intro {
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+    line-height: 1.9;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .profile-card .centered {
+    margin-top: 10px;
+    font-size: var(--text-micro);
+    color: var(--color-muted);
+  }
+  .deck {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 5px;
+    margin: 15px 0;
+  }
+  /* 게임 카드의 고유 색상은 앱이 소유한다. */
+  .deck-card {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: #f3e2dc;
+    position: relative;
+    aspect-ratio: 0.77;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-direction: column;
+  }
+  .deck-card-1 {
+    background: #e3eaf3;
+  }
+  .deck-card-2 {
+    background: #eee0f0;
+  }
+  .deck-card-3 {
+    background: #e9eddd;
+  }
+  .deck-card > span {
+    font-size: var(--text-display);
+    line-height: 1;
+  }
+  .deck-card > img {
+    width: 100%;
+    height: 80%;
+    object-fit: contain;
+  }
+  .deck-card > small {
+    font-size: var(--text-micro);
+    color: var(--color-ink);
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 2px;
+    margin-top: 3px;
+  }
+  .deck-card > b {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: var(--text-micro);
+    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    color: var(--color-muted);
+    border-radius: var(--radius-badge);
+    padding: 0 2px;
+  }
+  .deck-compact {
+    display: flex;
+    gap: 3px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .deck-compact .deck-card {
+    height: 26px;
+    width: 22px;
+    border-radius: var(--radius-badge);
+    aspect-ratio: auto;
+  }
+  .deck-compact .deck-card > span {
+    font-size: var(--text-body);
+  }
+  .deck-compact .deck-card > img {
+    height: 100%;
+    object-fit: cover;
+  }
+  .deck-compact .deck-card > b {
+    font-size: var(--text-micro);
+    top: auto;
+    right: 1px;
+    bottom: 0;
+  }
+  .snapshot {
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+    padding: 16px;
+    margin: 20px 0 5px;
+  }
+  .snapshot-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--color-line);
+    background: var(--color-sunken);
+    color: var(--color-muted);
+    border-radius: var(--radius-control);
+  }
+  .settings-card {
+    padding: 23px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    margin-bottom: 18px;
+  }
+  .settings-card h2 {
+    font-size: var(--text-body);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .settings-card > .muted {
+    line-height: 1.9;
+    font-size: var(--text-caption);
+    margin: 10px 0 18px;
+  }
+  .settings-profile {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .settings-profile > div {
+    flex: 1;
+  }
+  .settings-profile h2 {
+    font-size: var(--text-title);
+  }
+  .settings-profile p {
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+    margin-top: 6px;
+  }
+  .connect-profile {
+    padding-top: 5px;
+  }
+  .profile-preview {
+    margin-top: 15px;
+  }
+  .profile-preview > .muted {
+    margin: 13px 0;
+    font-size: var(--text-caption);
+  }
+  .input-button-row {
+    display: flex;
+    gap: 8px;
+  }
+  .input-button-row > input {
+    min-width: 0;
+  }
+  .blocked-user {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border-top: 1px solid var(--color-line);
+    padding: 14px 0;
+  }
+  .blocked-user strong {
+    font-size: var(--text-caption);
+  }
+  .blocked-user > .button {
+    margin-left: auto;
+  }
+  .locale-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .locale-links > a {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-badge);
+    padding: 8px 11px;
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+  }
+  .locale-links > a.active {
+    border-color: var(--color-brand);
+    background: var(--color-accent-soft);
+    color: var(--color-muted);
+  }
+  .account-settings > h2 {
+    margin-bottom: 17px;
+  }
+  .settings-action {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    padding: 15px 1px;
+    border-bottom: 1px solid var(--color-line);
+    font-size: var(--text-body);
+    color: var(--color-muted);
+  }
+  .settings-action:last-child {
+    border-bottom: 0;
+  }
+  .settings-action > svg:last-child {
+    margin-left: auto;
+  }
+  .profile-person {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+  }
+  .profile-person h3 {
+    font-size: var(--text-body);
+  }
+  .profile-person .small {
+    font-size: var(--text-micro);
+  }
+  .profile-game {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--color-line);
+    padding-top: 14px;
+    font-size: var(--text-micro);
+    color: var(--color-muted);
+    margin-bottom: 12px;
+  }
+  .unverified {
+    font-size: var(--text-micro);
+    padding: 2px 5px;
+    background: var(--color-sunken);
+    color: var(--color-muted);
+    border-radius: var(--radius-badge);
+  }
+  .profile-player-name {
+    font-size: var(--text-body);
+    font-weight: 650;
+    color: var(--color-muted);
+  }
+  .profile-player-name > span {
+    display: block;
+    color: var(--color-muted);
+    font-size: var(--text-micro);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .profile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin: 16px 0;
+  }
+  .profile-stats > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: var(--color-sunken);
+    min-height: 60px;
+    border-radius: var(--radius-control);
+    flex-wrap: wrap;
+    padding: 9px 6px;
+  }
+  .profile-stats svg {
+    color: var(--color-muted);
+  }
+  .profile-stats strong {
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+  }
+  .profile-stats span {
+    width: 100%;
+    text-align: center;
+    font-size: var(--text-micro);
+    color: var(--color-muted);
+  }
+  .info-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 31px;
+  }
+  .info-card h1 {
+    font-size: var(--text-title-lg);
+    letter-spacing: -1px;
+    margin: 10px 0 18px;
+  }
+  .info-card h2 {
+    font-size: var(--text-body);
+    margin: 26px 0 12px;
+    color: var(--color-ink);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .info-card > p {
+    font-size: var(--text-body);
+    color: var(--color-muted);
+    line-height: 1.95;
+    margin: 14px 0;
+  }
+  .info-card .info-lead {
+    font-size: var(--text-body);
+    line-height: 1.95;
+    color: var(--color-muted);
+  }
+  .info-card p a {
+    color: var(--color-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @media (max-width: 1250px) {
+    .profile-card {
+      padding: 18px 17px;
+    }
+    .deck-compact .deck-card {
+      width: 19px;
+      height: 24px;
+    }
+  }
+  @media (max-width: 1080px) {
+    .deck-compact .deck-card {
+      width: 25px;
+      height: 29px;
+    }
+  }
+  @media (max-width: 760px) {
+    .deck-compact .deck-card {
+      width: 23px;
+      height: 27px;
+    }
+    .snapshot {
+      padding: 13px;
+    }
+    .deck {
+      gap: 4px;
+    }
+    .deck-card > span {
+      font-size: var(--text-title-lg);
+    }
+    .deck-card > small {
+      font-size: var(--text-micro);
+    }
+    .settings-card {
+      padding: 20px;
+    }
+    .settings-profile h2 {
+      font-size: var(--text-subtitle);
+    }
+    .settings-profile p {
+      font-size: var(--text-micro);
+    }
+    .settings-profile {
+      gap: 11px;
+    }
+    .settings-profile > .status-pill {
+      font-size: var(--text-micro);
+    }
+    .settings-card h2 {
+      font-size: var(--text-body);
+    }
+    .settings-card .section-title-row .text-button {
+      font-size: var(--text-micro);
+    }
+    .info-card {
+      padding: 24px;
+    }
+    .info-card h1 {
+      font-size: var(--text-title-lg);
+    }
+    .info-card .info-lead {
+      font-size: var(--text-body);
+    }
+    .info-card > p {
+      font-size: var(--text-caption);
+    }
+    .profile-preview .deck-card > span {
+      font-size: var(--text-title);
+    }
+  }
+  @media (max-width: 440px) {
+    .deck-compact .deck-card {
+      width: 20px;
+      height: 25px;
+    }
+    .snapshot {
+      padding: 10px;
+    }
+    .snapshot .deck {
+      gap: 3px;
+    }
+    .deck-card > span {
+      font-size: var(--text-title);
+    }
+    .deck-card > small {
+      display: none;
+    }
+    .deck-card > b {
+      font-size: var(--text-micro);
+    }
+    .snapshot-icon {
+      width: 29px;
+      height: 29px;
+    }
+    .snapshot-icon svg {
+      width: 18px;
+    }
+    .info-card {
+      padding: 20px;
+    }
+    .info-card h1 {
+      font-size: var(--text-title);
+    }
+    .settings-card {
+      padding: 18px;
+    }
+    .settings-card .snapshot {
+      margin-left: -4px;
+      margin-right: -4px;
+    }
+    .settings-profile h2 {
+      font-size: var(--text-body);
+    }
+    .locale-links > a {
+      font-size: var(--text-micro);
+      padding: 8px 9px;
+    }
+    .settings-card .section-title-row {
+      gap: 6px;
+    }
+    .input-button-row {
+      gap: 6px;
+    }
+  }
+  .input-button-row {
+    align-items: flex-start;
+  }
+  .input-button-row > input {
+    flex: 1;
+  }
+  .deck-compact .deck-card > b {
+    display: none;
+  }
+}

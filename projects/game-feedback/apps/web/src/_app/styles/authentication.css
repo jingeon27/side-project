@@ -1,0 +1,92 @@
+@layer components {
+  .form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+  }
+  .field-error {
+    font-weight: 400;
+    color: var(--color-danger);
+    font-size: var(--text-caption);
+  }
+  .field-error:empty {
+    display: none;
+  }
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+    line-height: 1.8;
+  }
+  .check-row input {
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    accent-color: var(--color-accent);
+    flex-shrink: 0;
+  }
+  .check-row a {
+    color: var(--color-muted);
+    text-decoration: underline;
+  }
+  .login-icon {
+    display: flex;
+    justify-content: center;
+    color: var(--color-muted);
+    margin: 5px 0 28px;
+  }
+  .login-icon > svg {
+    height: 72px;
+    width: 78px;
+    padding: 17px;
+    background: var(--color-sunken);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-sheet);
+    transform: rotate(-10deg);
+  }
+  .google-button {
+    width: 100%;
+    gap: 14px;
+  }
+  .google-letter {
+    font-weight: 800;
+    font-size: var(--text-title);
+    letter-spacing: 0;
+    color: var(--color-muted);
+  }
+  .google-button > svg {
+    margin-left: auto;
+  }
+  .google-button + .muted {
+    font-size: var(--text-micro);
+    text-align: center;
+    margin: 11px 0 21px;
+  }
+  .demo-note {
+    padding: 14px;
+    border: 1px dashed var(--color-line);
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: var(--color-accent-ink);
+    font-size: var(--text-caption);
+    line-height: 1.8;
+  }
+  .demo-note > strong {
+    font-size: var(--text-caption);
+    color: var(--color-accent-ink);
+  }
+  .login-footer {
+    font-size: var(--text-micro);
+    color: var(--color-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 23px;
+  }
+}

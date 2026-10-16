@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { Send, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { CommentItem, useCreateCommentMutation } from '@/features/comment';
@@ -54,15 +55,23 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
           })}
         >
           <input
+            className="ds-input"
             aria-label="댓글 내용"
             {...form.register('body')}
             maxLength={2000}
             placeholder="궁금한 점이나 짧은 응원을 남겨주세요"
             required
           />
-          <button className="button dark" disabled={mutation.isPending} aria-label="댓글 등록">
+          <Button
+            variant="primary"
+            size="md"
+            type="submit"
+            className="button dark"
+            disabled={mutation.isPending}
+            aria-label="댓글 등록"
+          >
             {mutation.isPending ? <LoaderCircle size={17} className="spin" /> : <Send size={17} />}
-          </button>
+          </Button>
         </form>
       ) : (
         <button className="text-button" onClick={login}>

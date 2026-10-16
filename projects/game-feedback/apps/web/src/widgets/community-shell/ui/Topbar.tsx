@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { Gamepad2, ArrowUpRight, MessageCircle, Bell } from 'lucide-react';
 import { useSession } from '@/features/auth';
@@ -57,10 +58,18 @@ export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
               <span>{session.user.nickname}</span>
             </Link>
           ) : (
-            <button className="button dark small-button" onClick={handleLogin}>
-              로그인 / 시작하기
+            <Button
+              variant="primary"
+              size="sm"
+              type="button"
+              className="button dark small-button"
+              onClick={handleLogin}
+              aria-label="로그인 / 시작하기"
+            >
+              <span className="header-login-long">로그인 / 시작하기</span>
+              <span className="header-login-short">로그인</span>
               <ArrowUpRight size={14} />
-            </button>
+            </Button>
           )}
         </div>
       </div>

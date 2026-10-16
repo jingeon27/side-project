@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { LoaderCircle } from 'lucide-react';
 import { useUpdateAnswerMutation } from '@/features/answer';
 import { useUpdateCommentMutation } from '@/features/comment';
@@ -41,6 +42,7 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
         })}
       >
         <textarea
+          className="ds-textarea"
           aria-label="수정 내용"
           {...form.register('body')}
           rows={6}
@@ -49,9 +51,16 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
           required
         />
         <ErrorNotice message={error?.message || form.formState.errors.body?.message} />
-        <button className="button primary full" disabled={isPending}>
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          type="submit"
+          className="button primary full"
+          disabled={isPending}
+        >
           {isPending && <LoaderCircle className="spin" size={16} />}수정 완료
-        </button>
+        </Button>
       </form>
     </Modal>
   );

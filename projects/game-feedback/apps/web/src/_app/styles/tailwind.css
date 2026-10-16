@@ -1,0 +1,14 @@
+@import 'tailwindcss' source(none);
+@import '@side/design-system/styles.css';
+@import './base.css';
+@import './layout.css';
+@import './feed.css';
+@import './post.css';
+@import './profile.css';
+@import './notifications.css';
+@import './info.css';
+@import './authentication.css';
+@import './chat.css';
+@import './identity.css';
+
+@source '../../**/*.{ts,tsx}';

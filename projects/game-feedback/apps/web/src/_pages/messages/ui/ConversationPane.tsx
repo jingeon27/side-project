@@ -1,3 +1,4 @@
+import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowLeft, RefreshCw, ShieldBan } from 'lucide-react';
@@ -59,10 +60,16 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         <ShieldBan size={32} />
         <h2>지금은 이 대화를 열 수 없어요</h2>
         <ErrorNotice message={chatError(query.error)} />
-        <button className="button outline" onClick={() => query.refetch()}>
+        <Button
+          variant="secondary"
+          size="md"
+          type="submit"
+          className="button outline"
+          onClick={() => query.refetch()}
+        >
           <RefreshCw size={15} />
           다시 확인
-        </button>
+        </Button>
         <Link className="text-button" href={`/${locale}/messages`}>
           대화 목록으로 돌아가기 →
         </Link>

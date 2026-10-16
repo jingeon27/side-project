@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { useRouter } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
 import { useDeletePostMutation } from '@/features/post';
@@ -53,17 +54,27 @@ export function ContentDeleteDialog({
         }}
       >
         <ErrorNotice message={error?.message} />
-        <button className="button danger full" disabled={isPending}>
+        <Button
+          variant="danger"
+          size="lg"
+          fullWidth
+          type="submit"
+          className="button danger full"
+          disabled={isPending}
+        >
           {isPending && <LoaderCircle className="spin" size={16} />}삭제하기
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
           className="button outline full"
           type="button"
           disabled={isPending}
           onClick={() => onOpenChange(false)}
         >
           돌아가기
-        </button>
+        </Button>
       </form>
     </Modal>
   );

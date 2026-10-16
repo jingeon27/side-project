@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -93,10 +94,10 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         {post ? (
           <>
             <input type="hidden" {...form.register('categoryId')} />
-            <input value={post.category.name} readOnly aria-label="선택한 게임" />
+            <input className="ds-input" value={post.category.name} readOnly aria-label="선택한 게임" />
           </>
         ) : (
-          <select {...form.register('categoryId')}>
+          <select className="ds-select" {...form.register('categoryId')}>
             {categories
               .filter((category) => category.active)
               .map((category) => (
@@ -109,6 +110,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
       </Field>
       <Field label="제목">
         <input
+          className="ds-input"
           {...form.register('title')}
           maxLength={120}
           placeholder="예: 호그 2.6 덱, 페카를 만나면 어떻게 운영하나요?"
@@ -119,6 +121,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
       </Field>
       <Field label="플레이와 고민" hint="사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.">
         <textarea
+          className="ds-textarea"
           {...form.register('body')}
           rows={7}
           maxLength={10000}
@@ -136,7 +139,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
           </div>
           {accounts.length ? (
             <>
-              <select {...form.register('playerTag')}>
+              <select className="ds-select" {...form.register('playerTag')}>
                 {accounts.map((account) => (
                   <option key={account.playerTag} value={account.playerTag}>
                     {account.name} · {account.playerTag}
@@ -146,7 +149,10 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
               {profile && <Deck profile={profile} compact />}
             </>
           ) : (
-            <button
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
               className="button outline full"
               type="button"
               onClick={() =>
@@ -174,7 +180,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
             >
               <Plus size={16} />
               게임 프로필 연결하기
-            </button>
+            </Button>
           )}
           <p className="small muted">
             <Info size={13} />
@@ -183,10 +189,17 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         </div>
       )}
       <ErrorNotice message={mutationError?.message} />
-      <button className="button primary full" disabled={isPending || !categories.length}>
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        type="submit"
+        className="button primary full"
+        disabled={isPending || !categories.length}
+      >
         {isPending ? <LoaderCircle className="spin" size={17} /> : <ArrowUpRight size={17} />}
         {post ? '수정 완료' : '피드백 요청 올리기'}
-      </button>
+      </Button>
     </form>
   );
 }

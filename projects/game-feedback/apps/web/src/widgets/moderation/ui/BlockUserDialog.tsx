@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { LoaderCircle } from 'lucide-react';
 import type { Author } from '@/shared/api';
 import { ErrorNotice, Modal } from '@/shared/ui';
@@ -33,17 +34,27 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
         }}
       >
         <ErrorNotice message={mutation.error?.message} />
-        <button className="button danger full" disabled={mutation.isPending}>
+        <Button
+          variant="danger"
+          size="lg"
+          fullWidth
+          type="submit"
+          className="button danger full"
+          disabled={mutation.isPending}
+        >
           {mutation.isPending && <LoaderCircle className="spin" size={16} />}차단하기
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
           className="button outline full"
           type="button"
           disabled={mutation.isPending}
           onClick={() => onOpenChange(false)}
         >
           돌아가기
-        </button>
+        </Button>
       </form>
     </Modal>
   );

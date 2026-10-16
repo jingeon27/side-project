@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { ArrowUpRight, MessageCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { LoadingState } from '@/shared/ui';
@@ -24,10 +25,10 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
         </span>
         <h1>플레이 이야기를, 조금 더 가까이</h1>
         <p>로그인하면 다른 플레이어와 1:1 메시지를 나눌 수 있어요.</p>
-        <button className="button dark" onClick={login}>
+        <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
           로그인하고 대화하기
           <ArrowUpRight size={16} />
-        </button>
+        </Button>
       </div>
     );
   return (

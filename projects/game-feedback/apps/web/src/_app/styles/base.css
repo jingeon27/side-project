@@ -1,0 +1,145 @@
+@layer components {
+  /* 앱 조합용 보조 스타일. 컨트롤과 초기화는 공통 디자인 시스템이 소유한다. */
+  .icon-button {
+    min-width: var(--spacing-touch);
+    min-height: var(--spacing-touch);
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+  .small {
+    font-size: var(--text-caption);
+  }
+  .muted {
+    color: var(--color-muted);
+  }
+  .centered {
+    text-align: center;
+  }
+  .text-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+    padding: 3px 0;
+  }
+  .text-button:hover {
+    text-decoration: underline;
+  }
+  .danger-text {
+    color: var(--color-danger) !important;
+  }
+  .row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .state-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 17px;
+    min-height: 220px;
+    padding: 30px;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+  .error-notice {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+    padding: 11px 13px;
+    font-size: var(--text-body);
+    border-radius: var(--radius-control);
+    line-height: 1.7;
+    margin: 10px 0;
+  }
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+  .standalone-state {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 80dvh;
+    gap: 20px;
+    padding: 20px;
+    text-align: center;
+  }
+  .standalone-state h1 {
+    font-size: var(--text-display);
+  }
+  .standalone-state p {
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 15px 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    max-width: calc(100vw - 32px);
+    background: var(--color-ink);
+    color: var(--color-on-brand);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    z-index: var(--z-index-toast);
+    box-shadow: var(--shadow-toast);
+    font-size: var(--text-body);
+    animation: fade-in 0.15s ease-out;
+  }
+  .toast > svg {
+    color: var(--color-muted);
+  }
+  .toast .icon-button {
+    color: var(--color-muted);
+    padding: 3px;
+  }
+  .toast .icon-button:hover {
+    background: var(--color-brand);
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (max-width: 760px) {
+    .toast {
+      bottom: 85px;
+      font-size: var(--text-caption);
+      white-space: normal;
+      width: max-content;
+      max-width: calc(100vw - 24px);
+    }
+  }
+  @media (max-width: 440px) {
+    .row-between {
+      gap: 8px;
+    }
+    .standalone-state h1 {
+      font-size: var(--text-title-lg);
+    }
+  }
+}

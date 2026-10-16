@@ -1,4 +1,5 @@
 'use client';
+import { IconButton } from '@side/design-system';
 import { Check, X } from 'lucide-react';
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 
@@ -26,9 +27,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <div className="toast" role="status">
           <Check size={18} />
           {message}
-          <button className="icon-button" aria-label="알림 닫기" onClick={handleDismiss}>
+          <IconButton
+            className="icon-button text-on-brand hover:bg-brand-strong"
+            label="알림 닫기"
+            onClick={handleDismiss}
+          >
             <X size={16} />
-          </button>
+          </IconButton>
         </div>
       )}
     </NotifyContext.Provider>

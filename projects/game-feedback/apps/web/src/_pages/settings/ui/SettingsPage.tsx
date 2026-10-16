@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { overlay } from 'overlay-kit';
@@ -61,10 +62,10 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         </span>
         <h1>나의 플레이 공간</h1>
         <p>로그인하고 게임 프로필과 계정을 관리하세요.</p>
-        <button className="button dark" onClick={login}>
+        <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
           로그인 / 시작하기
           <ArrowUpRight size={16} />
-        </button>
+        </Button>
       </div>
     );
   return (
@@ -129,13 +130,16 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
             <Avatar name={person.nickname} size="small" />
             <strong>{person.nickname}</strong>
             <UserBadges author={person} compact />
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
+              type="submit"
               className="button outline small-button"
               disabled={unblock.isPending}
               onClick={() => unblock.mutate({ userId: person.id })}
             >
               차단 해제
-            </button>
+            </Button>
           </div>
         ))}
       </section>

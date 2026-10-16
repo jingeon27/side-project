@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { Suspense, useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -86,9 +87,15 @@ function FeedContent({ locale }: { locale: string }) {
         {feed.isError && (
           <div className="state-box">
             <ErrorNotice message={feed.error.message} />
-            <button className="button outline" onClick={() => feed.refetch()}>
+            <Button
+              variant="secondary"
+              size="md"
+              type="submit"
+              className="button outline"
+              onClick={() => feed.refetch()}
+            >
               다시 불러오기
-            </button>
+            </Button>
           </div>
         )}
         {!feed.isPending && !feed.isError && !posts.length && (
@@ -108,10 +115,10 @@ function FeedContent({ locale }: { locale: string }) {
                 ? '다른 단어로 검색하거나 새로운 질문을 남겨보세요.'
                 : '여러분의 플레이 고민이 누군가에게는 좋은 대화의 시작이에요.'}
             </p>
-            <button className="button dark" onClick={handleCompose}>
+            <Button variant="primary" size="md" type="submit" className="button dark" onClick={handleCompose}>
               피드백 요청하기
               <ArrowUpRight size={16} />
-            </button>
+            </Button>
           </div>
         )}
         <div className="post-list">
@@ -127,14 +134,18 @@ function FeedContent({ locale }: { locale: string }) {
         </div>
         <div ref={sentinel} className="feed-sentinel" />
         {feed.hasNextPage && (
-          <button
+          <Button
+            variant="secondary"
+            size="lg"
+            fullWidth
+            type="submit"
             className="button outline full load-more"
             disabled={feed.isFetchingNextPage}
             onClick={() => feed.fetchNextPage()}
           >
             {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}더
             많은 피드백 보기
-          </button>
+          </Button>
         )}
         {posts.length > 0 && !hasNextPage && (
           <div className="feed-end">

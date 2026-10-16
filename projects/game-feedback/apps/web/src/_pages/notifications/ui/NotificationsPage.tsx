@@ -1,5 +1,6 @@
 'use client';
-import Link from 'next/link';
+import { Button } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Bell, CheckCheck, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
@@ -25,10 +26,10 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
         </span>
         <h1>당신의 플레이에 도착한 소식</h1>
         <p>로그인하면 새로운 피드백과 댓글을 확인할 수 있어요.</p>
-        <button className="button dark" onClick={login}>
+        <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
           로그인하고 확인하기
           <ArrowUpRight size={16} />
-        </button>
+        </Button>
       </div>
     );
   const items = query.data?.pages.flatMap((page) => page.items) || [];
@@ -58,9 +59,9 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
           </span>
           <h3>아직 도착한 소식이 없어요</h3>
           <p>피드백 요청을 남기고 새로운 이야기를 만나보세요.</p>
-          <Link href={`/${locale}`} className="button outline">
+          <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
             라운지 둘러보기
-          </Link>
+          </ButtonLink>
         </div>
       )}
       {!query.isError && (
@@ -76,13 +77,17 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
         </div>
       )}
       {query.hasNextPage && (
-        <button
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          type="submit"
           className="button outline full"
           disabled={query.isFetchingNextPage}
           onClick={() => query.fetchNextPage()}
         >
           {query.isFetchingNextPage && <LoaderCircle className="spin" size={16} />}이전 알림 보기
-        </button>
+        </Button>
       )}
     </>
   );

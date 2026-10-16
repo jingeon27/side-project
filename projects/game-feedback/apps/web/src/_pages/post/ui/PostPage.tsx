@@ -1,4 +1,5 @@
 'use client';
+import { ButtonLink } from '@side/design-system/next';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
@@ -24,9 +25,9 @@ export function PostPage({ id, locale }: IPostPageProps) {
     return (
       <div className="state-box">
         <ErrorNotice message={detail.error?.message || '피드백 요청을 찾을 수 없어요.'} />
-        <Link className="button dark" href={`/${locale}`}>
+        <ButtonLink variant="primary" size="md" className="button dark" href={`/${locale}`}>
           라운지로 돌아가기
-        </Link>
+        </ButtonLink>
       </div>
     );
   const { post, answers, comments } = detail.data;

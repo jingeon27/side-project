@@ -1,3 +1,4 @@
+import { Button } from '@side/design-system';
 import { LoaderCircle, Send } from 'lucide-react';
 import { chatError } from '@/features/chat';
 import { useChatComposer } from '../model/use-chat-composer';
@@ -46,6 +47,7 @@ export function ChatComposer({
       )}
       <form className="chat-compose" onSubmit={handleSubmit}>
         <textarea
+          className="ds-textarea"
           {...form.register('body', { onChange: handleDraftChange })}
           aria-label="메시지 내용"
           placeholder="플레이 이야기를 나눠보세요"
@@ -54,14 +56,16 @@ export function ChatComposer({
           disabled={mutation.isPending}
           onKeyDown={handleKeyDown}
         />
-        <button
+        <Button
+          variant="primary"
+          size="md"
           className="button dark"
           type="submit"
           disabled={mutation.isPending || !draft.trim()}
           aria-label={mutation.isError ? '다시 보내기' : '보내기'}
         >
           {mutation.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
-        </button>
+        </Button>
       </form>
       <div className="chat-compose-hint">
         <span>Enter로 보내기 · Shift + Enter로 줄바꿈</span>

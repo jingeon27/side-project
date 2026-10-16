@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PlayerTagSchema } from '@game-feedback/contracts';
@@ -33,6 +34,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
       <Field label="플레이어 태그" hint="클래시 로얄 프로필의 이름 아래에서 찾을 수 있어요.">
         <div className="input-button-row">
           <input
+            className="ds-input"
             {...tagField}
             onChange={(event) => {
               void tagField.onChange(event);
@@ -43,9 +45,15 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
             maxLength={16}
             required
           />
-          <button className="button dark" type="submit" disabled={preview.isFetching}>
+          <Button
+            variant="primary"
+            size="md"
+            className="button dark"
+            type="submit"
+            disabled={preview.isFetching}
+          >
             {preview.isFetching ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}조회
-          </button>
+          </Button>
         </div>
       </Field>
       <ErrorNotice
@@ -55,7 +63,10 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
         <div className="profile-preview">
           <ProfileSnapshot profile={preview.data} />
           <p className="small muted">이 프로필이 맞나요? 태그 등록은 계정 소유권을 인증하지 않아요.</p>
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
             className="button primary full"
             type="button"
             onClick={() => {
@@ -75,7 +86,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
           >
             {save.isPending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}이 프로필
             연결하기
-          </button>
+          </Button>
         </div>
       )}
     </form>

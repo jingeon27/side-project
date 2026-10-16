@@ -1,10 +1,9 @@
+import { FormField } from '@side/design-system';
 import type { ReactNode } from 'react';
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <label className="field">
-      <span>{label}</span>
+    <FormField label={label} hint={hint} className="field">
       {children}
-      {hint && <small>{hint}</small>}
-    </label>
+    </FormField>
   );
 }

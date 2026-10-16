@@ -1,3 +1,4 @@
+import { Button } from '@side/design-system';
 import { Clock3, Crown, MessageSquare, Plus, Search, SlidersHorizontal } from 'lucide-react';
 
 interface IFeedFiltersProps {
@@ -22,10 +23,10 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
             </span>
           </h2>
         </div>
-        <button className="button primary" onClick={onCompose}>
+        <Button variant="primary" size="md" type="submit" className="button primary" onClick={onCompose}>
           <Plus size={17} />
           피드백 요청
-        </button>
+        </Button>
       </div>
       <div className="game-filter">
         <span className="game-filter-icon">
@@ -65,6 +66,7 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
       <div className="feed-search">
         <Search size={17} />
         <input
+          className="ds-input"
           aria-label="피드백 검색"
           placeholder="함께 풀어보고 싶은 플레이를 검색하세요"
           value={search}

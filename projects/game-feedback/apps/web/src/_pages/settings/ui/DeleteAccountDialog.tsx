@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useDeleteAccount } from '@/features/auth';
 import { useZodForm } from '@/shared/model/form';
@@ -27,15 +28,29 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
         onSubmit={form.handleSubmit(() => deletion.mutate(undefined, { onSuccess: onClose }))}
       >
         <Field label="계속하려면 '탈퇴'를 입력해 주세요">
-          <input {...form.register('confirmation')} placeholder="탈퇴" required />
+          <input className="ds-input" {...form.register('confirmation')} placeholder="탈퇴" required />
         </Field>
         <ErrorNotice message={form.formState.errors.confirmation?.message ?? deletion.error?.message} />
-        <button className="button danger full" disabled={confirmation !== '탈퇴' || deletion.isPending}>
+        <Button
+          variant="danger"
+          size="lg"
+          fullWidth
+          type="submit"
+          className="button danger full"
+          disabled={confirmation !== '탈퇴' || deletion.isPending}
+        >
           계정 영구 삭제하기
-        </button>
-        <button className="button outline full" type="button" onClick={onClose}>
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          className="button outline full"
+          type="button"
+          onClick={onClose}
+        >
           계속 함께하기
-        </button>
+        </Button>
       </form>
     </Modal>
   );

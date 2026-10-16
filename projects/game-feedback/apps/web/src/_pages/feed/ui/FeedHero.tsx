@@ -1,3 +1,4 @@
+import { Button } from '@side/design-system';
 import { ArrowUpRight, Check, Crown, MessageSquare } from 'lucide-react';
 
 interface IFeedHeroProps {
@@ -22,10 +23,16 @@ export function FeedHero({ onCompose }: IFeedHeroProps) {
           <br />
           작은 피드백이 다음 경기의 차이를 만듭니다.
         </p>
-        <button className="button dark hero-cta" onClick={onCompose}>
+        <Button
+          variant="primary"
+          size="md"
+          type="submit"
+          className="button dark hero-cta"
+          onClick={onCompose}
+        >
           첫 피드백 요청하기
           <ArrowUpRight size={17} />
-        </button>
+        </Button>
       </div>
       <div className="hero-art" aria-hidden="true">
         <div className="hero-orbit orbit-one" />

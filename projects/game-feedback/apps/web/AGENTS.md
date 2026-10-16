@@ -20,3 +20,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 컴포넌트 파일은 PascalCase, 나머지는 kebab-case다. named function 컴포넌트, `I` interface·`T` type, 내부 `handle*`·prop `on*`를 사용한다. any·non-null assertion·else·enum을 추가하지 않는다.
 - 계정 전환은 실행 중 query 취소 → 이전 계정 cache 제거 → 새 세션 저장 순서를 지킨다. SSE는 사용자 ID별로 닫고 다시 연결한다. 재전송 UUID·실패 초안·읽음 경계를 보존한다.
 - `lint`는 공유 Next·FSD preset과 앱의 query-key 규칙을 실제 검사한다. `@side/game-feedback check`에도 포함된다. Vitest와 Playwright는 Web이 소유한다.
+
+
+## 공통 디자인 시스템
+
+- Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.
+- CSS 진입점은 `_app/styles/tailwind.css`이며 공통 styles를 가져온 뒤 앱 도메인별 CSS를 components 레이어로 구성한다. 공통 토큰과 버튼·입력·모달 표현을 앱에서 중복 정의하지 않는다.
+- 앱 고유 게임 카드 표현과 화면 레이아웃은 앱에 둔다. Next ButtonLink는 `@side/design-system/next`를 사용하고, 폼 제출 버튼은 type="submit"을 명시한다.

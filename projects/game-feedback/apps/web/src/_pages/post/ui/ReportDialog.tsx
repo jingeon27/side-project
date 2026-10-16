@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { Flag, LoaderCircle } from 'lucide-react';
 import { ReportInputSchema, type ReportInput } from '@game-feedback/contracts';
 import { ErrorNotice, Field, Modal, useNotify } from '@/shared/ui';
@@ -37,7 +38,7 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
         })}
       >
         <Field label="신고 사유">
-          <select {...form.register('reason')}>
+          <select className="ds-select" {...form.register('reason')}>
             <option value="SPAM">스팸 / 광고</option>
             <option value="HARASSMENT">욕설 / 괴롭힘</option>
             <option value="PERSONAL_INFORMATION">개인정보 노출</option>
@@ -46,12 +47,19 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
           </select>
         </Field>
         <Field label="추가 설명 (선택)">
-          <textarea {...form.register('detail')} rows={4} maxLength={1000} />
+          <textarea className="ds-textarea" {...form.register('detail')} rows={4} maxLength={1000} />
         </Field>
         <ErrorNotice message={mutation.error?.message || form.formState.errors.detail?.message} />
-        <button className="button dark full" disabled={mutation.isPending}>
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          type="submit"
+          className="button dark full"
+          disabled={mutation.isPending}
+        >
           {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Flag size={16} />}신고 접수
-        </button>
+        </Button>
       </form>
     </Modal>
   );

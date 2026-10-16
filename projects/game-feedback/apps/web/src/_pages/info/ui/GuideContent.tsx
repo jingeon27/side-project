@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { ButtonLink } from '@side/design-system/next';
 import { Gamepad2, MessageSquare, ShieldCheck, ArrowUpRight } from 'lucide-react';
 export function GuideContent({ locale }: { locale: string }) {
   return (
@@ -59,10 +59,10 @@ export function GuideContent({ locale }: { locale: string }) {
           사용자는 차단할 수 있습니다.
         </p>
       </div>
-      <Link className="button dark" href={`/${locale}`}>
+      <ButtonLink variant="primary" size="md" className="button dark" href={`/${locale}`}>
         이제 라운지로 가볼까요?
         <ArrowUpRight size={16} />
-      </Link>
+      </ButtonLink>
     </>
   );
 }

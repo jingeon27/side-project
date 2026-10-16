@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { MessageSquare, Send, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { useCreateAnswerMutation } from '@/features/answer';
@@ -35,6 +36,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
           })}
         >
           <textarea
+            className="ds-textarea"
             aria-label="피드백 내용"
             {...form.register('body')}
             placeholder="어떤 부분을 바꾸면 좋을까요? 구체적인 이유와 함께 알려주세요. (10자 이상)"
@@ -45,20 +47,26 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
           />
           <div className="compose-bottom">
             <span className="small muted">비난보다 제안을, 결과보다 과정을.</span>
-            <button className="button primary" disabled={mutation.isPending}>
+            <Button
+              variant="primary"
+              size="md"
+              type="submit"
+              className="button primary"
+              disabled={mutation.isPending}
+            >
               {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}피드백
               남기기
-            </button>
+            </Button>
           </div>
           <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
         </form>
       ) : (
         <div className="login-prompt">
           <p>로그인하고 함께 플레이를 이야기해요.</p>
-          <button className="button dark" onClick={login}>
+          <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
             로그인하고 피드백 남기기
             <ArrowUpRight size={16} />
-          </button>
+          </Button>
         </div>
       )}
     </div>

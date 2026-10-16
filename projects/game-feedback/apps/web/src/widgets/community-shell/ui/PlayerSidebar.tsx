@@ -1,4 +1,6 @@
 'use client';
+import { Button } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Crown, Settings2, Plus, Gamepad2, ArrowUpRight, Sparkles, Shield } from 'lucide-react';
@@ -52,10 +54,16 @@ export function PlayerSidebar({ home }: { home: string }) {
             ) : (
               <p className="profile-intro">게임 프로필을 연결하면 더 구체적인 피드백을 받을 수 있어요.</p>
             )}
-            <Link className="button outline full" href={`${home}/settings`}>
+            <ButtonLink
+              variant="secondary"
+              size="lg"
+              fullWidth
+              className="button outline full"
+              href={`${home}/settings`}
+            >
               {accounts?.[0] ? <Settings2 size={16} /> : <Plus size={16} />}
               {accounts?.[0] ? '내 프로필 관리' : '게임 프로필 연결'}
-            </Link>
+            </ButtonLink>
           </>
         ) : (
           <>
@@ -70,10 +78,17 @@ export function PlayerSidebar({ home }: { home: string }) {
               <br />
               새로운 시선을 만나보세요.
             </p>
-            <button className="button primary full" onClick={handleLogin}>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              type="submit"
+              className="button primary full"
+              onClick={handleLogin}
+            >
               함께 시작하기
               <ArrowUpRight size={16} />
-            </button>
+            </Button>
             <p className="small muted centered">Google 계정으로 간편하게</p>
           </>
         )}

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { ArrowRight, Gamepad2, LoaderCircle, ShieldCheck } from 'lucide-react';
 import { useCompleteOnboarding, useDemoLogin, useSession } from '@/features/auth';
@@ -56,14 +57,16 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
       {!joining && (
         <>
           <form action="/api/auth/google" method="get">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               className="button google-button"
               type="submit"
               disabled={session && !session.googleConfigured}
             >
               <span className="google-letter">G</span>Google로 시작하기
               <ArrowRight size={17} />
-            </button>
+            </Button>
           </form>
           <p className="muted small">
             {session && !session.googleConfigured
@@ -81,6 +84,7 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
           )}
           <Field label="서비스 닉네임">
             <input
+              className="ds-input"
               {...form.register('nickname')}
               minLength={2}
               maxLength={20}
@@ -114,10 +118,17 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
               mutation.error?.message
             }
           />
-          <button className="button primary full" disabled={mutation.isPending || !agreed || !ageConfirmed}>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            type="submit"
+            className="button primary full"
+            disabled={mutation.isPending || !agreed || !ageConfirmed}
+          >
             {mutation.isPending ? <LoaderCircle className="spin" size={18} /> : <ArrowRight size={18} />}
             {joining ? '가입 완료하기' : '데모로 시작하기'}
-          </button>
+          </Button>
         </form>
       )}
       <p className="login-footer">

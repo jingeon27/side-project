@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { ButtonLink } from '@side/design-system/next';
 import { ArrowUpRight, MessageCircle } from 'lucide-react';
 
 interface IChatWelcomeProps {
@@ -23,10 +23,10 @@ export function ChatWelcome({ locale }: IChatWelcomeProps) {
         <br />
         라운지에서 함께 이야기할 플레이어를 찾아보세요.
       </p>
-      <Link href={`/${locale}`} className="button outline">
+      <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
         피드백 라운지 둘러보기
         <ArrowUpRight size={16} />
-      </Link>
+      </ButtonLink>
     </section>
   );
 }
