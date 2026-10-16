@@ -15,7 +15,7 @@ cp projects/blog/apps/web/.env.example projects/blog/apps/web/.env.local
 yarn workspace @blog/web dev
 ```
 
-`http://localhost:3100/ko`에 접속합니다. `/en/blog`에서 영문 글 목록을 볼 수 있습니다. `/en`, `/ko/blog`, `/ko/about`, `/rss/ko`, `/rss/en`, `/sitemap.xml`도 지원합니다. GA와 Sentry 환경변수가 없으면 외부 분석·오류 수집을 초기화하지 않습니다.
+`http://localhost:3100/ko`에 접속합니다. `/en/blog`에서 영문 글 목록을 볼 수 있습니다. `/en`, `/ko/blog`, `/ko/about`, `/rss/ko`, `/rss/en`, `/sitemap.xml`, `/robots.txt`도 지원합니다. 사이트맵과 수집 규칙은 빌드할 때 자동 생성하며, 배포 전 `SITE_URL`에 실제 도메인을 설정합니다. GA와 Sentry 환경변수가 없으면 외부 분석·오류 수집을 초기화하지 않습니다.
 
 ## 검증
 

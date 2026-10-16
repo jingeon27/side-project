@@ -393,12 +393,78 @@ test('unknown pages, slugs, categories, tags and unsupported locales return 404'
   }
 });
 
-test('sitemap, robots, both feeds and OG image are publicly readable', async ({ request }) => {
-  const sitemap = await request.get('/sitemap.xml');
-  expect(sitemap.ok()).toBe(true);
-  expect(await sitemap.text()).toContain(encodeURIComponent(article.slug));
-  const robots = await request.get('/robots.txt');
-  expect(await robots.text()).toContain('Sitemap:');
+test('sitemap and robots expose published translations and allow rendering assets', async ({
+  page,
+  request,
+}) => {
+  const response = await request.get('/sitemap.xml', { maxRedirects: 0 });
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toContain('application/xml');
+  const sitemap = await page.evaluate(
+    (xml) => {
+      const document = new DOMParser().parseFromString(xml, 'application/xml');
+      const namespace = 'http://www.sitemaps.org/schemas/sitemap/0.9';
+      return {
+        errors: document.getElementsByTagName('parsererror').length,
+        namespace: document.documentElement.namespaceURI,
+        entries: Array.from(document.getElementsByTagNameNS(namespace, 'url'), (entry) => ({
+          url: entry.getElementsByTagNameNS(namespace, 'loc')[0]?.textContent || '',
+          lastModified: entry.getElementsByTagNameNS(namespace, 'lastmod')[0]?.textContent,
+          languages: Object.fromEntries(
+            Array.from(entry.getElementsByTagNameNS('http://www.w3.org/1999/xhtml', 'link'), (link) => [
+              link.getAttribute('hreflang'),
+              link.getAttribute('href'),
+            ]),
+          ),
+        })),
+      };
+    },
+    await response.text(),
+  );
+  expect(sitemap.errors).toBe(0);
+  expect(sitemap.namespace).toBe('http://www.sitemaps.org/schemas/sitemap/0.9');
+  const urls = sitemap.entries.map((entry) => entry.url);
+  expect(new Set(urls).size).toBe(urls.length);
+  const origin = new URL(urls[0]!).origin;
+  const articleUrl = (entry: (typeof index)[number]) =>
+    `${origin}/${entry.locale}/blog/${encodeURIComponent(entry.slug)}`;
+  expect(urls.filter((url) => /\/(ko|en)\/blog\/[^/]+$/.test(url)).sort()).toEqual(
+    index.map(articleUrl).sort(),
+  );
+  for (const article of index) {
+    const entry = sitemap.entries.find((entry) => entry.url === articleUrl(article))!;
+    expect(entry.lastModified).toBe(article.updatedAt || article.publishedAt);
+    expect(entry.languages).toEqual(
+      Object.fromEntries(
+        index
+          .filter((translation) => translation.id === article.id)
+          .map((translation) => [translation.locale, articleUrl(translation)]),
+      ),
+    );
+  }
+  const robots = await request.get('/robots.txt', { maxRedirects: 0 });
+  expect(robots.status()).toBe(200);
+  expect(robots.headers()['content-type']).toContain('text/plain');
+  const rules = await robots.text();
+  expect(rules).toMatch(/^User-Agent: \*$/m);
+  expect(rules).toMatch(/^Allow: \/$/m);
+  expect(rules).toContain(`Sitemap: ${origin}/sitemap.xml`);
+  const blockedPaths = [...rules.matchAll(/^Disallow:\s*(\S+)$/gm)].map((match) => match[1]!);
+  expect(blockedPaths).toContain('/api/');
+  for (const path of [
+    ...urls.map((url) => new URL(url).pathname),
+    '/_next/static/chunks/app.js',
+    '/_next/static/css/app.css',
+    '/_next/image',
+    '/images/thumbnails/reading-ai-code.svg',
+  ])
+    expect(
+      blockedPaths.some((blocked) => path.startsWith(blocked)),
+      path,
+    ).toBe(false);
+});
+
+test('both feeds and OG images are publicly readable', async ({ request }) => {
   for (const locale of ['ko', 'en']) {
     const response = await request.get(`/rss/${locale}`);
     expect(response.headers()['content-type']).toContain('application/rss+xml');
