@@ -285,6 +285,20 @@ Web Vitest 37개·타입·FSD lint가 통과했다. 전체 Web Playwright 22개�
 
 Android Chromium·iOS WebKit의 Mobile host 6개도 통과했다(36.2초). 별도 출력 경로의 Web production build와 마지막 모션 줄이기 전환 보완 후 브라우저 2개 재검증도 통과했다(16초). 변경 파일 Prettier·diff 검사, 잔여 테스트 스키마 0개를 확인했고 소유 테스트 DB를 중지했다. 네이티브 dev client·실기기 확인은 이 검증에 포함하지 않는다.
 
+## 앱 경로와 인터랙션 설계
+
+Web과 Mobile이 `packages/bridge`의 `appRoutes`·`resolveAppRoute`·`WebPathSchema`를 사용한다. 라운지는 `/:locale?tab=unanswered&q=...`, 게시글은 `/:locale/posts/:postId`, 공개 프로필은 `/:locale/users/:userId?cursor=...`, 채팅 목록은 `/:locale/messages`, 대화는 `/:locale/messages/:conversationId`다. 기존 `messages?conversation=<id>` 주소도 새 경로로 연결하며 대화 상세 canonical은 새 경로를 사용한다. 대화 metadata는 상대 닉네임·본문을 포함하지 않고 항상 noindex/nofollow다. REST API 경로·DB schema는 바꾸지 않았다.
+
+루트 탭 간 이동과 채팅방 사이 이동은 replace, 목록에서 상세 진입은 push다. 상단 상세 뒤로 가기는 유효한 앱 이력을 사용해 필터가 있는 이전 피드·프로필로 돌아간다. 외부 링크로 바로 들어온 상세는 논리적 상위 화면으로 replace한다. 채팅방 헤더는 목록을 우선하고 Android 뒤로 가기는 실제 진입 이력을 우선한다. 라운지에서는 네이티브 종료를 요청한다. Next history state를 보존한 채 앱의 index·이전 경로·마지막 피드 필터만 추가하며 검색/탭을 되살릴 때도 새로운 탭 이력을 쌓지 않는다.
+
+채팅 목록은 App Router의 messages layout이 소유해 대화방 경로가 바뀌어도 유지한다. 상위 화면 에러 경계의 key를 pathname에서 사용자 ID로 바꿔 정상적인 라우팅에서 layout 전체를 다시 만드는 문제를 해결했다. 설치된 Next `catchError`는 경로 이동 시 오류 상태를 자체 초기화한다. 계정 전환 때는 계속 private 화면을 다시 만든다. 화면 전환 모션은 공통 main에 180ms 진입 효과만 적용하고, 채팅 목록과 방은 같은 전환 영역으로 묶는다. 전체 화면 key나 이전 화면을 보존하는 exit animation을 추가하지 않으며 모션 줄이기를 따른다.
+
+브리지 location은 query 변경도 전달한다. 준비된 WebView에서는 딥링크·동일 origin 새 창을 router로 보내고 동일 URL의 중복 요청을 무시한다. 피드 검색/탭과 프로필 cursor를 복구 주소에도 보존하고 중복 query·잘못된 인코딩·알 수 없는 경로는 거부한다. 웹 모달을 먼저 닫고 iOS swipe는 모달 중 비활성화한다. 필수 가입 안내는 뒤로 가기로 건너뛰지 않는다. 문서 교체 시 대기 중이던 뒤로 가기를 취소해 새 문서의 history로 잘못 전달하지 않는다. 800ms 응답 실패 시 기존 WebView history/종료 fallback은 유지한다.
+
+집계 타입 검사·Web/Mobile FSD lint, Web Vitest 12개 파일·41개와 Mobile Vitest 8개 파일·28개가 통과했다. Web Playwright 전체 24개(약 1.5분)와 Android Chromium·iOS WebKit host 전체 10개(41.8초)도 통과했다. 새 사례는 필터가 있는 상세 복귀, 탭 이동 전후 history 길이, 채팅 목록 DOM 유지·방 replace, 기존 query URL 리다이렉트·private canonical, 직접 진입의 상위 화면/홈 종료, query location·warm 딥링크·동일 경로 중복 방지를 검증한다. 기존 실시간 채팅·읽음·재시도·계정 전환·오류 복구·모션·JS 비활성 SEO도 함께 통과했다.
+
+별도 `.next/navigation-build` 출력 경로의 Web production build와 Android/iOS Metro export가 통과했다. 변경 파일 Prettier·diff 검사, 잔여 소유 테스트 스키마 0개·소유 테스트 DB 중지와 데이터 보존을 확인했다. 개발 홈·중첩 채팅 경로·API health는 200이며 고정 계정 3개·기존 게시글 6개를 보존했다. API·SDK·REST 계약·DB·의존성은 이번 경로 변경에서 수정하지 않아 해당 테스트를 반복하지 않았다. 네이티브 dev client·실기기·서명 빌드 검증은 포함하지 않는다. 경로별 정책은 [Mobile README](../apps/mobile/README.md#경로와-화면-전환)에도 정리한다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
