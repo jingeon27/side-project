@@ -1,9 +1,8 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Globe2 } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { notificationSummaryOptions } from '@/features/notification';
 import { conversationBadgeOptions } from '@/features/chat';
@@ -17,6 +16,7 @@ import { PlayerSidebar } from './PlayerSidebar';
 import { MobileNav } from './MobileNav';
 
 export function CommunityShell({ children, locale }: { children: ReactNode; locale: string }) {
+  const { t } = useI18n();
   const { session } = useSession();
   const path = usePathname();
   const connection = useChatConnection();
@@ -31,38 +31,27 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
   const userKey = session?.user?.id ?? 'anonymous';
   return (
     <>
-      <ServiceErrorBoundary title="상단 메뉴" resetKey={userKey}>
+      <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
         <Topbar home={home} path={path} chatUnread={chatUnread} unread={unread} />
       </ServiceErrorBoundary>
-      {locale !== 'ko' && (
-        <div className="language-banner">
-          <Globe2 size={16} />
-          <span>
-            {locale === 'ja'
-              ? '日本語の翻訳は準備中です。アルファ版は韓国語で提供しています。'
-              : 'English translation is in progress. This alpha is currently available in Korean.'}
-          </span>
-          <Link href="/ko">한국어로 보기</Link>
-        </div>
-      )}
       <div className={`site-grid ${resolveAppRoute(path)?.tab === 'messages' ? 'chat-layout' : ''}`}>
         <div className="shell-left-sidebar">
-          <ServiceErrorBoundary title="탐색 메뉴" resetKey={userKey}>
+          <ServiceErrorBoundary title={t('탐색 메뉴')} resetKey={userKey}>
             <LeftSidebar home={home} path={path} unread={unread} chatUnread={chatUnread} />
           </ServiceErrorBoundary>
         </div>
         <RouteViewport>
-          <ServiceErrorBoundary title="이 화면" resetKey={userKey} refreshOnRetry>
+          <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>
         <div className="shell-player-sidebar">
-          <ServiceErrorBoundary title="플레이어 프로필" resetKey={userKey}>
+          <ServiceErrorBoundary title={t('플레이어 프로필')} resetKey={userKey}>
             <PlayerSidebar home={home} />
           </ServiceErrorBoundary>
         </div>
       </div>
-      <ServiceErrorBoundary title="하단 메뉴" resetKey={userKey}>
+      <ServiceErrorBoundary title={t('하단 메뉴')} resetKey={userKey}>
         <MobileNav home={home} path={path} chatUnread={chatUnread} />
       </ServiceErrorBoundary>
     </>

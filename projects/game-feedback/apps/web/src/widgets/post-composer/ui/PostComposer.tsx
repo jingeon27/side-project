@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,7 @@ interface IPostComposerProps {
   post?: Post;
 }
 export function PostComposer({ open, onOpenChange, locale, post }: IPostComposerProps) {
+  const { t } = useI18n();
   const { session } = useSession(),
     categories = useQuery(categoryOptions()),
     accounts = useQuery(gameAccountListOptions(session?.user?.id));
@@ -29,11 +31,11 @@ export function PostComposer({ open, onOpenChange, locale, post }: IPostComposer
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={post ? '피드백 요청 수정' : '어떤 플레이가 고민인가요?'}
-      description="구체적인 고민을 알려주면 더 좋은 피드백을 받을 수 있어요."
+      title={post ? t('피드백 요청 수정') : t('어떤 플레이가 고민인가요?')}
+      description={t('구체적인 고민을 알려주면 더 좋은 피드백을 받을 수 있어요.')}
     >
       {isLoading ? (
-        <LoadingState text="작성할 프로필을 준비하고 있어요" />
+        <LoadingState text={t('작성할 프로필을 준비하고 있어요')} />
       ) : categories.isError || accounts.isError ? (
         <ErrorNotice message={categories.error?.message || accounts.error?.message} />
       ) : (
@@ -56,6 +58,7 @@ interface IPostComposerFormProps {
   onOpenChange: (value: boolean) => void;
 }
 function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: IPostComposerFormProps) {
+  const { t } = useI18n();
   const router = useRouter(),
     notify = useNotify(),
     create = useCreatePostMutation(),
@@ -83,7 +86,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
             ? await update.mutateAsync({ id: post.id, body: { title: values.title, body: values.body } })
             : await create.mutateAsync({ body: values });
           onOpenChange(false);
-          notify(post ? '요청을 수정했어요.' : '피드백 요청을 올렸어요. 새로운 시선을 기다려보세요!');
+          notify(post ? t('요청을 수정했어요.') : t('피드백 요청을 올렸어요. 새로운 시선을 기다려보세요!'));
           if (post) {
             router.refresh();
             return;
@@ -94,11 +97,11 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         }
       })}
     >
-      <Field label="게임">
+      <Field label={t('게임')}>
         {post ? (
           <>
             <input type="hidden" {...form.register('categoryId')} />
-            <input className="ds-input" value={post.category.name} readOnly aria-label="선택한 게임" />
+            <input className="ds-input" value={post.category.name} readOnly aria-label={t('선택한 게임')} />
           </>
         ) : (
           <select className="ds-select" {...form.register('categoryId')}>
@@ -112,41 +115,44 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
           </select>
         )}
       </Field>
-      <Field label="제목">
+      <Field label={t('제목')}>
         <input
           className="ds-input"
           {...form.register('title')}
           maxLength={120}
-          placeholder="예: 호그 2.6 덱, 페카를 만나면 어떻게 운영하나요?"
+          placeholder={t('예: 호그 2.6 덱, 페카를 만나면 어떻게 운영하나요?')}
         />
         <span className="field-error">
-          {form.formState.errors.title && '제목을 4~120자로 입력해 주세요.'}
+          {form.formState.errors.title && t('제목을 4~120자로 입력해 주세요.')}
         </span>
       </Field>
-      <Field label="플레이와 고민" hint="사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.">
+      <Field
+        label={t('플레이와 고민')}
+        hint={t('사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.')}
+      >
         <textarea
           className="ds-textarea"
           {...form.register('body')}
           rows={7}
           maxLength={10000}
-          placeholder="현재 트로피와 주로 사용하는 덱을 알려주세요. 어떤 상황에서 어려움을 겪고 있나요?"
+          placeholder={t('현재 트로피와 주로 사용하는 덱을 알려주세요. 어떤 상황에서 어려움을 겪고 있나요?')}
         />
         <span className="field-error">
-          {form.formState.errors.body && '내용을 20~10,000자로 입력해 주세요.'}
+          {form.formState.errors.body && t('내용을 20~10,000자로 입력해 주세요.')}
         </span>
       </Field>
       {!post && (
         <div className="composer-profile">
           <div className="row-between">
-            <strong>내 게임 프로필</strong>
-            <span className="small muted">요청 시점의 덱을 함께 보관해요</span>
+            <strong>{t('내 게임 프로필')}</strong>
+            <span className="small muted">{t('요청 시점의 덱을 함께 보관해요')}</span>
           </div>
           {accounts.length ? (
             <>
               <select className="ds-select" {...form.register('playerTag')}>
                 {accounts.map((account) => (
                   <option key={account.playerTag} value={account.playerTag}>
-                    {account.name} · {account.playerTag}
+                    {account.name} ({account.playerTag})
                   </option>
                 ))}
               </select>
@@ -168,8 +174,8 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
                       close();
                       unmount();
                     }}
-                    title="게임 프로필 연결"
-                    description="플레이어 태그로 프로필을 조회하고 확인해주세요."
+                    title={t('게임 프로필 연결')}
+                    description={t('플레이어 태그로 프로필을 조회하고 확인해주세요.')}
                   >
                     <ConnectProfile
                       onSaved={(saved) => {
@@ -183,12 +189,12 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
               }
             >
               <Plus size={16} />
-              게임 프로필 연결하기
+              {t('게임 프로필 연결하기')}
             </Button>
           )}
           <p className="small muted">
             <Info size={13} />
-            프로필 없이도 질문을 올릴 수 있어요. 개인정보는 적지 마세요.
+            {t('프로필 없이도 질문을 올릴 수 있어요. 개인정보는 적지 마세요.')}
           </p>
         </div>
       )}
@@ -202,7 +208,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         disabled={isPending || !categories.length}
       >
         {isPending ? <LoaderCircle className="spin" size={17} /> : <ArrowUpRight size={17} />}
-        {post ? '수정 완료' : '피드백 요청 올리기'}
+        {post ? t('수정 완료') : t('피드백 요청 올리기')}
       </Button>
     </form>
   );

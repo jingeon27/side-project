@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import type { FormEvent } from 'react';
 import { isNativeApp } from '@/shared/native';
 import { Button } from '@side/design-system';
@@ -22,6 +23,7 @@ function getLoginTitle(session: Session | undefined) {
   return '다음 플레이는 함께, 더 좋게';
 }
 export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps) {
+  const { t, locale } = useI18n();
   const { session } = useSession();
   const form = useZodForm(loginFormSchema, {
     defaultValues: { nickname: '', acceptedTerms: false, ageConfirmed: false },
@@ -57,7 +59,7 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
       onOpenChange={onOpenChange}
       dismissible={!joining}
       title={getLoginTitle(session)}
-      description="플레이메이트에 오신 것을 환영해요."
+      description={t('플레이메이트에 오신 것을 환영해요.')}
     >
       {session?.demoMode && !joining ? (
         <TestAccountPicker onSuccess={onSuccess} />
@@ -76,15 +78,16 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
               type="submit"
               disabled={nativeLogin.isPending || (session && !session.googleConfigured)}
             >
-              <span className="google-letter">G</span>Google로 시작하기
+              <span className="google-letter">G</span>
+              {t('Google로 시작하기')}
               <ArrowRight size={17} />
             </Button>
           </form>
           <ErrorNotice message={nativeLogin.error?.message} />
           <p className="muted small">
             {session && !session.googleConfigured
-              ? 'Google 로그인 연결 준비 중 · 데모로 먼저 둘러보세요.'
-              : 'Google의 공개 이름과 사진은 수집하지 않아요.'}
+              ? t('Google 로그인은 준비 중입니다. 데모로 먼저 둘러보세요.')
+              : t('Google의 공개 이름과 사진은 수집하지 않아요.')}
           </p>
         </>
       )}
@@ -92,36 +95,36 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
         <form onSubmit={form.handleSubmit(handleSubmit)} className="form-stack">
           {session?.demoMode && !joining && (
             <div className="custom-demo-divider">
-              <span>직접 정한 닉네임으로 시작하기</span>
+              <span>{t('직접 정한 닉네임으로 시작하기')}</span>
             </div>
           )}
-          <Field label="서비스 닉네임">
+          <Field label={t('서비스 닉네임')}>
             <input
               className="ds-input"
               {...form.register('nickname')}
               minLength={2}
               maxLength={20}
               required
-              placeholder="2~20자로 입력해 주세요"
+              placeholder={t('2~20자로 입력해 주세요')}
               autoComplete="nickname"
             />
           </Field>
           <label className="check-row">
             <input type="checkbox" {...form.register('acceptedTerms')} required />
             <span>
-              <a href="/ko/terms" target="_blank" rel="noreferrer">
-                이용약관
+              <a href={`/${locale}/terms`} target="_blank" rel="noreferrer">
+                {t('이용약관')}
               </a>{' '}
-              및{' '}
-              <a href="/ko/privacy" target="_blank" rel="noreferrer">
-                개인정보 처리방침
+              {t('및')}{' '}
+              <a href={`/${locale}/privacy`} target="_blank" rel="noreferrer">
+                {t('개인정보 처리방침')}
               </a>
-              에 동의합니다.
+              {t('에 동의합니다.')}
             </span>
           </label>
           <label className="check-row">
             <input type="checkbox" {...form.register('ageConfirmed')} required />
-            <span>만 14세 이상입니다.</span>
+            <span>{t('만 14세 이상입니다.')}</span>
           </label>
           <ErrorNotice
             message={
@@ -140,13 +143,13 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
             disabled={mutation.isPending || !agreed || !ageConfirmed}
           >
             {mutation.isPending ? <LoaderCircle className="spin" size={18} /> : <ArrowRight size={18} />}
-            {joining ? '가입 완료하기' : '데모로 시작하기'}
+            {joining ? t('가입 완료하기') : t('데모로 시작하기')}
           </Button>
         </form>
       )}
       <p className="login-footer">
         <ShieldCheck size={14} />
-        서로를 존중하는 건강한 피드백 공간
+        {t('서로를 존중하는 건강한 피드백 공간')}
       </p>
     </Modal>
   );

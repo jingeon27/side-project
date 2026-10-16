@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useDeleteAccount } from '@/features/auth';
@@ -11,6 +12,7 @@ interface IDeleteAccountDialogProps {
   onClose: () => void;
 }
 export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps) {
+  const { t } = useI18n();
   const form = useZodForm(deleteAccountSchema, { defaultValues: { confirmation: '' } });
   const confirmation = useWatch({ control: form.control, name: 'confirmation' });
   const deletion = useDeleteAccount();
@@ -20,15 +22,15 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
-      title="플레이메이트를 떠나시겠어요?"
-      description="계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요."
+      title={t('플레이메이트를 떠나시겠어요?')}
+      description={t('계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.')}
     >
       <form
         className="form-stack"
         onSubmit={form.handleSubmit(() => deletion.mutate(undefined, { onSuccess: onClose }))}
       >
-        <Field label="계속하려면 '탈퇴'를 입력해 주세요">
-          <input className="ds-input" {...form.register('confirmation')} placeholder="탈퇴" required />
+        <Field label={t("계속하려면 '탈퇴'를 입력해 주세요")}>
+          <input className="ds-input" {...form.register('confirmation')} placeholder={t('탈퇴')} required />
         </Field>
         <ErrorNotice message={form.formState.errors.confirmation?.message ?? deletion.error?.message} />
         <Button
@@ -37,9 +39,9 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
           fullWidth
           type="submit"
           className="button danger full"
-          disabled={confirmation !== '탈퇴' || deletion.isPending}
+          disabled={confirmation !== t('탈퇴') || deletion.isPending}
         >
-          계정 영구 삭제하기
+          {t('계정 영구 삭제하기')}
         </Button>
         <Button
           variant="secondary"
@@ -49,7 +51,7 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
           type="button"
           onClick={onClose}
         >
-          계속 함께하기
+          {t('계속 함께하기')}
         </Button>
       </form>
     </Modal>

@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { useRouter } from 'next/navigation';
 import { Flag, Pencil, Trash2, ShieldBan } from 'lucide-react';
 import { useSession } from '@/features/auth';
@@ -19,6 +20,7 @@ interface IContentActionsProps {
   locale: string;
 }
 export function ContentActions({ type, id, author, body = '', post, locale }: IContentActionsProps) {
+  const { t } = useI18n();
   const { session, login } = useSession(),
     notify = useNotify(),
     router = useRouter(),
@@ -50,7 +52,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
           }
         >
           <Pencil size={13} />
-          수정
+          {t('수정')}
         </button>
         <button
           className="text-button danger-text"
@@ -72,7 +74,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
           }
         >
           <Trash2 size={13} />
-          삭제
+          {t('삭제')}
         </button>
       </div>
     );
@@ -101,7 +103,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         }}
       >
         <Flag size={13} />
-        신고
+        {t('신고')}
       </button>
       <button
         className="text-button"
@@ -120,7 +122,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
                 unmount();
               }}
               onBlocked={() => {
-                notify('사용자를 차단했어요. 설정에서 해제할 수 있어요.');
+                notify(t('사용자를 차단했어요. 설정에서 해제할 수 있어요.'));
                 if (author.id === post.author.id) router.push(`/${locale}`);
               }}
             />
@@ -128,7 +130,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         }}
       >
         <ShieldBan size={13} />
-        차단
+        {t('차단')}
       </button>
     </div>
   );

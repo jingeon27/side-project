@@ -7,15 +7,20 @@ import { GuideContent } from './GuideContent';
 import { TermsContent } from './TermsContent';
 import { PrivacyContent } from './PrivacyContent';
 import { ContactContent } from './ContactContent';
+import { translate, isLocale } from '@/shared/i18n/index.server';
 
 export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) {
+  const language = isLocale(locale) ? locale : 'ko';
   return (
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
         <ArrowLeft size={16} />
-        피드백 라운지
+        {translate(language, '피드백 라운지')}
       </BackLink>
-      <article className="info-card">
+      {language !== 'ko' && (
+        <p className="language-banner">{translate(language, '한국어 원문으로 제공되는 안내입니다.')}</p>
+      )}
+      <article className="info-card" lang="ko">
         <span className="section-eyebrow">
           {kind === 'guide' ? 'PLAY BETTER, TOGETHER' : 'COMMUNITY & TRUST'}
         </span>

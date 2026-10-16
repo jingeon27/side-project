@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import Link from 'next/link';
 import { UserBadges } from '@/features/user';
 import type { Conversation } from '@/shared/api';
@@ -13,6 +15,7 @@ interface IConversationRowProps {
 }
 
 export function ConversationRow({ conversation, selected, locale, replace }: IConversationRowProps) {
+  const { t, locale: textLocale } = useI18n();
   return (
     <Link
       href={appRoutes.conversation(locale, conversation.id)}
@@ -20,18 +23,18 @@ export function ConversationRow({ conversation, selected, locale, replace }: ICo
       scroll={false}
       className={`conversation-row ${selected ? 'selected' : ''}`}
       data-testid={`conversation-${conversation.id}`}
-      aria-label={`${conversation.peer.nickname}님과의 대화${conversation.unreadCount ? `, 읽지 않은 메시지 ${conversation.unreadCount}개` : ''}`}
+      aria-label={`${t('{name}님과의 대화', { name: conversation.peer.nickname })}${conversation.unreadCount ? `, ${t('읽지 않은 메시지 {count}개', { count: conversation.unreadCount })}` : ''}`}
       aria-current={selected ? 'page' : undefined}
     >
       <Avatar name={conversation.peer.nickname} />
       <div className="conversation-preview">
         <div>
           <strong>{conversation.peer.nickname}</strong>
-          <time dateTime={conversation.updatedAt}>{timeAgo(conversation.updatedAt)}</time>
+          <time dateTime={conversation.updatedAt}>{timeAgo(conversation.updatedAt, textLocale)}</time>
         </div>
         <UserBadges author={conversation.peer} compact />
         <div>
-          <p>{conversation.lastMessage?.body || '첫 메시지로 이야기를 시작해요'}</p>
+          <p>{conversation.lastMessage?.body || t('첫 메시지로 이야기를 시작해요')}</p>
           {conversation.unreadCount > 0 && (
             <span className="chat-unread-count">
               {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}

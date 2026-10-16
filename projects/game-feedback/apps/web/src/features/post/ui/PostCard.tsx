@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
@@ -16,6 +17,7 @@ interface IPostCardProps {
   deck?: ReactNode;
 }
 export function PostCard({ post, href, authorContent, authorName, deck }: IPostCardProps) {
+  const { t, locale: textLocale } = useI18n();
   const reducedMotion = useMotionPreference();
   return (
     <m.article
@@ -27,7 +29,7 @@ export function PostCard({ post, href, authorContent, authorName, deck }: IPostC
     >
       <div className="post-topline">
         <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
-        <span className="post-time">{timeAgo(post.createdAt)}</span>
+        <span className="post-time">{timeAgo(post.createdAt, textLocale)}</span>
       </div>
       <Link href={href} className="post-title-link">
         <h3>{post.title}</h3>
@@ -49,11 +51,12 @@ export function PostCard({ post, href, authorContent, authorName, deck }: IPostC
           <Avatar name={post.author.nickname} size="small" />
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
-          <span className="post-author-game">클래시 로얄</span>
+          <span className="post-author-game">{t('클래시 로얄')}</span>
         </span>
         <span className={`answer-count ${post.answerCount > 0 ? 'has-answers' : ''}`}>
           <MessageSquare size={15} />
-          피드백<strong>{post.answerCount}</strong>
+          {t('피드백')}
+          <strong>{post.answerCount}</strong>
           <ArrowUpRight size={15} />
         </span>
       </div>

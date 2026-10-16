@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { MessageSquare, Send, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
@@ -10,6 +11,7 @@ interface IAnswerComposerProps {
   postId: string;
 }
 export function AnswerComposer({ postId }: IAnswerComposerProps) {
+  const { t } = useI18n();
   const { session, login } = useSession(),
     notify = useNotify(),
     mutation = useCreateAnswerMutation(),
@@ -19,7 +21,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
       <div className="row-between">
         <h3>
           <MessageSquare size={18} />
-          당신의 시선을 나눠주세요
+          {t('당신의 시선을 나눠주세요')}
         </h3>
         {session?.user && <Avatar name={session.user.nickname} size="small" />}
       </div>
@@ -29,7 +31,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
             try {
               await mutation.mutateAsync({ postId, body });
               form.reset();
-              notify('피드백을 전했어요. 나눠주셔서 고마워요!');
+              notify(t('피드백을 전했어요. 나눠주셔서 고마워요!'));
             } catch {
               /* The draft stays in the form and the mutation exposes the error. */
             }
@@ -37,16 +39,16 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
         >
           <textarea
             className="ds-textarea"
-            aria-label="피드백 내용"
+            aria-label={t('피드백 내용')}
             {...form.register('body')}
-            placeholder="어떤 부분을 바꾸면 좋을까요? 구체적인 이유와 함께 알려주세요. (10자 이상)"
+            placeholder={t('어떤 부분을 바꾸면 좋을까요? 구체적인 이유와 함께 알려주세요. (10자 이상)')}
             minLength={10}
             maxLength={10000}
             rows={5}
             required
           />
           <div className="compose-bottom">
-            <span className="small muted">비난보다 제안을, 결과보다 과정을.</span>
+            <span className="small muted">{t('비난보다 제안을, 결과보다 과정을.')}</span>
             <Button
               variant="primary"
               size="md"
@@ -54,17 +56,17 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
               className="button primary"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}피드백
-              남기기
+              {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
+              {t('피드백 남기기')}
             </Button>
           </div>
           <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
         </form>
       ) : (
         <div className="login-prompt">
-          <p>로그인하고 함께 플레이를 이야기해요.</p>
+          <p>{t('로그인하고 함께 플레이를 이야기해요.')}</p>
           <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
-            로그인하고 피드백 남기기
+            {t('로그인하고 피드백 남기기')}
             <ArrowUpRight size={16} />
           </Button>
         </div>

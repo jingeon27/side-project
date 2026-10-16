@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, LoaderCircle, FlaskConical, ShieldCheck } from 'lucide-react';
 import { testAccountListOptions, useSession, useTestAccountLogin } from '@/features/auth';
@@ -16,6 +17,7 @@ function getAccountLabel(account: TestAccount) {
   return '테스트 플레이어로 시작';
 }
 export function TestAccountPicker({ onSuccess, mode = 'login' }: ITestAccountPickerProps) {
+  const { t } = useI18n();
   const { session } = useSession();
   const accounts = useQuery(testAccountListOptions(session?.demoMode ?? false));
   const login = useTestAccountLogin();
@@ -25,37 +27,37 @@ export function TestAccountPicker({ onSuccess, mode = 'login' }: ITestAccountPic
       <div className="test-picker-heading">
         <FlaskConical size={17} />
         <div>
-          <strong>{mode === 'switch' ? '테스트 계정 전환' : '로그인 없이 바로 체험해보세요'}</strong>
-          <span>플레이어 · 인증 코치 · 운영자 계정이 준비되어 있어요</span>
+          <strong>{mode === 'switch' ? t('테스트 계정 전환') : t('로그인 없이 바로 체험해보세요')}</strong>
+          <span>{t('플레이어, 인증 코치, 운영자 계정이 준비되어 있어요')}</span>
         </div>
       </div>
       <p className="test-account-notice">
-        공용 테스트 계정입니다. 글·댓글·채팅이 다른 테스트 이용자와 공유되니 개인정보는 입력하지 마세요.
+        {t('공용 테스트 계정입니다. 게시글, 댓글, 채팅을 다른 이용자와 공유하니 개인정보는 입력하지 마세요.')}
       </p>
       {accounts.isPending && (
         <div className="test-account-loading">
           <LoaderCircle className="spin" size={16} />
-          계정을 준비하고 있어요
+          {t('계정을 준비하고 있어요')}
         </div>
       )}
       {accounts.isError && (
         <>
-          <ErrorNotice message="테스트 계정을 불러오지 못했어요." />
+          <ErrorNotice message={t('테스트 계정을 불러오지 못했어요.')} />
           <button className="text-button" onClick={() => void accounts.refetch()}>
-            다시 불러오기
+            {t('다시 불러오기')}
           </button>
         </>
       )}
       <div className="test-account-options">
         {accounts.data?.items.map((account) => {
           const current = session.user?.id === account.id;
-          const label = getAccountLabel(account);
+          const label = t(getAccountLabel(account));
           return (
             <button
               className={`test-account-option ${current ? 'current' : ''}`}
               key={account.id}
               disabled={login.isPending || current}
-              aria-label={`${account.nickname} · ${label}`}
+              aria-label={`${account.nickname} ${label}`}
               onClick={() => login.mutate({ accountId: account.id }, { onSuccess })}
             >
               <Avatar name={account.nickname} />
@@ -65,13 +67,15 @@ export function TestAccountPicker({ onSuccess, mode = 'login' }: ITestAccountPic
                   {account.role === 'ADMIN' && (
                     <span className="test-admin-role">
                       <ShieldCheck size={10} />
-                      운영자
+                      {t('운영자')}
                     </span>
                   )}
                 </span>
                 <UserBadges author={account} compact />
-                <span className="test-account-description">{account.description}</span>
-                <span className="test-account-action">{current ? '현재 사용 중인 계정' : label}</span>
+                <span className="test-account-description">
+                  {t(account.description.replaceAll('·', ', '))}
+                </span>
+                <span className="test-account-action">{current ? t('현재 사용 중인 계정') : label}</span>
               </span>
               {login.isPending && login.variables?.accountId === account.id ? (
                 <LoaderCircle className="spin" size={16} />

@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
 import { ArrowUpRight, Check, Crown, MessageSquare } from 'lucide-react';
 
@@ -6,6 +8,7 @@ interface IFeedHeroProps {
 }
 
 export function FeedHero({ onCompose }: IFeedHeroProps) {
+  const { t } = useI18n();
   return (
     <section className="hero">
       <div className="hero-copy">
@@ -14,14 +17,14 @@ export function FeedHero({ onCompose }: IFeedHeroProps) {
           PLAY BETTER, TOGETHER
         </div>
         <h1>
-          혼자 고민하던 플레이,
+          {t('혼자 고민하던 플레이,')}
           <br />
-          <span>함께 풀어볼까요?</span>
+          <span>{t('함께 풀어볼까요?')}</span>
         </h1>
         <p>
-          덱부터 운영까지, 플레이어들의 새로운 시선으로.
+          {t('덱부터 운영까지, 플레이어들의 새로운 시선으로.')}
           <br />
-          작은 피드백이 다음 경기의 차이를 만듭니다.
+          {t('작은 피드백이 다음 경기의 차이를 만듭니다.')}
         </p>
         <MotionButton
           variant="primary"
@@ -30,7 +33,7 @@ export function FeedHero({ onCompose }: IFeedHeroProps) {
           className="button dark hero-cta"
           onClick={onCompose}
         >
-          첫 피드백 요청하기
+          {t('첫 피드백 요청하기')}
           <ArrowUpRight size={17} />
         </MotionButton>
       </div>
@@ -54,7 +57,7 @@ export function FeedHero({ onCompose }: IFeedHeroProps) {
         </div>
         <div className="hero-mini-badge">
           <Check size={15} />
-          함께라면, 한 단계 더
+          {t('함께라면, 한 단계 더')}
         </div>
       </div>
       <div className="hero-index">01 — GAME FEEDBACK COMMUNITY</div>

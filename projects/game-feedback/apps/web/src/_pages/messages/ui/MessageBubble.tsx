@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import { Check } from 'lucide-react';
 import type { ChatMessage } from '@/shared/api';
 import { Avatar } from '@/shared/ui';
@@ -10,6 +12,7 @@ interface IMessageBubbleProps {
 }
 
 export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessageBubbleProps) {
+  const { t, locale: textLocale } = useI18n();
   const read =
     mine &&
     Boolean(peerLastReadAt) &&
@@ -26,17 +29,20 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
         <p className="chat-bubble">{message.body}</p>
         <div className="chat-message-meta">
           <time dateTime={message.createdAt}>
-            {new Date(message.createdAt).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })}
+            {new Date(message.createdAt).toLocaleTimeString(textLocale, {
+              hour: 'numeric',
+              minute: '2-digit',
+            })}
           </time>
           {mine && (
             <span className={read ? 'message-read' : ''}>
               {read ? (
                 <>
                   <Check size={10} />
-                  읽음
+                  {t('읽음')}
                 </>
               ) : (
-                '전송됨'
+                t('전송됨')
               )}
             </span>
           )}

@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { ThumbsUp } from 'lucide-react';
 import type { Answer } from '@/shared/api';
 import { ErrorNotice, useNotify } from '@/shared/ui';
@@ -8,6 +9,7 @@ interface IHelpfulAnswerButtonProps {
   answer: Answer;
 }
 export function HelpfulAnswerButton({ answer }: IHelpfulAnswerButtonProps) {
+  const { t } = useI18n();
   const mutation = useHelpfulAnswerMutation(),
     notify = useNotify();
   const reducedMotion = useMotionPreference();
@@ -25,7 +27,9 @@ export function HelpfulAnswerButton({ answer }: IHelpfulAnswerButtonProps) {
             { id: answer.id, helpful: !answer.helpful },
             {
               onSuccess: () =>
-                notify(answer.helpful ? '도움됨 표시를 취소했어요.' : '도움이 된 피드백에 마음을 전했어요.'),
+                notify(
+                  answer.helpful ? t('도움됨 표시를 취소했어요.') : t('도움이 된 피드백에 마음을 전했어요.'),
+                ),
             },
           )
         }
@@ -43,7 +47,7 @@ export function HelpfulAnswerButton({ answer }: IHelpfulAnswerButtonProps) {
         >
           <ThumbsUp size={15} />
         </m.span>
-        {answer.helpful ? '도움됨 취소' : '도움이 됐어요'}
+        {answer.helpful ? t('도움됨 취소') : t('도움이 됐어요')}
       </m.button>
       <ErrorNotice message={mutation.error?.message} />
     </div>

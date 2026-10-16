@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { Suspense, useEffect, useRef } from 'react';
@@ -22,6 +23,7 @@ export function FeedPage({ locale }: { locale: string }) {
 }
 
 function FeedContent({ locale }: { locale: string }) {
+  const { t } = useI18n();
   const { session, login } = useSession();
   const { tab, q, search, handleTabChange, handleSearchChange } = useFeedFilters();
   const feed = useInfiniteQuery(
@@ -77,7 +79,7 @@ function FeedContent({ locale }: { locale: string }) {
           onCompose={handleCompose}
         />
         {feed.isPending && (
-          <div className="feed-loading" aria-label="피드백 불러오는 중">
+          <div className="feed-loading" aria-label={t('피드백 불러오는 중')}>
             <PostCardSkeleton />
             <PostCardSkeleton />
             <PostCardSkeleton />
@@ -93,7 +95,7 @@ function FeedContent({ locale }: { locale: string }) {
               className="button outline"
               onClick={() => feed.refetch()}
             >
-              다시 불러오기
+              {t('다시 불러오기')}
             </Button>
           </div>
         )}
@@ -104,25 +106,25 @@ function FeedContent({ locale }: { locale: string }) {
             </span>
             <h3>
               {q
-                ? '아직 일치하는 피드백이 없어요'
+                ? t('아직 일치하는 피드백이 없어요')
                 : tab === 'unanswered'
-                  ? '지금은 모든 요청에 답변이 있어요'
-                  : '첫 번째 이야기를 기다려요'}
+                  ? t('지금은 모든 요청에 답변이 있어요')
+                  : t('첫 번째 이야기를 기다려요')}
             </h3>
             <p>
               {q
-                ? '다른 단어로 검색하거나 새로운 질문을 남겨보세요.'
-                : '여러분의 플레이 고민이 누군가에게는 좋은 대화의 시작이에요.'}
+                ? t('다른 단어로 검색하거나 새로운 질문을 남겨보세요.')
+                : t('여러분의 플레이 고민이 누군가에게는 좋은 대화의 시작이에요.')}
             </p>
             <Button variant="primary" size="md" type="submit" className="button dark" onClick={handleCompose}>
-              피드백 요청하기
+              {t('피드백 요청하기')}
               <ArrowUpRight size={16} />
             </Button>
           </div>
         )}
         <div className="post-list">
           {posts.map((post) => (
-            <ServiceErrorBoundary key={post.id} title="피드백 카드" resetKey={post.id}>
+            <ServiceErrorBoundary key={post.id} title={t('피드백 카드')} resetKey={post.id}>
               <PostCard
                 post={post}
                 href={`/${locale}/posts/${post.id}`}
@@ -144,22 +146,22 @@ function FeedContent({ locale }: { locale: string }) {
             disabled={feed.isFetchingNextPage}
             onClick={() => feed.fetchNextPage()}
           >
-            {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}더
-            많은 피드백 보기
+            {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
+            {t('더 많은 피드백 보기')}
           </Button>
         )}
         {posts.length > 0 && !hasNextPage && (
           <div className="feed-end">
             <span />
-            여기까지, 모든 플레이 이야기를 만났어요
+            {t('여기까지, 모든 플레이 이야기를 만났어요')}
             <span />
           </div>
         )}
         <div className="feed-footer">
           <Sparkles size={16} />
-          <span>경험을 나누는 것만으로도, 누군가의 플레이는 달라집니다.</span>
+          <span>{t('경험을 나누는 것만으로도, 누군가의 플레이는 달라집니다.')}</span>
           <Link href={`/${locale}/guide`}>
-            함께하는 방법
+            {t('함께하는 방법')}
             <ArrowRight size={14} />
           </Link>
         </div>

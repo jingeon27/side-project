@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Suspense, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
@@ -12,6 +13,7 @@ import { ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 import { MotionProvider } from '@/shared/motion';
 
 export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
+  const { t } = useI18n();
   const [client] = useState(() => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: true } },
@@ -21,7 +23,7 @@ export function Providers({ children, initialSession }: { children: ReactNode; i
   });
   return (
     <QueryClientProvider client={client}>
-      <ServiceErrorBoundary title="서비스 연결">
+      <ServiceErrorBoundary title={t('서비스 연결')}>
         <MotionProvider>
           <NavigationHistory />
           <ToastProvider>
@@ -35,16 +37,17 @@ export function Providers({ children, initialSession }: { children: ReactNode; i
   );
 }
 function SessionContent({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const { session } = useSession();
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
-      <ServiceErrorBoundary title="앱 연결">
+      <ServiceErrorBoundary title={t('앱 연결')}>
         <Suspense fallback={null}>
           <NativeBridge />
         </Suspense>
       </ServiceErrorBoundary>
-      <ServiceErrorBoundary title="회원가입 안내">
+      <ServiceErrorBoundary title={t('회원가입 안내')}>
         <AuthOnboarding />
       </ServiceErrorBoundary>
     </OverlayProvider>

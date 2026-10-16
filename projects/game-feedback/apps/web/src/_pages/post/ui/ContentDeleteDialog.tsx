@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { useRouter } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
@@ -22,6 +23,7 @@ export function ContentDeleteDialog({
   postId,
   locale,
 }: IContentDeleteDialogProps) {
+  const { t } = useI18n();
   const post = useDeletePostMutation(),
     answer = useDeleteAnswerMutation(),
     comment = useDeleteCommentMutation(),
@@ -34,8 +36,10 @@ export function ContentDeleteDialog({
       open={open}
       onOpenChange={onOpenChange}
       dismissible={!isPending}
-      title="정말 삭제할까요?"
-      description="삭제한 내용은 복구할 수 없어요. 요청을 삭제하면 연결된 피드백과 댓글도 보이지 않게 됩니다."
+      title={t('정말 삭제할까요?')}
+      description={t(
+        '삭제한 내용은 복구할 수 없어요. 요청을 삭제하면 연결된 피드백과 댓글도 보이지 않게 됩니다.',
+      )}
     >
       <form
         className="form-stack"
@@ -46,7 +50,7 @@ export function ContentDeleteDialog({
             if (type === 'ANSWER') await answer.mutateAsync({ id, postId });
             if (type === 'COMMENT') await comment.mutateAsync({ id, postId });
             onOpenChange(false);
-            notify('삭제했어요.');
+            notify(t('삭제했어요.'));
             if (type === 'POST') router.push(`/${locale}`);
           } catch {
             /* Mutation errors remain visible. */
@@ -62,7 +66,8 @@ export function ContentDeleteDialog({
           className="button danger full"
           disabled={isPending}
         >
-          {isPending && <LoaderCircle className="spin" size={16} />}삭제하기
+          {isPending && <LoaderCircle className="spin" size={16} />}
+          {t('삭제하기')}
         </Button>
         <Button
           variant="secondary"
@@ -73,7 +78,7 @@ export function ContentDeleteDialog({
           disabled={isPending}
           onClick={() => onOpenChange(false)}
         >
-          돌아가기
+          {t('돌아가기')}
         </Button>
       </form>
     </Modal>

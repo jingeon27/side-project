@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +18,7 @@ const profileTagSchema = z.object({ playerTag: PlayerTagSchema });
 type TProfileTagValues = z.output<typeof profileTagSchema>;
 
 export function ConnectProfile({ onSaved }: IConnectProfileProps) {
+  const { t } = useI18n();
   const form = useZodForm(profileTagSchema, { defaultValues: { playerTag: '' } });
   const [requestedTag, setRequestedTag] = useState<string | undefined>(undefined);
   const preview = useQuery(gameProfileOptions(requestedTag));
@@ -31,7 +33,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
   };
   return (
     <form className="connect-profile" onSubmit={form.handleSubmit(handleLookup)}>
-      <Field label="플레이어 태그" hint="클래시 로얄 프로필의 이름 아래에서 찾을 수 있어요.">
+      <Field label={t('플레이어 태그')} hint={t('클래시 로얄 프로필의 이름 아래에서 찾을 수 있어요.')}>
         <div className="input-button-row">
           <input
             className="ds-input"
@@ -52,7 +54,8 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
             type="submit"
             disabled={preview.isFetching}
           >
-            {preview.isFetching ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}조회
+            {preview.isFetching ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
+            {t('조회')}
           </Button>
         </div>
       </Field>
@@ -62,7 +65,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
       {requestedTag && preview.data && (
         <div className="profile-preview">
           <ProfileSnapshot profile={preview.data} />
-          <p className="small muted">이 프로필이 맞나요? 태그 등록은 계정 소유권을 인증하지 않아요.</p>
+          <p className="small muted">{t('이 프로필이 맞나요? 태그 등록은 계정 소유권을 인증하지 않아요.')}</p>
           <Button
             variant="primary"
             size="lg"
@@ -84,8 +87,8 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
             }}
             disabled={save.isPending}
           >
-            {save.isPending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}이 프로필
-            연결하기
+            {save.isPending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+            {t('이 프로필 연결하기')}
           </Button>
         </div>
       )}

@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { useParams, useRouter } from 'next/navigation';
 import { LoaderCircle, MessageCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
@@ -11,6 +12,7 @@ interface IStartChatLinkProps {
 }
 
 export function StartChatLink({ userId, nickname }: IStartChatLinkProps) {
+  const { t } = useI18n();
   const { session, login, notify } = useSession();
   const router = useRouter();
   const { locale } = useParams<{ locale: string }>();
@@ -38,7 +40,7 @@ export function StartChatLink({ userId, nickname }: IStartChatLinkProps) {
       aria-label={`${nickname}님과 채팅하기`}
     >
       {mutation.isPending ? <LoaderCircle size={13} className="spin" /> : <MessageCircle size={13} />}
-      채팅하기
+      {t('채팅하기')}
     </button>
   );
 }

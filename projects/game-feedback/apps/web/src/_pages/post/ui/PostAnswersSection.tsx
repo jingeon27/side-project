@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import { MessageSquare } from 'lucide-react';
 import { AnswerCard } from '@/features/answer';
 import { AuthorLink, UserBadges } from '@/features/user';
@@ -12,19 +14,21 @@ interface IPostAnswersSectionProps {
   locale: string;
 }
 export function PostAnswersSection({ post, answers, userId, locale }: IPostAnswersSectionProps) {
+  const { t } = useI18n();
   return (
     <section className="answers-section">
       <div className="section-title-row">
         <h2>
-          함께 나눈 피드백<span>{answers.length}</span>
+          {t('함께 나눈 피드백')}
+          <span>{answers.length}</span>
         </h2>
-        <span className="small muted">플레이를 이야기하고, 서로를 존중해요</span>
+        <span className="small muted">{t('플레이를 이야기하고, 서로를 존중해요')}</span>
       </div>
       {answers.length === 0 && (
         <div className="empty-answers">
           <MessageSquare size={26} />
-          <strong>첫 번째 피드백을 기다리고 있어요</strong>
-          <p>비슷한 경험이나 작은 팁부터 나눠주세요.</p>
+          <strong>{t('첫 번째 피드백을 기다리고 있어요')}</strong>
+          <p>{t('비슷한 경험이나 작은 팁부터 나눠주세요.')}</p>
         </div>
       )}
       {answers.map((answer) => (

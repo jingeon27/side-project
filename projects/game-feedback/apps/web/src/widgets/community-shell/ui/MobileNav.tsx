@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
 import { Home, MessageCircle, Bell, Settings2, CircleHelp } from 'lucide-react';
 import { resolveAppRoute } from '@game-feedback/bridge';
@@ -7,9 +9,10 @@ interface IMobileNavProps {
   chatUnread: number;
 }
 export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
+  const { t } = useI18n();
   const tab = resolveAppRoute(path)?.tab;
   return (
-    <nav className="mobile-nav" aria-label="모바일 메뉴">
+    <nav className="mobile-nav" aria-label={t('모바일 메뉴')}>
       <Link
         href={home}
         replace
@@ -17,7 +20,7 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         aria-current={tab === 'feed' ? 'page' : undefined}
       >
         <Home size={20} />
-        <span>라운지</span>
+        <span>{t('라운지')}</span>
       </Link>
       <Link
         href={`${home}/messages`}
@@ -26,7 +29,10 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         aria-current={tab === 'messages' ? 'page' : undefined}
       >
         <MessageCircle size={20} />
-        <span>채팅{chatUnread > 0 && <span className="mobile-chat-dot" />}</span>
+        <span>
+          {t('채팅')}
+          {chatUnread > 0 && <span className="mobile-chat-dot" />}
+        </span>
       </Link>
       <Link
         href={`${home}/notifications`}
@@ -35,7 +41,7 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         aria-current={tab === 'notifications' ? 'page' : undefined}
       >
         <Bell size={20} />
-        <span>알림</span>
+        <span>{t('알림')}</span>
       </Link>
       <Link
         href={`${home}/settings`}
@@ -44,7 +50,7 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         aria-current={tab === 'settings' ? 'page' : undefined}
       >
         <Settings2 size={20} />
-        <span>내 프로필</span>
+        <span>{t('내 프로필')}</span>
       </Link>
       <Link
         href={`${home}/guide`}
@@ -53,7 +59,7 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         aria-current={tab === 'guide' ? 'page' : undefined}
       >
         <CircleHelp size={20} />
-        <span>가이드</span>
+        <span>{t('가이드')}</span>
       </Link>
     </nav>
   );

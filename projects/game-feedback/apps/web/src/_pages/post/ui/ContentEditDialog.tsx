@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { LoaderCircle } from 'lucide-react';
 import { useUpdateAnswerMutation } from '@/features/answer';
@@ -14,6 +15,7 @@ interface IContentEditDialogProps {
   body: string;
 }
 export function ContentEditDialog({ open, onOpenChange, type, id, body }: IContentEditDialogProps) {
+  const { t } = useI18n();
   const answer = useUpdateAnswerMutation(),
     comment = useUpdateCommentMutation(),
     notify = useNotify(),
@@ -25,8 +27,8 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
       open={open}
       onOpenChange={onOpenChange}
       dismissible={!isPending}
-      title={type === 'ANSWER' ? '피드백 수정' : '댓글 수정'}
-      description="나누고 싶은 내용을 다듬어주세요."
+      title={type === 'ANSWER' ? t('피드백 수정') : t('댓글 수정')}
+      description={t('나누고 싶은 내용을 다듬어주세요.')}
     >
       <form
         className="form-stack"
@@ -35,7 +37,7 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
             if (type === 'ANSWER') await answer.mutateAsync({ id, body: values });
             if (type === 'COMMENT') await comment.mutateAsync({ id, body: values });
             onOpenChange(false);
-            notify('수정했어요.');
+            notify(t('수정했어요.'));
           } catch {
             /* Mutation errors remain visible. */
           }
@@ -43,7 +45,7 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
       >
         <textarea
           className="ds-textarea"
-          aria-label="수정 내용"
+          aria-label={t('수정 내용')}
           {...form.register('body')}
           rows={6}
           minLength={type === 'ANSWER' ? 10 : 1}
@@ -59,7 +61,8 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
           className="button primary full"
           disabled={isPending}
         >
-          {isPending && <LoaderCircle className="spin" size={16} />}수정 완료
+          {isPending && <LoaderCircle className="spin" size={16} />}
+          {t('수정 완료')}
         </Button>
       </form>
     </Modal>

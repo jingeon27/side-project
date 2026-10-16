@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { ButtonLink } from '@side/design-system/next';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
@@ -21,6 +22,7 @@ interface IPostPageProps {
   initialViewerId?: string;
 }
 export function PostPage({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
+  const { t } = useI18n();
   const { session } = useSession(),
     detail = useQuery({
       ...postDetailOptions(id),
@@ -28,13 +30,13 @@ export function PostPage({ id, locale, initialDetail, initialViewerId }: IPostPa
       initialData: session?.user?.id === initialViewerId ? initialDetail : undefined,
     });
   usePostRead(detail.data, session?.user?.id);
-  if (detail.isPending) return <LoadingState text="플레이 이야기를 불러오고 있어요" />;
+  if (detail.isPending) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
   if (detail.isError || !detail.data)
     return (
       <div className="state-box">
-        <ErrorNotice message={detail.error?.message || '피드백 요청을 찾을 수 없어요.'} />
+        <ErrorNotice message={detail.error?.message || t('피드백 요청을 찾을 수 없어요.')} />
         <ButtonLink variant="primary" size="md" className="button dark" href={`/${locale}`}>
-          라운지로 돌아가기
+          {t('라운지로 돌아가기')}
         </ButtonLink>
       </div>
     );
@@ -43,9 +45,9 @@ export function PostPage({ id, locale, initialDetail, initialViewerId }: IPostPa
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
         <ArrowLeft size={16} />
-        피드백 라운지
+        {t('피드백 라운지')}
       </BackLink>
-      <ServiceErrorBoundary title="게시글" resetKey={id}>
+      <ServiceErrorBoundary title={t('게시글')} resetKey={id}>
         <PostArticle
           post={post}
           authorName={<AuthorLink author={post.author} locale={locale} />}
@@ -56,10 +58,10 @@ export function PostPage({ id, locale, initialDetail, initialViewerId }: IPostPa
           profile={post.gameProfile && <ProfileSnapshot profile={post.gameProfile} />}
         />
       </ServiceErrorBoundary>
-      <ServiceErrorBoundary title="답변" resetKey={id}>
+      <ServiceErrorBoundary title={t('답변')} resetKey={id}>
         <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
       </ServiceErrorBoundary>
-      <ServiceErrorBoundary title="댓글" resetKey={id}>
+      <ServiceErrorBoundary title={t('댓글')} resetKey={id}>
         <PostCommentsSection post={post} comments={comments} locale={locale} />
       </ServiceErrorBoundary>
     </>

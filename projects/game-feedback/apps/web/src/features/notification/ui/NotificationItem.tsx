@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import Link from 'next/link';
 import { MessageSquare, ThumbsUp, ArrowUpRight } from 'lucide-react';
 import type { Notification } from '@/shared/api';
@@ -13,6 +15,7 @@ const notificationTitles: Record<Notification['type'], string> = {
   COMMENT: '새로운 댓글이 달렸어요',
 };
 export function NotificationItem({ notification, href, onRead }: INotificationItemProps) {
+  const { t, locale: textLocale } = useI18n();
   return (
     <Link
       href={href}
@@ -25,9 +28,9 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
         {notification.type === 'HELPFUL' ? <ThumbsUp size={22} /> : <MessageSquare size={22} />}
       </span>
       <div>
-        <strong>{notificationTitles[notification.type]}</strong>
+        <strong>{t(notificationTitles[notification.type])}</strong>
         <p>{notification.message}</p>
-        <span>{timeAgo(notification.createdAt)}</span>
+        <span>{timeAgo(notification.createdAt, textLocale)}</span>
       </div>
       {!notification.readAt && <span className="green-dot" />}
       <ArrowUpRight size={17} />

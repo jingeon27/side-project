@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { IconButton } from '@side/design-system';
 import { Check, X } from 'lucide-react';
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
@@ -32,6 +33,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 function ToastMessage({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  const { t } = useI18n();
   const present = useIsPresent();
   const reducedMotion = useMotionPreference();
   return (
@@ -46,10 +48,10 @@ function ToastMessage({ message, onDismiss }: { message: string; onDismiss: () =
       exit={{ opacity: 0, y: reducedMotion ? 0 : 4 }}
     >
       <Check size={18} />
-      {message}
+      {t(message)}
       <IconButton
         className="icon-button text-on-brand hover:bg-brand-strong"
-        label="알림 닫기"
+        label={t('알림 닫기')}
         onClick={onDismiss}
       >
         <X size={16} />

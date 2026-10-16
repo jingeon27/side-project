@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -21,6 +23,7 @@ interface IConversationPaneProps {
 }
 
 export function ConversationPane({ conversationId, userId, locale }: IConversationPaneProps) {
+  const { t } = useI18n();
   const connection = useChatConnection();
   const query = useInfiniteQuery({
     ...chatMessageOptions(userId, conversationId),
@@ -53,14 +56,14 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
   if (query.isPending)
     return (
       <section className="conversation-pane">
-        <LoadingState text="메시지를 불러오고 있어요" />
+        <LoadingState text={t('메시지를 불러오고 있어요')} />
       </section>
     );
   if (query.isError || !conversation)
     return (
       <section className="conversation-pane chat-unavailable">
         <ShieldBan size={32} />
-        <h2>지금은 이 대화를 열 수 없어요</h2>
+        <h2>{t('지금은 이 대화를 열 수 없어요')}</h2>
         <ErrorNotice message={chatError(query.error)} />
         <Button
           variant="secondary"
@@ -70,22 +73,25 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
           onClick={() => query.refetch()}
         >
           <RefreshCw size={15} />
-          다시 확인
+          {t('다시 확인')}
         </Button>
         <Link className="text-button" href={`/${locale}/messages`}>
-          대화 목록으로 돌아가기 →
+          {t('대화 목록으로 돌아가기 →')}
         </Link>
       </section>
     );
   return (
-    <section className="conversation-pane" aria-label={`${conversation.peer.nickname}님과의 대화`}>
+    <section
+      className="conversation-pane"
+      aria-label={t('{name}님과의 대화', { name: conversation.peer.nickname })}
+    >
       <header className="conversation-heading">
         <BackLink
           href={appRoutes.messages(locale)}
           parentOnly
           scroll={false}
           className="icon-button chat-back"
-          aria-label="대화 목록으로 돌아가기"
+          aria-label={t('대화 목록으로 돌아가기')}
         >
           <ArrowLeft size={19} />
         </BackLink>
@@ -93,11 +99,11 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         <div>
           <h2>{conversation.peer.nickname}</h2>
           <UserBadges author={conversation.peer} compact />
-          <p>플레이어와 나누는 1:1 대화</p>
+          <p>{t('플레이어와 나누는 1:1 대화')}</p>
         </div>
         <button className="text-button" onClick={() => handleBlock(conversation.peer)}>
           <ShieldBan size={13} />
-          차단
+          {t('차단')}
         </button>
       </header>
       <ChatHistory
@@ -112,7 +118,7 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
       />
       {scroll.unseen && (
         <button className="chat-new-messages" onClick={scroll.handleScrollLatest}>
-          새 메시지가 도착했어요
+          {t('새 메시지가 도착했어요')}
           <ArrowDown size={14} />
         </button>
       )}

@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
@@ -26,6 +27,7 @@ export function ProfilePage({
   initialPosts,
   initialViewerId,
 }: IProfilePageProps) {
+  const { t, locale: textLocale } = useI18n();
   const { session } = useSession();
   const sameViewer = session?.user?.id === initialViewerId;
   const profile = useQuery({ ...profileOptions(id), initialData: sameViewer ? initialProfile : undefined });
@@ -34,55 +36,59 @@ export function ProfilePage({
     refetchOnMount: 'always',
     initialData: sameViewer ? initialPosts : undefined,
   });
-  if (profile.isPending) return <LoadingState text="플레이어 프로필을 불러오고 있어요" />;
+  if (profile.isPending) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
   if (profile.isError || !profile.data)
-    return <ErrorNotice message={profile.error?.message || '플레이어를 찾을 수 없어요.'} />;
+    return <ErrorNotice message={profile.error?.message || t('플레이어를 찾을 수 없어요.')} />;
   const { author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
-        ← 피드백 라운지
+        {t('← 피드백 라운지')}
       </BackLink>
-      <section className="settings-card public-profile" aria-label="플레이어 프로필">
+      <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
           <Avatar name={author.nickname} size="large" />
           <div>
             <h1>{author.nickname}</h1>
             <UserBadges author={author} />
             <p>
-              {new Date(joinedAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}부터 함께 플레이 중
+              {t('{date}부터 함께 플레이 중', {
+                date: new Date(joinedAt).toLocaleDateString(textLocale, { timeZone: 'Asia/Seoul' }),
+              })}
             </p>
           </div>
         </div>
-        <p className="muted">클래시 로얄 플레이 경험을 나누는 플레이어</p>
+        <p className="muted">{t('클래시 로얄 플레이 경험을 나누는 플레이어')}</p>
         <dl className="public-profile-stats">
           <div>
-            <dt>공개 요청</dt>
+            <dt>{t('공개 요청')}</dt>
             <dd>{postCount}</dd>
           </div>
           <div>
-            <dt>공개 답변</dt>
+            <dt>{t('공개 답변')}</dt>
             <dd>{answerCount}</dd>
           </div>
           <div>
-            <dt>도움됨</dt>
+            <dt>{t('도움됨')}</dt>
             <dd>{helpfulCount}</dd>
           </div>
         </dl>
         {author.supercellTag && (
-          <p className="small muted">게임 계정 소유권 미인증 · 서비스 인증 표시와 별개입니다.</p>
+          <p className="small muted">
+            {t('게임 계정 소유권은 인증되지 않았습니다. 서비스 인증 표시와는 별개입니다.')}
+          </p>
         )}
         {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
       </section>
-      <ServiceErrorBoundary title="작성한 피드백 요청" resetKey={`${id}:${cursor}`}>
+      <ServiceErrorBoundary title={t('작성한 피드백 요청')} resetKey={`${id}:${cursor}`}>
         <section className="feed-section">
           <div className="section-title-row">
-            <h2>작성한 피드백 요청</h2>
+            <h2>{t('작성한 피드백 요청')}</h2>
           </div>
           {posts.isPending && <LoadingState />}
           <ErrorNotice message={posts.error?.message} />
           {!posts.isError && posts.data?.items.length === 0 && (
-            <p className="muted">공개한 피드백 요청이 없어요.</p>
+            <p className="muted">{t('공개한 피드백 요청이 없어요.')}</p>
           )}
           {!posts.isError && (
             <div className="post-list">
@@ -98,11 +104,11 @@ export function ProfilePage({
               ))}
             </div>
           )}
-          <nav className="profile-pagination" aria-label="작성글 페이지">
-            {cursor && <Link href={`/${locale}/users/${id}`}>처음으로</Link>}
+          <nav className="profile-pagination" aria-label={t('작성글 페이지')}>
+            {cursor && <Link href={`/${locale}/users/${id}`}>{t('처음으로')}</Link>}
             {posts.data?.nextCursor && (
               <Link href={`/${locale}/users/${id}?cursor=${encodeURIComponent(posts.data.nextCursor)}`}>
-                이전 요청 보기 →
+                {t('이전 요청 보기 →')}
               </Link>
             )}
           </nav>

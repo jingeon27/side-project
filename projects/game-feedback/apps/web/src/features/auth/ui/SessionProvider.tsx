@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { createContext, useContext, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Session } from '@/shared/api';
@@ -18,8 +19,9 @@ interface ISessionProviderProps {
 const SessionContext = createContext<ISessionContext | undefined>(undefined);
 
 export function useSession() {
+  const { t } = useI18n();
   const context = useContext(SessionContext);
-  if (!context) throw new Error('SessionProvider가 필요합니다.');
+  if (!context) throw new Error(t('SessionProvider가 필요합니다.'));
   return context;
 }
 export function SessionProvider({ children, onLogin }: ISessionProviderProps) {

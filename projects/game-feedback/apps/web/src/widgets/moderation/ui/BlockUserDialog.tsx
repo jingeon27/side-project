@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { LoaderCircle } from 'lucide-react';
 import type { Author } from '@/shared/api';
@@ -11,6 +12,7 @@ interface IBlockUserDialogProps {
   onBlocked?: () => void;
 }
 export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBlockUserDialogProps) {
+  const { t } = useI18n();
   const mutation = useBlockUserMutation();
   return (
     <Modal
@@ -18,7 +20,9 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
       onOpenChange={onOpenChange}
       dismissible={!mutation.isPending}
       title={`${author.nickname}님을 차단할까요?`}
-      description="서로의 게시글과 대화가 숨겨지며 메시지를 더 이상 주고받을 수 없어요. 설정에서 차단을 해제할 수 있습니다."
+      description={t(
+        '서로의 게시글과 대화가 숨겨지며 메시지를 더 이상 주고받을 수 없어요. 설정에서 차단을 해제할 수 있습니다.',
+      )}
     >
       <form
         className="form-stack"
@@ -42,7 +46,8 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
           className="button danger full"
           disabled={mutation.isPending}
         >
-          {mutation.isPending && <LoaderCircle className="spin" size={16} />}차단하기
+          {mutation.isPending && <LoaderCircle className="spin" size={16} />}
+          {t('차단하기')}
         </Button>
         <Button
           variant="secondary"
@@ -53,7 +58,7 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
           disabled={mutation.isPending}
           onClick={() => onOpenChange(false)}
         >
-          돌아가기
+          {t('돌아가기')}
         </Button>
       </form>
     </Modal>

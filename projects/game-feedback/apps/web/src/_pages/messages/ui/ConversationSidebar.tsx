@@ -1,3 +1,5 @@
+'use client';
+import { useI18n } from '@/shared/i18n';
 import Link from 'next/link';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
@@ -13,6 +15,7 @@ interface IConversationSidebarProps {
 }
 
 export function ConversationSidebar({ userId, conversationId, locale }: IConversationSidebarProps) {
+  const { t } = useI18n();
   const connection = useChatConnection();
   const conversations = useInfiniteQuery({
     ...conversationListOptions(userId),
@@ -21,22 +24,22 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
   const items = conversations.data?.pages.flatMap((page) => page.items) ?? [];
   const unread = conversations.data?.pages[0]?.unreadCount ?? 0;
   return (
-    <aside className="conversation-sidebar" aria-label="내 대화 목록">
+    <aside className="conversation-sidebar" aria-label={t('내 대화 목록')}>
       <div className="conversation-list-heading">
-        <h2>내 메시지</h2>
+        <h2>{t('내 메시지')}</h2>
         {unread > 0 && (
-          <span className="chat-unread-total" aria-label={`읽지 않은 메시지 ${unread}개`}>
+          <span className="chat-unread-total" aria-label={t('읽지 않은 메시지 {count}개', { count: unread })}>
             {unread}
           </span>
         )}
       </div>
-      {conversations.isPending && <LoadingState text="대화를 불러오고 있어요" />}
+      {conversations.isPending && <LoadingState text={t('대화를 불러오고 있어요')} />}
       {conversations.isError ? (
         <div className="chat-list-error">
           <ErrorNotice message={chatError(conversations.error)} />
           <button className="text-button" onClick={() => conversations.refetch()}>
             <RefreshCw size={13} />
-            다시 불러오기
+            {t('다시 불러오기')}
           </button>
         </div>
       ) : (
@@ -55,14 +58,14 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
           {!conversations.isPending && items.length === 0 && (
             <div className="chat-empty-list">
               <MessageCircle size={27} />
-              <strong>아직 시작한 대화가 없어요</strong>
+              <strong>{t('아직 시작한 대화가 없어요')}</strong>
               <p>
-                라운지의 요청이나 답변에서
+                {t('라운지의 요청이나 답변에서')}
                 <br />
-                ‘채팅하기’를 눌러보세요.
+                {t('‘채팅하기’를 눌러보세요.')}
               </p>
               <Link href={`/${locale}`}>
-                플레이어 만나러 가기
+                {t('플레이어 만나러 가기')}
                 <ArrowUpRight size={13} />
               </Link>
             </div>
@@ -73,7 +76,7 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
               disabled={conversations.isFetchingNextPage}
               onClick={() => conversations.fetchNextPage()}
             >
-              {conversations.isFetchingNextPage ? '불러오는 중…' : '이전 대화 더 보기'}
+              {conversations.isFetchingNextPage ? t('불러오는 중…') : t('이전 대화 더 보기')}
             </button>
           )}
         </>
@@ -81,9 +84,9 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
       <div className="chat-list-note">
         <ShieldCheck size={14} />
         <span>
-          대화 상대를 존중하고
+          {t('대화 상대를 존중하고')}
           <br />
-          개인정보는 공유하지 마세요.
+          {t('개인정보는 공유하지 마세요.')}
         </span>
       </div>
     </aside>

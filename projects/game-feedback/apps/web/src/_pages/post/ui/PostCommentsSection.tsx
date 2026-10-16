@@ -1,4 +1,5 @@
 'use client';
+import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { Send, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
@@ -15,6 +16,7 @@ interface IPostCommentsSectionProps {
   locale: string;
 }
 export function PostCommentsSection({ post, comments, locale }: IPostCommentsSectionProps) {
+  const { t } = useI18n();
   const { session, login } = useSession(),
     mutation = useCreateCommentMutation(),
     notify = useNotify(),
@@ -22,7 +24,8 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
   return (
     <section className="comments-section">
       <h2>
-        짧은 이야기<span>{comments.length}</span>
+        {t('짧은 이야기')}
+        <span>{comments.length}</span>
       </h2>
       {comments.map((comment) => (
         <CommentItem
@@ -49,7 +52,7 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
             try {
               await mutation.mutateAsync({ postId: post.id, body });
               form.reset();
-              notify('댓글을 남겼어요.');
+              notify(t('댓글을 남겼어요.'));
             } catch {
               /* The mutation error remains visible and the form keeps the draft. */
             }
@@ -57,10 +60,10 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
         >
           <input
             className="ds-input"
-            aria-label="댓글 내용"
+            aria-label={t('댓글 내용')}
             {...form.register('body')}
             maxLength={2000}
-            placeholder="궁금한 점이나 짧은 응원을 남겨주세요"
+            placeholder={t('궁금한 점이나 짧은 응원을 남겨주세요')}
             required
           />
           <Button
@@ -69,14 +72,14 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
             type="submit"
             className="button dark"
             disabled={mutation.isPending}
-            aria-label="댓글 등록"
+            aria-label={t('댓글 등록')}
           >
             {mutation.isPending ? <LoaderCircle size={17} className="spin" /> : <Send size={17} />}
           </Button>
         </form>
       ) : (
         <button className="text-button" onClick={login}>
-          로그인하고 댓글 남기기 →
+          {t('로그인하고 댓글 남기기 →')}
         </button>
       )}
       <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
