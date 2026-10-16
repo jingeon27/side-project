@@ -16,6 +16,7 @@ export function RouteViewport({ children }: { children: ReactNode }) {
     const before = previous.current;
     previous.current = key;
     if (!before || before === key || reducedMotion || !scope.current) return;
+    if (route?.screen === 'conversation' && window.matchMedia('(max-width: 760px)').matches) return;
     const controls = animate(
       scope.current,
       {

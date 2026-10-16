@@ -10,5 +10,6 @@
 @import './authentication.css';
 @import './chat.css';
 @import './identity.css';
+@import './mobile.css';
 
 @source '../../**/*.{ts,tsx}';

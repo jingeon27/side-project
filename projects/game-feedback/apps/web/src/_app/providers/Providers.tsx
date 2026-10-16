@@ -9,6 +9,7 @@ import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 import type { Session } from '@/shared/api';
 import { NativeBridge } from './NativeBridge';
 import { NavigationHistory } from './NavigationHistory';
+import { MobileViewport } from './MobileViewport';
 import { ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 import { MotionProvider } from '@/shared/motion';
 
@@ -26,6 +27,7 @@ export function Providers({ children, initialSession }: { children: ReactNode; i
       <ServiceErrorBoundary title={t('서비스 연결')}>
         <MotionProvider>
           <NavigationHistory />
+          <MobileViewport />
           <ToastProvider>
             <SessionProvider onLogin={openLoginDialog}>
               <SessionContent>{children}</SessionContent>
