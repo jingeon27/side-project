@@ -21,6 +21,9 @@ import {
   GalleryPostsDocument,
   LikePostDocument,
   UnlikePostDocument,
+  CreatePostCommentDocument,
+  DeletePostCommentDocument,
+  PostCommentsDocument,
   PostSort,
   RequestPostUploadDocument,
   CastVoteDocument,
@@ -336,6 +339,23 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     expect((await execute(GalleryPostsDocument, outsider, variables)).errors?.[0]?.extensions?.code).toBe(
       'FORBIDDEN',
     );
+    const comment = (
+      await ok(CreatePostCommentDocument, member, { postId: photo.id, body: '문서로 남긴 댓글' })
+    ).createPostComment;
+    expect(comment.canDelete).toBe(true);
+    const commentVariables = { postId: photo.id, offset: 0, limit: 24 };
+    expect((await ok(PostCommentsDocument, owner, commentVariables)).postComments).toEqual([comment]);
+    expect(
+      (await ok(GalleryPostsDocument, owner, variables)).galleryPosts.find(({ id }) => id === photo.id)
+        ?.commentCount,
+    ).toBe(1);
+    expect(
+      (await execute(PostCommentsDocument, outsider, commentVariables)).errors?.[0]?.extensions?.code,
+    ).toBe('FORBIDDEN');
+    expect((await ok(DeletePostCommentDocument, owner, { commentId: comment.id })).deletePostComment).toBe(
+      true,
+    );
+    expect((await ok(PostCommentsDocument, member, commentVariables)).postComments).toEqual([]);
     await ok(DeletePostDocument, owner, { postId: photo.id });
     expect(
       (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),

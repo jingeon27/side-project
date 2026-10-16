@@ -1,7 +1,7 @@
 'use client';
 
 import { useFragment, useMutation } from '@apollo/client/react';
-import { Heart, Trash2, Video } from 'lucide-react';
+import { Heart, MessageCircle, Trash2, Video } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { overlay } from 'overlay-kit';
@@ -24,6 +24,7 @@ import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Avatar } from '@/shared/ui/@core/avatar';
 
 import { resetGalleryPosts } from '../model/post.cache';
+import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
 
 export function PostCard({ id }: { id: string }) {
   const haptics = useHaptics();
@@ -116,28 +117,44 @@ export function PostCard({ id }: { id: string }) {
         <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4">
-        <Button
-          variant="secondary"
-          size="md"
-          className="gap-2 rounded-full border-line px-3"
-          aria-label={`${post.title} 좋아요`}
-          aria-pressed={post.likedByMe}
-          loading={likeState.loading || unlikeState.loading}
-          onClick={async () => {
-            try {
-              await (post.likedByMe ? unlike : like)({ variables: { postId: id } });
-            } catch {
-              /* ErrorLink가 알린다. */
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            className="gap-2 rounded-full border-line px-3"
+            aria-label={`${post.title} 좋아요`}
+            aria-pressed={post.likedByMe}
+            loading={likeState.loading || unlikeState.loading}
+            onClick={async () => {
+              try {
+                await (post.likedByMe ? unlike : like)({ variables: { postId: id } });
+              } catch {
+                /* ErrorLink가 알린다. */
+              }
+            }}
+          >
+            <Heart
+              aria-hidden
+              strokeWidth={1.7}
+              className={post.likedByMe ? 'size-4 fill-danger text-danger' : 'size-4'}
+            />
+            <span className="text-caption">좋아요 {formatCount(post.likeCount)}개</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="md"
+            className="gap-2 px-3 text-muted"
+            aria-label={`${post.title} 댓글 ${formatCount(post.commentCount)}개`}
+            onClick={() =>
+              overlay.open(({ isOpen, close, unmount }) => (
+                <PostCommentsBottomSheet postId={id} isOpen={isOpen} onClose={close} unmount={unmount} />
+              ))
             }
-          }}
-        >
-          <Heart
-            aria-hidden
-            strokeWidth={1.7}
-            className={post.likedByMe ? 'size-4 fill-danger text-danger' : 'size-4'}
-          />
-          <span className="text-caption">좋아요 {formatCount(post.likeCount)}개</span>
-        </Button>
+          >
+            <MessageCircle aria-hidden className="size-4" />
+            <span className="text-caption">댓글 {formatCount(post.commentCount)}개</span>
+          </Button>
+        </div>
         <p className="text-caption text-muted">
           <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>
         </p>

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   GalleryPostsDocument,
+  PostCommentsDocument,
   PostSort,
   PostKind,
   type GalleryPostsQuery,
@@ -24,6 +25,7 @@ function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][nu
     mediaUrl: '/backend/media/' + id,
     createdAt: '2026-10-15T00:00:00Z',
     likeCount: 0,
+    commentCount: 0,
     likedByMe: false,
     canDelete: false,
     author: { __typename: 'User', id: 'author', nickname: '친구', avatar: null },
@@ -31,6 +33,40 @@ function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][nu
 }
 const VARIABLES: GalleryPostsQueryVariables = { groupId: null, sort: PostSort.Newest, offset: 0, limit: 2 };
 describe('갤러리 게시물 캐시', () => {
+  it('댓글 페이지를 게시물별로 나누고 첫 페이지 갱신은 이전 뒷페이지를 대체해야 한다', () => {
+    const cache = new InMemoryCache({ typePolicies: postTypePolicies });
+    const write = (postId: string, offset: number, id: string, overwrite = false) =>
+      cache.writeQuery({
+        overwrite,
+        query: PostCommentsDocument,
+        variables: { postId, offset, limit: 1 },
+        data: {
+          postComments: [
+            {
+              __typename: 'PostComment',
+              id,
+              postId,
+              body: id,
+              createdAt: '2026-10-17T00:00:00Z',
+              canDelete: true,
+              author: { __typename: 'User', id: 'author', nickname: '친구', avatar: null },
+            },
+          ],
+        },
+      });
+    const read = (postId: string) =>
+      cache
+        .readQuery({ query: PostCommentsDocument, variables: { postId, offset: 0, limit: 1 } })
+        ?.postComments.map(({ id }) => id);
+    write('a', 0, 'a-new');
+    write('a', 1, 'a-old');
+    write('b', 0, 'b-new');
+    expect(read('a')).toEqual(['a-new', 'a-old']);
+    expect(read('b')).toEqual(['b-new']);
+    write('a', 0, 'a-fresh', true);
+    expect(read('a')).toEqual(['a-fresh']);
+    expect(read('b')).toEqual(['b-new']);
+  });
   it('전체 최신·각 갤러리·이달 인기의 offset 목록을 섞지 않아야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });
     const write = (variables: GalleryPostsQueryVariables, ids: string[]) =>
