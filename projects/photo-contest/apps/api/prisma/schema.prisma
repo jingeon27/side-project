@@ -13,6 +13,7 @@ model User {
   provider String
   providerId String
   memberships GroupMember[]
+  credential PasswordCredential?
   sessions Session[]
   submissions Submission[]
   votes Vote[]
@@ -194,4 +195,16 @@ model PostLike {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([postId, userId])
   @@index([userId])
+}
+model PasswordCredential {
+  loginId String @id
+  passwordHash String
+  userId String @unique
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model AuthAttempt {
+  keyHash String @id
+  count Int @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
 }

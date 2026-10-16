@@ -109,7 +109,7 @@ function applyEnv(values: Record<string, string>) {
   return function restoreEnv() {
     for (const [name, value] of previous) {
       if (value === undefined) delete process.env[name];
-      else process.env[name] = value;
+      if (value !== undefined) process.env[name] = value;
     }
   };
 }

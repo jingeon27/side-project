@@ -24,6 +24,7 @@ export class MaintenanceService {
       if (upload.storageKey) await this.media.delete(upload.storageKey);
       await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
     }
+    await this.db.authAttempt.deleteMany({ where: { expiresAt: { lte: now } } });
     await this.db.session.deleteMany({ where: { expiresAt: { lt: now } } });
     await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lt: now } } });
     await this.db.appLoginTicket.deleteMany({ where: { expiresAt: { lt: now } } });
