@@ -34,13 +34,9 @@ export default async function CategoryPage({ params }: Props) {
     <main id="main-content" className="page-container archive-page">
       <header className="page-heading">
         <Link className="back-link" href={`/${locale}/blog`}>
-          ← {t.common.backToBlog}
+          {t.common.backToBlog}
         </Link>
-        <p className="eyebrow">{t.common.category}</p>
-        <h1>
-          {t.categories[category]}
-          <span className="title-period">.</span>
-        </h1>
+        <h1>{t.categories[category]}</h1>
         <p>{t.categoryDescriptions[category]}</p>
       </header>
       <BlogFeed

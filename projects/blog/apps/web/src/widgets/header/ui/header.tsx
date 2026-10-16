@@ -7,6 +7,7 @@ import { ThemeSwitch } from '@/features/theme-switch/ui/theme-switch';
 import { HeaderNav } from './header-nav';
 
 export function Header({ locale }: { locale: Locale }) {
+  const t = labels(locale);
   const translations = Object.fromEntries(
     getArticles(locale).map((article) => [article.slug, article.translations]),
   );
@@ -16,23 +17,17 @@ export function Header({ locale }: { locale: Locale }) {
   return (
     <>
       <a className="skip-link" href="#main-content">
-        {labels(locale).nav.skip}
+        {t.nav.skip}
       </a>
       <header className="site-header">
         <div className="header-inner">
-          <Link href={`/${locale}`} className="wordmark" aria-label="jingeon / journal">
-            <span className="wordmark-symbol" aria-hidden="true">
-              j.
-            </span>
-            <span>
-              jingeon<span className="wordmark-suffix"> / journal</span>
-            </span>
+          <Link href={`/${locale}`} className="wordmark">
+            {t.nav.siteTitle}
           </Link>
           <div className="header-right">
             <HeaderNav locale={locale} />
             <div className="header-tools">
               <LocaleSwitch locale={locale} translations={translations} targetTags={targetTags} />
-              <span className="tool-divider" />
               <ThemeSwitch locale={locale} />
             </div>
           </div>

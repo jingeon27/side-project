@@ -17,12 +17,7 @@ export default async function BlogPage({ params }: Props) {
   return (
     <main id="main-content" className="page-container archive-page">
       <header className="page-heading">
-        <p className="eyebrow">{t.blog.eyebrow}</p>
-        <h1>
-          {t.blog.title}
-          <span className="title-period">.</span>
-        </h1>
-        <p>{t.blog.description}</p>
+        <h1>{t.blog.title}</h1>
       </header>
       <BlogFeed locale={locale} articles={getArticles(locale)} />
     </main>

@@ -80,7 +80,7 @@ export function BlogFeed({
                 setTag(fixedTag ?? 'all');
               }}
             >
-              {t.common.clearFilters} ↺
+              {t.common.clearFilters}
             </button>
           )}
           {tags.length > 0 && !fixedTag && (
@@ -107,15 +107,12 @@ export function BlogFeed({
       </div>
       {filtered.length ? (
         <div className="article-list">
-          {filtered.map((article, index) => (
-            <ArticleCard key={article.id} article={article} index={index} />
+          {filtered.map((article) => (
+            <ArticleCard key={article.id} article={article} />
           ))}
         </div>
       ) : (
         <div className="empty-state">
-          <span className="empty-mark" aria-hidden="true">
-            [ &nbsp; ]
-          </span>
           <h2>{articles.length ? t.common.noResults : t.common.empty}</h2>
           <p>{articles.length ? t.common.noResultsDescription : t.common.emptyDescription}</p>
           {articles.length ? (
@@ -128,12 +125,12 @@ export function BlogFeed({
                 setTag(fixedTag ?? 'all');
               }}
             >
-              {t.common.clearFilters} →
+              {t.common.clearFilters}
             </button>
           ) : (
             locale === 'en' && (
               <Link className="text-link" href="/ko/blog">
-                {t.common.koreanArticles} →
+                {t.common.koreanArticles}
               </Link>
             )
           )}

@@ -37,13 +37,9 @@ export default async function TagPage({ params }: Props) {
     <main id="main-content" className="page-container archive-page">
       <header className="page-heading">
         <Link className="back-link" href={`/${locale}/blog`}>
-          ← {t.common.backToBlog}
+          {t.common.backToBlog}
         </Link>
-        <p className="eyebrow">{t.common.tags}</p>
-        <h1>
-          <span className="title-period">#</span>
-          {name}
-        </h1>
+        <h1>#{name}</h1>
         <p>{t.blog.tagDescription}</p>
       </header>
       <BlogFeed locale={locale} articles={articles} fixedTag={name} />

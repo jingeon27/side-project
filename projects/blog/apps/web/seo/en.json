@@ -1,21 +1,21 @@
 {
   "site": {
-    "title": "Jingeon Kim | Engineering Blog",
-    "description": "Notes on software engineering, decisions and verification.",
+    "title": "Jingeon Kim's blog",
+    "description": "I write about problems I encounter while developing software and what I learn along the way.",
     "keywords": ["Software Engineering", "React", "Next.js", "TypeScript"]
   },
   "pages": {
     "home": {
       "title": "Home",
-      "description": "Engineering experiences and perspectives by Jingeon Kim."
+      "description": "I write about problems I encounter while developing software and what I learn along the way."
     },
     "blog": {
-      "title": "Blog",
-      "description": "Engineering experiences, learning and perspectives."
+      "title": "Posts",
+      "description": "Notes on software development and things I have learned."
     },
     "about": {
       "title": "About",
-      "description": "Contact information and GitHub for software engineer Jingeon Kim."
+      "description": "Email and GitHub for software engineer Jingeon Kim."
     }
   },
   "posts": {}

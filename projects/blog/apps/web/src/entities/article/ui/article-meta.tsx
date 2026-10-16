@@ -12,24 +12,16 @@ export function ArticleMeta({ article, showUpdated = false }: { article: Article
   return (
     <div className="article-meta">
       <time dateTime={article.publishedAt}>{date.format(new Date(article.publishedAt))}</time>
-      <span className="meta-dot" aria-hidden="true">
-        ·
-      </span>
       <span>
         {article.readingMinutes}
         {article.locale === 'ko' ? '' : ' '}
         {t.common.minutes}
       </span>
       {showUpdated && article.updatedAt && article.updatedAt !== article.publishedAt && (
-        <>
-          <span className="meta-dot" aria-hidden="true">
-            ·
-          </span>
-          <span>
-            {t.common.updated}{' '}
-            <time dateTime={article.updatedAt}>{date.format(new Date(article.updatedAt))}</time>
-          </span>
-        </>
+        <span>
+          {t.common.updated}{' '}
+          <time dateTime={article.updatedAt}>{date.format(new Date(article.updatedAt))}</time>
+        </span>
       )}
     </div>
   );

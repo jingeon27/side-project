@@ -1,5 +1,6 @@
 import type { Locale } from '@/i18n/routing';
 import { absoluteUrl } from '@/shared/config/site';
+import { labels } from '@/shared/config/labels';
 import { articlePath, type ArticleSeo } from './metadata';
 
 export function escapeXml(value: string): string {
@@ -10,11 +11,7 @@ export function escapeXml(value: string): string {
 }
 
 export function createRss(locale: Locale, articles: readonly ArticleSeo[]): string {
-  const title = locale === 'ko' ? 'Engineering Blog — 한국어' : 'Engineering Blog — English';
-  const description =
-    locale === 'ko'
-      ? '소프트웨어 엔지니어의 개발 경험과 생각'
-      : 'Notes on software engineering and learning.';
+  const { title, description } = labels(locale).home;
   const items = articles
     .filter((article) => article.locale === locale)
     .map((article) => {

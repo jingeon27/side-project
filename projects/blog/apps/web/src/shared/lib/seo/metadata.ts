@@ -49,7 +49,7 @@ export function pageMetadata(
   const image = absoluteUrl('/opengraph-image');
   return {
     metadataBase: siteUrl,
-    title: { absolute: `${title} · ${seo[locale].site.title}` },
+    title: { absolute: title === seo[locale].site.title ? title : `${title} - ${seo[locale].site.title}` },
     description,
     keywords: seo[locale].site.keywords,
     authors: [{ name: author.name, url: author.github }],
@@ -80,7 +80,7 @@ export function articleMetadata(article: ArticleSeo): Metadata {
   const image = absoluteUrl(article.coverImage || `/og/${article.locale}/${article.id}`);
   return {
     ...pageMetadata(article.locale, 'blog'),
-    title: { absolute: `${article.title} · ${seo[article.locale].site.title}` },
+    title: { absolute: `${article.title} - ${seo[article.locale].site.title}` },
     description: article.description,
     keywords: article.keywords,
     alternates: { canonical: url, languages: articleAlternates(article) },

@@ -1,21 +1,21 @@
 {
   "site": {
-    "title": "김진건 | Engineering Blog",
-    "description": "개발하면서 겪은 문제와 선택, 검증한 내용을 기록합니다.",
+    "title": "김진건의 블로그",
+    "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다.",
     "keywords": ["Software Engineer", "React", "Next.js", "TypeScript", "개발 블로그"]
   },
   "pages": {
     "home": {
       "title": "홈",
-      "description": "개발 경험과 생각을 기록하는 김진건의 블로그입니다."
+      "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다."
     },
     "blog": {
-      "title": "블로그",
-      "description": "개발 경험, 배운 것과 일하며 정리한 생각을 공유합니다."
+      "title": "글 목록",
+      "description": "개발 경험과 공부한 내용을 정리한 글입니다."
     },
     "about": {
       "title": "소개",
-      "description": "Software Engineer 김진건의 연락처와 GitHub입니다."
+      "description": "소프트웨어 엔지니어 김진건의 이메일과 GitHub입니다."
     }
   },
   "posts": {

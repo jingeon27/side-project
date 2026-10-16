@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getArticles } from '@/entities/article/lib/get-articles';
 import { isLocale } from '@/i18n/routing';
+import { labels } from '@/shared/config/labels';
 
 export async function GET(_request: Request, context: { params: Promise<{ locale: string; id: string }> }) {
   const { locale, id } = await context.params;
@@ -13,17 +14,17 @@ export async function GET(_request: Request, context: { params: Promise<{ locale
       style={{
         width: '100%',
         height: '100%',
-        background: '#f5f4ef',
-        color: '#282724',
+        background: '#ffffff',
+        color: '#18181b',
         display: 'flex',
         flexDirection: 'column',
         padding: '74px',
         justifyContent: 'space-between',
       }}
     >
-      <div style={{ fontSize: 24, letterSpacing: '4px' }}>JINGEON / ENGINEERING NOTES</div>
+      <div style={{ fontSize: 28 }}>{labels(locale).home.title}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-        <div style={{ fontSize: 22, color: '#737747', textTransform: 'uppercase' }}>{article.category}</div>
+        <div style={{ fontSize: 24, color: '#52525b' }}>{labels(locale).categories[article.category]}</div>
         <div
           style={{
             display: 'flex',
@@ -35,12 +36,7 @@ export async function GET(_request: Request, context: { params: Promise<{ locale
           {article.title}
         </div>
       </div>
-      <div style={{ display: 'flex', fontSize: 22, justifyContent: 'space-between', color: '#706e64' }}>
-        <span>Software Engineer</span>
-        <span>
-          {locale.toUpperCase()} · {article.publishedAt.slice(0, 10)}
-        </span>
-      </div>
+      <div style={{ fontSize: 24, color: '#52525b' }}>{article.publishedAt.slice(0, 10)}</div>
     </div>,
     { width: 1200, height: 630, headers: { 'Cache-Control': 'public, max-age=86400' } },
   );

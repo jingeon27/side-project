@@ -5,11 +5,12 @@
     "about": "소개",
     "skip": "본문으로 건너뛰기",
     "theme": "화면 테마 바꾸기",
-    "language": "언어 변경"
+    "language": "언어 변경",
+    "siteTitle": "김진건"
   },
   "common": {
     "all": "전체",
-    "articles": "개의 기록",
+    "articles": "개의 글",
     "readMore": "글 읽기",
     "allArticles": "전체 글 보기",
     "backToBlog": "글 목록으로",
@@ -17,40 +18,33 @@
     "published": "발행",
     "updated": "수정",
     "search": "제목으로 검색",
-    "searchPlaceholder": "어떤 이야기를 찾고 있나요?",
+    "searchPlaceholder": "글 제목 검색",
     "clear": "검색 지우기",
     "category": "카테고리",
     "tags": "태그",
     "clearFilters": "필터 초기화",
     "noResults": "조건에 맞는 글이 없습니다.",
     "noResultsDescription": "다른 검색어나 카테고리를 선택해 보세요.",
-    "empty": "아직 이 언어로 작성한 글이 없습니다.",
-    "emptyDescription": "글은 각 언어로 독립적으로 작성합니다. 한국어 기록을 먼저 둘러보세요.",
+    "empty": "아직 글이 없습니다.",
+    "emptyDescription": "다른 카테고리의 글을 확인해 보세요.",
     "koreanArticles": "한국어 글 보기",
-    "translationMissing": "이 글의 번역본을 아직 준비하지 않았습니다.",
-    "translationList": "선택한 언어의 글 목록 보기",
+    "translationMissing": "아직 번역하지 않은 글입니다.",
+    "translationList": "해당 언어의 글 목록 보기",
     "close": "닫기",
     "rss": "RSS 구독",
     "email": "이메일",
     "github": "GitHub"
   },
   "home": {
-    "eyebrow": "JINGEON · ENGINEERING JOURNAL",
-    "title": "문제를 풀고,\n기준을 남깁니다.",
-    "description": "소프트웨어를 만들며 마주한 문제와 선택의 이유. 개발 경험과 배움, 그리고 조금의 생각을 기록합니다.",
-    "role": "Software Engineer",
-    "latest": "최근 기록",
-    "latestDescription": "직접 경험하고, 확인하고, 배운 이야기들.",
-    "explore": "주제별로 읽기",
-    "index": "기록 보관소",
-    "about": "블로그 소개"
+    "title": "김진건의 블로그",
+    "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다.",
+    "latest": "최근 글",
+    "explore": "카테고리"
   },
   "blog": {
-    "eyebrow": "THE ARCHIVE",
-    "title": "쌓아가는 기록",
-    "description": "문제 해결 과정부터 짧은 배움까지, 소프트웨어를 만드는 이야기를 모았습니다.",
-    "categoryDescription": "주제에 관한 경험과 배움을 모았습니다.",
-    "tagDescription": "이 태그가 붙은 기록입니다.",
+    "title": "글 목록",
+    "categoryDescription": "이 카테고리의 글입니다.",
+    "tagDescription": "이 태그가 붙은 글입니다.",
     "results": "개의 글",
     "filterLabel": "글 필터"
   },
@@ -61,10 +55,10 @@
     "misc": "기타"
   },
   "categoryDescriptions": {
-    "engineering": "문제를 발견하고 해결한 과정",
-    "til": "오늘 새롭게 알게 된 것",
+    "engineering": "개발하면서 해결한 문제",
+    "til": "공부한 내용",
     "perspectives": "개발과 일에 대한 생각",
-    "misc": "그 밖에 남기고 싶은 기록"
+    "misc": "그 밖의 글"
   },
   "article": {
     "contents": "이 글의 목차",
@@ -74,29 +68,18 @@
     "shareFailed": "링크를 복사하지 못했습니다.",
     "copyCode": "코드 복사",
     "source": "티스토리 원문",
-    "related": "함께 읽기",
+    "related": "관련 글",
     "previous": "이전 글",
-    "next": "다음 글",
-    "writtenBy": "Written by",
-    "end": "읽어주셔서 감사합니다.",
-    "endDescription": "경험이 다음 문제를 푸는 데 작은 실마리가 되길 바랍니다."
+    "next": "다음 글"
   },
   "about": {
-    "eyebrow": "ABOUT THIS JOURNAL",
-    "title": "안녕하세요,\n소프트웨어 엔지니어입니다.",
-    "description": "직접 부딪힌 문제를 이해하고, 더 나은 선택의 기준을 만들어 갑니다. 이곳에는 그 과정에서 배운 것과 생각한 것을 기록합니다.",
-    "note": "완성된 답보다 구체적인 맥락을, 결과만큼 선택한 이유를 남기려 합니다.",
-    "contact": "이야기를 나눠요",
-    "contactDescription": "글에 관한 의견이나 함께 나누고 싶은 이야기가 있다면 편하게 연락해 주세요."
-  },
-  "footer": {
-    "description": "경험을 기록하고, 다음 선택의 기준으로.",
-    "copyright": "Software Engineer. Built with care.",
-    "top": "맨 위로"
+    "title": "김진건",
+    "description": "소프트웨어 엔지니어입니다. 개발하면서 겪은 문제와 배운 내용을 이 블로그에 정리합니다.",
+    "contact": "연락처"
   },
   "notFound": {
     "title": "페이지를 찾을 수 없습니다.",
-    "description": "주소가 바뀌었거나 아직 작성하지 않은 페이지입니다.",
+    "description": "주소를 확인해 주세요.",
     "home": "홈으로 돌아가기"
   },
   "analytics": {

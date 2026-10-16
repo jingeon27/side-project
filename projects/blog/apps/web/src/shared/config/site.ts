@@ -15,7 +15,7 @@ export function resolveSiteUrl(value: string | undefined): URL {
 // Production deployment must set SITE_URL explicitly; see docs/deployment.md.
 export const siteUrl = resolveSiteUrl(process.env.SITE_URL);
 export const author = {
-  name: 'Software Engineer',
+  name: '김진건',
   email: 'jingeon27@gmail.com',
   github: 'https://github.com/jingeon27',
 } as const;

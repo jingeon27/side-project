@@ -7,11 +7,11 @@ export default async function NotFound() {
   const t = labels(locale);
   return (
     <main id="main-content" className="page-container" style={{ paddingBlock: '6rem' }}>
-      <p className="eyebrow">404</p>
+      <p className="error-code">404</p>
       <h1>{t.notFound.title}</h1>
       <p>{t.notFound.description}</p>
       <Link href={`/${locale}`} className="text-link">
-        {t.notFound.home} →
+        {t.notFound.home}
       </Link>
     </main>
   );

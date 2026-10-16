@@ -29,9 +29,6 @@ export function ArticleSearch({
           ×
         </button>
       )}
-      <span className="search-hint" aria-hidden="true">
-        Aa
-      </span>
     </div>
   );
 }

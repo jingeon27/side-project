@@ -79,7 +79,7 @@ test('an unavailable translation has an explicit notice and target language list
   await page.goto(`/ko/blog/${encodeURIComponent(untranslated!.slug)}`);
   await page.getByRole('button', { name: /언어 변경/ }).click();
   await expect(page.getByRole('status')).toContainText(ko.common.translationMissing);
-  await page.getByRole('link', { name: `${ko.common.translationList} →` }).click();
+  await page.getByRole('link', { name: ko.common.translationList }).click();
   await expect(page).toHaveURL(/\/en\/blog$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   if (!index.some((entry) => entry.locale === 'en'))

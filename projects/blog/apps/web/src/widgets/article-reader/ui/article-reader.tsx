@@ -6,7 +6,6 @@ import { ArticleTags } from '@/entities/article/ui/article-tags';
 import { ArticleCard } from '@/entities/article/ui/article-card';
 import { ArticleShare } from '@/features/article-share/ui/article-share';
 import { labels } from '@/shared/config/labels';
-import { ExternalIcon } from '@/shared/ui/icon';
 import { TableOfContents } from './table-of-contents';
 
 export function ArticleReader({
@@ -35,7 +34,7 @@ export function ArticleReader({
         <div className="article-primary">
           <header className="article-heading">
             <Link className="back-link" href={`/${article.locale}/blog`}>
-              ← {t.common.backToBlog}
+              {t.common.backToBlog}
             </Link>
             <Link className="category-label" href={`/${article.locale}/blog/category/${article.category}`}>
               {t.categories[article.category]}
@@ -52,31 +51,13 @@ export function ArticleReader({
             <TableOfContents entries={article.toc} locale={article.locale} />
           </div>
           <article className="article-prose">{children}</article>
-          <div className="article-end">
-            <span className="end-mark" aria-hidden="true">
-              ∎
-            </span>
-            <p>{t.article.end}</p>
-            <span>{t.article.endDescription}</span>
-            {article.sourceUrl && (
+          {article.sourceUrl && (
+            <p className="article-source">
               <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="source-link">
                 {t.article.source}
-                <ExternalIcon />
               </a>
-            )}
-          </div>
-          <div className="author-note">
-            <span className="author-avatar" aria-hidden="true">
-              j.
-            </span>
-            <div>
-              <span className="author-caption">{t.article.writtenBy}</span>
-              <Link href={`/${article.locale}/about`}>
-                Software Engineer <span>↗</span>
-              </Link>
-            </div>
-            <ArticleShare locale={article.locale} contentId={article.id} title={article.title} />
-          </div>
+            </p>
+          )}
           {(previous || next) && (
             <nav
               className="article-pagination"
@@ -84,7 +65,7 @@ export function ArticleReader({
             >
               {previous ? (
                 <Link href={`/${article.locale}/blog/${previous.slug}`}>
-                  <span>← {t.article.previous}</span>
+                  <span>{t.article.previous}</span>
                   <strong>{previous.title}</strong>
                 </Link>
               ) : (
@@ -92,7 +73,7 @@ export function ArticleReader({
               )}
               {next ? (
                 <Link href={`/${article.locale}/blog/${next.slug}`}>
-                  <span>{t.article.next} →</span>
+                  <span>{t.article.next}</span>
                   <strong>{next.title}</strong>
                 </Link>
               ) : (
@@ -102,7 +83,6 @@ export function ArticleReader({
           )}
           {related.length > 0 && (
             <section className="related-section">
-              <p className="eyebrow">MORE TO EXPLORE</p>
               <h2>{t.article.related}</h2>
               <div className="article-list">
                 {related.map((candidate) => (

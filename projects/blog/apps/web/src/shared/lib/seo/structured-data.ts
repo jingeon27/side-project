@@ -1,5 +1,6 @@
 import type { Locale } from '@/i18n/routing';
 import { absoluteUrl, author } from '@/shared/config/site';
+import { labels } from '@/shared/config/labels';
 import { articlePath, type ArticleSeo } from './metadata';
 
 export function websiteJsonLd(locale: Locale) {
@@ -9,7 +10,7 @@ export function websiteJsonLd(locale: Locale) {
       {
         '@type': 'WebSite',
         '@id': absoluteUrl('/#website'),
-        name: 'Engineering Blog',
+        name: labels(locale).home.title,
         url: absoluteUrl(`/${locale}`),
         inLanguage: locale,
         author: { '@id': absoluteUrl('/#author') },

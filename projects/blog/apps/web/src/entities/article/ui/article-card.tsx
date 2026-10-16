@@ -1,18 +1,12 @@
 import Link from 'next/link';
 import type { Article } from '../model/types';
 import { labels } from '@/shared/config/labels';
-import { ArrowIcon } from '@/shared/ui/icon';
 import { ArticleMeta } from './article-meta';
 
-export function ArticleCard({ article, index }: { article: Article; index?: number }) {
+export function ArticleCard({ article }: { article: Article }) {
   const t = labels(article.locale);
   return (
     <article className="article-row">
-      {index !== undefined && (
-        <span className="article-index" aria-hidden="true">
-          {String(index + 1).padStart(2, '0')}
-        </span>
-      )}
       <div className="article-row-content">
         <div className="article-row-top">
           <Link
@@ -27,7 +21,6 @@ export function ArticleCard({ article, index }: { article: Article; index?: numb
         <h3>
           <Link prefetch={false} href={`/${article.locale}/blog/${article.slug}`}>
             {article.title}
-            <ArrowIcon className="article-row-arrow" />
           </Link>
         </h3>
         <p>{article.description}</p>

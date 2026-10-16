@@ -61,7 +61,6 @@ export function LocaleSwitch({
         aria-expanded={notice}
       >
         {next.toUpperCase()}
-        <span aria-hidden="true">↗</span>
       </button>
       {notice && (
         <div className="locale-notice" role="status">
@@ -73,7 +72,7 @@ export function LocaleSwitch({
               setNotice(false);
             }}
           >
-            {t.common.translationList} →
+            {t.common.translationList}
           </Link>
           <button
             type="button"

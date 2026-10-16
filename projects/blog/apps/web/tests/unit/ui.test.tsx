@@ -52,7 +52,7 @@ beforeEach(() => {
 
 describe('article discovery', () => {
   it('shows linked article metadata, category, and tags', () => {
-    render(<ArticleCard article={article} index={0} />);
+    render(<ArticleCard article={article} />);
     expect(screen.getByRole('link', { name: article.title })).toHaveAttribute('href', '/ko/blog/캐시-설계');
     expect(screen.getByRole('link', { name: '개발 경험' })).toHaveAttribute(
       'href',
@@ -91,7 +91,7 @@ describe('language and theme preferences', () => {
     await userEvent.click(screen.getByRole('button', { name: /언어 변경/ }));
     expect(screen.getByRole('status')).toHaveTextContent(labels('ko').common.translationMissing);
     expect(navigation.push).not.toHaveBeenCalled();
-    expect(screen.getByRole('link', { name: `${labels('ko').common.translationList} →` })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: labels('ko').common.translationList })).toHaveAttribute(
       'href',
       '/en/blog',
     );
