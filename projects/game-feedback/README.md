@@ -46,8 +46,8 @@ corepack yarn workspace @side/game-feedback db:stop
 | 명령 뒤의 작업                                                                   | 실행 내용                                                               |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Web 타입 검사 위임                                         |
-| `corepack yarn workspace @side/game-feedback test`                               | API 소유 DB URL 가드·단위·PostgreSQL 통합 테스트                        |
+| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Web 타입 및 Web FSD·코드 규칙 lint 검사 위임               |
+| `corepack yarn workspace @side/game-feedback test`                               | API DB 가드·통합 테스트 및 Web 캐시 경계 단위 테스트                    |
 | `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 소유 브라우저 테스트                              |
 | `corepack yarn workspace @side/game-feedback build`                              | Game Feedback API/Web production build                                  |
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                 |
