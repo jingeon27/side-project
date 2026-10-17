@@ -18,7 +18,7 @@ function CreateGroupBottomSheet({
       isOpen={isOpen}
       onClose={onClose}
       unmount={unmount}
-      snapPoints={resizable ? [0.65, 1] : undefined}
+      snapPoints={resizable ? [0.75, 1] : undefined}
     >
       <BottomSheet.Header title="그룹 만들기" description="친구들과 함께할 그룹 이름을 정해요." />
       <BottomSheet.Content>

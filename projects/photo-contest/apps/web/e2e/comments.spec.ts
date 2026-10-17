@@ -86,18 +86,25 @@ test(
       await expect
         .poll(async () => {
           const box = await sheet.boundingBox();
-          return box ? Math.abs((viewport.height - box.y) / viewport.height - 0.65) : 1;
+          return box ? Math.abs((viewport.height - box.y) / viewport.height - 0.75) : 1;
         })
         .toBeLessThan(0.015);
       await expect(sheet.getByRole('textbox', { name: '댓글', exact: true })).toBeInViewport();
       await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
     };
     await expectCompact();
+    const backdrop = page.locator('[data-bottom-sheet-backdrop]');
+    const opacity = () => backdrop.evaluate((element) => Number(getComputedStyle(element).opacity));
+    await expect.poll(opacity).toBeGreaterThan(0);
+    const compactOpacity = await opacity();
+    expect(compactOpacity).toBeLessThan(0.5);
     await mkdir('.data/screens', { recursive: true });
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-peek.png` });
     await dragComments(page, browserName, isMobile, -viewport.height * 0.3);
     await expect(sheet.getByRole('button', { name: '시트 축소' })).toHaveAttribute('aria-expanded', 'true');
     await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
+    await expect.poll(opacity).toBeGreaterThan(compactOpacity);
+    expect(await opacity()).toBeLessThan(1);
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-expanded.png` });
     await dragComments(page, browserName, isMobile, viewport.height * 0.3);
     await expectCompact();

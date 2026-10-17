@@ -50,7 +50,15 @@ function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBo
     >
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal container={getOverlayContainer()}>
-          <Drawer.Backdrop className="fixed inset-0 z-sheet bg-scrim opacity-[calc(1-var(--drawer-swipe-progress))] transition-opacity duration-[450ms] ease-sheet data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:duration-0" />
+          <Drawer.Backdrop
+            data-bottom-sheet-backdrop
+            className={cn(
+              'fixed inset-0 z-sheet bg-scrim transition-opacity duration-[450ms] ease-sheet data-ending-style:opacity-0 data-starting-style:opacity-0 data-swiping:duration-0',
+              resizable
+                ? 'opacity-[calc(0.3+0.4*(1-var(--drawer-swipe-progress)))]'
+                : 'opacity-[calc(1-var(--drawer-swipe-progress))]',
+            )}
+          />
           <Drawer.Viewport className="fixed inset-0 z-sheet flex items-end pb-[var(--drawer-keyboard-inset,0px)]">
             <Drawer.Popup
               className={cn(

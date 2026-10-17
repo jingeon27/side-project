@@ -13,7 +13,7 @@ import { PostCommentList } from './PostCommentList';
 import { PostCommentsHeader } from './PostCommentsHeader';
 
 const PAGE_SIZE = 24;
-const SNAP_POINTS = [0.65, 1];
+const SNAP_POINTS = [0.75, 1];
 
 export function PostCommentsBottomSheet({
   postId,
