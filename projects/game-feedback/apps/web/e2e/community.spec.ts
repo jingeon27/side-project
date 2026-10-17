@@ -42,11 +42,11 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(
       page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '피드', exact: true }),
     ).toHaveClass('active');
-    expect((await page.request.get(`/api/posts?q=${encodeURIComponent(title)}`)).ok()).toBeTruthy();
-    expect(
-      (await (await page.request.get(`/api/posts?q=${encodeURIComponent(title)}`)).json()).items,
-    ).toHaveLength(0);
     const url = page.url();
+    await page.goto(`/ko/boards/feedback?q=${encodeURIComponent(title)}`);
+    await expect(page.getByText('아직 게시글이 없어요. 첫 글을 남겨보세요.', { exact: true })).toBeVisible();
+    await expect(page.locator('.board-post-list .post-card')).toHaveCount(0);
+    await page.goto(url);
     await page.reload();
     await expect(page.locator('.prose-body strong')).toContainText(body);
     await expect(page.locator('.deck, .deck-card')).toHaveCount(0);
@@ -142,13 +142,14 @@ test('board tabs and Quill controls fit a small mobile viewport', async ({ page 
   await expect(page.getByRole('navigation', { name: 'モバイルメニュー' })).toBeVisible();
   await page.locator('.board-heading button').click();
   await expect(page.locator('.ql-editor')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: '分類', exact: true })).toHaveValue('FRIENDLY');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   const dialog = await page.getByRole('dialog').boundingBox();
   expect((dialog?.x ?? 0) + (dialog?.width ?? 0)).toBeLessThanOrEqual(321);
   await expect(page.locator('.deck')).toHaveCount(0);
 });
 
-test('mobile friend sale price survives reload and negotiable terms stay separate from other boards', async ({
+test('mobile composition can switch categories from a board and persist friend sale prices', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 844 });
@@ -156,27 +157,31 @@ test('mobile friend sale price survives reload and negotiable terms stay separat
     headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
   });
-  await page.goto('/en');
+  await page.goto('/en/boards/friendly');
   await page.getByRole('button', { name: 'Write a post', exact: true }).click();
   const editor = page.getByRole('dialog', { name: 'Write a post', exact: true });
-  await editor.getByLabel('Boards', { exact: true }).selectOption('FRIEND_SALE');
+  const category = editor.getByRole('combobox', { name: 'Category', exact: true });
+  await expect(category).toHaveValue('FRIENDLY');
+  const body = 'Please contact me in chat to agree on the price and duration of this friend slot.';
+  await editor.getByRole('textbox', { name: 'Content', exact: true }).fill(body);
+  await category.selectOption('FRIEND_SALE');
   const price = editor.getByLabel('Sale price (KRW)', { exact: true });
   await expect(price).toHaveAttribute('inputmode', 'numeric');
   await price.fill('0');
   // An inactive board's invalid fee must not block the new board's valid form.
-  await editor.getByLabel('Boards', { exact: true }).selectOption('FREE');
+  await editor.getByLabel('Category', { exact: true }).selectOption('FREE');
   await expect(price).toHaveCount(0);
-  await editor.getByLabel('Boards', { exact: true }).selectOption('FRIEND_SALE');
+  await editor.getByLabel('Category', { exact: true }).selectOption('FRIEND_SALE');
   await expect(price).toHaveValue('');
   const title = `Mobile friend slot sale ${Date.now().toString(36)}`;
   await editor.getByLabel('Title', { exact: true }).fill(title);
-  await editor
-    .getByRole('textbox', { name: 'Content', exact: true })
-    .fill('Please contact me in chat to agree on the price and duration of this friend slot.');
+  await expect(editor.getByRole('textbox', { name: 'Content', exact: true })).toContainText(body);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await editor.getByRole('button', { name: 'Publish post', exact: true }).click();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   await expect(page.locator('.friend-sale-summary')).toContainText('Price negotiable');
+  await expect(page).toHaveURL(/board=friend-sale$/);
+  await expect(page.locator('.back-link')).toHaveAttribute('href', '/en/boards/friend-sale');
   await page.reload();
   await expect(page.locator('.friend-sale-summary')).toContainText('Price negotiable');
   await page.locator('.detail-card').getByRole('button', { name: 'Edit', exact: true }).click();

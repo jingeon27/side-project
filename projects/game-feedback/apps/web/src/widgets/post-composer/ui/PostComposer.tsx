@@ -48,15 +48,9 @@ export function PostComposer({ open, onOpenChange, locale, post, board, category
       open={open}
       onOpenChange={onOpenChange}
       title={
-        post
-          ? t(post.board && post.board !== 'FEEDBACK' ? '게시글 수정' : '피드백 요청 수정')
-          : t(board === 'COACHING' ? '코칭 등록' : '글쓰기')
+        post ? t(post.board && post.board !== 'FEEDBACK' ? '게시글 수정' : '피드백 요청 수정') : t('글쓰기')
       }
-      description={t(
-        activeBoard === 'FEEDBACK'
-          ? '구체적인 고민을 알려주면 더 좋은 피드백을 받을 수 있어요.'
-          : '게시판에 맞는 글을 작성하고 플레이어와 이야기해보세요.',
-      )}
+      description={t('분류에 맞는 글을 작성하고 플레이어와 이야기해보세요.')}
     >
       {isLoading ? (
         <LoadingState text={t('작성할 프로필을 준비하고 있어요')} />
@@ -69,7 +63,7 @@ export function PostComposer({ open, onOpenChange, locale, post, board, category
           locale={locale}
           post={post}
           board={activeBoard ?? 'FEEDBACK'}
-          allowBoardSelection={!post && !board}
+          allowBoardSelection={!post}
           initialCategoryId={categoryId}
           onOpenChange={onOpenChange}
         />
@@ -176,7 +170,7 @@ function PostComposerForm({
             appRoutes.post(
               locale,
               result.id,
-              allowBoardSelection ? undefined : result.board,
+              initialCategoryId ? result.board : undefined,
               result.category.slug,
             ),
           );
@@ -185,7 +179,7 @@ function PostComposerForm({
         }
       })}
     >
-      <Field label={t('게시판')}>
+      <Field label={t('분류')}>
         {allowBoardSelection ? (
           <select
             className="ds-select"

@@ -13,9 +13,9 @@ test('the feed combines general posts and paid coaching and connects a student t
   await expect(page.getByRole('heading', { name: '피드', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('dialog');
-  await editor.getByLabel('게시판', { exact: true }).selectOption('COACHING');
+  await editor.getByLabel('분류', { exact: true }).selectOption('COACHING');
   await editor.getByLabel('시간당 수강료 (원)', { exact: true }).fill('0');
-  await editor.getByLabel('게시판', { exact: true }).selectOption('FREE');
+  await editor.getByLabel('분류', { exact: true }).selectOption('FREE');
   const generalTitle = `자유롭게 나누는 게임 이야기 ${suffix}`;
   await editor.getByLabel('제목', { exact: true }).fill(generalTitle);
   await editor
@@ -25,7 +25,7 @@ test('the feed combines general posts and paid coaching and connects a student t
   await expect(page.getByRole('heading', { name: generalTitle })).toBeVisible();
   await page.goto('/ko');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  await editor.getByLabel('게시판', { exact: true }).selectOption('COACHING');
+  await editor.getByLabel('분류', { exact: true }).selectOption('COACHING');
   await editor.getByLabel('모집 유형').selectOption('COACH');
   await editor.getByLabel('시간당 수강료 (원)', { exact: true }).fill('35000');
   const coachingTitle = `수비 타이밍 유료 레슨 ${suffix}`;
@@ -95,6 +95,12 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
   const editor = page.getByRole('dialog');
   await expect(editor.getByRole('textbox', { name: '선택한 게임', exact: true })).toHaveValue(gameName);
+  const classification = editor.getByRole('combobox', { name: '분류', exact: true });
+  await expect(classification).toHaveValue('COACHING');
+  await classification.selectOption('FRIEND_SALE');
+  await editor.getByLabel('판매 금액 (원)', { exact: true }).fill('12000');
+  await classification.selectOption('COACHING');
+  await expect(editor.getByLabel('판매 금액 (원)', { exact: true })).toHaveCount(0);
   await expect(editor.getByText('내 게임 프로필', { exact: true })).toHaveCount(0);
   await editor.getByLabel('모집 유형').selectOption('STUDENT');
   const title = `운영을 가르쳐줄 코치 구해요 ${suffix}`;

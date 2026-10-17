@@ -80,10 +80,11 @@ const messages: Record<string, readonly [string, string]> = {
     'Write about games or anything you want to share.',
     'ゲームの話題や共有したいことを自由に記入してください。',
   ],
-  '게시판에 맞는 글을 작성하고 플레이어와 이야기해보세요.': [
-    'Choose a board, write a post and talk with other players.',
-    '掲示板に合った投稿を書いて、プレイヤーと話しましょう。',
+  '분류에 맞는 글을 작성하고 플레이어와 이야기해보세요.': [
+    'Choose a category, write a post and talk with other players.',
+    '分類に合った投稿を書いて、プレイヤーと話しましょう。',
   ],
+  분류: ['Category', '分類'],
   '{game} 게시판': ['{game} boards', '{game}の掲示板'],
   게시판: ['Boards', '掲示板'],
   '클래시 로얄 게시판': ['Clash Royale boards', 'クラッシュロワイヤルの掲示板'],
