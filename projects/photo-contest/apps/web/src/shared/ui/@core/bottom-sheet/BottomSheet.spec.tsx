@@ -7,9 +7,19 @@ import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { hasOpenOverlay } from '../../../model/router';
 import { BottomSheet } from './BottomSheet';
 
-function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IOverlayControlProps) {
+function CreateGroupBottomSheet({
+  isOpen,
+  onClose,
+  unmount,
+  resizable,
+}: IOverlayControlProps & { resizable?: boolean }) {
   return (
-    <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
+    <BottomSheet.Root
+      isOpen={isOpen}
+      onClose={onClose}
+      unmount={unmount}
+      snapPoints={resizable ? [0.65, 1] : undefined}
+    >
       <BottomSheet.Header title="그룹 만들기" description="친구들과 함께할 그룹 이름을 정해요." />
       <BottomSheet.Content>
         <label htmlFor="group-name">그룹 이름</label>
@@ -24,13 +34,13 @@ function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IOverlayControlPro
   );
 }
 
-function Opener() {
+function Opener({ resizable }: { resizable?: boolean }) {
   return (
     <button
       type="button"
       onClick={() =>
         overlay.open(({ isOpen, close, unmount }) => (
-          <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
+          <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} resizable={resizable} />
         ))
       }
     >
@@ -59,6 +69,34 @@ afterEach(() => {
 });
 
 describe('BottomSheet', () => {
+  it('키보드로 시트를 확장·축소하고 다시 열면 기본 크기로 돌아와야 한다', async () => {
+    const user = userEvent.setup();
+    render(
+      <OverlayProvider>
+        <Opener resizable />
+      </OverlayProvider>,
+    );
+    const opener = screen.getByRole('button', { name: '그룹 만들기 열기' });
+    await user.click(opener);
+    const expand = await screen.findByRole('button', { name: '시트 전체 화면으로 확장' });
+    expand.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('button', { name: '시트 축소' })).toHaveAttribute('aria-expanded', 'true');
+    await user.keyboard(' ');
+    expect(screen.getByRole('button', { name: '시트 전체 화면으로 확장' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('button', { name: '닫기' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await user.click(opener);
+    expect(await screen.findByRole('button', { name: '시트 전체 화면으로 확장' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
   it('제목을 이름으로 가진 대화상자로 열리고 본문과 하단 버튼을 보여 줘야 한다', async () => {
     const { sheet, user } = await openSheet();
     expect(sheet).toHaveAccessibleDescription('친구들과 함께할 그룹 이름을 정해요.');

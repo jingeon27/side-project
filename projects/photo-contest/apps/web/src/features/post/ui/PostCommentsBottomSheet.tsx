@@ -13,6 +13,7 @@ import { PostCommentList } from './PostCommentList';
 import { PostCommentsHeader } from './PostCommentsHeader';
 
 const PAGE_SIZE = 24;
+const SNAP_POINTS = [0.65, 1];
 
 export function PostCommentsBottomSheet({
   postId,
@@ -24,7 +25,7 @@ export function PostCommentsBottomSheet({
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <BottomSheet.Root {...controls} className="h-dvh">
+    <BottomSheet.Root {...controls} snapPoints={SNAP_POINTS} className="h-dvh">
       <PostCommentsHeader postId={postId} />
       <div className="flex min-h-0 flex-1 desktop:mx-auto desktop:grid desktop:w-full desktop:max-w-6xl desktop:grid-cols-2">
         <PostCommentContext postId={postId} />

@@ -1,14 +1,65 @@
 import { mkdir } from 'node:fs/promises';
 import { createTestUser } from '@photo-contest/test-kit';
+import type { Page } from '@playwright/test';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest, seedPost } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
+async function dragComments(page: Page, browserName: string, isMobile: boolean, distance: number) {
+  const heading = page.getByRole('heading', { name: '댓글', exact: true });
+  const box = await heading.boundingBox();
+  if (!box) throw new Error('댓글 헤더가 보여야 한다');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  if (!isMobile) {
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + distance, { steps: 12 });
+    await page.mouse.up();
+    return;
+  }
+  if (browserName === 'chromium') {
+    const session = await page.context().newCDPSession(page);
+    try {
+      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      for (let step = 1; step <= 10; step++)
+        await session.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x, y: y + (distance * step) / 10 }],
+        });
+      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    } finally {
+      await session.detach();
+    }
+    return;
+  }
+  const touch = (clientY: number) => ({
+    identifier: 1,
+    clientX: x,
+    clientY,
+    screenX: x,
+    screenY: clientY,
+    radiusX: 1,
+    radiusY: 1,
+    rotationAngle: 0,
+    force: 1,
+  });
+  for (const [type, touches, changedTouches] of [
+    ['touchstart', [touch(y)], [touch(y)]],
+    ...Array.from({ length: 10 }, (_, index) => {
+      const point = touch(y + (distance * (index + 1)) / 10);
+      return ['touchmove', [point], [point]] as const;
+    }),
+    ['touchend', [], [touch(y + distance)]],
+  ] as const)
+    await heading.dispatchEvent(type, { touches, targetTouches: touches, changedTouches });
+}
+
 test(
   '댓글을 작성하고 작성자·관리자가 삭제하면 피드의 개수도 바뀌어야 한다',
   { tag: ['@ios', '@desktop'] },
-  async ({ page, signIn }, testInfo) => {
+  async ({ page, signIn, browserName, isMobile }, testInfo) => {
     const owner = await signIn('댓글 관리자');
     const member = await createTestUser(API_URL, { nickname: '댓글 친구', origin: WEB_ORIGIN });
     const group = await seedGroup(owner, '댓글 그룹');
@@ -29,12 +80,35 @@ test(
     const sheet = page.getByRole('dialog', { name: '댓글', exact: true });
     const list = sheet.getByRole('list', { name: '게시물 댓글' });
     await expect(list.getByText('친구가 남긴 웃음')).toBeVisible();
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('화면 크기가 있어야 한다');
+    const expectCompact = async () => {
+      await expect
+        .poll(async () => {
+          const box = await sheet.boundingBox();
+          return box ? Math.abs((viewport.height - box.y) / viewport.height - 0.65) : 1;
+        })
+        .toBeLessThan(0.015);
+      await expect(sheet.getByRole('textbox', { name: '댓글', exact: true })).toBeInViewport();
+      await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
+    };
+    await expectCompact();
+    await mkdir('.data/screens', { recursive: true });
+    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-peek.png` });
+    await dragComments(page, browserName, isMobile, -viewport.height * 0.3);
+    await expect(sheet.getByRole('button', { name: '시트 축소' })).toHaveAttribute('aria-expanded', 'true');
+    await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
+    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-expanded.png` });
+    await dragComments(page, browserName, isMobile, viewport.height * 0.3);
+    await expectCompact();
+    await sheet.getByRole('button', { name: '시트 전체 화면으로 확장' }).click();
+    await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
+    await sheet.getByRole('button', { name: '시트 축소' }).click();
+    await expectCompact();
     await sheet.getByRole('button', { name: '댓글 올리기' }).click();
     await expect(sheet.getByText('댓글을 입력해 주세요.')).toBeVisible();
     const input = sheet.getByRole('textbox', { name: '댓글', exact: true });
     await expect(input).toBeFocused();
-    const viewport = page.viewportSize();
-    if (!viewport) throw new Error('화면 크기가 있어야 한다');
     await page.setViewportSize({ width: viewport.width, height: 500 });
     await input.fill('한참 웃었어요\n이 순간은 저장!');
     await expect(input).toBeInViewport();
