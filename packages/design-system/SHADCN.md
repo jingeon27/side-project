@@ -29,3 +29,5 @@ Toaster는 같은 registry의 Sonner 조합을 named function으로 제공한다
 공통 색상은 html의 data-theme 속성이 있는 앱에서만 system/light/dark를 적용한다. light-dark와 color-scheme으로 기기 설정 변화를 즉시 반영하며, 쿠키/사용자 설정은 앱이 소유한다. data-theme이 없는 기존 소비 앱의 기본 테마는 유지한다.
 
 DropdownMenu는 공식 base-nova의 Base UI Menu Root/Trigger/Portal/Positioner/Popup/Item을 필요한 범위로 제공한다. 키보드 이동과 Escape, 외부 클릭, 포커스 복귀를 Base UI에 위임하고 공통 popover 레이어와 44px 조작 영역을 사용한다. Game Feedback 채팅의 신고·대화내역 삭제·차단은 앱이 소유한다.
+
+Dialog와 DialogContent는 선택적인 placement="bottom"으로 입력용 BottomSheet를 구성한다. 기본 center 배치는 유지한다. 같은 Base UI의 포커스 격리·닫기·중첩 처리를 재사용하고, 공통 토큰과 visual viewport 높이·하단 안전 영역으로 키보드가 열린 화면의 스크롤을 처리한다. Game Feedback의 shared/BottomSheet가 번역을 연결하고 입력용 팝업에 적용하며, 버튼만 있는 확인창은 중앙 Dialog를 사용한다.

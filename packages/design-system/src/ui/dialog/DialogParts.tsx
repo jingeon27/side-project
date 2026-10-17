@@ -34,6 +34,7 @@ type TDialogContentProps = TStyledProps<DialogPrimitive.Popup.Props> & {
   container?: ComponentProps<typeof DialogPortal>['container'];
   showCloseButton?: boolean;
   closeLabel?: string;
+  placement?: 'center' | 'bottom';
 };
 export function DialogContent({
   className,
@@ -41,16 +42,19 @@ export function DialogContent({
   container,
   showCloseButton = true,
   closeLabel = 'Close',
+  placement = 'center',
   ...props
 }: TDialogContentProps) {
   return (
     <DialogPortal container={container}>
       <DialogOverlay />
-      <DialogPrimitive.Viewport className={dialogStyles.viewport}>
+      <DialogPrimitive.Viewport
+        className={placement === 'bottom' ? dialogStyles.sheetViewport : dialogStyles.viewport}
+      >
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
-            dialogStyles.popup,
+            placement === 'bottom' ? dialogStyles.sheetPopup : dialogStyles.popup,
             'border border-border bg-popover text-popover-foreground',
             className,
           )}
