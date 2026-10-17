@@ -1,0 +1,151 @@
+I felt this was a good time to try building several services in parallel. Working with AI tools made me think I could handle areas beyond frontend development, including backend development, databases, and design, to the level each service needed.
+
+I began exploring ideas that interested me and decided to plan and work toward launching several services together. That led to [a photo-sharing service](https://github.com/jingeon27/side-project/tree/develop/projects/photo-contest), [a game feedback service](https://github.com/jingeon27/side-project/tree/f0e64fcc40baf01ca50cc2add07416cf5203e5f9/projects/game-feedback), and [my personal blog](https://github.com/jingeon27/side-project/tree/develop/projects/blog).
+
+I wanted to reduce the work of setting up a development environment each time I started another project. I organized the services separately in the [side-project repository](https://github.com/jingeon27/side-project) and first shared TypeScript configuration. Coding rules and a design system followed as I worked out what to share and what belonged within each service.
+
+## The first service was a private photo contest
+
+I started building `photo-contest` around groups where friends could join by invitation, upload photos, and vote. Submission and voting had separate periods, and results handled ties and contests without votes.
+
+I wanted each app to manage its tests within the shared repository. I put Vitest and Playwright configurations inside the apps so each could run the tests it needed independently.
+
+The root owned Yarn workspaces, common configuration, and delegation to project commands. Services belonged under `projects/<name>`, and shared configuration went into `packages`. The first shared package held TypeScript configuration.
+
+```text
+projects/
+  photo-contest/
+    apps/
+      api/
+      web/
+packages/
+  typescript-config/
+```
+
+From there, I added the mobile app and other services. API, web, and mobile apps each have their own test configurations and commands.
+
+## Showing photos as soon as the home screen opens
+
+The first home screen was closer to a group selector. I wanted to see recent photos from every group I belonged to as soon as I opened it. The group list could live on my profile page.
+
+I then decided that a place to keep posting suited the service better than events that closed after a deadline. I added scope for videos and composite images, administrator removal, and popular posts for the month. That led to a permanent post model alongside the existing contest model.
+
+I revised the design from the running screens too. I changed layouts that obscured photos and removed borders that suggested a story feature we did not have. I checked desktop spacing and layout separately. References from other services still needed to fit the actual features and how people would view photos.
+
+## Defining coding rules to use across projects
+
+As features grew, I organized the implementation conventions. Uploads used mutations to manage request state and failure handling together. Event handlers used only once stayed where they were used, while UI with a separate context, such as photo and video selection, became separate components.
+
+I moved [custom ESLint rules](https://github.com/jingeon27/side-project/tree/develop/packages/eslint-config) into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
+
+When game feedback joined the repository, I also worked on [a design system](https://github.com/jingeon27/side-project/tree/f0e64fcc40baf01ca50cc2add07416cf5203e5f9/packages/design-system) shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
+
+## I separated develop from feature branches
+
+When starting game feedback, I created [develop](https://github.com/jingeon27/side-project/tree/develop) from `main` and kept `feat/game-feedback` as a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
+
+I worked on the game service and blog while continuing to revise the photo service. I implemented and checked changes on feature branches, then opened PRs targeting `develop`. The photo feed, login, shared lint work, and blog migration were integrated through that branch.
+
+I used different worktrees to work on the blog and game service in separate sessions. Each working directory could keep its own feature branch while I worked.
+
+## I chose Clash Royale as the first game
+
+I wanted to try a B2C or C2C service. I wanted experience bringing people from communities I could reach and finding out whether they would keep using it.
+
+The game feedback idea was straightforward: someone stuck in a game describes their situation, and another player offers advice. I chose Clash Royale first because I thought I could reach its initial users more readily. Brawl Stars and League of Legends remained possible additions, but I decided to start with one game.
+
+I treated photo feedback and game feedback as separate services. Both involve asking for opinions, but people use them for different reasons and need different context. Building them under the same brand did not give me a reason to combine their accounts or data.
+
+I also wanted friend-add sales, friendly-match recruitment, and chat in the game service. Boards belong under a game such as Clash Royale. I later added coaching and general discussion, making five common categories to reuse across games. I dropped account trading because of the risk involved.
+
+Friend-add sales needed a price field. Coaching needed hourly, monthly, and target-rating pricing, and either students or coaches could post a request. The scope covers displaying terms and connecting people through chat. Payment processing stayed outside the initial scope.
+
+## I needed both people asking for feedback and people answering
+
+Game feedback needed both people asking questions and people willing to answer them. Alongside authentication, game profile integration, multiple languages, and caching, I needed to consider who would answer the first question.
+
+If someone posts a question and receives no reply, they have less reason to return. The flow needed to continue through receiving an answer and coming back to read it.
+
+I brought the following flow to the front of the plan.
+
+```text
+Someone posts a question
+  → Another player replies
+  → The requester receives a notification
+  → The requester reads it and marks whether it helped
+```
+
+Reply notifications and the `Helpful` action became important here. I had considered how to store questions and answers, but the plan did not complete the path back to the requester. I also needed a way to see whether the answer had been useful.
+
+The initial metric became the number of requests with at least one answer marked helpful. Several helpful answers on the same request still count as one request. I also want to track time to the first reply and the proportion of requests answered within 24 hours.
+
+I plan to find five to ten potential responders and manually connect questions with answers in existing communities first. I have not started recruiting them yet.
+
+## I chose REST to work through the cache model
+
+The photo service used GraphQL and Apollo Client. For game feedback, I chose REST and TanStack Query. I wanted to define cache boundaries for lists and detail pages, then decide which queries to refresh after a change. Organizing those relationships through REST felt familiar and suited the work I wanted to do in this project.
+
+I selected TanStack Query for browser server state. The feed uses cursor-based infinite scrolling, and creating a post or reply refreshes the relevant queries. For the server, I chose NestJS with Express.
+
+I also wanted Next.js server caching in the plan. My initial idea was to have NestJS call a Next.js Route Handler after a data change to invalidate the relevant cache. Reviewing that flow brought up a harder question: what would the author see immediately after writing?
+
+If someone submits a reply and then receives an older list, they may think the submission failed. Refreshing TanStack Query's browser cache does not resolve an older result still served by the Next.js layer. Updates made by other users need their own path too.
+
+I wanted the experience of designing server caching, so I kept it in a later development phase. For now, I left Next.js data caching off for user content and used TanStack Query invalidation and refetching. When adding server caching, I want to check how both browser state and newly fetched server results are updated.
+
+The behavior to verify is concrete: a new post should appear for its author immediately, and an edit should not revert to an older value after another fetch. I plan to use those behaviors as acceptance criteria when adding server caching.
+
+## I separated profile lookup from account ownership
+
+The game account connection flow starts with entering a Player Tag and loading the profile. A successful lookup does not establish that the person entering the tag owns the account. They could enter someone else's tag.
+
+That distinction mattered when designing verification labels. Showing profile lookup and ownership verification as the same state would imply more trust than the service had established.
+
+I decided that a connected game profile would initially have unverified ownership, with a separate verification process to investigate. An administrator-managed user verification label also has a different meaning from ownership of a game account. The label needs to reflect what was checked and the evidence used.
+
+The early plan also included snapshots of the deck and game information when a request was written. During implementation, I moved game profile registration to the user account and removed deck attachment from the writing screen. Verification requests became a one-to-one chat with an administrator. Running the screens led to further changes in what users connect and what a verification label means.
+
+## Translated navigation does not complete a conversation
+
+I considered Korean, English, and Japanese for the game service from the start. Locale routes, translated interface text, and post translation initially seemed to cover the main requirements.
+
+Translating posts alone left a gap. A Japanese-speaking player might read a translated Korean question and reply, while the original requester could not read the answer. The translation scope needed to include replies if it was going to support the whole feedback exchange.
+
+I kept locale routing in the early structure and left translation features and operating in each language as separate items to validate. The existence of `/en` or `/ja` routes did not establish that those users could complete the flow.
+
+I built the mobile app around a WebView that uses the web screens. I want to refine posting a request and reading its answer on the web first, then work on app distribution and store operation.
+
+## I chose to run the blog without a database
+
+The blog has different data needs from the game service. The game service has many users continually creating posts and replies. I am the blog's only author.
+
+I had been keeping articles in a repository and also publishing them on Tistory. Maintaining that process felt cumbersome, so I decided to build my own blog. I briefly considered a database and an admin editor because changing an article would otherwise require another deployment.
+
+I settled on Git and MDX. I wanted to edit articles in a familiar editor and keep their change history as I published them. Automating deployment after a Git push would also save me from running deployment commands for every article edit.
+
+Korean and English bodies live in separate MDX files grouped under one content ID. Titles, slugs, and search descriptions live in locale-specific SEO JSON. Shared metadata holds fields such as the publication date and tags.
+
+```text
+content/posts/side-project-design/
+  meta.json
+  ko.mdx
+  en.mdx
+
+seo/
+  ko.json
+  en.json
+```
+
+I wanted to avoid creating an English URL when no English article had been written. Only locales with an actual body appear in the listing and sitemap. I also kept URLs stable when changing titles and required explicit redirects when changing a URL.
+
+I limited the about page to contact information. Adding a resume and project introductions would expand what I was trying to show again. For the blog, I chose to concentrate on writing and reading articles.
+
+## I isolated the projects within the repository
+
+I planned to work on the game service and blog in different sessions. The existing photo service was in the same repository too, so I separated working directories and branches with Git worktrees.
+
+Source directories were only part of that separation. Each project also needed its own ports, API configuration, cookie name, database, and test schemas. A separate folder would not help if its web app sent requests to another project's running API.
+
+I documented the boundaries for data and local execution. Tests use separate ports and temporary database schemas rather than the development server in use. Settings and UI move to a shared package when there is a demonstrated reason to share them; service data and business logic stay within their projects.
+
+I am still building features and refining them in the running screens. Next, I want to find people who will ask questions and others who will answer them. I want to start by checking whether someone receives an answer and comes back to read it.

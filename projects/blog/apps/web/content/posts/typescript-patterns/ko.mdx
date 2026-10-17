@@ -1,6 +1,6 @@
 필드 이름이 맞아도 값 타입이 틀리거나, 함께 쓸 수 없는 props가 동시에 들어오는 코드를 종종 본다. 이런 조합을 타입 검사에서 걸러내려고 실무에서 반복해서 쓴 패턴 네 가지를 모았다.
 
-## 1. satisfies: 검사는 하되 추론은 유지하기
+## satisfies로 검사하면서 추론을 유지하기
 
 satisfies는 값의 타입을 새로 만들어주는 문법이 아니다. **값이 지정한 타입을 만족하는지 검사하면서, 값 자체의 구체적인 추론을 유지한다.**
 
@@ -27,7 +27,7 @@ const LABELS = {
 } as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
 ```
 
-## 2. T | undefined와 optional property는 다르다
+## T | undefined와 optional property는 다르다
 
 ```typescript
 interface Example {
@@ -47,7 +47,7 @@ const a: Example = {
 
 exactOptionalPropertyTypes를 켜면 이 차이가 더 엄격해진다. optionalKey?: number에 undefined를 직접 대입하려면 number | undefined를 명시해야 한다.
 
-## 3. 제네릭으로 value와 callback의 타입을 연결하기
+## 제네릭으로 value와 callback의 타입을 연결하기
 
 ```tsx
 interface SelectProps<T extends string> {
@@ -75,7 +75,7 @@ type PaymentMethod = 'normal' | 'coupon';
 
 두 prop이 같은 타입이라는 관계를 각자 string으로 선언하지 않고 제네릭 하나로 표현한 것이다.
 
-## 4. 서로 배타적인 props는 overload보다 union으로 표현하기
+## 서로 배타적인 props를 union으로 표현하기
 
 컴포넌트가 두 사용 방식 중 정확히 하나만 허용해야 한다면 never를 이용한 union이 명확하다.
 
