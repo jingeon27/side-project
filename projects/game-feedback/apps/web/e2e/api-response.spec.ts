@@ -2,20 +2,22 @@ import { test, expect } from '@playwright/test';
 import type { PostList } from '@game-feedback/contracts';
 const postsRoute = /\/api\/posts(?:\?.*)?$/;
 
-test('a suspended feed keeps its filters and shell usable until data arrives', async ({ page }) => {
+test('a suspended search keeps its filters and shell usable until data arrives', async ({ page }) => {
   const pending = Promise.withResolvers<void>();
   await page.route(postsRoute, async (route) => {
-    await pending.promise;
+    if (new URL(route.request().url()).searchParams.get('q') === '호그') await pending.promise;
     await route.continue();
   });
   try {
-    await page.goto('/ko', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByLabel('게시글 불러오는 중')).toBeVisible();
+    await page.goto('/ko');
+    await expect(page.locator('.post-card:visible').first()).toBeVisible();
+    await page.getByRole('textbox', { name: '게시글 검색' }).fill('호그');
+    await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: '게시글 검색' })).toBeVisible();
     await expect(page.locator('.topbar')).toBeVisible();
     pending.resolve();
     await expect(page.locator('.post-card').first()).toBeVisible();
-    await expect(page.getByLabel('게시글 불러오는 중')).not.toBeVisible();
+    await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).not.toBeVisible();
   } finally {
     pending.resolve();
   }
@@ -57,7 +59,7 @@ test('malformed display fields use safe fallbacks before a feed card is rendered
   const card = page.locator('.post-card').first();
   await expect(card.getByText('알 수 없는 플레이어', { exact: true })).toBeVisible();
   await expect(card.locator('.answer-count strong')).toHaveText('0');
-  await expect(card.getByText('인증 유저 (테스트)', { exact: true })).not.toBeVisible();
+  await expect(card.getByText('인증 유저', { exact: true })).not.toBeVisible();
   expect(errors).toEqual([]);
 });
 

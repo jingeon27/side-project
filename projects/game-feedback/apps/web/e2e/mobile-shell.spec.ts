@@ -28,7 +28,7 @@ for (const { width, locale, menu, actions } of [
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto(`/${locale}`);
-    const tabs = page.locator('.mobile-nav');
+    const tabs = page.locator('.mobile-nav:visible');
     await expect(tabs).toBeVisible();
     await expect(tabs.getByRole('link')).toHaveText(menu);
     await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');

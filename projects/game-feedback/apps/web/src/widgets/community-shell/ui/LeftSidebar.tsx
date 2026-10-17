@@ -7,7 +7,6 @@ import { categoryOptions } from '@/features/category';
 import { GameIcon } from './GameIcon';
 import { activeGameBoard, gameBoards, gameBoardPath } from '@/features/board';
 import { resolveAppRoute } from '@game-feedback/bridge';
-import { useSession } from '@/features/auth';
 interface ILeftSidebarProps {
   home: string;
   path: string;
@@ -15,7 +14,6 @@ interface ILeftSidebarProps {
 }
 export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
   const { t } = useI18n();
-  const { session } = useSession();
   const tab = resolveAppRoute(path)?.tab;
   const selected = activeGameBoard(path);
   const categories = useQuery(categoryOptions());
@@ -84,9 +82,7 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
             </div>
           </nav>
         ))}
-      <div className="sidebar-bottom">
-        {session?.demoMode && <p className="demo-badge">{t('예시 데이터를 사용하는 데모 환경')}</p>}
-      </div>
+      <div className="sidebar-bottom"></div>
     </aside>
   );
 }

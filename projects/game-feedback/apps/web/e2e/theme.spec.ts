@@ -36,7 +36,8 @@ for (const width of [400, 1440]) {
     await write.click();
     const login = page.getByRole('dialog');
     await expect(login).toBeVisible();
-    await expect(login.getByLabel('서비스 닉네임')).toHaveCSS('color', 'rgb(244, 241, 235)');
+    await expect(login.getByRole('button', { name: 'Google로 시작하기', exact: true })).toBeVisible();
+    await expect(login).toHaveCSS('background-color', 'rgb(28, 27, 26)');
     await login.getByRole('button', { name: '닫기', exact: true }).click();
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_theme')?.value).toBe('dark');
   });

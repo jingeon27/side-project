@@ -47,7 +47,6 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
             required
           />
           <div className="compose-bottom">
-            <span className="small muted">{t('비난보다 제안을, 결과보다 과정을.')}</span>
             <Button
               variant="primary"
               size="md"

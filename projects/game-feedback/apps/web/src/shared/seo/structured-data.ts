@@ -58,6 +58,11 @@ export function postStructuredData(detail: PostDetail) {
     datePublished: post.createdAt,
     dateModified: post.updatedAt,
     commentCount: answers.length + comments.length,
+    interactionStatistic: {
+      '@type': 'InteractionCounter',
+      interactionType: 'https://schema.org/ViewAction',
+      userInteractionCount: post.viewCount,
+    },
     comment: [...answers, ...comments].slice(0, 50).map((item) => ({
       '@type': 'Comment',
       text: item.body,

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { TBoardKind } from '@game-feedback/contracts';
 import { categoryOptions } from '@/features/category';
 import type { Post } from '@/shared/api';
-import { Modal, ErrorNotice, LoadingState } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, LoadingState } from '@/shared/ui';
 import { PostComposerForm } from './PostComposerForm';
 interface IPostComposerProps {
   open: boolean;
@@ -20,7 +20,7 @@ export function PostComposer({ open, onOpenChange, locale, post, board, category
   const categories = useQuery(categoryOptions());
   const isLoading = categories.isPending;
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       title={
@@ -43,6 +43,6 @@ export function PostComposer({ open, onOpenChange, locale, post, board, category
           onComplete={() => onOpenChange(false)}
         />
       )}
-    </Modal>
+    </BottomSheet>
   );
 }

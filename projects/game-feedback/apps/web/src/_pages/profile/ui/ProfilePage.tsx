@@ -8,6 +8,7 @@ import { profileOptions, UserBadges, AuthorLink } from '@/features/user';
 import { userPostListOptions, PostCard } from '@/features/post';
 import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
+import { FollowControls } from '@/features/follow';
 import type { PublicProfile, PostList } from '@/shared/api';
 import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { BackLink } from '@/shared/navigation';
@@ -42,7 +43,7 @@ function ProfileContent({
   initialViewerId,
 }: IProfilePageProps) {
   const { t, locale: textLocale } = useI18n();
-  const { session } = useSession();
+  const { session, login } = useSession();
   const sameViewer = session?.user?.id === initialViewerId;
   const profile = useQuery({
     ...profileOptions(id),
@@ -91,6 +92,7 @@ function ProfileContent({
           </p>
         )}
         {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
+        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={login} />
         <ReportUserButton userId={author.id} />
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>

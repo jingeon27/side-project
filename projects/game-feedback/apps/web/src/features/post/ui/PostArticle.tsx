@@ -1,10 +1,9 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import type { ReactNode } from 'react';
-import { MessageSquare } from 'lucide-react';
 import type { Post } from '@/shared/api';
 import { Avatar, RichTextBody } from '@/shared/ui';
-import { timeAgo } from '@/shared/lib/date';
+import { formatDateTime } from '@/shared/lib/date';
 import { PostStatus } from './PostStatus';
 import { CoachingSummary } from '@/features/coaching';
 import { FriendSaleSummary } from '@/features/friend-sale';
@@ -36,7 +35,7 @@ export function PostArticle({ post, authorContent, authorName, actions }: IPostA
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
           <span suppressHydrationWarning>
-            {timeAgo(post.createdAt, textLocale)}
+            <time dateTime={post.createdAt}>{formatDateTime(post.createdAt, textLocale)}</time>
             {post.updatedAt !== post.createdAt && t(' (수정됨)')}
           </span>
         </div>
@@ -45,14 +44,18 @@ export function PostArticle({ post, authorContent, authorName, actions }: IPostA
       {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
       <RichTextBody body={post.body} document={post.document} />
-      <div className="detail-footnote">
-        <MessageSquare size={15} />
-        {t(
-          isFeedback
-            ? '새로운 시선과 구체적인 제안을 기다리고 있어요.'
-            : '궁금한 내용은 댓글이나 채팅으로 이야기해보세요.',
-        )}
-      </div>
+      <dl className="post-publication">
+        <div>
+          <dt>{t('등록일시')}</dt>
+          <dd>
+            <time dateTime={post.createdAt}>{formatDateTime(post.createdAt, textLocale)}</time>
+          </dd>
+        </div>
+        <div>
+          <dt>{t('조회수')}</dt>
+          <dd>{post.viewCount.toLocaleString()}</dd>
+        </div>
+      </dl>
     </article>
   );
 }

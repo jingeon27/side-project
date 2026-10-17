@@ -4,7 +4,7 @@ import { Button, Input } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useDeleteAccount } from '@/features/auth';
 import { useZodForm } from '@/shared/model/form';
-import { ErrorNotice, Field, Modal } from '@/shared/ui';
+import { ErrorNotice, Field, BottomSheet } from '@/shared/ui';
 import { deleteAccountSchema } from '../model/settings.schema';
 
 interface IDeleteAccountDialogProps {
@@ -17,7 +17,7 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
   const confirmation = useWatch({ control: form.control, name: 'confirmation' });
   const deletion = useDeleteAccount();
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
@@ -54,6 +54,6 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
           {t('계속 함께하기')}
         </Button>
       </form>
-    </Modal>
+    </BottomSheet>
   );
 }

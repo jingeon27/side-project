@@ -131,49 +131,55 @@ test('players create a profile-backed request and exchange helpful feedback in t
   browser,
 }) => {
   const suffix = Date.now().toString(36);
-  await page.goto('/ko');
-  await page.getByRole('button', { name: '로그인 / 시작하기' }).click();
-  const login = page.getByRole('dialog');
-  await login.getByLabel('서비스 닉네임').fill(`플레이어_${suffix}`);
-  await login.getByRole('checkbox').nth(0).check();
-  await login.getByRole('checkbox').nth(1).check();
-  await login.getByRole('button', { name: '데모로 시작하기' }).click();
-  await expect(login).not.toBeVisible();
-  await page.goto('/ko/settings');
-  await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('#P0LYQ');
-  await page.getByRole('button', { name: '조회', exact: true }).click();
-  await page.getByRole('button', { name: '내 계정에 등록' }).click();
-  await expect(page.locator('[data-sonner-toast]')).toContainText('게임 프로필이 연결');
-  await page.goto('/ko');
-  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  const composer = page.getByRole('form', { name: '글쓰기', exact: true });
-  const title = `브라우저에서 작성한 덱 피드백 ${suffix}`;
-  await composer.getByLabel('제목', { exact: true }).fill(title);
-  await composer
-    .getByRole('textbox', { name: /플레이와 고민/ })
-    .fill(
-      '호그 순환 덱으로 상대 메가나이트를 막을 때 중앙 건물을 어떤 타이밍에 내려야 할지 궁금합니다. 수비 순서를 알려주세요.',
-    );
-  await composer.getByRole('button', { name: '피드백 요청 올리기' }).click();
-  await expect(page).toHaveURL(/\/ko\/posts\/[^/?]+$/);
-  await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-  const postUrl = page.url();
-  const coach = await browser.newContext({ baseURL: origin });
+  await page.request.post('/api/auth/test-token', {
+    headers: { Origin: 'http://127.0.0.1:3301' },
+    data: { accountId: 'sample-user-0' },
+  });
+  const originalTag = (await (await page.request.get('/api/session')).json()).user.supercellTag;
   try {
-    await signIn(coach.request, `브라우저코치_${suffix}`);
-    const coachPage = await coach.newPage();
-    await coachPage.goto(postUrl);
-    await coachPage
-      .getByRole('textbox', { name: '피드백 내용' })
+    await page.goto('/ko/settings');
+    await page.getByRole('button', { name: '계정 등록', exact: true }).click();
+    await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('#P0LYQ');
+    await page.getByRole('button', { name: '조회', exact: true }).click();
+    await page.getByRole('button', { name: '내 계정에 등록' }).click();
+    await expect(page.locator('[data-sonner-toast]')).toContainText('게임 프로필이 연결');
+    await page.goto('/ko');
+    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+    const composer = page.getByRole('form', { name: '글쓰기', exact: true });
+    const title = `브라우저에서 작성한 덱 피드백 ${suffix}`;
+    await composer.getByLabel('제목', { exact: true }).fill(title);
+    await composer
+      .getByRole('textbox', { name: /플레이와 고민/ })
       .fill(
-        '메가나이트가 강을 건너기 전에 대포를 중앙에 내려서 양쪽 타워가 함께 공격하게 하세요. 머스킷병은 점프 범위 밖에 배치하세요.',
+        '호그 순환 덱으로 상대 메가나이트를 막을 때 중앙 건물을 어떤 타이밍에 내려야 할지 궁금합니다. 수비 순서를 알려주세요.',
       );
-    await coachPage.getByRole('button', { name: '피드백 남기기', exact: true }).click();
-    await expect(coachPage.locator('[data-sonner-toast]')).toContainText('피드백을 전했어요');
-    await page.reload();
-    await page.getByRole('button', { name: '도움이 됐어요', exact: true }).click();
-    await expect(page.getByText('요청자가 도움받은 피드백')).toBeVisible();
+    await composer.getByRole('button', { name: '피드백 요청 올리기' }).click();
+    await expect(page).toHaveURL(/\/ko\/posts\/[^/?]+$/);
+    await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    const postUrl = page.url();
+    const coach = await browser.newContext({ baseURL: origin });
+    try {
+      await signIn(coach.request, `브라우저코치_${suffix}`);
+      const coachPage = await coach.newPage();
+      await coachPage.goto(postUrl);
+      await coachPage
+        .getByRole('textbox', { name: '피드백 내용' })
+        .fill(
+          '메가나이트가 강을 건너기 전에 대포를 중앙에 내려서 양쪽 타워가 함께 공격하게 하세요. 머스킷병은 점프 범위 밖에 배치하세요.',
+        );
+      await coachPage.getByRole('button', { name: '피드백 남기기', exact: true }).click();
+      await expect(coachPage.locator('[data-sonner-toast]')).toContainText('피드백을 전했어요');
+      await page.reload();
+      await page.getByRole('button', { name: '도움이 됐어요', exact: true }).click();
+      await expect(page.getByText('요청자가 도움받은 피드백')).toBeVisible();
+    } finally {
+      await coach.close();
+    }
   } finally {
-    await coach.close();
+    if (originalTag)
+      await page.request.post('/api/me/game-accounts', {
+        headers: { Origin: origin },
+        data: { playerTag: originalTag },
+      });
   }
 });

@@ -38,7 +38,8 @@ test('community boards publish and edit Quill formatting, stay separate from fee
       `/ko/boards/${slug}`,
     );
     await expect(page.locator('.prose-body strong')).toContainText(body);
-    if (slug === 'friend-sale') await expect(page.locator('.friend-sale-summary')).toContainText('12,000');
+    if (slug === 'friend-sale')
+      await expect(page.locator('.friend-sale-summary:visible')).toContainText('12,000');
     const url = page.url();
     await page.goto(`/ko/boards/feedback?q=${encodeURIComponent(title)}`);
     await expect(page.getByText('아직 게시글이 없어요. 첫 글을 남겨보세요.', { exact: true })).toBeVisible();
@@ -59,7 +60,8 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await edit.getByRole('button', { name: '수정 완료', exact: true }).click();
     await expect(edit).toHaveCount(0);
     await expect(page.locator('.prose-body')).toContainText(updated);
-    if (slug === 'friend-sale') await expect(page.locator('.friend-sale-summary')).toContainText('18,000');
+    if (slug === 'friend-sale')
+      await expect(page.locator('.friend-sale-summary:visible')).toContainText('18,000');
     const crawler = await browser.newContext({ javaScriptEnabled: false });
     try {
       const response = await (await crawler.newPage()).goto(url);
@@ -212,17 +214,17 @@ test('mobile composition can switch categories from a board and persist friend s
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await editor.getByRole('button', { name: 'Publish post', exact: true }).click();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-  await expect(page.locator('.friend-sale-summary')).toContainText('Price negotiable');
+  await expect(page.locator('.friend-sale-summary:visible')).toContainText('Price negotiable');
   await expect(page).toHaveURL(/board=friend-sale$/);
   await expect(page.locator('.back-link')).toHaveAttribute('href', '/en/boards/friend-sale');
   await page.reload();
-  await expect(page.locator('.friend-sale-summary')).toContainText('Price negotiable');
+  await expect(page.locator('.friend-sale-summary:visible')).toContainText('Price negotiable');
   await page.locator('.detail-card').getByRole('button', { name: 'Edit', exact: true }).click();
   const edit = page.getByRole('dialog', { name: 'Edit post', exact: true });
   await edit.getByLabel('Sale price (KRW)', { exact: true }).fill('25000');
   await edit.getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(edit).toHaveCount(0);
   await page.reload();
-  await expect(page.locator('.friend-sale-summary')).toContainText('25,000');
+  await expect(page.locator('.friend-sale-summary:visible')).toContainText('25,000');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });

@@ -1,36 +1,39 @@
 'use client';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
-import { Button, Input } from '@side/design-system';
-import type { Category } from '@/shared/api';
+import { useRouter } from 'next/navigation';
+import { useBrowserSearch } from '@/shared/navigation';
+import { use } from 'react';
+import { BoardSearch } from './BoardSearch';
+import type { IBoardSnapshot } from '../model/board-snapshot.type';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
+import { Button } from '@side/design-system';
 import { appRoutes } from '@game-feedback/bridge';
 import { boardBySlug } from '@/features/board';
-import { postListOptions, PostCard } from '@/features/post';
+import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, LoadingState } from '@/shared/ui';
+import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 
 interface IBoardsPageProps {
   locale: string;
   slug: string;
-  game: Category;
+  initialBoard: IBoardSnapshot | Promise<IBoardSnapshot>;
 }
-export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
+export function BoardsPage(props: IBoardsPageProps) {
+  const { locale, slug, initialBoard } = props;
   const { t } = useI18n();
   const board = boardBySlug(slug);
   const { session, login } = useSession();
-  const params = useSearchParams();
   const router = useRouter();
-  const q = (params.get('q') ?? '').trim().slice(0, 100);
   if (!board) return null;
   function handleCompose() {
     if (!session.user) {
       login();
       return;
     }
-    router.push(appRoutes.compose(locale, board?.kind, game.slug));
+    const game = new URLSearchParams(window.location.search).get('game') ?? undefined;
+    router.push(appRoutes.compose(locale, board?.kind, game));
   }
   return (
     <section className="board-page">
@@ -41,45 +44,56 @@ export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
       </div>
-      <form
-        className="board-search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const form = new FormData(event.currentTarget);
-          router.replace(
-            appRoutes.boards(locale, slug, String(form.get('q') ?? '').slice(0, 100), game.slug),
-          );
-        }}
-      >
-        <Input
-          key={q}
-          name="q"
-          defaultValue={q}
-          maxLength={100}
-          aria-label={t('게시판 검색')}
-          placeholder={t('게시판 검색')}
-        />
-        <Button variant="secondary" size="md" type="submit" aria-label={t('검색')}>
-          <Search size={18} />
-        </Button>
-      </form>
+      <BoardSearch locale={locale} slug={slug} />
       <AsyncBoundary
-        clientOnly
         title={t('게시판')}
-        resetKey={`${session.user?.id}:${slug}:${q}`}
-        pendingFallback={<LoadingState />}
+        resetKey={`${session.user?.id}:${slug}`}
+        refreshOnRetry
+        suspense={'then' in initialBoard}
+        pendingFallback={<PostListSkeleton />}
       >
-        <BoardPosts locale={locale} slug={slug} q={q} game={game} />
+        <BoardPostsRegion locale={locale} slug={slug} initialBoard={initialBoard} />
       </AsyncBoundary>
     </section>
   );
 }
-function BoardPosts({ locale, slug, q, game }: IBoardsPageProps & { q: string }) {
+function BoardPostsRegion({ locale, slug, initialBoard }: IBoardsPageProps) {
+  const initial = 'then' in initialBoard ? use(initialBoard) : initialBoard;
+  const search = useBrowserSearch(`?${new URLSearchParams({ q: initial.q })}`, `/${locale}/boards/${slug}`);
+  const params = new URLSearchParams(search);
+  const q = (params.get('q') ?? '').trim().slice(0, 100);
+  const { session } = useSession();
+  const { t } = useI18n();
+  return (
+    <ServiceErrorBoundary title={t('게시판')} resetKey={`${session.user?.id}:${slug}:${q}`}>
+      <BoardPosts locale={locale} slug={slug} initial={initial} q={q} />
+    </ServiceErrorBoundary>
+  );
+}
+function BoardPosts({
+  locale,
+  slug,
+  q,
+  initial,
+}: {
+  locale: string;
+  slug: string;
+  q: string;
+  initial: IBoardSnapshot;
+}) {
   const { t } = useI18n();
   const board = boardBySlug(slug);
-  const posts = useSuspenseInfiniteQuery(
-    postListOptions({ category: game.slug, board: board?.kind, q, limit: 12 }),
-  );
+  const { session } = useSession();
+  const game = initial.game;
+  const posts = useInfiniteQuery({
+    throwOnError: true,
+    ...postListOptions({ category: game.slug, board: board?.kind, q, limit: 12 }),
+    ...(q === initial.q && initial.viewerId === session.user?.id
+      ? { initialData: { pages: [initial.posts], pageParams: [''] }, initialDataUpdatedAt: 0 }
+      : {}),
+  });
+  if (posts.error && !posts.isFetching) throw posts.error;
+  if (!posts.data) return <PostListSkeleton />;
   const items = posts.data.pages.flatMap((page) => page.items);
   return (
     <>

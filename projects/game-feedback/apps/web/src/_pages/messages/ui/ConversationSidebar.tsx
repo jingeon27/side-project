@@ -2,7 +2,7 @@
 import { useI18n } from '@/shared/i18n';
 import Link from 'next/link';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, MessageCircle, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, MessageCircle } from 'lucide-react';
 import { conversationListOptions } from '@/features/chat';
 import { useChatConnection } from '@/widgets/chat-realtime';
 import { ConversationRow } from './ConversationRow';
@@ -68,14 +68,6 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
           {conversations.isFetchingNextPage ? t('불러오는 중…') : t('이전 대화 더 보기')}
         </button>
       )}
-      <div className="chat-list-note">
-        <ShieldCheck size={14} />
-        <span>
-          {t('대화 상대를 존중하고')}
-          <br />
-          {t('개인정보는 공유하지 마세요.')}
-        </span>
-      </div>
     </aside>
   );
 }

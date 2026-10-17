@@ -2,13 +2,19 @@ import { test, expect, type Page } from '@playwright/test';
 import type { Session, ChatMessage } from '@game-feedback/contracts';
 
 async function selectTestAccount(page: Page, nickname: string) {
-  const response = page.waitForResponse(
-    (item) => new URL(item.url()).pathname === '/api/auth/test-login' && item.request().method() === 'POST',
-  );
-  await page.getByRole('button', { name: new RegExp(nickname) }).click();
-  const login = await response;
-  expect(login.ok(), await login.text()).toBeTruthy();
-  return (await login.json()) as Session;
+  const accounts = {
+    새벽의호그: 'sample-user-0',
+    덱연구소: 'sample-user-3',
+    운영테스터: 'sample-test-admin',
+  };
+  const accountId = Reflect.get(accounts, nickname);
+  const login = await page.request.post('/api/auth/test-token', {
+    headers: { Origin: 'http://127.0.0.1:3301' },
+    data: { accountId },
+  });
+  expect(login.ok()).toBeTruthy();
+  await page.reload();
+  return (await (await page.request.get('/api/session')).json()) as Session;
 }
 
 test('prepared accounts can write posts and comments, switch identities, and exchange private chat', async ({
@@ -60,7 +66,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
     isVerified: true,
     supercellTag: '#9QY',
   });
-  await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저 (테스트)');
+  await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저');
   await expect(page.locator('.settings-profile:visible')).toContainText('#9QY');
   await page.goto(postUrl);
   const responseComment = `인증 코치 테스트 계정에서 이어서 남긴 댓글입니다. ${suffix}`;
@@ -81,7 +87,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
   const sent = (await (await delivery).json()) as ChatMessage;
   await page.goto('/ko/settings');
   await selectTestAccount(page, '새벽의호그');
-  await expect(page.locator('.settings-profile:visible')).not.toContainText('인증 유저 (테스트)');
+  await expect(page.locator('.settings-profile:visible')).not.toContainText('인증 유저');
   await page.goto(`/ko/messages?conversation=${roomId}`);
   await expect(page.getByTestId(`message-${sent.id}`)).toContainText(chatBody);
   await page.reload();

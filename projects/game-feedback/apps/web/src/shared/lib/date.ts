@@ -21,6 +21,10 @@ export function formatTime(value: string, locale: TLocale = 'ko') {
   });
 }
 
+export function formatDateTime(value: string, locale: TLocale = 'ko') {
+  return `${formatDate(value, locale)} ${formatTime(value, locale)}`;
+}
+
 export function dateKey(value: string) {
   return dayjs(value).tz(displayTimeZone).format('YYYY-MM-DD');
 }

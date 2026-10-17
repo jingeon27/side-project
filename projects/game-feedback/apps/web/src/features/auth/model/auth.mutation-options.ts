@@ -1,4 +1,5 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+import type { TLoginProvider } from '@game-feedback/bridge';
 import { requestNativeLogin } from '@/shared/native';
 import {
   fetchSession,
@@ -69,8 +70,8 @@ export function deleteAccountMutationOptions(client: QueryClient, notify: (text:
 export function nativeLoginMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['auth', 'native-login'],
-    mutationFn: async () => {
-      const ticket = await requestNativeLogin();
+    mutationFn: async (provider: TLoginProvider = 'google') => {
+      const ticket = await requestNativeLogin(provider);
       return ticket ? postAppExchange(ticket) : null;
     },
     onSuccess: async (session) => {

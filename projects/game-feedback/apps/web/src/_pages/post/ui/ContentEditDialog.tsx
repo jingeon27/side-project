@@ -4,7 +4,7 @@ import { Button, Textarea } from '@side/design-system';
 import { LoaderCircle } from 'lucide-react';
 import { useUpdateAnswerMutation } from '@/features/answer';
 import { useUpdateCommentMutation } from '@/features/comment';
-import { ErrorNotice, Modal, useNotify } from '@/shared/ui';
+import { ErrorNotice, BottomSheet, useNotify } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { answerFormSchema, commentFormSchema } from '../model/content.schema';
 interface IContentEditDialogProps {
@@ -23,7 +23,7 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
   const isPending = answer.isPending || comment.isPending,
     error = answer.error || comment.error;
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       dismissible={!isPending}
@@ -64,6 +64,6 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
           {t('수정 완료')}
         </Button>
       </form>
-    </Modal>
+    </BottomSheet>
   );
 }

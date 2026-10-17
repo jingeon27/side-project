@@ -28,7 +28,6 @@ export function ProfileSnapshot({ profile }: IProfileSnapshotProps) {
           <ShieldAlert size={13} />
           {t('소유권 미인증. 요청 작성 시점의 프로필입니다.')}
         </span>
-        {profile.source === 'DEMO' && <span>{t('데모 프로필')}</span>}
       </div>
     </section>
   );

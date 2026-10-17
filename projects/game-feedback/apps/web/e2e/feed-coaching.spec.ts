@@ -39,13 +39,13 @@ test('the feed combines general posts and paid coaching and connects a student t
   await expect(page.locator('.detail-card .coaching-summary')).toContainText('35,000');
   const detailUrl = page.url();
   await page.reload();
-  await expect(page.locator('.coaching-summary')).toContainText('35,000');
+  await expect(page.locator('.coaching-summary:visible')).toContainText('35,000');
   await page.goto(`/ko?q=${suffix}`);
-  await expect(page.locator('.post-card')).toHaveCount(2);
-  await expect(page.locator('.post-list')).toContainText(generalTitle);
-  await expect(page.locator('.post-list')).toContainText(coachingTitle);
+  await expect(page.locator('.post-card:visible')).toHaveCount(2);
+  await expect(page.locator('.post-list:visible')).toContainText(generalTitle);
+  await expect(page.locator('.post-list:visible')).toContainText(coachingTitle);
   await page.getByRole('button', { name: '답변 대기' }).click();
-  await expect(page.locator('.post-card')).toHaveCount(0);
+  await expect(page.locator('.post-card:visible')).toHaveCount(0);
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
@@ -110,20 +110,20 @@ test('students can recruit a paid coach and a new game receives the same five bo
     .fill('기본적인 운영부터 차근차근 배우고 싶어요. 유료 레슨의 일정과 수강료를 채팅으로 협의해요.');
   await editor.getByRole('button', { name: '코칭 등록', exact: true }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
-  await expect(page.locator('.coaching-summary')).toContainText('코치 구함');
-  await expect(page.locator('.coaching-summary')).toContainText('수강료 협의');
+  await expect(page.locator('.coaching-summary:visible')).toContainText('코치 구함');
+  await expect(page.locator('.coaching-summary:visible')).toContainText('수강료 협의');
   await expect(page).toHaveURL(new RegExp(`board=coaching&game=${slug}$`));
   await page.locator('.back-link').click();
   await expect(page).toHaveURL(new RegExp(`/ko/boards/coaching\\?game=${slug}$`));
   await expect(page.locator('.board-post-list')).toContainText(title);
   await page.goto(`/ko/boards/coaching?q=${suffix}`);
-  await expect(page.locator('.post-card')).toHaveCount(0);
+  await expect(page.locator('.post-card:visible')).toHaveCount(0);
   await page.goto(`/ko?q=${suffix}`);
-  await expect(page.locator('.post-card')).toContainText(title);
+  await expect(page.locator('.post-card:visible')).toContainText(title);
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/ko/boards/coaching?game=${slug}`);
-    await expect(page.locator('.post-card')).toContainText(title);
+    await expect(page.locator('.post-card:visible')).toContainText(title);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `/tmp/game-feedback-coaching-${width}.png`, fullPage: true });
   }

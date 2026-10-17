@@ -14,6 +14,7 @@ export async function clearAuthenticatedSession(client: QueryClient) {
     user: null,
     demoMode: current?.demoMode ?? false,
     googleConfigured: current?.googleConfigured ?? false,
+    socialProviders: current?.socialProviders,
     needsOnboarding: false,
   });
 }

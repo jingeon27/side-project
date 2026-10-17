@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
-import { postDetailOptions, PostArticle } from '@/features/post';
+import { postDetailOptions, PostArticle, useRecordPostView } from '@/features/post';
 import type { PostDetail } from '@/shared/api';
 import { useSession } from '@/features/auth';
 import { AuthorLink, UserBadges } from '@/features/user';
@@ -53,6 +53,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
       initialData: session?.user?.id === initialViewerId ? initialDetail : undefined,
     });
   usePostRead(detail.data, session?.user?.id);
+  useRecordPostView(id, !!detail.data, session.user?.id);
   const game = detail.data?.post.category.slug;
   const boardContext = boardByKind(detail.data?.post.board);
   useEffect(() => {

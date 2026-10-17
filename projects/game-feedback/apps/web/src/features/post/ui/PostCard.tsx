@@ -3,10 +3,10 @@ import { useI18n } from '@/shared/i18n';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, MessageSquare } from 'lucide-react';
+import { ArrowUpRight, Eye, MessageSquare } from 'lucide-react';
 import type { Post } from '@/shared/api';
 import { Avatar } from '@/shared/ui';
-import { timeAgo } from '@/shared/lib/date';
+import { formatDateTime, timeAgo } from '@/shared/lib/date';
 import { m, useMotionPreference } from '@/shared/motion';
 import { PostStatus } from './PostStatus';
 import { CoachingSummary } from '@/features/coaching';
@@ -35,9 +35,20 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
           <span className="small muted">{t(board?.name ?? '피드백')}</span>
           {isFeedback && <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />}
         </div>
-        <span className="post-time" suppressHydrationWarning>
-          {timeAgo(post.createdAt, textLocale)}
-        </span>
+        <div className="post-metadata">
+          <span className="post-views">
+            <Eye size={13} aria-hidden="true" />
+            {t('조회 {count}', { count: post.viewCount })}
+          </span>
+          <time
+            className="post-time"
+            dateTime={post.createdAt}
+            title={formatDateTime(post.createdAt, textLocale)}
+            suppressHydrationWarning
+          >
+            {timeAgo(post.createdAt, textLocale)}
+          </time>
+        </div>
       </div>
       <Link href={href} className="post-title-link">
         <h3>{post.title}</h3>

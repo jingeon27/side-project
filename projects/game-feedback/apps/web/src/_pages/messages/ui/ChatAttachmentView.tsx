@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import type { TChatAttachment } from '@/shared/api';
-import { Modal, openOverlay } from '@/shared/ui';
+import { BottomSheet, openOverlay } from '@/shared/ui';
 import { useI18n } from '@/shared/i18n';
 
 export function ChatAttachmentView({ attachment }: { attachment: TChatAttachment }) {
@@ -24,7 +24,7 @@ export function ChatAttachmentView({ attachment }: { attachment: TChatAttachment
       aria-label={`${t('이미지 크게 보기')}: ${attachment.name}`}
       onClick={() =>
         openOverlay(({ isOpen, close, unmount }) => (
-          <Modal
+          <BottomSheet
             open={isOpen}
             onOpenChange={(open) => {
               if (open) return;
@@ -42,7 +42,7 @@ export function ChatAttachmentView({ attachment }: { attachment: TChatAttachment
               height={900}
               unoptimized
             />
-          </Modal>
+          </BottomSheet>
         ))
       }
     >

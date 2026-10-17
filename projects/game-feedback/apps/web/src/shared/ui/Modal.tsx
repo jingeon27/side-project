@@ -21,7 +21,7 @@ export function Modal({ open, onOpenChange, title, description, children, dismis
       description={t(description)}
       dismissible={dismissible}
       closeLabel={t('닫기')}
-      className="dialog-content"
+      className="dialog-content max-w-md"
     >
       {children}
     </Dialog>

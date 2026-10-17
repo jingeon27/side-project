@@ -3,7 +3,7 @@ import { useI18n } from '@/shared/i18n';
 import { Button, NativeSelect, NativeSelectOption, Textarea } from '@side/design-system';
 import { Flag, LoaderCircle } from 'lucide-react';
 import { ReportInputSchema, type ReportInput } from '@game-feedback/contracts';
-import { ErrorNotice, Field, Modal, useNotify } from '@/shared/ui';
+import { ErrorNotice, Field, BottomSheet, useNotify } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { useReportMutation, reportReasons } from '@/features/moderation';
 interface IReportDialogProps {
@@ -17,10 +17,15 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
   const mutation = useReportMutation(),
     notify = useNotify(),
     form = useZodForm(ReportInputSchema, {
-      defaultValues: { targetType, targetId, reason: 'SPAM', detail: '' },
+      defaultValues: {
+        targetType,
+        targetId,
+        reason: targetType === 'USER' ? 'HARASSMENT' : 'SPAM',
+        detail: '',
+      },
     });
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       dismissible={!mutation.isPending}
@@ -64,6 +69,6 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
           {t('신고 접수')}
         </Button>
       </form>
-    </Modal>
+    </BottomSheet>
   );
 }

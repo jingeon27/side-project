@@ -3,7 +3,7 @@
 import { Gamepad2 } from 'lucide-react';
 import { useCompleteOnboarding } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
-import { Modal } from '@/shared/ui';
+import { BottomSheet } from '@/shared/ui';
 import { AccountSetupForm } from './AccountSetupForm';
 import type { TAccountSetupValues } from '../model/account-setup.schema';
 
@@ -19,7 +19,7 @@ export function OnboardingDialog({ open, onSuccess }: IOnboardingDialogProps) {
     onboarding.mutate({ nickname, acceptedTerms: true, ageConfirmed: true }, { onSuccess });
   }
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={() => {}}
       dismissible={false}
@@ -35,6 +35,6 @@ export function OnboardingDialog({ open, onSuccess }: IOnboardingDialogProps) {
         error={onboarding.error?.message}
         onSubmit={handleSubmit}
       />
-    </Modal>
+    </BottomSheet>
   );
 }

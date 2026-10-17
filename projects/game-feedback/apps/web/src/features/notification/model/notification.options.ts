@@ -13,6 +13,7 @@ function createNotificationListOptions(userId: string, params: TNotificationList
     initialPageParam: '',
     getNextPageParam: (page) => page.nextCursor ?? undefined,
     staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 }
 export function notificationListOptions(

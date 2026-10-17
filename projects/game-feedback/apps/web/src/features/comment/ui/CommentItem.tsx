@@ -19,7 +19,9 @@ export function CommentItem({ comment, authorContent, authorName, actions }: ICo
         <div className="comment-heading">
           <strong>{authorName ?? comment.author.nickname}</strong>
           {authorContent}
-          <span className="small muted">{timeAgo(comment.createdAt, textLocale)}</span>
+          <span className="small muted" suppressHydrationWarning>
+            {timeAgo(comment.createdAt, textLocale)}
+          </span>
         </div>
         <p>{comment.body}</p>
         {actions}

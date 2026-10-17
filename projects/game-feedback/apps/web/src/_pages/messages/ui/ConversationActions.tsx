@@ -61,26 +61,41 @@ export function ConversationActions({
     );
   }
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon" type="button" aria-label={t('대화 메뉴')} />}
+    <div className="conversation-actions" role="group" aria-label={t('대화 관리')}>
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        aria-label={t('사용자 신고')}
+        title={t('사용자 신고')}
+        onClick={() => openUserReport(peer.id, reportOverlayId)}
       >
-        <Menu size={19} aria-hidden="true" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => openUserReport(peer.id, reportOverlayId)}>
-          <Flag aria-hidden="true" />
-          {t('사용자 신고')}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={!throughMessageId} onClick={handleClear}>
-          <Trash2 aria-hidden="true" />
-          {t('대화내역 삭제')}
-        </DropdownMenuItem>
-        <DropdownMenuItem variant="destructive" onClick={() => handleBlock(peer)}>
-          <ShieldBan aria-hidden="true" />
-          {t('차단')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <Flag size={18} aria-hidden="true" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        type="button"
+        aria-label={t('대화내역 삭제')}
+        title={t('대화내역 삭제')}
+        disabled={!throughMessageId}
+        onClick={handleClear}
+      >
+        <Trash2 size={18} aria-hidden="true" />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={<Button variant="ghost" size="icon" type="button" aria-label={t('대화 메뉴')} />}
+        >
+          <Menu size={19} aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem variant="destructive" onClick={() => handleBlock(peer)}>
+            <ShieldBan aria-hidden="true" />
+            {t('차단')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

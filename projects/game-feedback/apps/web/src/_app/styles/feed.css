@@ -130,6 +130,21 @@
     color: var(--color-muted);
     white-space: nowrap;
   }
+  .post-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px 12px;
+    font-size: var(--text-micro);
+    color: var(--color-muted);
+  }
+  .post-views {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
   .post-card h3 {
     font-size: var(--text-body);
     letter-spacing: -0.55px;
@@ -233,7 +248,7 @@
     background: var(--color-sunken);
     width: 28px;
   }
-  .feed-loading {
+  .post-list-skeleton {
     display: flex;
     flex-direction: column;
     gap: 13px;
@@ -245,12 +260,13 @@
     border-radius: var(--radius-card);
     padding: 22px;
   }
-  .skeleton-card > div {
+  .skeleton-card > div:not(.skeleton-card-footer),
+  .skeleton-card-footer > span {
     height: 14px;
     background: linear-gradient(
       90deg,
       var(--color-sunken) 25%,
-      var(--color-sunken) 50%,
+      var(--color-line) 50%,
       var(--color-sunken) 75%
     );
     background-size: 200% 100%;
@@ -264,8 +280,29 @@
   .skeleton-card > div:nth-child(2) {
     width: 75%;
   }
-  .skeleton-card > div:last-child {
+  .skeleton-card > div:nth-child(3) {
     width: 90%;
+  }
+  .skeleton-card-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--color-line);
+    padding-top: 15px;
+    margin-top: 25px;
+  }
+  .skeleton-card-footer > span {
+    width: 35%;
+    margin-bottom: 0;
+  }
+  .skeleton-card-footer > span:last-child {
+    width: 20%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-card > div,
+    .skeleton-card-footer > span {
+      animation: none;
+    }
   }
   .empty-feed {
     padding: 48px 20px;

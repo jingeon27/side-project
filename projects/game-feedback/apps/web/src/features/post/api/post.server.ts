@@ -3,6 +3,11 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { ApiError, getPost, listPosts } from '@game-feedback/sdk';
 import { serverRequestOptions, publicServerOptions } from '@/shared/api/server';
+import type { TPostListParams } from '../types/post.type';
+
+export async function getServerPostList(params: TPostListParams) {
+  return listPosts(params, await serverRequestOptions());
+}
 export const getServerPost = cache(async (id: string) => {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
   try {

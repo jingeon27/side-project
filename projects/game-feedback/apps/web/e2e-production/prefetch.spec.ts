@@ -3,6 +3,70 @@ import { instant } from '@next/playwright';
 
 const origin = 'http://127.0.0.1:3353';
 
+for (const [slug, title] of [
+  ['feedback', '피드백'],
+  ['friend-sale', '친추판매'],
+  ['friendly', '친선전 모집'],
+  ['coaching', '게임코치'],
+  ['free', '자유게시판'],
+] as const) {
+  test(`the ${slug} board prefetches its title, search and write controls with list skeletons`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 900 });
+    await page.goto('/ko');
+    const link = page.locator('.game-board-chips').getByRole('link', { name: title, exact: true });
+    await expect(link).toBeVisible();
+    await link.scrollIntoViewIfNeeded();
+    await instant(page, async () => {
+      await link.click();
+      await page.waitForURL((url) => url.pathname === `/ko/boards/${slug}`);
+      await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+      await expect(page.getByRole('textbox', { name: '게시판 검색', exact: true })).toBeEnabled();
+      await expect(
+        page.getByRole('button', { name: slug === 'coaching' ? '코칭 등록' : '글쓰기', exact: true }),
+      ).toBeEnabled();
+      await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
+    });
+    await expect(page.locator('.board-post-list:visible .post-card').first()).toBeVisible();
+  });
+}
+
+for (const width of [400, 1440]) {
+  test(`the prefetched feed keeps its title and controls while only the list loads at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/ko/guide');
+    try {
+      await instant(page, async () => {
+        const navigation = width === 400 ? page.locator('.mobile-nav') : page.locator('.left-sidebar');
+        await navigation.getByRole('link', { name: '피드', exact: true }).click();
+        await page.waitForURL((url) => url.pathname === '/ko');
+        await expect(page.getByRole('heading', { name: '피드', exact: true })).toBeVisible();
+        await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toBeEnabled();
+        await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeEnabled();
+        await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
+        await expect(page.locator('.post-list-skeleton:visible .skeleton-card')).toHaveCount(3);
+        await expect(page.locator('.post-card:visible')).toHaveCount(0);
+        await page
+          .getByRole('textbox', { name: '게시글 검색', exact: true })
+          .evaluate((node) => node.setAttribute('data-shell-persistence', 'kept'));
+      });
+      const search = page.getByRole('textbox', { name: '게시글 검색', exact: true });
+      const heading = await page.locator('.feed-heading:visible').boundingBox();
+      await expect(page.locator('.post-card:visible').first()).toBeVisible();
+      await expect(search).toHaveAttribute('data-shell-persistence', 'kept');
+      const loadedHeading = await page.locator('.feed-heading:visible').boundingBox();
+      expect(loadedHeading?.y).toBe(heading?.y);
+      expect(loadedHeading?.height).toBe(heading?.height);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    } finally {
+      await page.close();
+    }
+  });
+}
+
 test('a production navigation shows the prefetched guide and keeps the shared header', async ({ page }) => {
   await page.goto('/ko');
   await expect(page.locator('.feed-heading:visible')).toBeVisible();
@@ -96,6 +160,12 @@ test('initial documents render public content without JavaScript and inaccessibl
     await page.goto('/ja');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
     await expect(page.getByRole('banner')).toContainText('Playmate');
+    await expect(page.locator('.post-card').first()).toBeVisible();
+    for (const slug of ['feedback', 'friend-sale', 'friendly', 'coaching', 'free']) {
+      const response = await page.goto(`/ko/boards/${slug}`);
+      expect(response?.status()).toBe(200);
+      await expect(page.locator('.board-post-list .post-card').first()).toBeVisible();
+    }
     await page.goto('/ko/posts/sample-post-0');
     await expect(page.locator('.detail-card:visible')).toBeVisible();
     await expect(page.locator('.detail-card:visible')).toHaveCSS('background-color', 'rgb(28, 27, 26)');

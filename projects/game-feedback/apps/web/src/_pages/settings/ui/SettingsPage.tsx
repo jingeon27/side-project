@@ -8,10 +8,9 @@ import { Gamepad2, Plus, LogOut, Trash2, ShieldBan, ArrowUpRight } from 'lucide-
 import { useSession, useLogout } from '@/features/auth';
 import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
 import { blockListOptions, useUnblockUser, UserBadges } from '@/features/user';
-import { TestAccountPicker } from '@/widgets/authentication';
 import { SupportChatButton } from '@/widgets/support';
 import { ConnectProfile } from '@/widgets/game-profile';
-import { openOverlay, Avatar, ErrorNotice, LoadingState, Modal } from '@/shared/ui';
+import { openOverlay, Avatar, ErrorNotice, LoadingState, BottomSheet } from '@/shared/ui';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { LanguageSettings } from './LanguageSettings';
 import { ThemeSettings } from './ThemeSettings';
@@ -21,7 +20,7 @@ interface ISettingsPageProps {
 }
 function openProfileConnection(t: (message: string) => string) {
   openOverlay(({ isOpen, close, unmount }) => (
-    <Modal
+    <BottomSheet
       open={isOpen}
       onOpenChange={(open) => {
         if (open) return;
@@ -37,7 +36,7 @@ function openProfileConnection(t: (message: string) => string) {
           unmount();
         }}
       />
-    </Modal>
+    </BottomSheet>
   ));
 }
 function openAccountDeletion() {
@@ -103,11 +102,6 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
           </span>
         </div>
       </section>
-      {session.demoMode && (
-        <section className="settings-card demo-switch-card">
-          <TestAccountPicker mode="switch" />
-        </section>
-      )}
       <section className="settings-card">
         <div className="section-title-row">
           <h2>
@@ -127,7 +121,6 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         {accounts.data?.map((profile) => (
           <ProfileSnapshot key={profile.playerTag} profile={profile} />
         ))}
-        {accounts.data?.length === 0 && <ConnectProfile />}
       </section>
       <section className="settings-card">
         <div className="section-title-row">

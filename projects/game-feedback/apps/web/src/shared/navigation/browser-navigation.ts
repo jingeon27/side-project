@@ -2,6 +2,19 @@ import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 const stateKey = '__game_feedback_navigation';
 const logicalParents = new Map<string, { parent: string }>();
+const locationListeners = new Set<() => void>();
+export function subscribeBrowserLocation(listener: () => void) {
+  locationListeners.add(listener);
+  return () => {
+    locationListeners.delete(listener);
+  };
+}
+function notifyLocation() {
+  // Next also replaces history during its insertion effect; notify after the commit.
+  queueMicrotask(() => {
+    for (const listener of locationListeners) listener();
+  });
+}
 interface INavigationEntry {
   index: number;
   previous: string | null;
@@ -49,17 +62,20 @@ export function installBrowserNavigation() {
     current = rememberFeed({ ...current, index: current.index + 1, previous });
     direction = 'forward';
     push.call(history, stateWithEntry(data, current), unused, url);
+    notifyLocation();
   };
   const handleReplace: History['replaceState'] = function (data, unused, url) {
     if (!active) return replace.call(history, data, unused, url);
     current = rememberFeed(entry(data) ?? current);
     direction = 'replace';
     replace.call(history, stateWithEntry(data, current), unused, url);
+    notifyLocation();
   };
   function handlePop(event: PopStateEvent) {
     const next = entry(event.state) ?? { index: 0, previous: null };
     direction = next.index < current.index ? 'back' : 'forward';
     current = next;
+    notifyLocation();
   }
   history.pushState = handlePush;
   history.replaceState = handleReplace;

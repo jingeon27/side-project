@@ -6,6 +6,7 @@ import { LoadingState } from './LoadingState';
 type TAsyncBoundaryProps = ComponentProps<typeof ServiceErrorBoundary> & {
   pendingFallback?: ReactNode;
   clientOnly?: boolean;
+  suspense?: boolean;
 };
 
 const subscribe = () => () => undefined;
@@ -16,12 +17,17 @@ export function AsyncBoundary({
   children,
   pendingFallback = <LoadingState />,
   clientOnly = false,
+  suspense = true,
   ...props
 }: TAsyncBoundaryProps) {
   const hydrated = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
   return (
     <ServiceErrorBoundary {...props}>
-      <Suspense fallback={pendingFallback}>{clientOnly && !hydrated ? pendingFallback : children}</Suspense>
+      {suspense ? (
+        <Suspense fallback={pendingFallback}>{clientOnly && !hydrated ? pendingFallback : children}</Suspense>
+      ) : (
+        children
+      )}
     </ServiceErrorBoundary>
   );
 }

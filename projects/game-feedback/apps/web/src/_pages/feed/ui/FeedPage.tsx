@@ -1,31 +1,28 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
-import { useCallback } from 'react';
+import { use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useBrowserSearch } from '@/shared/navigation';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Plus, MessageSquare, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
-import { postListOptions, PostCard } from '@/features/post';
+import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
-import { useFeedFilters } from '../model/use-feed-filters';
 import { appRoutes } from '@game-feedback/bridge';
 import { FeedFilters } from './FeedFilters';
-export function FeedPage({ locale }: { locale: string }) {
-  const { t } = useI18n();
-  return (
-    <AsyncBoundary title={t('피드')}>
-      <FeedContent locale={locale} />
-    </AsyncBoundary>
-  );
-}
-
-function FeedContent({ locale }: { locale: string }) {
+import type { IFeedSnapshot } from '../model/feed-snapshot.type';
+export function FeedPage({
+  locale,
+  initialFeed,
+}: {
+  locale: string;
+  initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
+}) {
   const { t } = useI18n();
   const { session, login } = useSession();
   const router = useRouter();
-  const { tab, q, search, handleTabChange, handleSearchChange } = useFeedFilters();
   function handleCompose() {
     if (!session?.user) {
       login();
@@ -36,50 +33,71 @@ function FeedContent({ locale }: { locale: string }) {
 
   return (
     <section className="feed-section">
-      <FeedFilters
-        tab={tab}
-        search={search}
-        onTabChange={handleTabChange}
-        onSearchChange={handleSearchChange}
-        onCompose={handleCompose}
-      />
+      <FeedFilters onCompose={handleCompose} />
       <AsyncBoundary
-        clientOnly
         title={t('최신 글')}
-        resetKey={`${session?.user?.id ?? 'anonymous'}:${tab}:${q}`}
-        pendingFallback={
-          <div className="feed-loading" aria-label={t('게시글 불러오는 중')}>
-            <PostCardSkeleton />
-            <PostCardSkeleton />
-            <PostCardSkeleton />
-          </div>
-        }
+        resetKey={session.user?.id}
+        refreshOnRetry
+        suspense={'then' in initialFeed}
+        pendingFallback={<PostListSkeleton />}
       >
-        <FeedResults locale={locale} tab={tab} q={q} onCompose={handleCompose} />
+        <FeedResultsRegion locale={locale} initialFeed={initialFeed} onCompose={handleCompose} />
       </AsyncBoundary>
     </section>
+  );
+}
+
+function FeedResultsRegion({
+  locale,
+  initialFeed,
+  onCompose,
+}: {
+  locale: string;
+  initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
+  onCompose: () => void;
+}) {
+  const { t } = useI18n();
+  const { session } = useSession();
+  const initial = 'then' in initialFeed ? use(initialFeed) : initialFeed;
+  const initialSearch = new URLSearchParams({ q: initial.q, tab: initial.tab }).toString();
+  const search = useBrowserSearch(`?${initialSearch}`, `/${locale}`);
+  const params = new URLSearchParams(search);
+  const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';
+  const q = params.get('q')?.trim().slice(0, 100) ?? '';
+  return (
+    <ServiceErrorBoundary title={t('최신 글')} resetKey={`${session.user?.id ?? 'anonymous'}:${tab}:${q}`}>
+      <FeedResults locale={locale} tab={tab} q={q} initial={initial} onCompose={onCompose} />
+    </ServiceErrorBoundary>
   );
 }
 function FeedResults({
   locale,
   tab,
   q,
+  initial,
   onCompose: handleCompose,
 }: {
   locale: string;
   tab: string;
   q: string;
+  initial: IFeedSnapshot;
   onCompose: () => void;
 }) {
   const { t } = useI18n();
-  const feed = useSuspenseInfiniteQuery(
-    postListOptions({
+  const { session } = useSession();
+  const sameQuery = initial.q === q && initial.tab === tab && initial.viewerId === session.user?.id;
+  const feed = useInfiniteQuery({
+    throwOnError: true,
+    ...postListOptions({
       limit: 8,
       board: tab === 'unanswered' ? 'FEEDBACK' : 'ALL',
       ...(tab === 'unanswered' ? { unanswered: 'true' } : {}),
       ...(q ? { q } : {}),
     }),
-  );
+    ...(sameQuery
+      ? { initialData: { pages: [initial.posts], pageParams: [''] }, initialDataUpdatedAt: 0 }
+      : {}),
+  });
   const { fetchNextPage, hasNextPage, isFetchingNextPage } = feed;
   const sentinel = useCallback(
     (node: HTMLDivElement | null) => {
@@ -95,8 +113,9 @@ function FeedResults({
     },
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
-  const posts = feed.data.pages.flatMap((page) => page.items);
+  const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
   if (feed.error && !feed.isFetching) throw feed.error;
+  if (!feed.data) return <PostListSkeleton />;
   return (
     <>
       {!posts.length && (
@@ -157,14 +176,5 @@ function FeedResults({
         </div>
       )}
     </>
-  );
-}
-function PostCardSkeleton() {
-  return (
-    <div className="skeleton-card">
-      <div />
-      <div />
-      <div />
-    </div>
   );
 }

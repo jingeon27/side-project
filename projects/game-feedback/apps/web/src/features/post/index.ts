@@ -6,6 +6,9 @@ export {
   useReadPostMutation,
 } from './model/post.hook';
 export { PostCard } from './ui/PostCard';
+export { PostListSkeleton } from './ui/PostListSkeleton';
+export { useRecordPostView } from './model/use-record-post-view';
+export { recordPostViewMutationOptions } from './model/post-view.mutation-options';
 export { PostArticle } from './ui/PostArticle';
 export type { TPostListParams } from './types/post.type';
 export {

@@ -37,6 +37,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
         <div className="input-button-row">
           <Input
             {...tagField}
+            aria-label={t('플레이어 태그')}
             onChange={(event) => {
               void tagField.onChange(event);
               setRequestedTag(undefined);

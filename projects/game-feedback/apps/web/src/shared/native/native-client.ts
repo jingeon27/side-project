@@ -1,4 +1,10 @@
-import { BRIDGE_EVENT, parseNativeMessage, type IAppInfo, type TWebMessage } from '@game-feedback/bridge';
+import {
+  BRIDGE_EVENT,
+  parseNativeMessage,
+  type IAppInfo,
+  type TWebMessage,
+  type TLoginProvider,
+} from '@game-feedback/bridge';
 
 interface INativeWindow extends Window {
   __GAME_FEEDBACK_APP__?: IAppInfo;
@@ -15,7 +21,9 @@ export function isNativeApp() {
 export function postToNative(message: TWebMessage) {
   if (isNativeApp()) (window as INativeWindow).ReactNativeWebView?.postMessage(JSON.stringify(message));
 }
-export function requestNativeLogin(): Promise<{ code: string; verifier: string } | null> {
+export function requestNativeLogin(
+  provider: TLoginProvider = 'google',
+): Promise<{ code: string; verifier: string } | null> {
   if (!isNativeApp()) return Promise.reject(new Error('앱에서 다시 시도해 주세요.'));
   return new Promise((resolve, reject) => {
     const id = crypto.randomUUID();
@@ -42,6 +50,6 @@ export function requestNativeLogin(): Promise<{ code: string; verifier: string }
       if (message.status === 'success') resolve({ code: message.code, verifier: message.verifier });
     }
     window.addEventListener(BRIDGE_EVENT, handleMessage);
-    postToNative({ type: 'auth-request', id });
+    postToNative({ type: 'auth-request', id, provider });
   });
 }

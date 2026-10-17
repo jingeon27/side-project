@@ -70,10 +70,7 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         <Avatar name={conversation.peer.nickname} size="small" />
         <div>
           <h2>{conversation.peer.nickname}</h2>
-          {(conversation.peer.isVerified ||
-            conversation.peer.isTestAccount ||
-            conversation.peer.supercellTag ||
-            conversation.supportTopic) && (
+          {(conversation.peer.isVerified || conversation.peer.supercellTag || conversation.supportTopic) && (
             <div className="conversation-peer-meta">
               <UserBadges author={conversation.peer} compact />
               {conversation.supportTopic && (

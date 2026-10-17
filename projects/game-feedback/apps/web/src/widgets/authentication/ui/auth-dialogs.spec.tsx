@@ -17,7 +17,6 @@ vi.mock('@/features/auth', () => ({
   useDemoLogin: auth.useDemoLogin,
   useCompleteOnboarding: auth.useCompleteOnboarding,
 }));
-vi.mock('./TestAccountPicker', () => ({ TestAccountPicker: () => <p>테스트 계정 선택</p> }));
 
 beforeEach(() => {
   auth.session = { demoMode: false, googleConfigured: true, needsOnboarding: false };
@@ -43,17 +42,15 @@ describe('authentication dialog responsibilities', () => {
     expect(auth.useCompleteOnboarding).not.toHaveBeenCalled();
   });
 
-  it('submits demo signup through its own mutation and leaves onboarding untouched', async () => {
+  it('shows four social methods and keeps testing login outside the product UI', () => {
     auth.session.demoMode = true;
-    const onSuccess = vi.fn();
-    render(<LoginDialog open onOpenChange={vi.fn()} onSuccess={onSuccess} />);
-    expect(screen.getByText('테스트 계정 선택')).toBeTruthy();
-    await submitSetup('데모로 시작하기');
-    await waitFor(() =>
-      expect(auth.demo.mutate).toHaveBeenCalledWith({ nickname: '새플레이어' }, { onSuccess }),
-    );
-    expect(auth.useCompleteOnboarding).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: '닫기' })).toBeTruthy();
+    render(<LoginDialog open onOpenChange={vi.fn()} onSuccess={vi.fn()} />);
+    for (const label of ['X로 시작하기', '카카오로 시작하기', 'Discord로 시작하기', 'Google로 시작하기']) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    }
+    expect(screen.queryByLabelText('서비스 닉네임')).toBeNull();
+    expect(screen.queryByText('테스트 계정 선택')).toBeNull();
+    expect(auth.useDemoLogin).not.toHaveBeenCalled();
   });
 
   it('keeps required onboarding independent and non-dismissible with its own mutation', async () => {

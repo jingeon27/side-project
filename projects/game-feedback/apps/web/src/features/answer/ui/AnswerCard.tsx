@@ -27,7 +27,7 @@ export function AnswerCard({ answer, authorContent, authorName, actions, helpful
         <div>
           <strong>{authorName ?? answer.author.nickname}</strong>
           {authorContent}
-          <span>
+          <span suppressHydrationWarning>
             {timeAgo(answer.createdAt, textLocale)}
             {answer.readAt && (
               <>

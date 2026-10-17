@@ -161,18 +161,6 @@
     font-size: var(--text-micro);
     background: var(--color-surface);
   }
-  .chat-list-note {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--color-muted);
-    font-size: var(--text-micro);
-    line-height: 1.8;
-    margin-top: auto;
-    padding: 18px;
-    border-top: 1px solid var(--color-line);
-    flex-shrink: 0;
-  }
   .chat-empty-list {
     text-align: center;
     display: flex;
@@ -255,10 +243,18 @@
     flex: 1;
     min-width: 0;
   }
+  .conversation-heading > .conversation-actions {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
   .conversation-peer-meta {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    max-height: 18px;
+    overflow: hidden;
+    white-space: nowrap;
     gap: 4px 8px;
     margin-top: 2px;
     font-size: var(--text-micro);
@@ -534,9 +530,6 @@
     .chat-bubble {
       font-size: var(--text-caption);
     }
-    .chat-list-note {
-      font-size: var(--text-micro);
-    }
     .conversation-list-heading {
       padding: 20px 16px 16px;
     }
@@ -646,10 +639,6 @@
       font-size: var(--text-micro);
       min-width: 17px;
       height: 17px;
-    }
-    .chat-list-note {
-      font-size: var(--text-micro);
-      padding: 18px 21px;
     }
     .chat-workspace > .chat-welcome {
       display: none;
