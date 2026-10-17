@@ -10,7 +10,10 @@
     ".": "./src/index.ts",
     "./next": "./src/next.ts",
     "./styles.css": "./src/styles.css",
-    "./theme.css": "./src/styles/theme.css"
+    "./theme.css": "./src/styles/theme.css",
+    "./lib/cn.helper": "./src/lib/cn.helper.ts",
+    "./ui/*": "./src/ui/*/index.ts",
+    "./ui": "./src/index.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -22,6 +25,7 @@
     "@base-ui/react": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
     "tailwind-merge": "^3.6.0"
   },
   "peerDependencies": {

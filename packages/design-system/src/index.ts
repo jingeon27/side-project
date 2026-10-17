@@ -16,3 +16,22 @@ export { Dialog } from './ui/dialog/Dialog';
 export type { IDialogProps } from './ui/dialog/Dialog';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
+
+export { Input } from './ui/input/Input';
+export { Textarea } from './ui/textarea/Textarea';
+export { NativeSelect, NativeSelectOption, NativeSelectOptGroup } from './ui/native-select/NativeSelect';
+export { Label } from './ui/label/Label';
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants } from './ui/tabs/Tabs';
+export { Checkbox } from './ui/checkbox/Checkbox';
+export {
+  DialogRoot,
+  DialogTrigger,
+  DialogPortal,
+  DialogClose,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog/DialogParts';

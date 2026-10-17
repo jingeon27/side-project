@@ -1,4 +1,5 @@
 @import './styles/theme.css';
+@import './styles/shadcn.css';
 @import './styles/base.css';
 @import './ui/form-field/form-field.css';
 

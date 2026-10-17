@@ -1,6 +1,6 @@
 # @side/design-system
 
-Game Feedback와 Photo Contest 웹이 공유하는 디자인 토큰과 React UI다. Photo Contest의 검증된 Base UI 컴포넌트에서 추출했다. API 클라이언트, 인증, 도메인 상태, 라우터, overlay-kit provider는 앱이 소유한다. API·모바일 앱에서 이 웹 패키지를 가져오지 않는다.
+Game Feedback와 Photo Contest 웹이 공유하는 디자인 토큰과 React UI다. 공식 shadcn/ui의 Base UI / base-nova 소스를 공통 토큰과 기존 공개 API에 연결한다. 설치 원본, 조정 범위와 MIT 라이선스는 [shadcn 구성](SHADCN.md)에 정리했다. API 클라이언트, 인증, 도메인 상태, 라우터, overlay-kit provider는 앱이 소유한다. API·모바일 앱에서 이 웹 패키지를 가져오지 않는다.
 
 ```tsx
 import { Button, Dialog, FormField, TextField, cn } from '@side/design-system';
@@ -20,11 +20,16 @@ import { ButtonLink } from '@side/design-system/next';
 @source '../../**/*.{ts,tsx}';
 ```
 
-공유 컴포넌트의 소스 검색은 패키지의 `styles.css`가 맡는다. 앱은 자신의 소스만 등록한다. `theme.css`는 색·글자 크기·분기점의 Tailwind 기본값을 초기화하고 흑백·오렌지 semantic palette와 공통 typography·radius·shadow·z-index·터치 크기를 제공한다. 모든 토큰은 `@theme static`으로 내보내므로 앱의 일반 CSS에서도 `var(--color-ink)`처럼 읽을 수 있다. `styles.css`는 이 테마와 공통 base 스타일을 함께 가져온다. 테마만 필요한 경우 `@side/design-system/theme.css`를 사용할 수 있다.
+공유 컴포넌트의 소스 검색은 패키지의 `styles.css`가 맡는다. 앱은 자신의 소스만 등록한다. `theme.css`는 색·글자 크기·분기점의 Tailwind 기본값을 초기화하고 흑백·오렌지 semantic palette와 공통 typography·radius·shadow·z-index·터치 크기를 제공한다. 모든 토큰은 `@theme static`으로 내보내므로 앱의 일반 CSS에서도 `var(--color-ink)`처럼 읽을 수 있다. `styles.css`는 이 테마와 공통 base 스타일을 함께 가져온다. shadcn.css는 같은 테마에서 primary/foreground/ring/border/input-border/popover 등의 shadcn 토큰을 파생하며 색을 앱별로 중복 정의하지 않는다. 테마만 필요한 경우 `@side/design-system/theme.css`를 사용할 수 있다.
 
 입력은 16px, 일반 버튼은 44px, 주 버튼은 50px를 기준으로 한다. 공통 base는 키보드 포커스·터치·reduced motion을 포함한다. 앱의 `#pc-main`, 토스트 위치, 내비게이션, 화면 레이아웃은 포함하지 않는다. 새 토큰을 더하면 `src/lib/cn.helper.ts`의 tailwind-merge 설정도 함께 갱신한다.
 
 ## 공개 UI
+
+- `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. NativeSelect는 모바일 OS 선택창을 사용한다.
+- `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다.
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 제어형 탭이다. 선택값과 URL은 앱이 소유한다.
+- `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogPortal`, `DialogOverlay`: shadcn 조합 API다. 기존 `Dialog`는 이를 조합하며 호출부의 props를 유지한다.
 
 - `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm"`, `fullWidth`, `loading`. 진행 중 재클릭을 막으면서 포커스를 유지한다. `buttonVariants`와 `IButtonProps`도 공개한다.
 - `ButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다. 이동에는 링크, 제출·조작에는 버튼을 사용한다.

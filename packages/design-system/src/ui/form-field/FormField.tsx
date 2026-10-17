@@ -3,6 +3,11 @@
 import { Children, cloneElement, isValidElement, useId } from 'react';
 import type { AriaAttributes, ReactNode } from 'react';
 import { cn } from '../../lib/cn.helper';
+import { Input } from '../input/Input';
+import { Textarea } from '../textarea/Textarea';
+import { NativeSelect } from '../native-select/NativeSelect';
+
+const fieldControls = new Set<unknown>(['input', 'textarea', 'select', Input, Textarea, NativeSelect]);
 
 export interface IFormFieldProps {
   label: string;
@@ -20,7 +25,7 @@ export function FormField({ label, children, hint, error, className }: IFormFiel
   const errorId = `${id}-error`;
   const controls = Children.map(children, (child) => {
     if (!isValidElement<AriaAttributes>(child)) return child;
-    if (!['input', 'textarea', 'select'].includes(String(child.type))) return child;
+    if (!fieldControls.has(child.type)) return child;
     const describedBy = [child.props['aria-describedby'], hint && hintId, error && errorId]
       .filter(Boolean)
       .join(' ');

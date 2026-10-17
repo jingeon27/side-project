@@ -4,6 +4,7 @@ import type { VariantProps } from 'class-variance-authority';
 import type { ComponentProps } from 'react';
 
 import { cn } from '../../lib/cn.helper';
+import { Button } from '../button/Button';
 
 const iconButtonVariants = cva(
   [
@@ -35,7 +36,9 @@ export interface IIconButtonProps
 /** 44×44 아이콘 버튼. 아이콘은 children으로 넣는다(lucide 아이콘은 aria-hidden). */
 export function IconButton({ label, variant, className, ...props }: IIconButtonProps) {
   return (
-    <BaseButton
+    <Button
+      variant="ghost"
+      size="icon"
       {...props}
       aria-label={label}
       title={props.title ?? label}
