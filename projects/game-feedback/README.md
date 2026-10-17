@@ -12,7 +12,7 @@
 
 게임코치에서는 가르치는 사람이 **수강생 모집**, 배우려는 사람이 **코치 구함**을 선택한다. 시간당 수강료 또는 희망 수강료를 원화로 입력하고, 비워두면 수강료 협의로 표시한다. 상세의 **코칭 상담**에서 작성자와 1:1 채팅을 시작한다. 코칭료 결제나 수강 완료를 처리하는 흐름은 없다.
 
-홈의 **글쓰기**에서는 게임과 게시판을 선택하고, 게시판에서 쓰면 해당 게임과 게시판이 고정된다. Quill의 굵게, 기울임, 밑줄, 취소선, 제목, 목록, 인용과 링크를 저장하며 수정과 새로고침에도 서식이 유지된다. 덱 카드 목록은 표시하지 않는다.
+홈의 **글쓰기**에서는 게임과 **분류**를 선택한다. 게임별 메뉴에서 글쓰기를 열면 해당 게임과 분류가 기본 선택되며, 분류는 피드백·친추판매·친선전 모집·게임코치·자유게시판 사이에서 변경할 수 있다. 게임별 메뉴의 게임 선택은 유지한다. Quill의 굵게, 기울임, 밑줄, 취소선, 제목, 목록, 인용과 링크를 저장하며 수정과 새로고침에도 서식이 유지된다. 덱 카드 목록은 표시하지 않는다.
 
 친추판매·친선전 모집의 글은 피드백 목록과 분리되고 작성자의 공개 프로필에서는 함께 확인할 수 있다. 상세에서 댓글을 남기거나 **채팅하기**로 대화를 시작한다. 글 작성자만 수정/삭제할 수 있고 기존 신고와 차단 정책도 적용된다.
 
@@ -77,13 +77,15 @@ corepack yarn workspace @side/game-feedback db:stop
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                |
 | `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                                   |
 
+API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
+
 ## API 규격 자동 생성
 
 `apps/api/openapi.json`은 REST 요청·응답·경로를 기술하는 OpenAPI 규격이다. 원본은 `packages/contracts`의 Zod 스키마와 API 경로 정의이며 JSON을 직접 편집하지 않는다. Orval이 이 규격에서 타입·클라이언트·Zod 응답 검증 코드를 만든다.
 
 프로젝트의 `dev`/`dev:demo`/`setup`, `check`/`typecheck`, `test`/`test:e2e`, `build`는 시작할 때 **계약 빌드 → Prisma 생성 → OpenAPI → SDK 생성**을 순서대로 실행한다. 실행 중 계약을 수정했다면 `codegen`을 다시 실행하거나 개발 서버를 다시 시작한다. 앱 워크스페이스의 개별 명령을 직접 실행하면 이 준비 단계는 실행하지 않는다.
 
-생성된 규격과 SDK는 API 변경을 리뷰하고 CI에서 누락을 잡을 수 있도록 Git에 포함한다. 규격이 같으면 재생성해도 변경되지 않으며 매번 새 파일이 올라가는 구조가 아니다. CI는 재생성 후 Git diff를 검사해 생성 결과를 빠뜨린 변경을 실패 처리한다. 생성 과정은 DB 접속이나 외부 API 호출이 필요 없다.
+`openapi.json`은 중간 생성 파일이므로 프로젝트 `.gitignore`에서 제외하고 Git에 올리지 않는다. 초기 체크아웃에서도 위 준비 단계가 원본 Zod 스키마와 API 경로 정의로 새로 생성한다. SDK 생성 코드는 API 변경 리뷰와 누락 검사를 위해 Git에 포함한다. CI는 규격과 SDK를 생성한 뒤 SDK diff와 SDK 소유 응답 검증 테스트를 검사한다. 생성 과정은 DB 접속이나 외부 API 호출이 필요 없다.
 
 ## 모바일 WebView 앱
 
