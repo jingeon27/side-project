@@ -108,7 +108,7 @@ describe('App', () => {
     expect(screen.getByText('현재 버전 1.0.0 · 필요한 버전 1.1.0 이상')).toBeTruthy();
     expect(screen.getByRole('button', { name: '업데이트하기' })).toBeTruthy();
     expect(screen.queryByTestId('web-view')).toBeNull();
-    expect(hideAsync).toHaveBeenCalled();
+    await waitFor(() => expect(hideAsync).toHaveBeenCalled());
     await waitFor(() =>
       expect(trackedEvents()).toContainEqual({
         name: 'update_required_shown',
