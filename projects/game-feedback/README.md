@@ -24,9 +24,9 @@
 
 설정의 **프로필 인증 문의**와 문의 페이지의 **관리자에게 문의하기**는 담당 관리자와 기존 **비공개 1:1 채팅**을 연다. 같은 사용자의 문의 대화는 재사용하고 사용자는 채팅으로 문의 내용과 답변을 확인한다. 실제 관리자가 없는 환경은 문의 불가 오류를 표시하며 가짜 답변을 만들지 않는다. 미인증 사용자는 글쓰기 화면과 작성한 글 상세에서도 인증을 신청할 수 있고, 인증 없이도 글을 작성할 수 있다.
 
-사용자 프로필과 채팅의 **대화 메뉴 → 사용자 신고**에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. `/:locale/admin`의 **운영 관리**는 localhost의 개발 서버에서 관리자 계정으로만 사용할 수 있고, 설정에서도 진입한다. 프로덕션 빌드에서는 모든 언어의 관리자 경로를 404로 차단하고 메뉴를 숨긴다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
+사용자 프로필과 채팅 상단의 **사용자 신고** 버튼에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. `/:locale/admin`의 **운영 관리**는 localhost의 개발 서버에서 관리자 계정으로만 사용할 수 있고, 설정에서도 진입한다. 프로덕션 빌드에서는 모든 언어의 관리자 경로를 404로 차단하고 메뉴를 숨긴다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
 
-로컬 데모에서는 계정 선택기의 **운영테스터**로 관리자 화면을 확인한다. 일반 계정으로 문의한 후 운영테스터의 문의함에서 채팅 답변과 인증 처리를 테스트할 수 있다. 관리자 인증 표시는 수동 서비스 검토 결과이며 Supercell API의 계정 소유권 검증과 구분한다.
+로컬에서는 테스트 토큰 API에 `sample-test-admin`을 전달해 관리자 화면을 확인한다. 일반 계정으로 문의한 후 운영테스터의 문의함에서 채팅 답변과 인증 처리를 테스트할 수 있다. 관리자 인증 표시는 수동 서비스 검토 결과이며 Supercell API의 계정 소유권 검증과 구분한다.
 
 ## 로컬 실행
 
@@ -36,16 +36,16 @@
 nvm use
 corepack yarn install --immutable
 cp projects/game-feedback/.env.example projects/game-feedback/.env
-corepack yarn workspace @side/game-feedback dev:demo
+corepack yarn workspace @side/game-feedback dev:test
 ```
 
-명시적 데모 실행은 외부 자격 증명 없이 가짜 로그인과 게임 프로필을 사용한다. Web 진입점은 <http://localhost:3300/>, API는 <http://localhost:4300>이다. 첫 방문 언어는 브라우저 설정을 따른다. 한국어로 바로 보려면 <http://localhost:3300/ko>를 사용한다. Ctrl+C는 이 실행이 시작한 API와 Web을 종료한다. 로컬 PostgreSQL 데이터와 소유 프로세스는 유지되며 다음 명령으로 중지한다.
+테스트 실행은 일반 서비스 UI에 예시 콘텐츠를 준비하고, 서버 API로 고정 계정의 테스트 토큰을 발급한다. 화면에 데모 가입 폼이나 계정 선택기, 테스트 배지는 표시하지 않는다. Web 진입점은 <http://localhost:3300/>, API는 <http://localhost:4300>이다. 첫 방문 언어는 브라우저 설정을 따른다. 한국어로 바로 보려면 <http://localhost:3300/ko>를 사용한다. Ctrl+C는 이 실행이 시작한 API와 Web을 종료한다. 로컬 PostgreSQL 데이터와 소유 프로세스는 유지되며 다음 명령으로 중지한다.
 
 ```sh
 corepack yarn workspace @side/game-feedback db:stop
 ```
 
-실제 Google/Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 데모 샘플은 명시적 데모 실행에만 추가한다.
+실제 소셜 로그인과 Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 예시 콘텐츠는 명시적인 테스트 또는 기존 데모 실행에서만 추가한다.
 
 ## Web UI와 shadcn/ui
 
@@ -61,21 +61,49 @@ corepack yarn workspace @side/game-feedback db:stop
 
 모바일은 한 열, 태블릿과 데스크톱은 기존 여러 열 배치를 사용한다. 모바일 채팅 상세에서는 상단 공통 메뉴와 하단 탭을 숨기고 대화 헤더의 뒤로 가기로 목록에 복귀한다. 입력창과 모달은 visual viewport 높이를 따라가며 Safe Area를 반영한다. 입력 글자는 16px, 하단 메뉴와 주요 언어 선택은 최소 44px 조작 영역을 사용한다. 게시글과 프로필의 긴 내용은 화면 안에서 줄바꿈한다.
 
-## 고정 테스트 계정으로 확인하기
+## 서버에서 테스트 토큰 발급하기
 
-`dev:demo` 실행 후 `/ko`에서 **로그인 / 시작하기**를 누르면 계정을 선택할 수 있다. 선택 즉시 해당 DB 사용자로 세션이 발급된다. `/ko/settings`의 **테스트 계정 전환**에서도 바꿀 수 있다.
+`dev:test`는 `GF_TEST_AUTH_ENABLED=true`, `GF_DEMO_MODE=false`로 시작한다. 로그인 화면은 X, 카카오, Discord, Google만 제공한다. 외부 소셜 인증을 거치지 않고 API 테스트를 하려면 다음 요청을 사용한다.
 
-| 선택 계정                           | 고정 ID             | 초기 상태                     |
-| ----------------------------------- | ------------------- | ----------------------------- |
-| 새벽의호그 · 테스트 플레이어로 시작 | `sample-user-0`     | 일반 사용자, 태그 `#2PP`      |
-| 덱연구소 · 인증 코치로 시작         | `sample-user-3`     | 서비스 인증 예시, 태그 `#9QY` |
-| 운영테스터 · 운영자 테스트로 시작   | `sample-test-admin` | 데모 운영자, 태그 미등록      |
+```sh
+curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
+  -H 'Origin: http://localhost:3300' \
+  -H 'Content-Type: application/json' \
+  -d '{"accountId":"sample-user-0"}'
+```
 
-새벽의호그로 게시글을 작성하고, 덱연구소로 전환해 댓글·채팅을 남긴 뒤 다시 새벽의호그로 돌아오면 작성자와 알림·대화 상태를 확인할 수 있다. 기본 샘플 게시글에는 댓글과 두 계정 사이의 대화가 저장돼 있다. 전환 시 이전 세션은 폐기하며 운영자 계정도 참여하지 않은 비공개 채팅을 읽을 수 없다.
+응답은 `{ accessToken, tokenType: "Bearer", expiresAt, user }`다. 이후 REST 요청에 `Authorization: Bearer <accessToken>`을 전달한다. 쓰기 요청에는 위 Origin 헤더도 보낸다. 같은 요청은 브라우저 테스트용 HttpOnly 세션 쿠키도 설정한다. 서버는 토큰의 해시만 저장하고 1시간 후 만료시키며 로그아웃 시 폐기한다. 잘못된 Bearer 헤더는 쿠키 인증으로 대체하지 않는다.
 
-모든 고정 계정은 테스트 계정으로 표시한다. **인증 유저 (테스트)**는 서비스 인증 배지의 예시이며 게임 계정 소유권은 `UNVERIFIED`다. 일반 Google 가입자는 인증되지 않은 상태로 시작한다. 대표 태그는 프로필 조회·저장 성공 후 사용자 정보와 게임 계정에 함께 반영하고 재로그인에도 유지한다. 태그 변경은 기존 게시글 스냅샷을 바꾸지 않는다.
+| 계정       | accountId           | 초기 상태                       |
+| ---------- | ------------------- | ------------------------------- |
+| 새벽의호그 | `sample-user-0`     | 일반 사용자, 태그 `#2PP`        |
+| 덱연구소   | `sample-user-3`     | 서비스 인증 사용자, 태그 `#9QY` |
+| 운영테스터 | `sample-test-admin` | 운영자                          |
 
-고정 계정 목록·전환 API는 명시적 데모에서만 제공하고 production에서는 사용할 수 없다. 이 절의 초기 상태는 최초 생성 기준이며 이후 저장한 태그·운영자 인증 변경을 시작할 때 덮어쓰지 않는다.
+발급은 미리 정의한 계정 ID만 허용한다. 테스트 인증이 꺼지면 endpoint는 404이고 production에서 활성화를 시도하면 시작을 거부한다. 기존 `/api/auth/test-login` 쿠키 전환 API는 테스트 자동화 호환을 위해 유지한다. 시작할 때 기존 사용자 변경과 메시지를 덮어쓰지 않는다. 피드백 6개와 친추판매, 친선전, 코치/수강생 모집, 자유글 10개를 추가하고 수강료 세 유형과 판매 금액을 준비한다.
+
+## 소셜 로그인 설정
+
+X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider>`, 콜백은 `/api/auth/social/<provider>/callback`이다. Google의 기존 `/api/auth/google`과 `/api/auth/google/callback`도 지원하며 기본 Google redirect URI는 기존 콜백이다. 환경변수의 redirect URI와 각 개발자 콘솔에 등록한 URL을 일치시킨다.
+
+| 제공자  | 환경변수                                              | 기본 콜백                           | 요청 범위                          |
+| ------- | ----------------------------------------------------- | ----------------------------------- | ---------------------------------- |
+| X       | `X_CLIENT_ID`, `X_CLIENT_SECRET`                      | `/api/auth/social/x/callback`       | `tweet.read users.read`, PKCE S256 |
+| 카카오  | `KAKAO_CLIENT_ID`(REST API 키), `KAKAO_CLIENT_SECRET` | `/api/auth/social/kakao/callback`   | 사용자 식별 ID                     |
+| Discord | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`          | `/api/auth/social/discord/callback` | `identify`                         |
+| Google  | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`            | `/api/auth/google/callback`         | `openid`, PKCE S256                |
+
+제공자별 `*_REDIRECT_URI`로 콜백을 지정할 수 있다. 세션 API의 `socialProviders`가 서버 설정 상태를 전달하고 설정된 로그인 버튼만 동작한다. 제공자와 외부 사용자 ID를 묶어 계정을 식별하며 서비스 닉네임은 가입 단계에서 직접 입력한다. 네이티브 WebView도 선택한 제공자를 시스템 브라우저로 전달하고 기존 일회용 앱 티켓/PKCE 교환으로 복귀한다.
+
+구현 기준은 [X OAuth 2.0](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code), [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [Discord OAuth2](https://docs.discord.com/developers/topics/oauth2)다. 로컬 검증은 가짜 제공자를 사용하며 실제 콘솔 키와 외부 계정 로그인은 별도로 확인해야 한다.
+
+## 팔로우, 공개 열람과 조회수
+
+공개 게시글의 목록, 본문과 댓글은 로그인 없이 읽을 수 있고 첫 HTML에도 포함한다. 작성과 수정은 로그인 흐름을 사용한다. 프로필에서 팔로우하면 이후의 새 게시글을 알림함으로 받고 사용자별 새 글 알림을 켜거나 끌 수 있다. 차단하면 양방향 팔로우를 해제하며 알림도 기존 콘텐츠 접근 정책으로 필터링한다. 알림함과 상단 알림 수는 30초 간격으로 갱신한다.
+
+등록일시는 Asia/Seoul 기준의 `<time datetime>`과 JSON-LD `datePublished`로 제공한다. 조회수는 `/api/posts/:id/views`에서 같은 로그인 사용자 또는 브라우저 방문 ID를 24시간에 한 번 집계하고 새로고침/동시 재시도로 중복 증가하지 않는다. 조회수 변경은 글의 수정일을 바꾸지 않는다. 목록과 상세에 저장된 조회수를 표시하고 JSON-LD에도 ViewAction 수를 연결한다.
+
+입력용 팝업은 BottomSheet, 삭제와 차단처럼 버튼만 있는 확인은 중앙 모달을 사용한다. 별도 글쓰기 경로와 검색·채팅의 본문 입력은 각 화면에 유지한다.
 
 ## 명령
 
@@ -99,7 +127,7 @@ API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실�
 
 `apps/api/openapi.json`은 REST 요청·응답·경로를 기술하는 OpenAPI 규격이다. 원본은 `packages/contracts`의 Zod 스키마와 API 경로 정의이며 JSON을 직접 편집하지 않는다. Orval이 이 규격에서 타입·클라이언트·Zod 응답 검증 코드를 만든다.
 
-프로젝트의 `dev`/`dev:demo`/`setup`, `check`/`typecheck`, `test`/`test:e2e`, `build`는 시작할 때 **계약 빌드 → Prisma 생성 → OpenAPI → SDK 생성**을 순서대로 실행한다. 실행 중 계약을 수정했다면 `codegen`을 다시 실행하거나 개발 서버를 다시 시작한다. 앱 워크스페이스의 개별 명령을 직접 실행하면 이 준비 단계는 실행하지 않는다.
+프로젝트의 `dev`/`dev:test`/`dev:demo`/`setup`, `check`/`typecheck`, `test`/`test:e2e`, `build`는 시작할 때 **계약 빌드 → Prisma 생성 → OpenAPI → SDK 생성**을 순서대로 실행한다. 실행 중 계약을 수정했다면 `codegen`을 다시 실행하거나 개발 서버를 다시 시작한다. 앱 워크스페이스의 개별 명령을 직접 실행하면 이 준비 단계는 실행하지 않는다.
 
 `openapi.json`은 중간 생성 파일이므로 프로젝트 `.gitignore`에서 제외하고 Git에 올리지 않는다. 초기 체크아웃에서도 위 준비 단계가 원본 Zod 스키마와 API 경로 정의로 새로 생성한다. SDK 생성 코드는 API 변경 리뷰와 누락 검사를 위해 Git에 포함한다. CI는 규격과 SDK를 생성한 뒤 SDK diff와 SDK 소유 응답 검증 테스트를 검사한다. 생성 과정은 DB 접속이나 외부 API 호출이 필요 없다.
 
@@ -108,7 +136,7 @@ API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실�
 `apps/mobile`은 Expo dev client로 실행하며 웹의 테스트 계정·게시글·댓글·채팅·공통 디자인을 그대로 사용한다. Metro는 8082, Android/iOS E2E는 Web 3302·API 4302와 별도 `gf_test_mobile_*` 스키마를 사용한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest 단위·UI와 Playwright native host 검증을 소유한다.
 
 ```sh
-# 웹 데모 실행 후 별도 터미널에서
+# 웹 실행 후 별도 터미널에서
 adb reverse tcp:3300 tcp:3300
 APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:android
 # iOS

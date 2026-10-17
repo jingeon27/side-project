@@ -1,16 +1,16 @@
 # 구현 및 검증 기록
 
-갱신일: 2026-10-17. 대상 저장소는 [jingeon27/side-project](https://github.com/jingeon27/side-project)이며 `develop`에서 분리한 `feat/game-feedback` Worktree에 구현한다. 사용자 제공 [MVP Plan v4.0 원문](mvp-plan-v4.md)은 수정하지 않는다.
+갱신일: 2026-10-18. 대상 저장소는 [jingeon27/side-project](https://github.com/jingeon27/side-project)이며 `develop`에서 분리한 `feat/game-feedback` Worktree에 구현한다. 사용자 제공 [MVP Plan v4.0 원문](mvp-plan-v4.md)은 수정하지 않는다.
 
 ## 구현 범위
 
 - 한국어 중심 `/ko`, `/ja`, `/en` 경로, 최신순·미답변 피드, cursor pagination과 무한 목록.
-- 게임 프로필 조회·연결, 대표 Supercell 태그 저장, 작성 시점의 태그·트로피·아레나를 표시하는 피드백 요청. 덱 카드 UI는 사용자 요청으로 제거했다.
+- 사용자 계정의 게임 계정 등록과 대표 Supercell 태그, 별도 관리자 인증. 글쓰기에는 게임 프로필을 첨부하지 않으며 덱 카드 UI도 표시하지 않는다.
 - 요청·피드백 답변·일반 댓글 CRUD, 요청자만 가능한 도움됨, 인앱 알림과 답변 읽음.
-- Google `openid`, 직접 입력 닉네임, 연령·약관 동의, HttpOnly 세션, 로그아웃·탈퇴.
+- X·카카오·Discord·Google 소셜 로그인, 직접 입력 닉네임, 연령·약관 동의, HttpOnly 세션, 로그아웃·탈퇴.
 - 신고·양방향 사용자 차단, 관리자 카테고리·콘텐츠 숨김·사용자 인증 변경과 감사 기록.
 - PostgreSQL에 보존하는 1:1 대화·메시지, 참여자 권한, 명시적 메시지까지의 읽음 경계, 인증된 SSE 갱신.
-- 명시적 데모의 고정 테스트 계정과 게시글·댓글·채팅 fixture, 실제 사용자 세션 전환.
+- 명시적 테스트 실행의 고정 계정 accessToken API와 예시 게시글·댓글·채팅. 화면에는 테스트 계정 선택기와 배지를 노출하지 않는다.
 - 서버 Zod 검증 → OpenAPI → Orval Client 및 응답 검증 스키마 생성.
 
 피드백 답변은 읽음·도움됨의 대상이며 일반 댓글과 구분해 표시하고 저장한다. 서비스 사용자 인증과 게임 계정 소유권 `UNVERIFIED`도 별개다. 기능 구현은 실제 사용자 모집·외부 제공자 검증·공개 출시 완료를 의미하지 않는다.
@@ -634,7 +634,7 @@ Web FSD 작업의 `yarn.lock` 변경은 이미 저장소에서 사용하는 over
 | 공개 운영          | 실제 연락처·연령·약관·개인정보·메시지 보유·신고 정책 검토        |
 | 모바일 운영        | dev client·실기기, 실제 Google 앱 복귀, 서명·스토어 검증         |
 | 공개 배포          | 운영 DB·HTTPS·비밀·출구 IP·모니터링·관리자 권한 검증             |
-| 글로벌·후속 단계   | 영어·일본어 완성, 번역·분석·평판·팔로우·추가 게임                |
+| 글로벌·후속 단계   | 영어·일본어 완성, 번역·분석·평판·추가 게임                       |
 
 ## 이번 공통 파일 변경 이유
 
@@ -685,3 +685,27 @@ Web Playwright 전체 69개에서 60개가 통과했다. Activity가 보존한 �
 Production Playwright 5개가 최종 통과했다. instant()로 가이드의 prefetched 본문과 게시글의 header/placeholder를 확인했고, JavaScript 없는 본문과 저장된 다크 모드, 공개 경로 404/차단 정보 비노출, 모든 locale의 관리자 HTML/RSC 차단도 포함한다. API build와 공개 SEO를 켠 일반 Web production build(.next/release-check)가 통과했다. 일반 빌드의 cacheComponents/partialPrefetching은 true, exposeTestingApiInProductionBuild는 false이고 sitemap은 요청 시점에 생성한다. 재생성 전후 SDK 해시가 같았다.
 
 로컬 개발 DB 55442에는 검토한 추가 Migration만 적용했고 기존 글/메시지를 삭제하지 않았다. 익명 설정 화면을 400/1440px로 직접 촬영해 섹션 간격 16px와 가로 넘침 없음도 확인했다. 테스트는 전용 55444와 격리 스키마 및 가짜 제공자를 사용한다. Google/Supercell 실연동, 실제 기기/스토어와 공개 배포를 검증한 결과로 표현하지 않는다.
+
+## 2026-10-18 공개 피드와 소셜 로그인
+
+홈과 게임 공통 다섯 분류는 제목·검색·글쓰기 버튼을 프리패칭 셸에 남기고 목록 영역만 카드 세 개의 스켈레톤으로 표시한다. 경로는 기존 boards/<분류>를 유지하며 각 정적 라우트 어댑터가 공통 BoardDocument를 사용한다. 첫 문서는 준비된 공개 목록을 바로 렌더링하고 RSC 이동은 목록 데이터만 스트리밍한다. 서버 초기 데이터를 가진 공개 목록은 useInfiniteQuery + throwOnError를 사용하며 첫 문서에는 목록 Suspense를 추가하지 않아 JavaScript 없는 본문이 가려지지 않게 한다. 분류 JSON-LD도 첫 문서에서는 동기 렌더링한다. 브라우저 URL은 useSyncExternalStore로 구독하고 Next history commit 이후 구독자에게 알린다. 검색 초기 동기화는 이미 입력한 초안을 덮어쓰지 않는다.
+
+입력용 로그인·온보딩·신고·게임 계정 등록·내용 수정·탈퇴 확인은 BottomSheet를 사용한다. 별도 작성 경로와 화면 안의 검색/채팅 입력은 유지한다. 중앙 모달은 삭제/차단 같은 버튼 확인만 담당한다. 공통 디자인 시스템의 Dialog에 선택형 placement를 추가하고 기본 center를 유지한다. Photo Contest 제품 코드는 변경하지 않았다. 채팅 상단에 신고와 내역 삭제를 직접 노출하고 차단은 메뉴에 둔다. 신고 사유에 사기 / 거래 피해를 추가해 먹튀도 함께 접수한다. 채팅 개인정보 공유 금지 문구와 글 상세/답변의 홍보 문구를 제거했다.
+
+공개 목록·글·댓글은 비로그인 열람과 서버 HTML을 제공하고 작성/수정에는 로그인을 요구한다. 목록과 상세에 조회수, 상세에 Asia/Seoul 등록일시를 표시하고 JSON-LD ViewAction을 추가한다. POST /api/posts/:id/views는 서버 해시로 방문자를 구분해 같은 사용자/브라우저는 24시간에 한 번 집계하며 글 수정일을 바꾸지 않는다. 숨김/삭제/차단 권한도 재검사한다. UserFollow 도메인은 팔로우/해제와 사용자별 새 글 알림 설정을 소유한다. 글 저장 트랜잭션에서 구독자 알림을 만들고 알림함/개수는 30초마다 갱신한다. 차단은 양방향 팔로우와 관련 알림을 정리한다. 관계 잠금과 구독 행 잠금으로 팔로우 설정 변경/차단과 알림 저장을 직렬화한다.
+
+명시적 dev:test는 GF_TEST_AUTH_ENABLED=true, GF_DEMO_MODE=false로 서버 테스트 토큰을 켠다. POST /api/auth/test-token에 sample-user-0, sample-user-3, sample-test-admin 중 accountId를 보내면 1시간 accessToken/Bearer/만료시각과 사용자 정보를 받고 HttpOnly 쿠키도 설정한다. DB에는 토큰 해시만 저장하며 응답은 no-store다. 만료/로그아웃 토큰은 인증에 사용할 수 없다. 일반 실행에서는 엔드포인트가 404이고 production에서 테스트 인증 활성화는 거부한다. 기존 테스트 로그인 API는 호환용으로 유지하지만 UI의 데모 가입/선택기/배지를 제거했다. 다른 분류에도 판매 금액, 친선전, 시간당·월·목표형 코칭과 자유글 예시를 추가하며 기존 데이터는 덮어쓰지 않는다.
+
+X·카카오·Discord·Google은 제공자 어댑터와 공통 소셜 로그인 경로를 사용한다. 제공자와 외부 사용자 ID 조합으로 식별하며 같은 문자열의 ID를 다른 서비스 계정과 합치지 않는다. 기존 Google 식별자는 보존하고 SocialIdentity로 옮긴다. OAuth state는 제공자에 묶어 한 번만 사용하며 만료를 검사한다. Google openid/서명 검증과 PKCE, X users.read/tweet.read와 PKCE S256, Discord identify, 카카오 사용자 ID 조회를 사용한다. 이름·이메일·사진은 계정에 자동 저장하지 않고 닉네임은 가입 폼에서 받는다. WebView는 선택한 제공자를 시스템 브라우저로 전달하며 짧은 일회용 앱 티켓과 PKCE로 WebView 쿠키 세션을 발급한다. 서버 설정 상태로 동작 가능한 로그인 버튼을 결정한다. 실제 콘솔 키와 외부 로그인은 아직 검증하지 않았다.
+
+추가 Migration 202610170011_user_follows, 202610170012_post_views, 202610170013_social_providers는 각각 팔로우, 조회수, 소셜 식별자와 제공자 경계를 추가한다. 기존 글/메시지를 삭제하지 않으며 개발 55442와 테스트 55444의 URL/소유권 가드를 유지한다. 이번 변경에는 새 runtime 의존성이 없고 루트 manifest/lockfile을 변경하지 않았다. 공통 Dialog 변경은 사용자가 요청한 입력용 BottomSheet와 공통 스타일 공유를 위한 것이다.
+
+### 2026-10-18 검증
+
+Node 24.19.0 / Yarn 4.17.0에서 프로젝트 check(계약/API/SDK/Bridge/Web/Mobile 타입, Web/Mobile FSD lint), 전체 format:check와 공통 디자인 시스템 check가 통과했다. API Vitest+Supertest 13개 파일 91개, SDK 38개, Web Vitest 24개 파일 92개, Mobile Vitest 10개 파일 42개와 공통 UI 14개가 통과했다. 제공자별 OAuth 요청/응답 오류, 동일 ID의 제공자 분리와 재로그인, native 제공자 전달, 테스트 토큰 만료/폐기/일반 실행 차단, 팔로우 알림/차단과 조회수 동시 중복 방지를 포함한다.
+
+Web Playwright 전체 72개 중 71개가 통과했다. 검사 도중 번역 파일의 정리로 Fast Refresh가 문서를 다시 열어 토스트 하나가 사라졌으며, 소스 변경 없이 일반/reduced motion 두 시나리오를 다시 실행해 모두 통과했다. 따라서 고유 72개를 확인했고 처음부터 72개가 한 번에 통과한 것으로 기록하지 않는다. 모바일 host는 Android Chromium/iOS WebKit 전체 30개가 통과했고 native 인증 취소, foreground 계정 변경, 신고/메뉴 우선 back과 입력을 확인했다.
+
+Production Playwright 12개가 모두 통과했다. instant()로 다섯 분류와 400/1440px 피드의 제목·검색·작성 버튼 및 목록 스켈레톤을 확인했고, 가이드 본문/글 셸, no-JS 피드·다섯 분류·상세, 저장 테마/SEO/404와 관리자 HTML/RSC 차단도 검사했다. API build와 Mobile Android/iOS Metro export가 통과했다. 이 결과는 실제 외부 계정 로그인, Supercell 운영 API, 실기기/스토어 또는 공개 배포 검증이 아니다.
+
+일반 Web production build(.next/release-check)도 통과했다. 빌드 설정에서 cacheComponents/partialPrefetching=true, exposeTestingApiInProductionBuild=false를 확인했다. dev:test 재시작의 OpenAPI/Orval 재생성 후 SDK 추적 diff는 0개다. 로컬 400/1440px에서 네 소셜 로그인 버튼과 BottomSheet 하단 정렬, 가로 넘침 없음과 pageerror 0개를 확인했다. demoMode=false 상태에서 테스트 토큰 발급과 Bearer 보호 API 호출을 확인하고 발급한 세션을 로그아웃했다. 제공자 네 개 모두 현재 키 미설정 상태이며 실제 외부 로그인을 성공했다고 표시하지 않는다. 개발 Web 3300/API 4300은 실행한 채 유지하고 소유 테스트 DB는 데이터를 보존해 종료했다.

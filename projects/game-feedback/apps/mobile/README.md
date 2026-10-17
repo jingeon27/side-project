@@ -18,13 +18,13 @@ APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
 APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:start
 ```
 
-Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이며 앱에서도 **로그인 / 시작하기**에서 새벽의호그·덱연구소·운영테스터를 선택할 수 있다. 실기기는 접근 가능한 Web origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
+Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로그인 화면은 X·카카오·Discord·Google을 제공하고 테스트 계정은 서버 토큰 API로 발급한다. 실기기는 접근 가능한 Web origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
 
 `.env.example`을 이 앱의 `.env`로 복사해 개발 origin을 지정할 수 있다. release 빌드는 명시적인 HTTPS origin이 필수다. `APP_VARIANT=development`일 때만 Android HTTP를 허용한다. 스킴은 `gamefeedback`, 번들/패키지는 `dev.side.gamefeedback`이다. 운영 서명·스토어 등록·배포는 포함하지 않는다.
 
 ## 네이티브 연결
 
-게시판과 Quill 글쓰기, 이미지/동영상 채팅은 웹 화면을 그대로 사용한다. 파일 선택은 WebView의 시스템 선택기를 사용하며 iOS의 사진 보관함/카메라/마이크 용도 문구를 app.config.ts에 정의한다. 동영상은 inline 재생을 허용하고 자동 재생은 하지 않는다. 이미지 확대는 웹 Dialog이므로 Android back과 기존 overlay 규칙을 따른다. 모바일 Enter는 줄바꿈이고 메시지는 전송 버튼으로 보낸다. 브라우저 host 검증과 실제 기기의 파일 선택/권한창 검증은 구분한다.
+게시판과 Quill 글쓰기, 이미지/동영상 채팅은 웹 화면을 그대로 사용한다. 파일 선택은 WebView의 시스템 선택기를 사용하며 iOS의 사진 보관함/카메라/마이크 용도 문구를 app.config.ts에 정의한다. 동영상은 inline 재생을 허용하고 자동 재생은 하지 않는다. 이미지 확대는 웹 BottomSheet이므로 Android back과 기존 overlay 규칙을 따른다. 모바일 Enter는 줄바꿈이고 메시지는 전송 버튼으로 보낸다. 브라우저 host 검증과 실제 기기의 파일 선택/권한창 검증은 구분한다.
 
 `WebViewChannel` class가 WebView 참조, 복구할 마지막 주소와 history, 화면 snapshot을 소유한다. `useWebShell`은 `useSyncExternalStore`로 로딩, 오류, 모달과 문서 상태를 구독하고 native host와 OS lifecycle을 연결한다. 변경이 없으면 같은 snapshot을 반환하며 채널은 셸 인스턴스마다 생성한다. 준비된 문서의 경로 변경은 복구 주소만 갱신하고 `source`를 바꾸지 않는다. 재시도는 마지막 주소와 새 WebView key를 한 번에 반영하고 이전 문서의 history를 비운다. 구독 해제와 ref 해제는 React가 처리한다.
 
@@ -48,10 +48,10 @@ ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초�
 
 | 경로                                                            | 탐색 규칙                                                            |
 | --------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `/:locale?tab=unanswered&q=...`                                 | 라운지 루트. 다른 탭에서 돌아오면 마지막 검색/탭을 복원              |
+| `/:locale?tab=unanswered&q=...`                                 | 피드 루트. 다른 탭에서 돌아오면 마지막 검색/탭을 복원                |
 | `/:locale/messages`                                             | 채팅 목록 루트                                                       |
 | `/:locale/messages/:conversationId`                             | 목록에서 push, 다른 채팅방으로 이동은 replace. 공통 목록 layout 유지 |
-| `/:locale/posts/:postId`, `/:locale/users/:userId?cursor=...`   | 상세는 push. 뒤로 가기는 진입 경로, 직접 진입은 라운지로 replace     |
+| `/:locale/posts/:postId`, `/:locale/users/:userId?cursor=...`   | 상세는 push. 뒤로 가기는 진입 경로, 직접 진입은 피드로 replace       |
 | `/:locale/settings`, `/:locale/notifications`, `/:locale/guide` | 루트 탭 간 replace로 이력 중복 방지                                  |
 
 채팅방 헤더의 뒤로 가기는 채팅 목록으로 돌아가고, Android 뒤로 가기는 유효한 진입 이력이 있으면 해당 화면으로 돌아간다. 직접 열린 채팅방은 목록으로 돌아간다. 준비된 WebView의 딥링크·동일 origin 새 창은 Next router로 전달하며 같은 URL을 반복 전달해도 이력을 추가하지 않는다. 연결 복구 주소에도 검색·cursor를 유지한다.
