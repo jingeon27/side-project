@@ -12,7 +12,7 @@ export function PostCommentsHeader({ postId }: { postId: string }) {
   });
   return (
     <div className="shrink-0 border-b border-line">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-3xl desktop:max-w-6xl">
         <BottomSheet.Header
           title="댓글"
           className="pb-2"

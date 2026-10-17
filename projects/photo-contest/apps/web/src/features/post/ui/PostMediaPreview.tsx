@@ -25,7 +25,7 @@ export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: I
 
   return (
     <figure aria-label="선택한 파일 미리보기" className="flex flex-col gap-2">
-      <div className="relative aspect-video max-h-80 overflow-hidden rounded-card bg-sunken">
+      <div className="relative aspect-video max-h-80 overflow-hidden rounded-card bg-sunken desktop:aspect-square desktop:max-h-[40dvh]">
         {status === 'unavailable' ? (
           <p
             role="status"
@@ -51,7 +51,7 @@ export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: I
             alt="선택한 사진 미리보기"
             fill
             unoptimized
-            sizes="calc(100vw - 40px)"
+            sizes="(min-width: 1024px) 540px, calc(100vw - 40px)"
             onLoad={handleLoaded}
             onError={handleUnavailable}
             className="object-contain"

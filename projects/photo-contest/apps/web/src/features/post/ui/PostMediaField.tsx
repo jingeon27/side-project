@@ -89,7 +89,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
           aria-label="파일 선택"
           disabled={isSubmitting}
           onClick={() => fileInputRef.current?.click()}
-          className="flex min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-sunken p-5 text-label text-ink transition-colors hover:bg-neutral-soft active:bg-neutral-soft disabled:cursor-not-allowed disabled:opacity-45"
+          className="flex min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-sunken p-5 text-label text-ink transition-colors hover:bg-neutral-soft active:bg-neutral-soft disabled:cursor-not-allowed disabled:opacity-45 desktop:aspect-square desktop:max-h-[40dvh]"
         >
           <ImagePlus aria-hidden className="size-7" />
           파일 선택

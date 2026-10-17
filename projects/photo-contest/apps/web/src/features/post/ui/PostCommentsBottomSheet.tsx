@@ -8,6 +8,7 @@ import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bo
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import { PostCommentComposer } from './PostCommentComposer';
+import { PostCommentContext } from './PostCommentContext';
 import { PostCommentList } from './PostCommentList';
 import { PostCommentsHeader } from './PostCommentsHeader';
 
@@ -25,16 +26,21 @@ export function PostCommentsBottomSheet({
   return (
     <BottomSheet.Root {...controls} className="h-dvh">
       <PostCommentsHeader postId={postId} />
-      <BottomSheet.Content className="px-0 pt-3">
-        <div className="mx-auto w-full max-w-3xl px-5">
-          <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-32 w-full" />}>
-            <PostCommentList commentsRef={commentsRef} postId={postId} />
-          </AsyncBoundary>
+      <div className="flex min-h-0 flex-1 desktop:mx-auto desktop:grid desktop:w-full desktop:max-w-6xl desktop:grid-cols-2">
+        <PostCommentContext postId={postId} />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <BottomSheet.Content className="px-0 pt-3">
+            <div className="mx-auto w-full max-w-3xl px-5">
+              <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-32 w-full" />}>
+                <PostCommentList commentsRef={commentsRef} postId={postId} />
+              </AsyncBoundary>
+            </div>
+          </BottomSheet.Content>
+          <BottomSheet.Footer className="pt-2 pb-[calc(12px+var(--safe-bottom))]">
+            <PostCommentComposer postId={postId} />
+          </BottomSheet.Footer>
         </div>
-      </BottomSheet.Content>
-      <BottomSheet.Footer className="pt-2 pb-[calc(12px+var(--safe-bottom))]">
-        <PostCommentComposer postId={postId} />
-      </BottomSheet.Footer>
+      </div>
     </BottomSheet.Root>
   );
 }

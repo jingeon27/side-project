@@ -23,7 +23,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'mobile-chrome', testIgnore: '**/webview.spec.ts', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'mobile-chrome',
+      testIgnore: ['**/webview.spec.ts', '**/desktop-*.spec.ts'],
+      use: { ...devices['Pixel 7'] },
+    },
     {
       name: 'mobile-safari',
       testIgnore: '**/webview.spec.ts',
