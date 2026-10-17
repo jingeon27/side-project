@@ -2,7 +2,7 @@
   .hero {
     height: 310px;
     border-radius: var(--radius-card);
-    background: var(--color-accent-soft);
+    background: var(--color-surface);
     border: 1px solid var(--color-line);
     padding: 33px;
     position: relative;
@@ -11,22 +11,6 @@
   .hero-copy {
     position: relative;
     z-index: 2;
-  }
-  .hero-eyebrow {
-    color: var(--color-muted);
-    font-size: var(--text-micro);
-    letter-spacing: 1.6px;
-    font-weight: 700;
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .hero-eyebrow > span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--color-brand-strong);
   }
   .hero h1 {
     font-size: var(--text-display);
@@ -47,133 +31,6 @@
     margin-top: 21px;
     gap: 22px;
   }
-  .hero-index {
-    position: absolute;
-    bottom: 14px;
-    right: 21px;
-    color: var(--color-muted);
-    font-size: var(--text-micro);
-    letter-spacing: 1.2px;
-  }
-  .hero-art {
-    position: absolute;
-    right: 28px;
-    top: 42px;
-    width: 230px;
-    height: 235px;
-  }
-  .hero-orbit {
-    border: 1px solid var(--color-line);
-    border-radius: 50%;
-    position: absolute;
-  }
-  .orbit-one {
-    width: 253px;
-    height: 165px;
-    right: -35px;
-    top: 35px;
-    transform: rotate(-32deg);
-  }
-  .orbit-two {
-    width: 180px;
-    height: 223px;
-    right: -7px;
-    top: -5px;
-    transform: rotate(-32deg);
-  }
-  .art-card {
-    position: absolute;
-    width: 107px;
-    height: 147px;
-    border-radius: var(--radius-card);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .art-card-back {
-    background: var(--color-brand-strong);
-    border: 5px solid var(--color-line);
-    color: var(--color-on-brand);
-    left: 18px;
-    top: 28px;
-    transform: rotate(-22deg);
-    box-shadow: 4px 8px 0 var(--color-line-strong);
-  }
-  .art-card-front {
-    background: var(--color-accent-soft);
-    border: 5px solid var(--color-line);
-    right: 18px;
-    top: 56px;
-    transform: rotate(15deg);
-    color: var(--color-muted);
-    box-shadow: 7px 9px 0 var(--color-line-strong);
-    flex-direction: column;
-    gap: 9px;
-  }
-  .art-card-front > svg {
-    fill: var(--color-on-brand);
-    filter: drop-shadow(2px 3px 0 var(--color-line-strong));
-  }
-  .art-card-front > span {
-    font-size: var(--text-micro);
-    letter-spacing: 0.7px;
-    font-weight: 800;
-  }
-  .art-card-dot {
-    position: absolute;
-    top: 9px;
-    left: 9px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--color-accent);
-  }
-  .art-card-bottom {
-    display: flex;
-    gap: 4px;
-  }
-  .art-card-bottom > i {
-    height: 4px;
-    width: 4px;
-    background: var(--color-accent);
-    border-radius: 50%;
-  }
-  .hero-spark {
-    position: absolute;
-    color: var(--color-muted);
-  }
-  .spark-one {
-    font-size: var(--text-display);
-    left: 13px;
-    bottom: 23px;
-  }
-  .spark-two {
-    font-size: var(--text-display);
-    right: 11px;
-    top: 0;
-    transform: rotate(14deg);
-  }
-  .hero-mini-badge {
-    position: absolute;
-    bottom: 8px;
-    left: 33px;
-    background: var(--color-surface);
-    border-radius: var(--radius-control);
-    padding: 8px 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: var(--text-micro);
-    font-weight: 600;
-    color: var(--color-muted);
-    box-shadow: var(--shadow-card);
-    transform: rotate(-7deg);
-  }
-  .hero-mini-badge > svg {
-    background: var(--color-accent-soft);
-    border-radius: 50%;
-    padding: 2px;
-  }
   .feed-section {
     margin-top: 32px;
   }
@@ -183,36 +40,12 @@
     justify-content: space-between;
     margin-bottom: 22px;
   }
-  .section-eyebrow {
-    font-size: var(--text-micro);
-    letter-spacing: 1.3px;
-    font-weight: 700;
-    color: var(--color-muted);
-    display: block;
-    margin-bottom: 5px;
-  }
   .feed-heading h2 {
     font-size: var(--text-title);
     letter-spacing: -1px;
     display: flex;
     align-items: center;
     gap: 12px;
-  }
-  .live-indicator {
-    color: var(--color-muted);
-    font-size: var(--text-micro);
-    letter-spacing: 0.5px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding-top: 4px;
-  }
-  .live-indicator > span {
-    height: 4px;
-    width: 4px;
-    border-radius: 50%;
-    background: var(--color-brand-strong);
   }
   .game-filter {
     border: 1px solid var(--color-line);
@@ -234,22 +67,6 @@
     border-radius: var(--radius-control);
     display: grid;
     place-items: center;
-  }
-  .game-filter-label {
-    font-size: var(--text-micro);
-    font-weight: 400;
-    color: var(--color-muted);
-    margin-left: 1px;
-    letter-spacing: 0;
-  }
-  .game-filter-pill {
-    margin-left: auto;
-    border-radius: var(--radius-badge);
-    color: var(--color-muted);
-    background: var(--color-accent-soft);
-    padding: 3px 6px;
-    font-size: var(--text-micro);
-    letter-spacing: 1px;
   }
   .feed-controls {
     display: flex;
@@ -283,12 +100,6 @@
     right: 0;
     background: var(--color-brand-strong);
     pointer-events: none;
-  }
-  .tab-dot {
-    background: var(--color-sunken);
-    height: 4px;
-    width: 4px;
-    border-radius: 50%;
   }
   .sort-label {
     display: flex;
@@ -374,12 +185,6 @@
   .status-pill.waiting {
     color: var(--color-muted);
     background: var(--color-accent-soft);
-  }
-  .status-pill.waiting > span {
-    height: 3px;
-    width: 3px;
-    background: var(--color-accent);
-    border-radius: 50%;
   }
   .status-pill.resolved {
     color: var(--color-muted);
@@ -596,23 +401,11 @@
     .hero h1 {
       font-size: var(--text-display);
     }
-    .hero-art {
-      right: 33px;
-      top: 47px;
-      transform: scale(1.1);
-      transform-origin: right center;
-    }
   }
   @media (max-width: 1250px) {
     .hero {
       padding: 27px;
       height: 300px;
-    }
-    .hero-art {
-      transform: scale(0.85);
-      transform-origin: right center;
-      right: 6px;
-      top: 42px;
     }
     .hero h1 {
       font-size: var(--text-display);
@@ -622,9 +415,6 @@
     }
     .hero-cta {
       margin-top: 19px;
-    }
-    .hero-index {
-      font-size: var(--text-micro);
     }
     .post-card {
       padding: 18px 18px 0;
@@ -637,11 +427,6 @@
     }
   }
   @media (max-width: 1080px) {
-    .hero-art {
-      transform: scale(1);
-      right: 20px;
-      top: 36px;
-    }
     .hero {
       height: 305px;
       padding: 30px;
@@ -676,9 +461,6 @@
     .feed-footer {
       font-size: var(--text-micro);
     }
-    .hero-index {
-      font-size: var(--text-micro);
-    }
   }
   @media (max-width: 760px) {
     .hero {
@@ -692,21 +474,6 @@
     .hero p {
       font-size: var(--text-caption);
       max-width: 240px;
-    }
-    .hero-eyebrow {
-      font-size: var(--text-micro);
-      letter-spacing: 1.2px;
-      margin-bottom: 15px;
-    }
-    .hero-art {
-      right: 10px;
-      top: 44px;
-      transform: scale(0.82);
-      transform-origin: right center;
-    }
-    .hero-index {
-      font-size: var(--text-micro);
-      right: 18px;
     }
     .hero-cta {
       gap: 14px;
@@ -726,9 +493,6 @@
     }
     .feed-heading > .button > svg {
       width: 15px;
-    }
-    .section-eyebrow {
-      font-size: var(--text-micro);
     }
     .feed-controls {
       margin-top: 9px;
@@ -756,12 +520,6 @@
       font-size: var(--text-caption);
       min-height: 49px;
       padding: 9px 12px;
-    }
-    .game-filter-label {
-      font-size: var(--text-micro);
-    }
-    .game-filter-pill {
-      font-size: var(--text-micro);
     }
     .post-card {
       padding: 17px 17px 0;
@@ -835,22 +593,9 @@
       font-size: var(--text-micro);
       max-width: 210px;
     }
-    .hero-art {
-      transform: scale(0.65);
-      right: -3px;
-      top: 51px;
-    }
     .hero-cta {
       gap: 12px;
       margin-top: 23px;
-    }
-    .hero-eyebrow {
-      font-size: var(--text-micro);
-    }
-    .hero-index {
-      font-size: var(--text-micro);
-      letter-spacing: 0.9px;
-      bottom: 12px;
     }
     .post-game-info {
       gap: 8px;
@@ -901,9 +646,6 @@
       padding: 16px 15px 0;
     }
     .sort-label {
-      font-size: var(--text-micro);
-    }
-    .game-filter-label {
       font-size: var(--text-micro);
     }
     .game-filter {

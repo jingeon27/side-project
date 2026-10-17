@@ -23,8 +23,7 @@ export function PostCard({ post, href, authorContent, authorName, deck }: IPostC
     <m.article
       className="post-card"
       initial={false}
-      whileInView={reducedMotion ? undefined : { opacity: [0.8, 1], y: [8, 0] }}
-      viewport={{ once: true, amount: 0.15 }}
+      animate={{ y: 0, opacity: 1 }}
       whileHover={reducedMotion ? undefined : { y: -3 }}
     >
       <div className="post-topline">

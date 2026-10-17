@@ -44,7 +44,6 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
           <strong>{t('클래시 로얄')}</strong>
           <small>Clash Royale</small>
         </span>
-        <span className="live-dot" />
       </Link>
       <div className="upcoming-games">
         <span>{t('다음 게임을 기다리고 있나요?')}</span>
@@ -52,7 +51,6 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
       </div>
       <div className="sidebar-bottom">
         <div className="community-caption">
-          <span className="tiny-sparkle">✳</span>
           <strong>
             {t('좋은 피드백이')}
             <br />

@@ -18,14 +18,7 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
     <>
       <div className="feed-heading">
         <div>
-          <span className="section-eyebrow">FEEDBACK LOUNGE</span>
-          <h2>
-            {t('피드백 라운지')}
-            <span className="live-indicator">
-              <span />
-              LIVE
-            </span>
-          </h2>
+          <h2>{t('피드백 라운지')}</h2>
         </div>
         <MotionButton
           variant="primary"
@@ -43,8 +36,6 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
           <Crown size={20} />
         </span>
         <span>{t('클래시 로얄')}</span>
-        <span className="game-filter-label">Clash Royale</span>
-        <span className="game-filter-pill">ACTIVE</span>
       </div>
       <div className="feed-controls">
         <div className="feed-tabs" role="tablist" aria-label={t('피드백 필터')}>
@@ -72,7 +63,6 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
           >
             <MessageSquare size={16} />
             {t('답변을 기다려요')}
-            <span className="tab-dot" />
             <m.span
               aria-hidden="true"
               className="feed-tab-indicator"

@@ -48,8 +48,10 @@
   .notification-item > svg {
     color: var(--color-muted);
   }
-  .notification-item > .green-dot {
-    margin-top: 7px;
+  .notification-unread {
+    color: var(--color-ink);
+    font-size: var(--text-micro);
+    white-space: nowrap;
   }
   .notification-list + .button {
     margin-top: 15px;

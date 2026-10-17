@@ -21,9 +21,6 @@ export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) 
         <p className="language-banner">{translate(language, '한국어 원문으로 제공되는 안내입니다.')}</p>
       )}
       <article className="info-card" lang="ko">
-        <span className="section-eyebrow">
-          {kind === 'guide' ? 'PLAY BETTER, TOGETHER' : 'COMMUNITY & TRUST'}
-        </span>
         <h1>{infoTitles[kind]}</h1>
         {match(kind)
           .with('guide', () => <GuideContent locale={locale} />)

@@ -32,7 +32,7 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
         <p>{notification.message}</p>
         <span>{timeAgo(notification.createdAt, textLocale)}</span>
       </div>
-      {!notification.readAt && <span className="green-dot" />}
+      {!notification.readAt && <span className="notification-unread">{t('읽지 않음')}</span>}
       <ArrowUpRight size={17} />
     </Link>
   );

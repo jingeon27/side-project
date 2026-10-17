@@ -31,7 +31,9 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         <MessageCircle size={20} />
         <span>
           {t('채팅')}
-          {chatUnread > 0 && <span className="mobile-chat-dot" />}
+          {chatUnread > 0 && (
+            <span className="mobile-chat-count">({chatUnread > 99 ? '99+' : chatUnread})</span>
+          )}
         </span>
       </Link>
       <Link

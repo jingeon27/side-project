@@ -2,6 +2,7 @@ import type { TLocale } from './locale';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '읽지 않음': ['Unread', '未読'],
   닫기: ['Close', '閉じる'],
   오류: ['error', 'エラー'],
   '게시글을 작성하고 피드백을 확인하는 요청자 계정': [
@@ -22,7 +23,7 @@ const messages: Record<string, readonly [string, string]> = {
   '회원가입 안내': ['Sign up', '新規登録'],
   '피드백 라운지': ['Feedback lounge', 'フィードバックラウンジ'],
   '피드백 요청': ['Request feedback', 'フィードバック依頼'],
-  '클래시 로얄': ['Clash Royale', 'クラッシュ・ロワイヤル'],
+  '클래시 로얄': ['Clash Royale', 'クラッシュロワイヤル'],
   '피드백 필터': ['Feedback filters', 'フィードバックの絞り込み'],
   '최신 피드백': ['Latest feedback', '最新のフィードバック'],
   '답변을 기다려요': ['Awaiting replies', '回答待ち'],

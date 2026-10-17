@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
-import { ArrowUpRight, Check, Crown, MessageSquare } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 interface IFeedHeroProps {
   onCompose: () => void;
@@ -12,10 +12,6 @@ export function FeedHero({ onCompose }: IFeedHeroProps) {
   return (
     <section className="hero">
       <div className="hero-copy">
-        <div className="hero-eyebrow">
-          <span />
-          PLAY BETTER, TOGETHER
-        </div>
         <h1>
           {t('혼자 고민하던 플레이,')}
           <br />
@@ -37,30 +33,6 @@ export function FeedHero({ onCompose }: IFeedHeroProps) {
           <ArrowUpRight size={17} />
         </MotionButton>
       </div>
-      <div className="hero-art" aria-hidden="true">
-        <div className="hero-orbit orbit-one" />
-        <div className="hero-orbit orbit-two" />
-        <div className="hero-spark spark-one">✦</div>
-        <div className="hero-spark spark-two">✳</div>
-        <div className="art-card art-card-back">
-          <Crown size={48} />
-        </div>
-        <div className="art-card art-card-front">
-          <div className="art-card-dot" />
-          <MessageSquare size={52} strokeWidth={1.6} />
-          <span>GOOD PLAY!</span>
-          <div className="art-card-bottom">
-            <i />
-            <i />
-            <i />
-          </div>
-        </div>
-        <div className="hero-mini-badge">
-          <Check size={15} />
-          {t('함께라면, 한 단계 더')}
-        </div>
-      </div>
-      <div className="hero-index">01 — GAME FEEDBACK COMMUNITY</div>
     </section>
   );
 }

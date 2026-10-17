@@ -4,7 +4,7 @@ import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Crown, Settings2, Plus, Gamepad2, ArrowUpRight, Sparkles, Shield } from 'lucide-react';
+import { Trophy, Crown, Settings2, Plus, ArrowUpRight, Shield } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { gameAccountListOptions } from '@/features/game-profile';
 import { UserBadges } from '@/features/user';
@@ -16,10 +16,6 @@ export function PlayerSidebar({ home }: { home: string }) {
   return (
     <aside className="right-sidebar">
       <div className="profile-card">
-        <div className="eyebrow">
-          <span className="green-dot" />
-          MY PLAYER
-        </div>
         {session?.user ? (
           <>
             <div className="profile-person">
@@ -71,11 +67,6 @@ export function PlayerSidebar({ home }: { home: string }) {
           </>
         ) : (
           <>
-            <div className="profile-illustration">
-              <span className="illustration-ring" />
-              <Gamepad2 size={38} />
-              <span className="illustration-star">✦</span>
-            </div>
             <h3>{t('반가워요, 플레이어님!')}</h3>
             <p className="profile-intro">
               {t('나의 플레이를 나누고')}
@@ -98,9 +89,6 @@ export function PlayerSidebar({ home }: { home: string }) {
         )}
       </div>
       <div className="guide-card">
-        <div className="guide-icon">
-          <Sparkles size={20} />
-        </div>
         <h3>
           {t('좋은 질문이')}
           <br />
@@ -128,7 +116,6 @@ export function PlayerSidebar({ home }: { home: string }) {
         </div>
       </div>
       <a className="alpha-status" href={`${home}/contact`}>
-        <span className="green-dot" />
         <span>{t('지금은 함께 만들어가는 알파 기간')}</span>
         <ArrowUpRight size={13} />
       </a>

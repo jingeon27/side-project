@@ -7,13 +7,7 @@ interface IPostStatusProps {
 }
 export function PostStatus({ answerCount, helpfulCount }: IPostStatusProps) {
   const { t } = useI18n();
-  if (answerCount === 0)
-    return (
-      <span className="status-pill waiting">
-        <span />
-        {t('답변 기다리는 중')}
-      </span>
-    );
+  if (answerCount === 0) return <span className="status-pill waiting">{t('답변 기다리는 중')}</span>;
   if (helpfulCount > 0)
     return (
       <span className="status-pill resolved">

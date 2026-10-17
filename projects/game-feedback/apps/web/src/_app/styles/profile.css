@@ -5,26 +5,6 @@
     border-radius: var(--radius-card);
     background: var(--color-surface);
   }
-  .profile-illustration {
-    height: 99px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    color: var(--color-ink);
-    margin: 6px 0 3px;
-  }
-  .profile-illustration > svg {
-    transform: rotate(-12deg);
-    position: relative;
-    background: var(--color-sunken);
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-sheet);
-    padding: 13px;
-    width: 73px;
-    height: 68px;
-    box-shadow: 4px 6px 0 var(--color-line-strong);
-  }
   .profile-card > h3 {
     font-size: var(--text-body);
     letter-spacing: -0.6px;

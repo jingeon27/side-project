@@ -236,38 +236,7 @@
     justify-content: center;
     text-align: center;
     padding: 30px;
-    background: radial-gradient(
-      ellipse at 50% 40%,
-      var(--color-sunken) 0%,
-      var(--color-surface) 55%,
-      var(--color-surface) 100%
-    );
-  }
-  .chat-welcome-art {
-    position: relative;
-    background: var(--color-sunken);
-    border: 1px solid var(--color-line);
-    width: 94px;
-    height: 90px;
-    border-radius: var(--radius-sheet);
-    color: var(--color-muted);
-    display: grid;
-    place-items: center;
-    transform: rotate(-9deg);
-    margin-bottom: 29px;
-    box-shadow: 7px 8px 0 var(--color-line-strong);
-  }
-  .chat-welcome-art > span {
-    position: absolute;
-    right: -16px;
-    top: -17px;
-    font-size: var(--text-display);
-    color: var(--color-muted);
-    transform: rotate(8deg);
-  }
-  .chat-welcome .section-eyebrow {
-    font-size: var(--text-micro);
-    letter-spacing: 1.2px;
+    background: var(--color-surface);
   }
   .chat-welcome h2 {
     font-size: var(--text-title-lg);
@@ -566,15 +535,6 @@
   .chat-author-link {
     color: var(--color-muted) !important;
   }
-  .mobile-chat-dot {
-    position: absolute;
-    height: 4px;
-    width: 4px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    right: -8px;
-    top: 1px;
-  }
   @media (min-width: 1500px) {
     .chat-layout {
       grid-template-columns: 205px minmax(0, 1fr);
@@ -638,9 +598,6 @@
     .chat-welcome h2 {
       font-size: var(--text-title-lg);
     }
-    .chat-welcome .section-eyebrow {
-      font-size: var(--text-micro);
-    }
   }
   @media (max-width: 1080px) {
     .chat-layout {
@@ -658,10 +615,6 @@
     .chat-connection {
       font-size: var(--text-micro);
       gap: 4px;
-    }
-    .chat-connection .green-dot {
-      height: 5px;
-      width: 5px;
     }
     .conversation-preview time {
       font-size: var(--text-micro);
@@ -739,10 +692,6 @@
       text-align: right;
       justify-content: flex-end;
       line-height: 1.8;
-    }
-    .chat-connection > .green-dot {
-      width: 5px;
-      height: 5px;
     }
     .chat-connection > svg {
       height: 11px;

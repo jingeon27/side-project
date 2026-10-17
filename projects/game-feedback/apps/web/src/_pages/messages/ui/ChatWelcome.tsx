@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { ButtonLink } from '@side/design-system/next';
-import { ArrowUpRight, MessageCircle } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 interface IChatWelcomeProps {
   locale: string;
@@ -11,11 +11,6 @@ export function ChatWelcome({ locale }: IChatWelcomeProps) {
   const { t } = useI18n();
   return (
     <section className="chat-welcome">
-      <div className="chat-welcome-art">
-        <MessageCircle size={43} />
-        <span>✳</span>
-      </div>
-      <span className="section-eyebrow">A NEW PERSPECTIVE, A NEW CONNECTION</span>
       <h2>
         {t('좋은 플레이 뒤에는')}
         <br />

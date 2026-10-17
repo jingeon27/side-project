@@ -77,7 +77,6 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
   return (
     <>
       <div className="page-heading">
-        <span className="section-eyebrow">MY PLAYER</span>
         <h1>{t('나의 플레이 공간')}</h1>
         <p>{t('프로필부터 계정까지, 필요한 설정을 한곳에서.')}</p>
       </div>

@@ -1,21 +1,19 @@
 @layer components {
   .hero {
     height: auto;
-    min-height: 310px;
+    min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 200px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     align-items: center;
-    padding-bottom: 48px;
+    padding-bottom: 28px;
   }
   .hero-copy {
     min-width: 0;
   }
-  .hero-art {
-    position: relative;
-    inset: auto;
-    width: 200px;
-    margin-inline: auto;
+  .mobile-chat-count {
+    margin-inline-start: 3px;
+    font-size: var(--text-micro);
   }
   .language-settings select {
     width: 100%;
@@ -58,12 +56,9 @@
     }
     .hero {
       height: auto;
-      min-height: 295px;
+      min-height: 0;
       grid-template-columns: minmax(0, 1fr);
       gap: 0;
-    }
-    .hero-art {
-      display: none;
     }
     .hero p {
       max-width: none;
@@ -71,10 +66,6 @@
     .hero h1 {
       font-size: clamp(25px, 6.8vw, 36px);
       overflow-wrap: anywhere;
-    }
-    .hero-index {
-      position: static;
-      margin-top: 20px;
     }
     .feed-heading,
     .feed-controls,
@@ -133,9 +124,6 @@
     }
     .hero {
       padding: 24px 18px;
-    }
-    .hero-art {
-      display: none;
     }
     .settings-card,
     .detail-card {

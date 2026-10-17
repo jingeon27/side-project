@@ -23,10 +23,7 @@ export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
           <span className="brand-mark">
             <Gamepad2 size={24} strokeWidth={2.5} />
           </span>
-          <span>
-            {t('플레이메이트')}
-            <span className="alpha-tag">ALPHA</span>
-          </span>
+          <span>{t('플레이메이트')}</span>
         </Link>
         <nav className="top-nav" aria-label={t('주 메뉴')}>
           <Link href={home} className={isHome ? 'active' : ''}>
@@ -62,7 +59,7 @@ export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
             href={`${home}/notifications`}
           >
             <Bell size={21} />
-            {unread > 0 && <span className="notification-dot" />}
+            {unread > 0 && <span className="header-chat-count">{unread > 99 ? '99+' : unread}</span>}
           </Link>
           {session?.user ? (
             <Link href={`${home}/settings`} className="user-button">
