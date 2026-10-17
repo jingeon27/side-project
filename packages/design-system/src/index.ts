@@ -49,3 +49,4 @@ export {
 
 export { Toaster } from './ui/sonner/Toaster';
 export { toast } from 'sonner';
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';

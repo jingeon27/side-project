@@ -3,7 +3,7 @@
 공식 shadcn/ui의 **Base UI / base-nova** registry 소스를 수동 설치하고 저장소의 공통 토큰·컴포넌트 이름·공개 API에 맞게 조정했다. shadcn/ui는 런타임 패키지를 추가하는 방식이 아니라 컴포넌트 소스를 프로젝트가 소유하는 방식으로 사용한다.
 
 - 공식 registry: `https://ui.shadcn.com/r/styles/base-nova/<component>.json`
-- 설치 구성: Button, Input, Textarea, NativeSelect, Label, Checkbox, Tabs, Dialog, Select, Sonner
+- 설치 구성: Button, Input, Textarea, NativeSelect, Label, Checkbox, Tabs, Dialog, Select, DropdownMenu, Sonner
 - 원본/라이선스: [shadcn-ui/ui](https://github.com/shadcn-ui/ui), [보존한 MIT 라이선스](SHADCN-LICENSE.md)
 - [공식 모노레포 가이드](https://ui.shadcn.com/docs/monorepo), [Base UI Button](https://ui.shadcn.com/docs/components/base/button), [Native Select](https://ui.shadcn.com/docs/components/base/native-select)
 
@@ -27,3 +27,5 @@ Select는 공식 base-nova의 Base UI Root/Trigger/Value/Portal/Positioner/Popup
 Toaster는 같은 registry의 Sonner 조합을 named function으로 제공한다. 앱이 theme을 전달하므로 next-themes를 중복 설치하지 않는다. 색/모서리/폰트/44px 닫기는 공통 패키지가 소유하며, 위치/시간/번역/업무 알림은 앱에서 설정한다. Sonner 2.0.8을 이 패키지 의존성으로 선언하고 toast를 함께 내보낸다. Radix UI 의존성은 추가하지 않는다.
 
 공통 색상은 html의 data-theme 속성이 있는 앱에서만 system/light/dark를 적용한다. light-dark와 color-scheme으로 기기 설정 변화를 즉시 반영하며, 쿠키/사용자 설정은 앱이 소유한다. data-theme이 없는 기존 소비 앱의 기본 테마는 유지한다.
+
+DropdownMenu는 공식 base-nova의 Base UI Menu Root/Trigger/Portal/Positioner/Popup/Item을 필요한 범위로 제공한다. 키보드 이동과 Escape, 외부 클릭, 포커스 복귀를 Base UI에 위임하고 공통 popover 레이어와 44px 조작 영역을 사용한다. Game Feedback 채팅의 신고·대화내역 삭제·차단은 앱이 소유한다.
