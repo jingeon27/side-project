@@ -13,7 +13,8 @@
     "test": "vitest run --project unit --project ui",
     "test:unit": "vitest run --project unit",
     "test:api": "vitest run --project api",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:deploy": "playwright test --config playwright.deploy.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.47.4",
