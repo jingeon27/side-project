@@ -36,6 +36,8 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이며 앱�
 
 Google 로그인은 시스템 브라우저 + PKCE를 사용한다. OAuth 완료 후 API가 `gamefeedback://auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google 제공자의 callback은 기존 Web origin의 `/api/auth/google/callback`이며 실제 자격 증명 검증은 별도다.
 
+ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초기 링크는 이미 받은 후속 링크를 덮어쓰지 않으며 해제 후 async 응답을 무시한다. lifecycle 훅은 let/ref 플래그 없이 구독하고 useCallback으로 안정화한 콜백별 의존성을 사용한다. WebView props는 satisfies로 검증해 추론을 유지한다.
+
 ## 경로와 화면 전환
 
 최초 WebView 주소는 Web origin의 `/`다. 서버가 기기/브라우저의 언어와 지역 설정을 감지하고 저장된 수동 언어 선택을 우선한다. 설정의 언어 선택은 WebView 쿠키에 보존한다. locale이 명시된 게시글과 대화 딥링크는 그 경로를 유지한다. 연결 복구도 마지막으로 열린 locale과 query를 유지하며 최초 `/` 리다이렉트가 끝나기 전에는 한국어 경로로 덮어쓰지 않는다.

@@ -331,6 +331,30 @@ Mobile의 최초 주소를 `/ko`에서 `/`로 바꿔 저장한 설정과 기기 
 
 Mobile Vitest는 9개 파일 34개가 통과했다. snapshot 참조 안정성/중복 알림 방지/구독 해제, 채널 인스턴스 분리, warm URL과 문서 source 분리, 복구 상태의 일괄 반영을 검증한다. RN Web UI에서 로딩/모달 상태의 구독 반영, OS listener 중복 설치 방지와 언마운트 후 WebView ref 해제를 확인했다. Mobile 타입 검사와 FSD lint, Android/iOS Metro export, 실제 native host를 연결한 Android Chromium/iOS WebKit E2E 12개 재검증(39.3초)과 전체 저장소 Prettier 검사도 통과했다. 잔여 소유 테스트 스키마 0개를 확인하고 테스트 DB만 중지했다. dev client/실기기 검증은 포함하지 않는다.
 
+## Lifecycle, mutation options와 조회 경계
+
+`ShellLifecycle`이 기기 foreground/background 전환, back 대기와 폐기 상태를 소유한다. `useShellLifecycle`은 let/ref 플래그 없이 OS 구독을 연결하고 해제한다. AbortController로 해제 뒤의 초기 링크와 back 응답을 무시하고, 후속 링크가 먼저 왔다면 늦은 초기 링크로 덮어쓰지 않는다. web back 요청이 거부되어도 history/종료 fallback으로 이어진다. `useWebShell`은 useCallback과 개별 lifecycle 의존성을 사용하며 props에 `satisfies WebViewProps`를 적용해 리터럴과 이벤트 인자 추론을 보존한다.
+
+Web의 useRef 호출은 14곳에서 4곳으로 줄였다. 피드 무한 스크롤은 정리 함수를 반환하는 React 19 callback ref를 사용한다. 채팅은 callback ref와 `ChatScrollController`로 DOM 스크롤, 이전 기록 anchor와 자동 하단 이동을 처리하고 새 메시지 표시는 useSyncExternalStore로 구독한다. 읽음 재시도와 메시지 UUID는 mutation의 variables를 사용한다. 실패한 같은 본문의 재전송은 같은 UUID, 성공 뒤 의도적으로 다시 보낸 같은 본문은 새 UUID를 사용한다. 전송 중 중복 제출은 사용자/대화별 mutationKey로 QueryClient에서 즉시 차단한다. Toast 타이머는 UI 상태와 effect cleanup으로 관리한다. 남은 ref는 경로 전환의 이전 값, 검색 URL 반영 확인, 게시글 읽음의 중복 방지와 모달 해제 식별자이며 외부 동기화에 사용한다. useCallback은 함수 참조를 안정화하며 이 값 보존 역할을 대체하지 않는다.
+
+9개 도메인의 mutation 26개는 `*.mutation-options.ts`의 `mutationOptions` 팩토리로 이동했다. mutationKey, REST IO, 캐시 무효화와 세션 교체 순서를 팩토리에서 관리하고 named public export로 공개한다. 기존 mutation 훅은 옵션을 연결해 원본 결과를 반환한다. query options의 scope/skipToken은 유지하며, 필수 인자가 있는 오버로드는 Suspense에 필요한 실행 함수를 타입 단언 없이 추론한다. 폼 검증, 초안과 예상 가능한 전송 실패는 폼/mutation 상태에서 처리한다.
+
+`AsyncBoundary`는 기존 Next catchError, QueryErrorResetBoundary와 Suspense를 조합한다. 피드 목록, 알림과 대화 목록/대화창의 초기 로딩과 조회 오류를 영역 안에서 처리한다. 공개 게시글/프로필/작성글은 서버에서 받은 초기 데이터를 useQuery로 즉시 표시하고 throwOnError로 오류 경계에 연결한다. 이 서버 렌더 경로에는 불필요한 Suspense를 추가하지 않아 JavaScript 없이도 본문을 읽을 수 있다. 서버 초기 세션은 공통 오류 경계 안에 두고 RSC 슬롯 전체를 최상위 Suspense로 감싸지 않는다. 전체 서비스가 이른 streaming fallback에 숨거나 notFound의 HTTP 상태가 200으로 바뀌지 않도록 한다. 피드 검색과 탭, 채팅 목록 등 정상 형제 영역은 유지한다. 오류에는 안전한 복구 문구와 재시도만 표시하며 상세/대화 오류에는 상위 화면 링크를 제공한다. 서버 초기 데이터가 있는 게시글/프로필은 기존 SSR 원문과 SEO를 유지한다. 초기 데이터 없이 브라우저 쿠키와 상대 REST URL을 사용하는 조회만 clientOnly로 hydration 이후 시작해 서버에서 잘못된 상대 URL 조회나 인증 없는 private fetch를 하지 않는다. refetch 실패로 접근 권한이 달라진 경우에도 오래된 private 화면을 계속 표시하지 않는다.
+
+Web에 dayjs 1.11.18과 utc/timezone plugin을 추가했다. shared/lib/date가 상대 시간, 날짜 구분 key와 읽음 시각 비교를 소유한다. 화면 문구 형식은 Intl을 유지하고 프로필/설정/채팅을 Asia/Seoul 시간대로 일치시킨다. 한국어/영어/일본어 표시는 함수 인자로 전달하며 사용자별 dayjs.locale 전역 변경은 하지 않는다. 루트 yarn.lock 변경은 이 Web Workspace의 직접 의존성과 신규 dayjs descriptor뿐이며 기존 패키지 해석을 변경하지 않았다.
+
+채팅은 기존 REST 전송 + 인증된 SSE 변경 알림을 유지한다. `ChatRealtimeConnection`이 EventSource와 브라우저 이벤트 수명을 소유하고, 사용자별 hook effect가 해제한다. 쿠키 인증과 대상 사용자/대화별 무효화를 유지하며 SSE envelope는 Zod로 확인한다. 잘못된 이벤트는 무시하고 open/reconnect에서 REST를 다시 조회해 놓친 변경을 복구한다. error 후 세션 확인은 5초 간격으로 제한하고 완전히 닫힌 EventSource는 online/visible에서 새로 연결한다. 정상 EventSource의 자체 재연결, 서버 3초 retry와 5초 heartbeat, 연결 불가 중 10초 REST polling을 유지한다. 서버는 메시지 본문을 SSE에 싣지 않고 참여 권한과 live 세션을 다시 확인한다. 여러 API 인스턴스의 이벤트 공유 pub/sub는 여전히 별도 운영 작업이며 이번에 도입하지 않았다. SSE의 단방향 이벤트와 재연결 동작은 [MDN 문서](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events), 조회 경계는 [TanStack Suspense 문서](https://tanstack.com/query/latest/docs/framework/react/guides/suspense)를 참고한다.
+
+## 의미 없는 상태와 장식 제거
+
+실제 접속/서버 상태와 연결되지 않았던 피드 LIVE와 게임 ACTIVE를 제거했다. MY PLAYER와 영문 대문자 장식 라벨, 프로필/알파/게임/탭의 점, 히어로의 궤도/별/떠 있는 카드와 장식 번호를 삭제하고 사용하지 않는 CSS도 정리했다. 소개와 빈 채팅 영역은 단순한 배경, 제목, 설명과 동작으로 구성한다. 피드 카드의 자동 진입 모션도 없애고 hover와 키보드 동작만 유지하며 모션 줄이기 변경 시 위치를 원점으로 돌린다. 기존 공통 DS의 색, 컨트롤과 필요한 탐색/게임 아이콘은 유지한다.
+
+알림과 모바일 채팅의 점은 숫자 또는 읽지 않음 문구로 바꾸고 실제 SSE 연결 상태는 텍스트로 표시한다. 한국어/영어/일본어의 서비스 문구에 가운데 점을 사용하지 않는다. 사용자 작성 콘텐츠는 수정하지 않는다. UI 규칙은 Web AGENTS.md에도 기록했다.
+
+이번 변경의 Web Vitest는 18개 파일 65개, Mobile Vitest는 10개 파일 38개가 통과했다. 프로젝트 타입 검사와 FSD lint, immutable install, Next 프로덕션 빌드, Android/iOS Metro export와 전체 저장소 Prettier 검사도 통과했다. Web 전체 E2E 실행에서는 31개 중 28개가 통과했고, 공개 SSR 본문/모션 줄이기 전환/접근 불가 대화의 오류 문구 3개 실패를 수정한 뒤 해당 파일의 8개 시나리오를 모두 재검증했다. 합쳐서 31개 고유 시나리오를 확인했으며 한 번의 전체 실행에서 31개가 통과한 결과로 표현하지 않는다. 공개 본문의 JavaScript 없는 렌더, 404 HTTP 상태와 프로필/게시글 SEO, 조회 실패의 지역 복구와 정상 형제 영역 유지, 계정 변경과 초안, SSE와 반응형 화면을 포함한다. Android Chromium/iOS WebKit의 native host E2E 12개도 통과했다. dev client/실기기 검증은 포함하지 않는다.
+
+1440px 데스크톱과 390px 모바일 피드, 모바일 설정 화면을 직접 캡처해 확인했다. 장식용 점과 가로 넘침이 없고 브라우저 pageerror도 0개였다. 전용 테스트 DB의 잔여 `gf_test_*` 스키마는 0개이며 해당 테스트 DB만 중지했다. 실행 중인 Web 3300과 API 4300은 HTTP 200을 반환하고 고정 테스트 계정 3개와 기존 게시글 6개를 보존했다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

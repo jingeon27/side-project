@@ -9,5 +9,6 @@ Expo 57 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글�
 - `APP_VARIANT=development`만 Android HTTP를 허용한다. release는 명시적인 HTTPS `EXPO_PUBLIC_WEB_ORIGIN`이 필요하다. `app.config.ts`가 네이티브 설정의 원본이며 생성 android/ios는 커밋하지 않는다.
 - `originWhitelist=['*']`와 동기 탐색 정책, 모든 메시지의 `nativeEvent.url` 검증을 유지한다. 새 창도 같은 정책을 사용한다. 딥링크는 알려진 locale·화면·안전한 ID만 받는다.
 - Android 뒤로 가기는 웹 overlay를 먼저 닫고, 800ms 내 미처리면 WebView history/종료로 이어진다. 응답을 기다리는 중 중복 누름은 무시한다. foreground는 세션을 먼저 확인하고 계정 변경 시 private cache를 지운다.
+- `WebViewChannel`은 화면 snapshot을 소유하고 `useWebShell`이 useSyncExternalStore로 구독한다. `ShellLifecycle`은 OS 전환·back 중복·초기/후속 링크 경합과 폐기를 관리한다. lifecycle 훅에 가변 let/ref 플래그를 두지 않으며 useCallback과 개별 의존성으로 OS 구독을 안정화한다. WebView props는 `satisfies WebViewProps`로 검증해 타입 추론을 유지한다.
 - 테스트 설정·파일은 이 앱이 소유한다. Vitest unit은 순수 함수, UI는 RN Web과 OS 모듈 대역, Playwright는 실제 웹/API + 실제 native host 로직을 쓴다. Web 3302/API 4302, `.next/e2e-mobile`, 전용 55444 DB의 `gf_test_mobile_*`만 사용한다. DB를 reset하지 않는다.
 - `bundle:check`는 Metro Android/iOS export를 검사한다. Playwright 통과를 dev client·실기기 또는 스토어 빌드 검증으로 표현하지 않는다.
