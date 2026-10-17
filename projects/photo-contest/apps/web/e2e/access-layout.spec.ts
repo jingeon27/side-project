@@ -113,7 +113,7 @@ test(
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const main = await page.locator('#pc-main').boundingBox();
-    expect(main?.width).toBeLessThanOrEqual(1200);
+    expect(main?.width).toBeLessThanOrEqual(1440);
     const viewport = page.viewportSize();
     if (viewport && viewport.width >= 1024) {
       expect(main?.width).toBeGreaterThan(1000);

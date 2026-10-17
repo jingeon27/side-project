@@ -27,10 +27,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="ko" data-app={app?.appVersion}>
       <body>
-        <div id={APP_ROOT_ID} className="flex min-h-dvh justify-center bg-canvas">
+        <div id={APP_ROOT_ID} className="flex min-h-dvh justify-center bg-canvas desktop:bg-sunken">
           <main
             id={APP_MAIN_ID}
-            className="relative flex min-h-dvh w-full max-w-web flex-col bg-surface desktop:pl-48"
+            className="relative flex min-h-dvh w-full max-w-web flex-col bg-surface desktop:bg-sunken desktop:pl-48 wide:pl-56"
           >
             <AppProviders>{children}</AppProviders>
           </main>
