@@ -21,7 +21,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     );
     expect(structuredData['@type']).toBe('CollectionPage');
     await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-    const editor = page.getByRole('dialog', { name: '글쓰기', exact: true });
+    const editor = page.getByRole('form', { name: '글쓰기', exact: true });
     const title = `${slug} 게시글 ${suffix}`;
     const body = `A detailed community listing for ${slug}. Please send a chat message to discuss the details.`;
     await editor.getByLabel('제목', { exact: true }).fill(title);
@@ -177,7 +177,7 @@ test('category chips support direct links, keyboard navigation, short viewports 
   await expect(page.locator('.ql-editor')).toBeVisible();
   await expect(page.getByRole('combobox', { name: '分類', exact: true })).toHaveValue('FRIENDLY');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-  const dialog = await page.getByRole('dialog').boundingBox();
+  const dialog = await page.getByRole('form', { name: '投稿する', exact: true }).boundingBox();
   expect((dialog?.x ?? 0) + (dialog?.width ?? 0)).toBeLessThanOrEqual(321);
   await expect(page.locator('.deck')).toHaveCount(0);
 });
@@ -192,7 +192,7 @@ test('mobile composition can switch categories from a board and persist friend s
   });
   await page.goto('/en/boards/friendly');
   await page.getByRole('button', { name: 'Write a post', exact: true }).click();
-  const editor = page.getByRole('dialog', { name: 'Write a post', exact: true });
+  const editor = page.getByRole('form', { name: 'Write a post', exact: true });
   const category = editor.getByRole('combobox', { name: 'Category', exact: true });
   await expect(category).toHaveValue('FRIENDLY');
   const body = 'Please contact me in chat to agree on the price and duration of this friend slot.';

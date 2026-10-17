@@ -31,7 +31,7 @@ for (const scenario of [
     });
     await page.goto('/ko/boards/coaching');
     await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
-    const editor = page.getByRole('dialog');
+    const editor = page.getByRole('form', { name: /글쓰기|게시글 수정/ });
     const title = `${scenario.type} 코칭 모집 ${Date.now().toString(36)}`;
     await editor.getByLabel('모집 유형', { exact: true }).selectOption(scenario.role);
     await editor.getByLabel('수강료 기준', { exact: true }).selectOption(scenario.type);
@@ -98,7 +98,7 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   });
   await page.goto('/ko/boards/free');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  const editor = page.getByRole('dialog');
+  const editor = page.getByRole('form', { name: /글쓰기|게시글 수정/ });
   const title = `본문 미디어 삽입 ${Date.now().toString(36)}`;
   await editor.getByLabel('제목', { exact: true }).fill(title);
   await editor

@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
 describe('community board navigation', () => {
+  it('opens the composer with a board and game parent while rejecting unsupported classifications', () => {
+    const compose = appRoutes.compose('ja', 'COACHING', 'another-game');
+    expect(compose).toBe('/ja/write?board=coaching&game=another-game');
+    expect(resolveAppRoute(compose)).toMatchObject({
+      screen: 'compose',
+      tab: 'boards',
+      game: 'another-game',
+      parent: '/ja/boards/coaching?game=another-game',
+    });
+    expect(resolveAppRoute('/ko/write')).toMatchObject({ screen: 'compose', tab: 'feed', parent: '/ko' });
+    expect(WebPathSchema.safeParse('/ko/write?board=account-trade').success).toBe(false);
+  });
   it('preserves board search and gives direct detail links a board parent', () => {
     const path = appRoutes.boards('en', 'friendly', 'practice match');
     expect(resolveAppRoute(path)).toMatchObject({ path, tab: 'boards', screen: 'boards', parent: '/en' });

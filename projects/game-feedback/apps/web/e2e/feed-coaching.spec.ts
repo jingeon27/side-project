@@ -12,7 +12,7 @@ test('the feed combines general posts and paid coaching and connects a student t
   await page.goto('/ko');
   await expect(page.getByRole('heading', { name: '피드', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  const editor = page.getByRole('dialog');
+  const editor = page.getByRole('form', { name: '글쓰기', exact: true });
   await editor.getByLabel('분류', { exact: true }).selectOption('COACHING');
   await editor.getByLabel('시간당 수강료 (원)', { exact: true }).fill('0');
   await editor.getByLabel('분류', { exact: true }).selectOption('FREE');
@@ -93,7 +93,7 @@ test('students can recruit a paid coach and a new game receives the same five bo
     '자유게시판',
   ]);
   await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
-  const editor = page.getByRole('dialog');
+  const editor = page.getByRole('form', { name: '글쓰기', exact: true });
   await expect(editor.getByRole('textbox', { name: '선택한 게임', exact: true })).toHaveValue(gameName);
   const classification = editor.getByRole('combobox', { name: '분류', exact: true });
   await expect(classification).toHaveValue('COACHING');

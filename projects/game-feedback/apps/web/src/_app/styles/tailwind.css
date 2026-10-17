@@ -2,6 +2,7 @@
 @import '@side/design-system/styles.css';
 @import 'quill/dist/quill.snow.css' layer(components);
 @import './base.css';
+@import './toast.css';
 @import './layout.css';
 @import './footer.css';
 @import './feed.css';
@@ -13,6 +14,7 @@
 @import './chat.css';
 @import './chat-media.css';
 @import './editor.css';
+@import './compose.css';
 @import './admin.css';
 @import './boards.css';
 @import './identity.css';

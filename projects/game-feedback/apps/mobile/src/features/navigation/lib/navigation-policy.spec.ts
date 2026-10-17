@@ -3,6 +3,15 @@ import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
 import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
 const origin = 'https://feedback.example';
 describe('WebView navigation and deep links', () => {
+  it('opens a dedicated composer within the WebView and preserves its board and game', () => {
+    const path = appRoutes.compose('ko', 'FRIEND_SALE', 'another-game');
+    expect(toWebPath(`gamefeedback:/${path}`, origin)).toBe(path);
+    expect(resolveAppRoute(path)).toMatchObject({
+      screen: 'compose',
+      parent: '/ko/boards/friend-sale?game=another-game',
+    });
+    expect(toWebPath('gamefeedback://ko/write?board=unknown', origin)).toBeNull();
+  });
   it('shares nested chat paths and preserves only route-owned query state', () => {
     for (const locale of ['ko', 'en', 'ja']) {
       const feed = appRoutes.feed(locale, { q: '호그 덱', tab: 'unanswered' });
@@ -65,6 +74,10 @@ describe('WebView navigation and deep links', () => {
       'https://evil.example/\\x',
     ])
       expect(decideNavigation(url, origin).action).toBe('block');
+    expect(decideNavigation('mailto:jingeon27@gmail.com', origin)).toEqual({
+      action: 'external',
+      url: 'mailto:jingeon27@gmail.com',
+    });
     expect(decideNavigation('https://example.com/help', origin)).toEqual({
       action: 'external',
       url: 'https://example.com/help',

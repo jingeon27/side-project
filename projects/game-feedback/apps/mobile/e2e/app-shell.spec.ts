@@ -12,7 +12,7 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.getByRole('button', { name: /새벽의호그/ }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  const composer = page.getByRole('dialog');
+  const composer = page.getByRole('form', { name: '글쓰기', exact: true });
   const title = `모바일에서 작성한 피드백 ${suffix}`;
   await composer.getByLabel('제목', { exact: true }).fill(title);
   await composer

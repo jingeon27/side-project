@@ -8,7 +8,7 @@ export const GameSlugSchema = z
   .max(40);
 export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings' | 'guide';
 export type TAppScreen =
-  TAppTab | 'post' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact' | 'admin';
+  TAppTab | 'post' | 'compose' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact' | 'admin';
 export interface IAppRoute {
   path: string;
   pathname: string;
@@ -39,6 +39,11 @@ function queryPath(path: string, values: Record<string, string | undefined>) {
 export const appRoutes = {
   feed: (locale: string, filters: { q?: string; tab?: string } = {}) =>
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
+  compose: (locale: string, board?: string, game?: string) =>
+    queryPath(`${root(locale)}/write`, {
+      board: board ? boardSlugs[board] : undefined,
+      game: game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
+    }),
   post: (locale: string, id: string, board?: string, game?: string) =>
     queryPath(`${root(locale)}/posts/${RouteIdSchema.parse(id)}`, {
       board: board ? boardSlugs[board] : undefined,
@@ -81,7 +86,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const match =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(boards|messages|notifications|settings|guide|terms|privacy|contact|admin))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(boards|write|messages|notifications|settings|guide|terms|privacy|contact|admin))?$/.exec(
       pathname,
     );
   if (!match) return null;
@@ -93,6 +98,22 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   const home = root(locale);
   const id = match[3];
   const kind = match[2] ?? match[4];
+  if (kind === 'write') {
+    const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
+    if (board && !board.success) return null;
+    return {
+      path: queryPath(pathname, {
+        board: board?.success ? board.data : undefined,
+        game: game.data !== 'clash-royale' ? game.data : undefined,
+      }),
+      game: game.data,
+      pathname,
+      locale,
+      screen: 'compose',
+      tab: board ? 'boards' : 'feed',
+      parent: board?.success ? appRoutes.boards(locale, board.data, undefined, game.data) : home,
+    };
+  }
   if (kind === 'posts' && id) {
     const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
     if (board && !board.success) return null;

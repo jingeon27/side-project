@@ -163,6 +163,7 @@ const messages: Record<string, readonly [string, string]> = {
   친추판매: ['Friend slots for sale', 'フレンド枠販売'],
   '친선전 모집': ['Friendly battles', 'フレンド対戦募集'],
   글쓰기: ['Write a post', '投稿する'],
+  '로그인하고 글을 작성해보세요.': ['Sign in to write a post.', 'ログインして投稿しましょう。'],
   '게시글 등록': ['Publish post', '投稿する'],
   '게시글 수정': ['Edit post', '投稿を編集'],
   '게시글을 등록했어요.': ['Post published.', '投稿しました。'],
@@ -754,9 +755,9 @@ const messages: Record<string, readonly [string, string]> = {
     'What are your trophies and main deck? Where are you having trouble?',
     '現在のトロフィーと主なデッキ、困っている状況を教えてください。',
   ],
-  '내용을 20~10,000자로 입력해 주세요.': [
-    'Enter 20–10,000 characters.',
-    '20〜10,000文字で入力してください。',
+  '내용을 입력해주세요. 최대 10,000자까지 작성할 수 있어요.': [
+    'Enter content, up to 10,000 characters.',
+    '内容を入力してください。最大10,000文字まで入力できます。',
   ],
   '내 게임 프로필': ['My game profile', '自分のゲームプロフィール'],
   '요청 시점의 프로필을 첨부해요': [
@@ -776,6 +777,13 @@ const messages: Record<string, readonly [string, string]> = {
   채팅하기: ['Chat', 'チャットする'],
   '기기 설정에 맞춤': ['Use device settings', '端末の設定に合わせる'],
   '언어 설정': ['Language settings', '言語設定'],
+  '화면 모드': ['Appearance', '表示モード'],
+  '라이트 모드': ['Light mode', 'ライトモード'],
+  '다크 모드': ['Dark mode', 'ダークモード'],
+  '문제가 계속되면 이메일로 문의해주세요.': [
+    'If the problem continues, contact us by email.',
+    '問題が続く場合はメールでお問い合わせください。',
+  ],
   '기기나 브라우저의 언어와 지역 설정을 사용합니다.': [
     'Uses your device or browser language and region settings.',
     '端末やブラウザの言語と地域設定を使用します。',

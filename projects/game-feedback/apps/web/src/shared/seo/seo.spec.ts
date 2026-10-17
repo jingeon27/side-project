@@ -42,7 +42,7 @@ describe('SEO metadata and visibility', () => {
     expect(createPageMetadata({ title: '공개', description: '공개', path: '/ko' }).robots).toMatchObject({
       index: true,
     });
-    for (const kind of ['messages', 'notifications', 'settings'] as const)
+    for (const kind of ['write', 'messages', 'notifications', 'settings'] as const)
       expect(staticPageMetadata(kind, 'ko').robots).toMatchObject({ index: false, follow: false });
     expect(
       createPageMetadata({

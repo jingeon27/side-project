@@ -2,13 +2,13 @@
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Plus, MessageSquare, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { postListOptions, PostCard } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
-import { PostComposer } from '@/widgets/post-composer';
-import { openOverlay, AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 import { useFeedFilters } from '../model/use-feed-filters';
 import { appRoutes } from '@game-feedback/bridge';
 import { FeedFilters } from './FeedFilters';
@@ -24,23 +24,14 @@ export function FeedPage({ locale }: { locale: string }) {
 function FeedContent({ locale }: { locale: string }) {
   const { t } = useI18n();
   const { session, login } = useSession();
+  const router = useRouter();
   const { tab, q, search, handleTabChange, handleSearchChange } = useFeedFilters();
   function handleCompose() {
     if (!session?.user) {
       login();
       return;
     }
-    openOverlay(({ isOpen, close, unmount }) => (
-      <PostComposer
-        locale={locale}
-        open={isOpen}
-        onOpenChange={(next) => {
-          if (next) return;
-          close();
-          unmount();
-        }}
-      />
-    ));
+    router.push(appRoutes.compose(locale));
   }
 
   return (
@@ -125,7 +116,7 @@ function FeedResults({
               ? t('다른 단어로 검색하거나 새로운 글을 남겨보세요.')
               : t('플레이 이야기나 모집 글을 남겨보세요.')}
           </p>
-          <Button variant="primary" size="md" type="submit" className="button dark" onClick={handleCompose}>
+          <Button variant="accent" size="md" type="button" onClick={handleCompose}>
             {t('글쓰기')}
             <ArrowUpRight size={16} />
           </Button>

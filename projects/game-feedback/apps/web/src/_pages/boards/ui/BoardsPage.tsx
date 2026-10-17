@@ -9,9 +9,8 @@ import { boardBySlug } from '@/features/board';
 import { postListOptions, PostCard } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useSession } from '@/features/auth';
-import { PostComposer } from '@/widgets/post-composer';
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, LoadingState, openOverlay } from '@/shared/ui';
+import { AsyncBoundary, LoadingState } from '@/shared/ui';
 
 interface IBoardsPageProps {
   locale: string;
@@ -31,25 +30,13 @@ export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
       login();
       return;
     }
-    openOverlay(({ isOpen, close, unmount }) => (
-      <PostComposer
-        open={isOpen}
-        onOpenChange={(open) => {
-          if (open) return;
-          close();
-          unmount();
-        }}
-        locale={locale}
-        board={board?.kind}
-        categoryId={game.id}
-      />
-    ));
+    router.push(appRoutes.compose(locale, board?.kind, game.slug));
   }
   return (
     <section className="board-page">
       <div className="page-heading board-heading">
         <h1>{t(board.name)}</h1>
-        <Button variant="primary" size="md" type="button" onClick={handleCompose}>
+        <Button variant="accent" size="md" type="button" onClick={handleCompose}>
           <Plus size={16} />
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>

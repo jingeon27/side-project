@@ -63,6 +63,12 @@ export function createPageMetadata({
   };
 }
 export const pageContent = {
+  write: {
+    title: '글쓰기',
+    description: '게임 이야기와 모집 글을 작성하고 플레이어와 나누세요.',
+    keywords: ['게시글 작성'],
+    privatePage: true,
+  },
   feed: {
     title: '게임 커뮤니티 피드',
     description: '피드백, 친추판매, 친선전 모집, 게임코치의 유료 강의와 자유게시판 글을 피드에서 만나보세요.',

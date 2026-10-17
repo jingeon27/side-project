@@ -14,12 +14,13 @@ for (const width of [320, 390, 768, 1440]) {
     });
     await page.goto('/en');
     await page.getByRole('button', { name: 'Write a post', exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('form', { name: 'Write a post', exact: true });
     await expect(dialog).toBeVisible();
     const box = await dialog.boundingBox();
     expect(box?.x).toBeGreaterThanOrEqual(0);
     expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(width + 1);
-    await page.keyboard.press('Escape');
+    await page.getByRole('link', { name: 'Go back', exact: true }).click();
+    await expect(page).toHaveURL('/en');
     await expect(dialog).toHaveCount(0);
     await page.goto('/en/messages/sample-conversation-0-3');
     const input = page.getByRole('textbox', { name: 'Message', exact: true });

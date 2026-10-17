@@ -15,6 +15,17 @@ export function RouteViewport({ children }: { children: ReactNode }) {
     const key = route?.tab === 'messages' ? appRoutes.messages(route.locale) : pathname;
     const before = previous.current;
     previous.current = key;
+    const beforeRoute = before ? resolveAppRoute(before) : null;
+    if (
+      before &&
+      before !== key &&
+      beforeRoute?.locale === route?.locale &&
+      route &&
+      ['feed', 'boards', 'messages', 'notifications', 'settings', 'guide', 'admin'].includes(route.screen) &&
+      getNavigationDirection() !== 'back' &&
+      !window.location.hash
+    )
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (!before || before === key || reducedMotion || !scope.current) return;
     if (route?.screen === 'conversation' && window.matchMedia('(max-width: 760px)').matches) return;
     const controls = animate(

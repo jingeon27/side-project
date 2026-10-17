@@ -14,6 +14,15 @@ function start(path: string) {
   stop = installBrowserNavigation();
 }
 describe('application history', () => {
+  it('returns from a composer to its source and uses the correct parent on a cold link', () => {
+    start('/ko?tab=unanswered&q=hog');
+    window.history.pushState({}, '', '/ko/write');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    expect(feedDestination('/ko')).toBe('/ko?tab=unanswered&q=hog');
+    stop();
+    start('/ko/write?board=coaching&game=another-game');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko/boards/coaching?game=another-game' });
+  });
   it('uses a loaded board parent for a canonical detail URL and releases it on unmount', () => {
     start('/ko/posts/post-board');
     const release = registerLogicalParent('/ko/boards/friendly');

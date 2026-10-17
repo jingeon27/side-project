@@ -101,3 +101,50 @@ test('nested conversations preserve the inbox layout and replace sibling rooms; 
   );
   await expect(page.locator('head meta[name="robots"]')).toHaveAttribute('content', /noindex, nofollow/);
 });
+
+for (const width of [400, 1440]) {
+  test(`guide scroll does not carry into chat and its regions stay separated at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.request.post('/api/auth/test-login', {
+      headers: { Origin: 'http://127.0.0.1:3301' },
+      data: { accountId: 'sample-user-0' },
+    });
+    await page.goto('/ko/guide');
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+    const menu =
+      width <= 760
+        ? page.locator('.mobile-nav')
+        : page.getByRole('navigation', { name: '주 메뉴', exact: true });
+    await menu.getByRole('link', { name: /^채팅(?: \d+개)?$/ }).click();
+    await expect(page).toHaveURL('/ko/messages');
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.getByRole('complementary', { name: '내 대화 목록' })).toBeVisible();
+    const workspace = await page.locator('.chat-workspace').boundingBox();
+    expect(workspace?.y).toBeGreaterThanOrEqual((await page.getByRole('banner').boundingBox())?.height ?? 0);
+    expect((workspace?.y ?? 0) + (workspace?.height ?? 0)).toBeLessThanOrEqual(844);
+    await page.getByTestId('conversation-sample-conversation-0-3').click();
+    await expect(page.getByRole('textbox', { name: '메시지 내용', exact: true })).toBeVisible();
+    const regions = await page.locator('.conversation-pane').evaluate((node) => {
+      const history = node.querySelector('.chat-message-scroll');
+      const heading = node.querySelector('.conversation-heading');
+      const compose = node.querySelector('.chat-compose-area');
+      if (!history || !heading || !compose) throw Error('Missing chat region');
+      return {
+        history: getComputedStyle(history).backgroundColor,
+        heading: getComputedStyle(heading).backgroundColor,
+        compose: getComputedStyle(compose).backgroundColor,
+        headerBottom: heading.getBoundingClientRect().bottom,
+        historyTop: history.getBoundingClientRect().top,
+        historyBottom: history.getBoundingClientRect().bottom,
+        composeTop: compose.getBoundingClientRect().top,
+      };
+    });
+    expect(regions.history).not.toBe(regions.heading);
+    expect(regions.history).not.toBe(regions.compose);
+    expect(regions.historyTop).toBeGreaterThanOrEqual(regions.headerBottom);
+    expect(regions.historyBottom).toBeLessThanOrEqual(regions.composeTop + 1);
+  });
+}
