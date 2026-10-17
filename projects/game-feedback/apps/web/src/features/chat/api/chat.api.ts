@@ -4,6 +4,8 @@ import {
   listConversations,
   readConversation,
   sendChatMessage,
+  uploadChatAttachment,
+  deleteChatAttachment,
 } from '@game-feedback/sdk';
 import type { IChatMessageInput } from '../model/chat.types';
 
@@ -25,4 +27,10 @@ export function postChatMessage(conversationId: string, input: IChatMessageInput
 
 export function markConversationRead(conversationId: string, messageId: string) {
   return readConversation(conversationId, { messageId });
+}
+export function uploadAttachment(conversationId: string, file: File) {
+  return uploadChatAttachment(conversationId, { file });
+}
+export function removeAttachment(conversationId: string, attachmentId: string) {
+  return deleteChatAttachment(conversationId, attachmentId, { keepalive: true });
 }

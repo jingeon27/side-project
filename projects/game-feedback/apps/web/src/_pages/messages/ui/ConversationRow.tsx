@@ -34,7 +34,16 @@ export function ConversationRow({ conversation, selected, locale, replace }: ICo
         </div>
         <UserBadges author={conversation.peer} compact />
         <div>
-          <p>{conversation.lastMessage?.body || t('첫 메시지로 이야기를 시작해요')}</p>
+          <p>
+            {conversation.lastMessage?.body ||
+              (conversation.lastMessage?.attachments?.length
+                ? t(
+                    conversation.lastMessage.attachments[0]?.kind === 'VIDEO'
+                      ? '동영상을 보냈어요'
+                      : '이미지를 보냈어요',
+                  )
+                : t('첫 메시지로 이야기를 시작해요'))}
+          </p>
           {conversation.unreadCount > 0 && (
             <span className="chat-unread-count">
               {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}

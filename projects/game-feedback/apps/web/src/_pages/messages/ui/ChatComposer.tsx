@@ -1,9 +1,10 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
-import { LoaderCircle, Send } from 'lucide-react';
+import { LoaderCircle, Send, Paperclip, X } from 'lucide-react';
 import { chatError } from '@/features/chat';
 import { useChatComposer } from '../model/use-chat-composer';
+import { ChatAttachmentView } from './ChatAttachmentView';
 
 interface IChatComposerProps {
   userId: string;
@@ -25,7 +26,21 @@ export function ChatComposer({
   onUnavailable,
 }: IChatComposerProps) {
   const { t } = useI18n();
-  const { form, draft, mutation, handleSubmit, handleKeyDown, handleDraftChange } = useChatComposer({
+  const {
+    form,
+    draft,
+    mutation,
+    upload,
+    remove,
+    fileError,
+    desktopKeyboard,
+    busy,
+    handleFile,
+    handleRemoveFile,
+    handleSubmit,
+    handleKeyDown,
+    handleDraftChange,
+  } = useChatComposer({
     userId,
     conversationId,
     unavailable,
@@ -48,7 +63,44 @@ export function ChatComposer({
           <span>{t('작성한 내용은 그대로 남아 있어요.')}</span>
         </div>
       )}
+      {Boolean(fileError || upload.error || remove.error) && (
+        <p role="alert" className="chat-send-error">
+          {fileError ? t(fileError) : t(chatError(upload.error ?? remove.error))}
+        </p>
+      )}
+      {upload.data && (
+        <div className="chat-attachment-preview">
+          <ChatAttachmentView attachment={upload.data} />
+          <span>{upload.data.name}</span>
+          <button
+            type="button"
+            className="icon-button"
+            disabled={busy}
+            onClick={handleRemoveFile}
+            aria-label={t('첨부파일 제거')}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       <form className="chat-compose" onSubmit={handleSubmit}>
+        <label
+          className={`chat-attach-button${busy ? ' disabled' : ''}`}
+          title={t('이미지 또는 동영상 첨부')}
+        >
+          {upload.isPending ? <LoaderCircle size={20} className="spin" /> : <Paperclip size={20} />}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
+            aria-label={t('이미지 또는 동영상 첨부')}
+            disabled={busy || unavailable}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = '';
+              void handleFile(file);
+            }}
+          />
+        </label>
         <textarea
           className="ds-textarea"
           {...form.register('body', { onChange: handleDraftChange })}
@@ -64,14 +116,14 @@ export function ChatComposer({
           size="md"
           className="button dark"
           type="submit"
-          disabled={mutation.isPending || !draft.trim()}
+          disabled={busy || unavailable || (!draft.trim() && !upload.data)}
           aria-label={mutation.isError ? t('다시 보내기') : t('보내기')}
         >
           {mutation.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
         </MotionButton>
       </form>
       <div className="chat-compose-hint">
-        <span>{t('Enter로 보내기, Shift + Enter로 줄바꿈')}</span>
+        {desktopKeyboard && <span>{t('Enter로 보내기, Shift + Enter로 줄바꿈')}</span>}
         <span>{draft.length.toLocaleString()} / 2,000</span>
       </div>
     </div>

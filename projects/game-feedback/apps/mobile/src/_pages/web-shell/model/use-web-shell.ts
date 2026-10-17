@@ -72,6 +72,8 @@ export function useWebShell() {
     return false;
   }
   const webViewProps = {
+    allowsInlineMediaPlayback: true,
+    mediaPlaybackRequiresUserAction: true,
     source: { uri: sourceUrl },
     originWhitelist: ['*'],
     setSupportMultipleWindows: false,

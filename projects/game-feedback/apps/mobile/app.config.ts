@@ -14,6 +14,9 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     ios: {
       bundleIdentifier: 'dev.side.gamefeedback',
       infoPlist: {
+        NSPhotoLibraryUsageDescription: '채팅에서 사진과 동영상을 선택해 전송할 때 사진 보관함을 사용합니다.',
+        NSCameraUsageDescription: '채팅에 전송할 사진이나 동영상을 촬영할 때 카메라를 사용합니다.',
+        NSMicrophoneUsageDescription: '채팅에 전송할 동영상을 촬영할 때 소리를 녹음합니다.',
         NSAppTransportSecurity: IS_DEVELOPMENT ? { NSAllowsLocalNetworking: true } : {},
       },
     },
