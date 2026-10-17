@@ -24,5 +24,5 @@ export const getServerUserPosts = cache(async (authorId: string, cursor = '') =>
   }
 });
 export function getPublicPostList(cursor?: string) {
-  return listPosts({ limit: 50, ...(cursor ? { cursor } : {}) }, publicServerOptions());
+  return listPosts({ board: 'ALL', limit: 50, ...(cursor ? { cursor } : {}) }, publicServerOptions());
 }

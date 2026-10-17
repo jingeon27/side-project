@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import type { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
 import { notificationSummaryOptions } from '@/features/notification';
@@ -18,7 +18,9 @@ import { MobileNav } from './MobileNav';
 export function CommunityShell({ children, locale }: { children: ReactNode; locale: string }) {
   const { t } = useI18n();
   const { session } = useSession();
-  const path = usePathname();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const path = resolveAppRoute(`${pathname}${search.size ? `?${search}` : ''}`)?.path ?? pathname;
   const connection = useChatConnection();
   const { data: notifications } = useQuery(notificationSummaryOptions(session?.user?.id));
   const { data: conversations } = useQuery({

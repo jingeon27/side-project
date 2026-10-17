@@ -4,6 +4,7 @@ import {
   feedDestination,
   getNavigationDirection,
   installBrowserNavigation,
+  registerLogicalParent,
 } from './browser-navigation';
 
 let stop = () => {};
@@ -13,6 +14,13 @@ function start(path: string) {
   stop = installBrowserNavigation();
 }
 describe('application history', () => {
+  it('uses a loaded board parent for a canonical detail URL and releases it on unmount', () => {
+    start('/ko/posts/post-board');
+    const release = registerLogicalParent('/ko/boards/friendly');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko/boards/friendly' });
+    release();
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+  });
   it('preserves Next state and the filtered source when details are pushed', () => {
     start('/ko?tab=unanswered&q=%ED%98%B8%EA%B7%B8');
     window.history.pushState({ __NA: true, tree: 'post-tree' }, '', '/ko/posts/post-1');

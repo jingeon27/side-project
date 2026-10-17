@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const RouteIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 const localeSchema = z.enum(['ko', 'en', 'ja']);
-export type TAppTab = 'feed' | 'messages' | 'notifications' | 'settings' | 'guide';
+export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings' | 'guide';
 export type TAppScreen = TAppTab | 'post' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact';
 export interface IAppRoute {
   path: string;
@@ -15,6 +15,13 @@ export interface IAppRoute {
 function root(locale: string) {
   return `/${localeSchema.parse(locale)}`;
 }
+const boardSlugSchema = z.enum(['account-trade', 'friendly', 'friends', 'marketplace']);
+const boardSlugs: Record<string, string> = {
+  ACCOUNT_TRADE: 'account-trade',
+  FRIENDLY: 'friendly',
+  FRIEND: 'friends',
+  SALE: 'marketplace',
+};
 function queryPath(path: string, values: Record<string, string | undefined>) {
   const query = Object.entries(values)
     .filter((entry): entry is [string, string] => !!entry[1])
@@ -25,7 +32,12 @@ function queryPath(path: string, values: Record<string, string | undefined>) {
 export const appRoutes = {
   feed: (locale: string, filters: { q?: string; tab?: string } = {}) =>
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
-  post: (locale: string, id: string) => `${root(locale)}/posts/${RouteIdSchema.parse(id)}`,
+  post: (locale: string, id: string, board?: string) =>
+    queryPath(`${root(locale)}/posts/${RouteIdSchema.parse(id)}`, {
+      board: board ? boardSlugs[board] : undefined,
+    }),
+  boards: (locale: string, slug = 'account-trade', q?: string) =>
+    queryPath(`${root(locale)}/boards/${boardSlugSchema.parse(slug)}`, { q: q?.trim() }),
   profile: (locale: string, id: string, cursor?: string) =>
     queryPath(`${root(locale)}/users/${RouteIdSchema.parse(id)}`, { cursor }),
   messages: (locale: string) => `${root(locale)}/messages`,
@@ -56,7 +68,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const match =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages)\/([A-Za-z0-9_-]{1,100})|\/(messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(boards|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
       pathname,
     );
   if (!match) return null;
@@ -66,8 +78,30 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   const home = root(locale);
   const id = match[3];
   const kind = match[2] ?? match[4];
-  if (kind === 'posts' && id)
-    return { path: pathname, pathname, locale, screen: 'post', tab: 'feed', parent: home };
+  if (kind === 'posts' && id) {
+    const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
+    if (board && !board.success) return null;
+    return {
+      path: queryPath(pathname, { board: board?.success ? board.data : undefined }),
+      pathname,
+      locale,
+      screen: 'post',
+      tab: board ? 'boards' : 'feed',
+      parent: board?.success ? appRoutes.boards(locale, board.data) : home,
+    };
+  }
+  if (kind === 'boards') {
+    const slug = boardSlugSchema.safeParse(id ?? 'account-trade');
+    if (!slug.success || (query.q?.length ?? 0) > 100) return null;
+    return {
+      path: appRoutes.boards(locale, slug.data, query.q),
+      pathname,
+      locale,
+      screen: 'boards',
+      tab: 'boards',
+      parent: home,
+    };
+  }
   if (kind === 'users' && id) {
     if ((query.cursor?.length ?? 0) > 200) return null;
     return {

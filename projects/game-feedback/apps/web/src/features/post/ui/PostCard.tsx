@@ -9,6 +9,7 @@ import { Avatar } from '@/shared/ui';
 import { timeAgo } from '@/shared/lib/date';
 import { m, useMotionPreference } from '@/shared/motion';
 import { PostStatus } from './PostStatus';
+import { boardByKind } from '@/features/board';
 interface IPostCardProps {
   post: Post;
   href: string;
@@ -18,6 +19,7 @@ interface IPostCardProps {
 export function PostCard({ post, href, authorContent, authorName }: IPostCardProps) {
   const { t, locale: textLocale } = useI18n();
   const reducedMotion = useMotionPreference();
+  const board = boardByKind(post.board);
   return (
     <m.article
       className="post-card"
@@ -26,7 +28,11 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
       whileHover={reducedMotion ? undefined : { y: -3 }}
     >
       <div className="post-topline">
-        <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
+        {board ? (
+          <span className="status-pill">{t(board.name)}</span>
+        ) : (
+          <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
+        )}
         <span className="post-time">{timeAgo(post.createdAt, textLocale)}</span>
       </div>
       <Link href={href} className="post-title-link">
@@ -52,8 +58,8 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
         </span>
         <span className={`answer-count ${post.answerCount > 0 ? 'has-answers' : ''}`}>
           <MessageSquare size={15} />
-          {t('피드백')}
-          <strong>{post.answerCount}</strong>
+          {t(board ? '게시글 보기' : '피드백')}
+          {!board && <strong>{post.answerCount}</strong>}
           <ArrowUpRight size={15} />
         </span>
       </div>

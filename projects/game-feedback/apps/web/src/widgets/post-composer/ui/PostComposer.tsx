@@ -1,6 +1,9 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
+import { useCallback } from 'react';
+import { useWatch } from 'react-hook-form';
+import type { TRichTextDocument, TBoardKind } from '@game-feedback/contracts';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { LoaderCircle, ArrowUpRight, Plus, Info } from 'lucide-react';
@@ -10,7 +13,16 @@ import { useCreatePostMutation, useUpdatePostMutation } from '@/features/post';
 import { gameAccountListOptions } from '@/features/game-profile';
 import { ConnectProfile } from '@/widgets/game-profile';
 import type { Category, GameProfile, Post } from '@/shared/api';
-import { openOverlay, Modal, Field, ErrorNotice, LoadingState, useNotify } from '@/shared/ui';
+import {
+  openOverlay,
+  Modal,
+  Field,
+  ErrorNotice,
+  LoadingState,
+  useNotify,
+  RichTextEditor,
+  ServiceErrorBoundary,
+} from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { postComposerSchema } from '../model/post-composer.schema';
 import { appRoutes } from '@game-feedback/bridge';
@@ -19,9 +31,11 @@ interface IPostComposerProps {
   onOpenChange: (value: boolean) => void;
   locale: string;
   post?: Post;
+  board?: TBoardKind;
 }
-export function PostComposer({ open, onOpenChange, locale, post }: IPostComposerProps) {
+export function PostComposer({ open, onOpenChange, locale, post, board = 'FEEDBACK' }: IPostComposerProps) {
   const { t } = useI18n();
+  const activeBoard = post?.board ?? board;
   const { session } = useSession(),
     categories = useQuery(categoryOptions()),
     accounts = useQuery(gameAccountListOptions(session?.user?.id));
@@ -30,8 +44,16 @@ export function PostComposer({ open, onOpenChange, locale, post }: IPostComposer
     <Modal
       open={open}
       onOpenChange={onOpenChange}
-      title={post ? t('피드백 요청 수정') : t('어떤 플레이가 고민인가요?')}
-      description={t('구체적인 고민을 알려주면 더 좋은 피드백을 받을 수 있어요.')}
+      title={
+        post
+          ? t(post.board && post.board !== 'FEEDBACK' ? '게시글 수정' : '피드백 요청 수정')
+          : t(board === 'FEEDBACK' ? '어떤 플레이가 고민인가요?' : '글쓰기')
+      }
+      description={t(
+        activeBoard === 'FEEDBACK'
+          ? '구체적인 고민을 알려주면 더 좋은 피드백을 받을 수 있어요.'
+          : '거래 조건이나 모집 내용을 구체적으로 적어주세요.',
+      )}
     >
       {isLoading ? (
         <LoadingState text={t('작성할 프로필을 준비하고 있어요')} />
@@ -43,6 +65,7 @@ export function PostComposer({ open, onOpenChange, locale, post }: IPostComposer
           accounts={accounts.data || []}
           locale={locale}
           post={post}
+          board={activeBoard}
           onOpenChange={onOpenChange}
         />
       )}
@@ -54,9 +77,17 @@ interface IPostComposerFormProps {
   accounts: GameProfile[];
   locale: string;
   post?: Post;
+  board: TBoardKind;
   onOpenChange: (value: boolean) => void;
 }
-function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: IPostComposerFormProps) {
+function PostComposerForm({
+  categories,
+  accounts,
+  locale,
+  post,
+  board,
+  onOpenChange,
+}: IPostComposerFormProps) {
   const { t } = useI18n();
   const router = useRouter(),
     notify = useNotify(),
@@ -66,29 +97,55 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
     defaultValues: {
       title: post?.title || '',
       body: post?.body || '',
+      document: post?.document ?? undefined,
+      editorValid: true,
+      board: post?.board ?? board,
       categoryId: post?.categoryId || categories[0]?.id || '',
       ...(post?.gameProfile?.playerTag || accounts[0]?.playerTag
         ? { playerTag: post?.gameProfile?.playerTag || accounts[0]?.playerTag }
         : {}),
     },
   });
+  const body = useWatch({ control: form.control, name: 'body' });
+  const document = useWatch({ control: form.control, name: 'document' });
+  const { setValue } = form;
+  const handleBodyChange = useCallback(
+    (value: { body: string; document: TRichTextDocument | null; valid: boolean }) => {
+      setValue('body', value.body, { shouldDirty: true, shouldValidate: true });
+      setValue('document', value.document, { shouldDirty: true });
+      setValue('editorValid', value.valid, { shouldValidate: true });
+    },
+    [setValue],
+  );
   const mutationError = create.error || update.error,
     isPending = create.isPending || update.isPending;
   return (
     <form
       className="form-stack"
-      onSubmit={form.handleSubmit(async (values) => {
+      onSubmit={form.handleSubmit(async ({ editorValid, ...values }) => {
+        if (!editorValid) return;
         try {
           const result = post
-            ? await update.mutateAsync({ id: post.id, body: { title: values.title, body: values.body } })
+            ? await update.mutateAsync({
+                id: post.id,
+                body: { title: values.title, body: values.body, document: values.document ?? null },
+              })
             : await create.mutateAsync({ body: values });
           onOpenChange(false);
-          notify(post ? t('요청을 수정했어요.') : t('피드백 요청을 올렸어요. 새로운 시선을 기다려보세요!'));
+          notify(
+            post
+              ? t('요청을 수정했어요.')
+              : t(
+                  board === 'FEEDBACK'
+                    ? '피드백 요청을 올렸어요. 새로운 시선을 기다려보세요!'
+                    : '게시글을 등록했어요.',
+                ),
+          );
           if (post) {
             router.refresh();
             return;
           }
-          router.push(appRoutes.post(locale, result.id));
+          router.push(appRoutes.post(locale, result.id, result.board));
         } catch {
           /* Mutation errors remain visible and the draft stays in the form. */
         }
@@ -117,27 +174,40 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
           className="ds-input"
           {...form.register('title')}
           maxLength={120}
-          placeholder={t('예: 호그 2.6 덱, 페카를 만나면 어떻게 운영하나요?')}
+          placeholder={t(
+            board === 'FEEDBACK'
+              ? '예: 호그 2.6 덱, 페카를 만나면 어떻게 운영하나요?'
+              : '제목을 입력해주세요.',
+          )}
         />
         <span className="field-error">
           {form.formState.errors.title && t('제목을 4~120자로 입력해 주세요.')}
         </span>
       </Field>
-      <Field
-        label={t('플레이와 고민')}
-        hint={t('사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.')}
-      >
-        <textarea
-          className="ds-textarea"
-          {...form.register('body')}
-          rows={7}
-          maxLength={10000}
-          placeholder={t('현재 트로피와 주로 사용하는 덱을 알려주세요. 어떤 상황에서 어려움을 겪고 있나요?')}
-        />
+      <div className="rich-text-field">
+        <span>{t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}</span>
+        <ServiceErrorBoundary title={t('본문 편집기')}>
+          <RichTextEditor
+            body={body}
+            document={document}
+            onChange={handleBodyChange}
+            disabled={isPending}
+            label={t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}
+          />
+        </ServiceErrorBoundary>
+        <small>
+          {t(
+            board === 'FEEDBACK'
+              ? '사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.'
+              : '거래 조건이나 모집 내용을 구체적으로 적어주세요.',
+          )}
+        </small>
         <span className="field-error">
           {form.formState.errors.body && t('내용을 20~10,000자로 입력해 주세요.')}
+          {form.formState.errors.editorValid &&
+            t('서식이 너무 복잡하거나 지원되지 않아요. 서식을 줄여주세요.')}
         </span>
-      </Field>
+      </div>
       {!post && (
         <div className="composer-profile">
           <div className="row-between">
@@ -202,7 +272,7 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         disabled={isPending || !categories.length}
       >
         {isPending ? <LoaderCircle className="spin" size={17} /> : <ArrowUpRight size={17} />}
-        {post ? t('수정 완료') : t('피드백 요청 올리기')}
+        {post ? t('수정 완료') : t(board === 'FEEDBACK' ? '피드백 요청 올리기' : '게시글 등록')}
       </Button>
     </form>
   );

@@ -29,6 +29,12 @@ export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
           <Link href={home} className={isHome ? 'active' : ''}>
             {t('피드백 라운지')}
           </Link>
+          <Link
+            href={`${home}/boards/account-trade`}
+            className={resolveAppRoute(path)?.tab === 'boards' ? 'active' : ''}
+          >
+            {t('게시판')}
+          </Link>
           <Link href={`${home}/guide`} className={path.endsWith('/guide') ? 'active' : ''}>
             {t('이용 가이드')}
             <ArrowUpRight size={13} />

@@ -1,2 +1,6 @@
 import { PostInputSchema } from '@game-feedback/contracts';
-export const postComposerSchema = PostInputSchema;
+import { z } from 'zod';
+
+export const postComposerSchema = PostInputSchema.extend({
+  editorValid: z.boolean().refine(Boolean),
+});

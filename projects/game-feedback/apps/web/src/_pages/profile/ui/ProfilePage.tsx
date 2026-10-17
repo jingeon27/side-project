@@ -132,7 +132,7 @@ function ProfilePosts({
           <PostCard
             key={post.id}
             post={post}
-            href={`/${locale}/posts/${post.id}`}
+            href={appRoutes.post(locale, post.id, post.board)}
             authorName={<AuthorLink author={post.author} locale={locale} />}
             authorContent={<UserBadges author={post.author} compact />}
           />

@@ -1,14 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { ComponentProps } from 'react';
-import { backNavigation } from './browser-navigation';
+import { useEffect, type ComponentProps } from 'react';
+import { backNavigation, registerLogicalParent } from './browser-navigation';
 
 export function BackLink({
   parentOnly = false,
+  logicalParent,
   ...props
-}: Omit<ComponentProps<typeof Link>, 'onNavigate'> & { parentOnly?: boolean }) {
+}: Omit<ComponentProps<typeof Link>, 'onNavigate'> & { parentOnly?: boolean; logicalParent?: string }) {
   const router = useRouter();
+  useEffect(() => (logicalParent ? registerLogicalParent(logicalParent) : undefined), [logicalParent]);
   return (
     <Link
       {...props}

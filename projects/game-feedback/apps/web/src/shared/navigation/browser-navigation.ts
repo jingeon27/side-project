@@ -1,6 +1,7 @@
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 const stateKey = '__game_feedback_navigation';
+const logicalParents = new Map<string, { parent: string }>();
 interface INavigationEntry {
   index: number;
   previous: string | null;
@@ -78,11 +79,21 @@ export function backNavigation(parentOnly = false) {
   const detail = ['post', 'profile', 'conversation'].includes(route.screen);
   if (previous && detail && (!parentOnly || resolveAppRoute(previous)?.pathname === route.parent))
     return { action: 'back' } as const;
-  const parent = route.parent ?? appRoutes.feed(route.locale);
+  const parent = logicalParents.get(route.path)?.parent ?? route.parent ?? appRoutes.feed(route.locale);
   return {
     action: 'replace',
     path: parent === appRoutes.feed(route.locale) ? feedDestination(parent) : parent,
   } as const;
+}
+export function registerLogicalParent(parent: string) {
+  const route = resolveAppRoute(currentPath());
+  const destination = resolveAppRoute(parent);
+  if (!route || !destination || route.locale !== destination.locale) return () => {};
+  const registration = { parent: destination.path };
+  logicalParents.set(route.path, registration);
+  return () => {
+    if (logicalParents.get(route.path) === registration) logicalParents.delete(route.path);
+  };
 }
 export function feedDestination(href: string) {
   const route = resolveAppRoute(href);

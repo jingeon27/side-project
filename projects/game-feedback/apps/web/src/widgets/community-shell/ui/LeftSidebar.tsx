@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { MessageSquareText, ChevronRight, Bell, MessageCircle } from 'lucide-react';
+import { MessageSquareText, ChevronRight, Bell, MessageCircle, List } from 'lucide-react';
 import { ClashRoyaleIcon } from '@/features/game-profile';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface ILeftSidebarProps {
@@ -19,6 +19,15 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
       <Link className={`side-link ${tab === 'feed' ? 'selected' : ''}`} href={home} replace>
         <MessageSquareText size={19} />
         {t('전체 피드백')}
+        <ChevronRight size={16} />
+      </Link>
+      <Link
+        className={`side-link ${tab === 'boards' ? 'selected' : ''}`}
+        href={`${home}/boards/account-trade`}
+        replace
+      >
+        <List size={19} />
+        {t('게시판')}
         <ChevronRight size={16} />
       </Link>
       <Link

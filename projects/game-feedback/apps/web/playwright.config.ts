@@ -46,7 +46,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'corepack yarn workspace @side/game-feedback db:test:migrate && corepack yarn workspace @game-feedback/api db:seed && corepack yarn workspace @game-feedback/api dev',
+        'corepack yarn workspace @side/game-feedback db:test:migrate && corepack yarn workspace @game-feedback/api db:seed && corepack yarn workspace @game-feedback/api test:server',
       cwd: rootDir,
       url: 'http://127.0.0.1:4301/api/session',
       env: apiEnv,
