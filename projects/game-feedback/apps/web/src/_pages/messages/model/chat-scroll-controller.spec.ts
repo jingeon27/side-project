@@ -44,4 +44,65 @@ describe('chat scroll position', () => {
     expect(viewport.scrollTop).toBe(1000);
     expect(listener).toHaveBeenCalledOnce();
   });
+
+  it('stays at the latest message through a send render and later viewport or media resizing', () => {
+    const controller = new ChatScrollController();
+    const viewport = { scrollTop: 0, scrollHeight: 1000, clientHeight: 300 };
+    controller.reconcile(viewport, 'first', false);
+    viewport.scrollTop = 100;
+    controller.scroll(viewport);
+    controller.sent();
+    controller.reconcile(viewport, 'first', false);
+    viewport.scrollHeight = 1100;
+    controller.reconcile(viewport, 'sent', false);
+    expect(viewport.scrollTop).toBe(1100);
+    viewport.scrollHeight = 1400;
+    viewport.clientHeight = 200;
+    controller.resize(viewport);
+    expect(viewport.scrollTop).toBe(1400);
+    expect(controller.getSnapshot()).toBe(false);
+  });
+
+  it('preserves a reading position through resizing and does not consume an in-flight history anchor', () => {
+    const controller = new ChatScrollController();
+    const viewport = { scrollTop: 0, scrollHeight: 1000, clientHeight: 300 };
+    controller.reconcile(viewport, 'first', false);
+    viewport.scrollTop = 100;
+    controller.scroll(viewport);
+    viewport.scrollHeight = 1200;
+    controller.resize(viewport);
+    expect(viewport.scrollTop).toBe(100);
+    controller.captureHistory(viewport);
+    viewport.scrollHeight = 1800;
+    controller.resize(viewport);
+    expect(viewport.scrollTop).toBe(100);
+    controller.reconcile(viewport, 'first', false);
+    expect(viewport.scrollTop).toBe(700);
+  });
+
+  it('gives an explicit send priority over loading older history', () => {
+    const controller = new ChatScrollController();
+    const viewport = { scrollTop: 0, scrollHeight: 1000, clientHeight: 300 };
+    controller.reconcile(viewport, 'first', false);
+    viewport.scrollTop = 100;
+    controller.scroll(viewport);
+    controller.captureHistory(viewport);
+    controller.sent();
+    viewport.scrollHeight = 1800;
+    controller.reconcile(viewport, 'sent', true);
+    expect(viewport.scrollTop).toBe(1800);
+  });
+
+  it('releases a completed send so later resizing does not interrupt reading', () => {
+    const controller = new ChatScrollController();
+    const viewport = { scrollTop: 0, scrollHeight: 1000, clientHeight: 300 };
+    controller.reconcile(viewport, 'first', false);
+    controller.sent();
+    controller.scrollLatest(viewport);
+    viewport.scrollTop = 100;
+    controller.scroll(viewport);
+    viewport.scrollHeight = 1400;
+    controller.resize(viewport);
+    expect(viewport.scrollTop).toBe(100);
+  });
 });

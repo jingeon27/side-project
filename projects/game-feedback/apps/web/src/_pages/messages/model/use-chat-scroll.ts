@@ -29,6 +29,15 @@ export function useChatScroll({
 
   useEffect(() => {
     if (!element || unavailable) return;
+    const observer = new ResizeObserver(() => controller.resize(element));
+    observer.observe(element);
+    const content = element.firstElementChild;
+    if (content) observer.observe(content);
+    return () => observer.disconnect();
+  }, [controller, element, unavailable]);
+
+  useEffect(() => {
+    if (!element || unavailable) return;
     const visible = new Map<string, number>();
     const observer = new IntersectionObserver(
       (entries) => {

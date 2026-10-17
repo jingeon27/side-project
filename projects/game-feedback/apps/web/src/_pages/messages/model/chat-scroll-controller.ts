@@ -35,10 +35,9 @@ export class ChatScrollController {
     const newMessage = newestId !== this.newestId;
     this.newestId = newestId;
     if (follow) {
-      element.scrollTop = element.scrollHeight;
+      this.scrollLatest(element);
       this.initialized = true;
       this.forceBottom = false;
-      this.setUnseen(false);
       return;
     }
     if (newMessage) this.setUnseen(true);
@@ -50,13 +49,23 @@ export class ChatScrollController {
   }
 
   scrollLatest(element: TScrollViewport) {
+    this.historyAnchor = null;
+    this.forceBottom = false;
     element.scrollTop = element.scrollHeight;
     this.nearBottom = true;
     this.setUnseen(false);
   }
 
   sent() {
+    this.historyAnchor = null;
+    this.nearBottom = true;
     this.forceBottom = true;
+    this.setUnseen(false);
+  }
+
+  resize(element: TScrollViewport) {
+    if (!this.initialized || this.historyAnchor) return;
+    if (this.nearBottom || this.forceBottom) this.scrollLatest(element);
   }
 
   captureHistory(element: TScrollViewport) {
