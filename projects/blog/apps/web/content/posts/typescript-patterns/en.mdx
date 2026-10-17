@@ -1,6 +1,6 @@
 I often see code where a field name is correct but its value has the wrong type, or where incompatible props are passed together. These are four patterns I use at work to catch those combinations during type checking.
 
-## 1. satisfies: check compatibility while preserving inference
+## Checking compatibility with satisfies while preserving inference
 
 `satisfies` does not create a new type for a value. It checks that the value meets a type while retaining the value's more specific inferred type.
 
@@ -27,7 +27,7 @@ const LABELS = {
 } as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
 ```
 
-## 2. T | undefined and an optional property mean different things
+## T | undefined and an optional property mean different things
 
 ```typescript
 interface Example {
@@ -47,7 +47,7 @@ Both properties can read as `number | undefined`, but constructing the object ca
 
 With `exactOptionalPropertyTypes` enabled, that distinction is stricter. To explicitly assign `undefined` to `optionalKey?: number`, its type must include `number | undefined`.
 
-## 3. Connect a value and its callback with a generic
+## Connecting a value and its callback with a generic
 
 ```tsx
 interface SelectProps<T extends string> {
@@ -75,7 +75,7 @@ type PaymentMethod = 'normal' | 'coupon';
 
 A single generic expresses that relationship instead of declaring each prop independently as `string`.
 
-## 4. Express mutually exclusive props with a union
+## Expressing mutually exclusive props with a union
 
 When a component must allow exactly one of two usage patterns, a union using `never` makes that requirement explicit.
 

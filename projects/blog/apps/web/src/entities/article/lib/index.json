@@ -3,13 +3,34 @@
     "category": "engineering",
     "tags": ["side-project", "product", "architecture", "nextjs"],
     "publishedAt": "2026-10-17",
-    "title": "사이드 프로젝트를 설계하면서 계속 바꾼 것들",
-    "description": "게임 피드백 서비스와 개인 블로그를 계획하며 첫 답변의 흐름, REST와 캐시, 계정 확인, MDX 운영 범위를 정한 기록.",
+    "updatedAt": "2026-10-17T18:22:58+09:00",
+    "title": "사이드 프로젝트 저장소를 만들고 서비스를 늘려 간 과정",
+    "description": "사진 대회로 시작한 저장소에서 피드와 공통 패키지를 만들고, develop을 기준으로 게임 피드백과 블로그 작업을 이어 간 기록.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
     "keywords": ["사이드 프로젝트", "제품 설계", "게임 피드백", "REST", "캐시", "MDX", "모노레포"],
     "id": "side-project-design",
     "locale": "ko",
     "toc": [
+      {
+        "id": "처음에는-비공개-사진-대회였다",
+        "title": "처음에는 비공개 사진 대회였다",
+        "level": 2
+      },
+      {
+        "id": "홈-화면을-보고-사진-서비스의-방향을-바꿨다",
+        "title": "홈 화면을 보고 사진 서비스의 방향을 바꿨다",
+        "level": 2
+      },
+      {
+        "id": "반복해서-지적한-코딩-규칙을-패키지로-옮겼다",
+        "title": "반복해서 지적한 코딩 규칙을 패키지로 옮겼다",
+        "level": 2
+      },
+      {
+        "id": "develop과-기능-브랜치를-구분했다",
+        "title": "develop과 기능 브랜치를 구분했다",
+        "level": 2
+      },
       {
         "id": "첫-게임은-클래시로얄로-정했다",
         "title": "첫 게임은 클래시로얄로 정했다",
@@ -46,7 +67,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 12,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -56,13 +77,34 @@
     "category": "engineering",
     "tags": ["side-project", "product", "architecture", "nextjs"],
     "publishedAt": "2026-10-17",
-    "title": "What I Kept Changing While Planning My Side Projects",
-    "description": "Planning a game feedback service and a personal blog: the first reply, REST and caching, account verification, MDX publishing, and project isolation.",
+    "updatedAt": "2026-10-17T18:22:58+09:00",
+    "title": "How My Side Project Repository Grew Beyond the First Service",
+    "description": "From a photo contest to a feed, shared packages, and a develop workflow, followed by game feedback and a personal blog in the same repository.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
     "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"],
     "id": "side-project-design",
     "locale": "en",
     "toc": [
+      {
+        "id": "the-first-service-was-a-private-photo-contest",
+        "title": "The first service was a private photo contest",
+        "level": 2
+      },
+      {
+        "id": "running-the-home-screen-changed-the-photo-service",
+        "title": "Running the home screen changed the photo service",
+        "level": 2
+      },
+      {
+        "id": "repeated-coding-requests-became-shared-packages",
+        "title": "Repeated coding requests became shared packages",
+        "level": 2
+      },
+      {
+        "id": "i-separated-develop-from-feature-branches",
+        "title": "I separated develop from feature branches",
+        "level": 2
+      },
       {
         "id": "i-chose-clash-royale-as-the-first-game",
         "title": "I chose Clash Royale as the first game",
@@ -99,7 +141,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 8,
+    "readingMinutes": 11,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -2039,7 +2081,7 @@
     "category": "engineering",
     "tags": ["react", "typescript", "sse", "chatbot"],
     "publishedAt": "2026-06-25T19:58:03+09:00",
-    "updatedAt": "2026-10-17T01:15:48.932+09:00",
+    "updatedAt": "2026-10-17T18:19:42+09:00",
     "sourceUrl": "https://jingeon27.tistory.com/20",
     "title": "우리 백엔드가 못 건드리는 영역에서 AI 상담 챗봇 붙이기",
     "description": "수정할 수 없는 두 백엔드의 SSE를 하나의 상담 화면에 연결하며 메시지와 연결 수명을 정리했다.",
@@ -2049,18 +2091,18 @@
     "locale": "ko",
     "toc": [
       {
-        "id": "0-시작은-평범한-ai-챗봇이었다",
-        "title": "0. 시작은 평범한 AI 챗봇이었다",
+        "id": "시작은-평범한-ai-챗봇이었다",
+        "title": "시작은 평범한 AI 챗봇이었다",
         "level": 2
       },
       {
-        "id": "1-두-번째-채널의-등장--상담사는-버튼으로-연결됐다",
-        "title": "1. 두 번째 채널의 등장 — 상담사는 '버튼'으로 연결됐다",
+        "id": "상담사-연결-버튼을-추가했다",
+        "title": "상담사 연결 버튼을 추가했다",
         "level": 2
       },
       {
-        "id": "2-버튼을-지우고-키워드로--그리고-단일-패널로-통합",
-        "title": "2. 버튼을 지우고 키워드로 — 그리고 단일 패널로 통합",
+        "id": "연결-키워드로-바꾸고-패널을-하나로-합쳤다",
+        "title": "연결 키워드로 바꾸고 패널을 하나로 합쳤다",
         "level": 2
       },
       {
@@ -2069,23 +2111,23 @@
         "level": 3
       },
       {
-        "id": "3-eventsource를-버린-이유-인증-헤더",
-        "title": "3. EventSource를 버린 이유: 인증 헤더",
+        "id": "인증-헤더-때문에-eventsource를-쓰지-못했다",
+        "title": "인증 헤더 때문에 EventSource를 쓰지 못했다",
         "level": 2
       },
       {
-        "id": "4-상태가-흩어진다--usereducer-상태머신",
-        "title": "4. 상태가 흩어진다 — useReducer 상태머신",
+        "id": "흩어진-상태-전이를-usereducer로-모았다",
+        "title": "흩어진 상태 전이를 useReducer로 모았다",
         "level": 2
       },
       {
-        "id": "5-sse-연결을-상태가-아니라-파생값으로--usesyncexternalstore",
-        "title": "5. SSE 연결을 '상태'가 아니라 '파생값'으로 — useSyncExternalStore",
+        "id": "store가-sse-연결을-관리하고-react는-스냅샷을-구독했다",
+        "title": "store가 SSE 연결을 관리하고 React는 스냅샷을 구독했다",
         "level": 2
       },
       {
-        "id": "6-멀쩡한-자체-store를-버리고-tanstackai로--미래를-위한-베팅",
-        "title": "6. 멀쩡한 자체 store를 버리고 @tanstack/ai로 — 미래를 위한 베팅",
+        "id": "메시지-관리를-tanstackai로-옮겼다",
+        "title": "메시지 관리를 @tanstack/ai로 옮겼다",
         "level": 2
       },
       {
@@ -2094,23 +2136,23 @@
         "level": 3
       },
       {
-        "id": "한-변수-혼재의-결말--별도-상태가-아니라-타입으로",
-        "title": "\"한 변수 혼재\"의 결말 — 별도 상태가 아니라 타입으로",
+        "id": "클라이언트와-서버의-상태-타입을-나눴다",
+        "title": "클라이언트와 서버의 상태 타입을 나눴다",
         "level": 3
       },
       {
-        "id": "dedup은-라이브러리가-알아서가-아니라-라이브러리에-위임",
-        "title": "dedup은 \"라이브러리가 알아서\"가 아니라 \"라이브러리에 위임\"",
+        "id": "메시지-중복-제거는-추가-검증이-필요했다",
+        "title": "메시지 중복 제거는 추가 검증이 필요했다",
         "level": 3
       },
       {
-        "id": "7-마감--정직한-에러-그리고-남은-빚",
-        "title": "7. 마감 — 정직한 에러, 그리고 남은 빚",
+        "id": "전송-실패-처리를-고치고-남은-문제를-확인했다",
+        "title": "전송 실패 처리를 고치고 남은 문제를 확인했다",
         "level": 2
       },
       {
-        "id": "8-회고--무엇이-판단이고-무엇이-제약이었나",
-        "title": "8. 회고 — 무엇이 '판단'이고 무엇이 '제약'이었나",
+        "id": "직접-정한-부분과-외부-서비스의-제약을-돌아봤다",
+        "title": "직접 정한 부분과 외부 서비스의 제약을 돌아봤다",
         "level": 2
       },
       {
@@ -2119,12 +2161,12 @@
         "level": 3
       },
       {
-        "id": "제약이-강제한-것--두-개의-못-건드리는-외부-백엔드",
-        "title": "제약이 강제한 것 — \"두 개의 못 건드리는 외부 백엔드\"",
+        "id": "두-외부-백엔드를-수정할-수-없어-남은-제약",
+        "title": "두 외부 백엔드를 수정할 수 없어 남은 제약",
         "level": 3
       }
     ],
-    "readingMinutes": 14,
+    "readingMinutes": 13,
     "translations": {
       "ko": "우리-백엔드가-못-건드리는-영역에서-ai-상담-챗봇-붙이기",
       "en": "chatbot-message-layer"
@@ -2134,7 +2176,7 @@
     "category": "engineering",
     "tags": ["react", "typescript", "sse", "chatbot"],
     "publishedAt": "2026-06-25T19:58:03+09:00",
-    "updatedAt": "2026-10-17T01:15:48.932+09:00",
+    "updatedAt": "2026-10-17T18:19:42+09:00",
     "sourceUrl": "https://jingeon27.tistory.com/20",
     "title": "Connecting an AI chatbot to two external backends",
     "description": "Combine AI and counselor streams into one timeline while managing external SSE formats and connection lifetimes.",
@@ -2144,18 +2186,18 @@
     "locale": "en",
     "toc": [
       {
-        "id": "0-an-ordinary-ai-chatbot-at-first",
-        "title": "0. An ordinary AI chatbot at first",
+        "id": "an-ordinary-ai-chatbot-at-first",
+        "title": "An ordinary AI chatbot at first",
         "level": 2
       },
       {
-        "id": "1-a-second-channel-and-a-counselor-button",
-        "title": "1. A second channel and a counselor button",
+        "id": "adding-a-counselor-connection-button",
+        "title": "Adding a counselor connection button",
         "level": 2
       },
       {
-        "id": "2-one-panel-and-a-connection-keyword",
-        "title": "2. One panel and a connection keyword",
+        "id": "combining-the-panels-and-using-a-connection-keyword",
+        "title": "Combining the panels and using a connection keyword",
         "level": 2
       },
       {
@@ -2164,23 +2206,23 @@
         "level": 3
       },
       {
-        "id": "3-authentication-headers-ruled-out-eventsource",
-        "title": "3. Authentication headers ruled out EventSource",
+        "id": "authentication-headers-ruled-out-eventsource",
+        "title": "Authentication headers ruled out EventSource",
         "level": 2
       },
       {
-        "id": "4-gather-transitions-in-usereducer",
-        "title": "4. Gather transitions in useReducer",
+        "id": "gathering-transitions-in-usereducer",
+        "title": "Gathering transitions in useReducer",
         "level": 2
       },
       {
-        "id": "5-derive-the-connection-with-usesyncexternalstore",
-        "title": "5. Derive the connection with useSyncExternalStore",
+        "id": "letting-the-store-own-sse-while-react-subscribes-to-snapshots",
+        "title": "Letting the store own SSE while React subscribes to snapshots",
         "level": 2
       },
       {
-        "id": "6-move-a-working-store-to-tanstackai",
-        "title": "6. Move a working store to @tanstack/ai",
+        "id": "moving-message-management-to-tanstackai",
+        "title": "Moving message management to @tanstack/ai",
         "level": 2
       },
       {
@@ -2189,23 +2231,23 @@
         "level": 3
       },
       {
-        "id": "separate-client-and-server-status-types",
-        "title": "Separate client and server status types",
+        "id": "separating-client-and-server-status-types",
+        "title": "Separating client and server status types",
         "level": 3
       },
       {
-        "id": "deduplication-was-delegated-not-fully-verified",
-        "title": "Deduplication was delegated, not fully verified",
+        "id": "message-deduplication-still-needed-verification",
+        "title": "Message deduplication still needed verification",
         "level": 3
       },
       {
-        "id": "7-error-feedback-and-unfinished-work",
-        "title": "7. Error feedback and unfinished work",
+        "id": "fixing-send-failures-and-checking-the-remaining-work",
+        "title": "Fixing send failures and checking the remaining work",
         "level": 2
       },
       {
-        "id": "8-decisions-and-constraints",
-        "title": "8. Decisions and constraints",
+        "id": "looking-back-at-my-decisions-and-the-external-constraints",
+        "title": "Looking back at my decisions and the external constraints",
         "level": 2
       },
       {
@@ -2319,7 +2361,7 @@
     "category": "engineering",
     "tags": ["nextjs", "authentication", "bff", "security"],
     "publishedAt": "2026-05-29T21:28:13+09:00",
-    "updatedAt": "2026-10-17T01:15:48.932+09:00",
+    "updatedAt": "2026-10-17T18:19:42+09:00",
     "sourceUrl": "https://jingeon27.tistory.com/19",
     "title": "정산 서비스를 별도 호스트로 분리하며 도메인 간 토큰 전달을 설계한 과정",
     "description": "정산 호스트로 토큰을 넘기는 방식을 URL에서 폼 POST로 바꾸고, 전용 BFF에 모은 과정과 남은 보안 과제.",
@@ -2334,68 +2376,68 @@
         "level": 2
       },
       {
-        "id": "1-핵심-문제--두-호스트는-쿠키를-공유하지-못한다",
-        "title": "1. 핵심 문제 — 두 호스트는 쿠키를 공유하지 못한다",
+        "id": "두-호스트의-쿠키를-직접-공유할-수-없었다",
+        "title": "두 호스트의 쿠키를 직접 공유할 수 없었다",
         "level": 2
       },
       {
-        "id": "2-1단계--url-쿼리-문자열로-토큰-전달",
-        "title": "2. 1단계 — URL 쿼리 문자열로 토큰 전달",
+        "id": "처음에는-url-쿼리로-토큰을-넘겼다",
+        "title": "처음에는 URL 쿼리로 토큰을 넘겼다",
         "level": 2
       },
       {
-        "id": "3-2단계--토큰을-html-폼의-post-본문으로-이동",
-        "title": "3. 2단계 — 토큰을 HTML 폼의 POST 본문으로 이동",
+        "id": "토큰을-html-폼의-post-본문으로-옮겼다",
+        "title": "토큰을 HTML 폼의 POST 본문으로 옮겼다",
         "level": 2
       },
       {
-        "id": "4-3단계--검토만-한-bff-보강안",
-        "title": "4. 3단계 — 검토만 한 BFF 보강안",
+        "id": "bff-보강안은-검토만-했다",
+        "title": "BFF 보강안은 검토만 했다",
         "level": 2
       },
       {
-        "id": "5-4단계--핸드오프-라우트로-책임-분리",
-        "title": "5. 4단계 — 핸드오프 라우트로 책임 분리",
+        "id": "핸드오프-라우트로-책임을-나눴다",
+        "title": "핸드오프 라우트로 책임을 나눴다",
         "level": 2
       },
       {
-        "id": "6-5단계--핸드오프-보안-헤더의-현재-상태와-한계",
-        "title": "6. 5단계 — 핸드오프 보안 헤더의 현재 상태와 한계",
+        "id": "핸드오프-응답의-보안-헤더를-점검했다",
+        "title": "핸드오프 응답의 보안 헤더를 점검했다",
         "level": 2
       },
       {
-        "id": "7-현재-구조--전체-흐름과-토큰-구독-방식",
-        "title": "7. 현재 구조 — 전체 흐름과 토큰 \"구독\" 방식",
+        "id": "현재-토큰-전달과-구독-구조",
+        "title": "현재 토큰 전달과 구독 구조",
         "level": 2
       },
       {
-        "id": "8-제약-조건--왜-인가-코드-방식을-쓰지-못했나",
-        "title": "8. 제약 조건 — 왜 인가 코드 방식을 쓰지 못했나",
+        "id": "인가-코드-교환을-도입하지-못한-이유",
+        "title": "인가 코드 교환을 도입하지 못한 이유",
         "level": 2
       },
       {
-        "id": "9-후일담--nextjs-163-업그레이드가-드러낸-잘못된-matcher",
-        "title": "9. 후일담 — Next.js 16.3 업그레이드가 드러낸 잘못된 matcher",
+        "id": "nextjs-163-업그레이드-후-matcher가-실패했다",
+        "title": "Next.js 16.3 업그레이드 후 matcher가 실패했다",
         "level": 2
       },
       {
-        "id": "9-1-증상과-세-조건",
-        "title": "9-1. 증상과 세 조건",
+        "id": "오류가-발생한-조건",
+        "title": "오류가 발생한 조건",
         "level": 3
       },
       {
-        "id": "9-2-업스트림-회귀-근거",
-        "title": "9-2. 업스트림 회귀 근거",
+        "id": "업스트림-회귀를-확인한-근거",
+        "title": "업스트림 회귀를 확인한 근거",
         "level": 3
       },
       {
-        "id": "9-3-실제-수정",
-        "title": "9-3. 실제 수정",
+        "id": "실제로-수정한-부분",
+        "title": "실제로 수정한 부분",
         "level": 3
       },
       {
-        "id": "9-4-남은-테스트-과제",
-        "title": "9-4. 남은 테스트 과제",
+        "id": "추가로-확인할-테스트",
+        "title": "추가로 확인할 테스트",
         "level": 3
       },
       {
@@ -2414,7 +2456,7 @@
     "category": "engineering",
     "tags": ["nextjs", "authentication", "bff", "security"],
     "publishedAt": "2026-05-29T21:28:13+09:00",
-    "updatedAt": "2026-10-17T01:15:48.932+09:00",
+    "updatedAt": "2026-10-17T18:19:42+09:00",
     "sourceUrl": "https://jingeon27.tistory.com/19",
     "title": "Passing authentication between separate hosts",
     "description": "Move settlement token handoff from URL parameters to a dedicated form-POST BFF, with its remaining security limits.",
@@ -2429,68 +2471,68 @@
         "level": 2
       },
       {
-        "id": "1-the-hosts-cannot-share-cookies",
-        "title": "1. The hosts cannot share cookies",
+        "id": "the-hosts-cannot-share-cookies",
+        "title": "The hosts cannot share cookies",
         "level": 2
       },
       {
-        "id": "2-first-approach-tokens-in-url-parameters",
-        "title": "2. First approach: tokens in URL parameters",
+        "id": "first-approach-tokens-in-url-parameters",
+        "title": "First approach: tokens in URL parameters",
         "level": 2
       },
       {
-        "id": "3-move-tokens-into-an-html-form-post",
-        "title": "3. Move tokens into an HTML form POST",
+        "id": "moving-tokens-into-an-html-form-post",
+        "title": "Moving tokens into an HTML form POST",
         "level": 2
       },
       {
-        "id": "4-proposed-bff-hardening-not-implemented",
-        "title": "4. Proposed BFF hardening, not implemented",
+        "id": "reviewing-the-proposed-bff-hardening",
+        "title": "Reviewing the proposed BFF hardening",
         "level": 2
       },
       {
-        "id": "5-give-handoff-a-dedicated-route",
-        "title": "5. Give handoff a dedicated route",
+        "id": "giving-handoff-a-dedicated-route",
+        "title": "Giving handoff a dedicated route",
         "level": 2
       },
       {
-        "id": "6-current-headers-and-their-limits",
-        "title": "6. Current headers and their limits",
+        "id": "checking-the-current-headers-and-their-limits",
+        "title": "Checking the current headers and their limits",
         "level": 2
       },
       {
-        "id": "7-current-flow-and-token-subscriptions",
-        "title": "7. Current flow and token subscriptions",
+        "id": "current-flow-and-token-subscriptions",
+        "title": "Current flow and token subscriptions",
         "level": 2
       },
       {
-        "id": "8-why-authorization-code-exchange-was-outside-scope",
-        "title": "8. Why authorization-code exchange was outside scope",
+        "id": "why-authorization-code-exchange-was-outside-scope",
+        "title": "Why authorization-code exchange was outside scope",
         "level": 2
       },
       {
-        "id": "9-a-nextjs-163-upgrade-exposed-the-matcher",
-        "title": "9. A Next.js 16.3 upgrade exposed the matcher",
+        "id": "a-nextjs-163-upgrade-exposed-the-matcher",
+        "title": "A Next.js 16.3 upgrade exposed the matcher",
         "level": 2
       },
       {
-        "id": "9-1-three-conditions-behind-the-failure",
-        "title": "9-1. Three conditions behind the failure",
+        "id": "conditions-behind-the-failure",
+        "title": "Conditions behind the failure",
         "level": 3
       },
       {
-        "id": "9-2-evidence-of-an-upstream-regression",
-        "title": "9-2. Evidence of an upstream regression",
+        "id": "evidence-of-an-upstream-regression",
+        "title": "Evidence of an upstream regression",
         "level": 3
       },
       {
-        "id": "9-3-applied-changes",
-        "title": "9-3. Applied changes",
+        "id": "applied-changes",
+        "title": "Applied changes",
         "level": 3
       },
       {
-        "id": "9-4-remaining-tests",
-        "title": "9-4. Remaining tests",
+        "id": "remaining-tests",
+        "title": "Remaining tests",
         "level": 3
       },
       {
@@ -3159,7 +3201,7 @@
     "category": "engineering",
     "tags": ["typescript", "react"],
     "publishedAt": "2024-05-25T17:01:01+09:00",
-    "updatedAt": "2026-10-17T01:15:48.932+09:00",
+    "updatedAt": "2026-10-17T18:19:42+09:00",
     "sourceUrl": "https://jingeon27.tistory.com/7",
     "title": "실무에서 자주 쓰는 TypeScript 패턴 네 가지",
     "description": "satisfies, optional property, 제네릭과 배타적인 props로 값 사이의 관계를 타입에 표현하기.",
@@ -3169,23 +3211,23 @@
     "locale": "ko",
     "toc": [
       {
-        "id": "1-satisfies-검사는-하되-추론은-유지하기",
-        "title": "1. satisfies: 검사는 하되 추론은 유지하기",
+        "id": "satisfies로-검사하면서-추론을-유지하기",
+        "title": "satisfies로 검사하면서 추론을 유지하기",
         "level": 2
       },
       {
-        "id": "2-t--undefined와-optional-property는-다르다",
-        "title": "2. T | undefined와 optional property는 다르다",
+        "id": "t--undefined와-optional-property는-다르다",
+        "title": "T | undefined와 optional property는 다르다",
         "level": 2
       },
       {
-        "id": "3-제네릭으로-value와-callback의-타입을-연결하기",
-        "title": "3. 제네릭으로 value와 callback의 타입을 연결하기",
+        "id": "제네릭으로-value와-callback의-타입을-연결하기",
+        "title": "제네릭으로 value와 callback의 타입을 연결하기",
         "level": 2
       },
       {
-        "id": "4-서로-배타적인-props는-overload보다-union으로-표현하기",
-        "title": "4. 서로 배타적인 props는 overload보다 union으로 표현하기",
+        "id": "서로-배타적인-props를-union으로-표현하기",
+        "title": "서로 배타적인 props를 union으로 표현하기",
         "level": 2
       }
     ],
@@ -3199,7 +3241,7 @@
     "category": "engineering",
     "tags": ["typescript", "react"],
     "publishedAt": "2024-05-25T17:01:01+09:00",
-    "updatedAt": "2026-10-17T01:15:48.932+09:00",
+    "updatedAt": "2026-10-17T18:19:42+09:00",
     "sourceUrl": "https://jingeon27.tistory.com/7",
     "title": "Four TypeScript patterns I use at work",
     "description": "Use satisfies, optional properties, generics, and exclusive props to express relationships between values.",
@@ -3209,23 +3251,23 @@
     "locale": "en",
     "toc": [
       {
-        "id": "1-satisfies-check-compatibility-while-preserving-inference",
-        "title": "1. satisfies: check compatibility while preserving inference",
+        "id": "checking-compatibility-with-satisfies-while-preserving-inference",
+        "title": "Checking compatibility with satisfies while preserving inference",
         "level": 2
       },
       {
-        "id": "2-t--undefined-and-an-optional-property-mean-different-things",
-        "title": "2. T | undefined and an optional property mean different things",
+        "id": "t--undefined-and-an-optional-property-mean-different-things",
+        "title": "T | undefined and an optional property mean different things",
         "level": 2
       },
       {
-        "id": "3-connect-a-value-and-its-callback-with-a-generic",
-        "title": "3. Connect a value and its callback with a generic",
+        "id": "connecting-a-value-and-its-callback-with-a-generic",
+        "title": "Connecting a value and its callback with a generic",
         "level": 2
       },
       {
-        "id": "4-express-mutually-exclusive-props-with-a-union",
-        "title": "4. Express mutually exclusive props with a union",
+        "id": "expressing-mutually-exclusive-props-with-a-union",
+        "title": "Expressing mutually exclusive props with a union",
         "level": 2
       }
     ],

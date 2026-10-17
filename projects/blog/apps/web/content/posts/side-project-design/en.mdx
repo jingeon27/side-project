@@ -1,8 +1,52 @@
-For this side project, I wanted to bring people to a service I had built and find out whether they would return. I was comfortable building frontend screens, and I wanted experience owning the server, database, and operation of a product as well. If it worked, I hoped to keep running it as a side business.
+The first service in my `side-project` repository let friends upload photos and vote on them. A photo contest became a permanent feed as I ran the app and revised the requirements. Repeated code review requests became shared packages. I later added a game feedback project and my personal blog to the repository. Game feedback is being developed on a separate feature branch.
 
-I did not begin with a single settled idea. I considered services that connect people, narrowed one down to game feedback, and decided to build a separate photo feedback service too. My personal blog joined them in the same repository.
+I wanted to bring people to a service I had built and find out whether they would return. I was comfortable building frontend screens, and I wanted experience owning the server, database, and operation of a product as well. If it worked, I hoped to keep running it as a side business.
 
-Much of the planning involved adding features and then taking them back out. Deciding what to verify first took more time than choosing the stack.
+Looking back through commits and the requests I made in local Codex sessions, I found a sequence of revisions. I ran the screens, changed requirements, and reorganized the existing structure as another project joined it.
+
+## The first service was a private photo contest
+
+The first commit, on October 13, contained `photo-contest`. People could create a group, join by invitation, submit photos, and vote. Submission and voting had separate periods, and results handled ties and contests without votes.
+
+I already intended to keep several side projects in the repository. I asked Codex to set up a monorepo without putting tests at the repository root. I wanted Vitest and Playwright, with each app able to run the tests it needed.
+
+The root owned Yarn workspaces, common configuration, and delegation to project commands. Services belonged under `projects/<name>`, and shared configuration went into `packages`. The first shared package held TypeScript configuration.
+
+```text
+projects/
+  photo-contest/
+    apps/
+      api/
+      web/
+packages/
+  typescript-config/
+```
+
+The mobile app, other services, shared lint rules, and design system came later. Test ownership was refined too. API, web, and mobile apps now each own their configurations and tests.
+
+## Running the home screen changed the photo service
+
+The first home screen was closer to a group selector. I wanted to see recent photos from every group I belonged to as soon as I opened it. The group list could live on my profile page.
+
+I then decided that a place to keep posting suited the service better than events that closed after a deadline. I added scope for videos and composite images, administrator removal, and popular posts for the month. That led to a permanent post model alongside the existing contest model.
+
+I revised the design from the running screens too. I pointed out layouts that obscured photos, borders that suggested a story feature we did not have, and awkward desktop spacing. References from other services still needed to fit the actual features and how people would view photos.
+
+## Repeated coding requests became shared packages
+
+Implementation conventions changed as features grew. I asked for uploads handled through mutations, and for event handlers used only once to stay inline when appropriate. I also asked for context-specific UI, such as photo and video selection, to have separate components.
+
+Leaving those requests only in conversation meant explaining them again in the next task. I asked for custom ESLint rules in a shared package, written in TypeScript and checked with RuleTester and fixtures. The rules and framework presets were later separated so each app could compose the configuration it needed.
+
+When game feedback joined the repository, I also worked on a design system shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
+
+## I separated develop from feature branches
+
+When starting game feedback, I asked for `develop` to be created from `main` and for `feat/game-feedback` to remain a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
+
+The actual `develop` history contains the photo feed, permanent posts, login and uploads, shared lint work, and the blog migration. Work still underway on a feature branch has not necessarily reached `develop`. Checking the combined state meant checking both the current branch and the PR target.
+
+I used different worktrees to work on the blog and game service in separate sessions. Separate folders could still point to the same repository, so I recorded the need to check the remote and branch before working.
 
 ## I chose Clash Royale as the first game
 
@@ -12,7 +56,9 @@ The game feedback idea was straightforward: someone stuck in a game describes th
 
 I treated photo feedback and game feedback as separate services. Both involve asking for opinions, but people use them for different reasons and need different context. Building them under the same brand did not give me a reason to combine their accounts or data.
 
-I also wanted friend-add sales, friendly-match recruitment, and chat in the game service. The navigation needed to distinguish games from boards: feedback and the other boards belong under Clash Royale. I dropped account trading because of the risk involved and kept payment processing outside the initial scope.
+I also wanted friend-add sales, friendly-match recruitment, and chat in the game service. Boards belong under a game such as Clash Royale. I later added coaching and general discussion, making five common categories to reuse across games. I dropped account trading because of the risk involved.
+
+Friend-add sales needed a price field. Coaching needed hourly, monthly, and target-rating pricing, and either students or coaches could post a request. The scope covers displaying terms and connecting people through chat. Payment processing stayed outside the initial scope.
 
 ## The first reply was near the end of the plan
 
@@ -37,7 +83,7 @@ I moved recruiting five to ten potential responders and manually connecting ques
 
 ## I chose REST to work through the cache model
 
-I chose REST because I wanted to define cache boundaries for lists and detail pages, then decide which queries to refresh after a change. Organizing those relationships through REST felt familiar and suited the work I wanted to do in this project.
+The photo service used GraphQL and Apollo Client. For game feedback, I chose REST and TanStack Query. I wanted to define cache boundaries for lists and detail pages, then decide which queries to refresh after a change. Organizing those relationships through REST felt familiar and suited the work I wanted to do in this project.
 
 I selected TanStack Query for browser server state. The feed uses cursor-based infinite scrolling, and creating a post or reply refreshes the relevant queries. For the server, I chose NestJS with Express.
 
@@ -57,7 +103,7 @@ That distinction mattered when designing verification labels. Showing profile lo
 
 I decided that a connected game profile would initially have unverified ownership, with a separate verification process to investigate. An administrator-managed user verification label also has a different meaning from ownership of a game account. The label needs to reflect what was checked and the evidence used.
 
-I also decided to preserve the game information from the time a feedback request was written. If someone changes their deck later, the old reply should still have the context it was based on. That is why a request snapshot is separate from the current profile.
+The early plan also included snapshots of the deck and game information when a request was written. During implementation, I moved game profile registration to the user account and removed deck attachment from the writing screen. Verification requests became a one-to-one chat with an administrator. Running the screens led to further changes in what users connect and what a verification label means.
 
 ## Translated navigation does not complete a conversation
 

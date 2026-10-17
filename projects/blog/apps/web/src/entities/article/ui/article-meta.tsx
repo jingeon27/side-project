@@ -6,7 +6,10 @@ export function ArticleMeta({ article, showUpdated = false }: { article: Article
   const t = labels(article.locale);
   return (
     <div className="article-meta">
-      <time dateTime={article.publishedAt}>{formatDate(article.publishedAt, article.locale)}</time>
+      <span>
+        {t.common.published}{' '}
+        <time dateTime={article.publishedAt}>{formatDate(article.publishedAt, article.locale)}</time>
+      </span>
       <span>
         {article.readingMinutes}
         {article.locale === 'ko' ? '' : ' '}
