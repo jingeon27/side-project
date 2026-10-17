@@ -21,6 +21,8 @@ function local(script, args = []) {
 export async function prerequisites() {
   await workspace('contracts', 'build');
   await workspace('api', 'db:generate');
+  await workspace('api', 'openapi');
+  await workspace('sdk', 'codegen');
 }
 
 export async function setup() {
@@ -33,11 +35,8 @@ export async function setup() {
 export async function runTask(task) {
   assertNode();
   if (task === 'setup') await setup();
-  else if (task === 'codegen') {
-    await prerequisites();
-    await workspace('api', 'openapi');
-    await workspace('sdk', 'codegen');
-  } else if (task === 'check') {
+  else if (task === 'codegen') await prerequisites();
+  else if (task === 'check') {
     await prerequisites();
     for (const name of ['contracts', 'api', 'sdk', 'bridge', 'web', 'mobile'])
       await workspace(name, 'typecheck');

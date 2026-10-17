@@ -8,6 +8,8 @@
 
 홈 `/:locale`은 모든 게임과 게시판의 글을 모은 **피드**다. 각 게임은 **피드백, 친추판매, 친선전 모집, 게임코치, 자유게시판**의 다섯 메뉴를 공통으로 사용한다. `/:locale/boards/feedback`, `/friend-sale`, `/friendly`, `/coaching`, `/free`에서 종류별 글을 보고, 다른 게임은 같은 경로의 `game=<category-slug>`로 구분한다. 메뉴를 게임마다 복제하지 않고 활성 카테고리와 공통 게시판 설정을 조합한다. 계정 거래는 제공하지 않는다.
 
+친추판매는 **판매 금액 (원)**을 입력한다. 1~10,000,000원의 정수를 저장하며 피드·게시판 카드와 상세에 표시하고 수정할 수 있다. 비워두면 **가격 협의**, 금액 정보가 없는 기존 글은 **판매 금액 미등록**으로 표시한다. 다른 게임도 같은 입력을 사용한다.
+
 게임코치에서는 가르치는 사람이 **수강생 모집**, 배우려는 사람이 **코치 구함**을 선택한다. 시간당 수강료 또는 희망 수강료를 원화로 입력하고, 비워두면 수강료 협의로 표시한다. 상세의 **코칭 상담**에서 작성자와 1:1 채팅을 시작한다. 코칭료 결제나 수강 완료를 처리하는 흐름은 없다.
 
 홈의 **글쓰기**에서는 게임과 게시판을 선택하고, 게시판에서 쓰면 해당 게임과 게시판이 고정된다. Quill의 굵게, 기울임, 밑줄, 취소선, 제목, 목록, 인용과 링크를 저장하며 수정과 새로고침에도 서식이 유지된다. 덱 카드 목록은 표시하지 않는다.
@@ -33,7 +35,7 @@ corepack yarn workspace @side/game-feedback dev:demo
 corepack yarn workspace @side/game-feedback db:stop
 ```
 
-실제 Google/Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 데모 샘플은 명시적 데모 실행에만 추가한다.
+실제 Google/Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 데모 샘플은 명시적 데모 실행에만 추가한다.
 
 ## 언어와 반응형 화면
 
@@ -74,6 +76,14 @@ corepack yarn workspace @side/game-feedback db:stop
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                    |
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                |
 | `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                                   |
+
+## API 규격 자동 생성
+
+`apps/api/openapi.json`은 REST 요청·응답·경로를 기술하는 OpenAPI 규격이다. 원본은 `packages/contracts`의 Zod 스키마와 API 경로 정의이며 JSON을 직접 편집하지 않는다. Orval이 이 규격에서 타입·클라이언트·Zod 응답 검증 코드를 만든다.
+
+프로젝트의 `dev`/`dev:demo`/`setup`, `check`/`typecheck`, `test`/`test:e2e`, `build`는 시작할 때 **계약 빌드 → Prisma 생성 → OpenAPI → SDK 생성**을 순서대로 실행한다. 실행 중 계약을 수정했다면 `codegen`을 다시 실행하거나 개발 서버를 다시 시작한다. 앱 워크스페이스의 개별 명령을 직접 실행하면 이 준비 단계는 실행하지 않는다.
+
+생성된 규격과 SDK는 API 변경을 리뷰하고 CI에서 누락을 잡을 수 있도록 Git에 포함한다. 규격이 같으면 재생성해도 변경되지 않으며 매번 새 파일이 올라가는 구조가 아니다. CI는 재생성 후 Git diff를 검사해 생성 결과를 빠뜨린 변경을 실패 처리한다. 생성 과정은 DB 접속이나 외부 API 호출이 필요 없다.
 
 ## 모바일 WebView 앱
 

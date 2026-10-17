@@ -10,6 +10,8 @@ corepack yarn workspace @game-feedback/sdk typecheck
 corepack yarn workspace @game-feedback/sdk test
 ```
 
+프로젝트의 개발 실행·setup·check/typecheck·test/E2E·build는 시작할 때 계약 빌드와 OpenAPI/SDK 생성을 자동으로 수행한다. 실행 중 계약을 수정하면 위 `codegen` 명령을 다시 실행한다. 앱별 명령을 직접 실행할 때는 먼저 생성해야 한다. 생성 JSON과 SDK는 Git에 포함하고 CI가 재생성 diff를 검사한다. 규격이 같으면 파일 diff는 생기지 않는다.
+
 앱의 `features/<domain>/api`에서는 `@game-feedback/sdk`의 생성 함수를 호출한다. Orval의 `schemas.type: zod`, `fetch.runtimeValidation`, `includeZodSchemaInArguments`가 응답 스키마를 자동 연결한다. 생성된 `.zod.ts`·client·validation 파일은 직접 수정하지 않는다. 호출자가 options로 스키마를 덮어쓸 수 없으며, transport는 스키마 없는 요청을 거부한다. 검증을 우회하던 raw API helper는 공개 API에서 제거했다.
 
 서버 컴포넌트의 요청은 생성 함수의 options에 `baseUrl`과 필요한 header·AbortSignal을 전달할 수 있다. 이 값은 요청별이며 전역 설정이나 fetch를 교체하지 않는다. `baseUrl`·Zod schema 옵션은 실제 fetch init에 전달하지 않고, 브라우저의 기본 상대 `/api` URL·credentials·no-store 동작을 유지한다. Web의 server-only 어댑터는 신뢰한 API origin과 Game Feedback 세션 cookie만 전달한다. 공개 프로필도 같은 생성·검증 경로를 사용한다.
@@ -42,3 +44,5 @@ HTTP 오류 본문은 코드·메시지의 타입을 검증하고 잘못되면 `
 SDK가 소유한 Vitest는 생성 클라이언트의 실제 호출·fallback·오류 처리를 검사한다. OpenAPI의 모든 operation이 생성 transport에 스키마를 전달하는지도 검사해 재생성 시 검증 누락을 막는다. 브라우저 회귀 테스트는 Web이 소유한다.
 
 게임 공통 게시판은 `FEEDBACK`, `FRIEND_SALE`, `FRIENDLY`, `COACHING`, `FREE`다. 홈은 `board=ALL`, 종류별 목록은 board와 category slug를 함께 전달한다. `COACHING` 생성에는 `coaching: { role: 'COACH' | 'STUDENT', hourlyRate: number | null }`가 필요하다. 금액은 시간당 원화 1~10,000,000원, null은 협의다. 코칭 외 게시판의 코칭 정보와 코칭 글의 정보 제거를 서버에서 거부한다. 다른 게임에 클래시 로얄 Player Tag를 첨부하지 않는다.
+
+`FRIEND_SALE` 생성에는 `friendSale: { price: number | null }`가 필요하다. 금액은 원화 1~10,000,000원의 정수이며 null은 가격 협의다. 기존 글의 메타데이터 누락/null은 미등록으로 구분한다. 다른 게시판에 가격 메타데이터를 넣거나 친추판매 글에서 메타데이터를 제거하는 요청을 거부한다. PATCH에서 생략하면 기존 금액을 보존한다. 금액의 문자열·범위 오류에 응답 fallback을 적용하지 않는다.
