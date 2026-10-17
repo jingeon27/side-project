@@ -19,7 +19,7 @@ export function useWebShell() {
     createNativeHost({
       origin: WEB_ORIGIN,
       send: (message) => channel.inject(buildDispatchScript(message)),
-      login: () => nativeLogin(WEB_ORIGIN),
+      login: (provider) => nativeLogin(WEB_ORIGIN, provider),
       onLocation: (path) => {
         channel.rememberUrl(`${WEB_ORIGIN}${path}`);
       },

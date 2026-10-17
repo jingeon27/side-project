@@ -36,17 +36,21 @@ export async function installNativeHost(page: Page) {
     onOverlayChange: (open) => {
       overlayOpen = open;
     },
-    login: () =>
+    login: (provider) =>
       loginResult
         ? Promise.resolve(loginResult)
-        : socialLogin(ORIGIN, {
-            randomVerifier: () => randomBytes(32).toString('base64url'),
-            challenge: async (verifier) => createHash('sha256').update(verifier).digest('base64url'),
-            openSession: async (url) => {
-              authSessions.push(url);
-              return { type: 'cancel' };
+        : socialLogin(
+            ORIGIN,
+            {
+              randomVerifier: () => randomBytes(32).toString('base64url'),
+              challenge: async (verifier) => createHash('sha256').update(verifier).digest('base64url'),
+              openSession: async (url) => {
+                authSessions.push(url);
+                return { type: 'cancel' };
+              },
             },
-          }),
+            provider,
+          ),
   });
   await page.exposeBinding('__gfNativePost', (_source, data: string, url: string) => {
     try {

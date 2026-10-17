@@ -3,12 +3,13 @@ import {
   WebPathSchema,
   type TLoginResult,
   type TNativeMessage,
+  type TLoginProvider,
 } from '@game-feedback/bridge';
 
 interface IHostOptions {
   origin: string;
   send: (message: TNativeMessage) => void;
-  login: () => Promise<TLoginResult>;
+  login: (provider: TLoginProvider) => Promise<TLoginResult>;
   onLocation: (path: string) => void;
   onReady?: () => void;
   onOverlayChange?: (open: boolean) => void;
@@ -60,7 +61,7 @@ export function createNativeHost(options: IHostOptions) {
         authPending = true;
         const started = generation;
         void options
-          .login()
+          .login(message.provider ?? 'google')
           .catch((): TLoginResult => ({ status: 'failed' }))
           .then((result) => {
             authPending = false;

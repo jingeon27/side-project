@@ -1,6 +1,6 @@
 # Game Feedback Mobile
 
-기존 웹을 여는 Expo 57 + React Native 0.86 WebView 앱이다. 게시글·댓글·1:1 채팅·테스트 계정·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다.
+기존 웹을 여는 Expo 57 + React Native 0.86 WebView 앱이다. 게시글·댓글·1:1 채팅·소셜 로그인·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다.
 
 ## 개발 실행
 
@@ -8,7 +8,7 @@
 
 ```sh
 corepack yarn install --immutable
-corepack yarn workspace @side/game-feedback dev:demo
+corepack yarn workspace @side/game-feedback dev:test
 # 다른 터미널: Android 에뮬레이터가 같은 localhost 웹 origin을 사용하도록 연결
 adb reverse tcp:3300 tcp:3300
 APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:android
@@ -36,7 +36,7 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이며 앱�
 - 메인 문서 연결 실패·5xx는 다시 시도 화면을 연다. 4xx는 웹이 표시한다. 다시 시도·Android renderer 종료는 마지막 주소로 WebView를 재생성하고 iOS content 종료는 reload한다.
 - 웹 준비 메시지 이전에는 딥링크를 문서 주소로, 이후에는 Next router 이동으로 전달한다. background에서 active로 돌아오면 세션을 먼저 확인하고 필요한 캐시를 갱신한다.
 
-Google 로그인은 시스템 브라우저 + PKCE를 사용한다. OAuth 완료 후 API가 `gamefeedback://auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google 제공자의 callback은 기존 Web origin의 `/api/auth/google/callback`이며 실제 자격 증명 검증은 별도다.
+X·카카오·Discord·Google 로그인은 선택한 제공자를 시스템 브라우저로 전달하고 앱 복귀에 PKCE를 사용한다. OAuth 완료 후 API가 `gamefeedback://auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google callback은 기존 Web origin의 `/api/auth/google/callback`, 나머지는 `/api/auth/social/{x|kakao|discord}/callback`이다. 실제 자격 증명 검증은 별도다. 테스트 계정은 [서버 토큰 API](../../README.md#서버에서-테스트-토큰-발급하기)로 발급하며 앱 화면에 선택기를 두지 않는다.
 
 ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초기 링크는 이미 받은 후속 링크를 덮어쓰지 않으며 해제 후 async 응답을 무시한다. lifecycle 훅은 let/ref 플래그 없이 구독하고 useCallback으로 안정화한 콜백별 의존성을 사용한다. WebView props는 satisfies로 검증해 추론을 유지한다.
 
@@ -73,7 +73,7 @@ corepack yarn workspace @game-feedback/mobile bundle:check
 
 Vitest는 순수 URL·프로토콜·PKCE 판단과 RN Web으로 그린 실제 셸 이벤트를 검증한다. Playwright의 `android-webview`·`ios-webview`는 Chromium/WebKit 모바일 환경에 실제 앱 host·URL 정책·인증 로직을 붙이고 OS 인증창만 대역으로 바꾼다. Google 버튼 취소 테스트에서는 실제 session 응답의 제공자 사용 가능 여부만 켜며 나머지 API·DB는 격리된 실제 서버를 사용한다. API의 일회용 코드 교환·쿠키·재사용·만료·경쟁·Origin·가입 동의는 API 소유 Vitest+Supertest로 검사한다.
 
-실기기에서 별도 확인할 항목은 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 시스템 Google 인증 후 앱 복귀, 비행기 모드와 연결 복구다. Metro export와 브라우저 검증은 서명된 네이티브 빌드·실기기 확인을 대신하지 않는다.
+실기기에서 별도 확인할 항목은 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 후 앱 복귀, 비행기 모드와 연결 복구다. Metro export와 브라우저 검증은 서명된 네이티브 빌드·실기기 확인을 대신하지 않는다.
 
 게임 메뉴는 모든 활성 게임이 피드백, 친추판매, 친선전 모집, 게임코치, 자유게시판 5개를 공유한다. 홈은 전체 피드이고 기본 게임 외 경로에는 `game=<category-slug>`를 유지한다. 게시판/상세의 warm 딥링크와 native back도 같은 game/board 문맥을 사용한다. 게임코치는 수강생 모집과 코치 구함, 시간당/월 단위/목표 달성 총수강료와 협의 표시와 기존 비공개 채팅 상담을 Web에서 제공한다.
 

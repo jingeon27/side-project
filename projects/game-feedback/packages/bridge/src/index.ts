@@ -8,6 +8,8 @@ export const APP_SCHEME = 'gamefeedback';
 export const APP_CALLBACK = `${APP_SCHEME}://auth/callback`;
 const id = z.string().min(1).max(100);
 const ticket = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+export const LoginProviderSchema = z.enum(['x', 'kakao', 'discord', 'google']);
+export type TLoginProvider = z.infer<typeof LoginProviderSchema>;
 export const WebMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('ready') }).strict(),
   z.object({ type: z.literal('location'), path: WebPathSchema }).strict(),
@@ -15,7 +17,7 @@ export const WebMessageSchema = z.discriminatedUnion('type', [
     .object({ type: z.literal('back-result'), id, handled: z.boolean(), atRoot: z.boolean().optional() })
     .strict(),
   z.object({ type: z.literal('navigation-state'), overlayOpen: z.boolean() }).strict(),
-  z.object({ type: z.literal('auth-request'), id }).strict(),
+  z.object({ type: z.literal('auth-request'), id, provider: LoginProviderSchema.optional() }).strict(),
 ]);
 export const NativeMessageSchema = z.union([
   z.object({ type: z.literal('open'), path: WebPathSchema }).strict(),

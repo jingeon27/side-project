@@ -9,7 +9,12 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  await page.getByRole('button', { name: /새벽의호그/ }).click();
+  await page.request.post('/api/auth/test-token', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-user-0' },
+  });
+  nativeHost.state('background');
+  nativeHost.state('active');
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const composer = page.getByRole('form', { name: '글쓰기', exact: true });
@@ -82,7 +87,7 @@ test('native back closes the web dialog, deep links keep the document, and foreg
   nativeHost.state('active');
   expect(nativeHost.openDeepLink('gamefeedback://ko/settings')).toBe(true);
   await expect(page.locator('.settings-profile')).toContainText('덱연구소');
-  await expect(page.locator('.settings-profile')).toContainText('인증 유저 (테스트)');
+  await expect(page.locator('.settings-profile')).toContainText('인증 유저');
 });
 
 test('native Google login opens the system auth session and cancellation keeps the login dialog usable', async ({
@@ -92,16 +97,28 @@ test('native Google login opens the system auth session and cancellation keeps t
   await page.route('**/api/session', async (route) => {
     const response = await route.fetch();
     const session = await response.json();
-    await route.fulfill({ response, json: { ...session, googleConfigured: true } });
+    await route.fulfill({
+      response,
+      json: {
+        ...session,
+        googleConfigured: true,
+        socialProviders: [{ provider: 'google', configured: true }],
+      },
+    });
   });
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await page.getByRole('button', { name: /Google로 시작하기/ }).click();
   await expect.poll(() => nativeHost.authSessions.length).toBe(1);
-  expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
+  expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/social\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: /새벽의호그/ }).click();
+  await page.request.post('/api/auth/test-token', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-user-0' },
+  });
+  nativeHost.state('background');
+  nativeHost.state('active');
   await expect(page.getByRole('dialog')).not.toBeVisible();
 });
 
@@ -122,8 +139,7 @@ test('native back dismisses the conversation menu and report dialog before leavi
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page.getByRole('menu')).toHaveCount(0);
   await expect.poll(nativeHost.currentPath).toBe(path);
-  await menu.click();
-  await page.getByRole('menuitem', { name: '사용자 신고', exact: true }).click();
+  await page.getByRole('button', { name: '사용자 신고', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page.getByRole('dialog')).toHaveCount(0);
