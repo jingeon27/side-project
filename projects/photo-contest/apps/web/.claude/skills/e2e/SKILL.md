@@ -11,9 +11,9 @@ description: 웹(apps/web)의 Playwright e2e를 작성·실행할 때(휴대폰 
 
 | project | 기기 | 도는 spec |
 | --- | --- | --- |
-| `mobile-chrome` | `devices['Pixel 7']` | 전체(기본) |
+| `mobile-chrome` | `devices['Pixel 7']` | 기본 spec(`webview.spec.ts`·`desktop-*.spec.ts` 제외) |
 | `mobile-safari` | `devices['iPhone 15']`(WebKit) | `@ios` 태그 |
-| `desktop-chrome` | `devices['Desktop Chrome']` | `@desktop` 태그(앱 열이 가운데 놓이는지 스모크) |
+| `desktop-chrome` | `devices['Desktop Chrome']` | `@desktop` 태그(반응형·그룹·업로드·댓글 흐름) |
 | `webview` | Pixel 7, UA 끝에 ` PhotoContestApp/1.0.0`(`buildAppUserAgent('1.0.0')`) | `webview.spec.ts`만(다른 프로젝트는 `testIgnore`) |
 
 - webServer는 두 개다: `apiWebServer({ port: 4320, webOrigin: 'http://localhost:3320', database: prepareE2eDatabase('web_e2e') })`(`@photo-contest/test-kit`)와 이 앱의 `next dev -p 3320`. Next는 env `NEXT_DIST_DIR=.next/e2e`(사용자 개발 서버의 `.next` 잠금과 겹치지 않게), `API_URL=http://127.0.0.1:4320`, `WEB_ORIGIN=http://localhost:3320`, url `http://localhost:3320/backend/health`(rewrite까지 확인), `reuseExistingServer: false`, timeout 180s.
