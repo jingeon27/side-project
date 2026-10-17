@@ -23,7 +23,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
     });
     expect(appearance.height).toBeGreaterThanOrEqual(44);
     expect(appearance.background).toBe(appearance.brand);
-    await page.getByRole('button', { name: '로그인 / 시작하기', exact: true }).click();
+    await action.click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveCSS('opacity', '1');

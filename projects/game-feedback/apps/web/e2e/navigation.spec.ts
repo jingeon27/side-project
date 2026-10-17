@@ -17,9 +17,11 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await expect(page.getByRole('textbox', { name: '게시글 검색' })).toHaveValue('호그');
   const length = await page.evaluate(() => history.length);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
-  await tabs.getByRole('link', { name: '내 프로필' }).click();
+  await tabs.getByRole('link', { name: '프로필', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/settings$/);
-  await tabs.getByRole('link', { name: '알림' }).click();
+  await tabs.getByRole('link', { name: '가이드', exact: true }).click();
+  await expect(page).toHaveURL(/\/ko\/guide$/);
+  await page.getByRole('banner').getByRole('link', { name: '알림 0개', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/notifications$/);
   await tabs.getByRole('link', { name: '피드' }).focus();
   await page.keyboard.press('Enter');

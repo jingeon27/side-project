@@ -2,6 +2,41 @@ import { test, expect } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 import { appRoutes } from '@game-feedback/bridge';
 
+test('mobile header and four tabs navigate in place and report their paths to the native shell', async ({
+  page,
+  nativeHost,
+}) => {
+  await page.goto('/ko');
+  await expect.poll(nativeHost.isReady).toBe(true);
+  const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
+  await expect(tabs.getByRole('link')).toHaveText(['피드', '가이드', '채팅', '프로필']);
+  await page.locator('html').evaluate((node) => node.setAttribute('data-route-document', 'kept'));
+  const length = await page.evaluate(() => history.length);
+  for (const [name, path] of [
+    ['가이드', '/ko/guide'],
+    ['채팅', '/ko/messages'],
+    ['프로필', '/ko/settings'],
+  ]) {
+    await tabs.getByRole('link', { name, exact: true }).click();
+    await expect.poll(nativeHost.currentPath).toBe(path);
+    await expect(tabs.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
+  }
+  const header = page.getByRole('banner');
+  await header.getByRole('link', { name: '언어 설정', exact: true }).click();
+  await expect(page).toHaveURL(/\/ko\/settings#language$/);
+  await expect(page.locator('#language-preference')).toBeInViewport();
+  await header.getByRole('link', { name: '알림 0개', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/notifications');
+  await header.getByRole('link', { name: '설정', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
+  await tabs.getByRole('link', { name: '피드', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko');
+  await expect(page.locator('html')).toHaveAttribute('data-route-document', 'kept');
+  expect(await page.evaluate(() => history.length)).toBe(length);
+  expect(await nativeHost.requestBack()).toBe(true);
+  expect(nativeHost.rootBacks()).toBe(1);
+});
+
 test('an admin deep link opens the protected management page and native back returns to account settings', async ({
   page,
   nativeHost,

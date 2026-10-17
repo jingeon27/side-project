@@ -8,7 +8,7 @@ test('WebView test account persists posts, comments and private chat across relo
   const suffix = Date.now().toString(36);
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await page.getByRole('button', { name: '로그인 / 시작하기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await page.getByRole('button', { name: /새벽의호그/ }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
@@ -18,8 +18,14 @@ test('WebView test account persists posts, comments and private chat across relo
   await composer
     .getByRole('textbox', { name: /플레이와 고민/ })
     .fill('모바일 웹뷰에서도 호그 순환 덱의 수비 타이밍과 반대 라인 공격을 함께 이야기하고 싶어요.');
+  const creation = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/api/posts' && response.request().method() === 'POST',
+  );
   await composer.getByRole('button', { name: '피드백 요청 올리기', exact: true }).click();
-  await expect(page).toHaveURL(/\/ko\/posts\/[^/?]+$/);
+  const created = await creation;
+  expect(created.ok()).toBe(true);
+  const post = await created.json();
+  await expect(page).toHaveURL(new RegExp(`/ko/posts/${post.id}$`), { timeout: 15_000 });
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
   const comment = `모바일 댓글 ${suffix}`;
   await page.getByRole('textbox', { name: '댓글 내용' }).fill(comment);
@@ -56,7 +62,7 @@ test('native back closes the web dialog, deep links keep the document, and foreg
 }) => {
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await page.getByRole('button', { name: '로그인 / 시작하기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page.getByRole('dialog')).not.toBeVisible();
@@ -90,7 +96,7 @@ test('native Google login opens the system auth session and cancellation keeps t
   });
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await page.getByRole('button', { name: '로그인 / 시작하기', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   await page.getByRole('button', { name: /Google로 시작하기/ }).click();
   await expect.poll(() => nativeHost.authSessions.length).toBe(1);
   expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
