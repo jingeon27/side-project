@@ -1,13 +1,22 @@
 import 'server-only';
 import { notFound } from 'next/navigation';
+import { appRoutes, GameSlugSchema } from '@game-feedback/bridge';
 import { boardBySlug } from '@/features/board';
+import { getPublicCategories } from '@/features/category/index.server';
 import { createPageMetadata, pageUrl, JsonLd } from '@/shared/seo';
 import { BoardsPage } from './BoardsPage';
 
-export function BoardsRoute({ locale, slug }: { locale: string; slug: string }) {
+async function resolveBoard(slug: string, game: unknown) {
   const board = boardBySlug(slug);
-  if (!board) notFound();
-  const url = pageUrl(`/${locale}/boards/${board.slug}`);
+  const parsed = GameSlugSchema.safeParse(game ?? 'clash-royale');
+  if (!board || !parsed.success) notFound();
+  const category = (await getPublicCategories()).find((item) => item.active && item.slug === parsed.data);
+  if (!category) notFound();
+  return { board, category };
+}
+export async function BoardsRoute({ locale, slug, game }: { locale: string; slug: string; game?: unknown }) {
+  const { board, category } = await resolveBoard(slug, game);
+  const url = pageUrl(appRoutes.boards(locale, board.slug, undefined, category.slug));
   return (
     <>
       <JsonLd
@@ -16,21 +25,20 @@ export function BoardsRoute({ locale, slug }: { locale: string; slug: string }) 
           '@type': 'CollectionPage',
           '@id': url,
           url,
-          name: `${board.name} 게시판`,
+          name: `${category.name} ${board.name}`,
           description: board.description,
         }}
       />
-      <BoardsPage locale={locale} slug={slug} />
+      <BoardsPage locale={locale} slug={slug} game={category} />
     </>
   );
 }
-export function boardMetadata(locale: string, slug: string) {
-  const board = boardBySlug(slug);
-  if (!board) notFound();
+export async function boardMetadata(locale: string, slug: string, game?: unknown) {
+  const { board, category } = await resolveBoard(slug, game);
   return createPageMetadata({
-    title: `${board.name} 게시판`,
+    title: `${category.name} ${board.name}`,
     description: board.description,
-    path: `/${locale}/boards/${board.slug}`,
-    keywords: [board.name, '클래시 로얄 게시판'],
+    path: appRoutes.boards(locale, board.slug, undefined, category.slug),
+    keywords: [category.name, board.name, '게임 커뮤니티'],
   });
 }

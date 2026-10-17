@@ -1,4 +1,21 @@
 @layer components {
+  .game-board-navigation {
+    margin-bottom: 24px;
+  }
+  .game-board-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--text-caption);
+  }
+  .coaching-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-block: 16px;
+    font-size: var(--text-caption);
+  }
   .board-heading {
     display: flex;
     justify-content: space-between;

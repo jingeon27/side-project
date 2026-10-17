@@ -3,7 +3,6 @@ import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
 import { m } from '@/shared/motion';
 import { Clock3, MessageSquare, Plus, Search, SlidersHorizontal } from 'lucide-react';
-import { ClashRoyaleIcon } from '@/features/game-profile';
 
 interface IFeedFiltersProps {
   tab: string;
@@ -19,7 +18,8 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
     <>
       <div className="feed-heading">
         <div>
-          <h2>{t('피드백 라운지')}</h2>
+          <h1>{t('피드')}</h1>
+          <p className="muted small">{t('게임 이야기와 모집, 코칭을 한곳에서 만나보세요.')}</p>
         </div>
         <MotionButton
           variant="primary"
@@ -29,15 +29,11 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
           onClick={onCompose}
         >
           <Plus size={17} />
-          {t('피드백 요청')}
+          {t('글쓰기')}
         </MotionButton>
       </div>
-      <div className="game-filter">
-        <ClashRoyaleIcon className="game-filter-icon" size={28} />
-        <span>{t('클래시 로얄')}</span>
-      </div>
       <div className="feed-controls">
-        <div className="feed-tabs" role="tablist" aria-label={t('피드백 필터')}>
+        <div className="feed-tabs" role="tablist" aria-label={t('피드 필터')}>
           <button
             role="tab"
             aria-selected={tab === 'latest'}
@@ -45,7 +41,7 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
             onClick={() => onTabChange('latest')}
           >
             <Clock3 size={16} />
-            {t('최신 피드백')}
+            {t('최신 글')}
             <m.span
               aria-hidden="true"
               className="feed-tab-indicator"
@@ -80,8 +76,8 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
         <Search size={17} />
         <input
           className="ds-input"
-          aria-label={t('피드백 검색')}
-          placeholder={t('함께 풀어보고 싶은 플레이를 검색하세요')}
+          aria-label={t('게시글 검색')}
+          placeholder={t('관심 있는 게시글을 검색하세요')}
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />

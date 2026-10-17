@@ -1,38 +1,6 @@
 @layer components {
-  .hero {
-    height: 310px;
-    border-radius: var(--radius-card);
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    padding: 33px;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero-copy {
-    position: relative;
-    z-index: 2;
-  }
-  .hero h1 {
-    font-size: var(--text-display);
-    line-height: 1.45;
-    letter-spacing: -1.5px;
-    font-weight: 750;
-  }
-  .hero h1 > span {
-    color: var(--color-accent-ink);
-  }
-  .hero p {
-    font-size: var(--text-caption);
-    line-height: 1.9;
-    margin-top: 12px;
-    color: var(--color-muted);
-  }
-  .hero-cta {
-    margin-top: 21px;
-    gap: 22px;
-  }
   .feed-section {
-    margin-top: 32px;
+    margin-top: 0;
   }
   .feed-heading {
     display: flex;
@@ -40,7 +8,7 @@
     justify-content: space-between;
     margin-bottom: 22px;
   }
-  .feed-heading h2 {
+  .feed-heading h1 {
     font-size: var(--text-title);
     letter-spacing: -1px;
     display: flex;
@@ -160,6 +128,15 @@
   .post-card:hover {
     border-color: var(--color-line);
     box-shadow: var(--shadow-card);
+  }
+  .post-board-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .feed-heading p {
+    margin-top: 6px;
   }
   .post-topline {
     display: flex;
@@ -388,29 +365,7 @@
   .empty-feed > .button {
     margin-top: 7px;
   }
-  @media (min-width: 1500px) {
-    .hero {
-      height: 325px;
-      padding: 36px;
-    }
-    .hero h1 {
-      font-size: var(--text-display);
-    }
-  }
   @media (max-width: 1250px) {
-    .hero {
-      padding: 27px;
-      height: 300px;
-    }
-    .hero h1 {
-      font-size: var(--text-display);
-    }
-    .hero p {
-      font-size: var(--text-caption);
-    }
-    .hero-cta {
-      margin-top: 19px;
-    }
     .post-card {
       padding: 18px 18px 0;
     }
@@ -422,16 +377,6 @@
     }
   }
   @media (max-width: 1080px) {
-    .hero {
-      height: 305px;
-      padding: 30px;
-    }
-    .hero h1 {
-      font-size: var(--text-display);
-    }
-    .hero p {
-      font-size: var(--text-caption);
-    }
     .post-card h3 {
       font-size: var(--text-subtitle);
     }
@@ -450,37 +395,19 @@
     .answer-count {
       font-size: var(--text-micro);
     }
-    .hero-cta {
-      margin-top: 20px;
-    }
+
     .feed-footer {
       font-size: var(--text-micro);
     }
   }
   @media (max-width: 760px) {
-    .hero {
-      padding: 27px 24px;
-      height: 295px;
-      border-radius: var(--radius-card);
-    }
-    .hero h1 {
-      font-size: var(--text-display);
-    }
-    .hero p {
-      font-size: var(--text-caption);
-      max-width: 240px;
-    }
-    .hero-cta {
-      gap: 14px;
-      margin-top: 21px;
-    }
     .feed-section {
-      margin-top: 27px;
+      margin-top: 0;
     }
     .feed-heading {
       margin-bottom: 17px;
     }
-    .feed-heading h2 {
+    .feed-heading h1 {
       font-size: var(--text-title);
     }
     .feed-heading > .button {
@@ -577,21 +504,6 @@
     }
   }
   @media (max-width: 440px) {
-    .hero {
-      height: 292px;
-      padding: 24px 20px;
-    }
-    .hero h1 {
-      font-size: var(--text-title-lg);
-    }
-    .hero p {
-      font-size: var(--text-micro);
-      max-width: 210px;
-    }
-    .hero-cta {
-      gap: 12px;
-      margin-top: 23px;
-    }
     .post-game-info {
       gap: 8px;
     }
@@ -627,7 +539,7 @@
       font-size: var(--text-micro);
       gap: 5px;
     }
-    .feed-heading h2 {
+    .feed-heading h1 {
       font-size: var(--text-title);
       gap: 10px;
     }
@@ -656,8 +568,5 @@
   }
   .feed-search input {
     min-height: var(--spacing-touch);
-  }
-  .hero-cta {
-    max-width: 100%;
   }
 }

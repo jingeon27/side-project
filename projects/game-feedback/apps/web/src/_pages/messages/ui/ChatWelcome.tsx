@@ -19,10 +19,10 @@ export function ChatWelcome({ locale }: IChatWelcomeProps) {
       <p>
         {t('왼쪽에서 대화를 선택하거나,')}
         <br />
-        {t('라운지에서 함께 이야기할 플레이어를 찾아보세요.')}
+        {t('피드에서 함께 이야기할 플레이어를 찾아보세요.')}
       </p>
       <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
-        {t('피드백 라운지 둘러보기')}
+        {t('피드 둘러보기')}
         <ArrowUpRight size={16} />
       </ButtonLink>
     </section>

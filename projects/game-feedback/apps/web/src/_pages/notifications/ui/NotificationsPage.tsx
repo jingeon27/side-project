@@ -69,7 +69,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           <h3>{t('아직 도착한 소식이 없어요')}</h3>
           <p>{t('피드백 요청을 남기고 새로운 이야기를 만나보세요.')}</p>
           <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
-            {t('라운지 둘러보기')}
+            {t('피드 둘러보기')}
           </ButtonLink>
         </div>
       )}

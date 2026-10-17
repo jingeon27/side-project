@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 export const RouteIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,100}$/);
 const localeSchema = z.enum(['ko', 'en', 'ja']);
+export const GameSlugSchema = z
+  .string()
+  .regex(/^[a-z0-9-]+$/)
+  .max(40);
 export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings' | 'guide';
 export type TAppScreen = TAppTab | 'post' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact';
 export interface IAppRoute {
@@ -11,16 +15,18 @@ export interface IAppRoute {
   screen: TAppScreen;
   tab: TAppTab;
   parent: string | null;
+  game?: string;
 }
 function root(locale: string) {
   return `/${localeSchema.parse(locale)}`;
 }
-const boardSlugSchema = z.enum(['account-trade', 'friendly', 'friends', 'marketplace']);
+const boardSlugSchema = z.enum(['feedback', 'friend-sale', 'friendly', 'coaching', 'free']);
 const boardSlugs: Record<string, string> = {
-  ACCOUNT_TRADE: 'account-trade',
+  FEEDBACK: 'feedback',
+  COACHING: 'coaching',
+  FREE: 'free',
+  FRIEND_SALE: 'friend-sale',
   FRIENDLY: 'friendly',
-  FRIEND: 'friends',
-  SALE: 'marketplace',
 };
 function queryPath(path: string, values: Record<string, string | undefined>) {
   const query = Object.entries(values)
@@ -32,12 +38,16 @@ function queryPath(path: string, values: Record<string, string | undefined>) {
 export const appRoutes = {
   feed: (locale: string, filters: { q?: string; tab?: string } = {}) =>
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
-  post: (locale: string, id: string, board?: string) =>
+  post: (locale: string, id: string, board?: string, game?: string) =>
     queryPath(`${root(locale)}/posts/${RouteIdSchema.parse(id)}`, {
       board: board ? boardSlugs[board] : undefined,
+      game: board && game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
     }),
-  boards: (locale: string, slug = 'account-trade', q?: string) =>
-    queryPath(`${root(locale)}/boards/${boardSlugSchema.parse(slug)}`, { q: q?.trim() }),
+  boards: (locale: string, slug = 'feedback', q?: string, game?: string) =>
+    queryPath(`${root(locale)}/boards/${boardSlugSchema.parse(slug)}`, {
+      game: game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
+      q: q?.trim(),
+    }),
   profile: (locale: string, id: string, cursor?: string) =>
     queryPath(`${root(locale)}/users/${RouteIdSchema.parse(id)}`, { cursor }),
   messages: (locale: string) => `${root(locale)}/messages`,
@@ -75,6 +85,8 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   const locale = match[1] ?? 'ko';
   const query = readQuery(search);
   if (!query) return null;
+  const game = GameSlugSchema.safeParse(query.game ?? 'clash-royale');
+  if (!game.success) return null;
   const home = root(locale);
   const id = match[3];
   const kind = match[2] ?? match[4];
@@ -82,19 +94,24 @@ export function resolveAppRoute(path: string): IAppRoute | null {
     const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
     if (board && !board.success) return null;
     return {
-      path: queryPath(pathname, { board: board?.success ? board.data : undefined }),
+      path: queryPath(pathname, {
+        board: board?.success ? board.data : undefined,
+        game: board && game.data !== 'clash-royale' ? game.data : undefined,
+      }),
+      game: game.data,
       pathname,
       locale,
       screen: 'post',
       tab: board ? 'boards' : 'feed',
-      parent: board?.success ? appRoutes.boards(locale, board.data) : home,
+      parent: board?.success ? appRoutes.boards(locale, board.data, undefined, game.data) : home,
     };
   }
   if (kind === 'boards') {
-    const slug = boardSlugSchema.safeParse(id ?? 'account-trade');
+    const slug = boardSlugSchema.safeParse(id ?? 'feedback');
     if (!slug.success || (query.q?.length ?? 0) > 100) return null;
     return {
-      path: appRoutes.boards(locale, slug.data, query.q),
+      path: appRoutes.boards(locale, slug.data, query.q, game.data),
+      game: game.data,
       pathname,
       locale,
       screen: 'boards',

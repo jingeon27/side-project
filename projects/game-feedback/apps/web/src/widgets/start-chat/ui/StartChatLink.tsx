@@ -9,9 +9,10 @@ import { appRoutes } from '@game-feedback/bridge';
 interface IStartChatLinkProps {
   userId: string;
   nickname: string;
+  label?: string;
 }
 
-export function StartChatLink({ userId, nickname }: IStartChatLinkProps) {
+export function StartChatLink({ userId, nickname, label }: IStartChatLinkProps) {
   const { t } = useI18n();
   const { session, login, notify } = useSession();
   const router = useRouter();
@@ -37,10 +38,10 @@ export function StartChatLink({ userId, nickname }: IStartChatLinkProps) {
       className="text-button chat-author-link"
       disabled={mutation.isPending}
       onClick={handleStart}
-      aria-label={`${nickname}님과 채팅하기`}
+      aria-label={label ? `${nickname} ${label}` : `${nickname}님과 채팅하기`}
     >
       {mutation.isPending ? <LoaderCircle size={13} className="spin" /> : <MessageCircle size={13} />}
-      {t('채팅하기')}
+      {label ?? t('채팅하기')}
     </button>
   );
 }

@@ -68,7 +68,7 @@ export function postStructuredData(detail: PostDetail) {
   };
 }
 export function profileDescription(profile: PublicProfile) {
-  return `${profile.author.nickname}님의 클래시 로얄 플레이어 프로필. 공개 피드백 요청 ${profile.postCount}개, 답변 ${profile.answerCount}개, 도움됨 ${profile.helpfulCount}개를 확인하세요.`;
+  return `${profile.author.nickname}님의 플레이어 프로필. 공개 게시글 ${profile.postCount}개, 답변 ${profile.answerCount}개, 도움됨 ${profile.helpfulCount}개를 확인하세요.`;
 }
 export function profileStructuredData(profile: PublicProfile, cursor?: string) {
   const url = pageUrl(

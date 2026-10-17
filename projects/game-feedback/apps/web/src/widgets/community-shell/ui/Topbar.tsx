@@ -15,7 +15,7 @@ interface ITopbarProps {
 export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
   const { t } = useI18n();
   const { session, login: handleLogin } = useSession();
-  const isHome = resolveAppRoute(path)?.tab === 'feed';
+  const isGame = ['feed', 'boards'].includes(resolveAppRoute(path)?.tab ?? '');
   return (
     <header className="topbar">
       <div className="topbar-inner">
@@ -26,14 +26,8 @@ export function Topbar({ home, path, chatUnread, unread }: ITopbarProps) {
           <span>{t('플레이메이트')}</span>
         </Link>
         <nav className="top-nav" aria-label={t('주 메뉴')}>
-          <Link href={home} className={isHome ? 'active' : ''}>
-            {t('피드백 라운지')}
-          </Link>
-          <Link
-            href={`${home}/boards/account-trade`}
-            className={resolveAppRoute(path)?.tab === 'boards' ? 'active' : ''}
-          >
-            {t('게시판')}
+          <Link href={home} className={isGame ? 'active' : ''}>
+            {t('피드')}
           </Link>
           <Link href={`${home}/guide`} className={path.endsWith('/guide') ? 'active' : ''}>
             {t('이용 가이드')}

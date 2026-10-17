@@ -1,11 +1,12 @@
 import type { TBoardKind } from '@game-feedback/contracts';
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 export const communityBoards = [
   {
-    kind: 'ACCOUNT_TRADE',
-    slug: 'account-trade',
-    name: '계정 거래',
-    description: '계정 거래 게시글을 살펴보고 작성자와 채팅으로 이야기해보세요.',
+    kind: 'FRIEND_SALE',
+    slug: 'friend-sale',
+    name: '친추판매',
+    description: '친구 추가 판매 글을 올리고 관심 있는 플레이어와 이야기해보세요.',
   },
   {
     kind: 'FRIENDLY',
@@ -14,21 +15,40 @@ export const communityBoards = [
     description: '함께 연습할 상대를 찾고 친선전을 모집해보세요.',
   },
   {
-    kind: 'FRIEND',
-    slug: 'friends',
-    name: '친구 추가',
-    description: '함께 플레이할 친구를 찾고 플레이어 태그를 나눠보세요.',
+    kind: 'COACHING',
+    slug: 'coaching',
+    name: '게임코치',
+    description: '코치의 강의와 레슨을 살펴보고 채팅으로 상담해보세요.',
   },
   {
-    kind: 'SALE',
-    slug: 'marketplace',
-    name: '일반 판매',
-    description: '판매 게시글을 등록하고 관심 있는 플레이어와 이야기해보세요.',
+    kind: 'FREE',
+    slug: 'free',
+    name: '자유게시판',
+    description: '게임 이야기와 일상을 자유롭게 나눠보세요.',
   },
 ] as const;
+export const gameBoards = [
+  {
+    kind: 'FEEDBACK',
+    slug: 'feedback',
+    name: '피드백',
+    description: '플레이 고민을 나누고 다른 플레이어의 피드백을 받아보세요.',
+  },
+  ...communityBoards,
+] as const;
 export function boardBySlug(slug: string) {
-  return communityBoards.find((board) => board.slug === slug);
+  return gameBoards.find((board) => board.slug === slug);
 }
 export function boardByKind(kind?: TBoardKind) {
-  return communityBoards.find((board) => board.kind === kind);
+  return gameBoards.find((board) => board.kind === (kind ?? 'FEEDBACK'));
+}
+export function gameBoardPath(locale: string, kind: TBoardKind, game?: string) {
+  const board = boardByKind(kind);
+  return appRoutes.boards(locale, board?.slug ?? 'feedback', undefined, game);
+}
+export function activeGameBoard(path: string): TBoardKind | undefined {
+  const route = resolveAppRoute(path);
+  if (!route || !['boards', 'post'].includes(route.screen)) return;
+  const parent = (route.screen === 'post' ? route.parent : route.path)?.split('?')[0];
+  return gameBoards.find((board) => parent === appRoutes.boards(route.locale, board.slug))?.kind;
 }

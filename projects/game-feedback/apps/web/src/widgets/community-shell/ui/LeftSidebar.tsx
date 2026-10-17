@@ -1,8 +1,11 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { MessageSquareText, ChevronRight, Bell, MessageCircle, List } from 'lucide-react';
-import { ClashRoyaleIcon } from '@/features/game-profile';
+import { Bell, MessageCircle, Home } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { categoryOptions } from '@/features/category';
+import { GameIcon } from './GameIcon';
+import { activeGameBoard, gameBoards, gameBoardPath } from '@/features/board';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface ILeftSidebarProps {
   home: string;
@@ -13,22 +16,16 @@ interface ILeftSidebarProps {
 export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProps) {
   const { t } = useI18n();
   const tab = resolveAppRoute(path)?.tab;
+  const selected = activeGameBoard(path);
+  const categories = useQuery(categoryOptions());
+  const gameSlug = resolveAppRoute(path)?.game;
+  const locale = home.slice(1);
   return (
     <aside className="left-sidebar">
       <div className="sidebar-label">{t('둘러보기')}</div>
       <Link className={`side-link ${tab === 'feed' ? 'selected' : ''}`} href={home} replace>
-        <MessageSquareText size={19} />
-        {t('전체 피드백')}
-        <ChevronRight size={16} />
-      </Link>
-      <Link
-        className={`side-link ${tab === 'boards' ? 'selected' : ''}`}
-        href={`${home}/boards/account-trade`}
-        replace
-      >
-        <List size={19} />
-        {t('게시판')}
-        <ChevronRight size={16} />
+        <Home size={19} />
+        {t('피드')}
       </Link>
       <Link
         className={`side-link ${tab === 'notifications' ? 'selected' : ''}`}
@@ -46,13 +43,29 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
       </Link>
       <div className="sidebar-separator" />
       <div className="sidebar-label">{t('나의 게임')}</div>
-      <Link className="game-side-link" href={home}>
-        <ClashRoyaleIcon className="game-icon" size={40} />
-        <span>
-          <strong>{t('클래시 로얄')}</strong>
-          <small>Clash Royale</small>
-        </span>
-      </Link>
+      {categories.data
+        ?.filter((game) => game.active)
+        .map((game) => (
+          <nav key={game.id} aria-label={t('{game} 게시판', { game: game.name })}>
+            <Link className="game-side-link" href={gameBoardPath(locale, 'FEEDBACK', game.slug)}>
+              <GameIcon slug={game.slug} size={40} />
+              <strong>{game.name}</strong>
+            </Link>
+            <div className="game-submenu">
+              {gameBoards.map((board) => (
+                <Link
+                  key={board.kind}
+                  href={gameBoardPath(locale, board.kind, game.slug)}
+                  replace
+                  className={`side-link ${selected === board.kind && gameSlug === game.slug ? 'selected' : ''}`}
+                  aria-current={selected === board.kind && gameSlug === game.slug ? 'page' : undefined}
+                >
+                  {t(board.name)}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        ))}
       <div className="upcoming-games">
         <span>{t('다음 게임을 기다리고 있나요?')}</span>
         <span>{t('더 많은 게임이 찾아올 예정이에요.')}</span>

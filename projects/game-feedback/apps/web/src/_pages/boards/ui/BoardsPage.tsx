@@ -1,24 +1,24 @@
 'use client';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '@side/design-system';
+import type { Category } from '@/shared/api';
 import { appRoutes } from '@game-feedback/bridge';
-import { communityBoards, boardBySlug } from '@/features/board';
-import { postListOptions } from '@/features/post';
+import { boardBySlug } from '@/features/board';
+import { postListOptions, PostCard } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useSession } from '@/features/auth';
 import { PostComposer } from '@/widgets/post-composer';
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, Avatar, LoadingState, openOverlay } from '@/shared/ui';
-import { timeAgo } from '@/shared/lib/date';
+import { AsyncBoundary, LoadingState, openOverlay } from '@/shared/ui';
 
 interface IBoardsPageProps {
   locale: string;
   slug: string;
+  game: Category;
 }
-export function BoardsPage({ locale, slug }: IBoardsPageProps) {
+export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
   const { t } = useI18n();
   const board = boardBySlug(slug);
   const { session, login } = useSession();
@@ -41,6 +41,7 @@ export function BoardsPage({ locale, slug }: IBoardsPageProps) {
         }}
         locale={locale}
         board={board?.kind}
+        categoryId={game.id}
       />
     ));
   }
@@ -53,27 +54,17 @@ export function BoardsPage({ locale, slug }: IBoardsPageProps) {
         </div>
         <Button variant="primary" size="md" type="button" onClick={handleCompose}>
           <Plus size={16} />
-          {t('글쓰기')}
+          {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
       </div>
-      <nav className="board-tabs" aria-label={t('게시판')}>
-        {communityBoards.map((item) => (
-          <Link
-            key={item.kind}
-            href={appRoutes.boards(locale, item.slug)}
-            replace
-            aria-current={item.slug === slug ? 'page' : undefined}
-          >
-            {t(item.name)}
-          </Link>
-        ))}
-      </nav>
       <form
         className="board-search"
         onSubmit={(event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
-          router.replace(appRoutes.boards(locale, slug, String(form.get('q') ?? '').slice(0, 100)));
+          router.replace(
+            appRoutes.boards(locale, slug, String(form.get('q') ?? '').slice(0, 100), game.slug),
+          );
         }}
       >
         <input
@@ -95,34 +86,30 @@ export function BoardsPage({ locale, slug }: IBoardsPageProps) {
         resetKey={`${session.user?.id}:${slug}:${q}`}
         pendingFallback={<LoadingState />}
       >
-        <BoardPosts locale={locale} slug={slug} q={q} />
+        <BoardPosts locale={locale} slug={slug} q={q} game={game} />
       </AsyncBoundary>
     </section>
   );
 }
-function BoardPosts({ locale, slug, q }: IBoardsPageProps & { q: string }) {
-  const { t, locale: textLocale } = useI18n();
+function BoardPosts({ locale, slug, q, game }: IBoardsPageProps & { q: string }) {
+  const { t } = useI18n();
   const board = boardBySlug(slug);
-  const posts = useSuspenseInfiniteQuery(postListOptions({ board: board?.kind, q, limit: 12 }));
+  const posts = useSuspenseInfiniteQuery(
+    postListOptions({ category: game.slug, board: board?.kind, q, limit: 12 }),
+  );
   const items = posts.data.pages.flatMap((page) => page.items);
   return (
     <>
       {!items.length && <p className="board-empty">{t('아직 게시글이 없어요. 첫 글을 남겨보세요.')}</p>}
-      <div className="board-post-list">
+      <div className="post-list board-post-list">
         {items.map((post) => (
-          <article className="board-post-row" key={post.id}>
-            <Link className="board-post-title" href={appRoutes.post(locale, post.id, post.board)}>
-              <h2>{post.title}</h2>
-              <ArrowUpRight size={17} />
-            </Link>
-            <p>{post.body}</p>
-            <div className="board-post-author">
-              <Avatar name={post.author.nickname} size="small" />
-              <AuthorLink author={post.author} locale={locale} />
-              <UserBadges author={post.author} compact />
-              <time dateTime={post.createdAt}>{timeAgo(post.createdAt, textLocale)}</time>
-            </div>
-          </article>
+          <PostCard
+            key={post.id}
+            post={post}
+            href={appRoutes.post(locale, post.id, post.board, game.slug)}
+            authorName={<AuthorLink author={post.author} locale={locale} />}
+            authorContent={<UserBadges author={post.author} compact />}
+          />
         ))}
       </div>
       {posts.hasNextPage && (

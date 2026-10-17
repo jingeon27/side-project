@@ -9,6 +9,7 @@ import { Avatar } from '@/shared/ui';
 import { timeAgo } from '@/shared/lib/date';
 import { m, useMotionPreference } from '@/shared/motion';
 import { PostStatus } from './PostStatus';
+import { CoachingSummary } from '@/features/coaching';
 import { boardByKind } from '@/features/board';
 interface IPostCardProps {
   post: Post;
@@ -20,6 +21,7 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
   const { t, locale: textLocale } = useI18n();
   const reducedMotion = useMotionPreference();
   const board = boardByKind(post.board);
+  const isFeedback = board?.kind === 'FEEDBACK';
   return (
     <m.article
       className="post-card"
@@ -28,17 +30,17 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
       whileHover={reducedMotion ? undefined : { y: -3 }}
     >
       <div className="post-topline">
-        {board ? (
-          <span className="status-pill">{t(board.name)}</span>
-        ) : (
-          <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
-        )}
+        <div className="post-board-status">
+          <span className="small muted">{t(board?.name ?? '피드백')}</span>
+          {isFeedback && <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />}
+        </div>
         <span className="post-time">{timeAgo(post.createdAt, textLocale)}</span>
       </div>
       <Link href={href} className="post-title-link">
         <h3>{post.title}</h3>
       </Link>
       <p className="post-excerpt">{post.body}</p>
+      {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.gameProfile && (
         <div className="post-game-info">
           <div className="post-game-stat">
@@ -54,12 +56,12 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
           <Avatar name={post.author.nickname} size="small" />
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
-          <span className="post-author-game">{t('클래시 로얄')}</span>
+          <span className="post-author-game">{post.category.name}</span>
         </span>
         <span className={`answer-count ${post.answerCount > 0 ? 'has-answers' : ''}`}>
           <MessageSquare size={15} />
-          {t(board ? '게시글 보기' : '피드백')}
-          {!board && <strong>{post.answerCount}</strong>}
+          {t(post.board === 'COACHING' ? '코칭 보기' : isFeedback ? '피드백' : '게시글 보기')}
+          {isFeedback && <strong>{post.answerCount}</strong>}
           <ArrowUpRight size={15} />
         </span>
       </div>

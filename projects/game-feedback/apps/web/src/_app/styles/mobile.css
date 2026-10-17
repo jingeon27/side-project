@@ -1,16 +1,4 @@
 @layer components {
-  .hero {
-    height: auto;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-    align-items: center;
-    padding-bottom: 28px;
-  }
-  .hero-copy {
-    min-width: 0;
-  }
   .mobile-chat-count {
     margin-inline-start: 3px;
     font-size: var(--text-micro);
@@ -54,19 +42,7 @@
     .mobile-nav > a span {
       overflow-wrap: anywhere;
     }
-    .hero {
-      height: auto;
-      min-height: 0;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0;
-    }
-    .hero p {
-      max-width: none;
-    }
-    .hero h1 {
-      font-size: clamp(25px, 6.8vw, 36px);
-      overflow-wrap: anywhere;
-    }
+
     .feed-heading,
     .feed-controls,
     .settings-profile,
@@ -122,9 +98,7 @@
     .topbar .notification-button {
       display: none;
     }
-    .hero {
-      padding: 24px 18px;
-    }
+
     .settings-card,
     .detail-card {
       padding: 16px;

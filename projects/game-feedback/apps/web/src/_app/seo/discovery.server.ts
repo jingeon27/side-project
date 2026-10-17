@@ -2,7 +2,9 @@ import 'server-only';
 import type { MetadataRoute } from 'next';
 import { getPublicPostList } from '@/features/post/index.server';
 import { getSeoConfig, pageUrl } from '@/shared/seo';
-import { communityBoards } from '@/features/board';
+import { getPublicCategories } from '@/features/category/index.server';
+import { appRoutes } from '@game-feedback/bridge';
+import { gameBoards } from '@/features/board';
 export function robots(): MetadataRoute.Robots {
   const { indexable, origin } = getSeoConfig();
   if (!indexable) return { rules: { userAgent: '*', disallow: '/' } };
@@ -22,9 +24,11 @@ export async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const url = pageUrl(`/ko${path}`);
     entries.set(url, { url });
   }
-  for (const board of communityBoards) {
-    const url = pageUrl(`/ko/boards/${board.slug}`);
-    entries.set(url, { url });
+  for (const game of (await getPublicCategories()).filter((item) => item.active)) {
+    for (const board of gameBoards) {
+      const url = pageUrl(appRoutes.boards('ko', board.slug, undefined, game.slug));
+      entries.set(url, { url });
+    }
   }
   const cursors = new Set<string>();
   let cursor: string | undefined;

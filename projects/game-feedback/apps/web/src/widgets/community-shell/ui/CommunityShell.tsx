@@ -14,6 +14,7 @@ import { Topbar } from './Topbar';
 import { LeftSidebar } from './LeftSidebar';
 import { PlayerSidebar } from './PlayerSidebar';
 import { MobileNav } from './MobileNav';
+import { GameBoardNavigation } from './GameBoardNavigation';
 
 export function CommunityShell({ children, locale }: { children: ReactNode; locale: string }) {
   const { t } = useI18n();
@@ -44,6 +45,7 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
         </div>
         <RouteViewport>
           <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
+            <GameBoardNavigation locale={locale} path={path} />
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>

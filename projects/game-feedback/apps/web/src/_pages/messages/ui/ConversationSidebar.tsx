@@ -49,7 +49,7 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
           <MessageCircle size={27} />
           <strong>{t('아직 시작한 대화가 없어요')}</strong>
           <p>
-            {t('라운지의 요청이나 답변에서')}
+            {t('피드의 요청이나 답변에서')}
             <br />
             {t('‘채팅하기’를 눌러보세요.')}
           </p>

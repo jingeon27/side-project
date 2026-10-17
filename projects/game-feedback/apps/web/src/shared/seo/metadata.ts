@@ -64,9 +64,9 @@ export function createPageMetadata({
 }
 export const pageContent = {
   feed: {
-    title: '클래시 로얄 피드백 라운지',
-    description: '클래시 로얄 덱과 플레이 고민을 나누고 다른 플레이어의 구체적인 피드백을 받아보세요.',
-    keywords: ['덱 추천', '플레이 상담', '피드백 요청'],
+    title: '게임 커뮤니티 피드',
+    description: '피드백, 친추판매, 친선전 모집, 게임코치의 유료 강의와 자유게시판 글을 피드에서 만나보세요.',
+    keywords: ['게임 커뮤니티', '피드백', '친추판매', '친선전', '게임코치', '게임 강의', '자유게시판'],
   },
   guide: {
     title: '피드백 요청 가이드',

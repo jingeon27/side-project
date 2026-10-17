@@ -57,3 +57,5 @@ export function buildBootstrapScript(version: string) {
 export function buildDispatchScript(message: TNativeMessage) {
   return `window.dispatchEvent(new CustomEvent(${JSON.stringify(BRIDGE_EVENT)},{detail:${JSON.stringify(message)}}));true;`;
 }
+
+export { GameSlugSchema } from './routes';

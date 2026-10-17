@@ -11,12 +11,12 @@ import { AuthorLink, UserBadges } from '@/features/user';
 import { PostComposer } from '@/widgets/post-composer';
 import { openOverlay, AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 import { useFeedFilters } from '../model/use-feed-filters';
-import { FeedHero } from './FeedHero';
+import { appRoutes } from '@game-feedback/bridge';
 import { FeedFilters } from './FeedFilters';
 export function FeedPage({ locale }: { locale: string }) {
   const { t } = useI18n();
   return (
-    <AsyncBoundary title={t('피드백 라운지')}>
+    <AsyncBoundary title={t('피드')}>
       <FeedContent locale={locale} />
     </AsyncBoundary>
   );
@@ -45,32 +45,29 @@ function FeedContent({ locale }: { locale: string }) {
   }
 
   return (
-    <>
-      <FeedHero onCompose={handleCompose} />
-      <section className="feed-section">
-        <FeedFilters
-          tab={tab}
-          search={search}
-          onTabChange={handleTabChange}
-          onSearchChange={handleSearchChange}
-          onCompose={handleCompose}
-        />
-        <AsyncBoundary
-          clientOnly
-          title={t('최신 피드백')}
-          resetKey={`${session?.user?.id ?? 'anonymous'}:${tab}:${q}`}
-          pendingFallback={
-            <div className="feed-loading" aria-label={t('피드백 불러오는 중')}>
-              <PostCardSkeleton />
-              <PostCardSkeleton />
-              <PostCardSkeleton />
-            </div>
-          }
-        >
-          <FeedResults locale={locale} tab={tab} q={q} onCompose={handleCompose} />
-        </AsyncBoundary>
-      </section>
-    </>
+    <section className="feed-section">
+      <FeedFilters
+        tab={tab}
+        search={search}
+        onTabChange={handleTabChange}
+        onSearchChange={handleSearchChange}
+        onCompose={handleCompose}
+      />
+      <AsyncBoundary
+        clientOnly
+        title={t('최신 글')}
+        resetKey={`${session?.user?.id ?? 'anonymous'}:${tab}:${q}`}
+        pendingFallback={
+          <div className="feed-loading" aria-label={t('게시글 불러오는 중')}>
+            <PostCardSkeleton />
+            <PostCardSkeleton />
+            <PostCardSkeleton />
+          </div>
+        }
+      >
+        <FeedResults locale={locale} tab={tab} q={q} onCompose={handleCompose} />
+      </AsyncBoundary>
+    </section>
   );
 }
 function FeedResults({
@@ -88,7 +85,7 @@ function FeedResults({
   const feed = useSuspenseInfiniteQuery(
     postListOptions({
       limit: 8,
-      category: 'clash-royale',
+      board: tab === 'unanswered' ? 'FEEDBACK' : 'ALL',
       ...(tab === 'unanswered' ? { unanswered: 'true' } : {}),
       ...(q ? { q } : {}),
     }),
@@ -119,28 +116,28 @@ function FeedResults({
           </span>
           <h3>
             {q
-              ? t('아직 일치하는 피드백이 없어요')
+              ? t('일치하는 게시글이 없어요')
               : tab === 'unanswered'
                 ? t('지금은 모든 요청에 답변이 있어요')
                 : t('첫 번째 이야기를 기다려요')}
           </h3>
           <p>
             {q
-              ? t('다른 단어로 검색하거나 새로운 질문을 남겨보세요.')
-              : t('여러분의 플레이 고민이 누군가에게는 좋은 대화의 시작이에요.')}
+              ? t('다른 단어로 검색하거나 새로운 글을 남겨보세요.')
+              : t('플레이 이야기나 모집 글을 남겨보세요.')}
           </p>
           <Button variant="primary" size="md" type="submit" className="button dark" onClick={handleCompose}>
-            {t('피드백 요청하기')}
+            {t('글쓰기')}
             <ArrowUpRight size={16} />
           </Button>
         </div>
       )}
       <div className="post-list">
         {posts.map((post) => (
-          <ServiceErrorBoundary key={post.id} title={t('피드백 카드')} resetKey={post.id}>
+          <ServiceErrorBoundary key={post.id} title={t('게시글')} resetKey={post.id}>
             <PostCard
               post={post}
-              href={`/${locale}/posts/${post.id}`}
+              href={appRoutes.post(locale, post.id)}
               authorName={<AuthorLink author={post.author} locale={locale} />}
               authorContent={<UserBadges author={post.author} compact />}
             />
@@ -159,7 +156,7 @@ function FeedResults({
           onClick={() => feed.fetchNextPage()}
         >
           {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
-          {t('더 많은 피드백 보기')}
+          {t('더 많은 글 보기')}
         </Button>
       )}
       {posts.length > 0 && !hasNextPage && (

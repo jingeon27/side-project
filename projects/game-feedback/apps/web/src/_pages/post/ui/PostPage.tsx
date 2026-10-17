@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { postDetailOptions, PostArticle } from '@/features/post';
@@ -33,7 +33,7 @@ export function PostPage(props: IPostPageProps) {
       resetKey={`${props.id}:${session.user?.id ?? 'anonymous'}`}
       recoveryAction={
         <BackLink href={appRoutes.feed(props.locale)} className="text-button">
-          {t('라운지로 돌아가기')}
+          {t('피드로 돌아가기')}
         </BackLink>
       }
     >
@@ -44,6 +44,7 @@ export function PostPage(props: IPostPageProps) {
 function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
   const { t } = useI18n();
   const router = useRouter();
+  const params = useSearchParams();
   const { session } = useSession(),
     detail = useQuery({
       ...postDetailOptions(id),
@@ -52,21 +53,32 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
       initialData: session?.user?.id === initialViewerId ? initialDetail : undefined,
     });
   usePostRead(detail.data, session?.user?.id);
+  const game = detail.data?.post.category.slug;
   const boardContext = boardByKind(detail.data?.post.board);
   useEffect(() => {
-    if (!boardContext || new URL(window.location.href).searchParams.get('board') === boardContext.slug)
+    if (!boardContext || !game) return;
+    if (boardContext.kind === 'FEEDBACK' && game === 'clash-royale' && !params.get('board')) return;
+    if (
+      new URL(window.location.href).searchParams.get('board') === boardContext.slug &&
+      (params.get('game') ?? 'clash-royale') === game
+    )
       return;
-    router.replace(appRoutes.post(locale, id, boardContext.kind), { scroll: false });
-  }, [boardContext, id, locale, router]);
+    router.replace(appRoutes.post(locale, id, boardContext.kind, game), { scroll: false });
+  }, [boardContext, game, id, locale, params, router]);
   if (!detail.data) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
   const { post, answers, comments } = detail.data;
   const board = boardByKind(post.board);
-  const parent = board ? appRoutes.boards(locale, board.slug) : appRoutes.feed(locale);
+  const isFeedback = board?.kind === 'FEEDBACK';
+  const hasBoardContext = !!params.get('board');
+  const parent =
+    hasBoardContext && board
+      ? appRoutes.boards(locale, board.slug, undefined, post.category.slug)
+      : appRoutes.feed(locale);
   return (
     <>
-      <BackLink className="back-link" href={parent} logicalParent={board ? parent : undefined}>
+      <BackLink className="back-link" href={parent} logicalParent={hasBoardContext ? parent : undefined}>
         <ArrowLeft size={16} />
-        {t(board?.name ?? '피드백 라운지')}
+        {t(hasBoardContext ? (board?.name ?? '피드') : '피드')}
       </BackLink>
       <ServiceErrorBoundary title={t('게시글')} resetKey={id}>
         <PostArticle
@@ -79,10 +91,14 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
           profile={post.gameProfile && <ProfileSnapshot profile={post.gameProfile} />}
         />
       </ServiceErrorBoundary>
-      {board && post.author.id !== session.user?.id && (
-        <StartChatLink userId={post.author.id} nickname={post.author.nickname} />
+      {!isFeedback && post.author.id !== session.user?.id && (
+        <StartChatLink
+          userId={post.author.id}
+          nickname={post.author.nickname}
+          label={post.board === 'COACHING' ? t('코칭 상담') : undefined}
+        />
       )}
-      {!board && (
+      {isFeedback && (
         <ServiceErrorBoundary title={t('답변')} resetKey={id}>
           <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
         </ServiceErrorBoundary>

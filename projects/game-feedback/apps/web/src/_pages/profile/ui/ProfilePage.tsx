@@ -26,7 +26,7 @@ export function ProfilePage(props: IProfilePageProps) {
     <ServiceErrorBoundary
       title={t('플레이어 프로필')}
       resetKey={`${props.id}:${session.user?.id ?? 'anonymous'}`}
-      recoveryAction={<BackLink href={appRoutes.feed(props.locale)}>{t('← 피드백 라운지')}</BackLink>}
+      recoveryAction={<BackLink href={appRoutes.feed(props.locale)}>{t('← 피드')}</BackLink>}
     >
       <ProfileContent {...props} />
     </ServiceErrorBoundary>
@@ -54,7 +54,7 @@ function ProfileContent({
   return (
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
-        {t('← 피드백 라운지')}
+        {t('← 피드')}
       </BackLink>
       <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
@@ -91,7 +91,7 @@ function ProfileContent({
         )}
         {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
       </section>
-      <ServiceErrorBoundary title={t('작성한 피드백 요청')} resetKey={`${id}:${cursor}`}>
+      <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>
         <ProfilePosts
           id={id}
           locale={locale}
@@ -124,15 +124,15 @@ function ProfilePosts({
   return (
     <section className="feed-section">
       <div className="section-title-row">
-        <h2>{t('작성한 피드백 요청')}</h2>
+        <h2>{t('작성한 게시글')}</h2>
       </div>
-      {posts.data.items.length === 0 && <p className="muted">{t('공개한 피드백 요청이 없어요.')}</p>}
+      {posts.data.items.length === 0 && <p className="muted">{t('공개한 게시글이 없어요.')}</p>}
       <div className="post-list">
         {posts.data.items.map((post) => (
           <PostCard
             key={post.id}
             post={post}
-            href={appRoutes.post(locale, post.id, post.board)}
+            href={appRoutes.post(locale, post.id, post.board, post.category.slug)}
             authorName={<AuthorLink author={post.author} locale={locale} />}
             authorContent={<UserBadges author={post.author} compact />}
           />
@@ -142,7 +142,7 @@ function ProfilePosts({
         {cursor && <Link href={`/${locale}/users/${id}`}>{t('처음으로')}</Link>}
         {posts.data?.nextCursor && (
           <Link href={`/${locale}/users/${id}?cursor=${encodeURIComponent(posts.data.nextCursor)}`}>
-            {t('이전 요청 보기 →')}
+            {t('이전 글 보기 →')}
           </Link>
         )}
       </nav>

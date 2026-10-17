@@ -60,7 +60,7 @@ export function GuideContent({ locale }: { locale: string }) {
         </p>
       </div>
       <ButtonLink variant="primary" size="md" className="button dark" href={`/${locale}`}>
-        이제 라운지로 가볼까요?
+        이제 피드로 가볼까요?
         <ArrowUpRight size={16} />
       </ButtonLink>
     </>
