@@ -3,6 +3,7 @@
 !.env.example
 .data/
 apps/api/dist/
+/apps/api/openapi.json
 apps/api/src/generated/
 apps/web/.next/
 apps/web/next-env.d.ts

@@ -30,7 +30,7 @@
 
 - 관련 검증 명령과 결과, 확인하지 못한 항목을 완료 기록에 남긴다.
 - 서버 성공 결과와 사용자의 `도움됨` 신호를 중심으로 제품 지표를 정의한다. 프런트 행동 이벤트와 실제 DB 성공 지표를 혼동하지 않는다.
-- API 계약은 서버 Zod 스키마 → OpenAPI → Orval 순서로 생성한다. 생성 파일을 손으로 고치지 않는다. 모든 생성 JSON 요청은 Zod 응답 스키마를 transport에 전달하며 SDK 소유 Vitest로 누락을 검사한다. 응답 fallback은 SDK의 명시적 표시 필드에만 적용하고 원래 계약으로 재검증한다. ID·권한·세션·커서·날짜·본문·목록 오류를 fallback으로 감추지 않는다.
+- API 계약은 서버 Zod 스키마 → OpenAPI → Orval 순서로 생성한다. `apps/api/openapi.json`은 Git에서 제외하고 프로젝트 준비 단계에서 생성한다. SDK 생성 코드는 Git에 포함하며 CI에서 재생성 diff를 검사한다. 생성 파일을 손으로 고치지 않는다. 모든 생성 JSON 요청은 Zod 응답 스키마를 transport에 전달하며 SDK 소유 Vitest로 누락을 검사한다. 응답 fallback은 SDK의 명시적 표시 필드에만 적용하고 원래 계약으로 재검증한다. ID·권한·세션·커서·날짜·본문·목록 오류를 fallback으로 감추지 않는다.
 - 변경 범위에 맞는 검사만 수행한다. `check`, `test`, `test:e2e`, `build`, 계약 생성 결과 검사를 선택한다.
 - 프로젝트 집계는 `test`, `build`, `typecheck`, `check`를 정의하고 앱·패키지 명령에 위임한다.
 - 테스트 파일·Vitest/Playwright 설정·러너 의존성은 API/Web/Mobile 또는 해당 패키지가 소유한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest unit/UI+Playwright native host로 검증한다. 루트·프로젝트 집계와 공통 e2e Workspace에 두지 않는다. DB URL 가드 테스트도 API가 소유한다.

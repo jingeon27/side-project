@@ -10,7 +10,7 @@ corepack yarn workspace @game-feedback/sdk typecheck
 corepack yarn workspace @game-feedback/sdk test
 ```
 
-프로젝트의 개발 실행·setup·check/typecheck·test/E2E·build는 시작할 때 계약 빌드와 OpenAPI/SDK 생성을 자동으로 수행한다. 실행 중 계약을 수정하면 위 `codegen` 명령을 다시 실행한다. 앱별 명령을 직접 실행할 때는 먼저 생성해야 한다. 생성 JSON과 SDK는 Git에 포함하고 CI가 재생성 diff를 검사한다. 규격이 같으면 파일 diff는 생기지 않는다.
+프로젝트의 개발 실행·setup·check/typecheck·test/E2E·build는 시작할 때 계약 빌드와 OpenAPI/SDK 생성을 자동으로 수행한다. 실행 중 계약을 수정하면 위 `codegen` 명령을 다시 실행한다. 앱별 명령을 직접 실행할 때는 먼저 생성해야 한다. `apps/api/openapi.json`은 Git에서 제외한 중간 파일이며 준비 단계에서 생성한다. SDK 생성 코드만 Git에 포함하고 CI가 재생성 diff와 operation별 응답 검증을 검사한다. 규격이 같으면 SDK diff는 생기지 않는다.
 
 앱의 `features/<domain>/api`에서는 `@game-feedback/sdk`의 생성 함수를 호출한다. Orval의 `schemas.type: zod`, `fetch.runtimeValidation`, `includeZodSchemaInArguments`가 응답 스키마를 자동 연결한다. 생성된 `.zod.ts`·client·validation 파일은 직접 수정하지 않는다. 호출자가 options로 스키마를 덮어쓸 수 없으며, transport는 스키마 없는 요청을 거부한다. 검증을 우회하던 raw API helper는 공개 API에서 제거했다.
 

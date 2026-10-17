@@ -33,8 +33,8 @@ jobs:
       - run: yarn install --immutable
       - run: yarn format:check
       - run: yarn workspace @side/game-feedback codegen
-      - name: Check generated API contract
-        run: git diff --exit-code -- projects/game-feedback/apps/api/openapi.json projects/game-feedback/packages/sdk/src/generated
+      - name: Check generated SDK
+        run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
       - run: yarn workspace @side/design-system check
       - run: yarn check:game-feedback
       - run: yarn test:game-feedback
