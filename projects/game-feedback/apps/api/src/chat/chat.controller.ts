@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req, Sse } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Sse } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { ChatEvents } from './chat.events';
 import type { SessionRequest } from '../auth/session.types';
@@ -21,6 +21,10 @@ export class ChatController {
   @Get('conversations/:id/messages')
   messages(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.chat.messages(req, id);
+  }
+  @Delete('conversations/:id/messages')
+  clearHistory(@Req() req: SessionRequest, @Param('id') id: string, @Body() body: unknown) {
+    return this.chat.clearHistory(req, id, body);
   }
   @Post('conversations/:id/messages')
   @HttpCode(200)

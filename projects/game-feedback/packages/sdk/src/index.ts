@@ -47,6 +47,7 @@ export {
   listConversations,
   createConversation,
   listChatMessages,
+  clearChatHistory,
   sendChatMessage,
   uploadChatAttachment,
   deleteChatAttachment,

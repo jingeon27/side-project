@@ -369,6 +369,161 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     await alice.agent.get(file.url).expect(404);
   });
 
+  it('clears only the viewer history and unread count, keeps peer receipts and rejects unauthorized deletion', async () => {
+    const owner = await login('기록삭제요청자');
+    const peer = await login('기록삭제상대방');
+    const room = (
+      await owner.agent
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: peer.id })
+        .expect(200)
+    ).body;
+    const old = (await send(owner, room.id, '내가 보낸 이전 메시지').expect(200)).body;
+    const boundary = (await send(peer, room.id, '상대가 보낸 이전 메시지').expect(200)).body;
+    const clear = (actor: Actor, messageId = boundary.id) =>
+      actor.agent
+        .delete(`/api/conversations/${room.id}/messages`)
+        .set('Origin', origin)
+        .send({ throughMessageId: messageId });
+    await supertest(app.getHttpServer())
+      .delete(`/api/conversations/${room.id}/messages`)
+      .set('Origin', origin)
+      .send({ throughMessageId: boundary.id })
+      .expect(401);
+    await clear(outsider).expect(404);
+    await owner.agent
+      .delete(`/api/conversations/${room.id}/messages`)
+      .set('Origin', origin)
+      .send({})
+      .expect(400);
+    await clear(owner, 'missing-message').expect(404);
+    expect((await owner.agent.get('/api/conversations')).body.unreadCount).toBe(1);
+    await clear(owner).expect(200);
+    await clear(owner).expect(200);
+    await clear(owner, old.id).expect(200);
+    const after = (await owner.agent.get(`/api/conversations/${room.id}/messages`).expect(200)).body;
+    expect(after.items).toEqual([]);
+    expect(after.conversation).toMatchObject({ lastMessage: null, unreadCount: 0 });
+    const inbox = (await owner.agent.get('/api/conversations').expect(200)).body;
+    expect(inbox.items).toEqual([]);
+    expect(inbox.unreadCount).toBe(0);
+    const peerHistory = (await peer.agent.get(`/api/conversations/${room.id}/messages`).expect(200)).body;
+    expect(peerHistory.items.map((message: Message) => message.id)).toEqual([boundary.id, old.id]);
+    expect(peerHistory.conversation.unreadCount).toBe(1);
+    const persisted = await db.chatConversation.findUniqueOrThrow({ where: { id: room.id } });
+    expect(persisted.firstUserId === owner.id ? persisted.firstReadAt : persisted.secondReadAt).toBeNull();
+    await read(owner, room.id, boundary.id).expect(404);
+    await send(owner, room.id, old.body, old.clientMessageId).expect(409);
+    await send(peer, room.id, '삭제 이후 다시 받은 메시지').expect(200);
+    const restored = (await owner.agent.get('/api/conversations').expect(200)).body;
+    expect(restored.items).toHaveLength(1);
+    expect(restored.unreadCount).toBe(1);
+    const newer = (await owner.agent.get(`/api/conversations/${room.id}/messages`).expect(200)).body;
+    expect(newer.items).toHaveLength(1);
+    expect(newer.items[0].body).toBe('삭제 이후 다시 받은 메시지');
+  });
+
+  it('keeps messages after the confirmed cutoff during concurrent sending and prevents a stale cursor from restoring history', async () => {
+    const owner = await login('동시삭제요청자');
+    const peer = await login('동시삭제상대방');
+    const room = (
+      await owner.agent
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: peer.id })
+        .expect(200)
+    ).body;
+    const old = (await send(peer, room.id, '이전 페이지').expect(200)).body;
+    const cutoff = (await send(peer, room.id, '확인한 마지막 메시지').expect(200)).body;
+    const cursor = (await owner.agent.get(`/api/conversations/${room.id}/messages?limit=1`).expect(200)).body
+      .nextCursor;
+    expect(cursor).toBeTypeOf('string');
+    const [newer] = await Promise.all([
+      send(peer, room.id, '삭제 확인 중 도착한 메시지').expect(200),
+      owner.agent
+        .delete(`/api/conversations/${room.id}/messages`)
+        .set('Origin', origin)
+        .send({ throughMessageId: cutoff.id })
+        .expect(200),
+    ]);
+    const visible = (await owner.agent.get(`/api/conversations/${room.id}/messages`).expect(200)).body;
+    expect(visible.items.map((message: Message) => message.id)).toEqual([newer.body.id]);
+    expect(visible.conversation.lastMessage.id).toBe(newer.body.id);
+    expect((await owner.agent.get('/api/conversations')).body.unreadCount).toBe(1);
+    expect(
+      (await owner.agent.get(`/api/conversations/${room.id}/messages`).query({ cursor }).expect(200)).body
+        .items,
+    ).toEqual([]);
+    const other = (
+      await owner.agent
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: alice.id })
+        .expect(200)
+    ).body;
+    await owner.agent
+      .delete(`/api/conversations/${other.id}/messages`)
+      .set('Origin', origin)
+      .send({ throughMessageId: old.id })
+      .expect(404);
+    const events = await stream(owner);
+    await owner.agent
+      .delete(`/api/conversations/${room.id}/messages`)
+      .set('Origin', origin)
+      .send({ throughMessageId: newer.body.id })
+      .expect(200);
+    expect(await within(events.nextInvalidate(), 3000, 'history clear invalidation')).toEqual({
+      conversationId: room.id,
+    });
+    events.close();
+  });
+
+  it('revokes cleared media for the viewer while preserving the peer download and new uploads', async () => {
+    const owner = await login('미디어삭제요청자');
+    const peer = await login('미디어삭제상대방');
+    const room = (
+      await owner.agent
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: peer.id })
+        .expect(200)
+    ).body;
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a53sAAAAASUVORK5CYII=',
+      'base64',
+    );
+    const upload = () =>
+      owner.agent
+        .post(`/api/conversations/${room.id}/attachments`)
+        .set('Origin', origin)
+        .attach('file', png, { filename: 'clear.png', contentType: 'image/png' });
+    const file = (await upload().expect(200)).body;
+    const message = (
+      await owner.agent
+        .post(`/api/conversations/${room.id}/messages`)
+        .set('Origin', origin)
+        .send({ body: '', attachmentIds: [file.id], clientMessageId: randomUUID() })
+        .expect(200)
+    ).body;
+    await owner.agent
+      .delete(`/api/conversations/${room.id}/messages`)
+      .set('Origin', origin)
+      .send({ throughMessageId: message.id })
+      .expect(200);
+    await owner.agent.get(file.url).expect(404);
+    await peer.agent.get(file.url).expect(200);
+    const draft = (await upload().expect(200)).body;
+    await owner.agent.get(draft.url).expect(200);
+    await peer.agent.get(draft.url).expect(404);
+    await owner.agent.post('/api/blocks').set('Origin', origin).send({ blockedUserId: peer.id }).expect(200);
+    await owner.agent
+      .delete(`/api/conversations/${room.id}/messages`)
+      .set('Origin', origin)
+      .send({ throughMessageId: message.id })
+      .expect(404);
+  });
+
   it('applies blocks in both directions to listing, creation, send and read', async () => {
     await alice.agent.post('/api/blocks').set('Origin', origin).send({ blockedUserId: bob.id }).expect(200);
     for (const actor of [alice, bob]) {

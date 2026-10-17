@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   ChatMessageInputSchema,
+  ClearChatHistoryInputSchema,
   ChatReadInputSchema,
   ConversationInputSchema,
   ListQuerySchema,
@@ -16,6 +17,7 @@ import type { SessionRequest } from '../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { ChatEvents } from './chat.events';
 import { authorDto, authorSelect } from '../users/user.presenter';
+import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
 
 const userSelect = { ...authorSelect, bannedAt: true };
@@ -52,6 +54,7 @@ function unreadWhere(row: ConversationRow, userId: string): Prisma.ChatMessageWh
   return {
     conversationId: row.id,
     senderId: { not: userId },
+    AND: [historyWhere(row, userId)],
     ...(boundary.at
       ? {
           OR: [{ createdAt: { gt: boundary.at } }, { createdAt: boundary.at, id: { gt: boundary.id ?? '' } }],
@@ -130,7 +133,7 @@ export class ChatService {
     const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
     const [last, unreadCount] = await Promise.all([
       this.db.chatMessage.findFirst({
-        where: { conversationId: row.id },
+        where: { conversationId: row.id, ...historyWhere(row, userId) },
         include: messageInclude,
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       }),
@@ -196,7 +199,10 @@ export class ChatService {
     const excluded = await this.excluded(user.id);
     const base: Prisma.ChatConversationWhereInput = {
       ...(!this.config.demoMode ? { firstUser: { demoKey: null }, secondUser: { demoKey: null } } : {}),
-      OR: [{ firstUserId: user.id }, { secondUserId: user.id }],
+      OR: [
+        { firstUserId: user.id, firstHidden: false },
+        { secondUserId: user.id, secondHidden: false },
+      ],
       AND: [
         {
           OR: [
@@ -253,6 +259,7 @@ export class ChatService {
     const rows = await this.db.chatMessage.findMany({
       where: {
         conversationId: id,
+        AND: [historyWhere(conversation, user.id)],
         ...(cursor
           ? {
               OR: [
@@ -287,6 +294,12 @@ export class ChatService {
           include: messageInclude,
         });
         if (previous) {
+          if (!advancesBoundary(previous, historyBoundary(conversation, user.id)))
+            throw new ApiError(
+              409,
+              'MESSAGE_HISTORY_CLEARED',
+              '삭제한 대화의 메시지는 다시 전송할 수 없습니다. 새 메시지로 작성해주세요.',
+            );
           if (
             previous.conversationId !== id ||
             previous.body !== body.body ||
@@ -336,7 +349,10 @@ export class ChatService {
           },
           include: messageInclude,
         });
-        await tx.chatConversation.update({ where: { id }, data: { updatedAt: createdAt } });
+        await tx.chatConversation.update({
+          where: { id },
+          data: { updatedAt: createdAt, firstHidden: false, secondHidden: false },
+        });
         await tx.supportConversation.updateMany({
           where: { conversationId: id, requesterId: user.id },
           data: { status: 'OPEN' },
@@ -356,13 +372,44 @@ export class ChatService {
     void this.events.publish([user.id, result.peerId], id);
     return messageDto(result.message);
   }
+  async clearHistory(req: SessionRequest, id: string, input: unknown) {
+    const user = requireUser(req);
+    const { throughMessageId } = parse(ClearChatHistoryInputSchema, input);
+    await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
+      const conversation = await this.visible(user.id, id, tx);
+      const message = await tx.chatMessage.findFirst({ where: { id: throughMessageId, conversationId: id } });
+      if (!message) throw new ApiError(404, 'MESSAGE_NOT_FOUND', '삭제할 대화내역을 찾을 수 없습니다.');
+      if (!advancesBoundary(message, historyBoundary(conversation, user.id))) return;
+      const newer = await tx.chatMessage.count({
+        where: {
+          conversationId: id,
+          OR: [
+            { createdAt: { gt: message.createdAt } },
+            { createdAt: message.createdAt, id: { gt: message.id } },
+          ],
+        },
+      });
+      await tx.chatConversation.update({
+        where: { id },
+        data:
+          conversation.firstUserId === user.id
+            ? { firstClearedAt: message.createdAt, firstClearedId: message.id, firstHidden: newer === 0 }
+            : { secondClearedAt: message.createdAt, secondClearedId: message.id, secondHidden: newer === 0 },
+      });
+    });
+    void this.events.publish([user.id], id);
+    return { ok: true };
+  }
   async read(req: SessionRequest, id: string, input: unknown) {
     const user = requireUser(req);
     const { messageId } = parse(ChatReadInputSchema, input);
     const result = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
       const conversation = await this.visible(user.id, id, tx);
-      const message = await tx.chatMessage.findFirst({ where: { id: messageId, conversationId: id } });
+      const message = await tx.chatMessage.findFirst({
+        where: { id: messageId, conversationId: id, ...historyWhere(conversation, user.id) },
+      });
       if (!message) throw new ApiError(404, 'MESSAGE_NOT_FOUND', '표시된 메시지를 찾을 수 없습니다.');
       const current = readBoundary(conversation, user.id);
       const advances =

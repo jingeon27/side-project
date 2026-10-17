@@ -185,6 +185,12 @@ model ChatConversation {
   firstReadId String?
   secondReadAt DateTime?
   secondReadId String?
+  firstClearedAt DateTime?
+  firstClearedId String?
+  secondClearedAt DateTime?
+  secondClearedId String?
+  firstHidden Boolean @default(false)
+  secondHidden Boolean @default(false)
   updatedAt DateTime @default(now())
   messages ChatMessage[]
   attachments ChatAttachment[]

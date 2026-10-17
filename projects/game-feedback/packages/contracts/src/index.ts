@@ -238,6 +238,7 @@ export const ChatMessageInputSchema = z
   .strict()
   .refine((input) => input.body.length > 0 || (input.attachmentIds?.length ?? 0) > 0)
   .refine((input) => new Set(input.attachmentIds).size === (input.attachmentIds?.length ?? 0));
+export const ClearChatHistoryInputSchema = z.object({ throughMessageId: ResponseIdSchema }).strict();
 export const ChatReadInputSchema = z.object({ messageId: z.string().min(1).max(100) }).strict();
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Conversation = z.infer<typeof ConversationSchema>;
@@ -505,6 +506,13 @@ export const operations: OperationSpec[] = [
     id: 'listChatMessages',
     response: ChatMessageListSchema,
     query: true,
+  },
+  {
+    method: 'delete',
+    path: '/api/conversations/{id}/messages',
+    id: 'clearChatHistory',
+    body: ClearChatHistoryInputSchema,
+    response: OkSchema,
   },
   {
     method: 'post',

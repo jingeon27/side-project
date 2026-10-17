@@ -3,6 +3,7 @@ import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
 import { ApiError } from '../common/http/api-error';
+import { historyWhere } from './chat-history';
 import { validateChatFile } from './chat-file';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
 
@@ -29,8 +30,19 @@ export class ChatAttachmentService {
   }
   async file(req: SessionRequest, conversationId: string, id: string) {
     const user = requireUser(req);
+    const conversation = await this.db.chatConversation.findFirst({
+      where: { id: conversationId, OR: [{ firstUserId: user.id }, { secondUserId: user.id }] },
+    });
+    if (!conversation) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     const file = await this.db.chatAttachment.findFirst({
-      where: { id, conversationId, OR: [{ messageId: { not: null } }, { uploaderId: user.id }] },
+      where: {
+        id,
+        conversationId,
+        OR: [
+          { message: { is: historyWhere(conversation, user.id) } },
+          { messageId: null, uploaderId: user.id },
+        ],
+      },
     });
     if (!file) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     return file;

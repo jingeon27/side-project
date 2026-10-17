@@ -712,6 +712,23 @@ export const ListChatMessagesResponse = zod.object({
 })
 
 
+export const ClearChatHistoryParams = zod.object({
+  "id": zod.string()
+})
+
+export const clearChatHistoryBodyThroughMessageIdMax = 100;
+
+
+
+export const ClearChatHistoryBody = zod.object({
+  "throughMessageId": zod.string().min(1).max(clearChatHistoryBodyThroughMessageIdMax)
+})
+
+export const ClearChatHistoryResponse = zod.object({
+  "ok": zod.literal(true)
+})
+
+
 export const SendChatMessageParams = zod.object({
   "id": zod.string()
 })
