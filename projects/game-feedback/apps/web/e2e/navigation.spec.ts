@@ -12,7 +12,8 @@ test('desktop navigation has one entry per destination and keeps boards in the s
     const header = page.getByRole('banner');
     const primary = page.getByRole('navigation', { name: '주 메뉴', exact: true });
     await expect(header.getByRole('link', { name: '프로필', exact: true })).toBeVisible();
-    await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(3);
+    await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(2);
+    await expect(header.getByRole('combobox', { name: '언어 설정', exact: true })).toBeVisible();
     await expect(primary.getByRole('link')).toHaveCount(3);
     await expect(page.getByRole('link', { name: '피드', exact: true })).toHaveCount(1);
     await expect(page.getByRole('link', { name: '가이드', exact: true })).toHaveCount(1);

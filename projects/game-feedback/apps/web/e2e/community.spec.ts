@@ -88,11 +88,8 @@ test('every game contains five shared boards on desktop and mobile and retired b
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/ko');
     const desktop = width > 760;
-    const selector = page.getByRole('button', { name: /^분류 선택:/ });
-    const sheet = page.getByRole('dialog', { name: '분류 선택', exact: true });
-    if (!desktop) await selector.click();
-    const navigation = desktop ? page.locator('.left-sidebar') : sheet;
-    const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-options');
+    const navigation = desktop ? page.locator('.left-sidebar') : page.locator('.game-board-navigation');
+    const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-chips');
     await expect(boards.getByRole('link')).toHaveText([
       ...(desktop ? [] : ['전체 피드']),
       '피드백',
@@ -101,7 +98,6 @@ test('every game contains five shared boards on desktop and mobile and retired b
       '게임코치',
       '자유게시판',
     ]);
-    if (!desktop) await page.keyboard.press('Escape');
     for (const [name, path] of [
       ['친추판매', '/ko/boards/friend-sale'],
       ['친선전 모집', '/ko/boards/friendly'],
@@ -110,17 +106,16 @@ test('every game contains five shared boards on desktop and mobile and retired b
       ['자유게시판', '/ko/boards/free'],
       ['전체 피드', '/ko'],
     ] as const) {
-      if (!desktop) await selector.click();
       const link = navigation.getByRole('link', {
         name: desktop && name === '전체 피드' ? '피드' : name,
         exact: true,
       });
       await link.click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
-      if (desktop) await expect(link).toHaveAttribute('aria-current', 'page');
+      await expect(link).toHaveAttribute('aria-current', 'page');
       if (!desktop) {
-        await expect(sheet).toBeHidden();
-        await expect(selector).toContainText(name);
+        await expect(link).toBeInViewport({ ratio: 1 });
+        await expect(page.getByRole('dialog')).toHaveCount(0);
       }
     }
     await expect(page.getByRole('link', { name: '계정 거래', exact: true })).toHaveCount(0);
@@ -131,7 +126,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
     expect(response.status()).toBe(404);
   }
 });
-test('category sheets preserve selection, keyboard focus, short viewports and Quill context', async ({
+test('category chips support direct links, keyboard navigation, short viewports and Quill context', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 844 });
@@ -141,33 +136,43 @@ test('category sheets preserve selection, keyboard focus, short viewports and Qu
   });
   await page.goto('/ja/boards/friendly');
   await expect(page.getByRole('navigation', { name: 'モバイルメニュー' })).toBeVisible();
-  const selector = page.getByRole('button', { name: /^分類を選択:/ });
-  const sheet = page.getByRole('dialog', { name: '分類を選択', exact: true });
-  await selector.click();
-  await expect(sheet.locator('[aria-current="page"]')).toHaveAttribute('href', '/ja/boards/friendly');
-  await expect(sheet.locator('[aria-current="page"] svg')).toHaveCount(1);
-  await page.keyboard.press('Escape');
-  await expect(sheet).toBeHidden();
-  await expect(selector).toBeFocused();
-  await selector.click();
-  await expect(sheet).toBeVisible();
-  await page.mouse.click(160, 10);
-  await expect(sheet).toBeHidden();
-  await selector.click();
-  await sheet.getByRole('link').last().click();
+  const chips = page.locator('.game-board-chips');
+  const friendly = chips.locator('a[href="/ja/boards/friendly"]');
+  await expect(friendly).toHaveAttribute('aria-current', 'page');
+  await expect(friendly).toBeInViewport({ ratio: 1 });
+  expect(await chips.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+  const length = await page.evaluate(() => history.length);
+  await friendly.focus();
+  await page.keyboard.press('Tab');
+  const coaching = chips.locator('a[href="/ja/boards/coaching"]');
+  await expect(coaching).toBeFocused();
+  await expect(coaching).toBeInViewport({ ratio: 1 });
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL('/ja/boards/coaching');
+  await expect(coaching).toHaveAttribute('aria-current', 'page');
+  expect(await page.evaluate(() => history.length)).toBe(length);
+  await page.reload();
+  await expect(coaching).toHaveAttribute('aria-current', 'page');
+  await expect(coaching).toBeInViewport({ ratio: 1 });
+  await chips.getByRole('link').last().click();
   await expect(page).toHaveURL('/ja/boards/free');
-  await expect(sheet).toBeHidden();
   await page.setViewportSize({ width: 400, height: 360 });
-  await selector.click();
-  await expect(sheet.locator('[aria-current="page"]')).toHaveAttribute('href', '/ja/boards/free');
-  await sheet.getByRole('link').last().scrollIntoViewIfNeeded();
-  await expect(sheet.getByRole('link').last()).toBeInViewport({ ratio: 1 });
-  const sheetBox = await sheet.boundingBox();
-  expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeLessThanOrEqual(361);
-  await sheet.locator('a[href="/ja/boards/friendly"]').click();
-  await expect(page).toHaveURL('/ja/boards/friendly');
-  await expect(sheet).toBeHidden();
+  await expect(chips.getByRole('link').last()).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(
+    await chips
+      .getByRole('link')
+      .evaluateAll(
+        (links) => new Set(links.map((link) => Math.round(link.getBoundingClientRect().top))).size,
+      ),
+  ).toBe(1);
+  await chips.getByRole('link').first().focus();
+  await expect(chips.getByRole('link').first()).toBeInViewport({ ratio: 1 });
+  await page.setViewportSize({ width: 760, height: 844 });
   await page.setViewportSize({ width: 320, height: 844 });
+  await expect(chips.getByRole('link').last()).toBeInViewport({ ratio: 1 });
+  await friendly.click();
+  await expect(page).toHaveURL('/ja/boards/friendly');
   await page.locator('.board-heading button').click();
   await expect(page.locator('.ql-editor')).toBeVisible();
   await expect(page.getByRole('combobox', { name: '分類', exact: true })).toHaveValue('FRIENDLY');

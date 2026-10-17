@@ -1,9 +1,8 @@
 @layer components {
   .game-board-navigation {
     display: none;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 16px;
   }
   @media (max-width: 760px) {
@@ -27,30 +26,19 @@
   .game-board-title > svg {
     flex-shrink: 0;
   }
-  .game-board-options {
+  .game-board-chips {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    gap: 8px;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 4px;
+    scroll-padding-inline: 4px;
+    -webkit-overflow-scrolling: touch;
   }
-  .game-board-options > a {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: var(--spacing-cta);
-    padding: 10px 12px;
-    border-radius: var(--radius-control);
-    font-size: var(--text-body);
-  }
-  .game-board-options > a:hover,
-  .game-board-options > a[aria-current='page'] {
-    background: var(--color-sunken);
-  }
-  .game-board-options > a[aria-current='page'] {
-    font-weight: 600;
-  }
-  .game-board-options svg {
-    flex-shrink: 0;
+  .game-board-chips::-webkit-scrollbar {
+    display: none;
   }
   .coaching-summary,
   .friend-sale-summary {
@@ -135,19 +123,5 @@
     padding-block: 48px;
     text-align: center;
     color: var(--color-muted);
-  }
-}
-
-@media (max-width: 760px) {
-  .game-board-sheet {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-  .fixed:has(> .game-board-sheet) {
-    top: var(--visual-viewport-top, 0px);
-    bottom: auto;
-    height: var(--visual-viewport-height, 100dvh);
-    align-items: flex-end;
-    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
 }

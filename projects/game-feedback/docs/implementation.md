@@ -555,7 +555,9 @@ Web 타입 검사와 Web/Mobile lint, Vitest 20개 파일 77개, Web production 
 
 Web 타입 검사와 lint, Vitest 20개 파일 77개가 통과했다. Playwright 5개가 통과했다(48.3초). 기존 필터 복귀/새로고침 검사를 400px에서 실행하고 Enter, 키보드로 지우기, 포커스 복귀와 다른 URL 필터 보존을 확인했다. 기존 320/390/768/1440px 반응형 검사도 통과했다. 별도 개발 화면 수동 확인은 Chromium 320/400/768/1440px와 WebKit 400px에서 한국어/영어/일본어 15개 조합을 사용했으며 입력/지우기/Enter/터치 영역, 가로 넘침과 pageerror 0개를 확인했다. E2E 개발 서버 로그에는 React use() 관련 경고가 1회 있었고 해당 사용자 흐름 검사는 통과했다. 실기기 검증과 이번 변경의 production build는 수행하지 않았다.
 
-## 모바일 분류 선택과 피드 정리
+## 모바일 분류 선택과 피드 정리 (이전 구현)
+
+아래는 바텀시트로 분류를 선택하던 이전 구현 기록이다. 현재 메뉴는 뒤의 분류 칩과 언어 드롭다운 절에 기록한 직접 이동 칩을 사용한다.
 
 모바일 게임 메뉴는 게임 이름과 현재 분류 버튼 한 줄로 구성한다. 분류 선택을 누르면 공통 Base UI Dialog를 사용하는 GameBoardSheet에서 전체 피드와 공통 5개 분류를 한 번에 보고 이동한다. 현재 항목에는 aria-current와 체크를 표시한다. 기존 gameBoards/gameBoardPath와 TabLink의 replace 및 저장된 피드 복귀를 재사용해 모든 게임의 경로 문맥과 검색 필터를 유지한다. Desktop은 기존 왼쪽 메뉴를 사용하며 모바일 버튼을 숨긴다. 모달은 overlay-kit과 영역 오류 경계를 사용하고 Escape/닫기/바깥 클릭 및 native back으로 닫힌다. 닫기 완료 후 overlay를 해제하며 기존 Base UI 포커스 복귀를 유지한다.
 
@@ -574,6 +576,18 @@ Chromium 320/400/760/768/1440px와 WebKit 320/400px의 한국어/영어/일본�
 Web 타입 검사, Web/Mobile lint와 Web Vitest 20개 파일 77개가 통과했다. Web E2E의 데스크톱 400/1440px Enter/Shift+Enter/합성 IME 이벤트/repeat/저장 재조회, 모바일 Enter/이미지/동영상/재전송/SSE와 반응형 10개가 통과했다. 새 푸터 2개 검사는 처음에 영어 canonical을 영어 경로로 예상해 실패했고, 기존 원문 canonical 정책과 같은 기대값으로 수정했다. 수정 후 320/1440px에서 한국어/영어/일본어의 약관/개인정보 링크 이동과 하단 메뉴 가림, 한국어 원문 canonical 검사 2개가 통과했다(19.6초). Web production build(.next/keyboard-footer-build)도 통과했다. Mobile host는 Android Chromium/iOS WebKit의 400/1440px에서 desktop pointer를 보고하는 WebView의 Enter 줄바꿈/버튼 전송과 400px 스크롤 6개가 통과했다(22.7초). 실제 OS IME/키보드와 실기기 검증은 포함하지 않는다.
 
 320/400/768/1440px의 한국어/영어/일본어 12개 수동 확인에서 링크 3개를 한 줄로 표시하고 하단 메뉴 가림/가로 넘침/pageerror가 없었다. 개발 채팅에서는 빈 초안의 Enter만 확인하고 전송 요청 0개를 확인했다. 소유 테스트 DB를 종료하고 개발 Web 3300/API 4300 실행을 유지한다. API/SDK/계약/네이티브 서비스/공통 패키지와 의존성은 변경하지 않았다.
+
+## 분류 칩과 언어 드롭다운, 스크롤 고정 헤더
+
+모바일 본문 상단에 전체 피드와 공통 5개 분류를 둥근 칩 링크로 표시한다. 바텀시트를 열지 않고 바로 이동하며 모든 게임이 기존 gameBoards/gameBoardPath를 공유한다. 선택 상태는 URL의 aria-current로 표시하고 공통 디자인 시스템의 버튼 색상/타이포/포커스/36px 칩과 44px 터치 영역을 재사용한다. 한 줄 가로 스크롤이며 callback ref와 ResizeObserver로 현재 분류를 노출하고 화면 크기나 번역 길이가 바뀌어도 선택 칩을 보이게 한다. 세로 스크롤 위치는 직접 바꾸지 않는다. 양끝 여백으로 소수점 좌표의 잘림과 포커스 표시를 보완했다. useRef/가변 let/선택 상태 복제 없이 observer를 정리하며 GameBoardSheet와 시트 전용 스타일/번역을 제거했다. Desktop은 기존 왼쪽 게임 메뉴를 사용한다. 분류 replace 탐색, 저장된 피드의 검색/답변 대기 복원, 상세의 논리적 상위 경로와 다른 게임 문맥을 보존한다.
+
+헤더의 언어 설정은 기존 Globe2 지구본 아이콘과 44px 조작 영역을 유지하는 드롭다운이다. 공통 shadcn Base UI 패키지의 NativeSelect/NativeSelectOption을 사용하며 프로필 설정과 같은 LanguageSelect로 선택/자동 감지/저장을 연결한다. 자동, 한국어, English, 日本語를 고를 수 있고 현재 문서의 언어 경로만 replace한다. 검색 쿼리와 해시, 글 상세와 게임 문맥은 유지한다. 쿠키와 useSyncExternalStore의 기존 preference 구독을 재사용하며 로그인 없이 저장하고 프로필과 헤더의 선택이 일치한다. localePath는 루트 경로의 해시도 보존한다. 아이콘 아래의 실제 select를 숨겨 제거하지 않아 키보드와 스크린 리더 조작을 유지한다.
+
+공통 topbar는 sticky로 화면 상단에 고정하고 디자인 시스템 app-bar 레이어를 사용한다. 86/77/66px의 기존 반응형 높이는 --site-header-height로 통일하며 같은 값으로 문서의 scroll-padding-top을 설정해 앵커와 키보드 포커스가 헤더에 가려지지 않게 한다. 기존 모바일 대화 화면의 전용 레이아웃을 유지한다. API/SDK/계약, 네이티브 서비스, 공통 패키지와 의존성은 변경하지 않았다.
+
+Web 타입 검사와 Web/Mobile lint, Web Vitest 20개 파일 77개가 통과했다. Web Playwright의 분류/작성/언어/헤더/탐색/미읽음/반응형 20개 중 처음 19개가 통과했고, 작은 화면의 선택 칩 끝이 소수점 좌표로 잘려 실패한 1개는 양끝 여백을 보완했다. 보완 후 분류 이동과 키보드/직접 진입 2개가 통과했다(19.8초). 헤더 320/1440px 고정과 앵커 가림 방지, 언어의 화면/쿼리/해시/저장 유지도 확인했다. Mobile host는 Android Chromium/iOS WebKit의 탐색/언어 14개가 모두 통과했다(1.0분). Web production build(.next/chip-header-build)가 통과했다. E2E 서버에서 응답 stream 종료 오류가 1회 기록됐지만 관련 브라우저 흐름과 별도 수동 화면에서 pageerror는 없었다.
+
+Chromium 320/400/760/768/1440px와 WebKit 320/400px에서 한국어/영어/일본어 21개 조합의 직접 분류 이동, 현재 칩 전체 표시, 한 줄 스크롤, 지구본과 44px select/읽을 수 있는 옵션, 고정 헤더, 가로 넘침과 pageerror 0개를 확인했다. 개발 글/메시지를 등록하지 않았고 실제 OS 선택창/키보드와 실기기 검증은 포함하지 않는다.
 
 ## 공통 파일 변경 이유
 

@@ -1,12 +1,19 @@
 @layer components {
+  :root {
+    --site-header-height: 86px;
+    scroll-padding-top: calc(var(--site-header-height) + 12px);
+  }
   .community-shell {
     display: flex;
     flex-direction: column;
     min-height: 100dvh;
   }
   .topbar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-index-app-bar);
     flex-shrink: 0;
-    height: 86px;
+    height: var(--site-header-height);
     border-bottom: 1px solid var(--color-line);
     background: var(--color-surface);
   }
@@ -253,6 +260,9 @@
     }
   }
   @media (max-width: 1080px) {
+    :root {
+      --site-header-height: 77px;
+    }
     .site-grid {
       grid-template-columns: 155px minmax(0, 1fr);
       gap: 28px;
@@ -265,9 +275,6 @@
     .header-actions {
       gap: 13px;
     }
-    .topbar {
-      height: 77px;
-    }
     .brand {
       font-size: var(--text-title);
     }
@@ -276,6 +283,9 @@
     }
   }
   @media (max-width: 760px) {
+    :root {
+      --site-header-height: 66px;
+    }
     .site-grid {
       grid-template-columns: minmax(0, 1fr);
       padding: 20px 20px 94px;
@@ -284,9 +294,6 @@
     .shell-left-sidebar,
     .left-sidebar {
       display: none;
-    }
-    .topbar {
-      height: 66px;
     }
     .topbar-inner {
       padding: 0 20px;

@@ -1,4 +1,5 @@
 export { LanguageProvider, useI18n, setLanguagePreference } from './LanguageProvider';
+export { LanguageSelect } from './LanguageSelect';
 export {
   detectLocale,
   preferredLocale,

@@ -22,10 +22,10 @@ test('mobile header and four tabs navigate in place and report their paths to th
     await expect(tabs.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
   }
   const header = page.getByRole('banner');
-  await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(2);
-  await header.getByRole('link', { name: '언어 설정', exact: true }).click();
-  await expect(page).toHaveURL(/\/ko\/settings#language$/);
-  await expect(page.locator('#language-preference')).toBeInViewport();
+  await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(1);
+  await header.getByRole('combobox', { name: '언어 설정', exact: true }).selectOption('ko');
+  await expect(page).toHaveURL(/\/ko\/settings$/);
+  await expect(header.getByRole('combobox')).toHaveValue('ko');
   await header.getByRole('link', { name: '알림 0개', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/notifications');
   await tabs.getByRole('link', { name: '프로필', exact: true }).click();
@@ -38,32 +38,36 @@ test('mobile header and four tabs navigate in place and report their paths to th
   expect(nativeHost.rootBacks()).toBe(1);
 });
 
-test('category sheets close on native back and return to the saved filtered feed', async ({
+test('category chips navigate directly and native back restores the saved filtered feed', async ({
   page,
   nativeHost,
 }) => {
   await page.setViewportSize({ width: 400, height: 844 });
   await page.goto('/ko?q=%ED%98%B8%EA%B7%B8&tab=unanswered');
   await expect.poll(nativeHost.isReady).toBe(true);
-  const selector = page.getByRole('button', { name: /^분류 선택:/ });
-  const sheet = page.getByRole('dialog', { name: '분류 선택', exact: true });
-  await selector.click();
-  await expect(sheet.getByRole('link')).toHaveCount(6);
-  await expect.poll(nativeHost.hasOverlay).toBe(true);
-  expect(await nativeHost.requestBack()).toBe(true);
-  await expect(sheet).toBeHidden();
+  const chips = page.locator('.game-board-chips');
+  await expect(chips.getByRole('link')).toHaveCount(6);
   await expect.poll(nativeHost.hasOverlay).toBe(false);
-  await expect(page).toHaveURL((url) => url.searchParams.get('q') === '호그');
-  await expect(selector).toBeFocused();
-  expect(nativeHost.rootBacks()).toBe(0);
-  await selector.click();
-  await sheet.getByRole('link', { name: '자유게시판', exact: true }).click();
+  const length = await page.evaluate(() => history.length);
+  await chips.getByRole('link', { name: '자유게시판', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/boards/free');
-  await expect(sheet).toBeHidden();
-  await expect(selector).toContainText('자유게시판');
-  await selector.click();
-  await expect(sheet.locator('[aria-current="page"]')).toHaveAttribute('href', '/ko/boards/free');
-  await sheet.getByRole('link', { name: '전체 피드', exact: true }).click();
+  const current = chips.locator('[aria-current="page"]');
+  await expect(current).toHaveAttribute('href', '/ko/boards/free');
+  await expect(current).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect.poll(nativeHost.hasOverlay).toBe(false);
+  expect(await page.evaluate(() => history.length)).toBe(length);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === '/ko' &&
+      url.searchParams.get('q') === '호그' &&
+      url.searchParams.get('tab') === 'unanswered',
+  );
+  expect(nativeHost.rootBacks()).toBe(0);
+  await chips.getByRole('link', { name: '친추판매', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/boards/friend-sale');
+  await chips.getByRole('link', { name: '전체 피드', exact: true }).click();
   await expect(page).toHaveURL(
     (url) =>
       url.pathname === '/ko' &&
@@ -172,15 +176,16 @@ test('coaching and general-board deep links preserve the game and return to its 
   const board = appRoutes.boards('ko', 'coaching', undefined, slug);
   expect(nativeHost.openDeepLink(`gamefeedback:/${board}`)).toBe(true);
   await expect.poll(nativeHost.currentPath).toBe(board);
-  await page.getByRole('button', { name: /^분류 선택:/ }).click();
-  const sheet = page.getByRole('dialog', { name: '분류 선택', exact: true });
-  await expect(sheet.locator('[aria-current="page"]')).toHaveAttribute('href', board);
-  await expect(sheet.getByRole('link', { name: '자유게시판', exact: true })).toHaveAttribute(
-    'href',
-    appRoutes.boards('ko', 'free', undefined, slug),
-  );
-  expect(await nativeHost.requestBack()).toBe(true);
-  await expect(sheet).toBeHidden();
+  const chips = page.locator('.game-board-chips');
+  await expect(chips.locator('[aria-current="page"]')).toHaveAttribute('href', board);
+  await expect(chips.locator('[aria-current="page"]')).toBeInViewport({ ratio: 1 });
+  const general = chips.getByRole('link', { name: '자유게시판', exact: true });
+  await expect(general).toHaveAttribute('href', appRoutes.boards('ko', 'free', undefined, slug));
+  await general.click();
+  await expect.poll(nativeHost.currentPath).toBe(appRoutes.boards('ko', 'free', undefined, slug));
+  await expect(general).toHaveAttribute('aria-current', 'page');
+  await expect.poll(nativeHost.hasOverlay).toBe(false);
+  await chips.getByRole('link', { name: '게임코치', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe(board);
   const detail = appRoutes.post('ko', post.id, 'COACHING', slug);
   expect(nativeHost.openDeepLink(`gamefeedback:/${detail}`)).toBe(true);

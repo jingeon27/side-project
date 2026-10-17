@@ -29,7 +29,7 @@ export function preferredLocale(preference: unknown, acceptLanguage?: string | n
   return isLocale(preference) ? preference : detectLocale(acceptLanguage);
 }
 export function localePath(path: string, locale: TLocale) {
-  return /^\/(ko|en|ja)(?=\/|\?|$)/.test(path)
-    ? path.replace(/^\/(ko|en|ja)(?=\/|\?|$)/, `/${locale}`)
+  return /^\/(ko|en|ja)(?=\/|\?|#|$)/.test(path)
+    ? path.replace(/^\/(ko|en|ja)(?=\/|\?|#|$)/, `/${locale}`)
     : `/${locale}`;
 }

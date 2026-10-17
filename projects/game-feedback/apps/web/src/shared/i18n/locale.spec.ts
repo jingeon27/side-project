@@ -25,6 +25,7 @@ describe('language preference', () => {
   it('retains details, search filters and opaque cursor values during language changes', () => {
     expect(localePath('/ko/messages/room-1', 'ja')).toBe('/ja/messages/room-1');
     expect(localePath('/en?tab=unanswered&q=hog', 'ko')).toBe('/ko?tab=unanswered&q=hog');
+    expect(localePath('/ko#feed', 'ja')).toBe('/ja#feed');
     expect(localePath('/ko/users/player-1?cursor=a%2B%2F%3D', 'en')).toBe(
       '/en/users/player-1?cursor=a%2B%2F%3D',
     );

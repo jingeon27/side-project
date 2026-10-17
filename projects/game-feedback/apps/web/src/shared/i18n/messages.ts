@@ -61,8 +61,6 @@ const messages: Record<string, readonly [string, string]> = {
   '공개한 게시글이 없어요.': ['No public posts yet.', '公開した投稿がありません。'],
   '이전 글 보기 →': ['Older posts →', '以前の投稿 →'],
   '전체 피드': ['All posts', '全体フィード'],
-  '분류 선택': ['Choose a category', '分類を選択'],
-  '분류 선택: {category}': ['Choose a category: {category}', '分類を選択: {category}'],
   '답변 대기': ['Unanswered', '回答待ち'],
   전체: ['All', 'すべて'],
   '최신 글': ['Latest posts', '新着投稿'],

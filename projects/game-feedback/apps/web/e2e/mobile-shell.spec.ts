@@ -33,10 +33,11 @@ for (const { width, locale, menu, actions } of [
     await expect(tabs.getByRole('link')).toHaveText(menu);
     await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');
     const header = page.getByRole('banner').locator('.header-actions');
-    await expect(header.getByRole('link')).toHaveCount(2);
+    await expect(header.getByRole('link')).toHaveCount(1);
+    await expect(header.getByRole('combobox')).toHaveCount(1);
     await expect(header.getByRole('button')).toHaveCount(0);
-    for (const name of actions) {
-      const link = header.getByRole('link', { name, exact: true });
+    for (const [index, name] of actions.entries()) {
+      const link = header.getByRole(index === 0 ? 'combobox' : 'link', { name, exact: true });
       await expect(link).toBeVisible();
       const box = await link.boundingBox();
       expect(box?.width).toBeGreaterThanOrEqual(44);
@@ -45,10 +46,12 @@ for (const { width, locale, menu, actions } of [
     await expect(header.locator('.notification-unread-indicator')).toHaveCount(0);
     await expect(tabs.locator('.mobile-chat-count')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await header.getByRole('link', { name: actions[0], exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/${locale}/settings#language$`));
-    await expect(page.locator('#language-preference')).toBeInViewport();
-    await expect(tabs.getByRole('link').last()).toHaveAttribute('aria-current', 'page');
+    const nextLocale = locale === 'en' ? 'ja' : 'en';
+    await header.getByRole('combobox', { name: actions[0], exact: true }).selectOption(nextLocale);
+    await expect(page).toHaveURL(new RegExp(`/${nextLocale}$`));
+    await expect(page.locator('html')).toHaveAttribute('lang', nextLocale);
+    await expect(header.getByRole('combobox')).toHaveValue(nextLocale);
+    await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');
   });
 }
 

@@ -1,8 +1,8 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { TabLink as Link } from '@/shared/navigation';
-import { Gamepad2, ArrowUpRight, Bell, Globe2 } from 'lucide-react';
+import { Gamepad2, ArrowUpRight, Bell } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { Avatar } from '@/shared/ui';
 interface ITopbarProps {
@@ -22,14 +22,7 @@ export function Topbar({ home, unread }: ITopbarProps) {
           <span>{t('플레이메이트')}</span>
         </Link>
         <div className="header-actions">
-          <Link
-            className="icon-button language-button"
-            replace
-            href={`${home}/settings#language`}
-            aria-label={t('언어 설정')}
-          >
-            <Globe2 size={20} />
-          </Link>
+          <LanguageSelect compact />
           <Link
             className="icon-button notification-button"
             aria-label={t('알림 {count}개', { count: unread })}
