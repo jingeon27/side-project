@@ -1,51 +1,28 @@
 'use client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { postDetailOptions, postListOptions } from '@/features/post';
-import { notificationListOptions } from '@/features/notification';
-import { deleteAnswerById, patchAnswer, postAnswer, postHelpfulAnswer } from '../api/answer.api';
-function useRefreshAnswerCaches() {
-  const client = useQueryClient();
-  return async (postId: string) => {
-    await Promise.all([
-      client.invalidateQueries(postDetailOptions(postId)),
-      client.invalidateQueries(postListOptions()),
-      client.invalidateQueries(notificationListOptions()),
-    ]);
-  };
-}
+import {
+  createAnswerMutationOptions,
+  updateAnswerMutationOptions,
+  deleteAnswerMutationOptions,
+  helpfulAnswerMutationOptions,
+} from './answer.mutation-options';
+
 export function useCreateAnswerMutation() {
-  const refresh = useRefreshAnswerCaches();
-  return useMutation({
-    mutationFn: postAnswer,
-    onSuccess: async (answer) => {
-      await refresh(answer.postId);
-    },
-  });
+  const client = useQueryClient();
+  return useMutation(createAnswerMutationOptions(client));
 }
+
 export function useUpdateAnswerMutation() {
-  const refresh = useRefreshAnswerCaches();
-  return useMutation({
-    mutationFn: patchAnswer,
-    onSuccess: async (answer) => {
-      await refresh(answer.postId);
-    },
-  });
+  const client = useQueryClient();
+  return useMutation(updateAnswerMutationOptions(client));
 }
+
 export function useDeleteAnswerMutation() {
-  const refresh = useRefreshAnswerCaches();
-  return useMutation({
-    mutationFn: deleteAnswerById,
-    onSuccess: async (_, { postId }) => {
-      await refresh(postId);
-    },
-  });
+  const client = useQueryClient();
+  return useMutation(deleteAnswerMutationOptions(client));
 }
+
 export function useHelpfulAnswerMutation() {
-  const refresh = useRefreshAnswerCaches();
-  return useMutation({
-    mutationFn: postHelpfulAnswer,
-    onSuccess: async (answer) => {
-      await refresh(answer.postId);
-    },
-  });
+  const client = useQueryClient();
+  return useMutation(helpfulAnswerMutationOptions(client));
 }

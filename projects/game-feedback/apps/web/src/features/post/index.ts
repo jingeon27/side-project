@@ -8,3 +8,9 @@ export {
 export { PostCard } from './ui/PostCard';
 export { PostArticle } from './ui/PostArticle';
 export type { TPostListParams } from './types/post.type';
+export {
+  createPostMutationOptions,
+  updatePostMutationOptions,
+  deletePostMutationOptions,
+  readPostMutationOptions,
+} from './model/post.mutation-options';

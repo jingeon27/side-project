@@ -10,3 +10,12 @@ export {
   useLogout,
   useDeleteAccount,
 } from './model/auth.hook';
+export {
+  demoLoginMutationOptions,
+  completeOnboardingMutationOptions,
+  testAccountLoginMutationOptions,
+  logoutMutationOptions,
+  deleteAccountMutationOptions,
+  nativeLoginMutationOptions,
+  refreshSessionMutationOptions,
+} from './model/auth.mutation-options';
