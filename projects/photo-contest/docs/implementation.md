@@ -62,7 +62,8 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 검증
 
-- Vitest 746개: API unit 63·실제 PostgreSQL/supertest 198, 웹 unit/UI 252·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 45.
+- Vitest 761개: API unit 64·실제 PostgreSQL/supertest 200, 웹 unit/UI 264(배포 스크립트 12개 포함)·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 45.
+- CI에서 웹 Playwright 36개·모바일 WebView 24개가 통과했다. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 운영 이미지의 HTTPS 검증은 웹 앱이 소유하는 별도 Playwright 설정으로 실행한다.
 - 기존 Playwright 56개(웹 32·모바일 24)가 통과했고 공개 정책·문의 링크·서버 HTML·favicon 검사 3개(Chrome·WebKit·데스크톱)를 추가했다. 이번 변경은 웹 unit/UI 251개, 웹 주요 흐름·홈 피드·정책 9개와 모바일 24개로 검증했다. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 웹 Chrome·WebKit·데스크톱·가짜 앱과 모바일 Android/iOS 가짜 WebView에서 그룹 생성·초대·사진/동영상 등록·좋아요·인기 정렬·관리자 삭제, 댓글 작성·삭제·페이지·개수, 당겨서 새로고침, 접근 제한·반응형·SSR·앱 기능을 검사한다. Chrome 새로고침은 CDP 실제 터치, WebKit은 Playwright의 호환 터치 이벤트로 확인한다. 실제 MP4를 재생하고 currentTime·탐색을 확인한다.
 - codegen·타입 검사·lint와 웹 프로덕션 빌드를 검사한다. 테스트 러너와 설정은 각 앱이 소유하고 전용 DB의 임시 스키마·별도 서버 포트를 사용한다.
 - 파일 선택 영역을 미리보기로 대체하는 변경은 기존 폼 테스트 5개와 Chrome·WebKit·데스크톱의 미리보기·시트 검사 6개로 확인했다. 실제 파일 선택·교체·제거·재열기·동영상 재생·업로드까지 검사한다.
@@ -80,7 +81,9 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 GitHub Actions는 운영 컨테이너에서 직접 가입·비공개 사진/영상·댓글·재시작·DB 백업 복원을 검증한다. 배포 대상에서는 검증한 동일 이미지를 artifact로 옮겨 GHCR에 게시하고 digest로 고정해 배포한다. 운영 브랜치와 활성화 값이 모두 없으면 게시·서버 접속을 하지 않는다. SSH 호스트 키를 확인하고 GHCR 작업 토큰은 stdin·임시 Docker 설정으로만 사용한다. VM 작업 잠금·공개 헬스 체크·이전 앱 복구를 제공하며 DB 스키마·미디어·백업은 자동으로 되돌리거나 지우지 않는다.
 
-서버가 없는 상태에서는 로컬 검증과 CI 구성을 준비한다. 실제 운영 DNS·인증서·VM 접근·R2 권한은 사용자 설정 후 확인한다. 준비할 값과 실행 순서는 [배포 안내](deployment.md)에 둔다.
+CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테이너의 직접 가입·Secure/HttpOnly 세션·비공개 사진/영상·댓글·앱 재시작 후 데이터 유지를 확인했다. 실제 DB 백업을 별도 DB로 복원해 댓글이 남는 것도 확인했다. 배포 스크립트의 실패 복구·잠금 12개와 기존 웹·API·모바일 검증도 통과했다.
+
+운영 VM은 아직 연결하지 않았다. 실제 운영 DNS·공개 인증서·VM 접근·GHCR 다운로드·R2 권한은 사용자 설정 후 확인한다. 준비할 값과 실행 순서는 [배포 안내](deployment.md)에 둔다.
 
 ## 개발 환경 반영
 
