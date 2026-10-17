@@ -36,7 +36,7 @@ export function PostArticle({ post, authorContent, authorName, actions, profile 
         <div>
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
-          <span>
+          <span suppressHydrationWarning>
             {timeAgo(post.createdAt, textLocale)}
             {post.updatedAt !== post.createdAt && t(' (수정됨)')}
           </span>

@@ -35,7 +35,9 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
           <span className="small muted">{t(board?.name ?? '피드백')}</span>
           {isFeedback && <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />}
         </div>
-        <span className="post-time">{timeAgo(post.createdAt, textLocale)}</span>
+        <span className="post-time" suppressHydrationWarning>
+          {timeAgo(post.createdAt, textLocale)}
+        </span>
       </div>
       <Link href={href} className="post-title-link">
         <h3>{post.title}</h3>
