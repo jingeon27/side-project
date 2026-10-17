@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Suspense, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
 import { SessionProvider, sessionOptions, useSession } from '@/features/auth';
@@ -10,7 +10,7 @@ import type { Session } from '@/shared/api';
 import { NativeBridge } from './NativeBridge';
 import { NavigationHistory } from './NavigationHistory';
 import { MobileViewport } from './MobileViewport';
-import { ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
+import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 import { MotionProvider } from '@/shared/motion';
 
 export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
@@ -44,11 +44,9 @@ function SessionContent({ children }: { children: ReactNode }) {
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
-      <ServiceErrorBoundary title={t('앱 연결')}>
-        <Suspense fallback={null}>
-          <NativeBridge />
-        </Suspense>
-      </ServiceErrorBoundary>
+      <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
+        <NativeBridge />
+      </AsyncBoundary>
       <ServiceErrorBoundary title={t('회원가입 안내')}>
         <AuthOnboarding />
       </ServiceErrorBoundary>

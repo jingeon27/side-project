@@ -2,6 +2,25 @@ import { test, expect } from '@playwright/test';
 import type { PostList } from '@game-feedback/contracts';
 const postsRoute = /\/api\/posts(?:\?.*)?$/;
 
+test('a suspended feed keeps its filters and shell usable until data arrives', async ({ page }) => {
+  const pending = Promise.withResolvers<void>();
+  await page.route(postsRoute, async (route) => {
+    await pending.promise;
+    await route.continue();
+  });
+  try {
+    await page.goto('/ko', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('피드백 불러오는 중')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: '피드백 검색' })).toBeVisible();
+    await expect(page.locator('.topbar')).toBeVisible();
+    pending.resolve();
+    await expect(page.locator('.post-card').first()).toBeVisible();
+    await expect(page.getByLabel('피드백 불러오는 중')).not.toBeVisible();
+  } finally {
+    pending.resolve();
+  }
+});
+
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: 'wait' });
 });
@@ -58,14 +77,13 @@ test('an invalid list shows a response error and recovers on retry without prete
     });
   });
   await page.goto('/ko');
-  const message = page.getByText('서버 응답을 확인하지 못했어요. 새로고침 후 내용을 확인해 주세요.', {
-    exact: true,
-  });
+  const message = page.getByRole('alert', { name: '최신 피드백 오류' });
   await expect(message).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '피드백 검색' })).toBeVisible();
   await expect(page.getByText('첫 번째 이야기를 기다려요', { exact: true })).not.toBeVisible();
   await expect(page.locator('.post-card')).toHaveCount(0);
   malformed = false;
-  await page.getByRole('button', { name: '다시 불러오기', exact: true }).click();
+  await message.getByRole('button', { name: '다시 시도하기', exact: true }).click();
   await expect(page.locator('.post-card').first()).toBeVisible();
   await expect(message).not.toBeVisible();
 });

@@ -6,5 +6,6 @@ export { Modal } from './Modal';
 export { ToastProvider, useNotify } from './ToastProvider';
 export { ErrorRecovery } from './ErrorRecovery';
 export { ServiceErrorBoundary } from './ServiceErrorBoundary';
+export { AsyncBoundary } from './AsyncBoundary';
 export { openOverlay } from './open-overlay';
 export { MotionButton } from './MotionButton';

@@ -9,7 +9,7 @@ import { userPostListOptions, PostCard } from '@/features/post';
 import { Deck } from '@/features/game-profile';
 import { StartChatLink } from '@/widgets/start-chat';
 import type { PublicProfile, PostList } from '@/shared/api';
-import { Avatar, ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { BackLink } from '@/shared/navigation';
 import { appRoutes } from '@game-feedback/bridge';
 interface IProfilePageProps {
@@ -20,7 +20,20 @@ interface IProfilePageProps {
   initialPosts: PostList;
   initialViewerId?: string;
 }
-export function ProfilePage({
+export function ProfilePage(props: IProfilePageProps) {
+  const { t } = useI18n();
+  const { session } = useSession();
+  return (
+    <ServiceErrorBoundary
+      title={t('플레이어 프로필')}
+      resetKey={`${props.id}:${session.user?.id ?? 'anonymous'}`}
+      recoveryAction={<BackLink href={appRoutes.feed(props.locale)}>{t('← 피드백 라운지')}</BackLink>}
+    >
+      <ProfileContent {...props} />
+    </ServiceErrorBoundary>
+  );
+}
+function ProfileContent({
   id,
   locale,
   cursor = '',
@@ -31,15 +44,13 @@ export function ProfilePage({
   const { t, locale: textLocale } = useI18n();
   const { session } = useSession();
   const sameViewer = session?.user?.id === initialViewerId;
-  const profile = useQuery({ ...profileOptions(id), initialData: sameViewer ? initialProfile : undefined });
-  const posts = useQuery({
-    ...userPostListOptions(id, cursor),
+  const profile = useQuery({
+    ...profileOptions(id),
+    throwOnError: true,
     refetchOnMount: 'always',
-    initialData: sameViewer ? initialPosts : undefined,
+    initialData: sameViewer ? initialProfile : undefined,
   });
-  if (profile.isPending) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
-  if (profile.isError || !profile.data)
-    return <ErrorNotice message={profile.error?.message || t('플레이어를 찾을 수 없어요.')} />;
+  if (!profile.data) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
   const { author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
@@ -82,39 +93,61 @@ export function ProfilePage({
         {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
       </section>
       <ServiceErrorBoundary title={t('작성한 피드백 요청')} resetKey={`${id}:${cursor}`}>
-        <section className="feed-section">
-          <div className="section-title-row">
-            <h2>{t('작성한 피드백 요청')}</h2>
-          </div>
-          {posts.isPending && <LoadingState />}
-          <ErrorNotice message={posts.error?.message} />
-          {!posts.isError && posts.data?.items.length === 0 && (
-            <p className="muted">{t('공개한 피드백 요청이 없어요.')}</p>
-          )}
-          {!posts.isError && (
-            <div className="post-list">
-              {posts.data?.items.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  href={`/${locale}/posts/${post.id}`}
-                  authorName={<AuthorLink author={post.author} locale={locale} />}
-                  authorContent={<UserBadges author={post.author} compact />}
-                  deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
-                />
-              ))}
-            </div>
-          )}
-          <nav className="profile-pagination" aria-label={t('작성글 페이지')}>
-            {cursor && <Link href={`/${locale}/users/${id}`}>{t('처음으로')}</Link>}
-            {posts.data?.nextCursor && (
-              <Link href={`/${locale}/users/${id}?cursor=${encodeURIComponent(posts.data.nextCursor)}`}>
-                {t('이전 요청 보기 →')}
-              </Link>
-            )}
-          </nav>
-        </section>
+        <ProfilePosts
+          id={id}
+          locale={locale}
+          cursor={cursor}
+          initialPosts={initialPosts}
+          initialViewerId={initialViewerId}
+        />
       </ServiceErrorBoundary>
     </>
+  );
+}
+
+function ProfilePosts({
+  id,
+  locale,
+  cursor = '',
+  initialPosts,
+  initialViewerId,
+}: Omit<IProfilePageProps, 'initialProfile'>) {
+  const { t } = useI18n();
+  const { session } = useSession();
+  const sameViewer = session.user?.id === initialViewerId;
+  const posts = useQuery({
+    ...userPostListOptions(id, cursor),
+    throwOnError: true,
+    refetchOnMount: 'always',
+    initialData: sameViewer ? initialPosts : undefined,
+  });
+  if (!posts.data) return <LoadingState />;
+  return (
+    <section className="feed-section">
+      <div className="section-title-row">
+        <h2>{t('작성한 피드백 요청')}</h2>
+      </div>
+      {posts.data.items.length === 0 && <p className="muted">{t('공개한 피드백 요청이 없어요.')}</p>}
+      <div className="post-list">
+        {posts.data.items.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            href={`/${locale}/posts/${post.id}`}
+            authorName={<AuthorLink author={post.author} locale={locale} />}
+            authorContent={<UserBadges author={post.author} compact />}
+            deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
+          />
+        ))}
+      </div>
+      <nav className="profile-pagination" aria-label={t('작성글 페이지')}>
+        {cursor && <Link href={`/${locale}/users/${id}`}>{t('처음으로')}</Link>}
+        {posts.data?.nextCursor && (
+          <Link href={`/${locale}/users/${id}?cursor=${encodeURIComponent(posts.data.nextCursor)}`}>
+            {t('이전 요청 보기 →')}
+          </Link>
+        )}
+      </nav>
+    </section>
   );
 }

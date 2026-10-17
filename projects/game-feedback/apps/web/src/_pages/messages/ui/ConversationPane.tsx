@@ -1,12 +1,10 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
-import Link from 'next/link';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowDown, ArrowLeft, RefreshCw, ShieldBan } from 'lucide-react';
-import { chatError, chatMessageOptions } from '@/features/chat';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { ArrowDown, ArrowLeft, ShieldBan } from 'lucide-react';
+import { chatMessageOptions } from '@/features/chat';
 import { UserBadges } from '@/features/user';
-import { Avatar, ErrorNotice, LoadingState } from '@/shared/ui';
+import { Avatar } from '@/shared/ui';
 import { useChatConnection } from '@/widgets/chat-realtime';
 import { useChatBlock } from '../model/use-chat-block';
 import { useChatScroll } from '../model/use-chat-scroll';
@@ -25,12 +23,12 @@ interface IConversationPaneProps {
 export function ConversationPane({ conversationId, userId, locale }: IConversationPaneProps) {
   const { t } = useI18n();
   const connection = useChatConnection();
-  const query = useInfiniteQuery({
+  const query = useSuspenseInfiniteQuery({
     ...chatMessageOptions(userId, conversationId),
     refetchInterval: connection === 'live' ? false : 10_000,
   });
-  const conversation = query.data?.pages[0]?.conversation;
-  const newestFirst = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const conversation = query.data.pages[0]?.conversation;
+  const newestFirst = query.data.pages.flatMap((page) => page.items) ?? [];
   const messages = [...new Map(newestFirst.map((message) => [message.id, message])).values()].reverse();
   const unavailable = query.isError || !conversation;
   const scroll = useChatScroll({
@@ -53,33 +51,8 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
     void query.fetchNextPage();
   }
 
-  if (query.isPending)
-    return (
-      <section className="conversation-pane">
-        <LoadingState text={t('메시지를 불러오고 있어요')} />
-      </section>
-    );
-  if (query.isError || !conversation)
-    return (
-      <section className="conversation-pane chat-unavailable">
-        <ShieldBan size={32} />
-        <h2>{t('지금은 이 대화를 열 수 없어요')}</h2>
-        <ErrorNotice message={chatError(query.error)} />
-        <Button
-          variant="secondary"
-          size="md"
-          type="submit"
-          className="button outline"
-          onClick={() => query.refetch()}
-        >
-          <RefreshCw size={15} />
-          {t('다시 확인')}
-        </Button>
-        <Link className="text-button" href={`/${locale}/messages`}>
-          {t('대화 목록으로 돌아가기 →')}
-        </Link>
-      </section>
-    );
+  if (query.error && !query.isFetching) throw query.error;
+  if (!conversation) throw new Error('Conversation is unavailable.');
   return (
     <section
       className="conversation-pane"

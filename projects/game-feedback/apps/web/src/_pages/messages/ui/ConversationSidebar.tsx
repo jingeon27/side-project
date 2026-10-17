@@ -1,10 +1,9 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import Link from 'next/link';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
-import { chatError, conversationListOptions } from '@/features/chat';
-import { ErrorNotice, LoadingState } from '@/shared/ui';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { ArrowUpRight, MessageCircle, ShieldCheck } from 'lucide-react';
+import { conversationListOptions } from '@/features/chat';
 import { useChatConnection } from '@/widgets/chat-realtime';
 import { ConversationRow } from './ConversationRow';
 
@@ -17,12 +16,13 @@ interface IConversationSidebarProps {
 export function ConversationSidebar({ userId, conversationId, locale }: IConversationSidebarProps) {
   const { t } = useI18n();
   const connection = useChatConnection();
-  const conversations = useInfiniteQuery({
+  const conversations = useSuspenseInfiniteQuery({
     ...conversationListOptions(userId),
     refetchInterval: connection === 'live' ? false : 10_000,
   });
-  const items = conversations.data?.pages.flatMap((page) => page.items) ?? [];
-  const unread = conversations.data?.pages[0]?.unreadCount ?? 0;
+  const items = conversations.data.pages.flatMap((page) => page.items) ?? [];
+  const unread = conversations.data.pages[0]?.unreadCount ?? 0;
+  if (conversations.error && !conversations.isFetching) throw conversations.error;
   return (
     <aside className="conversation-sidebar" aria-label={t('내 대화 목록')}>
       <div className="conversation-list-heading">
@@ -33,53 +33,40 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
           </span>
         )}
       </div>
-      {conversations.isPending && <LoadingState text={t('대화를 불러오고 있어요')} />}
-      {conversations.isError ? (
-        <div className="chat-list-error">
-          <ErrorNotice message={chatError(conversations.error)} />
-          <button className="text-button" onClick={() => conversations.refetch()}>
-            <RefreshCw size={13} />
-            {t('다시 불러오기')}
-          </button>
+      <div className="conversation-list">
+        {items.map((item) => (
+          <ConversationRow
+            key={item.id}
+            conversation={item}
+            selected={conversationId === item.id}
+            replace={Boolean(conversationId)}
+            locale={locale}
+          />
+        ))}
+      </div>
+      {items.length === 0 && (
+        <div className="chat-empty-list">
+          <MessageCircle size={27} />
+          <strong>{t('아직 시작한 대화가 없어요')}</strong>
+          <p>
+            {t('라운지의 요청이나 답변에서')}
+            <br />
+            {t('‘채팅하기’를 눌러보세요.')}
+          </p>
+          <Link href={`/${locale}`}>
+            {t('플레이어 만나러 가기')}
+            <ArrowUpRight size={13} />
+          </Link>
         </div>
-      ) : (
-        <>
-          <div className="conversation-list">
-            {items.map((item) => (
-              <ConversationRow
-                key={item.id}
-                conversation={item}
-                selected={conversationId === item.id}
-                replace={Boolean(conversationId)}
-                locale={locale}
-              />
-            ))}
-          </div>
-          {!conversations.isPending && items.length === 0 && (
-            <div className="chat-empty-list">
-              <MessageCircle size={27} />
-              <strong>{t('아직 시작한 대화가 없어요')}</strong>
-              <p>
-                {t('라운지의 요청이나 답변에서')}
-                <br />
-                {t('‘채팅하기’를 눌러보세요.')}
-              </p>
-              <Link href={`/${locale}`}>
-                {t('플레이어 만나러 가기')}
-                <ArrowUpRight size={13} />
-              </Link>
-            </div>
-          )}
-          {conversations.hasNextPage && (
-            <button
-              className="conversation-more"
-              disabled={conversations.isFetchingNextPage}
-              onClick={() => conversations.fetchNextPage()}
-            >
-              {conversations.isFetchingNextPage ? t('불러오는 중…') : t('이전 대화 더 보기')}
-            </button>
-          )}
-        </>
+      )}
+      {conversations.hasNextPage && (
+        <button
+          className="conversation-more"
+          disabled={conversations.isFetchingNextPage}
+          onClick={() => conversations.fetchNextPage()}
+        >
+          {conversations.isFetchingNextPage ? t('불러오는 중…') : t('이전 대화 더 보기')}
+        </button>
       )}
       <div className="chat-list-note">
         <ShieldCheck size={14} />

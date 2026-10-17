@@ -1,6 +1,5 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { ButtonLink } from '@side/design-system/next';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { postDetailOptions, PostArticle } from '@/features/post';
@@ -8,7 +7,7 @@ import type { PostDetail } from '@/shared/api';
 import { useSession } from '@/features/auth';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { ProfileSnapshot } from '@/features/game-profile';
-import { ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { usePostRead } from '../model/use-post-read.hook';
 import { ContentActions } from './ContentActions';
 import { PostAnswersSection } from './PostAnswersSection';
@@ -21,25 +20,34 @@ interface IPostPageProps {
   initialDetail?: PostDetail;
   initialViewerId?: string;
 }
-export function PostPage({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
+export function PostPage(props: IPostPageProps) {
+  const { t } = useI18n();
+  const { session } = useSession();
+  return (
+    <ServiceErrorBoundary
+      title={t('게시글')}
+      resetKey={`${props.id}:${session.user?.id ?? 'anonymous'}`}
+      recoveryAction={
+        <BackLink href={appRoutes.feed(props.locale)} className="text-button">
+          {t('라운지로 돌아가기')}
+        </BackLink>
+      }
+    >
+      <PostContent {...props} />
+    </ServiceErrorBoundary>
+  );
+}
+function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
   const { t } = useI18n();
   const { session } = useSession(),
     detail = useQuery({
       ...postDetailOptions(id),
       refetchOnMount: 'always',
+      throwOnError: true,
       initialData: session?.user?.id === initialViewerId ? initialDetail : undefined,
     });
   usePostRead(detail.data, session?.user?.id);
-  if (detail.isPending) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
-  if (detail.isError || !detail.data)
-    return (
-      <div className="state-box">
-        <ErrorNotice message={detail.error?.message || t('피드백 요청을 찾을 수 없어요.')} />
-        <ButtonLink variant="primary" size="md" className="button dark" href={`/${locale}`}>
-          {t('라운지로 돌아가기')}
-        </ButtonLink>
-      </div>
-    );
+  if (!detail.data) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
   const { post, answers, comments } = detail.data;
   return (
     <>

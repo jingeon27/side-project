@@ -2,7 +2,7 @@
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { Bell, CheckCheck, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import {
@@ -10,15 +10,13 @@ import {
   NotificationItem,
   useReadNotificationMutation,
 } from '@/features/notification';
-import { ErrorNotice, LoadingState } from '@/shared/ui';
+import { ErrorNotice, LoadingState, AsyncBoundary } from '@/shared/ui';
 interface INotificationsPageProps {
   locale: string;
 }
 export function NotificationsPage({ locale }: INotificationsPageProps) {
   const { t } = useI18n();
-  const { session, login, loading } = useSession(),
-    query = useInfiniteQuery(notificationListOptions(session?.user?.id, { limit: 20 })),
-    mutation = useReadNotificationMutation();
+  const { session, login, loading } = useSession();
   if (loading) return <LoadingState />;
   if (!session?.user)
     return (
@@ -34,18 +32,28 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
         </Button>
       </div>
     );
-  const items = query.data?.pages.flatMap((page) => page.items) || [];
+  return (
+    <AsyncBoundary clientOnly title={t('내 알림')} resetKey={session.user.id}>
+      <NotificationInbox userId={session.user.id} locale={locale} />
+    </AsyncBoundary>
+  );
+}
+function NotificationInbox({ userId, locale }: INotificationsPageProps & { userId: string }) {
+  const { t } = useI18n();
+  const query = useSuspenseInfiniteQuery(notificationListOptions(userId, { limit: 20 }));
+  const mutation = useReadNotificationMutation();
+  if (query.error && !query.isFetching) throw query.error;
+  const items = query.data.pages.flatMap((page) => page.items) || [];
   return (
     <>
       <div className="page-heading">
-        <span className="section-eyebrow">YOUR UPDATES</span>
         <h1>{t('새로운 시선이 도착했어요')}</h1>
         <p>{t('플레이를 함께 고민해 준 사람들의 이야기를 확인하세요.')}</p>
       </div>
       <div className="section-title-row">
         <h2>
           {t('내 알림')}
-          <span>{query.data?.pages[0]?.unreadCount || 0}</span>
+          <span>{query.data.pages[0]?.unreadCount || 0}</span>
         </h2>
         <button className="text-button" disabled={mutation.isPending} onClick={() => mutation.mutate({})}>
           <CheckCheck size={16} />
@@ -53,9 +61,7 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
         </button>
       </div>
       <ErrorNotice message={mutation.error?.message} />
-      {query.isPending && <LoadingState />}
-      {query.isError && <ErrorNotice message={query.error.message} />}
-      {!query.isPending && !query.isError && !items.length && (
+      {!items.length && (
         <div className="empty-feed">
           <span>
             <Bell size={28} />
@@ -67,18 +73,16 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
           </ButtonLink>
         </div>
       )}
-      {!query.isError && (
-        <div className="notification-list">
-          {items.map((item) => (
-            <NotificationItem
-              key={item.id}
-              notification={item}
-              href={`/${locale}/posts/${item.postId}`}
-              onRead={() => mutation.mutate({ id: item.id })}
-            />
-          ))}
-        </div>
-      )}
+      <div className="notification-list">
+        {items.map((item) => (
+          <NotificationItem
+            key={item.id}
+            notification={item}
+            href={`/${locale}/posts/${item.postId}`}
+            onRead={() => mutation.mutate({ id: item.id })}
+          />
+        ))}
+      </div>
       {query.hasNextPage && (
         <Button
           variant="secondary"

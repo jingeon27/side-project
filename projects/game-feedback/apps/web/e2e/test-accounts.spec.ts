@@ -97,7 +97,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
   await page.goto('/ko/settings');
   await selectTestAccount(page, '운영테스터');
   await page.goto(`/ko/messages?conversation=${roomId}`);
-  await expect(page.getByRole('heading', { name: '지금은 이 대화를 열 수 없어요' })).toBeVisible();
+  await expect(page.getByRole('alert', { name: '대화창 오류' })).toBeVisible();
   await expect(page.getByText(chatBody, { exact: true })).not.toBeVisible();
 });
 

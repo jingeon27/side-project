@@ -1,9 +1,11 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
+import Link from 'next/link';
+import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 import { ArrowUpRight, MessageCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
-import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { LoadingState, AsyncBoundary } from '@/shared/ui';
 import { ChatConnectionStatus } from './ChatConnectionStatus';
 import { ChatWelcome } from './ChatWelcome';
 import { ConversationPane } from './ConversationPane';
@@ -37,25 +39,41 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
     <>
       <div className="page-heading chat-page-heading">
         <div>
-          <span className="section-eyebrow">PLAYER TO PLAYER</span>
           <h1>{t('플레이로 이어지는 대화')}</h1>
           <p>{t('피드백에서 시작한 이야기를, 1:1 메시지로 이어가세요.')}</p>
         </div>
         <ChatConnectionStatus />
       </div>
       <div className={`chat-workspace ${conversationId ? 'has-conversation' : ''}`}>
-        <ServiceErrorBoundary
+        <AsyncBoundary
+          clientOnly
           title={t('대화 목록')}
           resetKey={userId}
           fallbackClassName="conversation-sidebar"
+          pendingFallback={
+            <aside className="conversation-sidebar">
+              <LoadingState text={t('대화를 불러오고 있어요')} />
+            </aside>
+          }
         >
           <ConversationSidebar userId={userId} conversationId={conversationId} locale={locale} />
-        </ServiceErrorBoundary>
+        </AsyncBoundary>
         {conversationId ? (
-          <ServiceErrorBoundary
+          <AsyncBoundary
+            clientOnly
             title={t('대화창')}
             resetKey={`${userId}:${conversationId}`}
             fallbackClassName="conversation-pane"
+            pendingFallback={
+              <section className="conversation-pane">
+                <LoadingState text={t('메시지를 불러오고 있어요')} />
+              </section>
+            }
+            recoveryAction={
+              <Link href={appRoutes.messages(locale)} replace scroll={false} className="text-button">
+                {t('대화 목록으로 돌아가기 →')}
+              </Link>
+            }
           >
             <ConversationPane
               key={`${userId}:${conversationId}`}
@@ -63,7 +81,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
               userId={userId}
               locale={locale}
             />
-          </ServiceErrorBoundary>
+          </AsyncBoundary>
         ) : (
           <ChatWelcome locale={locale} />
         )}

@@ -2,23 +2,24 @@
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import Link from 'next/link';
-import { Suspense, useEffect, useRef } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, MessageSquare, Sparkles, ArrowRight, LoaderCircle } from 'lucide-react';
+import { useCallback } from 'react';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { ArrowUpRight, Plus, MessageSquare, ArrowRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { postListOptions, PostCard } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { Deck } from '@/features/game-profile';
 import { PostComposer } from '@/widgets/post-composer';
-import { openOverlay, ErrorNotice, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { openOverlay, AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 import { useFeedFilters } from '../model/use-feed-filters';
 import { FeedHero } from './FeedHero';
 import { FeedFilters } from './FeedFilters';
 export function FeedPage({ locale }: { locale: string }) {
+  const { t } = useI18n();
   return (
-    <Suspense fallback={<LoadingState />}>
+    <AsyncBoundary title={t('피드백 라운지')}>
       <FeedContent locale={locale} />
-    </Suspense>
+    </AsyncBoundary>
   );
 }
 
@@ -26,29 +27,6 @@ function FeedContent({ locale }: { locale: string }) {
   const { t } = useI18n();
   const { session, login } = useSession();
   const { tab, q, search, handleTabChange, handleSearchChange } = useFeedFilters();
-  const feed = useInfiniteQuery(
-    postListOptions({
-      limit: 8,
-      category: 'clash-royale',
-      ...(tab === 'unanswered' ? { unanswered: 'true' } : {}),
-      ...(q ? { q } : {}),
-    }),
-  );
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = feed;
-  const sentinel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const node = sentinel.current;
-    if (!node || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-  const posts = feed.data?.pages.flatMap((page) => page.items) || [];
   function handleCompose() {
     if (!session?.user) {
       login();
@@ -78,94 +56,128 @@ function FeedContent({ locale }: { locale: string }) {
           onSearchChange={handleSearchChange}
           onCompose={handleCompose}
         />
-        {feed.isPending && (
-          <div className="feed-loading" aria-label={t('피드백 불러오는 중')}>
-            <PostCardSkeleton />
-            <PostCardSkeleton />
-            <PostCardSkeleton />
-          </div>
-        )}
-        {feed.isError && (
-          <div className="state-box">
-            <ErrorNotice message={feed.error.message} />
-            <Button
-              variant="secondary"
-              size="md"
-              type="submit"
-              className="button outline"
-              onClick={() => feed.refetch()}
-            >
-              {t('다시 불러오기')}
-            </Button>
-          </div>
-        )}
-        {!feed.isPending && !feed.isError && !posts.length && (
-          <div className="empty-feed">
-            <span>
-              <MessageSquare size={30} />
-            </span>
-            <h3>
-              {q
-                ? t('아직 일치하는 피드백이 없어요')
-                : tab === 'unanswered'
-                  ? t('지금은 모든 요청에 답변이 있어요')
-                  : t('첫 번째 이야기를 기다려요')}
-            </h3>
-            <p>
-              {q
-                ? t('다른 단어로 검색하거나 새로운 질문을 남겨보세요.')
-                : t('여러분의 플레이 고민이 누군가에게는 좋은 대화의 시작이에요.')}
-            </p>
-            <Button variant="primary" size="md" type="submit" className="button dark" onClick={handleCompose}>
-              {t('피드백 요청하기')}
-              <ArrowUpRight size={16} />
-            </Button>
-          </div>
-        )}
-        <div className="post-list">
-          {posts.map((post) => (
-            <ServiceErrorBoundary key={post.id} title={t('피드백 카드')} resetKey={post.id}>
-              <PostCard
-                post={post}
-                href={`/${locale}/posts/${post.id}`}
-                authorName={<AuthorLink author={post.author} locale={locale} />}
-                authorContent={<UserBadges author={post.author} compact />}
-                deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
-              />
-            </ServiceErrorBoundary>
-          ))}
-        </div>
-        <div ref={sentinel} className="feed-sentinel" />
-        {feed.hasNextPage && (
-          <Button
-            variant="secondary"
-            size="lg"
-            fullWidth
-            type="submit"
-            className="button outline full load-more"
-            disabled={feed.isFetchingNextPage}
-            onClick={() => feed.fetchNextPage()}
-          >
-            {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
-            {t('더 많은 피드백 보기')}
-          </Button>
-        )}
-        {posts.length > 0 && !hasNextPage && (
-          <div className="feed-end">
-            <span />
-            {t('여기까지, 모든 플레이 이야기를 만났어요')}
-            <span />
-          </div>
-        )}
-        <div className="feed-footer">
-          <Sparkles size={16} />
-          <span>{t('경험을 나누는 것만으로도, 누군가의 플레이는 달라집니다.')}</span>
-          <Link href={`/${locale}/guide`}>
-            {t('함께하는 방법')}
-            <ArrowRight size={14} />
-          </Link>
-        </div>
+        <AsyncBoundary
+          clientOnly
+          title={t('최신 피드백')}
+          resetKey={`${session?.user?.id ?? 'anonymous'}:${tab}:${q}`}
+          pendingFallback={
+            <div className="feed-loading" aria-label={t('피드백 불러오는 중')}>
+              <PostCardSkeleton />
+              <PostCardSkeleton />
+              <PostCardSkeleton />
+            </div>
+          }
+        >
+          <FeedResults locale={locale} tab={tab} q={q} onCompose={handleCompose} />
+        </AsyncBoundary>
       </section>
+    </>
+  );
+}
+function FeedResults({
+  locale,
+  tab,
+  q,
+  onCompose: handleCompose,
+}: {
+  locale: string;
+  tab: string;
+  q: string;
+  onCompose: () => void;
+}) {
+  const { t } = useI18n();
+  const feed = useSuspenseInfiniteQuery(
+    postListOptions({
+      limit: 8,
+      category: 'clash-royale',
+      ...(tab === 'unanswered' ? { unanswered: 'true' } : {}),
+      ...(q ? { q } : {}),
+    }),
+  );
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = feed;
+  const sentinel = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || !hasNextPage) return;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+        },
+        { rootMargin: '200px' },
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
+  );
+  const posts = feed.data.pages.flatMap((page) => page.items);
+  if (feed.error && !feed.isFetching) throw feed.error;
+  return (
+    <>
+      {!posts.length && (
+        <div className="empty-feed">
+          <span>
+            <MessageSquare size={30} />
+          </span>
+          <h3>
+            {q
+              ? t('아직 일치하는 피드백이 없어요')
+              : tab === 'unanswered'
+                ? t('지금은 모든 요청에 답변이 있어요')
+                : t('첫 번째 이야기를 기다려요')}
+          </h3>
+          <p>
+            {q
+              ? t('다른 단어로 검색하거나 새로운 질문을 남겨보세요.')
+              : t('여러분의 플레이 고민이 누군가에게는 좋은 대화의 시작이에요.')}
+          </p>
+          <Button variant="primary" size="md" type="submit" className="button dark" onClick={handleCompose}>
+            {t('피드백 요청하기')}
+            <ArrowUpRight size={16} />
+          </Button>
+        </div>
+      )}
+      <div className="post-list">
+        {posts.map((post) => (
+          <ServiceErrorBoundary key={post.id} title={t('피드백 카드')} resetKey={post.id}>
+            <PostCard
+              post={post}
+              href={`/${locale}/posts/${post.id}`}
+              authorName={<AuthorLink author={post.author} locale={locale} />}
+              authorContent={<UserBadges author={post.author} compact />}
+              deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
+            />
+          </ServiceErrorBoundary>
+        ))}
+      </div>
+      <div ref={sentinel} className="feed-sentinel" />
+      {feed.hasNextPage && (
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          type="submit"
+          className="button outline full load-more"
+          disabled={feed.isFetchingNextPage}
+          onClick={() => feed.fetchNextPage()}
+        >
+          {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
+          {t('더 많은 피드백 보기')}
+        </Button>
+      )}
+      {posts.length > 0 && !hasNextPage && (
+        <div className="feed-end">
+          <span />
+          {t('여기까지, 모든 플레이 이야기를 만났어요')}
+          <span />
+        </div>
+      )}
+      <div className="feed-footer">
+        <span>{t('경험을 나누는 것만으로도, 누군가의 플레이는 달라집니다.')}</span>
+        <Link href={`/${locale}/guide`}>
+          {t('함께하는 방법')}
+          <ArrowRight size={14} />
+        </Link>
+      </div>
     </>
   );
 }

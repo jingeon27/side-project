@@ -1,13 +1,13 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { createContext, useContext, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import type { Session } from '@/shared/api';
 import { useNotify } from '@/shared/ui';
 import { sessionOptions } from '../model/auth.options';
 
 interface ISessionContext {
-  session: Session | undefined;
+  session: Session;
   loading: boolean;
   login: () => void;
   notify: (text: string) => void;
@@ -25,10 +25,15 @@ export function useSession() {
   return context;
 }
 export function SessionProvider({ children, onLogin }: ISessionProviderProps) {
-  const { data: session, isPending } = useQuery({ ...sessionOptions(), refetchOnMount: 'always' });
+  const {
+    data: session,
+    error,
+    isFetching,
+  } = useSuspenseQuery({ ...sessionOptions(), refetchOnMount: 'always' });
   const notify = useNotify();
+  if (error && !isFetching) throw error;
   return (
-    <SessionContext.Provider value={{ session, loading: isPending, login: onLogin, notify }}>
+    <SessionContext.Provider value={{ session, loading: false, login: onLogin, notify }}>
       {children}
     </SessionContext.Provider>
   );

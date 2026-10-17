@@ -9,10 +9,10 @@ export function blockListOptions(userId?: string) {
   });
 }
 
-export function profileOptions(id?: string) {
+export function profileOptions(id: string) {
   return queryOptions({
-    queryKey: id ? ['public-profile', id] : ['public-profile'],
-    queryFn: id ? () => fetchPublicProfile(id) : skipToken,
+    queryKey: ['public-profile', id],
+    queryFn: () => fetchPublicProfile(id),
     staleTime: 0,
   });
 }

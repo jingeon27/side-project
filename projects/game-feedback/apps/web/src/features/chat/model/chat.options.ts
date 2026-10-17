@@ -14,13 +14,12 @@ export function chatMessageScopeOptions(userId?: string) {
   return { queryKey: [...chatScopeOptions(userId).queryKey, 'messages'] as const };
 }
 
-export function conversationListOptions(userId?: string) {
+export function conversationListOptions(userId: string) {
   return infiniteQueryOptions({
     queryKey: [...conversationScopeOptions(userId).queryKey, 'list'] as const,
-    queryFn: userId ? ({ pageParam }) => fetchConversations(pageParam) : skipToken,
+    queryFn: ({ pageParam }) => fetchConversations(pageParam),
     initialPageParam: '',
     getNextPageParam: (page) => page.nextCursor || undefined,
-    enabled: Boolean(userId),
     staleTime: 0,
   });
 }

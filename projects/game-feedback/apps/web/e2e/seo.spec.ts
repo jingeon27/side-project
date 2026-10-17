@@ -190,7 +190,7 @@ test('switching accounts cannot reseed a blocked profile from the previous serve
     await expect(page.locator('.public-profile')).toHaveCount(0);
     await expect(page.locator('.post-card')).toHaveCount(0);
     release();
-    await expect(page.getByRole('alert').filter({ hasText: '사용자를 찾을 수 없습니다.' })).toBeVisible();
+    await expect(page.getByRole('alert', { name: '플레이어 프로필 오류' })).toBeVisible();
   } finally {
     release();
     await coach.request.delete('/api/blocks/sample-user-0', { headers: { Origin: origin } });
