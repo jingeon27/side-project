@@ -99,7 +99,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         expect(toastBox && navBox && toastBox.y + toastBox.height <= navBox.y).toBe(true);
         await closeToast.click();
         await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
-        await expect(page.locator('[data-sonner-toaster]')).toBeEmpty();
+        await expect(page.locator('[data-sonner-toaster]')).toHaveCount(0);
         expect(errors).toEqual([]);
       } finally {
         expect(

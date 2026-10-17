@@ -589,6 +589,30 @@ Web 타입 검사와 Web/Mobile lint, Web Vitest 20개 파일 77개가 통과했
 
 Chromium 320/400/760/768/1440px와 WebKit 320/400px에서 한국어/영어/일본어 21개 조합의 직접 분류 이동, 현재 칩 전체 표시, 한 줄 스크롤, 지구본과 44px select/읽을 수 있는 옵션, 고정 헤더, 가로 넘침과 pageerror 0개를 확인했다. 개발 글/메시지를 등록하지 않았고 실제 OS 선택창/키보드와 실기기 검증은 포함하지 않는다.
 
+## 전용 글쓰기, 채팅 영역과 화면 전환
+
+글 등록은 /:locale/write 전용 페이지다. 공통 헤더/사이드바/푸터와 모바일 하단 메뉴를 숨기고 뒤로 가기와 글쓰기 제목, 작성 폼만 둔다. 게임과 기본 분류를 공유 bridge URL 계약으로 전달하고 분류를 바꿔도 입력한 내용을 보존한다. PostComposerForm이 실제 폼과 mutation을 소유하며 기존 PostComposer는 수정 모달만 조합한다. 성공 시 상세로 replace해 완료한 편집기를 뒤로 가기로 다시 열지 않는다. 실패 시 본문/미디어 초안은 보존한다. Web과 네이티브의 일반 복귀는 진입 경로, 직접 진입은 논리적 상위 분류를 사용한다. 따뜻한 딥링크에서 분류가 바뀌면 폼의 계정/언어/분류/게임 key도 바꿔 이전 기본값이 남지 않게 했다.
+
+본문의 임의 20자 제한을 서버 Zod 계약과 Web 폼에서 제거했다. 한 글자로 등록/수정할 수 있으며 공백뿐인 본문과 10,000자 초과는 계속 거부한다. OpenAPI/Orval로 SDK를 재생성했고 생성 코드를 손으로 바꾸지 않았다. API의 짧은 본문 등록/수정/거부 통합 검사를 추가했다.
+
+최상위 메뉴로 앞으로 이동하면 스크롤을 상단으로 초기화한다. 뒤로 가기, 같은 화면의 언어 전환과 해시는 기존 복귀/앵커 동작을 보존한다. 채팅 목록의 행/선택 상태와 목록 헤더, 메시지 이력, 대화 헤더와 입력 영역을 배경/구분선으로 나눈다. 메시지 이력은 중립 배경, 헤더/입력은 surface 토큰을 쓴다. 작성 버튼과 선택 칩은 공통 주황 accent, 실제 답변 상태는 의미에 맞는 공통 색을 사용한다.
+
+## 공통 shadcn Base UI, 다크 모드와 오류 복구
+
+공식 shadcn base-nova Select와 Sonner 소스/라이선스를 packages/design-system에서 관리한다. Base UI Select는 키보드/포커스 복귀/포털과 44px 옵션을 제공하며 언어/화면 모드 설정에 연결한다. 기존 Globe2 아이콘을 유지하고 언어 변경 시 화면/검색/해시와 자동 언어 설정을 보존한다. WebView의 뒤로 가기는 열린 Select를 먼저 닫고 경로는 유지한다. 등록 폼의 native select는 기존 shadcn NativeSelect를 사용한다.
+
+프로필에서 기기 설정/라이트/다크 모드를 선택하고 gf_theme 쿠키에 저장한다. useSyncExternalStore로 외부 설정을 구독하고 서버 html의 data-theme에 쿠키를 반영한다. 공통 팔레트는 data-theme이 있는 앱에만 적용해 Photo Contest의 기존 기본 모드를 보존한다. 시스템 모드는 CSS color-scheme/light-dark로 OS 변경을 따르며 명시한 모드는 기기 설정보다 우선한다. Quill/팝업/입력/채팅/토스트도 같은 의미 토큰을 사용하고 오렌지 위 글자는 on-accent를 사용한다.
+
+오류 화면과 문의 페이지는 사용자가 지정한 jingeon27@gmail.com으로 연결한다. 환경변수의 공개 주소를 Zod로 검사하고 잘못된 설정은 실제 기본 주소로 되돌린다. 오류 payload나 사용자 데이터를 mailto에 넣지 않는다. ServiceErrorFallback의 복구는 mutationOptions/useMutation이 대기/실패/재시도를 소유한다. 서비스 QueryClientProvider 바깥에서 발생하는 초기 연결 오류도 복구할 수 있도록 폴백에 별도 QueryClient를 둔다. 실패는 영역 안에 유지하고 재시도 중 중복 클릭을 막는다.
+
+커스텀 토스트의 상태/타이머/모션을 Sonner로 교체했다. 공통 Toaster가 색/폰트/모서리/닫기 터치 영역을 맡고 앱은 번역과 4.5초 표시, 최신 알림 하나, 위치만 설정한다. 일반 화면은 하단 메뉴 위, 대화방은 헤더 아래에 표시해 입력창을 피한다. Sonner는 공통 UI 패키지에만 의존성을 선언한다.
+
+## 인증 흐름과 채팅 SSE의 책임 분리
+
+LoginDialog는 로그인 수단 조합만 담당한다. GoogleLoginForm은 웹/네이티브 Google 진입, DemoLoginSection은 고정 테스트 계정과 데모 가입, OnboardingDialog는 가입 대기 세션의 닉네임/동의 완료를 담당한다. 서로 다른 mutation을 조건 분기 하나로 다루지 않는다. 공유 AccountSetupForm은 폼 검증과 필드만 소유한다. AuthOnboarding이 전용 필수 모달을 열고 Escape/바깥 클릭/네이티브 뒤로 가기로 필수 가입을 건너뛰지 못하게 한다.
+
+채팅 연결은 @microsoft/fetch-event-source 2.0.1로 전환했다. ChatRealtimeConnection이 snapshot/subscribe와 연결 수명을 소유하고 useChatRealtime이 useSyncExternalStore로 구독한다. 메시지는 인증된 REST와 TanStack Query 캐시를 단일 출처로 유지한다. 구독 시작 시 연결하고 마지막 해제/계정 변경 때 AbortController로 스트림과 DOM 리스너를 정리한다. StrictMode 재구독과 손님 상태에서도 연결이 중복되지 않는다. 쿠키 fetch와 content-type 검증, 401/403 세션 갱신 후 재시도 중단, 1초에서 30초까지 제한된 backoff와 최대 60초 Retry-After를 처리한다. 오프라인에서 중단하고 온라인/전경 복귀에 연결하며, 재접속 시 REST를 갱신해 놓친 메시지를 복구한다. 잘못된 이벤트는 Zod 검사로 버리고 다른 계정 캐시를 갱신하지 않는다. API의 SSE/REST 프로토콜은 유지했다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
@@ -611,3 +635,23 @@ Web FSD 작업의 `yarn.lock` 변경은 이미 저장소에서 사용하는 over
 | 모바일 운영        | dev client·실기기, 실제 Google 앱 복귀, 서명·스토어 검증         |
 | 공개 배포          | 운영 DB·HTTPS·비밀·출구 IP·모니터링·관리자 권한 검증             |
 | 글로벌·후속 단계   | 영어·일본어 완성, 번역·분석·평판·팔로우·추가 게임                |
+
+## 이번 공통 파일 변경 이유
+
+사용자가 두 서비스 공통 스타일과 shadcn + Base UI를 요청해 packages/design-system에 Select/Sonner와 선택형 다크 팔레트, on-accent/popover 토큰을 추가했다. 앱의 라우팅/설정 저장은 공통 패키지에 옮기지 않았다. 루트 yarn.lock은 공통 UI의 Sonner 2.0.8과 Game Feedback Web의 @microsoft/fetch-event-source 2.0.1 연결/고정만 추가하며 기존 의존성의 해석을 변경하지 않는다. 공개 주소만 .env.example에 기록하고 세션/인증정보/테스트 자료/스크린샷은 커밋하지 않는다.
+
+## 최신 develop 충돌 해소
+
+최신 develop(d3e014e)의 Photo Contest/블로그 변경을 기능 브랜치에 merge했다. develop/main을 덮어쓰거나 다른 작업 브랜치를 변경하지 않았다. Photo Contest의 AGENTS와 스타일 지침은 최신 배포/1440px 레이아웃 정책과 공통 패키지 사용을 함께 보존했다. cn은 공통 re-export를 유지하고 최신 wide/feed 토큰을 공통 merge 설정에 반영했다. 공통 TextField/TextArea는 labelSuffix를 받아 Photo Contest가 새 필수/선택 표시를 전달하며 required를 실제 textarea/Field.Control에 연결한다. 최신 Photo Contest의 기능 소스/GraphQL/배포 변경을 보존하고 인증·운영 DB·개발 서버에는 조치를 하지 않았다.
+
+## 최종 검증 기록
+
+Node 24.19.0, Yarn 4.17.0에서 immutable 설치와 전체 format:check, Web/Mobile 타입 검사와 lint, 공통 디자인 시스템 check가 통과했다. API Vitest+Supertest 11개 파일 76개, SDK 3개 파일 35개, Web Vitest 23개 파일 89개, Mobile 10개 파일 39개가 통과했다. API/SDK는 본문 최소 제한 변경 후, Web/Mobile은 전용 작성 경로와 인증/SSE 변경 후 검사했다. 최신 develop merge 후 공통 UI 7개 파일 14개와 Photo Contest Web 타입/lint 및 59개 파일 264개가 통과했다. API build와 Web production build(.next/service-ui-build)가 통과했다.
+
+Web Playwright 전체 65개를 실행해 60개가 통과했다. 실패한 작성 2개는 실제 분류 문맥 query를 기대값에 추가했고, 기존 피드백 1개는 Sonner의 알림 선택자로 변경했다. 테마 2개는 Select.Icon 기본 문자가 SVG 자식에 들어가지 않도록 명시한 아이콘 자식을 사용했다. 보완 후 작성/피드백/헤더/언어/테마 관련 14개가 통과했다. Sonner 종료 후 호스트 제거에 대한 테스트 기대값을 실제 라이브러리 동작에 맞춰 일반/reduced motion 2개도 통과했다(18.7초). 모바일 host 전체 28개가 Android Chromium/iOS WebKit에서 통과했고, 최종 Select 수정 후 언어 변경/드롭다운 우선 뒤로 가기 4개도 통과했다(41.8초). 본문 1글자 등록/실패 초안/복귀, SSE 오프라인 복귀 누락 메시지/로그아웃 중단, 계정 전환, 미디어, 채팅 스크롤, 오류 mailto, reduced motion과 조작 영역도 포함한다.
+
+Chromium 320/400/1440px와 WebKit 400px의 다크 작성/채팅 화면을 실제 UI 링크로 이동하며 확인했다. 4개 조합에서 헤더 숨김, 입력 글자/주황 버튼 대비, 채팅 영역 구분과 가로 넘침, pageerror 0개를 확인했고 글/메시지 전송은 0개였다.
+
+자동 검사는 55444의 격리된 gf_test_ 스키마와 가짜 외부 제공자를 사용했다. WebKit 수동 검사의 전체 문서 전환/페이지 종료에서는 중단된 fetch 네트워크 오류가 기록되어 UI 라우팅 확인과 구분했다. 실제 Google/Supercell, 기기 OS와 실기기·스토어 배포를 검증한 것으로 표현하지 않는다.
+
+최종 `@side/game-feedback check` 집계도 통과했고 OpenAPI/Orval 재생성 후 추적 SDK diff는 0개다. 소유 테스트 DB를 종료하고 개발 Web 3300/API 4300의 HTTP 200을 확인했다.

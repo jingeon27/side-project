@@ -38,7 +38,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm"`, `fullWidth`, `loading`. 진행 중 재클릭을 막으면서 포커스를 유지한다. `buttonVariants`와 `IButtonProps`도 공개한다.
 - `ButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다. 이동에는 링크, 제출·조작에는 버튼을 사용한다.
 - `IconButton`: `label`이 필수이며 `variant="ghost|soft|brand"`를 지원한다.
-- `TextField`, `TextArea`: `label`, `description`, `error`, native input/textarea props와 ref를 받는다. RHF의 `{...register('name')}`를 그대로 전달한다.
+- `TextField`, `TextArea`: `label`, `description`, `error`, `labelSuffix`, native input/textarea props와 ref를 받는다. labelSuffix는 앱이 제공하는 필수/선택 등 보조 표시다. RHF의 `{...register('name')}`를 그대로 전달한다.
 - `FormField`: 기존 native `<label>` 폼용 `label`, `children`, `hint`, `error`. 직접 자식인 native 입력의 ref를 유지하며 도움말·오류를 연결한다. 단독 native 입력은 `.ds-input`, `.ds-textarea`, `.ds-select`로 같은 공통 스타일을 사용할 수 있다.
 - `Badge`, `Avatar`, `Spinner`: 상태 글자·이름 fallback·진행 표시를 제공한다. `Avatar`는 이름 옆 장식이며 스크린 리더에서 숨긴다. `Spinner`에 `label`을 주면 진행 상태로 읽힌다.
 - `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
