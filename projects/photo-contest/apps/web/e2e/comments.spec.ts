@@ -33,11 +33,26 @@ test(
     await expect(sheet.getByText('댓글을 입력해 주세요.')).toBeVisible();
     const input = sheet.getByRole('textbox', { name: '댓글', exact: true });
     await expect(input).toBeFocused();
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('화면 크기가 있어야 한다');
+    await page.setViewportSize({ width: viewport.width, height: 500 });
     await input.fill('한참 웃었어요\n이 순간은 저장!');
+    await expect(input).toBeInViewport();
+    await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
     await sheet.getByRole('button', { name: '댓글 올리기' }).click();
     await expect(list.getByRole('listitem')).toHaveCount(2);
     await expect(list.getByRole('listitem').first()).toContainText('이 순간은 저장!');
     await expect(input).toHaveValue('');
+    await sheet.locator('[data-bottom-sheet-content]').evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect(input).toBeInViewport();
+    await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
+    expect(await sheet.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.setViewportSize(viewport);
+    await sheet.locator('[data-bottom-sheet-content]').evaluate((element) => {
+      element.scrollTop = 0;
+    });
     await mkdir('.data/screens', { recursive: true });
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments.png` });
     for (const nickname of ['댓글 관리자', '댓글 친구']) {
