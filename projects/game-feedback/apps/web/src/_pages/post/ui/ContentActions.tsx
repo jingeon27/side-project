@@ -5,12 +5,11 @@ import { Flag, Pencil, Trash2, ShieldBan } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { StartChatLink } from '@/widgets/start-chat';
 import { PostComposer } from '@/widgets/post-composer';
-import { BlockUserDialog } from '@/widgets/moderation';
+import { BlockUserDialog, ReportDialog } from '@/widgets/moderation';
 import type { Author, Post } from '@/shared/api';
 import { openOverlay, useNotify } from '@/shared/ui';
 import { ContentEditDialog } from './ContentEditDialog';
 import { ContentDeleteDialog } from './ContentDeleteDialog';
-import { ReportDialog } from './ReportDialog';
 interface IContentActionsProps {
   type: 'POST' | 'ANSWER' | 'COMMENT';
   id: string;

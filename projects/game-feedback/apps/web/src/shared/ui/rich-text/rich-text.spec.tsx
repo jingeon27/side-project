@@ -29,6 +29,33 @@ describe('rich text contract and safe server rendering', () => {
     expect(html.match(/<li>/g)).toHaveLength(2);
     expect(richTextToPlainText(document)).toBe('Formatted title\nBold text and a link\nFirst\nSecond');
   });
+  it('renders uploaded images and native video in public HTML and rejects external and data embeds', () => {
+    const document = RichTextDocumentSchema.parse({
+      ops: [
+        { insert: '사진과 동영상 설명' },
+        { insert: { image: '/api/post-media/image-1' } },
+        { insert: '\n' },
+        { insert: { video: '/api/post-media/video-1' } },
+        { insert: '\n' },
+      ],
+    });
+    const html = renderToStaticMarkup(<RichTextBody body="" document={document} />);
+    expect(html).toContain('src="/api/post-media/image-1"');
+    expect(html).toContain('<video');
+    expect(html).toContain('controls=""');
+    expect(html).not.toContain('<iframe');
+    expect(richTextToPlainText(document)).toBe('사진과 동영상 설명');
+    for (const url of [
+      'javascript:alert(1)',
+      'data:image/png;base64,test',
+      'https://example.com/file.png',
+      '/api/conversations/private/attachments/file-1',
+    ]) {
+      expect(
+        RichTextDocumentSchema.safeParse({ ops: [{ insert: { image: url } }, { insert: '\n' }] }).success,
+      ).toBe(false);
+    }
+  });
   it('renders pasted HTML as text and rejects executable URLs and object embeds', () => {
     const document = RichTextDocumentSchema.parse({ ops: [{ insert: '<img src=x onerror=alert(1)>\n' }] });
     const html = renderToStaticMarkup(<RichTextBody body="" document={document} />);

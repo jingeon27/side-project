@@ -7,7 +7,8 @@ export const GameSlugSchema = z
   .regex(/^[a-z0-9-]+$/)
   .max(40);
 export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings' | 'guide';
-export type TAppScreen = TAppTab | 'post' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact';
+export type TAppScreen =
+  TAppTab | 'post' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact' | 'admin';
 export interface IAppRoute {
   path: string;
   pathname: string;
@@ -54,6 +55,8 @@ export const appRoutes = {
   conversation: (locale: string, id: string) => `${root(locale)}/messages/${RouteIdSchema.parse(id)}`,
   notifications: (locale: string) => `${root(locale)}/notifications`,
   settings: (locale: string) => `${root(locale)}/settings`,
+  admin: (locale: string) => `${root(locale)}/admin`,
+  contact: (locale: string) => `${root(locale)}/contact`,
   guide: (locale: string) => `${root(locale)}/guide`,
 };
 function readQuery(search: string): Record<string, string> | null {
@@ -78,7 +81,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const match =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(boards|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(boards|messages|notifications|settings|guide|terms|privacy|contact|admin))?$/.exec(
       pathname,
     );
   if (!match) return null;
@@ -150,8 +153,13 @@ export function resolveAppRoute(path: string): IAppRoute | null {
       pathname,
       locale,
       screen,
-      tab: ['settings', 'notifications', 'guide'].includes(screen) ? (screen as TAppTab) : 'guide',
-      parent: home,
+      tab:
+        screen === 'admin' || screen === 'contact'
+          ? 'settings'
+          : ['settings', 'notifications', 'guide'].includes(screen)
+            ? (screen as TAppTab)
+            : 'guide',
+      parent: screen === 'admin' ? appRoutes.settings(locale) : home,
     };
   }
   const q = query.q?.trim();

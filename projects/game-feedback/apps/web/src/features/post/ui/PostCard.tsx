@@ -3,7 +3,7 @@ import { useI18n } from '@/shared/i18n';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Trophy, ArrowUpRight, MessageSquare } from 'lucide-react';
+import { ArrowUpRight, MessageSquare } from 'lucide-react';
 import type { Post } from '@/shared/api';
 import { Avatar } from '@/shared/ui';
 import { timeAgo } from '@/shared/lib/date';
@@ -45,16 +45,6 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
       <p className="post-excerpt">{post.body}</p>
       {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
-      {post.gameProfile && (
-        <div className="post-game-info">
-          <div className="post-game-stat">
-            <Trophy size={14} />
-            <span>{post.gameProfile.trophies.toLocaleString()}</span>
-            <span className="info-divider" />
-            <span>{post.gameProfile.arena}</span>
-          </div>
-        </div>
-      )}
       <div className="post-bottom">
         <span className="post-author">
           <Avatar name={post.author.nickname} size="small" />

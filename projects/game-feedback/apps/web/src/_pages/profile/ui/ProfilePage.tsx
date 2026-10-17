@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
 import { profileOptions, UserBadges, AuthorLink } from '@/features/user';
 import { userPostListOptions, PostCard } from '@/features/post';
+import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
 import type { PublicProfile, PostList } from '@/shared/api';
 import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
@@ -90,6 +91,7 @@ function ProfileContent({
           </p>
         )}
         {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
+        <ReportUserButton userId={author.id} />
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>
         <ProfilePosts

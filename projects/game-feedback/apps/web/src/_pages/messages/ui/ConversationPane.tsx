@@ -71,6 +71,9 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         <Avatar name={conversation.peer.nickname} />
         <div>
           <h2>{conversation.peer.nickname}</h2>
+          {conversation.supportTopic && (
+            <p>{t(conversation.supportTopic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자 문의')}</p>
+          )}
           <UserBadges author={conversation.peer} compact />
           <p>{t('플레이어와 나누는 1:1 대화')}</p>
         </div>

@@ -2,6 +2,22 @@ import { test, expect } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 import { appRoutes } from '@game-feedback/bridge';
 
+test('an admin deep link opens the protected management page and native back returns to account settings', async ({
+  page,
+  nativeHost,
+}) => {
+  await page.request.post('/api/auth/test-login', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-test-admin' },
+  });
+  await page.goto('/ko/admin');
+  await expect(page.getByRole('heading', { name: '운영 관리', exact: true })).toBeVisible();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/admin');
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
+  await expect(page.getByRole('link', { name: '운영 관리', exact: true })).toBeVisible();
+});
+
 test('cold detail back uses the parent and reports root exit without replaying tab history', async ({
   page,
   nativeHost,
@@ -71,7 +87,7 @@ test('coaching and general-board deep links preserve the game and return to its 
       board: 'COACHING',
       title: '기본 운영을 알려줄 코치를 구해요',
       body: '운영을 차근차근 알려주실 코치를 구해요. 유료 레슨의 일정은 채팅으로 상담해요.',
-      coaching: { role: 'STUDENT', hourlyRate: 30000 },
+      coaching: { role: 'STUDENT', pricing: { type: 'HOURLY', amount: 30000 } },
     },
   });
   expect(created.ok()).toBe(true);

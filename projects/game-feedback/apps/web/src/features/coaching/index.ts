@@ -1,2 +1,2 @@
 export { CoachingSummary } from './ui/CoachingSummary';
-export { coachingRoles } from './model/coaching';
+export { coachingRoles, coachingPricingTypes } from './model/coaching';

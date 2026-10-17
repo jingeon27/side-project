@@ -1,5 +1,5 @@
 import type Quill from 'quill';
-import { RichTextDocumentSchema, type TRichTextDocument } from '@game-feedback/contracts';
+import { RichTextDocumentSchema, type TRichTextDocument, type TPostMedia } from '@game-feedback/contracts';
 
 export interface IEditorValue {
   body: string;
@@ -14,6 +14,7 @@ export interface IQuillOptions {
   labels: Record<string, string>;
   onChange: (value: IEditorValue) => void;
   onError: (error: Error) => void;
+  onUploadMedia?: (file: File) => Promise<TPostMedia>;
 }
 class QuillSession {
   private readonly lifetime = new AbortController();
@@ -30,20 +31,37 @@ class QuillSession {
   }
   private async start() {
     const { default: Editor } = await import('quill');
+    const { registerPostMediaFormats } = await import('./quill-media');
+    registerPostMediaFormats(Editor);
     if (this.lifetime.signal.aborted) return;
     const host = document.createElement('div');
     this.root.append(host);
     this.editor = new Editor(host, {
       theme: 'snow',
       bounds: this.root,
-      formats: ['bold', 'italic', 'underline', 'strike', 'header', 'list', 'blockquote', 'link'],
+      formats: [
+        'bold',
+        'italic',
+        'underline',
+        'strike',
+        'header',
+        'list',
+        'blockquote',
+        'link',
+        'image',
+        'video',
+      ],
       modules: {
-        toolbar: [
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ header: 2 }, { header: 3 }],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          ['blockquote', 'link', 'clean'],
-        ],
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ header: 2 }, { header: 3 }],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['blockquote', 'link', 'clean'],
+            ...(this.options.onUploadMedia ? [['image', 'video']] : []),
+          ],
+          handlers: { image: () => this.pickMedia('image'), video: () => this.pickMedia('video') },
+        },
       },
     });
     this.editor.root.setAttribute('role', 'textbox');
@@ -79,6 +97,36 @@ class QuillSession {
     if (!this.options.document) this.editor.setText(this.options.body, 'silent');
     this.editor.enable(!this.disabled);
     this.editor.on('text-change', this.change);
+  }
+  private pickMedia(kind: 'image' | 'video') {
+    if (this.disabled || !this.editor || !this.options.onUploadMedia) return;
+    const index = this.editor.getSelection(true)?.index ?? this.editor.getLength() - 1;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = kind === 'image' ? 'image/jpeg,image/png,image/gif,image/webp' : 'video/mp4,video/webm';
+    input.hidden = true;
+    this.root.append(input);
+    input.addEventListener('cancel', () => input.remove(), { once: true, signal: this.lifetime.signal });
+    input.addEventListener(
+      'change',
+      () => {
+        const file = input.files?.[0];
+        input.remove();
+        if (!file) return;
+        void this.options
+          .onUploadMedia?.(file)
+          .then((media) => {
+            if (!this.editor || this.lifetime.signal.aborted) return;
+            this.editor.insertEmbed(index, media.kind === 'IMAGE' ? 'image' : 'video', media.url, 'api');
+            this.editor.setSelection(index + 1, 0, 'silent');
+          })
+          .catch(() => {
+            /* The owning upload mutation preserves the draft and displays its error. */
+          });
+      },
+      { once: true, signal: this.lifetime.signal },
+    );
+    input.click();
   }
   private change = () => {
     if (!this.editor || this.lifetime.signal.aborted) return;

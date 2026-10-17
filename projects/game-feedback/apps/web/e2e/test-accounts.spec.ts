@@ -45,7 +45,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
     supercellTag: '#2PP',
     isTestAccount: true,
   });
-  expect(post.gameProfile).toMatchObject({ playerTag: '#2PP', verification: 'UNVERIFIED', source: 'DEMO' });
+  expect(post.gameProfile).toBeNull();
   await expect(page).toHaveURL(/\/ko\/posts\/[^/?]+$/);
   const postUrl = page.url();
   const comment = `준비된 계정으로 직접 남긴 댓글입니다. ${suffix}`;
@@ -108,10 +108,10 @@ test('a registered Supercell tag is saved on the user and survives account switc
   await page.getByRole('button', { name: '로그인 / 시작하기', exact: true }).click();
   await selectTestAccount(page, '새벽의호그');
   await page.goto('/ko/settings');
-  await page.getByRole('button', { name: '프로필 연결', exact: true }).click();
+  await page.getByRole('button', { name: '계정 등록', exact: true }).click();
   await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('p0lyq');
   await page.getByRole('button', { name: '조회', exact: true }).click();
-  await page.getByRole('button', { name: '이 프로필 연결하기', exact: true }).click();
+  await page.getByRole('button', { name: '내 계정에 등록', exact: true }).click();
   await expect(page.locator('.settings-profile')).toContainText('#P0LYQ');
   await selectTestAccount(page, '덱연구소');
   await selectTestAccount(page, '새벽의호그');

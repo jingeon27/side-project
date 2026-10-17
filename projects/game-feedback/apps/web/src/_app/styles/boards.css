@@ -17,6 +17,10 @@
     margin-block: 16px;
     font-size: var(--text-caption);
   }
+  .coaching-summary > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .board-heading {
     display: flex;
     justify-content: space-between;

@@ -5,7 +5,7 @@ import { Flag, LoaderCircle } from 'lucide-react';
 import { ReportInputSchema, type ReportInput } from '@game-feedback/contracts';
 import { ErrorNotice, Field, Modal, useNotify } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
-import { useReportMutation } from '@/features/moderation';
+import { useReportMutation, reportReasons } from '@/features/moderation';
 interface IReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,11 +41,11 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
       >
         <Field label={t('신고 사유')}>
           <NativeSelect {...form.register('reason')}>
-            <NativeSelectOption value="SPAM">{t('스팸 / 광고')}</NativeSelectOption>
-            <NativeSelectOption value="HARASSMENT">{t('욕설 / 괴롭힘')}</NativeSelectOption>
-            <NativeSelectOption value="PERSONAL_INFORMATION">{t('개인정보 노출')}</NativeSelectOption>
-            <NativeSelectOption value="IMPERSONATION">{t('사칭')}</NativeSelectOption>
-            <NativeSelectOption value="OTHER">{t('기타')}</NativeSelectOption>
+            {reportReasons.map((item) => (
+              <NativeSelectOption key={item.value} value={item.value}>
+                {t(item.label)}
+              </NativeSelectOption>
+            ))}
           </NativeSelect>
         </Field>
         <Field label={t('추가 설명 (선택)')}>

@@ -5,18 +5,15 @@ import { useCallback, type ChangeEvent } from 'react';
 import { useWatch } from 'react-hook-form';
 import type { TRichTextDocument, TBoardKind } from '@game-feedback/contracts';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { LoaderCircle, ArrowUpRight, Plus, Info } from 'lucide-react';
-import { coachingRoles } from '@/features/coaching';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { uploadPostMediaMutationOptions } from '@/features/post-media';
+import { LoaderCircle, ArrowUpRight } from 'lucide-react';
 import { gameBoards } from '@/features/board';
 import { categoryOptions } from '@/features/category';
 import { useSession } from '@/features/auth';
 import { useCreatePostMutation, useUpdatePostMutation } from '@/features/post';
-import { gameAccountListOptions } from '@/features/game-profile';
-import { ConnectProfile } from '@/widgets/game-profile';
-import type { Category, GameProfile, Post } from '@/shared/api';
+import type { Category, Post } from '@/shared/api';
 import {
-  openOverlay,
   Modal,
   Field,
   ErrorNotice,
@@ -27,6 +24,7 @@ import {
 } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { postComposerSchema } from '../model/post-composer.schema';
+import { CoachingFields } from './CoachingFields';
 import { appRoutes } from '@game-feedback/bridge';
 interface IPostComposerProps {
   open: boolean;
@@ -39,10 +37,8 @@ interface IPostComposerProps {
 export function PostComposer({ open, onOpenChange, locale, post, board, categoryId }: IPostComposerProps) {
   const { t } = useI18n();
   const activeBoard = post?.board ?? board;
-  const { session } = useSession(),
-    categories = useQuery(categoryOptions()),
-    accounts = useQuery(gameAccountListOptions(session?.user?.id));
-  const isLoading = categories.isPending || accounts.isPending;
+  const categories = useQuery(categoryOptions());
+  const isLoading = categories.isPending;
   return (
     <Modal
       open={open}
@@ -53,13 +49,12 @@ export function PostComposer({ open, onOpenChange, locale, post, board, category
       description={t('분류에 맞는 글을 작성하고 플레이어와 이야기해보세요.')}
     >
       {isLoading ? (
-        <LoadingState text={t('작성할 프로필을 준비하고 있어요')} />
-      ) : categories.isError || accounts.isError ? (
-        <ErrorNotice message={categories.error?.message || accounts.error?.message} />
+        <LoadingState text={t('글쓰기를 준비하고 있어요')} />
+      ) : categories.isError ? (
+        <ErrorNotice message={categories.error?.message} />
       ) : (
         <PostComposerForm
           categories={categories.data || []}
-          accounts={accounts.data || []}
           locale={locale}
           post={post}
           board={activeBoard ?? 'FEEDBACK'}
@@ -73,7 +68,6 @@ export function PostComposer({ open, onOpenChange, locale, post, board, category
 }
 interface IPostComposerFormProps {
   categories: Category[];
-  accounts: GameProfile[];
   locale: string;
   post?: Post;
   board: TBoardKind;
@@ -83,7 +77,6 @@ interface IPostComposerFormProps {
 }
 function PostComposerForm({
   categories,
-  accounts,
   locale,
   post,
   board: initialBoard,
@@ -92,6 +85,10 @@ function PostComposerForm({
   onOpenChange,
 }: IPostComposerFormProps) {
   const { t } = useI18n();
+  const { session } = useSession();
+  const upload = useMutation(uploadPostMediaMutationOptions(session?.user?.id));
+  const { mutateAsync: uploadMedia } = upload;
+  const handleUploadMedia = useCallback((file: File) => uploadMedia(file), [uploadMedia]);
   const router = useRouter(),
     notify = useNotify(),
     create = useCreatePostMutation(),
@@ -103,18 +100,12 @@ function PostComposerForm({
       document: post?.document ?? undefined,
       editorValid: true,
       board: post?.board ?? initialBoard,
-      coaching: post?.coaching ?? { role: 'COACH', hourlyRate: null },
+      coaching: post?.coaching ?? { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
       friendSale: post?.friendSale ?? { price: null },
       categoryId: post?.categoryId || initialCategoryId || categories[0]?.id || '',
-      ...(post?.gameProfile?.playerTag || accounts[0]?.playerTag
-        ? { playerTag: post?.gameProfile?.playerTag || accounts[0]?.playerTag }
-        : {}),
     },
   });
   const board = useWatch({ control: form.control, name: 'board' }) ?? initialBoard;
-  const coachingRole = useWatch({ control: form.control, name: 'coaching.role' });
-  const categoryId = useWatch({ control: form.control, name: 'categoryId' });
-  const isClashRoyale = categories.find((item) => item.id === categoryId)?.slug === 'clash-royale';
   const body = useWatch({ control: form.control, name: 'body' });
   const document = useWatch({ control: form.control, name: 'document' });
   const { setValue } = form;
@@ -126,18 +117,17 @@ function PostComposerForm({
     },
     [setValue],
   );
-  const mutationError = create.error || update.error,
-    isPending = create.isPending || update.isPending;
+  const mutationError = create.error || update.error || upload.error,
+    isPending = create.isPending || update.isPending || upload.isPending;
   return (
     <form
       className="form-stack"
-      onSubmit={form.handleSubmit(async ({ editorValid, coaching, friendSale, playerTag, ...values }) => {
+      onSubmit={form.handleSubmit(async ({ editorValid, coaching, friendSale, ...values }) => {
         if (!editorValid) return;
         const input = {
           ...values,
           ...(board === 'COACHING' ? { coaching } : {}),
           ...(board === 'FRIEND_SALE' ? { friendSale } : {}),
-          ...(isClashRoyale && playerTag ? { playerTag } : {}),
         };
         try {
           const result = post
@@ -185,7 +175,11 @@ function PostComposerForm({
             {...form.register('board', {
               onChange: (event: ChangeEvent<HTMLSelectElement>) => {
                 if (event.target.value !== 'COACHING')
-                  form.setValue('coaching', { role: 'COACH', hourlyRate: null }, { shouldValidate: true });
+                  form.setValue(
+                    'coaching',
+                    { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
+                    { shouldValidate: true },
+                  );
                 if (event.target.value !== 'FRIEND_SALE')
                   form.setValue('friendSale', { price: null }, { shouldValidate: true });
               },
@@ -259,36 +253,7 @@ function PostComposerForm({
           )}
         </Field>
       )}
-      {board === 'COACHING' && (
-        <>
-          <Field label={t('모집 유형')}>
-            <NativeSelect {...form.register('coaching.role')}>
-              {coachingRoles.map((role) => (
-                <NativeSelectOption key={role.value} value={role.value}>
-                  {t(role.label)}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Field label={t(coachingRole === 'STUDENT' ? '시간당 희망 수강료 (원)' : '시간당 수강료 (원)')}>
-            <Input
-              type="number"
-              min={1}
-              max={10000000}
-              step={1}
-              placeholder={t('수강료 협의')}
-              {...form.register('coaching.hourlyRate', {
-                setValueAs: (value: unknown) =>
-                  value === '' || value === null || value === undefined ? null : Number(value),
-              })}
-            />
-            <small>{t('비워두면 채팅으로 수강료를 협의해요.')}</small>
-            {form.formState.errors.coaching && (
-              <span className="field-error">{t('수강료를 1~10,000,000원으로 입력해주세요.')}</span>
-            )}
-          </Field>
-        </>
-      )}
+      {board === 'COACHING' && <CoachingFields form={form} />}
       <div className="rich-text-field">
         <span>{t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}</span>
         <ServiceErrorBoundary title={t('본문 편집기')}>
@@ -297,6 +262,7 @@ function PostComposerForm({
             body={body}
             document={document}
             onChange={handleBodyChange}
+            onUploadMedia={handleUploadMedia}
             disabled={isPending}
             label={t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}
           />
@@ -318,60 +284,6 @@ function PostComposerForm({
             t('서식이 너무 복잡하거나 지원되지 않아요. 서식을 줄여주세요.')}
         </span>
       </div>
-      {!post && isClashRoyale && (
-        <div className="composer-profile">
-          <div className="row-between">
-            <strong>{t('내 게임 프로필')}</strong>
-            <span className="small muted">{t('요청 시점의 프로필을 첨부해요')}</span>
-          </div>
-          {accounts.length ? (
-            <NativeSelect {...form.register('playerTag')}>
-              {accounts.map((account) => (
-                <NativeSelectOption key={account.playerTag} value={account.playerTag}>
-                  {account.name} ({account.playerTag})
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          ) : (
-            <Button
-              variant="secondary"
-              size="lg"
-              fullWidth
-              className="button outline full"
-              type="button"
-              onClick={() =>
-                openOverlay(({ isOpen, close, unmount }) => (
-                  <Modal
-                    open={isOpen}
-                    onOpenChange={(next) => {
-                      if (next) return;
-                      close();
-                      unmount();
-                    }}
-                    title={t('게임 프로필 연결')}
-                    description={t('플레이어 태그로 프로필을 조회하고 확인해주세요.')}
-                  >
-                    <ConnectProfile
-                      onSaved={(saved) => {
-                        form.setValue('playerTag', saved.playerTag);
-                        close();
-                        unmount();
-                      }}
-                    />
-                  </Modal>
-                ))
-              }
-            >
-              <Plus size={16} />
-              {t('게임 프로필 연결하기')}
-            </Button>
-          )}
-          <p className="small muted">
-            <Info size={13} />
-            {t('프로필 없이도 질문을 올릴 수 있어요. 개인정보는 적지 마세요.')}
-          </p>
-        </div>
-      )}
       <ErrorNotice message={mutationError?.message} />
       <Button
         variant="primary"

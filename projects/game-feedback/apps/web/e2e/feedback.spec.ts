@@ -59,12 +59,12 @@ test('request → answer → notification → helpful, with ownership and origin
         title: `호그 덱 운영 피드백 ${suffix}`,
         body: '더블 엘릭서에 수비 카드가 꼬입니다. 상대의 탱커와 반대 라인 압박에 어떻게 대응하면 좋을까요?',
         categoryId,
-        playerTag: '#P0LYQ',
       },
     });
     expect(created.ok(), await created.text()).toBeTruthy();
     const post = await created.json();
-    expect(post.gameProfile.playerTag).toBe('#P0LYQ');
+    expect(post.gameProfile).toBeNull();
+    expect(post.author.supercellTag).toBe('#P0LYQ');
     expect(
       (
         await anonymous.post(`/api/posts/${post.id}/answers`, {
@@ -142,7 +142,7 @@ test('players create a profile-backed request and exchange helpful feedback in t
   await page.goto('/ko/settings');
   await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('#P0LYQ');
   await page.getByRole('button', { name: '조회', exact: true }).click();
-  await page.getByRole('button', { name: '이 프로필 연결하기' }).click();
+  await page.getByRole('button', { name: '내 계정에 등록' }).click();
   await expect(page.getByRole('status')).toContainText('게임 프로필이 연결');
   await page.goto('/ko');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();

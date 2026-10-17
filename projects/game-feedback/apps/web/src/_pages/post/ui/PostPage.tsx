@@ -8,7 +8,6 @@ import { postDetailOptions, PostArticle } from '@/features/post';
 import type { PostDetail } from '@/shared/api';
 import { useSession } from '@/features/auth';
 import { AuthorLink, UserBadges } from '@/features/user';
-import { ProfileSnapshot } from '@/features/game-profile';
 import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { usePostRead } from '../model/use-post-read.hook';
 import { ContentActions } from './ContentActions';
@@ -88,7 +87,6 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
           actions={
             <ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />
           }
-          profile={post.gameProfile && <ProfileSnapshot profile={post.gameProfile} />}
         />
       </ServiceErrorBoundary>
       {!isFeedback && post.author.id !== session.user?.id && (

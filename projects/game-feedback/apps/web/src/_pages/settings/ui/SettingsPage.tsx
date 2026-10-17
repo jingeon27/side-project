@@ -9,6 +9,7 @@ import { useSession, useLogout } from '@/features/auth';
 import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
 import { blockListOptions, useUnblockUser, UserBadges } from '@/features/user';
 import { TestAccountPicker } from '@/widgets/authentication';
+import { SupportChatButton } from '@/widgets/support';
 import { ConnectProfile } from '@/widgets/game-profile';
 import { openOverlay, Avatar, ErrorNotice, LoadingState, Modal } from '@/shared/ui';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
@@ -17,7 +18,7 @@ import { LanguageSettings } from './LanguageSettings';
 interface ISettingsPageProps {
   locale: string;
 }
-function openProfileConnection() {
+function openProfileConnection(t: (message: string) => string) {
   openOverlay(({ isOpen, close, unmount }) => (
     <Modal
       open={isOpen}
@@ -26,8 +27,8 @@ function openProfileConnection() {
         close();
         unmount();
       }}
-      title="게임 프로필 연결"
-      description="플레이어 태그로 트로피와 아레나를 확인해요."
+      title={t('게임 계정 등록')}
+      description={t('플레이어 태그로 트로피와 아레나를 확인해요.')}
     >
       <ConnectProfile
         onSaved={() => {
@@ -109,17 +110,15 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         <div className="section-title-row">
           <h2>
             <Gamepad2 size={20} />
-            {t('게임 프로필')}
+            {t('게임 계정')}
           </h2>
-          <button className="text-button" onClick={openProfileConnection}>
+          <button className="text-button" onClick={() => openProfileConnection(t)}>
             <Plus size={16} />
-            {t('프로필 연결')}
+            {t('계정 등록')}
           </button>
         </div>
         <p className="muted small">
-          {t(
-            '프로필을 연결하면 피드백 요청에 플레이어 태그와 트로피를 첨부할 수 있어요. 계정 소유권은 인증되지 않습니다.',
-          )}
+          {t('게임 계정은 내 사용자 계정에 등록됩니다. 프로필 인증은 관리자에게 문의해주세요.')}
         </p>
         {accounts.isPending && <LoadingState />}
         <ErrorNotice message={accounts.error?.message} />
@@ -158,6 +157,21 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
             </Button>
           </div>
         ))}
+      </section>
+      <section className="settings-card form-stack">
+        <h2>{t('인증과 문의')}</h2>
+        {session.user.bannedAt && (
+          <p role="alert">
+            {t('이용 제한 중')}: {session.user.banReason}
+          </p>
+        )}
+        <SupportChatButton topic="VERIFICATION" />
+        <SupportChatButton />
+        {session.user.role === 'ADMIN' && (
+          <Link className="text-button" href={`/${locale}/admin`}>
+            {t('운영 관리')}
+          </Link>
+        )}
       </section>
       <LanguageSettings />
       <section className="settings-card account-settings">

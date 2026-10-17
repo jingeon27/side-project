@@ -1,8 +1,10 @@
+import Image from 'next/image';
 import type { ReactNode } from 'react';
-import type { TRichTextDocument, TRichTextAttributes } from '@game-feedback/contracts';
+import type { TRichTextDocument, TRichTextAttributes, TRichTextEmbed } from '@game-feedback/contracts';
 
 interface ISegment {
-  text: string;
+  text?: string;
+  media?: TRichTextEmbed;
   attributes?: TRichTextAttributes;
 }
 interface ILine {
@@ -12,6 +14,8 @@ interface ILine {
 function lines(document: TRichTextDocument) {
   return document.ops.reduce<{ lines: ILine[]; current: ISegment[] }>(
     (state, op) => {
+      if (typeof op.insert !== 'string')
+        return { ...state, current: [...state.current, { media: op.insert }] };
       const parts = op.insert.split('\n');
       return parts.reduce((current, text, index) => {
         const segments = text ? [...current.current, { text, attributes: op.attributes }] : current.current;
@@ -24,6 +28,30 @@ function lines(document: TRichTextDocument) {
   ).lines;
 }
 function segmentNode(segment: ISegment, key: number) {
+  if (segment.media && 'image' in segment.media)
+    return (
+      <Image
+        key={key}
+        src={segment.media.image}
+        alt="게시글 사진"
+        width={1200}
+        height={900}
+        unoptimized
+        className="post-body-media"
+      />
+    );
+  if (segment.media && 'video' in segment.media)
+    return (
+      <video
+        key={key}
+        src={segment.media.video}
+        controls
+        playsInline
+        preload="metadata"
+        aria-label="게시글 동영상"
+        className="post-body-media"
+      />
+    );
   const attributes = segment.attributes ?? {};
   const marked = [
     { active: attributes.bold, tag: 'strong' },

@@ -87,7 +87,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
             disabled={save.isPending}
           >
             {save.isPending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
-            {t('이 프로필 연결하기')}
+            {t('내 계정에 등록')}
           </Button>
         </div>
       )}

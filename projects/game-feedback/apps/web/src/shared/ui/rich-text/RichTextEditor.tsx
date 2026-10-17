@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import type { TRichTextDocument } from '@game-feedback/contracts';
+import type { TRichTextDocument, TPostMedia } from '@game-feedback/contracts';
 import { useI18n } from '@/shared/i18n';
 import { QuillController, type IEditorValue } from './quill-session';
 
@@ -11,6 +11,7 @@ interface IRichTextEditorProps {
   disabled?: boolean;
   label: string;
   id?: string;
+  onUploadMedia?: (file: File) => Promise<TPostMedia>;
 }
 export function RichTextEditor({
   body,
@@ -19,6 +20,7 @@ export function RichTextEditor({
   disabled = false,
   label,
   id,
+  onUploadMedia,
 }: IRichTextEditorProps) {
   const { t } = useI18n();
   const [controller] = useState(
@@ -29,6 +31,7 @@ export function RichTextEditor({
         label,
         id,
         onChange,
+        onUploadMedia,
         labels: {
           bold: t('굵게'),
           italic: t('기울임'),
@@ -41,6 +44,8 @@ export function RichTextEditor({
           blockquote: t('인용'),
           link: t('링크'),
           clean: t('서식 지우기'),
+          image: t('사진 삽입'),
+          video: t('동영상 삽입'),
           'link-url': t('링크 주소'),
           'save-link': t('링크 적용'),
           'remove-link': t('링크 제거'),

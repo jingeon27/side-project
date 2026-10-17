@@ -14,9 +14,8 @@ interface IPostArticleProps {
   authorContent?: ReactNode;
   authorName?: ReactNode;
   actions?: ReactNode;
-  profile?: ReactNode;
 }
-export function PostArticle({ post, authorContent, authorName, actions, profile }: IPostArticleProps) {
+export function PostArticle({ post, authorContent, authorName, actions }: IPostArticleProps) {
   const { t, locale: textLocale } = useI18n();
   const board = boardByKind(post.board);
   const isFeedback = board?.kind === 'FEEDBACK';
@@ -46,7 +45,6 @@ export function PostArticle({ post, authorContent, authorName, actions, profile 
       {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
       <RichTextBody body={post.body} document={post.document} />
-      {profile}
       <div className="detail-footnote">
         <MessageSquare size={15} />
         {t(
