@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { excerpt, getSeoConfig, pageUrl } from './config';
 export const SITE_NAME = '플레이메이트';
-const baseKeywords = ['클래시 로얄', '클래시로얄', '게임 피드백', '덱 상담', SITE_NAME];
+const baseKeywords = ['게임 커뮤니티', '게임 피드백', '게임코치', SITE_NAME];
 interface IPageMetadata {
   title: string;
   description: string;

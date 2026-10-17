@@ -31,7 +31,7 @@ describe('SEO metadata and visibility', () => {
       const metadata = staticPageMetadata(kind, 'ko');
       titles.add(String(metadata.title));
       expect(metadata.description).toBeTruthy();
-      expect(metadata.keywords).toContain('클래시 로얄');
+      expect(metadata.keywords).toContain('게임 커뮤니티');
       expect(metadata.alternates?.canonical).toMatch(/^https:\/\/feedback\.example\/ko/);
       expect(metadata.twitter).toMatchObject({ card: 'summary_large_image' });
     }

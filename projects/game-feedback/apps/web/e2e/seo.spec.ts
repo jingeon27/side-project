@@ -27,7 +27,7 @@ test('every screen serves page-specific metadata without JavaScript and private 
       await page.goto(`${origin}/ko${path}`);
       await expect(page).toHaveTitle(`${title} | 플레이메이트`);
       await expect(page.locator('head meta[name="description"]')).toHaveAttribute('content', /.+/);
-      await expect(page.locator('head meta[name="keywords"]')).toHaveAttribute('content', /클래시 로얄/);
+      await expect(page.locator('head meta[name="keywords"]')).toHaveAttribute('content', /게임 커뮤니티/);
       await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
         'href',
         `https://feedback.example/ko${path}`,
