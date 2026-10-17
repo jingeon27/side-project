@@ -125,6 +125,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
     DATABASE_URL: inject('databaseUrl'),
     NODE_ENV: 'development',
     ENABLE_DEV_LOGIN: 'true',
+    TRUST_PROXY_HOPS: '0',
     WEB_ORIGIN: TEST_WEB_ORIGIN,
     STORAGE_BACKEND: 'local',
     STORAGE_DIR: storageDir,

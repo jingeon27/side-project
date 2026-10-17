@@ -35,6 +35,7 @@
 
 - `build`·`dev`는 `tsconfig.build.json`(src만, spec 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
 - 사용자의 개발 서버는 `dist/main.js`를 본다(`node --watch`). 검증용 빌드는 다른 outDir로 하고, 테스트 API는 test-kit이 `.e2e-build`로 빌드한다.
+- 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client·WASM·sharp도 포함한다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
 
 ## 테스트
 
