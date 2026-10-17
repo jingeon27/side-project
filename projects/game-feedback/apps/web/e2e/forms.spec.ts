@@ -68,6 +68,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
 });
 
 test('feed filters survive opening a post, returning, and reloading the shared URL', async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 844 });
   const suffix = Date.now().toString(36);
   await page.request.post('/api/auth/demo', {
     headers: { Origin: origin },
@@ -101,7 +102,17 @@ test('feed filters survive opening a post, returning, and reloading the shared U
   await page.reload();
   await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toHaveValue(suffix);
   await expect(page.locator('.post-list .post-card')).toHaveCount(1);
-  await page.getByRole('button', { name: '초기화', exact: true }).click();
+  const search = page.getByRole('textbox', { name: '게시글 검색', exact: true });
+  await search.focus();
+  await search.press('Enter');
+  await expect(search).toHaveValue(suffix);
+  await search.press('Tab');
+  const clearSearch = page.getByRole('button', { name: '검색어 지우기', exact: true });
+  await expect(clearSearch).toBeFocused();
+  await clearSearch.press('Enter');
+  await expect(search).toBeEmpty();
+  await expect(search).toBeFocused();
+  await expect(clearSearch).toHaveCount(0);
   await expect(page).toHaveURL(
     (url) =>
       !url.searchParams.has('q') &&

@@ -65,7 +65,7 @@ const messages: Record<string, readonly [string, string]> = {
   '피드 필터': ['Feed filters', 'フィードの絞り込み'],
   '최신 글': ['Latest posts', '新着投稿'],
   '게시글 검색': ['Search posts', '投稿を検索'],
-  '관심 있는 게시글을 검색하세요': ['Search for posts that interest you', '気になる投稿を検索'],
+  '검색어 지우기': ['Clear search', '検索語をクリア'],
   '게임 이야기와 모집, 코칭을 한곳에서 만나보세요.': [
     'Game discussions, recruitment and coaching in one feed.',
     'ゲームの話題、募集、コーチングを一つのフィードで。',

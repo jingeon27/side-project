@@ -66,30 +66,23 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    padding: 0 13px;
+    margin-block: 16px;
+    padding: 0 4px 0 12px;
     border-radius: var(--radius-control);
     border: 1px solid var(--color-line);
     background: var(--color-sunken);
     color: var(--color-muted);
-    height: 38px;
+    min-height: calc(var(--spacing-touch) + 2px);
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
   }
-  .feed-search input {
-    background: none;
-    border: 0;
-    box-shadow: none;
-    padding: 8px 0;
-    font-size: var(--text-input);
-    outline: 0;
-    min-width: 0;
+  .feed-search > svg {
+    flex-shrink: 0;
   }
-  .feed-search input:focus {
-    box-shadow: none;
-  }
-  .feed-search .text-button {
-    font-size: var(--text-micro);
-    white-space: nowrap;
+  .feed-search:focus-within {
+    border-color: var(--color-ring);
+    box-shadow: 0 0 0 2px var(--color-line-strong);
   }
   .post-list {
     display: flex;
@@ -425,10 +418,6 @@
     .sort-label > svg {
       width: 12px;
     }
-    .feed-search {
-      margin-top: 13px;
-      height: 37px;
-    }
     .game-filter {
       font-size: var(--text-caption);
       min-height: 49px;
@@ -552,12 +541,5 @@
     .feed-footer > a {
       margin-left: 21px;
     }
-  }
-  .feed-search {
-    height: auto;
-    min-height: var(--spacing-touch);
-  }
-  .feed-search input {
-    min-height: var(--spacing-touch);
   }
 }
