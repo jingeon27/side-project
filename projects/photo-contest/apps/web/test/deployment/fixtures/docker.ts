@@ -55,6 +55,7 @@ function main() {
   if (args.includes('stop')) {
     state.active = '';
     writeFileSync(stateFile, JSON.stringify(state));
+    if (phase === 'stop') process.exit(1);
     return;
   }
   throw new Error('지원하지 않는 Docker 경계 명령입니다.');

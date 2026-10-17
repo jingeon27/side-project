@@ -135,8 +135,8 @@ describe('VM 배포', () => {
     expect(readFileSync(`${root}/media/keep.txt`, 'utf8')).toBe('보존할 사진');
   });
 
-  it('로컬 미디어 백업 실패 뒤에도 멈춘 API를 다시 실행해야 한다', () => {
-    const result = run('backup.sh', ['--with-media'], 'media');
+  it.each(['stop', 'media'])('로컬 백업의 %s 실패 뒤에도 API를 다시 실행해야 한다', (phase) => {
+    const result = run('backup.sh', ['--with-media'], phase);
     expect(result.status).not.toBe(0);
     expect(state().active).toBe(oldRevision);
     expect(result.stdout).not.toContain('백업 완료');

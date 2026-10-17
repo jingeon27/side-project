@@ -13,8 +13,8 @@ destination="$DEPLOY_ROOT/backups/$(date -u +%Y%m%dT%H%M%SZ)-$(basename "$releas
 if [[ "${1:-}" == --with-media ]]; then
   [[ "$(setting STORAGE_BACKEND)" == local ]] || fail 'S3/R2 미디어는 버킷에서 별도로 백업합니다.'
   # DB와 로컬 파일 사이에 작성·삭제가 끼지 않도록 API만 잠깐 멈춘다.
-  compose_at "$release_dir" stop -t 30 api
   trap 'compose_at "$release_dir" up -d --wait --wait-timeout 120 api >&2' EXIT
+  compose_at "$release_dir" stop -t 30 api
 fi
 backup_database "$release_dir" "$destination"
 if [[ "${1:-}" == --with-media ]]; then
