@@ -23,16 +23,16 @@ export function PostCommentsBottomSheet({
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <BottomSheet.Root {...controls} className="h-[85dvh]">
+    <BottomSheet.Root {...controls} className="h-dvh">
       <PostCommentsHeader postId={postId} />
-      <BottomSheet.Content className="px-0 pt-4">
+      <BottomSheet.Content className="px-0 pt-3">
         <div className="mx-auto w-full max-w-3xl px-5">
           <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-32 w-full" />}>
             <PostCommentList commentsRef={commentsRef} postId={postId} />
           </AsyncBoundary>
         </div>
       </BottomSheet.Content>
-      <BottomSheet.Footer>
+      <BottomSheet.Footer className="pt-2 pb-[calc(12px+var(--safe-bottom))]">
         <PostCommentComposer postId={postId} />
       </BottomSheet.Footer>
     </BottomSheet.Root>

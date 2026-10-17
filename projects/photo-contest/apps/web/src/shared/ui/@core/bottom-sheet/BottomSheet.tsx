@@ -61,11 +61,12 @@ interface IBottomSheetHeaderProps {
   /** 시트의 이름. 스크린 리더가 대화상자 이름으로 읽는다. */
   title: string;
   description?: ReactNode;
+  className?: string;
 }
 
-function Header({ title, description }: IBottomSheetHeaderProps) {
+function Header({ title, description, className }: IBottomSheetHeaderProps) {
   return (
-    <div className="flex shrink-0 items-start gap-2 pr-2 pb-3 pl-5">
+    <div className={cn('flex shrink-0 items-start gap-2 pr-2 pb-3 pl-5', className)}>
       <div className="min-w-0 flex-1 pt-2.5">
         <Drawer.Title className="text-title text-ink">{title}</Drawer.Title>
         {description ? (

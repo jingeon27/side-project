@@ -15,6 +15,7 @@ export function PostCommentsHeader({ postId }: { postId: string }) {
       <div className="mx-auto w-full max-w-3xl">
         <BottomSheet.Header
           title="댓글"
+          className="pb-2"
           description={
             complete ? <span className="block truncate text-caption">{post.title}</span> : undefined
           }
