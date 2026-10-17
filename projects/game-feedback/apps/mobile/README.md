@@ -74,3 +74,5 @@ corepack yarn workspace @game-feedback/mobile bundle:check
 Vitest는 순수 URL·프로토콜·PKCE 판단과 RN Web으로 그린 실제 셸 이벤트를 검증한다. Playwright의 `android-webview`·`ios-webview`는 Chromium/WebKit 모바일 환경에 실제 앱 host·URL 정책·인증 로직을 붙이고 OS 인증창만 대역으로 바꾼다. Google 버튼 취소 테스트에서는 실제 session 응답의 제공자 사용 가능 여부만 켜며 나머지 API·DB는 격리된 실제 서버를 사용한다. API의 일회용 코드 교환·쿠키·재사용·만료·경쟁·Origin·가입 동의는 API 소유 Vitest+Supertest로 검사한다.
 
 실기기에서 별도 확인할 항목은 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 시스템 Google 인증 후 앱 복귀, 비행기 모드와 연결 복구다. Metro export와 브라우저 검증은 서명된 네이티브 빌드·실기기 확인을 대신하지 않는다.
+
+게임 메뉴는 모든 활성 게임이 피드백, 친추판매, 친선전 모집, 게임코치, 자유게시판 5개를 공유한다. 홈은 전체 피드이고 기본 게임 외 경로에는 `game=<category-slug>`를 유지한다. 게시판/상세의 warm 딥링크와 native back도 같은 game/board 문맥을 사용한다. 게임코치는 수강생 모집과 코치 구함, 시간당 수강료/협의 표시와 기존 비공개 채팅 상담을 Web에서 제공한다.

@@ -40,3 +40,5 @@ corepack yarn workspace @game-feedback/sdk test
 HTTP 오류 본문은 코드·메시지의 타입을 검증하고 잘못되면 `REQUEST_FAILED`와 일반 안내를 사용한다. 원래 HTTP status와 정상 서버 오류 코드는 보존한다. 요청 또는 본문 읽기의 AbortError와 네트워크 오류는 그대로 전달한다. 계약이 JSON을 요구하는 작업의 204 응답을 성공으로 간주하지 않는다. 요청 본문·서버 입력 검증에는 응답 fallback을 적용하지 않는다.
 
 SDK가 소유한 Vitest는 생성 클라이언트의 실제 호출·fallback·오류 처리를 검사한다. OpenAPI의 모든 operation이 생성 transport에 스키마를 전달하는지도 검사해 재생성 시 검증 누락을 막는다. 브라우저 회귀 테스트는 Web이 소유한다.
+
+게임 공통 게시판은 `FEEDBACK`, `FRIEND_SALE`, `FRIENDLY`, `COACHING`, `FREE`다. 홈은 `board=ALL`, 종류별 목록은 board와 category slug를 함께 전달한다. `COACHING` 생성에는 `coaching: { role: 'COACH' | 'STUDENT', hourlyRate: number | null }`가 필요하다. 금액은 시간당 원화 1~10,000,000원, null은 협의다. 코칭 외 게시판의 코칭 정보와 코칭 글의 정보 제거를 서버에서 거부한다. 다른 게임에 클래시 로얄 Player Tag를 첨부하지 않는다.
