@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { BackHandler, Linking, Platform } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
 import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge';
@@ -29,48 +29,49 @@ export function useWebShell() {
     }),
   );
   useEffect(() => () => host.reset(), [host]);
-  const lifecycle = useMemo(
-    () => ({
-      openLink(url: string) {
-        const path = toWebPath(url, WEB_ORIGIN);
-        if (!path) return;
-        channel.rememberUrl(`${WEB_ORIGIN}${path}`);
-        if (!host.open(path)) channel.loadCurrentDocument();
-      },
-      onState: host.state,
-      onBack: host.back,
-      onFallbackBack() {
-        if (channel.canGoBack()) {
-          channel.goBack();
-          return;
-        }
-        BackHandler.exitApp();
-      },
-    }),
+  const handleOpenLink = useCallback(
+    (url: string) => {
+      const path = toWebPath(url, WEB_ORIGIN);
+      if (!path) return;
+      channel.rememberUrl(`${WEB_ORIGIN}${path}`);
+      if (!host.open(path)) channel.loadCurrentDocument();
+    },
     [channel, host],
   );
-  useShellLifecycle(lifecycle);
-  function recreate() {
+  const handleFallbackBack = useCallback(() => {
+    if (channel.canGoBack()) {
+      channel.goBack();
+      return;
+    }
+    BackHandler.exitApp();
+  }, [channel]);
+  useShellLifecycle({
+    openLink: handleOpenLink,
+    onState: host.state,
+    onBack: host.back,
+    onFallbackBack: handleFallbackBack,
+  });
+  const handleRecreate = useCallback(() => {
     host.reset();
     channel.recreate();
-  }
-  function fail() {
+  }, [channel, host]);
+  const handleFailure = useCallback(() => {
     host.reset();
     channel.fail();
-  }
+  }, [channel, host]);
   function navigate(url: string, newWindow = false) {
     const decision = decideNavigation(url, WEB_ORIGIN);
     if (decision.action === 'allow') {
       if (newWindow && isSameOrigin(url, WEB_ORIGIN)) {
-        lifecycle.openLink(url);
+        handleOpenLink(url);
       }
       return !newWindow;
     }
-    if (decision.action === 'navigate') lifecycle.openLink(`${WEB_ORIGIN}${decision.path}`);
+    if (decision.action === 'navigate') handleOpenLink(`${WEB_ORIGIN}${decision.path}`);
     if (decision.action === 'external') void Linking.openURL(decision.url).catch(() => undefined);
     return false;
   }
-  const webViewProps: WebViewProps = {
+  const webViewProps = {
     source: { uri: sourceUrl },
     originWhitelist: ['*'],
     setSupportMultipleWindows: false,
@@ -100,16 +101,25 @@ export function useWebShell() {
     onLoadEnd: channel.finishLoading,
     onError: (event) => {
       event.preventDefault();
-      if (isSameOrigin(event.nativeEvent.url, WEB_ORIGIN) && isLoadFailure(event.nativeEvent)) fail();
+      if (isSameOrigin(event.nativeEvent.url, WEB_ORIGIN) && isLoadFailure(event.nativeEvent))
+        handleFailure();
     },
     onHttpError: (event) => {
-      if (isSameOrigin(event.nativeEvent.url, WEB_ORIGIN) && event.nativeEvent.statusCode >= 500) fail();
+      if (isSameOrigin(event.nativeEvent.url, WEB_ORIGIN) && event.nativeEvent.statusCode >= 500)
+        handleFailure();
     },
-    onRenderProcessGone: recreate,
+    onRenderProcessGone: handleRecreate,
     onContentProcessDidTerminate: () => {
       host.reset();
       channel.reload();
     },
+  } satisfies WebViewProps;
+  return {
+    attachWebView: channel.attach,
+    webViewProps,
+    webViewKey,
+    loading,
+    offline,
+    handleRetry: handleRecreate,
   };
-  return { attachWebView: channel.attach, webViewProps, webViewKey, loading, offline, handleRetry: recreate };
 }
