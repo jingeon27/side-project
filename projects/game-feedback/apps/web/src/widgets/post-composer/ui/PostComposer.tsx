@@ -1,14 +1,13 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
-import { useWatch } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { LoaderCircle, ArrowUpRight, Plus, Info } from 'lucide-react';
 import { categoryOptions } from '@/features/category';
 import { useSession } from '@/features/auth';
 import { useCreatePostMutation, useUpdatePostMutation } from '@/features/post';
-import { gameAccountListOptions, Deck } from '@/features/game-profile';
+import { gameAccountListOptions } from '@/features/game-profile';
 import { ConnectProfile } from '@/widgets/game-profile';
 import type { Category, GameProfile, Post } from '@/shared/api';
 import { openOverlay, Modal, Field, ErrorNotice, LoadingState, useNotify } from '@/shared/ui';
@@ -73,8 +72,6 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         : {}),
     },
   });
-  const playerTag = useWatch({ control: form.control, name: 'playerTag' }),
-    profile = accounts.find((account) => account.playerTag === playerTag);
   const mutationError = create.error || update.error,
     isPending = create.isPending || update.isPending;
   return (
@@ -145,19 +142,16 @@ function PostComposerForm({ categories, accounts, locale, post, onOpenChange }: 
         <div className="composer-profile">
           <div className="row-between">
             <strong>{t('내 게임 프로필')}</strong>
-            <span className="small muted">{t('요청 시점의 덱을 함께 보관해요')}</span>
+            <span className="small muted">{t('요청 시점의 프로필을 첨부해요')}</span>
           </div>
           {accounts.length ? (
-            <>
-              <select className="ds-select" {...form.register('playerTag')}>
-                {accounts.map((account) => (
-                  <option key={account.playerTag} value={account.playerTag}>
-                    {account.name} ({account.playerTag})
-                  </option>
-                ))}
-              </select>
-              {profile && <Deck profile={profile} compact />}
-            </>
+            <select className="ds-select" {...form.register('playerTag')}>
+              {accounts.map((account) => (
+                <option key={account.playerTag} value={account.playerTag}>
+                  {account.name} ({account.playerTag})
+                </option>
+              ))}
+            </select>
           ) : (
             <Button
               variant="secondary"

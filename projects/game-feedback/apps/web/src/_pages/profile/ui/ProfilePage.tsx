@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
 import { profileOptions, UserBadges, AuthorLink } from '@/features/user';
 import { userPostListOptions, PostCard } from '@/features/post';
-import { Deck } from '@/features/game-profile';
 import { StartChatLink } from '@/widgets/start-chat';
 import type { PublicProfile, PostList } from '@/shared/api';
 import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
@@ -136,7 +135,6 @@ function ProfilePosts({
             href={`/${locale}/posts/${post.id}`}
             authorName={<AuthorLink author={post.author} locale={locale} />}
             authorContent={<UserBadges author={post.author} compact />}
-            deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
           />
         ))}
       </div>

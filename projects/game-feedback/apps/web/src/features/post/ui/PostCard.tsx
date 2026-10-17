@@ -14,9 +14,8 @@ interface IPostCardProps {
   href: string;
   authorContent?: ReactNode;
   authorName?: ReactNode;
-  deck?: ReactNode;
 }
-export function PostCard({ post, href, authorContent, authorName, deck }: IPostCardProps) {
+export function PostCard({ post, href, authorContent, authorName }: IPostCardProps) {
   const { t, locale: textLocale } = useI18n();
   const reducedMotion = useMotionPreference();
   return (
@@ -42,7 +41,6 @@ export function PostCard({ post, href, authorContent, authorName, deck }: IPostC
             <span className="info-divider" />
             <span>{post.gameProfile.arena}</span>
           </div>
-          {deck}
         </div>
       )}
       <div className="post-bottom">

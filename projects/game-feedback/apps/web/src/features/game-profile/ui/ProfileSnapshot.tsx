@@ -1,38 +1,10 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import Image from 'next/image';
 import { Trophy, ShieldAlert } from 'lucide-react';
 import type { GameProfile } from '@/shared/api';
 import { ClashRoyaleIcon } from './ClashRoyaleIcon';
-interface IDeckProps {
-  profile: GameProfile;
-  compact?: boolean;
-}
 interface IProfileSnapshotProps {
   profile: GameProfile;
-}
-const cardSymbols = ['⚔️', '🏹', '🔥', '🪵', '💀', '🛡️', '⚡', '❄️'];
-export function Deck({ profile, compact = false }: IDeckProps) {
-  const { t } = useI18n();
-  return (
-    <div className={`deck ${compact ? 'deck-compact' : ''}`} aria-label={`${profile.name}님의 요청 시점 덱`}>
-      {profile.deck.slice(0, 8).map((card, i) => (
-        <div
-          className={`deck-card deck-card-${i % 4}`}
-          key={card.id}
-          title={`${card.name}, ${t('레벨 {level}', { level: card.level })}`}
-        >
-          {card.iconUrl ? (
-            <Image src={card.iconUrl} alt={card.name} width={64} height={80} unoptimized />
-          ) : (
-            <span aria-hidden="true">{cardSymbols[i] ?? '⚔️'}</span>
-          )}
-          {!compact && <small>{card.name}</small>}
-          <b>{card.level}</b>
-        </div>
-      ))}
-    </div>
-  );
 }
 export function ProfileSnapshot({ profile }: IProfileSnapshotProps) {
   const { t } = useI18n();
@@ -51,7 +23,6 @@ export function ProfileSnapshot({ profile }: IProfileSnapshotProps) {
           {profile.trophies.toLocaleString()}
         </span>
       </div>
-      <Deck profile={profile} />
       <div className="snapshot-foot">
         <span>
           <ShieldAlert size={13} />

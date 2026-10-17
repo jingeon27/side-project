@@ -23,88 +23,6 @@
     font-size: var(--text-micro);
     color: var(--color-muted);
   }
-  .deck {
-    display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 5px;
-    margin: 15px 0;
-  }
-  /* 게임 카드의 고유 색상은 앱이 소유한다. */
-  .deck-card {
-    border: 1px solid var(--color-line);
-    border-radius: var(--radius-control);
-    background: #f3e2dc;
-    position: relative;
-    aspect-ratio: 0.77;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    flex-direction: column;
-  }
-  .deck-card-1 {
-    background: #e3eaf3;
-  }
-  .deck-card-2 {
-    background: #eee0f0;
-  }
-  .deck-card-3 {
-    background: #e9eddd;
-  }
-  .deck-card > span {
-    font-size: var(--text-display);
-    line-height: 1;
-  }
-  .deck-card > img {
-    width: 100%;
-    height: 80%;
-    object-fit: contain;
-  }
-  .deck-card > small {
-    font-size: var(--text-micro);
-    color: var(--color-ink);
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0 2px;
-    margin-top: 3px;
-  }
-  .deck-card > b {
-    position: absolute;
-    top: 2px;
-    right: 3px;
-    font-size: var(--text-micro);
-    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-    color: var(--color-muted);
-    border-radius: var(--radius-badge);
-    padding: 0 2px;
-  }
-  .deck-compact {
-    display: flex;
-    gap: 3px;
-    margin: 0;
-    flex-shrink: 0;
-  }
-  .deck-compact .deck-card {
-    height: 26px;
-    width: 22px;
-    border-radius: var(--radius-badge);
-    aspect-ratio: auto;
-  }
-  .deck-compact .deck-card > span {
-    font-size: var(--text-body);
-  }
-  .deck-compact .deck-card > img {
-    height: 100%;
-    object-fit: cover;
-  }
-  .deck-compact .deck-card > b {
-    font-size: var(--text-micro);
-    top: auto;
-    right: 1px;
-    bottom: 0;
-  }
   .snapshot {
     border: 1px solid var(--color-line);
     background: var(--color-surface);
@@ -332,33 +250,10 @@
     .profile-card {
       padding: 18px 17px;
     }
-    .deck-compact .deck-card {
-      width: 19px;
-      height: 24px;
-    }
-  }
-  @media (max-width: 1080px) {
-    .deck-compact .deck-card {
-      width: 25px;
-      height: 29px;
-    }
   }
   @media (max-width: 760px) {
-    .deck-compact .deck-card {
-      width: 23px;
-      height: 27px;
-    }
     .snapshot {
       padding: 13px;
-    }
-    .deck {
-      gap: 4px;
-    }
-    .deck-card > span {
-      font-size: var(--text-title-lg);
-    }
-    .deck-card > small {
-      font-size: var(--text-micro);
     }
     .settings-card {
       padding: 20px;
@@ -393,29 +288,10 @@
     .info-card > p {
       font-size: var(--text-caption);
     }
-    .profile-preview .deck-card > span {
-      font-size: var(--text-title);
-    }
   }
   @media (max-width: 440px) {
-    .deck-compact .deck-card {
-      width: 20px;
-      height: 25px;
-    }
     .snapshot {
       padding: 10px;
-    }
-    .snapshot .deck {
-      gap: 3px;
-    }
-    .deck-card > span {
-      font-size: var(--text-title);
-    }
-    .deck-card > small {
-      display: none;
-    }
-    .deck-card > b {
-      font-size: var(--text-micro);
     }
     .snapshot-icon {
       width: 29px;
@@ -453,9 +329,6 @@
   }
   .input-button-row > input {
     flex: 1;
-  }
-  .deck-compact .deck-card > b {
-    display: none;
   }
 }
 

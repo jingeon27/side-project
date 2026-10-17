@@ -289,9 +289,9 @@ const messages: Record<string, readonly [string, string]> = {
   '계정 영구 삭제하기': ['Permanently delete account', 'アカウントを完全に削除'],
   '계속 함께하기': ['Keep my account', '利用を続ける'],
   '게임 프로필 연결': ['Connect game profile', 'ゲームプロフィールを連携'],
-  '플레이어 태그로 현재 덱과 트로피를 확인해요.': [
-    'Look up your deck and trophies using your player tag.',
-    'プレイヤータグからデッキとトロフィーを確認します。',
+  '플레이어 태그로 트로피와 아레나를 확인해요.': [
+    'Look up your trophies and arena using your player tag.',
+    'プレイヤータグからトロフィーとアリーナを確認します。',
   ],
   '나의 플레이 공간': ['My player space', 'マイプレイヤー'],
   '로그인하고 게임 프로필과 계정을 관리하세요.': [
@@ -308,10 +308,11 @@ const messages: Record<string, readonly [string, string]> = {
   플레이어: ['Player', 'プレイヤー'],
   '게임 프로필': ['Game profiles', 'ゲームプロフィール'],
   '프로필 연결': ['Connect profile', 'プロフィールを連携'],
-  '프로필을 연결하면 피드백 요청에 현재 덱과 트로피를 첨부할 수 있어요. 계정 소유권은 인증되지 않습니다.': [
-    'Connect a profile to attach your deck and trophies. This does not verify account ownership.',
-    '連携すると依頼にデッキとトロフィーを添付できます。所有権は認証されません。',
-  ],
+  '프로필을 연결하면 피드백 요청에 플레이어 태그와 트로피를 첨부할 수 있어요. 계정 소유권은 인증되지 않습니다.':
+    [
+      'Connect a profile to attach your player tag and trophies. This does not verify account ownership.',
+      '連携すると依頼にプレイヤータグとトロフィーを添付できます。所有権は認証されません。',
+    ],
   '차단한 사용자': ['Blocked players', 'ブロックしたユーザー'],
   명: [' people', '人'],
   '차단한 사용자가 없어요.': ['No blocked players.', 'ブロックしたユーザーはいません。'],
@@ -530,9 +531,9 @@ const messages: Record<string, readonly [string, string]> = {
     '20〜10,000文字で入力してください。',
   ],
   '내 게임 프로필': ['My game profile', '自分のゲームプロフィール'],
-  '요청 시점의 덱을 함께 보관해요': [
-    'Keep a snapshot of your deck with this request',
-    '依頼時のデッキを一緒に保存',
+  '요청 시점의 프로필을 첨부해요': [
+    'Attach your player profile to this request',
+    '依頼時のプレイヤープロフィールを添付',
   ],
   '플레이어 태그로 프로필을 조회하고 확인해주세요.': [
     'Look up and confirm your player tag.',
@@ -583,7 +584,6 @@ const messages: Record<string, readonly [string, string]> = {
   '읽지 않은 메시지 {count}개': ['Unread messages: {count}', '未読メッセージ：{count}件'],
   '{date}부터 함께 플레이 중': ['Playing together since {date}', '{date}から参加しています'],
   '{count}명': ['{count} players', '{count}人'],
-  '레벨 {level}': ['Level {level}', 'レベル {level}'],
   '요청자가 피드백을 확인한 시각: {date}': ['Seen by requester: {date}', '依頼者の確認日時：{date}'],
   '전송 중': ['Sending', '送信中'],
   '전송 실패': ['Send failed', '送信失敗'],

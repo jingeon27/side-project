@@ -8,7 +8,6 @@ import { ArrowUpRight, Plus, MessageSquare, ArrowRight, LoaderCircle } from 'luc
 import { useSession } from '@/features/auth';
 import { postListOptions, PostCard } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
-import { Deck } from '@/features/game-profile';
 import { PostComposer } from '@/widgets/post-composer';
 import { openOverlay, AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 import { useFeedFilters } from '../model/use-feed-filters';
@@ -144,7 +143,6 @@ function FeedResults({
               href={`/${locale}/posts/${post.id}`}
               authorName={<AuthorLink author={post.author} locale={locale} />}
               authorContent={<UserBadges author={post.author} compact />}
-              deck={post.gameProfile && <Deck profile={post.gameProfile} compact />}
             />
           </ServiceErrorBoundary>
         ))}
