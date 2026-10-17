@@ -9,7 +9,6 @@ import * as zod from 'zod';
 export const postInputTitleMin = 4;
 export const postInputTitleMax = 120;
 
-export const postInputBodyMin = 20;
 export const postInputBodyMax = 10000;
 
 export const postInputDocumentOneOpsItemInsertOneMax = 10001;
@@ -40,7 +39,7 @@ export const postInputFriendSaleOnePriceOneMax = 10000000;
 
 export const PostInput = zod.object({
   "title": zod.string().min(postInputTitleMin).max(postInputTitleMax),
-  "body": zod.string().min(postInputBodyMin).max(postInputBodyMax),
+  "body": zod.string().min(1).max(postInputBodyMax),
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({

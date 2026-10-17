@@ -46,6 +46,40 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       await db.$disconnect();
     }
   });
+  it('creates and edits a one-character post while rejecting empty, oversized and mismatched content', async () => {
+    const input = {
+      categoryId,
+      board: 'FREE',
+      title: '짧은 본문 등록 확인',
+      body: '안',
+      document: { ops: [{ insert: '안\n' }] },
+    };
+    const created = (await author.post('/api/posts').set('Origin', origin).send(input).expect(200)).body;
+    expect(created.body).toBe('안');
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ body: 'x', document: { ops: [{ insert: 'x\n' }] } })
+      .expect(200);
+    expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.body).toBe('x');
+    for (const body of ['', '   ', 'x'.repeat(10001)]) {
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, body, document: null })
+        .expect(400);
+      await author
+        .patch(`/api/posts/${created.id}`)
+        .set('Origin', origin)
+        .send({ body, document: null })
+        .expect(400);
+    }
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, body: '다' })
+      .expect(400);
+  });
   it('separates every board from feedback and persists formatting through detail and edit', async () => {
     const body = '함께 친선전을 연습할 상대를 찾습니다. 저녁에 편하게 이야기해주세요.';
     for (const board of ['FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']) {

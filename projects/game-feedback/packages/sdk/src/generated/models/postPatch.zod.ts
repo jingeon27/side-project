@@ -9,7 +9,6 @@ import * as zod from 'zod';
 export const postPatchTitleMin = 4;
 export const postPatchTitleMax = 120;
 
-export const postPatchBodyMin = 20;
 export const postPatchBodyMax = 10000;
 
 export const postPatchDocumentOneOpsItemInsertOneMax = 10001;
@@ -39,7 +38,7 @@ export const postPatchFriendSaleOnePriceOneMax = 10000000;
 
 export const PostPatch = zod.object({
   "title": zod.string().min(postPatchTitleMin).max(postPatchTitleMax).optional(),
-  "body": zod.string().min(postPatchBodyMin).max(postPatchBodyMax).optional(),
+  "body": zod.string().min(1).max(postPatchBodyMax).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.union([zod.string().min(1).max(postPatchDocumentOneOpsItemInsertOneMax),zod.union([zod.object({

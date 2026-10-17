@@ -267,7 +267,7 @@ export const DemoInputSchema = z.object({ nickname: NicknameSchema }).strict();
 export const PostInputSchema = z
   .object({
     title: z.string().trim().min(4).max(120),
-    body: z.string().trim().min(20).max(10000),
+    body: z.string().trim().min(1).max(10000),
     board: BoardKindSchema.optional(),
     document: RichTextDocumentSchema.nullable().optional(),
     coaching: CoachingDetailsSchema.nullable().optional(),

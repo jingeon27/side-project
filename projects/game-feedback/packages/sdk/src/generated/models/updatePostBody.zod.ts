@@ -9,7 +9,6 @@ import * as zod from 'zod';
 export const updatePostBodyTitleMin = 4;
 export const updatePostBodyTitleMax = 120;
 
-export const updatePostBodyBodyMin = 20;
 export const updatePostBodyBodyMax = 10000;
 
 export const updatePostBodyDocumentOneOpsItemInsertOneMax = 10001;
@@ -39,7 +38,7 @@ export const updatePostBodyFriendSaleOnePriceOneMax = 10000000;
 
 export const UpdatePostBody = zod.object({
   "title": zod.string().min(updatePostBodyTitleMin).max(updatePostBodyTitleMax).optional(),
-  "body": zod.string().min(updatePostBodyBodyMin).max(updatePostBodyBodyMax).optional(),
+  "body": zod.string().min(1).max(updatePostBodyBodyMax).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.union([zod.string().min(1).max(updatePostBodyDocumentOneOpsItemInsertOneMax),zod.union([zod.object({

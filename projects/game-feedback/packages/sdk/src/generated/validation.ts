@@ -1164,7 +1164,6 @@ export const ListPostsResponse = zod.object({
 export const createPostBodyTitleMin = 4;
 export const createPostBodyTitleMax = 120;
 
-export const createPostBodyBodyMin = 20;
 export const createPostBodyBodyMax = 10000;
 
 export const createPostBodyDocumentOneOpsItemInsertOneMax = 10001;
@@ -1196,7 +1195,7 @@ export const createPostBodyFriendSaleOnePriceOneMax = 10000000;
 
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
-  "body": zod.string().min(createPostBodyBodyMin).max(createPostBodyBodyMax),
+  "body": zod.string().min(1).max(createPostBodyBodyMax),
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
@@ -1587,7 +1586,6 @@ export const UpdatePostParams = zod.object({
 export const updatePostBodyTitleMin = 4;
 export const updatePostBodyTitleMax = 120;
 
-export const updatePostBodyBodyMin = 20;
 export const updatePostBodyBodyMax = 10000;
 
 export const updatePostBodyDocumentOneOpsItemInsertOneMax = 10001;
@@ -1618,7 +1616,7 @@ export const updatePostBodyFriendSaleOnePriceOneMax = 10000000;
 
 export const UpdatePostBody = zod.object({
   "title": zod.string().min(updatePostBodyTitleMin).max(updatePostBodyTitleMax).optional(),
-  "body": zod.string().min(updatePostBodyBodyMin).max(updatePostBodyBodyMax).optional(),
+  "body": zod.string().min(1).max(updatePostBodyBodyMax).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.union([zod.string().min(1).max(updatePostBodyDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
