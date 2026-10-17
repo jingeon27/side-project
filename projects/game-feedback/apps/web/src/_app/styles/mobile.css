@@ -93,9 +93,6 @@
       flex-wrap: wrap;
       gap: 12px;
     }
-    .feed-tabs > button {
-      min-height: 44px;
-    }
     input.ds-input,
     select.ds-input,
     textarea.ds-input,

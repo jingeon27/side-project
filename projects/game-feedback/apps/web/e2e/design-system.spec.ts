@@ -56,13 +56,13 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
     });
     await dialog.getByRole('button', { name: '닫기', exact: true }).click();
     await expect(dialog).not.toBeVisible();
-    await page.getByRole('tab', { name: '최신 글', exact: true }).focus();
-    await page.keyboard.press('ArrowRight');
+    const unanswered = page.getByRole('button', { name: '답변 대기', exact: true });
+    await unanswered.focus();
     await page.keyboard.press('Enter');
-    await expect(page.getByRole('tab', { name: '답변을 기다려요', exact: true })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(unanswered).toHaveAttribute('aria-pressed', 'true');
     await expect(page).toHaveURL(/tab=unanswered/);
+    await page.keyboard.press('Enter');
+    await expect(unanswered).toHaveAttribute('aria-pressed', 'false');
+    await expect(page).toHaveURL((url) => !url.searchParams.has('tab'));
   }
 });

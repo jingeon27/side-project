@@ -43,19 +43,10 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         await page.emulateMedia({ reducedMotion: 'no-preference' });
       }
 
-      const unanswered = page.getByRole('tab', { name: '답변을 기다려요' });
+      const unanswered = page.getByRole('button', { name: '답변 대기' });
       await unanswered.click();
-      await expect(unanswered).toHaveAttribute('aria-selected', 'true');
+      await expect(unanswered).toHaveAttribute('aria-pressed', 'true');
       await expect(page).toHaveURL(/tab=unanswered/);
-      await expect
-        .poll(() => unanswered.evaluate((node) => Number(getComputedStyle(node, '::after').opacity)))
-        .toBe(1);
-      const indicator = await unanswered.evaluate((node) => {
-        const style = getComputedStyle(node, '::after');
-        return { height: Number.parseFloat(style.height), width: Number.parseFloat(style.width) };
-      });
-      expect(indicator.height).toBeGreaterThan(0);
-      expect(indicator.width).toBeGreaterThan(0);
 
       const compose = page.getByRole('button', { name: '글쓰기' });
       await compose.focus();

@@ -53,7 +53,6 @@ export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
           <Plus size={16} />
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
-        <p>{t(board.description)}</p>
       </div>
       <form
         className="board-search"
