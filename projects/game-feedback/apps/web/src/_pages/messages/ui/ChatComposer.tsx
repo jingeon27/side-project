@@ -1,4 +1,5 @@
 'use client';
+import { Textarea } from '@side/design-system';
 import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
 import { LoaderCircle, Send, Paperclip, X } from 'lucide-react';
@@ -101,8 +102,8 @@ export function ChatComposer({
             }}
           />
         </label>
-        <textarea
-          className="ds-textarea"
+        <Textarea
+          className="min-h-touch"
           {...form.register('body', { onChange: handleDraftChange })}
           aria-label={t('메시지 내용')}
           placeholder={t('플레이 이야기를 나눠보세요')}

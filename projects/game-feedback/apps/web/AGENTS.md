@@ -29,7 +29,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## 공통 디자인 시스템
 
-- Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.
+- Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공식 shadcn/ui Base UI/base-nova 소스와 components.json 설정은 공통 패키지가 소유하며 웹 설정의 ui/utils alias도 그 패키지를 가리킨다. 보이는 폼 컨트롤은 Input/Textarea/NativeSelect/Checkbox를 사용하고 hidden/file 입력과 Quill 전용 DOM만 해당 구현을 유지한다. Checkbox는 RHF Controller로 연결하고 피드 Tabs는 URL을 제어값으로 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.
 - CSS 진입점은 `_app/styles/tailwind.css`이며 공통 styles를 가져온 뒤 앱 도메인별 CSS를 components 레이어로 구성한다. 공통 토큰과 버튼·입력·모달 표현을 앱에서 중복 정의하지 않는다.
 - 앱 고유 게임 카드 표현과 화면 레이아웃은 앱에 둔다. Next ButtonLink는 `@side/design-system/next`를 사용하고, 폼 제출 버튼은 type="submit"을 명시한다.
 - 실제 데이터에 근거하지 않는 LIVE/ACTIVE 상태, 장식용 점과 가운데 점, 불필요한 영문 대문자 라벨과 별/궤도/떠 있는 카드 장식을 추가하지 않는다. 읽지 않은 항목은 숫자나 문구로 표시하고 실제 SSE 상태는 텍스트로 전달한다. 사용자 콘텐츠 원문은 바꾸지 않는다.

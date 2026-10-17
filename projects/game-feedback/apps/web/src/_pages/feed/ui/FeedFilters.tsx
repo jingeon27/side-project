@@ -1,7 +1,7 @@
 'use client';
+import { Input, Tabs, TabsList, TabsTrigger } from '@side/design-system';
 import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
-import { m } from '@/shared/motion';
 import { Clock3, MessageSquare, Plus, Search, SlidersHorizontal } from 'lucide-react';
 
 interface IFeedFiltersProps {
@@ -32,50 +32,31 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
           {t('글쓰기')}
         </MotionButton>
       </div>
-      <div className="feed-controls">
-        <div className="feed-tabs" role="tablist" aria-label={t('피드 필터')}>
-          <button
-            role="tab"
-            aria-selected={tab === 'latest'}
-            className={tab === 'latest' ? 'active' : ''}
-            onClick={() => onTabChange('latest')}
-          >
+      <Tabs
+        value={tab}
+        onValueChange={(value) => {
+          if (typeof value === 'string') onTabChange(value);
+        }}
+        className="feed-controls data-[orientation=horizontal]:flex-row"
+      >
+        <TabsList variant="line" className="feed-tabs" aria-label={t('피드 필터')}>
+          <TabsTrigger value="latest" className={tab === 'latest' ? 'active' : ''}>
             <Clock3 size={16} />
             {t('최신 글')}
-            <m.span
-              aria-hidden="true"
-              className="feed-tab-indicator"
-              initial={false}
-              animate={{ scaleX: tab === 'latest' ? 1 : 0 }}
-              style={{ originX: 0 }}
-            />
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === 'unanswered'}
-            className={tab === 'unanswered' ? 'active' : ''}
-            onClick={() => onTabChange('unanswered')}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="unanswered" className={tab === 'unanswered' ? 'active' : ''}>
             <MessageSquare size={16} />
             {t('답변을 기다려요')}
-            <m.span
-              aria-hidden="true"
-              className="feed-tab-indicator"
-              initial={false}
-              animate={{ scaleX: tab === 'unanswered' ? 1 : 0 }}
-              style={{ originX: 0 }}
-            />
-          </button>
-        </div>
+          </TabsTrigger>
+        </TabsList>
         <div className="sort-label">
           <SlidersHorizontal size={14} />
           {t('최신순')}
         </div>
-      </div>
+      </Tabs>
       <div className="feed-search">
         <Search size={17} />
-        <input
-          className="ds-input"
+        <Input
           aria-label={t('게시글 검색')}
           placeholder={t('관심 있는 게시글을 검색하세요')}
           value={search}

@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, NativeSelect, NativeSelectOption, Textarea } from '@side/design-system';
 import { Flag, LoaderCircle } from 'lucide-react';
 import { ReportInputSchema, type ReportInput } from '@game-feedback/contracts';
 import { ErrorNotice, Field, Modal, useNotify } from '@/shared/ui';
@@ -40,16 +40,16 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
         })}
       >
         <Field label={t('신고 사유')}>
-          <select className="ds-select" {...form.register('reason')}>
-            <option value="SPAM">{t('스팸 / 광고')}</option>
-            <option value="HARASSMENT">{t('욕설 / 괴롭힘')}</option>
-            <option value="PERSONAL_INFORMATION">{t('개인정보 노출')}</option>
-            <option value="IMPERSONATION">{t('사칭')}</option>
-            <option value="OTHER">{t('기타')}</option>
-          </select>
+          <NativeSelect {...form.register('reason')}>
+            <NativeSelectOption value="SPAM">{t('스팸 / 광고')}</NativeSelectOption>
+            <NativeSelectOption value="HARASSMENT">{t('욕설 / 괴롭힘')}</NativeSelectOption>
+            <NativeSelectOption value="PERSONAL_INFORMATION">{t('개인정보 노출')}</NativeSelectOption>
+            <NativeSelectOption value="IMPERSONATION">{t('사칭')}</NativeSelectOption>
+            <NativeSelectOption value="OTHER">{t('기타')}</NativeSelectOption>
+          </NativeSelect>
         </Field>
         <Field label={t('추가 설명 (선택)')}>
-          <textarea className="ds-textarea" {...form.register('detail')} rows={4} maxLength={1000} />
+          <Textarea {...form.register('detail')} rows={4} maxLength={1000} />
         </Field>
         <ErrorNotice message={mutation.error?.message || form.formState.errors.detail?.message} />
         <Button

@@ -1,4 +1,5 @@
 'use client';
+import { NativeSelect, NativeSelectOption } from '@side/design-system';
 import { Globe2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useI18n, setLanguagePreference, languagePreference, localePath } from '@/shared/i18n';
@@ -16,9 +17,8 @@ export function LanguageSettings() {
       <label htmlFor="language-preference" className="sr-only">
         {t('언어 설정')}
       </label>
-      <select
+      <NativeSelect
         id="language-preference"
-        className="ds-input"
         value={preference}
         onChange={(event) => {
           const next = languagePreference(event.target.value);
@@ -29,17 +29,17 @@ export function LanguageSettings() {
           });
         }}
       >
-        <option value="auto">{t('기기 설정에 맞춤')}</option>
-        <option value="ko" lang="ko">
+        <NativeSelectOption value="auto">{t('기기 설정에 맞춤')}</NativeSelectOption>
+        <NativeSelectOption value="ko" lang="ko">
           한국어
-        </option>
-        <option value="en" lang="en">
+        </NativeSelectOption>
+        <NativeSelectOption value="en" lang="en">
           English
-        </option>
-        <option value="ja" lang="ja">
+        </NativeSelectOption>
+        <NativeSelectOption value="ja" lang="ja">
           日本語
-        </option>
-      </select>
+        </NativeSelectOption>
+      </NativeSelect>
       <p className="muted small">
         {preference === 'auto'
           ? t('기기나 브라우저의 언어와 지역 설정을 사용합니다.')

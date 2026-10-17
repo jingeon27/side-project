@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, Input } from '@side/design-system';
 import { Send, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { CommentItem, useCreateCommentMutation } from '@/features/comment';
@@ -58,8 +58,7 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
             }
           })}
         >
-          <input
-            className="ds-input"
+          <Input
             aria-label={t('댓글 내용')}
             {...form.register('body')}
             maxLength={2000}

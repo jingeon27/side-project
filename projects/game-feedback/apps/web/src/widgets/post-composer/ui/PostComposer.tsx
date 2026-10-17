@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
 import { useCallback, type ChangeEvent } from 'react';
 import { useWatch } from 'react-hook-form';
 import type { TRichTextDocument, TBoardKind } from '@game-feedback/contracts';
@@ -181,8 +181,7 @@ function PostComposerForm({
     >
       <Field label={t('분류')}>
         {allowBoardSelection ? (
-          <select
-            className="ds-select"
+          <NativeSelect
             {...form.register('board', {
               onChange: (event: ChangeEvent<HTMLSelectElement>) => {
                 if (event.target.value !== 'COACHING')
@@ -193,25 +192,20 @@ function PostComposerForm({
             })}
           >
             {gameBoards.map((item) => (
-              <option key={item.kind} value={item.kind}>
+              <NativeSelectOption key={item.kind} value={item.kind}>
                 {t(item.name)}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         ) : (
-          <input
-            className="ds-input"
-            readOnly
-            value={t(gameBoards.find((item) => item.kind === board)?.name ?? '피드백')}
-          />
+          <Input readOnly value={t(gameBoards.find((item) => item.kind === board)?.name ?? '피드백')} />
         )}
       </Field>
       <Field label={t('게임')}>
         {post || initialCategoryId ? (
           <>
             <input type="hidden" {...form.register('categoryId')} />
-            <input
-              className="ds-input"
+            <Input
               value={
                 post?.category.name ?? categories.find((item) => item.id === initialCategoryId)?.name ?? ''
               }
@@ -220,20 +214,19 @@ function PostComposerForm({
             />
           </>
         ) : (
-          <select className="ds-select" {...form.register('categoryId')}>
+          <NativeSelect {...form.register('categoryId')}>
             {categories
               .filter((category) => category.active)
               .map((category) => (
-                <option key={category.id} value={category.id}>
+                <NativeSelectOption key={category.id} value={category.id}>
                   {category.name}
-                </option>
+                </NativeSelectOption>
               ))}
-          </select>
+          </NativeSelect>
         )}
       </Field>
       <Field label={t('제목')}>
-        <input
-          className="ds-input"
+        <Input
           {...form.register('title')}
           maxLength={120}
           placeholder={t(
@@ -248,8 +241,7 @@ function PostComposerForm({
       </Field>
       {board === 'FRIEND_SALE' && (
         <Field label={t('판매 금액 (원)')}>
-          <input
-            className="ds-input"
+          <Input
             type="number"
             inputMode="numeric"
             min={1}
@@ -270,17 +262,16 @@ function PostComposerForm({
       {board === 'COACHING' && (
         <>
           <Field label={t('모집 유형')}>
-            <select className="ds-select" {...form.register('coaching.role')}>
+            <NativeSelect {...form.register('coaching.role')}>
               {coachingRoles.map((role) => (
-                <option key={role.value} value={role.value}>
+                <NativeSelectOption key={role.value} value={role.value}>
                   {t(role.label)}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
           </Field>
           <Field label={t(coachingRole === 'STUDENT' ? '시간당 희망 수강료 (원)' : '시간당 수강료 (원)')}>
-            <input
-              className="ds-input"
+            <Input
               type="number"
               min={1}
               max={10000000}
@@ -334,13 +325,13 @@ function PostComposerForm({
             <span className="small muted">{t('요청 시점의 프로필을 첨부해요')}</span>
           </div>
           {accounts.length ? (
-            <select className="ds-select" {...form.register('playerTag')}>
+            <NativeSelect {...form.register('playerTag')}>
               {accounts.map((account) => (
-                <option key={account.playerTag} value={account.playerTag}>
+                <NativeSelectOption key={account.playerTag} value={account.playerTag}>
                   {account.name} ({account.playerTag})
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
           ) : (
             <Button
               variant="secondary"

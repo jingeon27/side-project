@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, Textarea } from '@side/design-system';
 import { MessageSquare, Send, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { useCreateAnswerMutation } from '@/features/answer';
@@ -37,8 +37,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
             }
           })}
         >
-          <textarea
-            className="ds-textarea"
+          <Textarea
             aria-label={t('피드백 내용')}
             {...form.register('body')}
             placeholder={t('어떤 부분을 바꾸면 좋을까요? 구체적인 이유와 함께 알려주세요. (10자 이상)')}

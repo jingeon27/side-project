@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, Textarea } from '@side/design-system';
 import { LoaderCircle } from 'lucide-react';
 import { useUpdateAnswerMutation } from '@/features/answer';
 import { useUpdateCommentMutation } from '@/features/comment';
@@ -43,8 +43,7 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
           }
         })}
       >
-        <textarea
-          className="ds-textarea"
+        <Textarea
           aria-label={t('수정 내용')}
           {...form.register('body')}
           rows={6}

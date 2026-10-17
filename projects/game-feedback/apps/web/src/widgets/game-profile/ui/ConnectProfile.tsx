@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, Input } from '@side/design-system';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PlayerTagSchema } from '@game-feedback/contracts';
@@ -35,8 +35,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
     <form className="connect-profile" onSubmit={form.handleSubmit(handleLookup)}>
       <Field label={t('플레이어 태그')} hint={t('클래시 로얄 프로필의 이름 아래에서 찾을 수 있어요.')}>
         <div className="input-button-row">
-          <input
-            className="ds-input"
+          <Input
             {...tagField}
             onChange={(event) => {
               void tagField.onChange(event);

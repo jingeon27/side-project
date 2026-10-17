@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+import { Button, Input } from '@side/design-system';
 import { useWatch } from 'react-hook-form';
 import { useDeleteAccount } from '@/features/auth';
 import { useZodForm } from '@/shared/model/form';
@@ -30,7 +30,7 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
         onSubmit={form.handleSubmit(() => deletion.mutate(undefined, { onSuccess: onClose }))}
       >
         <Field label={t("계속하려면 '탈퇴'를 입력해 주세요")}>
-          <input className="ds-input" {...form.register('confirmation')} placeholder={t('탈퇴')} required />
+          <Input {...form.register('confirmation')} placeholder={t('탈퇴')} required />
         </Field>
         <ErrorNotice message={form.formState.errors.confirmation?.message ?? deletion.error?.message} />
         <Button

@@ -2,7 +2,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
-import { Button } from '@side/design-system';
+import { Button, Input } from '@side/design-system';
 import type { Category } from '@/shared/api';
 import { appRoutes } from '@game-feedback/bridge';
 import { boardBySlug } from '@/features/board';
@@ -67,12 +67,11 @@ export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
           );
         }}
       >
-        <input
+        <Input
           key={q}
           name="q"
           defaultValue={q}
           maxLength={100}
-          className="ds-input"
           aria-label={t('게시판 검색')}
           placeholder={t('게시판 검색')}
         />

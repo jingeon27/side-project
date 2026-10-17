@@ -2,8 +2,8 @@
 import { useI18n } from '@/shared/i18n';
 import type { FormEvent } from 'react';
 import { isNativeApp } from '@/shared/native';
-import { Button } from '@side/design-system';
-import { useWatch } from 'react-hook-form';
+import { Button, Input, Checkbox } from '@side/design-system';
+import { Controller, useWatch } from 'react-hook-form';
 import { ArrowRight, Gamepad2, LoaderCircle, ShieldCheck } from 'lucide-react';
 import { useCompleteOnboarding, useDemoLogin, useSession, useNativeLogin } from '@/features/auth';
 import type { Session } from '@/shared/api';
@@ -99,8 +99,7 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
             </div>
           )}
           <Field label={t('서비스 닉네임')}>
-            <input
-              className="ds-input"
+            <Input
               {...form.register('nickname')}
               minLength={2}
               maxLength={20}
@@ -110,7 +109,20 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
             />
           </Field>
           <label className="check-row">
-            <input type="checkbox" {...form.register('acceptedTerms')} required />
+            <Controller
+              name="acceptedTerms"
+              control={form.control}
+              render={({ field }) => (
+                <Checkbox
+                  name={field.name}
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked)}
+                  onBlur={() => field.onBlur()}
+                  inputRef={field.ref}
+                  required
+                />
+              )}
+            />
             <span>
               <a href={`/${locale}/terms`} target="_blank" rel="noreferrer">
                 {t('이용약관')}
@@ -123,7 +135,20 @@ export function LoginDialog({ open, onOpenChange, onSuccess }: ILoginDialogProps
             </span>
           </label>
           <label className="check-row">
-            <input type="checkbox" {...form.register('ageConfirmed')} required />
+            <Controller
+              name="ageConfirmed"
+              control={form.control}
+              render={({ field }) => (
+                <Checkbox
+                  name={field.name}
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked)}
+                  onBlur={() => field.onBlur()}
+                  inputRef={field.ref}
+                  required
+                />
+              )}
+            />
             <span>{t('만 14세 이상입니다.')}</span>
           </label>
           <ErrorNotice

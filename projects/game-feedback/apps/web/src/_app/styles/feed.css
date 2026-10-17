@@ -55,15 +55,6 @@
   .feed-tabs > button.active {
     color: var(--color-ink);
   }
-  .feed-tab-indicator {
-    height: 2px;
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    background: var(--color-brand-strong);
-    pointer-events: none;
-  }
   .sort-label {
     display: flex;
     align-items: center;
