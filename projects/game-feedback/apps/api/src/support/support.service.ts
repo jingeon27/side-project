@@ -23,19 +23,22 @@ export class SupportService {
   async start(req: SessionRequest, body: unknown) {
     const user = requireUser(req);
     const { topic } = parse(SupportInputSchema, body);
+    const availableAdmin = {
+      bannedAt: null,
+      ...(!this.config.demoMode && !this.config.testAuthEnabled ? { demoKey: null } : {}),
+    };
     const thread = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
       const existing = await tx.supportConversation.findFirst({
-        where: { requesterId: user.id, admin: { bannedAt: null } },
+        where: { requesterId: user.id, admin: availableAdmin },
       });
       if (existing)
         return tx.supportConversation.update({ where: { id: existing.id }, data: { topic, status: 'OPEN' } });
       const admin = await tx.user.findFirst({
         where: {
           role: 'ADMIN',
-          bannedAt: null,
+          ...availableAdmin,
           id: { not: user.id },
-          ...(!this.config.demoMode ? { demoKey: null } : {}),
         },
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       });

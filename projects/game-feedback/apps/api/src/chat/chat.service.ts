@@ -80,9 +80,10 @@ export class ChatService {
     };
   }
   private async excluded(userId: string) {
-    const demoAuthors = this.config.demoMode
-      ? []
-      : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
+    const demoAuthors =
+      this.config.demoMode || this.config.testAuthEnabled
+        ? []
+        : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
     const blocks = await this.db.block.findMany({
       where: { OR: [{ userId }, { blockedUserId: userId }] },
     });
@@ -122,7 +123,7 @@ export class ChatService {
     if (!row.support && (row.firstUser.bannedAt || row.secondUser.bannedAt))
       throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
     if (
-      (!this.config.demoMode && peer.demoKey) ||
+      (!this.config.demoMode && !this.config.testAuthEnabled && peer.demoKey) ||
       (!row.support && (await this.blocked(userId, peer.id, db)))
     ) {
       throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
@@ -165,7 +166,7 @@ export class ChatService {
     if (
       !peer ||
       peer.bannedAt ||
-      (!this.config.demoMode && peer.demoKey) ||
+      (!this.config.demoMode && !this.config.testAuthEnabled && peer.demoKey) ||
       (await this.blocked(user.id, recipientId))
     ) {
       throw new ApiError(404, 'RECIPIENT_UNAVAILABLE', '이 사용자와 대화를 시작할 수 없습니다.');
@@ -198,7 +199,9 @@ export class ChatService {
     const cursor = decodeCursor(query.cursor);
     const excluded = await this.excluded(user.id);
     const base: Prisma.ChatConversationWhereInput = {
-      ...(!this.config.demoMode ? { firstUser: { demoKey: null }, secondUser: { demoKey: null } } : {}),
+      ...(!this.config.demoMode && !this.config.testAuthEnabled
+        ? { firstUser: { demoKey: null }, secondUser: { demoKey: null } }
+        : {}),
       OR: [
         { firstUserId: user.id, firstHidden: false },
         { secondUserId: user.id, secondHidden: false },

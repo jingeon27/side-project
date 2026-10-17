@@ -171,6 +171,133 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect(detail.body.comments.length).toBeGreaterThan(0);
   });
 
+  it('starts player chat with test tokens while demo mode is disabled and preserves private access', async () => {
+    const player = await account('sample-user-0');
+    const peer = await account('sample-user-3');
+    const outsider = await account('sample-test-admin');
+    expect((await player.get('/api/session').expect(200)).body.demoMode).toBe(false);
+    const room = (
+      await player
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: 'sample-user-3' })
+        .expect(200)
+    ).body;
+    expect(room.peer.id).toBe('sample-user-3');
+    const body = `테스트 토큰으로 전송한 메시지 ${randomUUID()}`;
+    const message = (
+      await player
+        .post(`/api/conversations/${room.id}/messages`)
+        .set('Origin', origin)
+        .send({ body, clientMessageId: randomUUID() })
+        .expect(200)
+    ).body;
+    expect((await peer.get(`/api/conversations/${room.id}/messages`).expect(200)).body.items).toContainEqual(
+      expect.objectContaining({ id: message.id, body }),
+    );
+    const list = (await peer.get('/api/conversations').expect(200)).body;
+    expect(list.items).toContainEqual(
+      expect.objectContaining({ id: room.id, unreadCount: expect.any(Number) }),
+    );
+    expect(list.unreadCount).toBeGreaterThan(0);
+    await outsider.get(`/api/conversations/${room.id}/messages`).expect(404);
+    await player
+      .post('/api/blocks')
+      .set('Origin', origin)
+      .send({ blockedUserId: 'sample-user-3' })
+      .expect(200);
+    try {
+      await peer.get(`/api/conversations/${room.id}/messages`).expect(404);
+      expect((await peer.get('/api/conversations').expect(200)).body.items).not.toContainEqual(
+        expect.objectContaining({ id: room.id }),
+      );
+    } finally {
+      await player.delete('/api/blocks/sample-user-3').set('Origin', origin).expect(200);
+    }
+  });
+
+  it('opens and reuses administrator support with test tokens for both inquiry topics', async () => {
+    const requester = await account('sample-user-0');
+    const admin = await account('sample-test-admin');
+    const outsider = await account('sample-user-3');
+    const general = (
+      await requester
+        .post('/api/support/conversations')
+        .set('Origin', origin)
+        .send({ topic: 'GENERAL' })
+        .expect(200)
+    ).body;
+    expect(general).toMatchObject({ supportTopic: 'GENERAL', peer: { id: 'sample-test-admin' } });
+    const verification = (
+      await requester
+        .post('/api/support/conversations')
+        .set('Origin', origin)
+        .send({ topic: 'VERIFICATION' })
+        .expect(200)
+    ).body;
+    expect(verification).toMatchObject({ id: general.id, supportTopic: 'VERIFICATION' });
+    for (const [agent, body] of [
+      [requester, '프로필 인증을 요청합니다.'],
+      [admin, '관리자가 문의 내용을 확인했습니다.'],
+    ] as const) {
+      const message = (
+        await agent
+          .post(`/api/conversations/${general.id}/messages`)
+          .set('Origin', origin)
+          .send({ body, clientMessageId: randomUUID() })
+          .expect(200)
+      ).body;
+      expect(
+        (await requester.get(`/api/conversations/${general.id}/messages`).expect(200)).body.items,
+      ).toContainEqual(expect.objectContaining({ id: message.id, body }));
+    }
+    expect((await requester.get('/api/conversations').expect(200)).body.items).toContainEqual(
+      expect.objectContaining({ id: general.id }),
+    );
+    expect((await admin.get('/api/admin/support').expect(200)).body).toContainEqual(
+      expect.objectContaining({ conversationId: general.id, requesterId: 'sample-user-0' }),
+    );
+    await outsider.get(`/api/conversations/${general.id}/messages`).expect(404);
+  });
+
+  it('keeps test players and test administrators unavailable when test authentication is disabled', async () => {
+    const { db, app } = fixture();
+    if (!state.normal) throw new Error('Normal application missing.');
+    const user = await db.user.create({
+      data: { nickname: '일반사용자', termsVersion: 'test', ageConfirmed: true },
+    });
+    const raw = randomBytes(32).toString('base64url');
+    await db.session.create({
+      data: { userId: user.id, tokenHash: hash(raw), expiresAt: new Date(Date.now() + 60000) },
+    });
+    const token = `Bearer ${raw}`;
+    const room = (
+      await supertest(app.getHttpServer())
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .set('Authorization', token)
+        .send({ recipientId: 'sample-user-3' })
+        .expect(200)
+    ).body;
+    const normal = supertest(state.normal.getHttpServer());
+    await normal
+      .post('/api/conversations')
+      .set('Origin', origin)
+      .set('Authorization', token)
+      .send({ recipientId: 'sample-user-3' })
+      .expect(404);
+    await normal.get(`/api/conversations/${room.id}/messages`).set('Authorization', token).expect(404);
+    expect(
+      (await normal.get('/api/conversations').set('Authorization', token).expect(200)).body.items,
+    ).toHaveLength(0);
+    await normal
+      .post('/api/support/conversations')
+      .set('Origin', origin)
+      .set('Authorization', token)
+      .send({ topic: 'GENERAL' })
+      .expect(503);
+  });
+
   it('counts a public visit once per visitor for 24 hours, including concurrent retries', async () => {
     const { request, db } = fixture();
     const id = 'sample-post-0';
