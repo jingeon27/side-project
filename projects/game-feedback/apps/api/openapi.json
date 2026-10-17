@@ -379,6 +379,98 @@
         }
       }
     },
+    "/api/conversations/{id}/attachments": {
+      "post": {
+        "operationId": "uploadChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatAttachmentUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAttachment"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{id}/attachments/{attachmentId}": {
+      "delete": {
+        "operationId": "deleteChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/conversations/{id}/read": {
       "post": {
         "operationId": "readConversation",
@@ -800,6 +892,21 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "board",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "FEEDBACK",
+                "ACCOUNT_TRADE",
+                "FRIENDLY",
+                "FRIEND",
+                "SALE"
+              ]
             }
           }
         ],
@@ -1880,6 +1987,141 @@
   },
   "components": {
     "schemas": {
+      "RichTextDocument": {
+        "type": "object",
+        "properties": {
+          "ops": {
+            "minItems": 1,
+            "maxItems": 2000,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "insert": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 10001
+                },
+                "attributes": {
+                  "type": "object",
+                  "properties": {
+                    "bold": {
+                      "type": "boolean"
+                    },
+                    "italic": {
+                      "type": "boolean"
+                    },
+                    "underline": {
+                      "type": "boolean"
+                    },
+                    "strike": {
+                      "type": "boolean"
+                    },
+                    "link": {
+                      "type": "string",
+                      "maxLength": 2048,
+                      "pattern": "^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$"
+                    },
+                    "header": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "const": 2
+                        },
+                        {
+                          "type": "number",
+                          "const": 3
+                        }
+                      ]
+                    },
+                    "list": {
+                      "type": "string",
+                      "enum": [
+                        "ordered",
+                        "bullet"
+                      ]
+                    },
+                    "blockquote": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "insert"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "ops"
+        ],
+        "additionalProperties": false
+      },
+      "ChatAttachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "mimeType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/gif",
+              "video/mp4",
+              "video/webm"
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 26214400
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mimeType",
+          "size",
+          "kind",
+          "url"
+        ]
+      },
+      "ChatAttachmentUpload": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
       "AppExchangeInput": {
         "type": "object",
         "properties": {
@@ -2075,7 +2317,61 @@
           },
           "body": {
             "type": "string",
-            "minLength": 1
+            "maxLength": 2000
+          },
+          "attachments": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "mimeType": {
+                  "type": "string",
+                  "enum": [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp",
+                    "image/gif",
+                    "video/mp4",
+                    "video/webm"
+                  ]
+                },
+                "size": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 26214400
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "IMAGE",
+                    "VIDEO"
+                  ]
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "mimeType",
+                "size",
+                "kind",
+                "url"
+              ]
+            }
           },
           "createdAt": {
             "type": "string",
@@ -2188,7 +2484,61 @@
                   },
                   "body": {
                     "type": "string",
-                    "minLength": 1
+                    "maxLength": 2000
+                  },
+                  "attachments": {
+                    "maxItems": 4,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "enum": [
+                            "image/jpeg",
+                            "image/png",
+                            "image/webp",
+                            "image/gif",
+                            "video/mp4",
+                            "video/webm"
+                          ]
+                        },
+                        "size": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 26214400
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "IMAGE",
+                            "VIDEO"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "pattern": "^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "mimeType",
+                        "size",
+                        "kind",
+                        "url"
+                      ]
+                    }
                   },
                   "createdAt": {
                     "type": "string",
@@ -2343,7 +2693,61 @@
                         },
                         "body": {
                           "type": "string",
-                          "minLength": 1
+                          "maxLength": 2000
+                        },
+                        "attachments": {
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "mimeType": {
+                                "type": "string",
+                                "enum": [
+                                  "image/jpeg",
+                                  "image/png",
+                                  "image/webp",
+                                  "image/gif",
+                                  "video/mp4",
+                                  "video/webm"
+                                ]
+                              },
+                              "size": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 26214400
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "IMAGE",
+                                  "VIDEO"
+                                ]
+                              },
+                              "url": {
+                                "type": "string",
+                                "pattern": "^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "mimeType",
+                              "size",
+                              "kind",
+                              "url"
+                            ]
+                          }
                         },
                         "createdAt": {
                           "type": "string",
@@ -2520,7 +2924,61 @@
                       },
                       "body": {
                         "type": "string",
-                        "minLength": 1
+                        "maxLength": 2000
+                      },
+                      "attachments": {
+                        "maxItems": 4,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "mimeType": {
+                              "type": "string",
+                              "enum": [
+                                "image/jpeg",
+                                "image/png",
+                                "image/webp",
+                                "image/gif",
+                                "video/mp4",
+                                "video/webm"
+                              ]
+                            },
+                            "size": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 26214400
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "IMAGE",
+                                "VIDEO"
+                              ]
+                            },
+                            "url": {
+                              "type": "string",
+                              "pattern": "^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "mimeType",
+                            "size",
+                            "kind",
+                            "url"
+                          ]
+                        }
                       },
                       "createdAt": {
                         "type": "string",
@@ -2629,7 +3087,61 @@
                 },
                 "body": {
                   "type": "string",
-                  "minLength": 1
+                  "maxLength": 2000
+                },
+                "attachments": {
+                  "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "mimeType": {
+                        "type": "string",
+                        "enum": [
+                          "image/jpeg",
+                          "image/png",
+                          "image/webp",
+                          "image/gif",
+                          "video/mp4",
+                          "video/webm"
+                        ]
+                      },
+                      "size": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 26214400
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "IMAGE",
+                          "VIDEO"
+                        ]
+                      },
+                      "url": {
+                        "type": "string",
+                        "pattern": "^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "mimeType",
+                      "size",
+                      "kind",
+                      "url"
+                    ]
+                  }
                 },
                 "createdAt": {
                   "type": "string",
@@ -2689,13 +3201,21 @@
         "properties": {
           "body": {
             "type": "string",
-            "minLength": 1,
             "maxLength": 2000
           },
           "clientMessageId": {
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "attachmentIds": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
           }
         },
         "required": [
@@ -3122,6 +3642,96 @@
           "body": {
             "type": "string",
             "minLength": 1
+          },
+          "board": {
+            "type": "string",
+            "enum": [
+              "FEEDBACK",
+              "ACCOUNT_TRADE",
+              "FRIENDLY",
+              "FRIEND",
+              "SALE"
+            ]
+          },
+          "document": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "ops": {
+                    "minItems": 1,
+                    "maxItems": 2000,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "insert": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 10001
+                        },
+                        "attributes": {
+                          "type": "object",
+                          "properties": {
+                            "bold": {
+                              "type": "boolean"
+                            },
+                            "italic": {
+                              "type": "boolean"
+                            },
+                            "underline": {
+                              "type": "boolean"
+                            },
+                            "strike": {
+                              "type": "boolean"
+                            },
+                            "link": {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "pattern": "^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$"
+                            },
+                            "header": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "const": 2
+                                },
+                                {
+                                  "type": "number",
+                                  "const": 3
+                                }
+                              ]
+                            },
+                            "list": {
+                              "type": "string",
+                              "enum": [
+                                "ordered",
+                                "bullet"
+                              ]
+                            },
+                            "blockquote": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "insert"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "ops"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "categoryId": {
             "type": "string",
@@ -3568,6 +4178,96 @@
                   "type": "string",
                   "minLength": 1
                 },
+                "board": {
+                  "type": "string",
+                  "enum": [
+                    "FEEDBACK",
+                    "ACCOUNT_TRADE",
+                    "FRIENDLY",
+                    "FRIEND",
+                    "SALE"
+                  ]
+                },
+                "document": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "ops": {
+                          "minItems": 1,
+                          "maxItems": 2000,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "insert": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 10001
+                              },
+                              "attributes": {
+                                "type": "object",
+                                "properties": {
+                                  "bold": {
+                                    "type": "boolean"
+                                  },
+                                  "italic": {
+                                    "type": "boolean"
+                                  },
+                                  "underline": {
+                                    "type": "boolean"
+                                  },
+                                  "strike": {
+                                    "type": "boolean"
+                                  },
+                                  "link": {
+                                    "type": "string",
+                                    "maxLength": 2048,
+                                    "pattern": "^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$"
+                                  },
+                                  "header": {
+                                    "anyOf": [
+                                      {
+                                        "type": "number",
+                                        "const": 2
+                                      },
+                                      {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    ]
+                                  },
+                                  "list": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ordered",
+                                      "bullet"
+                                    ]
+                                  },
+                                  "blockquote": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "insert"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "ops"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "categoryId": {
                   "type": "string",
                   "minLength": 1,
@@ -3806,6 +4506,96 @@
               "body": {
                 "type": "string",
                 "minLength": 1
+              },
+              "board": {
+                "type": "string",
+                "enum": [
+                  "FEEDBACK",
+                  "ACCOUNT_TRADE",
+                  "FRIENDLY",
+                  "FRIEND",
+                  "SALE"
+                ]
+              },
+              "document": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "ops": {
+                        "minItems": 1,
+                        "maxItems": 2000,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "insert": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 10001
+                            },
+                            "attributes": {
+                              "type": "object",
+                              "properties": {
+                                "bold": {
+                                  "type": "boolean"
+                                },
+                                "italic": {
+                                  "type": "boolean"
+                                },
+                                "underline": {
+                                  "type": "boolean"
+                                },
+                                "strike": {
+                                  "type": "boolean"
+                                },
+                                "link": {
+                                  "type": "string",
+                                  "maxLength": 2048,
+                                  "pattern": "^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$"
+                                },
+                                "header": {
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "const": 2
+                                    },
+                                    {
+                                      "type": "number",
+                                      "const": 3
+                                    }
+                                  ]
+                                },
+                                "list": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ordered",
+                                    "bullet"
+                                  ]
+                                },
+                                "blockquote": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "insert"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "ops"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "categoryId": {
                 "type": "string",
@@ -4413,6 +5203,96 @@
             "minLength": 20,
             "maxLength": 10000
           },
+          "board": {
+            "type": "string",
+            "enum": [
+              "FEEDBACK",
+              "ACCOUNT_TRADE",
+              "FRIENDLY",
+              "FRIEND",
+              "SALE"
+            ]
+          },
+          "document": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "ops": {
+                    "minItems": 1,
+                    "maxItems": 2000,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "insert": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 10001
+                        },
+                        "attributes": {
+                          "type": "object",
+                          "properties": {
+                            "bold": {
+                              "type": "boolean"
+                            },
+                            "italic": {
+                              "type": "boolean"
+                            },
+                            "underline": {
+                              "type": "boolean"
+                            },
+                            "strike": {
+                              "type": "boolean"
+                            },
+                            "link": {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "pattern": "^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$"
+                            },
+                            "header": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "const": 2
+                                },
+                                {
+                                  "type": "number",
+                                  "const": 3
+                                }
+                              ]
+                            },
+                            "list": {
+                              "type": "string",
+                              "enum": [
+                                "ordered",
+                                "bullet"
+                              ]
+                            },
+                            "blockquote": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "insert"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "ops"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "categoryId": {
             "type": "string",
             "minLength": 1
@@ -4441,6 +5321,86 @@
             "type": "string",
             "minLength": 20,
             "maxLength": 10000
+          },
+          "document": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "ops": {
+                    "minItems": 1,
+                    "maxItems": 2000,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "insert": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 10001
+                        },
+                        "attributes": {
+                          "type": "object",
+                          "properties": {
+                            "bold": {
+                              "type": "boolean"
+                            },
+                            "italic": {
+                              "type": "boolean"
+                            },
+                            "underline": {
+                              "type": "boolean"
+                            },
+                            "strike": {
+                              "type": "boolean"
+                            },
+                            "link": {
+                              "type": "string",
+                              "maxLength": 2048,
+                              "pattern": "^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$"
+                            },
+                            "header": {
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "const": 2
+                                },
+                                {
+                                  "type": "number",
+                                  "const": 3
+                                }
+                              ]
+                            },
+                            "list": {
+                              "type": "string",
+                              "enum": [
+                                "ordered",
+                                "bullet"
+                              ]
+                            },
+                            "blockquote": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "insert"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "ops"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "playerTag": {
             "type": "string",

@@ -172,6 +172,17 @@ export const listConversationsResponseItemsItemLastMessageOneConversationIdMax =
 export const listConversationsResponseItemsItemLastMessageOneSenderIdMax = 100;
 
 
+export const listConversationsResponseItemsItemLastMessageOneBodyMax = 2000;
+
+export const listConversationsResponseItemsItemLastMessageOneAttachmentsItemIdMax = 100;
+
+export const listConversationsResponseItemsItemLastMessageOneAttachmentsItemNameMax = 200;
+
+export const listConversationsResponseItemsItemLastMessageOneAttachmentsItemSizeExclusiveMin = 0;
+export const listConversationsResponseItemsItemLastMessageOneAttachmentsItemSizeMax = 26214400;
+
+export const listConversationsResponseItemsItemLastMessageOneAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const listConversationsResponseItemsItemLastMessageOneAttachmentsMax = 4;
 
 export const listConversationsResponseItemsItemLastMessageOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const listConversationsResponseItemsItemLastMessageOneClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -206,7 +217,15 @@ export const ListConversationsResponse = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(listConversationsResponseItemsItemLastMessageOneBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(listConversationsResponseItemsItemLastMessageOneAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(listConversationsResponseItemsItemLastMessageOneAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(listConversationsResponseItemsItemLastMessageOneAttachmentsItemSizeExclusiveMin).max(listConversationsResponseItemsItemLastMessageOneAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(listConversationsResponseItemsItemLastMessageOneAttachmentsItemUrlRegExp)
+})).max(listConversationsResponseItemsItemLastMessageOneAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(listConversationsResponseItemsItemLastMessageOneCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(listConversationsResponseItemsItemLastMessageOneClientMessageIdRegExp)
 }),zod.null()]),
@@ -239,6 +258,17 @@ export const createConversationResponseLastMessageOneConversationIdMax = 100;
 export const createConversationResponseLastMessageOneSenderIdMax = 100;
 
 
+export const createConversationResponseLastMessageOneBodyMax = 2000;
+
+export const createConversationResponseLastMessageOneAttachmentsItemIdMax = 100;
+
+export const createConversationResponseLastMessageOneAttachmentsItemNameMax = 200;
+
+export const createConversationResponseLastMessageOneAttachmentsItemSizeExclusiveMin = 0;
+export const createConversationResponseLastMessageOneAttachmentsItemSizeMax = 26214400;
+
+export const createConversationResponseLastMessageOneAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const createConversationResponseLastMessageOneAttachmentsMax = 4;
 
 export const createConversationResponseLastMessageOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const createConversationResponseLastMessageOneClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -268,7 +298,15 @@ export const CreateConversationResponse = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(createConversationResponseLastMessageOneBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(createConversationResponseLastMessageOneAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(createConversationResponseLastMessageOneAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(createConversationResponseLastMessageOneAttachmentsItemSizeExclusiveMin).max(createConversationResponseLastMessageOneAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(createConversationResponseLastMessageOneAttachmentsItemUrlRegExp)
+})).max(createConversationResponseLastMessageOneAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(createConversationResponseLastMessageOneCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(createConversationResponseLastMessageOneClientMessageIdRegExp)
 }),zod.null()]),
@@ -304,6 +342,17 @@ export const listChatMessagesResponseConversationLastMessageOneConversationIdMax
 export const listChatMessagesResponseConversationLastMessageOneSenderIdMax = 100;
 
 
+export const listChatMessagesResponseConversationLastMessageOneBodyMax = 2000;
+
+export const listChatMessagesResponseConversationLastMessageOneAttachmentsItemIdMax = 100;
+
+export const listChatMessagesResponseConversationLastMessageOneAttachmentsItemNameMax = 200;
+
+export const listChatMessagesResponseConversationLastMessageOneAttachmentsItemSizeExclusiveMin = 0;
+export const listChatMessagesResponseConversationLastMessageOneAttachmentsItemSizeMax = 26214400;
+
+export const listChatMessagesResponseConversationLastMessageOneAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const listChatMessagesResponseConversationLastMessageOneAttachmentsMax = 4;
 
 export const listChatMessagesResponseConversationLastMessageOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const listChatMessagesResponseConversationLastMessageOneClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -319,6 +368,17 @@ export const listChatMessagesResponseItemsItemConversationIdMax = 100;
 export const listChatMessagesResponseItemsItemSenderIdMax = 100;
 
 
+export const listChatMessagesResponseItemsItemBodyMax = 2000;
+
+export const listChatMessagesResponseItemsItemAttachmentsItemIdMax = 100;
+
+export const listChatMessagesResponseItemsItemAttachmentsItemNameMax = 200;
+
+export const listChatMessagesResponseItemsItemAttachmentsItemSizeExclusiveMin = 0;
+export const listChatMessagesResponseItemsItemAttachmentsItemSizeMax = 26214400;
+
+export const listChatMessagesResponseItemsItemAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const listChatMessagesResponseItemsItemAttachmentsMax = 4;
 
 export const listChatMessagesResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const listChatMessagesResponseItemsItemClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -345,7 +405,15 @@ export const ListChatMessagesResponse = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(listChatMessagesResponseConversationLastMessageOneBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(listChatMessagesResponseConversationLastMessageOneAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(listChatMessagesResponseConversationLastMessageOneAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(listChatMessagesResponseConversationLastMessageOneAttachmentsItemSizeExclusiveMin).max(listChatMessagesResponseConversationLastMessageOneAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(listChatMessagesResponseConversationLastMessageOneAttachmentsItemUrlRegExp)
+})).max(listChatMessagesResponseConversationLastMessageOneAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(listChatMessagesResponseConversationLastMessageOneCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(listChatMessagesResponseConversationLastMessageOneClientMessageIdRegExp)
 }),zod.null()]),
@@ -363,7 +431,15 @@ export const ListChatMessagesResponse = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(listChatMessagesResponseItemsItemBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(listChatMessagesResponseItemsItemAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(listChatMessagesResponseItemsItemAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(listChatMessagesResponseItemsItemAttachmentsItemSizeExclusiveMin).max(listChatMessagesResponseItemsItemAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(listChatMessagesResponseItemsItemAttachmentsItemUrlRegExp)
+})).max(listChatMessagesResponseItemsItemAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(listChatMessagesResponseItemsItemCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(listChatMessagesResponseItemsItemClientMessageIdRegExp)
 })),
@@ -378,11 +454,16 @@ export const SendChatMessageParams = zod.object({
 export const sendChatMessageBodyBodyMax = 2000;
 
 export const sendChatMessageBodyClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+export const sendChatMessageBodyAttachmentIdsItemMax = 100;
+
+export const sendChatMessageBodyAttachmentIdsMax = 4;
+
 
 
 export const SendChatMessageBody = zod.object({
-  "body": zod.string().min(1).max(sendChatMessageBodyBodyMax),
-  "clientMessageId": zod.uuid().regex(sendChatMessageBodyClientMessageIdRegExp)
+  "body": zod.string().max(sendChatMessageBodyBodyMax),
+  "clientMessageId": zod.uuid().regex(sendChatMessageBodyClientMessageIdRegExp),
+  "attachmentIds": zod.array(zod.string().min(1).max(sendChatMessageBodyAttachmentIdsItemMax)).max(sendChatMessageBodyAttachmentIdsMax).optional()
 })
 
 export const sendChatMessageResponseIdMax = 100;
@@ -392,6 +473,17 @@ export const sendChatMessageResponseConversationIdMax = 100;
 export const sendChatMessageResponseSenderIdMax = 100;
 
 
+export const sendChatMessageResponseBodyMax = 2000;
+
+export const sendChatMessageResponseAttachmentsItemIdMax = 100;
+
+export const sendChatMessageResponseAttachmentsItemNameMax = 200;
+
+export const sendChatMessageResponseAttachmentsItemSizeExclusiveMin = 0;
+export const sendChatMessageResponseAttachmentsItemSizeMax = 26214400;
+
+export const sendChatMessageResponseAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const sendChatMessageResponseAttachmentsMax = 4;
 
 export const sendChatMessageResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const sendChatMessageResponseClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -407,9 +499,55 @@ export const SendChatMessageResponse = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(sendChatMessageResponseBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(sendChatMessageResponseAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(sendChatMessageResponseAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(sendChatMessageResponseAttachmentsItemSizeExclusiveMin).max(sendChatMessageResponseAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(sendChatMessageResponseAttachmentsItemUrlRegExp)
+})).max(sendChatMessageResponseAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(sendChatMessageResponseCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(sendChatMessageResponseClientMessageIdRegExp)
+})
+
+
+export const UploadChatAttachmentParams = zod.object({
+  "id": zod.string()
+})
+
+export const UploadChatAttachmentBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const uploadChatAttachmentResponseIdMax = 100;
+
+export const uploadChatAttachmentResponseNameMax = 200;
+
+export const uploadChatAttachmentResponseSizeExclusiveMin = 0;
+export const uploadChatAttachmentResponseSizeMax = 26214400;
+
+export const uploadChatAttachmentResponseUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+
+
+export const UploadChatAttachmentResponse = zod.object({
+  "id": zod.string().min(1).max(uploadChatAttachmentResponseIdMax),
+  "name": zod.string().min(1).max(uploadChatAttachmentResponseNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(uploadChatAttachmentResponseSizeExclusiveMin).max(uploadChatAttachmentResponseSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(uploadChatAttachmentResponseUrlRegExp)
+})
+
+
+export const DeleteChatAttachmentParams = zod.object({
+  "id": zod.string(),
+  "attachmentId": zod.string()
+})
+
+export const DeleteChatAttachmentResponse = zod.object({
+  "ok": zod.literal(true)
 })
 
 
@@ -591,12 +729,21 @@ export const ListPostsQueryParams = zod.object({
   "authorId": zod.string().min(1).max(listPostsQueryAuthorIdMax).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
-  "q": zod.string().optional()
+  "q": zod.string().optional(),
+  "board": zod.enum(['ALL', 'FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional()
 })
 
 export const listPostsResponseItemsItemIdMax = 100;
 
 
+
+export const listPostsResponseItemsItemDocumentOneOpsItemInsertMax = 10001;
+
+export const listPostsResponseItemsItemDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const listPostsResponseItemsItemDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const listPostsResponseItemsItemDocumentOneOpsMax = 2000;
 
 export const listPostsResponseItemsItemCategoryIdMax = 100;
 
@@ -640,6 +787,22 @@ export const ListPostsResponse = zod.object({
   "id": zod.string().min(1).max(listPostsResponseItemsItemIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(listPostsResponseItemsItemDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(listPostsResponseItemsItemDocumentOneOpsItemAttributesLinkMax).regex(listPostsResponseItemsItemDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(listPostsResponseItemsItemDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(listPostsResponseItemsItemCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(listPostsResponseItemsItemCategoryIdMaxOne),
@@ -686,6 +849,14 @@ export const createPostBodyTitleMax = 120;
 export const createPostBodyBodyMin = 20;
 export const createPostBodyBodyMax = 10000;
 
+export const createPostBodyDocumentOneOpsItemInsertMax = 10001;
+
+export const createPostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const createPostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const createPostBodyDocumentOneOpsMax = 2000;
+
 
 export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
@@ -693,6 +864,22 @@ export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,1
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
   "body": zod.string().min(createPostBodyBodyMin).max(createPostBodyBodyMax),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(createPostBodyDocumentOneOpsItemAttributesLinkMax).regex(createPostBodyDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(createPostBodyDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1),
   "playerTag": zod.string().regex(createPostBodyPlayerTagRegExp).optional()
 })
@@ -700,6 +887,14 @@ export const CreatePostBody = zod.object({
 export const createPostResponseIdMax = 100;
 
 
+
+export const createPostResponseDocumentOneOpsItemInsertMax = 10001;
+
+export const createPostResponseDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const createPostResponseDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const createPostResponseDocumentOneOpsMax = 2000;
 
 export const createPostResponseCategoryIdMax = 100;
 
@@ -741,6 +936,22 @@ export const CreatePostResponse = zod.object({
   "id": zod.string().min(1).max(createPostResponseIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(createPostResponseDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(createPostResponseDocumentOneOpsItemAttributesLinkMax).regex(createPostResponseDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(createPostResponseDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(createPostResponseCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(createPostResponseCategoryIdMaxOne),
@@ -786,6 +997,14 @@ export const GetPostParams = zod.object({
 export const getPostResponsePostIdMax = 100;
 
 
+
+export const getPostResponsePostDocumentOneOpsItemInsertMax = 10001;
+
+export const getPostResponsePostDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const getPostResponsePostDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const getPostResponsePostDocumentOneOpsMax = 2000;
 
 export const getPostResponsePostCategoryIdMax = 100;
 
@@ -849,6 +1068,22 @@ export const GetPostResponse = zod.object({
   "id": zod.string().min(1).max(getPostResponsePostIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(getPostResponsePostDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(getPostResponsePostDocumentOneOpsItemAttributesLinkMax).regex(getPostResponsePostDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(getPostResponsePostDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(getPostResponsePostCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(getPostResponsePostCategoryIdMaxOne),
@@ -928,18 +1163,49 @@ export const updatePostBodyTitleMax = 120;
 export const updatePostBodyBodyMin = 20;
 export const updatePostBodyBodyMax = 10000;
 
+export const updatePostBodyDocumentOneOpsItemInsertMax = 10001;
+
+export const updatePostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const updatePostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const updatePostBodyDocumentOneOpsMax = 2000;
+
 export const updatePostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 
 export const UpdatePostBody = zod.object({
   "title": zod.string().min(updatePostBodyTitleMin).max(updatePostBodyTitleMax).optional(),
   "body": zod.string().min(updatePostBodyBodyMin).max(updatePostBodyBodyMax).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(updatePostBodyDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(updatePostBodyDocumentOneOpsItemAttributesLinkMax).regex(updatePostBodyDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(updatePostBodyDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "playerTag": zod.string().regex(updatePostBodyPlayerTagRegExp).optional()
 })
 
 export const updatePostResponseIdMax = 100;
 
 
+
+export const updatePostResponseDocumentOneOpsItemInsertMax = 10001;
+
+export const updatePostResponseDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const updatePostResponseDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const updatePostResponseDocumentOneOpsMax = 2000;
 
 export const updatePostResponseCategoryIdMax = 100;
 
@@ -981,6 +1247,22 @@ export const UpdatePostResponse = zod.object({
   "id": zod.string().min(1).max(updatePostResponseIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(updatePostResponseDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(updatePostResponseDocumentOneOpsItemAttributesLinkMax).regex(updatePostResponseDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(updatePostResponseDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(updatePostResponseCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(updatePostResponseCategoryIdMaxOne),

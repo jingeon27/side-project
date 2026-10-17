@@ -11,6 +11,7 @@ import {
 import {
   Answer,
   Category,
+  ChatAttachment,
   ChatMessage,
   ChatMessageList,
   Comment,
@@ -36,6 +37,7 @@ import type {
   AppExchangeInput,
   BlockInput,
   CategoryInput,
+  ChatAttachmentUpload,
   ChatMessageInput,
   ChatReadInput,
   CommentInput,
@@ -338,6 +340,55 @@ return apiFetch<ChatMessage>(getSendChatMessageUrl(id),
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(chatMessageInput),
     schema: ChatMessage
+  }
+);}
+
+
+
+export const getUploadChatAttachmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/conversations/${id}/attachments`
+}
+
+export const uploadChatAttachment = async (id: string,
+    chatAttachmentUpload: ChatAttachmentUpload, options?: Parameters<typeof apiFetch>[1]): Promise<ChatAttachment> => {
+    const formData = new FormData();
+formData.append(`file`, chatAttachmentUpload.file);
+
+  return apiFetch<ChatAttachment>(getUploadChatAttachmentUrl(id),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData,
+    schema: ChatAttachment
+  }
+);}
+
+
+
+export const getDeleteChatAttachmentUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/conversations/${id}/attachments/${attachmentId}`
+}
+
+export const deleteChatAttachment = async (id: string,
+    attachmentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+  return apiFetch<Ok>(getDeleteChatAttachmentUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+    ,
+    schema: Ok
   }
 );}
 

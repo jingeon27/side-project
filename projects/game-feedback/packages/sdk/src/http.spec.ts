@@ -11,6 +11,7 @@ import {
   logout,
   ApiError,
   ApiResponseValidationError,
+  uploadChatAttachment,
 } from './index';
 import { apiFetch } from './http';
 import { sessionFixture, postFixture, profileFixture, messagesFixture } from './test/fixtures';
@@ -25,6 +26,25 @@ function respond(payload: unknown, status = 200) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('generated REST client response validation', () => {
+  it('uploads multipart data with session credentials and validates media metadata', async () => {
+    const attachment = {
+      id: 'attachment-1',
+      name: 'test.png',
+      mimeType: 'image/png',
+      size: 12,
+      kind: 'IMAGE',
+      url: '/api/conversations/room-1/attachments/attachment-1',
+    };
+    const fetcher = respond(attachment);
+    const file = new Blob(['image-data'], { type: 'image/png' });
+    expect(await uploadChatAttachment('room-1', { file })).toEqual(attachment);
+    const request = fetcher.mock.calls[0]?.[1];
+    expect(request?.body).toBeInstanceOf(FormData);
+    expect(new Headers(request?.headers).has('Content-Type')).toBe(false);
+    expect(request?.credentials).toBe('include');
+    respond({ ...attachment, url: 'https://untrusted.example/private' });
+    await expect(uploadChatAttachment('room-1', { file })).rejects.toBeInstanceOf(ApiResponseValidationError);
+  });
   it('validates public profiles and strips undeclared private fields', async () => {
     const profile = {
       author: postFixture().post.author,

@@ -81,6 +81,8 @@ model Post {
   title String
   body String
   gameProfile Json?
+  board String @default("FEEDBACK")
+  document Json?
   hidden Boolean @default(false)
   deletedAt DateTime?
   createdAt DateTime @default(now())
@@ -90,6 +92,7 @@ model Post {
   notifications Notification[]
   @@index([createdAt,id])
   @@index([categoryId,createdAt])
+  @@index([board,createdAt,id])
 }
 model Answer {
   id String @id @default(cuid())
@@ -176,6 +179,7 @@ model ChatConversation {
   secondReadId String?
   updatedAt DateTime @default(now())
   messages ChatMessage[]
+  attachments ChatAttachment[]
   @@unique([firstUserId,secondUserId])
   @@index([firstUserId,updatedAt,id])
   @@index([secondUserId,updatedAt,id])
@@ -189,6 +193,23 @@ model ChatMessage {
   clientMessageId String
   body String
   createdAt DateTime @default(now())
+  attachments ChatAttachment[]
   @@unique([senderId,clientMessageId])
   @@index([conversationId,createdAt,id])
+}
+
+model ChatAttachment {
+  id String @id @default(cuid())
+  conversationId String
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  uploaderId String
+  messageId String?
+  message ChatMessage? @relation(fields:[messageId],references:[id],onDelete:Cascade)
+  name String
+  mimeType String
+  size Int
+  bytes Bytes
+  createdAt DateTime @default(now())
+  @@index([conversationId,messageId])
+  @@index([uploaderId,createdAt])
 }

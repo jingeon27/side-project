@@ -34,6 +34,14 @@ export function createOpenApi() {
                 { name: 'category', in: 'query', schema: { type: 'string' } },
                 { name: 'unanswered', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
                 { name: 'q', in: 'query', schema: { type: 'string' } },
+                {
+                  name: 'board',
+                  in: 'query',
+                  schema: {
+                    type: 'string',
+                    enum: ['ALL', 'FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE'],
+                  },
+                },
               ]
             : []),
         ],
@@ -46,7 +54,9 @@ export function createOpenApi() {
         ? {
             requestBody: {
               required: true,
-              content: { 'application/json': { schema: schemaRef(operation.body) } },
+              content: {
+                [operation.contentType ?? 'application/json']: { schema: schemaRef(operation.body) },
+              },
             },
           }
         : {}),

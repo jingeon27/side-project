@@ -16,13 +16,17 @@ import type { SessionRequest } from '../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { ChatEvents } from './chat.events';
 import { authorDto, authorSelect } from '../users/user.presenter';
+import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
 
 const userSelect = authorSelect;
 const conversationInclude = {
   firstUser: { select: userSelect },
   secondUser: { select: userSelect },
 } as const;
-const messageInclude = { sender: { select: authorSelect } } as const;
+const messageInclude = {
+  sender: { select: authorSelect },
+  attachments: { select: attachmentSelect, orderBy: { createdAt: 'asc' } },
+} as const;
 type ConversationRow = Prisma.ChatConversationGetPayload<{ include: typeof conversationInclude }>;
 type MessageRow = Prisma.ChatMessageGetPayload<{ include: typeof messageInclude }>;
 
@@ -32,6 +36,7 @@ function messageDto(row: MessageRow): ChatMessage {
     conversationId: row.conversationId,
     sender: authorDto(row.sender),
     body: row.body,
+    attachments: row.attachments.map(attachmentDto),
     createdAt: row.createdAt.toISOString(),
     clientMessageId: row.clientMessageId,
   };
@@ -252,13 +257,34 @@ export class ChatService {
           include: messageInclude,
         });
         if (previous) {
-          if (previous.conversationId !== id || previous.body !== body.body)
+          if (
+            previous.conversationId !== id ||
+            previous.body !== body.body ||
+            previous.attachments
+              .map((item) => item.id)
+              .sort()
+              .join(',') !== [...(body.attachmentIds ?? [])].sort().join(',')
+          )
             throw new ApiError(409, 'MESSAGE_CONFLICT', '이 메시지 요청은 이미 사용되었습니다.');
           return {
             message: previous,
             peerId:
               conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId,
           };
+        }
+        const attachmentIds = body.attachmentIds ?? [];
+        if (attachmentIds.length) {
+          const eligible = await tx.chatAttachment.count({
+            where: {
+              id: { in: attachmentIds },
+              conversationId: id,
+              uploaderId: user.id,
+              messageId: null,
+              createdAt: { gte: new Date(Date.now() - 86400000) },
+            },
+          });
+          if (eligible !== attachmentIds.length)
+            throw new ApiError(400, 'INVALID_ATTACHMENT', '전송할 첨부파일을 다시 선택해주세요.');
         }
         const latest = await tx.chatMessage.findFirst({
           where: { conversationId: id },
@@ -274,6 +300,9 @@ export class ChatService {
             body: body.body,
             clientMessageId: body.clientMessageId,
             createdAt,
+            ...(attachmentIds.length
+              ? { attachments: { connect: attachmentIds.map((attachmentId) => ({ id: attachmentId })) } }
+              : {}),
           },
           include: messageInclude,
         });

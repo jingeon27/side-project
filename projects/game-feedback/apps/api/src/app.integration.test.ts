@@ -18,6 +18,22 @@ const options = {
 };
 
 describe('application module composition and shutdown', () => {
+  it('keeps HTTP rate limiting enabled when the application is not using the test override', async () => {
+    const app = await createApp({ ...options, rateLimit: true });
+    try {
+      const request = supertest(app.getHttpServer());
+      for (const index of Array.from({ length: 240 }, (_, index) => index)) {
+        void index;
+        await request.get('/api/session').expect(200);
+      }
+      await request
+        .get('/api/session')
+        .expect(429)
+        .expect('Retry-After', /^[1-9][0-9]*$/);
+    } finally {
+      await app.close();
+    }
+  });
   it('keeps configuration and session routes isolated between app instances', async () => {
     const demo = await createApp({ ...options, demoMode: true });
     const standard = await createApp({ ...options, demoMode: false });

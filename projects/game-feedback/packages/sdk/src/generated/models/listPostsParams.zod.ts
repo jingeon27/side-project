@@ -18,7 +18,8 @@ export const ListPostsParams = zod.object({
   "authorId": zod.string().min(1).max(listPostsParamsAuthorIdMax).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
-  "q": zod.string().optional()
+  "q": zod.string().optional(),
+  "board": zod.enum(['ALL', 'FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional()
 })
 
 export type ListPostsParams = zod.input<typeof ListPostsParams>;

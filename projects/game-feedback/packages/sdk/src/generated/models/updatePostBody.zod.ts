@@ -12,11 +12,34 @@ export const updatePostBodyTitleMax = 120;
 export const updatePostBodyBodyMin = 20;
 export const updatePostBodyBodyMax = 10000;
 
+export const updatePostBodyDocumentOneOpsItemInsertMax = 10001;
+
+export const updatePostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const updatePostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const updatePostBodyDocumentOneOpsMax = 2000;
+
 export const updatePostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const UpdatePostBody = zod.object({
   "title": zod.string().min(updatePostBodyTitleMin).max(updatePostBodyTitleMax).optional(),
   "body": zod.string().min(updatePostBodyBodyMin).max(updatePostBodyBodyMax).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(updatePostBodyDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(updatePostBodyDocumentOneOpsItemAttributesLinkMax).regex(updatePostBodyDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(updatePostBodyDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "playerTag": zod.string().regex(updatePostBodyPlayerTagRegExp).optional()
 })
 

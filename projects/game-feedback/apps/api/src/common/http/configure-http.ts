@@ -8,7 +8,7 @@ export function configureHttp(app: INestApplication) {
     res.setHeader('Referrer-Policy', 'same-origin');
     next();
   });
-  app.use(express.json({ limit: '64kb' }));
+  app.use(express.json({ limit: '256kb' }));
   app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
     if (error && typeof error === 'object' && 'type' in error) {
       res.status(error.type === 'entity.too.large' ? 413 : 400).json({

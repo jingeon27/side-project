@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { RichTextDocumentSchema } from './rich-text';
+export { RichTextDocumentSchema, RichTextAttributesSchema, richTextToPlainText } from './rich-text';
+export type { TRichTextDocument, TRichTextAttributes } from './rich-text';
+
+export const BoardKindSchema = z.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']);
+export type TBoardKind = z.infer<typeof BoardKindSchema>;
 
 const ResponseIdSchema = z.string().min(1).max(100);
 const ResponseTimestampSchema = z.iso.datetime();
@@ -64,6 +70,8 @@ export const PostSchema = z.object({
   id: ResponseIdSchema,
   title: z.string().min(1),
   body: z.string().min(1),
+  board: BoardKindSchema.optional(),
+  document: RichTextDocumentSchema.nullable().optional(),
   categoryId: ResponseIdSchema,
   category: CategorySchema,
   author: AuthorSchema,
@@ -130,11 +138,26 @@ export const SessionSchema = z.object({
   googleConfigured: z.boolean(),
   needsOnboarding: z.boolean(),
 });
+export const ChatAttachmentSchema = z.object({
+  id: ResponseIdSchema,
+  name: z.string().min(1).max(200),
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(25 * 1024 * 1024),
+  kind: z.enum(['IMAGE', 'VIDEO']),
+  url: z.string().regex(/^\/api\/conversations\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
+});
+export type TChatAttachment = z.infer<typeof ChatAttachmentSchema>;
+export const ChatAttachmentUploadSchema = z.object({ file: z.string().meta({ format: 'binary' }) });
 export const ChatMessageSchema = z.object({
   id: ResponseIdSchema,
   conversationId: ResponseIdSchema,
   sender: AuthorSchema,
-  body: z.string().min(1),
+  body: z.string().max(2000),
+  attachments: z.array(ChatAttachmentSchema).max(4).optional(),
   createdAt: ResponseTimestampSchema,
   clientMessageId: z.uuid(),
 });
@@ -158,8 +181,14 @@ export const ChatMessageListSchema = z.object({
 });
 export const ConversationInputSchema = z.object({ recipientId: z.string().min(1).max(100) }).strict();
 export const ChatMessageInputSchema = z
-  .object({ body: z.string().trim().min(1).max(2000), clientMessageId: z.uuid() })
-  .strict();
+  .object({
+    body: z.string().trim().max(2000),
+    clientMessageId: z.uuid(),
+    attachmentIds: z.array(ResponseIdSchema).max(4).optional(),
+  })
+  .strict()
+  .refine((input) => input.body.length > 0 || (input.attachmentIds?.length ?? 0) > 0)
+  .refine((input) => new Set(input.attachmentIds).size === (input.attachmentIds?.length ?? 0));
 export const ChatReadInputSchema = z.object({ messageId: z.string().min(1).max(100) }).strict();
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Conversation = z.infer<typeof ConversationSchema>;
@@ -190,11 +219,13 @@ export const PostInputSchema = z
   .object({
     title: z.string().trim().min(4).max(120),
     body: z.string().trim().min(20).max(10000),
+    board: BoardKindSchema.optional(),
+    document: RichTextDocumentSchema.nullable().optional(),
     categoryId: z.string().min(1),
     playerTag: PlayerTagSchema.optional(),
   })
   .strict();
-export const PostPatchSchema = PostInputSchema.omit({ categoryId: true })
+export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: true })
   .partial()
   .refine((v) => Object.keys(v).length > 0);
 export const AnswerInputSchema = z.object({ body: z.string().trim().min(10).max(10000) }).strict();
@@ -228,6 +259,7 @@ export const HideInputSchema = z
   })
   .strict();
 export const ListQuerySchema = z.object({
+  board: z.union([BoardKindSchema, z.literal('ALL')]).optional(),
   authorId: z.string().min(1).max(100).optional(),
   cursor: z.string().max(200).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(12),
@@ -252,6 +284,9 @@ export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
 
 export const schemas = {
+  RichTextDocument: RichTextDocumentSchema,
+  ChatAttachment: ChatAttachmentSchema,
+  ChatAttachmentUpload: ChatAttachmentUploadSchema,
   AppExchangeInput: AppExchangeInputSchema,
   TestAccount: TestAccountSchema,
   TestAccountList: TestAccountListSchema,
@@ -300,6 +335,7 @@ export type OperationSpec = {
   id: string;
   response: z.ZodType;
   body?: z.ZodType;
+  contentType?: 'multipart/form-data';
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
@@ -353,6 +389,20 @@ export const operations: OperationSpec[] = [
     id: 'sendChatMessage',
     body: ChatMessageInputSchema,
     response: ChatMessageSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/conversations/{id}/attachments',
+    id: 'uploadChatAttachment',
+    body: ChatAttachmentUploadSchema,
+    contentType: 'multipart/form-data',
+    response: ChatAttachmentSchema,
+  },
+  {
+    method: 'delete',
+    path: '/api/conversations/{id}/attachments/{attachmentId}',
+    id: 'deleteChatAttachment',
+    response: OkSchema,
   },
   {
     method: 'post',

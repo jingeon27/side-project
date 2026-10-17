@@ -13,6 +13,17 @@ export const chatMessageConversationIdMax = 100;
 export const chatMessageSenderIdMax = 100;
 
 
+export const chatMessageBodyMax = 2000;
+
+export const chatMessageAttachmentsItemIdMax = 100;
+
+export const chatMessageAttachmentsItemNameMax = 200;
+
+export const chatMessageAttachmentsItemSizeExclusiveMin = 0;
+export const chatMessageAttachmentsItemSizeMax = 26214400;
+
+export const chatMessageAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const chatMessageAttachmentsMax = 4;
 
 export const chatMessageCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const chatMessageClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -27,7 +38,15 @@ export const ChatMessage = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(chatMessageBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(chatMessageAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(chatMessageAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(chatMessageAttachmentsItemSizeExclusiveMin).max(chatMessageAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(chatMessageAttachmentsItemUrlRegExp)
+})).max(chatMessageAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(chatMessageCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(chatMessageClientMessageIdRegExp)
 })

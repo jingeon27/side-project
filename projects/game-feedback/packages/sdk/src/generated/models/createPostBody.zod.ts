@@ -12,12 +12,36 @@ export const createPostBodyTitleMax = 120;
 export const createPostBodyBodyMin = 20;
 export const createPostBodyBodyMax = 10000;
 
+export const createPostBodyDocumentOneOpsItemInsertMax = 10001;
+
+export const createPostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const createPostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const createPostBodyDocumentOneOpsMax = 2000;
+
 
 export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
   "body": zod.string().min(createPostBodyBodyMin).max(createPostBodyBodyMax),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(createPostBodyDocumentOneOpsItemAttributesLinkMax).regex(createPostBodyDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(createPostBodyDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1),
   "playerTag": zod.string().regex(createPostBodyPlayerTagRegExp).optional()
 })

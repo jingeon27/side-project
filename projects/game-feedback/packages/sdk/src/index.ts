@@ -40,6 +40,8 @@ export {
   createConversation,
   listChatMessages,
   sendChatMessage,
+  uploadChatAttachment,
+  deleteChatAttachment,
   readConversation,
   listTestAccounts,
   testAccountLogin,

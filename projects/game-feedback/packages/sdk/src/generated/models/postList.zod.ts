@@ -10,6 +10,14 @@ export const postListItemsItemIdMax = 100;
 
 
 
+export const postListItemsItemDocumentOneOpsItemInsertMax = 10001;
+
+export const postListItemsItemDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const postListItemsItemDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const postListItemsItemDocumentOneOpsMax = 2000;
+
 export const postListItemsItemCategoryIdMax = 100;
 
 export const postListItemsItemCategoryIdMaxOne = 100;
@@ -51,6 +59,22 @@ export const PostList = zod.object({
   "id": zod.string().min(1).max(postListItemsItemIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
+  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(postListItemsItemDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(postListItemsItemDocumentOneOpsItemAttributesLinkMax).regex(postListItemsItemDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(postListItemsItemDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(postListItemsItemCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(postListItemsItemCategoryIdMaxOne),

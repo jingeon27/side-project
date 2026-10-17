@@ -18,6 +18,17 @@ export const chatMessageListConversationLastMessageOneConversationIdMax = 100;
 export const chatMessageListConversationLastMessageOneSenderIdMax = 100;
 
 
+export const chatMessageListConversationLastMessageOneBodyMax = 2000;
+
+export const chatMessageListConversationLastMessageOneAttachmentsItemIdMax = 100;
+
+export const chatMessageListConversationLastMessageOneAttachmentsItemNameMax = 200;
+
+export const chatMessageListConversationLastMessageOneAttachmentsItemSizeExclusiveMin = 0;
+export const chatMessageListConversationLastMessageOneAttachmentsItemSizeMax = 26214400;
+
+export const chatMessageListConversationLastMessageOneAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const chatMessageListConversationLastMessageOneAttachmentsMax = 4;
 
 export const chatMessageListConversationLastMessageOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const chatMessageListConversationLastMessageOneClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -33,6 +44,17 @@ export const chatMessageListItemsItemConversationIdMax = 100;
 export const chatMessageListItemsItemSenderIdMax = 100;
 
 
+export const chatMessageListItemsItemBodyMax = 2000;
+
+export const chatMessageListItemsItemAttachmentsItemIdMax = 100;
+
+export const chatMessageListItemsItemAttachmentsItemNameMax = 200;
+
+export const chatMessageListItemsItemAttachmentsItemSizeExclusiveMin = 0;
+export const chatMessageListItemsItemAttachmentsItemSizeMax = 26214400;
+
+export const chatMessageListItemsItemAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const chatMessageListItemsItemAttachmentsMax = 4;
 
 export const chatMessageListItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const chatMessageListItemsItemClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
@@ -58,7 +80,15 @@ export const ChatMessageList = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(chatMessageListConversationLastMessageOneBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(chatMessageListConversationLastMessageOneAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(chatMessageListConversationLastMessageOneAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(chatMessageListConversationLastMessageOneAttachmentsItemSizeExclusiveMin).max(chatMessageListConversationLastMessageOneAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(chatMessageListConversationLastMessageOneAttachmentsItemUrlRegExp)
+})).max(chatMessageListConversationLastMessageOneAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(chatMessageListConversationLastMessageOneCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(chatMessageListConversationLastMessageOneClientMessageIdRegExp)
 }),zod.null()]),
@@ -76,7 +106,15 @@ export const ChatMessageList = zod.object({
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean()
 }),
-  "body": zod.string().min(1),
+  "body": zod.string().max(chatMessageListItemsItemBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(chatMessageListItemsItemAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(chatMessageListItemsItemAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(chatMessageListItemsItemAttachmentsItemSizeExclusiveMin).max(chatMessageListItemsItemAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(chatMessageListItemsItemAttachmentsItemUrlRegExp)
+})).max(chatMessageListItemsItemAttachmentsMax).optional(),
   "createdAt": zod.iso.datetime({"offset":true}).regex(chatMessageListItemsItemCreatedAtRegExp),
   "clientMessageId": zod.uuid().regex(chatMessageListItemsItemClientMessageIdRegExp)
 })),

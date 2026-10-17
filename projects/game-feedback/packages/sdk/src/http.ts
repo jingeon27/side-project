@@ -22,6 +22,8 @@ export async function apiFetch<T>(url: string, options: IApiFetchOptions<T> = {}
   const { schema, baseUrl, ...requestOptions } = options;
   if (!schema) throw new ApiError(0, 'RESPONSE_SCHEMA_REQUIRED', '응답 검증 스키마가 필요합니다.');
   const headers = new Headers(requestOptions.headers);
+  if (typeof FormData !== 'undefined' && requestOptions.body instanceof FormData)
+    headers.delete('Content-Type');
   if (typeof requestOptions.body === 'string' && !headers.has('Content-Type'))
     headers.set('Content-Type', 'application/json');
   const response = await fetch(baseUrl ? new URL(url, baseUrl).toString() : url, {

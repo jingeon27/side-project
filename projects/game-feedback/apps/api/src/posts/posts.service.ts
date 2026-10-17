@@ -3,6 +3,7 @@ import {
   PostInputSchema,
   PostPatchSchema,
   type GameProfile,
+  richTextToPlainText,
 } from '@game-feedback/contracts';
 import { ACTIVE_CONTENT } from '../common/content';
 import { decodeCursor, encodeCursor } from '../common/pagination';
@@ -47,6 +48,7 @@ export class PostsService {
       excluded = await this.visibility.excluded(req);
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_CONTENT,
+      ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),
       authorId: { notIn: excluded, ...(q.authorId ? { equals: q.authorId } : {}) },
       ...(q.category ? { category: { slug: q.category } } : {}),
       ...(q.unanswered === 'true'
@@ -113,6 +115,8 @@ export class PostsService {
   async createPost(req: SessionRequest, body: unknown) {
     const u = requireUser(req),
       input = parse(PostInputSchema, body);
+    if (input.document && richTextToPlainText(input.document) !== input.body)
+      throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const category = await this.db.category.findFirst({ where: { id: input.categoryId, active: true } });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
     let profile: GameProfile | undefined;
@@ -123,6 +127,8 @@ export class PostsService {
         categoryId: category.id,
         title: input.title,
         body: input.body,
+        board: input.board ?? 'FEEDBACK',
+        ...(input.document ? { document: input.document } : {}),
         ...(profile ? { gameProfile: profile as unknown as Prisma.InputJsonValue } : {}),
       },
       include: postInclude,
@@ -134,7 +140,9 @@ export class PostsService {
       input = parse(PostPatchSchema, body),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
-    const { playerTag, ...data } = input;
+    const { playerTag, document, ...data } = input;
+    if (input.document && (!input.body || richTextToPlainText(input.document) !== input.body))
+      throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const excluded = await this.visibility.excluded(req);
     const gameProfile = playerTag ? await this.profiles.lookup(playerTag) : undefined;
     return responsePost(
@@ -142,6 +150,7 @@ export class PostsService {
         where: { id },
         data: {
           ...data,
+          ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
           ...(gameProfile ? { gameProfile: gameProfile as unknown as Prisma.InputJsonValue } : {}),
         },
         include: {
@@ -161,7 +170,13 @@ export class PostsService {
     await this.db.$transaction([
       this.db.post.update({
         where: { id },
-        data: { deletedAt: new Date(), title: '삭제된 요청', body: '', gameProfile: Prisma.DbNull },
+        data: {
+          deletedAt: new Date(),
+          title: '삭제된 요청',
+          body: '',
+          gameProfile: Prisma.DbNull,
+          document: Prisma.DbNull,
+        },
       }),
       this.db.notification.deleteMany({ where: { postId: id } }),
     ]);

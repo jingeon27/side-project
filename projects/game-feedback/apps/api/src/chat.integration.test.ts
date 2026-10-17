@@ -260,6 +260,115 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     await read(bob, conversationId, foreignMessage.id).expect(404);
   });
 
+  it('uploads private media, authorizes draft access, attaches atomically and serves video ranges', async () => {
+    const path = `/api/conversations/${conversationId}/attachments`;
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a53sAAAAASUVORK5CYII=',
+      'base64',
+    );
+    await supertest(app.getHttpServer())
+      .post(path)
+      .set('Origin', origin)
+      .attach('file', png, { filename: 'test.png', contentType: 'image/png' })
+      .expect(401);
+    await outsider.agent
+      .post(path)
+      .set('Origin', origin)
+      .attach('file', png, { filename: 'test.png', contentType: 'image/png' })
+      .expect(404);
+    const image = (
+      await alice.agent
+        .post(path)
+        .set('Origin', origin)
+        .attach('file', png, { filename: 'test.png', contentType: 'image/png' })
+        .expect(200)
+    ).body;
+    expect(image).toMatchObject({ kind: 'IMAGE', mimeType: 'image/png', size: png.length });
+    expect(image).not.toHaveProperty('bytes');
+    await bob.agent.get(image.url).expect(404);
+    await alice.agent
+      .get(image.url)
+      .expect(200)
+      .expect('Content-Type', /image\/png/);
+    const videoBytes = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom00000000')]);
+    const video = (
+      await alice.agent
+        .post(path)
+        .set('Origin', origin)
+        .attach('file', videoBytes, { filename: 'practice.mp4', contentType: 'video/mp4' })
+        .expect(200)
+    ).body;
+    expect(video.kind).toBe('VIDEO');
+    await bob.agent
+      .post(`/api/conversations/${conversationId}/messages`)
+      .set('Origin', origin)
+      .send({ body: '', attachmentIds: [image.id], clientMessageId: randomUUID() })
+      .expect(400);
+    const input = { body: '', attachmentIds: [image.id, video.id], clientMessageId: randomUUID() };
+    const sent = (
+      await alice.agent
+        .post(`/api/conversations/${conversationId}/messages`)
+        .set('Origin', origin)
+        .send(input)
+        .expect(200)
+    ).body;
+    expect(sent.attachments).toHaveLength(2);
+    const retried = (
+      await alice.agent
+        .post(`/api/conversations/${conversationId}/messages`)
+        .set('Origin', origin)
+        .send(input)
+        .expect(200)
+    ).body;
+    expect(retried.id).toBe(sent.id);
+    await bob.agent.get(image.url).expect(200);
+    await outsider.agent.get(image.url).expect(404);
+    await supertest(app.getHttpServer()).get(video.url).expect(401);
+    await bob.agent
+      .get(video.url)
+      .set('Range', 'bytes=0-7')
+      .expect(206)
+      .expect('Content-Length', '8')
+      .expect('Content-Range', `bytes 0-7/${videoBytes.length}`);
+    await bob.agent.get(video.url).set('Range', 'bytes=999999-').expect(416);
+    await alice.agent.delete(image.url).set('Origin', origin).expect(404);
+    await alice.agent
+      .post(`/api/conversations/${conversationId}/messages`)
+      .set('Origin', origin)
+      .send({ ...input, clientMessageId: randomUUID() })
+      .expect(400);
+  });
+  it('rejects spoofed and oversized uploads and lets the uploader remove unsent files', async () => {
+    const path = `/api/conversations/${conversationId}/attachments`;
+    await alice.agent
+      .post(path)
+      .set('Origin', origin)
+      .attach('file', Buffer.from('<svg onload="alert(1)"/>'), {
+        filename: 'image.png',
+        contentType: 'image/png',
+      })
+      .expect(400);
+    await alice.agent
+      .post(path)
+      .set('Origin', origin)
+      .attach('file', Buffer.alloc(25 * 1024 * 1024 + 1), { filename: 'large.mp4', contentType: 'video/mp4' })
+      .expect(413);
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a53sAAAAASUVORK5CYII=',
+      'base64',
+    );
+    const file = (
+      await alice.agent
+        .post(path)
+        .set('Origin', origin)
+        .attach('file', png, { filename: 'remove.png', contentType: 'image/png' })
+        .expect(200)
+    ).body;
+    await bob.agent.delete(file.url).set('Origin', origin).expect(404);
+    await alice.agent.delete(file.url).set('Origin', origin).expect(200);
+    await alice.agent.get(file.url).expect(404);
+  });
+
   it('applies blocks in both directions to listing, creation, send and read', async () => {
     await alice.agent.post('/api/blocks').set('Origin', origin).send({ blockedUserId: bob.id }).expect(200);
     for (const actor of [alice, bob]) {
@@ -361,5 +470,6 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     expect(remaining.items.some((item: { id: string }) => item.id === conversationId)).toBe(false);
     expect(JSON.stringify(remaining)).not.toContain('대화코치');
     expect((await bob.agent.get('/api/session')).body.user).toBeNull();
+    expect(await db.chatAttachment.count({ where: { conversationId } })).toBe(0);
   }, 12000);
 });

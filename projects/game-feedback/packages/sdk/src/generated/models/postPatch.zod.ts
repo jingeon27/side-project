@@ -12,11 +12,34 @@ export const postPatchTitleMax = 120;
 export const postPatchBodyMin = 20;
 export const postPatchBodyMax = 10000;
 
+export const postPatchDocumentOneOpsItemInsertMax = 10001;
+
+export const postPatchDocumentOneOpsItemAttributesLinkMax = 2048;
+
+
+export const postPatchDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
+export const postPatchDocumentOneOpsMax = 2000;
+
 export const postPatchPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const PostPatch = zod.object({
   "title": zod.string().min(postPatchTitleMin).max(postPatchTitleMax).optional(),
   "body": zod.string().min(postPatchBodyMin).max(postPatchBodyMax).optional(),
+  "document": zod.union([zod.object({
+  "ops": zod.array(zod.object({
+  "insert": zod.string().min(1).max(postPatchDocumentOneOpsItemInsertMax),
+  "attributes": zod.object({
+  "bold": zod.boolean().optional(),
+  "italic": zod.boolean().optional(),
+  "underline": zod.boolean().optional(),
+  "strike": zod.boolean().optional(),
+  "link": zod.string().max(postPatchDocumentOneOpsItemAttributesLinkMax).regex(postPatchDocumentOneOpsItemAttributesLinkRegExp).optional(),
+  "header": zod.union([zod.literal(2),zod.literal(3)]).optional(),
+  "list": zod.enum(['ordered', 'bullet']).optional(),
+  "blockquote": zod.boolean().optional()
+}).optional()
+})).min(1).max(postPatchDocumentOneOpsMax)
+}),zod.null()]).optional(),
   "playerTag": zod.string().regex(postPatchPlayerTagRegExp).optional()
 })
 

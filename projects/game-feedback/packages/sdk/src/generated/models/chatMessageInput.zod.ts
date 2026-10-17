@@ -9,10 +9,15 @@ import * as zod from 'zod';
 export const chatMessageInputBodyMax = 2000;
 
 export const chatMessageInputClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+export const chatMessageInputAttachmentIdsItemMax = 100;
+
+export const chatMessageInputAttachmentIdsMax = 4;
+
 
 export const ChatMessageInput = zod.object({
-  "body": zod.string().min(1).max(chatMessageInputBodyMax),
-  "clientMessageId": zod.uuid().regex(chatMessageInputClientMessageIdRegExp)
+  "body": zod.string().max(chatMessageInputBodyMax),
+  "clientMessageId": zod.uuid().regex(chatMessageInputClientMessageIdRegExp),
+  "attachmentIds": zod.array(zod.string().min(1).max(chatMessageInputAttachmentIdsItemMax)).max(chatMessageInputAttachmentIdsMax).optional()
 })
 
 export type ChatMessageInput = zod.input<typeof ChatMessageInput>;
