@@ -14,6 +14,7 @@ import { Topbar } from './Topbar';
 import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
 import { GameBoardNavigation } from './GameBoardNavigation';
+import { CommunityFooter } from './CommunityFooter';
 
 export function CommunityShell({ children, locale }: { children: ReactNode; locale: string }) {
   const { t } = useI18n();
@@ -32,7 +33,7 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
   const home = `/${locale}`;
   const userKey = session?.user?.id ?? 'anonymous';
   return (
-    <>
+    <div className="community-shell">
       <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
         <Topbar home={home} unread={unread} />
       </ServiceErrorBoundary>
@@ -49,9 +50,12 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
           </ServiceErrorBoundary>
         </RouteViewport>
       </div>
+      <ServiceErrorBoundary title={t('서비스 안내')} resetKey={userKey}>
+        <CommunityFooter home={home} />
+      </ServiceErrorBoundary>
       <ServiceErrorBoundary title={t('하단 메뉴')} resetKey={userKey}>
         <MobileNav home={home} path={path} chatUnread={chatUnread} />
       </ServiceErrorBoundary>
-    </>
+    </div>
   );
 }

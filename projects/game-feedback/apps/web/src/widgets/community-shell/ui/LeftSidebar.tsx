@@ -85,12 +85,6 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
           </nav>
         ))}
       <div className="sidebar-bottom">
-        <div className="sidebar-footer-links">
-          <Link href={`${home}/terms`}>{t('이용약관')}</Link>
-          <Link href={`${home}/privacy`}>{t('개인정보')}</Link>
-          <Link href={`${home}/contact`}>{t('문의')}</Link>
-        </div>
-        <span className="copyright">© 2026 PLAYMATE</span>
         {session?.demoMode && <p className="demo-badge">{t('예시 데이터를 사용하는 데모 환경')}</p>}
       </div>
     </aside>

@@ -1,10 +1,9 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
-import Link from 'next/link';
 import { useCallback } from 'react';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, MessageSquare, ArrowRight, LoaderCircle } from 'lucide-react';
+import { ArrowUpRight, Plus, MessageSquare, LoaderCircle } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { postListOptions, PostCard } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
@@ -166,13 +165,6 @@ function FeedResults({
           <span />
         </div>
       )}
-      <div className="feed-footer">
-        <span>{t('경험을 나누는 것만으로도, 누군가의 플레이는 달라집니다.')}</span>
-        <Link href={`/${locale}/guide`}>
-          {t('함께하는 방법')}
-          <ArrowRight size={14} />
-        </Link>
-      </div>
     </>
   );
 }

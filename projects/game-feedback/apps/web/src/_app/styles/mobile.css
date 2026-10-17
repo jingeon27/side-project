@@ -23,7 +23,7 @@
   }
   @media (max-width: 760px) {
     .site-grid {
-      padding-bottom: calc(100px + env(safe-area-inset-bottom));
+      padding-bottom: 32px;
     }
     .topbar-inner {
       padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));

@@ -615,6 +615,8 @@ const messages: Record<string, readonly [string, string]> = {
   '서비스 닉네임': ['Nickname', 'ニックネーム'],
   '2~20자로 입력해 주세요': ['Enter 2–20 characters', '2〜20文字で入力してください'],
   이용약관: ['Terms of service', '利用規約'],
+  '서비스 이용약관': ['Terms of service', '利用規約'],
+  '서비스 안내': ['Service information', 'サービス案内'],
   및: ['and', 'および'],
   '개인정보 처리방침': ['Privacy policy', 'プライバシーポリシー'],
   '에 동의합니다.': ['I agree to the above.', 'に同意します。'],

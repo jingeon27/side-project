@@ -3,6 +3,7 @@
 @import 'quill/dist/quill.snow.css' layer(components);
 @import './base.css';
 @import './layout.css';
+@import './footer.css';
 @import './feed.css';
 @import './post.css';
 @import './profile.css';

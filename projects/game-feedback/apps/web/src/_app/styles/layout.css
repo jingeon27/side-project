@@ -1,5 +1,11 @@
 @layer components {
+  .community-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
   .topbar {
+    flex-shrink: 0;
     height: 86px;
     border-bottom: 1px solid var(--color-line);
     background: var(--color-surface);
@@ -88,6 +94,9 @@
     opacity: 0.5;
   }
   .site-grid {
+    flex: 1;
+    width: 100%;
+    align-content: start;
     max-width: 1160px;
     margin: 0 auto;
     padding: 40px 40px 80px;
@@ -177,23 +186,6 @@
     margin-top: 40px;
     padding: 0 11px;
   }
-  .sidebar-footer-links {
-    display: flex;
-    gap: 11px;
-    font-size: var(--text-micro);
-    color: var(--color-muted);
-    white-space: nowrap;
-  }
-  .sidebar-footer-links a:hover {
-    text-decoration: underline;
-  }
-  .copyright {
-    display: block;
-    font-size: var(--text-micro);
-    letter-spacing: 1px;
-    color: var(--color-muted);
-    margin-top: 11px;
-  }
   .shell-left-sidebar {
     min-width: 0;
   }
@@ -255,10 +247,6 @@
     .game-icon {
       width: 33px;
       height: 35px;
-    }
-    .sidebar-footer-links {
-      gap: 9px;
-      font-size: var(--text-micro);
     }
     .sidebar-bottom {
       padding: 0 9px;

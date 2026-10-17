@@ -565,6 +565,16 @@ Web 타입 검사와 Web/Mobile lint, Web Vitest 20개 파일 77개가 통과했
 
 Chromium 320/400/760/768/1440px와 WebKit 320/400px의 한국어/영어/일본어 21개 조합과 각 언어/엔진의 400×360px 낮은 화면 6개를 수동 확인했다. 모든 분류 표시, 선택 체크, Escape/바깥 클릭, 재열기, 필터 켜기/끄기, 모바일/데스크톱 전환, 가로 넘침과 pageerror 0개를 확인했다. 초기 수동 검사는 시트가 표시되기 전에 바깥 클릭을 보내 실패했으며, 표시/해제 완료를 기다리도록 검사 시점을 보정했다. 개발 게시글/메시지를 추가하지 않았고 소유 테스트 DB만 종료하며 Web 3300/API 4300 실행을 유지한다.
 
+## 데스크톱 채팅 키보드와 공통 푸터
+
+400px 데스크톱 브라우저에서 Enter가 메시지를 전송하지 않는 문제를 Playwright로 재현했다. useDesktopKeyboard에서 화면 너비 조건을 제거하고 hover/fine pointer 입력 환경을 기준으로 판단한다. useSyncExternalStore로 포인터 조건과 네이티브 bootstrap 변경을 구독하며 WebView는 폭/포인터 보고 값과 관계없이 Enter 줄바꿈을 유지한다. 데스크톱은 Enter 전송, Shift+Enter 줄바꿈이며 조합 중 isComposing/keyCode 229 Enter는 전송하지 않는다. Enter를 길게 눌러 발생하는 repeat 이벤트는 기본 줄바꿈과 중복 전송을 막는다. 기존 mutationOptions의 초안/첨부 보존, 재전송 UUID, 전송 중 중복 방지는 유지한다. 모바일 미디어 E2E는 좁은 데스크톱 창을 모바일로 취급하지 않고 touch/isMobile 브라우저 문맥을 사용하도록 고쳤다.
+
+공통 CommunityFooter에 서비스 이용약관/개인정보 처리방침/문의 링크를 배치하고 현재 언어의 기존 terms/privacy/contact 경로로 연결한다. 문서 본문은 기존 한국어 알파 초안을 유지하며 canonical도 한국어 원문을 가리키는 기존 정책을 보존한다. 새 정책이나 운영자 정보를 임의로 작성하지 않았다. 사이드바의 중복 링크/저작권과 피드 전용 안내 푸터를 정리하고 공통 푸터에서 한국 시간 기준 연도와 Playmate를 표시한다. 짧은 화면에서도 푸터가 본문 아래에 오도록 shell을 구성하고, 모바일 하단 메뉴의 여백을 푸터가 맡는다. 모바일 대화 화면에서는 푸터를 숨겨 입력 영역을 가리지 않는다. 전용 footer.css와 컴포넌트를 분리하고 영역 오류 경계를 사용한다.
+
+Web 타입 검사, Web/Mobile lint와 Web Vitest 20개 파일 77개가 통과했다. Web E2E의 데스크톱 400/1440px Enter/Shift+Enter/합성 IME 이벤트/repeat/저장 재조회, 모바일 Enter/이미지/동영상/재전송/SSE와 반응형 10개가 통과했다. 새 푸터 2개 검사는 처음에 영어 canonical을 영어 경로로 예상해 실패했고, 기존 원문 canonical 정책과 같은 기대값으로 수정했다. 수정 후 320/1440px에서 한국어/영어/일본어의 약관/개인정보 링크 이동과 하단 메뉴 가림, 한국어 원문 canonical 검사 2개가 통과했다(19.6초). Web production build(.next/keyboard-footer-build)도 통과했다. Mobile host는 Android Chromium/iOS WebKit의 400/1440px에서 desktop pointer를 보고하는 WebView의 Enter 줄바꿈/버튼 전송과 400px 스크롤 6개가 통과했다(22.7초). 실제 OS IME/키보드와 실기기 검증은 포함하지 않는다.
+
+320/400/768/1440px의 한국어/영어/일본어 12개 수동 확인에서 링크 3개를 한 줄로 표시하고 하단 메뉴 가림/가로 넘침/pageerror가 없었다. 개발 채팅에서는 빈 초안의 Enter만 확인하고 전송 요청 0개를 확인했다. 소유 테스트 DB를 종료하고 개발 Web 3300/API 4300 실행을 유지한다. API/SDK/계약/네이티브 서비스/공통 패키지와 의존성은 변경하지 않았다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
