@@ -1,15 +1,31 @@
 'use client';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, Suspense, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import { useAnimate, useMotionPreference } from '@/shared/motion';
 import { getNavigationDirection } from './browser-navigation';
 
 export function RouteViewport({ children }: { children: ReactNode }) {
+  const [scope, animate] = useAnimate<HTMLElement>();
+  return (
+    <main ref={scope} className="main-content">
+      <Suspense fallback={null}>
+        <RouteMotion scope={scope} animate={animate} />
+      </Suspense>
+      {children}
+    </main>
+  );
+}
+function RouteMotion({
+  scope,
+  animate,
+}: {
+  scope: ReturnType<typeof useAnimate<HTMLElement>>[0];
+  animate: ReturnType<typeof useAnimate<HTMLElement>>[1];
+}) {
   const pathname = usePathname();
   const reducedMotion = useMotionPreference();
   const previous = useRef<string | null>(null);
-  const [scope, animate] = useAnimate<HTMLElement>();
   useEffect(() => {
     const route = resolveAppRoute(pathname);
     const key = route?.tab === 'messages' ? appRoutes.messages(route.locale) : pathname;
@@ -38,9 +54,5 @@ export function RouteViewport({ children }: { children: ReactNode }) {
     );
     return () => controls.complete();
   }, [pathname, reducedMotion, animate, scope]);
-  return (
-    <main ref={scope} className="main-content">
-      {children}
-    </main>
-  );
+  return null;
 }

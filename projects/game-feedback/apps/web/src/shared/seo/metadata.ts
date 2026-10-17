@@ -35,7 +35,7 @@ export function createPageMetadata({
   const fullTitle = `${excerpt(title, 80)} | ${SITE_NAME}`;
   const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: 'Game Feedback | 플레이메이트' }];
   return {
-    title: excerpt(title, 80),
+    title: { absolute: fullTitle },
     description: text,
     keywords: [...new Set([...baseKeywords, ...keywords.map((word) => excerpt(word, 60))])],
     alternates: { canonical: url },

@@ -22,9 +22,9 @@
 
 게임 계정은 **설정 → 게임 계정 → 계정 등록**에서 사용자에게 등록한다. 글쓰기에 게임 프로필을 첨부하거나 게시글에 게임 프로필을 표시하지 않는다. 사용자 대표 Supercell 태그는 작성자/공개 프로필에서 확인한다. 등록만으로 인증되지 않으며 대표 태그를 바꾸면 기존 인증을 해제한다.
 
-설정의 **프로필 인증 문의**와 문의 페이지의 **관리자에게 문의하기**는 담당 관리자와 기존 **비공개 1:1 채팅**을 연다. 같은 사용자의 문의 대화는 재사용하고 사용자는 채팅으로 문의 내용과 답변을 확인한다. 실제 관리자가 없는 환경은 문의 불가 오류를 표시하며 가짜 답변을 만들지 않는다.
+설정의 **프로필 인증 문의**와 문의 페이지의 **관리자에게 문의하기**는 담당 관리자와 기존 **비공개 1:1 채팅**을 연다. 같은 사용자의 문의 대화는 재사용하고 사용자는 채팅으로 문의 내용과 답변을 확인한다. 실제 관리자가 없는 환경은 문의 불가 오류를 표시하며 가짜 답변을 만들지 않는다. 미인증 사용자는 글쓰기 화면과 작성한 글 상세에서도 인증을 신청할 수 있고, 인증 없이도 글을 작성할 수 있다.
 
-사용자 프로필의 **사용자 신고**에서 신고를 접수한다. `/:locale/admin`의 **운영 관리**는 관리자 계정만 사용할 수 있고, 설정에서도 진입한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
+사용자 프로필과 채팅의 **대화 메뉴 → 사용자 신고**에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. `/:locale/admin`의 **운영 관리**는 localhost의 개발 서버에서 관리자 계정으로만 사용할 수 있고, 설정에서도 진입한다. 프로덕션 빌드에서는 모든 언어의 관리자 경로를 404로 차단하고 메뉴를 숨긴다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
 
 로컬 데모에서는 계정 선택기의 **운영테스터**로 관리자 화면을 확인한다. 일반 계정으로 문의한 후 운영테스터의 문의함에서 채팅 답변과 인증 처리를 테스트할 수 있다. 관리자 인증 표시는 수동 서비스 검토 결과이며 Supercell API의 계정 소유권 검증과 구분한다.
 
@@ -86,7 +86,7 @@ corepack yarn workspace @side/game-feedback db:stop
 | `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed       |
 | `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임          |
 | `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트 |
-| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web·Mobile 소유 Playwright 테스트                           |
+| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 개발/프로덕션 프리패칭·Mobile Playwright 테스트         |
 | `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                   |
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                       |
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                    |
@@ -146,3 +146,9 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 - [사용자가 제공한 MVP Plan v4.0 원문](docs/mvp-plan-v4.md)
 
 사용자 모집, 실제 API 키와 출구 IP, 개인정보·약관 검토, 영어·일본어 공개 품질 검증은 코드 구현과 별도로 완료해야 한다.
+
+## Next.js와 프리패칭 검증
+
+Game Feedback Web만 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
+
+`corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.

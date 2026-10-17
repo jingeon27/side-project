@@ -24,7 +24,7 @@ for (const width of [320, 1440]) {
     await expect(page).toHaveURL('/en/guide');
     await expect.poll(async () => (await header.boundingBox())?.y).toBe(0);
     await page.goto('/en/settings#language');
-    const language = page.locator('#language-preference');
+    const language = page.locator('#language-preference:visible');
     await expect(language).toBeInViewport({ ratio: 1 });
     expect((await language.boundingBox())?.y).toBeGreaterThanOrEqual(
       (await header.boundingBox())?.height ?? 0,

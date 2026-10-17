@@ -655,3 +655,33 @@ Chromium 320/400/1440px와 WebKit 400px의 다크 작성/채팅 화면을 실제
 자동 검사는 55444의 격리된 gf_test_ 스키마와 가짜 외부 제공자를 사용했다. WebKit 수동 검사의 전체 문서 전환/페이지 종료에서는 중단된 fetch 네트워크 오류가 기록되어 UI 라우팅 확인과 구분했다. 실제 Google/Supercell, 기기 OS와 실기기·스토어 배포를 검증한 것으로 표현하지 않는다.
 
 최종 `@side/game-feedback check` 집계도 통과했고 OpenAPI/Orval 재생성 후 추적 SDK diff는 0개다. 소유 테스트 DB를 종료하고 개발 Web 3300/API 4300의 HTTP 200을 확인했다.
+
+## Next.js 16.4.2, 인증 유도와 채팅 관리
+
+Game Feedback Web의 Next.js를 16.4.2로 고정했다. Photo Contest와 블로그의 Next 버전은 유지한다. cacheComponents/partialPrefetching을 함께 켜고 root locale을 next/root-params로 읽는다. 첫 방문의 언어 리다이렉트는 브라우저 지역/사용자 쿠키를 유지하며 URL에 남길 피드 필터만 전달한다. 언어 설정은 해당 locale root의 값을 사용한다.
+
+세션/언어/테마 조회는 use cache: private와 300초의 client stale 수명으로 합쳤다. production의 서버 요청 사이에는 저장하지 않는다. React Query 세션은 로그인/로그아웃/전환 시 기존 취소/제거/저장 순서와 mount 재검증을 유지하고, 게시글/프로필의 권한 있는 REST 조회를 공용 캐시에 넣지 않는다. 서버가 초기 html의 언어와 테마를 설정한다. 서비스 bootstrap에는 별도의 오류 문서 경계와 useMutation 재시도, 문의 메일을 제공한다.
+
+URL 데이터는 로딩 경계 아래에 둔다. 언어 Provider는 URL 전체를 읽지 않고 root locale을 사용한다. Toast의 경로별 위치, 셸의 선택 메뉴와 route motion은 독립 Suspense를 사용해 전체 앱의 프리패칭을 막지 않는다. public document는 본문이 준비된 후 HTML을 만들고 RSC 이동은 본문 placeholder를 프리패칭한다. skipProxyUrlNormalize로 Flight 헤더를 보존하고 서버 전용 요청 헤더로 문서/이동 경계를 전달한다. metadata는 absolute title, canonical, JSON-LD와 비공개 noindex 정책을 유지한다. public 문서의 접근 검사를 Proxy에서 먼저 수행해 스트리밍이 404를 200으로 바꾸지 않도록 한다. 본문 렌더링 시에도 REST 권한을 재검증하며 접근 검사 결과를 공용 캐시에 저장하지 않는다.
+
+Cache Components의 Activity가 숨긴 이전 페이지도 DOM에 남으므로 글쓰기/대화의 전역 chrome CSS는 현재 셸에만 속한 shell-route 마커의 data-screen을 사용한다. 예전 화면을 DOM에서 찾는 :has 조건으로 현재 헤더를 숨기지 않는다. 언어·화면 모드 섹션은 제목/선택창/언어 설명 사이 16px, 설명 두 줄 사이 6px로 맞췄다.
+
+미인증 사용자에게 글쓰기 전과 본인의 글 상세에서 프로필 인증을 안내한다. 인증은 글쓰기의 필수 조건이 아니며 안내는 실제 관리자 1:1 VERIFICATION 대화로 이어진다. 검증된 계정과 관리자는 안내를 표시하지 않는다. 관리자 화면은 localhost 개발에서만 제공하며 production의 /ko, /en, /ja/admin은 404이고 메뉴를 숨긴다. 기존 API 관리자 권한과 감사 기록을 유지한다.
+
+채팅 상단 44px 메뉴에 사용자 신고/대화내역 삭제/차단을 모았다. 신고는 기존 USER 대상과 신고 사유/관리자 검토를 재사용한다. 내역 삭제는 DELETE /api/conversations/{id}/messages와 throughMessageId를 사용한다. 각 참여자의 createdAt/id 경계를 별도로 저장해 상대방 내역, 읽음 상태와 삭제 확인 중/이후 도착한 메시지를 유지한다. 삭제한 내역의 목록 preview, unread, pagination, 읽음 요청과 첨부파일 GET도 같은 경계를 적용한다. 기존 idempotency key로 삭제한 메시지를 복원하지 않는다. SSE는 삭제한 사용자에게만 동기화하고 새 메시지를 받으면 대화 목록에 다시 나타난다. mutation 성공 후 해당 사용자의 해당 방 캐시만 취소/초기화하며 실패 시 내역과 재시도 UI를 유지한다.
+
+Migration 202610170010_chat_history_visibility는 Game Feedback ChatConversation의 nullable 경계 네 열과 기본 false 표시 두 열만 추가한다. 기존 메시지나 다른 사용자의 데이터를 삭제하지 않는다. 공통 디자인 시스템에는 사용자가 요청한 shadcn Base UI/base-nova DropdownMenu의 필요한 네 구성과 44px 항목/포커스 동작을 추가했다. 루트 lockfile은 Game Feedback의 Next 16.4.2 및 같은 버전의 공식 Playwright 검증 도구를 연결하기 위해 변경했다. 다른 서비스의 제품 코드와 runtime 의존성은 변경하지 않는다.
+
+프리패칭 검증은 Web이 소유하는 별도 production Playwright 설정과 @next/playwright instant()를 사용한다. 테스트 전용 빌드에서만 exposeTestingApiInProductionBuild를 활성화하고 기본 build는 비활성화한다. 포트 3353/4353과 55444의 격리 gf_test_ 스키마만 사용하며 프로젝트 test:e2e도 이 검사를 위임한다. 개발 모드 결과를 production 프리패칭 성공으로 대신하지 않는다.
+
+최초 문서는 저장 테마/세션과 공개 본문의 인증/SEO를 기다리는 동작을 명시적으로 유지한다. locale root와 공개 게시판/글/프로필 문서의 instant=false는 이 의도된 초기 문서 대기를 개발 모드의 instant 진단 대상에서 제외한다. cacheComponents/partialPrefetching이나 실제 프리패칭을 끄지 않으며 자식 탐색 검증은 유지한다. 초기 HTML을 instant라고 주장하지 않고 별도 production instant() 테스트가 가이드의 준비된 본문과 글의 placeholder/헤더가 URL 이동 직후 사용 가능한지 검증한다.
+
+### 이번 변경의 최종 검증
+
+Node 24.19.0 / Yarn 4.17.0의 immutable 설치와 전체 format:check, @side/game-feedback check가 통과했다. Web typecheck는 next typegen을 먼저 실행해 깨끗한 체크아웃에서도 root-params 타입을 생성한다. 최종 프로젝트 test 집계에서 API Vitest+Supertest 79개, SDK 35개, Web Vitest 90개, Mobile 39개가 통과했다. 채팅 캐시 초기화 보완 후 Web 90개와 삭제/새 메시지/새로고침 없는 방 재진입도 다시 통과했다. 공통 디자인 시스템 check의 14개가 통과했다.
+
+Web Playwright 전체 69개에서 60개가 통과했다. Activity가 보존한 숨겨진 DOM 선택자, 폐지 분류의 문서 404와 의도한 초기 HTML 대기 진단을 보완한 회귀 16개 중 15개가 통과했고, 나머지 계정 전환 선택자를 고친 뒤 테스트 계정 2개도 통과했다. 따라서 고유 69개 시나리오를 확인했다. 인증 유도/400·1440px 설정 간격/채팅 신고·삭제 4개도 최종 확인했다. Mobile host 전체 30개에서 28개가 통과했고 테스트의 문서 marker 초기화 보완 후 Android Chromium/iOS WebKit의 나머지 2개도 통과했다. 실제 네이티브 뒤로 가기가 대화 메뉴와 신고 창부터 닫는 흐름을 포함한다.
+
+Production Playwright 5개가 최종 통과했다. instant()로 가이드의 prefetched 본문과 게시글의 header/placeholder를 확인했고, JavaScript 없는 본문과 저장된 다크 모드, 공개 경로 404/차단 정보 비노출, 모든 locale의 관리자 HTML/RSC 차단도 포함한다. API build와 공개 SEO를 켠 일반 Web production build(.next/release-check)가 통과했다. 일반 빌드의 cacheComponents/partialPrefetching은 true, exposeTestingApiInProductionBuild는 false이고 sitemap은 요청 시점에 생성한다. 재생성 전후 SDK 해시가 같았다.
+
+로컬 개발 DB 55442에는 검토한 추가 Migration만 적용했고 기존 글/메시지를 삭제하지 않았다. 익명 설정 화면을 400/1440px로 직접 촬영해 섹션 간격 16px와 가로 넘침 없음도 확인했다. 테스트는 전용 55444와 격리 스키마 및 가짜 제공자를 사용한다. Google/Supercell 실연동, 실제 기기/스토어와 공개 배포를 검증한 결과로 표현하지 않는다.

@@ -60,8 +60,8 @@ test('prepared accounts can write posts and comments, switch identities, and exc
     isVerified: true,
     supercellTag: '#9QY',
   });
-  await expect(page.locator('.settings-profile')).toContainText('인증 유저 (테스트)');
-  await expect(page.locator('.settings-profile')).toContainText('#9QY');
+  await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저 (테스트)');
+  await expect(page.locator('.settings-profile:visible')).toContainText('#9QY');
   await page.goto(postUrl);
   const responseComment = `인증 코치 테스트 계정에서 이어서 남긴 댓글입니다. ${suffix}`;
   await page.getByRole('textbox', { name: '댓글 내용' }).fill(responseComment);
@@ -81,7 +81,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
   const sent = (await (await delivery).json()) as ChatMessage;
   await page.goto('/ko/settings');
   await selectTestAccount(page, '새벽의호그');
-  await expect(page.locator('.settings-profile')).not.toContainText('인증 유저 (테스트)');
+  await expect(page.locator('.settings-profile:visible')).not.toContainText('인증 유저 (테스트)');
   await page.goto(`/ko/messages?conversation=${roomId}`);
   await expect(page.getByTestId(`message-${sent.id}`)).toContainText(chatBody);
   await page.reload();
@@ -112,11 +112,11 @@ test('a registered Supercell tag is saved on the user and survives account switc
   await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('p0lyq');
   await page.getByRole('button', { name: '조회', exact: true }).click();
   await page.getByRole('button', { name: '내 계정에 등록', exact: true }).click();
-  await expect(page.locator('.settings-profile')).toContainText('#P0LYQ');
+  await expect(page.locator('.settings-profile:visible')).toContainText('#P0LYQ');
   await selectTestAccount(page, '덱연구소');
   await selectTestAccount(page, '새벽의호그');
   await page.reload();
-  await expect(page.locator('.settings-profile')).toContainText('#P0LYQ');
+  await expect(page.locator('.settings-profile:visible')).toContainText('#P0LYQ');
   const session = (await (await page.request.get('/api/session')).json()) as Session;
   expect(session.user).toMatchObject({
     id: 'sample-user-0',

@@ -1,16 +1,16 @@
 @layer components {
-  :root:has(.post-compose-page) {
+  :root:has(.shell-route[data-screen='compose']) {
     scroll-padding-top: 12px;
   }
-  body:has(.post-compose-page) .topbar,
-  body:has(.post-compose-page) .site-footer {
+  .community-shell:has(> .shell-route[data-screen='compose']) .topbar,
+  .community-shell:has(> .shell-route[data-screen='compose']) .site-footer {
     display: none;
   }
-  .site-grid:has(.post-compose-page) {
+  .community-shell:has(> .shell-route[data-screen='compose']) .site-grid {
     grid-template-columns: minmax(0, 1fr);
     max-width: 820px;
   }
-  .site-grid:has(.post-compose-page) .shell-left-sidebar {
+  .community-shell:has(> .shell-route[data-screen='compose']) .site-grid .shell-left-sidebar {
     display: none;
   }
   .post-compose-page {
@@ -53,8 +53,8 @@
     padding-block: 32px;
   }
   @media (max-width: 760px) {
-    body:has(.post-compose-page) .mobile-nav,
-    body:has(.post-compose-page) .site-footer {
+    .community-shell:has(> .shell-route[data-screen='compose']) .mobile-nav,
+    .community-shell:has(> .shell-route[data-screen='compose']) .site-footer {
       display: none;
     }
     .post-compose-page .ql-editor {

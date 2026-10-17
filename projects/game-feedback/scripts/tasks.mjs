@@ -51,7 +51,10 @@ export async function runTask(task) {
   } else if (task === 'test:e2e' || task === 'test:mobile:e2e') {
     await prerequisites();
     await local('db.mjs', ['start', '--test']);
-    if (task === 'test:e2e') await workspace('web', 'test:e2e');
+    if (task === 'test:e2e') {
+      await workspace('web', 'test:e2e');
+      await workspace('web', 'test:prefetch');
+    }
     await workspace('mobile', 'test:e2e');
   } else if (task === 'build') {
     await prerequisites();

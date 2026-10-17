@@ -10,7 +10,9 @@ test('mobile header and four tabs navigate in place and report their paths to th
   await expect.poll(nativeHost.isReady).toBe(true);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
   await expect(tabs.getByRole('link')).toHaveText(['피드', '가이드', '채팅', '프로필']);
-  await page.locator('html').evaluate((node) => node.setAttribute('data-route-document', 'kept'));
+  await page.evaluate(() =>
+    Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
+  );
   const length = await page.evaluate(() => history.length);
   for (const [name, path] of [
     ['가이드', '/ko/guide'],
@@ -39,7 +41,7 @@ test('mobile header and four tabs navigate in place and report their paths to th
   await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
   await tabs.getByRole('link', { name: '피드', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko');
-  await expect(page.locator('html')).toHaveAttribute('data-route-document', 'kept');
+  expect(await page.evaluate(() => Reflect.get(window, '__routeDocument'))).toBe('kept');
   expect(await page.evaluate(() => history.length)).toBe(length);
   expect(await nativeHost.requestBack()).toBe(true);
   expect(nativeHost.rootBacks()).toBe(1);
@@ -127,7 +129,9 @@ test('query locations, warm nested links and duplicate opens preserve the curren
   await expect.poll(nativeHost.currentPath).toBe(appRoutes.feed('ko', { q: '호그' }));
   await page.getByRole('button', { name: '답변 대기' }).click();
   await expect.poll(nativeHost.currentPath).toBe(appRoutes.feed('ko', { q: '호그', tab: 'unanswered' }));
-  await page.evaluate(() => document.documentElement.setAttribute('data-route-document', 'kept'));
+  await page.evaluate(() =>
+    Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
+  );
   expect(nativeHost.openDeepLink('gamefeedback://ko/messages?conversation=sample-conversation-0-3')).toBe(
     true,
   );
@@ -135,7 +139,7 @@ test('query locations, warm nested links and duplicate opens preserve the curren
   await expect.poll(nativeHost.currentPath).toBe('/ko/messages/sample-conversation-0-3');
   const length = await page.evaluate(() => history.length);
   expect(nativeHost.openDeepLink('gamefeedback://ko/messages/sample-conversation-0-3')).toBe(true);
-  await expect(page.locator('html')).toHaveAttribute('data-route-document', 'kept');
+  expect(await page.evaluate(() => Reflect.get(window, '__routeDocument'))).toBe('kept');
   expect(await page.evaluate(() => history.length)).toBe(length);
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page).toHaveURL(
@@ -179,7 +183,9 @@ test('coaching and general-board deep links preserve the game and return to its 
   const post = await created.json();
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
-  await page.evaluate(() => document.documentElement.setAttribute('data-route-document', 'kept'));
+  await page.evaluate(() =>
+    Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
+  );
   const board = appRoutes.boards('ko', 'coaching', undefined, slug);
   expect(nativeHost.openDeepLink(`gamefeedback:/${board}`)).toBe(true);
   await expect.poll(nativeHost.currentPath).toBe(board);
@@ -196,8 +202,8 @@ test('coaching and general-board deep links preserve the game and return to its 
   await expect.poll(nativeHost.currentPath).toBe(board);
   const detail = appRoutes.post('ko', post.id, 'COACHING', slug);
   expect(nativeHost.openDeepLink(`gamefeedback:/${detail}`)).toBe(true);
-  await expect(page.locator('.coaching-summary')).toContainText('코치 구함');
-  await expect(page.locator('.coaching-summary')).toContainText('30,000');
+  await expect(page.locator('.coaching-summary:visible')).toContainText('코치 구함');
+  await expect(page.locator('.coaching-summary:visible')).toContainText('30,000');
   await expect.poll(nativeHost.currentPath).toBe(detail);
   expect(await nativeHost.requestBack()).toBe(true);
   await expect.poll(nativeHost.currentPath).toBe(board);
@@ -205,7 +211,7 @@ test('coaching and general-board deep links preserve the game and return to its 
     true,
   );
   await expect(page.getByRole('heading', { name: '자유게시판', exact: true })).toBeVisible();
-  await expect(page.locator('html')).toHaveAttribute('data-route-document', 'kept');
+  expect(await page.evaluate(() => Reflect.get(window, '__routeDocument'))).toBe('kept');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
 

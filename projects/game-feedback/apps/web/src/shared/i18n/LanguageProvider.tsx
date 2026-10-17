@@ -1,13 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
-import {
-  LANGUAGE_COOKIE,
-  isLocale,
-  languagePreference,
-  type TLanguagePreference,
-  type TLocale,
-} from './locale';
+import { LANGUAGE_COOKIE, languagePreference, type TLanguagePreference, type TLocale } from './locale';
 import { translate } from './messages';
 
 const preferenceEvent = 'game-feedback:language';
@@ -51,9 +44,7 @@ export function LanguageProvider({
   initialPreference: TLanguagePreference;
   automaticLocale: TLocale;
 }) {
-  const pathname = usePathname();
-  const candidate = pathname?.split('/')[1];
-  const locale = isLocale(candidate) ? candidate : initialLocale;
+  const locale = initialLocale;
   const preference = useSyncExternalStore(subscribe, readPreference, () => initialPreference);
   useEffect(() => {
     document.documentElement.lang = locale;

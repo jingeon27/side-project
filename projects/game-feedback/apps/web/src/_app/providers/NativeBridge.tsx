@@ -35,7 +35,9 @@ export function NativeBridge() {
       }
       if (message.type === 'state' && message.state === 'active') refreshSession();
       if (message.type === 'back') {
-        const select = document.querySelector('[data-slot="select-content"][data-open]');
+        const select = document.querySelector(
+          '[data-slot="select-content"][data-open], [data-slot="dropdown-menu-content"][data-open]',
+        );
         if (select) {
           select.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),

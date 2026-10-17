@@ -169,7 +169,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         )}
         <SupportChatButton topic="VERIFICATION" />
         <SupportChatButton />
-        {session.user.role === 'ADMIN' && (
+        {session.user.role === 'ADMIN' && process.env.NEXT_PUBLIC_GAME_FEEDBACK_LOCAL_ADMIN === 'true' && (
           <Link className="text-button" href={`/${locale}/admin`}>
             {t('운영 관리')}
           </Link>

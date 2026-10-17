@@ -7,7 +7,7 @@
     :root {
       --service-toast-bottom: calc(92px + env(safe-area-inset-bottom));
     }
-    body:has(.post-compose-page) {
+    body:has(.shell-route[data-screen='compose']) {
       --service-toast-bottom: calc(24px + env(safe-area-inset-bottom));
     }
   }

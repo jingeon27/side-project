@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import { LoadingState } from '@/shared/ui';
 import { notFound } from 'next/navigation';
 import { appRoutes, RouteIdSchema } from '@game-feedback/bridge';
 import { createPageMetadata } from '@/shared/seo';
@@ -5,7 +7,7 @@ import { createPageMetadata } from '@/shared/seo';
 interface IConversationRouteProps {
   params: Promise<{ locale: string; conversationId: string }>;
 }
-export default async function Page({ params }: IConversationRouteProps) {
+async function RouteContent({ params }: IConversationRouteProps) {
   if (!RouteIdSchema.safeParse((await params).conversationId).success) notFound();
   return null;
 }
@@ -19,4 +21,12 @@ export async function generateMetadata({ params }: IConversationRouteProps) {
     privatePage: true,
     keywords: ['1:1 채팅'],
   });
+}
+
+export default function Page(props: Parameters<typeof RouteContent>[0]) {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <RouteContent {...props} />
+    </Suspense>
+  );
 }

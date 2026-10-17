@@ -32,14 +32,16 @@ test('signed-out users can save a manual language, reload and resume automatic s
   try {
     const page = await context.newPage();
     await page.goto('/ja/settings');
-    const select = page.locator('#language-preference');
+    const select = page.locator('#language-preference:visible');
     await expect(select).toContainText('端末の設定に合わせる');
-    await page.locator('html').evaluate((node) => node.setAttribute('data-language-document', 'kept'));
+    await page.evaluate(() =>
+      Object.defineProperty(window, '__languageDocument', { value: 'kept', configurable: true }),
+    );
     await select.click();
     await page.getByRole('option', { name: 'English', exact: true }).click();
     await expect(page).toHaveURL(/\/en\/settings$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await expect(page.locator('html')).toHaveAttribute('data-language-document', 'kept');
+    expect(await page.evaluate(() => Reflect.get(window, '__languageDocument'))).toBe('kept');
     await expect(page.getByRole('heading', { name: 'Language', exact: true })).toBeVisible();
     await page.goto('/');
     await expect(page).toHaveURL(/\/en$/);
@@ -67,7 +69,9 @@ test('the header dropdown preserves the current page, filters and hash while sha
     await page.goto('/ja?q=hog&tab=unanswered#feed');
     const language = page.getByRole('banner').getByRole('combobox');
     await expect(language).toContainText('端末の設定に合わせる');
-    await page.locator('html').evaluate((node) => node.setAttribute('data-language-document', 'kept'));
+    await page.evaluate(() =>
+      Object.defineProperty(window, '__languageDocument', { value: 'kept', configurable: true }),
+    );
     const length = await page.evaluate(() => history.length);
     await language.click();
     await page.getByRole('option', { name: 'English', exact: true }).click();
@@ -77,15 +81,15 @@ test('the header dropdown preserves the current page, filters and hash while sha
       'aria-pressed',
       'true',
     );
-    await expect(page.locator('html')).toHaveAttribute('data-language-document', 'kept');
+    expect(await page.evaluate(() => Reflect.get(window, '__languageDocument'))).toBe('kept');
     expect(await page.evaluate(() => history.length)).toBe(length);
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_language')?.value).toBe('en');
     await page.goto('/');
     await expect(page).toHaveURL('/en');
     await expect(language).toContainText('English');
     await page.goto('/en/settings#language');
-    await expect(page.locator('#language-preference')).toContainText('English');
-    await page.locator('#language-preference').click();
+    await expect(page.locator('#language-preference:visible')).toContainText('English');
+    await page.locator('#language-preference:visible').click();
     await page.getByRole('option', { name: 'Use device settings', exact: true }).click();
     await expect(page).toHaveURL('/ja/settings#language');
     await expect(language).toContainText('端末の設定に合わせる');

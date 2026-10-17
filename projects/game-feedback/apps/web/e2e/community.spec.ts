@@ -173,7 +173,7 @@ test('category chips support direct links, keyboard navigation, short viewports 
   await expect(chips.getByRole('link').last()).toBeInViewport({ ratio: 1 });
   await friendly.click();
   await expect(page).toHaveURL('/ja/boards/friendly');
-  await page.locator('.board-heading button').click();
+  await page.locator('.board-heading:visible button').click();
   await expect(page.locator('.ql-editor')).toBeVisible();
   await expect(page.getByRole('combobox', { name: '分類', exact: true })).toHaveValue('FRIENDLY');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

@@ -1,7 +1,9 @@
+import { Suspense } from 'react';
+import { LoadingState } from '@/shared/ui';
 import { staticPageMetadata } from '@/shared/seo';
 import { notFound, redirect } from 'next/navigation';
 import { appRoutes, RouteIdSchema } from '@game-feedback/bridge';
-export default async function MessagesPage({
+async function RouteContent({
   params,
   searchParams,
 }: {
@@ -20,4 +22,12 @@ export default async function MessagesPage({
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   return staticPageMetadata('messages', (await params).locale);
+}
+
+export default function Page(props: Parameters<typeof RouteContent>[0]) {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <RouteContent {...props} />
+    </Suspense>
+  );
 }

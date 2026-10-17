@@ -53,12 +53,12 @@ for (const scenario of [
     await expect(editor.getByText('내 게임 프로필', { exact: true })).toHaveCount(0);
     await editor.getByRole('button', { name: '코칭 등록', exact: true }).click();
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-    await expect(page.locator('.coaching-summary')).toContainText(scenario.summary);
+    await expect(page.locator('.detail-card:visible .coaching-summary')).toContainText(scenario.summary);
     if (scenario.type === 'GOAL')
-      await expect(page.locator('.coaching-summary')).toContainText('9,000 트로피');
+      await expect(page.locator('.detail-card:visible .coaching-summary')).toContainText('9,000 트로피');
     const url = page.url();
     await page.reload();
-    await expect(page.locator('.coaching-summary')).toContainText(scenario.summary);
+    await expect(page.locator('.detail-card:visible .coaching-summary')).toContainText(scenario.summary);
     const crawler = await browser.newContext({ javaScriptEnabled: false });
     try {
       const response = await (await crawler.newPage()).goto(url);
@@ -78,10 +78,10 @@ for (const scenario of [
       .fill('');
     await editor.getByRole('button', { name: '수정 완료', exact: true }).click();
     await expect(editor).toHaveCount(0);
-    await expect(page.locator('.coaching-summary')).toContainText('시간당 수강료 협의');
-    await expect(page.locator('.coaching-summary')).not.toContainText('9,000 트로피');
+    await expect(page.locator('.detail-card:visible .coaching-summary')).toContainText('시간당 수강료 협의');
+    await expect(page.locator('.detail-card:visible .coaching-summary')).not.toContainText('9,000 트로피');
     await page.goto(`/ko?q=${encodeURIComponent(title)}`);
-    await expect(page.locator('.post-card .coaching-summary')).toContainText('시간당 수강료 협의');
+    await expect(page.locator('.post-card:visible .coaching-summary')).toContainText('시간당 수강료 협의');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   });
 }

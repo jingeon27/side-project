@@ -1,6 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
@@ -16,12 +16,13 @@ import { MobileNav } from './MobileNav';
 import { GameBoardNavigation } from './GameBoardNavigation';
 import { CommunityFooter } from './CommunityFooter';
 
-export function CommunityShell({ children, locale }: { children: ReactNode; locale: string }) {
+interface ICommunityShellProps {
+  children: ReactNode;
+  locale: string;
+}
+export function CommunityShell({ children, locale }: ICommunityShellProps) {
   const { t } = useI18n();
   const { session } = useSession();
-  const pathname = usePathname();
-  const search = useSearchParams();
-  const path = resolveAppRoute(`${pathname}${search.size ? `?${search}` : ''}`)?.path ?? pathname;
   const connection = useChatConnection();
   const { data: notifications } = useQuery(notificationSummaryOptions(session?.user?.id));
   const { data: conversations } = useQuery({
@@ -34,18 +35,25 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
   const userKey = session?.user?.id ?? 'anonymous';
   return (
     <div className="community-shell">
+      <Suspense fallback={null}>
+        <ShellScreen />
+      </Suspense>
       <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
         <Topbar home={home} unread={unread} />
       </ServiceErrorBoundary>
       <div className="site-grid">
         <div className="shell-left-sidebar">
           <ServiceErrorBoundary title={t('탐색 메뉴')} resetKey={userKey}>
-            <LeftSidebar home={home} path={path} chatUnread={chatUnread} />
+            <Suspense fallback={<LeftSidebar home={home} path="" chatUnread={chatUnread} />}>
+              <SidebarRoute home={home} chatUnread={chatUnread} />
+            </Suspense>
           </ServiceErrorBoundary>
         </div>
         <RouteViewport>
           <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
-            <GameBoardNavigation locale={locale} path={path} />
+            <Suspense fallback={null}>
+              <BoardNavigationRoute locale={locale} />
+            </Suspense>
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>
@@ -54,8 +62,29 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
         <CommunityFooter home={home} />
       </ServiceErrorBoundary>
       <ServiceErrorBoundary title={t('하단 메뉴')} resetKey={userKey}>
-        <MobileNav home={home} path={path} chatUnread={chatUnread} />
+        <Suspense fallback={<MobileNav home={home} path="" chatUnread={chatUnread} />}>
+          <MobileNavigationRoute home={home} chatUnread={chatUnread} />
+        </Suspense>
       </ServiceErrorBoundary>
     </div>
   );
+}
+
+function useShellPath() {
+  const pathname = usePathname();
+  const search = useSearchParams();
+  return resolveAppRoute(`${pathname}${search.size ? `?${search}` : ''}`)?.path ?? pathname;
+}
+function ShellScreen() {
+  const path = useShellPath();
+  return <span className="shell-route" hidden data-screen={resolveAppRoute(path)?.screen} />;
+}
+function SidebarRoute({ home, chatUnread }: { home: string; chatUnread: number }) {
+  return <LeftSidebar home={home} path={useShellPath()} chatUnread={chatUnread} />;
+}
+function MobileNavigationRoute({ home, chatUnread }: { home: string; chatUnread: number }) {
+  return <MobileNav home={home} path={useShellPath()} chatUnread={chatUnread} />;
+}
+function BoardNavigationRoute({ locale }: { locale: string }) {
+  return <GameBoardNavigation locale={locale} path={useShellPath()} />;
 }

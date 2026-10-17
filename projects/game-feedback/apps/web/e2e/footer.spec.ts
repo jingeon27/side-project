@@ -24,7 +24,7 @@ for (const width of [320, 1440]) {
       );
       await footer.scrollIntoViewIfNeeded();
       if (width <= 760) {
-        const navigation = await page.locator('.mobile-nav').boundingBox();
+        const navigation = await page.locator('.mobile-nav:visible').boundingBox();
         const links = await footer.locator('nav').boundingBox();
         expect((links?.y ?? 0) + (links?.height ?? 0)).toBeLessThanOrEqual(navigation?.y ?? 0);
       }

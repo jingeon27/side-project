@@ -54,8 +54,7 @@ export default defineConfig({
       timeout: 90_000,
     },
     {
-      command:
-        'corepack yarn workspace @game-feedback/web exec next dev --webpack --port 3301 --hostname 127.0.0.1',
+      command: 'corepack yarn workspace @game-feedback/web exec next dev --port 3301 --hostname 127.0.0.1',
       cwd: rootDir,
       url: 'http://127.0.0.1:3301/ko',
       env: {

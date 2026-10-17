@@ -104,3 +104,28 @@ test('native Google login opens the system auth session and cancellation keeps t
   await page.getByRole('button', { name: /새벽의호그/ }).click();
   await expect(page.getByRole('dialog')).not.toBeVisible();
 });
+
+test('native back dismisses the conversation menu and report dialog before leaving the chat', async ({
+  page,
+  nativeHost,
+}) => {
+  await page.request.post('/api/auth/test-login', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-user-0' },
+  });
+  const path = '/ko/messages/sample-conversation-0-3';
+  await page.goto(path);
+  await expect.poll(nativeHost.currentPath).toBe(path);
+  const menu = page.getByRole('button', { name: '대화 메뉴', exact: true });
+  await menu.click();
+  await expect(page.getByRole('menu')).toBeVisible();
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect.poll(nativeHost.currentPath).toBe(path);
+  await menu.click();
+  await page.getByRole('menuitem', { name: '사용자 신고', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect.poll(nativeHost.currentPath).toBe(path);
+});

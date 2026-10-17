@@ -11,3 +11,4 @@ export { openOverlay } from './open-overlay';
 export { MotionButton } from './MotionButton';
 export { RichTextEditor } from './rich-text/RichTextEditor';
 export { RichTextBody } from './rich-text/RichTextBody';
+export { errorRecoveryMutationOptions } from './model/error-recovery.mutation-options';

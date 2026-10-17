@@ -100,9 +100,9 @@
     .chat-compose textarea {
       font-size: 16px;
     }
-    body:has(.chat-workspace.has-conversation) .topbar,
-    body:has(.chat-workspace.has-conversation) .mobile-nav,
-    body:has(.chat-workspace.has-conversation) .chat-page-heading {
+    .community-shell:has(> .shell-route[data-screen='conversation']) .topbar,
+    .community-shell:has(> .shell-route[data-screen='conversation']) .mobile-nav,
+    .community-shell:has(> .shell-route[data-screen='conversation']) .chat-page-heading {
       display: none;
     }
     .chat-workspace.has-conversation {

@@ -29,7 +29,12 @@ describe('SEO metadata and visibility', () => {
     const titles = new Set<string>();
     for (const kind of Object.keys(pageContent) as (keyof typeof pageContent)[]) {
       const metadata = staticPageMetadata(kind, 'ko');
-      titles.add(String(metadata.title));
+      expect(metadata.title).toMatchObject({ absolute: expect.stringContaining(' | 플레이메이트') });
+      titles.add(
+        typeof metadata.title === 'object' && metadata.title && 'absolute' in metadata.title
+          ? String(metadata.title.absolute)
+          : '',
+      );
       expect(metadata.description).toBeTruthy();
       expect(metadata.keywords).toContain('게임 커뮤니티');
       expect(metadata.alternates?.canonical).toMatch(/^https:\/\/feedback\.example\/ko/);

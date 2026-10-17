@@ -1,15 +1,30 @@
 import type { ReactNode } from 'react';
-import { getServerSession } from '@/features/auth/index.server';
 import { ServiceErrorBoundary } from '@/shared/ui';
+import { LanguageProvider, type TLocale } from '@/shared/i18n';
+import { ThemeProvider } from '@/shared/theme';
 import { Providers } from './Providers';
-async function SessionProviders({ children }: { children: ReactNode }) {
-  const initialSession = await getServerSession();
-  return <Providers initialSession={initialSession}>{children}</Providers>;
-}
-export function ServiceProviders({ children }: { children: ReactNode }) {
+import type { serviceContext } from './service-context.server';
+
+export function ServiceProviders({
+  children,
+  locale,
+  context,
+}: {
+  children: ReactNode;
+  locale: TLocale;
+  context: Awaited<ReturnType<typeof serviceContext>>;
+}) {
   return (
     <ServiceErrorBoundary title="서비스 연결" refreshOnRetry>
-      <SessionProviders>{children}</SessionProviders>
+      <LanguageProvider
+        initialLocale={locale}
+        initialPreference={context.language}
+        automaticLocale={context.automaticLocale}
+      >
+        <ThemeProvider initialPreference={context.theme}>
+          <Providers initialSession={context.initialSession}>{children}</Providers>
+        </ThemeProvider>
+      </LanguageProvider>
     </ServiceErrorBoundary>
   );
 }

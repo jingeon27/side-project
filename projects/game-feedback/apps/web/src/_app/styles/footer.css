@@ -45,7 +45,7 @@
     .site-footer-links {
       column-gap: 8px;
     }
-    body:has(.chat-workspace.has-conversation) .site-footer {
+    .community-shell:has(> .shell-route[data-screen='conversation']) .site-footer {
       display: none;
     }
   }
