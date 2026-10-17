@@ -2,7 +2,6 @@
   .header-account {
     display: flex;
   }
-  .mobile-settings-button,
   .notification-unread-indicator {
     display: none;
   }
@@ -38,13 +37,9 @@
       padding: 10px;
       flex-shrink: 0;
     }
-    .header-actions .header-chat-button,
     .header-actions .header-notification-count,
     .header-actions .header-account {
       display: none;
-    }
-    .mobile-settings-button {
-      display: inline-flex;
     }
     .notification-unread-indicator {
       display: block;

@@ -1,6 +1,12 @@
 @layer components {
   .game-board-navigation {
+    display: none;
     margin-bottom: 24px;
+  }
+  @media (max-width: 760px) {
+    .game-board-navigation {
+      display: block;
+    }
   }
   .game-board-title {
     display: flex;

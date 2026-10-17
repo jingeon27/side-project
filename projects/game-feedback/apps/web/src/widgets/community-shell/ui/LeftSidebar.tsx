@@ -1,20 +1,21 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { Bell, MessageCircle, Home } from 'lucide-react';
+import { CircleHelp, MessageCircle, Home } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { categoryOptions } from '@/features/category';
 import { GameIcon } from './GameIcon';
 import { activeGameBoard, gameBoards, gameBoardPath } from '@/features/board';
 import { resolveAppRoute } from '@game-feedback/bridge';
+import { useSession } from '@/features/auth';
 interface ILeftSidebarProps {
   home: string;
   path: string;
-  unread: number;
   chatUnread: number;
 }
-export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProps) {
+export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
   const { t } = useI18n();
+  const { session } = useSession();
   const tab = resolveAppRoute(path)?.tab;
   const selected = activeGameBoard(path);
   const categories = useQuery(categoryOptions());
@@ -23,24 +24,41 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
   return (
     <aside className="left-sidebar">
       <div className="sidebar-label">{t('둘러보기')}</div>
-      <Link className={`side-link ${tab === 'feed' ? 'selected' : ''}`} href={home} replace>
-        <Home size={19} />
-        {t('피드')}
-      </Link>
-      <Link
-        className={`side-link ${tab === 'notifications' ? 'selected' : ''}`}
-        replace
-        href={`${home}/notifications`}
-      >
-        <Bell size={19} />
-        {t('내 알림')}
-        {unread > 0 && <span className="count-badge">{unread}</span>}
-      </Link>
-      <Link className={`side-link ${tab === 'messages' ? 'selected' : ''}`} href={`${home}/messages`} replace>
-        <MessageCircle size={19} />
-        {t('채팅')}
-        {chatUnread > 0 && <span className="count-badge">{chatUnread}</span>}
-      </Link>
+      <nav aria-label={t('주 메뉴')}>
+        <Link
+          className={`side-link ${tab === 'feed' ? 'selected' : ''}`}
+          href={home}
+          replace
+          aria-current={tab === 'feed' ? 'page' : undefined}
+        >
+          <Home size={19} />
+          {t('피드')}
+        </Link>
+        <Link
+          className={`side-link ${tab === 'guide' ? 'selected' : ''}`}
+          href={`${home}/guide`}
+          replace
+          aria-current={tab === 'guide' ? 'page' : undefined}
+        >
+          <CircleHelp size={19} />
+          {t('가이드')}
+        </Link>
+        <Link
+          className={`side-link ${tab === 'messages' ? 'selected' : ''}`}
+          href={`${home}/messages`}
+          replace
+          aria-current={tab === 'messages' ? 'page' : undefined}
+          aria-label={chatUnread > 0 ? t('채팅 {count}개', { count: chatUnread }) : t('채팅')}
+        >
+          <MessageCircle size={19} />
+          {t('채팅')}
+          {chatUnread > 0 && (
+            <span className="count-badge" aria-hidden="true">
+              {chatUnread > 99 ? '99+' : chatUnread}
+            </span>
+          )}
+        </Link>
+      </nav>
       <div className="sidebar-separator" />
       <div className="sidebar-label">{t('나의 게임')}</div>
       {categories.data
@@ -66,25 +84,14 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
             </div>
           </nav>
         ))}
-      <div className="upcoming-games">
-        <span>{t('다음 게임을 기다리고 있나요?')}</span>
-        <span>{t('더 많은 게임이 찾아올 예정이에요.')}</span>
-      </div>
       <div className="sidebar-bottom">
-        <div className="community-caption">
-          <strong>
-            {t('좋은 피드백이')}
-            <br />
-            {t('다음 플레이를 만듭니다.')}
-          </strong>
-        </div>
-        <p>{t('경험을 나누고, 함께 성장해요.')}</p>
         <div className="sidebar-footer-links">
           <Link href={`${home}/terms`}>{t('이용약관')}</Link>
           <Link href={`${home}/privacy`}>{t('개인정보')}</Link>
           <Link href={`${home}/contact`}>{t('문의')}</Link>
         </div>
         <span className="copyright">© 2026 PLAYMATE</span>
+        {session?.demoMode && <p className="demo-badge">{t('예시 데이터를 사용하는 데모 환경')}</p>}
       </div>
     </aside>
   );

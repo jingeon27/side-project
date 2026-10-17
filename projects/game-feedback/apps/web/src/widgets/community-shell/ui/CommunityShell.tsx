@@ -12,7 +12,6 @@ import { RouteViewport } from '@/shared/navigation';
 import { resolveAppRoute } from '@game-feedback/bridge';
 import { Topbar } from './Topbar';
 import { LeftSidebar } from './LeftSidebar';
-import { PlayerSidebar } from './PlayerSidebar';
 import { MobileNav } from './MobileNav';
 import { GameBoardNavigation } from './GameBoardNavigation';
 
@@ -35,12 +34,12 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
   return (
     <>
       <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
-        <Topbar home={home} path={path} chatUnread={chatUnread} unread={unread} />
+        <Topbar home={home} unread={unread} />
       </ServiceErrorBoundary>
-      <div className={`site-grid ${resolveAppRoute(path)?.tab === 'messages' ? 'chat-layout' : ''}`}>
+      <div className="site-grid">
         <div className="shell-left-sidebar">
           <ServiceErrorBoundary title={t('탐색 메뉴')} resetKey={userKey}>
-            <LeftSidebar home={home} path={path} unread={unread} chatUnread={chatUnread} />
+            <LeftSidebar home={home} path={path} chatUnread={chatUnread} />
           </ServiceErrorBoundary>
         </div>
         <RouteViewport>
@@ -49,11 +48,6 @@ export function CommunityShell({ children, locale }: { children: ReactNode; loca
             {children}
           </ServiceErrorBoundary>
         </RouteViewport>
-        <div className="shell-player-sidebar">
-          <ServiceErrorBoundary title={t('플레이어 프로필')} resetKey={userKey}>
-            <PlayerSidebar home={home} />
-          </ServiceErrorBoundary>
-        </div>
       </div>
       <ServiceErrorBoundary title={t('하단 메뉴')} resetKey={userKey}>
         <MobileNav home={home} path={path} chatUnread={chatUnread} />
