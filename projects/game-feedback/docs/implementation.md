@@ -355,6 +355,12 @@ Web에 dayjs 1.11.18과 utc/timezone plugin을 추가했다. shared/lib/date가 
 
 1440px 데스크톱과 390px 모바일 피드, 모바일 설정 화면을 직접 캡처해 확인했다. 장식용 점과 가로 넘침이 없고 브라우저 pageerror도 0개였다. 전용 테스트 DB의 잔여 `gf_test_*` 스키마는 0개이며 해당 테스트 DB만 중지했다. 실행 중인 Web 3300과 API 4300은 HTTP 200을 반환하고 고정 테스트 계정 3개와 기존 게시글 6개를 보존했다.
 
+## 클래시 로얄 게임 아이콘
+
+게임 메뉴, 피드의 게임 표시와 프로필 스냅샷의 일반 왕관 아이콘을 Supercell이 배포한 실제 클래시 로얄 앱 아이콘으로 바꿨다. `features/game-profile`의 `ClashRoyaleIcon`과 로컬 JPG를 재사용하고 Next Image로 최적화한다. 외부 이미지 서버에 런타임으로 의존하지 않으며 원본 출처와 확인일은 assets/README.md에 기록했다. 게임 이름이 있는 위치의 이미지 alt는 비워 중복 낭독을 피한다.
+
+Web 타입 검사와 FSD lint, Vitest 65개, 변경 파일 Prettier와 diff 검사, Next 프로덕션 빌드가 통과했다. 실행 중인 개발 서버에서 1440px 데스크톱 피드와 390px 모바일 피드/게시글 상세를 캡처했다. 세 위치 모두 최적화된 로컬 이미지가 로드됐으며 가로 넘침과 브라우저 pageerror는 없었다. API/DB/SDK와 모바일 host 코드는 변경하지 않았다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

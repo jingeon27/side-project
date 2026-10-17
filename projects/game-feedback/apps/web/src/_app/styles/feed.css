@@ -62,11 +62,6 @@
   .game-filter-icon {
     width: 28px;
     height: 28px;
-    background: var(--color-sunken);
-    color: var(--color-muted);
-    border-radius: var(--radius-control);
-    display: grid;
-    place-items: center;
   }
   .feed-controls {
     display: flex;

@@ -1,8 +1,9 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import Image from 'next/image';
-import { Trophy, ShieldAlert, Crown } from 'lucide-react';
+import { Trophy, ShieldAlert } from 'lucide-react';
 import type { GameProfile } from '@/shared/api';
+import { ClashRoyaleIcon } from './ClashRoyaleIcon';
 interface IDeckProps {
   profile: GameProfile;
   compact?: boolean;
@@ -38,9 +39,7 @@ export function ProfileSnapshot({ profile }: IProfileSnapshotProps) {
   return (
     <section className="snapshot">
       <div className="snapshot-heading">
-        <span className="snapshot-icon">
-          <Crown size={21} />
-        </span>
+        <ClashRoyaleIcon className="snapshot-icon" size={34} />
         <div>
           <strong>{profile.name}</strong>
           <span>

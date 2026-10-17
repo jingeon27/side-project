@@ -1,7 +1,8 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { MessageSquareText, ChevronRight, Bell, MessageCircle, Crown } from 'lucide-react';
+import { MessageSquareText, ChevronRight, Bell, MessageCircle } from 'lucide-react';
+import { ClashRoyaleIcon } from '@/features/game-profile';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface ILeftSidebarProps {
   home: string;
@@ -37,9 +38,7 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
       <div className="sidebar-separator" />
       <div className="sidebar-label">{t('나의 게임')}</div>
       <Link className="game-side-link" href={home}>
-        <span className="game-icon">
-          <Crown size={23} />
-        </span>
+        <ClashRoyaleIcon className="game-icon" size={40} />
         <span>
           <strong>{t('클래시 로얄')}</strong>
           <small>Clash Royale</small>
