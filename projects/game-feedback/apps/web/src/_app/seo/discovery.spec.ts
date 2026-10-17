@@ -2,6 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { robots, sitemap } from './discovery.server';
 const { list } = vi.hoisted(() => ({ list: vi.fn() }));
 vi.mock('@/features/post/index.server', () => ({ getPublicPostList: list }));
+vi.mock('@/features/category/index.server', () => ({
+  getPublicCategories: async () => [
+    { slug: 'clash-royale', active: true },
+    { slug: 'another-game', active: true },
+    { slug: 'inactive-game', active: false },
+  ],
+}));
 afterEach(() => {
   vi.unstubAllEnvs();
   list.mockReset();
@@ -34,6 +41,9 @@ describe('search discovery', () => {
     expect(list.mock.calls.map((call) => call[0])).toEqual([undefined, 'next']);
     expect(urls.filter((url) => url.endsWith('/users/author-1'))).toHaveLength(1);
     expect(urls).toContain('https://feedback.example/ko/posts/second');
+    expect(urls).toContain('https://feedback.example/ko/boards/coaching?game=another-game');
+    expect(urls).toContain('https://feedback.example/ko/boards/free');
+    expect(urls.some((url) => url.includes('inactive-game'))).toBe(false);
     expect(urls.some((url) => /messages|settings|notifications|test-user|posts\/test/.test(url))).toBe(false);
     expect(robots()).toMatchObject({ sitemap: 'https://feedback.example/sitemap.xml' });
   });

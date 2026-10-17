@@ -11,10 +11,38 @@ describe('community board navigation', () => {
   it('rejects unknown board slugs and duplicate or malformed queries', () => {
     for (const path of [
       '/ko/boards/unknown',
+      '/ko/boards/account-trade',
+      '/ko/boards/friends',
+      '/ko/boards/marketplace',
+      '/ko/posts/post-1?board=account-trade',
       '/ko/posts/post-1?board=unknown',
       '/ko/boards/friendly?q=a&q=b',
       '/ko/boards/friendly?q=%E0%A4%A',
     ])
       expect(WebPathSchema.safeParse(path).success).toBe(false);
+  });
+  it('opens friend-slot sales with the matching detail parent', () => {
+    expect(appRoutes.boards('ko')).toBe('/ko/boards/feedback');
+    expect(resolveAppRoute(appRoutes.post('ko', 'post-1', 'FRIEND_SALE'))).toMatchObject({
+      tab: 'boards',
+      parent: '/ko/boards/friend-sale',
+    });
+  });
+  it('keeps the game and all five board routes through search, detail and native parsing', () => {
+    for (const slug of ['feedback', 'friend-sale', 'friendly', 'coaching', 'free']) {
+      const path = appRoutes.boards('en', slug, 'lesson', 'another-game');
+      expect(resolveAppRoute(path)).toMatchObject({ path, game: 'another-game', screen: 'boards' });
+    }
+    expect(resolveAppRoute(appRoutes.boards('ko', 'free', undefined, 'test--game-'))).toMatchObject({
+      game: 'test--game-',
+    });
+    const detail = appRoutes.post('ko', 'post-1', 'COACHING', 'another-game');
+    expect(resolveAppRoute(detail)).toMatchObject({
+      game: 'another-game',
+      parent: '/ko/boards/coaching?game=another-game',
+    });
+    for (const game of ['../other', 'unknown/game', 'UPPERCASE']) {
+      expect(WebPathSchema.safeParse(`/ko/boards/free?game=${encodeURIComponent(game)}`).success).toBe(false);
+    }
   });
 });

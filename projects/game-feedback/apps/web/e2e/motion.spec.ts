@@ -56,7 +56,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         )
         .toBe(1);
 
-      const compose = page.getByRole('button', { name: '첫 피드백 요청하기' });
+      const compose = page.getByRole('button', { name: '글쓰기' });
       await compose.focus();
       await page.keyboard.press('Enter');
       await expect(page.getByRole('dialog')).toBeVisible();

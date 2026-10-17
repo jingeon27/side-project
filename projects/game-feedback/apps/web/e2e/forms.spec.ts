@@ -85,7 +85,7 @@ test('feed filters survive opening a post, returning, and reloading the shared U
   });
   expect(created.ok()).toBeTruthy();
   await page.goto('/ko?from=filters');
-  await page.getByRole('textbox', { name: '피드백 검색', exact: true }).fill(suffix);
+  await page.getByRole('textbox', { name: '게시글 검색', exact: true }).fill(suffix);
   await expect(page).toHaveURL((url) => url.searchParams.get('q') === suffix);
   await expect(page.locator('.post-list .post-card')).toHaveCount(1);
   await page.getByRole('tab', { name: '답변을 기다려요' }).click();
@@ -96,10 +96,10 @@ test('feed filters survive opening a post, returning, and reloading the shared U
     .click();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('textbox', { name: '피드백 검색', exact: true })).toHaveValue(suffix);
+  await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toHaveValue(suffix);
   await expect(page.getByRole('tab', { name: '답변을 기다려요' })).toHaveAttribute('aria-selected', 'true');
   await page.reload();
-  await expect(page.getByRole('textbox', { name: '피드백 검색', exact: true })).toHaveValue(suffix);
+  await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toHaveValue(suffix);
   await expect(page.locator('.post-list .post-card')).toHaveCount(1);
   await page.getByRole('button', { name: '초기화', exact: true }).click();
   await expect(page).toHaveURL(

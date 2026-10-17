@@ -15,7 +15,7 @@ test('every screen serves page-specific metadata without JavaScript and private 
   try {
     const page = await context.newPage();
     for (const [path, title] of [
-      ['', '클래시 로얄 피드백 라운지'],
+      ['', '게임 커뮤니티 피드'],
       ['/guide', '피드백 요청 가이드'],
       ['/terms', '이용약관'],
       ['/privacy', '개인정보 처리 안내'],

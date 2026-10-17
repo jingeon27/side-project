@@ -9,19 +9,19 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await page.locator('.post-card').first().getByRole('heading').click();
   await expect(page).toHaveURL(/\/ko\/posts\//);
   await page
-    .getByRole('link', { name: '피드백 라운지', exact: true })
+    .getByRole('link', { name: '피드', exact: true })
     .filter({ has: page.locator('svg') })
     .first()
     .click();
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
-  await expect(page.getByRole('textbox', { name: '피드백 검색' })).toHaveValue('호그');
+  await expect(page.getByRole('textbox', { name: '게시글 검색' })).toHaveValue('호그');
   const length = await page.evaluate(() => history.length);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
   await tabs.getByRole('link', { name: '내 프로필' }).click();
   await expect(page).toHaveURL(/\/ko\/settings$/);
   await tabs.getByRole('link', { name: '알림' }).click();
   await expect(page).toHaveURL(/\/ko\/notifications$/);
-  await tabs.getByRole('link', { name: '라운지' }).focus();
+  await tabs.getByRole('link', { name: '피드' }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
   expect(await page.evaluate(() => history.length)).toBe(length);

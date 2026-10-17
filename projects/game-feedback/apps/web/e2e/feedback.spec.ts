@@ -145,7 +145,7 @@ test('players create a profile-backed request and exchange helpful feedback in t
   await page.getByRole('button', { name: '이 프로필 연결하기' }).click();
   await expect(page.getByRole('status')).toContainText('게임 프로필이 연결');
   await page.goto('/ko');
-  await page.getByRole('button', { name: '피드백 요청', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const composer = page.getByRole('dialog');
   const title = `브라우저에서 작성한 덱 피드백 ${suffix}`;
   await composer.getByLabel('제목', { exact: true }).fill(title);

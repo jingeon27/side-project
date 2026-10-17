@@ -25,7 +25,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
     supercellTag: '#2PP',
   });
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  await page.getByRole('button', { name: '피드백 요청', exact: true }).click();
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const composer = page.getByRole('dialog');
   const title = `테스트 계정으로 작성한 게시글 ${suffix}`;
   await composer.getByLabel('제목', { exact: true }).fill(title);

@@ -31,7 +31,7 @@ describe('language preference', () => {
     expect(localePath('//example.com', 'en')).toBe('/en');
   });
   it('translates service copy and placeholders while preserving user-authored content', () => {
-    expect(translate('en', '피드백 라운지')).toBe('Feedback lounge');
+    expect(translate('en', '피드')).toBe('Feed');
     expect(translate('ja', '언어 설정')).toBe('言語設定');
     expect(translate('en', '채팅 {count}개', { count: 3 })).toBe('Chats: 3');
     expect(translate('ko', '채팅 {count}개', { count: 3 })).toBe('채팅 3개');

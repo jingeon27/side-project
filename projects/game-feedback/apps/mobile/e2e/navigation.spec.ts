@@ -44,3 +44,55 @@ test('query locations, warm nested links and duplicate opens preserve the curren
       url.searchParams.get('q') === '호그',
   );
 });
+
+test('coaching and general-board deep links preserve the game and return to its board', async ({
+  page,
+  nativeHost,
+}) => {
+  const slug = `native-game-${Date.now().toString(36)}`;
+  await page.request.post('/api/auth/test-login', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-test-admin' },
+  });
+  const categoryResponse = await page.request.post('/api/admin/categories', {
+    headers: { Origin: ORIGIN },
+    data: { slug, name: '네이티브 테스트 게임' },
+  });
+  expect(categoryResponse.ok()).toBe(true);
+  const category = await categoryResponse.json();
+  await page.request.post('/api/auth/test-login', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-user-0' },
+  });
+  const created = await page.request.post('/api/posts', {
+    headers: { Origin: ORIGIN },
+    data: {
+      categoryId: category.id,
+      board: 'COACHING',
+      title: '기본 운영을 알려줄 코치를 구해요',
+      body: '운영을 차근차근 알려주실 코치를 구해요. 유료 레슨의 일정은 채팅으로 상담해요.',
+      coaching: { role: 'STUDENT', hourlyRate: 30000 },
+    },
+  });
+  expect(created.ok()).toBe(true);
+  const post = await created.json();
+  await page.goto('/ko');
+  await expect.poll(nativeHost.isReady).toBe(true);
+  await page.evaluate(() => document.documentElement.setAttribute('data-route-document', 'kept'));
+  const board = appRoutes.boards('ko', 'coaching', undefined, slug);
+  expect(nativeHost.openDeepLink(`gamefeedback:/${board}`)).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe(board);
+  const detail = appRoutes.post('ko', post.id, 'COACHING', slug);
+  expect(nativeHost.openDeepLink(`gamefeedback:/${detail}`)).toBe(true);
+  await expect(page.locator('.coaching-summary')).toContainText('코치 구함');
+  await expect(page.locator('.coaching-summary')).toContainText('30,000');
+  await expect.poll(nativeHost.currentPath).toBe(detail);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe(board);
+  expect(nativeHost.openDeepLink(`gamefeedback:/${appRoutes.boards('ko', 'free', undefined, slug)}`)).toBe(
+    true,
+  );
+  await expect(page.getByRole('heading', { name: '자유게시판', exact: true })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-route-document', 'kept');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});

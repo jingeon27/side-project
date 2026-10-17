@@ -10,12 +10,12 @@ test('a suspended feed keeps its filters and shell usable until data arrives', a
   });
   try {
     await page.goto('/ko', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByLabel('피드백 불러오는 중')).toBeVisible();
-    await expect(page.getByRole('textbox', { name: '피드백 검색' })).toBeVisible();
+    await expect(page.getByLabel('게시글 불러오는 중')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: '게시글 검색' })).toBeVisible();
     await expect(page.locator('.topbar')).toBeVisible();
     pending.resolve();
     await expect(page.locator('.post-card').first()).toBeVisible();
-    await expect(page.getByLabel('피드백 불러오는 중')).not.toBeVisible();
+    await expect(page.getByLabel('게시글 불러오는 중')).not.toBeVisible();
   } finally {
     pending.resolve();
   }
@@ -77,9 +77,9 @@ test('an invalid list shows a response error and recovers on retry without prete
     });
   });
   await page.goto('/ko');
-  const message = page.getByRole('alert', { name: '최신 피드백 오류' });
+  const message = page.getByRole('alert', { name: '최신 글 오류' });
   await expect(message).toBeVisible();
-  await expect(page.getByRole('textbox', { name: '피드백 검색' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '게시글 검색' })).toBeVisible();
   await expect(page.getByText('첫 번째 이야기를 기다려요', { exact: true })).not.toBeVisible();
   await expect(page.locator('.post-card')).toHaveCount(0);
   malformed = false;

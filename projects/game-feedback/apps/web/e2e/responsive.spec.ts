@@ -13,7 +13,7 @@ for (const width of [320, 390, 768, 1440]) {
       data: { accountId: width === 320 || width === 768 ? 'sample-user-0' : 'sample-user-3' },
     });
     await page.goto('/en');
-    await page.getByRole('button', { name: 'Ask for feedback', exact: true }).click();
+    await page.getByRole('button', { name: 'Write a post', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     const box = await dialog.boundingBox();

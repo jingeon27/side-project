@@ -9,7 +9,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
   ]) {
     await page.setViewportSize(viewport);
     await page.goto('/ko');
-    const action = page.getByRole('button', { name: '피드백 요청', exact: true });
+    const action = page.getByRole('button', { name: '글쓰기', exact: true });
     await expect(action).toBeVisible();
     const appearance = await action.evaluate((button) => {
       const styles = getComputedStyle(button);
