@@ -32,7 +32,7 @@ it('키보드 선택과 Escape 닫기 후 트리거로 포커스를 돌려야 �
   const trigger = screen.getByRole('combobox', { name: '화면 모드' });
   await user.click(trigger);
   await user.keyboard('{End}{Enter}');
-  expect(trigger).toHaveTextContent('다크 모드');
+  expect(trigger).toHaveTextContent(/^다크 모드$/);
   expect(trigger).toHaveFocus();
   await user.click(trigger);
   await user.keyboard('{Escape}');

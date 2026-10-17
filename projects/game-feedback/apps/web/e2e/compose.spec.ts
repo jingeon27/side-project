@@ -47,7 +47,9 @@ for (const width of [320, 1440]) {
     expect(response.ok()).toBe(true);
     const post = await response.json();
     expect(post.body).toBe('안');
-    await expect(page).toHaveURL(url => url.pathname === `/ko/posts/${post.id}` && url.searchParams.get('board') === 'free');
+    await expect(page).toHaveURL(
+      (url) => url.pathname === `/ko/posts/${post.id}` && url.searchParams.get('board') === 'free',
+    );
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
     await expect(page.getByRole('banner')).toBeVisible();
     await page.reload();
