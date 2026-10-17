@@ -13,6 +13,8 @@ model User {
   nickname String
   isVerified Boolean @default(false)
   verifiedAt DateTime?
+  bannedAt DateTime?
+  banReason String?
   supercellTag String?
   role String @default("USER")
   termsVersion String
@@ -31,6 +33,9 @@ model User {
   reports Report[]
   blocks Block[] @relation("blocker")
   blockedBy Block[] @relation("blocked")
+  postMedia PostMedia[]
+  supportRequests SupportConversation[] @relation("supportRequester")
+  assignedSupport SupportConversation[] @relation("supportAdmin")
 }
 model Session {
   id String @id @default(cuid())
@@ -92,6 +97,7 @@ model Post {
   answers Answer[]
   comments Comment[]
   notifications Notification[]
+  media PostMedia[]
   @@index([createdAt,id])
   @@index([categoryId,createdAt])
   @@index([board,createdAt,id])
@@ -182,6 +188,7 @@ model ChatConversation {
   updatedAt DateTime @default(now())
   messages ChatMessage[]
   attachments ChatAttachment[]
+  support SupportConversation?
   @@unique([firstUserId,secondUserId])
   @@index([firstUserId,updatedAt,id])
   @@index([secondUserId,updatedAt,id])
@@ -214,4 +221,33 @@ model ChatAttachment {
   createdAt DateTime @default(now())
   @@index([conversationId,messageId])
   @@index([uploaderId,createdAt])
+}
+
+model PostMedia {
+  id String @id @default(cuid())
+  uploaderId String
+  uploader User @relation(fields:[uploaderId], references:[id], onDelete:Cascade)
+  postId String?
+  post Post? @relation(fields:[postId], references:[id], onDelete:Cascade)
+  name String
+  mimeType String
+  size Int
+  bytes Bytes
+  createdAt DateTime @default(now())
+  @@index([uploaderId,postId,createdAt])
+  @@index([postId])
+}
+
+model SupportConversation {
+  id String @id @default(cuid())
+  requesterId String
+  requester User @relation("supportRequester",fields:[requesterId],references:[id],onDelete:Cascade)
+  adminId String
+  admin User @relation("supportAdmin",fields:[adminId],references:[id],onDelete:Cascade)
+  conversationId String @unique
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  topic String
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  @@index([adminId,status,createdAt])
 }

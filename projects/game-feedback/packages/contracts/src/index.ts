@@ -1,14 +1,42 @@
 import { z } from 'zod';
 import { RichTextDocumentSchema } from './rich-text';
-export { RichTextDocumentSchema, RichTextAttributesSchema, richTextToPlainText } from './rich-text';
+import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
+export {
+  RichTextDocumentSchema,
+  RichTextAttributesSchema,
+  richTextToPlainText,
+  richTextMediaReferences,
+} from './rich-text';
 export type { TRichTextDocument, TRichTextAttributes } from './rich-text';
+export {
+  PostMediaSchema,
+  PostMediaUploadSchema,
+  PostMediaUrlSchema,
+  RichTextEmbedSchema,
+} from './post-media';
+export type { TPostMedia, TRichTextEmbed } from './post-media';
 
 export const BoardKindSchema = z.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']);
 export type TBoardKind = z.infer<typeof BoardKindSchema>;
+export const CoachingPricingTypeSchema = z.enum(['HOURLY', 'MONTHLY', 'GOAL']);
+export type TCoachingPricingType = z.infer<typeof CoachingPricingTypeSchema>;
+const CoachingAmountSchema = z.number().int().positive().max(10000000).nullable();
+export const CoachingPricingSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('HOURLY'), amount: CoachingAmountSchema }).strict(),
+  z.object({ type: z.literal('MONTHLY'), amount: CoachingAmountSchema }).strict(),
+  z
+    .object({
+      type: z.literal('GOAL'),
+      amount: CoachingAmountSchema,
+      targetScore: z.string().trim().min(1).max(100),
+    })
+    .strict(),
+]);
+export type TCoachingPricing = z.infer<typeof CoachingPricingSchema>;
 export const CoachingDetailsSchema = z
   .object({
     role: z.enum(['COACH', 'STUDENT']),
-    hourlyRate: z.number().int().positive().max(10000000).nullable(),
+    pricing: CoachingPricingSchema,
   })
   .strict();
 export type TCoachingDetails = z.infer<typeof CoachingDetailsSchema>;
@@ -35,6 +63,8 @@ export const UserSchema = AuthorSchema.extend({
   role: z.enum(['USER', 'ADMIN']),
   createdAt: ResponseTimestampSchema,
   verifiedAt: ResponseTimestampSchema.nullable(),
+  bannedAt: ResponseTimestampSchema.nullable().optional(),
+  banReason: z.string().nullable().optional(),
 });
 export const TestAccountSchema = AuthorSchema.extend({
   role: z.enum(['USER', 'ADMIN']),
@@ -132,6 +162,9 @@ export const PostDetailSchema = z.object({
   comments: z.array(CommentSchema),
 });
 export const AdminReportSchema = z.object({
+  targetPostId: ResponseIdSchema.nullable().optional(),
+  targetPreview: z.string().nullable().optional(),
+  targetUserId: ResponseIdSchema.nullable().optional(),
   id: ResponseIdSchema,
   reporterId: ResponseIdSchema,
   targetType: z.string(),
@@ -175,7 +208,9 @@ export const ChatMessageSchema = z.object({
   createdAt: ResponseTimestampSchema,
   clientMessageId: z.uuid(),
 });
+export const SupportTopicSchema = z.enum(['GENERAL', 'VERIFICATION']);
 export const ConversationSchema = z.object({
+  supportTopic: SupportTopicSchema.nullable().optional(),
   id: ResponseIdSchema,
   peer: AuthorSchema,
   lastMessage: ChatMessageSchema.nullable(),
@@ -238,7 +273,6 @@ export const PostInputSchema = z
     coaching: CoachingDetailsSchema.nullable().optional(),
     friendSale: FriendSaleDetailsSchema.nullable().optional(),
     categoryId: z.string().min(1),
-    playerTag: PlayerTagSchema.optional(),
   })
   .strict();
 export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: true })
@@ -250,7 +284,7 @@ export const HelpfulInputSchema = z.object({ helpful: z.boolean() }).strict();
 export const GameAccountInputSchema = z.object({ playerTag: PlayerTagSchema }).strict();
 export const ReportInputSchema = z
   .object({
-    targetType: z.enum(['POST', 'ANSWER', 'COMMENT']),
+    targetType: z.enum(['POST', 'ANSWER', 'COMMENT', 'USER']),
     targetId: z.string().min(1),
     reason: z.enum(['SPAM', 'HARASSMENT', 'PERSONAL_INFORMATION', 'IMPERSONATION', 'OTHER']),
     detail: z.string().trim().max(1000).optional(),
@@ -299,7 +333,34 @@ export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
 
+export const UserBanInputSchema = z
+  .object({ banned: z.boolean(), reason: z.string().trim().min(1).max(500) })
+  .strict();
+export const ReportReviewInputSchema = z.object({ status: z.enum(['REVIEWED', 'DISMISSED']) }).strict();
+export const SupportInputSchema = z.object({ topic: SupportTopicSchema }).strict();
+export const SupportStatusInputSchema = z.object({ status: z.enum(['OPEN', 'CLOSED']) }).strict();
+export const SupportThreadSchema = z.object({
+  id: ResponseIdSchema,
+  conversationId: ResponseIdSchema,
+  requester: AuthorSchema,
+  adminId: ResponseIdSchema,
+  topic: SupportTopicSchema,
+  status: z.enum(['OPEN', 'CLOSED']),
+  createdAt: ResponseTimestampSchema,
+  updatedAt: ResponseTimestampSchema,
+});
+export type TSupportThread = z.infer<typeof SupportThreadSchema>;
+
 export const schemas = {
+  UserBanInput: UserBanInputSchema,
+  ReportReviewInput: ReportReviewInputSchema,
+  SupportInput: SupportInputSchema,
+  SupportStatusInput: SupportStatusInputSchema,
+  SupportThread: SupportThreadSchema,
+  PostMedia: PostMediaSchema,
+  PostMediaUpload: PostMediaUploadSchema,
+  CoachingPricing: CoachingPricingSchema,
+  CoachingPricingType: CoachingPricingTypeSchema,
   CoachingDetails: CoachingDetailsSchema,
   FriendSaleDetails: FriendSaleDetailsSchema,
   RichTextDocument: RichTextDocumentSchema,
@@ -357,6 +418,50 @@ export type OperationSpec = {
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
+  { method: 'get', path: '/api/admin/users/{id}', id: 'getAdminUser', response: UserSchema },
+  {
+    method: 'post',
+    path: '/api/post-media',
+    id: 'uploadPostMedia',
+    body: PostMediaUploadSchema,
+    contentType: 'multipart/form-data',
+    response: PostMediaSchema,
+  },
+  { method: 'delete', path: '/api/post-media/{id}', id: 'deletePostMedia', response: OkSchema },
+  {
+    method: 'patch',
+    path: '/api/admin/users/{id}/ban',
+    id: 'setUserBan',
+    body: UserBanInputSchema,
+    response: UserSchema,
+  },
+  {
+    method: 'patch',
+    path: '/api/admin/reports/{id}',
+    id: 'reviewReport',
+    body: ReportReviewInputSchema,
+    response: OkSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/support/conversations',
+    id: 'startSupportConversation',
+    body: SupportInputSchema,
+    response: ConversationSchema,
+  },
+  {
+    method: 'get',
+    path: '/api/admin/support',
+    id: 'listSupportThreads',
+    response: z.array(SupportThreadSchema),
+  },
+  {
+    method: 'patch',
+    path: '/api/admin/support/{id}',
+    id: 'setSupportStatus',
+    body: SupportStatusInputSchema,
+    response: SupportThreadSchema,
+  },
   { method: 'get', path: '/api/users/{id}', id: 'getPublicProfile', response: PublicProfileSchema },
   {
     method: 'post',

@@ -18,10 +18,11 @@ import { ChatEvents } from './chat.events';
 import { authorDto, authorSelect } from '../users/user.presenter';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
 
-const userSelect = authorSelect;
+const userSelect = { ...authorSelect, bannedAt: true };
 const conversationInclude = {
   firstUser: { select: userSelect },
   secondUser: { select: userSelect },
+  support: true,
 } as const;
 const messageInclude = {
   sender: { select: authorSelect },
@@ -115,7 +116,12 @@ export class ChatService {
     });
     if (!row) throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
     const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
-    if ((!this.config.demoMode && peer.demoKey) || (await this.blocked(userId, peer.id, db))) {
+    if (!row.support && (row.firstUser.bannedAt || row.secondUser.bannedAt))
+      throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
+    if (
+      (!this.config.demoMode && peer.demoKey) ||
+      (!row.support && (await this.blocked(userId, peer.id, db)))
+    ) {
       throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
     }
     return row;
@@ -133,6 +139,7 @@ export class ChatService {
     const peerReadAt = row.firstUserId === userId ? row.secondReadAt : row.firstReadAt;
     return {
       id: row.id,
+      supportTopic: row.support?.topic === 'VERIFICATION' ? 'VERIFICATION' : row.support ? 'GENERAL' : null,
       peer: authorDto(peer),
       lastMessage: last ? messageDto(last) : null,
       unreadCount,
@@ -140,13 +147,24 @@ export class ChatService {
       peerLastReadAt: peerReadAt?.toISOString() ?? null,
     };
   }
+  async conversation(req: SessionRequest, id: string) {
+    const user = requireUser(req);
+    return this.dto(await this.visible(user.id, id), user.id);
+  }
   async create(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
+    if (user.bannedAt)
+      throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
     const { recipientId } = parse(ConversationInputSchema, input);
     if (recipientId === user.id)
       throw new ApiError(400, 'CANNOT_CHAT_SELF', '자신에게 메시지를 보낼 수 없습니다.');
     const peer = await this.db.user.findUnique({ where: { id: recipientId }, select: userSelect });
-    if (!peer || (!this.config.demoMode && peer.demoKey) || (await this.blocked(user.id, recipientId))) {
+    if (
+      !peer ||
+      peer.bannedAt ||
+      (!this.config.demoMode && peer.demoKey) ||
+      (await this.blocked(user.id, recipientId))
+    ) {
       throw new ApiError(404, 'RECIPIENT_UNAVAILABLE', '이 사용자와 대화를 시작할 수 없습니다.');
     }
     const [firstUserId, secondUserId] = [user.id, recipientId].sort();
@@ -177,9 +195,21 @@ export class ChatService {
     const cursor = decodeCursor(query.cursor);
     const excluded = await this.excluded(user.id);
     const base: Prisma.ChatConversationWhereInput = {
+      ...(!this.config.demoMode ? { firstUser: { demoKey: null }, secondUser: { demoKey: null } } : {}),
       OR: [{ firstUserId: user.id }, { secondUserId: user.id }],
-      firstUserId: { notIn: excluded },
-      secondUserId: { notIn: excluded },
+      AND: [
+        {
+          OR: [
+            { support: { isNot: null } },
+            {
+              firstUserId: { notIn: excluded },
+              secondUserId: { notIn: excluded },
+              firstUser: { bannedAt: null },
+              secondUser: { bannedAt: null },
+            },
+          ],
+        },
+      ],
     };
     const where: Prisma.ChatConversationWhereInput = {
       AND: [
@@ -307,6 +337,10 @@ export class ChatService {
           include: messageInclude,
         });
         await tx.chatConversation.update({ where: { id }, data: { updatedAt: createdAt } });
+        await tx.supportConversation.updateMany({
+          where: { conversationId: id, requesterId: user.id },
+          data: { status: 'OPEN' },
+        });
         return {
           message,
           peerId: conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId,

@@ -11,7 +11,7 @@ export const reportInputDetailMax = 1000;
 
 
 export const ReportInput = zod.object({
-  "targetType": zod.enum(['POST', 'ANSWER', 'COMMENT']),
+  "targetType": zod.enum(['POST', 'ANSWER', 'COMMENT', 'USER']),
   "targetId": zod.string().min(1),
   "reason": zod.enum(['SPAM', 'HARASSMENT', 'PERSONAL_INFORMATION', 'IMPERSONATION', 'OTHER']),
   "detail": zod.string().max(reportInputDetailMax).optional()

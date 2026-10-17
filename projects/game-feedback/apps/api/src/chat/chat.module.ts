@@ -9,6 +9,6 @@ import { ChatAttachmentService } from './chat-attachment.service';
 @Module({
   controllers: [ChatController, ChatAttachmentController],
   providers: [ChatService, ChatEvents, ChatLifecycleMiddleware, ChatAttachmentService, ChatAttachmentGuard],
-  exports: [ChatEvents, ChatLifecycleMiddleware],
+  exports: [ChatEvents, ChatLifecycleMiddleware, ChatService],
 })
 export class ChatModule {}

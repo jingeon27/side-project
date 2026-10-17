@@ -62,6 +62,7 @@ export const chatMessageListItemsItemClientMessageIdRegExp = new RegExp('^([0-9a
 
 export const ChatMessageList = zod.object({
   "conversation": zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
   "id": zod.string().min(1).max(chatMessageListConversationIdMax),
   "peer": zod.object({
   "id": zod.string().min(1).max(chatMessageListConversationPeerIdMax),

@@ -12,22 +12,31 @@ export const createPostBodyTitleMax = 120;
 export const createPostBodyBodyMin = 20;
 export const createPostBodyBodyMax = 10000;
 
-export const createPostBodyDocumentOneOpsItemInsertMax = 10001;
+export const createPostBodyDocumentOneOpsItemInsertOneMax = 10001;
 
+export const createPostBodyDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const createPostBodyDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const createPostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const createPostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const createPostBodyDocumentOneOpsMax = 2000;
 
-export const createPostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
-export const createPostBodyCoachingOneHourlyRateOneMax = 10000000;
+export const createPostBodyCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const createPostBodyCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const createPostBodyCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const createPostBodyCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const createPostBodyCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const createPostBodyCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const createPostBodyCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const createPostBodyFriendSaleOnePriceOneExclusiveMin = 0;
 export const createPostBodyFriendSaleOnePriceOneMax = 10000000;
 
 
-export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
@@ -35,7 +44,11 @@ export const CreatePostBody = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(createPostBodyDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(createPostBodyDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -50,13 +63,22 @@ export const CreatePostBody = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(createPostBodyCoachingOneHourlyRateOneExclusiveMin).max(createPostBodyCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(createPostBodyCoachingOnePricingOneAmountOneExclusiveMin).max(createPostBodyCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(createPostBodyCoachingOnePricingTwoAmountOneExclusiveMin).max(createPostBodyCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(createPostBodyCoachingOnePricingThreeAmountOneExclusiveMin).max(createPostBodyCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(createPostBodyCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(createPostBodyFriendSaleOnePriceOneExclusiveMin).max(createPostBodyFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
-  "categoryId": zod.string().min(1),
-  "playerTag": zod.string().regex(createPostBodyPlayerTagRegExp).optional()
+  "categoryId": zod.string().min(1)
 })
 
 export type CreatePostBody = zod.input<typeof CreatePostBody>;

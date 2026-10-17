@@ -31,6 +31,15 @@ export class ApiAccessMiddleware implements NestMiddleware {
       const ip = req.ip ?? 'unknown';
       if (this.config.rateLimit) this.enforceLimit(res, `coarse:ip:${ip}`, 1000);
       await this.sessions.loadSession(req);
+      if (req.gfSession?.user?.bannedAt && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        const allowed =
+          req.path === '/api/support/conversations' ||
+          req.path === '/api/auth/logout' ||
+          (req.method === 'DELETE' && req.path === '/api/me') ||
+          /^\/api\/conversations\/[^/]+\/(messages|read|attachments)(\/[^/]+)?$/.test(req.path);
+        if (!allowed)
+          throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
+      }
       if (this.config.rateLimit) {
         const bucket = requestRateBucket({
           ip,

@@ -115,7 +115,6 @@ export async function seed(db: PrismaClient, demoMode = false) {
       '오랜만에 복귀해서 익숙한 라바 덱으로 플레이하고 있어요. 달라진 카드와 수비 패턴에 적응하는 중인데 먼저 연습하면 좋은 운영이나 덱 조합을 추천해주세요.',
     ],
   ];
-  const profile = await new DemoProfileProvider().lookup('#2PP');
   for (let i = 0; i < entries.length; i++)
     await db.post.upsert({
       where: { id: `sample-post-${i}` },
@@ -126,7 +125,6 @@ export async function seed(db: PrismaClient, demoMode = false) {
         categoryId: category.id,
         title: entries[i][0],
         body: entries[i][1],
-        gameProfile: profile as unknown as Prisma.InputJsonValue,
         createdAt: new Date(Date.now() - (i + 1) * 1000 * 60 * 37),
       },
     });

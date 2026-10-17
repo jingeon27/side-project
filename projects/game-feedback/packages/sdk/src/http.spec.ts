@@ -153,6 +153,32 @@ describe('generated REST client response validation', () => {
       await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
     }
   });
+  it('validates coaching periods, goals and amounts without a money or target fallback', async () => {
+    const fixture = postFixture();
+    for (const pricing of [
+      { type: 'HOURLY', amount: 35000 },
+      { type: 'MONTHLY', amount: null },
+      { type: 'GOAL', amount: 500000, targetScore: '9000' },
+    ]) {
+      const coaching = { role: 'STUDENT', pricing };
+      respond({ ...fixture, post: { ...fixture.post, board: 'COACHING', coaching } });
+      expect((await getPost('post-1')).post.coaching).toEqual(coaching);
+    }
+    for (const pricing of [
+      { type: 'MONTHLY', amount: '35000' },
+      { type: 'HOURLY', amount: -1 },
+      { type: 'GOAL', amount: null },
+      { type: 'GOAL', amount: 500000, targetScore: 9000 },
+      { type: 'GOAL', amount: 500000, targetScore: '' },
+      { type: 'OTHER', amount: 35000 },
+    ]) {
+      respond({
+        ...fixture,
+        post: { ...fixture.post, board: 'COACHING', coaching: { role: 'COACH', pricing } },
+      });
+      await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
+    }
+  });
   it('fills only explicitly allowed missing display fields', async () => {
     const fixture = postFixture();
     const { nickname: _nickname, ...author } = fixture.post.author;

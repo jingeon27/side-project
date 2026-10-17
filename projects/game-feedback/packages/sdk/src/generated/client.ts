@@ -22,13 +22,16 @@ import {
   ListCategories200Item,
   ListGameAccounts200Item,
   ListReports200Item,
+  ListSupportThreads200Item,
   NotificationList,
   Ok,
   Post,
   PostDetail,
   PostList,
+  PostMedia,
   PublicProfile,
   Session,
+  SupportThread,
   TestAccountList,
   User
 } from './models';
@@ -52,13 +55,255 @@ import type {
   ListPostsParams,
   OnboardInput,
   PostInput,
+  PostMediaUpload,
   PostPatch,
   ReportInput,
+  ReportReviewInput,
+  SupportInput,
+  SupportStatusInput,
   TestLoginInput,
+  UserBanInput,
   VerificationInput
 } from './models';
 
 import { apiFetch } from '../http';
+export const getGetAdminUserUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/users/${id}`
+}
+
+export const getAdminUser = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<User> => {
+
+  return apiFetch<User>(getGetAdminUserUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: User
+  }
+);}
+
+
+
+export const getUploadPostMediaUrl = () => {
+
+
+
+
+  return `/api/post-media`
+}
+
+export const uploadPostMedia = async (postMediaUpload: PostMediaUpload, options?: Parameters<typeof apiFetch>[1]): Promise<PostMedia> => {
+    const formData = new FormData();
+formData.append(`file`, postMediaUpload.file);
+
+  return apiFetch<PostMedia>(getUploadPostMediaUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData,
+    schema: PostMedia
+  }
+);}
+
+
+
+export const getDeletePostMediaUrl = (id: string,) => {
+
+
+
+
+  return `/api/post-media/${id}`
+}
+
+export const deletePostMedia = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+  return apiFetch<Ok>(getDeletePostMediaUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+    ,
+    schema: Ok
+  }
+);}
+
+
+
+export const getSetUserBanUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/users/${id}/ban`
+}
+
+export const setUserBan = async (id: string,
+    userBanInput: UserBanInput, options?: Parameters<typeof apiFetch>[1]): Promise<User> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<User>(getSetUserBanUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(userBanInput),
+    schema: User
+  }
+);}
+
+
+
+export const getReviewReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/reports/${id}`
+}
+
+export const reviewReport = async (id: string,
+    reportReviewInput: ReportReviewInput, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<Ok>(getReviewReportUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reportReviewInput),
+    schema: Ok
+  }
+);}
+
+
+
+export const getStartSupportConversationUrl = () => {
+
+
+
+
+  return `/api/support/conversations`
+}
+
+export const startSupportConversation = async (supportInput: SupportInput, options?: Parameters<typeof apiFetch>[1]): Promise<Conversation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<Conversation>(getStartSupportConversationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportInput),
+    schema: Conversation
+  }
+);}
+
+
+
+export const getListSupportThreadsUrl = () => {
+
+
+
+
+  return `/api/admin/support`
+}
+
+export const listSupportThreads = async ( options?: Parameters<typeof apiFetch>[1]): Promise<ListSupportThreads200Item[]> => {
+
+  return apiFetch<ListSupportThreads200Item[]>(getListSupportThreadsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: zod.array(ListSupportThreads200Item)
+  }
+);}
+
+
+
+export const getSetSupportStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/support/${id}`
+}
+
+export const setSupportStatus = async (id: string,
+    supportStatusInput: SupportStatusInput, options?: Parameters<typeof apiFetch>[1]): Promise<SupportThread> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<SupportThread>(getSetSupportStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportStatusInput),
+    schema: SupportThread
+  }
+);}
+
+
+
 export const getGetPublicProfileUrl = (id: string,) => {
 
 

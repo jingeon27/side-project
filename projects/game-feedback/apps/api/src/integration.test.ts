@@ -70,7 +70,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       .expect(401);
     expect(response.body.errorCode).toBe('AUTH_REQUIRED');
   });
-  it('persists profile snapshots and exposes unverified ownership', async () => {
+  it('keeps game accounts on the user instead of attaching a profile to a post', async () => {
     const response = await requester
       .post('/api/posts')
       .set('Origin', origin)
@@ -78,12 +78,10 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
         title: '호그 운영 피드백 부탁드려요',
         body: '메가나이트를 상대할 때 수비 이후 공격 타이밍이 고민됩니다. 덱 운영을 알려주세요.',
         categoryId: 'clash-royale',
-        playerTag: '#2PP',
       })
       .expect(200);
     post = response.body;
-    expect(post.gameProfile.source).toBe('DEMO');
-    expect(post.gameProfile.verification).toBe('UNVERIFIED');
+    expect(post.gameProfile).toBeNull();
     expect(await db.post.count({ where: { id: post.id } })).toBe(1);
     const detail = await requester.get(`/api/posts/${post.id}`).expect(200);
     expect(detail.body.post.gameProfile).toEqual(post.gameProfile);

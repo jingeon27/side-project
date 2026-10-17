@@ -1,6 +1,14 @@
 export { ApiError } from './api-error';
 export { ApiResponseValidationError, type IResponseIssue } from './response/validation-error';
 export {
+  uploadPostMedia,
+  deletePostMedia,
+  setUserBan,
+  getAdminUser,
+  reviewReport,
+  startSupportConversation,
+  listSupportThreads,
+  setSupportStatus,
   exchangeAppLogin,
   getHealth,
   getPublicProfile,

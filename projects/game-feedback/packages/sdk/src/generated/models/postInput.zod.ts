@@ -12,22 +12,31 @@ export const postInputTitleMax = 120;
 export const postInputBodyMin = 20;
 export const postInputBodyMax = 10000;
 
-export const postInputDocumentOneOpsItemInsertMax = 10001;
+export const postInputDocumentOneOpsItemInsertOneMax = 10001;
 
+export const postInputDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const postInputDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const postInputDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const postInputDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const postInputDocumentOneOpsMax = 2000;
 
-export const postInputCoachingOneHourlyRateOneExclusiveMin = 0;
-export const postInputCoachingOneHourlyRateOneMax = 10000000;
+export const postInputCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const postInputCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const postInputCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const postInputCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const postInputCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const postInputCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const postInputCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const postInputFriendSaleOnePriceOneExclusiveMin = 0;
 export const postInputFriendSaleOnePriceOneMax = 10000000;
 
 
-export const postInputPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const PostInput = zod.object({
   "title": zod.string().min(postInputTitleMin).max(postInputTitleMax),
@@ -35,7 +44,11 @@ export const PostInput = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(postInputDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(postInputDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(postInputDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(postInputDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -50,13 +63,22 @@ export const PostInput = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(postInputCoachingOneHourlyRateOneExclusiveMin).max(postInputCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(postInputCoachingOnePricingOneAmountOneExclusiveMin).max(postInputCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(postInputCoachingOnePricingTwoAmountOneExclusiveMin).max(postInputCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(postInputCoachingOnePricingThreeAmountOneExclusiveMin).max(postInputCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(postInputCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(postInputFriendSaleOnePriceOneExclusiveMin).max(postInputFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
-  "categoryId": zod.string().min(1),
-  "playerTag": zod.string().regex(postInputPlayerTagRegExp).optional()
+  "categoryId": zod.string().min(1)
 })
 
 export type PostInput = zod.input<typeof PostInput>;

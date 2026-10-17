@@ -14,6 +14,7 @@ import { BlocksModule } from './blocks/blocks.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { ChatModule } from './chat/chat.module';
 import { HealthModule } from './health/health.module';
+import { SupportModule } from './support/support.module';
 import { ApiAccessMiddleware } from './common/http/api-access.middleware';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 
@@ -31,6 +32,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     ModerationModule,
     ChatModule,
     HealthModule,
+    SupportModule,
   ],
   providers: [ApiAccessMiddleware, { provide: APP_FILTER, useClass: ApiExceptionFilter }],
 })

@@ -6,6 +6,259 @@
  */
 import * as zod from 'zod';
 
+export const GetAdminUserParams = zod.object({
+  "id": zod.string()
+})
+
+export const getAdminUserResponseIdMax = 100;
+
+
+export const getAdminUserResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getAdminUserResponseVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getAdminUserResponseBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const GetAdminUserResponse = zod.object({
+  "id": zod.string().min(1).max(getAdminUserResponseIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(getAdminUserResponseCreatedAtRegExp),
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminUserResponseVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminUserResponseBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
+})
+
+
+export const UploadPostMediaBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const uploadPostMediaResponseIdMax = 100;
+
+export const uploadPostMediaResponseNameMax = 200;
+
+export const uploadPostMediaResponseSizeExclusiveMin = 0;
+export const uploadPostMediaResponseSizeMax = 26214400;
+
+export const uploadPostMediaResponseUrlRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+
+
+export const UploadPostMediaResponse = zod.object({
+  "id": zod.string().min(1).max(uploadPostMediaResponseIdMax),
+  "name": zod.string().min(1).max(uploadPostMediaResponseNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(uploadPostMediaResponseSizeExclusiveMin).max(uploadPostMediaResponseSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(uploadPostMediaResponseUrlRegExp)
+})
+
+
+export const DeletePostMediaParams = zod.object({
+  "id": zod.string()
+})
+
+export const DeletePostMediaResponse = zod.object({
+  "ok": zod.literal(true)
+})
+
+
+export const SetUserBanParams = zod.object({
+  "id": zod.string()
+})
+
+export const setUserBanBodyReasonMax = 500;
+
+
+
+export const SetUserBanBody = zod.object({
+  "banned": zod.boolean(),
+  "reason": zod.string().min(1).max(setUserBanBodyReasonMax)
+})
+
+export const setUserBanResponseIdMax = 100;
+
+
+export const setUserBanResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const setUserBanResponseVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const setUserBanResponseBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const SetUserBanResponse = zod.object({
+  "id": zod.string().min(1).max(setUserBanResponseIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(setUserBanResponseCreatedAtRegExp),
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserBanResponseVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserBanResponseBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
+})
+
+
+export const ReviewReportParams = zod.object({
+  "id": zod.string()
+})
+
+export const ReviewReportBody = zod.object({
+  "status": zod.enum(['REVIEWED', 'DISMISSED'])
+})
+
+export const ReviewReportResponse = zod.object({
+  "ok": zod.literal(true)
+})
+
+
+export const StartSupportConversationBody = zod.object({
+  "topic": zod.enum(['GENERAL', 'VERIFICATION'])
+})
+
+export const startSupportConversationResponseIdMax = 100;
+
+export const startSupportConversationResponsePeerIdMax = 100;
+
+
+export const startSupportConversationResponseLastMessageOneIdMax = 100;
+
+export const startSupportConversationResponseLastMessageOneConversationIdMax = 100;
+
+export const startSupportConversationResponseLastMessageOneSenderIdMax = 100;
+
+
+export const startSupportConversationResponseLastMessageOneBodyMax = 2000;
+
+export const startSupportConversationResponseLastMessageOneAttachmentsItemIdMax = 100;
+
+export const startSupportConversationResponseLastMessageOneAttachmentsItemNameMax = 200;
+
+export const startSupportConversationResponseLastMessageOneAttachmentsItemSizeExclusiveMin = 0;
+export const startSupportConversationResponseLastMessageOneAttachmentsItemSizeMax = 26214400;
+
+export const startSupportConversationResponseLastMessageOneAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const startSupportConversationResponseLastMessageOneAttachmentsMax = 4;
+
+export const startSupportConversationResponseLastMessageOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const startSupportConversationResponseLastMessageOneClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+export const startSupportConversationResponseUnreadCountMin = 0;
+export const startSupportConversationResponseUnreadCountMax = 9007199254740991;
+
+export const startSupportConversationResponseUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const startSupportConversationResponsePeerLastReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const StartSupportConversationResponse = zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
+  "id": zod.string().min(1).max(startSupportConversationResponseIdMax),
+  "peer": zod.object({
+  "id": zod.string().min(1).max(startSupportConversationResponsePeerIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean()
+}),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.string().min(1).max(startSupportConversationResponseLastMessageOneIdMax),
+  "conversationId": zod.string().min(1).max(startSupportConversationResponseLastMessageOneConversationIdMax),
+  "sender": zod.object({
+  "id": zod.string().min(1).max(startSupportConversationResponseLastMessageOneSenderIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean()
+}),
+  "body": zod.string().max(startSupportConversationResponseLastMessageOneBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(startSupportConversationResponseLastMessageOneAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(startSupportConversationResponseLastMessageOneAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(startSupportConversationResponseLastMessageOneAttachmentsItemSizeExclusiveMin).max(startSupportConversationResponseLastMessageOneAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(startSupportConversationResponseLastMessageOneAttachmentsItemUrlRegExp)
+})).max(startSupportConversationResponseLastMessageOneAttachmentsMax).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(startSupportConversationResponseLastMessageOneCreatedAtRegExp),
+  "clientMessageId": zod.uuid().regex(startSupportConversationResponseLastMessageOneClientMessageIdRegExp)
+}),zod.null()]),
+  "unreadCount": zod.int().min(startSupportConversationResponseUnreadCountMin).max(startSupportConversationResponseUnreadCountMax),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(startSupportConversationResponseUpdatedAtRegExp),
+  "peerLastReadAt": zod.union([zod.iso.datetime({"offset":true}).regex(startSupportConversationResponsePeerLastReadAtOneRegExp),zod.null()])
+})
+
+
+export const listSupportThreadsResponseIdMax = 100;
+
+export const listSupportThreadsResponseConversationIdMax = 100;
+
+export const listSupportThreadsResponseRequesterIdMax = 100;
+
+
+export const listSupportThreadsResponseAdminIdMax = 100;
+
+export const listSupportThreadsResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listSupportThreadsResponseUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const ListSupportThreadsResponseItem = zod.object({
+  "id": zod.string().min(1).max(listSupportThreadsResponseIdMax),
+  "conversationId": zod.string().min(1).max(listSupportThreadsResponseConversationIdMax),
+  "requester": zod.object({
+  "id": zod.string().min(1).max(listSupportThreadsResponseRequesterIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean()
+}),
+  "adminId": zod.string().min(1).max(listSupportThreadsResponseAdminIdMax),
+  "topic": zod.enum(['GENERAL', 'VERIFICATION']),
+  "status": zod.enum(['OPEN', 'CLOSED']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listSupportThreadsResponseCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listSupportThreadsResponseUpdatedAtRegExp)
+})
+export const ListSupportThreadsResponse = zod.array(ListSupportThreadsResponseItem)
+
+
+export const SetSupportStatusParams = zod.object({
+  "id": zod.string()
+})
+
+export const SetSupportStatusBody = zod.object({
+  "status": zod.enum(['OPEN', 'CLOSED'])
+})
+
+export const setSupportStatusResponseIdMax = 100;
+
+export const setSupportStatusResponseConversationIdMax = 100;
+
+export const setSupportStatusResponseRequesterIdMax = 100;
+
+
+export const setSupportStatusResponseAdminIdMax = 100;
+
+export const setSupportStatusResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const setSupportStatusResponseUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const SetSupportStatusResponse = zod.object({
+  "id": zod.string().min(1).max(setSupportStatusResponseIdMax),
+  "conversationId": zod.string().min(1).max(setSupportStatusResponseConversationIdMax),
+  "requester": zod.object({
+  "id": zod.string().min(1).max(setSupportStatusResponseRequesterIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean()
+}),
+  "adminId": zod.string().min(1).max(setSupportStatusResponseAdminIdMax),
+  "topic": zod.enum(['GENERAL', 'VERIFICATION']),
+  "status": zod.enum(['OPEN', 'CLOSED']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(setSupportStatusResponseCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(setSupportStatusResponseUpdatedAtRegExp)
+})
+
+
 export const GetPublicProfileParams = zod.object({
   "id": zod.string()
 })
@@ -54,6 +307,7 @@ export const exchangeAppLoginResponseUserOneIdMax = 100;
 
 export const exchangeAppLoginResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const exchangeAppLoginResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const exchangeAppLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
 export const ExchangeAppLoginResponse = zod.object({
@@ -65,7 +319,9 @@ export const ExchangeAppLoginResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(exchangeAppLoginResponseUserOneCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(exchangeAppLoginResponseUserOneVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(exchangeAppLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(exchangeAppLoginResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 }),zod.null()]),
   "demoMode": zod.boolean(),
   "googleConfigured": zod.boolean(),
@@ -104,6 +360,7 @@ export const testAccountLoginResponseUserOneIdMax = 100;
 
 export const testAccountLoginResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const testAccountLoginResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const testAccountLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
 export const TestAccountLoginResponse = zod.object({
@@ -115,7 +372,9 @@ export const TestAccountLoginResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(testAccountLoginResponseUserOneCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(testAccountLoginResponseUserOneVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(testAccountLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(testAccountLoginResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 }),zod.null()]),
   "demoMode": zod.boolean(),
   "googleConfigured": zod.boolean(),
@@ -136,6 +395,7 @@ export const setUserVerificationResponseIdMax = 100;
 
 export const setUserVerificationResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const setUserVerificationResponseVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const setUserVerificationResponseBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
 export const SetUserVerificationResponse = zod.object({
@@ -146,7 +406,9 @@ export const SetUserVerificationResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(setUserVerificationResponseCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserVerificationResponseVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserVerificationResponseVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserVerificationResponseBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 })
 
 
@@ -199,6 +461,7 @@ export const listConversationsResponseUnreadCountMax = 9007199254740991;
 
 export const ListConversationsResponse = zod.object({
   "items": zod.array(zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
   "id": zod.string().min(1).max(listConversationsResponseItemsItemIdMax),
   "peer": zod.object({
   "id": zod.string().min(1).max(listConversationsResponseItemsItemPeerIdMax),
@@ -280,6 +543,7 @@ export const createConversationResponsePeerLastReadAtOneRegExp = new RegExp('^(?
 
 
 export const CreateConversationResponse = zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
   "id": zod.string().min(1).max(createConversationResponseIdMax),
   "peer": zod.object({
   "id": zod.string().min(1).max(createConversationResponsePeerIdMax),
@@ -387,6 +651,7 @@ export const listChatMessagesResponseItemsItemClientMessageIdRegExp = new RegExp
 
 export const ListChatMessagesResponse = zod.object({
   "conversation": zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
   "id": zod.string().min(1).max(listChatMessagesResponseConversationIdMax),
   "peer": zod.object({
   "id": zod.string().min(1).max(listChatMessagesResponseConversationPeerIdMax),
@@ -573,6 +838,10 @@ export const GetHealthResponse = zod.object({
 })
 
 
+export const listReportsResponseTargetPostIdOneMax = 100;
+
+export const listReportsResponseTargetUserIdOneMax = 100;
+
 export const listReportsResponseIdMax = 100;
 
 export const listReportsResponseReporterIdMax = 100;
@@ -583,6 +852,9 @@ export const listReportsResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468
 
 
 export const ListReportsResponseItem = zod.object({
+  "targetPostId": zod.union([zod.string().min(1).max(listReportsResponseTargetPostIdOneMax),zod.null()]).optional(),
+  "targetPreview": zod.string().nullish(),
+  "targetUserId": zod.union([zod.string().min(1).max(listReportsResponseTargetUserIdOneMax),zod.null()]).optional(),
   "id": zod.string().min(1).max(listReportsResponseIdMax),
   "reporterId": zod.string().min(1).max(listReportsResponseReporterIdMax),
   "targetType": zod.string(),
@@ -600,6 +872,7 @@ export const getSessionResponseUserOneIdMax = 100;
 
 export const getSessionResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const getSessionResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getSessionResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
 export const GetSessionResponse = zod.object({
@@ -611,7 +884,9 @@ export const GetSessionResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(getSessionResponseUserOneCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getSessionResponseUserOneVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getSessionResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getSessionResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 }),zod.null()]),
   "demoMode": zod.boolean(),
   "googleConfigured": zod.boolean(),
@@ -635,6 +910,7 @@ export const demoLoginResponseUserOneIdMax = 100;
 
 export const demoLoginResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const demoLoginResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const demoLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
 export const DemoLoginResponse = zod.object({
@@ -646,7 +922,9 @@ export const DemoLoginResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(demoLoginResponseUserOneCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(demoLoginResponseUserOneVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(demoLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(demoLoginResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 }),zod.null()]),
   "demoMode": zod.boolean(),
   "googleConfigured": zod.boolean(),
@@ -672,6 +950,7 @@ export const onboardResponseUserOneIdMax = 100;
 
 export const onboardResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const onboardResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const onboardResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
 export const OnboardResponse = zod.object({
@@ -683,7 +962,9 @@ export const OnboardResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(onboardResponseUserOneCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(onboardResponseUserOneVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(onboardResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(onboardResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 }),zod.null()]),
   "demoMode": zod.boolean(),
   "googleConfigured": zod.boolean(),
@@ -737,16 +1018,26 @@ export const listPostsResponseItemsItemIdMax = 100;
 
 
 
-export const listPostsResponseItemsItemDocumentOneOpsItemInsertMax = 10001;
+export const listPostsResponseItemsItemDocumentOneOpsItemInsertOneMax = 10001;
 
+export const listPostsResponseItemsItemDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const listPostsResponseItemsItemDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const listPostsResponseItemsItemDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const listPostsResponseItemsItemDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const listPostsResponseItemsItemDocumentOneOpsMax = 2000;
 
-export const listPostsResponseItemsItemCoachingOneHourlyRateOneExclusiveMin = 0;
-export const listPostsResponseItemsItemCoachingOneHourlyRateOneMax = 10000000;
+export const listPostsResponseItemsItemCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const listPostsResponseItemsItemCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const listPostsResponseItemsItemCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const listPostsResponseItemsItemCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const listPostsResponseItemsItemCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const listPostsResponseItemsItemCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const listPostsResponseItemsItemCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const listPostsResponseItemsItemFriendSaleOnePriceOneExclusiveMin = 0;
 export const listPostsResponseItemsItemFriendSaleOnePriceOneMax = 10000000;
@@ -796,7 +1087,11 @@ export const ListPostsResponse = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(listPostsResponseItemsItemDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(listPostsResponseItemsItemDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(listPostsResponseItemsItemDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(listPostsResponseItemsItemDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -811,7 +1106,17 @@ export const ListPostsResponse = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(listPostsResponseItemsItemCoachingOneHourlyRateOneExclusiveMin).max(listPostsResponseItemsItemCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(listPostsResponseItemsItemCoachingOnePricingOneAmountOneExclusiveMin).max(listPostsResponseItemsItemCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(listPostsResponseItemsItemCoachingOnePricingTwoAmountOneExclusiveMin).max(listPostsResponseItemsItemCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(listPostsResponseItemsItemCoachingOnePricingThreeAmountOneExclusiveMin).max(listPostsResponseItemsItemCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(listPostsResponseItemsItemCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(listPostsResponseItemsItemFriendSaleOnePriceOneExclusiveMin).max(listPostsResponseItemsItemFriendSaleOnePriceOneMax),zod.null()])
@@ -862,22 +1167,31 @@ export const createPostBodyTitleMax = 120;
 export const createPostBodyBodyMin = 20;
 export const createPostBodyBodyMax = 10000;
 
-export const createPostBodyDocumentOneOpsItemInsertMax = 10001;
+export const createPostBodyDocumentOneOpsItemInsertOneMax = 10001;
 
+export const createPostBodyDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const createPostBodyDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const createPostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const createPostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const createPostBodyDocumentOneOpsMax = 2000;
 
-export const createPostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
-export const createPostBodyCoachingOneHourlyRateOneMax = 10000000;
+export const createPostBodyCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const createPostBodyCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const createPostBodyCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const createPostBodyCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const createPostBodyCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const createPostBodyCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const createPostBodyCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const createPostBodyFriendSaleOnePriceOneExclusiveMin = 0;
 export const createPostBodyFriendSaleOnePriceOneMax = 10000000;
 
 
-export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 
 export const CreatePostBody = zod.object({
@@ -886,7 +1200,11 @@ export const CreatePostBody = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(createPostBodyDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(createPostBodyDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -901,29 +1219,48 @@ export const CreatePostBody = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(createPostBodyCoachingOneHourlyRateOneExclusiveMin).max(createPostBodyCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(createPostBodyCoachingOnePricingOneAmountOneExclusiveMin).max(createPostBodyCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(createPostBodyCoachingOnePricingTwoAmountOneExclusiveMin).max(createPostBodyCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(createPostBodyCoachingOnePricingThreeAmountOneExclusiveMin).max(createPostBodyCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(createPostBodyCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(createPostBodyFriendSaleOnePriceOneExclusiveMin).max(createPostBodyFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
-  "categoryId": zod.string().min(1),
-  "playerTag": zod.string().regex(createPostBodyPlayerTagRegExp).optional()
+  "categoryId": zod.string().min(1)
 })
 
 export const createPostResponseIdMax = 100;
 
 
 
-export const createPostResponseDocumentOneOpsItemInsertMax = 10001;
+export const createPostResponseDocumentOneOpsItemInsertOneMax = 10001;
 
+export const createPostResponseDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const createPostResponseDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const createPostResponseDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const createPostResponseDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const createPostResponseDocumentOneOpsMax = 2000;
 
-export const createPostResponseCoachingOneHourlyRateOneExclusiveMin = 0;
-export const createPostResponseCoachingOneHourlyRateOneMax = 10000000;
+export const createPostResponseCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const createPostResponseCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const createPostResponseCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const createPostResponseCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const createPostResponseCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const createPostResponseCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const createPostResponseCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const createPostResponseFriendSaleOnePriceOneExclusiveMin = 0;
 export const createPostResponseFriendSaleOnePriceOneMax = 10000000;
@@ -971,7 +1308,11 @@ export const CreatePostResponse = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(createPostResponseDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(createPostResponseDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(createPostResponseDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(createPostResponseDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -986,7 +1327,17 @@ export const CreatePostResponse = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(createPostResponseCoachingOneHourlyRateOneExclusiveMin).max(createPostResponseCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(createPostResponseCoachingOnePricingOneAmountOneExclusiveMin).max(createPostResponseCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(createPostResponseCoachingOnePricingTwoAmountOneExclusiveMin).max(createPostResponseCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(createPostResponseCoachingOnePricingThreeAmountOneExclusiveMin).max(createPostResponseCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(createPostResponseCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(createPostResponseFriendSaleOnePriceOneExclusiveMin).max(createPostResponseFriendSaleOnePriceOneMax),zod.null()])
@@ -1037,16 +1388,26 @@ export const getPostResponsePostIdMax = 100;
 
 
 
-export const getPostResponsePostDocumentOneOpsItemInsertMax = 10001;
+export const getPostResponsePostDocumentOneOpsItemInsertOneMax = 10001;
 
+export const getPostResponsePostDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const getPostResponsePostDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const getPostResponsePostDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const getPostResponsePostDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const getPostResponsePostDocumentOneOpsMax = 2000;
 
-export const getPostResponsePostCoachingOneHourlyRateOneExclusiveMin = 0;
-export const getPostResponsePostCoachingOneHourlyRateOneMax = 10000000;
+export const getPostResponsePostCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const getPostResponsePostCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const getPostResponsePostCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const getPostResponsePostCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const getPostResponsePostCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const getPostResponsePostCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const getPostResponsePostCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const getPostResponsePostFriendSaleOnePriceOneExclusiveMin = 0;
 export const getPostResponsePostFriendSaleOnePriceOneMax = 10000000;
@@ -1116,7 +1477,11 @@ export const GetPostResponse = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(getPostResponsePostDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(getPostResponsePostDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(getPostResponsePostDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(getPostResponsePostDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -1131,7 +1496,17 @@ export const GetPostResponse = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(getPostResponsePostCoachingOneHourlyRateOneExclusiveMin).max(getPostResponsePostCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(getPostResponsePostCoachingOnePricingOneAmountOneExclusiveMin).max(getPostResponsePostCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(getPostResponsePostCoachingOnePricingTwoAmountOneExclusiveMin).max(getPostResponsePostCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(getPostResponsePostCoachingOnePricingThreeAmountOneExclusiveMin).max(getPostResponsePostCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(getPostResponsePostCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(getPostResponsePostFriendSaleOnePriceOneExclusiveMin).max(getPostResponsePostFriendSaleOnePriceOneMax),zod.null()])
@@ -1215,21 +1590,30 @@ export const updatePostBodyTitleMax = 120;
 export const updatePostBodyBodyMin = 20;
 export const updatePostBodyBodyMax = 10000;
 
-export const updatePostBodyDocumentOneOpsItemInsertMax = 10001;
+export const updatePostBodyDocumentOneOpsItemInsertOneMax = 10001;
 
+export const updatePostBodyDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const updatePostBodyDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const updatePostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const updatePostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const updatePostBodyDocumentOneOpsMax = 2000;
 
-export const updatePostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
-export const updatePostBodyCoachingOneHourlyRateOneMax = 10000000;
+export const updatePostBodyCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const updatePostBodyCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const updatePostBodyCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const updatePostBodyCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const updatePostBodyCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const updatePostBodyCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const updatePostBodyCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const updatePostBodyFriendSaleOnePriceOneExclusiveMin = 0;
 export const updatePostBodyFriendSaleOnePriceOneMax = 10000000;
 
-export const updatePostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 
 export const UpdatePostBody = zod.object({
@@ -1237,7 +1621,11 @@ export const UpdatePostBody = zod.object({
   "body": zod.string().min(updatePostBodyBodyMin).max(updatePostBodyBodyMax).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(updatePostBodyDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(updatePostBodyDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(updatePostBodyDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(updatePostBodyDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -1252,28 +1640,47 @@ export const UpdatePostBody = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(updatePostBodyCoachingOneHourlyRateOneExclusiveMin).max(updatePostBodyCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(updatePostBodyCoachingOnePricingOneAmountOneExclusiveMin).max(updatePostBodyCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(updatePostBodyCoachingOnePricingTwoAmountOneExclusiveMin).max(updatePostBodyCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(updatePostBodyCoachingOnePricingThreeAmountOneExclusiveMin).max(updatePostBodyCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(updatePostBodyCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(updatePostBodyFriendSaleOnePriceOneExclusiveMin).max(updatePostBodyFriendSaleOnePriceOneMax),zod.null()])
-}),zod.null()]).optional(),
-  "playerTag": zod.string().regex(updatePostBodyPlayerTagRegExp).optional()
+}),zod.null()]).optional()
 })
 
 export const updatePostResponseIdMax = 100;
 
 
 
-export const updatePostResponseDocumentOneOpsItemInsertMax = 10001;
+export const updatePostResponseDocumentOneOpsItemInsertOneMax = 10001;
 
+export const updatePostResponseDocumentOneOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const updatePostResponseDocumentOneOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const updatePostResponseDocumentOneOpsItemAttributesLinkMax = 2048;
 
 
 export const updatePostResponseDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const updatePostResponseDocumentOneOpsMax = 2000;
 
-export const updatePostResponseCoachingOneHourlyRateOneExclusiveMin = 0;
-export const updatePostResponseCoachingOneHourlyRateOneMax = 10000000;
+export const updatePostResponseCoachingOnePricingOneAmountOneExclusiveMin = 0;
+export const updatePostResponseCoachingOnePricingOneAmountOneMax = 10000000;
+
+export const updatePostResponseCoachingOnePricingTwoAmountOneExclusiveMin = 0;
+export const updatePostResponseCoachingOnePricingTwoAmountOneMax = 10000000;
+
+export const updatePostResponseCoachingOnePricingThreeAmountOneExclusiveMin = 0;
+export const updatePostResponseCoachingOnePricingThreeAmountOneMax = 10000000;
+
+export const updatePostResponseCoachingOnePricingThreeTargetScoreMax = 100;
 
 export const updatePostResponseFriendSaleOnePriceOneExclusiveMin = 0;
 export const updatePostResponseFriendSaleOnePriceOneMax = 10000000;
@@ -1321,7 +1728,11 @@ export const UpdatePostResponse = zod.object({
   "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(updatePostResponseDocumentOneOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(updatePostResponseDocumentOneOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(updatePostResponseDocumentOneOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(updatePostResponseDocumentOneOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),
@@ -1336,7 +1747,17 @@ export const UpdatePostResponse = zod.object({
 }),zod.null()]).optional(),
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(updatePostResponseCoachingOneHourlyRateOneExclusiveMin).max(updatePostResponseCoachingOneHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(updatePostResponseCoachingOnePricingOneAmountOneExclusiveMin).max(updatePostResponseCoachingOnePricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(updatePostResponseCoachingOnePricingTwoAmountOneExclusiveMin).max(updatePostResponseCoachingOnePricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(updatePostResponseCoachingOnePricingThreeAmountOneExclusiveMin).max(updatePostResponseCoachingOnePricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(updatePostResponseCoachingOnePricingThreeTargetScoreMax)
+})])
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(updatePostResponseFriendSaleOnePriceOneExclusiveMin).max(updatePostResponseFriendSaleOnePriceOneMax),zod.null()])
@@ -1808,7 +2229,7 @@ export const createReportBodyDetailMax = 1000;
 
 
 export const CreateReportBody = zod.object({
-  "targetType": zod.enum(['POST', 'ANSWER', 'COMMENT']),
+  "targetType": zod.enum(['POST', 'ANSWER', 'COMMENT', 'USER']),
   "targetId": zod.string().min(1),
   "reason": zod.enum(['SPAM', 'HARASSMENT', 'PERSONAL_INFORMATION', 'IMPERSONATION', 'OTHER']),
   "detail": zod.string().max(createReportBodyDetailMax).optional()

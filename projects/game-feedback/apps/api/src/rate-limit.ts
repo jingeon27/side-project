@@ -13,7 +13,10 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
   if (authAttempts.has(path)) return { key: `auth:ip:${request.ip}`, limit: 30 };
   const action = ['GET', 'HEAD', 'OPTIONS'].includes(request.method) ? 'read' : 'write';
   const identity = request.userId ? `user:${request.userId}` : `ip:${request.ip}`;
-  if (request.method === 'POST' && /^\/api\/conversations\/[^/]+\/attachments$/.test(path))
+  if (
+    request.method === 'POST' &&
+    (path === '/api/post-media' || /^\/api\/conversations\/[^/]+\/attachments$/.test(path))
+  )
     return { key: `upload:${identity}`, limit: 20 };
   return { key: `${action}:${identity}`, limit: action === 'read' ? 240 : 60 };
 }

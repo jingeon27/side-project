@@ -6,13 +6,31 @@
  */
 import * as zod from 'zod';
 
-export const coachingDetailsHourlyRateOneExclusiveMin = 0;
-export const coachingDetailsHourlyRateOneMax = 10000000;
+export const coachingDetailsPricingOneAmountOneExclusiveMin = 0;
+export const coachingDetailsPricingOneAmountOneMax = 10000000;
+
+export const coachingDetailsPricingTwoAmountOneExclusiveMin = 0;
+export const coachingDetailsPricingTwoAmountOneMax = 10000000;
+
+export const coachingDetailsPricingThreeAmountOneExclusiveMin = 0;
+export const coachingDetailsPricingThreeAmountOneMax = 10000000;
+
+export const coachingDetailsPricingThreeTargetScoreMax = 100;
 
 
 export const CoachingDetails = zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
-  "hourlyRate": zod.union([zod.int().gt(coachingDetailsHourlyRateOneExclusiveMin).max(coachingDetailsHourlyRateOneMax),zod.null()])
+  "pricing": zod.union([zod.object({
+  "type": zod.literal("HOURLY"),
+  "amount": zod.union([zod.int().gt(coachingDetailsPricingOneAmountOneExclusiveMin).max(coachingDetailsPricingOneAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("MONTHLY"),
+  "amount": zod.union([zod.int().gt(coachingDetailsPricingTwoAmountOneExclusiveMin).max(coachingDetailsPricingTwoAmountOneMax),zod.null()])
+}),zod.object({
+  "type": zod.literal("GOAL"),
+  "amount": zod.union([zod.int().gt(coachingDetailsPricingThreeAmountOneExclusiveMin).max(coachingDetailsPricingThreeAmountOneMax),zod.null()]),
+  "targetScore": zod.string().min(1).max(coachingDetailsPricingThreeTargetScoreMax)
+})])
 })
 
 export type CoachingDetails = zod.input<typeof CoachingDetails>;

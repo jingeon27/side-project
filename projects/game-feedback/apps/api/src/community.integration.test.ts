@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
@@ -59,7 +60,9 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
             title: `${board} 모집 게시글`,
             body,
             document,
-            ...(board === 'COACHING' ? { coaching: { role: 'COACH', hourlyRate: 30000 } } : {}),
+            ...(board === 'COACHING'
+              ? { coaching: { role: 'COACH', pricing: { type: 'HOURLY', amount: 30000 } } }
+              : {}),
             ...(board === 'FRIEND_SALE' ? { friendSale: { price: 12000 } } : {}),
           })
           .expect(200)
@@ -131,31 +134,35 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       body: '배우고 싶은 분야와 진행 방식, 수강료를 채팅으로 상담합니다.',
     };
     await author.post('/api/posts').set('Origin', origin).send(input).expect(400);
-    for (const hourlyRate of [0, -1, 10000001, '30000']) {
+    for (const amount of [0, -1, 1.5, 10000001, '30000']) {
       await author
         .post('/api/posts')
         .set('Origin', origin)
-        .send({ ...input, coaching: { role: 'COACH', hourlyRate } })
+        .send({ ...input, coaching: { role: 'COACH', pricing: { type: 'HOURLY', amount } } })
         .expect(400);
     }
     await author
       .post('/api/posts')
       .set('Origin', origin)
-      .send({ ...input, board: 'FREE', coaching: { role: 'COACH', hourlyRate: 30000 } })
+      .send({
+        ...input,
+        board: 'FREE',
+        coaching: { role: 'COACH', pricing: { type: 'HOURLY', amount: 30000 } },
+      })
       .expect(400);
     const created = (
       await author
         .post('/api/posts')
         .set('Origin', origin)
-        .send({ ...input, coaching: { role: 'STUDENT', hourlyRate: 50000 } })
+        .send({ ...input, coaching: { role: 'STUDENT', pricing: { type: 'HOURLY', amount: 50000 } } })
         .expect(200)
     ).body;
-    expect(created.coaching).toEqual({ role: 'STUDENT', hourlyRate: 50000 });
+    expect(created.coaching).toEqual({ role: 'STUDENT', pricing: { type: 'HOURLY', amount: 50000 } });
     await author.patch(`/api/posts/${created.id}`).set('Origin', origin).send({ coaching: null }).expect(400);
     await author
       .patch(`/api/posts/${created.id}`)
       .set('Origin', origin)
-      .send({ coaching: { role: 'COACH', hourlyRate: null } })
+      .send({ coaching: { role: 'COACH', pricing: { type: 'HOURLY', amount: null } } })
       .expect(200);
     await author
       .patch(`/api/posts/${created.id}`)
@@ -164,9 +171,258 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .expect(200);
     expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.coaching).toEqual({
       role: 'COACH',
-      hourlyRate: null,
+      pricing: { type: 'HOURLY', amount: null },
     });
   });
+
+  it('stores hourly, monthly and goal totals for coaches and students and rejects ambiguous terms', async () => {
+    const input = {
+      categoryId,
+      board: 'COACHING',
+      title: '여러 기준의 유료 코칭',
+      body: '기간과 목표에 맞게 코치와 수강생이 수강료를 정하고 상담합니다.',
+    };
+    for (const role of ['COACH', 'STUDENT']) {
+      for (const pricing of [
+        { type: 'HOURLY', amount: 35000 },
+        { type: 'MONTHLY', amount: 250000 },
+        { type: 'GOAL', amount: 500000, targetScore: '9,000 트로피' },
+        { type: 'MONTHLY', amount: null },
+        { type: 'GOAL', amount: null, targetScore: '다이아몬드' },
+      ]) {
+        const coaching = { role, pricing };
+        const created = (
+          await author
+            .post('/api/posts')
+            .set('Origin', origin)
+            .send({ ...input, coaching })
+            .expect(200)
+        ).body;
+        expect(created.coaching).toEqual(coaching);
+        await author
+          .patch(`/api/posts/${created.id}`)
+          .set('Origin', origin)
+          .send({ title: '진행 조건을 보존하는 코칭' })
+          .expect(200);
+        expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.coaching).toEqual(
+          coaching,
+        );
+      }
+    }
+    for (const pricing of [
+      { type: 'MONTHLY', amount: '250000' },
+      { type: 'MONTHLY', amount: 0 },
+      { type: 'GOAL', amount: -1, targetScore: '9000' },
+      { type: 'GOAL', amount: 500000 },
+      { type: 'GOAL', amount: null, targetScore: '   ' },
+      { type: 'GOAL', amount: 500000, targetScore: 9000 },
+      { type: 'GOAL', amount: 500000, targetScore: 'x'.repeat(101) },
+      { type: 'MONTHLY', amount: 250000, targetScore: '9000' },
+      { type: 'OTHER', amount: 30000 },
+    ])
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, coaching: { role: 'COACH', pricing } })
+        .expect(400);
+    const post = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({
+          ...input,
+          coaching: { role: 'COACH', pricing: { type: 'GOAL', amount: 500000, targetScore: '9000' } },
+        })
+        .expect(200)
+    ).body;
+    await author
+      .patch(`/api/posts/${post.id}`)
+      .set('Origin', origin)
+      .send({ coaching: { role: 'STUDENT', pricing: { type: 'MONTHLY', amount: 150000 } } })
+      .expect(200);
+    expect((await author.get(`/api/posts/${post.id}`)).body.post.coaching).toEqual({
+      role: 'STUDENT',
+      pricing: { type: 'MONTHLY', amount: 150000 },
+    });
+  });
+  it('migrates legacy hourly JSON without changing roles, amounts, post content or new pricing', async () => {
+    const userId = (await author.get('/api/session')).body.user.id;
+    const legacy = await db.post.create({
+      data: {
+        authorId: userId,
+        categoryId,
+        board: 'COACHING',
+        title: '기존 시간당 수강료',
+        body: '기존 코칭 조건과 본문을 그대로 보존하는지 검증하는 글입니다.',
+        coaching: { role: 'STUDENT', hourlyRate: 45000 },
+      },
+    });
+    const negotiated = await db.post.create({
+      data: {
+        authorId: userId,
+        categoryId,
+        board: 'COACHING',
+        title: '기존 수강료 협의',
+        body: '협의 상태인 기존 코칭 글도 원래대로 보존하는지 검증합니다.',
+        coaching: { role: 'COACH', hourlyRate: null },
+      },
+    });
+    const sql = readFileSync(
+      new URL('../prisma/migrations/202610170008_coaching_pricing/migration.sql', import.meta.url),
+      'utf8',
+    );
+    await db.$executeRawUnsafe(sql);
+    await db.$executeRawUnsafe(sql);
+    const updated = await db.post.findUniqueOrThrow({ where: { id: legacy.id } });
+    expect(updated).toMatchObject({
+      title: legacy.title,
+      body: legacy.body,
+      updatedAt: legacy.updatedAt,
+      coaching: { role: 'STUDENT', pricing: { type: 'HOURLY', amount: 45000 } },
+    });
+    expect((await author.get(`/api/posts/${negotiated.id}`).expect(200)).body.post.coaching).toEqual({
+      role: 'COACH',
+      pricing: { type: 'HOURLY', amount: null },
+    });
+  });
+  it('binds only owned media to a post atomically and respects moderation, blocking, ranges and removal', async () => {
+    const image = readFileSync(
+      new URL('../../web/src/features/game-profile/assets/clash-royale-icon.jpg', import.meta.url),
+    );
+    const peer = supertest.agent(app.getHttpServer());
+    const admin = supertest.agent(app.getHttpServer());
+    await peer
+      .post('/api/auth/test-login')
+      .set('Origin', origin)
+      .send({ accountId: 'sample-user-0' })
+      .expect(200);
+    await admin
+      .post('/api/auth/test-login')
+      .set('Origin', origin)
+      .send({ accountId: 'sample-test-admin' })
+      .expect(200);
+    await supertest(app.getHttpServer())
+      .post('/api/post-media')
+      .set('Origin', origin)
+      .attach('file', image, { filename: 'test.jpg', contentType: 'image/jpeg' })
+      .expect(401);
+    await author
+      .post('/api/post-media')
+      .set('Origin', origin)
+      .attach('file', image, { filename: 'wrong.png', contentType: 'image/png' })
+      .expect(400);
+    const media = (
+      await author
+        .post('/api/post-media')
+        .set('Origin', origin)
+        .attach('file', image, { filename: 'test.jpg', contentType: 'image/jpeg' })
+        .expect(200)
+    ).body;
+    await author.get(media.url).expect(200);
+    await peer.get(media.url).expect(404);
+    await supertest(app.getHttpServer()).get(media.url).expect(404);
+    const input = {
+      categoryId,
+      board: 'FREE',
+      title: '사진과 동영상이 있는 게시글',
+      body: '실제 업로드한 사진을 본문에 삽입하고 다시 조회해서 확인합니다.',
+    };
+    const document = { ops: [{ insert: input.body }, { insert: { image: media.url } }, { insert: '\n' }] };
+    const before = await db.post.count();
+    await peer
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, document })
+      .expect(400);
+    expect(await db.post.count()).toBe(before);
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({
+        ...input,
+        document: { ops: [{ insert: input.body }, { insert: { video: media.url } }, { insert: '\n' }] },
+      })
+      .expect(400);
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({
+        ...input,
+        document: {
+          ops: [
+            { insert: input.body },
+            { insert: { video: media.url } },
+            { insert: { image: media.url } },
+            { insert: '\n' },
+          ],
+        },
+      })
+      .expect(400);
+    const created = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, document })
+        .expect(200)
+    ).body;
+    await supertest(app.getHttpServer()).get(media.url).expect(200);
+    await peer
+      .post('/api/reports')
+      .set('Origin', origin)
+      .send({ targetType: 'POST', targetId: created.id, reason: 'SPAM' })
+      .expect(200);
+    const reports = (await admin.get('/api/admin/reports').expect(200)).body;
+    expect(reports.find((row: { targetId: string }) => row.targetId === created.id)).toMatchObject({
+      targetPostId: created.id,
+      targetPreview: expect.stringContaining(input.body),
+    });
+    const partial = await peer.get(media.url).set('Range', 'bytes=0-7').expect(206);
+    expect(partial.headers['content-range']).toBe(`bytes 0-7/${image.length}`);
+    await peer.get(media.url).set('Range', `bytes=${image.length}-`).expect(416);
+    await author.delete(media.url).set('Origin', origin).expect(404);
+    const userId = created.author.id;
+    await peer.post('/api/blocks').set('Origin', origin).send({ blockedUserId: userId }).expect(200);
+    await peer.get(media.url).expect(404);
+    await peer.delete(`/api/blocks/${userId}`).set('Origin', origin).expect(200);
+    await admin
+      .post('/api/admin/hide')
+      .set('Origin', origin)
+      .send({ targetType: 'POST', targetId: created.id, hidden: true, reason: '테스트 신고 검토' })
+      .expect(200);
+    await supertest(app.getHttpServer()).get(media.url).expect(404);
+    await admin
+      .post('/api/admin/hide')
+      .set('Origin', origin)
+      .send({ targetType: 'POST', targetId: created.id, hidden: false, reason: '테스트 복구' })
+      .expect(200);
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ body: input.body, document: { ops: [{ insert: input.body + '\n' }] } })
+      .expect(200);
+    await author.get(media.url).expect(404);
+    expect(await db.postMedia.count({ where: { postId: created.id } })).toBe(0);
+    const video = Buffer.from([0, 0, 0, 24, 102, 116, 121, 112, 105, 115, 111, 109]);
+    const uploaded = (
+      await author
+        .post('/api/post-media')
+        .set('Origin', origin)
+        .attach('file', video, { filename: 'clip.mp4', contentType: 'video/mp4' })
+        .expect(200)
+    ).body;
+    expect(uploaded.kind).toBe('VIDEO');
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({
+        body: input.body,
+        document: { ops: [{ insert: input.body }, { insert: { video: uploaded.url } }, { insert: '\n' }] },
+      })
+      .expect(200);
+    await author.delete(`/api/posts/${created.id}`).set('Origin', origin).expect(200);
+    await author.get(uploaded.url).expect(404);
+  });
+
   it('persists strict friend slot prices through creation, edits and lists while preserving legacy posts', async () => {
     const input = {
       categoryId,
@@ -276,7 +532,9 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
         board,
         title: `다른 게임 ${board} 게시글`,
         body: '모든 게임에서 공통 게시판을 사용하며 게임별로 글을 분리합니다.',
-        ...(board === 'COACHING' ? { coaching: { role: 'STUDENT', hourlyRate: null } } : {}),
+        ...(board === 'COACHING'
+          ? { coaching: { role: 'STUDENT', pricing: { type: 'HOURLY', amount: null } } }
+          : {}),
         ...(board === 'FRIEND_SALE' ? { friendSale: { price: null } } : {}),
       };
       const created = (await author.post('/api/posts').set('Origin', origin).send(input).expect(200)).body;

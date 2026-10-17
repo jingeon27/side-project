@@ -25,12 +25,20 @@ export function authorDto(user: PublicUserSource): Author {
   };
 }
 export function userDto(
-  user: PublicUserSource & { role: string; createdAt: Date; verifiedAt: Date | null },
+  user: PublicUserSource & {
+    role: string;
+    createdAt: Date;
+    verifiedAt: Date | null;
+    bannedAt?: Date | null;
+    banReason?: string | null;
+  },
 ): User {
   return {
     ...authorDto(user),
     role: user.role === 'ADMIN' ? 'ADMIN' : 'USER',
     createdAt: user.createdAt.toISOString(),
     verifiedAt: user.verifiedAt?.toISOString() ?? null,
+    bannedAt: user.bannedAt?.toISOString() ?? null,
+    banReason: user.banReason ?? null,
   };
 }

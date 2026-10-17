@@ -6,6 +6,10 @@
  */
 import * as zod from 'zod';
 
+export const adminReportTargetPostIdOneMax = 100;
+
+export const adminReportTargetUserIdOneMax = 100;
+
 export const adminReportIdMax = 100;
 
 export const adminReportReporterIdMax = 100;
@@ -15,6 +19,9 @@ export const adminReportTargetIdMax = 100;
 export const adminReportCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 export const AdminReport = zod.object({
+  "targetPostId": zod.union([zod.string().min(1).max(adminReportTargetPostIdOneMax),zod.null()]).optional(),
+  "targetPreview": zod.string().nullish(),
+  "targetUserId": zod.union([zod.string().min(1).max(adminReportTargetUserIdOneMax),zod.null()]).optional(),
   "id": zod.string().min(1).max(adminReportIdMax),
   "reporterId": zod.string().min(1).max(adminReportReporterIdMax),
   "targetType": zod.string(),

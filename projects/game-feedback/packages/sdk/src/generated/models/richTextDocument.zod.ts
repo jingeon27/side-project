@@ -6,8 +6,10 @@
  */
 import * as zod from 'zod';
 
-export const richTextDocumentOpsItemInsertMax = 10001;
+export const richTextDocumentOpsItemInsertOneMax = 10001;
 
+export const richTextDocumentOpsItemInsertTwoOneImageRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+export const richTextDocumentOpsItemInsertTwoTwoVideoRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
 export const richTextDocumentOpsItemAttributesLinkMax = 2048;
 
 
@@ -17,7 +19,11 @@ export const richTextDocumentOpsMax = 2000;
 
 export const RichTextDocument = zod.object({
   "ops": zod.array(zod.object({
-  "insert": zod.string().min(1).max(richTextDocumentOpsItemInsertMax),
+  "insert": zod.union([zod.string().min(1).max(richTextDocumentOpsItemInsertOneMax),zod.union([zod.object({
+  "image": zod.string().regex(richTextDocumentOpsItemInsertTwoOneImageRegExp)
+}),zod.object({
+  "video": zod.string().regex(richTextDocumentOpsItemInsertTwoTwoVideoRegExp)
+})])]),
   "attributes": zod.object({
   "bold": zod.boolean().optional(),
   "italic": zod.boolean().optional(),

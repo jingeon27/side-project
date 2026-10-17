@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Inject, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import type { SessionRequest } from '../auth/session.types';
 import { ModerationService } from './moderation.service';
 
@@ -21,5 +21,17 @@ export class ModerationController {
   @Get('admin/reports')
   reports(@Req() req: SessionRequest) {
     return this.moderation.reports(req);
+  }
+  @Patch('admin/reports/:id')
+  review(@Req() req: SessionRequest, @Param('id') id: string, @Body() body: unknown) {
+    return this.moderation.review(req, id, body);
+  }
+  @Get('admin/users/:id')
+  user(@Req() req: SessionRequest, @Param('id') id: string) {
+    return this.moderation.user(req, id);
+  }
+  @Patch('admin/users/:id/ban')
+  ban(@Req() req: SessionRequest, @Param('id') id: string, @Body() body: unknown) {
+    return this.moderation.ban(req, id, body);
   }
 }

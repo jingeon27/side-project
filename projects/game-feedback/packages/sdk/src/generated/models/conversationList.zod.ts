@@ -44,6 +44,7 @@ export const conversationListUnreadCountMax = 9007199254740991;
 
 export const ConversationList = zod.object({
   "items": zod.array(zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
   "id": zod.string().min(1).max(conversationListItemsItemIdMax),
   "peer": zod.object({
   "id": zod.string().min(1).max(conversationListItemsItemPeerIdMax),

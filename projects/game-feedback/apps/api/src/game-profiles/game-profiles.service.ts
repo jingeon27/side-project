@@ -31,8 +31,10 @@ export class GameProfilesService {
     const u = requireUser(req),
       input = parse(GameAccountInputSchema, body),
       profile = await this.lookup(input.playerTag);
-    await this.db.$transaction([
-      this.db.gameAccount.upsert({
+    await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;
+      const current = await tx.user.findUniqueOrThrow({ where: { id: u.id } });
+      await tx.gameAccount.upsert({
         where: { userId_playerTag: { userId: u.id, playerTag: input.playerTag } },
         update: { profile: profile as unknown as Prisma.InputJsonValue },
         create: {
@@ -40,9 +42,15 @@ export class GameProfilesService {
           playerTag: input.playerTag,
           profile: profile as unknown as Prisma.InputJsonValue,
         },
-      }),
-      this.db.user.update({ where: { id: u.id }, data: { supercellTag: input.playerTag } }),
-    ]);
+      });
+      await tx.user.update({
+        where: { id: u.id },
+        data: {
+          supercellTag: input.playerTag,
+          ...(current.supercellTag !== input.playerTag ? { isVerified: false, verifiedAt: null } : {}),
+        },
+      });
+    });
     return profile;
   }
 }

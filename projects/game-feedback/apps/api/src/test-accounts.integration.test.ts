@@ -292,7 +292,6 @@ describe.skipIf(!testDatabaseUrl)(
             title: '고정 계정으로 작성한 피드백 요청',
             body: '실제 사용자 세션으로 작성한 게시글의 작성자와 저장 결과를 확인합니다.',
             categoryId: 'clash-royale',
-            playerTag: '#2PP',
           })
           .expect(200)
       ).body;
@@ -443,7 +442,7 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await db.user.findUniqueOrThrow({ where: { id: requesterId } })).verifiedAt).toBeNull();
     });
 
-    it('normalizes and synchronizes the user tag and game account without changing old post snapshots', async () => {
+    it('registers the user tag on the account while posts use the current author identity', async () => {
       const linked = (
         await google
           .post('/api/me/game-accounts')
@@ -467,14 +466,13 @@ describe.skipIf(!testDatabaseUrl)(
             title: '게임 프로필 스냅샷 보존 확인',
             body: '프로필을 변경한 뒤에도 작성 당시 게임 프로필과 덱 정보를 유지하는지 확인합니다.',
             categoryId: 'clash-royale',
-            playerTag: '2pp',
           })
           .expect(200)
       ).body;
-      const originalSnapshot = post.gameProfile;
+      expect(post.gameProfile).toBeNull();
       await google.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: '9qy' }).expect(200);
       expect((await google.get('/api/session')).body.user.supercellTag).toBe('#9QY');
-      expect((await google.get(`/api/posts/${post.id}`)).body.post.gameProfile).toEqual(originalSnapshot);
+      expect((await google.get(`/api/posts/${post.id}`)).body.post.author.supercellTag).toBe('#9QY');
       expect((await db.user.findUniqueOrThrow({ where: { id: googleUserId } })).isVerified).toBe(false);
       const accounts = (await google.get('/api/me/game-accounts')).body;
       expect(accounts.map((account: { playerTag: string }) => account.playerTag)).toEqual(

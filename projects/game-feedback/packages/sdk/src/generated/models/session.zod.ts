@@ -11,6 +11,7 @@ export const sessionUserOneIdMax = 100;
 
 export const sessionUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const sessionUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const sessionUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 export const Session = zod.object({
   "user": zod.union([zod.object({
@@ -21,7 +22,9 @@ export const Session = zod.object({
   "isTestAccount": zod.boolean(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(sessionUserOneCreatedAtRegExp),
-  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(sessionUserOneVerifiedAtOneRegExp),zod.null()])
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(sessionUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(sessionUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
 }),zod.null()]),
   "demoMode": zod.boolean(),
   "googleConfigured": zod.boolean(),

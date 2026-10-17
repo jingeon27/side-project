@@ -2,14 +2,13 @@ import {
   ListQuerySchema,
   PostInputSchema,
   PostPatchSchema,
-  type GameProfile,
   richTextToPlainText,
 } from '@game-feedback/contracts';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
-import { GameProfilesService } from '../game-profiles/game-profiles.service';
+import { PostMediaService } from './post-media.service';
 import { postInclude, responsePost } from './post.presenter';
 import { responseAnswer } from '../answers/answer.presenter';
 import { responseComment } from '../comments/comment.presenter';
@@ -25,7 +24,7 @@ export class PostsService {
   constructor(
     @Inject(PrismaClient) readonly db: PrismaClient,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
-    @Inject(GameProfilesService) private readonly profiles: GameProfilesService,
+    @Inject(PostMediaService) private readonly media: PostMediaService,
   ) {}
   async visiblePost(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
@@ -123,23 +122,22 @@ export class PostsService {
       throw new ApiError(400, 'INVALID_FRIEND_SALE', '친추판매 글의 판매 금액을 확인해주세요.');
     const category = await this.db.category.findFirst({ where: { id: input.categoryId, active: true } });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
-    if (input.playerTag && category.slug !== 'clash-royale')
-      throw new ApiError(400, 'INVALID_PROFILE_GAME', '선택한 게임의 프로필을 확인해주세요.');
-    let profile: GameProfile | undefined;
-    if (input.playerTag) profile = await this.profiles.lookup(input.playerTag);
-    const p = await this.db.post.create({
-      data: {
-        authorId: u.id,
-        categoryId: category.id,
-        title: input.title,
-        body: input.body,
-        board: input.board ?? 'FEEDBACK',
-        ...(input.document ? { document: input.document } : {}),
-        ...(input.coaching ? { coaching: input.coaching } : {}),
-        ...(input.friendSale ? { friendSale: input.friendSale } : {}),
-        ...(profile ? { gameProfile: profile as unknown as Prisma.InputJsonValue } : {}),
-      },
-      include: postInclude,
+    const p = await this.db.$transaction(async (tx) => {
+      const created = await tx.post.create({
+        data: {
+          authorId: u.id,
+          categoryId: category.id,
+          title: input.title,
+          body: input.body,
+          board: input.board ?? 'FEEDBACK',
+          ...(input.document ? { document: input.document } : {}),
+          ...(input.coaching ? { coaching: input.coaching } : {}),
+          ...(input.friendSale ? { friendSale: input.friendSale } : {}),
+        },
+        include: postInclude,
+      });
+      await this.media.sync(tx, u.id, created.id, input.document);
+      return created;
     });
     return responsePost(p);
   }
@@ -148,34 +146,34 @@ export class PostsService {
       input = parse(PostPatchSchema, body),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
-    const { playerTag, document, coaching, friendSale, ...data } = input;
+    const { document, coaching, friendSale, ...data } = input;
     if (coaching !== undefined && (p.board === 'COACHING') !== !!coaching)
       throw new ApiError(400, 'INVALID_COACHING', '코칭 글의 모집 유형과 수강료를 확인해주세요.');
     if (friendSale !== undefined && (p.board === 'FRIEND_SALE') !== !!friendSale)
       throw new ApiError(400, 'INVALID_FRIEND_SALE', '친추판매 글의 판매 금액을 확인해주세요.');
-    if (playerTag && p.category.slug !== 'clash-royale')
-      throw new ApiError(400, 'INVALID_PROFILE_GAME', '선택한 게임의 프로필을 확인해주세요.');
     if (input.document && (!input.body || richTextToPlainText(input.document) !== input.body))
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const excluded = await this.visibility.excluded(req);
-    const gameProfile = playerTag ? await this.profiles.lookup(playerTag) : undefined;
     return responsePost(
-      await this.db.post.update({
-        where: { id },
-        data: {
-          ...data,
-          ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
-          ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
-          ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
-          ...(gameProfile ? { gameProfile: gameProfile as unknown as Prisma.InputJsonValue } : {}),
-        },
-        include: {
-          ...postInclude,
-          answers: {
-            where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-            select: { id: true, helpful: true },
+      await this.db.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+        if (input.body !== undefined || document !== undefined) await this.media.sync(tx, u.id, id, document);
+        return tx.post.update({
+          where: { id },
+          data: {
+            ...data,
+            ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
+            ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
+            ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
           },
-        },
+          include: {
+            ...postInclude,
+            answers: {
+              where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+              select: { id: true, helpful: true },
+            },
+          },
+        });
       }),
     );
   }
@@ -197,6 +195,7 @@ export class PostsService {
         },
       }),
       this.db.notification.deleteMany({ where: { postId: id } }),
+      this.db.postMedia.deleteMany({ where: { postId: id } }),
     ]);
     return { ok: true };
   }
