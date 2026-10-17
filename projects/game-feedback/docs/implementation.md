@@ -367,6 +367,39 @@ Web 타입 검사와 FSD lint, Vitest 65개, 변경 파일 Prettier와 diff 검�
 
 Web 타입 검사와 FSD lint, Vitest 65개, Next 프로덕션 빌드와 변경 파일 Prettier/diff 검사가 통과했다. 격리된 Web/API/DB에서 작성/수정/삭제, 검색 복귀와 320/390/768/1440px 반응형 E2E 7개가 통과했다. 개발 화면의 데스크톱/모바일 피드, 상세, 공개 프로필과 글쓰기에서 카드가 없는 것을 확인했고, 설정/프로필 연결 미리보기/글쓰기는 한국어/영어/일본어로도 확인했다. 가로 넘침과 브라우저 pageerror는 없었다. 전용 테스트 스키마는 0개이고 테스트 DB만 중지했으며 고정 계정 3개와 기존 게시글 6개를 보존했다. API/SDK/DB schema와 모바일 host 코드는 변경하지 않았다.
 
+## 게시판, Quill 글쓰기와 채팅 미디어
+
+사용자 요청으로 피드백과 별도로 계정 거래/친선전 모집/친구 추가/일반 판매 게시판을 추가했다. Post.board의 기본값 FEEDBACK으로 기존 글을 보존하고 선택한 게시판만 목록/검색/페이지네이션에 포함한다. 공개 프로필 작성글과 sitemap은 전체 게시판을 포함하며 기존 차단/숨김/삭제 규칙을 유지한다. 게시판 글은 댓글과 작성자 채팅으로 연결한다. 피드백의 답변/도움됨은 기존 라운지에서 사용한다. 공유 appRoutes에 네 게시판 경로와 상세 문맥을 추가하고, 메뉴/모바일 탭/딥링크/직접 열린 상세의 상위 화면 복귀를 연결했다. 게시판마다 title/keywords/canonical과 CollectionPage JSON-LD를 제공한다.
+
+Quill 2.0.3을 작성/수정 모달에 지연 로드한다. 굵게/기울임/밑줄/취소선, 제목 2/3, 순서/글머리 목록, 인용과 HTTP(S) 링크를 지원한다. Quill 수명은 class/callback ref가 관리하며 해제 뒤 import 결과를 무시한다. 초기화 실패는 편집기 영역의 오류 경계와 외부 store로 전달하고 요청 오류를 별도 React 상태로 복제하지 않는다. 편집기를 label 안에 넣어 툴바 버튼이 잘못 실행되는 구조를 피했다. 툴바/링크 입력은 한국어/영어/일본어 문구와 공통 디자인 토큰을 사용한다.
+
+본문은 Zod로 검증한 Delta document와 평문 body를 함께 저장하며 서버에서 두 값의 일치를 확인한다. 허용된 문자열 insert와 서식 속성만 받고 실행 가능한 URL/객체 embed/임의 속성은 거부한다. React 요소로 제목/목록/인용/링크를 렌더해 사용자 HTML을 실행하지 않는다. 검색, 발췌와 SEO 구조화 데이터는 평문을 사용하고 기존 문서는 평문으로 표시한다. 편집 중 지원하지 않는 서식이나 문서 한도를 만나면 폼 검증으로 등록을 막고 초안을 유지한다. 본문을 수정하는 구형 클라이언트가 document를 보내지 않으면 이전 서식을 지워 본문과 엇갈리지 않게 한다. 생성 중 드러난 링크 RegExp 변환 문제는 계약의 원본 패턴에서 수정한 뒤 OpenAPI/Orval을 재생성했다.
+
+채팅은 multipart 업로드 후 첨부 ID와 기존 재전송 UUID로 메시지를 전송한다. 현재 UI는 파일 한 개, 서버는 메시지당 최대 4개와 파일당 25MB를 허용한다. 본문 없는 미디어 메시지와 전송 실패 초안/파일 보존, 같은 UUID의 중복 방지와 SSE 갱신을 지원한다. JPEG/PNG/GIF/WebP/MP4/WebM의 MIME과 파일 signature/실제 크기를 확인한다. 미전송 파일은 올린 사용자만 볼 수 있고 다른 사용자/대화의 파일을 메시지에 연결하지 못한다. 첨부 연결은 대화 lock 안의 메시지 transaction으로 처리한다. 업로드는 사용자별 lock으로 미전송 4개 제한을 지키고 오래된 미전송 파일은 해당 사용자의 다음 업로드 때 24시간 기준으로 정리한다. 화면 해제/선택 변경에서도 미전송 파일 제거를 요청한다.
+
+파일과 메타데이터는 전용 PostgreSQL의 ChatAttachment에 저장한다. 메시지/대화 JSON에는 bytes를 조회하거나 노출하지 않는다. GET은 현재 세션, 대화 참여, 차단과 데모 접근 규칙을 확인하고 인증된 no-store 응답으로 제공한다. 동영상의 206/416 byte range와 UTF-8 파일명을 처리한다. 계정/대화 삭제 때 연결 파일도 cascade로 삭제한다. 대용량 운영의 오브젝트 스토리지는 이번 구현에 포함하지 않았다. 이미지 확대는 공통 Dialog로 열어 WebView의 보호된 API URL을 외부 창으로 보내지 않는다. 동영상은 inline 재생하며 iOS 파일 선택/촬영 용도 문구를 네이티브 설정에 추가했다. 모바일 Enter는 줄바꿈이고 데스크톱 포인터/키보드 조건에서만 Enter 전송 안내를 표시한다.
+
+Migration 202610170005_community_media는 Post의 board/document와 첨부 테이블/인덱스만 추가하며 기존 데이터는 수정/삭제하지 않는다. 계약 → OpenAPI → Orval 경로로 JSON operation 45개를 생성한다. JSON 본문의 제한은 서식 문서를 위해 256KB로 조정하고 파일 크기는 별도로 제한한다. 원래 서비스의 요청 제한과 세션/Origin/권한 검사는 유지한다. E2E의 빠른 공용 계정 반복으로 조회 제한에 도달한 문제는 API 소유 test:server 진입점을 분리해 해결했다. 이 진입점은 NODE_ENV=test, 전용 테스트 DB/schema, 4301/4302와 대응 Web origin, 외부 자격 증명 없음 조건을 확인하고 테스트의 속도 제한만 끈다. 일반 서버의 HTTP 240회 후 429/Retry-After 동작은 별도 API 통합 테스트로 확인한다.
+
+루트 yarn.lock 변경은 Quill의 Web 직접 의존성과 신규 전이 descriptor 7개만 추가하며 기존 resolution은 유지한다. Photo Contest와 공통 DS 제품 코드는 변경하지 않았다. Quill과 WebView 구현은 [Quill Delta](https://quilljs.com/docs/delta), [Quill React 예제](https://quilljs.com/playground/react), [WebView 파일 업로드 가이드](https://github.com/react-native-webview/react-native-webview/blob/master/docs/Guide.md#add-support-for-file-upload)를 참고했다. 실기기 파일 선택/권한창과 실제 Google/Supercell 검증은 브라우저/번들 검사와 구분한다.
+
+이번 변경의 최종 검증 결과는 다음과 같다.
+
+| 범위            | 실행 명령과 결과                                                                                                                                                                                          |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 설치/정적 검사  | Node 24에서 `yarn install --immutable`, `yarn workspace @side/game-feedback check`, 루트 `format:check`, `git diff --check` 통과                                                                          |
+| API             | `yarn workspace @game-feedback/api test` 10개 파일 66개 통과. 게시판 분리/문서 검증, 미디어 접근 권한/원자적 연결/삭제/Range/실제 HTTP 요청 제한 포함                                                     |
+| SDK             | `yarn workspace @game-feedback/sdk test` 3개 파일 33개 통과. multipart boundary와 응답 Zod 검증 포함                                                                                                      |
+| Web unit/UI     | `yarn workspace @game-feedback/web test` 20개 파일 70개 통과                                                                                                                                              |
+| Mobile unit/UI  | `yarn workspace @game-feedback/mobile test` 10개 파일 38개 통과                                                                                                                                           |
+| Web E2E         | `yarn workspace @game-feedback/web test:e2e` 전체 35개 통과(2.7분). 마지막 편집기 폼 검증 보완 뒤 `e2e/community.spec.ts` 2개 재검증 통과(33.2초)                                                         |
+| Mobile host E2E | `yarn workspace @game-feedback/mobile test:e2e` Android Chromium/iOS WebKit 전체 12개 통과(45.8초)                                                                                                        |
+| 생성/빌드       | `yarn workspace @side/game-feedback codegen` 전후 생성 파일 77개 hash 동일. `NEXT_DIST_DIR=.next/community-build yarn workspace @side/game-feedback build`의 API/Web 빌드와 Android/iOS Metro export 통과 |
+
+Web E2E에서 네 게시판의 Quill 작성/수정/새로고침과 서식 유지, JavaScript 없는 상세 HTML, canonical/JSON-LD, 모바일 320px을 확인했다. 실제 JPEG 업로드와 상대방 이미지 로드/확대/새로고침, 서버 저장 뒤 응답 실패를 가정한 UUID 재전송의 중복 방지, 미디어 전용 메시지를 확인했다. 실제 생성한 WebM은 브라우저 decode와 상대방 쿠키의 Range 206 응답까지 검사했다. 1440/390px 게시판/편집기와 모바일 이미지 채팅 캡처에서 가로 넘침이 없고 수동 브라우저 pageerror는 0개였다.
+
+첫 Mobile host 실행은 10/12가 통과했고, 시간 초과와 개발 소스 갱신 중 Fast Refresh가 발생한 두 사례를 확인한 뒤 소스 갱신 없이 전체 12개를 다시 검증했다. 최종 잔여 테스트 스키마는 0개이며 이번 테스트 DB만 중지했다. 개발 Web 3300/API 4300은 HTTP 200이고 고정 계정 3개와 기존 게시글 6개를 보존했다. 실기기 파일 선택/촬영/OS 권한창과 서명 빌드 검증은 포함하지 않는다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

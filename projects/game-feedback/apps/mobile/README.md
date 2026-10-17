@@ -24,6 +24,8 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이며 앱�
 
 ## 네이티브 연결
 
+게시판과 Quill 글쓰기, 이미지/동영상 채팅은 웹 화면을 그대로 사용한다. 파일 선택은 WebView의 시스템 선택기를 사용하며 iOS의 사진 보관함/카메라/마이크 용도 문구를 app.config.ts에 정의한다. 동영상은 inline 재생을 허용하고 자동 재생은 하지 않는다. 이미지 확대는 웹 Dialog이므로 Android back과 기존 overlay 규칙을 따른다. 모바일 Enter는 줄바꿈이고 메시지는 전송 버튼으로 보낸다. 브라우저 host 검증과 실제 기기의 파일 선택/권한창 검증은 구분한다.
+
 `WebViewChannel` class가 WebView 참조, 복구할 마지막 주소와 history, 화면 snapshot을 소유한다. `useWebShell`은 `useSyncExternalStore`로 로딩, 오류, 모달과 문서 상태를 구독하고 native host와 OS lifecycle을 연결한다. 변경이 없으면 같은 snapshot을 반환하며 채널은 셸 인스턴스마다 생성한다. 준비된 문서의 경로 변경은 복구 주소만 갱신하고 `source`를 바꾸지 않는다. 재시도는 마지막 주소와 새 WebView key를 한 번에 반영하고 이전 문서의 history를 비운다. 구독 해제와 ref 해제는 React가 처리한다.
 
 - SafeAreaView가 위·아래 여백을 관리한다. 웹은 기존 `@side/design-system` 스타일을 렌더링하고 네이티브 로딩·오류 화면은 같은 흰색·검정 팔레트를 따른다.

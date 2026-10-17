@@ -16,6 +16,10 @@ corepack yarn workspace @game-feedback/sdk test
 
 ## 응답 fallback 정책
 
+게시글은 기존 `body` 평문과 선택적인 Quill `document`, 게시판 `board`를 전달한다. 서버는 서식 문서에서 추출한 평문과 body의 일치를 확인하며 검색/SEO는 평문을 사용한다. 링크는 HTTP(S)만 허용하고 객체 embed나 임의 HTML 속성을 문서에 저장하지 않는다.
+
+`uploadChatAttachment`는 FormData와 세션 쿠키를 사용하고 JSON 첨부 메타데이터를 Zod로 검증한다. Content-Type boundary는 fetch가 지정한다. 파일 URL, MIME, 종류, 크기와 ID는 엄격하게 검증하며 외부 파일 URL로 fallback하지 않는다. `deleteChatAttachment`는 미전송 파일 제거용이다. 메타데이터의 파일 URL은 세션이 필요한 바이너리 GET이며 동영상 Range 요청을 지원한다. 바이너리 다운로드와 SSE는 JSON transport 대상이 아니다.
+
 서버 계약은 엄격하게 유지한다. SDK의 `src/response/fallback-policy.ts`가 스키마에 선언된 표시 필드에만 Zod `.catch(...)` 정책을 적용한 뒤 원래 응답 스키마로 전체를 다시 검증한다. 필드 이름이 같아도 fallback이 그 필드의 계약을 만족하지 않으면 적용하지 않는다. 원본 입력은 수정하지 않는다.
 
 | 필드                                         | 누락·잘못된 타입·범위의 fallback                      |
