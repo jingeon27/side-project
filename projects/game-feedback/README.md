@@ -37,6 +37,12 @@ corepack yarn workspace @side/game-feedback db:stop
 
 실제 Google/Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 데모 샘플은 명시적 데모 실행에만 추가한다.
 
+## Web UI와 shadcn/ui
+
+웹은 공통 `@side/design-system`의 **shadcn/ui Base UI / base-nova** 컴포넌트를 사용한다. 공통 패키지와 Web의 components.json은 같은 base-nova/neutral/lucide 설정을 사용하고 ui/utils alias는 공통 소스를 가리킨다. 설치 원본과 조정 범위는 [공통 shadcn 구성](../../packages/design-system/SHADCN.md)에 정리했다.
+
+작성/수정/로그인/신고/언어/검색/채팅 폼은 Input, Textarea, NativeSelect, Checkbox를 사용한다. 버튼과 모달은 공통 shadcn 기반을 사용하며 피드 탭은 방향키로 조작할 수 있는 Tabs와 URL 상태를 연결한다. 분류/금액 입력과 WYSIWYG, 키보드 포커스, 중첩 모달, WebView의 16px 입력과 터치 영역을 유지한다. 색과 타이포그래피는 Photo Contest와 같은 공통 토큰에서 가져온다.
+
 ## 언어와 반응형 화면
 
 첫 진입 `/`는 저장한 언어를 우선하고, 자동 선택이면 기기나 브라우저의 `Accept-Language`에서 한국어, 영어, 일본어를 선택한다. 지원하는 언어가 없으면 영어를 사용한다. 위치 권한이나 IP 조회는 사용하지 않는다. `/ko`, `/en`, `/ja`로 전달된 링크는 해당 언어와 상세 경로를 유지한다.

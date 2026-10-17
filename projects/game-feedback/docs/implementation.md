@@ -471,6 +471,30 @@ API에는 Vitest/Supertest 의존성과 HTTP 통합 테스트가 있었으나 AP
 
 개발 사용자 7명/고정 계정 3개/기존 게시글 6개를 보존했다. 잔여 gf_test_ 스키마 0개를 확인한 뒤 소유 테스트 DB만 중지했다. 이번 후속 변경에서는 Mobile 제품 코드/네이티브 host를 바꾸지 않았고 Mobile E2E를 다시 실행하지 않았다.
 
+## Web shadcn/ui 적용
+
+이전 Web은 공통 Base UI 커스텀 컴포넌트와 native 폼 컨트롤을 사용했고 Game Feedback의 shadcn 설정은 없었다. 사용자 요청으로 공식 shadcn/ui Base UI/base-nova registry 소스를 공통 디자인 시스템에 설치하고 저장소의 PascalCase/named export와 공통 토큰/공개 API에 맞게 조정했다. 공통 packages/design-system/components.json과 Web components.json은 같은 base-nova/neutral/lucide를 사용하고 ui/utils alias가 공통 소스로 연결된다. 원본과 MIT 라이선스, 조정 범위는 공통 패키지의 SHADCN.md/SHADCN-LICENSE.md에 보존한다. 런타임 shadcn 패키지를 넣은 것으로 구현을 대신하지 않는다.
+
+Button의 공식 CVA/포커스/invalid/disabled 기반에 기존 variant/size/fullWidth/loading을 연결하고 IconButton/Next ButtonLink가 이를 재사용한다. Dialog의 Root/Portal/Content/Header/Title/Description/Close 조합은 공통 API가 소유하며 기존 wrapper props, 번역된 닫기 이름, 포털 container, Viewport, 중첩/필수 모달 동작은 유지한다. Input/Textarea/NativeSelect/Checkbox/Tabs/Label을 공통 공개 API에 추가하고 Game Feedback의 실제 폼 12개 파일, 모달과 버튼, 피드 탭에서 사용한다. NativeSelect는 모바일 OS 선택창과 RHF ref를 유지하고 Checkbox는 Controller의 boolean 필드로 연결한다. Tabs의 값은 계속 URL이 소유하며 Base UI가 방향키와 ARIA를 관리한다.
+
+FormField는 합성 컨트롤에도 레이블/도움말/오류를 연결하며 복제 시 native ref를 보존한다. 이 동작은 실제 RHF+Zod를 사용해 invalid submit의 첫 오류 포커스와 세 필드 값의 전송을 검증한다. Tabs도 방향키/선택 패널/ARIA를 실제 Base UI로 검증한다. CSS는 기존 흑백/오렌지 토큰에서 shadcn 토큰을 파생하며 muted 글자색을 배경색으로 재해석하지 않는다. 입력 16px과 버튼 44px 이상을 유지하고 Quill/파일·hidden 입력은 전용 DOM을 사용한다.
+
+공통 패키지 수정은 사용자가 요청한 두 서비스 공통 스타일과 shadcn primitive를 한 곳에서 관리하기 위해 필요했다. lucide-react는 새 아이콘 소스를 소비하는 공통 패키지의 직접 의존성으로 선언했고 이미 잠긴 ^0.468.0을 재사용한다. yarn.lock 변경은 이 workspace 의존성 한 줄이며 기존 resolution/version 변경은 없다. Photo Contest 제품 소스·설정·DB·서버는 수정하지 않았다.
+
+registry의 방향 선택자를 설치된 Base UI 1.9의 data-orientation에 맞추고 orientation prop도 전달했다. 가로/세로 방향키와 선택 패널을 공통 UI 테스트로 검증하며 실제 피드 선택선의 표시/크기와 reduced motion은 브라우저에서 검증한다. 수동 캡처에서 기존 text-input 크기 토큰과 새 input 색 토큰이 겹쳐 입력값 색이 흐려지는 문제를 발견했다. 색 토큰을 input-border로 분리하고 브라우저 테스트에 실제 입력값이 공통 ink 색인지 검증을 추가했다.
+
+| 검증               | 결과                                                                                                                                                                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 공통 UI            | lint/typecheck 및 Vitest 6개 파일 13개 통과. RHF+Zod 오류 포커스/레이블/값 전송과 가로/세로 Tabs 키보드 조작 포함                                                                                                                                                                      |
+| 프로젝트 정적 검사 | 전체 check 통과. Web/Mobile lint와 모든 앱/패키지 타입 검사 포함. 최종 Web lint 재검사 통과                                                                                                                                                                                            |
+| Web unit           | Vitest 20개 파일 72개 통과                                                                                                                                                                                                                                                             |
+| Photo Contest 회귀 | Web Vitest 55개 파일 238개와 typecheck 통과. 기존 Yarn 실행의 vitest bin 매핑 실패로 Photo Web package.json에서 해석한 설치된 Vitest를 같은 unit/ui project 설정으로 직접 실행                                                                                                         |
+| Web E2E            | 전체 39개 중 37개 통과. 이전 커스텀 선택선을 찾던 motion 2개를 실제 shadcn 선택선 검사로 변경하고 관련 design-system/motion 3개 재실행 통과(26.0초). 39개 고유 시나리오를 검증했으며 단일 전체 실행 39개 통과로 표현하지 않음. 색 토큰 수정 뒤 design-system 시나리오 추가 재검증 통과 |
+| Mobile host E2E    | Android Chromium/iOS WebKit 전체 14개 통과(51.8초). WebView의 폼/딥링크/채팅 회귀 포함                                                                                                                                                                                                 |
+| Web production     | .next/shadcn-build에서 프로덕션 빌드와 타입 검사 통과                                                                                                                                                                                                                                  |
+
+개발 화면 1440/390/320px에서 분류 전환, 코칭 금액과 친추판매 금액 입력을 직접 캡처했다. 가로 넘침과 pageerror는 0개이며 초안만 입력하고 글은 등록하지 않았다. 개발 사용자 7명/고정 계정 3개/기존 게시글 6개와 원래 sample-post 6개를 보존했고 잔여 gf_test_ 스키마는 0개였다. 소유 테스트 DB만 종료하고 개발 Web/API는 유지한다. 실제 OS 파일 선택/권한창이나 실기기 검증은 포함하지 않는다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
