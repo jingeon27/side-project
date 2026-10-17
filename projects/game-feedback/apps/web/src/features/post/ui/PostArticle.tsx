@@ -7,6 +7,7 @@ import { Avatar, RichTextBody } from '@/shared/ui';
 import { timeAgo } from '@/shared/lib/date';
 import { PostStatus } from './PostStatus';
 import { CoachingSummary } from '@/features/coaching';
+import { FriendSaleSummary } from '@/features/friend-sale';
 import { boardByKind } from '@/features/board';
 interface IPostArticleProps {
   post: Post;
@@ -43,6 +44,7 @@ export function PostArticle({ post, authorContent, authorName, actions, profile 
         {actions}
       </div>
       {post.coaching && <CoachingSummary details={post.coaching} />}
+      {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
       <RichTextBody body={post.body} document={post.document} />
       {profile}
       <div className="detail-footnote">

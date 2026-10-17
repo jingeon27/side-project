@@ -10,6 +10,7 @@ import { timeAgo } from '@/shared/lib/date';
 import { m, useMotionPreference } from '@/shared/motion';
 import { PostStatus } from './PostStatus';
 import { CoachingSummary } from '@/features/coaching';
+import { FriendSaleSummary } from '@/features/friend-sale';
 import { boardByKind } from '@/features/board';
 interface IPostCardProps {
   post: Post;
@@ -41,6 +42,7 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
       </Link>
       <p className="post-excerpt">{post.body}</p>
       {post.coaching && <CoachingSummary details={post.coaching} />}
+      {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
       {post.gameProfile && (
         <div className="post-game-info">
           <div className="post-game-stat">

@@ -8,7 +8,8 @@
     gap: 8px;
     font-size: var(--text-caption);
   }
-  .coaching-summary {
+  .coaching-summary,
+  .friend-sale-summary {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;

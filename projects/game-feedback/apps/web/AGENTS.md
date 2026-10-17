@@ -19,7 +19,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 조회 대기·실패는 `useSuspenseQuery`/`useSuspenseInfiniteQuery`와 영역별 `AsyncBoundary`(Suspense + ServiceErrorBoundary)로 처리한다. 브라우저 쿠키에 의존하며 서버 초기 데이터가 없는 조회만 clientOnly로 지연한다. 이미 서버 초기 데이터가 있는 공개 상세/프로필은 useQuery + throwOnError와 오류 경계를 사용해 Suspense streaming이 JavaScript 없는 본문을 가리지 않도록 한다. mutation 실패는 초안을 보존하는 폼 안에서 처리한다.
 - `useRef`는 이전 경로나 외부 동기화의 식별자가 꼭 필요한 곳에 제한한다. DOM 연결은 정리 가능한 callback ref와 useCallback을 우선하고, 표시 상태·mutation 변수를 ref로 복제하지 않는다. 날짜 계산/비교/날짜 구분은 `shared/lib/date`의 dayjs helper를 사용하며 표시 시간대는 Asia/Seoul로 일치시킨다. 사용자별 locale을 전역 dayjs.locale로 변경하지 않는다.
 - SSE·DOM observer 등 외부 동기화에만 effect를 사용한다. 필터·선택 대화는 URL을 단일 출처로 사용한다.
-- 홈은 모든 게시판/게임의 피드이고 종류별 메뉴는 모든 게임이 같은 5개 설정을 사용한다. 게임을 UI에 하드코딩하지 않고 활성 카테고리와 game 경로 문맥을 전달한다. 코칭 모집 역할/시간당 수강료는 계약의 coaching 메타데이터로 저장하며 본문에서 추측하지 않는다.
+- 홈은 모든 게시판/게임의 피드이고 종류별 메뉴는 모든 게임이 같은 5개 설정을 사용한다. 게임을 UI에 하드코딩하지 않고 활성 카테고리와 game 경로 문맥을 전달한다. 코칭 모집 역할/시간당 수강료는 계약의 coaching, 친추판매 금액은 friendSale 메타데이터로 저장하며 본문에서 추측하지 않는다. 기존 가격 미등록과 명시적 가격 협의를 구분한다.
 - 게시판 종류는 계약의 board 값과 features/board의 경로/문구를 사용한다. 검색과 상세의 게시판 문맥은 공유 appRoutes로 전달한다. 새 상세 링크와 canonical 직접 진입 모두 논리적 상위 게시판으로 복귀해야 한다.
 - 글 본문은 Quill Delta의 허용된 문자열/속성과 평문을 함께 저장하고 서버에서 일치를 검증한다. 사용자 HTML을 dangerouslySetInnerHTML로 렌더하지 않는다. 편집기는 client에서 지연 로드하고 callback ref 수명을 정리한다. 채팅 업로드는 도메인 mutationOptions, 미디어는 인증된 같은 origin URL을 사용한다. 모바일 키보드에서 Enter 전송을 강제하거나 Shift+Enter 안내를 표시하지 않는다.
 - 컴포넌트 파일은 PascalCase, 나머지는 kebab-case다. named function 컴포넌트, `I` interface·`T` type, 내부 `handle*`·prop `on*`를 사용한다. any·non-null assertion·else·enum을 추가하지 않는다.

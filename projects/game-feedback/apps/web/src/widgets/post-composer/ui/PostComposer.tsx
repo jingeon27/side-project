@@ -110,6 +110,7 @@ function PostComposerForm({
       editorValid: true,
       board: post?.board ?? initialBoard,
       coaching: post?.coaching ?? { role: 'COACH', hourlyRate: null },
+      friendSale: post?.friendSale ?? { price: null },
       categoryId: post?.categoryId || initialCategoryId || categories[0]?.id || '',
       ...(post?.gameProfile?.playerTag || accounts[0]?.playerTag
         ? { playerTag: post?.gameProfile?.playerTag || accounts[0]?.playerTag }
@@ -136,11 +137,12 @@ function PostComposerForm({
   return (
     <form
       className="form-stack"
-      onSubmit={form.handleSubmit(async ({ editorValid, coaching, playerTag, ...values }) => {
+      onSubmit={form.handleSubmit(async ({ editorValid, coaching, friendSale, playerTag, ...values }) => {
         if (!editorValid) return;
         const input = {
           ...values,
           ...(board === 'COACHING' ? { coaching } : {}),
+          ...(board === 'FRIEND_SALE' ? { friendSale } : {}),
           ...(isClashRoyale && playerTag ? { playerTag } : {}),
         };
         try {
@@ -152,6 +154,7 @@ function PostComposerForm({
                   body: values.body,
                   document: values.document ?? null,
                   ...(board === 'COACHING' ? { coaching } : {}),
+                  ...(board === 'FRIEND_SALE' ? { friendSale } : {}),
                 },
               })
             : await create.mutateAsync({ body: input });
@@ -188,8 +191,10 @@ function PostComposerForm({
             className="ds-select"
             {...form.register('board', {
               onChange: (event: ChangeEvent<HTMLSelectElement>) => {
-                if (event.target.value === 'COACHING') return;
-                form.setValue('coaching', { role: 'COACH', hourlyRate: null }, { shouldValidate: true });
+                if (event.target.value !== 'COACHING')
+                  form.setValue('coaching', { role: 'COACH', hourlyRate: null }, { shouldValidate: true });
+                if (event.target.value !== 'FRIEND_SALE')
+                  form.setValue('friendSale', { price: null }, { shouldValidate: true });
               },
             })}
           >
@@ -247,6 +252,27 @@ function PostComposerForm({
           {form.formState.errors.title && t('제목을 4~120자로 입력해 주세요.')}
         </span>
       </Field>
+      {board === 'FRIEND_SALE' && (
+        <Field label={t('판매 금액 (원)')}>
+          <input
+            className="ds-input"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={10000000}
+            step={1}
+            placeholder={t('가격 협의')}
+            {...form.register('friendSale.price', {
+              setValueAs: (value: unknown) =>
+                value === '' || value === null || value === undefined ? null : Number(value),
+            })}
+          />
+          <small>{t('비워두면 채팅으로 가격을 협의해요.')}</small>
+          {form.formState.errors.friendSale && (
+            <span className="field-error">{t('판매 금액을 1~10,000,000원으로 입력해주세요.')}</span>
+          )}
+        </Field>
+      )}
       {board === 'COACHING' && (
         <>
           <Field label={t('모집 유형')}>

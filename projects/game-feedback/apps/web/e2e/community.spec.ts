@@ -25,6 +25,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     const title = `${slug} 게시글 ${suffix}`;
     const body = `A detailed community listing for ${slug}. Please send a chat message to discuss the details.`;
     await editor.getByLabel('제목', { exact: true }).fill(title);
+    if (slug === 'friend-sale') await editor.getByLabel('판매 금액 (원)', { exact: true }).fill('12000');
     const content = editor.getByRole('textbox', { name: '내용', exact: true });
     await content.fill(body);
     await content.press('ControlOrMeta+a');
@@ -37,6 +38,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
       `/ko/boards/${slug}`,
     );
     await expect(page.locator('.prose-body strong')).toContainText(body);
+    if (slug === 'friend-sale') await expect(page.locator('.friend-sale-summary')).toContainText('12,000');
     await expect(
       page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '피드', exact: true }),
     ).toHaveClass('active');
@@ -51,16 +53,23 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await page.locator('.detail-card').getByRole('button', { name: '수정', exact: true }).click();
     const edit = page.getByRole('dialog', { name: '게시글 수정', exact: true });
     await expect(edit.locator('.ql-editor strong')).toContainText(body);
+    if (slug === 'friend-sale') {
+      await expect(edit.getByLabel('판매 금액 (원)', { exact: true })).toHaveValue('12000');
+      await edit.getByLabel('판매 금액 (원)', { exact: true }).fill('18000');
+    }
     const updated = `${body} Updated details are available.`;
     await edit.getByRole('textbox', { name: '내용', exact: true }).fill(updated);
     await edit.getByRole('button', { name: '수정 완료', exact: true }).click();
     await expect(edit).toHaveCount(0);
     await expect(page.locator('.prose-body')).toContainText(updated);
+    if (slug === 'friend-sale') await expect(page.locator('.friend-sale-summary')).toContainText('18,000');
     const crawler = await browser.newContext({ javaScriptEnabled: false });
     try {
       const response = await (await crawler.newPage()).goto(url);
       expect(response?.status()).toBe(200);
-      expect(await response?.text()).toContain(updated);
+      const html = await response?.text();
+      expect(html).toContain(updated);
+      if (slug === 'friend-sale') expect(html).toContain('18,000');
     } finally {
       await crawler.close();
     }
@@ -68,6 +77,11 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await page.getByRole('textbox', { name: '게시판 검색' }).fill(suffix);
     await page.getByRole('button', { name: '검색', exact: true }).click();
     await expect(page.locator('.board-post-list .post-card')).toHaveCount(1);
+    if (slug === 'friend-sale') {
+      await expect(page.locator('.post-card .friend-sale-summary')).toContainText('18,000');
+      await page.goto(`/ko?q=${suffix}`);
+      await expect(page.locator('.post-card .friend-sale-summary')).toContainText('18,000');
+    }
   }
 });
 test('every game contains five shared boards on desktop and mobile and retired board routes are unavailable', async ({
@@ -132,4 +146,45 @@ test('board tabs and Quill controls fit a small mobile viewport', async ({ page 
   const dialog = await page.getByRole('dialog').boundingBox();
   expect((dialog?.x ?? 0) + (dialog?.width ?? 0)).toBeLessThanOrEqual(321);
   await expect(page.locator('.deck')).toHaveCount(0);
+});
+
+test('mobile friend sale price survives reload and negotiable terms stay separate from other boards', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.request.post('/api/auth/test-login', {
+    headers: { Origin: origin },
+    data: { accountId: 'sample-user-0' },
+  });
+  await page.goto('/en');
+  await page.getByRole('button', { name: 'Write a post', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: 'Write a post', exact: true });
+  await editor.getByLabel('Boards', { exact: true }).selectOption('FRIEND_SALE');
+  const price = editor.getByLabel('Sale price (KRW)', { exact: true });
+  await expect(price).toHaveAttribute('inputmode', 'numeric');
+  await price.fill('0');
+  // An inactive board's invalid fee must not block the new board's valid form.
+  await editor.getByLabel('Boards', { exact: true }).selectOption('FREE');
+  await expect(price).toHaveCount(0);
+  await editor.getByLabel('Boards', { exact: true }).selectOption('FRIEND_SALE');
+  await expect(price).toHaveValue('');
+  const title = `Mobile friend slot sale ${Date.now().toString(36)}`;
+  await editor.getByLabel('Title', { exact: true }).fill(title);
+  await editor
+    .getByRole('textbox', { name: 'Content', exact: true })
+    .fill('Please contact me in chat to agree on the price and duration of this friend slot.');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await editor.getByRole('button', { name: 'Publish post', exact: true }).click();
+  await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+  await expect(page.locator('.friend-sale-summary')).toContainText('Price negotiable');
+  await page.reload();
+  await expect(page.locator('.friend-sale-summary')).toContainText('Price negotiable');
+  await page.locator('.detail-card').getByRole('button', { name: 'Edit', exact: true }).click();
+  const edit = page.getByRole('dialog', { name: 'Edit post', exact: true });
+  await edit.getByLabel('Sale price (KRW)', { exact: true }).fill('25000');
+  await edit.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(edit).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('.friend-sale-summary')).toContainText('25,000');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });

@@ -44,6 +44,19 @@ const messages: Record<string, readonly [string, string]> = {
   '모집 유형': ['Recruitment type', '募集の種類'],
   '수강생 모집': ['Looking for students', '受講生募集'],
   '코치 구함': ['Looking for a coach', 'コーチ募集'],
+  '판매 금액 (원)': ['Sale price (KRW)', '販売価格（ウォン）'],
+  '판매 금액': ['Sale price', '販売価格'],
+  '가격 협의': ['Price negotiable', '価格は相談'],
+  '판매 금액 미등록': ['Price not provided', '価格未登録'],
+  '친추판매 정보': ['Friend slot sale details', 'フレンド枠販売情報'],
+  '비워두면 채팅으로 가격을 협의해요.': [
+    'Leave blank to discuss the price in chat.',
+    '空欄の場合はチャットで価格を相談します。',
+  ],
+  '판매 금액을 1~10,000,000원으로 입력해주세요.': [
+    'Enter a sale price between 1 and 10,000,000 KRW.',
+    '販売価格は1〜10,000,000ウォンで入力してください。',
+  ],
   '시간당 수강료 (원)': ['Hourly fee (KRW)', '1時間の受講料（ウォン）'],
   '시간당 희망 수강료 (원)': ['Hourly budget (KRW)', '1時間の希望受講料（ウォン）'],
   '비워두면 채팅으로 수강료를 협의해요.': [
