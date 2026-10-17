@@ -7,7 +7,7 @@
 | 경로 | 워크스페이스 | 역할 |
 | --- | --- | --- |
 | `apps/api` | `@photo-contest/api` | NestJS 12 schema-first GraphQL + REST(인증·업로드·사진·헬스), Prisma 6 + PostgreSQL |
-| `apps/web` | `@photo-contest/web` | Next.js 16 App Router, 모바일 우선 반응형 웹(최대 1200px), Apollo Client 4, Base UI |
+| `apps/web` | `@photo-contest/web` | Next.js 16 App Router, 모바일 우선 반응형 웹(최대 1440px), Apollo Client 4, Base UI |
 | `apps/mobile` | `@photo-contest/mobile` | Expo SDK 57 WebView 셸. 웹을 감싸고 브리지로 네이티브 기능을 제공 |
 | `packages/bridge` | `@photo-contest/bridge` | 웹 ↔ 앱 메시지 계약(zod). web·mobile만 쓴다 |
 | `packages/test-kit` | `@photo-contest/test-kit` | 격리 DB 스키마·테스트용 API 기동·테스트 이미지. 테스트에서만 쓴다 |
@@ -28,7 +28,7 @@
 
 ## 제품 방향
 
-상시 갤러리 커뮤니티다. 제품 표기는 갤러리이며 내부 Group 모델·/groups URL은 호환을 위해 유지한다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 갤러리 전체의 최신 게시물과 이달의 인기(KST)를, MY는 내 갤러리 목록·생성을 제공한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest·Submission은 이전 링크·데이터 호환용이다.
+상시 그룹 커뮤니티다. 제품 표기는 그룹이며 Group 모델·/groups URL을 쓴다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 그룹 전체의 최신 게시물과 이달의 인기(KST)를, MY는 내 그룹 목록·생성을 제공한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest·Submission은 이전 링크·데이터 호환용이다.
 
 ## 정해진 결정
 
@@ -49,3 +49,5 @@
 - 커밋 단위·메시지: `.claude/skills/commit/SKILL.md`
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
+
+운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB·미디어 volume을 지우거나 DB를 자동으로 되돌리지 않는다.

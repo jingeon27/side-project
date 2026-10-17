@@ -21,11 +21,11 @@ const twMerge = extendTailwindMerge({
       radius: ['badge', 'control', 'card', 'sheet'],
       shadow: ['app', 'card', 'sheet', 'toast'],
       spacing: ['app-bar', 'bottom-nav', 'cta', 'touch'],
-      breakpoint: ['pc', 'tablet', 'desktop'],
+      breakpoint: ['pc', 'tablet', 'desktop', 'wide'],
     },
     classGroups: {
       z: [{ z: ['app-bar', 'bottom-nav', 'sticky-cta', 'sheet', 'dialog', 'toast'] }],
-      'max-w': [{ 'max-w': ['app', 'web'] }],
+      'max-w': [{ 'max-w': ['app', 'feed', 'web'] }],
     },
   },
 });

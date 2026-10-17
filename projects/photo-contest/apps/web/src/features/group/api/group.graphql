@@ -1,4 +1,4 @@
-# MY 갤러리 카드: 이름, 내 역할, 멤버 수
+# MY 그룹 카드: 이름, 내 역할, 멤버 수
 fragment GroupCard on Group {
   id
   name

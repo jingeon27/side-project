@@ -27,7 +27,7 @@ const COPIED_MESSAGE = '초대 링크를 복사했어요';
 const subscribeNothing = () => () => undefined;
 
 /**
- * 갤러리 초대 카드(모든 멤버). 공유는 앱 공유 시트 → Web Share → 복사 순서로, 복사는 앱 클립보드 → 브라우저 순서로 한다.
+ * 그룹 초대 카드(모든 멤버). 공유는 앱 공유 시트 → Web Share → 복사 순서로, 복사는 앱 클립보드 → 브라우저 순서로 한다.
  * 관리자는 링크를 새로 만들 수 있고, 그러면 이전 링크로는 가입할 수 없다.
  */
 export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: IInviteCardProps) {
@@ -58,14 +58,14 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
           초대 링크를 아는 사람은 누구나 가입할 수 있어요. 친구에게만 보내 주세요.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 desktop:grid-cols-1">
         <Button
           variant="primary"
           size="md"
           onClick={async () => {
             const method = await shareActions.share(
               inviteUrl,
-              { title: '웃긴순간 갤러리 초대', text: buildInviteShareText(groupName) },
+              { title: '웃긴순간 그룹 초대', text: buildInviteShareText(groupName) },
               { copied: COPIED_MESSAGE },
             );
             if (method) trackEvent(ANALYTICS_EVENT.InviteLinkShared, { group_id: groupId, method });
@@ -86,7 +86,7 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
         </Button>
       </div>
       <input
-        aria-label="갤러리 초대 링크"
+        aria-label="그룹 초대 링크"
         readOnly
         value={inviteUrl}
         onFocus={(event) => event.currentTarget.select()}

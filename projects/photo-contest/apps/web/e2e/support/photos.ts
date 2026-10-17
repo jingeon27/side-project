@@ -49,14 +49,19 @@ export async function seedPhoto(cookie: string, contestId: string, caption: stri
   ).createSubmission.id;
 }
 
-export async function seedPost(cookie: string, groupId: string, title: string): Promise<string> {
+export async function seedPost(
+  cookie: string,
+  groupId: string,
+  title: string,
+  imageOptions?: Parameters<typeof createTestImage>[0],
+): Promise<string> {
   const { requestPostUpload: ticket } = await productRequest<{
     requestPostUpload: { id: string; url: string };
   }>(cookie, 'mutation($groupId:ID!){requestPostUpload(groupId:$groupId){id url}}', { groupId });
   const response = await fetch(API_URL + ticket.url.replace(/^\/backend/, ''), {
     method: 'POST',
     headers: { Cookie: cookie, Origin: WEB_ORIGIN, 'Content-Type': 'image/png' },
-    body: new Uint8Array(await createTestImage()),
+    body: new Uint8Array(await createTestImage(imageOptions)),
   });
   if (response.status !== 201) throw new Error('테스트 게시물 업로드 실패');
   return (

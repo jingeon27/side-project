@@ -18,6 +18,7 @@ import { getErrorMessage } from '@/shared/model/error';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
+import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 
@@ -66,6 +67,7 @@ function DevLoginForm({ nextPath }: { nextPath: string }) {
     >
       <p className="text-caption text-muted">로컬 체험용 로그인</p>
       <TextField
+        required
         label="체험 닉네임"
         placeholder="예: 진건"
         autoComplete="nickname"
@@ -168,7 +170,7 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         <h2 id={headingId} className="mt-2 text-title-lg text-ink">
           로그인하고 함께 웃어요.
         </h2>
-        <p className="mt-1 text-body text-muted">초대받은 갤러리에서만 사진을 볼 수 있어요.</p>
+        <p className="mt-1 text-body text-muted">초대받은 그룹에서만 사진을 볼 수 있어요.</p>
       </div>
       <PasswordAuthForms nextPath={next} />
       {loginFailed ? (
@@ -198,6 +200,10 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         ))
         .with({ status: 'ready' }, ({ config }) => <LoginMethods config={config} nextPath={next} />)
         .exhaustive()}
+      <div className="border-t border-line pt-3">
+        <p className="text-caption text-muted">서비스 이용에 관한 안내를 확인해 주세요.</p>
+        <LegalLinks />
+      </div>
     </section>
   );
 }

@@ -5,14 +5,24 @@ import { authenticate, expect, test } from './support/test';
 
 async function writePost(page: Page, title: string, video = false) {
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  const sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+  const sheet = page.getByRole('dialog', { name: '그룹에 글쓰기' });
   await sheet.getByLabel('제목', { exact: true }).fill(title);
   await sheet.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
     name: video ? 'clip.mp4' : 'photo.png',
     mimeType: video ? 'video/mp4' : 'image/png',
     buffer: video ? await createTestVideo() : await createTestImage(),
   });
-  await sheet.getByLabel('내용', { exact: true }).fill('합성도 환영하는 상시 갤러리');
+  if (video) {
+    const preview = sheet.getByLabel('선택한 동영상 미리보기', { exact: true });
+    await expect
+      .poll(() => preview.evaluate((el: HTMLVideoElement) => el.readyState))
+      .toBeGreaterThanOrEqual(2);
+  }
+  if (!video) {
+    const preview = sheet.getByRole('img', { name: '선택한 사진 미리보기', exact: true });
+    await expect.poll(() => preview.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+  }
+  await sheet.getByLabel('내용', { exact: true }).fill('합성도 환영하는 상시 그룹');
   await sheet.getByRole('checkbox').check();
   await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
   await expect(sheet).toHaveCount(0);
@@ -20,23 +30,23 @@ async function writePost(page: Page, title: string, video = false) {
     .getByRole('region', { name: '최신 게시물', exact: true })
     .getByRole('article', { name: title });
   await expect(post).toBeVisible();
-  await expect(post.getByText('합성도 환영하는 상시 갤러리', { exact: true })).toBeVisible();
+  await expect(post.getByText('합성도 환영하는 상시 그룹', { exact: true })).toBeVisible();
 }
 
 test(
-  '갤러리 생성·초대·여러 사진과 동영상·이달의 인기·관리자 삭제가 이어져야 한다',
+  '그룹 생성·초대·여러 사진과 동영상·이달의 인기·관리자 삭제가 이어져야 한다',
   { tag: ['@ios', '@desktop'] },
   async ({ page, browser, signIn }) => {
     await signIn('통합 관리자');
     await page.goto('/me');
-    await page.getByRole('button', { name: '갤러리 만들기', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('갤러리 이름').fill('언제나 웃긴 갤러리');
-    await page.getByRole('dialog').getByRole('button', { name: '갤러리 만들기', exact: true }).click();
+    await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
+    await page.getByRole('dialog').getByLabel('그룹 이름').fill('언제나 웃긴 그룹');
+    await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();
     await expect(page).toHaveURL(/\/groups\/[^/]+$/);
     const galleryUrl = page.url();
     await expect(page.getByRole('button', { name: '대회 만들기', exact: true })).toHaveCount(0);
-    await page.getByText('초대와 갤러리 멤버', { exact: true }).click();
-    const invite = await page.getByLabel('갤러리 초대 링크').inputValue();
+    await page.getByText('초대와 그룹 멤버', { exact: true }).click();
+    const invite = await page.getByLabel('그룹 초대 링크').inputValue();
     await writePost(page, '첫 번째 합성');
     await writePost(page, '두 번째 순간');
 

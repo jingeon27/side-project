@@ -19,11 +19,21 @@ type GalleryPost {
   kind: PostKind!
   mediaUrl: String!
   likeCount: Int!
+  commentCount: Int!
   likedByMe: Boolean!
+  canDelete: Boolean!
+}
+type PostComment {
+  id: ID!
+  postId: ID!
+  body: String!
+  author: User!
+  createdAt: DateTime!
   canDelete: Boolean!
 }
 extend type Query {
   galleryPosts(groupId: ID, sort: PostSort = NEWEST, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  postComments(postId: ID!, offset: Int = 0, limit: Int = 24): [PostComment!]!
 }
 extend type Mutation {
   uploadPostMedia(uploadId: ID!, file: Upload!): Boolean!
@@ -38,4 +48,6 @@ extend type Mutation {
   likePost(postId: ID!): GalleryPost!
   unlikePost(postId: ID!): GalleryPost!
   deletePost(postId: ID!): Boolean!
+  createPostComment(postId: ID!, body: String!): PostComment!
+  deletePostComment(commentId: ID!): Boolean!
 }

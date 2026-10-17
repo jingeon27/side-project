@@ -18,7 +18,7 @@ import { toast } from '@/shared/model/toast';
 import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
 import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
-import { TextArea } from '@/shared/ui/@core/text-field';
+import { FieldRequirement, TextArea } from '@/shared/ui/@core/text-field';
 
 import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '../lib/image.helper';
 import { markContestSubmitted } from '../model/submission.cache';
@@ -116,6 +116,7 @@ export function UploadPhotoBottomSheet({
                     ref={field.ref}
                     name={field.name}
                     type="file"
+                    aria-required="true"
                     accept={PHOTO_ACCEPT}
                     aria-label="사진 선택"
                     aria-invalid={Boolean(errors.photo)}
@@ -146,7 +147,10 @@ export function UploadPhotoBottomSheet({
                   ) : (
                     <>
                       <ImagePlus aria-hidden className="size-8" />
-                      <span className="text-label text-ink">사진 선택</span>
+                      <span className="text-label text-ink">
+                        사진 선택
+                        <FieldRequirement required />
+                      </span>
                       <span className="text-caption">JPEG, PNG, WebP, HEIC · 큰 사진은 줄여서 올려요</span>
                     </>
                   )}
@@ -165,6 +169,7 @@ export function UploadPhotoBottomSheet({
             )}
           />
           <TextArea
+            required
             label="사진 설명"
             placeholder="이 사진의 웃음 포인트는…"
             rows={3}
@@ -176,13 +181,15 @@ export function UploadPhotoBottomSheet({
             <label className="flex min-h-touch cursor-pointer items-start gap-3 text-body text-ink">
               <input
                 type="checkbox"
+                required
                 aria-invalid={Boolean(errors.rightsConfirmed)}
                 aria-describedby={errors.rightsConfirmed ? rightsErrorId : undefined}
                 className="mt-0.5 size-5 shrink-0 accent-brand"
                 {...form.register('rightsConfirmed')}
               />
               <span>
-                이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다. 그룹 멤버에게만 공개됩니다.
+                <FieldRequirement required /> 이 사진을 공유할 권리가 있고, 촬영된 사람의 동의를 확인했습니다.
+                그룹 멤버에게만 공개됩니다.
               </span>
             </label>
             {errors.rightsConfirmed ? (

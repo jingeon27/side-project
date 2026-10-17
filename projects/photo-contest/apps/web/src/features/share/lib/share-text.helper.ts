@@ -52,7 +52,7 @@ export function buildContestShareText(contestTitle: string) {
   return `‘${truncate(contestTitle.trim(), SHARE_TITLE_MAX_LENGTH)}’ 사진 대회가 열렸어요! 웃긴 순간을 한 장 골라 주세요.`;
 }
 
-/** 갤러리 초대 문구 */
+/** 그룹 초대 문구 */
 export function buildInviteShareText(groupName: string) {
-  return `‘${truncate(groupName.trim(), SHARE_TITLE_MAX_LENGTH)}’ 갤러리에 초대할게요. 웃긴순간에서 같이 사진 대회 해요!`;
+  return `‘${truncate(groupName.trim(), SHARE_TITLE_MAX_LENGTH)}’ 그룹에 초대할게요. 웃긴순간에서 사진과 동영상을 함께 나눠요!`;
 }
