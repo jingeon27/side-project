@@ -118,12 +118,6 @@
   .conversation-preview > .user-badges {
     margin: 0 0 7px;
   }
-  .conversation-heading .user-badges {
-    margin: 4px 0 2px;
-  }
-  .conversation-heading:has(.user-badges:not(:empty)) {
-    min-height: 88px;
-  }
   .test-account-picker {
     margin: 3px 0 23px;
   }
@@ -302,9 +296,6 @@
     .user-badges.compact .verified-user-badge {
       font-size: var(--text-micro);
     }
-    .conversation-heading:has(.user-badges:not(:empty)) {
-      min-height: 84px;
-    }
     .post-author {
       column-gap: 5px;
       row-gap: 5px;
@@ -389,9 +380,6 @@
     .conversation-row .user-badges.compact .supercell-user-tag {
       font-size: var(--text-micro);
     }
-    .conversation-heading:has(.user-badges:not(:empty)) {
-      min-height: 84px;
-    }
     .post-author {
       padding: 8px 0;
       row-gap: 5px;
@@ -441,12 +429,6 @@
     }
     .post-author > .user-badges .verified-user-badge {
       font-size: var(--text-micro);
-    }
-    .conversation-heading .user-badges {
-      gap: 3px;
-    }
-    .conversation-heading:has(.user-badges:not(:empty)) {
-      min-height: 81px;
     }
     .test-account-option {
       padding: 11px;

@@ -134,7 +134,6 @@ export function useChatComposer({
     upload,
     remove,
     fileError,
-    desktopKeyboard,
     busy,
     handleFile,
     handleRemoveFile,

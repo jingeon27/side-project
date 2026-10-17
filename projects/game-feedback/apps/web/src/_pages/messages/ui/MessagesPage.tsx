@@ -39,8 +39,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
     <>
       <div className="page-heading chat-page-heading">
         <div>
-          <h1>{t('플레이로 이어지는 대화')}</h1>
-          <p>{t('피드백에서 시작한 이야기를, 1:1 메시지로 이어가세요.')}</p>
+          <h1>{t('채팅')}</h1>
         </div>
         <ChatConnectionStatus />
       </div>

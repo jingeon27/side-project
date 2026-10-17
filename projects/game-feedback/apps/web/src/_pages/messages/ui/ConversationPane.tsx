@@ -1,5 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
+import { Button } from '@side/design-system';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowLeft, ShieldBan } from 'lucide-react';
 import { chatMessageOptions } from '@/features/chat';
@@ -68,19 +69,33 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         >
           <ArrowLeft size={19} />
         </BackLink>
-        <Avatar name={conversation.peer.nickname} />
+        <Avatar name={conversation.peer.nickname} size="small" />
         <div>
           <h2>{conversation.peer.nickname}</h2>
-          {conversation.supportTopic && (
-            <p>{t(conversation.supportTopic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자 문의')}</p>
+          {(conversation.peer.isVerified ||
+            conversation.peer.isTestAccount ||
+            conversation.peer.supercellTag ||
+            conversation.supportTopic) && (
+            <div className="conversation-peer-meta">
+              <UserBadges author={conversation.peer} compact />
+              {conversation.supportTopic && (
+                <span>
+                  {t(conversation.supportTopic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자 문의')}
+                </span>
+              )}
+            </div>
           )}
-          <UserBadges author={conversation.peer} compact />
-          <p>{t('플레이어와 나누는 1:1 대화')}</p>
         </div>
-        <button className="text-button" onClick={() => handleBlock(conversation.peer)}>
-          <ShieldBan size={13} />
-          {t('차단')}
-        </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          aria-label={t('차단')}
+          title={t('차단')}
+          onClick={() => handleBlock(conversation.peer)}
+        >
+          <ShieldBan size={18} />
+        </Button>
       </header>
       <ChatHistory
         conversation={conversation}
@@ -92,21 +107,23 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         onScroll={scroll.handleScroll}
         onLoadOlder={handleLoadOlder}
       />
-      {scroll.unseen && (
-        <button className="chat-new-messages" onClick={scroll.handleScrollLatest}>
-          {t('새 메시지가 도착했어요')}
-          <ArrowDown size={14} />
-        </button>
-      )}
-      <ChatComposer
-        userId={userId}
-        conversationId={conversationId}
-        unavailable={unavailable}
-        readFailed={read.mutation.isError}
-        onRetryRead={read.handleRetryRead}
-        onSent={scroll.handleSent}
-        onUnavailable={() => query.refetch()}
-      />
+      <div className="chat-compose-dock">
+        {scroll.unseen && (
+          <button className="chat-new-messages" onClick={scroll.handleScrollLatest}>
+            {t('새 메시지가 도착했어요')}
+            <ArrowDown size={14} />
+          </button>
+        )}
+        <ChatComposer
+          userId={userId}
+          conversationId={conversationId}
+          unavailable={unavailable}
+          readFailed={read.mutation.isError}
+          onRetryRead={read.handleRetryRead}
+          onSent={scroll.handleSent}
+          onUnavailable={() => query.refetch()}
+        />
+      </div>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const config = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  devIndicators: process.env.GF_E2E_SCHEMA || process.env.GF_MOBILE_E2E_SCHEMA ? false : undefined,
+  devIndicators: false,
   transpilePackages: ['@game-feedback/contracts', '@game-feedback/sdk', '@side/design-system'],
   async rewrites() {
     const origin = process.env.GAME_FEEDBACK_API_URL || process.env.API_ORIGIN || 'http://127.0.0.1:4300';

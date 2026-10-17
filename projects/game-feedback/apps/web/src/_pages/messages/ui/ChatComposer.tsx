@@ -34,7 +34,6 @@ export function ChatComposer({
     upload,
     remove,
     fileError,
-    desktopKeyboard,
     busy,
     handleFile,
     handleRemoveFile,
@@ -103,18 +102,18 @@ export function ChatComposer({
           />
         </label>
         <Textarea
-          className="min-h-touch"
+          className="min-h-touch max-h-28 w-0 flex-1 resize-none rounded-none border-0 px-0 py-2 leading-6 shadow-none focus-visible:border-transparent focus-visible:ring-0"
           {...form.register('body', { onChange: handleDraftChange })}
           aria-label={t('메시지 내용')}
           placeholder={t('플레이 이야기를 나눠보세요')}
-          rows={2}
+          rows={1}
           maxLength={2000}
           disabled={mutation.isPending}
           onKeyDown={handleKeyDown}
         />
         <MotionButton
           variant="primary"
-          size="md"
+          size="icon"
           className="button dark"
           type="submit"
           disabled={busy || unavailable || (!draft.trim() && !upload.data)}
@@ -123,10 +122,7 @@ export function ChatComposer({
           {mutation.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
         </MotionButton>
       </form>
-      <div className="chat-compose-hint">
-        {desktopKeyboard && <span>{t('Enter로 보내기, Shift + Enter로 줄바꿈')}</span>}
-        <span>{draft.length.toLocaleString()} / 2,000</span>
-      </div>
+      {draft.length >= 1800 && <p className="chat-compose-count">{draft.length.toLocaleString()} / 2,000</p>}
     </div>
   );
 }
