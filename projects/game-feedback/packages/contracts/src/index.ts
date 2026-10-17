@@ -73,7 +73,19 @@ export const TestAccountSchema = AuthorSchema.extend({
 });
 export const TestAccountListSchema = z.object({ items: z.array(TestAccountSchema) });
 export const TestLoginInputSchema = z.object({ accountId: z.string().min(1).max(100) }).strict();
+export const SocialProviderSchema = z.enum(['x', 'kakao', 'discord', 'google']);
+export type TSocialProvider = z.infer<typeof SocialProviderSchema>;
+export const TestTokenSchema = z.object({
+  accessToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  tokenType: z.literal('Bearer'),
+  expiresAt: ResponseTimestampSchema,
+  user: UserSchema,
+});
 export const VerificationInputSchema = z.object({ isVerified: z.boolean() }).strict();
+export const FollowInputSchema = z.object({ notifyNewPosts: z.boolean() }).strict();
+export const FollowStatusSchema = z.object({ following: z.boolean(), notifyNewPosts: z.boolean() });
+export type TFollowInput = z.infer<typeof FollowInputSchema>;
+export type TFollowStatus = z.infer<typeof FollowStatusSchema>;
 export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
 export const PublicProfileSchema = z.object({
@@ -120,6 +132,7 @@ export const PostSchema = z.object({
   category: CategorySchema,
   author: AuthorSchema,
   gameProfile: GameProfileSchema.nullable(),
+  viewCount: ResponseCountSchema,
   answerCount: ResponseCountSchema,
   helpfulCount: ResponseCountSchema,
   createdAt: ResponseTimestampSchema,
@@ -145,7 +158,7 @@ export const CommentSchema = z.object({
 });
 export const NotificationSchema = z.object({
   id: ResponseIdSchema,
-  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT']),
+  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'FOLLOWED_POST']),
   postId: ResponseIdSchema,
   answerId: ResponseIdSchema.nullable(),
   message: z.string().min(1),
@@ -161,6 +174,8 @@ export const PostDetailSchema = z.object({
   answers: z.array(AnswerSchema),
   comments: z.array(CommentSchema),
 });
+export const PostViewInputSchema = z.object({ visitorId: z.uuid() }).strict();
+export const PostViewSchema = z.object({ viewCount: ResponseCountSchema });
 export const AdminReportSchema = z.object({
   targetPostId: ResponseIdSchema.nullable().optional(),
   targetPreview: z.string().nullable().optional(),
@@ -180,6 +195,7 @@ export const NotificationListSchema = z.object({
   nextCursor: z.string().min(1).nullable(),
 });
 export const SessionSchema = z.object({
+  socialProviders: z.array(z.object({ provider: SocialProviderSchema, configured: z.boolean() })).optional(),
   user: UserSchema.nullable(),
   demoMode: z.boolean(),
   googleConfigured: z.boolean(),
@@ -287,7 +303,7 @@ export const ReportInputSchema = z
   .object({
     targetType: z.enum(['POST', 'ANSWER', 'COMMENT', 'USER']),
     targetId: z.string().min(1),
-    reason: z.enum(['SPAM', 'HARASSMENT', 'PERSONAL_INFORMATION', 'IMPERSONATION', 'OTHER']),
+    reason: z.enum(['SPAM', 'HARASSMENT', 'PERSONAL_INFORMATION', 'IMPERSONATION', 'FRAUD', 'OTHER']),
     detail: z.string().trim().max(1000).optional(),
   })
   .strict();
@@ -410,7 +426,7 @@ export const schemas = {
   HideInput: HideInputSchema,
 };
 export type OperationSpec = {
-  method: 'get' | 'post' | 'patch' | 'delete';
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete';
   path: string;
   id: string;
   response: z.ZodType;
@@ -472,6 +488,13 @@ export const operations: OperationSpec[] = [
     response: SessionSchema,
   },
   { method: 'get', path: '/api/auth/test-accounts', id: 'listTestAccounts', response: TestAccountListSchema },
+  {
+    method: 'post',
+    path: '/api/auth/test-token',
+    id: 'issueTestToken',
+    body: TestLoginInputSchema,
+    response: TestTokenSchema,
+  },
   {
     method: 'post',
     path: '/api/auth/test-login',
@@ -586,6 +609,13 @@ export const operations: OperationSpec[] = [
   { method: 'post', path: '/api/posts/{id}/read', id: 'readAnswers', response: OkSchema },
   {
     method: 'post',
+    path: '/api/posts/{id}/views',
+    id: 'recordPostView',
+    body: PostViewInputSchema,
+    response: PostViewSchema,
+  },
+  {
+    method: 'post',
     path: '/api/posts/{id}/comments',
     id: 'createComment',
     body: CommentInputSchema,
@@ -629,6 +659,15 @@ export const operations: OperationSpec[] = [
   { method: 'post', path: '/api/notifications/read-all', id: 'readAllNotifications', response: OkSchema },
   { method: 'post', path: '/api/reports', id: 'createReport', body: ReportInputSchema, response: OkSchema },
   { method: 'get', path: '/api/blocks', id: 'listBlocks', response: z.array(AuthorSchema) },
+  { method: 'get', path: '/api/users/{id}/follow', id: 'getUserFollow', response: FollowStatusSchema },
+  {
+    method: 'put',
+    path: '/api/users/{id}/follow',
+    id: 'followUser',
+    body: FollowInputSchema,
+    response: FollowStatusSchema,
+  },
+  { method: 'delete', path: '/api/users/{id}/follow', id: 'unfollowUser', response: OkSchema },
   { method: 'post', path: '/api/blocks', id: 'blockUser', body: BlockInputSchema, response: OkSchema },
   { method: 'delete', path: '/api/blocks/{id}', id: 'unblockUser', response: OkSchema },
   {

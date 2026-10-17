@@ -2,6 +2,7 @@ export type RequestIdentity = { ip: string; userId?: string | null; path: string
 const authAttempts = new Set([
   '/api/auth/demo',
   '/api/auth/test-login',
+  '/api/auth/test-token',
   '/api/auth/onboard',
   '/api/auth/google',
   '/api/auth/google/callback',
@@ -10,7 +11,8 @@ const authAttempts = new Set([
 
 export function requestRateBucket(request: RequestIdentity): { key: string; limit: number } {
   const path = request.path.replace(/\/+$/, '');
-  if (authAttempts.has(path)) return { key: `auth:ip:${request.ip}`, limit: 30 };
+  if (authAttempts.has(path) || path.startsWith('/api/auth/social/'))
+    return { key: `auth:ip:${request.ip}`, limit: 30 };
   const action = ['GET', 'HEAD', 'OPTIONS'].includes(request.method) ? 'read' : 'write';
   const identity = request.userId ? `user:${request.userId}` : `ip:${request.ip}`;
   if (

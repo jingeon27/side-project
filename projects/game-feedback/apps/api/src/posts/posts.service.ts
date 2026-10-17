@@ -137,6 +137,30 @@ export class PostsService {
         include: postInclude,
       });
       await this.media.sync(tx, u.id, created.id, input.document);
+      // Serialize delivery with notification preference changes and block cleanup.
+      const subscriptions = await tx.$queryRaw<
+        Array<{ followerId: string }>
+      >`SELECT "followerId" FROM "UserFollow" WHERE "followingId" = ${u.id} AND "notifyNewPosts" = true ORDER BY "followerId" FOR UPDATE`;
+      const excluded = await this.visibility.excluded(req);
+      const followers = await tx.userFollow.findMany({
+        where: {
+          followingId: u.id,
+          notifyNewPosts: true,
+          followerId: { in: subscriptions.map(({ followerId }) => followerId), notIn: excluded },
+          follower: { bannedAt: null },
+        },
+        select: { followerId: true },
+      });
+      if (followers.length)
+        await tx.notification.createMany({
+          data: followers.map(({ followerId }) => ({
+            userId: followerId,
+            actorId: u.id,
+            postId: created.id,
+            type: 'FOLLOWED_POST',
+            message: `${u.nickname}: ${created.title}`,
+          })),
+        });
       return created;
     });
     return responsePost(p);

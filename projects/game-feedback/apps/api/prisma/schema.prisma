@@ -36,6 +36,27 @@ model User {
   postMedia PostMedia[]
   supportRequests SupportConversation[] @relation("supportRequester")
   assignedSupport SupportConversation[] @relation("supportAdmin")
+  following UserFollow[] @relation("followFollower")
+  followers UserFollow[] @relation("followAuthor")
+  socialIdentities SocialIdentity[]
+}
+model SocialIdentity {
+  provider String
+  subject String
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([provider,subject])
+  @@unique([userId,provider])
+}
+model UserFollow {
+  followerId String
+  follower User @relation("followFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following User @relation("followAuthor", fields: [followingId], references: [id], onDelete: Cascade)
+  notifyNewPosts Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@id([followerId,followingId])
+  @@index([followingId,notifyNewPosts])
 }
 model Session {
   id String @id @default(cuid())
@@ -43,11 +64,13 @@ model Session {
   userId String?
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   pendingSubject String?
+  pendingProvider String?
   expiresAt DateTime
   createdAt DateTime @default(now())
   @@index([expiresAt])
 }
 model OAuthAttempt {
+  provider String @default("google")
   appChallenge String?
   stateHash String @id
   nonce String
@@ -55,6 +78,7 @@ model OAuthAttempt {
   expiresAt DateTime
 }
 model AppLoginTicket {
+  provider String @default("google")
   codeHash String @id
   challenge String
   subject String
@@ -91,6 +115,7 @@ model Post {
   coaching Json?
   friendSale Json?
   hidden Boolean @default(false)
+  viewCount Int @default(0)
   deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -98,9 +123,17 @@ model Post {
   comments Comment[]
   notifications Notification[]
   media PostMedia[]
+  views PostView[]
   @@index([createdAt,id])
   @@index([categoryId,createdAt])
   @@index([board,createdAt,id])
+}
+model PostView {
+  postId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  visitorHash String
+  lastViewedAt DateTime @default(now())
+  @@id([postId,visitorHash])
 }
 model Answer {
   id String @id @default(cuid())

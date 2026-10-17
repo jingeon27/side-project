@@ -14,7 +14,7 @@ corepack yarn workspace @game-feedback/api test src/community.integration.test.t
 
 API 명령은 계약 빌드 → 전용 Prisma 생성 → 소유 테스트 PostgreSQL 시작 → Vitest 실행을 준비한다. 별도 환경변수 없이 전용 loopback 55444의 `game_feedback_test`를 사용하며 각 통합 테스트가 고유 `gf_test_` 스키마에 Migration을 적용하고 종료 후 해당 스키마만 정리한다. DB를 준비하지 못하면 실패하며 통합 테스트를 건너뛴 성공으로 처리하지 않는다. Vitest를 직접 호출하며 TEST_DATABASE_URL을 누락한 경우도 설정 단계에서 실패한다.
 
-개발 DB 55442는 사용하지 않는다. 외부 Google/Supercell 인증정보를 비우고 가짜 제공자로 검증한다. 로그인·Origin/권한·글/댓글/답변·채팅/SSE/미디어·테스트 계정/인증·모바일 인증 인계와 친추판매/코칭 메타데이터를 검사한다. 개발 서버에서 외부 API를 실제 검증한 결과와 구분한다.
+개발 DB 55442는 사용하지 않는다. 외부 X·카카오·Discord·Google/Supercell 인증정보를 비우고 가짜 제공자로 검증한다. 로그인·Origin/권한·글/댓글/답변·채팅/SSE/미디어·테스트 계정/인증·모바일 인증 인계와 친추판매/코칭 메타데이터를 검사한다. 개발 서버에서 외부 API를 실제 검증한 결과와 구분한다.
 
 루트 `yarn workspace @side/game-feedback test`와 CI도 같은 API 명령을 호출한다. 테스트 DB는 재사용할 수 있도록 유지되며 작업 후 소유 DB만 종료한다.
 
@@ -33,3 +33,5 @@ corepack yarn workspace @side/game-feedback db:test:stop
 - USER 신고는 기존 POST /api/reports를 사용한다. 관리자만 GET /api/admin/users/:id, PATCH /api/admin/users/:id/ban, PATCH /api/admin/reports/:id와 기존 인증/숨김 API를 사용할 수 있다. 밴은 기존 세션의 일반 활동에도 적용하되 관리자 문의는 유지한다. 변경 사유와 조치는 AuditLog에 기록한다.
 
 Migration 202610170009는 이 API 전용 DB에 제재 필드와 PostMedia/SupportConversation을 추가한다. 원래 사용자/게시글은 삭제하지 않는다. 공개 운영의 파일 저장소/백업/악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
+
+서버 테스트 계정은 명시적 `dev:test` 또는 `GF_TEST_AUTH_ENABLED=true`에서 `POST /api/auth/test-token`으로 발급한다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.

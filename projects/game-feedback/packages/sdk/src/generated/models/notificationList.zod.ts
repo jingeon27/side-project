@@ -23,7 +23,7 @@ export const notificationListUnreadCountMax = 9007199254740991;
 export const NotificationList = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string().min(1).max(notificationListItemsItemIdMax),
-  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT']),
+  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'FOLLOWED_POST']),
   "postId": zod.string().min(1).max(notificationListItemsItemPostIdMax),
   "answerId": zod.union([zod.string().min(1).max(notificationListItemsItemAnswerIdOneMax),zod.null()]),
   "message": zod.string().min(1),

@@ -6,6 +6,7 @@ import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
 import { authorDto, authorSelect } from '../users/user.presenter';
+import { lockUserRelationship } from '../common/relationship-lock';
 
 @Injectable()
 export class BlocksService {
@@ -26,21 +27,30 @@ export class BlocksService {
       throw new ApiError(400, 'CANNOT_BLOCK_SELF', '자신은 차단할 수 없습니다.');
     if (!(await this.db.user.findUnique({ where: { id: input.blockedUserId } })))
       throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
-    await this.db.$transaction([
-      this.db.block.upsert({
+    await this.db.$transaction(async (tx) => {
+      await lockUserRelationship(tx, u.id, input.blockedUserId);
+      await tx.block.upsert({
         where: { userId_blockedUserId: { userId: u.id, blockedUserId: input.blockedUserId } },
         update: {},
         create: { userId: u.id, ...input },
-      }),
-      this.db.notification.deleteMany({
+      });
+      await tx.userFollow.deleteMany({
+        where: {
+          OR: [
+            { followerId: u.id, followingId: input.blockedUserId },
+            { followerId: input.blockedUserId, followingId: u.id },
+          ],
+        },
+      });
+      await tx.notification.deleteMany({
         where: {
           OR: [
             { userId: u.id, actorId: input.blockedUserId },
             { userId: input.blockedUserId, actorId: u.id },
           ],
         },
-      }),
-    ]);
+      });
+    });
     return { ok: true };
   }
   async unblock(req: SessionRequest, id: string) {

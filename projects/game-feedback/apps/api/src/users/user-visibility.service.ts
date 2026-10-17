@@ -10,9 +10,10 @@ export class UserVisibilityService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
   async excluded(req: SessionRequest) {
-    const demoAuthors = this.config.demoMode
-      ? []
-      : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
+    const demoAuthors =
+      this.config.demoMode || this.config.testAuthEnabled
+        ? []
+        : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
     const excluded = demoAuthors.map((user) => user.id);
     const u = req.gfSession?.user;
     if (!u) return excluded;

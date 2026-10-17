@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';
+import { seedCommunityPosts } from './testing/community-fixtures';
 
 export const TEST_ACCOUNT_FIXTURES = [
   {
@@ -129,6 +130,11 @@ export async function seed(db: PrismaClient, demoMode = false) {
       },
     });
   const coach = authors[3];
+  await seedCommunityPosts(
+    db,
+    category.id,
+    authors.map((author) => author.id),
+  );
   await db.answer.upsert({
     where: { id: 'sample-answer-0' },
     update: {},
@@ -212,7 +218,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
 }
 if (require.main === module) {
   const db = new PrismaClient({ datasources: { db: { url: assertDatabaseUrl(process.env.DATABASE_URL) } } });
-  seed(db, process.env.GF_DEMO_MODE === 'true')
+  seed(db, process.env.GF_DEMO_MODE === 'true' || process.env.GF_TEST_AUTH_ENABLED === 'true')
     .then(() => console.log('Game Feedback seed complete (existing content preserved).'))
     .finally(() => db.$disconnect())
     .catch((error) => {

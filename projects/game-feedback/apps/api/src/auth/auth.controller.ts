@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AppAuthService } from './app-auth.service';
 import { AuthService } from './auth.service';
@@ -38,6 +38,22 @@ export class AuthController {
   @Get('auth/google')
   google(@Req() req: Request, @Res() res: Response) {
     return this.auth.google(req, res);
+  }
+
+  @Get('auth/social/:provider')
+  social(@Req() req: Request, @Res() res: Response, @Param('provider') provider: string) {
+    return this.auth.social(req, res, provider);
+  }
+
+  @Get('auth/social/:provider/callback')
+  socialCallback(@Req() req: SessionRequest, @Res() res: Response, @Param('provider') provider: string) {
+    return this.auth.socialCallback(req, res, provider);
+  }
+
+  @Post('auth/test-token')
+  @HttpCode(200)
+  testToken(@Req() req: SessionRequest, @Res({ passthrough: true }) res: Response, @Body() body: unknown) {
+    return this.auth.testToken(req, res, body);
   }
 
   @Get('auth/google/callback')

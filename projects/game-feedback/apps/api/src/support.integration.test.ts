@@ -153,8 +153,8 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     const report = {
       targetType: 'USER',
       targetId: id,
-      reason: 'HARASSMENT',
-      detail: '테스트 사용자 신고 검토',
+      reason: 'FRAUD',
+      detail: '입금 후 약속한 코칭을 제공하지 않고 연락 두절',
     };
     await peer.post('/api/reports').set('Origin', origin).send(report).expect(200);
     await peer.post('/api/reports').set('Origin', origin).send(report).expect(200);
@@ -162,7 +162,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     await author.post('/api/reports').set('Origin', origin).send(report).expect(400);
     const reports = (await admin.get('/api/admin/reports').expect(200)).body;
     const received = reports.find((row: { targetId: string }) => row.targetId === id);
-    expect(received.targetUserId).toBe(id);
+    expect(received).toMatchObject({ targetUserId: id, reason: report.reason, detail: report.detail });
     await peer
       .patch(`/api/admin/reports/${received.id}`)
       .set('Origin', origin)

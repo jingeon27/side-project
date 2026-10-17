@@ -5,11 +5,11 @@ export class DemoProfileProvider implements ProfileProvider {
   async lookup(playerTag: string): Promise<GameProfile> {
     return {
       playerTag,
-      name: '샘플 플레이어',
+      name: playerTag === '#9QY' ? '덱연구소' : '새벽의호그',
       trophies: 6850,
       bestTrophies: 7023,
       arena: '고요의 성역',
-      clan: '샘플 클랜',
+      clan: '로얄메이트',
       deck: [
         '호그 라이더',
         '머스킷병',

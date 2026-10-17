@@ -3,7 +3,11 @@ import { spawn } from 'node:child_process';
 import { assertNode, environment, rootDir } from './env.mjs';
 
 const demo = process.argv.includes('--demo');
-const env = environment({ GF_DEMO_MODE: demo ? 'true' : 'false' });
+const testAuth = process.argv.includes('--test-auth');
+const env = environment({
+  GF_DEMO_MODE: demo ? 'true' : 'false',
+  GF_TEST_AUTH_ENABLED: testAuth ? 'true' : 'false',
+});
 const children = new Set();
 let stopping = false;
 
@@ -60,6 +64,7 @@ try {
   await Promise.all([assertPortFree(3300), assertPortFree(4300)]);
   // Propagate explicit demo mode before importing setup's environment snapshot.
   process.env.GF_DEMO_MODE = env.GF_DEMO_MODE;
+  process.env.GF_TEST_AUTH_ENABLED = env.GF_TEST_AUTH_ENABLED;
   const { setup } = await import('./tasks.mjs');
   await setup();
   if (!stopping) {

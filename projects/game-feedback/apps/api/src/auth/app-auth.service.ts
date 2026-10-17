@@ -1,25 +1,27 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type { Response } from 'express';
-import { AppExchangeInputSchema } from '@game-feedback/contracts';
+import { AppExchangeInputSchema, SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import { PrismaClient } from '../generated/prisma';
 import { hash, token } from '../common/crypto';
 import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 import type { SessionRequest } from './session.types';
 import { SessionService } from './session.service';
+import { SocialIdentityService } from './social-identity.service';
 
 @Injectable()
 export class AppAuthService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
   ) {}
-  async issueTicket(subject: string, challenge: string) {
+  async issueTicket(subject: string, challenge: string, provider: TSocialProvider = 'google') {
     const code = token();
     await this.db.appLoginTicket.deleteMany({ where: { expiresAt: { lte: new Date() } } });
     await this.db.appLoginTicket.create({
-      data: { codeHash: hash(code), challenge, subject, expiresAt: new Date(Date.now() + 120_000) },
+      data: { codeHash: hash(code), challenge, subject, provider, expiresAt: new Date(Date.now() + 120_000) },
     });
     return code;
   }
@@ -34,8 +36,9 @@ export class AppAuthService {
       where: { codeHash, challenge, expiresAt: { gt: new Date() } },
     });
     if (consumed.count !== 1) throw new ApiError(400, 'APP_LOGIN_INVALID', '이미 사용된 로그인 요청입니다.');
-    const user = await this.db.user.findUnique({ where: { googleSubject: ticket.subject } });
-    await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : ticket.subject);
+    const provider = parse(SocialProviderSchema, ticket.provider);
+    const user = await this.identities.findUser(provider, ticket.subject);
+    await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : ticket.subject, { provider });
     return this.sessions.session(req);
   }
 }

@@ -26,6 +26,14 @@ function respond(payload: unknown, status = 200) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('generated REST client response validation', () => {
+  it.each([undefined, -1, '1'])(
+    'rejects an invalid view count without inventing a counter: %s',
+    async (viewCount) => {
+      const fixture = postFixture();
+      respond({ ...fixture, post: { ...fixture.post, viewCount } });
+      await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
+    },
+  );
   it('uploads multipart data with session credentials and validates media metadata', async () => {
     const attachment = {
       id: 'attachment-1',

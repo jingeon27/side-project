@@ -60,6 +60,9 @@ export const postDetailPostGameProfileOneDeckItemLevelMin = 0;
 export const postDetailPostGameProfileOneDeckItemLevelMax = 9007199254740991;
 
 export const postDetailPostGameProfileOneFetchedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const postDetailPostViewCountMin = 0;
+export const postDetailPostViewCountMax = 9007199254740991;
+
 export const postDetailPostAnswerCountMin = 0;
 export const postDetailPostAnswerCountMax = 9007199254740991;
 
@@ -163,6 +166,7 @@ export const PostDetail = zod.object({
   "source": zod.enum(['SUPERCELL', 'DEMO']),
   "fetchedAt": zod.iso.datetime({"offset":true}).regex(postDetailPostGameProfileOneFetchedAtRegExp)
 }),zod.null()]),
+  "viewCount": zod.int().min(postDetailPostViewCountMin).max(postDetailPostViewCountMax),
   "answerCount": zod.int().min(postDetailPostAnswerCountMin).max(postDetailPostAnswerCountMax),
   "helpfulCount": zod.int().min(postDetailPostHelpfulCountMin).max(postDetailPostHelpfulCountMax),
   "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailPostCreatedAtRegExp),

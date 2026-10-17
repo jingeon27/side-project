@@ -17,7 +17,10 @@ import {
   Comment,
   Conversation,
   ConversationList,
+  FollowUser200,
   GameProfile,
+  GetUserFollow200,
+  IssueTestToken200,
   ListBlocks200Item,
   ListCategories200Item,
   ListGameAccounts200Item,
@@ -30,6 +33,7 @@ import {
   PostList,
   PostMedia,
   PublicProfile,
+  RecordPostView200,
   Session,
   SupportThread,
   TestAccountList,
@@ -47,6 +51,7 @@ import type {
   CommentInput,
   ConversationInput,
   DemoInput,
+  FollowUserBody,
   GameAccountInput,
   HelpfulInput,
   HideInput,
@@ -58,6 +63,7 @@ import type {
   PostInput,
   PostMediaUpload,
   PostPatch,
+  RecordPostViewBody,
   ReportInput,
   ReportReviewInput,
   SupportInput,
@@ -380,6 +386,42 @@ export const listTestAccounts = async ( options?: Parameters<typeof apiFetch>[1]
 
     ,
     schema: TestAccountList
+  }
+);}
+
+
+
+export const getIssueTestTokenUrl = () => {
+
+
+
+
+  return `/api/auth/test-token`
+}
+
+export const issueTestToken = async (testLoginInput: TestLoginInput, options?: Parameters<typeof apiFetch>[1]): Promise<IssueTestToken200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<IssueTestToken200>(getIssueTestTokenUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(testLoginInput),
+    schema: IssueTestToken200
   }
 );}
 
@@ -1219,6 +1261,43 @@ export const readAnswers = async (id: string, options?: Parameters<typeof apiFet
 
 
 
+export const getRecordPostViewUrl = (id: string,) => {
+
+
+
+
+  return `/api/posts/${id}/views`
+}
+
+export const recordPostView = async (id: string,
+    recordPostViewBody: RecordPostViewBody, options?: Parameters<typeof apiFetch>[1]): Promise<RecordPostView200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<RecordPostView200>(getRecordPostViewUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recordPostViewBody),
+    schema: RecordPostView200
+  }
+);}
+
+
+
 export const getCreateCommentUrl = (id: string,) => {
 
 
@@ -1556,6 +1635,87 @@ return apiFetch<Ok>(getBlockUserUrl(),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(blockInput),
+    schema: Ok
+  }
+);}
+
+
+
+export const getGetUserFollowUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/follow`
+}
+
+export const getUserFollow = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<GetUserFollow200> => {
+
+  return apiFetch<GetUserFollow200>(getGetUserFollowUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: GetUserFollow200
+  }
+);}
+
+
+
+export const getFollowUserUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/follow`
+}
+
+export const followUser = async (id: string,
+    followUserBody: FollowUserBody, options?: Parameters<typeof apiFetch>[1]): Promise<FollowUser200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<FollowUser200>(getFollowUserUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(followUserBody),
+    schema: FollowUser200
+  }
+);}
+
+
+
+export const getUnfollowUserUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/follow`
+}
+
+export const unfollowUser = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+  return apiFetch<Ok>(getUnfollowUserUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+    ,
     schema: Ok
   }
 );}

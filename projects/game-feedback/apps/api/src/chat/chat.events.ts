@@ -26,7 +26,7 @@ export class ChatEvents implements OnModuleDestroy {
       !!session?.user &&
       session.userId === client.userId &&
       session.expiresAt.getTime() > Date.now() &&
-      (this.config.demoMode || !session.user.demoKey)
+      (this.config.demoMode || this.config.testAuthEnabled || !session.user.demoKey)
     );
   }
   stream(req: SessionRequest): Observable<MessageEvent> {

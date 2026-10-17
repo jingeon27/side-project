@@ -35,6 +35,7 @@ export function postFixture(): PostDetail {
   const author = authorFixture();
   return {
     post: {
+      viewCount: 0,
       id: 'post-1',
       title: '호그 운영 질문입니다',
       body: '수비 이후 호그를 보내는 타이밍에 관해 알려주세요.',

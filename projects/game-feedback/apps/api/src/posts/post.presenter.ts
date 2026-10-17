@@ -20,6 +20,7 @@ export const responsePost = (p: PostRecord) => ({
   category: p.category,
   author: authorDto(p.author),
   gameProfile: p.gameProfile,
+  viewCount: p.viewCount,
   answerCount: p.answers.length,
   helpfulCount: p.answers.filter((a) => a.helpful).length,
   createdAt: p.createdAt.toISOString(),

@@ -28,6 +28,7 @@ export {
   deleteAnswer,
   markHelpful,
   readAnswers,
+  recordPostView,
   createComment,
   updateComment,
   deleteComment,
@@ -54,5 +55,9 @@ export {
   readConversation,
   listTestAccounts,
   testAccountLogin,
+  issueTestToken,
+  getUserFollow,
+  followUser,
+  unfollowUser,
   setUserVerification,
 } from './generated/client';

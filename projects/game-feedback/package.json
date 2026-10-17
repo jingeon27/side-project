@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:demo": "node scripts/dev.mjs --demo",
+    "dev:test": "node scripts/dev.mjs --test-auth",
     "setup": "node scripts/tasks.mjs setup",
     "db:start": "node scripts/db.mjs start",
     "db:stop": "node scripts/db.mjs stop",

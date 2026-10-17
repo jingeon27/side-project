@@ -18,7 +18,7 @@ export const notificationCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|
 
 export const Notification = zod.object({
   "id": zod.string().min(1).max(notificationIdMax),
-  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT']),
+  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'FOLLOWED_POST']),
   "postId": zod.string().min(1).max(notificationPostIdMax),
   "answerId": zod.union([zod.string().min(1).max(notificationAnswerIdOneMax),zod.null()]),
   "message": zod.string().min(1),
