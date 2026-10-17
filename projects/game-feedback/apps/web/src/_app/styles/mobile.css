@@ -88,16 +88,10 @@
       font-weight: 700;
     }
 
-    .feed-heading,
-    .feed-controls,
     .settings-profile,
     .section-title-row {
       flex-wrap: wrap;
       gap: 12px;
-    }
-    .feed-tabs {
-      gap: 16px;
-      flex-wrap: wrap;
     }
     .feed-tabs > button {
       min-height: 44px;

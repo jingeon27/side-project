@@ -48,14 +48,12 @@ export function BoardsPage({ locale, slug, game }: IBoardsPageProps) {
   return (
     <section className="board-page">
       <div className="page-heading board-heading">
-        <div>
-          <h1>{t(board.name)}</h1>
-          <p>{t(board.description)}</p>
-        </div>
+        <h1>{t(board.name)}</h1>
         <Button variant="primary" size="md" type="button" onClick={handleCompose}>
           <Plus size={16} />
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
+        <p>{t(board.description)}</p>
       </div>
       <form
         className="board-search"

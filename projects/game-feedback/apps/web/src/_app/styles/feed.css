@@ -3,9 +3,10 @@
     margin-top: 0;
   }
   .feed-heading {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 16px;
     align-items: center;
-    justify-content: space-between;
     margin-bottom: 22px;
   }
   .feed-heading h1 {
@@ -35,12 +36,18 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-width: 0;
+    gap: 16px;
     border-bottom: 1px solid var(--color-line);
     margin-top: 13px;
   }
   .feed-tabs {
-    display: flex;
-    gap: 22px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .feed-tabs::-webkit-scrollbar {
+    display: none;
   }
   .feed-tabs > button {
     position: relative;
@@ -59,6 +66,8 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    flex-shrink: 0;
+    white-space: nowrap;
     font-size: var(--text-micro);
     color: var(--color-muted);
   }
@@ -120,7 +129,8 @@
     flex-wrap: wrap;
   }
   .feed-heading p {
-    margin-top: 6px;
+    grid-column: 1 / -1;
+    text-wrap: pretty;
   }
   .post-topline {
     display: flex;
@@ -403,9 +413,6 @@
     .feed-controls {
       margin-top: 9px;
     }
-    .feed-tabs {
-      gap: 22px;
-    }
     .feed-tabs > button {
       font-size: var(--text-caption);
     }
@@ -511,9 +518,6 @@
     }
     .post-bottom {
       min-height: 43px;
-    }
-    .feed-tabs {
-      gap: 18px;
     }
     .feed-tabs > button {
       font-size: var(--text-micro);

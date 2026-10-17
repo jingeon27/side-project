@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { activeGameBoard, gameBoards, gameBoardPath } from '@/features/board';
 import { categoryOptions } from '@/features/category';
 import { useI18n } from '@/shared/i18n';
+import { useActiveItemScroll } from '@/shared/model/scroll';
 import { TabLink } from '@/shared/navigation';
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import { GameIcon } from './GameIcon';
@@ -12,6 +13,7 @@ interface IGameBoardNavigationProps {
 }
 export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps) {
   const { t } = useI18n();
+  const scrollTabs = useActiveItemScroll();
   const categories = useQuery(categoryOptions());
   const selected = activeGameBoard(path);
   const route = resolveAppRoute(path);
@@ -23,7 +25,7 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
         <GameIcon slug={game.slug} />
         <strong>{game.name}</strong>
       </div>
-      <div className="board-tabs">
+      <div ref={scrollTabs} className="board-tabs">
         <TabLink href={appRoutes.feed(locale)} replace aria-current={!selected ? 'page' : undefined}>
           {t('전체 피드')}
         </TabLink>

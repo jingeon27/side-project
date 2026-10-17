@@ -555,6 +555,14 @@ Web 타입 검사와 Web/Mobile lint, Vitest 20개 파일 77개, Web production 
 
 Web 타입 검사와 lint, Vitest 20개 파일 77개가 통과했다. Playwright 5개가 통과했다(48.3초). 기존 필터 복귀/새로고침 검사를 400px에서 실행하고 Enter, 키보드로 지우기, 포커스 복귀와 다른 URL 필터 보존을 확인했다. 기존 320/390/768/1440px 반응형 검사도 통과했다. 별도 개발 화면 수동 확인은 Chromium 320/400/768/1440px와 WebKit 400px에서 한국어/영어/일본어 15개 조합을 사용했으며 입력/지우기/Enter/터치 영역, 가로 넘침과 pageerror 0개를 확인했다. E2E 개발 서버 로그에는 React use() 관련 경고가 1회 있었고 해당 사용자 흐름 검사는 통과했다. 실기기 검증과 이번 변경의 production build는 수행하지 않았다.
 
+## 가로 스크롤 탭과 제목 줄바꿈
+
+모바일 게임 분류 메뉴의 flex-wrap과 피드 필터의 줄바꿈 규칙을 제거했다. 탭은 한 줄에서 자연스러운 너비를 유지하고 영역 안에서 가로 스크롤한다. 스크롤바는 숨기며 44px 조작 영역과 피드 정렬 문구는 유지한다. 피드 필터는 공통 Base UI Tabs의 키보드/선택 상태를 그대로 사용한다. useActiveItemScroll은 정리 가능한 callback ref와 useCallback으로 연결하고 ResizeObserver/MutationObserver 및 focusin으로 직접 진입, 선택 변경, 화면 크기와 키보드 이동 시 항목을 보이게 한다. 내부 좌우 padding을 포함해 포커스/밑줄 여백을 확보하며 페이지의 세로 스크롤은 이동하지 않는다. 해제 시 observer와 이벤트를 정리하며 useRef나 별도 선택 상태를 추가하지 않았다.
+
+피드/분류 제목과 작성 버튼을 같은 줄에 두고 설명은 다음 줄에서 본문 전체 너비를 사용하도록 grid로 정리했다. 설명이 버튼에 눌려 짧게 끊기지 않으며 기본 어절 단위 줄바꿈과 text-wrap: pretty/balance를 사용한다. 공통 디자인 시스템, API/SDK/계약과 네이티브 서비스 코드는 변경하지 않았다.
+
+Web 타입 검사와 lint, Vitest 20개 파일 77개가 통과했다. Web E2E 첫 실행은 검색/반응형/탐색 등 7개 통과, 신규 탭 검사 1개는 일본어 마지막 탭의 약 0.3px 잘림으로 실패했다. 내부 padding까지 보이도록 보완한 후 분류 탐색, 가로 휠/키보드/직접 진입/크기 변경과 Quill, 공통 컨트롤 3개를 재실행해 모두 통과했다. Mobile host의 Android Chromium/iOS WebKit 탐색 10개도 통과했다(43.3초). Chromium 320/400/760/768/1440px와 WebKit 320/400px의 한국어/영어/일본어 21개 조합에서 한 줄 탭, 선택 항목 표시, 전체 너비 설명, 가로 넘침/pageerror 0개를 확인했다. 개발 API의 읽기 제한 429로 중단된 나머지 조합은 제한 시간이 지난 후 이어 확인했으며 제한 정책을 바꾸지 않았다. 최종 padding 조정 뒤 WebKit 6개 조합도 재확인했다. 이번 변경의 production build와 실기기 검증은 수행하지 않았다. 개발 데이터에 게시글/메시지를 추가하지 않았으며 소유 테스트 DB만 종료하고 Web 3300/API 4300 실행을 유지한다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.
