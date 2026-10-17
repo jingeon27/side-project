@@ -1,0 +1,16 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 110MB
+	}
+	handle_path /backend/* {
+		reverse_proxy api:4200
+	}
+	handle {
+		reverse_proxy web:3200
+	}
+}

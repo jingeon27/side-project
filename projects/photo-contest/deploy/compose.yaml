@@ -1,0 +1,131 @@
+name: photo-contest
+
+x-api-environment: &api-environment
+  NODE_ENV: production
+  API_HOST: 0.0.0.0
+  PORT: 4200
+  TRUST_PROXY_HOPS: 1
+  WEB_ORIGIN: ${WEB_ORIGIN:?Set WEB_ORIGIN}
+  DATABASE_URL: postgresql://photo_contest:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/photo_contest?schema=public
+  ENABLE_DEV_LOGIN: 'false'
+  ENABLE_TEST_API: 'false'
+  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+  STORAGE_DIR: /var/lib/photo-contest/media
+  S3_BUCKET: ${S3_BUCKET:-}
+  S3_ENDPOINT: ${S3_ENDPOINT:-}
+  S3_REGION: ${S3_REGION:-auto}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: photo_contest
+      POSTGRES_DB: photo_contest
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks: [data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+
+  migrate:
+    image: ${API_IMAGE:?Set API_IMAGE}
+    profiles: [tools]
+    environment: *api-environment
+    networks: [data]
+    command: ['node', '/app/node_modules/prisma/build/index.js', 'migrate', 'deploy']
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    image: ${API_IMAGE:?Set API_IMAGE}
+    restart: unless-stopped
+    init: true
+    environment: *api-environment
+    volumes:
+      - media:/var/lib/photo-contest/media
+    networks: [app, data]
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:4200/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+
+  web:
+    image: ${WEB_IMAGE:?Set WEB_IMAGE}
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3200
+      API_URL: http://api:4200
+      WEB_ORIGIN: ${WEB_ORIGIN:?Set WEB_ORIGIN}
+    networks: [app]
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3200/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 15s
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL}
+    ports:
+      - '${HTTP_PORT:-80}:80'
+      - '${HTTPS_PORT:-443}:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [app]
+    depends_on:
+      web: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:2019/config/']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+
+networks:
+  app:
+  data:
+    internal: true
+
+volumes:
+  pgdata:
+  media:
+  caddy_data:
+  caddy_config:
