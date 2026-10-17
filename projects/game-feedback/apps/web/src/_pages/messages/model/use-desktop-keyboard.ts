@@ -1,14 +1,18 @@
 import { useSyncExternalStore } from 'react';
+import { isNativeApp, NATIVE_BOOTSTRAP_EVENT } from '@/shared/native';
 
-const query = '(min-width: 761px) and (hover: hover) and (pointer: fine)';
+const query = '(hover: hover) and (pointer: fine)';
 function subscribe(listener: () => void) {
-  if (!window.matchMedia) return () => {};
-  const media = window.matchMedia(query);
-  media.addEventListener('change', listener);
-  return () => media.removeEventListener('change', listener);
+  const media = window.matchMedia?.(query);
+  media?.addEventListener('change', listener);
+  window.addEventListener(NATIVE_BOOTSTRAP_EVENT, listener);
+  return () => {
+    media?.removeEventListener('change', listener);
+    window.removeEventListener(NATIVE_BOOTSTRAP_EVENT, listener);
+  };
 }
 function snapshot() {
-  return typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
+  return !isNativeApp() && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
 }
 export function useDesktopKeyboard() {
   return useSyncExternalStore(subscribe, snapshot, () => false);

@@ -88,6 +88,7 @@ export function useChatComposer({
     )
       return;
     event.preventDefault();
+    if (event.repeat) return;
     void handleSubmit();
   }
 
