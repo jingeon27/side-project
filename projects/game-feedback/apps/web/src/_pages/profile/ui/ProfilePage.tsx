@@ -1,5 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
+import { formatDate } from '@/shared/lib/date';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
@@ -53,7 +54,7 @@ export function ProfilePage({
             <UserBadges author={author} />
             <p>
               {t('{date}부터 함께 플레이 중', {
-                date: new Date(joinedAt).toLocaleDateString(textLocale, { timeZone: 'Asia/Seoul' }),
+                date: formatDate(joinedAt, textLocale),
               })}
             </p>
           </div>

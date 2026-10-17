@@ -18,6 +18,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@side/design-system": "workspace:*",
     "@tanstack/react-query": "^5.90.0",
+    "dayjs": "1.11.18",
     "es-toolkit": "^1.52.0",
     "framer-motion": "14.3.0",
     "lucide-react": "^0.468.0",

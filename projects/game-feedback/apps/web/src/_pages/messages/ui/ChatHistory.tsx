@@ -2,6 +2,7 @@
 import { useI18n } from '@/shared/i18n';
 import { LoaderCircle, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { RefObject } from 'react';
+import { dateKey, formatDate } from '@/shared/lib/date';
 import type { ChatMessage, Conversation } from '@/shared/api';
 import { AnimatePresence, m, useMotionPreference } from '@/shared/motion';
 import { MessageBubble } from './MessageBubble';
@@ -56,7 +57,7 @@ export function ChatHistory({
           const previous = messages[index - 1];
           const newDay =
             !previous ||
-            new Date(previous.createdAt).toDateString() !== new Date(message.createdAt).toDateString();
+            dateKey(previous.createdAt) !== dateKey(message.createdAt);
           return (
             <m.div
               key={message.id}
@@ -66,7 +67,7 @@ export function ChatHistory({
               {newDay && (
                 <div className="chat-date">
                   <span>
-                    {new Date(message.createdAt).toLocaleDateString(textLocale, {
+                    {formatDate(message.createdAt, textLocale, {
                       month: 'long',
                       day: 'numeric',
                       weekday: 'short',

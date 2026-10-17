@@ -1,5 +1,6 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
+import { formatDate } from '@/shared/lib/date';
 import { Button } from '@side/design-system';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -88,9 +89,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
             <UserBadges author={session.user} />
             <p>
               {t('{date}부터 함께 플레이 중', {
-                date: new Date(session.user.createdAt).toLocaleDateString(textLocale, {
-                  timeZone: 'Asia/Seoul',
-                }),
+                date: formatDate(session.user.createdAt, textLocale),
               })}
             </p>
             <Link className="text-button" href={`/${locale}/users/${session.user.id}`}>
