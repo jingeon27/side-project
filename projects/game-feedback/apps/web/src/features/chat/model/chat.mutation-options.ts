@@ -5,6 +5,7 @@ import {
   startConversation,
   uploadAttachment,
   removeAttachment,
+  clearHistory,
 } from '../api/chat.api';
 import { chatMessageOptions, conversationScopeOptions } from './chat.options';
 import type { IChatMessageInput } from './chat.types';
@@ -53,6 +54,18 @@ export function removeChatAttachmentMutationOptions(userId: string, conversation
         if (error instanceof ApiError && error.errorCode === 'ATTACHMENT_NOT_FOUND') return { ok: true };
         throw error;
       }
+    },
+  });
+}
+
+export function clearChatHistoryMutationOptions(client: QueryClient, userId: string, conversationId: string) {
+  return mutationOptions({
+    mutationKey: ['chat', userId, conversationId, 'clear-history'],
+    mutationFn: (throughMessageId: string) => clearHistory(conversationId, throughMessageId),
+    onSuccess: async () => {
+      await client.cancelQueries(chatMessageOptions(userId, conversationId));
+      await client.resetQueries(chatMessageOptions(userId, conversationId));
+      await client.invalidateQueries(conversationScopeOptions(userId));
     },
   });
 }

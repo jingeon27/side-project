@@ -6,6 +6,7 @@ import {
   sendChatMessage,
   uploadChatAttachment,
   deleteChatAttachment,
+  clearChatHistory,
 } from '@game-feedback/sdk';
 import type { IChatMessageInput } from '../model/chat.types';
 
@@ -33,4 +34,8 @@ export function uploadAttachment(conversationId: string, file: File) {
 }
 export function removeAttachment(conversationId: string, attachmentId: string) {
   return deleteChatAttachment(conversationId, attachmentId, { keepalive: true });
+}
+
+export function clearHistory(conversationId: string, throughMessageId: string) {
+  return clearChatHistory(conversationId, { throughMessageId });
 }

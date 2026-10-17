@@ -2,6 +2,24 @@ import type { TLocale } from './locale';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '프로필 인증 안내': ['Profile verification', 'プロフィール認証のご案内'],
+  '프로필을 인증하고 신뢰를 더해보세요': [
+    'Build trust with a verified profile',
+    'プロフィール認証で信頼を高めましょう',
+  ],
+  '인증 없이도 글을 작성할 수 있어요. 관리자와 1:1 채팅으로 프로필 인증을 신청해보세요.': [
+    'You can post without verification. Request profile verification in a private chat with an administrator.',
+    '未認証でも投稿できます。管理者との1対1チャットでプロフィール認証を申請できます。',
+  ],
+  '프로필 인증 신청': ['Request verification', 'プロフィール認証を申請'],
+  '대화 메뉴': ['Conversation menu', 'チャットメニュー'],
+  '대화내역 삭제': ['Delete chat history', 'チャット履歴を削除'],
+  '대화내역을 삭제했어요.': ['Chat history deleted.', 'チャット履歴を削除しました。'],
+  '현재까지의 대화내역을 내 계정에서 삭제합니다. 상대방의 내역은 유지되며, 새 메시지는 다시 받을 수 있어요.':
+    [
+      'Delete the current chat history from your account. The other person keeps their history, and you can still receive new messages.',
+      '現在までの履歴を自分のアカウントから削除します。相手の履歴は残り、新しいメッセージは受信できます。',
+    ],
   '신고 대상 보기': ['View reported content', '通報対象を見る'],
   '글쓰기를 준비하고 있어요': ['Preparing the editor', '投稿の準備中'],
   '사진 삽입': ['Insert photo', '写真を挿入'],

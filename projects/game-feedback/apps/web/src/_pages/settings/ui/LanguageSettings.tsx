@@ -15,14 +15,16 @@ export function LanguageSettings() {
         {t('언어 설정')}
       </label>
       <LanguageSelect id="language-preference" />
-      <p className="muted small">
-        {preference === 'auto'
-          ? t('기기나 브라우저의 언어와 지역 설정을 사용합니다.')
-          : t('직접 선택한 언어를 이 브라우저와 앱에 저장합니다.')}
-      </p>
-      <p className="muted small">
-        {t('자동 선택 언어: {language}', { language: languageNames[automaticLocale] })}
-      </p>
+      <div className="settings-help">
+        <p className="muted small">
+          {preference === 'auto'
+            ? t('기기나 브라우저의 언어와 지역 설정을 사용합니다.')
+            : t('직접 선택한 언어를 이 브라우저와 앱에 저장합니다.')}
+        </p>
+        <p className="muted small">
+          {t('자동 선택 언어: {language}', { language: languageNames[automaticLocale] })}
+        </p>
+      </div>
     </section>
   );
 }

@@ -2,8 +2,7 @@
 import { Button } from '@side/design-system';
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
-import { openOverlay } from '@/shared/ui';
-import { ReportDialog } from './ReportDialog';
+import { openUserReport } from './open-user-report';
 export function ReportUserButton({ userId }: { userId: string }) {
   const { t } = useI18n();
   const { session, login } = useSession();
@@ -17,18 +16,7 @@ export function ReportUserButton({ userId }: { userId: string }) {
           login();
           return;
         }
-        openOverlay(({ isOpen, close, unmount }) => (
-          <ReportDialog
-            open={isOpen}
-            targetType="USER"
-            targetId={userId}
-            onOpenChange={(next) => {
-              if (next) return;
-              close();
-              unmount();
-            }}
-          />
-        ));
+        openUserReport(userId);
       }}
     >
       {t('사용자 신고')}

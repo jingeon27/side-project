@@ -14,6 +14,7 @@ for (const width of [320, 1440]) {
     await expect(page).toHaveURL('/ko/write');
     await expect(page.getByRole('banner')).toBeHidden();
     await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('complementary', { name: '프로필 인증 안내' })).toBeVisible();
     if (width <= 760) await expect(page.locator('.mobile-nav')).toBeHidden();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
     const form = page.getByRole('form', { name: '글쓰기', exact: true });
@@ -51,6 +52,7 @@ for (const width of [320, 1440]) {
       (url) => url.pathname === `/ko/posts/${post.id}` && url.searchParams.get('board') === 'free',
     );
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    await expect(page.getByRole('complementary', { name: '프로필 인증 안내' })).toBeVisible();
     await expect(page.getByRole('banner')).toBeVisible();
     await page.reload();
     await expect(page.locator('.prose-body')).toHaveText('안');

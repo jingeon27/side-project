@@ -4,6 +4,7 @@ import { Button } from '@side/design-system';
 import type { TBoardKind } from '@game-feedback/contracts';
 import { ArrowLeft } from 'lucide-react';
 import { useSession } from '@/features/auth';
+import { VerificationPrompt } from '@/widgets/support';
 import { PostComposerForm } from '@/widgets/post-composer';
 import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -53,13 +54,16 @@ function ComposeContent({ locale, categories, board, categoryId }: IPostComposeP
       </div>
     );
   return (
-    <PostComposerForm
-      key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}`}
-      categories={categories}
-      locale={locale}
-      board={board}
-      allowBoardSelection
-      initialCategoryId={categoryId}
-    />
+    <>
+      <VerificationPrompt />
+      <PostComposerForm
+        key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}`}
+        categories={categories}
+        locale={locale}
+        board={board}
+        allowBoardSelection
+        initialCategoryId={categoryId}
+      />
+    </>
   );
 }

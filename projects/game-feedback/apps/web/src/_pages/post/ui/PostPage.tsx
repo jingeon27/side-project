@@ -16,6 +16,7 @@ import { PostCommentsSection } from './PostCommentsSection';
 import { BackLink } from '@/shared/navigation';
 import { appRoutes } from '@game-feedback/bridge';
 import { boardByKind } from '@/features/board';
+import { VerificationPrompt } from '@/widgets/support';
 import { StartChatLink } from '@/widgets/start-chat';
 interface IPostPageProps {
   id: string;
@@ -89,6 +90,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
           }
         />
       </ServiceErrorBoundary>
+      {post.author.id === session.user?.id && <VerificationPrompt />}
       {!isFeedback && post.author.id !== session.user?.id && (
         <StartChatLink
           userId={post.author.id}

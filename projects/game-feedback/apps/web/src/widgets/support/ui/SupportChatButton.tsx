@@ -8,7 +8,13 @@ import { startSupportMutationOptions } from '@/features/support';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice } from '@/shared/ui';
 
-export function SupportChatButton({ topic = 'GENERAL' }: { topic?: 'GENERAL' | 'VERIFICATION' }) {
+export function SupportChatButton({
+  topic = 'GENERAL',
+  label,
+}: {
+  topic?: 'GENERAL' | 'VERIFICATION';
+  label?: string;
+}) {
   const { t, locale } = useI18n();
   const { session, login } = useSession();
   const client = useQueryClient();
@@ -33,7 +39,7 @@ export function SupportChatButton({ topic = 'GENERAL' }: { topic?: 'GENERAL' | '
           }
         }}
       >
-        {t(topic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자에게 문의하기')}
+        {label ?? t(topic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자에게 문의하기')}
       </Button>
       <ErrorNotice message={mutation.error?.message} />
     </div>

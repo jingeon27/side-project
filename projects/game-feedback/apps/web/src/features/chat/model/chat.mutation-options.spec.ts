@@ -1,11 +1,12 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { postChatMessage } from '../api/chat.api';
+import { clearHistory, postChatMessage } from '../api/chat.api';
 import { chatMessageOptions, conversationListOptions } from './chat.options';
-import { sendChatMessageMutationOptions } from './chat.mutation-options';
+import { clearChatHistoryMutationOptions, sendChatMessageMutationOptions } from './chat.mutation-options';
 import type { IChatMessageInput } from './chat.types';
 
 vi.mock('../api/chat.api', () => ({
+  clearHistory: vi.fn(),
   postChatMessage: vi.fn(),
   markConversationRead: vi.fn(),
   startConversation: vi.fn(),
@@ -57,4 +58,26 @@ describe('chat mutation options', () => {
     expect(client.getQueryState(inbox)?.isInvalidated).toBe(false);
     client.clear();
   });
+});
+
+it('removes cleared cached history only after a successful deletion and keeps other viewers and rooms', async () => {
+  const client = new QueryClient();
+  const current = chatMessageOptions('alice', 'room-1').queryKey;
+  const other = chatMessageOptions('alice', 'room-2').queryKey;
+  const peer = chatMessageOptions('bob', 'room-1').queryKey;
+  const inbox = conversationListOptions('alice').queryKey;
+  for (const key of [current, other, peer, inbox]) client.setQueryData(key, { pages: [], pageParams: [] });
+  vi.mocked(clearHistory).mockRejectedValueOnce(new Error('offline'));
+  const options = clearChatHistoryMutationOptions(client, 'alice', 'room-1');
+  await expect(client.getMutationCache().build(client, options).execute('cutoff')).rejects.toThrow('offline');
+  expect(client.getQueryData(current)).toBeDefined();
+  expect(client.getQueryState(inbox)?.isInvalidated).toBe(false);
+  vi.mocked(clearHistory).mockResolvedValue({ ok: true });
+  await client.getMutationCache().build(client, options).execute('cutoff');
+  expect(clearHistory).toHaveBeenLastCalledWith('room-1', 'cutoff');
+  expect(client.getQueryData(current)).toBeUndefined();
+  expect(client.getQueryData(other)).toBeDefined();
+  expect(client.getQueryData(peer)).toBeDefined();
+  expect(client.getQueryState(inbox)?.isInvalidated).toBe(true);
+  client.clear();
 });

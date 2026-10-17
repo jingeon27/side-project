@@ -1,13 +1,12 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowDown, ArrowLeft, ShieldBan } from 'lucide-react';
+import { ArrowDown, ArrowLeft } from 'lucide-react';
 import { chatMessageOptions } from '@/features/chat';
 import { UserBadges } from '@/features/user';
 import { Avatar } from '@/shared/ui';
 import { useChatConnection } from '@/widgets/chat-realtime';
-import { useChatBlock } from '../model/use-chat-block';
+import { ConversationActions } from './ConversationActions';
 import { useChatScroll } from '../model/use-chat-scroll';
 import { useVisibleRead } from '../model/use-visible-read';
 import { ChatComposer } from './ChatComposer';
@@ -45,7 +44,6 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
     visibleBoundary: scroll.visibleBoundary,
     unavailable,
   });
-  const { handleBlock } = useChatBlock({ userId, conversationId, locale });
 
   function handleLoadOlder() {
     scroll.handleCaptureHistory();
@@ -86,16 +84,13 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          type="button"
-          aria-label={t('차단')}
-          title={t('차단')}
-          onClick={() => handleBlock(conversation.peer)}
-        >
-          <ShieldBan size={18} />
-        </Button>
+        <ConversationActions
+          userId={userId}
+          conversationId={conversationId}
+          locale={locale}
+          peer={conversation.peer}
+          throughMessageId={conversation.lastMessage?.id}
+        />
       </header>
       <ChatHistory
         conversation={conversation}

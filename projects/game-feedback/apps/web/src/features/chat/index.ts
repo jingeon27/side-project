@@ -14,6 +14,7 @@ export { useChatRealtime } from './model/use-chat-realtime';
 export { removeAttachment as discardChatAttachment } from './api/chat.api';
 export type { TChatConnection, IChatMessageInput } from './model/chat.types';
 export {
+  clearChatHistoryMutationOptions,
   createConversationMutationOptions,
   sendChatMessageMutationOptions,
   readConversationMutationOptions,
