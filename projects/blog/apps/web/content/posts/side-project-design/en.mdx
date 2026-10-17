@@ -1,8 +1,8 @@
 I felt this was a good time to try building several services in parallel. Working with AI tools made me think I could handle areas beyond frontend development, including backend development, databases, and design, to the level each service needed.
 
-I began exploring ideas that interested me and decided to plan and work toward launching several services together. That led to a service for sharing photos and opinions, a game feedback service, and my personal blog.
+I began exploring ideas that interested me and decided to plan and work toward launching several services together. That led to [a photo-sharing service](https://github.com/jingeon27/side-project/tree/develop/projects/photo-contest), [a game feedback service](https://github.com/jingeon27/side-project/tree/f0e64fcc40baf01ca50cc2add07416cf5203e5f9/projects/game-feedback), and [my personal blog](https://github.com/jingeon27/side-project/tree/develop/projects/blog).
 
-I wanted to reduce the work of setting up a development environment each time I started another project. I organized the services separately within a monorepo and first shared TypeScript configuration. Coding rules and a design system followed as I worked out what to share and what belonged within each service.
+I wanted to reduce the work of setting up a development environment each time I started another project. I organized the services separately in the [side-project repository](https://github.com/jingeon27/side-project) and first shared TypeScript configuration. Coding rules and a design system followed as I worked out what to share and what belonged within each service.
 
 ## The first service was a private photo contest
 
@@ -36,13 +36,13 @@ I revised the design from the running screens too. I changed layouts that obscur
 
 As features grew, I organized the implementation conventions. Uploads used mutations to manage request state and failure handling together. Event handlers used only once stayed where they were used, while UI with a separate context, such as photo and video selection, became separate components.
 
-I moved custom ESLint rules into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
+I moved [custom ESLint rules](https://github.com/jingeon27/side-project/tree/develop/packages/eslint-config) into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
 
-When game feedback joined the repository, I also worked on a design system shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
+When game feedback joined the repository, I also worked on [a design system](https://github.com/jingeon27/side-project/tree/f0e64fcc40baf01ca50cc2add07416cf5203e5f9/packages/design-system) shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
 
 ## I separated develop from feature branches
 
-When starting game feedback, I created `develop` from `main` and kept `feat/game-feedback` as a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
+When starting game feedback, I created [develop](https://github.com/jingeon27/side-project/tree/develop) from `main` and kept `feat/game-feedback` as a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
 
 I worked on the game service and blog while continuing to revise the photo service. I implemented and checked changes on feature branches, then opened PRs targeting `develop`. The photo feed, login, shared lint work, and blog migration were integrated through that branch.
 
