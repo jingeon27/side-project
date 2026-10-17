@@ -25,7 +25,7 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
       />
     ))
     .otherwise((groups) => (
-      <div className="grid gap-4 tablet:grid-cols-2">
+      <div className="grid gap-4 tablet:grid-cols-2 desktop:grid-cols-1 wide:grid-cols-2">
         {groups.map((group) => (
           <GroupCard key={group.id} group={group} />
         ))}

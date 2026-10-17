@@ -20,12 +20,16 @@ export function MePageTemplate() {
           fallback={<Skeleton className="h-32 w-full" />}
         >
           {(_viewerId, viewerRef) => (
-            <div className="flex flex-col gap-8">
-              <MyProfile viewerRef={viewerRef} />
-              <MyGroupsSection />
-              <div className="border-t border-line pt-4">
-                <h2 className="text-label text-ink">서비스 안내</h2>
-                <LegalLinks />
+            <div className="mx-auto grid w-full max-w-5xl items-start gap-8 desktop:grid-cols-[240px_minmax(0,1fr)]">
+              <div className="contents desktop:sticky desktop:top-24 desktop:flex desktop:flex-col desktop:gap-6">
+                <MyProfile viewerRef={viewerRef} />
+                <div className="order-3 border-t border-line pt-4 desktop:border-0 desktop:pt-0">
+                  <h2 className="text-label text-ink">서비스 안내</h2>
+                  <LegalLinks />
+                </div>
+              </div>
+              <div className="order-2">
+                <MyGroupsSection />
               </div>
             </div>
           )}
