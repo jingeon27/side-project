@@ -709,3 +709,13 @@ Web Playwright 전체 72개 중 71개가 통과했다. 검사 도중 번역 파�
 Production Playwright 12개가 모두 통과했다. instant()로 다섯 분류와 400/1440px 피드의 제목·검색·작성 버튼 및 목록 스켈레톤을 확인했고, 가이드 본문/글 셸, no-JS 피드·다섯 분류·상세, 저장 테마/SEO/404와 관리자 HTML/RSC 차단도 검사했다. API build와 Mobile Android/iOS Metro export가 통과했다. 이 결과는 실제 외부 계정 로그인, Supercell 운영 API, 실기기/스토어 또는 공개 배포 검증이 아니다.
 
 일반 Web production build(.next/release-check)도 통과했다. 빌드 설정에서 cacheComponents/partialPrefetching=true, exposeTestingApiInProductionBuild=false를 확인했다. dev:test 재시작의 OpenAPI/Orval 재생성 후 SDK 추적 diff는 0개다. 로컬 400/1440px에서 네 소셜 로그인 버튼과 BottomSheet 하단 정렬, 가로 넘침 없음과 pageerror 0개를 확인했다. demoMode=false 상태에서 테스트 토큰 발급과 Bearer 보호 API 호출을 확인하고 발급한 세션을 로그아웃했다. 제공자 네 개 모두 현재 키 미설정 상태이며 실제 외부 로그인을 성공했다고 표시하지 않는다. 개발 Web 3300/API 4300은 실행한 채 유지하고 소유 테스트 DB는 데이터를 보존해 종료했다.
+
+## 테스트 토큰 모드의 채팅과 관리자 문의 수정
+
+dev:test로 전환한 뒤 ChatService의 수신자 선택/방 조회/대화 목록/읽지 않은 수와 SupportService의 관리자 선택에 demoMode만 검사하는 조건이 남아 테스트 계정을 거부했다. 현재 로컬 서버에서 플레이어 대화 생성과 문의 열기가 모두 404로 실패하는 것을 재현했다. testAuthEnabled도 같은 허용 조건으로 처리하고, 테스트 인증이 꺼진 일반 실행에서는 테스트 사용자/관리자를 계속 제외한다. 기존 문의를 재사용할 때도 같은 관리자 필터를 적용한다.
+
+이전 브라우저 테스트 서버는 demoMode=true를 강제해 dev:test 환경을 검사하지 못했다. 테스트 서버가 명시된 두 플래그를 읽게 하고, Web 소유 playwright.test-auth.config.ts와 test:test-auth 명령을 추가했다. 프로젝트 test:e2e/CI가 기존 데모 검사와 별도로 demoMode=false, testAuthEnabled=true의 세 시나리오를 실행한다. 프로필에서 플레이어 채팅 열기, 일반 관리자 문의, 프로필 인증 문의에서 양방향 메시지 수신과 목록/새로고침 보존을 확인한다. API 회귀는 방/메시지/읽지 않은 수, 비참여자/차단 접근과 테스트 인증 비활성 시의 비노출도 검사한다.
+
+API Vitest+Supertest 전체 94개와 새 모드의 Web Playwright 3개가 통과했다. API/Web 타입과 Web lint도 통과했고 현재 개발 서버에서도 두 대화 시작 API가 200으로 열리는 것을 확인했다. UI나 API 계약, Migration과 외부 로그인 설정은 변경하지 않았다.
+
+기존 데모 모드의 플레이어 실시간 채팅 회귀 1개도 통과했다. 실제 localhost:3300의 400px 화면에서 프로필 채팅/일반 문의/프로필 인증 문의 버튼을 각각 눌러 대화방과 메시지 입력창이 열리는 것을 확인했고 pageerror는 0개였다. 로컬 기존 글/메시지를 삭제하거나 검증용 메시지를 추가하지 않았다.

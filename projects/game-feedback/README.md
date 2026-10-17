@@ -109,17 +109,17 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 
 모든 명령은 저장소 루트에서 실행한다.
 
-| 명령 뒤의 작업                                                                   | 실행 내용                                                                     |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed       |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임          |
-| `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트 |
-| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 개발/프로덕션 프리패칭·Mobile Playwright 테스트         |
-| `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                   |
-| `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                       |
-| `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                    |
-| `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                |
-| `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                                   |
+| 명령 뒤의 작업                                                                   | 실행 내용                                                                         |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed           |
+| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임              |
+| `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트     |
+| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 데모/테스트 토큰/프로덕션 프리패칭·Mobile Playwright 테스트 |
+| `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                       |
+| `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
+| `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
+| `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
+| `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                                       |
 
 API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
 
@@ -180,3 +180,5 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 Game Feedback Web만 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
 `corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
+
+테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=true`인 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.

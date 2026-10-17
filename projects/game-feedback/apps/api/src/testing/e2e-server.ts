@@ -12,7 +12,8 @@ async function main() {
     throw new Error('E2E server must not use external provider credentials.');
   const app = await createApp({
     databaseUrl,
-    demoMode: true,
+    demoMode: process.env.GF_DEMO_MODE === 'true',
+    testAuthEnabled: process.env.GF_TEST_AUTH_ENABLED === 'true',
     rateLimit: false,
     profileProvider: new DemoProfileProvider(),
   });

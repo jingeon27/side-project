@@ -53,6 +53,7 @@ export async function runTask(task) {
     await local('db.mjs', ['start', '--test']);
     if (task === 'test:e2e') {
       await workspace('web', 'test:e2e');
+      await workspace('web', 'test:test-auth');
       await workspace('web', 'test:prefetch');
     }
     await workspace('mobile', 'test:e2e');
