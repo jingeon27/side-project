@@ -1,5 +1,42 @@
 import { test, expect } from '@playwright/test';
 
+test('desktop navigation has one entry per destination and keeps boards in the sidebar', async ({ page }) => {
+  const login = await page.request.post('/api/auth/test-login', {
+    headers: { Origin: 'http://127.0.0.1:3301' },
+    data: { accountId: 'sample-user-0' },
+  });
+  expect(login.ok()).toBe(true);
+  for (const width of [768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/ko');
+    const header = page.getByRole('banner');
+    const primary = page.getByRole('navigation', { name: '주 메뉴', exact: true });
+    await expect(header.getByRole('link', { name: '프로필', exact: true })).toBeVisible();
+    await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(3);
+    await expect(primary.getByRole('link')).toHaveCount(3);
+    await expect(page.getByRole('link', { name: '피드', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: '가이드', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: /^채팅(?: \d+개)?$/ })).toHaveCount(1);
+    const boards = page.getByRole('navigation', { name: '클래시로얄 게시판', exact: true });
+    await expect(boards).toHaveCount(1);
+    await primary.getByRole('link', { name: '가이드', exact: true }).click();
+    await expect(page).toHaveURL(/\/ko\/guide$/);
+    await expect(primary.getByRole('link', { name: '가이드', exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await header.getByRole('link', { name: '프로필', exact: true }).click();
+    await expect(page).toHaveURL(/\/ko\/settings$/);
+    await boards.getByRole('link', { name: '친선전 모집', exact: true }).click();
+    await expect(page).toHaveURL(/\/ko\/boards\/friendly$/);
+    await expect(boards.getByRole('link', { name: '친선전 모집', exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
 test('detail back and tab replacement restore the filtered feed without a tab history loop', async ({
   page,
 }) => {

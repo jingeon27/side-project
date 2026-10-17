@@ -22,12 +22,13 @@ test('mobile header and four tabs navigate in place and report their paths to th
     await expect(tabs.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
   }
   const header = page.getByRole('banner');
+  await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(2);
   await header.getByRole('link', { name: '언어 설정', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/settings#language$/);
   await expect(page.locator('#language-preference')).toBeInViewport();
   await header.getByRole('link', { name: '알림 0개', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/notifications');
-  await header.getByRole('link', { name: '설정', exact: true }).click();
+  await tabs.getByRole('link', { name: '프로필', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
   await tabs.getByRole('link', { name: '피드', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko');

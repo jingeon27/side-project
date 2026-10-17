@@ -33,15 +33,12 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(content.locator('strong')).toContainText(body);
     await editor.getByRole('button', { name: '게시글 등록', exact: true }).click();
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-    await expect(page.locator('.game-board-navigation a[aria-current="page"]')).toHaveAttribute(
+    await expect(page.locator('.left-sidebar .game-submenu a[aria-current="page"]')).toHaveAttribute(
       'href',
       `/ko/boards/${slug}`,
     );
     await expect(page.locator('.prose-body strong')).toContainText(body);
     if (slug === 'friend-sale') await expect(page.locator('.friend-sale-summary')).toContainText('12,000');
-    await expect(
-      page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '피드', exact: true }),
-    ).toHaveClass('active');
     const url = page.url();
     await page.goto(`/ko/boards/feedback?q=${encodeURIComponent(title)}`);
     await expect(page.getByText('아직 게시글이 없어요. 첫 글을 남겨보세요.', { exact: true })).toBeVisible();
@@ -90,9 +87,11 @@ test('every game contains five shared boards on desktop and mobile and retired b
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/ko');
-    const navigation = page.locator('.game-board-navigation');
-    await expect(navigation.getByRole('link')).toHaveText([
-      '전체 피드',
+    const desktop = width > 760;
+    const navigation = page.locator(desktop ? '.left-sidebar' : '.game-board-navigation');
+    const boards = navigation.locator(desktop ? '.game-submenu' : '.board-tabs');
+    await expect(boards.getByRole('link')).toHaveText([
+      ...(desktop ? [] : ['전체 피드']),
       '피드백',
       '친추판매',
       '친선전 모집',
@@ -107,22 +106,13 @@ test('every game contains five shared boards on desktop and mobile and retired b
       ['자유게시판', '/ko/boards/free'],
       ['전체 피드', '/ko'],
     ]) {
-      await navigation.getByRole('link', { name, exact: true }).click();
+      const link = navigation.getByRole('link', {
+        name: desktop && name === '전체 피드' ? '피드' : name,
+        exact: true,
+      });
+      await link.click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
-      await expect(navigation.getByRole('link', { name, exact: true })).toHaveAttribute(
-        'aria-current',
-        'page',
-      );
-    }
-    if (width === 1440) {
-      const sidebar = page.locator('.left-sidebar .game-submenu');
-      await expect(sidebar.getByRole('link')).toHaveText([
-        '피드백',
-        '친추판매',
-        '친선전 모집',
-        '게임코치',
-        '자유게시판',
-      ]);
+      await expect(link).toHaveAttribute('aria-current', 'page');
     }
     await expect(page.getByRole('link', { name: '계정 거래', exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
