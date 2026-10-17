@@ -730,7 +730,7 @@ export const ListPostsQueryParams = zod.object({
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
   "q": zod.string().optional(),
-  "board": zod.enum(['ALL', 'FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional()
+  "board": zod.enum(['ALL', 'FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional()
 })
 
 export const listPostsResponseItemsItemIdMax = 100;
@@ -787,7 +787,7 @@ export const ListPostsResponse = zod.object({
   "id": zod.string().min(1).max(listPostsResponseItemsItemIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(listPostsResponseItemsItemDocumentOneOpsItemInsertMax),
@@ -864,7 +864,7 @@ export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,1
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
   "body": zod.string().min(createPostBodyBodyMin).max(createPostBodyBodyMax),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertMax),
@@ -936,7 +936,7 @@ export const CreatePostResponse = zod.object({
   "id": zod.string().min(1).max(createPostResponseIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(createPostResponseDocumentOneOpsItemInsertMax),
@@ -1068,7 +1068,7 @@ export const GetPostResponse = zod.object({
   "id": zod.string().min(1).max(getPostResponsePostIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(getPostResponsePostDocumentOneOpsItemInsertMax),
@@ -1247,7 +1247,7 @@ export const UpdatePostResponse = zod.object({
   "id": zod.string().min(1).max(updatePostResponseIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(updatePostResponseDocumentOneOpsItemInsertMax),

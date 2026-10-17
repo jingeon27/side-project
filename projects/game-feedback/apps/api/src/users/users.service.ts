@@ -5,7 +5,7 @@ import type { SessionRequest } from '../auth/session.types';
 import { requireAdmin } from '../auth/session-access';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
-import { ACTIVE_CONTENT } from '../common/content';
+import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { UserVisibilityService } from './user-visibility.service';
 import { authorDto, authorSelect, userDto } from './user.presenter';
 
@@ -22,7 +22,7 @@ export class UsersService {
       select: { ...authorSelect, createdAt: true },
     });
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
-    const postVisibility = { ...ACTIVE_CONTENT, authorId: { notIn: excluded } };
+    const postVisibility = { ...ACTIVE_POST, authorId: { notIn: excluded } };
     const answerVisibility = { authorId: id, ...ACTIVE_CONTENT, post: postVisibility };
     const [postCount, answerCount, helpfulCount] = await Promise.all([
       this.db.post.count({ where: { ...postVisibility, authorId: id } }),

@@ -10,7 +10,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     data: { accountId: 'sample-user-0' },
   });
   const suffix = Date.now().toString(36);
-  for (const slug of ['account-trade', 'friendly', 'friends', 'marketplace']) {
+  for (const slug of ['friend-sale', 'friendly']) {
     await page.goto(`/ko/boards/${slug}`);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
@@ -32,9 +32,15 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(content.locator('strong')).toContainText(body);
     await editor.getByRole('button', { name: '게시글 등록', exact: true }).click();
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
+    await expect(page.locator('.game-board-navigation a[aria-current="page"]')).toHaveAttribute(
+      'href',
+      `/ko/boards/${slug}`,
+    );
     await expect(page.locator('.prose-body strong')).toContainText(body);
     await expect(
-      page.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: '게시판', exact: true }),
+      page
+        .getByRole('navigation', { name: '주 메뉴' })
+        .getByRole('link', { name: '클래시 로얄', exact: true }),
     ).toHaveClass('active');
     expect((await page.request.get(`/api/posts?q=${encodeURIComponent(title)}`)).ok()).toBeTruthy();
     expect(
@@ -64,6 +70,38 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await page.getByRole('textbox', { name: '게시판 검색' }).fill(suffix);
     await page.getByRole('button', { name: '검색', exact: true }).click();
     await expect(page.locator('.board-post-row')).toHaveCount(1);
+  }
+});
+test('Clash Royale contains three boards on desktop and mobile and retired board routes are unavailable', async ({
+  page,
+}) => {
+  for (const width of [1440, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/ko');
+    const navigation = page.locator('.game-board-navigation');
+    await expect(navigation.getByRole('link')).toHaveText(['피드백', '친추판매', '친선전 모집']);
+    for (const [name, path] of [
+      ['친추판매', '/ko/boards/friend-sale'],
+      ['친선전 모집', '/ko/boards/friendly'],
+      ['피드백', '/ko'],
+    ]) {
+      await navigation.getByRole('link', { name, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect(navigation.getByRole('link', { name, exact: true })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+    }
+    if (width === 1440) {
+      const sidebar = page.locator('.left-sidebar .game-submenu');
+      await expect(sidebar.getByRole('link')).toHaveText(['피드백', '친추판매', '친선전 모집']);
+    }
+    await expect(page.getByRole('link', { name: '계정 거래', exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  }
+  for (const slug of ['account-trade', 'friends', 'marketplace']) {
+    const response = await page.request.get(`/ko/boards/${slug}`);
+    expect(response.status()).toBe(404);
   }
 });
 test('board tabs and Quill controls fit a small mobile viewport', async ({ page }) => {

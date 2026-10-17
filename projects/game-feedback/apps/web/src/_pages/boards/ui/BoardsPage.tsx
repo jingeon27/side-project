@@ -5,7 +5,7 @@ import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Plus, Search } from 'lucide-react';
 import { Button } from '@side/design-system';
 import { appRoutes } from '@game-feedback/bridge';
-import { communityBoards, boardBySlug } from '@/features/board';
+import { boardBySlug } from '@/features/board';
 import { postListOptions } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useSession } from '@/features/auth';
@@ -56,18 +56,6 @@ export function BoardsPage({ locale, slug }: IBoardsPageProps) {
           {t('글쓰기')}
         </Button>
       </div>
-      <nav className="board-tabs" aria-label={t('게시판')}>
-        {communityBoards.map((item) => (
-          <Link
-            key={item.kind}
-            href={appRoutes.boards(locale, item.slug)}
-            replace
-            aria-current={item.slug === slug ? 'page' : undefined}
-          >
-            {t(item.name)}
-          </Link>
-        ))}
-      </nav>
       <form
         className="board-search"
         onSubmit={(event) => {
@@ -103,7 +91,9 @@ export function BoardsPage({ locale, slug }: IBoardsPageProps) {
 function BoardPosts({ locale, slug, q }: IBoardsPageProps & { q: string }) {
   const { t, locale: textLocale } = useI18n();
   const board = boardBySlug(slug);
-  const posts = useSuspenseInfiniteQuery(postListOptions({ board: board?.kind, q, limit: 12 }));
+  const posts = useSuspenseInfiniteQuery(
+    postListOptions({ category: 'clash-royale', board: board?.kind, q, limit: 12 }),
+  );
   const items = posts.data.pages.flatMap((page) => page.items);
   return (
     <>

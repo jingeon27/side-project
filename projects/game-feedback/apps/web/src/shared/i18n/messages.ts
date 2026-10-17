@@ -3,10 +3,9 @@ import type { TLocale } from './locale';
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
   게시판: ['Boards', '掲示板'],
-  '계정 거래': ['Account trading', 'アカウント取引'],
+  '클래시 로얄 게시판': ['Clash Royale boards', 'クラッシュロワイヤルの掲示板'],
+  친추판매: ['Friend slots for sale', 'フレンド枠販売'],
   '친선전 모집': ['Friendly battles', 'フレンド対戦募集'],
-  '친구 추가': ['Find friends', 'フレンド募集'],
-  '일반 판매': ['Marketplace', '売買'],
   글쓰기: ['Write a post', '投稿する'],
   '게시글 등록': ['Publish post', '投稿する'],
   '게시글 수정': ['Edit post', '投稿を編集'],
@@ -55,21 +54,13 @@ const messages: Record<string, readonly [string, string]> = {
   '본문 편집기': ['Post editor', '本文エディター'],
   '제목 2': ['Heading 2', '見出し2'],
   '제목 3': ['Heading 3', '見出し3'],
-  '계정 거래 게시글을 살펴보고 작성자와 채팅으로 이야기해보세요.': [
-    'Browse account listings and chat with the author.',
-    'アカウント取引の投稿を見て、投稿者とチャットしましょう。',
+  '친구 추가 판매 글을 올리고 관심 있는 플레이어와 이야기해보세요.': [
+    'List a friend slot and chat with interested players.',
+    'フレンド枠の販売を投稿して、興味のあるプレイヤーと話しましょう。',
   ],
   '함께 연습할 상대를 찾고 친선전을 모집해보세요.': [
     'Find a practice partner for friendly battles.',
     '一緒に練習する相手を募集しましょう。',
-  ],
-  '함께 플레이할 친구를 찾고 플레이어 태그를 나눠보세요.': [
-    'Find players and share your player tag.',
-    '一緒に遊ぶフレンドを見つけてタグを共有しましょう。',
-  ],
-  '판매 게시글을 등록하고 관심 있는 플레이어와 이야기해보세요.': [
-    'Create a listing and talk with interested players.',
-    '売買の投稿を登録して、興味のあるプレイヤーと話しましょう。',
   ],
   '거래 조건이나 모집 내용을 구체적으로 적어주세요.': [
     'Describe your listing or recruitment in detail.',

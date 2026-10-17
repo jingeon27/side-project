@@ -3,7 +3,7 @@ import { RichTextDocumentSchema } from './rich-text';
 export { RichTextDocumentSchema, RichTextAttributesSchema, richTextToPlainText } from './rich-text';
 export type { TRichTextDocument, TRichTextAttributes } from './rich-text';
 
-export const BoardKindSchema = z.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']);
+export const BoardKindSchema = z.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']);
 export type TBoardKind = z.infer<typeof BoardKindSchema>;
 
 const ResponseIdSchema = z.string().min(1).max(100);

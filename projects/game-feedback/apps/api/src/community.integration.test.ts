@@ -47,7 +47,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
   });
   it('separates every board from feedback and persists formatting through detail and edit', async () => {
     const body = '함께 친선전을 연습할 상대를 찾습니다. 저녁에 편하게 이야기해주세요.';
-    for (const board of ['ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']) {
+    for (const board of ['FRIEND_SALE', 'FRIENDLY']) {
       const document = { ops: [{ insert: body, attributes: { bold: true } }, { insert: '\n' }] };
       const created = (
         await author
@@ -86,12 +86,14 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       title: '입력 검증 게시글',
       body: '서식을 포함한 본문을 안전하게 검증하는 게시글입니다.',
     };
-    await author
-      .post('/api/posts')
-      .set('Origin', origin)
-      .send({ ...input, board: 'UNKNOWN' })
-      .expect(400);
-    await author.get('/api/posts?board=UNKNOWN').expect(400);
+    for (const board of ['UNKNOWN', 'ACCOUNT_TRADE', 'FRIEND', 'SALE']) {
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, board })
+        .expect(400);
+      await author.get('/api/posts').query({ board }).expect(400);
+    }
     await author
       .post('/api/posts')
       .set('Origin', origin)
@@ -112,5 +114,37 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .set('Origin', origin)
       .send({ ...input, document: { ops: [{ insert: '다른 본문\n' }] } })
       .expect(400);
+  });
+  it('keeps retired listings in storage while excluding them from every public surface', async () => {
+    const userId = (await author.get('/api/session').expect(200)).body.user.id;
+    const before = (await author.get(`/api/users/${userId}`).expect(200)).body;
+    const retired = await db.post.create({
+      data: {
+        categoryId,
+        authorId: userId,
+        board: 'ACCOUNT_TRADE',
+        title: 'Retired account listing',
+        body: 'This historical listing should remain private after its board is removed.',
+      },
+    });
+    await db.notification.create({
+      data: { userId, postId: retired.id, type: 'COMMENT', message: retired.title },
+    });
+    for (const query of [{ board: 'ALL' }, { authorId: userId }, { board: 'ALL', q: retired.title }]) {
+      const list = (await author.get('/api/posts').query(query).expect(200)).body;
+      expect(list.items.some((post: { id: string }) => post.id === retired.id)).toBe(false);
+    }
+    await author.get(`/api/posts/${retired.id}`).expect(404);
+    await author
+      .post(`/api/posts/${retired.id}/comments`)
+      .set('Origin', origin)
+      .send({ body: 'This comment must not be accepted.' })
+      .expect(404);
+    const profile = (await author.get(`/api/users/${userId}`).expect(200)).body;
+    expect(profile.postCount).toBe(before.postCount);
+    const notifications = (await author.get('/api/notifications').expect(200)).body;
+    expect(notifications.items.some((item: { postId: string }) => item.postId === retired.id)).toBe(false);
+    expect(notifications.unreadCount).toBe(0);
+    expect(await db.post.findUnique({ where: { id: retired.id } })).toMatchObject({ board: 'ACCOUNT_TRADE' });
   });
 });

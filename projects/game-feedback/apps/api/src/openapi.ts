@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { z } from 'zod';
-import { operations, schemas } from '@game-feedback/contracts';
+import { BoardKindSchema, operations, schemas } from '@game-feedback/contracts';
 
 export function createOpenApi() {
   const components: Record<string, unknown> = {};
@@ -39,7 +39,7 @@ export function createOpenApi() {
                   in: 'query',
                   schema: {
                     type: 'string',
-                    enum: ['ALL', 'FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE'],
+                    enum: ['ALL', ...BoardKindSchema.options],
                   },
                 },
               ]

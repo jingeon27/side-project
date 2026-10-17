@@ -1,8 +1,9 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { MessageSquareText, ChevronRight, Bell, MessageCircle, List } from 'lucide-react';
+import { Bell, MessageCircle } from 'lucide-react';
 import { ClashRoyaleIcon } from '@/features/game-profile';
+import { activeGameBoard, clashRoyaleBoards, gameBoardPath } from '@/features/board';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface ILeftSidebarProps {
   home: string;
@@ -13,23 +14,11 @@ interface ILeftSidebarProps {
 export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProps) {
   const { t } = useI18n();
   const tab = resolveAppRoute(path)?.tab;
+  const selected = activeGameBoard(path);
+  const locale = home.slice(1);
   return (
     <aside className="left-sidebar">
       <div className="sidebar-label">{t('둘러보기')}</div>
-      <Link className={`side-link ${tab === 'feed' ? 'selected' : ''}`} href={home} replace>
-        <MessageSquareText size={19} />
-        {t('전체 피드백')}
-        <ChevronRight size={16} />
-      </Link>
-      <Link
-        className={`side-link ${tab === 'boards' ? 'selected' : ''}`}
-        href={`${home}/boards/account-trade`}
-        replace
-      >
-        <List size={19} />
-        {t('게시판')}
-        <ChevronRight size={16} />
-      </Link>
       <Link
         className={`side-link ${tab === 'notifications' ? 'selected' : ''}`}
         replace
@@ -46,13 +35,28 @@ export function LeftSidebar({ home, path, unread, chatUnread }: ILeftSidebarProp
       </Link>
       <div className="sidebar-separator" />
       <div className="sidebar-label">{t('나의 게임')}</div>
-      <Link className="game-side-link" href={home}>
-        <ClashRoyaleIcon className="game-icon" size={40} />
-        <span>
-          <strong>{t('클래시 로얄')}</strong>
-          <small>Clash Royale</small>
-        </span>
-      </Link>
+      <nav aria-label={t('클래시 로얄 게시판')}>
+        <Link className="game-side-link" href={home}>
+          <ClashRoyaleIcon className="game-icon" size={40} />
+          <span>
+            <strong>{t('클래시 로얄')}</strong>
+            <small>Clash Royale</small>
+          </span>
+        </Link>
+        <div className="game-submenu">
+          {clashRoyaleBoards.map((board) => (
+            <Link
+              key={board.kind}
+              href={gameBoardPath(locale, board.kind)}
+              replace
+              className={`side-link ${selected === board.kind ? 'selected' : ''}`}
+              aria-current={selected === board.kind ? 'page' : undefined}
+            >
+              {t(board.name)}
+            </Link>
+          ))}
+        </div>
+      </nav>
       <div className="upcoming-games">
         <span>{t('다음 게임을 기다리고 있나요?')}</span>
         <span>{t('더 많은 게임이 찾아올 예정이에요.')}</span>

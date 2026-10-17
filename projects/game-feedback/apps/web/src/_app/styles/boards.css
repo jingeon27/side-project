@@ -1,4 +1,13 @@
 @layer components {
+  .game-board-navigation {
+    margin-bottom: 24px;
+  }
+  .game-board-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--text-caption);
+  }
   .board-heading {
     display: flex;
     justify-content: space-between;

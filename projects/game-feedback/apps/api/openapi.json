@@ -902,10 +902,8 @@
               "enum": [
                 "ALL",
                 "FEEDBACK",
-                "ACCOUNT_TRADE",
-                "FRIENDLY",
-                "FRIEND",
-                "SALE"
+                "FRIEND_SALE",
+                "FRIENDLY"
               ]
             }
           }
@@ -3647,10 +3645,8 @@
             "type": "string",
             "enum": [
               "FEEDBACK",
-              "ACCOUNT_TRADE",
-              "FRIENDLY",
-              "FRIEND",
-              "SALE"
+              "FRIEND_SALE",
+              "FRIENDLY"
             ]
           },
           "document": {
@@ -4182,10 +4178,8 @@
                   "type": "string",
                   "enum": [
                     "FEEDBACK",
-                    "ACCOUNT_TRADE",
-                    "FRIENDLY",
-                    "FRIEND",
-                    "SALE"
+                    "FRIEND_SALE",
+                    "FRIENDLY"
                   ]
                 },
                 "document": {
@@ -4511,10 +4505,8 @@
                 "type": "string",
                 "enum": [
                   "FEEDBACK",
-                  "ACCOUNT_TRADE",
-                  "FRIENDLY",
-                  "FRIEND",
-                  "SALE"
+                  "FRIEND_SALE",
+                  "FRIENDLY"
                 ]
               },
               "document": {
@@ -5207,10 +5199,8 @@
             "type": "string",
             "enum": [
               "FEEDBACK",
-              "ACCOUNT_TRADE",
-              "FRIENDLY",
-              "FRIEND",
-              "SALE"
+              "FRIEND_SALE",
+              "FRIENDLY"
             ]
           },
           "document": {

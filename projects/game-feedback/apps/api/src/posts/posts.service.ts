@@ -5,7 +5,7 @@ import {
   type GameProfile,
   richTextToPlainText,
 } from '@game-feedback/contracts';
-import { ACTIVE_CONTENT } from '../common/content';
+import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
@@ -30,7 +30,7 @@ export class PostsService {
   async visiblePost(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
     const post = await this.db.post.findFirst({
-      where: { id, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+      where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
       include: {
         ...postInclude,
         answers: {
@@ -47,7 +47,7 @@ export class PostsService {
       cursor = decodeCursor(q.cursor),
       excluded = await this.visibility.excluded(req);
     const where: Prisma.PostWhereInput = {
-      ...ACTIVE_CONTENT,
+      ...ACTIVE_POST,
       ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),
       authorId: { notIn: excluded, ...(q.authorId ? { equals: q.authorId } : {}) },
       ...(q.category ? { category: { slug: q.category } } : {}),

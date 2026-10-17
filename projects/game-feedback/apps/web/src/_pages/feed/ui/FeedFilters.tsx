@@ -3,7 +3,6 @@ import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
 import { m } from '@/shared/motion';
 import { Clock3, MessageSquare, Plus, Search, SlidersHorizontal } from 'lucide-react';
-import { ClashRoyaleIcon } from '@/features/game-profile';
 
 interface IFeedFiltersProps {
   tab: string;
@@ -31,10 +30,6 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
           <Plus size={17} />
           {t('피드백 요청')}
         </MotionButton>
-      </div>
-      <div className="game-filter">
-        <ClashRoyaleIcon className="game-filter-icon" size={28} />
-        <span>{t('클래시 로얄')}</span>
       </div>
       <div className="feed-controls">
         <div className="feed-tabs" role="tablist" aria-label={t('피드백 필터')}>

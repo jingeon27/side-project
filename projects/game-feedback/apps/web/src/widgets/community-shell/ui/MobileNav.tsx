@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { Home, MessageCircle, Bell, Settings2, CircleHelp, List } from 'lucide-react';
+import { Home, MessageCircle, Bell, Settings2, CircleHelp } from 'lucide-react';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface IMobileNavProps {
   home: string;
@@ -16,20 +16,11 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
       <Link
         href={home}
         replace
-        className={tab === 'feed' ? 'active' : ''}
-        aria-current={tab === 'feed' ? 'page' : undefined}
+        className={tab === 'feed' || tab === 'boards' ? 'active' : ''}
+        aria-current={tab === 'feed' || tab === 'boards' ? 'page' : undefined}
       >
         <Home size={20} />
-        <span>{t('라운지')}</span>
-      </Link>
-      <Link
-        href={`${home}/boards/account-trade`}
-        replace
-        className={tab === 'boards' ? 'active' : ''}
-        aria-current={tab === 'boards' ? 'page' : undefined}
-      >
-        <List size={20} />
-        <span>{t('게시판')}</span>
+        <span>{t('클래시 로얄')}</span>
       </Link>
       <Link
         href={`${home}/messages`}

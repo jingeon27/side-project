@@ -11,10 +11,21 @@ describe('community board navigation', () => {
   it('rejects unknown board slugs and duplicate or malformed queries', () => {
     for (const path of [
       '/ko/boards/unknown',
+      '/ko/boards/account-trade',
+      '/ko/boards/friends',
+      '/ko/boards/marketplace',
+      '/ko/posts/post-1?board=account-trade',
       '/ko/posts/post-1?board=unknown',
       '/ko/boards/friendly?q=a&q=b',
       '/ko/boards/friendly?q=%E0%A4%A',
     ])
       expect(WebPathSchema.safeParse(path).success).toBe(false);
+  });
+  it('opens friend-slot sales with the matching detail parent', () => {
+    expect(appRoutes.boards('ko')).toBe('/ko/boards/friend-sale');
+    expect(resolveAppRoute(appRoutes.post('ko', 'post-1', 'FRIEND_SALE'))).toMatchObject({
+      tab: 'boards',
+      parent: '/ko/boards/friend-sale',
+    });
   });
 });

@@ -26,7 +26,7 @@ export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,1
 export const CreatePostBody = zod.object({
   "title": zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
   "body": zod.string().min(createPostBodyBodyMin).max(createPostBodyBodyMax),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(createPostBodyDocumentOneOpsItemInsertMax),

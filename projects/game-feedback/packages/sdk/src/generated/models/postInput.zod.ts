@@ -26,7 +26,7 @@ export const postInputPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$')
 export const PostInput = zod.object({
   "title": zod.string().min(postInputTitleMin).max(postInputTitleMax),
   "body": zod.string().min(postInputBodyMin).max(postInputBodyMax),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(postInputDocumentOneOpsItemInsertMax),

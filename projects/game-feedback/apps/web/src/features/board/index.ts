@@ -1,1 +1,8 @@
-export { communityBoards, boardBySlug, boardByKind } from './model/boards';
+export {
+  communityBoards,
+  clashRoyaleBoards,
+  boardBySlug,
+  boardByKind,
+  gameBoardPath,
+  activeGameBoard,
+} from './model/boards';

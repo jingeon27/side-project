@@ -79,7 +79,7 @@ export const PostDetail = zod.object({
   "id": zod.string().min(1).max(postDetailPostIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(postDetailPostDocumentOneOpsItemInsertMax),

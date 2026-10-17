@@ -400,6 +400,14 @@ Web E2E에서 네 게시판의 Quill 작성/수정/새로고침과 서식 유지
 
 첫 Mobile host 실행은 10/12가 통과했고, 시간 초과와 개발 소스 갱신 중 Fast Refresh가 발생한 두 사례를 확인한 뒤 소스 갱신 없이 전체 12개를 다시 검증했다. 최종 잔여 테스트 스키마는 0개이며 이번 테스트 DB만 중지했다. 개발 Web 3300/API 4300은 HTTP 200이고 고정 계정 3개와 기존 게시글 6개를 보존했다. 실기기 파일 선택/촬영/OS 권한창과 서명 빌드 검증은 포함하지 않는다.
 
+## 클래시로얄 하위 게시판 정리 (2026-10-17)
+
+클래시로얄 아래에 피드백·친추판매·친선전 모집을 배치했다. 상단과 모바일 하단 메뉴는 게임으로 진입하고, 왼쪽 게임 메뉴와 본문 위의 같은 하위 탐색으로 세 게시판을 오간다. 친구 추가와 일반 판매는 별도 항목으로 제공하지 않는다. 계정 거래의 메뉴·직접 URL·작성 API를 제거하고 폐지한 게시판의 기존 데이터는 삭제하지 않은 채 목록·검색·상세·프로필 집계·알림·사이트맵에서 제외한다. 공개 계약은 `FEEDBACK`, `FRIEND_SALE`, `FRIENDLY`만 받으며 새 DB migration은 필요하지 않다.
+
+동시에 진행되는 피드·게임코치 작업과 분리해 `side-project-game-feedback-boards` worktree의 `fix/game-feedback-board-hierarchy` 브랜치에서 검증했다. 원래 worktree의 다른 변경은 보존했다. Node 24의 immutable 설치, 집계 타입·Web/Mobile lint, API(격리 PostgreSQL 통합 검사 포함) **67개**, SDK **33개**, Web **71개**, Mobile **38개**, Web Playwright **36개**, Android/iOS WebView host Playwright **12개**를 통과했다. API/Web production build와 Android/iOS Metro export도 통과했으며 OpenAPI·SDK 생성 파일 **77개**는 재생성 전후 hash가 동일했다. 처음의 공유 worktree 실행은 소스가 변경되어 중단했고 최종 성공 결과에 포함하지 않았다.
+
+Web 회귀 검사에서 기존 프로필 카드의 상대 시간이 분 경계를 지나며 SSR/클라이언트 텍스트가 달라지는 hydration 경고 1건을 관찰했다. 게시판 분류와는 별도로 후속 확인할 항목이다. 실서비스 배포와 실제 Google·Supercell 검증은 수행하지 않았다.
+
 ## 공통 파일 변경 이유
 
 루트 `package.json`에는 Game Feedback 전용 진입 명령만 추가하고 기존 Workspace·photo-contest 명령은 보존한다. `yarn.lock`은 기존 의존성을 유지하며 신규 프로젝트 의존성을 고정한다. 루트 README는 신규 프로젝트 위치·시작 방법만 추가한다. Game Feedback CI는 타입·테스트·빌드·생성 계약을 검사한다.

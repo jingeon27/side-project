@@ -162,6 +162,15 @@
     gap: 9px;
     padding: 10px 10px 11px;
   }
+  .game-submenu {
+    margin-inline-start: 29px;
+    padding-inline-start: 10px;
+    border-inline-start: 1px solid var(--color-line);
+  }
+  .game-submenu .side-link {
+    padding: 10px;
+    font-size: var(--text-caption);
+  }
   .game-icon {
     width: 40px;
     height: 40px;

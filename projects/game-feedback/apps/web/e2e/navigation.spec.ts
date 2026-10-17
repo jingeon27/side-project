@@ -21,7 +21,7 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await expect(page).toHaveURL(/\/ko\/settings$/);
   await tabs.getByRole('link', { name: '알림' }).click();
   await expect(page).toHaveURL(/\/ko\/notifications$/);
-  await tabs.getByRole('link', { name: '라운지' }).focus();
+  await tabs.getByRole('link', { name: '클래시 로얄' }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
   expect(await page.evaluate(() => history.length)).toBe(length);

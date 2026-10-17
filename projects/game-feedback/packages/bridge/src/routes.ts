@@ -15,12 +15,10 @@ export interface IAppRoute {
 function root(locale: string) {
   return `/${localeSchema.parse(locale)}`;
 }
-const boardSlugSchema = z.enum(['account-trade', 'friendly', 'friends', 'marketplace']);
+const boardSlugSchema = z.enum(['friend-sale', 'friendly']);
 const boardSlugs: Record<string, string> = {
-  ACCOUNT_TRADE: 'account-trade',
+  FRIEND_SALE: 'friend-sale',
   FRIENDLY: 'friendly',
-  FRIEND: 'friends',
-  SALE: 'marketplace',
 };
 function queryPath(path: string, values: Record<string, string | undefined>) {
   const query = Object.entries(values)
@@ -36,7 +34,7 @@ export const appRoutes = {
     queryPath(`${root(locale)}/posts/${RouteIdSchema.parse(id)}`, {
       board: board ? boardSlugs[board] : undefined,
     }),
-  boards: (locale: string, slug = 'account-trade', q?: string) =>
+  boards: (locale: string, slug = 'friend-sale', q?: string) =>
     queryPath(`${root(locale)}/boards/${boardSlugSchema.parse(slug)}`, { q: q?.trim() }),
   profile: (locale: string, id: string, cursor?: string) =>
     queryPath(`${root(locale)}/users/${RouteIdSchema.parse(id)}`, { cursor }),
@@ -91,7 +89,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
     };
   }
   if (kind === 'boards') {
-    const slug = boardSlugSchema.safeParse(id ?? 'account-trade');
+    const slug = boardSlugSchema.safeParse(id ?? 'friend-sale');
     if (!slug.success || (query.q?.length ?? 0) > 100) return null;
     return {
       path: appRoutes.boards(locale, slug.data, query.q),
