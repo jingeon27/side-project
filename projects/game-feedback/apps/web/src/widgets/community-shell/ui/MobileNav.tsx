@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { Home, MessageCircle, Bell, Settings2, CircleHelp } from 'lucide-react';
+import { Home, MessageCircle, UserRound, CircleHelp } from 'lucide-react';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface IMobileNavProps {
   home: string;
@@ -23,38 +23,6 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         <span>{t('피드')}</span>
       </Link>
       <Link
-        href={`${home}/messages`}
-        replace
-        className={tab === 'messages' ? 'active' : ''}
-        aria-current={tab === 'messages' ? 'page' : undefined}
-      >
-        <MessageCircle size={20} />
-        <span>
-          {t('채팅')}
-          {chatUnread > 0 && (
-            <span className="mobile-chat-count">({chatUnread > 99 ? '99+' : chatUnread})</span>
-          )}
-        </span>
-      </Link>
-      <Link
-        href={`${home}/notifications`}
-        replace
-        className={tab === 'notifications' ? 'active' : ''}
-        aria-current={tab === 'notifications' ? 'page' : undefined}
-      >
-        <Bell size={20} />
-        <span>{t('알림')}</span>
-      </Link>
-      <Link
-        href={`${home}/settings`}
-        replace
-        className={tab === 'settings' ? 'active' : ''}
-        aria-current={tab === 'settings' ? 'page' : undefined}
-      >
-        <Settings2 size={20} />
-        <span>{t('내 프로필')}</span>
-      </Link>
-      <Link
         href={`${home}/guide`}
         replace
         className={tab === 'guide' ? 'active' : ''}
@@ -62,6 +30,30 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
       >
         <CircleHelp size={20} />
         <span>{t('가이드')}</span>
+      </Link>
+      <Link
+        href={`${home}/messages`}
+        replace
+        className={tab === 'messages' ? 'active' : ''}
+        aria-current={tab === 'messages' ? 'page' : undefined}
+        aria-label={chatUnread > 0 ? t('채팅 {count}개', { count: chatUnread }) : t('채팅')}
+      >
+        <span className="mobile-nav-icon" aria-hidden="true">
+          <MessageCircle size={20} />
+          {chatUnread > 0 && (
+            <span className="mobile-chat-count">{chatUnread > 99 ? '99+' : chatUnread}</span>
+          )}
+        </span>
+        <span>{t('채팅')}</span>
+      </Link>
+      <Link
+        href={`${home}/settings`}
+        replace
+        className={tab === 'settings' ? 'active' : ''}
+        aria-current={tab === 'settings' ? 'page' : undefined}
+      >
+        <UserRound size={20} />
+        <span>{t('프로필')}</span>
       </Link>
     </nav>
   );

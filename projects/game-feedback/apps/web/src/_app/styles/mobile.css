@@ -1,7 +1,10 @@
 @layer components {
-  .mobile-chat-count {
-    margin-inline-start: 3px;
-    font-size: var(--text-micro);
+  .header-account {
+    display: flex;
+  }
+  .mobile-settings-button,
+  .notification-unread-indicator {
+    display: none;
   }
   .language-settings select {
     width: 100%;
@@ -29,6 +32,31 @@
     .header-actions {
       gap: 2px;
     }
+    .header-actions .icon-button {
+      width: 44px;
+      height: 44px;
+      padding: 10px;
+      flex-shrink: 0;
+    }
+    .header-actions .header-chat-button,
+    .header-actions .header-notification-count,
+    .header-actions .header-account {
+      display: none;
+    }
+    .mobile-settings-button {
+      display: inline-flex;
+    }
+    .notification-unread-indicator {
+      display: block;
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 9px;
+      height: 9px;
+      border: 2px solid var(--color-surface);
+      border-radius: 50%;
+      background: var(--color-danger);
+    }
     .mobile-nav {
       padding-inline: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right));
       gap: 4px;
@@ -39,8 +67,30 @@
       min-height: 44px;
       text-align: center;
     }
-    .mobile-nav > a span {
+    .mobile-nav > a > span {
       overflow-wrap: anywhere;
+    }
+    .mobile-nav-icon {
+      display: inline-flex;
+      position: relative;
+    }
+    .mobile-chat-count {
+      position: absolute;
+      top: -7px;
+      inset-inline-start: calc(100% - 5px);
+      min-width: 17px;
+      padding: 1px 4px;
+      border-radius: var(--radius-badge);
+      background: var(--color-ink);
+      color: var(--color-surface);
+      font-size: var(--text-micro);
+      font-weight: 700;
+      line-height: 15px;
+      white-space: nowrap;
+    }
+    .mobile-nav > a.active {
+      color: var(--color-ink);
+      font-weight: 700;
     }
 
     .feed-heading,
@@ -95,10 +145,6 @@
     }
   }
   @media (max-width: 380px) {
-    .topbar .notification-button {
-      display: none;
-    }
-
     .settings-card,
     .detail-card {
       padding: 16px;

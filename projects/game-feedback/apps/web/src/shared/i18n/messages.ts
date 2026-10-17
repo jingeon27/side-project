@@ -669,6 +669,8 @@ const messages: Record<string, readonly [string, string]> = {
   '모바일 메뉴': ['Mobile menu', 'モバイルメニュー'],
   알림: ['Alerts', 'お知らせ'],
   '내 프로필': ['My profile', 'マイページ'],
+  프로필: ['Profile', 'プロフィール'],
+  설정: ['Settings', '設定'],
   가이드: ['Guide', 'ガイド'],
   '함께 성장하는 플레이어': ['Learning together', '一緒に上達するプレイヤー'],
   '소유권 미인증': ['Ownership unverified', '所有権未認証'],
