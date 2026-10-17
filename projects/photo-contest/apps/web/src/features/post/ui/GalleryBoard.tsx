@@ -49,10 +49,7 @@ function BoardContent({
         ))
         .otherwise((posts) => (
           <div
-            className={cn(
-              'grid min-w-0 items-start',
-              popular ? 'grid-cols-3 gap-3 desktop:grid-cols-1 desktop:gap-5' : 'grid-cols-1 gap-6',
-            )}
+            className={cn('grid min-w-0 grid-cols-1 items-start', popular ? 'gap-4' : 'gap-6')}
             data-photo-feed
           >
             {posts.map(({ id }, index) =>
