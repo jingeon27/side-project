@@ -13,6 +13,11 @@ export const CoachingDetailsSchema = z
   .strict();
 export type TCoachingDetails = z.infer<typeof CoachingDetailsSchema>;
 
+export const FriendSaleDetailsSchema = z
+  .object({ price: z.number().int().positive().max(10000000).nullable() })
+  .strict();
+export type TFriendSaleDetails = z.infer<typeof FriendSaleDetailsSchema>;
+
 const ResponseIdSchema = z.string().min(1).max(100);
 const ResponseTimestampSchema = z.iso.datetime();
 const ResponseCountSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -80,6 +85,7 @@ export const PostSchema = z.object({
   board: BoardKindSchema.optional(),
   document: RichTextDocumentSchema.nullable().optional(),
   coaching: CoachingDetailsSchema.nullable().optional(),
+  friendSale: FriendSaleDetailsSchema.nullable().optional(),
   categoryId: ResponseIdSchema,
   category: CategorySchema,
   author: AuthorSchema,
@@ -230,6 +236,7 @@ export const PostInputSchema = z
     board: BoardKindSchema.optional(),
     document: RichTextDocumentSchema.nullable().optional(),
     coaching: CoachingDetailsSchema.nullable().optional(),
+    friendSale: FriendSaleDetailsSchema.nullable().optional(),
     categoryId: z.string().min(1),
     playerTag: PlayerTagSchema.optional(),
   })
@@ -294,6 +301,7 @@ export type ReportInput = z.infer<typeof ReportInputSchema>;
 
 export const schemas = {
   CoachingDetails: CoachingDetailsSchema,
+  FriendSaleDetails: FriendSaleDetailsSchema,
   RichTextDocument: RichTextDocumentSchema,
   ChatAttachment: ChatAttachmentSchema,
   ChatAttachmentUpload: ChatAttachmentUploadSchema,

@@ -748,6 +748,9 @@ export const listPostsResponseItemsItemDocumentOneOpsMax = 2000;
 export const listPostsResponseItemsItemCoachingOneHourlyRateOneExclusiveMin = 0;
 export const listPostsResponseItemsItemCoachingOneHourlyRateOneMax = 10000000;
 
+export const listPostsResponseItemsItemFriendSaleOnePriceOneExclusiveMin = 0;
+export const listPostsResponseItemsItemFriendSaleOnePriceOneMax = 10000000;
+
 export const listPostsResponseItemsItemCategoryIdMax = 100;
 
 export const listPostsResponseItemsItemCategoryIdMaxOne = 100;
@@ -810,6 +813,9 @@ export const ListPostsResponse = zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(listPostsResponseItemsItemCoachingOneHourlyRateOneExclusiveMin).max(listPostsResponseItemsItemCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(listPostsResponseItemsItemFriendSaleOnePriceOneExclusiveMin).max(listPostsResponseItemsItemFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(listPostsResponseItemsItemCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(listPostsResponseItemsItemCategoryIdMaxOne),
@@ -867,6 +873,9 @@ export const createPostBodyDocumentOneOpsMax = 2000;
 export const createPostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
 export const createPostBodyCoachingOneHourlyRateOneMax = 10000000;
 
+export const createPostBodyFriendSaleOnePriceOneExclusiveMin = 0;
+export const createPostBodyFriendSaleOnePriceOneMax = 10000000;
+
 
 export const createPostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
@@ -894,6 +903,9 @@ export const CreatePostBody = zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(createPostBodyCoachingOneHourlyRateOneExclusiveMin).max(createPostBodyCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(createPostBodyFriendSaleOnePriceOneExclusiveMin).max(createPostBodyFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1),
   "playerTag": zod.string().regex(createPostBodyPlayerTagRegExp).optional()
 })
@@ -912,6 +924,9 @@ export const createPostResponseDocumentOneOpsMax = 2000;
 
 export const createPostResponseCoachingOneHourlyRateOneExclusiveMin = 0;
 export const createPostResponseCoachingOneHourlyRateOneMax = 10000000;
+
+export const createPostResponseFriendSaleOnePriceOneExclusiveMin = 0;
+export const createPostResponseFriendSaleOnePriceOneMax = 10000000;
 
 export const createPostResponseCategoryIdMax = 100;
 
@@ -973,6 +988,9 @@ export const CreatePostResponse = zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(createPostResponseCoachingOneHourlyRateOneExclusiveMin).max(createPostResponseCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(createPostResponseFriendSaleOnePriceOneExclusiveMin).max(createPostResponseFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(createPostResponseCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(createPostResponseCategoryIdMaxOne),
@@ -1029,6 +1047,9 @@ export const getPostResponsePostDocumentOneOpsMax = 2000;
 
 export const getPostResponsePostCoachingOneHourlyRateOneExclusiveMin = 0;
 export const getPostResponsePostCoachingOneHourlyRateOneMax = 10000000;
+
+export const getPostResponsePostFriendSaleOnePriceOneExclusiveMin = 0;
+export const getPostResponsePostFriendSaleOnePriceOneMax = 10000000;
 
 export const getPostResponsePostCategoryIdMax = 100;
 
@@ -1111,6 +1132,9 @@ export const GetPostResponse = zod.object({
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(getPostResponsePostCoachingOneHourlyRateOneExclusiveMin).max(getPostResponsePostCoachingOneHourlyRateOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(getPostResponsePostFriendSaleOnePriceOneExclusiveMin).max(getPostResponsePostFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(getPostResponsePostCategoryIdMax),
   "category": zod.object({
@@ -1202,6 +1226,9 @@ export const updatePostBodyDocumentOneOpsMax = 2000;
 export const updatePostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
 export const updatePostBodyCoachingOneHourlyRateOneMax = 10000000;
 
+export const updatePostBodyFriendSaleOnePriceOneExclusiveMin = 0;
+export const updatePostBodyFriendSaleOnePriceOneMax = 10000000;
+
 export const updatePostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 
@@ -1227,6 +1254,9 @@ export const UpdatePostBody = zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(updatePostBodyCoachingOneHourlyRateOneExclusiveMin).max(updatePostBodyCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(updatePostBodyFriendSaleOnePriceOneExclusiveMin).max(updatePostBodyFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
   "playerTag": zod.string().regex(updatePostBodyPlayerTagRegExp).optional()
 })
 
@@ -1244,6 +1274,9 @@ export const updatePostResponseDocumentOneOpsMax = 2000;
 
 export const updatePostResponseCoachingOneHourlyRateOneExclusiveMin = 0;
 export const updatePostResponseCoachingOneHourlyRateOneMax = 10000000;
+
+export const updatePostResponseFriendSaleOnePriceOneExclusiveMin = 0;
+export const updatePostResponseFriendSaleOnePriceOneMax = 10000000;
 
 export const updatePostResponseCategoryIdMax = 100;
 
@@ -1304,6 +1337,9 @@ export const UpdatePostResponse = zod.object({
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(updatePostResponseCoachingOneHourlyRateOneExclusiveMin).max(updatePostResponseCoachingOneHourlyRateOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(updatePostResponseFriendSaleOnePriceOneExclusiveMin).max(updatePostResponseFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(updatePostResponseCategoryIdMax),
   "category": zod.object({

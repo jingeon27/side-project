@@ -60,6 +60,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
             body,
             document,
             ...(board === 'COACHING' ? { coaching: { role: 'COACH', hourlyRate: 30000 } } : {}),
+            ...(board === 'FRIEND_SALE' ? { friendSale: { price: 12000 } } : {}),
           })
           .expect(200)
       ).body;
@@ -166,6 +167,105 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       hourlyRate: null,
     });
   });
+  it('persists strict friend slot prices through creation, edits and lists while preserving legacy posts', async () => {
+    const input = {
+      categoryId,
+      board: 'FRIEND_SALE',
+      title: '친구 슬롯 판매 금액 안내',
+      body: '판매 조건과 기간을 확인하고 궁금한 내용은 채팅으로 문의해주세요.',
+    };
+    await author.post('/api/posts').set('Origin', origin).send(input).expect(400);
+    for (const friendSale of [
+      null,
+      {},
+      { price: 0 },
+      { price: -1 },
+      { price: 1.5 },
+      { price: 10000001 },
+      { price: '12000' },
+      { price: 12000, currency: 'KRW' },
+    ]) {
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, friendSale })
+        .expect(400);
+    }
+    const created = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, friendSale: { price: 12000 } })
+        .expect(200)
+    ).body;
+    expect(created.friendSale).toEqual({ price: 12000 });
+    for (const friendSale of [null, { price: 0 }, { price: '18000' }]) {
+      await author.patch(`/api/posts/${created.id}`).set('Origin', origin).send({ friendSale }).expect(400);
+    }
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ friendSale: { price: 18000 } })
+      .expect(200);
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ title: '금액을 수정한 친구 슬롯 판매' })
+      .expect(200);
+    expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.friendSale).toEqual({
+      price: 18000,
+    });
+    const listed = (await author.get('/api/posts').query({ board: 'ALL' }).expect(200)).body.items;
+    expect(listed.find((post: { id: string }) => post.id === created.id).friendSale).toEqual({
+      price: 18000,
+    });
+    await author
+      .patch(`/api/posts/${created.id}`)
+      .set('Origin', origin)
+      .send({ friendSale: { price: null } })
+      .expect(200);
+    expect((await author.get(`/api/posts/${created.id}`).expect(200)).body.post.friendSale).toEqual({
+      price: null,
+    });
+    const general = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, board: 'FREE' })
+        .expect(200)
+    ).body;
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, board: 'FREE', friendSale: { price: 12000 } })
+      .expect(400);
+    await author
+      .patch(`/api/posts/${general.id}`)
+      .set('Origin', origin)
+      .send({ friendSale: { price: 12000 } })
+      .expect(400);
+    const legacy = await db.post.create({
+      data: {
+        authorId: created.author.id,
+        categoryId,
+        board: 'FRIEND_SALE',
+        title: input.title,
+        body: input.body,
+      },
+    });
+    expect((await author.get(`/api/posts/${legacy.id}`).expect(200)).body.post.friendSale).toBeNull();
+    await author
+      .patch(`/api/posts/${legacy.id}`)
+      .set('Origin', origin)
+      .send({ title: '기존 친추판매 글 제목 수정' })
+      .expect(200);
+    expect((await author.get(`/api/posts/${legacy.id}`).expect(200)).body.post.friendSale).toBeNull();
+    await author
+      .patch(`/api/posts/${legacy.id}`)
+      .set('Origin', origin)
+      .send({ friendSale: { price: 10000000 } })
+      .expect(200);
+  });
   it('uses the same five board kinds for another game and keeps game filters isolated', async () => {
     const category = await db.category.create({
       data: { slug: 'another-game', name: 'Another Game', active: true },
@@ -177,6 +277,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
         title: `다른 게임 ${board} 게시글`,
         body: '모든 게임에서 공통 게시판을 사용하며 게임별로 글을 분리합니다.',
         ...(board === 'COACHING' ? { coaching: { role: 'STUDENT', hourlyRate: null } } : {}),
+        ...(board === 'FRIEND_SALE' ? { friendSale: { price: null } } : {}),
       };
       const created = (await author.post('/api/posts').set('Origin', origin).send(input).expect(200)).body;
       const own = (await author.get('/api/posts').query({ board, category: category.slug }).expect(200)).body;

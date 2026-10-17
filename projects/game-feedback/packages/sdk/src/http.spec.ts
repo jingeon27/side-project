@@ -142,6 +142,17 @@ describe('generated REST client response validation', () => {
     });
     expect(result.answers).toEqual(fixture.answers);
   });
+  it('preserves friend sale prices and legacy omissions while rejecting malformed money without fallback', async () => {
+    const fixture = postFixture();
+    for (const friendSale of [undefined, null, { price: null }, { price: 12000 }]) {
+      respond({ ...fixture, post: { ...fixture.post, board: 'FRIEND_SALE', friendSale } });
+      expect((await getPost('post-1')).post.friendSale).toEqual(friendSale);
+    }
+    for (const price of ['12000', 0, -1, 1.5, 10000001, false]) {
+      respond({ ...fixture, post: { ...fixture.post, board: 'FRIEND_SALE', friendSale: { price } } });
+      await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
+    }
+  });
   it('fills only explicitly allowed missing display fields', async () => {
     const fixture = postFixture();
     const { nickname: _nickname, ...author } = fixture.post.author;

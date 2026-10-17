@@ -23,6 +23,9 @@ export const updatePostBodyDocumentOneOpsMax = 2000;
 export const updatePostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
 export const updatePostBodyCoachingOneHourlyRateOneMax = 10000000;
 
+export const updatePostBodyFriendSaleOnePriceOneExclusiveMin = 0;
+export const updatePostBodyFriendSaleOnePriceOneMax = 10000000;
+
 export const updatePostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const UpdatePostBody = zod.object({
@@ -46,6 +49,9 @@ export const UpdatePostBody = zod.object({
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(updatePostBodyCoachingOneHourlyRateOneExclusiveMin).max(updatePostBodyCoachingOneHourlyRateOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(updatePostBodyFriendSaleOnePriceOneExclusiveMin).max(updatePostBodyFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
   "playerTag": zod.string().regex(updatePostBodyPlayerTagRegExp).optional()
 })

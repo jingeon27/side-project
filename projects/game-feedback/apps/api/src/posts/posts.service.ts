@@ -119,6 +119,8 @@ export class PostsService {
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     if ((input.board === 'COACHING') !== !!input.coaching)
       throw new ApiError(400, 'INVALID_COACHING', '코칭 글의 모집 유형과 수강료를 확인해주세요.');
+    if ((input.board === 'FRIEND_SALE') !== !!input.friendSale)
+      throw new ApiError(400, 'INVALID_FRIEND_SALE', '친추판매 글의 판매 금액을 확인해주세요.');
     const category = await this.db.category.findFirst({ where: { id: input.categoryId, active: true } });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
     if (input.playerTag && category.slug !== 'clash-royale')
@@ -134,6 +136,7 @@ export class PostsService {
         board: input.board ?? 'FEEDBACK',
         ...(input.document ? { document: input.document } : {}),
         ...(input.coaching ? { coaching: input.coaching } : {}),
+        ...(input.friendSale ? { friendSale: input.friendSale } : {}),
         ...(profile ? { gameProfile: profile as unknown as Prisma.InputJsonValue } : {}),
       },
       include: postInclude,
@@ -145,9 +148,11 @@ export class PostsService {
       input = parse(PostPatchSchema, body),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
-    const { playerTag, document, coaching, ...data } = input;
+    const { playerTag, document, coaching, friendSale, ...data } = input;
     if (coaching !== undefined && (p.board === 'COACHING') !== !!coaching)
       throw new ApiError(400, 'INVALID_COACHING', '코칭 글의 모집 유형과 수강료를 확인해주세요.');
+    if (friendSale !== undefined && (p.board === 'FRIEND_SALE') !== !!friendSale)
+      throw new ApiError(400, 'INVALID_FRIEND_SALE', '친추판매 글의 판매 금액을 확인해주세요.');
     if (playerTag && p.category.slug !== 'clash-royale')
       throw new ApiError(400, 'INVALID_PROFILE_GAME', '선택한 게임의 프로필을 확인해주세요.');
     if (input.document && (!input.body || richTextToPlainText(input.document) !== input.body))
@@ -160,6 +165,7 @@ export class PostsService {
         data: {
           ...data,
           ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
+          ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
           ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
           ...(gameProfile ? { gameProfile: gameProfile as unknown as Prisma.InputJsonValue } : {}),
         },
@@ -187,6 +193,7 @@ export class PostsService {
           gameProfile: Prisma.DbNull,
           document: Prisma.DbNull,
           coaching: Prisma.DbNull,
+          friendSale: Prisma.DbNull,
         },
       }),
       this.db.notification.deleteMany({ where: { postId: id } }),

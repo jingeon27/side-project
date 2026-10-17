@@ -84,6 +84,7 @@ model Post {
   board String @default("FEEDBACK")
   document Json?
   coaching Json?
+  friendSale Json?
   hidden Boolean @default(false)
   deletedAt DateTime?
   createdAt DateTime @default(now())

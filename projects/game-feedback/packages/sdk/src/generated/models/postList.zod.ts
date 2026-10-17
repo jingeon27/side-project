@@ -21,6 +21,9 @@ export const postListItemsItemDocumentOneOpsMax = 2000;
 export const postListItemsItemCoachingOneHourlyRateOneExclusiveMin = 0;
 export const postListItemsItemCoachingOneHourlyRateOneMax = 10000000;
 
+export const postListItemsItemFriendSaleOnePriceOneExclusiveMin = 0;
+export const postListItemsItemFriendSaleOnePriceOneMax = 10000000;
+
 export const postListItemsItemCategoryIdMax = 100;
 
 export const postListItemsItemCategoryIdMaxOne = 100;
@@ -81,6 +84,9 @@ export const PostList = zod.object({
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(postListItemsItemCoachingOneHourlyRateOneExclusiveMin).max(postListItemsItemCoachingOneHourlyRateOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(postListItemsItemFriendSaleOnePriceOneExclusiveMin).max(postListItemsItemFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(postListItemsItemCategoryIdMax),
   "category": zod.object({

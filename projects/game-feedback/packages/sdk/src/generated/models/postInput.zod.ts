@@ -23,6 +23,9 @@ export const postInputDocumentOneOpsMax = 2000;
 export const postInputCoachingOneHourlyRateOneExclusiveMin = 0;
 export const postInputCoachingOneHourlyRateOneMax = 10000000;
 
+export const postInputFriendSaleOnePriceOneExclusiveMin = 0;
+export const postInputFriendSaleOnePriceOneMax = 10000000;
+
 
 export const postInputPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
@@ -48,6 +51,9 @@ export const PostInput = zod.object({
   "coaching": zod.union([zod.object({
   "role": zod.enum(['COACH', 'STUDENT']),
   "hourlyRate": zod.union([zod.int().gt(postInputCoachingOneHourlyRateOneExclusiveMin).max(postInputCoachingOneHourlyRateOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "friendSale": zod.union([zod.object({
+  "price": zod.union([zod.int().gt(postInputFriendSaleOnePriceOneExclusiveMin).max(postInputFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1),
   "playerTag": zod.string().regex(postInputPlayerTagRegExp).optional()

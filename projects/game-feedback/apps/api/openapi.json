@@ -2016,6 +2016,27 @@
         ],
         "additionalProperties": false
       },
+      "FriendSaleDetails": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "price"
+        ],
+        "additionalProperties": false
+      },
       "RichTextDocument": {
         "type": "object",
         "properties": {
@@ -3798,6 +3819,34 @@
               }
             ]
           },
+          "friendSale": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "price"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "categoryId": {
             "type": "string",
             "minLength": 1,
@@ -4369,6 +4418,34 @@
                     }
                   ]
                 },
+                "friendSale": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "price": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 10000000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "price"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "categoryId": {
                   "type": "string",
                   "minLength": 1,
@@ -4726,6 +4803,34 @@
                     "required": [
                       "role",
                       "hourlyRate"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "friendSale": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "price": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 10000000
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "price"
                     ],
                     "additionalProperties": false
                   },
@@ -5466,6 +5571,34 @@
               }
             ]
           },
+          "friendSale": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "price"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "categoryId": {
             "type": "string",
             "minLength": 1
@@ -5603,6 +5736,34 @@
                 "required": [
                   "role",
                   "hourlyRate"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "friendSale": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "price"
                 ],
                 "additionalProperties": false
               },

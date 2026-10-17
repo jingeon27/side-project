@@ -37,6 +37,7 @@ export * from './demoInput.zod';
 export * from './demoLoginBody.zod';
 export * from './error.zod';
 export * from './exchangeAppLoginBody.zod';
+export * from './friendSaleDetails.zod';
 export * from './gameAccountInput.zod';
 export * from './gameProfile.zod';
 export * from './helpfulInput.zod';
