@@ -23,6 +23,68 @@ on:
 permissions:
   contents: read
 jobs:
+  containers:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn workspace @side/photo-contest db:generate
+      - uses: docker/setup-buildx-action@v4
+      - name: Build API image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: projects/photo-contest/apps/api/Dockerfile
+          platforms: linux/arm64
+          load: true
+          tags: photo-contest-api:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=photo-contest-api-arm64
+          cache-to: type=gha,mode=max,scope=photo-contest-api-arm64
+      - name: Build web image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: projects/photo-contest/apps/web/Dockerfile
+          platforms: linux/arm64
+          load: true
+          tags: photo-contest-web:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=photo-contest-web-arm64
+          cache-to: type=gha,mode=max,scope=photo-contest-web-arm64
+      - run: yarn workspace @photo-contest/web exec playwright install --with-deps chromium
+      - name: Verify production containers and backup restore
+        run: bash projects/photo-contest/apps/web/test/deployment/containers.sh
+      - name: Archive the verified images
+        if: >-
+          github.event_name == 'push' &&
+          vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
+          github.ref_name == vars.PHOTO_CONTEST_DEPLOY_BRANCH
+        run: docker save "photo-contest-api:$GITHUB_SHA" "photo-contest-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/photo-contest-images.tar.gz"
+      - uses: actions/upload-artifact@v4
+        if: >-
+          github.event_name == 'push' &&
+          vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
+          github.ref_name == vars.PHOTO_CONTEST_DEPLOY_BRANCH
+        with:
+          name: photo-contest-images-${{ github.sha }}
+          path: ${{ runner.temp }}/photo-contest-images.tar.gz
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: photo-contest-deployment-traces
+          path: projects/photo-contest/apps/web/test-results/deployment/
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -44,6 +106,8 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
+      - name: Check deployment scripts
+        run: shellcheck -x projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
       - run: yarn format:check
       - run: yarn workspace @side/eslint-config check
       - run: yarn workspace @side/photo-contest check
@@ -94,3 +158,90 @@ jobs:
             projects/photo-contest/apps/${{ matrix.app }}/playwright-report/
             projects/photo-contest/apps/${{ matrix.app }}/test-results/
             projects/photo-contest/apps/${{ matrix.app }}/.data/screens/
+
+  publish:
+    needs: [verify, browser, containers]
+    if: >-
+      github.event_name == 'push' &&
+      vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
+      github.ref_name == vars.PHOTO_CONTEST_DEPLOY_BRANCH
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api_image: ${{ steps.push.outputs.api_image }}
+      web_image: ${{ steps.push.outputs.web_image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: photo-contest-images-${{ github.sha }}
+          path: ${{ runner.temp }}/photo-contest-images
+      - name: Image names
+        id: images
+        shell: bash
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY,,}-photo-contest" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the exact verified images
+        id: push
+        env:
+          IMAGE_PREFIX: ${{ steps.images.outputs.prefix }}
+        run: |
+          gzip -dc "$RUNNER_TEMP/photo-contest-images/photo-contest-images.tar.gz" | docker load
+          for app in api web; do
+            image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
+            docker tag "photo-contest-$app:$GITHUB_SHA" "$image"
+            docker push "$image"
+            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: photo-contest-production
+    concurrency:
+      group: photo-contest-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip superseded commits
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_BRANCH: ${{ vars.PHOTO_CONTEST_DEPLOY_BRANCH }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          const { GITHUB_API_URL, GITHUB_REPOSITORY, DEPLOY_BRANCH, GH_TOKEN, GITHUB_SHA, GITHUB_OUTPUT } = process.env;
+          const response = await fetch(`${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/commits/${encodeURIComponent(DEPLOY_BRANCH)}`, {
+            headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json' },
+          });
+          if (!response.ok) throw new Error(`배포 브랜치 조회 실패: ${response.status}`);
+          const commit = await response.json();
+          appendFileSync(GITHUB_OUTPUT, `deploy=${commit.sha === GITHUB_SHA}\n`);
+          JS
+      - name: Deploy verified digests over SSH
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          API_IMAGE: ${{ needs.publish.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.publish.outputs.web_image }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          DEPLOY_HOST: ${{ vars.PHOTO_CONTEST_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.PHOTO_CONTEST_DEPLOY_SSH_USER }}
+          DEPLOY_PORT: ${{ vars.PHOTO_CONTEST_DEPLOY_SSH_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.PHOTO_CONTEST_DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.PHOTO_CONTEST_DEPLOY_SSH_KEY }}
+        run: bash projects/photo-contest/deploy/scripts/ci-upload.sh
