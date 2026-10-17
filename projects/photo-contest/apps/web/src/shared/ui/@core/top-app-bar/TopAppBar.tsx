@@ -1,6 +1,6 @@
 'use client';
 
-import { Aperture, ChevronLeft, House, UserRound } from 'lucide-react';
+import { ChevronLeft, House, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -10,6 +10,7 @@ import { ROUTES } from '../../../constants/routes';
 import { useBackNavigation } from '../../../model/router';
 import { IconButton } from '../icon-button';
 import { LegalLinks } from '../legal-links';
+import { BrandIcon } from './BrandIcon';
 
 const APP_BAR_CLASS_NAME = 'sticky top-0 z-app-bar shrink-0 border-b border-line bg-surface pt-(--safe-top)';
 
@@ -23,7 +24,7 @@ function DesktopNavigation() {
           aria-label="웃긴순간 홈"
           className="mb-10 flex min-h-touch items-center gap-2 px-3 text-title-lg tracking-tighter text-ink active:opacity-60"
         >
-          <Aperture aria-hidden className="size-6" />
+          <BrandIcon />
           웃긴순간
         </Link>
         <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
@@ -104,7 +105,7 @@ export function BrandAppBar({ actions, className }: { actions?: ReactNode; class
       <header className={cn(APP_BAR_CLASS_NAME, className)}>
         <div className="flex h-app-bar items-center gap-2 px-4 desktop:px-8">
           <h1 className="flex min-w-0 flex-1 items-center gap-2 text-title-lg tracking-tighter text-ink desktop:text-title">
-            <Aperture aria-hidden className="size-6 desktop:hidden" />
+            <BrandIcon className="desktop:hidden" />
             웃긴순간
           </h1>
           <span className="text-caption text-muted">
