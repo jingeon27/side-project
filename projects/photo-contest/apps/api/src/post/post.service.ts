@@ -43,7 +43,7 @@ function postInclude(userId: string) {
     group: { select: { name: true, members: { where: { userId }, select: { role: true } } } },
     author: true,
     upload: true,
-    _count: { select: { likes: true } },
+    _count: { select: { likes: true, comments: true } },
     likes: { where: { userId }, select: { userId: true } },
   } satisfies Prisma.PostInclude;
 }
@@ -60,6 +60,7 @@ function present(row: TPostRow, userId: string) {
     kind: row.upload.kind,
     mediaUrl: `/backend/media/${row.id}`,
     likeCount: row._count.likes,
+    commentCount: row._count.comments,
     likedByMe: row.likes.length > 0,
     canDelete: row.authorId === userId || row.group.members.some(isOwner),
   };
@@ -217,7 +218,7 @@ export class PostService {
     const upload = await this.db.atomic(async (tx) => {
       const { post, admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
       if (!admin && post.authorId !== viewer.id)
-        fail('작성자와 갤러리 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
+        fail('작성자와 그룹 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
       await tx.post.delete({ where: { id: postId } });
       await recordEvent(tx, {
         id: `post-deleted:${postId}`,

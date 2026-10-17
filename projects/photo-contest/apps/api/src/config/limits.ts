@@ -51,6 +51,7 @@ export const MAX_MEDIA_BODY = '100mb';
 export const MAX_VIDEO_SECONDS = 300;
 export const POST_TITLE_LIMIT = 80;
 export const POST_BODY_LIMIT = 5000;
+export const COMMENT_BODY_LIMIT = 1000;
 
 export const PASSWORD_MIN_LENGTH = 15;
 export const PASSWORD_MAX_LENGTH = 128;

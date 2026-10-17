@@ -44,11 +44,11 @@ export const config = {
 };
 ```
 
-Four defects emerged three months later: matcher scope and path-boundary checking, plus query loss and protocol-relative URL interpretation in new URL(pathname, domain). Matcher scope directly caused the outage; investigation found the others. Section 9 distinguishes them.
+Four defects emerged three months later: matcher scope and path-boundary checking, plus query loss and protocol-relative URL interpretation in new URL(pathname, domain). Matcher scope directly caused the outage; investigation found the others. I distinguish them later in the section about the Next.js upgrade.
 
 ---
 
-## 1. The hosts cannot share cookies
+## The hosts cannot share cookies
 
 Access and refresh tokens are stored in HttpOnly cookies. An Axios interceptor adds the access token to Authorization for each request.
 
@@ -68,7 +68,7 @@ This records how that handoff changed, separating implemented changes from propo
 
 ---
 
-## 2. First approach: tokens in URL parameters
+## First approach: tokens in URL parameters
 
 The initial proposal was a two-stage middleware redirect.
 
@@ -115,7 +115,7 @@ Cleaning history did not clean network-path logs, so tokens needed to leave the 
 
 ---
 
-## 3. Move tokens into an HTML form POST
+## Moving tokens into an HTML form POST
 
 A GET redirect cannot carry the needed body, so I inserted an auto-submitting HTML form. The receiver is a BFF, a server layer owned by the frontend app.
 
@@ -158,7 +158,7 @@ The same refresh token also becomes duplicated across hosts. With rotation or re
 
 ---
 
-## 4. Proposed BFF hardening, not implemented
+## Reviewing the proposed BFF hardening
 
 A POST endpoint accepting external tokens can permit login CSRF: an attacker submits their own token and causes a victim to use the attacker's account.
 
@@ -188,7 +188,7 @@ Origin validation does not make handoff one-time. TTL, nonce, atomic one-time co
 
 ---
 
-## 5. Give handoff a dedicated route
+## Giving handoff a dedicated route
 
 The second approach put host routing, token reading, and HTML generation in middleware. That was too much responsibility in a layer traversed by all requests.
 
@@ -209,7 +209,7 @@ The bridge is directly accessible. Outside local mode, ordinary UI calls it from
 
 ---
 
-## 6. Current headers and their limits
+## Checking the current headers and their limits
 
 The bridge gained destination normalization and response headers. This is the reviewed branch implementation; Origin checks and nonce-based CSP are still absent.
 
@@ -264,7 +264,7 @@ Request-specific nonces, nonce script-src, frame-ancestors none, and base-uri no
 
 ---
 
-## 7. Current flow and token subscriptions
+## Current flow and token subscriptions
 
 The current handoff is:
 
@@ -358,7 +358,7 @@ URL exposure fell, but duplication and JavaScript exposure remain.
 
 ---
 
-## 8. Why authorization-code exchange was outside scope
+## Why authorization-code exchange was outside scope
 
 An OAuth-style authorization-code exchange is safer for this transfer. Only a one-time code crosses the browser; settlement exchanges it for tokens server to server.
 
@@ -374,17 +374,17 @@ The accepted risks are:
 
 - Tokens still pass through the browser in readable form. Reduced URL, Referer, and ordinary log exposure does not prevent body collection or XSS.
 - HTTPS and short access-token lifetimes reduce some risks but do not remove the cost of transferring long-lived refresh tokens.
-- Both hosts share one refresh token and need coordinated rotation/logout. Access-only handoff remains follow-up work from section 3.
+- Both hosts share one refresh token and need coordinated rotation/logout. Sending only the access token in the form POST and repeating handoff on expiry remains follow-up work.
 - The form lacks TTL, nonce, one-time consumption, session binding, and incoming Origin validation. It is not replay-proof.
 - An authorization-code exchange should replace it if shared storage or an exchange API becomes available. Centralizing the start in /api/finance/bridge limits replacement scope.
 
 ---
 
-## 9. A Next.js 16.3 upgrade exposed the matcher
+## A Next.js 16.3 upgrade exposed the matcher
 
 Three months after host separation, moving from Next.js 14.2 to 16.3.0 broke settlement. Next.js 16 defaulted to Turbopack and renamed middleware.ts to Node-runtime proxy.ts. We retained the old matcher.
 
-### 9-1. Three conditions behind the failure
+### Conditions behind the failure
 
 `/((?!api).*)` also catches /_next/**. Settlement chunks redirected 307 to the main host because they were not settlement paths.
 
@@ -411,7 +411,7 @@ An empty crossorigin means anonymous rather than being ignored, switching the re
 
 The matcher was wrong from the start, but the second condition exposed it. The upgrade revealed rather than created the routing defect.
 
-### 9-2. Evidence of an upstream regression
+### Evidence of an upstream regression
 
 The client reference manifest's moduleLoading.crossOrigin differed.
 
@@ -431,7 +431,7 @@ I found matching upstream reports and a proposed fix.
 
 Both were open at the article's review point. This narrowed the cause to a 16.3.0 serialization regression rather than a specification change across all of Next.js 16.
 
-### 9-3. Applied changes
+### Applied changes
 
 First, I excluded API and static paths from the matcher.
 
@@ -454,7 +454,7 @@ I pinned ~16.2.12 pending a stable fix. ^16.2.12 would permit reinstalling 16.3.
 
 Error-collection CORS uses an exact allowlist and Vary: Origin but permits credentials on every path. Separately from the matcher, it needs narrowing to error-collection routes.
 
-### 9-4. Remaining tests
+### Remaining tests
 
 The matcher fix addressed the /_next/** outage. Exact /api and /_next paths, robots.txt, sitemap.xml, manifests, and public fonts still need checking against the real asset set.
 

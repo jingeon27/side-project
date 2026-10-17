@@ -24,6 +24,7 @@ model User {
   posts Post[]
   postUploads PostUpload[]
   postLikes PostLike[]
+  postComments PostComment[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
 }
@@ -185,7 +186,18 @@ model Post {
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   upload PostUpload @relation(fields: [uploadId], references: [id])
   likes PostLike[]
+  comments PostComment[]
   @@index([groupId, createdAt, id])
+}
+model PostComment {
+  id String @id @default(cuid())
+  postId String
+  authorId String
+  body String
+  createdAt DateTime @default(now())
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  @@index([postId, createdAt, id])
 }
 model PostLike {
   postId String

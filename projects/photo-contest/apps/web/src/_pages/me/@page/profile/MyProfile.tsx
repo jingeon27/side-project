@@ -12,7 +12,7 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
   const viewer = data.me;
   if (!viewer) return null;
   return (
-    <section className="flex flex-wrap items-center gap-6 border-b border-line pb-8 tablet:gap-10 tablet:px-6">
+    <section className="flex flex-wrap items-center gap-6 border-b border-line pb-8 tablet:gap-10 tablet:px-6 desktop:flex-col desktop:items-start desktop:gap-5 desktop:rounded-card desktop:border desktop:bg-surface desktop:p-6">
       <Avatar
         name={viewer.nickname}
         src={viewer.avatar}

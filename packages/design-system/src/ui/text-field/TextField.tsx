@@ -1,5 +1,5 @@
 import { Field } from '@base-ui/react/field';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { cn } from '../../lib/cn.helper';
 
@@ -16,6 +16,8 @@ interface IFieldTextProps {
   /** 있으면 오류로 표시하고 읽어 준다(react-hook-form의 errors.x?.message). */
   error?: string;
   className?: string;
+  /** 레이블 옆의 필수/선택 등 보조 표시는 소비 앱이 제공한다. */
+  labelSuffix?: ReactNode;
 }
 
 /** 도움말과 오류 안내. Field가 입력의 aria-describedby·aria-invalid로 연결한다. */
@@ -35,14 +37,24 @@ function FieldMessages({ description, error }: Pick<IFieldTextProps, 'descriptio
 export interface ITextFieldProps extends IFieldTextProps, Omit<ComponentProps<'input'>, 'className'> {}
 
 /** 한 줄 입력. `{...register('name')}`을 그대로 넘긴다. */
-export function TextField({ label, description, error, className, ...inputProps }: ITextFieldProps) {
+export function TextField({
+  label,
+  description,
+  error,
+  className,
+  labelSuffix,
+  ...inputProps
+}: ITextFieldProps) {
   return (
     <Field.Root
       invalid={Boolean(error)}
       disabled={inputProps.disabled}
       className={cn('flex flex-col gap-1.5', className)}
     >
-      <Field.Label className="text-label text-ink">{label}</Field.Label>
+      <div className="flex items-center gap-1">
+        <Field.Label className="text-label text-ink">{label}</Field.Label>
+        {labelSuffix}
+      </div>
       <Field.Control {...inputProps} className={cn(CONTROL_CLASS_NAME, 'h-12')} />
       <FieldMessages description={description} error={error} />
     </Field.Root>
@@ -58,6 +70,7 @@ export function TextArea({
   error,
   className,
   rows = 4,
+  labelSuffix,
   ...textareaProps
 }: ITextAreaProps) {
   return (
@@ -66,8 +79,12 @@ export function TextArea({
       disabled={textareaProps.disabled}
       className={cn('flex flex-col gap-1.5', className)}
     >
-      <Field.Label className="text-label text-ink">{label}</Field.Label>
+      <div className="flex items-center gap-1">
+        <Field.Label className="text-label text-ink">{label}</Field.Label>
+        {labelSuffix}
+      </div>
       <Field.Control
+        required={textareaProps.required}
         render={
           <textarea {...textareaProps} rows={rows} className={cn(CONTROL_CLASS_NAME, 'resize-none py-3')} />
         }

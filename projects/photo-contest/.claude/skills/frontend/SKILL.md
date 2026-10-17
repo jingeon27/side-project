@@ -21,7 +21,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - feature slice 세그먼트: `api/<domain>.graphql`, `model/<domain>.cache.ts`·`<domain>.type-policies.ts`·`<domain>.schema.ts`·`*.hook.ts`, `lib/*.helper.ts`, `types/`, `ui/`, `index.ts`(쓰는 이름만 명시 export). slice 안에서는 상대 경로로, 자기 배럴을 import하지 않는다.
 - 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
 
-현재 제품의 갤러리는 상시 게시판이다. 홈은 전체 가입 갤러리의 최신 게시물·이달의 인기, MY는 갤러리 목록·생성이다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
+현재 제품의 그룹은 상시 게시판이다. 홈은 전체 가입 그룹의 최신 게시물·이달의 인기, MY는 그룹 목록·생성이다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
 
 ## 이벤트 핸들러
 
@@ -39,7 +39,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 
 ## 모바일 레이아웃
 
-- 화면은 `#pc-root` > `main#pc-main`의 반응형 웹 영역(`max-w-web` 1200px)에 그린다. 상시 게시물은 모든 화면에서 최대 540px의 큰 1열 피드다. `desktop:`(1024px)부터 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진을 쓰며, 그보다 좁으면 하단 탭과 피드 위의 가로 인기 사진을 쓴다. 이전 대회 피드의 격자는 유지한다. 오버레이는 `#pc-main` 안에 띄우고 시트·폼은 `max-w-app`(540px)로 제한한다.
+- 화면은 `#pc-root` > `main#pc-main`의 반응형 웹 영역(`max-w-web` 1440px)에 그린다. 상시 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드다. `desktop:`(1024px)부터 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진을 쓰며, 그보다 좁으면 하단 탭과 피드 위의 인기 목록을 쓴다. 인기 목록은 모든 기기에서 순위·64px 사진·내용 순서로 한 줄씩 표시한다. 이전 대회 피드의 격자는 유지한다. 오버레이 portal은 `#pc-main`에 둔다. 바텀시트는 모든 기기에서 화면 아래에 붙고 화면 너비를 채운다. 일반 화면의 로그인 폼은 `max-w-app`(540px)을 쓴다.
 - 높이는 dvh(100vh·min-h-screen 금지). 안전 영역은 브라우저에서 웹이 `env(safe-area-inset-*)`로, 앱 WebView에서는 네이티브가 맡는다(웹이 따로 하지 않는다).
 - 누를 영역 44px 이상(주 버튼 50px), 탭 피드백은 `active:`. 입력 글자 16px 이상(iOS 확대 방지). 확대(pinch)는 막지 않는다.
 - 공통 조각: `TopAppBar`(뒤로 가기·제목·액션), `StickyCta`(하단 고정 주 버튼, safe-bottom), `BottomNav`(홈·MY 화면에만, 입력 중 숨김), `BottomSheet`, `ConfirmDialog`, `Toast`, `Skeleton`·`EmptyState`·`ErrorState`.

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import type { INestApplication, LogLevel } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { json, raw } from 'express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 
@@ -10,7 +11,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { bodyParserErrorHandler } from './common/http/body-parser-error.middleware';
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
-import { assertProductionConfig, assertTestingConfig, isTest } from './config/env';
+import { assertProductionConfig, assertTestingConfig, isTest, trustedProxyHops } from './config/env';
 import {
   MAX_JSON_BODY,
   MAX_UPLOAD_BODY,
@@ -35,10 +36,12 @@ export interface ICreateAppOptions {
 export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INestApplication> {
   assertTestingConfig();
   assertProductionConfig();
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
     logger: logger ?? (isTest() ? false : LOG_LEVELS),
   });
+  // 운영에서는 외부에 포트를 열지 않고 Caddy 한 단계가 전달한 주소만 사용한다.
+  app.set('trust proxy', trustedProxyHops());
   app.use(noStore);
   app.use(originGuard);
   app.use(

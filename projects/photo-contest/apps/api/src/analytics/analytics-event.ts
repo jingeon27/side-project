@@ -5,6 +5,8 @@ export const ANALYTICS_EVENT = {
   POST_CREATED: 'post_created',
   POST_LIKED: 'post_liked',
   POST_DELETED: 'post_deleted',
+  COMMENT_CREATED: 'comment_created',
+  COMMENT_DELETED: 'comment_deleted',
   GROUP_CREATED: 'group_created',
   GROUP_JOINED: 'group_joined',
   CONTEST_CREATED: 'contest_created',

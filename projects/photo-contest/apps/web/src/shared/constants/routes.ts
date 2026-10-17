@@ -2,6 +2,8 @@
 export const ROUTES = {
   HOME: '/',
   ME: '/me',
+  TERMS: '/terms',
+  PRIVACY: '/privacy',
   GROUP: (id: string) => `/groups/${encodeURIComponent(id)}`,
   CONTEST: (id: string) => `/contests/${encodeURIComponent(id)}`,
   INVITE: (token: string) => `/invite/${encodeURIComponent(token)}`,

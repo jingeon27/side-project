@@ -62,6 +62,7 @@ export function CreateContestBottomSheet({
       <BottomSheet.Content>
         <form id={FORM_ID} onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <TextField
+            required
             label="대회 제목"
             placeholder="이번 주 가장 웃긴 순간"
             autoComplete="off"
@@ -69,18 +70,21 @@ export function CreateContestBottomSheet({
             {...form.register('title')}
           />
           <TextField
+            required
             label="시작 시각"
             type="datetime-local"
             error={errors.startsAt?.message}
             {...form.register('startsAt')}
           />
           <TextField
+            required
             label="사진 제출 마감"
             type="datetime-local"
             error={errors.submissionEndsAt?.message}
             {...form.register('submissionEndsAt')}
           />
           <TextField
+            required
             label="투표 마감"
             type="datetime-local"
             description="입력 시각은 기기의 시간대 기준이에요. 대회는 최대 90일 동안 진행할 수 있어요."

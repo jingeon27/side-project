@@ -19,6 +19,12 @@
     }
   },
   "posts": {
+    "side-project-design": {
+      "title": "사이드 프로젝트 저장소를 만들고 서비스를 늘려 간 과정",
+      "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+      "description": "여러 서비스를 병렬로 만들면서 모노레포와 공통 패키지를 구성한 과정, 사진 서비스와 게임 피드백, 블로그의 설계 경험을 정리했어요.",
+      "keywords": ["사이드 프로젝트", "제품 설계", "게임 피드백", "REST", "캐시", "MDX", "모노레포"]
+    },
     "puppeteer-event-lifecycle": {
       "title": "Puppeteer의 request와 response를 함께 기다리기: closure보다 중요했던 수명 관리",
       "slug": "puppeteer의-request와-response를-함께-기다리기-closure보다-중요했던-수명-관리",

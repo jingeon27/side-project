@@ -20,6 +20,8 @@ description: 웹(apps/web)에서 입력 폼(그룹·대회 만들기, 사진 제
 - 시트에서는 `<form id={FORM_ID}>`를 `BottomSheet.Content` 안에 두고, 제출 버튼은 `BottomSheet.Footer`에서 `type="submit" form={FORM_ID}`로 잇는다. form으로 Content와 Footer를 함께 감싸면 Content만 스크롤되는 구조가 깨진다.
 - 렌더에 쓰는 값(글자 수, 미리보기, 버튼 활성)은 `useWatch({ control: form.control, name })`, 핸들러 안에서는 `form.getValues()`. 렌더 중 `form.watch()`는 폼 전체를 다시 그린다.
 
+필수인 TextField·TextArea에는 required를 명시한다. 공통 컴포넌트가 필수·선택 표시를 붙이며 접근성 이름은 바꾸지 않는다. 직접 만든 파일 입력은 선택 뒤 value를 비우므로 aria-required를 사용하고, 필수 동의 체크박스는 required와 같은 필수 표시를 붙인다. 표시는 Zod 검증과 일치해야 한다.
+
 ## 제출
 
 ```tsx

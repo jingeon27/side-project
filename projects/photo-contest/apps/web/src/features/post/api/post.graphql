@@ -8,6 +8,7 @@ fragment GalleryPostCard on GalleryPost {
   mediaUrl
   createdAt
   likeCount
+  commentCount
   likedByMe
   canDelete
   author {
@@ -60,4 +61,30 @@ mutation DeletePost($postId: ID!) {
 
 mutation UploadPostMedia($uploadId: ID!, $file: Upload!) {
   uploadPostMedia(uploadId: $uploadId, file: $file)
+}
+
+fragment PostCommentCard on PostComment {
+  id
+  postId
+  body
+  createdAt
+  canDelete
+  author {
+    id
+    nickname
+    avatar
+  }
+}
+query PostComments($postId: ID!, $offset: Int!, $limit: Int!) {
+  postComments(postId: $postId, offset: $offset, limit: $limit) {
+    ...PostCommentCard
+  }
+}
+mutation CreatePostComment($postId: ID!, $body: String!) {
+  createPostComment(postId: $postId, body: $body) {
+    ...PostCommentCard
+  }
+}
+mutation DeletePostComment($commentId: ID!) {
+  deletePostComment(commentId: $commentId)
 }

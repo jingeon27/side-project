@@ -11,7 +11,7 @@ The task became combining two external streams into one client-side conversation
 
 ---
 
-## 0. An ordinary AI chatbot at first
+## An ordinary AI chatbot at first
 
 ```text
 src/modules/entities/chat/chatbot/
@@ -57,7 +57,7 @@ That connection keyword led to the next requirement.
 
 ---
 
-## 1. A second channel and a counselor button
+## Adding a counselor connection button
 
 Questions AI could not resolve needed a human counselor. Responses came from the separate session backend's SSE, with start / subscribe / message / end operations opening sessions and receiving messages and statuses.
 
@@ -85,7 +85,7 @@ But moving from AI to a counselor continues the same conversation. Splitting pan
 
 ---
 
-## 2. One panel and a connection keyword
+## Combining the panels and using a connection keyword
 
 I changed two things together.
 
@@ -121,7 +121,7 @@ Discarding a response can look like a bug. Here it came from the external-servic
 
 ---
 
-## 3. Authentication headers ruled out EventSource
+## Authentication headers ruled out EventSource
 
 Session SSE required Authorization: Bearer, but standard browser EventSource cannot send custom headers. I switched to `@microsoft/fetch-event-source`, whose fetch-based implementation supports Bearer headers, reconnection policy, and background-tab connections with `openWhenHidden`.
 
@@ -142,7 +142,7 @@ This was another constraint of consuming an external API: the browser's standard
 
 ---
 
-## 4. Gather transitions in useReducer
+## Gathering transitions in useReducer
 
 Status was more than a flag. It encoded the session workflow.
 
@@ -157,11 +157,11 @@ ai ──"상담원 연결"→ connecting ──(SSE: live)→ live ──(SSE: 
 
 Client-created and server-provided values shared one variable. Several useState calls could become inconsistent at boundaries such as an SSE done event arriving while connecting. I gathered transitions into one useReducer state machine.
 
-Transitions became clearer, but effects still imperatively opened and closed SSE. “Status is live but connection is closed” remained possible. Section 6 returns to the mixed-status type.
+Transitions became clearer, but effects still imperatively opened and closed SSE. “Status is live but connection is closed” remained possible. I separated the client and server status types later when moving to @tanstack/ai.
 
 ---
 
-## 5. Derive the connection with useSyncExternalStore
+## Letting the store own SSE while React subscribes to snapshots
 
 > Connection = subscribers exist ∧ session exists ∧ session is not finished.
 
@@ -191,7 +191,7 @@ This version worked, but I replaced it anyway.
 
 ---
 
-## 6. Move a working store to @tanstack/ai
+## Moving message management to @tanstack/ai
 
 ChatStore accumulated messages, deduplicated IDs with seen, managed subscriptions, and updated immutable snapshots. Those are common message-store responsibilities already handled by AI message frameworks.
 
@@ -248,9 +248,9 @@ The adapter was only part of the work. useChat made several assumptions.
 - Without `live: true`, subscription does not start. Omitting it caused missing live messages until I used `useChat({ connection, initialMessages, live: true })`.
 - Closing the panel unmounts the component and unsubscribes. The adapter's finally calls controller.abort() to close SSE.
 
-### Separate client and server status types
+### Separating client and server status types
 
-The mixed status from section 4 was first split into serverStatus and isConnecting, then simplified again. The final implementation keeps one state with separate types.
+I first split the client's connecting state and the server's status into serverStatus and isConnecting. I later simplified this to one state value with separate types.
 
 ```tsx
 type ServerStatus = 'ai' | 'live' | 'hold' | 'done';   // SSE/히스토리가 주는 권위 상태
@@ -263,13 +263,13 @@ const connection = useMemo(() => makeSessionConnection({ sessionId, onStatus: se
 
 The keyword handler directly sets connecting. The server callback onStatus accepts only ServerStatus, so that path cannot supply the client's optimistic connecting value. The distinction is expressed through types rather than additional runtime state.
 
-### Deduplication was delegated, not fully verified
+### Message deduplication still needed verification
 
 I did not port ChatStore's seen set into the adapter. Message accumulation, deduplication, and lifetime were delegated to useChat's messageId handling. That does not mean I verified every deduplication case. Whether identical IDs from initial history and SSE are combined still needs a backend-retransmission scenario test.
 
 ---
 
-## 7. Error feedback and unfinished work
+## Fixing send failures and checking the remaining work
 
 Review led to several corrections.
 
@@ -286,7 +286,7 @@ Other debt remains.
 
 ---
 
-## 8. Decisions and constraints
+## Looking back at my decisions and the external constraints
 
 ### Decisions I made
 

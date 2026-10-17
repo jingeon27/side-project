@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { appVersions, developmentLoginEnabled, mobileAppScheme, webOrigin } from './env';
+import { appVersions, developmentLoginEnabled, mobileAppScheme, trustedProxyHops, webOrigin } from './env';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -49,6 +49,17 @@ describe('앱 scheme 설정', () => {
 });
 
 describe('실행 환경 설정', () => {
+  it('기본값은 전달 헤더를 신뢰하지 않고 명시한 프록시 한 단계만 허용해야 한다', () => {
+    vi.stubEnv('TRUST_PROXY_HOPS', undefined);
+    expect(trustedProxyHops()).toBe(0);
+    vi.stubEnv('TRUST_PROXY_HOPS', '1');
+    expect(trustedProxyHops()).toBe(1);
+    for (const invalid of ['true', '2', '-1', '']) {
+      vi.stubEnv('TRUST_PROXY_HOPS', invalid);
+      expect(() => trustedProxyHops()).toThrow('TRUST_PROXY_HOPS must be 0 or 1.');
+    }
+  });
+
   it('개발 로그인은 NODE_ENV=development와 ENABLE_DEV_LOGIN=true가 모두 있을 때만 열어야 한다', () => {
     vi.stubEnv('NODE_ENV', 'development');
     vi.stubEnv('ENABLE_DEV_LOGIN', 'true');

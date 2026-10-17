@@ -5,11 +5,11 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page, signIn }) => {
     const cookie = await signIn('시트 회귀 회원');
-    const group = await seedGroup(cookie, '시트 확인 갤러리');
+    const group = await seedGroup(cookie, '시트 확인 그룹');
     await page.goto(`/groups/${group.id}`);
     const opener = page.getByRole('button', { name: '글쓰기', exact: true });
     await opener.click();
-    let sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+    let sheet = page.getByRole('dialog', { name: '그룹에 글쓰기' });
     await expect(sheet).toBeVisible();
     const viewport = page.viewportSize();
     if (!viewport) throw new Error('viewport missing');
@@ -17,10 +17,23 @@ test(
     await expect
       .poll(async () => {
         const box = await sheet.boundingBox();
-        return Boolean(box && box.y >= 0 && box.y + box.height <= 501 && box.width <= 540);
+        return Boolean(
+          box &&
+          box.y >= 0 &&
+          box.y + box.height <= 501 &&
+          Math.abs(box.width - viewport.width) <= 1 &&
+          Math.abs(box.x) <= 1,
+        );
       })
       .toBe(true);
     const content = sheet.locator('[data-bottom-sheet-content]');
+    await expect(sheet.getByLabel('제목', { exact: true })).toHaveAttribute('required', '');
+    await expect(sheet.getByLabel('사진·동영상 선택', { exact: true })).toHaveAttribute(
+      'aria-required',
+      'true',
+    );
+    await expect(sheet.getByLabel('내용', { exact: true })).not.toHaveAttribute('required');
+    await expect(sheet.getByRole('checkbox')).toHaveAttribute('required', '');
     expect(await content.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     await content.evaluate((el) => {
       el.scrollTop = el.scrollHeight;
@@ -30,7 +43,7 @@ test(
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(opener).toBeFocused();
     await opener.click();
-    sheet = page.getByRole('dialog', { name: '갤러리에 글쓰기' });
+    sheet = page.getByRole('dialog', { name: '그룹에 글쓰기' });
     await expect(sheet.getByLabel('제목', { exact: true })).toHaveValue('');
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);

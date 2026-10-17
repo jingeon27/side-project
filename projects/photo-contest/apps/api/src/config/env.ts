@@ -75,6 +75,13 @@ export function apiHost() {
   return process.env.API_HOST ?? '127.0.0.1';
 }
 
+export function trustedProxyHops() {
+  const value = process.env.TRUST_PROXY_HOPS ?? '0';
+  if (value === '0') return 0;
+  if (value === '1') return 1;
+  throw new Error('TRUST_PROXY_HOPS must be 0 or 1.');
+}
+
 export function webOrigin() {
   return new URL(process.env.WEB_ORIGIN ?? DEFAULT_WEB_ORIGIN).origin;
 }

@@ -29,6 +29,20 @@ function ReportForm({ onSubmit }: { onSubmit: () => void }) {
 }
 
 describe('TextField / TextArea', () => {
+  it('필수 입력과 선택 입력을 구분하고 접근성 이름과 required를 유지해야 한다', () => {
+    render(
+      <>
+        <TextField label="제목" required />
+        <TextArea label="댓글" required />
+        <TextArea label="내용" />
+      </>,
+    );
+    expect(screen.getByRole('textbox', { name: '제목' })).toBeRequired();
+    expect(screen.getByRole('textbox', { name: '댓글' })).toBeRequired();
+    expect(screen.getByRole('textbox', { name: '내용' })).not.toBeRequired();
+    expect(screen.getAllByText('필수')).toHaveLength(2);
+    expect(screen.getByText('선택')).toBeVisible();
+  });
   it('레이블과 도움말이 입력에 연결돼야 한다', () => {
     render(<TextField label="닉네임" description="2~20자" />);
     const input = screen.getByRole('textbox', { name: '닉네임' });

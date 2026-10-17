@@ -19,39 +19,41 @@
 
 최초 이관에서는 Tistory의 `article:published_time`과 `article:modified_time`에 기록된 시간대 포함 ISO 값을 보존했다. 이후 편집한 글은 발행일을 유지하고 `updatedAt`에 편집 시각을 기록한다. 화면의 날짜는 한국 시간을 기준으로 표시한다. 콘텐츠 ID는 파일과 번역의 공통 식별자이며 공개 URL은 언어별 SEO의 slug로 정한다. 기존 글을 합치거나 발행일을 마이그레이션 날짜로 바꾸지 않았다.
 
+2026-10-17에는 앞서 이관한 공개 원문 27편을 다시 조회해 `article:published_time`과 저장된 `publishedAt`, 최초 이관 기록이 모두 일치하는지 확인했다. 한국어와 영어는 같은 최초 발행일을 사용한다. 목록과 상세에는 최초 발행일을 `발행`으로 표시하고, 상세에서는 이후 편집일을 `수정`으로 구분한다. 이 블로그에서 새로 작성한 글의 발행일은 해당 글의 날짜를 사용한다.
+
 ## 공개 글 대응표
 
 Tistory 번호와 로컬 수정본 번호는 29번부터 다르다. 아래 표의 번호는 공개 URL을 뜻한다.
 
-| 공개 URL                                | 콘텐츠 ID                       | `resume/blog` 대응 파일                            |
-| --------------------------------------- | ------------------------------- | -------------------------------------------------- |
-| [/4](https://jingeon27.tistory.com/4)   | `puppeteer-event-lifecycle`     | `revised/post-04-puppeteer-closure.md`             |
-| [/5](https://jingeon27.tistory.com/5)   | `electron-module-boundaries`    | `revised/post-05-electron-nestjs-inspired.md`      |
-| [/6](https://jingeon27.tistory.com/6)   | `query-key-factory`             | `revised/post-06-query-key-factory.md`             |
-| [/7](https://jingeon27.tistory.com/7)   | `typescript-patterns`           | `revised/post-07-typescript-patterns.md`           |
-| [/8](https://jingeon27.tistory.com/8)   | `nextjs-tanstack-query-ssr`     | `revised/post-08-next-tanstack-query.md`           |
-| [/11](https://jingeon27.tistory.com/11) | `reservation-form-state`        | `revised/post-11-reservation-form.md`              |
-| [/12](https://jingeon27.tistory.com/12) | `review-like-optimistic-update` | `revised/post-12-review-like-optimistic-update.md` |
-| [/14](https://jingeon27.tistory.com/14) | `nextjs-seo-prefetch`           | `revised/post-14-next-seo-prefetch.md`             |
-| [/15](https://jingeon27.tistory.com/15) | `review-form-funnel`            | `revised/post-15-review-form.md`                   |
-| [/18](https://jingeon27.tistory.com/18) | `typed-program-form`            | `revised/post-18-program-form.md`                  |
-| [/19](https://jingeon27.tistory.com/19) | `cross-domain-token-handoff`    | `revised/post-19-cross-domain-token.md`            |
-| [/20](https://jingeon27.tistory.com/20) | `chatbot-message-layer`         | `revised/post-20-chatbot-message-layer.md`         |
-| [/21](https://jingeon27.tistory.com/21) | `sitemap-api-boundaries`        | `revised/post-21-sitemap-cache.md`                 |
-| [/22](https://jingeon27.tistory.com/22) | `payment-coupon-branches`       | `revised/post-22-payment-coupon.md`                |
-| [/23](https://jingeon27.tistory.com/23) | `fsd-layer-boundaries`          | `revised/post-23-fsd-2-1.md`                       |
-| [/24](https://jingeon27.tistory.com/24) | `prototype-working-rules`       | `revised/post-24-prototype-rules.md`               |
-| [/25](https://jingeon27.tistory.com/25) | `testing-standards`             | `revised/post-25-test-suite-rebuild.md`            |
-| [/26](https://jingeon27.tistory.com/26) | `declarative-code`              | `revised/post-26-declarative-code.md`              |
-| [/27](https://jingeon27.tistory.com/27) | `nextjs-server-client-issues`   | `revised/post-27-next-server-to-client.md`         |
-| [/28](https://jingeon27.tistory.com/28) | `error-boundary-recovery`       | `revised/post-28-error-boundary.md`                |
-| [/29](https://jingeon27.tistory.com/29) | `low-effort-success`            | `revised/post-33-low-effort-success.md`            |
-| [/30](https://jingeon27.tistory.com/30) | `sentry-observability`          | `revised/post-30-sentry-pii-hardening.md`          |
-| [/31](https://jingeon27.tistory.com/31) | `plan-gated-ai-workflow`        | `revised/post-34-plan-gated-ai-workflow.md`        |
-| [/32](https://jingeon27.tistory.com/32) | `zod-assertion-boundaries`      | `revised/post-35-zod-assertion-boundaries.md`      |
-| [/33](https://jingeon27.tistory.com/33) | `bottom-sheet-drag-crash`       | `revised/post-36-sentry-bottom-sheet-crash.md`     |
-| [/34](https://jingeon27.tistory.com/34) | `health-check-program`          | `revised/post-new-health-check-program.md`         |
-| [/35](https://jingeon27.tistory.com/35) | `reading-ai-code`               | `revised/post-new-reading-ai-code.md`              |
+| 공개 URL                                | 콘텐츠 ID                       | `resume/blog` 대응 파일                            | 최초 발행일 (한국 시간) |
+| --------------------------------------- | ------------------------------- | -------------------------------------------------- | ----------------------- |
+| [/4](https://jingeon27.tistory.com/4)   | `puppeteer-event-lifecycle`     | `revised/post-04-puppeteer-closure.md`             | 2024-03-29              |
+| [/5](https://jingeon27.tistory.com/5)   | `electron-module-boundaries`    | `revised/post-05-electron-nestjs-inspired.md`      | 2024-04-02              |
+| [/6](https://jingeon27.tistory.com/6)   | `query-key-factory`             | `revised/post-06-query-key-factory.md`             | 2024-04-10              |
+| [/7](https://jingeon27.tistory.com/7)   | `typescript-patterns`           | `revised/post-07-typescript-patterns.md`           | 2024-05-25              |
+| [/8](https://jingeon27.tistory.com/8)   | `nextjs-tanstack-query-ssr`     | `revised/post-08-next-tanstack-query.md`           | 2025-01-22              |
+| [/11](https://jingeon27.tistory.com/11) | `reservation-form-state`        | `revised/post-11-reservation-form.md`              | 2025-06-30              |
+| [/12](https://jingeon27.tistory.com/12) | `review-like-optimistic-update` | `revised/post-12-review-like-optimistic-update.md` | 2025-07-03              |
+| [/14](https://jingeon27.tistory.com/14) | `nextjs-seo-prefetch`           | `revised/post-14-next-seo-prefetch.md`             | 2025-11-20              |
+| [/15](https://jingeon27.tistory.com/15) | `review-form-funnel`            | `revised/post-15-review-form.md`                   | 2025-12-13              |
+| [/18](https://jingeon27.tistory.com/18) | `typed-program-form`            | `revised/post-18-program-form.md`                  | 2026-02-13              |
+| [/19](https://jingeon27.tistory.com/19) | `cross-domain-token-handoff`    | `revised/post-19-cross-domain-token.md`            | 2026-05-29              |
+| [/20](https://jingeon27.tistory.com/20) | `chatbot-message-layer`         | `revised/post-20-chatbot-message-layer.md`         | 2026-06-25              |
+| [/21](https://jingeon27.tistory.com/21) | `sitemap-api-boundaries`        | `revised/post-21-sitemap-cache.md`                 | 2026-06-16              |
+| [/22](https://jingeon27.tistory.com/22) | `payment-coupon-branches`       | `revised/post-22-payment-coupon.md`                | 2026-07-02              |
+| [/23](https://jingeon27.tistory.com/23) | `fsd-layer-boundaries`          | `revised/post-23-fsd-2-1.md`                       | 2026-07-01              |
+| [/24](https://jingeon27.tistory.com/24) | `prototype-working-rules`       | `revised/post-24-prototype-rules.md`               | 2026-07-12              |
+| [/25](https://jingeon27.tistory.com/25) | `testing-standards`             | `revised/post-25-test-suite-rebuild.md`            | 2026-08-08              |
+| [/26](https://jingeon27.tistory.com/26) | `declarative-code`              | `revised/post-26-declarative-code.md`              | 2026-08-12              |
+| [/27](https://jingeon27.tistory.com/27) | `nextjs-server-client-issues`   | `revised/post-27-next-server-to-client.md`         | 2026-08-16              |
+| [/28](https://jingeon27.tistory.com/28) | `error-boundary-recovery`       | `revised/post-28-error-boundary.md`                | 2026-08-17              |
+| [/29](https://jingeon27.tistory.com/29) | `low-effort-success`            | `revised/post-33-low-effort-success.md`            | 2026-08-25              |
+| [/30](https://jingeon27.tistory.com/30) | `sentry-observability`          | `revised/post-30-sentry-pii-hardening.md`          | 2026-08-25              |
+| [/31](https://jingeon27.tistory.com/31) | `plan-gated-ai-workflow`        | `revised/post-34-plan-gated-ai-workflow.md`        | 2026-08-30              |
+| [/32](https://jingeon27.tistory.com/32) | `zod-assertion-boundaries`      | `revised/post-35-zod-assertion-boundaries.md`      | 2026-09-05              |
+| [/33](https://jingeon27.tistory.com/33) | `bottom-sheet-drag-crash`       | `revised/post-36-sentry-bottom-sheet-crash.md`     | 2026-09-28              |
+| [/34](https://jingeon27.tistory.com/34) | `health-check-program`          | `revised/post-new-health-check-program.md`         | 2026-09-30              |
+| [/35](https://jingeon27.tistory.com/35) | `reading-ai-code`               | `revised/post-new-reading-ai-code.md`              | 2026-10-05              |
 
 ## 제외한 로컬 파일
 

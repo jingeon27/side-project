@@ -5,8 +5,10 @@
   --breakpoint-pc: 540px;
   --breakpoint-tablet: 768px;
   --breakpoint-desktop: 1024px;
+  --breakpoint-wide: 1280px;
   --max-width-app: 540px;
-  --max-width-web: 1200px;
+  --max-width-feed: 680px;
+  --max-width-web: 1440px;
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', 'Malgun Gothic',

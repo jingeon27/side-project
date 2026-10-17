@@ -19,6 +19,12 @@
     }
   },
   "posts": {
+    "side-project-design": {
+      "title": "How My Side Project Repository Grew Beyond the First Service",
+      "slug": "what-i-kept-changing-while-planning-my-side-projects",
+      "description": "Why I began planning several services in parallel, and how I organized a monorepo, shared packages, a photo service, game feedback, and a personal blog.",
+      "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"]
+    },
     "puppeteer-event-lifecycle": {
       "title": "Waiting for Puppeteer requests and responses",
       "slug": "puppeteer-event-lifecycle",
