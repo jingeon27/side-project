@@ -2,7 +2,7 @@
 import { useI18n } from '@/shared/i18n';
 import { IconButton } from '@side/design-system';
 import { Check, X } from 'lucide-react';
-import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { AnimatePresence, m, useIsPresent, useMotionPreference } from '@/shared/motion';
 
 const NotifyContext = createContext<(text: string) => void>(() => {});
@@ -10,23 +10,25 @@ export function useNotify() {
   return useContext(NotifyContext);
 }
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [message, setMessage] = useState('');
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [{ message, sequence }, setToast] = useState({ message: '', sequence: 0 });
   const handleNotify = useCallback((text: string) => {
-    clearTimeout(timer.current);
-    setMessage(text);
-    timer.current = setTimeout(() => setMessage(''), 4500);
+    setToast((current) => ({ message: text, sequence: current.sequence + 1 }));
   }, []);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  function handleDismiss() {
-    clearTimeout(timer.current);
-    setMessage('');
-  }
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => {
+      setToast((current) => (current.sequence === sequence ? { ...current, message: '' } : current));
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [message, sequence]);
+  const handleDismiss = useCallback(() => {
+    setToast((current) => ({ ...current, message: '' }));
+  }, []);
   return (
     <NotifyContext.Provider value={handleNotify}>
       {children}
       <AnimatePresence mode="wait">
-        {message && <ToastMessage key={message} message={message} onDismiss={handleDismiss} />}
+        {message && <ToastMessage key={sequence} message={message} onDismiss={handleDismiss} />}
       </AnimatePresence>
     </NotifyContext.Provider>
   );

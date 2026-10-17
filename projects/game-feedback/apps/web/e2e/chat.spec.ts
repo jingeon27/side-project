@@ -150,6 +150,13 @@ test('a failed send preserves the draft and retries with the same idempotency ke
     expect(history.items.filter((item: ChatMessage) => item.body === body)).toHaveLength(1);
     expect(keys).toHaveLength(2);
     expect(keys[0]).toBe(keys[1]);
+    await send(page, body);
+    const repeated = await (
+      await sender.context.request.get(`/api/conversations/${room.id}/messages`)
+    ).json();
+    expect(repeated.items.filter((item: ChatMessage) => item.body === body)).toHaveLength(2);
+    expect(keys).toHaveLength(3);
+    expect(keys[2]).not.toBe(keys[0]);
   } finally {
     await sender.context.close();
     await peer.context.close();

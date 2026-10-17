@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useReadConversationMutation } from '@/features/chat';
 
 interface IVisibleReadOptions {
@@ -15,9 +15,8 @@ export function useVisibleRead({
   unavailable,
 }: IVisibleReadOptions) {
   const [active, setActive] = useState(true);
-  const lastAttempt = useRef('');
   const mutation = useReadConversationMutation(userId, conversationId);
-  const { mutate } = mutation;
+  const { mutate, variables } = mutation;
 
   useEffect(() => {
     function handleVisibility() {
@@ -33,15 +32,14 @@ export function useVisibleRead({
   }, []);
 
   useEffect(() => {
-    if (!active || !visibleBoundary || unavailable || lastAttempt.current === visibleBoundary) return;
-    lastAttempt.current = visibleBoundary;
+    if (!active || !visibleBoundary || unavailable || variables === visibleBoundary) return;
     mutate(visibleBoundary);
-  }, [active, visibleBoundary, unavailable, mutate]);
+  }, [active, visibleBoundary, unavailable, mutate, variables]);
 
-  function handleRetryRead() {
+  const handleRetryRead = useCallback(() => {
     if (!active || !visibleBoundary || unavailable) return;
     mutate(visibleBoundary);
-  }
+  }, [active, visibleBoundary, unavailable, mutate]);
 
   return { mutation, handleRetryRead };
 }

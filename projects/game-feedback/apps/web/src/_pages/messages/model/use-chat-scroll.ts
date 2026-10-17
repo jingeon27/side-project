@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
+import { ChatScrollController } from './chat-scroll-controller';
 
 interface IChatScrollOptions {
   messageStamp: string;
@@ -8,11 +9,6 @@ interface IChatScrollOptions {
   fetchingOlder: boolean;
 }
 
-interface IHistoryAnchor {
-  height: number;
-  top: number;
-}
-
 export function useChatScroll({
   messageStamp,
   newestId,
@@ -20,38 +16,18 @@ export function useChatScroll({
   unavailable,
   fetchingOlder,
 }: IChatScrollOptions) {
-  const scroller = useRef<HTMLDivElement>(null);
-  const initialized = useRef(false);
-  const nearBottom = useRef(true);
-  const forceBottom = useRef(false);
-  const lastNewest = useRef('');
-  const historyAnchor = useRef<IHistoryAnchor | null>(null);
-  const [unseen, setUnseen] = useState(false);
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const [controller] = useState(() => new ChatScrollController());
+  const scroller = useCallback((node: HTMLDivElement | null) => setElement(node), []);
+  const unseen = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const [visibleBoundary, setVisibleBoundary] = useState('');
 
   useLayoutEffect(() => {
-    const element = scroller.current;
     if (!element || pending || unavailable) return;
-    if (historyAnchor.current) {
-      if (!fetchingOlder) {
-        element.scrollTop = element.scrollHeight - historyAnchor.current.height + historyAnchor.current.top;
-        historyAnchor.current = null;
-      }
-      return;
-    }
-    const shouldFollow = !initialized.current || forceBottom.current || nearBottom.current;
-    if (shouldFollow) {
-      element.scrollTop = element.scrollHeight;
-      initialized.current = true;
-      forceBottom.current = false;
-      setUnseen(false);
-    }
-    if (!shouldFollow && newestId !== lastNewest.current) setUnseen(true);
-    lastNewest.current = newestId;
-  }, [messageStamp, newestId, pending, unavailable, fetchingOlder]);
+    controller.reconcile(element, newestId, fetchingOlder);
+  }, [controller, element, messageStamp, newestId, pending, unavailable, fetchingOlder]);
 
   useEffect(() => {
-    const element = scroller.current;
     if (!element || unavailable) return;
     const visible = new Map<string, number>();
     const observer = new IntersectionObserver(
@@ -73,33 +49,25 @@ export function useChatScroll({
     );
     for (const node of element.querySelectorAll('[data-message-id]')) observer.observe(node);
     return () => observer.disconnect();
-  }, [messageStamp, unavailable]);
+  }, [element, messageStamp, unavailable]);
 
-  function handleScroll() {
-    const element = scroller.current;
+  const handleScroll = useCallback(() => {
+    if (element) controller.scroll(element);
+  }, [controller, element]);
+
+  const handleScrollLatest = useCallback(() => {
     if (!element) return;
-    nearBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 90;
-    if (nearBottom.current) setUnseen(false);
-  }
+    controller.scrollLatest(element);
+  }, [controller, element]);
 
-  function handleScrollLatest() {
-    const element = scroller.current;
-    if (!element) return;
-    element.scrollTop = element.scrollHeight;
-    nearBottom.current = true;
-    setUnseen(false);
-  }
-
-  function handleSent() {
-    forceBottom.current = true;
+  const handleSent = useCallback(() => {
+    controller.sent();
     handleScrollLatest();
-  }
+  }, [controller, handleScrollLatest]);
 
-  function handleCaptureHistory() {
-    const element = scroller.current;
-    if (!element) return;
-    historyAnchor.current = { height: element.scrollHeight, top: element.scrollTop };
-  }
+  const handleCaptureHistory = useCallback(() => {
+    if (element) controller.captureHistory(element);
+  }, [controller, element]);
 
   return {
     scroller,

@@ -1,7 +1,8 @@
-import { useRef, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
+import type { BaseSyntheticEvent, KeyboardEvent } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { useSendChatMessageMutation, type IChatMessageInput } from '@/features/chat';
+import { sendChatMessageMutationOptions } from '@/features/chat';
 import { ApiError } from '@/shared/api';
 import { useZodForm } from '@/shared/model/form';
 
@@ -24,16 +25,18 @@ export function useChatComposer({
 }: IChatComposerOptions) {
   const form = useZodForm(messageSchema, { defaultValues: { body: '' } });
   const draft = useWatch({ control: form.control, name: 'body' });
-  const mutation = useSendChatMessageMutation(userId, conversationId);
-  const pendingMessage = useRef<IChatMessageInput | null>(null);
+  const client = useQueryClient();
+  const options = sendChatMessageMutationOptions(client, userId, conversationId);
+  const mutation = useMutation(options);
 
   async function handleSend({ body }: z.output<typeof messageSchema>) {
-    if (mutation.isPending || unavailable) return;
-    if (pendingMessage.current?.body !== body)
-      pendingMessage.current = { body, clientMessageId: crypto.randomUUID() };
+    if (client.isMutating({ mutationKey: options.mutationKey, exact: true }) || unavailable) return;
+    const input =
+      mutation.isError && mutation.variables?.body === body
+        ? mutation.variables
+        : { body, clientMessageId: crypto.randomUUID() };
     try {
-      await mutation.mutateAsync(pendingMessage.current);
-      pendingMessage.current = null;
+      await mutation.mutateAsync(input);
       form.reset({ body: '' });
       onSent();
     } catch (error) {

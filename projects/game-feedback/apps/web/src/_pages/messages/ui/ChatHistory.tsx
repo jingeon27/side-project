@@ -1,7 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { LoaderCircle, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
-import type { RefObject } from 'react';
+import type { RefCallback } from 'react';
 import { dateKey, formatDate } from '@/shared/lib/date';
 import type { ChatMessage, Conversation } from '@/shared/api';
 import { AnimatePresence, m, useMotionPreference } from '@/shared/motion';
@@ -11,7 +11,7 @@ interface IChatHistoryProps {
   conversation: Conversation;
   messages: ChatMessage[];
   userId: string;
-  scroller: RefObject<HTMLDivElement | null>;
+  scroller: RefCallback<HTMLDivElement>;
   hasOlder: boolean;
   fetchingOlder: boolean;
   onScroll: () => void;
@@ -55,9 +55,7 @@ export function ChatHistory({
       <AnimatePresence initial={false}>
         {messages.map((message, index) => {
           const previous = messages[index - 1];
-          const newDay =
-            !previous ||
-            dateKey(previous.createdAt) !== dateKey(message.createdAt);
+          const newDay = !previous || dateKey(previous.createdAt) !== dateKey(message.createdAt);
           return (
             <m.div
               key={message.id}
