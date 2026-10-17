@@ -15,7 +15,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
     const appearance = await action.evaluate((button) => {
       const styles = getComputedStyle(button);
       const probe = document.createElement('span');
-      probe.style.color = 'var(--color-brand)';
+      probe.style.color = 'var(--color-accent)';
       document.body.append(probe);
       const brand = getComputedStyle(probe).color;
       probe.remove();

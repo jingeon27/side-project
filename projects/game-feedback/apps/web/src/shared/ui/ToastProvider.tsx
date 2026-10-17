@@ -1,63 +1,51 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { IconButton } from '@side/design-system';
-import { Check, X } from 'lucide-react';
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { AnimatePresence, m, useIsPresent, useMotionPreference } from '@/shared/motion';
 
+import { createContext, useContext, useCallback, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import { Toaster, toast } from '@side/design-system';
+import { resolveAppRoute } from '@game-feedback/bridge';
+import { useI18n, translate } from '@/shared/i18n';
+import { useThemePreference } from '@/shared/theme';
+
+const toasterId = 'game-feedback';
 const NotifyContext = createContext<(text: string) => void>(() => {});
+
 export function useNotify() {
   return useContext(NotifyContext);
 }
+
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [{ message, sequence }, setToast] = useState({ message: '', sequence: 0 });
-  const handleNotify = useCallback((text: string) => {
-    setToast((current) => ({ message: text, sequence: current.sequence + 1 }));
-  }, []);
-  useEffect(() => {
-    if (!message) return;
-    const timer = setTimeout(() => {
-      setToast((current) => (current.sequence === sequence ? { ...current, message: '' } : current));
-    }, 4500);
-    return () => clearTimeout(timer);
-  }, [message, sequence]);
-  const handleDismiss = useCallback(() => {
-    setToast((current) => ({ ...current, message: '' }));
-  }, []);
+  const { t, locale } = useI18n();
+  const theme = useThemePreference();
+  const pathname = usePathname();
+  const conversation = resolveAppRoute(pathname)?.screen === 'conversation';
+  const handleNotify = useCallback(
+    (text: string) => {
+      toast(translate(locale, text), { id: 'game-feedback-notice', toasterId });
+    },
+    [locale],
+  );
+  const offset = conversation
+    ? { top: 'var(--service-toast-top)' }
+    : { bottom: 'var(--service-toast-bottom)' };
   return (
     <NotifyContext.Provider value={handleNotify}>
       {children}
-      <AnimatePresence mode="wait">
-        {message && <ToastMessage key={sequence} message={message} onDismiss={handleDismiss} />}
-      </AnimatePresence>
+      <Toaster
+        id={toasterId}
+        theme={theme}
+        position={conversation ? 'top-center' : 'bottom-center'}
+        duration={4500}
+        visibleToasts={1}
+        closeButton
+        customAriaLabel={t('알림')}
+        className="service-toaster"
+        offset={offset}
+        mobileOffset={offset}
+        toastOptions={{
+          closeButtonAriaLabel: t('알림 닫기'),
+        }}
+      />
     </NotifyContext.Provider>
-  );
-}
-
-function ToastMessage({ message, onDismiss }: { message: string; onDismiss: () => void }) {
-  const { t } = useI18n();
-  const present = useIsPresent();
-  const reducedMotion = useMotionPreference();
-  return (
-    <m.div
-      className="toast"
-      role={present ? 'status' : undefined}
-      aria-hidden={!present || undefined}
-      inert={!present}
-      style={{ x: '-50%' }}
-      initial={{ opacity: 0, y: reducedMotion ? 0 : 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: reducedMotion ? 0 : 4 }}
-    >
-      <Check size={18} />
-      {t(message)}
-      <IconButton
-        className="icon-button text-on-brand hover:bg-brand-strong"
-        label={t('알림 닫기')}
-        onClick={onDismiss}
-      >
-        <X size={16} />
-      </IconButton>
-    </m.div>
   );
 }

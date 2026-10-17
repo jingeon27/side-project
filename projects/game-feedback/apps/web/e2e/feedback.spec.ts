@@ -143,10 +143,10 @@ test('players create a profile-backed request and exchange helpful feedback in t
   await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('#P0LYQ');
   await page.getByRole('button', { name: '조회', exact: true }).click();
   await page.getByRole('button', { name: '내 계정에 등록' }).click();
-  await expect(page.getByRole('status')).toContainText('게임 프로필이 연결');
+  await expect(page.locator('[data-sonner-toast]')).toContainText('게임 프로필이 연결');
   await page.goto('/ko');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  const composer = page.getByRole('dialog');
+  const composer = page.getByRole('form', { name: '글쓰기', exact: true });
   const title = `브라우저에서 작성한 덱 피드백 ${suffix}`;
   await composer.getByLabel('제목', { exact: true }).fill(title);
   await composer
@@ -169,7 +169,7 @@ test('players create a profile-backed request and exchange helpful feedback in t
         '메가나이트가 강을 건너기 전에 대포를 중앙에 내려서 양쪽 타워가 함께 공격하게 하세요. 머스킷병은 점프 범위 밖에 배치하세요.',
       );
     await coachPage.getByRole('button', { name: '피드백 남기기', exact: true }).click();
-    await expect(coachPage.getByRole('status')).toContainText('피드백을 전했어요');
+    await expect(coachPage.locator('[data-sonner-toast]')).toContainText('피드백을 전했어요');
     await page.reload();
     await page.getByRole('button', { name: '도움이 됐어요', exact: true }).click();
     await expect(page.getByText('요청자가 도움받은 피드백')).toBeVisible();

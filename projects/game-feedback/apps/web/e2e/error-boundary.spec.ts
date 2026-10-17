@@ -42,6 +42,10 @@ test('a comment render failure preserves the post and answers and recovers withi
   await page.goto('/ko/posts/sample-post-0');
   const failure = page.getByRole('alert', { name: '댓글 오류' });
   await expect(failure).toBeVisible();
+  await expect(failure.getByRole('link', { name: 'jingeon27@gmail.com', exact: true })).toHaveAttribute(
+    'href',
+    'mailto:jingeon27@gmail.com',
+  );
   await expect(page.locator('.detail-card')).toBeVisible();
   await expect(page.locator('.answer-card').first()).toBeVisible();
   await expect(page.locator('.topbar')).toBeVisible();
@@ -76,11 +80,19 @@ test('a chat render failure keeps the inbox usable and recovers without reloadin
   await page.goto('/ko/messages?conversation=sample-conversation-0-3');
   const failure = page.getByRole('alert', { name: '대화창 오류' });
   await expect(failure).toBeVisible();
+  await expect(failure.getByRole('link', { name: 'jingeon27@gmail.com', exact: true })).toHaveAttribute(
+    'href',
+    'mailto:jingeon27@gmail.com',
+  );
   await expect(page.getByRole('complementary', { name: '내 대화 목록' })).toBeVisible();
   await expect(page.locator('.conversation-row').first()).toBeVisible();
   await expect(page.locator('.shell-player-sidebar')).not.toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(failure).toBeVisible();
+  await expect(failure.getByRole('link', { name: 'jingeon27@gmail.com', exact: true })).toHaveAttribute(
+    'href',
+    'mailto:jingeon27@gmail.com',
+  );
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect(page.getByRole('alert', { name: '이 화면 오류' })).toHaveCount(0);

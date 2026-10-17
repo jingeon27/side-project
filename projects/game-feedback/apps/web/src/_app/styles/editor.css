@@ -57,6 +57,9 @@
     max-width: 100%;
     white-space: normal;
     z-index: 2;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    border-color: var(--color-line-strong);
   }
   .rich-text-editor .ql-snow .ql-tooltip::before,
   .rich-text-editor .ql-snow .ql-tooltip.ql-editing::before {

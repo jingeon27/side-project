@@ -76,7 +76,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         await helpful.click();
         await expect(helpful).toHaveAttribute('aria-pressed', String(!answer.helpful));
         await page.setViewportSize({ width: 390, height: 844 });
-        const status = page.getByRole('status');
+        const status = page.locator('[data-sonner-toast]');
         await expect(status).toContainText(answer.helpful ? '도움됨 표시를 취소' : '마음을 전했어요');
         await expect
           .poll(() =>
@@ -90,9 +90,16 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         await expect
           .poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth))
           .toBeLessThanOrEqual(0);
-        await status.getByRole('button', { name: '알림 닫기' }).click();
-        await expect(page.getByRole('status')).toHaveCount(0);
-        await expect(page.locator('.toast')).toHaveCount(0);
+        const closeToast = status.getByRole('button', { name: '알림 닫기' });
+        const closeBox = await closeToast.boundingBox();
+        expect(closeBox?.width).toBeGreaterThanOrEqual(44);
+        expect(closeBox?.height).toBeGreaterThanOrEqual(44);
+        const toastBox = await status.boundingBox();
+        const navBox = await page.locator('.mobile-nav').boundingBox();
+        expect(toastBox && navBox && toastBox.y + toastBox.height <= navBox.y).toBe(true);
+        await closeToast.click();
+        await expect(page.locator('[data-sonner-toast]')).toHaveCount(0);
+        await expect(page.locator('[data-sonner-toaster]')).toBeEmpty();
         expect(errors).toEqual([]);
       } finally {
         expect(

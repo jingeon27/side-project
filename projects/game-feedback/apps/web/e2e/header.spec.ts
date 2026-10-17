@@ -19,7 +19,8 @@ for (const width of [320, 1440]) {
         return node.contains(document.elementFromPoint(box.width / 2, box.height / 2));
       }),
     ).toBe(true);
-    await header.getByRole('combobox', { name: '언어 설정', exact: true }).selectOption('en');
+    await header.getByRole('combobox', { name: '언어 설정', exact: true }).click();
+    await page.getByRole('option', { name: 'English', exact: true }).click();
     await expect(page).toHaveURL('/en/guide');
     await expect.poll(async () => (await header.boundingBox())?.y).toBe(0);
     await page.goto('/en/settings#language');

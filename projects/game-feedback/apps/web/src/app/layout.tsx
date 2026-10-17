@@ -3,6 +3,8 @@ import { ServiceProviders } from '@/_app/index.server';
 import { getSeoConfig } from '@/shared/seo';
 import { cookies, headers } from 'next/headers';
 import { LanguageProvider } from '@/shared/i18n';
+import { ThemeProvider } from '@/shared/theme';
+import { THEME_COOKIE, themePreference } from '@/shared/theme/index.server';
 import {
   detectLocale,
   isLocale,
@@ -29,15 +31,18 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const automaticLocale = detectLocale(requestHeaders.get('accept-language'));
   const locale = isLocale(candidate) ? candidate : automaticLocale;
   const preference = languagePreference(cookieStore.get(LANGUAGE_COOKIE)?.value);
+  const theme = themePreference(cookieStore.get(THEME_COOKIE)?.value);
   return (
-    <html lang={locale}>
+    <html lang={locale} data-theme={theme}>
       <body>
         <LanguageProvider
           initialLocale={locale}
           initialPreference={preference}
           automaticLocale={automaticLocale}
         >
-          <ServiceProviders>{children}</ServiceProviders>
+          <ThemeProvider initialPreference={theme}>
+            <ServiceProviders>{children}</ServiceProviders>
+          </ThemeProvider>
         </LanguageProvider>
       </body>
     </html>

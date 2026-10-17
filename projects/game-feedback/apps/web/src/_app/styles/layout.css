@@ -41,8 +41,8 @@
     align-items: center;
   }
   .brand-mark {
-    background: var(--color-ink);
-    color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
     display: grid;
     place-items: center;
     width: 35px;

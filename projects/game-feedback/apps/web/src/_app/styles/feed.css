@@ -114,16 +114,16 @@
     white-space: nowrap;
   }
   .status-pill.waiting {
-    color: var(--color-muted);
-    background: var(--color-accent-soft);
+    color: var(--color-info);
+    background: var(--color-info-soft);
   }
   .status-pill.resolved {
-    color: var(--color-muted);
+    color: var(--color-accent-ink);
     background: var(--color-accent-soft);
   }
   .status-pill.discussing {
     color: var(--color-muted);
-    background: var(--color-accent-soft);
+    background: var(--color-sunken);
   }
   .post-time {
     font-size: var(--text-micro);

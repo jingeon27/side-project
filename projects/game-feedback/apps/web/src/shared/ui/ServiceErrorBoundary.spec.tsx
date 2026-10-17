@@ -12,6 +12,28 @@ function UnstableRegion({ failed }: { failed: boolean }) {
 beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));
 
 describe('ServiceErrorBoundary', () => {
+  it('shows a public contact address and blocks repeated recovery while its mutation is pending without a query provider', async () => {
+    const recovery = Promise.withResolvers<void>();
+    const onReset = vi.fn(() => recovery.promise);
+    render(
+      <ServiceErrorBoundary title="대화창" onReset={onReset}>
+        <UnstableRegion failed />
+      </ServiceErrorBoundary>,
+    );
+    const contact = screen.getByRole('link', { name: 'jingeon27@gmail.com' });
+    expect(contact.getAttribute('href')).toBe('mailto:jingeon27@gmail.com');
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도하기' }));
+    const pending = await screen.findByRole<HTMLButtonElement>('button', { name: '다시 불러오는 중…' });
+    expect(pending.disabled).toBe(true);
+    fireEvent.click(pending);
+    expect(onReset).toHaveBeenCalledOnce();
+    recovery.reject(new Error('secret recovery payload'));
+    await waitFor(() =>
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: '다시 시도하기' }).disabled).toBe(false),
+    );
+    expect(screen.queryByText(/secret recovery/)).toBeNull();
+  });
+
   it('contains render failures and preserves sibling state', () => {
     const cleanup = vi.fn();
     function Sibling() {

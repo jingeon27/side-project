@@ -3,7 +3,7 @@
 공식 shadcn/ui의 **Base UI / base-nova** registry 소스를 수동 설치하고 저장소의 공통 토큰·컴포넌트 이름·공개 API에 맞게 조정했다. shadcn/ui는 런타임 패키지를 추가하는 방식이 아니라 컴포넌트 소스를 프로젝트가 소유하는 방식으로 사용한다.
 
 - 공식 registry: `https://ui.shadcn.com/r/styles/base-nova/<component>.json`
-- 설치 구성: Button, Input, Textarea, NativeSelect, Label, Checkbox, Tabs, Dialog
+- 설치 구성: Button, Input, Textarea, NativeSelect, Label, Checkbox, Tabs, Dialog, Select, Sonner
 - 원본/라이선스: [shadcn-ui/ui](https://github.com/shadcn-ui/ui), [보존한 MIT 라이선스](SHADCN-LICENSE.md)
 - [공식 모노레포 가이드](https://ui.shadcn.com/docs/monorepo), [Base UI Button](https://ui.shadcn.com/docs/components/base/button), [Native Select](https://ui.shadcn.com/docs/components/base/native-select)
 
@@ -19,3 +19,11 @@ Web과 이 패키지의 components.json은 base-nova/neutral/lucide 설정을 �
 - 입력은 16px, 기본 조작 영역은 44px 이상을 유지한다. NativeSelect는 모바일 OS 선택창을 사용하며 WYSIWYG와 파일 업로드의 전용 DOM은 앱이 소유한다.
 
 Game Feedback의 실제 작성/수정/신고/로그인/언어/검색/채팅 폼이 이 컴포넌트를 사용한다. Photo Contest는 기존 공통 UI 진입점을 유지하며 같은 버튼/모달 기반과 토큰을 사용한다. 앱의 라우팅·서버 상태·도메인 로직은 공통 패키지에 넣지 않는다.
+
+## Select와 Sonner
+
+Select는 공식 base-nova의 Base UI Root/Trigger/Value/Portal/Positioner/Popup/List/Item/Indicator/ScrollArrow 구성을 사용한다. 공통 토큰, 16px 글자와 44px 트리거/옵션, popover 레이어에 맞췄다. hideIcon은 아이콘만 표시하는 트리거에서 기본 화살표를 숨기며 접근성 이름과 선택값은 앱이 제공한다. 언어와 화면 모드 설정에서 사용하고 RHF의 native 폼은 기존 NativeSelect를 유지한다.
+
+Toaster는 같은 registry의 Sonner 조합을 named function으로 제공한다. 앱이 theme을 전달하므로 next-themes를 중복 설치하지 않는다. 색/모서리/폰트/44px 닫기는 공통 패키지가 소유하며, 위치/시간/번역/업무 알림은 앱에서 설정한다. Sonner 2.0.8을 이 패키지 의존성으로 선언하고 toast를 함께 내보낸다. Radix UI 의존성은 추가하지 않는다.
+
+공통 색상은 html의 data-theme 속성이 있는 앱에서만 system/light/dark를 적용한다. light-dark와 color-scheme으로 기기 설정 변화를 즉시 반영하며, 쿠키/사용자 설정은 앱이 소유한다. data-theme이 없는 기존 소비 앱의 기본 테마는 유지한다.

@@ -14,6 +14,7 @@ import { ConnectProfile } from '@/widgets/game-profile';
 import { openOverlay, Avatar, ErrorNotice, LoadingState, Modal } from '@/shared/ui';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { LanguageSettings } from './LanguageSettings';
+import { ThemeSettings } from './ThemeSettings';
 
 interface ISettingsPageProps {
   locale: string;
@@ -62,6 +63,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
     return (
       <>
         <LanguageSettings />
+        <ThemeSettings />
         <div className="empty-feed">
           <span>
             <Gamepad2 size={30} />
@@ -174,6 +176,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         )}
       </section>
       <LanguageSettings />
+      <ThemeSettings />
       <section className="settings-card account-settings">
         <h2>{t('계정 관리')}</h2>
         <ErrorNotice message={logout.error?.message} />

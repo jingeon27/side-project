@@ -23,9 +23,16 @@ test('mobile header and four tabs navigate in place and report their paths to th
   }
   const header = page.getByRole('banner');
   await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(1);
-  await header.getByRole('combobox', { name: '언어 설정', exact: true }).selectOption('ko');
+  await header.getByRole('combobox', { name: '언어 설정', exact: true }).click();
+  await expect(page.getByRole('listbox')).toBeVisible();
+  const beforeDropdownBack = await nativeHost.currentPath();
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  expect(await nativeHost.currentPath()).toBe(beforeDropdownBack);
+  await header.getByRole('combobox', { name: '언어 설정', exact: true }).click();
+  await page.getByRole('option', { name: '한국어', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/settings$/);
-  await expect(header.getByRole('combobox')).toHaveValue('ko');
+  await expect(header.getByRole('combobox')).toContainText('한국어');
   await header.getByRole('link', { name: '알림 0개', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/notifications');
   await tabs.getByRole('link', { name: '프로필', exact: true }).click();
@@ -200,4 +207,39 @@ test('coaching and general-board deep links preserve the game and return to its 
   await expect(page.getByRole('heading', { name: '자유게시판', exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-route-document', 'kept');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test('native back leaves the full-page editor without a dialog and restores filtered feed context', async ({
+  page,
+  nativeHost,
+}) => {
+  await page.request.post('/api/auth/test-login', {
+    headers: { Origin: ORIGIN },
+    data: { accountId: 'sample-user-0' },
+  });
+  await page.goto('/ko?q=hog&tab=unanswered');
+  await expect.poll(nativeHost.isReady).toBe(true);
+  await page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/write');
+  await expect(page.getByRole('form', { name: '글쓰기', exact: true })).toBeVisible();
+  await expect(page.getByRole('banner')).toBeHidden();
+  await expect.poll(nativeHost.hasOverlay).toBe(false);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === '/ko' &&
+      url.searchParams.get('q') === 'hog' &&
+      url.searchParams.get('tab') === 'unanswered',
+  );
+  const path = appRoutes.compose('ko', 'FRIENDLY');
+  expect(nativeHost.openDeepLink(`gamefeedback:/${path}`)).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe(path);
+  await expect(page.getByLabel('분류', { exact: true })).toHaveValue('FRIENDLY');
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe(appRoutes.feed('ko', { q: 'hog', tab: 'unanswered' }));
+  await page.goto(path);
+  await expect.poll(nativeHost.currentPath).toBe(path);
+  await expect(page.getByLabel('분류', { exact: true })).toHaveValue('FRIENDLY');
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe('/ko/boards/friendly');
 });

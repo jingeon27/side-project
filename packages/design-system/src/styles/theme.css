@@ -38,6 +38,7 @@
   --color-bronze: #c08b5c;
   --color-kakao: #fee500;
   --color-on-brand: #ffffff;
+  --color-on-accent: #101010;
   --color-scrim: rgb(0 0 0 / 0.5);
 
   /* 크기·줄 높이·굵기·자간을 한 토큰으로 묶는다. */
@@ -99,6 +100,7 @@
   --z-index-sticky-cta: 20;
   --z-index-sheet: 40;
   --z-index-dialog: 50;
+  --z-index-popover: 55;
   --z-index-toast: 60;
 
   /* 고정 높이와 최소 터치 영역 */

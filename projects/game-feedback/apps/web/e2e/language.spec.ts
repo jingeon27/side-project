@@ -33,9 +33,10 @@ test('signed-out users can save a manual language, reload and resume automatic s
     const page = await context.newPage();
     await page.goto('/ja/settings');
     const select = page.locator('#language-preference');
-    await expect(select).toHaveValue('auto');
+    await expect(select).toContainText('端末の設定に合わせる');
     await page.locator('html').evaluate((node) => node.setAttribute('data-language-document', 'kept'));
-    await select.selectOption('en');
+    await select.click();
+    await page.getByRole('option', { name: 'English', exact: true }).click();
     await expect(page).toHaveURL(/\/en\/settings$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('html')).toHaveAttribute('data-language-document', 'kept');
@@ -43,8 +44,9 @@ test('signed-out users can save a manual language, reload and resume automatic s
     await page.goto('/');
     await expect(page).toHaveURL(/\/en$/);
     await page.goto('/en/settings');
-    await expect(select).toHaveValue('en');
-    await select.selectOption('auto');
+    await expect(select).toContainText('English');
+    await select.click();
+    await page.getByRole('option', { name: 'Use device settings', exact: true }).click();
     await expect(page).toHaveURL(/\/ja\/settings$/);
     await page.goto('/');
     await expect(page).toHaveURL(/\/ja$/);
@@ -64,10 +66,11 @@ test('the header dropdown preserves the current page, filters and hash while sha
     const page = await context.newPage();
     await page.goto('/ja?q=hog&tab=unanswered#feed');
     const language = page.getByRole('banner').getByRole('combobox');
-    await expect(language).toHaveValue('auto');
+    await expect(language).toContainText('端末の設定に合わせる');
     await page.locator('html').evaluate((node) => node.setAttribute('data-language-document', 'kept'));
     const length = await page.evaluate(() => history.length);
-    await language.selectOption('en');
+    await language.click();
+    await page.getByRole('option', { name: 'English', exact: true }).click();
     await expect(page).toHaveURL('/en?q=hog&tab=unanswered#feed');
     await expect(page.getByRole('textbox', { name: 'Search posts', exact: true })).toHaveValue('hog');
     await expect(page.getByRole('button', { name: 'Unanswered', exact: true })).toHaveAttribute(
@@ -79,14 +82,16 @@ test('the header dropdown preserves the current page, filters and hash while sha
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_language')?.value).toBe('en');
     await page.goto('/');
     await expect(page).toHaveURL('/en');
-    await expect(language).toHaveValue('en');
+    await expect(language).toContainText('English');
     await page.goto('/en/settings#language');
-    await expect(page.locator('#language-preference')).toHaveValue('en');
-    await page.locator('#language-preference').selectOption('auto');
+    await expect(page.locator('#language-preference')).toContainText('English');
+    await page.locator('#language-preference').click();
+    await page.getByRole('option', { name: 'Use device settings', exact: true }).click();
     await expect(page).toHaveURL('/ja/settings#language');
-    await expect(language).toHaveValue('auto');
+    await expect(language).toContainText('端末の設定に合わせる');
     await page.goto('/ja/posts/sample-post-0');
-    await language.selectOption('ko');
+    await language.click();
+    await page.getByRole('option', { name: '한국어', exact: true }).click();
     await expect(page).toHaveURL('/ko/posts/sample-post-0');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   } finally {

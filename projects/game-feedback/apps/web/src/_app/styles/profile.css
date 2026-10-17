@@ -23,6 +23,9 @@
     border-radius: var(--radius-card);
     margin-bottom: 18px;
   }
+  .theme-settings [data-slot='native-select-wrapper'] {
+    margin-top: 12px;
+  }
   .settings-card h2 {
     font-size: var(--text-body);
     display: flex;

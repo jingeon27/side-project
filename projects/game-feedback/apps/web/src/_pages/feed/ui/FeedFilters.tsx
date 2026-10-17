@@ -27,13 +27,7 @@ export function FeedFilters({ tab, search, onTabChange, onSearchChange, onCompos
     <>
       <div className="feed-heading">
         <h1>{t('피드')}</h1>
-        <MotionButton
-          variant="primary"
-          size="md"
-          type="button"
-          className="button primary"
-          onClick={onCompose}
-        >
+        <MotionButton variant="accent" size="md" type="button" className="button primary" onClick={onCompose}>
           <Plus size={17} />
           {t('글쓰기')}
         </MotionButton>

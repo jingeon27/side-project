@@ -24,9 +24,13 @@ import { ButtonLink } from '@side/design-system/next';
 
 입력은 16px, 일반 버튼은 44px, 주 버튼은 50px를 기준으로 한다. 공통 base는 키보드 포커스·터치·reduced motion을 포함한다. 앱의 `#pc-main`, 토스트 위치, 내비게이션, 화면 레이아웃은 포함하지 않는다. 새 토큰을 더하면 `src/lib/cn.helper.ts`의 tailwind-merge 설정도 함께 갱신한다.
 
+html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이 기기 설정 또는 명시한 모드를 따른다. 쿠키 저장과 프로필 설정은 앱에서 처리한다. 속성을 지정하지 않은 소비 앱은 기존 기본 테마를 사용한다. 오렌지 accent 위의 글자는 `on-accent`로 고정해 다크 모드에서도 대비를 유지한다.
+
 ## 공개 UI
 
 - `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. NativeSelect는 모바일 OS 선택창을 사용한다.
+- `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`: Base UI의 키보드 선택/포털/포커스 복귀를 사용하는 shadcn 드롭다운이다. 기본 트리거와 옵션은 44px이다.
+- `Toaster`, `toast`: Sonner 알림. 공통 색/폰트/모서리/닫기 크기를 적용하며 theme과 번역/위치는 앱이 전달한다.
 - `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다.
 - `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 제어형 탭이다. 선택값과 URL은 앱이 소유한다.
 - `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogPortal`, `DialogOverlay`: shadcn 조합 API다. 기존 `Dialog`는 이를 조합하며 호출부의 props를 유지한다.

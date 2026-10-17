@@ -25,7 +25,7 @@ export const buttonVariants = cva(
           'border border-line-strong bg-surface text-ink hover:bg-sunken active:not-data-disabled:bg-sunken',
         ghost: 'bg-transparent text-ink hover:bg-neutral-soft active:not-data-disabled:bg-neutral-soft',
         danger: 'bg-danger text-on-brand hover:brightness-95 active:not-data-disabled:brightness-90',
-        accent: 'bg-accent text-ink hover:brightness-95 active:not-data-disabled:brightness-90',
+        accent: 'bg-accent text-on-accent hover:brightness-95 active:not-data-disabled:brightness-90',
       },
       size: {
         default: 'h-touch gap-2 px-4',

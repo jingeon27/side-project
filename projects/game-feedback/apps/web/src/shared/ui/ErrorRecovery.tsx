@@ -2,6 +2,7 @@
 import { useI18n } from '@/shared/i18n';
 import { Button, cn } from '@side/design-system';
 import type { ReactNode } from 'react';
+import { getContactEmail } from '@/shared/config';
 
 interface IErrorRecoveryProps {
   title: string;
@@ -19,6 +20,7 @@ export function ErrorRecovery({
   recoveryAction,
 }: IErrorRecoveryProps) {
   const { t } = useI18n();
+  const email = getContactEmail();
   return (
     <section
       className={cn('error-recovery', className)}
@@ -34,6 +36,11 @@ export function ErrorRecovery({
       <Button variant="secondary" size="md" type="button" disabled={pending} onClick={onRetry}>
         {pending ? t('다시 불러오는 중…') : t('다시 시도하기')}
       </Button>
+      <p className="error-contact">
+        {t('문제가 계속되면 이메일로 문의해주세요.')}
+        <br />
+        <a href={`mailto:${email}`}>{email}</a>
+      </p>
       {recoveryAction}
     </section>
   );

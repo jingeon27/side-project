@@ -33,7 +33,7 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
           replace
           aria-current={!selected ? 'page' : undefined}
           className={cn(
-            buttonVariants({ variant: !selected ? 'primary' : 'secondary', size: 'sm' }),
+            buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm' }),
             'rounded-full',
           )}
         >
@@ -47,7 +47,7 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
             replace
             aria-current={selected === board.kind ? 'page' : undefined}
             className={cn(
-              buttonVariants({ variant: selected === board.kind ? 'primary' : 'secondary', size: 'sm' }),
+              buttonVariants({ variant: selected === board.kind ? 'accent' : 'secondary', size: 'sm' }),
               'rounded-full',
             )}
           >

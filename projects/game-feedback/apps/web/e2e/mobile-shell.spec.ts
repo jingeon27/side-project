@@ -47,10 +47,11 @@ for (const { width, locale, menu, actions } of [
     await expect(tabs.locator('.mobile-chat-count')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const nextLocale = locale === 'en' ? 'ja' : 'en';
-    await header.getByRole('combobox', { name: actions[0], exact: true }).selectOption(nextLocale);
+    await header.getByRole('combobox', { name: actions[0], exact: true }).click();
+    await page.getByRole('option', { name: nextLocale === 'en' ? 'English' : '日本語', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/${nextLocale}$`));
     await expect(page.locator('html')).toHaveAttribute('lang', nextLocale);
-    await expect(header.getByRole('combobox')).toHaveValue(nextLocale);
+    await expect(header.getByRole('combobox')).toContainText(nextLocale === 'en' ? 'English' : '日本語');
     await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');
   });
 }

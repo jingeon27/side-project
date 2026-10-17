@@ -35,6 +35,14 @@ export function NativeBridge() {
       }
       if (message.type === 'state' && message.state === 'active') refreshSession();
       if (message.type === 'back') {
+        const select = document.querySelector('[data-slot="select-content"][data-open]');
+        if (select) {
+          select.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+          );
+          postToNative({ type: 'back-result', id: message.id, handled: true });
+          return;
+        }
         const open = Object.values(overlays)
           .filter((item) => item.isOpen)
           .at(-1);

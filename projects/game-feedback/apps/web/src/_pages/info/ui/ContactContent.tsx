@@ -1,6 +1,7 @@
 import { ArrowUpRight } from 'lucide-react';
+import { getContactEmail } from '@/shared/config';
 export function ContactContent() {
-  const contact = process.env.GAME_FEEDBACK_CONTACT_EMAIL;
+  const contact = getContactEmail();
   return (
     <>
       <p className="info-lead">불편했던 점, 좋은 아이디어, 함께 만들어가고 싶은 이야기를 기다려요.</p>
