@@ -23,3 +23,13 @@ corepack yarn workspace @side/game-feedback db:test:stop
 ```
 
 `openapi.json`은 Git에 포함하지 않는 중간 생성 파일이다. 프로젝트 개발/검사/테스트/빌드의 준비 단계 또는 `yarn workspace @side/game-feedback codegen`이 Zod/경로 정의에서 생성한다. Orval이 이 규격으로 REST SDK와 응답 검증 코드를 생성한다.
+
+## 본문 미디어와 운영 API
+
+- POST /api/post-media는 인증된 multipart 파일을 검증하고 /api/post-media/:id 주소를 돌려준다. GET은 본문 등록 전 업로더에게만 허용하고 등록 후 글의 공개/차단/숨김/삭제 정책을 적용한다. DELETE는 아직 글에 연결하지 않은 본인 파일만 삭제한다. 저장/수정과 파일 연결은 같은 DB 트랜잭션이다.
+- 코칭 pricing은 HOURLY/MONTHLY/GOAL과 amount로 저장한다. GOAL에는 targetScore가 필요하다. 기존 hourlyRate는 Migration 202610170008로 금액과 역할을 보존해 변환한다.
+- POST /api/me/game-accounts는 사용자에게 계정을 등록한다. 글쓰기/PATCH에는 playerTag를 받지 않는다. 대표 태그가 바뀌면 사용자 인증을 해제한다.
+- POST /api/support/conversations는 GENERAL/VERIFICATION 문의를 실제 관리자와 기존 1:1 대화로 시작/재사용한다. 담당자가 없는 환경은 503이다. GET /api/admin/support와 PATCH /api/admin/support/:id는 담당 관리자 자신의 문의만 관리한다.
+- USER 신고는 기존 POST /api/reports를 사용한다. 관리자만 GET /api/admin/users/:id, PATCH /api/admin/users/:id/ban, PATCH /api/admin/reports/:id와 기존 인증/숨김 API를 사용할 수 있다. 밴은 기존 세션의 일반 활동에도 적용하되 관리자 문의는 유지한다. 변경 사유와 조치는 AuditLog에 기록한다.
+
+Migration 202610170009는 이 API 전용 DB에 제재 필드와 PostMedia/SupportConversation을 추가한다. 원래 사용자/게시글은 삭제하지 않는다. 공개 운영의 파일 저장소/백업/악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.

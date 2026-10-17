@@ -43,6 +43,10 @@ HTTP 오류 본문은 코드·메시지의 타입을 검증하고 잘못되면 `
 
 SDK가 소유한 Vitest는 생성 클라이언트의 실제 호출·fallback·오류 처리를 검사한다. OpenAPI의 모든 operation이 생성 transport에 스키마를 전달하는지도 검사해 재생성 시 검증 누락을 막는다. 브라우저 회귀 테스트는 Web이 소유한다.
 
-게임 공통 게시판은 `FEEDBACK`, `FRIEND_SALE`, `FRIENDLY`, `COACHING`, `FREE`다. 홈은 `board=ALL`, 종류별 목록은 board와 category slug를 함께 전달한다. `COACHING` 생성에는 `coaching: { role: 'COACH' | 'STUDENT', hourlyRate: number | null }`가 필요하다. 금액은 시간당 원화 1~10,000,000원, null은 협의다. 코칭 외 게시판의 코칭 정보와 코칭 글의 정보 제거를 서버에서 거부한다. 다른 게임에 클래시 로얄 Player Tag를 첨부하지 않는다.
+게임 공통 게시판은 `FEEDBACK`, `FRIEND_SALE`, `FRIENDLY`, `COACHING`, `FREE`다. 홈은 `board=ALL`, 종류별 목록은 board와 category slug를 함께 전달한다. `COACHING` 생성에는 `coaching: { role: 'COACH' | 'STUDENT', pricing }`가 필요하다. pricing은 `{ type: 'HOURLY' | 'MONTHLY', amount: number | null }` 또는 `{ type: 'GOAL', amount: number | null, targetScore: string }`다. 금액은 기준별 원화 1~10,000,000원의 정수이며 null은 협의다. 목표는 1~100자이며 목표형에 필수다. 금액/기준/목표 오류를 응답 fallback으로 숨기지 않는다. 코칭 외 게시판의 코칭 정보와 코칭 글의 정보 제거를 서버에서 거부한다. 다른 게임에 클래시 로얄 Player Tag를 첨부하지 않는다.
 
 `FRIEND_SALE` 생성에는 `friendSale: { price: number | null }`가 필요하다. 금액은 원화 1~10,000,000원의 정수이며 null은 가격 협의다. 기존 글의 메타데이터 누락/null은 미등록으로 구분한다. 다른 게시판에 가격 메타데이터를 넣거나 친추판매 글에서 메타데이터를 제거하는 요청을 거부한다. PATCH에서 생략하면 기존 금액을 보존한다. 금액의 문자열·범위 오류에 응답 fallback을 적용하지 않는다.
+
+본문 미디어는 uploadPostMedia의 multipart 파일 업로드 후 반환된 `/api/post-media/:id`만 Quill Delta의 `{ image: url }` 또는 `{ video: url }`에 사용한다. 공개 전 업로더 소유권과 글 등록 시 원자적 연결을 검증하며 외부 URL을 허용하지 않는다. GET 파일/Range는 바이너리 경로이고 JSON 계약에는 업로드/삭제 작업을 정의한다.
+
+startSupportConversation은 GENERAL/VERIFICATION 문의를 담당 관리자와의 기존 1:1 Conversation으로 반환한다. listSupportThreads/setSupportStatus, listReports/reviewReport/getAdminUser/setUserBan과 기존 setUserVerification은 관리자 API다. 밴 여부와 사유는 본인 세션/관리자 사용자 조회에만 포함하며 공개 작성자에는 노출하지 않는다.
