@@ -3,9 +3,9 @@
     "category": "engineering",
     "tags": ["side-project", "product", "architecture", "nextjs"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-17T18:22:58+09:00",
+    "updatedAt": "2026-10-17T18:28:41+09:00",
     "title": "사이드 프로젝트 저장소를 만들고 서비스를 늘려 간 과정",
-    "description": "사진 대회로 시작한 저장소에서 피드와 공통 패키지를 만들고, develop을 기준으로 게임 피드백과 블로그 작업을 이어 간 기록.",
+    "description": "여러 서비스를 병렬로 기획하고 출시해 보려는 생각에서, 모노레포와 공통 패키지를 구성하고 사진 서비스와 게임 피드백, 블로그를 만들어 간 기록.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
     "keywords": ["사이드 프로젝트", "제품 설계", "게임 피드백", "REST", "캐시", "MDX", "모노레포"],
     "id": "side-project-design",
@@ -17,13 +17,13 @@
         "level": 2
       },
       {
-        "id": "홈-화면을-보고-사진-서비스의-방향을-바꿨다",
-        "title": "홈 화면을 보고 사진 서비스의 방향을 바꿨다",
+        "id": "홈-화면에서-바로-사진을-볼-수-있게-했다",
+        "title": "홈 화면에서 바로 사진을 볼 수 있게 했다",
         "level": 2
       },
       {
-        "id": "반복해서-지적한-코딩-규칙을-패키지로-옮겼다",
-        "title": "반복해서 지적한 코딩 규칙을 패키지로 옮겼다",
+        "id": "여러-프로젝트에서-쓸-코딩-규칙을-정리했다",
+        "title": "여러 프로젝트에서 쓸 코딩 규칙을 정리했다",
         "level": 2
       },
       {
@@ -37,8 +37,8 @@
         "level": 2
       },
       {
-        "id": "첫-답변이-달리는-시점이-계획의-맨-뒤에-있었다",
-        "title": "첫 답변이 달리는 시점이 계획의 맨 뒤에 있었다",
+        "id": "피드백을-요청할-사람과-답변할-사람이-모두-필요했다",
+        "title": "피드백을 요청할 사람과 답변할 사람이 모두 필요했다",
         "level": 2
       },
       {
@@ -67,7 +67,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 12,
+    "readingMinutes": 11,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -77,9 +77,9 @@
     "category": "engineering",
     "tags": ["side-project", "product", "architecture", "nextjs"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-17T18:22:58+09:00",
+    "updatedAt": "2026-10-17T18:28:41+09:00",
     "title": "How My Side Project Repository Grew Beyond the First Service",
-    "description": "From a photo contest to a feed, shared packages, and a develop workflow, followed by game feedback and a personal blog in the same repository.",
+    "description": "Why I began planning several services in parallel, and how I organized a monorepo, shared packages, a photo service, game feedback, and a personal blog.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
     "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"],
     "id": "side-project-design",
@@ -91,13 +91,13 @@
         "level": 2
       },
       {
-        "id": "running-the-home-screen-changed-the-photo-service",
-        "title": "Running the home screen changed the photo service",
+        "id": "showing-photos-as-soon-as-the-home-screen-opens",
+        "title": "Showing photos as soon as the home screen opens",
         "level": 2
       },
       {
-        "id": "repeated-coding-requests-became-shared-packages",
-        "title": "Repeated coding requests became shared packages",
+        "id": "defining-coding-rules-to-use-across-projects",
+        "title": "Defining coding rules to use across projects",
         "level": 2
       },
       {
@@ -111,8 +111,8 @@
         "level": 2
       },
       {
-        "id": "the-first-reply-was-near-the-end-of-the-plan",
-        "title": "The first reply was near the end of the plan",
+        "id": "i-needed-both-people-asking-for-feedback-and-people-answering",
+        "title": "I needed both people asking for feedback and people answering",
         "level": 2
       },
       {
@@ -141,7 +141,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 10,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"

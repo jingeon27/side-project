@@ -1,14 +1,14 @@
-The first service in my `side-project` repository let friends upload photos and vote on them. A photo contest became a permanent feed as I ran the app and revised the requirements. Repeated code review requests became shared packages. I later added a game feedback project and my personal blog to the repository. Game feedback is being developed on a separate feature branch.
+I felt this was a good time to try building several services in parallel. Working with AI tools made me think I could handle areas beyond frontend development, including backend development, databases, and design, to the level each service needed.
 
-I wanted to bring people to a service I had built and find out whether they would return. I was comfortable building frontend screens, and I wanted experience owning the server, database, and operation of a product as well. If it worked, I hoped to keep running it as a side business.
+I began exploring ideas that interested me and decided to plan and work toward launching several services together. That led to a service for sharing photos and opinions, a game feedback service, and my personal blog.
 
-Looking back through commits and the requests I made in local Codex sessions, I found a sequence of revisions. I ran the screens, changed requirements, and reorganized the existing structure as another project joined it.
+I wanted to reduce the work of setting up a development environment each time I started another project. I organized the services separately within a monorepo and first shared TypeScript configuration. Coding rules and a design system followed as I worked out what to share and what belonged within each service.
 
 ## The first service was a private photo contest
 
-The first commit, on October 13, contained `photo-contest`. People could create a group, join by invitation, submit photos, and vote. Submission and voting had separate periods, and results handled ties and contests without votes.
+I started building `photo-contest` around groups where friends could join by invitation, upload photos, and vote. Submission and voting had separate periods, and results handled ties and contests without votes.
 
-I already intended to keep several side projects in the repository. I asked Codex to set up a monorepo without putting tests at the repository root. I wanted Vitest and Playwright, with each app able to run the tests it needed.
+I wanted each app to manage its tests within the shared repository. I put Vitest and Playwright configurations inside the apps so each could run the tests it needed independently.
 
 The root owned Yarn workspaces, common configuration, and delegation to project commands. Services belonged under `projects/<name>`, and shared configuration went into `packages`. The first shared package held TypeScript configuration.
 
@@ -22,35 +22,35 @@ packages/
   typescript-config/
 ```
 
-The mobile app, other services, shared lint rules, and design system came later. Test ownership was refined too. API, web, and mobile apps now each own their configurations and tests.
+From there, I added the mobile app and other services. API, web, and mobile apps each have their own test configurations and commands.
 
-## Running the home screen changed the photo service
+## Showing photos as soon as the home screen opens
 
 The first home screen was closer to a group selector. I wanted to see recent photos from every group I belonged to as soon as I opened it. The group list could live on my profile page.
 
 I then decided that a place to keep posting suited the service better than events that closed after a deadline. I added scope for videos and composite images, administrator removal, and popular posts for the month. That led to a permanent post model alongside the existing contest model.
 
-I revised the design from the running screens too. I pointed out layouts that obscured photos, borders that suggested a story feature we did not have, and awkward desktop spacing. References from other services still needed to fit the actual features and how people would view photos.
+I revised the design from the running screens too. I changed layouts that obscured photos and removed borders that suggested a story feature we did not have. I checked desktop spacing and layout separately. References from other services still needed to fit the actual features and how people would view photos.
 
-## Repeated coding requests became shared packages
+## Defining coding rules to use across projects
 
-Implementation conventions changed as features grew. I asked for uploads handled through mutations, and for event handlers used only once to stay inline when appropriate. I also asked for context-specific UI, such as photo and video selection, to have separate components.
+As features grew, I organized the implementation conventions. Uploads used mutations to manage request state and failure handling together. Event handlers used only once stayed where they were used, while UI with a separate context, such as photo and video selection, became separate components.
 
-Leaving those requests only in conversation meant explaining them again in the next task. I asked for custom ESLint rules in a shared package, written in TypeScript and checked with RuleTester and fixtures. The rules and framework presets were later separated so each app could compose the configuration it needed.
+I moved custom ESLint rules into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
 
 When game feedback joined the repository, I also worked on a design system shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
 
 ## I separated develop from feature branches
 
-When starting game feedback, I asked for `develop` to be created from `main` and for `feat/game-feedback` to remain a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
+When starting game feedback, I created `develop` from `main` and kept `feat/game-feedback` as a separate feature branch. I also changed the target of follow-up photo service PRs to `develop`.
 
-The actual `develop` history contains the photo feed, permanent posts, login and uploads, shared lint work, and the blog migration. Work still underway on a feature branch has not necessarily reached `develop`. Checking the combined state meant checking both the current branch and the PR target.
+I worked on the game service and blog while continuing to revise the photo service. I implemented and checked changes on feature branches, then opened PRs targeting `develop`. The photo feed, login, shared lint work, and blog migration were integrated through that branch.
 
-I used different worktrees to work on the blog and game service in separate sessions. Separate folders could still point to the same repository, so I recorded the need to check the remote and branch before working.
+I used different worktrees to work on the blog and game service in separate sessions. Each working directory could keep its own feature branch while I worked.
 
 ## I chose Clash Royale as the first game
 
-I initially felt more comfortable trying a B2C or C2C service. I wanted to recruit people from communities I could reach, rather than start by selling to business customers. I had no evidence that consumer acquisition would be easy. It was the route I felt more able to start with.
+I wanted to try a B2C or C2C service. I wanted experience bringing people from communities I could reach and finding out whether they would keep using it.
 
 The game feedback idea was straightforward: someone stuck in a game describes their situation, and another player offers advice. I chose Clash Royale first because I thought I could reach its initial users more readily. Brawl Stars and League of Legends remained possible additions, but I decided to start with one game.
 
@@ -60,11 +60,11 @@ I also wanted friend-add sales, friendly-match recruitment, and chat in the game
 
 Friend-add sales needed a price field. Coaching needed hourly, monthly, and target-rating pricing, and either students or coaches could post a request. The scope covers displaying terms and connecting people through chat. Payment processing stayed outside the initial scope.
 
-## The first reply was near the end of the plan
+## I needed both people asking for feedback and people answering
 
-The early plan described authentication, game profile integration, multiple languages, caching, and mobile apps in detail. Meeting actual users and finding people willing to answer came much later.
+Game feedback needed both people asking questions and people willing to answer them. Alongside authentication, game profile integration, multiple languages, and caching, I needed to consider who would answer the first question.
 
-A review pointed out the problem with that order. If someone posts a question and nobody answers, the service stops there. A well-organized server and a finished app would still leave that first question waiting.
+If someone posts a question and receives no reply, they have less reason to return. The flow needed to continue through receiving an answer and coming back to read it.
 
 I brought the following flow to the front of the plan.
 
@@ -79,7 +79,7 @@ Reply notifications and the `Helpful` action became important here. I had consid
 
 The initial metric became the number of requests with at least one answer marked helpful. Several helpful answers on the same request still count as one request. I also want to track time to the first reply and the proportion of requests answered within 24 hours.
 
-I moved recruiting five to ten potential responders and manually connecting questions with answers in existing communities to the beginning of the plan. I have not completed that recruitment or validation. Those numbers are targets for the next step.
+I plan to find five to ten potential responders and manually connect questions with answers in existing communities first. I have not started recruiting them yet.
 
 ## I chose REST to work through the cache model
 
@@ -91,7 +91,7 @@ I also wanted Next.js server caching in the plan. My initial idea was to have Ne
 
 If someone submits a reply and then receives an older list, they may think the submission failed. Refreshing TanStack Query's browser cache does not resolve an older result still served by the Next.js layer. Updates made by other users need their own path too.
 
-The review suggested postponing server caching for early user content. I still wanted the experience of designing the cache model, so I kept it in a later development phase. The current implementation notes leave Next.js data caching off for user content and use TanStack Query invalidation and refetching first. Server cache consistency remains future work.
+I wanted the experience of designing server caching, so I kept it in a later development phase. For now, I left Next.js data caching off for user content and used TanStack Query invalidation and refetching. When adding server caching, I want to check how both browser state and newly fetched server results are updated.
 
 The behavior to verify is concrete: a new post should appear for its author immediately, and an edit should not revert to an older value after another fetch. I plan to use those behaviors as acceptance criteria when adding server caching.
 
@@ -113,7 +113,7 @@ Translating posts alone left a gap. A Japanese-speaking player might read a tran
 
 I kept locale routing in the early structure and left translation features and operating in each language as separate items to validate. The existence of `/en` or `/ja` routes did not establish that those users could complete the flow.
 
-I reconsidered mobile work in the same way. The first validation should cover posting a request and reading the answer on the web. App distribution and store operation need their own work. A WebView shell was implemented later, but running it locally and operating a released store app require separate verification.
+I built the mobile app around a WebView that uses the web screens. I want to refine posting a request and reading its answer on the web first, then work on app distribution and store operation.
 
 ## I chose to run the blog without a database
 
@@ -121,7 +121,7 @@ The blog has different data needs from the game service. The game service has ma
 
 I had been keeping articles in a repository and also publishing them on Tistory. Maintaining that process felt cumbersome, so I decided to build my own blog. I briefly considered a database and an admin editor because changing an article would otherwise require another deployment.
 
-I settled on Git and MDX. What I needed was a familiar editor, a history of changes, and a publishing flow. Connecting GitHub to hosting can automate deployment after a push and remove the need to run deployment commands each time. CI is ready; the actual hosting connection and domain setup are separate work.
+I settled on Git and MDX. I wanted to edit articles in a familiar editor and keep their change history as I published them. Automating deployment after a Git push would also save me from running deployment commands for every article edit.
 
 Korean and English bodies live in separate MDX files grouped under one content ID. Titles, slugs, and search descriptions live in locale-specific SEO JSON. Shared metadata holds fields such as the publication date and tags.
 
@@ -148,6 +148,4 @@ Source directories were only part of that separation. Each project also needed i
 
 I documented the boundaries for data and local execution. Tests use separate ports and temporary database schemas rather than the development server in use. Settings and UI move to a shared package when there is a demonstrated reason to share them; service data and business logic stay within their projects.
 
-I also decided to record completion at the level actually checked. Passing local tests, connecting a real external API, deploying, and having someone use the service each establish different facts. The implementation notes need to make that distinction clear enough for the next task to continue.
-
-After several revisions of the plan, I still have no results to report about acquisition or return visits. Those are questions left to test. Before expanding the feature list again, I want to record a real request, its first reply, and whether the requester came back to read it.
+I am still building features and refining them in the running screens. Next, I want to find people who will ask questions and others who will answer them. I want to start by checking whether someone receives an answer and comes back to read it.
