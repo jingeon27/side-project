@@ -49,3 +49,5 @@
 - 커밋 단위·메시지: `.claude/skills/commit/SKILL.md`
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
+
+운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB·미디어 volume을 지우거나 DB를 자동으로 되돌리지 않는다.

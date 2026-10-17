@@ -74,6 +74,14 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 남은 테스트 스키마가 없는 것도 확인했다.
 
+## 운영 배포 준비
+
+앱별 Dockerfile과 Next.js standalone 산출물, 운영 Compose·Caddy·배포/백업/앱 복구 스크립트를 추가했다. Oracle A1의 ARM64를 대상으로 하며 웹·API·PostgreSQL을 같은 VM에 둔다. Caddy가 HTTPS와 `/backend/*`를 맡고 DB·API 포트는 외부에 열지 않는다. API의 TRUST_PROXY_HOPS 기본값은 0이며 운영 Compose만 1로 지정해 Caddy 뒤의 가입 제한을 사용자 주소별로 분리한다. prisma CLI는 운영 migrate deploy를 위해 production dependency로 옮겼다.
+
+GitHub Actions는 운영 컨테이너에서 직접 가입·비공개 사진/영상·댓글·재시작·DB 백업 복원을 검증한다. 배포 대상에서는 검증한 동일 이미지를 artifact로 옮겨 GHCR에 게시하고 digest로 고정해 배포한다. 운영 브랜치와 활성화 값이 모두 없으면 게시·서버 접속을 하지 않는다. SSH 호스트 키를 확인하고 GHCR 작업 토큰은 stdin·임시 Docker 설정으로만 사용한다. VM 작업 잠금·공개 헬스 체크·이전 앱 복구를 제공하며 DB 스키마·미디어·백업은 자동으로 되돌리거나 지우지 않는다.
+
+서버가 없는 상태에서는 로컬 검증과 CI 구성을 준비한다. 실제 운영 DNS·인증서·VM 접근·R2 권한은 사용자 설정 후 확인한다. 준비할 값과 실행 순서는 [배포 안내](deployment.md)에 둔다.
+
 ## 개발 환경 반영
 
 그룹 마이그레이션은 앞선 전체 실행 요청에 따라 개발 환경에 반영했다. 직접 가입 기능은 `20261016090000_password_login`으로 PasswordCredential·AuthAttempt 테이블만 추가하며 기존 사용자와 게시물을 보존한다. 실행 요청에 따라 개발 DB에도 적용해 현재 웹에서 직접 가입할 수 있다. 새 환경에서는 db:migrate 후 실행한다. 테스트 DB는 개발 DB와 다른 55434의 photo_contest_test이며 각 레인이 임시 스키마를 만들고 정리한다.
