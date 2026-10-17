@@ -83,6 +83,7 @@ model Post {
   gameProfile Json?
   board String @default("FEEDBACK")
   document Json?
+  coaching Json?
   hidden Boolean @default(false)
   deletedAt DateTime?
   createdAt DateTime @default(now())

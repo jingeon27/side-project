@@ -3,8 +3,15 @@ import { RichTextDocumentSchema } from './rich-text';
 export { RichTextDocumentSchema, RichTextAttributesSchema, richTextToPlainText } from './rich-text';
 export type { TRichTextDocument, TRichTextAttributes } from './rich-text';
 
-export const BoardKindSchema = z.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']);
+export const BoardKindSchema = z.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']);
 export type TBoardKind = z.infer<typeof BoardKindSchema>;
+export const CoachingDetailsSchema = z
+  .object({
+    role: z.enum(['COACH', 'STUDENT']),
+    hourlyRate: z.number().int().positive().max(10000000).nullable(),
+  })
+  .strict();
+export type TCoachingDetails = z.infer<typeof CoachingDetailsSchema>;
 
 const ResponseIdSchema = z.string().min(1).max(100);
 const ResponseTimestampSchema = z.iso.datetime();
@@ -72,6 +79,7 @@ export const PostSchema = z.object({
   body: z.string().min(1),
   board: BoardKindSchema.optional(),
   document: RichTextDocumentSchema.nullable().optional(),
+  coaching: CoachingDetailsSchema.nullable().optional(),
   categoryId: ResponseIdSchema,
   category: CategorySchema,
   author: AuthorSchema,
@@ -221,6 +229,7 @@ export const PostInputSchema = z
     body: z.string().trim().min(20).max(10000),
     board: BoardKindSchema.optional(),
     document: RichTextDocumentSchema.nullable().optional(),
+    coaching: CoachingDetailsSchema.nullable().optional(),
     categoryId: z.string().min(1),
     playerTag: PlayerTagSchema.optional(),
   })
@@ -284,6 +293,7 @@ export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
 
 export const schemas = {
+  CoachingDetails: CoachingDetailsSchema,
   RichTextDocument: RichTextDocumentSchema,
   ChatAttachment: ChatAttachmentSchema,
   ChatAttachmentUpload: ChatAttachmentUploadSchema,

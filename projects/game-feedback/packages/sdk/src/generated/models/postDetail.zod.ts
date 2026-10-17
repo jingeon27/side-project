@@ -18,6 +18,9 @@ export const postDetailPostDocumentOneOpsItemAttributesLinkMax = 2048;
 export const postDetailPostDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const postDetailPostDocumentOneOpsMax = 2000;
 
+export const postDetailPostCoachingOneHourlyRateOneExclusiveMin = 0;
+export const postDetailPostCoachingOneHourlyRateOneMax = 10000000;
+
 export const postDetailPostCategoryIdMax = 100;
 
 export const postDetailPostCategoryIdMaxOne = 100;
@@ -79,7 +82,7 @@ export const PostDetail = zod.object({
   "id": zod.string().min(1).max(postDetailPostIdMax),
   "title": zod.string().min(1),
   "body": zod.string().min(1),
-  "board": zod.enum(['FEEDBACK', 'ACCOUNT_TRADE', 'FRIENDLY', 'FRIEND', 'SALE']).optional(),
+  "board": zod.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']).optional(),
   "document": zod.union([zod.object({
   "ops": zod.array(zod.object({
   "insert": zod.string().min(1).max(postDetailPostDocumentOneOpsItemInsertMax),
@@ -94,6 +97,10 @@ export const PostDetail = zod.object({
   "blockquote": zod.boolean().optional()
 }).optional()
 })).min(1).max(postDetailPostDocumentOneOpsMax)
+}),zod.null()]).optional(),
+  "coaching": zod.union([zod.object({
+  "role": zod.enum(['COACH', 'STUDENT']),
+  "hourlyRate": zod.union([zod.int().gt(postDetailPostCoachingOneHourlyRateOneExclusiveMin).max(postDetailPostCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(postDetailPostCategoryIdMax),
   "category": zod.object({

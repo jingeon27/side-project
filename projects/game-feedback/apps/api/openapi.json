@@ -902,10 +902,10 @@
               "enum": [
                 "ALL",
                 "FEEDBACK",
-                "ACCOUNT_TRADE",
+                "FRIEND_SALE",
                 "FRIENDLY",
-                "FRIEND",
-                "SALE"
+                "COACHING",
+                "FREE"
               ]
             }
           }
@@ -1987,6 +1987,35 @@
   },
   "components": {
     "schemas": {
+      "CoachingDetails": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "COACH",
+              "STUDENT"
+            ]
+          },
+          "hourlyRate": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "role",
+          "hourlyRate"
+        ],
+        "additionalProperties": false
+      },
       "RichTextDocument": {
         "type": "object",
         "properties": {
@@ -3647,10 +3676,10 @@
             "type": "string",
             "enum": [
               "FEEDBACK",
-              "ACCOUNT_TRADE",
+              "FRIEND_SALE",
               "FRIENDLY",
-              "FRIEND",
-              "SALE"
+              "COACHING",
+              "FREE"
             ]
           },
           "document": {
@@ -3725,6 +3754,42 @@
                 },
                 "required": [
                   "ops"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coaching": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "COACH",
+                      "STUDENT"
+                    ]
+                  },
+                  "hourlyRate": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "role",
+                  "hourlyRate"
                 ],
                 "additionalProperties": false
               },
@@ -4182,10 +4247,10 @@
                   "type": "string",
                   "enum": [
                     "FEEDBACK",
-                    "ACCOUNT_TRADE",
+                    "FRIEND_SALE",
                     "FRIENDLY",
-                    "FRIEND",
-                    "SALE"
+                    "COACHING",
+                    "FREE"
                   ]
                 },
                 "document": {
@@ -4260,6 +4325,42 @@
                       },
                       "required": [
                         "ops"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "coaching": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "COACH",
+                            "STUDENT"
+                          ]
+                        },
+                        "hourlyRate": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 10000000
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "hourlyRate"
                       ],
                       "additionalProperties": false
                     },
@@ -4511,10 +4612,10 @@
                 "type": "string",
                 "enum": [
                   "FEEDBACK",
-                  "ACCOUNT_TRADE",
+                  "FRIEND_SALE",
                   "FRIENDLY",
-                  "FRIEND",
-                  "SALE"
+                  "COACHING",
+                  "FREE"
                 ]
               },
               "document": {
@@ -4589,6 +4690,42 @@
                     },
                     "required": [
                       "ops"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "coaching": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "COACH",
+                          "STUDENT"
+                        ]
+                      },
+                      "hourlyRate": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 10000000
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "role",
+                      "hourlyRate"
                     ],
                     "additionalProperties": false
                   },
@@ -5207,10 +5344,10 @@
             "type": "string",
             "enum": [
               "FEEDBACK",
-              "ACCOUNT_TRADE",
+              "FRIEND_SALE",
               "FRIENDLY",
-              "FRIEND",
-              "SALE"
+              "COACHING",
+              "FREE"
             ]
           },
           "document": {
@@ -5285,6 +5422,42 @@
                 },
                 "required": [
                   "ops"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coaching": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "COACH",
+                      "STUDENT"
+                    ]
+                  },
+                  "hourlyRate": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "role",
+                  "hourlyRate"
                 ],
                 "additionalProperties": false
               },
@@ -5394,6 +5567,42 @@
                 },
                 "required": [
                   "ops"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coaching": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "COACH",
+                      "STUDENT"
+                    ]
+                  },
+                  "hourlyRate": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "role",
+                  "hourlyRate"
                 ],
                 "additionalProperties": false
               },

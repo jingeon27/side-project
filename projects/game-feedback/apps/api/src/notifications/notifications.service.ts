@@ -1,5 +1,5 @@
 import { ListQuerySchema } from '@game-feedback/contracts';
-import { ACTIVE_CONTENT } from '../common/content';
+import { ACTIVE_POST } from '../common/content';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { Inject, Injectable } from '@nestjs/common';
@@ -26,7 +26,7 @@ export class NotificationsService {
     const where: Prisma.NotificationWhereInput = {
       AND: [visible],
       userId: u.id,
-      post: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+      post: { ...ACTIVE_POST, authorId: { notIn: excluded } },
       ...(cursor
         ? {
             OR: [
@@ -47,7 +47,7 @@ export class NotificationsService {
           AND: [visible],
           userId: u.id,
           readAt: null,
-          post: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+          post: { ...ACTIVE_POST, authorId: { notIn: excluded } },
         },
       }),
     ]);

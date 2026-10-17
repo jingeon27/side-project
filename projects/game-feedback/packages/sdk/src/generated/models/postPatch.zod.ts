@@ -20,6 +20,9 @@ export const postPatchDocumentOneOpsItemAttributesLinkMax = 2048;
 export const postPatchDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const postPatchDocumentOneOpsMax = 2000;
 
+export const postPatchCoachingOneHourlyRateOneExclusiveMin = 0;
+export const postPatchCoachingOneHourlyRateOneMax = 10000000;
+
 export const postPatchPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const PostPatch = zod.object({
@@ -39,6 +42,10 @@ export const PostPatch = zod.object({
   "blockquote": zod.boolean().optional()
 }).optional()
 })).min(1).max(postPatchDocumentOneOpsMax)
+}),zod.null()]).optional(),
+  "coaching": zod.union([zod.object({
+  "role": zod.enum(['COACH', 'STUDENT']),
+  "hourlyRate": zod.union([zod.int().gt(postPatchCoachingOneHourlyRateOneExclusiveMin).max(postPatchCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
   "playerTag": zod.string().regex(postPatchPlayerTagRegExp).optional()
 })

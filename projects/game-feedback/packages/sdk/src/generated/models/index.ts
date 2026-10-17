@@ -21,6 +21,7 @@ export * from './chatMessage.zod';
 export * from './chatMessageInput.zod';
 export * from './chatMessageList.zod';
 export * from './chatReadInput.zod';
+export * from './coachingDetails.zod';
 export * from './comment.zod';
 export * from './commentInput.zod';
 export * from './conversation.zod';

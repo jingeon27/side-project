@@ -20,6 +20,9 @@ export const updatePostBodyDocumentOneOpsItemAttributesLinkMax = 2048;
 export const updatePostBodyDocumentOneOpsItemAttributesLinkRegExp = new RegExp('^[Hh][Tt][Tt][Pp][Ss]?:\\/\\/.+$');
 export const updatePostBodyDocumentOneOpsMax = 2000;
 
+export const updatePostBodyCoachingOneHourlyRateOneExclusiveMin = 0;
+export const updatePostBodyCoachingOneHourlyRateOneMax = 10000000;
+
 export const updatePostBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
 
 export const UpdatePostBody = zod.object({
@@ -39,6 +42,10 @@ export const UpdatePostBody = zod.object({
   "blockquote": zod.boolean().optional()
 }).optional()
 })).min(1).max(updatePostBodyDocumentOneOpsMax)
+}),zod.null()]).optional(),
+  "coaching": zod.union([zod.object({
+  "role": zod.enum(['COACH', 'STUDENT']),
+  "hourlyRate": zod.union([zod.int().gt(updatePostBodyCoachingOneHourlyRateOneExclusiveMin).max(updatePostBodyCoachingOneHourlyRateOneMax),zod.null()])
 }),zod.null()]).optional(),
   "playerTag": zod.string().regex(updatePostBodyPlayerTagRegExp).optional()
 })
