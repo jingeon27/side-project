@@ -20,10 +20,18 @@ import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { CreatePostButton, GalleryFeed } from '@/features/post';
 import { GroupCommunity } from './community/GroupCommunity';
 
-function GroupFrame({ title = '그룹', children }: { title?: string; children: ReactNode }) {
+function GroupFrame({
+  title = '그룹',
+  children,
+  actions,
+}: {
+  title?: string;
+  children: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
     <>
-      <TopAppBar title={title} backHref={ROUTES.HOME} />
+      <TopAppBar title={title} backHref={ROUTES.HOME} actions={actions} />
       <div className="flex flex-col gap-8 px-4 py-6 tablet:px-8">{children}</div>
     </>
   );
@@ -63,8 +71,8 @@ function GroupContent({
     );
   const group = data.group;
   return (
-    <GroupFrame title={group.name}>
-      <section className="flex flex-wrap items-center gap-4 border-b border-line pb-6 tablet:gap-6">
+    <GroupFrame title={group.name} actions={<CreatePostButton groupId={group.id} />}>
+      <section className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-4 border-b border-line pb-6 tablet:gap-6 desktop:rounded-card desktop:border desktop:bg-surface desktop:p-6">
         <span
           aria-hidden
           className="flex size-20 shrink-0 items-center justify-center rounded-full border border-line bg-sunken text-display text-ink"
@@ -76,23 +84,26 @@ function GroupContent({
           <p className="mt-1 text-label text-ink">{group.members.length}명이 함께하는 그룹</p>
           <p className="mt-2 text-caption text-muted">사진도 동영상도, 합성도 환영해요.</p>
         </div>
-        <CreatePostButton groupId={group.id} />
       </section>
-      <GalleryFeed groupId={group.id} />
-      <details className="rounded-card border border-line p-4">
-        <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
-          초대와 그룹 멤버
-        </summary>
-        <div className="mt-4 flex flex-col gap-6">
-          <InviteCard
-            groupId={group.id}
-            groupName={group.name}
-            inviteToken={group.inviteToken}
-            canRegenerate={isGroupOwner(group.role)}
-          />
-          <GroupCommunity groupRef={groupRef} viewerId={viewerId} />
-        </div>
-      </details>
+      <GalleryFeed
+        groupId={group.id}
+        sidebar={
+          <details className="rounded-card border border-line bg-surface p-4">
+            <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
+              초대와 그룹 멤버
+            </summary>
+            <div className="mt-4 flex flex-col gap-6">
+              <InviteCard
+                groupId={group.id}
+                groupName={group.name}
+                inviteToken={group.inviteToken}
+                canRegenerate={isGroupOwner(group.role)}
+              />
+              <GroupCommunity groupRef={groupRef} viewerId={viewerId} />
+            </div>
+          </details>
+        }
+      />
     </GroupFrame>
   );
 }

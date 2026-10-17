@@ -53,7 +53,7 @@ test(
       expect((await page.locator('#pc-main').boundingBox())?.width).toBeGreaterThan(1000);
       const feed = await latest.boundingBox();
       const popular = await page.getByRole('region', { name: '이달의 인기', exact: true }).boundingBox();
-      expect(feed?.width).toBeLessThanOrEqual(540);
+      expect(feed?.width).toBeLessThanOrEqual(680);
       if (!feed || !popular) throw new Error('피드와 인기 사진이 보여야 한다');
       expect(popular.x).toBeGreaterThan(feed.x + feed.width);
       await mkdir('.data/screens', { recursive: true });

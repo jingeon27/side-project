@@ -2,10 +2,8 @@
 
 import { useFragment, useMutation } from '@apollo/client/react';
 import { Heart, MessageCircle, Trash2, Video } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { overlay } from 'overlay-kit';
-import { match } from 'ts-pattern';
 
 import {
   DeletePostDocument,
@@ -25,6 +23,7 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
+import { PostMedia } from './PostMedia';
 
 export function PostCard({ id }: { id: string }) {
   const haptics = useHaptics();
@@ -45,7 +44,10 @@ export function PostCard({ id }: { id: string }) {
   if (!complete) return null;
 
   return (
-    <article className="min-w-0 border-b border-line bg-surface pb-6" aria-label={post.title}>
+    <article
+      className="min-w-0 border-b border-line bg-surface pb-6 desktop:rounded-card desktop:border desktop:p-5"
+      aria-label={post.title}
+    >
       <div className="flex items-center gap-3 pb-3">
         <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -89,30 +91,7 @@ export function PostCard({ id }: { id: string }) {
         ) : null}
       </div>
       <h3 className="mb-3 wrap-break-word text-title text-ink">{post.title}</h3>
-      {match(post.kind)
-        .with(PostKind.Video, () => (
-          <video
-            src={post.mediaUrl}
-            controls
-            playsInline
-            preload="metadata"
-            aria-label={post.title}
-            className="aspect-square w-full rounded-card bg-sunken object-contain"
-          />
-        ))
-        .with(PostKind.Photo, () => (
-          <div className="relative aspect-square overflow-hidden rounded-card bg-sunken">
-            <Image
-              src={post.mediaUrl}
-              alt={post.title}
-              fill
-              unoptimized
-              sizes="(min-width:768px) 540px, calc(100vw - 32px)"
-              className="object-contain"
-            />
-          </div>
-        ))
-        .exhaustive()}
+      <PostMedia postId={id} />
       {post.body ? (
         <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
       ) : null}

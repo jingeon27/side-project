@@ -58,7 +58,7 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
           초대 링크를 아는 사람은 누구나 가입할 수 있어요. 친구에게만 보내 주세요.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 desktop:grid-cols-1">
         <Button
           variant="primary"
           size="md"
