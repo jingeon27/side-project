@@ -1,4 +1,7 @@
 .git
+.npmrc
+**/.npmrc
+**/.ssh
 .yarn
 **/node_modules
 **/.env
