@@ -48,13 +48,14 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
       await expect(unanswered).toHaveAttribute('aria-selected', 'true');
       await expect(page).toHaveURL(/tab=unanswered/);
       await expect
-        .poll(() =>
-          unanswered.locator('.feed-tab-indicator').evaluate((node) => {
-            const transform = getComputedStyle(node).transform;
-            return transform === 'none' ? 1 : new DOMMatrixReadOnly(transform).m11;
-          }),
-        )
+        .poll(() => unanswered.evaluate((node) => Number(getComputedStyle(node, '::after').opacity)))
         .toBe(1);
+      const indicator = await unanswered.evaluate((node) => {
+        const style = getComputedStyle(node, '::after');
+        return { height: Number.parseFloat(style.height), width: Number.parseFloat(style.width) };
+      });
+      expect(indicator.height).toBeGreaterThan(0);
+      expect(indicator.width).toBeGreaterThan(0);
 
       const compose = page.getByRole('button', { name: '글쓰기' });
       await compose.focus();
