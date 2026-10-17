@@ -1,0 +1,107 @@
+For this side project, I wanted to bring people to a service I had built and find out whether they would return. I was comfortable building frontend screens, and I wanted experience owning the server, database, and operation of a product as well. If it worked, I hoped to keep running it as a side business.
+
+I did not begin with a single settled idea. I considered services that connect people, narrowed one down to game feedback, and decided to build a separate photo feedback service too. My personal blog joined them in the same repository.
+
+Much of the planning involved adding features and then taking them back out. Deciding what to verify first took more time than choosing the stack.
+
+## I chose Clash Royale as the first game
+
+I initially felt more comfortable trying a B2C or C2C service. I wanted to recruit people from communities I could reach, rather than start by selling to business customers. I had no evidence that consumer acquisition would be easy. It was the route I felt more able to start with.
+
+The game feedback idea was straightforward: someone stuck in a game describes their situation, and another player offers advice. I chose Clash Royale first because I thought I could reach its initial users more readily. Brawl Stars and League of Legends remained possible additions, but I decided to start with one game.
+
+I treated photo feedback and game feedback as separate services. Both involve asking for opinions, but people use them for different reasons and need different context. Building them under the same brand did not give me a reason to combine their accounts or data.
+
+I also wanted friend-add sales, friendly-match recruitment, and chat in the game service. The navigation needed to distinguish games from boards: feedback and the other boards belong under Clash Royale. I dropped account trading because of the risk involved and kept payment processing outside the initial scope.
+
+## The first reply was near the end of the plan
+
+The early plan described authentication, game profile integration, multiple languages, caching, and mobile apps in detail. Meeting actual users and finding people willing to answer came much later.
+
+A review pointed out the problem with that order. If someone posts a question and nobody answers, the service stops there. A well-organized server and a finished app would still leave that first question waiting.
+
+I brought the following flow to the front of the plan.
+
+```text
+Someone posts a question
+  → Another player replies
+  → The requester receives a notification
+  → The requester reads it and marks whether it helped
+```
+
+Reply notifications and the `Helpful` action became important here. I had considered how to store questions and answers, but the plan did not complete the path back to the requester. I also needed a way to see whether the answer had been useful.
+
+The initial metric became the number of requests with at least one answer marked helpful. Several helpful answers on the same request still count as one request. I also want to track time to the first reply and the proportion of requests answered within 24 hours.
+
+I moved recruiting five to ten potential responders and manually connecting questions with answers in existing communities to the beginning of the plan. I have not completed that recruitment or validation. Those numbers are targets for the next step.
+
+## I chose REST to work through the cache model
+
+I chose REST because I wanted to define cache boundaries for lists and detail pages, then decide which queries to refresh after a change. Organizing those relationships through REST felt familiar and suited the work I wanted to do in this project.
+
+I selected TanStack Query for browser server state. The feed uses cursor-based infinite scrolling, and creating a post or reply refreshes the relevant queries. For the server, I chose NestJS with Express.
+
+I also wanted Next.js server caching in the plan. My initial idea was to have NestJS call a Next.js Route Handler after a data change to invalidate the relevant cache. Reviewing that flow brought up a harder question: what would the author see immediately after writing?
+
+If someone submits a reply and then receives an older list, they may think the submission failed. Refreshing TanStack Query's browser cache does not resolve an older result still served by the Next.js layer. Updates made by other users need their own path too.
+
+The review suggested postponing server caching for early user content. I still wanted the experience of designing the cache model, so I kept it in a later development phase. The current implementation notes leave Next.js data caching off for user content and use TanStack Query invalidation and refetching first. Server cache consistency remains future work.
+
+The behavior to verify is concrete: a new post should appear for its author immediately, and an edit should not revert to an older value after another fetch. I plan to use those behaviors as acceptance criteria when adding server caching.
+
+## I separated profile lookup from account ownership
+
+The game account connection flow starts with entering a Player Tag and loading the profile. A successful lookup does not establish that the person entering the tag owns the account. They could enter someone else's tag.
+
+That distinction mattered when designing verification labels. Showing profile lookup and ownership verification as the same state would imply more trust than the service had established.
+
+I decided that a connected game profile would initially have unverified ownership, with a separate verification process to investigate. An administrator-managed user verification label also has a different meaning from ownership of a game account. The label needs to reflect what was checked and the evidence used.
+
+I also decided to preserve the game information from the time a feedback request was written. If someone changes their deck later, the old reply should still have the context it was based on. That is why a request snapshot is separate from the current profile.
+
+## Translated navigation does not complete a conversation
+
+I considered Korean, English, and Japanese for the game service from the start. Locale routes, translated interface text, and post translation initially seemed to cover the main requirements.
+
+Translating posts alone left a gap. A Japanese-speaking player might read a translated Korean question and reply, while the original requester could not read the answer. The translation scope needed to include replies if it was going to support the whole feedback exchange.
+
+I kept locale routing in the early structure and left translation features and operating in each language as separate items to validate. The existence of `/en` or `/ja` routes did not establish that those users could complete the flow.
+
+I reconsidered mobile work in the same way. The first validation should cover posting a request and reading the answer on the web. App distribution and store operation need their own work. A WebView shell was implemented later, but running it locally and operating a released store app require separate verification.
+
+## I chose to run the blog without a database
+
+The blog has different data needs from the game service. The game service has many users continually creating posts and replies. I am the blog's only author.
+
+I had been keeping articles in a repository and also publishing them on Tistory. Maintaining that process felt cumbersome, so I decided to build my own blog. I briefly considered a database and an admin editor because changing an article would otherwise require another deployment.
+
+I settled on Git and MDX. What I needed was a familiar editor, a history of changes, and a publishing flow. Connecting GitHub to hosting can automate deployment after a push and remove the need to run deployment commands each time. CI is ready; the actual hosting connection and domain setup are separate work.
+
+Korean and English bodies live in separate MDX files grouped under one content ID. Titles, slugs, and search descriptions live in locale-specific SEO JSON. Shared metadata holds fields such as the publication date and tags.
+
+```text
+content/posts/side-project-design/
+  meta.json
+  ko.mdx
+  en.mdx
+
+seo/
+  ko.json
+  en.json
+```
+
+I wanted to avoid creating an English URL when no English article had been written. Only locales with an actual body appear in the listing and sitemap. I also kept URLs stable when changing titles and required explicit redirects when changing a URL.
+
+I limited the about page to contact information. Adding a resume and project introductions would expand what I was trying to show again. For the blog, I chose to concentrate on writing and reading articles.
+
+## I isolated the projects within the repository
+
+I planned to work on the game service and blog in different sessions. The existing photo service was in the same repository too, so I separated working directories and branches with Git worktrees.
+
+Source directories were only part of that separation. Each project also needed its own ports, API configuration, cookie name, database, and test schemas. A separate folder would not help if its web app sent requests to another project's running API.
+
+I documented the boundaries for data and local execution. Tests use separate ports and temporary database schemas rather than the development server in use. Settings and UI move to a shared package when there is a demonstrated reason to share them; service data and business logic stay within their projects.
+
+I also decided to record completion at the level actually checked. Passing local tests, connecting a real external API, deploying, and having someone use the service each establish different facts. The implementation notes need to make that distinction clear enough for the next task to continue.
+
+After several revisions of the plan, I still have no results to report about acquisition or return visits. Those are questions left to test. Before expanding the feature list again, I want to record a real request, its first reply, and whether the requester came back to read it.

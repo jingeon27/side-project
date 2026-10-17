@@ -19,6 +19,12 @@
     }
   },
   "posts": {
+    "side-project-design": {
+      "title": "What I Kept Changing While Planning My Side Projects",
+      "slug": "what-i-kept-changing-while-planning-my-side-projects",
+      "description": "Planning a game feedback service and a personal blog: the first reply, REST and caching, account verification, MDX publishing, and project isolation.",
+      "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"]
+    },
     "puppeteer-event-lifecycle": {
       "title": "Waiting for Puppeteer requests and responses",
       "slug": "puppeteer-event-lifecycle",

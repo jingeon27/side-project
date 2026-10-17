@@ -1,5 +1,111 @@
 [
   {
+    "category": "engineering",
+    "tags": ["side-project", "product", "architecture", "nextjs"],
+    "publishedAt": "2026-10-17",
+    "title": "사이드 프로젝트를 설계하면서 계속 바꾼 것들",
+    "description": "게임 피드백 서비스와 개인 블로그를 계획하며 첫 답변의 흐름, REST와 캐시, 계정 확인, MDX 운영 범위를 정한 기록.",
+    "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+    "keywords": ["사이드 프로젝트", "제품 설계", "게임 피드백", "REST", "캐시", "MDX", "모노레포"],
+    "id": "side-project-design",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "첫-게임은-클래시로얄로-정했다",
+        "title": "첫 게임은 클래시로얄로 정했다",
+        "level": 2
+      },
+      {
+        "id": "첫-답변이-달리는-시점이-계획의-맨-뒤에-있었다",
+        "title": "첫 답변이 달리는 시점이 계획의 맨 뒤에 있었다",
+        "level": 2
+      },
+      {
+        "id": "rest를-고른-이유는-캐시-모델을-직접-잡아-보고-싶어서였다",
+        "title": "REST를 고른 이유는 캐시 모델을 직접 잡아 보고 싶어서였다",
+        "level": 2
+      },
+      {
+        "id": "게임-프로필-조회와-계정-소유-확인을-나눴다",
+        "title": "게임 프로필 조회와 계정 소유 확인을 나눴다",
+        "level": 2
+      },
+      {
+        "id": "다국어-메뉴와-서로-대화할-수-있는-서비스는-차이가-있었다",
+        "title": "다국어 메뉴와 서로 대화할 수 있는 서비스는 차이가 있었다",
+        "level": 2
+      },
+      {
+        "id": "블로그는-db-없이-운영하기로-했다",
+        "title": "블로그는 DB 없이 운영하기로 했다",
+        "level": 2
+      },
+      {
+        "id": "같은-저장소에서-서로의-데이터를-건드리지-않게-했다",
+        "title": "같은 저장소에서 서로의 데이터를 건드리지 않게 했다",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+      "en": "what-i-kept-changing-while-planning-my-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "product", "architecture", "nextjs"],
+    "publishedAt": "2026-10-17",
+    "title": "What I Kept Changing While Planning My Side Projects",
+    "description": "Planning a game feedback service and a personal blog: the first reply, REST and caching, account verification, MDX publishing, and project isolation.",
+    "slug": "what-i-kept-changing-while-planning-my-side-projects",
+    "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"],
+    "id": "side-project-design",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "i-chose-clash-royale-as-the-first-game",
+        "title": "I chose Clash Royale as the first game",
+        "level": 2
+      },
+      {
+        "id": "the-first-reply-was-near-the-end-of-the-plan",
+        "title": "The first reply was near the end of the plan",
+        "level": 2
+      },
+      {
+        "id": "i-chose-rest-to-work-through-the-cache-model",
+        "title": "I chose REST to work through the cache model",
+        "level": 2
+      },
+      {
+        "id": "i-separated-profile-lookup-from-account-ownership",
+        "title": "I separated profile lookup from account ownership",
+        "level": 2
+      },
+      {
+        "id": "translated-navigation-does-not-complete-a-conversation",
+        "title": "Translated navigation does not complete a conversation",
+        "level": 2
+      },
+      {
+        "id": "i-chose-to-run-the-blog-without-a-database",
+        "title": "I chose to run the blog without a database",
+        "level": 2
+      },
+      {
+        "id": "i-isolated-the-projects-within-the-repository",
+        "title": "I isolated the projects within the repository",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 8,
+    "translations": {
+      "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
+      "en": "what-i-kept-changing-while-planning-my-side-projects"
+    }
+  },
+  {
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "testing", "reflection"],
     "publishedAt": "2026-10-05T12:01:45+09:00",

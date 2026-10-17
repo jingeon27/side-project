@@ -31,6 +31,7 @@ export const articleThumbnails = {
     fit: 'cover',
   },
   'sentry-observability': { src: '/images/thumbnails/sentry-observability.svg', fit: 'cover' },
+  'side-project-design': { src: '/images/thumbnails/side-project-design.svg', fit: 'cover' },
   'sitemap-api-boundaries': { src: '/images/thumbnails/sitemap-api-boundaries.svg', fit: 'cover' },
   'testing-standards': { src: '/images/thumbnails/testing-standards.svg', fit: 'cover' },
   'typed-program-form': { src: '/images/thumbnails/typed-program-form.svg', fit: 'cover' },
