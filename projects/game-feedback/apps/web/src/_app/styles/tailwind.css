@@ -1,5 +1,6 @@
 @import 'tailwindcss' source(none);
 @import '@side/design-system/styles.css';
+@import 'quill/dist/quill.snow.css' layer(components);
 @import './base.css';
 @import './layout.css';
 @import './feed.css';
@@ -9,6 +10,7 @@
 @import './info.css';
 @import './authentication.css';
 @import './chat.css';
+@import './editor.css';
 @import './identity.css';
 @import './mobile.css';
 
