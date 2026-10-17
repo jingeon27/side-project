@@ -57,7 +57,11 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   const authConfig = await request.get('/backend/auth/config');
   expect(authConfig.status()).toBe(200);
   expect(await authConfig.json()).toEqual({ developmentLogin: false, google: false, kakao: false });
-  expect((await request.get('/backend/testing/users')).status()).toBe(404);
+  const testing = await request.post('/backend/testing/users', {
+    headers: { Origin: process.env.DEPLOY_SMOKE_ORIGIN ?? '' },
+    data: { nickname: '운영에서 만들면 안 되는 계정' },
+  });
+  expect(testing.status()).toBe(404);
   await photo.getByRole('button', { name: '운영 사진 댓글 0개', exact: true }).click();
   const comments = page.getByRole('dialog', { name: '댓글', exact: true });
   await comments.getByRole('textbox', { name: '댓글', exact: true }).fill('재시작해도 남는 댓글');
