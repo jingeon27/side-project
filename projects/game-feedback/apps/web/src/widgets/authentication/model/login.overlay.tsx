@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { overlay } from 'overlay-kit';
 import { useSession } from '@/features/auth';
 import { LoginDialog } from '../ui/LoginDialog';
+import { OnboardingDialog } from '../ui/OnboardingDialog';
 
 export function openLoginDialog() {
   openOverlay(
@@ -32,9 +33,8 @@ export function AuthOnboarding() {
     // 서버의 가입 대기 상태를 외부 overlay store와 연결하고 화면 종료 시 해제한다.
     const id = openOverlay(
       ({ isOpen, close, unmount }) => (
-        <LoginDialog
+        <OnboardingDialog
           open={isOpen}
-          onOpenChange={() => {}}
           onSuccess={() => {
             close();
             unmount();

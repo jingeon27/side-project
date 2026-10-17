@@ -1,20 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChatRealtimeConnection } from './chat-realtime-connection';
-import type { TChatConnection } from './chat.types';
 
 export function useChatRealtime(userId: string | undefined, onSessionStale: () => void) {
   const client = useQueryClient();
-  const [connection, setConnection] = useState<TChatConnection>('connecting');
-  useEffect(() => {
-    if (!userId) return;
-    const channel = new ChatRealtimeConnection({
-      userId,
-      client,
-      onConnection: setConnection,
-      onSessionStale,
-    });
-    return channel.connect();
-  }, [userId, client, onSessionStale]);
-  return connection;
+  const channel = useMemo(
+    () => new ChatRealtimeConnection({ userId, client, onSessionStale }),
+    [userId, client, onSessionStale],
+  );
+  return useSyncExternalStore(channel.subscribe, channel.getSnapshot, channel.getServerSnapshot);
 }

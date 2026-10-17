@@ -162,3 +162,41 @@ test('a failed send preserves the draft and retries with the same idempotency ke
     await peer.context.close();
   }
 });
+
+test('SSE reconnect fetches missed messages after offline and stops after logout', async ({ browser }) => {
+  const suffix = Date.now().toString(36);
+  const viewer = await participant(browser, `연결복구_${suffix}`);
+  const peer = await participant(browser, `연결상대_${suffix}`);
+  try {
+    const room = await conversation(viewer.context, peer.user.id);
+    const page = await viewer.context.newPage();
+    const requests: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/api/chat/events') requests.push(request.url());
+    });
+    await openRealtime(page, `/ko/messages/${room.id}`);
+    await expect(page.locator('.chat-connection')).toContainText('실시간 연결됨');
+    await viewer.context.setOffline(true);
+    await expect(page.locator('.chat-connection')).toContainText('오프라인입니다');
+    const body = `오프라인 동안 도착한 메시지 ${suffix}`;
+    const sent = await peer.context.request.post(`/api/conversations/${room.id}/messages`, {
+      headers: { Origin: origin },
+      data: { body, clientMessageId: crypto.randomUUID() },
+    });
+    expect(sent.ok(), await sent.text()).toBe(true);
+    const message = await sent.json();
+    await viewer.context.setOffline(false);
+    await expect(page.locator('.chat-connection')).toContainText('실시간 연결됨');
+    await expect(page.getByTestId(`message-${message.id}`)).toContainText(body);
+    expect(requests.length).toBeGreaterThanOrEqual(2);
+    const logout = await viewer.context.request.post('/api/auth/logout', { headers: { Origin: origin } });
+    expect(logout.ok(), await logout.text()).toBe(true);
+    await expect(page.getByRole('button', { name: '로그인하고 대화하기', exact: true })).toBeVisible();
+    const finished = requests.length;
+    await page.waitForTimeout(1500);
+    expect(requests).toHaveLength(finished);
+  } finally {
+    await viewer.context.close();
+    await peer.context.close();
+  }
+});

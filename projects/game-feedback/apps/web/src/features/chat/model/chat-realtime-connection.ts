@@ -1,3 +1,8 @@
+import {
+  fetchEventSource,
+  EventStreamContentType,
+  type EventSourceMessage,
+} from '@microsoft/fetch-event-source';
 import type { QueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { chatMessageOptions, chatMessageScopeOptions, conversationScopeOptions } from './chat.options';
@@ -5,32 +10,60 @@ import type { TChatConnection } from './chat.types';
 
 const invalidationSchema = z.object({ conversationId: z.string().min(1).max(128).nullable() });
 interface IChatRealtimeOptions {
-  userId: string;
+  userId?: string;
   client: QueryClient;
-  onConnection: (connection: TChatConnection) => void;
   onSessionStale: () => void;
 }
 
+class ChatStreamAccessError extends Error {}
+
+/** Owns one viewer's connection. Message data remains in the authenticated REST query cache. */
 export class ChatRealtimeConnection {
-  private readonly lifetime = new AbortController();
-  private stream: EventSource | null = null;
+  private readonly listeners = new Set<() => void>();
+  private lifetime: AbortController | null = null;
+  private stream: AbortController | null = null;
+  private connection: TChatConnection = 'connecting';
+  private failures = 0;
+  private retryAfter = 0;
   private lastSessionCheck = Number.NEGATIVE_INFINITY;
 
   constructor(private readonly options: IChatRealtimeOptions) {}
 
-  connect() {
-    this.options.onConnection(navigator.onLine ? 'connecting' : 'offline');
-    this.openStream();
+  getSnapshot = () => this.connection;
+  getServerSnapshot = (): TChatConnection => 'connecting';
+
+  subscribe = (onChange: () => void) => {
+    this.listeners.add(onChange);
+    if (this.listeners.size === 1 && this.options.userId) this.connect();
+    return () => {
+      this.listeners.delete(onChange);
+      if (this.listeners.size === 0) this.dispose();
+    };
+  };
+
+  private connect() {
+    this.lifetime = new AbortController();
     const { signal } = this.lifetime;
     window.addEventListener('online', this.handleOnline, { signal });
     window.addEventListener('offline', this.handleOffline, { signal });
     document.addEventListener('visibilitychange', this.handleVisible, { signal });
-    return this.dispose;
+    this.publish(navigator.onLine ? 'connecting' : 'offline');
+    this.openStream();
+  }
+
+  private publish(connection: TChatConnection) {
+    if (this.connection === connection) return;
+    this.connection = connection;
+    for (const listener of this.listeners) listener();
+  }
+
+  private active(stream: AbortController) {
+    return this.stream === stream && !stream.signal.aborted && Boolean(this.lifetime);
   }
 
   private refresh(conversationId?: string | null) {
-    if (this.lifetime.signal.aborted) return;
     const { client, userId } = this.options;
+    if (!this.lifetime || !userId) return;
     void client.invalidateQueries(conversationScopeOptions(userId));
     if (conversationId) {
       void client.invalidateQueries(chatMessageOptions(userId, conversationId));
@@ -40,72 +73,88 @@ export class ChatRealtimeConnection {
   }
 
   private openStream() {
-    if (this.lifetime.signal.aborted) return;
-    this.closeStream();
-    this.stream = new EventSource('/api/chat/events', { withCredentials: true });
-    this.stream.addEventListener('open', this.handleOpen);
-    this.stream.addEventListener('invalidate', this.handleInvalidate);
-    this.stream.addEventListener('error', this.handleError);
+    if (!this.lifetime || !navigator.onLine || this.stream) return;
+    const stream = new AbortController();
+    this.stream = stream;
+    // The library suspends hidden-page connections and reopens them on foreground.
+    void fetchEventSource('/api/chat/events', {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: EventStreamContentType },
+      signal: stream.signal,
+      openWhenHidden: false,
+      onopen: async (response) => {
+        if (!this.active(stream)) return;
+        if ([401, 403].includes(response.status)) throw new ChatStreamAccessError('Session unavailable');
+        if (!response.ok || !response.headers.get('content-type')?.startsWith(EventStreamContentType)) {
+          const seconds = Number(response.headers.get('retry-after'));
+          this.retryAfter = Number.isFinite(seconds) ? Math.min(60_000, Math.max(0, seconds * 1000)) : 0;
+          throw new Error('Chat stream unavailable');
+        }
+        this.failures = 0;
+        this.retryAfter = 0;
+        this.publish('live');
+        // Events carry invalidations, so REST recovers messages missed while disconnected.
+        this.refresh();
+      },
+      onmessage: (event) => this.handleMessage(stream, event),
+      onclose: () => {
+        if (this.active(stream)) throw new Error('Chat stream closed');
+      },
+      onerror: (error: unknown) => {
+        if (!this.active(stream)) return;
+        this.publish(navigator.onLine ? 'retrying' : 'offline');
+        this.refresh();
+        const now = Date.now();
+        if (error instanceof ChatStreamAccessError || now - this.lastSessionCheck >= 5_000) {
+          this.lastSessionCheck = now;
+          this.options.onSessionStale();
+        }
+        if (error instanceof ChatStreamAccessError) throw error;
+        this.failures += 1;
+        return Math.max(this.retryAfter, Math.min(30_000, 1000 * 2 ** Math.min(this.failures - 1, 5)));
+      },
+    }).catch(() => {
+      // Access failures already requested a session refresh; never expose response payloads.
+    });
   }
 
-  private closeStream() {
-    this.stream?.removeEventListener('open', this.handleOpen);
-    this.stream?.removeEventListener('invalidate', this.handleInvalidate);
-    this.stream?.removeEventListener('error', this.handleError);
-    this.stream?.close();
-    this.stream = null;
-  }
-
-  private handleOpen = () => {
-    if (this.lifetime.signal.aborted) return;
-    this.options.onConnection('live');
-    // Refetch REST data after reconnect because the stream carries no message history.
-    this.refresh();
-  };
-
-  private handleInvalidate = (event: Event) => {
-    if (this.lifetime.signal.aborted || !(event instanceof MessageEvent)) return;
+  private handleMessage(stream: AbortController, event: EventSourceMessage) {
+    if (!this.active(stream) || event.event !== 'invalidate') return;
     try {
       const data: unknown = JSON.parse(event.data);
       const parsed = invalidationSchema.safeParse(data);
       if (parsed.success) this.refresh(parsed.data.conversationId);
     } catch {
-      // Ignore malformed events; reconnect and REST polling remain the recovery path.
+      // Ignore malformed events. Reconnection and authenticated REST restore the data.
     }
-  };
-
-  private handleError = () => {
-    if (this.lifetime.signal.aborted) return;
-    this.options.onConnection(navigator.onLine ? 'retrying' : 'offline');
-    this.refresh();
-    const now = Date.now();
-    if (now - this.lastSessionCheck < 5_000) return;
-    this.lastSessionCheck = now;
-    this.options.onSessionStale();
-  };
+  }
 
   private handleOnline = () => {
-    if (this.lifetime.signal.aborted) return;
-    this.options.onConnection('retrying');
-    if (this.stream?.readyState === EventSource.CLOSED) this.openStream();
-    this.refresh();
-  };
-
-  private handleOffline = () => {
-    if (!this.lifetime.signal.aborted) this.options.onConnection('offline');
-  };
-
-  private handleVisible = () => {
-    if (this.lifetime.signal.aborted || document.visibilityState !== 'visible') return;
-    if (navigator.onLine && this.stream?.readyState === EventSource.CLOSED) {
-      this.options.onConnection('retrying');
+    if (!this.lifetime) return;
+    if (!this.stream) {
+      this.publish('retrying');
       this.openStream();
     }
     this.refresh();
   };
 
-  dispose = () => {
-    this.lifetime.abort();
-    this.closeStream();
+  private handleOffline = () => {
+    this.stream?.abort();
+    this.stream = null;
+    this.publish('offline');
   };
+
+  private handleVisible = () => {
+    if (!this.lifetime || document.visibilityState !== 'visible') return;
+    if (navigator.onLine) this.openStream();
+    this.refresh();
+  };
+
+  private dispose() {
+    this.lifetime?.abort();
+    this.lifetime = null;
+    this.stream?.abort();
+    this.stream = null;
+  }
 }

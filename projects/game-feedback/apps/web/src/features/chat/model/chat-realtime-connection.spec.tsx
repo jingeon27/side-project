@@ -1,56 +1,65 @@
-import { QueryClient } from '@tanstack/react-query';
+import { StrictMode } from 'react';
+import { render, screen, act, cleanup } from '@testing-library/react';
+import { fetchEventSource, type FetchEventSourceInit } from '@microsoft/fetch-event-source';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatRealtimeConnection } from './chat-realtime-connection';
+import { useChatRealtime } from './use-chat-realtime';
 import { chatMessageOptions, conversationListOptions } from './chat.options';
 
-class FakeEventSource extends EventTarget {
-  static readonly CLOSED = 2;
-  static instances: FakeEventSource[] = [];
-  readyState = 0;
-  close = vi.fn(() => {
-    this.readyState = FakeEventSource.CLOSED;
-  });
-  constructor(
-    readonly url: string,
-    readonly options: EventSourceInit,
-  ) {
-    super();
-    FakeEventSource.instances.push(this);
-  }
+vi.mock('@microsoft/fetch-event-source', () => ({
+  EventStreamContentType: 'text/event-stream',
+  fetchEventSource: vi.fn(() => Promise.resolve()),
+}));
+const transport = vi.mocked(fetchEventSource);
+function request(index = -1) {
+  const options = transport.mock.calls.at(index)?.[1];
+  if (!options) throw new Error('Missing stream request');
+  return options;
+}
+function invalidate(stream: FetchEventSourceInit, data: string) {
+  stream.onmessage?.({ event: 'invalidate', data, id: '' });
 }
 function setup() {
   const client = new QueryClient();
   const onSessionStale = vi.fn();
-  const onConnection = vi.fn();
-  const channel = new ChatRealtimeConnection({ userId: 'alice', client, onSessionStale, onConnection });
-  const dispose = channel.connect();
-  const stream = FakeEventSource.instances.at(-1);
-  if (!stream) throw new Error('Missing stream');
-  return { client, onSessionStale, onConnection, dispose, stream };
+  const channel = new ChatRealtimeConnection({ userId: 'alice', client, onSessionStale });
+  const onChange = vi.fn();
+  const dispose = channel.subscribe(onChange);
+  return { client, onSessionStale, onChange, channel, dispose, stream: request() };
+}
+function ready(stream: FetchEventSourceInit) {
+  return stream.onopen?.(
+    new Response('', { headers: { 'Content-Type': 'text/event-stream; charset=utf-8' } }),
+  );
 }
 beforeEach(() => {
-  FakeEventSource.instances = [];
-  vi.stubGlobal('EventSource', FakeEventSource);
+  transport.mockClear();
+  vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
 });
 afterEach(() => {
-  vi.unstubAllGlobals();
+  cleanup();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
-describe('chat SSE lifecycle', () => {
-  it('uses cookies and invalidates only the current viewer and target conversation', () => {
-    const { client, stream, dispose } = setup();
+describe('chat SSE external store', () => {
+  it('uses cookie fetch and invalidates only the viewer and target room after a valid event', async () => {
+    const { client, channel, onChange, stream, dispose } = setup();
+    expect(transport).toHaveBeenCalledWith(
+      '/api/chat/events',
+      expect.objectContaining({ credentials: 'include', openWhenHidden: false }),
+    );
+    await ready(stream);
+    expect(channel.getSnapshot()).toBe('live');
+    expect(onChange).toHaveBeenCalledOnce();
     const inbox = conversationListOptions('alice').queryKey;
     const target = chatMessageOptions('alice', 'room-1').queryKey;
     const other = chatMessageOptions('alice', 'room-2').queryKey;
     const otherViewer = conversationListOptions('bob').queryKey;
     for (const key of [inbox, target, other, otherViewer])
       client.setQueryData(key, { pages: [], pageParams: [] });
-    stream.dispatchEvent(
-      new MessageEvent('invalidate', { data: JSON.stringify({ conversationId: 'room-1' }) }),
-    );
-    expect(stream.url).toBe('/api/chat/events');
-    expect(stream.options).toEqual({ withCredentials: true });
+    invalidate(stream, JSON.stringify({ conversationId: 'room-1' }));
     expect(client.getQueryState(inbox)?.isInvalidated).toBe(true);
     expect(client.getQueryState(target)?.isInvalidated).toBe(true);
     expect(client.getQueryState(other)?.isInvalidated).toBe(false);
@@ -58,40 +67,128 @@ describe('chat SSE lifecycle', () => {
     dispose();
     client.clear();
   });
-  it('ignores malformed events and detaches all events when the viewer changes', () => {
-    const { client, stream, onConnection, dispose } = setup();
+
+  it('ignores invalid payloads and stale callbacks after all subscribers leave', async () => {
+    const { client, stream, onChange, dispose } = setup();
     const invalidation = vi.spyOn(client, 'invalidateQueries');
-    stream.dispatchEvent(new MessageEvent('invalidate', { data: '{invalid' }));
-    stream.dispatchEvent(new MessageEvent('invalidate', { data: JSON.stringify({ conversationId: 42 }) }));
+    invalidate(stream, '{invalid');
+    invalidate(stream, JSON.stringify({ conversationId: 42 }));
+    stream.onmessage?.({ event: 'heartbeat', data: '{}', id: '' });
     expect(invalidation).not.toHaveBeenCalled();
     dispose();
-    onConnection.mockClear();
-    stream.dispatchEvent(new Event('open'));
-    stream.dispatchEvent(new Event('error'));
+    onChange.mockClear();
+    expect(stream.signal?.aborted).toBe(true);
+    await ready(stream);
+    invalidate(stream, JSON.stringify({ conversationId: 'room-1' }));
+    stream.onerror?.(new Error('closed'));
     window.dispatchEvent(new Event('online'));
     document.dispatchEvent(new Event('visibilitychange'));
-    expect(stream.close).toHaveBeenCalledOnce();
     expect(invalidation).not.toHaveBeenCalled();
-    expect(onConnection).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(transport).toHaveBeenCalledOnce();
     client.clear();
   });
-  it('throttles session checks and recovers a closed stream when connectivity returns', () => {
+
+  it('shares one stream and reopens it after the last unsubscribe, including StrictMode', async () => {
+    const { client, channel, stream, dispose } = setup();
+    const unsubscribe = channel.subscribe(vi.fn());
+    expect(transport).toHaveBeenCalledOnce();
+    dispose();
+    expect(stream.signal?.aborted).toBe(false);
+    unsubscribe();
+    expect(stream.signal?.aborted).toBe(true);
+    const remounted = channel.subscribe(vi.fn());
+    expect(transport).toHaveBeenCalledTimes(2);
+    await ready(request());
+    expect(channel.getSnapshot()).toBe('live');
+    remounted();
+    client.clear();
+  });
+
+  it('backs off retries, throttles session checks and recovers messages after reconnect', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const { client, stream, onConnection, onSessionStale, dispose } = setup();
-    stream.dispatchEvent(new Event('error'));
-    stream.dispatchEvent(new Event('error'));
+    const { client, channel, stream, onSessionStale, dispose } = setup();
+    expect(stream.onerror?.(new Error('network'))).toBe(1000);
+    expect(stream.onerror?.(new Error('network'))).toBe(2000);
+    expect(channel.getSnapshot()).toBe('retrying');
     expect(onSessionStale).toHaveBeenCalledOnce();
-    vi.advanceTimersByTime(5_000);
-    stream.dispatchEvent(new Event('error'));
+    vi.advanceTimersByTime(5000);
+    expect(stream.onerror?.(new Error('network'))).toBe(4000);
     expect(onSessionStale).toHaveBeenCalledTimes(2);
-    stream.readyState = FakeEventSource.CLOSED;
-    window.dispatchEvent(new Event('online'));
-    expect(FakeEventSource.instances).toHaveLength(2);
-    const next = FakeEventSource.instances.at(-1);
-    next?.dispatchEvent(new Event('open'));
-    expect(onConnection).toHaveBeenLastCalledWith('live');
+    const invalidation = vi.spyOn(client, 'invalidateQueries');
+    await ready(stream);
+    expect(channel.getSnapshot()).toBe('live');
+    expect(invalidation).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['chat', 'alice', 'messages'] }),
+    );
+    expect(stream.onerror?.(new Error('network'))).toBe(1000);
     dispose();
+    client.clear();
+  });
+
+  it('aborts offline, opens only one new request online and disposes the old account', async () => {
+    const { client, channel, stream, dispose } = setup();
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    window.dispatchEvent(new Event('offline'));
+    expect(channel.getSnapshot()).toBe('offline');
+    expect(stream.signal?.aborted).toBe(true);
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+    window.dispatchEvent(new Event('online'));
+    window.dispatchEvent(new Event('online'));
+    expect(transport).toHaveBeenCalledTimes(2);
+    await ready(request());
+    expect(channel.getSnapshot()).toBe('live');
+    dispose();
+    client.clear();
+  });
+
+  it('validates HTTP responses, honors a bounded Retry-After and stops retrying unauthorized sessions', async () => {
+    const { client, stream, onSessionStale, dispose } = setup();
+    const failure = await stream
+      .onopen?.(new Response('not SSE', { status: 429, headers: { 'Retry-After': '12' } }))
+      .catch((error) => error);
+    expect(stream.onerror?.(failure)).toBe(12_000);
+    await expect(
+      stream.onopen?.(new Response('<html/>', { headers: { 'Content-Type': 'text/html' } })),
+    ).rejects.toThrow('Chat stream unavailable');
+    const unauthorized = await stream.onopen?.(new Response('', { status: 401 })).catch((error) => error);
+    expect(() => stream.onerror?.(unauthorized)).toThrow('Session unavailable');
+    expect(onSessionStale).toHaveBeenCalledTimes(2);
+    dispose();
+    client.clear();
+  });
+
+  it('keeps React subscribed to the current viewer and opens no guest connection', async () => {
+    const client = new QueryClient();
+    const onSessionStale = vi.fn();
+    function Connection({ userId }: { userId?: string }) {
+      return <p>{useChatRealtime(userId, onSessionStale)}</p>;
+    }
+    function App({ userId }: { userId?: string }) {
+      return (
+        <StrictMode>
+          <QueryClientProvider client={client}>
+            <Connection userId={userId} />
+          </QueryClientProvider>
+        </StrictMode>
+      );
+    }
+    const { rerender, unmount } = render(<App />);
+    expect(transport).not.toHaveBeenCalled();
+    rerender(<App userId="alice" />);
+    const alice = request();
+    await act(() => ready(alice));
+    expect(screen.getByText('live')).toBeTruthy();
+    rerender(<App userId="bob" />);
+    expect(alice.signal?.aborted).toBe(true);
+    expect(screen.getByText('connecting')).toBeTruthy();
+    const bob = request();
+    await act(() => ready(bob));
+    rerender(<App />);
+    expect(bob.signal?.aborted).toBe(true);
+    expect(screen.getByText('connecting')).toBeTruthy();
+    unmount();
     client.clear();
   });
 });
