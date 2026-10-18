@@ -4,3 +4,5 @@ export { gameAccountListOptions, gameProfileOptions } from './model/game-profile
 export { useSaveGameAccount } from './model/game-profile.hook';
 export type { TGameProfile } from './types/game-profile.type';
 export { saveGameAccountMutationOptions } from './model/game-profile.mutation-options';
+
+export { lookupGameProfileMutationOptions } from './model/game-profile.mutation-options';

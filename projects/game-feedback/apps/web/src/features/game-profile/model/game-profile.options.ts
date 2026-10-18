@@ -8,10 +8,20 @@ export function gameAccountListOptions(userId?: string) {
     queryFn: userId ? ({ signal }) => fetchGameAccounts({ signal }) : skipToken,
   });
 }
-export function gameProfileOptions(playerTag?: string) {
+function profileScope() {
+  return queryOptions({ queryKey: ['game-profile'], queryFn: skipToken });
+}
+function createGameProfileOptions(playerTag: string) {
   return queryOptions({
-    queryKey: compact(['game-profile', playerTag]),
-    queryFn: playerTag ? ({ signal }) => fetchGameProfile({ playerTag, signal }) : skipToken,
+    queryKey: [...profileScope().queryKey, playerTag],
+    queryFn: ({ signal }) => fetchGameProfile({ playerTag, signal }),
     staleTime: 0,
   });
+}
+export function gameProfileOptions(playerTag: string): ReturnType<typeof createGameProfileOptions>;
+export function gameProfileOptions(
+  playerTag?: string,
+): ReturnType<typeof createGameProfileOptions> | ReturnType<typeof profileScope>;
+export function gameProfileOptions(playerTag?: string) {
+  return playerTag ? createGameProfileOptions(playerTag) : profileScope();
 }

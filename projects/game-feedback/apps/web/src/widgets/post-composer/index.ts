@@ -1,2 +1,2 @@
-export { PostComposer } from './ui/PostComposer';
-export { PostComposerForm } from './ui/PostComposerForm';
+export { CreatePostForm } from './ui/CreatePostForm';
+export { EditPostSheet } from './ui/EditPostSheet';

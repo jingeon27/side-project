@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Flag, Pencil, Trash2, ShieldBan } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { StartChatLink } from '@/widgets/start-chat';
-import { PostComposer } from '@/widgets/post-composer';
+import { EditPostSheet } from '@/widgets/post-composer';
 import { BlockUserDialog, ReportDialog } from '@/widgets/moderation';
 import type { Author, Post } from '@/shared/api';
 import { openOverlay, useNotify } from '@/shared/ui';
@@ -37,7 +37,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
                 unmount();
               };
               if (type === 'POST')
-                return <PostComposer open={isOpen} onOpenChange={onOpenChange} post={post} locale={locale} />;
+                return <EditPostSheet open={isOpen} onOpenChange={onOpenChange} post={post} />;
               return (
                 <ContentEditDialog
                   open={isOpen}
@@ -79,7 +79,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
     );
   return (
     <div className="content-actions">
-      <StartChatLink userId={author.id} nickname={author.nickname} />
+      {type !== 'POST' && <StartChatLink userId={author.id} nickname={author.nickname} />}
       <button
         className="text-button"
         onClick={() => {

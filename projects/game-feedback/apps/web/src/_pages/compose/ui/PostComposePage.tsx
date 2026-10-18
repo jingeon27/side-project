@@ -5,7 +5,7 @@ import type { TBoardKind, TBattleMode, TCoachingRole } from '@game-feedback/cont
 import { ArrowLeft } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { VerificationPrompt } from '@/widgets/support';
-import { PostComposerForm } from '@/widgets/post-composer';
+import { CreatePostForm } from '@/widgets/post-composer';
 import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { BackLink } from '@/shared/navigation';
@@ -65,12 +65,11 @@ function ComposeContent({
   return (
     <>
       <VerificationPrompt />
-      <PostComposerForm
+      <CreatePostForm
         key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}:${battleMode ?? ''}:${coachingRole ?? ''}`}
         categories={categories}
         locale={locale}
         board={board}
-        allowBoardSelection
         initialCategoryId={categoryId}
         initialBattleMode={battleMode}
         initialCoachingRole={coachingRole}

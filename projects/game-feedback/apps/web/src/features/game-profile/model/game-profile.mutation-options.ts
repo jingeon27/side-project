@@ -3,7 +3,7 @@ import { sessionOptions } from '@/features/auth';
 import { chatScopeOptions } from '@/features/chat';
 import { postListOptions, postDetailOptions } from '@/features/post';
 import { postGameAccount } from '../api/game-profile.api';
-import { gameAccountListOptions } from './game-profile.options';
+import { gameAccountListOptions, gameProfileOptions } from './game-profile.options';
 
 export function saveGameAccountMutationOptions(client: QueryClient, notify: (text: string) => void) {
   return mutationOptions({
@@ -19,5 +19,12 @@ export function saveGameAccountMutationOptions(client: QueryClient, notify: (tex
       ]);
       notify('게임 프로필이 연결되었어요.');
     },
+  });
+}
+
+export function lookupGameProfileMutationOptions(client: QueryClient) {
+  return mutationOptions({
+    mutationKey: ['game-profile', 'lookup'],
+    mutationFn: ({ playerTag }: { playerTag: string }) => client.fetchQuery(gameProfileOptions(playerTag)),
   });
 }
