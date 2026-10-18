@@ -5,13 +5,17 @@ import { staticPageMetadata } from '@/shared/seo';
 
 interface IPageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ board?: string | string[]; game?: string | string[] }>;
+  searchParams: Promise<{
+    board?: string | string[];
+    game?: string | string[];
+    battleMode?: string | string[];
+  }>;
 }
 
 async function RouteContent({ params, searchParams }: IPageProps) {
   const { locale } = await params;
-  const { board, game } = await searchParams;
-  return <ComposeRoute locale={locale} board={board} game={game} />;
+  const { board, game, battleMode } = await searchParams;
+  return <ComposeRoute locale={locale} board={board} game={game} battleMode={battleMode} />;
 }
 
 export async function generateMetadata({ params }: IPageProps) {

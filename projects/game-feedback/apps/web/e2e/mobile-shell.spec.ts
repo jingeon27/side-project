@@ -7,19 +7,19 @@ for (const { width, locale, menu, actions } of [
   {
     width: 320,
     locale: 'ko',
-    menu: ['피드', '가이드', '채팅', '프로필'],
+    menu: ['홈', '가이드', '채팅', '프로필'],
     actions: ['언어 설정', '알림 0개'],
   },
   {
     width: 390,
     locale: 'en',
-    menu: ['Feed', 'Guide', 'Chat', 'Profile'],
+    menu: ['Home', 'Guide', 'Chat', 'Profile'],
     actions: ['Language settings', 'Notifications: 0'],
   },
   {
     width: 760,
     locale: 'ja',
-    menu: ['フィード', 'ガイド', 'チャット', 'プロフィール'],
+    menu: ['ホーム', 'ガイド', 'チャット', 'プロフィール'],
     actions: ['言語設定', 'お知らせ：0件'],
   },
 ]) {

@@ -3,6 +3,9 @@ import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { Button } from '@side/design-system';
 import { TabLink as Link } from '@/shared/navigation';
 import { Gamepad2, ArrowUpRight, Bell } from 'lucide-react';
+import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
+import { resolveAppRoute, type TAppScreen } from '@game-feedback/bridge';
 import { useSession } from '@/features/auth';
 import { Avatar } from '@/shared/ui';
 interface ITopbarProps {
@@ -21,6 +24,11 @@ export function Topbar({ home, unread }: ITopbarProps) {
           </span>
           <span>{t('플레이메이트')}</span>
         </Link>
+        <div className="mobile-page-title">
+          <Suspense fallback={null}>
+            <CurrentPageTitle />
+          </Suspense>
+        </div>
         <div className="header-actions">
           <LanguageSelect compact />
           <Link
@@ -63,4 +71,28 @@ export function Topbar({ home, unread }: ITopbarProps) {
       </div>
     </header>
   );
+}
+
+const screenTitles = {
+  feed: '홈',
+  boards: '홈',
+  post: '게시글',
+  compose: '글쓰기',
+  guide: '가이드',
+  messages: '채팅',
+  conversation: '채팅',
+  settings: '프로필',
+  profile: '프로필',
+  notifications: '알림',
+  admin: '관리자',
+  contact: '문의하기',
+  terms: '이용약관',
+  privacy: '개인정보 처리방침',
+} satisfies Record<TAppScreen, string>;
+
+function CurrentPageTitle() {
+  const { t } = useI18n();
+  const pathname = usePathname();
+  const screen = resolveAppRoute(pathname)?.screen;
+  return <p>{t(screen ? screenTitles[screen] : '홈')}</p>;
 }

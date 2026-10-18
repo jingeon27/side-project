@@ -28,7 +28,7 @@ export function FeedFilters({ onCompose }: IFeedFiltersProps) {
         <FeedFiltersUrlSync />
       </Suspense>
       <div className="feed-heading">
-        <h1>{t('피드')}</h1>
+        <h1>{t('홈')}</h1>
         <MotionButton variant="accent" size="md" type="button" className="button primary" onClick={onCompose}>
           <Plus size={17} />
           {t('글쓰기')}

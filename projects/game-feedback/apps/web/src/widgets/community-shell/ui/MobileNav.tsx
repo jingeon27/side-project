@@ -20,7 +20,7 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         aria-current={tab === 'feed' || tab === 'boards' ? 'page' : undefined}
       >
         <Home size={20} />
-        <span>{t('피드')}</span>
+        <span>{t('홈')}</span>
       </Link>
       <Link
         href={`${home}/guide`}

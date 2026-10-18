@@ -6,7 +6,7 @@ const origin = 'http://127.0.0.1:3353';
 for (const [slug, title] of [
   ['feedback', '피드백'],
   ['friend-sale', '친추판매'],
-  ['friendly', '친선전 모집'],
+  ['friendly', '전투 모집'],
   ['coaching', '게임코치'],
   ['free', '자유게시판'],
 ] as const) {
@@ -41,9 +41,9 @@ for (const width of [400, 1440]) {
     try {
       await instant(page, async () => {
         const navigation = width === 400 ? page.locator('.mobile-nav') : page.locator('.left-sidebar');
-        await navigation.getByRole('link', { name: '피드', exact: true }).click();
+        await navigation.getByRole('link', { name: '홈', exact: true }).click();
         await page.waitForURL((url) => url.pathname === '/ko');
-        await expect(page.getByRole('heading', { name: '피드', exact: true })).toBeVisible();
+        await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
         await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toBeEnabled();
         await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeEnabled();
         await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();

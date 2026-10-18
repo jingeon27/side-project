@@ -10,7 +10,7 @@ test('the feed combines general posts and paid coaching and connects a student t
     data: { accountId: 'sample-user-3' },
   });
   await page.goto('/ko');
-  await expect(page.getByRole('heading', { name: '피드', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: '글쓰기', exact: true });
   await editor.getByLabel('분류', { exact: true }).selectOption('COACHING');
@@ -88,7 +88,7 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await expect(sidebar.locator('.game-submenu a')).toHaveText([
     '피드백',
     '친추판매',
-    '친선전 모집',
+    '전투 모집',
     '게임코치',
     '자유게시판',
   ]);

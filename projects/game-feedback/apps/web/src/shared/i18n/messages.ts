@@ -2,6 +2,11 @@ import type { TLocale } from './locale';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '1:1': ['1v1', '1対1'],
+  팀전: ['Team battle', 'チーム戦'],
+  '전투 유형': ['Battle type', '対戦形式'],
+  '전투 유형을 선택해주세요.': ['Choose a battle type.', '対戦形式を選んでください。'],
+
   '프로필 인증 안내': ['Profile verification', 'プロフィール認証のご案内'],
   '프로필을 인증하고 신뢰를 더해보세요': [
     'Build trust with a verified profile',
@@ -78,7 +83,8 @@ const messages: Record<string, readonly [string, string]> = {
   '작성한 게시글': ['Posts', '投稿一覧'],
   '공개한 게시글이 없어요.': ['No public posts yet.', '公開した投稿がありません。'],
   '이전 글 보기 →': ['Older posts →', '以前の投稿 →'],
-  '전체 피드': ['All posts', '全体フィード'],
+  홈: ['Home', 'ホーム'],
+  '모든 게임': ['All games', 'すべてのゲーム'],
   '답변 대기': ['Unanswered', '回答待ち'],
   전체: ['All', 'すべて'],
   '최신 글': ['Latest posts', '新着投稿'],
@@ -179,7 +185,7 @@ const messages: Record<string, readonly [string, string]> = {
   게시판: ['Boards', '掲示板'],
   '클래시 로얄 게시판': ['Clash Royale boards', 'クラッシュロワイヤルの掲示板'],
   친추판매: ['Friend slots for sale', 'フレンド枠販売'],
-  '친선전 모집': ['Friendly battles', 'フレンド対戦募集'],
+  '전투 모집': ['Battle recruitment', '対戦募集'],
   글쓰기: ['Write a post', '投稿する'],
   '로그인하고 글을 작성해보세요.': ['Sign in to write a post.', 'ログインして投稿しましょう。'],
   '게시글 등록': ['Publish post', '投稿する'],
@@ -233,9 +239,9 @@ const messages: Record<string, readonly [string, string]> = {
     'List a friend slot and chat with interested players.',
     'フレンド枠の販売を投稿して、興味のあるプレイヤーと話しましょう。',
   ],
-  '함께 연습할 상대를 찾고 친선전을 모집해보세요.': [
-    'Find a practice partner for friendly battles.',
-    '一緒に練習する相手を募集しましょう。',
+  '1:1 대전 상대나 함께 전투할 팀원을 모집해보세요.': [
+    'Find a 1v1 opponent or recruit teammates.',
+    '1対1の対戦相手やチームのメンバーを募集しましょう。',
   ],
   '거래 조건이나 모집 내용을 구체적으로 적어주세요.': [
     'Describe your listing or recruitment in detail.',
@@ -321,7 +327,6 @@ const messages: Record<string, readonly [string, string]> = {
     'Enter to send, Shift + Enter for a new line',
     'Enterで送信、Shift + Enterで改行',
   ],
-  '실시간 연결됨': ['Connected', '接続済み'],
   '오프라인입니다. 연결을 기다려요': [
     'Offline. Waiting for a connection.',
     'オフラインです。接続を待っています。',
@@ -794,6 +799,7 @@ const messages: Record<string, readonly [string, string]> = {
   '피드백 요청 올리기': ['Post request', '依頼を投稿'],
   채팅하기: ['Chat', 'チャットする'],
   '기기 설정에 맞춤': ['Use device settings', '端末の設定に合わせる'],
+  '언어를 변경하고 있어요': ['Changing language', '言語を変更しています'],
   '언어 설정': ['Language settings', '言語設定'],
   '화면 모드': ['Appearance', '表示モード'],
   '라이트 모드': ['Light mode', 'ライトモード'],

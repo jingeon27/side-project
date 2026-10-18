@@ -11,6 +11,7 @@ import { m, useMotionPreference } from '@/shared/motion';
 import { PostStatus } from './PostStatus';
 import { CoachingSummary } from '@/features/coaching';
 import { FriendSaleSummary } from '@/features/friend-sale';
+import { BattleSummary } from '@/features/battle';
 import { boardByKind } from '@/features/board';
 interface IPostCardProps {
   post: Post;
@@ -56,6 +57,7 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
       <p className="post-excerpt">{post.body}</p>
       {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
+      {post.board === 'FRIENDLY' && post.battle && <BattleSummary details={post.battle} />}
       <div className="post-bottom">
         <span className="post-author">
           <Avatar name={post.author.nickname} size="small" />

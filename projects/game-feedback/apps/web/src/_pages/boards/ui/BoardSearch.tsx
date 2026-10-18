@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Search } from 'lucide-react';
 import { Button, Input } from '@side/design-system';
 import { appRoutes } from '@game-feedback/bridge';
+import { parseBattleMode } from '@/features/battle';
 import { useZodForm } from '@/shared/model/form';
 import { useI18n } from '@/shared/i18n';
 
@@ -27,8 +28,11 @@ export function BoardSearch({ locale, slug }: { locale: string; slug: string }) 
         role="search"
         aria-label={t('게시판 검색')}
         onSubmit={form.handleSubmit(({ q }) => {
-          const game = new URLSearchParams(window.location.search).get('game') ?? undefined;
-          router.replace(appRoutes.boards(locale, slug, q.trim(), game));
+          const params = new URLSearchParams(window.location.search);
+          const game = params.get('game') ?? undefined;
+          router.replace(
+            appRoutes.boards(locale, slug, q.trim(), game, parseBattleMode(params.get('battleMode'))),
+          );
         })}
       >
         <Input

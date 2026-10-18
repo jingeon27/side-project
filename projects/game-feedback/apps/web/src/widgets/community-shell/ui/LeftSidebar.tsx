@@ -30,7 +30,7 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
           aria-current={tab === 'feed' ? 'page' : undefined}
         >
           <Home size={19} />
-          {t('피드')}
+          {t('홈')}
         </Link>
         <Link
           className={`side-link ${tab === 'guide' ? 'selected' : ''}`}

@@ -20,6 +20,21 @@ describe('community board navigation', () => {
     expect(post).toBe('/ko/posts/post-1?board=friendly');
     expect(resolveAppRoute(post)).toMatchObject({ tab: 'boards', parent: '/ko/boards/friendly' });
   });
+  it('preserves battle filters and the team recruitment context through native route parsing', () => {
+    const board = appRoutes.boards('ko', 'friendly', '주말', 'another-game', 'TEAM');
+    expect(resolveAppRoute(board)?.path).toBe(board);
+    const compose = appRoutes.compose('ko', 'FRIENDLY', 'another-game', 'TEAM');
+    expect(resolveAppRoute(compose)).toMatchObject({
+      path: compose,
+      parent: appRoutes.boards('ko', 'friendly', undefined, 'another-game', 'TEAM'),
+    });
+    for (const path of [
+      '/ko/boards/friendly?battleMode=RAID',
+      '/ko/boards/free?battleMode=TEAM',
+      '/ko/write?board=free&battleMode=TEAM',
+    ])
+      expect(WebPathSchema.safeParse(path).success).toBe(false);
+  });
   it('rejects unknown board slugs and duplicate or malformed queries', () => {
     for (const path of [
       '/ko/boards/unknown',

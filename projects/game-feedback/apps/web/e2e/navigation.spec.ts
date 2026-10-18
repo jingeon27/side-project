@@ -15,7 +15,7 @@ test('desktop navigation has one entry per destination and keeps boards in the s
     await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(2);
     await expect(header.getByRole('combobox', { name: '언어 설정', exact: true })).toBeVisible();
     await expect(primary.getByRole('link')).toHaveCount(3);
-    await expect(page.getByRole('link', { name: '피드', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: '홈', exact: true })).toHaveCount(1);
     await expect(page.getByRole('link', { name: '가이드', exact: true })).toHaveCount(1);
     await expect(page.getByRole('link', { name: /^채팅(?: \d+개)?$/ })).toHaveCount(1);
     const boards = page.getByRole('navigation', { name: '클래시로얄 게시판', exact: true });
@@ -28,9 +28,9 @@ test('desktop navigation has one entry per destination and keeps boards in the s
     );
     await header.getByRole('link', { name: '프로필', exact: true }).click();
     await expect(page).toHaveURL(/\/ko\/settings$/);
-    await boards.getByRole('link', { name: '친선전 모집', exact: true }).click();
+    await boards.getByRole('link', { name: '전투 모집', exact: true }).click();
     await expect(page).toHaveURL(/\/ko\/boards\/friendly$/);
-    await expect(boards.getByRole('link', { name: '친선전 모집', exact: true })).toHaveAttribute(
+    await expect(boards.getByRole('link', { name: '전투 모집', exact: true })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -47,7 +47,7 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await page.locator('.post-card').first().getByRole('heading').click();
   await expect(page).toHaveURL(/\/ko\/posts\//);
   await page
-    .getByRole('link', { name: '피드', exact: true })
+    .getByRole('link', { name: '홈', exact: true })
     .filter({ has: page.locator('svg') })
     .first()
     .click();
@@ -61,7 +61,7 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await expect(page).toHaveURL(/\/ko\/guide$/);
   await page.getByRole('banner').getByRole('link', { name: '알림 0개', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/notifications$/);
-  await tabs.getByRole('link', { name: '피드' }).focus();
+  await tabs.getByRole('link', { name: '홈' }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
   expect(await page.evaluate(() => history.length)).toBe(length);

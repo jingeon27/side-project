@@ -7,6 +7,7 @@ import { formatDateTime } from '@/shared/lib/date';
 import { PostStatus } from './PostStatus';
 import { CoachingSummary } from '@/features/coaching';
 import { FriendSaleSummary } from '@/features/friend-sale';
+import { BattleSummary } from '@/features/battle';
 import { boardByKind } from '@/features/board';
 interface IPostArticleProps {
   post: Post;
@@ -43,6 +44,7 @@ export function PostArticle({ post, authorContent, authorName, actions }: IPostA
       </div>
       {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
+      {post.board === 'FRIENDLY' && post.battle && <BattleSummary details={post.battle} />}
       <RichTextBody body={post.body} document={post.document} />
       <dl className="post-publication">
         <div>

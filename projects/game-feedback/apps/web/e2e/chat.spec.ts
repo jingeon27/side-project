@@ -175,7 +175,7 @@ test('SSE reconnect fetches missed messages after offline and stops after logout
       if (new URL(request.url()).pathname === '/api/chat/events') requests.push(request.url());
     });
     await openRealtime(page, `/ko/messages/${room.id}`);
-    await expect(page.locator('.chat-connection')).toContainText('실시간 연결됨');
+    await expect(page.locator('.chat-connection')).toHaveCount(0);
     await viewer.context.setOffline(true);
     await expect(page.locator('.chat-connection')).toContainText('오프라인입니다');
     const body = `오프라인 동안 도착한 메시지 ${suffix}`;
@@ -186,7 +186,7 @@ test('SSE reconnect fetches missed messages after offline and stops after logout
     expect(sent.ok(), await sent.text()).toBe(true);
     const message = await sent.json();
     await viewer.context.setOffline(false);
-    await expect(page.locator('.chat-connection')).toContainText('실시간 연결됨');
+    await expect(page.locator('.chat-connection')).toHaveCount(0);
     await expect(page.getByTestId(`message-${message.id}`)).toContainText(body);
     expect(requests.length).toBeGreaterThanOrEqual(2);
     const logout = await viewer.context.request.post('/api/auth/logout', { headers: { Origin: origin } });

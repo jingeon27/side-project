@@ -21,12 +21,8 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
   const game = categories.data?.find((item) => item.active && item.slug === (route?.game ?? 'clash-royale'));
   if (!game || !route || !['feed', 'boards', 'post'].includes(route.screen)) return null;
   return (
-    <nav className="game-board-navigation" aria-label={t('{game} 게시판', { game: game.name })}>
-      <div className="game-board-title">
-        <GameIcon slug={game.slug} />
-        <strong>{game.name}</strong>
-      </div>
-      <div className="game-board-chips">
+    <div className="game-board-navigation">
+      <div className="home-game-scope">
         <TabLink
           ref={!selected ? currentChip : undefined}
           href={appRoutes.feed(locale)}
@@ -37,24 +33,34 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
             'rounded-full',
           )}
         >
-          {t('전체 피드')}
+          {t('홈')}
         </TabLink>
-        {gameBoards.map((board) => (
-          <TabLink
-            key={board.kind}
-            ref={selected === board.kind ? currentChip : undefined}
-            href={gameBoardPath(locale, board.kind, game.slug)}
-            replace
-            aria-current={selected === board.kind ? 'page' : undefined}
-            className={cn(
-              buttonVariants({ variant: selected === board.kind ? 'accent' : 'secondary', size: 'sm' }),
-              'rounded-full',
-            )}
-          >
-            {t(board.name)}
-          </TabLink>
-        ))}
+        <span>{t('모든 게임')}</span>
       </div>
-    </nav>
+      <nav className="game-category-group" aria-label={t('{game} 게시판', { game: game.name })}>
+        <div className="game-board-title">
+          <GameIcon slug={game.slug} />
+          <strong>{game.name}</strong>
+          <span>{t('분류')}</span>
+        </div>
+        <div className="game-board-chips">
+          {gameBoards.map((board) => (
+            <TabLink
+              key={board.kind}
+              ref={selected === board.kind ? currentChip : undefined}
+              href={gameBoardPath(locale, board.kind, game.slug)}
+              replace
+              aria-current={selected === board.kind ? 'page' : undefined}
+              className={cn(
+                buttonVariants({ variant: selected === board.kind ? 'accent' : 'secondary', size: 'sm' }),
+                'rounded-full',
+              )}
+            >
+              {t(board.name)}
+            </TabLink>
+          ))}
+        </div>
+      </nav>
+    </div>
   );
 }

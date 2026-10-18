@@ -93,23 +93,22 @@ test('every game contains five shared boards on desktop and mobile and retired b
     const navigation = desktop ? page.locator('.left-sidebar') : page.locator('.game-board-navigation');
     const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-chips');
     await expect(boards.getByRole('link')).toHaveText([
-      ...(desktop ? [] : ['전체 피드']),
       '피드백',
       '친추판매',
-      '친선전 모집',
+      '전투 모집',
       '게임코치',
       '자유게시판',
     ]);
     for (const [name, path] of [
       ['친추판매', '/ko/boards/friend-sale'],
-      ['친선전 모집', '/ko/boards/friendly'],
+      ['전투 모집', '/ko/boards/friendly'],
       ['피드백', '/ko/boards/feedback'],
       ['게임코치', '/ko/boards/coaching'],
       ['자유게시판', '/ko/boards/free'],
-      ['전체 피드', '/ko'],
+      ['홈', '/ko'],
     ] as const) {
       const link = navigation.getByRole('link', {
-        name: desktop && name === '전체 피드' ? '피드' : name,
+        name,
         exact: true,
       });
       await link.click();

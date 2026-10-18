@@ -26,7 +26,32 @@
   .game-board-title > svg {
     flex-shrink: 0;
   }
-  .game-board-chips {
+  .home-game-scope {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .home-game-scope > span,
+  .game-board-title > span {
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+  }
+  .game-category-group {
+    padding: 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    min-width: 0;
+  }
+  .game-category-group .game-board-chips {
+    margin-top: 8px;
+  }
+  .game-board-title > span {
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .game-board-chips,
+  .battle-filters {
     display: flex;
     gap: 8px;
     min-width: 0;
@@ -37,10 +62,12 @@
     scroll-padding-inline: 4px;
     -webkit-overflow-scrolling: touch;
   }
-  .game-board-chips::-webkit-scrollbar {
+  .game-board-chips::-webkit-scrollbar,
+  .battle-filters::-webkit-scrollbar {
     display: none;
   }
   .coaching-summary,
+  .battle-summary,
   .friend-sale-summary {
     display: flex;
     flex-wrap: wrap;
@@ -78,6 +105,9 @@
   }
   .board-post-list {
     margin-bottom: 20px;
+  }
+  .battle-filters {
+    margin-bottom: 16px;
   }
   .board-post-row {
     padding: 22px 0;

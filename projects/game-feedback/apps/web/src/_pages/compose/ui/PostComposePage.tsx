@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@side/design-system';
-import type { TBoardKind } from '@game-feedback/contracts';
+import type { TBoardKind, TBattleMode } from '@game-feedback/contracts';
 import { ArrowLeft } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { VerificationPrompt } from '@/widgets/support';
@@ -16,6 +16,7 @@ interface IPostComposePageProps {
   categories: Category[];
   board: TBoardKind;
   categoryId?: string;
+  battleMode?: TBattleMode;
   parent: string;
 }
 
@@ -41,7 +42,7 @@ export function PostComposePage(props: IPostComposePageProps) {
   );
 }
 
-function ComposeContent({ locale, categories, board, categoryId }: IPostComposePageProps) {
+function ComposeContent({ locale, categories, board, categoryId, battleMode }: IPostComposePageProps) {
   const { t } = useI18n();
   const { session, login: handleLogin } = useSession();
   if (!session.user)
@@ -57,12 +58,13 @@ function ComposeContent({ locale, categories, board, categoryId }: IPostComposeP
     <>
       <VerificationPrompt />
       <PostComposerForm
-        key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}`}
+        key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}:${battleMode ?? ''}`}
         categories={categories}
         locale={locale}
         board={board}
         allowBoardSelection
         initialCategoryId={categoryId}
+        initialBattleMode={battleMode}
       />
     </>
   );

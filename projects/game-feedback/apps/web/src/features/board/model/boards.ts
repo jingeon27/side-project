@@ -11,8 +11,8 @@ export const communityBoards = [
   {
     kind: 'FRIENDLY',
     slug: 'friendly',
-    name: '친선전 모집',
-    description: '함께 연습할 상대를 찾고 친선전을 모집해보세요.',
+    name: '전투 모집',
+    description: '1:1 대전 상대나 함께 전투할 팀원을 모집해보세요.',
   },
   {
     kind: 'COACHING',

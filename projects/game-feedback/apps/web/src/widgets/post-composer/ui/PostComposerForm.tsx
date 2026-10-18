@@ -3,7 +3,7 @@ import { useI18n } from '@/shared/i18n';
 import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
 import { useCallback, type ChangeEvent } from 'react';
 import { useWatch } from 'react-hook-form';
-import type { TRichTextDocument, TBoardKind } from '@game-feedback/contracts';
+import type { TRichTextDocument, TBoardKind, TBattleMode } from '@game-feedback/contracts';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { uploadPostMediaMutationOptions } from '@/features/post-media';
@@ -16,6 +16,7 @@ import { Field, ErrorNotice, useNotify, RichTextEditor, ServiceErrorBoundary } f
 import { useZodForm } from '@/shared/model/form';
 import { postComposerSchema } from '../model/post-composer.schema';
 import { CoachingFields } from './CoachingFields';
+import { BattleFields } from './BattleFields';
 import { appRoutes } from '@game-feedback/bridge';
 
 interface IPostComposerFormProps {
@@ -25,6 +26,7 @@ interface IPostComposerFormProps {
   board: TBoardKind;
   allowBoardSelection: boolean;
   initialCategoryId?: string;
+  initialBattleMode?: TBattleMode;
   onComplete?: () => void;
 }
 export function PostComposerForm({
@@ -34,6 +36,7 @@ export function PostComposerForm({
   board: initialBoard,
   allowBoardSelection,
   initialCategoryId,
+  initialBattleMode,
   onComplete,
 }: IPostComposerFormProps) {
   const { t } = useI18n();
@@ -54,6 +57,7 @@ export function PostComposerForm({
       board: post?.board ?? initialBoard,
       coaching: post?.coaching ?? { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
       friendSale: post?.friendSale ?? { price: null },
+      battle: post?.battle ?? { mode: initialBattleMode ?? 'DUEL' },
       categoryId: post?.categoryId || initialCategoryId || categories[0]?.id || '',
     },
   });
@@ -75,12 +79,13 @@ export function PostComposerForm({
     <form
       className="form-stack"
       aria-label={t(post ? '게시글 수정' : '글쓰기')}
-      onSubmit={form.handleSubmit(async ({ editorValid, coaching, friendSale, ...values }) => {
+      onSubmit={form.handleSubmit(async ({ editorValid, coaching, friendSale, battle, ...values }) => {
         if (!editorValid) return;
         const input = {
           ...values,
           ...(board === 'COACHING' ? { coaching } : {}),
           ...(board === 'FRIEND_SALE' ? { friendSale } : {}),
+          ...(board === 'FRIENDLY' ? { battle } : {}),
         };
         try {
           const result = post
@@ -92,6 +97,7 @@ export function PostComposerForm({
                   document: values.document ?? null,
                   ...(board === 'COACHING' ? { coaching } : {}),
                   ...(board === 'FRIEND_SALE' ? { friendSale } : {}),
+                  ...(board === 'FRIENDLY' ? { battle } : {}),
                 },
               })
             : await create.mutateAsync({ body: input });
@@ -207,6 +213,7 @@ export function PostComposerForm({
         </Field>
       )}
       {board === 'COACHING' && <CoachingFields form={form} />}
+      {board === 'FRIENDLY' && <BattleFields form={form} />}
       <div className="rich-text-field">
         <span>{t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}</span>
         <ServiceErrorBoundary title={t('본문 편집기')}>
