@@ -121,9 +121,13 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     'api',
     'web',
   ]);
-  await expect.poll(async () => (await request.get('/backend/health')).status()).toBe(200);
-  await page.reload();
-  await expect(photo.getByRole('button', { name: '운영 사진 댓글 1개', exact: true })).toBeVisible();
+  // API 헬스만으로는 웹의 복구와 Docker 재시작 중 끊긴 브라우저 연결까지 확인할 수 없다.
+  await expect(async () => {
+    expect((await request.get('/backend/health')).status()).toBe(200);
+    const response = await page.goto(groupPath, { waitUntil: 'domcontentloaded' });
+    expect(response?.status()).toBe(200);
+    await expect(photo.getByRole('button', { name: '운영 사진 댓글 1개', exact: true })).toBeVisible();
+  }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
   expect((await page.request.get(mediaUrl)).status()).toBe(200);
   await page.goto('/me');
   await expect(page.getByRole('heading', { name: '배포 검증 회원', exact: true })).toBeVisible();
