@@ -42,7 +42,7 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.reload();
   await expect(page.getByText(comment, { exact: true })).toBeVisible();
   const session = await (await page.request.get('/api/session')).json();
-  expect(session.user).toMatchObject({ id: 'sample-user-0', supercellTag: '#2PP' });
+  expect(session.user).toMatchObject({ id: 'sample-user-0', supercellTag: '#GG829JGY' });
   const roomResponse = await page.request.post('/api/conversations', {
     headers: { Origin: ORIGIN },
     data: { recipientId: 'sample-user-3' },

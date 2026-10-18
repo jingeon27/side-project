@@ -9,7 +9,7 @@ export const TEST_ACCOUNT_FIXTURES = [
     nickname: '새벽의호그',
     role: 'USER',
     isVerified: false,
-    supercellTag: '#2PP',
+    supercellTag: '#GG829JGY',
     description: '게시글을 작성하고 피드백을 확인하는 요청자 계정',
   },
   {

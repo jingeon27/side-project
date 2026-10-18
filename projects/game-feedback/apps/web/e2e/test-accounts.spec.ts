@@ -28,7 +28,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
     id: 'sample-user-0',
     isTestAccount: true,
     isVerified: false,
-    supercellTag: '#2PP',
+    supercellTag: '#GG829JGY',
   });
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
@@ -48,7 +48,7 @@ test('prepared accounts can write posts and comments, switch identities, and exc
   expect(post.author).toMatchObject({
     id: player.user?.id,
     isVerified: false,
-    supercellTag: '#2PP',
+    supercellTag: '#GG829JGY',
     isTestAccount: true,
   });
   expect(post.gameProfile).toBeNull();

@@ -38,7 +38,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
               preview.reset();
               save.reset();
             }}
-            placeholder="#2PP"
+            placeholder="#GG829JGY"
             maxLength={16}
             required
             disabled={save.isPending}

@@ -226,7 +226,7 @@ describe.skipIf(!testDatabaseUrl)(
         nickname: '새벽의호그',
         role: 'USER',
         isVerified: false,
-        supercellTag: '#2PP',
+        supercellTag: '#GG829JGY',
       });
       expect(catalog.items.find((user: { id: string }) => user.id === coachId)).toMatchObject({
         nickname: '덱연구소',
@@ -262,7 +262,7 @@ describe.skipIf(!testDatabaseUrl)(
         id: requesterId,
         isTestAccount: true,
         isVerified: false,
-        supercellTag: '#2PP',
+        supercellTag: '#GG829JGY',
       });
       const coachSession = (await choose(coach, coachId).expect(200)).body;
       expect(coachSession.user).toMatchObject({ id: coachId, isTestAccount: true, isVerified: true });

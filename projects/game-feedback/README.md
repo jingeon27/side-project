@@ -84,7 +84,7 @@ curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
 
 | 계정       | accountId           | 초기 상태                       |
 | ---------- | ------------------- | ------------------------------- |
-| 새벽의호그 | `sample-user-0`     | 일반 사용자, 태그 `#2PP`        |
+| 새벽의호그 | `sample-user-0`     | 일반 사용자, 태그 `#GG829JGY`   |
 | 덱연구소   | `sample-user-3`     | 서비스 인증 사용자, 태그 `#9QY` |
 | 운영테스터 | `sample-test-admin` | 운영자                          |
 
