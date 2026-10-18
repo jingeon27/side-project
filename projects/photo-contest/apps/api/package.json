@@ -3,10 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "yarn build && concurrently -k 'tsc -w -p tsconfig.build.json' 'node --watch --env-file-if-exists=../../.env dist/main.js'",
-    "build": "tsc -p tsconfig.build.json",
+    "dev": "yarn build && concurrently -k 'tsc7 -w -p tsconfig.build.json' 'node --watch --env-file-if-exists=../../.env dist/main.js'",
+    "build": "tsc7 -p tsconfig.build.json",
     "start": "node --env-file-if-exists=../../.env dist/main.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc7 --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "test": "vitest run --project unit",
