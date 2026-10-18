@@ -74,8 +74,8 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 - 공개 그룹 변경은 API unit 66·실제 DB e2e 210, 웹 unit/UI 273·실제 문서 API 11, Chrome·WebKit·데스크톱·가짜 WebView Playwright 42개로 검증했다. SEO 생성·비공개 데이터 배제·49개 공개 그룹의 사이트맵 분할·JSON-LD script 탈출·가입 신청 거절/재신청/수락을 포함한다. 코드 생성·타입 검사·lint·포맷·별도 dist의 프로덕션 빌드도 통과했다.
 
-- Vitest 761개: API unit 64·실제 PostgreSQL/supertest 200, 웹 unit/UI 264(배포 스크립트 12개 포함)·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 45.
-- CI에서 웹 Playwright 36개·모바일 WebView 24개가 통과했다. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 운영 이미지의 HTTPS 검증은 웹 앱이 소유하는 별도 Playwright 설정으로 실행한다.
+- Vitest 786개: API unit 66·실제 PostgreSQL/supertest 210, 웹 unit/UI 273(배포 스크립트 12개 포함)·실제 문서 계약 11, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 45.
+- CI에서 웹 Playwright 42개·모바일 WebView 24개가 통과했다. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 운영 이미지의 HTTPS 검증은 웹 앱이 소유하는 별도 Playwright 설정으로 실행한다.
 - 기존 Playwright 56개(웹 32·모바일 24)가 통과했고 공개 정책·문의 링크·서버 HTML·favicon 검사 3개(Chrome·WebKit·데스크톱)를 추가했다. 이번 변경은 웹 unit/UI 251개, 웹 주요 흐름·홈 피드·정책 9개와 모바일 24개로 검증했다. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 웹 Chrome·WebKit·데스크톱·가짜 앱과 모바일 Android/iOS 가짜 WebView에서 그룹 생성·초대·사진/동영상 등록·좋아요·인기 정렬·관리자 삭제, 댓글 작성·삭제·페이지·개수, 당겨서 새로고침, 접근 제한·반응형·SSR·앱 기능을 검사한다. Chrome 새로고침은 CDP 실제 터치, WebKit은 Playwright의 호환 터치 이벤트로 확인한다. 실제 MP4를 재생하고 currentTime·탐색을 확인한다.
 - codegen·타입 검사·lint와 웹 프로덕션 빌드를 검사한다. 테스트 러너와 설정은 각 앱이 소유하고 전용 DB의 임시 스키마·별도 서버 포트를 사용한다.
 - 파일 선택 영역을 미리보기로 대체하는 변경은 기존 폼 테스트 5개와 Chrome·WebKit·데스크톱의 미리보기·시트 검사 6개로 확인했다. 실제 파일 선택·교체·제거·재열기·동영상 재생·업로드까지 검사한다.
@@ -104,3 +104,5 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 댓글 마이그레이션 `20261017010000_post_comments`는 PostComment 테이블·인덱스·cascade 외래 키만 추가한다. 개발 DB에도 적용하고 기존 게시물·사용자 유지와 최신·인기 피드 및 댓글 조회를 확인했다. 격리 테스트 DB에도 전체 마이그레이션을 적용해 검증한다.
 
 공개 그룹 마이그레이션 `20261019010000_public_groups`는 Group.visibility와 GroupJoinRequest·인덱스·cascade 외래 키만 추가한다. 기존 그룹·사진·영상·좋아요를 보존하며 이전 스키마에 마이그레이션을 적용하는 테스트로 PRIVATE 유지도 확인한다. 이번 작업은 별도 worktree·테스트 DB 55435에서 수행했으며 사용자의 개발 DB나 실행 중인 서버에는 적용하지 않았다. 개발 반영 시 db:generate·db:migrate 후 서버를 다시 실행한다.
+
+운영 컨테이너 검증은 공개 그룹 canonical·JSON-LD와 비공개 사진의 익명 거부를 포함한다. 재시작 복구 확인은 API 헬스·웹 문서 응답·기존 댓글 표시를 함께 제한 시간 안에 재확인하여 Docker 네트워크 전환 중의 일시적인 브라우저 연결 오류를 처리한다.
