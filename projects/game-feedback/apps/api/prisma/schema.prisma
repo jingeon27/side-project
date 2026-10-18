@@ -257,7 +257,9 @@ model ChatAttachment {
   name String
   mimeType String
   size Int
-  bytes Bytes
+  bytes Bytes?
+  objectId String? @unique
+  object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   @@index([conversationId,messageId])
   @@index([uploaderId,createdAt])
@@ -272,10 +274,24 @@ model PostMedia {
   name String
   mimeType String
   size Int
-  bytes Bytes
+  bytes Bytes?
+  objectId String? @unique
+  object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   @@index([uploaderId,postId,createdAt])
   @@index([postId])
+}
+
+model MediaObject {
+  id String @id @default(cuid())
+  backend String
+  key String @unique
+  createdAt DateTime @default(now())
+  retiredAt DateTime?
+  postMedia PostMedia?
+  chatAttachment ChatAttachment?
+  @@index([createdAt])
+  @@index([retiredAt])
 }
 
 model SupportConversation {

@@ -57,11 +57,12 @@ export class PostMediaController {
       res.status(416).end();
       return;
     }
+    const bytes = await this.media.content(file, range);
     if (range.partial) {
       res.status(206);
       res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.size}`);
     }
     res.setHeader('Content-Length', range.end - range.start + 1);
-    res.send(Buffer.from(file.bytes).subarray(range.start, range.end + 1));
+    res.send(bytes);
   }
 }

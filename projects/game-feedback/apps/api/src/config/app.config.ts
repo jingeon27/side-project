@@ -5,6 +5,7 @@ import { resolveIdentityProviders } from './identity-providers';
 import type { ProfileProvider } from '../game-profiles/providers/profile-provider';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
+import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
@@ -19,6 +20,7 @@ export interface AppOptions {
   rateLimit?: boolean;
   logger?: false;
   prisma?: PrismaClient;
+  mediaStorage?: TMediaStorageConfig;
 }
 
 export interface AppConfig {
@@ -31,6 +33,7 @@ export interface AppConfig {
   identityProviders: TIdentityProviders;
   profileProvider?: ProfileProvider;
   rateLimit: boolean;
+  mediaStorage: TMediaStorageConfig;
 }
 
 export function resolveAppConfig(options: AppOptions): AppConfig {
@@ -58,6 +61,7 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     testAuthEnabled,
     webOrigin,
     rateLimit: options.rateLimit !== false,
+    mediaStorage: options.mediaStorage ?? resolveMediaStorageConfig(process.env),
     identityProvider: identityProviders.google,
     identityProviders,
     profileProvider:

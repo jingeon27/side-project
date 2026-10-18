@@ -6,13 +6,19 @@ import { ApiError } from '../common/http/api-error';
 import { historyWhere } from './chat-history';
 import { validateChatFile } from './chat-file';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
+import { MediaStorage } from '../media-storage/media-storage.service';
 
 @Injectable()
 export class ChatAttachmentService {
-  constructor(@Inject(PrismaClient) private readonly db: PrismaClient) {}
+  constructor(
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(MediaStorage) private readonly storage: MediaStorage,
+  ) {}
   async upload(req: SessionRequest, conversationId: string, input: unknown) {
     const user = requireUser(req);
     const file = validateChatFile(input);
+    const { bytes: _bytes, ...metadata } = file;
+    const stored = await this.storage.save(file.bytes, file.mimeType);
     const attachment = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
       await tx.chatAttachment.deleteMany({
@@ -22,7 +28,7 @@ export class ChatAttachmentService {
       if (pending >= 4)
         throw new ApiError(409, 'ATTACHMENT_LIMIT', '전송 대기 중인 첨부파일을 먼저 정리해주세요.');
       return tx.chatAttachment.create({
-        data: { conversationId, uploaderId: user.id, ...file, bytes: Uint8Array.from(file.bytes) },
+        data: { conversationId, uploaderId: user.id, ...metadata, ...stored },
         select: attachmentSelect,
       });
     });
@@ -35,6 +41,7 @@ export class ChatAttachmentService {
     });
     if (!conversation) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     const file = await this.db.chatAttachment.findFirst({
+      include: { object: true },
       where: {
         id,
         conversationId,
@@ -46,6 +53,9 @@ export class ChatAttachmentService {
     });
     if (!file) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     return file;
+  }
+  content(...args: Parameters<MediaStorage['read']>) {
+    return this.storage.read(...args);
   }
   async remove(req: SessionRequest, conversationId: string, id: string) {
     const user = requireUser(req);

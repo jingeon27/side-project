@@ -1,7 +1,12 @@
-import express, { type NextFunction, type Request, type Response } from 'express';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import type { INestApplication } from '@nestjs/common';
 
 export function configureHttp(app: INestApplication) {
+  // Production API traffic enters through the single private reverse-proxy hop.
+  // The container port is published only to host loopback for operator SSH tunnels.
+  const server = app.getHttpAdapter().getInstance() as Express;
+  server.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
+  server.disable('x-powered-by');
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff');

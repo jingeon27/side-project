@@ -19,9 +19,11 @@ import { SupportModule } from './support/support.module';
 import { FollowsModule } from './follows/follows.module';
 import { ApiAccessMiddleware } from './common/http/api-access.middleware';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
+import { MediaStorageModule } from './media-storage/media-storage.module';
 
 @Module({
   imports: [
+    MediaStorageModule,
     AuthModule,
     UsersModule,
     PostsModule,

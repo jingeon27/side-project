@@ -7,16 +7,20 @@ import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { validateMediaFile } from '../common/media-file';
 import { UserVisibilityService } from '../users/user-visibility.service';
+import { MediaStorage } from '../media-storage/media-storage.service';
 
 @Injectable()
 export class PostMediaService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
+    @Inject(MediaStorage) private readonly storage: MediaStorage,
   ) {}
   async upload(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
     const file = validateMediaFile(input);
+    const { bytes: _bytes, ...metadata } = file;
+    const stored = await this.storage.save(file.bytes, file.mimeType);
     const row = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
       await tx.postMedia.deleteMany({
@@ -29,7 +33,7 @@ export class PostMediaService {
           '작성 대기 중인 파일이 많습니다. 기존 초안을 먼저 등록해주세요.',
         );
       return tx.postMedia.create({
-        data: { ...file, bytes: Uint8Array.from(file.bytes), uploaderId: user.id },
+        data: { ...metadata, ...stored, uploaderId: user.id },
         select: { id: true, name: true, mimeType: true, size: true },
       });
     });
@@ -42,6 +46,7 @@ export class PostMediaService {
   async file(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
     const file = await this.db.postMedia.findFirst({
+      include: { object: true },
       where: {
         id,
         OR: [
@@ -52,6 +57,9 @@ export class PostMediaService {
     });
     if (!file) throw new ApiError(404, 'MEDIA_NOT_FOUND', '미디어를 찾을 수 없습니다.');
     return file;
+  }
+  content(...args: Parameters<MediaStorage['read']>) {
+    return this.storage.read(...args);
   }
   async remove(req: SessionRequest, id: string) {
     const user = requireUser(req);

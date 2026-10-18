@@ -1,9 +1,12 @@
 import { createApp } from './app';
+import { resolveListenConfig, validateProductionEnvironment } from './config/production.config';
 async function main() {
+  validateProductionEnvironment(process.env);
+  const { HOST, PORT } = resolveListenConfig(process.env);
   const app = await createApp();
   app.enableShutdownHooks();
-  await app.listen(Number(process.env.PORT ?? 4300), '127.0.0.1');
-  console.log(`Game Feedback API listening on http://127.0.0.1:${process.env.PORT ?? 4300}`);
+  await app.listen(PORT, HOST);
+  console.log(`Game Feedback API listening on port ${PORT}.`);
 }
 main().catch((error) => {
   console.error(error instanceof Error ? error.message : error);
