@@ -1,5 +1,10 @@
+import { fileURLToPath } from 'node:url';
+
 /** @type {import('next').NextConfig} */
 const config = {
+  output: process.env.GF_STANDALONE === 'true' ? 'standalone' : undefined,
+  outputFileTracingRoot: fileURLToPath(new URL('../../../../', import.meta.url)),
+  poweredByHeader: false,
   distDir: process.env.NEXT_DIST_DIR || '.next',
   devIndicators: false,
   cacheComponents: true,

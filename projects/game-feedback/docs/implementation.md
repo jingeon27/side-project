@@ -878,3 +878,26 @@ Web typecheck/lint와 변경 파일 Prettier 검사가 통과했습니다. 새 P
 등록 폼은 `#GG829JGY` 예시와 8자리 안내를 표시하고 최대 9자(`#` 포함)로 입력을 제한합니다. 한국어·영어·일본어 안내와 검증 오류를 제공하고 모바일 자동 대문자 입력을 설정했습니다. 응답의 표시용 태그 fallback도 새 형식의 값을 보존합니다. 테스트 계정과 관련 API/SDK/Web fixture를 8자리로 맞췄으며 seed가 이미 저장된 사용자 태그나 인증 상태를 덮어쓰지는 않습니다. DB 스키마·Migration·의존성 변경은 없습니다.
 
 프로젝트 check, OpenAPI/SDK 재생성과 변경 파일 Prettier가 통과했습니다. API Vitest+Supertest 109개와 SDK Vitest 43개가 통과했으며 정상 태그·대소문자 정규화와 두 endpoint의 잘못된 길이/문자 거부를 확인했습니다. 관련 Web Playwright 21개 중 20개가 통과했고 이전 5자리 태그가 URL 인코딩된 채 남아 있던 조회 fixture를 수정한 뒤 해당 파일 4개를 다시 실행해 모두 통과했습니다. 21개 전체가 한 번에 통과한 것으로 기록하지 않습니다. 393px의 세 언어 안내/오류/조회/등록, 조회 중 입력 변경, 사용자 태그 유지와 인증 문의 흐름을 확인했습니다. 검증은 격리 PostgreSQL과 가짜 프로바이더를 사용했으며 실제 Supercell API 호출을 성공으로 기록하지 않습니다. 실행 중인 개발 Web의 200 응답과 개발 API의 7자리 태그 거부(400)도 확인했습니다.
+
+## Lightsail 서울 운영 배포 준비 (2026-10-19)
+
+사용자의 운영 환경 준비 요청과 Lightsail 서울 선택에 따라 2GB 단일 호스트의 CloudFormation, Static IP, Docker Compose, Caddy HTTPS와 GitHub Actions CD를 추가했습니다. API/Web 이미지는 Node 24 linux/amd64로 빌드하며 Web은 monorepo standalone 결과를 사용합니다. main의 최신 커밋이 코드·컨테이너 검증을 통과하고 GF_DEPLOY_ENABLED가 true인 경우에만 게시/배포합니다. SSH 호스트 키를 고정하고 서버 env를 덮어쓰지 않으며 배포를 직렬화합니다. 운영 도메인·OAuth·SSH/GitHub 설정과 사용자 실행 순서는 deploy/lightsail/README.md를 따릅니다.
+
+운영은 HTTPS origin, 문의 이메일, 완전한 OAuth 쌍과 DB 암호를 검증합니다. 데모/테스트 인증/Next testing API를 거부하며 Caddy에서도 테스트 로그인 경로를 막습니다. DB 앱 역할은 비관리자이고 공개 포트는 80/443, API 관리 연결은 loopback입니다. 메모리·swap·로그 회전을 구성하고 private 파일의 사진/영상 signature/크기/소유권/공개 범위/Range 정책을 유지합니다. FILESYSTEM volume이 기본이며 선택한 private S3/R2도 지원합니다. DB bytes는 기존 개발 파일 호환용으로 읽고 새 운영 파일은 외부 저장소 메타데이터를 참조합니다.
+
+운영 준비 요청이 이전의 배포 전 SQL 미포함 정책을 대체하므로 schema.prisma에서 최초 migration을 생성했습니다. 새 운영 DB는 migrate deploy와 카테고리 seed를 사용하며 테스트 계정은 만들지 않습니다. 로컬 db:sync는 계속 URL 가드와 데이터 손실 거부 정책을 사용합니다. 이번 로컬 동기화에서 신규 nullable 컬럼의 unique 경고로 db:sync가 중단되어 생성 diff의 테이블/컬럼/인덱스/FK 추가와 NOT NULL 완화만 검토한 후 전용 55442에 단일 트랜잭션으로 적용했습니다. 데이터 손실 강제 옵션이나 reset을 사용하지 않았고 글 18개, 메시지 10개, PostMedia/ChatAttachment 각 1개의 수가 동일했습니다. 기존 3300/4300/3303 개발 서버도 유지했습니다.
+
+배포 전 백업, daily 03:00 KST 백업/정리 timer, 7일 로컬 보관과 선택한 S3/R2 offsite 복사를 추가했습니다. 참조가 끊긴 파일은 14일 더 보관해 백업 복구를 지원합니다. 앱 health 실패는 이전 이미지/설정으로 복귀하며 SQL은 forward-only입니다. restore는 기존 DB volume이 없는 새 스택에만 허용하고 archive 경로/종류를 검증합니다. 기본 로컬 백업만으로 디스크 유실을 복구할 수 없으므로 외부 보관은 운영 설정으로 별도 준비해야 합니다. 비용 이메일을 지정하면 월 $20 Lightsail Budgets 알림을 구성하며 이는 트래픽 제한이나 과금 차단이 아닙니다.
+
+로컬 Admin은 SSH CLI로 실제 계정을 ADMIN으로 지정하고 한 시간짜리 세션을 발급해 터널로 연결합니다. 발급·권한 변경 감사 기록을 남기고 demo/banned/non-admin 발급을 거부합니다. Vite 서버가 Bearer를 주입하며 client bundle에는 boolean 모드만 전달합니다. 이 모드의 테스트 로그인 버튼은 숨기고 token을 browser storage에 넣지 않습니다.
+
+현재 worktree의 검증 결과:
+
+- 프로젝트 check와 OpenAPI/SDK 재생성 diff 없음, 전체 Prettier 검사 통과.
+- API Vitest+Supertest 123개 통과. 최초 migration을 새 테스트 schema에 적용했고 운영 설정 거부, private filesystem 저장/Range, 14일 파일 보관/정리, 실제 관리자 세션·권한·감사 기록을 검증했습니다.
+- Web Vitest 99개, Admin Vitest 2개 통과. Production build/instant() 12개와 관리자 Playwright 3개도 최종 각각 한 번에 통과했습니다.
+- API/Web linux/amd64 Docker 이미지와 operator 모드 Admin build 통과. 테스트 credential 문자열이 Admin 산출물에 없는 것을 확인했습니다.
+- 실제 Docker의 HTTPS local CA, 최초 migration/카테고리만 seed, 비로그인 HTML/SEO, 테스트 인증 차단, 앱 DB role, private 파일/Range, Caddy SSE 전달, API 재시작 보존을 검증했습니다. 의도적으로 실패하는 Web 이미지를 배포해 이전 이미지 복귀를 확인했고, 백업을 새 DB/media volume에 복구하여 글/파일/세션 보존과 기존 volume restore 거부까지 통과했습니다. 개발 컨테이너/DB를 재사용하지 않고 생성한 game-feedback-smoke-* 스택만 정리했습니다.
+- CloudFormation cfn-lint(서울), actionlint, shellcheck와 git diff --check 통과. 루트 workflow는 컨테이너 검증/CD 때문에, yarn.lock은 API S3 저장/streaming backup 의존성 때문에 변경했습니다. 다른 서비스 제품 코드는 변경하지 않았습니다.
+
+유료 AWS 자원 생성, 실제 SSH CD 실행, 공인 DNS/ACME 인증서, 운영 OAuth/Supercell, 실제 S3/R2 송수신과 외부 모니터링 수신은 실행하지 않았습니다. Game Feedback의 Sentry/Amplitude 연동은 현재 없으며 이 변경이 해당 연동을 완성했다고 주장하지 않습니다. 2GB 실서버의 동시 사용자 처리량도 부하 측정 전입니다. 이 절은 구현/로컬 검증 결과이며 실제 공개 배포 완료 기록이 아닙니다.

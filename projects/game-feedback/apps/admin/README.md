@@ -16,7 +16,9 @@ http://127.0.0.1:3303 에서 로컬 관리자 로그인을 누른다. 이 버튼
 
 문의함에서 문의 채팅 답변/처리 완료/재개, 신고함에서 검토/반려/콘텐츠 숨김, 사용자 관리에서 ID 조회/프로필 인증 승인·해제/사유를 입력한 밴·해제를 제공한다. 문의 메시지는 5초 주기로 갱신하며 실패한 답변 초안과 재전송 ID를 유지한다. 감사 기록과 권한은 API가 관리한다.
 
-서버는 `127.0.0.1`에만 바인딩한다. 기본 프록시는 API `localhost:4300`, 서비스 Origin `localhost:3300`이다. 다른 로컬 실행 조합은 `GF_ADMIN_API_ORIGIN`, `GF_ADMIN_WEB_ORIGIN`, `GF_ADMIN_PORT`로 지정한다. 프록시는 실제 로컬 관리자 Origin을 확인한 뒤 API의 설정된 서비스 Origin으로 전달한다. 배포와 원격 접속을 위한 인증 서비스로 사용하지 않는다.
+서버는 `127.0.0.1`에만 바인딩한다. 기본 프록시는 API `localhost:4300`, 서비스 Origin `localhost:3300`이다. 다른 로컬 실행 조합은 `GF_ADMIN_API_ORIGIN`, `GF_ADMIN_WEB_ORIGIN`, `GF_ADMIN_PORT`로 지정한다. 프록시는 실제 로컬 관리자 Origin을 확인한 뒤 API의 설정된 서비스 Origin으로 전달한다.
+
+운영 API에는 SSH 터널과 SSH에서 발급한 실제 ADMIN 계정의 한 시간짜리 세션으로 연결한다. `GF_ADMIN_ACCESS_TOKEN`은 로컬 Vite 서버만 사용하고 브라우저에 전달하지 않는다. 이 모드에서는 테스트 로그인 버튼이 숨겨진다. `.env.example`과 [운영 Admin 절차](../../deploy/lightsail/README.md#로컬-admin)를 따른다. Admin 자체는 공개 배포하지 않으며 운영 테스트 인증은 켜지 않는다.
 
 ## 검증
 
