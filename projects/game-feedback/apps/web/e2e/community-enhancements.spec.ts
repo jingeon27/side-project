@@ -211,21 +211,26 @@ test('verification opens a private admin chat and an administrator reviews user 
       headers: { Origin: origin },
       data: { accountId: 'sample-test-admin' },
     });
-    const admin = await adminContext.newPage();
-    await admin.goto('/ko/admin');
-    const thread = admin
-      .getByRole('region', { name: '문의함', exact: true })
-      .locator('article')
-      .filter({ hasText: `문의_${suffix}` });
-    await thread.getByRole('link', { name: '문의 채팅 열기', exact: true }).click();
-    await expect(admin.getByRole('log').getByText(request, { exact: true })).toBeVisible();
+    const threads = await (await adminContext.request.get('/api/admin/support')).json();
+    const thread = threads.find((item: { requester: { id: string } }) => item.requester.id === userId);
+    expect(thread).toBeTruthy();
     const reply = `인증 확인 완료 ${suffix}`;
-    await admin.getByRole('textbox', { name: '메시지 내용' }).fill(reply);
-    await admin.getByRole('button', { name: '보내기', exact: true }).click();
-    await admin.goto('/ko/admin');
-    await thread.getByText('사용자 관리', { exact: true }).click();
-    await thread.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
-    await expect(thread.getByRole('button', { name: '인증 해제', exact: true })).toBeVisible();
+    expect(
+      (
+        await adminContext.request.post(`/api/conversations/${thread.conversationId}/messages`, {
+          headers: { Origin: origin },
+          data: { body: reply, clientMessageId: crypto.randomUUID() },
+        })
+      ).ok(),
+    ).toBe(true);
+    expect(
+      (
+        await adminContext.request.patch(`/api/admin/users/${userId}/verification`, {
+          headers: { Origin: origin },
+          data: { isVerified: true },
+        })
+      ).ok(),
+    ).toBe(true);
     expect((await (await page.request.get('/api/session')).json()).user.isVerified).toBe(true);
     await page.reload();
     await expect(page.getByRole('log').getByText(reply, { exact: true })).toBeVisible();
@@ -241,16 +246,25 @@ test('verification opens a private admin chat and an administrator reviews user 
     await dialog.getByLabel('추가 설명 (선택)', { exact: true }).fill(`사용자 신고 ${suffix}`);
     await dialog.getByRole('button', { name: '신고 접수', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    await admin.reload();
-    const report = admin
-      .getByRole('region', { name: '신고함', exact: true })
-      .locator('article')
-      .filter({ hasText: `사용자 신고 ${suffix}` });
-    await report.getByRole('button', { name: '검토 완료', exact: true }).click();
-    await report.getByText('사용자 관리', { exact: true }).click();
-    await report.getByLabel('제재 사유', { exact: true }).fill('테스트 신고 검토 후 제재');
-    await report.getByRole('button', { name: '사용자 밴', exact: true }).click();
-    await expect(report.getByRole('button', { name: '밴 해제', exact: true })).toBeVisible();
+    const reports = await (await adminContext.request.get('/api/admin/reports')).json();
+    const report = reports.find((item: { detail: string }) => item.detail === `사용자 신고 ${suffix}`);
+    expect(report).toBeTruthy();
+    expect(
+      (
+        await adminContext.request.patch(`/api/admin/reports/${report.id}`, {
+          headers: { Origin: origin },
+          data: { status: 'REVIEWED' },
+        })
+      ).ok(),
+    ).toBe(true);
+    expect(
+      (
+        await adminContext.request.patch(`/api/admin/users/${userId}/ban`, {
+          headers: { Origin: origin },
+          data: { banned: true, reason: '테스트 신고 검토 후 제재' },
+        })
+      ).ok(),
+    ).toBe(true);
     const input = {
       categoryId: 'clash-royale',
       board: 'FREE',
@@ -266,14 +280,18 @@ test('verification opens a private admin chat and an administrator reviews user 
     await expect(
       page.getByRole('log').getByText('이용 제한에 대해 문의합니다.', { exact: true }),
     ).toBeVisible();
-    await report.getByLabel('제재 사유', { exact: true }).fill('문의 확인 후 제재 해제');
-    await report.getByRole('button', { name: '밴 해제', exact: true }).click();
-    await expect(report.getByRole('button', { name: '사용자 밴', exact: true })).toBeVisible();
+    expect(
+      (
+        await adminContext.request.patch(`/api/admin/users/${userId}/ban`, {
+          headers: { Origin: origin },
+          data: { banned: false, reason: '문의 확인 후 제재 해제' },
+        })
+      ).ok(),
+    ).toBe(true);
     expect((await page.request.post('/api/posts', { headers: { Origin: origin }, data: input })).ok()).toBe(
       true,
     );
-    await page.goto('/ko/admin');
-    await expect(page.getByRole('heading', { name: '관리자 권한이 필요합니다.', exact: true })).toBeVisible();
+    expect((await page.request.get('/ko/admin')).status()).toBe(404);
     expect((await page.request.get('/api/admin/support')).status()).toBe(403);
   } finally {
     await adminContext.close();

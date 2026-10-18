@@ -1,17 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
+import type { ListQueryDto } from '../common/http/list-query.dto';
 import {
-  ChatMessageInputSchema,
-  ClearChatHistoryInputSchema,
-  ChatReadInputSchema,
-  ConversationInputSchema,
-  ListQuerySchema,
-  type ChatMessage,
-  type Conversation,
-} from '@game-feedback/contracts';
+  type ReadMessageDto,
+  type ClearHistoryDto,
+  type SendMessageDto,
+  type CreateConversationDto,
+} from './chat-input.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { type ChatMessage, type Conversation } from '@game-feedback/contracts';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { ApiError } from '../common/http/api-error';
 import { decodeCursor, encodeCursor } from '../common/pagination';
-import { parse } from '../common/validation';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
@@ -155,11 +153,11 @@ export class ChatService {
     const user = requireUser(req);
     return this.dto(await this.visible(user.id, id), user.id);
   }
-  async create(req: SessionRequest, input: unknown) {
+  async create(req: SessionRequest, input: CreateConversationDto) {
     const user = requireUser(req);
     if (user.bannedAt)
       throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
-    const { recipientId } = parse(ConversationInputSchema, input);
+    const { recipientId } = input;
     if (recipientId === user.id)
       throw new ApiError(400, 'CANNOT_CHAT_SELF', '자신에게 메시지를 보낼 수 없습니다.');
     const peer = await this.db.user.findUnique({ where: { id: recipientId }, select: userSelect });
@@ -193,9 +191,9 @@ export class ChatService {
     void this.events.publish([user.id, recipientId], row.id);
     return this.dto(row, user.id);
   }
-  async list(req: SessionRequest) {
+  async list(req: SessionRequest, query: ListQueryDto) {
     const user = requireUser(req);
-    const query = parse(ListQuerySchema, req.query);
+
     const cursor = decodeCursor(query.cursor);
     const excluded = await this.excluded(user.id);
     const base: Prisma.ChatConversationWhereInput = {
@@ -254,10 +252,10 @@ export class ChatService {
       nextCursor: rows.length > query.limit ? encodeCursor({ id: last.id, createdAt: last.updatedAt }) : null,
     };
   }
-  async messages(req: SessionRequest, id: string) {
+  async messages(req: SessionRequest, id: string, query: ListQueryDto) {
     const user = requireUser(req);
     const conversation = await this.visible(user.id, id);
-    const query = parse(ListQuerySchema, req.query);
+
     const cursor = decodeCursor(query.cursor);
     const rows = await this.db.chatMessage.findMany({
       where: {
@@ -283,9 +281,9 @@ export class ChatService {
       nextCursor: rows.length > query.limit ? encodeCursor(items[items.length - 1]) : null,
     };
   }
-  async send(req: SessionRequest, id: string, input: unknown) {
+  async send(req: SessionRequest, id: string, input: SendMessageDto) {
     const user = requireUser(req);
-    const body = parse(ChatMessageInputSchema, input);
+    const body = input;
     // Authorization precedes idempotency lookup so UUID reuse cannot reveal another conversation.
     await this.visible(user.id, id);
     const result = await this.db
@@ -375,9 +373,9 @@ export class ChatService {
     void this.events.publish([user.id, result.peerId], id);
     return messageDto(result.message);
   }
-  async clearHistory(req: SessionRequest, id: string, input: unknown) {
+  async clearHistory(req: SessionRequest, id: string, input: ClearHistoryDto) {
     const user = requireUser(req);
-    const { throughMessageId } = parse(ClearChatHistoryInputSchema, input);
+    const { throughMessageId } = input;
     await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
       const conversation = await this.visible(user.id, id, tx);
@@ -404,9 +402,9 @@ export class ChatService {
     void this.events.publish([user.id], id);
     return { ok: true };
   }
-  async read(req: SessionRequest, id: string, input: unknown) {
+  async read(req: SessionRequest, id: string, input: ReadMessageDto) {
     const user = requireUser(req);
-    const { messageId } = parse(ChatReadInputSchema, input);
+    const { messageId } = input;
     const result = await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
       const conversation = await this.visible(user.id, id, tx);

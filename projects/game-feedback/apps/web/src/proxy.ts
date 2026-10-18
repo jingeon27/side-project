@@ -15,11 +15,7 @@ export async function proxy(request: NextRequest) {
       if (!['q', 'tab'].includes(key)) url.searchParams.delete(key);
     return NextResponse.redirect(url);
   }
-  if (
-    /^\/(ko|en|ja)\/admin(?:\/|$)/.test(request.nextUrl.pathname) &&
-    (process.env.NODE_ENV === 'production' ||
-      !['localhost', '127.0.0.1', '[::1]'].includes(request.nextUrl.hostname))
-  )
+  if (/^\/(ko|en|ja)\/admin(?:\/|$)/.test(request.nextUrl.pathname))
     return new NextResponse('Not Found', { status: 404 });
   if (
     request.method === 'GET' &&

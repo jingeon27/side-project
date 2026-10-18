@@ -1,11 +1,10 @@
+import type { PostViewDto } from './post-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { PostViewInputSchema } from '@game-feedback/contracts';
 import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { hash } from '../common/crypto';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import { parse } from '../common/validation';
 import { UserVisibilityService } from '../users/user-visibility.service';
 
 @Injectable()
@@ -15,8 +14,8 @@ export class PostViewsService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
   ) {}
 
-  async record(req: SessionRequest, id: string, body: unknown) {
-    const { visitorId } = parse(PostViewInputSchema, body);
+  async record(req: SessionRequest, id: string, body: PostViewDto) {
+    const { visitorId } = body;
     const excluded = await this.visibility.excluded(req);
     const visitorHash = hash(req.gfSession?.user ? `user:${req.gfSession.user.id}` : `visitor:${visitorId}`);
     return this.db.$transaction(async (tx) => {

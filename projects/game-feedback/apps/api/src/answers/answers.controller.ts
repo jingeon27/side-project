@@ -1,32 +1,40 @@
-import { Body, Controller, Delete, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { UseGuards, Controller, Delete, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { UserGuard } from '../common/http/session.guard';
+import { HelpfulDto, AnswerBodyDto } from './answer-input.dto';
+import { ValidatedBody } from '../common/http/request-validation';
 import type { SessionRequest } from '../auth/session.types';
 import { AnswersService } from './answers.service';
 
 @Controller('api')
 export class AnswersController {
   constructor(@Inject(AnswersService) private readonly service: AnswersService) {}
-  @HttpCode(200) @Post('posts/:id/answers') answer(
+  @HttpCode(200)
+  @Post('posts/:id/answers')
+  @UseGuards(UserGuard)
+  answer(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @Body() body: unknown,
+    @ValidatedBody(AnswerBodyDto) body: AnswerBodyDto,
   ) {
     return this.service.createAnswer(req, id, body);
   }
-  @Patch('answers/:id') editAnswer(
+  @Patch('answers/:id')
+  @UseGuards(UserGuard)
+  editAnswer(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @Body() body: unknown,
+    @ValidatedBody(AnswerBodyDto) body: AnswerBodyDto,
   ) {
     return this.service.updateAnswer(req, id, body);
   }
-  @Delete('answers/:id') deleteAnswer(@Req() req: SessionRequest, @Param('id') id: string) {
+  @Delete('answers/:id')
+  deleteAnswer(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.deleteAnswer(req, id);
   }
-  @HttpCode(200) @Post('answers/:id/helpful') helpful(
-    @Req() req: SessionRequest,
-    @Param('id') id: string,
-    @Body() body: unknown,
-  ) {
+  @HttpCode(200)
+  @Post('answers/:id/helpful')
+  @UseGuards(UserGuard)
+  helpful(@Req() req: SessionRequest, @Param('id') id: string, @ValidatedBody(HelpfulDto) body: HelpfulDto) {
     return this.service.helpful(req, id, body);
   }
 }

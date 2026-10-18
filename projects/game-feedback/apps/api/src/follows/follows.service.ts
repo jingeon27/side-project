@@ -1,10 +1,9 @@
+import type { FollowUserDto } from './follow-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { FollowInputSchema } from '@game-feedback/contracts';
 import { PrismaClient } from '../generated/prisma';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
-import { parse } from '../common/validation';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { lockUserRelationship } from '../common/relationship-lock';
 
@@ -34,9 +33,8 @@ export class FollowsService {
     return { following: !!follow, notifyNewPosts: follow?.notifyNewPosts ?? false };
   }
 
-  async follow(req: SessionRequest, id: string, body: unknown) {
+  async follow(req: SessionRequest, id: string, input: FollowUserDto) {
     const user = requireUser(req);
-    const input = parse(FollowInputSchema, body);
     if (user.id === id) throw new ApiError(400, 'CANNOT_FOLLOW_SELF', '자신을 팔로우할 수 없습니다.');
     await this.target(req, id);
     const follow = await this.db.$transaction(async (tx) => {

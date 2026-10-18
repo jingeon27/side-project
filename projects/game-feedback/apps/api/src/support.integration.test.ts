@@ -27,10 +27,10 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     assertDatabaseUrl(databaseUrl, 'test');
     const migration = spawnSync(
       process.execPath,
-      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
     );
-    if (migration.status !== 0) throw new Error('Isolated support migration failed');
+    if (migration.status !== 0) throw new Error('Isolated support schema setup failed');
     db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });

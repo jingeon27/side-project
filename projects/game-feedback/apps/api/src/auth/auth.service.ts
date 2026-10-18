@@ -1,14 +1,10 @@
+import { type OnboardDto, type TestLoginDto, type DemoLoginDto } from './auth-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaClient } from '../generated/prisma';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { createHash } from 'node:crypto';
 import type { Request, Response } from 'express';
-import {
-  DemoInputSchema,
-  OnboardInputSchema,
-  TestLoginInputSchema,
-  SocialProviderSchema,
-} from '@game-feedback/contracts';
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import type { SessionRequest } from './session.types';
 import { AppAuthService } from './app-auth.service';
 import { SessionService } from './session.service';
@@ -17,8 +13,7 @@ import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 import { COOKIE, cookies, setCookie } from '../common/http/cookies';
 import { hash, token } from '../common/crypto';
-import { authorDto } from '../users/user.presenter';
-import { userDto } from '../users/user.presenter';
+import { authorDto, userDto } from '../users/user.presenter';
 import { sessionToken } from './session-token';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { SocialIdentityService } from './social-identity.service';
@@ -32,9 +27,8 @@ export class AuthService {
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
     @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
   ) {}
-  async demo(req: SessionRequest, res: Response, body: unknown) {
+  async demo(req: SessionRequest, res: Response, input: DemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
-    const input = parse(DemoInputSchema, body);
     const user = await this.db.user.upsert({
       where: { demoKey: `demo:${input.nickname.toLocaleLowerCase()}` },
       update: {},
@@ -70,9 +64,9 @@ export class AuthService {
     };
   }
 
-  async testLogin(req: SessionRequest, res: Response, body: unknown) {
+  async testLogin(req: SessionRequest, res: Response, body: TestLoginDto) {
     this.requireTestAuth();
-    const { accountId } = parse(TestLoginInputSchema, body);
+    const { accountId } = body;
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === accountId);
     if (!fixture) throw new ApiError(404, 'TEST_ACCOUNT_NOT_FOUND', '사용할 수 없는 테스트 계정입니다.');
     await seed(this.db, true);
@@ -82,9 +76,9 @@ export class AuthService {
     return this.sessions.session(req);
   }
 
-  async testToken(req: SessionRequest, res: Response, body: unknown) {
+  async testToken(req: SessionRequest, res: Response, body: TestLoginDto) {
     this.requireTestAuth();
-    const { accountId } = parse(TestLoginInputSchema, body);
+    const { accountId } = body;
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === accountId);
     if (!fixture) throw new ApiError(404, 'TEST_ACCOUNT_NOT_FOUND', '사용할 수 없는 테스트 계정입니다.');
     await seed(this.db, true);
@@ -103,8 +97,8 @@ export class AuthService {
     return this.socialCallback(req, res, 'google');
   }
 
-  async social(req: Request, res: Response, name: string) {
-    const provider = parse(SocialProviderSchema, name);
+  async social(req: Request, res: Response, name: TSocialProvider) {
+    const provider = name;
     const identity = this.config.identityProviders[provider];
     if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
     const appChallenge = req.query.app_challenge;
@@ -131,8 +125,8 @@ export class AuthService {
     res.redirect(identity.authorizationUrl({ state, nonce, challenge }));
   }
 
-  async socialCallback(req: SessionRequest, res: Response, name: string) {
-    const provider = parse(SocialProviderSchema, name);
+  async socialCallback(req: SessionRequest, res: Response, name: TSocialProvider) {
+    const provider = name;
     const identity = this.config.identityProviders[provider];
     if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
     const state = typeof req.query.state === 'string' ? req.query.state : '';
@@ -176,9 +170,8 @@ export class AuthService {
     res.redirect(`${this.config.webOrigin}/ko${user ? '' : '?onboard=1'}`);
   }
 
-  async onboard(req: SessionRequest, res: Response, body: unknown) {
-    const input = parse(OnboardInputSchema, body),
-      subject = req.gfSession?.pendingSubject;
+  async onboard(req: SessionRequest, res: Response, input: OnboardDto) {
+    const subject = req.gfSession?.pendingSubject;
     if (!subject) throw new ApiError(401, 'ONBOARDING_REQUIRED', '소셜 로그인 후 가입을 완료해주세요.');
     const provider = parse(SocialProviderSchema, req.gfSession?.pendingProvider ?? 'google');
     const user = await this.identities.onboard(provider, subject, input.nickname);

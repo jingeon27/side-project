@@ -1,9 +1,0 @@
-ALTER TABLE "Post" ADD COLUMN "viewCount" INTEGER NOT NULL DEFAULT 0;
-
-CREATE TABLE "PostView" (
-    "postId" TEXT NOT NULL,
-    "visitorHash" TEXT NOT NULL,
-    "lastViewedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "PostView_pkey" PRIMARY KEY ("postId", "visitorHash"),
-    CONSTRAINT "PostView_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE
-);

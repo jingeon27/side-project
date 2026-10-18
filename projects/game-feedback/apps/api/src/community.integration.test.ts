@@ -27,10 +27,10 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     assertDatabaseUrl(databaseUrl, 'test');
     const migration = spawnSync(
       process.execPath,
-      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
     );
-    if (migration.status !== 0) throw new Error('Isolated community migration failed');
+    if (migration.status !== 0) throw new Error('Isolated community schema setup failed');
     db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
@@ -278,46 +278,6 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     expect((await author.get(`/api/posts/${post.id}`)).body.post.coaching).toEqual({
       role: 'STUDENT',
       pricing: { type: 'MONTHLY', amount: 150000 },
-    });
-  });
-  it('migrates legacy hourly JSON without changing roles, amounts, post content or new pricing', async () => {
-    const userId = (await author.get('/api/session')).body.user.id;
-    const legacy = await db.post.create({
-      data: {
-        authorId: userId,
-        categoryId,
-        board: 'COACHING',
-        title: '기존 시간당 수강료',
-        body: '기존 코칭 조건과 본문을 그대로 보존하는지 검증하는 글입니다.',
-        coaching: { role: 'STUDENT', hourlyRate: 45000 },
-      },
-    });
-    const negotiated = await db.post.create({
-      data: {
-        authorId: userId,
-        categoryId,
-        board: 'COACHING',
-        title: '기존 수강료 협의',
-        body: '협의 상태인 기존 코칭 글도 원래대로 보존하는지 검증합니다.',
-        coaching: { role: 'COACH', hourlyRate: null },
-      },
-    });
-    const sql = readFileSync(
-      new URL('../prisma/migrations/202610170008_coaching_pricing/migration.sql', import.meta.url),
-      'utf8',
-    );
-    await db.$executeRawUnsafe(sql);
-    await db.$executeRawUnsafe(sql);
-    const updated = await db.post.findUniqueOrThrow({ where: { id: legacy.id } });
-    expect(updated).toMatchObject({
-      title: legacy.title,
-      body: legacy.body,
-      updatedAt: legacy.updatedAt,
-      coaching: { role: 'STUDENT', pricing: { type: 'HOURLY', amount: 45000 } },
-    });
-    expect((await author.get(`/api/posts/${negotiated.id}`).expect(200)).body.post.coaching).toEqual({
-      role: 'COACH',
-      pricing: { type: 'HOURLY', amount: null },
     });
   });
   it('binds only owned media to a post atomically and respects moderation, blocking, ranges and removal', async () => {

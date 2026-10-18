@@ -28,7 +28,7 @@ export async function prerequisites() {
 export async function setup() {
   await prerequisites();
   await local('db.mjs', ['start']);
-  await local('db.mjs', ['migrate']);
+  await local('db.mjs', ['sync']);
   await workspace('api', 'db:seed');
 }
 
@@ -38,16 +38,18 @@ export async function runTask(task) {
   else if (task === 'codegen') await prerequisites();
   else if (task === 'check') {
     await prerequisites();
-    for (const name of ['contracts', 'api', 'sdk', 'bridge', 'web', 'mobile'])
+    for (const name of ['contracts', 'api', 'sdk', 'bridge', 'web', 'mobile', 'admin'])
       await workspace(name, 'typecheck');
     await workspace('web', 'lint');
     await workspace('mobile', 'lint');
+    await workspace('admin', 'lint');
   } else if (task === 'test') {
     await prerequisites();
     await workspace('api', 'test', { NODE_ENV: 'test' });
     await workspace('sdk', 'test');
     await workspace('web', 'test');
     await workspace('mobile', 'test');
+    await workspace('admin', 'test');
   } else if (task === 'test:e2e' || task === 'test:mobile:e2e') {
     await prerequisites();
     await local('db.mjs', ['start', '--test']);
@@ -55,6 +57,7 @@ export async function runTask(task) {
       await workspace('web', 'test:e2e');
       await workspace('web', 'test:test-auth');
       await workspace('web', 'test:prefetch');
+      await workspace('admin', 'test:e2e');
     }
     await workspace('mobile', 'test:e2e');
   } else if (task === 'build') {
@@ -62,6 +65,7 @@ export async function runTask(task) {
     await workspace('api', 'build', { NODE_ENV: 'production' });
     await workspace('web', 'build', { NODE_ENV: 'production' });
     await workspace('mobile', 'bundle:check');
+    await workspace('admin', 'build');
   } else throw new Error('Usage: tasks.mjs setup|codegen|check|test|test:e2e|test:mobile:e2e|build');
 }
 

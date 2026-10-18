@@ -1,10 +1,9 @@
+import type { GameAccountDto } from './game-account-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaClient, Prisma } from '../generated/prisma';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { GameAccountInputSchema, PlayerTagSchema } from '@game-feedback/contracts';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
-import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 
 @Injectable()
@@ -13,8 +12,7 @@ export class GameProfilesService {
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
-  async lookup(tag: unknown) {
-    const playerTag = parse(PlayerTagSchema, tag);
+  async lookup(playerTag: string) {
     if (!this.config.profileProvider)
       throw new ApiError(503, 'PROFILE_UNAVAILABLE', '게임 API가 아직 설정되지 않았습니다.');
     return this.config.profileProvider.lookup(playerTag);
@@ -27,9 +25,8 @@ export class GameProfilesService {
     ).map((a) => a.profile);
   }
 
-  async saveGameAccount(req: SessionRequest, body: unknown) {
+  async saveGameAccount(req: SessionRequest, input: GameAccountDto) {
     const u = requireUser(req),
-      input = parse(GameAccountInputSchema, body),
       profile = await this.lookup(input.playerTag);
     await this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;

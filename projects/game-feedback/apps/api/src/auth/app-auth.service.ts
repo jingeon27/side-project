@@ -1,7 +1,8 @@
+import type { AppExchangeDto } from './auth-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import type { Response } from 'express';
-import { AppExchangeInputSchema, SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import { PrismaClient } from '../generated/prisma';
 import { hash, token } from '../common/crypto';
 import { parse } from '../common/validation';
@@ -25,8 +26,8 @@ export class AppAuthService {
     });
     return code;
   }
-  async exchange(req: SessionRequest, res: Response, body: unknown) {
-    const { code, verifier } = parse(AppExchangeInputSchema, body);
+  async exchange(req: SessionRequest, res: Response, body: AppExchangeDto) {
+    const { code, verifier } = body;
     const codeHash = hash(code);
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const ticket = await this.db.appLoginTicket.findUnique({ where: { codeHash } });

@@ -28,11 +28,11 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     assertDatabaseUrl(url, 'test');
     const result = spawnSync(
       process.execPath,
-      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url }, encoding: 'utf8' },
     );
     if (result.status !== 0)
-      throw new Error(`Isolated test migration failed: ${result.stderr}\n${result.stdout}`);
+      throw new Error(`Isolated test schema setup failed: ${result.stderr}\n${result.stdout}`);
     db = new PrismaClient({ datasources: { db: { url } } });
     await seed(db, false);
     app = await createApp({
@@ -69,6 +69,36 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       })
       .expect(401);
     expect(response.body.errorCode).toBe('AUTH_REQUIRED');
+  });
+  it('keeps public category reads and audited admin creation in separate application contexts', async () => {
+    const admin = supertest.agent(app.getHttpServer());
+    const adminUser = (await login(admin, '카테고리관리자')).body.user;
+    await db.user.update({ where: { id: adminUser.id }, data: { role: 'ADMIN' } });
+    const input = { slug: 'category-boundary-game', name: '별도 게임' };
+    await supertest(app.getHttpServer())
+      .post('/api/admin/categories')
+      .set('Origin', origin)
+      .send(input)
+      .expect(401);
+    await requester.post('/api/admin/categories').set('Origin', origin).send(input).expect(403);
+    await admin
+      .post('/api/admin/categories')
+      .set('Origin', origin)
+      .send({ slug: 'INVALID!', name: '게임' })
+      .expect(400);
+    const category = (await admin.post('/api/admin/categories').set('Origin', origin).send(input).expect(200))
+      .body;
+    const active = (await supertest(app.getHttpServer()).get('/api/categories').expect(200)).body;
+    expect(active).toContainEqual(expect.objectContaining({ id: category.id, ...input }));
+    expect(
+      await db.auditLog.count({
+        where: { actorId: adminUser.id, action: 'CREATE_CATEGORY', targetId: category.id },
+      }),
+    ).toBe(1);
+    await db.category.update({ where: { id: category.id }, data: { active: false } });
+    expect((await supertest(app.getHttpServer()).get('/api/categories').expect(200)).body).not.toContainEqual(
+      expect.objectContaining({ id: category.id }),
+    );
   });
   it('keeps game accounts on the user instead of attaching a profile to a post', async () => {
     const response = await requester

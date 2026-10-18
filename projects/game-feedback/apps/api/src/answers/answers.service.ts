@@ -1,4 +1,4 @@
-import { AnswerInputSchema, HelpfulInputSchema } from '@game-feedback/contracts';
+import { type AnswerBodyDto, type HelpfulDto } from './answer-input.dto';
 import { ACTIVE_CONTENT } from '../common/content';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
@@ -8,7 +8,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
-import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 
 @Injectable()
@@ -18,9 +17,8 @@ export class AnswersService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostsService) private readonly posts: PostsService,
   ) {}
-  async createAnswer(req: SessionRequest, postId: string, body: unknown) {
+  async createAnswer(req: SessionRequest, postId: string, input: AnswerBodyDto) {
     const u = requireUser(req),
-      input = parse(AnswerInputSchema, body),
       p = await this.posts.visiblePost(req, postId);
     const a = await this.db.$transaction(async (tx) => {
       const row = await tx.answer.create({
@@ -53,9 +51,8 @@ export class AnswersService {
       throw new ApiError(404, 'ANSWER_NOT_FOUND', '답변을 찾을 수 없습니다.');
     return a;
   }
-  async updateAnswer(req: SessionRequest, id: string, body: unknown) {
+  async updateAnswer(req: SessionRequest, id: string, input: AnswerBodyDto) {
     const u = requireUser(req),
-      input = parse(AnswerInputSchema, body),
       a = await this.visibleAnswer(req, id);
     if (a.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     return responseAnswer(
@@ -76,9 +73,8 @@ export class AnswersService {
     ]);
     return { ok: true };
   }
-  async helpful(req: SessionRequest, id: string, body: unknown) {
+  async helpful(req: SessionRequest, id: string, input: HelpfulDto) {
     const u = requireUser(req),
-      input = parse(HelpfulInputSchema, body),
       a = await this.visibleAnswer(req, id),
       p = await this.posts.visiblePost(req, a.postId);
     if (p.authorId !== u.id || a.authorId === u.id)

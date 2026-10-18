@@ -1,4 +1,4 @@
-import { CommentInputSchema } from '@game-feedback/contracts';
+import type { CommentBodyDto } from './comment-input.dto';
 import { ACTIVE_CONTENT } from '../common/content';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
@@ -8,7 +8,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
-import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 
 @Injectable()
@@ -18,9 +17,8 @@ export class CommentsService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostsService) private readonly posts: PostsService,
   ) {}
-  async createComment(req: SessionRequest, postId: string, body: unknown) {
+  async createComment(req: SessionRequest, postId: string, input: CommentBodyDto) {
     const u = requireUser(req),
-      input = parse(CommentInputSchema, body),
       p = await this.posts.visiblePost(req, postId);
     const c = await this.db.$transaction(async (tx) => {
       const row = await tx.comment.create({
@@ -52,9 +50,8 @@ export class CommentsService {
       throw new ApiError(404, 'COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
     return c;
   }
-  async updateComment(req: SessionRequest, id: string, body: unknown) {
+  async updateComment(req: SessionRequest, id: string, input: CommentBodyDto) {
     const u = requireUser(req),
-      input = parse(CommentInputSchema, body),
       c = await this.visibleComment(req, id);
     if (c.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     return responseComment(

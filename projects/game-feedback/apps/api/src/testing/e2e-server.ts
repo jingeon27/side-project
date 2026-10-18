@@ -6,7 +6,10 @@ async function main() {
   if (process.env.NODE_ENV !== 'test') throw new Error('E2E server requires NODE_ENV=test.');
   const databaseUrl = assertDatabaseUrl(process.env.DATABASE_URL, 'test');
   const port = Number(process.env.PORT);
-  if (![4301, 4302, 4353].includes(port) || process.env.WEB_ORIGIN !== `http://127.0.0.1:${port - 1000}`)
+  if (
+    ![4301, 4302, 4304, 4353].includes(port) ||
+    process.env.WEB_ORIGIN !== `http://127.0.0.1:${port - 1000}`
+  )
     throw new Error('E2E server requires the owned browser-test ports.');
   if (process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_SECRET || process.env.SUPERCELL_API_TOKEN)
     throw new Error('E2E server must not use external provider credentials.');

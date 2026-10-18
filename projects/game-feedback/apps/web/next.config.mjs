@@ -8,7 +8,6 @@ const config = {
   skipProxyUrlNormalize: true,
   experimental: { exposeTestingApiInProductionBuild: process.env.GF_PREFETCH_TESTING === 'true' },
   env: {
-    NEXT_PUBLIC_GAME_FEEDBACK_LOCAL_ADMIN: process.env.NODE_ENV === 'production' ? 'false' : 'true',
     NEXT_PUBLIC_GAME_FEEDBACK_CONTACT_EMAIL: process.env.GAME_FEEDBACK_CONTACT_EMAIL ?? '',
   },
   transpilePackages: ['@game-feedback/contracts', '@game-feedback/sdk', '@side/design-system'],

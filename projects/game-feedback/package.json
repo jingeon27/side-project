@@ -16,8 +16,6 @@
     "db:status": "node scripts/db.mjs status",
     "db:test:start": "node scripts/db.mjs start --test",
     "db:test:stop": "node scripts/db.mjs stop --test",
-    "db:migrate": "node scripts/db.mjs migrate",
-    "db:test:migrate": "node scripts/db.mjs migrate --test",
     "check": "node scripts/tasks.mjs check",
     "typecheck": "node scripts/tasks.mjs check",
     "test": "node scripts/tasks.mjs test",
@@ -27,7 +25,10 @@
     "test:mobile:e2e": "node scripts/tasks.mjs test:mobile:e2e",
     "mobile:start": "yarn workspace @game-feedback/mobile start",
     "mobile:android": "yarn workspace @game-feedback/mobile android",
-    "mobile:ios": "yarn workspace @game-feedback/mobile ios"
+    "mobile:ios": "yarn workspace @game-feedback/mobile ios",
+    "admin:dev": "yarn workspace @game-feedback/admin dev",
+    "db:sync": "node scripts/db.mjs sync",
+    "db:test:sync": "node scripts/db.mjs sync --test"
   },
   "devDependencies": {
     "embedded-postgres": "18.4.0-beta.17"

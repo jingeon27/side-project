@@ -39,7 +39,7 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const url = assertDatabaseUrl(target.toString(), 'test');
     const migrated = spawnSync(
       process.execPath,
-      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url }, encoding: 'utf8' },
     );
     if (migrated.status !== 0) throw new Error(migrated.stderr + migrated.stdout);

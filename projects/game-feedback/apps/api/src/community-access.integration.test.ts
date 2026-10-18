@@ -34,10 +34,10 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
     const migration = spawnSync(
       process.execPath,
-      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
     );
-    if (migration.status !== 0) throw new Error('Isolated community migration failed.');
+    if (migration.status !== 0) throw new Error('Isolated community schema setup failed.');
     const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     state.db = db;
     await seed(db, true);

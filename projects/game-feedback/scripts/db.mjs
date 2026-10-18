@@ -11,7 +11,7 @@ const command = process.argv[2] ?? 'status';
 const isTest = process.argv.includes('--test');
 const env = environment();
 const databaseUrl = isTest ? env.TEST_DATABASE_URL : env.DATABASE_URL;
-const target = guardDatabaseUrl(databaseUrl, { test: isTest, allowTestSchema: command === 'migrate' });
+const target = guardDatabaseUrl(databaseUrl, { test: isTest, allowTestSchema: command === 'sync' });
 const label = isTest ? 'test' : 'dev';
 const dataRoot = path.join(projectDir, '.data');
 const dataDir = path.join(dataRoot, `postgres-${label}`);
@@ -266,9 +266,9 @@ try {
         ? `Game Feedback ${label} database is running on ${target.port}.`
         : `Game Feedback ${label} database is stopped.`,
     );
-  } else if (command === 'migrate') {
-    await yarn(['workspace', '@game-feedback/api', 'prisma:deploy'], { ...env, DATABASE_URL: databaseUrl });
-  } else throw new Error('Usage: db.mjs start|stop|status|migrate [--test]');
+  } else if (command === 'sync') {
+    await yarn(['workspace', '@game-feedback/api', 'prisma:sync'], { ...env, DATABASE_URL: databaseUrl });
+  } else throw new Error('Usage: db.mjs start|stop|status|sync [--test]');
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;

@@ -1,0 +1,43 @@
+{
+  "name": "@game-feedback/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc7 --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc7 --noEmit",
+    "lint": "eslint .",
+    "test": "node scripts/test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@game-feedback/contracts": "workspace:*",
+    "@game-feedback/sdk": "workspace:*",
+    "@hookform/resolvers": "^5.2.2",
+    "@side/design-system": "workspace:*",
+    "@tanstack/react-query": "^5.90.0",
+    "dayjs": "1.11.18",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@side/eslint-config": "workspace:*",
+    "@side/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.16",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^9.39.0",
+    "jiti": "^2.6.1",
+    "tailwindcss": "^4.1.16",
+    "typescript": "6.0.2",
+    "vite": "^7.0.0",
+    "vitest": "^4.1.0"
+  }
+}

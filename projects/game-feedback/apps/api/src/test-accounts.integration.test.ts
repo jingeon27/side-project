@@ -61,14 +61,14 @@ describe.skipIf(!testDatabaseUrl)(
       assertDatabaseUrl(databaseUrl, 'test');
       const migration = spawnSync(
         process.execPath,
-        [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+        [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
         {
           env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
           encoding: 'utf8',
         },
       );
       if (migration.status !== 0)
-        throw new Error(`Isolated account migration failed: ${migration.stderr}\n${migration.stdout}`);
+        throw new Error(`Isolated account schema setup failed: ${migration.stderr}\n${migration.stdout}`);
       db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
       await seed(db, true);
       app = await createApp({

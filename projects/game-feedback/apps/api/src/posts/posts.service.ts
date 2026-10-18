@@ -1,9 +1,6 @@
-import {
-  ListQuerySchema,
-  PostInputSchema,
-  PostPatchSchema,
-  richTextToPlainText,
-} from '@game-feedback/contracts';
+import type { ListQueryDto } from '../common/http/list-query.dto';
+import { type UpdatePostDto, type CreatePostDto } from './post-input.dto';
+import { richTextToPlainText } from '@game-feedback/contracts';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UserVisibilityService } from '../users/user-visibility.service';
@@ -16,7 +13,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaClient, Prisma } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
-import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 
 @Injectable()
@@ -41,8 +37,8 @@ export class PostsService {
     if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
     return post;
   }
-  async listPosts(req: SessionRequest) {
-    const q = parse(ListQuerySchema, req.query),
+  async listPosts(req: SessionRequest, query: ListQueryDto) {
+    const q = query,
       cursor = decodeCursor(q.cursor),
       excluded = await this.visibility.excluded(req);
     if (q.battleMode && q.board !== 'FRIENDLY')
@@ -127,9 +123,8 @@ export class PostsService {
       comments: comments.map(responseComment),
     };
   }
-  async createPost(req: SessionRequest, body: unknown) {
-    const u = requireUser(req),
-      input = parse(PostInputSchema, body);
+  async createPost(req: SessionRequest, input: CreatePostDto) {
+    const u = requireUser(req);
     if (input.document && richTextToPlainText(input.document) !== input.body)
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     if ((input.board === 'COACHING') !== !!input.coaching)
@@ -184,9 +179,8 @@ export class PostsService {
     });
     return responsePost(p);
   }
-  async updatePost(req: SessionRequest, id: string, body: unknown) {
+  async updatePost(req: SessionRequest, id: string, input: UpdatePostDto) {
     const u = requireUser(req),
-      input = parse(PostPatchSchema, body),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     const { document, coaching, friendSale, battle, ...data } = input;

@@ -119,18 +119,18 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     schema = `gf_test_chat_${randomBytes(8).toString('hex')}`;
     target.searchParams.set('schema', schema);
     databaseUrl = target.toString();
-    // Validate before invoking any migration or creating a Prisma connection.
+    // Validate before applying the schema or creating a Prisma connection.
     assertDatabaseUrl(databaseUrl, 'test');
     const migration = spawnSync(
       process.execPath,
-      [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'],
+      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
       {
         env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
         encoding: 'utf8',
       },
     );
     if (migration.status !== 0)
-      throw new Error(`Isolated chat migration failed: ${migration.stderr}\n${migration.stdout}`);
+      throw new Error(`Isolated chat schema setup failed: ${migration.stderr}\n${migration.stdout}`);
     db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });

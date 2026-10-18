@@ -14,6 +14,7 @@ import { openOverlay, Avatar, ErrorNotice, LoadingState, BottomSheet } from '@/s
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { LanguageSettings } from './LanguageSettings';
 import { ThemeSettings } from './ThemeSettings';
+import { MyPosts } from './MyPosts';
 
 interface ISettingsPageProps {
   locale: string;
@@ -102,6 +103,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
           </span>
         </div>
       </section>
+      <MyPosts locale={locale} userId={session.user.id} />
       <section className="settings-card">
         <div className="section-title-row">
           <h2>
@@ -162,11 +164,6 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         )}
         <SupportChatButton topic="VERIFICATION" />
         <SupportChatButton />
-        {session.user.role === 'ADMIN' && process.env.NEXT_PUBLIC_GAME_FEEDBACK_LOCAL_ADMIN === 'true' && (
-          <Link className="text-button" href={`/${locale}/admin`}>
-            {t('운영 관리')}
-          </Link>
-        )}
       </section>
       <LanguageSettings />
       <ThemeSettings />

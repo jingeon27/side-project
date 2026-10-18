@@ -1,10 +1,9 @@
+import type { BlockUserDto } from './block-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { BlockInputSchema } from '@game-feedback/contracts';
 import { PrismaClient } from '../generated/prisma';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
-import { parse } from '../common/validation';
 import { authorDto, authorSelect } from '../users/user.presenter';
 import { lockUserRelationship } from '../common/relationship-lock';
 
@@ -20,9 +19,8 @@ export class BlocksService {
       })
     ).map((b) => authorDto(b.blockedUser));
   }
-  async block(req: SessionRequest, body: unknown) {
-    const u = requireUser(req),
-      input = parse(BlockInputSchema, body);
+  async block(req: SessionRequest, input: BlockUserDto) {
+    const u = requireUser(req);
     if (input.blockedUserId === u.id)
       throw new ApiError(400, 'CANNOT_BLOCK_SELF', '자신은 차단할 수 없습니다.');
     if (!(await this.db.user.findUnique({ where: { id: input.blockedUserId } })))

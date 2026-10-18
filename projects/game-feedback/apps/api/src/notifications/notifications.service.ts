@@ -1,4 +1,4 @@
-import { ListQuerySchema } from '@game-feedback/contracts';
+import type { ListQueryDto } from '../common/http/list-query.dto';
 import { ACTIVE_POST } from '../common/content';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UserVisibilityService } from '../users/user-visibility.service';
@@ -6,7 +6,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { PrismaClient, Prisma } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
-import { parse } from '../common/validation';
 import { ApiError } from '../common/http/api-error';
 
 @Injectable()
@@ -15,9 +14,9 @@ export class NotificationsService {
     @Inject(PrismaClient) readonly db: PrismaClient,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
   ) {}
-  async notifications(req: SessionRequest) {
+  async notifications(req: SessionRequest, query: ListQueryDto) {
     const u = requireUser(req),
-      q = parse(ListQuerySchema, req.query),
+      q = query,
       cursor = decodeCursor(q.cursor),
       excluded = await this.visibility.excluded(req);
     const visible: Prisma.NotificationWhereInput = {

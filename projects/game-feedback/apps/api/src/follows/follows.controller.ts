@@ -1,4 +1,7 @@
-import { Body, Controller, Delete, Get, Inject, Param, Put, Req } from '@nestjs/common';
+import { UseGuards, Controller, Delete, Get, Inject, Param, Put, Req } from '@nestjs/common';
+import { UserGuard } from '../common/http/session.guard';
+import { FollowUserDto } from './follow-input.dto';
+import { ValidatedBody } from '../common/http/request-validation';
 import type { SessionRequest } from '../auth/session.types';
 import { FollowsService } from './follows.service';
 
@@ -12,7 +15,12 @@ export class FollowsController {
   }
 
   @Put()
-  follow(@Req() req: SessionRequest, @Param('id') id: string, @Body() body: unknown) {
+  @UseGuards(UserGuard)
+  follow(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedBody(FollowUserDto) body: FollowUserDto,
+  ) {
     return this.follows.follow(req, id, body);
   }
 

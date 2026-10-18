@@ -1,4 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
+import { UseGuards, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
+import { UserGuard } from '../common/http/session.guard';
+import { BlockUserDto } from './block-input.dto';
+import { ValidatedBody } from '../common/http/request-validation';
 import type { SessionRequest } from '../auth/session.types';
 import { BlocksService } from './blocks.service';
 
@@ -13,7 +16,8 @@ export class BlocksController {
 
   @HttpCode(200)
   @Post('blocks')
-  block(@Req() req: SessionRequest, @Body() body: unknown) {
+  @UseGuards(UserGuard)
+  block(@Req() req: SessionRequest, @ValidatedBody(BlockUserDto) body: BlockUserDto) {
     return this.blocks.block(req, body);
   }
 

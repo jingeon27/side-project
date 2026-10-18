@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
 import { AnswersModule } from './answers/answers.module';
 import { CommentsModule } from './comments/comments.module';
+import { AdminModule } from './admin/admin.module';
 import { CategoriesModule } from './categories/categories.module';
 import { GameProfilesModule } from './game-profiles/game-profiles.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -27,6 +28,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
     AnswersModule,
     CommentsModule,
     CategoriesModule,
+    AdminModule,
     GameProfilesModule,
     NotificationsModule,
     BlocksModule,
