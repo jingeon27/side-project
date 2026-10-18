@@ -27,10 +27,11 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   await groupForm.getByRole('button', { name: '그룹 만들기', exact: true }).click();
   await expect(page).toHaveURL(/\/groups\/[^/]+$/);
 
-  for (const video of [false, true]) {
+  const groupPath = new URL(page.url()).pathname;
+  const createMediaPost = async (title: string, video = false) => {
     await page.getByRole('button', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('dialog', { name: '그룹에 글쓰기', exact: true });
-    await form.getByLabel('제목', { exact: true }).fill(video ? '운영 동영상' : '운영 사진');
+    await form.getByLabel('제목', { exact: true }).fill(title);
     await form.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
       name: video ? 'smoke.mp4' : 'smoke.png',
       mimeType: video ? 'video/mp4' : 'image/png',
@@ -39,13 +40,15 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     await form.getByRole('checkbox').check();
     await form.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(form).toHaveCount(0);
-  }
+  };
+  await createMediaPost('운영 사진');
+  await createMediaPost('운영 동영상', true);
   const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
   const photo = latest.getByRole('article', { name: '운영 사진', exact: true });
   const mediaUrl = await photo.getByRole('img', { name: '운영 사진', exact: true }).getAttribute('src');
   if (!mediaUrl) throw new Error('사진 주소가 있어야 한다');
   expect((await page.request.get(mediaUrl)).status()).toBe(200);
-  expect((await request.get(mediaUrl)).status()).toBe(401);
+  expect((await request.get(mediaUrl)).status()).toBe(200);
   const videoUrl = await latest
     .getByRole('article', { name: '운영 동영상', exact: true })
     .locator('video')
@@ -68,6 +71,40 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   await comments.getByRole('button', { name: '댓글 올리기', exact: true }).click();
   await expect(comments.getByText('재시작해도 남는 댓글', { exact: true })).toBeVisible();
   await comments.getByRole('button', { name: '닫기', exact: true }).click();
+
+  const seoResponse = await request.get(`${groupPath}?utm_source=container`, {
+    headers: { 'User-Agent': 'Twitterbot' },
+  });
+  expect(seoResponse.status()).toBe(200);
+  const seoHtml = await seoResponse.text();
+  expect(seoHtml).toContain(`rel="canonical" href="${process.env.DEPLOY_SMOKE_ORIGIN}${groupPath}"`);
+  expect(seoHtml).toContain('application/ld+json');
+  expect(seoHtml).toContain('DiscussionForumPosting');
+
+  await page.goto('/explore');
+  await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
+  const privateForm = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+  await privateForm.getByLabel('그룹 이름').fill('운영 비공개 그룹');
+  await privateForm.getByRole('radio', { name: /^비공개 그룹/ }).check();
+  await privateForm.getByRole('button', { name: '그룹 만들기', exact: true }).click();
+  await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+  const privatePath = new URL(page.url()).pathname;
+  await createMediaPost('운영 비공개 사진');
+  const privateUrl = await page
+    .getByRole('region', { name: '최신 게시물', exact: true })
+    .getByRole('article', { name: '운영 비공개 사진', exact: true })
+    .getByRole('img', { name: '운영 비공개 사진', exact: true })
+    .getAttribute('src');
+  if (!privateUrl) throw new Error('비공개 사진 주소가 있어야 한다');
+  expect((await page.request.get(privateUrl)).status()).toBe(200);
+  expect((await request.get(privateUrl)).status()).toBe(401);
+  const privateHtml = await (
+    await request.get(privatePath, { headers: { 'User-Agent': 'Twitterbot' } })
+  ).text();
+  expect(privateHtml).toContain('noindex');
+  expect(privateHtml).not.toContain('운영 비공개 사진');
+  expect(privateHtml).not.toContain('application/ld+json');
+  await page.goto(groupPath);
 
   const directory = process.env.SMOKE_COMPOSE_DIR;
   const project = process.env.SMOKE_COMPOSE_PROJECT;
