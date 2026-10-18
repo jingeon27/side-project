@@ -48,7 +48,7 @@
     "@types/supertest": "^6.0.3",
     "concurrently": "^9.2.0",
     "supertest": "^7.3.1",
-    "typescript": "^5.9.0",
+    "typescript": "6.0.2",
     "unplugin-swc": "^2.0.0",
     "vitest": "^4.1.0"
   },

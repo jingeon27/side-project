@@ -1611,7 +1611,7 @@ __metadata:
     "@mdx-js/loader": "npm:^3.1.1"
     "@mdx-js/mdx": "npm:^3.1.1"
     "@mdx-js/react": "npm:^3.1.1"
-    "@next/mdx": "npm:16.4.0"
+    "@next/mdx": "npm:16.4.2"
     "@playwright/test": "npm:^1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
     "@side/typescript-config": "workspace:*"
@@ -1627,12 +1627,12 @@ __metadata:
     "@vitejs/plugin-react": "npm:^5.0.0"
     cmdk: "npm:^1.1.1"
     eslint: "npm:^9.39.0"
-    eslint-config-next: "npm:16.4.0"
+    eslint-config-next: "npm:16.4.2"
     github-slugger: "npm:^2.0.0"
     image-size: "npm:^2.0.2"
     jsdom: "npm:^29.0.0"
     mdast-util-to-string: "npm:^4.0.0"
-    next: "npm:16.4.0"
+    next: "npm:16.4.2"
     next-intl: "npm:^4.14.9"
     prettier: "npm:^3.9.0"
     react: "npm:^19.2.4"
@@ -1645,7 +1645,7 @@ __metadata:
     shiki: "npm:^4.5.0"
     tailwindcss: "npm:^4.1.0"
     tsx: "npm:^4.20.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     unified: "npm:^11.0.5"
     unist-util-visit: "npm:^5.0.0"
     vite: "npm:^7.0.0"
@@ -2814,6 +2814,7 @@ __metadata:
     "@nestjs/core": "npm:11.1.6"
     "@nestjs/platform-express": "npm:11.1.6"
     "@prisma/client": "npm:6.19.0"
+    "@side/typescript-config": "workspace:*"
     "@types/express": "npm:^5.0.3"
     "@types/node": "npm:^24.0.0"
     "@types/supertest": "npm:^6.0.3"
@@ -2823,7 +2824,7 @@ __metadata:
     rxjs: "npm:^7.8.2"
     supertest: "npm:^7.1.4"
     tsx: "npm:^4.20.6"
-    typescript: "npm:~5.9.3"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.0.0"
     zod: "npm:^4.1.12"
   languageName: unknown
@@ -2833,7 +2834,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/bridge@workspace:projects/game-feedback/packages/bridge"
   dependencies:
-    typescript: "npm:~5.9.3"
+    "@side/typescript-config": "workspace:*"
+    typescript: "npm:6.0.2"
     zod: "npm:^4.1.12"
   languageName: unknown
   linkType: soft
@@ -2842,7 +2844,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/contracts@workspace:projects/game-feedback/packages/contracts"
   dependencies:
-    typescript: "npm:~5.9.3"
+    "@side/typescript-config": "workspace:*"
+    typescript: "npm:6.0.2"
     zod: "npm:^4.1.12"
   languageName: unknown
   linkType: soft
@@ -2854,6 +2857,7 @@ __metadata:
     "@game-feedback/bridge": "workspace:*"
     "@playwright/test": "npm:1.64.0"
     "@side/eslint-config": "workspace:*"
+    "@side/typescript-config": "workspace:*"
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/react": "npm:^16.3.0"
     "@types/react": "npm:~19.2.0"
@@ -2873,7 +2877,7 @@ __metadata:
     react-native-safe-area-context: "npm:~5.7.0"
     react-native-web: "npm:~0.21.0"
     react-native-webview: "npm:13.16.1"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
   languageName: unknown
   linkType: soft
@@ -2882,9 +2886,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/sdk@workspace:projects/game-feedback/packages/sdk"
   dependencies:
+    "@side/typescript-config": "workspace:*"
     "@types/node": "npm:^24.0.0"
     orval: "npm:8.43.0"
-    typescript: "npm:~5.9.3"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.1.12"
   languageName: unknown
@@ -2926,7 +2931,7 @@ __metadata:
     react-hook-form: "npm:^7.65.0"
     tailwindcss: "npm:^4.1.16"
     ts-pattern: "npm:^5.9.0"
-    typescript: "npm:~5.9.3"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.1.12"
   languageName: unknown
@@ -4820,13 +4825,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/env@npm:16.4.0"
-  checksum: 10c0/84938ae83a022a05182a6bae86f42300ba1771c0d47c804b7bc38c5df3081ddad71dc2b0fede4b674fd198007b3155f42340363ae4a152c52993c3cd3546c706
-  languageName: node
-  linkType: hard
-
 "@next/env@npm:16.4.2":
   version: 16.4.2
   resolution: "@next/env@npm:16.4.2"
@@ -4834,19 +4832,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/eslint-plugin-next@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/eslint-plugin-next@npm:16.4.0"
+"@next/eslint-plugin-next@npm:16.4.2":
+  version: 16.4.2
+  resolution: "@next/eslint-plugin-next@npm:16.4.2"
   dependencies:
     "@eslint-community/eslint-utils": "npm:4.9.1"
     fast-glob: "npm:3.3.1"
-  checksum: 10c0/486d552fc86ead119661e656d8cddb88d3735b53e67739bd606faa8ea83513e84394741f38c389fdccd8ccfac7376eb7ca4595beef1e6bb7bba6935a60dcc9fe
+  checksum: 10c0/369123319cba8a05d0b9985beb8d6dec27cf333749eaa714b7c8cdc01c2df88d77c0adf3c51b7f541341a53dccf0271ff3a5ac434d1c99862602809a1038f563
   languageName: node
   linkType: hard
 
-"@next/mdx@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/mdx@npm:16.4.0"
+"@next/mdx@npm:16.4.2":
+  version: 16.4.2
+  resolution: "@next/mdx@npm:16.4.2"
   dependencies:
     source-map: "npm:^0.7.0"
   peerDependencies:
@@ -4857,7 +4855,7 @@ __metadata:
       optional: true
     "@mdx-js/react":
       optional: true
-  checksum: 10c0/849bb74f447740e6799d3d9fb6601218ec467baa578d9c2b527444f53b5bb27640e5e6cd9b6491ec0cd7f7844d32a6eee99d8fd65f46d064e11af456b524617b
+  checksum: 10c0/a2931b14c875d91d5d5c984e8552ab7e467f0f7032a839bd677a28d372d8b78ba3a9933910814deb4aafbfa2852dc01e70767230e49f92475d3329d837109d7b
   languageName: node
   linkType: hard
 
@@ -4873,24 +4871,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-darwin-arm64@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-darwin-arm64@npm:16.4.0"
-  conditions: os=darwin & cpu=arm64
-  languageName: node
-  linkType: hard
-
 "@next/swc-darwin-arm64@npm:16.4.2":
   version: 16.4.2
   resolution: "@next/swc-darwin-arm64@npm:16.4.2"
   conditions: os=darwin & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"@next/swc-darwin-x64@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-darwin-x64@npm:16.4.0"
-  conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
@@ -4901,24 +4885,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-linux-arm64-gnu@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-linux-arm64-gnu@npm:16.4.0"
-  conditions: os=linux & cpu=arm64 & libc=glibc
-  languageName: node
-  linkType: hard
-
 "@next/swc-linux-arm64-gnu@npm:16.4.2":
   version: 16.4.2
   resolution: "@next/swc-linux-arm64-gnu@npm:16.4.2"
   conditions: os=linux & cpu=arm64 & libc=glibc
-  languageName: node
-  linkType: hard
-
-"@next/swc-linux-arm64-musl@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-linux-arm64-musl@npm:16.4.0"
-  conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
@@ -4929,24 +4899,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-linux-x64-gnu@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-linux-x64-gnu@npm:16.4.0"
-  conditions: os=linux & cpu=x64 & libc=glibc
-  languageName: node
-  linkType: hard
-
 "@next/swc-linux-x64-gnu@npm:16.4.2":
   version: 16.4.2
   resolution: "@next/swc-linux-x64-gnu@npm:16.4.2"
   conditions: os=linux & cpu=x64 & libc=glibc
-  languageName: node
-  linkType: hard
-
-"@next/swc-linux-x64-musl@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-linux-x64-musl@npm:16.4.0"
-  conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
@@ -4957,24 +4913,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-win32-arm64-msvc@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-win32-arm64-msvc@npm:16.4.0"
-  conditions: os=win32 & cpu=arm64
-  languageName: node
-  linkType: hard
-
 "@next/swc-win32-arm64-msvc@npm:16.4.2":
   version: 16.4.2
   resolution: "@next/swc-win32-arm64-msvc@npm:16.4.2"
   conditions: os=win32 & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"@next/swc-win32-x64-msvc@npm:16.4.0":
-  version: 16.4.0
-  resolution: "@next/swc-win32-x64-msvc@npm:16.4.0"
-  conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
@@ -5643,7 +5585,7 @@ __metadata:
     sharp: "npm:^0.34.0"
     supertest: "npm:^7.3.1"
     ts-pattern: "npm:^5.9.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     unplugin-swc: "npm:^2.0.0"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
@@ -5656,7 +5598,7 @@ __metadata:
   dependencies:
     "@side/typescript-config": "workspace:*"
     jsdom: "npm:^29.0.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
   languageName: unknown
@@ -5700,7 +5642,7 @@ __metadata:
     react-native-safe-area-context: "npm:~5.7.0"
     react-native-web: "npm:~0.21.0"
     react-native-webview: "npm:13.16.1"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
   languageName: unknown
@@ -5716,7 +5658,7 @@ __metadata:
     prisma: "npm:6.19.0"
     sharp: "npm:^0.34.0"
     tsx: "npm:^4.20.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
   bin:
     photo-contest-test-api: ./bin/serve-test-api.mjs
   languageName: unknown
@@ -5758,7 +5700,7 @@ __metadata:
     jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
     lucide-react: "npm:^1.23.0"
-    next: "npm:16.4.0"
+    next: "npm:16.4.2"
     overlay-kit: "npm:^1.9.0"
     react: "npm:^19.2.4"
     react-dom: "npm:^19.2.4"
@@ -5766,7 +5708,7 @@ __metadata:
     rxjs: "npm:^7.8.2"
     tailwindcss: "npm:^4.1.0"
     ts-pattern: "npm:^5.9.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
   languageName: unknown
@@ -7607,13 +7549,13 @@ __metadata:
     jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
     lucide-react: "npm:^0.468.0"
-    next: "npm:16.4.0"
+    next: "npm:16.4.2"
     react: "npm:^19.2.4"
     react-dom: "npm:^19.2.4"
     react-hook-form: "npm:^7.81.0"
     sonner: "npm:2.0.8"
     tailwind-merge: "npm:^3.6.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
     zod: "npm:^4.4.0"
   peerDependencies:
@@ -7636,10 +7578,10 @@ __metadata:
     "@typescript-eslint/utils": "npm:8.71.1"
     eslint: "npm:^9.39.0"
     eslint-config-expo: "npm:~57.0.2"
-    eslint-config-next: "npm:16.4.0"
+    eslint-config-next: "npm:16.4.2"
     eslint-plugin-react: "npm:7.37.5"
     jiti: "npm:^2.6.1"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
     typescript-eslint: "npm:^8.50.0"
     vitest: "npm:^4.1.0"
   peerDependencies:
@@ -7660,19 +7602,22 @@ __metadata:
   resolution: "@side/photo-contest@workspace:projects/photo-contest"
   dependencies:
     "@side/eslint-config": "workspace:*"
+    "@side/typescript-config": "workspace:*"
     "@types/node": "npm:^24.0.0"
     concurrently: "npm:^9.2.0"
     embedded-postgres: "npm:18.4.0-beta.17"
     eslint: "npm:^9.39.0"
     jiti: "npm:^2.6.1"
     tsx: "npm:^4.20.0"
-    typescript: "npm:^5.9.0"
+    typescript: "npm:6.0.2"
   languageName: unknown
   linkType: soft
 
 "@side/typescript-config@workspace:*, @side/typescript-config@workspace:packages/typescript-config":
   version: 0.0.0-use.local
   resolution: "@side/typescript-config@workspace:packages/typescript-config"
+  dependencies:
+    "@typescript/native": "npm:typescript@7.0.2"
   languageName: unknown
   linkType: soft
 
@@ -8838,6 +8783,217 @@ __metadata:
     "@typescript-eslint/types": "npm:8.71.1"
     eslint-visitor-keys: "npm:^5.0.0"
   checksum: 10c0/6cdb1b83bb6e4ad10bb3aba0b492ed87d9b31c20f085e325455b28af43bd7190abaceca7c12762738da72f4ed3f45d23762c36a5b9066fa1e449c96124464718
+  languageName: node
+  linkType: hard
+
+"@typescript/native@npm:typescript@7.0.2":
+  version: 7.0.2
+  resolution: "typescript@npm:7.0.2"
+  dependencies:
+    "@typescript/typescript-aix-ppc64": "npm:7.0.2"
+    "@typescript/typescript-darwin-arm64": "npm:7.0.2"
+    "@typescript/typescript-darwin-x64": "npm:7.0.2"
+    "@typescript/typescript-freebsd-arm64": "npm:7.0.2"
+    "@typescript/typescript-freebsd-x64": "npm:7.0.2"
+    "@typescript/typescript-linux-arm": "npm:7.0.2"
+    "@typescript/typescript-linux-arm64": "npm:7.0.2"
+    "@typescript/typescript-linux-loong64": "npm:7.0.2"
+    "@typescript/typescript-linux-mips64el": "npm:7.0.2"
+    "@typescript/typescript-linux-ppc64": "npm:7.0.2"
+    "@typescript/typescript-linux-riscv64": "npm:7.0.2"
+    "@typescript/typescript-linux-s390x": "npm:7.0.2"
+    "@typescript/typescript-linux-x64": "npm:7.0.2"
+    "@typescript/typescript-netbsd-arm64": "npm:7.0.2"
+    "@typescript/typescript-netbsd-x64": "npm:7.0.2"
+    "@typescript/typescript-openbsd-arm64": "npm:7.0.2"
+    "@typescript/typescript-openbsd-x64": "npm:7.0.2"
+    "@typescript/typescript-sunos-x64": "npm:7.0.2"
+    "@typescript/typescript-win32-arm64": "npm:7.0.2"
+    "@typescript/typescript-win32-x64": "npm:7.0.2"
+  dependenciesMeta:
+    "@typescript/typescript-aix-ppc64":
+      optional: true
+    "@typescript/typescript-darwin-arm64":
+      optional: true
+    "@typescript/typescript-darwin-x64":
+      optional: true
+    "@typescript/typescript-freebsd-arm64":
+      optional: true
+    "@typescript/typescript-freebsd-x64":
+      optional: true
+    "@typescript/typescript-linux-arm":
+      optional: true
+    "@typescript/typescript-linux-arm64":
+      optional: true
+    "@typescript/typescript-linux-loong64":
+      optional: true
+    "@typescript/typescript-linux-mips64el":
+      optional: true
+    "@typescript/typescript-linux-ppc64":
+      optional: true
+    "@typescript/typescript-linux-riscv64":
+      optional: true
+    "@typescript/typescript-linux-s390x":
+      optional: true
+    "@typescript/typescript-linux-x64":
+      optional: true
+    "@typescript/typescript-netbsd-arm64":
+      optional: true
+    "@typescript/typescript-netbsd-x64":
+      optional: true
+    "@typescript/typescript-openbsd-arm64":
+      optional: true
+    "@typescript/typescript-openbsd-x64":
+      optional: true
+    "@typescript/typescript-sunos-x64":
+      optional: true
+    "@typescript/typescript-win32-arm64":
+      optional: true
+    "@typescript/typescript-win32-x64":
+      optional: true
+  bin:
+    tsc: bin/tsc
+  checksum: 10c0/3dcee51ec8c332492325bcdbf7df48b66668751f127e622ae7d41b6c716eb19184424a45e14f7750f50f340232388b69e6287859155f06a5ce2df76f12cb31cf
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-aix-ppc64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-aix-ppc64@npm:7.0.2"
+  conditions: os=aix & cpu=ppc64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-darwin-arm64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-darwin-arm64@npm:7.0.2"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-darwin-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-darwin-x64@npm:7.0.2"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-freebsd-arm64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-freebsd-arm64@npm:7.0.2"
+  conditions: os=freebsd & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-freebsd-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-freebsd-x64@npm:7.0.2"
+  conditions: os=freebsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-arm64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-arm64@npm:7.0.2"
+  conditions: os=linux & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-arm@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-arm@npm:7.0.2"
+  conditions: os=linux & cpu=arm
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-loong64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-loong64@npm:7.0.2"
+  conditions: os=linux & cpu=loong64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-mips64el@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-mips64el@npm:7.0.2"
+  conditions: os=linux & cpu=mips64el
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-ppc64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-ppc64@npm:7.0.2"
+  conditions: os=linux & cpu=ppc64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-riscv64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-riscv64@npm:7.0.2"
+  conditions: os=linux & cpu=riscv64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-s390x@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-s390x@npm:7.0.2"
+  conditions: os=linux & cpu=s390x
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-linux-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-linux-x64@npm:7.0.2"
+  conditions: os=linux & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-netbsd-arm64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-netbsd-arm64@npm:7.0.2"
+  conditions: os=netbsd & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-netbsd-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-netbsd-x64@npm:7.0.2"
+  conditions: os=netbsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-openbsd-arm64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-openbsd-arm64@npm:7.0.2"
+  conditions: os=openbsd & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-openbsd-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-openbsd-x64@npm:7.0.2"
+  conditions: os=openbsd & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-sunos-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-sunos-x64@npm:7.0.2"
+  conditions: os=sunos & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-win32-arm64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-win32-arm64@npm:7.0.2"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript-win32-x64@npm:7.0.2":
+  version: 7.0.2
+  resolution: "@typescript/typescript-win32-x64@npm:7.0.2"
+  conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
@@ -11695,11 +11851,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-next@npm:16.4.0":
-  version: 16.4.0
-  resolution: "eslint-config-next@npm:16.4.0"
+"eslint-config-next@npm:16.4.2":
+  version: 16.4.2
+  resolution: "eslint-config-next@npm:16.4.2"
   dependencies:
-    "@next/eslint-plugin-next": "npm:16.4.0"
+    "@next/eslint-plugin-next": "npm:16.4.2"
     eslint-import-resolver-node: "npm:^0.3.6"
     eslint-import-resolver-typescript: "npm:^3.5.2"
     eslint-plugin-import: "npm:^2.32.0"
@@ -11714,7 +11870,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/5bf3c816d0a3bd3340ec48ba5bf1d924d3fea76e0d80b389d0c100b9b026a31f55d8f594d836939d0574daa1e607e8f8297720b6cb63456a8a11023370e95345
+  checksum: 10c0/b3119b8eec1e1991f91f539e590322084ec5f1d8ea3099842c1e7a99fd19a7258649d00b1d5cc2f99961c94c8c77032e8903a9d35447c760c9bbd9be5de3d9e8
   languageName: node
   linkType: hard
 
@@ -16716,66 +16872,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next@npm:16.4.0":
-  version: 16.4.0
-  resolution: "next@npm:16.4.0"
-  dependencies:
-    "@next/env": "npm:16.4.0"
-    "@next/swc-darwin-arm64": "npm:16.4.0"
-    "@next/swc-darwin-x64": "npm:16.4.0"
-    "@next/swc-linux-arm64-gnu": "npm:16.4.0"
-    "@next/swc-linux-arm64-musl": "npm:16.4.0"
-    "@next/swc-linux-x64-gnu": "npm:16.4.0"
-    "@next/swc-linux-x64-musl": "npm:16.4.0"
-    "@next/swc-win32-arm64-msvc": "npm:16.4.0"
-    "@next/swc-win32-x64-msvc": "npm:16.4.0"
-    "@swc/helpers": "npm:0.5.23"
-    baseline-browser-mapping: "npm:^2.9.19"
-    caniuse-lite: "npm:^1.0.30001579"
-    postcss: "npm:8.5.23"
-    sharp: "npm:^0.35.4"
-    styled-jsx: "npm:5.1.6"
-  peerDependencies:
-    "@opentelemetry/api": ^1.1.0
-    "@playwright/test": ^1.51.1
-    babel-plugin-react-compiler: "*"
-    react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
-    react-dom: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
-    sass: ^1.3.0
-  dependenciesMeta:
-    "@next/swc-darwin-arm64":
-      optional: true
-    "@next/swc-darwin-x64":
-      optional: true
-    "@next/swc-linux-arm64-gnu":
-      optional: true
-    "@next/swc-linux-arm64-musl":
-      optional: true
-    "@next/swc-linux-x64-gnu":
-      optional: true
-    "@next/swc-linux-x64-musl":
-      optional: true
-    "@next/swc-win32-arm64-msvc":
-      optional: true
-    "@next/swc-win32-x64-msvc":
-      optional: true
-    sharp:
-      optional: true
-  peerDependenciesMeta:
-    "@opentelemetry/api":
-      optional: true
-    "@playwright/test":
-      optional: true
-    babel-plugin-react-compiler:
-      optional: true
-    sass:
-      optional: true
-  bin:
-    next: dist/bin/next
-  checksum: 10c0/3937ef84cfd269a1c3abb2d7e7e4a12dad2b7fcd55488c5c2e3235913ea88b5d3ba721e1379ee2ea21a03424a5088caf2318fcd7146e6f92a02cc0891b7d1cef
-  languageName: node
-  linkType: hard
-
 "next@npm:16.4.2":
   version: 16.4.2
   resolution: "next@npm:16.4.2"
@@ -19479,7 +19575,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.35.4, sharp@npm:^0.35.5":
+"sharp@npm:^0.35.5":
   version: 0.35.5
   resolution: "sharp@npm:0.35.5"
   dependencies:
@@ -20697,23 +20793,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.9.0, typescript@npm:~5.9.3":
-  version: 5.9.3
-  resolution: "typescript@npm:5.9.3"
+"typescript@npm:6.0.2":
+  version: 6.0.2
+  resolution: "typescript@npm:6.0.2"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
+  checksum: 10c0/4b860b0bf87cc0fee0f66d8ef2640b5a8a8a8c74d1129adb82e389e5f97124383823c47946bef8a73ede371461143a3aa8544399d2133c7b2e4f07e81860af7f
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.9.0#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A~5.9.3#optional!builtin<compat/typescript>":
-  version: 5.9.3
-  resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
+"typescript@patch:typescript@npm%3A6.0.2#optional!builtin<compat/typescript>":
+  version: 6.0.2
+  resolution: "typescript@patch:typescript@npm%3A6.0.2#optional!builtin<compat/typescript>::version=6.0.2&hash=5786d5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/ad09fdf7a756814dce65bc60c1657b40d44451346858eea230e10f2e95a289d9183b6e32e5c11e95acc0ccc214b4f36289dcad4bf1886b0adb84d711d336a430
+  checksum: 10c0/49f0b84fc6ca55653e77752b8a61beabc09ee3dae5d965c31596225aa6ef213c5727b1d2e895b900416dc603854ba0872ac4a812c2a4ed6793a601f9c675de02
   languageName: node
   linkType: hard
 

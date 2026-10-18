@@ -57,7 +57,7 @@
     "jsdom": "^29.0.0",
     "react-dom": "19.2.3",
     "react-native-web": "~0.21.0",
-    "typescript": "^5.9.0",
+    "typescript": "6.0.2",
     "vitest": "^4.1.0"
   }
 }

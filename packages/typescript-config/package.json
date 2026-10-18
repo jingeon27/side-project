@@ -4,5 +4,8 @@
   "version": "0.0.0",
   "exports": {
     "./base": "./tsconfig.base.json"
+  },
+  "dependencies": {
+    "@typescript/native": "npm:typescript@7.0.2"
   }
 }
