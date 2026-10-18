@@ -516,7 +516,7 @@
     font-size: var(--text-caption);
     max-width: 380px;
   }
-  .text-button.chat-author-link {
+  .text-button.chat-author-link:not([data-slot='button']) {
     color: var(--color-muted) !important;
   }
   @media (min-width: 1500px) {
@@ -729,7 +729,7 @@
     .conversation-first-message strong {
       font-size: var(--text-body);
     }
-    .text-button.chat-author-link {
+    .text-button.chat-author-link:not([data-slot='button']) {
       font-size: var(--text-micro) !important;
     }
     .mobile-nav > a > span {
@@ -785,7 +785,7 @@
       font-size: var(--text-caption);
       padding: 9px 11px;
     }
-    .text-button.chat-author-link {
+    .text-button.chat-author-link:not([data-slot='button']) {
       font-size: var(--text-micro) !important;
     }
     .header-actions {

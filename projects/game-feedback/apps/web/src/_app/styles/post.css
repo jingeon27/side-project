@@ -120,10 +120,32 @@
   }
   .detail-contact-action {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid var(--color-line);
+  }
+  .detail-contact-author {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+  .detail-contact-author > div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .detail-contact-author span {
+    color: var(--color-muted);
+    font-size: var(--text-micro);
+  }
+  .detail-contact-author strong {
+    font-size: var(--text-caption);
   }
   .content-actions {
     margin-left: auto;
@@ -303,15 +325,35 @@
   }
   .comments-section {
     margin: 32px 0;
+    padding: 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
   }
   .comments-section > h2 {
-    margin-bottom: 17px;
+    margin-bottom: 8px;
+  }
+  .comments-empty {
+    padding: 24px 0;
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+  }
+  .comment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .comment-list > li + li {
+    border-top: 1px solid var(--color-line);
   }
   .comment {
     display: flex;
-    gap: 9px;
-    border-top: 1px solid var(--color-line);
-    padding: 17px 0;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 0;
+  }
+  .comment > .avatar {
+    flex-shrink: 0;
   }
   .comment-content {
     flex: 1;
@@ -324,33 +366,81 @@
   }
   .comment-heading > strong {
     font-size: var(--text-caption);
+    color: var(--color-ink);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .comment-author-label {
+    padding: 2px 6px;
+    border-radius: var(--radius-badge);
+    background: var(--color-accent-soft);
+    color: var(--color-brand);
+    font-size: var(--text-micro);
+    white-space: nowrap;
+  }
+  .comment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    margin-top: 4px;
+    font-size: var(--text-micro);
     color: var(--color-muted);
   }
-  .comment-heading > .small {
-    font-size: var(--text-micro);
+  .comment-meta > time,
+  .comment-meta > span {
+    white-space: nowrap;
   }
   .comment-content > p {
     font-size: var(--text-body);
-    color: var(--color-muted);
+    color: var(--color-ink);
     line-height: 1.7;
     margin-top: 7px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
   .comment-content > .content-actions {
-    margin-top: 6px;
-    justify-content: flex-end;
+    margin-top: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
   .comment-form {
+    display: grid;
+    gap: 12px;
+    border-top: 1px solid var(--color-line);
+    padding-top: 20px;
+  }
+  .comment-form-author {
     display: flex;
     align-items: center;
-    gap: 7px;
-    margin-top: 15px;
+    gap: 9px;
+    min-width: 0;
+    font-size: var(--text-caption);
+    overflow-wrap: anywhere;
   }
-  .comment-form > input {
-    font-size: var(--text-input);
+  .comment-form > textarea {
+    min-height: 96px;
+    max-height: 240px;
+    resize: vertical;
+  }
+  .comment-form-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .comment-login {
+    border-top: 1px solid var(--color-line);
+    padding-top: 20px;
+  }
+  .comment-login > button {
+    width: 100%;
   }
   @media (max-width: 760px) {
+    .comments-section {
+      padding: 20px;
+    }
+    .comment {
+      gap: 9px;
+    }
     .detail-contact-action > button {
       width: 100%;
       min-height: 44px;
@@ -476,10 +566,6 @@
     .answer-compose h3 {
       font-size: var(--text-caption);
     }
-  }
-  .comment-form > input {
-    min-width: 0;
-    flex: 1;
   }
   .compose-bottom {
     flex-wrap: wrap;

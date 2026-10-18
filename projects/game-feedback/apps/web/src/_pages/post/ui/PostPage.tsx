@@ -81,7 +81,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
               <StartChatLink
                 userId={post.author.id}
                 nickname={post.author.nickname}
-                label={post.board === 'COACHING' ? t('코칭 상담') : undefined}
+                label={t('작성자와 1:1 채팅')}
                 appearance="button"
               />
             )

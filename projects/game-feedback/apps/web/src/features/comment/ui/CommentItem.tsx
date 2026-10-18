@@ -9,19 +9,28 @@ interface ICommentItemProps {
   authorContent?: ReactNode;
   authorName?: ReactNode;
   actions?: ReactNode;
+  isPostAuthor?: boolean;
 }
-export function CommentItem({ comment, authorContent, authorName, actions }: ICommentItemProps) {
-  const { locale: textLocale } = useI18n();
+export function CommentItem({
+  comment,
+  authorContent,
+  authorName,
+  actions,
+  isPostAuthor,
+}: ICommentItemProps) {
+  const { t, locale: textLocale } = useI18n();
   return (
     <article className="comment">
       <Avatar name={comment.author.nickname} size="small" />
       <div className="comment-content">
         <div className="comment-heading">
           <strong>{authorName ?? comment.author.nickname}</strong>
+          {isPostAuthor && <span className="comment-author-label">{t('작성자')}</span>}
           {authorContent}
-          <span className="small muted" suppressHydrationWarning>
-            {timeAgo(comment.createdAt, textLocale)}
-          </span>
+        </div>
+        <div className="comment-meta" suppressHydrationWarning>
+          <time dateTime={comment.createdAt}>{timeAgo(comment.createdAt, textLocale)}</time>
+          {comment.updatedAt !== comment.createdAt && <span>{t(' (수정됨)')}</span>}
         </div>
         <p>{comment.body}</p>
         {actions}
