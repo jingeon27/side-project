@@ -14,33 +14,31 @@ interface IPostArticleProps {
   authorContent?: ReactNode;
   authorName?: ReactNode;
   actions?: ReactNode;
+  contactAction?: ReactNode;
 }
-export function PostArticle({ post, authorContent, authorName, actions }: IPostArticleProps) {
+export function PostArticle({ post, authorContent, authorName, actions, contactAction }: IPostArticleProps) {
   const { t, locale: textLocale } = useI18n();
   const board = boardByKind(post.board);
   const isFeedback = board?.kind === 'FEEDBACK';
   return (
     <article className="detail-card">
-      <div className="post-topline">
-        {!isFeedback ? (
-          <span className="status-pill">{t(board?.name ?? '게시글')}</span>
-        ) : (
-          <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />
-        )}
-        <span className="post-time">{post.category.name}</span>
-      </div>
+      {(isFeedback || actions) && (
+        <div className="post-topline">
+          {isFeedback && <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />}
+          {actions}
+        </div>
+      )}
       <h1>{post.title}</h1>
       <div className="detail-author">
         <Avatar name={post.author.nickname} />
-        <div>
+        <div className="detail-author-info">
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
-          <span suppressHydrationWarning>
+          <div className="detail-author-meta" suppressHydrationWarning>
             <time dateTime={post.createdAt}>{formatDateTime(post.createdAt, textLocale)}</time>
-            {post.updatedAt !== post.createdAt && t(' (수정됨)')}
-          </span>
+            {post.updatedAt !== post.createdAt && <span>{t(' (수정됨)')}</span>}
+          </div>
         </div>
-        {actions}
       </div>
       {post.coaching && <CoachingSummary details={post.coaching} />}
       {post.board === 'FRIEND_SALE' && <FriendSaleSummary details={post.friendSale} />}
@@ -58,6 +56,7 @@ export function PostArticle({ post, authorContent, authorName, actions }: IPostA
           <dd>{post.viewCount.toLocaleString()}</dd>
         </div>
       </dl>
+      {contactAction && <div className="detail-contact-action">{contactAction}</div>}
     </article>
   );
 }

@@ -1,4 +1,6 @@
 'use client';
+import Link from 'next/link';
+import { appRoutes } from '@game-feedback/bridge';
 import { useI18n } from '@/shared/i18n';
 import { Check } from 'lucide-react';
 import type { ChatMessage } from '@/shared/api';
@@ -23,7 +25,15 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
       data-message-id={message.id}
       data-message-index={index}
     >
-      {!mine && <Avatar name={message.sender.nickname} size="small" />}
+      {!mine && (
+        <Link
+          className="chat-peer-avatar"
+          href={appRoutes.profile(textLocale, message.sender.id)}
+          aria-label={t('{name} 프로필 보기', { name: message.sender.nickname })}
+        >
+          <Avatar name={message.sender.nickname} size="small" />
+        </Link>
+      )}
       <div className="chat-message-content">
         <div className="chat-bubble">
           {message.attachments?.map((attachment) => (

@@ -19,7 +19,7 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
   const selected = activeGameBoard(path);
   const route = resolveAppRoute(path);
   const game = categories.data?.find((item) => item.active && item.slug === (route?.game ?? 'clash-royale'));
-  if (!game || !route || !['feed', 'boards', 'post'].includes(route.screen)) return null;
+  if (!game || !route || !['feed', 'boards'].includes(route.screen)) return null;
   return (
     <div className="game-board-navigation">
       <nav className="game-category-group" aria-label={t('{game} 게시판', { game: game.name })}>

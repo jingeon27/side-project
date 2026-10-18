@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useI18n } from '@/shared/i18n';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowLeft } from 'lucide-react';
@@ -67,20 +68,28 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
         >
           <ArrowLeft size={19} />
         </BackLink>
-        <Avatar name={conversation.peer.nickname} size="small" />
-        <div>
-          <h2>{conversation.peer.nickname}</h2>
-          {(conversation.peer.isVerified || conversation.peer.supercellTag || conversation.supportTopic) && (
-            <div className="conversation-peer-meta">
-              <UserBadges author={conversation.peer} compact />
-              {conversation.supportTopic && (
-                <span>
-                  {t(conversation.supportTopic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자 문의')}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <Link
+          className="conversation-peer-profile"
+          href={appRoutes.profile(locale, conversation.peer.id)}
+          aria-label={t('{name} 프로필 보기', { name: conversation.peer.nickname })}
+        >
+          <Avatar name={conversation.peer.nickname} size="small" />
+          <div className="conversation-peer-info">
+            <h2>{conversation.peer.nickname}</h2>
+            {(conversation.peer.isVerified ||
+              conversation.peer.supercellTag ||
+              conversation.supportTopic) && (
+              <div className="conversation-peer-meta">
+                <UserBadges author={conversation.peer} compact />
+                {conversation.supportTopic && (
+                  <span>
+                    {t(conversation.supportTopic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자 문의')}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </Link>
         <ConversationActions
           userId={userId}
           conversationId={conversationId}

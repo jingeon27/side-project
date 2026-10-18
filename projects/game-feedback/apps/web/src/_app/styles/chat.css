@@ -239,9 +239,33 @@
     min-height: 64px;
     gap: 8px;
   }
-  .conversation-heading > div {
+  .conversation-peer-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex: 1;
     min-width: 0;
+    min-height: 44px;
+  }
+  .conversation-peer-profile > .avatar,
+  .chat-peer-avatar {
+    flex-shrink: 0;
+  }
+  .chat-peer-avatar {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .conversation-peer-info {
+    min-width: 0;
+    flex: 1;
+  }
+  .conversation-actions > button,
+  .conversation-actions > [data-slot='dropdown-menu-trigger'] {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
   }
   .conversation-heading > .conversation-actions {
     display: flex;
@@ -251,10 +275,7 @@
   .conversation-peer-meta {
     display: flex;
     align-items: center;
-    flex-wrap: nowrap;
-    max-height: 18px;
-    overflow: hidden;
-    white-space: nowrap;
+    flex-wrap: wrap;
     gap: 4px 8px;
     margin-top: 2px;
     font-size: var(--text-micro);
@@ -495,7 +516,7 @@
     font-size: var(--text-caption);
     max-width: 380px;
   }
-  .chat-author-link {
+  .text-button.chat-author-link {
     color: var(--color-muted) !important;
   }
   @media (min-width: 1500px) {
@@ -576,7 +597,8 @@
   }
   @media (max-width: 760px) {
     .conversation-heading {
-      padding: 8px 12px;
+      padding: 8px;
+      gap: 4px;
       min-height: 60px;
     }
     .chat-page-heading h1 {
@@ -651,8 +673,11 @@
     }
     .chat-back {
       display: flex;
-      padding: 5px 2px;
-      margin-right: 1px;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      padding: 0;
+      margin: 0;
     }
     .chat-message-scroll {
       padding: 0 17px 18px;
@@ -704,7 +729,7 @@
     .conversation-first-message strong {
       font-size: var(--text-body);
     }
-    .chat-author-link {
+    .text-button.chat-author-link {
       font-size: var(--text-micro) !important;
     }
     .mobile-nav > a > span {
@@ -760,7 +785,7 @@
       font-size: var(--text-caption);
       padding: 9px 11px;
     }
-    .chat-author-link {
+    .text-button.chat-author-link {
       font-size: var(--text-micro) !important;
     }
     .header-actions {

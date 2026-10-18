@@ -8,7 +8,13 @@ export async function isClientNavigation() {
 
 // Initial public documents finish the body before sending HTML. Client navigations
 // can show the prefetched placeholder while fresh, viewer-authorized data arrives.
-export async function DocumentContent({ children }: { children: ReactNode }) {
+export async function DocumentContent({
+  children,
+  fallback = <LoadingState />,
+}: {
+  children: ReactNode;
+  fallback?: ReactNode;
+}) {
   if (!(await serviceContext()).navigation) return children;
-  return <Suspense fallback={<LoadingState />}>{children}</Suspense>;
+  return <Suspense fallback={fallback}>{children}</Suspense>;
 }

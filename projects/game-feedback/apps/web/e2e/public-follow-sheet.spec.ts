@@ -99,7 +99,8 @@ for (const width of [400, 1440]) {
     await expect(sheet).toHaveClass(/bottom-sheet-content/);
     await sheet.getByLabel('신고 사유', { exact: true }).selectOption('FRAUD');
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();
-    await page.getByRole('button', { name: '대화내역 삭제', exact: true }).click();
+    await page.getByRole('button', { name: '대화 메뉴', exact: true }).click();
+    await page.getByRole('menuitem', { name: '대화내역 삭제', exact: true }).click();
     const confirmation = page.getByRole('dialog');
     await expect(confirmation).toHaveClass(/dialog-content/);
     await expect(confirmation.getByRole('textbox')).toHaveCount(0);

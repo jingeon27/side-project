@@ -9,7 +9,9 @@
   }
   .post-publication > div {
     display: flex;
+    align-items: center;
     gap: 6px;
+    white-space: nowrap;
   }
   .profile-follow-controls {
     margin-top: 12px;
@@ -93,21 +95,35 @@
     align-items: center;
     gap: 9px;
   }
-  .detail-author > div:nth-child(2) {
+  .detail-author-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    min-width: 0;
   }
   .detail-author strong {
     font-size: var(--text-caption);
     color: var(--color-ink);
   }
-  .detail-author > div:nth-child(2) > span {
+  .detail-author-meta {
     font-size: var(--text-micro);
     color: var(--color-muted);
     display: flex;
     align-items: center;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+  .detail-author-meta > time,
+  .detail-author-meta > span {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .detail-contact-action {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-line);
   }
   .content-actions {
     margin-left: auto;
@@ -335,6 +351,10 @@
     font-size: var(--text-input);
   }
   @media (max-width: 760px) {
+    .detail-contact-action > button {
+      width: 100%;
+      min-height: 44px;
+    }
     .detail-card {
       padding: 22px;
     }
@@ -419,7 +439,7 @@
     .detail-card > h1 {
       font-size: var(--text-title);
     }
-    .detail-author > div:nth-child(2) > span {
+    .detail-author-meta {
       font-size: var(--text-micro);
     }
     .detail-author strong {

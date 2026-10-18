@@ -4,13 +4,11 @@ import { Suspense, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
-import { notificationSummaryOptions } from '@/features/notification';
 import { conversationBadgeOptions } from '@/features/chat';
 import { useChatConnection } from '@/widgets/chat-realtime';
 import { ServiceErrorBoundary } from '@/shared/ui';
 import { RouteViewport } from '@/shared/navigation';
 import { resolveAppRoute } from '@game-feedback/bridge';
-import { Topbar } from './Topbar';
 import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
 import { GameBoardNavigation } from './GameBoardNavigation';
@@ -19,18 +17,17 @@ import { CommunityFooter } from './CommunityFooter';
 interface ICommunityShellProps {
   children: ReactNode;
   locale: string;
+  topbar: ReactNode;
 }
-export function CommunityShell({ children, locale }: ICommunityShellProps) {
+export function CommunityShell({ children, locale, topbar }: ICommunityShellProps) {
   const { t } = useI18n();
   const { session } = useSession();
   const connection = useChatConnection();
-  const { data: notifications } = useQuery(notificationSummaryOptions(session?.user?.id));
   const { data: conversations } = useQuery({
     ...conversationBadgeOptions(session?.user?.id),
     refetchInterval: connection === 'live' ? false : 10_000,
   });
   const chatUnread = conversations?.unreadCount ?? 0;
-  const unread = notifications?.unreadCount ?? 0;
   const home = `/${locale}`;
   const userKey = session?.user?.id ?? 'anonymous';
   return (
@@ -39,7 +36,7 @@ export function CommunityShell({ children, locale }: ICommunityShellProps) {
         <ShellScreen />
       </Suspense>
       <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
-        <Topbar home={home} unread={unread} />
+        {topbar}
       </ServiceErrorBoundary>
       <div className="site-grid">
         <div className="shell-left-sidebar">

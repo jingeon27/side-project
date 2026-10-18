@@ -13,12 +13,20 @@ export const viewport = rootViewport;
 export function generateStaticParams() {
   return [{ locale: 'ko' }, { locale: 'en' }, { locale: 'ja' }];
 }
-export default async function LocaleLayout({ children }: { children: React.ReactNode }) {
+export default async function LocaleLayout({
+  children,
+  topbar,
+}: {
+  children: React.ReactNode;
+  topbar: React.ReactNode;
+}) {
   const locale = await rootLocale();
   if (!isLocale(locale)) notFound();
   return (
     <RootDocument locale={locale}>
-      <CommunityShell locale={locale}>{children}</CommunityShell>
+      <CommunityShell locale={locale} topbar={topbar}>
+        {children}
+      </CommunityShell>
     </RootDocument>
   );
 }

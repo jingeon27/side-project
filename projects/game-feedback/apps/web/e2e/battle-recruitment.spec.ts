@@ -59,7 +59,7 @@ for (const width of [400, 1440]) {
     );
     await page.getByRole('link', { name: '돌아가기', exact: true }).click();
     await filters.getByRole('link', { name: '팀전', exact: true }).click();
-    await expect(page.getByText('아직 게시글이 없어요. 첫 글을 남겨보세요.', { exact: true })).toBeVisible();
+    await expect(page.getByText('일치하는 게시글이 없어요', { exact: true })).toBeVisible();
     await filters.getByRole('link', { name: '전체', exact: true }).click();
     await expect(page.locator('.board-post-list:visible .post-card')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

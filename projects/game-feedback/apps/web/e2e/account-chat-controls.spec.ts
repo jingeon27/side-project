@@ -16,6 +16,8 @@ for (const width of [400, 1440]) {
     await page.goto('/ko/settings');
     for (const name of ['언어', '화면 모드']) {
       const section = page.getByRole('region', { name, exact: true });
+      await expect(section.getByRole('heading')).toBeVisible();
+      await expect(section.getByRole('combobox')).toBeVisible();
       const heading = await section.getByRole('heading').boundingBox();
       const control = await section.getByRole('combobox').boundingBox();
       expect(heading).toBeTruthy();
@@ -79,7 +81,8 @@ test('chat reports a peer, preserves history on failure and deletes only the vie
     await expect(page.getByTestId(`message-${first.id}`)).toBeVisible();
     expect((await page.locator('.conversation-heading').boundingBox())?.height).toBeLessThanOrEqual(65);
     const actions = page.getByRole('group', { name: '대화 관리', exact: true });
-    await expect(actions.getByRole('button', { name: '대화내역 삭제', exact: true })).toBeVisible();
+    await expect(actions.getByRole('button', { name: '대화내역 삭제', exact: true })).toHaveCount(0);
+    await expect(actions.getByRole('button', { name: '사용자 신고', exact: true })).toBeVisible();
     await actions.getByRole('button', { name: '사용자 신고', exact: true }).click();
     const report = page.getByRole('dialog');
     await expect(report.getByLabel('신고 사유', { exact: true })).toHaveValue('HARASSMENT');
@@ -95,12 +98,14 @@ test('chat reports a peer, preserves history on failure and deletes only the vie
       reason: 'FRAUD',
     });
     await expect(report).toHaveCount(0);
-    await actions.getByRole('button', { name: '대화내역 삭제', exact: true }).click();
+    await actions.getByRole('button', { name: '대화 메뉴', exact: true }).click();
+    await page.getByRole('menuitem', { name: '대화내역 삭제', exact: true }).click();
     const confirmation = page.getByRole('dialog');
     await expect(confirmation).toContainText('상대방의 내역은 유지');
     await confirmation.getByRole('button', { name: '취소', exact: true }).click();
     await expect(page.getByTestId(`message-${first.id}`)).toBeVisible();
-    await actions.getByRole('button', { name: '대화내역 삭제', exact: true }).click();
+    await actions.getByRole('button', { name: '대화 메뉴', exact: true }).click();
+    await page.getByRole('menuitem', { name: '대화내역 삭제', exact: true }).click();
     await page.route(`**/api/conversations/${room.id}/messages`, async (route) => {
       if (route.request().method() !== 'DELETE') return route.continue();
       return route.fulfill({

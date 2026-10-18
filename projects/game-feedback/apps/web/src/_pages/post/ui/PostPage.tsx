@@ -3,7 +3,6 @@ import { useI18n } from '@/shared/i18n';
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 import { postDetailOptions, PostArticle, useRecordPostView } from '@/features/post';
 import type { PostDetail } from '@/shared/api';
 import { useSession } from '@/features/auth';
@@ -70,35 +69,29 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
   const { post, answers, comments } = detail.data;
   const board = boardByKind(post.board);
   const isFeedback = board?.kind === 'FEEDBACK';
-  const hasBoardContext = !!params.get('board');
-  const parent =
-    hasBoardContext && board
-      ? appRoutes.boards(locale, board.slug, undefined, post.category.slug)
-      : appRoutes.feed(locale);
   return (
     <>
-      <BackLink className="back-link" href={parent} logicalParent={hasBoardContext ? parent : undefined}>
-        <ArrowLeft size={16} />
-        {t(hasBoardContext ? (board?.name ?? '피드') : '피드')}
-      </BackLink>
       <ServiceErrorBoundary title={t('게시글')} resetKey={id}>
         <PostArticle
           post={post}
           authorName={<AuthorLink author={post.author} locale={locale} />}
           authorContent={<UserBadges author={post.author} />}
+          contactAction={
+            post.author.id !== session.user?.id && (
+              <StartChatLink
+                userId={post.author.id}
+                nickname={post.author.nickname}
+                label={post.board === 'COACHING' ? t('코칭 상담') : undefined}
+                appearance="button"
+              />
+            )
+          }
           actions={
             <ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />
           }
         />
       </ServiceErrorBoundary>
       {post.author.id === session.user?.id && <VerificationPrompt />}
-      {!isFeedback && post.author.id !== session.user?.id && (
-        <StartChatLink
-          userId={post.author.id}
-          nickname={post.author.nickname}
-          label={post.board === 'COACHING' ? t('코칭 상담') : undefined}
-        />
-      )}
       {isFeedback && (
         <ServiceErrorBoundary title={t('답변')} resetKey={id}>
           <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />

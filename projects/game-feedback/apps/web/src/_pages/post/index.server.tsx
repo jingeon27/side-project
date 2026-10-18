@@ -2,6 +2,7 @@ import { getServerPost } from '@/features/post/index.server';
 import { getServerSession } from '@/features/auth/index.server';
 import { createPageMetadata, pageUrl, postStructuredData, JsonLd } from '@/shared/seo';
 import { PostPage } from './ui/PostPage';
+import { PostTopbar } from './ui/PostTopbar';
 interface IPostRouteProps {
   params: Promise<{ locale: string; id: string }>;
 }
@@ -30,4 +31,10 @@ export async function PostRoute({ params }: IPostRouteProps) {
       <PostPage id={id} locale={locale} initialDetail={initialDetail} initialViewerId={session.user?.id} />
     </>
   );
+}
+
+export async function PostHeaderRoute({ params }: IPostRouteProps) {
+  const { locale, id } = await params;
+  const { post } = await getServerPost(id);
+  return <PostTopbar locale={locale} post={post} />;
 }
