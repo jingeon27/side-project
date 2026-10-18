@@ -10,7 +10,7 @@
     "./test": "./src/test.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc7 --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
