@@ -120,32 +120,10 @@
   }
   .detail-contact-action {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
+    justify-content: flex-end;
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid var(--color-line);
-  }
-  .detail-contact-author {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-  }
-  .detail-contact-author > div {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .detail-contact-author span {
-    color: var(--color-muted);
-    font-size: var(--text-micro);
-  }
-  .detail-contact-author strong {
-    font-size: var(--text-caption);
   }
   .content-actions {
     margin-left: auto;

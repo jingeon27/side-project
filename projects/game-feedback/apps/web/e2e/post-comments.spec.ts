@@ -19,7 +19,9 @@ test('public comments identify the post author and remain readable on mobile and
   await expect(authorComment.locator('.comment-author-label')).toHaveText('작성자');
   await expect(authorComment.locator('time')).toHaveAttribute('datetime', ownComment.createdAt);
   await expect(comments.getByRole('button', { name: '로그인하고 댓글 남기기', exact: true })).toBeVisible();
-  await expect(page.locator('.detail-contact-action')).toContainText(detail.post.author.nickname);
+  await expect(page.locator('.detail-card .detail-author')).toContainText(detail.post.author.nickname);
+  await expect(page.locator('.detail-card .avatar')).toHaveCount(1);
+  await expect(page.locator('.detail-contact-action')).toHaveText('작성자와 1:1 채팅');
   await expect(page.locator('.detail-contact-action button')).toHaveText('작성자와 1:1 채팅');
   for (const width of [320, 393, 1440]) {
     await page.setViewportSize({ width, height: 852 });

@@ -537,7 +537,6 @@ const messages: Record<string, readonly [string, string]> = {
     '似た経験やちょっとしたコツを教えてください。',
   ],
   '작성자와 1:1 채팅': ['Chat with the author', '投稿者と1対1チャット'],
-  '글 작성자': ['Post author', '投稿者'],
   작성자: ['Author', '投稿者'],
   '아직 댓글이 없어요.': ['No comments yet.', 'コメントはまだありません。'],
   '댓글을 남겨주세요': ['Write a comment', 'コメントを入力'],

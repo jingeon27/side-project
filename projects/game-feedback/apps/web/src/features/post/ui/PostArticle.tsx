@@ -56,18 +56,7 @@ export function PostArticle({ post, authorContent, authorName, actions, contactA
           <dd>{post.viewCount.toLocaleString()}</dd>
         </div>
       </dl>
-      {contactAction && (
-        <footer className="detail-contact-action">
-          <div className="detail-contact-author">
-            <Avatar name={post.author.nickname} size="small" />
-            <div>
-              <span>{t('글 작성자')}</span>
-              <strong>{post.author.nickname}</strong>
-            </div>
-          </div>
-          {contactAction}
-        </footer>
-      )}
+      {contactAction && <footer className="detail-contact-action">{contactAction}</footer>}
     </article>
   );
 }
