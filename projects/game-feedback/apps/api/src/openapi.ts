@@ -1,0 +1,91 @@
+import { writeFileSync } from 'node:fs';
+import { z } from 'zod';
+import { BoardKindSchema, BattleModeSchema, operations, schemas } from '@game-feedback/contracts';
+
+export function createOpenApi() {
+  const components: Record<string, unknown> = {};
+  for (const [name, schema] of Object.entries(schemas)) {
+    const json = z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' });
+    const { $schema, ...rest } = json;
+    components[name] = rest;
+  }
+  const schemaRef = (schema: z.ZodType) => {
+    const found = Object.entries(schemas).find(([, value]) => value === schema);
+    if (found) return { $ref: `#/components/schemas/${found[0]}` };
+    const { $schema, ...rest } = z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' });
+    return rest;
+  };
+  const paths: Record<string, Record<string, unknown>> = {};
+  for (const operation of operations) {
+    const parameters: unknown[] = [...operation.path.matchAll(/\{(\w+)\}/g)].map((m) => ({
+      name: m[1],
+      in: 'path',
+      required: true,
+      schema: { type: 'string' },
+    }));
+    if (operation.query)
+      parameters.push(
+        ...[
+          { name: 'cursor', in: 'query', schema: { type: 'string' } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 12 } },
+          ...(operation.id === 'listPosts'
+            ? [
+                { name: 'authorId', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 100 } },
+                {
+                  name: 'battleMode',
+                  in: 'query',
+                  schema: { type: 'string', enum: BattleModeSchema.options },
+                },
+                { name: 'category', in: 'query', schema: { type: 'string' } },
+                { name: 'unanswered', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
+                { name: 'q', in: 'query', schema: { type: 'string' } },
+                {
+                  name: 'board',
+                  in: 'query',
+                  schema: {
+                    type: 'string',
+                    enum: ['ALL', ...BoardKindSchema.options],
+                  },
+                },
+              ]
+            : []),
+        ],
+      );
+    paths[operation.path] ??= {};
+    paths[operation.path][operation.method] = {
+      operationId: operation.id,
+      parameters,
+      ...(operation.body
+        ? {
+            requestBody: {
+              required: true,
+              content: {
+                [operation.contentType ?? 'application/json']: { schema: schemaRef(operation.body) },
+              },
+            },
+          }
+        : {}),
+      responses: {
+        '200': {
+          description: 'Success',
+          content: { 'application/json': { schema: schemaRef(operation.response) } },
+        },
+        default: {
+          description: 'Stable API error',
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+        },
+      },
+    };
+  }
+  return {
+    openapi: '3.1.0',
+    info: { title: 'Game Feedback API', version: '0.1.0' },
+    servers: [{ url: '/' }],
+    paths,
+    components: {
+      schemas: components,
+      securitySchemes: { session: { type: 'apiKey', in: 'cookie', name: 'gamefeedback_session' } },
+    },
+  };
+}
+if (require.main === module) writeFileSync('openapi.json', JSON.stringify(createOpenApi(), null, 2) + '\n');

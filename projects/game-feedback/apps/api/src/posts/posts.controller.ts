@@ -1,0 +1,37 @@
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import type { SessionRequest } from '../auth/session.types';
+import { PostsService } from './posts.service';
+import { PostViewsService } from './post-views.service';
+
+@Controller('api')
+export class PostsController {
+  constructor(
+    @Inject(PostsService) private readonly service: PostsService,
+    @Inject(PostViewsService) private readonly views: PostViewsService,
+  ) {}
+  @HttpCode(200) @Post('posts/:id/views') view(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.views.record(req, id, body);
+  }
+  @Get('posts') posts(@Req() req: SessionRequest) {
+    return this.service.listPosts(req);
+  }
+  @HttpCode(200) @Post('posts') createPost(@Req() req: SessionRequest, @Body() body: unknown) {
+    return this.service.createPost(req, body);
+  }
+  @Get('posts/:id') post(@Req() req: SessionRequest, @Param('id') id: string) {
+    return this.service.detail(req, id);
+  }
+  @Patch('posts/:id') updatePost(@Req() req: SessionRequest, @Param('id') id: string, @Body() body: unknown) {
+    return this.service.updatePost(req, id, body);
+  }
+  @Delete('posts/:id') deletePost(@Req() req: SessionRequest, @Param('id') id: string) {
+    return this.service.deletePost(req, id);
+  }
+  @HttpCode(200) @Post('posts/:id/read') read(@Req() req: SessionRequest, @Param('id') id: string) {
+    return this.service.readPost(req, id);
+  }
+}

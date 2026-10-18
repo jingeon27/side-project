@@ -112,6 +112,7 @@ jobs:
         run: shellcheck -x projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
       - run: yarn format:check
       - run: yarn workspace @side/eslint-config check
+      - run: yarn workspace @side/design-system check
       - run: yarn workspace @side/photo-contest check
       - run: yarn workspace @photo-contest/web lint && yarn workspace @photo-contest/mobile lint
       - run: yarn workspace @photo-contest/api test:e2e

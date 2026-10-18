@@ -1,0 +1,35 @@
+{
+  "name": "@side/game-feedback",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:demo": "node scripts/dev.mjs --demo",
+    "dev:test": "node scripts/dev.mjs --test-auth",
+    "setup": "node scripts/tasks.mjs setup",
+    "db:start": "node scripts/db.mjs start",
+    "db:stop": "node scripts/db.mjs stop",
+    "db:status": "node scripts/db.mjs status",
+    "db:test:start": "node scripts/db.mjs start --test",
+    "db:test:stop": "node scripts/db.mjs stop --test",
+    "db:migrate": "node scripts/db.mjs migrate",
+    "db:test:migrate": "node scripts/db.mjs migrate --test",
+    "check": "node scripts/tasks.mjs check",
+    "typecheck": "node scripts/tasks.mjs check",
+    "test": "node scripts/tasks.mjs test",
+    "test:e2e": "node scripts/tasks.mjs test:e2e",
+    "codegen": "node scripts/tasks.mjs codegen",
+    "build": "node scripts/tasks.mjs build",
+    "test:mobile:e2e": "node scripts/tasks.mjs test:mobile:e2e",
+    "mobile:start": "yarn workspace @game-feedback/mobile start",
+    "mobile:android": "yarn workspace @game-feedback/mobile android",
+    "mobile:ios": "yarn workspace @game-feedback/mobile ios"
+  },
+  "devDependencies": {
+    "embedded-postgres": "18.4.0-beta.17"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@game-feedback/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --watch --require tsx/cjs src/main.ts",
+    "build": "node scripts/build.cjs",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs",
+    "test:server": "tsx src/testing/e2e-server.ts",
+    "prisma:generate": "prisma generate",
+    "db:migrate": "node ../../scripts/db.mjs migrate",
+    "db:seed": "tsx src/seed.ts",
+    "check": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "prisma:deploy": "prisma migrate deploy",
+    "openapi": "tsx src/openapi.ts"
+  },
+  "dependencies": {
+    "@game-feedback/contracts": "workspace:*",
+    "@nestjs/common": "11.1.6",
+    "@nestjs/core": "11.1.6",
+    "@nestjs/platform-express": "11.1.6",
+    "@prisma/client": "6.19.0",
+    "express": "^5.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "@types/supertest": "^6.0.3",
+    "prisma": "6.19.0",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.0"
+  }
+}

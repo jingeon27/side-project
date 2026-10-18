@@ -10,6 +10,15 @@ projects/photo-contest/
   packages/bridge/ # 앱↔웹 계약, 자체 Vitest
   packages/test-kit/ # 격리 DB·API·테스트 fixture 도구
   docs/
+projects/game-feedback/
+  apps/api/        # NestJS · REST · Prisma, 격리 PostgreSQL · Vitest · supertest
+  apps/web/        # Next.js, 피드백 · 1:1 채팅 · Vitest + Playwright
+  apps/mobile/     # Expo WebView, Vitest unit/UI + Playwright
+  packages/bridge/ # Game Feedback 앱↔웹 메시지 계약
+  packages/contracts/ # Zod 서버 검증 · OpenAPI 계약
+  packages/sdk/    # Orval API Client · 응답 검증 스키마
+  docs/
+packages/design-system/ # 두 웹이 공유하는 Base UI·토큰·스타일·cn, 자체 Vitest
 packages/typescript-config/
 packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
@@ -36,6 +45,25 @@ corepack yarn dev:photo-contest
 ```
 
 웹은 http://localhost:3200, API는 http://127.0.0.1:4200입니다. 기존 DB의 포트는 해당 프로젝트 `.env`를 따릅니다. [웃긴순간 실행·운영 문서](projects/photo-contest/README.md)를 참고하세요.
+
+## Game Feedback
+
+플레이메이트는 클래시로얄 피드백 요청·답변·댓글과 영속 1:1 채팅을 제공하는 비공개 알파입니다. 데모에서는 고정된 플레이어·인증 코치·운영자 테스트 계정으로 전환할 수 있습니다.
+
+```sh
+cp projects/game-feedback/.env.example projects/game-feedback/.env
+corepack yarn workspace @side/game-feedback dev:demo
+```
+
+웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. [모바일 앱](projects/game-feedback/apps/mobile/README.md)은 이 웹을 Expo WebView로 열며 Metro 8082를 사용합니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
+
+## 공통 디자인 시스템
+
+[설계와 사용법](packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.
+
+```sh
+corepack yarn workspace @side/design-system check
+```
 
 ## 검증
 

@@ -1,0 +1,7 @@
+.expo/
+.expo-export-check/
+# app.config.ts is the source for generated native projects.
+android/
+ios/
+playwright-report/
+test-results/

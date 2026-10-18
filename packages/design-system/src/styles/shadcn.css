@@ -1,0 +1,23 @@
+@theme inline {
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-brand);
+  --color-primary-foreground: var(--color-on-brand);
+  --color-secondary: var(--color-neutral-soft);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted-foreground: var(--color-muted);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-border: var(--color-line);
+  --color-input-border: var(--color-line-strong);
+  --color-ring: var(--color-brand);
+  --color-destructive: var(--color-danger);
+  --radius-sm: var(--radius-badge);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-control);
+  --radius-xl: var(--radius-card);
+  --text-xs: var(--text-caption);
+  --text-sm: var(--text-label);
+  --text-base: var(--text-input);
+}

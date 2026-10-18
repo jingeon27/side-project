@@ -25,9 +25,8 @@
     "@hookform/resolvers": "^5.4.0",
     "@photo-contest/bridge": "workspace:*",
     "@sentry/nextjs": "^11.7.0",
+    "@side/design-system": "workspace:*",
     "apollo-upload-client": "20.0.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
     "es-toolkit": "^1.52.0",
     "graphql": "^16.11.0",
     "lucide-react": "^1.23.0",
@@ -37,7 +36,6 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.81.0",
     "rxjs": "^7.8.2",
-    "tailwind-merge": "^3.6.0",
     "ts-pattern": "^5.9.0",
     "zod": "^4.4.0"
   },

@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(cuid())
+  googleSubject String? @unique
+  demoKey String? @unique
+  nickname String
+  isVerified Boolean @default(false)
+  verifiedAt DateTime?
+  bannedAt DateTime?
+  banReason String?
+  supercellTag String?
+  role String @default("USER")
+  termsVersion String
+  termsAcceptedAt DateTime @default(now())
+  ageConfirmed Boolean
+  createdAt DateTime @default(now())
+  chatAsFirst ChatConversation[] @relation("chatFirst")
+  chatAsSecond ChatConversation[] @relation("chatSecond")
+  chatMessages ChatMessage[]
+  sessions Session[]
+  gameAccounts GameAccount[]
+  posts Post[]
+  answers Answer[]
+  comments Comment[]
+  notifications Notification[]
+  reports Report[]
+  blocks Block[] @relation("blocker")
+  blockedBy Block[] @relation("blocked")
+  postMedia PostMedia[]
+  supportRequests SupportConversation[] @relation("supportRequester")
+  assignedSupport SupportConversation[] @relation("supportAdmin")
+  following UserFollow[] @relation("followFollower")
+  followers UserFollow[] @relation("followAuthor")
+  socialIdentities SocialIdentity[]
+}
+model SocialIdentity {
+  provider String
+  subject String
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([provider,subject])
+  @@unique([userId,provider])
+}
+model UserFollow {
+  followerId String
+  follower User @relation("followFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following User @relation("followAuthor", fields: [followingId], references: [id], onDelete: Cascade)
+  notifyNewPosts Boolean @default(true)
+  createdAt DateTime @default(now())
+  @@id([followerId,followingId])
+  @@index([followingId,notifyNewPosts])
+}
+model Session {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pendingSubject String?
+  pendingProvider String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+model OAuthAttempt {
+  provider String @default("google")
+  appChallenge String?
+  stateHash String @id
+  nonce String
+  verifier String
+  expiresAt DateTime
+}
+model AppLoginTicket {
+  provider String @default("google")
+  codeHash String @id
+  challenge String
+  subject String
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model Category {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  active Boolean @default(true)
+  posts Post[]
+}
+model GameAccount {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  playerTag String
+  profile Json
+  updatedAt DateTime @updatedAt
+  @@unique([userId,playerTag])
+}
+model Post {
+  id String @id @default(cuid())
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  categoryId String
+  category Category @relation(fields:[categoryId],references:[id],onDelete:Restrict)
+  title String
+  body String
+  gameProfile Json?
+  board String @default("FEEDBACK")
+  document Json?
+  coaching Json?
+  friendSale Json?
+  battle Json?
+  hidden Boolean @default(false)
+  viewCount Int @default(0)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  answers Answer[]
+  comments Comment[]
+  notifications Notification[]
+  media PostMedia[]
+  views PostView[]
+  @@index([createdAt,id])
+  @@index([categoryId,createdAt])
+  @@index([board,createdAt,id])
+}
+model PostView {
+  postId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  visitorHash String
+  lastViewedAt DateTime @default(now())
+  @@id([postId,visitorHash])
+}
+model Answer {
+  id String @id @default(cuid())
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  body String
+  helpful Boolean @default(false)
+  readAt DateTime?
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+}
+model Comment {
+  id String @id @default(cuid())
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  authorId String
+  author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
+  body String
+  hidden Boolean @default(false)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+}
+model Notification {
+  id String @id @default(cuid())
+  actorId String?
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  postId String
+  post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  answerId String?
+  type String
+  message String
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId,createdAt,id])
+}
+model Report {
+  id String @id @default(cuid())
+  reporterId String
+  reporter User @relation(fields:[reporterId],references:[id],onDelete:Cascade)
+  targetType String
+  targetId String
+  reason String
+  detail String?
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  @@unique([reporterId,targetType,targetId])
+}
+model Block {
+  id String @id @default(cuid())
+  userId String
+  user User @relation("blocker",fields:[userId],references:[id],onDelete:Cascade)
+  blockedUserId String
+  blockedUser User @relation("blocked",fields:[blockedUserId],references:[id],onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId,blockedUserId])
+}
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String
+  action String
+  targetType String
+  targetId String
+  detail String
+  createdAt DateTime @default(now())
+}
+
+model ChatConversation {
+  id String @id @default(cuid())
+  firstUserId String
+  firstUser User @relation("chatFirst", fields:[firstUserId], references:[id], onDelete:Cascade)
+  secondUserId String
+  secondUser User @relation("chatSecond", fields:[secondUserId], references:[id], onDelete:Cascade)
+  firstReadAt DateTime?
+  firstReadId String?
+  secondReadAt DateTime?
+  secondReadId String?
+  firstClearedAt DateTime?
+  firstClearedId String?
+  secondClearedAt DateTime?
+  secondClearedId String?
+  firstHidden Boolean @default(false)
+  secondHidden Boolean @default(false)
+  updatedAt DateTime @default(now())
+  messages ChatMessage[]
+  attachments ChatAttachment[]
+  support SupportConversation?
+  @@unique([firstUserId,secondUserId])
+  @@index([firstUserId,updatedAt,id])
+  @@index([secondUserId,updatedAt,id])
+}
+model ChatMessage {
+  id String @id @default(cuid())
+  conversationId String
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  senderId String
+  sender User @relation(fields:[senderId],references:[id],onDelete:Cascade)
+  clientMessageId String
+  body String
+  createdAt DateTime @default(now())
+  attachments ChatAttachment[]
+  @@unique([senderId,clientMessageId])
+  @@index([conversationId,createdAt,id])
+}
+
+model ChatAttachment {
+  id String @id @default(cuid())
+  conversationId String
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  uploaderId String
+  messageId String?
+  message ChatMessage? @relation(fields:[messageId],references:[id],onDelete:Cascade)
+  name String
+  mimeType String
+  size Int
+  bytes Bytes
+  createdAt DateTime @default(now())
+  @@index([conversationId,messageId])
+  @@index([uploaderId,createdAt])
+}
+
+model PostMedia {
+  id String @id @default(cuid())
+  uploaderId String
+  uploader User @relation(fields:[uploaderId], references:[id], onDelete:Cascade)
+  postId String?
+  post Post? @relation(fields:[postId], references:[id], onDelete:Cascade)
+  name String
+  mimeType String
+  size Int
+  bytes Bytes
+  createdAt DateTime @default(now())
+  @@index([uploaderId,postId,createdAt])
+  @@index([postId])
+}
+
+model SupportConversation {
+  id String @id @default(cuid())
+  requesterId String
+  requester User @relation("supportRequester",fields:[requesterId],references:[id],onDelete:Cascade)
+  adminId String
+  admin User @relation("supportAdmin",fields:[adminId],references:[id],onDelete:Cascade)
+  conversationId String @unique
+  conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
+  topic String
+  status String @default("OPEN")
+  createdAt DateTime @default(now())
+  @@index([adminId,status,createdAt])
+}
