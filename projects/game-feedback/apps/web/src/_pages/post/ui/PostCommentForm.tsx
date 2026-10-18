@@ -1,10 +1,11 @@
 'use client';
 import { Button, Textarea } from '@side/design-system';
+import { Send } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { useCreateCommentMutation } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { Avatar, ErrorNotice, useNotify } from '@/shared/ui';
+import { ErrorNotice, useNotify } from '@/shared/ui';
 import { commentFormSchema } from '../model/content.schema';
 
 export function PostCommentForm({ postId }: { postId: string }) {
@@ -36,25 +37,29 @@ export function PostCommentForm({ postId }: { postId: string }) {
         }
       })}
     >
-      <div className="comment-form-author">
-        <Avatar name={session.user.nickname} size="small" />
-        <strong>{session.user.nickname}</strong>
-      </div>
-      <Textarea
-        aria-label={t('댓글 내용')}
-        aria-invalid={!!form.formState.errors.body}
-        {...form.register('body')}
-        rows={3}
-        maxLength={2000}
-        placeholder={t('댓글을 남겨주세요')}
-        required
-      />
-      <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
-      <div className="comment-form-actions">
-        <Button variant="primary" size="md" type="submit" loading={mutation.isPending}>
-          {t('댓글 등록')}
+      <div className="comment-compose">
+        <Textarea
+          className="min-h-touch max-h-28 min-w-0 flex-1 resize-none rounded-none border-0 px-0 py-2 leading-6 shadow-none focus-visible:border-transparent focus-visible:ring-0"
+          aria-label={t('댓글 내용')}
+          aria-invalid={!!form.formState.errors.body}
+          {...form.register('body')}
+          rows={1}
+          maxLength={2000}
+          placeholder={t('댓글을 남겨주세요')}
+          disabled={mutation.isPending}
+          required
+        />
+        <Button
+          variant="primary"
+          size="icon"
+          type="submit"
+          loading={mutation.isPending}
+          aria-label={t('댓글 등록')}
+        >
+          {!mutation.isPending && <Send size={18} aria-hidden="true" />}
         </Button>
       </div>
+      <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
     </form>
   );
 }

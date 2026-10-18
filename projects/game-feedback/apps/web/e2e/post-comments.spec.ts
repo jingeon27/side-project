@@ -15,6 +15,7 @@ test('public comments identify the post author and remain readable on mobile and
   const comments = page.getByRole('region', { name: /^댓글/ });
   await expect(comments.getByRole('heading', { level: 2 })).toHaveText(`댓글${detail.comments.length}`);
   await expect(comments.getByRole('listitem')).toHaveCount(detail.comments.length);
+  await expect(comments.locator('article.mine')).toHaveCount(0);
   const authorComment = comments.locator('article').filter({ hasText: ownComment.body });
   await expect(authorComment.locator('.comment-author-label')).toHaveText('작성자');
   await expect(authorComment.locator('time')).toHaveAttribute('datetime', ownComment.createdAt);
@@ -96,6 +97,7 @@ test('comment drafts support line breaks and author chat opens the correct conve
   await page.unroute(commentEndpoint);
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
   await expect(page.locator('.comment-content > p')).toHaveText('첫 번째 줄\n두 번째 줄');
+  await expect(page.locator('article.comment.mine')).toHaveCount(1);
   await expect(page.locator('.comment-author-label')).toHaveText('작성자');
   await expect(page.getByText('아직 댓글이 없어요.', { exact: true })).toHaveCount(0);
   await expect(input).toHaveValue('');
@@ -104,6 +106,39 @@ test('comment drafts support line breaks and author chat opens the correct conve
 
   await page.request.post('/api/auth/test-login', { headers, data: { accountId: 'sample-user-3' } });
   await page.reload();
+  const comments = page.getByRole('region', { name: /^댓글/ });
+  await expect(comments.locator('article.mine')).toHaveCount(0);
+  const reply = `내 댓글 ${'abcdefghij'.repeat(20)}`;
+  await input.fill(reply);
+  await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
+  const mine = comments.locator('article.mine .comment-bubble');
+  const theirs = comments.locator('article:not(.mine) .comment-bubble');
+  await expect(mine).toHaveText(reply);
+  await expect(theirs).toHaveText('첫 번째 줄\n두 번째 줄');
+  expect(await mine.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(
+    await theirs.evaluate((node) => getComputedStyle(node).backgroundColor),
+  );
+  for (const width of [320, 393, 1440]) {
+    await page.setViewportSize({ width, height: 852 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    const ownBox = await mine.boundingBox();
+    const peerBox = await theirs.boundingBox();
+    if (!ownBox || !peerBox) throw new Error('Both comment bubbles must be visible.');
+    expect(ownBox.x + ownBox.width).toBeGreaterThan(peerBox.x + peerBox.width);
+    expect((await page.locator('.comment-compose').boundingBox())?.height).toBeLessThanOrEqual(64);
+  }
+  await page.setViewportSize({ width: 393, height: 852 });
+  await comments.evaluate((node) => node.scrollIntoView({ block: 'start' }));
+  await comments.screenshot({ path: '/tmp/gf-comment-bubbles-393.png' });
+  await page.context().addCookies([{ name: 'gf_theme', value: 'dark', url: origin }]);
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(mine).toHaveText(reply);
+  expect(await mine.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(
+    await theirs.evaluate((node) => getComputedStyle(node).backgroundColor),
+  );
+  await comments.evaluate((node) => node.scrollIntoView({ block: 'start' }));
+  await comments.screenshot({ path: '/tmp/gf-comment-bubbles-dark-393.png' });
   await page.locator('.detail-contact-action').getByRole('button').click();
   await expect(page).toHaveURL('/ko/messages/sample-conversation-0-3');
   await expect(page.locator('.conversation-heading:visible')).toContainText('새벽의호그');

@@ -1,6 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { useId } from 'react';
+import { useSession } from '@/features/auth';
 import { CommentItem } from '@/features/comment';
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { Comment, Post } from '@/shared/api';
@@ -13,6 +14,7 @@ interface IPostCommentsSectionProps {
 }
 export function PostCommentsSection({ post, comments, locale }: IPostCommentsSectionProps) {
   const { t } = useI18n();
+  const { session } = useSession();
   const headingId = useId();
   return (
     <section className="comments-section" aria-labelledby={headingId}>
@@ -26,6 +28,7 @@ export function PostCommentsSection({ post, comments, locale }: IPostCommentsSec
           <li key={comment.id}>
             <CommentItem
               comment={comment}
+              mine={comment.author.id === session.user?.id}
               isPostAuthor={comment.author.id === post.author.id}
               authorName={<AuthorLink author={comment.author} locale={locale} />}
               authorContent={<UserBadges author={comment.author} compact />}

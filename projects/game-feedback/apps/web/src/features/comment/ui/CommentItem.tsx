@@ -10,6 +10,7 @@ interface ICommentItemProps {
   authorName?: ReactNode;
   actions?: ReactNode;
   isPostAuthor?: boolean;
+  mine: boolean;
 }
 export function CommentItem({
   comment,
@@ -17,22 +18,23 @@ export function CommentItem({
   authorName,
   actions,
   isPostAuthor,
+  mine,
 }: ICommentItemProps) {
   const { t, locale: textLocale } = useI18n();
   return (
-    <article className="comment">
-      <Avatar name={comment.author.nickname} size="small" />
+    <article className={`comment${mine ? ' mine' : ''}`}>
+      {!mine && <Avatar name={comment.author.nickname} size="small" />}
       <div className="comment-content">
         <div className="comment-heading">
           <strong>{authorName ?? comment.author.nickname}</strong>
           {isPostAuthor && <span className="comment-author-label">{t('작성자')}</span>}
           {authorContent}
         </div>
+        <p className="comment-bubble">{comment.body}</p>
         <div className="comment-meta" suppressHydrationWarning>
           <time dateTime={comment.createdAt}>{timeAgo(comment.createdAt, textLocale)}</time>
           {comment.updatedAt !== comment.createdAt && <span>{t(' (수정됨)')}</span>}
         </div>
-        <p>{comment.body}</p>
         {actions}
       </div>
     </article>
