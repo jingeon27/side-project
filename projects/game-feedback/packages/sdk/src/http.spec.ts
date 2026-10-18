@@ -120,6 +120,14 @@ describe('generated REST client response validation', () => {
     respond(fixture);
     expect(await getSession()).toEqual(fixture);
   });
+  it.each(['#GG829JGY', '#AB12CD34'])(
+    'preserves an eight-character alphanumeric tag %s in session responses',
+    async (supercellTag) => {
+      const fixture = sessionFixture();
+      respond({ ...fixture, user: { ...fixture.user, supercellTag } });
+      expect((await getSession()).user?.supercellTag).toBe(supercellTag);
+    },
+  );
   it('normalizes nested display fields and badge counts while preserving valid siblings', async () => {
     const fixture = postFixture();
     respond({
@@ -233,10 +241,10 @@ describe('generated REST client response validation', () => {
   it('preserves valid game data but rejects false source or ownership claims', async () => {
     const profile = profileFixture();
     respond(profile);
-    expect(await getGameProfile('#2PP')).toEqual(profile);
+    expect(await getGameProfile('#GG829JGY')).toEqual(profile);
     for (const patch of [{ source: 'UNKNOWN' }, { verification: 'VERIFIED' }, { trophies: '7000' }]) {
       respond({ ...profile, ...patch });
-      await expect(getGameProfile('#2PP')).rejects.toBeInstanceOf(ApiResponseValidationError);
+      await expect(getGameProfile('#GG829JGY')).rejects.toBeInstanceOf(ApiResponseValidationError);
     }
   });
   it('does not turn a failed or empty mutation response into success', async () => {

@@ -254,7 +254,11 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect(await db.auditLog.count({ where: { targetId: answer.id } })).toBe(1);
   });
   it('deletes accounts, sessions, profile links and authored content', async () => {
-    await coach.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: '#2PP' }).expect(200);
+    await coach
+      .post('/api/me/game-accounts')
+      .set('Origin', origin)
+      .send({ playerTag: '#GG829JGY' })
+      .expect(200);
     await coach.delete('/api/me').set('Origin', origin).expect(200);
     expect(await db.user.findUnique({ where: { id: coachUser.id } })).toBeNull();
     expect((await coach.get('/api/session')).body.user).toBeNull();

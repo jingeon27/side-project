@@ -1,4 +1,4 @@
-import { GameAccountInputSchema } from '@game-feedback/contracts';
+import { GameAccountInputSchema, PLAYER_TAG_PATTERN } from '@game-feedback/contracts';
 import { IsString, Matches } from 'class-validator';
 import type { z } from 'zod';
 import { Trim } from '../common/http/request-validation';
@@ -7,6 +7,6 @@ export class GameAccountDto {
   static readonly contract = GameAccountInputSchema;
   @Trim()
   @IsString()
-  @Matches(/^#?[0289PYLQGRJCUV]{3,15}$/i)
+  @Matches(PLAYER_TAG_PATTERN)
   declare playerTag: z.output<typeof GameAccountInputSchema>['playerTag'];
 }

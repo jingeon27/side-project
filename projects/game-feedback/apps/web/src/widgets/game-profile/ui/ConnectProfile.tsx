@@ -28,7 +28,7 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
   const tagField = form.register('playerTag');
   return (
     <form className="connect-profile" onSubmit={form.handleSubmit((values) => preview.mutate(values))}>
-      <Field label={t('플레이어 태그')} hint={t('클래시 로얄 프로필의 이름 아래에서 찾을 수 있어요.')}>
+      <Field label={t('플레이어 태그')} hint={t('# 뒤에 영문과 숫자 8자리를 입력해주세요.')}>
         <div className="input-button-row">
           <Input
             {...tagField}
@@ -39,7 +39,10 @@ export function ConnectProfile({ onSaved }: IConnectProfileProps) {
               save.reset();
             }}
             placeholder="#GG829JGY"
-            maxLength={16}
+            maxLength={9}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
             required
             disabled={save.isPending}
           />

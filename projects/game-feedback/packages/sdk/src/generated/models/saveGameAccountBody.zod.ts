@@ -6,7 +6,7 @@
  */
 import * as zod from 'zod';
 
-export const saveGameAccountBodyPlayerTagRegExp = new RegExp('^#?[0289PYLQGRJCUV]{3,15}$');
+export const saveGameAccountBodyPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{8}$');
 
 export const SaveGameAccountBody = zod.object({
   "playerTag": zod.string().regex(saveGameAccountBodyPlayerTagRegExp)

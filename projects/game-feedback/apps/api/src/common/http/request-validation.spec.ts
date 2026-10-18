@@ -48,8 +48,8 @@ describe('decorated HTTP requests and generated contract compatibility', () => {
   });
   it('preserves tag normalization, nullable negotiation, attachment rules and query defaults', async () => {
     await expect(
-      new RequestValidationPipe(GameAccountDto).transform({ playerTag: ' p0lyq ' }, metadata),
-    ).resolves.toEqual({ playerTag: '#P0LYQ' });
+      new RequestValidationPipe(GameAccountDto).transform({ playerTag: ' p0lyq829 ' }, metadata),
+    ).resolves.toEqual({ playerTag: '#P0LYQ829' });
     await expect(
       new RequestValidationPipe(CreatePostDto).transform(
         {

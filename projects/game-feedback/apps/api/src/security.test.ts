@@ -93,7 +93,7 @@ describe('external adapter boundaries', () => {
     expect(url.searchParams.get('nonce')).toBe('nonce');
   });
   it('marks sample profiles unverified and DEMO', async () => {
-    const p = await new DemoProfileProvider().lookup('#2PP');
+    const p = await new DemoProfileProvider().lookup('#GG829JGY');
     expect(p.source).toBe('DEMO');
     expect(p.verification).toBe('UNVERIFIED');
     expect(p.deck).toHaveLength(8);

@@ -194,7 +194,7 @@ test('verification opens a private admin chat and an administrator reviews user 
   const userId = session.user.id;
   await page.request.post('/api/me/game-accounts', {
     headers: { Origin: origin },
-    data: { playerTag: '#2PP' },
+    data: { playerTag: '#GG829JGY' },
   });
   await page.goto('/ko/settings');
   await page.getByRole('button', { name: '프로필 인증 문의', exact: true }).click();

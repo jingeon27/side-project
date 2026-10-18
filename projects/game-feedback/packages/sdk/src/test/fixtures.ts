@@ -5,7 +5,7 @@ export function authorFixture(): Author {
     id: 'player-1',
     nickname: '테스트플레이어',
     isVerified: false,
-    supercellTag: '#2PP',
+    supercellTag: '#GG829JGY',
     isTestAccount: false,
   };
 }
@@ -19,7 +19,7 @@ export function sessionFixture(): Session {
 }
 export function profileFixture(): GameProfile {
   return {
-    playerTag: '#2PP',
+    playerTag: '#GG829JGY',
     name: '플레이어',
     trophies: 7000,
     bestTrophies: 7200,

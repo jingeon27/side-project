@@ -18,7 +18,7 @@ export const TEST_ACCOUNT_FIXTURES = [
     nickname: '덱연구소',
     role: 'USER',
     isVerified: true,
-    supercellTag: '#9QY',
+    supercellTag: '#9QY82JGY',
     description: '서비스 인증 배지와 피드백·채팅을 확인하는 코치 계정',
   },
   {

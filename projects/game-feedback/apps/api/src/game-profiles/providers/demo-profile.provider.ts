@@ -5,7 +5,7 @@ export class DemoProfileProvider implements ProfileProvider {
   async lookup(playerTag: string): Promise<GameProfile> {
     return {
       playerTag,
-      name: playerTag === '#9QY' ? '덱연구소' : '새벽의호그',
+      name: playerTag === '#9QY82JGY' ? '덱연구소' : '새벽의호그',
       trophies: 6850,
       bestTrophies: 7023,
       arena: '고요의 성역',

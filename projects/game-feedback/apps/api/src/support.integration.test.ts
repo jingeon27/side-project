@@ -61,7 +61,11 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       .send({ accountId: 'sample-user-3' })
       .expect(200);
     const me = (await author.get('/api/session')).body.user;
-    await author.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: '#2PP' }).expect(200);
+    await author
+      .post('/api/me/game-accounts')
+      .set('Origin', origin)
+      .send({ playerTag: '#GG829JGY' })
+      .expect(200);
     await author.get('/api/admin/support').expect(403);
     await author.get(`/api/admin/users/${me.id}`).expect(403);
     await author
@@ -102,7 +106,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     expect(thread).toMatchObject({
       topic: 'VERIFICATION',
       conversationId: conversation.id,
-      requester: { supercellTag: '#2PP' },
+      requester: { supercellTag: '#GG829JGY' },
       status: 'OPEN',
     });
     await admin
@@ -123,9 +127,17 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       .expect(200);
     expect(await db.auditLog.count({ where: { targetId: me.id, action: 'VERIFY_USER' } })).toBe(1);
     expect((await author.get(`/api/conversations/${conversation.id}/messages`)).body.items).toHaveLength(2);
-    await author.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: '#2PP' }).expect(200);
+    await author
+      .post('/api/me/game-accounts')
+      .set('Origin', origin)
+      .send({ playerTag: '#GG829JGY' })
+      .expect(200);
     expect((await author.get('/api/session')).body.user.isVerified).toBe(true);
-    await author.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: '#9QY' }).expect(200);
+    await author
+      .post('/api/me/game-accounts')
+      .set('Origin', origin)
+      .send({ playerTag: '#9QY82JGY' })
+      .expect(200);
     expect((await author.get('/api/session')).body.user.isVerified).toBe(false);
     await author
       .post('/api/support/conversations')

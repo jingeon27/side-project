@@ -64,10 +64,10 @@ test('prepared accounts can write posts and comments, switch identities, and exc
     id: 'sample-user-3',
     isTestAccount: true,
     isVerified: true,
-    supercellTag: '#9QY',
+    supercellTag: '#9QY82JGY',
   });
   await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저');
-  await expect(page.locator('.settings-profile:visible')).toContainText('#9QY');
+  await expect(page.locator('.settings-profile:visible')).toContainText('#9QY82JGY');
   await page.goto(postUrl);
   const responseComment = `인증 코치 테스트 계정에서 이어서 남긴 댓글입니다. ${suffix}`;
   await page.getByRole('textbox', { name: '댓글 내용' }).fill(responseComment);
@@ -118,18 +118,18 @@ test('a registered Supercell tag is saved on the user and survives account switc
   await selectTestAccount(page, '새벽의호그');
   await page.goto('/ko/settings');
   await page.getByRole('button', { name: '계정 등록', exact: true }).click();
-  await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('p0lyq');
+  await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('p0lyq829');
   await page.getByRole('button', { name: '조회', exact: true }).click();
   await page.getByRole('button', { name: '내 계정에 등록', exact: true }).click();
-  await expect(page.locator('.settings-profile:visible')).toContainText('#P0LYQ');
+  await expect(page.locator('.settings-profile:visible')).toContainText('#P0LYQ829');
   await selectTestAccount(page, '덱연구소');
   await selectTestAccount(page, '새벽의호그');
   await page.reload();
-  await expect(page.locator('.settings-profile:visible')).toContainText('#P0LYQ');
+  await expect(page.locator('.settings-profile:visible')).toContainText('#P0LYQ829');
   const session = (await (await page.request.get('/api/session')).json()) as Session;
   expect(session.user).toMatchObject({
     id: 'sample-user-0',
-    supercellTag: '#P0LYQ',
+    supercellTag: '#P0LYQ829',
     isVerified: false,
     isTestAccount: true,
   });
@@ -137,7 +137,7 @@ test('a registered Supercell tag is saved on the user and survives account switc
   expect(
     accounts.some(
       (item: { playerTag: string; verification: string }) =>
-        item.playerTag === '#P0LYQ' && item.verification === 'UNVERIFIED',
+        item.playerTag === '#P0LYQ829' && item.verification === 'UNVERIFIED',
     ),
   ).toBeTruthy();
   await page.screenshot({ path: 'test-results/test-account-profile.png', fullPage: true });

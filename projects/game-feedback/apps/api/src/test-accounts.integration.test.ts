@@ -232,7 +232,7 @@ describe.skipIf(!testDatabaseUrl)(
         nickname: '덱연구소',
         role: 'USER',
         isVerified: true,
-        supercellTag: '#9QY',
+        supercellTag: '#9QY82JGY',
       });
       expect(catalog.items.find((user: { id: string }) => user.id === adminId)).toMatchObject({
         role: 'ADMIN',
@@ -442,20 +442,30 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await db.user.findUniqueOrThrow({ where: { id: requesterId } })).verifiedAt).toBeNull();
     });
 
+    it.each(['#AB12CD3', '#AB12CD345', '#AB12_CD4', '#AB12 CD4', '#가A12CD34', '##AB12CD34'])(
+      'rejects malformed tag %s in lookup and account registration',
+      async (playerTag) => {
+        await google.get(`/api/game-profiles/${encodeURIComponent(playerTag)}`).expect(400);
+        await google.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag }).expect(400);
+      },
+    );
+
     it('registers the user tag on the account while posts use the current author identity', async () => {
       const linked = (
         await google
           .post('/api/me/game-accounts')
           .set('Origin', origin)
-          .send({ playerTag: ' 2pp ' })
+          .send({ playerTag: ' ab12cd34 ' })
           .expect(200)
       ).body;
-      expect(linked).toMatchObject({ playerTag: '#2PP', verification: 'UNVERIFIED' });
-      expect((await google.get('/api/session')).body.user.supercellTag).toBe('#2PP');
-      expect((await db.user.findUniqueOrThrow({ where: { id: googleUserId } })).supercellTag).toBe('#2PP');
+      expect(linked).toMatchObject({ playerTag: '#AB12CD34', verification: 'UNVERIFIED' });
+      expect((await google.get('/api/session')).body.user.supercellTag).toBe('#AB12CD34');
+      expect((await db.user.findUniqueOrThrow({ where: { id: googleUserId } })).supercellTag).toBe(
+        '#AB12CD34',
+      );
       expect(
         await db.gameAccount.findUnique({
-          where: { userId_playerTag: { userId: googleUserId, playerTag: '#2PP' } },
+          where: { userId_playerTag: { userId: googleUserId, playerTag: '#AB12CD34' } },
         }),
       ).not.toBeNull();
       const post = (
@@ -470,28 +480,38 @@ describe.skipIf(!testDatabaseUrl)(
           .expect(200)
       ).body;
       expect(post.gameProfile).toBeNull();
-      await google.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: '9qy' }).expect(200);
-      expect((await google.get('/api/session')).body.user.supercellTag).toBe('#9QY');
-      expect((await google.get(`/api/posts/${post.id}`)).body.post.author.supercellTag).toBe('#9QY');
+      await google
+        .post('/api/me/game-accounts')
+        .set('Origin', origin)
+        .send({ playerTag: '9qy82jgy' })
+        .expect(200);
+      expect((await google.get('/api/session')).body.user.supercellTag).toBe('#9QY82JGY');
+      expect((await google.get(`/api/posts/${post.id}`)).body.post.author.supercellTag).toBe('#9QY82JGY');
       expect((await db.user.findUniqueOrThrow({ where: { id: googleUserId } })).isVerified).toBe(false);
       const accounts = (await google.get('/api/me/game-accounts')).body;
       expect(accounts.map((account: { playerTag: string }) => account.playerTag)).toEqual(
-        expect.arrayContaining(['#2PP', '#9QY']),
+        expect.arrayContaining(['#AB12CD34', '#9QY82JGY']),
       );
     });
 
     it('preserves the last successful tag on failed lookup and across Google relogin', async () => {
-      failingTag = '#PYL';
-      await google.post('/api/me/game-accounts').set('Origin', origin).send({ playerTag: 'pyl' }).expect(503);
+      failingTag = '#PYL829JG';
+      await google
+        .post('/api/me/game-accounts')
+        .set('Origin', origin)
+        .send({ playerTag: 'pyl829jg' })
+        .expect(503);
       await google
         .post('/api/me/game-accounts')
         .set('Origin', origin)
         .send({ playerTag: 'not-a-tag!' })
         .expect(400);
-      expect((await db.user.findUniqueOrThrow({ where: { id: googleUserId } })).supercellTag).toBe('#9QY');
+      expect((await db.user.findUniqueOrThrow({ where: { id: googleUserId } })).supercellTag).toBe(
+        '#9QY82JGY',
+      );
       expect(
         await db.gameAccount.findUnique({
-          where: { userId_playerTag: { userId: googleUserId, playerTag: '#PYL' } },
+          where: { userId_playerTag: { userId: googleUserId, playerTag: '#PYL829JG' } },
         }),
       ).toBeNull();
       await google.post('/api/auth/logout').set('Origin', origin).expect(200);
@@ -499,7 +519,7 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await google.get('/api/session')).body.user).toMatchObject({
         id: googleUserId,
         nickname: '일반가입사용자',
-        supercellTag: '#9QY',
+        supercellTag: '#9QY82JGY',
         isVerified: false,
         verifiedAt: null,
         isTestAccount: false,

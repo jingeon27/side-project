@@ -35,7 +35,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
     await expect(dialog).toHaveAttribute('data-slot', 'dialog-content');
     const nickname = dialog.getByLabel('플레이어 태그');
     await expect(nickname).toHaveAttribute('data-slot', 'input');
-    await nickname.fill('#2PP');
+    await nickname.fill('#GG829JGY');
     const inputColors = await nickname.evaluate((input) => {
       const probe = document.createElement('span');
       probe.style.color = 'var(--color-ink)';

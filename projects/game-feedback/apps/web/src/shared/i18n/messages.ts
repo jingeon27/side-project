@@ -626,6 +626,14 @@ const messages: Record<string, readonly [string, string]> = {
     'Look up your trophies and arena using your player tag.',
     'プレイヤータグからトロフィーとアリーナを確認します。',
   ],
+  '# 뒤에 영문과 숫자 8자리를 입력해주세요.': [
+    'Enter 8 letters or numbers after #.',
+    '# の後に半角英数字8文字を入力してください。',
+  ],
+  '# 뒤에 영문과 숫자로 된 8자리 태그를 입력해주세요.': [
+    'Your tag must contain 8 letters or numbers after #.',
+    'タグは # の後に半角英数字8文字で入力してください。',
+  ],
   '나의 플레이 공간': ['My player space', 'マイプレイヤー'],
   '로그인하고 게임 프로필과 계정을 관리하세요.': [
     'Sign in to manage your account and game profiles.',

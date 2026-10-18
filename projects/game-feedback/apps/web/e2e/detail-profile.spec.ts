@@ -134,7 +134,7 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
   const release = Promise.withResolvers<void>();
   await page.route('**/api/game-profiles/**', async (route) => {
     const response = await route.fetch();
-    if (decodeURIComponent(new URL(route.request().url()).pathname).endsWith('#2PP')) {
+    if (decodeURIComponent(new URL(route.request().url()).pathname).endsWith('#GG829JGY')) {
       responseReady.resolve();
       await release.promise;
     }
@@ -143,20 +143,20 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
   await page.goto('/ko/settings');
   await page.getByRole('button', { name: '계정 등록', exact: true }).click();
   const sheet = page.getByRole('dialog');
-  await sheet.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#2PP');
+  await sheet.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#GG829JGY');
   await sheet.getByRole('button', { name: '조회', exact: true }).click();
   await responseReady.promise;
-  await sheet.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#P0LYQ');
+  await sheet.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#P0LYQ829');
   const firstResponse = page.waitForResponse((response) =>
-    decodeURIComponent(response.url()).endsWith('#2PP'),
+    decodeURIComponent(response.url()).endsWith('#GG829JGY'),
   );
   release.resolve();
   await firstResponse;
   await expect(sheet.getByRole('button', { name: '내 계정에 등록', exact: true })).toHaveCount(0);
   await sheet.getByRole('button', { name: '조회', exact: true }).click();
-  await expect(sheet.locator('.profile-preview')).toContainText('#P0LYQ');
+  await expect(sheet.locator('.profile-preview')).toContainText('#P0LYQ829');
   await sheet.getByRole('button', { name: '내 계정에 등록', exact: true }).click();
   await expect(sheet).toHaveCount(0);
   const accounts = await (await page.request.get('/api/me/game-accounts')).json();
-  expect(accounts.some((account: { playerTag: string }) => account.playerTag === '#P0LYQ')).toBe(true);
+  expect(accounts.some((account: { playerTag: string }) => account.playerTag === '#P0LYQ829')).toBe(true);
 });

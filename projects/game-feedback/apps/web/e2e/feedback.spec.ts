@@ -48,11 +48,11 @@ test('request → answer → notification → helpful, with ownership and origin
     const provider = await signIn(coach, `코치_${suffix}`);
     const categories = await (await requester.get('/api/categories')).json();
     const categoryId = categories[0].id as string;
-    const profile = await requester.get('/api/game-profiles/%23P0LYQ');
+    const profile = await requester.get(`/api/game-profiles/${encodeURIComponent('#P0LYQ829')}`);
     expect(profile.ok()).toBeTruthy();
     expect((await profile.json()).verification).toBe('UNVERIFIED');
     expect(
-      (await requester.post('/api/me/game-accounts', { data: { playerTag: '#P0LYQ' } })).ok(),
+      (await requester.post('/api/me/game-accounts', { data: { playerTag: '#P0LYQ829' } })).ok(),
     ).toBeTruthy();
     const created = await requester.post('/api/posts', {
       data: {
@@ -64,7 +64,7 @@ test('request → answer → notification → helpful, with ownership and origin
     expect(created.ok(), await created.text()).toBeTruthy();
     const post = await created.json();
     expect(post.gameProfile).toBeNull();
-    expect(post.author.supercellTag).toBe('#P0LYQ');
+    expect(post.author.supercellTag).toBe('#P0LYQ829');
     expect(
       (
         await anonymous.post(`/api/posts/${post.id}/answers`, {
@@ -139,7 +139,7 @@ test('players create a profile-backed request and exchange helpful feedback in t
   try {
     await page.goto('/ko/settings');
     await page.getByRole('button', { name: '계정 등록', exact: true }).click();
-    await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('#P0LYQ');
+    await page.getByRole('textbox', { name: /플레이어 태그/ }).fill('#P0LYQ829');
     await page.getByRole('button', { name: '조회', exact: true }).click();
     await page.getByRole('button', { name: '내 계정에 등록' }).click();
     await expect(page.locator('[data-sonner-toast]')).toContainText('게임 프로필이 연결');

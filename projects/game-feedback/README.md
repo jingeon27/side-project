@@ -82,11 +82,13 @@ curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
 
 응답은 `{ accessToken, tokenType: "Bearer", expiresAt, user }`다. 이후 REST 요청에 `Authorization: Bearer <accessToken>`을 전달한다. 쓰기 요청에는 위 Origin 헤더도 보낸다. 같은 요청은 브라우저 테스트용 HttpOnly 세션 쿠키도 설정한다. 서버는 토큰의 해시만 저장하고 1시간 후 만료시키며 로그아웃 시 폐기한다. 잘못된 Bearer 헤더는 쿠키 인증으로 대체하지 않는다.
 
-| 계정       | accountId           | 초기 상태                       |
-| ---------- | ------------------- | ------------------------------- |
-| 새벽의호그 | `sample-user-0`     | 일반 사용자, 태그 `#GG829JGY`   |
-| 덱연구소   | `sample-user-3`     | 서비스 인증 사용자, 태그 `#9QY` |
-| 운영테스터 | `sample-test-admin` | 운영자                          |
+| 계정       | accountId           | 초기 상태                            |
+| ---------- | ------------------- | ------------------------------------ |
+| 새벽의호그 | `sample-user-0`     | 일반 사용자, 태그 `#GG829JGY`        |
+| 덱연구소   | `sample-user-3`     | 서비스 인증 사용자, 태그 `#9QY82JGY` |
+| 운영테스터 | `sample-test-admin` | 운영자                               |
+
+플레이어 태그는 `#` 뒤 영문·숫자 8자리입니다. 입력 시 앞뒤 공백을 제거하고 `#` 생략과 소문자는 정규화합니다. 예: `gg829jgy` → `#GG829JGY`.
 
 발급은 미리 정의한 계정 ID만 허용한다. 테스트 인증이 꺼지면 endpoint는 404이고 production에서 활성화를 시도하면 시작을 거부한다. 기존 `/api/auth/test-login` 쿠키 전환 API는 테스트 자동화 호환을 위해 유지한다. 시작할 때 기존 사용자 변경과 메시지를 덮어쓰지 않는다. 피드백 6개와 친추판매, 친선전, 코치/수강생 모집, 자유글 10개를 추가하고 수강료 세 유형과 판매 금액을 준비한다.
 
