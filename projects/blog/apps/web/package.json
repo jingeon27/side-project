@@ -12,7 +12,7 @@
     "build": "yarn content:generate && next build",
     "content:generate": "tsx scripts/generate-article-registry.ts",
     "content:validate": "tsx scripts/generate-article-registry.ts --check",
-    "typecheck": "yarn content:generate && tsc --noEmit",
+    "typecheck": "yarn content:generate && tsc7 --noEmit",
     "lint": "eslint .",
     "test": "yarn content:generate && vitest run",
     "test:e2e": "playwright test",
