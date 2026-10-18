@@ -49,6 +49,18 @@ export class PostsService {
       throw new ApiError(400, 'INVALID_BATTLE_FILTER', '전투 모집에서 전투 유형을 선택해주세요.');
     if (q.coachingRole && q.board !== 'COACHING')
       throw new ApiError(400, 'INVALID_COACHING_FILTER', '게임코치에서 모집 유형을 선택해주세요.');
+    if (
+      q.feedbackStatus &&
+      (q.board !== 'FEEDBACK' || (q.feedbackStatus === 'ANSWERED' && q.unanswered === 'true'))
+    )
+      throw new ApiError(400, 'INVALID_FEEDBACK_FILTER', '피드백의 답변 상태를 확인해주세요.');
+    const visibleAnswers = { ...ACTIVE_CONTENT, authorId: { notIn: excluded } };
+    const answerFilter =
+      q.feedbackStatus === 'ANSWERED'
+        ? { some: visibleAnswers }
+        : q.feedbackStatus === 'WAITING' || q.unanswered === 'true'
+          ? { none: visibleAnswers }
+          : undefined;
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_POST,
       ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),
@@ -56,9 +68,7 @@ export class PostsService {
       ...(q.category ? { category: { slug: q.category } } : {}),
       ...(q.battleMode ? { battle: { path: ['mode'], equals: q.battleMode } } : {}),
       ...(q.coachingRole ? { coaching: { path: ['role'], equals: q.coachingRole } } : {}),
-      ...(q.unanswered === 'true'
-        ? { answers: { none: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } } } }
-        : {}),
+      ...(answerFilter ? { answers: answerFilter } : {}),
       ...(q.q
         ? {
             OR: [

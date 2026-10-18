@@ -4,6 +4,7 @@ import {
   BoardKindSchema,
   BattleModeSchema,
   CoachingRoleSchema,
+  FeedbackStatusSchema,
   operations,
   schemas,
 } from '@game-feedback/contracts';
@@ -46,6 +47,11 @@ export function createOpenApi() {
                   name: 'coachingRole',
                   in: 'query',
                   schema: { type: 'string', enum: CoachingRoleSchema.options },
+                },
+                {
+                  name: 'feedbackStatus',
+                  in: 'query',
+                  schema: { type: 'string', enum: FeedbackStatusSchema.options },
                 },
                 { name: 'category', in: 'query', schema: { type: 'string' } },
                 { name: 'unanswered', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },

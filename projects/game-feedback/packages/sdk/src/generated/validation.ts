@@ -1084,6 +1084,7 @@ export const ListPostsQueryParams = zod.object({
   "authorId": zod.string().min(1).max(listPostsQueryAuthorIdMax).optional(),
   "battleMode": zod.enum(['DUEL', 'TEAM']).optional(),
   "coachingRole": zod.enum(['COACH', 'STUDENT']).optional(),
+  "feedbackStatus": zod.enum(['WAITING', 'ANSWERED']).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
   "q": zod.string().optional(),

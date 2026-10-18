@@ -334,9 +334,13 @@ export const HideInputSchema = z
     reason: z.string().trim().min(1).max(500),
   })
   .strict();
+export const FeedbackStatusSchema = z.enum(['WAITING', 'ANSWERED']);
+export type TFeedbackStatus = z.infer<typeof FeedbackStatusSchema>;
+
 export const ListQuerySchema = z.object({
   battleMode: BattleModeSchema.optional(),
   coachingRole: CoachingRoleSchema.optional(),
+  feedbackStatus: FeedbackStatusSchema.optional(),
   board: z.union([BoardKindSchema, z.literal('ALL')]).optional(),
   authorId: z.string().min(1).max(100).optional(),
   cursor: z.string().max(200).optional(),

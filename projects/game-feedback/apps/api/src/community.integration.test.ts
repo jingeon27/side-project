@@ -767,4 +767,122 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     ])
       await reader.get('/api/posts').query(query).expect(400);
   });
+  it('filters feedback using visible replies without exposing hidden, deleted or blocked answers', async () => {
+    const q = `답변필터${randomBytes(6).toString('hex')}`;
+    const reviewer = supertest.agent(app.getHttpServer());
+    await reviewer.post('/api/auth/demo').set('Origin', origin).send({ nickname: q }).expect(200);
+    const reviewerId = (await reviewer.get('/api/session').expect(200)).body.user.id;
+    const records: Array<{ id: string }> = [];
+    for (const label of ['waiting', 'answered-one', 'answered-two', 'hidden', 'deleted']) {
+      const post = (
+        await author
+          .post('/api/posts')
+          .set('Origin', origin)
+          .send({
+            categoryId,
+            board: 'FEEDBACK',
+            title: `${q} ${label}`,
+            body: '수비 이후 공격으로 전환하는 타이밍이 궁금합니다.',
+          })
+          .expect(200)
+      ).body;
+      records.push({ id: post.id });
+      if (label !== 'waiting')
+        await db.answer.create({
+          data: {
+            postId: post.id,
+            authorId: reviewerId,
+            body: '상대의 카드 순환을 확인한 뒤 공격해보세요.',
+            hidden: label === 'hidden',
+            deletedAt: label === 'deleted' ? new Date() : null,
+          },
+        });
+    }
+    const ids = (names: number[]) => names.map((index) => records[index]?.id).sort();
+    const params = { board: 'FEEDBACK', category: 'clash-royale', q };
+    const reader = supertest(app.getHttpServer());
+    for (const [feedbackStatus, expected] of [
+      ['WAITING', [0, 3, 4]],
+      ['ANSWERED', [1, 2]],
+    ] as const) {
+      const result = (
+        await reader
+          .get('/api/posts')
+          .query({ ...params, feedbackStatus })
+          .expect(200)
+      ).body;
+      expect(result.items.map((post: { id: string }) => post.id).sort()).toEqual(ids([...expected]));
+      expect(
+        result.items.every((post: { answerCount: number }) =>
+          feedbackStatus === 'WAITING' ? post.answerCount === 0 : post.answerCount > 0,
+        ),
+      ).toBe(true);
+    }
+    const first = (
+      await reader
+        .get('/api/posts')
+        .query({ ...params, feedbackStatus: 'ANSWERED', limit: 1 })
+        .expect(200)
+    ).body;
+    expect(first.nextCursor).toEqual(expect.any(String));
+    const second = (
+      await reader
+        .get('/api/posts')
+        .query({ ...params, feedbackStatus: 'ANSWERED', limit: 1, cursor: first.nextCursor })
+        .expect(200)
+    ).body;
+    expect([first.items[0].id, second.items[0].id].sort()).toEqual(ids([1, 2]));
+    expect(second.nextCursor).toBeNull();
+    expect(
+      (
+        await reader
+          .get('/api/posts')
+          .query({ ...params, feedbackStatus: 'ANSWERED', category: 'another-game' })
+          .expect(200)
+      ).body.items,
+    ).toEqual([]);
+    await author.post('/api/blocks').set('Origin', origin).send({ blockedUserId: reviewerId }).expect(200);
+    try {
+      expect(
+        (
+          await author
+            .get('/api/posts')
+            .query({ ...params, feedbackStatus: 'ANSWERED' })
+            .expect(200)
+        ).body.items,
+      ).toEqual([]);
+      const waiting = (
+        await author
+          .get('/api/posts')
+          .query({ ...params, feedbackStatus: 'WAITING' })
+          .expect(200)
+      ).body;
+      expect(waiting.items.map((post: { id: string }) => post.id).sort()).toEqual(ids([0, 1, 2, 3, 4]));
+      expect(
+        (
+          await reader
+            .get('/api/posts')
+            .query({ ...params, feedbackStatus: 'ANSWERED' })
+            .expect(200)
+        ).body.items,
+      ).toHaveLength(2);
+    } finally {
+      await author.delete(`/api/blocks/${reviewerId}`).set('Origin', origin).expect(200);
+    }
+    for (const query of [
+      { board: 'FREE', feedbackStatus: 'WAITING' },
+      { board: 'ALL', feedbackStatus: 'ANSWERED' },
+      { feedbackStatus: 'WAITING' },
+      { board: 'FEEDBACK', feedbackStatus: 'UNKNOWN' },
+      { board: 'FEEDBACK', feedbackStatus: 'ANSWERED', unanswered: 'true' },
+    ])
+      await reader.get('/api/posts').query(query).expect(400);
+    const legacy = (
+      await reader
+        .get('/api/posts')
+        .query({ ...params, unanswered: 'true' })
+        .expect(200)
+    ).body;
+    expect(legacy.items.map((post: { id: string }) => post.id).sort()).toEqual(ids([0, 3, 4]));
+  });
 });
