@@ -8,6 +8,6 @@ guardDatabaseUrl(process.env.TEST_DATABASE_URL, { test: true });
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.{spec,test}.ts'],
   },
 });

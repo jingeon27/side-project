@@ -6,7 +6,7 @@ const outputDir = join(apiDir, 'dist');
 rmSync(outputDir, { recursive: true, force: true });
 const result = spawnSync(
   process.execPath,
-  [require.resolve('typescript/bin/tsc'), '-p', join(apiDir, 'tsconfig.json')],
+  [require.resolve('@side/typescript-config/compiler'), '-p', join(apiDir, 'tsconfig.json')],
   {
     stdio: 'inherit',
   },

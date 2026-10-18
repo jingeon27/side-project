@@ -9,7 +9,7 @@
   },
   "scripts": {
     "codegen": "orval --config orval.config.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc7 --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

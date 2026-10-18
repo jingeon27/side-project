@@ -11,13 +11,13 @@ export default defineConfig({
   },
   test: {
     projects: [
-      { extends: true, test: { name: 'unit', environment: 'node', include: ['src/**/*.spec.ts'] } },
+      { extends: true, test: { name: 'unit', environment: 'node', include: ['src/**/*.{spec,test}.ts'] } },
       {
         extends: true,
         test: {
           name: 'ui',
           environment: 'jsdom',
-          include: ['src/**/*.spec.tsx'],
+          include: ['src/**/*.{spec,test}.tsx'],
           setupFiles: ['./vitest.setup.ts'],
           server: { deps: { inline: [/@base-ui\//] } },
           deps: {

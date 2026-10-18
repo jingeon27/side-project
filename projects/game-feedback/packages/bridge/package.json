@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc7 --noEmit"
   },
   "dependencies": {
     "zod": "^4.1.12"
