@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { overlay } from 'overlay-kit';
@@ -18,32 +18,35 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
   const client = useQueryClient();
   const router = useRouter();
   const notify = useNotify();
-  const dialogId = useRef<string | null>(null);
+  const overlayId = `block-chat:${userId}:${conversationId}`;
 
   useEffect(
     () => () => {
-      if (dialogId.current) overlay.unmount(dialogId.current);
+      overlay.unmount(overlayId);
     },
-    [],
+    [overlayId],
   );
 
   function handleBlock(author: Author) {
-    dialogId.current = openOverlay(({ isOpen, close, unmount }) => (
-      <BlockUserDialog
-        author={author}
-        open={isOpen}
-        onOpenChange={(nextOpen) => {
-          if (nextOpen) return;
-          close();
-          unmount();
-        }}
-        onBlocked={() => {
-          client.removeQueries(chatMessageOptions(userId, conversationId));
-          router.replace(appRoutes.messages(locale), { scroll: false });
-          notify('사용자를 차단했어요. 더 이상 메시지를 주고받을 수 없어요.');
-        }}
-      />
-    ));
+    openOverlay(
+      ({ isOpen, close, unmount }) => (
+        <BlockUserDialog
+          author={author}
+          open={isOpen}
+          onOpenChange={(nextOpen) => {
+            if (nextOpen) return;
+            close();
+            unmount();
+          }}
+          onBlocked={() => {
+            client.removeQueries(chatMessageOptions(userId, conversationId));
+            router.replace(appRoutes.messages(locale), { scroll: false });
+            notify('사용자를 차단했어요. 더 이상 메시지를 주고받을 수 없어요.');
+          }}
+        />
+      ),
+      { overlayId },
+    );
   }
 
   return { handleBlock };

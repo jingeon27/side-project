@@ -10,15 +10,16 @@ export function blockUserMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['moderation', 'block-user'],
     mutationFn: postBlockUser,
-    onSuccess: async () => {
-      await Promise.all([
+    onSuccess: () => {
+      // Complete the confirmed block immediately; query boundaries own refresh failures.
+      void Promise.all([
         client.invalidateQueries(blockListOptions()),
         client.invalidateQueries(postListOptions()),
         client.invalidateQueries(postDetailOptions()),
         client.invalidateQueries(notificationListOptions()),
         client.invalidateQueries(chatScopeOptions()),
         client.invalidateQueries(followStatusOptions()),
-      ]);
+      ]).catch(() => undefined);
     },
   });
 }

@@ -1,6 +1,7 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
 import { useRouter } from 'next/navigation';
+import { appRoutes } from '@game-feedback/bridge';
 import { Flag, Pencil, Trash2, ShieldBan } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { StartChatLink } from '@/widgets/start-chat';
@@ -122,7 +123,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
               }}
               onBlocked={() => {
                 notify(t('사용자를 차단했어요. 설정에서 해제할 수 있어요.'));
-                if (author.id === post.author.id) router.push(`/${locale}`);
+                if (author.id === post.author.id) router.replace(appRoutes.feed(locale));
               }}
             />
           ));

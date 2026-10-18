@@ -819,6 +819,7 @@ const messages: Record<string, readonly [string, string]> = {
       '互いの投稿と会話が非表示になり、メッセージを送受信できなくなります。設定から解除できます。',
     ],
   차단하기: ['Block player', 'ブロックする'],
+  '{name}님을 차단할까요?': ['Block {name}?', '{name}をブロックしますか？'],
   '피드백 요청 수정': ['Edit request', '依頼を編集'],
   '어떤 플레이가 고민인가요?': ['What would you like help with?', 'どんなプレイで悩んでいますか？'],
   '구체적인 고민을 알려주면 더 좋은 피드백을 받을 수 있어요.': [
