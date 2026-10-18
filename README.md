@@ -48,7 +48,7 @@ corepack yarn dev:photo-contest
 
 ## Game Feedback
 
-플레이메이트는 클래시로얄 피드백 요청·답변·댓글과 영속 1:1 채팅을 제공하는 비공개 알파입니다. 데모에서는 고정된 플레이어·인증 코치·운영자 테스트 계정으로 전환할 수 있습니다.
+플레이메이트는 피드백, 친추판매, 전투 모집, 게임코치, 자유게시판과 영속 1:1 채팅을 제공하는 비공개 알파입니다. 테스트 실행에서는 서버의 테스트 토큰 API로 고정 계정에 로그인합니다.
 
 ```sh
 cp projects/game-feedback/.env.example projects/game-feedback/.env
@@ -85,3 +85,9 @@ corepack yarn format:check
 `test:api`는 웹·모바일이 소비하는 실제 API 계약을, `test:e2e`는 API의 supertest와 웹·모바일의 Playwright를 실행합니다. `TEST_DATABASE_URL`을 우선 사용하고 실행마다 임시 스키마를 만든 뒤 제거합니다. 개발 서버의 포트·빌드 폴더·데이터를 재사용하지 않습니다.
 
 새 프로젝트는 `@side/<name>` 집계 패키지에 `test`·`build`·`typecheck`·`check`를 정의합니다. 여러 프로젝트가 함께 쓰는 코드만 루트 `packages/*`에 둡니다.
+
+## TypeScript와 테스트 파일 규칙
+
+웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/typescript-config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
+
+새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.

@@ -743,3 +743,33 @@ Migration 202610180014_battle_recruitment는 Post.battle JSONB nullable 열과 �
 홈을 별도 상위 영역으로 분리했던 표시를 제거했다. 게임 이름 아래 한 줄에서 홈, 피드백, 친추판매, 전투 모집, 게임코치, 자유게시판을 같은 크기와 선택 스타일로 표시한다. 분류만 감싸던 테두리/배경/안쪽 여백과 모든 게임 안내를 제거했다. 기존 홈 조회와 각 분류의 URL은 유지하며 여섯 칩이 같은 스크롤 영역과 선택 칩 노출 로직을 사용한다.
 
 로컬 400px에서 여섯 칩의 상단 위치가 모두 123px, 높이가 모두 36px이며 가로 넘침과 pageerror가 없음을 확인했다. Web 타입과 lint, 관련 Playwright 13개가 통과했다. 홈/분류 선택, 320px 일본어 직접 진입/키보드/짧은 화면/크기 변경, 헤더와 언어 전환, 상세에서 검색한 홈 복귀를 검증했다. API/계약/DB Migration 변경은 없다.
+
+## 검색 전용 화면, 모집 필터와 가이드 갱신 (2026-10-18)
+
+헤더는 검색 아이콘으로 검색 화면을 엽니다. 본문의 검색 폼과 모바일 중복 홈 제목을 없애고 첫 칩을 전체로 표시합니다. 검색 화면은 분류/게임/전투 유형/코치 또는 수강생 조건을 URL에 보존하며 결과 영역만 skeleton과 오류 경계로 처리합니다. 공개 게시글의 상세 SEO는 유지하고 검색 URL은 noindex로 둡니다. 코칭 역할은 서버 Zod → OpenAPI → Orval로 생성하며 API에서 다른 분류의 역할 필터를 거부합니다.
+
+친추판매, 1:1/팀전, 코치/수강생, 자유글에 맞는 제목과 편집기 예시를 제공하고 가격 단위별 금액 예시를 구분합니다. 분류 변경 시 제목과 본문 초안은 보존합니다. 이용 가이드는 다섯 분류, 본문 미디어, 가격, 모집 유형과 수강료 기준, 채팅, 사용자 계정의 태그 등록/관리자 인증, 팔로우와 신고를 설명하도록 교체했습니다. 게시글에 게임 프로필을 첨부하라는 이전 안내는 제거했습니다.
+
+## 공통 도구와 모니터링 감사 (2026-10-18)
+
+사용자가 Photo Contest를 포함한 서비스 버전과 공통 적용을 요청해 이번 범위에서 다른 앱 manifest, 공통 compiler 실행기, 테스트 수집 설정도 수정했습니다. Node/Yarn/Expo 버전과 다른 서비스의 운영 데이터는 변경하지 않습니다. Next.js와 관련 패키지를 16.4.2로 맞추고 타입 검사와 API 빌드는 공통 TypeScript 7.0.2 실행기 `tsc7`을 사용합니다. Next/ESLint/코드 생성기의 JavaScript API는 TypeScript 6.0.2로 연결합니다. 공식 shim은 Yarn 내장 패치의 ENOENT 오류 때문에 직접 사용하지 않습니다. Photo Contest의 ESM Apollo 플러그인 로딩과 미디어 트랙 predicate는 네이티브 컴파일러와 현재 Node의 모듈 해석에 맞췄습니다.
+
+Vitest가 spec/test 접미사를 모두 수집하도록 빠진 설정을 보완했습니다. 기능 사양은 spec, 확인한 버그의 회귀는 test이며 API의 통합 테스트도 Vitest+Supertest입니다. Photo Contest Web/Mobile의 `.api.spec.ts`와 `.api.test.ts`는 unit에서 제외해 실제 API 레인에서만 실행합니다. 기존 혼합 파일을 대량으로 이름만 변경하지는 않았습니다.
+
+| 대상                         | 코드 연결 확인                                                                                                        | 실제 외부 수집 확인                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Game Feedback Web/API/Mobile | Amplitude와 Sentry 연동 없음. Web Vitals 수집기도 없음                                                                | 확인하지 못함                                                       |
+| Photo Contest API            | main 첫 import 초기화, REST 5xx, GraphQL 내부 오류, OAuth/주기 작업 실패 전송 경로. 4xx 제외 및 요청/사용자 정보 제거 | DSN 없으면 초기화하지 않음. 실제 계정의 이벤트 수신은 확인하지 못함 |
+| Photo Contest Web/Mobile     | Amplitude와 Sentry 연동 있음. WebView device ID와 사용자 ID 연결 코드 있음                                            | 키 없는 실행에서 전송 안 함. 실제 계정의 수신 확인은 별도           |
+| Photo Contest Web 성능       | Sentry trace 비율 0이며 별도 Web Vitals 수집기 없음                                                                   | 수집 중이라고 주장할 수 없음                                        |
+| 공유 디자인 시스템           | Game Feedback와 Photo Contest Web이 shadcn + Base UI 패키지와 스타일을 사용함. Blog에는 적용하지 않음                 | 브라우저 검증은 서비스별 수행                                       |
+
+Photo Contest 서버 Sentry 옵션/정보 제거 단위 6개와 격리 PostgreSQL+Supertest 통합 6개가 통과했습니다. 통합 테스트는 REST/GraphQL/OAuth/주기 작업 오류와 4xx 제외를 실제 앱 경로로 검증하고 외부 전송 경계만 대체합니다. 이 결과를 Sentry 대시보드 수신 성공으로 기록하지 않습니다. 실제 DSN·프로젝트 접근이 없는 현재 상태에서 운영 수집, 소스맵 업로드, 알림 규칙을 완료했다고 말할 수 없습니다.
+
+이번 검증에서 Game Feedback API 97개, SDK 41개, Web 94개, Mobile 42개 Vitest가 통과했습니다. Web Playwright 전체 78개 중 75개가 통과했고, 숨겨진 Activity의 카드까지 세던 선택자와 이전 인라인 검색 기대를 수정한 뒤 관련 세 파일 10개가 모두 통과했습니다. 78개가 한 번에 통과한 결과로 기록하지 않습니다. Production 프리패칭 12개와 demoMode=false 테스트 토큰 채팅 3개가 통과했습니다. 400px 실제 개발 화면에서 홈/가이드/코칭/검색의 가로 넘침과 pageerror가 없음을 확인했습니다.
+
+Photo Contest API unit 64개와 Sentry Supertest 6개, Web 264개, Mobile 137개, Bridge 35개, 공통 디자인 시스템 14개, ESLint 규칙 45개, Blog 67개가 통과했습니다. Photo Contest와 Blog의 Next 16.4.2 프로덕션 빌드가 통과했습니다. Photo Contest API는 TypeScript 7로 빌드한 격리 서버의 health 200을 확인하고 테스트 스키마 0개를 확인한 뒤 이 검사에서 시작한 DB만 종료했습니다. Photo Contest Web/Mobile은 Yarn peer bin 목록에서 Vitest가 빠지는 환경에서도 앱이 선언한 러너를 실행하도록 자체 실행기를 연결했습니다.
+
+WebView 최종 검사는 이전 메뉴 명칭과 인증 갱신 직후 UI 대기를 보완한 뒤 Android Chromium/iOS WebKit 32개가 한 번에 통과했습니다. 새 검색 경로의 코칭 역할 보존, 네이티브 뒤로 가기, 작성/댓글/채팅, 언어/화면 모드와 키보드/스크롤을 확인했습니다. 앞선 실행의 타임아웃과 실패를 성공으로 합산하지 않습니다. 최종 공통 및 앱 타입 검사와 린트가 통과했습니다. 실제 모바일 OS의 WebView·소셜 로그인·스토어 동작은 실기기에서 별도로 검증해야 합니다.
+
+Game Feedback API의 TypeScript 7 production 빌드와 모바일 Android/iOS Metro export가 통과했으며 immutable 설치와 전체 format:check도 통과했습니다. Photo Contest의 API 기본 자동 통합은 꺼져 있고 main의 시작 실패 catch는 콘솔에만 기록합니다. 따라서 요청/작업의 명시적인 예외 보고를 프로세스 전체 크래시 수집과 동일하게 보지 않습니다. 운영 모니터링 완성 여부에는 이 시작/프로세스 오류 경로도 별도 확인이 필요합니다.
