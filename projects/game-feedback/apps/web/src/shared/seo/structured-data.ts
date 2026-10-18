@@ -1,3 +1,4 @@
+import { translate } from '@/shared/i18n/index.server';
 import type { PostDetail, PublicProfile } from '@/shared/api';
 import { pageUrl, excerpt } from './config';
 import { pageContent, localizedStaticContent, SITE_NAME, staticPagePath, type TStaticPage } from './metadata';
@@ -28,7 +29,7 @@ export function publicPageStructuredData(kind: TPublicStaticPage, locale: string
         '@type': publicPageTypes[kind],
         '@id': `${url}#webpage`,
         url,
-        name: `${content.title} | ${SITE_NAME}`,
+        name: `${content.title} | ${translate(content.language, SITE_NAME)}`,
         description: content.description,
         inLanguage: content.language,
         isPartOf: { '@id': `${homeUrl}#website` },

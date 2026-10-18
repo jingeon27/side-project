@@ -70,7 +70,7 @@ Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, 
 
 `apps/mobile/src/_app`은 Provider와 셸 조합만 담당한다. `_pages/web-shell`은 UI·WebView 핸들러·OS 수명 주기를, `features/navigation`은 순수 URL 정책을, `features/bridge`는 native host와 PKCE 시스템 인증을 소유한다. 공통 계약은 `packages/bridge`에 두고 제품 화면은 Web FSD에서 렌더링한다.
 
-세션 쿠키는 WebView에만 남는다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급한다. WebView가 verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한다. 그 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 앱 교환으로 세션을 바꾸면 이전 SSE도 종료한다. Migration `202610170004_mobile_login`은 OAuthAttempt에 선택 필드와 독립 티켓 테이블만 추가한다.
+세션 쿠키는 WebView에만 남는다. Google OAuth 시작 시 앱 challenge를 서버 attempt에 보존하고 완료 후 hashed AppLoginTicket을 발급한다. WebView가 verifier와 함께 REST 교환을 요청하면 Origin·challenge·2분 만료를 확인하고 원자적 delete로 한 번만 소비한다. 그 뒤 기존 SessionService가 HttpOnly 쿠키를 발급한다. 앱 교환으로 세션을 바꾸면 이전 SSE도 종료한다. OAuthAttempt와 AppLoginTicket은 현재 Prisma 스키마에서 관리한다.
 
 API 테스트는 Vitest+Supertest가 소유한다. Web은 Vitest+Playwright, Mobile은 Vitest unit/UI와 실제 웹/API를 쓰는 Android/iOS Playwright host가 소유한다. Mobile E2E의 3302/4302·`.next/e2e-mobile`·`gf_test_mobile_*`는 Web E2E의 3301/4301과 분리한다. 실제 네이티브 모듈·서명·스토어 배포는 브라우저 테스트 범위 밖이다.
 
@@ -107,7 +107,7 @@ Category는 DB에서 관리하고 카테고리 생성은 관리자만 수행한�
 
 고정 테스트 계정 선택은 서버 allowlist의 사용자만 세션에 연결한다. 이 경로는 명시적 데모 모드와 비운영 환경에 한정한다. 정상 Google 세션과 동일한 작성자·참여자 권한 검사를 통과해야 하며 사용자 ID를 임의로 주입해 다른 계정으로 전환할 수 없다. 일반 모드의 테스트 계정 진입점과 데모 데이터는 비노출한다.
 
-API는 `GET /api/auth/test-accounts`, `POST /api/auth/test-login`과 관리자 전용 `PATCH /api/admin/users/:id/verification`을 제공한다. 세션 전환은 이전 세션 토큰을 폐기하고 새 세션을 발급한다. 사용자 인증 변경은 AuditLog에 남긴다. `202610160003_user_test_accounts`는 기존 초기·채팅 Migration 이후에 적용하는 추가 Migration이다.
+API는 `GET /api/auth/test-accounts`, `POST /api/auth/test-login`과 관리자 전용 `PATCH /api/admin/users/:id/verification`을 제공한다. 세션 전환은 이전 세션 토큰을 폐기하고 새 세션을 발급한다. 사용자 인증 변경은 AuditLog에 남긴다.
 
 요청, 답변, 댓글은 작성자 권한을 서버에서 검사한다. 요청자만 자신의 요청에 달린 답변을 도움됨으로 표시한다. 답변 알림은 DB에 저장하며 확인 여부도 서버 상태로 관리한다. 차단 관계와 숨김 상태는 조회 및 작성 흐름에 반영한다.
 
@@ -121,17 +121,17 @@ API는 `GET /api/auth/test-accounts`, `POST /api/auth/test-login`과 관리자 �
 
 ApiAccessMiddleware가 세션을 읽은 다음 ChatLifecycleMiddleware가 현재 사용자·세션 토큰과 탈퇴 시 대화 상대를 컨트롤러 실행 전에 보존한다. 상태 200의 응답이 완료된 뒤 세션 교체·로그아웃·탈퇴의 스트림 종료와 차단 변경 갱신을 전달한다. ChatEvents는 모듈 종료 시 `onModuleDestroy`에서 모든 SSE를 닫는다.
 
-채팅 본문을 제3자 이벤트·오류 로그에 첨부하지 않는다. SSE 상태는 단일 API 프로세스 내에서 전달하므로 다중 인스턴스 배포에는 공유 pub/sub와 재연결·순서·중복 처리를 별도 검증해야 한다. 원본 첫 Migration은 유지하고 `202610160002_chat`의 추가 SQL로 확장한다.
+채팅 본문을 제3자 이벤트·오류 로그에 첨부하지 않는다. SSE 상태는 단일 API 프로세스 내에서 전달하므로 다중 인스턴스 배포에는 공유 pub/sub와 재연결·순서·중복 처리를 별도 검증해야 한다. 배포 전 DB 구조는 현재 Prisma 스키마를 기준으로 관리한다.
 
 ## DB 경계
 
-Prisma schema, Client, Migration은 `apps/api`에만 속한다. 서비스 DB와 역할은 `game_feedback` 전용이다. 테스트는 별도 서버/DB의 `gf_test_` 임시 스키마로 격리한다. PostgreSQL bootstrap 관리자와 앱 역할은 분리하고 앱 역할의 superuser/createdb/createrole 권한을 거부한다.
+Prisma schema와 Client는 `apps/api`에만 속한다. 서비스 DB와 역할은 `game_feedback` 전용이다. 테스트는 별도 서버/DB의 `gf_test_` 임시 스키마로 격리한다. PostgreSQL bootstrap 관리자와 앱 역할은 분리하고 앱 역할의 superuser/createdb/createrole 권한을 거부한다.
 
 DatabaseModule은 실행별 AppConfig와 PrismaClient를 컨테이너에 제공한다. 직접 만든 Client만 애플리케이션 종료 시 연결을 끊고, 테스트 등 외부에서 주입한 Client의 종료 권한은 호출자에게 남긴다. ChatEvents의 스트림 정리가 끝난 뒤 `onApplicationShutdown`에서 소유 DB 연결을 정리한다.
 
 로컬 DB 관리자는 `.data/postgres-dev`와 `.data/postgres-test`만 관리한다. TCP loopback과 고정 전용 포트를 사용한다. 임의 포트 프로세스를 종료하지 않는다. 시작한 DB 소유 프로세스는 랜덤 토큰으로만 제어하며 관리자 비밀과 제어 메타데이터는 Git에서 제외한다.
 
-Migration 실행 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. 검토된 SQL을 `prisma migrate deploy`로 적용하며 reset/db push를 실행하지 않는다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
+스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. 배포 전에는 `schema.prisma`만 관리하며 URL 검증 뒤 `prisma db push --skip-generate`로 적용한다. 데이터 손실 경고가 발생하면 강제하지 않고 실패한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
 
 ## API 계약과 갱신
 
@@ -144,3 +144,15 @@ Zod 서버 검증 스키마를 OpenAPI에 연결하고 Orval로 SDK와 검증 �
 ## 외부 서비스 경계
 
 실제 Google·Supercell 구현과 가짜 제공자를 분리한다. 테스트는 가짜 제공자를 강제하며 데모는 명시적 `GF_DEMO_MODE`와 개발 실행에서만 허용한다. production은 데모를 거부한다. Supercell 키·등록 IP가 없거나 제공자 조회가 실패하면 실제 데이터가 조회된 것처럼 성공 처리하지 않는다. 번역·이메일·분석 연동은 후속 범위다.
+
+## 페이지 조립과 별도 관리자
+
+Topbar는 Root, Brand, Title, Back, Breadcrumb, Actions를 제공한다. Next `@topbar` 슬롯의 페이지 어댑터에서 필요한 구성을 선택하고, 게시글은 서버가 조회한 실제 게임/분류를 전달해 조립한다. 불러오지 않은 상세의 헤더와 본문은 각자 placeholder를 표시한다. 초기 검색엔진 문서는 공개 본문과 실제 breadcrumb를 완성해서 응답하고 클라이언트 탐색만 Suspense로 나눈다.
+
+`CreatePostForm`은 생성과 등록 후 이동을, `EditPostSheet`는 기존 값과 수정 저장을 담당한다. 공유 `PostContentFields`는 제목, 본문, 가격/모집 필드만 소유한다. ConnectProfile의 입력은 RHF, 조회 결과/대기/오류는 mutation, 저장은 별도 mutation이 소유한다.
+
+관리자 UI는 `apps/admin`의 React/Vite 서비스로 분리한다. 공개 Web/WebView의 관리자 페이지, 메뉴, 관리용 클라이언트 도메인은 제거한다. 로컬 3303의 관리자 프록시는 요청 Origin을 검증하고 기존 API의 ADMIN 권한 및 감사 기록을 사용한다. 사용자 문의는 기존 1:1 채팅이므로 관리자 UI 분리와 무관하게 유지한다.
+
+NativeHost와 NativeBridgeChannel은 각 환경의 수명과 연결 상태를 클래스로 관리한다. instrumentation-client가 브라우저 이벤트 구독을 한 번 설치하고 React NativeBridge는 최신 router/session/overlay 어댑터만 bind/unbind한다. 경로와 메시지 분기는 ts-pattern, 쿼리 조합과 마지막 overlay 선택은 es-toolkit을 사용한다. sitemap은 24시간 뒤 요청 시 재검증하며 게시글 lastmod는 updatedAt을 사용한다. 정해진 시각에 실행하는 스케줄러는 아니다.
+
+API의 AdminModule은 공개 도메인 서비스와 별개로 관리자 카테고리/사용자/신고/문의의 controller와 service를 소유한다. 같은 Prisma 테이블을 사용해도 권한과 업무 흐름을 공개 service에 섞지 않는다. JSON Body/Query는 도메인별 class-validator DTO와 명시적인 ValidationPipe parameter decorator로 받으며 Guard → DTO 검증 → Service 순서다. tsx에서도 DTO class를 expectedType으로 직접 전달한다. Zod의 계약 정규화와 중첩 JSON 규칙은 HTTP 경계에서 검사해 OpenAPI와 SDK의 단일 계약을 보존하며 Service의 입력 parse를 제거한다. Response Zod 검증과 fallback은 SDK가 계속 소유한다. [Nest ValidationPipe](https://docs.nestjs.com/application/validation)를 기반으로 한다.

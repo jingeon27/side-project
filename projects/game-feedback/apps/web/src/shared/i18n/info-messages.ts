@@ -233,4 +233,11 @@ export const infoMessages: Record<string, readonly [string, string]> = {
   '{name} 프로필 보기': ['View {name}’s profile', '{name}のプロフィールを見る'],
   '내가 작성한 글': ['My posts', '自分の投稿'],
   '아직 작성한 글이 없어요.': ['You have not written any posts yet.', 'まだ投稿がありません。'],
+  '게임 커뮤니티': ['Gaming community', 'ゲームコミュニティ'],
+  '게임 피드백': ['Gameplay feedback', 'ゲームのフィードバック'],
+  '커뮤니티 가이드': ['Community guide', 'コミュニティガイド'],
+  '프로필 인증': ['Profile verification', 'プロフィール認証'],
+  '개인정보 처리': ['Personal information processing', '個人情報の取り扱い'],
+  '계정 삭제': ['Account deletion', 'アカウント削除'],
+  '서비스 문의': ['Service support', 'サービスへのお問い合わせ'],
 };

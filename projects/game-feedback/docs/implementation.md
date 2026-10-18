@@ -791,3 +791,42 @@ Node 24.19.0 / Yarn 4.17.0에서 프로젝트 check, API build와 변경 파일 
 관련 Web Playwright 일곱 파일 23개가 최종 한 번에 통과했습니다. 최초 검사에서 이전 빈 목록 문구 기대와 신규 fixture의 허용되지 않은 테스트 계정 지정을 수정한 뒤 같은 범위를 다시 실행했습니다. 공개 상태별 목록, 검색·상세 왕복, 새로고침, 다른 게임, no-JS 선택 상태와 빈 필터 해제를 확인했습니다. Production build와 프리패칭 12개도 통과했으며 instant()의 목록 스켈레톤이 보일 때 답변 상태 칩을 사용할 수 있습니다. Mobile Playwright의 새 필터 검색/뒤로 가기는 Android Chromium과 iOS WebKit host 두 검사에서 통과했습니다.
 
 기존 개발 서버 3300/4300에서 320·400·1440px 한국어 피드백 화면, 400px 영어·일본어 다크 모드를 확인했습니다. 가로 넘침과 pageerror는 없고 답변 있음 목록의 표시 개수가 모두 1 이상이었습니다. 개발 서버와 데이터는 유지하고 이번에 시작한 소유 테스트 DB만 종료합니다. 이번 변경은 Game Feedback 범위이며 외부 모니터링 연동과 운영 이벤트 수신, 실기기·스토어 및 배포를 새로 검증한 결과가 아닙니다.
+
+## 페이지 조립, 별도 관리자와 API 요청 경계 (2026-10-18)
+
+관리자는 `apps/admin`의 독립 React/Vite 앱으로 옮겼습니다. 로컬 127.0.0.1:3303에서만 실행하며 문의 답변/처리, 신고 검토/콘텐츠 숨김, 사용자 인증과 사유를 포함한 밴/해제를 제공합니다. 공개 Web의 관리자 페이지와 메뉴, 관리 전용 feature와 CSS를 제거하고 모든 locale의 기존 관리자 HTML/RSC는 404로 처리합니다. API의 ADMIN 권한과 감사 기록은 유지합니다. 관리자 프록시는 로컬 Origin을 먼저 검사하고 기존 API Origin으로 전달하며 외부 Origin의 쓰기는 거부합니다.
+
+API도 테이블 단위로 한 service에 합치지 않습니다. 공개 Categories/Users/Moderation/Support와 관리자 `admin/{categories,users,reports,support}`의 controller/service를 분리하고 AdminModule에서 조합합니다. Category 테이블과 기존 REST URL/응답은 공유하지만 조회와 관리자 생성의 application context는 독립합니다. 관리자 카테고리 생성의 권한, Zod 계약과 감사 기록, 비로그인 활성 카테고리 조회를 Supertest로 확인합니다.
+
+JSON 요청은 도메인별 class-validator DTO와 class-transformer, Nest ValidationPipe 기반의 명시적 parameter decorator가 검증합니다. tsx의 design:paramtypes 미출력에도 같은 검증이 적용되도록 DTO를 파이프에 직접 전달합니다. Service는 입력 DTO와 업무 불변식, 권한과 트랜잭션을 담당합니다. Guard가 DTO 파이프보다 먼저 실행돼 관리자/로그인 권한과 비활성 테스트 인증의 404 우선순위를 보존합니다. Zod의 중첩 JSON/refinement/정규화와 OpenAPI/SDK 계약도 HTTP 경계에서 유지합니다. 응답 검증/fallback 계약을 class-validator로 바꾸지 않습니다. DTO 단위는 잘못된 타입, 추가 필드와 prototype 키, 금액, 빈 PATCH, 태그 정규화, 사진만 있는 채팅과 중복 첨부, query 기본값을 확인합니다.
+
+배포 전이라는 사용자 지시에 따라 누적 migration SQL과 그 SQL만 검사하던 과거 데이터 변환 테스트를 제거했습니다. schema.prisma를 단일 출처로 관리하고 `db:sync` / `db:test:sync`는 기존 전용 URL 가드 후 `prisma db push --skip-generate`를 실행합니다. 데이터 손실 강제 옵션과 reset은 없습니다. 기존 개발 DB를 삭제하거나 초기화하지 않았습니다. 이전 절의 Migration 적용 기록은 당시 이력이며 현재 실행 방식은 이 절과 README를 따릅니다. 최초 운영 배포 전 초기 migration과 운영 적용 절차는 별도로 준비해야 합니다. 사용자 원본 계획은 수정하지 않았습니다.
+
+Topbar는 Root/Brand/Title/Back/Breadcrumb/Actions compound를 제공하고 각 페이지의 @topbar 어댑터에서 조립합니다. 상세에는 서버가 확인한 실제 게임 > 분류, 뒤로 가기, 언어와 알림만 표시합니다. 비소유자 채팅 CTA는 본문 하단 한 곳에 배치하고 등록/수정 날짜 토큰은 393px에서도 줄바꿈하지 않습니다. 차가운 상세 탐색에서도 헤더 뼈대와 본문 fallback을 각각 먼저 표시하며 초기 no-JS 문서는 실제 breadcrumb와 공개 본문을 완성합니다.
+
+프로필 탭에 자기 글의 모든 분류와 추가 페이지를 표시합니다. 채팅 헤더의 상대와 수신 메시지 아바타는 상대 프로필에 연결하고 신고는 바로 노출하며 차단/대화내역 삭제는 메뉴로 옮겼습니다. 헤더는 393px에서 68px 이하이며 각 버튼을 잘리지 않게 배치했습니다. 가이드/약관/개인정보/문의는 한국어·영어·일본어 본문과 metadata, canonical, hreflang과 JSON-LD를 제공합니다. 사이트맵은 24시간 후 요청에서 재검증하며 게시글 lastmod는 updatedAt입니다. 크론 스케줄러는 아닙니다.
+
+CreatePostForm과 EditPostSheet는 생성/수정 mutation, 기본값, 완료 후 흐름을 따로 소유합니다. 공통 PostContentFields는 제목·본문·가격/모집 필드만 공유합니다. ConnectProfile은 RHF 입력과 조회/저장 mutation을 분리하고 입력 변경 시 이전 preview를 분리합니다. 조회 중 태그 변경 뒤 늦게 도착한 결과를 등록하지 않는 브라우저 회귀를 추가했습니다.
+
+NativeHost와 검증용 host harness는 클래스로 상태와 수명을 소유합니다. instrumentation-client에서 NativeBridgeChannel의 DOM 구독을 한 번 설치하고 React는 최신 router/auth/overlay 어댑터만 bind합니다. ts-pattern으로 메시지와 화면 종류를 분기하고 es-toolkit으로 query와 마지막 overlay를 조합합니다. URL 길이/인코딩/중복 query/허용 화면 검증은 유지하고 관리자 딥링크는 공개 셸에서 제외합니다.
+
+루트 yarn.lock 변경은 새 Admin workspace, API의 class-validator/class-transformer와 bridge의 ts-pattern/es-toolkit 의존성을 선언하기 위해 필요했습니다. Node/Yarn과 다른 서비스의 제품 코드는 변경하지 않았습니다. 실제 OAuth/Supercell, Sentry/Amplitude 수신과 실기기/스토어/공개 배포를 새로 검증한 결과로 기록하지 않습니다.
+
+이번 최종 검증 결과는 다음과 같습니다. 앞선 실패나 재시작을 최종 성공 수에 합산하지 않습니다.
+
+| 범위                            | 결과                                                                                                                                                      |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API Vitest + Supertest          | 14개 파일, 100개 통과                                                                                                                                     |
+| SDK / Web / Mobile / Admin unit | 각각 41 / 99 / 43 / 2개 통과                                                                                                                              |
+| Web Playwright                  | 전체 86개 중 85개 통과. 320px 글쓰기 진입 1건 이후 동일 반응형 파일의 320/390/768/1440px 4개 재검사 통과. 86개 전체가 한 번에 통과한 결과로 기록하지 않음 |
+| Native host                     | Android Chromium/iOS WebKit 전체 34개 최종 한 번에 통과                                                                                                   |
+| 별도 Admin Playwright           | 권한/외부 Origin, 인증/밴, 문의 답변/신고 처리 3개 통과                                                                                                   |
+| Production build + instant()    | 12개 통과. 최초 상세 헤더의 params 대기가 셸을 막는 문제를 고친 후 목록/상세 프리패칭과 no-JS 공개 문서 검증                                              |
+| demoMode=false 테스트 토큰 채팅 | 플레이어 채팅/일반 문의/인증 문의 3개 통과                                                                                                                |
+| 정적 검사와 설치                | 프로젝트 check와 변경 파일 format 검사, Yarn immutable 설치 통과                                                                                          |
+| 빌드                            | API, Web production, Android/iOS Metro export, 별도 Admin build 통과                                                                                      |
+| 수동 화면/메타데이터            | 393px 상세/채팅 헤더, 관리자 3303 화면과 pageerror 0개. 3300 개발 문서 유지 확인. no-JS 영어/일본어 정보 페이지 8개의 제목·키워드·canonical 확인          |
+
+정보 페이지의 공통 키워드와 브랜드 표기도 locale에 맞춥니다. 개발용 Web E2E는 WebView와 같은 Webpack 설정을 사용합니다. 여러 Next 검증 서버를 동시에 실행한 Turbopack 개발 HMR 반복 재로딩과 구분해 최종 검사를 순서대로 실행했고 production Turbopack 빌드/프리패칭 검증은 유지했습니다. 일반 3300 dev 실행 설정은 변경하지 않았습니다.
+
+초기 빌드/서버 시작 실패에서 남긴 이번 작업 소유 테스트 스키마 6개를 명시적으로 확인해 정리했고 이전 작업의 스키마 5개는 보존했습니다. 이후 이번에 시작한 테스트 DB 55444만 종료했으며 데이터 디렉터리와 개발 DB/서버는 유지했습니다. 별도 관리자 3303은 실행 중입니다.

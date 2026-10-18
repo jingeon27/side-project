@@ -35,12 +35,18 @@ export function createPageMetadata({
   const allowed = indexable && !privatePage && !isTestAccount;
   const url = pageUrl(path);
   const text = excerpt(description);
-  const fullTitle = `${excerpt(title, 80)} | ${SITE_NAME}`;
-  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: 'Game Feedback | 플레이메이트' }];
+  const siteName = translate(locale, SITE_NAME);
+  const fullTitle = `${excerpt(title, 80)} | ${siteName}`;
+  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: `Game Feedback | ${siteName}` }];
   return {
     title: { absolute: fullTitle },
     description: text,
-    keywords: [...new Set([...baseKeywords, ...keywords.map((word) => excerpt(word, 60))])],
+    keywords: [
+      ...new Set([
+        ...baseKeywords.map((word) => translate(locale, word)),
+        ...keywords.map((word) => excerpt(word, 60)),
+      ]),
+    ],
     alternates: { canonical: url },
     robots: { index: allowed, follow: !privatePage, googleBot: { index: allowed, follow: !privatePage } },
     ...(authorName ? { authors: [{ name: authorName, ...(authorUrl ? { url: authorUrl } : {}) }] } : {}),
@@ -49,7 +55,7 @@ export function createPageMetadata({
       title: fullTitle,
       description: text,
       url,
-      siteName: SITE_NAME,
+      siteName,
       locale: { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }[locale],
       images,
       ...(type === 'profile' && authorName ? { username: authorName } : {}),

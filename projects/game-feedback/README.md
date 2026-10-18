@@ -32,7 +32,7 @@
 
 설정의 **프로필 인증 문의**와 문의 페이지의 **관리자에게 문의하기**는 담당 관리자와 기존 **비공개 1:1 채팅**을 연다. 같은 사용자의 문의 대화는 재사용하고 사용자는 채팅으로 문의 내용과 답변을 확인한다. 실제 관리자가 없는 환경은 문의 불가 오류를 표시하며 가짜 답변을 만들지 않는다. 미인증 사용자는 글쓰기 화면과 작성한 글 상세에서도 인증을 신청할 수 있고, 인증 없이도 글을 작성할 수 있다.
 
-사용자 프로필과 채팅 상단의 **사용자 신고** 버튼에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. `/:locale/admin`의 **운영 관리**는 localhost의 개발 서버에서 관리자 계정으로만 사용할 수 있고, 설정에서도 진입한다. 프로덕션 빌드에서는 모든 언어의 관리자 경로를 404로 차단하고 메뉴를 숨긴다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
+사용자 프로필과 채팅 상단의 **사용자 신고** 버튼에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. 관리자는 별도 React/Vite 서비스 `apps/admin`에서 실행한다. `corepack yarn workspace @side/game-feedback admin:dev`로 http://127.0.0.1:3303 에서 열며 공개 Web/WebView에는 관리자 화면이나 메뉴가 없다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
 
 로컬에서는 테스트 토큰 API에 `sample-test-admin`을 전달해 관리자 화면을 확인한다. 일반 계정으로 문의한 후 운영테스터의 문의함에서 채팅 답변과 인증 처리를 테스트할 수 있다. 관리자 인증 표시는 수동 서비스 검토 결과이며 Supercell API의 계정 소유권 검증과 구분한다.
 
@@ -53,7 +53,7 @@ corepack yarn workspace @side/game-feedback dev:test
 corepack yarn workspace @side/game-feedback db:stop
 ```
 
-실제 소셜 로그인과 Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Migration 적용, 카테고리 seed를 준비한다. 예시 콘텐츠는 명시적인 테스트 또는 기존 데모 실행에서만 추가한다.
+실제 소셜 로그인과 Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Prisma 스키마 동기화, 카테고리 seed를 준비한다. 예시 콘텐츠는 명시적인 테스트 또는 기존 데모 실행에서만 추가한다.
 
 ## Web UI와 shadcn/ui
 
@@ -119,7 +119,7 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 
 | 명령 뒤의 작업                                                                   | 실행 내용                                                                         |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 검토된 Migration 적용, 카테고리 seed           |
+| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 현재 Prisma 스키마 적용, 카테고리 seed         |
 | `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임              |
 | `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트     |
 | `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 데모/테스트 토큰/프로덕션 프리패칭·Mobile Playwright 테스트 |
@@ -127,7 +127,7 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
-| `corepack yarn workspace @side/game-feedback db:migrate`                         | 개발 DB URL 검증 후 `prisma migrate deploy`                                       |
+| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push --skip-generate`                              |
 
 API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
 
@@ -167,7 +167,7 @@ APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
 
 개발 DB는 `127.0.0.1:55442/game_feedback`, 테스트 DB는 `127.0.0.1:55444/game_feedback_test`이며 서비스 전용 `game_feedback` 역할을 쓴다. bootstrap 관리자 자격 증명은 프로젝트 `.data`에만 저장하고 앱에 전달하지 않는다. 앱 역할에는 superuser·DB 생성·역할 생성 권한이 없다. DB의 TCP 연결은 loopback으로 한정한다.
 
-DB 실행기는 고정된 프로젝트 데이터 디렉터리만 관리한다. 포트가 다른 프로세스에 사용 중이면 종료하지 않고 실패한다. Migration 실행기는 hostname, port, database, user, schema를 검증한다. 개발과 테스트 간 URL 교체, 원격 URL, 기존 서비스 DB는 허용하지 않는다. 외부 배포의 Migration 절차는 별도의 운영 설정과 검토가 필요하다.
+DB 실행기는 고정된 프로젝트 데이터 디렉터리만 관리한다. 포트가 다른 프로세스에 사용 중이면 종료하지 않고 실패한다. 스키마 동기화 실행기는 hostname, port, database, user, schema를 검증한다. 개발과 테스트 간 URL 교체, 원격 URL, 기존 서비스 DB는 허용하지 않는다. 외부 배포의 Migration 절차는 별도의 운영 설정과 검토가 필요하다.
 
 DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종료되면 `db:status`가 실행 중으로 표시될 수 있다. 연결 오류가 계속되면 해당 개발·테스트 DB의 `db:stop` 후 `db:start`를 실행한다. 데이터는 유지되며 포트의 다른 프로세스를 종료할 필요는 없다.
 
@@ -185,8 +185,14 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 ## Next.js와 프리패칭 검증
 
-Game Feedback Web만 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
+Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
 `corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
 
 테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=true`인 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
+
+관리자 실행·로그인·검증 절차는 [Admin README](apps/admin/README.md)를 참고한다. 아직 배포 전이므로 migration SQL을 보관하지 않고 `schema.prisma`와 `db:sync`를 사용한다. 첫 배포 전에 초기 migration을 생성하고 운영 적용 절차를 준비한다.
+
+API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
+
+개발용 Web Playwright 서버는 WebView 검사와 같은 Webpack 설정으로 실행한다. Turbopack의 production 빌드와 프리패칭은 별도 test:prefetch에서 검증한다. 일반 dev 명령은 Next 기본 설정을 유지한다.

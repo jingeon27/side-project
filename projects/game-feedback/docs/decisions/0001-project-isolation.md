@@ -13,7 +13,7 @@ Game Feedback은 `jingeon27/side-project`의 기존 Yarn Workspace 안에서 개
 - 테스트 러너와 파일은 API/Web이 소유하고 프로젝트 집계는 앱·패키지 명령에 위임한다.
 - 개발 DB는 55442/game_feedback, 테스트 DB는 55444/game_feedback_test이며 앱 전용 역할을 사용한다.
 - embedded-postgres는 `18.4.0-beta.17`로 고정하고 `.data` 아래의 소유 디렉터리만 관리한다. 앱 계정과 로컬 bootstrap 관리자를 분리한다.
-- Migration은 URL 대상과 스키마를 검증하고 검토된 SQL의 `migrate deploy`만 실행한다.
+- 배포 전 로컬 스키마는 URL 대상과 스키마를 검증한 `db:sync`로 적용하며 데이터 손실을 강제하지 않는다.
 - 일반 실행의 데모 모드는 꺼 둔다. 명시적 `dev:demo`만 가짜 로그인/프로필과 데모 seed를 사용하며 production에서는 거부한다.
 - Google은 `openid`만 요청한다. 서비스 닉네임은 가입자가 입력한다. 이메일 알림을 위해 이메일을 자동 수집하지 않는다.
 - 첫 공개 전에 실제 Google/Supercell 연결, 운영 문서, 모집 및 수동 매칭 증거를 별도로 확보한다.
