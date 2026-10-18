@@ -9,6 +9,7 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '로그인', exact: true })).toBeVisible();
   await page.request.post('/api/auth/test-token', {
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-user-0' },
@@ -16,6 +17,8 @@ test('WebView test account persists posts, comments and private chat across relo
   nativeHost.state('background');
   nativeHost.state('active');
   await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page.locator('.header-account')).toContainText('새벽의호그');
+  await expect.poll(nativeHost.hasOverlay).toBe(false);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const composer = page.getByRole('form', { name: '글쓰기', exact: true });
   const title = `모바일에서 작성한 피드백 ${suffix}`;
@@ -85,6 +88,7 @@ test('native back closes the web dialog, deep links keep the document, and foreg
   expect(result.ok()).toBe(true);
   nativeHost.state('background');
   nativeHost.state('active');
+  await expect(page.locator('.header-account')).toContainText('덱연구소');
   expect(nativeHost.openDeepLink('gamefeedback://ko/settings')).toBe(true);
   await expect(page.locator('.settings-profile')).toContainText('덱연구소');
   await expect(page.locator('.settings-profile')).toContainText('인증 유저');

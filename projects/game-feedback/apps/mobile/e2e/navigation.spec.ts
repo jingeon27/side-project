@@ -9,7 +9,7 @@ test('mobile header and four tabs navigate in place and report their paths to th
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
-  await expect(tabs.getByRole('link')).toHaveText(['피드', '가이드', '채팅', '프로필']);
+  await expect(tabs.getByRole('link')).toHaveText(['홈', '가이드', '채팅', '프로필']);
   await page.evaluate(() =>
     Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
   );
@@ -39,7 +39,7 @@ test('mobile header and four tabs navigate in place and report their paths to th
   await expect.poll(nativeHost.currentPath).toBe('/ko/notifications');
   await tabs.getByRole('link', { name: '프로필', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
-  await tabs.getByRole('link', { name: '피드', exact: true }).click();
+  await tabs.getByRole('link', { name: '홈', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko');
   expect(await page.evaluate(() => Reflect.get(window, '__routeDocument'))).toBe('kept');
   expect(await page.evaluate(() => history.length)).toBe(length);
@@ -76,7 +76,7 @@ test('category chips navigate directly and native back restores the saved filter
   expect(nativeHost.rootBacks()).toBe(0);
   await chips.getByRole('link', { name: '친추판매', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/boards/friend-sale');
-  await chips.getByRole('link', { name: '전체 피드', exact: true }).click();
+  await chips.getByRole('link', { name: '전체', exact: true }).click();
   await expect(page).toHaveURL(
     (url) =>
       url.pathname === '/ko' &&
@@ -248,4 +248,25 @@ test('native back leaves the full-page editor without a dialog and restores filt
   await expect(page.getByLabel('분류', { exact: true })).toHaveValue('FRIENDLY');
   expect(await nativeHost.requestBack()).toBe(true);
   await expect.poll(nativeHost.currentPath).toBe('/ko/boards/friendly');
+});
+
+test('native search keeps the coaching role and returns to the filtered classification', async ({
+  page,
+  nativeHost,
+}) => {
+  const board = appRoutes.boards('ko', 'coaching', undefined, undefined, { coachingRole: 'STUDENT' });
+  await page.goto(board);
+  await expect.poll(nativeHost.isReady).toBe(true);
+  const search = appRoutes.search('ko', { board: 'coaching', coachingRole: 'STUDENT' });
+  await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe(search);
+  await page.getByRole('textbox', { name: '게시판 검색', exact: true }).fill('모집');
+  await page.getByRole('button', { name: '검색', exact: true }).click();
+  await expect
+    .poll(nativeHost.currentPath)
+    .toBe(appRoutes.search('ko', { board: 'coaching', coachingRole: 'STUDENT', q: '모집' }));
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect
+    .poll(nativeHost.currentPath)
+    .toBe(appRoutes.boards('ko', 'coaching', '모집', undefined, { coachingRole: 'STUDENT' }));
 });
