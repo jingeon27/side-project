@@ -42,7 +42,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
       await expect(page.locator('.friend-sale-summary:visible')).toContainText('12,000');
     const url = page.url();
     await page.goto(`/ko/boards/feedback?q=${encodeURIComponent(title)}`);
-    await expect(page.getByText('아직 게시글이 없어요. 첫 글을 남겨보세요.', { exact: true })).toBeVisible();
+    await expect(page.getByText('일치하는 게시글이 없어요', { exact: true })).toBeVisible();
     await expect(page.locator('.board-post-list .post-card')).toHaveCount(0);
     await page.goto(url);
     await page.reload();

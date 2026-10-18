@@ -136,6 +136,16 @@
     text-overflow: ellipsis;
     line-height: 1.7;
   }
+  .post-card[data-board='FEEDBACK'] .post-topline {
+    align-items: flex-start;
+  }
+  .post-card[data-board='FEEDBACK'] .post-excerpt {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
   .post-game-info {
     display: flex;
     align-items: center;

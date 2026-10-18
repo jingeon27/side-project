@@ -16,10 +16,11 @@ import { boardByKind } from '@/features/board';
 interface IPostCardProps {
   post: Post;
   href: string;
+  showBoardLabel?: boolean;
   authorContent?: ReactNode;
   authorName?: ReactNode;
 }
-export function PostCard({ post, href, authorContent, authorName }: IPostCardProps) {
+export function PostCard({ post, href, authorContent, authorName, showBoardLabel = true }: IPostCardProps) {
   const { t, locale: textLocale } = useI18n();
   const reducedMotion = useMotionPreference();
   const board = boardByKind(post.board);
@@ -27,13 +28,14 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
   return (
     <m.article
       className="post-card"
+      data-board={post.board}
       initial={false}
       animate={{ y: 0, opacity: 1 }}
       whileHover={reducedMotion ? undefined : { y: -3 }}
     >
       <div className="post-topline">
         <div className="post-board-status">
-          <span className="small muted">{t(board?.name ?? '피드백')}</span>
+          {showBoardLabel && <span className="small muted">{t(board?.name ?? '피드백')}</span>}
           {isFeedback && <PostStatus answerCount={post.answerCount} helpfulCount={post.helpfulCount} />}
         </div>
         <div className="post-metadata">
@@ -67,7 +69,7 @@ export function PostCard({ post, href, authorContent, authorName }: IPostCardPro
         </span>
         <span className={`answer-count ${post.answerCount > 0 ? 'has-answers' : ''}`}>
           <MessageSquare size={15} />
-          {t(post.board === 'COACHING' ? '코칭 보기' : isFeedback ? '피드백' : '게시글 보기')}
+          {t(post.board === 'COACHING' ? '코칭 보기' : isFeedback ? '답변' : '게시글 보기')}
           {isFeedback && <strong>{post.answerCount}</strong>}
           <ArrowUpRight size={15} />
         </span>

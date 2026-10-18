@@ -5,7 +5,7 @@ import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { notFound } from 'next/navigation';
 import { appRoutes, GameSlugSchema } from '@game-feedback/bridge';
 import { boardBySlug } from '@/features/board';
-import { BattleModeSchema, CoachingRoleSchema } from '@game-feedback/contracts';
+import { BattleModeSchema, CoachingRoleSchema, FeedbackStatusSchema } from '@game-feedback/contracts';
 import { getPublicCategories } from '@/features/category/index.server';
 import { getServerSession } from '@/features/auth/index.server';
 import { getServerPostList } from '@/features/post/index.server';
@@ -36,6 +36,8 @@ async function snapshot(
   if (!battle.success || (battle.data && board.kind !== 'FRIENDLY')) notFound();
   const coaching = CoachingRoleSchema.optional().safeParse(params.coachingRole);
   if (!coaching.success || (coaching.data && board.kind !== 'COACHING')) notFound();
+  const feedback = FeedbackStatusSchema.optional().safeParse(params.feedbackStatus);
+  if (!feedback.success || (feedback.data && board.kind !== 'FEEDBACK')) notFound();
   const q = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim().slice(0, 100) ?? '';
   const [posts, session] = await Promise.all([
     getServerPostList({
@@ -44,6 +46,7 @@ async function snapshot(
       q,
       battleMode: battle.data,
       coachingRole: coaching.data,
+      feedbackStatus: feedback.data,
       limit: 12,
     }),
     getServerSession(),
@@ -54,6 +57,7 @@ async function snapshot(
     q,
     battleMode: battle.data,
     coachingRole: coaching.data,
+    feedbackStatus: feedback.data,
     viewerId: session.user?.id,
   };
 }

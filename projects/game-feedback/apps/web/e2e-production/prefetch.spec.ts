@@ -27,6 +27,11 @@ for (const [slug, title] of [
         page.getByRole('button', { name: slug === 'coaching' ? '코칭 등록' : '글쓰기', exact: true }),
       ).toBeEnabled();
       await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
+      if (slug === 'feedback') {
+        const filters = page.getByRole('navigation', { name: '답변 상태', exact: true });
+        await expect(filters.getByRole('link')).toHaveText(['전체', '답변 대기', '답변 있음']);
+        await expect(filters.getByRole('link', { name: '답변 대기', exact: true })).toBeEnabled();
+      }
     });
     await expect(page.locator('.board-post-list:visible .post-card').first()).toBeVisible();
   });

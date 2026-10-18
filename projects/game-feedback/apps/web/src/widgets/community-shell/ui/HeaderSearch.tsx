@@ -4,6 +4,7 @@ import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import { Search } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { parseBattleMode } from '@/features/battle';
+import { parseFeedbackStatus } from '@/features/post';
 import { parseCoachingRole } from '@/features/coaching';
 import { useI18n } from '@/shared/i18n';
 import { TabLink, useBrowserSearch } from '@/shared/navigation';
@@ -18,6 +19,7 @@ export function HeaderSearch() {
   const board = route.screen === 'boards' ? (slug === 'boards' ? 'feedback' : slug) : undefined;
   const href = appRoutes.search(route.locale, {
     board,
+    feedbackStatus: parseFeedbackStatus(params.get('feedbackStatus')),
     game: params.get('game') ?? undefined,
     q: params.get('q') ?? undefined,
     tab: params.get('tab') ?? undefined,

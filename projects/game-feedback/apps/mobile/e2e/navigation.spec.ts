@@ -270,3 +270,34 @@ test('native search keeps the coaching role and returns to the filtered classifi
     .poll(nativeHost.currentPath)
     .toBe(appRoutes.boards('ko', 'coaching', '모집', undefined, { coachingRole: 'STUDENT' }));
 });
+
+test('native feedback search and back keep its reply status, query and game', async ({
+  page,
+  nativeHost,
+}) => {
+  const board = appRoutes.boards('ko', 'feedback', '수비', undefined, { feedbackStatus: 'WAITING' });
+  await page.goto(board);
+  await expect.poll(nativeHost.isReady).toBe(true);
+  const filters = page.getByRole('navigation', { name: '답변 상태', exact: true });
+  await expect(filters.getByRole('link', { name: '답변 대기', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
+  await expect
+    .poll(nativeHost.currentPath)
+    .toBe(appRoutes.search('ko', { board: 'feedback', q: '수비', feedbackStatus: 'WAITING' }));
+  await page.getByRole('textbox', { name: '게시판 검색', exact: true }).fill('공격');
+  await page.getByRole('button', { name: '검색', exact: true }).click();
+  await expect
+    .poll(nativeHost.currentPath)
+    .toBe(appRoutes.search('ko', { board: 'feedback', q: '공격', feedbackStatus: 'WAITING' }));
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect
+    .poll(nativeHost.currentPath)
+    .toBe(appRoutes.boards('ko', 'feedback', '공격', undefined, { feedbackStatus: 'WAITING' }));
+  await expect(filters.getByRole('link', { name: '답변 대기', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+});

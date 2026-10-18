@@ -115,6 +115,7 @@ function SearchResults({
           <PostCard
             key={post.id}
             post={post}
+            showBoardLabel={board?.kind !== 'FEEDBACK'}
             href={appRoutes.post(locale, post.id, board?.kind, request.category)}
             authorName={<AuthorLink author={post.author} locale={locale} />}
             authorContent={<UserBadges author={post.author} compact />}

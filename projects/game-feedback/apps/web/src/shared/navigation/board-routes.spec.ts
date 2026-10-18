@@ -108,4 +108,25 @@ describe('community board navigation', () => {
     ])
       expect(WebPathSchema.safeParse(path).success, path).toBe(false);
   });
+  it('preserves feedback status and game through search and its logical parent', () => {
+    for (const feedbackStatus of ['WAITING', 'ANSWERED'] as const) {
+      const board = appRoutes.boards('ko', 'feedback', '수비', 'another-game', { feedbackStatus });
+      expect(resolveAppRoute(board)).toMatchObject({ path: board, screen: 'boards', game: 'another-game' });
+      const search = appRoutes.search('ko', {
+        board: 'feedback',
+        game: 'another-game',
+        q: '수비',
+        feedbackStatus,
+      });
+      expect(resolveAppRoute(search)).toMatchObject({ path: search, screen: 'search', parent: board });
+    }
+    for (const path of [
+      '/ko/boards/feedback?feedbackStatus=UNKNOWN',
+      '/ko/boards/free?feedbackStatus=WAITING',
+      '/ko/search?board=coaching&feedbackStatus=ANSWERED',
+      '/ko/search?feedbackStatus=WAITING',
+      '/ko/boards/feedback?feedbackStatus=WAITING&feedbackStatus=ANSWERED',
+    ])
+      expect(WebPathSchema.safeParse(path).success, path).toBe(false);
+  });
 });

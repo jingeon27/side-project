@@ -17,3 +17,4 @@ export {
   deletePostMutationOptions,
   readPostMutationOptions,
 } from './model/post.mutation-options';
+export { feedbackStatuses, parseFeedbackStatus } from './model/feedback-status';

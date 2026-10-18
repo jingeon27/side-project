@@ -1,7 +1,7 @@
 import { boardBySlug } from '@/features/board';
 import { parseBattleMode } from '@/features/battle';
 import { parseCoachingRole } from '@/features/coaching';
-import type { TPostListParams } from '@/features/post';
+import { parseFeedbackStatus, type TPostListParams } from '@/features/post';
 import type { PostList } from '@/shared/api';
 
 export interface ISearchSnapshot {
@@ -15,6 +15,7 @@ export function searchQuery(path: string) {
   const board = boardBySlug(params.get('board') ?? '');
   const unanswered = !board && params.get('tab') === 'unanswered';
   const request = {
+    feedbackStatus: parseFeedbackStatus(params.get('feedbackStatus')),
     q: params.get('q')?.trim().slice(0, 100) ?? '',
     board: unanswered ? 'FEEDBACK' : (board?.kind ?? 'ALL'),
     category: params.get('game') ?? (board ? 'clash-royale' : undefined),

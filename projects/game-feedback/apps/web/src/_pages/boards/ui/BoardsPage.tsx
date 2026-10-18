@@ -4,9 +4,11 @@ import { useBrowserSearch } from '@/shared/navigation';
 import { use } from 'react';
 import { BattleFilters } from './BattleFilters';
 import { CoachingFilters } from './CoachingFilters';
+import { FeedbackFilters } from './FeedbackFilters';
+import { readBoardFilters, boardSnapshotSearch, type TBoardFilters } from '../model/board-filters';
+import { BoardEmptyState } from './BoardEmptyState';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseBattleMode } from '@/features/battle';
-import type { TBattleMode, TCoachingRole } from '@game-feedback/contracts';
 import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -54,6 +56,12 @@ export function BoardsPage(props: IBoardsPageProps) {
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
       </div>
+      {board.kind === 'FEEDBACK' && (
+        <FeedbackFilters
+          locale={locale}
+          initialSearch={'then' in initialBoard ? '' : boardSnapshotSearch(initialBoard)}
+        />
+      )}
       {board.kind === 'FRIENDLY' && <BattleFilters locale={locale} slug={slug} />}
       {board.kind === 'COACHING' && <CoachingFilters locale={locale} slug={slug} />}
       <AsyncBoundary
@@ -70,31 +78,23 @@ export function BoardsPage(props: IBoardsPageProps) {
 }
 function BoardPostsRegion({ locale, slug, initialBoard }: IBoardsPageProps) {
   const initial = 'then' in initialBoard ? use(initialBoard) : initialBoard;
-  const search = useBrowserSearch(
-    `?${new URLSearchParams({ q: initial.q, ...(initial.battleMode ? { battleMode: initial.battleMode } : {}), ...(initial.coachingRole ? { coachingRole: initial.coachingRole } : {}) })}`,
-    `/${locale}/boards/${slug}`,
-  );
-  const params = new URLSearchParams(search);
-  const q = (params.get('q') ?? '').trim().slice(0, 100);
-  const battleMode = parseBattleMode(params.get('battleMode'));
-  const coachingRole = parseCoachingRole(params.get('coachingRole'));
+  const search = useBrowserSearch(boardSnapshotSearch(initial), `/${locale}/boards/${slug}`);
+  const filters = readBoardFilters(search);
   const { session } = useSession();
   const { t } = useI18n();
   return (
     <ServiceErrorBoundary
       title={t('게시판')}
-      resetKey={`${session.user?.id}:${slug}:${q}:${battleMode ?? ''}:${coachingRole ?? ''}`}
+      resetKey={`${session.user?.id}:${slug}:${JSON.stringify(filters)}`}
     >
-      <BoardPosts
-        locale={locale}
-        slug={slug}
-        initial={initial}
-        q={q}
-        battleMode={battleMode}
-        coachingRole={coachingRole}
-      />
+      <BoardPosts locale={locale} slug={slug} initial={initial} {...filters} />
     </ServiceErrorBoundary>
   );
+}
+interface IBoardPostsProps extends TBoardFilters {
+  locale: string;
+  slug: string;
+  initial: IBoardSnapshot;
 }
 function BoardPosts({
   locale,
@@ -103,24 +103,27 @@ function BoardPosts({
   initial,
   battleMode,
   coachingRole,
-}: {
-  locale: string;
-  slug: string;
-  q: string;
-  battleMode?: TBattleMode;
-  coachingRole?: TCoachingRole;
-  initial: IBoardSnapshot;
-}) {
+  feedbackStatus,
+}: IBoardPostsProps) {
   const { t } = useI18n();
   const board = boardBySlug(slug);
   const { session } = useSession();
   const game = initial.game;
   const posts = useInfiniteQuery({
     throwOnError: true,
-    ...postListOptions({ category: game.slug, board: board?.kind, q, battleMode, coachingRole, limit: 12 }),
+    ...postListOptions({
+      category: game.slug,
+      board: board?.kind,
+      q,
+      battleMode,
+      coachingRole,
+      feedbackStatus,
+      limit: 12,
+    }),
     ...(q === initial.q &&
     battleMode === initial.battleMode &&
     coachingRole === initial.coachingRole &&
+    feedbackStatus === initial.feedbackStatus &&
     initial.viewerId === session.user?.id
       ? { initialData: { pages: [initial.posts], pageParams: [''] }, initialDataUpdatedAt: 0 }
       : {}),
@@ -130,12 +133,20 @@ function BoardPosts({
   const items = posts.data.pages.flatMap((page) => page.items);
   return (
     <>
-      {!items.length && <p className="board-empty">{t('아직 게시글이 없어요. 첫 글을 남겨보세요.')}</p>}
+      {!items.length && (
+        <BoardEmptyState
+          board={board?.kind}
+          feedbackStatus={feedbackStatus}
+          q={q}
+          allFeedbackHref={appRoutes.boards(locale, slug, q, game.slug)}
+        />
+      )}
       <div className="post-list board-post-list">
         {items.map((post) => (
           <PostCard
             key={post.id}
             post={post}
+            showBoardLabel={board?.kind !== 'FEEDBACK'}
             href={appRoutes.post(locale, post.id, post.board, game.slug)}
             authorName={<AuthorLink author={post.author} locale={locale} />}
             authorContent={<UserBadges author={post.author} compact />}

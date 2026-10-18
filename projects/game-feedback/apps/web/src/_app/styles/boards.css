@@ -41,6 +41,7 @@
     white-space: nowrap;
   }
   .game-board-chips,
+  .feedback-filters,
   .coaching-filters,
   .battle-filters {
     display: flex;
@@ -54,6 +55,7 @@
     -webkit-overflow-scrolling: touch;
   }
   .game-board-chips::-webkit-scrollbar,
+  .feedback-filters::-webkit-scrollbar,
   .coaching-filters::-webkit-scrollbar,
   .battle-filters::-webkit-scrollbar {
     display: none;
@@ -90,6 +92,7 @@
     margin-bottom: 20px;
   }
   .battle-filters,
+  .feedback-filters,
   .coaching-filters {
     margin-bottom: 16px;
   }
@@ -134,6 +137,10 @@
     color: var(--color-muted);
   }
   .board-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
     padding-block: 48px;
     text-align: center;
     color: var(--color-muted);

@@ -33,9 +33,13 @@ function root(locale: string) {
 const boardSlugSchema = z.enum(['feedback', 'friend-sale', 'friendly', 'coaching', 'free']);
 const battleModeSchema = z.enum(['DUEL', 'TEAM']);
 const coachingRoleSchema = z.enum(['COACH', 'STUDENT']);
+const feedbackStatusSchema = z.enum(['WAITING', 'ANSWERED']);
 interface IRecruitmentFilters {
   battleMode?: z.infer<typeof battleModeSchema>;
   coachingRole?: z.infer<typeof coachingRoleSchema>;
+}
+interface IBoardFilters extends IRecruitmentFilters {
+  feedbackStatus?: z.infer<typeof feedbackStatusSchema>;
 }
 const boardSlugs: Record<string, string> = {
   FEEDBACK: 'feedback',
@@ -56,13 +60,17 @@ export const appRoutes = {
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
   search: (
     locale: string,
-    filters: IRecruitmentFilters & { board?: string; game?: string; q?: string; tab?: string } = {},
+    filters: IBoardFilters & { board?: string; game?: string; q?: string; tab?: string } = {},
   ) =>
     queryPath(`${root(locale)}/search`, {
       board: filters.board ? boardSlugSchema.parse(filters.board) : undefined,
       game: filters.game && filters.game !== 'clash-royale' ? GameSlugSchema.parse(filters.game) : undefined,
       q: filters.q?.trim(),
       tab: !filters.board && filters.tab === 'unanswered' ? 'unanswered' : undefined,
+      feedbackStatus:
+        filters.board === 'feedback' && filters.feedbackStatus
+          ? feedbackStatusSchema.parse(filters.feedbackStatus)
+          : undefined,
       battleMode:
         filters.board === 'friendly' && filters.battleMode
           ? battleModeSchema.parse(filters.battleMode)
@@ -88,10 +96,14 @@ export const appRoutes = {
       board: board ? boardSlugs[board] : undefined,
       game: board && game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
     }),
-  boards: (locale: string, slug = 'feedback', q?: string, game?: string, filters: IRecruitmentFilters = {}) =>
+  boards: (locale: string, slug = 'feedback', q?: string, game?: string, filters: IBoardFilters = {}) =>
     queryPath(`${root(locale)}/boards/${boardSlugSchema.parse(slug)}`, {
       game: game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
       q: q?.trim(),
+      feedbackStatus:
+        slug === 'feedback' && filters.feedbackStatus
+          ? feedbackStatusSchema.parse(filters.feedbackStatus)
+          : undefined,
       battleMode:
         slug === 'friendly' && filters.battleMode ? battleModeSchema.parse(filters.battleMode) : undefined,
       coachingRole:
@@ -143,8 +155,11 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   const home = root(locale);
   const id = match[3];
   const kind = match[2] ?? match[4];
+  const feedback = feedbackStatusSchema.optional().safeParse(query.feedbackStatus);
+  if (!feedback.success || (feedback.data && !['search', 'boards'].includes(kind ?? ''))) return null;
   if (kind === 'search') {
     const board = boardSlugSchema.optional().safeParse(query.board);
+    if (feedback.data && query.board !== 'feedback') return null;
     const battle = battleModeSchema.optional().safeParse(query.battleMode);
     const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
     if (!board.success || !battle.success || !coaching.success || (query.q?.length ?? 0) > 100) return null;
@@ -152,6 +167,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
       return null;
     const filters = {
       board: board.data,
+      feedbackStatus: feedback.data,
       game: query.game,
       q: query.q,
       tab: query.tab,
@@ -216,12 +232,14 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (kind === 'boards') {
     const slug = boardSlugSchema.safeParse(id ?? 'feedback');
     if (!slug.success || (query.q?.length ?? 0) > 100) return null;
+    if (feedback.data && slug.data !== 'feedback') return null;
     const battle = battleModeSchema.optional().safeParse(query.battleMode);
     if (!battle.success || (battle.data && slug.data !== 'friendly')) return null;
     const coaching = coachingRoleSchema.optional().safeParse(query.coachingRole);
     if (!coaching.success || (coaching.data && slug.data !== 'coaching')) return null;
     return {
       path: appRoutes.boards(locale, slug.data, query.q, game.data, {
+        feedbackStatus: feedback.data,
         battleMode: battle.data,
         coachingRole: coaching.data,
       }),

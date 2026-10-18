@@ -2,6 +2,18 @@ import type { TLocale } from './locale';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '답변 상태': ['Reply status', '回答状況'],
+  '답변 있음': ['Answered', '回答あり'],
+  '답변을 기다리는 요청이 없어요.': [
+    'No requests are awaiting replies.',
+    '回答待ちのリクエストはありません。',
+  ],
+  '아직 답변이 달린 요청이 없어요.': [
+    'No requests have replies yet.',
+    '回答のあるリクエストはまだありません。',
+  ],
+  '아직 피드백 요청이 없어요.': ['No feedback requests yet.', 'フィードバックのリクエストはまだありません。'],
+  '전체 피드백 보기': ['View all feedback', 'すべてのフィードバックを見る'],
   '제목이나 내용으로 검색': ['Search titles or content', 'タイトルや内容で検索'],
   '검색 범위': ['Search scope', '検索範囲'],
   '검색어를 입력해주세요.': ['Enter a search term.', '検索キーワードを入力してください。'],
