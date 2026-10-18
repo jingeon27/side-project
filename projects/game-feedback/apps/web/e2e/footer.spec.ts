@@ -30,17 +30,21 @@ for (const width of [320, 1440]) {
       }
       await footer.getByRole('link', { name: termsLabel, exact: true }).click();
       await expect(page).toHaveURL(`/${locale}/terms`);
-      await expect(page.getByRole('heading', { level: 1 })).toContainText('이용약관');
+      await expect(page.getByRole('heading', { level: 1 })).toContainText(
+        { ko: '이용약관', en: 'Terms of service', ja: '利用規約' }[locale],
+      );
       await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
         'href',
-        'https://feedback.example/ko/terms',
+        `https://feedback.example/${locale}/terms`,
       );
       await footer.getByRole('link', { name: privacyLabel, exact: true }).click();
       await expect(page).toHaveURL(`/${locale}/privacy`);
-      await expect(page.getByRole('heading', { level: 1 })).toContainText('개인정보');
+      await expect(page.getByRole('heading', { level: 1 })).toContainText(
+        { ko: '개인정보', en: 'Privacy', ja: 'プライバシー' }[locale],
+      );
       await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
         'href',
-        'https://feedback.example/ko/privacy',
+        `https://feedback.example/${locale}/privacy`,
       );
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }

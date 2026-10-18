@@ -60,12 +60,12 @@ test('every screen serves page-specific metadata without JavaScript and private 
     await page.goto(`${origin}/ja/contact?utm_source=test`);
     await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://feedback.example/ko/contact',
+      'https://feedback.example/ja/contact',
     );
     const translated = JSON.parse(
       (await page.locator('script[type="application/ld+json"]').textContent()) || '{}',
     );
-    expect(translated['@graph'][1].url).toBe('https://feedback.example/ko/contact');
+    expect(translated['@graph'][1].url).toBe('https://feedback.example/ja/contact');
     const image = await context.request.get(`${origin}/og`);
     expect(image.ok()).toBe(true);
     expect(image.headers()['content-type']).toContain('image/png');

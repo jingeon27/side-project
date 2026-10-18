@@ -37,7 +37,13 @@ describe('search discovery', () => {
       items: [post('second'), { ...post('test'), author: { id: 'test-user', isTestAccount: true } }],
       nextCursor: null,
     });
-    const urls = (await sitemap()).map((item) => item.url);
+    const entries = await sitemap();
+    const urls = entries.map((item) => item.url);
+    expect(entries.find((item) => item.url.endsWith('/posts/first'))?.lastModified).toBe(
+      '2026-10-17T00:00:00.000Z',
+    );
+    expect(urls).toContain('https://feedback.example/en/guide');
+    expect(urls).toContain('https://feedback.example/ja/terms');
     expect(list.mock.calls.map((call) => call[0])).toEqual([undefined, 'next']);
     expect(urls.filter((url) => url.endsWith('/users/author-1'))).toHaveLength(1);
     expect(urls).toContain('https://feedback.example/ko/posts/second');

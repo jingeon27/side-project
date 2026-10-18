@@ -1,6 +1,6 @@
 import type { PostDetail, PublicProfile } from '@/shared/api';
 import { pageUrl, excerpt } from './config';
-import { pageContent, SITE_NAME, staticPagePath, type TStaticPage } from './metadata';
+import { pageContent, localizedStaticContent, SITE_NAME, staticPagePath, type TStaticPage } from './metadata';
 const publicPageTypes = {
   feed: 'WebPage',
   guide: 'WebPage',
@@ -12,7 +12,7 @@ export type TPublicStaticPage = keyof typeof publicPageTypes;
 export function publicPageStructuredData(kind: TPublicStaticPage, locale: string) {
   const homeUrl = pageUrl('/');
   const url = pageUrl(staticPagePath(kind, locale));
-  const content = pageContent[kind];
+  const content = localizedStaticContent(kind, locale);
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -30,7 +30,7 @@ export function publicPageStructuredData(kind: TPublicStaticPage, locale: string
         url,
         name: `${content.title} | ${SITE_NAME}`,
         description: content.description,
-        inLanguage: 'ko',
+        inLanguage: content.language,
         isPartOf: { '@id': `${homeUrl}#website` },
       },
     ],

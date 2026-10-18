@@ -24,6 +24,7 @@ export function getSeoConfig() {
   return resolveSeoConfig(process.env);
 }
 export function canonicalPath(path: string) {
+  if (/^\/(ko|en|ja)\/(guide|terms|privacy|contact)(?:[/?]|$)/.test(path)) return path;
   return path.replace(/^\/(ko|en|ja)(?=\/|$)/, '/ko');
 }
 export function pageUrl(path: string) {

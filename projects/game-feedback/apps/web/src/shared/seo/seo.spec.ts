@@ -81,7 +81,7 @@ describe('SEO metadata and visibility', () => {
         expect(page).toMatchObject({
           '@type': kind === 'contact' ? 'ContactPage' : 'WebPage',
           url: staticPageMetadata(kind, locale).alternates?.canonical,
-          inLanguage: 'ko',
+          inLanguage: kind === 'feed' ? 'ko' : locale,
           isPartOf: { '@id': site?.['@id'] },
         });
       }

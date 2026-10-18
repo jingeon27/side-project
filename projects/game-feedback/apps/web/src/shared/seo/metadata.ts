@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { translate, isLocale, type TLocale } from '@/shared/i18n/index.server';
 import { excerpt, getSeoConfig, pageUrl } from './config';
 export const SITE_NAME = '플레이메이트';
 const baseKeywords = ['게임 커뮤니티', '게임 피드백', '게임코치', SITE_NAME];
@@ -14,6 +15,7 @@ interface IPageMetadata {
   authorName?: string;
   authorUrl?: string;
   isTestAccount?: boolean;
+  locale?: TLocale;
 }
 export function createPageMetadata({
   title,
@@ -27,6 +29,7 @@ export function createPageMetadata({
   authorName,
   authorUrl,
   isTestAccount,
+  locale = 'ko',
 }: IPageMetadata): Metadata {
   const { indexable, origin } = getSeoConfig();
   const allowed = indexable && !privatePage && !isTestAccount;
@@ -47,7 +50,7 @@ export function createPageMetadata({
       description: text,
       url,
       siteName: SITE_NAME,
-      locale: 'ko_KR',
+      locale: { ko: 'ko_KR', en: 'en_US', ja: 'ja_JP' }[locale],
       images,
       ...(type === 'profile' && authorName ? { username: authorName } : {}),
       ...(type === 'article'
@@ -134,6 +137,29 @@ export type TStaticPage = keyof typeof pageContent;
 export function staticPagePath(kind: TStaticPage, locale: string) {
   return `/${locale}${kind === 'feed' ? '' : `/${kind}`}`;
 }
+export function localizedStaticContent(kind: TStaticPage, locale: string) {
+  const language =
+    ['guide', 'terms', 'privacy', 'contact'].includes(kind) && isLocale(locale) ? locale : 'ko';
+  const content = pageContent[kind];
+  return {
+    ...content,
+    language,
+    title: translate(language, content.title),
+    description: translate(language, content.description),
+    keywords: content.keywords.map((word) => translate(language, word)),
+  };
+}
 export function staticPageMetadata(kind: TStaticPage, locale: string): Metadata {
-  return createPageMetadata({ ...pageContent[kind], path: staticPagePath(kind, locale) });
+  const { language, ...content } = localizedStaticContent(kind, locale);
+  const metadata = createPageMetadata({ ...content, locale: language, path: staticPagePath(kind, locale) });
+  if (!['guide', 'terms', 'privacy', 'contact'].includes(kind)) return metadata;
+  return {
+    ...metadata,
+    alternates: {
+      ...metadata.alternates,
+      languages: Object.fromEntries(
+        ['ko', 'en', 'ja'].map((value) => [value, pageUrl(staticPagePath(kind, value))]),
+      ),
+    },
+  };
 }

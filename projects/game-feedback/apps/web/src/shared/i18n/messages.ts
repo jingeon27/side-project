@@ -1,7 +1,9 @@
 import type { TLocale } from './locale';
+import { infoMessages } from './info-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  ...infoMessages,
   '답변 상태': ['Reply status', '回答状況'],
   '답변 있음': ['Answered', '回答あり'],
   '답변을 기다리는 요청이 없어요.': [
