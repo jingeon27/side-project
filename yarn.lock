@@ -7618,6 +7618,8 @@ __metadata:
   resolution: "@side/typescript-config@workspace:packages/typescript-config"
   dependencies:
     "@typescript/native": "npm:typescript@7.0.2"
+  bin:
+    tsc7: ./bin/tsc7.cjs
   languageName: unknown
   linkType: soft
 
