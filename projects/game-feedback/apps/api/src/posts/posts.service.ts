@@ -45,11 +45,14 @@ export class PostsService {
     const q = parse(ListQuerySchema, req.query),
       cursor = decodeCursor(q.cursor),
       excluded = await this.visibility.excluded(req);
+    if (q.battleMode && q.board !== 'FRIENDLY')
+      throw new ApiError(400, 'INVALID_BATTLE_FILTER', '전투 모집에서 전투 유형을 선택해주세요.');
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_POST,
       ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),
       authorId: { notIn: excluded, ...(q.authorId ? { equals: q.authorId } : {}) },
       ...(q.category ? { category: { slug: q.category } } : {}),
+      ...(q.battleMode ? { battle: { path: ['mode'], equals: q.battleMode } } : {}),
       ...(q.unanswered === 'true'
         ? { answers: { none: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } } } }
         : {}),
@@ -120,6 +123,8 @@ export class PostsService {
       throw new ApiError(400, 'INVALID_COACHING', '코칭 글의 모집 유형과 수강료를 확인해주세요.');
     if ((input.board === 'FRIEND_SALE') !== !!input.friendSale)
       throw new ApiError(400, 'INVALID_FRIEND_SALE', '친추판매 글의 판매 금액을 확인해주세요.');
+    if ((input.board === 'FRIENDLY') !== !!input.battle)
+      throw new ApiError(400, 'INVALID_BATTLE', '전투 모집의 전투 유형을 선택해주세요.');
     const category = await this.db.category.findFirst({ where: { id: input.categoryId, active: true } });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
     const p = await this.db.$transaction(async (tx) => {
@@ -133,6 +138,7 @@ export class PostsService {
           ...(input.document ? { document: input.document } : {}),
           ...(input.coaching ? { coaching: input.coaching } : {}),
           ...(input.friendSale ? { friendSale: input.friendSale } : {}),
+          ...(input.battle ? { battle: input.battle } : {}),
         },
         include: postInclude,
       });
@@ -170,11 +176,13 @@ export class PostsService {
       input = parse(PostPatchSchema, body),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
-    const { document, coaching, friendSale, ...data } = input;
+    const { document, coaching, friendSale, battle, ...data } = input;
     if (coaching !== undefined && (p.board === 'COACHING') !== !!coaching)
       throw new ApiError(400, 'INVALID_COACHING', '코칭 글의 모집 유형과 수강료를 확인해주세요.');
     if (friendSale !== undefined && (p.board === 'FRIEND_SALE') !== !!friendSale)
       throw new ApiError(400, 'INVALID_FRIEND_SALE', '친추판매 글의 판매 금액을 확인해주세요.');
+    if (battle !== undefined && (p.board === 'FRIENDLY') !== !!battle)
+      throw new ApiError(400, 'INVALID_BATTLE', '전투 모집의 전투 유형을 선택해주세요.');
     if (input.document && (!input.body || richTextToPlainText(input.document) !== input.body))
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const excluded = await this.visibility.excluded(req);
@@ -188,6 +196,7 @@ export class PostsService {
             ...data,
             ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
             ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
+            ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
             ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
           },
           include: {

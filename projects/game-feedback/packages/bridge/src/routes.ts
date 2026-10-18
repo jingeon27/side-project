@@ -22,6 +22,7 @@ function root(locale: string) {
   return `/${localeSchema.parse(locale)}`;
 }
 const boardSlugSchema = z.enum(['feedback', 'friend-sale', 'friendly', 'coaching', 'free']);
+const battleModeSchema = z.enum(['DUEL', 'TEAM']);
 const boardSlugs: Record<string, string> = {
   FEEDBACK: 'feedback',
   COACHING: 'coaching',
@@ -39,20 +40,28 @@ function queryPath(path: string, values: Record<string, string | undefined>) {
 export const appRoutes = {
   feed: (locale: string, filters: { q?: string; tab?: string } = {}) =>
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
-  compose: (locale: string, board?: string, game?: string) =>
+  compose: (locale: string, board?: string, game?: string, battleMode?: z.infer<typeof battleModeSchema>) =>
     queryPath(`${root(locale)}/write`, {
       board: board ? boardSlugs[board] : undefined,
       game: game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
+      battleMode: board === 'FRIENDLY' && battleMode ? battleModeSchema.parse(battleMode) : undefined,
     }),
   post: (locale: string, id: string, board?: string, game?: string) =>
     queryPath(`${root(locale)}/posts/${RouteIdSchema.parse(id)}`, {
       board: board ? boardSlugs[board] : undefined,
       game: board && game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
     }),
-  boards: (locale: string, slug = 'feedback', q?: string, game?: string) =>
+  boards: (
+    locale: string,
+    slug = 'feedback',
+    q?: string,
+    game?: string,
+    battleMode?: z.infer<typeof battleModeSchema>,
+  ) =>
     queryPath(`${root(locale)}/boards/${boardSlugSchema.parse(slug)}`, {
       game: game && game !== 'clash-royale' ? GameSlugSchema.parse(game) : undefined,
       q: q?.trim(),
+      battleMode: slug === 'friendly' && battleMode ? battleModeSchema.parse(battleMode) : undefined,
     }),
   profile: (locale: string, id: string, cursor?: string) =>
     queryPath(`${root(locale)}/users/${RouteIdSchema.parse(id)}`, { cursor }),
@@ -101,17 +110,20 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (kind === 'write') {
     const board = query.board ? boardSlugSchema.safeParse(query.board) : null;
     if (board && !board.success) return null;
+    const battle = battleModeSchema.optional().safeParse(query.battleMode);
+    if (!battle.success || (battle.data && query.board !== 'friendly')) return null;
     return {
       path: queryPath(pathname, {
         board: board?.success ? board.data : undefined,
         game: game.data !== 'clash-royale' ? game.data : undefined,
+        battleMode: battle.data,
       }),
       game: game.data,
       pathname,
       locale,
       screen: 'compose',
       tab: board ? 'boards' : 'feed',
-      parent: board?.success ? appRoutes.boards(locale, board.data, undefined, game.data) : home,
+      parent: board?.success ? appRoutes.boards(locale, board.data, undefined, game.data, battle.data) : home,
     };
   }
   if (kind === 'posts' && id) {
@@ -133,8 +145,10 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (kind === 'boards') {
     const slug = boardSlugSchema.safeParse(id ?? 'feedback');
     if (!slug.success || (query.q?.length ?? 0) > 100) return null;
+    const battle = battleModeSchema.optional().safeParse(query.battleMode);
+    if (!battle.success || (battle.data && slug.data !== 'friendly')) return null;
     return {
-      path: appRoutes.boards(locale, slug.data, query.q, game.data),
+      path: appRoutes.boards(locale, slug.data, query.q, game.data, battle.data),
       game: game.data,
       pathname,
       locale,

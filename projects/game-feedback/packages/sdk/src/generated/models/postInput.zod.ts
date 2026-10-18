@@ -77,6 +77,9 @@ export const PostInput = zod.object({
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(postInputFriendSaleOnePriceOneExclusiveMin).max(postInputFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1)
 })
 

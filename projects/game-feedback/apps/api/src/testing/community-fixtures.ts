@@ -32,6 +32,22 @@ const communityPosts = [
     body: '주말 오후에 편하게 2대2 플레이할 친구를 구합니다. 점수나 실력 제한 없이 같이 연습해요. 관심 있으면 댓글이나 채팅 남겨주세요.',
   },
   {
+    id: 'sample-battle-duel',
+    author: 1,
+    board: 'FRIENDLY',
+    title: '오늘 저녁 1:1 대전하실 분 구해요',
+    body: '한 시간 정도 1:1로 함께 연습할 상대를 찾습니다. 가능한 시간과 게임 계정을 채팅으로 알려주세요.',
+    battle: { mode: 'DUEL' },
+  },
+  {
+    id: 'sample-battle-team',
+    author: 2,
+    board: 'FRIENDLY',
+    title: '주말에 함께 전투할 팀원 모집합니다',
+    body: '주말 오후에 팀전을 함께할 분을 구합니다. 점수 제한 없이 편하게 플레이해요. 가능한 시간은 채팅으로 이야기해주세요.',
+    battle: { mode: 'TEAM' },
+  },
+  {
     id: 'sample-coaching-hourly',
     author: 3,
     board: 'COACHING',
@@ -84,6 +100,7 @@ const communityPosts = [
   title: string;
   body: string;
   friendSale?: Prisma.InputJsonValue;
+  battle?: Prisma.InputJsonValue;
   coaching?: Prisma.InputJsonValue;
 }>;
 

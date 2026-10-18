@@ -114,6 +114,7 @@ model Post {
   document Json?
   coaching Json?
   friendSale Json?
+  battle Json?
   hidden Boolean @default(false)
   viewCount Int @default(0)
   deletedAt DateTime?

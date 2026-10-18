@@ -16,6 +16,7 @@ export const responsePost = (p: PostRecord) => ({
   document: p.document,
   coaching: p.coaching,
   friendSale: p.friendSale,
+  battle: p.battle,
   categoryId: p.categoryId,
   category: p.category,
   author: authorDto(p.author),

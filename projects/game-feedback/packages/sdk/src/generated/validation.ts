@@ -1082,6 +1082,7 @@ export const ListPostsQueryParams = zod.object({
   "cursor": zod.string().optional(),
   "limit": zod.int().min(1).max(listPostsQueryLimitMax).default(listPostsQueryLimitDefault),
   "authorId": zod.string().min(1).max(listPostsQueryAuthorIdMax).optional(),
+  "battleMode": zod.enum(['DUEL', 'TEAM']).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
   "q": zod.string().optional(),
@@ -1198,6 +1199,9 @@ export const ListPostsResponse = zod.object({
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(listPostsResponseItemsItemFriendSaleOnePriceOneExclusiveMin).max(listPostsResponseItemsItemFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(listPostsResponseItemsItemCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(listPostsResponseItemsItemCategoryIdMaxOne),
@@ -1311,6 +1315,9 @@ export const CreatePostBody = zod.object({
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(createPostBodyFriendSaleOnePriceOneExclusiveMin).max(createPostBodyFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1)
 })
 
@@ -1421,6 +1428,9 @@ export const CreatePostResponse = zod.object({
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(createPostResponseFriendSaleOnePriceOneExclusiveMin).max(createPostResponseFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(createPostResponseCategoryIdMax),
   "category": zod.object({
@@ -1595,6 +1605,9 @@ export const GetPostResponse = zod.object({
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(getPostResponsePostFriendSaleOnePriceOneExclusiveMin).max(getPostResponsePostFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(getPostResponsePostCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(getPostResponsePostCategoryIdMaxOne),
@@ -1738,6 +1751,9 @@ export const UpdatePostBody = zod.object({
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(updatePostBodyFriendSaleOnePriceOneExclusiveMin).max(updatePostBodyFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
 }),zod.null()]).optional()
 })
 
@@ -1848,6 +1864,9 @@ export const UpdatePostResponse = zod.object({
 }),zod.null()]).optional(),
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(updatePostResponseFriendSaleOnePriceOneExclusiveMin).max(updatePostResponseFriendSaleOnePriceOneMax),zod.null()])
+}),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
 }),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(updatePostResponseCategoryIdMax),
   "category": zod.object({

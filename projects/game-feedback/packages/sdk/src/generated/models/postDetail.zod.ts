@@ -135,6 +135,9 @@ export const PostDetail = zod.object({
   "friendSale": zod.union([zod.object({
   "price": zod.union([zod.int().gt(postDetailPostFriendSaleOnePriceOneExclusiveMin).max(postDetailPostFriendSaleOnePriceOneMax),zod.null()])
 }),zod.null()]).optional(),
+  "battle": zod.union([zod.object({
+  "mode": zod.enum(['DUEL', 'TEAM'])
+}),zod.null()]).optional(),
   "categoryId": zod.string().min(1).max(postDetailPostCategoryIdMax),
   "category": zod.object({
   "id": zod.string().min(1).max(postDetailPostCategoryIdMaxOne),

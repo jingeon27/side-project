@@ -325,3 +325,14 @@ describe('HTTP failures and cancellation', () => {
     expect(new ApiResponseValidationError(200)).toBeInstanceOf(ApiError);
   });
 });
+
+describe('battle response metadata', () => {
+  it.each([{ mode: 'RAID' }, { mode: 1 }, 'TEAM'])(
+    'rejects invalid battle metadata instead of falling back: %j',
+    async (battle) => {
+      const fixture = postFixture();
+      respond({ ...fixture, post: { ...fixture.post, battle } });
+      await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
+    },
+  );
+});

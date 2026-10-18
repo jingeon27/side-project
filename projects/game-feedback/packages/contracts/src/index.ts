@@ -46,6 +46,11 @@ export const FriendSaleDetailsSchema = z
   .strict();
 export type TFriendSaleDetails = z.infer<typeof FriendSaleDetailsSchema>;
 
+export const BattleModeSchema = z.enum(['DUEL', 'TEAM']);
+export type TBattleMode = z.infer<typeof BattleModeSchema>;
+export const BattleDetailsSchema = z.object({ mode: BattleModeSchema }).strict();
+export type TBattleDetails = z.infer<typeof BattleDetailsSchema>;
+
 const ResponseIdSchema = z.string().min(1).max(100);
 const ResponseTimestampSchema = z.iso.datetime();
 const ResponseCountSchema = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
@@ -128,6 +133,7 @@ export const PostSchema = z.object({
   document: RichTextDocumentSchema.nullable().optional(),
   coaching: CoachingDetailsSchema.nullable().optional(),
   friendSale: FriendSaleDetailsSchema.nullable().optional(),
+  battle: BattleDetailsSchema.nullable().optional(),
   categoryId: ResponseIdSchema,
   category: CategorySchema,
   author: AuthorSchema,
@@ -289,6 +295,7 @@ export const PostInputSchema = z
     document: RichTextDocumentSchema.nullable().optional(),
     coaching: CoachingDetailsSchema.nullable().optional(),
     friendSale: FriendSaleDetailsSchema.nullable().optional(),
+    battle: BattleDetailsSchema.nullable().optional(),
     categoryId: z.string().min(1),
   })
   .strict();
@@ -326,6 +333,7 @@ export const HideInputSchema = z
   })
   .strict();
 export const ListQuerySchema = z.object({
+  battleMode: BattleModeSchema.optional(),
   board: z.union([BoardKindSchema, z.literal('ALL')]).optional(),
   authorId: z.string().min(1).max(100).optional(),
   cursor: z.string().max(200).optional(),

@@ -98,6 +98,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
               ? { coaching: { role: 'COACH', pricing: { type: 'HOURLY', amount: 30000 } } }
               : {}),
             ...(board === 'FRIEND_SALE' ? { friendSale: { price: 12000 } } : {}),
+            ...(board === 'FRIENDLY' ? { battle: { mode: 'DUEL' } } : {}),
           })
           .expect(200)
       ).body;
@@ -556,6 +557,92 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .send({ friendSale: { price: 10000000 } })
       .expect(200);
   });
+  it('stores battle modes independently, filters both types, and validates recruitment metadata', async () => {
+    const input = {
+      categoryId,
+      board: 'FRIENDLY',
+      title: '함께 전투할 플레이어 모집',
+      body: '같이 플레이할 분을 찾습니다.',
+    };
+    const duel = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, battle: { mode: 'DUEL' } })
+        .expect(200)
+    ).body;
+    const team = (
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, battle: { mode: 'TEAM' } })
+        .expect(200)
+    ).body;
+    for (const [mode, own, other] of [
+      ['DUEL', duel, team],
+      ['TEAM', team, duel],
+    ] as const) {
+      const result = (
+        await author.get('/api/posts').query({ board: 'FRIENDLY', battleMode: mode, limit: 50 }).expect(200)
+      ).body;
+      expect(result.items).toContainEqual(expect.objectContaining({ id: own.id, battle: { mode } }));
+      expect(result.items).not.toContainEqual(expect.objectContaining({ id: other.id }));
+    }
+    const updated = (
+      await author
+        .patch(`/api/posts/${team.id}`)
+        .set('Origin', origin)
+        .send({ battle: { mode: 'DUEL' } })
+        .expect(200)
+    ).body;
+    expect(updated.battle).toEqual({ mode: 'DUEL' });
+    expect((await author.get(`/api/posts/${team.id}`).expect(200)).body.post.battle).toEqual({
+      mode: 'DUEL',
+    });
+    for (const battle of [undefined, null, { mode: 'RAID' }, { mode: 1 }, { mode: 'TEAM', extra: true }]) {
+      await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({ ...input, battle })
+        .expect(400);
+    }
+    await author
+      .post('/api/posts')
+      .set('Origin', origin)
+      .send({ ...input, board: 'FREE', battle: { mode: 'TEAM' } })
+      .expect(400);
+    await author.patch(`/api/posts/${duel.id}`).set('Origin', origin).send({ battle: null }).expect(400);
+    await author.get('/api/posts').query({ board: 'FRIENDLY', battleMode: 'RAID' }).expect(400);
+    await author.get('/api/posts').query({ board: 'FREE', battleMode: 'TEAM' }).expect(400);
+  });
+  it('keeps legacy recruitment posts readable without assigning a battle type', async () => {
+    const user = (await author.get('/api/session')).body.user;
+    const old = await db.post.create({
+      data: {
+        categoryId,
+        authorId: user.id,
+        board: 'FRIENDLY',
+        title: '이전 모집 게시글',
+        body: '기존 글은 전투 유형을 추측하지 않습니다.',
+      },
+    });
+    expect((await author.get(`/api/posts/${old.id}`).expect(200)).body.post.battle).toBeNull();
+    expect(
+      (
+        await author
+          .patch(`/api/posts/${old.id}`)
+          .set('Origin', origin)
+          .send({ title: '이전 모집 제목 수정' })
+          .expect(200)
+      ).body.battle,
+    ).toBeNull();
+    const all = (await author.get('/api/posts').query({ board: 'FRIENDLY', limit: 50 }).expect(200)).body;
+    expect(all.items).toContainEqual(expect.objectContaining({ id: old.id, battle: null }));
+    const filtered = (
+      await author.get('/api/posts').query({ board: 'FRIENDLY', battleMode: 'DUEL', limit: 50 }).expect(200)
+    ).body;
+    expect(filtered.items).not.toContainEqual(expect.objectContaining({ id: old.id }));
+  });
   it('uses the same five board kinds for another game and keeps game filters isolated', async () => {
     const category = await db.category.create({
       data: { slug: 'another-game', name: 'Another Game', active: true },
@@ -570,6 +657,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
           ? { coaching: { role: 'STUDENT', pricing: { type: 'HOURLY', amount: null } } }
           : {}),
         ...(board === 'FRIEND_SALE' ? { friendSale: { price: null } } : {}),
+        ...(board === 'FRIENDLY' ? { battle: { mode: 'DUEL' } } : {}),
       };
       const created = (await author.post('/api/posts').set('Origin', origin).send(input).expect(200)).body;
       const own = (await author.get('/api/posts').query({ board, category: category.slug }).expect(200)).body;

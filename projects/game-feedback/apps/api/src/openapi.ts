@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { z } from 'zod';
-import { BoardKindSchema, operations, schemas } from '@game-feedback/contracts';
+import { BoardKindSchema, BattleModeSchema, operations, schemas } from '@game-feedback/contracts';
 
 export function createOpenApi() {
   const components: Record<string, unknown> = {};
@@ -31,6 +31,11 @@ export function createOpenApi() {
           ...(operation.id === 'listPosts'
             ? [
                 { name: 'authorId', in: 'query', schema: { type: 'string', minLength: 1, maxLength: 100 } },
+                {
+                  name: 'battleMode',
+                  in: 'query',
+                  schema: { type: 'string', enum: BattleModeSchema.options },
+                },
                 { name: 'category', in: 'query', schema: { type: 'string' } },
                 { name: 'unanswered', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },
                 { name: 'q', in: 'query', schema: { type: 'string' } },
