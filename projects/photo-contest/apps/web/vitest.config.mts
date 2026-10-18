@@ -21,7 +21,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['src/**/*.{spec,test}.ts', 'test/deployment/*.{spec,test}.ts'],
-          exclude: ['src/**/*.api.spec.ts'],
+          exclude: ['src/**/*.api.{spec,test}.ts'],
         },
       },
       {
@@ -38,7 +38,7 @@ export default defineConfig({
         test: {
           name: 'api',
           environment: 'node',
-          include: ['src/**/*.api.spec.ts'],
+          include: ['src/**/*.api.{spec,test}.ts'],
           globalSetup: ['./vitest.api-setup.ts'],
           fileParallelism: false,
           testTimeout: 60_000,
