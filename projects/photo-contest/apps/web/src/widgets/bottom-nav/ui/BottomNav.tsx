@@ -1,6 +1,6 @@
 'use client';
 
-import { House, UserRound } from 'lucide-react';
+import { Compass, House, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -46,13 +46,23 @@ export function BottomNav() {
       data-bottom-nav
       className="sticky bottom-0 z-bottom-nav mt-auto shrink-0 border-t border-line bg-surface pb-(--safe-bottom) desktop:hidden keyboard-open:invisible"
     >
-      <ul className="grid h-bottom-nav grid-cols-2">
+      <ul className="grid h-bottom-nav grid-cols-3">
         <li>
           <NavItem
             href={ROUTES.HOME}
             label="홈"
             icon={<House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />}
             isActive={pathname === ROUTES.HOME}
+          />
+        </li>
+        <li>
+          <NavItem
+            href={ROUTES.EXPLORE}
+            label="탐색"
+            icon={
+              <Compass aria-hidden className="size-6" strokeWidth={pathname === ROUTES.EXPLORE ? 2.5 : 1.7} />
+            }
+            isActive={pathname === ROUTES.EXPLORE}
           />
         </li>
         <li>

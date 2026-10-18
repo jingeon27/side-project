@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('BottomNav', () => {
-  it('홈과 MY 두 탭을 보여 주고 지금 화면의 탭만 aria-current="page"여야 한다', () => {
+  it('홈·탐색·MY를 보여 주고 지금 화면의 탭만 aria-current="page"여야 한다', () => {
     navigation.pathname = '/me';
     render(<BottomNav />);
     const nav = screen.getByRole('navigation', { name: '주요 메뉴' });
@@ -19,6 +19,8 @@ describe('BottomNav', () => {
     expect(screen.getByRole('link', { name: '홈' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: '홈' })).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('link', { name: 'MY' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: '탐색' })).toHaveAttribute('href', '/explore');
+    expect(screen.getByRole('link', { name: '탐색' })).not.toHaveAttribute('aria-current');
   });
 
   it('홈에서는 홈 탭이 현재 탭이어야 한다', () => {

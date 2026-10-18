@@ -2,7 +2,7 @@
 
 import { useMutation } from '@apollo/client/react';
 
-import { CreateGroupDocument } from '@/shared/api/generated';
+import { CreateGroupDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
@@ -14,13 +14,16 @@ import { TextField } from '@/shared/ui/@core/text-field';
 
 import { prependMyGroup } from '../model/group.cache';
 import { createGroupSchema } from '../model/group.schema';
+import { GroupVisibilityField } from './GroupVisibilityField';
 
 const FORM_ID = 'create-group-form';
 
 /** 그룹 만들기. 만들면 홈 목록에 넣고 새 그룹 화면으로 간다. 실패는 공통 토스트가 알린다. */
 export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomSheetControlProps) {
   const router = useAppRouter();
-  const form = useZodForm(createGroupSchema, { defaultValues: { name: '' } });
+  const form = useZodForm(createGroupSchema, {
+    defaultValues: { name: '', visibility: GroupVisibility.Public },
+  });
   const [createGroup, { loading }] = useMutation(CreateGroupDocument, {
     update: (cache, { data }) => {
       if (data) prependMyGroup(cache, data.createGroup);
@@ -36,15 +39,16 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
   return (
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
-        title="우리만의 그룹 만들기"
-        description="기간 제한 없이 사진과 동영상으로 웃긴 순간을 나눠보세요."
+        title="그룹 만들기"
+        description="공개 범위를 정하고 사진과 동영상으로 웃긴 순간을 나눠보세요."
       />
       <BottomSheet.Content>
         <form
           id={FORM_ID}
-          onSubmit={form.handleSubmit(async ({ name }) => {
+          className="flex flex-col gap-6"
+          onSubmit={form.handleSubmit(async (values) => {
             try {
-              await createGroup({ variables: { name } });
+              await createGroup({ variables: values });
             } catch {
               // 실패는 ErrorLink가 토스트로 알린다. 입력을 고쳐 다시 시도할 수 있게 시트를 열어 둔다.
             }
@@ -60,6 +64,7 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
             error={form.formState.errors.name?.message}
             {...form.register('name')}
           />
+          <GroupVisibilityField form={form} />
         </form>
       </BottomSheet.Content>
       <BottomSheet.Footer>

@@ -1,0 +1,24 @@
+'use client';
+
+import { Plus } from 'lucide-react';
+import { overlay } from 'overlay-kit';
+
+import { Button } from '@/shared/ui/@core/button';
+
+import { CreateGroupBottomSheet } from './CreateGroupBottomSheet';
+
+export function CreateGroupButton() {
+  return (
+    <Button
+      size="md"
+      onClick={() =>
+        overlay.open(({ isOpen, close, unmount }) => (
+          <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
+        ))
+      }
+    >
+      <Plus aria-hidden className="mr-1 size-4" />
+      그룹 만들기
+    </Button>
+  );
+}
