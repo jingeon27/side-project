@@ -29,17 +29,24 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 ## 상시 그룹 게시물
 
 - 현재 제품은 Post·PostUpload·PostLike·PostComment다. 그룹은 종료되지 않으며 대회 없이 여러 번 등록한다.
-- galleryPosts의 groupId가 없으면 가입한 모든 그룹, 있으면 해당 멤버십을 검사한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
-- 작성자와 OWNER만 삭제한다. 파일도 매 요청 멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
+- galleryPosts의 groupId가 없으면 로그인 후 가입한 모든 그룹, 있으면 readableGroup으로 공개 범위·멤버십을 검사한다. PUBLIC은 익명 읽기, PRIVATE는 승인된 멤버만 허용한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
+- 작성자와 OWNER만 삭제한다. 파일도 매 요청 공개 범위·멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
 - 웹 업로드는 GraphQL Upload scalar·multipart middleware와 uploadPostMedia mutation을 사용한다. 티켓 소유·만료·멤버십을 먼저 검사하고 스트림 크기를 제한한다. 기존 REST 업로드도 같은 검증·저장 로직을 쓴다.
 - /post-uploads는 5분 일회용 해시 티켓, 원본 100MB 상한이다. 사진은 기존 sharp 변환을 재사용하고 동영상은 MediaInfo WASM으로 컨테이너·코덱·시간을 검사한다. MP4 H.264/AAC·WebM VP8/VP9+Opus/Vorbis, 5분 이하.
 - /media/:id는 비공개 no-store 스트리밍·byte Range 206/416을 지원한다. 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
-- 댓글은 accessiblePost로 같은 멤버십·숨김 규칙을 적용한다. 본문은 trim 후 1~1000자, 최신순(createdAt·id desc) offset 목록이다. 작성자·관리자만 삭제하며 개수는 게시물 조회의 _count로 함께 구한다. 댓글 내용은 이벤트에 넣지 않는다.
+- 댓글 읽기는 readablePost, 쓰기·삭제는 accessiblePost로 공개 범위·멤버십·숨김 규칙을 적용한다. 본문은 trim 후 1~1000자, 최신순(createdAt·id desc) offset 목록이다. 작성자·관리자만 삭제하며 개수는 게시물 조회의 _count로 함께 구한다. 댓글 내용은 이벤트에 넣지 않는다.
 - 생성·좋아요·삭제 도메인 이벤트는 같은 DB 트랜잭션에 ID·종류만 기록한다.
+
+## 그룹 탐색·가입
+
+- createGroup은 PUBLIC/PRIVATE 선택이며 생략하면 PUBLIC이다. DB default PRIVATE는 기존 그룹의 공개 전환을 막기 위한 값이다.
+- group·discoverGroups는 익명 메타데이터 조회를 허용한다. 비멤버의 role·inviteToken은 null, members는 빈 배열이다. discoverGroups의 공개 범위 필터와 publicGroupCount는 공개 사이트맵을 지원한다.
+- requestGroupMembership과 joinGroup은 같은 규칙: 공개 그룹은 즉시 가입, 비공개 그룹은 GroupJoinRequest만 만든다. 기존 멤버의 역할을 유지하고 동시 신청·가입은 DB unique와 Serializable 재시도로 한 행만 남긴다.
+- 신청 목록·수락·거절은 OWNER만. 수락은 멤버 생성·가입 이벤트·신청 삭제를 한 트랜잭션으로 처리한다.
 
 ## 기존 대회 호환 규칙
 
-- 그룹 멤버만 그룹·대회·사진·파일에 접근한다(ID를 알아도 불가). 초대 토큰은 모든 멤버가 보고, 재발급은 OWNER만 하며 이전 토큰은 바로 무효다. `invitePreview`는 비로그인도 보지만 그룹 이름·멤버 수·관리자 닉네임·(가입했으면) 그룹 ID만 준다.
+- 기존 Contest·Submission·순위·사진 파일은 공개 그룹이어도 멤버만 접근한다(ID를 알아도 불가). 초대 토큰은 모든 멤버가 보고, 재발급은 OWNER만 하며 이전 토큰은 바로 무효다. `invitePreview`는 비로그인도 보지만 그룹 이름·멤버 수·관리자 닉네임·(가입했으면) 그룹 ID만 준다.
 - 단계는 저장하지 않고 서버 시각과 마감으로 계산한다(UPCOMING → SUBMISSION → VOTING → COMPLETED).
 - 1인 1장 제출·1인 1표는 DB unique + Serializable 재시도로 보장한다. UI 비활성화는 보장 수단이 아니다.
 - 자기 사진·숨긴 사진에는 투표할 수 없다. 득표수는 종료 후에만, 좋아요 수는 항상 공개한다.

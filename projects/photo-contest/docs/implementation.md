@@ -1,6 +1,6 @@
 # 웃긴순간 구현 기록
 
-2026-10-17 기준. 현재 제품은 기간 없는 그룹 커뮤니티다. 실사용·전환율·재방문 성과는 아직 측정하지 않았다.
+2026-10-19 기준. 현재 제품은 기간 없는 그룹 커뮤니티다. 실사용·전환율·재방문 성과는 아직 측정하지 않았다.
 
 화면·초대 공유·오류 안내의 공간 명칭은 그룹으로 통일한다. 기존 GraphQL 문서·타입의 Gallery 이름과 /groups URL은 유지한다.
 
@@ -12,13 +12,23 @@
 
 Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이터와 이전 URL 호환을 위해 유지한다. 새 작성 흐름에는 대회·마감일·1인 1장 제약이 없다. 마이그레이션은 기존 사진·숨김 상태·작성 시각·파일 키·좋아요를 새 모델에 보존하며, 실제 이전 스키마에 데이터를 넣은 뒤 SQL을 적용해 검증했다.
 
+## 공개 탐색·가입 승인·SEO
+
+`/explore`에서 로그인 없이 그룹 이름을 검색한다. 그룹 생성은 로그인 후 공개·비공개를 선택하며 기본값은 공개다. 기존 그룹은 새 마이그레이션의 PRIVATE default로 비공개를 유지한다. 공개 그룹의 게시물·미디어·댓글은 익명으로 읽고 로그인 후 바로 가입한다. 비공개 그룹은 GroupJoinRequest를 만들고 OWNER가 수락·거절한다. 초대 토큰도 같은 정책을 적용하므로 비공개 승인을 우회하지 않는다. 이름·공개 여부·멤버 수는 탐색에 표시하지만 비멤버의 inviteToken·role은 null, members는 빈 배열이다.
+
+가입·신청은 복합 unique와 Serializable 트랜잭션으로 중복을 막고 역할을 유지한다. 수락은 멤버 생성·가입 이벤트·신청 삭제를 함께 처리한다. 읽기 권한은 readableGroup/readablePost, 활동과 기존 대회는 기존 멤버 전용 권한으로 나눈다. 대기 중인 그룹은 MY에 넣지 않는다. 승인 상태 조회는 부모의 useBackgroundQuery refetch가 소유하여 Suspense QueryRef를 갱신하고, 승인 뒤 처음 등장하는 비공개 피드와 관리자 신청 목록은 ClientOnly로 조회한다.
+
+탐색은 1·2·3열 카드이고 메뉴는 홈·탐색·MY를 JSX로 선언한다. 그룹의 정체성·초대/멤버·가입 안내는 각각 컴포넌트로 나누며 공개·비공개 배지는 ts-pattern으로 분기한다.
+
+공개 그룹마다 canonical·OG/Twitter·JSON-LD와 실제 게시물 서버 HTML을 제공한다. SEO 서버 조회는 인증 Cookie를 전달하지 않는다. 비공개 그룹은 공통 noindex 메타데이터와 빈 게시물 스냅샷을 사용하며 그룹장에게도 JSON-LD를 출력하지 않는다. 공개 그룹만 48개씩 분할하는 사이트맵 인덱스와 robots를 제공하고 실제 공개 사진을 공유 이미지로 쓴다. 사용자 입력은 JSON-LD script 탈출을 막도록 이스케이프한다. 도메인 설정·구조화 데이터 범위·검증은 [SEO 안내](seo.md)를 따른다.
+
 ## 피드와 미디어
 
 `galleryPosts`는 groupId를 지정하면 해당 그룹, 생략하면 가입한 그룹 전체를 조회한다. 최신순은 createdAt·id desc이고, 인기순은 KST 이번 달에 작성한 게시물의 좋아요 desc·createdAt/id desc다. 숨긴 사진은 홈·그룹 목록에서 제외하며 이관된 게시물은 기존 사진의 숨김도 확인한다.
 
 사진은 sharp 실제 디코딩·크기 검사 후 최대 1600px WebP로 저장한다. 동영상은 mediainfo.js WASM으로 실제 컨테이너·영상/음성 코덱·길이를 검사한다. MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원한다. 영상은 변환하지 않고 비공개로 저장한다.
 
-`/media/:id`는 요청마다 멤버십을 검사하고 no-store·nosniff와 byte Range 206/416을 지원한다. 로컬·S3 저장소에서 스트리밍해 탐색할 때 파일 전체를 메모리에 올리지 않는다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
+`/media/:id`는 요청마다 그룹의 공개 범위와 멤버십을 검사하고 no-store·nosniff와 byte Range 206/416을 지원한다. 로컬·S3 저장소에서 스트리밍해 탐색할 때 파일 전체를 메모리에 올리지 않는다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
 
 웹의 파일 전송은 requestPostUpload → uploadPostMedia → createPost mutation이다. Apollo UploadHttpLink가 Blob/File을 multipart로 전송한다. 이전 사진 제출도 uploadSubmissionPhoto mutation을 사용한다. API는 Origin·세션·티켓 소유/만료·멤버십을 확인하고 크기가 제한된 스트림을 실제 사진/동영상 검사로 넘긴다. REST 업로드는 호환용으로 같은 저장 로직을 쓴다.
 
@@ -34,7 +44,7 @@ Apollo는 `offsetLimitPagination(['groupId', 'sort'])`으로 목록을 분리한
 
 윙크하며 웃는 얼굴을 흑백 SVG favicon으로 만들고 Next.js의 `app/icon.svg` 규약으로 제공한다. 모바일 상단·데스크톱 메뉴의 BrandIcon도 같은 `/icon.svg`를 사용해 브랜드 이미지가 함께 바뀐다. 이름이 옆에 있으므로 아이콘은 장식 이미지로 처리한다. `/terms`·`/privacy`는 공개 라우트이며 본문이 서버 HTML에 포함된다. 로그인·MY·데스크톱 메뉴에서 정책 링크를 제공하고 운영자 김진건·문의 이메일 jingeon27@gmail.com·작성일을 한 설정에서 관리한다. 정책은 현재 구현을 반영한 검토용 초안이다. 실제 운영 환경의 위탁·국외 이전, 문의·운영 이력·백업 보관 기간과 아동 개인정보 처리 기준은 정식 공개 전에 확정해야 한다.
 
-댓글은 PostComment에 저장하고 게시물·사용자 삭제 시 함께 지운다. 댓글 조회·작성·삭제도 MembershipService.accessiblePost로 멤버십·숨김을 확인한다. 작성자·관리자만 삭제하며 내용은 trim 후 1~1000자다. 최신순(createdAt·id desc) offset 조회이며 댓글 수는 게시물 조회의 _count로 계산한다. 댓글 시트는 독립 QueryRef·Suspense/오류 경계를 사용하고 작성·삭제 뒤 댓글과 피드 개수를 갱신한다.
+댓글은 PostComment에 저장하고 게시물·사용자 삭제 시 함께 지운다. 댓글 조회는 MembershipService.readablePost로 공개 범위·숨김을, 작성·삭제는 accessiblePost로 멤버십·숨김을 확인한다. 작성자·관리자만 삭제하며 내용은 trim 후 1~1000자다. 최신순(createdAt·id desc) offset 조회이며 댓글 수는 게시물 조회의 _count로 계산한다. 댓글 시트는 독립 QueryRef·Suspense/오류 경계를 사용하고 작성·삭제 뒤 댓글과 피드 개수를 갱신한다.
 
 댓글 시트의 헤더·목록·입력창은 각각 PostCommentsHeader·PostCommentList·PostCommentComposer가 맡는다. 시트는 화면 너비를 채우고 높이 약 75%로 열린다. 배경은 기본 상태에서 검정 15%, 전체 높이에서는 검정 35%로 어두워지며 Base UI의 스와이프 진행률로 두 단계 사이를 연결한다. 위로 끌면 상단 안전 여백·키보드를 제외한 전체 높이로 펼쳐지고 아래로 끌면 기본 크기로 돌아간다. 헤더의 확장·축소 버튼으로 키보드에서도 조절할 수 있다. Base UI의 snapPoints와 스냅 오프셋에 맞춘 하단 패딩으로 크기와 드래그 중에도 입력창을 화면 안에 둔다. 헤더·하단 입력 영역의 여백을 줄여 목록이 더 많이 보이게 하고, 모바일의 본문·입력은 최대 768px로 제한하며 데스크톱은 왼쪽 원본 게시물·오른쪽 대화를 최대 1152px의 2열로 보여 준다. 내 댓글은 오른쪽의 검은 말풍선, 다른 멤버는 왼쪽의 옅은 말풍선으로 구분하며 게시물 작성자도 표시한다. 본문 아래에 시각과 삭제 조작을 모은다. 하단 입력창은 내용에 따라 최대 높이까지 늘어나고 전송 버튼을 옆에 둔다. 필수 표시·글자 수·오류 안내·제출 잠금은 실제 RHF/Zod 상태와 연결한다. 로그인 사용자는 기존 Me 캐시에서 읽으며 댓글 조회와 작성·삭제 계약은 유지한다.
 
@@ -61,6 +71,8 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
 
 ## 검증
+
+- 공개 그룹 변경은 API unit 66·실제 DB e2e 210, 웹 unit/UI 273·실제 문서 API 11, Chrome·WebKit·데스크톱·가짜 WebView Playwright 42개로 검증했다. SEO 생성·비공개 데이터 배제·49개 공개 그룹의 사이트맵 분할·JSON-LD script 탈출·가입 신청 거절/재신청/수락을 포함한다. 코드 생성·타입 검사·lint·포맷·별도 dist의 프로덕션 빌드도 통과했다.
 
 - Vitest 761개: API unit 64·실제 PostgreSQL/supertest 200, 웹 unit/UI 264(배포 스크립트 12개 포함)·실제 문서 계약 7, 모바일 unit/UI 137·API 9, bridge 35, 공용 lint RuleTester fixture 45.
 - CI에서 웹 Playwright 36개·모바일 WebView 24개가 통과했다. Android 하드웨어 뒤로 가기 2개는 iOS에서 제외한다. 운영 이미지의 HTTPS 검증은 웹 앱이 소유하는 별도 Playwright 설정으로 실행한다.
@@ -90,3 +102,5 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 그룹 마이그레이션은 앞선 전체 실행 요청에 따라 개발 환경에 반영했다. 직접 가입 기능은 `20261016090000_password_login`으로 PasswordCredential·AuthAttempt 테이블만 추가하며 기존 사용자와 게시물을 보존한다. 실행 요청에 따라 개발 DB에도 적용해 현재 웹에서 직접 가입할 수 있다. 새 환경에서는 db:migrate 후 실행한다. 테스트 DB는 개발 DB와 다른 55434의 photo_contest_test이며 각 레인이 임시 스키마를 만들고 정리한다.
 
 댓글 마이그레이션 `20261017010000_post_comments`는 PostComment 테이블·인덱스·cascade 외래 키만 추가한다. 개발 DB에도 적용하고 기존 게시물·사용자 유지와 최신·인기 피드 및 댓글 조회를 확인했다. 격리 테스트 DB에도 전체 마이그레이션을 적용해 검증한다.
+
+공개 그룹 마이그레이션 `20261019010000_public_groups`는 Group.visibility와 GroupJoinRequest·인덱스·cascade 외래 키만 추가한다. 기존 그룹·사진·영상·좋아요를 보존하며 이전 스키마에 마이그레이션을 적용하는 테스트로 PRIVATE 유지도 확인한다. 이번 작업은 별도 worktree·테스트 DB 55435에서 수행했으며 사용자의 개발 DB나 실행 중인 서버에는 적용하지 않았다. 개발 반영 시 db:generate·db:migrate 후 서버를 다시 실행한다.
