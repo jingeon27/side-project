@@ -1,6 +1,12 @@
 import { writeFileSync } from 'node:fs';
 import { z } from 'zod';
-import { BoardKindSchema, BattleModeSchema, operations, schemas } from '@game-feedback/contracts';
+import {
+  BoardKindSchema,
+  BattleModeSchema,
+  CoachingRoleSchema,
+  operations,
+  schemas,
+} from '@game-feedback/contracts';
 
 export function createOpenApi() {
   const components: Record<string, unknown> = {};
@@ -35,6 +41,11 @@ export function createOpenApi() {
                   name: 'battleMode',
                   in: 'query',
                   schema: { type: 'string', enum: BattleModeSchema.options },
+                },
+                {
+                  name: 'coachingRole',
+                  in: 'query',
+                  schema: { type: 'string', enum: CoachingRoleSchema.options },
                 },
                 { name: 'category', in: 'query', schema: { type: 'string' } },
                 { name: 'unanswered', in: 'query', schema: { type: 'string', enum: ['true', 'false'] } },

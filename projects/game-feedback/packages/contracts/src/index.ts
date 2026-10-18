@@ -33,9 +33,11 @@ export const CoachingPricingSchema = z.discriminatedUnion('type', [
     .strict(),
 ]);
 export type TCoachingPricing = z.infer<typeof CoachingPricingSchema>;
+export const CoachingRoleSchema = z.enum(['COACH', 'STUDENT']);
+export type TCoachingRole = z.infer<typeof CoachingRoleSchema>;
 export const CoachingDetailsSchema = z
   .object({
-    role: z.enum(['COACH', 'STUDENT']),
+    role: CoachingRoleSchema,
     pricing: CoachingPricingSchema,
   })
   .strict();
@@ -334,6 +336,7 @@ export const HideInputSchema = z
   .strict();
 export const ListQuerySchema = z.object({
   battleMode: BattleModeSchema.optional(),
+  coachingRole: CoachingRoleSchema.optional(),
   board: z.union([BoardKindSchema, z.literal('ALL')]).optional(),
   authorId: z.string().min(1).max(100).optional(),
   cursor: z.string().max(200).optional(),

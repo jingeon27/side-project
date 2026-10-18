@@ -703,4 +703,68 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     expect(notifications.unreadCount).toBe(0);
     expect(await db.post.findUnique({ where: { id: retired.id } })).toMatchObject({ board: 'ACCOUNT_TRADE' });
   });
+  it('filters coaching roles for anonymous readers with search, game and cursor boundaries', async () => {
+    const q = `모집유형확인${randomBytes(6).toString('hex')}`;
+    const created = [];
+    for (const role of ['COACH', 'STUDENT', 'COACH'] as const) {
+      const response = await author
+        .post('/api/posts')
+        .set('Origin', origin)
+        .send({
+          categoryId,
+          board: 'COACHING',
+          title: `${q} ${role}`,
+          body: '레슨 일정과 조건을 함께 정해요.',
+          coaching: { role, pricing: { type: 'HOURLY', amount: 30000 } },
+        })
+        .expect(200);
+      created.push(response.body);
+    }
+    const reader = supertest(app.getHttpServer());
+    for (const role of ['COACH', 'STUDENT'] as const) {
+      const result = (
+        await reader
+          .get('/api/posts')
+          .query({
+            board: 'COACHING',
+            coachingRole: role,
+            category: 'clash-royale',
+            q,
+          })
+          .expect(200)
+      ).body;
+      expect(result.items.map((post: { id: string }) => post.id).sort()).toEqual(
+        created
+          .filter((post) => post.coaching.role === role)
+          .map((post) => post.id)
+          .sort(),
+      );
+    }
+    const params = { board: 'COACHING', coachingRole: 'COACH', category: 'clash-royale', q, limit: 1 };
+    const first = (await reader.get('/api/posts').query(params).expect(200)).body;
+    expect(first.items).toHaveLength(1);
+    expect(first.nextCursor).toEqual(expect.any(String));
+    const second = (
+      await reader
+        .get('/api/posts')
+        .query({ ...params, cursor: first.nextCursor })
+        .expect(200)
+    ).body;
+    expect(second.items).toHaveLength(1);
+    expect(second.items[0].id).not.toBe(first.items[0].id);
+    expect(second.nextCursor).toBeNull();
+    const otherGame = (
+      await reader
+        .get('/api/posts')
+        .query({ ...params, category: 'another-game' })
+        .expect(200)
+    ).body;
+    expect(otherGame.items).toEqual([]);
+    for (const query of [
+      { board: 'FREE', coachingRole: 'COACH' },
+      { board: 'ALL', coachingRole: 'STUDENT' },
+      { board: 'COACHING', coachingRole: 'OTHER' },
+    ])
+      await reader.get('/api/posts').query(query).expect(400);
+  });
 });

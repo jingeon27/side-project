@@ -17,6 +17,7 @@ export const ListPostsParams = zod.object({
   "limit": zod.int().min(1).max(listPostsParamsLimitMax).default(listPostsParamsLimitDefault),
   "authorId": zod.string().min(1).max(listPostsParamsAuthorIdMax).optional(),
   "battleMode": zod.enum(['DUEL', 'TEAM']).optional(),
+  "coachingRole": zod.enum(['COACH', 'STUDENT']).optional(),
   "category": zod.string().optional(),
   "unanswered": zod.enum(['true', 'false']).optional(),
   "q": zod.string().optional(),

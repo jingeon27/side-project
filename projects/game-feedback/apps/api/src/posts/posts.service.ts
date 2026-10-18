@@ -47,12 +47,15 @@ export class PostsService {
       excluded = await this.visibility.excluded(req);
     if (q.battleMode && q.board !== 'FRIENDLY')
       throw new ApiError(400, 'INVALID_BATTLE_FILTER', '전투 모집에서 전투 유형을 선택해주세요.');
+    if (q.coachingRole && q.board !== 'COACHING')
+      throw new ApiError(400, 'INVALID_COACHING_FILTER', '게임코치에서 모집 유형을 선택해주세요.');
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_POST,
       ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),
       authorId: { notIn: excluded, ...(q.authorId ? { equals: q.authorId } : {}) },
       ...(q.category ? { category: { slug: q.category } } : {}),
       ...(q.battleMode ? { battle: { path: ['mode'], equals: q.battleMode } } : {}),
+      ...(q.coachingRole ? { coaching: { path: ['role'], equals: q.coachingRole } } : {}),
       ...(q.unanswered === 'true'
         ? { answers: { none: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } } } }
         : {}),
