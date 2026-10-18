@@ -22,21 +22,6 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
   if (!game || !route || !['feed', 'boards', 'post'].includes(route.screen)) return null;
   return (
     <div className="game-board-navigation">
-      <div className="home-game-scope">
-        <TabLink
-          ref={!selected ? currentChip : undefined}
-          href={appRoutes.feed(locale)}
-          replace
-          aria-current={!selected ? 'page' : undefined}
-          className={cn(
-            buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm' }),
-            'rounded-full',
-          )}
-        >
-          {t('홈')}
-        </TabLink>
-        <span>{t('모든 게임')}</span>
-      </div>
       <nav className="game-category-group" aria-label={t('{game} 게시판', { game: game.name })}>
         <div className="game-board-title">
           <GameIcon slug={game.slug} />
@@ -44,6 +29,18 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
           <span>{t('분류')}</span>
         </div>
         <div className="game-board-chips">
+          <TabLink
+            ref={!selected ? currentChip : undefined}
+            href={appRoutes.feed(locale)}
+            replace
+            aria-current={!selected ? 'page' : undefined}
+            className={cn(
+              buttonVariants({ variant: !selected ? 'accent' : 'secondary', size: 'sm' }),
+              'rounded-full',
+            )}
+          >
+            {t('홈')}
+          </TabLink>
           {gameBoards.map((board) => (
             <TabLink
               key={board.kind}

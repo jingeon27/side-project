@@ -6,11 +6,17 @@ test('mobile titles follow the screen and game classifications stay inside their
   const header = page.getByRole('banner');
   await expect(header.locator('.brand')).toBeHidden();
   await expect(header.locator('.mobile-page-title')).toHaveText('홈');
-  await expect(page.locator('.home-game-scope')).toContainText('모든 게임');
   const game = page.locator('.game-category-group');
   await expect(game.locator('.game-board-title')).toContainText('클래시로얄');
-  await expect(game.getByRole('link')).toHaveCount(5);
-  await expect(game.getByRole('link', { name: '홈', exact: true })).toHaveCount(0);
+  await expect(game.locator('.game-board-chips').getByRole('link')).toHaveText([
+    '홈',
+    '피드백',
+    '친추판매',
+    '전투 모집',
+    '게임코치',
+    '자유게시판',
+  ]);
+  await expect(game.getByRole('link', { name: '홈', exact: true })).toHaveAttribute('aria-current', 'page');
   await game.getByRole('link', { name: '전투 모집', exact: true }).click();
   await expect(header.locator('.mobile-page-title')).toHaveText('홈');
   await expect(game.getByRole('link', { name: '전투 모집', exact: true })).toHaveAttribute(

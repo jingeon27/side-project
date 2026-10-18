@@ -93,6 +93,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
     const navigation = desktop ? page.locator('.left-sidebar') : page.locator('.game-board-navigation');
     const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-chips');
     await expect(boards.getByRole('link')).toHaveText([
+      ...(desktop ? [] : ['홈']),
       '피드백',
       '친추판매',
       '전투 모집',
