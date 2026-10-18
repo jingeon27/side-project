@@ -278,7 +278,9 @@ try {
   const badWeb = `${imagePrefix}-web:${badSha}`;
   temporaryImages.push(badApi, badWeb);
   command('docker', ['tag', `${imagePrefix}-api:${sha}`, badApi]);
-  command('docker', ['build', '--platform', 'linux/amd64', '--tag', badWeb, '-'], {
+  // The daemon builder can use the already loaded private image without a registry login.
+  // Actions uses a separate Buildx cache builder for the real API/Web image builds.
+  command('docker', ['build', '--builder', 'default', '--platform', 'linux/amd64', '--tag', badWeb, '-'], {
     input: `FROM ${imagePrefix}-web:${sha}\nCMD ["node", "-e", "process.exit(1)"]\n`,
   });
   const rollback = spawnSync('bash', [join(original.release, 'ops.sh'), 'deploy', badSha], {
