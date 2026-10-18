@@ -88,7 +88,9 @@ test('native back closes the web dialog, deep links keep the document, and foreg
   expect(result.ok()).toBe(true);
   nativeHost.state('background');
   nativeHost.state('active');
-  await expect(page.locator('.header-account')).toContainText('덱연구소');
+  await expect(page.locator('.header-account').filter({ hasText: '덱연구소' }).first()).toContainText(
+    '덱연구소',
+  );
   expect(nativeHost.openDeepLink('gamefeedback://ko/settings')).toBe(true);
   await expect(page.locator('.settings-profile')).toContainText('덱연구소');
   await expect(page.locator('.settings-profile')).toContainText('인증 유저');

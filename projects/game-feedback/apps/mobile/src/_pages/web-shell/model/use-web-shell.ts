@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { BackHandler, Linking, Platform } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
 import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge';
-import { createNativeHost, nativeLogin } from '@/features/bridge';
+import { NativeHost, nativeLogin } from '@/features/bridge';
 import { decideNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
 import { APP_VERSION, WEB_ORIGIN } from '@/shared/config/env';
 import { isLoadFailure } from '../lib/load-error';
@@ -15,18 +15,19 @@ export function useWebShell() {
     channel.subscribe,
     channel.getSnapshot,
   );
-  const [host] = useState(() =>
-    createNativeHost({
-      origin: WEB_ORIGIN,
-      send: (message) => channel.inject(buildDispatchScript(message)),
-      login: (provider) => nativeLogin(WEB_ORIGIN, provider),
-      onLocation: (path) => {
-        channel.rememberUrl(`${WEB_ORIGIN}${path}`);
-      },
-      onReady: channel.finishLoading,
-      onOverlayChange: channel.setOverlayOpen,
-      onRootBack: () => BackHandler.exitApp(),
-    }),
+  const [host] = useState(
+    () =>
+      new NativeHost({
+        origin: WEB_ORIGIN,
+        send: (message) => channel.inject(buildDispatchScript(message)),
+        login: (provider) => nativeLogin(WEB_ORIGIN, provider),
+        onLocation: (path) => {
+          channel.rememberUrl(`${WEB_ORIGIN}${path}`);
+        },
+        onReady: channel.finishLoading,
+        onOverlayChange: channel.setOverlayOpen,
+        onRootBack: () => BackHandler.exitApp(),
+      }),
   );
   useEffect(() => () => host.reset(), [host]);
   const handleOpenLink = useCallback(

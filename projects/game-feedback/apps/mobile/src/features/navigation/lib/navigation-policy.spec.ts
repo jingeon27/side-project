@@ -37,6 +37,25 @@ describe('WebView navigation and deep links', () => {
     ])
       expect(WebPathSchema.safeParse(path).success).toBe(false);
   });
+  it('rejects administrator paths and malformed query data while preserving safe route encoding', () => {
+    ['ko', 'en', 'ja'].forEach((locale) => {
+      expect(resolveAppRoute(`/${locale}/admin`)).toBeNull();
+      expect(toWebPath(`gamefeedback://${locale}/admin`, origin)).toBeNull();
+    });
+    [
+      '/ko?%71=a&q=b',
+      '/ko?q=%00',
+      '/ko?q=a?x=b',
+      '/ko/search?board=free&feedbackStatus=WAITING',
+      '/ko/boards/free?battleMode=TEAM',
+    ].forEach((path) => {
+      expect(WebPathSchema.safeParse(path).success).toBe(false);
+    });
+    expect(WebPathSchema.parse('/ko/search?q=hog+%26+ice&&utm_source=app')).toBe(
+      '/ko/search?q=hog%20%26%20ice',
+    );
+    expect(WebPathSchema.parse('/ko?__proto__=safe&q=hog')).toBe('/ko?q=hog');
+  });
   it('keeps only exact origins in the WebView', () => {
     for (const url of [origin, `${origin}/ko/posts/abc`, 'about:blank'])
       expect(decideNavigation(url, origin).action).toBe('allow');

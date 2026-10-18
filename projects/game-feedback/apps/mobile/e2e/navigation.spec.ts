@@ -89,20 +89,14 @@ test('category chips navigate directly and native back restores the saved filter
   );
 });
 
-test('an admin deep link opens the protected management page and native back returns to account settings', async ({
+test('management routes are unavailable in the public web and native route parser', async ({
   page,
   nativeHost,
 }) => {
-  await page.request.post('/api/auth/test-login', {
-    headers: { Origin: ORIGIN },
-    data: { accountId: 'sample-test-admin' },
-  });
-  await page.goto('/ko/admin');
-  await expect(page.getByRole('heading', { name: '운영 관리', exact: true })).toBeVisible();
-  await expect.poll(nativeHost.currentPath).toBe('/ko/admin');
-  expect(await nativeHost.requestBack()).toBe(true);
+  await page.goto('/ko/settings');
   await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
-  await expect(page.getByRole('link', { name: '운영 관리', exact: true })).toBeVisible();
+  expect((await page.request.get('/ko/admin')).status()).toBe(404);
+  await expect(page.getByRole('link', { name: '운영 관리', exact: true })).toHaveCount(0);
 });
 
 test('cold detail back uses the parent and reports root exit without replaying tab history', async ({
@@ -111,6 +105,8 @@ test('cold detail back uses the parent and reports root exit without replaying t
 }) => {
   await page.goto('/ko/posts/sample-post-0');
   await expect.poll(nativeHost.currentPath).toBe('/ko/posts/sample-post-0');
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page).toHaveURL(/\/ko\/boards\/feedback$/);
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page).toHaveURL(/\/ko$/);
   expect(await nativeHost.requestBack()).toBe(true);

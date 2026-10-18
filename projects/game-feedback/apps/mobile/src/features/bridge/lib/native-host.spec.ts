@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildBootstrapScript, buildDispatchScript, parseNativeMessage } from '@game-feedback/bridge';
-import { createNativeHost } from './create-native-host';
+import { NativeHost } from './native-host';
 const origin = 'https://feedback.example';
 function setup() {
   const send = vi.fn();
   const login = vi.fn(async () => ({ status: 'cancelled' as const }));
   const onLocation = vi.fn();
-  const host = createNativeHost({ origin, send, login, onLocation });
+  const host = new NativeHost({ origin, send, login, onLocation });
   const receive = (message: unknown, source = `${origin}/ko`) =>
     host.receive(JSON.stringify(message), source);
   return { host, send, login, onLocation, receive };
@@ -17,7 +17,7 @@ describe('native bridge boundary', () => {
     const onOverlayChange = vi.fn();
     const onRootBack = vi.fn();
     const send = vi.fn();
-    const host = createNativeHost({
+    const host = new NativeHost({
       origin,
       send,
       login: async () => ({ status: 'cancelled' }),
@@ -76,19 +76,14 @@ describe('native bridge boundary', () => {
   });
   it('serializes native auth and discards results from replaced documents', async () => {
     const { host, receive, send, login } = setup();
-    let finish: (value: { status: 'cancelled' }) => void = () => undefined;
-    login.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          finish = resolve;
-        }),
-    );
+    const pending = Promise.withResolvers<{ status: 'cancelled' }>();
+    login.mockImplementation(() => pending.promise);
     receive({ type: 'auth-request', id: 'a' });
     receive({ type: 'auth-request', id: 'b' });
     expect(login).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledWith({ type: 'auth-result', id: 'b', status: 'cancelled' });
     host.reset();
-    finish({ status: 'cancelled' });
+    pending.resolve({ status: 'cancelled' });
     await Promise.resolve();
     await Promise.resolve();
     expect(send).not.toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }));
