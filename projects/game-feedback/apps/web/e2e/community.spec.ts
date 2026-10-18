@@ -73,13 +73,14 @@ test('community boards publish and edit Quill formatting, stay separate from fee
       await crawler.close();
     }
     await page.goto(`/ko/boards/${slug}`);
+    await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
     await page.getByRole('textbox', { name: '게시판 검색' }).fill(suffix);
     await page.getByRole('button', { name: '검색', exact: true }).click();
-    await expect(page.locator('.board-post-list .post-card')).toHaveCount(1);
+    await expect(page.locator('.post-list:visible .post-card')).toHaveCount(1);
     if (slug === 'friend-sale') {
-      await expect(page.locator('.post-card .friend-sale-summary')).toContainText('18,000');
+      await expect(page.locator('.post-card:visible .friend-sale-summary')).toContainText('18,000');
       await page.goto(`/ko?q=${suffix}`);
-      await expect(page.locator('.post-card .friend-sale-summary')).toContainText('18,000');
+      await expect(page.locator('.post-card:visible .friend-sale-summary')).toContainText('18,000');
     }
   }
 });
@@ -93,7 +94,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
     const navigation = desktop ? page.locator('.left-sidebar') : page.locator('.game-board-navigation');
     const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-chips');
     await expect(boards.getByRole('link')).toHaveText([
-      ...(desktop ? [] : ['홈']),
+      ...(desktop ? [] : ['전체']),
       '피드백',
       '친추판매',
       '전투 모집',
@@ -109,7 +110,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
       ['홈', '/ko'],
     ] as const) {
       const link = navigation.getByRole('link', {
-        name,
+        name: !desktop && name === '홈' ? '전체' : name,
         exact: true,
       });
       await link.click();

@@ -13,6 +13,11 @@ export function CoachingFields({ form }: { form: TPostComposerForm }) {
   const role = useWatch({ control: form.control, name: 'coaching.role' });
   const pricingType = useWatch({ control: form.control, name: 'coaching.pricing.type' }) ?? 'HOURLY';
   const pricing = coachingPricingTypes.find((item) => item.value === pricingType);
+  const amountPlaceholder = {
+    HOURLY: '예: 30000',
+    MONTHLY: '예: 200000',
+    GOAL: '예: 150000',
+  } satisfies Record<typeof pricingType, string>;
   const amountError = form.getFieldState('coaching.pricing.amount', form.formState).error;
   const targetError = form.getFieldState('coaching.pricing.targetScore', form.formState).error;
   return (
@@ -70,7 +75,7 @@ export function CoachingFields({ form }: { form: TPostComposerForm }) {
           min={1}
           max={10000000}
           step={1}
-          placeholder={t('수강료 협의')}
+          placeholder={t(amountPlaceholder[pricingType])}
           {...form.register('coaching.pricing.amount', {
             setValueAs: (value: unknown) =>
               value === '' || value === null || value === undefined ? null : Number(value),

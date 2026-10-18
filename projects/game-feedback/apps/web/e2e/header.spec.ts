@@ -6,18 +6,25 @@ test('mobile titles follow the screen and game classifications stay inside their
   const header = page.getByRole('banner');
   await expect(header.locator('.brand')).toBeHidden();
   await expect(header.locator('.mobile-page-title')).toHaveText('홈');
+  await expect(header.getByRole('link', { name: '검색', exact: true })).toHaveAttribute('href', '/ko/search');
+  await expect(header.getByRole('textbox')).toHaveCount(0);
+  await expect(page.getByRole('main').getByRole('search')).toHaveCount(0);
   const game = page.locator('.game-category-group');
   await expect(game.locator('.game-board-title')).toContainText('클래시로얄');
   await expect(game.locator('.game-board-chips').getByRole('link')).toHaveText([
-    '홈',
+    '전체',
     '피드백',
     '친추판매',
     '전투 모집',
     '게임코치',
     '자유게시판',
   ]);
-  await expect(game.getByRole('link', { name: '홈', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(game.getByRole('link', { name: '전체', exact: true })).toHaveAttribute('aria-current', 'page');
   await game.getByRole('link', { name: '전투 모집', exact: true }).click();
+  await expect(header.getByRole('link', { name: '검색', exact: true })).toHaveAttribute(
+    'href',
+    '/ko/search?board=friendly',
+  );
   await expect(header.locator('.mobile-page-title')).toHaveText('홈');
   await expect(game.getByRole('link', { name: '전투 모집', exact: true })).toHaveAttribute(
     'aria-current',
@@ -69,6 +76,7 @@ for (const width of [320, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 600 });
     await page.goto('/ko/guide');
+    await expect(page.getByRole('heading', { name: '문의와 신고', exact: true })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
     const header = page.getByRole('banner');
@@ -95,3 +103,27 @@ for (const width of [320, 1440]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
+
+test('the guide describes current classifications, account verification and chat actions', async ({
+  page,
+}) => {
+  await page.goto('/ko/guide');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { name: '이용 가이드', exact: true })).toBeVisible();
+  await expect(main.getByRole('heading', { name: '코치와 수강생 모집', exact: true })).toBeVisible();
+  await expect(main.getByText('게시글에 별도로 첨부하지 않습니다.', { exact: false })).toBeVisible();
+  await expect(main.getByRole('navigation', { name: '분류별 바로가기' }).getByRole('link')).toHaveText([
+    '전체',
+    '피드백',
+    '친추판매',
+    '전투 모집',
+    '게임코치',
+    '자유게시판',
+  ]);
+  await expect(main.getByText(/불러온 게임 프로필을.*첨부/)).toHaveCount(0);
+  await main
+    .getByRole('navigation', { name: '분류별 바로가기' })
+    .getByRole('link', { name: '게임코치', exact: true })
+    .click();
+  await expect(page).toHaveURL('/ko/boards/coaching');
+});

@@ -1,66 +1,124 @@
 import { ButtonLink } from '@side/design-system/next';
-import { Gamepad2, MessageSquare, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { appRoutes } from '@game-feedback/bridge';
+import { gameBoards, gameBoardPath } from '@/features/board';
+
 export function GuideContent({ locale }: { locale: string }) {
   return (
     <>
-      <p className="info-lead">
-        완벽한 플레이보다, 조금 더 나아지는 플레이.
-        <br />
-        작은 경험과 다른 시선이 모이는 공간입니다.
-      </p>
-      <div className="guide-step">
-        <span>01</span>
-        <div>
-          <h2>
-            <Gamepad2 size={20} />
-            나의 플레이를 연결해요
-          </h2>
-          <p>
-            내 프로필에서 플레이어 태그를 조회하고 연결하세요. 프로필 인증은 관리자에게 신청할 수 있습니다.
-          </p>
-        </div>
-      </div>
-      <div className="guide-step">
-        <span>02</span>
-        <div>
-          <h2>
-            <MessageSquare size={20} />
-            구체적으로 질문해요
-          </h2>
-          <p>
-            현재 트로피, 어려운 상황과 시도해 본 방법을 적어주세요. 요청 작성 시 첨부한 프로필에는 플레이어
-            태그, 트로피와 아레나가 표시됩니다.
-          </p>
-          <blockquote>
-            “호그 2.6 덱으로 6,500점에서 플레이 중이에요. 페카를 상대할 때 엘릭서가 부족해집니다. 수비 후
-            호그를 바로 내는 편인데, 운영을 어떻게 바꿔야 할까요?”
-          </blockquote>
-        </div>
-      </div>
-      <div className="guide-step">
-        <span>03</span>
-        <div>
-          <h2>
-            <ShieldCheck size={20} />
-            경험을 나누고 마음을 전해요
-          </h2>
-          <p>
-            제안의 이유를 함께 설명하면 더 좋은 피드백이 돼요. 요청자는 도움이 된 답변에 ‘도움이 됐어요’를
-            표시할 수 있습니다. 새 답변은 인앱 알림함에서 확인하세요. 더 이야기하고 싶다면 작성자나 답변자의
-            ‘채팅하기’에서 1:1 대화를 시작하세요. 채팅함에서 새 메시지와 읽음 상태를 확인할 수 있습니다.
-          </p>
-        </div>
-      </div>
-      <div className="info-callout">
-        <strong>플레이를 이야기하고, 서로를 존중해요.</strong>
+      <p className="info-lead">게시글을 찾고, 모집 글을 올리고, 채팅으로 이야기하는 방법을 안내합니다.</p>
+      <section className="guide-section">
+        <h2>전체와 다섯 분류</h2>
         <p>
-          욕설, 비방, 광고, 개인정보 공개, 사칭은 허용되지 않아요. 문제가 있는 콘텐츠는 신고하고, 원치 않는
-          사용자는 차단할 수 있습니다.
+          홈의 전체에서는 모든 분류의 최신 글을 볼 수 있습니다. 게임 이름 아래 칩에서 분류를 선택하고, 헤더의
+          검색 아이콘으로 검색 페이지를 열 수 있습니다. 공개 게시글과 댓글, 사용자 프로필은 로그인 없이 읽을
+          수 있습니다.
         </p>
-      </div>
-      <ButtonLink variant="primary" size="md" className="button dark" href={`/${locale}`}>
-        이제 피드로 가볼까요?
-        <ArrowUpRight size={16} />
+        <dl className="guide-board-list">
+          {gameBoards.map((board) => (
+            <div key={board.kind}>
+              <dt>{board.name}</dt>
+              <dd>{board.description}</dd>
+            </div>
+          ))}
+        </dl>
+        <nav className="guide-board-links" aria-label="분류별 바로가기">
+          <ButtonLink variant="secondary" size="sm" href={appRoutes.feed(locale)}>
+            전체
+          </ButtonLink>
+          {gameBoards.map((board) => (
+            <ButtonLink
+              key={board.kind}
+              variant="secondary"
+              size="sm"
+              href={gameBoardPath(locale, board.kind)}
+            >
+              {board.name}
+            </ButtonLink>
+          ))}
+        </nav>
+      </section>
+      <section className="guide-section">
+        <h2>글쓰기와 사진·동영상</h2>
+        <p>
+          로그인 후 글쓰기를 누르고 게임과 분류를 선택하세요. 분류를 바꿔도 입력한 제목과 본문은 유지됩니다.
+          본문 편집기의 사진·동영상 버튼으로 파일을 넣고, 서식과 링크도 함께 작성할 수 있습니다.
+        </p>
+        <p>
+          피드백에는 어려웠던 상황, 시도한 방법과 궁금한 점을 적어주세요. 다른 글에는 모집 조건이나 함께
+          나누고 싶은 이야기를 적으면 됩니다. 작성한 글은 본인이 수정하거나 삭제할 수 있습니다.
+        </p>
+      </section>
+      <section className="guide-section">
+        <h2>친추판매와 전투 모집</h2>
+        <p>
+          친추판매는 판매 금액을 입력하고 이용 기간과 제공 내용을 본문에 적습니다. 금액을 비워두면 가격 협의로
+          표시됩니다.
+        </p>
+        <p>
+          전투 모집은 1:1 또는 팀전을 선택합니다. 가능한 시간, 규칙, 모집 인원과 참가 조건을 적어주세요.
+          목록의 전체·1:1·팀전 필터에서 원하는 모집만 볼 수 있습니다.
+        </p>
+      </section>
+      <section className="guide-section">
+        <h2>코치와 수강생 모집</h2>
+        <p>
+          가르치는 사람은 수강생 모집, 배우려는 사람은 코치 구함을 선택합니다. 게임코치 목록에서도 같은 모집
+          유형으로 글을 골라볼 수 있습니다.
+        </p>
+        <p>
+          수강료는 시간당, 월 단위, 목표 점수 달성까지 중에서 선택합니다. 목표 달성형에는 목표 점수와
+          달성까지의 총수강료를 적습니다. 금액을 비워두면 수강료 협의로 표시됩니다.
+        </p>
+        <p>
+          코칭 상담 버튼으로 상대와 1:1 채팅을 시작하고 수업 방식, 일정과 비용을 정하세요. 서비스에서는 결제와
+          정산을 처리하지 않습니다.
+        </p>
+      </section>
+      <section className="guide-section">
+        <h2>채팅과 대화내역</h2>
+        <p>
+          게시글이나 사용자 프로필의 채팅하기에서 대화를 시작합니다. 채팅에서는 사진·동영상과 텍스트를 보낼 수
+          있습니다. 데스크톱 Enter는 전송, Shift+Enter는 줄바꿈이며 모바일 Enter는 줄바꿈입니다.
+        </p>
+        <p>
+          대화내역 삭제는 현재까지의 내 기록에만 적용됩니다. 상대의 기록과 이후 도착하는 메시지는 유지됩니다.
+          채팅 상단에서 상대를 신고하거나 메뉴에서 차단할 수 있습니다.
+        </p>
+      </section>
+      <section className="guide-section">
+        <h2>게임 계정과 프로필 인증</h2>
+        <p>
+          프로필의 게임 계정에서 플레이어 태그를 조회하고 내 계정에 등록하세요. 게임 계정은 사용자 계정에
+          연결하며 게시글에 별도로 첨부하지 않습니다.
+        </p>
+        <p>
+          프로필 인증 신청은 관리자와의 비공개 1:1 채팅으로 연결됩니다. 관리자 확인 후 인증되며, 인증 전에도
+          글을 작성할 수 있습니다. 대표 태그를 바꾸면 다시 인증을 받아야 합니다.
+        </p>
+        <ButtonLink variant="secondary" size="sm" href={appRoutes.settings(locale)}>
+          프로필에서 계정 등록하기
+        </ButtonLink>
+      </section>
+      <section className="guide-section">
+        <h2>팔로우와 새 소식</h2>
+        <p>
+          사용자 프로필에서 팔로우하고 새 글 알림을 설정할 수 있습니다. 새 답변·댓글과 구독한 사용자의 새 글은
+          헤더의 알림에서 확인하세요. 읽지 않은 채팅은 하단 채팅 메뉴에 개수로 표시됩니다.
+        </p>
+        <p>피드백 요청자는 도움이 된 답변에 도움됨을 표시할 수 있습니다.</p>
+      </section>
+      <section className="guide-section">
+        <h2>문의와 신고</h2>
+        <p>
+          운영 문의와 프로필 인증은 프로필의 관리자 문의에서 상담할 수 있습니다. 게시글·댓글·프로필·채팅의
+          신고 기능으로 욕설·괴롭힘, 사칭, 사기·거래 피해 등을 접수할 수 있습니다.
+        </p>
+        <ButtonLink variant="secondary" size="sm" href={appRoutes.contact(locale)}>
+          문의 안내 보기
+        </ButtonLink>
+      </section>
+      <ButtonLink variant="primary" size="md" href={appRoutes.feed(locale)}>
+        홈으로 이동
       </ButtonLink>
     </>
   );

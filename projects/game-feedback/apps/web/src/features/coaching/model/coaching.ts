@@ -1,3 +1,10 @@
+import { CoachingRoleSchema } from '@game-feedback/contracts';
+
+export function parseCoachingRole(value: unknown) {
+  const result = CoachingRoleSchema.safeParse(value);
+  return result.success ? result.data : undefined;
+}
+
 export const coachingRoles = [
   { value: 'COACH', label: '수강생 모집' },
   { value: 'STUDENT', label: '코치 구함' },

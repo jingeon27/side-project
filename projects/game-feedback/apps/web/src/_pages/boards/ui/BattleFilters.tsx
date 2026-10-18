@@ -21,7 +21,7 @@ export function BattleFilters({ locale, slug }: { locale: string; slug: string }
             slug,
             params.get('q') ?? undefined,
             params.get('game') ?? undefined,
-            item.value,
+            { battleMode: item.value },
           )}
           replace
           aria-current={mode === item.value ? 'page' : undefined}

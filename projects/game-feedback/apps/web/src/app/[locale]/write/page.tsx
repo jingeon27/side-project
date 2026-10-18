@@ -9,13 +9,22 @@ interface IPageProps {
     board?: string | string[];
     game?: string | string[];
     battleMode?: string | string[];
+    coachingRole?: string | string[];
   }>;
 }
 
 async function RouteContent({ params, searchParams }: IPageProps) {
   const { locale } = await params;
-  const { board, game, battleMode } = await searchParams;
-  return <ComposeRoute locale={locale} board={board} game={game} battleMode={battleMode} />;
+  const { board, game, battleMode, coachingRole } = await searchParams;
+  return (
+    <ComposeRoute
+      locale={locale}
+      board={board}
+      game={game}
+      battleMode={battleMode}
+      coachingRole={coachingRole}
+    />
+  );
 }
 
 export async function generateMetadata({ params }: IPageProps) {

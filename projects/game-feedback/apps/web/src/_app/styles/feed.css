@@ -16,6 +16,12 @@
     align-items: center;
     gap: 12px;
   }
+  .feed-actions {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .game-filter {
     border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
@@ -31,36 +37,6 @@
   .game-filter-icon {
     width: 28px;
     height: 28px;
-  }
-  .feed-toolbar {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .feed-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-    padding: 0 4px 0 12px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--color-line);
-    background: var(--color-sunken);
-    color: var(--color-muted);
-    min-height: calc(var(--spacing-touch) + 2px);
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
-  }
-  .feed-search > svg {
-    flex-shrink: 0;
-  }
-  .feed-search:focus-within {
-    border-color: var(--color-ring);
-    box-shadow: 0 0 0 2px var(--color-line-strong);
   }
   .post-list {
     display: flex;
@@ -381,10 +357,10 @@
     .feed-heading h1 {
       font-size: var(--text-title);
     }
-    .feed-heading > .button {
+    .feed-actions > .button {
       gap: 5px;
     }
-    .feed-heading > .button > svg {
+    .feed-actions > .button > svg {
       width: 15px;
     }
     .game-filter {

@@ -21,12 +21,12 @@ describe('community board navigation', () => {
     expect(resolveAppRoute(post)).toMatchObject({ tab: 'boards', parent: '/ko/boards/friendly' });
   });
   it('preserves battle filters and the team recruitment context through native route parsing', () => {
-    const board = appRoutes.boards('ko', 'friendly', '주말', 'another-game', 'TEAM');
+    const board = appRoutes.boards('ko', 'friendly', '주말', 'another-game', { battleMode: 'TEAM' });
     expect(resolveAppRoute(board)?.path).toBe(board);
-    const compose = appRoutes.compose('ko', 'FRIENDLY', 'another-game', 'TEAM');
+    const compose = appRoutes.compose('ko', 'FRIENDLY', 'another-game', { battleMode: 'TEAM' });
     expect(resolveAppRoute(compose)).toMatchObject({
       path: compose,
-      parent: appRoutes.boards('ko', 'friendly', undefined, 'another-game', 'TEAM'),
+      parent: appRoutes.boards('ko', 'friendly', undefined, 'another-game', { battleMode: 'TEAM' }),
     });
     for (const path of [
       '/ko/boards/friendly?battleMode=RAID',
@@ -71,5 +71,41 @@ describe('community board navigation', () => {
     for (const game of ['../other', 'unknown/game', 'UPPERCASE']) {
       expect(WebPathSchema.safeParse(`/ko/boards/free?game=${encodeURIComponent(game)}`).success).toBe(false);
     }
+  });
+  it('preserves coaching and battle scopes through dedicated search and composition', () => {
+    for (const [board, filters] of [
+      ['coaching', { coachingRole: 'STUDENT' }],
+      ['friendly', { battleMode: 'TEAM' }],
+    ] as const) {
+      const path = appRoutes.search('ko', { board, game: 'another-game', q: '주말', ...filters });
+      expect(resolveAppRoute(path)).toMatchObject({
+        path,
+        screen: 'search',
+        tab: 'boards',
+        game: 'another-game',
+        parent: appRoutes.boards('ko', board, '주말', 'another-game', filters),
+      });
+    }
+    const compose = appRoutes.compose('en', 'COACHING', 'another-game', { coachingRole: 'STUDENT' });
+    expect(resolveAppRoute(compose)).toMatchObject({
+      path: compose,
+      parent: '/en/boards/coaching?game=another-game&coachingRole=STUDENT',
+    });
+    expect(resolveAppRoute(appRoutes.search('ko', { q: '호그', tab: 'unanswered' }))).toMatchObject({
+      screen: 'search',
+      tab: 'feed',
+      parent: '/ko?tab=unanswered&q=%ED%98%B8%EA%B7%B8',
+    });
+    for (const path of [
+      '/ko/search?board=free&coachingRole=COACH',
+      '/ko/search?coachingRole=STUDENT',
+      '/ko/search?board=coaching&coachingRole=OTHER',
+      '/ko/search?board=coaching&battleMode=TEAM',
+      '/ko/search?board=unknown',
+      '/ko/search?q=a&q=b',
+      '/ko/boards/free?coachingRole=COACH',
+      '/ko/write?board=free&coachingRole=STUDENT',
+    ])
+      expect(WebPathSchema.safeParse(path).success, path).toBe(false);
   });
 });

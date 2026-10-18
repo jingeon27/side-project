@@ -50,9 +50,14 @@ for (const width of [400, 1440]) {
       await anonymous.close();
     }
     await page.goto('/ko/boards/friendly?battleMode=DUEL');
+    await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
     await page.getByRole('textbox', { name: '게시판 검색', exact: true }).fill(title);
     await page.getByRole('button', { name: '검색', exact: true }).click();
-    await expect(page.locator('.board-post-list:visible .post-card')).toHaveCount(1);
+    await expect(page.locator('.post-list:visible .post-card')).toHaveCount(1);
+    await expect(page).toHaveURL(
+      (url) => url.pathname === '/ko/search' && url.searchParams.get('battleMode') === 'DUEL',
+    );
+    await page.getByRole('link', { name: '돌아가기', exact: true }).click();
     await filters.getByRole('link', { name: '팀전', exact: true }).click();
     await expect(page.getByText('아직 게시글이 없어요. 첫 글을 남겨보세요.', { exact: true })).toBeVisible();
     await filters.getByRole('link', { name: '전체', exact: true }).click();

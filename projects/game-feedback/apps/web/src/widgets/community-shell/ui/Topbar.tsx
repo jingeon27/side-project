@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { resolveAppRoute, type TAppScreen } from '@game-feedback/bridge';
 import { useSession } from '@/features/auth';
 import { Avatar } from '@/shared/ui';
+import { HeaderSearch } from './HeaderSearch';
 interface ITopbarProps {
   home: string;
   unread: number;
@@ -30,6 +31,9 @@ export function Topbar({ home, unread }: ITopbarProps) {
           </Suspense>
         </div>
         <div className="header-actions">
+          <Suspense fallback={null}>
+            <HeaderSearch />
+          </Suspense>
           <LanguageSelect compact />
           <Link
             className="icon-button notification-button"
@@ -74,6 +78,7 @@ export function Topbar({ home, unread }: ITopbarProps) {
 }
 
 const screenTitles = {
+  search: '검색',
   feed: '홈',
   boards: '홈',
   post: '게시글',

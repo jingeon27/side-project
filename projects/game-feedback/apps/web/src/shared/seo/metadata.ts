@@ -63,6 +63,12 @@ export function createPageMetadata({
   };
 }
 export const pageContent = {
+  search: {
+    title: '게시글 검색',
+    description: '제목과 내용으로 게시글을 검색하세요.',
+    keywords: ['게시글 검색'],
+    privatePage: true,
+  },
   write: {
     title: '글쓰기',
     description: '게임 이야기와 모집 글을 작성하고 플레이어와 나누세요.',
@@ -85,9 +91,10 @@ export const pageContent = {
     ],
   },
   guide: {
-    title: '피드백 요청 가이드',
-    description: '덱과 게임 상황을 공유하고 구체적인 피드백을 주고받는 방법을 알아보세요.',
-    keywords: ['피드백 작성법', '커뮤니티 가이드'],
+    title: '플레이메이트 이용 가이드',
+    description:
+      '전체 게시글 검색과 다섯 분류, 전투 모집, 코치·수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.',
+    keywords: ['커뮤니티 가이드', '게임코치', '전투 모집', '채팅', '프로필 인증'],
   },
   terms: {
     title: '이용약관',

@@ -41,6 +41,7 @@
     white-space: nowrap;
   }
   .game-board-chips,
+  .coaching-filters,
   .battle-filters {
     display: flex;
     gap: 8px;
@@ -53,6 +54,7 @@
     -webkit-overflow-scrolling: touch;
   }
   .game-board-chips::-webkit-scrollbar,
+  .coaching-filters::-webkit-scrollbar,
   .battle-filters::-webkit-scrollbar {
     display: none;
   }
@@ -84,19 +86,11 @@
   .board-heading > button {
     flex-shrink: 0;
   }
-  .board-search {
-    display: flex;
-    gap: 8px;
-    margin-block: 20px;
-  }
-  .board-search > input {
-    flex: 1;
-    min-width: 0;
-  }
   .board-post-list {
     margin-bottom: 20px;
   }
-  .battle-filters {
+  .battle-filters,
+  .coaching-filters {
     margin-bottom: 16px;
   }
   .board-post-row {

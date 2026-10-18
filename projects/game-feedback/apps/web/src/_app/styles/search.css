@@ -1,0 +1,27 @@
+@layer components {
+  .search-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .post-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .post-search-form > input {
+    flex: 1;
+    min-width: 0;
+  }
+  .search-scope {
+    margin-block: 12px 24px;
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+  }
+  .search-empty {
+    padding-block: 40px;
+    color: var(--color-muted);
+    text-align: center;
+  }
+}

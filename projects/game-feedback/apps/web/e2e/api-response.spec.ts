@@ -9,9 +9,9 @@ test('a suspended search keeps its filters and shell usable until data arrives',
     await route.continue();
   });
   try {
-    await page.goto('/ko');
-    await expect(page.locator('.post-card:visible').first()).toBeVisible();
+    await page.goto('/ko/search');
     await page.getByRole('textbox', { name: '게시글 검색' }).fill('호그');
+    await page.getByRole('button', { name: '검색', exact: true }).click();
     await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: '게시글 검색' })).toBeVisible();
     await expect(page.locator('.topbar')).toBeVisible();
@@ -81,7 +81,7 @@ test('an invalid list shows a response error and recovers on retry without prete
   await page.goto('/ko');
   const message = page.getByRole('alert', { name: '최신 글 오류' });
   await expect(message).toBeVisible();
-  await expect(page.getByRole('textbox', { name: '게시글 검색' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toBeVisible();
   await expect(page.getByText('첫 번째 이야기를 기다려요', { exact: true })).not.toBeVisible();
   await expect(page.locator('.post-card')).toHaveCount(0);
   malformed = false;

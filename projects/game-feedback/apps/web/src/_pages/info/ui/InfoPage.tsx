@@ -15,7 +15,7 @@ export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) 
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
         <ArrowLeft size={16} />
-        {translate(language, '피드')}
+        {translate(language, '홈')}
       </BackLink>
       {language !== 'ko' && (
         <p className="language-banner">{translate(language, '한국어 원문으로 제공되는 안내입니다.')}</p>

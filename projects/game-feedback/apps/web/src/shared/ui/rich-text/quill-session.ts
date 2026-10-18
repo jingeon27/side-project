@@ -10,6 +10,7 @@ export interface IQuillOptions {
   body: string;
   document?: TRichTextDocument | null;
   label: string;
+  placeholder?: string;
   id?: string;
   labels: Record<string, string>;
   onChange: (value: IEditorValue) => void;
@@ -20,10 +21,12 @@ class QuillSession {
   private readonly lifetime = new AbortController();
   private editor?: Quill;
   private disabled = false;
+  private placeholder: string;
   constructor(
     private readonly root: HTMLDivElement,
     private readonly options: IQuillOptions,
   ) {
+    this.placeholder = options.placeholder ?? '';
     void this.start().catch((error: unknown) => {
       if (!this.lifetime.signal.aborted)
         options.onError(error instanceof Error ? error : new Error('Editor unavailable'));
@@ -38,6 +41,7 @@ class QuillSession {
     this.root.append(host);
     this.editor = new Editor(host, {
       theme: 'snow',
+      placeholder: this.placeholder,
       bounds: this.root,
       formats: [
         'bold',
@@ -66,6 +70,7 @@ class QuillSession {
     });
     this.editor.root.setAttribute('role', 'textbox');
     this.editor.root.setAttribute('aria-label', this.options.label);
+    this.editor.root.setAttribute('aria-placeholder', this.placeholder);
     this.editor.root.setAttribute('aria-multiline', 'true');
     if (this.options.id) this.editor.root.id = this.options.id;
     this.root.querySelectorAll<HTMLButtonElement>('.ql-toolbar button').forEach((button) => {
@@ -141,6 +146,11 @@ class QuillSession {
     this.disabled = disabled;
     this.editor?.enable(!disabled);
   }
+  setPlaceholder(placeholder: string) {
+    this.placeholder = placeholder;
+    this.editor?.root.setAttribute('data-placeholder', placeholder);
+    this.editor?.root.setAttribute('aria-placeholder', placeholder);
+  }
   dispose = () => {
     this.lifetime.abort();
     this.editor?.off('text-change', this.change);
@@ -151,9 +161,12 @@ class QuillSession {
 export class QuillController {
   private session?: QuillSession;
   private disabled = false;
+  private placeholder: string;
   private failure: Error | null = null;
   private readonly listeners = new Set<() => void>();
-  constructor(private readonly options: Omit<IQuillOptions, 'onError'>) {}
+  constructor(private readonly options: Omit<IQuillOptions, 'onError'>) {
+    this.placeholder = options.placeholder ?? '';
+  }
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -168,7 +181,11 @@ export class QuillController {
   };
   attach = (root: HTMLDivElement | null) => {
     if (!root) return;
-    const session = new QuillSession(root, { ...this.options, onError: this.reportError });
+    const session = new QuillSession(root, {
+      ...this.options,
+      placeholder: this.placeholder,
+      onError: this.reportError,
+    });
     session.setDisabled(this.disabled);
     this.session = session;
     return session.dispose;
@@ -176,5 +193,9 @@ export class QuillController {
   setDisabled(disabled: boolean) {
     this.disabled = disabled;
     this.session?.setDisabled(disabled);
+  }
+  setPlaceholder(placeholder: string) {
+    this.placeholder = placeholder;
+    this.session?.setPlaceholder(placeholder);
   }
 }

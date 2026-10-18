@@ -85,11 +85,13 @@ test('feed filters survive opening a post, returning, and reloading the shared U
     },
   });
   expect(created.ok()).toBeTruthy();
-  await page.goto('/ko?from=filters');
+  await page.goto('/ko?tab=unanswered');
+  await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
+  await expect(page).toHaveURL('/ko/search?tab=unanswered');
   await page.getByRole('textbox', { name: '게시글 검색', exact: true }).fill(suffix);
+  await page.getByRole('button', { name: '검색', exact: true }).click();
   await expect(page).toHaveURL((url) => url.searchParams.get('q') === suffix);
-  await expect(page.locator('.post-list .post-card')).toHaveCount(1);
-  await page.getByRole('button', { name: '답변 대기' }).click();
+  await expect(page.locator('.post-list:visible .post-card')).toHaveCount(1);
   await expect(page).toHaveURL((url) => url.searchParams.get('tab') === 'unanswered');
   await page
     .getByRole('link')
@@ -98,10 +100,12 @@ test('feed filters survive opening a post, returning, and reloading the shared U
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toHaveValue(suffix);
-  await expect(page.getByRole('button', { name: '답변 대기' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(
+    (url) => url.pathname === '/ko/search' && url.searchParams.get('tab') === 'unanswered',
+  );
   await page.reload();
   await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toHaveValue(suffix);
-  await expect(page.locator('.post-list .post-card')).toHaveCount(1);
+  await expect(page.locator('.post-list:visible .post-card')).toHaveCount(1);
   const search = page.getByRole('textbox', { name: '게시글 검색', exact: true });
   await search.focus();
   await search.press('Enter');
@@ -114,10 +118,7 @@ test('feed filters survive opening a post, returning, and reloading the shared U
   await expect(search).toBeFocused();
   await expect(clearSearch).toHaveCount(0);
   await expect(page).toHaveURL(
-    (url) =>
-      !url.searchParams.has('q') &&
-      url.searchParams.get('tab') === 'unanswered' &&
-      url.searchParams.get('from') === 'filters',
+    (url) => !url.searchParams.has('q') && url.searchParams.get('tab') === 'unanswered',
   );
 });
 

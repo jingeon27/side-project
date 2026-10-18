@@ -10,6 +10,7 @@ interface IRichTextEditorProps {
   onChange: (value: IEditorValue) => void;
   disabled?: boolean;
   label: string;
+  placeholder?: string;
   id?: string;
   onUploadMedia?: (file: File) => Promise<TPostMedia>;
 }
@@ -19,6 +20,7 @@ export function RichTextEditor({
   onChange,
   disabled = false,
   label,
+  placeholder,
   id,
   onUploadMedia,
 }: IRichTextEditorProps) {
@@ -29,6 +31,7 @@ export function RichTextEditor({
         body,
         document,
         label,
+        placeholder,
         id,
         onChange,
         onUploadMedia,
@@ -62,6 +65,7 @@ export function RichTextEditor({
     [controller],
   );
   useEffect(() => controller.setDisabled(disabled), [controller, disabled]);
+  useEffect(() => controller.setPlaceholder(placeholder ?? ''), [controller, placeholder]);
   if (failure) throw failure;
   return <div className="rich-text-editor" ref={handleAttach} />;
 }

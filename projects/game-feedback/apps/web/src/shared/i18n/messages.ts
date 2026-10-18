@@ -2,6 +2,66 @@ import type { TLocale } from './locale';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '제목이나 내용으로 검색': ['Search titles or content', 'タイトルや内容で検索'],
+  '검색 범위': ['Search scope', '検索範囲'],
+  '검색어를 입력해주세요.': ['Enter a search term.', '検索キーワードを入力してください。'],
+  '검색 결과': ['Search results', '検索結果'],
+  '예: 친구 추가 30일 이용권 판매합니다': [
+    'e.g. Selling a 30-day friend slot',
+    '例：30日間のフレンド枠を販売します',
+  ],
+  '친구 추가 이용 기간과 제공 내용, 가능한 인원, 거래 방식을 알려주세요.': [
+    'Describe the duration, what is included, available slots and how the sale works.',
+    '利用期間、提供内容、募集人数、取引方法を教えてください。',
+  ],
+  '예: 주말 저녁 팀전에 함께할 팀원 구해요': [
+    'e.g. Looking for teammates for weekend evening battles',
+    '例：週末の夜にチーム戦で遊ぶ仲間を募集',
+  ],
+  '모집 인원과 역할, 함께할 시간, 참가 조건을 적어주세요.': [
+    'Include open roles, the number of players, schedule and entry requirements.',
+    '募集人数と役割、参加時間、参加条件を書いてください。',
+  ],
+  '예: 오늘 저녁 9시에 1:1 연습하실 분': [
+    'e.g. Anyone up for 1v1 practice at 9 tonight?',
+    '例：今夜9時に1対1で練習しませんか',
+  ],
+  '가능한 시간과 대전 규칙, 원하는 상대 조건을 적어주세요.': [
+    'Share your availability, battle rules and the opponents you want to practice with.',
+    '参加できる時間、対戦ルール、希望する相手の条件を書いてください。',
+  ],
+  '예: 목표 점수 달성까지 도와줄 코치 구해요': [
+    'e.g. Looking for a coach to help reach my target score',
+    '例：目標スコア達成を手伝ってくれるコーチを募集',
+  ],
+  '현재 실력과 목표, 배우고 싶은 내용, 가능한 시간과 예산을 알려주세요.': [
+    'Describe your current level, goals, what you want to learn, availability and budget.',
+    '現在の実力と目標、学びたい内容、受講可能な時間、予算を教えてください。',
+  ],
+  '예: 수비와 운영을 함께 연습할 수강생 모집': [
+    'e.g. Coaching students in defense and match strategy',
+    '例：防御と立ち回りを一緒に練習する受講生を募集',
+  ],
+  '가르칠 분야와 수강 대상, 수업 방식, 일정과 수강료에 포함되는 내용을 적어주세요.': [
+    'Explain what you teach, who it is for, the lesson format, schedule and what the fee covers.',
+    '指導内容、対象者、授業の進め方、日程、料金に含まれる内容を書いてください。',
+  ],
+  '예: 이번 업데이트, 다들 어떻게 느끼셨나요?': [
+    'e.g. What does everyone think of the latest update?',
+    '例：今回のアップデート、皆さんはどう感じましたか？',
+  ],
+  '공유하고 싶은 플레이 이야기나 질문을 편하게 남겨주세요.': [
+    'Share a gameplay story or a question you would like to discuss.',
+    '共有したいプレイの話や質問を気軽に書いてください。',
+  ],
+  '어떤 상황에서 막혔나요? 시도한 방법과 궁금한 점을 적어주세요.': [
+    'Where did you get stuck? Describe what you tried and what you would like to know.',
+    'どのような場面で困りましたか？試した方法や知りたいことを書いてください。',
+  ],
+  '예: 15000': ['e.g. 15000', '例：15000'],
+  '예: 30000': ['e.g. 30000', '例：30000'],
+  '예: 200000': ['e.g. 200000', '例：200000'],
+  '예: 150000': ['e.g. 150000', '例：150000'],
   '1:1': ['1v1', '1対1'],
   팀전: ['Team battle', 'チーム戦'],
   '전투 유형': ['Battle type', '対戦形式'],

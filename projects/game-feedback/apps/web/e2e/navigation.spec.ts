@@ -12,7 +12,7 @@ test('desktop navigation has one entry per destination and keeps boards in the s
     const header = page.getByRole('banner');
     const primary = page.getByRole('navigation', { name: '주 메뉴', exact: true });
     await expect(header.getByRole('link', { name: '프로필', exact: true })).toBeVisible();
-    await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(2);
+    await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(3);
     await expect(header.getByRole('combobox', { name: '언어 설정', exact: true })).toBeVisible();
     await expect(primary.getByRole('link')).toHaveCount(3);
     await expect(page.getByRole('link', { name: '홈', exact: true })).toHaveCount(1);
@@ -52,7 +52,10 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
     .first()
     .click();
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
-  await expect(page.getByRole('textbox', { name: '게시글 검색' })).toHaveValue('호그');
+  await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toHaveAttribute(
+    'href',
+    '/ko/search?q=%ED%98%B8%EA%B7%B8',
+  );
   const length = await page.evaluate(() => history.length);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
   await tabs.getByRole('link', { name: '프로필', exact: true }).click();
@@ -112,6 +115,7 @@ for (const width of [400, 1440]) {
       data: { accountId: 'sample-user-0' },
     });
     await page.goto('/ko/guide');
+    await expect(page.getByRole('heading', { name: '문의와 신고', exact: true })).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
     const menu =

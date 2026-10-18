@@ -22,7 +22,7 @@ for (const [slug, title] of [
       await link.click();
       await page.waitForURL((url) => url.pathname === `/ko/boards/${slug}`);
       await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
-      await expect(page.getByRole('textbox', { name: '게시판 검색', exact: true })).toBeEnabled();
+      await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toBeEnabled();
       await expect(
         page.getByRole('button', { name: slug === 'coaching' ? '코칭 등록' : '글쓰기', exact: true }),
       ).toBeEnabled();
@@ -44,16 +44,17 @@ for (const width of [400, 1440]) {
         await navigation.getByRole('link', { name: '홈', exact: true }).click();
         await page.waitForURL((url) => url.pathname === '/ko');
         await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
-        await expect(page.getByRole('textbox', { name: '게시글 검색', exact: true })).toBeEnabled();
+        await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toBeEnabled();
         await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeEnabled();
         await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
         await expect(page.locator('.post-list-skeleton:visible .skeleton-card')).toHaveCount(3);
         await expect(page.locator('.post-card:visible')).toHaveCount(0);
         await page
-          .getByRole('textbox', { name: '게시글 검색', exact: true })
+          .getByRole('banner')
+          .getByRole('link', { name: '검색', exact: true })
           .evaluate((node) => node.setAttribute('data-shell-persistence', 'kept'));
       });
-      const search = page.getByRole('textbox', { name: '게시글 검색', exact: true });
+      const search = page.getByRole('banner').getByRole('link', { name: '검색', exact: true });
       const heading = await page.locator('.feed-heading:visible').boundingBox();
       await expect(page.locator('.post-card:visible').first()).toBeVisible();
       await expect(search).toHaveAttribute('data-shell-persistence', 'kept');
@@ -77,9 +78,7 @@ test('a production navigation shows the prefetched guide and keeps the shared he
     await page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true }).click();
     await page.waitForURL((url) => url.pathname === '/ko/guide');
     await expect(page.getByRole('banner')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: '좋은 피드백은 함께 만들어요', exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: '이용 가이드', exact: true })).toBeVisible();
     expect(await page.evaluate(() => Reflect.get(window, '__navigationDocument'))).toBe('kept');
   });
 });

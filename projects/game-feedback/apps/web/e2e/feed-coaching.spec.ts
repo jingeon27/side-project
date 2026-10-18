@@ -116,6 +116,33 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await page.locator('.back-link').click();
   await expect(page).toHaveURL(new RegExp(`/ko/boards/coaching\\?game=${slug}$`));
   await expect(page.locator('.board-post-list')).toContainText(title);
+  const roles = page.getByRole('navigation', { name: '모집 유형', exact: true });
+  await expect(roles.getByRole('link')).toHaveText(['전체', '수강생 모집', '코치 구함']);
+  await roles.getByRole('link', { name: '수강생 모집', exact: true }).click();
+  await expect(page.locator('.board-post-list .post-card')).toHaveCount(0);
+  await roles.getByRole('link', { name: '코치 구함', exact: true }).click();
+  await expect(page.locator('.board-post-list')).toContainText(title);
+  await expect(page).toHaveURL(
+    (url) => url.searchParams.get('game') === slug && url.searchParams.get('coachingRole') === 'STUDENT',
+  );
+  await page.reload();
+  await expect(roles.getByRole('link', { name: '코치 구함', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
+  await page.getByRole('textbox', { name: '게시판 검색', exact: true }).fill(suffix);
+  await page.getByRole('button', { name: '검색', exact: true }).click();
+  await expect(page.locator('.post-list .post-card')).toHaveCount(1);
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === '/ko/search' &&
+      url.searchParams.get('game') === slug &&
+      url.searchParams.get('coachingRole') === 'STUDENT',
+  );
+  await page.getByRole('link', { name: '돌아가기', exact: true }).click();
+  await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+  await expect(editor.getByLabel('모집 유형')).toHaveValue('STUDENT');
   await page.goto(`/ko/boards/coaching?q=${suffix}`);
   await expect(page.locator('.post-card:visible')).toHaveCount(0);
   await page.goto(`/ko?q=${suffix}`);

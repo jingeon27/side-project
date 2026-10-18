@@ -8,22 +8,22 @@ for (const { width, locale, menu, actions } of [
     width: 320,
     locale: 'ko',
     menu: ['홈', '가이드', '채팅', '프로필'],
-    actions: ['언어 설정', '알림 0개'],
+    actions: ['언어 설정', '알림 0개', '검색'],
   },
   {
     width: 390,
     locale: 'en',
     menu: ['Home', 'Guide', 'Chat', 'Profile'],
-    actions: ['Language settings', 'Notifications: 0'],
+    actions: ['Language settings', 'Notifications: 0', 'Search'],
   },
   {
     width: 760,
     locale: 'ja',
     menu: ['ホーム', 'ガイド', 'チャット', 'プロフィール'],
-    actions: ['言語設定', 'お知らせ：0件'],
+    actions: ['言語設定', 'お知らせ：0件', '検索'],
   },
 ]) {
-  test(`${width}px mobile shell keeps its four tabs and two accessible header actions in ${locale}`, async ({
+  test(`${width}px mobile shell keeps its four tabs and accessible header actions in ${locale}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -33,7 +33,7 @@ for (const { width, locale, menu, actions } of [
     await expect(tabs.getByRole('link')).toHaveText(menu);
     await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');
     const header = page.getByRole('banner').locator('.header-actions');
-    await expect(header.getByRole('link')).toHaveCount(1);
+    await expect(header.getByRole('link')).toHaveCount(2);
     await expect(header.getByRole('combobox')).toHaveCount(1);
     await expect(header.getByRole('button')).toHaveCount(0);
     for (const [index, name] of actions.entries()) {

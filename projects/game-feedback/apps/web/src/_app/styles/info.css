@@ -1,4 +1,30 @@
 @layer components {
+  .guide-section {
+    margin-block: 28px;
+    scroll-margin-top: calc(var(--site-header-height) + 16px);
+  }
+  .guide-section p {
+    color: var(--color-muted);
+    line-height: 1.9;
+  }
+  .guide-board-list {
+    display: grid;
+    gap: 12px;
+    margin-block: 20px;
+  }
+  .guide-board-list dt {
+    font-weight: 600;
+  }
+  .guide-board-list dd {
+    margin-top: 4px;
+    color: var(--color-muted);
+    line-height: 1.8;
+  }
+  .guide-board-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
   .guide-step {
     display: flex;
     gap: 17px;

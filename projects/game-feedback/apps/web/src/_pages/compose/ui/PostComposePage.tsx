@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@side/design-system';
-import type { TBoardKind, TBattleMode } from '@game-feedback/contracts';
+import type { TBoardKind, TBattleMode, TCoachingRole } from '@game-feedback/contracts';
 import { ArrowLeft } from 'lucide-react';
 import { useSession } from '@/features/auth';
 import { VerificationPrompt } from '@/widgets/support';
@@ -17,6 +17,7 @@ interface IPostComposePageProps {
   board: TBoardKind;
   categoryId?: string;
   battleMode?: TBattleMode;
+  coachingRole?: TCoachingRole;
   parent: string;
 }
 
@@ -42,7 +43,14 @@ export function PostComposePage(props: IPostComposePageProps) {
   );
 }
 
-function ComposeContent({ locale, categories, board, categoryId, battleMode }: IPostComposePageProps) {
+function ComposeContent({
+  locale,
+  categories,
+  board,
+  categoryId,
+  battleMode,
+  coachingRole,
+}: IPostComposePageProps) {
   const { t } = useI18n();
   const { session, login: handleLogin } = useSession();
   if (!session.user)
@@ -58,13 +66,14 @@ function ComposeContent({ locale, categories, board, categoryId, battleMode }: I
     <>
       <VerificationPrompt />
       <PostComposerForm
-        key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}:${battleMode ?? ''}`}
+        key={`${session.user.id}:${locale}:${board}:${categoryId ?? ''}:${battleMode ?? ''}:${coachingRole ?? ''}`}
         categories={categories}
         locale={locale}
         board={board}
         allowBoardSelection
         initialCategoryId={categoryId}
         initialBattleMode={battleMode}
+        initialCoachingRole={coachingRole}
       />
     </>
   );

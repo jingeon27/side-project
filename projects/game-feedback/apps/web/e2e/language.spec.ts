@@ -76,7 +76,10 @@ test('the header dropdown preserves the current page, filters and hash while sha
     await language.click();
     await page.getByRole('option', { name: 'English', exact: true }).click();
     await expect(page).toHaveURL('/en?q=hog&tab=unanswered#feed');
-    await expect(page.getByRole('textbox', { name: 'Search posts', exact: true })).toHaveValue('hog');
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Search', exact: true })).toHaveAttribute(
+      'href',
+      '/en/search?q=hog&tab=unanswered',
+    );
     await expect(page.getByRole('button', { name: 'Unanswered', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',

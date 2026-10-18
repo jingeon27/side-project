@@ -3,7 +3,7 @@ import { useI18n } from '@/shared/i18n';
 import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
 import { useCallback, type ChangeEvent } from 'react';
 import { useWatch } from 'react-hook-form';
-import type { TRichTextDocument, TBoardKind, TBattleMode } from '@game-feedback/contracts';
+import type { TRichTextDocument, TBoardKind, TBattleMode, TCoachingRole } from '@game-feedback/contracts';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { uploadPostMediaMutationOptions } from '@/features/post-media';
@@ -15,6 +15,7 @@ import type { Category, Post } from '@/shared/api';
 import { Field, ErrorNotice, useNotify, RichTextEditor, ServiceErrorBoundary } from '@/shared/ui';
 import { useZodForm } from '@/shared/model/form';
 import { postComposerSchema } from '../model/post-composer.schema';
+import { postComposerCopy } from '../model/post-composer-copy';
 import { CoachingFields } from './CoachingFields';
 import { BattleFields } from './BattleFields';
 import { appRoutes } from '@game-feedback/bridge';
@@ -27,6 +28,7 @@ interface IPostComposerFormProps {
   allowBoardSelection: boolean;
   initialCategoryId?: string;
   initialBattleMode?: TBattleMode;
+  initialCoachingRole?: TCoachingRole;
   onComplete?: () => void;
 }
 export function PostComposerForm({
@@ -37,6 +39,7 @@ export function PostComposerForm({
   allowBoardSelection,
   initialCategoryId,
   initialBattleMode,
+  initialCoachingRole,
   onComplete,
 }: IPostComposerFormProps) {
   const { t } = useI18n();
@@ -55,13 +58,19 @@ export function PostComposerForm({
       document: post?.document ?? undefined,
       editorValid: true,
       board: post?.board ?? initialBoard,
-      coaching: post?.coaching ?? { role: 'COACH', pricing: { type: 'HOURLY', amount: null } },
+      coaching: post?.coaching ?? {
+        role: initialCoachingRole ?? 'COACH',
+        pricing: { type: 'HOURLY', amount: null },
+      },
       friendSale: post?.friendSale ?? { price: null },
       battle: post?.battle ?? { mode: initialBattleMode ?? 'DUEL' },
       categoryId: post?.categoryId || initialCategoryId || categories[0]?.id || '',
     },
   });
   const board = useWatch({ control: form.control, name: 'board' }) ?? initialBoard;
+  const role = useWatch({ control: form.control, name: 'coaching.role' }) ?? 'COACH';
+  const mode = useWatch({ control: form.control, name: 'battle.mode' }) ?? 'DUEL';
+  const copy = postComposerCopy(board, role, mode);
   const body = useWatch({ control: form.control, name: 'body' });
   const document = useWatch({ control: form.control, name: 'document' });
   const { setValue } = form;
@@ -179,15 +188,7 @@ export function PostComposerForm({
         )}
       </Field>
       <Field label={t('제목')}>
-        <Input
-          {...form.register('title')}
-          maxLength={120}
-          placeholder={t(
-            board === 'FEEDBACK'
-              ? '예: 호그 2.6 덱, 페카를 만나면 어떻게 운영하나요?'
-              : '제목을 입력해주세요.',
-          )}
-        />
+        <Input {...form.register('title')} maxLength={120} placeholder={t(copy.title)} />
         <span className="field-error">
           {form.formState.errors.title && t('제목을 4~120자로 입력해 주세요.')}
         </span>
@@ -200,7 +201,7 @@ export function PostComposerForm({
             min={1}
             max={10000000}
             step={1}
-            placeholder={t('가격 협의')}
+            placeholder={t('예: 15000')}
             {...form.register('friendSale.price', {
               setValueAs: (value: unknown) =>
                 value === '' || value === null || value === undefined ? null : Number(value),
@@ -225,6 +226,7 @@ export function PostComposerForm({
             onUploadMedia={handleUploadMedia}
             disabled={isPending}
             label={t(board === 'FEEDBACK' ? '플레이와 고민' : '내용')}
+            placeholder={t(copy.body)}
           />
         </ServiceErrorBoundary>
         <small>

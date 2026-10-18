@@ -50,6 +50,10 @@
     line-height: 1.8;
     overflow-wrap: anywhere;
   }
+  .rich-text-editor .ql-editor.ql-blank::before {
+    color: var(--color-muted);
+    font-style: normal;
+  }
   .rich-text-editor:focus-within .ql-container {
     border-color: var(--color-ink);
   }

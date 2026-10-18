@@ -2,10 +2,11 @@
 import { useRouter } from 'next/navigation';
 import { useBrowserSearch } from '@/shared/navigation';
 import { use } from 'react';
-import { BoardSearch } from './BoardSearch';
 import { BattleFilters } from './BattleFilters';
+import { CoachingFilters } from './CoachingFilters';
+import { parseCoachingRole } from '@/features/coaching';
 import { parseBattleMode } from '@/features/battle';
-import type { TBattleMode } from '@game-feedback/contracts';
+import type { TBattleMode, TCoachingRole } from '@game-feedback/contracts';
 import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -37,7 +38,12 @@ export function BoardsPage(props: IBoardsPageProps) {
     }
     const params = new URLSearchParams(window.location.search);
     const game = params.get('game') ?? undefined;
-    router.push(appRoutes.compose(locale, board?.kind, game, parseBattleMode(params.get('battleMode'))));
+    router.push(
+      appRoutes.compose(locale, board?.kind, game, {
+        battleMode: parseBattleMode(params.get('battleMode')),
+        coachingRole: parseCoachingRole(params.get('coachingRole')),
+      }),
+    );
   }
   return (
     <section className="board-page">
@@ -48,8 +54,8 @@ export function BoardsPage(props: IBoardsPageProps) {
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
       </div>
-      <BoardSearch locale={locale} slug={slug} />
       {board.kind === 'FRIENDLY' && <BattleFilters locale={locale} slug={slug} />}
+      {board.kind === 'COACHING' && <CoachingFilters locale={locale} slug={slug} />}
       <AsyncBoundary
         title={t('게시판')}
         resetKey={`${session.user?.id}:${slug}`}
@@ -65,20 +71,28 @@ export function BoardsPage(props: IBoardsPageProps) {
 function BoardPostsRegion({ locale, slug, initialBoard }: IBoardsPageProps) {
   const initial = 'then' in initialBoard ? use(initialBoard) : initialBoard;
   const search = useBrowserSearch(
-    `?${new URLSearchParams({ q: initial.q, ...(initial.battleMode ? { battleMode: initial.battleMode } : {}) })}`,
+    `?${new URLSearchParams({ q: initial.q, ...(initial.battleMode ? { battleMode: initial.battleMode } : {}), ...(initial.coachingRole ? { coachingRole: initial.coachingRole } : {}) })}`,
     `/${locale}/boards/${slug}`,
   );
   const params = new URLSearchParams(search);
   const q = (params.get('q') ?? '').trim().slice(0, 100);
   const battleMode = parseBattleMode(params.get('battleMode'));
+  const coachingRole = parseCoachingRole(params.get('coachingRole'));
   const { session } = useSession();
   const { t } = useI18n();
   return (
     <ServiceErrorBoundary
       title={t('게시판')}
-      resetKey={`${session.user?.id}:${slug}:${q}:${battleMode ?? ''}`}
+      resetKey={`${session.user?.id}:${slug}:${q}:${battleMode ?? ''}:${coachingRole ?? ''}`}
     >
-      <BoardPosts locale={locale} slug={slug} initial={initial} q={q} battleMode={battleMode} />
+      <BoardPosts
+        locale={locale}
+        slug={slug}
+        initial={initial}
+        q={q}
+        battleMode={battleMode}
+        coachingRole={coachingRole}
+      />
     </ServiceErrorBoundary>
   );
 }
@@ -88,11 +102,13 @@ function BoardPosts({
   q,
   initial,
   battleMode,
+  coachingRole,
 }: {
   locale: string;
   slug: string;
   q: string;
   battleMode?: TBattleMode;
+  coachingRole?: TCoachingRole;
   initial: IBoardSnapshot;
 }) {
   const { t } = useI18n();
@@ -101,8 +117,11 @@ function BoardPosts({
   const game = initial.game;
   const posts = useInfiniteQuery({
     throwOnError: true,
-    ...postListOptions({ category: game.slug, board: board?.kind, q, battleMode, limit: 12 }),
-    ...(q === initial.q && battleMode === initial.battleMode && initial.viewerId === session.user?.id
+    ...postListOptions({ category: game.slug, board: board?.kind, q, battleMode, coachingRole, limit: 12 }),
+    ...(q === initial.q &&
+    battleMode === initial.battleMode &&
+    coachingRole === initial.coachingRole &&
+    initial.viewerId === session.user?.id
       ? { initialData: { pages: [initial.posts], pageParams: [''] }, initialDataUpdatedAt: 0 }
       : {}),
   });

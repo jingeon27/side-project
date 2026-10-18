@@ -39,7 +39,7 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
               'rounded-full',
             )}
           >
-            {t('홈')}
+            {t('전체')}
           </TabLink>
           {gameBoards.map((board) => (
             <TabLink
