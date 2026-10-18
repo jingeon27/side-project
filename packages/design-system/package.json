@@ -17,7 +17,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc7 --noEmit",
     "test": "node scripts/test.mjs",
     "check": "yarn lint && yarn typecheck && yarn test"
   },
