@@ -51,7 +51,10 @@ test('the feed combines general posts and paid coaching and connects a student t
     data: { accountId: 'sample-user-0' },
   });
   await page.goto(detailUrl);
-  await page.getByRole('button', { name: /코칭 상담/ }).click();
+  await page
+    .locator('.detail-contact-action')
+    .getByRole('button', { name: /작성자와 1:1 채팅/ })
+    .click();
   await expect(page).toHaveURL(/\/messages\//);
   const message = `레슨 시간 상담 부탁드려요 ${suffix}`;
   await page.getByRole('textbox', { name: '메시지 내용' }).fill(message);

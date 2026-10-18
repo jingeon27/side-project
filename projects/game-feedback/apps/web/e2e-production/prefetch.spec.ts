@@ -73,7 +73,7 @@ for (const width of [400, 1440]) {
   });
 }
 
-test('a production navigation shows the prefetched guide and keeps the shared header', async ({ page }) => {
+test('a production navigation shows the prefetched guide with its own page header', async ({ page }) => {
   await page.goto('/ko');
   await expect(page.locator('.feed-heading:visible')).toBeVisible();
   await page.evaluate(() =>
@@ -83,6 +83,8 @@ test('a production navigation shows the prefetched guide and keeps the shared he
     await page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true }).click();
     await page.waitForURL((url) => url.pathname === '/ko/guide');
     await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('banner').locator('.mobile-page-title')).toHaveText('가이드');
+    await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: '이용 가이드', exact: true })).toBeVisible();
     expect(await page.evaluate(() => Reflect.get(window, '__navigationDocument'))).toBe('kept');
   });

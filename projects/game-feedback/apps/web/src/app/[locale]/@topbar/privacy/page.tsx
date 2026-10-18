@@ -1,8 +1,8 @@
 import { locale as rootLocale } from 'next/root-params';
-import { PageTopbar } from '@/_app';
+import { PrivacyTopbar } from '@/_pages/info';
+
 export default async function Page() {
-  return <PageTopbar locale={await rootLocale()} title="개인정보 처리방침" />;
+  return <PrivacyTopbar locale={await rootLocale()} />;
 }
 
-// Initial documents may wait for the sibling page; navigation shells are verified with instant().
 export const instant = false;

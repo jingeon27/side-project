@@ -1,0 +1,19 @@
+'use client';
+import { appRoutes } from '@game-feedback/bridge';
+import { useI18n } from '@/shared/i18n';
+import { Topbar } from '@/widgets/community-shell';
+
+export function PrivacyTopbar({ locale }: { locale: string }) {
+  const { t } = useI18n();
+  return (
+    <Topbar.Root>
+      <Topbar.Brand home={appRoutes.feed(locale)} />
+      <Topbar.Title>{t('개인정보 처리방침')}</Topbar.Title>
+      <Topbar.Actions>
+        <Topbar.Language />
+        <Topbar.Notifications href={appRoutes.notifications(locale)} />
+        <Topbar.Account href={appRoutes.settings(locale)} />
+      </Topbar.Actions>
+    </Topbar.Root>
+  );
+}

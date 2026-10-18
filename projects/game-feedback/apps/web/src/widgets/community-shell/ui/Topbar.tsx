@@ -1,9 +1,12 @@
 'use client';
 import type { ReactNode } from 'react';
-import { ArrowLeft, ChevronRight, Gamepad2 } from 'lucide-react';
-import { useI18n } from '@/shared/i18n';
+import { ArrowLeft, Gamepad2 } from 'lucide-react';
+import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { BackLink, TabLink } from '@/shared/navigation';
 import { TopbarActions } from './TopbarActions';
+import { TopbarAccount } from './TopbarAccount';
+import { TopbarNotifications } from './TopbarNotifications';
+import { TopbarSearch } from './TopbarSearch';
 
 function TopbarRoot({ children }: { children: ReactNode }) {
   return (
@@ -43,62 +46,17 @@ function TopbarBack({ href, logicalParent }: { href: string; logicalParent?: str
     </BackLink>
   );
 }
-function TopbarBreadcrumb({
-  game,
-  gameHref,
-  board,
-  boardHref,
-}: {
-  game: string;
-  gameHref: string;
-  board: string;
-  boardHref: string;
-}) {
-  const { t } = useI18n();
-  return (
-    <nav className="post-breadcrumb" aria-label={t('게시글 경로')}>
-      <TabLink href={gameHref} title={game}>
-        {game}
-      </TabLink>
-      <ChevronRight size={14} aria-hidden="true" />
-      <TabLink href={boardHref}>{board}</TabLink>
-    </nav>
-  );
+function TopbarLanguage() {
+  return <LanguageSelect compact />;
 }
 export const Topbar = {
   Root: TopbarRoot,
   Brand: TopbarBrand,
   Title: TopbarTitle,
   Back: TopbarBack,
-  Breadcrumb: TopbarBreadcrumb,
   Actions: TopbarActions,
+  Account: TopbarAccount,
+  Notifications: TopbarNotifications,
+  Search: TopbarSearch,
+  Language: TopbarLanguage,
 };
-
-export function PageTopbar({
-  locale,
-  title,
-  search = false,
-}: {
-  locale: string;
-  title: string;
-  search?: boolean;
-}) {
-  const { t } = useI18n();
-  const home = `/${locale}`;
-  return (
-    <Topbar.Root>
-      <Topbar.Brand home={home} />
-      <Topbar.Title>{t(title)}</Topbar.Title>
-      <Topbar.Actions home={home} search={search} />
-    </Topbar.Root>
-  );
-}
-export function PostTopbarPlaceholder({ home }: { home: string }) {
-  return (
-    <Topbar.Root>
-      <Topbar.Back href={home} />
-      <span className="post-header-placeholder" aria-hidden="true" />
-      <Topbar.Actions home={home} account={false} />
-    </Topbar.Root>
-  );
-}

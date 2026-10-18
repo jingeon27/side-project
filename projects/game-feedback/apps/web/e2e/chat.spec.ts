@@ -72,7 +72,7 @@ test('two players exchange persistent private messages live, with unread and rea
     await openRealtime(authorPage, `/ko/posts/${post.id}`);
     await openRealtime(coachPage, `/ko/posts/${post.id}`);
     await coachPage
-      .getByRole('button', { name: `${author.user.nickname}님과 채팅하기`, exact: true })
+      .getByRole('button', { name: `${author.user.nickname} 작성자와 1:1 채팅`, exact: true })
       .first()
       .click();
     await expect(coachPage).toHaveURL(/\/ko\/messages\/[^/?]+$/);

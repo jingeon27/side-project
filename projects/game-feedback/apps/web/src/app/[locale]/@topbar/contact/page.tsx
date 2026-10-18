@@ -1,8 +1,8 @@
 import { locale as rootLocale } from 'next/root-params';
-import { PageTopbar } from '@/_app';
+import { ContactTopbar } from '@/_pages/contact';
+
 export default async function Page() {
-  return <PageTopbar locale={await rootLocale()} title="문의하기" />;
+  return <ContactTopbar locale={await rootLocale()} />;
 }
 
-// Initial documents may wait for the sibling page; navigation shells are verified with instant().
 export const instant = false;

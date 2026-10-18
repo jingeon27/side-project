@@ -1,3 +1,3 @@
 export { CommunityShell } from './ui/CommunityShell';
 
-export { Topbar, PageTopbar, PostTopbarPlaceholder } from './ui/Topbar';
+export { Topbar } from './ui/Topbar';

@@ -1,8 +1,8 @@
 import { locale as rootLocale } from 'next/root-params';
-import { PageTopbar } from '@/_app';
+import { FeedTopbar } from '@/_pages/feed';
+
 export default async function Page() {
-  return <PageTopbar locale={await rootLocale()} title="홈" search />;
+  return <FeedTopbar locale={await rootLocale()} />;
 }
 
-// Initial documents may wait for the sibling page; navigation shells are verified with instant().
 export const instant = false;
