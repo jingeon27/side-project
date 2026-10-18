@@ -13,6 +13,7 @@ model User {
   provider String
   providerId String
   memberships GroupMember[]
+  groupJoinRequests GroupJoinRequest[]
   credential PasswordCredential?
   sessions Session[]
   submissions Submission[]
@@ -45,13 +46,26 @@ model OAuthAttempt {
 model Group {
   id String @id @default(cuid())
   name String
+  visibility String @default("PRIVATE")
   inviteHash String @unique
   inviteToken String
   createdAt DateTime @default(now())
   members GroupMember[]
+  joinRequests GroupJoinRequest[]
   contests Contest[]
   posts Post[]
   postUploads PostUpload[]
+  @@index([createdAt, id])
+}
+model GroupJoinRequest {
+  id String @id @default(cuid())
+  groupId String
+  userId String
+  createdAt DateTime @default(now())
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([groupId, userId])
+  @@index([groupId, createdAt, id])
 }
 model GroupMember {
   groupId String

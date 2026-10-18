@@ -19,7 +19,11 @@ interface ICommentView {
   canDelete: boolean;
 }
 
-function present(row: PostComment & { author: IUserView }, viewerId: string, admin: boolean): ICommentView {
+function present(
+  row: PostComment & { author: IUserView },
+  viewerId: string | null,
+  admin: boolean,
+): ICommentView {
   return {
     id: row.id,
     postId: row.postId,
@@ -37,9 +41,9 @@ export class PostCommentService {
     private readonly membership: MembershipService,
   ) {}
 
-  async list(viewer: IViewer, postId: string, offset?: number | null, limit?: number | null) {
+  async list(viewer: IViewer | null, postId: string, offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
-    const { admin } = await this.membership.accessiblePost(viewer.id, postId);
+    const { admin } = await this.membership.readablePost(viewer?.id ?? null, postId);
     const rows = await this.db.postComment.findMany({
       where: { postId },
       include: { author: { select: USER_VIEW_SELECT } },
@@ -47,7 +51,7 @@ export class PostCommentService {
       skip: range.offset,
       take: range.limit,
     });
-    return rows.map((row) => present(row, viewer.id, admin));
+    return rows.map((row) => present(row, viewer?.id ?? null, admin));
   }
 
   async create(viewer: IViewer, postId: string, input: unknown) {

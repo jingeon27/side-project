@@ -22,6 +22,7 @@ type GalleryPost {
   commentCount: Int!
   likedByMe: Boolean!
   canDelete: Boolean!
+  canInteract: Boolean!
 }
 type PostComment {
   id: ID!

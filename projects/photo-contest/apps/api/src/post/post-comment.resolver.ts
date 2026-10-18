@@ -1,7 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
+import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { PostCommentService } from './post-comment.service';
 
 @Resolver()
@@ -10,7 +10,7 @@ export class PostCommentResolver {
 
   @Query()
   postComments(
-    @Viewer() viewer: IViewer,
+    @OptionalViewer() viewer: IViewer | null,
     @Args('postId') postId: string,
     @Args('offset') offset?: number | null,
     @Args('limit') limit?: number | null,
