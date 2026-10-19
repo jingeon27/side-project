@@ -1,5 +1,12 @@
 fragment GalleryPostCard on GalleryPost {
   id
+  contestId
+  contest {
+    id
+    groupId
+    title
+    phase
+  }
   groupId
   groupName
   title
@@ -18,8 +25,8 @@ fragment GalleryPostCard on GalleryPost {
     avatar
   }
 }
-query GalleryPosts($groupId: ID, $sort: PostSort!, $offset: Int!, $limit: Int!) {
-  galleryPosts(groupId: $groupId, sort: $sort, offset: $offset, limit: $limit) {
+query GalleryPosts($groupId: ID, $contestId: ID, $sort: PostSort!, $offset: Int!, $limit: Int!) {
+  galleryPosts(groupId: $groupId, contestId: $contestId, sort: $sort, offset: $offset, limit: $limit) {
     ...GalleryPostCard
   }
 }
@@ -30,6 +37,7 @@ mutation RequestPostUpload($groupId: ID!) {
   }
 }
 mutation CreatePost(
+  $contestId: ID
   $groupId: ID!
   $uploadId: ID!
   $title: String!
@@ -37,6 +45,7 @@ mutation CreatePost(
   $rightsConfirmed: Boolean!
 ) {
   createPost(
+    contestId: $contestId
     groupId: $groupId
     uploadId: $uploadId
     title: $title

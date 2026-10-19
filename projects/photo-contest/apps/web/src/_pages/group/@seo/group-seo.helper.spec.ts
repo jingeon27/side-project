@@ -17,6 +17,8 @@ const data: IGroupSeoData = {
   posts: [
     {
       __typename: 'GalleryPost',
+      contestId: null,
+      contest: null,
       id: 'post-1',
       groupId: 'group-1',
       groupName: '웃긴 고양이',
