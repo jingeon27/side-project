@@ -8,6 +8,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc7 --noEmit",
     "test": "node scripts/test.mjs",
+    "test:unit": "node scripts/test.mjs --project unit",
+    "test:integration": "node scripts/test.mjs --project integration",
     "test:server": "tsx src/testing/e2e-server.ts",
     "prisma:generate": "prisma generate",
     "db:seed": "tsx src/seed.ts",

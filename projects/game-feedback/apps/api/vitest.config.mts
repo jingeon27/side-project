@@ -1,13 +1,28 @@
 import { defineConfig } from 'vitest/config';
-import { guardDatabaseUrl } from '../../scripts/database-guard.mjs';
 
-if (!process.env.TEST_DATABASE_URL)
-  throw new Error('Run yarn workspace @game-feedback/api test to prepare the isolated test database.');
-guardDatabaseUrl(process.env.TEST_DATABASE_URL, { test: true });
+const integrationFiles = ['src/**/*.integration.{spec,test}.ts', 'src/integration.test.ts'];
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['src/**/*.{spec,test}.ts'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['src/**/*.{spec,test}.ts'],
+          exclude: integrationFiles,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          environment: 'node',
+          include: integrationFiles,
+          globalSetup: ['./scripts/integration-setup.mjs'],
+        },
+      },
+    ],
   },
 });
