@@ -7,6 +7,10 @@ COPY . .
 RUN yarn workspaces focus @photo-contest/web
 RUN yarn workspace @photo-contest/api db:generate
 ENV NEXT_TELEMETRY_DISABLED=1 API_URL=http://api:4200
+ARG WEB_ORIGIN=https://photo-contest.test
+ARG NEXT_PUBLIC_SENTRY_DSN=
+ARG NEXT_PUBLIC_AMPLITUDE_API_KEY=
+ENV WEB_ORIGIN=${WEB_ORIGIN} NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} NEXT_PUBLIC_AMPLITUDE_API_KEY=${NEXT_PUBLIC_AMPLITUDE_API_KEY}
 RUN yarn workspace @photo-contest/web codegen \
     && mkdir -p projects/photo-contest/apps/web/public \
     && yarn workspace @photo-contest/web build
