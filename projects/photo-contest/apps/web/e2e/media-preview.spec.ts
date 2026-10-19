@@ -85,7 +85,7 @@ test(
       .poll(() => image.evaluate((el: HTMLImageElement) => [el.naturalWidth, el.naturalHeight]))
       .toEqual([80, 120]);
     await sheet.getByLabel('제목', { exact: true }).fill('세로 사진의 순간');
-    await sheet.getByRole('checkbox').check();
+    await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();
     await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(sheet).toHaveCount(0);
     const uploaded = page

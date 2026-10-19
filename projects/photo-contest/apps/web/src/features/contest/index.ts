@@ -10,3 +10,6 @@ export { contestTypePolicies } from './model/contest.type-policies';
 export { ContestListItem } from './ui/ContestListItem';
 export { CreateContestBottomSheet } from './ui/CreateContestBottomSheet';
 export { PhaseBadge } from './ui/PhaseBadge';
+export { CreateGroupContestButton } from './ui/CreateGroupContestButton';
+export { GroupContestCard } from './ui/GroupContestCard';
+export { GroupContestVoteButton } from './ui/GroupContestVoteButton';

@@ -7,6 +7,9 @@ import { overlay } from 'overlay-kit';
 
 import {
   DeletePostDocument,
+  GroupContestDocument,
+  GroupContestsDocument,
+  GroupContestResultsDocument,
   GalleryPostCardFragmentDoc,
   GalleryPostsDocument,
   PostKind,
@@ -38,7 +41,12 @@ export function PostCard({ id }: { id: string }) {
   const [unlike, unlikeState] = useMutation(UnlikePostDocument, { refetchQueries: [GalleryPostsDocument] });
   const [remove] = useMutation(DeletePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [GalleryPostsDocument],
+    refetchQueries: [
+      GalleryPostsDocument,
+      GroupContestDocument,
+      GroupContestsDocument,
+      GroupContestResultsDocument,
+    ],
     awaitRefetchQueries: true,
   });
   if (!complete) return null;
@@ -91,6 +99,14 @@ export function PostCard({ id }: { id: string }) {
           </Button>
         ) : null}
       </div>
+      {post.contest ? (
+        <Link
+          href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
+          className="mb-3 inline-flex min-h-touch items-center rounded-control bg-sunken px-3 text-caption text-ink"
+        >
+          대회 참여 · {post.contest.title}
+        </Link>
+      ) : null}
       <h3 className="mb-3 wrap-break-word text-title text-ink">{post.title}</h3>
       <PostMedia postId={id} />
       {post.body ? (
