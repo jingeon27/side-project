@@ -47,3 +47,5 @@ corepack yarn workspace @photo-contest/api db:generate
 - 콜백은 다시 실행되므로 파일 저장·삭제(`PhotoStorage`)·fetch를 넣지 않는다. 저장은 먼저 하고 실패하면 지우고(`SubmissionService.upload`), 삭제는 커밋 뒤에 한다(`ModerationService.remove`).
 - 쓰지 않는 곳: 두 번 보내도 성공해야 하는 생성은 `createMany({ data: [row], skipDuplicates: true })`, 동시 요청이 모두 성공해야 하면 Serializable 없이 `this.db.$transaction`(`LikeService.like`). atomic 안의 P2002는 모두 ALREADY_DONE 문장이 되므로 다른 unique 충돌은 미리 확인하거나 skipDuplicates로 피한다.
 - 확인 직후 지워진 행의 FK 위반(P2003)은 필요한 곳에서 NOT_FOUND로 바꾼다(`LikeService.like`).
+
+Service는 Database 대신 UnitOfWork.atomic을 호출하고 도메인 Repository 메서드에 같은 tx를 넘긴다. 새 PostContestVote는 (contestId,voterId) unique와 Post(id,contestId)의 복합 FK를 유지한다. Contest.format default LEGACY와 nullable Post.contestId로 기존 데이터를 보존한다.

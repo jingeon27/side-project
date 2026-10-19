@@ -21,7 +21,7 @@
 
 ## 규칙
 
-- 상시 게시물은 Post 도메인에 둔다. Contest·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER만 한다.
+- 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
@@ -42,7 +42,7 @@
 | 스크립트 | 내용 |
 | --- | --- |
 | `test` · `test:unit` | Vitest `unit`: `src/**/*.spec.ts`(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
-| `test:integration` | Vitest `e2e`: `test/integration/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test:integration` | Vitest `integration`: `test/integration/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
 
@@ -56,3 +56,5 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계·외부 성공 콜백 티켓을 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
 
 `test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
+
+그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 멤버 전용·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 묶어 읽는다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다.
