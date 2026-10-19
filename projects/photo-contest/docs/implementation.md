@@ -12,7 +12,7 @@ OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 �
 
 새 단위·통합·웹 API·브라우저 사양은 `.spec.ts(x)`로 추가했다. API 실제 DB 파일을 test/integration으로 옮기고 Vitest integration 프로젝트·test:integration 명령을 사용한다. test:e2e는 호환 위임으로 남겼다. API 개발 서버·개발 DB는 변경하지 않고 별도 테스트 PostgreSQL과 임시 스키마만 사용했다. 마이그레이션 20261020010000_group_contests는 개발·운영 DB에 아직 적용하지 않았다.
 
-로컬 검증: API unit 86개, 웹 unit/UI 297개·실제 API 문서 17개·Playwright 51개, 모바일 unit/UI 137개·API 9개·WebView Playwright 24개(기존 조건부 2개 제외)가 통과했다. Chrome·iPhone WebKit·데스크톱에서 대회 개최→사진/영상 참여→1회 투표→수상작·공개 SSR·비공개 SEO·관리자 양도를 확인했다. 웹 프로덕션 빌드와 타입·lint 검사도 통과했다. API 실제 PostgreSQL 통합 228개와 포맷·프로젝트 check·앱 lint가 통과했고 남은 테스트 스키마는 0개다. 원격 CI는 PR에서 별도로 확인한다.
+로컬 검증: API unit 98개, 웹 unit/UI 297개·실제 API 문서 17개·Playwright 51개, 모바일 unit/UI 137개·API 9개·WebView Playwright 24개(기존 조건부 2개 제외)가 통과했다. Chrome·iPhone WebKit·데스크톱에서 대회 개최→사진/영상 참여→1회 투표→수상작·공개 SSR·비공개 SEO·관리자 양도를 확인했다. 웹 프로덕션 빌드와 타입·lint 검사도 통과했다. API 실제 PostgreSQL 통합 234개와 포맷·프로젝트 check·앱 lint가 통과했고 남은 테스트 스키마는 0개다. 원격 CI는 PR에서 별도로 확인한다.
 
 ## 2026-10-20 Repository 단위·통합 테스트 보강
 
