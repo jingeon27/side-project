@@ -3,7 +3,7 @@
 import { useWatch } from 'react-hook-form';
 import { CoachingPricingTypeSchema } from '@game-feedback/contracts';
 import { Input, NativeSelect, NativeSelectOption } from '@side/design-system';
-import { coachingRoles, coachingPricingTypes } from '@/features/coaching';
+import { coachingPricingTypes } from '@/features/coaching';
 import { useI18n } from '@/shared/i18n';
 import { Field } from '@/shared/ui';
 import type { TPostComposerForm } from '../model/post-composer.schema';
@@ -24,11 +24,8 @@ export function CoachingFields({ form }: { form: TPostComposerForm }) {
     <>
       <Field label={t('모집 유형')}>
         <NativeSelect {...form.register('coaching.role')}>
-          {coachingRoles.map((item) => (
-            <NativeSelectOption key={item.value} value={item.value}>
-              {t(item.label)}
-            </NativeSelectOption>
-          ))}
+          <NativeSelectOption value="COACH">{t('수강생 모집')}</NativeSelectOption>
+          <NativeSelectOption value="STUDENT">{t('코치 구함')}</NativeSelectOption>
         </NativeSelect>
       </Field>
       <Field label={t('수강료 기준')}>
@@ -45,11 +42,9 @@ export function CoachingFields({ form }: { form: TPostComposerForm }) {
             );
           }}
         >
-          {coachingPricingTypes.map((item) => (
-            <NativeSelectOption key={item.value} value={item.value}>
-              {t(item.label)}
-            </NativeSelectOption>
-          ))}
+          <NativeSelectOption value="HOURLY">{t('시간당')}</NativeSelectOption>
+          <NativeSelectOption value="MONTHLY">{t('월 단위')}</NativeSelectOption>
+          <NativeSelectOption value="GOAL">{t('목표 점수 달성까지')}</NativeSelectOption>
         </NativeSelect>
       </Field>
       {pricingType === 'GOAL' && (

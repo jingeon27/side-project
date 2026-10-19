@@ -2,7 +2,7 @@
 
 ## 2026-10-20 그룹 대회·명예의 전당·운영 권한·SEO
 
-origin/develop의 bc97cad에서 별도 worktree·기능 브랜치를 만들었다. 기존 대회는 format=LEGACY로 보존하고 새 그룹 대회는 format=POST와 Post.contestId로 연결한다. 일반 게시물과 대회 참여를 선택하며 같은 그룹의 접수 중인 대회에 사진·동영상·합성을 여러 번 올린다. 시작→접수 마감→투표 마감과 90일 제한은 API·폼에서 검사한다.
+origin/develop의 bc97cad에서 별도 worktree·기능 브랜치를 만들고 최종 검증 중 추가된 9f5d9af의 저장소 검증도 반영했다. 기존 대회는 format=LEGACY로 보존하고 새 그룹 대회는 format=POST와 Post.contestId로 연결한다. 일반 게시물과 대회 참여를 선택하며 같은 그룹의 접수 중인 대회에 사진·동영상·합성을 여러 번 올린다. 시작→접수 마감→투표 마감과 90일 제한은 API·폼에서 검사한다.
 
 OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 가입 승인을 한다. OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 할 수 있다. 양도는 이전 OWNER→MEMBER와 대상→OWNER를 Serializable 트랜잭션 하나로 처리한다. 역할 변경·투표 이벤트는 성공한 쓰기와 같은 트랜잭션에 개인정보 없이 남긴다.
 
@@ -13,6 +13,14 @@ OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 �
 새 단위·통합·웹 API·브라우저 사양은 `.spec.ts(x)`로 추가했다. API 실제 DB 파일을 test/integration으로 옮기고 Vitest integration 프로젝트·test:integration 명령을 사용한다. test:e2e는 호환 위임으로 남겼다. API 개발 서버·개발 DB는 변경하지 않고 별도 테스트 PostgreSQL과 임시 스키마만 사용했다. 마이그레이션 20261020010000_group_contests는 개발·운영 DB에 아직 적용하지 않았다.
 
 로컬 검증: API unit 86개, 웹 unit/UI 297개·실제 API 문서 17개·Playwright 51개, 모바일 unit/UI 137개·API 9개·WebView Playwright 24개(기존 조건부 2개 제외)가 통과했다. Chrome·iPhone WebKit·데스크톱에서 대회 개최→사진/영상 참여→1회 투표→수상작·공개 SSR·비공개 SEO·관리자 양도를 확인했다. 웹 프로덕션 빌드와 타입·lint 검사도 통과했다. API 실제 PostgreSQL 통합 228개와 포맷·프로젝트 check·앱 lint가 통과했고 남은 테스트 스키마는 0개다. 원격 CI는 PR에서 별도로 확인한다.
+
+## 2026-10-20 Repository 단위·통합 테스트 보강
+
+- 트랜잭션 오류 정책을 순수 함수로 분리해 ts-pattern으로 분기한다. 기존 P2034의 최대 4회 시도, P2002의 즉시 CONFLICT, 나머지 오류의 원형 전파를 유지하고 let/for 반복을 재귀 호출로 바꿨다.
+- 단위 테스트 12개를 추가해 재시도 경계·unique 충돌·FK/미존재/연결 풀 오류·Prisma 오류가 아닌 값을 검증한다. API unit은 총 86개 통과했다.
+- 실제 PostgreSQL 통합 테스트 6개를 추가했다. 단일 연결의 사용자·그룹·멤버십·이벤트 커밋, lazy 배열 쿼리 순서·롤백, atomic unique의 재시도 금지, 실제 직렬화 충돌 재시도·이벤트 중복 방지와 4회 충돌 후 완전 롤백을 확인한다. API integration은 총 217개 통과했다.
+- DB 목이나 고정 지연 없이 barrier로 두 실제 트랜잭션의 읽기를 동기화해 충돌을 재현한다. 별도 임시 PostgreSQL과 api_test_* 스키마를 사용하고 종료 후 정리했다. 기존 개발 DB·서버·dist에는 변경이 없다.
+- API typecheck와 ESLint를 통과했다. DB 스키마·GraphQL/REST 계약과 외부 서비스 설정은 변경하지 않는다.
 
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 

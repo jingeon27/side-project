@@ -1,7 +1,10 @@
 'use client';
+
+import type { Ref } from 'react';
+import type { TBoardKind } from '@game-feedback/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { buttonVariants, cn } from '@side/design-system';
-import { activeGameBoard, gameBoards, gameBoardPath } from '@/features/board';
+import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
 import { categoryOptions } from '@/features/category';
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';
@@ -41,23 +44,68 @@ export function GameBoardNavigation({ locale, path }: IGameBoardNavigationProps)
           >
             {t('전체')}
           </TabLink>
-          {gameBoards.map((board) => (
-            <TabLink
-              key={board.kind}
-              ref={selected === board.kind ? currentChip : undefined}
-              href={gameBoardPath(locale, board.kind, game.slug)}
-              replace
-              aria-current={selected === board.kind ? 'page' : undefined}
-              className={cn(
-                buttonVariants({ variant: selected === board.kind ? 'accent' : 'secondary', size: 'sm' }),
-                'rounded-full',
-              )}
-            >
-              {t(board.name)}
-            </TabLink>
-          ))}
+          <GameBoardChip
+            kind="FEEDBACK"
+            locale={locale}
+            game={game.slug}
+            selected={selected}
+            currentChip={currentChip}
+          />
+          <GameBoardChip
+            kind="FRIEND_SALE"
+            locale={locale}
+            game={game.slug}
+            selected={selected}
+            currentChip={currentChip}
+          />
+          <GameBoardChip
+            kind="FRIENDLY"
+            locale={locale}
+            game={game.slug}
+            selected={selected}
+            currentChip={currentChip}
+          />
+          <GameBoardChip
+            kind="COACHING"
+            locale={locale}
+            game={game.slug}
+            selected={selected}
+            currentChip={currentChip}
+          />
+          <GameBoardChip
+            kind="FREE"
+            locale={locale}
+            game={game.slug}
+            selected={selected}
+            currentChip={currentChip}
+          />
         </div>
       </nav>
     </div>
+  );
+}
+
+interface IGameBoardChipProps {
+  kind: TBoardKind;
+  locale: string;
+  game: string;
+  selected?: TBoardKind;
+  currentChip: Ref<HTMLAnchorElement>;
+}
+function GameBoardChip({ kind, locale, game, selected, currentChip }: IGameBoardChipProps) {
+  const { t } = useI18n();
+  const board = boardByKind(kind);
+  if (!board) return null;
+  const active = selected === kind;
+  return (
+    <TabLink
+      ref={active ? currentChip : undefined}
+      href={gameBoardPath(locale, kind, game)}
+      replace
+      aria-current={active ? 'page' : undefined}
+      className={cn(buttonVariants({ variant: active ? 'accent' : 'secondary', size: 'sm' }), 'rounded-full')}
+    >
+      {t(board.name)}
+    </TabLink>
   );
 }

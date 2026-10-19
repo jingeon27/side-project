@@ -1,5 +1,13 @@
 # 구현 및 검증 기록
 
+## 2026-10-20 단위·통합 테스트와 명시적 분기/메뉴
+
+- API Vitest를 unit·integration 레인으로 나누고 `test:unit`·`test:integration`을 추가했다. 테스트 DB를 끈 상태에서 unit 76개가 실행되고 55444가 열리지 않는 것을 확인했다. 실제 PostgreSQL/Supertest integration 97개를 함께 검증한다.
+- 이번 API 보강은 39개다. 순수 커서·채팅 삭제 경계·숨김 알림 정책 26개와 Repository/HTTP 통합 13개를 추가했다. 단일 연결의 도메인 간 커밋·배열/콜백 롤백·차단 가시성·동일 시각 페이지네이션·채팅 기록 분리를 확인한다.
+- 관리자 숨김 POST/ANSWER/COMMENT와 신고 POST/ANSWER/COMMENT/USER를 ts-pattern exhaustive로 처리한다. es-toolkit groupBy·uniq로 신고 조회 ID를 묶는다. 실제 감사 테이블 CHECK 위반을 격리 스키마에 주입해 숨김·알림 삭제까지 함께 롤백되는지 확인한다.
+- 피드백 상태·코칭 역할·전투 유형과 글쓰기의 고정 옵션, 사이드바·게임 칩·가이드의 다섯 메뉴는 각각 JSX로 조립한다. 공통 링크 표현만 작은 컴포넌트로 분리하고 서버의 글·게임 목록을 렌더링하는 map은 유지한다. Web 테스트는 102개이며 새 3개가 검색어/게임 문맥 보존과 URL 활성 상태를 검증한다.
+- API 타입 검사, Web 타입 검사·lint, 전체 format 검사를 수행한다. DB 스키마·외부 API 계약과 개발 서버에는 변경이 없다. 별도 worktree와 테스트 전용 DB·격리 스키마만 사용한다.
+
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 
 운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
