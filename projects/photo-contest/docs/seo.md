@@ -4,14 +4,17 @@
 
 ## 검색에 공개하는 범위
 
-| 화면                    | 검색·메타데이터                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| 홈 `/`                  | 대표 canonical, 사이트 소개·브랜드 공유 이미지, WebSite JSON-LD                             |
-| 탐색 `/explore`         | 대표 canonical·공유 정보, 그룹 카드 서버 HTML                                               |
-| 검색 `/explore?q=…`     | canonical은 `/explore`, 검색 결과는 noindex                                                 |
-| 공개 그룹 `/groups/:id` | 그룹 이름·멤버 수 설명, 자기 canonical, 실제 공개 사진 OG/Twitter, 게시물 서버 HTML·JSON-LD |
-| 비공개 그룹             | 공통 비공개 안내 메타데이터, noindex/nofollow/noimageindex, JSON-LD·공유 사진 없음          |
-| MY·초대·기존 대회       | 기본 noindex, 사이트맵 제외                                                                 |
+| 화면                                        | 검색·메타데이터                                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 홈 `/`                                      | 대표 canonical, 사이트 소개·브랜드 공유 이미지, WebSite JSON-LD                                         |
+| 탐색 `/explore`                             | 대표 canonical·공유 정보, 그룹 카드 서버 HTML                                                           |
+| 검색 `/explore?q=…`                         | canonical은 `/explore`, 검색 결과는 noindex                                                             |
+| 공개 그룹 `/groups/:id`                     | 그룹 이름·멤버 수 설명, 자기 canonical, 실제 공개 사진 OG/Twitter, 게시물 서버 HTML·JSON-LD             |
+| 공개 그룹 대회 목록 `/groups/:id/contests`  | 자기 canonical, 공개 대회 일정·목록 서버 HTML, CollectionPage·ItemList·Event JSON-LD                    |
+| 공개 대회 `/groups/:id/contests/:contestId` | 대회명·일정·참여작 서버 HTML, canonical·OG/Twitter, Event·CollectionPage·DiscussionForumPosting JSON-LD |
+| 공개 명예의 전당 `/groups/:id/hall-of-fame` | 지난 대회·실제 공동 우승작 서버 HTML, 별도 canonical·공유 사진·목록 JSON-LD                             |
+| 비공개 그룹                                 | 공통 비공개 안내 메타데이터, noindex/nofollow/noimageindex, JSON-LD·공유 사진 없음                      |
+| MY·초대·기존 대회                           | 기본 noindex, 사이트맵 제외                                                                             |
 
 그룹 이름·공개 여부·멤버 수는 비공개 그룹도 탐색할 수 있는 정보다. 게시물·댓글·파일은 승인된 멤버만 읽는다. SEO 서버 조회는 로그인 Cookie를 전달하지 않으며, 비공개 그룹이면 게시물 조회를 실행하지 않는다. 그룹장이 로그인해도 비공개 메타데이터와 JSON-LD 정책은 같다. 개인화된 페이지·미디어·사이트맵을 공유 캐시에 저장하지 않는다.
 
@@ -27,6 +30,10 @@
 - `/sitemap.xml`은 사이트맵 인덱스다. 홈·탐색은 `/sitemaps/main.xml`, 그룹은 `/sitemaps/groups/0.xml`부터 48개씩 제공한다.
 - 그룹 개수·목록은 API에서 PUBLIC만 조회한다. PRIVATE·알 수 없는 공개 범위는 포함하지 않는다. 데이터가 없는 페이지·잘못된 페이지 번호는 404다.
 - 확인되지 않은 수정일을 lastmod로 만들지 않는다. 사이트맵은 실시간 조회·no-store이며 API 장애 시 비어 있는 성공 응답으로 숨기지 않는다.
+
+그룹 사이트맵은 각 공개 그룹의 게시물·대회 목록·명예의 전당 URL을 제공한다. 공개 POST 대회 상세는 `/sitemaps/contests/0.xml`부터 48개씩 별도로 나누고 인덱스에 연결한다. LEGACY·PRIVATE 대회는 포함하지 않는다. 비공개 그룹에서는 대회·결과·참여작 SEO 쿼리를 실행하지 않고 로그인한 그룹장에게도 공통 noindex·사진 없음·JSON-LD 없음 정책을 적용한다. 다른 그룹의 대회 ID를 끼워 넣은 공개 URL은 없는 페이지로 처리한다.
+
+Event는 실제 시작·투표 마감과 VirtualLocation을 가진 온라인 대회다. 종료 후에는 실제 수상작에만 award를 붙이고 공동 우승을 유지한다. 표가 없으면 수상을 만들지 않으며 영상 poster·평점·입장권·물리적 장소를 지어내지 않는다. 구조화 데이터는 화면에 표시되는 공개 참여작·결과와 같은 데이터를 사용한다. [Schema.org Event](https://schema.org/Event)의 온라인 행사 속성을 따른다.
 
 ## 배포 후 확인
 

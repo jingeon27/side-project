@@ -21,7 +21,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - feature slice 세그먼트: `api/<domain>.graphql`, `model/<domain>.cache.ts`·`<domain>.type-policies.ts`·`<domain>.schema.ts`·`*.hook.ts`, `lib/*.helper.ts`, `types/`, `ui/`, `index.ts`(쓰는 이름만 명시 export). slice 안에서는 상대 경로로, 자기 배럴을 import하지 않는다.
 - 파일 이름: 컴포넌트는 PascalCase(`PhotoCard.tsx`), 나머지는 kebab-case + 역할 접미사(`.hook.ts`, `.helper.ts`, `.schema.ts`, `.cache.ts`, `.type.ts`, `.server.ts`). 시트는 `XxxBottomSheet`.
 
-현재 제품의 그룹은 상시 게시판이다. 홈은 전체 가입 그룹의 최신 게시물·이달의 인기, MY는 가입 그룹 목록·생성이며 `/explore`는 익명 그룹 탐색·검색과 로그인 후 생성이다. 공개 그룹은 익명 감상, 비공개 그룹은 OWNER 승인 후 감상이며 가입·글쓰기·반응 상태는 Apollo의 GroupAccess를 읽는다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
+현재 제품의 그룹은 상시 게시판이다. 홈은 전체 가입 그룹의 최신 게시물·이달의 인기, MY는 가입 그룹 목록·생성이며 `/explore`는 익명 그룹 탐색·검색과 로그인 후 생성이다. 공개 그룹은 익명 감상, 비공개 그룹은 OWNER·MODERATOR 승인 후 감상이며 가입·글쓰기·반응 상태는 Apollo의 GroupAccess를 읽는다. post feature가 파일 등록·미디어 카드·좋아요·삭제·정렬별 캐시를 소유한다. 고정 메뉴는 배열 map 대신 JSX로 직접 선언한다.
 
 ## 이벤트 핸들러
 
@@ -57,3 +57,5 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - `useBridge()`·`useNativeApp()`(hydration 안전)·`useShareLink()`(앱 → Web Share → 복사)·`useHaptics()`·`useExternalLink()`를 쓴다. 앱이 지원하지 않는 기능(`supports` false)은 웹 기능으로 대신한다.
 - 앱 감지(`html[data-app]`, User-Agent `PhotoContestApp/x.y.z`)는 화면 모양에만 쓰고 권한 판단에 쓰지 않는다.
 - 메시지를 추가·변경할 때는 `bridge` 스킬을 따른다.
+
+그룹 안 새 대회는 group-contests(목록·명예의 전당)와 group-contest(상세) 화면으로 나눈다. PostContestField는 일반 게시물/대회 참여 선택을 RHF로 소유하고 접수 중 같은 그룹 대회를 조회한다. 공개 화면은 cookie 없는 SEO와 일치하는 PreloadQuery로 SSR, 비공개는 canViewPosts·ClientOnly로 보호한다. 단일 대회 갱신으로 완료 상태가 되면 사전 조회하지 못한 결과는 ClientOnly로 받는다.

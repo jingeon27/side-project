@@ -25,7 +25,7 @@ packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 V
 
 루트·프로젝트의 검사 명령은 앱과 패키지에 위임합니다. 테스트 러너·설정·파일·의존성은 각 앱 또는 패키지가 소유합니다. 화면 없는 API의 e2e는 Vitest·supertest로 실행하며, 공용 e2e 워크스페이스는 없습니다.
 
-웃긴순간은 사진·동영상·합성을 공유하는 상시 그룹 커뮤니티입니다. 홈은 가입한 그룹의 최신 게시물과 이달의 인기를, MY는 내 그룹을 보여 줍니다. 탐색에서 공개·비공개 그룹을 찾고 공개 게시물을 로그인 없이 감상합니다. 공개 그룹은 바로 가입하고 비공개 그룹은 그룹장이 수락합니다. 공개 그룹 SEO·사이트맵은 [SEO 안내](projects/photo-contest/docs/seo.md)에 정리했습니다.
+웃긴순간은 사진·동영상·합성을 공유하는 상시 그룹 커뮤니티입니다. 홈은 가입한 그룹의 최신 게시물과 이달의 인기를, MY는 내 그룹을 보여 줍니다. 탐색에서 공개·비공개 그룹을 찾고 공개 게시물을 로그인 없이 감상합니다. 공개 그룹은 바로 가입하고 비공개 그룹은 그룹장이 수락합니다. 그룹 안에서 대회를 열고 게시물 참여·투표·지난 대회 명예의 전당을 이용합니다. 그룹장은 부관리자 임명·해제와 관리자 양도를 관리합니다. 공개 그룹·대회·명예의 전당 SEO·사이트맵은 [SEO 안내](projects/photo-contest/docs/seo.md)에 정리했습니다.
 
 ## 시작
 
@@ -86,7 +86,7 @@ corepack yarn build:photo-contest
 corepack yarn format:check
 ```
 
-`test:api`는 웹·모바일이 소비하는 실제 API 계약을, `test:e2e`는 API의 supertest와 웹·모바일의 Playwright를 실행합니다. `TEST_DATABASE_URL`을 우선 사용하고 실행마다 임시 스키마를 만든 뒤 제거합니다. 개발 서버의 포트·빌드 폴더·데이터를 재사용하지 않습니다.
+`test:api`는 웹·모바일이 소비하는 실제 API 계약을, API의 `test:integration`은 실제 DB+supertest를 실행하며 기존 `test:e2e`는 호환 위임입니다. 웹·모바일의 `test:e2e`는 Playwright를 실행합니다. 새 단위·통합 사양은 `.spec.ts(x)`를 사용합니다. `TEST_DATABASE_URL`을 우선 사용하고 실행마다 임시 스키마를 만든 뒤 제거합니다. 개발 서버의 포트·빌드 폴더·데이터를 재사용하지 않습니다.
 
 새 프로젝트는 `@side/<name>` 집계 패키지에 `test`·`build`·`typecheck`·`check`를 정의합니다. 여러 프로젝트가 함께 쓰는 코드만 루트 `packages/*`에 둡니다.
 

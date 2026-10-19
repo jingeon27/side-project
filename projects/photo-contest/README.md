@@ -40,7 +40,11 @@ corepack yarn dev:photo-contest
 | `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                                 |
 | `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·MP4·fixture 준비                                                  |
 
-누구나 로그인 후 공개·비공개 그룹을 만들 수 있습니다. `/explore`에서 이름으로 탐색하며 초대 링크 없이도 그룹에 들어갑니다. 공개 그룹의 사진·동영상·댓글은 로그인 없이 볼 수 있고 로그인 후 바로 가입합니다. 비공개 그룹은 그룹장이 가입 신청을 수락해야 내용을 볼 수 있으며, 초대 링크도 승인을 우회하지 않습니다. 기존 그룹은 비공개로 유지합니다. 모든 멤버가 초대 링크를 공유하고 관리자만 재발급할 수 있습니다. 홈은 가입한 모든 그룹의 사진·동영상을 최신순으로 모읍니다. MY에서 내 그룹을 보고 새 그룹을 만듭니다. 그룹에서 제목·내용과 파일을 올리며, 게시물은 작성자와 관리자가 삭제할 수 있습니다.
+누구나 로그인 후 공개·비공개 그룹을 만들 수 있습니다. `/explore`에서 이름으로 탐색하며 초대 링크 없이도 그룹에 들어갑니다. 공개 그룹의 사진·동영상·댓글은 로그인 없이 볼 수 있고 로그인 후 바로 가입합니다. 비공개 그룹은 관리자·부관리자가 가입 신청을 수락해야 내용을 볼 수 있으며, 초대 링크도 승인을 우회하지 않습니다. 기존 그룹은 비공개로 유지합니다. 모든 멤버가 초대 링크를 공유하고 관리자만 재발급할 수 있습니다. 홈은 가입한 모든 그룹의 사진·동영상을 최신순으로 모읍니다. MY에서 내 그룹을 보고 새 그룹을 만듭니다. 그룹에서 제목·내용과 파일을 올리며, 게시물은 작성자와 관리자·부관리자가 삭제할 수 있습니다.
+
+그룹 메뉴의 ‘대회’에서 관리자와 부관리자가 대회 제목·접수 기간·투표 마감을 정합니다. 글쓰기에서 일반 게시물 또는 접수 중인 대회를 선택하며 사진·동영상·합성으로 여러 번 참여할 수 있습니다. 그룹은 대회가 끝나도 유지됩니다. 투표는 그룹 멤버가 대회당 한 번 하고 본인 참여작에는 투표할 수 없습니다. 종료 후 ‘명예의 전당’에서 최종 순위와 우승작을 봅니다. 동점은 공동 우승이며 한 표도 없으면 우승작을 정하지 않습니다. 순위는 사진 밖에 표시합니다.
+
+‘초대와 그룹 멤버’에서 그룹장이 부관리자를 임명·해제하거나 다른 멤버에게 관리자를 양도합니다. 부관리자는 개최·게시물/댓글 삭제·비공개 가입 승인을 맡고, 임명·양도·초대 재발급은 그룹장만 할 수 있습니다. 관리자 양도 시 이전 그룹장은 일반 멤버가 됩니다.
 
 게시물에 댓글을 남길 수 있습니다. 댓글은 그룹의 공개 범위에 따라 조회하며 멤버만 작성할 수 있고 작성자와 관리자가 삭제합니다. 본문은 최대 1000자이고 최신순으로 24개씩 조회합니다. 댓글 시트는 내 글과 다른 멤버의 글을 말풍선으로 구분하고, 게시물 작성자 표시·댓글 수·빈 목록 안내를 제공합니다. 입력창은 내용에 따라 늘어나며 전송 버튼과 함께 하단에 고정됩니다. 피드 맨 위에서 아래로 당겼다 놓으면 최신 글과 인기를 함께 새로 받습니다. 짧은 당김·가로 이동·입력·사진 확대는 새로고침을 실행하지 않습니다. 키보드 포커스 시 새로고침 조작도 제공합니다. 바텀시트는 화면 너비를 채우며 폼에는 필수·선택 여부를 표시합니다.
 
@@ -103,17 +107,18 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 corepack yarn workspace @side/photo-contest db:test:local
 ```
 
-| 앱     | `test`                   | `test:api`                                | `test:e2e`                                                   |
-| ------ | ------------------------ | ----------------------------------------- | ------------------------------------------------------------ |
-| API    | 순수 규칙·사진 처리 unit | 없음                                      | Vitest + supertest + 실제 PostgreSQL, `test/e2e`             |
-| 웹     | unit·실제 폼/캐시 UI     | 생성 GraphQL 문서를 격리 API에 실행(4321) | Pixel 7·iPhone 15(WebKit)·데스크톱·가짜 앱, 웹 3320/API 4320 |
-| 모바일 | unit·UI                  | 앱 설정·상태 API(4331)                    | Android/iOS 가짜 WebView와 실제 웹, 웹 3330/API 4330         |
-| bridge | 자체 Vitest              | 없음                                      | 없음                                                         |
+| 앱     | `test`                   | `test:api`                                | `test:e2e`                                                                   |
+| ------ | ------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------- |
+| API    | 순수 규칙·사진 처리 unit | 없음                                      | `test:integration`: Vitest + supertest + 실제 PostgreSQL, `test/integration` |
+| 웹     | unit·실제 폼/캐시 UI     | 생성 GraphQL 문서를 격리 API에 실행(4321) | Pixel 7·iPhone 15(WebKit)·데스크톱·가짜 앱, 웹 3320/API 4320                 |
+| 모바일 | unit·UI                  | 앱 설정·상태 API(4331)                    | Android/iOS 가짜 WebView와 실제 웹, 웹 3330/API 4330                         |
+| bridge | 자체 Vitest              | 없음                                      | 없음                                                                         |
 
 ```sh
 corepack yarn workspace @side/photo-contest check
 corepack yarn workspace @photo-contest/web lint
 corepack yarn workspace @photo-contest/mobile lint
+corepack yarn workspace @photo-contest/api test:integration
 corepack yarn workspace @side/photo-contest test:api
 corepack yarn workspace @photo-contest/web exec playwright install chromium webkit
 corepack yarn workspace @side/photo-contest test:e2e
@@ -128,6 +133,8 @@ corepack yarn format:check
 
 보고서·trace는 각 앱의 `playwright-report`·`test-results`, 화면 캡처는 웹 앱의 `.data/screens`에 남습니다. CI는 앱별 레인과 WebKit 설치·테스트 DB·종료 후 정리 검사를 실행합니다.
 
-공개 그룹에는 canonical·OG/Twitter·JSON-LD와 서버 HTML을 제공하고 사이트맵에는 공개 그룹만 포함합니다. 도메인 설정과 검증 방법은 [SEO 안내](docs/seo.md)를 참고하세요.
+공개 그룹·대회 목록·대회 상세·명예의 전당에는 canonical·OG/Twitter·JSON-LD와 서버 HTML을 제공합니다. 사이트맵에는 공개 그룹과 공개 대회만 포함하고 비공개 대회는 로그인한 그룹장에게도 noindex·구조화 데이터 제외를 적용합니다. 도메인 설정과 검증 방법은 [SEO 안내](docs/seo.md)를 참고하세요.
 
 실제 네이티브 빌드·실기기의 키보드/그룹/시스템 공유 시트와 외부 OAuth는 브라우저 테스트로 대체되지 않습니다. 제품 가설·베타 사용자 모집은 [기획](docs/product-plan.md), 코드와 검증 결과는 [구현 기록](docs/implementation.md)을 참고하세요.
+
+새 기능 사양은 단위·통합 모두 `.spec.ts(x)`를 사용합니다. 기존 API `test:e2e` 명령은 `test:integration`에 위임하는 호환 이름입니다. 이번 변경은 `20261020010000_group_contests` 마이그레이션을 포함하며 기존 Contest는 LEGACY, 일반 Post는 contestId=null로 보존합니다.

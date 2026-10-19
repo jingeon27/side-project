@@ -7,7 +7,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 - 기능 모듈: `auth`, `group`, `contest`, `submission`(업로드·사진 조회 포함), `like`, `vote`, `moderation`, `analytics`, `maintenance`, `health`. 공통은 `config`(env·limits·paths), `common`(errors·validation·crypto·http·graphql), `database`, `storage`.
 - 모듈 하나 = `<name>.graphql` + `<name>.module.ts` + `<name>.resolver.ts` + `<name>.service.ts`. GraphQL 스키마는 모듈별 `.graphql`이 계약이고(웹 codegen 입력), `app.module.ts`가 `src/**/*.graphql`을 합친다.
-- resolver·controller는 얇게: 조회자 확인 + service 위임. 규칙과 권한은 service에 둔다. 권한 확인은 `membership.service`(requireMember·requireOwner·accessibleContest)로만 한다.
+- resolver·controller는 얇게: 조회자 확인 + service 위임. 규칙과 권한은 service에 둔다. 권한 확인은 `membership.service`(requireMember·requireAdmin·requireOwner·accessibleContest)로만 한다.
 - 조회자별 필드(likedByMe, isAdmin, votedSubmissionId, hiddenSubmissions)와 비싼 필드(members, contests, leaderboard)는 field resolver로 선택될 때만 계산하고 N+1을 만들지 않는다.
 - 매직 넘버는 `config/limits.ts`, 환경변수는 `config/env.ts`의 getter로 호출할 때마다 읽는다(테스트가 실행 중에 바꾼다). 상대 STORAGE_DIR는 프로젝트 루트 기준.
 - 닫힌 집합 분기(Phase, 오류 코드→HTTP, provider)는 ts-pattern `exhaustive()`, 묶기·nil 검사는 es-toolkit. 직접 유틸을 만들지 않는다.
@@ -30,7 +30,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 - 현재 제품은 Post·PostUpload·PostLike·PostComment다. 그룹은 종료되지 않으며 대회 없이 여러 번 등록한다.
 - galleryPosts의 groupId가 없으면 로그인 후 가입한 모든 그룹, 있으면 readableGroup으로 공개 범위·멤버십을 검사한다. PUBLIC은 익명 읽기, PRIVATE는 승인된 멤버만 허용한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
-- 작성자와 OWNER만 삭제한다. 파일도 매 요청 공개 범위·멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
+- 작성자와 OWNER·MODERATOR만 삭제한다. 파일도 매 요청 공개 범위·멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
 - 웹 업로드는 GraphQL Upload scalar·multipart middleware와 uploadPostMedia mutation을 사용한다. 티켓 소유·만료·멤버십을 먼저 검사하고 스트림 크기를 제한한다. 기존 REST 업로드도 같은 검증·저장 로직을 쓴다.
 - /post-uploads는 5분 일회용 해시 티켓, 원본 100MB 상한이다. 사진은 기존 sharp 변환을 재사용하고 동영상은 MediaInfo WASM으로 컨테이너·코덱·시간을 검사한다. MP4 H.264/AAC·WebM VP8/VP9+Opus/Vorbis, 5분 이하.
 - /media/:id는 비공개 no-store 스트리밍·byte Range 206/416을 지원한다. 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
@@ -42,7 +42,16 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - createGroup은 PUBLIC/PRIVATE 선택이며 생략하면 PUBLIC이다. DB default PRIVATE는 기존 그룹의 공개 전환을 막기 위한 값이다.
 - group·discoverGroups는 익명 메타데이터 조회를 허용한다. 비멤버의 role·inviteToken은 null, members는 빈 배열이다. discoverGroups의 공개 범위 필터와 publicGroupCount는 공개 사이트맵을 지원한다.
 - requestGroupMembership과 joinGroup은 같은 규칙: 공개 그룹은 즉시 가입, 비공개 그룹은 GroupJoinRequest만 만든다. 기존 멤버의 역할을 유지하고 동시 신청·가입은 DB unique와 Serializable 재시도로 한 행만 남긴다.
-- 신청 목록·수락·거절은 OWNER만. 수락은 멤버 생성·가입 이벤트·신청 삭제를 한 트랜잭션으로 처리한다.
+- 신청 목록·수락·거절은 OWNER·MODERATOR만. 수락은 멤버 생성·가입 이벤트·신청 삭제를 한 트랜잭션으로 처리한다.
+
+## 그룹 게시물 대회·운영 권한
+
+- Contest.format=POST인 새 대회는 groupContest·groupContests·groupContestResults 계약을 쓴다. LEGACY는 기존 API만 사용하고 새 대회는 이전 제출 API로 접근하지 못하게 막는다.
+- OWNER·MODERATOR만 같은 그룹에서 개최한다. Post.contestId는 선택이며 접수 중 같은 그룹 POST 대회만 허용한다. 일반 게시물과 사진·동영상·복수 참여작을 구분한다.
+- 공개 대회·결과는 익명 읽기, 비공개는 멤버만. 투표는 VOTING 중 멤버만, 본인·숨긴 글은 거부한다. (contestId,voterId) unique와 (postId,contestId) 복합 FK로 대회당 1표·다른 대회 투표를 DB에서도 보장한다.
+- 종료 후 보이는 참여작으로 득표수 경쟁 순위(1,1,3)를 계산한다. 동률 표시는 작성 시각 asc·id asc이며 일반 좋아요가 수상 순위를 바꾸지 않는다. 최다 득표 > 0이면 공동 우승, 0표는 우승 없음이다. 완료 이벤트는 형식에 맞는 참여작·투표를 집계한다.
+- OWNER만 setGroupModerator·transferGroupOwnership을 실행한다. 대상은 같은 그룹의 멤버이고 OWNER 역할은 임명 API로 바꾸지 않는다. 양도는 원 OWNER→MEMBER와 대상→OWNER를 하나의 Serializable 트랜잭션에서 처리한다.
+- publicGroupContests·publicGroupContestCount는 PUBLIC/POST만 포함한다. winners는 siblingLoader로 묶어 읽고 private 결과·미디어를 SEO에 섞지 않는다.
 
 ## 기존 대회 호환 규칙
 
@@ -67,3 +76,5 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 스키마를 바꾸면 Prisma 마이그레이션을 추가한다. 파괴적 변경(컬럼·테이블 삭제)은 피하고, 테스트는 test-kit 격리 스키마에서 마이그레이션을 적용해 확인한다. 개발 DB public 스키마에는 직접 적용하지 않는다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹의 계약 테스트(문서 ↔ 스키마 검증)를 같이 돌린다.
 - 새 규칙에는 실제 PostgreSQL + supertest 테스트를 붙인다(`testing` 스킬).
+
+Service의 Prisma I/O는 도메인 Repository에 두고 UnitOfWork.atomic의 tx를 모든 권한·읽기·쓰기·이벤트에 전달한다.

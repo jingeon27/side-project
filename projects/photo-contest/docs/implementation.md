@@ -1,5 +1,19 @@
 # 웃긴순간 구현 기록
 
+## 2026-10-20 그룹 대회·명예의 전당·운영 권한·SEO
+
+origin/develop의 bc97cad에서 별도 worktree·기능 브랜치를 만들었다. 기존 대회는 format=LEGACY로 보존하고 새 그룹 대회는 format=POST와 Post.contestId로 연결한다. 일반 게시물과 대회 참여를 선택하며 같은 그룹의 접수 중인 대회에 사진·동영상·합성을 여러 번 올린다. 시작→접수 마감→투표 마감과 90일 제한은 API·폼에서 검사한다.
+
+OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 가입 승인을 한다. OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 할 수 있다. 양도는 이전 OWNER→MEMBER와 대상→OWNER를 Serializable 트랜잭션 하나로 처리한다. 역할 변경·투표 이벤트는 성공한 쓰기와 같은 트랜잭션에 개인정보 없이 남긴다.
+
+투표는 VOTING 중 멤버당 한 표이며 본인·숨긴 글·다른 대회 참여작을 거부한다. PostContestVote의 unique와 복합 FK로 동시·교차 대회 투표를 막는다. 종료 후 득표수 경쟁 순위(1,1,3)와 최다 득표 공동 우승을 계산하며 0표는 우승이 없다. 일반 좋아요가 대회 순위를 바꾸지 않는다. 명예의 전당은 종료된 대회와 현재 공개 가능한 우승작·결과를 모으며 순위는 사진을 가리지 않는다. 삭제한 참여작은 결과·수상작에서 제외한다. 완료 기록은 기존/새 형식에 맞는 실제 참여작·투표·참여자를 센다.
+
+그룹 메뉴의 대회·명예의 전당과 상세는 독립 QueryRef·Suspense/오류 경계다. 공개 화면은 RSC PreloadQuery로 HTML을 제공한다. 비공개 내용은 canViewPosts·ClientOnly로 승인 후 조회하고 SEO는 cookie 없이 별도 조회한다. 목록·명예의 전당·상세 canonical·OG/Twitter·JSON-LD를 만들고 PUBLIC/POST 대회만 48개씩 사이트맵에 넣는다. 비공개는 그룹장에게도 공통 noindex, 공유 사진·JSON-LD 없음이다. [SEO 계약](seo.md)을 따른다.
+
+새 단위·통합·웹 API·브라우저 사양은 `.spec.ts(x)`로 추가했다. API 실제 DB 파일을 test/integration으로 옮기고 Vitest integration 프로젝트·test:integration 명령을 사용한다. test:e2e는 호환 위임으로 남겼다. API 개발 서버·개발 DB는 변경하지 않고 별도 테스트 PostgreSQL과 임시 스키마만 사용했다. 마이그레이션 20261020010000_group_contests는 개발·운영 DB에 아직 적용하지 않았다.
+
+로컬 검증: API unit 86개, 웹 unit/UI 297개·실제 API 문서 17개·Playwright 51개, 모바일 unit/UI 137개·API 9개·WebView Playwright 24개(기존 조건부 2개 제외)가 통과했다. Chrome·iPhone WebKit·데스크톱에서 대회 개최→사진/영상 참여→1회 투표→수상작·공개 SSR·비공개 SEO·관리자 양도를 확인했다. 웹 프로덕션 빌드와 타입·lint 검사도 통과했다. API 실제 PostgreSQL 통합 228개와 포맷·프로젝트 check·앱 lint가 통과했고 남은 테스트 스키마는 0개다. 원격 CI는 PR에서 별도로 확인한다.
+
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 
 운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
