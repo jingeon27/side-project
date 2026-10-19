@@ -721,6 +721,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aws-sdk/s3-request-presigner@npm:3.1149.0":
+  version: 3.1149.0
+  resolution: "@aws-sdk/s3-request-presigner@npm:3.1149.0"
+  dependencies:
+    "@aws-sdk/core": "npm:^3.978.2"
+    "@aws-sdk/signature-v4-multi-region": "npm:^3.996.48"
+    "@aws-sdk/types": "npm:^3.974.6"
+    "@smithy/core": "npm:^3.35.2"
+    "@smithy/types": "npm:^4.19.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/f5f0762bde0e62247792d845365cb40f491d7ac6b3d87a9bfe0c85cb1c222b40b48df1873d21fb85c5251fd2ed88394c011cd41432f71825c90cd6a1b95c7c89
+  languageName: node
+  linkType: hard
+
 "@aws-sdk/signature-v4-multi-region@npm:^3.996.48":
   version: 3.996.48
   resolution: "@aws-sdk/signature-v4-multi-region@npm:3.996.48"
@@ -5612,6 +5626,7 @@ __metadata:
     "@apollo/server": "npm:^5.0.0"
     "@as-integrations/express5": "npm:^1.1.0"
     "@aws-sdk/client-s3": "npm:^3.0.0"
+    "@aws-sdk/s3-request-presigner": "npm:3.1149.0"
     "@nestjs/apollo": "npm:^14.0.3"
     "@nestjs/common": "npm:^12.1.2"
     "@nestjs/core": "npm:^12.1.2"
