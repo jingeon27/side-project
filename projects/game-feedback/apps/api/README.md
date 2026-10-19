@@ -8,11 +8,17 @@ NestJS REST API이며 입력과 응답 계약은 `@game-feedback/contracts`의 Z
 
 ```sh
 corepack yarn workspace @game-feedback/api test
+# DB 없이 순수 정책·검증 단위 테스트
+corepack yarn workspace @game-feedback/api test:unit
+# 격리 PostgreSQL + Supertest 통합 테스트
+corepack yarn workspace @game-feedback/api test:integration
 # 특정 HTTP 통합 테스트만 실행
 corepack yarn workspace @game-feedback/api test src/community.integration.test.ts
 ```
 
-API 명령은 계약 빌드 → 전용 Prisma 생성 → 소유 테스트 PostgreSQL 시작 → Vitest 실행을 준비한다. 별도 환경변수 없이 전용 loopback 55444의 `game_feedback_test`를 사용하며 각 통합 테스트가 고유 `gf_test_` 스키마에 현재 Prisma schema를 적용하고 종료 후 해당 스키마만 정리한다. DB를 준비하지 못하면 실패하며 통합 테스트를 건너뛴 성공으로 처리하지 않는다. Vitest를 직접 호출하며 TEST_DATABASE_URL을 누락한 경우도 설정 단계에서 실패한다.
+모든 API 명령은 계약 빌드와 전용 Prisma 생성을 준비한다. `test:unit`은 DB를 시작하거나 연결하지 않는다. `test:integration`과 전체 `test`는 소유 테스트 PostgreSQL을 준비한다. 별도 환경변수 없이 전용 loopback 55444의 `game_feedback_test`를 사용하며 각 통합 테스트가 고유 `gf_test_` 스키마를 만들고 종료 후 해당 스키마만 정리한다. DB를 준비하지 못하면 실패하며 통합 테스트를 건너뛴 성공으로 처리하지 않는다. 통합 레인을 Vitest로 직접 호출할 때도 `TEST_DATABASE_URL` 검증을 통과해야 한다.
+
+단위 레인은 `*.spec.ts`와 `*.test.ts`에서 통합 파일을 제외한다. 통합 레인은 `*.integration.spec.ts`·`*.integration.test.ts`와 기존 `integration.test.ts`를 수집한다. Repository 테스트는 실제 DB로 도메인 간 커밋·배열/콜백 롤백·단일 연결 가시성·동일 시각 페이지네이션을 검사한다. 관리자 숨김의 세 분기와 신고의 네 분기를 HTTP로 검증하고, 실제 감사 테이블 제약 위반으로 알림 삭제까지 롤백되는지 확인한다. 단위 테스트는 커서·채팅 삭제 경계·콘텐츠별 알림 정리 정책을 검증한다.
 
 개발 DB 55442는 사용하지 않는다. 외부 X·카카오·Discord·Google/Supercell 인증정보를 비우고 가짜 제공자로 검증한다. 로그인·Origin/권한·글/댓글/답변·채팅/SSE/미디어·테스트 계정/인증·모바일 인증 인계와 친추판매/코칭 메타데이터를 검사한다. 개발 서버에서 외부 API를 실제 검증한 결과와 구분한다.
 
@@ -32,7 +38,7 @@ corepack yarn workspace @side/game-feedback db:test:stop
 - POST /api/support/conversations는 GENERAL/VERIFICATION 문의를 실제 관리자와 기존 1:1 대화로 시작/재사용한다. 담당자가 없는 환경은 503이다. GET /api/admin/support와 PATCH /api/admin/support/:id는 담당 관리자 자신의 문의만 관리한다.
 - USER 신고는 기존 POST /api/reports를 사용한다. 관리자만 GET /api/admin/users/:id, PATCH /api/admin/users/:id/ban, PATCH /api/admin/reports/:id와 기존 인증/숨김 API를 사용할 수 있다. 밴은 기존 세션의 일반 활동에도 적용하되 관리자 문의는 유지한다. 변경 사유와 조치는 AuditLog에 기록한다.
 
-DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 데이터 손실을 강제하지 않고 운영은 scripts/migrate.mjs의 migrate deploy를 사용한다. 운영 파일 저장소/백업과 복구 명령은 [Lightsail 가이드](../../deploy/lightsail/README.md)를 따른다. 외부 저장소 자격 증명, 악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
+DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 데이터 손실을 강제하지 않고 운영은 scripts/migrate.mjs의 migrate deploy를 사용한다. 운영 파일 저장소/백업과 복구 명령은 [공통 EC2·RDS·S3 가이드](../../../../deploy/shared-instance/README.md)를 따른다. 외부 저장소 자격 증명, 악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
 
 `node apps/api/scripts/production-smoke.mjs`는 프로젝트 루트에서 Linux + Docker Compose로 실행하는 API 소유 운영 통합 검사다. `GF_SMOKE_TAG=<40자 SHA>`, `GF_SMOKE_IMAGE_PREFIX=<이미지 prefix>`에 미리 빌드한 API/Web 이미지를 지정한다. 개발 서버 대신 새 Docker project/volume에서 HTTPS·migration·비공개 파일·SSE·백업 복구를 확인하고 생성한 스택만 정리한다. macOS에서는 deploy/lightsail/Dockerfile의 smoke-tools target을 별도 Docker 엔진의 host network와 socket/repository bind로 실행할 수 있다.
 

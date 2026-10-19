@@ -5,6 +5,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { SessionRequest } from '../../auth/session.types';
 import { requireAdmin } from '../../auth/session-access';
 import { ApiError } from '../../common/http/api-error';
+import { match } from 'ts-pattern';
+import { groupBy, uniq } from 'es-toolkit';
+import { hiddenNotificationScope } from './report.policy';
 @Injectable()
 export class AdminReportsService {
   constructor(
@@ -15,18 +18,13 @@ export class AdminReportsService {
     const u = requireAdmin(req);
     await this.transactions.run(async (tx) => {
       const data = { hidden: input.hidden };
-      if (input.targetType === 'POST')
-        await this.repository.updatePost({ where: { id: input.targetId }, data }, tx);
-      if (input.targetType === 'ANSWER')
-        await this.repository.updateAnswer({ where: { id: input.targetId }, data }, tx);
-      if (input.targetType === 'COMMENT')
-        await this.repository.updateComment({ where: { id: input.targetId }, data }, tx);
-      if (input.hidden) {
-        if (input.targetType === 'POST')
-          await this.repository.deleteManyNotification({ where: { postId: input.targetId } }, tx);
-        if (input.targetType === 'ANSWER')
-          await this.repository.deleteManyNotification({ where: { answerId: input.targetId } }, tx);
-      }
+      await match(input.targetType)
+        .with('POST', () => this.repository.updatePost({ where: { id: input.targetId }, data }, tx))
+        .with('ANSWER', () => this.repository.updateAnswer({ where: { id: input.targetId }, data }, tx))
+        .with('COMMENT', () => this.repository.updateComment({ where: { id: input.targetId }, data }, tx))
+        .exhaustive();
+      const scope = hiddenNotificationScope(input);
+      if (scope) await this.repository.deleteManyNotification({ where: scope }, tx);
       await this.repository.createAuditLog(
         {
           data: {
@@ -45,7 +43,8 @@ export class AdminReportsService {
   async reports(req: SessionRequest) {
     requireAdmin(req);
     const rows = await this.repository.findManyReport({ orderBy: { createdAt: 'desc' }, take: 100 });
-    const ids = (type: string) => rows.filter((row) => row.targetType === type).map((row) => row.targetId);
+    const grouped = groupBy(rows, (row) => row.targetType);
+    const ids = (type: string) => uniq((grouped[type] ?? []).map((row) => row.targetId));
     const [posts, answers, comments] = await Promise.all([
       this.repository.findManyPost({
         where: { id: { in: ids('POST') } },

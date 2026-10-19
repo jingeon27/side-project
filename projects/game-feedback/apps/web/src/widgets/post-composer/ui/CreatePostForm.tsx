@@ -6,7 +6,6 @@ import type { TBoardKind, TBattleMode, TCoachingRole } from '@game-feedback/cont
 import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { appRoutes } from '@game-feedback/bridge';
-import { gameBoards } from '@/features/board';
 import { useCreatePostMutation } from '@/features/post';
 import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -82,11 +81,11 @@ export function CreatePostForm({
             },
           })}
         >
-          {gameBoards.map((item) => (
-            <NativeSelectOption key={item.kind} value={item.kind}>
-              {t(item.name)}
-            </NativeSelectOption>
-          ))}
+          <NativeSelectOption value="FEEDBACK">{t('피드백')}</NativeSelectOption>
+          <NativeSelectOption value="FRIEND_SALE">{t('친추판매')}</NativeSelectOption>
+          <NativeSelectOption value="FRIENDLY">{t('전투 모집')}</NativeSelectOption>
+          <NativeSelectOption value="COACHING">{t('게임코치')}</NativeSelectOption>
+          <NativeSelectOption value="FREE">{t('자유게시판')}</NativeSelectOption>
         </NativeSelect>
       </Field>
       <Field label={t('게임')}>
