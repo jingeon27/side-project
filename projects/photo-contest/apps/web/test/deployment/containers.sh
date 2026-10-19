@@ -10,9 +10,11 @@ project="pc-smoke-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 revision=${GITHUB_SHA:-local}
 cp projects/photo-contest/deploy/compose.yaml "$directory/compose.yaml"
 # 운영 라우팅은 그대로 검사하고 인증서 발급만 로컬 CA로 대체한다.
-sed '/encode zstd gzip/a\
-\ttls internal
-' projects/photo-contest/deploy/Caddyfile >"$directory/Caddyfile"
+python3 - projects/photo-contest/deploy/Caddyfile "$directory/Caddyfile" <<'PY'
+import pathlib, sys
+source, destination = map(pathlib.Path, sys.argv[1:])
+destination.write_text(source.read_text().replace('encode zstd gzip', 'encode zstd gzip\n\ttls internal', 1))
+PY
 cat >"$directory/.env" <<EOF
 DOMAIN=localhost
 WEB_ORIGIN=https://localhost:3382

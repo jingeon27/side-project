@@ -4,6 +4,10 @@ import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { expect, test } from '@playwright/test';
 
 test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({ page, request }) => {
+  const origin = new URL(process.env.DEPLOY_SMOKE_ORIGIN ?? 'https://localhost:3382').origin;
+  await page.route('**/*', (route) =>
+    new URL(route.request().url()).origin === origin ? route.continue() : route.abort(),
+  );
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');

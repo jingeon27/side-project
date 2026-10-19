@@ -1,0 +1,93 @@
+name: Shared instance contract
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  shared-instance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: projects/game-feedback/deploy/lightsail/Dockerfile
+          target: api
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-gf-api:${{ github.sha }}
+          cache-from: type=gha,scope=game-feedback-api
+          cache-to: type=gha,mode=max,scope=game-feedback-api
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: projects/game-feedback/deploy/lightsail/Dockerfile
+          target: web
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-gf-web:${{ github.sha }}
+          build-args: |
+            GF_SITE_URL=${{ vars.GF_SITE_URL || 'https://game-feedback.test' }}
+            GF_CONTACT_EMAIL=${{ vars.GF_CONTACT_EMAIL || 'operator@game-feedback.test' }}
+          cache-from: type=gha,scope=game-feedback-web
+          cache-to: type=gha,mode=max,scope=game-feedback-web
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: projects/photo-contest/apps/api/Dockerfile
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-pc-api:${{ github.sha }}
+          cache-from: type=gha,scope=photo-contest-api-amd64
+          cache-to: type=gha,mode=max,scope=photo-contest-api-amd64
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: projects/photo-contest/apps/web/Dockerfile
+          platforms: linux/amd64
+          load: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: side-shared-pc-web:${{ github.sha }}
+          build-args: |
+            WEB_ORIGIN=${{ vars.PHOTO_CONTEST_SITE_URL || 'https://photo-contest.test' }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.PHOTO_CONTEST_WEB_SENTRY_DSN }}
+            NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.PHOTO_CONTEST_AMPLITUDE_API_KEY }}
+          cache-from: type=gha,scope=photo-contest-web-amd64
+          cache-to: type=gha,mode=max,scope=photo-contest-web-amd64
+      - name: Verify both services behind one HTTPS proxy with external database and object storage boundaries
+        env:
+          SIDE_SMOKE_TAG: ${{ github.sha }}
+          SIDE_GF_SITE_URL: ${{ vars.GF_SITE_URL || 'https://game-feedback.test' }}
+          SIDE_PC_SITE_URL: ${{ vars.PHOTO_CONTEST_SITE_URL || 'https://photo-contest.test' }}
+        run: node projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs
+      - name: Archive the exact images verified together
+        run: |
+          docker save "side-shared-gf-api:$GITHUB_SHA" "side-shared-gf-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/game-feedback.tar.gz"
+          docker save "side-shared-pc-api:$GITHUB_SHA" "side-shared-pc-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/photo-contest.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-game-feedback-images-${{ github.sha }}
+          path: ${{ runner.temp }}/game-feedback.tar.gz
+          retention-days: 1
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-photo-contest-images-${{ github.sha }}
+          path: ${{ runner.temp }}/photo-contest.tar.gz
+          retention-days: 1
+          compression-level: 0
