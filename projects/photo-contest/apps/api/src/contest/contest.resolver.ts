@@ -2,7 +2,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
-import { GROUP_ROLE } from '../group/group-role';
+import { isAdmin } from '../group/group-role';
 import { phase } from './contest.policy';
 import { ContestService } from './contest.service';
 import type { IContestNode, ICreateContestInput } from './contest.service';
@@ -33,7 +33,7 @@ export class ContestResolver {
 
   @ResolveField()
   isAdmin(@Parent() contest: IContestNode) {
-    return contest.viewerRole === GROUP_ROLE.OWNER;
+    return isAdmin({ role: contest.viewerRole });
   }
 
   @ResolveField()

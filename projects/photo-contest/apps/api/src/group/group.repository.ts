@@ -141,6 +141,13 @@ export class GroupRepository {
     return client.submission.findUnique(args);
   }
 
+  updateGroupMember<T extends Prisma.GroupMemberUpdateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.GroupMemberUpdateArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.groupMember.update(args);
+  }
+
   recordEvent(client: TDatabaseClient | undefined, event: IAnalyticsEvent) {
     return recordEvent(client ?? this.db, event);
   }

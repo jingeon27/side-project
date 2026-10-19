@@ -1,4 +1,5 @@
-import type { TPostRow } from './post.query';
+import { presentPost } from './post.presenter';
+import { assertContestParticipation } from '../contest/group-contest.policy';
 import { postInclude } from './post.query';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PostRepository } from './post.repository';
@@ -21,7 +22,6 @@ import {
   POST_TITLE_LIMIT,
   UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
-import { isOwner } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
@@ -30,33 +30,17 @@ import { MediaProcessor } from './media-processor';
 interface IPostInput {
   groupId: string;
   uploadId: string;
+  contestId?: string | null;
   title: string;
   body?: string | null;
   rightsConfirmed: boolean;
 }
 interface IPostQuery {
   groupId?: string | null;
+  contestId?: string | null;
   sort?: 'NEWEST' | 'MONTHLY_POPULAR' | null;
   offset?: number | null;
   limit?: number | null;
-}
-function present(row: TPostRow, userId: string | null) {
-  return {
-    id: row.id,
-    groupId: row.groupId,
-    groupName: row.group.name,
-    title: row.title,
-    body: row.body,
-    author: row.author,
-    createdAt: row.createdAt,
-    kind: row.upload.kind,
-    mediaUrl: `/backend/media/${row.id}`,
-    likeCount: row._count.likes,
-    commentCount: row._count.comments,
-    likedByMe: row.likes.length > 0,
-    canDelete: row.authorId === userId || row.group.members.some(isOwner),
-    canInteract: row.group.members.length > 0,
-  };
 }
 @Injectable()
 export class PostService {
@@ -77,12 +61,13 @@ export class PostService {
     const popular = query.sort === 'MONTHLY_POPULAR';
     const rows = await this.repository.listVisiblePosts({
       groupIds,
+      contestId: query.contestId,
       viewerId: viewer?.id ?? null,
       popular,
       offset,
       limit,
     });
-    return rows.map((row) => present(row, viewer?.id ?? null));
+    return rows.map((row) => presentPost(row, viewer?.id ?? null));
   }
   async requestUpload(viewer: IViewer, groupId: string) {
     const token = randomToken();
@@ -171,9 +156,21 @@ export class PostService {
         upload.expiresAt <= new Date()
       )
         fail('업로드가 완료되지 않았거나 만료되었습니다.');
+      if (input.contestId) {
+        const contest = await this.repository.findUniqueContest({ where: { id: input.contestId } }, tx);
+        if (!contest) fail('대회를 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+        assertContestParticipation(contest, input.groupId);
+      }
       const created = await this.repository.createPost(
         {
-          data: { groupId: input.groupId, authorId: viewer.id, uploadId: upload.id, title, body },
+          data: {
+            groupId: input.groupId,
+            authorId: viewer.id,
+            uploadId: upload.id,
+            title,
+            body,
+            contestId: input.contestId ?? null,
+          },
           include: postInclude(viewer.id),
         },
         tx,
@@ -186,7 +183,7 @@ export class PostService {
       });
       return created;
     });
-    return present(row, viewer.id);
+    return presentPost(row, viewer.id);
   }
   async like(viewer: IViewer, postId: string, liked: boolean) {
     const row = await this.transactions.atomic(async (tx) => {
@@ -213,7 +210,7 @@ export class PostService {
         tx,
       );
     });
-    return present(row, viewer.id);
+    return presentPost(row, viewer.id);
   }
   async delete(viewer: IViewer, postId: string) {
     const upload = await this.transactions.atomic(async (tx) => {

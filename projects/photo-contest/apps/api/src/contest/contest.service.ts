@@ -10,7 +10,7 @@ import { siblingLoader } from '../common/batch';
 import { fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
-import { GROUP_ROLE, isOwner, toGroupRole } from '../group/group-role';
+import { isAdmin, toGroupRole } from '../group/group-role';
 import type { TGroupRole } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
@@ -77,7 +77,7 @@ export class ContestService {
   /** 그룹 멤버로 확인된 Group 노드 아래에서만 부른다. 최근 50개, 최신순 */
   async contestsOfGroup(viewer: IViewer, group: { id: string; role: TGroupRole }): Promise<IContestNode[]> {
     const contests = await this.repository.findManyContest({
-      where: { groupId: group.id },
+      where: { groupId: group.id, format: 'LEGACY' },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: GROUP_CONTEST_HISTORY,
     });
@@ -86,10 +86,10 @@ export class ContestService {
 
   /** 관리자만. 권한을 먼저 확인한 뒤 입력을 검사한다. */
   async createContest(viewer: IViewer, input: ICreateContestInput): Promise<IContestNode> {
-    const member = await this.membership.requireOwner(viewer.id, input.groupId);
-    const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
-    const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
-    const contest = await this.transactions.atomic(async (tx) => {
+    const { contest, role } = await this.transactions.atomic(async (tx) => {
+      const member = await this.membership.requireAdmin(viewer.id, input.groupId, tx);
+      const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
+      const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
       const created = await this.repository.createContest(
         { data: { groupId: input.groupId, title, ...dates } },
         tx,
@@ -100,16 +100,16 @@ export class ContestService {
         userId: viewer.id,
         properties: { groupId: input.groupId, contestId: created.id },
       });
-      return created;
+      return { contest: created, role: member.role };
     });
-    return this.toNode(viewer.id, contest, member.role);
+    return this.toNode(viewer.id, contest, role);
   }
 
   /** 종료된 대회만. 숨긴 사진은 빼고 득표순 경쟁 순위로 돌려준다. */
   async results(viewer: IViewer, contestId: string): Promise<IResultView[]> {
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.COMPLETED) fail('대회가 끝난 후 결과를 확인할 수 있습니다.');
-    const admin = isOwner(member);
+    const admin = isAdmin(member);
     const rows = await this.repository.findManySubmission({
       where: { contestId, hidden: false },
       include: submissionInclude(viewer.id, admin),
@@ -158,7 +158,7 @@ export class ContestService {
   }
 
   private node(contest: Contest, viewerRole: TGroupRole, loaders: IContestLoaders): IContestNode {
-    const admin = viewerRole === GROUP_ROLE.OWNER;
+    const admin = isAdmin({ role: viewerRole });
     return {
       ...contest,
       viewerRole,

@@ -1,0 +1,52 @@
+enum GroupContestFilter {
+  ACTIVE
+  OPEN
+  COMPLETED
+}
+
+type GroupContest {
+  id: ID!
+  groupId: ID!
+  title: String!
+  startsAt: DateTime!
+  submissionEndsAt: DateTime!
+  endsAt: DateTime!
+  phase: Phase!
+  isAdmin: Boolean!
+  canParticipate: Boolean!
+  canVote: Boolean!
+  votedPostId: ID
+  entryCount: Int!
+  winners: [GroupContestResult!]!
+}
+
+type GroupContestResult {
+  rank: Int!
+  post: GalleryPost!
+  voteCount: Int!
+  winner: Boolean!
+}
+
+extend type Query {
+  publicGroupContestCount: Int!
+  publicGroupContests(offset: Int = 0, limit: Int = 24): [GroupContest!]!
+  groupContests(
+    groupId: ID!
+    filter: GroupContestFilter = ACTIVE
+    offset: Int = 0
+    limit: Int = 24
+  ): [GroupContest!]!
+  groupContest(id: ID!): GroupContest!
+  groupContestResults(contestId: ID!): [GroupContestResult!]!
+}
+
+extend type Mutation {
+  createGroupContest(
+    groupId: ID!
+    title: String!
+    startsAt: DateTime!
+    submissionEndsAt: DateTime!
+    endsAt: DateTime!
+  ): GroupContest!
+  castGroupContestVote(contestId: ID!, postId: ID!): GroupContest!
+}

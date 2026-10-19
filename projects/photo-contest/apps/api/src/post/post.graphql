@@ -8,7 +8,15 @@ enum PostSort {
   NEWEST
   MONTHLY_POPULAR
 }
+type PostContest {
+  id: ID!
+  groupId: ID!
+  title: String!
+  phase: Phase!
+}
 type GalleryPost {
+  contestId: ID
+  contest: PostContest
   id: ID!
   groupId: ID!
   groupName: String!
@@ -33,13 +41,20 @@ type PostComment {
   canDelete: Boolean!
 }
 extend type Query {
-  galleryPosts(groupId: ID, sort: PostSort = NEWEST, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  galleryPosts(
+    groupId: ID
+    contestId: ID
+    sort: PostSort = NEWEST
+    offset: Int = 0
+    limit: Int = 24
+  ): [GalleryPost!]!
   postComments(postId: ID!, offset: Int = 0, limit: Int = 24): [PostComment!]!
 }
 extend type Mutation {
   uploadPostMedia(uploadId: ID!, file: Upload!): Boolean!
   requestPostUpload(groupId: ID!): UploadTicket!
   createPost(
+    contestId: ID
     groupId: ID!
     uploadId: ID!
     title: String!

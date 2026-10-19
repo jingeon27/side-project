@@ -44,6 +44,41 @@ export class ContestRepository {
     });
   }
 
+  findUniqueContest<T extends Prisma.ContestFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ContestFindUniqueArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.contest.findUnique(args);
+  }
+
+  countContest<T extends Prisma.ContestCountArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ContestCountArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.contest.count(args);
+  }
+
+  findManyPost<T extends Prisma.PostFindManyArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PostFindManyArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.post.findMany(args);
+  }
+
+  findUniquePost<T extends Prisma.PostFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PostFindUniqueArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.post.findUnique(args);
+  }
+
+  createPostContestVote<T extends Prisma.PostContestVoteCreateArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PostContestVoteCreateArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.postContestVote.create(args);
+  }
+
   recordEvent(client: TDatabaseClient | undefined, event: IAnalyticsEvent) {
     return recordEvent(client ?? this.db, event);
   }
