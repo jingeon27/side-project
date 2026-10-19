@@ -31,5 +31,4 @@ describe('group.helper', () => {
     expect(isGroupAdmin(GroupRole.Member)).toBe(false);
     expect(isGroupAdmin(null)).toBe(false);
   });
-
 });

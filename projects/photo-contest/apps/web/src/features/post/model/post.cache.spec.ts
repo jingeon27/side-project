@@ -119,19 +119,22 @@ describe('그룹 게시물 캐시', () => {
   });
   it('그룹 피드와 각 대회 참여작의 offset 목록을 분리해야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });
-    const write = (contestId: string | undefined, offset: number, id: string) => cache.writeQuery({
-      query: GalleryPostsDocument,
-      variables: { ...VARIABLES, groupId: 'a', contestId, offset },
-      data: { galleryPosts: [post(id, 'a')] },
-    });
+    const write = (contestId: string | undefined, offset: number, id: string) =>
+      cache.writeQuery({
+        query: GalleryPostsDocument,
+        variables: { ...VARIABLES, groupId: 'a', contestId, offset },
+        data: { galleryPosts: [post(id, 'a')] },
+      });
     write(undefined, 0, 'general');
     write('first', 0, 'first-new');
     write('first', 1, 'first-old');
     write('second', 0, 'second-new');
-    const read = (contestId?: string) => cache.readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'a', contestId } })?.galleryPosts.map(({ id }) => id);
+    const read = (contestId?: string) =>
+      cache
+        .readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'a', contestId } })
+        ?.galleryPosts.map(({ id }) => id);
     expect(read()).toEqual(['general']);
     expect(read('first')).toEqual(['first-new', 'first-old']);
     expect(read('second')).toEqual(['second-new']);
   });
-
 });
