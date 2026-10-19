@@ -1,5 +1,17 @@
 # 웃긴순간 구현 기록
 
+## 2026-10-20 링크 첨부와 사진·동영상 저장
+
+사진·동영상 없이 유튜브·일반 HTTP/HTTPS 링크만 게시하거나 파일과 링크를 함께 등록한다. Post.uploadId를 nullable로 확장하고 linkUrl과 첨부 필수 CHECK를 추가해 기존 파일과 FK 동작을 보존했다. 링크 글도 기존 그룹 공개 범위·멤버십·대회·댓글·반응·삭제 규칙을 따르고, 서버가 사용자 링크의 외부 메타데이터를 가져오지 않는다.
+
+PostLinkField·PostAttachments·PostLink·PostDownloadButton으로 작성·파일·링크 표시·저장을 분리했다. 유튜브는 정확한 호스트와 ID만 사용하며 클릭 후 재생한다. 일반 링크는 외부 브라우저로 열고 복사할 수 있다. 공개 링크는 JSON-LD citation으로 제공하고 파일 없는 글에 사진·MediaObject를 만들지 않는다. 약관·개인정보 안내에도 링크와 외부 영상 재생을 반영했다.
+
+postDownload는 readablePost로 권한·숨김·파일을 확인한 뒤 S3 최대 60초 presigned GET 또는 로컬 attachment 다운로드 경로를 반환한다. 한글 파일명·no-store·Range를 지원하며 웹은 Apollo no-cache로 매번 발급받는다. 앱의 link.open은 8KB까지 긴 서명 URL을 허용한다. 서명 검증은 테스트용 임시 자격 증명으로 실제 AWS SDK를 실행하며 운영 S3 객체·IAM에 접속한 검증과 구분한다.
+
+로컬 검증: API unit 102·실제 PostgreSQL 통합 245(첨부 사양 8개 포함), 웹 unit/UI 307·실제 API 문서 18, bridge 36·모바일 unit/UI 137, 실제 standalone 캐시 3, 모바일 WebView 24가 통과했다(기존 조건부 2개 제외). 웹 전체 60개 실행은 57개 통과 후 장시간 중단된 권한 검사 1개와 WebKit의 한글 파일명 NFD 비교 2개가 실패했다. 파일명 비교를 NFC로 보정하고 재실행의 반복 컴파일을 막도록 격리 e2e에만 Turbopack 디스크 컴파일 캐시를 끈 뒤 실패 항목·저장·약관 10개를 Chrome/WebKit/데스크톱에서 재확인해 모두 통과했다. 프로젝트 check·lint·타입 검사도 통과했다.
+
+20261020030000_post_links는 개발·운영 DB에 아직 적용하지 않았다. 앱·Web·API 반영 순서와 발급한 S3 주소의 권한 유지 시간, 투네이션 페이지의 실제 확인 범위는 [첨부·저장 계약](post-attachments.md)에 기록했다. 자체 영상 주소가 투네이션의 영상 후원에서 재생된다는 주장은 하지 않는다.
+
 ## 2026-10-20 공개 서버 캐시와 Codex 지침 정리
 
 Next fetch Data Cache에 익명 SEO 콘텐츠는 30초, 사이트맵 데이터는 60초의 재검증 주기를 적용했다. 공개 여부·대회 소속·일정은 매 요청 확인하고 개인화된 SSR/Apollo는 no-store를 유지한다. 캐시는 query 문서만 허용하며 API URL·Origin·문서·변수별로 분리된다. 일반 GraphQL 실행 오류는 HTTP 200을 유지하고 캐시용 공개 query 오류만 400으로 구분해 실패 응답을 성공 데이터로 저장하지 않는다.

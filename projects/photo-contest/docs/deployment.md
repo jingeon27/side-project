@@ -9,3 +9,5 @@ Photo Contest의 실제 운영 Compose는 [`deploy/shared-instance/compose.yaml`
 이전 Oracle ARM64·단독 Compose·로컬 DB 백업 절차는 [기록](deployment-legacy.md)으로 보존한다. 해당 Compose는 기존 컨테이너 회귀 테스트에 쓰며 새 CD의 운영 대상으로 쓰지 않는다.
 
 공개 캐시를 도입한 릴리스는 API·Web 이미지뿐 아니라 공통 Caddyfile도 운영 호스트의 `proxy/Caddyfile`에 갱신해야 한다. 이미지 배포만으로 공통 프록시 설정이 바뀌지는 않는다. 기존 [proxy.sh](../../../deploy/shared-instance/scripts/proxy.sh)의 `validate` 후 `reload`를 실행한다. PC 경로는 내부 URL 차단→GraphQL→일반 API→Web 순서를 route 블록으로 고정한다.
+
+링크 게시물 릴리스는 20261020030000_post_links 마이그레이션을 API·Web 교체 전에 적용한다. S3 다운로드는 기존 GetObject 권한으로 최대 60초 presigned URL을 만든다. 브라우저의 파일 탐색 이동이므로 별도 공개 버킷이나 파일 업로드용 CORS 개방이 필요하지 않다. 긴 서명 URL을 8KB까지 전달하려면 변경한 bridge 패키지를 포함해 모바일 앱을 빌드한다. [첨부·저장 계약](post-attachments.md)을 참고한다.

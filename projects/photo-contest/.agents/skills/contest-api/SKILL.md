@@ -78,3 +78,5 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 새 규칙에는 실제 PostgreSQL + supertest 테스트를 붙인다(`testing` 스킬).
 
 Service의 Prisma I/O는 도메인 Repository에 두고 UnitOfWork.atomic의 tx를 모든 권한·읽기·쓰기·이벤트에 전달한다.
+
+게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 S3 최대 60초 presigned GET 또는 로컬 attachment 다운로드 경로를 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.

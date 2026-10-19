@@ -49,6 +49,8 @@ Next.js fetch Data Cache에 공개 게시물·대회 목록·결과는 30초, �
 
 `test:cache`는 개발 서버 대신 별도 dist의 실제 standalone 운영 빌드와 격리 API/DB를 실행한다. 반복 요청의 캐시 재사용, 정상·부분 성공 쓰기 뒤 즉시 만료, 사이트맵, 비공개 제외, Origin·본문 한도, 쿠키와 multipart 전달을 검사한다. 앱 CI의 web 브라우저 레인에서 실행한다.
 
+링크 첨부는 공개 게시물의 citation으로 제공한다. kind=LINK에는 사진·MediaObject·썸네일을 만들지 않고 비공개 링크는 SEO에 넣지 않는다. 파일 저장용 presigned URL은 공개 SEO·사이트맵 쿼리에 포함하지 않는다.
+
 ## 배포 후 확인
 
 1. 실제 도메인의 공개 그룹을 로그아웃 상태로 열고 HTML 소스에서 title·canonical·robots·OG/Twitter·application/ld+json과 게시물 본문을 확인한다.

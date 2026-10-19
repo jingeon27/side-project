@@ -51,3 +51,5 @@
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
 
 운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB·미디어 volume을 지우거나 DB를 자동으로 되돌리지 않는다.
+
+게시물 첨부는 파일 또는 HTTP·HTTPS 링크 중 하나 이상이다. Post.uploadId는 nullable, linkUrl은 선택이며 링크만 있으면 kind=LINK·mediaUrl=null이다. postDownload는 기존 읽기 권한을 검사한 뒤 S3 최대 60초 presigned GET 또는 매번 권한을 검사하는 로컬 attachment 경로를 반환한다. URL은 조회할 때마다 새로 받고 Apollo·Next 공개 캐시에 넣지 않는다. 링크 URL로 서버가 외부 메타데이터를 가져오지 않는다. 전체 계약·투네이션 확인 범위는 docs/post-attachments.md를 따른다.
