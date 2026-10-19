@@ -38,7 +38,7 @@ corepack yarn workspace @photo-contest/api db:generate
 
 ## 검증
 
-- `corepack yarn workspace @photo-contest/api test:e2e`: globalSetup이 테스트 DB에 새 `api_test_*` 스키마를 만들고 모든 마이그레이션을 `prisma migrate deploy`로 적용한다. client는 schema.prisma 기준이라 SQL이 빠뜨린 열·제약은 그것을 쓰는 테스트에서만 드러난다 — 새 열·제약을 쓰는 api 테스트를 같이 더한다. 이어서 `typecheck`.
+- `corepack yarn workspace @photo-contest/api test:integration`: globalSetup이 테스트 DB에 새 `api_test_*` 스키마를 만들고 모든 마이그레이션을 `prisma migrate deploy`로 적용한다. client는 schema.prisma 기준이라 SQL이 빠뜨린 열·제약은 그것을 쓰는 테스트에서만 드러난다 — 새 열·제약을 쓰는 api 테스트를 같이 더한다. 이어서 `typecheck`.
 
 ## `Database.atomic()` (`src/database/database.service.ts`)
 

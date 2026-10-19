@@ -42,7 +42,7 @@
 | 스크립트 | 내용 |
 | --- | --- |
 | `test` · `test:unit` | Vitest `unit`: `src/**/*.spec.ts`(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
-| `test:e2e` | Vitest `e2e`: `test/e2e/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test:integration` | Vitest `e2e`: `test/integration/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
 
@@ -54,3 +54,5 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 - `.claude/skills/api-test/SKILL.md`: unit·실제 DB/supertest e2e·하네스.
 
 테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계·외부 성공 콜백 티켓을 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
+
+`test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
