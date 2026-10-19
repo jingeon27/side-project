@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateSharedInstanceEnvironment } from './shared-instance.config';
 
 const publicOrigin = z.url().refine((value) => {
   const url = new URL(value);
@@ -17,6 +18,7 @@ const secret = z
 /** Report variable names only: validation errors must never print credentials. */
 export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
   if (env.NODE_ENV !== 'production') return;
+  validateSharedInstanceEnvironment(env);
   const result = z
     .object({
       WEB_ORIGIN: publicOrigin,
