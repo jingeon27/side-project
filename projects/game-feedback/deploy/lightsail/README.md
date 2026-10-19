@@ -1,3 +1,5 @@
+> 이전 Lightsail 단독 배포 기록입니다. 현재 운영은 [공통 EC2·RDS·S3 가이드](../../../../deploy/shared-instance/README.md)를 따릅니다. 이 디렉터리의 Dockerfile과 Compose는 기존 회귀 테스트에서도 사용합니다.
+
 # Lightsail 서울 운영
 
 Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, PostgreSQL을 실행한다. 이미지는 GitHub Actions에서 빌드하며 서버에서 Yarn/Next 빌드를 하지 않는다. Admin은 이 서버에 배포하지 않고 로컬 React 서비스에서 SSH 터널로 연결한다.

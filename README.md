@@ -57,6 +57,10 @@ corepack yarn workspace @side/game-feedback dev:demo
 
 웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. [모바일 앱](projects/game-feedback/apps/mobile/README.md)은 이 웹을 Expo WebView로 열며 Metro 8082를 사용합니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
 
+## 공통 운영 배포
+
+두 서비스는 서울 EC2 한 대에서 공통 Caddy를 사용하고, 외부 RDS PostgreSQL의 서비스별 DB·role과 서로 다른 비공개 S3 버킷을 사용합니다. [설정·CD·백업 복구 안내](deploy/shared-instance/README.md)를 따르세요. 운영 이미지는 AMD64이며 DB는 애플리케이션 Compose에 포함하지 않습니다.
+
 ## 공통 디자인 시스템
 
 [설계와 사용법](packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.

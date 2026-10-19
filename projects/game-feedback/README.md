@@ -195,7 +195,7 @@ Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial
 
 관리자 실행·로그인·검증 절차는 [Admin README](apps/admin/README.md)를 참고한다. 운영 배포 준비 요청 이후 최초 migration을 포함하며 운영은 `migrate deploy`, 로컬은 전용 URL 가드를 거친 `db:sync`를 사용한다. 기존 로컬 DB를 초기화하거나 최초 migration을 중복 적용하지 않는다.
 
-AWS Lightsail 서울의 인프라 템플릿, Docker/HTTPS, GitHub Actions CD와 사용자 설정 순서는 [운영 가이드](deploy/lightsail/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다.
+Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS PostgreSQL과 서비스별 S3 버킷을 사용한다. Docker/HTTPS, GitHub Actions CD, DB 권한 분리와 복구 절차는 [공통 운영 가이드](../../deploy/shared-instance/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다. 이전 Lightsail 구성은 단독 컨테이너 회귀 테스트용으로 보존한다.
 
 API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
 

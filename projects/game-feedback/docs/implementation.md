@@ -1,5 +1,26 @@
 # 구현 및 검증 기록
 
+## 2026-10-19 공통 EC2·RDS·S3와 Repository
+
+운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
+
+- 두 API의 도메인 Service에서 DB 직접 접근을 Repository로 옮겼다. UnitOfWork가 같은 트랜잭션 client를 전달하며 권한·미디어·이벤트도 같은 연결을 사용한다. DB 스키마와 API 계약은 유지했다.
+- 런타임 DML과 일회성 DDL 자격 증명을 분리하고 RDS hostname·TLS CA·role·pool 한도를 검증한다. 두 DB와 버킷을 분리하고 Caddy만 공유한다. GF 작성 중 가시성 조회가 다른 연결을 기다리던 경로도 수정했다.
+- CI가 함께 검증한 AMD64 이미지를 그대로 게시·digest 배포한다. 공통 호스트 lock, provider PITR 검사, 이전 앱 롤백, current/previous 이미지 보호를 적용했다. Web liveness와 API DB readiness를 분리했다.
+
+| 실제 로컬 실행            | 결과                                                                                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GF API Vitest·Supertest   | 134개 통과, 연결 1개로 글 작성 3건·세션 조회 3건 동시 처리와 구독 알림 포함                                                                                              |
+| PC API Vitest / Supertest | 74개 / 211개 통과, 도메인 간 단일 연결·전체 롤백 포함                                                                                                                    |
+| PC 프로젝트 check         | 통과, Web 단위 테스트 287개 포함                                                                                                                                         |
+| GF 프로젝트 check         | 통과                                                                                                                                                                     |
+| 운영 도구 테스트          | 14개 통과: PITR 잘못된 설정·시각 거부, 양쪽 current/previous 이미지 보존·범위 밖 삭제 거부                                                                               |
+| 실제 운영 이미지 통합     | 두 API/Web AMD64 build, 공통 HTTPS Caddy·PostgreSQL TLS·별도 DML/DDL·S3/Range·SSE·오래된 PITR 거부·보호된 릴리스 덮어쓰기 거부·독립 롤백·재시작 보존·생존/준비 상태 통과 |
+| PC 운영 이미지 Playwright | 1개 통과: 가입·사진/동영상·댓글·공개 SEO·비공개 미디어·재시작 보존과 DB 백업의 새 DB 복원                                                                                |
+| 계약·정적 검사            | 두 서비스 codegen 결과 변경 없음, format·actionlint·shellcheck 통과                                                                                                      |
+
+실제 AWS 리소스는 생성·변경하지 않았고 운영 CD·공인 DNS/ACME·실제 RDS PITR 복원·S3 IAM 분리는 미검증이다. 통합 검사의 S3 HTTP 경계와 RDS Describe 응답·registry 매핑은 fixture이며 앱·DB·TLS·프록시는 실제로 실행했다. 제공된 계획의 전체 캐시 개편과 나머지 제품 결함은 이번 변경의 완료 범위가 아니다. 테스트는 전용 DB·격리 스키마·별도 Docker profile에서 실행했다.
+
 갱신일: 2026-10-18. 대상 저장소는 [jingeon27/side-project](https://github.com/jingeon27/side-project)이며 `develop`에서 분리한 `feat/game-feedback` Worktree에 구현한다. 사용자 제공 [MVP Plan v4.0 원문](mvp-plan-v4.md)은 수정하지 않는다.
 
 ## 구현 범위
