@@ -1,5 +1,13 @@
 # 웃긴순간 구현 기록
 
+## 2026-10-20 Repository 단위·통합 테스트 보강
+
+- 트랜잭션 오류 정책을 순수 함수로 분리해 ts-pattern으로 분기한다. 기존 P2034의 최대 4회 시도, P2002의 즉시 CONFLICT, 나머지 오류의 원형 전파를 유지하고 let/for 반복을 재귀 호출로 바꿨다.
+- 단위 테스트 12개를 추가해 재시도 경계·unique 충돌·FK/미존재/연결 풀 오류·Prisma 오류가 아닌 값을 검증한다. API unit은 총 86개 통과했다.
+- 실제 PostgreSQL 통합 테스트 6개를 추가했다. 단일 연결의 사용자·그룹·멤버십·이벤트 커밋, lazy 배열 쿼리 순서·롤백, atomic unique의 재시도 금지, 실제 직렬화 충돌 재시도·이벤트 중복 방지와 4회 충돌 후 완전 롤백을 확인한다. API integration은 총 217개 통과했다.
+- DB 목이나 고정 지연 없이 barrier로 두 실제 트랜잭션의 읽기를 동기화해 충돌을 재현한다. 별도 임시 PostgreSQL과 api_test_* 스키마를 사용하고 종료 후 정리했다. 기존 개발 DB·서버·dist에는 변경이 없다.
+- API typecheck와 ESLint를 통과했다. DB 스키마·GraphQL/REST 계약과 외부 서비스 설정은 변경하지 않는다.
+
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 
 운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
