@@ -106,7 +106,7 @@ jobs:
       - run: yarn workspace @side/design-system check
       - run: yarn workspace @side/photo-contest check
       - run: yarn workspace @photo-contest/web lint && yarn workspace @photo-contest/mobile lint
-      - run: yarn workspace @photo-contest/api test:e2e
+      - run: yarn workspace @photo-contest/api test:integration
       - run: yarn workspace @photo-contest/web test:api
       - run: yarn workspace @photo-contest/mobile test:api
       - run: yarn build:photo-contest
