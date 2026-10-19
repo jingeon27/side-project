@@ -73,7 +73,7 @@ test(
     await (await selectionChooser).setFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '선택한 파일 제거' }).click();
-    await expect(sheet.getByText('사진이나 동영상을 선택해 주세요.')).toBeVisible();
+    await expect(sheet.getByText('사진·동영상 또는 링크를 첨부해 주세요.')).toBeVisible();
     await picker.setInputFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();

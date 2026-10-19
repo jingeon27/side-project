@@ -1,6 +1,6 @@
+import { postAttachmentJsonLd, postImageUrls } from '@/features/post';
 import {
   GroupVisibility,
-  PostKind,
   type GalleryPostsQuery,
   type GroupContestAwardFragment,
   type PublicGroupContestSeoQuery,
@@ -26,10 +26,7 @@ export function groupContestMetadata(data: IGroupContestSeoData, contestId: stri
       index: false,
       images: [],
     });
-  const images = data.posts
-    .filter((post) => post.kind === PostKind.Photo)
-    .slice(0, 3)
-    .map((post) => siteUrl(post.mediaUrl, origin));
+  const images = postImageUrls(data.posts, origin).slice(0, 3);
   return createPageMetadata({
     origin,
     path,
@@ -76,14 +73,7 @@ export function groupContestJsonLd(data: IGroupContestSeoData, origin: string) {
         description: `${group.name}에서 사진·동영상·합성으로 참여하는 온라인 대회입니다.`,
         eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
         location: { '@type': 'VirtualLocation', url },
-        ...(posts.some((post) => post.kind === PostKind.Photo)
-          ? {
-              image: posts
-                .filter((post) => post.kind === PostKind.Photo)
-                .slice(0, 3)
-                .map((post) => siteUrl(post.mediaUrl, origin)),
-            }
-          : {}),
+        ...(postImageUrls(posts, origin).length ? { image: postImageUrls(posts, origin).slice(0, 3) } : {}),
       },
       {
         '@type': 'CollectionPage',
@@ -111,15 +101,7 @@ export function groupContestJsonLd(data: IGroupContestSeoData, origin: string) {
               ...(contest.winners.some((winner) => winner.post.id === post.id)
                 ? { award: `${contest.title} ${contest.winners.length > 1 ? '공동 우승' : '우승'}` }
                 : {}),
-              ...(post.kind === PostKind.Photo
-                ? { image: siteUrl(post.mediaUrl, origin) }
-                : {
-                    associatedMedia: {
-                      '@type': 'MediaObject',
-                      name: post.title,
-                      contentUrl: siteUrl(post.mediaUrl, origin),
-                    },
-                  }),
+              ...postAttachmentJsonLd(post, origin),
             },
           })),
         },

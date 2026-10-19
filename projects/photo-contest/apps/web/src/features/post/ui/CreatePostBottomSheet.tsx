@@ -22,6 +22,7 @@ import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
 import { PostContestField } from './PostContestField';
 import { PostMediaField } from './PostMediaField';
+import { PostLinkField } from './PostLinkField';
 
 export function CreatePostBottomSheet({
   groupId,
@@ -39,6 +40,7 @@ export function CreatePostBottomSheet({
       title: '',
       body: '',
       media: null,
+      linkUrl: '',
       rightsConfirmed: false,
     },
   });
@@ -74,18 +76,33 @@ export function CreatePostBottomSheet({
           id={formId}
           noValidate
           onSubmit={form.handleSubmit(
-            async ({ title, body, media: file, rightsConfirmed, participateInContest, contestId }) => {
+            async ({
+              title,
+              body,
+              media: file,
+              linkUrl,
+              rightsConfirmed,
+              participateInContest,
+              contestId,
+            }) => {
               try {
-                const content = file.type.startsWith('video/')
-                  ? { body: file, contentType: file.type }
-                  : await prepareUploadImage(file, browserImageCodec);
-                const { data } = await requestUpload({ variables: { groupId } });
-                if (!data) return;
-                await uploadMedia({ variables: { uploadId: data.requestPostUpload.id, file: content.body } });
+                let uploadId: string | undefined;
+                if (file) {
+                  const content = file.type.startsWith('video/')
+                    ? { body: file, contentType: file.type }
+                    : await prepareUploadImage(file, browserImageCodec);
+                  const { data } = await requestUpload({ variables: { groupId } });
+                  if (!data) return;
+                  await uploadMedia({
+                    variables: { uploadId: data.requestPostUpload.id, file: content.body },
+                  });
+                  uploadId = data.requestPostUpload.id;
+                }
                 await createPost({
                   variables: {
                     groupId,
-                    uploadId: data.requestPostUpload.id,
+                    uploadId,
+                    linkUrl: linkUrl || null,
                     title,
                     body,
                     rightsConfirmed,
@@ -123,6 +140,7 @@ export function CreatePostBottomSheet({
             {...form.register('body')}
           />
           <div className="flex flex-col gap-4 desktop:col-start-2 desktop:row-start-3">
+            <PostLinkField form={form} />
             <PostContestField groupId={groupId} form={form} />
             <label className="flex min-h-touch items-start gap-3 text-body text-ink">
               <input

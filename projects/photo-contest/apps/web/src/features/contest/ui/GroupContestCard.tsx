@@ -1,7 +1,7 @@
 'use client';
 
 import { useFragment } from '@apollo/client/react';
-import { Trophy, Video } from 'lucide-react';
+import { Link2, Trophy, Video } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { GroupContestCardFragmentDoc, PostKind } from '@/shared/api/generated';
@@ -55,7 +55,7 @@ export function GroupContestCard({ id, hallOfFame = false }: { id: string; hallO
                   {rank}
                 </span>
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-control bg-sunken">
-                  {post.kind === PostKind.Photo ? (
+                  {post.kind === PostKind.Photo && post.mediaUrl ? (
                     <Image
                       unoptimized
                       fill
@@ -64,6 +64,8 @@ export function GroupContestCard({ id, hallOfFame = false }: { id: string; hallO
                       alt={post.title}
                       className="object-cover"
                     />
+                  ) : post.kind === PostKind.Link ? (
+                    <Link2 aria-label="링크 우승작" className="m-auto h-full w-6 text-muted" />
                   ) : (
                     <Video aria-label="동영상 우승작" className="m-auto h-full w-6 text-muted" />
                   )}

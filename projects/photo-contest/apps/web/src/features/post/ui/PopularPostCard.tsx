@@ -1,7 +1,7 @@
 'use client';
 
 import { useFragment } from '@apollo/client/react';
-import { Heart, Play } from 'lucide-react';
+import { Heart, Link2, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -26,11 +26,15 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
           <span className="sr-only">위</span>
         </span>
         <span className="relative size-16 shrink-0 overflow-hidden rounded-control bg-sunken">
-          {post.kind === PostKind.Photo ? (
+          {post.kind === PostKind.Photo && post.mediaUrl ? (
             <Image src={post.mediaUrl} alt="" fill unoptimized sizes="64px" className="object-cover" />
           ) : (
             <span className="flex size-full items-center justify-center bg-neutral-soft text-ink">
-              <Play aria-hidden className="size-5" />
+              {post.kind === PostKind.Link ? (
+                <Link2 aria-hidden className="size-5" />
+              ) : (
+                <Play aria-hidden className="size-5" />
+              )}
             </span>
           )}
         </span>

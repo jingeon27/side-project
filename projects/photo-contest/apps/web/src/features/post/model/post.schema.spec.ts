@@ -9,6 +9,14 @@ const post = {
 };
 
 describe('게시물의 대회 참여 선택', () => {
+  it('사진 없이 링크로 등록하거나 파일과 링크를 함께 첨부할 수 있어야 한다', () => {
+    expect(
+      postSchema.parse({ ...post, media: null, linkUrl: ' https://youtu.be/abcdefghijk ' }),
+    ).toMatchObject({ media: null, linkUrl: 'https://youtu.be/abcdefghijk' });
+    expect(postSchema.safeParse({ ...post, linkUrl: 'https://example.com/source' }).success).toBe(true);
+    expect(postSchema.safeParse({ ...post, media: null, linkUrl: '' }).success).toBe(false);
+    expect(postSchema.safeParse({ ...post, linkUrl: 'javascript:alert(1)' }).success).toBe(false);
+  });
   it('일반 게시물은 대회를 선택하지 않아도 등록할 수 있어야 한다', () => {
     expect(postSchema.parse(post)).toMatchObject({ participateInContest: false, contestId: '' });
     expect(

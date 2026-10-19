@@ -45,6 +45,7 @@ const data: IGroupContestSeoData = {
       title: '참여 사진',
       body: '순간 포착',
       kind: PostKind.Photo,
+      linkUrl: null,
       mediaUrl: '/backend/media/photo',
       createdAt: '2026-10-20T00:00:00Z',
       likeCount: 2,

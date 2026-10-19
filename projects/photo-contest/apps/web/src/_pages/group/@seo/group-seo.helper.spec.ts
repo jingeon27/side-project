@@ -25,6 +25,7 @@ const data: IGroupSeoData = {
       title: '고양이 점프',
       body: '사진에 나온 순간\n전체 본문',
       kind: PostKind.Photo,
+      linkUrl: null,
       mediaUrl: '/backend/media/post-1',
       createdAt: '2026-10-19T00:00:00.000Z',
       likeCount: 5,
@@ -77,6 +78,22 @@ describe('공개 그룹 SEO', () => {
     });
   });
 
+  it('링크만 있는 게시물은 출처를 표시하고 존재하지 않는 파일을 메타데이터에 만들지 않아야 한다', () => {
+    const links = {
+      ...data,
+      posts: data.posts.map((post) => ({
+        ...post,
+        kind: PostKind.Link,
+        mediaUrl: null,
+        linkUrl: 'https://example.com/source',
+      })),
+    };
+    const json = JSON.stringify(groupJsonLd(links, origin));
+    expect(json).toContain('"citation":"https://example.com/source"');
+    expect(json).not.toContain('associatedMedia');
+    expect(json).not.toContain('/backend/media/');
+    expect(JSON.stringify(groupMetadata(links, origin))).not.toContain('/backend/media/');
+  });
   it('영상에 없는 썸네일을 꾸며 넣지 않고 실제 미디어 주소를 써야 한다', () => {
     const video = { ...data, posts: data.posts.map((post) => ({ ...post, kind: PostKind.Video })) };
     const json = JSON.stringify(groupJsonLd(video, origin));

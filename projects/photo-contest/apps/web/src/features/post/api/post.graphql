@@ -13,6 +13,7 @@ fragment GalleryPostCard on GalleryPost {
   body
   kind
   mediaUrl
+  linkUrl
   createdAt
   likeCount
   commentCount
@@ -39,7 +40,8 @@ mutation RequestPostUpload($groupId: ID!) {
 mutation CreatePost(
   $contestId: ID
   $groupId: ID!
-  $uploadId: ID!
+  $uploadId: ID
+  $linkUrl: String
   $title: String!
   $body: String
   $rightsConfirmed: Boolean!
@@ -48,6 +50,7 @@ mutation CreatePost(
     contestId: $contestId
     groupId: $groupId
     uploadId: $uploadId
+    linkUrl: $linkUrl
     title: $title
     body: $body
     rightsConfirmed: $rightsConfirmed
@@ -71,6 +74,14 @@ mutation DeletePost($postId: ID!) {
 
 mutation UploadPostMedia($uploadId: ID!, $file: Upload!) {
   uploadPostMedia(uploadId: $uploadId, file: $file)
+}
+
+query PostDownload($postId: ID!) {
+  postDownload(postId: $postId) {
+    url
+    filename
+    expiresAt
+  }
 }
 
 fragment PostCommentCard on PostComment {

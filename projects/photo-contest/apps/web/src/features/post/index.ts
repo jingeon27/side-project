@@ -5,3 +5,4 @@ export { postTypePolicies } from './model/post.type-policies';
 export { resetGalleryPosts } from './model/post.cache';
 export { PostCard } from './ui/PostCard';
 export { PostMedia } from './ui/PostMedia';
+export { postAttachmentJsonLd, postImageUrls } from './model/post-seo.helper';

@@ -24,6 +24,7 @@ function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][nu
     title: id,
     body: '',
     kind: PostKind.Photo,
+    linkUrl: null,
     mediaUrl: '/backend/media/' + id,
     createdAt: '2026-10-15T00:00:00Z',
     likeCount: 0,

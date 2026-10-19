@@ -1,9 +1,5 @@
-import {
-  GroupVisibility,
-  PostKind,
-  type GroupContestsQuery,
-  type PublicGroupSeoQuery,
-} from '@/shared/api/generated';
+import { postAttachmentJsonLd, postImageUrls } from '@/features/post';
+import { GroupVisibility, type GroupContestsQuery, type PublicGroupSeoQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
 
@@ -23,11 +19,10 @@ export function groupContestsMetadata(data: IGroupContestsSeoData, hallOfFame: b
       index: false,
       images: [],
     });
-  const images = data.contests
-    .flatMap((contest) => contest.winners)
-    .filter(({ post }) => post.kind === PostKind.Photo)
-    .slice(0, 3)
-    .map(({ post }) => siteUrl(post.mediaUrl, origin));
+  const images = postImageUrls(
+    data.contests.flatMap((contest) => contest.winners.map(({ post }) => post)),
+    origin,
+  ).slice(0, 3);
   return createPageMetadata({
     origin,
     path,
@@ -90,7 +85,7 @@ export function groupContestsJsonLd(data: IGroupContestsSeoData, hallOfFame: boo
                 name: post.title,
                 url: `${siteUrl(ROUTES.GROUP_CONTEST(data.group.id, contest.id), origin)}#post-${post.id}`,
                 author: { '@type': 'Person', name: post.author.nickname },
-                ...(post.kind === PostKind.Photo ? { image: siteUrl(post.mediaUrl, origin) } : {}),
+                ...postAttachmentJsonLd(post, origin),
               })),
             },
           })),
