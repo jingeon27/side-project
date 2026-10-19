@@ -51,15 +51,22 @@
 		max_size 110MB
 	}
 	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|backend/testing(?:/|$))
-	respond @internal 404
-	handle_path /backend/* {
-		reverse_proxy pc-api:4200 {
-			flush_interval -1
+	@graphql path_regexp graphql (?i)^/backend/graphql/?$
+	route {
+		respond @internal 404
+		handle @graphql {
+			rewrite * /backend/graphql
+			reverse_proxy pc-web:3200
 		}
-	}
-	handle {
-		reverse_proxy pc-web:3200 {
-			flush_interval -1
+		handle_path /backend/* {
+			reverse_proxy pc-api:4200 {
+				flush_interval -1
+			}
+		}
+		handle {
+			reverse_proxy pc-web:3200 {
+				flush_interval -1
+			}
 		}
 	}
 }

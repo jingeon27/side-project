@@ -7,6 +7,11 @@
 	request_body {
 		max_size 110MB
 	}
+	@graphql path_regexp graphql (?i)^/backend/graphql/?$
+	handle @graphql {
+		rewrite * /backend/graphql
+		reverse_proxy web:3200
+	}
 	handle_path /backend/* {
 		reverse_proxy api:4200
 	}
