@@ -28,7 +28,10 @@ const WRONG_ORIGINS = [
 /** 로그인이 필요한 모든 GraphQL 연산. 인자는 형식만 맞춘 값이다. */
 const PROTECTED_OPERATIONS: Array<[string, string]> = [
   ['myGroups', '{ myGroups { id } }'],
-  ['group', '{ group(id: "group") { id } }'],
+  ['requestGroupMembership', 'mutation { requestGroupMembership(groupId: "group") { id } }'],
+  ['approveGroupJoinRequest', 'mutation { approveGroupJoinRequest(requestId: "request") }'],
+  ['rejectGroupJoinRequest', 'mutation { rejectGroupJoinRequest(requestId: "request") }'],
+  ['groupJoinRequests', '{ groupJoinRequests(groupId: "group") { id } }'],
   ['contest', '{ contest(id: "contest") { id } }'],
   ['contestResults', '{ contestResults(contestId: "contest") { rank } }'],
   ['submissions', '{ submissions(contestId: "contest") { id } }'],

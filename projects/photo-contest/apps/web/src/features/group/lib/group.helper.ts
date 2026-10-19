@@ -1,7 +1,7 @@
 import { GroupRole, Phase } from '@/shared/api/generated';
 
 /** 그룹 관리자(만든 사람)인지 */
-export function isGroupOwner(role: GroupRole) {
+export function isGroupOwner(role: GroupRole | null | undefined) {
   return role === GroupRole.Owner;
 }
 

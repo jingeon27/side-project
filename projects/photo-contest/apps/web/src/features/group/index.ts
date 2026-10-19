@@ -4,3 +4,7 @@ export { groupTypePolicies } from './model/group.type-policies';
 export { CreateGroupBottomSheet } from './ui/CreateGroupBottomSheet';
 export { GroupCard } from './ui/GroupCard';
 export { MemberList } from './ui/MemberList';
+export { CreateGroupButton } from './ui/CreateGroupButton';
+export { GroupMembershipButton } from './ui/GroupMembershipButton';
+export { GroupJoinRequests } from './ui/GroupJoinRequests';
+export { GroupVisibilityBadge } from './ui/GroupVisibilityBadge';

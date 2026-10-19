@@ -3,14 +3,14 @@ import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
+import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { PostService } from './post.service';
 
 @Resolver()
 export class PostResolver {
   constructor(private readonly posts: PostService) {}
   @Query()
-  galleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['list']>[1]) {
+  galleryPosts(@OptionalViewer() viewer: IViewer | null, @Args() query: Parameters<PostService['list']>[1]) {
     return this.posts.list(viewer, query);
   }
   @Mutation()

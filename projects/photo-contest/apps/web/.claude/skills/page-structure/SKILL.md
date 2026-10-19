@@ -8,7 +8,7 @@ description: 웹(apps/web)에 새 화면·라우트를 추가하거나 화면 sl
 ## 새 화면 순서
 
 1. `src/shared/constants/routes.ts`의 `ROUTES`에 경로를 더한다(파라미터는 `encodeURIComponent`하는 함수). 링크·이동·`backHref`는 모두 `ROUTES`로 만든다.
-2. `src/_pages/<screen>/` 루트에는 `index.ts`(화면 컴포넌트 `<Screen>PageTemplate`만 export)와 `@` 폴더만 둔다. `@page/<Screen>PageTemplate.tsx`('use client')가 조립하고, 화면 전용 조각은 `@page/ui/`·`@page/bottom-sheet/`·`@page/model/`(주소 쿼리 zod `*.schema.ts`)·`@page/<섹션>/`에 둔다.
+2. `src/_pages/<screen>/` 루트에는 `index.ts`(화면 컴포넌트 `<Screen>PageTemplate`와 라우트에 필요한 서버 SEO 진입점만 export)와 `@` 폴더만 둔다. `@page/<Screen>PageTemplate.tsx`('use client')가 조립하고, 화면 전용 조각은 `@page/ui/`·`@page/bottom-sheet/`·`@page/model/`(주소 쿼리 zod `*.schema.ts`)·`@page/<섹션>/`에 둔다.
 3. 라우트 `src/app/<경로>/page.tsx`는 `await params` → (첫 화면 데이터가 있으면) `PreloadQuery` → 템플릿만 한다. 화면은 배럴에서만 가져온다(`@/_pages/<screen>/@page/…`는 `fsd/slice-public-api` 오류). 아래 이름은 예시다.
 
 ```tsx
@@ -32,15 +32,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 ## 멤버 전용 화면
 
 - 세 곳을 함께 바꾼다: `src/proxy.ts`의 `config.matcher`(빌드 때 정적으로 읽으므로 상수 import 없이 문자열 그대로), `src/shared/lib/auth-gate.helper.ts`의 `isMemberOnlyPath`, `src/shared/constants/routes.ts`의 `MEMBER_ONLY_PATH_PREFIXES`·`MEMBER_ONLY_PATHS`. 그리고 `src/proxy.spec.ts`(matcher 목록 단언)와 `src/shared/lib/auth-gate.helper.spec.ts`를 고친다.
-- proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다(`frontend` 스킬 "인증·이동"). `/`와 `/invite/*`는 공개로 둔다.
+- proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다(`frontend` 스킬 "인증·이동"). `/`·`/explore`·`/groups/*`·`/invite/*`는 공개 진입으로 둔다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
 
 ## 뒤로 가기·이동·하단 탭
 
-- `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹·초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `BrandAppBar`를 쓴다.
+- `TopAppBar`의 `backHref`는 상위 화면이다(대회 → `ROUTES.GROUP(groupId)`, 그룹 → `ROUTES.EXPLORE`, 초대 → `ROUTES.HOME`). 안의 `useBackNavigation`이 앱 안 기록(`routeHistoryStore`)이 있으면 `router.back()`, 없으면(카카오톡 링크로 바로 들어옴) `backHref`로 가고, 같은 값을 안드로이드 뒤로 가기(`navigation.back`)의 상위 화면으로 등록한다. 등록하지 않은 화면의 상위는 홈이다. 홈은 `BrandAppBar`를 쓴다.
 - 코드로 이동할 때는 `useAppRouter()`(`@/shared/model/router`)만 쓴다. `next/navigation`의 `useRouter`로 replace하면 push로 세어져 뒤로 가기가 앱 밖으로 나갈 수 있고, 열린 시트의 history 항목도 어긋난다. 단순 링크는 `<Link>`·`ButtonLink`.
 - 정렬 같은 화면 상태는 `replaceSearchParams({ sort })`로 주소에 남긴다(기록을 쌓지 않고 열린 시트 표시를 지킨다). 읽을 때는 `useSearchParams` 값을 `@page/model/*.schema.ts`로 파싱해 잘못된 값은 기본값으로 바꾼다.
 - 기록 깊이는 `RouteHistoryTracker`(`src/_app/providers/navigation`)만 센다. 화면에서 `routeHistoryStore`를 바꾸지 않는다.
-- `BottomNav`(`@/widgets/bottom-nav`)는 홈·MY 템플릿에만 마지막 자식으로 둔다(레이아웃에 두지 않는다). 키보드가 열리면 스스로 숨는다. 한 화면에 `StickyCta`와 함께 두지 않는다.
+- `BottomNav`(`@/widgets/bottom-nav`)는 홈·탐색·MY 템플릿에만 마지막 자식으로 둔다(레이아웃에 두지 않는다). 키보드가 열리면 스스로 숨는다. 한 화면에 `StickyCta`와 함께 두지 않는다.
 
 ## FSD lint 오류 고치기
 

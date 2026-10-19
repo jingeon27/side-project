@@ -4,7 +4,7 @@ import { Body, Controller, Get, Headers, HttpCode, Param, Post, Res } from '@nes
 import type { Response } from 'express';
 
 import type { IViewer } from '../auth/session.service';
-import { Viewer } from '../auth/viewer.decorator';
+import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { NO_STORE } from '../common/http/no-store.middleware';
 import { MediaStorage } from '../storage/media-storage.service';
 import { mediaRange } from './media-range';
@@ -29,7 +29,7 @@ export class PostController {
   }
   @Get('media/:id')
   async media(
-    @Viewer() viewer: IViewer,
+    @OptionalViewer() viewer: IViewer | null,
     @Param('id') id: string,
     @Headers('range') header: string | undefined,
     @Res() res: Response,

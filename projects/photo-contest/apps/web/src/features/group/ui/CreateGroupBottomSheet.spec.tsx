@@ -1,7 +1,7 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { OverlayProvider, overlay } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,7 +72,7 @@ describe('CreateGroupBottomSheet', () => {
   it('빈 이름을 제출하면 오류를 보여 주고 요청하지 않아야 한다', async () => {
     const { user, opener } = renderSheet();
     await user.click(opener);
-    const sheet = await screen.findByRole('dialog', { name: '우리만의 그룹 만들기' });
+    const sheet = await screen.findByRole('dialog', { name: '그룹 만들기' });
 
     await user.click(screen.getAllByRole('button', { name: '그룹 만들기' }).at(-1) ?? sheet);
 
@@ -86,7 +86,7 @@ describe('CreateGroupBottomSheet', () => {
   it('Escape로 닫으면 시트를 연 버튼으로 포커스가 돌아가야 한다', async () => {
     const { user, opener } = renderSheet();
     await user.click(opener);
-    await screen.findByRole('dialog', { name: '우리만의 그룹 만들기' });
+    await screen.findByRole('dialog', { name: '그룹 만들기' });
 
     await user.keyboard('{Escape}');
 
@@ -94,26 +94,31 @@ describe('CreateGroupBottomSheet', () => {
     await waitFor(() => expect(opener).toHaveFocus());
   });
 
-  it('만들면 홈 목록 맨 앞에 넣고 새 그룹 화면으로 가야 한다', async () => {
-    const created = group('group-new', '웃음 연구소');
-    const { user, opener, client } = renderSheet([
-      {
-        request: { query: CreateGroupDocument, variables: { name: '웃음 연구소' } },
-        result: { data: { createGroup: created } },
-      },
-    ]);
-    await user.click(opener);
-    await screen.findByRole('dialog', { name: '우리만의 그룹 만들기' });
+  it.each(['PUBLIC', 'PRIVATE'])(
+    '%s 그룹을 만들면 MY 목록에 넣고 새 그룹 화면으로 가야 한다',
+    async (visibility) => {
+      const created = group('group-new', '웃음 연구소');
+      const { user, opener, client } = renderSheet([
+        {
+          request: { query: CreateGroupDocument, variables: { name: '웃음 연구소', visibility } },
+          result: { data: { createGroup: created } },
+        },
+      ]);
+      await user.click(opener);
+      const sheet = await screen.findByRole('dialog', { name: '그룹 만들기' });
 
-    await user.type(screen.getByLabelText('그룹 이름'), '  웃음 연구소  ');
-    await user.keyboard('{Enter}');
+      await user.type(screen.getByLabelText('그룹 이름'), '  웃음 연구소  ');
+      expect(screen.getByRole('radio', { name: /^공개 그룹/ })).toBeChecked();
+      if (visibility === 'PRIVATE') await user.click(screen.getByRole('radio', { name: /^비공개 그룹/ }));
+      await user.click(within(sheet).getByRole('button', { name: '그룹 만들기' }));
 
-    await waitFor(() => expect(navigatedTo()).toEqual(['/groups/group-new']));
-    expect(trackEvent).toHaveBeenCalledWith('group_created', { group_id: 'group-new' });
-    expect(client.readQuery({ query: MyGroupsDocument })?.myGroups.map((item) => item.id)).toEqual([
-      'group-new',
-      'group-old',
-    ]);
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-  });
+      await waitFor(() => expect(navigatedTo()).toEqual(['/groups/group-new']));
+      expect(trackEvent).toHaveBeenCalledWith('group_created', { group_id: 'group-new' });
+      expect(client.readQuery({ query: MyGroupsDocument })?.myGroups.map((item) => item.id)).toEqual([
+        'group-new',
+        'group-old',
+      ]);
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    },
+  );
 });

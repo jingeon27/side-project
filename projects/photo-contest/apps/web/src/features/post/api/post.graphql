@@ -11,6 +11,7 @@ fragment GalleryPostCard on GalleryPost {
   commentCount
   likedByMe
   canDelete
+  canInteract
   author {
     id
     nickname

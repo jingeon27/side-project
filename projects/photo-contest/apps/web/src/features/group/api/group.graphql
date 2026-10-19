@@ -37,17 +37,16 @@ query Group($id: ID!) {
   }
 }
 
-mutation CreateGroup($name: String!) {
-  createGroup(name: $name) {
+mutation CreateGroup($name: String!, $visibility: GroupVisibility! = PUBLIC) {
+  createGroup(name: $name, visibility: $visibility) {
     ...GroupCard
   }
 }
 
 query Gallery($id: ID!) {
   group(id: $id) {
-    id
     name
-    role
+    ...GroupAccess
     inviteToken
     members {
       role
@@ -57,5 +56,77 @@ query Gallery($id: ID!) {
         avatar
       }
     }
+  }
+}
+
+fragment GroupAccess on Group {
+  id
+  visibility
+  role
+  memberCount
+  canViewPosts
+  joinRequestPending
+}
+
+fragment DiscoverGroup on Group {
+  id
+  name
+  ...GroupAccess
+}
+
+query DiscoverGroups($search: String, $offset: Int = 0, $limit: Int = 24) {
+  discoverGroups(search: $search, offset: $offset, limit: $limit) {
+    ...DiscoverGroup
+  }
+}
+
+mutation RequestGroupMembership($groupId: ID!) {
+  requestGroupMembership(groupId: $groupId) {
+    ...GroupAccess
+    ...GroupCard
+  }
+}
+
+fragment GroupJoinRequestRow on GroupJoinRequest {
+  id
+  groupId
+  user {
+    id
+    nickname
+    avatar
+  }
+  createdAt
+}
+
+query GroupJoinRequests($groupId: ID!, $offset: Int = 0, $limit: Int = 24) {
+  groupJoinRequests(groupId: $groupId, offset: $offset, limit: $limit) {
+    ...GroupJoinRequestRow
+  }
+}
+
+mutation ApproveGroupJoinRequest($requestId: ID!) {
+  approveGroupJoinRequest(requestId: $requestId)
+}
+
+mutation RejectGroupJoinRequest($requestId: ID!) {
+  rejectGroupJoinRequest(requestId: $requestId)
+}
+
+query PublicGroupSeo($id: ID!) {
+  group(id: $id) {
+    id
+    name
+    visibility
+    memberCount
+  }
+}
+
+query PublicGroupCount {
+  publicGroupCount
+}
+
+query PublicGroupSitemap($offset: Int!, $limit: Int!) {
+  discoverGroups(visibility: PUBLIC, offset: $offset, limit: $limit) {
+    id
   }
 }

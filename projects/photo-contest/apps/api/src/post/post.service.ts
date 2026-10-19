@@ -8,7 +8,7 @@ import type { IViewer } from '../auth/session.service';
 import { readUpload } from '../common/graphql/read-upload';
 import { MAX_VIDEO_BYTES } from '../config/limits';
 import { randomToken, sha256Hex } from '../common/crypto';
-import { ERROR_CODE, fail } from '../common/errors';
+import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import {
   MAX_PENDING_UPLOADS,
@@ -38,7 +38,8 @@ interface IPostQuery {
   offset?: number | null;
   limit?: number | null;
 }
-function postInclude(userId: string) {
+function postInclude(viewerId: string | null) {
+  const userId = { in: viewerId ? [viewerId] : [] };
   return {
     group: { select: { name: true, members: { where: { userId }, select: { role: true } } } },
     author: true,
@@ -48,7 +49,7 @@ function postInclude(userId: string) {
   } satisfies Prisma.PostInclude;
 }
 type TPostRow = Prisma.PostGetPayload<{ include: ReturnType<typeof postInclude> }>;
-function present(row: TPostRow, userId: string) {
+function present(row: TPostRow, userId: string | null) {
   return {
     id: row.id,
     groupId: row.groupId,
@@ -63,6 +64,7 @@ function present(row: TPostRow, userId: string) {
     commentCount: row._count.comments,
     likedByMe: row.likes.length > 0,
     canDelete: row.authorId === userId || row.group.members.some(isOwner),
+    canInteract: row.group.members.length > 0,
   };
 }
 @Injectable()
@@ -74,11 +76,12 @@ export class PostService {
     private readonly processor: MediaProcessor,
   ) {}
 
-  async list(viewer: IViewer, query: IPostQuery) {
+  async list(viewer: IViewer | null, query: IPostQuery) {
     const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
+    if (!query.groupId && !viewer) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
     const groupIds = query.groupId
-      ? [(await this.membership.requireMember(viewer.id, query.groupId)).groupId]
-      : await this.membership.memberGroupIds(viewer.id);
+      ? [(await this.membership.readableGroup(viewer?.id ?? null, query.groupId)).group.id]
+      : await this.membership.memberGroupIds(viewer?.id ?? '');
     const popular = query.sort === 'MONTHLY_POPULAR';
     const rows = await this.db.post.findMany({
       where: {
@@ -87,7 +90,7 @@ export class PostService {
         OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],
         ...(popular ? { createdAt: koreanMonth() } : {}),
       },
-      include: postInclude(viewer.id),
+      include: postInclude(viewer?.id ?? null),
       skip: offset,
       take: limit,
       orderBy: [
@@ -96,7 +99,7 @@ export class PostService {
         { id: 'desc' },
       ],
     });
-    return rows.map((row) => present(row, viewer.id));
+    return rows.map((row) => present(row, viewer?.id ?? null));
   }
   async requestUpload(viewer: IViewer, groupId: string) {
     const token = randomToken();
@@ -239,8 +242,8 @@ export class PostService {
     }
     return true;
   }
-  async file(viewer: IViewer, postId: string) {
-    const { post } = await this.membership.accessiblePost(viewer.id, postId);
+  async file(viewer: IViewer | null, postId: string) {
+    const { post } = await this.membership.readablePost(viewer?.id ?? null, postId);
     if (!post.upload.storageKey) fail('파일을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     return { key: post.upload.storageKey, size: post.upload.byteSize, contentType: post.upload.contentType };
   }

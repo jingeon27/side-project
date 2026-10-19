@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useFragment, useMutation, useQuery } from '@apollo/client/react';
 import { Field } from '@base-ui/react/field';
 import { ArrowUp } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
@@ -10,16 +10,22 @@ import {
   GalleryPostsDocument,
   MeDocument,
   PostCommentsDocument,
+  GalleryPostCardFragmentDoc,
 } from '@/shared/api/generated';
 import { useZodForm } from '@/shared/model/form';
 import { Avatar } from '@/shared/ui/@core/avatar';
-import { Button } from '@/shared/ui/@core/button';
+import { Button, ButtonLink } from '@/shared/ui/@core/button';
+import { ROUTES } from '@/shared/constants/routes';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
 import { commentSchema } from '../model/comment.schema';
 
 export function PostCommentComposer({ postId }: { postId: string }) {
   const { data } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
+  const { data: post, complete } = useFragment({
+    fragment: GalleryPostCardFragmentDoc,
+    from: { __typename: 'GalleryPost', id: postId },
+  });
   const form = useZodForm(commentSchema, { defaultValues: { body: '' } });
   const body = useWatch({ control: form.control, name: 'body' });
   const [create] = useMutation(CreatePostCommentDocument, {
@@ -28,6 +34,13 @@ export function PostCommentComposer({ postId }: { postId: string }) {
     onCompleted: () => form.reset(),
   });
   const { errors, isSubmitting } = form.formState;
+  if (!complete) return null;
+  if (!post.canInteract)
+    return (
+      <ButtonLink href={ROUTES.GROUP(post.groupId)} variant="secondary" fullWidth>
+        그룹에 가입하고 댓글 남기기
+      </ButtonLink>
+    );
 
   return (
     <form

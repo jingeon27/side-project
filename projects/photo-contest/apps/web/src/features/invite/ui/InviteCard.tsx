@@ -55,7 +55,7 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
           친구가 많을수록 웃음도 커져요
         </h2>
         <p className="mt-1 text-caption text-muted">
-          초대 링크를 아는 사람은 누구나 가입할 수 있어요. 친구에게만 보내 주세요.
+          친구에게 그룹을 소개해 보세요. 비공개 그룹은 그룹장이 가입 신청을 수락해야 함께할 수 있어요.
         </p>
       </div>
       <div className="grid grid-cols-2 gap-2 desktop:grid-cols-1">

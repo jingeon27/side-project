@@ -2,15 +2,13 @@
 
 import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
 import type { QueryRef } from '@apollo/client/react';
-import { Plus, Users } from 'lucide-react';
-import { overlay } from 'overlay-kit';
+import { Users } from 'lucide-react';
 import { match } from 'ts-pattern';
 
-import { CreateGroupBottomSheet, GroupCard } from '@/features/group';
+import { CreateGroupButton, GroupCard } from '@/features/group';
 import { MyGroupsDocument } from '@/shared/api/generated';
 import type { MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
-import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
@@ -21,7 +19,7 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
       <EmptyState
         icon={<Users className="size-6" />}
         title="아직 참여한 그룹이 없어요"
-        description="그룹을 만들거나 친구의 초대 링크로 참여해 보세요."
+        description="탐색에서 그룹을 찾거나 직접 그룹을 만들어 보세요."
       />
     ))
     .otherwise((groups) => (
@@ -39,17 +37,7 @@ export function MyGroupsSection() {
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-title text-ink">내 그룹</h2>
-        <Button
-          size="md"
-          onClick={() => {
-            overlay.open(({ isOpen, close, unmount }) => (
-              <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
-            ));
-          }}
-        >
-          <Plus aria-hidden className="size-4" />
-          그룹 만들기
-        </Button>
+        <CreateGroupButton />
       </div>
       <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={refetch}>
         <MyGroupsContent groupsRef={groupsRef} />

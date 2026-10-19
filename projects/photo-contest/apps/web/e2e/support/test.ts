@@ -18,12 +18,13 @@ export async function authenticate(context: BrowserContext, nickname: string) {
   return cookie;
 }
 
-export async function seedGroup(cookie: string, name: string) {
+export async function seedGroup(cookie: string, name: string, visibility: 'PUBLIC' | 'PRIVATE' = 'PUBLIC') {
   const result = await graphqlRequest<{ createGroup: { id: string; inviteToken: string } }>(API_URL, {
     cookie,
     origin: WEB_ORIGIN,
-    query: 'mutation($name: String!) { createGroup(name: $name) { id inviteToken } }',
-    variables: { name },
+    query:
+      'mutation($name: String!, $visibility: GroupVisibility!) { createGroup(name: $name, visibility: $visibility) { id inviteToken } }',
+    variables: { name, visibility },
   });
   if (!result.data || result.errors?.length) throw new Error(JSON.stringify(result.errors));
   return result.data.createGroup;

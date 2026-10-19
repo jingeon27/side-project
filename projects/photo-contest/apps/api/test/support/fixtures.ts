@@ -22,8 +22,9 @@ export const CREATE_CONTEST = `
   }
 `;
 
-const CREATE_GROUP = 'mutation($name: String!) { createGroup(name: $name) { id inviteToken } }';
-const JOIN_GROUP = 'mutation($token: String!) { joinGroup(token: $token) { id } }';
+const CREATE_GROUP =
+  'mutation($name: String!, $visibility: GroupVisibility!) { createGroup(name: $name, visibility: $visibility) { id inviteToken } }';
+const JOIN_GROUP = 'mutation($token: String!) { joinGroup(token: $token) { id role } }';
 
 /** 지금 시작해 제출 1시간, 투표 1시간인 일정 */
 export function contestSchedule(now = Date.now()): IContestSchedule {
@@ -40,16 +41,31 @@ export async function createGroup(
   owner: ITestUser,
   name: string,
   members: readonly ITestUser[] = [],
+  visibility: 'PUBLIC' | 'PRIVATE' = 'PUBLIC',
 ): Promise<ITestGroup> {
   const { createGroup: group } = await api.gqlOk<{ createGroup: ITestGroup }>(owner.cookie, CREATE_GROUP, {
     name,
+    visibility,
   });
-  for (const member of members) await joinGroup(api, member, group.inviteToken);
+  for (const member of members) await joinGroup(api, member, group.inviteToken, owner);
   return group;
 }
 
-export async function joinGroup(api: ITestApi, user: ITestUser, inviteToken: string) {
-  await api.gqlOk(user.cookie, JOIN_GROUP, { token: inviteToken });
+export async function joinGroup(api: ITestApi, user: ITestUser, inviteToken: string, owner?: ITestUser) {
+  const { joinGroup: group } = await api.gqlOk<{ joinGroup: { id: string; role: string | null } }>(
+    user.cookie,
+    JOIN_GROUP,
+    { token: inviteToken },
+  );
+  if (group.role || !owner) return;
+  const { groupJoinRequests } = await api.gqlOk<{
+    groupJoinRequests: Array<{ id: string; user: { id: string } }>;
+  }>(owner.cookie, 'query($id:ID!){groupJoinRequests(groupId:$id){id user{id}}}', { id: group.id });
+  const request = groupJoinRequests.find((row) => row.user.id === user.id);
+  if (!request) throw new Error('비공개 그룹 가입 신청이 있어야 한다');
+  await api.gqlOk(owner.cookie, 'mutation($id:ID!){approveGroupJoinRequest(requestId:$id)}', {
+    id: request.id,
+  });
 }
 
 /** 그룹 관리자가 지금 제출 기간인 대회를 만든다. */

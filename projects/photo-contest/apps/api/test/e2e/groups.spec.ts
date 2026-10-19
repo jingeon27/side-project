@@ -93,12 +93,16 @@ describe('그룹과 초대', () => {
       ).toEqual({ code: 'BAD_USER_INPUT', message: '그룹 이름은(는) 1~40자여야 합니다.' });
   });
 
-  it('비회원은 그룹 ID를 알아도 그룹에 접근할 수 없어야 한다', async () => {
-    const group = await createGroup(api, owner, '비공개 그룹', [friend]);
-    const query = 'query($id: ID!) { group(id: $id) { name } }';
-    expect(await api.gqlFail(outsider.cookie, query, { id: group.id })).toEqual(GROUP_FORBIDDEN);
-    // 없는 그룹도 같은 오류로 답해 그룹이 있는지 드러내지 않는다.
-    expect(await api.gqlFail(outsider.cookie, query, { id: 'missing-group' })).toEqual(GROUP_FORBIDDEN);
+  it('비공개 그룹의 비회원에게는 기본 정보만 보여 주고 멤버 권한은 주지 않아야 한다', async () => {
+    const group = await createGroup(api, owner, '비공개 그룹', [friend], 'PRIVATE');
+    const query = 'query($id: ID!) { group(id: $id) { name canViewPosts inviteToken members { role } } }';
+    expect(await api.gqlOk(outsider.cookie, query, { id: group.id })).toEqual({
+      group: { name: '비공개 그룹', canViewPosts: false, inviteToken: null, members: [] },
+    });
+    expect(await api.gqlFail(outsider.cookie, query, { id: 'missing-group' })).toEqual({
+      code: 'NOT_FOUND',
+      message: '그룹을 찾을 수 없습니다.',
+    });
     expect(await api.gqlFail(outsider.cookie, REGENERATE, { groupId: group.id })).toEqual(GROUP_FORBIDDEN);
     const { myGroups } = await api.gqlOk<{ myGroups: Array<{ id: string }> }>(
       outsider.cookie,
