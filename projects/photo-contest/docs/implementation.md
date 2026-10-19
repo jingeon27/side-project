@@ -1,5 +1,15 @@
 # 웃긴순간 구현 기록
 
+## 2026-10-20 공개 서버 캐시와 Codex 지침 정리
+
+Next fetch Data Cache에 익명 SEO 콘텐츠는 30초, 사이트맵 데이터는 60초의 재검증 주기를 적용했다. 공개 여부·대회 소속·일정은 매 요청 확인하고 개인화된 SSR/Apollo는 no-store를 유지한다. 캐시는 query 문서만 허용하며 API URL·Origin·문서·변수별로 분리된다. 일반 GraphQL 실행 오류는 HTTP 200을 유지하고 캐시용 공개 query 오류만 400으로 구분해 실패 응답을 성공 데이터로 저장하지 않는다.
+
+Next /backend/graphql은 Cookie·Origin과 multipart 스트림을 전달하며 JSON mutation의 성공·부분 성공 뒤 공개 태그를 expire:0으로 만료시킨다. Caddy의 GraphQL 경로도 Web을 거치게 하고 PC 내부 경로 차단 순서를 고정했다. 실제 Caddy 2.10.2와 두 HTTP 업스트림으로 단독·공통 설정의 GraphQL/일반 API 라우팅·경로 정규화·쿼리 문자열 보존·공통 내부 경로 차단을 확인했다. 운영에는 프록시 설정 갱신과 validate/reload가 필요하며 실제 운영 서버 변경은 하지 않았다.
+
+앱 소유 test:cache가 별도 dist의 실제 standalone Web·격리 API/DB에서 요청 간 캐시 재사용, 정상·부분 성공 쓰기 뒤 만료, 사이트맵, 비공개 제외, Origin·본문 한도, 쿠키와 multipart 업로드를 검증한다. 외부 API에 직접 넣은 데이터로 HIT를 확인하고 웹 mutation으로 무효화를 확인하므로 가짜 캐시를 쓰지 않는다. 일반 브라우저 fixture의 제품 요청도 실제 서비스와 같은 웹 경로를 사용한다. API 통합 237개·웹 unit/UI 303개·문서 API 17개·운영 캐시 3개가 통과했다. 웹 전체 실행은 49개 통과 뒤 개발 빌드 반복 새로고침과 시각 경계로 2개가 실패했고, 격리한 개발 빌드 산출물을 지운 뒤 해당 2개를 재실행해 통과했다. 모바일 WebView 24개가 통과했고 기존 조건부 2개는 제외했다. 프로젝트 check·앱 lint·타입·포맷 검사도 통과했다.
+
+저장소 스킬 23개를 Codex의 .agents/skills로 옮기고 AGENTS.md의 경로를 갱신했다. 기존 전용 경로와 참조는 제거했으며 모든 스킬 링크가 실제 파일로 연결된다. Markdown 지침에서 외부 회사 언급을 제거하고 별도 MDX 블로그 글은 보존했다.
+
 ## 2026-10-20 그룹 대회·명예의 전당·운영 권한·SEO
 
 origin/develop의 bc97cad에서 별도 worktree·기능 브랜치를 만들고 최종 검증 중 추가된 9f5d9af의 저장소 검증도 반영했다. 기존 대회는 format=LEGACY로 보존하고 새 그룹 대회는 format=POST와 Post.contestId로 연결한다. 일반 게시물과 대회 참여를 선택하며 같은 그룹의 접수 중인 대회에 사진·동영상·합성을 여러 번 올린다. 시작→접수 마감→투표 마감과 90일 제한은 API·폼에서 검사한다.

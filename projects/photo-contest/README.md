@@ -122,6 +122,7 @@ corepack yarn workspace @photo-contest/api test:integration
 corepack yarn workspace @side/photo-contest test:api
 corepack yarn workspace @photo-contest/web exec playwright install chromium webkit
 corepack yarn workspace @side/photo-contest test:e2e
+corepack yarn workspace @photo-contest/web test:cache
 corepack yarn workspace @photo-contest/test-kit check:cleanup
 corepack yarn build:photo-contest
 corepack yarn format:check
@@ -138,3 +139,5 @@ corepack yarn format:check
 실제 네이티브 빌드·실기기의 키보드/그룹/시스템 공유 시트와 외부 OAuth는 브라우저 테스트로 대체되지 않습니다. 제품 가설·베타 사용자 모집은 [기획](docs/product-plan.md), 코드와 검증 결과는 [구현 기록](docs/implementation.md)을 참고하세요.
 
 새 기능 사양은 단위·통합 모두 `.spec.ts(x)`를 사용합니다. 기존 API `test:e2e` 명령은 `test:integration`에 위임하는 호환 이름입니다. 이번 변경은 `20261020010000_group_contests` 마이그레이션을 포함하며 기존 Contest는 LEGACY, 일반 Post는 contestId=null로 보존합니다.
+
+공개 SEO 콘텐츠는 Next Data Cache에서 30초, 사이트맵 데이터는 60초 주기로 재검증하며 웹의 쓰기 성공 뒤 즉시 만료시킵니다. 공개 여부·대회 일정과 로그인 사용자별 조회는 매번 확인합니다. 운영 Caddy의 GraphQL 경로도 Web을 거쳐야 하므로 [배포 안내](docs/deployment.md)에 따라 프록시 설정을 함께 갱신합니다. 실제 standalone 캐시 검증은 앱의 test:cache가 소유합니다.
