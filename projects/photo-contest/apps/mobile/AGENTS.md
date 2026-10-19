@@ -81,8 +81,8 @@
 
 | 스크립트 | 내용 | 서버 |
 | --- | --- | --- |
-| `test` | vitest `unit`(node, `src/**/*.spec.ts`) + `ui`(jsdom, `src/**/*.spec.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
-| `test:api` | vitest `api`(`src/**/*.api.spec.ts`). `vitest.api-setup.ts`가 test-kit 격리 API를 띄운다 | API :4331, webOrigin `http://localhost:3331`, 스키마 `mobile_api_*` |
+| `test` | vitest `unit`(node, `src/**/*.{spec,test}.ts`) + `ui`(jsdom, `src/**/*.{spec,test}.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
+| `test:api` | vitest `api`(`src/**/*.api.{spec,test}.ts`). `vitest.api-setup.ts`가 test-kit 격리 API를 띄운다 | API :4331, webOrigin `http://localhost:3331`, 스키마 `mobile_api_*` |
 | `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`) |
 | `bundle:check` | `expo export --platform android`로 Metro 번들이 만들어지는지 확인하고 결과 폴더를 지운다 | 없음 |
 

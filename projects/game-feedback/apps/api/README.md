@@ -1,0 +1,41 @@
+# Game Feedback API
+
+NestJS REST API이며 입력과 응답 계약은 `@game-feedback/contracts`의 Zod가 소유한다. API 테스트는 **Vitest + Supertest**로 실행한다. `vitest.config.mts`가 Node 환경과 API 소유 테스트 파일을 지정하고 통합 테스트는 `createApp()`의 HTTP 서버에 Supertest 요청을 보낸다.
+
+## 테스트
+
+저장소 루트에서 Node.js 24와 설치된 의존성을 사용한다.
+
+```sh
+corepack yarn workspace @game-feedback/api test
+# 특정 HTTP 통합 테스트만 실행
+corepack yarn workspace @game-feedback/api test src/community.integration.test.ts
+```
+
+API 명령은 계약 빌드 → 전용 Prisma 생성 → 소유 테스트 PostgreSQL 시작 → Vitest 실행을 준비한다. 별도 환경변수 없이 전용 loopback 55444의 `game_feedback_test`를 사용하며 각 통합 테스트가 고유 `gf_test_` 스키마에 현재 Prisma schema를 적용하고 종료 후 해당 스키마만 정리한다. DB를 준비하지 못하면 실패하며 통합 테스트를 건너뛴 성공으로 처리하지 않는다. Vitest를 직접 호출하며 TEST_DATABASE_URL을 누락한 경우도 설정 단계에서 실패한다.
+
+개발 DB 55442는 사용하지 않는다. 외부 X·카카오·Discord·Google/Supercell 인증정보를 비우고 가짜 제공자로 검증한다. 로그인·Origin/권한·글/댓글/답변·채팅/SSE/미디어·테스트 계정/인증·모바일 인증 인계와 친추판매/코칭 메타데이터를 검사한다. 개발 서버에서 외부 API를 실제 검증한 결과와 구분한다.
+
+루트 `yarn workspace @side/game-feedback test`와 CI도 같은 API 명령을 호출한다. 테스트 DB는 재사용할 수 있도록 유지되며 작업 후 소유 DB만 종료한다.
+
+```sh
+corepack yarn workspace @side/game-feedback db:test:stop
+```
+
+`openapi.json`은 Git에 포함하지 않는 중간 생성 파일이다. 프로젝트 개발/검사/테스트/빌드의 준비 단계 또는 `yarn workspace @side/game-feedback codegen`이 Zod/경로 정의에서 생성한다. Orval이 이 규격으로 REST SDK와 응답 검증 코드를 생성한다.
+
+## 본문 미디어와 운영 API
+
+- POST /api/post-media는 인증된 multipart 파일을 검증하고 /api/post-media/:id 주소를 돌려준다. GET은 본문 등록 전 업로더에게만 허용하고 등록 후 글의 공개/차단/숨김/삭제 정책을 적용한다. DELETE는 아직 글에 연결하지 않은 본인 파일만 삭제한다. 저장/수정과 파일 연결은 같은 DB 트랜잭션이다.
+- 코칭 pricing은 HOURLY/MONTHLY/GOAL과 amount로 저장한다. GOAL에는 targetScore가 필요하다. 배포 전에는 기존 hourlyRate 형식의 운영 데이터 변환을 제공하지 않으며 현재 pricing 계약을 사용한다.
+- POST /api/me/game-accounts는 사용자에게 계정을 등록한다. 글쓰기/PATCH에는 playerTag를 받지 않는다. 대표 태그가 바뀌면 사용자 인증을 해제한다.
+- POST /api/support/conversations는 GENERAL/VERIFICATION 문의를 실제 관리자와 기존 1:1 대화로 시작/재사용한다. 담당자가 없는 환경은 503이다. GET /api/admin/support와 PATCH /api/admin/support/:id는 담당 관리자 자신의 문의만 관리한다.
+- USER 신고는 기존 POST /api/reports를 사용한다. 관리자만 GET /api/admin/users/:id, PATCH /api/admin/users/:id/ban, PATCH /api/admin/reports/:id와 기존 인증/숨김 API를 사용할 수 있다. 밴은 기존 세션의 일반 활동에도 적용하되 관리자 문의는 유지한다. 변경 사유와 조치는 AuditLog에 기록한다.
+
+DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 데이터 손실을 강제하지 않고 운영은 scripts/migrate.mjs의 migrate deploy를 사용한다. 운영 파일 저장소/백업과 복구 명령은 [Lightsail 가이드](../../deploy/lightsail/README.md)를 따른다. 외부 저장소 자격 증명, 악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
+
+`node apps/api/scripts/production-smoke.mjs`는 프로젝트 루트에서 Linux + Docker Compose로 실행하는 API 소유 운영 통합 검사다. `GF_SMOKE_TAG=<40자 SHA>`, `GF_SMOKE_IMAGE_PREFIX=<이미지 prefix>`에 미리 빌드한 API/Web 이미지를 지정한다. 개발 서버 대신 새 Docker project/volume에서 HTTPS·migration·비공개 파일·SSE·백업 복구를 확인하고 생성한 스택만 정리한다. macOS에서는 deploy/lightsail/Dockerfile의 smoke-tools target을 별도 Docker 엔진의 host network와 socket/repository bind로 실행할 수 있다.
+
+서버 테스트 계정은 명시적 `dev:test` 또는 `GF_TEST_AUTH_ENABLED=true`에서 `POST /api/auth/test-token`으로 발급한다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.
+
+관리자 HTTP 업무는 `src/admin/{categories,users,reports,support}`의 독립 controller/service와 AdminModule이 소유한다. 공개 카테고리 조회와 관리자 생성은 같은 테이블을 쓰되 service를 공유하지 않는다. 요청 DTO의 class-validator decorator와 class-transformer/Nest ValidationPipe를 controller에서 적용하고 Service에는 검증된 입력을 전달한다. Guard가 먼저 권한을 확인하며 Zod 계약의 정규화/중첩 JSON 규칙은 HTTP 파이프에서 보존한다. 응답 Zod 검증과 OpenAPI/Orval 생성 방식은 유지한다.

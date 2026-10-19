@@ -1,10 +1,12 @@
+import { UnitOfWork } from '../database/unit-of-work';
+import { SubmissionRepository } from './submission.repository';
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { Prisma } from '../../generated/prisma';
 
 import { Injectable } from '@nestjs/common';
 
-import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
 import { readUpload } from '../common/graphql/read-upload';
 import { MAX_UPLOAD_BYTES } from '../config/limits';
@@ -13,7 +15,6 @@ import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import { MAX_PENDING_UPLOADS, PAGE_SIZE_DEFAULT, TEXT_LIMIT, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
-import { Database } from '../database/database.service';
 import { isOwner } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import type { ISubmissionAccess } from '../group/membership.service';
@@ -60,7 +61,8 @@ function uploadUrl(token: string) {
 @Injectable()
 export class SubmissionService {
   constructor(
-    private readonly db: Database,
+    private readonly repository: SubmissionRepository,
+    private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: PhotoStorage,
   ) {}
@@ -71,7 +73,7 @@ export class SubmissionService {
     const sort = toSubmissionSort(query.sort);
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
     const admin = isOwner(member);
-    const rows = await this.db.submission.findMany({
+    const rows = await this.repository.findManySubmission({
       where: { contestId, ...(admin ? {} : { hidden: false }) },
       include: submissionInclude(viewer.id, admin),
       orderBy: submissionOrderBy(sort),
@@ -84,7 +86,7 @@ export class SubmissionService {
 
   /** 접근을 확인한 사진 하나를 조회자 기준으로 다시 읽는다. 좋아요처럼 사진을 바꾼 뒤 돌려줄 때 쓴다. */
   async view(viewer: IViewer, { submission, contest, admin }: ISubmissionAccess): Promise<ISubmissionView> {
-    const row = await this.db.submission.findUnique({
+    const row = await this.repository.findUniqueSubmission({
       where: { id: submission.id },
       include: submissionInclude(viewer.id, admin),
     });
@@ -97,12 +99,12 @@ export class SubmissionService {
     const { contest } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
     const now = new Date();
-    const pending = await this.db.upload.count({
+    const pending = await this.repository.countUpload({
       where: { userId: viewer.id, contestId, expiresAt: { gt: now }, submission: null },
     });
     if (pending >= MAX_PENDING_UPLOADS) fail(MESSAGE.TOO_MANY_UPLOADS, ERROR_CODE.RATE_LIMITED);
     const token = randomToken();
-    const upload = await this.db.upload.create({
+    const upload = await this.repository.createUpload({
       data: {
         userId: viewer.id,
         contestId,
@@ -130,7 +132,7 @@ export class SubmissionService {
   }
 
   private async uploadGrant(viewer: IViewer, where: Prisma.UploadWhereUniqueInput) {
-    const grant = await this.db.upload.findUnique({ where });
+    const grant = await this.repository.findUniqueUpload({ where });
     if (!grant || grant.userId !== viewer.id || grant.imageKey || grant.expiresAt < new Date())
       fail(MESSAGE.UPLOAD_REJECTED, ERROR_CODE.FORBIDDEN);
     const { contest } = await this.membership.accessibleContest(viewer.id, grant.contestId);
@@ -144,7 +146,7 @@ export class SubmissionService {
     await this.storage.put(imageKey, image);
     try {
       // 같은 티켓으로 동시에 올려도 imageKey를 먼저 기록한 한 요청만 남는다.
-      const updated = await this.db.upload.updateMany({
+      const updated = await this.repository.updateManyUpload({
         where: { id: grant.id, imageKey: null, expiresAt: { gt: new Date() } },
         data: { imageKey },
       });
@@ -159,12 +161,12 @@ export class SubmissionService {
   async create(viewer: IViewer, input: ICreateSubmissionInput): Promise<ISubmissionView> {
     if (input.rightsConfirmed !== true) fail(MESSAGE.RIGHTS_REQUIRED);
     const caption = textValue(input.caption, TEXT_LIMIT.CAPTION, '사진 설명');
-    const { row, admin } = await this.db.atomic(async (tx) => {
+    const { row, admin } = await this.transactions.atomic(async (tx) => {
       const { contest, member } = await this.membership.accessibleContest(viewer.id, input.contestId, {
         client: tx,
       });
       if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-      const upload = await tx.upload.findUnique({ where: { id: input.uploadId } });
+      const upload = await this.repository.findUniqueUpload({ where: { id: input.uploadId } }, tx);
       if (
         !upload ||
         upload.userId !== viewer.id ||
@@ -173,27 +175,33 @@ export class SubmissionService {
         upload.expiresAt < new Date()
       )
         fail(MESSAGE.UPLOAD_INCOMPLETE);
-      const created = await tx.submission.create({
-        data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
-        include: submissionInclude(viewer.id, isOwner(member)),
-      });
+      const created = await this.repository.createSubmission(
+        {
+          data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
+          include: submissionInclude(viewer.id, isOwner(member)),
+        },
+        tx,
+      );
       const properties = { contestId: contest.id, groupId: contest.groupId };
-      await recordEvent(tx, {
+      await this.repository.recordEvent(tx, {
         id: `submission:${created.id}`,
         type: ANALYTICS_EVENT.SUBMISSION_CREATED,
         userId: viewer.id,
         properties,
       });
       // 같은 그룹의 이전 대회에 참여했던 사람이 다시 참여했는지(재참여율)를 본다.
-      const previous = await tx.submission.findFirst({
-        where: {
-          authorId: viewer.id,
-          contest: { groupId: contest.groupId, endsAt: { lt: contest.startsAt } },
+      const previous = await this.repository.findFirstSubmission(
+        {
+          where: {
+            authorId: viewer.id,
+            contest: { groupId: contest.groupId, endsAt: { lt: contest.startsAt } },
+          },
+          select: { id: true },
         },
-        select: { id: true },
-      });
+        tx,
+      );
       if (previous)
-        await recordEvent(tx, {
+        await this.repository.recordEvent(tx, {
           id: `return:${contest.id}:${viewer.id}`,
           type: ANALYTICS_EVENT.NEXT_CONTEST_JOINED,
           userId: viewer.id,
@@ -207,7 +215,7 @@ export class SubmissionService {
   /** 비공개 사진 파일. 매 요청 멤버십을 확인하고, 숨긴 사진은 관리자에게만 준다. */
   async photoFile(viewer: IViewer, submissionId: string): Promise<Buffer> {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
-    const upload = await this.db.upload.findUnique({
+    const upload = await this.repository.findUniqueUpload({
       where: { id: submission.uploadId },
       select: { imageKey: true },
     });

@@ -1,0 +1,14 @@
+@layer components {
+  :root {
+    --service-toast-bottom: calc(24px + env(safe-area-inset-bottom));
+    --service-toast-top: calc(var(--site-header-height) + 16px + env(safe-area-inset-top));
+  }
+  @media (max-width: 760px) {
+    :root {
+      --service-toast-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+    body:has(.shell-route[data-screen='compose']) {
+      --service-toast-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+  }
+}

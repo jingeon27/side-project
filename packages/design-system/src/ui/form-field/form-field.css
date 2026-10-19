@@ -1,0 +1,42 @@
+@layer components {
+  :is(.ds-input, .ds-textarea, .ds-select),
+  .ds-form-field :is(input:not([type='checkbox'], [type='radio'], [type='file']), textarea, select) {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    padding: 12px 14px;
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: var(--text-input);
+    line-height: var(--text-input--line-height);
+    letter-spacing: var(--text-input--letter-spacing);
+    outline: none;
+    transition:
+      border-color 150ms,
+      background-color 150ms;
+  }
+
+  :is(textarea.ds-input, .ds-textarea),
+  .ds-form-field textarea {
+    min-height: 88px;
+    resize: vertical;
+  }
+
+  :is(.ds-input, .ds-textarea, .ds-select):focus,
+  .ds-form-field :is(input, textarea, select):focus {
+    border-color: var(--color-brand);
+  }
+
+  :is(.ds-input, .ds-textarea, .ds-select):disabled,
+  .ds-form-field :is(input, textarea, select):disabled {
+    background: var(--color-sunken);
+    color: var(--color-muted);
+  }
+
+  :is(.ds-input, .ds-textarea, .ds-select)[aria-invalid='true'],
+  .ds-form-field :is(input, textarea, select)[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+}

@@ -1,0 +1,65 @@
+{
+	email {$ACME_EMAIL}
+	admin localhost:2019
+}
+
+(private_logs) {
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 3
+		}
+		format filter {
+			wrap json
+			fields {
+				request>uri delete
+				request>headers delete
+				resp_headers delete
+			}
+		}
+	}
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000"
+	}
+}
+
+{$GAME_FEEDBACK_DOMAIN} {
+	import private_logs
+	request_body {
+		max_size 27MB
+	}
+	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|api/auth/(?:demo|test-))
+	respond @internal 404
+	handle /api/* {
+		reverse_proxy gf-api:4300 {
+			flush_interval -1
+		}
+	}
+	handle {
+		reverse_proxy gf-web:3300 {
+			flush_interval -1
+		}
+	}
+}
+
+{$PHOTO_CONTEST_DOMAIN} {
+	import private_logs
+	request_body {
+		max_size 110MB
+	}
+	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|backend/testing(?:/|$))
+	respond @internal 404
+	handle_path /backend/* {
+		reverse_proxy pc-api:4200 {
+			flush_interval -1
+		}
+	}
+	handle {
+		reverse_proxy pc-web:3200 {
+			flush_interval -1
+		}
+	}
+}

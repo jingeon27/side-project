@@ -1,0 +1,151 @@
+name: Game Feedback
+
+on:
+  pull_request:
+    paths:
+      - 'projects/game-feedback/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/game-feedback.yml'
+      - '.github/workflows/shared-instance.yml'
+      - 'deploy/shared-instance/**'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'projects/game-feedback/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'yarn.lock'
+      - '.github/workflows/game-feedback.yml'
+      - '.github/workflows/shared-instance.yml'
+      - 'deploy/shared-instance/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn format:check
+      - run: yarn workspace @side/game-feedback codegen
+      - name: Check generated SDK
+        run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
+      - run: yarn workspace @side/design-system check
+      - run: yarn check:game-feedback
+      - run: yarn test:game-feedback
+      - run: yarn build:game-feedback
+      - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
+      - run: yarn workspace @side/game-feedback test:e2e
+      - name: Stop owned test database
+        if: always()
+        run: yarn workspace @side/game-feedback db:test:stop
+
+  shared-contract:
+    uses: ./.github/workflows/shared-instance.yml
+
+  containers:
+    needs: [verify, shared-contract]
+    outputs:
+      api_image: ${{ steps.publish.outputs.api_image }}
+      web_image: ${{ steps.publish.outputs.web_image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: write
+    env:
+      GF_SMOKE_TAG: ${{ github.sha }}
+      GF_SMOKE_IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Resolve public build settings
+        env:
+          SITE_URL: ${{ vars.GF_SITE_URL }}
+          CONTACT_EMAIL: ${{ vars.GF_CONTACT_EMAIL }}
+          DEPLOY_ENABLED: ${{ vars.GF_DEPLOY_ENABLED }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          const site = process.env.SITE_URL || 'https://game-feedback.test';
+          const url = new URL(site);
+          if (url.origin !== site || url.protocol !== 'https:') throw new Error('GF_SITE_URL must be an HTTPS origin.');
+          if (process.env.DEPLOY_ENABLED === 'true' && (!process.env.SITE_URL || !process.env.CONTACT_EMAIL))
+            throw new Error('Configure GF_SITE_URL and GF_CONTACT_EMAIL before enabling deployment.');
+          const email = process.env.CONTACT_EMAIL || 'operator@game-feedback.test';
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid GF_CONTACT_EMAIL.');
+          appendFileSync(process.env.GITHUB_ENV, `GF_BUILD_SITE_URL=${site}\nGF_BUILD_CONTACT_EMAIL=${email}\nGF_SMOKE_DOMAIN=${url.hostname}\n`);
+          JS
+      - uses: actions/download-artifact@v4
+        with:
+          name: shared-game-feedback-images-${{ github.sha }}
+          path: ${{ runner.temp }}/shared-images
+      - name: Load images verified by the shared-instance contract
+        run: |
+          gzip -dc "$RUNNER_TEMP/shared-images/game-feedback.tar.gz" | docker load
+          for app in api web; do
+            docker tag "side-shared-gf-$app:$GITHUB_SHA" "${GF_SMOKE_IMAGE_PREFIX}-$app:$GITHUB_SHA"
+          done
+      - name: Verify the deployed stack and restore a backup into fresh volumes
+        run: node projects/game-feedback/apps/api/scripts/production-smoke.mjs
+      - name: Sign in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the tested images
+        id: publish
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+        run: |
+          docker push "${GF_SMOKE_IMAGE_PREFIX}-api:${GF_SMOKE_TAG}"
+          docker push "${GF_SMOKE_IMAGE_PREFIX}-web:${GF_SMOKE_TAG}"
+          for app in api web; do
+            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "${GF_SMOKE_IMAGE_PREFIX}-$app:${GF_SMOKE_TAG}")
+            echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+  deploy:
+    needs: [verify, containers, shared-contract]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    concurrency:
+      group: side-project-shared-instance
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse an obsolete main revision
+        run: |
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+      - name: Deploy the tested image digests to the shared host
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          API_IMAGE: ${{ needs.containers.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.containers.outputs.web_image }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+          DEPLOY_HOST: ${{ vars.SIDE_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.SIDE_DEPLOY_SSH_USER }}
+          DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.SIDE_DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.SIDE_DEPLOY_SSH_KEY }}
+        run: bash deploy/shared-instance/scripts/ci-upload.sh game-feedback

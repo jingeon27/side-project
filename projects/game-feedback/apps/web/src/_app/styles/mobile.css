@@ -1,0 +1,158 @@
+@layer components {
+  .header-account {
+    display: flex;
+  }
+  .notification-unread-indicator {
+    display: none;
+  }
+  .language-settings select {
+    width: 100%;
+    min-height: 44px;
+    margin-block: 12px;
+  }
+  .language-settings p + p {
+    margin-top: 8px;
+  }
+  .post-title-link,
+  .post-excerpt,
+  .prose-body,
+  .comment-content,
+  .settings-profile > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 760px) {
+    .site-grid {
+      padding-bottom: 32px;
+    }
+    .topbar-inner {
+      padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+    }
+    .header-actions {
+      gap: 2px;
+    }
+    .header-actions .icon-button {
+      width: 44px;
+      height: 44px;
+      padding: 10px;
+      flex-shrink: 0;
+    }
+    .header-actions .header-notification-count,
+    .header-actions .header-account {
+      display: none;
+    }
+    .notification-unread-indicator {
+      display: block;
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 9px;
+      height: 9px;
+      border: 2px solid var(--color-surface);
+      border-radius: 50%;
+      background: var(--color-danger);
+    }
+    .mobile-nav {
+      padding-inline: max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-right));
+      gap: 4px;
+    }
+    .mobile-nav > a {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 44px;
+      text-align: center;
+    }
+    .mobile-nav > a > span {
+      overflow-wrap: anywhere;
+    }
+    .mobile-nav-icon {
+      display: inline-flex;
+      position: relative;
+    }
+    .mobile-chat-count {
+      position: absolute;
+      top: -7px;
+      inset-inline-start: calc(100% - 5px);
+      min-width: 17px;
+      padding: 1px 4px;
+      border-radius: var(--radius-badge);
+      background: var(--color-ink);
+      color: var(--color-surface);
+      font-size: var(--text-micro);
+      font-weight: 700;
+      line-height: 15px;
+      white-space: nowrap;
+    }
+    .mobile-nav > a.active {
+      color: var(--color-ink);
+      font-weight: 700;
+    }
+
+    .settings-profile,
+    .section-title-row {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    input.ds-input,
+    select.ds-input,
+    textarea.ds-input,
+    textarea.ds-textarea,
+    .chat-compose textarea {
+      font-size: 16px;
+    }
+    .community-shell:has(> .shell-route[data-screen='conversation']) .topbar,
+    .community-shell:has(> .shell-route[data-screen='conversation']) .mobile-nav,
+    .community-shell:has(> .shell-route[data-screen='conversation']) .chat-page-heading {
+      display: none;
+    }
+    .chat-workspace.has-conversation {
+      position: fixed;
+      top: var(--visual-viewport-top, 0px);
+      left: 0;
+      width: 100%;
+      height: var(--visual-viewport-height, 100dvh);
+      min-height: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+      border: 0;
+      border-radius: 0;
+      z-index: 20;
+    }
+    .conversation-pane,
+    .conversation-heading > div {
+      min-width: 0;
+      min-height: 0;
+    }
+    .conversation-heading h2 {
+      overflow-wrap: anywhere;
+    }
+    .chat-message-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  @media (max-width: 380px) {
+    .settings-card,
+    .detail-card {
+      padding: 16px;
+    }
+    .settings-profile > .status-pill {
+      margin-left: 0;
+    }
+  }
+}
+
+/* Visual viewport geometry overrides the shared Dialog layout utilities. */
+@media (max-width: 760px) {
+  .dialog-content {
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 24px);
+    max-width: calc(100vw - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .fixed:has(> .dialog-content) {
+    top: var(--visual-viewport-top, 0px);
+    bottom: auto;
+    height: var(--visual-viewport-height, 100dvh);
+    padding: 12px;
+  }
+}

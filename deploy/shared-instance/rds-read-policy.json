@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "rds:DescribeDBInstances",
+      "Resource": "*",
+      "Condition": { "StringEquals": { "aws:RequestedRegion": "ap-northeast-2" } }
+    }
+  ]
+}

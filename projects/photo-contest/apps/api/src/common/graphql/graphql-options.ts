@@ -1,4 +1,3 @@
-import { ApolloServerPluginCacheControlDisabled } from '@apollo/server/plugin/disabled';
 import type { ApolloDriverConfig } from '@nestjs/apollo';
 import type { GraphQLFormattedError } from 'graphql';
 import depthLimit from 'graphql-depth-limit';
@@ -23,7 +22,8 @@ export function maskInternalError(formatted: GraphQLFormattedError): GraphQLForm
 }
 
 /** 앱을 만들 때마다 읽어 테스트가 바꾼 NODE_ENV를 반영한다. */
-export function graphqlOptions(): ApolloDriverConfig {
+export async function graphqlOptions(): Promise<ApolloDriverConfig> {
+  const { ApolloServerPluginCacheControlDisabled } = await import('@apollo/server/plugin/disabled');
   return {
     typePaths: [GRAPHQL_SCHEMA_GLOB],
     graphiql: false,

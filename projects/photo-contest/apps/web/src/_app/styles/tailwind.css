@@ -1,5 +1,5 @@
 @import 'tailwindcss' source(none);
-@import './theme.css';
+@import '@side/design-system/styles.css';
 @import './globals.css';
 
 @source '../../**/*.{ts,tsx}';

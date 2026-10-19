@@ -1,3 +1,4 @@
+import { VoteRepository } from './vote.repository';
 import { Module } from '@nestjs/common';
 
 import { GroupModule } from '../group/group.module';
@@ -6,6 +7,6 @@ import { VoteService } from './vote.service';
 
 @Module({
   imports: [GroupModule],
-  providers: [VoteService, VoteResolver],
+  providers: [VoteRepository, VoteService, VoteResolver],
 })
 export class VoteModule {}

@@ -1,5 +1,4 @@
 import type { Prisma } from '../../generated/prisma';
-import type { TDatabaseClient } from '../database/database.service';
 
 export const ANALYTICS_EVENT = {
   POST_CREATED: 'post_created',
@@ -27,9 +26,4 @@ export interface IAnalyticsEvent {
   userId: string | null;
   /** 이름·설명·신고 내용 같은 PII는 넣지 않는다. ID와 집계 숫자만 */
   properties: Prisma.InputJsonObject;
-}
-
-/** 내부 지표용으로 DB에만 남긴다(외부 분석 도구로 보내지 않는다). 이미 있는 id면 그대로 둔다. */
-export async function recordEvent(client: TDatabaseClient, event: IAnalyticsEvent) {
-  await client.analyticsEvent.createMany({ data: [event], skipDuplicates: true });
 }

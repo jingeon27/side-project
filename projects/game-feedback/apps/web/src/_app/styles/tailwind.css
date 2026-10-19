@@ -1,0 +1,23 @@
+@import 'tailwindcss' source(none);
+@import '@side/design-system/styles.css';
+@import 'quill/dist/quill.snow.css' layer(components);
+@import './base.css';
+@import './toast.css';
+@import './layout.css';
+@import './footer.css';
+@import './feed.css';
+@import './search.css';
+@import './post.css';
+@import './profile.css';
+@import './notifications.css';
+@import './info.css';
+@import './authentication.css';
+@import './chat.css';
+@import './chat-media.css';
+@import './editor.css';
+@import './compose.css';
+@import './boards.css';
+@import './identity.css';
+@import './mobile.css';
+
+@source '../../**/*.{ts,tsx}';

@@ -20,6 +20,7 @@ COPY --from=build /app/projects/photo-contest/apps/api/package.json ./package.js
 COPY --from=build /app/projects/photo-contest/apps/api/dist ./dist
 COPY --from=build /app/projects/photo-contest/apps/api/src ./src
 COPY --from=build /app/projects/photo-contest/apps/api/prisma ./prisma
+COPY --from=build /app/projects/photo-contest/apps/api/scripts ./scripts
 COPY --from=build /app/projects/photo-contest/apps/api/generated ./generated
 USER node
 EXPOSE 4200

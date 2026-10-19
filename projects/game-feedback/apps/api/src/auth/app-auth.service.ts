@@ -1,0 +1,45 @@
+import { AuthRepository } from './auth.repository';
+import type { AppExchangeDto } from './auth-input.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import type { Response } from 'express';
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+import { hash, token } from '../common/crypto';
+import { parse } from '../common/validation';
+import { ApiError } from '../common/http/api-error';
+import type { SessionRequest } from './session.types';
+import { SessionService } from './session.service';
+import { SocialIdentityService } from './social-identity.service';
+
+@Injectable()
+export class AppAuthService {
+  constructor(
+    @Inject(AuthRepository) private readonly repository: AuthRepository,
+    @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
+  ) {}
+  async issueTicket(subject: string, challenge: string, provider: TSocialProvider = 'google') {
+    const code = token();
+    await this.repository.deleteManyAppLoginTicket({ where: { expiresAt: { lte: new Date() } } });
+    await this.repository.createAppLoginTicket({
+      data: { codeHash: hash(code), challenge, subject, provider, expiresAt: new Date(Date.now() + 120_000) },
+    });
+    return code;
+  }
+  async exchange(req: SessionRequest, res: Response, body: AppExchangeDto) {
+    const { code, verifier } = body;
+    const codeHash = hash(code);
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+    const ticket = await this.repository.findUniqueAppLoginTicket({ where: { codeHash } });
+    if (!ticket || ticket.challenge !== challenge || ticket.expiresAt <= new Date())
+      throw new ApiError(400, 'APP_LOGIN_INVALID', '로그인 요청이 만료되었거나 올바르지 않습니다.');
+    const consumed = await this.repository.deleteManyAppLoginTicket({
+      where: { codeHash, challenge, expiresAt: { gt: new Date() } },
+    });
+    if (consumed.count !== 1) throw new ApiError(400, 'APP_LOGIN_INVALID', '이미 사용된 로그인 요청입니다.');
+    const provider = parse(SocialProviderSchema, ticket.provider);
+    const user = await this.identities.findUser(provider, ticket.subject);
+    await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : ticket.subject, { provider });
+    return this.sessions.session(req);
+  }
+}

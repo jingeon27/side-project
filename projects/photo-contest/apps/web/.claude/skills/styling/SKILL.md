@@ -7,14 +7,14 @@ description: 웹(apps/web)의 Tailwind 4·디자인 토큰, 휴대폰·태블릿
 
 ## Tailwind 4 (설정 파일 없음)
 
-- 진입점은 `src/_app/styles/tailwind.css`(`@import 'tailwindcss' source(none)` + `theme.css` + `globals.css`)이고 `@source '../../**/*.{ts,tsx}'`(= `src`)만 훑는다. 클래스는 소스에 완전한 문자열로 쓴다. `bg-${tone}` 같은 조합은 생성되지 않으니 cva variant나 전체 이름 매핑을 쓴다.
-- `src/_app/styles/theme.css`가 기본 색·글자 크기·분기점을 지운다(`--color-*`·`--text-*`·`--breakpoint-*: initial`). `bg-white`·`text-gray-500`·`text-sm`·`md:`는 오류 없이 아무 스타일도 만들지 않는다. 있는 값:
+- 진입점은 `src/_app/styles/tailwind.css`(`@import 'tailwindcss' source(none)` + `@side/design-system/styles.css` + 앱 `globals.css`)다. 앱은 `@source '../../**/*.{ts,tsx}'`(= `src`)를 훑고, 공통 패키지는 자신의 스타일 진입점에서 소스 스캔을 캡슐화한다. 클래스는 소스에 완전한 문자열로 쓴다. `bg-${tone}` 같은 조합은 생성되지 않으니 cva variant나 전체 이름 매핑을 쓴다.
+- 루트 `packages/design-system`의 공통 테마가 기본 색·글자 크기·분기점을 지운다(`--color-*`·`--text-*`·`--breakpoint-*: initial`). 앱에 같은 토큰을 복제하지 않는다. `bg-white`·`text-gray-500`·`text-sm`·`md:`는 오류 없이 아무 스타일도 만들지 않는다. 있는 값:
   - 색: `brand`(`-strong`·`-soft`) `accent`(`-soft`·`-ink`) `ink` `muted` `subtle` `line`(`-strong`) `surface` `sunken` `canvas` `background` `danger`(`-soft`) `info`(`-soft`) `neutral-soft` `gold` `silver` `bronze` `kakao` `on-brand` `scrim`
   - 글자: `text-display|title-lg|title|subtitle|body|input|button|label|caption|micro`(크기·줄 높이·굵기·자간 한 묶음)
-  - `rounded-badge|control|card|sheet`, `shadow-app|card|sheet|toast`, `h-app-bar`(60) `h-bottom-nav`(76) `h-cta`(50) `size-touch`(44), `max-w-app`(모바일 피드·일반 폼 540)·`max-w-feed`(데스크톱 피드 680)·`max-w-web`(웹 1440). 기본 spacing(`p-4`·`gap-2`)은 그대로 있다.
-- 토큰을 더하면 `@theme`에 넣고, 글자·모서리·그림자·spacing·z·max-w 토큰이면 `src/shared/lib/cn.helper.ts`의 `extendTailwindMerge`에도 등록하고 `cn.helper.spec.ts`에 케이스를 더한다. 빠지면 tailwind-merge가 `cn('text-title', 'text-ink')`에서 하나를 지운다. `var()`로만 읽는 값은 `@theme static`에 둔다.
-- `src/_app/styles/globals.css`는 `@layer base`만, 100줄 이하로 둔다. 화면·컴포넌트 스타일을 넣지 않는다. 앱바 배경(`--color-surface`)을 바꾸면 `src/shared/constants/layout.ts`의 `THEME_COLOR`도 바꾼다.
-- 합치기는 `cn()`(`@/shared/lib/cn.helper`, 뒤에 온 값이 이긴다). `!` 유틸(`p-0!`·`!p-0`), 임의 hex(`bg-[#fff]`), 색 inline style은 쓰지 않는다. 토큰이 있는 값(색·글자·모서리·그림자·z·높이)을 임의 값으로 쓰지 않는다.
+  - `rounded-badge|control|card|sheet`, `shadow-app|card|sheet|toast`, `h-app-bar`(60) `h-bottom-nav`(76) `h-cta`(50) `size-touch`(44), `max-w-app`(모바일 폼 540)·`max-w-feed`(데스크톱 피드 680)·`max-w-web`(웹 1440). 기본 spacing(`p-4`·`gap-2`)은 그대로 있다.
+- 토큰을 더하면 공통 패키지의 `@theme`에 넣고, 글자·모서리·그림자·spacing·z·max-w 토큰이면 공통 `cn`의 `extendTailwindMerge`에도 등록한다. 공통 패키지 테스트와 앱의 `src/shared/lib/cn.helper.spec.ts`로 실제 연결을 검증한다. 빠지면 tailwind-merge가 `cn('text-title', 'text-ink')`에서 하나를 지운다. `var()`로만 읽는 값은 `@theme static`에 둔다.
+- `src/_app/styles/globals.css`에는 `@layer base` 안의 `#pc-main` 토스트 위치만 둔다. 공통 body·입력·포커스·모션 reset은 디자인 시스템이 소유한다. 앱바 배경(`--color-surface`)을 바꾸면 `src/shared/constants/layout.ts`의 `THEME_COLOR`도 바꾼다.
+- 합치기는 `@side/design-system`의 `cn()`을 사용한다(`@/shared/lib/cn.helper`는 명시적 re-export, 뒤에 온 값이 이긴다). `!` 유틸(`p-0!`·`!p-0`), 임의 hex(`bg-[#fff]`), 색 inline style은 쓰지 않는다. 토큰이 있는 값(색·글자·모서리·그림자·z·높이)을 임의 값으로 쓰지 않는다.
 - Base UI 상태는 `data-*` 변형으로 꾸민다(`data-disabled:`·`data-pressed:`·`data-invalid:`·`data-starting-style:`·`data-ending-style:`). `Button`의 `loading`은 native `disabled`를 걸지 않으므로 `disabled:` 변형이 맞지 않는다.
 
 ## 레이아웃
@@ -37,7 +37,7 @@ description: 웹(apps/web)의 Tailwind 4·디자인 토큰, 휴대폰·태블릿
 
 ## 확인
 
-- `corepack yarn workspace @photo-contest/web test`(`cn` spec), `corepack yarn workspace @photo-contest/web lint`(side 루트).
+- `corepack yarn workspace @side/design-system check`와 `corepack yarn workspace @photo-contest/web test`(기존 UI·`cn` 통합 spec), `corepack yarn workspace @photo-contest/web lint`(side 루트).
 - 이미 떠 있는 개발 서버(http://localhost:3200)를 휴대폰 폭(360~430px)과 데스크톱 폭에서 본다. 서버를 끄거나 다시 띄우지 않는다. 가로 스크롤이 생기면 안 된다.
 
 데스크톱 글쓰기는 2열 안에서 미디어·내용을 함께 보고, 댓글은 게시물 미디어·대화를 나란히 본다. 그룹의 글쓰기는 상단바에 두며 초대·멤버 정보는 인기 목록 아래에 둔다. GalleryFeed의 sidebar 슬롯은 모바일에서 피드 아래로 내려가며 DOM을 복제하지 않는다.

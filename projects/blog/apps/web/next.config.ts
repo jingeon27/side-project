@@ -5,6 +5,7 @@ import type { NextConfig } from 'next';
 import { readFileSync } from 'node:fs';
 
 const config: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
   experimental: { globalNotFound: true },
   pageExtensions: ['ts', 'tsx', 'md', 'mdx'],

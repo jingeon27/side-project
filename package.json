@@ -24,7 +24,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:photo-contest:unit": "yarn workspace @side/photo-contest test:unit",
-    "test:photo-contest:api": "yarn workspace @side/photo-contest test:api"
+    "test:photo-contest:api": "yarn workspace @side/photo-contest test:api",
+    "dev:game-feedback": "yarn workspace @side/game-feedback dev",
+    "dev:game-feedback:demo": "yarn workspace @side/game-feedback dev:demo",
+    "setup:game-feedback": "yarn workspace @side/game-feedback setup",
+    "build:game-feedback": "yarn workspace @side/game-feedback build",
+    "test:game-feedback": "yarn workspace @side/game-feedback test",
+    "check:game-feedback": "yarn workspace @side/game-feedback check"
   },
   "devDependencies": {
     "prettier": "^3.9.0"

@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 
 import { PROJECT_ROOT } from './paths';
+import { assertSharedInstanceConfig } from './shared-instance';
 
 // 테스트가 실행 중에 NODE_ENV 같은 값을 바꾸므로 모든 값은 호출할 때마다 읽는다.
 
@@ -166,6 +167,7 @@ export function sentryTracesSampleRate() {
 /** 운영에서 설정이 빠지면 조용히 기본값으로 뜨지 않고 시작을 멈춘다. */
 export function assertProductionConfig() {
   if (!isProduction()) return;
+  assertSharedInstanceConfig(process.env);
   const storageReady =
     storageBackend() === 's3' ? Boolean(optional('S3_BUCKET')) : Boolean(optional('STORAGE_DIR'));
   if (!process.env.WEB_ORIGIN?.startsWith('https://') || !optional('DATABASE_URL') || !storageReady)

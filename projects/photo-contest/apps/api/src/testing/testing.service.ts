@@ -1,3 +1,4 @@
+import { TestingRepository } from './testing.repository';
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
@@ -8,16 +9,15 @@ import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { APP_LOGIN_TICKET_TTL_MS } from '../config/limits';
 import { PHASE } from '../contest/contest.policy';
 import type { TPhase } from '../contest/contest.policy';
-import { Database } from '../database/database.service';
 
 const STEP_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class TestingService {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly repository: TestingRepository) {}
 
   createUser(nickname: string) {
-    return this.db.user.create({
+    return this.repository.createUser({
       data: { nickname, provider: 'testing', providerId: randomUUID() },
       select: { id: true, nickname: true, avatar: true },
     });
@@ -31,7 +31,7 @@ export class TestingService {
       .with(PHASE.COMPLETED, () => [-3, -2, -1] as const)
       .exhaustive();
     const now = Date.now();
-    const result = await this.db.contest.updateMany({
+    const result = await this.repository.updateManyContest({
       where: { id: contestId },
       data: {
         startsAt: new Date(now + offsets[0] * STEP_MS),
@@ -47,7 +47,7 @@ export class TestingService {
   async issueAppLoginTicket(nickname: string, challenge: string) {
     const user = await this.createUser(nickname);
     const code = randomToken();
-    await this.db.appLoginTicket.create({
+    await this.repository.createAppLoginTicket({
       data: {
         codeHash: sha256Hex(code),
         userId: user.id,

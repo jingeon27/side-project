@@ -10,6 +10,8 @@ on:
         '.yarnrc.yml',
         '.dockerignore',
         '.github/workflows/photo-contest.yml',
+        '.github/workflows/shared-instance.yml',
+        'deploy/shared-instance/**',
       ]
   pull_request:
     paths:
@@ -21,12 +23,18 @@ on:
         '.yarnrc.yml',
         '.dockerignore',
         '.github/workflows/photo-contest.yml',
+        '.github/workflows/shared-instance.yml',
+        'deploy/shared-instance/**',
       ]
 permissions:
   contents: read
 jobs:
+  shared-contract:
+    uses: ./.github/workflows/shared-instance.yml
+
   containers:
-    runs-on: ubuntu-24.04-arm
+    needs: shared-contract
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -35,33 +43,16 @@ jobs:
       - run: corepack enable
       - run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
-      - uses: docker/setup-buildx-action@v4
-      - name: Build API image
-        uses: docker/build-push-action@v7
+      - uses: actions/download-artifact@v4
         with:
-          context: .
-          file: projects/photo-contest/apps/api/Dockerfile
-          platforms: linux/arm64
-          load: true
-          tags: photo-contest-api:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha,scope=photo-contest-api-arm64
-          cache-to: type=gha,mode=max,scope=photo-contest-api-arm64
-      - name: Build web image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: projects/photo-contest/apps/web/Dockerfile
-          platforms: linux/arm64
-          load: true
-          tags: photo-contest-web:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha,scope=photo-contest-web-arm64
-          cache-to: type=gha,mode=max,scope=photo-contest-web-arm64
+          name: shared-photo-contest-images-${{ github.sha }}
+          path: ${{ runner.temp }}/shared-images
+      - name: Load images verified by the shared-instance contract
+        run: |
+          gzip -dc "$RUNNER_TEMP/shared-images/photo-contest.tar.gz" | docker load
+          for app in api web; do
+            docker tag "side-shared-pc-$app:$GITHUB_SHA" "photo-contest-$app:$GITHUB_SHA"
+          done
       - run: yarn workspace @photo-contest/web exec playwright install --with-deps chromium
       - name: Verify production containers and backup restore
         run: bash projects/photo-contest/apps/web/test/deployment/containers.sh
@@ -112,6 +103,7 @@ jobs:
         run: shellcheck -x projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
       - run: yarn format:check
       - run: yarn workspace @side/eslint-config check
+      - run: yarn workspace @side/design-system check
       - run: yarn workspace @side/photo-contest check
       - run: yarn workspace @photo-contest/web lint && yarn workspace @photo-contest/mobile lint
       - run: yarn workspace @photo-contest/api test:e2e
@@ -162,7 +154,7 @@ jobs:
             projects/photo-contest/apps/${{ matrix.app }}/.data/screens/
 
   publish:
-    needs: [verify, browser, containers]
+    needs: [verify, browser, containers, shared-contract]
     if: >-
       github.event_name == 'push' &&
       vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
@@ -210,7 +202,7 @@ jobs:
     timeout-minutes: 15
     environment: photo-contest-production
     concurrency:
-      group: photo-contest-production
+      group: side-project-shared-instance
       cancel-in-progress: false
     permissions:
       contents: read
@@ -241,9 +233,9 @@ jobs:
           WEB_IMAGE: ${{ needs.publish.outputs.web_image }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
-          DEPLOY_HOST: ${{ vars.PHOTO_CONTEST_DEPLOY_HOST }}
-          DEPLOY_USER: ${{ vars.PHOTO_CONTEST_DEPLOY_SSH_USER }}
-          DEPLOY_PORT: ${{ vars.PHOTO_CONTEST_DEPLOY_SSH_PORT }}
-          DEPLOY_KNOWN_HOSTS: ${{ vars.PHOTO_CONTEST_DEPLOY_SSH_KNOWN_HOSTS }}
-          DEPLOY_SSH_KEY: ${{ secrets.PHOTO_CONTEST_DEPLOY_SSH_KEY }}
-        run: bash projects/photo-contest/deploy/scripts/ci-upload.sh
+          DEPLOY_HOST: ${{ vars.SIDE_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.SIDE_DEPLOY_SSH_USER }}
+          DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.SIDE_DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.SIDE_DEPLOY_SSH_KEY }}
+        run: bash deploy/shared-instance/scripts/ci-upload.sh photo-contest

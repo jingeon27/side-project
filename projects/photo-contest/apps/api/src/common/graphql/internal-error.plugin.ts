@@ -1,4 +1,4 @@
-import type { ApolloServerPlugin } from '@apollo/server';
+import type { ApolloServerPlugin } from '@apollo/server' with { 'resolution-mode': 'import' };
 
 import { reportUnexpectedError } from '../../monitoring/sentry';
 import { ERROR_CODE } from '../errors';

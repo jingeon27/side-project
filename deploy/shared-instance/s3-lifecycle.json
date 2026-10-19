@@ -1,0 +1,11 @@
+{
+  "Rules": [
+    {
+      "ID": "retain-recoverable-versions",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    }
+  ]
+}

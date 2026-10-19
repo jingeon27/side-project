@@ -1,8 +1,8 @@
+import { GroupRepository } from './group.repository';
 import { Injectable } from '@nestjs/common';
 
 import type { Contest, GroupMember, Submission } from '../../generated/prisma';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { Database } from '../database/database.service';
 import type { TDatabaseClient } from '../database/database.service';
 import { isOwner } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility } from './group-visibility';
@@ -27,39 +27,40 @@ interface IAccessOptions {
 /** 공개 Post 읽기와 멤버 전용 쓰기·기존 대회 접근을 구분한다. */
 @Injectable()
 export class MembershipService {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly repository: GroupRepository) {}
 
   /** 여러 그룹을 합친 조회도 멤버십 범위를 먼저 고정한다. */
   async memberGroupIds(userId: string): Promise<string[]> {
-    const memberships = await this.db.groupMember.findMany({ where: { userId }, select: { groupId: true } });
+    const memberships = await this.repository.findManyGroupMember({
+      where: { userId },
+      select: { groupId: true },
+    });
     return memberships.map(({ groupId }) => groupId);
   }
 
-  async requireMember(
-    userId: string,
-    groupId: string,
-    client: TDatabaseClient = this.db,
-  ): Promise<GroupMember> {
-    const member = await client.groupMember.findUnique({ where: { groupId_userId: { groupId, userId } } });
+  async requireMember(userId: string, groupId: string, client?: TDatabaseClient): Promise<GroupMember> {
+    const member = await this.repository.findUniqueGroupMember(
+      { where: { groupId_userId: { groupId, userId } } },
+      client,
+    );
     if (!member) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
     return member;
   }
 
-  async requireOwner(
-    userId: string,
-    groupId: string,
-    client: TDatabaseClient = this.db,
-  ): Promise<GroupMember> {
+  async requireOwner(userId: string, groupId: string, client?: TDatabaseClient): Promise<GroupMember> {
     const member = await this.requireMember(userId, groupId, client);
     if (!isOwner(member)) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
     return member;
   }
 
-  async readableGroup(userId: string | null, groupId: string, client: TDatabaseClient = this.db) {
-    const group = await client.group.findUnique({ where: { id: groupId } });
+  async readableGroup(userId: string | null, groupId: string, client?: TDatabaseClient) {
+    const group = await this.repository.findUniqueGroup({ where: { id: groupId } }, client);
     if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     const member = userId
-      ? await client.groupMember.findUnique({ where: { groupId_userId: { groupId, userId } } })
+      ? await this.repository.findUniqueGroupMember(
+          { where: { groupId_userId: { groupId, userId } } },
+          client,
+        )
       : null;
     if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE && !member) {
       if (!userId) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
@@ -68,11 +69,14 @@ export class MembershipService {
     return { group, member };
   }
 
-  async readablePost(userId: string | null, postId: string, client: TDatabaseClient = this.db) {
-    const post = await client.post.findUnique({
-      where: { id: postId },
-      include: { upload: true, legacySubmission: { select: { hidden: true } } },
-    });
+  async readablePost(userId: string | null, postId: string, client?: TDatabaseClient) {
+    const post = await this.repository.findUniquePost(
+      {
+        where: { id: postId },
+        include: { upload: true, legacySubmission: { select: { hidden: true } } },
+      },
+      client,
+    );
     if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     const { member } = await this.readableGroup(userId, post.groupId, client);
     const admin = member ? isOwner(member) : false;
@@ -81,11 +85,14 @@ export class MembershipService {
     return { post, admin };
   }
 
-  async accessiblePost(userId: string, postId: string, client: TDatabaseClient = this.db) {
-    const post = await client.post.findUnique({
-      where: { id: postId },
-      include: { upload: true, legacySubmission: { select: { hidden: true } } },
-    });
+  async accessiblePost(userId: string, postId: string, client?: TDatabaseClient) {
+    const post = await this.repository.findUniquePost(
+      {
+        where: { id: postId },
+        include: { upload: true, legacySubmission: { select: { hidden: true } } },
+      },
+      client,
+    );
     if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     const member = await this.requireMember(userId, post.groupId, client);
     const admin = isOwner(member);
@@ -98,9 +105,9 @@ export class MembershipService {
   async accessibleContest(
     userId: string,
     contestId: string,
-    { owner = false, client = this.db }: IAccessOptions = {},
+    { owner = false, client }: IAccessOptions = {},
   ): Promise<IContestAccess> {
-    const contest = await client.contest.findUnique({ where: { id: contestId } });
+    const contest = await this.repository.findUniqueContest({ where: { id: contestId } }, client);
     if (!contest) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const member = owner
       ? await this.requireOwner(userId, contest.groupId, client)
@@ -112,12 +119,15 @@ export class MembershipService {
   async accessibleSubmission(
     userId: string,
     submissionId: string,
-    { owner = false, client = this.db }: IAccessOptions = {},
+    { owner = false, client }: IAccessOptions = {},
   ): Promise<ISubmissionAccess> {
-    const found = await client.submission.findUnique({
-      where: { id: submissionId },
-      include: { contest: true },
-    });
+    const found = await this.repository.findUniqueSubmission(
+      {
+        where: { id: submissionId },
+        include: { contest: true },
+      },
+      client,
+    );
     if (!found) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const { contest, ...submission } = found;
     const member = owner

@@ -1,0 +1,21 @@
+{
+  "name": "@game-feedback/bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc7 --noEmit"
+  },
+  "dependencies": {
+    "es-toolkit": "^1.52.0",
+    "ts-pattern": "^5.9.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@side/typescript-config": "workspace:*",
+    "typescript": "6.0.2"
+  }
+}

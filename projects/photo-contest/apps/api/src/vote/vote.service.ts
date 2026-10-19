@@ -1,10 +1,11 @@
+import { UnitOfWork } from '../database/unit-of-work';
+import { VoteRepository } from './vote.repository';
 import { Injectable } from '@nestjs/common';
 
-import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
 import { fail } from '../common/errors';
 import { phase, PHASE } from '../contest/contest.policy';
-import { Database } from '../database/database.service';
 import { MembershipService } from '../group/membership.service';
 
 /** GraphQL Vote */
@@ -17,7 +18,8 @@ export interface IVoteView {
 @Injectable()
 export class VoteService {
   constructor(
-    private readonly db: Database,
+    private readonly repository: VoteRepository,
+    private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
 
@@ -26,21 +28,27 @@ export class VoteService {
    * 동시에 여러 번 보내도 한 요청만 성공한다(나머지는 CONFLICT).
    */
   async castVote(viewer: IViewer, contestId: string, submissionId: string): Promise<IVoteView> {
-    return this.db.atomic(async (tx) => {
+    return this.transactions.atomic(async (tx) => {
       const { contest } = await this.membership.accessibleContest(viewer.id, contestId, { client: tx });
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간이 아닙니다.');
-      const submission = await tx.submission.findUnique({
-        where: { id: submissionId },
-        select: { contestId: true, authorId: true, hidden: true },
-      });
+      const submission = await this.repository.findUniqueSubmission(
+        {
+          where: { id: submissionId },
+          select: { contestId: true, authorId: true, hidden: true },
+        },
+        tx,
+      );
       if (!submission || submission.contestId !== contest.id || submission.hidden)
         fail('투표할 수 없는 사진입니다.');
       if (submission.authorId === viewer.id) fail('자신의 사진에는 투표할 수 없습니다.');
-      const vote = await tx.vote.create({
-        data: { voterId: viewer.id, contestId: contest.id, submissionId },
-        select: { id: true, contestId: true, submissionId: true },
-      });
-      await recordEvent(tx, {
+      const vote = await this.repository.createVote(
+        {
+          data: { voterId: viewer.id, contestId: contest.id, submissionId },
+          select: { id: true, contestId: true, submissionId: true },
+        },
+        tx,
+      );
+      await this.repository.recordEvent(tx, {
         id: `vote:${vote.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,

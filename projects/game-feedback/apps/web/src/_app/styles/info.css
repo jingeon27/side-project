@@ -1,0 +1,107 @@
+@layer components {
+  .guide-section {
+    margin-block: 28px;
+    scroll-margin-top: calc(var(--site-header-height) + 16px);
+  }
+  .guide-section p {
+    color: var(--color-muted);
+    line-height: 1.9;
+  }
+  .guide-board-list {
+    display: grid;
+    gap: 12px;
+    margin-block: 20px;
+  }
+  .guide-board-list dt {
+    font-weight: 600;
+  }
+  .guide-board-list dd {
+    margin-top: 4px;
+    color: var(--color-muted);
+    line-height: 1.8;
+  }
+  .guide-board-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .guide-step {
+    display: flex;
+    gap: 17px;
+    margin: 29px 0;
+  }
+  .guide-step > span {
+    border: 1px solid var(--color-line);
+    width: 31px;
+    height: 31px;
+    border-radius: var(--radius-control);
+    display: grid;
+    place-items: center;
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .guide-step h2 {
+    margin: 4px 0 12px;
+  }
+  .guide-step p {
+    font-size: var(--text-body);
+    line-height: 1.9;
+    color: var(--color-muted);
+  }
+  .info-callout p {
+    font-size: var(--text-body);
+    line-height: 1.9;
+    color: var(--color-muted);
+  }
+  .guide-step blockquote {
+    margin: 17px 0 0;
+    padding: 14px;
+    border-left: 2px solid var(--color-line);
+    background: var(--color-surface);
+    font-size: var(--text-caption);
+    line-height: 1.9;
+    color: var(--color-muted);
+  }
+  .info-callout {
+    padding: 19px;
+    background: var(--color-sunken);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    margin: 26px 0;
+  }
+  .info-callout > strong {
+    font-size: var(--text-body);
+    color: var(--color-muted);
+  }
+  .info-callout > p {
+    margin-top: 8px;
+    font-size: var(--text-caption);
+  }
+  .info-callout h2 {
+    margin: 0 0 12px;
+  }
+  .contact-link {
+    color: var(--color-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  @media (max-width: 760px) {
+    .guide-step {
+      gap: 12px;
+    }
+    .guide-step h2 {
+      font-size: var(--text-body);
+    }
+    .guide-step p {
+      font-size: var(--text-caption);
+    }
+    .guide-step > span {
+      font-size: var(--text-caption);
+      width: 27px;
+      height: 27px;
+    }
+  }
+}

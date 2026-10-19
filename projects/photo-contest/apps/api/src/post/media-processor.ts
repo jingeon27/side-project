@@ -1,5 +1,11 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
-import mediaInfoFactory, { isTrackType, type MediaInfo } from 'mediainfo.js';
+import mediaInfoFactory, {
+  isTrackType,
+  type MediaInfo,
+  type GeneralTrack,
+  type VideoTrack,
+  type AudioTrack,
+} from 'mediainfo.js';
 
 import { fail } from '../common/errors';
 import { MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from '../config/limits';
@@ -29,9 +35,9 @@ export class MediaProcessor implements OnModuleDestroy {
         body.subarray(offset, offset + size),
       );
       const tracks = result.media?.track ?? [];
-      const general = tracks.find((track) => isTrackType(track, 'General'));
-      const video = tracks.find((track) => isTrackType(track, 'Video'));
-      const audio = tracks.filter((track) => isTrackType(track, 'Audio'));
+      const general = tracks.find((track): track is GeneralTrack => isTrackType(track, 'General'));
+      const video = tracks.find((track): track is VideoTrack => isTrackType(track, 'Video'));
+      const audio = tracks.filter((track): track is AudioTrack => isTrackType(track, 'Audio'));
       const duration = Math.max(...[general, video, ...audio].map((track) => Number(track?.Duration ?? 0)));
       const mp4 = general?.Format === 'MPEG-4' && video?.Format === 'AVC';
       const webm = general?.Format === 'WebM' && ['VP8', 'VP9'].includes(video?.Format ?? '');
