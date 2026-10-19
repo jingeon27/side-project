@@ -1,6 +1,6 @@
+import { ModerationRepository } from './moderation.repository';
 import type { CreateReportDto } from './report-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { PostsService } from '../posts/posts.service';
@@ -11,7 +11,7 @@ import { ApiError } from '../common/http/api-error';
 @Injectable()
 export class ModerationService {
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(ModerationRepository) private readonly repository: ModerationRepository,
     @Inject(PostsService) private readonly posts: PostsService,
     @Inject(AnswersService) private readonly answers: AnswersService,
     @Inject(CommentsService) private readonly comments: CommentsService,
@@ -24,10 +24,10 @@ export class ModerationService {
     if (input.targetType === 'USER') {
       if (input.targetId === u.id)
         throw new ApiError(400, 'CANNOT_REPORT_SELF', '자신을 신고할 수 없습니다.');
-      if (!(await this.db.user.findUnique({ where: { id: input.targetId } })))
+      if (!(await this.repository.findUniqueUser({ where: { id: input.targetId } })))
         throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
     }
-    await this.db.report.upsert({
+    await this.repository.upsertReport({
       where: {
         reporterId_targetType_targetId: {
           reporterId: u.id,

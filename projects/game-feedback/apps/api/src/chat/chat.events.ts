@@ -1,6 +1,6 @@
+import { ChatRepository } from './chat.repository';
 import { Observable, type Subscriber } from 'rxjs';
 import { Inject, Injectable, type MessageEvent, type OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
@@ -13,12 +13,12 @@ export class ChatEvents implements OnModuleDestroy {
   private readonly clients = new Set<Client>();
   canAccess: (userId: string, conversationId: string) => Promise<boolean> = async () => false;
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(ChatRepository) private readonly repository: ChatRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   private async authenticated(client: Client): Promise<boolean> {
-    const session = await this.db.session.findUnique({
+    const session = await this.repository.findUniqueSession({
       where: { tokenHash: client.sessionHash },
       include: { user: true },
     });

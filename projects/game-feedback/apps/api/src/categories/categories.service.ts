@@ -1,9 +1,9 @@
+import { CategoriesRepository } from './categories.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
 @Injectable()
 export class CategoriesService {
-  constructor(@Inject(PrismaClient) private readonly db: PrismaClient) {}
+  constructor(@Inject(CategoriesRepository) private readonly repository: CategoriesRepository) {}
   categories() {
-    return this.db.category.findMany({ where: { active: true }, orderBy: { slug: 'asc' } });
+    return this.repository.activeCategories();
   }
 }

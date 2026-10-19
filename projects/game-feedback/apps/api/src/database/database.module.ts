@@ -1,3 +1,4 @@
+import { UnitOfWork } from './unit-of-work';
 import { Global, Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
 import { PrismaClient } from '../generated/prisma';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
@@ -21,11 +22,12 @@ export class DatabaseModule {
     return {
       module: DatabaseModule,
       providers: [
+        UnitOfWork,
         { provide: APP_CONFIG, useValue: config },
         { provide: PrismaClient, useValue: db },
         { provide: DatabaseLifecycle, useValue: new DatabaseLifecycle(db, !providedClient) },
       ],
-      exports: [APP_CONFIG, PrismaClient],
+      exports: [APP_CONFIG, PrismaClient, UnitOfWork],
     };
   }
 }

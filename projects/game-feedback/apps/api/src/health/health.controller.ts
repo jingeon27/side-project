@@ -1,13 +1,13 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+import { HealthRepository } from './health.repository';
 
 @Controller('api/health')
 export class HealthController {
-  constructor(@Inject(PrismaClient) private readonly db: PrismaClient) {}
+  constructor(@Inject(HealthRepository) private readonly repository: HealthRepository) {}
 
   @Get()
   async health() {
-    await this.db.$queryRaw`SELECT 1`;
+    await this.repository.ping();
     return { ok: true };
   }
 }

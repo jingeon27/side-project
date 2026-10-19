@@ -1,3 +1,4 @@
+import { CommentsRepository } from './comments.repository';
 import { Module } from '@nestjs/common';
 import { UsersModule } from '../users/users.module';
 import { PostsModule } from '../posts/posts.module';
@@ -7,7 +8,7 @@ import { CommentsService } from './comments.service';
 @Module({
   imports: [UsersModule, PostsModule],
   controllers: [CommentsController],
-  providers: [CommentsService],
+  providers: [CommentsRepository, CommentsService],
   exports: [CommentsService],
 })
 export class CommentsModule {}

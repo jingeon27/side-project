@@ -1,9 +1,10 @@
+import { MediaStorageRepository } from './media-storage.repository';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 import { mkdir, open, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { PrismaClient, type MediaObject } from '../generated/prisma';
+import { type MediaObject } from '../generated/prisma';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { ApiError } from '../common/http/api-error';
 
@@ -20,7 +21,7 @@ interface IMediaRange {
 export class MediaStorage implements OnModuleDestroy {
   private readonly s3: S3Client | undefined;
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(MediaStorageRepository) private readonly repository: MediaStorageRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {
     const storage = config.mediaStorage;
@@ -45,7 +46,7 @@ export class MediaStorage implements OnModuleDestroy {
     const storage = this.config.mediaStorage;
     if (storage.driver === 'DATABASE') return { bytes: Uint8Array.from(bytes), objectId: null };
     // Register before external IO so failed uploads remain eligible for orphan cleanup.
-    const object = await this.db.mediaObject.create({
+    const object = await this.repository.createMediaObject({
       data: { backend: storage.driver, key: `objects/${randomUUID()}` },
     });
     try {
@@ -116,14 +117,14 @@ export class MediaStorage implements OnModuleDestroy {
   /** Run under the operator lock, after the daily backup. Never delete a referenced object. */
   async prune() {
     const before = new Date(Date.now() - 86400000);
-    await this.db.postMedia.deleteMany({ where: { postId: null, createdAt: { lt: before } } });
-    await this.db.chatAttachment.deleteMany({ where: { messageId: null, createdAt: { lt: before } } });
+    await this.repository.deleteManyPostMedia({ where: { postId: null, createdAt: { lt: before } } });
+    await this.repository.deleteManyChatAttachment({ where: { messageId: null, createdAt: { lt: before } } });
     const storage = this.config.mediaStorage;
-    await this.db.mediaObject.updateMany({
+    await this.repository.updateManyMediaObject({
       where: { createdAt: { lt: before }, retiredAt: null, postMedia: null, chatAttachment: null },
       data: { retiredAt: new Date() },
     });
-    const objects = await this.db.mediaObject.findMany({
+    const objects = await this.repository.findManyMediaObject({
       // Keep deleted content for 14 days so seven-day operator backups remain restorable.
       where: {
         backend: storage.driver,
@@ -142,7 +143,7 @@ export class MediaStorage implements OnModuleDestroy {
           });
         if (storage.driver === 'S3' && this.s3)
           await this.s3.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: object.key }));
-        await this.db.mediaObject.delete({ where: { id: object.id } });
+        await this.repository.deleteMediaObject({ where: { id: object.id } });
       }),
     );
     return {

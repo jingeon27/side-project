@@ -1,13 +1,13 @@
+import { ChatRepository } from './chat.repository';
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
-import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { ChatEvents } from './chat.events';
 
 @Injectable()
 export class ChatLifecycleMiddleware implements NestMiddleware {
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(ChatRepository) private readonly repository: ChatRepository,
     @Inject(ChatEvents) private readonly events: ChatEvents,
   ) {}
 
@@ -19,7 +19,7 @@ export class ChatLifecycleMiddleware implements NestMiddleware {
       let deletedPeers: string[] = [];
       if (req.method === 'DELETE' && req.path === '/api/me' && userId) {
         deletedPeers = (
-          await this.db.chatConversation.findMany({
+          await this.repository.findManyChatConversation({
             where: { OR: [{ firstUserId: userId }, { secondUserId: userId }] },
             select: { firstUserId: true, secondUserId: true },
           })

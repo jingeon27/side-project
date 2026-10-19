@@ -1,51 +1,61 @@
+import { UnitOfWork } from '../../database/unit-of-work';
+import { ReportsRepository } from './reports.repository';
 import { type ReviewReportDto, type HideContentDto } from './report-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma';
 import type { SessionRequest } from '../../auth/session.types';
 import { requireAdmin } from '../../auth/session-access';
 import { ApiError } from '../../common/http/api-error';
 @Injectable()
 export class AdminReportsService {
-  constructor(@Inject(PrismaClient) private readonly db: PrismaClient) {}
+  constructor(
+    @Inject(ReportsRepository) private readonly repository: ReportsRepository,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+  ) {}
   async hide(req: SessionRequest, input: HideContentDto) {
     const u = requireAdmin(req);
-    await this.db.$transaction(async (tx) => {
+    await this.transactions.run(async (tx) => {
       const data = { hidden: input.hidden };
-      if (input.targetType === 'POST') await tx.post.update({ where: { id: input.targetId }, data });
-      if (input.targetType === 'ANSWER') await tx.answer.update({ where: { id: input.targetId }, data });
-      if (input.targetType === 'COMMENT') await tx.comment.update({ where: { id: input.targetId }, data });
+      if (input.targetType === 'POST')
+        await this.repository.updatePost({ where: { id: input.targetId }, data }, tx);
+      if (input.targetType === 'ANSWER')
+        await this.repository.updateAnswer({ where: { id: input.targetId }, data }, tx);
+      if (input.targetType === 'COMMENT')
+        await this.repository.updateComment({ where: { id: input.targetId }, data }, tx);
       if (input.hidden) {
         if (input.targetType === 'POST')
-          await tx.notification.deleteMany({ where: { postId: input.targetId } });
+          await this.repository.deleteManyNotification({ where: { postId: input.targetId } }, tx);
         if (input.targetType === 'ANSWER')
-          await tx.notification.deleteMany({ where: { answerId: input.targetId } });
+          await this.repository.deleteManyNotification({ where: { answerId: input.targetId } }, tx);
       }
-      await tx.auditLog.create({
-        data: {
-          actorId: u.id,
-          action: input.hidden ? 'HIDE' : 'UNHIDE',
-          targetType: input.targetType,
-          targetId: input.targetId,
-          detail: input.reason,
+      await this.repository.createAuditLog(
+        {
+          data: {
+            actorId: u.id,
+            action: input.hidden ? 'HIDE' : 'UNHIDE',
+            targetType: input.targetType,
+            targetId: input.targetId,
+            detail: input.reason,
+          },
         },
-      });
+        tx,
+      );
     });
     return { ok: true };
   }
   async reports(req: SessionRequest) {
     requireAdmin(req);
-    const rows = await this.db.report.findMany({ orderBy: { createdAt: 'desc' }, take: 100 });
+    const rows = await this.repository.findManyReport({ orderBy: { createdAt: 'desc' }, take: 100 });
     const ids = (type: string) => rows.filter((row) => row.targetType === type).map((row) => row.targetId);
     const [posts, answers, comments] = await Promise.all([
-      this.db.post.findMany({
+      this.repository.findManyPost({
         where: { id: { in: ids('POST') } },
         select: { id: true, authorId: true, title: true, body: true },
       }),
-      this.db.answer.findMany({
+      this.repository.findManyAnswer({
         where: { id: { in: ids('ANSWER') } },
         select: { id: true, authorId: true, postId: true, body: true },
       }),
-      this.db.comment.findMany({
+      this.repository.findManyComment({
         where: { id: { in: ids('COMMENT') } },
         select: { id: true, authorId: true, postId: true, body: true },
       }),
@@ -69,19 +79,22 @@ export class AdminReportsService {
   async review(req: SessionRequest, id: string, body: ReviewReportDto) {
     const admin = requireAdmin(req);
     const { status } = body;
-    await this.db.$transaction(async (tx) => {
-      if (!(await tx.report.findUnique({ where: { id } })))
+    await this.transactions.run(async (tx) => {
+      if (!(await this.repository.findUniqueReport({ where: { id } }, tx)))
         throw new ApiError(404, 'REPORT_NOT_FOUND', '신고를 찾을 수 없습니다.');
-      await tx.report.update({ where: { id }, data: { status } });
-      await tx.auditLog.create({
-        data: {
-          actorId: admin.id,
-          action: `REPORT_${status}`,
-          targetType: 'REPORT',
-          targetId: id,
-          detail: '신고 검토 상태 변경',
+      await this.repository.updateReport({ where: { id }, data: { status } }, tx);
+      await this.repository.createAuditLog(
+        {
+          data: {
+            actorId: admin.id,
+            action: `REPORT_${status}`,
+            targetType: 'REPORT',
+            targetId: id,
+            detail: '신고 검토 상태 변경',
+          },
         },
-      });
+        tx,
+      );
     });
     return { ok: true };
   }

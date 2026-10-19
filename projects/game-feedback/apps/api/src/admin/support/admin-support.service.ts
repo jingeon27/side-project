@@ -1,6 +1,7 @@
+import { UnitOfWork } from '../../database/unit-of-work';
+import { SupportRepository } from './support.repository';
 import type { SupportStatusDto } from './support-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma';
 import type { SessionRequest } from '../../auth/session.types';
 import { requireAdmin } from '../../auth/session-access';
 import { ApiError } from '../../common/http/api-error';
@@ -11,10 +12,13 @@ const include = {
 } as const;
 @Injectable()
 export class AdminSupportService {
-  constructor(@Inject(PrismaClient) private readonly db: PrismaClient) {}
+  constructor(
+    @Inject(SupportRepository) private readonly repository: SupportRepository,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+  ) {}
   async list(req: SessionRequest) {
     const admin = requireAdmin(req);
-    const rows = await this.db.supportConversation.findMany({
+    const rows = await this.repository.findManySupportConversation({
       where: { adminId: admin.id },
       include,
       orderBy: { conversation: { updatedAt: 'desc' } },
@@ -31,19 +35,28 @@ export class AdminSupportService {
   async status(req: SessionRequest, id: string, body: SupportStatusDto) {
     const admin = requireAdmin(req);
     const { status } = body;
-    const row = await this.db.$transaction(async (tx) => {
-      const thread = await tx.supportConversation.findFirst({ where: { id, adminId: admin.id } });
+    const row = await this.transactions.run(async (tx) => {
+      const thread = await this.repository.findFirstSupportConversation(
+        { where: { id, adminId: admin.id } },
+        tx,
+      );
       if (!thread) throw new ApiError(404, 'SUPPORT_NOT_FOUND', '문의를 찾을 수 없습니다.');
-      const updated = await tx.supportConversation.update({ where: { id }, data: { status }, include });
-      await tx.auditLog.create({
-        data: {
-          actorId: admin.id,
-          action: `SUPPORT_${status}`,
-          targetType: 'SUPPORT',
-          targetId: id,
-          detail: '문의 처리 상태 변경',
+      const updated = await this.repository.updateSupportConversation(
+        { where: { id }, data: { status }, include },
+        tx,
+      );
+      await this.repository.createAuditLog(
+        {
+          data: {
+            actorId: admin.id,
+            action: `SUPPORT_${status}`,
+            targetType: 'SUPPORT',
+            targetId: id,
+            detail: '문의 처리 상태 변경',
+          },
         },
-      });
+        tx,
+      );
       return updated;
     });
     return {

@@ -1,3 +1,4 @@
+import { ModerationRepository } from './moderation.repository';
 import { Module } from '@nestjs/common';
 import { PostsModule } from '../posts/posts.module';
 import { AnswersModule } from '../answers/answers.module';
@@ -8,6 +9,6 @@ import { ModerationService } from './moderation.service';
 @Module({
   imports: [PostsModule, AnswersModule, CommentsModule],
   controllers: [ModerationController],
-  providers: [ModerationService],
+  providers: [ModerationRepository, ModerationService],
 })
 export class ModerationModule {}

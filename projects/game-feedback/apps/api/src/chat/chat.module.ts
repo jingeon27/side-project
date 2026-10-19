@@ -1,3 +1,4 @@
+import { ChatRepository } from './chat.repository';
 import { Module } from '@nestjs/common';
 import { ChatController } from './chat.controller';
 import { ChatEvents } from './chat.events';
@@ -8,7 +9,14 @@ import { ChatAttachmentService } from './chat-attachment.service';
 
 @Module({
   controllers: [ChatController, ChatAttachmentController],
-  providers: [ChatService, ChatEvents, ChatLifecycleMiddleware, ChatAttachmentService, ChatAttachmentGuard],
+  providers: [
+    ChatRepository,
+    ChatService,
+    ChatEvents,
+    ChatLifecycleMiddleware,
+    ChatAttachmentService,
+    ChatAttachmentGuard,
+  ],
   exports: [ChatEvents, ChatLifecycleMiddleware, ChatService],
 })
 export class ChatModule {}

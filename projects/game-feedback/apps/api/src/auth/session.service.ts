@@ -1,5 +1,6 @@
+import { UnitOfWork } from '../database/unit-of-work';
+import { AuthRepository } from './auth.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import type { Response } from 'express';
 import type { SessionRequest } from './session.types';
@@ -12,14 +13,13 @@ import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contr
 @Injectable()
 export class SessionService {
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(AuthRepository) private readonly repository: AuthRepository,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
   async loadSession(req: SessionRequest) {
     const raw = sessionToken(req);
-    req.gfSession = raw
-      ? await this.db.session.findUnique({ where: { tokenHash: hash(raw) }, include: { user: true } })
-      : null;
+    req.gfSession = raw ? await this.repository.sessionWithUser(hash(raw)) : null;
     if (
       req.gfSession &&
       (req.gfSession.expiresAt.getTime() <= Date.now() ||
@@ -52,23 +52,23 @@ export class SessionService {
       maxAge = options.durationMs ?? (userId ? 1000 * 60 * 60 * 24 * 14 : 1000 * 60 * 15);
     const expiresAt = new Date(Date.now() + maxAge);
     const current = sessionToken(req);
-    await this.db.$transaction(async (tx) => {
-      if (current) await tx.session.deleteMany({ where: { tokenHash: hash(current) } });
-      await tx.session.create({
-        data: {
-          tokenHash: hash(raw),
-          userId,
-          pendingSubject,
-          pendingProvider: pendingSubject ? (options.provider ?? 'google') : null,
-          expiresAt,
+    await this.transactions.run(async (tx) => {
+      if (current) await this.repository.deleteManySession({ where: { tokenHash: hash(current) } }, tx);
+      await this.repository.createSession(
+        {
+          data: {
+            tokenHash: hash(raw),
+            userId,
+            pendingSubject,
+            pendingProvider: pendingSubject ? (options.provider ?? 'google') : null,
+            expiresAt,
+          },
         },
-      });
+        tx,
+      );
     });
     setCookie(res, COOKIE, raw, maxAge, this.config.production);
-    req.gfSession = await this.db.session.findUnique({
-      where: { tokenHash: hash(raw) },
-      include: { user: true },
-    });
+    req.gfSession = await this.repository.sessionWithUser(hash(raw));
     return { accessToken: raw, expiresAt: expiresAt.toISOString() };
   }
 }

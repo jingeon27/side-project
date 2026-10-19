@@ -7,6 +7,7 @@ import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from './generated/prisma';
 import { createApp } from './app';
 import { seed } from './seed';
+import { hash, token } from './common/crypto';
 import { assertDatabaseUrl, DemoProfileProvider, type IdentityProvider } from './security';
 
 const baseUrl = process.env.TEST_DATABASE_URL;
@@ -302,5 +303,56 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect((await agent.get('/api/session')).body.user.nickname).toBe('직접지은이름');
     await agent.post('/api/auth/demo').set('Origin', origin).send({ nickname: '공개위험' }).expect(404);
     await authApp.close();
+  });
+  it('creates followed posts with one pooled connection while serving session requests', async () => {
+    const author = await db.user.create({
+      data: { nickname: '연결풀 작성자', termsVersion: '2026-10-16', ageConfirmed: true },
+    });
+    const follower = await db.user.create({
+      data: { nickname: '연결풀 구독자', termsVersion: '2026-10-16', ageConfirmed: true },
+    });
+    await db.userFollow.create({ data: { followerId: follower.id, followingId: author.id } });
+    const accessToken = token();
+    await db.session.create({
+      data: { tokenHash: hash(accessToken), userId: author.id, expiresAt: new Date(Date.now() + 60000) },
+    });
+    const singleConnectionUrl = new URL(url);
+    singleConnectionUrl.searchParams.set('connection_limit', '1');
+    singleConnectionUrl.searchParams.set('pool_timeout', '2');
+    const single = await createApp({
+      databaseUrl: singleConnectionUrl.toString(),
+      webOrigin: origin,
+      demoMode: false,
+      rateLimit: false,
+    });
+    try {
+      const api = supertest(single.getHttpServer());
+      const created = await Promise.all(
+        Array.from({ length: 3 }, (_, index) =>
+          api
+            .post('/api/posts')
+            .set('Origin', origin)
+            .set('Authorization', `Bearer ${accessToken}`)
+            .send({
+              title: `단일 연결 작성 ${index}`,
+              body: '동일한 트랜잭션으로 구독 알림을 전달합니다.',
+              categoryId: 'clash-royale',
+            })
+            .timeout({ response: 5000, deadline: 8000 })
+            .expect(200),
+        ).concat(
+          Array.from({ length: 3 }, () =>
+            api.get('/api/session').set('Authorization', `Bearer ${accessToken}`).expect(200),
+          ),
+        ),
+      );
+      const postIds = created.slice(0, 3).map(({ body }) => body.id);
+      expect(await db.post.count({ where: { id: { in: postIds }, authorId: author.id } })).toBe(3);
+      expect(await db.notification.count({ where: { postId: { in: postIds }, userId: follower.id } })).toBe(
+        3,
+      );
+    } finally {
+      await single.close();
+    }
   });
 });

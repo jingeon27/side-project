@@ -1,5 +1,6 @@
+import { UnitOfWork } from '../database/unit-of-work';
+import { ChatRepository } from './chat.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
 import { ApiError } from '../common/http/api-error';
@@ -11,7 +12,8 @@ import { MediaStorage } from '../media-storage/media-storage.service';
 @Injectable()
 export class ChatAttachmentService {
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(ChatRepository) private readonly repository: ChatRepository,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(MediaStorage) private readonly storage: MediaStorage,
   ) {}
   async upload(req: SessionRequest, conversationId: string, input: unknown) {
@@ -19,28 +21,37 @@ export class ChatAttachmentService {
     const file = validateChatFile(input);
     const { bytes: _bytes, ...metadata } = file;
     const stored = await this.storage.save(file.bytes, file.mimeType);
-    const attachment = await this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
-      await tx.chatAttachment.deleteMany({
-        where: { uploaderId: user.id, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
-      });
-      const pending = await tx.chatAttachment.count({ where: { uploaderId: user.id, messageId: null } });
+    const attachment = await this.transactions.run(async (tx) => {
+      await this.repository.lockUser(user.id, tx);
+      await this.repository.deleteManyChatAttachment(
+        {
+          where: { uploaderId: user.id, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+        },
+        tx,
+      );
+      const pending = await this.repository.countChatAttachment(
+        { where: { uploaderId: user.id, messageId: null } },
+        tx,
+      );
       if (pending >= 4)
         throw new ApiError(409, 'ATTACHMENT_LIMIT', '전송 대기 중인 첨부파일을 먼저 정리해주세요.');
-      return tx.chatAttachment.create({
-        data: { conversationId, uploaderId: user.id, ...metadata, ...stored },
-        select: attachmentSelect,
-      });
+      return this.repository.createChatAttachment(
+        {
+          data: { conversationId, uploaderId: user.id, ...metadata, ...stored },
+          select: attachmentSelect,
+        },
+        tx,
+      );
     });
     return attachmentDto(attachment);
   }
   async file(req: SessionRequest, conversationId: string, id: string) {
     const user = requireUser(req);
-    const conversation = await this.db.chatConversation.findFirst({
+    const conversation = await this.repository.findFirstChatConversation({
       where: { id: conversationId, OR: [{ firstUserId: user.id }, { secondUserId: user.id }] },
     });
     if (!conversation) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
-    const file = await this.db.chatAttachment.findFirst({
+    const file = await this.repository.findFirstChatAttachment({
       include: { object: true },
       where: {
         id,
@@ -59,7 +70,7 @@ export class ChatAttachmentService {
   }
   async remove(req: SessionRequest, conversationId: string, id: string) {
     const user = requireUser(req);
-    const result = await this.db.chatAttachment.deleteMany({
+    const result = await this.repository.deleteManyChatAttachment({
       where: { id, conversationId, uploaderId: user.id, messageId: null },
     });
     if (!result.count) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');

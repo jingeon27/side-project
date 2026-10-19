@@ -1,3 +1,5 @@
+import { UnitOfWork } from '../database/unit-of-work';
+import { ChatRepository } from './chat.repository';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import {
   type ReadMessageDto,
@@ -7,7 +9,7 @@ import {
 } from './chat-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ChatMessage, type Conversation } from '@game-feedback/contracts';
-import { Prisma, PrismaClient } from '../generated/prisma';
+import { Prisma } from '../generated/prisma';
 import { ApiError } from '../common/http/api-error';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { requireUser } from '../auth/session-access';
@@ -64,7 +66,8 @@ function unreadWhere(row: ConversationRow, userId: string): Prisma.ChatMessageWh
 @Injectable()
 export class ChatService {
   constructor(
-    @Inject(PrismaClient) readonly db: PrismaClient,
+    @Inject(ChatRepository) private readonly repository: ChatRepository,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(ChatEvents) private readonly events: ChatEvents,
   ) {
@@ -81,8 +84,8 @@ export class ChatService {
     const demoAuthors =
       this.config.demoMode || this.config.testAuthEnabled
         ? []
-        : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
-    const blocks = await this.db.block.findMany({
+        : await this.repository.findManyUser({ where: { demoKey: { not: null } }, select: { id: true } });
+    const blocks = await this.repository.findManyBlock({
       where: { OR: [{ userId }, { blockedUserId: userId }] },
     });
     return [
@@ -95,27 +98,33 @@ export class ChatService {
   private async blocked(
     userId: string,
     peerId: string,
-    db: Prisma.TransactionClient | PrismaClient = this.db,
+    db: Prisma.TransactionClient | undefined = undefined,
   ) {
-    return !!(await db.block.findFirst({
-      where: {
-        OR: [
-          { userId, blockedUserId: peerId },
-          { userId: peerId, blockedUserId: userId },
-        ],
+    return !!(await this.repository.findFirstBlock(
+      {
+        where: {
+          OR: [
+            { userId, blockedUserId: peerId },
+            { userId: peerId, blockedUserId: userId },
+          ],
+        },
+        select: { id: true },
       },
-      select: { id: true },
-    }));
+      db,
+    ));
   }
   async visible(
     userId: string,
     id: string,
-    db: Prisma.TransactionClient | PrismaClient = this.db,
+    db: Prisma.TransactionClient | undefined = undefined,
   ): Promise<ConversationRow> {
-    const row = await db.chatConversation.findFirst({
-      where: { id, OR: [{ firstUserId: userId }, { secondUserId: userId }] },
-      include: conversationInclude,
-    });
+    const row = await this.repository.findFirstChatConversation(
+      {
+        where: { id, OR: [{ firstUserId: userId }, { secondUserId: userId }] },
+        include: conversationInclude,
+      },
+      db,
+    );
     if (!row) throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
     const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
     if (!row.support && (row.firstUser.bannedAt || row.secondUser.bannedAt))
@@ -131,12 +140,12 @@ export class ChatService {
   private async dto(row: ConversationRow, userId: string): Promise<Conversation> {
     const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
     const [last, unreadCount] = await Promise.all([
-      this.db.chatMessage.findFirst({
+      this.repository.findFirstChatMessage({
         where: { conversationId: row.id, ...historyWhere(row, userId) },
         include: messageInclude,
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       }),
-      this.db.chatMessage.count({ where: unreadWhere(row, userId) }),
+      this.repository.countChatMessage({ where: unreadWhere(row, userId) }),
     ]);
     const peerReadAt = row.firstUserId === userId ? row.secondReadAt : row.firstReadAt;
     return {
@@ -160,7 +169,7 @@ export class ChatService {
     const { recipientId } = input;
     if (recipientId === user.id)
       throw new ApiError(400, 'CANNOT_CHAT_SELF', '자신에게 메시지를 보낼 수 없습니다.');
-    const peer = await this.db.user.findUnique({ where: { id: recipientId }, select: userSelect });
+    const peer = await this.repository.findUniqueUser({ where: { id: recipientId }, select: userSelect });
     if (
       !peer ||
       peer.bannedAt ||
@@ -172,7 +181,7 @@ export class ChatService {
     const [firstUserId, secondUserId] = [user.id, recipientId].sort();
     let row: ConversationRow;
     try {
-      row = await this.db.chatConversation.upsert({
+      row = await this.repository.upsertChatConversation({
         where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
         update: {},
         create: { firstUserId, secondUserId },
@@ -181,7 +190,7 @@ export class ChatService {
     } catch (error) {
       // Prisma may emulate upsert with relation reads; the pair's unique key settles concurrent starts.
       if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
-      row = await this.db.chatConversation.findUniqueOrThrow({
+      row = await this.repository.findUniqueOrThrowChatConversation({
         where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
         include: conversationInclude,
       });
@@ -233,7 +242,7 @@ export class ChatService {
           : []),
       ],
     };
-    const rows = await this.db.chatConversation.findMany({
+    const rows = await this.repository.findManyChatConversation({
       where,
       include: conversationInclude,
       take: query.limit + 1,
@@ -241,9 +250,9 @@ export class ChatService {
     });
     const items = await Promise.all(rows.slice(0, query.limit).map((row) => this.dto(row, user.id)));
     // The global unread badge includes every visible conversation, not only this page.
-    const all = await this.db.chatConversation.findMany({ where: base, include: conversationInclude });
+    const all = await this.repository.findManyChatConversation({ where: base, include: conversationInclude });
     const counts = await Promise.all(
-      all.map((row) => this.db.chatMessage.count({ where: unreadWhere(row, user.id) })),
+      all.map((row) => this.repository.countChatMessage({ where: unreadWhere(row, user.id) })),
     );
     const last = rows[Math.min(query.limit, rows.length) - 1];
     return {
@@ -257,7 +266,7 @@ export class ChatService {
     const conversation = await this.visible(user.id, id);
 
     const cursor = decodeCursor(query.cursor);
-    const rows = await this.db.chatMessage.findMany({
+    const rows = await this.repository.findManyChatMessage({
       where: {
         conversationId: id,
         AND: [historyWhere(conversation, user.id)],
@@ -286,14 +295,17 @@ export class ChatService {
     const body = input;
     // Authorization precedes idempotency lookup so UUID reuse cannot reveal another conversation.
     await this.visible(user.id, id);
-    const result = await this.db
-      .$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
+    const result = await this.transactions
+      .run(async (tx) => {
+        await this.repository.lockConversation(id, tx);
         const conversation = await this.visible(user.id, id, tx);
-        const previous = await tx.chatMessage.findUnique({
-          where: { senderId_clientMessageId: { senderId: user.id, clientMessageId: body.clientMessageId } },
-          include: messageInclude,
-        });
+        const previous = await this.repository.findUniqueChatMessage(
+          {
+            where: { senderId_clientMessageId: { senderId: user.id, clientMessageId: body.clientMessageId } },
+            include: messageInclude,
+          },
+          tx,
+        );
         if (previous) {
           if (!advancesBoundary(previous, historyBoundary(conversation, user.id)))
             throw new ApiError(
@@ -318,46 +330,61 @@ export class ChatService {
         }
         const attachmentIds = body.attachmentIds ?? [];
         if (attachmentIds.length) {
-          const eligible = await tx.chatAttachment.count({
-            where: {
-              id: { in: attachmentIds },
-              conversationId: id,
-              uploaderId: user.id,
-              messageId: null,
-              createdAt: { gte: new Date(Date.now() - 86400000) },
+          const eligible = await this.repository.countChatAttachment(
+            {
+              where: {
+                id: { in: attachmentIds },
+                conversationId: id,
+                uploaderId: user.id,
+                messageId: null,
+                createdAt: { gte: new Date(Date.now() - 86400000) },
+              },
             },
-          });
+            tx,
+          );
           if (eligible !== attachmentIds.length)
             throw new ApiError(400, 'INVALID_ATTACHMENT', '전송할 첨부파일을 다시 선택해주세요.');
         }
-        const latest = await tx.chatMessage.findFirst({
-          where: { conversationId: id },
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          select: { createdAt: true },
-        });
+        const latest = await this.repository.findFirstChatMessage(
+          {
+            where: { conversationId: id },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            select: { createdAt: true },
+          },
+          tx,
+        );
         // Serialize the pair and keep a strictly increasing timestamp for precise read boundaries.
         const createdAt = new Date(Math.max(Date.now(), (latest?.createdAt.getTime() ?? 0) + 1));
-        const message = await tx.chatMessage.create({
-          data: {
-            conversationId: id,
-            senderId: user.id,
-            body: body.body,
-            clientMessageId: body.clientMessageId,
-            createdAt,
-            ...(attachmentIds.length
-              ? { attachments: { connect: attachmentIds.map((attachmentId) => ({ id: attachmentId })) } }
-              : {}),
+        const message = await this.repository.createChatMessage(
+          {
+            data: {
+              conversationId: id,
+              senderId: user.id,
+              body: body.body,
+              clientMessageId: body.clientMessageId,
+              createdAt,
+              ...(attachmentIds.length
+                ? { attachments: { connect: attachmentIds.map((attachmentId) => ({ id: attachmentId })) } }
+                : {}),
+            },
+            include: messageInclude,
           },
-          include: messageInclude,
-        });
-        await tx.chatConversation.update({
-          where: { id },
-          data: { updatedAt: createdAt, firstHidden: false, secondHidden: false },
-        });
-        await tx.supportConversation.updateMany({
-          where: { conversationId: id, requesterId: user.id },
-          data: { status: 'OPEN' },
-        });
+          tx,
+        );
+        await this.repository.updateChatConversation(
+          {
+            where: { id },
+            data: { updatedAt: createdAt, firstHidden: false, secondHidden: false },
+          },
+          tx,
+        );
+        await this.repository.updateManySupportConversation(
+          {
+            where: { conversationId: id, requesterId: user.id },
+            data: { status: 'OPEN' },
+          },
+          tx,
+        );
         return {
           message,
           peerId: conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId,
@@ -376,28 +403,41 @@ export class ChatService {
   async clearHistory(req: SessionRequest, id: string, input: ClearHistoryDto) {
     const user = requireUser(req);
     const { throughMessageId } = input;
-    await this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
+    await this.transactions.run(async (tx) => {
+      await this.repository.lockConversation(id, tx);
       const conversation = await this.visible(user.id, id, tx);
-      const message = await tx.chatMessage.findFirst({ where: { id: throughMessageId, conversationId: id } });
+      const message = await this.repository.findFirstChatMessage(
+        { where: { id: throughMessageId, conversationId: id } },
+        tx,
+      );
       if (!message) throw new ApiError(404, 'MESSAGE_NOT_FOUND', '삭제할 대화내역을 찾을 수 없습니다.');
       if (!advancesBoundary(message, historyBoundary(conversation, user.id))) return;
-      const newer = await tx.chatMessage.count({
-        where: {
-          conversationId: id,
-          OR: [
-            { createdAt: { gt: message.createdAt } },
-            { createdAt: message.createdAt, id: { gt: message.id } },
-          ],
+      const newer = await this.repository.countChatMessage(
+        {
+          where: {
+            conversationId: id,
+            OR: [
+              { createdAt: { gt: message.createdAt } },
+              { createdAt: message.createdAt, id: { gt: message.id } },
+            ],
+          },
         },
-      });
-      await tx.chatConversation.update({
-        where: { id },
-        data:
-          conversation.firstUserId === user.id
-            ? { firstClearedAt: message.createdAt, firstClearedId: message.id, firstHidden: newer === 0 }
-            : { secondClearedAt: message.createdAt, secondClearedId: message.id, secondHidden: newer === 0 },
-      });
+        tx,
+      );
+      await this.repository.updateChatConversation(
+        {
+          where: { id },
+          data:
+            conversation.firstUserId === user.id
+              ? { firstClearedAt: message.createdAt, firstClearedId: message.id, firstHidden: newer === 0 }
+              : {
+                  secondClearedAt: message.createdAt,
+                  secondClearedId: message.id,
+                  secondHidden: newer === 0,
+                },
+        },
+        tx,
+      );
     });
     void this.events.publish([user.id], id);
     return { ok: true };
@@ -405,12 +445,15 @@ export class ChatService {
   async read(req: SessionRequest, id: string, input: ReadMessageDto) {
     const user = requireUser(req);
     const { messageId } = input;
-    const result = await this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${id} FOR UPDATE`;
+    const result = await this.transactions.run(async (tx) => {
+      await this.repository.lockConversation(id, tx);
       const conversation = await this.visible(user.id, id, tx);
-      const message = await tx.chatMessage.findFirst({
-        where: { id: messageId, conversationId: id, ...historyWhere(conversation, user.id) },
-      });
+      const message = await this.repository.findFirstChatMessage(
+        {
+          where: { id: messageId, conversationId: id, ...historyWhere(conversation, user.id) },
+        },
+        tx,
+      );
       if (!message) throw new ApiError(404, 'MESSAGE_NOT_FOUND', '표시된 메시지를 찾을 수 없습니다.');
       const current = readBoundary(conversation, user.id);
       const advances =
@@ -418,13 +461,16 @@ export class ChatService {
         message.createdAt > current.at ||
         (message.createdAt.getTime() === current.at.getTime() && message.id > (current.id ?? ''));
       if (advances)
-        await tx.chatConversation.update({
-          where: { id },
-          data:
-            conversation.firstUserId === user.id
-              ? { firstReadAt: message.createdAt, firstReadId: message.id }
-              : { secondReadAt: message.createdAt, secondReadId: message.id },
-        });
+        await this.repository.updateChatConversation(
+          {
+            where: { id },
+            data:
+              conversation.firstUserId === user.id
+                ? { firstReadAt: message.createdAt, firstReadId: message.id }
+                : { secondReadAt: message.createdAt, secondReadId: message.id },
+          },
+          tx,
+        );
       return {
         peerId: conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId,
       };

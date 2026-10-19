@@ -1,5 +1,5 @@
+import { UsersRepository } from './users.repository';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
@@ -9,12 +9,12 @@ import { authorDto, authorSelect } from './user.presenter';
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(UsersRepository) private readonly repository: UsersRepository,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
   ) {}
   async profile(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
-    const user = await this.db.user.findFirst({
+    const user = await this.repository.findFirstUser({
       where: { id, NOT: { id: { in: excluded } } },
       select: { ...authorSelect, createdAt: true },
     });
@@ -22,9 +22,9 @@ export class UsersService {
     const postVisibility = { ...ACTIVE_POST, authorId: { notIn: excluded } };
     const answerVisibility = { authorId: id, ...ACTIVE_CONTENT, post: postVisibility };
     const [postCount, answerCount, helpfulCount] = await Promise.all([
-      this.db.post.count({ where: { ...postVisibility, authorId: id } }),
-      this.db.answer.count({ where: answerVisibility }),
-      this.db.answer.count({ where: { ...answerVisibility, helpful: true } }),
+      this.repository.countPost({ where: { ...postVisibility, authorId: id } }),
+      this.repository.countAnswer({ where: answerVisibility }),
+      this.repository.countAnswer({ where: { ...answerVisibility, helpful: true } }),
     ]);
     return {
       author: authorDto(user),
