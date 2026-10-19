@@ -26,10 +26,14 @@ import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { MediaProcessor } from './media-processor';
+import { postLink } from './post-link.policy';
+import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
+import { DOWNLOAD_URL_TTL_SECONDS } from '../config/limits';
 
 interface IPostInput {
   groupId: string;
-  uploadId: string;
+  uploadId?: string | null;
+  linkUrl?: string | null;
   contestId?: string | null;
   title: string;
   body?: string | null;
@@ -145,15 +149,20 @@ export class PostService {
     const title = textValue(input.title, POST_TITLE_LIMIT, '제목');
     const body = input.body?.trim() ?? '';
     if (body.length > POST_BODY_LIMIT) fail('내용은 5000자 이하로 입력해 주세요.');
+    const linkUrl = postLink(input.linkUrl);
+    if (!input.uploadId && !linkUrl) fail('사진·동영상 또는 링크를 첨부해 주세요.');
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, input.groupId, tx);
-      const upload = await this.repository.findUniquePostUpload({ where: { id: input.uploadId } }, tx);
+      const upload = input.uploadId
+        ? await this.repository.findUniquePostUpload({ where: { id: input.uploadId } }, tx)
+        : null;
       if (
-        !upload ||
-        upload.userId !== viewer.id ||
-        upload.groupId !== input.groupId ||
-        !upload.storageKey ||
-        upload.expiresAt <= new Date()
+        input.uploadId &&
+        (!upload ||
+          upload.userId !== viewer.id ||
+          upload.groupId !== input.groupId ||
+          !upload.storageKey ||
+          upload.expiresAt <= new Date())
       )
         fail('업로드가 완료되지 않았거나 만료되었습니다.');
       if (input.contestId) {
@@ -166,7 +175,8 @@ export class PostService {
           data: {
             groupId: input.groupId,
             authorId: viewer.id,
-            uploadId: upload.id,
+            uploadId: upload?.id ?? null,
+            linkUrl,
             title,
             body,
             contestId: input.contestId ?? null,
@@ -179,7 +189,7 @@ export class PostService {
         id: `post:${created.id}`,
         type: ANALYTICS_EVENT.POST_CREATED,
         userId: viewer.id,
-        properties: { groupId: input.groupId, postId: created.id, kind: upload.kind },
+        properties: { groupId: input.groupId, postId: created.id, kind: upload?.kind ?? 'LINK' },
       });
       return created;
     });
@@ -227,12 +237,14 @@ export class PostService {
       if (post.legacySubmissionId)
         await this.repository.deleteManySubmission({ where: { id: post.legacySubmissionId } }, tx);
       // 파일 삭제가 일시 실패해도 정리 작업이 다시 시도할 수 있도록 티켓을 남긴다.
-      await this.repository.updatePostUpload(
-        { where: { id: post.uploadId }, data: { expiresAt: new Date(0) } },
-        tx,
-      );
+      if (post.uploadId)
+        await this.repository.updatePostUpload(
+          { where: { id: post.uploadId }, data: { expiresAt: new Date(0) } },
+          tx,
+        );
       return post.upload;
     });
+    if (!upload) return true;
     try {
       if (upload.storageKey) await this.storage.delete(upload.storageKey);
       await this.repository.deleteManyPostUpload({ where: { id: upload.id, post: null } });
@@ -243,7 +255,25 @@ export class PostService {
   }
   async file(viewer: IViewer | null, postId: string) {
     const { post } = await this.membership.readablePost(viewer?.id ?? null, postId);
-    if (!post.upload.storageKey) fail('파일을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-    return { key: post.upload.storageKey, size: post.upload.byteSize, contentType: post.upload.contentType };
+    if (!post.upload?.storageKey) fail('파일을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    return {
+      key: post.upload.storageKey,
+      size: post.upload.byteSize,
+      contentType: post.upload.contentType,
+      filename: mediaDownloadFilename(post.title, post.upload.storageKey),
+    };
+  }
+  async download(viewer: IViewer | null, postId: string) {
+    const file = await this.file(viewer, postId);
+    const signedUrl = await this.storage.presignDownload(
+      file.key,
+      mediaDownloadDisposition(file.filename),
+      DOWNLOAD_URL_TTL_SECONDS,
+    );
+    return {
+      url: signedUrl ?? `/backend/media/${postId}/download`,
+      filename: file.filename,
+      expiresAt: signedUrl ? new Date(Date.now() + DOWNLOAD_URL_TTL_SECONDS * 1000) : null,
+    };
   }
 }

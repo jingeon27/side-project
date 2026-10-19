@@ -3,6 +3,7 @@ scalar Upload
 enum PostKind {
   PHOTO
   VIDEO
+  LINK
 }
 enum PostSort {
   NEWEST
@@ -25,7 +26,8 @@ type GalleryPost {
   author: User!
   createdAt: DateTime!
   kind: PostKind!
-  mediaUrl: String!
+  mediaUrl: String
+  linkUrl: String
   likeCount: Int!
   commentCount: Int!
   likedByMe: Boolean!
@@ -40,7 +42,13 @@ type PostComment {
   createdAt: DateTime!
   canDelete: Boolean!
 }
+type PostDownload {
+  url: String!
+  filename: String!
+  expiresAt: DateTime
+}
 extend type Query {
+  postDownload(postId: ID!): PostDownload!
   galleryPosts(
     groupId: ID
     contestId: ID
@@ -56,7 +64,8 @@ extend type Mutation {
   createPost(
     contestId: ID
     groupId: ID!
-    uploadId: ID!
+    uploadId: ID
+    linkUrl: String
     title: String!
     body: String
     rightsConfirmed: Boolean!

@@ -196,7 +196,8 @@ model Post {
   id String @id @default(cuid())
   groupId String
   authorId String
-  uploadId String @unique
+  uploadId String? @unique
+  linkUrl String?
   title String
   body String @default("")
   hidden Boolean @default(false)
@@ -205,7 +206,7 @@ model Post {
   legacySubmission Submission? @relation(fields: [legacySubmissionId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  upload PostUpload @relation(fields: [uploadId], references: [id])
+  upload PostUpload? @relation(fields: [uploadId], references: [id], onDelete: Restrict)
   likes PostLike[]
   comments PostComment[]
   contestVotes PostContestVote[]
