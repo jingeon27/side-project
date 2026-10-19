@@ -1,12 +1,12 @@
+import { connection } from 'next/server';
 import { getPublicGroupCount, PUBLIC_GROUP_SITEMAP_SIZE } from '@/_pages/group';
 import { getPublicGroupContestCount, PUBLIC_CONTEST_SITEMAP_SIZE } from '@/_pages/group-contests';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { siteUrl } from '@/shared/lib/seo.helper';
 import { sitemapIndex, sitemapResponse } from '@/shared/lib/sitemap.helper';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
+  await connection();
   const origin = getWebOrigin();
   const [count, contestCount] = await Promise.all([getPublicGroupCount(), getPublicGroupContestCount()]);
   const urls = [

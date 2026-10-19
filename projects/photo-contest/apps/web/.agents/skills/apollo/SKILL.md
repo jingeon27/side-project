@@ -59,3 +59,7 @@ corepack yarn workspace @photo-contest/web typecheck
 corepack yarn workspace @photo-contest/web test       # 캐시 정책·helper spec
 corepack yarn workspace @photo-contest/web test:api   # src/**/*.api.spec.ts: 앱 문서를 격리 API(:4321)에 실행
 ```
+
+## 공개 서버 캐시
+
+개인화된 Apollo SSR은 no-store를 유지한다. SEO 공개 여부·대회 일정은 먼저 fresh 조회하고 익명 콘텐츠·사이트맵만 publicQuery의 cacheSeconds와 public-cache.policy로 캐시한다. JSON mutation은 Next /backend/graphql을 거쳐 성공·부분 성공 뒤 공개 태그를 expire:0으로 만료시키며 multipart는 그대로 전송한다. force-dynamic sitemap 설정은 명시적 캐시도 끄므로 connection()으로 런타임 조회를 유지한다. cache 검증은 test:cache의 실제 standalone 서버에서 한다.

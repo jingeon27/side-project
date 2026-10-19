@@ -73,9 +73,6 @@ query PublicGroupContestSeo($id: ID!) {
     endsAt
     phase
     entryCount
-    winners {
-      ...GroupContestAward
-    }
   }
 }
 query PublicGroupContestSitemap($offset: Int!, $limit: Int!) {

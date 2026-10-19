@@ -1,12 +1,12 @@
+import { connection } from 'next/server';
 import { getPublicGroupContestSitemapPage, PUBLIC_CONTEST_SITEMAP_SIZE } from '@/_pages/group-contests';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { siteUrl } from '@/shared/lib/seo.helper';
 import { sitemapDocument, sitemapResponse } from '@/shared/lib/sitemap.helper';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(_request: Request, { params }: { params: Promise<{ page: string }> }) {
+  await connection();
   const { page } = await params;
   if (!/^(0|[1-9]\d*)\.xml$/.test(page)) return new Response(null, { status: 404 });
   const index = Number(page.slice(0, -4));

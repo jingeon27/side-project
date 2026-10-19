@@ -2,6 +2,7 @@ import {
   GroupVisibility,
   PostKind,
   type GalleryPostsQuery,
+  type GroupContestAwardFragment,
   type PublicGroupContestSeoQuery,
   type PublicGroupSeoQuery,
 } from '@/shared/api/generated';
@@ -10,7 +11,7 @@ import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper'
 
 export interface IGroupContestSeoData {
   group: PublicGroupSeoQuery['group'];
-  contest: PublicGroupContestSeoQuery['groupContest'] | null;
+  contest: (PublicGroupContestSeoQuery['groupContest'] & { winners: GroupContestAwardFragment[] }) | null;
   posts: GalleryPostsQuery['galleryPosts'];
 }
 

@@ -11,6 +11,7 @@ import {
   PublicGroupSeoDocument,
 } from '@/shared/api/generated';
 import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
+import { PUBLIC_CONTENT_TTL } from '@/shared/api/public-cache.policy';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { groupContestMetadata, type IGroupContestSeoData } from './group-contest-seo.helper';
 
@@ -22,17 +23,29 @@ export const getGroupContestSeoData = cache(
       const { groupContest: contest } = await publicQuery(PublicGroupContestSeoDocument, { id: contestId });
       if (contest.groupId !== groupId) return null;
       if (contest.phase === Phase.Completed) {
-        const { groupContestResults } = await publicQuery(GroupContestResultsDocument, { contestId });
-        return { group, contest, posts: groupContestResults.map((result) => result.post) };
+        const { groupContestResults } = await publicQuery(
+          GroupContestResultsDocument,
+          { contestId },
+          PUBLIC_CONTENT_TTL,
+        );
+        return {
+          group,
+          contest: { ...contest, winners: groupContestResults.filter((result) => result.winner) },
+          posts: groupContestResults.map((result) => result.post),
+        };
       }
-      const { galleryPosts } = await publicQuery(GalleryPostsDocument, {
-        groupId,
-        contestId,
-        sort: PostSort.Newest,
-        offset: 0,
-        limit: 24,
-      });
-      return { group, contest, posts: galleryPosts };
+      const { galleryPosts } = await publicQuery(
+        GalleryPostsDocument,
+        {
+          groupId,
+          contestId,
+          sort: PostSort.Newest,
+          offset: 0,
+          limit: 24,
+        },
+        PUBLIC_CONTENT_TTL,
+      );
+      return { group, contest: { ...contest, winners: [] }, posts: galleryPosts };
     } catch (error) {
       if (
         error instanceof PublicQueryError &&
