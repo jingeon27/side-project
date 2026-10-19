@@ -124,7 +124,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     outsider = await createTestUser(url, { nickname: '문서-외부인', origin });
     const group = (await ok(CreateGroupDocument, owner, { name: '문서 계약 그룹' })).createGroup;
     groupId = group.id;
-    inviteToken = (await ok(GroupDocument, owner, { id: groupId })).group.inviteToken;
+    const token = (await ok(GroupDocument, owner, { id: groupId })).group.inviteToken;
+    if (!token) throw new Error('그룹장의 초대 토큰이 있어야 한다');
+    inviteToken = token;
     await ok(JoinGroupDocument, member, { token: inviteToken });
     const now = Date.now();
     const contest = await ok(CreateContestDocument, owner, {
@@ -250,6 +252,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     const newToken = (await ok(RegenerateInviteLinkDocument, owner, { groupId })).regenerateInviteLink
       .inviteToken;
     expect(newToken).not.toBe(inviteToken);
+    if (!newToken) throw new Error('새 초대 토큰이 있어야 한다');
     expect(
       (await execute(InvitePreviewDocument, undefined, { token: inviteToken })).errors?.[0]?.extensions?.code,
     ).toBe('NOT_FOUND');
@@ -263,6 +266,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     for (const name of ['홈 피드 첫 그룹', '홈 피드 둘째 그룹']) {
       const group = (await ok(CreateGroupDocument, owner, { name })).createGroup;
       const token = (await ok(GroupDocument, owner, { id: group.id })).group.inviteToken;
+      if (!token) throw new Error('그룹장의 초대 토큰이 있어야 한다');
       await ok(JoinGroupDocument, member, { token });
       const now = Date.now();
       const contest = (
@@ -336,9 +340,12 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
         ?.id,
     ).toBe(photo.id);
     expect((await ok(UnlikePostDocument, owner, { postId: photo.id })).unlikePost.likeCount).toBe(0);
-    expect((await execute(GalleryPostsDocument, outsider, variables)).errors?.[0]?.extensions?.code).toBe(
-      'FORBIDDEN',
-    );
+    expect(
+      (await ok(GalleryPostsDocument, outsider, variables)).galleryPosts.find((post) => post.id === photo.id),
+    ).toMatchObject({ canInteract: false, canDelete: false, likedByMe: false });
+    expect(
+      (await execute(LikePostDocument, outsider, { postId: photo.id })).errors?.[0]?.extensions?.code,
+    ).toBe('FORBIDDEN');
     const comment = (
       await ok(CreatePostCommentDocument, member, { postId: photo.id, body: '문서로 남긴 댓글' })
     ).createPostComment;
@@ -349,8 +356,16 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       (await ok(GalleryPostsDocument, owner, variables)).galleryPosts.find(({ id }) => id === photo.id)
         ?.commentCount,
     ).toBe(1);
+    expect((await ok(PostCommentsDocument, outsider, commentVariables)).postComments).toEqual([
+      { ...comment, canDelete: false },
+    ]);
     expect(
-      (await execute(PostCommentsDocument, outsider, commentVariables)).errors?.[0]?.extensions?.code,
+      (await execute(CreatePostCommentDocument, outsider, { postId: photo.id, body: '가입 전 댓글' }))
+        .errors?.[0]?.extensions?.code,
+    ).toBe('FORBIDDEN');
+    expect(
+      (await execute(DeletePostCommentDocument, outsider, { commentId: comment.id })).errors?.[0]?.extensions
+        ?.code,
     ).toBe('FORBIDDEN');
     expect((await ok(DeletePostCommentDocument, owner, { commentId: comment.id })).deletePostComment).toBe(
       true,

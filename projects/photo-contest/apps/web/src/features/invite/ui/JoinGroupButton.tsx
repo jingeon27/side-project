@@ -5,14 +5,20 @@ import { useMutation } from '@apollo/client/react';
 import { prependMyGroup } from '@/features/group';
 import { resetGalleryPosts } from '@/features/post';
 import { resetPhotoFeed } from '@/features/feed';
-import { JoinGroupDocument } from '@/shared/api/generated';
+import { GroupVisibility, JoinGroupDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useAppRouter } from '@/shared/model/router';
 import { Button } from '@/shared/ui/@core/button';
 
 /** 초대 수락. 가입하면 홈 목록에 넣고 그룹 화면으로 바꿔 간다(뒤로 가기가 초대 화면으로 돌아오지 않게). */
-export function JoinGroupButton({ token }: { token: string }) {
+export function JoinGroupButton({
+  token,
+  visibility = GroupVisibility.Public,
+}: {
+  token: string;
+  visibility?: GroupVisibility;
+}) {
   const router = useAppRouter();
   const [joinGroup, { loading, data }] = useMutation(JoinGroupDocument, {
     variables: { token },
@@ -24,7 +30,7 @@ export function JoinGroupButton({ token }: { token: string }) {
       }
     },
     onCompleted: ({ joinGroup: group }) => {
-      trackEvent(ANALYTICS_EVENT.GroupJoined, { group_id: group.id });
+      if (group.role) trackEvent(ANALYTICS_EVENT.GroupJoined, { group_id: group.id });
       router.replace(ROUTES.GROUP(group.id));
     },
   });
@@ -42,7 +48,7 @@ export function JoinGroupButton({ token }: { token: string }) {
         }
       }}
     >
-      초대 수락하고 가입하기
+      {visibility === GroupVisibility.Private ? '가입 신청하기' : '초대 수락하고 가입하기'}
     </Button>
   );
 }

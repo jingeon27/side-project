@@ -20,6 +20,7 @@ describe('기존 사진의 갤러리 이관', () => {
     const initial = await sql('20261012000000_init');
     const likes = await sql('20261013130000_likes_and_app_login');
     const gallery = await sql('20261015090000_gallery_posts');
+    const publicGroups = await sql('20261019010000_public_groups');
     // 테스트 DB 안의 임시 스키마에서 이전 버전을 만든 뒤 새 SQL을 그대로 적용한다.
     // 실패하면 스키마 생성도 함께 rollback되어 개발 데이터나 다른 테스트에 닿지 않는다.
     await api.db.$transaction(async (tx) => {
@@ -40,6 +41,10 @@ describe('기존 사진의 갤러리 이관', () => {
         INSERT INTO "Like" ("submissionId","userId") VALUES ('photo','liker');
       `);
       await execute(gallery);
+      await execute(publicGroups);
+      expect(await tx.$queryRawUnsafe('SELECT id,visibility FROM "Group"')).toEqual([
+        { id: 'gallery', visibility: 'PRIVATE' },
+      ]);
       expect(
         await tx.$queryRawUnsafe('SELECT id,title,hidden,"legacySubmissionId","createdAt" FROM "Post"'),
       ).toEqual([

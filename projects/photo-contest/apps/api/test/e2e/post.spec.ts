@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { koreanMonth } from '../../src/post/post-order';
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../support/app';
-import { createGroup } from '../support/fixtures';
+import { createGroup, joinGroup } from '../support/fixtures';
 
 const FIELDS = 'id groupId title body kind mediaUrl likeCount commentCount likedByMe canDelete author { id }';
 const COMMENT_FIELDS = 'id postId body createdAt canDelete author { id nickname avatar }';
@@ -81,7 +81,7 @@ describe('상시 그룹 게시물', () => {
     owner = await api.signIn('그룹 관리자');
     member = await api.signIn('그룹 회원');
     outsider = await api.signIn('그룹 외부인');
-    groupId = (await createGroup(api, owner, '상시 그룹', [member])).id;
+    groupId = (await createGroup(api, owner, '상시 그룹', [member], 'PRIVATE')).id;
     otherId = (await createGroup(api, outsider, '외부 그룹')).id;
   });
   afterAll(async () => {
@@ -209,9 +209,7 @@ describe('상시 그룹 게시물', () => {
     const del = 'mutation($id:ID!){deletePost(postId:$id)}';
     const peer = await api.signIn('다른 회원');
     const group = await api.db.group.findUniqueOrThrow({ where: { id: groupId } });
-    await api.gqlOk(peer.cookie, 'mutation($token:String!){joinGroup(token:$token){id}}', {
-      token: group.inviteToken,
-    });
+    await joinGroup(api, peer, group.inviteToken, owner);
     expect((await list(owner, { groupId })).find((p) => p.id === post.id)?.canDelete).toBe(true);
     expect((await api.gqlFail(peer.cookie, del, { id: post.id })).code).toBe('FORBIDDEN');
     const before = (await readdir(api.storageDir)).length;
@@ -240,9 +238,7 @@ describe('상시 그룹 게시물', () => {
     expect((await list(owner, { groupId })).find(({ id }) => id === post.id)?.commentCount).toBe(1);
     const peer = await api.signIn('댓글 다른 회원');
     const group = await api.db.group.findUniqueOrThrow({ where: { id: groupId } });
-    await api.gqlOk(peer.cookie, 'mutation($token:String!){joinGroup(token:$token){id}}', {
-      token: group.inviteToken,
-    });
+    await joinGroup(api, peer, group.inviteToken, owner);
     expect(
       (await api.gqlOk<{ postComments: IComment[] }>(peer.cookie, COMMENTS, { id: post.id })).postComments[0]
         ?.canDelete,

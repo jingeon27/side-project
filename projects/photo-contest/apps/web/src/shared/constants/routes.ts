@@ -2,6 +2,7 @@
 export const ROUTES = {
   HOME: '/',
   ME: '/me',
+  EXPLORE: '/explore',
   TERMS: '/terms',
   PRIVACY: '/privacy',
   GROUP: (id: string) => `/groups/${encodeURIComponent(id)}`,
@@ -20,5 +21,5 @@ export const BACKEND_ROUTES = {
 } as const;
 
 /** 로그인해야 볼 수 있는 화면. proxy.ts matcher와 같은 목록이다. */
-export const MEMBER_ONLY_PATH_PREFIXES = ['/groups/', '/contests/'] as const;
+export const MEMBER_ONLY_PATH_PREFIXES = ['/contests/'] as const;
 export const MEMBER_ONLY_PATHS = ['/me'] as const;

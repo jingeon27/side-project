@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, House, UserRound } from 'lucide-react';
+import { ChevronLeft, Compass, House, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -32,6 +32,10 @@ function DesktopNavigation() {
         </Link>
         <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
           <House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />홈
+        </NavigationLink>
+        <NavigationLink href={ROUTES.EXPLORE} active={pathname === ROUTES.EXPLORE}>
+          <Compass aria-hidden className="size-6" strokeWidth={pathname === ROUTES.EXPLORE ? 2.5 : 1.7} />
+          탐색
         </NavigationLink>
         <NavigationLink href={ROUTES.ME} active={pathname === ROUTES.ME}>
           <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
@@ -66,7 +70,7 @@ function NavigationLink({ href, active, children }: { href: string; active: bool
 interface ITopAppBarProps {
   /** 화면 제목(h1). 길면 한 줄로 자른다. */
   title: string;
-  /** 있으면 뒤로 가기 버튼을 보여 준다. 앱 안 기록이 없을 때 갈 상위 화면(대회 → 그룹, 그룹 → 홈). */
+  /** 있으면 뒤로 가기 버튼을 보여 준다. 앱 안 기록이 없을 때 갈 상위 화면(대회 → 그룹, 그룹 → 탐색). */
   backHref?: string;
   /** 오른쪽 아이콘 버튼들(공유 등) */
   actions?: ReactNode;

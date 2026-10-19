@@ -45,6 +45,7 @@ export function PostCard({ id }: { id: string }) {
 
   return (
     <article
+      id={`post-${id}`}
       className="min-w-0 border-b border-line bg-surface pb-6 desktop:rounded-card desktop:border desktop:p-5"
       aria-label={post.title}
     >
@@ -105,6 +106,10 @@ export function PostCard({ id }: { id: string }) {
             aria-pressed={post.likedByMe}
             loading={likeState.loading || unlikeState.loading}
             onClick={async () => {
+              if (!post.canInteract) {
+                toast.info('그룹에 가입하면 좋아요를 남길 수 있어요.');
+                return;
+              }
               try {
                 await (post.likedByMe ? unlike : like)({ variables: { postId: id } });
               } catch {

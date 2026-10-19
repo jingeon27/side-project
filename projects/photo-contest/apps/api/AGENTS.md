@@ -12,7 +12,7 @@
 | `database/` · `storage/` | 전역 모듈. `Database.atomic()`(Serializable 재시도), 비공개 사진 저장소(local·S3) |
 | `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·개발 로그인·로그아웃·OAuth·앱 로그인 교환, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `@Viewer()`/`@OptionalViewer()` |
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·업로드(`POST /uploads/:token`)·사진 조회(`GET /photos/:id`)·sharp 변환 |
-| `post/` | 상시 그룹 사진·동영상 게시물, 멤버 전용 댓글·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, GraphQL multipart 일회용 업로드·비공개 byte Range 스트리밍 |
+| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, GraphQL multipart 일회용 업로드·공개 범위를 확인하는 byte Range 스트리밍 |
 | `feed/` | `myPhotoFeed`: 가입한 모든 그룹의 공개 사진을 전체 최신순(createdAt·id desc)으로 offset 조회. 홈에는 관리자도 숨긴 사진·신고 정보를 받지 않는다 |
 | `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·OAuth 시도·앱 로그인 티켓) — 테스트는 `SchedulerService.runOnce()` |
 | `testing/` | NODE_ENV=test와 ENABLE_TEST_API=true에서만 사용자·세션·단계·외부 콜백 티켓 fixture를 만든다 |
@@ -21,7 +21,7 @@
 
 ## 규칙
 
-- 상시 게시물은 Post 도메인에 둔다. Contest·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만.
+- 상시 게시물은 Post 도메인에 둔다. Contest·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER만 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.

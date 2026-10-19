@@ -5,6 +5,7 @@ import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { Database } from '../database/database.service';
 import type { TDatabaseClient } from '../database/database.service';
 import { isOwner } from './group-role';
+import { GROUP_VISIBILITY, toGroupVisibility } from './group-visibility';
 
 export interface IContestAccess {
   contest: Contest;
@@ -23,7 +24,7 @@ interface IAccessOptions {
   client?: TDatabaseClient;
 }
 
-/** 그룹 멤버십 규칙. 목록·상세·사진 파일 모두 이 검사를 거친다(ID를 알아도 접근할 수 없다). */
+/** 공개 Post 읽기와 멤버 전용 쓰기·기존 대회 접근을 구분한다. */
 @Injectable()
 export class MembershipService {
   constructor(private readonly db: Database) {}
@@ -52,6 +53,32 @@ export class MembershipService {
     const member = await this.requireMember(userId, groupId, client);
     if (!isOwner(member)) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
     return member;
+  }
+
+  async readableGroup(userId: string | null, groupId: string, client: TDatabaseClient = this.db) {
+    const group = await client.group.findUnique({ where: { id: groupId } });
+    if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    const member = userId
+      ? await client.groupMember.findUnique({ where: { groupId_userId: { groupId, userId } } })
+      : null;
+    if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE && !member) {
+      if (!userId) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
+      fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
+    }
+    return { group, member };
+  }
+
+  async readablePost(userId: string | null, postId: string, client: TDatabaseClient = this.db) {
+    const post = await client.post.findUnique({
+      where: { id: postId },
+      include: { upload: true, legacySubmission: { select: { hidden: true } } },
+    });
+    if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    const { member } = await this.readableGroup(userId, post.groupId, client);
+    const admin = member ? isOwner(member) : false;
+    if ((post.hidden || post.legacySubmission?.hidden) && !admin)
+      fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    return { post, admin };
   }
 
   async accessiblePost(userId: string, postId: string, client: TDatabaseClient = this.db) {

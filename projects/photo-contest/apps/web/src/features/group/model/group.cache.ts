@@ -8,6 +8,7 @@ import type { GroupCardFragment } from '@/shared/api/generated';
  * 같은 그룹이 이미 있으면 한 번만 남긴다.
  */
 export function prependMyGroup(cache: ApolloCache, group: GroupCardFragment) {
+  if (!group.role) return;
   cache.updateQuery({ query: MyGroupsDocument }, (data) =>
     data ? { myGroups: [group, ...data.myGroups.filter((item) => item.id !== group.id)] } : undefined,
   );

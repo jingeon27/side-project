@@ -5,6 +5,8 @@ query InvitePreview($token: String!) {
     memberCount
     ownerNickname
     joinedGroupId
+    visibility
+    joinRequestPending
   }
 }
 

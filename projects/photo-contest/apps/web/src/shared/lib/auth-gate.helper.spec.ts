@@ -43,8 +43,9 @@ describe('hasSessionCookie', () => {
 });
 
 describe('isMemberOnlyPath', () => {
-  it('그룹·대회·MY 화면만 멤버 전용이어야 한다', () => {
-    expect(isMemberOnlyPath('/groups/g1')).toBe(true);
+  it('대회·MY만 로그인하고 그룹·탐색은 로그인 없이 볼 수 있어야 한다', () => {
+    expect(isMemberOnlyPath('/groups/g1')).toBe(false);
+    expect(isMemberOnlyPath('/explore')).toBe(false);
     expect(isMemberOnlyPath('/contests/c1')).toBe(true);
     expect(isMemberOnlyPath('/me')).toBe(true);
     expect(isMemberOnlyPath('/')).toBe(false);
@@ -65,6 +66,9 @@ describe('decideAuthGate', () => {
   });
 
   it('세션 쿠키가 있거나 공개 화면이면 통과시켜야 한다', () => {
+    expect(decideAuthGate({ pathname: '/groups/g1', search: '', cookieHeader: null })).toEqual({
+      type: 'allow',
+    });
     expect(
       decideAuthGate({ pathname: '/groups/g1', search: '', cookieHeader: 'contest_session=abc' }),
     ).toEqual({ type: 'allow' });

@@ -28,6 +28,7 @@ function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][nu
     commentCount: 0,
     likedByMe: false,
     canDelete: false,
+    canInteract: true,
     author: { __typename: 'User', id: 'author', nickname: '친구', avatar: null },
   };
 }
