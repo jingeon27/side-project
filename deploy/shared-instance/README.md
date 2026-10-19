@@ -10,19 +10,65 @@ photo.example.com ─┘                    └─ PC Web / PC API ─ photo_con
 
 Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. DB·원본 미디어는 EC2 볼륨에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스가 함께 중단되는 구조다.
 
+## 최초 배포 순서와 설정 화면
+
+기준일은 2026-10-20이다. 아래 콘솔 링크는 본인 계정으로 로그인해서 사용한다. 리소스 이름·도메인 예시는 실제 소유 값으로 바꾼다. 이 문서의 명령은 저장소 루트에서 실행하며, 서버 명령과 로컬 검증 명령을 구분한다.
+
+| 순서 | 열 화면                                                                                                                                                                                                                                                    | 실행할 행동                                                                                                                                                                                          | 완료 확인                                            |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1    | [EC2 인스턴스](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Instances:)                                                                                                                                                                   | 서울 리전에서 Ubuntu 24.04 **x86_64** 인스턴스를 만든다. 운영 컨테이너 한도 합계가 약 2.7GiB이므로 메모리 4GiB 이상을 시작점으로 검증한다. 디스크에는 이미지 4개와 이전 릴리스가 들어갈 여유를 둔다. | 아키텍처 x86_64, 상태 검사 통과, SSH 접속 성공       |
+| 2    | [Elastic IP](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Addresses:)                                                                                                                                                                     | 고정 IP를 할당하고 위 EC2에 연결한다.                                                                                                                                                                | 인스턴스에 연결된 공인 IP를 기록                     |
+| 3    | [EC2 보안 그룹](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#SecurityGroups:)                                                                                                                                                             | 80/443을 허용하고 관리·배포용 SSH 접속 경로를 정한다. 아래 SSH 설명을 먼저 읽는다. 앱 포트 3200/3300/4200/4300과 DB 포트는 인터넷에 열지 않는다.                                                     | 운영자와 배포 러너가 SSH로 접속 가능                 |
+| 4    | [RDS 데이터베이스](https://console.aws.amazon.com/rds/home?region=ap-northeast-2#databases:)                                                                                                                                                               | 표준 생성 → PostgreSQL → EC2와 같은 VPC → 퍼블릭 액세스 없음. 백업 7일 이상, 암호화, 삭제 방지를 켠다. RDS 보안 그룹 5432의 소스는 EC2 보안 그룹으로 지정한다.                                       | 상태 Available, endpoint·instance ID 기록            |
+| 5    | [RDS 파라미터 그룹](https://console.aws.amazon.com/rds/home?region=ap-northeast-2#parameter-groups:)                                                                                                                                                       | 선택한 PostgreSQL 버전과 맞는 파라미터 그룹에서 `rds.force_ssl=1`을 설정하고 인스턴스에 연결한다. 적용 상태에 따라 재부팅한다.                                                                       | 적용 완료, TLS 접속 성공                             |
+| 6    | [S3 버킷](https://console.aws.amazon.com/s3/home?region=ap-northeast-2)                                                                                                                                                                                    | 서울 리전에 서비스별 일반 목적 버킷 2개를 만든다. 모든 퍼블릭 액세스 차단, 기본 암호화, Versioning을 켜고 아래 lifecycle JSON을 등록한다.                                                            | 서로 다른 버킷 이름 2개, 비공개·버전 관리 활성화     |
+| 7    | [IAM 정책](https://console.aws.amazon.com/iam/home#/policies) / [역할](https://console.aws.amazon.com/iam/home#/roles)                                                                                                                                     | 아래 RDS 조회 JSON으로 EC2용 역할을 만든다. EC2 → 작업 → 보안 → IAM 역할 수정에서 연결한다. 메타데이터는 IMDSv2 필수, hop limit 2로 설정한다.                                                        | EC2 역할로 서울 RDS 인스턴스 조회 성공               |
+| 8    | [IAM 사용자](https://console.aws.amazon.com/iam/home#/users)                                                                                                                                                                                               | 콘솔 로그인 없는 앱 자격 증명을 서비스별로 준비한다. 아래 S3 JSON의 버킷 이름을 바꾸어 각자 자기 버킷에만 권한을 준다.                                                                               | 각 버킷 읽기·쓰기 성공, 상대 버킷 요청 거부          |
+| 9    | [Route 53 호스팅 영역](https://console.aws.amazon.com/route53/v2/hostedzones) 또는 도메인을 관리하는 DNS 화면                                                                                                                                              | 두 서비스의 A 레코드를 같은 Elastic IP로 연결한다. Route 53 사용은 필수가 아니다.                                                                                                                    | `dig +short`로 두 도메인이 고정 IP를 반환            |
+| 10   | [Docker Ubuntu 설치 안내](https://docs.docker.com/engine/install/ubuntu/)                                                                                                                                                                                  | 아래 서버 준비, 환경 파일 입력, 최초 DB 초기화를 수행한다.                                                                                                                                           | Docker/Compose 실행, 서비스별 DB와 역할 생성         |
+| 11   | 아래 소셜 로그인 설정 화면                                                                                                                                                                                                                                 | 사용할 제공자의 앱과 콜백 주소를 등록하고 서버 환경 파일에 키를 넣는다. GF는 제공자 하나 이상이 필수다.                                                                                              | 실제 도메인과 콜백 주소가 정확히 일치                |
+| 12   | [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments) / [Variables](https://github.com/jingeon27/side-project/settings/variables/actions) / [Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions) | 두 Environment와 아래 이름의 변수·SSH Secret을 등록한다. 배포 활성화 값은 준비가 끝날 때까지 `false`로 둔다.                                                                                         | Environment 2개와 필수 값 등록                       |
+| 13   | 아래 프록시 명령                                                                                                                                                                                                                                           | DNS 확인 후 Caddy를 시작한다.                                                                                                                                                                        | 인증서 발급 성공. 앱 배포 전 502는 가능              |
+| 14   | [RDS 복원 안내](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html)                                                                                                                                                                      | RDS의 최신 복원 가능 시각이 준비됐는지 확인한다. 첫 배포 후 검증 데이터를 만들고 별도 RDS로 복구 연습한다.                                                                                           | 최근 20분 이내 복구 가능 시각 확보                   |
+| 15   | [develop → main 비교](https://github.com/jingeon27/side-project/compare/main...develop?expand=1) / [Actions](https://github.com/jingeon27/side-project/actions)                                                                                            | 배포 활성화 값을 `true`로 바꾸고 검토한 변경을 main에 반영해 초기 검증 배포를 한다. 아래 운영 검증과 복구 연습 후 공개한다.                                                                          | 두 서비스 workflow의 deploy 성공, 아래 공개 URL 확인 |
+
+기본 CD는 GitHub `ubuntu-latest`에서 서버로 SSH 접속한다. **SSH를 본인 IP에만 허용하면 CD는 연결할 수 없다.** 현재 코드에는 VPN 가입이나 SSM 전송 단계가 없으며, OIDC용 AWS 역할을 등록해도 SSH 접속을 대신하지 않는다. 제한된 SSH 소스 정책을 쓰려면 VPN을 연결하는 단계 또는 고정 IP 배포 러너를 추가하고 실제 접속을 먼저 확인해야 한다. 일반 GitHub 호스트 러너의 전체 IP 대역을 고정 허용 목록으로 취급하지 않는다. [GitHub 공식 네트워크 안내](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#ip-addresses)를 따른다.
+
+준비할 공개 값은 EC2 IP·instance ID·보안 그룹 ID, 두 도메인, RDS endpoint·instance ID, 두 버킷 이름, 배포 SSH 사용자·포트·확인한 host key다. 비밀번호·비밀 키·OAuth secret은 서버 환경 파일이나 지정한 GitHub Secret에 직접 입력하며 이 문서나 이슈에 적지 않는다.
+
 ## AWS에서 먼저 준비할 것
 
-1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 두 도메인의 DNS를 준비한다. Docker Engine/Compose plugin, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
+1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 두 도메인의 DNS를 준비한다. Docker Engine/Compose plugin, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다. [EC2 생성 안내](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EC2_GetStarted.html)를 참고한다.
 2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
 3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. 컨테이너에서 IMDSv2로 인스턴스 역할을 읽으려면 EC2 metadata 응답 hop limit을 2로 설정한다.
-4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. [수명 주기](s3-lifecycle.json)는 오래된 이전 버전과 미완료 multipart만 정리하며 현재 객체를 만료시키지 않는다. 브라우저는 API를 거쳐 파일을 받으므로 퍼블릭 버킷이나 S3 CORS 허용이 필요하지 않다.
+4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. 버킷 → 권한에서 퍼블릭 접근 차단, 속성에서 버전 관리·암호화, 관리에서 [수명 주기](s3-lifecycle.json)와 같은 규칙을 설정한다. 이전 버전은 30일 후 만료, 미완료 multipart는 1일 후 중단으로 설정하고 현재 객체 만료는 켜지 않는다. JSON을 그대로 적용하려면 해당 권한이 있는 운영자 세션에서 아래 CLI를 버킷별로 실행한다. 브라우저는 API를 거쳐 파일을 받으므로 퍼블릭 버킷이나 S3 CORS 허용이 필요하지 않다.
 5. [S3 앱 정책](s3-app-policy.json)의 `SERVICE_BUCKET_NAME`을 각 버킷으로 바꾸고 서비스별 IAM 자격 증명을 발급한다. 각 계정은 자기 버킷만 읽고 쓸 수 있어야 한다. 한쪽 자격 증명으로 다른 버킷을 읽거나 쓰는 요청이 거부되는지 AWS에서 직접 확인한다. RDS 복구 지점 조회용 EC2 역할과 이 두 자격 증명을 구분한다.
 
 상시 컨테이너 메모리 한도 합계는 약 2.7GiB이며 운영 도구·OS·업로드 처리에는 추가 메모리가 필요하다. 실제 인스턴스 크기와 RDS 연결 수는 업로드·동시 채팅·SSR 부하를 측정해 결정한다. 호스트에서 운영 이미지를 빌드하지 않는다.
 
+[AWS CLI 설치 안내](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)에 따라 운영자 로컬 환경 또는 AWS CloudShell에서 AWS CLI를 준비한다. 아래 명령은 저장소를 받은 디렉터리에서 `YOUR_BUCKET_NAME`을 실제 버킷 이름으로 바꾸고 서비스별로 한 번씩 실행한다. 앱 자격 증명에는 버킷 관리 권한을 추가하지 않는다. [S3 수명 주기 CLI 안내](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-bucket-lifecycle-configuration.html)를 참고한다.
+
+```sh
+aws s3api put-bucket-lifecycle-configuration \
+  --region ap-northeast-2 \
+  --bucket YOUR_BUCKET_NAME \
+  --lifecycle-configuration file://deploy/shared-instance/s3-lifecycle.json
+```
+
 ## 호스트 파일과 DB 초기화
 
 서버에 저장소를 체크아웃한 뒤 배포 사용자 소유 디렉터리를 준비한다. 다음 작업은 AWS 리소스를 생성하지 않는다.
+
+Ubuntu에서 `git`, `python3`, `curl`, `openssl`, `postgresql-client`, `util-linux`를 설치하고 [공식 Docker 저장소 설치 절차](https://docs.docker.com/engine/install/ubuntu/#install-using-the-apt-repository)로 Docker Engine과 `docker-compose-plugin`을 설치한다. 배포 사용자에게 Docker 실행 권한을 부여한 뒤 새 SSH 세션에서 확인한다. 이후 CD도 동일 사용자를 쓴다. [Docker 그룹 설정](https://docs.docker.com/engine/install/linux-postinstall/)은 호스트 관리 권한을 주는 설정이다.
+
+```sh
+git clone --branch develop https://github.com/jingeon27/side-project.git
+cd side-project
+docker version
+docker compose version
+python3 --version
+psql --version
+```
 
 ```sh
 sudo install -d -m 700 -o "$USER" -g "$(id -gn)" /srv/side-project
@@ -36,6 +82,8 @@ bash deploy/shared-instance/scripts/prepare.sh
 | `/srv/side-project/.env`                        | 두 도메인, ACME 메일, RDS 실제 endpoint·instance ID, 두 버킷 이름   |
 | `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정 |
 | `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정   |
+
+원본 예시는 [호스트 환경 파일](host.env.example), [GF 환경 파일](../../projects/game-feedback/deploy/shared-instance/service.env.example), [PC 환경 파일](../../projects/photo-contest/deploy/shared-instance/service.env.example)이다. `GAME_FEEDBACK_DOMAIN`과 `PHOTO_CONTEST_DOMAIN`에는 `https://`나 경로를 붙이지 않는다. GitHub의 `*_SITE_URL`에는 `https://`를 포함하고 마지막 `/`는 붙이지 않는다. 호스트의 버킷 이름과 각 서비스 자격 증명의 권한 대상이 일치해야 한다. 공개 출시 때 GF 환경 파일의 `GF_INDEXING=true`로 검색 수집을 허용한다.
 
 `prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 현재 저장소 버전으로 복사하므로 변경 시 검토 후 `proxy.sh reload`를 실행한다.
 
@@ -58,6 +106,30 @@ Prisma 6 URL은 `sslmode=require&sslaccept=strict&sslcert=/run/rds/ca.pem`을 �
 
 CA를 갱신하면 기존 bind mount가 이전 파일을 유지할 수 있으므로 API 컨테이너를 다시 생성한 뒤 TLS 연결을 확인한다. 인증서 회전은 기존 CA가 만료되기 전에 수행한다.
 
+## 소셜 로그인과 선택적 외부 서비스
+
+서비스별로 별도 OAuth 앱·클라이언트를 만들고, 발급한 ID/secret을 **해당 서비스 서버 환경 파일**에 넣는다. GF는 ID와 secret 한 쌍을 하나 이상 설정해야 시작한다. 운영에서는 데모 로그인과 테스트 토큰 발급 API가 비활성화된다. PC는 아이디·비밀번호 로그인도 제공한다.
+
+| 제공자  | 설정 화면과 행동                                                                                                                                                                                                                                                                                                                                               | GF 콜백                                               | PC 콜백                                           |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------- |
+| Google  | [Google Auth Platform](https://console.cloud.google.com/auth/overview)에서 프로젝트 선택 → Branding/Audience 설정 → [Clients](https://console.cloud.google.com/auth/clients)에서 웹 애플리케이션 클라이언트 생성. 승인된 리디렉션 URI 입력, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 저장. 공개 출시 시 Audience의 게시 상태와 필요한 도메인 확인을 완료한다. | `https://게임도메인/api/auth/google/callback`         | `https://사진도메인/backend/auth/google/callback` |
+| Kakao   | [Kakao 앱 관리](https://developers.kakao.com/console/app)에서 앱 생성 → 카카오 로그인 활성화 → 리디렉션 URI 등록. 플랫폼 키의 REST API 키와 해당 Client Secret을 `KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`에 저장한다.                                                                                                                                           | `https://게임도메인/api/auth/social/kakao/callback`   | `https://사진도메인/backend/auth/kakao/callback`  |
+| X       | [Developer Console](https://console.x.com/)에서 앱의 OAuth 2.0 사용자 인증을 설정한다. 서버용 confidential/web app의 Client ID/secret을 `X_CLIENT_ID`/`X_CLIENT_SECRET`에 저장하고 콜백 URL·웹사이트 URL을 입력한다. 현재 코드는 `tweet.read users.read`와 PKCE를 사용한다. 콘솔의 이용 조건과 API 접근 가능 여부도 확인한다.                                  | `https://게임도메인/api/auth/social/x/callback`       | 미지원                                            |
+| Discord | [Developer Portal](https://discord.com/developers/applications) → New Application → OAuth2에서 Redirects를 추가한다. Client ID/secret을 `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`에 저장한다. 로그인 범위는 `identify`다. 봇 생성·서버 초대는 필요 없다.                                                                                                     | `https://게임도메인/api/auth/social/discord/callback` | 미지원                                            |
+
+콜백은 문자 단위로 맞춘다. Google은 [공식 웹 서버 OAuth 안내](https://developers.google.com/identity/protocols/oauth2/web-server), Kakao는 [사전 설정 안내](https://developers.kakao.com/docs/ko/kakaologin/prerequisite), X는 [OAuth 2.0 PKCE 안내](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code), Discord는 [OAuth2 안내](https://docs.discord.com/developers/topics/oauth2)를 따른다. 초기에는 테스트 사용자로 실제 로그인·취소·재로그인을 확인한 뒤 제공자의 공개 설정을 적용한다.
+
+Google Branding에 입력할 서비스 홈페이지·약관·개인정보 주소는 아래 경로를 실제 도메인과 조합한다. 도메인 소유권 확인이 필요하면 [Search Console](https://search.google.com/search-console/)에서 제공하는 DNS 레코드를 등록한다. OAuth 동의 화면을 테스트 상태로 두면 일반 사용자 공개 로그인 확인을 마친 것이 아니다. [Google OAuth 정책](https://developers.google.com/identity/protocols/oauth2/policies)의 홈페이지·도메인 요구사항도 확인한다.
+
+| 서비스 | 홈페이지                | 이용약관                      | 개인정보처리방침                |
+| ------ | ----------------------- | ----------------------------- | ------------------------------- |
+| GF     | `https://게임도메인/ko` | `https://게임도메인/ko/terms` | `https://게임도메인/ko/privacy` |
+| PC     | `https://사진도메인`    | `https://사진도메인/terms`    | `https://사진도메인/privacy`    |
+
+Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https://developer.clashroyale.com/)에서 키를 발급하고 EC2의 실제 외부 통신 IP를 허용한 뒤 `SUPERCELL_API_TOKEN`에 저장한다. 이 키는 관리자에 의한 수동 프로필 인증과 별개다.
+
+PC 모니터링을 사용할 때는 [Sentry 프로젝트](https://sentry.io/settings/)에서 API/Next 프로젝트 DSN을 발급하고, [Amplitude](https://app.amplitude.com/)에서 프로젝트 API key를 확인한다. API DSN은 서버 PC 환경 파일의 `SENTRY_DSN`, 웹 공개 키는 아래 GitHub repository variable에 넣는다. 현재 shared-instance GF 템플릿에는 Sentry/Amplitude 주입이 없으므로 GF 운영 수집이 켜졌다고 간주하지 않는다.
+
 ## 프록시와 GitHub Actions
 
 도메인 DNS가 EC2를 가리키고 80/443이 열려 있는 상태에서 설정을 검증하고 프록시를 시작한다. API가 아직 실행되지 않았다면 프록시는 잠시 502를 돌려줄 수 있다.
@@ -68,6 +140,8 @@ bash deploy/shared-instance/scripts/proxy.sh start
 ```
 
 GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) 또는 repository 설정에 다음을 등록한다. 기존 GitHub 연결을 다시 만들 필요는 없다.
+
+[Environment 설정](https://github.com/jingeon27/side-project/settings/environments)에서 정확히 `production`, `photo-contest-production`을 만들고 운영 배포 브랜치를 허용한다. [Actions Variables](https://github.com/jingeon27/side-project/settings/variables/actions)에서 공개 설정을, [Actions Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions)에서 private key를 등록한다. 공통 SSH 설정을 repository 범위에 두면 두 Environment에 중복 입력할 필요가 없다. [GitHub Environment 안내](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)를 따른다.
 
 | 종류                | 이름                                                               | 값                                                                                        |
 | ------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
@@ -81,10 +155,20 @@ GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) �
 | Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | PC의 `https://실제도메인`                                                                 |
 | Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치, 예: `main`                                                              |
 | Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택적 공개 Web 빌드 설정                                                                 |
+| Repository Variable | `GF_DEPLOY_ENABLED`                                                | 준비 중 `false`, 공개 배포 준비 후 `true`                                                 |
+| Repository Variable | `PHOTO_CONTEST_DEPLOY_ENABLED`                                     | 준비 중 `false`, 공개 배포 준비 후 `true`                                                 |
+
+배포 키는 로컬에서 별도로 만든다. 공개키 `.pub`는 서버 배포 사용자의 `~/.ssh/authorized_keys`에 추가하고, 개인키는 `SIDE_DEPLOY_SSH_KEY` Secret에 원문 그대로 넣는다. 서버의 `/etc/ssh/ssh_host_ed25519_key.pub`를 신뢰할 수 있는 EC2 콘솔 세션에서 읽어 IP/호스트와 함께 known_hosts 형식으로 등록한다. 예를 들어 22번 포트는 `EC2_IP ssh-ed25519 공개호스트키`, 다른 포트는 `[EC2_IP]:PORT ssh-ed25519 공개호스트키`다. 이 값은 배포 사용자 로그인 공개키와 다른 **서버 host key**다.
+
+```sh
+ssh-keygen -t ed25519 -f ~/.ssh/side-project-deploy -C side-project-actions
+```
+
+코드의 SSH 단계는 대화형 비밀번호 입력 없이 실행한다. 암호문이 설정된 개인키를 해제하는 단계는 없으므로 이 전용 키의 passphrase는 비워 두고 GitHub Secret으로 보관한다. 키를 등록한 뒤 배포 러너와 같은 네트워크 경로에서 `BatchMode=yes`와 등록한 known_hosts를 사용해 접속을 확인한다.
 
 공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. DB·S3·OAuth 비밀은 서버의 서비스별 환경 파일에만 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
 
-설정과 복구 연습을 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정한다. GF는 main push, PC는 설정한 브랜치 push에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
+설정과 RDS 복구 가능 시각 확인을 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 최초 RDS에는 앱 데이터가 없으므로 첫 배포 후 검증 데이터를 준비하고 실제 복구 연습을 마친 뒤 공개한다. GF는 main push, PC는 설정한 브랜치 push에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
 
 Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 서비스 배포와 이미지 정리는 GitHub concurrency와 서버의 공통 `flock`으로 직렬화한다. 배포 순서는 runtime RDS/S3 접근 검사 → 최신 PITR 확인·기록 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
 
@@ -112,9 +196,20 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/_health/live`는 DB 장애에서도 프로세스 생존을 확인한다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다.
 
+최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
+
+| 서비스 | 공개 readiness URL                        | Web liveness URL                  |
+| ------ | ----------------------------------------- | --------------------------------- |
+| GF     | `https://게임도메인/api/health/ready`     | `https://게임도메인/_health/live` |
+| PC     | `https://사진도메인/backend/health/ready` | `https://사진도메인/_health/live` |
+
+[Google Search Console](https://search.google.com/search-console/)에서 소유권을 확인하고 실제 서비스의 `/sitemap.xml`을 제출한다. GF는 `GF_INDEXING=true`를 적용한 뒤 `/robots.txt`, canonical, 사이트맵 URL이 운영 도메인을 사용하는지 먼저 확인한다.
+
 ## 백업·복구 연습
 
 배포 도구는 RDS의 `LatestRestorableTime`이 최근 20분 이내이고 암호화·비공개·삭제 방지·백업 보존 7일 이상인지 확인한다. 이 기록은 **공급자가 제공하는 복구 지점 확인**이며 DB 복원 연습을 대신하지 않는다. RDS 자동 백업의 [보존 기간](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.BackupRetention.html)은 생성 방법에 따라 기본값이 다르므로 명시적으로 설정한다.
+
+RDS를 만든 직후 복구 가능 시각이 아직 없으면 배포를 활성화하지 않고 자동 백업 상태와 RDS → 해당 DB → 유지 관리 및 백업의 최신 복원 가능 시간을 확인한다. `LatestRestorableTime`이 준비된 뒤 배포 검사를 통과해야 한다. 이 검사를 끄거나 오래된 시각으로 대체하지 않는다.
 
 1. 운영과 분리한 새 RDS 인스턴스로 원하는 시각의 PITR을 수행한다. 원래 DB를 덮어쓰지 않는다. [AWS PITR 안내](https://docs.aws.amazon.com/AmazonRDS/latest/gettingstartedguide/managing-backup-restore.html)를 따른다.
 2. 별도 앱 환경에서 복원된 두 DB의 사용자·권한·게시물·댓글·채팅·첨부 참조가 맞는지 확인한다. DB 시점과 S3 버전을 맞춰 필요한 객체를 별도 검증 버킷에 복구한다.
@@ -125,6 +220,99 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 ## 로컬 검증 범위와 이전 구성
 
+로컬에서는 Node.js 24와 저장소의 Yarn을 사용한다. 기존 개발 서버·개발 DB를 대상으로 테스트하지 않는다. 최초 설치는 `corepack yarn install --immutable`, 브라우저 준비는 각 앱 workspace에서 `exec playwright install chromium webkit`으로 수행한다. RDS·S3·OAuth 운영 키는 로컬 테스트에 넣지 않는다.
+
+공통 UI 검증은 `corepack yarn workspace @side/design-system check`로 실행한다. 두 서비스의 UI가 함께 사용하는 lint·타입 검사·primitive 테스트를 확인한다.
+
+GF는 자체 55444 테스트 DB와 임의 `gf_test_` 스키마를 사용한다. 다른 서비스용 `TEST_DATABASE_URL`을 설정하지 않은 터미널에서 순서대로 실행한다.
+
+```sh
+corepack yarn workspace @side/game-feedback check
+corepack yarn workspace @side/game-feedback test
+corepack yarn workspace @side/game-feedback test:e2e
+corepack yarn workspace @side/game-feedback db:test:stop
+```
+
+PC는 별도 터미널에서 `corepack yarn workspace @side/photo-contest db:test:local`로 전용 55434 DB를 시작한다. 다음 명령은 **PC 검증용 터미널에서만** 실행하고, 마치면 DB 터미널에서 Ctrl+C로 해당 DB만 종료한다. 앱별 임의 스키마는 테스트 teardown이 정리한다. API 빌드는 Docker 또는 test-kit의 `.e2e-build`에서 수행하므로 실행 중인 개발 서버의 `dist`를 바꾸지 않는다.
+
+```sh
+export TEST_DATABASE_URL='postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public'
+corepack yarn workspace @side/photo-contest db:generate
+corepack yarn workspace @side/photo-contest lint
+corepack yarn workspace @side/photo-contest typecheck
+corepack yarn workspace @side/photo-contest test
+corepack yarn workspace @photo-contest/api test:e2e
+corepack yarn workspace @photo-contest/web test:api
+corepack yarn workspace @photo-contest/web test:e2e
+corepack yarn workspace @photo-contest/test-kit check:cleanup
+```
+
+공통 배포 검증은 Docker Engine/Compose와 amd64 실행 지원이 필요하다. macOS에서는 [Docker Desktop 설치](https://docs.docker.com/desktop/setup/install/mac-install/) 또는 [Colima 설치](https://github.com/abiosoft/colima#installation) 중 하나로 별도 검증 환경을 준비한다. 작업할 Docker context를 확인한 뒤 저장소 루트의 **Bash**에서 아래 명령을 실행한다. `test:e2e`의 개발 서버 검증과 별개로 실제 운영 Dockerfile의 이미지 4개를 빌드한다.
+
+```bash
+deployment_test_sha="$(git rev-parse HEAD)"
+deployment_image_labels=(
+  --label org.opencontainers.image.source=https://github.com/jingeon27/side-project
+  --label "org.opencontainers.image.revision=$deployment_test_sha"
+)
+docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
+  -f projects/game-feedback/deploy/lightsail/Dockerfile --target api \
+  -t "side-shared-gf-api:$deployment_test_sha" .
+docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
+  -f projects/game-feedback/deploy/lightsail/Dockerfile --target web \
+  --build-arg GF_SITE_URL=https://game-feedback.test \
+  --build-arg GF_CONTACT_EMAIL=jingeon27@gmail.com \
+  -t "side-shared-gf-web:$deployment_test_sha" .
+docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
+  -f projects/photo-contest/apps/api/Dockerfile \
+  -t "side-shared-pc-api:$deployment_test_sha" .
+docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
+  -f projects/photo-contest/apps/web/Dockerfile \
+  --build-arg WEB_ORIGIN=https://photo-contest.test \
+  -t "side-shared-pc-web:$deployment_test_sha" .
+```
+
+Linux 호스트에 `flock` 등 위 운영 도구가 있으면 `SIDE_SMOKE_TAG="$deployment_test_sha" node projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs`로 실행한다. macOS에는 Linux `flock`이 없으므로 Dockerfile의 기존 `smoke-tools` stage를 사용한다. Colima의 Linux Docker VM에서는 아래 host network로 검증할 수 있다. Docker Desktop은 [host networking 지원 설정](https://docs.docker.com/engine/network/drivers/host/#docker-desktop)을 먼저 활성화해야 한다. 이 도구 컨테이너는 테스트 중 Docker socket을 사용하며 운영 서비스로 배포하지 않는다.
+
+```bash
+deployment_test_root="$(pwd)"
+docker build -f projects/game-feedback/deploy/lightsail/Dockerfile \
+  --target smoke-tools -t "side-shared-smoke-tools:$deployment_test_sha" .
+docker run --rm --network host \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  --volume "$deployment_test_root:$deployment_test_root" \
+  --workdir "$deployment_test_root" \
+  --env "SIDE_SMOKE_TAG=$deployment_test_sha" \
+  "side-shared-smoke-tools:$deployment_test_sha" \
+  projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs
+```
+
+성공 기준은 마지막 `Shared-instance smoke passed` 출력이다. runner는 임의 Docker project/network/volume과 loopback의 임의 포트를 사용하고 종료 시 자신이 만든 테스트 자원을 정리한다. 빌드 이미지와 Docker VM의 정리는 검증자가 소유한 것만 대상으로 한다. 전역 prune, 기존 서비스 중지, 기존 volume 삭제는 하지 않는다.
+
 API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs`는 실제 두 API/Web 이미지·Caddy·PostgreSQL TLS를 실행한다. S3 HTTP 경계, RDS Describe 응답과 registry 매핑만 fixture로 대체한다. 버킷 분리, DML/DDL 분리, TLS 실패 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 오래된 PITR 거부, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 AWS의 IAM/S3/PITR을 검증했다는 뜻은 아니다.
+
+### 2026-10-20 로컬 실행 기록
+
+애플리케이션 검증 기준은 develop의 `9f5d9afe68f929837e9f9466945bc7caf740122a`다. 아래 결과는 이번 실행에서 확인한 값이며 이전 작업의 로그를 재사용하지 않았다.
+
+| 검증                       | 결과                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| 공통 디자인 시스템 `check` | lint/typecheck와 테스트 14개 통과                                                                |
+| GF `check`                 | API/Web/Mobile/Admin와 패키지 타입 검사, 앱 lint 통과                                            |
+| GF `test`                  | API 173, SDK 43, Web 102, Mobile 43, Admin 2개 통과                                              |
+| GF Web E2E                 | 일반 브라우저 94, 테스트 토큰 로그인 3, 운영 prefetch 12개 통과                                  |
+| GF Admin E2E               | 3개 통과                                                                                         |
+| GF Mobile E2E              | Playwright의 Android/iOS native host fixture 34개 통과                                           |
+| PC lint/typecheck          | 통과                                                                                             |
+| PC `test`                  | API unit 86, Web 287, Mobile 137, Bridge 35개 통과                                               |
+| PC API integration         | 실제 전용 PostgreSQL + Supertest 217개 통과                                                      |
+| PC Web API                 | 실제 격리 API에 생성 문서 실행 11개 통과                                                         |
+| PC Web E2E                 | mobile Chrome/Safari, desktop Chrome, WebView 총 42개 통과                                       |
+| 운영 Docker 이미지         | GF API/Web, PC API/Web의 linux/amd64 이미지 4개 빌드 및 revision label 확인                      |
+| 공통 배포 smoke            | `Shared-instance smoke passed` 확인. 실제 앱·TLS·저장/조회·SSE·롤백·재시작 보존·health 검사 통과 |
+
+컨테이너 검증은 macOS의 별도 Colima profile과 기존 `smoke-tools` 컨테이너에서 실행했다. 검증이 만든 Docker container/network/volume을 정리하고 전용 VM도 삭제했다. PC 테스트 DB는 임시 디렉터리·임의 비밀번호를 사용하는 별도 55434 인스턴스에서 실행한 뒤 종료·정리했고, GF 소유 55444 테스트 DB도 종료했다. 기존 GF 개발 서버/API와 55442 개발 DB를 재시작하지 않았다.
+
+실제 AWS 리소스 생성, 운영 IAM 권한, RDS의 실제 PITR 복원, 공인 DNS/인증서, 외부 OAuth 제공자의 로그인과 실제 운영 SSH 전송은 이번 로컬 실행 범위에 포함되지 않는다. 위 최초 배포 절차에서 계정 소유자가 리소스를 준비한 뒤 확인해야 한다.
 
 `projects/game-feedback/deploy/lightsail`과 `projects/photo-contest/deploy/compose.yaml`은 이전 단독 배포 및 별도 컨테이너 회귀 테스트용이다. 새 Actions CD는 이 문서의 shared-instance 구성만 사용한다. 이전 Lightsail/Oracle/로컬 PostgreSQL volume/R2 중심의 운영 명령을 이 호스트에 적용하지 않는다. 첨부 계획의 전체 캐시 개편과 나머지 제품 결함은 이 배포 변경의 완료 범위에 포함하지 않는다.
