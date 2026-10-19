@@ -1,9 +1,13 @@
+import type { TPostRow } from './post.query';
+import { postInclude } from './post.query';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PostRepository } from './post.repository';
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma';
-import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
 import { readUpload } from '../common/graphql/read-upload';
 import { MAX_VIDEO_BYTES } from '../config/limits';
@@ -17,13 +21,11 @@ import {
   POST_TITLE_LIMIT,
   UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
-import { Database } from '../database/database.service';
 import { isOwner } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { MediaProcessor } from './media-processor';
-import { koreanMonth } from './post-order';
 
 interface IPostInput {
   groupId: string;
@@ -38,17 +40,6 @@ interface IPostQuery {
   offset?: number | null;
   limit?: number | null;
 }
-function postInclude(viewerId: string | null) {
-  const userId = { in: viewerId ? [viewerId] : [] };
-  return {
-    group: { select: { name: true, members: { where: { userId }, select: { role: true } } } },
-    author: true,
-    upload: true,
-    _count: { select: { likes: true, comments: true } },
-    likes: { where: { userId }, select: { userId: true } },
-  } satisfies Prisma.PostInclude;
-}
-type TPostRow = Prisma.PostGetPayload<{ include: ReturnType<typeof postInclude> }>;
 function present(row: TPostRow, userId: string | null) {
   return {
     id: row.id,
@@ -70,7 +61,8 @@ function present(row: TPostRow, userId: string | null) {
 @Injectable()
 export class PostService {
   constructor(
-    private readonly db: Database,
+    private readonly repository: PostRepository,
+    private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
     private readonly processor: MediaProcessor,
@@ -83,42 +75,39 @@ export class PostService {
       ? [(await this.membership.readableGroup(viewer?.id ?? null, query.groupId)).group.id]
       : await this.membership.memberGroupIds(viewer?.id ?? '');
     const popular = query.sort === 'MONTHLY_POPULAR';
-    const rows = await this.db.post.findMany({
-      where: {
-        groupId: { in: groupIds },
-        hidden: false,
-        OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],
-        ...(popular ? { createdAt: koreanMonth() } : {}),
-      },
-      include: postInclude(viewer?.id ?? null),
-      skip: offset,
-      take: limit,
-      orderBy: [
-        ...(popular ? [{ likes: { _count: 'desc' as const } }] : []),
-        { createdAt: 'desc' },
-        { id: 'desc' },
-      ],
+    const rows = await this.repository.listVisiblePosts({
+      groupIds,
+      viewerId: viewer?.id ?? null,
+      popular,
+      offset,
+      limit,
     });
     return rows.map((row) => present(row, viewer?.id ?? null));
   }
   async requestUpload(viewer: IViewer, groupId: string) {
     const token = randomToken();
-    const upload = await this.db.atomic(async (tx) => {
+    const upload = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, groupId, tx);
       const now = new Date();
-      const pending = await tx.postUpload.count({
-        where: { userId: viewer.id, expiresAt: { gt: now }, post: null },
-      });
+      const pending = await this.repository.countPostUpload(
+        {
+          where: { userId: viewer.id, expiresAt: { gt: now }, post: null },
+        },
+        tx,
+      );
       if (pending >= MAX_PENDING_UPLOADS)
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
-      return tx.postUpload.create({
-        data: {
-          userId: viewer.id,
-          groupId,
-          tokenHash: sha256Hex(token),
-          expiresAt: new Date(now.getTime() + UPLOAD_TICKET_TTL_MS),
+      return this.repository.createPostUpload(
+        {
+          data: {
+            userId: viewer.id,
+            groupId,
+            tokenHash: sha256Hex(token),
+            expiresAt: new Date(now.getTime() + UPLOAD_TICKET_TTL_MS),
+          },
         },
-      });
+        tx,
+      );
     });
     return { id: upload.id, expiresAt: upload.expiresAt, url: `/backend/post-uploads/${token}` };
   }
@@ -135,7 +124,7 @@ export class PostService {
   }
 
   private async uploadGrant(viewer: IViewer, where: Prisma.PostUploadWhereUniqueInput) {
-    const grant = await this.db.postUpload.findUnique({ where });
+    const grant = await this.repository.findUniquePostUpload({ where });
     if (!grant || grant.userId !== viewer.id || grant.storageKey || grant.expiresAt <= new Date())
       fail('업로드 요청이 만료되었거나 유효하지 않습니다.', ERROR_CODE.FORBIDDEN);
     await this.membership.requireMember(viewer.id, grant.groupId);
@@ -151,7 +140,7 @@ export class PostService {
     const key = createMediaKey(media.extension);
     await this.storage.put(key, media.body, media.contentType);
     try {
-      const updated = await this.db.postUpload.updateMany({
+      const updated = await this.repository.updateManyPostUpload({
         where: { id: grant.id, storageKey: null, expiresAt: { gt: new Date() } },
         data: {
           storageKey: key,
@@ -171,9 +160,9 @@ export class PostService {
     const title = textValue(input.title, POST_TITLE_LIMIT, '제목');
     const body = input.body?.trim() ?? '';
     if (body.length > POST_BODY_LIMIT) fail('내용은 5000자 이하로 입력해 주세요.');
-    const row = await this.db.atomic(async (tx) => {
+    const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, input.groupId, tx);
-      const upload = await tx.postUpload.findUnique({ where: { id: input.uploadId } });
+      const upload = await this.repository.findUniquePostUpload({ where: { id: input.uploadId } }, tx);
       if (
         !upload ||
         upload.userId !== viewer.id ||
@@ -182,11 +171,14 @@ export class PostService {
         upload.expiresAt <= new Date()
       )
         fail('업로드가 완료되지 않았거나 만료되었습니다.');
-      const created = await tx.post.create({
-        data: { groupId: input.groupId, authorId: viewer.id, uploadId: upload.id, title, body },
-        include: postInclude(viewer.id),
-      });
-      await recordEvent(tx, {
+      const created = await this.repository.createPost(
+        {
+          data: { groupId: input.groupId, authorId: viewer.id, uploadId: upload.id, title, body },
+          include: postInclude(viewer.id),
+        },
+        tx,
+      );
+      await this.repository.recordEvent(tx, {
         id: `post:${created.id}`,
         type: ANALYTICS_EVENT.POST_CREATED,
         userId: viewer.id,
@@ -197,46 +189,56 @@ export class PostService {
     return present(row, viewer.id);
   }
   async like(viewer: IViewer, postId: string, liked: boolean) {
-    const row = await this.db.atomic(async (tx) => {
+    const row = await this.transactions.atomic(async (tx) => {
       await this.membership.accessiblePost(viewer.id, postId, tx);
       if (liked)
-        await tx.postLike.upsert({
-          where: { postId_userId: { postId, userId: viewer.id } },
-          create: { postId, userId: viewer.id },
-          update: {},
-        });
-      if (!liked) await tx.postLike.deleteMany({ where: { postId, userId: viewer.id } });
+        await this.repository.upsertPostLike(
+          {
+            where: { postId_userId: { postId, userId: viewer.id } },
+            create: { postId, userId: viewer.id },
+            update: {},
+          },
+          tx,
+        );
+      if (!liked) await this.repository.deleteManyPostLike({ where: { postId, userId: viewer.id } }, tx);
       if (liked)
-        await recordEvent(tx, {
+        await this.repository.recordEvent(tx, {
           id: `post-like:${postId}:${viewer.id}`,
           type: ANALYTICS_EVENT.POST_LIKED,
           userId: viewer.id,
           properties: { postId },
         });
-      return tx.post.findUniqueOrThrow({ where: { id: postId }, include: postInclude(viewer.id) });
+      return this.repository.findUniqueOrThrowPost(
+        { where: { id: postId }, include: postInclude(viewer.id) },
+        tx,
+      );
     });
     return present(row, viewer.id);
   }
   async delete(viewer: IViewer, postId: string) {
-    const upload = await this.db.atomic(async (tx) => {
+    const upload = await this.transactions.atomic(async (tx) => {
       const { post, admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
       if (!admin && post.authorId !== viewer.id)
         fail('작성자와 그룹 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
-      await tx.post.delete({ where: { id: postId } });
-      await recordEvent(tx, {
+      await this.repository.deletePost({ where: { id: postId } }, tx);
+      await this.repository.recordEvent(tx, {
         id: `post-deleted:${postId}`,
         type: ANALYTICS_EVENT.POST_DELETED,
         userId: viewer.id,
         properties: { postId, groupId: post.groupId },
       });
-      if (post.legacySubmissionId) await tx.submission.deleteMany({ where: { id: post.legacySubmissionId } });
+      if (post.legacySubmissionId)
+        await this.repository.deleteManySubmission({ where: { id: post.legacySubmissionId } }, tx);
       // 파일 삭제가 일시 실패해도 정리 작업이 다시 시도할 수 있도록 티켓을 남긴다.
-      await tx.postUpload.update({ where: { id: post.uploadId }, data: { expiresAt: new Date(0) } });
+      await this.repository.updatePostUpload(
+        { where: { id: post.uploadId }, data: { expiresAt: new Date(0) } },
+        tx,
+      );
       return post.upload;
     });
     try {
       if (upload.storageKey) await this.storage.delete(upload.storageKey);
-      await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
+      await this.repository.deleteManyPostUpload({ where: { id: upload.id, post: null } });
     } catch (error) {
       reportUnexpectedError(error, { operationName: 'deletePost', location: 'media-cleanup' });
     }

@@ -1,3 +1,4 @@
+import { MaintenanceRepository } from './maintenance.repository';
 import { Module } from '@nestjs/common';
 
 import { AnalyticsModule } from '../analytics/analytics.module';
@@ -6,7 +7,7 @@ import { SchedulerService } from './scheduler.service';
 
 @Module({
   imports: [AnalyticsModule],
-  providers: [MaintenanceService, SchedulerService],
+  providers: [MaintenanceRepository, MaintenanceService, SchedulerService],
   exports: [MaintenanceService, SchedulerService],
 })
 export class MaintenanceModule {}

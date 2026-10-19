@@ -1,3 +1,4 @@
+import { LikeRepository } from './like.repository';
 import { Module } from '@nestjs/common';
 
 import { GroupModule } from '../group/group.module';
@@ -7,6 +8,6 @@ import { LikeService } from './like.service';
 
 @Module({
   imports: [GroupModule, SubmissionModule],
-  providers: [LikeService, LikeResolver],
+  providers: [LikeRepository, LikeService, LikeResolver],
 })
 export class LikeModule {}

@@ -1,8 +1,10 @@
+import { UnitOfWork } from '../database/unit-of-work';
+import { GroupRepository } from './group.repository';
 import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Group, Prisma } from '../../generated/prisma';
-import { ANALYTICS_EVENT, recordEvent } from '../analytics/analytics-event';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
 import type { IUserView } from '../auth/user-view';
@@ -11,7 +13,6 @@ import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
-import { Database } from '../database/database.service';
 import { GROUP_ROLE, toGroupRole } from './group-role';
 import type { TGroupRole } from './group-role';
 import { buildLeaderboard } from './leaderboard';
@@ -68,12 +69,13 @@ interface IGroupWithRole {
 @Injectable()
 export class GroupService {
   constructor(
-    private readonly db: Database,
+    private readonly repository: GroupRepository,
+    private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
 
   async myGroups(viewer: IViewer): Promise<IGroupNode[]> {
-    const memberships = await this.db.groupMember.findMany({
+    const memberships = await this.repository.findManyGroupMember({
       where: { userId: viewer.id },
       include: { group: { include: groupCount } },
       orderBy: [{ joinedAt: 'desc' }, { groupId: 'asc' }],
@@ -82,7 +84,7 @@ export class GroupService {
   }
 
   async group(viewer: IViewer | null, groupId: string): Promise<IGroupNode> {
-    const group = await this.db.group.findUnique({
+    const group = await this.repository.findUniqueGroup({
       where: { id: groupId },
       include: viewerGroupInclude(viewer),
     });
@@ -106,7 +108,7 @@ export class GroupService {
     const range = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const search = query.search?.trim() ?? '';
     if (search.length > TEXT_LIMIT.GROUP_NAME) fail('검색어는 40자 이하로 입력해 주세요.');
-    const groups = await this.db.group.findMany({
+    const groups = await this.repository.findManyGroup({
       where: {
         ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
         ...(query.visibility ? { visibility: query.visibility } : {}),
@@ -126,7 +128,7 @@ export class GroupService {
   }
 
   publicGroupCount() {
-    return this.db.group.count({ where: { visibility: GROUP_VISIBILITY.PUBLIC } });
+    return this.repository.countGroup({ where: { visibility: GROUP_VISIBILITY.PUBLIC } });
   }
 
   async createGroup(
@@ -136,18 +138,21 @@ export class GroupService {
   ): Promise<IGroupNode> {
     const validName = textValue(name, TEXT_LIMIT.GROUP_NAME, '그룹 이름');
     const inviteToken = randomToken();
-    const group = await this.db.atomic(async (tx) => {
-      const created = await tx.group.create({
-        data: {
-          name: validName,
-          visibility,
-          inviteToken,
-          inviteHash: sha256Hex(inviteToken),
-          members: { create: { userId: viewer.id, role: GROUP_ROLE.OWNER } },
+    const group = await this.transactions.atomic(async (tx) => {
+      const created = await this.repository.createGroup(
+        {
+          data: {
+            name: validName,
+            visibility,
+            inviteToken,
+            inviteHash: sha256Hex(inviteToken),
+            members: { create: { userId: viewer.id, role: GROUP_ROLE.OWNER } },
+          },
+          include: groupCount,
         },
-        include: groupCount,
-      });
-      await recordEvent(tx, {
+        tx,
+      );
+      await this.repository.recordEvent(tx, {
         id: `group:${created.id}`,
         type: ANALYTICS_EVENT.GROUP_CREATED,
         userId: viewer.id,
@@ -165,32 +170,41 @@ export class GroupService {
   }
 
   async requestMembership(viewer: IViewer, groupId: string): Promise<IGroupNode> {
-    await this.db.atomic(async (tx) => {
-      const group = await tx.group.findUnique({ where: { id: groupId } });
+    await this.transactions.atomic(async (tx) => {
+      const group = await this.repository.findUniqueGroup({ where: { id: groupId } }, tx);
       if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-      const existing = await tx.groupMember.findUnique({
-        where: { groupId_userId: { groupId, userId: viewer.id } },
-      });
+      const existing = await this.repository.findUniqueGroupMember(
+        {
+          where: { groupId_userId: { groupId, userId: viewer.id } },
+        },
+        tx,
+      );
       if (existing) return;
       if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE) {
-        await tx.groupJoinRequest.createMany({
-          data: [{ groupId, userId: viewer.id }],
-          skipDuplicates: true,
-        });
+        await this.repository.createManyGroupJoinRequest(
+          {
+            data: [{ groupId, userId: viewer.id }],
+            skipDuplicates: true,
+          },
+          tx,
+        );
         return;
       }
       // 같은 사용자의 동시 가입도 PK로 한 행만 남긴다.
-      await tx.groupMember.createMany({
-        data: [{ groupId: group.id, userId: viewer.id }],
-        skipDuplicates: true,
-      });
-      await recordEvent(tx, {
+      await this.repository.createManyGroupMember(
+        {
+          data: [{ groupId: group.id, userId: viewer.id }],
+          skipDuplicates: true,
+        },
+        tx,
+      );
+      await this.repository.recordEvent(tx, {
         id: `joined:${group.id}:${viewer.id}`,
         type: ANALYTICS_EVENT.GROUP_JOINED,
         userId: viewer.id,
         properties: { groupId: group.id },
       });
-      await tx.groupJoinRequest.deleteMany({ where: { groupId, userId: viewer.id } });
+      await this.repository.deleteManyGroupJoinRequest({ where: { groupId, userId: viewer.id } }, tx);
     });
     return this.group(viewer, groupId);
   }
@@ -199,7 +213,7 @@ export class GroupService {
   async regenerateInviteLink(viewer: IViewer, groupId: string): Promise<IGroupNode> {
     const member = await this.membership.requireOwner(viewer.id, groupId);
     const inviteToken = randomToken();
-    const group = await this.db.group.update({
+    const group = await this.repository.updateGroup({
       where: { id: groupId },
       data: { inviteToken, inviteHash: sha256Hex(inviteToken) },
       include: groupCount,
@@ -211,19 +225,19 @@ export class GroupService {
   async invitePreview(viewer: IViewer | null, token: unknown): Promise<IInvitePreview> {
     const group = await this.groupByInvite(token);
     const [memberCount, owner, membership, pending] = await Promise.all([
-      this.db.groupMember.count({ where: { groupId: group.id } }),
-      this.db.groupMember.findFirst({
+      this.repository.countGroupMember({ where: { groupId: group.id } }),
+      this.repository.findFirstGroupMember({
         where: { groupId: group.id, role: GROUP_ROLE.OWNER },
         orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
         select: { user: { select: { nickname: true } } },
       }),
       viewer
-        ? this.db.groupMember.findUnique({
+        ? this.repository.findUniqueGroupMember({
             where: { groupId_userId: { groupId: group.id, userId: viewer.id } },
           })
         : null,
       viewer
-        ? this.db.groupJoinRequest.findUnique({
+        ? this.repository.findUniqueGroupJoinRequest({
             where: { groupId_userId: { groupId: group.id, userId: viewer.id } },
           })
         : null,
@@ -240,7 +254,7 @@ export class GroupService {
 
   /** 종료된 대회(endsAt <= now)의 숨기지 않은 사진만 집계한다. */
   async leaderboard(groupId: string, now = new Date()): Promise<ILeaderboardEntry<IUserView>[]> {
-    const rows = await this.db.submission.findMany({
+    const rows = await this.repository.findManySubmission({
       where: { hidden: false, contest: { groupId, endsAt: { lte: now } } },
       select: {
         contestId: true,
@@ -260,13 +274,13 @@ export class GroupService {
 
   private async groupByInvite(token: unknown) {
     const value = textValue(token, TEXT_LIMIT.INVITE_TOKEN, '초대 코드');
-    const group = await this.db.group.findUnique({ where: { inviteHash: sha256Hex(value) } });
+    const group = await this.repository.findUniqueGroup({ where: { inviteHash: sha256Hex(value) } });
     if (!group) fail(ERROR_MESSAGE.INVALID_INVITE, ERROR_CODE.NOT_FOUND);
     return group;
   }
 
   private async membersOf(groupIds: readonly string[]): Promise<Map<string, IMemberView[]>> {
-    const rows = await this.db.groupMember.findMany({
+    const rows = await this.repository.findManyGroupMember({
       where: { groupId: { in: [...groupIds] } },
       select: { groupId: true, role: true, user: { select: USER_VIEW_SELECT } },
       orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],

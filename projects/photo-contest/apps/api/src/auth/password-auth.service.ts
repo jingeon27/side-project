@@ -1,3 +1,4 @@
+import { AuthRepository } from './auth.repository';
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -14,7 +15,6 @@ import {
   PASSWORD_MAX_LENGTH,
   TEXT_LIMIT,
 } from '../config/limits';
-import { Database } from '../database/database.service';
 import { hashPassword, verifyPassword } from './password';
 import { SessionService } from './session.service';
 import { USER_VIEW_SELECT } from './user-view';
@@ -46,7 +46,7 @@ const LOGIN_FAILED = '아이디 또는 비밀번호를 확인해 주세요.';
 @Injectable()
 export class PasswordAuthService {
   constructor(
-    private readonly db: Database,
+    private readonly repository: AuthRepository,
     private readonly sessions: SessionService,
   ) {}
 
@@ -56,8 +56,8 @@ export class PasswordAuthService {
     if (!parsed.success) fail(parsed.error.issues[0]?.message ?? '입력 내용을 확인해 주세요.');
     const { loginId, password, nickname } = parsed.data;
     const passwordHash = await hashPassword(password);
-    const user = await this.db.user
-      .create({
+    const user = await this.repository
+      .createUser({
         data: {
           provider: 'password',
           providerId: loginId,
@@ -82,7 +82,7 @@ export class PasswordAuthService {
     if (!parsed.success) fail(LOGIN_FAILED, ERROR_CODE.UNAUTHENTICATED);
     const { loginId, password } = parsed.data;
     await this.throttle(`login:id:${loginId}`, AUTH_LOGIN_ID_LIMIT);
-    const credential = await this.db.passwordCredential.findUnique({
+    const credential = await this.repository.findUniquePasswordCredential({
       where: { loginId },
       include: { user: { select: USER_VIEW_SELECT } },
     });
@@ -96,7 +96,7 @@ export class PasswordAuthService {
   private async throttle(key: string, limit: number) {
     const now = Date.now();
     const bucket = Math.floor(now / AUTH_ATTEMPT_WINDOW_MS);
-    const attempt = await this.db.authAttempt.upsert({
+    const attempt = await this.repository.upsertAuthAttempt({
       where: { keyHash: sha256Hex(`${key}:${bucket}`) },
       create: {
         keyHash: sha256Hex(`${key}:${bucket}`),

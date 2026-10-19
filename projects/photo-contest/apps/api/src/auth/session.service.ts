@@ -1,3 +1,4 @@
+import { AuthRepository } from './auth.repository';
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
@@ -5,7 +6,6 @@ import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readCookie } from '../common/http/cookie-header';
 import { SESSION_TTL_MS } from '../config/limits';
-import { Database } from '../database/database.service';
 import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
 
 // randomToken()이 만드는 32바이트 base64url. 다른 모양은 DB를 조회하지 않고 비로그인으로 본다.
@@ -28,7 +28,7 @@ export class SessionService {
   // 필드 리졸버마다 세션을 다시 조회하지 않도록 요청 객체마다 한 번만 찾는다.
   private readonly viewers = new WeakMap<Request, Promise<IViewer | null>>();
 
-  constructor(private readonly db: Database) {}
+  constructor(private readonly repository: AuthRepository) {}
 
   viewer(req: Request): Promise<IViewer | null> {
     const cached = this.viewers.get(req);
@@ -45,7 +45,7 @@ export class SessionService {
   /** 새 세션을 만들고 쿠키로 내려준다. DB에는 토큰 해시만 저장한다. */
   async start(res: Response, userId: string) {
     const token = randomToken();
-    await this.db.session.create({
+    await this.repository.createSession({
       data: { tokenHash: sha256Hex(token), userId, expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
     });
     res.cookie(AUTH_COOKIE.SESSION, token, authCookieOptions(SESSION_TTL_MS));
@@ -53,16 +53,13 @@ export class SessionService {
 
   async end(req: Request, res: Response) {
     const token = sessionToken(req);
-    if (token) await this.db.session.deleteMany({ where: { tokenHash: sha256Hex(token) } });
+    if (token) await this.repository.deleteManySession({ where: { tokenHash: sha256Hex(token) } });
     res.clearCookie(AUTH_COOKIE.SESSION, authCookieOptions());
   }
 
   private async findViewer(token: string | undefined): Promise<IViewer | null> {
     if (!token) return null;
-    const session = await this.db.session.findUnique({
-      where: { tokenHash: sha256Hex(token) },
-      select: { expiresAt: true, user: { select: { id: true, nickname: true, avatar: true } } },
-    });
+    const session = await this.repository.sessionWithViewer(sha256Hex(token));
     return session && session.expiresAt > new Date() ? session.user : null;
   }
 }

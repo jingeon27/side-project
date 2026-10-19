@@ -1,3 +1,4 @@
+import { GroupRepository } from './group.repository';
 import { Module } from '@nestjs/common';
 
 import { GroupResolver } from './group.resolver';
@@ -8,6 +9,7 @@ import { MembershipService } from './membership.service';
 
 @Module({
   providers: [
+    GroupRepository,
     GroupService,
     MembershipService,
     GroupResolver,

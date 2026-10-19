@@ -1,3 +1,4 @@
+import { PostRepository } from './post.repository';
 import { Module } from '@nestjs/common';
 
 import { GroupModule } from '../group/group.module';
@@ -10,7 +11,14 @@ import { PostCommentService } from './post-comment.service';
 
 @Module({
   imports: [GroupModule],
-  providers: [PostService, PostResolver, PostCommentService, PostCommentResolver, MediaProcessor],
+  providers: [
+    PostRepository,
+    PostService,
+    PostResolver,
+    PostCommentService,
+    PostCommentResolver,
+    MediaProcessor,
+  ],
   controllers: [PostController],
 })
 export class PostModule {}
