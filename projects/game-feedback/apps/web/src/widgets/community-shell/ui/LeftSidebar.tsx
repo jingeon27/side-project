@@ -1,11 +1,13 @@
 'use client';
+
+import type { TBoardKind } from '@game-feedback/contracts';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
 import { CircleHelp, MessageCircle, Home } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { categoryOptions } from '@/features/category';
 import { GameIcon } from './GameIcon';
-import { activeGameBoard, gameBoards, gameBoardPath } from '@/features/board';
+import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
 import { resolveAppRoute } from '@game-feedback/bridge';
 interface ILeftSidebarProps {
   home: string;
@@ -68,21 +70,63 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
               <strong>{game.name}</strong>
             </Link>
             <div className="game-submenu">
-              {gameBoards.map((board) => (
-                <Link
-                  key={board.kind}
-                  href={gameBoardPath(locale, board.kind, game.slug)}
-                  replace
-                  className={`side-link ${selected === board.kind && gameSlug === game.slug ? 'selected' : ''}`}
-                  aria-current={selected === board.kind && gameSlug === game.slug ? 'page' : undefined}
-                >
-                  {t(board.name)}
-                </Link>
-              ))}
+              <SidebarBoardLink
+                kind="FEEDBACK"
+                locale={locale}
+                game={game.slug}
+                selected={gameSlug === game.slug ? selected : undefined}
+              />
+              <SidebarBoardLink
+                kind="FRIEND_SALE"
+                locale={locale}
+                game={game.slug}
+                selected={gameSlug === game.slug ? selected : undefined}
+              />
+              <SidebarBoardLink
+                kind="FRIENDLY"
+                locale={locale}
+                game={game.slug}
+                selected={gameSlug === game.slug ? selected : undefined}
+              />
+              <SidebarBoardLink
+                kind="COACHING"
+                locale={locale}
+                game={game.slug}
+                selected={gameSlug === game.slug ? selected : undefined}
+              />
+              <SidebarBoardLink
+                kind="FREE"
+                locale={locale}
+                game={game.slug}
+                selected={gameSlug === game.slug ? selected : undefined}
+              />
             </div>
           </nav>
         ))}
       <div className="sidebar-bottom"></div>
     </aside>
+  );
+}
+
+interface ISidebarBoardLinkProps {
+  kind: TBoardKind;
+  locale: string;
+  game: string;
+  selected?: TBoardKind;
+}
+function SidebarBoardLink({ kind, locale, game, selected }: ISidebarBoardLinkProps) {
+  const { t } = useI18n();
+  const board = boardByKind(kind);
+  if (!board) return null;
+  const active = selected === kind;
+  return (
+    <Link
+      href={gameBoardPath(locale, kind, game)}
+      replace
+      className={`side-link ${active ? 'selected' : ''}`}
+      aria-current={active ? 'page' : undefined}
+    >
+      {t(board.name)}
+    </Link>
   );
 }

@@ -1,7 +1,8 @@
+import type { TBoardKind } from '@game-feedback/contracts';
 import { translate, type TLocale } from '@/shared/i18n/index.server';
 import { ButtonLink } from '@side/design-system/next';
 import { appRoutes } from '@game-feedback/bridge';
-import { gameBoards, gameBoardPath } from '@/features/board';
+import { boardByKind, gameBoardPath } from '@/features/board';
 
 export function GuideContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
@@ -18,27 +19,21 @@ export function GuideContent({ locale }: { locale: TLocale }) {
           )}
         </p>
         <dl className="guide-board-list">
-          {gameBoards.map((board) => (
-            <div key={board.kind}>
-              <dt>{t(board.name)}</dt>
-              <dd>{t(board.description)}</dd>
-            </div>
-          ))}
+          <GuideBoardDescription kind="FEEDBACK" locale={locale} />
+          <GuideBoardDescription kind="FRIEND_SALE" locale={locale} />
+          <GuideBoardDescription kind="FRIENDLY" locale={locale} />
+          <GuideBoardDescription kind="COACHING" locale={locale} />
+          <GuideBoardDescription kind="FREE" locale={locale} />
         </dl>
         <nav className="guide-board-links" aria-label={t('분류별 바로가기')}>
           <ButtonLink variant="secondary" size="sm" href={appRoutes.feed(locale)}>
             {t('전체')}
           </ButtonLink>
-          {gameBoards.map((board) => (
-            <ButtonLink
-              key={board.kind}
-              variant="secondary"
-              size="sm"
-              href={gameBoardPath(locale, board.kind)}
-            >
-              {t(board.name)}
-            </ButtonLink>
-          ))}
+          <GuideBoardLink kind="FEEDBACK" locale={locale} />
+          <GuideBoardLink kind="FRIEND_SALE" locale={locale} />
+          <GuideBoardLink kind="FRIENDLY" locale={locale} />
+          <GuideBoardLink kind="COACHING" locale={locale} />
+          <GuideBoardLink kind="FREE" locale={locale} />
         </nav>
       </section>
       <section className="guide-section">
@@ -138,5 +133,25 @@ export function GuideContent({ locale }: { locale: TLocale }) {
         {t('홈으로 이동')}
       </ButtonLink>
     </>
+  );
+}
+
+function GuideBoardDescription({ kind, locale }: { kind: TBoardKind; locale: TLocale }) {
+  const board = boardByKind(kind);
+  if (!board) return null;
+  return (
+    <div>
+      <dt>{translate(locale, board.name)}</dt>
+      <dd>{translate(locale, board.description)}</dd>
+    </div>
+  );
+}
+function GuideBoardLink({ kind, locale }: { kind: TBoardKind; locale: TLocale }) {
+  const board = boardByKind(kind);
+  if (!board) return null;
+  return (
+    <ButtonLink variant="secondary" size="sm" href={gameBoardPath(locale, kind)}>
+      {translate(locale, board.name)}
+    </ButtonLink>
   );
 }
