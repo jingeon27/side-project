@@ -15,6 +15,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ pag
   const groups = await getPublicGroupSitemapPage(index);
   if (!groups.length) return new Response(null, { status: 404 });
   return sitemapResponse(
-    sitemapDocument(groups.map((group) => siteUrl(ROUTES.GROUP(group.id), getWebOrigin()))),
+    sitemapDocument(
+      groups.flatMap((group) =>
+        [ROUTES.GROUP(group.id), ROUTES.GROUP_CONTESTS(group.id), ROUTES.GROUP_HALL_OF_FAME(group.id)].map(
+          (path) => siteUrl(path, getWebOrigin()),
+        ),
+      ),
+    ),
   );
 }
