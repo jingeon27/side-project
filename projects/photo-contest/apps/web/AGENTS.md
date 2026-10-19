@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Web (Next.js 16 · Apollo Client 4 · Base UI)
 
-화면·상태·레이어는 `../../.claude/skills/frontend/SKILL.md`, 테스트 격리는 `../../.claude/skills/testing/SKILL.md`를 따른다. 위 Next.js 자동 안내는 유지한다.
+화면·상태·레이어는 `../../.agents/skills/frontend/SKILL.md`, 테스트 격리는 `../../.agents/skills/testing/SKILL.md`를 따른다. 위 Next.js 자동 안내는 유지한다.
 
 ## 구조
 
@@ -48,12 +48,12 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 | 작업 | 스킬 |
 | --- | --- |
-| 화면·라우트·SSR·로그인 게이트·앱 열 | `.claude/skills/page-structure/SKILL.md` |
-| 문서·정규화 캐시·offset·낙관적 응답 | `.claude/skills/apollo/SKILL.md` |
-| 실제 RHF·Zod 폼과 제출 상태 | `.claude/skills/form/SKILL.md` |
-| 시트·대화상자·뒤로 가기·포커스 | `.claude/skills/overlay/SKILL.md` |
-| Tailwind 토큰·모바일·안전 영역·사진 | `.claude/skills/styling/SKILL.md` |
-| Playwright·격리 서버·외부 경계 | `.claude/skills/e2e/SKILL.md` |
+| 화면·라우트·SSR·로그인 게이트·앱 열 | `.agents/skills/page-structure/SKILL.md` |
+| 문서·정규화 캐시·offset·낙관적 응답 | `.agents/skills/apollo/SKILL.md` |
+| 실제 RHF·Zod 폼과 제출 상태 | `.agents/skills/form/SKILL.md` |
+| 시트·대화상자·뒤로 가기·포커스 | `.agents/skills/overlay/SKILL.md` |
+| Tailwind 토큰·모바일·안전 영역·사진 | `.agents/skills/styling/SKILL.md` |
+| Playwright·격리 서버·외부 경계 | `.agents/skills/e2e/SKILL.md` |
 
 데스크톱에서는 `wide:`(1280px)부터 메뉴 폭을 늘리고 피드·인기 목록을 카드로 구분한다. 그룹 글쓰기는 상단바에, 초대·멤버 정보는 GalleryFeed.sidebar에 둔다. MY는 프로필·그룹을 좌우로 나눈다. 글쓰기는 미디어·내용 2열, 댓글은 원본 게시물·대화 2열이며 시트 외곽은 화면 너비를 채운다. 댓글 시트는 높이 75%로 열리고 드래그·헤더 버튼으로 안전 영역과 키보드를 제외한 전체 높이까지 확장한다. BottomSheet.Root의 snapPoints와 Base UI가 크기·드래그를 소유하며 스냅 오프셋에 맞춘 하단 패딩으로 입력창을 화면 안에 둔다.
 

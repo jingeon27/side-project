@@ -1,6 +1,6 @@
 # API (NestJS 12 · schema-first GraphQL · Prisma 6)
 
-도메인 규칙과 인증 흐름은 `../../.claude/skills/contest-api/SKILL.md`, 테스트 레인은 `../../.claude/skills/testing/SKILL.md`를 먼저 읽는다.
+도메인 규칙과 인증 흐름은 `../../.agents/skills/contest-api/SKILL.md`, 테스트 레인은 `../../.agents/skills/testing/SKILL.md`를 먼저 읽는다.
 
 ## 모듈 지도 (`src`)
 
@@ -48,10 +48,10 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 ## 앱 스킬
 
-- `.claude/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
-- `.claude/skills/auth/SKILL.md`: Cookie·Origin·OAuth·앱 PKCE 교환.
-- `.claude/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
-- `.claude/skills/api-test/SKILL.md`: unit·실제 DB/supertest e2e·하네스.
+- `.agents/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
+- `.agents/skills/auth/SKILL.md`: Cookie·Origin·OAuth·앱 PKCE 교환.
+- `.agents/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
+- `.agents/skills/api-test/SKILL.md`: unit·실제 DB/supertest e2e·하네스.
 
 테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계·외부 성공 콜백 티켓을 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
 

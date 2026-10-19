@@ -1,6 +1,6 @@
 # Photo Contest (웃긴순간)
 
-상위 `side`의 Yarn workspaces에 속한다. 세이프닥 저장소(safedoc-usermall·react·global)는 구조와 규칙만 참고한다. 그 저장소의 서버 주소, 환경변수 값, 사내 데이터, 업무 명칭, 코드 파일을 가져오지 않는다.
+상위 `side`의 Yarn workspaces에 속한다. 이 저장소의 구조·규칙·공개 API를 기준으로 구현하며 외부 저장소의 서버 주소, 환경변수 값, 사내 데이터, 코드 파일을 가져오지 않는다.
 
 ## 구성
 
@@ -40,13 +40,13 @@
 
 ## 스킬 (관련 작업 전에 해당 파일 전체를 읽는다)
 
-- 웹 구조·화면·폼·Apollo·오버레이: `.claude/skills/frontend/SKILL.md`
-- API 모듈·권한·대회 규칙·인증: `.claude/skills/contest-api/SKILL.md`
-- 모바일 앱(Expo WebView 셸): `.claude/skills/mobile/SKILL.md`
-- 웹 ↔ 앱 메시지 추가·변경: `.claude/skills/bridge/SKILL.md`
-- Sentry·Amplitude·이벤트 추가: `.claude/skills/monitoring/SKILL.md`
-- 테스트 레인·격리 DB·포트: `.claude/skills/testing/SKILL.md`
-- 커밋 단위·메시지: `.claude/skills/commit/SKILL.md`
+- 웹 구조·화면·폼·Apollo·오버레이: `.agents/skills/frontend/SKILL.md`
+- API 모듈·권한·대회 규칙·인증: `.agents/skills/contest-api/SKILL.md`
+- 모바일 앱(Expo WebView 셸): `.agents/skills/mobile/SKILL.md`
+- 웹 ↔ 앱 메시지 추가·변경: `.agents/skills/bridge/SKILL.md`
+- Sentry·Amplitude·이벤트 추가: `.agents/skills/monitoring/SKILL.md`
+- 테스트 레인·격리 DB·포트: `.agents/skills/testing/SKILL.md`
+- 커밋 단위·메시지: `.agents/skills/commit/SKILL.md`
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
 
