@@ -128,7 +128,61 @@ Google Branding에 입력할 서비스 홈페이지·약관·개인정보 주소
 
 Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https://developer.clashroyale.com/)에서 키를 발급하고 EC2의 실제 외부 통신 IP를 허용한 뒤 `SUPERCELL_API_TOKEN`에 저장한다. 이 키는 관리자에 의한 수동 프로필 인증과 별개다.
 
-PC 모니터링을 사용할 때는 [Sentry 프로젝트](https://sentry.io/settings/)에서 API/Next 프로젝트 DSN을 발급하고, [Amplitude](https://app.amplitude.com/)에서 프로젝트 API key를 확인한다. API DSN은 서버 PC 환경 파일의 `SENTRY_DSN`, 웹 공개 키는 아래 GitHub repository variable에 넣는다. 현재 shared-instance GF 템플릿에는 Sentry/Amplitude 주입이 없으므로 GF 운영 수집이 켜졌다고 간주하지 않는다.
+## Sentry와 Amplitude 설정
+
+현재 연결 상태부터 확인한다. 콘솔에서 키를 만들었다는 것과 운영에서 이벤트가 수집된다는 것은 별도로 확인해야 한다.
+
+| 대상              | 키 입력으로 사용할 수 있는 경로                                            | 코드 보완이 필요한 부분                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| PC API            | 서버 환경 파일의 `SENTRY_DSN`으로 예상하지 못한 오류 수집                  | 자동 HTTP/DB tracing은 꺼져 있다. `SENTRY_TRACES_SAMPLE_RATE`만 올려도 자동 계측이 추가되지는 않는다.                                  |
+| PC Web 브라우저   | repository Variables의 Sentry DSN·Amplitude API key를 이미지 빌드에 주입   | `tracesSampleRate: 0`이므로 운영 Web Vitals 수집을 완료했다고 볼 수 없다. 소스맵 업로드 연결도 필요하다.                               |
+| PC Next 서버      | 소스는 런타임 `SENTRY_DSN`을 읽는다.                                       | 현재 Web Compose에는 런타임 DSN 주입이 없다. Web용 DSN을 Web 컨테이너에 전달하는 연결이 필요하다. API DSN은 API 컨테이너에만 전달된다. |
+| PC Mobile         | Expo 빌드 환경의 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY` | EC2 웹 배포와 별도로 앱을 새로 빌드해야 한다.                                                                                          |
+| GF Web/API/Mobile | 현재 운영 SDK·환경변수 연결 없음                                           | SDK, 이벤트 카탈로그, 계정 식별, 배포 키 주입을 먼저 연결해야 한다. 임의로 GitHub 변수를 추가해도 수집되지 않는다.                     |
+
+### Sentry 프로젝트와 DSN
+
+1. [Sentry](https://sentry.io/)에 로그인하고 Organization을 준비한다. Projects → Create Project에서 `photo-contest-web`은 Next.js, `photo-contest-api`는 Node.js/NestJS 플랫폼으로 만든다. GF를 연결할 때는 별도 `game-feedback-web`, `game-feedback-api` 프로젝트를 만든다. 네이티브 앱 오류를 수집할 때는 서비스별 React Native 프로젝트를 따로 둔다.
+2. [프로젝트 설정](https://sentry.io/settings/) → 해당 Organization → Projects → 프로젝트 → Client Keys (DSN)에서 DSN을 복사한다. **Auth Token이 아니라 DSN**을 아래 대응 위치에 입력한다. 브라우저 DSN은 공개 번들에 포함될 수 있는 값이다. [Sentry Next.js 설정 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/)를 참고한다.
+3. PC API DSN을 `/srv/side-project/services/photo-contest/.env`의 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다.
+4. 프로젝트의 알림 설정에서 예상하지 못한 오류와 새 오류 알림의 수신자를 지정한다. 운영·개발 확인을 분리하려면 테스트 환경 또는 별도 테스트 프로젝트에서 먼저 검증한다.
+
+### Amplitude 프로젝트와 API key
+
+1. [Amplitude](https://app.amplitude.com/) → Settings → Organization settings → Projects → Create Project에서 서비스별 프로젝트 `photo-contest-production`, `game-feedback-production`을 만든다. 개발 검증용 프로젝트도 별도로 둔다. 현재 PC SDK에는 EU `serverZone` 설정이 없으므로 기본 US 수집 경로에 맞는 프로젝트를 사용한다. EU를 선택하려면 Web/Mobile SDK 설정도 함께 바꾼다. [프로젝트 생성 안내](https://amplitude.com/docs/get-started/create-project), [지역별 수집 안내](https://amplitude.com/docs/apis/analytics/http-api-quickstart)를 참고한다.
+2. Organization settings → API Keys에서 해당 프로젝트를 선택하고 API key를 확인한다. 이 키는 이벤트 수집용이며 데이터 조회·관리용 secret key와 용도가 다르다. [키 관리 안내](https://amplitude.com/docs/admin/account-management/manage-your-api-keys-and-secret-keys)를 따른다.
+3. PC API key를 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_AMPLITUDE_API_KEY`에 넣는다. 한 서비스의 Web과 Mobile은 같은 Amplitude 프로젝트를 사용하고 서비스 간에는 분리한다. PC 앱을 배포할 때는 같은 키를 Expo 빌드 환경의 `EXPO_PUBLIC_AMPLITUDE_API_KEY`에도 넣는다.
+4. PC 코드는 `page_viewed`와 도메인 성공 이벤트를 직접 보낸다. 콘솔에서 제공하는 자동 수집 스크립트를 추가로 붙이지 않는다. 로그인한 계정의 DB 사용자 ID로 Web/Mobile을 식별하며, WebView의 기기 ID는 네이티브와 공유한다. 닉네임·채팅 본문·세션 토큰은 이벤트 속성에 넣지 않는다.
+
+### 키를 넣는 위치와 적용 시점
+
+| 위치                       | 키                                | 입력할 값                     | 적용                   |
+| -------------------------- | --------------------------------- | ----------------------------- | ---------------------- |
+| GitHub repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN`    | PC Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
+| GitHub repository Variable | `PHOTO_CONTEST_AMPLITUDE_API_KEY` | PC Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
+| 서버 PC 환경 파일          | `SENTRY_DSN`                      | PC API 프로젝트 DSN           | 다음 API 배포에 적용   |
+| 서버 PC 환경 파일          | `SENTRY_TRACES_SAMPLE_RATE`       | 현재 오류 수집 경로는 `0`     | 다음 API 배포에 적용   |
+| Expo 빌드 환경             | `EXPO_PUBLIC_SENTRY_DSN`          | PC Mobile 프로젝트 DSN        | 앱 새 빌드·배포        |
+| Expo 빌드 환경             | `EXPO_PUBLIC_AMPLITUDE_API_KEY`   | PC Amplitude 프로젝트 API key | 앱 새 빌드·배포        |
+
+브라우저의 `NEXT_PUBLIC_*` 값은 Next 빌드 때 포함된다. 서버 환경 파일 수정이나 기존 컨테이너 재시작만으로 웹 키가 바뀌지 않으므로 새 이미지가 필요하다. GF 변수 이름이나 Web 서버용 별도 키는 아직 지원되는 설정처럼 등록하지 않는다.
+
+### Web Vitals와 소스맵
+
+오류 수집, 성능 tracing, 소스맵 업로드를 각각 확인한다. Web Vitals를 수집하려면 브라우저 tracing 설정과 샘플링을 보완해야 한다. 운영 샘플링을 처음에는 0.1 정도로 검토하고 실제 사용량에 맞춰 조정할 수 있다. **tracing 전송에 소스맵 업로드용 Auth Token이 필요한 것은 아니다.** [Sentry tracing/Web Vitals 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/tracing/)를 따른다.
+
+읽을 수 있는 운영 스택을 위해서는 Next 빌드에 `withSentryConfig`, 프로젝트 식별자 `SENTRY_ORG`/`SENTRY_PROJECT`, [GitHub Secret](https://github.com/jingeon27/side-project/settings/secrets/actions)의 `SENTRY_AUTH_TOKEN`을 연결하는 추가 작업이 필요하다. 현재 workflow에는 이 Secret을 읽거나 소스맵을 올리는 단계가 없으므로 등록만으로 업로드되지 않는다. 토큰은 `NEXT_PUBLIC_*`에 넣지 않고 비밀 빌드 입력으로 전달해야 한다. [소스맵 업로드 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/)를 참고한다.
+
+### 수집 확인 행동과 성공 기준
+
+| 대상            | 확인할 행동                                                                                                      | 성공 기준                                                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sentry 브라우저 | 테스트 프로젝트 키로 빌드한 격리 환경에서 식별 가능한 테스트 오류를 보내고, 개발자 도구에서 `envelope` 요청 확인 | 같은 프로젝트의 Issues에 오류가 보이며 client 태그와 환경을 구분할 수 있음                                                                  |
+| Sentry API      | 격리 환경에서 예상하지 못한 5xx 오류 보고 경로 확인. 운영 API에 의도적으로 장애를 만들지 않음                    | API 프로젝트에 오류가 보이고, 정상적인 4xx 업무 오류는 보고되지 않음                                                                        |
+| Amplitude       | 로그인 → 페이지 이동 → 그룹 생성 등 실제 성공 동작 → 로그아웃 → 다른 계정 로그인                                 | 이벤트/사용자 화면에서 `page_viewed`, `login_succeeded` 등 발생 확인. 계정 전환 후 User ID가 바뀌며 WebView/네이티브가 같은 사용자를 가리킴 |
+| Web Vitals      | 계측 보완 후 페이지 로드·상호작용·이동을 수행                                                                    | Sentry Web Vitals 화면에서 LCP/INP/CLS 확인. Sentry Issues에 오류가 보이는 것만으로 성능 수집 성공으로 보지 않음                            |
+
+DSN과 API key를 아직 제공하지 않은 로컬 테스트는 초기화 옵션, 개인정보 제거, 이벤트 카탈로그·계정 전환 동작을 검증한다. 실제 외부 프로젝트의 수신 성공은 위 확인 절차를 수행한 뒤 기록한다.
 
 ## 프록시와 GitHub Actions
 
