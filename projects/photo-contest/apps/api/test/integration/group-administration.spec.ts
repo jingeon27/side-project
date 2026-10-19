@@ -132,4 +132,23 @@ describe('그룹장·부관리자 권한 통합', () => {
     expect(await api.db.groupMember.count({ where: { groupId: group.id, role: 'OWNER' } })).toBe(1);
     expect(await api.db.groupMember.count({ where: { groupId: group.id } })).toBe(3);
   });
+  it('임명·해제·양도의 운영 기록은 성공한 상태 변경과 함께 저장해야 한다', async () => {
+    const group = await createGroup(api, owner, '운영 기록', [deputy]);
+    for (const enabled of [true, true, false])
+      await api.gqlOk(owner.cookie, SET_MODERATOR, { id: group.id, user: deputy.id, enabled });
+    await api.gqlOk(owner.cookie, TRANSFER_OWNER, { id: group.id, user: deputy.id });
+    const events = await api.db.analyticsEvent.findMany({
+      where: {
+        type: { in: ['group_moderator_changed', 'group_ownership_transferred'] },
+        properties: { path: ['groupId'], equals: group.id },
+      },
+    });
+    expect(events).toHaveLength(3);
+    expect(events.filter((event) => event.type === 'group_moderator_changed')).toHaveLength(2);
+    expect(events.find((event) => event.type === 'group_ownership_transferred')?.properties).toMatchObject({
+      previousOwnerId: owner.id,
+      ownerId: deputy.id,
+    });
+    expect(JSON.stringify(events.map((event) => event.properties))).not.toContain(owner.nickname);
+  });
 });

@@ -123,6 +123,12 @@ export class GroupContestService {
         fail('대회 참여 게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       if (post.authorId === viewer.id) fail('자신의 게시물에는 투표할 수 없습니다.');
       await this.repository.createPostContestVote({ data: { contestId, postId, voterId: viewer.id } }, tx);
+      await this.repository.recordEvent(tx, {
+        id: `post-vote:${contestId}:${viewer.id}`,
+        type: ANALYTICS_EVENT.VOTE_CAST,
+        userId: viewer.id,
+        properties: { contestId, postId },
+      });
     });
     return this.get(viewer, contestId);
   }

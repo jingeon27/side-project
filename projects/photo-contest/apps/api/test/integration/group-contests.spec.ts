@@ -270,6 +270,9 @@ describe('그룹 게시물 대회 통합', () => {
     await moveGroupContest(api, id, 'VOTING');
     await api.gqlOk(voter.cookie, CAST_POST_VOTE, { id, postId: first.id });
     await moveGroupContest(api, id, 'COMPLETED');
+    const votes = await api.db.analyticsEvent.findMany({ where: { id: `post-vote:${id}:${voter.id}` } });
+    expect(votes).toHaveLength(1);
+    expect(votes[0]?.properties).toMatchObject({ contestId: id, postId: first.id });
     await api.runScheduledWork();
     await api.runScheduledWork();
     const events = await api.db.analyticsEvent.findMany({ where: { id: `completed:${id}` } });
