@@ -7,7 +7,12 @@ export async function productRequest<T>(
   query: string,
   variables: Record<string, unknown> = {},
 ): Promise<T> {
-  const result = await graphqlRequest<T>(API_URL, { cookie, origin: WEB_ORIGIN, query, variables });
+  const result = await graphqlRequest<T>(`${WEB_ORIGIN}/backend`, {
+    cookie,
+    origin: WEB_ORIGIN,
+    query,
+    variables,
+  });
   if (!result.data || result.errors?.length) throw new Error(JSON.stringify(result.errors));
   return result.data;
 }
