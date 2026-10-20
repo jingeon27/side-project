@@ -56,7 +56,22 @@ jobs:
       - run: yarn workspace @side/game-feedback test:e2e
       - name: Verify telemetry with intercepted SDK requests
         if: always() && !cancelled()
+        env:
+          GF_OBSERVABILITY_PRODUCTION: 'true'
         run: yarn workspace @game-feedback/web test:observability
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: game-feedback-playwright
+          path: |
+            projects/game-feedback/apps/web/test-results
+            projects/game-feedback/apps/web/.e2e-build/observability-results
+            projects/game-feedback/apps/web/.e2e-build/test-auth-results
+            projects/game-feedback/apps/web/.e2e-build/prefetch-results
+            projects/game-feedback/apps/admin/test-results
+            projects/game-feedback/apps/mobile/test-results
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Stop owned test database
         if: always()
         run: yarn workspace @side/game-feedback db:test:stop

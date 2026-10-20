@@ -473,4 +473,13 @@
       font-size: var(--text-caption);
     }
   }
+  @media (max-width: 380px) {
+    .feed-heading {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .feed-actions {
+      grid-column: 1;
+      flex-wrap: wrap;
+    }
+  }
 }

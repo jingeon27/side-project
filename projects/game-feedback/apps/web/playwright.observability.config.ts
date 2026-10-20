@@ -6,6 +6,7 @@ export default defineConfig({
   ...base,
   testMatch: '**/observability.spec.ts',
   testIgnore: [],
+  outputDir: '.e2e-build/observability-results',
   webServer: base.webServer.map((server, index) => ({
     ...server,
     ...(index === 1
