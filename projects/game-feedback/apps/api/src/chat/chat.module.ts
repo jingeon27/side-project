@@ -1,22 +1,26 @@
-import { ChatRepository } from './chat.repository';
 import { Module } from '@nestjs/common';
-import { ChatController } from './chat.controller';
-import { ChatEvents } from './chat.events';
-import { ChatService } from './chat.service';
-import { ChatLifecycleMiddleware } from './chat-lifecycle.middleware';
+import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentController, ChatAttachmentGuard } from './chat-attachment.controller';
 import { ChatAttachmentService } from './chat-attachment.service';
+import { ChatConversationService } from './chat-conversation.service';
+import { ChatHistoryService } from './chat-history.service';
+import { ChatLifecycleMiddleware } from './chat-lifecycle.middleware';
+import { ChatMessageService } from './chat-message.service';
+import { ChatController } from './chat.controller';
+import { ChatEvents } from './chat.events';
 
 @Module({
   controllers: [ChatController, ChatAttachmentController],
   providers: [
-    ChatRepository,
-    ChatService,
+    ChatAccessService,
+    ChatConversationService,
+    ChatMessageService,
+    ChatHistoryService,
     ChatEvents,
     ChatLifecycleMiddleware,
     ChatAttachmentService,
     ChatAttachmentGuard,
   ],
-  exports: [ChatEvents, ChatLifecycleMiddleware, ChatService],
+  exports: [ChatEvents, ChatLifecycleMiddleware, ChatAccessService, ChatConversationService],
 })
 export class ChatModule {}

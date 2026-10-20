@@ -1,3 +1,9 @@
+# 2026-10-20 서비스와 데이터 접근 구조 정리
+
+Repository 전달 계층을 제거하고 서비스에서 Prisma를 직접 사용한다. UnitOfWork는 기존 트랜잭션·재시도와 한 연결 사용을 유지한다. 트랜잭션 통합 사양은 database 구현 옆에 둔다.
+
+채팅은 ChatAccessService(공개 범위·차단), ChatConversationService(대화·목록), ChatMessageService(메시지·멱등 전송), ChatHistoryService(읽음·내 기록 삭제)로 분리했다. SSE는 같은 접근 검사를 사용하고 commit 뒤에만 알린다.
+
 # 구현 및 검증 기록
 
 ## 2026-10-20 채팅 URL 링크
