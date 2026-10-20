@@ -1,0 +1,15 @@
+type GroupCategory {
+  id: ID!
+  name: String!
+  position: Int!
+  archivedAt: DateTime
+}
+extend type Group {
+  categories: [GroupCategory!]!
+}
+extend type Mutation {
+  createGroupCategory(groupId: ID!, name: String!): GroupCategory!
+  renameGroupCategory(categoryId: ID!, name: String!): GroupCategory!
+  reorderGroupCategories(groupId: ID!, categoryIds: [ID!]!): [GroupCategory!]!
+  archiveGroupCategory(categoryId: ID!): GroupCategory!
+}

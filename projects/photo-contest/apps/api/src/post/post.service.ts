@@ -3,6 +3,7 @@ import { recordEvent } from '../analytics/analytics-event.writer';
 import { assertContestParticipation } from '../contest/group-contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
+import { GroupCategoryService } from '../group/group-category.service';
 import { koreanMonth } from './post-order';
 import { presentPost } from './post.presenter';
 import { postInclude } from './post.query';
@@ -13,27 +14,28 @@ import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
-import { randomToken, sha256Hex } from '../common/crypto';
-import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { randomToken,sha256Hex } from '../common/crypto';
+import { ERROR_CODE,ERROR_MESSAGE,fail } from '../common/errors';
 import { readUpload } from '../common/graphql/read-upload';
-import { pageRange, textValue } from '../common/validation';
+import { pageRange,textValue } from '../common/validation';
 import {
-  DOWNLOAD_URL_TTL_SECONDS,
-  MAX_PENDING_UPLOADS,
-  MAX_VIDEO_BYTES,
-  PAGE_SIZE_DEFAULT,
-  POST_BODY_LIMIT,
-  POST_TITLE_LIMIT,
-  UPLOAD_TICKET_TTL_MS,
+DOWNLOAD_URL_TTL_SECONDS,
+MAX_PENDING_UPLOADS,
+MAX_VIDEO_BYTES,
+PAGE_SIZE_DEFAULT,
+POST_BODY_LIMIT,
+POST_TITLE_LIMIT,
+UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
-import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
-import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
+import { createMediaKey,MediaStorage } from '../storage/media-storage.service';
+import { mediaDownloadDisposition,mediaDownloadFilename } from './media-download.policy';
 import { MediaProcessor } from './media-processor';
 import { postLink } from './post-link.policy';
 
 interface IPostInput {
+  categoryId?: string | null;
   groupId: string;
   uploadId?: string | null;
   linkUrl?: string | null;
@@ -43,6 +45,7 @@ interface IPostInput {
   rightsConfirmed: boolean;
 }
 interface IPostQuery {
+  categoryId?: string | null;
   groupId?: string | null;
   contestId?: string | null;
   sort?: 'NEWEST' | 'MONTHLY_POPULAR' | null;
@@ -53,6 +56,7 @@ interface IPostQuery {
 export class PostService {
   constructor(
     private readonly db: Database,
+    private readonly categories: GroupCategoryService,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
@@ -86,6 +90,7 @@ export class PostService {
     const rows = await this.db.post.findMany({
       where: {
         ...scope,
+        ...(query.categoryId ? { categoryId: query.categoryId } : {}),
         ...(query.contestId ? { contestId: query.contestId } : {}),
         hidden: false,
         OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],
@@ -193,9 +198,11 @@ export class PostService {
         if (!contest) fail('대회를 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
         assertContestParticipation(contest, input.groupId);
       }
+      if (input.categoryId) await this.categories.requireActive(input.groupId, input.categoryId, tx);
       const created = await (tx ?? this.db).post.create({
         data: {
           groupId: input.groupId,
+          categoryId: input.categoryId ?? null,
           authorId: viewer.id,
           uploadId: upload?.id ?? null,
           linkUrl,
@@ -209,7 +216,12 @@ export class PostService {
         id: `post:${created.id}`,
         type: ANALYTICS_EVENT.POST_CREATED,
         userId: viewer.id,
-        properties: { groupId: input.groupId, postId: created.id, kind: upload?.kind ?? 'LINK' },
+        properties: {
+          groupId: input.groupId,
+          postId: created.id,
+          kind: upload?.kind ?? 'LINK',
+          categoryId: input.categoryId ?? null,
+        },
       });
       return created;
     });

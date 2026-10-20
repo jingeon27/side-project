@@ -1,10 +1,11 @@
-import type { TPostRow } from './post.query';
-import { isAdmin } from '../group/group-role';
 import { phase } from '../contest/contest.policy';
+import { isAdmin } from '../group/group-role';
+import type { TPostRow } from './post.query';
 
 export function presentPost(row: TPostRow, userId: string | null) {
   return {
     id: row.id,
+    category: row.category,
     contestId: row.contestId,
     contest: row.contest ? { ...row.contest, phase: phase(row.contest) } : null,
     groupId: row.groupId,
