@@ -4,6 +4,7 @@ import { createApp } from './app';
 import { PrismaClient } from './generated/prisma';
 import { ChatEvents } from './chat/chat.events';
 import { DemoProfileProvider } from './game-profiles/providers/demo-profile.provider';
+import { SessionService } from './auth/session.service';
 
 const options = {
   databaseUrl:
@@ -18,6 +19,23 @@ const options = {
 };
 
 describe('application module composition and shutdown', () => {
+  it('serves health probes beyond both rate budgets without consuming the session read budget', async () => {
+    const app = await createApp({ ...options, rateLimit: true });
+    const sessions = vi.spyOn(app.get(SessionService), 'loadSession');
+    try {
+      const request = supertest(app.getHttpServer());
+      for (const _ of Array.from({ length: 1001 })) await request.get('/api/health/live').expect(200);
+      await request.head('/api/health/live').expect(200);
+      await request.get('/api/health/ready').expect(200);
+      await request.get('/api/health').expect(200);
+      expect(sessions).not.toHaveBeenCalled();
+      for (const _ of Array.from({ length: 240 })) await request.get('/api/session').expect(200);
+      await request.get('/api/session').expect(429);
+    } finally {
+      sessions.mockRestore();
+      await app.close();
+    }
+  });
   it('keeps HTTP rate limiting enabled when the application is not using the test override', async () => {
     const app = await createApp({ ...options, rateLimit: true });
     try {
