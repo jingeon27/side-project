@@ -1,6 +1,8 @@
+import { initSentry } from './monitoring/sentry';
 import { createApp } from './app';
 import { resolveListenConfig, validateProductionEnvironment } from './config/production.config';
 async function main() {
+  initSentry();
   validateProductionEnvironment(process.env);
   const { HOST, PORT } = resolveListenConfig(process.env);
   const app = await createApp();
