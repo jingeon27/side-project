@@ -970,3 +970,9 @@ UserAvatar는 사용자별 한 개이고 User.profileLinks는 기본 빈 배열�
 격리 migration+실DB HTTP 통합 신규 7개를 포함해 API 180개, Web 105개, SDK 43개가 통과했다. 모바일 너비 390px와 데스크톱 1440px에서 사진 미리보기·저장·삭제, 링크 저장·삭제와 타인 편집 숨김 E2E 2개가 통과했다. 계약→OpenAPI→Orval로 SDK를 생성했다. 실제 S3 외부 수신은 이 테스트 결과에 포함하지 않는다.
 
 최신 develop에서 두 기능을 합친 최종 검사는 API 184개, Web 113개, SDK 43개, Bridge 8개, Mobile 43개와 Admin 2개가 통과했다. 채팅·첨부·작성·프로필·빈 키 E2E 11개, 실제 SDK 관측 E2E 3개가 통과했으며 가짜 키로 production build/start를 사용한 관측 E2E 3개도 통과했다.
+
+## 2026-10-21 전체 브라우저 회귀 검증
+
+일반 브라우저 E2E는 격리 API와 실제 Next production build/start를 사용한다. CI의 개발 서버 지연 컴파일로 실행마다 다른 화면 이동이 5초 제한을 넘던 문제를 제거했다. 로컬 전체 98개가 한 번에 통과했으며 이전 개발 모드 실행은 CI에서 87/98개 통과했다. 테스트 인증 모드도 같은 production 서버 설정을 재사용한다. 관측 검사는 개발 모드와 공개 키를 빌드에 주입한 production 모드를 명시적으로 구분한다.
+
+폐기한 게시판 경로는 스트리밍 응답의 상태 코드만 검사하지 않고 실제 not-found 화면과 noindex를 확인한다. 글쓰기의 모바일 메뉴 검사는 Cache Components가 보존한 숨김 Activity 대신 보이는 메뉴가 없는지 확인한다. 웹 타입·lint·포맷 검사도 통과했다.

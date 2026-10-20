@@ -199,4 +199,4 @@ Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS Postgr
 
 API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
 
-개발용 Web Playwright 서버는 WebView 검사와 같은 Webpack 설정으로 실행한다. Turbopack의 production 빌드와 프리패칭은 별도 test:prefetch에서 검증한다. 일반 dev 명령은 Next 기본 설정을 유지한다.
+일반 Web Playwright와 테스트 토큰 검사는 격리 API와 실제 production build/start를 사용한다. 프리패칭은 별도 test:prefetch에서 검증한다. 관측 검사는 기본 개발 모드와 `GF_OBSERVABILITY_PRODUCTION=true`인 production 모드를 지원한다. 일반 dev 명령과 모바일 WebView 검사 설정은 유지한다.
