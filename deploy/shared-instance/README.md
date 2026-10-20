@@ -12,7 +12,7 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 
 ## AWS에서 먼저 준비할 것
 
-1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 두 도메인의 DNS를 준비한다. Docker Engine/Compose plugin, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
+1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 두 도메인의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
 2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
 3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. 컨테이너에서 IMDSv2로 인스턴스 역할을 읽으려면 EC2 metadata 응답 hop limit을 2로 설정한다.
 4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. [수명 주기](s3-lifecycle.json)는 오래된 이전 버전과 미완료 multipart만 정리하며 현재 객체를 만료시키지 않는다. 브라우저는 API를 거쳐 파일을 받으므로 퍼블릭 버킷이나 S3 CORS 허용이 필요하지 않다.
@@ -130,3 +130,19 @@ API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instanc
 `projects/game-feedback/deploy/lightsail`과 `projects/photo-contest/deploy/compose.yaml`은 이전 단독 배포 및 별도 컨테이너 회귀 테스트용이다. 새 Actions CD는 이 문서의 shared-instance 구성만 사용한다. 이전 Lightsail/Oracle/로컬 PostgreSQL volume/R2 중심의 운영 명령을 이 호스트에 적용하지 않는다. 첨부 계획의 전체 캐시 개편과 나머지 제품 결함은 이 배포 변경의 완료 범위에 포함하지 않는다.
 
 Photo Contest의 `/backend/graphql`은 pc-web의 Next Route Handler로 보내 공개 SEO·사이트맵 캐시 무효화를 수행한다. 나머지 `/backend/*`는 pc-api로 보낸다. 해당 릴리스에서는 운영 `proxy/Caddyfile`을 동기화하고 `scripts/proxy.sh validate` 후 `reload`를 실행해야 한다. PC route 블록의 내부 경로 차단·GraphQL·일반 API·Web 순서를 유지한다.
+
+## 재생성 동안의 요청과 호환성
+
+Caddy route 블록은 내부·테스트·GF 관리자 경로를 프록시보다 먼저 차단한다. 차단 본문은 `edge-blocked`이며 관리자 앱은 기존 SSH 터널로 loopback API에 붙는다. 호스트 Caddyfile은 prepare.sh의 cp로 반영하고 `proxy.sh validate` 후 `proxy.sh reload`한다. 바인드 마운트 파일을 원자 교체하면 컨테이너에서 이전 inode를 볼 수 있어 에디터/rsync의 교체 방식으로 갱신하지 않는다.
+
+모든 업스트림은 연결 실패를 250ms 간격으로 최대 60초 기다린다. API 종료 유예 20초와 시작 구간 30초를 합친 값에 여유를 뒀다. 헬스체크 시작 구간은 API 30초/Web 20초이며 매초 검사한다. 재시도에서 모든 HTTP 메서드를 허용하도록 바꾸지 않는다. 연결 후 실패의 기본 GET 재시도 정책을 유지한다. 장시간 업로드·스트림·인프라 장애의 무중단을 보장하지 않는다. 종료 유예를 넘는 요청과 60초가 넘는 시작 실패는 사용자 오류가 될 수 있다.
+
+service.sh는 같은 이미지도 실제로 재생성한다. API의 SSE는 종료 훅에서 닫고 클라이언트가 재연결한다. 공통 smoke는 서비스 스크립트로 두 서비스를 재배포하면서 실제 API/Web GET을 계속 보내 실패 수·최대 대기 시간을 기록하고 네 컨테이너 ID가 모두 바뀌었는지 검사한다. 실제 컨테이너 검증은 Docker가 있는 CI에서 수행한다.
+
+## 확장 → 배포 → 정리
+
+SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 컬럼 추가와 이중 쓰기, (2) 새 컬럼 읽는 앱 배포와 이전 앱 종료 확인, (3) 보관 기간 후 옛 컬럼 정리로 나눈다. `node scripts/check-migrations.mjs`는 기준 ref 이후 새 migration.sql만 검사한다. 기존 위험 SQL이나 기존 migration 수정을 재검사하는 규칙이 아니다. DROP TABLE/COLUMN/CONSTRAINT/INDEX, 컬럼 타입·NOT NULL 변경, RENAME은 실패한다. 정리 단계는 해당 DDL 바로 앞에 `-- migration-lint: allow DROP COLUMN — 이전 읽기 앱 종료 후 2주 경과`처럼 정확한 규칙과 검토 가능한 사유를 쓴다. CI에서는 PR base SHA 또는 push의 before SHA를 기준으로 사용한다.
+
+## Next 컴파일 캐시
+
+두 웹 빌드는 각각 gf-next-cache/pc-next-cache BuildKit mount를 사용한다. shared-instance workflow는 SHA 키와 OS restore prefix의 Actions cache, 고정 커밋의 cache-dance로 mount를 복원·추출한다. 기존 GHA 이미지 레이어 캐시도 유지한다. 같은 브랜치의 두 번째 소스 변경 빌드에서 캐시 복원 로그와 Next 컴파일 시간을 비교한다. 캐시를 적용했다고 실제 속도 향상을 측정한 것으로 간주하지 않는다. 저장 한도·보존 정책은 GitHub 설정을 따른다.

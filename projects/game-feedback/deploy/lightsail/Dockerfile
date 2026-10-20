@@ -25,7 +25,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 GF_STANDALONE=true \
     GAME_FEEDBACK_SITE_URL=${GF_SITE_URL} WEB_ORIGIN=${GF_SITE_URL} \
     GAME_FEEDBACK_CONTACT_EMAIL=${GF_CONTACT_EMAIL} \
     GF_DEMO_MODE=false GF_TEST_AUTH_ENABLED=false GF_PREFETCH_TESTING=false GAME_FEEDBACK_INDEXING=false
-RUN mkdir -p projects/game-feedback/apps/web/public \
+RUN --mount=type=cache,id=gf-next-cache,target=/app/projects/game-feedback/apps/web/.next/cache \
+    mkdir -p projects/game-feedback/apps/web/public \
     && corepack yarn workspace @game-feedback/web build
 
 FROM base AS api
