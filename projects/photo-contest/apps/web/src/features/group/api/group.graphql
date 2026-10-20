@@ -130,3 +130,26 @@ query PublicGroupSitemap($offset: Int!, $limit: Int!) {
     id
   }
 }
+
+fragment GroupAdministration on Group {
+  name
+  ...GroupAccess
+  members {
+    role
+    user {
+      id
+      nickname
+      avatar
+    }
+  }
+}
+mutation SetGroupModerator($groupId: ID!, $userId: ID!, $enabled: Boolean!) {
+  setGroupModerator(groupId: $groupId, userId: $userId, enabled: $enabled) {
+    ...GroupAdministration
+  }
+}
+mutation TransferGroupOwnership($groupId: ID!, $userId: ID!) {
+  transferGroupOwnership(groupId: $groupId, userId: $userId) {
+    ...GroupAdministration
+  }
+}

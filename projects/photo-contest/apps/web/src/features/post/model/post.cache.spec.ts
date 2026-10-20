@@ -16,12 +16,15 @@ import { postTypePolicies } from './post.type-policies';
 function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][number] {
   return {
     __typename: 'GalleryPost',
+    contestId: null,
+    contest: null,
     id,
     groupId,
     groupName: groupId,
     title: id,
     body: '',
     kind: PostKind.Photo,
+    linkUrl: null,
     mediaUrl: '/backend/media/' + id,
     createdAt: '2026-10-15T00:00:00Z',
     likeCount: 0,
@@ -114,5 +117,25 @@ describe('그룹 게시물 캐시', () => {
     expect(
       cache.readQuery({ query: GalleryPostsDocument, variables: VARIABLES })?.galleryPosts.map((p) => p.id),
     ).toEqual(['fresh']);
+  });
+  it('그룹 피드와 각 대회 참여작의 offset 목록을 분리해야 한다', () => {
+    const cache = new InMemoryCache({ typePolicies: postTypePolicies });
+    const write = (contestId: string | undefined, offset: number, id: string) =>
+      cache.writeQuery({
+        query: GalleryPostsDocument,
+        variables: { ...VARIABLES, groupId: 'a', contestId, offset },
+        data: { galleryPosts: [post(id, 'a')] },
+      });
+    write(undefined, 0, 'general');
+    write('first', 0, 'first-new');
+    write('first', 1, 'first-old');
+    write('second', 0, 'second-new');
+    const read = (contestId?: string) =>
+      cache
+        .readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'a', contestId } })
+        ?.galleryPosts.map(({ id }) => id);
+    expect(read()).toEqual(['general']);
+    expect(read('first')).toEqual(['first-new', 'first-old']);
+    expect(read('second')).toEqual(['second-new']);
   });
 });

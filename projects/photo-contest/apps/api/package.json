@@ -11,13 +11,14 @@
     "db:migrate": "prisma migrate deploy",
     "test": "vitest run --project unit",
     "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project integration",
-    "test:e2e": "vitest run --project integration"
+    "test:e2e": "yarn test:integration",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
     "@as-integrations/express5": "^1.1.0",
     "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "3.1149.0",
     "@nestjs/apollo": "^14.0.3",
     "@nestjs/common": "^12.1.2",
     "@nestjs/core": "^12.1.2",

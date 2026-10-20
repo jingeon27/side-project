@@ -9,6 +9,7 @@ import { GRAPHQL_SCHEMA_GLOB } from '../../config/paths';
 import { ERROR_CODE, ERROR_MESSAGE } from '../errors';
 import { createGraphqlContext } from './graphql-context';
 import { internalErrorReportPlugin } from './internal-error.plugin';
+import { publicQueryCachePlugin } from './public-query.plugin';
 
 /** 예상하지 못한 오류는 내부 내용을 숨긴다. Sentry 보고는 internalErrorReportPlugin이 한다. */
 export function maskInternalError(formatted: GraphQLFormattedError): GraphQLFormattedError {
@@ -29,11 +30,14 @@ export async function graphqlOptions(): Promise<ApolloDriverConfig> {
     graphiql: false,
     introspection: !isProduction(),
     csrfPrevention: true,
+    // 실행 오류의 기본 HTTP 200은 publicQueryCachePlugin이 유지하고 캐시용 조회만 구분한다.
+    preserveHttpStatusForExecutionErrors: false,
     resolvers: { Upload: GraphQLUpload },
     plugins: [
       // 기본 cache control 플러그인이 no-store 미들웨어의 `private, no-store`를 `no-store`로 덮어쓴다.
       ApolloServerPluginCacheControlDisabled(),
       internalErrorReportPlugin(),
+      publicQueryCachePlugin(),
     ],
     validationRules: [depthLimit(GRAPHQL_MAX_DEPTH)],
     formatError: maskInternalError,

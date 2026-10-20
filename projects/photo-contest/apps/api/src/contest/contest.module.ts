@@ -1,3 +1,5 @@
+import { GroupContestService } from './group-contest.service';
+import { GroupContestResolver } from './group-contest.resolver';
 import { ContestRepository } from './contest.repository';
 import { Module } from '@nestjs/common';
 
@@ -8,7 +10,14 @@ import { GroupContestsResolver } from './group-contests.resolver';
 
 @Module({
   imports: [GroupModule],
-  providers: [ContestRepository, ContestService, ContestResolver, GroupContestsResolver],
+  providers: [
+    GroupContestService,
+    GroupContestResolver,
+    ContestRepository,
+    ContestService,
+    ContestResolver,
+    GroupContestsResolver,
+  ],
   exports: [ContestService],
 })
 export class ContestModule {}

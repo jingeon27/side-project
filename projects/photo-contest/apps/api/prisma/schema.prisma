@@ -26,6 +26,7 @@ model User {
   postUploads PostUpload[]
   postLikes PostLike[]
   postComments PostComment[]
+  postContestVotes PostContestVote[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
 }
@@ -78,6 +79,7 @@ model GroupMember {
   @@index([userId])
 }
 model Contest {
+  format String @default("LEGACY")
   completionTrackedAt DateTime?
   id String @id @default(cuid())
   groupId String
@@ -90,6 +92,9 @@ model Contest {
   submissions Submission[]
   votes Vote[]
   uploads Upload[]
+  posts Post[]
+  postVotes PostContestVote[]
+  @@index([groupId, format, endsAt, id])
   @@index([groupId, createdAt])
 }
 model Upload {
@@ -186,10 +191,13 @@ model PostUpload {
   @@index([expiresAt])
 }
 model Post {
+  contestId String?
+  contest Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
   groupId String
   authorId String
-  uploadId String @unique
+  uploadId String? @unique
+  linkUrl String?
   title String
   body String @default("")
   hidden Boolean @default(false)
@@ -198,9 +206,12 @@ model Post {
   legacySubmission Submission? @relation(fields: [legacySubmissionId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  upload PostUpload @relation(fields: [uploadId], references: [id])
+  upload PostUpload? @relation(fields: [uploadId], references: [id], onDelete: Restrict)
   likes PostLike[]
   comments PostComment[]
+  contestVotes PostContestVote[]
+  @@unique([id, contestId])
+  @@index([contestId, createdAt, id])
   @@index([groupId, createdAt, id])
 }
 model PostComment {
@@ -233,4 +244,16 @@ model AuthAttempt {
   count Int @default(1)
   expiresAt DateTime
   @@index([expiresAt])
+}
+model PostContestVote {
+  id String @id @default(cuid())
+  contestId String
+  postId String
+  voterId String
+  createdAt DateTime @default(now())
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId, contestId], references: [id, contestId], onDelete: Cascade)
+  voter User @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  @@unique([contestId, voterId])
+  @@index([postId])
 }

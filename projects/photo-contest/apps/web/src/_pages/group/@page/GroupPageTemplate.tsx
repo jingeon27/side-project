@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
-import { GroupMembershipButton } from '@/features/group';
+import { GroupMembershipButton, GroupNavigation } from '@/features/group';
 import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
@@ -82,6 +82,7 @@ function GroupContent({
       }
     >
       <GroupIdentity groupRef={groupRef} />
+      {group.canViewPosts ? <GroupNavigation groupId={group.id} /> : null}
       {group.canViewPosts ? (
         <GroupFeed groupRef={groupRef} sidebar={<GroupSidebar groupRef={groupRef} />} />
       ) : (

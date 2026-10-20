@@ -7,12 +7,18 @@ import { Button } from '@/shared/ui/@core/button';
 
 import { CreatePostBottomSheet } from './CreatePostBottomSheet';
 
-export function CreatePostButton({ groupId }: { groupId: string }) {
+export function CreatePostButton({ groupId, contestId }: { groupId: string; contestId?: string }) {
   return (
     <Button
       onClick={() =>
         overlay.open(({ isOpen, close, unmount }) => (
-          <CreatePostBottomSheet groupId={groupId} isOpen={isOpen} onClose={close} unmount={unmount} />
+          <CreatePostBottomSheet
+            groupId={groupId}
+            defaultContestId={contestId}
+            isOpen={isOpen}
+            onClose={close}
+            unmount={unmount}
+          />
         ))
       }
     >

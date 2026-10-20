@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import type { IS3Settings } from '../config/env';
 import type { IPhotoStore } from './photo-store';
@@ -42,5 +43,18 @@ export class S3PhotoStore implements IPhotoStore {
 
   async delete(key: string) {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.settings.bucket, Key: key }));
+  }
+
+  presignDownload(key: string, disposition: string, expiresIn: number) {
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: this.settings.bucket,
+        Key: key,
+        ResponseContentDisposition: disposition,
+        ResponseCacheControl: 'private, no-store',
+      }),
+      { expiresIn },
+    );
   }
 }

@@ -23,7 +23,7 @@ async function writePost(page: Page, title: string, video = false) {
     await expect.poll(() => preview.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
   }
   await sheet.getByLabel('내용', { exact: true }).fill('합성도 환영하는 상시 그룹');
-  await sheet.getByRole('checkbox').check();
+  await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();
   await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
   await expect(sheet).toHaveCount(0);
   const post = page

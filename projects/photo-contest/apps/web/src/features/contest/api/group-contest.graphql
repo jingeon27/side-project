@@ -1,0 +1,86 @@
+fragment GroupContestSummary on GroupContest {
+  id
+  groupId
+  title
+  startsAt
+  submissionEndsAt
+  endsAt
+  phase
+  isAdmin
+  canParticipate
+  canVote
+  votedPostId
+  entryCount
+}
+fragment GroupContestAward on GroupContestResult {
+  rank
+  voteCount
+  winner
+  post {
+    ...GalleryPostCard
+  }
+}
+fragment GroupContestCard on GroupContest {
+  ...GroupContestSummary
+  winners {
+    ...GroupContestAward
+  }
+}
+query GroupContests($groupId: ID!, $filter: GroupContestFilter!, $offset: Int!, $limit: Int!) {
+  groupContests(groupId: $groupId, filter: $filter, offset: $offset, limit: $limit) {
+    ...GroupContestCard
+  }
+}
+query GroupContest($id: ID!) {
+  groupContest(id: $id) {
+    ...GroupContestSummary
+  }
+}
+query GroupContestResults($contestId: ID!) {
+  groupContestResults(contestId: $contestId) {
+    ...GroupContestAward
+  }
+}
+mutation CreateGroupContest(
+  $groupId: ID!
+  $title: String!
+  $startsAt: DateTime!
+  $submissionEndsAt: DateTime!
+  $endsAt: DateTime!
+) {
+  createGroupContest(
+    groupId: $groupId
+    title: $title
+    startsAt: $startsAt
+    submissionEndsAt: $submissionEndsAt
+    endsAt: $endsAt
+  ) {
+    ...GroupContestSummary
+  }
+}
+mutation CastGroupContestVote($contestId: ID!, $postId: ID!) {
+  castGroupContestVote(contestId: $contestId, postId: $postId) {
+    ...GroupContestSummary
+  }
+}
+query PublicGroupContestSeo($id: ID!) {
+  groupContest(id: $id) {
+    id
+    groupId
+    title
+    startsAt
+    submissionEndsAt
+    endsAt
+    phase
+    entryCount
+  }
+}
+query PublicGroupContestSitemap($offset: Int!, $limit: Int!) {
+  publicGroupContests(offset: $offset, limit: $limit) {
+    id
+    groupId
+  }
+}
+query PublicGroupContestCount {
+  publicGroupContestCount
+}

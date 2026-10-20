@@ -11,6 +11,7 @@ import {
   PublicGroupSitemapDocument,
 } from '@/shared/api/generated';
 import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
+import { PUBLIC_CONTENT_TTL, PUBLIC_SITEMAP_TTL } from '@/shared/api/public-cache.policy';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 
 import { groupMetadata } from './group-seo.helper';
@@ -22,12 +23,16 @@ const readGroupSeoData = cache(async (id: string): Promise<IGroupSeoData | null>
   try {
     const { group } = await publicQuery(PublicGroupSeoDocument, { id });
     if (group.visibility !== GroupVisibility.Public) return { group, posts: [] };
-    const { galleryPosts } = await publicQuery(GalleryPostsDocument, {
-      groupId: id,
-      sort: PostSort.Newest,
-      offset: 0,
-      limit: 24,
-    });
+    const { galleryPosts } = await publicQuery(
+      GalleryPostsDocument,
+      {
+        groupId: id,
+        sort: PostSort.Newest,
+        offset: 0,
+        limit: 24,
+      },
+      PUBLIC_CONTENT_TTL,
+    );
     return { group, posts: galleryPosts };
   } catch (error) {
     if (error instanceof PublicQueryError && error.code === 'NOT_FOUND') return null;
@@ -45,14 +50,18 @@ export async function getGroupMetadata(id: string) {
 }
 
 export async function getPublicGroupCount() {
-  return (await publicQuery(PublicGroupCountDocument, {})).publicGroupCount;
+  return (await publicQuery(PublicGroupCountDocument, {}, PUBLIC_SITEMAP_TTL)).publicGroupCount;
 }
 
 export async function getPublicGroupSitemapPage(page: number) {
   return (
-    await publicQuery(PublicGroupSitemapDocument, {
-      offset: page * PUBLIC_GROUP_SITEMAP_SIZE,
-      limit: PUBLIC_GROUP_SITEMAP_SIZE,
-    })
+    await publicQuery(
+      PublicGroupSitemapDocument,
+      {
+        offset: page * PUBLIC_GROUP_SITEMAP_SIZE,
+        limit: PUBLIC_GROUP_SITEMAP_SIZE,
+      },
+      PUBLIC_SITEMAP_TTL,
+    )
   ).discoverGroups;
 }

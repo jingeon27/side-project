@@ -1,5 +1,41 @@
 # 웃긴순간 구현 기록
 
+## 2026-10-20 링크 첨부와 사진·동영상 저장
+
+사진·동영상 없이 유튜브·일반 HTTP/HTTPS 링크만 게시하거나 파일과 링크를 함께 등록한다. Post.uploadId를 nullable로 확장하고 linkUrl과 첨부 필수 CHECK를 추가해 기존 파일과 FK 동작을 보존했다. 링크 글도 기존 그룹 공개 범위·멤버십·대회·댓글·반응·삭제 규칙을 따르고, 서버가 사용자 링크의 외부 메타데이터를 가져오지 않는다.
+
+PostLinkField·PostAttachments·PostLink·PostDownloadButton으로 작성·파일·링크 표시·저장을 분리했다. 유튜브는 정확한 호스트와 ID만 사용하며 클릭 후 재생한다. 일반 링크는 외부 브라우저로 열고 복사할 수 있다. 공개 링크는 JSON-LD citation으로 제공하고 파일 없는 글에 사진·MediaObject를 만들지 않는다. 약관·개인정보 안내에도 링크와 외부 영상 재생을 반영했다.
+
+postDownload는 readablePost로 권한·숨김·파일을 확인한 뒤 S3 최대 60초 presigned GET 또는 로컬 attachment 다운로드 경로를 반환한다. 한글 파일명·no-store·Range를 지원하며 웹은 Apollo no-cache로 매번 발급받는다. 앱의 link.open은 8KB까지 긴 서명 URL을 허용한다. 서명 검증은 테스트용 임시 자격 증명으로 실제 AWS SDK를 실행하며 운영 S3 객체·IAM에 접속한 검증과 구분한다.
+
+로컬 검증: API unit 102·실제 PostgreSQL 통합 245(첨부 사양 8개 포함), 웹 unit/UI 307·실제 API 문서 18, bridge 36·모바일 unit/UI 137, 실제 standalone 캐시 3, 모바일 WebView 24가 통과했다(기존 조건부 2개 제외). 웹 전체 60개 실행은 57개 통과 후 장시간 중단된 권한 검사 1개와 WebKit의 한글 파일명 NFD 비교 2개가 실패했다. 파일명 비교를 NFC로 보정하고 재실행의 반복 컴파일을 막도록 격리 e2e에만 Turbopack 디스크 컴파일 캐시를 끈 뒤 실패 항목·저장·약관 10개를 Chrome/WebKit/데스크톱에서 재확인해 모두 통과했다. 프로젝트 check·lint·타입 검사도 통과했다.
+
+20261020030000_post_links는 개발·운영 DB에 아직 적용하지 않았다. 앱·Web·API 반영 순서와 발급한 S3 주소의 권한 유지 시간, 투네이션 페이지의 실제 확인 범위는 [첨부·저장 계약](post-attachments.md)에 기록했다. 자체 영상 주소가 투네이션의 영상 후원에서 재생된다는 주장은 하지 않는다.
+
+## 2026-10-20 공개 서버 캐시와 Codex 지침 정리
+
+Next fetch Data Cache에 익명 SEO 콘텐츠는 30초, 사이트맵 데이터는 60초의 재검증 주기를 적용했다. 공개 여부·대회 소속·일정은 매 요청 확인하고 개인화된 SSR/Apollo는 no-store를 유지한다. 캐시는 query 문서만 허용하며 API URL·Origin·문서·변수별로 분리된다. 일반 GraphQL 실행 오류는 HTTP 200을 유지하고 캐시용 공개 query 오류만 400으로 구분해 실패 응답을 성공 데이터로 저장하지 않는다.
+
+Next /backend/graphql은 Cookie·Origin과 multipart 스트림을 전달하며 JSON mutation의 성공·부분 성공 뒤 공개 태그를 expire:0으로 만료시킨다. Caddy의 GraphQL 경로도 Web을 거치게 하고 PC 내부 경로 차단 순서를 고정했다. 실제 Caddy 2.10.2와 두 HTTP 업스트림으로 단독·공통 설정의 GraphQL/일반 API 라우팅·경로 정규화·쿼리 문자열 보존·공통 내부 경로 차단을 확인했다. 운영에는 프록시 설정 갱신과 validate/reload가 필요하며 실제 운영 서버 변경은 하지 않았다.
+
+앱 소유 test:cache가 별도 dist의 실제 standalone Web·격리 API/DB에서 요청 간 캐시 재사용, 정상·부분 성공 쓰기 뒤 만료, 사이트맵, 비공개 제외, Origin·본문 한도, 쿠키와 multipart 업로드를 검증한다. 외부 API에 직접 넣은 데이터로 HIT를 확인하고 웹 mutation으로 무효화를 확인하므로 가짜 캐시를 쓰지 않는다. 일반 브라우저 fixture의 제품 요청도 실제 서비스와 같은 웹 경로를 사용한다. API 통합 237개·웹 unit/UI 303개·문서 API 17개·운영 캐시 3개가 통과했다. 웹 전체 실행은 49개 통과 뒤 개발 빌드 반복 새로고침과 시각 경계로 2개가 실패했고, 격리한 개발 빌드 산출물을 지운 뒤 해당 2개를 재실행해 통과했다. 모바일 WebView 24개가 통과했고 기존 조건부 2개는 제외했다. 프로젝트 check·앱 lint·타입·포맷 검사도 통과했다.
+
+저장소 스킬 23개를 Codex의 .agents/skills로 옮기고 AGENTS.md의 경로를 갱신했다. 기존 전용 경로와 참조는 제거했으며 모든 스킬 링크가 실제 파일로 연결된다. Markdown 지침에서 외부 회사 언급을 제거하고 별도 MDX 블로그 글은 보존했다.
+
+## 2026-10-20 그룹 대회·명예의 전당·운영 권한·SEO
+
+origin/develop의 bc97cad에서 별도 worktree·기능 브랜치를 만들고 최종 검증 중 추가된 9f5d9af의 저장소 검증도 반영했다. 기존 대회는 format=LEGACY로 보존하고 새 그룹 대회는 format=POST와 Post.contestId로 연결한다. 일반 게시물과 대회 참여를 선택하며 같은 그룹의 접수 중인 대회에 사진·동영상·합성을 여러 번 올린다. 시작→접수 마감→투표 마감과 90일 제한은 API·폼에서 검사한다.
+
+OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 가입 승인을 한다. OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 할 수 있다. 양도는 이전 OWNER→MEMBER와 대상→OWNER를 Serializable 트랜잭션 하나로 처리한다. 역할 변경·투표 이벤트는 성공한 쓰기와 같은 트랜잭션에 개인정보 없이 남긴다.
+
+투표는 VOTING 중 멤버당 한 표이며 본인·숨긴 글·다른 대회 참여작을 거부한다. PostContestVote의 unique와 복합 FK로 동시·교차 대회 투표를 막는다. 종료 후 득표수 경쟁 순위(1,1,3)와 최다 득표 공동 우승을 계산하며 0표는 우승이 없다. 일반 좋아요가 대회 순위를 바꾸지 않는다. 명예의 전당은 종료된 대회와 현재 공개 가능한 우승작·결과를 모으며 순위는 사진을 가리지 않는다. 삭제한 참여작은 결과·수상작에서 제외한다. 완료 기록은 기존/새 형식에 맞는 실제 참여작·투표·참여자를 센다.
+
+그룹 메뉴의 대회·명예의 전당과 상세는 독립 QueryRef·Suspense/오류 경계다. 공개 화면은 RSC PreloadQuery로 HTML을 제공한다. 비공개 내용은 canViewPosts·ClientOnly로 승인 후 조회하고 SEO는 cookie 없이 별도 조회한다. 목록·명예의 전당·상세 canonical·OG/Twitter·JSON-LD를 만들고 PUBLIC/POST 대회만 48개씩 사이트맵에 넣는다. 비공개는 그룹장에게도 공통 noindex, 공유 사진·JSON-LD 없음이다. [SEO 계약](seo.md)을 따른다.
+
+새 단위·통합·웹 API·브라우저 사양은 `.spec.ts(x)`로 추가했다. API 실제 DB 테스트는 대상 구현 파일 옆 `src/**/*.integration.{spec,test}.ts`에 두고 Vitest integration 프로젝트·test:integration 명령을 사용한다. test:e2e는 호환 위임으로 남겼다. API 개발 서버·개발 DB는 변경하지 않고 별도 테스트 PostgreSQL과 임시 스키마만 사용했다. 마이그레이션 20261020010000_group_contests는 개발·운영 DB에 아직 적용하지 않았다.
+
+로컬 검증: API unit 98개, 웹 unit/UI 297개·실제 API 문서 17개·Playwright 51개, 모바일 unit/UI 137개·API 9개·WebView Playwright 24개(기존 조건부 2개 제외)가 통과했다. Chrome·iPhone WebKit·데스크톱에서 대회 개최→사진/영상 참여→1회 투표→수상작·공개 SSR·비공개 SEO·관리자 양도를 확인했다. 웹 프로덕션 빌드와 타입·lint 검사도 통과했다. API 실제 PostgreSQL 통합 234개와 포맷·프로젝트 check·앱 lint가 통과했고 남은 테스트 스키마는 0개다. 원격 CI는 PR에서 별도로 확인한다.
+
 ## 2026-10-20 Repository 단위·통합 테스트 보강
 
 - 트랜잭션 오류 정책을 순수 함수로 분리해 ts-pattern으로 분기한다. 기존 P2034의 최대 4회 시도, P2002의 즉시 CONFLICT, 나머지 오류의 원형 전파를 유지하고 let/for 반복을 재귀 호출로 바꿨다.

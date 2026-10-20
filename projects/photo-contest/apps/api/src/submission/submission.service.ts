@@ -15,7 +15,7 @@ import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import { MAX_PENDING_UPLOADS, PAGE_SIZE_DEFAULT, TEXT_LIMIT, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
-import { isOwner } from '../group/group-role';
+import { isAdmin } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import type { ISubmissionAccess } from '../group/membership.service';
 import { createPhotoKey } from '../storage/photo-key';
@@ -72,7 +72,7 @@ export class SubmissionService {
     const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const sort = toSubmissionSort(query.sort);
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
-    const admin = isOwner(member);
+    const admin = isAdmin(member);
     const rows = await this.repository.findManySubmission({
       where: { contestId, ...(admin ? {} : { hidden: false }) },
       include: submissionInclude(viewer.id, admin),
@@ -178,7 +178,7 @@ export class SubmissionService {
       const created = await this.repository.createSubmission(
         {
           data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
-          include: submissionInclude(viewer.id, isOwner(member)),
+          include: submissionInclude(viewer.id, isAdmin(member)),
         },
         tx,
       );
@@ -207,7 +207,7 @@ export class SubmissionService {
           userId: viewer.id,
           properties,
         });
-      return { row: created, admin: isOwner(member) };
+      return { row: created, admin: isAdmin(member) };
     });
     return presentSubmission(row, { completed: false, admin });
   }

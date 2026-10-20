@@ -1,5 +1,6 @@
 enum GroupRole {
   OWNER
+  MODERATOR
   MEMBER
 }
 enum GroupVisibility {
@@ -69,6 +70,8 @@ type Query {
 }
 
 type Mutation {
+  setGroupModerator(groupId: ID!, userId: ID!, enabled: Boolean!): Group!
+  transferGroupOwnership(groupId: ID!, userId: ID!): Group!
   createGroup(name: String!, visibility: GroupVisibility! = PUBLIC): Group!
   "공개 그룹은 즉시 가입하고 비공개 그룹은 승인 대기 신청을 만든다"
   requestGroupMembership(groupId: ID!): Group!

@@ -10,6 +10,10 @@ import { PostService } from './post.service';
 export class PostResolver {
   constructor(private readonly posts: PostService) {}
   @Query()
+  postDownload(@OptionalViewer() viewer: IViewer | null, @Args('postId') id: string) {
+    return this.posts.download(viewer, id);
+  }
+  @Query()
   galleryPosts(@OptionalViewer() viewer: IViewer | null, @Args() query: Parameters<PostService['list']>[1]) {
     return this.posts.list(viewer, query);
   }

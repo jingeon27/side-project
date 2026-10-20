@@ -5,6 +5,10 @@ export function isGroupOwner(role: GroupRole | null | undefined) {
   return role === GroupRole.Owner;
 }
 
+export function isGroupAdmin(role: GroupRole | null | undefined) {
+  return isGroupOwner(role) || role === GroupRole.Moderator;
+}
+
 /** 진행 중(시작 전·제출·투표)과 끝난 대회로 나눈다. API가 최신순으로 주므로 순서는 그대로 둔다. */
 export function splitContests<TContest extends { phase: Phase }>(contests: readonly TContest[]) {
   return {

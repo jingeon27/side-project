@@ -1,6 +1,6 @@
 # Photo Contest (웃긴순간)
 
-상위 `side`의 Yarn workspaces에 속한다. 세이프닥 저장소(safedoc-usermall·react·global)는 구조와 규칙만 참고한다. 그 저장소의 서버 주소, 환경변수 값, 사내 데이터, 업무 명칭, 코드 파일을 가져오지 않는다.
+상위 `side`의 Yarn workspaces에 속한다. 이 저장소의 구조·규칙·공개 API를 기준으로 구현하며 외부 저장소의 서버 주소, 환경변수 값, 사내 데이터, 코드 파일을 가져오지 않는다.
 
 ## 구성
 
@@ -28,26 +28,28 @@
 
 ## 제품 방향
 
-상시 그룹 커뮤니티다. 제품 표기는 그룹이며 Group 모델·/groups URL을 쓴다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 그룹 전체의 최신 게시물과 이달의 인기(KST)를, MY는 내 그룹 목록·생성을 제공한다. `/explore`는 로그인 없이 공개·비공개 그룹의 이름·멤버 수를 탐색한다. 공개 그룹의 게시물·댓글·미디어는 익명 조회하며 가입은 로그인 후 즉시 처리한다. 비공개 그룹의 내용은 승인된 멤버만 보고 OWNER가 신청을 수락·거절한다. 초대 링크도 같은 승인 규칙을 적용한다. 기존 그룹은 PRIVATE를 유지한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest·Submission은 이전 링크·데이터 호환용이다.
+상시 그룹 커뮤니티다. 제품 표기는 그룹이며 Group 모델·/groups URL을 쓴다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 그룹 전체의 최신 게시물과 이달의 인기(KST)를, MY는 내 그룹 목록·생성을 제공한다. `/explore`는 로그인 없이 공개·비공개 그룹의 이름·멤버 수를 탐색한다. 공개 그룹의 게시물·댓글·미디어는 익명 조회하며 가입은 로그인 후 즉시 처리한다. 비공개 그룹의 내용은 승인된 멤버만 보고 OWNER·MODERATOR가 신청을 수락·거절한다. 초대 링크도 같은 승인 규칙을 적용한다. 기존 그룹은 PRIVATE를 유지한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest는 format=POST인 그룹 대회와 format=LEGACY인 이전 대회를 구분하며 Submission은 이전 링크·데이터 호환용이다. 새 그룹 대회는 Post.contestId로 참여하며 사진·동영상·여러 게시물을 허용한다.
 
 ## 정해진 결정
 
 - 인증: HttpOnly 쿠키 `contest_session` 하나. API는 cookie-parser 없이 요청 `Cookie` 헤더를 직접 파싱하고 요청당 한 번만 조회한다. 웹 `proxy.ts`는 요청 쿠키로 멤버 전용 화면을 막고, SSR은 요청의 Cookie 헤더를 API로만 넘긴다. 앱 WebView도 같은 쿠키를 쓰고 토큰을 네이티브로 넘기지 않는다.
 - 앱 소셜 로그인: Google이 WebView 로그인을 막으므로 시스템 브라우저 + PKCE + 일회용 코드 교환(`/auth/app/exchange`).
 - 모니터링: API는 Sentry만(도메인 이벤트는 DB에만 기록), 웹·모바일은 Sentry + Amplitude. 키가 없으면 아무것도 보내지 않는다.
-- 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 관리자만. 게시물은 작성자와 관리자만 삭제한다. 기존 대회의 득표수는 종료 후 공개한다.
+- 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 관리자만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인을 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. 양도한 OWNER는 MEMBER가 된다.
 - 서버 상태는 Apollo(정규화 캐시가 단일 출처). TanStack Query로 바꾸지 않는다.
 
 ## 스킬 (관련 작업 전에 해당 파일 전체를 읽는다)
 
-- 웹 구조·화면·폼·Apollo·오버레이: `.claude/skills/frontend/SKILL.md`
-- API 모듈·권한·대회 규칙·인증: `.claude/skills/contest-api/SKILL.md`
-- 모바일 앱(Expo WebView 셸): `.claude/skills/mobile/SKILL.md`
-- 웹 ↔ 앱 메시지 추가·변경: `.claude/skills/bridge/SKILL.md`
-- Sentry·Amplitude·이벤트 추가: `.claude/skills/monitoring/SKILL.md`
-- 테스트 레인·격리 DB·포트: `.claude/skills/testing/SKILL.md`
-- 커밋 단위·메시지: `.claude/skills/commit/SKILL.md`
+- 웹 구조·화면·폼·Apollo·오버레이: `.agents/skills/frontend/SKILL.md`
+- API 모듈·권한·대회 규칙·인증: `.agents/skills/contest-api/SKILL.md`
+- 모바일 앱(Expo WebView 셸): `.agents/skills/mobile/SKILL.md`
+- 웹 ↔ 앱 메시지 추가·변경: `.agents/skills/bridge/SKILL.md`
+- Sentry·Amplitude·이벤트 추가: `.agents/skills/monitoring/SKILL.md`
+- 테스트 레인·격리 DB·포트: `.agents/skills/testing/SKILL.md`
+- 커밋 단위·메시지: `.agents/skills/commit/SKILL.md`
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
 
 운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB·미디어 volume을 지우거나 DB를 자동으로 되돌리지 않는다.
+
+게시물 첨부는 파일 또는 HTTP·HTTPS 링크 중 하나 이상이다. Post.uploadId는 nullable, linkUrl은 선택이며 링크만 있으면 kind=LINK·mediaUrl=null이다. postDownload는 기존 읽기 권한을 검사한 뒤 S3 최대 60초 presigned GET 또는 매번 권한을 검사하는 로컬 attachment 경로를 반환한다. URL은 조회할 때마다 새로 받고 Apollo·Next 공개 캐시에 넣지 않는다. 링크 URL로 서버가 외부 메타데이터를 가져오지 않는다. 전체 계약·투네이션 확인 범위는 docs/post-attachments.md를 따른다.

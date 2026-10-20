@@ -29,6 +29,20 @@ export class AnalyticsRepository {
     return client.vote.findMany(args);
   }
 
+  findManyPost<T extends Prisma.PostFindManyArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PostFindManyArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.post.findMany(args);
+  }
+
+  findManyPostContestVote<T extends Prisma.PostContestVoteFindManyArgs>(
+    args: Prisma.SelectSubset<T, Prisma.PostContestVoteFindManyArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.postContestVote.findMany(args);
+  }
+
   updateContest<T extends Prisma.ContestUpdateArgs>(
     args: Prisma.SelectSubset<T, Prisma.ContestUpdateArgs>,
     client: TDatabaseClient = this.db,

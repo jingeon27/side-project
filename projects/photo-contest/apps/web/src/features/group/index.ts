@@ -1,4 +1,5 @@
-export { isGroupOwner, splitContests } from './lib/group.helper';
+export { isGroupOwner, isGroupAdmin, splitContests } from './lib/group.helper';
+export { GroupNavigation } from './ui/GroupNavigation';
 export { prependMyGroup } from './model/group.cache';
 export { groupTypePolicies } from './model/group.type-policies';
 export { CreateGroupBottomSheet } from './ui/CreateGroupBottomSheet';
@@ -8,3 +9,4 @@ export { CreateGroupButton } from './ui/CreateGroupButton';
 export { GroupMembershipButton } from './ui/GroupMembershipButton';
 export { GroupJoinRequests } from './ui/GroupJoinRequests';
 export { GroupVisibilityBadge } from './ui/GroupVisibilityBadge';
+export { GroupContentFrame } from './ui/GroupContentFrame';

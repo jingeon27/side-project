@@ -8,6 +8,8 @@ export const ANALYTICS_EVENT = {
   COMMENT_DELETED: 'comment_deleted',
   GROUP_CREATED: 'group_created',
   GROUP_JOINED: 'group_joined',
+  GROUP_MODERATOR_CHANGED: 'group_moderator_changed',
+  GROUP_OWNERSHIP_TRANSFERRED: 'group_ownership_transferred',
   CONTEST_CREATED: 'contest_created',
   SUBMISSION_CREATED: 'submission_created',
   NEXT_CONTEST_JOINED: 'next_contest_joined',

@@ -23,28 +23,37 @@ export class ContestCompletionService {
   async recordCompletedContests(now = new Date()): Promise<number> {
     const contests = await this.repository.findManyContest({
       where: { endsAt: { lte: now }, completionTrackedAt: null },
-      select: { id: true, groupId: true },
+      select: { id: true, groupId: true, format: true },
       orderBy: { endsAt: 'asc' },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const contest of contests) {
       await this.transactions.atomic(async (tx) => {
-        const [submissions, votes] = await Promise.all([
-          this.repository.findManySubmission(
-            {
-              where: { contestId: contest.id, hidden: false },
-              select: { authorId: true },
-            },
-            tx,
-          ),
-          this.repository.findManyVote(
-            {
-              where: { contestId: contest.id, submission: { hidden: false } },
-              select: { voterId: true },
-            },
-            tx,
-          ),
-        ]);
+        const [submissions, votes] =
+          contest.format === 'POST'
+            ? await Promise.all([
+                this.repository.findManyPost(
+                  { where: { contestId: contest.id, hidden: false }, select: { authorId: true } },
+                  tx,
+                ),
+                this.repository.findManyPostContestVote(
+                  { where: { contestId: contest.id, post: { hidden: false } }, select: { voterId: true } },
+                  tx,
+                ),
+              ])
+            : await Promise.all([
+                this.repository.findManySubmission(
+                  { where: { contestId: contest.id, hidden: false }, select: { authorId: true } },
+                  tx,
+                ),
+                this.repository.findManyVote(
+                  {
+                    where: { contestId: contest.id, submission: { hidden: false } },
+                    select: { voterId: true },
+                  },
+                  tx,
+                ),
+              ]);
         const participants = uniq([
           ...submissions.map((submission) => submission.authorId),
           ...votes.map((vote) => vote.voterId),
