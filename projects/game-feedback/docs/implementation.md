@@ -970,3 +970,22 @@ UserAvatar는 사용자별 한 개이고 User.profileLinks는 기본 빈 배열�
 격리 migration+실DB HTTP 통합 신규 7개를 포함해 API 180개, Web 105개, SDK 43개가 통과했다. 모바일 너비 390px와 데스크톱 1440px에서 사진 미리보기·저장·삭제, 링크 저장·삭제와 타인 편집 숨김 E2E 2개가 통과했다. 계약→OpenAPI→Orval로 SDK를 생성했다. 실제 S3 외부 수신은 이 테스트 결과에 포함하지 않는다.
 
 최신 develop에서 두 기능을 합친 최종 검사는 API 184개, Web 113개, SDK 43개, Bridge 8개, Mobile 43개와 Admin 2개가 통과했다. 채팅·첨부·작성·프로필·빈 키 E2E 11개, 실제 SDK 관측 E2E 3개가 통과했으며 가짜 키로 production build/start를 사용한 관측 E2E 3개도 통과했다.
+
+## 게시글·채팅 S3 직접 업로드와 로컬 관측 설정 (2026-10-21)
+
+S3 저장소에서 게시글과 채팅의 사진·동영상은 업로드 예약 → 브라우저 S3 POST → 서버 검증·확정으로 처리한다. 최대 25MB와 파일 signature·실제 크기·MIME 검사를 유지하고 5분짜리 POST 정책은 예약한 key·크기·타입을 제한한다. 검증된 바이트를 별도 최종 객체에 저장하므로 staging 주소를 재사용해도 확정 파일은 바뀌지 않는다. 파일 확인과 최종 저장을 위한 서버 전송은 남는다. DATABASE/FILESYSTEM은 기존 multipart 경로를 유지한다.
+
+PostMedia/ChatAttachment의 uploadedAt과 추가형 migration으로 기존 첨부를 보존하며, 미완료 첨부는 API와 DB CHECK 양쪽에서 게시글·메시지 연결을 거부한다. 게시글 공개 범위, 채팅 참여자·차단·대화 삭제 경계와 소유권을 확인한 후 60초짜리 GET 주소로 이동한다. 이미 발급한 주소는 만료까지 유효하다. Range와 HEAD, no-store를 유지하고 완료 중복 요청은 같은 첨부를 반환한다. 임시 객체는 하루 후 정리하고 최종 객체의 14일 백업 유예는 보존한다. 업로드 예약과 기존 multipart는 사용자별 제한을 공유하고 완료 검증은 별도 제한을 사용한다.
+
+전송 계약·DTO와 S3 전송을 공유하되 게시글·채팅의 권한·저장·메시지 연결은 도메인별 서비스가 소유한다. SDK는 Zod 계약 → OpenAPI → Orval로 재생성했다. 루트 yarn.lock은 API의 S3 POST·GET 서명 의존성 선언 때문에 변경했다. 공통 배포 README는 직접 업로드에 필요한 CORS 안내 때문에 수정했으며 Photo Contest 제품 코드는 변경하지 않았다.
+
+로컬 키는 프로젝트 루트 `.env`에서 집계 dev/dev:test 실행이 Web/API에 전달한다. `.env.example`에 S3 설정을 추가하고 docs/observability.md에 Sentry DSN·Amplitude 개발 프로젝트 키, 재시작과 실제 수신 확인, Next/API 서버 DSN 공유를 기록했다. tracing·Web Vitals와 소스맵 업로드는 기존처럼 비활성이다. docs/media-upload.md와 CORS JSON은 실제 private 버킷 설정과 검증 절차를 설명한다.
+
+검증 결과:
+
+- API 단위 81개와 관련 통합 36개가 통과했다. 새 PostgreSQL schema에 migration을 적용하고 실제 AWS SDK·로컬 S3 HTTP fixture로 서명 POST의 크기 제한, 완료 전 접근·연결 거부, 동시 확정, staging 덮어쓰기, 공개/비공개 조회, 채팅 참여자·차단·대화 내역 삭제, Range·HEAD와 정리를 검사했다.
+- Web Vitest 120개와 SDK Vitest 43개가 통과했다. 실제 생성 SDK의 응답 검증을 거쳐 직접 전송·로컬 multipart·실패 예약 정리를 검사했다. 기존 Sentry/Amplitude 단위 검사도 포함한다.
+- 관련 Playwright 3개가 한 번에 통과했다. 로컬 DATABASE 경로에서 모바일 채팅의 사진 전송·실패 재시도·상대 조회, 동영상 재생·Range와 글쓰기 사진/동영상의 저장·수정·비로그인 HTML을 확인했다.
+- API/Web/SDK typecheck, Web lint, API build와 immutable install이 통과했다. OpenAPI/SDK 재생성 diff가 없고 변경 파일 Prettier와 migration 호환성 검사(신규 SQL 1개)가 통과했다. shared-instance smoke의 S3 조회 검사를 307·서명 URL·Range에 맞춰 변경하고 두 runner 파일의 Node 문법을 검사했다.
+
+이 컴퓨터의 Docker 실행 파일이 없어 컨테이너 smoke는 실행하지 못했다. 실제 AWS 버킷 IAM/CORS와 브라우저 송수신, 실제 Sentry·Amplitude 콘솔 수신은 자격 증명이 없어 확인하지 않았다. 로컬 fixture 결과를 실제 외부 수신이나 공개 배포 완료로 기록하지 않는다. 개발 서버·개발 DB는 변경하지 않았으며 테스트는 전용 55444와 격리 schema만 사용했다. 종료 후 소유한 테스트 DB만 중지하고 데이터를 보존했다.

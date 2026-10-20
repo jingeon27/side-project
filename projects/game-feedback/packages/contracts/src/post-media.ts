@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MediaMimeTypeSchema, MediaSizeSchema } from './media-upload';
 
 export const PostMediaUrlSchema = z.string().regex(/^\/api\/post-media\/[A-Za-z0-9_-]{1,100}$/);
 export const RichTextEmbedSchema = z.union([
@@ -9,12 +10,8 @@ export type TRichTextEmbed = z.infer<typeof RichTextEmbedSchema>;
 export const PostMediaSchema = z.object({
   id: z.string().min(1).max(100),
   name: z.string().min(1).max(200),
-  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
-  size: z
-    .number()
-    .int()
-    .positive()
-    .max(25 * 1024 * 1024),
+  mimeType: MediaMimeTypeSchema,
+  size: MediaSizeSchema,
   kind: z.enum(['IMAGE', 'VIDEO']),
   url: PostMediaUrlSchema,
 });

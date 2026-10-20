@@ -3,6 +3,14 @@ import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { z } from 'zod';
 import { RichTextDocumentSchema } from './rich-text';
 import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
+import {
+  MediaMimeTypeSchema,
+  MediaSizeSchema,
+  MediaUploadInputSchema,
+  MediaUploadPlanSchema,
+} from './media-upload';
+export { MediaUploadInputSchema, MediaUploadPlanSchema } from './media-upload';
+export type { TMediaUploadInput, TMediaUploadPlan } from './media-upload';
 export {
   RichTextDocumentSchema,
   RichTextAttributesSchema,
@@ -216,12 +224,8 @@ export const SessionSchema = z.object({
 export const ChatAttachmentSchema = z.object({
   id: ResponseIdSchema,
   name: z.string().min(1).max(200),
-  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
-  size: z
-    .number()
-    .int()
-    .positive()
-    .max(25 * 1024 * 1024),
+  mimeType: MediaMimeTypeSchema,
+  size: MediaSizeSchema,
   kind: z.enum(['IMAGE', 'VIDEO']),
   url: z.string().regex(/^\/api\/conversations\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
 });
@@ -396,6 +400,8 @@ export const schemas = {
   SupportThread: SupportThreadSchema,
   PostMedia: PostMediaSchema,
   PostMediaUpload: PostMediaUploadSchema,
+  MediaUploadInput: MediaUploadInputSchema,
+  MediaUploadPlan: MediaUploadPlanSchema,
   CoachingPricing: CoachingPricingSchema,
   CoachingPricingType: CoachingPricingTypeSchema,
   CoachingDetails: CoachingDetailsSchema,
@@ -455,6 +461,19 @@ export type OperationSpec = {
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
+  {
+    method: 'post',
+    path: '/api/post-media/uploads',
+    id: 'requestPostMediaUpload',
+    body: MediaUploadInputSchema,
+    response: MediaUploadPlanSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/post-media/{id}/complete',
+    id: 'completePostMediaUpload',
+    response: PostMediaSchema,
+  },
   { method: 'get', path: '/api/admin/users/{id}', id: 'getAdminUser', response: UserSchema },
   {
     method: 'post',
@@ -586,6 +605,19 @@ export const operations: OperationSpec[] = [
     id: 'uploadChatAttachment',
     body: ChatAttachmentUploadSchema,
     contentType: 'multipart/form-data',
+    response: ChatAttachmentSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/conversations/{id}/attachments/uploads',
+    id: 'requestChatAttachmentUpload',
+    body: MediaUploadInputSchema,
+    response: MediaUploadPlanSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/conversations/{id}/attachments/{attachmentId}/complete',
+    id: 'completeChatAttachmentUpload',
     response: ChatAttachmentSchema,
   },
   {

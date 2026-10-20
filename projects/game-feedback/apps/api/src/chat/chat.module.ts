@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentController, ChatAttachmentGuard } from './chat-attachment.controller';
 import { ChatAttachmentService } from './chat-attachment.service';
+import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
 import { ChatConversationService } from './chat-conversation.service';
 import { ChatHistoryService } from './chat-history.service';
 import { ChatLifecycleMiddleware } from './chat-lifecycle.middleware';
@@ -19,6 +20,7 @@ import { ChatEvents } from './chat.events';
     ChatEvents,
     ChatLifecycleMiddleware,
     ChatAttachmentService,
+    ChatAttachmentUploadService,
     ChatAttachmentGuard,
   ],
   exports: [ChatEvents, ChatLifecycleMiddleware, ChatAccessService, ChatConversationService],

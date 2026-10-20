@@ -6,6 +6,59 @@
  */
 import * as zod from 'zod';
 
+export const requestPostMediaUploadBodyNameMax = 1000;
+
+export const requestPostMediaUploadBodySizeExclusiveMin = 0;
+export const requestPostMediaUploadBodySizeMax = 26214400;
+
+
+
+export const RequestPostMediaUploadBody = zod.object({
+  "name": zod.string().min(1).max(requestPostMediaUploadBodyNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(requestPostMediaUploadBodySizeExclusiveMin).max(requestPostMediaUploadBodySizeMax)
+})
+
+export const requestPostMediaUploadResponseTwoIdMax = 100;
+
+export const requestPostMediaUploadResponseTwoExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const RequestPostMediaUploadResponse = zod.union([zod.object({
+  "mode": zod.literal("PROXY")
+}),zod.object({
+  "mode": zod.literal("DIRECT"),
+  "id": zod.string().min(1).max(requestPostMediaUploadResponseTwoIdMax),
+  "url": zod.url(),
+  "fields": zod.record(zod.string(), zod.string()),
+  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestPostMediaUploadResponseTwoExpiresAtRegExp)
+})])
+
+
+export const CompletePostMediaUploadParams = zod.object({
+  "id": zod.string()
+})
+
+export const completePostMediaUploadResponseIdMax = 100;
+
+export const completePostMediaUploadResponseNameMax = 200;
+
+export const completePostMediaUploadResponseSizeExclusiveMin = 0;
+export const completePostMediaUploadResponseSizeMax = 26214400;
+
+export const completePostMediaUploadResponseUrlRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
+
+
+export const CompletePostMediaUploadResponse = zod.object({
+  "id": zod.string().min(1).max(completePostMediaUploadResponseIdMax),
+  "name": zod.string().min(1).max(completePostMediaUploadResponseNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(completePostMediaUploadResponseSizeExclusiveMin).max(completePostMediaUploadResponseSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(completePostMediaUploadResponseUrlRegExp)
+})
+
+
 export const GetAdminUserParams = zod.object({
   "id": zod.string()
 })
@@ -1047,6 +1100,64 @@ export const UploadChatAttachmentResponse = zod.object({
   "size": zod.int().gt(uploadChatAttachmentResponseSizeExclusiveMin).max(uploadChatAttachmentResponseSizeMax),
   "kind": zod.enum(['IMAGE', 'VIDEO']),
   "url": zod.string().regex(uploadChatAttachmentResponseUrlRegExp)
+})
+
+
+export const RequestChatAttachmentUploadParams = zod.object({
+  "id": zod.string()
+})
+
+export const requestChatAttachmentUploadBodyNameMax = 1000;
+
+export const requestChatAttachmentUploadBodySizeExclusiveMin = 0;
+export const requestChatAttachmentUploadBodySizeMax = 26214400;
+
+
+
+export const RequestChatAttachmentUploadBody = zod.object({
+  "name": zod.string().min(1).max(requestChatAttachmentUploadBodyNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(requestChatAttachmentUploadBodySizeExclusiveMin).max(requestChatAttachmentUploadBodySizeMax)
+})
+
+export const requestChatAttachmentUploadResponseTwoIdMax = 100;
+
+export const requestChatAttachmentUploadResponseTwoExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const RequestChatAttachmentUploadResponse = zod.union([zod.object({
+  "mode": zod.literal("PROXY")
+}),zod.object({
+  "mode": zod.literal("DIRECT"),
+  "id": zod.string().min(1).max(requestChatAttachmentUploadResponseTwoIdMax),
+  "url": zod.url(),
+  "fields": zod.record(zod.string(), zod.string()),
+  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestChatAttachmentUploadResponseTwoExpiresAtRegExp)
+})])
+
+
+export const CompleteChatAttachmentUploadParams = zod.object({
+  "id": zod.string(),
+  "attachmentId": zod.string()
+})
+
+export const completeChatAttachmentUploadResponseIdMax = 100;
+
+export const completeChatAttachmentUploadResponseNameMax = 200;
+
+export const completeChatAttachmentUploadResponseSizeExclusiveMin = 0;
+export const completeChatAttachmentUploadResponseSizeMax = 26214400;
+
+export const completeChatAttachmentUploadResponseUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+
+
+export const CompleteChatAttachmentUploadResponse = zod.object({
+  "id": zod.string().min(1).max(completeChatAttachmentUploadResponseIdMax),
+  "name": zod.string().min(1).max(completeChatAttachmentUploadResponseNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(completeChatAttachmentUploadResponseSizeExclusiveMin).max(completeChatAttachmentUploadResponseSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(completeChatAttachmentUploadResponseUrlRegExp)
 })
 
 
