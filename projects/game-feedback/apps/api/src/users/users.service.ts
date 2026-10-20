@@ -1,3 +1,4 @@
+import { ProfileLinksSchema } from '@game-feedback/contracts';
 import { PrismaClient } from '../generated/prisma';
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -17,7 +18,7 @@ export class UsersService {
     const excluded = await this.visibility.excluded(req);
     const user = await this.db.user.findFirst({
       where: { id, NOT: { id: { in: excluded } } },
-      select: { ...authorSelect, createdAt: true },
+      select: { ...authorSelect, createdAt: true, profileLinks: true },
     });
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
     const postVisibility = { ...ACTIVE_POST, authorId: { notIn: excluded } };
@@ -29,6 +30,7 @@ export class UsersService {
     ]);
     return {
       author: authorDto(user),
+      links: ProfileLinksSchema.parse(user.profileLinks),
       joinedAt: user.createdAt.toISOString(),
       postCount,
       answerCount,

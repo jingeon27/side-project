@@ -21,7 +21,10 @@ export class SessionService {
   async loadSession(req: SessionRequest) {
     const raw = sessionToken(req);
     req.gfSession = raw
-      ? await this.db.session.findUnique({ where: { tokenHash: hash(raw) }, include: { user: true } })
+      ? await this.db.session.findUnique({
+          where: { tokenHash: hash(raw) },
+          include: { user: { include: { avatar: { select: { id: true } } } } },
+        })
       : null;
     if (
       req.gfSession &&
@@ -70,7 +73,7 @@ export class SessionService {
     setCookie(res, COOKIE, raw, maxAge, this.config.production);
     req.gfSession = await this.db.session.findUnique({
       where: { tokenHash: hash(raw) },
-      include: { user: true },
+      include: { user: { include: { avatar: { select: { id: true } } } } },
     });
     return { accessToken: raw, expiresAt: expiresAt.toISOString() };
   }

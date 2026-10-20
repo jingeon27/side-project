@@ -16,6 +16,7 @@ export const TestAccount = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.literal(true),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "description": zod.string()
 })

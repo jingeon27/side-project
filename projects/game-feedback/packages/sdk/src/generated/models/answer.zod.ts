@@ -27,7 +27,8 @@ export const Answer = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "helpful": zod.boolean(),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(answerReadAtOneRegExp),zod.null()]),

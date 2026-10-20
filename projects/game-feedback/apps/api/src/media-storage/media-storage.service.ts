@@ -122,7 +122,13 @@ export class MediaStorage implements OnModuleDestroy {
     await this.db.chatAttachment.deleteMany({ where: { messageId: null, createdAt: { lt: before } } });
     const storage = this.config.mediaStorage;
     await this.db.mediaObject.updateMany({
-      where: { createdAt: { lt: before }, retiredAt: null, postMedia: null, chatAttachment: null },
+      where: {
+        createdAt: { lt: before },
+        retiredAt: null,
+        postMedia: null,
+        chatAttachment: null,
+        avatar: null,
+      },
       data: { retiredAt: new Date() },
     });
     const objects = await this.db.mediaObject.findMany({
@@ -131,6 +137,7 @@ export class MediaStorage implements OnModuleDestroy {
         retiredAt: { lt: new Date(Date.now() - 14 * 86400000) },
         postMedia: null,
         chatAttachment: null,
+        avatar: null,
       },
       take: 100,
       orderBy: { createdAt: 'asc' },

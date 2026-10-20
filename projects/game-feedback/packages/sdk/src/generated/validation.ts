@@ -24,6 +24,7 @@ export const GetAdminUserResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(getAdminUserResponseCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminUserResponseVerifiedAtOneRegExp),zod.null()]),
@@ -92,6 +93,7 @@ export const SetUserBanResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(setUserBanResponseCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserBanResponseVerifiedAtOneRegExp),zod.null()]),
@@ -158,7 +160,8 @@ export const StartSupportConversationResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "lastMessage": zod.union([zod.object({
   "id": zod.string().min(1).max(startSupportConversationResponseLastMessageOneIdMax),
@@ -168,7 +171,8 @@ export const StartSupportConversationResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "body": zod.string().max(startSupportConversationResponseLastMessageOneBodyMax),
   "attachments": zod.array(zod.object({
@@ -209,7 +213,8 @@ export const ListSupportThreadsResponseItem = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "adminId": zod.string().min(1).max(listSupportThreadsResponseAdminIdMax),
   "topic": zod.enum(['GENERAL', 'VERIFICATION']),
@@ -249,7 +254,8 @@ export const SetSupportStatusResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "adminId": zod.string().min(1).max(setSupportStatusResponseAdminIdMax),
   "topic": zod.enum(['GENERAL', 'VERIFICATION']),
@@ -265,6 +271,14 @@ export const GetPublicProfileParams = zod.object({
 
 export const getPublicProfileResponseAuthorIdMax = 100;
 
+
+export const getPublicProfileResponseLinksItemLabelMax = 40;
+
+export const getPublicProfileResponseLinksItemUrlMax = 2048;
+
+
+export const getPublicProfileResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
+export const getPublicProfileResponseLinksMax = 5;
 
 export const getPublicProfileResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const getPublicProfileResponsePostCountMin = 0;
@@ -284,12 +298,167 @@ export const GetPublicProfileResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
+  "links": zod.array(zod.object({
+  "label": zod.string().min(1).max(getPublicProfileResponseLinksItemLabelMax),
+  "url": zod.string().max(getPublicProfileResponseLinksItemUrlMax).regex(getPublicProfileResponseLinksItemUrlRegExp)
+})).max(getPublicProfileResponseLinksMax).optional(),
   "joinedAt": zod.iso.datetime({"offset":true}).regex(getPublicProfileResponseJoinedAtRegExp),
   "postCount": zod.int().min(getPublicProfileResponsePostCountMin).max(getPublicProfileResponsePostCountMax),
   "answerCount": zod.int().min(getPublicProfileResponseAnswerCountMin).max(getPublicProfileResponseAnswerCountMax),
   "helpfulCount": zod.int().min(getPublicProfileResponseHelpfulCountMin).max(getPublicProfileResponseHelpfulCountMax)
+})
+
+
+export const updateProfileBodyLinksItemLabelMax = 40;
+
+export const updateProfileBodyLinksItemUrlMax = 2048;
+
+
+export const updateProfileBodyLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
+export const updateProfileBodyLinksMax = 5;
+
+
+
+export const UpdateProfileBody = zod.object({
+  "links": zod.array(zod.object({
+  "label": zod.string().min(1).max(updateProfileBodyLinksItemLabelMax),
+  "url": zod.string().max(updateProfileBodyLinksItemUrlMax).regex(updateProfileBodyLinksItemUrlRegExp)
+})).max(updateProfileBodyLinksMax)
+})
+
+export const updateProfileResponseAuthorIdMax = 100;
+
+
+export const updateProfileResponseLinksItemLabelMax = 40;
+
+export const updateProfileResponseLinksItemUrlMax = 2048;
+
+
+export const updateProfileResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
+export const updateProfileResponseLinksMax = 5;
+
+export const updateProfileResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const updateProfileResponsePostCountMin = 0;
+export const updateProfileResponsePostCountMax = 9007199254740991;
+
+export const updateProfileResponseAnswerCountMin = 0;
+export const updateProfileResponseAnswerCountMax = 9007199254740991;
+
+export const updateProfileResponseHelpfulCountMin = 0;
+export const updateProfileResponseHelpfulCountMax = 9007199254740991;
+
+
+
+export const UpdateProfileResponse = zod.object({
+  "author": zod.object({
+  "id": zod.string().min(1).max(updateProfileResponseAuthorIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "links": zod.array(zod.object({
+  "label": zod.string().min(1).max(updateProfileResponseLinksItemLabelMax),
+  "url": zod.string().max(updateProfileResponseLinksItemUrlMax).regex(updateProfileResponseLinksItemUrlRegExp)
+})).max(updateProfileResponseLinksMax).optional(),
+  "joinedAt": zod.iso.datetime({"offset":true}).regex(updateProfileResponseJoinedAtRegExp),
+  "postCount": zod.int().min(updateProfileResponsePostCountMin).max(updateProfileResponsePostCountMax),
+  "answerCount": zod.int().min(updateProfileResponseAnswerCountMin).max(updateProfileResponseAnswerCountMax),
+  "helpfulCount": zod.int().min(updateProfileResponseHelpfulCountMin).max(updateProfileResponseHelpfulCountMax)
+})
+
+
+export const UploadProfileAvatarBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const uploadProfileAvatarResponseAuthorIdMax = 100;
+
+
+export const uploadProfileAvatarResponseLinksItemLabelMax = 40;
+
+export const uploadProfileAvatarResponseLinksItemUrlMax = 2048;
+
+
+export const uploadProfileAvatarResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
+export const uploadProfileAvatarResponseLinksMax = 5;
+
+export const uploadProfileAvatarResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const uploadProfileAvatarResponsePostCountMin = 0;
+export const uploadProfileAvatarResponsePostCountMax = 9007199254740991;
+
+export const uploadProfileAvatarResponseAnswerCountMin = 0;
+export const uploadProfileAvatarResponseAnswerCountMax = 9007199254740991;
+
+export const uploadProfileAvatarResponseHelpfulCountMin = 0;
+export const uploadProfileAvatarResponseHelpfulCountMax = 9007199254740991;
+
+
+
+export const UploadProfileAvatarResponse = zod.object({
+  "author": zod.object({
+  "id": zod.string().min(1).max(uploadProfileAvatarResponseAuthorIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "links": zod.array(zod.object({
+  "label": zod.string().min(1).max(uploadProfileAvatarResponseLinksItemLabelMax),
+  "url": zod.string().max(uploadProfileAvatarResponseLinksItemUrlMax).regex(uploadProfileAvatarResponseLinksItemUrlRegExp)
+})).max(uploadProfileAvatarResponseLinksMax).optional(),
+  "joinedAt": zod.iso.datetime({"offset":true}).regex(uploadProfileAvatarResponseJoinedAtRegExp),
+  "postCount": zod.int().min(uploadProfileAvatarResponsePostCountMin).max(uploadProfileAvatarResponsePostCountMax),
+  "answerCount": zod.int().min(uploadProfileAvatarResponseAnswerCountMin).max(uploadProfileAvatarResponseAnswerCountMax),
+  "helpfulCount": zod.int().min(uploadProfileAvatarResponseHelpfulCountMin).max(uploadProfileAvatarResponseHelpfulCountMax)
+})
+
+
+export const deleteProfileAvatarResponseAuthorIdMax = 100;
+
+
+export const deleteProfileAvatarResponseLinksItemLabelMax = 40;
+
+export const deleteProfileAvatarResponseLinksItemUrlMax = 2048;
+
+
+export const deleteProfileAvatarResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
+export const deleteProfileAvatarResponseLinksMax = 5;
+
+export const deleteProfileAvatarResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const deleteProfileAvatarResponsePostCountMin = 0;
+export const deleteProfileAvatarResponsePostCountMax = 9007199254740991;
+
+export const deleteProfileAvatarResponseAnswerCountMin = 0;
+export const deleteProfileAvatarResponseAnswerCountMax = 9007199254740991;
+
+export const deleteProfileAvatarResponseHelpfulCountMin = 0;
+export const deleteProfileAvatarResponseHelpfulCountMax = 9007199254740991;
+
+
+
+export const DeleteProfileAvatarResponse = zod.object({
+  "author": zod.object({
+  "id": zod.string().min(1).max(deleteProfileAvatarResponseAuthorIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "links": zod.array(zod.object({
+  "label": zod.string().min(1).max(deleteProfileAvatarResponseLinksItemLabelMax),
+  "url": zod.string().max(deleteProfileAvatarResponseLinksItemUrlMax).regex(deleteProfileAvatarResponseLinksItemUrlRegExp)
+})).max(deleteProfileAvatarResponseLinksMax).optional(),
+  "joinedAt": zod.iso.datetime({"offset":true}).regex(deleteProfileAvatarResponseJoinedAtRegExp),
+  "postCount": zod.int().min(deleteProfileAvatarResponsePostCountMin).max(deleteProfileAvatarResponsePostCountMax),
+  "answerCount": zod.int().min(deleteProfileAvatarResponseAnswerCountMin).max(deleteProfileAvatarResponseAnswerCountMax),
+  "helpfulCount": zod.int().min(deleteProfileAvatarResponseHelpfulCountMin).max(deleteProfileAvatarResponseHelpfulCountMax)
 })
 
 
@@ -321,6 +490,7 @@ export const ExchangeAppLoginResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(exchangeAppLoginResponseUserOneCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(exchangeAppLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
@@ -345,6 +515,7 @@ export const ListTestAccountsResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.literal(true),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "description": zod.string()
 }))
@@ -379,6 +550,7 @@ export const IssueTestTokenResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(issueTestTokenResponseUserCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(issueTestTokenResponseUserVerifiedAtOneRegExp),zod.null()]),
@@ -415,6 +587,7 @@ export const TestAccountLoginResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(testAccountLoginResponseUserOneCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(testAccountLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
@@ -449,6 +622,7 @@ export const SetUserVerificationResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(setUserVerificationResponseCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(setUserVerificationResponseVerifiedAtOneRegExp),zod.null()]),
@@ -513,7 +687,8 @@ export const ListConversationsResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "lastMessage": zod.union([zod.object({
   "id": zod.string().min(1).max(listConversationsResponseItemsItemLastMessageOneIdMax),
@@ -523,7 +698,8 @@ export const ListConversationsResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "body": zod.string().max(listConversationsResponseItemsItemLastMessageOneBodyMax),
   "attachments": zod.array(zod.object({
@@ -595,7 +771,8 @@ export const CreateConversationResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "lastMessage": zod.union([zod.object({
   "id": zod.string().min(1).max(createConversationResponseLastMessageOneIdMax),
@@ -605,7 +782,8 @@ export const CreateConversationResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "body": zod.string().max(createConversationResponseLastMessageOneBodyMax),
   "attachments": zod.array(zod.object({
@@ -703,7 +881,8 @@ export const ListChatMessagesResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "lastMessage": zod.union([zod.object({
   "id": zod.string().min(1).max(listChatMessagesResponseConversationLastMessageOneIdMax),
@@ -713,7 +892,8 @@ export const ListChatMessagesResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "body": zod.string().max(listChatMessagesResponseConversationLastMessageOneBodyMax),
   "attachments": zod.array(zod.object({
@@ -739,7 +919,8 @@ export const ListChatMessagesResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "body": zod.string().max(listChatMessagesResponseItemsItemBodyMax),
   "attachments": zod.array(zod.object({
@@ -824,7 +1005,8 @@ export const SendChatMessageResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "body": zod.string().max(sendChatMessageResponseBodyMax),
   "attachments": zod.array(zod.object({
@@ -948,6 +1130,7 @@ export const GetSessionResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(getSessionResponseUserOneCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getSessionResponseUserOneVerifiedAtOneRegExp),zod.null()]),
@@ -990,6 +1173,7 @@ export const DemoLoginResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(demoLoginResponseUserOneCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(demoLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
@@ -1034,6 +1218,7 @@ export const OnboardResponse = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(onboardResponseUserOneCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(onboardResponseUserOneVerifiedAtOneRegExp),zod.null()]),
@@ -1216,7 +1401,8 @@ export const ListPostsResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "gameProfile": zod.union([zod.object({
   "playerTag": zod.string().min(1),
@@ -1446,7 +1632,8 @@ export const CreatePostResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "gameProfile": zod.union([zod.object({
   "playerTag": zod.string().min(1),
@@ -1622,7 +1809,8 @@ export const GetPostResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "gameProfile": zod.union([zod.object({
   "playerTag": zod.string().min(1),
@@ -1656,7 +1844,8 @@ export const GetPostResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "helpful": zod.boolean(),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(getPostResponseAnswersItemReadAtOneRegExp),zod.null()]),
@@ -1672,7 +1861,8 @@ export const GetPostResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "createdAt": zod.iso.datetime({"offset":true}).regex(getPostResponseCommentsItemCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(getPostResponseCommentsItemUpdatedAtRegExp)
@@ -1882,7 +2072,8 @@ export const UpdatePostResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "gameProfile": zod.union([zod.object({
   "playerTag": zod.string().min(1),
@@ -1953,7 +2144,8 @@ export const CreateAnswerResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "helpful": zod.boolean(),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(createAnswerResponseReadAtOneRegExp),zod.null()]),
@@ -1997,7 +2189,8 @@ export const UpdateAnswerResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "helpful": zod.boolean(),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(updateAnswerResponseReadAtOneRegExp),zod.null()]),
@@ -2045,7 +2238,8 @@ export const MarkHelpfulResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "helpful": zod.boolean(),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(markHelpfulResponseReadAtOneRegExp),zod.null()]),
@@ -2117,7 +2311,8 @@ export const CreateCommentResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "createdAt": zod.iso.datetime({"offset":true}).regex(createCommentResponseCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(createCommentResponseUpdatedAtRegExp)
@@ -2157,7 +2352,8 @@ export const UpdateCommentResponse = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "createdAt": zod.iso.datetime({"offset":true}).regex(updateCommentResponseCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(updateCommentResponseUpdatedAtRegExp)
@@ -2380,7 +2576,8 @@ export const ListBlocksResponseItem = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 })
 export const ListBlocksResponse = zod.array(ListBlocksResponseItem)
 
