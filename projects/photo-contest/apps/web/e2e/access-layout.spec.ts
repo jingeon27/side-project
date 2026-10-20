@@ -56,7 +56,8 @@ test(
       );
     };
     const home = await readServerText('/');
-    expect(home.text).toContain('아직 올라온 게시물이 없어요');
+    expect(home.text).toContain('공개 그룹');
+    expect(home.text).toContain('공개 그룹의 최신 사진');
     expect(home.errors).toBe(0);
     const me = await readServerText('/me');
     expect(me.text).toContain('SSR 사용자');
