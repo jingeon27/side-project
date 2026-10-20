@@ -127,7 +127,7 @@ test(
     }
     if (viewport && main) expect(Math.abs(main.x - (viewport.width - main.width) / 2)).toBeLessThan(2);
     await mkdir('.data/screens', { recursive: true });
-    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-home.png`, fullPage: true });
+    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-home.png` });
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page.getByRole('heading', { name: '레이아웃-사용자' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '내 그룹' })).toBeVisible();

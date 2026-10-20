@@ -145,6 +145,7 @@ test(
       groupId: group.id,
     });
     await page.goto(`/groups/${group.id}`);
+    await expect(page.getByText('카테고리 관리', { exact: true })).toBeVisible();
     await page.getByText('초대와 그룹 멤버', { exact: true }).click();
     await page.getByRole('button', { name: `${nickname} 부관리자 임명`, exact: true }).click();
     await expect(page.getByRole('button', { name: `${nickname} 부관리자 해제`, exact: true })).toBeVisible();

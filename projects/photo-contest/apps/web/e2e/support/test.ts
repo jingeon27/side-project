@@ -3,6 +3,7 @@ import { test as base, expect } from '@playwright/test';
 import type { BrowserContext } from '@playwright/test';
 
 import { API_URL, WEB_ORIGIN } from './env';
+import { observeRuntimeErrors } from './runtime-errors';
 
 export async function authenticate(context: BrowserContext, nickname: string) {
   const cookie = await createTestUser(API_URL, { nickname, origin: WEB_ORIGIN });
@@ -35,8 +36,7 @@ export async function seedGroup(cookie: string, name: string, visibility: 'PUBLI
 
 export const test = base.extend<{ signIn: (nickname: string) => Promise<string> }>({
   page: async ({ page }, provide) => {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
+    const errors = await observeRuntimeErrors(page);
     await page.addInitScript(() =>
       document.addEventListener('DOMContentLoaded', () => {
         const style = document.createElement('style');
