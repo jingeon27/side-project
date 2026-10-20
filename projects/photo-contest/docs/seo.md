@@ -65,3 +65,5 @@ API e2e는 익명 공개 읽기·미디어 Range·댓글·숨김·기존 대회 
 참고: [Next.js JSON-LD](https://nextjs.org/docs/app/guides/json-ld), [Google discussion forum markup](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum), [Google canonical 가이드](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls), [Schema.org CollectionPage](https://schema.org/CollectionPage).
 
 공개 홈의 공개 그룹 6개·최신 게시물 24개도 익명 Next Data Cache(30초)를 사용한다. RSC에서 현재 사용자·가입 그룹은 no-store로 먼저 확인해 공개 홈과 내 피드의 사전 조회를 나눈다. publicPreloadContext는 쿠키 없는 공개 조회에만 지정하며 같은 문서·변수로 브라우저 캐시에 사전 조회한다. 쓰기·숨김·복원 뒤 공통 공개 태그를 즉시 만료시킨다. 개인 피드는 캐시하지 않는다.
+
+`?category=` 필터의 canonical은 그룹 기본 URL이다. 활성 카테고리 ID는 fresh 그룹 메타데이터로 확인하고 잘못되거나 보관된 ID는 전체 목록으로 처리한다. 필터별 캐시는 categoryId로 구분하며 공개 SEO·사이트맵 태그는 카테고리 쓰기에도 즉시 무효화한다.
