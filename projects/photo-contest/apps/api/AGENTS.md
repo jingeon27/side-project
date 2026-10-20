@@ -33,7 +33,7 @@
 
 ## 빌드·실행
 
-- `build`·`dev`는 `tsconfig.build.json`(src만, spec 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
+- `build`·`dev`는 `tsconfig.build.json`(src만, `*.spec.ts`·`*.test.ts` 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
 - 사용자의 개발 서버는 `dist/main.js`를 본다(`node --watch`). 검증용 빌드는 다른 outDir로 하고, 테스트 API는 test-kit이 `.e2e-build`로 빌드한다.
 - 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client·WASM·sharp도 포함한다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
 
@@ -41,8 +41,8 @@
 
 | 스크립트 | 내용 |
 | --- | --- |
-| `test` · `test:unit` | Vitest `unit`: `src/**/*.spec.ts`(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
-| `test:integration` | Vitest `integration`: `test/integration/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
+| `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
 
@@ -51,7 +51,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 - `.agents/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
 - `.agents/skills/auth/SKILL.md`: Cookie·Origin·OAuth·앱 PKCE 교환.
 - `.agents/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
-- `.agents/skills/api-test/SKILL.md`: unit·실제 DB/supertest e2e·하네스.
+- `.agents/skills/api-test/SKILL.md`: unit·실제 DB/supertest integration·하네스.
 
 테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계·외부 성공 콜백 티켓을 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
 

@@ -109,12 +109,12 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 corepack yarn workspace @side/photo-contest db:test:local
 ```
 
-| 앱     | `test`                   | `test:api`                                | `test:e2e`                                                                   |
-| ------ | ------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------- |
-| API    | 순수 규칙·사진 처리 unit | 없음                                      | `test:integration`: Vitest + supertest + 실제 PostgreSQL, `test/integration` |
-| 웹     | unit·실제 폼/캐시 UI     | 생성 GraphQL 문서를 격리 API에 실행(4321) | Pixel 7·iPhone 15(WebKit)·데스크톱·가짜 앱, 웹 3320/API 4320                 |
-| 모바일 | unit·UI                  | 앱 설정·상태 API(4331)                    | Android/iOS 가짜 WebView와 실제 웹, 웹 3330/API 4330                         |
-| bridge | 자체 Vitest              | 없음                                      | 없음                                                                         |
+| 앱     | `test`                   | `test:api`                                | `test:e2e`                                                                                                                |
+| ------ | ------------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| API    | 순수 규칙·사진 처리 unit | 없음                                      | `test:integration`: Vitest + supertest + 실제 PostgreSQL, 구현 옆 `*.integration.{spec,test}.ts` (`test:e2e`는 호환 이름) |
+| 웹     | unit·실제 폼/캐시 UI     | 생성 GraphQL 문서를 격리 API에 실행(4321) | Pixel 7·iPhone 15(WebKit)·데스크톱·가짜 앱, 웹 3320/API 4320                                                              |
+| 모바일 | unit·UI                  | 앱 설정·상태 API(4331)                    | Android/iOS 가짜 WebView와 실제 웹, 웹 3330/API 4330                                                                      |
+| bridge | 자체 Vitest              | 없음                                      | 없음                                                                                                                      |
 
 ```sh
 corepack yarn workspace @side/photo-contest check

@@ -19,7 +19,7 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 - 아이디는 trim·소문자 처리한 영문/숫자/밑줄 3~24자, 닉네임 1~24자다. 가입 비밀번호는 15~128자로 앞뒤 공백·유니코드를 바꾸지 않는다.
 - User와 1:1인 PasswordCredential에 아이디·scrypt-v1 해시를 둔다. salt 16바이트, N=32768·r=8·p=3·64바이트 결과이며 timingSafeEqual로 비교한다. 없는 아이디도 같은 scrypt 비용을 쓴다. 비밀번호·해시는 GraphQL·이벤트·로그·Sentry에 싣지 않는다.
 - AuthAttempt는 15분 버킷의 IP/아이디를 SHA-256 키로만 저장하고 DB upsert 증가로 여러 API 인스턴스에도 제한한다. 가입 IP 5회, 로그인 IP 30회·아이디 10회이며 만료 행은 maintenance가 지운다. IP는 Express가 확인한 요청 주소를 사용하고 클라이언트의 전달 헤더를 직접 신뢰하지 않는다.
-- 비밀번호 계정을 OAuth 이메일과 합치지 않는다. 검증은 `test/e2e/password-auth.spec.ts`와 `src/auth/password.spec.ts`를 함께 확인한다.
+- 비밀번호 계정을 OAuth 이메일과 합치지 않는다. 검증은 `src/auth/password-auth.service.integration.spec.ts`와 `src/auth/password.spec.ts`를 함께 확인한다.
 
 ## 개발 로그인
 
@@ -44,5 +44,5 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 ## 건드리면 있어야 하는 테스트
 
 - unit: `src/common/http/cookie-header.spec.ts`(섞인 쿠키, 같은 이름 중복, 따옴표·퍼센트, 4KB 초과, 깨진 형식), `src/common/crypto.spec.ts`(RFC 7636 벡터), `src/config/env.spec.ts`(개발 로그인 조건, 앱 scheme).
-- e2e 레인(`api-test` 스킬): 모든 변경 엔드포인트의 Origin 없음·다른 Origin 403(비로그인이어도), 세션 쿠키 HttpOnly·SameSite=Lax·Path=/, DB에 토큰 원문 없음, 깨진 Cookie 헤더는 비로그인, 로그아웃 뒤 같은 쿠키 거부, 앱을 만든 뒤 `vi.stubEnv('NODE_ENV', 'production')`이면 개발 로그인 403.
+- integration 레인(`api-test` 스킬): 모든 변경 엔드포인트의 Origin 없음·다른 Origin 403(비로그인이어도), 세션 쿠키 HttpOnly·SameSite=Lax·Path=/, DB에 토큰 원문 없음, 깨진 Cookie 헤더는 비로그인, 로그아웃 뒤 같은 쿠키 거부, 앱을 만든 뒤 `vi.stubEnv('NODE_ENV', 'production')`이면 개발 로그인 403.
 - OAuth(provider fetch stub): `/auth/unknown` 400, client id 없음 503, state 불일치·만료·재사용은 `/?loginError=1`로 302, token 요청의 `code_verifier`가 authorize의 `code_challenge`와 맞음, 같은 provider ID로 다시 로그인하면 같은 사용자. 앱 핸드오프: 잘못된 challenge 400, 콜백은 세션 쿠키 없이 앱 scheme으로, 교환 성공·재사용 403·틀린 verifier 뒤 올바른 verifier 성공·만료 403·동시 교환 정확히 1건.

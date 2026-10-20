@@ -32,7 +32,7 @@ OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 �
 
 그룹 메뉴의 대회·명예의 전당과 상세는 독립 QueryRef·Suspense/오류 경계다. 공개 화면은 RSC PreloadQuery로 HTML을 제공한다. 비공개 내용은 canViewPosts·ClientOnly로 승인 후 조회하고 SEO는 cookie 없이 별도 조회한다. 목록·명예의 전당·상세 canonical·OG/Twitter·JSON-LD를 만들고 PUBLIC/POST 대회만 48개씩 사이트맵에 넣는다. 비공개는 그룹장에게도 공통 noindex, 공유 사진·JSON-LD 없음이다. [SEO 계약](seo.md)을 따른다.
 
-새 단위·통합·웹 API·브라우저 사양은 `.spec.ts(x)`로 추가했다. API 실제 DB 파일을 test/integration으로 옮기고 Vitest integration 프로젝트·test:integration 명령을 사용한다. test:e2e는 호환 위임으로 남겼다. API 개발 서버·개발 DB는 변경하지 않고 별도 테스트 PostgreSQL과 임시 스키마만 사용했다. 마이그레이션 20261020010000_group_contests는 개발·운영 DB에 아직 적용하지 않았다.
+새 단위·통합·웹 API·브라우저 사양은 `.spec.ts(x)`로 추가했다. API 실제 DB 테스트는 대상 구현 파일 옆 `src/**/*.integration.{spec,test}.ts`에 두고 Vitest integration 프로젝트·test:integration 명령을 사용한다. test:e2e는 호환 위임으로 남겼다. API 개발 서버·개발 DB는 변경하지 않고 별도 테스트 PostgreSQL과 임시 스키마만 사용했다. 마이그레이션 20261020010000_group_contests는 개발·운영 DB에 아직 적용하지 않았다.
 
 로컬 검증: API unit 98개, 웹 unit/UI 297개·실제 API 문서 17개·Playwright 51개, 모바일 unit/UI 137개·API 9개·WebView Playwright 24개(기존 조건부 2개 제외)가 통과했다. Chrome·iPhone WebKit·데스크톱에서 대회 개최→사진/영상 참여→1회 투표→수상작·공개 SSR·비공개 SEO·관리자 양도를 확인했다. 웹 프로덕션 빌드와 타입·lint 검사도 통과했다. API 실제 PostgreSQL 통합 234개와 포맷·프로젝트 check·앱 lint가 통과했고 남은 테스트 스키마는 0개다. 원격 CI는 PR에서 별도로 확인한다.
 

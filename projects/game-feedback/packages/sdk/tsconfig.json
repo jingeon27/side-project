@@ -8,5 +8,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "orval.config.ts"]
+  "include": ["src/**/*.ts", "orval.config.ts", "orval.config.spec.ts"]
 }
