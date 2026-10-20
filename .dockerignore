@@ -2,7 +2,9 @@
 .npmrc
 **/.npmrc
 **/.ssh
-.yarn
+.yarn/*
+!.yarn/patches/
+!.yarn/patches/**
 **/node_modules
 **/.env
 **/.env.*

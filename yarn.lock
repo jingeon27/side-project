@@ -222,6 +222,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@apollo/client-react-streaming@patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch":
+  version: 0.14.5
+  resolution: "@apollo/client-react-streaming@patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch::version=0.14.5&hash=ea4560"
+  dependencies:
+    "@types/react-dom": "npm:^19.0.0"
+    "@wry/equality": "npm:^0.5.6"
+  peerDependencies:
+    "@apollo/client": ^4.0.0
+    graphql: ^16 || >=17.0.0-alpha.2
+    react: ^19
+    react-dom: ^19
+    rxjs: ^7.3.0
+  checksum: 10c0/c4d6ea6ced513616b9ecf711fc575a2a044f3ad41503723dc9873d6d306c2e8d2d42bfa3745a51b87f2f90c2a8c0c3e212515732bdcfc4981895cecdc7904f05
+  languageName: node
+  linkType: hard
+
 "@apollo/client@npm:^4.0.0":
   version: 4.3.3
   resolution: "@apollo/client@npm:4.3.3"
@@ -5767,6 +5783,7 @@ __metadata:
     "@amplitude/analytics-browser": "npm:^2.47.4"
     "@apollo/client": "npm:^4.0.0"
     "@apollo/client-integration-nextjs": "npm:^0.14.5"
+    "@apollo/client-react-streaming": "patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch"
     "@base-ui/react": "npm:^1.9.0"
     "@graphql-codegen/cli": "npm:^6.0.0"
     "@graphql-codegen/typed-document-node": "npm:^6.0.0"
