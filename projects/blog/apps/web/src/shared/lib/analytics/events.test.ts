@@ -1,5 +1,4 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { scrubSentryEvent } from '@/shared/lib/analytics/sentry';
 
 beforeEach(() => {
   vi.resetModules();
@@ -11,6 +10,7 @@ beforeEach(() => {
   delete window.__blogAnalyticsInitialized;
   delete window.__blogAnalyticsLastPath;
 });
+
 afterEach(() => vi.unstubAllEnvs());
 
 describe('optional consent-based analytics', () => {
@@ -69,25 +69,4 @@ describe('optional consent-based analytics', () => {
     expect(analytics.hasAnalyticsConsent()).toBe(false);
     expect(() => analytics.trackPageView('/ko')).not.toThrow();
   });
-});
-
-it('filters Sentry user data, request content, URL queries and email addresses', () => {
-  const safe = scrubSentryEvent({
-    user: { id: '123', email: 'hello@example.com' },
-    request: {
-      url: 'https://blog.example/ko/blog?token=secret#anchor',
-      data: 'private',
-      headers: { cookie: 'secret' },
-      cookies: { auth: 'secret' },
-      query_string: 'private',
-    },
-    exception: { values: [{ value: 'Request by hello@example.com Bearer secret' }] },
-    extra: { search_query: 'private', category: 'engineering' },
-  });
-  expect(safe).not.toHaveProperty('user');
-  expect(safe?.request).toEqual({ url: 'https://blog.example/ko/blog' });
-  expect(JSON.stringify(safe)).not.toContain('secret');
-  expect(JSON.stringify(safe)).not.toContain('hello@example.com');
-  expect(safe?.extra).toEqual({ category: 'engineering' });
-  expect(scrubSentryEvent({ exception: { values: [{ value: 'NEXT_HTTP_ERROR_FALLBACK;404' }] } })).toBeNull();
 });

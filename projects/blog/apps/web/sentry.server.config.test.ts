@@ -4,13 +4,10 @@ const sdk = vi.hoisted(() => ({
   init: vi.fn<(options: Record<string, unknown>) => void>(),
   captureRouterTransitionStart: vi.fn(),
 }));
+
 vi.mock('@sentry/nextjs', () => sdk);
 
-const runtimes = [
-  ['server', () => import('../../sentry.server.config')],
-  ['edge', () => import('../../sentry.edge.config')],
-  ['client', () => import('../../src/instrumentation-client')],
-] as const;
+const runtimes = [['server', () => import('./sentry.server.config')]] as const;
 
 beforeEach(() => {
   vi.resetModules();
@@ -18,6 +15,7 @@ beforeEach(() => {
   vi.stubEnv('SENTRY_DSN', '');
   vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
 });
+
 afterEach(() => vi.unstubAllEnvs());
 
 describe.each(runtimes)('Sentry %s configuration', (_runtime, load) => {
@@ -52,45 +50,4 @@ describe.each(runtimes)('Sentry %s configuration', (_runtime, load) => {
     expect(options).not.toHaveProperty('sendDefaultPii');
     expect(options).not.toHaveProperty('beforeSendTransaction');
   });
-});
-
-it('scrubs streamed span names, attributes and linked attributes without breaking trace identity', async () => {
-  const { scrubSentrySpan } = await import('@/shared/lib/analytics/sentry');
-  const span = {
-    trace_id: 'a'.repeat(32),
-    span_id: 'b'.repeat(16),
-    is_segment: true,
-    name: 'GET https://blog.example/ko/blog?search=private#anchor',
-    start_timestamp: 1,
-    end_timestamp: 2,
-    status: 'ok',
-    attributes: {
-      'url.full': 'https://blog.example/ko/blog?search=private#anchor',
-      'user.id': 'private',
-      'http.request.header.authorization': 'Bearer private',
-      'http.response.body': 'private',
-      'gen_ai.input.messages': 'private',
-      'db.query.text': 'SELECT private',
-      'graphql.variables': 'private',
-      'app.category': 'engineering',
-    },
-    links: [
-      {
-        trace_id: 'c'.repeat(32),
-        span_id: 'd'.repeat(16),
-        attributes: { 'user.email': 'hello@example.com', 'sentry.op': 'navigation' },
-      },
-    ],
-  };
-  const safe = scrubSentrySpan(span);
-  expect(safe.trace_id).toBe(span.trace_id);
-  expect(safe.span_id).toBe(span.span_id);
-  expect(safe.name).toBe('GET https://blog.example/ko/blog');
-  expect(safe.attributes).toEqual({
-    'url.full': 'https://blog.example/ko/blog',
-    'app.category': 'engineering',
-  });
-  expect(safe.links[0]?.attributes).toEqual({ 'sentry.op': 'navigation' });
-  expect(JSON.stringify(safe)).not.toContain('private');
-  expect(span.attributes['user.id']).toBe('private');
 });

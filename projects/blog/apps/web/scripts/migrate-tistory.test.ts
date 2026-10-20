@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { visit } from 'unist-util-visit';
-import { analyzeMdx } from '../../scripts/content';
+import { analyzeMdx } from './content';
 
 const root = process.cwd();
 type MigratedPost = {

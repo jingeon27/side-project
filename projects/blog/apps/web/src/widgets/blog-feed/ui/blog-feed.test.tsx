@@ -1,22 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+
 import userEvent from '@testing-library/user-event';
-import { ArticleCard } from '@/entities/article/ui/article-card';
-import { ArticleMeta } from '@/entities/article/ui/article-meta';
+
 import type { Article } from '@/entities/article/model/types';
+
 import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
-import { LocaleSwitch } from '@/features/locale-switch/ui/locale-switch';
-import { ThemeSwitch } from '@/features/theme-switch/ui/theme-switch';
+
 import { labels } from '@/shared/config/labels';
-import { TableOfContents } from '@/widgets/article-reader/ui/table-of-contents';
-import { CodeBlock } from '@/shared/ui/code-block/code-block';
-import { Summary } from '@/shared/ui/mdx/summary';
-import { Decision } from '@/shared/ui/mdx/decision';
-import { Callout } from '@/shared/ui/mdx/callout';
-import { Figure } from '@/shared/ui/mdx/figure';
-import { NextIntlClientProvider } from 'next-intl';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => navigation.pathname,
   useRouter: () => ({ push: navigation.push }),
@@ -36,6 +31,7 @@ const article: Article = {
   toc: [],
   translations: { ko: '캐시-설계' },
 };
+
 const other: Article = {
   ...article,
   id: 'learning',
@@ -44,6 +40,7 @@ const other: Article = {
   category: 'til',
   tags: ['react'],
 };
+
 const tagOnly: Article = {
   ...article,
   id: 'state',
@@ -51,6 +48,7 @@ const tagOnly: Article = {
   slug: '상태-복구',
   tags: ['react'],
 };
+
 const nestedTag: Article = {
   ...article,
   id: 'form',
@@ -81,42 +79,11 @@ describe('article discovery', () => {
       value: vi.fn(),
     });
   });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it.each([
-    ['ko', '2026년 10월 1일', '2026년 10월 17일'],
-    ['en', 'Oct 1, 2026', 'Oct 17, 2026'],
-  ] as const)(
-    'keeps Korean publication and revision dates after midnight in %s',
-    (locale, published, updated) => {
-      const entry = {
-        ...article,
-        locale,
-        publishedAt: '2026-10-01T00:10:00+09:00',
-        updatedAt: '2026-10-17T01:15:00+09:00',
-      };
-      const { container } = render(<ArticleMeta article={entry} showUpdated />);
-      const dates = container.querySelectorAll('time');
-      expect(dates).toHaveLength(2);
-      expect(dates[0]).toHaveTextContent(published);
-      expect(dates[0]).toHaveAttribute('datetime', entry.publishedAt);
-      expect(dates[1]).toHaveTextContent(updated);
-      expect(dates[1]).toHaveAttribute('datetime', entry.updatedAt);
-    },
-  );
-
-  it('shows linked article metadata, category, and tags', () => {
-    render(<ArticleCard article={article} />);
-    expect(screen.getByRole('link', { name: article.title })).toHaveAttribute('href', '/ko/blog/캐시-설계');
-    expect(screen.getByRole('link', { name: '개발 경험' })).toHaveAttribute(
-      'href',
-      '/ko/blog/category/engineering',
-    );
-    expect(screen.getByRole('link', { name: '#nextjs' })).toHaveAttribute('href', '/ko/blog/tag/nextjs');
-    expect(screen.getByText(article.description)).toBeVisible();
-  });
   it('combines unified search with category filters and resets an empty result', async () => {
     const user = userEvent.setup();
     render(<BlogFeed locale="ko" articles={[article, other]} />);
@@ -298,168 +265,5 @@ describe('article discovery', () => {
     render(<BlogFeed locale="en" articles={[]} />);
     expect(screen.getByRole('heading', { name: labels('en').common.empty })).toBeVisible();
     expect(screen.getByRole('link', { name: /Korean/ })).toHaveAttribute('href', '/ko/blog');
-  });
-});
-
-describe('language and theme preferences', () => {
-  afterEach(() => vi.unstubAllGlobals());
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-  it('keeps an untranslated article in place and offers the target language index', async () => {
-    render(<LocaleSwitch locale="ko" translations={{ [article.slug]: article.translations }} />);
-    await userEvent.click(screen.getByRole('button', { name: /언어 변경/ }));
-    expect(screen.getByRole('status')).toHaveTextContent(labels('ko').common.translationMissing);
-    expect(navigation.push).not.toHaveBeenCalled();
-    expect(screen.getByRole('link', { name: labels('ko').common.translationList })).toHaveAttribute(
-      'href',
-      '/en/blog',
-    );
-  });
-  it('uses the actual translated slug for a published translation', async () => {
-    render(
-      <LocaleSwitch
-        locale="ko"
-        translations={{ [article.slug]: { ko: article.slug, en: 'designing-cache' } }}
-      />,
-    );
-    await userEvent.click(screen.getByRole('button', { name: /언어 변경/ }));
-    expect(navigation.push).toHaveBeenCalledWith('/en/blog/designing-cache');
-  });
-  it('persists theme choice and updates accessible pressed state', async () => {
-    render(<ThemeSwitch locale="en" />);
-    const button = screen.getByRole('button', { name: labels('en').nav.theme });
-    expect(button).toHaveAttribute('aria-pressed', 'false');
-    await userEvent.click(button);
-    expect(document.documentElement.dataset.theme).toBe('dark');
-    expect(localStorage.getItem('blog-theme')).toBe('dark');
-    expect(button).toHaveAttribute('aria-pressed', 'true');
-  });
-  it.each([
-    { system: 'light', selected: 'dark' },
-    { system: 'dark', selected: 'light' },
-  ] as const)(
-    'restores the selected $selected theme when locale and route rendering replace root attributes',
-    async ({ system, selected }) => {
-      vi.stubGlobal(
-        'matchMedia',
-        vi.fn().mockImplementation((media: string) => ({
-          matches: system === 'dark',
-          media,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      );
-      document.documentElement.dataset.theme = system;
-      document.documentElement.style.colorScheme = system;
-      navigation.pathname = '/ko/blog';
-      const user = userEvent.setup();
-      const view = render(<ThemeSwitch locale="ko" />);
-      await user.click(screen.getByRole('button', { name: labels('ko').nav.theme }));
-      expect(localStorage.getItem('blog-theme')).toBe(selected);
-
-      for (const [locale, pathname] of [
-        ['en', '/en/blog'],
-        ['en', '/en/about'],
-        ['ko', '/ko/about'],
-      ] as const) {
-        delete document.documentElement.dataset.theme;
-        document.documentElement.style.removeProperty('color-scheme');
-        navigation.pathname = pathname;
-        view.rerender(<ThemeSwitch locale={locale} />);
-        expect(document.documentElement).toHaveAttribute('data-theme', selected);
-        expect(document.documentElement.style.colorScheme).toBe(selected);
-        expect(localStorage.getItem('blog-theme')).toBe(selected);
-        expect(screen.getByRole('button', { name: labels(locale).nav.theme })).toHaveAttribute(
-          'aria-pressed',
-          String(selected === 'dark'),
-        );
-      }
-    },
-  );
-});
-
-describe('article reading aids', () => {
-  it('updates the active TOC entry when a real heading enters the viewport and disconnects on unmount', () => {
-    const observe = vi.fn();
-    const disconnect = vi.fn();
-    let onChange: IntersectionObserverCallback;
-    const MockObserver = vi.fn(function (this: object, callback: IntersectionObserverCallback) {
-      onChange = callback;
-      Object.assign(this, { observe, disconnect });
-    });
-    vi.stubGlobal('IntersectionObserver', MockObserver);
-    const entries = [
-      { id: 'first', title: '첫 번째', level: 2 as const },
-      { id: 'second', title: '두 번째', level: 3 as const },
-    ];
-    const result = render(
-      <>
-        <h2 id="first">First</h2>
-        <h3 id="second">Second</h3>
-        <TableOfContents entries={entries} locale="ko" />
-      </>,
-    );
-    expect(observe).toHaveBeenCalledTimes(2);
-    act(() =>
-      onChange(
-        [
-          {
-            isIntersecting: true,
-            target: document.getElementById('second')!,
-            boundingClientRect: { top: 100 },
-          } as unknown as IntersectionObserverEntry,
-        ],
-        {} as IntersectionObserver,
-      ),
-    );
-    for (const link of screen.getAllByRole('link', { name: '두 번째', hidden: true }))
-      expect(link).toHaveAttribute('aria-current', 'location');
-    expect(screen.getAllByRole('link', { name: '첫 번째', hidden: true })[0]).toHaveAttribute(
-      'href',
-      '#first',
-    );
-    result.unmount();
-    expect(disconnect).toHaveBeenCalledOnce();
-    vi.unstubAllGlobals();
-  });
-  it('copies a highlighted multi-line block as readable original code', async () => {
-    const user = userEvent.setup();
-    render(
-      <NextIntlClientProvider locale="ko" messages={{}}>
-        <CodeBlock data-language="typescript">
-          <code>
-            <span data-line="">
-              <span>const</span>
-              {' answer = 42;'}
-            </span>
-            {'\n'}
-            <span data-line="">console.log(answer);</span>
-          </code>
-        </CodeBlock>
-      </NextIntlClientProvider>,
-    );
-    await user.click(screen.getByRole('button', { name: labels('ko').article.copyCode }));
-    expect(await navigator.clipboard.readText()).toBe('const answer = 42;\nconsole.log(answer);\n');
-    expect(screen.getByRole('status')).toHaveTextContent(labels('ko').article.copied);
-  });
-  it('renders structured MDX notes and figure captions with accessible alternative text', () => {
-    render(
-      <>
-        <Summary>핵심 정리</Summary>
-        <Decision>선택한 이유</Decision>
-        <Callout>참고 사항</Callout>
-        <Figure src="/images/test.png" alt="캐시 계층도" caption="서버와 클라이언트의 경계" />
-      </>,
-    );
-    expect(screen.getByText('핵심 정리')).toBeVisible();
-    expect(screen.getByText('선택한 이유')).toBeVisible();
-    expect(screen.getByText('참고 사항')).toBeVisible();
-    expect(screen.getByRole('img', { name: '캐시 계층도' })).toHaveAttribute('loading', 'lazy');
-    expect(screen.getByText('서버와 클라이언트의 경계')).toBeVisible();
   });
 });
