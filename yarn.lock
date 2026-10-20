@@ -7670,6 +7670,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@side/migration-check@workspace:packages/migration-check":
+  version: 0.0.0-use.local
+  resolution: "@side/migration-check@workspace:packages/migration-check"
+  dependencies:
+    vitest: "npm:^4.1.0"
+  languageName: unknown
+  linkType: soft
+
 "@side/photo-contest@workspace:projects/photo-contest":
   version: 0.0.0-use.local
   resolution: "@side/photo-contest@workspace:projects/photo-contest"
