@@ -26,9 +26,9 @@
 	}
 }
 
-# Bound web drain (10s), API replacement (20s + 30s) and web startup (20s).
+# Bound web drain (30s), API replacement (20s + 30s) and web startup (20s).
 (upstream_retry) {
-	lb_try_duration 100s
+	lb_try_duration 140s
 	lb_try_interval 250ms
 }
 

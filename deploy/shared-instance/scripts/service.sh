@@ -29,8 +29,15 @@ compose() {
 }
 activate() {
   local directory=$1
+  local web_id drain_started
+  web_id=$(compose "$directory" ps -aq web) || return 1
+  drain_started=$SECONDS
   # Drain SSR while the old API still serves its in-flight reads.
   compose "$directory" stop web || return 1
+  printf 'Web drain completed in %ss\n' "$((SECONDS - drain_started))"
+  if [[ -n "$web_id" ]]; then
+    docker inspect --format 'Web shutdown: exit={{.State.ExitCode}} oom={{.State.OOMKilled}}' "$web_id" || return 1
+  fi
   compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" api || return 1
   compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" web || return 1
   compose "$directory" exec -T web node -e \
