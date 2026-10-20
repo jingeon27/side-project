@@ -1,3 +1,9 @@
+## 2026-10-21 Apollo SSR 스트림 취소 회귀
+
+`@apollo/client-react-streaming` 0.14.5가 취소된 스트림에 늦게 enqueue하면서 `ERR_INVALID_STATE`를 처리하지 않는 [상류 이슈 #561](https://github.com/apollographql/apollo-client-integrations/issues/561)를 실제 서버 스택에서 확인했다. Yarn patch로 Node 스트림 컨트롤러의 해당 TypeError만 처리하며 API/GraphQL 오류와 다른 예외는 숨기지 않는다. ESM/CJS의 RSC·SSR·브라우저 빌드 8개에 같은 보정을 적용한다. 정식 수정 버전으로 올릴 때 패치 제거와 회귀 검사를 함께 검토한다.
+
+읽기 경로의 거절된 Promise와 구독 해제 시 cancel 실패도 처리한다. 브라우저의 활성 쿼리는 실제 오류를 받고 SSR은 기존 오류 원문 비공개 정책을 따른다. 앱이 소유하는 실제 Apollo link + ReadableStream 검사에서 수정 전 쓰기 2개 실패·미처리 예외 3개와 읽기 오류 누출을 재현했고 수정 후 7개가 통과했다. 테스트용 직접 의존성, 루트 resolution·lock과 패치 파일을 함께 관리한다. Git/Docker ignore는 `.yarn/patches`만 허용해 immutable install과 운영 이미지에서도 동일한 코드가 적용된다. 임시로 시도한 홈 렌더 우회는 제거하고 기존 SSR·Suspense 구성을 유지한다.
+
 ## 2026-10-21 전체 브라우저 회귀 검증
 
 브라우저 E2E는 격리 API와 실제 production build/standalone 서버로 실행한다. 개발 서버의 지연 컴파일과 화면 이동 중 devtools 오류가 결과에 섞이지 않게 하며, pageerror 검사는 유지한다. Chrome 휴대폰·Safari 휴대폰·데스크톱·가짜 WebView 전체 66개, 웹 unit/UI 326개와 타입·lint·포맷 검사를 통과했다.

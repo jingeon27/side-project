@@ -5,13 +5,11 @@ import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { useDeferredValue } from 'react';
 import { NoGroupHome } from '../no-group/NoGroupHome';
 
 function MemberHomeContent({ queryRef }: { queryRef: QueryRef<MyGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);
-  const hasGroups = useDeferredValue(data.myGroups.length > 0);
-  if (!hasGroups) return <NoGroupHome signedIn />;
+  if (!data.myGroups.length) return <NoGroupHome signedIn />;
   return (
     <GalleryFeed
       emptyAction={
