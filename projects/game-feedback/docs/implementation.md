@@ -959,3 +959,5 @@ API 테스트 177개와 웹 113개, 타입검사·lint가 통과했다. 가짜 �
 UserAvatar는 사용자별 한 개이고 User.profileLinks는 기본 빈 배열이다. 공개 사진 읽기도 기존 프로필의 데모·차단 가시성 규칙을 따르고 private no-store로 응답한다. 기존 객체는 14일 정리 유예를 적용하며 사용 중인 avatar 객체는 정리에서 제외한다. 마이그레이션은 새 필드와 테이블만 추가했다. 개발 DB에는 적용하지 않았다. 루트 lock 변경은 API의 기존 버전 sharp 의존성 선언에 필요하다.
 
 격리 migration+실DB HTTP 통합 신규 7개를 포함해 API 180개, Web 105개, SDK 43개가 통과했다. 모바일 너비 390px와 데스크톱 1440px에서 사진 미리보기·저장·삭제, 링크 저장·삭제와 타인 편집 숨김 E2E 2개가 통과했다. 계약→OpenAPI→Orval로 SDK를 생성했다. 실제 S3 외부 수신은 이 테스트 결과에 포함하지 않는다.
+
+최신 develop에서 두 기능을 합친 최종 검사는 API 184개, Web 113개, SDK 43개, Bridge 8개, Mobile 43개와 Admin 2개가 통과했다. 채팅·첨부·작성·프로필·빈 키 E2E 11개, 실제 SDK 관측 E2E 3개가 통과했으며 가짜 키로 production build/start를 사용한 관측 E2E 3개도 통과했다.
