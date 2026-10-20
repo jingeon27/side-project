@@ -32,7 +32,7 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
           href={appRoutes.profile(textLocale, message.sender.id)}
           aria-label={t('{name} 프로필 보기', { name: message.sender.nickname })}
         >
-          <Avatar name={message.sender.nickname} size="small" />
+          <Avatar src={message.sender.avatarUrl} name={message.sender.nickname} size="small" />
         </Link>
       )}
       <div className="chat-message-content">

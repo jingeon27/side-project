@@ -62,7 +62,7 @@ export function PostCard({ post, href, authorContent, authorName, showBoardLabel
       {post.board === 'FRIENDLY' && post.battle && <BattleSummary details={post.battle} />}
       <div className="post-bottom">
         <span className="post-author">
-          <Avatar name={post.author.nickname} size="small" />
+          <Avatar src={post.author.avatarUrl} name={post.author.nickname} size="small" />
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}
           <span className="post-author-game">{post.category.name}</span>

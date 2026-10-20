@@ -13,7 +13,7 @@ export function TopbarAccount({ href }: { href: string }) {
     <div className="header-account">
       {session.user ? (
         <TabLink href={href} className="user-button" aria-label={t('프로필')}>
-          <Avatar name={session.user.nickname} size="small" />
+          <Avatar src={session.user.avatarUrl} name={session.user.nickname} size="small" />
           <span>{session.user.nickname}</span>
         </TabLink>
       ) : (

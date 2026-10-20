@@ -23,7 +23,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
           <MessageSquare size={18} />
           {t('당신의 시선을 나눠주세요')}
         </h3>
-        {session?.user && <Avatar name={session.user.nickname} size="small" />}
+        {session?.user && <Avatar src={session.user.avatarUrl} name={session.user.nickname} size="small" />}
       </div>
       {session?.user ? (
         <form

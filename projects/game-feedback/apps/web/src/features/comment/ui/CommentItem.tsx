@@ -28,7 +28,7 @@ export function CommentItem({
   const { t, locale: textLocale } = useI18n();
   return (
     <article className={`comment${mine ? ' mine' : ''}`}>
-      {!mine && <Avatar name={comment.author.nickname} size="small" />}
+      {!mine && <Avatar src={comment.author.avatarUrl} name={comment.author.nickname} size="small" />}
       <div className="comment-content">
         <div className="comment-heading">
           <strong>{authorName ?? comment.author.nickname}</strong>

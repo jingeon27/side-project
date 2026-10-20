@@ -30,7 +30,7 @@ export function PostArticle({ post, authorContent, authorName, actions, contactA
       )}
       <h1>{post.title}</h1>
       <div className="detail-author">
-        <Avatar name={post.author.nickname} />
+        <Avatar src={post.author.avatarUrl} name={post.author.nickname} />
         <div className="detail-author-info">
           <strong>{authorName ?? post.author.nickname}</strong>
           {authorContent}

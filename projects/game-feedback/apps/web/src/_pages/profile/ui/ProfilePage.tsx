@@ -4,7 +4,13 @@ import { formatDate } from '@/shared/lib/date';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/features/auth';
-import { profileOptions, UserBadges, AuthorLink } from '@/features/user';
+import {
+  profileOptions,
+  UserBadges,
+  AuthorLink,
+  ProfileLinksEditor,
+  ProfilePhotoEditor,
+} from '@/features/user';
 import { userPostListOptions, PostCard } from '@/features/post';
 import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
@@ -52,7 +58,7 @@ function ProfileContent({
     initialData: sameViewer ? initialProfile : undefined,
   });
   if (!profile.data) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
-  const { author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
+  const { links, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
@@ -60,7 +66,7 @@ function ProfileContent({
       </BackLink>
       <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
-          <Avatar name={author.nickname} size="large" />
+          <Avatar src={author.avatarUrl} name={author.nickname} size="large" />
           <div>
             <h1>{author.nickname}</h1>
             <UserBadges author={author} />
@@ -71,6 +77,24 @@ function ProfileContent({
             </p>
           </div>
         </div>
+        {(links ?? []).length > 0 && (
+          <ul className="profile-links" aria-label={t('프로필 링크')}>
+            {(links ?? []).map((link) => (
+              <li key={`${link.url}:${link.label}`}>
+                <a href={link.url} target="_blank" rel="nofollow ugc noopener noreferrer">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+        {author.id === session.user?.id && (
+          <details className="profile-editor">
+            <summary>{t('프로필 편집')}</summary>
+            <ProfilePhotoEditor hasPhoto={!!author.avatarUrl} />
+            <ProfileLinksEditor links={links} />
+          </details>
+        )}
         <p className="muted">{t('클래시 로얄 플레이 경험을 나누는 플레이어')}</p>
         <dl className="public-profile-stats">
           <div>
