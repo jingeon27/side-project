@@ -7,6 +7,7 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
+      - 'scripts/check-migrations.mjs'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -17,6 +18,7 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
+      - 'scripts/check-migrations.mjs'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -31,6 +33,11 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Reject incompatible new migrations
+        env:
+          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
+        run: node scripts/check-migrations.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -42,6 +49,7 @@ jobs:
         run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
       - run: yarn workspace @side/design-system check
       - run: yarn check:game-feedback
+      - run: yarn workspace @side/migration-check test
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
       - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit

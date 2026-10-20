@@ -7,6 +7,7 @@ on:
         'packages/**',
         'package.json',
         'yarn.lock',
+        'scripts/check-migrations.mjs',
         '.yarnrc.yml',
         '.dockerignore',
         '.github/workflows/photo-contest.yml',
@@ -20,6 +21,7 @@ on:
         'packages/**',
         'package.json',
         'yarn.lock',
+        'scripts/check-migrations.mjs',
         '.yarnrc.yml',
         '.dockerignore',
         '.github/workflows/photo-contest.yml',
@@ -93,6 +95,11 @@ jobs:
       TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55432/photo_contest_test?schema=public
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Reject incompatible new migrations
+        env:
+          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
+        run: node scripts/check-migrations.mjs
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - run: corepack enable

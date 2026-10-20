@@ -40,6 +40,7 @@ x-logging: &logging
 services:
   api:
     image: ${API_IMAGE:?Set API_IMAGE digest}
+    stop_grace_period: 20s
     restart: unless-stopped
     init: true
     environment: *api
@@ -59,13 +60,15 @@ services:
       interval: 15s
       timeout: 5s
       retries: 8
-      start_period: 15s
+      start_period: 30s
+      start_interval: 1s
     mem_limit: 512m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     logging: *logging
   web:
     image: ${WEB_IMAGE:?Set WEB_IMAGE digest}
+    stop_grace_period: 10s
     restart: unless-stopped
     init: true
     environment:
@@ -93,6 +96,8 @@ services:
       interval: 15s
       timeout: 4s
       retries: 8
+      start_period: 20s
+      start_interval: 1s
     tmpfs: ['/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700']
     mem_limit: 640m
     cap_drop: [ALL]

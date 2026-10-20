@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   cpSync,
@@ -198,7 +198,7 @@ class Client {
         accept,
       );
       req.on('error', reject);
-      req.setTimeout(20000, () => req.destroy(new Error('HTTPS smoke timed out')));
+      req.setTimeout(65000, () => req.destroy(new Error('HTTPS smoke timed out')));
       req.end(body);
     });
   }
@@ -460,9 +460,88 @@ try {
   assert.equal((await pc.http('/backend/health/ready')).status, 200);
   assert.equal((await gf.http('/_health/live')).status, 200);
   assert.equal((await pc.http('/_health/live')).status, 200);
-  assert.equal((await gf.http('/_internal/cache/revalidate')).status, 404);
-  assert.equal((await pc.post('/backend/testing/users', {})).status, 404);
-  assert.equal((await gf.post('/api/auth/test-token', {})).status, 404);
+  for (const response of [
+    await gf.http('/_internal/cache/revalidate'),
+    await gf.http('/api/admin/reports'),
+    await pc.post('/backend/testing/users', {}),
+    await gf.post('/api/auth/test-token', {}),
+  ]) {
+    assert.equal(response.status, 404);
+    assert.equal(response.text(), 'edge-blocked');
+  }
+  // Keep HTTP polling alive while service.sh performs real same-image replacement.
+  const beforeIds = ['game-feedback', 'photo-contest'].map((service) =>
+    serviceCompose(service, ['ps', '-q', 'api', 'web']).trim(),
+  );
+  const availability = { running: true, samples: [], failures: [] };
+  const probes = [
+    [gf, '/api/health/live'],
+    [gf, '/ko'],
+    [pc, '/backend/health/live'],
+    [pc, '/'],
+  ].map(async ([client, path]) => {
+    while (availability.running) {
+      const started = performance.now();
+      try {
+        const response = await client.http(path);
+        assert.equal(response.status, 200, `${client.domain}${path}: ${response.status}`);
+        availability.samples.push({
+          endpoint: client.domain + path,
+          milliseconds: performance.now() - started,
+        });
+      } catch (error) {
+        availability.failures.push(String(error));
+      }
+      await delay(100);
+    }
+  });
+  try {
+    await delay(300);
+    for (const service of ['game-feedback', 'photo-contest']) {
+      await new Promise((accept, reject) => {
+        const child = spawn(
+          'bash',
+          [
+            join(root, `services/${service}/releases/${sha}/host/service.sh`),
+            service,
+            'deploy',
+            sha,
+            ...refs[service],
+          ],
+          { env: baseEnv, stdio: ['ignore', 'pipe', 'pipe'] },
+        );
+        let output = '';
+        child.stdout.on('data', (chunk) => {
+          output = (output + chunk).slice(-32768);
+        });
+        child.stderr.on('data', (chunk) => {
+          output = (output + chunk).slice(-32768);
+        });
+        child.on('error', reject);
+        child.on('exit', (code) => (code === 0 ? accept() : reject(new Error(`Redeploy failed: ${output}`))));
+      });
+    }
+    await delay(300);
+  } finally {
+    availability.running = false;
+    await Promise.all(probes);
+  }
+  assert.deepEqual(availability.failures, [], 'No failed bounded GET probes during replacement');
+  for (const [index, service] of ['game-feedback', 'photo-contest'].entries()) {
+    const nextIds = serviceCompose(service, ['ps', '-q', 'api', 'web']).trim().split('\n');
+    assert.equal(nextIds.length, 2);
+    for (const nextId of nextIds)
+      assert.ok(!beforeIds[index].split('\n').includes(nextId), 'Both containers must actually be replaced');
+  }
+  assert.equal(new Set(availability.samples.map((sample) => sample.endpoint)).size, 4);
+  console.log(
+    'Redeploy availability:',
+    JSON.stringify({
+      samples: availability.samples.length,
+      failures: availability.failures.length,
+      maxLatencyMs: Math.ceil(Math.max(...availability.samples.map((sample) => sample.milliseconds))),
+    }),
+  );
   assert.equal(
     sql('game_feedback', "SELECT has_database_privilege('game_feedback','photo_contest','CONNECT')"),
     'f',
