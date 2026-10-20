@@ -22,3 +22,5 @@ Amplitude에서 7일 전환 기간으로 가입→글쓰기와 가입→게시�
 API와 웹 단위 테스트는 SDK 경계에서 이벤트와 개인정보 제거를 검사한다. `yarn workspace @game-feedback/web test:observability`는 별도 격리 API·웹을 띄우고 가짜 키로 실제 SDK의 네트워크 요청만 가로챈다. 일반 E2E는 빈 키에서 요청이 없음을 검사한다. 이 결과는 실제 Sentry Issues/Amplitude 콘솔 수신 확인을 대신하지 않는다.
 
 프로덕션 조건은 `GF_OBSERVABILITY_PRODUCTION=true yarn workspace @game-feedback/web test:observability`로 별도 빌드/start와 가짜 키를 사용해 검증한다. 오류만 수집하는 설정에서 서버 시작과 SDK 전송 검사가 3개 모두 통과했다.
+
+서버 DSN fallback은 NEXT_PUBLIC 값을 정적 속성으로 읽어 이미지 빌드 시 포함한다. production 관측 검사는 시작 프로세스에서 공개 키 환경변수를 비워도 빌드에 들어간 키로 동작하는지 확인한다.
