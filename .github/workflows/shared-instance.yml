@@ -39,6 +39,8 @@ jobs:
           build-args: |
             GF_SITE_URL=${{ vars.GF_SITE_URL || 'https://game-feedback.test' }}
             GF_CONTACT_EMAIL=${{ vars.GF_CONTACT_EMAIL || 'operator@game-feedback.test' }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.GF_WEB_SENTRY_DSN }}
+            NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.GF_AMPLITUDE_API_KEY }}
           cache-from: type=gha,scope=game-feedback-web
           cache-to: type=gha,mode=max,scope=game-feedback-web
       - uses: docker/build-push-action@v6

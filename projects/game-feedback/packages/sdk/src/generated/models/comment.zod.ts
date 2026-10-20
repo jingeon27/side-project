@@ -26,7 +26,8 @@ export const Comment = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "createdAt": zod.iso.datetime({"offset":true}).regex(commentCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(commentUpdatedAtRegExp)

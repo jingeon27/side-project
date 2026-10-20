@@ -79,6 +79,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
           contactAction={
             post.author.id !== session.user?.id && (
               <StartChatLink
+                source="post"
                 userId={post.author.id}
                 nickname={post.author.nickname}
                 label={t('작성자와 1:1 채팅')}

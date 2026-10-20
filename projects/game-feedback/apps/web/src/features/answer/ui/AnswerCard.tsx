@@ -23,7 +23,7 @@ export function AnswerCard({ answer, authorContent, authorName, actions, helpful
         </div>
       )}
       <div className="detail-author">
-        <Avatar name={answer.author.nickname} />
+        <Avatar src={answer.author.avatarUrl} name={answer.author.nickname} />
         <div>
           <strong>{authorName ?? answer.author.nickname}</strong>
           {authorContent}

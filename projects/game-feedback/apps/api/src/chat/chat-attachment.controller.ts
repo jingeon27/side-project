@@ -17,15 +17,15 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
-import { ChatService } from './chat.service';
+import type { SessionRequest } from '../auth/session.types';
+import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentService } from './chat-attachment.service';
 import { CHAT_FILE_LIMIT, mediaRange } from './chat-file';
 
 @Injectable()
 export class ChatAttachmentGuard implements CanActivate {
-  constructor(@Inject(ChatService) private readonly chat: ChatService) {}
+  constructor(@Inject(ChatAccessService) private readonly chat: ChatAccessService) {}
   async canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest<SessionRequest>();
     await this.chat.visible(requireUser(req).id, String(req.params.id));

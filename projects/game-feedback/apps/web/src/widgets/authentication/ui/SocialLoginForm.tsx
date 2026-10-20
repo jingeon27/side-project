@@ -1,4 +1,5 @@
 'use client';
+import { savePendingLogin, trackEvent, flushAnalytics, ANALYTICS_EVENT } from '@/shared/analytics';
 
 import type { FormEvent } from 'react';
 import { Button } from '@side/design-system';
@@ -22,9 +23,16 @@ interface ISocialLoginFormProps {
 export function SocialLoginForm({ providers, onSuccess }: ISocialLoginFormProps) {
   const { t } = useI18n();
   const login = useNativeLogin();
-  function handleSubmit(event: FormEvent<HTMLFormElement>, provider: TSocialProvider) {
-    if (!isNativeApp()) return;
+  async function handleSubmit(event: FormEvent<HTMLFormElement>, provider: TSocialProvider) {
     event.preventDefault();
+    const form = event.currentTarget;
+    savePendingLogin(provider);
+    trackEvent(ANALYTICS_EVENT.LoginProviderSelected, { provider });
+    if (!isNativeApp()) {
+      await flushAnalytics();
+      HTMLFormElement.prototype.submit.call(form);
+      return;
+    }
     login.mutate(provider, {
       onSuccess: (result) => {
         if (result) onSuccess();

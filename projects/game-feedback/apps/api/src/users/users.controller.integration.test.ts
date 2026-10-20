@@ -118,9 +118,11 @@ describe.skipIf(!testDatabaseUrl)(
         'author',
         'helpfulCount',
         'joinedAt',
+        'links',
         'postCount',
       ]);
       expect(Object.keys(profile.author).sort()).toEqual([
+        'avatarUrl',
         'id',
         'isTestAccount',
         'isVerified',

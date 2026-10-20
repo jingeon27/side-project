@@ -73,7 +73,7 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
           href={appRoutes.profile(locale, conversation.peer.id)}
           aria-label={t('{name} 프로필 보기', { name: conversation.peer.nickname })}
         >
-          <Avatar name={conversation.peer.nickname} size="small" />
+          <Avatar src={conversation.peer.avatarUrl} name={conversation.peer.nickname} size="small" />
           <div className="conversation-peer-info">
             <h2>{conversation.peer.nickname}</h2>
             {(conversation.peer.isVerified ||

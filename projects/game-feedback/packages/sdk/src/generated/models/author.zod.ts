@@ -15,7 +15,8 @@ export const Author = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 })
 
 export type Author = zod.input<typeof Author>;

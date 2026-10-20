@@ -26,7 +26,8 @@ export const ListSupportThreads200Item = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "adminId": zod.string().min(1).max(listSupportThreads200ItemAdminIdMax),
   "topic": zod.enum(['GENERAL', 'VERIFICATION']),

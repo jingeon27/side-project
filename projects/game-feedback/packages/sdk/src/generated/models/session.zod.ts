@@ -24,6 +24,7 @@ export const Session = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(sessionUserOneCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(sessionUserOneVerifiedAtOneRegExp),zod.null()]),

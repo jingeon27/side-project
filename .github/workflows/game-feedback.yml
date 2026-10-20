@@ -46,6 +46,9 @@ jobs:
       - run: yarn build:game-feedback
       - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
       - run: yarn workspace @side/game-feedback test:e2e
+      - name: Verify telemetry with intercepted SDK requests
+        if: always() && !cancelled()
+        run: yarn workspace @game-feedback/web test:observability
       - name: Stop owned test database
         if: always()
         run: yarn workspace @side/game-feedback db:test:stop

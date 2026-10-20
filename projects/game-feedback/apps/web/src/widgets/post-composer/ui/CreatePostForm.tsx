@@ -1,4 +1,6 @@
 'use client';
+import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
+
 import type { ChangeEvent } from 'react';
 import { useWatch } from 'react-hook-form';
 import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
@@ -54,6 +56,10 @@ export function CreatePostForm({
     try {
       const result = await create.mutateAsync({
         body: { ...postContentInput(values), categoryId: values.categoryId, board: values.board },
+      });
+      trackEvent(ANALYTICS_EVENT.PostCreated, {
+        board: result.board ?? values.board ?? 'FEEDBACK',
+        game: result.category.slug,
       });
       form.reset();
       notify(t('게시글을 등록했어요.'));

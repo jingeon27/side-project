@@ -1,4 +1,5 @@
 'use client';
+import { AnalyticsIdentity } from '@/shared/analytics';
 import { useI18n } from '@/shared/i18n';
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,6 +44,7 @@ function SessionContent({ children }: { children: ReactNode }) {
   const { session } = useSession();
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
+      <AnalyticsIdentity userId={session.user?.id} needsOnboarding={session.needsOnboarding} />
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
       <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
         <NativeBridge />

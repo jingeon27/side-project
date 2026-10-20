@@ -85,7 +85,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
       </div>
       <section className="settings-card">
         <div className="settings-profile">
-          <Avatar name={session.user.nickname} size="large" />
+          <Avatar src={session.user.avatarUrl} name={session.user.nickname} size="large" />
           <div>
             <h2>{session.user.nickname}</h2>
             <UserBadges author={session.user} />
@@ -139,7 +139,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         {blocks.data?.length === 0 && <p className="muted small">{t('차단한 사용자가 없어요.')}</p>}
         {blocks.data?.map((person) => (
           <div className="blocked-user" key={person.id}>
-            <Avatar name={person.nickname} size="small" />
+            <Avatar src={person.avatarUrl} name={person.nickname} size="small" />
             <strong>{person.nickname}</strong>
             <UserBadges author={person} compact />
             <Button

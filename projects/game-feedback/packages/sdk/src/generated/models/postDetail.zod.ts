@@ -150,7 +150,8 @@ export const PostDetail = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "gameProfile": zod.union([zod.object({
   "playerTag": zod.string().min(1),
@@ -184,7 +185,8 @@ export const PostDetail = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "helpful": zod.boolean(),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(postDetailAnswersItemReadAtOneRegExp),zod.null()]),
@@ -200,7 +202,8 @@ export const PostDetail = zod.object({
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
-  "isTestAccount": zod.boolean()
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
 }),
   "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemUpdatedAtRegExp)

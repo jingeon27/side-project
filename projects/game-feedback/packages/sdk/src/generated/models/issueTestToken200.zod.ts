@@ -25,6 +25,7 @@ export const IssueTestToken200 = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(issueTestToken200UserCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(issueTestToken200UserVerifiedAtOneRegExp),zod.null()]),

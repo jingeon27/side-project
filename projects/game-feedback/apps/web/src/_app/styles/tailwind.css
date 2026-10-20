@@ -21,3 +21,56 @@
 @import './mobile.css';
 
 @source '../../**/*.{ts,tsx}';
+
+@layer components {
+  .profile-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+  .profile-links a {
+    color: var(--color-brand-strong);
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+  }
+  .profile-editor {
+    margin-block: 1rem;
+  }
+  .profile-editor summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding-block: 0.75rem;
+  }
+  .profile-editor form {
+    display: grid;
+    gap: 0.75rem;
+    padding-block: 1rem;
+  }
+  .profile-link-field {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .profile-link-field label {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .profile-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .profile-photo-picker {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+  }
+  .profile-photo-preview {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}

@@ -19,6 +19,7 @@ export const User = zod.object({
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['USER', 'ADMIN']),
   "createdAt": zod.iso.datetime({"offset":true}).regex(userCreatedAtRegExp),
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(userVerifiedAtOneRegExp),zod.null()]),

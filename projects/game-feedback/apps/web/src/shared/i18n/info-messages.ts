@@ -134,10 +134,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'この非公開アルファは登録とゲームのフィードバックに必要な情報を使用します。この草案は現在の実装範囲を説明するものです。',
     ],
   '처리하는 정보': ['Information we process', '取り扱う情報'],
-  '로그인을 위한 소셜 서비스 식별자, 직접 입력한 서비스 닉네임, 가입 동의 상태, 세션 정보, 서비스 인증 여부와 인증 시각과 변경 기록, 사용자 정보에 저장한 대표 Supercell 태그와 조회한 게임 프로필, 작성한 콘텐츠, 1:1 대화 상대와 메시지 본문, 전송 시각, 읽음 상태, 팔로우와 새 글 알림 설정, 조회수 집계를 위한 방문 식별자의 해시, 알림, 신고 및 차단 정보를 처리합니다. 소셜 서비스의 공개 이름과 사진은 자동 수집하지 않습니다.':
+  '로그인을 위한 소셜 서비스 식별자, 직접 입력한 서비스 닉네임, 가입 동의 상태, 세션 정보, 서비스 인증 여부와 인증 시각과 변경 기록, 사용자 정보에 저장한 대표 Supercell 태그와 조회한 게임 프로필, 작성한 콘텐츠, 1:1 대화 상대와 메시지 본문, 전송 시각, 읽음 상태, 팔로우와 새 글 알림 설정, 조회수 집계를 위한 방문 식별자의 해시, 알림, 신고 및 차단 정보를 처리합니다. 직접 등록한 프로필 사진과 링크는 공개 프로필에 표시합니다. 소셜 서비스의 공개 이름과 사진은 자동 수집하지 않습니다.':
     [
-      'We process social sign-in identifiers, your chosen nickname, registration consent, sessions, service verification status and history, your primary Supercell tag and retrieved game profile, your content, private-chat participants and messages, timestamps, read status, follows and new-post settings, hashed visitor identifiers for view counts, notifications, reports and blocks. Social providers’ public names and photos are not collected automatically.',
-      'ソーシャルログイン識別子、自分で入力したニックネーム、登録同意、セッション、サービス認証の状態・日時・履歴、代表Supercellタグと取得したゲーム情報、投稿内容、チャットの相手・本文・送信日時・既読状態、フォローと新着通知の設定、閲覧数集計用の訪問識別子のハッシュ、通知・通報・ブロック情報を取り扱います。ソーシャルサービスの公開名や写真を自動収集することはありません。',
+      'We process social sign-in identifiers, your chosen nickname, registration consent, sessions, service verification status and history, your primary Supercell tag and retrieved game profile, your content, private-chat participants and messages, timestamps, read status, follows and new-post settings, hashed visitor identifiers for view counts, notifications, reports and blocks. Photos and links you add are displayed on your public profile. Social providers’ public names and photos are not collected automatically.',
+      'ソーシャルログイン識別子、自分で入力したニックネーム、登録同意、セッション、サービス認証の状態・日時・履歴、代表Supercellタグと取得したゲーム情報、投稿内容、チャットの相手・本文・送信日時・既読状態、フォローと新着通知の設定、閲覧数集計用の訪問識別子のハッシュ、通知・通報・ブロック情報を取り扱います。自分で登録した写真とリンクは公開プロフィールに表示します。ソーシャルサービスの公開名や写真を自動収集することはありません。',
     ],
   '이용 목적과 공개 범위': ['Purpose and visibility', '利用目的と公開範囲'],
   '계정 확인, 피드백 요청과 답변, 게임 계정 등록, 인앱 알림 및 커뮤니티 운영에 사용합니다. 닉네임, 서비스 인증 표시, 등록한 대표 게임 태그, 게시한 내용은 다른 이용자에게 보일 수 있습니다. 서비스 인증 표시는 게임 계정 소유권 인증을 의미하지 않습니다. 1:1 채팅 내용은 대화 참여자에게만 제공하며 첨부한 이미지와 동영상도 서비스 운영 서버에 저장합니다.':
@@ -146,10 +146,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'アカウント確認、フィードバック、ゲームアカウント登録、通知、コミュニティ運営に利用します。ニックネーム、サービス認証表示、代表ゲームタグ、投稿内容は他の利用者に表示されることがあります。サービス認証はゲームアカウントの所有権認証ではありません。1対1チャットは参加者だけが閲覧でき、添付画像・動画もサービスのサーバーに保存されます。',
     ],
   '세션과 외부 서비스': ['Sessions and external services', 'セッションと外部サービス'],
-  '로그인 상태 유지를 위해 HttpOnly 세션 쿠키를 사용합니다. Google, X, 카카오, Discord 로그인과 게임 프로필 조회에는 각 외부 서비스가 연결됩니다. 이메일 알림이나 외부 분석 도구는 초기 알파에 연결되지 않았습니다.':
+  '로그인 상태 유지를 위해 HttpOnly 세션 쿠키를 사용합니다. 소셜 로그인과 게임 프로필 조회는 각 제공자에 연결됩니다. 운영자가 키를 설정한 환경에서는 Functional Software, Inc.(Sentry)에 요청·쿠키·사용자 정보와 오류 메시지를 제거한 오류 종류·스택을, Amplitude, Inc.에 검색어를 제거한 페이지 경로, 기기·브라우저, 화면 너비 구간, 언어, 쿠키 식별자와 로그인 사용자 ID를 HTTPS로 전송합니다. Amplitude IP 수집은 꺼져 있습니다. 오류 진단과 이용 흐름 분석에 사용하며 키가 없으면 전송하지 않습니다. 국외 이전 국가와 보유 기간은 운영 프로젝트의 실제 설정을 확인한 후 공개 전 확정합니다.':
     [
-      'We use HttpOnly session cookies to keep you signed in. Google, X, Kakao, Discord and game profile lookups connect to their respective external services. Email notifications and external analytics are not connected in the initial alpha.',
-      'ログイン状態の維持にHttpOnlyセッションCookieを使用します。Google、X、カカオ、Discordでのログインやゲーム情報の取得では各外部サービスに接続します。初期アルファではメール通知や外部分析ツールを接続していません。',
+      'We use HttpOnly session cookies. Social login and game lookups contact their providers. When operator keys are configured, errors with requests, cookies, users and messages removed go to Functional Software, Inc. (Sentry). Page paths without search terms, device and browser data, viewport buckets, language, cookie identifiers and signed-in user IDs go to Amplitude, Inc. over HTTPS for usage analysis. Amplitude IP collection is disabled. No keys means no telemetry. Transfer countries and retention periods must be verified in the actual projects and finalized before public launch.',
+      'ログインにはHttpOnlyセッションCookieを使用し、ソーシャルログインとゲーム情報照会は各提供者に接続します。運営者がキーを設定した場合、リクエスト・Cookie・ユーザー・メッセージを除去したエラーをFunctional Software, Inc.（Sentry）へ、検索語を除いたページパス、端末・ブラウザー、画面幅区分、言語、Cookie識別子、ログインユーザーIDをAmplitude, Inc.へHTTPSで送信します。目的はエラー診断と利用分析です。AmplitudeのIP収集は無効で、キーがなければ送信しません。移転先の国と保存期間は実際の設定を確認し公開前に確定します。',
     ],
   '삭제와 권리 행사': ['Deletion and your rights', '削除と権利の行使'],
   '설정에서 계정을 삭제하면 참여한 1:1 대화와 메시지, 첨부파일도 함께 삭제됩니다. 로그아웃하면 세션과 실시간 연결이 종료됩니다. 공개 운영자의 정보, 보관 기간, 위탁 및 국외 이전 등 최종 개인정보 처리 사항은 공개 서비스 전 검토하고 확정해야 합니다.':

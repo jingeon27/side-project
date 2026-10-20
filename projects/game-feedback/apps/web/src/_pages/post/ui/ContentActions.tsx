@@ -80,7 +80,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
     );
   return (
     <div className="content-actions">
-      {type !== 'POST' && <StartChatLink userId={author.id} nickname={author.nickname} />}
+      {type !== 'POST' && <StartChatLink source="comment" userId={author.id} nickname={author.nickname} />}
       <button
         className="text-button"
         onClick={() => {

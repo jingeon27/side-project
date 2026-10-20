@@ -1,3 +1,5 @@
+export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { z } from 'zod';
 import { RichTextDocumentSchema } from './rich-text';
 import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
@@ -65,6 +67,7 @@ export const AuthorSchema = z.object({
   isVerified: z.boolean(),
   supercellTag: z.string().nullable(),
   isTestAccount: z.boolean(),
+  avatarUrl: z.string().nullable().optional(),
 });
 export const UserSchema = AuthorSchema.extend({
   role: z.enum(['USER', 'ADMIN']),
@@ -97,6 +100,7 @@ export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
 export const PublicProfileSchema = z.object({
   author: AuthorSchema,
+  links: ProfileLinksSchema.optional(),
   joinedAt: ResponseTimestampSchema,
   postCount: ResponseCountSchema,
   answerCount: ResponseCountSchema,
@@ -496,6 +500,22 @@ export const operations: OperationSpec[] = [
     response: SupportThreadSchema,
   },
   { method: 'get', path: '/api/users/{id}', id: 'getPublicProfile', response: PublicProfileSchema },
+  {
+    method: 'patch',
+    path: '/api/profile',
+    id: 'updateProfile',
+    body: UpdateProfileInputSchema,
+    response: PublicProfileSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/profile/avatar',
+    id: 'uploadProfileAvatar',
+    body: PostMediaUploadSchema,
+    contentType: 'multipart/form-data',
+    response: PublicProfileSchema,
+  },
+  { method: 'delete', path: '/api/profile/avatar', id: 'deleteProfileAvatar', response: PublicProfileSchema },
   {
     method: 'post',
     path: '/api/auth/app/exchange',
