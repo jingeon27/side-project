@@ -7,6 +7,9 @@ import { overlay } from 'overlay-kit';
 
 import {
   DeletePostDocument,
+  GroupContestDocument,
+  GroupContestsDocument,
+  GroupContestResultsDocument,
   GalleryPostCardFragmentDoc,
   GalleryPostsDocument,
   PostKind,
@@ -23,7 +26,8 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
-import { PostMedia } from './PostMedia';
+import { PostAttachments } from './PostAttachments';
+import { PostDownloadButton } from './PostDownloadButton';
 
 export function PostCard({ id }: { id: string }) {
   const haptics = useHaptics();
@@ -38,7 +42,12 @@ export function PostCard({ id }: { id: string }) {
   const [unlike, unlikeState] = useMutation(UnlikePostDocument, { refetchQueries: [GalleryPostsDocument] });
   const [remove] = useMutation(DeletePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [GalleryPostsDocument],
+    refetchQueries: [
+      GalleryPostsDocument,
+      GroupContestDocument,
+      GroupContestsDocument,
+      GroupContestResultsDocument,
+    ],
     awaitRefetchQueries: true,
   });
   if (!complete) return null;
@@ -91,8 +100,16 @@ export function PostCard({ id }: { id: string }) {
           </Button>
         ) : null}
       </div>
+      {post.contest ? (
+        <Link
+          href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
+          className="mb-3 inline-flex min-h-touch items-center rounded-control bg-sunken px-3 text-caption text-ink"
+        >
+          대회 참여 · {post.contest.title}
+        </Link>
+      ) : null}
       <h3 className="mb-3 wrap-break-word text-title text-ink">{post.title}</h3>
-      <PostMedia postId={id} />
+      <PostAttachments postId={id} />
       {post.body ? (
         <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
       ) : null}
@@ -138,6 +155,7 @@ export function PostCard({ id }: { id: string }) {
             <MessageCircle aria-hidden className="size-4" />
             <span className="text-caption">댓글 {formatCount(post.commentCount)}개</span>
           </Button>
+          {post.mediaUrl ? <PostDownloadButton postId={id} title={post.title} /> : null}
         </div>
         <p className="text-caption text-muted">
           <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>

@@ -14,7 +14,8 @@
     "test:unit": "node scripts/test.mjs --project unit",
     "test:api": "node scripts/test.mjs --project api",
     "test:e2e": "playwright test",
-    "test:deploy": "playwright test --config playwright.deploy.config.ts"
+    "test:deploy": "playwright test --config playwright.deploy.config.ts",
+    "test:cache": "playwright test --config playwright.cache.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.47.4",

@@ -9,6 +9,7 @@ import { NO_STORE } from '../common/http/no-store.middleware';
 import { MediaStorage } from '../storage/media-storage.service';
 import { mediaRange } from './media-range';
 import { PostService } from './post.service';
+import { mediaDownloadDisposition } from './media-download.policy';
 
 @Controller()
 export class PostController {
@@ -35,6 +36,26 @@ export class PostController {
     @Res() res: Response,
   ) {
     const file = await this.posts.file(viewer, id);
+    await this.sendFile(file, header, res);
+  }
+
+  @Get('media/:id/download')
+  async download(
+    @OptionalViewer() viewer: IViewer | null,
+    @Param('id') id: string,
+    @Headers('range') header: string | undefined,
+    @Res() res: Response,
+  ) {
+    const file = await this.posts.file(viewer, id);
+    res.set('Content-Disposition', mediaDownloadDisposition(file.filename));
+    await this.sendFile(file, header, res);
+  }
+
+  private async sendFile(
+    file: Awaited<ReturnType<PostService['file']>>,
+    header: string | undefined,
+    res: Response,
+  ) {
     res.set({
       'Content-Type': file.contentType,
       'Cache-Control': NO_STORE,

@@ -20,7 +20,7 @@ export class GroupJoinRequestService {
 
   async list(viewer: IViewer, groupId: string, offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
-    await this.membership.requireOwner(viewer.id, groupId);
+    await this.membership.requireAdmin(viewer.id, groupId);
     return this.repository.findManyGroupJoinRequest({
       where: { groupId },
       include: { user: { select: USER_VIEW_SELECT } },
@@ -34,7 +34,7 @@ export class GroupJoinRequestService {
     return this.transactions.atomic(async (tx) => {
       const request = await this.repository.findUniqueGroupJoinRequest({ where: { id: requestId } }, tx);
       if (!request) fail('가입 신청을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-      await this.membership.requireOwner(viewer.id, request.groupId, tx);
+      await this.membership.requireAdmin(viewer.id, request.groupId, tx);
       if (approved) {
         await this.repository.createManyGroupMember(
           {

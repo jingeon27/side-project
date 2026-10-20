@@ -129,18 +129,27 @@ export class PostRepository {
     return client.postUpload.deleteMany(args);
   }
 
+  findUniqueContest<T extends Prisma.ContestFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ContestFindUniqueArgs>,
+    client: TDatabaseClient = this.db,
+  ) {
+    return client.contest.findUnique(args);
+  }
+
   recordEvent(client: TDatabaseClient | undefined, event: IAnalyticsEvent) {
     return recordEvent(client ?? this.db, event);
   }
 
   listVisiblePosts({
     groupIds,
+    contestId,
     viewerId,
     popular,
     offset,
     limit,
   }: {
     groupIds: string[];
+    contestId?: string | null;
     viewerId: string | null;
     popular: boolean;
     offset: number;
@@ -149,6 +158,7 @@ export class PostRepository {
     return this.db.post.findMany({
       where: {
         groupId: { in: groupIds },
+        ...(contestId ? { contestId } : {}),
         hidden: false,
         OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],
         ...(popular ? { createdAt: koreanMonth() } : {}),

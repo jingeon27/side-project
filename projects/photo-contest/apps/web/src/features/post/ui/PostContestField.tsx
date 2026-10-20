@@ -1,0 +1,119 @@
+'use client';
+
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useId, useState, useTransition } from 'react';
+import { useWatch, type UseFormReturn } from 'react-hook-form';
+import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
+import { ROUTES } from '@/shared/constants/routes';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
+import { FieldRequirement } from '@/shared/ui/@core/text-field';
+import { Button } from '@/shared/ui/@core/button';
+import { Skeleton } from '@/shared/ui/@core/skeleton';
+import Link from 'next/link';
+import type { TPostInput, TPostValues } from '../model/post.schema';
+
+type TPostForm = UseFormReturn<TPostInput, unknown, TPostValues>;
+function ContestSelection({
+  form,
+  queryRef,
+  groupId,
+}: {
+  form: TPostForm;
+  queryRef: QueryRef<GroupContestsQuery>;
+  groupId: string;
+}) {
+  const { fetchMore } = useQueryRefHandlers(queryRef);
+  const { data } = useReadQuery(queryRef);
+  const [hasMore, setHasMore] = useState(true);
+  const [pending, startTransition] = useTransition();
+  const id = useId();
+  if (!data.groupContests.length)
+    return (
+      <p className="text-body text-muted">
+        현재 접수 중인 대회가 없어요.{' '}
+        <Link href={ROUTES.GROUP_CONTESTS(groupId)} className="underline underline-offset-4">
+          그룹 대회 보기
+        </Link>
+      </p>
+    );
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="text-label text-ink">
+        참여할 대회
+        <FieldRequirement required />
+      </label>
+      <select
+        id={id}
+        required
+        aria-invalid={Boolean(form.formState.errors.contestId)}
+        aria-describedby={form.formState.errors.contestId ? `${id}-error` : undefined}
+        className="min-h-touch w-full rounded-control border border-line-strong bg-surface px-3 text-body text-ink"
+        disabled={form.formState.isSubmitting}
+        {...form.register('contestId')}
+      >
+        <option value="">대회를 선택해 주세요</option>
+        {data.groupContests.map((contest) => (
+          <option key={contest.id} value={contest.id}>
+            {contest.title}
+          </option>
+        ))}
+      </select>
+      {hasMore && data.groupContests.length >= 48 ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          loading={pending}
+          onClick={() =>
+            startTransition(async () => {
+              try {
+                const result = await fetchMore({ variables: { offset: data.groupContests.length } });
+                setHasMore(result.data.groupContests.length === 48);
+              } catch {
+                /* 조회 경계에서 재시도한다. */
+              }
+            })
+          }
+        >
+          대회 더 불러오기
+        </Button>
+      ) : null}
+      {form.formState.errors.contestId ? (
+        <p role="alert" id={`${id}-error`} className="text-caption text-danger">
+          {form.formState.errors.contestId.message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+function OpenContests({ form, groupId }: { form: TPostForm; groupId: string }) {
+  const [queryRef, { refetch }] = useBackgroundQuery(GroupContestsDocument, {
+    variables: { groupId, filter: GroupContestFilter.Open, offset: 0, limit: 48 },
+    fetchPolicy: 'network-only',
+  });
+  return (
+    <AsyncBoundary fallback={<Skeleton className="h-14 w-full" />} onRetry={refetch}>
+      <ContestSelection form={form} groupId={groupId} queryRef={queryRef} />
+    </AsyncBoundary>
+  );
+}
+export function PostContestField({ form, groupId }: { form: TPostForm; groupId: string }) {
+  const participating = useWatch({ control: form.control, name: 'participateInContest' });
+  return (
+    <section className="flex flex-col gap-3 rounded-control border border-line p-4">
+      <label className="flex min-h-touch cursor-pointer items-center gap-3 text-label text-ink">
+        <input
+          type="checkbox"
+          disabled={form.formState.isSubmitting}
+          className="size-5 accent-ink"
+          {...form.register('participateInContest')}
+        />
+        대회에 참여하기 <span className="text-caption text-muted">선택</span>
+      </label>
+      {participating ? (
+        <OpenContests form={form} groupId={groupId} />
+      ) : (
+        <p className="text-caption text-muted">선택하지 않으면 일반 그룹 게시물로 올라가요.</p>
+      )}
+    </section>
+  );
+}

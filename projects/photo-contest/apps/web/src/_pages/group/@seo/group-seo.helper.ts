@@ -1,4 +1,5 @@
-import { GroupVisibility, PostKind } from '@/shared/api/generated';
+import { postAttachmentJsonLd, postImageUrls } from '@/features/post';
+import { GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
 
@@ -16,10 +17,7 @@ export function groupMetadata(data: IGroupSeoData, origin: string) {
       index: false,
       images: [],
     });
-  const images = posts
-    .filter((post) => post.kind === PostKind.Photo)
-    .slice(0, 3)
-    .map((post) => siteUrl(post.mediaUrl, origin));
+  const images = postImageUrls(posts, origin).slice(0, 3);
   return createPageMetadata({
     origin,
     path,
@@ -82,15 +80,7 @@ export function groupJsonLd(data: IGroupSeoData, origin: string) {
                 interactionType: 'https://schema.org/LikeAction',
                 userInteractionCount: post.likeCount,
               },
-              ...(post.kind === PostKind.Photo
-                ? { image: siteUrl(post.mediaUrl, origin) }
-                : {
-                    associatedMedia: {
-                      '@type': 'MediaObject',
-                      name: post.title,
-                      contentUrl: siteUrl(post.mediaUrl, origin),
-                    },
-                  }),
+              ...postAttachmentJsonLd(post, origin),
             },
           })),
         },

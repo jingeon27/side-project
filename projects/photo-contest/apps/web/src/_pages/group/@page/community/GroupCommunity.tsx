@@ -13,7 +13,7 @@ export function GroupCommunity({ groupRef, viewerId }: { groupRef: TGroupQueryRe
   return (
     <section>
       <h2 className="mb-3 text-title text-ink">함께하는 친구 {group.members.length}명</h2>
-      <MemberList members={group.members} viewerId={viewerId} />
+      <MemberList groupId={group.id} viewerRole={group.role} members={group.members} viewerId={viewerId} />
     </section>
   );
 }

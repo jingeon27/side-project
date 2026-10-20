@@ -6,6 +6,10 @@ export const ROUTES = {
   TERMS: '/terms',
   PRIVACY: '/privacy',
   GROUP: (id: string) => `/groups/${encodeURIComponent(id)}`,
+  GROUP_CONTESTS: (id: string) => `/groups/${encodeURIComponent(id)}/contests`,
+  GROUP_HALL_OF_FAME: (id: string) => `/groups/${encodeURIComponent(id)}/hall-of-fame`,
+  GROUP_CONTEST: (groupId: string, id: string) =>
+    `/groups/${encodeURIComponent(groupId)}/contests/${encodeURIComponent(id)}`,
   CONTEST: (id: string) => `/contests/${encodeURIComponent(id)}`,
   INVITE: (token: string) => `/invite/${encodeURIComponent(token)}`,
 } as const;

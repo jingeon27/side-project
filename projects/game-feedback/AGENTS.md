@@ -36,5 +36,5 @@
 - 테스트 파일·Vitest/Playwright 설정·러너 의존성은 API/Web/Mobile 또는 해당 패키지가 소유한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest unit/UI+Playwright native host로 검증한다. 루트·프로젝트 집계와 공통 e2e Workspace에 두지 않는다. DB URL 가드 테스트도 API가 소유한다.
 - 루트 Prettier 설정을 사용해 변경 파일의 format을 검사한다. 사용자 제공 원본 계획은 수정하지 않는다.
 - 이전 저장소에서 얻은 테스트 결과를 현재 저장소의 검증으로 기록하지 않는다. 환경과 실제 실행 결과를 구분한다.
-- 로컬 테스트 및 커밋 절차는 `.claude/skills/game-feedback-test/SKILL.md`, `.claude/skills/game-feedback-commit/SKILL.md`를 참고한다.
+- 로컬 테스트 및 커밋 절차는 `.agents/skills/game-feedback-test/SKILL.md`, `.agents/skills/game-feedback-commit/SKILL.md`를 참고한다.
 - 외부 공개·운영 데이터 삭제·다른 서비스 변경은 일반적인 로컬 구현 작업과 구분한다. 사용자 지시에 없는 배포를 완료로 주장하지 않는다.

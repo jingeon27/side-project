@@ -84,7 +84,7 @@ test(
     await composer
       .getByLabel('내용', { exact: true })
       .fill('큰 화면에서도 사진과 내용을 함께 보며 작성해요.');
-    await composer.getByRole('checkbox').check();
+    await composer.getByRole('checkbox', { name: /공유할 권리/ }).check();
     await page.screenshot({ path: '.data/screens/desktop-composer-wide.png' });
     await composer.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(composer).toHaveCount(0);

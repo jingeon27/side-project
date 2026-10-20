@@ -27,6 +27,10 @@ export class MediaStorage {
   delete(key: string) {
     return this.store().delete(mediaKey(key));
   }
+  async presignDownload(key: string, disposition: string, expiresIn: number): Promise<string | null> {
+    if (storageBackend() !== 's3') return null;
+    return this.s3Store().presignDownload(mediaKey(key), disposition, expiresIn);
+  }
   private store() {
     return match(storageBackend())
       .with('local', () => new LocalPhotoStore(storageDir()))

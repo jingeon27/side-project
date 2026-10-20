@@ -24,6 +24,7 @@ import {
   CreatePostCommentDocument,
   DeletePostCommentDocument,
   PostCommentsDocument,
+  PostDownloadDocument,
   PostSort,
   RequestPostUploadDocument,
   CastVoteDocument,
@@ -327,6 +328,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
         })
       ).createPost;
       expect(post.kind).toBe(video ? 'VIDEO' : 'PHOTO');
+      const { postDownload } = await ok(PostDownloadDocument, member, { postId: post.id });
+      expect(postDownload.url).toBe(`/backend/media/${post.id}/download`);
+      expect(postDownload.filename).toMatch(video ? /\.mp4$/ : /\.webp$/);
       created.push(post);
     }
     const photo = created[0];
@@ -375,5 +379,46 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     expect(
       (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),
     ).toBe(false);
+  });
+  it('링크 게시물 문서는 파일 없이 실행되고 비공개 링크는 멤버에게만 보여야 한다', async () => {
+    const { createGroup: group } = await ok(CreateGroupDocument, owner, {
+      name: '링크 문서 비공개',
+      visibility: 'PRIVATE',
+    });
+    const { createPost } = await ok(CreatePostDocument, owner, {
+      groupId: group.id,
+      title: '링크 사양',
+      linkUrl: 'https://youtu.be/abcdefghijk',
+      rightsConfirmed: true,
+    });
+    expect(createPost).toMatchObject({
+      kind: 'LINK',
+      mediaUrl: null,
+      linkUrl: 'https://youtu.be/abcdefghijk',
+    });
+    expect(
+      (
+        await ok(GalleryPostsDocument, owner, {
+          groupId: group.id,
+          sort: PostSort.Newest,
+          offset: 0,
+          limit: 24,
+        })
+      ).galleryPosts[0],
+    ).toMatchObject({ id: createPost.id });
+    expect(
+      (
+        await execute(GalleryPostsDocument, outsider, {
+          groupId: group.id,
+          sort: PostSort.Newest,
+          offset: 0,
+          limit: 24,
+        })
+      ).errors?.[0]?.extensions?.code,
+    ).toBe('FORBIDDEN');
+    expect(
+      (await execute(PostDownloadDocument, owner, { postId: createPost.id })).errors?.[0]?.extensions?.code,
+    ).toBe('NOT_FOUND');
+    await ok(DeletePostDocument, owner, { postId: createPost.id });
   });
 });

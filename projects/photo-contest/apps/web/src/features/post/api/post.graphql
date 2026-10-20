@@ -1,11 +1,19 @@
 fragment GalleryPostCard on GalleryPost {
   id
+  contestId
+  contest {
+    id
+    groupId
+    title
+    phase
+  }
   groupId
   groupName
   title
   body
   kind
   mediaUrl
+  linkUrl
   createdAt
   likeCount
   commentCount
@@ -18,8 +26,8 @@ fragment GalleryPostCard on GalleryPost {
     avatar
   }
 }
-query GalleryPosts($groupId: ID, $sort: PostSort!, $offset: Int!, $limit: Int!) {
-  galleryPosts(groupId: $groupId, sort: $sort, offset: $offset, limit: $limit) {
+query GalleryPosts($groupId: ID, $contestId: ID, $sort: PostSort!, $offset: Int!, $limit: Int!) {
+  galleryPosts(groupId: $groupId, contestId: $contestId, sort: $sort, offset: $offset, limit: $limit) {
     ...GalleryPostCard
   }
 }
@@ -30,15 +38,19 @@ mutation RequestPostUpload($groupId: ID!) {
   }
 }
 mutation CreatePost(
+  $contestId: ID
   $groupId: ID!
-  $uploadId: ID!
+  $uploadId: ID
+  $linkUrl: String
   $title: String!
   $body: String
   $rightsConfirmed: Boolean!
 ) {
   createPost(
+    contestId: $contestId
     groupId: $groupId
     uploadId: $uploadId
+    linkUrl: $linkUrl
     title: $title
     body: $body
     rightsConfirmed: $rightsConfirmed
@@ -62,6 +74,14 @@ mutation DeletePost($postId: ID!) {
 
 mutation UploadPostMedia($uploadId: ID!, $file: Upload!) {
   uploadPostMedia(uploadId: $uploadId, file: $file)
+}
+
+query PostDownload($postId: ID!) {
+  postDownload(postId: $postId) {
+    url
+    filename
+    expiresAt
+  }
 }
 
 fragment PostCommentCard on PostComment {

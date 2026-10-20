@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { GroupRole, Phase } from '@/shared/api/generated';
 
-import { isGroupOwner, splitContests } from './group.helper';
+import { isGroupAdmin, isGroupOwner, splitContests } from './group.helper';
 
 describe('group.helper', () => {
   it('관리자만 그룹 주인으로 봐야 한다', () => {
@@ -23,5 +23,12 @@ describe('group.helper', () => {
 
     expect(active.map((contest) => contest.id)).toEqual(['a', 'c', 'd']);
     expect(finished.map((contest) => contest.id)).toEqual(['b', 'e']);
+  });
+  it('부관리자는 운영할 수 있지만 그룹장으로 취급하지 않아야 한다', () => {
+    expect(isGroupAdmin(GroupRole.Owner)).toBe(true);
+    expect(isGroupAdmin(GroupRole.Moderator)).toBe(true);
+    expect(isGroupOwner(GroupRole.Moderator)).toBe(false);
+    expect(isGroupAdmin(GroupRole.Member)).toBe(false);
+    expect(isGroupAdmin(null)).toBe(false);
   });
 });

@@ -5,7 +5,7 @@ import { useFragment } from '@apollo/client/react';
 import { GalleryPostCardFragmentDoc } from '@/shared/api/generated';
 import { Avatar } from '@/shared/ui/@core/avatar';
 
-import { PostMedia } from './PostMedia';
+import { PostAttachments } from './PostAttachments';
 
 export function PostCommentContext({ postId }: { postId: string }) {
   const { data: post, complete } = useFragment({
@@ -26,7 +26,7 @@ export function PostCommentContext({ postId }: { postId: string }) {
         </div>
       </div>
       <h3 className="shrink-0 wrap-break-word text-title text-ink">{post.title}</h3>
-      <PostMedia postId={postId} detail />
+      <PostAttachments postId={postId} detail />
       {post.body ? (
         <p className="shrink-0 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
       ) : null}

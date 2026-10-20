@@ -2,6 +2,7 @@
 
 import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Camera, Sparkles } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { match } from 'ts-pattern';
 
@@ -19,13 +20,15 @@ function BoardContent({
   postsRef,
   limit,
   popular,
+  postAction,
 }: {
   postsRef: QueryRef<GalleryPostsQuery>;
   limit: number;
   popular: boolean;
+  postAction?: (postId: string) => ReactNode;
 }) {
-  const { data } = useReadQuery(postsRef);
   const { fetchMore } = useQueryRefHandlers(postsRef);
+  const { data } = useReadQuery(postsRef);
   const [hasMore, setHasMore] = useState(true);
   const [pending, startTransition] = useTransition();
   const firstId = data.galleryPosts[0]?.id;
@@ -53,7 +56,16 @@ function BoardContent({
             data-photo-feed
           >
             {posts.map(({ id }, index) =>
-              popular ? <PopularPostCard key={id} id={id} rank={index + 1} /> : <PostCard key={id} id={id} />,
+              popular ? (
+                <PopularPostCard key={id} id={id} rank={index + 1} />
+              ) : postAction ? (
+                <div key={id} className="flex min-w-0 flex-col gap-3">
+                  <PostCard id={id} />
+                  {postAction(id)}
+                </div>
+              ) : (
+                <PostCard key={id} id={id} />
+              ),
             )}
           </div>
         ))}
@@ -78,11 +90,22 @@ function BoardContent({
     </div>
   );
 }
-export function GalleryBoard({ groupId, popular = false }: { groupId?: string; popular?: boolean }) {
+export function GalleryBoard({
+  groupId,
+  contestId,
+  popular = false,
+  postAction,
+}: {
+  groupId?: string;
+  contestId?: string;
+  popular?: boolean;
+  postAction?: (postId: string) => ReactNode;
+}) {
   const limit = popular ? 3 : 24;
   const [postsRef, { refetch }] = useBackgroundQuery(GalleryPostsDocument, {
     variables: {
       groupId: groupId ?? null,
+      ...(contestId ? { contestId } : {}),
       sort: popular ? PostSort.MonthlyPopular : PostSort.Newest,
       offset: 0,
       limit,
@@ -104,7 +127,7 @@ export function GalleryBoard({ groupId, popular = false }: { groupId?: string; p
         {popular ? '이달의 인기' : '최신 게시물'}
       </h2>
       <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
-        <BoardContent postsRef={postsRef} limit={limit} popular={popular} />
+        <BoardContent postsRef={postsRef} limit={limit} popular={popular} postAction={postAction} />
       </AsyncBoundary>
     </section>
   );
