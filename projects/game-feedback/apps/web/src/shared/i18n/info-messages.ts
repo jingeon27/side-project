@@ -136,7 +136,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
   '처리하는 정보': ['Information we process', '取り扱う情報'],
   '로그인을 위한 소셜 서비스 식별자, 직접 입력한 서비스 닉네임, 가입 동의 상태, 세션 정보, 서비스 인증 여부와 인증 시각과 변경 기록, 사용자 정보에 저장한 대표 Supercell 태그와 조회한 게임 프로필, 작성한 콘텐츠, 1:1 대화 상대와 메시지 본문, 전송 시각, 읽음 상태, 팔로우와 새 글 알림 설정, 조회수 집계를 위한 방문 식별자의 해시, 알림, 신고 및 차단 정보를 처리합니다. 직접 등록한 프로필 사진과 링크는 공개 프로필에 표시합니다. 소셜 서비스의 공개 이름과 사진은 자동 수집하지 않습니다.':
     [
-      'We process social sign-in identifiers, your chosen nickname, registration consent, sessions, service verification status and history, your primary Supercell tag and retrieved game profile, your content, private-chat participants and messages, timestamps, read status, follows and new-post settings, hashed visitor identifiers for view counts, notifications, reports and blocks. Social providers’ public names and photos are not collected automatically.',
+      'We process social sign-in identifiers, your chosen nickname, registration consent, sessions, service verification status and history, your primary Supercell tag and retrieved game profile, your content, private-chat participants and messages, timestamps, read status, follows and new-post settings, hashed visitor identifiers for view counts, notifications, reports and blocks. Photos and links you add are displayed on your public profile. Social providers’ public names and photos are not collected automatically.',
       'ソーシャルログイン識別子、自分で入力したニックネーム、登録同意、セッション、サービス認証の状態・日時・履歴、代表Supercellタグと取得したゲーム情報、投稿内容、チャットの相手・本文・送信日時・既読状態、フォローと新着通知の設定、閲覧数集計用の訪問識別子のハッシュ、通知・通報・ブロック情報を取り扱います。自分で登録した写真とリンクは公開プロフィールに表示します。ソーシャルサービスの公開名や写真を自動収集することはありません。',
     ],
   '이용 목적과 공개 범위': ['Purpose and visibility', '利用目的と公開範囲'],

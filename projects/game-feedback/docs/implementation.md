@@ -951,9 +951,10 @@ Web typecheck/lint와 변경 파일 Prettier 검사가 통과했습니다. 새 P
 SDK 11의 Next span 계측은 현재 Next 서버 시작을 실패시켜 서버에서 OpenTelemetry 설정과 기본 integration을 끄고 오류 수집만 초기화했다. tracesSampleRate를 설정하지 않아 tracing을 켜지 않는다. 브라우저는 trace 0이다. Amplitude의 pageUrlEnrichment는 개인정보 제거 뒤 URL을 다시 추가하므로 명시적으로 끄고 자체 enrichment만 사용한다. 이 차이는 실제 SDK 전송 테스트로 확인했다.
 
 API 테스트 177개와 웹 113개, 타입검사·lint가 통과했다. 가짜 키에서 실제 SDK 페이지뷰 이동당 1회, 오류 전송의 개인정보 제거, 글쓰기 실패 미집계와 글/채팅/메시지 성공 집계 3개 E2E가 통과했다. 빈 키 외부 요청 0건 E2E도 통과했다. 실제 운영 대시보드 수신과 소스맵 업로드는 검증하지 않았다. 자세한 콘솔 설정과 퍼널은 docs/observability.md에 기록했다.
+
 ## 2026-10-20 프로필 링크와 사진
 
-내 공개 프로필의 편집 영역에서 이름·HTTP(S) 주소 링크를 최대 5개 저장하고 사진을 미리 본 뒤 등록·교체·삭제할 수 있다. 링크의 계정정보 URL·스크립트와 빈 이름을 거부한다. 사진은 5MB 이하 JPEG/PNG/WebP만 받고 실제 디코딩 후 방향 보정·512px 정사각형 WebP로 정규화하며 메타데이터를 보존하지 않는다. 기존 DATABASE/FILESYSTEM/S3 저장소를 재사용한다. 선택한 Blob 미리보기는 해당 UI 수명이 끝나면 해제한다.
+내 공개 프로필의 편집 영역에서 이름·HTTP(S) 주소 링크를 최대 5개 저장하고 사진을 미리 본 뒤 등록·교체·삭제할 수 있다. 링크의 계정정보 URL·스크립트와 빈 이름을 거부한다. 사진은 5MB 이하 JPEG/PNG/WebP만 받고 실제 디코딩 후 방향 보정·512px 이하 정사각형 WebP로 정규화하며 메타데이터를 보존하지 않는다. 기존 DATABASE/FILESYSTEM/S3 저장소를 재사용한다. 선택한 Blob 미리보기는 해당 UI 수명이 끝나면 해제한다.
 
 UserAvatar는 사용자별 한 개이고 User.profileLinks는 기본 빈 배열이다. 공개 사진 읽기도 기존 프로필의 데모·차단 가시성 규칙을 따르고 private no-store로 응답한다. 기존 객체는 14일 정리 유예를 적용하며 사용 중인 avatar 객체는 정리에서 제외한다. 마이그레이션은 새 필드와 테이블만 추가했다. 개발 DB에는 적용하지 않았다. 루트 lock 변경은 API의 기존 버전 sharp 의존성 선언에 필요하다.
 

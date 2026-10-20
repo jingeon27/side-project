@@ -18,9 +18,9 @@ const unitOnly = projects.length > 0 && projects.every((project) => project === 
 const env = {
   ...configured,
   NODE_ENV: 'test',
-  SENTRY_DSN:'',
-  NEXT_PUBLIC_SENTRY_DSN:'',
-  NEXT_PUBLIC_AMPLITUDE_API_KEY:'',
+  SENTRY_DSN: '',
+  NEXT_PUBLIC_SENTRY_DSN: '',
+  NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
   DATABASE_URL: configured.TEST_DATABASE_URL,
   GF_DEMO_MODE: 'false',
   GOOGLE_CLIENT_ID: '',
