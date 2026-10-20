@@ -100,9 +100,18 @@ for (const video of [false, true]) {
         .getByRole('region', { name: '최신 게시물', exact: true })
         .getByRole('article', { name: title, exact: true });
       const saved = page.waitForEvent('download');
+      const metadata = page.waitForResponse((response) => {
+        const request = response.request();
+        if (!response.url().endsWith('/backend/graphql')) return false;
+        if (!request.headers()['content-type']?.includes('application/json')) return false;
+        return request.postDataJSON()?.operationName === 'PostDownload';
+      });
       await article.getByRole('button', { name: `${title} 파일 저장`, exact: true }).click();
       const download = await saved;
-      expect(download.suggestedFilename().normalize('NFC')).toBe(`${title}.${video ? 'mp4' : 'webp'}`);
+      const expectedFilename = `${title}.${video ? 'mp4' : 'webp'}`;
+      expect((await (await metadata).json()).data.postDownload.filename).toBe(expectedFilename);
+      // 서버가 지정한 한글 이름을 확인하고 브라우저/OS의 공백 치환만 허용한다.
+      expect(download.suggestedFilename().normalize('NFC').replaceAll('_', ' ')).toBe(expectedFilename);
       const file = await download.path();
       if (!file) throw new Error('저장한 파일이 있어야 한다');
       const bytes = await readFile(file);

@@ -22,11 +22,16 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
       method="get"
       className="flex items-end gap-3"
       noValidate
-      onSubmit={form.handleSubmit(({ q: value }) => {
-        const query = new URLSearchParams();
-        if (value) query.set('q', value);
-        startTransition(() => router.replace(`${ROUTES.EXPLORE}${value ? `?${query}` : ''}`));
-      })}
+      onSubmit={(event) => {
+        // 브라우저 복원/초기 hydration 중 React change 이벤트가 없었어도 실제 입력값을 검증한다.
+        const value = new FormData(event.currentTarget).get('q');
+        form.setValue('q', typeof value === 'string' ? value : '');
+        void form.handleSubmit(({ q }) => {
+          const query = new URLSearchParams();
+          if (q) query.set('q', q);
+          startTransition(() => router.replace(`${ROUTES.EXPLORE}${q ? `?${query}` : ''}`));
+        })(event);
+      }}
     >
       <TextField
         label="그룹 검색"
