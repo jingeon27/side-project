@@ -2891,6 +2891,7 @@ __metadata:
     es-toolkit: "npm:^1.52.0"
     ts-pattern: "npm:^5.9.0"
     typescript: "npm:6.0.2"
+    vitest: "npm:^4.1.0"
     zod: "npm:^4.1.12"
   languageName: unknown
   linkType: soft
