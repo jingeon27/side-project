@@ -6,6 +6,15 @@ Repository 전달 계층을 제거하고 서비스에서 Prisma를 직접 사용
 
 # 구현 및 검증 기록
 
+## 2026-10-20 Admin 코드스타일과 화면 책임 분리
+
+- `.agents/skills/game-feedback-code-style`에 Web·Admin의 FSD·명명·폼·query/mutation·공통 UI 규칙을 추가하고 프로젝트와 Admin `AGENTS.md`에서 연결했다. 스킬 구조 검증을 통과했으며 커밋·PR의 `type(game-feedback): ...` 형식도 기록했다.
+- `_app`은 Provider·인증·라우트 조합, `_pages`는 로그인·문의·신고·사용자 관리로 분리했다. 공통 셸·문의 대화·사용자 패널은 widgets가 소유하며 검색·답변·제재 폼과 Zod 스키마를 목적별로 나눴다. 고정 메뉴는 명시적인 JSX로 구성하고 공통 디자인 시스템의 컨트롤·타이포 토큰을 사용한다.
+- 조회 options, mutation options, 원본 useMutation 결과를 반환하는 mutation 훅을 도메인별로 분리했다. 문의별 mutation 상태를 독립적으로 관리하고 ts-pattern 분기·es-toolkit 메시지 중복 제거를 사용한다. 로그인·로그아웃은 이전 요청 취소 → 도메인 캐시·mutation 제거 → 세션 교체 순서를 유지하면서 활성 세션 구독을 보존한다.
+- Admin ESLint에서 SDK 직접 호출, UI의 mutation 정의, inline query key, let·enum·non-null assertion과 명명 규칙을 검사한다. 메모리 안의 위반 예제로 실제 거부되는지 확인하고 도메인 API의 SDK import가 허용되는 것도 확인했다.
+- Admin Vitest 5개와 Playwright 5개를 통과했다. 인증·권한·밴·신고·문의의 기존 동작과 로그인 구독 갱신·이전 계정 캐시 제거, 답변 실패 시 초안/UUID 보존, 조회 오류 시 메뉴 유지, 사용자 URL 재진입을 확인했다. 타입 검사·lint·Prettier·production build도 통과했다. 빌드에는 Zod 주석과 큰 청크에 대한 경고가 있으며 빌드 실패는 아니다.
+- 초기 브라우저 검증에서 최신 스키마와 로컬 생성 Prisma Client가 달라 `db:generate` 후 재검증했다. 테스트는 Admin 3304/API 4304와 기존 전용 테스트 DB 55444의 새 격리 스키마만 사용했다. 다른 worktree의 DB 프로세스와 개발 서버는 변경하지 않았다. Admin의 기존 라이브러리 사용을 위해 manifest와 루트 `yarn.lock`만 함께 갱신했다.
+
 ## 2026-10-20 채팅 URL 링크
 
 - 메시지 본문은 `linkify-react`와 `linkifyjs`로 HTTP·HTTPS·도메인 주소를 링크로 표시한다. 프로토콜이 없는 주소에는 HTTPS를 적용하며 원문·줄바꿈·쿼리·괄호를 유지한다. HTML은 텍스트로 렌더링하고 실행형·파일·FTP 주소는 링크로 만들지 않는다. 이메일 자동 링크는 사용하지 않는다.

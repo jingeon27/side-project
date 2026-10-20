@@ -28,6 +28,7 @@
 
 ## 검증 및 완료 기록
 
+- Web·Admin 코드 변경과 리뷰에는 `.agents/skills/game-feedback-code-style/SKILL.md`를 적용한다. 각 앱의 `AGENTS.md`와 lint 설정으로 구체적인 경계를 확인한다.
 - 관련 검증 명령과 결과, 확인하지 못한 항목을 완료 기록에 남긴다.
 - 서버 성공 결과와 사용자의 `도움됨` 신호를 중심으로 제품 지표를 정의한다. 프런트 행동 이벤트와 실제 DB 성공 지표를 혼동하지 않는다.
 - API 계약은 서버 Zod 스키마 → OpenAPI → Orval 순서로 생성한다. `apps/api/openapi.json`은 Git에서 제외하고 프로젝트 준비 단계에서 생성한다. SDK 생성 코드는 Git에 포함하며 CI에서 재생성 diff를 검사한다. 생성 파일을 손으로 고치지 않는다. 모든 생성 JSON 요청은 Zod 응답 스키마를 transport에 전달하며 SDK 소유 Vitest로 누락을 검사한다. 응답 fallback은 SDK의 명시적 표시 필드에만 적용하고 원래 계약으로 재검증한다. ID·권한·세션·커서·날짜·본문·목록 오류를 fallback으로 감추지 않는다.
