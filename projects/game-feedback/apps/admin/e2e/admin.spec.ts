@@ -20,6 +20,81 @@ test('anonymous and ordinary sessions do not expose administration and foreign o
   await page.reload();
   await expect(page.getByRole('navigation', { name: '관리자 메뉴' })).toHaveCount(0);
 });
+
+test('a failed support reply keeps its draft and retries with the same message ID', async ({
+  page,
+  browser,
+}) => {
+  const viewer = await browser.newContext({ baseURL: origin });
+  try {
+    const nickname = `재시도_${randomUUID().slice(0, 8)}`;
+    await viewer.request.post('/api/auth/demo', {
+      headers,
+      data: { nickname },
+    });
+    const created = await viewer.request.post('/api/support/conversations', {
+      headers,
+      data: { topic: 'GENERAL' },
+    });
+    expect(created.ok()).toBe(true);
+    const room = await created.json();
+    const requests: string[] = [];
+    await page.route(`**/api/conversations/${room.id}/messages`, async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      requests.push(route.request().postDataJSON().clientMessageId);
+      if (requests.length === 1) return route.abort('failed');
+      return route.continue();
+    });
+    await page.goto('/');
+    await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
+    const thread = page.locator('[data-thread-id]').filter({ hasText: nickname });
+    await thread.getByRole('link', { name: '문의 채팅 열기', exact: true }).click();
+    const conversation = page.getByRole('region', { name: '문의 대화', exact: true });
+    const input = conversation.getByRole('textbox', { name: '답변 내용', exact: true });
+    const body = `다시 보낼 답변 ${randomUUID()}`;
+    await input.fill(body);
+    await conversation.getByRole('button', { name: '답변 보내기', exact: true }).click();
+    await expect(conversation.getByRole('alert')).toBeVisible();
+    await expect(input).toHaveValue(body);
+    await conversation.getByRole('button', { name: '답변 보내기', exact: true }).click();
+    await expect(input).toHaveValue('');
+    await expect(conversation.getByRole('log').getByText(body, { exact: true })).toHaveCount(1);
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toBe(requests[0]);
+    const history = await (await viewer.request.get(`/api/conversations/${room.id}/messages`)).json();
+    expect(history.items.filter((message: { body: string }) => message.body === body)).toHaveLength(1);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test('a failed report page preserves navigation and user deep links restore the search form', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
+  const menu = page.getByRole('navigation', { name: '관리자 메뉴' });
+  await page.route('**/api/admin/reports', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Temporarily unavailable' }),
+    }),
+  );
+  await menu.getByRole('link', { name: '신고함', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: '정보를 불러오지 못했습니다.' })).toBeVisible();
+  await expect(menu).toBeVisible();
+  await menu.getByRole('link', { name: '사용자 관리', exact: true }).click();
+  await page.getByRole('textbox', { name: '사용자 ID', exact: true }).fill('sample-user-0');
+  await page.getByRole('button', { name: '조회', exact: true }).click();
+  await expect(page.getByRole('article', { name: '사용자 관리' })).toContainText('새벽의호그');
+  await page.reload();
+  await expect(page.getByRole('textbox', { name: '사용자 ID', exact: true })).toHaveValue('sample-user-0');
+  await expect(page.getByRole('article', { name: '사용자 관리' })).toContainText('새벽의호그');
+  await menu.getByRole('link', { name: '문의함', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '문의함', exact: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/admin-support.png', fullPage: true });
+});
 test('a local administrator verifies users and applies and reverses a reasoned ban', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
