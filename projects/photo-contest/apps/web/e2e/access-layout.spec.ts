@@ -113,7 +113,7 @@ test(
   async ({ page, signIn }, testInfo) => {
     await signIn('레이아웃-사용자');
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const main = await page.locator('#pc-main').boundingBox();
     expect(main?.width).toBeLessThanOrEqual(1440);
