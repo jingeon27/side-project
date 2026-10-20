@@ -1,3 +1,9 @@
+## 2026-10-21 첫 그룹 가입 후 개인 피드 시작
+
+WebKit CI trace에서 가입 직후 처음 나타난 개인 피드의 hydration 오류를 확인했다. 홈 RSC는 개인 피드의 사전 조회 여부를 전달하며, 미리 받지 않은 개인 쿼리만 기존 ClientOnly 경계로 시작한다. 공개 홈과 기존 가입자의 개인 피드는 계속 SSR한다. 서버 HTML 검사는 그룹이 없는 홈뿐 아니라 가입 그룹의 실제 게시물까지 확인한다.
+
+검증: 웹 unit/UI 333개, Safari 신규 홈 5회 반복 10개, Chrome·Safari·데스크톱 홈 전환/서버 HTML 8개와 lint·typecheck·format 통과.
+
 ## 2026-10-21 Apollo SSR 스트림 취소 회귀
 
 `@apollo/client-react-streaming` 0.14.5가 취소된 스트림에 늦게 enqueue하면서 `ERR_INVALID_STATE`를 처리하지 않는 [상류 이슈 #561](https://github.com/apollographql/apollo-client-integrations/issues/561)를 실제 서버 스택에서 확인했다. Yarn patch로 Node 스트림 컨트롤러의 해당 TypeError만 처리하며 API/GraphQL 오류와 다른 예외는 숨기지 않는다. ESM/CJS의 RSC·SSR·브라우저 빌드 8개에 같은 보정을 적용한다. 정식 수정 버전으로 올릴 때 패치 제거와 회귀 검사를 함께 검토한다.

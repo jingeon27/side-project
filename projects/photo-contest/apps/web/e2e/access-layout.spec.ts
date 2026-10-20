@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
+import { seedPost } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
 test('열어둔 대회는 서버 단계가 바뀌면 새로고침 없이 투표 화면으로 넘어가야 한다', async ({
@@ -40,7 +41,7 @@ test(
   '홈과 MY의 사용자 정보는 브라우저 JS 실행 전 서버 HTML에 있어야 한다',
   { tag: '@ios' },
   async ({ page, signIn }) => {
-    await signIn('SSR 사용자');
+    const cookie = await signIn('SSR 사용자');
     const readServerText = async (path: string) => {
       const response = await page.request.get(path);
       expect(response.status()).toBe(200);
@@ -59,6 +60,12 @@ test(
     expect(home.text).toContain('공개 그룹');
     expect(home.text).toContain('공개 그룹의 최신 사진');
     expect(home.errors).toBe(0);
+    const group = await seedGroup(cookie, 'SSR 가입 그룹');
+    await seedPost(cookie, group.id, 'SSR 개인 피드 사진');
+    const memberHome = await readServerText('/');
+    expect(memberHome.text).toContain('최신 게시물');
+    expect(memberHome.text).toContain('SSR 개인 피드 사진');
+    expect(memberHome.errors).toBe(0);
     const me = await readServerText('/me');
     expect(me.text).toContain('SSR 사용자');
     expect(me.text).toContain('내 그룹');
