@@ -149,7 +149,7 @@ jobs:
       - run: yarn workspace @photo-contest/${{ matrix.app }} exec playwright install --with-deps chromium webkit
       - run: yarn workspace @photo-contest/${{ matrix.app }} test:e2e
       - name: Verify production public cache
-        if: matrix.app == 'web'
+        if: always() && !cancelled() && matrix.app == 'web'
         run: yarn workspace @photo-contest/web test:cache
       - name: Check test schema cleanup
         if: always()

@@ -1,9 +1,10 @@
 export { GroupPageTemplate } from './@page/GroupPageTemplate';
+export { parseGroupCategory } from './@page/model/category-search.schema';
+export { groupJsonLd } from './@seo/group-seo.helper';
 export {
+  PUBLIC_GROUP_SITEMAP_SIZE,
   getGroupMetadata,
   getGroupSeoData,
   getPublicGroupCount,
   getPublicGroupSitemapPage,
-  PUBLIC_GROUP_SITEMAP_SIZE,
 } from './@seo/group-seo.server';
-export { groupJsonLd } from './@seo/group-seo.helper';

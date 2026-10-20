@@ -16,7 +16,8 @@ import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { CreatePostButton, GalleryFeed } from '@/features/post';
+import { CreatePostButton } from '@/features/post';
+import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
 import { GroupIdentity } from './ui/GroupIdentity';
 import { GroupSidebar } from './ui/GroupSidebar';
 import { PrivateGroupNotice } from './ui/PrivateGroupNotice';
@@ -94,7 +95,7 @@ function GroupContent({
 function GroupFeed({ groupRef, sidebar }: { groupRef: TGroupQueryRef; sidebar?: ReactNode }) {
   const { data } = useReadQuery(groupRef);
   if (!data) return null;
-  const feed = <GalleryFeed groupId={data.group.id} sidebar={sidebar} />;
+  const feed = <GroupCategoryFilter group={data.group} sidebar={sidebar} />;
   if (data.group.visibility === GroupVisibility.Private)
     return <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>{feed}</ClientOnly>;
   return feed;

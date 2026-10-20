@@ -7,6 +7,7 @@ export function postInclude(viewerId: string | null) {
     contest: {
       select: { id: true, groupId: true, title: true, startsAt: true, submissionEndsAt: true, endsAt: true },
     },
+    category: true,
     author: true,
     upload: true,
     _count: { select: { likes: true, comments: true, contestVotes: true } },

@@ -67,3 +67,6 @@ export const AUTH_REGISTER_IP_LIMIT = 5;
 
 export const MAX_GRAPHQL_FIELD_BYTES = 64 * 1024;
 export const MAX_GRAPHQL_UPLOAD_FILES = 1;
+
+export const GROUP_CATEGORY_LIMIT = 20;
+export const GROUP_CATEGORY_NAME_LIMIT = 20;

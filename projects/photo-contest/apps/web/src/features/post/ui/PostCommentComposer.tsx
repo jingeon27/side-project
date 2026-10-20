@@ -7,7 +7,7 @@ import { useWatch } from 'react-hook-form';
 
 import {
   CreatePostCommentDocument,
-  GalleryPostsDocument,
+  RefreshPostDocument,
   MeDocument,
   PostCommentsDocument,
   GalleryPostCardFragmentDoc,
@@ -29,7 +29,7 @@ export function PostCommentComposer({ postId }: { postId: string }) {
   const form = useZodForm(commentSchema, { defaultValues: { body: '' } });
   const body = useWatch({ control: form.control, name: 'body' });
   const [create] = useMutation(CreatePostCommentDocument, {
-    refetchQueries: [PostCommentsDocument, GalleryPostsDocument],
+    refetchQueries: [PostCommentsDocument, { query: RefreshPostDocument, variables: { id: postId } }],
     awaitRefetchQueries: true,
     onCompleted: () => form.reset(),
   });

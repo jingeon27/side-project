@@ -1,9 +1,12 @@
 'use client';
 
-import { useQuery, useReadQuery } from '@apollo/client/react';
-import { GroupJoinRequests, isGroupOwner, isGroupAdmin } from '@/features/group';
+import { GroupCategoryManager, GroupJoinRequests, isGroupAdmin, isGroupOwner } from '@/features/group';
 import { InviteCard } from '@/features/invite';
+import { HiddenPostManager } from '@/features/post';
 import { GroupVisibility, MeDocument } from '@/shared/api/generated';
+import { ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { useQuery, useReadQuery } from '@apollo/client/react';
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
 
@@ -29,6 +32,16 @@ export function GroupSidebar({ groupRef }: { groupRef: TGroupQueryRef }) {
           <GroupCommunity groupRef={groupRef} viewerId={viewer?.me?.id ?? ''} />
         </div>
       </details>
+      {isGroupAdmin(group.role) ? (
+        <ClientOnly fallback={<Skeleton className="h-24 w-full" />}>
+          <GroupCategoryManager groupId={group.id} />
+        </ClientOnly>
+      ) : null}
+      {isGroupAdmin(group.role) ? (
+        <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>
+          <HiddenPostManager groupId={group.id} />
+        </ClientOnly>
+      ) : null}
       {isGroupAdmin(group.role) && group.visibility === GroupVisibility.Private ? (
         <GroupJoinRequests groupId={group.id} />
       ) : null}

@@ -6,12 +6,13 @@ import { useId } from 'react';
 import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '@/features/submission';
 import {
   CreatePostDocument,
+  GalleryPostsDocument,
   GroupContestDocument,
   GroupContestsDocument,
-  GalleryPostsDocument,
   RequestPostUploadDocument,
   UploadPostMediaDocument,
 } from '@/shared/api/generated';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
@@ -20,9 +21,10 @@ import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-fi
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
+import { PostCategoryField } from './PostCategoryField';
 import { PostContestField } from './PostContestField';
-import { PostMediaField } from './PostMediaField';
 import { PostLinkField } from './PostLinkField';
+import { PostMediaField } from './PostMediaField';
 
 export function CreatePostBottomSheet({
   groupId,
@@ -36,6 +38,7 @@ export function CreatePostBottomSheet({
   const form = useZodForm(postSchema, {
     defaultValues: {
       participateInContest: Boolean(defaultContestId),
+      categoryId: '',
       contestId: defaultContestId ?? '',
       title: '',
       body: '',
@@ -84,6 +87,7 @@ export function CreatePostBottomSheet({
               rightsConfirmed,
               participateInContest,
               contestId,
+              categoryId,
             }) => {
               try {
                 let uploadId: string | undefined;
@@ -98,9 +102,10 @@ export function CreatePostBottomSheet({
                   });
                   uploadId = data.requestPostUpload.id;
                 }
-                await createPost({
+                const { data: posted } = await createPost({
                   variables: {
                     groupId,
+                    categoryId: categoryId || null,
                     uploadId,
                     linkUrl: linkUrl || null,
                     title,
@@ -109,6 +114,12 @@ export function CreatePostBottomSheet({
                     ...(participateInContest ? { contestId } : {}),
                   },
                 });
+                if (posted)
+                  trackEvent(ANALYTICS_EVENT.PostCreated, {
+                    group_id: groupId,
+                    category_id: categoryId || null,
+                    kind: posted.createPost.kind,
+                  });
                 toast.success('게시물을 올렸어요');
                 onClose();
               } catch (error) {
@@ -141,6 +152,7 @@ export function CreatePostBottomSheet({
           />
           <div className="flex flex-col gap-4 desktop:col-start-2 desktop:row-start-3">
             <PostLinkField form={form} />
+            <PostCategoryField form={form} groupId={groupId} />
             <PostContestField groupId={groupId} form={form} />
             <label className="flex min-h-touch items-start gap-3 text-body text-ink">
               <input

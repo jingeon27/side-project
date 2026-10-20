@@ -12,11 +12,13 @@ const data: IGroupSeoData = {
     id: 'group-1',
     name: '웃긴 고양이',
     visibility: GroupVisibility.Public,
+    categories: [],
     memberCount: 3,
   },
   posts: [
     {
       __typename: 'GalleryPost',
+      category: null,
       contestId: null,
       contest: null,
       id: 'post-1',
@@ -32,6 +34,7 @@ const data: IGroupSeoData = {
       commentCount: 2,
       likedByMe: false,
       canDelete: false,
+      canModerate: false,
       canInteract: false,
       author: { __typename: 'User', id: 'author-1', nickname: '고양이 친구', avatar: null },
     },

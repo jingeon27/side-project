@@ -5,12 +5,13 @@ import { offsetLimitPagination } from '@apollo/client/utilities';
 export const groupTypePolicies: TypePolicies = {
   Query: {
     fields: {
-      discoverGroups: offsetLimitPagination(['search']),
+      discoverGroups: offsetLimitPagination(['search', 'visibility']),
       groupJoinRequests: offsetLimitPagination(['groupId']),
     },
   },
   Group: {
     fields: {
+      categories: { merge: false },
       members: { merge: false },
       leaderboard: { merge: false },
     },

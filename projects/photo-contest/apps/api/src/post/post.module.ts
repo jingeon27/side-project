@@ -1,18 +1,22 @@
-import { PostRepository } from './post.repository';
 import { Module } from '@nestjs/common';
+import { PostCategoryResolver } from './post-category.resolver';
+import { PostCategoryService } from './post-category.service';
 
 import { GroupModule } from '../group/group.module';
 import { MediaProcessor } from './media-processor';
+import { PostCommentResolver } from './post-comment.resolver';
+import { PostCommentService } from './post-comment.service';
+import { PostModerationService } from './post-moderation.service';
 import { PostController } from './post.controller';
 import { PostResolver } from './post.resolver';
 import { PostService } from './post.service';
-import { PostCommentResolver } from './post-comment.resolver';
-import { PostCommentService } from './post-comment.service';
 
 @Module({
   imports: [GroupModule],
   providers: [
-    PostRepository,
+    PostCategoryService,
+    PostCategoryResolver,
+    PostModerationService,
     PostService,
     PostResolver,
     PostCommentService,

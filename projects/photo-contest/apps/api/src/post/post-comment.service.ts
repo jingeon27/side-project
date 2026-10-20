@@ -1,5 +1,7 @@
+import { recordEvent } from '../analytics/analytics-event.writer';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { PostRepository } from './post.repository';
+
 import { Injectable } from '@nestjs/common';
 
 import type { PostComment } from '../../generated/prisma';
@@ -38,7 +40,7 @@ function present(
 @Injectable()
 export class PostCommentService {
   constructor(
-    private readonly repository: PostRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
@@ -46,10 +48,17 @@ export class PostCommentService {
   async list(viewer: IViewer | null, postId: string, offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
     const { admin } = await this.membership.readablePost(viewer?.id ?? null, postId);
-    const rows = await this.repository.findManyPostComment({
-      where: { postId },
+    const rows = await this.db.postComment.findMany({
+      where: {
+        postId,
+      },
       include: { author: { select: USER_VIEW_SELECT } },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [
+        { createdAt: 'desc' },
+        {
+          id: 'desc',
+        },
+      ],
       skip: range.offset,
       take: range.limit,
     });
@@ -60,14 +69,13 @@ export class PostCommentService {
     const body = textValue(input, COMMENT_BODY_LIMIT, '댓글');
     return this.transactions.atomic(async (tx) => {
       const { admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
-      const row = await this.repository.createPostComment(
-        {
-          data: { postId, authorId: viewer.id, body },
-          include: { author: { select: USER_VIEW_SELECT } },
+      const row = await (tx ?? this.db).postComment.create({
+        data: { postId, authorId: viewer.id, body },
+        include: {
+          author: { select: USER_VIEW_SELECT },
         },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+      });
+      await recordEvent(tx ?? this.db, {
         id: `comment-created:${row.id}`,
         type: ANALYTICS_EVENT.COMMENT_CREATED,
         userId: viewer.id,
@@ -79,13 +87,13 @@ export class PostCommentService {
 
   async delete(viewer: IViewer, commentId: string) {
     return this.transactions.atomic(async (tx) => {
-      const row = await this.repository.findUniquePostComment({ where: { id: commentId } }, tx);
+      const row = await (tx ?? this.db).postComment.findUnique({ where: { id: commentId } });
       if (!row) fail('댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       const { admin } = await this.membership.accessiblePost(viewer.id, row.postId, tx);
       if (!admin && row.authorId !== viewer.id)
         fail('작성자와 그룹 관리자만 댓글을 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
-      await this.repository.deletePostComment({ where: { id: commentId } }, tx);
-      await this.repository.recordEvent(tx, {
+      await (tx ?? this.db).postComment.delete({ where: { id: commentId } });
+      await recordEvent(tx ?? this.db, {
         id: `comment-deleted:${commentId}`,
         type: ANALYTICS_EVENT.COMMENT_DELETED,
         userId: viewer.id,

@@ -1,4 +1,5 @@
-import { AuthRepository } from './auth.repository';
+import { Database } from '../database/database.service';
+
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';
@@ -22,8 +23,8 @@ import {
 } from '../config/limits';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
-import { accessTokenOf, identityOf, OAUTH_PROVIDER, oauthProvider } from './oauth-provider';
 import type { IOAuthIdentity, IOAuthProvider } from './oauth-provider';
+import { accessTokenOf, identityOf, OAUTH_PROVIDER, oauthProvider } from './oauth-provider';
 import { SessionService } from './session.service';
 
 const MESSAGE = {
@@ -85,7 +86,7 @@ async function readJson(response: globalThis.Response): Promise<unknown> {
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly repository: AuthRepository,
+    private readonly db: Database,
     private readonly sessions: SessionService,
   ) {}
 
@@ -101,7 +102,7 @@ export class AuthService {
   async devLogin(body: unknown, res: Response) {
     if (!developmentLoginEnabled()) fail(MESSAGE.DEV_LOGIN_DISABLED, ERROR_CODE.FORBIDDEN);
     const nickname = textValue(devLoginSchema.safeParse(body).data?.nickname, TEXT_LIMIT.NICKNAME, '닉네임');
-    const user = await this.repository.upsertUser({
+    const user = await this.db.user.upsert({
       where: { provider_providerId: { provider: 'dev', providerId: nickname } },
       create: { provider: 'dev', providerId: nickname, nickname },
       update: {},
@@ -122,7 +123,7 @@ export class AuthService {
     const challenge = parseAppChallenge(appChallenge);
     const state = randomToken();
     const verifier = randomToken();
-    await this.repository.createOAuthAttempt({
+    await this.db.oAuthAttempt.create({
       data: {
         stateHash: sha256Hex(state),
         provider: provider.name,
@@ -156,14 +157,13 @@ export class AuthService {
       const provider = oauthProvider(providerName);
       const state = queryValue(req.query.state);
       const code = queryValue(req.query.code);
-      if (state)
-        attempt = await this.repository.findUniqueOAuthAttempt({ where: { stateHash: sha256Hex(state) } });
+      if (state) attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: sha256Hex(state) } });
       const cookieState = readCookie(req.headers.cookie, AUTH_COOKIE.OAUTH_STATE);
       if (!state || !code || !cookieState || !safeEqual(cookieState, state))
         fail(MESSAGE.CALLBACK_REJECTED, ERROR_CODE.FORBIDDEN);
       const verified = await this.consumeAttempt(attempt, provider);
       const identity = await this.fetchIdentity(provider, code, verified.verifier);
-      const user = await this.repository.upsertUser({
+      const user = await this.db.user.upsert({
         where: { provider_providerId: { provider: provider.name, providerId: identity.providerId } },
         create: { provider: provider.name, ...identity },
         update: { nickname: identity.nickname, avatar: identity.avatar },
@@ -189,7 +189,7 @@ export class AuthService {
     if (!parsed.success) fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
     const codeHash = sha256Hex(parsed.data.code);
     const now = new Date();
-    const ticket = await this.repository.findUniqueAppLoginTicket({ where: { codeHash } });
+    const ticket = await this.db.appLoginTicket.findUnique({ where: { codeHash } });
     if (
       !ticket ||
       ticket.expiresAt <= now ||
@@ -197,7 +197,7 @@ export class AuthService {
     )
       fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
     // 같은 코드로 동시에 교환해도 삭제에 성공한 한 요청만 세션을 받는다.
-    const consumed = await this.repository.deleteManyAppLoginTicket({
+    const consumed = await this.db.appLoginTicket.deleteMany({
       where: { codeHash, expiresAt: { gt: now } },
     });
     if (consumed.count !== 1) fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
@@ -207,7 +207,7 @@ export class AuthService {
   private async consumeAttempt(attempt: OAuthAttempt | null, provider: IOAuthProvider) {
     if (!attempt || attempt.provider !== provider.name || attempt.expiresAt < new Date())
       fail(MESSAGE.ATTEMPT_EXPIRED, ERROR_CODE.FORBIDDEN);
-    const consumed = await this.repository.deleteManyOAuthAttempt({
+    const consumed = await this.db.oAuthAttempt.deleteMany({
       where: { stateHash: attempt.stateHash },
     });
     if (consumed.count !== 1) fail(MESSAGE.ATTEMPT_USED, ERROR_CODE.FORBIDDEN);
@@ -246,7 +246,7 @@ export class AuthService {
 
   private async issueAppTicket(userId: string, challenge: string) {
     const code = randomToken();
-    await this.repository.createAppLoginTicket({
+    await this.db.appLoginTicket.create({
       data: {
         codeHash: sha256Hex(code),
         userId,

@@ -1,8 +1,10 @@
+import { Prisma } from '../../generated/prisma';
+import { recordEvent } from '../analytics/analytics-event.writer';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { LikeRepository } from './like.repository';
+
 import { Injectable } from '@nestjs/common';
 
-import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
@@ -23,7 +25,7 @@ function isMissingSubmission(error: unknown) {
 @Injectable()
 export class LikeService {
   constructor(
-    private readonly repository: LikeRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly submissionService: SubmissionService,
@@ -36,16 +38,13 @@ export class LikeService {
     try {
       // 이미 있으면 아무것도 하지 않는다. Serializable이 아니어야 동시 요청이 재시도 없이 모두 성공한다.
       await this.transactions.run(async (tx) => {
-        const { count } = await this.repository.createManyLike(
-          {
-            data: [{ submissionId, userId: viewer.id }],
-            skipDuplicates: true,
-          },
-          tx,
-        );
+        const { count } = await (tx ?? this.db).like.createMany({
+          data: [{ submissionId, userId: viewer.id }],
+          skipDuplicates: true,
+        });
         if (count === 0) return;
         // 취소 후 다시 눌러도 같은 id라 이벤트는 처음 한 번만 남는다.
-        await this.repository.recordEvent(tx, {
+        await recordEvent(tx ?? this.db, {
           id: `like:${submissionId}:${viewer.id}`,
           type: ANALYTICS_EVENT.SUBMISSION_LIKED,
           userId: viewer.id,
@@ -63,7 +62,7 @@ export class LikeService {
   /** 누르지 않은 사진이면 그대로 둔다. 취소는 이벤트를 남기지 않는다. */
   async unlike(viewer: IViewer, submissionId: string): Promise<ISubmissionView> {
     const access = await this.membership.accessibleSubmission(viewer.id, submissionId);
-    await this.repository.deleteManyLike({ where: { submissionId, userId: viewer.id } });
+    await this.db.like.deleteMany({ where: { submissionId, userId: viewer.id } });
     return this.submissionService.view(viewer, access);
   }
 }

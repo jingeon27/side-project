@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { GroupVisibility, Phase } from '@/shared/api/generated';
+import { describe, expect, it } from 'vitest';
 import {
   groupContestsJsonLd,
   groupContestsMetadata,
@@ -13,6 +13,7 @@ const data: IGroupContestsSeoData = {
     id: 'group',
     name: '웃음 그룹',
     visibility: GroupVisibility.Public,
+    categories: [],
     memberCount: 2,
   },
   contests: [

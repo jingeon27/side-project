@@ -5,7 +5,7 @@ import { overlay } from 'overlay-kit';
 
 import {
   DeletePostCommentDocument,
-  GalleryPostsDocument,
+  RefreshPostDocument,
   PostCommentCardFragmentDoc,
   PostCommentsDocument,
 } from '@/shared/api/generated';
@@ -29,7 +29,7 @@ export function PostCommentCard({
     from: { __typename: 'PostComment', id },
   });
   const [remove] = useMutation(DeletePostCommentDocument, {
-    refetchQueries: [PostCommentsDocument, GalleryPostsDocument],
+    refetchQueries: [PostCommentsDocument],
     awaitRefetchQueries: true,
   });
   if (!complete) return null;
@@ -74,7 +74,13 @@ export function PostCommentCard({
                     confirmLabel="댓글 삭제하기"
                     tone="danger"
                     onConfirm={async () => {
-                      await remove({ variables: { commentId: id } });
+                      await remove({
+                        variables: { commentId: id },
+                        refetchQueries: [
+                          PostCommentsDocument,
+                          { query: RefreshPostDocument, variables: { id: comment.postId } },
+                        ],
+                      });
                     }}
                   />
                 ))

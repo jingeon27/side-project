@@ -45,6 +45,7 @@ mutation CreateGroup($name: String!, $visibility: GroupVisibility! = PUBLIC) {
 
 query Gallery($id: ID!) {
   group(id: $id) {
+    ...GroupCategories
     name
     ...GroupAccess
     inviteToken
@@ -74,8 +75,8 @@ fragment DiscoverGroup on Group {
   ...GroupAccess
 }
 
-query DiscoverGroups($search: String, $offset: Int = 0, $limit: Int = 24) {
-  discoverGroups(search: $search, offset: $offset, limit: $limit) {
+query DiscoverGroups($search: String, $visibility: GroupVisibility, $offset: Int = 0, $limit: Int = 24) {
+  discoverGroups(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
     ...DiscoverGroup
   }
 }
@@ -114,6 +115,9 @@ mutation RejectGroupJoinRequest($requestId: ID!) {
 
 query PublicGroupSeo($id: ID!) {
   group(id: $id) {
+    categories {
+      id
+    }
     id
     name
     visibility
@@ -151,5 +155,44 @@ mutation SetGroupModerator($groupId: ID!, $userId: ID!, $enabled: Boolean!) {
 mutation TransferGroupOwnership($groupId: ID!, $userId: ID!) {
   transferGroupOwnership(groupId: $groupId, userId: $userId) {
     ...GroupAdministration
+  }
+}
+
+fragment GroupCategoryRow on GroupCategory {
+  id
+  name
+  position
+  archivedAt
+}
+fragment GroupCategories on Group {
+  id
+  categories {
+    ...GroupCategoryRow
+  }
+}
+query GroupCategories($id: ID!) {
+  group(id: $id) {
+    ...GroupCategories
+    role
+  }
+}
+mutation CreateGroupCategory($groupId: ID!, $name: String!) {
+  createGroupCategory(groupId: $groupId, name: $name) {
+    ...GroupCategoryRow
+  }
+}
+mutation RenameGroupCategory($categoryId: ID!, $name: String!) {
+  renameGroupCategory(categoryId: $categoryId, name: $name) {
+    ...GroupCategoryRow
+  }
+}
+mutation ReorderGroupCategories($groupId: ID!, $categoryIds: [ID!]!) {
+  reorderGroupCategories(groupId: $groupId, categoryIds: $categoryIds) {
+    ...GroupCategoryRow
+  }
+}
+mutation ArchiveGroupCategory($categoryId: ID!) {
+  archiveGroupCategory(categoryId: $categoryId) {
+    ...GroupCategoryRow
   }
 }

@@ -45,6 +45,7 @@ model OAuthAttempt {
   expiresAt DateTime
 }
 model Group {
+  categories GroupCategory[]
   id String @id @default(cuid())
   name String
   visibility String @default("PRIVATE")
@@ -191,6 +192,9 @@ model PostUpload {
   @@index([expiresAt])
 }
 model Post {
+  categoryId String?
+  category GroupCategory? @relation(fields: [categoryId, groupId], references: [id, groupId], onUpdate: NoAction, onDelete: Restrict)
+  @@index([groupId, categoryId, createdAt])
   contestId String?
   contest Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
@@ -256,4 +260,18 @@ model PostContestVote {
   voter User @relation(fields: [voterId], references: [id], onDelete: Cascade)
   @@unique([contestId, voterId])
   @@index([postId])
+}
+
+model GroupCategory {
+  id String @id @default(cuid())
+  groupId String
+  name String
+  position Int
+  archivedAt DateTime?
+  createdById String
+  createdAt DateTime @default(now())
+  group Group @relation(fields:[groupId],references:[id],onDelete:Cascade)
+  posts Post[]
+  @@unique([id,groupId])
+  @@index([groupId,archivedAt,position])
 }

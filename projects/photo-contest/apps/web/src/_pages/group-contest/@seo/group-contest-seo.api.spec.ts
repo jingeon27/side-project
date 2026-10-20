@@ -101,7 +101,13 @@ describe('생성 문서로 사용하는 그룹 대회·운영 권한·공개 SEO
   it('익명 대회·참여작 조회와 그룹 경로 일치 여부를 확인해야 한다', async () => {
     const seo = await getGroupContestSeoData(publicId, contestId);
     expect(seo?.contest).toMatchObject({ title: '검색할 수 있는 대회', entryCount: 1 });
-    expect(seo?.posts[0]).toMatchObject({ id: postId, contestId, canInteract: false, canDelete: false });
+    expect(seo?.posts[0]).toMatchObject({
+      id: postId,
+      contestId,
+      canModerate: false,
+      canInteract: false,
+      canDelete: false,
+    });
     expect(await getGroupContestSeoData(publicId, privateContestId)).toBeNull();
     expect(await getGroupContestSeoData(publicId, 'missing-contest')).toBeNull();
   });

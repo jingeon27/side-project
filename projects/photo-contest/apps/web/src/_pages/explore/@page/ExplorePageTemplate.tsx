@@ -14,7 +14,7 @@ import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
 import { GroupDiscoveryResults } from './ui/GroupDiscoveryResults';
-import { GroupSearchForm } from './ui/GroupSearchForm';
+import { GroupSearchForm } from '@/features/group';
 
 export function ExplorePageTemplate({ search }: { search: string }) {
   const [queryRef, { refetch }] = useBackgroundQuery(DiscoverGroupsDocument, {

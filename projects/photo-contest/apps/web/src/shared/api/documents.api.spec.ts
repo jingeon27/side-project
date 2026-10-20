@@ -346,7 +346,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     expect((await ok(UnlikePostDocument, owner, { postId: photo.id })).unlikePost.likeCount).toBe(0);
     expect(
       (await ok(GalleryPostsDocument, outsider, variables)).galleryPosts.find((post) => post.id === photo.id),
-    ).toMatchObject({ canInteract: false, canDelete: false, likedByMe: false });
+    ).toMatchObject({ canModerate: false, canInteract: false, canDelete: false, likedByMe: false });
     expect(
       (await execute(LikePostDocument, outsider, { postId: photo.id })).errors?.[0]?.extensions?.code,
     ).toBe('FORBIDDEN');

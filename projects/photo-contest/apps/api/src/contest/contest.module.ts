@@ -1,6 +1,6 @@
-import { GroupContestService } from './group-contest.service';
 import { GroupContestResolver } from './group-contest.resolver';
-import { ContestRepository } from './contest.repository';
+import { GroupContestService } from './group-contest.service';
+
 import { Module } from '@nestjs/common';
 
 import { GroupModule } from '../group/group.module';
@@ -13,7 +13,6 @@ import { GroupContestsResolver } from './group-contests.resolver';
   providers: [
     GroupContestService,
     GroupContestResolver,
-    ContestRepository,
     ContestService,
     ContestResolver,
     GroupContestsResolver,

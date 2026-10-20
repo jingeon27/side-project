@@ -1,22 +1,27 @@
-import { presentPost } from './post.presenter';
+import type { Prisma } from '../../generated/prisma';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import { assertContestParticipation } from '../contest/group-contest.policy';
-import { postInclude } from './post.query';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { PostRepository } from './post.repository';
+import { GroupCategoryService } from '../group/group-category.service';
+import { koreanMonth } from './post-order';
+import { presentPost } from './post.presenter';
+import { postInclude } from './post.query';
+
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import { Injectable } from '@nestjs/common';
 
-import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
-import { readUpload } from '../common/graphql/read-upload';
-import { MAX_VIDEO_BYTES } from '../config/limits';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { readUpload } from '../common/graphql/read-upload';
 import { pageRange, textValue } from '../common/validation';
 import {
+  DOWNLOAD_URL_TTL_SECONDS,
   MAX_PENDING_UPLOADS,
+  MAX_VIDEO_BYTES,
   PAGE_SIZE_DEFAULT,
   POST_BODY_LIMIT,
   POST_TITLE_LIMIT,
@@ -25,12 +30,12 @@ import {
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
 import { MediaProcessor } from './media-processor';
 import { postLink } from './post-link.policy';
-import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
-import { DOWNLOAD_URL_TTL_SECONDS } from '../config/limits';
 
 interface IPostInput {
+  categoryId?: string | null;
   groupId: string;
   uploadId?: string | null;
   linkUrl?: string | null;
@@ -40,6 +45,7 @@ interface IPostInput {
   rightsConfirmed: boolean;
 }
 interface IPostQuery {
+  categoryId?: string | null;
   groupId?: string | null;
   contestId?: string | null;
   sort?: 'NEWEST' | 'MONTHLY_POPULAR' | null;
@@ -49,7 +55,8 @@ interface IPostQuery {
 @Injectable()
 export class PostService {
   constructor(
-    private readonly repository: PostRepository,
+    private readonly db: Database,
+    private readonly categories: GroupCategoryService,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
@@ -57,19 +64,46 @@ export class PostService {
   ) {}
 
   async list(viewer: IViewer | null, query: IPostQuery) {
-    const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     if (!query.groupId && !viewer) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
     const groupIds = query.groupId
       ? [(await this.membership.readableGroup(viewer?.id ?? null, query.groupId)).group.id]
       : await this.membership.memberGroupIds(viewer?.id ?? '');
+    return this.findPosts(viewer, { groupId: { in: groupIds } }, query);
+  }
+
+  async listPublic(viewer: IViewer | null, query: IPostQuery) {
+    return this.findPosts(viewer, { group: { visibility: 'PUBLIC' } }, query);
+  }
+
+  async find(viewer: IViewer | null, id: string) {
+    await this.membership.readablePost(viewer?.id ?? null, id);
+    const post = await this.db.post.findUniqueOrThrow({
+      where: { id },
+      include: postInclude(viewer?.id ?? null),
+    });
+    return presentPost(post, viewer?.id ?? null);
+  }
+
+  private async findPosts(viewer: IViewer | null, scope: Prisma.PostWhereInput, query: IPostQuery) {
+    const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const popular = query.sort === 'MONTHLY_POPULAR';
-    const rows = await this.repository.listVisiblePosts({
-      groupIds,
-      contestId: query.contestId,
-      viewerId: viewer?.id ?? null,
-      popular,
-      offset,
-      limit,
+    const rows = await this.db.post.findMany({
+      where: {
+        ...scope,
+        ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+        ...(query.contestId ? { contestId: query.contestId } : {}),
+        hidden: false,
+        OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],
+        ...(popular ? { createdAt: koreanMonth() } : {}),
+      },
+      include: postInclude(viewer?.id ?? null),
+      skip: offset,
+      take: limit,
+      orderBy: [
+        ...(popular ? [{ likes: { _count: 'desc' as const } }] : []),
+        { createdAt: 'desc' },
+        { id: 'desc' },
+      ],
     });
     return rows.map((row) => presentPost(row, viewer?.id ?? null));
   }
@@ -78,25 +112,19 @@ export class PostService {
     const upload = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, groupId, tx);
       const now = new Date();
-      const pending = await this.repository.countPostUpload(
-        {
-          where: { userId: viewer.id, expiresAt: { gt: now }, post: null },
-        },
-        tx,
-      );
+      const pending = await (tx ?? this.db).postUpload.count({
+        where: { userId: viewer.id, expiresAt: { gt: now }, post: null },
+      });
       if (pending >= MAX_PENDING_UPLOADS)
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
-      return this.repository.createPostUpload(
-        {
-          data: {
-            userId: viewer.id,
-            groupId,
-            tokenHash: sha256Hex(token),
-            expiresAt: new Date(now.getTime() + UPLOAD_TICKET_TTL_MS),
-          },
+      return (tx ?? this.db).postUpload.create({
+        data: {
+          userId: viewer.id,
+          groupId,
+          tokenHash: sha256Hex(token),
+          expiresAt: new Date(now.getTime() + UPLOAD_TICKET_TTL_MS),
         },
-        tx,
-      );
+      });
     });
     return { id: upload.id, expiresAt: upload.expiresAt, url: `/backend/post-uploads/${token}` };
   }
@@ -113,7 +141,7 @@ export class PostService {
   }
 
   private async uploadGrant(viewer: IViewer, where: Prisma.PostUploadWhereUniqueInput) {
-    const grant = await this.repository.findUniquePostUpload({ where });
+    const grant = await this.db.postUpload.findUnique({ where });
     if (!grant || grant.userId !== viewer.id || grant.storageKey || grant.expiresAt <= new Date())
       fail('업로드 요청이 만료되었거나 유효하지 않습니다.', ERROR_CODE.FORBIDDEN);
     await this.membership.requireMember(viewer.id, grant.groupId);
@@ -129,7 +157,7 @@ export class PostService {
     const key = createMediaKey(media.extension);
     await this.storage.put(key, media.body, media.contentType);
     try {
-      const updated = await this.repository.updateManyPostUpload({
+      const updated = await this.db.postUpload.updateMany({
         where: { id: grant.id, storageKey: null, expiresAt: { gt: new Date() } },
         data: {
           storageKey: key,
@@ -154,7 +182,7 @@ export class PostService {
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, input.groupId, tx);
       const upload = input.uploadId
-        ? await this.repository.findUniquePostUpload({ where: { id: input.uploadId } }, tx)
+        ? await (tx ?? this.db).postUpload.findUnique({ where: { id: input.uploadId } })
         : null;
       if (
         input.uploadId &&
@@ -166,30 +194,34 @@ export class PostService {
       )
         fail('업로드가 완료되지 않았거나 만료되었습니다.');
       if (input.contestId) {
-        const contest = await this.repository.findUniqueContest({ where: { id: input.contestId } }, tx);
+        const contest = await (tx ?? this.db).contest.findUnique({ where: { id: input.contestId } });
         if (!contest) fail('대회를 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
         assertContestParticipation(contest, input.groupId);
       }
-      const created = await this.repository.createPost(
-        {
-          data: {
-            groupId: input.groupId,
-            authorId: viewer.id,
-            uploadId: upload?.id ?? null,
-            linkUrl,
-            title,
-            body,
-            contestId: input.contestId ?? null,
-          },
-          include: postInclude(viewer.id),
+      if (input.categoryId) await this.categories.requireActive(input.groupId, input.categoryId, tx);
+      const created = await (tx ?? this.db).post.create({
+        data: {
+          groupId: input.groupId,
+          categoryId: input.categoryId ?? null,
+          authorId: viewer.id,
+          uploadId: upload?.id ?? null,
+          linkUrl,
+          title,
+          body,
+          contestId: input.contestId ?? null,
         },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+        include: postInclude(viewer.id),
+      });
+      await recordEvent(tx ?? this.db, {
         id: `post:${created.id}`,
         type: ANALYTICS_EVENT.POST_CREATED,
         userId: viewer.id,
-        properties: { groupId: input.groupId, postId: created.id, kind: upload?.kind ?? 'LINK' },
+        properties: {
+          groupId: input.groupId,
+          postId: created.id,
+          kind: upload?.kind ?? 'LINK',
+          categoryId: input.categoryId ?? null,
+        },
       });
       return created;
     });
@@ -199,26 +231,23 @@ export class PostService {
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.accessiblePost(viewer.id, postId, tx);
       if (liked)
-        await this.repository.upsertPostLike(
-          {
-            where: { postId_userId: { postId, userId: viewer.id } },
-            create: { postId, userId: viewer.id },
-            update: {},
-          },
-          tx,
-        );
-      if (!liked) await this.repository.deleteManyPostLike({ where: { postId, userId: viewer.id } }, tx);
+        await (tx ?? this.db).postLike.upsert({
+          where: { postId_userId: { postId, userId: viewer.id } },
+          create: { postId, userId: viewer.id },
+          update: {},
+        });
+      if (!liked) await (tx ?? this.db).postLike.deleteMany({ where: { postId, userId: viewer.id } });
       if (liked)
-        await this.repository.recordEvent(tx, {
+        await recordEvent(tx ?? this.db, {
           id: `post-like:${postId}:${viewer.id}`,
           type: ANALYTICS_EVENT.POST_LIKED,
           userId: viewer.id,
           properties: { postId },
         });
-      return this.repository.findUniqueOrThrowPost(
-        { where: { id: postId }, include: postInclude(viewer.id) },
-        tx,
-      );
+      return (tx ?? this.db).post.findUniqueOrThrow({
+        where: { id: postId },
+        include: postInclude(viewer.id),
+      });
     });
     return presentPost(row, viewer.id);
   }
@@ -227,27 +256,27 @@ export class PostService {
       const { post, admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
       if (!admin && post.authorId !== viewer.id)
         fail('작성자와 그룹 관리자만 삭제할 수 있습니다.', ERROR_CODE.FORBIDDEN);
-      await this.repository.deletePost({ where: { id: postId } }, tx);
-      await this.repository.recordEvent(tx, {
+      await (tx ?? this.db).post.delete({ where: { id: postId } });
+      await recordEvent(tx ?? this.db, {
         id: `post-deleted:${postId}`,
         type: ANALYTICS_EVENT.POST_DELETED,
         userId: viewer.id,
         properties: { postId, groupId: post.groupId },
       });
       if (post.legacySubmissionId)
-        await this.repository.deleteManySubmission({ where: { id: post.legacySubmissionId } }, tx);
+        await (tx ?? this.db).submission.deleteMany({ where: { id: post.legacySubmissionId } });
       // 파일 삭제가 일시 실패해도 정리 작업이 다시 시도할 수 있도록 티켓을 남긴다.
       if (post.uploadId)
-        await this.repository.updatePostUpload(
-          { where: { id: post.uploadId }, data: { expiresAt: new Date(0) } },
-          tx,
-        );
+        await (tx ?? this.db).postUpload.update({
+          where: { id: post.uploadId },
+          data: { expiresAt: new Date(0) },
+        });
       return post.upload;
     });
     if (!upload) return true;
     try {
       if (upload.storageKey) await this.storage.delete(upload.storageKey);
-      await this.repository.deleteManyPostUpload({ where: { id: upload.id, post: null } });
+      await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
     } catch (error) {
       reportUnexpectedError(error, { operationName: 'deletePost', location: 'media-cleanup' });
     }
