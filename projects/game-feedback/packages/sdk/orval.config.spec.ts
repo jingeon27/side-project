@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 import { expect, it } from 'vitest';
 it('passes a response schema to every generated OpenAPI operation after caller options', () => {
-  const spec = JSON.parse(
-    readFileSync(new URL('../../../apps/api/openapi.json', import.meta.url), 'utf8'),
-  ) as { paths: Record<string, Record<string, { operationId: string }>> };
+  const spec = JSON.parse(readFileSync(new URL('../../apps/api/openapi.json', import.meta.url), 'utf8')) as {
+    paths: Record<string, Record<string, { operationId: string }>>;
+  };
   const source = ts.createSourceFile(
     'client.ts',
-    readFileSync(new URL('./generated/client.ts', import.meta.url), 'utf8'),
+    readFileSync(new URL('./src/generated/client.ts', import.meta.url), 'utf8'),
     ts.ScriptTarget.Latest,
     true,
   );
