@@ -8,7 +8,7 @@ import type { DiscoverGroupsQuery } from '@/shared/api/generated';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 
-import { DiscoverGroupCard } from './DiscoverGroupCard';
+import { DiscoverGroupCard } from '@/features/group';
 
 export function GroupDiscoveryResults({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);

@@ -32,6 +32,7 @@ const data: IGroupSeoData = {
       commentCount: 2,
       likedByMe: false,
       canDelete: false,
+      canModerate: false,
       canInteract: false,
       author: { __typename: 'User', id: 'author-1', nickname: '고양이 친구', avatar: null },
     },

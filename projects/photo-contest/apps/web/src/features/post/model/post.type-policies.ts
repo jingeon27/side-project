@@ -5,6 +5,8 @@ export const postTypePolicies: TypePolicies = {
   Query: {
     fields: {
       galleryPosts: offsetLimitPagination(['groupId', 'contestId', 'sort']),
+      publicGalleryPosts: offsetLimitPagination(['sort']),
+      hiddenGalleryPosts: offsetLimitPagination(['groupId']),
       postComments: offsetLimitPagination(['postId']),
     },
   },

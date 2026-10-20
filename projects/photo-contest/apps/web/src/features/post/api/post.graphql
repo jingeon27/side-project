@@ -19,6 +19,7 @@ fragment GalleryPostCard on GalleryPost {
   commentCount
   likedByMe
   canDelete
+  canModerate
   canInteract
   author {
     id
@@ -108,4 +109,26 @@ mutation CreatePostComment($postId: ID!, $body: String!) {
 }
 mutation DeletePostComment($commentId: ID!) {
   deletePostComment(commentId: $commentId)
+}
+
+query PublicGalleryPosts($sort: PostSort!, $offset: Int!, $limit: Int!) {
+  publicGalleryPosts(sort: $sort, offset: $offset, limit: $limit) {
+    ...GalleryPostCard
+  }
+}
+
+query RefreshPost($id: ID!) {
+  galleryPost(id: $id) {
+    ...GalleryPostCard
+  }
+}
+query HiddenGalleryPosts($groupId: ID!, $offset: Int!, $limit: Int!) {
+  hiddenGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
+    id
+    title
+    createdAt
+  }
+}
+mutation SetPostHidden($postId: ID!, $hidden: Boolean!) {
+  setPostHidden(postId: $postId, hidden: $hidden)
 }

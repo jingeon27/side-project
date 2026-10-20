@@ -10,3 +10,5 @@ export { GroupMembershipButton } from './ui/GroupMembershipButton';
 export { GroupJoinRequests } from './ui/GroupJoinRequests';
 export { GroupVisibilityBadge } from './ui/GroupVisibilityBadge';
 export { GroupContentFrame } from './ui/GroupContentFrame';
+export { DiscoverGroupCard } from './ui/DiscoverGroupCard';
+export { GroupSearchForm } from './ui/GroupSearchForm';

@@ -9,9 +9,9 @@ import { useAppRouter } from '@/shared/model/router';
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
 
-import { groupSearchSchema } from '../model/search.schema';
+import { groupSearchSchema } from '../model/group-search.schema';
 
-export function GroupSearchForm({ search }: { search: string }) {
+export function GroupSearchForm({ search = '' }: { search?: string }) {
   const form = useZodForm(groupSearchSchema, { defaultValues: { search } });
   const router = useAppRouter();
   const [pending, startTransition] = useTransition();

@@ -52,6 +52,7 @@ const data: IGroupContestSeoData = {
       commentCount: 0,
       likedByMe: false,
       canDelete: false,
+      canModerate: false,
       canInteract: false,
       author: { __typename: 'User', id: 'author', nickname: '참여자', avatar: null },
     },

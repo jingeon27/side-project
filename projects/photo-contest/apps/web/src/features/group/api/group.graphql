@@ -74,8 +74,8 @@ fragment DiscoverGroup on Group {
   ...GroupAccess
 }
 
-query DiscoverGroups($search: String, $offset: Int = 0, $limit: Int = 24) {
-  discoverGroups(search: $search, offset: $offset, limit: $limit) {
+query DiscoverGroups($search: String, $visibility: GroupVisibility, $offset: Int = 0, $limit: Int = 24) {
+  discoverGroups(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
     ...DiscoverGroup
   }
 }
