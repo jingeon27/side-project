@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { groupBy } from 'es-toolkit';
 import { match } from 'ts-pattern';
+import type { Prisma } from '../../generated/prisma';
+import { recordEvent } from '../analytics/analytics-event.writer';
+import { Database } from '../database/database.service';
 
-import type { Contest, GroupMember, Prisma } from '../../generated/prisma';
-import type { IViewer } from '../auth/session.service';
+import type { Contest, GroupMember } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
@@ -15,10 +18,10 @@ import { MembershipService } from '../group/membership.service';
 import { presentPost } from '../post/post.presenter';
 import { postInclude } from '../post/post.query';
 import { contestDates, phase, PHASE } from './contest.policy';
-import { ContestRepository } from './contest.repository';
+
+import type { ICreateContestInput } from './contest.service';
 import { CONTEST_FORMAT, GROUP_CONTEST_FILTER, type TGroupContestFilter } from './group-contest.policy';
 import { rankResults } from './result-ranking';
-import type { ICreateContestInput } from './contest.service';
 
 function contestInclude(viewerId: string | null) {
   return {
@@ -46,7 +49,7 @@ export interface IGroupContestNode extends Contest {
 @Injectable()
 export class GroupContestService {
   constructor(
-    private readonly repository: ContestRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
@@ -68,7 +71,7 @@ export class GroupContestService {
       .with(GROUP_CONTEST_FILTER.OPEN, () => ({ startsAt: { lte: now }, submissionEndsAt: { gt: now } }))
       .with(GROUP_CONTEST_FILTER.COMPLETED, () => ({ endsAt: { lte: now } }))
       .exhaustive();
-    const rows = await this.repository.findManyContest({
+    const rows = await this.db.contest.findMany({
       where: { groupId: input.groupId, format: CONTEST_FORMAT.POST, ...schedule },
       include: contestInclude(viewer?.id ?? null),
       orderBy: [{ endsAt: 'desc' }, { id: 'desc' }],
@@ -79,7 +82,7 @@ export class GroupContestService {
   }
 
   async get(viewer: IViewer | null, id: string) {
-    const row = await this.repository.findUniqueContest({
+    const row = await this.db.contest.findUnique({
       where: { id },
       include: contestInclude(viewer?.id ?? null),
     });
@@ -96,11 +99,10 @@ export class GroupContestService {
       await this.membership.requireAdmin(viewer.id, input.groupId, tx);
       const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
       const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
-      const created = await this.repository.createContest(
-        { data: { groupId: input.groupId, title, format: CONTEST_FORMAT.POST, ...dates } },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+      const created = await (tx ?? this.db).contest.create({
+        data: { groupId: input.groupId, title, format: CONTEST_FORMAT.POST, ...dates },
+      });
+      await recordEvent(tx ?? this.db, {
         id: `contest:${created.id}`,
         type: ANALYTICS_EVENT.CONTEST_CREATED,
         userId: viewer.id,
@@ -113,17 +115,17 @@ export class GroupContestService {
 
   async vote(viewer: IViewer, contestId: string, postId: string) {
     await this.transactions.atomic(async (tx) => {
-      const contest = await this.repository.findUniqueContest({ where: { id: contestId } }, tx);
+      const contest = await (tx ?? this.db).contest.findUnique({ where: { id: contestId } });
       if (!contest || contest.format !== CONTEST_FORMAT.POST)
         fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
       await this.membership.requireMember(viewer.id, contest.groupId, tx);
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간에만 투표할 수 있습니다.');
-      const post = await this.repository.findUniquePost({ where: { id: postId } }, tx);
+      const post = await (tx ?? this.db).post.findUnique({ where: { id: postId } });
       if (!post || post.hidden || post.contestId !== contestId || post.groupId !== contest.groupId)
         fail('대회 참여 게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       if (post.authorId === viewer.id) fail('자신의 게시물에는 투표할 수 없습니다.');
-      await this.repository.createPostContestVote({ data: { contestId, postId, voterId: viewer.id } }, tx);
-      await this.repository.recordEvent(tx, {
+      await (tx ?? this.db).postContestVote.create({ data: { contestId, postId, voterId: viewer.id } });
+      await recordEvent(tx ?? this.db, {
         id: `post-vote:${contestId}:${viewer.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,
@@ -140,14 +142,14 @@ export class GroupContestService {
   }
 
   publicCount() {
-    return this.repository.countContest({
+    return this.db.contest.count({
       where: { format: CONTEST_FORMAT.POST, group: { visibility: 'PUBLIC' } },
     });
   }
 
   async publicList(offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
-    const rows = await this.repository.findManyContest({
+    const rows = await this.db.contest.findMany({
       where: { format: CONTEST_FORMAT.POST, group: { visibility: 'PUBLIC' } },
       include: contestInclude(null),
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -161,7 +163,7 @@ export class GroupContestService {
     const loadResults = siblingLoader(
       rows.filter((row) => phase(row) === PHASE.COMPLETED).map((row) => row.id),
       async (ids) => {
-        const entries = await this.repository.findManyPost({
+        const entries = await this.db.post.findMany({
           where: { contestId: { in: [...ids] }, hidden: false },
           include: postInclude(viewer?.id ?? null),
         });

@@ -1,21 +1,21 @@
 import { randomUUID } from 'node:crypto';
+import { recordEvent } from '../analytics/analytics-event.writer';
+import { Database } from './database.service';
 
-import { afterAll, beforeAll, describe, expect, it, inject } from 'vitest';
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 
+import type { ITestApi } from '../../test/support/app';
+import { createTestApp } from '../../test/support/app';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
-import { AuthRepository } from '../auth/auth.repository';
-import { UnitOfWork } from './unit-of-work';
-import { GroupRepository } from '../group/group.repository';
 import { ERROR_MESSAGE } from '../common/errors';
 import { SERIALIZABLE_ATTEMPTS } from '../config/limits';
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi } from '../../test/support/app';
+import { UnitOfWork } from './unit-of-work';
 
 const userData = () => {
   const id = `repo-user-${randomUUID()}`;
-  return { id, nickname: 'Repository 회원', provider: 'test', providerId: id };
+  return { id, nickname: 'DB 회원', provider: 'test', providerId: id };
 };
-const groupData = (name = 'Repository 그룹') => {
+const groupData = (name = 'DB 그룹') => {
   const id = `repo-group-${randomUUID()}`;
   return { id, name, inviteToken: id, inviteHash: id };
 };
@@ -34,7 +34,7 @@ class TransactionBarrier {
   }
 }
 
-describe('Repository transaction boundaries', () => {
+describe('DB transaction boundaries', () => {
   const userId = `repository-user-${randomUUID()}`;
   const groupId = `repository-group-${randomUUID()}`;
   const eventId = `repository-event-${randomUUID()}`;
@@ -58,35 +58,31 @@ describe('Repository transaction boundaries', () => {
   it('uses one connection across domains and rolls back writes and analytics together', async () => {
     const api = state.api;
     if (!api) throw new Error('Test application was not initialized');
-    const auth = api.app.get(AuthRepository);
-    const groups = api.app.get(GroupRepository);
+    const auth = api.app.get(Database);
+    const groups = api.app.get(Database);
     const work = api.app.get(UnitOfWork);
     await expect(
       work.atomic(async (client) => {
-        await auth.createUser(
-          { data: { id: userId, nickname: 'Repository 회원', provider: 'test', providerId: userId } },
-          client,
-        );
-        await groups.createGroup(
-          {
-            data: {
-              id: groupId,
-              name: 'Repository 그룹',
-              inviteToken: groupId,
-              inviteHash: groupId,
-              members: { create: { userId, role: 'OWNER' } },
-            },
+        await (client ?? auth).user.create({
+          data: { id: userId, nickname: 'DB 회원', provider: 'test', providerId: userId },
+        });
+        await (client ?? groups).group.create({
+          data: {
+            id: groupId,
+            name: 'DB 그룹',
+            inviteToken: groupId,
+            inviteHash: groupId,
+            members: { create: { userId, role: 'OWNER' } },
           },
-          client,
-        );
-        await groups.recordEvent(client, {
+        });
+        await recordEvent(client ?? groups, {
           id: eventId,
           type: ANALYTICS_EVENT.GROUP_CREATED,
           userId,
           properties: { groupId },
         });
         expect(
-          await groups.findUniqueGroupMember({ where: { groupId_userId: { groupId, userId } } }, client),
+          await (client ?? groups).groupMember.findUnique({ where: { groupId_userId: { groupId, userId } } }),
         ).toMatchObject({ userId, groupId });
         throw failure;
       }),
@@ -99,18 +95,17 @@ describe('Repository transaction boundaries', () => {
 
   it('단일 연결에서 사용자·그룹·멤버십·이벤트를 함께 커밋해야 한다', async () => {
     const api = currentApi();
-    const auth = api.app.get(AuthRepository);
-    const groups = api.app.get(GroupRepository);
+    const auth = api.app.get(Database);
+    const groups = api.app.get(Database);
     const user = userData();
     const group = groupData();
     const event = `repo-commit:${group.id}`;
     const created = await api.app.get(UnitOfWork).atomic(async (client) => {
-      await auth.createUser({ data: user }, client);
-      const row = await groups.createGroup(
-        { data: { ...group, members: { create: { userId: user.id, role: 'OWNER' } } } },
-        client,
-      );
-      await groups.recordEvent(client, {
+      await (client ?? auth).user.create({ data: user });
+      const row = await (client ?? groups).group.create({
+        data: { ...group, members: { create: { userId: user.id, role: 'OWNER' } } },
+      });
+      await recordEvent(client ?? groups, {
         id: event,
         type: ANALYTICS_EVENT.GROUP_CREATED,
         userId: user.id,
@@ -129,17 +124,17 @@ describe('Repository transaction boundaries', () => {
       properties: { groupId: group.id },
     });
   });
-  it('배열 트랜잭션에서 다른 Repository의 lazy query와 반환 순서를 유지해야 한다', async () => {
+  it('배열 트랜잭션에서 다른 DB의 lazy query와 반환 순서를 유지해야 한다', async () => {
     const api = currentApi();
     const user = userData();
     const group = groupData();
     const [createdUser, createdGroup] = await api.app
       .get(UnitOfWork)
       .run([
-        api.app.get(AuthRepository).createUser({ data: user }),
+        api.app.get(Database).user.create({ data: user }),
         api.app
-          .get(GroupRepository)
-          .createGroup({ data: { ...group, members: { create: { userId: user.id, role: 'OWNER' } } } }),
+          .get(Database)
+          .group.create({ data: { ...group, members: { create: { userId: user.id, role: 'OWNER' } } } }),
       ]);
     expect(createdUser.id).toBe(user.id);
     expect(createdGroup.id).toBe(group.id);
@@ -153,8 +148,8 @@ describe('Repository transaction boundaries', () => {
       api.app
         .get(UnitOfWork)
         .run([
-          api.app.get(AuthRepository).createUser({ data: user }),
-          api.app.get(GroupRepository).createGroup({ data: group }),
+          api.app.get(Database).user.create({ data: user }),
+          api.app.get(Database).group.create({ data: group }),
         ]),
     ).rejects.toMatchObject({ code: 'P2002' });
     expect(await api.db.user.findUnique({ where: { id: user.id } })).toBeNull();
@@ -168,20 +163,17 @@ describe('Repository transaction boundaries', () => {
     await expect(
       api.app.get(UnitOfWork).atomic(async (client) => {
         calls.count += 1;
-        const repository = api.app.get(GroupRepository);
-        await repository.createGroup({ data: group }, client);
-        await repository.recordEvent(client, {
+        const repository = api.app.get(Database);
+        await (client ?? repository).group.create({ data: group });
+        await recordEvent(client ?? repository, {
           id: group.id,
           type: ANALYTICS_EVENT.GROUP_CREATED,
           userId: user.id,
           properties: { groupId: group.id },
         });
-        await api.app
-          .get(AuthRepository)
-          .createUser(
-            { data: { ...userData(), provider: user.provider, providerId: user.providerId } },
-            client,
-          );
+        await (client ?? api.app.get(Database)).user.create({
+          data: { ...userData(), provider: user.provider, providerId: user.providerId },
+        });
       }),
     ).rejects.toMatchObject({ message: ERROR_MESSAGE.ALREADY_DONE, extensions: { code: 'CONFLICT' } });
     expect(calls.count).toBe(1);
@@ -196,22 +188,22 @@ describe('Repository transaction boundaries', () => {
       const group = await api.db.group.create({ data: groupData('0') });
       const barrier = new TransactionBarrier();
       const attempts = [{ count: 0 }, { count: 0 }];
-      const repository = api.app.get(GroupRepository);
+      const repository = api.app.get(Database);
       const work = api.app.get(UnitOfWork);
       await Promise.all(
         attempts.map((attempt, index) =>
           work.atomic(async (client) => {
             attempt.count += 1;
-            const current = await repository.findUniqueGroup({ where: { id: group.id } }, client);
+            const current = await (client ?? repository).group.findUnique({ where: { id: group.id } });
             if (!current) throw new Error('테스트 그룹이 있어야 한다');
             if (attempt.count === 1) {
               await barrier.arrive();
             }
-            await repository.updateGroup(
-              { where: { id: group.id }, data: { name: String(Number(current.name) + 1) } },
-              client,
-            );
-            await repository.recordEvent(client, {
+            await (client ?? repository).group.update({
+              where: { id: group.id },
+              data: { name: String(Number(current.name) + 1) },
+            });
+            await recordEvent(client ?? repository, {
               id: `${group.id}:${index}`,
               type: ANALYTICS_EVENT.GROUP_JOINED,
               userId: null,
@@ -233,12 +225,12 @@ describe('Repository transaction boundaries', () => {
     const api = currentApi();
     const group = await api.db.group.create({ data: groupData('initial') });
     const attempts = { count: 0 };
-    const groups = api.app.get(GroupRepository);
+    const groups = api.app.get(Database);
     await expect(
       api.app.get(UnitOfWork).atomic(async (client) => {
         attempts.count += 1;
-        await groups.findUniqueGroup({ where: { id: group.id } }, client);
-        await groups.recordEvent(client, {
+        await (client ?? groups).group.findUnique({ where: { id: group.id } });
+        await recordEvent(client ?? groups, {
           id: group.id,
           type: ANALYTICS_EVENT.GROUP_JOINED,
           userId: null,
@@ -246,7 +238,7 @@ describe('Repository transaction boundaries', () => {
         });
         // 별도 DB 연결이 다른 요청의 커밋을 재현한다.
         await api.db.group.update({ where: { id: group.id }, data: { name: `external-${attempts.count}` } });
-        await groups.updateGroup({ where: { id: group.id }, data: { name: 'must-rollback' } }, client);
+        await (client ?? groups).group.update({ where: { id: group.id }, data: { name: 'must-rollback' } });
       }),
     ).rejects.toMatchObject({ message: ERROR_MESSAGE.REQUEST_CONFLICT, extensions: { code: 'CONFLICT' } });
     expect(attempts.count).toBe(SERIALIZABLE_ATTEMPTS);

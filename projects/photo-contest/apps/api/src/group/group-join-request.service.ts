@@ -1,5 +1,7 @@
+import { recordEvent } from '../analytics/analytics-event.writer';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { GroupRepository } from './group.repository';
+
 import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
@@ -13,7 +15,7 @@ import { MembershipService } from './membership.service';
 @Injectable()
 export class GroupJoinRequestService {
   constructor(
-    private readonly repository: GroupRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
@@ -21,10 +23,15 @@ export class GroupJoinRequestService {
   async list(viewer: IViewer, groupId: string, offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
     await this.membership.requireAdmin(viewer.id, groupId);
-    return this.repository.findManyGroupJoinRequest({
+    return this.db.groupJoinRequest.findMany({
       where: { groupId },
       include: { user: { select: USER_VIEW_SELECT } },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [
+        {
+          createdAt: 'asc',
+        },
+        { id: 'asc' },
+      ],
       skip: range.offset,
       take: range.limit,
     });
@@ -32,25 +39,26 @@ export class GroupJoinRequestService {
 
   async review(viewer: IViewer, requestId: string, approved: boolean) {
     return this.transactions.atomic(async (tx) => {
-      const request = await this.repository.findUniqueGroupJoinRequest({ where: { id: requestId } }, tx);
+      const request = await (tx ?? this.db).groupJoinRequest.findUnique({
+        where: {
+          id: requestId,
+        },
+      });
       if (!request) fail('가입 신청을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       await this.membership.requireAdmin(viewer.id, request.groupId, tx);
       if (approved) {
-        await this.repository.createManyGroupMember(
-          {
-            data: [{ groupId: request.groupId, userId: request.userId }],
-            skipDuplicates: true,
-          },
-          tx,
-        );
-        await this.repository.recordEvent(tx, {
+        await (tx ?? this.db).groupMember.createMany({
+          data: [{ groupId: request.groupId, userId: request.userId }],
+          skipDuplicates: true,
+        });
+        await recordEvent(tx ?? this.db, {
           id: `joined:${request.groupId}:${request.userId}`,
           type: ANALYTICS_EVENT.GROUP_JOINED,
           userId: request.userId,
           properties: { groupId: request.groupId },
         });
       }
-      await this.repository.deleteGroupJoinRequest({ where: { id: requestId } }, tx);
+      await (tx ?? this.db).groupJoinRequest.delete({ where: { id: requestId } });
       return true;
     });
   }
