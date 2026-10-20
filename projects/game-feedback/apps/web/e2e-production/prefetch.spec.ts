@@ -74,13 +74,22 @@ for (const width of [400, 1440]) {
 }
 
 test('a production navigation shows the prefetched guide with its own page header', async ({ page }) => {
+  const guidePrefetched = page.waitForResponse(async (response) => {
+    const headers = response.request().headers();
+    if (new URL(response.url()).pathname !== '/ko/guide') return false;
+    if (headers['next-router-segment-prefetch'] !== '/_tree') return false;
+    return response.ok() && (await response.finished()) === null;
+  });
   await page.goto('/ko');
   await expect(page.locator('.feed-heading:visible')).toBeVisible();
+  const guide = page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true });
+  await guide.hover();
+  await guidePrefetched;
   await page.evaluate(() =>
     Object.defineProperty(window, '__navigationDocument', { value: 'kept', configurable: true }),
   );
   await instant(page, async () => {
-    await page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true }).click();
+    await guide.click();
     await page.waitForURL((url) => url.pathname === '/ko/guide');
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('banner').locator('.mobile-page-title')).toHaveText('가이드');
