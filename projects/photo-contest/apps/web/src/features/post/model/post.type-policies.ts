@@ -4,7 +4,7 @@ import { offsetLimitPagination } from '@apollo/client/utilities';
 export const postTypePolicies: TypePolicies = {
   Query: {
     fields: {
-      galleryPosts: offsetLimitPagination(['groupId', 'contestId', 'sort']),
+      galleryPosts: offsetLimitPagination(['groupId', 'contestId', 'categoryId', 'sort']),
       publicGalleryPosts: offsetLimitPagination(['sort']),
       hiddenGalleryPosts: offsetLimitPagination(['groupId']),
       postComments: offsetLimitPagination(['postId']),

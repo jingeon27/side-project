@@ -2,21 +2,22 @@
 
 import type { TGroupQueryRef } from './model/group-query.type';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
+import { useBackgroundQuery,useReadQuery } from '@apollo/client/react';
 import type { ReactNode } from 'react';
 import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
-import { GroupMembershipButton, GroupNavigation } from '@/features/group';
-import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
+import { GroupMembershipButton,GroupNavigation } from '@/features/group';
+import { GalleryDocument,GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
-import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { ERROR_CODE,getErrorCode,getErrorMessage } from '@/shared/model/error';
+import { AsyncBoundary,ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { CreatePostButton, GalleryFeed } from '@/features/post';
+import { CreatePostButton } from '@/features/post';
+import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
 import { GroupIdentity } from './ui/GroupIdentity';
 import { GroupSidebar } from './ui/GroupSidebar';
 import { PrivateGroupNotice } from './ui/PrivateGroupNotice';
@@ -94,7 +95,7 @@ function GroupContent({
 function GroupFeed({ groupRef, sidebar }: { groupRef: TGroupQueryRef; sidebar?: ReactNode }) {
   const { data } = useReadQuery(groupRef);
   if (!data) return null;
-  const feed = <GalleryFeed groupId={data.group.id} sidebar={sidebar} />;
+  const feed = <GroupCategoryFilter group={data.group} sidebar={sidebar} />;
   if (data.group.visibility === GroupVisibility.Private)
     return <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>{feed}</ClientOnly>;
   return feed;

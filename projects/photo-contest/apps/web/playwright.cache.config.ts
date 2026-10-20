@@ -15,6 +15,11 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: [['list']],
   use: { ...devices['Desktop Chrome'], baseURL: CACHE_WEB_ORIGIN, trace: 'retain-on-failure' },
+  projects: [
+    { name: 'desktop-chrome' },
+    { name: 'mobile-chrome', testMatch: '**/group-category.spec.ts', use: { ...devices['Pixel 7'] } },
+    { name: 'mobile-safari', testMatch: '**/group-category.spec.ts', use: { ...devices['iPhone 15'] } },
+  ],
   webServer: [
     apiWebServer({ port: CACHE_API_PORT, webOrigin: CACHE_WEB_ORIGIN, database }),
     {

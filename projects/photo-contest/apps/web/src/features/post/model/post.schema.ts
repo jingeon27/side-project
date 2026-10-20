@@ -5,6 +5,7 @@ import { validPostLink } from './post-link.helper';
 
 export const postSchema = z
   .object({
+    categoryId: z.string().default(''),
     participateInContest: z.boolean().default(false),
     contestId: z.string().default(''),
     title: z.string().trim().min(1, '제목을 입력해 주세요.').max(80, '80자 이내로 입력해 주세요.'),

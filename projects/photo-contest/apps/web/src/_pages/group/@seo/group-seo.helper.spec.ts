@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe,expect,it } from 'vitest';
 
-import { GroupVisibility, PostKind } from '@/shared/api/generated';
+import { GroupVisibility,PostKind } from '@/shared/api/generated';
 
-import { groupJsonLd, groupMetadata } from './group-seo.helper';
+import { groupJsonLd,groupMetadata } from './group-seo.helper';
 import type { IGroupSeoData } from './group-seo.type';
 
 const origin = 'https://moment.example';
@@ -12,11 +12,13 @@ const data: IGroupSeoData = {
     id: 'group-1',
     name: '웃긴 고양이',
     visibility: GroupVisibility.Public,
+    categories: [],
     memberCount: 3,
   },
   posts: [
     {
       __typename: 'GalleryPost',
+      category: null,
       contestId: null,
       contest: null,
       id: 'post-1',

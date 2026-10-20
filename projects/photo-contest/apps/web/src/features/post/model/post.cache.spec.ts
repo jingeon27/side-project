@@ -1,13 +1,13 @@
 import { InMemoryCache } from '@apollo/client';
-import { describe, expect, it } from 'vitest';
+import { describe,expect,it } from 'vitest';
 
 import {
-  GalleryPostsDocument,
-  PostCommentsDocument,
-  PostSort,
-  PostKind,
-  type GalleryPostsQuery,
-  type GalleryPostsQueryVariables,
+GalleryPostsDocument,
+PostCommentsDocument,
+PostKind,
+PostSort,
+type GalleryPostsQuery,
+type GalleryPostsQueryVariables,
 } from '@/shared/api/generated';
 
 import { resetGalleryPosts } from './post.cache';
@@ -16,6 +16,7 @@ import { postTypePolicies } from './post.type-policies';
 function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][number] {
   return {
     __typename: 'GalleryPost',
+    category: null,
     contestId: null,
     contest: null,
     id,
@@ -38,6 +39,24 @@ function post(id: string, groupId: string): GalleryPostsQuery['galleryPosts'][nu
 }
 const VARIABLES: GalleryPostsQueryVariables = { groupId: null, sort: PostSort.Newest, offset: 0, limit: 2 };
 describe('그룹 게시물 캐시', () => {
+  it('같은 그룹의 카테고리별 offset 목록을 섞지 않아야 한다', () => {
+    const cache = new InMemoryCache({ typePolicies: postTypePolicies });
+    for (const [categoryId, ids] of [
+      ['category-a', ['a', 'b']],
+      ['category-b', ['c']],
+    ] as const)
+      cache.writeQuery({
+        query: GalleryPostsDocument,
+        variables: { ...VARIABLES, groupId: 'group', categoryId },
+        data: { galleryPosts: ids.map((id) => post(id, 'group')) },
+      });
+    const read = (categoryId: string) =>
+      cache
+        .readQuery({ query: GalleryPostsDocument, variables: { ...VARIABLES, groupId: 'group', categoryId } })
+        ?.galleryPosts.map(({ id }) => id);
+    expect(read('category-a')).toEqual(['a', 'b']);
+    expect(read('category-b')).toEqual(['c']);
+  });
   it('댓글 페이지를 게시물별로 나누고 첫 페이지 갱신은 이전 뒷페이지를 대체해야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });
     const write = (postId: string, offset: number, id: string, overwrite = false) =>

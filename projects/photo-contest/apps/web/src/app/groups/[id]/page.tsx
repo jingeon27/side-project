@@ -1,16 +1,22 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { GroupPageTemplate, getGroupMetadata, getGroupSeoData, groupJsonLd } from '@/_pages/group';
+import {
+GroupPageTemplate,
+getGroupMetadata,
+getGroupSeoData,
+groupJsonLd,
+parseGroupCategory,
+} from '@/_pages/group';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
-  GalleryDocument,
-  GalleryPostsDocument,
-  PostSort,
-  MeDocument,
-  GroupVisibility,
+GalleryDocument,
+GalleryPostsDocument,
+GroupVisibility,
+MeDocument,
+PostSort,
 } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { JsonLd } from '@/shared/ui/@core/json-ld';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const metadata = await getGroupMetadata((await params).id);
@@ -18,10 +24,17 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return metadata;
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
   const seo = await getGroupSeoData(id);
   if (!seo) notFound();
+  const categoryId = parseGroupCategory((await searchParams).category, seo.group.categories);
   const jsonLd = groupJsonLd(seo, getWebOrigin());
   return (
     <>
@@ -33,7 +46,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : (
             <PreloadQuery
               query={GalleryPostsDocument}
-              variables={{ groupId: id, sort: PostSort.Newest, offset: 0, limit: 24 }}
+              variables={{
+                groupId: id,
+                ...(categoryId ? { categoryId } : {}),
+                sort: PostSort.Newest,
+                offset: 0,
+                limit: 24,
+              }}
               errorPolicy="all"
             >
               <PreloadQuery

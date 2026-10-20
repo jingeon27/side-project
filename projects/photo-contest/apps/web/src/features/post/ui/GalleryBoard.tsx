@@ -3,15 +3,15 @@
 import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { GalleryPostList } from './GalleryPostList';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery,useQueryRefHandlers,useReadQuery,type QueryRef } from '@apollo/client/react';
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
+import { GalleryPostsDocument,PostSort,type GalleryPostsQuery } from '@/shared/api/generated';
+import { cn } from '@/shared/lib/cn.helper';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { cn } from '@/shared/lib/cn.helper';
 
 function BoardContent({
   postsRef,
@@ -49,12 +49,14 @@ function BoardContent({
 export function GalleryBoard({
   groupId,
   contestId,
+  categoryId,
   popular = false,
   postAction,
   emptyAction,
 }: {
   groupId?: string;
   contestId?: string;
+  categoryId?: string;
   popular?: boolean;
   postAction?: (postId: string) => ReactNode;
   emptyAction?: ReactNode;
@@ -64,6 +66,7 @@ export function GalleryBoard({
     variables: {
       groupId: groupId ?? null,
       ...(contestId ? { contestId } : {}),
+      ...(categoryId ? { categoryId } : {}),
       sort: popular ? PostSort.MonthlyPopular : PostSort.Newest,
       offset: 0,
       limit,

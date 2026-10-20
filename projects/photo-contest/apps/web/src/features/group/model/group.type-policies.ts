@@ -11,6 +11,7 @@ export const groupTypePolicies: TypePolicies = {
   },
   Group: {
     fields: {
+      categories: { merge: false },
       members: { merge: false },
       leaderboard: { merge: false },
     },

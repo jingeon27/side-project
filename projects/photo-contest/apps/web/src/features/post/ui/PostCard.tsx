@@ -1,35 +1,36 @@
 'use client';
 
-import { useFragment, useMutation } from '@apollo/client/react';
-import { Heart, MessageCircle, Trash2, Video } from 'lucide-react';
+import { useFragment,useMutation } from '@apollo/client/react';
+import { Heart,MessageCircle,Trash2,Video } from 'lucide-react';
 import Link from 'next/link';
 import { overlay } from 'overlay-kit';
 
 import {
-  PublicGalleryPostsDocument,
-  HiddenGalleryPostsDocument,
-  SetPostHiddenDocument,
-  DeletePostDocument,
-  GroupContestDocument,
-  GroupContestsDocument,
-  GroupContestResultsDocument,
-  GalleryPostCardFragmentDoc,
-  GalleryPostsDocument,
-  PostKind,
-  LikePostDocument,
-  UnlikePostDocument,
+DeletePostDocument,
+GalleryPostCardFragmentDoc,
+GalleryPostsDocument,
+GroupContestDocument,
+GroupContestResultsDocument,
+GroupContestsDocument,
+HiddenGalleryPostsDocument,
+LikePostDocument,
+PostKind,
+PublicGalleryPostsDocument,
+SetPostHiddenDocument,
+UnlikePostDocument,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { formatCount, formatDateTime } from '@/shared/lib/format.helper';
+import { formatCount,formatDateTime } from '@/shared/lib/format.helper';
 import { useHaptics } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';
-import { Button, ButtonLink } from '@/shared/ui/@core/button';
-import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Avatar } from '@/shared/ui/@core/avatar';
+import { Button,ButtonLink } from '@/shared/ui/@core/button';
+import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
 import { resetGalleryPosts } from '../model/post.cache';
-import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
 import { PostAttachments } from './PostAttachments';
+import { PostCategoryEditor } from './PostCategoryEditor';
+import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
 import { PostDownloadButton } from './PostDownloadButton';
 
 export function PostCard({ id, preview = false }: { id: string; preview?: boolean }) {
@@ -102,6 +103,7 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
             숨기기
           </Button>
         ) : null}
+        {!preview ? <PostCategoryEditor postId={id} /> : null}
         {post.canDelete ? (
           <Button
             variant="ghost"
@@ -137,6 +139,12 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
         >
           대회 참여 · {post.contest.title}
         </Link>
+      ) : null}
+      {post.category ? (
+        <p className="mb-2 text-caption text-muted">
+          {post.category.name}
+          {post.category.archivedAt ? ' · 보관됨' : ''}
+        </p>
       ) : null}
       <h3 className="mb-3 wrap-break-word text-title text-ink">{post.title}</h3>
       <PostAttachments postId={id} />

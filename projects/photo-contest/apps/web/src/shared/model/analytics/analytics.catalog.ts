@@ -3,6 +3,9 @@
  * ID는 cuid라 넣어도 되고, 경로는 ID를 지운 path_template(`/groups/:id`)로 보낸다. 모두 서버 응답이 성공한 뒤에 보낸다.
  */
 export const ANALYTICS_EVENT = {
+  CategoryCreated: 'category_created',
+  CategoryFilterApplied: 'category_filter_applied',
+  PostCreated: 'post_created',
   PageViewed: 'page_viewed',
   LoginStarted: 'login_started',
   LoginSucceeded: 'login_succeeded',
@@ -48,6 +51,13 @@ interface ISubmissionProperties extends IContestProperties {
 
 /** 이벤트마다 보낼 수 있는 속성. 카탈로그에 없는 이벤트·속성은 타입 오류가 난다. */
 export type TAnalyticsEventProperties = {
+  [ANALYTICS_EVENT.CategoryCreated]: { group_id: string };
+  [ANALYTICS_EVENT.CategoryFilterApplied]: { group_id: string; category_id: string };
+  [ANALYTICS_EVENT.PostCreated]: {
+    group_id: string;
+    category_id: string | null;
+    kind: 'PHOTO' | 'VIDEO' | 'LINK';
+  };
   [ANALYTICS_EVENT.PageViewed]: { path_template: string };
   [ANALYTICS_EVENT.LoginStarted]: { provider: TLoginMethod };
   [ANALYTICS_EVENT.LoginSucceeded]: { provider: TLoginMethod };

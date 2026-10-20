@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { GroupVisibility, Phase, PostKind } from '@/shared/api/generated';
+import { GroupVisibility,Phase,PostKind } from '@/shared/api/generated';
 import { serializeJsonLd } from '@/shared/lib/seo.helper';
+import { describe,expect,it } from 'vitest';
 import {
-  groupContestJsonLd,
-  groupContestMetadata,
-  type IGroupContestSeoData,
+groupContestJsonLd,
+groupContestMetadata,
+type IGroupContestSeoData,
 } from './group-contest-seo.helper';
 
 const origin = 'https://moments.example';
@@ -14,6 +14,7 @@ const data: IGroupContestSeoData = {
     id: 'group',
     name: '공개 그룹',
     visibility: GroupVisibility.Public,
+    categories: [],
     memberCount: 3,
   },
   contest: {
@@ -31,6 +32,7 @@ const data: IGroupContestSeoData = {
   posts: [
     {
       __typename: 'GalleryPost',
+      category: null,
       id: 'photo',
       contestId: 'contest',
       contest: {

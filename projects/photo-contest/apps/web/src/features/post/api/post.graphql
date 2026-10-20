@@ -1,4 +1,9 @@
 fragment GalleryPostCard on GalleryPost {
+  category {
+    id
+    name
+    archivedAt
+  }
   id
   contestId
   contest {
@@ -27,8 +32,22 @@ fragment GalleryPostCard on GalleryPost {
     avatar
   }
 }
-query GalleryPosts($groupId: ID, $contestId: ID, $sort: PostSort!, $offset: Int!, $limit: Int!) {
-  galleryPosts(groupId: $groupId, contestId: $contestId, sort: $sort, offset: $offset, limit: $limit) {
+query GalleryPosts(
+  $groupId: ID
+  $contestId: ID
+  $categoryId: ID
+  $sort: PostSort!
+  $offset: Int!
+  $limit: Int!
+) {
+  galleryPosts(
+    groupId: $groupId
+    contestId: $contestId
+    categoryId: $categoryId
+    sort: $sort
+    offset: $offset
+    limit: $limit
+  ) {
     ...GalleryPostCard
   }
 }
@@ -39,6 +58,7 @@ mutation RequestPostUpload($groupId: ID!) {
   }
 }
 mutation CreatePost(
+  $categoryId: ID
   $contestId: ID
   $groupId: ID!
   $uploadId: ID
@@ -48,6 +68,7 @@ mutation CreatePost(
   $rightsConfirmed: Boolean!
 ) {
   createPost(
+    categoryId: $categoryId
     contestId: $contestId
     groupId: $groupId
     uploadId: $uploadId
@@ -131,4 +152,22 @@ query HiddenGalleryPosts($groupId: ID!, $offset: Int!, $limit: Int!) {
 }
 mutation SetPostHidden($postId: ID!, $hidden: Boolean!) {
   setPostHidden(postId: $postId, hidden: $hidden)
+}
+
+fragment PostCategoryOptions on Group {
+  id
+  categories {
+    id
+    name
+  }
+}
+query PostCategoryOptions($id: ID!) {
+  group(id: $id) {
+    ...PostCategoryOptions
+  }
+}
+mutation SetPostCategory($postId: ID!, $categoryId: ID) {
+  setPostCategory(postId: $postId, categoryId: $categoryId) {
+    ...GalleryPostCard
+  }
 }
