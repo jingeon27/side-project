@@ -1,6 +1,6 @@
-import { createTestUser,graphqlRequest } from '@photo-contest/test-kit';
-import { expect,test } from '../../e2e/support/test';
-import { CACHE_API_URL,CACHE_WEB_ORIGIN } from './env';
+import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
+import { expect, test } from '../../e2e/support/test';
+import { CACHE_API_URL, CACHE_WEB_ORIGIN } from './env';
 
 test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리자 수정·보관을 사용할 수 있어야 한다', async ({
   page,

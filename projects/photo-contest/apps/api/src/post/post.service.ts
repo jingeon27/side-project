@@ -14,23 +14,23 @@ import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import type { IViewer } from '../auth/session.service';
-import { randomToken,sha256Hex } from '../common/crypto';
-import { ERROR_CODE,ERROR_MESSAGE,fail } from '../common/errors';
+import { randomToken, sha256Hex } from '../common/crypto';
+import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readUpload } from '../common/graphql/read-upload';
-import { pageRange,textValue } from '../common/validation';
+import { pageRange, textValue } from '../common/validation';
 import {
-DOWNLOAD_URL_TTL_SECONDS,
-MAX_PENDING_UPLOADS,
-MAX_VIDEO_BYTES,
-PAGE_SIZE_DEFAULT,
-POST_BODY_LIMIT,
-POST_TITLE_LIMIT,
-UPLOAD_TICKET_TTL_MS,
+  DOWNLOAD_URL_TTL_SECONDS,
+  MAX_PENDING_UPLOADS,
+  MAX_VIDEO_BYTES,
+  PAGE_SIZE_DEFAULT,
+  POST_BODY_LIMIT,
+  POST_TITLE_LIMIT,
+  UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
-import { createMediaKey,MediaStorage } from '../storage/media-storage.service';
-import { mediaDownloadDisposition,mediaDownloadFilename } from './media-download.policy';
+import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
 import { MediaProcessor } from './media-processor';
 import { postLink } from './post-link.policy';
 

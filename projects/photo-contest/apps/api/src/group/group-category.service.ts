@@ -3,10 +3,10 @@ import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { ERROR_CODE,fail } from '../common/errors';
+import { ERROR_CODE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
-import { GROUP_CATEGORY_LIMIT,GROUP_CATEGORY_NAME_LIMIT } from '../config/limits';
-import { Database,type TDatabaseClient } from '../database/database.service';
+import { GROUP_CATEGORY_LIMIT, GROUP_CATEGORY_NAME_LIMIT } from '../config/limits';
+import { Database, type TDatabaseClient } from '../database/database.service';
 import { MembershipService } from './membership.service';
 
 @Injectable()

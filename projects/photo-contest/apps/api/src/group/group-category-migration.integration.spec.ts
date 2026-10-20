@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import { readdir,readFile } from 'node:fs/promises';
-import { afterAll,beforeAll,describe,expect,it } from 'vitest';
-import { createTestApp,type ITestApi } from '../../test/support/app';
+import { readdir, readFile } from 'node:fs/promises';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createTestApp, type ITestApi } from '../../test/support/app';
 
 describe('카테고리 추가 마이그레이션의 이전 앱 호환', () => {
   let api: ITestApi;

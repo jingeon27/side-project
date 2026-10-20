@@ -1,7 +1,7 @@
-import { createTestImage,createTestUser,graphqlRequest } from '@photo-contest/test-kit';
-import type { APIRequestContext,Page } from '@playwright/test';
-import { expect,test } from '../../e2e/support/test';
-import { CACHE_API_URL,CACHE_WEB_ORIGIN } from './env';
+import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
+import type { APIRequestContext, Page } from '@playwright/test';
+import { expect, test } from '../../e2e/support/test';
+import { CACHE_API_URL, CACHE_WEB_ORIGIN } from './env';
 
 async function product<T>(cookie: string, query: string, variables: Record<string, unknown> = {}) {
   const result = await graphqlRequest<T>(CACHE_API_URL, {
@@ -35,25 +35,52 @@ async function upload(cookie: string, groupId: string) {
 const CREATE_POST =
   'mutation($group:ID!,$upload:ID!,$title:String!){createPost(groupId:$group,uploadId:$upload,title:$title,rightsConfirmed:true){id}}';
 
-test('공개 홈은 익명 캐시를 재사용하고 숨김 직후 갱신하며 개인 피드와 섞이지 않아야 한다', async ({request})=>{
- const cookie=await createTestUser(CACHE_API_URL,{origin:CACHE_WEB_ORIGIN,nickname:'홈 캐시 회원'});
- const {createGroup:group}=await product<{createGroup:{id:string}}>(cookie,'mutation{createGroup(name:"홈 캐시 공개",visibility:PUBLIC){id}}');
- const {createGroup:secret}=await product<{createGroup:{id:string}}>(cookie,'mutation{createGroup(name:"홈 캐시 비공개",visibility:PRIVATE){id}}');
- await product(cookie,CREATE_POST,{group:secret.id,upload:await upload(cookie,secret.id),title:'홈에 공유하면 안 되는 사진'});
- const first=await product<{createPost:{id:string}}>(cookie,CREATE_POST,{group:group.id,upload:await upload(cookie,group.id),title:'홈 캐시 첫 사진'});
- const home=()=>request.get('/',{headers:{'User-Agent':'Twitterbot'}}).then(response=>response.text());
- expect(await home()).toContain('홈 캐시 첫 사진');
- expect(await home()).not.toContain('홈에 공유하면 안 되는 사진');
- await product(cookie,CREATE_POST,{group:group.id,upload:await upload(cookie,group.id),title:'홈 캐시 뒤에 올린 사진'});
- expect(await home()).not.toContain('홈 캐시 뒤에 올린 사진');
- const hidden=await request.post('/backend/graphql',{headers:{Cookie:cookie,Origin:CACHE_WEB_ORIGIN},data:{query:'mutation($id:ID!){setPostHidden(postId:$id,hidden:true)}',variables:{id:first.createPost.id}}});
- expect((await hidden.json()).errors).toBeUndefined();
- const fresh=await home();
- expect(fresh).toContain('홈 캐시 뒤에 올린 사진');
- expect(fresh).not.toContain('홈 캐시 첫 사진');
- const personal=await request.get('/',{headers:{Cookie:cookie,'User-Agent':'Twitterbot'}});
- expect(await personal.text()).toContain('홈에 공유하면 안 되는 사진');
- expect(await home()).not.toContain('홈에 공유하면 안 되는 사진');
+test('공개 홈은 익명 캐시를 재사용하고 숨김 직후 갱신하며 개인 피드와 섞이지 않아야 한다', async ({
+  request,
+}) => {
+  const cookie = await createTestUser(CACHE_API_URL, { origin: CACHE_WEB_ORIGIN, nickname: '홈 캐시 회원' });
+  const { createGroup: group } = await product<{ createGroup: { id: string } }>(
+    cookie,
+    'mutation{createGroup(name:"홈 캐시 공개",visibility:PUBLIC){id}}',
+  );
+  const { createGroup: secret } = await product<{ createGroup: { id: string } }>(
+    cookie,
+    'mutation{createGroup(name:"홈 캐시 비공개",visibility:PRIVATE){id}}',
+  );
+  await product(cookie, CREATE_POST, {
+    group: secret.id,
+    upload: await upload(cookie, secret.id),
+    title: '홈에 공유하면 안 되는 사진',
+  });
+  const first = await product<{ createPost: { id: string } }>(cookie, CREATE_POST, {
+    group: group.id,
+    upload: await upload(cookie, group.id),
+    title: '홈 캐시 첫 사진',
+  });
+  const home = () =>
+    request.get('/', { headers: { 'User-Agent': 'Twitterbot' } }).then((response) => response.text());
+  expect(await home()).toContain('홈 캐시 첫 사진');
+  expect(await home()).not.toContain('홈에 공유하면 안 되는 사진');
+  await product(cookie, CREATE_POST, {
+    group: group.id,
+    upload: await upload(cookie, group.id),
+    title: '홈 캐시 뒤에 올린 사진',
+  });
+  expect(await home()).not.toContain('홈 캐시 뒤에 올린 사진');
+  const hidden = await request.post('/backend/graphql', {
+    headers: { Cookie: cookie, Origin: CACHE_WEB_ORIGIN },
+    data: {
+      query: 'mutation($id:ID!){setPostHidden(postId:$id,hidden:true)}',
+      variables: { id: first.createPost.id },
+    },
+  });
+  expect((await hidden.json()).errors).toBeUndefined();
+  const fresh = await home();
+  expect(fresh).toContain('홈 캐시 뒤에 올린 사진');
+  expect(fresh).not.toContain('홈 캐시 첫 사진');
+  const personal = await request.get('/', { headers: { Cookie: cookie, 'User-Agent': 'Twitterbot' } });
+  expect(await personal.text()).toContain('홈에 공유하면 안 되는 사진');
+  expect(await home()).not.toContain('홈에 공유하면 안 되는 사진');
 });
 
 async function seoTitles(request: APIRequestContext, page: Page, groupId: string) {

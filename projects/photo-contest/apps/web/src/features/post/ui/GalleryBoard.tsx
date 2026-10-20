@@ -3,11 +3,11 @@
 import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { GalleryPostList } from './GalleryPostList';
 
-import { useBackgroundQuery,useQueryRefHandlers,useReadQuery,type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { GalleryPostsDocument,PostSort,type GalleryPostsQuery } from '@/shared/api/generated';
+import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';

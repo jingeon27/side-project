@@ -1,12 +1,12 @@
 'use client';
 
-import { GroupCategoryManager,GroupJoinRequests,isGroupAdmin,isGroupOwner } from '@/features/group';
+import { GroupCategoryManager, GroupJoinRequests, isGroupAdmin, isGroupOwner } from '@/features/group';
 import { InviteCard } from '@/features/invite';
 import { HiddenPostManager } from '@/features/post';
-import { GroupVisibility,MeDocument } from '@/shared/api/generated';
+import { GroupVisibility, MeDocument } from '@/shared/api/generated';
 import { ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { useQuery,useReadQuery } from '@apollo/client/react';
+import { useQuery, useReadQuery } from '@apollo/client/react';
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
 

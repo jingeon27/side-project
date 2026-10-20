@@ -3,21 +3,21 @@
 import { useMutation } from '@apollo/client/react';
 import { useId } from 'react';
 
-import { ImagePrepareError,browserImageCodec,prepareUploadImage } from '@/features/submission';
+import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '@/features/submission';
 import {
-CreatePostDocument,
-GalleryPostsDocument,
-GroupContestDocument,
-GroupContestsDocument,
-RequestPostUploadDocument,
-UploadPostMediaDocument,
+  CreatePostDocument,
+  GalleryPostsDocument,
+  GroupContestDocument,
+  GroupContestsDocument,
+  RequestPostUploadDocument,
+  UploadPostMediaDocument,
 } from '@/shared/api/generated';
-import { ANALYTICS_EVENT,trackEvent } from '@/shared/model/analytics';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
-import { BottomSheet,type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
-import { FieldRequirement,TextArea,TextField } from '@/shared/ui/@core/text-field';
+import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';

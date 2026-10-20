@@ -1,6 +1,6 @@
 'use client';
 
-import { LoginPanel,ViewerBoundary } from '@/features/auth';
+import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { ROUTES } from '@/shared/constants/routes';
 import { ButtonLink } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -24,7 +24,7 @@ export function HomePageTemplate() {
                   로그인 없이 그룹 둘러보기
                 </ButtonLink>
               </div>
-              <NoGroupHome/>
+              <NoGroupHome />
             </div>
           }
           fallback={<Skeleton className="h-32 w-full" />}

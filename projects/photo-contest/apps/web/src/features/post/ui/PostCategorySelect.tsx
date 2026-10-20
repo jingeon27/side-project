@@ -1,6 +1,6 @@
 'use client';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
-import { useId,type ComponentProps } from 'react';
+import { useId, type ComponentProps } from 'react';
 
 export function PostCategorySelect({
   categories,

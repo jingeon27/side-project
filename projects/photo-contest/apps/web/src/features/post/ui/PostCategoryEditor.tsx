@@ -1,23 +1,23 @@
 'use client';
 import {
-GalleryPostCardFragmentDoc,
-GalleryPostsDocument,
-PostCategoryOptionsDocument,
-PublicGalleryPostsDocument,
-SetPostCategoryDocument,
-type PostCategoryOptionsQuery,
+  GalleryPostCardFragmentDoc,
+  GalleryPostsDocument,
+  PostCategoryOptionsDocument,
+  PublicGalleryPostsDocument,
+  SetPostCategoryDocument,
+  type PostCategoryOptionsQuery,
 } from '@/shared/api/generated';
 import { useZodForm } from '@/shared/model/form';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
-import { BottomSheet,type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import {
-useBackgroundQuery,
-useFragment,
-useMutation,
-useReadQuery,
-type QueryRef,
+  useBackgroundQuery,
+  useFragment,
+  useMutation,
+  useReadQuery,
+  type QueryRef,
 } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 import { z } from 'zod';

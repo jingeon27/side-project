@@ -1,13 +1,13 @@
 import { InMemoryCache } from '@apollo/client';
-import { describe,expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-GalleryPostsDocument,
-PostCommentsDocument,
-PostKind,
-PostSort,
-type GalleryPostsQuery,
-type GalleryPostsQueryVariables,
+  GalleryPostsDocument,
+  PostCommentsDocument,
+  PostKind,
+  PostSort,
+  type GalleryPostsQuery,
+  type GalleryPostsQueryVariables,
 } from '@/shared/api/generated';
 
 import { resetGalleryPosts } from './post.cache';

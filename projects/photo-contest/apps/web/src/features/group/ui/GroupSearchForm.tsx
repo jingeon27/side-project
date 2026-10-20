@@ -12,15 +12,17 @@ import { TextField } from '@/shared/ui/@core/text-field';
 import { groupSearchSchema } from '../model/group-search.schema';
 
 export function GroupSearchForm({ search = '' }: { search?: string }) {
-  const form = useZodForm(groupSearchSchema, { defaultValues: { search } });
+  const form = useZodForm(groupSearchSchema, { defaultValues: { q: search } });
   const router = useAppRouter();
   const [pending, startTransition] = useTransition();
   return (
     <form
       role="search"
+      action={ROUTES.EXPLORE}
+      method="get"
       className="flex items-end gap-3"
       noValidate
-      onSubmit={form.handleSubmit(({ search: value }) => {
+      onSubmit={form.handleSubmit(({ q: value }) => {
         const query = new URLSearchParams();
         if (value) query.set('q', value);
         startTransition(() => router.replace(`${ROUTES.EXPLORE}${value ? `?${query}` : ''}`));
@@ -32,8 +34,8 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
         maxLength={40}
         autoComplete="off"
         className="flex-1"
-        error={form.formState.errors.search?.message}
-        {...form.register('search')}
+        error={form.formState.errors.q?.message}
+        {...form.register('q')}
       />
       <Button type="submit" loading={pending} className="shrink-0">
         <Search aria-hidden className="mr-1 size-4" />

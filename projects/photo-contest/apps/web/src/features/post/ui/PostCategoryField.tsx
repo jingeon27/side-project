@@ -1,10 +1,10 @@
 'use client';
-import { PostCategoryOptionsDocument,type PostCategoryOptionsQuery } from '@/shared/api/generated';
+import { PostCategoryOptionsDocument, type PostCategoryOptionsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { useBackgroundQuery,useReadQuery,type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import type { UseFormReturn } from 'react-hook-form';
-import type { TPostInput,TPostValues } from '../model/post.schema';
+import type { TPostInput, TPostValues } from '../model/post.schema';
 import { PostCategorySelect } from './PostCategorySelect';
 
 type TPostForm = UseFormReturn<TPostInput, unknown, TPostValues>;

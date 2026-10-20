@@ -1,11 +1,11 @@
 import 'server-only';
 
 import { HttpLink } from '@apollo/client';
-import { ApolloClient,InMemoryCache,registerApolloClient } from '@apollo/client-integration-nextjs';
+import { ApolloClient, InMemoryCache, registerApolloClient } from '@apollo/client-integration-nextjs';
 import { headers } from 'next/headers';
 
 import { PUBLIC_QUERY_HEADER } from './public-cache.policy';
-import { buildServerRequestHeaders,getServerApiUrl,getWebOrigin } from './server-request.helper';
+import { buildServerRequestHeaders, getServerApiUrl, getWebOrigin } from './server-request.helper';
 
 /**
  * RSC 전용 Apollo Client. 요청마다 새로 만들고, 들어온 요청의 Cookie 헤더를 API로 그대로 전달한다.

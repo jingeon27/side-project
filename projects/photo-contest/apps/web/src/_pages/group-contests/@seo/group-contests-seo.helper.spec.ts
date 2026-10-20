@@ -1,9 +1,9 @@
-import { GroupVisibility,Phase } from '@/shared/api/generated';
-import { describe,expect,it } from 'vitest';
+import { GroupVisibility, Phase } from '@/shared/api/generated';
+import { describe, expect, it } from 'vitest';
 import {
-groupContestsJsonLd,
-groupContestsMetadata,
-type IGroupContestsSeoData,
+  groupContestsJsonLd,
+  groupContestsMetadata,
+  type IGroupContestsSeoData,
 } from './group-contests-seo.helper';
 
 const origin = 'https://moments.example';

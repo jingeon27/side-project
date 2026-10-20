@@ -2,16 +2,16 @@
 
 import type { TGroupQueryRef } from './model/group-query.type';
 
-import { useBackgroundQuery,useReadQuery } from '@apollo/client/react';
+import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
 import type { ReactNode } from 'react';
 import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
-import { GroupMembershipButton,GroupNavigation } from '@/features/group';
-import { GalleryDocument,GroupVisibility } from '@/shared/api/generated';
+import { GroupMembershipButton, GroupNavigation } from '@/features/group';
+import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { ERROR_CODE,getErrorCode,getErrorMessage } from '@/shared/model/error';
-import { AsyncBoundary,ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
+import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';

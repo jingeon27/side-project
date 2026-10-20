@@ -1,6 +1,6 @@
-import { Args,Mutation,Parent,ResolveField,Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
 import type { IViewer } from '../auth/session.service';
-import { OptionalViewer,Viewer } from '../auth/viewer.decorator';
+import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { GroupCategoryService } from './group-category.service';
 import type { IGroupNode } from './group.service';
 

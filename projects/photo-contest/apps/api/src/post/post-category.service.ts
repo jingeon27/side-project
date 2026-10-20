@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { ERROR_CODE,fail } from '../common/errors';
+import { ERROR_CODE, fail } from '../common/errors';
 import { Database } from '../database/database.service';
 import { GroupCategoryService } from '../group/group-category.service';
 import { MembershipService } from '../group/membership.service';

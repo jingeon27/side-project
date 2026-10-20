@@ -1,8 +1,8 @@
-import { describe,expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { GroupVisibility,PostKind } from '@/shared/api/generated';
+import { GroupVisibility, PostKind } from '@/shared/api/generated';
 
-import { groupJsonLd,groupMetadata } from './group-seo.helper';
+import { groupJsonLd, groupMetadata } from './group-seo.helper';
 import type { IGroupSeoData } from './group-seo.type';
 
 const origin = 'https://moment.example';

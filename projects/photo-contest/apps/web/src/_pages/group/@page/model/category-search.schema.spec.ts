@@ -1,4 +1,4 @@
-import { describe,expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { parseGroupCategory } from './category-search.schema';
 describe('그룹 카테고리 URL', () => {
   it('현재 그룹의 활성 카테고리만 선택해야 한다', () =>

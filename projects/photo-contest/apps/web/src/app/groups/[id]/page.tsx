@@ -1,17 +1,17 @@
 import {
-GroupPageTemplate,
-getGroupMetadata,
-getGroupSeoData,
-groupJsonLd,
-parseGroupCategory,
+  GroupPageTemplate,
+  getGroupMetadata,
+  getGroupSeoData,
+  groupJsonLd,
+  parseGroupCategory,
 } from '@/_pages/group';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
-GalleryDocument,
-GalleryPostsDocument,
-GroupVisibility,
-MeDocument,
-PostSort,
+  GalleryDocument,
+  GalleryPostsDocument,
+  GroupVisibility,
+  MeDocument,
+  PostSort,
 } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { JsonLd } from '@/shared/ui/@core/json-ld';

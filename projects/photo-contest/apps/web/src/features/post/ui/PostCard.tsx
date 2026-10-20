@@ -1,30 +1,30 @@
 'use client';
 
-import { useFragment,useMutation } from '@apollo/client/react';
-import { Heart,MessageCircle,Trash2,Video } from 'lucide-react';
+import { useFragment, useMutation } from '@apollo/client/react';
+import { Heart, MessageCircle, Trash2, Video } from 'lucide-react';
 import Link from 'next/link';
 import { overlay } from 'overlay-kit';
 
 import {
-DeletePostDocument,
-GalleryPostCardFragmentDoc,
-GalleryPostsDocument,
-GroupContestDocument,
-GroupContestResultsDocument,
-GroupContestsDocument,
-HiddenGalleryPostsDocument,
-LikePostDocument,
-PostKind,
-PublicGalleryPostsDocument,
-SetPostHiddenDocument,
-UnlikePostDocument,
+  DeletePostDocument,
+  GalleryPostCardFragmentDoc,
+  GalleryPostsDocument,
+  GroupContestDocument,
+  GroupContestResultsDocument,
+  GroupContestsDocument,
+  HiddenGalleryPostsDocument,
+  LikePostDocument,
+  PostKind,
+  PublicGalleryPostsDocument,
+  SetPostHiddenDocument,
+  UnlikePostDocument,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { formatCount,formatDateTime } from '@/shared/lib/format.helper';
+import { formatCount, formatDateTime } from '@/shared/lib/format.helper';
 import { useHaptics } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';
 import { Avatar } from '@/shared/ui/@core/avatar';
-import { Button,ButtonLink } from '@/shared/ui/@core/button';
+import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
 import { resetGalleryPosts } from '../model/post.cache';

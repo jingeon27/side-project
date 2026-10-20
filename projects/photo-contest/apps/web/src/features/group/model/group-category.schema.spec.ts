@@ -1,5 +1,5 @@
-import { describe,expect,it } from 'vitest';
-import { groupCategorySchema,moveGroupCategory } from './group-category.schema';
+import { describe, expect, it } from 'vitest';
+import { groupCategorySchema, moveGroupCategory } from './group-category.schema';
 describe('카테고리 입력과 순서', () => {
   it('공백을 제거하고 이름을 1~20자로 제한해야 한다', () => {
     expect(groupCategorySchema.parse({ name: ' 합성 ' })).toEqual({ name: '합성' });

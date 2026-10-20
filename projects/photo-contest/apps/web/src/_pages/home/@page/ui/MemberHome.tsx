@@ -1,10 +1,10 @@
 'use client';
 
-import { CreatePostButton,GalleryFeed } from '@/features/post';
-import { MyGroupsDocument,type MyGroupsQuery } from '@/shared/api/generated';
+import { CreatePostButton, GalleryFeed } from '@/features/post';
+import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { useBackgroundQuery,useReadQuery,type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { NoGroupHome } from '../no-group/NoGroupHome';
 
 function MemberHomeContent({ queryRef }: { queryRef: QueryRef<MyGroupsQuery> }) {

@@ -1,17 +1,17 @@
 'use client';
 
 import {
-ArchiveGroupCategoryDocument,
-CreateGroupCategoryDocument,
-GalleryDocument,
-GroupCategoriesDocument,
-PostCategoryOptionsDocument,
-RenameGroupCategoryDocument,
-ReorderGroupCategoriesDocument,
-type GroupCategoriesQuery,
-type GroupCategoryRowFragment,
+  ArchiveGroupCategoryDocument,
+  CreateGroupCategoryDocument,
+  GalleryDocument,
+  GroupCategoriesDocument,
+  PostCategoryOptionsDocument,
+  RenameGroupCategoryDocument,
+  ReorderGroupCategoriesDocument,
+  type GroupCategoriesQuery,
+  type GroupCategoryRowFragment,
 } from '@/shared/api/generated';
-import { ANALYTICS_EVENT,trackEvent } from '@/shared/model/analytics';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { getErrorMessage } from '@/shared/model/error';
 import { useZodForm } from '@/shared/model/form';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -19,10 +19,10 @@ import { Button } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
-import { useBackgroundQuery,useMutation,useReadQuery,type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 import { isGroupAdmin } from '../lib/group.helper';
-import { groupCategorySchema,moveGroupCategory } from '../model/group-category.schema';
+import { groupCategorySchema, moveGroupCategory } from '../model/group-category.schema';
 
 const REFRESH = [GroupCategoriesDocument, GalleryDocument, PostCategoryOptionsDocument];
 function CategoryRow({

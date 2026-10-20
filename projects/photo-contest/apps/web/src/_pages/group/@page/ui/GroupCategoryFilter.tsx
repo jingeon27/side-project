@@ -1,7 +1,7 @@
 'use client';
 import { GalleryFeed } from '@/features/post';
 import type { GalleryQuery } from '@/shared/api/generated';
-import { ANALYTICS_EVENT,trackEvent } from '@/shared/model/analytics';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { replaceSearchParams } from '@/shared/model/router';
 import { Button } from '@/shared/ui/@core/button';
 import { useSearchParams } from 'next/navigation';

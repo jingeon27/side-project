@@ -189,3 +189,5 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 공개 그룹 마이그레이션 `20261019010000_public_groups`는 Group.visibility와 GroupJoinRequest·인덱스·cascade 외래 키만 추가한다. 기존 그룹·사진·영상·좋아요를 보존하며 이전 스키마에 마이그레이션을 적용하는 테스트로 PRIVATE 유지도 확인한다. 이번 작업은 별도 worktree·테스트 DB 55435에서 수행했으며 사용자의 개발 DB나 실행 중인 서버에는 적용하지 않았다. 개발 반영 시 db:generate·db:migrate 후 서버를 다시 실행한다.
 
 운영 컨테이너 검증은 공개 그룹 canonical·JSON-LD와 비공개 사진의 익명 거부를 포함한다. 재시작 복구 확인은 API 헬스·웹 문서 응답·기존 댓글 표시를 함께 제한 시간 안에 재확인하여 Docker 네트워크 전환 중의 일시적인 브라우저 연결 오류를 처리한다.
+
+최신 develop의 테스트 위치 변경을 반영한 최종 검사: 전체 check, API integration 274개, Web API 18개, 신규 홈 E2E 6개, 기존 탐색·공개 SEO·비공개 가입 E2E 6개와 프로덕션 cache/category E2E 7개가 통과했다. Android 뒤로 가기 2개도 통과했다(iOS 하드웨어 뒤로 가기 2개는 설계상 제외). 새 홈에도 검색 폼과 그룹 생성 버튼이 있어 전환 전의 화면을 조작하던 기존 브라우저 검사를 목적 화면이 나타난 뒤 실행하도록 고쳤다. 검색은 JS 준비 전에도 GET /explore?q=로 제출된다. 전체 Prettier 검사와 앱 lint/typecheck를 확인했다.

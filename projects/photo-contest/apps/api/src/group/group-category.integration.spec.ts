@@ -1,5 +1,5 @@
-import { afterAll,beforeAll,describe,expect,it } from 'vitest';
-import { createTestApp,type ITestApi,type ITestUser } from '../../test/support/app';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 
 const CREATE =
   'mutation($groupId:ID!,$name:String!){createGroupCategory(groupId:$groupId,name:$name){id name position archivedAt}}';

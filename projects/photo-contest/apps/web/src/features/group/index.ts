@@ -1,4 +1,4 @@
-export { isGroupAdmin,isGroupOwner,splitContests } from './lib/group.helper';
+export { isGroupAdmin, isGroupOwner, splitContests } from './lib/group.helper';
 export { prependMyGroup } from './model/group.cache';
 export { groupTypePolicies } from './model/group.type-policies';
 export { CreateGroupBottomSheet } from './ui/CreateGroupBottomSheet';

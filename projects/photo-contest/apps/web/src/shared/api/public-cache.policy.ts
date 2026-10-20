@@ -1,4 +1,4 @@
-import { getOperationAST,OperationTypeNode,type DocumentNode } from 'graphql';
+import { getOperationAST, OperationTypeNode, type DocumentNode } from 'graphql';
 
 export const PUBLIC_CACHE_TAG = 'photo-contest:public:v1';
 export const PUBLIC_CONTENT_TTL = 30;
