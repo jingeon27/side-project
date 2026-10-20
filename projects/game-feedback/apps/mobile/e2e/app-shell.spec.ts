@@ -92,8 +92,8 @@ test('native back closes the web dialog, deep links keep the document, and foreg
     '덱연구소',
   );
   expect(nativeHost.openDeepLink('gamefeedback://ko/settings')).toBe(true);
-  await expect(page.locator('.settings-profile')).toContainText('덱연구소');
-  await expect(page.locator('.settings-profile')).toContainText('인증 유저');
+  await expect(page.locator('.settings-profile:visible')).toContainText('덱연구소');
+  await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저');
 });
 
 test('native Google login opens the system auth session and cancellation keeps the login dialog usable', async ({
