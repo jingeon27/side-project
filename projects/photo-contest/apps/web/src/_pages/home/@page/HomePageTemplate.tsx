@@ -1,13 +1,12 @@
 'use client';
 
-import { LoginPanel, ViewerBoundary } from '@/features/auth';
+import { LoginPanel,ViewerBoundary } from '@/features/auth';
+import { ROUTES } from '@/shared/constants/routes';
+import { ButtonLink } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { BrandAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
-import { ROUTES } from '@/shared/constants/routes';
-import { ButtonLink } from '@/shared/ui/@core/button';
 
-import { ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { NoGroupHome } from './no-group/NoGroupHome';
 import { MemberHome } from './ui/MemberHome';
 
@@ -25,9 +24,7 @@ export function HomePageTemplate() {
                   로그인 없이 그룹 둘러보기
                 </ButtonLink>
               </div>
-              <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>
-                <NoGroupHome />
-              </ClientOnly>
+              <NoGroupHome/>
             </div>
           }
           fallback={<Skeleton className="h-32 w-full" />}

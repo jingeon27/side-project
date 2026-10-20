@@ -63,3 +63,5 @@ Next.js fetch Data Cache에 공개 게시물·대회 목록·결과는 30초, �
 API e2e는 익명 공개 읽기·미디어 Range·댓글·숨김·기존 대회 권한·비공개 승인과 이전 그룹의 PRIVATE 보존을 검사한다. 웹 API 레인은 생성 문서를 실제 API에 실행하고 공개 그룹 49개의 사이트맵 분할·비공개 배제·장애 전파를 확인한다. Playwright는 Chrome·WebKit·데스크톱에서 공개 탐색·서버 HTML·canonical·실제 공유 사진·JSON-LD XSS·사이트맵·비공개 SEO를 검사한다. 운영 컨테이너 smoke도 HTTPS에서 공개 SEO와 비공개 사진 접근 제한을 확인한다.
 
 참고: [Next.js JSON-LD](https://nextjs.org/docs/app/guides/json-ld), [Google discussion forum markup](https://developers.google.com/search/docs/appearance/structured-data/discussion-forum), [Google canonical 가이드](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls), [Schema.org CollectionPage](https://schema.org/CollectionPage).
+
+공개 홈의 공개 그룹 6개·최신 게시물 24개도 익명 Next Data Cache(30초)를 사용한다. RSC에서 현재 사용자·가입 그룹은 no-store로 먼저 확인해 공개 홈과 내 피드의 사전 조회를 나눈다. publicPreloadContext는 쿠키 없는 공개 조회에만 지정하며 같은 문서·변수로 브라우저 캐시에 사전 조회한다. 쓰기·숨김·복원 뒤 공통 공개 태그를 즉시 만료시킨다. 개인 피드는 캐시하지 않는다.

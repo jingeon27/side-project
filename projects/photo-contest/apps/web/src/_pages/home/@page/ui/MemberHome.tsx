@@ -1,21 +1,15 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { GalleryFeed, CreatePostButton } from '@/features/post';
-import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
+import { CreatePostButton,GalleryFeed } from '@/features/post';
+import { MyGroupsDocument,type MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { useBackgroundQuery,useReadQuery,type QueryRef } from '@apollo/client/react';
 import { NoGroupHome } from '../no-group/NoGroupHome';
 
 function MemberHomeContent({ queryRef }: { queryRef: QueryRef<MyGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);
-  if (!data.myGroups.length)
-    return (
-      <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>
-        <NoGroupHome signedIn />
-      </ClientOnly>
-    );
+  if (!data.myGroups.length) return <NoGroupHome signedIn />;
   return (
     <GalleryFeed
       emptyAction={

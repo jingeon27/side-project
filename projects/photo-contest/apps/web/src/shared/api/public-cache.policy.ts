@@ -1,10 +1,18 @@
-import { getOperationAST, OperationTypeNode, type DocumentNode } from 'graphql';
+import { getOperationAST,OperationTypeNode,type DocumentNode } from 'graphql';
 
 export const PUBLIC_CACHE_TAG = 'photo-contest:public:v1';
 export const PUBLIC_CONTENT_TTL = 30;
 export const PUBLIC_SITEMAP_TTL = 60;
 export const GRAPHQL_PROXY_BODY_LIMIT = 64 * 1024;
 export const GRAPHQL_PROXY_TIMEOUT_MS = 120_000;
+export const PUBLIC_QUERY_HEADER = 'x-photo-contest-public-query';
+
+export function publicPreloadContext(document: DocumentNode) {
+  return {
+    headers: { [PUBLIC_QUERY_HEADER]: 'true' },
+    fetchOptions: publicCacheOptions(document, PUBLIC_CONTENT_TTL),
+  };
+}
 
 export function publicCacheOptions(document: DocumentNode, seconds: number) {
   if (getOperationAST(document)?.operation !== OperationTypeNode.QUERY)
