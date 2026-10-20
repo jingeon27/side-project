@@ -205,7 +205,16 @@ try {
   assert.equal((await original.json('/api/auth/demo', { nickname: 'forbidden' })).status, 404);
   assert.equal((await original.http('/api/auth/test-accounts')).status, 404);
   assert.equal(original.sql('SELECT rolsuper FROM pg_roles WHERE rolname = current_user;'), 'f');
-  assert.equal(original.sql('SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL;'), '1');
+  const expectedMigrations = readdirSync(join(project, 'apps/api/prisma/migrations'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const appliedMigrations = original
+    .sql(
+      'SELECT migration_name FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY migration_name;',
+    )
+    .split('\n');
+  assert.deepEqual(appliedMigrations, expectedMigrations);
   assert.equal(original.sql('SELECT count(*) FROM "User";'), '0', 'Production must not seed test accounts');
   original.sql(
     `INSERT INTO "User" (id,nickname,"termsVersion","ageConfirmed") VALUES ('smoke-operator','운영확인','v1',true),('smoke-peer','대화상대','v1',true);`,
