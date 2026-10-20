@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
+import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
 describe('community board navigation', () => {
   it('opens the composer with a board and game parent while rejecting unsupported classifications', () => {
     const compose = appRoutes.compose('ja', 'COACHING', 'another-game');
