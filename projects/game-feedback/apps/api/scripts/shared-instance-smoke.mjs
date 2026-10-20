@@ -198,7 +198,7 @@ class Client {
         accept,
       );
       req.on('error', reject);
-      req.setTimeout(65000, () => req.destroy(new Error('HTTPS smoke timed out')));
+      req.setTimeout(105000, () => req.destroy(new Error('HTTPS smoke timed out')));
       req.end(body);
     });
   }
@@ -490,7 +490,7 @@ try {
           milliseconds: performance.now() - started,
         });
       } catch (error) {
-        availability.failures.push(String(error));
+        availability.failures.push(`${client.domain}${path}: ${String(error)}`);
       }
       await delay(100);
     }

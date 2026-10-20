@@ -29,7 +29,10 @@ compose() {
 }
 activate() {
   local directory=$1
-  compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" api web || return 1
+  # Drain SSR while the old API still serves its in-flight reads.
+  compose "$directory" stop web || return 1
+  compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" api || return 1
+  compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" web || return 1
   compose "$directory" exec -T web node -e \
     "fetch('http://127.0.0.1:'+process.env.PORT+'/_health/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 }
