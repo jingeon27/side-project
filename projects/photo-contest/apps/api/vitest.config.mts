@@ -24,6 +24,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['src/**/*.{spec,test}.ts'],
+          exclude: ['src/**/*.integration.{spec,test}.ts'],
         },
       },
       {
@@ -31,7 +32,7 @@ export default defineConfig({
         test: {
           name: 'integration',
           environment: 'node',
-          include: ['test/integration/**/*.{spec,test}.ts'],
+          include: ['src/**/*.integration.{spec,test}.ts', 'test/integration/**/*.{spec,test}.ts'],
           globalSetup: ['test/support/global-setup.ts'],
           setupFiles: ['test/support/setup.ts'],
           // 파일들이 격리 스키마 하나를 함께 쓰므로 순서대로 실행한다.

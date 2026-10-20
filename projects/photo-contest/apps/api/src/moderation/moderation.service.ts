@@ -1,5 +1,6 @@
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { ModerationRepository } from './moderation.repository';
+
 import { Injectable } from '@nestjs/common';
 
 import type { IViewer } from '../auth/session.service';
@@ -12,7 +13,7 @@ import { PhotoStorage } from '../storage/photo-storage.service';
 @Injectable()
 export class ModerationService {
   constructor(
-    private readonly repository: ModerationRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: PhotoStorage,
@@ -23,7 +24,7 @@ export class ModerationService {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
     if (submission.hidden) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const validReason = textValue(reason, TEXT_LIMIT.REPORT_REASON, '신고 이유');
-    await this.repository.createManyReport({
+    await this.db.report.createMany({
       data: [{ submissionId, reporterId: viewer.id, reason: validReason }],
       skipDuplicates: true,
     });
@@ -33,7 +34,7 @@ export class ModerationService {
   /** 관리자만. 사진·투표·좋아요·신고를 보존한 채 목록·결과에서 뺀다. */
   async hide(viewer: IViewer, submissionId: string): Promise<boolean> {
     await this.membership.accessibleSubmission(viewer.id, submissionId, { owner: true });
-    const updated = await this.repository.updateManySubmission({
+    const updated = await this.db.submission.updateMany({
       where: { id: submissionId },
       data: { hidden: true },
     });
@@ -48,19 +49,16 @@ export class ModerationService {
         owner: true,
         client: tx,
       });
-      const upload = await this.repository.findUniqueUpload(
-        {
-          where: { id: submission.uploadId },
-          select: { imageKey: true },
-        },
-        tx,
-      );
-      await this.repository.deleteSubmission({ where: { id: submission.id } }, tx);
+      const upload = await (tx ?? this.db).upload.findUnique({
+        where: { id: submission.uploadId },
+        select: { imageKey: true },
+      });
+      await (tx ?? this.db).submission.delete({ where: { id: submission.id } });
       // 업로드 행은 정리 작업이 지우도록 만료시켜 둔다.
-      await this.repository.updateUpload(
-        { where: { id: submission.uploadId }, data: { expiresAt: new Date() } },
-        tx,
-      );
+      await (tx ?? this.db).upload.update({
+        where: { id: submission.uploadId },
+        data: { expiresAt: new Date() },
+      });
       return upload?.imageKey ?? null;
     });
     if (imageKey) await this.storage.delete(imageKey);

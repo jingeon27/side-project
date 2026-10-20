@@ -1,9 +1,10 @@
-import { AuthRepository } from './auth.repository';
+import { Prisma } from '../../generated/prisma';
+import { Database } from '../database/database.service';
+
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
-import { Prisma } from '../../generated/prisma';
 import { sha256Hex } from '../common/crypto';
 import { ERROR_CODE, fail } from '../common/errors';
 import {
@@ -11,8 +12,8 @@ import {
   AUTH_LOGIN_ID_LIMIT,
   AUTH_LOGIN_IP_LIMIT,
   AUTH_REGISTER_IP_LIMIT,
-  PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
   TEXT_LIMIT,
 } from '../config/limits';
 import { hashPassword, verifyPassword } from './password';
@@ -46,7 +47,7 @@ const LOGIN_FAILED = '아이디 또는 비밀번호를 확인해 주세요.';
 @Injectable()
 export class PasswordAuthService {
   constructor(
-    private readonly repository: AuthRepository,
+    private readonly db: Database,
     private readonly sessions: SessionService,
   ) {}
 
@@ -56,8 +57,8 @@ export class PasswordAuthService {
     if (!parsed.success) fail(parsed.error.issues[0]?.message ?? '입력 내용을 확인해 주세요.');
     const { loginId, password, nickname } = parsed.data;
     const passwordHash = await hashPassword(password);
-    const user = await this.repository
-      .createUser({
+    const user = await this.db.user
+      .create({
         data: {
           provider: 'password',
           providerId: loginId,
@@ -82,7 +83,7 @@ export class PasswordAuthService {
     if (!parsed.success) fail(LOGIN_FAILED, ERROR_CODE.UNAUTHENTICATED);
     const { loginId, password } = parsed.data;
     await this.throttle(`login:id:${loginId}`, AUTH_LOGIN_ID_LIMIT);
-    const credential = await this.repository.findUniquePasswordCredential({
+    const credential = await this.db.passwordCredential.findUnique({
       where: { loginId },
       include: { user: { select: USER_VIEW_SELECT } },
     });
@@ -96,7 +97,7 @@ export class PasswordAuthService {
   private async throttle(key: string, limit: number) {
     const now = Date.now();
     const bucket = Math.floor(now / AUTH_ATTEMPT_WINDOW_MS);
-    const attempt = await this.repository.upsertAuthAttempt({
+    const attempt = await this.db.authAttempt.upsert({
       where: { keyHash: sha256Hex(`${key}:${bucket}`) },
       create: {
         keyHash: sha256Hex(`${key}:${bucket}`),

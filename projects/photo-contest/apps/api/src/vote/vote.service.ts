@@ -1,5 +1,7 @@
+import { recordEvent } from '../analytics/analytics-event.writer';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
-import { VoteRepository } from './vote.repository';
+
 import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
@@ -18,7 +20,7 @@ export interface IVoteView {
 @Injectable()
 export class VoteService {
   constructor(
-    private readonly repository: VoteRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
@@ -31,24 +33,18 @@ export class VoteService {
     return this.transactions.atomic(async (tx) => {
       const { contest } = await this.membership.accessibleContest(viewer.id, contestId, { client: tx });
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간이 아닙니다.');
-      const submission = await this.repository.findUniqueSubmission(
-        {
-          where: { id: submissionId },
-          select: { contestId: true, authorId: true, hidden: true },
-        },
-        tx,
-      );
+      const submission = await (tx ?? this.db).submission.findUnique({
+        where: { id: submissionId },
+        select: { contestId: true, authorId: true, hidden: true },
+      });
       if (!submission || submission.contestId !== contest.id || submission.hidden)
         fail('투표할 수 없는 사진입니다.');
       if (submission.authorId === viewer.id) fail('자신의 사진에는 투표할 수 없습니다.');
-      const vote = await this.repository.createVote(
-        {
-          data: { voterId: viewer.id, contestId: contest.id, submissionId },
-          select: { id: true, contestId: true, submissionId: true },
-        },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+      const vote = await (tx ?? this.db).vote.create({
+        data: { voterId: viewer.id, contestId: contest.id, submissionId },
+        select: { id: true, contestId: true, submissionId: true },
+      });
+      await recordEvent(tx ?? this.db, {
         id: `vote:${vote.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,

@@ -1,15 +1,16 @@
-import { FeedRepository } from './feed.repository';
+import { Database } from '../database/database.service';
+
 import { Injectable } from '@nestjs/common';
 
 import type { IViewer } from '../auth/session.service';
 import { pageRange } from '../common/validation';
 import { PAGE_SIZE_DEFAULT } from '../config/limits';
-import { PHASE, phase } from '../contest/contest.policy';
 import type { TPhase } from '../contest/contest.policy';
+import { PHASE, phase } from '../contest/contest.policy';
 import { MembershipService } from '../group/membership.service';
-import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
-import type { ISubmissionView } from '../submission/submission.presenter';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
+import type { ISubmissionView } from '../submission/submission.presenter';
+import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
 
 export interface IFeedRange {
   offset?: unknown;
@@ -27,7 +28,7 @@ interface IPhotoFeedItem {
 @Injectable()
 export class FeedService {
   constructor(
-    private readonly repository: FeedRepository,
+    private readonly db: Database,
     private readonly membership: MembershipService,
   ) {}
 
@@ -35,7 +36,7 @@ export class FeedService {
     const { offset, limit } = pageRange(range.offset ?? 0, range.limit ?? PAGE_SIZE_DEFAULT);
     const groupIds = await this.membership.memberGroupIds(viewer.id);
     if (!groupIds.length) return [];
-    const rows = await this.repository.findManySubmission({
+    const rows = await this.db.submission.findMany({
       where: { hidden: false, contest: { groupId: { in: groupIds } } },
       include: {
         ...submissionInclude(viewer.id, false),
