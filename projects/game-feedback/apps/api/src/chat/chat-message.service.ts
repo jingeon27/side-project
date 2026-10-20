@@ -93,6 +93,7 @@ export class ChatMessageService {
               conversationId: id,
               uploaderId: user.id,
               messageId: null,
+              uploadedAt: { not: null },
               createdAt: { gte: new Date(Date.now() - 86400000) },
             },
           });

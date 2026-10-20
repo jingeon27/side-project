@@ -10,6 +10,7 @@ import { ApiError } from '../common/http/api-error';
 import { validateMediaFile } from '../common/media-file';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
+import { presentPostMedia } from './post-media.presenter';
 
 @Injectable()
 export class PostMediaService {
@@ -24,27 +25,30 @@ export class PostMediaService {
     const file = validateMediaFile(input);
     const { bytes: _bytes, ...metadata } = file;
     const stored = await this.storage.save(file.bytes, file.mimeType);
-    const row = await this.transactions.run(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
+    return presentPostMedia(await this.register(user.id, metadata, stored));
+  }
+  async register(
+    uploaderId: string,
+    metadata: { name: string; mimeType: string; size: number },
+    stored: Awaited<ReturnType<MediaStorage['save']>>,
+    ready = true,
+  ) {
+    return this.transactions.run(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${uploaderId} FOR UPDATE`;
       await (tx ?? this.db).postMedia.deleteMany({
-        where: { uploaderId: user.id, postId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+        where: { uploaderId, postId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
       });
-      if ((await (tx ?? this.db).postMedia.count({ where: { uploaderId: user.id, postId: null } })) >= 20)
+      if ((await (tx ?? this.db).postMedia.count({ where: { uploaderId, postId: null } })) >= 20)
         throw new ApiError(
           409,
           'MEDIA_LIMIT',
           '작성 대기 중인 파일이 많습니다. 기존 초안을 먼저 등록해주세요.',
         );
       return (tx ?? this.db).postMedia.create({
-        data: { ...metadata, ...stored, uploaderId: user.id },
+        data: { ...metadata, ...stored, uploaderId, uploadedAt: ready ? new Date() : null },
         select: { id: true, name: true, mimeType: true, size: true },
       });
     });
-    return {
-      ...row,
-      kind: row.mimeType.startsWith('image/') ? 'IMAGE' : 'VIDEO',
-      url: `/api/post-media/${row.id}`,
-    };
   }
   async file(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
@@ -52,6 +56,7 @@ export class PostMediaService {
       include: { object: true },
       where: {
         id,
+        uploadedAt: { not: null },
         OR: [
           { postId: null, uploaderId: req.gfSession?.user?.id ?? '' },
           {
@@ -70,6 +75,9 @@ export class PostMediaService {
   }
   content(...args: Parameters<MediaStorage['read']>) {
     return this.storage.read(...args);
+  }
+  location(...args: Parameters<MediaStorage['presignRead']>) {
+    return this.storage.presignRead(...args);
   }
   async remove(req: SessionRequest, id: string) {
     const user = requireUser(req);
@@ -90,6 +98,7 @@ export class PostMediaService {
       const linked = await (tx ?? this.db).postMedia.updateMany({
         where: {
           uploaderId: userId,
+          uploadedAt: { not: null },
           OR: refs.map((ref) => ({
             id: ref.id,
             mimeType: { startsWith: ref.kind === 'IMAGE' ? 'image/' : 'video/' },

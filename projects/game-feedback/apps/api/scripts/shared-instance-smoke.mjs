@@ -636,10 +636,31 @@ try {
   assert.equal(mediaResponse.status, 200, mediaResponse.text());
   const media = mediaResponse.json();
   assert.equal((await gf.http(media.url)).status, 404);
-  assert.deepEqual(
-    (await gf.http(media.url, { headers: { Authorization: `Bearer ${token}`, Range: 'bytes=0-7' } })).body,
-    png.subarray(0, 8),
+  const signed = await gf.http(media.url, {
+    headers: { Authorization: `Bearer ${token}`, Range: 'bytes=0-7' },
+  });
+  assert.equal(signed.status, 307, signed.text());
+  assert.equal(signed.headers['cache-control'], 'private, no-store');
+  const signedUrl = new URL(signed.headers.location);
+  assert.equal(signedUrl.hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(signedUrl.searchParams.get('X-Amz-Expires'), '60');
+  // API 컨테이너의 격리 네트워크에서 S3 fixture를 읽으며 서비스 인증은 전달하지 않는다.
+  const content = JSON.parse(
+    serviceCompose('game-feedback', [
+      'exec',
+      '-T',
+      'api',
+      'node',
+      '--input-type=module',
+      '-e',
+      `const response = await fetch(process.argv[1], {headers: {Range: 'bytes=0-7'}});
+       console.log(JSON.stringify({status: response.status, cache: response.headers.get('cache-control'), bytes: Buffer.from(await response.arrayBuffer()).toString('base64')}));`,
+      signedUrl.toString(),
+    ]),
   );
+  assert.equal(content.status, 206);
+  assert.equal(content.cache, 'private, no-store');
+  assert.deepEqual(Buffer.from(content.bytes, 'base64'), png.subarray(0, 8));
   assert.equal(
     sql('game_feedback', 'SELECT count(*) FROM "PostMedia" WHERE bytes IS NULL AND "objectId" IS NOT NULL'),
     '1',

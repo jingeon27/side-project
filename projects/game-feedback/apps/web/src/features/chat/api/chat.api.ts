@@ -5,9 +5,12 @@ import {
   readConversation,
   sendChatMessage,
   uploadChatAttachment,
+  requestChatAttachmentUpload,
+  completeChatAttachmentUpload,
   deleteChatAttachment,
   clearChatHistory,
 } from '@game-feedback/sdk';
+import { uploadMediaFile } from '@/shared/api';
 import type { IChatMessageInput } from '../model/chat.types';
 
 export function fetchConversations(cursor = '', limit = 20) {
@@ -30,7 +33,12 @@ export function markConversationRead(conversationId: string, messageId: string) 
   return readConversation(conversationId, { messageId });
 }
 export function uploadAttachment(conversationId: string, file: File) {
-  return uploadChatAttachment(conversationId, { file });
+  return uploadMediaFile(file, {
+    reserve: (input) => requestChatAttachmentUpload(conversationId, input),
+    proxy: () => uploadChatAttachment(conversationId, { file }),
+    complete: (id) => completeChatAttachmentUpload(conversationId, id),
+    remove: (id) => deleteChatAttachment(conversationId, id),
+  });
 }
 export function removeAttachment(conversationId: string, attachmentId: string) {
   return deleteChatAttachment(conversationId, attachmentId, { keepalive: true });

@@ -55,6 +55,8 @@ corepack yarn workspace @side/game-feedback db:stop
 
 실제 소셜 로그인과 Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Prisma 스키마 동기화, 카테고리 seed를 준비한다. 예시 콘텐츠는 명시적인 테스트 또는 기존 데모 실행에서만 추가한다.
 
+로컬 Sentry·Amplitude 키는 같은 `projects/game-feedback/.env`에 넣는다. 앱별 실행 명령 대신 위 집계 명령으로 시작해야 Web/API에 함께 전달된다. [관측 설정과 수신 확인](docs/observability.md#로컬에서-먼저-확인하기)을 따른다. S3 직접 업로드를 확인하려면 같은 파일에 서버 전용 S3 설정을 넣고 [게시글·채팅 첨부 설정](docs/media-upload.md)에 따라 버킷 CORS를 적용한다.
+
 ## Web UI와 shadcn/ui
 
 웹은 공통 `@side/design-system`의 **shadcn/ui Base UI / base-nova** 컴포넌트를 사용한다. 공통 패키지와 Web의 components.json은 같은 base-nova/neutral/lucide 설정을 사용하고 ui/utils alias는 공통 소스를 가리킨다. 설치 원본과 조정 범위는 [공통 shadcn 구성](../../packages/design-system/SHADCN.md)에 정리했다.

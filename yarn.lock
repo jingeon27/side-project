@@ -721,6 +721,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aws-sdk/s3-presigned-post@npm:3.1149.0":
+  version: 3.1149.0
+  resolution: "@aws-sdk/s3-presigned-post@npm:3.1149.0"
+  dependencies:
+    "@aws-sdk/client-s3": "npm:3.1149.0"
+    "@aws-sdk/core": "npm:^3.978.2"
+    "@aws-sdk/types": "npm:^3.974.6"
+    "@smithy/core": "npm:^3.35.2"
+    "@smithy/signature-v4": "npm:^5.7.4"
+    "@smithy/types": "npm:^4.19.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/5650c09df6bc79596194361765beb0325f35c51293a074767e12ef53e3273e1fc90248cfe2f4ea96813fff3905ca6dde949700c2b07dd62e395ae53fb0cf9844
+  languageName: node
+  linkType: hard
+
 "@aws-sdk/s3-request-presigner@npm:3.1149.0":
   version: 3.1149.0
   resolution: "@aws-sdk/s3-request-presigner@npm:3.1149.0"
@@ -2874,6 +2889,8 @@ __metadata:
   dependencies:
     "@aws-sdk/client-s3": "npm:3.1149.0"
     "@aws-sdk/lib-storage": "npm:3.1149.0"
+    "@aws-sdk/s3-presigned-post": "npm:3.1149.0"
+    "@aws-sdk/s3-request-presigner": "npm:3.1149.0"
     "@game-feedback/contracts": "workspace:*"
     "@nestjs/common": "npm:11.1.6"
     "@nestjs/core": "npm:11.1.6"

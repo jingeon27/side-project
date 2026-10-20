@@ -7,8 +7,13 @@ createServer(
   { key: readFileSync('/certs/server.key'), cert: readFileSync('/certs/server.crt') },
   async (req, res) => {
     const bucket = req.headers.host?.split('.')[0];
-    const key = `${bucket}${new URL(req.url, 'https://storage.test').pathname}`;
-    if (!allowed[bucket] || !req.headers.authorization?.includes(`Credential=${allowed[bucket]}/`)) {
+    const url = new URL(req.url, 'https://storage.test');
+    const key = `${bucket}${url.pathname}`;
+    // Fixture 경계는 header와 presigned query 양쪽에서 버킷별 credential을 확인한다.
+    const credential =
+      req.headers.authorization?.match(/Credential=([^, ]+)/)?.[1] ??
+      url.searchParams.get('X-Amz-Credential');
+    if (!allowed[bucket] || !credential?.startsWith(`${allowed[bucket]}/`)) {
       res.writeHead(403).end();
       return;
     }
@@ -40,8 +45,9 @@ createServer(
     const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range ?? '');
     const bytes = range ? object.bytes.subarray(Number(range[1]), Number(range[2]) + 1) : object.bytes;
     res.writeHead(range ? 206 : 200, {
-      'Content-Type': object.type,
+      'Content-Type': url.searchParams.get('response-content-type') ?? object.type,
       'Content-Length': bytes.length,
+      'Cache-Control': url.searchParams.get('response-cache-control') ?? 'private, no-store',
       ...(range ? { 'Content-Range': `bytes ${range[1]}-${range[2]}/${object.bytes.length}` } : {}),
     });
     res.end(bytes);
