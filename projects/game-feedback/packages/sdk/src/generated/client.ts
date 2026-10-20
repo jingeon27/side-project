@@ -26,6 +26,7 @@ import {
   ListGameAccounts200Item,
   ListReports200Item,
   ListSupportThreads200Item,
+  MediaUploadPlan,
   NotificationList,
   Ok,
   Post,
@@ -59,6 +60,7 @@ import type {
   ListConversationsParams,
   ListNotificationsParams,
   ListPostsParams,
+  MediaUploadInput,
   OnboardInput,
   PostInput,
   PostMediaUpload,
@@ -75,6 +77,64 @@ import type {
 } from './models';
 
 import { apiFetch } from '../http';
+export const getRequestPostMediaUploadUrl = () => {
+
+
+
+
+  return `/api/post-media/uploads`
+}
+
+export const requestPostMediaUpload = async (mediaUploadInput: MediaUploadInput, options?: Parameters<typeof apiFetch>[1]): Promise<MediaUploadPlan> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<MediaUploadPlan>(getRequestPostMediaUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mediaUploadInput),
+    schema: MediaUploadPlan
+  }
+);}
+
+
+
+export const getCompletePostMediaUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/post-media/${id}/complete`
+}
+
+export const completePostMediaUpload = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<PostMedia> => {
+
+  return apiFetch<PostMedia>(getCompletePostMediaUploadUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+    ,
+    schema: PostMedia
+  }
+);}
+
+
+
 export const getGetAdminUserUrl = (id: string,) => {
 
 
@@ -772,6 +832,67 @@ formData.append(`file`, chatAttachmentUpload.file);
     method: 'POST'
     ,
     body: formData,
+    schema: ChatAttachment
+  }
+);}
+
+
+
+export const getRequestChatAttachmentUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/conversations/${id}/attachments/uploads`
+}
+
+export const requestChatAttachmentUpload = async (id: string,
+    mediaUploadInput: MediaUploadInput, options?: Parameters<typeof apiFetch>[1]): Promise<MediaUploadPlan> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<MediaUploadPlan>(getRequestChatAttachmentUploadUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mediaUploadInput),
+    schema: MediaUploadPlan
+  }
+);}
+
+
+
+export const getCompleteChatAttachmentUploadUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/conversations/${id}/attachments/${attachmentId}/complete`
+}
+
+export const completeChatAttachmentUpload = async (id: string,
+    attachmentId: string, options?: Parameters<typeof apiFetch>[1]): Promise<ChatAttachment> => {
+
+  return apiFetch<ChatAttachment>(getCompleteChatAttachmentUploadUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'POST'
+
+    ,
     schema: ChatAttachment
   }
 );}

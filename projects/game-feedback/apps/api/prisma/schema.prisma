@@ -273,6 +273,7 @@ model ChatAttachment {
   objectId String? @unique
   object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
+  uploadedAt DateTime? @default(now())
   @@index([conversationId,messageId])
   @@index([uploaderId,createdAt])
 }
@@ -290,6 +291,7 @@ model PostMedia {
   objectId String? @unique
   object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
+  uploadedAt DateTime? @default(now())
   @@index([uploaderId,postId,createdAt])
   @@index([postId])
 }

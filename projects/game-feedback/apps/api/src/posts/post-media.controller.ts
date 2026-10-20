@@ -21,6 +21,9 @@ import type { SessionRequest } from '../auth/session.types';
 import { MEDIA_FILE_LIMIT, mediaRange } from '../common/media-file';
 import { PostMediaService } from './post-media.service';
 import { requireUser } from '../auth/session-access';
+import { ValidatedBody } from '../common/http/request-validation';
+import { MediaUploadDto } from '../common/media-upload.dto';
+import { PostMediaUploadService } from './post-media-upload.service';
 
 @Injectable()
 export class PostMediaUploadGuard implements CanActivate {
@@ -32,7 +35,22 @@ export class PostMediaUploadGuard implements CanActivate {
 
 @Controller('api/post-media')
 export class PostMediaController {
-  constructor(@Inject(PostMediaService) private readonly media: PostMediaService) {}
+  constructor(
+    @Inject(PostMediaService) private readonly media: PostMediaService,
+    @Inject(PostMediaUploadService) private readonly uploads: PostMediaUploadService,
+  ) {}
+  @Post('uploads')
+  @HttpCode(200)
+  @UseGuards(PostMediaUploadGuard)
+  request(@Req() req: SessionRequest, @ValidatedBody(MediaUploadDto) input: MediaUploadDto) {
+    return this.uploads.request(req, input);
+  }
+  @Post(':id/complete')
+  @HttpCode(200)
+  @UseGuards(PostMediaUploadGuard)
+  complete(@Req() req: SessionRequest, @Param('id') id: string) {
+    return this.uploads.complete(req, id);
+  }
   @Post()
   @HttpCode(200)
   @UseGuards(PostMediaUploadGuard)
@@ -47,6 +65,7 @@ export class PostMediaController {
   @Get(':id')
   async file(@Req() req: SessionRequest, @Param('id') id: string, @Res() res: Response) {
     const file = await this.media.file(req, id);
+    res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Type', file.mimeType);
     res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`);
@@ -55,6 +74,21 @@ export class PostMediaController {
     if (!range) {
       res.setHeader('Content-Range', `bytes */${file.size}`);
       res.status(416).end();
+      return;
+    }
+    if (req.method === 'HEAD') {
+      res.setHeader('Content-Length', file.size);
+      res.end();
+      return;
+    }
+    const location = await this.media.location(
+      file,
+      file.mimeType,
+      `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+    );
+    if (location) {
+      res.setHeader('Referrer-Policy', 'no-referrer');
+      res.redirect(307, location);
       return;
     }
     const bytes = await this.media.content(file, range);

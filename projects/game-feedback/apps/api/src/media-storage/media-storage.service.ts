@@ -1,13 +1,23 @@
 import { PrismaClient } from '../generated/prisma';
 
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { mkdir, open, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ApiError } from '../common/http/api-error';
+import { validateMediaFile } from '../common/media-file';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { type MediaObject } from '../generated/prisma';
+import { MEDIA_READ_TTL_SECONDS, MEDIA_UPLOAD_TTL_SECONDS } from './media-storage.policy';
 
 interface IMediaReference {
   bytes: Uint8Array | null;
@@ -31,10 +41,99 @@ export class MediaStorage implements OnModuleDestroy {
         ? new S3Client({
             region: storage.region,
             endpoint: storage.endpoint,
+            forcePathStyle: storage.forcePathStyle,
             credentials: { accessKeyId: storage.accessKeyId, secretAccessKey: storage.secretAccessKey },
             maxAttempts: 3,
           })
         : undefined;
+  }
+
+  async reserveUpload(mimeType: string, size: number) {
+    const storage = this.config.mediaStorage;
+    if (storage.driver !== 'S3' || !this.s3) return null;
+    const object = await this.db.mediaObject.create({
+      data: { backend: 'S3', key: `staging/${randomUUID()}` },
+    });
+    const expiresAt = new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000).toISOString();
+    try {
+      const form = await createPresignedPost(this.s3, {
+        Bucket: storage.bucket,
+        Key: object.key,
+        Expires: MEDIA_UPLOAD_TTL_SECONDS,
+        Fields: { 'Content-Type': mimeType },
+        Conditions: [
+          ['content-length-range', size, size],
+          ['eq', '$Content-Type', mimeType],
+        ],
+      });
+      return { objectId: object.id, form, expiresAt };
+    } catch {
+      throw new ApiError(
+        503,
+        'STORAGE_UNAVAILABLE',
+        '업로드 주소를 만들지 못했습니다. 잠시 후 다시 시도해주세요.',
+      );
+    }
+  }
+
+  async completeUpload(file: IMediaReference & { name: string; size: number; mimeType: string }) {
+    const validated = validateMediaFile({
+      originalname: file.name,
+      mimetype: file.mimeType,
+      size: file.size,
+      buffer: await this.stagedBytes(file, file.size, file.mimeType),
+    });
+    // 업로드 주소가 재사용되어도 확정 파일을 덮어쓸 수 없도록 별도 객체에 저장한다.
+    const stored = await this.save(validated.bytes, validated.mimeType);
+    return { ...stored, name: validated.name };
+  }
+
+  private async stagedBytes(file: IMediaReference, size: number, mimeType: string) {
+    const storage = this.config.mediaStorage;
+    if (
+      storage.driver !== 'S3' ||
+      !this.s3 ||
+      file.object?.backend !== 'S3' ||
+      !/^staging\/[a-f0-9-]{36}$/.test(file.object.key)
+    )
+      throw new ApiError(400, 'INVALID_MEDIA', '업로드 요청을 다시 시작해주세요.');
+    try {
+      const metadata = await this.s3.send(
+        new HeadObjectCommand({ Bucket: storage.bucket, Key: file.object.key }),
+      );
+      if (metadata.ContentLength !== size || metadata.ContentType !== mimeType)
+        throw new ApiError(400, 'INVALID_ATTACHMENT', '업로드한 파일의 크기와 형식을 확인해주세요.');
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(400, 'UPLOAD_INCOMPLETE', 'S3 파일 전송을 완료한 뒤 다시 시도해주세요.');
+    }
+    return this.read(file, { start: 0, end: size - 1 });
+  }
+
+  async presignRead(file: IMediaReference, mimeType: string, disposition: string) {
+    const storage = this.config.mediaStorage;
+    if (file.bytes !== null || storage.driver !== 'S3') return null;
+    if (!this.s3 || file.object?.backend !== 'S3')
+      throw new ApiError(503, 'STORAGE_UNAVAILABLE', '파일 저장소를 사용할 수 없습니다.');
+    try {
+      return await getSignedUrl(
+        this.s3,
+        new GetObjectCommand({
+          Bucket: storage.bucket,
+          Key: file.object.key,
+          ResponseContentType: mimeType,
+          ResponseContentDisposition: disposition,
+          ResponseCacheControl: 'private, no-store',
+        }),
+        { expiresIn: MEDIA_READ_TTL_SECONDS },
+      );
+    } catch {
+      throw new ApiError(
+        503,
+        'STORAGE_UNAVAILABLE',
+        '파일 주소를 만들지 못했습니다. 잠시 후 다시 시도해주세요.',
+      );
+    }
   }
 
   private path(key: string) {
@@ -134,7 +233,10 @@ export class MediaStorage implements OnModuleDestroy {
     const objects = await this.db.mediaObject.findMany({
       where: {
         backend: storage.driver,
-        retiredAt: { lt: new Date(Date.now() - 14 * 86400000) },
+        OR: [
+          { retiredAt: { lt: new Date(Date.now() - 14 * 86400000) } },
+          { key: { startsWith: 'staging/' }, createdAt: { lt: before } },
+        ],
         postMedia: null,
         chatAttachment: null,
         avatar: null,

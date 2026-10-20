@@ -22,22 +22,36 @@ export class ChatAttachmentService {
     const file = validateChatFile(input);
     const { bytes: _bytes, ...metadata } = file;
     const stored = await this.storage.save(file.bytes, file.mimeType);
-    const attachment = await this.transactions.run(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
+    return attachmentDto(await this.register(user.id, conversationId, metadata, stored));
+  }
+  async register(
+    userId: string,
+    conversationId: string,
+    metadata: { name: string; mimeType: string; size: number },
+    stored: Awaited<ReturnType<MediaStorage['save']>>,
+    ready = true,
+  ) {
+    return this.transactions.run(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
       await (tx ?? this.db).chatAttachment.deleteMany({
-        where: { uploaderId: user.id, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
+        where: { uploaderId: userId, messageId: null, createdAt: { lt: new Date(Date.now() - 86400000) } },
       });
       const pending = await (tx ?? this.db).chatAttachment.count({
-        where: { uploaderId: user.id, messageId: null },
+        where: { uploaderId: userId, messageId: null },
       });
       if (pending >= 4)
         throw new ApiError(409, 'ATTACHMENT_LIMIT', '전송 대기 중인 첨부파일을 먼저 정리해주세요.');
       return (tx ?? this.db).chatAttachment.create({
-        data: { conversationId, uploaderId: user.id, ...metadata, ...stored },
+        data: {
+          conversationId,
+          uploaderId: userId,
+          ...metadata,
+          ...stored,
+          uploadedAt: ready ? new Date() : null,
+        },
         select: attachmentSelect,
       });
     });
-    return attachmentDto(attachment);
   }
   async file(req: SessionRequest, conversationId: string, id: string) {
     const user = requireUser(req);
@@ -50,6 +64,7 @@ export class ChatAttachmentService {
       where: {
         id,
         conversationId,
+        uploadedAt: { not: null },
         OR: [
           {
             message: { is: historyWhere(conversation, user.id) },
@@ -63,6 +78,9 @@ export class ChatAttachmentService {
   }
   content(...args: Parameters<MediaStorage['read']>) {
     return this.storage.read(...args);
+  }
+  location(...args: Parameters<MediaStorage['presignRead']>) {
+    return this.storage.presignRead(...args);
   }
   async remove(req: SessionRequest, conversationId: string, id: string) {
     const user = requireUser(req);

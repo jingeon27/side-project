@@ -10,6 +10,7 @@ const s3Schema = z.object({
   bucket: z.string().regex(/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/),
   region: z.string().min(1),
   endpoint: z.url().optional(),
+  forcePathStyle: z.boolean().optional(),
   accessKeyId: z.string().min(1),
   secretAccessKey: z.string().min(8),
 });
@@ -28,6 +29,7 @@ export function resolveMediaStorageConfig(env: NodeJS.ProcessEnv): TMediaStorage
     bucket: env.GF_S3_BUCKET,
     region: env.GF_S3_REGION ?? 'auto',
     endpoint: env.GF_S3_ENDPOINT || undefined,
+    forcePathStyle: env.GF_S3_FORCE_PATH_STYLE === 'true',
     accessKeyId: env.GF_S3_ACCESS_KEY_ID,
     secretAccessKey: env.GF_S3_SECRET_ACCESS_KEY,
   });

@@ -1,0 +1,2 @@
+export const MEDIA_UPLOAD_TTL_SECONDS = 300;
+export const MEDIA_READ_TTL_SECONDS = 60;

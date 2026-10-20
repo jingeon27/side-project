@@ -22,6 +22,9 @@ import type { SessionRequest } from '../auth/session.types';
 import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentService } from './chat-attachment.service';
 import { CHAT_FILE_LIMIT, mediaRange } from './chat-file';
+import { ValidatedBody } from '../common/http/request-validation';
+import { MediaUploadDto } from '../common/media-upload.dto';
+import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
 
 @Injectable()
 export class ChatAttachmentGuard implements CanActivate {
@@ -35,7 +38,24 @@ export class ChatAttachmentGuard implements CanActivate {
 @Controller('api/conversations/:id/attachments')
 @UseGuards(ChatAttachmentGuard)
 export class ChatAttachmentController {
-  constructor(@Inject(ChatAttachmentService) private readonly attachments: ChatAttachmentService) {}
+  constructor(
+    @Inject(ChatAttachmentService) private readonly attachments: ChatAttachmentService,
+    @Inject(ChatAttachmentUploadService) private readonly uploads: ChatAttachmentUploadService,
+  ) {}
+  @Post('uploads')
+  @HttpCode(200)
+  request(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedBody(MediaUploadDto) input: MediaUploadDto,
+  ) {
+    return this.uploads.request(req, id, input);
+  }
+  @Post(':attachmentId/complete')
+  @HttpCode(200)
+  complete(@Req() req: SessionRequest, @Param('id') id: string, @Param('attachmentId') attachmentId: string) {
+    return this.uploads.complete(req, id, attachmentId);
+  }
   @Post()
   @HttpCode(200)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: CHAT_FILE_LIMIT, files: 1, fields: 0 } }))
@@ -54,6 +74,7 @@ export class ChatAttachmentController {
     @Res() res: Response,
   ) {
     const file = await this.attachments.file(req, id, attachmentId);
+    res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Content-Type', file.mimeType);
     res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`);
@@ -62,6 +83,21 @@ export class ChatAttachmentController {
     if (!range) {
       res.setHeader('Content-Range', `bytes */${file.size}`);
       res.status(416).end();
+      return;
+    }
+    if (req.method === 'HEAD') {
+      res.setHeader('Content-Length', file.size);
+      res.end();
+      return;
+    }
+    const location = await this.attachments.location(
+      file,
+      file.mimeType,
+      `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+    );
+    if (location) {
+      res.setHeader('Referrer-Policy', 'no-referrer');
+      res.redirect(307, location);
       return;
     }
     const bytes = await this.attachments.content(file, range);
