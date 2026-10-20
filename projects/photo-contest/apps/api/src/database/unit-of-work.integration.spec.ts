@@ -2,14 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, inject } from 'vitest';
 
-import { ANALYTICS_EVENT } from '../../src/analytics/analytics-event';
-import { AuthRepository } from '../../src/auth/auth.repository';
-import { UnitOfWork } from '../../src/database/unit-of-work';
-import { GroupRepository } from '../../src/group/group.repository';
-import { ERROR_MESSAGE } from '../../src/common/errors';
-import { SERIALIZABLE_ATTEMPTS } from '../../src/config/limits';
-import { createTestApp } from '../support/app';
-import type { ITestApi } from '../support/app';
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { AuthRepository } from '../auth/auth.repository';
+import { UnitOfWork } from './unit-of-work';
+import { GroupRepository } from '../group/group.repository';
+import { ERROR_MESSAGE } from '../common/errors';
+import { SERIALIZABLE_ATTEMPTS } from '../config/limits';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi } from '../../test/support/app';
 
 const userData = () => {
   const id = `repo-user-${randomUUID()}`;

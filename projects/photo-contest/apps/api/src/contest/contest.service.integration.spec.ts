@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { moveContestTo, setSubmittedAt } from '../support/clock';
-import { CREATE_CONTEST, contestSchedule, createContest, createGroup } from '../support/fixtures';
-import type { ITestGroup } from '../support/fixtures';
-import { listPhotos, submitPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { moveContestTo, setSubmittedAt } from '../../test/support/clock';
+import { CREATE_CONTEST, contestSchedule, createContest, createGroup } from '../../test/support/fixtures';
+import type { ITestGroup } from '../../test/support/fixtures';
+import { listPhotos, submitPhoto } from '../../test/support/photos';
 
 const GROUP_FORBIDDEN = { code: 'FORBIDDEN', message: '이 그룹에 접근할 권한이 없습니다.' };
 const INVALID_SCHEDULE = {

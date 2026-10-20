@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi } from '../support/app';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi } from '../../test/support/app';
 
 const NO_STORE = 'private, no-store';
 // 아무도 듣지 않는 포트. 앱은 DB에 미리 연결하지 않으므로 뜨기는 하고 /health만 실패한다.

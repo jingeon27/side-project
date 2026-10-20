@@ -5,12 +5,18 @@ import { createTestImage } from '@photo-contest/test-kit';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { moveContestTo } from '../support/clock';
-import { createContest, createGroup } from '../support/fixtures';
-import type { ITestGroup } from '../support/fixtures';
-import { CREATE_SUBMISSION, postPhoto, requestUpload, submitPhoto, uploadPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { moveContestTo } from '../../test/support/clock';
+import { createContest, createGroup } from '../../test/support/fixtures';
+import type { ITestGroup } from '../../test/support/fixtures';
+import {
+  CREATE_SUBMISSION,
+  postPhoto,
+  requestUpload,
+  submitPhoto,
+  uploadPhoto,
+} from '../../test/support/photos';
 
 const PHOTO_ERROR = {
   INVALID_BODY: '10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.',

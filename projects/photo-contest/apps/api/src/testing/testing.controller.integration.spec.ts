@@ -2,8 +2,8 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../support/app';
-import type { ITestApi } from '../support/app';
+import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
+import type { ITestApi } from '../../test/support/app';
 
 describe('테스트 fixture API', () => {
   let api: ITestApi;

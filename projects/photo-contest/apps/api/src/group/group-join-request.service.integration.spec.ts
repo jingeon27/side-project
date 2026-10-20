@@ -1,8 +1,8 @@
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../support/app';
-import { createGroup } from '../support/fixtures';
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createGroup } from '../../test/support/fixtures';
 
 const GROUP_FIELDS =
   'id name visibility role memberCount canViewPosts joinRequestPending inviteToken members{user{id}}';

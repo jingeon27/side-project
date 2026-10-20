@@ -1,18 +1,18 @@
 ---
 name: api-test
-description: API(apps/api)의 unit 테스트나 실제 PostgreSQL 격리 스키마 + supertest로 도는 e2e 레인(test/e2e) 테스트를 추가·수정·실행하거나 테스트 하네스(test/support)를 고칠 때 사용한다.
+description: API(apps/api)의 구현 파일 옆 unit 테스트나 실제 PostgreSQL 격리 스키마 + supertest로 도는 integration 테스트를 추가·수정·실행하거나 테스트 하네스(test/support)를 고칠 때 사용한다.
 ---
 
 레인 소유·이름 규칙·목 원칙은 `testing` 스킬. 여기서는 apps/api의 실제 모양만 다룬다. 헬퍼는 `test/support/`에 있는 것을 먼저 찾아 쓴다.
 
 ## 어느 레인인가
 
-- `unit`(`src/**/*.{spec,test}.ts`, 대상 옆): DB·Nest 앱 없이 도는 순수 함수(단계·순위, 쿠키 파서, PKCE 벡터, 입력 검증, env getter, sharp 변환). env는 `vi.stubEnv` + `afterEach(vi.unstubAllEnvs)`(`src/config/env.spec.ts`).
-- `e2e`(`test/e2e/<도메인>.spec.ts`): 권한, DB 제약, 상태 코드·헤더·쿠키·Origin·CSRF, 동시성, 주기 작업. 확인된 버그의 재발 방지는 `*.test.ts`.
+- `unit`(`src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외, 대상 옆): DB·Nest 앱 없이 도는 순수 함수(단계·순위, 쿠키 파서, PKCE 벡터, 입력 검증, env getter, sharp 변환). env는 `vi.stubEnv` + `afterEach(vi.unstubAllEnvs)`(`src/config/env.spec.ts`).
+- `integration`(`src/**/<대상 구현 파일>.integration.spec.ts`, 대상 옆): 권한, DB 제약, 상태 코드·헤더·쿠키·Origin·CSRF, 동시성, 주기 작업. 확인된 버그의 재발 방지는 `*.integration.test.ts`. 여러 모듈을 함께 검증하면 주 대상 옆에 둔다(`src/database/unit-of-work.integration.spec.ts`, `src/bootstrap.integration.spec.ts`).
 
 ## 레인 설정
 
-- `vitest.config.mts`: unplugin-swc가 데코레이터 메타데이터를 살리므로 테스트는 `../../src/…` TS 소스를 바로 import한다(`dist`·`.e2e-build`를 import하지 않는다). e2e 프로젝트는 `globalSetup: test/support/global-setup.ts`, `setupFiles: test/support/setup.ts`, `fileParallelism: false`, 타임아웃 30초.
+- `vitest.config.mts`: unplugin-swc가 데코레이터 메타데이터를 살리므로 테스트는 대상 TS 소스를 상대 경로로 바로 import한다(`dist`·`.e2e-build`를 import하지 않는다). integration 프로젝트는 `globalSetup: test/support/global-setup.ts`, `setupFiles: test/support/setup.ts`, `fileParallelism: false`, 타임아웃 30초. 공용 하네스는 계속 `test/support/`에 둔다.
 - `test/support/global-setup.ts`: `loadProjectEnv()` → 테스트 DB(test-kit `resolveTestDatabaseUrl()` 규칙: `TEST_DATABASE_URL` 우선, 없으면 로컬 `DATABASE_URL`만) → `isolatedSchemaName('api_test')` → `createIsolatedDatabase(…)`(마이그레이션 적용) → `project.provide('databaseUrl', …)`, teardown에서 `dropIsolatedDatabase`. 실행 전체가 이 스키마 하나를 쓰고 테스트는 `inject('databaseUrl')`로 받는다. `.env`는 열거나 출력하지 않는다.
 
 ## 하네스 (`test/support/`)
@@ -40,10 +40,10 @@ description: API(apps/api)의 unit 테스트나 실제 PostgreSQL 격리 스키�
 
 ```sh
 corepack yarn workspace @photo-contest/api test                     # unit
-corepack yarn workspace @photo-contest/api test:e2e                 # 격리 스키마 + supertest
-corepack yarn workspace @photo-contest/api test:e2e <파일 이름 일부> -t '<it 이름>'
+corepack yarn workspace @photo-contest/api test:integration         # 격리 스키마 + supertest
+corepack yarn workspace @photo-contest/api test:integration <파일 이름 일부> -t '<it 이름>'
 corepack yarn workspace @photo-contest/api typecheck                # test/ 포함
 corepack yarn workspace @side/photo-contest exec eslint apps/api
 ```
 
-- `test:e2e`는 포트를 열지 않으므로 개발 서버(:4200)가 떠 있어도 그대로 돌린다. DB가 응답하지 않으면 띄우거나 재시작하지 말고 사용자에게 알린다.
+- `test:integration`은 포트를 열지 않으므로 개발 서버(:4200)가 떠 있어도 그대로 돌린다. 기존 `test:e2e` 명령도 같은 integration 레인을 실행한다. DB가 응답하지 않으면 띄우거나 재시작하지 말고 사용자에게 알린다.

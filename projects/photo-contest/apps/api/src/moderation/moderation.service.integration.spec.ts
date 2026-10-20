@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { moveContestTo } from '../support/clock';
-import { castVote, createContest, createGroup, likePhoto } from '../support/fixtures';
-import type { ITestGroup } from '../support/fixtures';
-import { listPhotos, storedPhotoExists, submitPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { moveContestTo } from '../../test/support/clock';
+import { castVote, createContest, createGroup, likePhoto } from '../../test/support/fixtures';
+import type { ITestGroup } from '../../test/support/fixtures';
+import { listPhotos, storedPhotoExists, submitPhoto } from '../../test/support/photos';
 
 const REPORT =
   'mutation($id: ID!, $reason: String!) { reportSubmission(submissionId: $id, reason: $reason) }';

@@ -1,17 +1,17 @@
 import { captureException, init } from '@sentry/node';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ContestCompletionService } from '../../src/analytics/contest-completion.service';
-import { AuthService } from '../../src/auth/auth.service';
-import { GroupService } from '../../src/group/group.service';
-import { MaintenanceService } from '../../src/maintenance/maintenance.service';
-import { PhotoStorage } from '../../src/storage/photo-storage.service';
-import { createTestApp, TEST_WEB_ORIGIN } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { cookiePair, findSetCookie } from '../support/cookies';
-import { stubExternalFetch } from '../support/external-fetch';
-import { createContest, createGroup } from '../support/fixtures';
-import { submitPhoto } from '../support/photos';
+import { ContestCompletionService } from '../analytics/contest-completion.service';
+import { AuthService } from '../auth/auth.service';
+import { GroupService } from '../group/group.service';
+import { MaintenanceService } from '../maintenance/maintenance.service';
+import { PhotoStorage } from '../storage/photo-storage.service';
+import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { cookiePair, findSetCookie } from '../../test/support/cookies';
+import { stubExternalFetch } from '../../test/support/external-fetch';
+import { createContest, createGroup } from '../../test/support/fixtures';
+import { submitPhoto } from '../../test/support/photos';
 
 // 실제 구현은 그대로 두고 호출만 지켜본다. SENTRY_DSN이 없으므로 밖으로는 아무것도 나가지 않는다.
 vi.mock('@sentry/node', { spy: true });
@@ -68,7 +68,7 @@ describe('Sentry 오류 보고', () => {
   }
 
   it('SENTRY_DSN이 없으면 시작 시 Sentry를 초기화하지 않아야 한다', async () => {
-    await import('../../src/instrumentation');
+    await import('../instrumentation');
     expect(init).not.toHaveBeenCalled();
   });
 
@@ -156,7 +156,7 @@ describe('Sentry 오류 보고', () => {
     expect(payload).not.toContain(SECRET);
     expect(payload).not.toContain(member.cookie.split('=')[1]);
     // 원문 대신 호출 위치는 남긴다.
-    expect(payload).toContain('monitoring.spec.ts');
+    expect(payload).toContain('sentry.integration.spec.ts');
 
     vi.mocked(captureException).mockClear();
     vi.spyOn(api.app.get(GroupService), 'myGroups').mockRejectedValueOnce(new Error(SECRET));

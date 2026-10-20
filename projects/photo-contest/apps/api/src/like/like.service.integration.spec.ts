@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { moveContestTo } from '../support/clock';
-import { createContest, createGroup, joinGroup } from '../support/fixtures';
-import type { ITestGroup } from '../support/fixtures';
-import { listPhotos, submitPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { moveContestTo } from '../../test/support/clock';
+import { createContest, createGroup, joinGroup } from '../../test/support/fixtures';
+import type { ITestGroup } from '../../test/support/fixtures';
+import { listPhotos, submitPhoto } from '../../test/support/photos';
 
 const LIKE = 'mutation($id: ID!) { likeSubmission(submissionId: $id) { id likeCount likedByMe } }';
 const UNLIKE = 'mutation($id: ID!) { unlikeSubmission(submissionId: $id) { id likeCount likedByMe } }';

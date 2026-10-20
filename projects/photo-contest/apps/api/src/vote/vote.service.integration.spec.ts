@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { moveContestTo } from '../support/clock';
-import { createContest, createGroup } from '../support/fixtures';
-import type { ITestGroup } from '../support/fixtures';
-import { submitPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { moveContestTo } from '../../test/support/clock';
+import { createContest, createGroup } from '../../test/support/fixtures';
+import type { ITestGroup } from '../../test/support/fixtures';
+import { submitPhoto } from '../../test/support/photos';
 
 const CAST_VOTE = `
   mutation($contestId: ID!, $submissionId: ID!) {

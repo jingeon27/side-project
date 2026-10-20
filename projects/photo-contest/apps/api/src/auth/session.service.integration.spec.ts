@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { SessionService } from '../../src/auth/session.service';
-import { createTestApp, TEST_WEB_ORIGIN } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { cookieAttributes, cookieValue, findSetCookie, isClearingCookie } from '../support/cookies';
+import { SessionService } from './session.service';
+import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { cookieAttributes, cookieValue, findSetCookie, isClearingCookie } from '../../test/support/cookies';
 
 const SESSION_COOKIE = 'contest_session';
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;

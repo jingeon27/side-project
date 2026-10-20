@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { minutesFrom, moveContestTo, setSubmittedAt } from '../support/clock';
-import { createContest, createGroup, hidePhoto, joinGroup, likePhoto } from '../support/fixtures';
-import type { ITestGroup } from '../support/fixtures';
-import { submitPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { minutesFrom, moveContestTo, setSubmittedAt } from '../../test/support/clock';
+import { createContest, createGroup, hidePhoto, joinGroup, likePhoto } from '../../test/support/fixtures';
+import type { ITestGroup } from '../../test/support/fixtures';
+import { submitPhoto } from '../../test/support/photos';
 
 const FEED = `query($offset: Int, $limit: Int) {
   myPhotoFeed(offset: $offset, limit: $limit) {

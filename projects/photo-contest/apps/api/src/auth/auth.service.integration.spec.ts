@@ -3,16 +3,16 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Response } from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../support/app';
-import type { ITestApi } from '../support/app';
+import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
+import type { ITestApi } from '../../test/support/app';
 import {
   cookieAttributes,
   cookiePair,
   cookieValue,
   findSetCookie,
   isClearingCookie,
-} from '../support/cookies';
-import { formBody, jsonResponse, stubExternalFetch } from '../support/external-fetch';
+} from '../../test/support/cookies';
+import { formBody, jsonResponse, stubExternalFetch } from '../../test/support/external-fetch';
 
 const GOOGLE = {
   authorize: 'https://accounts.google.com/o/oauth2/v2/auth',

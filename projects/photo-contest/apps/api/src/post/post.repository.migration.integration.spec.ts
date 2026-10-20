@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp, type ITestApi } from '../support/app';
+import { createTestApp, type ITestApi } from '../../test/support/app';
 
 describe('기존 사진의 갤러리 이관', () => {
   let api: ITestApi;

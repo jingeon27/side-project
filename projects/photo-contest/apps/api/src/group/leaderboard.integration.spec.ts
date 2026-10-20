@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
-import { moveContestTo } from '../support/clock';
-import { castVote, createContest, createGroup, hidePhoto, likePhoto } from '../support/fixtures';
-import { submitPhoto } from '../support/photos';
+import { createTestApp } from '../../test/support/app';
+import type { ITestApi, ITestUser } from '../../test/support/app';
+import { moveContestTo } from '../../test/support/clock';
+import { castVote, createContest, createGroup, hidePhoto, likePhoto } from '../../test/support/fixtures';
+import { submitPhoto } from '../../test/support/photos';
 
 const LEADERBOARD = `
   query($id: ID!) {

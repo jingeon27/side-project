@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../support/app';
-import type { ITestApi, ITestUser } from '../support/app';
+import { createTestApp, TEST_WEB_ORIGIN } from '../test/support/app';
+import type { ITestApi, ITestUser } from '../test/support/app';
 
 const NO_STORE = 'private, no-store';
 const FORBIDDEN_ORIGIN = { message: '허용되지 않은 요청 출처입니다.' };
