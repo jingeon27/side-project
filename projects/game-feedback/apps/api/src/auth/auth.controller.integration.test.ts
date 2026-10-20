@@ -5,12 +5,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 import { SocialProviderSchema } from '@game-feedback/contracts';
-import { PrismaClient } from './generated/prisma';
-import { createApp } from './app';
-import { seed } from './seed';
-import { assertDatabaseUrl, DemoProfileProvider } from './security';
-import { hash } from './common/crypto';
-import { resolveAppConfig } from './config/app.config';
+import { PrismaClient } from '../generated/prisma';
+import { createApp } from '../app';
+import { seed } from '../seed';
+import { assertDatabaseUrl, DemoProfileProvider } from '../security';
+import { hash } from '../common/crypto';
+import { resolveAppConfig } from '../config/app.config';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);

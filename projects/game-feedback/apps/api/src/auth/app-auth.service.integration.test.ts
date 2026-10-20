@@ -4,9 +4,9 @@ import { spawnSync } from 'node:child_process';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from './generated/prisma';
-import { createApp } from './app';
-import { assertDatabaseUrl, hash } from './security';
+import { PrismaClient } from '../generated/prisma';
+import { createApp } from '../app';
+import { assertDatabaseUrl, hash } from '../security';
 
 const baseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';

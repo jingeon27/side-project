@@ -12,3 +12,4 @@ description: Run scoped Game Feedback verification with isolated fake providers 
 5. 로컬 스키마는 URL 가드를 거친 db:sync로 적용하고 운영은 검토된 migration의 migrate deploy를 사용한다. reset과 데이터 손실 강제 옵션은 사용하지 않는다. 테스트 정리는 생성한 `gf_test_` 스키마와 이번 실행에서 새로 만든 `game-feedback-smoke-*` Docker project/volume만 삭제할 수 있다.
 6. 실행한 명령·결과·미확인 외부 항목을 완료 보고에 남긴다. 실제 Google/Supercell, 사용자 모집, 배포는 별도 검증으로 기록한다.
 7. 종료 후 필요하면 `db:test:stop`을 사용한다. 다른 프로세스나 다른 서비스의 DB를 종료하지 않는다.
+8. 단위·통합 테스트는 주 대상 구현 파일과 같은 디렉터리에 둔다. API 통합 테스트에는 `*.integration.spec.ts` 또는 `*.integration.test.ts`를 사용해 Vitest 통합 레인에서 수집되도록 한다. 여러 도메인을 함께 검증하는 테스트도 주 대상 옆에 유지한다.

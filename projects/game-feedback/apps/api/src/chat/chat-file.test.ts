@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mediaRange, validateChatFile } from './chat/chat-file';
+import { mediaRange, validateChatFile } from './chat-file';
 describe('chat media boundaries', () => {
   it('preserves UTF-8 filenames from multipart headers without splitting emoji', () => {
     const name = '친선전 연습🎮.png';

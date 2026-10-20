@@ -5,10 +5,10 @@ import { spawnSync } from 'node:child_process';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from './generated/prisma';
-import { createApp } from './app';
-import { seed } from './seed';
-import { assertDatabaseUrl } from './security';
+import { PrismaClient } from '../generated/prisma';
+import { createApp } from '../app';
+import { seed } from '../seed';
+import { assertDatabaseUrl } from '../security';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
@@ -282,7 +282,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
   });
   it('binds only owned media to a post atomically and respects moderation, blocking, ranges and removal', async () => {
     const image = readFileSync(
-      new URL('../../web/src/features/game-profile/assets/clash-royale-icon.jpg', import.meta.url),
+      new URL('../../../web/src/features/game-profile/assets/clash-royale-icon.jpg', import.meta.url),
     );
     const peer = supertest.agent(app.getHttpServer());
     const admin = supertest.agent(app.getHttpServer());

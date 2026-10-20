@@ -1,7 +1,7 @@
 import { it as test } from 'vitest';
 import assert from 'node:assert/strict';
-import { guardDatabaseUrl } from '../../../scripts/database-guard.mjs';
-import { developmentDatabaseUrl, testDatabaseUrl } from '../../../scripts/env.mjs';
+import { guardDatabaseUrl } from './database-guard.mjs';
+import { developmentDatabaseUrl, testDatabaseUrl } from './env.mjs';
 
 test('accepts only the dedicated development target', () => {
   assert.equal(guardDatabaseUrl(developmentDatabaseUrl).database, 'game_feedback');

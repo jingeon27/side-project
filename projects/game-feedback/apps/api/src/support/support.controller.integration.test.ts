@@ -5,10 +5,10 @@ import { spawnSync } from 'node:child_process';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from './generated/prisma';
-import { createApp } from './app';
-import { seed } from './seed';
-import { assertDatabaseUrl } from './security';
+import { PrismaClient } from '../generated/prisma';
+import { createApp } from '../app';
+import { seed } from '../seed';
+import { assertDatabaseUrl } from '../security';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);

@@ -7,12 +7,12 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from './generated/prisma';
-import { createApp } from './app';
-import { seed } from './seed';
-import { assertDatabaseUrl, hash } from './security';
-import { MediaStorage } from './media-storage/media-storage.service';
-import { grantOperatorRole, issueOperatorSession } from './admin/operator-session';
+import { PrismaClient } from '../generated/prisma';
+import { createApp } from '../app';
+import { seed } from '../seed';
+import { assertDatabaseUrl, hash } from '../security';
+import { MediaStorage } from './media-storage.service';
+import { grantOperatorRole, issueOperatorSession } from '../admin/operator-session';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
