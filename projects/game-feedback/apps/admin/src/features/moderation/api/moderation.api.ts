@@ -16,3 +16,4 @@ export const updateReport = ({ id, status }: { id: string; status: 'REVIEWED' | 
   reviewReport(id, { status });
 export const updateVisibility = (input: Parameters<typeof hideContent>[0]) => hideContent(input);
 export type TAdminReport = Awaited<ReturnType<typeof fetchReports>>[number];
+export type TAdminUser = Awaited<ReturnType<typeof fetchUser>>;

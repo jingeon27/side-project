@@ -1,7 +1,3 @@
-export {
-  threadOptions,
-  messageOptions,
-  statusMutationOptions,
-  replyMutationOptions,
-} from './model/support.options';
+export { threadOptions, messageOptions } from './model/support.options';
+export { useSupportStatusMutation, useSupportReplyMutation } from './model/support.hook';
 export type { TSupportThread } from './api/support.api';
