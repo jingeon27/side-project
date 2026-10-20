@@ -1,20 +1,21 @@
 import { UnitOfWork } from '../database/unit-of-work';
-import { AnswersRepository } from './answers.repository';
-import { type AnswerBodyDto, type HelpfulDto } from './answer-input.dto';
+import { PrismaClient } from '../generated/prisma';
+
+import { Inject, Injectable } from '@nestjs/common';
+import { requireUser } from '../auth/session-access';
+import type { SessionRequest } from '../auth/session.types';
 import { ACTIVE_CONTENT } from '../common/content';
+import { ApiError } from '../common/http/api-error';
+import { PostsService } from '../posts/posts.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
-import { PostsService } from '../posts/posts.service';
+import { type AnswerBodyDto, type HelpfulDto } from './answer-input.dto';
 import { responseAnswer } from './answer.presenter';
-import { Inject, Injectable } from '@nestjs/common';
-import type { SessionRequest } from '../auth/session.types';
-import { requireUser } from '../auth/session-access';
-import { ApiError } from '../common/http/api-error';
 
 @Injectable()
 export class AnswersService {
   constructor(
-    @Inject(AnswersRepository) private readonly repository: AnswersRepository,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostsService) private readonly posts: PostsService,
@@ -23,33 +24,27 @@ export class AnswersService {
     const u = requireUser(req),
       p = await this.posts.visiblePost(req, postId);
     const a = await this.transactions.run(async (tx) => {
-      const row = await this.repository.createAnswer(
-        {
-          data: { postId, authorId: u.id, body: input.body },
-          include: { author: { select: authorSelect } },
-        },
-        tx,
-      );
+      const row = await (tx ?? this.db).answer.create({
+        data: { postId, authorId: u.id, body: input.body },
+        include: { author: { select: authorSelect } },
+      });
       if (p.authorId !== u.id)
-        await this.repository.createNotification(
-          {
-            data: {
-              actorId: u.id,
-              userId: p.authorId,
-              postId,
-              answerId: row.id,
-              type: 'ANSWER',
-              message: `${u.nickname}님이 피드백을 남겼어요.`,
-            },
+        await (tx ?? this.db).notification.create({
+          data: {
+            actorId: u.id,
+            userId: p.authorId,
+            postId,
+            answerId: row.id,
+            type: 'ANSWER',
+            message: `${u.nickname}님이 피드백을 남겼어요.`,
           },
-          tx,
-        );
+        });
       return row;
     });
     return responseAnswer(a);
   }
   async visibleAnswer(req: SessionRequest, id: string) {
-    const a = await this.repository.findFirstAnswer({
+    const a = await this.db.answer.findFirst({
       where: { id, ...ACTIVE_CONTENT },
       include: { author: { select: authorSelect } },
     });
@@ -64,7 +59,7 @@ export class AnswersService {
       a = await this.visibleAnswer(req, id);
     if (a.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     return responseAnswer(
-      await this.repository.updateAnswer({
+      await this.db.answer.update({
         where: { id },
         data: { body: input.body, readAt: null, helpful: false },
         include: { author: { select: authorSelect } },
@@ -76,11 +71,11 @@ export class AnswersService {
       a = await this.visibleAnswer(req, id);
     if (a.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.');
     await this.transactions.run([
-      this.repository.updateAnswer({
+      this.db.answer.update({
         where: { id },
         data: { deletedAt: new Date(), body: '', helpful: false },
       }),
-      this.repository.deleteManyNotification({ where: { answerId: id } }),
+      this.db.notification.deleteMany({ where: { answerId: id } }),
     ]);
     return { ok: true };
   }
@@ -91,31 +86,25 @@ export class AnswersService {
     if (p.authorId !== u.id || a.authorId === u.id)
       throw new ApiError(403, 'FORBIDDEN', '요청자만 다른 사용자의 답변에 도움됨을 표시할 수 있습니다.');
     const row = await this.transactions.run(async (tx) => {
-      const changed = await this.repository.updateManyAnswer(
-        {
-          where: { id, helpful: !input.helpful },
-          data: { helpful: input.helpful, readAt: new Date() },
-        },
-        tx,
-      );
+      const changed = await (tx ?? this.db).answer.updateMany({
+        where: { id, helpful: !input.helpful },
+        data: { helpful: input.helpful, readAt: new Date() },
+      });
       if (input.helpful && changed.count)
-        await this.repository.createNotification(
-          {
-            data: {
-              actorId: u.id,
-              userId: a.authorId,
-              postId: a.postId,
-              answerId: a.id,
-              type: 'HELPFUL',
-              message: `${u.nickname}님이 피드백을 도움됨으로 표시했어요.`,
-            },
+        await (tx ?? this.db).notification.create({
+          data: {
+            actorId: u.id,
+            userId: a.authorId,
+            postId: a.postId,
+            answerId: a.id,
+            type: 'HELPFUL',
+            message: `${u.nickname}님이 피드백을 도움됨으로 표시했어요.`,
           },
-          tx,
-        );
-      return this.repository.findUniqueOrThrowAnswer(
-        { where: { id }, include: { author: { select: authorSelect } } },
-        tx,
-      );
+        });
+      return (tx ?? this.db).answer.findUniqueOrThrow({
+        where: { id },
+        include: { author: { select: authorSelect } },
+      });
     });
     return responseAnswer(row);
   }

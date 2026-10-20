@@ -1,17 +1,18 @@
+import { ACTIVE_POST } from '../common/content';
 import { UnitOfWork } from '../database/unit-of-work';
-import { PostsRepository } from './posts.repository';
-import type { PostViewDto } from './post-input.dto';
+import { PrismaClient } from '../generated/prisma';
+
 import { Inject, Injectable } from '@nestjs/common';
 import type { SessionRequest } from '../auth/session.types';
 import { hash } from '../common/crypto';
-import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { UserVisibilityService } from '../users/user-visibility.service';
+import type { PostViewDto } from './post-input.dto';
 
 @Injectable()
 export class PostViewsService {
   constructor(
-    @Inject(PostsRepository) private readonly repository: PostsRepository,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
   ) {}
@@ -21,24 +22,23 @@ export class PostViewsService {
     const excluded = await this.visibility.excluded(req);
     const visitorHash = hash(req.gfSession?.user ? `user:${req.gfSession.user.id}` : `visitor:${visitorId}`);
     return this.transactions.run(async (tx) => {
-      await this.repository.lockPost(id, tx);
-      const post = await this.repository.findFirstPost(
-        {
-          where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
-          select: { id: true, updatedAt: true },
-        },
-        tx,
-      );
+      await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+      const post = await (tx ?? this.db).post.findFirst({
+        where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
+        select: { id: true, updatedAt: true },
+      });
       if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
-      const counted = await this.repository.recordUniqueView(id, visitorHash, tx);
-      return this.repository.updatePost(
-        {
-          where: { id },
-          data: { viewCount: { increment: counted }, updatedAt: post.updatedAt },
-          select: { viewCount: true },
-        },
-        tx,
-      );
+      const counted = await tx.$executeRaw`
+      INSERT INTO "PostView" ("postId", "visitorHash", "lastViewedAt")
+      VALUES (${id}, ${visitorHash}, CURRENT_TIMESTAMP)
+      ON CONFLICT ("postId", "visitorHash") DO UPDATE SET "lastViewedAt" = CURRENT_TIMESTAMP
+      WHERE "PostView"."lastViewedAt" <= CURRENT_TIMESTAMP - INTERVAL '24 hours'
+    `;
+      return (tx ?? this.db).post.update({
+        where: { id },
+        data: { viewCount: { increment: counted }, updatedAt: post.updatedAt },
+        select: { viewCount: true },
+      });
     });
   }
 }

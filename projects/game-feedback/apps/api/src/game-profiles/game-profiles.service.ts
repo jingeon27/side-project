@@ -1,17 +1,17 @@
 import { UnitOfWork } from '../database/unit-of-work';
-import { GameProfilesRepository } from './game-profiles.repository';
-import type { GameAccountDto } from './game-account-input.dto';
+import { PrismaClient, type Prisma } from '../generated/prisma';
+
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma } from '../generated/prisma';
-import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import type { SessionRequest } from '../auth/session.types';
 import { requireUser } from '../auth/session-access';
+import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
+import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import type { GameAccountDto } from './game-account-input.dto';
 
 @Injectable()
 export class GameProfilesService {
   constructor(
-    @Inject(GameProfilesRepository) private readonly repository: GameProfilesRepository,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
@@ -24,7 +24,10 @@ export class GameProfilesService {
   async gameAccounts(req: SessionRequest) {
     const u = requireUser(req);
     return (
-      await this.repository.findManyGameAccount({ where: { userId: u.id }, orderBy: { updatedAt: 'desc' } })
+      await this.db.gameAccount.findMany({
+        where: { userId: u.id },
+        orderBy: { updatedAt: 'desc' },
+      })
     ).map((a) => a.profile);
   }
 
@@ -32,30 +35,24 @@ export class GameProfilesService {
     const u = requireUser(req),
       profile = await this.lookup(input.playerTag);
     await this.transactions.run(async (tx) => {
-      await this.repository.lockUser(u.id, tx);
-      const current = await this.repository.findUniqueOrThrowUser({ where: { id: u.id } }, tx);
-      await this.repository.upsertGameAccount(
-        {
-          where: { userId_playerTag: { userId: u.id, playerTag: input.playerTag } },
-          update: { profile: profile as unknown as Prisma.InputJsonValue },
-          create: {
-            userId: u.id,
-            playerTag: input.playerTag,
-            profile: profile as unknown as Prisma.InputJsonValue,
-          },
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;
+      const current = await (tx ?? this.db).user.findUniqueOrThrow({ where: { id: u.id } });
+      await (tx ?? this.db).gameAccount.upsert({
+        where: { userId_playerTag: { userId: u.id, playerTag: input.playerTag } },
+        update: { profile: profile as unknown as Prisma.InputJsonValue },
+        create: {
+          userId: u.id,
+          playerTag: input.playerTag,
+          profile: profile as unknown as Prisma.InputJsonValue,
         },
-        tx,
-      );
-      await this.repository.updateUser(
-        {
-          where: { id: u.id },
-          data: {
-            supercellTag: input.playerTag,
-            ...(current.supercellTag !== input.playerTag ? { isVerified: false, verifiedAt: null } : {}),
-          },
+      });
+      await (tx ?? this.db).user.update({
+        where: { id: u.id },
+        data: {
+          supercellTag: input.playerTag,
+          ...(current.supercellTag !== input.playerTag ? { isVerified: false, verifiedAt: null } : {}),
         },
-        tx,
-      );
+      });
     });
     return profile;
   }

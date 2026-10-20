@@ -1,57 +1,57 @@
 import { UnitOfWork } from '../database/unit-of-work';
-import { AuthRepository } from './auth.repository';
-import { Inject, Injectable } from '@nestjs/common';
+import { PrismaClient, type Prisma } from '../generated/prisma';
+
 import type { TSocialProvider } from '@game-feedback/contracts';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class SocialIdentityService {
   constructor(
-    @Inject(AuthRepository) private readonly repository: AuthRepository,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
   ) {}
 
   async findUser(provider: TSocialProvider, subject: string) {
-    const identity = await this.repository.findUniqueSocialIdentity({
+    const identity = await this.db.socialIdentity.findUnique({
       where: { provider_subject: { provider, subject } },
       include: { user: true },
     });
     if (identity) return identity.user;
-    if (provider === 'google') return this.repository.findUniqueUser({ where: { googleSubject: subject } });
+    if (provider === 'google') return this.db.user.findUnique({ where: { googleSubject: subject } });
     return null;
   }
 
   async onboard(provider: TSocialProvider, subject: string, nickname: string) {
     return this.transactions.run(async (tx) => {
-      await this.repository.lockIdentity(provider, subject, tx);
-      const identity = await this.repository.findUniqueSocialIdentity(
-        {
-          where: { provider_subject: { provider, subject } },
-          include: { user: true },
-        },
-        tx,
-      );
+      await this.lockIdentity(provider, subject, tx);
+      const identity = await (tx ?? this.db).socialIdentity.findUnique({
+        where: { provider_subject: { provider, subject } },
+        include: { user: true },
+      });
       if (identity) return identity.user;
       const legacy =
         provider === 'google'
-          ? await this.repository.findUniqueUser({ where: { googleSubject: subject } }, tx)
+          ? await (tx ?? this.db).user.findUnique({ where: { googleSubject: subject } })
           : null;
       if (legacy) {
-        await this.repository.createSocialIdentity({ data: { provider, subject, userId: legacy.id } }, tx);
+        await (tx ?? this.db).socialIdentity.create({ data: { provider, subject, userId: legacy.id } });
         return legacy;
       }
-      return this.repository.createUser(
-        {
-          data: {
-            nickname,
-            termsVersion: '2026-10-16',
-            ageConfirmed: true,
-            ...(provider === 'google' ? { googleSubject: subject } : {}),
-            role: provider === 'google' && process.env.GF_ADMIN_GOOGLE_SUB === subject ? 'ADMIN' : 'USER',
-            socialIdentities: { create: { provider, subject } },
-          },
+      return (tx ?? this.db).user.create({
+        data: {
+          nickname,
+          termsVersion: '2026-10-16',
+          ageConfirmed: true,
+          ...(provider === 'google' ? { googleSubject: subject } : {}),
+          role: provider === 'google' && process.env.GF_ADMIN_GOOGLE_SUB === subject ? 'ADMIN' : 'USER',
+          socialIdentities: { create: { provider, subject } },
         },
-        tx,
-      );
+      });
     });
+  }
+
+  private lockIdentity(provider: string, subject: string, client: Prisma.TransactionClient) {
+    const key = `${provider}:${subject}`;
+    return client.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
   }
 }
