@@ -28,6 +28,9 @@ x-api: &api
   DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
   SUPERCELL_API_TOKEN: ${SUPERCELL_API_TOKEN:-}
   GF_ADMIN_GOOGLE_SUB: ${GF_ADMIN_GOOGLE_SUB:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+  SENTRY_RELEASE: ${RELEASE_SHA:-}
   NODE_OPTIONS: --max-old-space-size=256
 x-ca: &ca
   - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro

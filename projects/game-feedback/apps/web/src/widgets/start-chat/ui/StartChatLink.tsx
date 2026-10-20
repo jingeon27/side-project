@@ -1,4 +1,6 @@
 'use client';
+import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
+
 import { Button } from '@side/design-system';
 import { useI18n } from '@/shared/i18n';
 import { useParams, useRouter } from 'next/navigation';
@@ -8,13 +10,14 @@ import { chatError, useCreateConversationMutation } from '@/features/chat';
 import { appRoutes } from '@game-feedback/bridge';
 
 interface IStartChatLinkProps {
+  source: 'post' | 'comment' | 'profile';
   userId: string;
   nickname: string;
   label?: string;
   appearance?: 'text' | 'button';
 }
 
-export function StartChatLink({ userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
+export function StartChatLink({ source, userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
   const { t } = useI18n();
   const { session, login, notify } = useSession();
   const router = useRouter();
@@ -28,6 +31,7 @@ export function StartChatLink({ userId, nickname, label, appearance = 'text' }: 
     }
     mutation.mutate(userId, {
       onSuccess: (conversation) => {
+        trackEvent(ANALYTICS_EVENT.ChatStarted, { source });
         router.push(appRoutes.conversation(locale, conversation.id));
       },
       onError: (error) => notify(chatError(error)),

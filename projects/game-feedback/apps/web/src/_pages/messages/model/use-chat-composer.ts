@@ -1,3 +1,4 @@
+import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
 import { useEffect, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
@@ -65,6 +66,7 @@ export function useChatComposer({
         : { body, clientMessageId: crypto.randomUUID(), ...(attachmentIds.length ? { attachmentIds } : {}) };
     try {
       await mutation.mutateAsync(input);
+      trackEvent(ANALYTICS_EVENT.MessageSent, { has_attachment: attachmentIds.length > 0 });
       form.reset({ body: '' });
       upload.reset();
       form.clearErrors('root.attachment');

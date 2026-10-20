@@ -146,10 +146,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'アカウント確認、フィードバック、ゲームアカウント登録、通知、コミュニティ運営に利用します。ニックネーム、サービス認証表示、代表ゲームタグ、投稿内容は他の利用者に表示されることがあります。サービス認証はゲームアカウントの所有権認証ではありません。1対1チャットは参加者だけが閲覧でき、添付画像・動画もサービスのサーバーに保存されます。',
     ],
   '세션과 외부 서비스': ['Sessions and external services', 'セッションと外部サービス'],
-  '로그인 상태 유지를 위해 HttpOnly 세션 쿠키를 사용합니다. Google, X, 카카오, Discord 로그인과 게임 프로필 조회에는 각 외부 서비스가 연결됩니다. 이메일 알림이나 외부 분석 도구는 초기 알파에 연결되지 않았습니다.':
+  '로그인 상태 유지를 위해 HttpOnly 세션 쿠키를 사용합니다. 소셜 로그인과 게임 프로필 조회는 각 제공자에 연결됩니다. 운영자가 키를 설정한 환경에서는 Functional Software, Inc.(Sentry)에 요청·쿠키·사용자 정보와 오류 메시지를 제거한 오류 종류·스택을, Amplitude, Inc.에 검색어를 제거한 페이지 경로, 기기·브라우저, 화면 너비 구간, 언어, 쿠키 식별자와 로그인 사용자 ID를 HTTPS로 전송합니다. Amplitude IP 수집은 꺼져 있습니다. 오류 진단과 이용 흐름 분석에 사용하며 키가 없으면 전송하지 않습니다. 국외 이전 국가와 보유 기간은 운영 프로젝트의 실제 설정을 확인한 후 공개 전 확정합니다.':
     [
-      'We use HttpOnly session cookies to keep you signed in. Google, X, Kakao, Discord and game profile lookups connect to their respective external services. Email notifications and external analytics are not connected in the initial alpha.',
-      'ログイン状態の維持にHttpOnlyセッションCookieを使用します。Google、X、カカオ、Discordでのログインやゲーム情報の取得では各外部サービスに接続します。初期アルファではメール通知や外部分析ツールを接続していません。',
+      'We use HttpOnly session cookies. Social login and game lookups contact their providers. When operator keys are configured, errors with requests, cookies, users and messages removed go to Functional Software, Inc. (Sentry). Page paths without search terms, device and browser data, viewport buckets, language, cookie identifiers and signed-in user IDs go to Amplitude, Inc. over HTTPS for usage analysis. Amplitude IP collection is disabled. No keys means no telemetry. Transfer countries and retention periods must be verified in the actual projects and finalized before public launch.',
+      'ログインにはHttpOnlyセッションCookieを使用し、ソーシャルログインとゲーム情報照会は各提供者に接続します。運営者がキーを設定した場合、リクエスト・Cookie・ユーザー・メッセージを除去したエラーをFunctional Software, Inc.（Sentry）へ、検索語を除いたページパス、端末・ブラウザー、画面幅区分、言語、Cookie識別子、ログインユーザーIDをAmplitude, Inc.へHTTPSで送信します。目的はエラー診断と利用分析です。AmplitudeのIP収集は無効で、キーがなければ送信しません。移転先の国と保存期間は実際の設定を確認し公開前に確定します。',
     ],
   '삭제와 권리 행사': ['Deletion and your rights', '削除と権利の行使'],
   '설정에서 계정을 삭제하면 참여한 1:1 대화와 메시지, 첨부파일도 함께 삭제됩니다. 로그아웃하면 세션과 실시간 연결이 종료됩니다. 공개 운영자의 정보, 보관 기간, 위탁 및 국외 이전 등 최종 개인정보 처리 사항은 공개 서비스 전 검토하고 확정해야 합니다.':

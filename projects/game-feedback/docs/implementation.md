@@ -943,3 +943,11 @@ Web typecheck/lint와 변경 파일 Prettier 검사가 통과했습니다. 새 P
 - CloudFormation cfn-lint(서울), actionlint, shellcheck와 git diff --check 통과. 루트 workflow는 컨테이너 검증/CD 때문에, yarn.lock은 API S3 저장/streaming backup 의존성 때문에 변경했습니다. 다른 서비스 제품 코드는 변경하지 않았습니다.
 
 유료 AWS 자원 생성, 실제 SSH CD 실행, 공인 DNS/ACME 인증서, 운영 OAuth/Supercell, 실제 S3/R2 송수신과 외부 모니터링 수신은 실행하지 않았습니다. Game Feedback의 Sentry/Amplitude 연동은 현재 없으며 이 변경이 해당 연동을 완성했다고 주장하지 않습니다. 2GB 실서버의 동시 사용자 처리량도 부하 측정 전입니다. 이 절은 구현/로컬 검증 결과이며 실제 공개 배포 완료 기록이 아닙니다.
+
+## 2026-10-20 웹/API 관측 연결
+
+웹 Sentry 오류 수집과 Amplitude의 타입 이벤트 7개, 자동 페이지뷰 공통 속성, 계정 식별 초기화를 추가했다. API는 예외 필터의 500만 수집하며 실제 URL 대신 라우트 패턴을 태그한다. 빈 키는 비활성화한다. 공통 workflow 변경은 GF 웹 빌드 인자 연결에 필요하다. 실제 국가·보유기간·콘솔 알림 설정은 운영 프로젝트 확인 후 확정한다. 모바일은 이번 변경에 포함하지 않는다.
+
+SDK 11의 Next span 계측은 현재 Next 서버 시작을 실패시켜 서버에서 OpenTelemetry 설정과 기본 integration을 끄고 오류 수집만 초기화했다. tracesSampleRate를 설정하지 않아 tracing을 켜지 않는다. 브라우저는 trace 0이다. Amplitude의 pageUrlEnrichment는 개인정보 제거 뒤 URL을 다시 추가하므로 명시적으로 끄고 자체 enrichment만 사용한다. 이 차이는 실제 SDK 전송 테스트로 확인했다.
+
+API 테스트 177개와 웹 113개, 타입검사·lint가 통과했다. 가짜 키에서 실제 SDK 페이지뷰 이동당 1회, 오류 전송의 개인정보 제거, 글쓰기 실패 미집계와 글/채팅/메시지 성공 집계 3개 E2E가 통과했다. 빈 키 외부 요청 0건 E2E도 통과했다. 실제 운영 대시보드 수신과 소스맵 업로드는 검증하지 않았다. 자세한 콘솔 설정과 퍼널은 docs/observability.md에 기록했다.

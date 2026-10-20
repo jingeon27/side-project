@@ -22,6 +22,9 @@ databaseUrl.searchParams.set('schema', schema);
 process.env.GF_E2E_DATABASE_URL = databaseUrl.toString();
 const apiEnv = {
   NODE_ENV: 'test',
+  SENTRY_DSN: '',
+  NEXT_PUBLIC_SENTRY_DSN: '',
+  NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
   GF_DEMO_MODE: 'true',
   PORT: '4301',
   WEB_ORIGIN: 'http://127.0.0.1:3301',
@@ -43,7 +46,7 @@ const apiEnv = {
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: '**/test-token-chat.spec.ts',
+  testIgnore: ['**/test-token-chat.spec.ts', '**/observability.spec.ts'],
   fullyParallel: false,
   workers: 1,
   timeout: 45_000,

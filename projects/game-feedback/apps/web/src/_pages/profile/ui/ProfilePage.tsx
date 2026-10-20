@@ -91,7 +91,9 @@ function ProfileContent({
             {t('게임 계정 소유권은 인증되지 않았습니다. 서비스 인증 표시와는 별개입니다.')}
           </p>
         )}
-        {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
+        {author.id !== session?.user?.id && (
+          <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
+        )}
         <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={login} />
         <ReportUserButton userId={author.id} />
       </section>
