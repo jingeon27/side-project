@@ -1,6 +1,7 @@
 import type { Prisma } from '../../generated/prisma';
 
 export const ANALYTICS_EVENT = {
+  POST_VISIBILITY_CHANGED: 'post_visibility_changed',
   POST_CREATED: 'post_created',
   POST_LIKED: 'post_liked',
   POST_DELETED: 'post_deleted',

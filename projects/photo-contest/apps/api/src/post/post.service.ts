@@ -60,15 +60,32 @@ export class PostService {
   ) {}
 
   async list(viewer: IViewer | null, query: IPostQuery) {
-    const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     if (!query.groupId && !viewer) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
     const groupIds = query.groupId
       ? [(await this.membership.readableGroup(viewer?.id ?? null, query.groupId)).group.id]
       : await this.membership.memberGroupIds(viewer?.id ?? '');
+    return this.findPosts(viewer, { groupId: { in: groupIds } }, query);
+  }
+
+  async listPublic(viewer: IViewer | null, query: IPostQuery) {
+    return this.findPosts(viewer, { group: { visibility: 'PUBLIC' } }, query);
+  }
+
+  async find(viewer: IViewer | null, id: string) {
+    await this.membership.readablePost(viewer?.id ?? null, id);
+    const post = await this.db.post.findUniqueOrThrow({
+      where: { id },
+      include: postInclude(viewer?.id ?? null),
+    });
+    return presentPost(post, viewer?.id ?? null);
+  }
+
+  private async findPosts(viewer: IViewer | null, scope: Prisma.PostWhereInput, query: IPostQuery) {
+    const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const popular = query.sort === 'MONTHLY_POPULAR';
     const rows = await this.db.post.findMany({
       where: {
-        groupId: { in: groupIds },
+        ...scope,
         ...(query.contestId ? { contestId: query.contestId } : {}),
         hidden: false,
         OR: [{ legacySubmissionId: null }, { legacySubmission: { hidden: false } }],

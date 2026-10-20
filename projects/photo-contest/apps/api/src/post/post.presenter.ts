@@ -20,6 +20,7 @@ export function presentPost(row: TPostRow, userId: string | null) {
     commentCount: row._count.comments,
     likedByMe: row.likes.length > 0,
     canDelete: row.authorId === userId || row.group.members.some(isAdmin),
+    canModerate: row.group.members.some(isAdmin),
     canInteract: row.group.members.length > 0,
   };
 }

@@ -32,6 +32,7 @@ type GalleryPost {
   commentCount: Int!
   likedByMe: Boolean!
   canDelete: Boolean!
+  canModerate: Boolean!
   canInteract: Boolean!
 }
 type PostComment {
@@ -47,7 +48,15 @@ type PostDownload {
   filename: String!
   expiresAt: DateTime
 }
+type HiddenGalleryPost {
+  id: ID!
+  title: String!
+  createdAt: DateTime!
+}
 extend type Query {
+  galleryPost(id: ID!): GalleryPost!
+  hiddenGalleryPosts(groupId: ID!, offset: Int = 0, limit: Int = 24): [HiddenGalleryPost!]!
+  publicGalleryPosts(sort: PostSort!, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
   postDownload(postId: ID!): PostDownload!
   galleryPosts(
     groupId: ID
@@ -59,6 +68,7 @@ extend type Query {
   postComments(postId: ID!, offset: Int = 0, limit: Int = 24): [PostComment!]!
 }
 extend type Mutation {
+  setPostHidden(postId: ID!, hidden: Boolean!): Boolean!
   uploadPostMedia(uploadId: ID!, file: Upload!): Boolean!
   requestPostUpload(groupId: ID!): UploadTicket!
   createPost(

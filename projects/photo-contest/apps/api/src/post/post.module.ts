@@ -6,11 +6,19 @@ import { PostCommentResolver } from './post-comment.resolver';
 import { PostCommentService } from './post-comment.service';
 import { PostController } from './post.controller';
 import { PostResolver } from './post.resolver';
+import { PostModerationService } from './post-moderation.service';
 import { PostService } from './post.service';
 
 @Module({
   imports: [GroupModule],
-  providers: [PostService, PostResolver, PostCommentService, PostCommentResolver, MediaProcessor],
+  providers: [
+    PostModerationService,
+    PostService,
+    PostResolver,
+    PostCommentService,
+    PostCommentResolver,
+    MediaProcessor,
+  ],
   controllers: [PostController],
 })
 export class PostModule {}
