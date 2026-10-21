@@ -48,7 +48,7 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
   const serverClient = new ApolloClient({ cache, link: ApolloLink.empty() });
   const serverTree = (
     <ApolloProvider client={serverClient}>
-      <MemberHome feedPreloaded={false} />
+      <MemberHome feedPreloaded={false} initialHasGroups={false} />
     </ApolloProvider>
   );
   const container = document.createElement('div');
@@ -73,7 +73,7 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
   const client = new ApolloClient({ cache: browserCache, link: ApolloLink.empty() });
   const tree = (
     <ApolloProvider client={client}>
-      <MemberHome feedPreloaded={false} />
+      <MemberHome feedPreloaded={false} initialHasGroups={false} />
     </ApolloProvider>
   );
   const onRecoverableError = vi.fn();
