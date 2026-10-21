@@ -121,6 +121,8 @@ model Upload {
   contestId String
   expiresAt DateTime
   imageKey String? @unique
+  mediaUploadId String? @unique
+  mediaUpload PostUpload? @relation(fields: [mediaUploadId], references: [id], onDelete: Restrict)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   submission Submission?
@@ -199,13 +201,26 @@ model PostUpload {
   groupId String
   expiresAt DateTime
   storageKey String? @unique
+  stagingKey String? @unique
+  completionKey String? @unique
+  completionStartedAt DateTime?
+  attempts PostUploadAttempt[]
   kind String @default("PHOTO")
   contentType String @default("image/webp")
   byteSize Int @default(0)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   post Post?
+  submissionUpload Upload?
   @@index([expiresAt])
+}
+model PostUploadAttempt {
+  key String @id
+  uploadId String?
+  createdAt DateTime @default(now())
+  upload PostUpload? @relation(fields: [uploadId], references: [id], onDelete: SetNull)
+  @@index([createdAt])
+  @@index([uploadId])
 }
 model Post {
   categoryId String?

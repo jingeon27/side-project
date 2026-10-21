@@ -7,15 +7,16 @@ import { TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from './app';
 
 export interface IUploadTicket {
   id: string;
-  /** API가 돌려준 웹 프록시 경로 (/backend/uploads/<token>) */
+  fields: Array<{ name: string; value: string }>;
+  /** 서명된 저장소 경로 */
   url: string;
   expiresAt: string;
-  /** API에 직접 보낼 경로 (/uploads/<token>) */
+  /** API의 로컬 저장소 경로 */
   path: string;
 }
 
 const REQUEST_UPLOAD =
-  'mutation($contestId: ID!) { requestUploadUrl(contestId: $contestId) { id url expiresAt } }';
+  'mutation($contestId: ID!, $size: Int!, $type: String!) { requestUploadUrl(contestId: $contestId,contentType:$type,byteSize:$size) { id url fields{name value} expiresAt } }';
 export const CREATE_SUBMISSION = `
   mutation($contestId: ID!, $uploadId: ID!, $caption: String!, $rightsConfirmed: Boolean! = true) {
     createSubmission(contestId: $contestId, uploadId: $uploadId, caption: $caption, rightsConfirmed: $rightsConfirmed) {
@@ -29,25 +30,34 @@ export async function requestUpload(
   api: ITestApi,
   cookie: string,
   contestId: string,
+  body?: Buffer,
+  contentType = 'image/png',
 ): Promise<IUploadTicket> {
   const { requestUploadUrl: ticket } = await api.gqlOk<{
     requestUploadUrl: Omit<IUploadTicket, 'path'>;
-  }>(cookie, REQUEST_UPLOAD, { contestId });
+  }>(cookie, REQUEST_UPLOAD, {
+    contestId,
+    size: (body ?? (await createTestImage())).length,
+    type: contentType,
+  });
   return { ...ticket, path: ticket.url.replace(/^\/backend/, '') };
 }
 
 /** 브라우저처럼 Origin을 붙여 원본 사진을 올린다. */
 export function postPhoto(
   api: ITestApi,
-  cookie: string | undefined,
-  path: string,
+  ticket: IUploadTicket,
   body: Buffer | string,
   contentType = 'image/png',
 ) {
-  let pending = api.http().post(path).set('Origin', TEST_WEB_ORIGIN).set('Content-Type', contentType);
-  if (cookie) pending = pending.set('Cookie', cookie);
-  return pending.send(body);
+  const request = api.http().post(ticket.path).set('Origin', TEST_WEB_ORIGIN);
+  for (const field of ticket.fields) request.field(field.name, field.value);
+  return request.attach('file', Buffer.isBuffer(body) ? body : Buffer.from(body), {
+    filename: 'photo',
+    contentType,
+  });
 }
+export const COMPLETE_UPLOAD = 'mutation($id: ID!) { completeSubmissionUpload(uploadId:$id) }';
 
 /** 티켓을 받아 사진을 올리고 업로드 ID를 돌려준다. */
 export async function uploadPhoto(
@@ -56,9 +66,11 @@ export async function uploadPhoto(
   contestId: string,
   image?: Buffer,
 ): Promise<string> {
-  const ticket = await requestUpload(api, cookie, contestId);
-  const response = await postPhoto(api, cookie, ticket.path, image ?? (await createTestImage()));
+  const body = image ?? (await createTestImage());
+  const ticket = await requestUpload(api, cookie, contestId, body);
+  const response = await postPhoto(api, ticket, body);
   if (response.status !== 201) throw new Error(`사진 업로드 실패 (${response.status}): ${response.text}`);
+  await api.gqlOk(cookie, COMPLETE_UPLOAD, { id: ticket.id });
   return ticket.id;
 }
 

@@ -1,9 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
-
-import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
+import { postUpload } from '../../test/support/group-contest';
 
 const FIELDS = 'id title kind mediaUrl linkUrl canInteract';
 const CREATE = `mutation($group:ID!,$upload:ID,$link:String,$title:String!){createPost(groupId:$group,uploadId:$upload,linkUrl:$link,title:$title,rightsConfirmed:true){${FIELDS}}}`;
@@ -36,20 +34,8 @@ describe('링크 게시물과 미디어 저장', () => {
   const create = async (group: string, link: string | null, upload?: string, title = '첨부한 웃긴 순간') =>
     (await api.gqlOk<{ createPost: IPost }>(owner.cookie, CREATE, { group, link, upload, title })).createPost;
   const media = async (group: string, video = false, link: string | null = null) => {
-    const { requestPostUpload: ticket } = await api.gqlOk<{ requestPostUpload: { id: string; url: string } }>(
-      owner.cookie,
-      'mutation($id:ID!){requestPostUpload(groupId:$id){id url}}',
-      { id: group },
-    );
-    const response = await api
-      .http()
-      .post(ticket.url.replace('/backend', ''))
-      .set('Origin', TEST_WEB_ORIGIN)
-      .set('Cookie', owner.cookie)
-      .set('Content-Type', video ? 'video/mp4' : 'image/png')
-      .send(video ? await createTestVideo() : await createTestImage());
-    expect(response.status).toBe(201);
-    return create(group, link, ticket.id, video ? '저장할 동영상' : '저장할 한글 사진');
+    const uploadId = await postUpload(api, owner, group, video);
+    return create(group, link, uploadId, video ? '저장할 동영상' : '저장할 한글 사진');
   };
 
   it('파일 없는 유튜브·일반 링크를 만들고 공개 그룹에서 익명으로 읽어야 한다', async () => {
@@ -124,11 +110,11 @@ describe('링크 게시물과 미디어 저장', () => {
         id: post.id,
       });
       expect(download).toMatchObject({ url: `/backend/media/${post.id}/download`, expiresAt: null });
-      expect(download.filename).toBe(video ? '저장할 동영상.mp4' : '저장할 한글 사진.webp');
+      expect(download.filename).toBe(video ? '저장할 동영상.mp4' : '저장할 한글 사진.png');
       const response = await api.http().get(download.url.replace('/backend', ''));
       expect(response.status).toBe(200);
       expect(response.headers['content-disposition']).toContain("filename*=UTF-8''");
-      expect(response.headers['content-type']).toContain(video ? 'video/mp4' : 'image/webp');
+      expect(response.headers['content-type']).toContain(video ? 'video/mp4' : 'image/png');
       expect(response.headers['cache-control']).toContain('no-store');
       const range = await api.http().get(download.url.replace('/backend', '')).set('Range', 'bytes=0-3');
       expect(range.status).toBe(206);
@@ -170,7 +156,7 @@ describe('링크 게시물과 미디어 저장', () => {
     });
     const url = new URL(postDownload.url);
     expect(url.origin).toBe('https://s3.example.test');
-    expect(url.pathname).toMatch(/^\/attachments\/[a-f0-9-]{36}\.webp$/);
+    expect(url.pathname).toMatch(/^\/attachments\/[a-f0-9-]{36}\.png$/);
     expect(url.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(url.searchParams.get('X-Amz-Security-Token')).toBe(sessionToken);
     expect(postDownload.url.length).toBeGreaterThan(2048);

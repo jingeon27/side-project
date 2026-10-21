@@ -1,22 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { readUpload } from '../common/graphql/read-upload';
 import { pageRange, textValue } from '../common/validation';
 import {
   DOWNLOAD_URL_TTL_SECONDS,
-  MAX_PENDING_UPLOADS,
-  MAX_VIDEO_BYTES,
   PAGE_SIZE_DEFAULT,
   POST_BODY_LIMIT,
   POST_TITLE_LIMIT,
-  UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
 import { assertContestParticipation } from '../contest/group-contest.policy';
 import { Database } from '../database/database.service';
@@ -24,9 +18,9 @@ import { UnitOfWork } from '../database/unit-of-work';
 import { GroupCategoryService } from '../group/group-category.service';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
-import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { MediaStorage } from '../storage/media-storage.service';
 import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
-import { MediaProcessor } from './media-processor';
+import { MediaUploadService } from '../media-upload/media-upload.service';
 import { postLink } from './post-link.policy';
 import { koreanMonth } from './post-order';
 import { presentPost } from './post.presenter';
@@ -58,7 +52,7 @@ export class PostService {
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
-    private readonly processor: MediaProcessor,
+    private readonly uploads: MediaUploadService,
   ) {}
 
   async list(viewer: IViewer | null, query: IPostQuery) {
@@ -105,70 +99,11 @@ export class PostService {
     });
     return rows.map((row) => presentPost(row, viewer?.id ?? null));
   }
-  async requestUpload(viewer: IViewer, groupId: string) {
-    const token = randomToken();
-    const upload = await this.transactions.atomic(async (tx) => {
-      await this.membership.requireMember(viewer.id, groupId, tx);
-      const now = new Date();
-      const pending = await (tx ?? this.db).postUpload.count({
-        where: { userId: viewer.id, expiresAt: { gt: now }, post: null },
-      });
-      if (pending >= MAX_PENDING_UPLOADS)
-        fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
-      return (tx ?? this.db).postUpload.create({
-        data: {
-          userId: viewer.id,
-          groupId,
-          tokenHash: sha256Hex(token),
-          expiresAt: new Date(now.getTime() + UPLOAD_TICKET_TTL_MS),
-        },
-      });
-    });
-    return { id: upload.id, expiresAt: upload.expiresAt, url: `/backend/post-uploads/${token}` };
+  requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {
+    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize);
   }
-  async upload(viewer: IViewer, token: string, body: unknown, contentType: string) {
-    const grant = await this.uploadGrant(viewer, { tokenHash: sha256Hex(token) });
-    await this.saveUpload(grant, body, contentType);
-  }
-
-  async uploadFile(viewer: IViewer, uploadId: string, file: Promise<FileUpload>) {
-    const grant = await this.uploadGrant(viewer, { id: uploadId });
-    const content = await readUpload(file, MAX_VIDEO_BYTES);
-    await this.saveUpload(grant, content.body, content.contentType);
-    return true;
-  }
-
-  private async uploadGrant(viewer: IViewer, where: Prisma.PostUploadWhereUniqueInput) {
-    const grant = await this.db.postUpload.findUnique({ where });
-    if (!grant || grant.userId !== viewer.id || grant.storageKey || grant.expiresAt <= new Date())
-      fail('업로드 요청이 만료되었거나 유효하지 않습니다.', ERROR_CODE.FORBIDDEN);
-    await this.membership.requireMember(viewer.id, grant.groupId);
-    return grant;
-  }
-
-  private async saveUpload(
-    grant: Awaited<ReturnType<PostService['uploadGrant']>>,
-    body: unknown,
-    contentType: string,
-  ) {
-    const media = await this.processor.process(body, contentType);
-    const key = createMediaKey(media.extension);
-    await this.storage.put(key, media.body, media.contentType);
-    try {
-      const updated = await this.db.postUpload.updateMany({
-        where: { id: grant.id, storageKey: null, expiresAt: { gt: new Date() } },
-        data: {
-          storageKey: key,
-          kind: media.kind,
-          contentType: media.contentType,
-          byteSize: media.body.length,
-        },
-      });
-      if (updated.count !== 1) fail('이미 사용했거나 만료된 업로드입니다.', ERROR_CODE.CONFLICT);
-    } catch (error) {
-      await this.storage.delete(key);
-      throw error;
-    }
+  completeUpload(viewer: IViewer, uploadId: string) {
+    return this.uploads.completeUpload(viewer, uploadId);
   }
   async create(viewer: IViewer, input: IPostInput) {
     if (!input.rightsConfirmed) fail('공유할 권리와 촬영된 사람의 동의를 확인해 주세요.');
@@ -180,11 +115,15 @@ export class PostService {
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, input.groupId, tx);
       const upload = input.uploadId
-        ? await (tx ?? this.db).postUpload.findUnique({ where: { id: input.uploadId } })
+        ? await (tx ?? this.db).postUpload.findUnique({
+            where: { id: input.uploadId },
+            include: { submissionUpload: true },
+          })
         : null;
       if (
         input.uploadId &&
         (!upload ||
+          upload.submissionUpload !== null ||
           upload.userId !== viewer.id ||
           upload.groupId !== input.groupId ||
           !upload.storageKey ||
@@ -320,6 +259,7 @@ export class PostService {
     if (!upload) return true;
     try {
       if (upload.storageKey) await this.storage.delete(upload.storageKey);
+      if (upload.stagingKey) await this.storage.delete(upload.stagingKey);
       await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
     } catch (error) {
       reportUnexpectedError(error, { operationName: 'deletePost', location: 'media-cleanup' });

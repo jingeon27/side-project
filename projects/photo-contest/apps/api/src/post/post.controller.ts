@@ -1,10 +1,10 @@
 import { pipeline } from 'node:stream/promises';
 
-import { Body, Controller, Get, Headers, HttpCode, Param, Post, Res } from '@nestjs/common';
+import { Controller, Get, Headers, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
 import type { IViewer } from '../auth/session.service';
-import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import { OptionalViewer } from '../auth/viewer.decorator';
 import { NO_STORE } from '../common/http/no-store.middleware';
 import { MediaStorage } from '../storage/media-storage.service';
 import { mediaDownloadDisposition } from './media-download.policy';
@@ -17,17 +17,6 @@ export class PostController {
     private readonly posts: PostService,
     private readonly storage: MediaStorage,
   ) {}
-  @Post('post-uploads/:token')
-  @HttpCode(201)
-  async upload(
-    @Viewer() viewer: IViewer,
-    @Param('token') token: string,
-    @Body() body: unknown,
-    @Headers('content-type') type: string,
-  ) {
-    await this.posts.upload(viewer, token, body, type ?? '');
-    return { uploaded: true };
-  }
   @Get('media/:id')
   async media(
     @OptionalViewer() viewer: IViewer | null,

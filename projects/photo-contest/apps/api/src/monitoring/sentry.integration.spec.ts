@@ -101,7 +101,7 @@ describe('Sentry 오류 보고', () => {
       [404, () => api.http().get('/missing-route')],
       [403, () => api.http().post('/auth/dev').send({ nickname: '출처 없음' })],
       [
-        403,
+        404,
         () =>
           api.http().post('/uploads/bad-token').set('Origin', TEST_WEB_ORIGIN).set('Cookie', member.cookie),
       ],

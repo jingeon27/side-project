@@ -29,20 +29,23 @@ export async function createGroupContest(
 }
 
 export async function postUpload(api: ITestApi, author: ITestUser, groupId: string, video = false) {
-  const { requestPostUpload } = await api.gqlOk<{ requestPostUpload: { id: string; url: string } }>(
+  const contentType = video ? 'video/mp4' : 'image/png';
+  const body = video ? await createTestVideo() : await createTestImage();
+  const { requestPostUpload: ticket } = await api.gqlOk<{
+    requestPostUpload: { id: string; url: string; fields: Array<{ name: string; value: string }> };
+  }>(
     author.cookie,
-    'mutation($id:ID!){requestPostUpload(groupId:$id){id url}}',
-    { id: groupId },
+    'mutation($id:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$id,contentType:$type,byteSize:$size){id url fields{name value}}}',
+    { id: groupId, type: contentType, size: body.length },
   );
-  const response = await api
-    .http()
-    .post(requestPostUpload.url.replace('/backend', ''))
-    .set('Origin', TEST_WEB_ORIGIN)
-    .set('Cookie', author.cookie)
-    .set('Content-Type', video ? 'video/mp4' : 'image/png')
-    .send(video ? await createTestVideo() : await createTestImage());
+  const request = api.http().post(ticket.url.replace('/backend', '')).set('Origin', TEST_WEB_ORIGIN);
+  for (const field of ticket.fields) request.field(field.name, field.value);
+  const response = await request.attach('file', body, { filename: 'media', contentType });
   if (response.status !== 201) throw new Error('실제 게시물 미디어 업로드 실패');
-  return requestPostUpload.id;
+  await api.gqlOk(author.cookie, 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}', {
+    id: ticket.id,
+  });
+  return ticket.id;
 }
 
 export async function createEntry(

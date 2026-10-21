@@ -26,6 +26,14 @@ const RESERVED_SCHEMES = new Set([
 ]);
 
 export type TStorageBackend = 'local' | 's3';
+
+/** 새 S3 객체에만 붙이며 DB에 전체 키를 저장해 기존 객체도 계속 읽는다. */
+export function s3KeyPrefix() {
+  const prefix = (process.env.S3_KEY_PREFIX ?? '').trim().replace(/\/$/, '');
+  if (prefix.length > 128 || (prefix && !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(prefix)))
+    throw new Error('S3_KEY_PREFIX must contain relative path segments.');
+  return prefix ? `${prefix}/` : '';
+}
 export type TOAuthProviderName = 'google' | 'kakao';
 
 export interface IAppVersions {

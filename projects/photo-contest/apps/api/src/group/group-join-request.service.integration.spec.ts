@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
-
-import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
+import { postUpload } from '../../test/support/group-contest';
 
 const GROUP_FIELDS =
   'id name visibility role memberCount canViewPosts joinRequestPending inviteToken members{user{id}}';
@@ -59,24 +58,12 @@ describe('그룹 탐색과 가입 승인', () => {
     ).groupJoinRequests;
 
   async function createPost(groupId: string, video = false) {
-    const { requestPostUpload: ticket } = await api.gqlOk<{ requestPostUpload: { id: string; url: string } }>(
-      owner.cookie,
-      'mutation($id:ID!){requestPostUpload(groupId:$id){id url}}',
-      { id: groupId },
-    );
-    const upload = await api
-      .http()
-      .post(ticket.url.replace('/backend', ''))
-      .set('Cookie', owner.cookie)
-      .set('Origin', TEST_WEB_ORIGIN)
-      .set('Content-Type', video ? 'video/mp4' : 'image/png')
-      .send(video ? await createTestVideo() : await createTestImage());
-    expect(upload.status).toBe(201);
+    const uploadId = await postUpload(api, owner, groupId, video);
     return (
       await api.gqlOk<{ createPost: { id: string; mediaUrl: string } }>(
         owner.cookie,
         'mutation($g:ID!,$u:ID!){createPost(groupId:$g,uploadId:$u,title:"탐색 게시물",rightsConfirmed:true){id mediaUrl}}',
-        { g: groupId, u: ticket.id },
+        { g: groupId, u: uploadId },
       )
     ).createPost;
   }
