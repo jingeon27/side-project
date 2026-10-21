@@ -14,12 +14,19 @@ import {
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { getErrorMessage } from '@/shared/model/error';
 import { useZodForm } from '@/shared/model/form';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
-import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
+import {
+  skipToken,
+  useBackgroundQuery,
+  useMutation,
+  useReadQuery,
+  type QueryRef,
+} from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 import { isGroupAdmin } from '../lib/group.helper';
 import { groupCategorySchema, moveGroupCategory } from '../model/group-category.schema';
@@ -205,15 +212,19 @@ function CategoryManagement({ queryRef }: { queryRef: QueryRef<GroupCategoriesQu
   );
 }
 export function GroupCategoryManager({ groupId }: { groupId: string }) {
-  const [queryRef, { refetch }] = useBackgroundQuery(GroupCategoriesDocument, { variables: { id: groupId } });
+  const [queryRef, { refetch }] = useBackgroundQuery(
+    GroupCategoriesDocument,
+    useIsSSR() ? skipToken : { variables: { id: groupId } },
+  );
+  const fallback = <Skeleton className="h-24 w-full" />;
   return (
     <details className="rounded-card border border-line bg-surface p-4">
       <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
         카테고리 관리
       </summary>
       <div className="mt-4">
-        <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-24 w-full" />}>
-          <CategoryManagement queryRef={queryRef} />
+        <AsyncBoundary onRetry={refetch} fallback={fallback}>
+          {queryRef ? <CategoryManagement queryRef={queryRef} /> : fallback}
         </AsyncBoundary>
       </div>
     </details>

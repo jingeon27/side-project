@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  skipToken,
   useBackgroundQuery,
   useMutation,
   useReadQuery,
@@ -14,6 +15,7 @@ import {
   SetPostHiddenDocument,
   type HiddenGalleryPostsQuery,
 } from '@/shared/api/generated';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
@@ -64,18 +66,21 @@ function HiddenPosts({ queryRef }: { queryRef: QueryRef<HiddenGalleryPostsQuery>
   );
 }
 export function HiddenPostManager({ groupId }: { groupId: string }) {
-  const [queryRef, { refetch }] = useBackgroundQuery(HiddenGalleryPostsDocument, {
-    variables: { groupId, offset: 0, limit: 24 },
-    refetchWritePolicy: 'overwrite',
-  });
+  const [queryRef, { refetch }] = useBackgroundQuery(
+    HiddenGalleryPostsDocument,
+    useIsSSR()
+      ? skipToken
+      : { variables: { groupId, offset: 0, limit: 24 }, refetchWritePolicy: 'overwrite' },
+  );
+  const fallback = <Skeleton className="h-24 w-full" />;
   return (
     <details className="rounded-card border border-line bg-surface p-4">
       <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
         숨긴 게시물 관리
       </summary>
       <div className="mt-4">
-        <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-24 w-full" />}>
-          <HiddenPosts queryRef={queryRef} />
+        <AsyncBoundary onRetry={refetch} fallback={fallback}>
+          {queryRef ? <HiddenPosts queryRef={queryRef} /> : fallback}
         </AsyncBoundary>
       </div>
     </details>

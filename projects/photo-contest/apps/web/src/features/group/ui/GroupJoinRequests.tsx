@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  skipToken,
   useBackgroundQuery,
   useFragment,
   useMutation,
@@ -21,8 +22,9 @@ import {
   type GroupJoinRequestsQuery,
 } from '@/shared/api/generated';
 import { formatDateTime } from '@/shared/lib/format.helper';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { toast } from '@/shared/model/toast';
-import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -136,12 +138,19 @@ function RequestList({ queryRef }: { queryRef: QueryRef<GroupJoinRequestsQuery> 
   );
 }
 
-function GroupJoinRequestsQuery({ groupId }: { groupId: string }) {
-  const [queryRef, { refetch }] = useBackgroundQuery(GroupJoinRequestsDocument, {
-    variables: { groupId, offset: 0, limit: PAGE_SIZE },
-    refetchWritePolicy: 'overwrite',
-    fetchPolicy: 'network-only',
-  });
+/** 신청 목록은 사전 조회하지 않으므로 브라우저에서 시작하고, 제목·설명은 서버 HTML에 둔다. */
+export function GroupJoinRequests({ groupId }: { groupId: string }) {
+  const [queryRef, { refetch }] = useBackgroundQuery(
+    GroupJoinRequestsDocument,
+    useIsSSR()
+      ? skipToken
+      : {
+          variables: { groupId, offset: 0, limit: PAGE_SIZE },
+          refetchWritePolicy: 'overwrite',
+          fetchPolicy: 'network-only',
+        },
+  );
+  const fallback = <Skeleton className="mt-4 h-24 w-full" />;
   return (
     <section className="rounded-card border border-line bg-surface p-4" aria-label="가입 신청 관리">
       <div className="flex items-center justify-between gap-3">
@@ -149,6 +158,7 @@ function GroupJoinRequestsQuery({ groupId }: { groupId: string }) {
         <Button
           size="md"
           variant="ghost"
+          disabled={!queryRef}
           onClick={async () => {
             try {
               await refetch();
@@ -161,17 +171,9 @@ function GroupJoinRequestsQuery({ groupId }: { groupId: string }) {
         </Button>
       </div>
       <p className="mt-1 text-caption text-muted">수락한 멤버만 이 그룹의 게시물을 볼 수 있어요.</p>
-      <AsyncBoundary fallback={<Skeleton className="mt-4 h-24 w-full" />} onRetry={refetch}>
-        <RequestList queryRef={queryRef} />
+      <AsyncBoundary fallback={fallback} onRetry={refetch}>
+        {queryRef ? <RequestList queryRef={queryRef} /> : fallback}
       </AsyncBoundary>
     </section>
-  );
-}
-
-export function GroupJoinRequests({ groupId }: { groupId: string }) {
-  return (
-    <ClientOnly fallback={<Skeleton className="h-24 w-full" />}>
-      <GroupJoinRequestsQuery groupId={groupId} />
-    </ClientOnly>
   );
 }

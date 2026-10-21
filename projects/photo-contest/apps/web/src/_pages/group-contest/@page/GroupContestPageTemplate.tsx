@@ -22,7 +22,8 @@ import {
   type GroupContestResultsQuery,
 } from '@/shared/api/generated';
 import { formatDateTime } from '@/shared/lib/format.helper';
-import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -109,13 +110,17 @@ function Results({ queryRef }: { queryRef: QueryRef<GroupContestResultsQuery> })
     </section>
   );
 }
-function ResultQuery({ id }: { id: string }) {
-  const [queryRef, { refetch }] = useBackgroundQuery(GroupContestResultsDocument, {
-    variables: { contestId: id },
-  });
+/** 라우트가 결과를 사전 조회했으면 SSR에서도 같은 변수로 읽고, 아니면 브라우저에서 시작한다. */
+function ResultQuery({ id, preloaded }: { id: string; preloaded: boolean }) {
+  const isSSR = useIsSSR();
+  const [queryRef, { refetch }] = useBackgroundQuery(
+    GroupContestResultsDocument,
+    preloaded || !isSSR ? { variables: { contestId: id } } : skipToken,
+  );
+  const fallback = <Skeleton className="h-64 w-full" />;
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
-      <Results queryRef={queryRef} />
+    <AsyncBoundary fallback={fallback} onRetry={refetch}>
+      {queryRef ? <Results queryRef={queryRef} /> : fallback}
     </AsyncBoundary>
   );
 }
@@ -135,15 +140,7 @@ function ContestContent({
     <>
       <ContestHeader id={contest.id} />
       {match(contest.phase)
-        .with(Phase.Completed, () =>
-          resultsPreloaded ? (
-            <ResultQuery id={contest.id} />
-          ) : (
-            <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
-              <ResultQuery id={contest.id} />
-            </ClientOnly>
-          ),
-        )
+        .with(Phase.Completed, () => <ResultQuery id={contest.id} preloaded={resultsPreloaded} />)
         .otherwise(() => (
           <GalleryBoard
             groupId={groupId}
