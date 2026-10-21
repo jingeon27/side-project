@@ -16,7 +16,7 @@ import { MembershipService } from '../group/membership.service';
 function commentInclude(viewerId: string | null) {
   return {
     author: { select: USER_VIEW_SELECT },
-    _count: { select: { likes: true } },
+    _count: { select: { likes: true, replies: true } },
     likes: { where: { userId: viewerId ?? '' }, select: { userId: true } },
   } satisfies Prisma.PostCommentInclude;
 }
@@ -27,6 +27,8 @@ function present(row: TCommentRow, viewerId: string | null, admin: boolean, canI
   return {
     id: row.id,
     postId: row.postId,
+    parentId: row.parentId,
+    replyCount: row._count.replies,
     body: row.body,
     author: row.author,
     createdAt: row.createdAt,
@@ -45,18 +47,25 @@ export class PostCommentService {
     private readonly membership: MembershipService,
   ) {}
 
-  async list(viewer: IViewer | null, postId: string, offset?: number | null, limit?: number | null) {
+  async list(
+    viewer: IViewer | null,
+    postId: string,
+    offset?: number | null,
+    limit?: number | null,
+    parentId?: string | null,
+  ) {
     const range = pageRange(offset ?? 0, limit ?? PAGE_SIZE_DEFAULT);
     const { admin, member } = await this.membership.readablePost(viewer?.id ?? null, postId);
     const rows = await this.db.postComment.findMany({
       where: {
         postId,
+        parentId: parentId ?? null,
       },
       include: commentInclude(viewer?.id ?? null),
       orderBy: [
-        { createdAt: 'desc' },
+        { createdAt: parentId ? 'asc' : 'desc' },
         {
-          id: 'desc',
+          id: parentId ? 'asc' : 'desc',
         },
       ],
       skip: range.offset,
@@ -65,19 +74,30 @@ export class PostCommentService {
     return rows.map((row) => present(row, viewer?.id ?? null, admin, Boolean(member)));
   }
 
-  async create(viewer: IViewer, postId: string, input: unknown) {
+  async count(viewer: IViewer | null, postId: string, parentId?: string | null) {
+    await this.membership.readablePost(viewer?.id ?? null, postId);
+    return this.db.postComment.count({ where: { postId, parentId: parentId ?? null } });
+  }
+
+  async create(viewer: IViewer, postId: string, input: unknown, parentId?: string | null) {
     const body = textValue(input, COMMENT_BODY_LIMIT, '댓글');
     return this.transactions.atomic(async (tx) => {
       const { admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
+      if (parentId !== undefined && parentId !== null) {
+        const parent = await tx.postComment.findUnique({ where: { id: parentId } });
+        if (!parent || parent.postId !== postId)
+          fail('답글을 남길 댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+        if (parent.parentId) fail('원댓글에 답글을 남겨 주세요.');
+      }
       const row = await (tx ?? this.db).postComment.create({
-        data: { postId, authorId: viewer.id, body },
+        data: { postId, parentId: parentId ?? null, authorId: viewer.id, body },
         include: commentInclude(viewer.id),
       });
       await recordEvent(tx ?? this.db, {
         id: `comment-created:${row.id}`,
         type: ANALYTICS_EVENT.COMMENT_CREATED,
         userId: viewer.id,
-        properties: { commentId: row.id, postId },
+        properties: { commentId: row.id, postId, ...(parentId ? { parentId } : {}) },
       });
       return present(row, viewer.id, admin, true);
     });

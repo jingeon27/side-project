@@ -67,6 +67,10 @@ export class PostResolver {
     return this.posts.like(viewer, id, true);
   }
   @Mutation()
+  updatePost(@Viewer() viewer: IViewer, @Args() input: Parameters<PostService['update']>[1]) {
+    return this.posts.update(viewer, input);
+  }
+  @Mutation()
   unlikePost(@Viewer() viewer: IViewer, @Args('postId') id: string) {
     return this.posts.like(viewer, id, false);
   }

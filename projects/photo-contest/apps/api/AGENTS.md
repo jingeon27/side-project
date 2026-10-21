@@ -64,3 +64,5 @@ publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-con
 Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 S3 최대 60초 presigned GET을 만들거나 로컬 /media/:id/download를 반환한다. attachment·UTF-8 파일명·no-store를 유지하고 이미 발급한 S3 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다.
 
 GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
+
+PostComment.parentId는 한 단계 답글이다. createPostComment는 accessiblePost와 같은 tx에서 원댓글·게시물 일치·깊이를 검증하며 복합 FK(id,postId)가 다른 게시물 연결을 막는다. postComments/postCommentCount는 parentId가 없으면 원댓글만, 있으면 해당 답글만 읽는다. 원댓글 최신순·답글 오래된 순에 id를 마지막 기준으로 둔다. PostComment.replyCount는 _count.replies로 구하며 원댓글 삭제는 답글·좋아요를 cascade한다. updatePost는 작성자·관리자만 제목·내용·분류를 변경하고 기존 첨부·작성자·대회는 유지한다. 기존 보관 분류 유지는 허용하되 새로 지정하는 분류는 활성·같은 그룹이어야 한다.

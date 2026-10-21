@@ -223,12 +223,17 @@ model PostComment {
   id String @id @default(cuid())
   postId String
   authorId String
+  parentId String?
   body String
   createdAt DateTime @default(now())
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes PostCommentLike[]
+  parent PostComment? @relation("PostCommentReplies", fields: [parentId, postId], references: [id, postId], onDelete: Cascade)
+  replies PostComment[] @relation("PostCommentReplies")
+  @@unique([id, postId])
   @@index([postId, createdAt, id])
+  @@index([postId, parentId, createdAt, id])
 }
 model PostCommentLike {
   commentId String

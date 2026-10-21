@@ -39,6 +39,8 @@ type GalleryPost {
 type PostComment {
   id: ID!
   postId: ID!
+  parentId: ID
+  replyCount: Int!
   body: String!
   author: User!
   createdAt: DateTime!
@@ -70,7 +72,8 @@ extend type Query {
     offset: Int = 0
     limit: Int = 24
   ): [GalleryPost!]!
-  postComments(postId: ID!, offset: Int = 0, limit: Int = 24): [PostComment!]!
+  postComments(postId: ID!, parentId: ID, offset: Int = 0, limit: Int = 24): [PostComment!]!
+  postCommentCount(postId: ID!, parentId: ID): Int!
 }
 extend type Mutation {
   setPostCategory(postId: ID!, categoryId: ID): GalleryPost!
@@ -90,7 +93,8 @@ extend type Mutation {
   likePost(postId: ID!): GalleryPost!
   unlikePost(postId: ID!): GalleryPost!
   deletePost(postId: ID!): Boolean!
-  createPostComment(postId: ID!, body: String!): PostComment!
+  updatePost(postId: ID!, title: String!, body: String, categoryId: ID): GalleryPost!
+  createPostComment(postId: ID!, parentId: ID, body: String!): PostComment!
   deletePostComment(commentId: ID!): Boolean!
   likePostComment(commentId: ID!): PostComment!
   unlikePostComment(commentId: ID!): PostComment!
