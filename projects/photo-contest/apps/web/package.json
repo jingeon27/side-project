@@ -27,7 +27,6 @@
     "@photo-contest/bridge": "workspace:*",
     "@sentry/nextjs": "^11.7.0",
     "@side/design-system": "workspace:*",
-    "apollo-upload-client": "20.0.0",
     "es-toolkit": "^1.52.0",
     "graphql": "^16.11.0",
     "lucide-react": "^1.23.0",
