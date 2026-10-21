@@ -3,11 +3,12 @@
 import { useMutation } from '@apollo/client/react';
 import { Copy, RefreshCw, Share2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
-import { useId, useSyncExternalStore } from 'react';
+import { useId } from 'react';
 
 import { buildInviteShareText, useShareActions } from '@/features/share';
 import { RegenerateInviteLinkDocument } from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
@@ -24,8 +25,6 @@ interface IInviteCardProps {
 
 const COPIED_MESSAGE = '초대 링크를 복사했어요';
 
-const subscribeNothing = () => () => undefined;
-
 /**
  * 그룹 초대 카드(모든 멤버). 공유는 앱 공유 시트 → Web Share → 복사 순서로, 복사는 앱 클립보드 → 브라우저 순서로 한다.
  * 관리자는 링크를 새로 만들 수 있고, 그러면 이전 링크로는 가입할 수 없다.
@@ -33,11 +32,7 @@ const subscribeNothing = () => () => undefined;
 export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: IInviteCardProps) {
   const headingId = useId();
   // 서버 렌더링과 첫 hydration에서는 origin을 몰라 상대 경로를 쓰고, 브라우저에서 바로 절대 주소로 바꾼다.
-  const origin = useSyncExternalStore(
-    subscribeNothing,
-    () => window.location.origin,
-    () => '',
-  );
+  const origin = useIsSSR() ? '' : window.location.origin;
   const inviteUrl = buildInviteUrl(origin, inviteToken);
   const shareActions = useShareActions();
   const [regenerateInviteLink] = useMutation(RegenerateInviteLinkDocument, {

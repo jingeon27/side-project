@@ -11,9 +11,11 @@ import { parseGroupCategory } from '../model/category-search.schema';
 export function GroupCategoryFilter({
   group,
   sidebar,
+  clientOnly = false,
 }: {
   group: GalleryQuery['group'];
   sidebar?: ReactNode;
+  clientOnly?: boolean;
 }) {
   const search = useSearchParams();
   const categoryId = parseGroupCategory(search.get('category'), group.categories);
@@ -48,7 +50,12 @@ export function GroupCategoryFilter({
           ))}
         </nav>
       ) : null}
-      <GalleryFeed groupId={group.id} categoryId={categoryId ?? undefined} sidebar={sidebar} />
+      <GalleryFeed
+        groupId={group.id}
+        categoryId={categoryId ?? undefined}
+        sidebar={sidebar}
+        clientOnly={clientOnly}
+      />
     </div>
   );
 }

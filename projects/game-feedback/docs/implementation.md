@@ -1,3 +1,9 @@
+# 2026-10-21 SSR 판별 hook 정리
+
+AsyncBoundary와 CommentItem에 따로 있던 hydration 판별을 `shared/lib/use-is-ssr`의 `useIsSSR`로 모았다. 구독 함수는 es-toolkit `noop`을 반환하는 모듈 상수다. 서버 렌더링과 첫 hydration에서는 true라 clientOnly 경계와 댓글 시각의 서버 HTML은 그대로다.
+
+검증: 웹 unit/UI 123개(useIsSSR의 서버·hydration·클라이언트 사양 3개 포함), `tsc7 --noEmit`, 변경 파일 eslint·prettier 통과. `next typegen`은 실행 중인 개발 서버의 `.next`와 겹쳐 생략했다.
+
 # 2026-10-21 가이드 프리패치 검증
 
 CI trace에서 가이드의 route tree 응답이 도착하기 전에 instant navigation 잠금을 시작해 이동이 멈추는 경우를 확인했다. 응답 완료를 실제로 관찰하고 hover 후 잠금을 시작한다. 고정 지연·재시도 없이 5회 반복 검사가 통과했다. 기존 즉시 화면·헤더·문서 유지 검사는 그대로 둔다.

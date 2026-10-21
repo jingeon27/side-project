@@ -56,6 +56,14 @@ function parseBody(text: string): IErrorBody | null {
   }
 }
 
+async function readText(response: Response) {
+  try {
+    return await response.text();
+  } catch {
+    return '';
+  }
+}
+
 function toErrorCode(value: unknown): TErrorCode | null {
   return typeof value === 'string' && ERROR_CODES.has(value) ? (value as TErrorCode) : null;
 }
@@ -63,7 +71,7 @@ function toErrorCode(value: unknown): TErrorCode | null {
 /** 실패한 REST 응답이면 서버 안내문으로 RequestError를 던진다. */
 export async function ensureOk(response: Response) {
   if (response.ok) return response;
-  const body = parseBody(await response.text().catch(() => ''));
+  const body = parseBody(await readText(response));
   const message =
     typeof body?.message === 'string' && response.status < 500 ? body.message : DEFAULT_ERROR_MESSAGE;
   throw new RequestError(message, response.status);

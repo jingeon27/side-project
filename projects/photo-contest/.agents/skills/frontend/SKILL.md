@@ -58,4 +58,4 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 앱 감지(`html[data-app]`, User-Agent `PhotoContestApp/x.y.z`)는 화면 모양에만 쓰고 권한 판단에 쓰지 않는다.
 - 메시지를 추가·변경할 때는 `bridge` 스킬을 따른다.
 
-그룹 안 새 대회는 group-contests(목록·명예의 전당)와 group-contest(상세) 화면으로 나눈다. PostContestField는 일반 게시물/대회 참여 선택을 RHF로 소유하고 접수 중 같은 그룹 대회를 조회한다. 공개 화면은 cookie 없는 SEO와 일치하는 PreloadQuery로 SSR, 비공개는 canViewPosts·ClientOnly로 보호한다. 단일 대회 갱신으로 완료 상태가 되면 사전 조회하지 못한 결과는 ClientOnly로 받는다.
+그룹 안 새 대회는 group-contests(목록·명예의 전당)와 group-contest(상세) 화면으로 나눈다. PostContestField는 일반 게시물/대회 참여 선택을 RHF로 소유하고 접수 중 같은 그룹 대회를 조회한다. 공개 화면은 cookie 없는 SEO와 일치하는 PreloadQuery로 SSR, 비공개는 canViewPosts·ClientOnly로 보호한다. 단일 대회 갱신으로 완료 상태가 되면 사전 조회하지 못한 결과는 `useIsSSR`·`skipToken`으로 브라우저에서 받는다.

@@ -10,10 +10,13 @@ export function useHaptics() {
   const bridge = useBridge();
   return useMemo(
     () => ({
-      impact: (style: THapticStyle = 'light') => {
+      impact: async (style: THapticStyle = 'light') => {
         if (!bridge?.supports('haptics.impact')) return;
-        // 진동은 부가 효과라 실패해도 알리지 않는다.
-        bridge.request('haptics.impact', { style }).catch(() => undefined);
+        try {
+          await bridge.request('haptics.impact', { style });
+        } catch {
+          // 진동은 부가 효과라 실패해도 알리지 않는다.
+        }
       },
     }),
     [bridge],

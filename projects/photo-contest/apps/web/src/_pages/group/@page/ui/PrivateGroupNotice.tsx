@@ -28,8 +28,12 @@ export function PrivateGroupNotice({
       {group.joinRequestPending ? (
         <Button
           variant="ghost"
-          onClick={() => {
-            void onRefresh().catch(() => undefined);
+          onClick={async () => {
+            try {
+              await onRefresh();
+            } catch {
+              /* 조회 경계가 실패를 보여 준다. */
+            }
           }}
         >
           승인 상태 확인

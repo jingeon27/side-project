@@ -8,9 +8,7 @@ import { match } from 'ts-pattern';
 import { Phase } from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { replaceSearchParams } from '@/shared/model/router';
-import { ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { SegmentedControl, SegmentedControlItem } from '@/shared/ui/@core/segmented-control';
-import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 import { ContestFeed } from '../feed/ContestFeed';
 import { ContestResults } from '../results/ContestResults';
@@ -46,9 +44,7 @@ export function ContestStage({ contestRef, viewerId }: { contestRef: TContestQue
       </>
     ))
     .with(Phase.Completed, () => (
-      <ClientOnly fallback={<Skeleton className="aspect-square w-full" />}>
-        <ContestResults key={contest.id} contestRef={contestRef} viewerId={viewerId} />
-      </ClientOnly>
+      <ContestResults key={contest.id} contestRef={contestRef} viewerId={viewerId} />
     ))
     .exhaustive();
 }

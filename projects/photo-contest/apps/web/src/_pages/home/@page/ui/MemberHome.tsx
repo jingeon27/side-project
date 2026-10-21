@@ -2,7 +2,7 @@
 
 import { CreatePostButton, GalleryFeed } from '@/features/post';
 import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
-import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { NoGroupHome } from '../no-group/NoGroupHome';
@@ -16,8 +16,9 @@ function MemberHomeContent({
 }) {
   const { data } = useReadQuery(queryRef);
   if (!data.myGroups.length) return <NoGroupHome signedIn />;
-  const feed = (
+  return (
     <GalleryFeed
+      clientOnly={!feedPreloaded}
       emptyAction={
         <div className="flex flex-wrap justify-center gap-3">
           {data.myGroups.map((group) => (
@@ -30,8 +31,6 @@ function MemberHomeContent({
       }
     />
   );
-  if (!feedPreloaded) return <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>{feed}</ClientOnly>;
-  return feed;
 }
 export function MemberHome({ feedPreloaded }: { feedPreloaded: boolean }) {
   const [queryRef, { refetch }] = useBackgroundQuery(MyGroupsDocument);

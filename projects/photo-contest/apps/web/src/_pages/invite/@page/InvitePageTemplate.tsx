@@ -31,8 +31,12 @@ function InviteContent({
       <ErrorState
         title="초대 링크를 확인해 주세요"
         message={getErrorMessage(error)}
-        onRetry={() => {
-          void refetch().catch(() => undefined);
+        onRetry={async () => {
+          try {
+            await refetch();
+          } catch {
+            /* 실패하면 같은 안내가 남는다. */
+          }
         }}
       />
     );

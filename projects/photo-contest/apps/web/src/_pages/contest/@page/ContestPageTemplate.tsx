@@ -73,8 +73,12 @@ function ContestQuerySection({ id, viewerId }: { id: string; viewerId: string })
     variables: { id },
     errorPolicy: 'all',
   });
-  const handleRetry = () => {
-    void refetch().catch(() => undefined);
+  const handleRetry = async () => {
+    try {
+      await refetch();
+    } catch {
+      /* 조회 경계가 실패를 보여 준다. */
+    }
   };
   return (
     <AsyncBoundary
