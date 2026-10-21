@@ -29,8 +29,10 @@ const scratch = join(repo, 'projects/game-feedback/.data');
 mkdirSync(scratch, { recursive: true });
 const root = mkdtempSync(join(scratch, 'shared-instance-'));
 const host = 'side.abcdef.ap-northeast-2.rds.amazonaws.com';
-const gfDomain = new URL(process.env.SIDE_GF_SITE_URL ?? 'https://game-feedback.test').hostname;
-const pcDomain = new URL(process.env.SIDE_PC_SITE_URL ?? 'https://photo-contest.test').hostname;
+const gfDomain = new URL(process.env.SIDE_GF_SITE_URL ?? 'https://game.bambyul.com').hostname;
+const pcDomain = new URL(process.env.SIDE_PC_SITE_URL ?? 'https://contest.bambyul.com').hostname;
+const gfApiDomain = `api.${gfDomain}`;
+const pcApiDomain = `api.${pcDomain}`;
 const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf8' }).stdout.trim();
 const baseEnv = {
   ...process.env,
@@ -47,7 +49,9 @@ const password = randomBytes(32).toString('hex');
 const schemaPassword = randomBytes(32).toString('hex');
 const proxyEnv = {
   GAME_FEEDBACK_DOMAIN: gfDomain,
+  GAME_FEEDBACK_API_DOMAIN: gfApiDomain,
   PHOTO_CONTEST_DOMAIN: pcDomain,
+  PHOTO_CONTEST_API_DOMAIN: pcApiDomain,
   ACME_EMAIL: 'operator@example.test',
   RDS_REGION: 'ap-northeast-2',
   RDS_INSTANCE_ID: 'side-smoke',
@@ -456,8 +460,14 @@ try {
   );
   const gf = new Client(gfDomain, port, publicCa);
   const pc = new Client(pcDomain, port, publicCa);
+  const gfApi = new Client(gfApiDomain, port, publicCa);
+  const pcApi = new Client(pcApiDomain, port, publicCa);
   await retry(async () => assert.equal((await gf.http('/api/health/ready')).status, 200));
   assert.equal((await pc.http('/backend/health/ready')).status, 200);
+  assert.equal((await gfApi.http('/api/health/ready')).status, 200);
+  assert.equal((await pcApi.http('/health/ready')).status, 200);
+  assert.equal((await gfApi.http('/')).status, 404);
+  assert.equal((await pcApi.http('/health')).headers['x-robots-tag'], 'noindex, nofollow');
   assert.equal((await gf.http('/_health/live')).status, 200);
   assert.equal((await pc.http('/_health/live')).status, 200);
   for (const response of [
@@ -465,6 +475,10 @@ try {
     await gf.http('/api/admin/reports'),
     await pc.post('/backend/testing/users', {}),
     await gf.post('/api/auth/test-token', {}),
+    await gfApi.http('/_internal/cache/revalidate'),
+    await gfApi.http('/api/admin/reports'),
+    await gfApi.post('/api/auth/test-token', {}),
+    await pcApi.post('/testing/users', {}),
   ]) {
     assert.equal(response.status, 404);
     assert.equal(response.text(), 'edge-blocked');
@@ -597,6 +611,8 @@ try {
   const group = (
     await pc.graphql('mutation { createGroup(name:"공통 배포 그룹",visibility:PUBLIC) { id } }')
   ).json().data.createGroup;
+  const publicPc = new Client(pcDomain, port, publicCa);
+  assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
   const upload = (
     await pc.graphql('mutation($id:ID!) { requestPostUpload(groupId:$id) { id url } }', { id: group.id })
   ).json().data.requestPostUpload;
@@ -617,12 +633,20 @@ try {
     body: png,
   });
   assert.equal(uploaded.status, 201, uploaded.text());
-  const post = (
-    await pc.graphql(
-      'mutation($group:ID!,$upload:ID!) { createPost(groupId:$group,uploadId:$upload,title:"S3 파일 보존",rightsConfirmed:true) { id mediaUrl } }',
-      { group: group.id, upload: upload.id },
-    )
-  ).json().data.createPost;
+  pcApi.cookie = pc.cookie;
+  const posted = await pcApi.post(
+    '/graphql',
+    {
+      query:
+        'mutation($group:ID!,$upload:ID!) { createPost(groupId:$group,uploadId:$upload,title:"S3 파일 보존",rightsConfirmed:true) { id mediaUrl } }',
+      variables: { group: group.id, upload: upload.id },
+    },
+    { Origin: `https://${pcDomain}` },
+  );
+  assert.equal(posted.status, 200, posted.text());
+  assert.equal(posted.json().errors, undefined, posted.text());
+  const post = posted.json().data.createPost;
+  assert.match((await publicPc.http(`/groups/${group.id}`)).text(), /S3 파일 보존/);
   assert.equal((await pc.http(post.mediaUrl)).status, 200);
   const partial = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
   assert.equal(partial.status, 206);
