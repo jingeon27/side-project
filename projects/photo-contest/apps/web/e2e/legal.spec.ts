@@ -12,9 +12,9 @@ test(
     await expect(page).toHaveURL(`${WEB_ORIGIN}/terms`);
     await expect(page.getByRole('heading', { name: '이용약관', level: 1 })).toBeVisible();
     await expect(page).toHaveTitle('이용약관 · 별사대');
-    await expect(page.getByRole('link', { name: 'jingeon27@gmail.com', exact: true })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'contact@bambyul.com', exact: true })).toHaveAttribute(
       'href',
-      'mailto:jingeon27@gmail.com',
+      'mailto:contact@bambyul.com',
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
