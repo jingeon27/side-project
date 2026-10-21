@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { getArticles } from '@/entities/article/lib/get-articles';
@@ -24,7 +25,8 @@ export function Header({ locale }: { locale: Locale }) {
       <header className="site-header">
         <div className="header-inner">
           <Link href={`/${locale}`} className="wordmark">
-            {t.nav.siteTitle}
+            <Image src="/icon.svg" alt="" aria-hidden width={28} height={28} unoptimized />
+            <span>{t.nav.siteTitle}</span>
           </Link>
           <div className="header-right">
             <HeaderNav locale={locale} />

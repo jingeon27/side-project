@@ -2,6 +2,7 @@ import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 
 import type { TLoginProvider } from '@game-feedback/bridge';
 
+import { ApiError } from '@/shared/api';
 import { requestNativeLogin } from '@/shared/native';
 
 import {
@@ -30,6 +31,10 @@ export function completeOnboardingMutationOptions(client: QueryClient, notify: (
   return mutationOptions({
     mutationKey: ['auth', 'complete-onboarding'],
     mutationFn: postOnboarding,
+    onError: async (error) => {
+      if (error instanceof ApiError && error.errorCode === 'AUTH_REQUIRED')
+        await clearAuthenticatedSession(client);
+    },
     onSuccess: async (session) => {
       await replaceSession(client, session);
       notify('반가워요! 함께 플레이를 나눠봐요.');

@@ -19,7 +19,7 @@ export function AdminShell({ nickname, tab, children }: IAdminShellProps) {
   return (
     <div className="admin-shell">
       <header className="admin-header">
-        <strong>Game Feedback 운영 관리</strong>
+        <strong>Game Mate 운영 관리</strong>
         <span>{nickname}</span>
         <Button type="button" variant="ghost" disabled={logout.isPending} onClick={() => logout.mutate()}>
           로그아웃

@@ -43,7 +43,7 @@ export async function signInBrowser(context: BrowserContext, cookie: string) {
   ]);
 }
 
-export async function seedGroup(ownerCookie: string, name = '웃긴순간 모임') {
+export async function seedGroup(ownerCookie: string, name = '별사대 모임') {
   const data = await gql<{ createGroup: { id: string; inviteToken: string } }>(
     ownerCookie,
     'mutation CreateGroup($name: String!) { createGroup(name: $name) { id inviteToken } }',

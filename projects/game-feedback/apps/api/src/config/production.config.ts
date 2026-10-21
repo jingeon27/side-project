@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { resolveCacheRevalidationConfig } from '../cache-invalidation/cache-invalidation.config';
 import { validateSharedInstanceEnvironment } from './shared-instance.config';
 
 const publicOrigin = z.url().refine((value) => {
@@ -20,6 +21,7 @@ const secret = z
 export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
   if (env.NODE_ENV !== 'production') return;
   validateSharedInstanceEnvironment(env);
+  resolveCacheRevalidationConfig(env);
   const result = z
     .object({
       WEB_ORIGIN: publicOrigin,

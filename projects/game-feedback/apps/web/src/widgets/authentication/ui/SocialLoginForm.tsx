@@ -2,70 +2,58 @@
 
 import type { FormEvent } from 'react';
 
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
-import { Button } from '@side/design-system';
+import { useMutation } from '@tanstack/react-query';
+
+import type { TSocialProvider } from '@game-feedback/contracts';
 
 import { useNativeLogin } from '@/features/auth';
-import { ANALYTICS_EVENT, flushAnalytics, savePendingLogin, trackEvent } from '@/shared/analytics';
+import { ANALYTICS_EVENT, savePendingLogin, trackEvent } from '@/shared/analytics';
 import { useI18n } from '@/shared/i18n';
 import { isNativeApp } from '@/shared/native';
 import { ErrorNotice } from '@/shared/ui';
 
-const labels: Record<TSocialProvider, string> = {
-  x: 'X로 시작하기',
-  kakao: '카카오로 시작하기',
-  discord: 'Discord로 시작하기',
-  google: 'Google로 시작하기',
-};
+import { browserLoginMutationOptions } from '../model/browser-login.mutation-options';
+import { SocialLoginButton } from './SocialLoginButton';
+
 interface ISocialLoginFormProps {
   providers: Array<{ provider: TSocialProvider; configured: boolean }>;
-  onSuccess: () => void;
+  returnTo: string;
+  onSuccess?: () => void;
 }
 
-export function SocialLoginForm({ providers, onSuccess }: ISocialLoginFormProps) {
+export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLoginFormProps) {
   const { t } = useI18n();
-  const login = useNativeLogin();
-  async function handleSubmit(event: FormEvent<HTMLFormElement>, provider: TSocialProvider) {
+  const nativeLogin = useNativeLogin();
+  const browserLogin = useMutation(browserLoginMutationOptions());
+  const pending = nativeLogin.isPending || browserLogin.isPending;
+  const selected = nativeLogin.isPending ? nativeLogin.variables : browserLogin.variables?.provider;
+  const configured = (provider: TSocialProvider) =>
+    providers.some((item) => item.provider === provider && item.configured);
+  function handleSubmit(event: FormEvent<HTMLFormElement>, provider: TSocialProvider) {
     event.preventDefault();
-    const form = event.currentTarget;
+    if (pending || !configured(provider)) return;
     savePendingLogin(provider);
     trackEvent(ANALYTICS_EVENT.LoginProviderSelected, { provider });
     if (!isNativeApp()) {
-      await flushAnalytics();
-      HTMLFormElement.prototype.submit.call(form);
+      browserLogin.mutate({ form: event.currentTarget, provider });
       return;
     }
-    login.mutate(provider, {
+    nativeLogin.mutate(provider, {
       onSuccess: (result) => {
-        if (result) onSuccess();
+        if (result) onSuccess?.();
       },
     });
   }
+  const common = { pending, selected, returnTo, onSubmit: handleSubmit };
   return (
-    <div className="form-stack social-login-methods">
-      {SocialProviderSchema.options.map((provider) => (
-        <form
-          key={provider}
-          action={`/api/auth/social/${provider}`}
-          method="get"
-          onSubmit={(event) => handleSubmit(event, provider)}
-        >
-          <Button
-            variant="secondary"
-            size="lg"
-            fullWidth
-            type="submit"
-            disabled={
-              login.isPending || !providers.some((item) => item.provider === provider && item.configured)
-            }
-          >
-            {t(labels[provider])}
-          </Button>
-        </form>
-      ))}
-      <ErrorNotice message={login.error?.message} />
+    <div className="social-login-methods">
+      <SocialLoginButton {...common} provider="google" configured={configured('google')} />
+      <SocialLoginButton {...common} provider="kakao" configured={configured('kakao')} />
+      <SocialLoginButton {...common} provider="discord" configured={configured('discord')} />
+      <SocialLoginButton {...common} provider="x" configured={configured('x')} />
+      <ErrorNotice message={nativeLogin.error?.message ?? browserLogin.error?.message} />
       {!providers.some((item) => item.configured) && (
-        <p className="muted small">{t('로그인 방법을 준비하고 있어요.')}</p>
+        <p className="login-unavailable">{t('로그인 방법을 준비하고 있어요.')}</p>
       )}
     </div>
   );

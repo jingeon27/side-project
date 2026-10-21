@@ -22,8 +22,8 @@ describe('ServiceErrorBoundary', () => {
         <UnstableRegion failed />
       </ServiceErrorBoundary>,
     );
-    const contact = screen.getByRole('link', { name: 'jingeon27@gmail.com' });
-    expect(contact.getAttribute('href')).toBe('mailto:jingeon27@gmail.com');
+    const contact = screen.getByRole('link', { name: 'contact@bambyul.com' });
+    expect(contact.getAttribute('href')).toBe('mailto:contact@bambyul.com');
     fireEvent.click(screen.getByRole('button', { name: '다시 시도하기' }));
     const pending = await screen.findByRole<HTMLButtonElement>('button', { name: '다시 불러오는 중…' });
     expect(pending.disabled).toBe(true);

@@ -13,3 +13,5 @@ export { GroupNavigation } from './ui/GroupNavigation';
 export { GroupSearchForm } from './ui/GroupSearchForm';
 export { GroupVisibilityBadge } from './ui/GroupVisibilityBadge';
 export { MemberList } from './ui/MemberList';
+
+export { EditGroupProfileButton } from './ui/EditGroupProfileButton';

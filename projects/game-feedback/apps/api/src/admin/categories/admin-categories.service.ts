@@ -1,8 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
-import { UnitOfWork } from '../../database/unit-of-work';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { PrismaClient } from '../../generated/prisma';
 import type { CreateCategoryDto } from './category-input.dto';
 
@@ -10,22 +12,25 @@ import type { CreateCategoryDto } from './category-input.dto';
 export class AdminCategoriesService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
   async create(req: SessionRequest, input: CreateCategoryDto) {
     const u = requireAdmin(req);
-    return this.transactions.run(async (tx) => {
-      const c = await (tx ?? this.db).category.create({ data: input });
-      await (tx ?? this.db).auditLog.create({
-        data: {
-          actorId: u.id,
-          action: 'CREATE_CATEGORY',
-          targetType: 'CATEGORY',
-          targetId: c.id,
-          detail: input.name,
-        },
-      });
-      return c;
-    });
+    return this.cache.change(
+      async (tx) => {
+        const c = await (tx ?? this.db).category.create({ data: input });
+        await (tx ?? this.db).auditLog.create({
+          data: {
+            actorId: u.id,
+            action: 'CREATE_CATEGORY',
+            targetType: 'CATEGORY',
+            targetId: c.id,
+            detail: input.name,
+          },
+        });
+        return c;
+      },
+      [DISCOVERY_CACHE_TAG],
+    );
   }
 }

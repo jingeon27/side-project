@@ -26,7 +26,7 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
-      title={t('플레이메이트를 떠나시겠어요?')}
+      title={t('Game Mate를 떠나시겠어요?')}
       description={t('계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.')}
     >
       <form

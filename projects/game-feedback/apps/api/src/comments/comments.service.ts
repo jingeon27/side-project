@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { postCacheTag } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
@@ -16,30 +18,33 @@ import { responseComment } from './comment.presenter';
 export class CommentsService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostsService) private readonly posts: PostsService,
   ) {}
   async createComment(req: SessionRequest, postId: string, input: CommentBodyDto) {
     const u = requireUser(req),
       p = await this.posts.visiblePost(req, postId);
-    const c = await this.transactions.run(async (tx) => {
-      const row = await (tx ?? this.db).comment.create({
-        data: { postId, authorId: u.id, body: input.body },
-        include: { author: { select: authorSelect } },
-      });
-      if (p.authorId !== u.id)
-        await (tx ?? this.db).notification.create({
-          data: {
-            actorId: u.id,
-            userId: p.authorId,
-            postId,
-            type: 'COMMENT',
-            message: `${u.nickname}님이 댓글을 남겼어요.`,
-          },
+    const c = await this.cache.change(
+      async (tx) => {
+        const row = await (tx ?? this.db).comment.create({
+          data: { postId, authorId: u.id, body: input.body },
+          include: { author: { select: authorSelect } },
         });
-      return row;
-    });
+        if (p.authorId !== u.id)
+          await (tx ?? this.db).notification.create({
+            data: {
+              actorId: u.id,
+              userId: p.authorId,
+              postId,
+              type: 'COMMENT',
+              message: `${u.nickname}님이 댓글을 남겼어요.`,
+            },
+          });
+        return row;
+      },
+      [postCacheTag(postId)],
+    );
     return responseComment(c);
   }
   async visibleComment(req: SessionRequest, id: string) {
@@ -58,18 +63,25 @@ export class CommentsService {
       c = await this.visibleComment(req, id);
     if (c.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     return responseComment(
-      await this.db.comment.update({
-        where: { id },
-        data: input,
-        include: { author: { select: authorSelect } },
-      }),
+      await this.cache.change(
+        (tx) =>
+          tx.comment.update({
+            where: { id },
+            data: input,
+            include: { author: { select: authorSelect } },
+          }),
+        [postCacheTag(c.postId)],
+      ),
     );
   }
   async deleteComment(req: SessionRequest, id: string) {
     const u = requireUser(req),
       c = await this.visibleComment(req, id);
     if (c.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.');
-    await this.db.comment.update({ where: { id }, data: { deletedAt: new Date(), body: '' } });
+    await this.cache.change(
+      (tx) => tx.comment.update({ where: { id }, data: { deletedAt: new Date(), body: '' } }),
+      [postCacheTag(c.postId)],
+    );
     return { ok: true };
   }
 }

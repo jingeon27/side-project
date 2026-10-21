@@ -78,7 +78,10 @@ function ContestHeader({ id }: { id: string }) {
       ) : (
         <GroupMembershipButton groupId={contest.groupId} />
       )}
-      <p className="text-caption text-muted">대회당 한 표 · 본인 참여작 투표 불가 · 동점은 공동 우승</p>
+      <p className="text-caption text-muted">
+        좋아요는 1인 {contest.likeLimit}개 작품 · 대회 투표는 별도 한 표 · 본인 참여작 투표 불가 · 동점은 공동
+        우승
+      </p>
       <ContestPhaseSync id={id} phase={contest.phase} />
     </section>
   );

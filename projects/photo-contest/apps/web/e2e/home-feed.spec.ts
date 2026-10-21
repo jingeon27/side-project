@@ -24,7 +24,8 @@ test(
     await seedPost(friend, privateGroup.id, '노출되면 안 되는 순간');
 
     await page.goto('/');
-    await expect(page.getByText('합성도 환영', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
+    await expect(page.getByRole('img', { name: '알림', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '내 그룹', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '그룹 만들기', exact: true })).toHaveCount(0);

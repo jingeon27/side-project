@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { labels } from '@/shared/config/labels';
+import { author } from '@/shared/config/site';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 
 type Props = { params: Promise<{ locale: string }> };
@@ -26,7 +27,7 @@ export default async function AboutPage({ params }: Props) {
           <div>
             <dt>Email</dt>
             <dd>
-              <a href="mailto:jingeon27@gmail.com">jingeon27@gmail.com</a>
+              <a href={`mailto:${author.email}`}>{author.email}</a>
             </dd>
           </div>
           <div>

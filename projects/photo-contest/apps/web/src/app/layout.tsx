@@ -15,7 +15,7 @@ import { PRIVATE_ROBOTS, SITE_DESCRIPTION } from '@/shared/lib/seo.helper';
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL(getWebOrigin()),
-    title: { default: '웃긴순간 — 웃긴 순간을 나누는 그룹', template: '%s · 웃긴순간' },
+    title: { default: '별사대 — 별난 사진 대회', template: '%s · 별사대' },
     description: SITE_DESCRIPTION,
     robots: PRIVATE_ROBOTS,
   };

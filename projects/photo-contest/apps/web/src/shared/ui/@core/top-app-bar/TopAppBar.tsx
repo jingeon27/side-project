@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { ChevronLeft, Compass, House, UserRound } from 'lucide-react';
+import { Bell, ChevronLeft, Compass, House, UserRound } from 'lucide-react';
 
 import { ROUTES } from '../../../constants/routes';
 import { cn } from '../../../lib/cn.helper';
@@ -25,11 +25,11 @@ function DesktopNavigation() {
       >
         <Link
           href={ROUTES.HOME}
-          aria-label="웃긴순간 홈"
+          aria-label="별사대 홈"
           className="mb-8 flex min-h-touch items-center gap-2 px-3 text-title-lg tracking-tighter text-ink active:opacity-60"
         >
           <BrandIcon />
-          웃긴순간
+          별사대
         </Link>
         <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
           <House aria-hidden className="size-6" strokeWidth={pathname === ROUTES.HOME ? 2.5 : 1.7} />홈
@@ -46,7 +46,7 @@ function DesktopNavigation() {
           <p className="text-label text-muted">가볍게 올리고, 같이 웃어요.</p>
           <p className="mt-2">사진 · 동영상 · 합성</p>
           <LegalLinks className="mt-3 gap-x-2" />
-          <p className="mt-6 text-micro">© 웃긴순간</p>
+          <p className="mt-6 text-micro">© 별사대</p>
         </div>
       </nav>
     </aside>
@@ -105,24 +105,19 @@ export function TopAppBar({ title, backHref, actions, className }: ITopAppBarPro
   );
 }
 
-/** 홈 화면의 브랜드 앱바 */
-export function BrandAppBar({ actions, className }: { actions?: ReactNode; className?: string }) {
+export function HomeAppBar({ actions, className }: { actions?: ReactNode; className?: string }) {
   return (
-    <>
-      <DesktopNavigation />
-      <header className={cn(APP_BAR_CLASS_NAME, className)}>
-        <div className="flex h-app-bar items-center gap-2 px-4 desktop:px-8">
-          <h1 className="flex min-w-0 flex-1 items-center gap-2 text-title-lg tracking-tighter text-ink desktop:text-title">
-            <BrandIcon className="desktop:hidden" />
-            <span className="desktop:hidden">웃긴순간</span>
-            <span className="hidden desktop:inline">홈 피드</span>
-          </h1>
-          <span className="text-caption text-muted">
-            사진도, 동영상도. <span className="text-ink">합성도 환영</span>
+    <TopAppBar
+      title="홈"
+      className={className}
+      actions={
+        <>
+          <span role="img" aria-label="알림" className="flex size-touch items-center justify-center text-ink">
+            <Bell aria-hidden className="size-6" strokeWidth={1.7} />
           </span>
-          {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
-        </div>
-      </header>
-    </>
+          {actions}
+        </>
+      }
+    />
   );
 }

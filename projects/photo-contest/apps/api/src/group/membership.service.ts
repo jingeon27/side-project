@@ -85,7 +85,7 @@ export class MembershipService {
     const admin = member ? isAdmin(member) : false;
     if ((post.hidden || post.legacySubmission?.hidden) && !admin)
       fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-    return { post, admin };
+    return { post, admin, member };
   }
 
   async accessiblePost(userId: string, postId: string, client?: TDatabaseClient) {

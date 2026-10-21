@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 
 import { z } from 'zod';
 
+import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 import { ApiError, getPost, listPosts } from '@game-feedback/sdk';
 
 import type { PostDetail } from '@/shared/api';
@@ -22,8 +23,8 @@ export async function getServerPostList(params: TPostListParams) {
 // 쿠키 없이 받은 공개 상세라 모든 사용자가 게시글 id 하나로 같은 캐시를 쓴다. 없는 글은 null로 캐시한다.
 async function getPublicPost(id: string) {
   'use cache';
-  cacheTag(postDetailCacheTag(id));
-  cacheLife({ stale: 60, revalidate: 60, expire: 3_600 });
+  cacheTag(POSTS_CACHE_TAG, postDetailCacheTag(id));
+  cacheLife('max');
   try {
     return await getPost(id, publicServerOptions());
   } catch (error) {

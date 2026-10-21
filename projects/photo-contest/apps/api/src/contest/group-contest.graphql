@@ -8,6 +8,7 @@ type GroupContest {
   id: ID!
   groupId: ID!
   title: String!
+  likeLimit: Int!
   startsAt: DateTime!
   submissionEndsAt: DateTime!
   endsAt: DateTime!
@@ -44,6 +45,7 @@ extend type Mutation {
   createGroupContest(
     groupId: ID!
     title: String!
+    likeLimit: Int = 1
     startsAt: DateTime!
     submissionEndsAt: DateTime!
     endsAt: DateTime!

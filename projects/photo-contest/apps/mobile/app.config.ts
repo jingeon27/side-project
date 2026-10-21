@@ -7,7 +7,8 @@ const IS_DEVELOPMENT = process.env.APP_VARIANT === 'development';
 export default function appConfig({ config }: ConfigContext): ExpoConfig {
   return {
     ...config,
-    name: '웃긴순간',
+    name: '별사대',
+    icon: './assets/icon.png',
     slug: 'photo-contest',
     version: '1.0.0',
     scheme: 'photocontest',
@@ -23,6 +24,7 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
       },
     },
     android: {
+      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#e85d4a' },
       package: 'dev.side.photocontest',
       // 뒤로 가기를 BackHandler로 받아 웹에 먼저 물어봐야 한다.
       predictiveBackGestureEnabled: false,

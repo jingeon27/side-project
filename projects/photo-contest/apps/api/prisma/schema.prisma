@@ -26,6 +26,7 @@ model User {
   postUploads PostUpload[]
   postLikes PostLike[]
   postComments PostComment[]
+  postCommentLikes PostCommentLike[]
   postContestVotes PostContestVote[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
@@ -48,6 +49,10 @@ model Group {
   categories GroupCategory[]
   id String @id @default(cuid())
   name String
+  description String @default("")
+  avatarId String?
+  avatar GroupAvatar? @relation("CurrentGroupAvatar", fields: [avatarId, id], references: [id, groupId], onDelete: NoAction, onUpdate: NoAction)
+  avatarUploads GroupAvatar[] @relation("GroupAvatarUploads")
   visibility String @default("PRIVATE")
   inviteHash String @unique
   inviteToken String
@@ -58,6 +63,16 @@ model Group {
   posts Post[]
   postUploads PostUpload[]
   @@index([createdAt, id])
+}
+model GroupAvatar {
+  id String @id @default(cuid())
+  groupId String
+  storageKey String @unique
+  expiresAt DateTime
+  group Group @relation("GroupAvatarUploads", fields: [groupId], references: [id], onDelete: Cascade)
+  currentGroups Group[] @relation("CurrentGroupAvatar")
+  @@unique([id, groupId])
+  @@index([expiresAt])
 }
 model GroupJoinRequest {
   id String @id @default(cuid())
@@ -85,6 +100,7 @@ model Contest {
   id String @id @default(cuid())
   groupId String
   title String
+  likeLimit Int @default(1)
   startsAt DateTime
   submissionEndsAt DateTime
   endsAt DateTime
@@ -222,11 +238,26 @@ model PostComment {
   id String @id @default(cuid())
   postId String
   authorId String
+  parentId String?
   body String
   createdAt DateTime @default(now())
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes PostCommentLike[]
+  parent PostComment? @relation("PostCommentReplies", fields: [parentId, postId], references: [id, postId], onDelete: Cascade)
+  replies PostComment[] @relation("PostCommentReplies")
+  @@unique([id, postId])
   @@index([postId, createdAt, id])
+  @@index([postId, parentId, createdAt, id])
+}
+model PostCommentLike {
+  commentId String
+  userId String
+  createdAt DateTime @default(now())
+  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([commentId, userId])
+  @@index([userId])
 }
 model PostLike {
   postId String

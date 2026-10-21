@@ -19,6 +19,8 @@ const unitOnly = projects.length > 0 && projects.every((project) => project === 
 const env = {
   ...configured,
   NODE_ENV: 'test',
+  GF_CACHE_REVALIDATION_SECRET: '',
+  GF_CACHE_REVALIDATION_URL: '',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',
   NEXT_PUBLIC_AMPLITUDE_API_KEY: '',

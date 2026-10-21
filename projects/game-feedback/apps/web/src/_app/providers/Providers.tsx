@@ -11,7 +11,7 @@ import type { Session } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { MotionProvider } from '@/shared/motion';
 import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
-import { AuthOnboarding, openLoginDialog } from '@/widgets/authentication';
+import { AuthOnboarding, useLoginNavigation } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 
 import { MobileViewport } from './MobileViewport';
@@ -20,6 +20,7 @@ import { NavigationHistory } from './NavigationHistory';
 
 export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
   const { t } = useI18n();
+  const handleLogin = useLoginNavigation();
   const [client] = useState(() => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: true } },
@@ -34,7 +35,7 @@ export function Providers({ children, initialSession }: { children: ReactNode; i
           <NavigationHistory />
           <MobileViewport />
           <ToastProvider>
-            <SessionProvider onLogin={openLoginDialog}>
+            <SessionProvider onLogin={handleLogin}>
               <SessionContent>{children}</SessionContent>
             </SessionProvider>
           </ToastProvider>
@@ -53,9 +54,9 @@ function SessionContent({ children }: { children: ReactNode }) {
       <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
         <NativeBridge />
       </AsyncBoundary>
-      <ServiceErrorBoundary title={t('회원가입 안내')}>
+      <AsyncBoundary title={t('회원가입 안내')} pendingFallback={null}>
         <AuthOnboarding />
-      </ServiceErrorBoundary>
+      </AsyncBoundary>
     </OverlayProvider>
   );
 }

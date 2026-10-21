@@ -15,6 +15,8 @@
 	}
 	@localAuth path /api/auth/demo /api/auth/test-* /api/auth/test-accounts
 	respond @localAuth 404
+	@internal path /_internal /_internal/*
+	respond @internal 404
 	handle /api/* {
 		reverse_proxy api:4300 {
 			flush_interval -1

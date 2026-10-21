@@ -40,7 +40,7 @@ export function ContactContent({ locale }: { locale: TLocale }) {
       </p>
       <h2>{t('서비스 상태')}</h2>
       <p>{t('서비스 오류를 문의할 때는 문제가 발생한 화면과 시각을 함께 알려주세요.')}</p>
-      <p className="muted small">{t('플레이메이트는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.')}</p>
+      <p className="muted small">{t('Game Mate는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.')}</p>
     </>
   );
 }

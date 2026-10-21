@@ -41,7 +41,17 @@ function RouteMotion({
       before !== key &&
       beforeRoute?.locale === route?.locale &&
       route &&
-      ['feed', 'boards', 'search', 'messages', 'notifications', 'settings', 'guide'].includes(route.screen) &&
+      [
+        'feed',
+        'boards',
+        'search',
+        'messages',
+        'notifications',
+        'settings',
+        'guide',
+        'login',
+        'onboarding',
+      ].includes(route.screen) &&
       getNavigationDirection() !== 'back' &&
       !window.location.hash
     )

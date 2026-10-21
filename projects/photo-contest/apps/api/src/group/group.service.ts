@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
@@ -10,7 +12,7 @@ import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
-import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import { GROUP_DESCRIPTION_LIMIT, PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
@@ -38,6 +40,8 @@ export interface IMemberView {
 export interface IGroupNode {
   id: string;
   name: string;
+  description: string;
+  avatarUrl: string | null;
   /** 조회한 사용자의 역할 */
   role: TGroupRole | null;
   visibility: TGroupVisibility;
@@ -133,13 +137,19 @@ export class GroupService {
     viewer: IViewer,
     name: unknown,
     visibility: TGroupVisibility = GROUP_VISIBILITY.PUBLIC,
+    description?: string | null,
   ): Promise<IGroupNode> {
     const validName = textValue(name, TEXT_LIMIT.GROUP_NAME, '그룹 이름');
+    const validDescription = description?.trim() ?? '';
+    if (validDescription.length > GROUP_DESCRIPTION_LIMIT) fail('그룹 소개는 500자 이하로 입력해 주세요.');
     const inviteToken = randomToken();
     const group = await this.transactions.atomic(async (tx) => {
       const created = await (tx ?? this.db).group.create({
         data: {
+          // nullable 복합 avatar FK가 기본 id 생성을 덮지 않도록 명시한다.
+          id: randomUUID(),
           name: validName,
+          description: validDescription,
           visibility,
           inviteToken,
           inviteHash: sha256Hex(inviteToken),
@@ -304,6 +314,8 @@ export class GroupService {
     return {
       id: group.id,
       name: group.name,
+      description: group.description,
+      avatarUrl: group.avatarId ? `/backend/groups/${group.id}/avatar/${group.avatarId}` : null,
       role: role ? toGroupRole(role) : null,
       visibility: toGroupVisibility(group.visibility),
       memberCount: group._count.members,

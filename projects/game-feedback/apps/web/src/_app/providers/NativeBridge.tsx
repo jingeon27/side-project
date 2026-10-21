@@ -7,7 +7,7 @@ import { last } from 'es-toolkit';
 import { overlay, useOverlayData } from 'overlay-kit';
 import { match } from 'ts-pattern';
 
-import { useRefreshSession, useSession } from '@/features/auth';
+import { useRefreshSession } from '@/features/auth';
 import { nativeBridgeChannel } from '@/shared/native';
 import { backNavigation } from '@/shared/navigation';
 
@@ -17,7 +17,6 @@ export function NativeBridge() {
   const search = useSearchParams().toString();
   const { mutate: refreshSession } = useRefreshSession();
   const overlays = useOverlayData();
-  const { session } = useSession();
   useEffect(() => {
     const open = last(Object.values(overlays).filter((item) => item.isOpen));
     return nativeBridgeChannel.bind({
@@ -26,7 +25,7 @@ export function NativeBridge() {
       onOpen: (path) => router.push(path),
       onActive: refreshSession,
       onDismissOverlay: () => {
-        if (!open || session?.needsOnboarding) return;
+        if (!open) return;
         overlay.close(open.id);
         overlay.unmount(open.id);
       },
@@ -44,6 +43,6 @@ export function NativeBridge() {
           .with({ action: 'unhandled' }, () => ({ handled: false }))
           .exhaustive(),
     });
-  }, [overlays, pathname, search, refreshSession, router, session?.needsOnboarding]);
+  }, [overlays, pathname, search, refreshSession, router]);
   return null;
 }

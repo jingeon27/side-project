@@ -89,8 +89,12 @@ for (const width of [400, 1440]) {
     const sheet = page.getByRole('dialog');
     await expect(sheet).toHaveClass(/bottom-sheet-content/);
     await expect(sheet).toHaveCSS('opacity', '1');
-    const bounds = await sheet.boundingBox();
-    expect(Math.round((bounds?.y ?? 0) + (bounds?.height ?? 0))).toBe(900);
+    await expect
+      .poll(async () => {
+        const bounds = await sheet.locator('.ds-sheet-frame').boundingBox();
+        return bounds ? Math.round(bounds.y + bounds.height) : null;
+      })
+      .toBe(900);
     await sheet.getByLabel('플레이어 태그', { exact: true }).fill('#GG829JGY');
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();
     await page.goto('/ko/messages/sample-conversation-0-3');

@@ -54,6 +54,8 @@ function renderSheet(mocks: MockLink.MockedResponse[] = []) {
     data: {
       group: {
         __typename: 'Group',
+        description: '',
+        avatarUrl: null,
         id: 'group-1',
         name: '웃음 연구소',
         role: GroupRole.Owner,

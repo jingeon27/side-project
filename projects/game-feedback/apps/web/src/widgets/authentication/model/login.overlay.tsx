@@ -1,21 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
-
-import { overlay } from 'overlay-kit';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { useSession } from '@/features/auth';
-import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import { openOverlay } from '@/shared/ui';
 
 import { LoginDialog } from '../ui/LoginDialog';
-import { OnboardingDialog } from '../ui/OnboardingDialog';
+import { onboardingRedirect } from './onboarding-navigation';
 
-export function openLoginDialog() {
-  trackEvent(ANALYTICS_EVENT.LoginOpened, {});
+export function openLoginDialog(returnTo?: string) {
   openOverlay(
     ({ isOpen, close, unmount }) => (
       <LoginDialog
+        returnTo={returnTo}
         open={isOpen}
         onOpenChange={(open) => {
           if (open) return;
@@ -33,23 +31,14 @@ export function openLoginDialog() {
 }
 export function AuthOnboarding() {
   const { session } = useSession();
-  const pending = session?.needsOnboarding ?? false;
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const destination = onboardingRedirect(pathname + (search ? `?${search}` : ''), {
+    needsOnboarding: session.needsOnboarding,
+  });
   useEffect(() => {
-    if (!pending) return;
-    // 서버의 가입 대기 상태를 외부 overlay store와 연결하고 화면 종료 시 해제한다.
-    const id = openOverlay(
-      ({ isOpen, close, unmount }) => (
-        <OnboardingDialog
-          open={isOpen}
-          onSuccess={() => {
-            close();
-            unmount();
-          }}
-        />
-      ),
-      { overlayId: 'auth-onboarding' },
-    );
-    return () => overlay.unmount(id);
-  }, [pending]);
+    if (destination) router.replace(destination);
+  }, [destination, router]);
   return null;
 }

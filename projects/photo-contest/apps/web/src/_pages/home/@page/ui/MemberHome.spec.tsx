@@ -25,6 +25,8 @@ function seedMyGroups(cache: InMemoryCache) {
       myGroups: [
         {
           __typename: 'Group',
+          description: '',
+          avatarUrl: null,
           id: 'group-1',
           name: '우리 웃음',
           role: GroupRole.Member,

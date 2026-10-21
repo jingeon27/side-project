@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:net';
 
 import { assertNode, environment, rootDir } from './env.mjs';
@@ -9,6 +10,9 @@ const env = environment({
   GF_DEMO_MODE: demo ? 'true' : 'false',
   GF_TEST_AUTH_ENABLED: testAuth ? 'true' : 'false',
 });
+// Both child processes share one server-only credential, without writing it to disk or logs.
+env.GF_CACHE_REVALIDATION_SECRET ||= randomBytes(32).toString('hex');
+env.GF_CACHE_REVALIDATION_URL ||= 'http://localhost:3300/_internal/cache/revalidate';
 const children = new Set();
 let stopping = false;
 

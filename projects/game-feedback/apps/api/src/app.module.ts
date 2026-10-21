@@ -5,6 +5,7 @@ import { AdminModule } from './admin/admin.module';
 import { AnswersModule } from './answers/answers.module';
 import { AuthModule } from './auth/auth.module';
 import { BlocksModule } from './blocks/blocks.module';
+import { CacheInvalidationModule } from './cache-invalidation/cache-invalidation.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ChatModule } from './chat/chat.module';
 import { CommentsModule } from './comments/comments.module';
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
+    CacheInvalidationModule,
     MediaStorageModule,
     AuthModule,
     UsersModule,

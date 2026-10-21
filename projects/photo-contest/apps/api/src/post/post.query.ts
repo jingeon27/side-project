@@ -5,7 +5,15 @@ export function postInclude(viewerId: string | null) {
   return {
     group: { select: { name: true, members: { where: { userId }, select: { role: true } } } },
     contest: {
-      select: { id: true, groupId: true, title: true, startsAt: true, submissionEndsAt: true, endsAt: true },
+      select: {
+        id: true,
+        groupId: true,
+        title: true,
+        likeLimit: true,
+        startsAt: true,
+        submissionEndsAt: true,
+        endsAt: true,
+      },
     },
     category: true,
     author: true,

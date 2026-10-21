@@ -2,8 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, uniq } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
+import { DISCOVERY_CACHE_TAG, postCacheTag } from '@game-feedback/contracts';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../../common/http/api-error';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient } from '../../generated/prisma';
@@ -15,28 +18,37 @@ export class AdminReportsService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
   async hide(req: SessionRequest, input: HideContentDto) {
     const u = requireAdmin(req);
-    await this.transactions.run(async (tx) => {
-      const data = { hidden: input.hidden };
-      await match(input.targetType)
-        .with('POST', () => (tx ?? this.db).post.update({ where: { id: input.targetId }, data }))
-        .with('ANSWER', () => (tx ?? this.db).answer.update({ where: { id: input.targetId }, data }))
-        .with('COMMENT', () => (tx ?? this.db).comment.update({ where: { id: input.targetId }, data }))
-        .exhaustive();
-      const scope = hiddenNotificationScope(input);
-      if (scope) await (tx ?? this.db).notification.deleteMany({ where: scope });
-      await (tx ?? this.db).auditLog.create({
-        data: {
-          actorId: u.id,
-          action: input.hidden ? 'HIDE' : 'UNHIDE',
-          targetType: input.targetType,
-          targetId: input.targetId,
-          detail: input.reason,
-        },
-      });
-    });
+    await this.cache.change(
+      async (tx) => {
+        const data = { hidden: input.hidden };
+        const postId = await match(input.targetType)
+          .with('POST', () => tx.post.update({ where: { id: input.targetId }, data }).then((row) => row.id))
+          .with('ANSWER', () =>
+            tx.answer.update({ where: { id: input.targetId }, data }).then((row) => row.postId),
+          )
+          .with('COMMENT', () =>
+            tx.comment.update({ where: { id: input.targetId }, data }).then((row) => row.postId),
+          )
+          .exhaustive();
+        const scope = hiddenNotificationScope(input);
+        if (scope) await (tx ?? this.db).notification.deleteMany({ where: scope });
+        await (tx ?? this.db).auditLog.create({
+          data: {
+            actorId: u.id,
+            action: input.hidden ? 'HIDE' : 'UNHIDE',
+            targetType: input.targetType,
+            targetId: input.targetId,
+            detail: input.reason,
+          },
+        });
+        return postId;
+      },
+      (postId) => [postCacheTag(postId), DISCOVERY_CACHE_TAG],
+    );
     return { ok: true };
   }
   async reports(req: SessionRequest) {

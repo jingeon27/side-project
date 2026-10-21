@@ -12,6 +12,14 @@ import { RichTextDocumentSchema } from './rich-text';
 
 export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 
+export {
+  POSTS_CACHE_TAG,
+  DISCOVERY_CACHE_TAG,
+  CacheTagSchema,
+  CacheRevalidationSchema,
+  postCacheTag,
+} from './cache-revalidation';
+
 export { MediaUploadInputSchema, MediaUploadPlanSchema } from './media-upload';
 export type { TMediaUploadInput, TMediaUploadPlan } from './media-upload';
 export {
@@ -750,3 +758,4 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/admin/hide', id: 'hideContent', body: HideInputSchema, response: OkSchema },
 ];
+export { AuthReturnPathSchema } from './auth-return-path';

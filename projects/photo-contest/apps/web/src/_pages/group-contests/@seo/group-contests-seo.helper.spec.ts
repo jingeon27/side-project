@@ -12,6 +12,8 @@ const origin = 'https://moments.example';
 const data: IGroupContestsSeoData = {
   group: {
     __typename: 'Group',
+    description: '',
+    avatarUrl: null,
     id: 'group',
     name: '웃음 그룹',
     visibility: GroupVisibility.Public,
@@ -21,6 +23,7 @@ const data: IGroupContestsSeoData = {
   contests: [
     {
       __typename: 'GroupContest',
+      likeLimit: 1,
       id: 'contest',
       groupId: 'group',
       title: '지난 대회',

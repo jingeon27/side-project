@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
 .data/
 apps/api/dist/
 /apps/api/openapi.json

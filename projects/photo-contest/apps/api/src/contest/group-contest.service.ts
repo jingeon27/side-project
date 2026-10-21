@@ -9,7 +9,7 @@ import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
-import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import { CONTEST_LIKE_LIMIT_MAX, PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
@@ -92,13 +92,16 @@ export class GroupContestService {
     return node;
   }
 
-  async create(viewer: IViewer, input: ICreateContestInput) {
+  async create(viewer: IViewer, input: ICreateContestInput & { likeLimit?: number | null }) {
+    const likeLimit = input.likeLimit ?? 1;
+    if (!Number.isInteger(likeLimit) || likeLimit < 1 || likeLimit > CONTEST_LIKE_LIMIT_MAX)
+      fail('1인당 좋아요 한도는 1~100개로 정해 주세요.');
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireAdmin(viewer.id, input.groupId, tx);
       const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
       const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
       const created = await (tx ?? this.db).contest.create({
-        data: { groupId: input.groupId, title, format: CONTEST_FORMAT.POST, ...dates },
+        data: { groupId: input.groupId, title, likeLimit, format: CONTEST_FORMAT.POST, ...dates },
       });
       await recordEvent(tx ?? this.db, {
         id: `contest:${created.id}`,

@@ -3,6 +3,45 @@ import { describe, expect, it } from 'vitest';
 import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
 
 describe('community board navigation', () => {
+  it.each(['login', 'onboarding'] as const)(
+    '인증 화면 %s는 같은 언어의 안전한 복귀 경로만 보존해야 한다',
+    (screen) => {
+      const parent = appRoutes.boards('ja', 'coaching', '週末', 'another-game', { coachingRole: 'STUDENT' });
+      const path = appRoutes[screen]('ja', parent);
+      expect(resolveAppRoute(path)).toMatchObject({ path, screen, tab: 'settings', parent, locale: 'ja' });
+      expect(resolveAppRoute(appRoutes[screen]('en'))).toMatchObject({ screen, parent: '/en' });
+      for (const legal of ['/ja/terms', '/ja/privacy', '/ja/contact']) {
+        expect(resolveAppRoute(appRoutes[screen]('ja', legal))?.parent).toBe(legal);
+      }
+      for (const unsafe of [
+        'https://outside.test/ja',
+        '//outside.test/ja',
+        '/en/guide',
+        '/ja/login',
+        '/ja/onboarding',
+        '/ja/onboarding/',
+        appRoutes.login('ja', parent),
+        appRoutes.onboarding('ja', parent),
+        appRoutes.login('ja', appRoutes.onboarding('ja', parent)),
+        appRoutes.onboarding('ja', appRoutes.login('ja', parent)),
+        '/ja/onboarding/extra',
+        '/ja%2Fonboarding',
+        '/ja\\onboarding',
+      ])
+        expect(WebPathSchema.safeParse(appRoutes[screen]('ja', unsafe)).success, unsafe).toBe(false);
+    },
+  );
+  it('로그인은 원래 화면으로 돌아가며 외부 주소와 로그인 순환을 거부해야 한다', () => {
+    const parent = appRoutes.boards('ko', 'coaching', '주말', undefined, { coachingRole: 'STUDENT' });
+    const login = appRoutes.login('ko', parent);
+    expect(resolveAppRoute(login)).toMatchObject({ path: login, screen: 'login', parent, tab: 'settings' });
+    expect(resolveAppRoute('/ja/login')).toMatchObject({ screen: 'login', parent: '/ja' });
+    ['https://outside.test', '//outside.test', '/en/guide', '/ko/login', '/ko/login?returnTo=%2Fko'].forEach(
+      (path) => {
+        expect(WebPathSchema.safeParse(appRoutes.login('ko', path)).success).toBe(false);
+      },
+    );
+  });
   it('opens the composer with a board and game parent while rejecting unsupported classifications', () => {
     const compose = appRoutes.compose('ja', 'COACHING', 'another-game');
     expect(compose).toBe('/ja/write?board=coaching&game=another-game');

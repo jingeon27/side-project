@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Controller, useWatch } from 'react-hook-form';
 
 import { Button, Checkbox, Input } from '@side/design-system';
@@ -15,7 +15,7 @@ interface IAccountSetupFormProps {
   submitLabel: string;
   pending: boolean;
   error?: string;
-  onSubmit: (values: TAccountSetupValues) => void;
+  onSubmit: (values: TAccountSetupValues) => void | Promise<void>;
 }
 
 export function AccountSetupForm({ submitLabel, pending, error, onSubmit }: IAccountSetupFormProps) {
@@ -25,13 +25,19 @@ export function AccountSetupForm({ submitLabel, pending, error, onSubmit }: IAcc
   });
   const [agreed, ageConfirmed] = useWatch({ control: form.control, name: ['acceptedTerms', 'ageConfirmed'] });
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="form-stack">
-      <Field label={t('서비스 닉네임')}>
+    <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="form-stack" aria-busy={pending}>
+      <Field
+        label={t('서비스 닉네임')}
+        error={
+          form.formState.errors.nickname?.message ? t(form.formState.errors.nickname.message) : undefined
+        }
+      >
         <Input
           {...form.register('nickname')}
           minLength={2}
           maxLength={20}
           required
+          disabled={pending}
           placeholder={t('2~20자로 입력해 주세요')}
           autoComplete="nickname"
         />
@@ -48,6 +54,7 @@ export function AccountSetupForm({ submitLabel, pending, error, onSubmit }: IAcc
               onBlur={() => field.onBlur()}
               inputRef={field.ref}
               required
+              disabled={pending}
             />
           )}
         />
@@ -74,6 +81,7 @@ export function AccountSetupForm({ submitLabel, pending, error, onSubmit }: IAcc
               onBlur={() => field.onBlur()}
               inputRef={field.ref}
               required
+              disabled={pending}
             />
           )}
         />
@@ -81,10 +89,7 @@ export function AccountSetupForm({ submitLabel, pending, error, onSubmit }: IAcc
       </label>
       <ErrorNotice
         message={
-          form.formState.errors.nickname?.message ??
-          form.formState.errors.acceptedTerms?.message ??
-          form.formState.errors.ageConfirmed?.message ??
-          error
+          form.formState.errors.acceptedTerms?.message ?? form.formState.errors.ageConfirmed?.message ?? error
         }
       />
       <Button
@@ -93,9 +98,10 @@ export function AccountSetupForm({ submitLabel, pending, error, onSubmit }: IAcc
         fullWidth
         type="submit"
         className="button primary full"
-        disabled={pending || !agreed || !ageConfirmed}
+        disabled={!agreed || !ageConfirmed}
+        loading={pending}
       >
-        {pending ? <LoaderCircle className="spin" size={18} /> : <ArrowRight size={18} />}
+        {!pending && <ArrowRight aria-hidden size={18} />}
         {submitLabel}
       </Button>
     </form>

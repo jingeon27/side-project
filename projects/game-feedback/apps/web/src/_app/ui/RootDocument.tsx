@@ -16,7 +16,7 @@ export const rootViewport: Viewport = {
 };
 export const rootMetadata: Metadata = {
   metadataBase: new URL(getSeoConfig().origin),
-  title: { default: '플레이메이트 | Game Feedback', template: '%s | 플레이메이트' },
+  title: { default: 'Game Mate', template: '%s | Game Mate' },
   description: '클래시 로얄 플레이어를 위한 게임 피드백 커뮤니티.',
   robots: { index: false, follow: false },
 };

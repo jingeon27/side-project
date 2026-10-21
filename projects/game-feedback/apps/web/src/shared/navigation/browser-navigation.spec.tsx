@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { appRoutes } from '@game-feedback/bridge';
+
 import {
   backNavigation,
   feedDestination,
@@ -15,6 +17,27 @@ function start(path: string) {
   stop = installBrowserNavigation();
 }
 describe('application history', () => {
+  it('가입 안내는 이전 게시판으로 돌아가고 직접 진입하면 복귀 경로를 사용해야 한다', () => {
+    const parent = appRoutes.boards('ko', 'coaching', '주말', undefined, { coachingRole: 'STUDENT' });
+    start(parent);
+    window.history.pushState({}, '', appRoutes.onboarding('ko', parent));
+    expect(backNavigation()).toEqual({ action: 'back' });
+    stop();
+    start(appRoutes.onboarding('ko', parent));
+    expect(backNavigation()).toEqual({ action: 'replace', path: parent });
+  });
+  it('인증 화면 사이의 이전 방문 기록으로 돌아가지 않고 논리적 부모로 이동해야 한다', () => {
+    const parent = '/en/terms';
+    for (const [before, current] of [
+      ['login', 'onboarding'],
+      ['onboarding', 'login'],
+    ] as const) {
+      start(appRoutes[before]('en', parent));
+      window.history.pushState({}, '', appRoutes[current]('en', parent));
+      expect(backNavigation()).toEqual({ action: 'replace', path: parent });
+      stop();
+    }
+  });
   it('returns from a composer to its source and uses the correct parent on a cold link', () => {
     start('/ko?tab=unanswered&q=hog');
     window.history.pushState({}, '', '/ko/write');
