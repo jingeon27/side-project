@@ -72,6 +72,12 @@ export function createPageMetadata({
   };
 }
 export const pageContent = {
+  onboarding: {
+    title: '회원가입',
+    description: '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.',
+    keywords: ['회원가입', '서비스 닉네임'],
+    privatePage: true,
+  },
   login: {
     title: '로그인',
     description: '소셜 계정으로 로그인하세요.',
@@ -151,7 +157,9 @@ export function staticPagePath(kind: TStaticPage, locale: string) {
 }
 export function localizedStaticContent(kind: TStaticPage, locale: string) {
   const language =
-    ['login', 'guide', 'terms', 'privacy', 'contact'].includes(kind) && isLocale(locale) ? locale : 'ko';
+    ['login', 'onboarding', 'guide', 'terms', 'privacy', 'contact'].includes(kind) && isLocale(locale)
+      ? locale
+      : 'ko';
   const content = pageContent[kind];
   return {
     ...content,

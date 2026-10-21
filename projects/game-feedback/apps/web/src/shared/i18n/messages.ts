@@ -740,6 +740,16 @@ const messages: Record<string, readonly [string, string]> = {
   '에 동의합니다.': ['I agree to the above.', 'に同意します。'],
   '만 14세 이상입니다.': ['I am at least 14 years old.', '14歳以上です。'],
   '가입 완료하기': ['Complete sign-up', '登録を完了'],
+  회원가입: ['Sign up', '新規登録'],
+  '시트 높이 조절': ['Adjust sheet height', 'シートの高さを調整'],
+  '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.': [
+    'Choose a nickname and agree to the required items.',
+    'ニックネームを決めて、必須項目に同意してください。',
+  ],
+  '닉네임에는 문자, 숫자, 공백과 _ . -만 사용할 수 있어요.': [
+    'Use letters, numbers, spaces, or _ . - in your nickname.',
+    'ニックネームには文字、数字、空白と _ . - を使用できます。',
+  ],
   '서로를 존중하는 건강한 피드백 공간': [
     'A respectful place to share feedback',
     '互いを尊重するフィードバックの場',

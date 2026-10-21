@@ -3,6 +3,25 @@ import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
 import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
 const origin = 'https://feedback.example';
 describe('WebView navigation and deep links', () => {
+  it('가입 안내 딥링크와 복귀 경로를 보존하고 인증 화면 간 순환과 외부 목적지를 차단해야 한다', () => {
+    const parent = appRoutes.boards('ko', 'friendly', '주말', 'another-game', { battleMode: 'TEAM' });
+    const onboarding = appRoutes.onboarding('ko', parent);
+    expect(toWebPath(`gamefeedback:/${onboarding}`, origin)).toBe(onboarding);
+    expect(decideNavigation(`gamefeedback:/${onboarding}`, origin)).toEqual({
+      action: 'navigate',
+      path: onboarding,
+    });
+    expect(resolveAppRoute(onboarding)).toMatchObject({ screen: 'onboarding', parent, tab: 'settings' });
+    for (const unsafe of [
+      appRoutes.login('ko'),
+      appRoutes.onboarding('ko'),
+      '/en/terms',
+      'https://outside.test',
+    ]) {
+      expect(toWebPath(`gamefeedback:/${appRoutes.onboarding('ko', unsafe)}`, origin)).toBeNull();
+      expect(toWebPath(`gamefeedback:/${appRoutes.login('ko', unsafe)}`, origin)).toBeNull();
+    }
+  });
   it('opens a dedicated composer within the WebView and preserves its board and game', () => {
     const path = appRoutes.compose('ko', 'FRIEND_SALE', 'another-game');
     expect(toWebPath(`gamefeedback:/${path}`, origin)).toBe(path);

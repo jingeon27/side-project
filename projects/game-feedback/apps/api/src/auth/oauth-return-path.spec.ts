@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
+import { AuthReturnPathSchema } from '@game-feedback/contracts';
 import {
   OAUTH_RETURN_COOKIE,
   requestedReturnPath,
@@ -30,8 +31,37 @@ describe('OAuth 로그인 복귀 경로', () => {
     expect(cancelled.pathname).toBe('/en/login');
     expect(cancelled.searchParams.get('returnTo')).toBe('/en/boards/coaching?coachingRole=STUDENT');
     expect(cancelled.searchParams.get('login')).toBe('cancelled');
-    expect(
-      new URL(loginRedirect('https://feedback.test', path, 'onboarding')).searchParams.get('onboard'),
-    ).toBe('1');
+    const onboarding = new URL(loginRedirect('https://feedback.test', path, 'onboarding'));
+    expect(onboarding.pathname).toBe('/en/onboarding');
+    expect(onboarding.searchParams.get('returnTo')).toBe('/en/boards/coaching?coachingRole=STUDENT');
+    const existing = new URL(loginRedirect('https://feedback.test', path));
+    expect(existing.pathname).toBe('/en/boards/coaching');
+    expect(existing.searchParams.get('coachingRole')).toBe('STUDENT');
+  });
+
+  it.each(['ko', 'en', 'ja'])(
+    '신규 %s 사용자는 복귀할 홈을 가진 별도 가입 화면으로 보내야 한다',
+    (locale) => {
+      const destination = new URL(loginRedirect('https://feedback.test', `/${locale}`, 'onboarding'));
+      expect(destination.pathname).toBe(`/${locale}/onboarding`);
+      expect(destination.searchParams.get('returnTo')).toBe(`/${locale}`);
+      expect(destination.searchParams.has('onboard')).toBe(false);
+    },
+  );
+
+  it.each([
+    '/ko/../en/settings',
+    '/ko/%2e%2e/en/settings',
+    '/ko/login?returnTo=https%3A%2F%2Foutside.test',
+    '/ko/login?returnTo=%2F%2Foutside.test',
+    '/ko/login?returnTo=%2Fen%2Fsettings',
+    '/ko/login?returnTo=%2Fko%2Flogin',
+    '/ko/login?returnTo=%2Fko%2Fonboarding',
+    '/ko/onboarding?returnTo=%2Fko%2Flogin%3FreturnTo%3D%252Fko',
+    '/ko/login?returnTo=%2Fko&returnTo=%2Fko%2Fsettings',
+    '/ko/login/again',
+  ])('안전하지 않은 중첩 복귀 경로 %s를 거부해야 한다', (returnTo) => {
+    expect(AuthReturnPathSchema.safeParse(returnTo).success).toBe(false);
+    expect(() => requestedReturnPath({ query: { returnTo } } as unknown as Request)).toThrow();
   });
 });
