@@ -1,4 +1,9 @@
-import { createTestImage, graphqlRequest } from '@photo-contest/test-kit';
+import {
+  createTestImage,
+  graphqlRequest,
+  uploadTestPostMedia,
+  uploadTestSubmissionMedia,
+} from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './env';
 
@@ -34,22 +39,18 @@ export async function seedContest(cookie: string, groupId: string, title: string
 }
 
 export async function seedPhoto(cookie: string, contestId: string, caption: string): Promise<string> {
-  const { requestUploadUrl: ticket } = await productRequest<{
-    requestUploadUrl: { id: string; url: string };
-  }>(cookie, 'mutation($contestId: ID!) { requestUploadUrl(contestId: $contestId) { id url } }', {
+  const uploadId = await uploadTestSubmissionMedia(API_URL, {
+    cookie,
+    origin: WEB_ORIGIN,
     contestId,
+    body: await createTestImage(),
+    contentType: 'image/png',
   });
-  const response = await fetch(API_URL + ticket.url.replace(/^\/backend/, ''), {
-    method: 'POST',
-    headers: { Cookie: cookie, Origin: WEB_ORIGIN, 'Content-Type': 'image/png' },
-    body: new Uint8Array(await createTestImage()),
-  });
-  if (response.status !== 201) throw new Error('테스트 사진 업로드 실패');
   return (
     await productRequest<{ createSubmission: { id: string } }>(
       cookie,
       'mutation($contestId: ID!, $uploadId: ID!, $caption: String!) { createSubmission(contestId: $contestId, uploadId: $uploadId, caption: $caption, rightsConfirmed: true) { id } }',
-      { contestId, uploadId: ticket.id, caption },
+      { contestId, uploadId, caption },
     )
   ).createSubmission.id;
 }
@@ -60,20 +61,18 @@ export async function seedPost(
   title: string,
   imageOptions?: Parameters<typeof createTestImage>[0],
 ): Promise<string> {
-  const { requestPostUpload: ticket } = await productRequest<{
-    requestPostUpload: { id: string; url: string };
-  }>(cookie, 'mutation($groupId:ID!){requestPostUpload(groupId:$groupId){id url}}', { groupId });
-  const response = await fetch(API_URL + ticket.url.replace(/^\/backend/, ''), {
-    method: 'POST',
-    headers: { Cookie: cookie, Origin: WEB_ORIGIN, 'Content-Type': 'image/png' },
-    body: new Uint8Array(await createTestImage(imageOptions)),
+  const uploadId = await uploadTestPostMedia(API_URL, {
+    cookie,
+    origin: WEB_ORIGIN,
+    groupId,
+    body: await createTestImage(imageOptions),
+    contentType: 'image/png',
   });
-  if (response.status !== 201) throw new Error('테스트 게시물 업로드 실패');
   return (
     await productRequest<{ createPost: { id: string } }>(
       cookie,
       'mutation($groupId:ID!,$uploadId:ID!,$title:String!){createPost(groupId:$groupId,uploadId:$uploadId,title:$title,rightsConfirmed:true){id}}',
-      { groupId, uploadId: ticket.id, title },
+      { groupId, uploadId, title },
     )
   ).createPost.id;
 }

@@ -18,7 +18,6 @@ const config: CodegenConfig = {
         defaultScalarType: 'unknown',
         scalars: {
           DateTime: { input: 'string', output: 'string' },
-          Upload: { input: 'File | Blob', output: 'never' },
         },
       },
     },

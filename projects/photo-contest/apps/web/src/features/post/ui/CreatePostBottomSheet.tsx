@@ -7,11 +7,11 @@ import { useMutation } from '@apollo/client/react';
 import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
   CreatePostDocument,
+  CompletePostUploadDocument,
   GalleryPostsDocument,
   GroupContestDocument,
   GroupContestsDocument,
   RequestPostUploadDocument,
-  UploadPostMediaDocument,
 } from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
@@ -21,6 +21,7 @@ import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { resetGalleryPosts } from '../model/post.cache';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { postSchema } from '../model/post.schema';
 import { PostCategoryField } from './PostCategoryField';
 import { PostContestField } from './PostContestField';
@@ -48,7 +49,7 @@ export function CreatePostBottomSheet({
       rightsConfirmed: false,
     },
   });
-  const [uploadMedia] = useMutation(UploadPostMediaDocument);
+  const [completeUpload] = useMutation(CompletePostUploadDocument);
   const [requestUpload] = useMutation(RequestPostUploadDocument);
   const [createPost, { data: created }] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
@@ -96,11 +97,15 @@ export function CreatePostBottomSheet({
                   const content = file.type.startsWith('video/')
                     ? { body: file, contentType: file.type }
                     : await prepareUploadImage(file, browserImageCodec);
-                  const { data } = await requestUpload({ variables: { groupId } });
-                  if (!data) return;
-                  await uploadMedia({
-                    variables: { uploadId: data.requestPostUpload.id, file: content.body },
+                  const { data } = await requestUpload({
+                    variables: { groupId, contentType: content.contentType, byteSize: content.body.size },
                   });
+                  if (!data) return;
+                  await uploadToStorage(data.requestPostUpload, content.body);
+                  const { data: completed } = await completeUpload({
+                    variables: { uploadId: data.requestPostUpload.id },
+                  });
+                  if (!completed) return;
                   uploadId = data.requestPostUpload.id;
                 }
                 const { data: posted } = await createPost({
@@ -124,7 +129,7 @@ export function CreatePostBottomSheet({
                 toast.success('게시물을 올렸어요');
                 onClose();
               } catch (error) {
-                if (error instanceof ImagePrepareError)
+                if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
                   form.setError('media', { message: error.message }, { shouldFocus: true });
               }
             },
