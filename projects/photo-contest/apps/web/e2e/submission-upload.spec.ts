@@ -1,4 +1,5 @@
 import { createTestImage } from '@photo-contest/test-kit';
+
 import { seedContest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 

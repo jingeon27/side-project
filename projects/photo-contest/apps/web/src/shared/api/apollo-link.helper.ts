@@ -1,6 +1,5 @@
 import { ApolloLink, HttpLink } from '@apollo/client';
 import { ErrorLink } from '@apollo/client/link/error';
-import UploadHttpLink from 'apollo-upload-client/UploadHttpLink.mjs';
 import { OperationTypeNode } from 'graphql';
 import { throwError } from 'rxjs';
 

@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 
-import { createTestImage } from '@photo-contest/test-kit';
+import { createTestImage, uploadTestPostMedia } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest } from './support/photos';
@@ -38,8 +38,25 @@ test(
       path: `.data/screens/${testInfo.project.name}-group-profile.png`,
       animations: 'disabled',
     });
+    const storage = /\/backend\/local-post-uploads\?/;
+    await page.route(storage, (route) => route.abort('failed'));
+    await editor.getByRole('button', { name: '프로필 저장하기' }).click();
+    await expect(editor.getByRole('alert')).toHaveText(
+      '파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
+    );
+    await expect(editor.getByLabel('그룹 이름')).toHaveValue(name);
+    await expect(preview).toBeVisible();
+    await page.unroute(storage);
+    const mutations: string[] = [];
+    page.on('request', (req) => {
+      if (req.url().endsWith('/backend/graphql')) {
+        expect(req.headers()['content-type']).toContain('application/json');
+        mutations.push(req.postData() ?? '');
+      }
+    });
     await editor.getByRole('button', { name: '프로필 저장하기' }).click();
     await expect(editor).toHaveCount(0);
+    expect(mutations.some((body) => body.includes('completeGroupAvatarUpload'))).toBe(true);
     await expect(page.getByText(description, { exact: true })).toBeVisible();
     const { group: profile } = await productRequest<{ group: { avatarUrl: string } }>(
       owner,
@@ -69,7 +86,7 @@ test(
 test(
   '대회 좋아요 기본값 1을 변경하고 설정한 한도까지 선택·취소·재선택할 수 있어야 한다',
   { tag: ['@ios', '@desktop'] },
-  async ({ page, request, signIn }, testInfo) => {
+  async ({ page, signIn }, testInfo) => {
     const owner = await signIn('좋아요 한도 대회장');
     const group = await seedGroup(owner, '좋아요 한도 브라우저 그룹');
     const path = `/groups/${group.id}`;
@@ -87,21 +104,17 @@ test(
     if (!contestId) throw new Error('대회 ID가 있어야 한다');
     const contestPath = new URL(page.url()).pathname;
     for (const title of ['첫 번째 순간', '두 번째 순간', '세 번째 순간']) {
-      const { requestPostUpload: ticket } = await productRequest<{
-        requestPostUpload: { id: string; url: string };
-      }>(owner, 'mutation($groupId:ID!){requestPostUpload(groupId:$groupId){id url}}', { groupId: group.id });
-      expect(
-        (
-          await request.post(API_URL + ticket.url.replace('/backend', ''), {
-            headers: { Cookie: owner, Origin: WEB_ORIGIN, 'Content-Type': 'image/png' },
-            data: await createTestImage(),
-          })
-        ).status(),
-      ).toBe(201);
+      const uploadId = await uploadTestPostMedia(API_URL, {
+        cookie: owner,
+        origin: WEB_ORIGIN,
+        groupId: group.id,
+        body: await createTestImage(),
+        contentType: 'image/png',
+      });
       await productRequest(
         owner,
         'mutation($groupId:ID!,$contestId:ID!,$uploadId:ID!,$title:String!){createPost(groupId:$groupId,contestId:$contestId,uploadId:$uploadId,title:$title,rightsConfirmed:true){id}}',
-        { groupId: group.id, contestId, uploadId: ticket.id, title },
+        { groupId: group.id, contestId, uploadId, title },
       );
     }
     await page.goto(contestPath);

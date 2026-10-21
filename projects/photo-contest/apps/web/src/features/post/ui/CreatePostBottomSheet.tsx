@@ -6,13 +6,14 @@ import { useMutation } from '@apollo/client/react';
 
 import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
-  CreatePostDocument,
   CompletePostUploadDocument,
+  CreatePostDocument,
   GalleryPostsDocument,
   GroupContestDocument,
   GroupContestsDocument,
   RequestPostUploadDocument,
 } from '@/shared/api/generated';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
@@ -21,7 +22,6 @@ import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { resetGalleryPosts } from '../model/post.cache';
-import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { postSchema } from '../model/post.schema';
 import { PostCategoryField } from './PostCategoryField';
 import { PostContestField } from './PostContestField';

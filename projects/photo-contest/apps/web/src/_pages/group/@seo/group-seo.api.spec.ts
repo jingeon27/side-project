@@ -2,7 +2,12 @@ import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
-import { createTestImage, createTestUser, uploadTestPostMedia, graphqlRequest } from '@photo-contest/test-kit';
+import {
+  createTestImage,
+  createTestUser,
+  graphqlRequest,
+  uploadTestPostMedia,
+} from '@photo-contest/test-kit';
 
 import {
   ApproveGroupJoinRequestDocument,

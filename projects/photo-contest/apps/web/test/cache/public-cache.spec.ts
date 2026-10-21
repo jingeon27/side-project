@@ -1,6 +1,11 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 
-import { createTestImage, createTestUser, uploadTestPostMedia, graphqlRequest } from '@photo-contest/test-kit';
+import {
+  createTestImage,
+  createTestUser,
+  graphqlRequest,
+  uploadTestPostMedia,
+} from '@photo-contest/test-kit';
 
 import { expect, test } from '../../e2e/support/test';
 import { CACHE_API_URL, CACHE_WEB_ORIGIN } from './env';

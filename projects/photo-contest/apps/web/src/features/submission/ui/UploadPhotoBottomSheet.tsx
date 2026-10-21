@@ -8,10 +8,10 @@ import { ImagePlus } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 
 import {
+  CompleteSubmissionUploadDocument,
   CreateSubmissionDocument,
   RequestUploadDocument,
   SubmissionsDocument,
-  CompleteSubmissionUploadDocument,
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';

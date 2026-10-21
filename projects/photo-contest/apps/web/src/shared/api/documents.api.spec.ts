@@ -1,39 +1,33 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import {
-  createTestImage,
-  createTestVideo,
-  createTestUser,
-  graphqlRequest,
-  moveTestContest,
-} from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
-  CreatePostDocument,
+  createTestImage,
+  createTestUser,
+  createTestVideo,
+  graphqlRequest,
+  moveTestContest,
+} from '@photo-contest/test-kit';
+
+import {
+  CastVoteDocument,
+  CompleteGroupAvatarUploadDocument,
   CompletePostUploadDocument,
   CompleteSubmissionUploadDocument,
-  RegisterWithPasswordDocument,
-  LoginWithPasswordDocument,
-  DeletePostDocument,
-  GalleryPostsDocument,
-  LikePostDocument,
-  UnlikePostDocument,
-  CreatePostCommentDocument,
-  DeletePostCommentDocument,
-  PostCommentsDocument,
-  PostDownloadDocument,
-  PostSort,
-  RequestPostUploadDocument,
-  CastVoteDocument,
   ContestDocument,
   ContestResultsDocument,
   CreateContestDocument,
   CreateGroupContestDocument,
   CreateGroupDocument,
+  CreatePostCommentDocument,
+  CreatePostDocument,
   CreateSubmissionDocument,
+  DeletePostCommentDocument,
+  DeletePostDocument,
   DeleteSubmissionDocument,
   GalleryDocument,
+  GalleryPostsDocument,
   GroupDocument,
   GroupLeaderboardDocument,
   GroupProfileDocument,
@@ -41,20 +35,28 @@ import {
   InvitePreviewDocument,
   JoinGroupDocument,
   LikePostCommentDocument,
+  LikePostDocument,
   LikeSubmissionDocument,
+  LoginWithPasswordDocument,
   MeDocument,
   MyGroupsDocument,
   MyPhotoFeedDocument,
+  PostCommentsDocument,
+  PostDownloadDocument,
+  PostSort,
   RegenerateInviteLinkDocument,
+  RegisterWithPasswordDocument,
   ReportSubmissionDocument,
+  RequestGroupAvatarUploadDocument,
+  RequestPostUploadDocument,
   RequestUploadDocument,
   SubmissionsDocument,
   SubmissionSort,
   UnlikePostCommentDocument,
+  UnlikePostDocument,
   UnlikeSubmissionDocument,
   UpdateGroupProfileDocument,
   UpdatePostDocument,
-  UploadGroupAvatarDocument,
 } from './generated';
 
 const url = inject('apiUrl');
@@ -138,16 +140,29 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     contestId = contest.createContest.id;
   });
 
-  it('그룹 사진 multipart와 프로필 JSON 문서로 저장·조회·삭제해야 한다', async () => {
+  it('그룹 사진 presigned POST와 프로필 JSON 문서로 저장·조회·삭제해야 한다', async () => {
     const { createGroup: group } = await ok(CreateGroupDocument, owner, {
       name: '프로필 문서 그룹',
       description: '처음 소개',
     });
-    const uploaded = await uploadMutation(UploadGroupAvatarDocument, owner, {
+    const image = await createTestImage();
+    const { requestGroupAvatarUpload: ticket } = await ok(RequestGroupAvatarUploadDocument, owner, {
       groupId: group.id,
-      file: new File([new Uint8Array(await createTestImage())], 'group.png', { type: 'image/png' }),
+      contentType: 'image/png',
+      byteSize: image.length,
     });
-    const avatarId = uploaded.data?.uploadGroupAvatar.id;
+    const form = new FormData();
+    for (const field of ticket.fields) form.append(field.name, field.value);
+    form.append('file', new Blob([new Uint8Array(image)], { type: 'image/png' }), 'group.png');
+    const response = await fetch(url + ticket.url.replace('/backend', ''), {
+      method: 'POST',
+      headers: { Origin: origin },
+      body: form,
+    });
+    expect(response.status).toBe(201);
+    const {
+      completeGroupAvatarUpload: { id: avatarId },
+    } = await ok(CompleteGroupAvatarUploadDocument, owner, { uploadId: ticket.id });
     expect(avatarId).toBeTruthy();
     const { updateGroupProfile: profile } = await ok(UpdateGroupProfileDocument, owner, {
       groupId: group.id,

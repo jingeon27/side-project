@@ -8,13 +8,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createErrorToastLink } from '@/shared/api/apollo-link.helper';
 import {
+  CompleteSubmissionUploadDocument,
   ContestDocument,
   CreateSubmissionDocument,
   Phase,
   RequestUploadDocument,
   SubmissionsDocument,
   SubmissionSort,
-  CompleteSubmissionUploadDocument,
   type ContestQuery,
   type SubmissionCardFragment,
 } from '@/shared/api/generated';
