@@ -1,17 +1,18 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-import { seed } from '../seed';
+import { createHash } from 'node:crypto';
 
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { createHash } from 'node:crypto';
+
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+
 import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
 import { COOKIE, cookies, setCookie } from '../common/http/cookies';
 import { parse } from '../common/validation';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { TEST_ACCOUNT_FIXTURES } from '../seed';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
+import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
 import { AppAuthService } from './app-auth.service';
 import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';

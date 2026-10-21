@@ -1,12 +1,13 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { ApiError } from '../../common/http/api-error';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient } from '../../generated/prisma';
 import { authorDto, authorSelect } from '../../users/user.presenter';
 import type { SupportStatusDto } from './support-input.dto';
+
 const include = {
   requester: { select: authorSelect },
   conversation: { select: { updatedAt: true } },

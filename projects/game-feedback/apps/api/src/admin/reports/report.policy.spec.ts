@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { hiddenNotificationScope } from './report.policy';
 
 describe('콘텐츠 숨김 알림 정책', () => {

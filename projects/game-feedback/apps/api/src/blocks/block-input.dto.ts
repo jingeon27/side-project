@@ -1,6 +1,7 @@
-import { BlockInputSchema } from '@game-feedback/contracts';
 import { IsString, MinLength } from 'class-validator';
 import type { z } from 'zod';
+
+import { BlockInputSchema } from '@game-feedback/contracts';
 
 export class BlockUserDto {
   static readonly contract = BlockInputSchema;

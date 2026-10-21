@@ -1,10 +1,11 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient } from '../../generated/prisma';
 import type { CreateCategoryDto } from './category-input.dto';
+
 @Injectable()
 export class AdminCategoriesService {
   constructor(

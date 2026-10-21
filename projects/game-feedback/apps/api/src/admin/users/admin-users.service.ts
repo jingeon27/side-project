@@ -1,13 +1,14 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { ChatEvents } from '../../chat/chat.events';
 import { ApiError } from '../../common/http/api-error';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient } from '../../generated/prisma';
 import { userDto } from '../../users/user.presenter';
 import { type UserBanDto, type VerificationDto } from './user-input.dto';
+
 @Injectable()
 export class AdminUsersService {
   constructor(

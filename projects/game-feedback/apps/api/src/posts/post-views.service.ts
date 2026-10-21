@@ -1,11 +1,11 @@
-import { ACTIVE_POST } from '../common/content';
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import type { SessionRequest } from '../auth/session.types';
+import { ACTIVE_POST } from '../common/content';
 import { hash } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import type { PostViewDto } from './post-input.dto';
 

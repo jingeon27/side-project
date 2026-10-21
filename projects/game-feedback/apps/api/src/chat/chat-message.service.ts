@@ -1,17 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, Prisma } from '../generated/prisma';
+import { Prisma, PrismaClient } from '../generated/prisma';
 import { ChatAccessService } from './chat-access.service';
 import { ChatConversationService } from './chat-conversation.service';
 import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
 import { type SendMessageDto } from './chat-input.dto';
 import { ChatEvents } from './chat.events';
 import { messageDto, messageInclude } from './chat.presenter';
+
 @Injectable()
 export class ChatMessageService {
   constructor(

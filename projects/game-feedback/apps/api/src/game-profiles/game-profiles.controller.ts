@@ -1,9 +1,11 @@
+import { Controller, Get, HttpCode, Inject, Param, Post, Req, UseGuards } from '@nestjs/common';
+
 import { PlayerTagSchema } from '@game-feedback/contracts';
+
+import type { SessionRequest } from '../auth/session.types';
 import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
-import { UseGuards, Controller, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
 import { UserGuard } from '../common/http/session.guard';
 import { GameAccountDto } from './game-account-input.dto';
-import type { SessionRequest } from '../auth/session.types';
 import { GameProfilesService } from './game-profiles.service';
 
 @Controller('api')

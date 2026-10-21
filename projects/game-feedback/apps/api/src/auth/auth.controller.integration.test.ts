@@ -1,16 +1,19 @@
-import { randomUUID, randomBytes, createHash } from 'node:crypto';
-import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
+
 import type { INestApplication } from '@nestjs/common';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { SocialProviderSchema } from '@game-feedback/contracts';
-import { PrismaClient } from '../generated/prisma';
+
 import { createApp } from '../app';
-import { seed } from '../seed';
-import { assertDatabaseUrl, DemoProfileProvider } from '../security';
 import { hash } from '../common/crypto';
 import { resolveAppConfig } from '../config/app.config';
+import { PrismaClient } from '../generated/prisma';
+import { assertDatabaseUrl, DemoProfileProvider } from '../security';
+import { seed } from '../seed';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);

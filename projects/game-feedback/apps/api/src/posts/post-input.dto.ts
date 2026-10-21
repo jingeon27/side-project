@@ -1,6 +1,8 @@
-import { PostInputSchema, PostPatchSchema, PostViewInputSchema } from '@game-feedback/contracts';
-import { Length, IsIn, IsObject, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsIn, IsObject, IsOptional, IsString, IsUUID, Length, MinLength } from 'class-validator';
 import type { z } from 'zod';
+
+import { PostInputSchema, PostPatchSchema, PostViewInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from '../common/http/request-validation';
 
 export class CreatePostDto {

@@ -1,11 +1,11 @@
-import type { PrismaClient } from '../generated/prisma';
-import { assertDatabaseUrl } from '../database/database-url';
 import type { IdentityProvider, TIdentityProviders } from '../auth/providers/identity-provider';
-import { resolveIdentityProviders } from './identity-providers';
-import type { ProfileProvider } from '../game-profiles/providers/profile-provider';
+import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
+import type { ProfileProvider } from '../game-profiles/providers/profile-provider';
 import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
+import type { PrismaClient } from '../generated/prisma';
 import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
+import { resolveIdentityProviders } from './identity-providers';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 

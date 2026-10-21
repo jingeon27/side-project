@@ -1,14 +1,15 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, uniq } from 'es-toolkit';
 import { match } from 'ts-pattern';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { ApiError } from '../../common/http/api-error';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient } from '../../generated/prisma';
 import { type HideContentDto, type ReviewReportDto } from './report-input.dto';
 import { hiddenNotificationScope } from './report.policy';
+
 @Injectable()
 export class AdminReportsService {
   constructor(

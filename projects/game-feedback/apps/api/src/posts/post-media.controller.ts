@@ -10,20 +10,21 @@ import {
   Req,
   Res,
   UploadedFile,
-  UseInterceptors,
   UseGuards,
+  UseInterceptors,
   type CanActivate,
   type ExecutionContext,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import type { SessionRequest } from '../auth/session.types';
-import { MEDIA_FILE_LIMIT, mediaRange } from '../common/media-file';
-import { PostMediaService } from './post-media.service';
+
 import { requireUser } from '../auth/session-access';
+import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
+import { MEDIA_FILE_LIMIT, mediaRange } from '../common/media-file';
 import { MediaUploadDto } from '../common/media-upload.dto';
 import { PostMediaUploadService } from './post-media-upload.service';
+import { PostMediaService } from './post-media.service';
 
 @Injectable()
 export class PostMediaUploadGuard implements CanActivate {

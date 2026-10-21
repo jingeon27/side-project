@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+
 import type { Prisma } from '../generated/prisma';
 
 export type SessionRequest = Request & {

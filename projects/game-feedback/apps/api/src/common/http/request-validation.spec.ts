@@ -1,12 +1,14 @@
 import 'reflect-metadata';
+
 import { describe, expect, it } from 'vitest';
-import { RequestValidationPipe } from './request-validation';
-import { ListQueryDto } from './list-query.dto';
+
 import { CreateCategoryDto } from '../../admin/categories/category-input.dto';
 import { UserBanDto } from '../../admin/users/user-input.dto';
-import { CreatePostDto, UpdatePostDto } from '../../posts/post-input.dto';
 import { SendMessageDto } from '../../chat/chat-input.dto';
 import { GameAccountDto } from '../../game-profiles/game-account-input.dto';
+import { CreatePostDto, UpdatePostDto } from '../../posts/post-input.dto';
+import { ListQueryDto } from './list-query.dto';
+import { RequestValidationPipe } from './request-validation';
 
 const metadata = { type: 'body' as const };
 describe('decorated HTTP requests and generated contract compatibility', () => {

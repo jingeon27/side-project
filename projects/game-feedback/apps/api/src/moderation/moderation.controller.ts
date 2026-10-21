@@ -1,9 +1,10 @@
-import { UseGuards, Controller, HttpCode, Inject, Post, Req } from '@nestjs/common';
-import { UserGuard } from '../common/http/session.guard';
-import { CreateReportDto } from './report-input.dto';
-import { ValidatedBody } from '../common/http/request-validation';
+import { Controller, HttpCode, Inject, Post, Req, UseGuards } from '@nestjs/common';
+
 import type { SessionRequest } from '../auth/session.types';
+import { ValidatedBody } from '../common/http/request-validation';
+import { UserGuard } from '../common/http/session.guard';
 import { ModerationService } from './moderation.service';
+import { CreateReportDto } from './report-input.dto';
 
 @Controller('api')
 export class ModerationController {

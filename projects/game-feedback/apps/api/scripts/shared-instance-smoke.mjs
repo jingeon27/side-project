@@ -6,9 +6,9 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   readlinkSync,
-  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';

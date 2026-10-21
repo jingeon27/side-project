@@ -1,6 +1,7 @@
-import { FollowInputSchema } from '@game-feedback/contracts';
 import { IsBoolean } from 'class-validator';
 import type { z } from 'zod';
+
+import { FollowInputSchema } from '@game-feedback/contracts';
 
 export class FollowUserDto {
   static readonly contract = FollowInputSchema;

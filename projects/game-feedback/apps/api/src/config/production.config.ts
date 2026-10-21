@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { validateSharedInstanceEnvironment } from './shared-instance.config';
 
 const publicOrigin = z.url().refine((value) => {
