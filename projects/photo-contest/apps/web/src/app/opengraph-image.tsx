@@ -14,21 +14,25 @@ export default function Image() {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
-        background: '#12151c',
+        background: '#e85d4a',
         color: '#ffffff',
         fontFamily: 'sans-serif',
       }}
     >
       <svg width="130" height="130" viewBox="0 0 64 64">
         <path
-          d="M18 12H34C43 12 48 16.2 48 23.5C48 27.5 46 30.7 42.2 32.4C46.7 33.9 49.5 37.2 49.5 41.9C49.5 49.6 43.5 54 34 54H18Z M34 18L36.4 22.6L41 25L36.4 27.4L34 32L31.6 27.4L27 25L31.6 22.6Z M28 37V45H33.5C38 45 40.2 43.7 40.2 41S38 37 33.5 37Z"
-          transform="translate(-1 0)"
-          fill="#f7f5ef"
-          fillRule="evenodd"
+          d="m25 22 3.5-6h9l3.5 6H47a5 5 0 0 1 5 5v17a5 5 0 0 1-5 5H17a5 5 0 0 1-5-5V27a5 5 0 0 1 5-5Z"
+          fill="none"
+          stroke="#fff9f2"
+          strokeWidth="3.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
+        <path d="m32 26 3 6 6 3-6 3-3 6-3-6-6-3 6-3Z" fill="#fff9f2" />
+        <circle cx="45" cy="28" r="1.8" fill="#fff9f2" />
       </svg>
       <div style={{ display: 'flex', fontSize: 72, fontWeight: 700, marginTop: 30 }}>별사대</div>
-      <div style={{ display: 'flex', fontSize: 26, marginTop: 22, color: '#e8edf7', letterSpacing: 7 }}>
+      <div style={{ display: 'flex', fontSize: 26, marginTop: 22, color: '#fff0e9', letterSpacing: 7 }}>
         PHOTO · VIDEO · REMIX
       </div>
     </div>,
