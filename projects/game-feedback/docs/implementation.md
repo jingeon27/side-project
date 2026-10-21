@@ -1083,8 +1083,8 @@ Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게
 
 검증 결과:
 
-- API 전체 Vitest/Supertest 228개가 통과했다. 신규 통합 사양은 실제 migration을 적용한 격리 PostgreSQL에서 관계·권한·알림 중복·다른 게시글 FK·삭제·차단·숨김·삭제 동시성·탈퇴를 확인한다. 이전 migration 상태의 기존 댓글을 새 스키마로 올려 parentId=null과 본문이 보존되는지도 검사했다.
-- Web 전체 Vitest 153개와 SDK 전체 Vitest 57개가 통과했다. SDK 생성 함수의 부모 ID 전달과 부모/삭제 상태 누락, 잘못된 본문·작성자, 삭제 원문 노출을 실제 응답 검증으로 거부한다. 웹 사양은 답글 중첩·로그인·필수 본문·취소·전송 잠금·실패 초안과 SSR 차단 필터·삭제 댓글의 구조화 데이터를 다룬다.
+- API 전체 Vitest/Supertest 247개가 통과했다. 신규 통합 사양은 실제 migration을 적용한 격리 PostgreSQL에서 관계·권한·알림 중복·다른 게시글 FK·삭제·차단·숨김·삭제 동시성·탈퇴를 확인한다. 이전 migration 상태의 기존 댓글을 새 스키마로 올려 parentId=null과 본문이 보존되는지도 검사했다.
+- Web 전체 Vitest 169개와 SDK 전체 Vitest 57개가 통과했다. SDK 생성 함수의 부모 ID 전달과 부모/삭제 상태 누락, 잘못된 본문·작성자, 삭제 원문 노출을 실제 응답 검증으로 거부한다. 웹 사양은 답글 중첩·로그인·필수 본문·취소·전송 잠금·실패 초안과 SSR 차단 필터·삭제 댓글의 구조화 데이터를 다룬다.
 - Next production build/start의 Playwright 8개가 통과했다. 답글 작성·줄바꿈·실패 후 재시도·수정·원댓글 삭제 후 보존·마지막 답글 삭제, no-JS 공개 문서·JSON-LD, 차단 스레드의 API/SSR 일치와 기존 댓글 동작을 확인했다. 320/393/1440px 가로 넘침을 검사하고 모바일 라이트/다크 스크린샷을 직접 확인했다. 새 답글의 알림 표시·미읽음 수·대상 답글 이동·읽음 처리와 develop의 NestJS 공개 캐시 갱신·관리자 숨김·무효화 요청 인증도 재검증했다.
 - API·contracts·Web·SDK 타입 검사와 Web lint, API build, 신규 migration SQL 호환성 검사와 변경 파일 포맷 검사가 통과했다. 계약 → OpenAPI → SDK를 다시 생성해 생성 결과가 동일함을 확인했다.
 
