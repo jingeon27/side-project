@@ -59,7 +59,7 @@ corepack yarn workspace @side/game-feedback db:stop
 
 ## Web UI와 shadcn/ui
 
-로그인은 가로 760px 이하의 모바일 웹과 앱 WebView에서 `/:locale/login` 페이지로 이동하고, 데스크톱에서는 중앙 선택창으로 열린다. 두 화면은 같은 Google·카카오·Discord·X 버튼을 공유하며 미설정 제공자는 준비 상태로 표시한다. 뒤로 가기와 로그인 완료 시 원래 화면·필터·언어를 유지하고, OAuth 복귀 주소는 같은 서비스의 언어 경로만 허용한다. 필수 가입 정보 입력은 기존 독립 온보딩 시트가 담당한다.
+로그인은 가로 760px 이하의 모바일 웹과 앱 WebView에서 `/:locale/login` 페이지로 이동하고, 데스크톱에서는 중앙 선택창으로 열린다. 두 화면은 같은 Google·카카오·Discord·X 버튼을 공유하며 미설정 제공자는 준비 상태로 표시한다. 뒤로 가기와 로그인 완료 시 원래 화면·필터·언어를 유지하고, OAuth 복귀 주소는 같은 서비스의 언어 경로만 허용한다. 닉네임과 필수 약관 동의는 별도 `/:locale/onboarding` 페이지에서 받고 완료 후 원래 화면으로 돌아간다.
 
 웹은 공통 `@side/design-system`의 **shadcn/ui Base UI / base-nova** 컴포넌트를 사용한다. 공통 패키지와 Web의 components.json은 같은 base-nova/neutral/lucide 설정을 사용하고 ui/utils alias는 공통 소스를 가리킨다. 설치 원본과 조정 범위는 [공통 shadcn 구성](../../packages/design-system/SHADCN.md)에 정리했다.
 
@@ -117,7 +117,7 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 
 등록일시는 Asia/Seoul 기준의 `<time datetime>`과 JSON-LD `datePublished`로 제공한다. 조회수는 `/api/posts/:id/views`에서 같은 로그인 사용자 또는 브라우저 방문 ID를 24시간에 한 번 집계하고 새로고침/동시 재시도로 중복 증가하지 않는다. 조회수 변경은 글의 수정일을 바꾸지 않는다. 목록과 상세에 저장된 조회수를 표시하고 JSON-LD에도 ViewAction 수를 연결한다.
 
-입력용 팝업은 BottomSheet, 삭제와 차단처럼 버튼만 있는 확인은 중앙 모달을 사용한다. 별도 글쓰기 경로와 검색·채팅의 본문 입력은 각 화면에 유지한다.
+입력용 팝업은 핸들로 높이를 조절하는 공통 BottomSheet, 삭제와 차단처럼 버튼만 있는 확인은 중앙 모달을 사용한다. 별도 글쓰기 경로와 검색·채팅의 본문 입력은 각 화면에 유지한다.
 
 ## 명령
 
