@@ -11,9 +11,9 @@ export function resolveSiteUrl(value: string | undefined): URL {
   return url;
 }
 
-// Keep local production-build checks possible without configuring a hosted domain.
-// Production deployment must set SITE_URL explicitly; see docs/deployment.md.
-export const siteUrl = resolveSiteUrl(process.env.SITE_URL);
+export const siteUrl = resolveSiteUrl(
+  process.env.SITE_URL || (process.env.NODE_ENV === 'production' ? 'https://blog.bambyul.com' : undefined),
+);
 export const author = {
   name: '김진건',
   email: 'jingeon27@gmail.com',

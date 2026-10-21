@@ -6,7 +6,7 @@
     "skip": "Skip to content",
     "theme": "Switch color theme",
     "language": "Change language",
-    "siteTitle": "Jingeon Kim"
+    "siteTitle": "Bambyul Blog"
   },
   "common": {
     "all": "All",
@@ -41,7 +41,7 @@
     "github": "GitHub"
   },
   "home": {
-    "title": "Jingeon Kim's blog",
+    "title": "Bambyul Blog",
     "description": "I write about problems I encounter while developing software and what I learn along the way.",
     "latest": "Recent posts",
     "explore": "Categories"
