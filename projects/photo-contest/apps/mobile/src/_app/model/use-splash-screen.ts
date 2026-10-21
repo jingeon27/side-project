@@ -1,5 +1,6 @@
-import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
 import { useCallback, useEffect, useRef } from 'react';
+
+import { hideAsync, preventAutoHideAsync } from 'expo-splash-screen';
 
 /** 웹이 끝내 알리지 않아도(느린 네트워크) 스플래시에 갇히지 않게 한다. 그 뒤에는 로딩 오버레이가 보인다. */
 const SPLASH_MAX_MS = 10_000;

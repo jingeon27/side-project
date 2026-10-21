@@ -1,16 +1,16 @@
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 
-import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
-import { startAnalytics, trackEvent } from '@/features/analytics/model/analytics';
-import { UNKNOWN_APP_VERSION, readAppVersion } from '@/features/app-config/model/app-version';
-import { readStoreUrl } from '@/features/app-config/model/store';
-import { useVersionGate } from '@/features/app-config/model/use-version-gate';
-import { readInitialLink } from '@/features/navigation/model/read-initial-link';
-import type { IInitialLink } from '@/features/navigation/model/read-initial-link';
+import { StatusBar } from 'expo-status-bar';
+
 import { UpdateRequiredPageTemplate } from '@/_pages/update-required/@page/UpdateRequiredPageTemplate';
 import { WebShellPageTemplate } from '@/_pages/web-shell/@page/WebShellPageTemplate';
 import { toDeepLinkEvent } from '@/_pages/web-shell/lib/shell-events';
+import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
+import { startAnalytics, trackEvent } from '@/features/analytics/model/analytics';
+import { readAppVersion, UNKNOWN_APP_VERSION } from '@/features/app-config/model/app-version';
+import { readStoreUrl } from '@/features/app-config/model/store';
+import { useVersionGate } from '@/features/app-config/model/use-version-gate';
+import { readInitialLink, type IInitialLink } from '@/features/navigation/model/read-initial-link';
 
 import { keepSplashScreen, useSplashScreen } from './model/use-splash-screen';
 import { AppProviders } from './providers/AppProviders';

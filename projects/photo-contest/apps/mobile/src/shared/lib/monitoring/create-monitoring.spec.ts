@@ -1,8 +1,7 @@
 import type { ErrorEvent } from '@sentry/react-native';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createMonitoring, scrubBreadcrumb, scrubEvent } from './create-monitoring';
-import type { TMonitoringSdk } from './create-monitoring';
+import { createMonitoring, scrubBreadcrumb, scrubEvent, type TMonitoringSdk } from './create-monitoring';
 
 const DSN = 'https://public@sentry.example/1';
 

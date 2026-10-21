@@ -1,12 +1,13 @@
 import { randomBytes } from 'node:crypto';
 
+import type { BrowserContext } from '@playwright/test';
+
 import {
   createTestAppLoginTicket,
   createTestImage,
   createTestUser,
   graphqlRequest,
 } from '@photo-contest/test-kit';
-import type { BrowserContext } from '@playwright/test';
 
 import { E2E_API_URL, E2E_WEB_ORIGIN } from './e2e-env';
 

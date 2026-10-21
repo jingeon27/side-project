@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ANALYTICS_EVENT } from '@/features/analytics/config/events';

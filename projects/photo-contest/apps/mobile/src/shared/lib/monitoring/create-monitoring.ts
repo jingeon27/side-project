@@ -1,5 +1,6 @@
-import type * as Sentry from '@sentry/react-native';
 import type { ComponentType } from 'react';
+
+import type * as Sentry from '@sentry/react-native';
 
 export type TMonitoringSdk = Pick<typeof Sentry, 'init' | 'wrap' | 'captureMessage' | 'captureException'>;
 

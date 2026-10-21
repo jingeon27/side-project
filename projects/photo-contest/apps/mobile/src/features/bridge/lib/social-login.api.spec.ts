@@ -5,9 +5,9 @@ import { describe, expect, inject, it } from 'vitest';
 import { encodeBase64Url } from '@/shared/lib/base64url';
 
 import {
-  PKCE_VERIFIER_BYTES,
   buildAuthCallbackUrl,
   buildSocialLoginUrl,
+  PKCE_VERIFIER_BYTES,
   readAuthCallback,
 } from './social-login';
 
