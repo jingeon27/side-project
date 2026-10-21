@@ -1,20 +1,22 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+
+import { apiFetch } from './http';
 import {
-  getSession,
-  getPublicProfile,
-  getHealth,
-  getPost,
-  listChatMessages,
-  listCategories,
-  getGameProfile,
-  logout,
   ApiError,
   ApiResponseValidationError,
+  getGameProfile,
+  getHealth,
+  getPost,
+  getPublicProfile,
+  getSession,
+  listCategories,
+  listChatMessages,
+  logout,
   uploadChatAttachment,
 } from './index';
-import { apiFetch } from './http';
-import { sessionFixture, postFixture, profileFixture, messagesFixture } from './test/fixtures';
+import { messagesFixture, postFixture, profileFixture, sessionFixture } from './test/fixtures';
+
 function respond(payload: unknown, status = 200) {
   const fetcher = vi.fn(
     async (_url: RequestInfo | URL, _options?: RequestInit) =>

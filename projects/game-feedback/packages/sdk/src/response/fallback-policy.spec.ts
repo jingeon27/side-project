@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+
 import { applyResponseFallbacks } from './fallback-policy';
+
 describe('field fallback limits', () => {
   it('keeps array size and custom field constraints in the final schema validation', () => {
     const schema = z.object({
