@@ -1,4 +1,3 @@
-import { uploadTestSubmissionMedia } from '@photo-contest/test-kit';
 import { randomBytes } from 'node:crypto';
 
 import type { BrowserContext } from '@playwright/test';
@@ -9,6 +8,7 @@ import {
   createTestUser,
   graphqlRequest,
   uploadTestPostMedia,
+  uploadTestSubmissionMedia,
 } from '@photo-contest/test-kit';
 
 import { E2E_API_URL, E2E_WEB_ORIGIN } from './e2e-env';
