@@ -217,6 +217,9 @@ export class AuthService {
       async (tx) => {
         await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
         await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
+        await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "authorId" = ${u.id} ORDER BY "id" FOR UPDATE`;
+        // 타인의 답글은 탈퇴한 원댓글에서 분리해 보존한다.
+        await tx.comment.updateMany({ where: { parent: { authorId: u.id } }, data: { parentId: null } });
         await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
         await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
         await (tx ?? this.db).user.delete({ where: { id: u.id } });

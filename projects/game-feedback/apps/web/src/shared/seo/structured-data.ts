@@ -47,6 +47,7 @@ function person(author: { id: string; nickname: string }) {
 }
 export function postStructuredData(detail: PostDetail) {
   const { post, answers, comments } = detail;
+  const activeComments = comments.filter((comment) => !comment.isDeleted);
   return {
     '@context': 'https://schema.org',
     '@type': 'DiscussionForumPosting',
@@ -58,13 +59,13 @@ export function postStructuredData(detail: PostDetail) {
     author: person(post.author),
     datePublished: post.createdAt,
     dateModified: post.updatedAt,
-    commentCount: answers.length + comments.length,
+    commentCount: answers.length + activeComments.length,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: 'https://schema.org/ViewAction',
       userInteractionCount: post.viewCount,
     },
-    comment: [...answers, ...comments].slice(0, 50).map((item) => ({
+    comment: [...answers, ...activeComments].slice(0, 50).map((item) => ({
       '@type': 'Comment',
       text: item.body,
       datePublished: item.createdAt,

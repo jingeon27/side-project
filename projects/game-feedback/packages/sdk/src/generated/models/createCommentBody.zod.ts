@@ -8,9 +8,12 @@ import * as zod from 'zod';
 
 export const createCommentBodyBodyMax = 2000;
 
+export const createCommentBodyParentIdOneMax = 100;
+
 
 export const CreateCommentBody = zod.object({
-  "body": zod.string().min(1).max(createCommentBodyBodyMax)
+  "body": zod.string().min(1).max(createCommentBodyBodyMax),
+  "parentId": zod.union([zod.string().min(1).max(createCommentBodyParentIdOneMax),zod.null()]).optional()
 })
 
 export type CreateCommentBody = zod.input<typeof CreateCommentBody>;

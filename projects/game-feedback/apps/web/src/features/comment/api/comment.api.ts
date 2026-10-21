@@ -1,5 +1,6 @@
 import { createComment, updateComment, deleteComment } from '@game-feedback/sdk';
-export function postComment({ postId, body }: { postId: string; body: { body: string } }) {
+import type { CreateCommentInput } from '@/shared/api';
+export function postComment({ postId, body }: { postId: string; body: CreateCommentInput }) {
   return createComment(postId, body);
 }
 export function patchComment({ id, body }: { id: string; body: { body: string } }) {

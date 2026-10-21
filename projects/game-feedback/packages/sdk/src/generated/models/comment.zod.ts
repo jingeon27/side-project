@@ -6,32 +6,51 @@
  */
 import * as zod from 'zod';
 
-export const commentIdMax = 100;
+export const commentOneIdMax = 100;
 
-export const commentPostIdMax = 100;
+export const commentOnePostIdMax = 100;
+
+export const commentOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const commentOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const commentOneParentIdOneMax = 100;
 
 
-export const commentAuthorIdMax = 100;
+export const commentOneAuthorIdMax = 100;
 
 
-export const commentCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const commentUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const commentTwoIdMax = 100;
 
-export const Comment = zod.object({
-  "id": zod.string().min(1).max(commentIdMax),
-  "postId": zod.string().min(1).max(commentPostIdMax),
+export const commentTwoPostIdMax = 100;
+
+export const commentTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const commentTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+export const Comment = zod.union([zod.object({
+  "id": zod.string().min(1).max(commentOneIdMax),
+  "postId": zod.string().min(1).max(commentOnePostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(commentOneCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(commentOneUpdatedAtRegExp),
+  "parentId": zod.union([zod.string().min(1).max(commentOneParentIdOneMax),zod.null()]),
+  "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({
-  "id": zod.string().min(1).max(commentAuthorIdMax),
+  "id": zod.string().min(1).max(commentOneAuthorIdMax),
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
-}),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(commentCreatedAtRegExp),
-  "updatedAt": zod.iso.datetime({"offset":true}).regex(commentUpdatedAtRegExp)
 })
+}),zod.object({
+  "id": zod.string().min(1).max(commentTwoIdMax),
+  "postId": zod.string().min(1).max(commentTwoPostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(commentTwoCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(commentTwoUpdatedAtRegExp),
+  "parentId": zod.null(),
+  "isDeleted": zod.literal(true),
+  "body": zod.literal(""),
+  "author": zod.null()
+})])
 
 export type Comment = zod.input<typeof Comment>;
 export type CommentOutput = zod.output<typeof Comment>;

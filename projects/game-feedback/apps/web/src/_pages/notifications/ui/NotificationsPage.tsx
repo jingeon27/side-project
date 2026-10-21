@@ -9,6 +9,7 @@ import {
   notificationListOptions,
   NotificationItem,
   useReadNotificationMutation,
+  notificationPath,
 } from '@/features/notification';
 import { ErrorNotice, LoadingState, AsyncBoundary } from '@/shared/ui';
 interface INotificationsPageProps {
@@ -78,7 +79,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           <NotificationItem
             key={item.id}
             notification={item}
-            href={`/${locale}/posts/${item.postId}`}
+            href={notificationPath(locale, item)}
             onRead={() => mutation.mutate({ id: item.id })}
           />
         ))}

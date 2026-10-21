@@ -175,19 +175,34 @@ export const AnswerSchema = z.object({
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
 });
-export const CommentSchema = z.object({
+const CommentFields = {
   id: ResponseIdSchema,
   postId: ResponseIdSchema,
-  body: z.string().min(1),
-  author: AuthorSchema,
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
-});
+};
+export const CommentSchema = z.discriminatedUnion('isDeleted', [
+  z.object({
+    ...CommentFields,
+    parentId: ResponseIdSchema.nullable(),
+    isDeleted: z.literal(false),
+    body: z.string().min(1),
+    author: AuthorSchema,
+  }),
+  z.object({
+    ...CommentFields,
+    parentId: z.null(),
+    isDeleted: z.literal(true),
+    body: z.literal(''),
+    author: z.null(),
+  }),
+]);
 export const NotificationSchema = z.object({
   id: ResponseIdSchema,
-  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'FOLLOWED_POST']),
+  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
   postId: ResponseIdSchema,
   answerId: ResponseIdSchema.nullable(),
+  commentId: ResponseIdSchema.nullable().optional(),
   message: z.string().min(1),
   readAt: ResponseTimestampSchema.nullable(),
   createdAt: ResponseTimestampSchema,
@@ -322,6 +337,10 @@ export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: t
   .refine((v) => Object.keys(v).length > 0);
 export const AnswerInputSchema = z.object({ body: z.string().trim().min(10).max(10000) }).strict();
 export const CommentInputSchema = z.object({ body: z.string().trim().min(1).max(2000) }).strict();
+export const CreateCommentInputSchema = CommentInputSchema.extend({
+  parentId: ResponseIdSchema.nullable().optional(),
+});
+export type CreateCommentInput = z.infer<typeof CreateCommentInputSchema>;
 export const HelpfulInputSchema = z.object({ helpful: z.boolean() }).strict();
 export const GameAccountInputSchema = z.object({ playerTag: PlayerTagSchema }).strict();
 export const ReportInputSchema = z
@@ -451,6 +470,7 @@ export const schemas = {
   PostPatch: PostPatchSchema,
   AnswerInput: AnswerInputSchema,
   CommentInput: CommentInputSchema,
+  CreateCommentInput: CreateCommentInputSchema,
   HelpfulInput: HelpfulInputSchema,
   GameAccountInput: GameAccountInputSchema,
   ReportInput: ReportInputSchema,
@@ -693,7 +713,7 @@ export const operations: OperationSpec[] = [
     method: 'post',
     path: '/api/posts/{id}/comments',
     id: 'createComment',
-    body: CommentInputSchema,
+    body: CreateCommentInputSchema,
     response: CommentSchema,
   },
   {

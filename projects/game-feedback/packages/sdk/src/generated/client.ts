@@ -51,6 +51,7 @@ import type {
   ClearChatHistoryBody,
   CommentInput,
   ConversationInput,
+  CreateCommentInput,
   DemoInput,
   FollowUserBody,
   GameAccountInput,
@@ -1511,7 +1512,7 @@ export const getCreateCommentUrl = (id: string,) => {
 }
 
 export const createComment = async (id: string,
-    commentInput: CommentInput, options?: Parameters<typeof apiFetch>[1]): Promise<Comment> => {
+    createCommentInput: CreateCommentInput, options?: Parameters<typeof apiFetch>[1]): Promise<Comment> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1532,7 +1533,7 @@ return apiFetch<Comment>(getCreateCommentUrl(id),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(commentInput),
+    body: JSON.stringify(createCommentInput),
     schema: Comment
   }
 );}

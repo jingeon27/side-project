@@ -1,0 +1,182 @@
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Comment, Post } from '@/shared/api';
+import { PostCommentsSection } from './PostCommentsSection';
+
+const state = vi.hoisted(() => ({
+  user: { id: 'viewer' } as { id: string } | null,
+  login: vi.fn(),
+  create: vi.fn(),
+  notify: vi.fn(),
+}));
+
+vi.mock('@/features/auth', () => ({
+  useSession: () => ({ session: { user: state.user }, login: state.login }),
+}));
+vi.mock('@/features/comment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/comment')>()),
+  useCreateCommentMutation: () => useMutation({ mutationFn: state.create }),
+}));
+vi.mock('@/features/user', () => ({
+  AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
+  UserBadges: () => null,
+}));
+vi.mock('@/shared/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/shared/ui')>()),
+  useNotify: () => state.notify,
+}));
+vi.mock('./ContentActions', () => ({
+  ContentActions: ({ id }: { id: string }) => <button type="button">{id} 수정·삭제</button>,
+}));
+
+const author = {
+  id: 'author',
+  nickname: '먼저쓴사람',
+  isVerified: false,
+  supercellTag: null,
+  isTestAccount: false,
+};
+const post = {
+  id: 'post',
+  title: '함께 이야기해요',
+  body: '게시글 본문',
+  categoryId: 'category',
+  category: { id: 'category', slug: 'game', name: '게임', active: true },
+  author,
+  gameProfile: null,
+  viewCount: 0,
+  answerCount: 0,
+  helpfulCount: 0,
+  createdAt: '2026-10-20T00:00:00Z',
+  updatedAt: '2026-10-20T00:00:00Z',
+} satisfies Post;
+
+function comment(id: string, parentId: string | null = null): Comment {
+  return {
+    id,
+    parentId,
+    postId: post.id,
+    body: `${id} 본문`,
+    author,
+    isDeleted: false,
+    createdAt: '2026-10-20T00:00:00Z',
+    updatedAt: '2026-10-20T00:00:00Z',
+  };
+}
+
+function renderComments(comments: Comment[]) {
+  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <PostCommentsSection post={post} comments={comments} locale="ko" />
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  state.user = { id: 'viewer' };
+  state.login.mockReset();
+  state.create.mockReset().mockResolvedValue(comment('new-reply', 'first'));
+  state.notify.mockReset();
+});
+
+describe('comment replies', () => {
+  it('nests replies under their root and keeps replies beneath an anonymous deleted root', () => {
+    const removed: Comment = {
+      ...comment('removed'),
+      author: null,
+      body: '',
+      isDeleted: true,
+      parentId: null,
+    };
+    renderComments([
+      comment('first'),
+      removed,
+      comment('last'),
+      comment('first-reply', 'first'),
+      comment('removed-reply', 'removed'),
+    ]);
+    const list = screen.getByRole('list', { name: '댓글' });
+    const roots = within(list)
+      .getAllByRole('listitem')
+      .filter((item) => item.parentElement === list);
+    expect(roots).toHaveLength(3);
+    const [firstRoot, removedRoot] = roots;
+    if (!firstRoot || !removedRoot) throw new Error('Expected both comment threads.');
+    expect(within(firstRoot).getByRole('list', { name: '답글' }).textContent).toContain('first-reply 본문');
+    expect(within(removedRoot).getByText('삭제된 댓글이에요.')).toBeTruthy();
+    expect(within(removedRoot).getByRole('list', { name: '답글' }).textContent).toContain(
+      'removed-reply 본문',
+    );
+    expect(within(removedRoot).queryByRole('button', { name: 'removed 수정·삭제' })).toBeNull();
+    expect(screen.getByRole('heading', { name: '댓글4' })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: '답글' })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'first-reply 수정·삭제' })).toBeTruthy();
+  });
+
+  it('opens login instead of a reply form for a visitor', () => {
+    state.user = null;
+    renderComments([comment('first')]);
+    fireEvent.click(screen.getByRole('button', { name: '답글' }));
+    expect(state.login).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull();
+  });
+
+  it('posts to the selected root and closes only after success', async () => {
+    renderComments([comment('first'), comment('second')]);
+    const secondThread = screen.getByText('second 본문').closest('li');
+    if (!secondThread) throw new Error('Expected the second comment thread.');
+    fireEvent.click(within(secondThread).getByRole('button', { name: '답글' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '답글 내용' }), {
+      target: { value: '두 번째 댓글에 답해요' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '답글 등록' }));
+    await waitFor(() =>
+      expect(state.create).toHaveBeenCalledWith(
+        { postId: 'post', body: { body: '두 번째 댓글에 답해요', parentId: 'second' } },
+        expect.anything(),
+      ),
+    );
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull());
+    expect(state.notify).toHaveBeenCalledWith('답글을 남겼어요.');
+  });
+
+  it('locks the reply while saving and preserves the draft on failure for a retry', async () => {
+    const pending = Promise.withResolvers<Comment>();
+    state.create.mockReturnValueOnce(pending.promise);
+    renderComments([comment('first')]);
+    fireEvent.click(screen.getByRole('button', { name: '답글' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '답글 내용' }), {
+      target: { value: '실패해도 남아야 하는 답글' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '답글 등록' }));
+    await waitFor(() => expect(state.create).toHaveBeenCalledOnce());
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: '취소' }).disabled).toBe(true);
+    expect(screen.getByRole('button', { name: '답글 등록' }).getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: '답글 등록' }));
+    expect(state.create).toHaveBeenCalledOnce();
+    await act(async () => pending.reject(new Error('잠시 후 다시 시도해주세요.')));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('잠시 후 다시 시도해주세요.'));
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).value).toBe(
+      '실패해도 남아야 하는 답글',
+    );
+    fireEvent.click(screen.getByRole('button', { name: '답글 등록' }));
+    await waitFor(() => expect(state.create).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull());
+  });
+
+  it('cancels without submitting and opens an empty composer next time', () => {
+    renderComments([comment('first')]);
+    fireEvent.click(screen.getByRole('button', { name: '답글' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '답글 내용' }), {
+      target: { value: '취소할 초안' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    expect(state.create).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '답글' }));
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).value).toBe('');
+  });
+});

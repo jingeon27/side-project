@@ -28,8 +28,8 @@ const detail = {
     { id: 'answer-2', ...author('blocked') },
   ],
   comments: [
-    { id: 'comment-1', ...author('friend') },
-    { id: 'comment-2', ...author('blocked') },
+    { id: 'comment-1', parentId: null, isDeleted: false, ...author('friend') },
+    { id: 'comment-2', parentId: null, isDeleted: false, ...author('blocked') },
   ],
 };
 const fetchMock = vi.fn();

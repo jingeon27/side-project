@@ -8,6 +8,7 @@ import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { UserVisibilityService } from '../users/user-visibility.service';
+import { activeCommentWhere } from '../comments/comment-visibility';
 
 @Injectable()
 export class NotificationsService {
@@ -21,7 +22,10 @@ export class NotificationsService {
       cursor = decodeCursor(q.cursor),
       excluded = await this.visibility.excluded(req);
     const visible: Prisma.NotificationWhereInput = {
-      OR: [{ actorId: null }, { actorId: { notIn: excluded } }],
+      AND: [
+        { OR: [{ actorId: null }, { actorId: { notIn: excluded } }] },
+        { OR: [{ commentId: null }, { comment: { is: activeCommentWhere(excluded) } }] },
+      ],
     };
     const where: Prisma.NotificationWhereInput = {
       AND: [visible],
@@ -58,6 +62,7 @@ export class NotificationsService {
         type: n.type,
         postId: n.postId,
         answerId: n.answerId,
+        commentId: n.commentId,
         message: n.message,
         readAt: n.readAt?.toISOString() ?? null,
         createdAt: n.createdAt.toISOString(),

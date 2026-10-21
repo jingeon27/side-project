@@ -167,6 +167,10 @@ model Comment {
   id String @id @default(cuid())
   postId String
   post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  parentId String?
+  parent Comment? @relation("CommentReplies",fields:[parentId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
+  replies Comment[] @relation("CommentReplies")
+  notifications Notification[]
   authorId String
   author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
   body String
@@ -175,6 +179,8 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
+  @@unique([id,postId])
+  @@index([parentId,postId])
 }
 model CacheInvalidation {
   tag String @id
@@ -192,11 +198,14 @@ model Notification {
   postId String
   post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
   answerId String?
+  commentId String?
+  comment Comment? @relation(fields:[commentId],references:[id],onDelete:Cascade)
   type String
   message String
   readAt DateTime?
   createdAt DateTime @default(now())
   @@index([userId,createdAt,id])
+  @@index([commentId])
 }
 model Report {
   id String @id @default(cuid())

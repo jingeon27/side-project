@@ -33,6 +33,7 @@ export * from './conversationList.zod';
 export * from './createAnswerBody.zod';
 export * from './createCategoryBody.zod';
 export * from './createCommentBody.zod';
+export * from './createCommentInput.zod';
 export * from './createConversationBody.zod';
 export * from './createPostBody.zod';
 export * from './createReportBody.zod';

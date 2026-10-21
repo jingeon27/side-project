@@ -38,7 +38,9 @@ export function ContentDeleteDialog({
       dismissible={!isPending}
       title={t('정말 삭제할까요?')}
       description={t(
-        '삭제한 내용은 복구할 수 없어요. 요청을 삭제하면 연결된 피드백과 댓글도 보이지 않게 됩니다.',
+        type === 'COMMENT'
+          ? '댓글을 삭제해도 다른 사람이 남긴 답글은 유지됩니다.'
+          : '삭제한 내용은 복구할 수 없어요. 요청을 삭제하면 연결된 피드백과 댓글도 보이지 않게 됩니다.',
       )}
     >
       <form
