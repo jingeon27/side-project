@@ -20,7 +20,7 @@ export function PostCommentsBottomSheet({
   ...controls
 }: IBottomSheetControlProps & { postId: string }) {
   const [commentsRef, { refetch }] = useBackgroundQuery(PostCommentsDocument, {
-    variables: { postId, offset: 0, limit: PAGE_SIZE },
+    variables: { postId, parentId: null, offset: 0, limit: PAGE_SIZE },
     fetchPolicy: 'network-only',
     refetchWritePolicy: 'overwrite',
   });

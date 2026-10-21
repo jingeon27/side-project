@@ -59,15 +59,18 @@ describe('그룹 게시물 캐시', () => {
   });
   it('댓글 페이지를 게시물별로 나누고 첫 페이지 갱신은 이전 뒷페이지를 대체해야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });
-    const write = (postId: string, offset: number, id: string, overwrite = false) =>
+    const write = (postId: string, offset: number, id: string, overwrite = false, parentId?: string) =>
       cache.writeQuery({
         overwrite,
         query: PostCommentsDocument,
-        variables: { postId, offset, limit: 1 },
+        variables: { postId, parentId: parentId ?? null, offset, limit: 1 },
         data: {
+          postCommentCount: 2,
           postComments: [
             {
               __typename: 'PostComment',
+              parentId: parentId ?? null,
+              replyCount: 0,
               likeCount: 0,
               likedByMe: false,
               canInteract: true,
@@ -81,9 +84,12 @@ describe('그룹 게시물 캐시', () => {
           ],
         },
       });
-    const read = (postId: string) =>
+    const read = (postId: string, parentId?: string) =>
       cache
-        .readQuery({ query: PostCommentsDocument, variables: { postId, offset: 0, limit: 1 } })
+        .readQuery({
+          query: PostCommentsDocument,
+          variables: { postId, parentId: parentId ?? null, offset: 0, limit: 1 },
+        })
         ?.postComments.map(({ id }) => id);
     write('a', 0, 'a-new');
     write('a', 1, 'a-old');
@@ -93,6 +99,11 @@ describe('그룹 게시물 캐시', () => {
     write('a', 0, 'a-fresh', true);
     expect(read('a')).toEqual(['a-fresh']);
     expect(read('b')).toEqual(['b-new']);
+    write('a', 0, 'a-reply', false, 'a-fresh');
+    write('a', 0, 'other-reply', false, 'another-thread');
+    expect(read('a', 'a-fresh')).toEqual(['a-reply']);
+    expect(read('a', 'another-thread')).toEqual(['other-reply']);
+    expect(read('a')).toEqual(['a-fresh']);
   });
   it('전체 최신·각 그룹·이달 인기의 offset 목록을 섞지 않아야 한다', () => {
     const cache = new InMemoryCache({ typePolicies: postTypePolicies });

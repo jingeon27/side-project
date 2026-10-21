@@ -107,6 +107,8 @@ query PostDownload($postId: ID!) {
 }
 
 fragment PostCommentCard on PostComment {
+  parentId
+  replyCount
   likeCount
   likedByMe
   canInteract
@@ -121,13 +123,14 @@ fragment PostCommentCard on PostComment {
     avatar
   }
 }
-query PostComments($postId: ID!, $offset: Int!, $limit: Int!) {
-  postComments(postId: $postId, offset: $offset, limit: $limit) {
+query PostComments($postId: ID!, $parentId: ID = null, $offset: Int!, $limit: Int!) {
+  postCommentCount(postId: $postId, parentId: $parentId)
+  postComments(postId: $postId, parentId: $parentId, offset: $offset, limit: $limit) {
     ...PostCommentCard
   }
 }
-mutation CreatePostComment($postId: ID!, $body: String!) {
-  createPostComment(postId: $postId, body: $body) {
+mutation CreatePostComment($postId: ID!, $body: String!, $parentId: ID) {
+  createPostComment(postId: $postId, body: $body, parentId: $parentId) {
     ...PostCommentCard
   }
 }
@@ -187,5 +190,11 @@ mutation UnlikePostComment($commentId: ID!) {
     id
     likeCount
     likedByMe
+  }
+}
+
+mutation UpdatePost($postId: ID!, $title: String!, $body: String, $categoryId: ID) {
+  updatePost(postId: $postId, title: $title, body: $body, categoryId: $categoryId) {
+    ...GalleryPostCard
   }
 }

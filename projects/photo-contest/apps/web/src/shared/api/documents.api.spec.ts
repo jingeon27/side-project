@@ -13,6 +13,7 @@ import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
   CreatePostDocument,
+  UpdatePostDocument,
   UploadPostMediaDocument,
   UploadSubmissionPhotoDocument,
   RegisterWithPasswordDocument,
@@ -352,6 +353,25 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     expect(
       (await execute(LikePostDocument, outsider, { postId: photo.id })).errors?.[0]?.extensions?.code,
     ).toBe('FORBIDDEN');
+    expect(
+      (
+        await ok(UpdatePostDocument, member, {
+          postId: photo.id,
+          title: '문서로 수정한 사진',
+          body: '수정한 내용',
+          categoryId: null,
+        })
+      ).updatePost,
+    ).toMatchObject({
+      id: photo.id,
+      title: '문서로 수정한 사진',
+      body: '수정한 내용',
+      mediaUrl: photo.mediaUrl,
+    });
+    expect(
+      (await execute(UpdatePostDocument, outsider, { postId: photo.id, title: '권한 없는 수정' })).errors?.[0]
+        ?.extensions?.code,
+    ).toBe('FORBIDDEN');
     const comment = (
       await ok(CreatePostCommentDocument, member, { postId: photo.id, body: '문서로 남긴 댓글' })
     ).createPostComment;
@@ -411,10 +431,35 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
         likeCount: 0,
         likedByMe: false,
       });
+    const reply = (
+      await ok(CreatePostCommentDocument, owner, {
+        postId: photo.id,
+        parentId: comment.id,
+        body: '문서로 남긴 답글',
+      })
+    ).createPostComment;
+    expect(reply).toMatchObject({ parentId: comment.id, replyCount: 0, canInteract: true });
+    expect(await ok(PostCommentsDocument, owner, commentVariables)).toMatchObject({
+      postCommentCount: 1,
+      postComments: [{ id: comment.id, replyCount: 1 }],
+    });
+    const replyVariables = { ...commentVariables, parentId: comment.id };
+    expect((await ok(PostCommentsDocument, owner, replyVariables)).postComments).toEqual([reply]);
+    await ok(LikePostCommentDocument, member, { commentId: reply.id });
+    expect((await ok(PostCommentsDocument, undefined, replyVariables)).postComments[0]).toMatchObject({
+      id: reply.id,
+      likeCount: 1,
+      likedByMe: false,
+      canInteract: false,
+    });
     expect((await ok(DeletePostCommentDocument, owner, { commentId: comment.id })).deletePostComment).toBe(
       true,
     );
     expect((await ok(PostCommentsDocument, member, commentVariables)).postComments).toEqual([]);
+    expect(await ok(PostCommentsDocument, owner, replyVariables)).toMatchObject({
+      postCommentCount: 0,
+      postComments: [],
+    });
     await ok(DeletePostDocument, owner, { postId: photo.id });
     expect(
       (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),
