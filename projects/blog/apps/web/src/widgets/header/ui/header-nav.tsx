@@ -1,6 +1,8 @@
 'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
 import { labels, type UiLocale } from '@/shared/config/labels';
 
 export function HeaderNav({ locale }: { locale: UiLocale }) {

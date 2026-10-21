@@ -1,10 +1,9 @@
+import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { render } from '@testing-library/react';
+import type { Article } from '@/entities/article/model/types';
 
 import { ArticleMeta } from './article-meta';
-
-import type { Article } from '@/entities/article/model/types';
 
 const article: Article = {
   id: 'cache',

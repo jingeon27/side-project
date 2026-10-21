@@ -1,10 +1,11 @@
 import type { MDXComponents } from 'mdx/types';
+
 import { CodeBlock } from '@/shared/ui/code-block/code-block';
-import { Summary } from '@/shared/ui/mdx/summary';
-import { Decision } from '@/shared/ui/mdx/decision';
 import { Callout } from '@/shared/ui/mdx/callout';
+import { Decision } from '@/shared/ui/mdx/decision';
 import { Figure } from '@/shared/ui/mdx/figure';
 import { MdxImage } from '@/shared/ui/mdx/image';
+import { Summary } from '@/shared/ui/mdx/summary';
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {

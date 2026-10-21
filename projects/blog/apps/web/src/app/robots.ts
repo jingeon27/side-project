@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+
 import { absoluteUrl, siteUrl } from '@/shared/config/site';
 
 export default function robots(): MetadataRoute.Robots {

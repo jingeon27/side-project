@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { siteUrl } from '@/shared/config/site';
-
 import { articleMetadata, pageMetadata, type ArticleSeo } from '@/shared/lib/seo/metadata';
 
 const article: ArticleSeo = {

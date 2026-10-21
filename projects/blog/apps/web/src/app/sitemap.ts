@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+
 import { getArticles } from '@/entities/article/lib/get-articles';
 import { locales } from '@/i18n/routing';
 import { absoluteUrl } from '@/shared/config/site';

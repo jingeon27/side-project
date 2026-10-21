@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createRss } from './rss';
-
 import type { ArticleSeo } from './metadata';
+import { createRss } from './rss';
 
 const article: ArticleSeo = {
   id: 'cache',

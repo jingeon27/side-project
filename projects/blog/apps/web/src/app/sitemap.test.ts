@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import sitemap from './sitemap';
-
 import { getArticles } from '@/entities/article/lib/get-articles';
-
 import { siteUrl } from '@/shared/config/site';
+
+import sitemap from './sitemap';
 
 describe('multilingual SEO', () => {
   it('publishes exactly the existing article URLs in the sitemap', () => {

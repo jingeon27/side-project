@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useSyncExternalStore } from 'react';
+
 import type { Locale } from '@/i18n/routing';
 import { labels } from '@/shared/config/labels';
 import {

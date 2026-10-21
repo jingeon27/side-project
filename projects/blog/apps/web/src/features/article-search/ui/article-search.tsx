@@ -1,12 +1,15 @@
 'use client';
 
-import { Command } from 'cmdk';
-import { useRouter } from 'next/navigation';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { Command } from 'cmdk';
+
 import type { Article } from '@/entities/article/model/types';
 import { labels, type UiLocale } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 import { SearchIcon } from '@/shared/ui/icon';
+
 import { matchesArticleSearch, normalizeSearchText } from '../lib/matches-article-search';
 
 export function ArticleSearch({

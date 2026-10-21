@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 
