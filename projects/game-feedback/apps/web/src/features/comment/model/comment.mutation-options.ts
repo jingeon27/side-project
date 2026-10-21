@@ -1,5 +1,5 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { postDetailOptions, postListOptions } from '@/features/post';
+import { postDetailOptions, postListOptions, refreshServerPostDetail } from '@/features/post';
 import { notificationListOptions } from '@/features/notification';
 import { deleteCommentById, patchComment, postComment } from '../api/comment.api';
 function createRefreshCommentCaches(client: QueryClient) {
@@ -8,6 +8,7 @@ function createRefreshCommentCaches(client: QueryClient) {
       client.invalidateQueries(postDetailOptions(postId)),
       client.invalidateQueries(postListOptions()),
       client.invalidateQueries(notificationListOptions()),
+      refreshServerPostDetail(postId),
     ]);
   };
 }

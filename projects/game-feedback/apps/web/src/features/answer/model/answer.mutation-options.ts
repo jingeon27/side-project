@@ -1,5 +1,5 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { postDetailOptions, postListOptions } from '@/features/post';
+import { postDetailOptions, postListOptions, refreshServerPostDetail } from '@/features/post';
 import { notificationListOptions } from '@/features/notification';
 import { deleteAnswerById, patchAnswer, postAnswer, postHelpfulAnswer } from '../api/answer.api';
 function createRefreshAnswerCaches(client: QueryClient) {
@@ -8,6 +8,7 @@ function createRefreshAnswerCaches(client: QueryClient) {
       client.invalidateQueries(postDetailOptions(postId)),
       client.invalidateQueries(postListOptions()),
       client.invalidateQueries(notificationListOptions()),
+      refreshServerPostDetail(postId),
     ]);
   };
 }
