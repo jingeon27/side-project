@@ -1,7 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
 import { AppState } from 'react-native';
+
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
+
 import { currentWebViewProps, fakeWebView } from '@/test/ui/fake-web-view';
+
 import { App } from './App';
 
 const failure = vi.hoisted(() => ({ active: false }));

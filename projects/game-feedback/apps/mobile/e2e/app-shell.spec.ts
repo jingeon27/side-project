@@ -1,4 +1,4 @@
-import { test, expect } from './support/fixtures';
+import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
 test('WebView test account persists posts, comments and private chat across reload', async ({

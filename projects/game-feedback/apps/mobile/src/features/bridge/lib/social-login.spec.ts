@@ -1,6 +1,9 @@
 import { createHash } from 'node:crypto';
+
 import { describe, expect, it, vi } from 'vitest';
+
 import { parseLoginCallback, socialLogin } from './social-login';
+
 const verifier = 'a'.repeat(43);
 const code = 'b'.repeat(43);
 describe('system-browser OAuth', () => {

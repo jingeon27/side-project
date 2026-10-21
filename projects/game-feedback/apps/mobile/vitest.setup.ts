@@ -1,6 +1,8 @@
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+
 import { resetFakeWebView } from './src/test/ui/fake-web-view';
+
 vi.mock('react-native-webview', async () => ({
   default: (await import('./src/test/ui/fake-web-view')).FakeWebView,
 }));

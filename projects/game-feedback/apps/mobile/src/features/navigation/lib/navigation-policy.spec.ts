@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
+
 import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
+
+import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
+
 const origin = 'https://feedback.example';
 describe('WebView navigation and deep links', () => {
   it('opens a dedicated composer within the WebView and preserves its board and game', () => {

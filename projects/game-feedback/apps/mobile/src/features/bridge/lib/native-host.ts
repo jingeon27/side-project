@@ -1,9 +1,9 @@
 import {
   parseWebMessage,
   WebPathSchema,
+  type TLoginProvider,
   type TLoginResult,
   type TNativeMessage,
-  type TLoginProvider,
 } from '@game-feedback/bridge';
 
 interface INativeHostOptions {

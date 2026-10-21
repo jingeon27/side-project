@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import { WebViewChannel } from './web-view-channel';
 
 const origin = 'https://feedback.example';
