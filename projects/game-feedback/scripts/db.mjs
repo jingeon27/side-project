@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile, unlink, open, access } from 'node:fs/promises';
-import { createServer, createConnection } from 'node:net';
-import { randomBytes } from 'node:crypto';
-import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { access, mkdir, open, readFile, unlink, writeFile } from 'node:fs/promises';
+import { createConnection, createServer } from 'node:net';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertNode, environment, projectDir, yarn } from './env.mjs';
+
 import { guardDatabaseUrl } from './database-guard.mjs';
+import { assertNode, environment, projectDir, yarn } from './env.mjs';
 
 const command = process.argv[2] ?? 'status';
 const isTest = process.argv.includes('--test');

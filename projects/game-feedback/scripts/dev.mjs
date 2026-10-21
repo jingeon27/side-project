@@ -1,5 +1,6 @@
-import { createServer } from 'node:net';
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
+
 import { assertNode, environment, rootDir } from './env.mjs';
 
 const demo = process.argv.includes('--demo');
