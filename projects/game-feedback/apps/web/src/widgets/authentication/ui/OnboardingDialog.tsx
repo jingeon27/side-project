@@ -1,6 +1,6 @@
 'use client';
 
-import { Gamepad2 } from 'lucide-react';
+import Image from 'next/image';
 import { useCompleteOnboarding } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { BottomSheet } from '@/shared/ui';
@@ -24,10 +24,10 @@ export function OnboardingDialog({ open, onSuccess }: IOnboardingDialogProps) {
       onOpenChange={() => {}}
       dismissible={false}
       title="어떤 이름으로 만날까요?"
-      description={t('플레이메이트에 오신 것을 환영해요.')}
+      description={t('Game Mate에 오신 것을 환영해요.')}
     >
       <div className="login-icon">
-        <Gamepad2 size={34} />
+        <Image src="/icon.svg" alt="" aria-hidden width={64} height={64} unoptimized />
       </div>
       <AccountSetupForm
         submitLabel={t('가입 완료하기')}

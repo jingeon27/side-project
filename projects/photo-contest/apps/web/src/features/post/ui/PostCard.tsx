@@ -1,22 +1,15 @@
 'use client';
 
 import { useFragment, useMutation } from '@apollo/client/react';
-import { Heart, MessageCircle, Trash2, Video } from 'lucide-react';
+import { Heart, MessageCircle, Video } from 'lucide-react';
 import Link from 'next/link';
 import { overlay } from 'overlay-kit';
 
 import {
-  DeletePostDocument,
   GalleryPostCardFragmentDoc,
   GalleryPostsDocument,
-  GroupContestDocument,
-  GroupContestResultsDocument,
-  GroupContestsDocument,
-  HiddenGalleryPostsDocument,
   LikePostDocument,
   PostKind,
-  PublicGalleryPostsDocument,
-  SetPostHiddenDocument,
   UnlikePostDocument,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -25,11 +18,10 @@ import { useHaptics } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
-import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
-import { resetGalleryPosts, refreshMonthlyPopular } from '../model/post.cache';
+import { refreshMonthlyPopular } from '../model/post.cache';
 import { PostAttachments } from './PostAttachments';
-import { PostCategoryEditor } from './PostCategoryEditor';
+import { PostActionsMenu } from './PostActionsMenu';
 import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
 import { PostDownloadButton } from './PostDownloadButton';
 
@@ -50,35 +42,20 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
     onQueryUpdated: refreshMonthlyPopular,
     awaitRefetchQueries: true,
   });
-  const [hide, hideState] = useMutation(SetPostHiddenDocument, {
-    refetchQueries: [GalleryPostsDocument, PublicGalleryPostsDocument, HiddenGalleryPostsDocument],
-    awaitRefetchQueries: true,
-  });
-  const [remove] = useMutation(DeletePostDocument, {
-    update: resetGalleryPosts,
-    refetchQueries: [
-      GalleryPostsDocument,
-      PublicGalleryPostsDocument,
-      GroupContestDocument,
-      GroupContestsDocument,
-      GroupContestResultsDocument,
-    ],
-    awaitRefetchQueries: true,
-  });
   if (!complete) return null;
 
   return (
     <article
       id={`post-${id}`}
-      className="min-w-0 border-b border-line bg-surface pb-6 desktop:rounded-card desktop:border desktop:p-5"
+      className="min-w-0 rounded-card border border-line bg-surface p-4 shadow-card desktop:p-5"
       aria-label={post.title}
     >
-      <div className="flex items-center gap-3 pb-3">
+      <div className="flex items-center gap-3 pb-4">
         <Avatar name={post.author.nickname} src={post.author.avatar} size="sm" />
         <div className="flex min-w-0 flex-1 flex-col">
           <Link
             href={ROUTES.GROUP(post.groupId)}
-            className="relative w-fit max-w-full truncate text-label text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-muted active:opacity-60"
+            className="relative w-fit max-w-full truncate text-label font-semibold text-ink before:absolute before:inset-x-0 before:-inset-y-3 hover:text-muted active:opacity-60"
           >
             {post.groupName}
           </Link>
@@ -87,64 +64,14 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
         {post.kind === PostKind.Video ? (
           <Video aria-label="동영상" className="size-4 shrink-0 text-muted" />
         ) : null}
-        {post.canModerate && !preview ? (
-          <Button
-            variant="ghost"
-            size="md"
-            loading={hideState.loading}
-            aria-label={`${post.title} 숨기기`}
-            onClick={() =>
-              overlay.open(({ isOpen, close, unmount }) => (
-                <ConfirmDialog
-                  isOpen={isOpen}
-                  onClose={close}
-                  unmount={unmount}
-                  title="게시물을 숨길까요?"
-                  description="공개 피드와 그룹에서 보이지 않게 됩니다. 숨긴 게시물 관리에서 다시 공개할 수 있어요."
-                  confirmLabel="숨기기"
-                  onConfirm={() => hide({ variables: { postId: id, hidden: true } }).then(() => undefined)}
-                />
-              ))
-            }
-          >
-            숨기기
-          </Button>
-        ) : null}
-        {!preview ? <PostCategoryEditor postId={id} /> : null}
-        {post.canDelete ? (
-          <Button
-            variant="ghost"
-            size="md"
-            className="px-3 text-muted"
-            aria-label={`${post.title} 삭제`}
-            onClick={() =>
-              overlay.open(({ isOpen, close, unmount }) => (
-                <ConfirmDialog
-                  isOpen={isOpen}
-                  onClose={close}
-                  unmount={unmount}
-                  title="게시물을 삭제할까요?"
-                  description="사진·동영상과 좋아요가 함께 삭제됩니다."
-                  confirmLabel="게시물 삭제하기"
-                  tone="danger"
-                  onConfirm={async () => {
-                    await remove({ variables: { postId: id } });
-                    toast.success('게시물을 삭제했어요');
-                  }}
-                />
-              ))
-            }
-          >
-            <Trash2 aria-hidden className="size-4" />
-          </Button>
-        ) : null}
+        {!preview ? <PostActionsMenu postId={id} /> : null}
       </div>
       {post.contest ? (
         <Link
           href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
           className="mb-3 inline-flex min-h-touch items-center rounded-control bg-sunken px-3 text-caption text-ink"
         >
-          대회 참여 · {post.contest.title}
+          대회 참여 · {post.contest.title} · 좋아요 1인 {post.contest.likeLimit}개
         </Link>
       ) : null}
       {post.category ? (
@@ -153,12 +80,12 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
           {post.category.archivedAt ? ' · 보관됨' : ''}
         </p>
       ) : null}
-      <h3 className="mb-3 wrap-break-word text-title text-ink">{post.title}</h3>
+      <h3 className="mb-4 wrap-break-word text-title leading-snug text-ink">{post.title}</h3>
       <PostAttachments postId={id} />
       {post.body ? (
         <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
       ) : null}
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line pt-3">
         <div className="flex flex-wrap items-center gap-2">
           {preview ? (
             <ButtonLink href={ROUTES.GROUP(post.groupId)} variant="secondary" size="md">
@@ -167,9 +94,9 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
           ) : (
             <>
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="md"
-                className="gap-2 rounded-full border-line px-3"
+                className="gap-2 rounded-full px-3"
                 aria-label={`${post.title} 좋아요`}
                 aria-pressed={post.likedByMe}
                 loading={likeState.loading || unlikeState.loading}

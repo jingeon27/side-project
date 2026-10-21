@@ -70,3 +70,6 @@ export const MAX_GRAPHQL_UPLOAD_FILES = 1;
 
 export const GROUP_CATEGORY_LIMIT = 20;
 export const GROUP_CATEGORY_NAME_LIMIT = 20;
+export const GROUP_DESCRIPTION_LIMIT = 500;
+export const GROUP_AVATAR_EDGE_PX = 512;
+export const CONTEST_LIKE_LIMIT_MAX = 100;

@@ -15,7 +15,7 @@ describe('SEO 출력', () => {
     expect(result.openGraph).toMatchObject({
       url: 'https://moment.example/groups/group-1',
       locale: 'ko_KR',
-      siteName: '웃긴순간',
+      siteName: '별사대',
     });
     expect(result.twitter).toMatchObject({
       card: 'summary_large_image',

@@ -13,11 +13,15 @@ python3 - "$ROOT/.env" <<'PY'
 import pathlib, re, sys
 e = dict(line.strip().split('=', 1) for line in pathlib.Path(sys.argv[1]).read_text().splitlines()
          if line.strip() and not line.lstrip().startswith('#'))
-for key in ['GAME_FEEDBACK_DOMAIN', 'PHOTO_CONTEST_DOMAIN']:
+keys = ['GAME_FEEDBACK_DOMAIN', 'GAME_FEEDBACK_API_DOMAIN', 'PHOTO_CONTEST_DOMAIN', 'PHOTO_CONTEST_API_DOMAIN']
+for key in keys:
     if not re.fullmatch(r'[a-z0-9][a-z0-9.-]+\.[a-z]{2,}', e.get(key, '')):
         raise SystemExit('Configure distinct public service domains.')
-if e['GAME_FEEDBACK_DOMAIN'] == e['PHOTO_CONTEST_DOMAIN']:
-    raise SystemExit('Services must use distinct domains.')
+if len({e[key] for key in keys}) != len(keys):
+    raise SystemExit('Services and APIs must use distinct domains.')
+for service in ['GAME_FEEDBACK', 'PHOTO_CONTEST']:
+    if e[f'{service}_API_DOMAIN'] != f"api.{e[f'{service}_DOMAIN']}":
+        raise SystemExit('API domains must use the api.<service-domain> form.')
 if e.get('GAME_FEEDBACK_S3_BUCKET') == e.get('PHOTO_CONTEST_S3_BUCKET'):
     raise SystemExit('Services must use distinct private S3 buckets.')
 PY

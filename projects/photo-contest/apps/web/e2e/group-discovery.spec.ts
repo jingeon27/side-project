@@ -81,7 +81,7 @@ test(
       },
       await response.text(),
     );
-    expect(seo.title).toBe(`${name} · 웃긴순간`);
+    expect(seo.title).toBe(`${name} · 별사대`);
     expect(seo.canonical).toBe(WEB_ORIGIN + groupPath);
     expect(seo.ogImage).toBe(`${WEB_ORIGIN}/backend/media/${postId}`);
     expect(seo.robots).toContain('index');

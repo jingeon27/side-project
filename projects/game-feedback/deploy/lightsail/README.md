@@ -18,7 +18,7 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
 2. 아래 명령을 **직접** 실행하면 유료 인스턴스와 Static IP를 만든다. 이 저장소를 수정하거나 PR을 만드는 것만으로 AWS가 생성되지 않는다.
 
    ```sh
-   GF_BUDGET_EMAIL=jingeon27@gmail.com bash projects/game-feedback/deploy/lightsail/provision.sh <서울-키페어-이름>
+   GF_BUDGET_EMAIL=contact@bambyul.com bash projects/game-feedback/deploy/lightsail/provision.sh <서울-키페어-이름>
    ```
 
    활성 Ubuntu 24.04 blueprint를 조회하고 `stack.yaml`을 적용한다. SSH 허용 CIDR은 기본 전체 IPv4이며 키 인증을 사용한다. 제한할 때에는 GitHub 배포 러너의 접근 경로도 준비해야 한다. SSH 키는 GitHub 전용 키를 서버의 `ubuntu/.ssh/authorized_keys`에 별도 등록하는 편이 좋다. Docker 그룹 사용자는 호스트 관리 권한이 있으므로 전용 키를 관리한다.
@@ -30,7 +30,7 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
    | 변수                                     | 값                                             |
    | ---------------------------------------- | ---------------------------------------------- |
    | `GF_DOMAIN`                              | `https://` 없이 실제 도메인                    |
-   | `GF_CONTACT_EMAIL`                       | `jingeon27@gmail.com`                          |
+   | `GF_CONTACT_EMAIL`                       | `contact@bambyul.com`                          |
    | `GF_IMAGE_PREFIX`                        | `ghcr.io/jingeon27/side-project-game-feedback` |
    | `GF_DB_PASSWORD`, `GF_DB_ADMIN_PASSWORD` | 각각 따로 생성한 `openssl rand -hex 32` 값     |
    | OAuth client ID/secret                   | 아래 제공자 중 적어도 한 쌍의 실제 운영 키     |

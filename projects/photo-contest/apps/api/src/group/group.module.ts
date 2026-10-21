@@ -9,9 +9,15 @@ import { GroupJoinRequestService } from './group-join-request.service';
 import { GroupResolver } from './group.resolver';
 import { GroupService } from './group.service';
 import { MembershipService } from './membership.service';
+import { GroupProfileService } from './group-profile.service';
+import { GroupProfileResolver } from './group-profile.resolver';
+import { GroupProfileController } from './group-profile.controller';
 
 @Module({
+  controllers: [GroupProfileController],
   providers: [
+    GroupProfileService,
+    GroupProfileResolver,
     GroupCategoryService,
     GroupCategoryResolver,
     GroupAdministrationService,

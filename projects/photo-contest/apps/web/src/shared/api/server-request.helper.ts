@@ -8,7 +8,9 @@ export function getServerApiUrl(env: Record<string, string | undefined> = proces
 
 /** API가 상태를 바꾸는 요청(POST)에서 확인하는 웹 origin */
 export function getWebOrigin(env: Record<string, string | undefined> = process.env) {
-  return new URL(env.WEB_ORIGIN || DEFAULT_WEB_ORIGIN).origin;
+  return new URL(
+    env.WEB_ORIGIN || (env.NODE_ENV === 'production' ? 'https://contest.bambyul.com' : DEFAULT_WEB_ORIGIN),
+  ).origin;
 }
 
 /**

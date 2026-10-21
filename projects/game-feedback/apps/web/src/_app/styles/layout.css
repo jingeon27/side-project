@@ -55,17 +55,15 @@
     align-items: center;
   }
   .brand-mark {
-    background: var(--color-accent);
-    color: var(--color-on-accent);
     display: grid;
     place-items: center;
     width: 35px;
     height: 35px;
     border-radius: var(--radius-card);
-    transform: rotate(-7deg);
   }
-  .brand-mark svg {
-    transform: rotate(7deg);
+  .brand-mark img {
+    width: 100%;
+    height: 100%;
   }
   .mobile-page-title {
     display: none;
@@ -375,9 +373,6 @@
       width: 31px;
       height: 31px;
       border-radius: var(--radius-control);
-    }
-    .brand-mark svg {
-      width: 21px;
     }
     .brand > span:last-child {
       gap: 6px;

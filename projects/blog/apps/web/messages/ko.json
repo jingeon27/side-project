@@ -6,7 +6,7 @@
     "skip": "본문으로 건너뛰기",
     "theme": "화면 테마 바꾸기",
     "language": "언어 변경",
-    "siteTitle": "김진건"
+    "siteTitle": "밤별 블로그"
   },
   "common": {
     "all": "전체",
@@ -41,7 +41,7 @@
     "github": "GitHub"
   },
   "home": {
-    "title": "김진건의 블로그",
+    "title": "밤별 블로그",
     "description": "개발하면서 겪은 문제와 배운 내용을 기록합니다.",
     "latest": "최근 글",
     "explore": "카테고리"

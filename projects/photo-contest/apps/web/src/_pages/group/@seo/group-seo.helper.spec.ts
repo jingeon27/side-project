@@ -9,6 +9,8 @@ const origin = 'https://moment.example';
 const data: IGroupSeoData = {
   group: {
     __typename: 'Group',
+    description: '',
+    avatarUrl: null,
     id: 'group-1',
     name: '웃긴 고양이',
     visibility: GroupVisibility.Public,
@@ -42,6 +44,29 @@ const data: IGroupSeoData = {
 };
 
 describe('공개 그룹 SEO', () => {
+  it('공개 그룹의 소개와 대표 사진을 공유 메타데이터·JSON-LD에 반영해야 한다', () => {
+    const profile = {
+      ...data,
+      group: {
+        ...data.group,
+        description: '고양이들의 특별한 순간',
+        avatarUrl: '/backend/groups/group-1/avatar/avatar-1',
+      },
+    };
+    expect(groupMetadata(profile, origin)).toMatchObject({
+      description: profile.group.description,
+      openGraph: { images: [`${origin}${profile.group.avatarUrl}`, `${origin}/backend/media/post-1`] },
+    });
+    expect(groupJsonLd(profile, origin)?.['@graph']).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          '@type': 'CollectionPage',
+          description: profile.group.description,
+          image: `${origin}${profile.group.avatarUrl}`,
+        }),
+      ]),
+    );
+  });
   it('그룹의 실제 이름·멤버 수·사진으로 canonical과 공유 메타데이터를 만들어야 한다', () => {
     const metadata = groupMetadata(data, origin);
     expect(metadata.title).toBe('웃긴 고양이');

@@ -95,3 +95,17 @@ corepack yarn format:check
 웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/typescript-config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
 
 새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.
+
+## Bambyul · 밤별
+
+‘밤하늘의 별’이라는 의미의 공통 브랜드다. 작성자 김진건의 이름에 담긴 ‘별’과 ‘하늘’에서 가져왔다.
+
+| 제품                    | 프로젝트      | 운영 웹                     | 운영 API                                         |
+| ----------------------- | ------------- | --------------------------- | ------------------------------------------------ |
+| 밤별 블로그             | blog          | https://blog.bambyul.com    | 별도 API 서버 없음 (`api.blog.bambyul.com` 예약) |
+| Game Mate               | game-feedback | https://game.bambyul.com    | https://api.game.bambyul.com/api                 |
+| 별사대 · 별난 사진 대회 | photo-contest | https://contest.bambyul.com | https://api.contest.bambyul.com/graphql          |
+
+서비스 로고는 서로 다른 실루엣과 색을 쓴다. 밤별 블로그는 남색의 책과 별, Game Mate는 초록색 게임패드, 별사대는 코랄색의 카메라와 별 렌즈다. 각 서비스의 favicon·Apple 아이콘·공유 이미지·네이티브 앱 아이콘은 해당 로고를 따른다.
+
+웹·WebView는 각 웹 origin의 `/api` 또는 `/backend` 프록시를 사용한다. API 공개 도메인과 서버 간 내부 upstream 주소를 구분하며, 별사대의 API GraphQL도 Next 프록시를 거쳐 공개 캐시를 무효화한다. DNS·TLS·호스팅 연결은 [공통 배포 안내](deploy/shared-instance/README.md)와 [블로그 배포 안내](projects/blog/docs/deployment.md)를 따른다.
