@@ -20,6 +20,12 @@ import { sessionToken } from './session-token';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
 import { SocialIdentityService } from './social-identity.service';
+import {
+  OAUTH_RETURN_COOKIE,
+  requestedReturnPath,
+  savedReturnPath,
+  loginRedirect,
+} from './oauth-return-path';
 
 @Injectable()
 export class AuthService {
@@ -105,6 +111,7 @@ export class AuthService {
     const provider = name;
     const identity = this.config.identityProviders[provider];
     if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const returnPath = requestedReturnPath(req);
     const appChallenge = req.query.app_challenge;
     if (
       appChallenge !== undefined &&
@@ -125,6 +132,13 @@ export class AuthService {
       },
     });
     setCookie(res, 'gamefeedback_oauth', state, 10 * 60 * 1000, this.config.production);
+    setCookie(
+      res,
+      OAUTH_RETURN_COOKIE,
+      Buffer.from(returnPath).toString('base64url'),
+      10 * 60 * 1000,
+      this.config.production,
+    );
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     res.redirect(identity.authorizationUrl({ state, nonce, challenge }));
   }
@@ -146,11 +160,13 @@ export class AuthService {
     if (consumed.count !== 1)
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 이미 사용되었습니다.');
     setCookie(res, 'gamefeedback_oauth', '', 0, this.config.production);
+    const returnPath = savedReturnPath(req);
+    setCookie(res, OAUTH_RETURN_COOKIE, '', 0, this.config.production);
     if (!code) {
       res.redirect(
         attempt.appChallenge
           ? 'gamefeedback://auth/callback?error=login_failed'
-          : `${this.config.webOrigin}/ko?login=cancelled`,
+          : loginRedirect(this.config.webOrigin, returnPath, 'cancelled'),
       );
       return;
     }
@@ -171,7 +187,7 @@ export class AuthService {
       return;
     }
     await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : subject, { provider });
-    res.redirect(`${this.config.webOrigin}/ko${user ? '' : '?onboard=1'}`);
+    res.redirect(loginRedirect(this.config.webOrigin, returnPath, user ? undefined : 'onboarding'));
   }
 
   async onboard(req: SessionRequest, res: Response, input: OnboardDto) {

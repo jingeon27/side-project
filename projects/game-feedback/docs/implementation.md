@@ -1013,3 +1013,20 @@ PostMedia/ChatAttachment의 uploadedAt과 추가형 migration으로 기존 첨�
 - API/Web/SDK typecheck, Web lint, API build와 immutable install이 통과했다. OpenAPI/SDK 재생성 diff가 없고 변경 파일 Prettier와 migration 호환성 검사(신규 SQL 1개)가 통과했다. shared-instance smoke의 S3 조회 검사를 307·서명 URL·Range에 맞춰 변경하고 두 runner 파일의 Node 문법을 검사했다.
 
 이 컴퓨터의 Docker 실행 파일이 없어 컨테이너 smoke는 실행하지 못했다. 실제 AWS 버킷 IAM/CORS와 브라우저 송수신, 실제 Sentry·Amplitude 콘솔 수신은 자격 증명이 없어 확인하지 않았다. 로컬 fixture 결과를 실제 외부 수신이나 공개 배포 완료로 기록하지 않는다. 개발 서버·개발 DB는 변경하지 않았으며 테스트는 전용 55444와 격리 schema만 사용했다. 종료 후 소유한 테스트 DB만 중지하고 데이터를 보존했다.
+
+## 모바일 로그인 페이지와 소셜 버튼 (2026-10-21)
+
+모바일 웹(760px 이하)과 앱 WebView의 로그인 진입을 `/:locale/login`으로 분리했다. 데스크톱은 공통 디자인 시스템의 중앙 Dialog를 사용한다. 로그인 페이지·페이지별 Topbar·데스크톱 Dialog를 각각 조립하고 제공자 버튼·약관 링크만 공유한다. 버튼은 Google·카카오·Discord·X 로고와 색상을 구분하며 50px 높이·일정한 간격·진행 상태·미설정 상태를 제공한다. 기존 온보딩과 테스트 계정 API는 유지한다. 새 의존성·DB migration·루트 파일 변경은 없다.
+
+로그인 경로는 bridge의 알려진 화면으로 등록하고 원래 화면·검색 조건을 복귀 경로로 보존한다. 외부 URL, 다른 언어의 복귀 경로와 로그인 순환은 웹 라우터에서 거부하며 언어 변경 시 복귀 화면도 같은 언어로 바꾼다. API는 안전한 서비스 언어 경로를 Zod로 검증하고 10분짜리 HttpOnly OAuth 복귀 쿠키로 전달해 성공·신규 가입·취소 후의 언어와 화면을 유지한다. 외부 주소와 잘못된 쿠키는 거부하거나 기존 홈으로 복구한다. 앱의 PKCE·일회용 코드 교환과 시스템 인증 프로토콜은 유지한다.
+
+검증 결과:
+
+- API Vitest 단위 85개와 로그인 관련 Supertest 통합 18개 통과. 복귀 경로·외부 주소 거부·취소·기존 앱 인증을 확인했다.
+- Web Vitest 134개, Bridge 9개, Mobile 43개 통과. API/Web/Bridge/Mobile typecheck, Web lint와 API build 통과.
+- Next production build/start에서 Web Playwright 7개가 최종 한 번에 통과했다. 모바일 페이지 전환·320px 가로 넘침·393px 버튼 및 라이트/다크 화면·데스크톱 Dialog와 포커스 복귀·언어 변경·세션 갱신 후 원래 게시판 복귀·OAuth form 목적지·미설정 버튼·저장된 테마의 no-JS 적용을 확인했다.
+- Android Chromium/iOS WebKit의 실제 native host를 사용한 Playwright 4개가 통과했다. 앱 뒤로 가기, 딥링크, foreground 세션 갱신, 시스템 인증 진입과 취소 후 로그인 페이지 유지를 확인했다. 실기기 검증으로 기록하지 않는다.
+- 393px 라이트/다크와 1440px 데스크톱의 스크린샷을 직접 확인했다. 테스트는 전용 55444의 격리 schema와 별도 Web/API 포트를 사용했다.
+- 계약 → OpenAPI → SDK를 다시 생성해 SDK diff가 없음을 확인했다. 변경 코드·문서의 Prettier와 `git diff --check`를 통과했다.
+
+실제 외부 제공자의 계정 로그인은 실행하지 않았다. API는 가짜 제공자, 웹은 OAuth 시작 요청 가로채기, 앱은 시스템 인증 취소 대역을 사용했다. 실행 중인 개발 Web/API와 개발 DB는 변경하지 않았다. 검증 후 소유한 테스트 DB만 중지하고 데이터를 보존했다.

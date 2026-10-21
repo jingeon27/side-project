@@ -469,4 +469,34 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect(exchange.body.user.nickname).toBe('x플레이어');
     await agent.post('/api/auth/app/exchange').set('Origin', origin).send({ code, verifier }).expect(400);
   });
+
+  it('OAuth callback preserves the login page locale and return destination', async () => {
+    const agent = supertest.agent(fixture().app.getHttpServer());
+    const returnTo = '/ja/login?returnTo=' + encodeURIComponent('/ja/boards/coaching?coachingRole=STUDENT');
+    const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await agent
+      .get('/api/auth/social/google/callback')
+      .query({ state, code: 'fake-code' })
+      .expect(302);
+    const destination = new URL(callback.headers.location);
+    expect(destination.origin).toBe(origin);
+    expect(destination.pathname).toBe('/ja/login');
+    expect(destination.searchParams.get('returnTo')).toBe('/ja/boards/coaching?coachingRole=STUDENT');
+    expect(
+      callback.headers['set-cookie'].some((value: string) => value.startsWith('gamefeedback_oauth_return=;')),
+    ).toBe(true);
+  });
+  it('OAuth cancellation returns to the selected locale and external return destinations are rejected', async () => {
+    const agent = supertest.agent(fixture().app.getHttpServer());
+    await agent.get('/api/auth/social/google').query({ returnTo: 'https://outside.test' }).expect(400);
+    const returnTo = '/en/login?returnTo=%2Fen%2Fsettings';
+    const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const cancelled = await agent.get('/api/auth/social/google/callback').query({ state }).expect(302);
+    const destination = new URL(cancelled.headers.location);
+    expect(destination.pathname).toBe('/en/login');
+    expect(destination.searchParams.get('returnTo')).toBe('/en/settings');
+    expect(destination.searchParams.get('login')).toBe('cancelled');
+  });
 });
