@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import { translate, isLocale, type TLocale } from '@/shared/i18n/index.server';
+
+import { isLocale, translate, type TLocale } from '@/shared/i18n/index.server';
+
 import { excerpt, getSeoConfig, pageUrl } from './config';
+
 export const SITE_NAME = '플레이메이트';
 const baseKeywords = ['게임 커뮤니티', '게임 피드백', '게임코치', SITE_NAME];
 interface IPageMetadata {

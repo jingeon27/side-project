@@ -1,8 +1,11 @@
 'use client';
+
 import type { TCoachingDetails } from '@game-feedback/contracts';
+
 import { useI18n } from '@/shared/i18n';
 import { formatWon } from '@/shared/lib/money';
-import { coachingRoles, coachingPricingTypes } from '../model/coaching';
+
+import { coachingPricingTypes, coachingRoles } from '../model/coaching';
 
 export function CoachingSummary({ details }: { details: TCoachingDetails }) {
   const { t, locale } = useI18n();

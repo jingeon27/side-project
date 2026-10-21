@@ -1,5 +1,7 @@
 import { locale as rootLocale } from 'next/root-params';
-import { BoardsRoute, boardMetadata } from '@/_pages/boards/index.server';
+
+import { boardMetadata, BoardsRoute } from '@/_pages/boards/index.server';
+
 import { isClientNavigation } from '../ui/DocumentContent';
 
 export interface IBoardDocumentProps {

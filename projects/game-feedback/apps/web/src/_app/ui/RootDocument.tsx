@@ -1,10 +1,13 @@
 import { Suspense, type ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
-import { getSeoConfig } from '@/shared/seo';
+
 import type { TLocale } from '@/shared/i18n';
+import { getSeoConfig } from '@/shared/seo';
+
 import { serviceContext } from '../providers/service-context.server';
-import { BootstrapBoundary } from './BootstrapBoundary';
 import { ServiceProviders } from '../providers/ServiceProviders';
+import { BootstrapBoundary } from './BootstrapBoundary';
+
 export const rootViewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

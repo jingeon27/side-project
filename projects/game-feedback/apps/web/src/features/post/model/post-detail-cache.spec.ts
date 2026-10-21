@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest';
+
 import { refreshServerPostDetail } from './post-detail-cache';
 
 const { expirePostDetailCache } = vi.hoisted(() => ({ expirePostDetailCache: vi.fn() }));

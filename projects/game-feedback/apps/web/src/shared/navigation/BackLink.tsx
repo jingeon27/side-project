@@ -1,7 +1,9 @@
 'use client';
+
+import { useEffect, type ComponentProps } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, type ComponentProps } from 'react';
+
 import { backNavigation, registerLogicalParent } from './browser-navigation';
 
 export function BackLink({

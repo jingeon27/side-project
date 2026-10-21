@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { themePreference } from './theme';
 
 describe('theme preference', () => {

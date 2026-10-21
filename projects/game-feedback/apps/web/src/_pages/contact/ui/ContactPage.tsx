@@ -1,6 +1,8 @@
 'use client';
-import { SupportChatButton } from '@/widgets/support';
+
 import { useI18n } from '@/shared/i18n';
+import { SupportChatButton } from '@/widgets/support';
+
 export function ContactPage() {
   const { t } = useI18n();
   return (

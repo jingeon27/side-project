@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+
 import { ChatMessageBody } from './ChatMessageBody';
 
 describe('chat message links', () => {

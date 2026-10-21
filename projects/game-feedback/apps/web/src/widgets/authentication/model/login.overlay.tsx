@@ -1,9 +1,13 @@
 'use client';
-import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
-import { openOverlay } from '@/shared/ui';
+
 import { useEffect } from 'react';
+
 import { overlay } from 'overlay-kit';
+
 import { useSession } from '@/features/auth';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
+import { openOverlay } from '@/shared/ui';
+
 import { LoginDialog } from '../ui/LoginDialog';
 import { OnboardingDialog } from '../ui/OnboardingDialog';
 

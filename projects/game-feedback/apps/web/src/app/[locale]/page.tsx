@@ -1,7 +1,9 @@
 import { locale as rootLocale } from 'next/root-params';
+
 import { isClientNavigation } from '@/_app/index.server';
-import { PublicPageJsonLd, staticPageMetadata } from '@/shared/seo';
 import { FeedRoute } from '@/_pages/feed/index.server';
+import { PublicPageJsonLd, staticPageMetadata } from '@/shared/seo';
+
 async function RouteContent({
   searchParams,
 }: {

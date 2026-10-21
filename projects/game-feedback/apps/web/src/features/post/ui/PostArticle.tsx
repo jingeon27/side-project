@@ -1,14 +1,18 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import type { ReactNode } from 'react';
-import type { Post } from '@/shared/api';
-import { Avatar, RichTextBody } from '@/shared/ui';
-import { formatDateTime } from '@/shared/lib/date';
-import { PostStatus } from './PostStatus';
-import { CoachingSummary } from '@/features/coaching';
-import { FriendSaleSummary } from '@/features/friend-sale';
+
 import { BattleSummary } from '@/features/battle';
 import { boardByKind } from '@/features/board';
+import { CoachingSummary } from '@/features/coaching';
+import { FriendSaleSummary } from '@/features/friend-sale';
+import type { Post } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { formatDateTime } from '@/shared/lib/date';
+import { Avatar, RichTextBody } from '@/shared/ui';
+
+import { PostStatus } from './PostStatus';
+
 interface IPostArticleProps {
   post: Post;
   authorContent?: ReactNode;

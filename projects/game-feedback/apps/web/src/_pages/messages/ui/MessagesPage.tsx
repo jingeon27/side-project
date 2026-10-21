@@ -1,11 +1,16 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import Link from 'next/link';
+
+import { ArrowUpRight, MessageCircle } from 'lucide-react';
+
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
-import { ArrowUpRight, MessageCircle } from 'lucide-react';
+
 import { useSession } from '@/features/auth';
-import { LoadingState, AsyncBoundary } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
+import { AsyncBoundary, LoadingState } from '@/shared/ui';
+
 import { ChatConnectionStatus } from './ChatConnectionStatus';
 import { ChatWelcome } from './ChatWelcome';
 import { ConversationPane } from './ConversationPane';

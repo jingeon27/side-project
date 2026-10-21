@@ -1,10 +1,12 @@
 'use client';
-import { savePendingLogin, trackEvent, flushAnalytics, ANALYTICS_EVENT } from '@/shared/analytics';
 
 import type { FormEvent } from 'react';
-import { Button } from '@side/design-system';
+
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+import { Button } from '@side/design-system';
+
 import { useNativeLogin } from '@/features/auth';
+import { ANALYTICS_EVENT, flushAnalytics, savePendingLogin, trackEvent } from '@/shared/analytics';
 import { useI18n } from '@/shared/i18n';
 import { isNativeApp } from '@/shared/native';
 import { ErrorNotice } from '@/shared/ui';

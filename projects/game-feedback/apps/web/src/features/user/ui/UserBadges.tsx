@@ -1,7 +1,10 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { BadgeCheck } from 'lucide-react';
+
 import type { Author } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+
 interface IUserBadgesProps {
   author: Author;
   compact?: boolean;

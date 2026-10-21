@@ -1,10 +1,12 @@
 'use client';
 
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
-import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
+
+import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
 import { UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary } from '@/shared/ui';

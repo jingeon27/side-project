@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('composer examples follow the classification, battle type, coaching role and fee while keeping drafts', async ({
   page,

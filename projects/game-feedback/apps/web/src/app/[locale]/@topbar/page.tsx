@@ -1,4 +1,5 @@
 import { locale as rootLocale } from 'next/root-params';
+
 import { FeedTopbar } from '@/_pages/feed';
 
 export default async function Page() {

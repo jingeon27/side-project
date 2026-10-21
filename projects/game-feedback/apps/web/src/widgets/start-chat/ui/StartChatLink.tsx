@@ -1,13 +1,16 @@
 'use client';
-import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
 
-import { Button } from '@side/design-system';
-import { useI18n } from '@/shared/i18n';
 import { useParams, useRouter } from 'next/navigation';
+
 import { LoaderCircle, MessageCircle } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { chatError, useCreateConversationMutation } from '@/features/chat';
-import { appRoutes } from '@game-feedback/bridge';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
+import { useI18n } from '@/shared/i18n';
 
 interface IStartChatLinkProps {
   source: 'post' | 'comment' | 'profile';

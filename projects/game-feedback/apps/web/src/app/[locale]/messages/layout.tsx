@@ -1,7 +1,8 @@
 import { Suspense, type ReactNode } from 'react';
 import { locale as rootLocale } from 'next/root-params';
-import { LoadingState } from '@/shared/ui';
+
 import { MessagesLayout } from '@/_pages/messages';
+import { LoadingState } from '@/shared/ui';
 
 export default async function Layout({
   children,

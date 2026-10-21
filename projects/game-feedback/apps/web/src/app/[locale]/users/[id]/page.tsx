@@ -1,5 +1,6 @@
-import { ProfileRoute, profileMetadata } from '@/_pages/profile/index.server';
 import { DocumentContent } from '@/_app/index.server';
+import { profileMetadata, ProfileRoute } from '@/_pages/profile/index.server';
+
 export { profileMetadata as generateMetadata };
 export default function Page(props: Parameters<typeof ProfileRoute>[0]) {
   return (

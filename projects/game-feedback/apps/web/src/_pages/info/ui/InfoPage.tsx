@@ -1,13 +1,16 @@
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
 import { ArrowLeft } from 'lucide-react';
 import { match } from 'ts-pattern';
+
+import { appRoutes } from '@game-feedback/bridge';
+
+import { isLocale, translate } from '@/shared/i18n/index.server';
+import { BackLink } from '@/shared/navigation';
+
 import { infoTitles, type TInfoKind } from '../model/info';
-import { GuideContent } from './GuideContent';
-import { TermsContent } from './TermsContent';
-import { PrivacyContent } from './PrivacyContent';
 import { ContactContent } from './ContactContent';
-import { translate, isLocale } from '@/shared/i18n/index.server';
+import { GuideContent } from './GuideContent';
+import { PrivacyContent } from './PrivacyContent';
+import { TermsContent } from './TermsContent';
 
 export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) {
   const language = isLocale(locale) ? locale : 'ko';

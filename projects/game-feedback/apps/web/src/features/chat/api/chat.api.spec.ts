@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
+
 import { uploadAttachment } from './chat.api';
 
 const file = new File(['image-content'], 'chat.png', { type: 'image/png' });

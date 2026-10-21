@@ -1,7 +1,9 @@
 'use client';
+
 import { useEffect, useRef } from 'react';
-import { identifyUser, resetAnalytics, trackEvent } from './analytics.store';
+
 import { ANALYTICS_EVENT } from './analytics.catalog';
+import { identifyUser, resetAnalytics, trackEvent } from './analytics.store';
 import { consumePendingLogin, markPendingOnboarding } from './login-marker';
 
 export function AnalyticsIdentity({

@@ -1,11 +1,13 @@
 'use client';
 
 import { Gamepad2 } from 'lucide-react';
+
 import { useCompleteOnboarding } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { BottomSheet } from '@/shared/ui';
-import { AccountSetupForm } from './AccountSetupForm';
+
 import type { TAccountSetupValues } from '../model/account-setup.schema';
+import { AccountSetupForm } from './AccountSetupForm';
 
 interface IOnboardingDialogProps {
   open: boolean;

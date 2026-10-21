@@ -3,6 +3,7 @@
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { BottomSheet } from '@/shared/ui';
+
 import { SocialLoginForm } from './SocialLoginForm';
 
 interface ILoginDialogProps {

@@ -1,10 +1,11 @@
 import {
-  fetchEventSource,
   EventStreamContentType,
+  fetchEventSource,
   type EventSourceMessage,
 } from '@microsoft/fetch-event-source';
 import type { QueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+
 import { chatMessageOptions, chatMessageScopeOptions, conversationScopeOptions } from './chat.options';
 import type { TChatConnection } from './chat.types';
 

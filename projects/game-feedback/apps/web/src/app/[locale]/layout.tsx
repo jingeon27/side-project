@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 import { locale as rootLocale } from 'next/root-params';
+
 import { CommunityShell } from '@/_app';
-import { rootMetadata, rootViewport, RootDocument } from '@/_app/index.server';
+import { RootDocument, rootMetadata, rootViewport } from '@/_app/index.server';
 import { isLocale } from '@/shared/i18n/index.server';
+
 import '@/_app/styles/tailwind.css';
 
 // The initial document waits for its saved appearance and authorized session.

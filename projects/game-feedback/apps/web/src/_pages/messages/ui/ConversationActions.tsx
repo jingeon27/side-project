@@ -1,18 +1,23 @@
 'use client';
+
 import { useEffect } from 'react';
+
+import { Flag, Menu, ShieldBan, Trash2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
+
 import {
   Button,
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@side/design-system';
-import { Menu, Flag, Trash2, ShieldBan } from 'lucide-react';
-import { openUserReport } from '@/widgets/moderation';
+
 import type { Author } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { openOverlay } from '@/shared/ui';
+import { openUserReport } from '@/widgets/moderation';
+
 import { useChatBlock } from '../model/use-chat-block';
 import { ClearConversationDialog } from './ClearConversationDialog';
 

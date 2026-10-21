@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { BRIDGE_EVENT } from '@game-feedback/bridge';
+
 import { NativeBridgeChannel } from './native-bridge-channel';
+
 const channels = new Set<NativeBridgeChannel>();
 afterEach(() => {
   channels.forEach((channel) => channel.stop());

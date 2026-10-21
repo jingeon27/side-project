@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('mobile titles follow the screen and game classifications stay inside their game', async ({ page }) => {
   await page.setViewportSize({ width: 400, height: 844 });

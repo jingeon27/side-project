@@ -1,16 +1,21 @@
 'use client';
 
 import type { Ref } from 'react';
-import type { TBoardKind } from '@game-feedback/contracts';
+
 import { useQuery } from '@tanstack/react-query';
+
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+import type { TBoardKind } from '@game-feedback/contracts';
 import { buttonVariants, cn } from '@side/design-system';
+
 import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
 import { categoryOptions } from '@/features/category';
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';
-import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+
 import { useCurrentChipScroll } from '../model/use-current-chip-scroll';
 import { GameIcon } from './GameIcon';
+
 interface IGameBoardNavigationProps {
   locale: string;
   path: string;

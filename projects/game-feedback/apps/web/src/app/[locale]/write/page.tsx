@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
-import { LoadingState } from '@/shared/ui';
+
 import { ComposeRoute } from '@/_pages/compose/index.server';
 import { staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
 
 interface IPageProps {
   params: Promise<{ locale: string }>;

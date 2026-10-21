@@ -1,5 +1,7 @@
 'use client';
+
 import { Globe2 } from 'lucide-react';
+
 import { LanguageSelect, useI18n } from '@/shared/i18n';
 
 const languageNames = { ko: '한국어', en: 'English', ja: '日本語' } as const;

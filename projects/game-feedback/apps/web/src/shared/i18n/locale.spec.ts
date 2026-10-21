@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { detectLocale, preferredLocale, languagePreference, localePath } from './locale';
+
+import { detectLocale, languagePreference, localePath, preferredLocale } from './locale';
 import { translate } from './messages';
 
 describe('language preference', () => {

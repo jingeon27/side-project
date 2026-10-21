@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { QueryClient, skipToken } from '@tanstack/react-query';
+import { describe, expect, it } from 'vitest';
+
 import { postDetailOptions, postListOptions } from './post.options';
 
 describe('post query cache contracts', () => {

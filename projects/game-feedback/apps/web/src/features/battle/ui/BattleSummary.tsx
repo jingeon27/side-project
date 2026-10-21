@@ -1,7 +1,9 @@
 'use client';
 
 import type { TBattleDetails } from '@game-feedback/contracts';
+
 import { useI18n } from '@/shared/i18n';
+
 import { battleModeLabel } from '../model/battle';
 
 export function BattleSummary({ details }: { details: TBattleDetails }) {

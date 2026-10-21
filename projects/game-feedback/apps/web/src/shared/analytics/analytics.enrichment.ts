@@ -1,5 +1,7 @@
 import type { Types } from '@amplitude/analytics-browser';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { isNativeApp } from '@/shared/native';
 
 export function viewportBucket(width: number) {

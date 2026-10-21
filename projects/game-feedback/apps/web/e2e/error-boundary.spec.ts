@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
 import type { ChatMessageList, PostDetail } from '@game-feedback/contracts';
 
 const origin = 'http://127.0.0.1:3301';

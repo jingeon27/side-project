@@ -1,9 +1,13 @@
 'use client';
+
+import { LoaderCircle, Paperclip, Send, X } from 'lucide-react';
+
 import { Textarea } from '@side/design-system';
+
+import { chatError } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
-import { LoaderCircle, Send, Paperclip, X } from 'lucide-react';
-import { chatError } from '@/features/chat';
+
 import { useChatComposer } from '../model/use-chat-composer';
 import { ChatAttachmentView } from './ChatAttachmentView';
 

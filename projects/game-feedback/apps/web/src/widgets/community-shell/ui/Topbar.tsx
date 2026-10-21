@@ -1,10 +1,14 @@
 'use client';
+
 import type { ReactNode } from 'react';
+
 import { ArrowLeft, Gamepad2 } from 'lucide-react';
+
 import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { BackLink, TabLink } from '@/shared/navigation';
-import { TopbarActions } from './TopbarActions';
+
 import { TopbarAccount } from './TopbarAccount';
+import { TopbarActions } from './TopbarActions';
 import { TopbarNotifications } from './TopbarNotifications';
 import { TopbarSearch } from './TopbarSearch';
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 for (const width of [320, 1440]) {
   test(`service footer opens localized policy pages and stays above mobile navigation at ${width}px`, async ({

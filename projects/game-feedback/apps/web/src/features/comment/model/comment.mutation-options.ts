@@ -1,7 +1,10 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { postDetailOptions, postListOptions, refreshServerPostDetail } from '@/features/post';
+
 import { notificationListOptions } from '@/features/notification';
+import { postDetailOptions, postListOptions, refreshServerPostDetail } from '@/features/post';
+
 import { deleteCommentById, patchComment, postComment } from '../api/comment.api';
+
 function createRefreshCommentCaches(client: QueryClient) {
   return async (postId: string) => {
     await Promise.all([

@@ -1,10 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, Input } from '@side/design-system';
+
 import { useWatch } from 'react-hook-form';
+
+import { Button, Input } from '@side/design-system';
+
 import { useDeleteAccount } from '@/features/auth';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { ErrorNotice, Field, BottomSheet } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field } from '@/shared/ui';
+
 import { deleteAccountSchema } from '../model/settings.schema';
 
 interface IDeleteAccountDialogProps {

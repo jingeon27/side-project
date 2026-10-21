@@ -1,5 +1,7 @@
-import { test, expect, type BrowserContext } from '@playwright/test';
+import { expect, test, type BrowserContext } from '@playwright/test';
+
 import type { PostDetail } from '@game-feedback/contracts';
+
 const origin = 'http://127.0.0.1:3301';
 async function choose(context: BrowserContext, accountId: string) {
   const response = await context.request.post('/api/auth/test-login', {

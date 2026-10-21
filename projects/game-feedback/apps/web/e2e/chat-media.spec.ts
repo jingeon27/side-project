@@ -1,5 +1,7 @@
-import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+
+import { expect, test } from '@playwright/test';
+
 const origin = 'http://127.0.0.1:3301';
 const room = 'sample-conversation-0-3';
 const path = `/ko/messages/${room}`;

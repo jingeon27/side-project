@@ -2,9 +2,11 @@
 
 import { appRoutes } from '@game-feedback/bridge';
 import type { TFeedbackStatus } from '@game-feedback/contracts';
+
 import { parseFeedbackStatus } from '@/features/post';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
+
 import { BoardFilterLink } from './BoardFilterLink';
 
 export function FeedbackFilters({ locale, initialSearch }: { locale: string; initialSearch: string }) {

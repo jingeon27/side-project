@@ -1,11 +1,14 @@
 'use client';
 
-import { Button, Input, Checkbox } from '@side/design-system';
-import { Controller, useWatch } from 'react-hook-form';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { Controller, useWatch } from 'react-hook-form';
+
+import { Button, Checkbox, Input } from '@side/design-system';
+
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field } from '@/shared/ui';
+
 import { accountSetupSchema, type TAccountSetupValues } from '../model/account-setup.schema';
 
 interface IAccountSetupFormProps {

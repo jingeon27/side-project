@@ -1,9 +1,12 @@
 'use client';
+
 import { useState } from 'react';
 import { catchError, type ErrorInfo } from 'next/error';
+
 import { QueryClient, useMutation } from '@tanstack/react-query';
-import { ErrorRecovery, errorRecoveryMutationOptions } from '@/shared/ui';
+
 import { LanguageProvider, translate, type TLocale } from '@/shared/i18n';
+import { ErrorRecovery, errorRecoveryMutationOptions } from '@/shared/ui';
 
 function BootstrapFailure({ locale }: { locale: TLocale }, { retry }: ErrorInfo) {
   const [client] = useState(() => new QueryClient());

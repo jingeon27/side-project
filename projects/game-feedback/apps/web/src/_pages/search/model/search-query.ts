@@ -1,5 +1,5 @@
-import { boardBySlug } from '@/features/board';
 import { parseBattleMode } from '@/features/battle';
+import { boardBySlug } from '@/features/board';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus, type TPostListParams } from '@/features/post';
 import type { PostList } from '@/shared/api';

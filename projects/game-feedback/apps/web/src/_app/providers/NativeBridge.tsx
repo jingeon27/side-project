@@ -1,9 +1,12 @@
 'use client';
+
 import { useEffect } from 'react';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { overlay, useOverlayData } from 'overlay-kit';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
 import { last } from 'es-toolkit';
+import { overlay, useOverlayData } from 'overlay-kit';
 import { match } from 'ts-pattern';
+
 import { useRefreshSession, useSession } from '@/features/auth';
 import { nativeBridgeChannel } from '@/shared/native';
 import { backNavigation } from '@/shared/navigation';

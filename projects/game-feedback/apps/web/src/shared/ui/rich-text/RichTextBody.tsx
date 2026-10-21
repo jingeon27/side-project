@@ -1,6 +1,7 @@
-import Image from 'next/image';
 import type { ReactNode } from 'react';
-import type { TRichTextDocument, TRichTextAttributes, TRichTextEmbed } from '@game-feedback/contracts';
+import Image from 'next/image';
+
+import type { TRichTextAttributes, TRichTextDocument, TRichTextEmbed } from '@game-feedback/contracts';
 
 interface ISegment {
   text?: string;

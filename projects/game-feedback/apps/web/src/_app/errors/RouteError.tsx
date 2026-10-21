@@ -1,4 +1,5 @@
 'use client';
+
 import { useI18n } from '@/shared/i18n';
 import { ErrorRecovery } from '@/shared/ui';
 

@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
+
 import { expirePostDetailCache } from './post-cache.action';
 
 const { updateTag } = vi.hoisted(() => ({ updateTag: vi.fn() }));
