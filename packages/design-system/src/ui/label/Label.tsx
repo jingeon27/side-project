@@ -2,6 +2,7 @@
 'use client';
 
 import type { ComponentProps } from 'react';
+
 import { cn } from '../../lib/cn.helper';
 
 function Label({ className, ...props }: ComponentProps<'label'>) {

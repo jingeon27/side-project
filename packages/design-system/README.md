@@ -3,7 +3,7 @@
 Game Feedback와 Photo Contest 웹이 공유하는 디자인 토큰과 React UI다. 공식 shadcn/ui의 Base UI / base-nova 소스를 공통 토큰과 기존 공개 API에 연결한다. 설치 원본, 조정 범위와 MIT 라이선스는 [shadcn 구성](SHADCN.md)에 정리했다. API 클라이언트, 인증, 도메인 상태, 라우터, overlay-kit provider는 앱이 소유한다. API·모바일 앱에서 이 웹 패키지를 가져오지 않는다.
 
 ```tsx
-import { Button, Dialog, FormField, TextField, cn } from '@side/design-system';
+import { Button, cn, Dialog, FormField, TextField } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 ```
 
@@ -46,6 +46,26 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 컴포넌트는 모두 `className`을 지원한다. 클래스 병합은 공통 `cn`을 사용하며 뒤의 같은 종류 값이 우선한다. 공개 props 타입은 `I` 접두사, 배지 tone 타입은 `TBadgeTone`으로 내보낸다.
 
 Photo Contest의 `AlertDialog`·바텀시트는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.
+
+## Storybook
+
+저장소 루트에서 실행한다.
+
+```sh
+corepack yarn storybook
+```
+
+`http://localhost:6006`에서 공통 토큰과 UI의 기본·오류·로딩·비활성 상태를 확인한다. Controls로 props를 바꾸고 테마 툴바에서 light·dark·system을 전환할 수 있다. Accessibility 패널은 각 예제의 접근성 점검 결과를 보여 준다.
+
+React + Vite와 Tailwind 4를 사용하며 앱과 같은 `src/styles.css`를 가져온다. 테마는 iframe의 html에 적용해 다이얼로그·메뉴 같은 포털에도 전달한다. Next 전용 `ButtonLink`는 소비 앱에서 검증한다.
+
+스토리는 컴포넌트 옆의 `*.stories.tsx`에 CSF 형식으로 추가한다. 자동 문서와 타입 검사를 공통 적용하며 상태가 필요한 예제는 이름 있는 함수 컴포넌트로 작성한다.
+
+```sh
+corepack yarn build:storybook
+```
+
+정적 결과는 `packages/design-system/dist/storybook`에 생성된다. 기존 `check`에도 정적 빌드를 포함해 CI에서 설정과 스토리 빌드를 함께 검증한다.
 
 ## 검사
 

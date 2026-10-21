@@ -1,14 +1,15 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { expect, it, vi } from 'vitest';
-import { FormField } from './FormField';
-import { Input } from '../input/Input';
-import { Textarea } from '../textarea/Textarea';
-import { NativeSelect, NativeSelectOption } from '../native-select/NativeSelect';
+import { z } from 'zod';
+
 import { Button } from '../button/Button';
+import { Input } from '../input/Input';
+import { NativeSelect, NativeSelectOption } from '../native-select/NativeSelect';
+import { Textarea } from '../textarea/Textarea';
+import { FormField } from './FormField';
 
 const schema = z.object({
   title: z.string().min(4, '제목을 확인해주세요'),

@@ -19,7 +19,9 @@
     "lint": "eslint .",
     "typecheck": "tsc7 --noEmit",
     "test": "node scripts/test.mjs",
-    "check": "yarn lint && yarn typecheck && yarn test"
+    "check": "yarn lint && yarn typecheck && yarn test && yarn build-storybook",
+    "storybook": "storybook dev --port 6006 --no-open",
+    "build-storybook": "storybook build --output-dir dist/storybook"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
