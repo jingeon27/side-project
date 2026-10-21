@@ -60,7 +60,7 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
           onClick={async () => {
             const method = await shareActions.share(
               inviteUrl,
-              { title: '웃긴순간 그룹 초대', text: buildInviteShareText(groupName) },
+              { title: '별사대 그룹 초대', text: buildInviteShareText(groupName) },
               { copied: COPIED_MESSAGE },
             );
             if (method) trackEvent(ANALYTICS_EVENT.InviteLinkShared, { group_id: groupId, method });

@@ -52,7 +52,7 @@ function ResultsContent({
     const method = await shareActions.share(
       window.location.origin + ROUTES.CONTEST(contest.id),
       {
-        title: '웃긴순간 대회 결과',
+        title: '별사대 대회 결과',
         text: buildResultShareText(
           contest.title,
           winners.map(({ submission, voteCount }) => ({

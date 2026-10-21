@@ -11,7 +11,7 @@ test(
     await page.getByRole('link', { name: '이용약관', exact: true }).first().click();
     await expect(page).toHaveURL(`${WEB_ORIGIN}/terms`);
     await expect(page.getByRole('heading', { name: '이용약관', level: 1 })).toBeVisible();
-    await expect(page).toHaveTitle('이용약관 · 웃긴순간');
+    await expect(page).toHaveTitle('이용약관 · 별사대');
     await expect(page.getByRole('link', { name: 'jingeon27@gmail.com', exact: true })).toHaveAttribute(
       'href',
       'mailto:jingeon27@gmail.com',
@@ -21,7 +21,7 @@ test(
     await page.getByRole('link', { name: '개인정보 처리방침', exact: true }).first().click();
     await expect(page).toHaveURL(`${WEB_ORIGIN}/privacy`);
     await expect(page.getByRole('heading', { name: '개인정보 처리방침', level: 1 })).toBeVisible();
-    await expect(page).toHaveTitle('개인정보 처리방침 · 웃긴순간');
+    await expect(page).toHaveTitle('개인정보 처리방침 · 별사대');
     expect((await context.cookies()).some((cookie) => cookie.name === 'contest_session')).toBe(false);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const response = await page.request.get('/privacy');

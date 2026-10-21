@@ -4,7 +4,7 @@ import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { ROUTES } from '@/shared/constants/routes';
 import { ButtonLink } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { BrandAppBar } from '@/shared/ui/@core/top-app-bar';
+import { HomeAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
 import { NoGroupHome } from './no-group/NoGroupHome';
@@ -13,7 +13,7 @@ import { MemberHome } from './ui/MemberHome';
 export function HomePageTemplate({ memberFeedPreloaded = false }: { memberFeedPreloaded?: boolean }) {
   return (
     <div className="flex flex-1 flex-col">
-      <BrandAppBar />
+      <HomeAppBar />
       <div className="flex flex-1 flex-col px-4 py-5 tablet:px-8 desktop:py-8">
         <ViewerBoundary
           guest={
