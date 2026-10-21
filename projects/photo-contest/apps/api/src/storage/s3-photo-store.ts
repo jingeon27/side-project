@@ -12,8 +12,8 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import type { IS3Settings } from '../config/env';
-import type { IPhotoStore } from './photo-store';
 import { MEDIA_IO_TIMEOUT_MS, POST_UPLOAD_TTL_SECONDS } from '../config/limits';
+import type { IPhotoStore } from './photo-store';
 
 export class S3PhotoStore implements IPhotoStore {
   private readonly client: S3Client;

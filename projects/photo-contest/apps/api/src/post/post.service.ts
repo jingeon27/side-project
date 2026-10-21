@@ -17,10 +17,10 @@ import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { GroupCategoryService } from '../group/group-category.service';
 import { MembershipService } from '../group/membership.service';
+import { MediaUploadService } from '../media-upload/media-upload.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { MediaStorage } from '../storage/media-storage.service';
 import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
-import { MediaUploadService } from '../media-upload/media-upload.service';
 import { postLink } from './post-link.policy';
 import { koreanMonth } from './post-order';
 import { presentPost } from './post.presenter';
@@ -117,13 +117,14 @@ export class PostService {
       const upload = input.uploadId
         ? await (tx ?? this.db).postUpload.findUnique({
             where: { id: input.uploadId },
-            include: { submissionUpload: true },
+            include: { submissionUpload: true, groupAvatar: true },
           })
         : null;
       if (
         input.uploadId &&
         (!upload ||
           upload.submissionUpload !== null ||
+          upload.groupAvatar !== null ||
           upload.userId !== viewer.id ||
           upload.groupId !== input.groupId ||
           !upload.storageKey ||

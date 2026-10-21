@@ -95,5 +95,6 @@ type GroupAvatarTicket {
   id: ID!
 }
 extend type Mutation {
-  uploadGroupAvatar(groupId: ID!, file: Upload!): GroupAvatarTicket!
+  requestGroupAvatarUpload(groupId: ID!, contentType: String!, byteSize: Int!): UploadTicket!
+  completeGroupAvatarUpload(uploadId: ID!): GroupAvatarTicket!
 }

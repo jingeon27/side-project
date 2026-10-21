@@ -1,5 +1,4 @@
-import { createReadStream } from 'node:fs';
-import { constants } from 'node:fs';
+import { constants, createReadStream } from 'node:fs';
 import {
   copyFile,
   lstat,
@@ -14,8 +13,8 @@ import {
 } from 'node:fs/promises';
 import { dirname, extname, resolve } from 'node:path';
 
-import type { IPhotoStore } from './photo-store';
 import { LOCAL_UPLOAD_ORPHAN_TTL_MS } from '../config/limits';
+import type { IPhotoStore } from './photo-store';
 
 const UUID_PATTERN = '[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}';
 const STAGING_FILENAME = new RegExp(`^${UUID_PATTERN}(?:\\.type)?$`);

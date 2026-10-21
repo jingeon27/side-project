@@ -1,6 +1,7 @@
-import { createTestVideo } from '@photo-contest/test-kit';
 import mediaInfoFactory, { isTrackType } from 'mediainfo.js';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { createTestVideo } from '@photo-contest/test-kit';
 
 import { MAX_VIDEO_SECONDS } from '../config/limits';
 import { MediaProcessor } from './media-processor';

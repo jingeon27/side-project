@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { CLEANUP_BATCH_SIZE, COMPLETED_POST_UPLOAD_TTL_MS, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
@@ -24,8 +25,10 @@ export class MaintenanceService {
       take: CLEANUP_BATCH_SIZE,
     });
     for (const avatar of avatars) {
-      await this.media.delete(avatar.storageKey);
-      await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
+      await this.attempt(async () => {
+        await this.media.delete(avatar.storageKey);
+        await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
+      });
     }
     // 실패한 항목의 추적 행을 남겨 다음 정리에서 다시 시도한다.
     const candidates = await this.db.postUploadAttempt.findMany({
@@ -57,6 +60,7 @@ export class MaintenanceService {
         expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) },
         post: null,
         submissionUpload: null,
+        groupAvatar: null,
       },
       take: CLEANUP_BATCH_SIZE,
     });
@@ -65,7 +69,9 @@ export class MaintenanceService {
         if (upload.storageKey) await this.media.delete(upload.storageKey);
         if (upload.stagingKey) await this.media.delete(upload.stagingKey);
         if (await this.db.postUploadAttempt.count({ where: { uploadId: upload.id } })) return;
-        await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null, submissionUpload: null } });
+        await this.db.postUpload.deleteMany({
+          where: { id: upload.id, post: null, submissionUpload: null, groupAvatar: null },
+        });
       });
     }
     await this.db.authAttempt.deleteMany({ where: { expiresAt: { lte: now } } });

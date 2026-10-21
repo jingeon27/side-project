@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { MediaUploadModule } from '../media-upload/media-upload.module';
 import { GroupAdministrationResolver } from './group-administration.resolver';
 import { GroupAdministrationService } from './group-administration.service';
 import { GroupCategoryResolver } from './group-category.resolver';
@@ -11,9 +12,10 @@ import { GroupProfileResolver } from './group-profile.resolver';
 import { GroupProfileService } from './group-profile.service';
 import { GroupResolver } from './group.resolver';
 import { GroupService } from './group.service';
-import { MembershipService } from './membership.service';
+import { MembershipModule } from './membership.module';
 
 @Module({
+  imports: [MembershipModule, MediaUploadModule],
   controllers: [GroupProfileController],
   providers: [
     GroupProfileService,
@@ -23,11 +25,10 @@ import { MembershipService } from './membership.service';
     GroupAdministrationService,
     GroupAdministrationResolver,
     GroupService,
-    MembershipService,
     GroupResolver,
     GroupJoinRequestService,
     GroupJoinRequestResolver,
   ],
-  exports: [GroupCategoryService, GroupService, MembershipService],
+  exports: [GroupCategoryService, GroupService, MembershipModule],
 })
 export class GroupModule {}

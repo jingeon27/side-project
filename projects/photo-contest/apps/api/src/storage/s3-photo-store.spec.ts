@@ -1,6 +1,8 @@
-import { createServer, type Server, type RequestListener } from 'node:http';
 import { once } from 'node:events';
+import { createServer, type RequestListener, type Server } from 'node:http';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { S3PhotoStore } from './s3-photo-store';
 
 let server: Server | undefined;

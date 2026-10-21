@@ -65,6 +65,8 @@ model Group {
   @@index([createdAt, id])
 }
 model GroupAvatar {
+  mediaUploadId String? @unique
+  mediaUpload PostUpload? @relation(fields: [mediaUploadId], references: [id], onDelete: Restrict)
   id String @id @default(cuid())
   groupId String
   storageKey String @unique
@@ -212,6 +214,7 @@ model PostUpload {
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   post Post?
   submissionUpload Upload?
+  groupAvatar GroupAvatar?
   @@index([expiresAt])
 }
 model PostUploadAttempt {

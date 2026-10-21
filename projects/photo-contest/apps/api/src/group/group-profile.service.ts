@@ -1,24 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
-import { readUpload } from '../common/graphql/read-upload';
 import { textValue } from '../common/validation';
-import {
-  GROUP_AVATAR_EDGE_PX,
-  GROUP_DESCRIPTION_LIMIT,
-  MAX_UPLOAD_BYTES,
-  TEXT_LIMIT,
-  UPLOAD_TICKET_TTL_MS,
-} from '../config/limits';
+import { GROUP_DESCRIPTION_LIMIT, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
-import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
-import { processPhoto } from '../submission/photo-processor';
+import { MediaUploadService } from '../media-upload/media-upload.service';
+import { MediaStorage } from '../storage/media-storage.service';
 import { GroupService } from './group.service';
 import { MembershipService } from './membership.service';
 
@@ -37,6 +29,7 @@ export class GroupProfileService {
     private readonly groups: GroupService,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
+    private readonly uploads: MediaUploadService,
   ) {}
 
   async update(viewer: IViewer, input: IGroupProfileInput) {
@@ -48,8 +41,16 @@ export class GroupProfileService {
     await this.db.atomic(async (tx) => {
       await this.membership.requireAdmin(viewer.id, input.groupId, tx);
       if (input.avatarId != null) {
-        const avatar = await tx.groupAvatar.findUnique({ where: { id: input.avatarId } });
-        if (!avatar || avatar.groupId !== input.groupId || avatar.expiresAt <= new Date())
+        const avatar = await tx.groupAvatar.findUnique({
+          where: { id: input.avatarId },
+          include: { mediaUpload: true },
+        });
+        if (
+          !avatar ||
+          avatar.groupId !== input.groupId ||
+          avatar.expiresAt <= new Date() ||
+          (avatar.mediaUploadId && avatar.mediaUpload?.storageKey !== avatar.storageKey)
+        )
           fail('그룹 사진 업로드가 만료되었거나 사용할 수 없습니다.');
       }
       await tx.group.update({
@@ -78,19 +79,14 @@ export class GroupProfileService {
     return this.storage.stream(group.avatar.storageKey);
   }
 
-  async upload(viewer: IViewer, groupId: string, file: Promise<FileUpload>) {
-    await this.membership.requireAdmin(viewer.id, groupId);
-    const { body } = await readUpload(file, MAX_UPLOAD_BYTES);
-    const processed = await processPhoto(body, GROUP_AVATAR_EDGE_PX);
-    // 저장 전에 정리 대상을 기록해 저장 실패·권한 회수·응답 중단 뒤에도 파일이 남지 않게 한다.
-    const asset = await this.db.groupAvatar.create({
-      data: {
-        groupId,
-        storageKey: createMediaKey('webp'),
-        expiresAt: new Date(Date.now() + UPLOAD_TICKET_TTL_MS),
-      },
-    });
-    await this.storage.put(asset.storageKey, processed, 'image/webp');
-    return { id: asset.id };
+  requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {
+    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'GROUP_AVATAR' });
+  }
+
+  async completeUpload(viewer: IViewer, avatarId: string) {
+    const avatar = await this.db.groupAvatar.findUnique({ where: { id: avatarId } });
+    if (!avatar?.mediaUploadId) fail('그룹 사진 업로드가 만료되었거나 사용할 수 없습니다.');
+    await this.uploads.completeUpload(viewer, avatar.mediaUploadId, { avatarId });
+    return { id: avatarId };
   }
 }

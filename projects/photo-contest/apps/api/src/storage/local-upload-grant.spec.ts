@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
+
 import { createLocalUploadGrant, verifyLocalUploadGrant } from './local-upload-grant';
 
 describe('로컬 업로드 서명', () => {

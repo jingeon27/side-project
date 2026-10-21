@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   IMAGE_HEADER_BYTES,
   MAX_MEDIA_ANALYSIS_BYTES,

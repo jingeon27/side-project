@@ -5,7 +5,6 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { json } from 'express';
 
-import { localUpload } from './storage/local-upload.middleware';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { bodyParserErrorHandler } from './common/http/body-parser-error.middleware';
@@ -15,10 +14,11 @@ import {
   assertProductionConfig,
   assertTestingConfig,
   isTest,
-  trustedProxyHops,
   storageBackend,
+  trustedProxyHops,
 } from './config/env';
 import { MAX_JSON_BODY } from './config/limits';
+import { localUpload } from './storage/local-upload.middleware';
 
 const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log'];
 

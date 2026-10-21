@@ -45,23 +45,32 @@ describe('그룹 사진과 소개', () => {
     removeAvatar: false,
     ...extra,
   });
+  const REQUEST =
+    'mutation($groupId:ID!,$type:String!,$size:Int!){requestGroupAvatarUpload(groupId:$groupId,contentType:$type,byteSize:$size){id url fields{name value}}}';
+  const COMPLETE = 'mutation($id:ID!){completeGroupAvatarUpload(uploadId:$id){id}}';
+  interface ITicket {
+    id: string;
+    url: string;
+    fields: Array<{ name: string; value: string }>;
+  }
+  const reserve = (cookie: string | undefined, body: Buffer, id = groupId, type = 'image/png') =>
+    api.gql<{ requestGroupAvatarUpload: ITicket }>(cookie, REQUEST, { groupId: id, type, size: body.length });
+  const store = async (ticket: ITicket, body: Buffer) => {
+    const req = api.http().post(ticket.url.replace('/backend', '')).set('Origin', TEST_WEB_ORIGIN);
+    for (const field of ticket.fields) req.field(field.name, field.value);
+    expect(
+      (await req.attach('file', body, { filename: 'avatar.png', contentType: 'image/png' })).status,
+    ).toBe(201);
+  };
   const upload = async (cookie: string | undefined, id = groupId, bytes?: Buffer) => {
-    const req = api
-      .http()
-      .post('/graphql')
-      .set('Origin', TEST_WEB_ORIGIN)
-      .set('Apollo-Require-Preflight', 'true');
-    if (cookie) req.set('Cookie', cookie);
-    return req
-      .field(
-        'operations',
-        JSON.stringify({
-          query: 'mutation($id:ID!,$file:Upload!){uploadGroupAvatar(groupId:$id,file:$file){id}}',
-          variables: { id, file: null },
-        }),
-      )
-      .field('map', JSON.stringify({ '0': ['variables.file'] }))
-      .attach('0', bytes ?? (await createTestImage()), { filename: 'avatar.png', contentType: 'image/png' });
+    const image = bytes ?? (await createTestImage());
+    const requested = await reserve(cookie, image, id);
+    if (!requested.data) return { body: { errors: requested.errors, data: null } };
+    const ticket = requested.data.requestGroupAvatarUpload;
+    await store(ticket, image);
+    return {
+      body: await api.gql<{ completeGroupAvatarUpload: { id: string } }>(cookie, COMPLETE, { id: ticket.id }),
+    };
   };
 
   it('관리자·부관리자만 수정하며 공백·글자 수를 검증하고 소개는 생성 때도 지정해야 한다', async () => {
@@ -92,13 +101,13 @@ describe('그룹 사진과 소개', () => {
   });
 
   it('인증·관리 권한·실제 파일 내용을 확인한 뒤 사진을 준비해야 한다', async () => {
-    expect((await upload(undefined)).body.errors[0].extensions.code).toBe('UNAUTHENTICATED');
-    expect((await upload(member.cookie)).body.errors[0].extensions.code).toBe('FORBIDDEN');
+    expect((await upload(undefined)).body.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+    expect((await upload(member.cookie)).body.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
     expect(
-      (await upload(owner.cookie, groupId, Buffer.from('fake png'))).body.errors[0].extensions.code,
+      (await upload(owner.cookie, groupId, Buffer.from('fake png'))).body.errors?.[0]?.extensions?.code,
     ).toBe('BAD_USER_INPUT');
     const large = Buffer.alloc(10 * 1024 * 1024 + 1);
-    expect((await upload(owner.cookie, groupId, large)).body.errors[0].extensions.code).toBe(
+    expect((await upload(owner.cookie, groupId, large)).body.errors?.[0]?.extensions?.code).toBe(
       'BAD_USER_INPUT',
     );
   });
@@ -110,7 +119,7 @@ describe('그룹 사진과 소개', () => {
       .toBuffer();
     const response = await upload(moderator.cookie, groupId, image);
     expect(response.body.errors).toBeUndefined();
-    const avatarId = response.body.data.uploadGroupAvatar.id as string;
+    const avatarId = response.body.data!.completeGroupAvatarUpload.id as string;
     expect(
       (await api.gqlOk<{ group: IProfile }>(undefined, READ, { id: groupId })).group.avatarUrl,
     ).toBeNull();
@@ -147,8 +156,8 @@ describe('그룹 사진과 소개', () => {
   });
 
   it('만료 사진을 거절하고 사용 중인 사진은 보존하며 버린 사진은 저장소 실패 후 재시도해야 한다', async () => {
-    const active = (await upload(owner.cookie)).body.data.uploadGroupAvatar.id as string;
-    const orphan = (await upload(owner.cookie)).body.data.uploadGroupAvatar.id as string;
+    const active = (await upload(owner.cookie)).body.data!.completeGroupAvatarUpload.id as string;
+    const orphan = (await upload(owner.cookie)).body.data!.completeGroupAvatarUpload.id as string;
     const orphanRow = await api.db.groupAvatar.findUniqueOrThrow({ where: { id: orphan } });
     await api.gqlOk(owner.cookie, UPDATE, values({ avatarId: active }));
     await api.db.groupAvatar.updateMany({
@@ -160,7 +169,7 @@ describe('그룹 사진과 소개', () => {
     );
     const storage = api.app.get(MediaStorage);
     const failure = vi.spyOn(storage, 'delete').mockRejectedValueOnce(new Error('일시 저장소 오류'));
-    await expect(api.app.get(MaintenanceService).cleanup()).rejects.toThrow('일시 저장소 오류');
+    await api.app.get(MaintenanceService).cleanup();
     expect(await api.db.groupAvatar.findUnique({ where: { id: orphan } })).not.toBeNull();
     failure.mockRestore();
     await api.app.get(MaintenanceService).cleanup();
@@ -169,5 +178,63 @@ describe('그룹 사진과 소개', () => {
     expect(await api.db.groupAvatar.findUnique({ where: { id: active } })).not.toBeNull();
     const group = (await api.gqlOk<{ group: IProfile }>(undefined, READ, { id: groupId })).group;
     expect((await api.http().get(group.avatarUrl!.replace('/backend', ''))).status).toBe(200);
+  });
+  it('완료 전 자산·다른 소유자·게시물 티켓으로의 재사용을 거절하고 완료는 재시도해도 같은 사진이어야 한다', async () => {
+    const image = await createTestImage();
+    const requested = await reserve(owner.cookie, image);
+    const ticket = requested.data!.requestGroupAvatarUpload;
+    expect((await api.gqlFail(owner.cookie, UPDATE, values({ avatarId: ticket.id }))).code).toBe(
+      'BAD_USER_INPUT',
+    );
+    await store(ticket, image);
+    expect((await api.gqlFail(moderator.cookie, COMPLETE, { id: ticket.id })).code).toBe('FORBIDDEN');
+    const row = await api.db.groupAvatar.findUniqueOrThrow({ where: { id: ticket.id } });
+    expect(
+      (
+        await api.gqlFail(owner.cookie, 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}', {
+          id: row.mediaUploadId,
+        })
+      ).code,
+    ).toBe('FORBIDDEN');
+    const first = await api.gqlOk(owner.cookie, COMPLETE, { id: ticket.id });
+    expect(await api.gqlOk(owner.cookie, COMPLETE, { id: ticket.id })).toEqual(first);
+    expect(
+      (
+        await api.gqlFail(
+          owner.cookie,
+          'mutation($group:ID!,$id:ID!){createPost(groupId:$group,uploadId:$id,title:"대표 사진 재사용",rightsConfirmed:true){id}}',
+          { group: groupId, id: row.mediaUploadId },
+        )
+      ).code,
+    ).toBe('BAD_USER_INPUT');
+  });
+
+  it('이미지 처리 도중 관리자 권한을 잃으면 사진을 확정하지 않아야 한다', async () => {
+    const image = await createTestImage();
+    const ticket = (await reserve(moderator.cookie, image)).data!.requestGroupAvatarUpload;
+    await store(ticket, image);
+    const storage = api.app.get(MediaStorage);
+    const put = storage.put.bind(storage);
+    const processing = vi.spyOn(storage, 'put').mockImplementation(async (...args) => {
+      await put(...args);
+      await api.db.groupMember.update({
+        where: { groupId_userId: { groupId, userId: moderator.id } },
+        data: { role: 'MEMBER' },
+      });
+    });
+    try {
+      expect((await api.gqlFail(moderator.cookie, COMPLETE, { id: ticket.id })).code).toBe('FORBIDDEN');
+      const asset = await api.db.groupAvatar.findUniqueOrThrow({
+        where: { id: ticket.id },
+        include: { mediaUpload: true },
+      });
+      expect(asset.mediaUpload?.storageKey).toBeNull();
+    } finally {
+      processing.mockRestore();
+      await api.db.groupMember.update({
+        where: { groupId_userId: { groupId, userId: moderator.id } },
+        data: { role: 'MODERATOR' },
+      });
+    }
   });
 });

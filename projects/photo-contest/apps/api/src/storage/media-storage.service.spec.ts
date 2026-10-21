@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { s3KeyPrefix } from '../config/env';
-import { assertPhotoKey } from './photo-key';
 import { createMediaKey, createStagingKey, MediaStorage } from './media-storage.service';
+import { assertPhotoKey } from './photo-key';
 
 afterEach(() => vi.unstubAllEnvs());
 describe('S3 객체 경로', () => {

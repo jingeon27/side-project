@@ -3,22 +3,23 @@ import { readdir } from 'node:fs/promises';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import { UnitOfWork } from '../database/unit-of-work';
-import { MediaStorage } from '../storage/media-storage.service';
-import type { TDatabaseClient } from '../database/database.service';
-import type { ITestApi, ITestUser } from '../../test/support/app';
-import { MaintenanceService } from '../maintenance/maintenance.service';
+import { createTestImage } from '@photo-contest/test-kit';
+
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
 import { createContest, createGroup, type ITestGroup } from '../../test/support/fixtures';
 import {
-  CREATE_SUBMISSION,
   COMPLETE_UPLOAD,
+  CREATE_SUBMISSION,
   postPhoto,
   requestUpload,
   submitPhoto,
   uploadPhoto,
 } from '../../test/support/photos';
+import type { TDatabaseClient } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { MaintenanceService } from '../maintenance/maintenance.service';
+import { MediaStorage } from '../storage/media-storage.service';
 
 const NOT_SUBMISSION_PHASE = { code: 'BAD_USER_INPUT', message: '사진 제출 기간이 아닙니다.' };
 const UPLOAD_INCOMPLETE = {

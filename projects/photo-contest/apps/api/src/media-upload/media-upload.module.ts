@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { GroupModule } from '../group/group.module';
+
+import { MembershipModule } from '../group/membership.module';
 import { MediaProcessor } from '../post/media-processor';
 import { MediaUploadService } from './media-upload.service';
 
 @Module({
-  imports: [GroupModule],
+  imports: [MembershipModule],
   providers: [MediaUploadService, MediaProcessor],
   exports: [MediaUploadService],
 })

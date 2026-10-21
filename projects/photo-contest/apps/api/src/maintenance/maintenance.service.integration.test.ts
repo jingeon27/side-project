@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto';
+
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { createTestImage } from '@photo-contest/test-kit';
+
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { postUpload } from '../../test/support/group-contest';
-import { MediaStorage, createMediaKey } from '../storage/media-storage.service';
+import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { MaintenanceService } from './maintenance.service';
 
 describe('직접 업로드 파일 정리 회귀', () => {

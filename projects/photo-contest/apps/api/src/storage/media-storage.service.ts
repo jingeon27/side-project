@@ -4,10 +4,10 @@ import { Injectable } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
 import { s3KeyPrefix, s3Settings, storageBackend, storageDir } from '../config/env';
-import { LocalPhotoStore } from './local-photo-store';
-import { S3PhotoStore } from './s3-photo-store';
-import { createLocalUploadGrant } from './local-upload-grant';
 import { CLEANUP_BATCH_SIZE, MEDIA_RANGE_BLOCK_BYTES } from '../config/limits';
+import { LocalPhotoStore } from './local-photo-store';
+import { createLocalUploadGrant } from './local-upload-grant';
+import { S3PhotoStore } from './s3-photo-store';
 
 function mediaKey(key: string) {
   if (!/^(?:[A-Za-z0-9_-]+\/)*[a-f0-9-]{36}\.(jpg|png|webp|mp4|webm)$/.test(key))

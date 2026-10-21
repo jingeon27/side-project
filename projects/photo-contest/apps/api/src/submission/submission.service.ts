@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
@@ -11,10 +10,9 @@ import { phase, PHASE } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
-import type { ISubmissionAccess } from '../group/membership.service';
-import { MembershipService } from '../group/membership.service';
-import { PhotoStorage } from '../storage/photo-storage.service';
+import { MembershipService, type ISubmissionAccess } from '../group/membership.service';
 import { MediaUploadService } from '../media-upload/media-upload.service';
+import { PhotoStorage } from '../storage/photo-storage.service';
 import { submissionOrderBy, toSubmissionSort } from './submission-sort';
 import { presentSubmission, submissionInclude, type ISubmissionView } from './submission.presenter';
 
@@ -77,14 +75,17 @@ export class SubmissionService {
   async requestUploadUrl(viewer: IViewer, contestId: string, contentType: string, byteSize: number) {
     const { contest } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-    return this.uploads.requestUpload(viewer, contest.groupId, contentType, byteSize, contestId);
+    return this.uploads.requestUpload(viewer, contest.groupId, contentType, byteSize, {
+      kind: 'SUBMISSION',
+      contestId,
+    });
   }
 
   async completeUpload(viewer: IViewer, uploadId: string) {
     const grant = await this.db.upload.findUnique({ where: { id: uploadId } });
     if (!grant || grant.userId !== viewer.id || !grant.mediaUploadId)
       fail(MESSAGE.UPLOAD_REJECTED, ERROR_CODE.FORBIDDEN);
-    await this.uploads.completeUpload(viewer, grant.mediaUploadId, grant.id);
+    await this.uploads.completeUpload(viewer, grant.mediaUploadId, { submissionId: grant.id });
     return true;
   }
 

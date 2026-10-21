@@ -1,9 +1,9 @@
 import {
+  MAX_MEDIA_ANALYSIS_BYTES,
+  MAX_MEDIA_RANGE_REQUESTS,
   MEDIA_ANALYSIS_TIMEOUT_MS,
   MEDIA_RANGE_BLOCK_BYTES,
   MEDIA_RANGE_CACHE_BLOCKS,
-  MAX_MEDIA_ANALYSIS_BYTES,
-  MAX_MEDIA_RANGE_REQUESTS,
 } from '../config/limits';
 import type { MediaStorage } from './media-storage.service';
 

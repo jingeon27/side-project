@@ -1,9 +1,10 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { request as httpRequest, type Server } from 'node:http';
 import { join } from 'node:path';
 
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';

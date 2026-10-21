@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { LOCAL_UPLOAD_ORPHAN_TTL_MS } from '../config/limits';
 import { LocalPhotoStore } from './local-photo-store';
 import { createMediaKey, MediaStorage } from './media-storage.service';
-import { LOCAL_UPLOAD_ORPHAN_TTL_MS } from '../config/limits';
 
 async function readStream(stream: Awaited<ReturnType<LocalPhotoStore['stream']>>) {
   const chunks: Buffer[] = [];

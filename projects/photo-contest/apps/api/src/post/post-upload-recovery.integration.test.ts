@@ -1,5 +1,7 @@
-import { createTestImage } from '@photo-contest/test-kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { createTestImage } from '@photo-contest/test-kit';
+
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import type { TDatabaseClient } from '../database/database.service';
