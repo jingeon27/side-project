@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
 import { SessionProvider, sessionOptions, useSession } from '@/features/auth';
-import { AuthOnboarding, openLoginDialog } from '@/widgets/authentication';
+import { AuthOnboarding, useLoginNavigation } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 import type { Session } from '@/shared/api';
 import { NativeBridge } from './NativeBridge';
@@ -16,6 +16,7 @@ import { MotionProvider } from '@/shared/motion';
 
 export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
   const { t } = useI18n();
+  const handleLogin = useLoginNavigation();
   const [client] = useState(() => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: true } },
@@ -30,7 +31,7 @@ export function Providers({ children, initialSession }: { children: ReactNode; i
           <NavigationHistory />
           <MobileViewport />
           <ToastProvider>
-            <SessionProvider onLogin={openLoginDialog}>
+            <SessionProvider onLogin={handleLogin}>
               <SessionContent>{children}</SessionContent>
             </SessionProvider>
           </ToastProvider>

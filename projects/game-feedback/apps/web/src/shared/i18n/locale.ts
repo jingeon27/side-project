@@ -1,3 +1,5 @@
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+
 export const locales = ['ko', 'en', 'ja'] as const;
 export type TLocale = (typeof locales)[number];
 export type TLanguagePreference = TLocale | 'auto';
@@ -28,7 +30,11 @@ export function detectLocale(acceptLanguage: string | null | undefined): TLocale
 export function preferredLocale(preference: unknown, acceptLanguage?: string | null): TLocale {
   return isLocale(preference) ? preference : detectLocale(acceptLanguage);
 }
-export function localePath(path: string, locale: TLocale) {
+export function localePath(path: string, locale: TLocale): string {
+  if (/^\/(ko|en|ja)\/login(?:[/?]|$)/.test(path)) {
+    const route = resolveAppRoute(path);
+    return appRoutes.login(locale, localePath(route?.parent ?? appRoutes.feed(locale), locale));
+  }
   return /^\/(ko|en|ja)(?=\/|\?|#|$)/.test(path)
     ? path.replace(/^\/(ko|en|ja)(?=\/|\?|#|$)/, `/${locale}`)
     : `/${locale}`;

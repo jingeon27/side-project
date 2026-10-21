@@ -6,6 +6,17 @@ import { infoMessages } from './info-messages';
 const messages: Record<string, readonly [string, string]> = {
   ...infoMessages,
   ...profileMessages,
+  '소셜 계정으로 로그인하세요.': [
+    'Sign in with your social account.',
+    'ソーシャルアカウントでログインしてください。',
+  ],
+  '로그인이 취소됐어요. 다시 선택해주세요.': [
+    'Sign-in was cancelled. Choose a method to try again.',
+    'ログインがキャンセルされました。もう一度選択してください。',
+  ],
+  '카카오 로그인': ['Login with Kakao', 'カカオでログイン'],
+  '준비 중': ['Soon', '準備中'],
+  '서비스 이용 안내': ['Service information', 'サービスのご案内'],
   '답변 상태': ['Reply status', '回答状況'],
   '답변 있음': ['Answered', '回答あり'],
   '답변을 기다리는 요청이 없어요.': [

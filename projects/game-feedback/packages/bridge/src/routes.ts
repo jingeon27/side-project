@@ -10,7 +10,16 @@ export const GameSlugSchema = z
   .max(40);
 export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings' | 'guide';
 export type TAppScreen =
-  TAppTab | 'search' | 'post' | 'compose' | 'profile' | 'conversation' | 'terms' | 'privacy' | 'contact';
+  | TAppTab
+  | 'search'
+  | 'post'
+  | 'compose'
+  | 'profile'
+  | 'conversation'
+  | 'terms'
+  | 'privacy'
+  | 'contact'
+  | 'login';
 export interface IAppRoute {
   path: string;
   pathname: string;
@@ -50,6 +59,7 @@ function queryPath(path: string, values: Record<string, string | undefined>) {
   return `${path}${query ? `?${query}` : ''}`;
 }
 export const appRoutes = {
+  login: (locale: string, returnTo?: string) => queryPath(`${root(locale)}/login`, { returnTo }),
   feed: (locale: string, filters: { q?: string; tab?: string } = {}) =>
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
   search: (
@@ -137,7 +147,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const segments =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(search|boards|write|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|search|boards|write|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
       pathname,
     );
   if (!segments) return null;
@@ -153,6 +163,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (!feedback.success || (feedback.data && !['search', 'boards'].includes(kind ?? ''))) return null;
   const context = { pathname, locale, home, query, game: game.data, id, feedback: feedback.data };
   return match(kind)
+    .with('login', () => resolveLoginRoute(context))
     .with('search', () => resolveSearchRoute(context))
     .with('write', () => resolveComposeRoute(context))
     .with('posts', () => resolvePostRoute(context))
@@ -171,6 +182,21 @@ interface IRouteContext {
   game: string;
   id?: string;
   feedback?: z.infer<typeof feedbackStatusSchema>;
+}
+
+function resolveLoginRoute({ pathname, locale, home, query }: IRouteContext): IAppRoute | null {
+  // 로그인 페이지를 다시 목적지로 받으면 복귀 경로가 순환한다.
+  if (query.returnTo && /^\/(ko|en|ja)\/login(?:[/?]|$)/.test(query.returnTo)) return null;
+  const destination = query.returnTo ? resolveAppRoute(query.returnTo) : null;
+  if (query.returnTo && (!destination || destination.locale !== locale)) return null;
+  return {
+    path: appRoutes.login(locale, destination?.path),
+    pathname,
+    locale,
+    screen: 'login',
+    tab: 'settings',
+    parent: destination?.path ?? home,
+  };
 }
 
 function resolveSearchRoute({ pathname, locale, query, game, feedback }: IRouteContext): IAppRoute | null {
