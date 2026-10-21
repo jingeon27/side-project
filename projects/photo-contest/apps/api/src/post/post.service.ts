@@ -227,10 +227,56 @@ export class PostService {
     });
     return presentPost(row, viewer.id);
   }
+  async update(
+    viewer: IViewer,
+    input: { postId: string; title: string; body?: string | null; categoryId?: string | null },
+  ) {
+    const title = textValue(input.title, POST_TITLE_LIMIT, '제목');
+    const body = input.body?.trim() ?? '';
+    if (body.length > POST_BODY_LIMIT) fail('내용은 5000자 이하로 입력해 주세요.');
+    return this.transactions.atomic(async (tx) => {
+      const { post, admin } = await this.membership.accessiblePost(viewer.id, input.postId, tx);
+      if (!admin && post.authorId !== viewer.id)
+        fail('작성자와 그룹 관리자만 수정할 수 있습니다.', ERROR_CODE.FORBIDDEN);
+      // 보관된 기존 분류는 유지할 수 있고, 다른 분류를 고를 때는 활성 여부를 확인한다.
+      if (input.categoryId !== undefined && input.categoryId !== null && input.categoryId !== post.categoryId)
+        await this.categories.requireActive(post.groupId, input.categoryId, tx);
+      const row = await tx.post.update({
+        where: { id: post.id },
+        data: {
+          title,
+          ...(input.body !== undefined ? { body } : {}),
+          ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+        },
+        include: postInclude(viewer.id),
+      });
+      await recordEvent(tx, {
+        id: `post-updated:${post.id}:${crypto.randomUUID()}`,
+        type: ANALYTICS_EVENT.POST_UPDATED,
+        userId: viewer.id,
+        properties: { postId: post.id, groupId: post.groupId },
+      });
+      return presentPost(row, viewer.id);
+    });
+  }
+
   async like(viewer: IViewer, postId: string, liked: boolean) {
     const row = await this.transactions.atomic(async (tx) => {
-      await this.membership.accessiblePost(viewer.id, postId, tx);
-      if (liked)
+      const { post } = await this.membership.accessiblePost(viewer.id, postId, tx);
+      const existing = liked
+        ? await tx.postLike.findUnique({ where: { postId_userId: { postId, userId: viewer.id } } })
+        : null;
+      if (liked && !existing && post.contestId) {
+        const contest = await tx.contest.findUniqueOrThrow({ where: { id: post.contestId } });
+        const count = await tx.postLike.count({
+          where: { userId: viewer.id, post: { contestId: post.contestId } },
+        });
+        if (count >= contest.likeLimit)
+          fail(
+            `이 대회에서는 ${contest.likeLimit}개 작품까지만 좋아요를 남길 수 있어요. 다른 작품의 좋아요를 취소한 뒤 다시 선택해 주세요.`,
+          );
+      }
+      if (liked && !existing)
         await (tx ?? this.db).postLike.upsert({
           where: { postId_userId: { postId, userId: viewer.id } },
           create: { postId, userId: viewer.id },

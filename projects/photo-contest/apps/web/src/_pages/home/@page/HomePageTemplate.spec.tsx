@@ -33,6 +33,8 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
   const state = { hasGroup };
   const group = {
     __typename: 'Group',
+    description: '',
+    avatarUrl: null,
     id: 'public',
     name: '공개 웃음',
     visibility: GroupVisibility.Public,

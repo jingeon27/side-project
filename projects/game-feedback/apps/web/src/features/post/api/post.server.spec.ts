@@ -55,7 +55,8 @@ describe('게시글 상세 서버 조회', () => {
       'post-1',
       expect.not.objectContaining({ headers: expect.anything() }),
     );
-    expect(cacheTag).toHaveBeenCalledExactlyOnceWith('post:post-1');
+    expect(cacheTag).toHaveBeenCalledExactlyOnceWith('posts', 'post:post-1');
+    expect(cacheLife).toHaveBeenCalledExactlyOnceWith('max');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

@@ -625,7 +625,7 @@ const messages: Record<string, readonly [string, string]> = {
   '작성글 페이지': ['Post pages', '投稿ページ'],
   처음으로: ['First page', '最初のページ'],
   '이전 요청 보기 →': ['Earlier requests →', '以前の依頼を見る →'],
-  '플레이메이트를 떠나시겠어요?': ['Leave Playmate?', 'Playmateを退会しますか？'],
+  'Game Mate를 떠나시겠어요?': ['Leave Game Mate?', 'Game Mateを退会しますか？'],
   '계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.': [
     'Your account, game profiles and content will be deleted. This cannot be undone.',
     'アカウント、ゲームプロフィール、投稿を削除します。取り消すことはできません。',
@@ -723,7 +723,7 @@ const messages: Record<string, readonly [string, string]> = {
   '어떤 이름으로 만날까요?': ['What should we call you?', 'どんな名前で参加しますか？'],
   '함께 플레이할 계정을 골라보세요': ['Choose an account to play with', '利用するアカウントを選んでください'],
   '다음 플레이는 함께, 더 좋게': ['Make your next game better, together', '次のプレイを、一緒にもっと良く'],
-  '플레이메이트에 오신 것을 환영해요.': ['Welcome to Playmate.', 'Playmateへようこそ。'],
+  'Game Mate에 오신 것을 환영해요.': ['Welcome to Game Mate.', 'Game Mateへようこそ。'],
   'Google로 시작하기': ['Continue with Google', 'Googleで続ける'],
   'Google의 공개 이름과 사진은 수집하지 않아요.': [
     'We do not collect your Google name or photo.',
@@ -828,8 +828,8 @@ const messages: Record<string, readonly [string, string]> = {
     '健全なゲーム文化を一緒につくりましょう。',
   ],
   '지금은 함께 만들어가는 알파 기간': ['Help us shape this alpha', '一緒につくるアルファ版です'],
-  '플레이메이트 홈': ['Playmate home', 'Playmateホーム'],
-  플레이메이트: ['Playmate', 'Playmate'],
+  'Game Mate 홈': ['Game Mate home', 'Game Mateホーム'],
+  'Game Mate': ['Game Mate', 'Game Mate'],
   '주 메뉴': ['Main menu', 'メインメニュー'],
   '이용 가이드': ['How to use', '使い方'],
   로그인: ['Sign in', 'ログイン'],

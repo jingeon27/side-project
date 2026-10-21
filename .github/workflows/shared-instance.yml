@@ -53,8 +53,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           tags: side-shared-gf-web:${{ github.sha }}
           build-args: |
-            GF_SITE_URL=${{ vars.GF_SITE_URL || 'https://game-feedback.test' }}
-            GF_CONTACT_EMAIL=${{ vars.GF_CONTACT_EMAIL || 'operator@game-feedback.test' }}
+            GF_SITE_URL=${{ vars.GF_SITE_URL || 'https://game.bambyul.com' }}
+            GF_CONTACT_EMAIL=${{ vars.GF_CONTACT_EMAIL || 'contact@bambyul.com' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.GF_WEB_SENTRY_DSN }}
             NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.GF_AMPLITUDE_API_KEY }}
           cache-from: type=gha,scope=game-feedback-web
@@ -82,7 +82,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           tags: side-shared-pc-web:${{ github.sha }}
           build-args: |
-            WEB_ORIGIN=${{ vars.PHOTO_CONTEST_SITE_URL || 'https://photo-contest.test' }}
+            WEB_ORIGIN=${{ vars.PHOTO_CONTEST_SITE_URL || 'https://contest.bambyul.com' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.PHOTO_CONTEST_WEB_SENTRY_DSN }}
             NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.PHOTO_CONTEST_AMPLITUDE_API_KEY }}
           cache-from: type=gha,scope=photo-contest-web-amd64
@@ -90,8 +90,8 @@ jobs:
       - name: Verify both services behind one HTTPS proxy with external database and object storage boundaries
         env:
           SIDE_SMOKE_TAG: ${{ github.sha }}
-          SIDE_GF_SITE_URL: ${{ vars.GF_SITE_URL || 'https://game-feedback.test' }}
-          SIDE_PC_SITE_URL: ${{ vars.PHOTO_CONTEST_SITE_URL || 'https://photo-contest.test' }}
+          SIDE_GF_SITE_URL: ${{ vars.GF_SITE_URL || 'https://game.bambyul.com' }}
+          SIDE_PC_SITE_URL: ${{ vars.PHOTO_CONTEST_SITE_URL || 'https://contest.bambyul.com' }}
         run: node projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs
       - name: Archive the exact images verified together
         run: |

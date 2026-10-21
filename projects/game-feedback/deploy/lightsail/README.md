@@ -18,7 +18,7 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
 2. 아래 명령을 **직접** 실행하면 유료 인스턴스와 Static IP를 만든다. 이 저장소를 수정하거나 PR을 만드는 것만으로 AWS가 생성되지 않는다.
 
    ```sh
-   GF_BUDGET_EMAIL=jingeon27@gmail.com bash projects/game-feedback/deploy/lightsail/provision.sh <서울-키페어-이름>
+   GF_BUDGET_EMAIL=contact@bambyul.com bash projects/game-feedback/deploy/lightsail/provision.sh <서울-키페어-이름>
    ```
 
    활성 Ubuntu 24.04 blueprint를 조회하고 `stack.yaml`을 적용한다. SSH 허용 CIDR은 기본 전체 IPv4이며 키 인증을 사용한다. 제한할 때에는 GitHub 배포 러너의 접근 경로도 준비해야 한다. SSH 키는 GitHub 전용 키를 서버의 `ubuntu/.ssh/authorized_keys`에 별도 등록하는 편이 좋다. Docker 그룹 사용자는 호스트 관리 권한이 있으므로 전용 키를 관리한다.
@@ -33,10 +33,13 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
    | `GF_CONTACT_EMAIL`                       | `contact@bambyul.com`                          |
    | `GF_IMAGE_PREFIX`                        | `ghcr.io/jingeon27/side-project-game-feedback` |
    | `GF_DB_PASSWORD`, `GF_DB_ADMIN_PASSWORD` | 각각 따로 생성한 `openssl rand -hex 32` 값     |
+   | `GF_CACHE_REVALIDATION_SECRET`           | 추가로 생성한 `openssl rand -hex 32` 값        |
    | OAuth client ID/secret                   | 아래 제공자 중 적어도 한 쌍의 실제 운영 키     |
    | `GF_INDEXING`                            | 최초에는 `false`                               |
 
    운영은 HTTPS origin, 강한 DB 암호, 완전한 OAuth 설정을 검사한다. 테스트 계정·데모·Next testing API는 꺼져 있고 설정으로 켜면 시작을 거부한다. Supercell 조회에는 실제 API 토큰과 서버 Static IP 등록이 별도로 필요하다.
+
+   Compose는 캐시 무효화 비밀을 API/Web에 동일하게 전달한다. API는 Docker 내부의 `http://web:3300/_internal/cache/revalidate`를 호출하며 이 경로는 Caddy에서 차단한다. 콜백 실패는 DB 큐에서 재시도하고, 성공한 쓰기를 실패로 바꾸지 않는다. 기존 설치도 새 비밀을 설정하고 `CacheInvalidation` migration을 적용한 뒤 배포한다.
 
 6. OAuth 제공자에 실제 도메인의 callback을 등록한다. 제공자가 허용한 앱 상태·동의 항목도 확인한다.
 

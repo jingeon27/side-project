@@ -10,7 +10,7 @@ import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
-import { buildContestDefaults, createContestSchema } from '../model/contest.schema';
+import { buildContestDefaults, createGroupContestSchema } from '../model/contest.schema';
 
 export function CreateGroupContestBottomSheet({
   groupId,
@@ -20,7 +20,7 @@ export function CreateGroupContestBottomSheet({
 }: IBottomSheetControlProps & { groupId: string }) {
   const formId = useId();
   const [defaults] = useState(() => buildContestDefaults(new Date()));
-  const form = useZodForm(createContestSchema, { defaultValues: defaults });
+  const form = useZodForm(createGroupContestSchema, { defaultValues: { ...defaults, likeLimit: 1 } });
   const router = useAppRouter();
   const [create] = useMutation(CreateGroupContestDocument, {
     refetchQueries: [GroupContestsDocument],
@@ -56,6 +56,17 @@ export function CreateGroupContestBottomSheet({
             maxLength={80}
             error={errors.title?.message}
             {...form.register('title')}
+          />
+          <TextField
+            required
+            type="number"
+            label="1인당 좋아요 한도"
+            min={1}
+            max={100}
+            step={1}
+            description="이 대회에서 한 사람이 좋아요를 남길 수 있는 작품 수예요. 기본값은 1개이며, 취소하면 다른 작품을 선택할 수 있어요. 대회 투표와는 별개입니다."
+            error={errors.likeLimit?.message}
+            {...form.register('likeLimit', { valueAsNumber: true })}
           />
           <TextField
             required

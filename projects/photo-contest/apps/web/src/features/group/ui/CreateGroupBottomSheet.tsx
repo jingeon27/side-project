@@ -10,7 +10,7 @@ import { useAppRouter } from '@/shared/model/router';
 import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
 import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
-import { TextField } from '@/shared/ui/@core/text-field';
+import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { prependMyGroup } from '../model/group.cache';
 import { createGroupSchema } from '../model/group.schema';
@@ -22,7 +22,7 @@ const FORM_ID = 'create-group-form';
 export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomSheetControlProps) {
   const router = useAppRouter();
   const form = useZodForm(createGroupSchema, {
-    defaultValues: { name: '', visibility: GroupVisibility.Public },
+    defaultValues: { name: '', description: '', visibility: GroupVisibility.Public },
   });
   const [createGroup, { loading }] = useMutation(CreateGroupDocument, {
     update: (cache, { data }) => {
@@ -63,6 +63,14 @@ export function CreateGroupBottomSheet({ isOpen, onClose, unmount }: IBottomShee
             enterKeyHint="done"
             error={form.formState.errors.name?.message}
             {...form.register('name')}
+          />
+          <TextArea
+            label="그룹 소개"
+            maxLength={500}
+            rows={3}
+            placeholder="어떤 순간을 함께 나눌까요?"
+            error={form.formState.errors.description?.message}
+            {...form.register('description')}
           />
           <GroupVisibilityField form={form} />
         </form>

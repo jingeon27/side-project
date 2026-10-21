@@ -1,4 +1,5 @@
 fragment GroupContestSummary on GroupContest {
+  likeLimit
   id
   groupId
   title
@@ -42,6 +43,7 @@ query GroupContestResults($contestId: ID!) {
   }
 }
 mutation CreateGroupContest(
+  $likeLimit: Int = 1
   $groupId: ID!
   $title: String!
   $startsAt: DateTime!
@@ -49,6 +51,7 @@ mutation CreateGroupContest(
   $endsAt: DateTime!
 ) {
   createGroupContest(
+    likeLimit: $likeLimit
     groupId: $groupId
     title: $title
     startsAt: $startsAt

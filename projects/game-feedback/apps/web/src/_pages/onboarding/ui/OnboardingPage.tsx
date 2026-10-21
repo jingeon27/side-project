@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useEffect } from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { appRoutes } from '@game-feedback/bridge';
@@ -37,7 +38,10 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
   return (
     <section className="onboarding-page" lang={locale} aria-labelledby="onboarding-title">
       <div className="login-page-heading">
-        <p className="login-service-name">{t('플레이메이트')}</p>
+        <p className="login-service-name">
+          <Image src="/icon.svg" alt="" aria-hidden width={28} height={28} unoptimized />
+          {t('Game Mate')}
+        </p>
         <h1 id="onboarding-title">{t('회원가입')}</h1>
         <p>{t('사용할 닉네임을 정하고 필수 항목에 동의해 주세요.')}</p>
       </div>

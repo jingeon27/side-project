@@ -29,7 +29,7 @@ describe('SEO metadata and visibility', () => {
     const titles = new Set<string>();
     for (const kind of Object.keys(pageContent) as (keyof typeof pageContent)[]) {
       const metadata = staticPageMetadata(kind, 'ko');
-      expect(metadata.title).toMatchObject({ absolute: expect.stringContaining(' | 플레이메이트') });
+      expect(metadata.title).toMatchObject({ absolute: expect.stringContaining(' | Game Mate') });
       titles.add(
         typeof metadata.title === 'object' && metadata.title && 'absolute' in metadata.title
           ? String(metadata.title.absolute)
@@ -84,7 +84,7 @@ describe('SEO metadata and visibility', () => {
           '@type': 'WebSite',
           '@id': 'https://feedback.example/#website',
           url: 'https://feedback.example/',
-          name: '플레이메이트',
+          name: 'Game Mate',
         });
         expect(page).toMatchObject({
           '@type': kind === 'contact' ? 'ContactPage' : 'WebPage',

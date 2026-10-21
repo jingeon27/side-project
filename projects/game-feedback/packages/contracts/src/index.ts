@@ -1,6 +1,13 @@
 export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { z } from 'zod';
+export {
+  POSTS_CACHE_TAG,
+  DISCOVERY_CACHE_TAG,
+  CacheTagSchema,
+  CacheRevalidationSchema,
+  postCacheTag,
+} from './cache-revalidation';
 import { RichTextDocumentSchema } from './rich-text';
 import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
 import {

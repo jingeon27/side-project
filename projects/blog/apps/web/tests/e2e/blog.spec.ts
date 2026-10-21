@@ -39,9 +39,9 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('heading', { level: 1, name: article.title })).toBeVisible();
   await expect(page.locator('.article-prose')).toBeVisible();
   await page.getByRole('navigation').getByRole('link', { name: ko.nav.about, exact: true }).click();
-  await expect(page.getByRole('link', { name: 'jingeon27@gmail.com' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'contact@bambyul.com' })).toHaveAttribute(
     'href',
-    'mailto:jingeon27@gmail.com',
+    'mailto:contact@bambyul.com',
   );
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { author } from '@/shared/config/site';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 
@@ -25,7 +26,7 @@ export default async function AboutPage({ params }: Props) {
           <div>
             <dt>Email</dt>
             <dd>
-              <a href="mailto:jingeon27@gmail.com">jingeon27@gmail.com</a>
+              <a href={`mailto:${author.email}`}>{author.email}</a>
             </dd>
           </div>
           <div>

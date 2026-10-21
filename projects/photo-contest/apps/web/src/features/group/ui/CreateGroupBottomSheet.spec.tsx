@@ -29,6 +29,8 @@ vi.mock('@/shared/model/analytics', async (importOriginal) => ({
 
 const group = (id: string, name: string): GroupCardFragment => ({
   __typename: 'Group',
+  description: '',
+  avatarUrl: null,
   id,
   name,
   role: GroupRole.Owner,

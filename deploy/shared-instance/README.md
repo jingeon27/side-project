@@ -3,16 +3,22 @@
 Photo Contest와 Game Feedback을 서울 리전의 **EC2 한 대 + 외부 RDS PostgreSQL 한 인스턴스 + 서비스별 비공개 S3 버킷**으로 운영한다. 두 서비스의 API 프로토콜은 각각 GraphQL과 REST를 유지한다. 운영 이미지는 모두 `linux/amd64`다.
 
 ```text
-game.example.com  ─┐                    ┌─ GF Web / GF API ─ game_feedback DB / GF S3
-                  ├─ Caddy :443 ────────┤
-photo.example.com ─┘                    └─ PC Web / PC API ─ photo_contest DB / PC S3
+game.bambyul.com         ─┐              ┌─ GF Web
+api.game.bambyul.com     ─┤              ├─ GF API ─ game_feedback DB / GF S3
+                         ├─ Caddy :443 ─┤
+contest.bambyul.com      ─┤              ├─ PC Web
+api.contest.bambyul.com  ─┘              └─ PC API ─ photo_contest DB / PC S3
 ```
+
+제품명은 Game Mate와 별사대(별난 사진 대회)다. 밤별 블로그는 `blog.bambyul.com`에서 별도 Vercel 프로젝트로 운영한다. `api.blog.bambyul.com`은 주소만 예약하며 현재 별도 API 서버는 없다.
+
+웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 별사대 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
 
 Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. DB·원본 미디어는 EC2 볼륨에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스가 함께 중단되는 구조다.
 
 ## AWS에서 먼저 준비할 것
 
-1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 두 도메인의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
+1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 네 호스트의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
 2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
 3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. 컨테이너에서 IMDSv2로 인스턴스 역할을 읽으려면 EC2 metadata 응답 hop limit을 2로 설정한다.
 4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. [수명 주기](s3-lifecycle.json)는 오래된 이전 버전과 미완료 multipart만 정리하며 현재 객체를 만료시키지 않는다. Game Feedback 게시글·채팅 첨부는 presigned POST로 직접 전송하므로 해당 버킷에 [CORS 예시](../../projects/game-feedback/deploy/shared-instance/s3-cors.json)의 origin을 실제 도메인으로 바꿔 적용한다. 버킷 공개 접근은 계속 차단한다. [업로드와 조회 검증](../../projects/game-feedback/docs/media-upload.md)을 확인한다.
@@ -76,9 +82,9 @@ GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) �
 | Variable            | `SIDE_DEPLOY_SSH_PORT`                                             | 보통 `22`                                                                                 |
 | Variable            | `SIDE_DEPLOY_SSH_KNOWN_HOSTS`                                      | 신뢰할 경로로 확인한 서버 host key. 검증 없는 `ssh-keyscan` 결과를 그대로 신뢰하지 않는다 |
 | Secret              | `SIDE_DEPLOY_SSH_KEY`                                              | 배포용 SSH private key                                                                    |
-| Repository Variable | `GF_SITE_URL`                                                      | GF의 `https://실제도메인`                                                                 |
+| Repository Variable | `GF_SITE_URL`                                                      | `https://game.bambyul.com`                                                                |
 | Repository Variable | `GF_CONTACT_EMAIL`                                                 | `contact@bambyul.com`                                                                     |
-| Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | PC의 `https://실제도메인`                                                                 |
+| Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | `https://contest.bambyul.com`                                                             |
 | Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치, 예: `main`                                                              |
 | Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택적 공개 Web 빌드 설정                                                                 |
 
@@ -146,3 +152,10 @@ SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 �
 ## Next 컴파일 캐시
 
 두 웹 빌드는 각각 gf-next-cache/pc-next-cache BuildKit mount를 사용한다. shared-instance workflow는 SHA 키와 OS restore prefix의 Actions cache, 고정 커밋의 cache-dance로 mount를 복원·추출한다. 기존 GHA 이미지 레이어 캐시도 유지한다. 같은 브랜치의 두 번째 소스 변경 빌드에서 캐시 복원 로그와 Next 컴파일 시간을 비교한다. 캐시를 적용했다고 실제 속도 향상을 측정한 것으로 간주하지 않는다. 저장 한도·보존 정책은 GitHub 설정을 따른다.
+
+## Bambyul DNS와 클라이언트 설정
+
+- `game.bambyul.com`, `api.game.bambyul.com`, `contest.bambyul.com`, `api.contest.bambyul.com`의 A/AAAA 레코드를 같은 EC2 고정 주소로 연결한다. Caddy가 각 호스트의 TLS 인증서를 발급한다.
+- `host.env.example`의 네 DOMAIN 값을 복사하고 `proxy.sh validate` 후 시작한다. API 주소는 `api.<웹 도메인>` 규칙이며 네 호스트는 서로 달라야 한다.
+- GitHub Variables의 `GF_SITE_URL`은 `https://game.bambyul.com`, `PHOTO_CONTEST_SITE_URL`은 `https://contest.bambyul.com`으로 지정한다. 빌드·통합 검사의 기본 운영 origin도 이 값이다. CI HTTPS 요청은 loopback·테스트 CA를 사용하므로 실제 DNS나 운영 서버에 연결하지 않는다.
+- 모바일 release의 `EXPO_PUBLIC_WEB_ORIGIN`은 각 앱의 `.env.production.example`을 참고한다. 앱 이름·홈 화면 아이콘은 네이티브 앱을 새로 빌드해야 반영된다.

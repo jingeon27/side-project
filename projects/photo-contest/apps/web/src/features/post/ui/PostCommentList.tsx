@@ -63,7 +63,7 @@ export function PostCommentList({
           <p className="text-caption text-muted">함께 웃은 포인트, 가벼운 한마디면 충분해요.</p>
         </div>
       )}
-      {complete && data.postComments.length < post.commentCount ? (
+      {data.postComments.length < data.postCommentCount ? (
         <Button
           variant="ghost"
           size="md"

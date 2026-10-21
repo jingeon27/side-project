@@ -20,9 +20,11 @@ import { FollowsModule } from './follows/follows.module';
 import { ApiAccessMiddleware } from './common/http/api-access.middleware';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { MediaStorageModule } from './media-storage/media-storage.module';
+import { CacheInvalidationModule } from './cache-invalidation/cache-invalidation.module';
 
 @Module({
   imports: [
+    CacheInvalidationModule,
     MediaStorageModule,
     AuthModule,
     UsersModule,

@@ -90,6 +90,9 @@
     margin-bottom: 32px;
   }
   .login-service-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0 0 16px;
     font-size: var(--text-label);
     font-weight: 600;

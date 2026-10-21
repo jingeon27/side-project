@@ -1,4 +1,16 @@
-# 2026-10-21 게시글 상세 공개 캐시
+# 2026-10-22 NestJS 변경에 따른 Next.js 태그 만료
+
+공개 게시글 상세는 `'use cache'` 안에서 `cacheTag('posts', 'post:<id>')`와 `cacheLife('max')`를 사용한다. 60초 간격 재검증 대신 NestJS의 변경 커밋이 태그를 만료한다. `updateTag`는 Server Action에서만 사용할 수 있으므로 작성자의 Router Cache를 갱신하는 기존 액션에 유지한다. API가 호출하는 `POST /_internal/cache/revalidate` Route Handler는 `revalidateTag(tag, { expire: 0 })`를 사용해 첫 후속 조회부터 새 데이터를 기다린다. `'max'` 재검증의 stale 응답을 첫 조회에 반환하지 않는다.
+
+게시글·답변·댓글·도움됨·읽음·조회수, 관리자 숨김/복원과 작성자 인증/밴/게임 태그/프로필 사진·탈퇴 변경을 연결했다. 개별 변경은 `post:<id>`, 작성자 정보 변경은 `posts`를 만료한다. 글 생성/수정/삭제·숨김/복원·탈퇴·카테고리 생성은 `discovery`도 만료해 sitemap에 반영한다. 개인화된 차단 필터는 공유 캐시 밖에 유지한다.
+
+데이터 변경과 태그 기록은 하나의 DB 트랜잭션이다. 커밋 후 최대 1.5초 안에 콜백을 시도하고, 실패해도 쓰기는 성공한다. 미전달 태그는 `CacheInvalidation` 테이블에서 5초 주기로 재시도하며 API 재시작 후에도 남는다. 태그별 revision을 비교해 오래된 콜백의 성공이 그 사이 발생한 새 쓰기를 지우지 않게 했다. 실패는 일반 경고와 설정된 Sentry로 보고하며 요청 헤더·비밀·게시글 내용은 보고하지 않는다.
+
+콜백은 양쪽 서버에만 주입한 `GF_CACHE_REVALIDATION_SECRET`으로 인증한다. 상수 시간 해시 비교, 허용된 태그·최대 64개·본문 크기 검사와 `no-store` 응답을 적용했다. Caddy는 `/_internal`을 외부에서 차단하고 API는 단일 Web 컨테이너의 내부 주소를 호출한다. 운영 `.env`에 `openssl rand -hex 32`로 생성한 비밀을 추가해야 하며 두 Compose 구성과 smoke fixture에 전달을 연결했다. 로컬 통합 dev 명령은 메모리에서만 공유하는 임시 비밀을 생성한다. 독립 실행은 두 프로세스의 비밀을 일치시키고 API에 콜백 URL을 설정한다. 추가형 migration `20261022020000_cache_invalidations`를 운영 `migrate deploy`로 적용한다.
+
+검증: API unit 92개와 PostgreSQL 통합 122개, Web unit/UI 144개, SDK 43개, Admin unit 5개가 통과했다. 새 통합 사양은 실제 migration 실행, 커밋 이후 콜백, 롤백 시 이벤트 미생성, 콜백 실패·재시작 후 재전송, 동시 쓰기의 revision 보존을 검증한다. production build/start의 캐시·댓글 Playwright 5개와 PPR/프리패치 12개가 통과했으며 JavaScript 없는 첫 후속 HTML에서 API 직접 수정·댓글 생성/수정/삭제·관리자 숨김/복원이 반영되는지 확인했다. API/Web/Admin/계약/SDK 타입 검사, Web/Admin lint, 변경 파일 Prettier, 추가 migration 호환 검사와 스크립트 구문 검사도 통과했다. SDK 재생성 diff는 0개다. 실제 AWS 설정·운영 배포는 하지 않았고 Docker CLI가 없어 컨테이너 smoke는 실행하지 않았다.
+
+# 2026-10-21 게시글 상세 공개 캐시 (10월 22일 변경 전 기록)
 
 게시글 상세의 서버 조회(본문·메타데이터·상단바)는 모든 사용자가 쿠키 없이 받은 공개 응답을 `'use cache'`로 게시글 id마다 함께 쓴다(`post:<id>` 태그, 60초 재검증, 1시간 만료). 로그인 요청만 API의 `/_internal/visibility/excluded-authors`에서 양방향 차단 관계를 받아, 작성자와 차단 관계면 404로 막고 그런 사람의 답변·댓글을 뺀다. Caddy는 `/api`만 API로 전달하고 `/_internal`을 edge에서 막으므로 이 경로는 웹 서버만 부른다. 사용자가 자신을 차단한 사람을 응답에서 알 수 없다. 화면은 계속 요청마다 렌더하므로 댓글의 상대 시각 처리는 그대로다.
 
@@ -1054,3 +1066,9 @@ E2E 서버의 가짜 Google 제공자는 기존 NODE_ENV=test·격리 DB·전용
 디자인 시스템 lint·typecheck·Vitest 16개가 통과했다. 웹 E2E에서 실제 마우스와 Chromium 터치 이벤트로 확장·축소·아래로 닫기를 검사했고, 높이를 바꿔도 입력 초안이 보존되는지 확인했다. 게임 계정·신고 시트와 확인 Dialog의 기존 동작도 검증했다. 393px 가입 라이트/다크와 시트 핸들 화면을 직접 확인했다. 초기 캡처가 테마 전환 중간에 찍히지 않도록 입력 글자와 주 버튼의 최종 다크 색상을 기다린다.
 
 문의 메일은 contact@bambyul.com으로 변경했다. 오류 복구·문의 페이지의 기본 주소, 로컬·Lightsail·공통 인스턴스의 환경변수 예제와 회귀 검사를 함께 맞췄다. 공통 deploy/shared-instance/README.md 수정은 GF_CONTACT_EMAIL 예제 한 항목을 갱신하기 위한 것이다. ACME 인증서·예산 알림 주소는 문의 주소와 별도 설정으로 유지한다. 새 의존성이나 루트 manifest·lock 변경은 없다. 변경 파일 Prettier와 diff 검사를 통과했으며 실행 중인 개발 서버·개발 DB는 변경하지 않았다. 검증 후 이번 작업이 소유한 테스트 DB만 중지하고 데이터를 보존했다.
+
+## PR #28의 develop 병합 충돌 해결 (2026-10-22)
+
+최신 develop 4921df3을 기능 브랜치에 merge했다. 공통 배포 안내와 Lightsail 환경 예제는 game.bambyul.com과 contact@bambyul.com을 유지하고, 가입 페이지 전용 레이아웃과 드래그 시트를 보존했다. 삭제한 OnboardingDialog는 되살리지 않고 새 가입 페이지에 Game Mate 이름과 28px 아이콘을 적용했다. develop의 NestJS 캐시 무효화와 다른 서비스 변경은 그대로 반영했다.
+
+병합 결과에서 Web Vitest 160개, API 단위 105개와 로그인·OAuth·캐시 관련 Supertest 통합 30개, 실제 Next production build/start의 Playwright 12개가 통과했다. Playwright는 모바일·데스크톱 로그인, 가입과 언어·복귀 경로, 마우스·터치 시트와 캐시 갱신·관리자 숨김·인증 없는 무효화 요청 거부를 확인했다. API/Web 타입 검사와 Web lint, OpenAPI/SDK 재생성 diff, 변경 파일 Prettier와 diff 검사도 통과했다. 기존 개발 서버와 개발 DB는 변경하지 않았고 검증 후 소유한 테스트 DB만 중지해 데이터를 보존했다. 실제 외부 OAuth와 물리 기기 검증은 포함하지 않는다.

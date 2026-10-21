@@ -1,10 +1,10 @@
 import { expirePostDetailCache } from '../api/post-cache.action';
 
-/** 쓰기 성공 뒤 서버의 게시글 상세 캐시를 비운다. 실패해도 60초 재검증으로 따라잡으므로 화면 갱신을 막지 않는다. */
+/** 작성자의 Router Cache도 즉시 갱신한다. API의 영속 큐가 서버 캐시 무효화를 별도로 재시도한다. */
 export async function refreshServerPostDetail(id: string) {
   try {
     await expirePostDetailCache(id);
   } catch {
-    // 서버 캐시는 재검증 주기 안에 갱신된다.
+    // API가 저장한 무효화 요청은 Next.js 연결 복구 후에도 재시도된다.
   }
 }

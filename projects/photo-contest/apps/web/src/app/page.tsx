@@ -40,7 +40,7 @@ export default async function Page() {
         variables={{ sort: PostSort.Newest, offset: 0, limit: 24 }}
         context={publicPreloadContext(PublicGalleryPostsDocument)}
       >
-        <HomePageTemplate />
+        <HomePageTemplate initialHasGroups={false} />
       </PreloadQuery>
     </PreloadQuery>
   ) : (
@@ -52,7 +52,7 @@ export default async function Page() {
         query={GalleryPostsDocument}
         variables={{ groupId: null, sort: PostSort.MonthlyPopular, offset: 0, limit: 3 }}
       >
-        <HomePageTemplate memberFeedPreloaded />
+        <HomePageTemplate memberFeedPreloaded initialHasGroups />
       </PreloadQuery>
     </PreloadQuery>
   );

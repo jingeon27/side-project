@@ -6,10 +6,15 @@ import type { ProfileProvider } from '../game-profiles/providers/profile-provide
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
 import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
+import {
+  resolveCacheRevalidationConfig,
+  type ICacheRevalidationConfig,
+} from '../cache-invalidation/cache-invalidation.config';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
 export interface AppOptions {
+  cacheRevalidation?: ICacheRevalidationConfig;
   databaseUrl?: string;
   webOrigin?: string;
   demoMode?: boolean;
@@ -24,6 +29,7 @@ export interface AppOptions {
 }
 
 export interface AppConfig {
+  cacheRevalidation?: ICacheRevalidationConfig;
   databaseUrl: string;
   production: boolean;
   demoMode: boolean;
@@ -55,6 +61,7 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     options.identityProvider,
   );
   return {
+    cacheRevalidation: options.cacheRevalidation ?? resolveCacheRevalidationConfig(process.env),
     databaseUrl: assertDatabaseUrl(options.databaseUrl ?? process.env.DATABASE_URL),
     production,
     demoMode,
