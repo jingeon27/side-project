@@ -68,6 +68,9 @@ describe('그룹 게시물 캐시', () => {
           postComments: [
             {
               __typename: 'PostComment',
+              likeCount: 0,
+              likedByMe: false,
+              canInteract: true,
               id,
               postId,
               body: id,

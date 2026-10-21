@@ -107,6 +107,9 @@ query PostDownload($postId: ID!) {
 }
 
 fragment PostCommentCard on PostComment {
+  likeCount
+  likedByMe
+  canInteract
   id
   postId
   body
@@ -169,5 +172,20 @@ query PostCategoryOptions($id: ID!) {
 mutation SetPostCategory($postId: ID!, $categoryId: ID) {
   setPostCategory(postId: $postId, categoryId: $categoryId) {
     ...GalleryPostCard
+  }
+}
+
+mutation LikePostComment($commentId: ID!) {
+  likePostComment(commentId: $commentId) {
+    id
+    likeCount
+    likedByMe
+  }
+}
+mutation UnlikePostComment($commentId: ID!) {
+  unlikePostComment(commentId: $commentId) {
+    id
+    likeCount
+    likedByMe
   }
 }

@@ -15,6 +15,8 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Button } from '@/shared/ui/@core/button';
 
+import { PostCommentLikeButton } from './PostCommentLikeButton';
+
 export function PostCommentCard({
   id,
   viewerId,
@@ -54,6 +56,7 @@ export function PostCommentCard({
           {comment.body}
         </p>
         <div className={cn('flex items-center gap-1', isMine && 'flex-row-reverse')}>
+          <PostCommentLikeButton id={id} />
           <time className="text-micro text-muted" dateTime={comment.createdAt}>
             {formatDateTime(comment.createdAt)}
           </time>

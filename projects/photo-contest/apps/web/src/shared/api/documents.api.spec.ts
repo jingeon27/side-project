@@ -23,6 +23,8 @@ import {
   UnlikePostDocument,
   CreatePostCommentDocument,
   DeletePostCommentDocument,
+  LikePostCommentDocument,
+  UnlikePostCommentDocument,
   PostCommentsDocument,
   PostDownloadDocument,
   PostSort,
@@ -361,7 +363,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
         ?.commentCount,
     ).toBe(1);
     expect((await ok(PostCommentsDocument, outsider, commentVariables)).postComments).toEqual([
-      { ...comment, canDelete: false },
+      { ...comment, canDelete: false, canInteract: false },
     ]);
     expect(
       (await execute(CreatePostCommentDocument, outsider, { postId: photo.id, body: '가입 전 댓글' }))
@@ -371,6 +373,44 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       (await execute(DeletePostCommentDocument, outsider, { commentId: comment.id })).errors?.[0]?.extensions
         ?.code,
     ).toBe('FORBIDDEN');
+    expect(comment).toMatchObject({ likeCount: 0, likedByMe: false, canInteract: true });
+    expect(
+      (await execute(LikePostCommentDocument, outsider, { commentId: comment.id })).errors?.[0]?.extensions
+        ?.code,
+    ).toBe('FORBIDDEN');
+    expect(
+      (await execute(UnlikePostCommentDocument, undefined, { commentId: comment.id })).errors?.[0]?.extensions
+        ?.code,
+    ).toBe('UNAUTHENTICATED');
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(
+        (await ok(LikePostCommentDocument, owner, { commentId: comment.id })).likePostComment,
+      ).toMatchObject({
+        id: comment.id,
+        likeCount: 1,
+        likedByMe: true,
+      });
+    expect((await ok(PostCommentsDocument, owner, commentVariables)).postComments[0]).toMatchObject({
+      likeCount: 1,
+      likedByMe: true,
+    });
+    expect((await ok(PostCommentsDocument, member, commentVariables)).postComments[0]).toMatchObject({
+      likeCount: 1,
+      likedByMe: false,
+    });
+    expect((await ok(PostCommentsDocument, undefined, commentVariables)).postComments[0]).toMatchObject({
+      likeCount: 1,
+      likedByMe: false,
+      canInteract: false,
+    });
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(
+        (await ok(UnlikePostCommentDocument, owner, { commentId: comment.id })).unlikePostComment,
+      ).toMatchObject({
+        id: comment.id,
+        likeCount: 0,
+        likedByMe: false,
+      });
     expect((await ok(DeletePostCommentDocument, owner, { commentId: comment.id })).deletePostComment).toBe(
       true,
     );
