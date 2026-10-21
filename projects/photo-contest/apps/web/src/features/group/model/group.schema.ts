@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { GroupVisibility } from '@/shared/api/generated';
 
 export const createGroupSchema = z.object({

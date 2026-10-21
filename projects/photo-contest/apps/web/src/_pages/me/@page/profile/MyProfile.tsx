@@ -1,7 +1,6 @@
 'use client';
 
-import { useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { LogoutButton } from '@/features/auth';
 import type { MeQuery } from '@/shared/api/generated';

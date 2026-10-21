@@ -1,14 +1,16 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
-import { ArrowUpRight, Users } from 'lucide-react';
 import Link from 'next/link';
 
-import { GroupVisibilityBadge } from './GroupVisibilityBadge';
-import { GroupMembershipButton } from './GroupMembershipButton';
+import { useFragment } from '@apollo/client/react';
+import { ArrowUpRight, Users } from 'lucide-react';
+
 import { DiscoverGroupFragmentDoc, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatCount } from '@/shared/lib/format.helper';
+
+import { GroupMembershipButton } from './GroupMembershipButton';
+import { GroupVisibilityBadge } from './GroupVisibilityBadge';
 
 export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinable?: boolean }) {
   const { data: group, complete } = useFragment({

@@ -1,9 +1,11 @@
-import { useApolloClient } from '@apollo/client/react';
-import type { IWebBridge } from '@photo-contest/bridge/web';
-import { setTags } from '@sentry/nextjs';
-import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+
+import { useApolloClient } from '@apollo/client/react';
+import { setTags } from '@sentry/nextjs';
 import { match } from 'ts-pattern';
+
+import type { IWebBridge } from '@photo-contest/bridge/web';
 
 import { buildSentryClientTags } from '@/shared/lib/sentry.helper';
 import {

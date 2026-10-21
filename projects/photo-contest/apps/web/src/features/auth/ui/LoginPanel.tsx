@@ -1,11 +1,13 @@
 'use client';
 
+import { useId, useTransition } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+import { CircleAlert, MessageCircle, RotateCw } from 'lucide-react';
+import { match } from 'ts-pattern';
+
 import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
 import { BridgeError } from '@photo-contest/bridge/web';
-import { CircleAlert, MessageCircle, RotateCw } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useId, useTransition } from 'react';
-import { match } from 'ts-pattern';
 
 import { NEXT_PATH_PARAM } from '@/shared/constants/auth';
 import { BACKEND_ROUTES } from '@/shared/constants/routes';
@@ -22,13 +24,12 @@ import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 
-import { exchangeAppLogin, requestDevLogin } from '../api/auth-request.helper';
-import type { TAuthConfig } from '../api/auth-request.helper';
-import { PasswordAuthForms } from './PasswordAuthForms';
+import { exchangeAppLogin, requestDevLogin, type TAuthConfig } from '../api/auth-request.helper';
 import { completeLogin } from '../lib/complete-login.helper';
 import { savePendingLogin } from '../lib/login-marker.helper';
 import { retryAuthConfig, useAuthConfig } from '../model/auth-config.store';
 import { devLoginSchema } from '../model/login.schema';
+import { PasswordAuthForms } from './PasswordAuthForms';
 
 /** OAuth가 실패하면 API가 `/?loginError=1`로 돌려보낸다. */
 const LOGIN_ERROR_PARAM = 'loginError';

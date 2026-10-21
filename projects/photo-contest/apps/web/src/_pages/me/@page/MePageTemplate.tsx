@@ -7,8 +7,8 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
-import { MyProfile } from './profile/MyProfile';
 import { MyGroupsSection } from './groups/MyGroupsSection';
+import { MyProfile } from './profile/MyProfile';
 
 export function MePageTemplate() {
   return (

@@ -1,7 +1,9 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
 import { useId, useState } from 'react';
+
+import { useMutation } from '@apollo/client/react';
+
 import { CreateGroupContestDocument, GroupContestsDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { useZodForm } from '@/shared/model/form';
@@ -10,6 +12,7 @@ import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
+
 import { buildContestDefaults, createContestSchema } from '../model/contest.schema';
 
 export function CreateGroupContestBottomSheet({

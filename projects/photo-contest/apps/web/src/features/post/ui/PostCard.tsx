@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useFragment, useMutation } from '@apollo/client/react';
 import { Heart, MessageCircle, Trash2, Video } from 'lucide-react';
-import Link from 'next/link';
 import { overlay } from 'overlay-kit';
 
 import {
@@ -27,7 +28,7 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
-import { resetGalleryPosts, refreshMonthlyPopular } from '../model/post.cache';
+import { refreshMonthlyPopular, resetGalleryPosts } from '../model/post.cache';
 import { PostAttachments } from './PostAttachments';
 import { PostCategoryEditor } from './PostCategoryEditor';
 import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';

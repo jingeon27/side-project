@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-import { fetchAuthConfig } from '../api/auth-request.helper';
-import type { TAuthConfig } from '../api/auth-request.helper';
+import { fetchAuthConfig, type TAuthConfig } from '../api/auth-request.helper';
 
 export type TAuthConfigState =
   { status: 'loading' } | { status: 'ready'; config: TAuthConfig } | { status: 'failed' };

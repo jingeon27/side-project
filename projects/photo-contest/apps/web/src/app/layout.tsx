@@ -1,12 +1,15 @@
-import { parseAppUserAgent } from '@photo-contest/bridge';
+import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
-import type { ReactNode } from 'react';
+
+import { parseAppUserAgent } from '@photo-contest/bridge';
 
 import { AppProviders } from '@/_app/providers';
+
 import '@/_app/styles/tailwind.css';
-import { APP_MAIN_ID, APP_ROOT_ID, THEME_COLOR } from '@/shared/constants/layout';
+
 import { getWebOrigin } from '@/shared/api/server-request.helper';
+import { APP_MAIN_ID, APP_ROOT_ID, THEME_COLOR } from '@/shared/constants/layout';
 import { PRIVATE_ROBOTS, SITE_DESCRIPTION } from '@/shared/lib/seo.helper';
 
 export function generateMetadata(): Metadata {

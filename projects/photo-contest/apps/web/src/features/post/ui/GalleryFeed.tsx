@@ -1,7 +1,8 @@
 'use client';
 
-import { useApolloClient } from '@apollo/client/react';
 import type { ReactNode } from 'react';
+
+import { useApolloClient } from '@apollo/client/react';
 
 import { GalleryPostsDocument } from '@/shared/api/generated';
 import { PullToRefresh } from '@/shared/ui/@core/pull-to-refresh';

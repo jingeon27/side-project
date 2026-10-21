@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { postSchema } from './post.schema';
 
 const post = {

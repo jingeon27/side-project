@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+
 import { match } from 'ts-pattern';
 
 import { decideAuthGate } from '@/shared/lib/auth-gate.helper';

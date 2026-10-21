@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
+
 import { match } from 'ts-pattern';
 
-import { SHARE_METHOD } from '@/shared/model/analytics';
-import type { TShareMethod } from '@/shared/model/analytics';
-import { SHARE_OUTCOME, useBridge, useShareLink } from '@/shared/model/bridge';
-import type { IShareContent } from '@/shared/model/bridge';
+import { SHARE_METHOD, type TShareMethod } from '@/shared/model/analytics';
+import { SHARE_OUTCOME, useBridge, useShareLink, type IShareContent } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';
 
 interface IShareMessages {

@@ -1,10 +1,10 @@
 'use client';
 
-import type { TGroupQueryRef } from '../model/group-query.type';
-
 import { useReadQuery } from '@apollo/client/react';
 
 import { MemberList } from '@/features/group';
+
+import type { TGroupQueryRef } from '../model/group-query.type';
 
 export function GroupCommunity({ groupRef, viewerId }: { groupRef: TGroupQueryRef; viewerId: string }) {
   const { data } = useReadQuery(groupRef);

@@ -1,12 +1,13 @@
 'use client';
 
-import { ChevronLeft, Compass, House, UserRound } from 'lucide-react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
 
-import { cn } from '../../../lib/cn.helper';
+import { ChevronLeft, Compass, House, UserRound } from 'lucide-react';
+
 import { ROUTES } from '../../../constants/routes';
+import { cn } from '../../../lib/cn.helper';
 import { useBackNavigation } from '../../../model/router';
 import { IconButton } from '../icon-button';
 import { LegalLinks } from '../legal-links';

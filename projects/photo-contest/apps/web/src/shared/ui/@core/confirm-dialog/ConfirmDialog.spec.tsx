@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfirmDialog } from './ConfirmDialog';

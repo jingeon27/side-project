@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+
 import { graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';

@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+
 import {
-  GroupPageTemplate,
   getGroupMetadata,
   getGroupSeoData,
   groupJsonLd,
+  GroupPageTemplate,
   parseGroupCategory,
 } from '@/_pages/group';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
@@ -15,8 +18,6 @@ import {
 } from '@/shared/api/generated';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { JsonLd } from '@/shared/ui/@core/json-ld';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const metadata = await getGroupMetadata((await params).id);

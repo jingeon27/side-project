@@ -3,9 +3,11 @@
 import { useFragment } from '@apollo/client/react';
 import { Plus } from 'lucide-react';
 import { overlay } from 'overlay-kit';
+
 import { isGroupAdmin } from '@/features/group';
 import { GroupAccessFragmentDoc } from '@/shared/api/generated';
 import { Button } from '@/shared/ui/@core/button';
+
 import { CreateGroupContestBottomSheet } from './CreateGroupContestBottomSheet';
 
 export function CreateGroupContestButton({ groupId }: { groupId: string }) {

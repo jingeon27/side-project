@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  skipToken,
+  useBackgroundQuery,
+  useMutation,
+  useReadQuery,
+  type QueryRef,
+} from '@apollo/client/react';
+import { overlay } from 'overlay-kit';
+
+import {
   ArchiveGroupCategoryDocument,
   CreateGroupCategoryDocument,
   GalleryDocument,
@@ -20,14 +29,7 @@ import { Button } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
-import {
-  skipToken,
-  useBackgroundQuery,
-  useMutation,
-  useReadQuery,
-  type QueryRef,
-} from '@apollo/client/react';
-import { overlay } from 'overlay-kit';
+
 import { isGroupAdmin } from '../lib/group.helper';
 import { groupCategorySchema, moveGroupCategory } from '../model/group-category.schema';
 

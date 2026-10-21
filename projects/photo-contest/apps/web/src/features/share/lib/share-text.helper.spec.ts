@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  SHARE_TEXT_MAX_LENGTH,
   buildContestShareText,
   buildInviteShareText,
   buildResultShareText,
+  SHARE_TEXT_MAX_LENGTH,
 } from './share-text.helper';
 
 describe('buildResultShareText', () => {

@@ -1,5 +1,4 @@
-import { createWebBridge } from '@photo-contest/bridge/web';
-import type { IWebBridge } from '@photo-contest/bridge/web';
+import { createWebBridge, type IWebBridge } from '@photo-contest/bridge/web';
 
 let bridge: IWebBridge | null = null;
 

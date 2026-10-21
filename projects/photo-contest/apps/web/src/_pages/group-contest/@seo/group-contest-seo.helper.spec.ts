@@ -1,6 +1,8 @@
+import { describe, expect, it } from 'vitest';
+
 import { GroupVisibility, Phase, PostKind } from '@/shared/api/generated';
 import { serializeJsonLd } from '@/shared/lib/seo.helper';
-import { describe, expect, it } from 'vitest';
+
 import {
   groupContestJsonLd,
   groupContestMetadata,

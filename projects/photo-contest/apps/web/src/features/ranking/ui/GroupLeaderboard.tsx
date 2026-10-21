@@ -1,13 +1,12 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
-import { Trophy } from 'lucide-react';
 import { useId } from 'react';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Trophy } from 'lucide-react';
 import { match } from 'ts-pattern';
 
-import { GroupLeaderboardDocument } from '@/shared/api/generated';
-import type { GroupLeaderboardQuery } from '@/shared/api/generated';
+import { GroupLeaderboardDocument, type GroupLeaderboardQuery } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';

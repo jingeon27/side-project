@@ -1,5 +1,7 @@
-import { GroupVisibility, Phase } from '@/shared/api/generated';
 import { describe, expect, it } from 'vitest';
+
+import { GroupVisibility, Phase } from '@/shared/api/generated';
+
 import {
   groupContestsJsonLd,
   groupContestsMetadata,

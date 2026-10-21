@@ -1,7 +1,9 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { createTestImage, createTestUser, graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
+
+import { createTestImage, createTestUser, graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
+
 import {
   CastGroupContestVoteDocument,
   CreateGroupContestDocument,
@@ -19,6 +21,7 @@ import {
   SetGroupModeratorDocument,
   TransferGroupOwnershipDocument,
 } from '@/shared/api/generated';
+
 import { getGroupContestSeoData } from './group-contest-seo.server';
 
 const origin = 'http://localhost:3321';

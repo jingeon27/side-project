@@ -1,6 +1,8 @@
 import { mkdir } from 'node:fs/promises';
-import { createTestUser } from '@photo-contest/test-kit';
+
 import type { Page } from '@playwright/test';
+
+import { createTestUser } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest, seedPost } from './support/photos';

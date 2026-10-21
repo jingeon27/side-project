@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  fitWithin,
   IMAGE_MESSAGE,
   ImagePrepareError,
-  UPLOAD_MAX_BYTES,
-  fitWithin,
   isHeicFile,
   isImageFile,
   prepareUploadImage,
+  UPLOAD_MAX_BYTES,
+  type IImageCodec,
 } from './image.helper';
-import type { IImageCodec } from './image.helper';
 
 const file = (name: string, type: string, size = 1024) => new File([new Uint8Array(size)], name, { type });
 

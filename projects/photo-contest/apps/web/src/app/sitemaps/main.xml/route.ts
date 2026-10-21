@@ -1,4 +1,5 @@
 import { connection } from 'next/server';
+
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { siteUrl } from '@/shared/lib/seo.helper';

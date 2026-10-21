@@ -2,15 +2,17 @@ import { globSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import {
-  Kind,
-  NoUnusedFragmentsRule,
   buildASTSchema,
   concatAST,
+  Kind,
+  NoUnusedFragmentsRule,
   parse,
   specifiedRules,
   validate,
+  type DefinitionNode,
+  type DocumentNode,
+  type OperationDefinitionNode,
 } from 'graphql';
-import type { DefinitionNode, DocumentNode, OperationDefinitionNode } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
 const APP_ROOT = fileURLToPath(new URL('../../../', import.meta.url));

@@ -1,4 +1,5 @@
 import { match } from 'ts-pattern';
+
 import { PostKind, type GalleryPostCardFragment } from '@/shared/api/generated';
 import { siteUrl } from '@/shared/lib/seo.helper';
 

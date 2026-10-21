@@ -1,16 +1,20 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
 import { useEffect, useRef, useState, useTransition } from 'react';
+
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { FEED_PAGE_SIZE, PHOTO_SORT, FeedLoadMore, SubmissionCard } from '@/features/submission';
-import type { TPhotoSort } from '@/features/submission';
+import {
+  FEED_PAGE_SIZE,
+  FeedLoadMore,
+  PHOTO_SORT,
+  SubmissionCard,
+  type TPhotoSort,
+} from '@/features/submission';
 import { VoteButton } from '@/features/vote';
-import { Phase, SubmissionsDocument } from '@/shared/api/generated';
-import type { SubmissionsQuery } from '@/shared/api/generated';
+import { Phase, SubmissionsDocument, type SubmissionsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';

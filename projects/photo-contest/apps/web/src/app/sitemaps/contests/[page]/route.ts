@@ -1,4 +1,5 @@
 import { connection } from 'next/server';
+
 import { getPublicGroupContestSitemapPage, PUBLIC_CONTEST_SITEMAP_SIZE } from '@/_pages/group-contests';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';

@@ -1,9 +1,10 @@
+import { StrictMode } from 'react';
+
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
-import { StrictMode } from 'react';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CreatePostBottomSheet } from './CreatePostBottomSheet';

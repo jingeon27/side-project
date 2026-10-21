@@ -1,55 +1,56 @@
-import {
-  createTestImage,
-  createTestVideo,
-  createTestUser,
-  graphqlRequest,
-  moveTestContest,
-} from '@photo-contest/test-kit';
 import { ApolloClient, InMemoryCache } from '@apollo/client';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import UploadHttpLink from 'apollo-upload-client/UploadHttpLink.mjs';
 import { print } from 'graphql';
-import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
-  CreatePostDocument,
-  UploadPostMediaDocument,
-  UploadSubmissionPhotoDocument,
-  RegisterWithPasswordDocument,
-  LoginWithPasswordDocument,
-  DeletePostDocument,
-  GalleryPostsDocument,
-  LikePostDocument,
-  UnlikePostDocument,
-  CreatePostCommentDocument,
-  DeletePostCommentDocument,
-  PostCommentsDocument,
-  PostDownloadDocument,
-  PostSort,
-  RequestPostUploadDocument,
+  createTestImage,
+  createTestUser,
+  createTestVideo,
+  graphqlRequest,
+  moveTestContest,
+} from '@photo-contest/test-kit';
+
+import {
   CastVoteDocument,
   ContestDocument,
   ContestResultsDocument,
   CreateContestDocument,
   CreateGroupDocument,
+  CreatePostCommentDocument,
+  CreatePostDocument,
   CreateSubmissionDocument,
+  DeletePostCommentDocument,
+  DeletePostDocument,
   DeleteSubmissionDocument,
-  GroupDocument,
   GalleryDocument,
+  GalleryPostsDocument,
+  GroupDocument,
   GroupLeaderboardDocument,
   HideSubmissionDocument,
   InvitePreviewDocument,
   JoinGroupDocument,
+  LikePostDocument,
   LikeSubmissionDocument,
+  LoginWithPasswordDocument,
   MeDocument,
   MyGroupsDocument,
   MyPhotoFeedDocument,
+  PostCommentsDocument,
+  PostDownloadDocument,
+  PostSort,
   RegenerateInviteLinkDocument,
+  RegisterWithPasswordDocument,
   ReportSubmissionDocument,
+  RequestPostUploadDocument,
   RequestUploadDocument,
-  SubmissionSort,
   SubmissionsDocument,
+  SubmissionSort,
+  UnlikePostDocument,
   UnlikeSubmissionDocument,
+  UploadPostMediaDocument,
+  UploadSubmissionPhotoDocument,
 } from './generated';
 
 const url = inject('apiUrl');

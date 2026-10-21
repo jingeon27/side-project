@@ -1,6 +1,7 @@
-import { act, render, screen } from '@testing-library/react';
 import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { useIsSSR } from './is-ssr.hook';

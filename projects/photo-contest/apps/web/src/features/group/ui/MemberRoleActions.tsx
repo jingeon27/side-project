@@ -2,10 +2,11 @@
 
 import { useMutation } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
+
 import {
   GalleryDocument,
-  GroupContestsDocument,
   GroupContestDocument,
+  GroupContestsDocument,
   GroupRole,
   MyGroupsDocument,
   SetGroupModeratorDocument,

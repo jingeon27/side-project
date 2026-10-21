@@ -1,14 +1,16 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
-import { ApolloProvider, useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { ApolloProvider, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { InvitePreviewDocument, MeDocument } from '../../../api/generated';
-import type { InvitePreviewQuery, MeQuery } from '../../../api/generated';
-
+import {
+  InvitePreviewDocument,
+  MeDocument,
+  type InvitePreviewQuery,
+  type MeQuery,
+} from '../../../api/generated';
 import { AsyncBoundary } from './AsyncBoundary';
 
 const profile = {

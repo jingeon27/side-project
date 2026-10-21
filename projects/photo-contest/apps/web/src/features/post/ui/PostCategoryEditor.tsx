@@ -1,4 +1,15 @@
 'use client';
+
+import {
+  useBackgroundQuery,
+  useFragment,
+  useMutation,
+  useReadQuery,
+  type QueryRef,
+} from '@apollo/client/react';
+import { overlay } from 'overlay-kit';
+import { z } from 'zod';
+
 import {
   GalleryPostCardFragmentDoc,
   GalleryPostsDocument,
@@ -12,15 +23,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import {
-  useBackgroundQuery,
-  useFragment,
-  useMutation,
-  useReadQuery,
-  type QueryRef,
-} from '@apollo/client/react';
-import { overlay } from 'overlay-kit';
-import { z } from 'zod';
+
 import { resetGalleryPosts } from '../model/post.cache';
 import { PostCategorySelect } from './PostCategorySelect';
 

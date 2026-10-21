@@ -1,6 +1,5 @@
 import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
-import { BridgeError } from '@photo-contest/bridge/web';
-import type { IWebBridge } from '@photo-contest/bridge/web';
+import { BridgeError, type IWebBridge } from '@photo-contest/bridge/web';
 
 export const SHARE_OUTCOME = {
   /** 공유 시트로 보냈다 */

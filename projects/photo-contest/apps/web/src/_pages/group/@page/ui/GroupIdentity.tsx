@@ -1,7 +1,9 @@
 'use client';
 
 import { useReadQuery } from '@apollo/client/react';
+
 import { GroupVisibilityBadge } from '@/features/group';
+
 import type { TGroupQueryRef } from '../model/group-query.type';
 
 export function GroupIdentity({ groupRef }: { groupRef: TGroupQueryRef }) {

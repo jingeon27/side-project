@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { graphqlMutation, mutationChangedData } from './graphql-mutation.helper';
 
 describe('공개 캐시를 무효화할 GraphQL 쓰기', () => {

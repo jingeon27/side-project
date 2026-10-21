@@ -1,5 +1,6 @@
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import type { Page } from '@playwright/test';
+
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 import { authenticate, expect, test } from './support/test';
 
