@@ -1,6 +1,6 @@
 'use client';
 
-import { Gamepad2 } from 'lucide-react';
+import Image from 'next/image';
 import { useCompleteOnboarding } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { BottomSheet } from '@/shared/ui';
@@ -27,7 +27,7 @@ export function OnboardingDialog({ open, onSuccess }: IOnboardingDialogProps) {
       description={t('Game Mate에 오신 것을 환영해요.')}
     >
       <div className="login-icon">
-        <Gamepad2 size={34} />
+        <Image src="/icon.svg" alt="" aria-hidden width={64} height={64} unoptimized />
       </div>
       <AccountSetupForm
         submitLabel={t('가입 완료하기')}

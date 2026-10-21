@@ -1,5 +1,6 @@
 'use client';
 import { useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { appRoutes } from '@game-feedback/bridge';
 import { useSession } from '@/features/auth';
@@ -25,7 +26,10 @@ export function LoginPage({
   return (
     <section className="login-page" aria-labelledby="login-title">
       <div className="login-page-heading">
-        <p className="login-service-name">{t('Game Mate')}</p>
+        <p className="login-service-name">
+          <Image src="/icon.svg" alt="" aria-hidden width={28} height={28} unoptimized />
+          {t('Game Mate')}
+        </p>
         <h1 id="login-title">{t('로그인')}</h1>
         <p>{t('소셜 계정으로 로그인하세요.')}</p>
       </div>
