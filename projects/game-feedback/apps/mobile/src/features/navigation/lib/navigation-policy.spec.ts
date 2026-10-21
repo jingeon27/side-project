@@ -93,9 +93,9 @@ describe('WebView navigation and deep links', () => {
       'https://evil.example/\\x',
     ])
       expect(decideNavigation(url, origin).action).toBe('block');
-    expect(decideNavigation('mailto:jingeon27@gmail.com', origin)).toEqual({
+    expect(decideNavigation('mailto:contact@bambyul.com', origin)).toEqual({
       action: 'external',
-      url: 'mailto:jingeon27@gmail.com',
+      url: 'mailto:contact@bambyul.com',
     });
     expect(decideNavigation('https://example.com/help', origin)).toEqual({
       action: 'external',

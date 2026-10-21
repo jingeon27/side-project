@@ -30,7 +30,7 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
    | 변수                                     | 값                                             |
    | ---------------------------------------- | ---------------------------------------------- |
    | `GF_DOMAIN`                              | `https://` 없이 실제 도메인                    |
-   | `GF_CONTACT_EMAIL`                       | `jingeon27@gmail.com`                          |
+   | `GF_CONTACT_EMAIL`                       | `contact@bambyul.com`                          |
    | `GF_IMAGE_PREFIX`                        | `ghcr.io/jingeon27/side-project-game-feedback` |
    | `GF_DB_PASSWORD`, `GF_DB_ADMIN_PASSWORD` | 각각 따로 생성한 `openssl rand -hex 32` 값     |
    | OAuth client ID/secret                   | 아래 제공자 중 적어도 한 쌍의 실제 운영 키     |

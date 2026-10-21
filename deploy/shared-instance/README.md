@@ -77,7 +77,7 @@ GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) �
 | Variable            | `SIDE_DEPLOY_SSH_KNOWN_HOSTS`                                      | 신뢰할 경로로 확인한 서버 host key. 검증 없는 `ssh-keyscan` 결과를 그대로 신뢰하지 않는다 |
 | Secret              | `SIDE_DEPLOY_SSH_KEY`                                              | 배포용 SSH private key                                                                    |
 | Repository Variable | `GF_SITE_URL`                                                      | GF의 `https://실제도메인`                                                                 |
-| Repository Variable | `GF_CONTACT_EMAIL`                                                 | `jingeon27@gmail.com`                                                                     |
+| Repository Variable | `GF_CONTACT_EMAIL`                                                 | `contact@bambyul.com`                                                                     |
 | Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | PC의 `https://실제도메인`                                                                 |
 | Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치, 예: `main`                                                              |
 | Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택적 공개 Web 빌드 설정                                                                 |
