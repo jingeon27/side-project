@@ -2,6 +2,7 @@
 
 import { CreatePostButton, GalleryFeed } from '@/features/post';
 import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
@@ -14,8 +15,11 @@ function MemberHomeContent({
   queryRef: QueryRef<MyGroupsQuery>;
   feedPreloaded: boolean;
 }) {
+  const isSSR = useIsSSR();
   const { data } = useReadQuery(queryRef);
-  if (!data.myGroups.length) return <NoGroupHome signedIn />;
+  // 가입·prefetch가 캐시를 먼저 바꿔도 hydration 중에는 라우트가 그린 최초 화면을 유지한다.
+  const hasGroups = isSSR ? feedPreloaded : data.myGroups.length > 0;
+  if (!hasGroups) return <NoGroupHome signedIn />;
   return (
     <GalleryFeed
       clientOnly={!feedPreloaded}
