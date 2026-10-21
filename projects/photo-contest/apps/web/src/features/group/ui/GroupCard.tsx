@@ -1,5 +1,6 @@
-import { ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
+
+import { ChevronRight, Users } from 'lucide-react';
 
 import type { GroupCardFragment } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';

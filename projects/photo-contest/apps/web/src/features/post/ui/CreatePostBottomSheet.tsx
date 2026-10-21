@@ -1,9 +1,10 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
 import { useId } from 'react';
 
-import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '@/features/submission';
+import { useMutation } from '@apollo/client/react';
+
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
   CreatePostDocument,
   GalleryPostsDocument,

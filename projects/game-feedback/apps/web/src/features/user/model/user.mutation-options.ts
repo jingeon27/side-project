@@ -1,6 +1,8 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+
 import { chatScopeOptions } from '@/features/chat';
-import { postListOptions, postDetailOptions } from '@/features/post';
+import { postDetailOptions, postListOptions } from '@/features/post';
+
 import { deleteUserBlock } from '../api/user.api';
 import { blockListOptions } from './user.options';
 

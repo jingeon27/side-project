@@ -1,7 +1,8 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
+
+import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 
 import {
   ApproveGroupJoinRequestDocument,

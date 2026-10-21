@@ -1,6 +1,7 @@
 import { AsyncBoundary } from '@/shared/ui';
-import { QueryProvider } from './providers/QueryProvider';
+
 import { AdminRouter } from './AdminRouter';
+import { QueryProvider } from './providers/QueryProvider';
 
 export function App() {
   return (

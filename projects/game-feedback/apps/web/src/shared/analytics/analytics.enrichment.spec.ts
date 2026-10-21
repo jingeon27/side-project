@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { analyticsContext, scrubAnalyticsProperties, viewportBucket } from './analytics.enrichment';
+
 describe('Amplitude 공통 속성', () => {
   it('중첩된 attribution 사용자 속성에서도 검색어를 지워야 한다', () => {
     expect(

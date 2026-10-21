@@ -4,8 +4,8 @@ import { resetSubmissionFeeds } from '@/features/submission';
 import {
   ContestDocument,
   ContestResultsDocument,
-  SubmissionVisibilityFragmentDoc,
   SubmissionsDocument,
+  SubmissionVisibilityFragmentDoc,
 } from '@/shared/api/generated';
 
 const submissionId = (cache: ApolloCache, id: string) => cache.identify({ __typename: 'Submission', id });

@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { ANALYTICS_EVENT, initAnalytics, toPathTemplate, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';

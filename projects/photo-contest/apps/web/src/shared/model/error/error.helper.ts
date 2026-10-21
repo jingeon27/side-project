@@ -1,4 +1,5 @@
 import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
+
 import { BridgeError } from '@photo-contest/bridge/web';
 
 /** API가 GraphQL extensions.code로 보내는 값 중 화면이 분기하는 것 */

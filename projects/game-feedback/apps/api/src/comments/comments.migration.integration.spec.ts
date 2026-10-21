@@ -1,11 +1,13 @@
-import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { cpSync, mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import { expect, it } from 'vitest';
+
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 

@@ -1,5 +1,7 @@
 import { createRequire } from 'node:module';
+
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
+
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require('../generated/prisma/index.js');
 if (process.env.NODE_ENV !== 'production' || process.env.DEPLOYMENT_TARGET !== 'shared-instance')

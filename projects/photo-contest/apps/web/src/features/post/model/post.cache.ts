@@ -1,5 +1,6 @@
-import { PostSort } from '@/shared/api/generated';
 import type { ApolloCache, ObservableQuery } from '@apollo/client';
+
+import { PostSort } from '@/shared/api/generated';
 
 export function resetGalleryPosts(cache: ApolloCache) {
   cache.evict({ id: 'ROOT_QUERY', fieldName: 'galleryPosts' });

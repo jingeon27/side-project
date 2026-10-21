@@ -1,10 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
-import { castVote, createContest, createGroup, likePhoto } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import {
+  castVote,
+  createContest,
+  createGroup,
+  likePhoto,
+  type ITestGroup,
+} from '../../test/support/fixtures';
 import { listPhotos, storedPhotoExists, submitPhoto } from '../../test/support/photos';
 
 const REPORT =

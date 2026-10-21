@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { MediaMimeTypeSchema, MediaSizeSchema } from './media-upload';
 
 export const PostMediaUrlSchema = z.string().regex(/^\/api\/post-media\/[A-Za-z0-9_-]{1,100}$/);

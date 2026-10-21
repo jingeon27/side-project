@@ -1,4 +1,4 @@
-import { test, expect } from './support/fixtures';
+import { expect, test } from './support/fixtures';
 
 test.use({ locale: 'ja-JP' });
 test('WebView entry detects the device language and keeps a manual preference across reloads', async ({

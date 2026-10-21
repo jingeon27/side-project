@@ -1,15 +1,15 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
 import { useState } from 'react';
+
+import { useMutation } from '@apollo/client/react';
 
 import { CreateContestDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { useAppRouter } from '@/shared/model/router';
-import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
-import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
 

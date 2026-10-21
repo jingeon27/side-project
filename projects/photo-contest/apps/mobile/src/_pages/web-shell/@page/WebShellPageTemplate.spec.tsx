@@ -1,11 +1,13 @@
+import { AppState, BackHandler, Platform, Share } from 'react-native';
+
 import { getUserId, reset, setUserId, track } from '@amplitude/analytics-react-native';
-import { parseNativeAppInfo } from '@photo-contest/bridge';
 import { captureMessage } from '@sentry/react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { setStringAsync } from 'expo-clipboard';
 import { addEventListener as addLinkingListener, openURL } from 'expo-linking';
-import { AppState, BackHandler, Platform, Share } from 'react-native';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { parseNativeAppInfo } from '@photo-contest/bridge';
 
 import {
   dispatchedMessages,

@@ -2,10 +2,10 @@
 'use client';
 
 import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
-import type { TStyledProps } from '../../lib/styled-props';
-import { cn } from '../../lib/cn.helper';
-
 import { CheckIcon } from 'lucide-react';
+
+import { cn } from '../../lib/cn.helper';
+import type { TStyledProps } from '../../lib/styled-props';
 
 function Checkbox({ className, ...props }: TStyledProps<CheckboxPrimitive.Root.Props>) {
   return (

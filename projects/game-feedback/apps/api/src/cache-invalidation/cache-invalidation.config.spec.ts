@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { resolveCacheRevalidationConfig } from './cache-invalidation.config';
 
 const configured = {

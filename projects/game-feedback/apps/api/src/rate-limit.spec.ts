@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
-import { RequestRateLimiter, requestRateBucket } from './rate-limit';
+
+import { requestRateBucket, RequestRateLimiter } from './rate-limit';
 
 it('직접 전송 예약과 기존 업로드는 제한을 공유하고 완료 검증은 별도 예산을 사용해야 한다', () => {
   const limiter = new RequestRateLimiter();

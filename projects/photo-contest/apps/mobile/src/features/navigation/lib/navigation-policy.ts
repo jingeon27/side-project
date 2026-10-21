@@ -1,7 +1,6 @@
 import { originOf } from '@photo-contest/bridge';
 
-import { isRelativeWebPath, toWebPath } from './deep-link';
-import type { ILinkOptions } from './deep-link';
+import { isRelativeWebPath, toWebPath, type ILinkOptions } from './deep-link';
 
 export type TNavigationDecision =
   /** WebView가 그대로 연다. */

@@ -1,7 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { SupportConversation } from '@/widgets/support-conversation';
+
 import { threadOptions } from '@/features/support';
 import { AsyncBoundary } from '@/shared/ui';
+import { SupportConversation } from '@/widgets/support-conversation';
+
 import { SupportThreadCard } from './SupportThreadCard';
 
 export function SupportPage({ threadId }: { threadId: string }) {

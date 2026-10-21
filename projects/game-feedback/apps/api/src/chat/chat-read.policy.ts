@@ -1,6 +1,7 @@
 import { type Prisma } from '../generated/prisma';
 import { historyWhere } from './chat-history';
 import { type ConversationRow } from './chat.presenter';
+
 export function readBoundary(row: ConversationRow, userId: string) {
   return row.firstUserId === userId
     ? { at: row.firstReadAt, id: row.firstReadId }

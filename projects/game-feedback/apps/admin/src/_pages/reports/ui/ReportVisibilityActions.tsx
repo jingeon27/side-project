@@ -1,6 +1,8 @@
-import { Button } from '@side/design-system';
 import type { z } from 'zod';
+
 import type { HideInputSchema } from '@game-feedback/contracts';
+import { Button } from '@side/design-system';
+
 import { useContentVisibilityMutation, type TAdminReport } from '@/features/moderation';
 import { ErrorNotice } from '@/shared/ui';
 

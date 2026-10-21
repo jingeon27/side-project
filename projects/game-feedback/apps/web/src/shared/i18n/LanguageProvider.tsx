@@ -1,5 +1,7 @@
 'use client';
+
 import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from 'react';
+
 import { LANGUAGE_COOKIE, languagePreference, type TLanguagePreference, type TLocale } from './locale';
 import { translate } from './messages';
 

@@ -1,6 +1,8 @@
 import { queryOptions, skipToken } from '@tanstack/react-query';
-import { fetchSession, fetchTestAccounts } from '../api/auth.api';
+
 import type { Session } from '@/shared/api';
+
+import { fetchSession, fetchTestAccounts } from '../api/auth.api';
 import { clearSessionDependentQueries } from './private-cache';
 
 export function sessionOptions() {

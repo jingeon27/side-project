@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { resolveSeoConfig, canonicalPath, excerpt } from './config';
+
+import { canonicalPath, excerpt, resolveSeoConfig } from './config';
 import { createPageMetadata, pageContent, staticPageMetadata } from './metadata';
 import { profileStructuredData, publicPageStructuredData, serializeJsonLd } from './structured-data';
+
 afterEach(() => vi.unstubAllEnvs());
 describe('SEO metadata and visibility', () => {
   const production = {

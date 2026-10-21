@@ -1,9 +1,10 @@
 'use client';
 
+import { useId } from 'react';
+
 import { useMutation } from '@apollo/client/react';
 import { Copy, RefreshCw, Share2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
-import { useId } from 'react';
 
 import { buildInviteShareText, useShareActions } from '@/features/share';
 import { RegenerateInviteLinkDocument } from '@/shared/api/generated';

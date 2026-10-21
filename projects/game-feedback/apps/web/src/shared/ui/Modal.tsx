@@ -1,6 +1,9 @@
 'use client';
+
 import type { ReactNode } from 'react';
+
 import { Dialog } from '@side/design-system';
+
 import { useI18n } from '@/shared/i18n';
 
 interface IModalProps {

@@ -1,9 +1,10 @@
 import {
-  uploadPostMedia,
-  requestPostMediaUpload,
   completePostMediaUpload,
   deletePostMedia,
+  requestPostMediaUpload,
+  uploadPostMedia,
 } from '@game-feedback/sdk';
+
 import { uploadMediaFile } from '@/shared/api';
 
 export function uploadMedia(file: File) {

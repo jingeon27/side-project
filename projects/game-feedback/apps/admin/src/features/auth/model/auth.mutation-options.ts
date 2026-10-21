@@ -1,5 +1,6 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { loginLocalAdmin, endSession } from '../api/auth.api';
+
+import { endSession, loginLocalAdmin } from '../api/auth.api';
 import { sessionOptions } from './auth.options';
 
 async function replaceSession(client: QueryClient, session: Awaited<ReturnType<typeof loginLocalAdmin>>) {

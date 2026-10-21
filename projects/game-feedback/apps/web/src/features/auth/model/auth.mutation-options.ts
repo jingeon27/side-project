@@ -1,17 +1,20 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+
 import type { TLoginProvider } from '@game-feedback/bridge';
-import { requestNativeLogin } from '@/shared/native';
+
 import { ApiError } from '@/shared/api';
+import { requestNativeLogin } from '@/shared/native';
+
 import {
+  deleteMembership,
   fetchSession,
   postAppExchange,
-  deleteMembership,
   postDemoLogin,
   postLogout,
   postOnboarding,
   postTestLogin,
 } from '../api/auth.api';
-import { clearAuthenticatedSession, replaceSession, refreshSession } from './session-cache';
+import { clearAuthenticatedSession, refreshSession, replaceSession } from './session-cache';
 
 export function demoLoginMutationOptions(client: QueryClient, notify: (text: string) => void) {
   return mutationOptions({

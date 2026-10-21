@@ -1,11 +1,15 @@
 'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFieldArray } from 'react-hook-form';
+
 import { UpdateProfileInputSchema } from '@game-feedback/contracts';
-import type { PublicProfile } from '@/shared/api';
 import { Button, Input } from '@side/design-system';
-import { useZodForm } from '@/shared/model/form';
+
+import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
+import { useZodForm } from '@/shared/model/form';
+
 import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 
 export function ProfileLinksEditor({ links }: { links: PublicProfile['links'] }) {

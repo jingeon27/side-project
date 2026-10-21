@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { koreanMonth } from './post-order';
 import { mediaRange } from './media-range';
+import { koreanMonth } from './post-order';
 
 describe('그룹 기간과 파일 범위', () => {
   it('UTC 월말이어도 한국의 다음 달을 계산해야 한다', () => {

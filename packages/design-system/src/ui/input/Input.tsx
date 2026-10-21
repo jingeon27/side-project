@@ -1,6 +1,8 @@
 // Adapted from shadcn/ui base-nova. See SHADCN.md for source and license.
 import type { ComponentProps } from 'react';
+
 import { Input as InputPrimitive } from '@base-ui/react/input';
+
 import { cn } from '../../lib/cn.helper';
 
 function Input({ className, type, ...props }: ComponentProps<'input'>) {

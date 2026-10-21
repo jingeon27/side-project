@@ -1,5 +1,7 @@
 'use client';
 
+import { useTransition } from 'react';
+
 import {
   useFragment,
   useQuery,
@@ -8,7 +10,6 @@ import {
   type QueryRef,
 } from '@apollo/client/react';
 import { MessageCircle } from 'lucide-react';
-import { useTransition } from 'react';
 
 import { GalleryPostCardFragmentDoc, MeDocument, type PostCommentsQuery } from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';

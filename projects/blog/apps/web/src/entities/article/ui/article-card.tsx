@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import type { Article } from '../model/types';
+
 import { labels } from '@/shared/config/labels';
+
+import type { Article } from '../model/types';
 import { ArticleMeta } from './article-meta';
 import { ArticleThumbnail } from './article-thumbnail';
 

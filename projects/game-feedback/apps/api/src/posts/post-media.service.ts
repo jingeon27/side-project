@@ -1,13 +1,14 @@
-import { ACTIVE_POST } from '../common/content';
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../generated/prisma';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
-import { Inject, Injectable } from '@nestjs/common';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { validateMediaFile } from '../common/media-file';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { presentPostMedia } from './post-media.presenter';

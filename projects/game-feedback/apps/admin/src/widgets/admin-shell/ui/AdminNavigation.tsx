@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+
 import type { TAdminTab } from '@/shared/lib';
 
 interface IAdminNavigationLinkProps {

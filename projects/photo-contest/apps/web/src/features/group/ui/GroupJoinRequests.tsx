@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useRef, useState, useTransition } from 'react';
+
 import {
   skipToken,
   useBackgroundQuery,
@@ -9,7 +11,6 @@ import {
   useReadQuery,
   type QueryRef,
 } from '@apollo/client/react';
-import { useEffect, useRef, useState, useTransition } from 'react';
 
 import {
   ApproveGroupJoinRequestDocument,

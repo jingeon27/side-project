@@ -1,8 +1,12 @@
 'use client';
+
+import { CircleHelp, Home, MessageCircle, UserRound } from 'lucide-react';
+
+import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { Home, MessageCircle, UserRound, CircleHelp } from 'lucide-react';
-import { resolveAppRoute } from '@game-feedback/bridge';
+
 interface IMobileNavProps {
   home: string;
   path: string;

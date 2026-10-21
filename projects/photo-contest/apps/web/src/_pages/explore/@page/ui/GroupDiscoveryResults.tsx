@@ -1,14 +1,14 @@
 'use client';
 
-import { useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { Compass } from 'lucide-react';
 import { useState, useTransition } from 'react';
 
+import { useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Compass } from 'lucide-react';
+
+import { DiscoverGroupCard } from '@/features/group';
 import type { DiscoverGroupsQuery } from '@/shared/api/generated';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
-
-import { DiscoverGroupCard } from '@/features/group';
 
 export function GroupDiscoveryResults({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> }) {
   const { data } = useReadQuery(queryRef);

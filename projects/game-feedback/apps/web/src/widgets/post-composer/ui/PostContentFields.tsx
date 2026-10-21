@@ -1,14 +1,20 @@
 'use client';
+
 import { useCallback } from 'react';
+
 import { useWatch } from 'react-hook-form';
-import { Input } from '@side/design-system';
+
 import type { TRichTextDocument } from '@game-feedback/contracts';
+import { Input } from '@side/design-system';
+
 import { useI18n } from '@/shared/i18n';
 import { Field, RichTextEditor, ServiceErrorBoundary } from '@/shared/ui';
-import type { TPostComposerForm } from '../model/post-composer.schema';
+
 import { postComposerCopy } from '../model/post-composer-copy';
-import { CoachingFields } from './CoachingFields';
+import type { TPostComposerForm } from '../model/post-composer.schema';
 import { BattleFields } from './BattleFields';
+import { CoachingFields } from './CoachingFields';
+
 interface IPostContentFieldsProps {
   form: TPostComposerForm;
   disabled: boolean;

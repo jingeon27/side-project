@@ -1,13 +1,15 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import type { GameProfile } from '@game-feedback/contracts';
-import { PrismaClient } from '../generated/prisma';
+
 import { createApp } from '../app';
-import { seed } from '../seed';
+import { PrismaClient } from '../generated/prisma';
 import {
   ApiError,
   assertDatabaseUrl,
@@ -15,6 +17,7 @@ import {
   type IdentityProvider,
   type ProfileProvider,
 } from '../security';
+import { seed } from '../seed';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';

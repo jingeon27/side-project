@@ -1,8 +1,10 @@
 'use client';
+
 import Image from 'next/image';
+
 import type { TChatAttachment } from '@/shared/api';
-import { BottomSheet, openOverlay } from '@/shared/ui';
 import { useI18n } from '@/shared/i18n';
+import { BottomSheet, openOverlay } from '@/shared/ui';
 
 export function ChatAttachmentView({ attachment }: { attachment: TChatAttachment }) {
   const { t } = useI18n();

@@ -1,5 +1,6 @@
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import type { FileUpload } from 'graphql-upload/processRequest.mjs';
+
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
 import { GroupProfileService } from './group-profile.service';

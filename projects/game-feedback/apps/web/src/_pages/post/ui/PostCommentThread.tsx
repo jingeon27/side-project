@@ -1,12 +1,17 @@
 'use client';
+
 import { useId, useState } from 'react';
-import { Button } from '@side/design-system';
+
 import { Reply } from 'lucide-react';
+
+import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { CommentItem } from '@/features/comment';
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { Comment, Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
+
 import type { ICommentThread } from '../model/comment-threads';
 import { ContentActions } from './ContentActions';
 import { PostCommentReplyForm } from './PostCommentReplyForm';

@@ -1,7 +1,10 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { recordPostView } from '@game-feedback/sdk';
+
 import type { PostDetail } from '@game-feedback/contracts';
+import { recordPostView } from '@game-feedback/sdk';
+
 import { withApiError } from '@/shared/api';
+
 import { postDetailOptions } from './post.options';
 
 export function recordPostViewMutationOptions(client: QueryClient) {

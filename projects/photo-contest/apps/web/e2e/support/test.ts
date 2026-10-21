@@ -1,6 +1,6 @@
+import { test as base, expect, type BrowserContext } from '@playwright/test';
+
 import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
-import { test as base, expect } from '@playwright/test';
-import type { BrowserContext } from '@playwright/test';
 
 import { API_URL, WEB_ORIGIN } from './env';
 import { observeRuntimeErrors } from './runtime-errors';

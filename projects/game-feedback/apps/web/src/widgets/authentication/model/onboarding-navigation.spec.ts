@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { onboardingRedirect } from './onboarding-navigation';
 
 const pending = { needsOnboarding: true, authenticated: false };

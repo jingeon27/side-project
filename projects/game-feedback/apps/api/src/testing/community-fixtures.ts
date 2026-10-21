@@ -1,4 +1,4 @@
-import type { PrismaClient, Prisma } from '../generated/prisma';
+import type { Prisma, PrismaClient } from '../generated/prisma';
 
 const communityPosts = [
   {

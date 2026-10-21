@@ -1,13 +1,15 @@
 'use client';
 
-import Image from 'next/image';
-import { Camera } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import Image from 'next/image';
+
+import { Camera } from 'lucide-react';
 import { useController, type UseFormReturn } from 'react-hook-form';
+
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
-import type { TGroupProfileInput } from '../model/group-profile.schema';
-import { groupProfileSchema } from '../model/group-profile.schema';
+
+import { groupProfileSchema, type TGroupProfileInput } from '../model/group-profile.schema';
 
 export function GroupAvatarField({
   form,

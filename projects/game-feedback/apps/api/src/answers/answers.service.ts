@@ -1,12 +1,13 @@
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { postCacheTag } from '@game-feedback/contracts';
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
+import { postCacheTag } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT } from '../common/content';
 import { ApiError } from '../common/http/api-error';
+import { PrismaClient } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';

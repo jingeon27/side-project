@@ -1,10 +1,13 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
+
 import type { INestApplication } from '@nestjs/common';
-import { CommentSchema, PostDetailSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { CommentSchema, PostDetailSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
+
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';

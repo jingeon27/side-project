@@ -1,4 +1,5 @@
 import { getRequestConfig } from 'next-intl/server';
+
 import { defaultLocale, isLocale } from './routing';
 
 const messages = {

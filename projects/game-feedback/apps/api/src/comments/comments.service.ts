@@ -1,19 +1,20 @@
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { postCacheTag } from '@game-feedback/contracts';
-import { uniq } from 'es-toolkit';
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+import { uniq } from 'es-toolkit';
+
+import { postCacheTag } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
+import { PrismaClient } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import type { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
-import { responseComment } from './comment.presenter';
 import { activeCommentWhere } from './comment-visibility';
+import { responseComment } from './comment.presenter';
 
 @Injectable()
 export class CommentsService {

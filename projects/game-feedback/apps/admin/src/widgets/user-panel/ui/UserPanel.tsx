@@ -1,7 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
+
 import { userOptions, useVerifyUserMutation } from '@/features/moderation';
 import { ErrorNotice } from '@/shared/ui';
+
 import { UserBanForm } from './UserBanForm';
 
 export function UserPanel({ userId }: { userId: string }) {

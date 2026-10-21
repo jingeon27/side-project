@@ -1,11 +1,13 @@
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
-
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
-import { SubmissionService } from './submission.service';
-import type { ICreateSubmissionInput, ISubmissionListQuery } from './submission.service';
+import {
+  SubmissionService,
+  type ICreateSubmissionInput,
+  type ISubmissionListQuery,
+} from './submission.service';
 
 @Resolver('Submission')
 export class SubmissionResolver {

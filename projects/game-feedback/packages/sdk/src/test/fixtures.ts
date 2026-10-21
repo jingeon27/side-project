@@ -1,4 +1,5 @@
-import type { Session, PostDetail, GameProfile, ChatMessageList, Author } from '../generated/models';
+import type { Author, ChatMessageList, GameProfile, PostDetail, Session } from '../generated/models';
+
 const timestamp = '2026-10-17T00:00:00.000Z';
 export function authorFixture(): Author {
   return {

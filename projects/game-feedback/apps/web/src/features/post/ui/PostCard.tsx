@@ -1,18 +1,22 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+
 import { ArrowUpRight, Eye, MessageSquare } from 'lucide-react';
-import type { Post } from '@/shared/api';
-import { Avatar } from '@/shared/ui';
-import { formatDateTime, timeAgo } from '@/shared/lib/date';
-import { m, useMotionPreference } from '@/shared/motion';
-import { PostStatus } from './PostStatus';
-import { CoachingSummary } from '@/features/coaching';
-import { FriendSaleSummary } from '@/features/friend-sale';
+
 import { BattleSummary } from '@/features/battle';
 import { boardByKind } from '@/features/board';
+import { CoachingSummary } from '@/features/coaching';
+import { FriendSaleSummary } from '@/features/friend-sale';
+import type { Post } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { formatDateTime, timeAgo } from '@/shared/lib/date';
+import { m, useMotionPreference } from '@/shared/motion';
+import { Avatar } from '@/shared/ui';
+
+import { PostStatus } from './PostStatus';
+
 interface IPostCardProps {
   post: Post;
   href: string;

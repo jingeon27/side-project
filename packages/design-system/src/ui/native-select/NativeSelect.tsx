@@ -1,8 +1,9 @@
 // Adapted from shadcn/ui base-nova. See SHADCN.md for source and license.
 import type { ComponentProps } from 'react';
-import { cn } from '../../lib/cn.helper';
 
 import { ChevronDownIcon } from 'lucide-react';
+
+import { cn } from '../../lib/cn.helper';
 
 type TNativeSelectProps = Omit<ComponentProps<'select'>, 'size'> & {
   size?: 'sm' | 'default';

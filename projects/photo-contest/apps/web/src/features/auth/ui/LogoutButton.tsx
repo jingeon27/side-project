@@ -1,7 +1,8 @@
 'use client';
 
-import { LogOut } from 'lucide-react';
 import { useTransition } from 'react';
+
+import { LogOut } from 'lucide-react';
 
 import { ROUTES } from '@/shared/constants/routes';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';

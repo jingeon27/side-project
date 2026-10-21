@@ -1,8 +1,12 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Trophy, ShieldAlert } from 'lucide-react';
+
+import { ShieldAlert, Trophy } from 'lucide-react';
+
 import type { GameProfile } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+
 import { ClashRoyaleIcon } from './ClashRoyaleIcon';
+
 interface IProfileSnapshotProps {
   profile: GameProfile;
 }

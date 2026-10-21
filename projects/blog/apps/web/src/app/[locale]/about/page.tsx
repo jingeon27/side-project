@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
-import { author } from '@/shared/config/site';
+
 import { labels } from '@/shared/config/labels';
+import { author } from '@/shared/config/site';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
 
 type Props = { params: Promise<{ locale: string }> };

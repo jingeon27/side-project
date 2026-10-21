@@ -1,12 +1,13 @@
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
-import { PrismaClient, type Prisma } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
+import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 import type { GameAccountDto } from './game-account-input.dto';
 
 @Injectable()

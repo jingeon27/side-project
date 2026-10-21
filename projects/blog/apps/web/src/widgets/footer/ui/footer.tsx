@@ -1,6 +1,6 @@
 import type { Locale } from '@/entities/article/model/types';
-import { author } from '@/shared/config/site';
 import { labels } from '@/shared/config/labels';
+import { author } from '@/shared/config/site';
 
 export function Footer({ locale }: { locale: Locale }) {
   const t = labels(locale);

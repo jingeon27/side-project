@@ -1,10 +1,12 @@
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
-import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
-import { UseGuards, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
-import { DemoAuthGuard, TestAuthGuard } from '../common/http/session.guard';
-import { AppExchangeDto, OnboardDto, TestLoginDto, DemoLoginDto } from './auth-input.dto';
+import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
+
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+
+import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
+import { DemoAuthGuard, TestAuthGuard } from '../common/http/session.guard';
 import { AppAuthService } from './app-auth.service';
+import { AppExchangeDto, DemoLoginDto, OnboardDto, TestLoginDto } from './auth-input.dto';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';

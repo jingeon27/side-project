@@ -1,22 +1,28 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
 import { useQuery } from '@tanstack/react-query';
-import { postDetailOptions, PostArticle, useRecordPostView } from '@/features/post';
-import type { PostDetail } from '@/shared/api';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { useSession } from '@/features/auth';
+import { boardByKind } from '@/features/board';
+import { PostArticle, postDetailOptions, useRecordPostView } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
+import type { PostDetail } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { BackLink } from '@/shared/navigation';
 import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { StartChatLink } from '@/widgets/start-chat';
+import { VerificationPrompt } from '@/widgets/support';
+
 import { usePostRead } from '../model/use-post-read.hook';
 import { ContentActions } from './ContentActions';
 import { PostAnswersSection } from './PostAnswersSection';
 import { PostCommentsSection } from './PostCommentsSection';
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
-import { boardByKind } from '@/features/board';
-import { VerificationPrompt } from '@/widgets/support';
-import { StartChatLink } from '@/widgets/start-chat';
+
 interface IPostPageProps {
   id: string;
   locale: string;

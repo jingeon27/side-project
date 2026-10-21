@@ -1,5 +1,6 @@
-import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+
 const require = createRequire(import.meta.url);
 const { validateProductionEnvironment } = require('../dist/config/production.config.js');
 const { assertDatabaseUrl } = require('../dist/database/database-url.js');

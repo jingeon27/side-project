@@ -1,4 +1,5 @@
 import { ButtonLink } from '@side/design-system/next';
+
 export function NotFoundPage() {
   return (
     <main className="standalone-state">

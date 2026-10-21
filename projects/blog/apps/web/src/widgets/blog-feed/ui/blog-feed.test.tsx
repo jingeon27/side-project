@@ -1,14 +1,10 @@
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-
-import userEvent from '@testing-library/user-event';
-
 import type { Article } from '@/entities/article/model/types';
-
-import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
-
 import { labels } from '@/shared/config/labels';
+import { BlogFeed } from '@/widgets/blog-feed/ui/blog-feed';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));
 

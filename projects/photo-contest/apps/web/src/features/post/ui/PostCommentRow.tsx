@@ -5,15 +5,15 @@ import { overlay } from 'overlay-kit';
 
 import {
   DeletePostCommentDocument,
-  RefreshPostDocument,
   PostCommentCardFragmentDoc,
   PostCommentsDocument,
+  RefreshPostDocument,
 } from '@/shared/api/generated';
-import { formatDateTime } from '@/shared/lib/format.helper';
 import { cn } from '@/shared/lib/cn.helper';
+import { formatDateTime } from '@/shared/lib/format.helper';
 import { Avatar } from '@/shared/ui/@core/avatar';
-import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { Button } from '@/shared/ui/@core/button';
+import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
 import { PostCommentLikeButton } from './PostCommentLikeButton';
 

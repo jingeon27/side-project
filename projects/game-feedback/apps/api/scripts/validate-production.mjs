@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+
 const require = createRequire(import.meta.url);
 const { validateProductionEnvironment, resolveListenConfig } = require('../dist/config/production.config.js');
 const { resolveMediaStorageConfig } = require('../dist/media-storage/media-storage.config.js');

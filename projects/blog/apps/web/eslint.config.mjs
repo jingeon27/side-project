@@ -1,6 +1,7 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
+import { defineConfig, globalIgnores } from 'eslint/config';
+
 const layers = ['shared', 'entities', 'features', 'widgets', 'app'];
 const boundaries = layers.slice(0, -1).map((layer, index) => ({
   files: [`src/${layer}/**/*.{ts,tsx}`],

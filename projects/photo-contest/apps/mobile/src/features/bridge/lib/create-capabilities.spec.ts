@@ -1,12 +1,11 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { PROTOCOL_VERSION } from '@photo-contest/bridge';
-import type { TNativeMessage } from '@photo-contest/bridge';
-import { NativeCapabilityError, createNativeRouter } from '@photo-contest/bridge/native';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createCapabilities } from './create-capabilities';
-import type { ICapabilityDependencies } from './create-capabilities';
+import { PROTOCOL_VERSION, type TNativeMessage } from '@photo-contest/bridge';
+import { createNativeRouter, NativeCapabilityError } from '@photo-contest/bridge/native';
+
+import { createCapabilities, type ICapabilityDependencies } from './create-capabilities';
 
 const API_BASE = 'https://contest.example/backend';
 const CALLBACK_URL = 'photocontest://auth/callback';

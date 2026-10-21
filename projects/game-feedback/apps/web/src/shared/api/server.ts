@@ -1,5 +1,7 @@
 import 'server-only';
+
 import { cookies } from 'next/headers';
+
 const SESSION_COOKIE = 'gamefeedback_session';
 export function publicServerOptions() {
   const url = new URL(process.env.GAME_FEEDBACK_API_URL || process.env.API_ORIGIN || 'http://127.0.0.1:4300');

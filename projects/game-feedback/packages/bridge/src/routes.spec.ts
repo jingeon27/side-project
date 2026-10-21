@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
+
 describe('community board navigation', () => {
   it.each(['login', 'onboarding'] as const)(
     '인증 화면 %s는 같은 언어의 안전한 복귀 경로만 보존해야 한다',

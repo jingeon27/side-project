@@ -2,9 +2,11 @@
 
 import { appRoutes } from '@game-feedback/bridge';
 import type { TCoachingRole } from '@game-feedback/contracts';
+
 import { parseCoachingRole } from '@/features/coaching';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
+
 import { BoardFilterLink } from './BoardFilterLink';
 
 export function CoachingFilters({ locale, slug }: { locale: string; slug: string }) {

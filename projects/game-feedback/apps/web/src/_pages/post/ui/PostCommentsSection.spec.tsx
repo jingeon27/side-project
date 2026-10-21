@@ -1,7 +1,9 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { Comment, Post } from '@/shared/api';
+
 import { PostCommentsSection } from './PostCommentsSection';
 
 const state = vi.hoisted(() => ({

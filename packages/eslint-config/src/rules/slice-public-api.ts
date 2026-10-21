@@ -6,8 +6,8 @@ import {
   isBarrel,
   isPublicDeepImport,
   SLICED_LAYERS,
+  type TFsdOptions,
 } from '../lib/fsd.helper';
-import type { TFsdOptions } from '../lib/fsd.helper';
 
 export const slicePublicApi: TSESLint.RuleModule<'deep' | 'ownBarrel', TFsdOptions> = {
   defaultOptions: [{}],

@@ -2,10 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { APP_MARKER_KEY, NATIVE_EVENT_NAME } from './protocol';
-import { installFakeNativeApp } from './test';
-import type { IFakeNativeApp } from './test';
-import { BridgeError, createWebBridge, readNativeAppInfo } from './web';
-import type { IWebBridge, TBridgeWindow } from './web';
+import { installFakeNativeApp, type IFakeNativeApp } from './test';
+import { BridgeError, createWebBridge, readNativeAppInfo, type IWebBridge, type TBridgeWindow } from './web';
 
 let fake: IFakeNativeApp | undefined;
 let bridge: IWebBridge | undefined;

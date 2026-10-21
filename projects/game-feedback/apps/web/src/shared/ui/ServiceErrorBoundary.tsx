@@ -1,7 +1,10 @@
 'use client';
+
 import { useState, type ReactNode } from 'react';
 import { catchError, type ErrorInfo } from 'next/error';
+
 import { QueryClient, QueryErrorResetBoundary, useMutation } from '@tanstack/react-query';
+
 import { ErrorRecovery } from './ErrorRecovery';
 import { errorRecoveryMutationOptions } from './model/error-recovery.mutation-options';
 

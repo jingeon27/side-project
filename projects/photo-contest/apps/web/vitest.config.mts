@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vitest/config';
 
 // 날짜 포맷 결과가 기기 시간대에 따라 달라지지 않게 서비스 시간대로 고정한다.

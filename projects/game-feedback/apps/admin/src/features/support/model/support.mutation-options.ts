@@ -1,6 +1,7 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { updateStatus, sendReply } from '../api/support.api';
-import { threadOptions, messageOptions } from './support.options';
+
+import { sendReply, updateStatus } from '../api/support.api';
+import { messageOptions, threadOptions } from './support.options';
 
 export function statusMutationOptions(client: QueryClient) {
   return mutationOptions({

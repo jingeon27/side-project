@@ -1,9 +1,10 @@
 'use client';
 
+import { useTransition, type ReactNode } from 'react';
+
 import { AlertDialog } from '@base-ui/react/alert-dialog';
+
 import { dialogStyles } from '@side/design-system';
-import type { ReactNode } from 'react';
-import { useTransition } from 'react';
 
 import { cn } from '../../../lib/cn.helper';
 import { getOverlayContainer } from '../../../lib/overlay-container.helper';

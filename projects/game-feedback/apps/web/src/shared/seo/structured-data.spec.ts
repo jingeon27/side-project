@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import type { PostDetail } from '@/shared/api';
+
 import { postStructuredData } from './structured-data';
 
 describe('삭제된 원댓글이 있는 공개 글의 구조화 데이터', () => {

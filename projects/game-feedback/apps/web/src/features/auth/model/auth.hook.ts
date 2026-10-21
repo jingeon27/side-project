@@ -1,14 +1,17 @@
 'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useNotify } from '@/shared/ui';
+
 import {
-  demoLoginMutationOptions,
   completeOnboardingMutationOptions,
-  testAccountLoginMutationOptions,
-  logoutMutationOptions,
   deleteAccountMutationOptions,
+  demoLoginMutationOptions,
+  logoutMutationOptions,
   nativeLoginMutationOptions,
   refreshSessionMutationOptions,
+  testAccountLoginMutationOptions,
 } from './auth.mutation-options';
 
 export function useDemoLogin() {

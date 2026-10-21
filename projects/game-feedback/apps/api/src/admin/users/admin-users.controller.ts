@@ -1,9 +1,11 @@
-import { UseGuards, Controller, Get, Inject, Param, Patch, Req } from '@nestjs/common';
-import { AdminGuard } from '../../common/http/session.guard';
-import { UserBanDto, VerificationDto } from './user-input.dto';
-import { ValidatedBody } from '../../common/http/request-validation';
+import { Controller, Get, Inject, Param, Patch, Req, UseGuards } from '@nestjs/common';
+
 import type { SessionRequest } from '../../auth/session.types';
+import { ValidatedBody } from '../../common/http/request-validation';
+import { AdminGuard } from '../../common/http/session.guard';
 import { AdminUsersService } from './admin-users.service';
+import { UserBanDto, VerificationDto } from './user-input.dto';
+
 @UseGuards(AdminGuard)
 @Controller('api/admin/users')
 export class AdminUsersController {

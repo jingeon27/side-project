@@ -1,20 +1,23 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
+
 import type { INestApplication } from '@nestjs/common';
-import {
-  CacheRevalidationSchema,
-  PostSchema,
-  CommentSchema,
-  AnswerSchema,
-  postCacheTag,
-} from '@game-feedback/contracts';
 import supertest from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  AnswerSchema,
+  CacheRevalidationSchema,
+  CommentSchema,
+  postCacheTag,
+  PostSchema,
+} from '@game-feedback/contracts';
+
 import { createApp, type AppOptions } from '../app';
-import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../database/database-url';
+import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 import { CacheInvalidationService } from './cache-invalidation.service';
 

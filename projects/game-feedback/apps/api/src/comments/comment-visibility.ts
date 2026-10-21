@@ -1,5 +1,5 @@
-import type { Prisma } from '../generated/prisma';
 import { ACTIVE_CONTENT } from '../common/content';
+import type { Prisma } from '../generated/prisma';
 
 /** 삭제된 원댓글은 익명 자리표시자로 남길 수 있지만 차단·숨김 관계는 전파한다. */
 export function activeCommentWhere(excluded: string[]) {

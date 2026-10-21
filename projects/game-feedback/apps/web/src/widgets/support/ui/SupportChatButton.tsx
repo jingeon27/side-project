@@ -1,8 +1,12 @@
 'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useRouter } from 'next/navigation';
-import { Button } from '@side/design-system';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { appRoutes } from '@game-feedback/bridge';
+import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { startSupportMutationOptions } from '@/features/support';
 import { useI18n } from '@/shared/i18n';

@@ -1,17 +1,19 @@
 import 'server-only';
 
 import { cache } from 'react';
+
 import {
   GroupContestFilter,
   GroupContestsDocument,
   GroupVisibility,
-  PublicGroupSeoDocument,
   PublicGroupContestCountDocument,
   PublicGroupContestSitemapDocument,
+  PublicGroupSeoDocument,
 } from '@/shared/api/generated';
-import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
 import { PUBLIC_CONTENT_TTL, PUBLIC_SITEMAP_TTL } from '@/shared/api/public-cache.policy';
+import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
+
 import { groupContestsMetadata, type IGroupContestsSeoData } from './group-contests-seo.helper';
 
 export const PUBLIC_CONTEST_SITEMAP_SIZE = 48;

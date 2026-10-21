@@ -17,14 +17,15 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
-import { ChatAccessService } from './chat-access.service';
-import { ChatAttachmentService } from './chat-attachment.service';
-import { CHAT_FILE_LIMIT, mediaRange } from './chat-file';
 import { ValidatedBody } from '../common/http/request-validation';
 import { MediaUploadDto } from '../common/media-upload.dto';
+import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
+import { ChatAttachmentService } from './chat-attachment.service';
+import { CHAT_FILE_LIMIT, mediaRange } from './chat-file';
 
 @Injectable()
 export class ChatAttachmentGuard implements CanActivate {

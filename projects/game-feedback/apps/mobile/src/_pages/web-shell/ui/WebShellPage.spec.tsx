@@ -1,12 +1,22 @@
+import {
+  AppState,
+  BackHandler,
+  Linking,
+  Platform,
+  type AppStateStatus,
+  type NativeSyntheticEvent,
+} from 'react-native';
+
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AppStateStatus, NativeSyntheticEvent } from 'react-native';
-import type { WebViewNativeEvent } from 'react-native-webview/lib/WebViewTypes';
-import { AppState, BackHandler, Linking, Platform } from 'react-native';
 import * as ExpoLinking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import type { WebViewNativeEvent } from 'react-native-webview/lib/WebViewTypes';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { currentWebViewProps, fakeWebView } from '@/test/ui/fake-web-view';
+
 import { WebShellPage } from './WebShellPage';
+
 const url = 'https://feedback.example/ko';
 function event<T extends Record<string, unknown> = Record<string, never>>(extra: T = {} as T) {
   return {

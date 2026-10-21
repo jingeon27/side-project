@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-
 import { act, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TableOfContents } from '@/widgets/article-reader/ui/table-of-contents';
 

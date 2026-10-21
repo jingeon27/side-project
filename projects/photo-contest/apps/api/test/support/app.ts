@@ -3,9 +3,10 @@ import type { Server } from 'node:http';
 import { join } from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
-import { createDatabaseClient } from '@photo-contest/test-kit';
 import request from 'supertest';
 import { inject } from 'vitest';
+
+import { createDatabaseClient } from '@photo-contest/test-kit';
 
 import { createApp } from '../../src/bootstrap';
 import { SchedulerService } from '../../src/maintenance/scheduler.service';

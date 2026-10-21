@@ -1,10 +1,10 @@
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable, type MessageEvent, type OnModuleDestroy } from '@nestjs/common';
 import { Observable, type Subscriber } from 'rxjs';
+
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { PrismaClient } from '../generated/prisma';
 
 type Client = { userId: string; sessionHash: string; subscriber: Subscriber<MessageEvent> };
 

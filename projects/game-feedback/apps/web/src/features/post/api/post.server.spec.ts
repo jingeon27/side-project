@@ -1,5 +1,7 @@
-import { ApiError } from '@game-feedback/sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ApiError } from '@game-feedback/sdk';
+
 import { getServerPost } from './post.server';
 
 const { getCookie, getPost, cacheTag, cacheLife } = vi.hoisted(() => ({

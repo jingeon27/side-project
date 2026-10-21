@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
+
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+
 import { getServerSession } from '@/features/auth/index.server';
+
 import { OnboardingPage } from './ui/OnboardingPage';
 import { OnboardingTopbar } from './ui/OnboardingTopbar';
 

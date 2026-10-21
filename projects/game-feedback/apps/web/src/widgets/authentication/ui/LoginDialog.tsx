@@ -1,11 +1,13 @@
 'use client';
 
+import { appRoutes } from '@game-feedback/bridge';
+import { Dialog } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
-import { Dialog } from '@side/design-system';
-import { appRoutes } from '@game-feedback/bridge';
-import { SocialLoginForm } from './SocialLoginForm';
+
 import { LoginLegalLinks } from './LoginLegalLinks';
+import { SocialLoginForm } from './SocialLoginForm';
 
 interface ILoginDialogProps {
   open: boolean;

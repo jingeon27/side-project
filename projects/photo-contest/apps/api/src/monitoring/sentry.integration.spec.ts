@@ -1,17 +1,16 @@
 import { captureException, init } from '@sentry/node';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import { cookiePair, findSetCookie } from '../../test/support/cookies';
+import { stubExternalFetch } from '../../test/support/external-fetch';
+import { createContest, createGroup } from '../../test/support/fixtures';
+import { submitPhoto } from '../../test/support/photos';
 import { ContestCompletionService } from '../analytics/contest-completion.service';
 import { AuthService } from '../auth/auth.service';
 import { GroupService } from '../group/group.service';
 import { MaintenanceService } from '../maintenance/maintenance.service';
 import { PhotoStorage } from '../storage/photo-storage.service';
-import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
-import { cookiePair, findSetCookie } from '../../test/support/cookies';
-import { stubExternalFetch } from '../../test/support/external-fetch';
-import { createContest, createGroup } from '../../test/support/fixtures';
-import { submitPhoto } from '../../test/support/photos';
 
 // 실제 구현은 그대로 두고 호출만 지켜본다. SENTRY_DSN이 없으므로 밖으로는 아무것도 나가지 않는다.
 vi.mock('@sentry/node', { spy: true });

@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-import { match } from 'ts-pattern';
-
 import { Injectable } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import { s3Settings, storageBackend, storageDir } from '../config/env';
 import { LocalPhotoStore } from './local-photo-store';

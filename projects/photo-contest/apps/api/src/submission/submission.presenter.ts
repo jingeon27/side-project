@@ -1,6 +1,5 @@
 import type { Prisma } from '../../generated/prisma';
-import { USER_VIEW_SELECT } from '../auth/user-view';
-import type { IUserView } from '../auth/user-view';
+import { USER_VIEW_SELECT, type IUserView } from '../auth/user-view';
 
 export interface IReportView {
   id: string;

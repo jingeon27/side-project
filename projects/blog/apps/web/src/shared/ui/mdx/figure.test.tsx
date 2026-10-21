@@ -1,14 +1,10 @@
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { render, screen } from '@testing-library/react';
-
-import { Summary } from '@/shared/ui/mdx/summary';
-
-import { Decision } from '@/shared/ui/mdx/decision';
-
 import { Callout } from '@/shared/ui/mdx/callout';
-
+import { Decision } from '@/shared/ui/mdx/decision';
 import { Figure } from '@/shared/ui/mdx/figure';
+import { Summary } from '@/shared/ui/mdx/summary';
 
 describe('article reading aids', () => {
   it('renders structured MDX notes and figure captions with accessible alternative text', () => {

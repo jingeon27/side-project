@@ -1,7 +1,7 @@
 'use client';
 
-import { PostMedia } from './PostMedia';
 import { PostLink } from './PostLink';
+import { PostMedia } from './PostMedia';
 
 export function PostAttachments({ postId, detail = false }: { postId: string; detail?: boolean }) {
   return (

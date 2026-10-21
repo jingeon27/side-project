@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { ApiResponseValidationError, createComment, getPost, listNotifications } from './index';
 import { authorFixture, postFixture } from './test/fixtures';
 

@@ -1,4 +1,5 @@
 import { getDeviceId, getUserId, init, reset, setUserId, track } from '@amplitude/analytics-react-native';
+
 import type { TWebEventPayload } from '@photo-contest/bridge';
 
 import { AMPLITUDE_API_KEY } from '@/shared/config/env';

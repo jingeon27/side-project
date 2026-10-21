@@ -1,8 +1,9 @@
-import { UseGuards, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, UseGuards } from '@nestjs/common';
+
+import type { SessionRequest } from '../auth/session.types';
+import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { BlockUserDto } from './block-input.dto';
-import { ValidatedBody } from '../common/http/request-validation';
-import type { SessionRequest } from '../auth/session.types';
 import { BlocksService } from './blocks.service';
 
 @Controller('api')

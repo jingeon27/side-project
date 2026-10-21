@@ -1,8 +1,8 @@
-import { PrismaClient, type Prisma } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import type { SessionRequest } from '../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 
 @Injectable()
 export class UserVisibilityService {

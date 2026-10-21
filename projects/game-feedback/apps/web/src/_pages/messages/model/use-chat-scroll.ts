@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
+
 import { ChatScrollController } from './chat-scroll-controller';
 
 interface IChatScrollOptions {

@@ -3,11 +3,15 @@ import { ApolloProvider } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CreateGroupDocument, GroupRole, MyGroupsDocument } from '@/shared/api/generated';
-import type { GroupCardFragment } from '@/shared/api/generated';
+import {
+  CreateGroupDocument,
+  GroupRole,
+  MyGroupsDocument,
+  type GroupCardFragment,
+} from '@/shared/api/generated';
 import { trackEvent } from '@/shared/model/analytics';
 
 import { CreateGroupBottomSheet } from './CreateGroupBottomSheet';

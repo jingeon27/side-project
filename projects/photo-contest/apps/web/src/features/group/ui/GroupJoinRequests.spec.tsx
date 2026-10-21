@@ -1,7 +1,8 @@
+import { renderToString } from 'react-dom/server';
+
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act, render, screen } from '@testing-library/react';
-import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { GroupJoinRequests } from './GroupJoinRequests';

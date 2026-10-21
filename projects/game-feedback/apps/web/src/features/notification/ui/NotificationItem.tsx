@@ -1,9 +1,13 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import Link from 'next/link';
-import { FileText, MessageSquare, ThumbsUp, ArrowUpRight } from 'lucide-react';
+
+import { ArrowUpRight, FileText, MessageSquare, ThumbsUp } from 'lucide-react';
+
 import type { Notification } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
+
 interface INotificationItemProps {
   notification: Notification;
   href: string;

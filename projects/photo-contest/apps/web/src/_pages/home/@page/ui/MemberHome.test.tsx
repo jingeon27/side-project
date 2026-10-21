@@ -1,8 +1,9 @@
+import { hydrateRoot, type Root } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
+
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act, within } from '@testing-library/react';
-import { hydrateRoot, type Root } from 'react-dom/client';
-import { renderToString } from 'react-dom/server';
 import { expect, it, vi } from 'vitest';
 
 import {
@@ -14,6 +15,7 @@ import {
   PostSort,
   PublicGalleryPostsDocument,
 } from '@/shared/api/generated';
+
 import { MemberHome } from './MemberHome';
 
 vi.mock('next/navigation', () => ({

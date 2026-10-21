@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
-import Image from 'next/image';
 import type { ComponentPropsWithoutRef } from 'react';
+import Image from 'next/image';
+
 import imageSizes from '@/shared/config/image-sizes.json';
 
 const dimensions = imageSizes as Record<string, { width: number; height: number }>;

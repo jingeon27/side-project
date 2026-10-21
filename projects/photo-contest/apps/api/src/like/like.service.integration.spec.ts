@@ -1,10 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
-import { createContest, createGroup, joinGroup } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import { createContest, createGroup, joinGroup, type ITestGroup } from '../../test/support/fixtures';
 import { listPhotos, submitPhoto } from '../../test/support/photos';
 
 const LIKE = 'mutation($id: ID!) { likeSubmission(submissionId: $id) { id likeCount likedByMe } }';

@@ -1,7 +1,9 @@
-import { translate } from '@/shared/i18n/index.server';
 import type { PostDetail, PublicProfile } from '@/shared/api';
-import { pageUrl, excerpt } from './config';
-import { pageContent, localizedStaticContent, SITE_NAME, staticPagePath, type TStaticPage } from './metadata';
+import { translate } from '@/shared/i18n/index.server';
+
+import { excerpt, pageUrl } from './config';
+import { localizedStaticContent, pageContent, SITE_NAME, staticPagePath, type TStaticPage } from './metadata';
+
 const publicPageTypes = {
   feed: 'WebPage',
   guide: 'WebPage',

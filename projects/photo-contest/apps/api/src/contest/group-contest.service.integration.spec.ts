@@ -5,10 +5,10 @@ import { contestSchedule, createContest, createGroup } from '../../test/support/
 import {
   CAST_POST_VOTE,
   CREATE_GROUP_CONTEST,
-  GROUP_CONTEST,
-  GROUP_CONTEST_FIELDS,
   createEntry,
   createGroupContest,
+  GROUP_CONTEST,
+  GROUP_CONTEST_FIELDS,
   moveGroupContest,
   postUpload,
 } from '../../test/support/group-contest';

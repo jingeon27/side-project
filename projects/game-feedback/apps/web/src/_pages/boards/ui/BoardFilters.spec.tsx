@@ -1,11 +1,14 @@
+import type { ReactNode } from 'react';
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import type { ReactNode } from 'react';
+
 import { installBrowserNavigation } from '@/shared/navigation';
-import { FeedbackFilters } from './FeedbackFilters';
-import { CoachingFilters } from './CoachingFilters';
+
 import { BattleFilters } from './BattleFilters';
+import { CoachingFilters } from './CoachingFilters';
+import { FeedbackFilters } from './FeedbackFilters';
 
 const router = {
   bfcacheId: 'board-filter-test',

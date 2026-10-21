@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
+
 import { Injectable } from '@nestjs/common';
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
-import { recordEvent } from '../analytics/analytics-event.writer';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, fail } from '../common/errors';
 import { readUpload } from '../common/graphql/read-upload';

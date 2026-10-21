@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { CommentSchema, PostSchema, SessionSchema, NotificationListSchema } from '@game-feedback/contracts';
+
+import { CommentSchema, NotificationListSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
 
 const origin = 'http://127.0.0.1:3301';
 const headers = { Origin: origin };

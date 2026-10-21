@@ -2,8 +2,10 @@
 
 import { useReadQuery } from '@apollo/client/react';
 import { LockKeyhole } from 'lucide-react';
+
 import { GroupMembershipButton } from '@/features/group';
 import { Button } from '@/shared/ui/@core/button';
+
 import type { TGroupQueryRef } from '../model/group-query.type';
 
 export function PrivateGroupNotice({

@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { BackHandler, Linking, Platform } from 'react-native';
+
 import type { WebViewProps } from 'react-native-webview';
+
 import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge';
+
 import { NativeHost, nativeLogin } from '@/features/bridge';
 import { decideNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
 import { APP_VERSION, WEB_ORIGIN } from '@/shared/config/env';
+
 import { isLoadFailure } from '../lib/load-error';
-import { WebViewChannel } from './web-view-channel';
 import { useShellLifecycle } from './use-shell-lifecycle';
+import { WebViewChannel } from './web-view-channel';
 
 export function useWebShell() {
   const [channel] = useState(() => new WebViewChannel(`${WEB_ORIGIN}/`));

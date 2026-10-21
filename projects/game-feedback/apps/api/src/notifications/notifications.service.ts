@@ -1,14 +1,14 @@
-import { PrismaClient, type Prisma } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, encodeCursor } from '../common/pagination';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
-import { activeCommentWhere } from '../comments/comment-visibility';
 
 @Injectable()
 export class NotificationsService {

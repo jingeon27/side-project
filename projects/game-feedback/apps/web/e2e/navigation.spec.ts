@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('desktop navigation has one entry per destination and keeps boards in the sidebar', async ({ page }) => {
   const login = await page.request.post('/api/auth/test-login', {

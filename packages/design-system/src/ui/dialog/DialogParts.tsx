@@ -2,8 +2,10 @@
 'use client';
 
 import type { ComponentProps } from 'react';
+
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
+
 import { cn } from '../../lib/cn.helper';
 import type { TStyledProps } from '../../lib/styled-props';
 import { Button } from '../button/Button';

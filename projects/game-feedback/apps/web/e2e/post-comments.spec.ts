@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+
 import type { PostDetail } from '@game-feedback/contracts';
 
 const origin = 'http://127.0.0.1:3301';

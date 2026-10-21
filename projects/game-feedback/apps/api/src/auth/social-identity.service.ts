@@ -1,8 +1,9 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../generated/prisma';
+import { Inject, Injectable } from '@nestjs/common';
 
 import type { TSocialProvider } from '@game-feedback/contracts';
-import { Inject, Injectable } from '@nestjs/common';
+
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 
 @Injectable()
 export class SocialIdentityService {

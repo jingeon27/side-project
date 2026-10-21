@@ -1,10 +1,14 @@
 'use client';
-import { Button, Textarea } from '@side/design-system';
+
 import { Send } from 'lucide-react';
+
+import { Button, Textarea } from '@side/design-system';
+
 import { useCreateCommentMutation } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, useNotify } from '@/shared/ui';
+
 import { commentFormSchema } from '../model/content.schema';
 
 interface IPostCommentReplyFormProps {

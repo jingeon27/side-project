@@ -1,10 +1,8 @@
-import { createParamDecorator, Injectable } from '@nestjs/common';
-import type { ExecutionContext, PipeTransform } from '@nestjs/common';
+import { createParamDecorator, Injectable, type ExecutionContext, type PipeTransform } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { requestOf } from '../common/graphql/graphql-context';
-import { SessionService } from './session.service';
-import type { IViewer } from './session.service';
+import { SessionService, type IViewer } from './session.service';
 
 @Injectable()
 export class RequiredViewerPipe implements PipeTransform<Request, Promise<IViewer>> {

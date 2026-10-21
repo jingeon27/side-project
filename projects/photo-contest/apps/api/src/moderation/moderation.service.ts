@@ -1,12 +1,11 @@
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
 import { Injectable } from '@nestjs/common';
 
 import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { TEXT_LIMIT } from '../config/limits';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
 import { PhotoStorage } from '../storage/photo-storage.service';
 

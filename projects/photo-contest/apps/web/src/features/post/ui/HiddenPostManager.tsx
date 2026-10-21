@@ -4,13 +4,14 @@ import {
   skipToken,
   useBackgroundQuery,
   useMutation,
-  useReadQuery,
   useQueryRefHandlers,
+  useReadQuery,
   type QueryRef,
 } from '@apollo/client/react';
+
 import {
-  HiddenGalleryPostsDocument,
   GalleryPostsDocument,
+  HiddenGalleryPostsDocument,
   PublicGalleryPostsDocument,
   SetPostHiddenDocument,
   type HiddenGalleryPostsQuery,

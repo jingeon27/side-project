@@ -7,15 +7,15 @@ import { useWatch } from 'react-hook-form';
 
 import {
   CreatePostCommentDocument,
-  RefreshPostDocument,
+  GalleryPostCardFragmentDoc,
   MeDocument,
   PostCommentsDocument,
-  GalleryPostCardFragmentDoc,
+  RefreshPostDocument,
 } from '@/shared/api/generated';
+import { ROUTES } from '@/shared/constants/routes';
 import { useZodForm } from '@/shared/model/form';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
-import { ROUTES } from '@/shared/constants/routes';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
 import { commentSchema } from '../model/comment.schema';

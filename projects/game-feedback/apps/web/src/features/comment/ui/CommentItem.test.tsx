@@ -1,8 +1,11 @@
-import { act, waitFor } from '@testing-library/react';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+
+import { act, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { Comment } from '@/shared/api';
+
 import { CommentItem } from './CommentItem';
 
 afterEach(() => vi.useRealTimers());

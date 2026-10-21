@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
+
 import type { Page } from '@playwright/test';
+
 import { appRoutes } from '@game-feedback/bridge';
-import { test, expect } from './support/fixtures';
+
+import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
 async function pendingSignup(page: Page, returnTo: string) {

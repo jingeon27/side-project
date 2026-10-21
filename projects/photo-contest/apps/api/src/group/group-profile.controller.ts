@@ -1,6 +1,8 @@
 import { pipeline } from 'node:stream/promises';
+
 import { Controller, Get, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
+
 import { NO_STORE } from '../common/http/no-store.middleware';
 import { GroupProfileService } from './group-profile.service';
 

@@ -8,8 +8,9 @@ import {
   useReadQuery,
   type QueryRef,
 } from '@apollo/client/react';
-import { match } from 'ts-pattern';
 import { Trophy } from 'lucide-react';
+import { match } from 'ts-pattern';
+
 import { GroupContestVoteButton, PhaseBadge } from '@/features/contest';
 import { GroupContentFrame, GroupMembershipButton } from '@/features/group';
 import { CreatePostButton, GalleryBoard, PostCard } from '@/features/post';

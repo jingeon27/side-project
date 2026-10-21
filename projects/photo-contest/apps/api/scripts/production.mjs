@@ -1,5 +1,6 @@
-import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+
 const require = createRequire(import.meta.url);
 const { assertProductionConfig } = require('../dist/config/env.js');
 const { sharedDatabaseUrl } = require('../dist/config/shared-instance.js');

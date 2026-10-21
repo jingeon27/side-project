@@ -1,6 +1,7 @@
-import { test, expect } from './support/fixtures';
-import { ORIGIN } from './support/native-host';
 import { appRoutes } from '@game-feedback/bridge';
+
+import { expect, test } from './support/fixtures';
+import { ORIGIN } from './support/native-host';
 
 test('mobile header and four tabs navigate in place and report their paths to the native shell', async ({
   page,

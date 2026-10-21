@@ -1,8 +1,10 @@
+import { useState } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { useState } from 'react';
 import { expect, it } from 'vitest';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 
 function FeedTabs({ orientation }: { orientation: 'horizontal' | 'vertical' }) {
   const [value, setValue] = useState<unknown>('latest');

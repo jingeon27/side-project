@@ -1,5 +1,6 @@
-import { z } from 'zod';
 import { useWatch } from 'react-hook-form';
+import { z } from 'zod';
+
 import { useZodForm } from '@/shared/model/form';
 
 const searchSchema = z.object({ q: z.string().max(100) });

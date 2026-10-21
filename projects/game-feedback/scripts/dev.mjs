@@ -1,6 +1,7 @@
-import { createServer } from 'node:net';
-import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { createServer } from 'node:net';
+
 import { assertNode, environment, rootDir } from './env.mjs';
 
 const demo = process.argv.includes('--demo');

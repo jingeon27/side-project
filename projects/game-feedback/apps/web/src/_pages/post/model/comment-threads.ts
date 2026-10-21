@@ -1,4 +1,5 @@
 import { groupBy } from 'es-toolkit';
+
 import type { Comment } from '@/shared/api';
 
 export interface ICommentThread {

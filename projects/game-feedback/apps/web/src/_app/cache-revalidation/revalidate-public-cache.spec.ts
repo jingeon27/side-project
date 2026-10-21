@@ -1,5 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { revalidateTag } from 'next/cache';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { revalidatePublicCache } from './revalidate-public-cache';
 
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));

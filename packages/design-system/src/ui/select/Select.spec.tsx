@@ -1,8 +1,10 @@
 import { useState } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { expect, it } from 'vitest';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './Select';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
 
 function Appearance() {
   const [value, setValue] = useState<string | null>('light');

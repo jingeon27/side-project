@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
 import {
-  GroupContestsPageTemplate,
-  getGroupContestsSeoData,
   getGroupContestsMetadata,
+  getGroupContestsSeoData,
   groupContestsJsonLd,
+  GroupContestsPageTemplate,
 } from '@/_pages/group-contests';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {

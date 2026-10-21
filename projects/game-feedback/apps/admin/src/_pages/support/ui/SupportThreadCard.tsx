@@ -1,7 +1,9 @@
-import { Button } from '@side/design-system';
 import { match } from 'ts-pattern';
+
+import { Button } from '@side/design-system';
+
 import { useSupportStatusMutation, type TSupportThread } from '@/features/support';
-import { adminUserPath, adminSupportPath } from '@/shared/lib';
+import { adminSupportPath, adminUserPath } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
 
 export function SupportThreadCard({ thread }: { thread: TSupportThread }) {

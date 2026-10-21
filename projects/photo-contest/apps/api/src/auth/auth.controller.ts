@@ -13,8 +13,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
-import { AuthService } from './auth.service';
-import type { IAuthConfig } from './auth.service';
+import { AuthService, type IAuthConfig } from './auth.service';
 
 const OK = { ok: true } as const;
 

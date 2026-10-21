@@ -1,4 +1,5 @@
 import { createInstance } from '@amplitude/analytics-browser';
+
 import type { TAnalyticsEventName, TAnalyticsProperties } from './analytics.catalog';
 import { analyticsEnrichment } from './analytics.enrichment';
 

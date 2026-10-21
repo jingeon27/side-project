@@ -1,6 +1,9 @@
 'use client';
+
 import { ArrowUpRight } from 'lucide-react';
+
 import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';

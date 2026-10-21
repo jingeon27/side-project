@@ -1,5 +1,6 @@
 import { infiniteQueryOptions, queryOptions, skipToken } from '@tanstack/react-query';
 import { compact } from 'es-toolkit';
+
 import { fetchPostDetail, fetchPostList } from '../api/post.api';
 import type { TPostListParams } from '../types/post.type';
 

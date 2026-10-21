@@ -1,6 +1,8 @@
 'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
+
 import { useSession } from '@/features/auth';
 import { notificationSummaryOptions } from '@/features/notification';
 import { useI18n } from '@/shared/i18n';

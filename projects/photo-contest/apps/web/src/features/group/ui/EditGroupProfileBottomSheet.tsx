@@ -1,7 +1,9 @@
 'use client';
 
-import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { useId } from 'react';
+
+import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
+
 import {
   DiscoverGroupsDocument,
   GalleryDocument,
@@ -18,6 +20,7 @@ import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bo
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextArea, TextField } from '@/shared/ui/@core/text-field';
+
 import { groupProfileSchema } from '../model/group-profile.schema';
 import { GroupAvatarField } from './GroupAvatarField';
 

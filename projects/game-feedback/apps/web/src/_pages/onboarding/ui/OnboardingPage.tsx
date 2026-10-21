@@ -1,14 +1,17 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useEffect } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
 import { useSuspenseQuery } from '@tanstack/react-query';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { sessionOptions, useCompleteOnboarding } from '@/features/auth';
-import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
 import { useI18n } from '@/shared/i18n';
 import { LoadingState } from '@/shared/ui';
+import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
   const { t } = useI18n();

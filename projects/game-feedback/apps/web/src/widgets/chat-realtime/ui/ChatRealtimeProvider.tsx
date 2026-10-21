@@ -1,6 +1,9 @@
 'use client';
+
 import { createContext, useCallback, useContext, type ReactNode } from 'react';
+
 import { useQueryClient } from '@tanstack/react-query';
+
 import { sessionOptions } from '@/features/auth';
 import { useChatRealtime, type TChatConnection } from '@/features/chat';
 

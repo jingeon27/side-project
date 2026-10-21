@@ -1,6 +1,8 @@
-import { translate, type TLocale } from '@/shared/i18n/index.server';
 import { ArrowUpRight } from 'lucide-react';
+
 import { getContactEmail } from '@/shared/config';
+import { translate, type TLocale } from '@/shared/i18n/index.server';
+
 export function ContactContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   const contact = getContactEmail();

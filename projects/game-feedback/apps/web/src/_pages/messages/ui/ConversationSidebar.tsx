@@ -1,10 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import Link from 'next/link';
+
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, MessageCircle } from 'lucide-react';
+
 import { conversationListOptions } from '@/features/chat';
+import { useI18n } from '@/shared/i18n';
 import { useChatConnection } from '@/widgets/chat-realtime';
+
 import { ConversationRow } from './ConversationRow';
 
 interface IConversationSidebarProps {

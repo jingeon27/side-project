@@ -1,7 +1,9 @@
+import { useState } from 'react';
+
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+
 import { Button } from '../button/Button';
 import { TextField } from '../text-field/TextField';
 import { Dialog } from './Dialog';

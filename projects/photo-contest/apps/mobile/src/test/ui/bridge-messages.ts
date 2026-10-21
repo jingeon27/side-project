@@ -1,7 +1,16 @@
-import { NATIVE_EVENT_NAME, PROTOCOL_VERSION, decodeNativeMessage } from '@photo-contest/bridge';
-import type { TNativeMessage, TWebEventPayload, TWebEventType, TWebRequestType } from '@photo-contest/bridge';
 import type { NativeSyntheticEvent } from 'react-native';
+
 import { vi } from 'vitest';
+
+import {
+  decodeNativeMessage,
+  NATIVE_EVENT_NAME,
+  PROTOCOL_VERSION,
+  type TNativeMessage,
+  type TWebEventPayload,
+  type TWebEventType,
+  type TWebRequestType,
+} from '@photo-contest/bridge';
 
 import { fakeWebView } from './fake-web-view';
 

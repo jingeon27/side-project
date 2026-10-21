@@ -1,18 +1,20 @@
-import { randomBytes } from 'node:crypto';
-import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
-import { createApp } from '../app';
-import { seed } from '../seed';
-import { assertDatabaseUrl, hash } from '../security';
-import { MediaStorage } from './media-storage.service';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { grantOperatorRole, issueOperatorSession } from '../admin/operator-session';
+import { createApp } from '../app';
+import { PrismaClient } from '../generated/prisma';
+import { assertDatabaseUrl, hash } from '../security';
+import { seed } from '../seed';
+import { MediaStorage } from './media-storage.service';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';

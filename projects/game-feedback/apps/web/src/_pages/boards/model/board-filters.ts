@@ -1,6 +1,7 @@
 import { parseBattleMode } from '@/features/battle';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus } from '@/features/post';
+
 import type { IBoardSnapshot } from './board-snapshot.type';
 
 export function readBoardFilters(search: string) {

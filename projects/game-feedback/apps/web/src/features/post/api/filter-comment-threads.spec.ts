@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import type { Comment } from '@/shared/api';
+
 import { filterCommentThreads } from './filter-comment-threads';
 
 function comment(id: string, authorId: string, parentId: string | null = null): Comment {

@@ -1,6 +1,5 @@
+import { useId, type ReactNode } from 'react';
 import Image from 'next/image';
-import { useId } from 'react';
-import type { ReactNode } from 'react';
 
 import type { SubmissionCardFragment } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';

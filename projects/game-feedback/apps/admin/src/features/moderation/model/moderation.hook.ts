@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import {
-  verifyMutationOptions,
   banMutationOptions,
   reviewMutationOptions,
+  verifyMutationOptions,
   visibilityMutationOptions,
 } from './moderation.mutation-options';
 

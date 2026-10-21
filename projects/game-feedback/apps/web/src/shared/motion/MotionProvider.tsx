@@ -1,7 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
+
 import { domAnimation, LazyMotion, MotionConfig } from 'framer-motion';
+
 import { interactionTransition } from './transitions';
 import { useMotionPreference } from './use-motion-preference';
 

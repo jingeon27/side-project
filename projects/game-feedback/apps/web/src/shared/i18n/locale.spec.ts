@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { detectLocale, preferredLocale, languagePreference, localePath } from './locale';
-import { translate } from './messages';
+
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+
+import { detectLocale, languagePreference, localePath, preferredLocale } from './locale';
+import { translate } from './messages';
 
 describe('language preference', () => {
   it('가입 안내의 언어를 바꾸면 인증 화면과 원래 목적지의 언어를 함께 바꿔야 한다', () => {

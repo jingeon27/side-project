@@ -1,8 +1,10 @@
 import { writeFileSync } from 'node:fs';
+
 import { z } from 'zod';
+
 import {
-  BoardKindSchema,
   BattleModeSchema,
+  BoardKindSchema,
   CoachingRoleSchema,
   FeedbackStatusSchema,
   operations,
