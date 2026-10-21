@@ -1,9 +1,10 @@
 'use client';
 import { useI18n } from '@/shared/i18n';
-import { useSyncExternalStore, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { Comment } from '@/shared/api';
 import { Avatar } from '@/shared/ui';
 import { timeAgo } from '@/shared/lib/date';
+import { useIsSSR } from '@/shared/lib/use-is-ssr';
 interface ICommentItemProps {
   comment: Comment;
   authorContent?: ReactNode;
@@ -12,9 +13,6 @@ interface ICommentItemProps {
   isPostAuthor?: boolean;
   mine: boolean;
 }
-const subscribeHydration = () => () => undefined;
-const clientHydrated = () => true;
-const serverHydrated = () => false;
 
 export function CommentItem({
   comment,
@@ -24,7 +22,7 @@ export function CommentItem({
   isPostAuthor,
   mine,
 }: ICommentItemProps) {
-  const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
+  const isSSR = useIsSSR();
   const { t, locale: textLocale } = useI18n();
   return (
     <article className={`comment${mine ? ' mine' : ''}`}>
@@ -38,9 +36,9 @@ export function CommentItem({
         <p className="comment-bubble">{comment.body}</p>
         <div className="comment-meta">
           <time dateTime={comment.createdAt}>
-            {hydrated
-              ? timeAgo(comment.createdAt, textLocale)
-              : new Date(comment.createdAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'}
+            {isSSR
+              ? new Date(comment.createdAt).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'
+              : timeAgo(comment.createdAt, textLocale)}
           </time>
           {comment.updatedAt !== comment.createdAt && <span>{t(' (수정됨)')}</span>}
         </div>
