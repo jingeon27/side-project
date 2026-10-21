@@ -106,4 +106,6 @@ corepack yarn format:check
 | Game Mate               | game-feedback | https://game.bambyul.com    | https://api.game.bambyul.com/api                 |
 | 별사대 · 별난 사진 대회 | photo-contest | https://contest.bambyul.com | https://api.contest.bambyul.com/graphql          |
 
+서비스 로고는 서로 다른 실루엣과 색을 쓴다. 밤별 블로그는 남색의 책과 별, Game Mate는 초록색 게임패드, 별사대는 코랄색의 카메라와 별 렌즈다. 각 서비스의 favicon·Apple 아이콘·공유 이미지·네이티브 앱 아이콘은 해당 로고를 따른다.
+
 웹·WebView는 각 웹 origin의 `/api` 또는 `/backend` 프록시를 사용한다. API 공개 도메인과 서버 간 내부 upstream 주소를 구분하며, 별사대의 API GraphQL도 Next 프록시를 거쳐 공개 캐시를 무효화한다. DNS·TLS·호스팅 연결은 [공통 배포 안내](deploy/shared-instance/README.md)와 [블로그 배포 안내](projects/blog/docs/deployment.md)를 따른다.
