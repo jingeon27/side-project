@@ -19,7 +19,8 @@ export type TAppScreen =
   | 'terms'
   | 'privacy'
   | 'contact'
-  | 'login';
+  | 'login'
+  | 'onboarding';
 export interface IAppRoute {
   path: string;
   pathname: string;
@@ -60,6 +61,7 @@ function queryPath(path: string, values: Record<string, string | undefined>) {
 }
 export const appRoutes = {
   login: (locale: string, returnTo?: string) => queryPath(`${root(locale)}/login`, { returnTo }),
+  onboarding: (locale: string, returnTo?: string) => queryPath(`${root(locale)}/onboarding`, { returnTo }),
   feed: (locale: string, filters: { q?: string; tab?: string } = {}) =>
     queryPath(root(locale), { tab: filters.tab === 'unanswered' ? 'unanswered' : undefined, q: filters.q }),
   search: (
@@ -147,7 +149,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const segments =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|search|boards|write|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|onboarding|search|boards|write|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
       pathname,
     );
   if (!segments) return null;
@@ -163,7 +165,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (!feedback.success || (feedback.data && !['search', 'boards'].includes(kind ?? ''))) return null;
   const context = { pathname, locale, home, query, game: game.data, id, feedback: feedback.data };
   return match(kind)
-    .with('login', () => resolveLoginRoute(context))
+    .with('login', 'onboarding', (screen) => resolveAuthRoute(context, screen))
     .with('search', () => resolveSearchRoute(context))
     .with('write', () => resolveComposeRoute(context))
     .with('posts', () => resolvePostRoute(context))
@@ -184,16 +186,19 @@ interface IRouteContext {
   feedback?: z.infer<typeof feedbackStatusSchema>;
 }
 
-function resolveLoginRoute({ pathname, locale, home, query }: IRouteContext): IAppRoute | null {
-  // 로그인 페이지를 다시 목적지로 받으면 복귀 경로가 순환한다.
-  if (query.returnTo && /^\/(ko|en|ja)\/login(?:[/?]|$)/.test(query.returnTo)) return null;
+function resolveAuthRoute(
+  { pathname, locale, home, query }: IRouteContext,
+  screen: 'login' | 'onboarding',
+): IAppRoute | null {
+  // 인증 화면을 목적지로 받으면 로그인과 가입 안내 사이에 복귀 경로가 순환한다.
+  if (query.returnTo && /^\/(ko|en|ja)\/(login|onboarding)(?:[/?]|$)/.test(query.returnTo)) return null;
   const destination = query.returnTo ? resolveAppRoute(query.returnTo) : null;
   if (query.returnTo && (!destination || destination.locale !== locale)) return null;
   return {
-    path: appRoutes.login(locale, destination?.path),
+    path: appRoutes[screen](locale, destination?.path),
     pathname,
     locale,
-    screen: 'login',
+    screen,
     tab: 'settings',
     parent: destination?.path ?? home,
   };

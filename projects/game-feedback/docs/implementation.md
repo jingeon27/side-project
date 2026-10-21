@@ -1042,3 +1042,33 @@ PostMedia/ChatAttachment의 uploadedAt과 추가형 migration으로 기존 첨�
 - 계약 → OpenAPI → SDK를 다시 생성해 SDK diff가 없음을 확인했다. 변경 코드·문서의 Prettier와 `git diff --check`를 통과했다.
 
 실제 외부 제공자의 계정 로그인은 실행하지 않았다. API는 가짜 제공자, 웹은 OAuth 시작 요청 가로채기, 앱은 시스템 인증 취소 대역을 사용했다. 실행 중인 개발 Web/API와 개발 DB는 변경하지 않았다. 검증 후 소유한 테스트 DB만 중지하고 데이터를 보존했다.
+
+## 닉네임·필수 동의의 가입 페이지 분리 (2026-10-22)
+
+모바일·데스크톱·앱 WebView의 가입 안내를 `/:locale/onboarding` 페이지로 분리했다. 닉네임 입력, 이용약관·개인정보 처리방침 동의와 만 14세 이상 확인을 페이지에서 받고, 두 필수 항목을 확인해야 가입을 제출한다. 약관·개인정보·문의 페이지는 가입 대기 상태에서도 열 수 있다. 기존 가입 안내 BottomSheet는 제거했으며, 데스크톱의 소셜 로그인 Dialog와 모바일 로그인 페이지는 유지한다.
+
+브라우저 OAuth 신규 사용자는 검증한 원래 화면을 returnTo에 담아 가입 페이지로 이동하고, 기존 사용자는 원래 화면으로 바로 복귀한다. 앱 PKCE 교환 뒤의 pending 세션도 같은 페이지로 이동한다. 외부 주소·다른 언어·인증 화면을 중첩한 목적지는 거부하고 안전한 홈으로 복구한다. 언어 전환은 목적지의 게시판·검색 조건도 함께 보존하며 가입 페이지는 noindex/nofollow다.
+
+페이지의 서버 진입은 최신 쿠키 세션을 검사한다. 클라이언트 이동도 기존 sessionOptions 캐시를 재조회하고 결과가 나올 때까지 이동 판단을 보류한다. 재조회·요청 실패 시 폼 초안과 동의를 보존하고 요청 중에는 입력과 제출을 잠근다. 가입 중 인증이 만료되면 pending 세션 캐시를 정리하고 원래 목적지를 유지해 로그인으로 이동한다. 가입 완료 후에는 원래 화면으로 복귀하며 이미 가입한 사용자의 직접 재진입도 같은 목적지로 보낸다.
+
+검증 결과:
+
+- API 단위 98개와 관련 Supertest 통합 24개가 통과했다. 새 OAuth 복귀 통합 사양은 migration을 적용한 격리 PostgreSQL 스키마와 가짜 제공자로 세 언어의 신규·기존·취소·잘못된 복귀 쿠키를 검증한다.
+- Web Vitest 전체 150개가 통과했다. 실제 SessionProvider·React Query·RHF·디자인 시스템 컨트롤과 SDK 응답 검증을 사용해 필수 동의·닉네임 오류·진행 중 잠금·실패 후 재시도·인증 만료·오래된 클라이언트 세션·재조회 중 초안 보존을 확인했다.
+- Bridge 단위 11개, Mobile 전체 단위 45개와 Next production build/start의 Web Playwright 14개가 한 번에 통과했다. 실제 pending HttpOnly 쿠키를 쓰는 테스트 OAuth로 모바일·데스크톱 가입 페이지, 약관 새 창, 320px 가로 넘침, 언어 전환, 실패 초안, 가입 후 복귀와 익명·가입 완료 계정의 직접 진입을 확인했다. 마지막 문구 정리와 다크 모드 가독성 검사를 추가한 뒤 가입·시트 5개도 재검증했다.
+- Android Chromium/iOS WebKit native host Playwright 10개가 통과했다. 가입 대기 페이지·개인정보 열람·뒤로 가기, 가입 완료 후 원래 필터 복귀, 기존 로그인·딥링크·foreground 갱신, 채팅 신고 시트의 native back을 확인했다. 실제 모바일 OS나 외부 제공자 계정 검증으로 기록하지 않는다.
+- API·contracts·Bridge·Mobile·Web 타입 검사와 Web lint가 통과했다. 계약 → OpenAPI → SDK를 재생성했고 SDK 추적 diff가 없다. 393px 라이트/다크와 1440px 가입 화면의 스크린샷을 생성했다.
+
+E2E 서버의 가짜 Google 제공자는 기존 NODE_ENV=test·격리 DB·전용 포트·외부 자격 증명 금지 검사 뒤에서만 사용한다. 테스트는 55444의 gf_test_ 스키마와 별도 Web/API 포트를 사용했다. 새 의존성·DB migration·다른 서비스 코드 변경은 없다. 기존 가입 대기의 필수 완료 정책을 유지하므로 뒤로 가기로 일반 화면에 이동하면 가입 페이지로 돌아온다. 공개 배포와 실제 Google·카카오·Discord·X 로그인은 수행하지 않았다.
+
+공통 디자인 시스템에 Base UI Drawer 기반 BottomSheet를 추가하고 GF의 기존 입력 시트를 연결했다. 핸들의 마우스·터치 드래그와 방향키·Home·End·Enter·Space로 60%와 전체 높이를 조절한다. 아래로 끌어 닫기, 포커스 복귀와 필수 처리 중 닫기 방지를 제공한다. 제목·핸들은 고정하고 본문은 보이는 높이 안에서 스크롤하며 소프트 키보드는 VirtualKeyboardProvider를 사용한다. 상속되지 않는 Drawer 위치 변수는 popup에서 계산한 별칭으로 본문에 전달한다. 공통 패키지는 재사용 가능한 시트와 스타일·문서를 소유하며 기존 Photo Contest 제품 코드는 수정하지 않았다. 기존 Dialog의 하단 배치 API는 유지한다.
+
+디자인 시스템 lint·typecheck·Vitest 16개가 통과했다. 웹 E2E에서 실제 마우스와 Chromium 터치 이벤트로 확장·축소·아래로 닫기를 검사했고, 높이를 바꿔도 입력 초안이 보존되는지 확인했다. 게임 계정·신고 시트와 확인 Dialog의 기존 동작도 검증했다. 393px 가입 라이트/다크와 시트 핸들 화면을 직접 확인했다. 초기 캡처가 테마 전환 중간에 찍히지 않도록 입력 글자와 주 버튼의 최종 다크 색상을 기다린다.
+
+문의 메일은 contact@bambyul.com으로 변경했다. 오류 복구·문의 페이지의 기본 주소, 로컬·Lightsail·공통 인스턴스의 환경변수 예제와 회귀 검사를 함께 맞췄다. 공통 deploy/shared-instance/README.md 수정은 GF_CONTACT_EMAIL 예제 한 항목을 갱신하기 위한 것이다. ACME 인증서·예산 알림 주소는 문의 주소와 별도 설정으로 유지한다. 새 의존성이나 루트 manifest·lock 변경은 없다. 변경 파일 Prettier와 diff 검사를 통과했으며 실행 중인 개발 서버·개발 DB는 변경하지 않았다. 검증 후 이번 작업이 소유한 테스트 DB만 중지하고 데이터를 보존했다.
+
+## PR #28의 develop 병합 충돌 해결 (2026-10-22)
+
+최신 develop 4921df3을 기능 브랜치에 merge했다. 공통 배포 안내와 Lightsail 환경 예제는 game.bambyul.com과 contact@bambyul.com을 유지하고, 가입 페이지 전용 레이아웃과 드래그 시트를 보존했다. 삭제한 OnboardingDialog는 되살리지 않고 새 가입 페이지에 Game Mate 이름과 28px 아이콘을 적용했다. develop의 NestJS 캐시 무효화와 다른 서비스 변경은 그대로 반영했다.
+
+병합 결과에서 Web Vitest 160개, API 단위 105개와 로그인·OAuth·캐시 관련 Supertest 통합 30개, 실제 Next production build/start의 Playwright 12개가 통과했다. Playwright는 모바일·데스크톱 로그인, 가입과 언어·복귀 경로, 마우스·터치 시트와 캐시 갱신·관리자 숨김·인증 없는 무효화 요청 거부를 확인했다. API/Web 타입 검사와 Web lint, OpenAPI/SDK 재생성 diff, 변경 파일 Prettier와 diff 검사도 통과했다. 기존 개발 서버와 개발 DB는 변경하지 않았고 검증 후 소유한 테스트 DB만 중지해 데이터를 보존했다. 실제 외부 OAuth와 물리 기기 검증은 포함하지 않는다.

@@ -470,7 +470,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     await agent.post('/api/auth/app/exchange').set('Origin', origin).send({ code, verifier }).expect(400);
   });
 
-  it('OAuth callback preserves the login page locale and return destination', async () => {
+  it('OAuth callback sends an existing user directly to the login page return destination', async () => {
     const agent = supertest.agent(fixture().app.getHttpServer());
     const returnTo = '/ja/login?returnTo=' + encodeURIComponent('/ja/boards/coaching?coachingRole=STUDENT');
     const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
@@ -481,8 +481,9 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .expect(302);
     const destination = new URL(callback.headers.location);
     expect(destination.origin).toBe(origin);
-    expect(destination.pathname).toBe('/ja/login');
-    expect(destination.searchParams.get('returnTo')).toBe('/ja/boards/coaching?coachingRole=STUDENT');
+    expect(destination.pathname).toBe('/ja/boards/coaching');
+    expect(destination.searchParams.get('coachingRole')).toBe('STUDENT');
+    expect(destination.searchParams.has('returnTo')).toBe(false);
     expect(
       callback.headers['set-cookie'].some((value: string) => value.startsWith('gamefeedback_oauth_return=;')),
     ).toBe(true);

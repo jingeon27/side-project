@@ -1,8 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { detectLocale, preferredLocale, languagePreference, localePath } from './locale';
 import { translate } from './messages';
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 describe('language preference', () => {
+  it('가입 안내의 언어를 바꾸면 인증 화면과 원래 목적지의 언어를 함께 바꿔야 한다', () => {
+    const parent = appRoutes.search('ko', {
+      board: 'coaching',
+      game: 'another-game',
+      q: '주말',
+      coachingRole: 'STUDENT',
+    });
+    const translated = localePath(appRoutes.onboarding('ko', parent), 'ja');
+    expect(translated).toBe(appRoutes.onboarding('ja', localePath(parent, 'ja')));
+    expect(resolveAppRoute(translated)).toMatchObject({
+      screen: 'onboarding',
+      locale: 'ja',
+      parent: localePath(parent, 'ja'),
+    });
+    expect(localePath(appRoutes.onboarding('ko', '/ko/privacy'), 'en')).toBe(
+      appRoutes.onboarding('en', '/en/privacy'),
+    );
+    expect(localePath(appRoutes.onboarding('ko', appRoutes.login('ko')), 'en')).toBe(
+      appRoutes.onboarding('en', '/en'),
+    );
+    expect(localePath(appRoutes.login('ko', appRoutes.onboarding('ko')), 'en')).toBe(
+      appRoutes.login('en', '/en'),
+    );
+  });
   it.each([
     ['ko-KR,ko;q=0.9,en;q=0.5', 'ko'],
     ['ja-JP,en;q=0.8', 'ja'],
@@ -37,6 +62,14 @@ describe('language preference', () => {
     expect(translate('en', '채팅 {count}개', { count: 3 })).toBe('Chats: 3');
     expect(translate('ko', '채팅 {count}개', { count: 3 })).toBe('채팅 3개');
     expect(translate('en', 'My own post title')).toBe('My own post title');
+    expect(translate('en', '회원가입')).toBe('Sign up');
+    expect(translate('ja', '가입 완료하기')).toBe('登録を完了');
+    expect(translate('en', '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.')).toBe(
+      'Choose a nickname and agree to the required items.',
+    );
+    expect(translate('ja', '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.')).toBe(
+      'ニックネームを決めて、必須項目に同意してください。',
+    );
   });
   it('로그인 페이지의 언어를 바꿔도 복귀할 게시판과 검색 조건을 유지해야 한다', () => {
     expect(localePath('/ko/login?returnTo=%2Fko%2Fboards%2Fcoaching%3FcoachingRole%3DSTUDENT', 'en')).toBe(

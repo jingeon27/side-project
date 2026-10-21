@@ -31,12 +31,6 @@
     color: var(--color-muted);
     text-decoration: underline;
   }
-  .login-icon {
-    display: flex;
-    justify-content: center;
-    color: var(--color-muted);
-    margin: 5px 0 28px;
-  }
 }
 
 @layer components {
@@ -85,7 +79,8 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .login-page {
+  .login-page,
+  .onboarding-page {
     width: 100%;
     max-width: 368px;
     margin-inline: auto;
@@ -115,12 +110,13 @@
     font-size: var(--text-body);
     line-height: 1.7;
   }
-  .community-shell:has(> .shell-route[data-screen='login']) .shell-left-sidebar,
-  .community-shell:has(> .shell-route[data-screen='login']) .site-footer,
-  .community-shell:has(> .shell-route[data-screen='login']) .mobile-nav {
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding']))
+    .shell-left-sidebar,
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) .site-footer,
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) .mobile-nav {
     display: none;
   }
-  .community-shell:has(> .shell-route[data-screen='login']) .site-grid {
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) .site-grid {
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
     max-width: 100%;
@@ -128,18 +124,20 @@
     padding: 0 24px;
     flex: 1;
   }
-  .community-shell:has(> .shell-route[data-screen='login']) .topbar {
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) .topbar {
     border-bottom: 0;
   }
-  .community-shell:has(> .shell-route[data-screen='login']) .topbar-inner {
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding'])) .topbar-inner {
     max-width: 480px;
     padding-inline: 16px;
   }
-  .community-shell:has(> .shell-route[data-screen='login']) .post-header-back {
+  .community-shell:has(> .shell-route:is([data-screen='login'], [data-screen='onboarding']))
+    .post-header-back {
     display: inline-flex;
   }
   @media (min-width: 761px) {
-    .login-page {
+    .login-page,
+    .onboarding-page {
       padding-top: 64px;
     }
   }
