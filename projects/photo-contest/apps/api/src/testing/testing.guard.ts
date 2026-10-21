@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import type { CanActivate } from '@nestjs/common';
+import { Injectable, type CanActivate } from '@nestjs/common';
 
 import { ERROR_CODE, fail } from '../common/errors';
 import { testingApiEnabled } from '../config/env';

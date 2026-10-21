@@ -4,8 +4,7 @@ import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
 import { isAdmin } from '../group/group-role';
 import { phase } from './contest.policy';
-import { ContestService } from './contest.service';
-import type { IContestNode, ICreateContestInput } from './contest.service';
+import { ContestService, type IContestNode, type ICreateContestInput } from './contest.service';
 
 @Resolver('Contest')
 export class ContestResolver {

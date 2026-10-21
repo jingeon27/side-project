@@ -7,9 +7,9 @@ import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { NO_STORE } from '../common/http/no-store.middleware';
 import { MediaStorage } from '../storage/media-storage.service';
+import { mediaDownloadDisposition } from './media-download.policy';
 import { mediaRange } from './media-range';
 import { PostService } from './post.service';
-import { mediaDownloadDisposition } from './media-download.policy';
 
 @Controller()
 export class PostController {

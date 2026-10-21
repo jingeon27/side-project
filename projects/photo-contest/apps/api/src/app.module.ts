@@ -1,5 +1,4 @@
-import { ApolloDriver } from '@nestjs/apollo';
-import type { ApolloDriverConfig } from '@nestjs/apollo';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 

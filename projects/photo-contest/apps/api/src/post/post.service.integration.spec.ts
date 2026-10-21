@@ -1,11 +1,12 @@
 import { readdir } from 'node:fs/promises';
 
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { koreanMonth } from './post-order';
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
+
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup, joinGroup } from '../../test/support/fixtures';
+import { koreanMonth } from './post-order';
 
 const FIELDS = 'id groupId title body kind mediaUrl likeCount commentCount likedByMe canDelete author { id }';
 const COMMENT_FIELDS = 'id postId body createdAt canDelete author { id nickname avatar }';

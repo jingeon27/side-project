@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
 import { castVote, createContest, createGroup, hidePhoto, likePhoto } from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';

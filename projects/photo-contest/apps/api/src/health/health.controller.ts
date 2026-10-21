@@ -1,10 +1,8 @@
-import { Database } from '../database/database.service';
-
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
-import type { IAppVersions } from '../config/env';
-import { appVersions } from '../config/env';
+import { appVersions, type IAppVersions } from '../config/env';
+import { Database } from '../database/database.service';
 
 const HEALTH_STATUS = { OK: 'ok', UNAVAILABLE: 'unavailable' } as const;
 

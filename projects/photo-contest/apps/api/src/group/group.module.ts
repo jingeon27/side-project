@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
+
 import { GroupAdministrationResolver } from './group-administration.resolver';
 import { GroupAdministrationService } from './group-administration.service';
 import { GroupCategoryResolver } from './group-category.resolver';
 import { GroupCategoryService } from './group-category.service';
-
 import { GroupJoinRequestResolver } from './group-join-request.resolver';
 import { GroupJoinRequestService } from './group-join-request.service';
 import { GroupResolver } from './group.resolver';

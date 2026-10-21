@@ -1,5 +1,3 @@
-import { Database } from '../database/database.service';
-
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
@@ -8,8 +6,8 @@ import { match } from 'ts-pattern';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { APP_LOGIN_TICKET_TTL_MS } from '../config/limits';
-import type { TPhase } from '../contest/contest.policy';
-import { PHASE } from '../contest/contest.policy';
+import { PHASE, type TPhase } from '../contest/contest.policy';
+import { Database } from '../database/database.service';
 
 const STEP_MS = 60 * 60 * 1000;
 

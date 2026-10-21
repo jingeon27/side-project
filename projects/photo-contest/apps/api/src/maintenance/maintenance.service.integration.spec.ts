@@ -2,14 +2,18 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { MaintenanceService } from './maintenance.service';
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
 import { stubExternalFetch } from '../../test/support/external-fetch';
-import { castVote, createContest, createGroup, hidePhoto } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import {
+  castVote,
+  createContest,
+  createGroup,
+  hidePhoto,
+  type ITestGroup,
+} from '../../test/support/fixtures';
 import { requestUpload, storedPhotoExists, submitPhoto, uploadPhoto } from '../../test/support/photos';
+import { MaintenanceService } from './maintenance.service';
 
 const MINUTE_MS = 60 * 1000;
 const REPORT =

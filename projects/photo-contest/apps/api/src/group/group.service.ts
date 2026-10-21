@@ -1,26 +1,21 @@
-import type { Prisma } from '../../generated/prisma';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
 import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
-import type { Group } from '../../generated/prisma';
+import type { Group, Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import type { IUserView } from '../auth/user-view';
-import { USER_VIEW_SELECT } from '../auth/user-view';
+import { USER_VIEW_SELECT, type IUserView } from '../auth/user-view';
 import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
-import type { TGroupRole } from './group-role';
-import { GROUP_ROLE, toGroupRole } from './group-role';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility, type TGroupVisibility } from './group-visibility';
-import type { ILeaderboardEntry } from './leaderboard';
-import { buildLeaderboard } from './leaderboard';
+import { buildLeaderboard, type ILeaderboardEntry } from './leaderboard';
 import { MembershipService } from './membership.service';
 
 const groupCount = { _count: { select: { members: true } } } as const;

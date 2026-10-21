@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { Prisma } from '../../generated/prisma';
 import { ERROR_MESSAGE } from '../common/errors';
 import { SERIALIZABLE_ATTEMPTS } from '../config/limits';

@@ -1,24 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { groupBy } from 'es-toolkit';
 import { match } from 'ts-pattern';
-import type { Prisma } from '../../generated/prisma';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
 
-import type { Contest, GroupMember } from '../../generated/prisma';
+import type { Contest, GroupMember, Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { presentPost } from '../post/post.presenter';
 import { postInclude } from '../post/post.query';
 import { contestDates, phase, PHASE } from './contest.policy';
-
 import type { ICreateContestInput } from './contest.service';
 import { CONTEST_FORMAT, GROUP_CONTEST_FILTER, type TGroupContestFilter } from './group-contest.policy';
 import { rankResults } from './result-ranking';

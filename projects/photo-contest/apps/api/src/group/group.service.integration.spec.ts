@@ -2,11 +2,10 @@ import { createHash } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createContest, createGroup, joinGroup } from '../../test/support/fixtures';
 import { ContestService } from '../contest/contest.service';
 import { GroupService } from './group.service';
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
-import { createContest, createGroup, joinGroup } from '../../test/support/fixtures';
 
 const GROUP_FORBIDDEN = { code: 'FORBIDDEN', message: '이 그룹에 접근할 권한이 없습니다.' };
 const INVALID_INVITE = { code: 'NOT_FOUND', message: '유효하지 않은 초대 링크입니다.' };

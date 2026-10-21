@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import type { Prisma } from '../../generated/prisma';
 import { Database, type TDatabaseClient } from './database.service';
 

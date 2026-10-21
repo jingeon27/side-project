@@ -1,9 +1,8 @@
-import { Database, type TDatabaseClient } from '../database/database.service';
-
 import { Injectable } from '@nestjs/common';
 
 import type { Contest, GroupMember, Submission } from '../../generated/prisma';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { Database, type TDatabaseClient } from '../database/database.service';
 import { isAdmin, isOwner } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility } from './group-visibility';
 

@@ -1,8 +1,7 @@
-import { Database } from '../database/database.service';
-
 import { Injectable } from '@nestjs/common';
 
 import { CLEANUP_BATCH_SIZE, UPLOAD_TICKET_TTL_MS } from '../config/limits';
+import { Database } from '../database/database.service';
 import { MediaStorage } from '../storage/media-storage.service';
 import { PhotoStorage } from '../storage/photo-storage.service';
 
