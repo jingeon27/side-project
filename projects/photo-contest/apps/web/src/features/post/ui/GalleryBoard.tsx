@@ -1,9 +1,16 @@
 'use client';
 
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { GalleryPostList } from './GalleryPostList';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import {
+  skipToken,
+  useBackgroundQuery,
+  useQueryRefHandlers,
+  useReadQuery,
+  type QueryRef,
+} from '@apollo/client/react';
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -51,6 +58,7 @@ export function GalleryBoard({
   contestId,
   categoryId,
   popular = false,
+  clientOnly = false,
   postAction,
   emptyAction,
 }: {
@@ -58,21 +66,30 @@ export function GalleryBoard({
   contestId?: string;
   categoryId?: string;
   popular?: boolean;
+  /** 라우트가 사전 조회하지 않은 목록은 SSR에서 건너뛰고 브라우저에서 시작한다. */
+  clientOnly?: boolean;
   postAction?: (postId: string) => ReactNode;
   emptyAction?: ReactNode;
 }) {
   const limit = popular ? 3 : 24;
-  const [postsRef, { refetch }] = useBackgroundQuery(GalleryPostsDocument, {
-    variables: {
-      groupId: groupId ?? null,
-      ...(contestId ? { contestId } : {}),
-      ...(categoryId ? { categoryId } : {}),
-      sort: popular ? PostSort.MonthlyPopular : PostSort.Newest,
-      offset: 0,
-      limit,
-    },
-    refetchWritePolicy: 'overwrite',
-  });
+  const isSSR = useIsSSR();
+  const [postsRef, { refetch }] = useBackgroundQuery(
+    GalleryPostsDocument,
+    clientOnly && isSSR
+      ? skipToken
+      : {
+          variables: {
+            groupId: groupId ?? null,
+            ...(contestId ? { contestId } : {}),
+            ...(categoryId ? { categoryId } : {}),
+            sort: popular ? PostSort.MonthlyPopular : PostSort.Newest,
+            offset: 0,
+            limit,
+          },
+          refetchWritePolicy: 'overwrite',
+        },
+  );
+  const fallback = <Skeleton className="h-48 w-full" />;
   return (
     <section
       className="relative flex min-w-0 flex-col gap-3"
@@ -87,14 +104,18 @@ export function GalleryBoard({
         {popular ? <Sparkles aria-hidden className="size-4 text-muted" /> : null}
         {popular ? '이달의 인기' : '최신 게시물'}
       </h2>
-      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
-        <BoardContent
-          postsRef={postsRef}
-          limit={limit}
-          popular={popular}
-          postAction={postAction}
-          emptyAction={emptyAction}
-        />
+      <AsyncBoundary onRetry={refetch} fallback={fallback}>
+        {postsRef ? (
+          <BoardContent
+            postsRef={postsRef}
+            limit={limit}
+            popular={popular}
+            postAction={postAction}
+            emptyAction={emptyAction}
+          />
+        ) : (
+          fallback
+        )}
       </AsyncBoundary>
     </section>
   );

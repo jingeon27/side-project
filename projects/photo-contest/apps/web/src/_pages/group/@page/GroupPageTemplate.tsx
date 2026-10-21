@@ -11,7 +11,7 @@ import { GroupMembershipButton, GroupNavigation } from '@/features/group';
 import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
-import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
@@ -99,10 +99,14 @@ function GroupContent({
 function GroupFeed({ groupRef, sidebar }: { groupRef: TGroupQueryRef; sidebar?: ReactNode }) {
   const { data } = useReadQuery(groupRef);
   if (!data) return null;
-  const feed = <GroupCategoryFilter group={data.group} sidebar={sidebar} />;
-  if (data.group.visibility === GroupVisibility.Private)
-    return <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>{feed}</ClientOnly>;
-  return feed;
+  // 비공개 그룹의 게시물은 라우트가 사전 조회하지 않는다.
+  return (
+    <GroupCategoryFilter
+      group={data.group}
+      sidebar={sidebar}
+      clientOnly={data.group.visibility === GroupVisibility.Private}
+    />
+  );
 }
 function GroupQuerySection({ id }: { id: string }) {
   const [groupRef, { refetch }] = useBackgroundQuery(GalleryDocument, {
