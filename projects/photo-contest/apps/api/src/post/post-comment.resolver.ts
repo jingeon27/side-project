@@ -27,4 +27,14 @@ export class PostCommentResolver {
   deletePostComment(@Viewer() viewer: IViewer, @Args('commentId') commentId: string) {
     return this.comments.delete(viewer, commentId);
   }
+
+  @Mutation()
+  likePostComment(@Viewer() viewer: IViewer, @Args('commentId') commentId: string) {
+    return this.comments.like(viewer, commentId, true);
+  }
+
+  @Mutation()
+  unlikePostComment(@Viewer() viewer: IViewer, @Args('commentId') commentId: string) {
+    return this.comments.like(viewer, commentId, false);
+  }
 }

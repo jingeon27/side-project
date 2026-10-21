@@ -9,6 +9,7 @@ export const ANALYTICS_EVENT = {
   POST_DELETED: 'post_deleted',
   COMMENT_CREATED: 'comment_created',
   COMMENT_DELETED: 'comment_deleted',
+  COMMENT_LIKED: 'comment_liked',
   GROUP_CREATED: 'group_created',
   GROUP_JOINED: 'group_joined',
   GROUP_MODERATOR_CHANGED: 'group_moderator_changed',

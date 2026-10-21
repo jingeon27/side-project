@@ -26,6 +26,7 @@ model User {
   postUploads PostUpload[]
   postLikes PostLike[]
   postComments PostComment[]
+  postCommentLikes PostCommentLike[]
   postContestVotes PostContestVote[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
@@ -226,7 +227,17 @@ model PostComment {
   createdAt DateTime @default(now())
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes PostCommentLike[]
   @@index([postId, createdAt, id])
+}
+model PostCommentLike {
+  commentId String
+  userId String
+  createdAt DateTime @default(now())
+  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([commentId, userId])
+  @@index([userId])
 }
 model PostLike {
   postId String

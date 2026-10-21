@@ -43,6 +43,9 @@ type PostComment {
   author: User!
   createdAt: DateTime!
   canDelete: Boolean!
+  likeCount: Int!
+  likedByMe: Boolean!
+  canInteract: Boolean!
 }
 type PostDownload {
   url: String!
@@ -89,4 +92,6 @@ extend type Mutation {
   deletePost(postId: ID!): Boolean!
   createPostComment(postId: ID!, body: String!): PostComment!
   deletePostComment(commentId: ID!): Boolean!
+  likePostComment(commentId: ID!): PostComment!
+  unlikePostComment(commentId: ID!): PostComment!
 }
