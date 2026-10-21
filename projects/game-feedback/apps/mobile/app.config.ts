@@ -4,7 +4,8 @@ const IS_DEVELOPMENT = process.env.APP_VARIANT === 'development';
 export default function appConfig({ config }: ConfigContext): ExpoConfig {
   return {
     ...config,
-    name: '플레이메이트',
+    name: 'Game Mate',
+    icon: './assets/icon.png',
     slug: 'game-feedback',
     version: '1.0.0',
     scheme: 'gamefeedback',
@@ -20,7 +21,11 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
         NSAppTransportSecurity: IS_DEVELOPMENT ? { NSAllowsLocalNetworking: true } : {},
       },
     },
-    android: { package: 'dev.side.gamefeedback', predictiveBackGestureEnabled: false },
+    android: {
+      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#111827' },
+      package: 'dev.side.gamefeedback',
+      predictiveBackGestureEnabled: false,
+    },
     plugins: [['expo-build-properties', { android: IS_DEVELOPMENT ? { usesCleartextTraffic: true } : {} }]],
   };
 }

@@ -9,7 +9,7 @@ export function LaunchScreen() {
       accessibilityRole="progressbar"
       style={[styles.screen, { backgroundColor: dark ? '#101010' : '#ffffff' }]}
     >
-      <Text style={[styles.title, { color: foreground }]}>플레이메이트</Text>
+      <Text style={[styles.title, { color: foreground }]}>Game Mate</Text>
       <ActivityIndicator color={foreground} size="small" />
     </View>
   );
