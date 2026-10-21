@@ -10,7 +10,7 @@ export function GET() {
       style={{
         width: '100%',
         height: '100%',
-        background: '#111827',
+        background: '#12151c',
         color: '#ffffff',
         display: 'flex',
         flexDirection: 'column',
@@ -19,9 +19,12 @@ export function GET() {
       }}
     >
       <svg width="130" height="130" viewBox="0 0 64 64">
-        <path d="m39 10 3.7 11.3L54 25l-11.3 3.7L39 40l-3.7-11.3L24 25l11.3-3.7Z" fill="#f5dc93" />
-        <path d="m20 34 2.5 7.5L30 44l-7.5 2.5L20 54l-2.5-7.5L10 44l7.5-2.5Z" fill="#e8edf7" />
-        <circle cx="18" cy="18" r="2" fill="#e8edf7" />
+        <path
+          d="M18 12H34C43 12 48 16.2 48 23.5C48 27.5 46 30.7 42.2 32.4C46.7 33.9 49.5 37.2 49.5 41.9C49.5 49.6 43.5 54 34 54H18Z M34 18L36.4 22.6L41 25L36.4 27.4L34 32L31.6 27.4L27 25L31.6 22.6Z M28 37V45H33.5C38 45 40.2 43.7 40.2 41S38 37 33.5 37Z"
+          transform="translate(-1 0)"
+          fill="#f7f5ef"
+          fillRule="evenodd"
+        />
       </svg>
       <div style={{ fontSize: 84, fontWeight: 700 }}>{labels('en').home.title}</div>
     </div>,

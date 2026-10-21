@@ -16,7 +16,7 @@ export const siteUrl = resolveSiteUrl(
 );
 export const author = {
   name: '김진건',
-  email: 'jingeon27@gmail.com',
+  email: 'contact@bambyul.com',
   github: 'https://github.com/jingeon27',
 } as const;
 
