@@ -38,4 +38,9 @@ describe('language preference', () => {
     expect(translate('ko', '채팅 {count}개', { count: 3 })).toBe('채팅 3개');
     expect(translate('en', 'My own post title')).toBe('My own post title');
   });
+  it('로그인 페이지의 언어를 바꿔도 복귀할 게시판과 검색 조건을 유지해야 한다', () => {
+    expect(localePath('/ko/login?returnTo=%2Fko%2Fboards%2Fcoaching%3FcoachingRole%3DSTUDENT', 'en')).toBe(
+      '/en/login?returnTo=%2Fen%2Fboards%2Fcoaching%3FcoachingRole%3DSTUDENT',
+    );
+  });
 });

@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
 describe('community board navigation', () => {
+  it('로그인은 원래 화면으로 돌아가며 외부 주소와 로그인 순환을 거부해야 한다', () => {
+    const parent = appRoutes.boards('ko', 'coaching', '주말', undefined, { coachingRole: 'STUDENT' });
+    const login = appRoutes.login('ko', parent);
+    expect(resolveAppRoute(login)).toMatchObject({ path: login, screen: 'login', parent, tab: 'settings' });
+    expect(resolveAppRoute('/ja/login')).toMatchObject({ screen: 'login', parent: '/ja' });
+    ['https://outside.test', '//outside.test', '/en/guide', '/ko/login', '/ko/login?returnTo=%2Fko'].forEach(
+      (path) => {
+        expect(WebPathSchema.safeParse(appRoutes.login('ko', path)).success).toBe(false);
+      },
+    );
+  });
   it('opens the composer with a board and game parent while rejecting unsupported classifications', () => {
     const compose = appRoutes.compose('ja', 'COACHING', 'another-game');
     expect(compose).toBe('/ja/write?board=coaching&game=another-game');

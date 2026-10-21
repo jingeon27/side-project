@@ -1,5 +1,4 @@
 'use client';
-import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
 import { openOverlay } from '@/shared/ui';
 import { useEffect } from 'react';
 import { overlay } from 'overlay-kit';
@@ -7,11 +6,11 @@ import { useSession } from '@/features/auth';
 import { LoginDialog } from '../ui/LoginDialog';
 import { OnboardingDialog } from '../ui/OnboardingDialog';
 
-export function openLoginDialog() {
-  trackEvent(ANALYTICS_EVENT.LoginOpened, {});
+export function openLoginDialog(returnTo?: string) {
   openOverlay(
     ({ isOpen, close, unmount }) => (
       <LoginDialog
+        returnTo={returnTo}
         open={isOpen}
         onOpenChange={(open) => {
           if (open) return;

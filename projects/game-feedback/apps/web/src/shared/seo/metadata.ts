@@ -72,6 +72,12 @@ export function createPageMetadata({
   };
 }
 export const pageContent = {
+  login: {
+    title: '로그인',
+    description: '소셜 계정으로 로그인하세요.',
+    keywords: ['로그인'],
+    privatePage: true,
+  },
   search: {
     title: '게시글 검색',
     description: '제목과 내용으로 게시글을 검색하세요.',
@@ -145,7 +151,7 @@ export function staticPagePath(kind: TStaticPage, locale: string) {
 }
 export function localizedStaticContent(kind: TStaticPage, locale: string) {
   const language =
-    ['guide', 'terms', 'privacy', 'contact'].includes(kind) && isLocale(locale) ? locale : 'ko';
+    ['login', 'guide', 'terms', 'privacy', 'contact'].includes(kind) && isLocale(locale) ? locale : 'ko';
   const content = pageContent[kind];
   return {
     ...content,

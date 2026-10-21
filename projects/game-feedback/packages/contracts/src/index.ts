@@ -747,3 +747,4 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/admin/hide', id: 'hideContent', body: HideInputSchema, response: OkSchema },
 ];
+export { AuthReturnPathSchema } from './auth-return-path';
