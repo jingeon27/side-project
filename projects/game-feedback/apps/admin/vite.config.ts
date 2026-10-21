@@ -1,7 +1,8 @@
-import { defineConfig, loadEnv, type Plugin } from 'vite';
-import react from '@vitejs/plugin-react';
-import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { fileURLToPath } from 'node:url';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 function localAdmin(port: number): Plugin {
   const guard = (req: IncomingMessage, res: ServerResponse, next: () => void) => {

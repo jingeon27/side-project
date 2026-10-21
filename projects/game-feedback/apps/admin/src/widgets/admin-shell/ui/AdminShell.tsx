@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
+
 import { Button } from '@side/design-system';
+
 import { useLogoutMutation } from '@/features/auth';
 import type { TAdminTab } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
+
 import { AdminNavigation } from './AdminNavigation';
 
 interface IAdminShellProps {

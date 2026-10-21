@@ -1,9 +1,12 @@
-import { Button } from '@side/design-system';
-import { HideInputSchema } from '@game-feedback/contracts';
 import { match } from 'ts-pattern';
+
+import { HideInputSchema } from '@game-feedback/contracts';
+import { Button } from '@side/design-system';
+
 import { useReviewReportMutation, type TAdminReport } from '@/features/moderation';
 import { adminUserPath } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
+
 import { ReportVisibilityActions } from './ReportVisibilityActions';
 
 export function ReportCard({ report }: { report: TAdminReport }) {

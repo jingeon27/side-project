@@ -1,6 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
+
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = `gf_test_admin_${randomUUID().replaceAll('-', '')}`;
 const target = new URL('postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test');

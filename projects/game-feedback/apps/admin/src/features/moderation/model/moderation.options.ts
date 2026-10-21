@@ -1,5 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
+
 import { fetchReports, fetchUser } from '../api/moderation.api';
+
 export function reportOptions() {
   return queryOptions({ queryKey: ['admin-reports'], queryFn: fetchReports });
 }

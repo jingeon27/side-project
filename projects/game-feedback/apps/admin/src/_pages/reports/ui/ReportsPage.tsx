@@ -1,5 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+
 import { reportOptions } from '@/features/moderation';
+
 import { ReportCard } from './ReportCard';
 
 export function ReportsPage() {
