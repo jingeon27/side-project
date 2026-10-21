@@ -193,6 +193,8 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
+공개 게시글 상세는 `cacheTag`와 `cacheLife('max')`를 사용하며, NestJS에서 변경을 커밋한 뒤 Next.js의 `POST /_internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`로 만료한다. 실패한 콜백은 같은 트랜잭션에 저장한 DB 큐에서 재시도한다. 로컬 `dev` 명령은 Web/API가 공유하는 임시 비밀을 생성한다. 따로 실행한다면 두 프로세스에 같은 `GF_CACHE_REVALIDATION_SECRET`(32자 이상), API에 `GF_CACHE_REVALIDATION_URL=http://localhost:3300/_internal/cache/revalidate`를 설정한다. 운영은 `deploy/shared-instance/service.env.example`의 비밀을 `openssl rand -hex 32`로 생성해 서비스 `.env`에 저장한다. Compose가 양쪽에 비밀과 내부 콜백 주소를 전달하며 새 `CacheInvalidation` migration도 적용해야 한다. 자세한 동작과 검증은 [구현 기록](docs/implementation.md)을 참고한다.
+
 `corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
 
 테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=true`인 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
