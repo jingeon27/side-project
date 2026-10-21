@@ -1,8 +1,10 @@
-import { fileURLToPath } from 'node:url';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { imageSize } from 'image-size';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { format } from 'prettier';
+import { fileURLToPath } from 'node:url';
+
+import { imageSize } from 'image-size';
+import { format, resolveConfig } from 'prettier';
+
 import { readContent } from './content';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -30,10 +32,8 @@ const files = new Map(
         [
           file,
           await format(source, {
-            parser: file.endsWith('.ts') ? 'typescript' : 'json',
-            singleQuote: true,
-            printWidth: 110,
-            trailingComma: 'all',
+            ...(await resolveConfig(file)),
+            filepath: file,
           }),
         ] as const,
     ),
