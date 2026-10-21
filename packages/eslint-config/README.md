@@ -16,6 +16,8 @@
 
 웹은 `nextConfig`와 `fsdBoundaries(srcDir)`, 모바일은 `expoConfig`, API·공용 패키지는 `baseConfig`를 사용합니다. 프레임워크별 심각도와 테스트 예외는 해당 preset에서 관리합니다.
 
+모든 `eslint.config.ts`는 preset 뒤에 `tsconfigRootDir(import.meta.dirname)`을 둡니다. 에디터 ESLint 서버처럼 한 프로세스가 여러 설정을 읽으면 typescript-eslint가 루트 후보를 모두 모아 `multiple candidate TSConfigRootDirs` 파싱 오류를 냅니다.
+
 ```sh
 corepack yarn workspace @side/eslint-config check
 ```

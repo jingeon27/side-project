@@ -50,6 +50,11 @@ export const baseConfig: Linter.Config[] = [
   },
 ];
 
+// 에디터 ESLint 서버는 여러 설정을 한 프로세스에서 읽어 typescript-eslint가 tsconfigRootDir을 추론하지 못한다.
+export function tsconfigRootDir(dir: string): Linter.Config {
+  return { name: 'side/tsconfig-root-dir', languageOptions: { parserOptions: { tsconfigRootDir: dir } } };
+}
+
 export const testOverrides: Linter.Config[] = [
   { files: testFiles, rules: { '@typescript-eslint/no-non-null-assertion': 'off' } },
 ];
