@@ -1,12 +1,14 @@
 ## 2026-10-22 전체 파일 업로드 presigned 전환
 
-게시물 사진·동영상과 이전 대회 사진 제출을 모두 서명 발급 → 저장소 FormData POST → 완료 검증 → 게시/제출 흐름으로 통일했다. GraphQL에는 JSON 메타데이터만 보내며 uploadSubmissionPhoto·Upload scalar·/uploads raw 경로와 graphql-upload·apollo-upload-client를 제거했다. 브라우저 전송 helper는 shared/api에 두고 Apollo는 HttpLink를 사용한다. 앱 WebView와 테스트 seed도 같은 계약을 따른다.
+게시물 사진·동영상과 이전 대회 사진 제출, 그룹 대표 사진을 모두 서명 발급 → 저장소 FormData POST → 완료 검증 → 게시/제출 흐름으로 통일했다. GraphQL에는 JSON 메타데이터만 보내며 uploadSubmissionPhoto·uploadGroupAvatar·Upload scalar·/uploads raw 경로와 graphql-upload·apollo-upload-client를 제거했다. 브라우저 전송 helper는 shared/api에 두고 Apollo는 HttpLink를 사용한다. 앱 WebView와 테스트 seed도 같은 계약을 따른다.
 
 공통 MediaUploadService가 소유권·그룹/대회 권한·만료·정확한 크기/타입·완료 lease·동시성 제한·후보 파일 추적과 커밋 응답 유실 복구를 맡는다. 대회 사진은 5분 서명과 10MB 상한, sharp의 실제 디코딩·40MP 제한·방향 보정·1600px WebP 변환·EXIF 제거를 유지한다. 파일 확인 중 대회가 마감돼도 확정하지 않으며 대회용 업로드를 일반 게시물에 쓰지 못하게 검사한다. 제출된 대회 파일은 게시물 임시 파일 정리에서 제외한다. 기존 Upload 행은 nullable mediaUploadId 관계와 추가형 20261022030000_presigned_submission_uploads migration으로 보존한다.
 
 S3_KEY_PREFIX를 선택적으로 지원한다. S3_BUCKET=jingeon-side-project, S3_KEY_PREFIX=game-feedback/photo-contest이면 새 임시·최종 객체가 기존 game-feedback/* IAM 범위에 들어간다. DB에 전체 키를 기록해 기존 루트 경로의 파일도 계속 읽고 로컬 파일 경로는 유지한다. Compose와 .env 예시에 전달을 연결했으며 실제 AWS 설정은 변경하지 않았다.
 
-검증: API unit 130개·실제 PostgreSQL 통합 299개, Web unit/UI 346개·실제 API 문서 18개, production build/start의 Chrome·WebKit·데스크톱 E2E 18개와 Android/iOS WebView seed 회귀 2개가 통과했다. 이전 대회 제출의 전송 실패 후 초안 보존·재시도, GraphQL JSON 전송, 새로고침 후 사진 표시와 기존 게시물 사진/동영상 업로드·다운로드를 확인했다. API/Web/Mobile/test-kit 타입 검사와 프로젝트 lint도 통과했다. 첫 브라우저 실행에서 업로드 전 페이지 진입이 한 번 시간 초과됐고 전체 18개 재실행은 모두 통과했다. 실제 S3/IAM/CORS 송수신과 운영 배포는 미실행이며 개발 DB·개발 서버를 변경하지 않았다.
+최신 develop(#31)을 반영한 뒤 그룹 대표 사진도 requestGroupAvatarUpload → 저장소 POST → completeGroupAvatarUpload → updateGroupProfile로 전환했다. 완료 전 지정·다른 소유자·다른 업로드 목적을 거절하고 처리 중 관리 권한 회수를 트랜잭션에서 재확인한다. 512px WebP 변환·메타데이터 제거와 현재 대표 사진 보존을 유지한다. nullable GroupAvatar.mediaUploadId와 20261022152000_presigned_group_avatars migration을 추가했다. MembershipModule을 분리해 공통 업로드 서비스와 GroupModule의 순환을 피했다.
+
+검증: API unit 130개·실제 PostgreSQL 통합 325개, Web unit/UI 349개·실제 API 문서 20개, production build/start의 Chrome·WebKit·데스크톱 E2E 21개와 Android/iOS WebView seed 회귀 2개가 통과했다. 이전 대회 제출의 전송 실패 후 초안 보존·재시도, GraphQL JSON 전송, 새로고침 후 사진 표시와 기존 게시물 사진/동영상 업로드·다운로드를 확인했다. API/Web/Mobile/test-kit 타입 검사와 프로젝트 lint도 통과했다. 최신 develop 반영 전 첫 브라우저 실행에서 업로드 전 페이지 진입이 한 번 시간 초과됐고 전체 18개 재실행은 모두 통과했다. 최신 develop 반영 후 21개 검증은 첫 실행에서 모두 통과했고 대표 사진 전송 실패 후 미리보기·입력 유지와 재시도까지 확인했다. 실제 S3/IAM/CORS 송수신과 운영 배포는 미실행이며 개발 DB·개발 서버를 변경하지 않았다.
 
 ## 2026-10-21 게시물 직접 업로드와 완료 복구
 

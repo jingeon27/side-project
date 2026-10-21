@@ -93,7 +93,7 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 
 운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, 영속 `STORAGE_DIR` 또는 private S3 호환 버킷이 필요합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
 
-웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost 순서로 전송하며 저장소에 세션 쿠키를 보내지 않습니다. 로컬은 HMAC 서명 업로드 URL로 디스크에 스트리밍하고 운영은 S3 presigned POST를 사용합니다. 게시물 서버는 사진·동영상의 위치정보 등 메타데이터를 제거하지 않으므로 공개 전에 확인해야 합니다. 기존 대회 제출도 requestUploadUrl → 저장소 FormData POST → completeSubmissionUpload → createSubmission으로 전송하고 완료 단계의 1600px WebP 변환·메타데이터 제거를 유지합니다. GraphQL multipart와 raw 업로드 경로는 제거했습니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
+웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost 순서로 전송하며 저장소에 세션 쿠키를 보내지 않습니다. 로컬은 HMAC 서명 업로드 URL로 디스크에 스트리밍하고 운영은 S3 presigned POST를 사용합니다. 게시물 서버는 사진·동영상의 위치정보 등 메타데이터를 제거하지 않으므로 공개 전에 확인해야 합니다. 기존 대회 제출도 requestUploadUrl → 저장소 FormData POST → completeSubmissionUpload → createSubmission으로 전송하고 완료 단계의 1600px WebP 변환·메타데이터 제거를 유지합니다. 그룹 대표 사진도 requestGroupAvatarUpload → 저장소 FormData POST → completeGroupAvatarUpload → updateGroupProfile로 전송하며 512px WebP 변환·메타데이터 제거를 유지합니다. GraphQL multipart와 raw 업로드 경로는 제거했습니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
 
 | 앱     | 오류 수집                                               | 사용자 행동 측정                |
 | ------ | ------------------------------------------------------- | ------------------------------- |

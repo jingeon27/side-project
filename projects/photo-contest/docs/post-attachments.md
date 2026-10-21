@@ -26,7 +26,9 @@ Post.uploadId는 nullable로 확장하고 linkUrl을 추가한다. 기존 파일
 
 기존 대회 Submission도 `requestUploadUrl(contestId, contentType, byteSize)` → 저장소 FormData POST → `completeSubmissionUpload(uploadId)` → `createSubmission`으로 전송한다. 대회 사진의 서명은 5분이며 JPEG·PNG·WebP 10MB 이하만 예약할 수 있다. 완료 단계에서 접수 기간과 소유자·멤버십을 재확인하고, 원본을 고정한 뒤 기존 sharp의 실제 디코딩·40MP 검사·EXIF 방향 보정·1600px WebP 변환·메타데이터 제거를 수행한다. 대회 파일은 게시물 업로드 ID로 사용할 수 없다. 게시물과 대회의 완료 동시성 제한·후보 객체 추적·실패 복구는 `MediaUploadService`가 공유한다. 제출된 대회 사진은 미사용 게시물 업로드 정리에서 제외한다.
 
-`uploadPostMedia`·`uploadSubmissionPhoto`·`Upload` scalar와 `/post-uploads/:token`·`/uploads/:token`은 제거한다. 이전 탭은 새로고침해야 한다. GraphQL은 JSON 메타데이터만 전송하고 웹과 앱 WebView는 같은 저장소 전송 helper를 사용한다. nullable `Upload.mediaUploadId` 관계는 추가형 migration `20261022030000_presigned_submission_uploads`로 연결하며 기존 파일·제출 행은 그대로 읽는다. graphql-upload·apollo-upload-client 의존성은 제거하지만 대회 완료 변환에 필요한 sharp는 유지한다.
+그룹 대표 사진도 `requestGroupAvatarUpload(groupId, contentType, byteSize)` → 저장소 FormData POST → `completeGroupAvatarUpload(uploadId)` → `updateGroupProfile(avatarId)`로 전송한다. 서명은 5분, JPEG·PNG·WebP 10MB 이하이며 완료 전에는 프로필에 지정할 수 없다. 발급·완료 및 프로필 저장 트랜잭션에서 관리자 권한을 다시 확인하고 소유자와 업로드 목적을 분리한다. 완료 단계에서 실제 디코딩·40MP 상한·512px WebP 변환·EXIF/GPS 제거를 유지한다. 사용 중인 대표 사진은 공통 미사용 업로드 정리에서 제외하고 교체·포기한 사진만 재시도하며 정리한다. `20261022152000_presigned_group_avatars`는 nullable 관계를 추가해 기존 대표 사진을 유지한다.
+
+`uploadPostMedia`·`uploadSubmissionPhoto`·`uploadGroupAvatar`·`Upload` scalar와 `/post-uploads/:token`·`/uploads/:token`은 제거한다. 이전 탭은 새로고침해야 한다. GraphQL은 JSON 메타데이터만 전송하고 웹과 앱 WebView는 같은 저장소 전송 helper를 사용한다. nullable `Upload.mediaUploadId` 관계는 추가형 migration `20261022030000_presigned_submission_uploads`로 연결하며 기존 파일·제출 행은 그대로 읽는다. graphql-upload·apollo-upload-client 의존성은 제거하지만 대회 완료 변환에 필요한 sharp는 유지한다.
 
 ## 파일 저장
 
