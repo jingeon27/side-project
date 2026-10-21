@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { translate, isLocale, type TLocale } from '@/shared/i18n/index.server';
 import { excerpt, getSeoConfig, pageUrl } from './config';
-export const SITE_NAME = '플레이메이트';
+export const SITE_NAME = 'Game Mate';
 const baseKeywords = ['게임 커뮤니티', '게임 피드백', '게임코치', SITE_NAME];
 interface IPageMetadata {
   title: string;
@@ -37,7 +37,7 @@ export function createPageMetadata({
   const text = excerpt(description);
   const siteName = translate(locale, SITE_NAME);
   const fullTitle = `${excerpt(title, 80)} | ${siteName}`;
-  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: `Game Feedback | ${siteName}` }];
+  const images = [{ url: `${origin}/og`, width: 1200, height: 630, alt: siteName }];
   return {
     title: { absolute: fullTitle },
     description: text,
@@ -100,24 +100,24 @@ export const pageContent = {
     ],
   },
   guide: {
-    title: '플레이메이트 이용 가이드',
+    title: 'Game Mate 이용 가이드',
     description:
       '전체 게시글 검색과 다섯 분류, 전투 모집, 코치·수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.',
     keywords: ['커뮤니티 가이드', '게임코치', '전투 모집', '채팅', '프로필 인증'],
   },
   terms: {
     title: '이용약관',
-    description: '플레이메이트 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.',
+    description: 'Game Mate 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.',
     keywords: ['서비스 이용약관'],
   },
   privacy: {
     title: '개인정보 처리 안내',
-    description: '플레이메이트의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.',
+    description: 'Game Mate의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.',
     keywords: ['개인정보 처리', '계정 삭제'],
   },
   contact: {
     title: '문의 및 신고 안내',
-    description: '플레이메이트 서비스 문의, 제안과 커뮤니티 신고 방법을 확인하세요.',
+    description: 'Game Mate 서비스 문의, 제안과 커뮤니티 신고 방법을 확인하세요.',
     keywords: ['서비스 문의', '커뮤니티 신고'],
   },
   messages: {

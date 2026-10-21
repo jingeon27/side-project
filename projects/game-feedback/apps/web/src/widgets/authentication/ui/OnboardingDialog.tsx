@@ -24,7 +24,7 @@ export function OnboardingDialog({ open, onSuccess }: IOnboardingDialogProps) {
       onOpenChange={() => {}}
       dismissible={false}
       title="어떤 이름으로 만날까요?"
-      description={t('플레이메이트에 오신 것을 환영해요.')}
+      description={t('Game Mate에 오신 것을 환영해요.')}
     >
       <div className="login-icon">
         <Gamepad2 size={34} />

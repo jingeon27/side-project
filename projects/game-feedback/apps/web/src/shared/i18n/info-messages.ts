@@ -98,10 +98,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'この文書は非公開アルファに適用する利用基準の草案です。公開前に運営者情報と最終規約を確定する必要があります。',
     ],
   '1. 서비스의 목적과 범위': ['1. Purpose and scope', '1. サービスの目的と範囲'],
-  '플레이메이트는 게임 플레이에 대한 피드백 요청, 답변, 댓글과 1:1 채팅을 나누는 커뮤니티입니다. 알파 기간에는 기능과 운영 방식이 변경될 수 있습니다. 다른 사용자의 조언은 의견이며 게임 결과를 보장하지 않습니다.':
+  'Game Mate는 게임 플레이에 대한 피드백 요청, 답변, 댓글과 1:1 채팅을 나누는 커뮤니티입니다. 알파 기간에는 기능과 운영 방식이 변경될 수 있습니다. 다른 사용자의 조언은 의견이며 게임 결과를 보장하지 않습니다.':
     [
-      'Playmate is a community for game feedback, replies, comments and private chats. Features and operation may change during the alpha. Other users’ advice is an opinion and does not guarantee game results.',
-      'Playmateはゲームのフィードバック、回答、コメント、1対1チャットを共有するコミュニティです。アルファ期間中は機能や運営方法が変更される場合があります。他の利用者の助言は意見であり、ゲームの結果を保証しません。',
+      'Game Mate is a community for game feedback, replies, comments and private chats. Features and operation may change during the alpha. Other users’ advice is an opinion and does not guarantee game results.',
+      'Game Mateはゲームのフィードバック、回答、コメント、1対1チャットを共有するコミュニティです。アルファ期間中は機能や運営方法が変更される場合があります。他の利用者の助言は意見であり、ゲームの結果を保証しません。',
     ],
   '2. 가입과 계정': ['2. Registration and accounts', '2. 登録とアカウント'],
   '만 14세 이상만 가입할 수 있습니다. Google, X, 카카오, Discord 계정으로 로그인하며 서비스에서는 사용자가 직접 정한 닉네임을 사용합니다. 게임 태그 등록은 해당 계정의 소유권 인증을 의미하지 않습니다.':
@@ -196,9 +196,9 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'When reporting a service error, include the affected screen and the time it occurred.',
     'サービスの不具合については、発生した画面と日時をお知らせください。',
   ],
-  '플레이메이트는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.': [
-    'Playmate is an independent project and is not an official game service.',
-    'Playmateは独立したプロジェクトであり、ゲームの公式サービスではありません。',
+  'Game Mate는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.': [
+    'Game Mate is an independent project and is not an official game service.',
+    'Game Mateは独立したプロジェクトであり、ゲームの公式サービスではありません。',
   ],
   '이용 가이드': ['User guide', '利用ガイド'],
   '이용약관 (비공개 알파 초안)': ['Terms of service (private-alpha draft)', '利用規約（非公開アルファ草案）'],
@@ -206,27 +206,27 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'Privacy information (private-alpha draft)',
     'プライバシーについて（非公開アルファ草案）',
   ],
-  '플레이메이트에 이야기해주세요': ['Contact Playmate', 'Playmateへのお問い合わせ'],
-  '플레이메이트 이용 가이드': ['Playmate user guide', 'Playmate利用ガイド'],
+  'Game Mate에 이야기해주세요': ['Contact Game Mate', 'Game Mateへのお問い合わせ'],
+  'Game Mate 이용 가이드': ['Game Mate user guide', 'Game Mate利用ガイド'],
   '전체 게시글 검색과 다섯 분류, 전투 모집, 코치·수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.':
     [
       'Learn about search, the five categories, battle recruitment, coaching, chat, game accounts and profile verification.',
       '検索、5つの分類、対戦・コーチ募集、チャット、ゲームアカウント登録、プロフィール認証をご案内します。',
     ],
   이용약관: ['Terms of service', '利用規約'],
-  '플레이메이트 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.': [
-    'Read the terms and community rules for the Playmate private alpha.',
-    'Playmate非公開アルファの利用条件とコミュニティ運営方針をご確認ください。',
+  'Game Mate 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.': [
+    'Read the terms and community rules for the Game Mate private alpha.',
+    'Game Mate非公開アルファの利用条件とコミュニティ運営方針をご確認ください。',
   ],
   '개인정보 처리 안내': ['Privacy information', 'プライバシーについて'],
-  '플레이메이트의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.': [
-    'How Playmate processes, retains and deletes account, post and chat information.',
-    'Playmateのアカウント、投稿、チャット情報の利用・保存・削除についてご案内します。',
+  'Game Mate의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.': [
+    'How Game Mate processes, retains and deletes account, post and chat information.',
+    'Game Mateのアカウント、投稿、チャット情報の利用・保存・削除についてご案内します。',
   ],
   '문의 및 신고 안내': ['Support and reporting', 'お問い合わせと通報'],
-  '플레이메이트 서비스 문의, 제안과 커뮤니티 신고 방법을 확인하세요.': [
-    'Learn how to contact Playmate, share suggestions and report community issues.',
-    'Playmateへのお問い合わせ、ご提案、コミュニティの通報方法をご案内します。',
+  'Game Mate 서비스 문의, 제안과 커뮤니티 신고 방법을 확인하세요.': [
+    'Learn how to contact Game Mate, share suggestions and report community issues.',
+    'Game Mateへのお問い合わせ、ご提案、コミュニティの通報方法をご案内します。',
   ],
   '분류별 바로가기': ['Browse categories', '分類へのリンク'],
   '게시글 경로': ['Post location', '投稿の分類'],

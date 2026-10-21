@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Game Mate</title>
+  <rect width="64" height="64" rx="18" fill="#111827"/>
+  <path d="m39 10 3.7 11.3L54 25l-11.3 3.7L39 40l-3.7-11.3L24 25l11.3-3.7Z" fill="#f5dc93"/>
+  <path d="m20 34 2.5 7.5L30 44l-7.5 2.5L20 54l-2.5-7.5L10 44l7.5-2.5Z" fill="#e8edf7"/>
+  <circle cx="18" cy="18" r="2" fill="#e8edf7"/>
+</svg>

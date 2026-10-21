@@ -15,7 +15,7 @@ export function CommunityFooter({ home }: { home: string }) {
           <TabLink href={`${home}/privacy`}>{t('개인정보 처리방침')}</TabLink>
           <TabLink href={`${home}/contact`}>{t('문의')}</TabLink>
         </nav>
-        <span className="site-footer-copyright">© {year} Playmate</span>
+        <span className="site-footer-copyright">© {year} Game Mate</span>
       </div>
     </footer>
   );

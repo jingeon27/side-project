@@ -1,5 +1,9 @@
 export function resolveSeoConfig(env: Record<string, string | undefined>) {
-  const url = new URL(env.GAME_FEEDBACK_SITE_URL || env.WEB_ORIGIN || 'http://localhost:3300');
+  const url = new URL(
+    env.GAME_FEEDBACK_SITE_URL ||
+      env.WEB_ORIGIN ||
+      (env.NODE_ENV === 'production' ? 'https://game.bambyul.com' : 'http://localhost:3300'),
+  );
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.username ||
