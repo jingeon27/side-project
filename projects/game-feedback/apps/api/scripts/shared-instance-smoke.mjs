@@ -390,6 +390,7 @@ try {
             GF_S3_ACCESS_KEY_ID: 'gf-smoke-access',
             GF_S3_SECRET_ACCESS_KEY: 'gf-private-secret',
             GF_CONTACT_EMAIL: 'operator@example.test',
+            GF_CACHE_REVALIDATION_SECRET: randomBytes(32).toString('hex'),
             GOOGLE_CLIENT_ID: 'smoke-oauth-client',
             GOOGLE_CLIENT_SECRET: 'smoke-oauth-secret',
             GF_API_BIND_PORT: '0',

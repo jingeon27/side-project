@@ -47,6 +47,7 @@ class Stack {
         `GF_IMAGE_PREFIX=${imagePrefix}`,
         `GF_DB_PASSWORD=${randomBytes(32).toString('hex')}`,
         `GF_DB_ADMIN_PASSWORD=${randomBytes(32).toString('hex')}`,
+        `GF_CACHE_REVALIDATION_SECRET=${randomBytes(32).toString('hex')}`,
         'GOOGLE_CLIENT_ID=isolated-smoke-client',
         'GOOGLE_CLIENT_SECRET=isolated-smoke-secret',
         'GF_BIND_ADDRESS=127.0.0.1',

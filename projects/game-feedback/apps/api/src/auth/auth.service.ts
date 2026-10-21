@@ -1,8 +1,13 @@
-import { UnitOfWork } from '../database/unit-of-work';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+import {
+  SocialProviderSchema,
+  POSTS_CACHE_TAG,
+  DISCOVERY_CACHE_TAG,
+  type TSocialProvider,
+} from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { createHash } from 'node:crypto';
@@ -31,7 +36,7 @@ import {
 export class AuthService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
@@ -208,13 +213,16 @@ export class AuthService {
 
   async deleteAccount(req: SessionRequest, res: Response) {
     const u = requireUser(req);
-    await this.transactions.run(async (tx) => {
-      await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
-      await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
-      await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
-      await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
-      await (tx ?? this.db).user.delete({ where: { id: u.id } });
-    });
+    await this.cache.change(
+      async (tx) => {
+        await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
+        await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
+        await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
+        await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
+        await (tx ?? this.db).user.delete({ where: { id: u.id } });
+      },
+      [POSTS_CACHE_TAG, DISCOVERY_CACHE_TAG],
+    );
     setCookie(res, COOKIE, '', 0, this.config.production);
     return { ok: true };
   }

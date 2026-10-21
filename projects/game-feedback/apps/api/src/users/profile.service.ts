@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import sharp from 'sharp';
-import { UpdateProfileInputSchema } from '@game-feedback/contracts';
+import { UpdateProfileInputSchema, POSTS_CACHE_TAG } from '@game-feedback/contracts';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { PrismaClient } from '../generated/prisma';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
@@ -19,6 +20,7 @@ export class ProfileService {
     @Inject(UsersService) private readonly users: UsersService,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(MediaStorage) private readonly storage: MediaStorage,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
   async update(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
@@ -39,11 +41,15 @@ export class ProfileService {
     const bytes = await this.normalize(file.buffer);
     const stored = await this.storage.save(bytes, 'image/webp');
     const data = { ...stored, id: randomUUID(), size: bytes.length, mimeType: 'image/webp' };
-    await this.db.userAvatar.upsert({
-      where: { userId: user.id },
-      create: { ...data, userId: user.id },
-      update: data,
-    });
+    await this.cache.change(
+      (tx) =>
+        tx.userAvatar.upsert({
+          where: { userId: user.id },
+          create: { ...data, userId: user.id },
+          update: data,
+        }),
+      [POSTS_CACHE_TAG],
+    );
     return this.users.profile(req, user.id);
   }
   private async normalize(input: Buffer) {
@@ -62,7 +68,10 @@ export class ProfileService {
   }
   async remove(req: SessionRequest) {
     const user = requireUser(req);
-    await this.db.userAvatar.deleteMany({ where: { userId: user.id } });
+    await this.cache.change(
+      (tx) => tx.userAvatar.deleteMany({ where: { userId: user.id } }),
+      [POSTS_CACHE_TAG],
+    );
     return this.users.profile(req, user.id);
   }
   async file(req: SessionRequest, id: string) {

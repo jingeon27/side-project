@@ -3,6 +3,8 @@ import { resolveListenConfig, validateProductionEnvironment } from './production
 import { resolveMediaStorageConfig } from '../media-storage/media-storage.config';
 
 const valid = {
+  GF_CACHE_REVALIDATION_SECRET: 'production-cache-secret-'.repeat(3),
+  GF_CACHE_REVALIDATION_URL: 'http://web:3300/_internal/cache/revalidate',
   NODE_ENV: 'production',
   WEB_ORIGIN: 'https://play.game-feedback.test',
   GAME_FEEDBACK_SITE_URL: 'https://play.game-feedback.test',
