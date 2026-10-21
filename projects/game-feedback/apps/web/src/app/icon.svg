@@ -1,5 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <title>Game Mate</title>
-  <rect width="64" height="64" rx="17" fill="#12151c"/>
-  <path d="M18 12H34C43 12 48 16.2 48 23.5C48 27.5 46 30.7 42.2 32.4C46.7 33.9 49.5 37.2 49.5 41.9C49.5 49.6 43.5 54 34 54H18Z M34 18L36.4 22.6L41 25L36.4 27.4L34 32L31.6 27.4L27 25L31.6 22.6Z M28 37V45H33.5C38 45 40.2 43.7 40.2 41S38 37 33.5 37Z" transform="translate(-1 0)" fill="#f7f5ef" fill-rule="evenodd"/>
+  <rect width="64" height="64" rx="17" fill="#147d64"/>
+  <g transform="translate(0 -3)">
+    <path d="M22 21h20c5 0 8.6 3.2 10 8.2l3.5 13.5c1.4 5.4-4.7 9-8.6 5.5L40 42H24l-6.9 6.2c-3.9 3.5-10-.1-8.6-5.5L12 29.2C13.4 24.2 17 21 22 21Z" fill="#f4fff9"/>
+    <path d="M19 32h10M24 27v10" fill="none" stroke="#147d64" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="41" cy="29.5" r="2.5" fill="#147d64"/>
+    <circle cx="47" cy="35.5" r="2.5" fill="#147d64"/>
+  </g>
 </svg>
