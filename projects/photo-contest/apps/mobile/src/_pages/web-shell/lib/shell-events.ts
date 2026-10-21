@@ -1,5 +1,8 @@
-import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
-import type { TAnalyticsEvent, TAnalyticsEventName } from '@/features/analytics/config/events';
+import {
+  ANALYTICS_EVENT,
+  type TAnalyticsEvent,
+  type TAnalyticsEventName,
+} from '@/features/analytics/config/events';
 import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
 import { toLinkTemplate } from '@/features/navigation/lib/deep-link';
 import type { TMonitoringTags } from '@/shared/lib/monitoring/create-monitoring';

@@ -1,4 +1,5 @@
-import { URL, fileURLToPath } from 'node:url';
+import { fileURLToPath, URL } from 'node:url';
+
 import { configDefaults, defineConfig } from 'vitest/config';
 
 // 날짜 계산이 개발 PC 시간대에 따라 달라지지 않게 서비스 기준 시간대로 고정한다.

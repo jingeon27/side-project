@@ -1,15 +1,18 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { useId, useState, useTransition } from 'react';
+import Link from 'next/link';
+
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
+
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
-import { FieldRequirement } from '@/shared/ui/@core/text-field';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import Link from 'next/link';
+import { FieldRequirement } from '@/shared/ui/@core/text-field';
+
 import type { TPostInput, TPostValues } from '../model/post.schema';
 
 type TPostForm = UseFormReturn<TPostInput, unknown, TPostValues>;

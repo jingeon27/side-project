@@ -1,8 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+
 import { clearHistory, postChatMessage } from '../api/chat.api';
-import { chatMessageOptions, conversationListOptions } from './chat.options';
 import { clearChatHistoryMutationOptions, sendChatMessageMutationOptions } from './chat.mutation-options';
+import { chatMessageOptions, conversationListOptions } from './chat.options';
 import type { IChatMessageInput } from './chat.types';
 
 vi.mock('../api/chat.api', () => ({

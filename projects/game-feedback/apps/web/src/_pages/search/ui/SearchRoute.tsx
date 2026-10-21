@@ -1,10 +1,14 @@
 import 'server-only';
+
 import { notFound } from 'next/navigation';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { getServerSession } from '@/features/auth/index.server';
 import { getPublicCategories } from '@/features/category/index.server';
 import { getServerPostList } from '@/features/post/index.server';
 import { initialDocumentData } from '@/shared/lib/initial-document-data';
+
 import { searchQuery, type ISearchSnapshot } from '../model/search-query';
 import { SearchPage } from './SearchPage';
 

@@ -1,4 +1,5 @@
 import concurrently from 'concurrently';
+
 const { result } = concurrently(
   [
     { command: 'yarn workspace @photo-contest/api dev', name: 'api' },

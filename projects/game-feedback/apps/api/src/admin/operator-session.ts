@@ -1,5 +1,5 @@
-import type { PrismaClient } from '../generated/prisma';
 import { hash, token } from '../common/crypto';
+import type { PrismaClient } from '../generated/prisma';
 
 /** SSH-only operator tooling; no HTTP endpoint can create or promote an operator. */
 export async function requireOperatorUser(db: PrismaClient, userId: string) {

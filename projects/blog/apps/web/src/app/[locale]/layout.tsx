@@ -1,14 +1,17 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
-import { isLocale, locales } from '@/i18n/routing';
-import { Header } from '@/widgets/header/ui/header';
-import { Footer } from '@/widgets/footer/ui/footer';
+
 import { AnalyticsConsent } from '@/features/analytics-consent/ui/analytics-consent';
 import { AnalyticsTracker } from '@/features/analytics-consent/ui/analytics-tracker';
+import { isLocale, locales } from '@/i18n/routing';
 import { siteUrl } from '@/shared/config/site';
-import { websiteJsonLd, serializeJsonLd } from '@/shared/lib/seo/structured-data';
+import { serializeJsonLd, websiteJsonLd } from '@/shared/lib/seo/structured-data';
+import { Footer } from '@/widgets/footer/ui/footer';
+import { Header } from '@/widgets/header/ui/header';
+
 import '../globals.css';
 
 export const metadata: Metadata = { metadataBase: siteUrl };

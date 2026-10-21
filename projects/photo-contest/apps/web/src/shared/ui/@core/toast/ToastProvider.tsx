@@ -1,8 +1,9 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { Toast } from '@base-ui/react/toast';
 import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { match } from 'ts-pattern';
 
 import { cn } from '../../../lib/cn.helper';

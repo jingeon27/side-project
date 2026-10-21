@@ -1,9 +1,11 @@
-import { UseGuards, Controller, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
-import { AdminGuard } from '../../common/http/session.guard';
-import { ReviewReportDto, HideContentDto } from './report-input.dto';
-import { ValidatedBody } from '../../common/http/request-validation';
+import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+
 import type { SessionRequest } from '../../auth/session.types';
+import { ValidatedBody } from '../../common/http/request-validation';
+import { AdminGuard } from '../../common/http/session.guard';
 import { AdminReportsService } from './admin-reports.service';
+import { HideContentDto, ReviewReportDto } from './report-input.dto';
+
 @UseGuards(AdminGuard)
 @Controller('api/admin')
 export class AdminReportsController {

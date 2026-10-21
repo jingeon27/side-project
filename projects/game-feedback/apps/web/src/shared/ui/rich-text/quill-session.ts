@@ -1,5 +1,6 @@
 import type Quill from 'quill';
-import { RichTextDocumentSchema, type TRichTextDocument, type TPostMedia } from '@game-feedback/contracts';
+
+import { RichTextDocumentSchema, type TPostMedia, type TRichTextDocument } from '@game-feedback/contracts';
 
 export interface IEditorValue {
   body: string;

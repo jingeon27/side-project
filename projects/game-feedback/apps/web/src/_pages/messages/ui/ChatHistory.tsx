@@ -1,10 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { LoaderCircle, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+
 import type { RefCallback } from 'react';
-import { dateKey, formatDate } from '@/shared/lib/date';
+
+import { LoaderCircle, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+
 import type { ChatMessage, Conversation } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { dateKey, formatDate } from '@/shared/lib/date';
 import { AnimatePresence, m, useMotionPreference } from '@/shared/motion';
+
 import { MessageBubble } from './MessageBubble';
 
 interface IChatHistoryProps {

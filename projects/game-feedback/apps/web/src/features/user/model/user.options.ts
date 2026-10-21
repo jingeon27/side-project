@@ -1,5 +1,6 @@
 import { queryOptions, skipToken } from '@tanstack/react-query';
 import { compact } from 'es-toolkit';
+
 import { fetchBlockedUsers, fetchPublicProfile } from '../api/user.api';
 
 export function blockListOptions(userId?: string) {

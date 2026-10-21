@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 
-import ko from '../../../messages/ko.json';
 import en from '../../../messages/en.json';
+import ko from '../../../messages/ko.json';
 
 function keys(value: object, prefix = ''): string[] {
   return Object.entries(value)

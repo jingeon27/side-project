@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect, useId, useRef, useState } from 'react';
+import Image from 'next/image';
+
 import { useMutation } from '@apollo/client/react';
 import { ImagePlus } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useId, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 
 import {
@@ -15,12 +16,11 @@ import {
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
-import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
-import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea } from '@/shared/ui/@core/text-field';
 
-import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '../lib/image.helper';
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '../lib/image.helper';
 import { markContestSubmitted } from '../model/submission.cache';
 import { uploadPhotoSchema } from '../model/submission.schema';
 

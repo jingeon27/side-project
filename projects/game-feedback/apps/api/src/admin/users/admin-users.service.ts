@@ -1,14 +1,16 @@
-import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
-import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
+import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ChatEvents } from '../../chat/chat.events';
 import { ApiError } from '../../common/http/api-error';
+import { PrismaClient } from '../../generated/prisma';
 import { userDto } from '../../users/user.presenter';
 import { type UserBanDto, type VerificationDto } from './user-input.dto';
+
 @Injectable()
 export class AdminUsersService {
   constructor(

@@ -1,5 +1,3 @@
-import { Database } from '../database/database.service';
-
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';
@@ -21,10 +19,17 @@ import {
   PKCE_VERIFIER_MIN_LENGTH,
   TEXT_LIMIT,
 } from '../config/limits';
+import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
-import type { IOAuthIdentity, IOAuthProvider } from './oauth-provider';
-import { accessTokenOf, identityOf, OAUTH_PROVIDER, oauthProvider } from './oauth-provider';
+import {
+  accessTokenOf,
+  identityOf,
+  OAUTH_PROVIDER,
+  oauthProvider,
+  type IOAuthIdentity,
+  type IOAuthProvider,
+} from './oauth-provider';
 import { SessionService } from './session.service';
 
 const MESSAGE = {

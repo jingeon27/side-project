@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
-import { LoadingState } from '@/shared/ui';
-import { staticPageMetadata } from '@/shared/seo';
 import { notFound, redirect } from 'next/navigation';
+
 import { appRoutes, RouteIdSchema } from '@game-feedback/bridge';
+
+import { staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
+
 async function RouteContent({
   params,
   searchParams,

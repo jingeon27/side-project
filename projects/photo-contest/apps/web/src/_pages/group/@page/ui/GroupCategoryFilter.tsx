@@ -1,11 +1,14 @@
 'use client';
+
+import type { ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
+
 import { GalleryFeed } from '@/features/post';
 import type { GalleryQuery } from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { replaceSearchParams } from '@/shared/model/router';
 import { Button } from '@/shared/ui/@core/button';
-import { useSearchParams } from 'next/navigation';
-import type { ReactNode } from 'react';
+
 import { parseGroupCategory } from '../model/category-search.schema';
 
 export function GroupCategoryFilter({

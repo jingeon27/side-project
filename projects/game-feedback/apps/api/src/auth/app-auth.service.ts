@@ -1,12 +1,14 @@
-import { PrismaClient } from '../generated/prisma';
+import { createHash } from 'node:crypto';
 
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
-import { createHash } from 'node:crypto';
+
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+
 import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
+import { PrismaClient } from '../generated/prisma';
 import type { AppExchangeDto } from './auth-input.dto';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';

@@ -1,8 +1,10 @@
 import { Suspense } from 'react';
-import { LoadingState } from '@/shared/ui';
 import { notFound } from 'next/navigation';
+
 import { appRoutes, RouteIdSchema } from '@game-feedback/bridge';
+
 import { createPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
 
 interface IConversationRouteProps {
   params: Promise<{ locale: string; conversationId: string }>;

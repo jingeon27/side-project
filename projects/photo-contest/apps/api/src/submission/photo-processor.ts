@@ -1,5 +1,4 @@
-import sharp from 'sharp';
-import type { Metadata } from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 
 import { fail } from '../common/errors';
 import { MAX_IMAGE_EDGE_PX, MAX_INPUT_PIXELS, MAX_UPLOAD_BYTES, WEBP_QUALITY } from '../config/limits';

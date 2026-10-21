@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+
 export function createShareImage() {
   return new ImageResponse(
     <div

@@ -1,3 +1,7 @@
+import type { ReactElement } from 'react';
+import { hydrateRoot, type Root } from 'react-dom/client';
+import { prerender } from 'react-dom/static';
+
 import {
   ApolloClient,
   ApolloLink,
@@ -7,9 +11,6 @@ import {
 } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act } from '@testing-library/react';
-import type { ReactElement } from 'react';
-import { hydrateRoot, type Root } from 'react-dom/client';
-import { prerender } from 'react-dom/static';
 
 import { APP_TYPE_POLICIES } from '@/_app/providers/apollo/app.type-policies';
 import { createNoNetworkLink } from '@/shared/api/apollo-link.helper';

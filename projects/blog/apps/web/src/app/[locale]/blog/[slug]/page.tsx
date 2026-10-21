@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { getArticles, getArticleBySlug } from '@/entities/article/lib/get-articles';
+
+import { getArticleBySlug, getArticles } from '@/entities/article/lib/get-articles';
 import { loadArticle } from '@/entities/article/lib/registry';
 import { articleMetadata } from '@/shared/lib/seo/metadata';
 import { articleJsonLd, serializeJsonLd } from '@/shared/lib/seo/structured-data';

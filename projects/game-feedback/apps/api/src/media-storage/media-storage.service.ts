@@ -1,4 +1,6 @@
-import { PrismaClient } from '../generated/prisma';
+import { randomUUID } from 'node:crypto';
+import { mkdir, open, unlink, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import {
   DeleteObjectCommand,
@@ -10,13 +12,11 @@ import {
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
-import { mkdir, open, unlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+
 import { ApiError } from '../common/http/api-error';
 import { validateMediaFile } from '../common/media-file';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { type MediaObject } from '../generated/prisma';
+import { PrismaClient, type MediaObject } from '../generated/prisma';
 import { MEDIA_READ_TTL_SECONDS, MEDIA_UPLOAD_TTL_SECONDS } from './media-storage.policy';
 
 interface IMediaReference {

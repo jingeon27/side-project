@@ -1,11 +1,14 @@
 'use client';
 
 import { useWatch } from 'react-hook-form';
+
 import { CoachingPricingTypeSchema } from '@game-feedback/contracts';
 import { Input, NativeSelect, NativeSelectOption } from '@side/design-system';
+
 import { coachingPricingTypes } from '@/features/coaching';
 import { useI18n } from '@/shared/i18n';
 import { Field } from '@/shared/ui';
+
 import type { TPostComposerForm } from '../model/post-composer.schema';
 
 export function CoachingFields({ form }: { form: TPostComposerForm }) {

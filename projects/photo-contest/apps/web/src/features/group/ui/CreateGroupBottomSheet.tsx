@@ -7,8 +7,7 @@ import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { useAppRouter } from '@/shared/model/router';
-import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
-import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 

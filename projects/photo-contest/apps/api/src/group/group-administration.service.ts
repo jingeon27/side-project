@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { randomToken } from '../common/crypto';
 import { fail } from '../common/errors';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { GROUP_ROLE, isOwner } from './group-role';
-
 import { GroupService } from './group.service';
 import { MembershipService } from './membership.service';
 

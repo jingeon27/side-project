@@ -1,5 +1,7 @@
 import type { Request } from 'express';
+
 import { AuthReturnPathSchema } from '@game-feedback/contracts';
+
 import { cookies } from '../common/http/cookies';
 import { parse } from '../common/validation';
 

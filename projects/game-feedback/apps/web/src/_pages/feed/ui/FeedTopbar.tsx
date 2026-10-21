@@ -1,7 +1,10 @@
 'use client';
+
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 import { Topbar } from '@/widgets/community-shell';

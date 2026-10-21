@@ -1,5 +1,7 @@
 import type { z } from 'zod';
+
 import type { postComposerSchema } from './post-composer.schema';
+
 export function postContentInput(values: z.output<typeof postComposerSchema>) {
   return {
     title: values.title,

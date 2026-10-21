@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import ko from '../../../../seo/ko.json';
-import en from '../../../../seo/en.json';
+
 import { locales, type Locale } from '@/i18n/routing';
 import { absoluteUrl, author, siteUrl } from '@/shared/config/site';
+
+import en from '../../../../seo/en.json';
+import ko from '../../../../seo/ko.json';
 
 const seo = { ko, en };
 

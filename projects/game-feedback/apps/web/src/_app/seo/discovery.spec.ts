@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { robots, sitemap } from './discovery.server';
+
 const { list } = vi.hoisted(() => ({ list: vi.fn() }));
 vi.mock('@/features/post/index.server', () => ({ getPublicPostList: list }));
 vi.mock('@/features/category/index.server', () => ({

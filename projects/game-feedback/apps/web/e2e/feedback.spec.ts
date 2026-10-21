@@ -1,5 +1,7 @@
-import { test, expect, type APIRequestContext } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
+
 import { getSession, listCategories, listPosts } from '@game-feedback/sdk';
+
 import {
   GetSessionResponse,
   ListCategoriesResponse,

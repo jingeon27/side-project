@@ -1,7 +1,10 @@
 'use client';
-import { useParams } from 'next/navigation';
+
 import type { ReactNode } from 'react';
+import { useParams } from 'next/navigation';
+
 import { RouteIdSchema } from '@game-feedback/bridge';
+
 import { MessagesPage } from './MessagesPage';
 
 export function MessagesLayout({ locale, children }: { locale: string; children: ReactNode }) {

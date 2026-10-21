@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../../test/support/app';
 
 describe('공개 Next Data Cache용 GraphQL 응답', () => {

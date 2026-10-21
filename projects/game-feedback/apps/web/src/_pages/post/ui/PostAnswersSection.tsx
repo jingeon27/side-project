@@ -1,12 +1,16 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { MessageSquare } from 'lucide-react';
+
 import { AnswerCard } from '@/features/answer';
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { Answer, Post } from '@/shared/api';
-import { ContentActions } from './ContentActions';
+import { useI18n } from '@/shared/i18n';
+
 import { AnswerComposer } from './AnswerComposer';
+import { ContentActions } from './ContentActions';
 import { HelpfulAnswerButton } from './HelpfulAnswerButton';
+
 interface IPostAnswersSectionProps {
   post: Post;
   answers: Answer[];

@@ -1,7 +1,9 @@
-import { render as renderUI, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render as renderUI, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { LoginDialog } from './LoginDialog';
 
 function render(ui: ReactElement) {

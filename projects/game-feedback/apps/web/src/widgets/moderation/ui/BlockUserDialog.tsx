@@ -1,9 +1,12 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { Button } from '@side/design-system';
-import type { Author } from '@/shared/api';
-import { ErrorNotice, Modal } from '@/shared/ui';
+
 import { useBlockUserMutation } from '@/features/moderation';
+import type { Author } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { ErrorNotice, Modal } from '@/shared/ui';
+
 interface IBlockUserDialogProps {
   author: Author;
   open: boolean;

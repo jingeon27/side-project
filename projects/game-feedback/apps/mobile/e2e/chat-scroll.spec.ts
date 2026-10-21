@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { test, expect } from './support/fixtures';
+
+import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
 test('400px WebView keeps the newest message visible through multiline input, sending and keyboard resizing', async ({

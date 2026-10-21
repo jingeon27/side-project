@@ -1,16 +1,15 @@
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
 import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
 import { ERROR_CODE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import { COMMENT_BODY_LIMIT, PAGE_SIZE_DEFAULT } from '../config/limits';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
 
 function commentInclude(viewerId: string | null) {

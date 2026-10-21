@@ -1,8 +1,6 @@
 'use client';
 
-import { useIsSSR } from '@/shared/model/is-ssr.hook';
-import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
-import { GalleryPostList } from './GalleryPostList';
+import type { ReactNode } from 'react';
 
 import {
   skipToken,
@@ -12,13 +10,16 @@ import {
   type QueryRef,
 } from '@apollo/client/react';
 import { Sparkles } from 'lucide-react';
-import type { ReactNode } from 'react';
 
 import { GalleryPostsDocument, PostSort, type GalleryPostsQuery } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
+import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+
+import { GalleryPostList } from './GalleryPostList';
 
 function BoardContent({
   postsRef,

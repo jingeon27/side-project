@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { validPostLink, youtubeVideoId } from './post-link.helper';
 
 describe('첨부 링크와 유튜브 재생', () => {

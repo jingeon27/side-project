@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { renderToString } from 'react-dom/server';
-import { fireEvent, render, screen } from '@testing-library/react';
+import Link from 'next/link';
+
 import { QueryClient, QueryClientProvider, queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { AsyncBoundary } from './AsyncBoundary';
 
 beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));

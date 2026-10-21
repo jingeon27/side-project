@@ -1,8 +1,10 @@
-import { locale as rootLocale } from 'next/root-params';
 import { Suspense } from 'react';
-import { LoadingState } from '@/shared/ui';
-import { staticPageMetadata } from '@/shared/seo';
+import { locale as rootLocale } from 'next/root-params';
+
 import { SettingsPage as Screen } from '@/_pages/settings';
+import { staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
+
 async function RouteContent(_props: { params: Promise<{ locale: string }> }) {
   const locale = await rootLocale();
   return <Screen locale={locale} />;

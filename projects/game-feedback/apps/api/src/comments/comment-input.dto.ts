@@ -1,6 +1,8 @@
-import { CommentInputSchema } from '@game-feedback/contracts';
-import { Length, IsString } from 'class-validator';
+import { IsString, Length } from 'class-validator';
 import type { z } from 'zod';
+
+import { CommentInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from '../common/http/request-validation';
 
 export class CommentBodyDto {

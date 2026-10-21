@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const projectDir = fileURLToPath(new URL('../', import.meta.url));
 export const rootDir = path.resolve(projectDir, '../..');

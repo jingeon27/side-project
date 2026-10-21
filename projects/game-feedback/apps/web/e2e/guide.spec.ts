@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('320px 모바일 가이드 제목과 화살표로 각 기능에 이동하고 돌아올 수 있어야 한다', async ({
   page,

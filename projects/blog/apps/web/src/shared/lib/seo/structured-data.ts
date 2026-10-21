@@ -1,6 +1,7 @@
 import type { Locale } from '@/i18n/routing';
-import { absoluteUrl, author } from '@/shared/config/site';
 import { labels } from '@/shared/config/labels';
+import { absoluteUrl, author } from '@/shared/config/site';
+
 import { articlePath, type ArticleSeo } from './metadata';
 
 export function websiteJsonLd(locale: Locale) {

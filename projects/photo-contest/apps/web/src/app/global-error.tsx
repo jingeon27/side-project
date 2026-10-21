@@ -1,9 +1,11 @@
 'use client';
 
-import { captureException } from '@sentry/nextjs';
 import { useEffect } from 'react';
 
+import { captureException } from '@sentry/nextjs';
+
 import '@/_app/styles/tailwind.css';
+
 import { ErrorState } from '@/shared/ui/@core/error-state';
 
 /** 루트 레이아웃까지 실패했을 때. 레이아웃을 대신하므로 html·body와 스타일을 직접 둔다. */

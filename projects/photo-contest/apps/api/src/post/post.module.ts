@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { PostCategoryResolver } from './post-category.resolver';
-import { PostCategoryService } from './post-category.service';
 
 import { GroupModule } from '../group/group.module';
 import { MediaProcessor } from './media-processor';
+import { PostCategoryResolver } from './post-category.resolver';
+import { PostCategoryService } from './post-category.service';
 import { PostCommentResolver } from './post-comment.resolver';
 import { PostCommentService } from './post-comment.service';
 import { PostModerationService } from './post-moderation.service';

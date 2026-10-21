@@ -1,7 +1,10 @@
 'use client';
+
+import { Plus } from 'lucide-react';
+
 import { useI18n } from '@/shared/i18n';
 import { MotionButton } from '@/shared/ui';
-import { Plus } from 'lucide-react';
+
 import { useFeedFilters } from '../model/use-feed-filters';
 
 interface IFeedFiltersProps {

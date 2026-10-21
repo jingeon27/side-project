@@ -1,13 +1,11 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Users } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { CreateGroupButton, GroupCard } from '@/features/group';
-import { MyGroupsDocument } from '@/shared/api/generated';
-import type { MyGroupsQuery } from '@/shared/api/generated';
+import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';

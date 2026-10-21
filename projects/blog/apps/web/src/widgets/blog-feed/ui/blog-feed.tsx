@@ -1,11 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+
 import type { Article } from '@/entities/article/model/types';
 import { ArticleCard } from '@/entities/article/ui/article-card';
-import { ArticleSearch } from '@/features/article-search/ui/article-search';
 import { matchesArticleSearch } from '@/features/article-search/lib/matches-article-search';
+import { ArticleSearch } from '@/features/article-search/ui/article-search';
 import { CategoryFilter, type Category } from '@/features/category-filter/ui/category-filter';
 import { labels, type UiLocale } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';

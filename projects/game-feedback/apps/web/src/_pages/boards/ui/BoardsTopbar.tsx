@@ -1,7 +1,10 @@
 'use client';
+
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { parseBattleMode } from '@/features/battle';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus } from '@/features/post';

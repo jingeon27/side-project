@@ -1,10 +1,14 @@
-import { COLORS } from '@/shared/config/theme';
 import { StyleSheet } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
+
+import { COLORS } from '@/shared/config/theme';
+
 import { useWebShell } from '../model/use-web-shell';
-import { OfflineView } from './OfflineView';
 import { LaunchScreen } from './LaunchScreen';
+import { OfflineView } from './OfflineView';
+
 export function WebShellPage() {
   const { attachWebView, webViewKey, webViewProps, loading, offline, handleRetry } = useWebShell();
   return (

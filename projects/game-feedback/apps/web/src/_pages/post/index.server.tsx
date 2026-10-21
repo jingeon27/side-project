@@ -1,8 +1,10 @@
-import { getServerPost } from '@/features/post/index.server';
 import { getServerSession } from '@/features/auth/index.server';
-import { createPageMetadata, pageUrl, postStructuredData, JsonLd } from '@/shared/seo';
+import { getServerPost } from '@/features/post/index.server';
+import { createPageMetadata, JsonLd, pageUrl, postStructuredData } from '@/shared/seo';
+
 import { PostPage } from './ui/PostPage';
 import { PostTopbar } from './ui/PostTopbar';
+
 interface IPostRouteProps {
   params: Promise<{ locale: string; id: string }>;
 }

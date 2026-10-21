@@ -1,13 +1,9 @@
-import type { Prisma } from '../../generated/prisma';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
+import { Injectable } from '@nestjs/common';
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
-import { Injectable } from '@nestjs/common';
-
+import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
@@ -21,15 +17,15 @@ import {
   UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
-import type { ISubmissionAccess } from '../group/membership.service';
-import { MembershipService } from '../group/membership.service';
+import { MembershipService, type ISubmissionAccess } from '../group/membership.service';
 import { createPhotoKey } from '../storage/photo-key';
 import { PhotoStorage } from '../storage/photo-storage.service';
 import { processPhoto } from './photo-processor';
 import { submissionOrderBy, toSubmissionSort } from './submission-sort';
-import type { ISubmissionView } from './submission.presenter';
-import { presentSubmission, submissionInclude } from './submission.presenter';
+import { presentSubmission, submissionInclude, type ISubmissionView } from './submission.presenter';
 
 export interface ISubmissionListQuery {
   offset?: unknown;

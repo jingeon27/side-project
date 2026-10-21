@@ -1,5 +1,7 @@
-import { it as test } from 'vitest';
 import assert from 'node:assert/strict';
+
+import { it as test } from 'vitest';
+
 import { guardDatabaseUrl } from './database-guard.mjs';
 import { developmentDatabaseUrl, testDatabaseUrl } from './env.mjs';
 

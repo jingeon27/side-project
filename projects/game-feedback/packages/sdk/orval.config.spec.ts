@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
+
 import ts from 'typescript';
 import { expect, it } from 'vitest';
+
 it('passes a response schema to every generated OpenAPI operation after caller options', () => {
   const spec = JSON.parse(readFileSync(new URL('../../apps/api/openapi.json', import.meta.url), 'utf8')) as {
     paths: Record<string, Record<string, { operationId: string }>>;

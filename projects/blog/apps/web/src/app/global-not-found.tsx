@@ -1,11 +1,15 @@
 import Link from 'next/link';
+
 import { siteUrl } from '@/shared/config/site';
+
+import './globals.css';
+
 export const metadata = {
   metadataBase: siteUrl,
   title: '404 - 김진건의 블로그',
   robots: { index: false, follow: true },
 };
-import './globals.css';
+
 export default function GlobalNotFound() {
   return (
     <html lang="ko">

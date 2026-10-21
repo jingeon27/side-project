@@ -1,10 +1,13 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import type { ReactNode } from 'react';
+
 import type { Comment } from '@/shared/api';
-import { Avatar } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
 import { useIsSSR } from '@/shared/lib/use-is-ssr';
+import { Avatar } from '@/shared/ui';
+
 interface ICommentItemProps {
   comment: Comment;
   authorContent?: ReactNode;

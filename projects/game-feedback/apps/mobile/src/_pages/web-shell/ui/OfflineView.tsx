@@ -1,5 +1,7 @@
-import { COLORS } from '@/shared/config/theme';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { COLORS } from '@/shared/config/theme';
+
 export function OfflineView({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={styles.root}>

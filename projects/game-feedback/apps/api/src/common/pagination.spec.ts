@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { decodeCursor, encodeCursor } from './pagination';
+
 import { ApiError } from './http/api-error';
+import { decodeCursor, encodeCursor } from './pagination';
 
 const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
 

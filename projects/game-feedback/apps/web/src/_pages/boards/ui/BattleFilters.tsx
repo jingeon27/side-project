@@ -2,9 +2,11 @@
 
 import { appRoutes } from '@game-feedback/bridge';
 import type { TBattleMode } from '@game-feedback/contracts';
+
 import { parseBattleMode } from '@/features/battle';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
+
 import { BoardFilterLink } from './BoardFilterLink';
 
 export function BattleFilters({ locale, slug }: { locale: string; slug: string }) {

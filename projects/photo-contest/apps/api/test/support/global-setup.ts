@@ -1,6 +1,8 @@
 import { rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import type { TestProject } from 'vitest/node';
+
 import {
   createIsolatedDatabase,
   dropIsolatedDatabase,
@@ -9,7 +11,6 @@ import {
   PROJECT_ROOT,
   resolveTestDatabaseUrl,
 } from '@photo-contest/test-kit';
-import type { TestProject } from 'vitest/node';
 
 declare module 'vitest' {
   export interface ProvidedContext {

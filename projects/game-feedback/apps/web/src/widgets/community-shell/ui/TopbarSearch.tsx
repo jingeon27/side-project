@@ -1,5 +1,7 @@
 'use client';
+
 import { Search } from 'lucide-react';
+
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';
 

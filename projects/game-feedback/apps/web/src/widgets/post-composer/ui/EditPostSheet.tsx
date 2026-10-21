@@ -1,17 +1,23 @@
 'use client';
-import { Button, Input } from '@side/design-system';
-import { LoaderCircle, Check } from 'lucide-react';
+
 import { useRouter } from 'next/navigation';
-import { useUpdatePostMutation } from '@/features/post';
+
+import { Check, LoaderCircle } from 'lucide-react';
+
+import { Button, Input } from '@side/design-system';
+
 import { boardByKind } from '@/features/board';
+import { useUpdatePostMutation } from '@/features/post';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, Field, ErrorNotice, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+
 import { postComposerSchema } from '../model/post-composer.schema';
 import { postContentInput } from '../model/post-content-input';
 import { usePostMediaUpload } from '../model/use-post-media-upload';
 import { PostContentFields } from './PostContentFields';
+
 interface IEditPostSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

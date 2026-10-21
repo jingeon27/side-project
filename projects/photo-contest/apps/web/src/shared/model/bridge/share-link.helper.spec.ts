@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
-import { NativeCapabilityError } from '@photo-contest/bridge/native';
-import type { TNativeCapabilities } from '@photo-contest/bridge/native';
-import { installFakeNativeApp } from '@photo-contest/bridge/test';
-import type { IFakeNativeApp } from '@photo-contest/bridge/test';
-import { createWebBridge } from '@photo-contest/bridge/web';
-import type { IWebBridge } from '@photo-contest/bridge/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { SHARE_OUTCOME, copyText, openExternalLink, shareLink } from './share-link.helper';
-import type { IShareEnvironment } from './share-link.helper';
+import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/bridge/native';
+import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
+import { createWebBridge, type IWebBridge } from '@photo-contest/bridge/web';
+
+import {
+  copyText,
+  openExternalLink,
+  SHARE_OUTCOME,
+  shareLink,
+  type IShareEnvironment,
+} from './share-link.helper';
 
 const URL_TO_SHARE = 'http://localhost:3000/invite/abc';
 

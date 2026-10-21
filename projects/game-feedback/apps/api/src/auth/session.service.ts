@@ -1,12 +1,13 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
+
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+
 import { hash, token } from '../common/crypto';
 import { COOKIE, setCookie } from '../common/http/cookies';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
 import { userDto } from '../users/user.presenter';
 import { sessionToken } from './session-token';
 import type { SessionRequest } from './session.types';

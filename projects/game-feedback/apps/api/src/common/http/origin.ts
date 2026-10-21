@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+
 import { ApiError } from './api-error';
 
 export function assertOrigin(req: Request, webOrigin: string) {

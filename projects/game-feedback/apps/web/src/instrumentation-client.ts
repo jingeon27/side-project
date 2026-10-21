@@ -1,12 +1,13 @@
 import * as Sentry from '@sentry/nextjs';
-import { nativeBridgeChannel, isNativeApp } from '@/shared/native';
+
 import { initAnalytics } from '@/shared/analytics';
 import {
-  SENTRY_DATA_COLLECTION,
-  resolveClientSentryDsn,
   buildSentryClientTags,
   filterSentryEvent,
+  resolveClientSentryDsn,
+  SENTRY_DATA_COLLECTION,
 } from '@/shared/lib/monitoring/sentry.helper';
+import { isNativeApp, nativeBridgeChannel } from '@/shared/native';
 
 nativeBridgeChannel.start();
 const dsn = resolveClientSentryDsn({ NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN });

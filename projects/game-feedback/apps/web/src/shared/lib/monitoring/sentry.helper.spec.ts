@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
+
 import {
+  buildSentryClientTags,
+  filterSentryEvent,
   resolveClientSentryDsn,
   resolveServerSentryDsn,
   scrubSentryEvent,
-  filterSentryEvent,
-  buildSentryClientTags,
 } from './sentry.helper';
+
 describe('웹 Sentry 수집 범위', () => {
   it('브라우저에는 공개 DSN만 사용하고 서버 DSN을 우선해야 한다', () => {
     expect(resolveClientSentryDsn({ SENTRY_DSN: 'private' })).toBeNull();

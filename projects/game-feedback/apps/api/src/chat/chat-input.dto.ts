@@ -1,11 +1,13 @@
-import {
-  ConversationInputSchema,
-  ChatMessageInputSchema,
-  ClearChatHistoryInputSchema,
-  ChatReadInputSchema,
-} from '@game-feedback/contracts';
-import { Length, ArrayMaxSize, IsArray, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsOptional, IsString, IsUUID, Length, MaxLength } from 'class-validator';
 import type { z } from 'zod';
+
+import {
+  ChatMessageInputSchema,
+  ChatReadInputSchema,
+  ClearChatHistoryInputSchema,
+  ConversationInputSchema,
+} from '@game-feedback/contracts';
+
 import { Trim } from '../common/http/request-validation';
 
 export class CreateConversationDto {

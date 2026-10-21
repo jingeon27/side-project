@@ -1,7 +1,7 @@
-import { beforeAll, beforeEach, afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { AUTH_LOGIN_ID_LIMIT, AUTH_REGISTER_IP_LIMIT } from '../config/limits';
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../test/support/app';
+import { AUTH_LOGIN_ID_LIMIT, AUTH_REGISTER_IP_LIMIT } from '../config/limits';
 
 const REGISTER =
   'mutation($loginId:String!,$password:String!,$nickname:String!){registerWithPassword(loginId:$loginId,password:$password,nickname:$nickname){id nickname avatar}}';

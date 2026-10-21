@@ -1,8 +1,10 @@
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
-import articles from '@/entities/article/lib/index.json';
+
 import { getArticleThumbnail } from '@/entities/article/lib/article-thumbnails';
+import articles from '@/entities/article/lib/index.json';
 
 const publicRoot = path.resolve(process.cwd(), 'public');
 

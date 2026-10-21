@@ -6,8 +6,7 @@ import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createErrorToastLink } from '@/shared/api/apollo-link.helper';
-import { CastVoteDocument, ContestDocument, Phase } from '@/shared/api/generated';
-import type { ContestQuery } from '@/shared/api/generated';
+import { CastVoteDocument, ContestDocument, Phase, type ContestQuery } from '@/shared/api/generated';
 import { trackEvent } from '@/shared/model/analytics';
 import { toast } from '@/shared/model/toast';
 

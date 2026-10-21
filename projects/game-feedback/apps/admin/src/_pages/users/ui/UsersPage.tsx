@@ -1,5 +1,6 @@
-import { UserPanel } from '@/widgets/user-panel';
 import { AsyncBoundary } from '@/shared/ui';
+import { UserPanel } from '@/widgets/user-panel';
+
 import { UserSearchForm } from './UserSearchForm';
 
 export function UsersPage({ userId }: { userId: string }) {

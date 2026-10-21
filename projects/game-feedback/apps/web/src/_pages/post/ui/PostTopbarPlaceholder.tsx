@@ -1,5 +1,7 @@
 'use client';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { Topbar } from '@/widgets/community-shell';
 
 export function PostTopbarPlaceholder({ locale }: { locale: string }) {

@@ -1,5 +1,7 @@
 'use client';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { useI18n } from '@/shared/i18n';
 import { Topbar } from '@/widgets/community-shell';
 

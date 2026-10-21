@@ -1,10 +1,10 @@
-import { captureException, captureMessage, init, wrap } from '@sentry/react-native';
 import type { ComponentType } from 'react';
+
+import { captureException, captureMessage, init, wrap } from '@sentry/react-native';
 
 import { SENTRY_DSN } from '@/shared/config/env';
 
-import { createMonitoring } from './create-monitoring';
-import type { TMonitoringTags } from './create-monitoring';
+import { createMonitoring, type TMonitoringTags } from './create-monitoring';
 
 const monitoring = createMonitoring({
   dsn: SENTRY_DSN,

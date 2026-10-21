@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
-import type { Session, ChatMessage } from '@game-feedback/contracts';
+import { expect, test, type Page } from '@playwright/test';
+
+import type { ChatMessage, Session } from '@game-feedback/contracts';
 
 async function selectTestAccount(page: Page, nickname: string) {
   const accounts = {

@@ -3,10 +3,12 @@ import { ApolloProvider } from '@apollo/client/react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GroupVisibility } from '@/shared/api/generated';
-import { HomePageTemplate } from './HomePageTemplate';
-import { postTypePolicies } from '@/features/post';
+
 import { groupTypePolicies } from '@/features/group';
+import { postTypePolicies } from '@/features/post';
+import { GroupVisibility } from '@/shared/api/generated';
+
+import { HomePageTemplate } from './HomePageTemplate';
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({

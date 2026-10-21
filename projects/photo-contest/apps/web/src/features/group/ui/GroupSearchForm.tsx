@@ -1,7 +1,8 @@
 'use client';
 
-import { Search } from 'lucide-react';
 import { useTransition } from 'react';
+
+import { Search } from 'lucide-react';
 
 import { ROUTES } from '@/shared/constants/routes';
 import { useZodForm } from '@/shared/model/form';

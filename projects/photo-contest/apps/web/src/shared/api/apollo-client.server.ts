@@ -1,8 +1,9 @@
 import 'server-only';
 
+import { headers } from 'next/headers';
+
 import { HttpLink } from '@apollo/client';
 import { ApolloClient, InMemoryCache, registerApolloClient } from '@apollo/client-integration-nextjs';
-import { headers } from 'next/headers';
 
 import { PUBLIC_QUERY_HEADER } from './public-cache.policy';
 import { buildServerRequestHeaders, getServerApiUrl, getWebOrigin } from './server-request.helper';

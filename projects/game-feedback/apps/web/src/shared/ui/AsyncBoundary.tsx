@@ -1,8 +1,10 @@
 'use client';
+
 import { Suspense, type ComponentProps, type ReactNode } from 'react';
+
 import { useIsSSR } from '../lib/use-is-ssr';
-import { ServiceErrorBoundary } from './ServiceErrorBoundary';
 import { LoadingState } from './LoadingState';
+import { ServiceErrorBoundary } from './ServiceErrorBoundary';
 
 type TAsyncBoundaryProps = ComponentProps<typeof ServiceErrorBoundary> & {
   pendingFallback?: ReactNode;

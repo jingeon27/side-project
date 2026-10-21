@@ -1,8 +1,10 @@
-import { PROTOCOL_VERSION, buildAppUserAgent, originOf } from '@photo-contest/bridge';
-import { buildBootstrapScript } from '@photo-contest/bridge/native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+
 import type { WebViewProps } from 'react-native-webview';
+
+import { buildAppUserAgent, originOf, PROTOCOL_VERSION } from '@photo-contest/bridge';
+import { buildBootstrapScript } from '@photo-contest/bridge/native';
 
 import { applyAnalyticsAuth, trackEvent } from '@/features/analytics/model/analytics';
 import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
@@ -23,8 +25,8 @@ import {
   describeProcessTermination,
   toCapabilityEvent,
   toDeepLinkEvent,
+  type IShellFailureReport,
 } from '../lib/shell-events';
-import type { IShellFailureReport } from '../lib/shell-events';
 import { useAndroidBackPress } from './use-android-back-press';
 import { useAppStateEvents } from './use-app-state-events';
 import { useWebShellBridge } from './use-web-shell-bridge';

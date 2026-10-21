@@ -1,9 +1,11 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { postDetailOptions, postListOptions } from '@/features/post';
-import { notificationListOptions } from '@/features/notification';
-import { blockListOptions } from '@/features/user';
+
 import { chatScopeOptions } from '@/features/chat';
 import { followStatusOptions } from '@/features/follow';
+import { notificationListOptions } from '@/features/notification';
+import { postDetailOptions, postListOptions } from '@/features/post';
+import { blockListOptions } from '@/features/user';
+
 import { postBlockUser, postReport } from '../api/moderation.api';
 
 export function blockUserMutationOptions(client: QueryClient) {

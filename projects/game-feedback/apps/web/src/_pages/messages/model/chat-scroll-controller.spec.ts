@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import { ChatScrollController } from './chat-scroll-controller';
 
 describe('chat scroll position', () => {

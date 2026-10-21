@@ -1,10 +1,14 @@
 'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+
 import { Button } from '@side/design-system';
-import { useZodForm } from '@/shared/model/form';
+
 import { useI18n } from '@/shared/i18n';
+import { useZodForm } from '@/shared/model/form';
+
 import { deleteAvatarMutationOptions, uploadAvatarMutationOptions } from '../model/profile.mutation-options';
 
 const photoSchema = z.object({

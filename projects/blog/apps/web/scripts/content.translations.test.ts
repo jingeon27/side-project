@@ -1,10 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+
 import { visit } from 'unist-util-visit';
-import { analyzeMdx } from './content';
+import { describe, expect, it } from 'vitest';
+
 import { getArticles } from '@/entities/article/lib/get-articles';
+
 import manifest from '../../../docs/migration-manifest.json';
+import { analyzeMdx } from './content';
 
 const ids = manifest.posts.map((post) => post.contentId);
 const root = path.join(process.cwd(), 'content/posts');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import { labels, type UiLocale } from '@/shared/config/labels';
 
 type Entry = { id: string; title: string; level: 2 | 3 };

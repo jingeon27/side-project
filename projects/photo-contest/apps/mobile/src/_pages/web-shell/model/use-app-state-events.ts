@@ -1,13 +1,13 @@
-import type { INativeRouter } from '@photo-contest/bridge/native';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
+
+import type { INativeRouter } from '@photo-contest/bridge/native';
 
 import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
 import { trackEvent } from '@/features/analytics/model/analytics';
 import { useLatest } from '@/shared/lib/use-latest';
 
-import { nextBridgeAppState } from '../lib/app-state';
-import type { TBridgeAppState } from '../lib/app-state';
+import { nextBridgeAppState, type TBridgeAppState } from '../lib/app-state';
 
 interface IUseAppStateEventsOptions {
   router: INativeRouter;

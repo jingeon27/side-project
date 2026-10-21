@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from 'react';
+
 import { THEME_COOKIE, themePreference, type TThemePreference } from './theme';
 
 const preferenceEvent = 'game-feedback:theme';

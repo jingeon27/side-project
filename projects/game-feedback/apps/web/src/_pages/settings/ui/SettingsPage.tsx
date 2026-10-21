@@ -1,20 +1,25 @@
 'use client';
+
+import Link from 'next/link';
+
+import { useQuery } from '@tanstack/react-query';
+import { ArrowUpRight, Gamepad2, LogOut, Plus, ShieldBan, Trash2 } from 'lucide-react';
+
+import { Button } from '@side/design-system';
+
+import { useLogout, useSession } from '@/features/auth';
+import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
+import { blockListOptions, UserBadges, useUnblockUser } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
-import { Button } from '@side/design-system';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { Gamepad2, Plus, LogOut, Trash2, ShieldBan, ArrowUpRight } from 'lucide-react';
-import { useSession, useLogout } from '@/features/auth';
-import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
-import { blockListOptions, useUnblockUser, UserBadges } from '@/features/user';
-import { SupportChatButton } from '@/widgets/support';
+import { Avatar, BottomSheet, ErrorNotice, LoadingState, openOverlay } from '@/shared/ui';
 import { ConnectProfile } from '@/widgets/game-profile';
-import { openOverlay, Avatar, ErrorNotice, LoadingState, BottomSheet } from '@/shared/ui';
+import { SupportChatButton } from '@/widgets/support';
+
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { LanguageSettings } from './LanguageSettings';
-import { ThemeSettings } from './ThemeSettings';
 import { MyPosts } from './MyPosts';
+import { ThemeSettings } from './ThemeSettings';
 
 interface ISettingsPageProps {
   locale: string;

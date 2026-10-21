@@ -1,12 +1,17 @@
 import 'server-only';
+
 import { cache } from 'react';
 import { cacheLife, cacheTag } from 'next/cache';
 import { notFound } from 'next/navigation';
+
 import { z } from 'zod';
+
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 import { ApiError, getPost, listPosts } from '@game-feedback/sdk';
+
 import type { PostDetail } from '@/shared/api';
-import { hasSessionCookie, serverRequestOptions, publicServerOptions } from '@/shared/api/server';
+import { hasSessionCookie, publicServerOptions, serverRequestOptions } from '@/shared/api/server';
+
 import type { TPostListParams } from '../types/post.type';
 import { POST_ID_PATTERN, postDetailCacheTag } from './post-cache';
 

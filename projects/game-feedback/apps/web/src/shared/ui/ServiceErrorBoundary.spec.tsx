@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+
 import { QueryClient, QueryClientProvider, queryOptions, useQuery } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ServiceErrorBoundary } from './ServiceErrorBoundary';
 
 function UnstableRegion({ failed }: { failed: boolean }) {

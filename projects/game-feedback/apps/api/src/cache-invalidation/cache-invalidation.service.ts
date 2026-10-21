@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+
 import {
   Inject,
   Injectable,
@@ -6,10 +7,12 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
+
 import { CacheTagSchema } from '@game-feedback/contracts';
-import { PrismaClient, type Prisma } from '../generated/prisma';
-import { UnitOfWork } from '../database/unit-of-work';
+
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 import { reportUnexpectedError } from '../monitoring/sentry';
 
 interface IPendingInvalidation {

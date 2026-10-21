@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { assertSharedInstanceConfig, sharedDatabaseUrl } from './shared-instance';
 
 const host = 'side.abcdef.ap-northeast-2.rds.amazonaws.com';

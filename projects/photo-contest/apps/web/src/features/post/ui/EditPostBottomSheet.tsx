@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+
 import {
   useBackgroundQuery,
   useFragment,
@@ -7,7 +9,6 @@ import {
   useReadQuery,
   type QueryRef,
 } from '@apollo/client/react';
-import { useId } from 'react';
 
 import {
   GalleryPostCardFragmentDoc,

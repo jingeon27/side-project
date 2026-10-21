@@ -1,6 +1,8 @@
 import { mutationOptions } from '@tanstack/react-query';
-import { flushAnalytics } from '@/shared/analytics';
+
 import type { TSocialProvider } from '@game-feedback/contracts';
+
+import { flushAnalytics } from '@/shared/analytics';
 
 export function browserLoginMutationOptions() {
   return mutationOptions({

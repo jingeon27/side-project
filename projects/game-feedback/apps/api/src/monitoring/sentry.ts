@@ -1,5 +1,4 @@
-import { captureException, init } from '@sentry/node';
-import type { Event, NodeOptions } from '@sentry/node';
+import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
 const sentryDsn = () => process.env.SENTRY_DSN?.trim();
 const sentryEnvironment = () => process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV;

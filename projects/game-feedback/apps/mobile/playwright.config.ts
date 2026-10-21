@@ -1,6 +1,7 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
 
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = process.env.GF_MOBILE_E2E_SCHEMA ?? `gf_test_mobile_${randomUUID().replaceAll('-', '')}`;

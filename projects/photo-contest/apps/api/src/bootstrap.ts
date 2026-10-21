@@ -13,12 +13,12 @@ import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
 import { assertProductionConfig, assertTestingConfig, isTest, trustedProxyHops } from './config/env';
 import {
-  MAX_JSON_BODY,
-  MAX_UPLOAD_BODY,
-  MAX_MEDIA_BODY,
-  MAX_VIDEO_BYTES,
   MAX_GRAPHQL_FIELD_BYTES,
   MAX_GRAPHQL_UPLOAD_FILES,
+  MAX_JSON_BODY,
+  MAX_MEDIA_BODY,
+  MAX_UPLOAD_BODY,
+  MAX_VIDEO_BYTES,
 } from './config/limits';
 
 const UPLOAD_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

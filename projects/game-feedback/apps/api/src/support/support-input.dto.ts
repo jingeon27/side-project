@@ -1,6 +1,7 @@
-import { SupportInputSchema } from '@game-feedback/contracts';
 import { IsIn } from 'class-validator';
 import type { z } from 'zod';
+
+import { SupportInputSchema } from '@game-feedback/contracts';
 
 export class StartSupportDto {
   static readonly contract = SupportInputSchema;

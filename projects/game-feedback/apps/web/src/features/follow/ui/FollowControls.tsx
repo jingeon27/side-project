@@ -2,11 +2,14 @@
 
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { BellOff, BellRing, UserCheck, UserPlus } from 'lucide-react';
+
 import { Button } from '@side/design-system';
-import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
+
 import { useI18n } from '@/shared/i18n';
-import { followStatusOptions } from '../model/follow.options';
+import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
+
 import { updateFollowMutationOptions } from '../model/follow.mutation-options';
+import { followStatusOptions } from '../model/follow.options';
 
 interface IFollowControlsProps {
   userId: string;

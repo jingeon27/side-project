@@ -1,9 +1,10 @@
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
+
 import { SessionService } from '../../auth/session.service';
 import type { SessionRequest } from '../../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../../config/app.config';
-import { isHealthProbe, RequestRateLimiter, requestRateBucket } from '../../rate-limit';
+import { isHealthProbe, requestRateBucket, RequestRateLimiter } from '../../rate-limit';
 import { ApiError } from './api-error';
 import { assertOrigin } from './origin';
 

@@ -1,4 +1,5 @@
 import type { GameProfile } from '@game-feedback/contracts';
+
 import { ApiError } from '../../common/http/api-error';
 import type { ProfileProvider } from './profile-provider';
 

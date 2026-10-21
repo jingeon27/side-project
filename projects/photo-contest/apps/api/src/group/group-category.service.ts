@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';

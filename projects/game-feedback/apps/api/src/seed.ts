@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from './generated/prisma';
+import { Prisma, PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';
 import { seedCommunityPosts } from './testing/community-fixtures';
 

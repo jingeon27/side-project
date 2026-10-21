@@ -1,16 +1,19 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, Input } from '@side/design-system';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlayerTagSchema } from '@game-feedback/contracts';
-import { Search, LoaderCircle, Check } from 'lucide-react';
+import { Check, LoaderCircle, Search } from 'lucide-react';
 import { z } from 'zod';
+
+import { PlayerTagSchema } from '@game-feedback/contracts';
+import { Button, Input } from '@side/design-system';
+
 import {
   lookupGameProfileMutationOptions,
   ProfileSnapshot,
   useSaveGameAccount,
 } from '@/features/game-profile';
 import type { GameProfile } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field } from '@/shared/ui';
 

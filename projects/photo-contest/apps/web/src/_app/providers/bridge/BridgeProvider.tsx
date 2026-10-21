@@ -1,7 +1,8 @@
 'use client';
 
-import type { IWebBridge } from '@photo-contest/bridge/web';
 import type { ReactNode } from 'react';
+
+import type { IWebBridge } from '@photo-contest/bridge/web';
 
 import { BridgeContext, getWebBridge } from '@/shared/model/bridge';
 

@@ -1,5 +1,6 @@
-import type { TWebRequestPayload } from '@photo-contest/bridge';
 import { useMemo } from 'react';
+
+import type { TWebRequestPayload } from '@photo-contest/bridge';
 
 import { useBridge } from './bridge.hook';
 

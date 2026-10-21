@@ -1,6 +1,8 @@
-import { QueryClient, MutationObserver, QueryObserver } from '@tanstack/react-query';
-import { SessionSchema } from '@game-feedback/contracts';
+import { MutationObserver, QueryClient, QueryObserver } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { SessionSchema } from '@game-feedback/contracts';
+
 import { loginMutationOptions, logoutMutationOptions } from './auth.mutation-options';
 import { sessionOptions } from './auth.options';
 

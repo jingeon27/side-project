@@ -1,4 +1,5 @@
 import { getGameProfile, listGameAccounts, saveGameAccount } from '@game-feedback/sdk';
+
 import { withApiError, type GameProfile } from '@/shared/api';
 
 export function fetchGameProfile({

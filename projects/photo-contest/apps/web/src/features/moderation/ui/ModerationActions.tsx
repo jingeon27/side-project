@@ -4,8 +4,11 @@ import { useMutation } from '@apollo/client/react';
 import { EyeOff, Flag, Trash2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
-import { DeleteSubmissionDocument, HideSubmissionDocument } from '@/shared/api/generated';
-import type { SubmissionCardFragment } from '@/shared/api/generated';
+import {
+  DeleteSubmissionDocument,
+  HideSubmissionDocument,
+  type SubmissionCardFragment,
+} from '@/shared/api/generated';
 import { formatDateTime } from '@/shared/lib/format.helper';
 import { toast } from '@/shared/model/toast';
 import { Badge } from '@/shared/ui/@core/badge';

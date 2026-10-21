@@ -1,8 +1,10 @@
-import createMDX from '@next/mdx';
-import createNextIntlPlugin from 'next-intl/plugin';
-import { withSentryConfig } from '@sentry/nextjs/config';
-import type { NextConfig } from 'next';
 import { readFileSync } from 'node:fs';
+
+import type { NextConfig } from 'next';
+
+import createMDX from '@next/mdx';
+import { withSentryConfig } from '@sentry/nextjs/config';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 const config: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',

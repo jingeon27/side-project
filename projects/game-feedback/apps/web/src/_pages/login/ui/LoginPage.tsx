@@ -1,12 +1,15 @@
 'use client';
+
 import { useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import { useSession } from '@/features/auth';
-import { SocialLoginForm, LoginLegalLinks } from '@/widgets/authentication';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice } from '@/shared/ui';
+import { LoginLegalLinks, SocialLoginForm } from '@/widgets/authentication';
 
 export function LoginPage({
   locale,

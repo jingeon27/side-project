@@ -1,25 +1,30 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useBrowserSearch } from '@/shared/navigation';
+
 import { use } from 'react';
-import { BattleFilters } from './BattleFilters';
-import { CoachingFilters } from './CoachingFilters';
-import { FeedbackFilters } from './FeedbackFilters';
-import { readBoardFilters, boardSnapshotSearch, type TBoardFilters } from '../model/board-filters';
-import { BoardEmptyState } from './BoardEmptyState';
-import { parseCoachingRole } from '@/features/coaching';
-import { parseBattleMode } from '@/features/battle';
-import type { IBoardSnapshot } from '../model/board-snapshot.type';
+import { useRouter } from 'next/navigation';
+
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import { Button } from '@side/design-system';
+
 import { appRoutes } from '@game-feedback/bridge';
-import { boardBySlug } from '@/features/board';
-import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
-import { AuthorLink, UserBadges } from '@/features/user';
+import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
+import { parseBattleMode } from '@/features/battle';
+import { boardBySlug } from '@/features/board';
+import { parseCoachingRole } from '@/features/coaching';
+import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
+import { useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+
+import { boardSnapshotSearch, readBoardFilters, type TBoardFilters } from '../model/board-filters';
+import type { IBoardSnapshot } from '../model/board-snapshot.type';
+import { BattleFilters } from './BattleFilters';
+import { BoardEmptyState } from './BoardEmptyState';
+import { CoachingFilters } from './CoachingFilters';
+import { FeedbackFilters } from './FeedbackFilters';
 
 interface IBoardsPageProps {
   locale: string;

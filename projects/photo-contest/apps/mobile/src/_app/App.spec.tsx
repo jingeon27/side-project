@@ -1,9 +1,10 @@
 import { track } from '@amplitude/analytics-react-native';
-import { parseNativeAppInfo } from '@photo-contest/bridge';
 import { render, screen, waitFor } from '@testing-library/react';
 import { getInitialURL } from 'expo-linking';
 import { hideAsync } from 'expo-splash-screen';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { parseNativeAppInfo } from '@photo-contest/bridge';
 
 import { nativeEvent, navigationState } from '@/test/ui/bridge-messages';
 import { currentWebViewProps, fakeWebView } from '@/test/ui/fake-web-view';

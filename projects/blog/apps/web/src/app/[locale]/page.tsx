@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+
 import { getArticles } from '@/entities/article/lib/get-articles';
 import { ArticleCard } from '@/entities/article/ui/article-card';
 import { labels } from '@/shared/config/labels';

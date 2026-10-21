@@ -1,7 +1,8 @@
 'use client';
 
-import { ApolloClient, ApolloNextAppProvider, InMemoryCache } from '@apollo/client-integration-nextjs';
 import type { ReactNode } from 'react';
+
+import { ApolloClient, ApolloNextAppProvider, InMemoryCache } from '@apollo/client-integration-nextjs';
 
 import { createAppLink } from '@/shared/api/apollo-link.helper';
 import { toast } from '@/shared/model/toast';

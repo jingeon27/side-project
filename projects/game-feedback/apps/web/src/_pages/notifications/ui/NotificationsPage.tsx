@@ -1,16 +1,20 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { ArrowUpRight, Bell, CheckCheck, LoaderCircle } from 'lucide-react';
+
 import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { Bell, CheckCheck, ArrowUpRight, LoaderCircle } from 'lucide-react';
+
 import { useSession } from '@/features/auth';
 import {
-  notificationListOptions,
   NotificationItem,
+  notificationListOptions,
   useReadNotificationMutation,
 } from '@/features/notification';
-import { ErrorNotice, LoadingState, AsyncBoundary } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
+import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
+
 interface INotificationsPageProps {
   locale: string;
 }

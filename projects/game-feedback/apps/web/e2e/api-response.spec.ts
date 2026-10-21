@@ -1,5 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 import type { PostList } from '@game-feedback/contracts';
+
 const postsRoute = /\/api\/posts(?:\?.*)?$/;
 
 test('a suspended search keeps its filters and shell usable until data arrives', async ({ page }) => {

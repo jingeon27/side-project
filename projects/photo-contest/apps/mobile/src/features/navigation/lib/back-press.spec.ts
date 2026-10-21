@@ -1,5 +1,6 @@
-import { NativeCapabilityError } from '@photo-contest/bridge/native';
 import { describe, expect, it, vi } from 'vitest';
+
+import { NativeCapabilityError } from '@photo-contest/bridge/native';
 
 import { decideBackPress, resolveBackPress } from './back-press';
 

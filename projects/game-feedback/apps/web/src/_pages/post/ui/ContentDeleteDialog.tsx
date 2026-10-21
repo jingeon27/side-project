@@ -1,12 +1,17 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+
 import { useRouter } from 'next/navigation';
+
 import { LoaderCircle } from 'lucide-react';
-import { useDeletePostMutation } from '@/features/post';
+
+import { Button } from '@side/design-system';
+
 import { useDeleteAnswerMutation } from '@/features/answer';
 import { useDeleteCommentMutation } from '@/features/comment';
+import { useDeletePostMutation } from '@/features/post';
+import { useI18n } from '@/shared/i18n';
 import { ErrorNotice, Modal, useNotify } from '@/shared/ui';
+
 interface IContentDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

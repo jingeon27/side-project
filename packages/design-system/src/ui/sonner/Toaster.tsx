@@ -2,8 +2,10 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { CircleCheck, Info, TriangleAlert, OctagonX, LoaderCircle } from 'lucide-react';
+
+import { CircleCheck, Info, LoaderCircle, OctagonX, TriangleAlert } from 'lucide-react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
+
 import { cn } from '../../lib/cn.helper';
 
 const defaultStyles = {

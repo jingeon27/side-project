@@ -1,7 +1,8 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useLayoutEffect, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
+
 import { labels, type UiLocale } from '@/shared/config/labels';
 
 type Theme = 'light' | 'dark';

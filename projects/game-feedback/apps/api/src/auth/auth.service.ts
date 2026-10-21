@@ -1,36 +1,37 @@
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { PrismaClient } from '../generated/prisma';
-import { seed } from '../seed';
+import { createHash } from 'node:crypto';
 
-import {
-  SocialProviderSchema,
-  POSTS_CACHE_TAG,
-  DISCOVERY_CACHE_TAG,
-  type TSocialProvider,
-} from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { createHash } from 'node:crypto';
+
+import {
+  DISCOVERY_CACHE_TAG,
+  POSTS_CACHE_TAG,
+  SocialProviderSchema,
+  type TSocialProvider,
+} from '@game-feedback/contracts';
+
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
 import { COOKIE, cookies, setCookie } from '../common/http/cookies';
 import { parse } from '../common/validation';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { TEST_ACCOUNT_FIXTURES } from '../seed';
+import { PrismaClient } from '../generated/prisma';
+import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
 import { AppAuthService } from './app-auth.service';
 import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';
+import {
+  loginRedirect,
+  OAUTH_RETURN_COOKIE,
+  requestedReturnPath,
+  savedReturnPath,
+} from './oauth-return-path';
 import { requireUser } from './session-access';
 import { sessionToken } from './session-token';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
 import { SocialIdentityService } from './social-identity.service';
-import {
-  OAUTH_RETURN_COOKIE,
-  requestedReturnPath,
-  savedReturnPath,
-  loginRedirect,
-} from './oauth-return-path';
 
 @Injectable()
 export class AuthService {

@@ -1,5 +1,7 @@
 import { mkdir } from 'node:fs/promises';
+
 import { createTestImage, createTestUser, createTestVideo, moveTestContest } from '@photo-contest/test-kit';
+
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';

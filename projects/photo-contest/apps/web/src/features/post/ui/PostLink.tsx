@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
+
 import { useFragment } from '@apollo/client/react';
 import { Copy, ExternalLink, Link2, Play } from 'lucide-react';
-import { useState } from 'react';
+
 import { GalleryPostCardFragmentDoc } from '@/shared/api/generated';
 import { useBridge, useExternalLink, useShareLink } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
+
 import { validPostLink, youtubeVideoId } from '../model/post-link.helper';
 
 export function PostLink({ postId }: { postId: string }) {

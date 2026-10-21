@@ -1,10 +1,8 @@
-import { Prisma } from '../../generated/prisma';
-import { Database } from '../database/database.service';
-
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
+import { Prisma } from '../../generated/prisma';
 import { sha256Hex } from '../common/crypto';
 import { ERROR_CODE, fail } from '../common/errors';
 import {
@@ -16,6 +14,7 @@ import {
   PASSWORD_MIN_LENGTH,
   TEXT_LIMIT,
 } from '../config/limits';
+import { Database } from '../database/database.service';
 import { hashPassword, verifyPassword } from './password';
 import { SessionService } from './session.service';
 import { USER_VIEW_SELECT } from './user-view';

@@ -1,10 +1,13 @@
 'use client';
+
 import { useFragment } from '@apollo/client/react';
 import { Pencil } from 'lucide-react';
 import { overlay } from 'overlay-kit';
+
 import { GroupAccessFragmentDoc } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { Button } from '@/shared/ui/@core/button';
+
 import { isGroupAdmin } from '../lib/group.helper';
 import { EditGroupProfileBottomSheet } from './EditGroupProfileBottomSheet';
 

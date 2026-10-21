@@ -1,6 +1,8 @@
 import * as Sentry from '@sentry/node';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { initSentry, reportableError, reportUnexpectedError, sentryOptions, scrubEvent } from './sentry';
+
+import { initSentry, reportableError, reportUnexpectedError, scrubEvent, sentryOptions } from './sentry';
+
 afterEach(async () => {
   await Sentry.close(1000);
   vi.unstubAllEnvs();

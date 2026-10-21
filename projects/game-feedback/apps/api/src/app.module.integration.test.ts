@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
 import supertest from 'supertest';
+import { describe, expect, it, vi } from 'vitest';
+
 import { createApp } from './app';
-import { PrismaClient } from './generated/prisma';
+import { SessionService } from './auth/session.service';
 import { ChatEvents } from './chat/chat.events';
 import { DemoProfileProvider } from './game-profiles/providers/demo-profile.provider';
-import { SessionService } from './auth/session.service';
+import { PrismaClient } from './generated/prisma';
 
 const options = {
   databaseUrl:

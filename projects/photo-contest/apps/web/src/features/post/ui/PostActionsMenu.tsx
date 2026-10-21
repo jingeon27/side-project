@@ -16,8 +16,8 @@ import {
   PublicGalleryPostsDocument,
   SetPostHiddenDocument,
 } from '@/shared/api/generated';
-import { getOverlayContainer } from '@/shared/lib/overlay-container.helper';
 import { cn } from '@/shared/lib/cn.helper';
+import { getOverlayContainer } from '@/shared/lib/overlay-container.helper';
 import { toast } from '@/shared/model/toast';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { IconButton } from '@/shared/ui/@core/icon-button';

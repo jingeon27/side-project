@@ -1,1 +1,22 @@
-{ "singleQuote": true, "printWidth": 110, "trailingComma": "all" }
+{
+  "singleQuote": true,
+  "printWidth": 110,
+  "trailingComma": "all",
+  "plugins": ["@ianvs/prettier-plugin-sort-imports"],
+  "importOrder": [
+    "<BUILTIN_MODULES>",
+    "",
+    "^react(?:-dom|-native)?(?:/|$)",
+    "^next(?:/|$)",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "^@(side|blog|game-feedback|photo-contest)/",
+    "",
+    "^[@~]/",
+    "",
+    "^[.]"
+  ],
+  "importOrderParserPlugins": ["typescript", "jsx", "decorators-legacy"],
+  "importOrderTypeScriptVersion": "6.0.2"
+}

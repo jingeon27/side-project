@@ -1,6 +1,8 @@
 import { Button, Input } from '@side/design-system';
+
 import { adminUserPath } from '@/shared/lib';
 import { useZodForm } from '@/shared/model';
+
 import { userSearchSchema } from '../model/user-search.schema';
 
 export function UserSearchForm({ initialUserId }: { initialUserId: string }) {

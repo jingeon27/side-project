@@ -1,7 +1,5 @@
-import { Scalar } from '@nestjs/graphql';
-import type { CustomScalar } from '@nestjs/graphql';
-import { Kind } from 'graphql';
-import type { ValueNode } from 'graphql';
+import { Scalar, type CustomScalar } from '@nestjs/graphql';
+import { Kind, type ValueNode } from 'graphql';
 
 import { ERROR_CODE, fail } from '../errors';
 

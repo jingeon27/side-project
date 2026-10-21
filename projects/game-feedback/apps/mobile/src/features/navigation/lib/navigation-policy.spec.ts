@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
+
 import { appRoutes, resolveAppRoute, WebPathSchema } from '@game-feedback/bridge';
+
+import { decideNavigation, isSameOrigin, toWebPath } from './navigation-policy';
+
 const origin = 'https://feedback.example';
 describe('WebView navigation and deep links', () => {
   it('가입 안내 딥링크와 복귀 경로를 보존하고 인증 화면 간 순환과 외부 목적지를 차단해야 한다', () => {

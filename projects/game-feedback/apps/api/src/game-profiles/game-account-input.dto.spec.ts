@@ -1,6 +1,9 @@
 import 'reflect-metadata';
+
 import { describe, expect, it } from 'vitest';
+
 import { PlayerTagSchema } from '@game-feedback/contracts';
+
 import { RequestValidationPipe } from '../common/http/request-validation';
 import { GameAccountDto } from './game-account-input.dto';
 

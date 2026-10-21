@@ -1,4 +1,5 @@
 import { connection } from 'next/server';
+
 import { getPublicGroupSitemapPage, PUBLIC_GROUP_SITEMAP_SIZE } from '@/_pages/group';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';

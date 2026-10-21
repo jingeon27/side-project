@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+
 import { buttonVariants, cn } from '@side/design-system';
+
 import { TabLink } from '@/shared/navigation';
 
 interface IBoardFilterLinkProps {

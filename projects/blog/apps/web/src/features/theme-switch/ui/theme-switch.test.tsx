@@ -1,11 +1,8 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { render, screen } from '@testing-library/react';
-
-import userEvent from '@testing-library/user-event';
-
 import { ThemeSwitch } from '@/features/theme-switch/ui/theme-switch';
-
 import { labels } from '@/shared/config/labels';
 
 const navigation = vi.hoisted(() => ({ pathname: '/ko/blog/캐시-설계', push: vi.fn() }));

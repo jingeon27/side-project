@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useSyncExternalStore } from 'react';
+
 import { subscribeBrowserLocation } from './browser-navigation';
 
 export function useBrowserSearch(initialSearch = '', pathname?: string) {

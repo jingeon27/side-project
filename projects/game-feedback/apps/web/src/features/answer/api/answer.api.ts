@@ -1,4 +1,5 @@
-import { createAnswer, updateAnswer, deleteAnswer, markHelpful } from '@game-feedback/sdk';
+import { createAnswer, deleteAnswer, markHelpful, updateAnswer } from '@game-feedback/sdk';
+
 export function postAnswer({ postId, body }: { postId: string; body: { body: string } }) {
   return createAnswer(postId, body);
 }

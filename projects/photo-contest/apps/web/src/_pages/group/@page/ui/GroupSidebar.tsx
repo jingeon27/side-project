@@ -1,10 +1,12 @@
 'use client';
 
+import { useQuery, useReadQuery } from '@apollo/client/react';
+
 import { GroupCategoryManager, GroupJoinRequests, isGroupAdmin, isGroupOwner } from '@/features/group';
 import { InviteCard } from '@/features/invite';
 import { HiddenPostManager } from '@/features/post';
 import { GroupVisibility, MeDocument } from '@/shared/api/generated';
-import { useQuery, useReadQuery } from '@apollo/client/react';
+
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
 

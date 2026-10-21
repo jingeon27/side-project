@@ -1,8 +1,11 @@
 'use client';
-import { openOverlay } from '@/shared/ui';
+
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
 import { useSession } from '@/features/auth';
+import { openOverlay } from '@/shared/ui';
+
 import { LoginDialog } from '../ui/LoginDialog';
 import { onboardingRedirect } from './onboarding-navigation';
 

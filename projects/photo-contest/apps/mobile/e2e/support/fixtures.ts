@@ -1,7 +1,6 @@
-import { expect, test as base } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
-import { installNativeHost } from './native-host';
-import type { INativeHost } from './native-host';
+import { installNativeHost, type INativeHost } from './native-host';
 
 interface INativeHostFixtures {
   /** 페이지를 앱 WebView처럼 만든 가짜 앱. page.goto 전에 설치된다. */

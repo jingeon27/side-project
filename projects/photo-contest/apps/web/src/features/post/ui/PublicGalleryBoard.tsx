@@ -1,11 +1,13 @@
 'use client';
 
 import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
-import { PublicGalleryPostsDocument, PostSort, type PublicGalleryPostsQuery } from '@/shared/api/generated';
+
+import { PostSort, PublicGalleryPostsDocument, type PublicGalleryPostsQuery } from '@/shared/api/generated';
 import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+
 import { GalleryPostList } from './GalleryPostList';
 
 function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery> }) {

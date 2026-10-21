@@ -1,8 +1,12 @@
 'use client';
-import { Button } from '@side/design-system';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useRouter } from 'next/navigation';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { appRoutes } from '@game-feedback/bridge';
+import { Button } from '@side/design-system';
+
 import { clearChatHistoryMutationOptions } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice, Modal, useNotify } from '@/shared/ui';

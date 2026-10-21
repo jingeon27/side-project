@@ -1,16 +1,18 @@
 import {
+  clearChatHistory,
+  completeChatAttachmentUpload,
   createConversation,
+  deleteChatAttachment,
   listChatMessages,
   listConversations,
   readConversation,
+  requestChatAttachmentUpload,
   sendChatMessage,
   uploadChatAttachment,
-  requestChatAttachmentUpload,
-  completeChatAttachmentUpload,
-  deleteChatAttachment,
-  clearChatHistory,
 } from '@game-feedback/sdk';
+
 import { uploadMediaFile } from '@/shared/api';
+
 import type { IChatMessageInput } from '../model/chat.types';
 
 export function fetchConversations(cursor = '', limit = 20) {

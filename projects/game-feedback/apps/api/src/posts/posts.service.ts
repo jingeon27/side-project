@@ -1,23 +1,22 @@
-import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
-import type { ListQueryDto } from '../common/http/list-query.dto';
-import { decodeCursor } from '../common/pagination';
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { PrismaClient, Prisma } from '../generated/prisma';
-import { postInclude } from './post.presenter';
-
-import { richTextToPlainText, postCacheTag, DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
+
+import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
+
 import { responseAnswer } from '../answers/answer.presenter';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { responseComment } from '../comments/comment.presenter';
+import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import { encodeCursor } from '../common/pagination';
+import type { ListQueryDto } from '../common/http/list-query.dto';
+import { decodeCursor, encodeCursor } from '../common/pagination';
+import { Prisma, PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import { type CreatePostDto, type UpdatePostDto } from './post-input.dto';
 import { PostMediaService } from './post-media.service';
-import { responsePost } from './post.presenter';
+import { postInclude, responsePost } from './post.presenter';
 
 @Injectable()
 export class PostsService {
