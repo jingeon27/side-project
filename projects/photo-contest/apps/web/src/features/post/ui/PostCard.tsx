@@ -71,7 +71,7 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
           href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
           className="mb-3 inline-flex min-h-touch items-center rounded-control bg-sunken px-3 text-caption text-ink"
         >
-          대회 참여 · {post.contest.title}
+          대회 참여 · {post.contest.title} · 좋아요 1인 {post.contest.likeLimit}개
         </Link>
       ) : null}
       {post.category ? (

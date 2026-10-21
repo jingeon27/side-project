@@ -38,6 +38,8 @@ describe('비공개 그룹 화면 SSR·hydration', () => {
         data: {
           group: {
             __typename: 'Group',
+            description: '',
+            avatarUrl: null,
             id: 'group-1',
             name: '비공개 웃음',
             visibility: GroupVisibility.Private,

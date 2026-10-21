@@ -62,6 +62,8 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
       myGroups: [
         {
           __typename: 'Group',
+          description: '',
+          avatarUrl: null,
           id: 'joined',
           name: '새 그룹',
           role: GroupRole.Member,

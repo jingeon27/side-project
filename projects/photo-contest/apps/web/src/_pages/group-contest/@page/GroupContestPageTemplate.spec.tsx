@@ -33,6 +33,8 @@ function seedCompletedContest(cache: InMemoryCache) {
     data: {
       group: {
         __typename: 'Group',
+        description: '',
+        avatarUrl: null,
         id: 'group-1',
         name: '공개 웃음',
         visibility: GroupVisibility.Public,
@@ -52,6 +54,7 @@ function seedCompletedContest(cache: InMemoryCache) {
     data: {
       groupContest: {
         __typename: 'GroupContest',
+        likeLimit: 1,
         id: 'contest-1',
         groupId: 'group-1',
         title: '가을 웃음 대회',

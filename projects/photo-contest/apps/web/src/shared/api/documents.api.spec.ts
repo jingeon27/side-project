@@ -12,6 +12,10 @@ import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
+  UploadGroupAvatarDocument,
+  UpdateGroupProfileDocument,
+  GroupProfileDocument,
+  CreateGroupContestDocument,
   CreatePostDocument,
   UpdatePostDocument,
   UploadPostMediaDocument,
@@ -141,6 +145,59 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       endsAt: new Date(now + 7_200_000).toISOString(),
     });
     contestId = contest.createContest.id;
+  });
+
+  it('그룹 사진 multipart와 프로필 JSON 문서로 저장·조회·삭제해야 한다', async () => {
+    const { createGroup: group } = await ok(CreateGroupDocument, owner, {
+      name: '프로필 문서 그룹',
+      description: '처음 소개',
+    });
+    const uploaded = await uploadMutation(UploadGroupAvatarDocument, owner, {
+      groupId: group.id,
+      file: new File([new Uint8Array(await createTestImage())], 'group.png', { type: 'image/png' }),
+    });
+    const avatarId = uploaded.data?.uploadGroupAvatar.id;
+    expect(avatarId).toBeTruthy();
+    const { updateGroupProfile: profile } = await ok(UpdateGroupProfileDocument, owner, {
+      groupId: group.id,
+      name: '바꾼 이름',
+      description: '바꾼 소개',
+      avatarId,
+    });
+    expect(profile).toMatchObject({
+      name: '바꾼 이름',
+      description: '바꾼 소개',
+      avatarUrl: expect.stringContaining(`/groups/${group.id}/avatar/`),
+    });
+    expect((await ok(GroupProfileDocument, undefined, { id: group.id })).group).toMatchObject({
+      name: profile.name,
+      description: profile.description,
+      avatarUrl: profile.avatarUrl,
+      role: null,
+    });
+    const removed = await ok(UpdateGroupProfileDocument, owner, {
+      groupId: group.id,
+      name: profile.name,
+      description: profile.description,
+      removeAvatar: true,
+    });
+    expect(removed.updateGroupProfile.avatarUrl).toBeNull();
+  });
+
+  it('그룹 대회 문서는 좋아요 한도 기본값 1과 지정값을 보존해야 한다', async () => {
+    const now = Date.now();
+    const schedule = {
+      groupId,
+      title: '문서 좋아요 한도',
+      startsAt: new Date(now).toISOString(),
+      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
+      endsAt: new Date(now + 7_200_000).toISOString(),
+    };
+    expect((await ok(CreateGroupContestDocument, owner, schedule)).createGroupContest.likeLimit).toBe(1);
+    expect(
+      (await ok(CreateGroupContestDocument, owner, { ...schedule, likeLimit: 3 })).createGroupContest
+        .likeLimit,
+    ).toBe(3);
   });
 
   it('직접 가입·로그인 문서가 개발 로그인 없이도 실행돼야 한다', async () => {
