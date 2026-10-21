@@ -47,7 +47,7 @@ description: 웹(apps/web)에서 GraphQL 문서를 쓰고 codegen하거나, Apol
 
 - 조건부 쿼리는 `useQuery(XDocument, id ? { variables: { id } } : skipToken)`. `skip` 옵션이나 `id!`를 쓰지 않는다.
 - 클라이언트 컴포넌트는 SSR 중 GraphQL을 보내지 않는다(`createNoNetworkLink`). `useBackgroundQuery` + `useReadQuery`의 Suspense 조회는 라우트의 `PreloadQuery`와 Document·variables가 같아야 한다. `AsyncBoundary`는 각 조회의 fallback·오류·같은 QueryRef 재시도를 묶는다(`page-structure` 스킬).
-- 권한·만료·잘못된 초대처럼 예상되는 오류는 `errorPolicy: 'all'`로 받아 data가 없는 경우 화면에서 분기한다. React 오류 경계는 SSR 예외를 잡지 못한다. 대회 종료 후에만 허용되는 결과처럼 조건부로 시작하고 사전 조회할 수 없는 쿼리는 `ClientOnly` 아래에서 시작한다. 상시 쿼리의 SSR을 피하는 용도로 쓰지 않는다.
+- 권한·만료·잘못된 초대처럼 예상되는 오류는 `errorPolicy: 'all'`로 받아 data가 없는 경우 화면에서 분기한다. React 오류 경계는 SSR 예외를 잡지 못한다. 대회 종료 후에만 허용되는 결과처럼 조건부로 시작하고 사전 조회할 수 없는 쿼리는 조회 부모가 `useIsSSR() ? skipToken : options`로 브라우저에서 시작하고, `{queryRef ? <Section queryRef={queryRef} /> : fallback}`처럼 QueryRef가 없는 동안 `AsyncBoundary`와 같은 fallback 요소를 그린다. 경계에 시작 전 상태를 추가하지 않는다. 재시도는 계속 부모의 `refetch`가 소유한다. 자식의 `useSuspenseQuery`로 바꾸지 않는다(실패한 참조가 suspense 캐시에 남아 경계를 리셋해도 다시 요청하지 않는다). 조회가 여러 하위 컴포넌트에 퍼진 트리만 `ClientOnly`로 감싼다. 상시 쿼리의 SSR을 피하는 용도로 쓰지 않는다.
 - 주기 갱신은 별도 컴포넌트의 `useQuery`로 같은 정규화 캐시를 갱신한다. `ContestPhaseSync`는 30초 간격이며 종료 시 `skipToken`으로 멈춘다. 데이터 표시와 polling 책임을 나누고 피드는 polling하지 않는다.
 - RSC에서 `query()`·`getClient()`로 받은 값을 화면에 직접 그리지 않는다. 브라우저 캐시가 바뀌어도 갱신되지 않는다. 요청 쿠키는 `src/shared/api/apollo-client.server.ts`만 다룬다.
 

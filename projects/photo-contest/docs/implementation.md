@@ -1,3 +1,11 @@
+## 2026-10-21 사전 조회하지 않은 조회의 브라우저 시작
+
+가입 신청·카테고리·숨긴 게시물 관리, 대회 결과, 홈의 첫 개인 피드와 비공개 그룹 피드를 ClientOnly로 통째로 감싸지 않는다. 조회 부모가 `useIsSSR`이면 `skipToken`을 넘기고, QueryRef가 없는 동안 경계와 같은 fallback을 그린다. 제목·접힌 관리 메뉴·피드 틀·사이드바는 서버 HTML에 남는다. 재시도는 부모의 refetch가 소유한다. 자식의 `useSuspenseQuery`는 실패한 참조가 suspense 캐시에 남아 경계 리셋만으로 다시 요청하지 않으므로 쓰지 않는다. ClientOnly는 GroupContentFrame의 비공개 본문에만 남긴다. Promise `.catch`는 try/catch로 바꿨다.
+
+검증: 웹 unit/UI 343개(useIsSSR, 가입 신청, 홈·비공개 그룹·대회 결과의 SSR→hydration 사양 포함), typecheck·lint·format, 커밋별 typecheck 통과. skipToken을 되돌리면 SSR→hydration 사양이 실패하는 것을 확인했다. Playwright Chrome·Safari·데스크톱 관련 36개 통과. 앞선 실행에서 레거시 대회의 시작 예정→투표 전환(30초 polling·35초 대기)이 한 번 실패했고 단독 2회 재실행은 통과했다.
+
+로컬 주의: test-kit이 프로젝트 `.env`를 읽으므로 `.env.example`의 `NODE_ENV=development`가 e2e 웹 빌드에 들어가 `/_global-error` prerender가 실패한다. 로컬 e2e는 `NODE_ENV=production`으로 실행했다.
+
 ## 2026-10-21 첫 그룹 가입 후 개인 피드 시작
 
 WebKit CI trace에서 가입 직후 처음 나타난 개인 피드의 hydration 오류를 확인했다. 홈 RSC는 개인 피드의 사전 조회 여부를 전달하며, 미리 받지 않은 개인 쿼리만 기존 ClientOnly 경계로 시작한다. 공개 홈과 기존 가입자의 개인 피드는 계속 SSR한다. 서버 HTML 검사는 그룹이 없는 홈뿐 아니라 가입 그룹의 실제 게시물까지 확인한다.
