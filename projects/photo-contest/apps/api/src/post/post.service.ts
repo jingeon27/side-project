@@ -262,8 +262,21 @@ export class PostService {
 
   async like(viewer: IViewer, postId: string, liked: boolean) {
     const row = await this.transactions.atomic(async (tx) => {
-      await this.membership.accessiblePost(viewer.id, postId, tx);
-      if (liked)
+      const { post } = await this.membership.accessiblePost(viewer.id, postId, tx);
+      const existing = liked
+        ? await tx.postLike.findUnique({ where: { postId_userId: { postId, userId: viewer.id } } })
+        : null;
+      if (liked && !existing && post.contestId) {
+        const contest = await tx.contest.findUniqueOrThrow({ where: { id: post.contestId } });
+        const count = await tx.postLike.count({
+          where: { userId: viewer.id, post: { contestId: post.contestId } },
+        });
+        if (count >= contest.likeLimit)
+          fail(
+            `이 대회에서는 ${contest.likeLimit}개 작품까지만 좋아요를 남길 수 있어요. 다른 작품의 좋아요를 취소한 뒤 다시 선택해 주세요.`,
+          );
+      }
+      if (liked && !existing)
         await (tx ?? this.db).postLike.upsert({
           where: { postId_userId: { postId, userId: viewer.id } },
           create: { postId, userId: viewer.id },

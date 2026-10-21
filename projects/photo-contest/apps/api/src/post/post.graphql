@@ -13,6 +13,7 @@ type PostContest {
   id: ID!
   groupId: ID!
   title: String!
+  likeLimit: Int!
   phase: Phase!
 }
 type GalleryPost {

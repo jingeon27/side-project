@@ -66,3 +66,7 @@ Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필�
 GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
 
 PostComment.parentId는 한 단계 답글이다. createPostComment는 accessiblePost와 같은 tx에서 원댓글·게시물 일치·깊이를 검증하며 복합 FK(id,postId)가 다른 게시물 연결을 막는다. postComments/postCommentCount는 parentId가 없으면 원댓글만, 있으면 해당 답글만 읽는다. 원댓글 최신순·답글 오래된 순에 id를 마지막 기준으로 둔다. PostComment.replyCount는 _count.replies로 구하며 원댓글 삭제는 답글·좋아요를 cascade한다. updatePost는 작성자·관리자만 제목·내용·분류를 변경하고 기존 첨부·작성자·대회는 유지한다. 기존 보관 분류 유지는 허용하되 새로 지정하는 분류는 활성·같은 그룹이어야 한다.
+
+그룹 프로필은 GroupProfileService가 관리한다. uploadGroupAvatar는 관리자 권한·실제 이미지 형식·10MB 상한을 검사해 512px WebP를 준비하고, updateGroupProfile이 같은 그룹의 만료 전 자산만 지정한다. Group.avatarId와 GroupAvatar(id,groupId)의 복합 FK로 다른 그룹 연결을 막는다. Group 생성 시 nullable 복합 FK의 Prisma 기본값 처리 때문에 id를 명시한다. 대표 사진은 공개 메타데이터이며 현재 지정된 자산만 익명 GET으로 읽고 no-store를 유지한다. 버리거나 교체한 자산은 유지보수에서 재시도하며 현재 사용 중인 자산은 보존한다. 그룹 소개 상한은 500자다.
+
+Contest.likeLimit은 기본 1이며 그룹 대회 개최 시 관리자만 1~100으로 설정한다. PostService.like는 같은 Serializable tx에서 권한·기존 반응·대회별 해당 사용자 반응 수를 검사한다. 이미 누른 작품은 재요청에 성공하고 취소하면 한도를 돌려준다. 숨긴 작품의 좋아요도 집계하며 일반 게시물·댓글·별도 PostContestVote에는 이 한도를 적용하지 않는다. 기존 반응은 마이그레이션에서 지우지 않는다.

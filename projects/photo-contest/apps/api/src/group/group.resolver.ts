@@ -45,8 +45,9 @@ export class GroupResolver {
     @Viewer() viewer: IViewer,
     @Args('name') name: string,
     @Args('visibility') visibility: TGroupVisibility,
+    @Args('description') description?: string | null,
   ) {
-    return this.groups.createGroup(viewer, name, visibility);
+    return this.groups.createGroup(viewer, name, visibility, description);
   }
 
   @Mutation()

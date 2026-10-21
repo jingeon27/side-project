@@ -17,6 +17,17 @@ export class MaintenanceService {
   /** 버려진 업로드 파일과 만료된 세션·OAuth 시도·앱 로그인 티켓을 지운다. */
   async cleanup(now = new Date()) {
     await this.removeAbandonedUploads(now);
+    const avatars = await this.db.groupAvatar.findMany({
+      where: {
+        expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) },
+        currentGroups: { none: {} },
+      },
+      take: CLEANUP_BATCH_SIZE,
+    });
+    for (const avatar of avatars) {
+      await this.media.delete(avatar.storageKey);
+      await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
+    }
     const abandoned = await this.db.postUpload.findMany({
       where: { expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) }, post: null },
       take: CLEANUP_BATCH_SIZE,
