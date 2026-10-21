@@ -117,6 +117,10 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
   await manager.getByRole('button', { name: '편집 보관', exact: true }).click();
   await page.getByRole('button', { name: '보관하기', exact: true }).click();
   await expect(manager.getByRole('button', { name: '편집 보관', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => Reflect.get(window.history.state ?? {}, '__photoContestOverlay')))
+    .toBeUndefined();
   await setUser(member);
   await page.goto(`/groups/${group.id}?category=${category.id}`);
   await expect(

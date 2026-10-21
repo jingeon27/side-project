@@ -130,7 +130,7 @@ corepack yarn build:photo-contest
 corepack yarn format:check
 ```
 
-모든 DB 레인은 `TEST_DATABASE_URL`을 우선 사용하고, 비어 있으면 로컬 `DATABASE_URL`만 허용합니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마·사진 폴더를 제거합니다. 검증용 API는 `.e2e-build`, Next는 `.next/e2e`·`.next/e2e-mobile`을 써 개발 서버와 겹치지 않습니다.
+모든 DB 레인은 `TEST_DATABASE_URL`을 우선 사용하고, 비어 있으면 로컬 `DATABASE_URL`만 허용합니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마·사진 폴더를 제거합니다. 웹 브라우저 E2E는 실제 production build/standalone 서버를 실행합니다. 검증용 API는 `.e2e-build`, Next는 `.next/e2e`·`.next/e2e-mobile`을 써 개발 서버와 겹치지 않습니다.
 
 `/testing/users`(사용자+세션), `/testing/contests/:id/phase`(단계 이동), `/testing/app-login-tickets`(외부 성공 콜백 대체)은 `NODE_ENV=test`와 `ENABLE_TEST_API=true`에서만 열립니다. 개발·운영에서 활성화하면 서버가 시작을 거부합니다. 테스트 하네스가 설정하므로 개발 `.env`에서 켤 필요가 없습니다. 웹·모바일의 테스트 데이터는 이 API와 제품 API로 준비합니다.
 

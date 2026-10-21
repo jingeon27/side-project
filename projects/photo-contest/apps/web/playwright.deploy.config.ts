@@ -10,7 +10,8 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   forbidOnly: Boolean(process.env.CI),
-  timeout: 120_000,
+  // Docker 준비 대기 120초와 브라우저 복구 확인 45초를 함께 포함한다.
+  timeout: 240_000,
   expect: { timeout: 20_000 },
   reporter: [['list']],
   outputDir: 'test-results/deployment',

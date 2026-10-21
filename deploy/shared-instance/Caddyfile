@@ -26,9 +26,9 @@
 	}
 }
 
-# Bound the wait across a 20s graceful stop and a 30s API startup.
+# Bound web drain (30s), API replacement (20s + 30s) and web startup (20s).
 (upstream_retry) {
-	lb_try_duration 60s
+	lb_try_duration 140s
 	lb_try_interval 250ms
 }
 

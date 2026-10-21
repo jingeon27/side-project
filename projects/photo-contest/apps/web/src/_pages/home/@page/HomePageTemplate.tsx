@@ -10,7 +10,7 @@ import { BottomNav } from '@/widgets/bottom-nav';
 import { NoGroupHome } from './no-group/NoGroupHome';
 import { MemberHome } from './ui/MemberHome';
 
-export function HomePageTemplate() {
+export function HomePageTemplate({ memberFeedPreloaded = false }: { memberFeedPreloaded?: boolean }) {
   return (
     <div className="flex flex-1 flex-col">
       <BrandAppBar />
@@ -29,7 +29,7 @@ export function HomePageTemplate() {
           }
           fallback={<Skeleton className="h-32 w-full" />}
         >
-          {() => <MemberHome />}
+          {() => <MemberHome feedPreloaded={memberFeedPreloaded} />}
         </ViewerBoundary>
       </div>
       <BottomNav />

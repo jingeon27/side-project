@@ -8,6 +8,11 @@ const authAttempts = new Set([
   '/api/auth/google/callback',
   '/api/auth/app/exchange',
 ]);
+const healthPaths = new Set(['/api/health', '/api/health/live', '/api/health/ready']);
+
+export function isHealthProbe(request: Pick<RequestIdentity, 'method' | 'path'>): boolean {
+  return ['GET', 'HEAD'].includes(request.method) && healthPaths.has(request.path.replace(/\/+$/, ''));
+}
 
 export function requestRateBucket(request: RequestIdentity): { key: string; limit: number } {
   const path = request.path.replace(/\/+$/, '');

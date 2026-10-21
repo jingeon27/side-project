@@ -51,5 +51,8 @@
     "@embedded-postgres/windows-x64": {
       "built": true
     }
+  },
+  "resolutions": {
+    "@apollo/client-react-streaming@npm:0.14.5": "patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch"
   }
 }

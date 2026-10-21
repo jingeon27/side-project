@@ -21,7 +21,10 @@ test('WebView entry detects the device language and keeps a manual preference ac
   await expect(page.getByRole('navigation', { name: 'Mobile menu' })).toBeVisible();
   await expect(language).toContainText('English');
   await page.goto('/en/settings#language');
-  await page.locator('#language-preference').click();
+  await page
+    .getByRole('region', { name: 'Language', exact: true })
+    .getByRole('combobox', { name: 'Language settings', exact: true })
+    .click();
   await page.getByRole('option', { name: 'Use device settings', exact: true }).click();
   await expect(page).toHaveURL(/\/ja\/settings#language$/);
   await expect.poll(nativeHost.currentPath).toBe('/ja/settings');

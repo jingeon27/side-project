@@ -66,19 +66,19 @@ export default defineConfig({
     },
     {
       command:
-        'corepack yarn workspace @game-feedback/web exec next dev --webpack --port 3301 --hostname 127.0.0.1',
+        'corepack yarn workspace @game-feedback/web build && corepack yarn workspace @game-feedback/web exec next start --port 3301 --hostname 127.0.0.1',
       cwd: rootDir,
       url: 'http://127.0.0.1:3301/ko',
       env: {
         ...apiEnv,
-        NODE_ENV: 'development',
+        NODE_ENV: 'production',
         GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4301',
         NEXT_DIST_DIR: '.next/e2e',
         GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
         GAME_FEEDBACK_INDEXING: 'false',
       },
       reuseExistingServer: false,
-      timeout: 90_000,
+      timeout: 180_000,
     },
   ],
 });

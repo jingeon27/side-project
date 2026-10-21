@@ -52,7 +52,7 @@ export default async function Page() {
         query={GalleryPostsDocument}
         variables={{ groupId: null, sort: PostSort.MonthlyPopular, offset: 0, limit: 3 }}
       >
-        <HomePageTemplate />
+        <HomePageTemplate memberFeedPreloaded />
       </PreloadQuery>
     </PreloadQuery>
   );

@@ -27,7 +27,7 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
-import { resetGalleryPosts } from '../model/post.cache';
+import { resetGalleryPosts, refreshMonthlyPopular } from '../model/post.cache';
 import { PostAttachments } from './PostAttachments';
 import { PostCategoryEditor } from './PostCategoryEditor';
 import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
@@ -40,9 +40,16 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
     from: { __typename: 'GalleryPost', id },
   });
   const [like, likeState] = useMutation(LikePostDocument, {
+    refetchQueries: [GalleryPostsDocument],
+    onQueryUpdated: refreshMonthlyPopular,
+    awaitRefetchQueries: true,
     onCompleted: () => haptics.impact('light'),
   });
-  const [unlike, unlikeState] = useMutation(UnlikePostDocument);
+  const [unlike, unlikeState] = useMutation(UnlikePostDocument, {
+    refetchQueries: [GalleryPostsDocument],
+    onQueryUpdated: refreshMonthlyPopular,
+    awaitRefetchQueries: true,
+  });
   const [hide, hideState] = useMutation(SetPostHiddenDocument, {
     refetchQueries: [GalleryPostsDocument, PublicGalleryPostsDocument, HiddenGalleryPostsDocument],
     awaitRefetchQueries: true,

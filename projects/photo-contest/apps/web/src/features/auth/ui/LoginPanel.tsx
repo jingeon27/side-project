@@ -170,7 +170,7 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         <h2 id={headingId} className="mt-2 text-title-lg text-ink">
           로그인하고 함께 웃어요.
         </h2>
-        <p className="mt-1 text-body text-muted">초대받은 그룹에서만 사진을 볼 수 있어요.</p>
+        <p className="mt-1 text-body text-muted">로그인하고 그룹에 참여해 사진과 동영상을 나눠보세요.</p>
       </div>
       <PasswordAuthForms nextPath={next} />
       {loginFailed ? (

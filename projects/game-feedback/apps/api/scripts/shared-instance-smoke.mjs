@@ -198,7 +198,7 @@ class Client {
         accept,
       );
       req.on('error', reject);
-      req.setTimeout(65000, () => req.destroy(new Error('HTTPS smoke timed out')));
+      req.setTimeout(145000, () => req.destroy(new Error('HTTPS smoke timed out')));
       req.end(body);
     });
   }
@@ -474,6 +474,7 @@ try {
     serviceCompose(service, ['ps', '-q', 'api', 'web']).trim(),
   );
   const availability = { running: true, samples: [], failures: [] };
+  const deploymentLogs = [];
   const probes = [
     [gf, '/api/health/live'],
     [gf, '/ko'],
@@ -490,7 +491,11 @@ try {
           milliseconds: performance.now() - started,
         });
       } catch (error) {
-        availability.failures.push(String(error));
+        availability.failures.push({
+          endpoint: client.domain + path,
+          milliseconds: Math.ceil(performance.now() - started),
+          error: String(error),
+        });
       }
       await delay(100);
     }
@@ -498,6 +503,7 @@ try {
   try {
     await delay(300);
     for (const service of ['game-feedback', 'photo-contest']) {
+      const started = performance.now();
       await new Promise((accept, reject) => {
         const child = spawn(
           'bash',
@@ -518,13 +524,25 @@ try {
           output = (output + chunk).slice(-32768);
         });
         child.on('error', reject);
-        child.on('exit', (code) => (code === 0 ? accept() : reject(new Error(`Redeploy failed: ${output}`))));
+        child.on('exit', (code) => {
+          deploymentLogs.push({ service, milliseconds: Math.ceil(performance.now() - started), output });
+          if (code === 0) return accept();
+          reject(new Error(`Redeploy failed: ${output}`));
+        });
       });
     }
     await delay(300);
   } finally {
     availability.running = false;
     await Promise.all(probes);
+  }
+  if (availability.failures.length) {
+    console.error(
+      'Redeploy diagnostics:',
+      JSON.stringify({ deploymentLogs, failures: availability.failures }),
+    );
+    for (const service of ['game-feedback', 'photo-contest'])
+      console.error(service, serviceCompose(service, ['logs', '--no-color', '--tail', '60', 'web']));
   }
   assert.deepEqual(availability.failures, [], 'No failed bounded GET probes during replacement');
   for (const [index, service] of ['game-feedback', 'photo-contest'].entries()) {

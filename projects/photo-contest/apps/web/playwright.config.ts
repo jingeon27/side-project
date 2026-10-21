@@ -57,8 +57,9 @@ export default defineConfig({
       env: { GOOGLE_CLIENT_ID: 'web-e2e-client', GOOGLE_CLIENT_SECRET: 'web-e2e-secret', SENTRY_DSN: '' },
     }),
     {
-      command: `yarn workspace @photo-contest/web exec next dev -p ${WEB_PORT}`,
-      url: `${WEB_ORIGIN}/backend/health`,
+      command:
+        'yarn workspace @photo-contest/web build && yarn workspace @photo-contest/web exec node scripts/serve-cache-build.mjs',
+      url: `${WEB_ORIGIN}/_health/live`,
       reuseExistingServer: false,
       timeout: 180_000,
       gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
@@ -68,6 +69,7 @@ export default defineConfig({
         NEXT_DIST_DIR: '.next/e2e',
         API_URL: `http://127.0.0.1:${API_PORT}`,
         WEB_ORIGIN,
+        PORT: String(WEB_PORT),
         NEXT_PUBLIC_SENTRY_DSN: '',
         SENTRY_DSN: '',
         NEXT_PUBLIC_AMPLITUDE_API_KEY: '',

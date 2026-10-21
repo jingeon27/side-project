@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { RequestRateLimiter, requestRateBucket } from './rate-limit';
+import { isHealthProbe, RequestRateLimiter, requestRateBucket } from './rate-limit';
 
 const request = { ip: '127.0.0.1', path: '/api/conversations', method: 'GET' };
 describe('request rate limits across shared network addresses', () => {
+  it('exempts only GET/HEAD requests to the exact health routes', () => {
+    for (const path of ['/api/health', '/api/health/', '/api/health/live', '/api/health/ready/']) {
+      expect(isHealthProbe({ method: 'GET', path })).toBe(true);
+      expect(isHealthProbe({ method: 'HEAD', path })).toBe(true);
+      expect(isHealthProbe({ method: 'POST', path })).toBe(false);
+    }
+    for (const path of ['/api/health/ready-extra', '/api/health/live/nested', '/api/session'])
+      expect(isHealthProbe({ method: 'GET', path })).toBe(false);
+  });
   it('keeps authenticated users on the same IP in separate read budgets', () => {
     const limiter = new RequestRateLimiter();
     const alice = requestRateBucket({ ...request, userId: 'alice' });

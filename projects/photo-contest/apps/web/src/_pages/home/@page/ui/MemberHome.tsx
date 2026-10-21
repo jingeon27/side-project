@@ -2,15 +2,21 @@
 
 import { CreatePostButton, GalleryFeed } from '@/features/post';
 import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
-import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
+import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { NoGroupHome } from '../no-group/NoGroupHome';
 
-function MemberHomeContent({ queryRef }: { queryRef: QueryRef<MyGroupsQuery> }) {
+function MemberHomeContent({
+  queryRef,
+  feedPreloaded,
+}: {
+  queryRef: QueryRef<MyGroupsQuery>;
+  feedPreloaded: boolean;
+}) {
   const { data } = useReadQuery(queryRef);
   if (!data.myGroups.length) return <NoGroupHome signedIn />;
-  return (
+  const feed = (
     <GalleryFeed
       emptyAction={
         <div className="flex flex-wrap justify-center gap-3">
@@ -24,12 +30,14 @@ function MemberHomeContent({ queryRef }: { queryRef: QueryRef<MyGroupsQuery> }) 
       }
     />
   );
+  if (!feedPreloaded) return <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>{feed}</ClientOnly>;
+  return feed;
 }
-export function MemberHome() {
+export function MemberHome({ feedPreloaded }: { feedPreloaded: boolean }) {
   const [queryRef, { refetch }] = useBackgroundQuery(MyGroupsDocument);
   return (
     <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
-      <MemberHomeContent queryRef={queryRef} />
+      <MemberHomeContent queryRef={queryRef} feedPreloaded={feedPreloaded} />
     </AsyncBoundary>
   );
 }

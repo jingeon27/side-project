@@ -131,7 +131,7 @@ test('a session changed outside the screen clears the previous account confirmat
   });
   expect(signedIn.ok()).toBeTruthy();
   await page.goto('/ko/settings');
-  await expect(page.locator('.settings-profile')).toContainText('새벽의호그');
+  await expect(page.locator('.settings-profile:visible')).toContainText('새벽의호그');
   await page.getByRole('button', { name: '회원 탈퇴', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '플레이메이트를 떠나시겠어요?' });
   await dialog.getByRole('textbox').fill('탈퇴');
@@ -144,7 +144,7 @@ test('a session changed outside the screen clears the previous account confirmat
   });
   expect(switched.ok()).toBeTruthy();
   await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')));
-  await expect(page.locator('.settings-profile')).toContainText('덱연구소');
+  await expect(page.locator('.settings-profile:visible')).toContainText('덱연구소');
   await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: '회원 탈퇴', exact: true }).click();
   await expect(dialog.getByRole('textbox')).toHaveValue('');

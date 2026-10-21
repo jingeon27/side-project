@@ -125,6 +125,22 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     'api',
     'web',
   ]);
+  await promisify(execFile)('docker', [
+    'compose',
+    '--project-name',
+    project,
+    '--env-file',
+    `${directory}/.env`,
+    '-f',
+    `${directory}/compose.yaml`,
+    'up',
+    '-d',
+    '--wait',
+    '--wait-timeout',
+    '120',
+    'api',
+    'web',
+  ]);
   // API 헬스만으로는 웹의 복구와 Docker 재시작 중 끊긴 브라우저 연결까지 확인할 수 없다.
   await expect(async () => {
     expect((await request.get('/backend/health')).status()).toBe(200);

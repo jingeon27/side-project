@@ -1,3 +1,21 @@
+## 2026-10-21 첫 그룹 가입 후 개인 피드 시작
+
+WebKit CI trace에서 가입 직후 처음 나타난 개인 피드의 hydration 오류를 확인했다. 홈 RSC는 개인 피드의 사전 조회 여부를 전달하며, 미리 받지 않은 개인 쿼리만 기존 ClientOnly 경계로 시작한다. 공개 홈과 기존 가입자의 개인 피드는 계속 SSR한다. 서버 HTML 검사는 그룹이 없는 홈뿐 아니라 가입 그룹의 실제 게시물까지 확인한다.
+
+검증: 웹 unit/UI 333개, Safari 신규 홈 5회 반복 10개, Chrome·Safari·데스크톱 홈 전환/서버 HTML 8개와 lint·typecheck·format 통과.
+
+## 2026-10-21 Apollo SSR 스트림 취소 회귀
+
+`@apollo/client-react-streaming` 0.14.5가 취소된 스트림에 늦게 enqueue하면서 `ERR_INVALID_STATE`를 처리하지 않는 [상류 이슈 #561](https://github.com/apollographql/apollo-client-integrations/issues/561)를 실제 서버 스택에서 확인했다. Yarn patch로 Node 스트림 컨트롤러의 해당 TypeError만 처리하며 API/GraphQL 오류와 다른 예외는 숨기지 않는다. ESM/CJS의 RSC·SSR·브라우저 빌드 8개에 같은 보정을 적용한다. 정식 수정 버전으로 올릴 때 패치 제거와 회귀 검사를 함께 검토한다.
+
+읽기 경로의 거절된 Promise와 구독 해제 시 cancel 실패도 처리한다. 브라우저의 활성 쿼리는 실제 오류를 받고 SSR은 기존 오류 원문 비공개 정책을 따른다. 앱이 소유하는 실제 Apollo link + ReadableStream 검사에서 수정 전 쓰기 2개 실패·미처리 예외 3개와 읽기 오류 누출을 재현했고 수정 후 7개가 통과했다. 테스트용 직접 의존성, 루트 resolution·lock과 패치 파일을 함께 관리한다. Git/Docker ignore는 `.yarn/patches`만 허용해 immutable install과 운영 이미지에서도 동일한 코드가 적용된다. 임시로 시도한 홈 렌더 우회는 제거하고 기존 SSR·Suspense 구성을 유지한다.
+
+## 2026-10-21 전체 브라우저 회귀 검증
+
+브라우저 E2E는 격리 API와 실제 production build/standalone 서버로 실행한다. 개발 서버의 지연 컴파일과 화면 이동 중 devtools 오류가 결과에 섞이지 않게 하며, pageerror 검사는 유지한다. Chrome 휴대폰·Safari 휴대폰·데스크톱·가짜 WebView 전체 66개, 웹 unit/UI 326개와 타입·lint·포맷 검사를 통과했다.
+
+검색 폼은 브라우저가 복원한 실제 FormData를 RHF/Zod로 검증한다. change 이벤트 없이 복원된 검색어가 빠지는 회귀를 수정 전 실패·수정 후 통과로 확인했다. 파일 저장은 서버의 한글 이름 계약과 실제 바이트를 검사하며 Linux WebKit의 공백 치환을 허용한다. 공개 캐시 HIT·쓰기 무효화·개인화 분리는 별도 production cache/category 7개로 확인했다.
+
 ## 2026-10-20 그룹 카테고리
 
 그룹장·부관리자는 선택 분류를 최대 20개·이름 20자로 만들고 이름·순서·보관을 관리한다. 사진·동영상·링크와 대회 참여 글 모두 선택할 수 있고 작성자·관리자가 나중에 변경한다. 보관한 분류는 기존 글에 남는다. 필터는 URL과 Apollo keyArgs로 구분하고 잘못된 ID는 전체로 표시한다. canonical은 기본 그룹 주소를 유지하며 필터 주소를 사이트맵에 넣지 않는다.
@@ -191,3 +209,5 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 운영 컨테이너 검증은 공개 그룹 canonical·JSON-LD와 비공개 사진의 익명 거부를 포함한다. 재시작 복구 확인은 API 헬스·웹 문서 응답·기존 댓글 표시를 함께 제한 시간 안에 재확인하여 Docker 네트워크 전환 중의 일시적인 브라우저 연결 오류를 처리한다.
 
 최신 develop의 테스트 위치 변경을 반영한 최종 검사: 전체 check, API integration 274개, Web API 18개, 신규 홈 E2E 6개, 기존 탐색·공개 SEO·비공개 가입 E2E 6개와 프로덕션 cache/category E2E 7개가 통과했다. Android 뒤로 가기 2개도 통과했다(iOS 하드웨어 뒤로 가기 2개는 설계상 제외). 새 홈에도 검색 폼과 그룹 생성 버튼이 있어 전환 전의 화면을 조작하던 기존 브라우저 검사를 목적 화면이 나타난 뒤 실행하도록 고쳤다. 검색은 JS 준비 전에도 GET /explore?q=로 제출된다. 전체 Prettier 검사와 앱 lint/typecheck를 확인했다.
+
+전체 브라우저 회귀 검사에서 좋아요 수 정규화만으로는 인기 목록 순서가 바뀌지 않는 문제를 확인했다. 활성 MONTHLY_POPULAR 쿼리만 다시 조회하고, NEWEST의 추가 페이지는 유지한다. 기존 사진/동영상/인기/삭제 흐름과 페이지네이션 E2E 4개가 통과했다.
