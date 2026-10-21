@@ -1,3 +1,25 @@
+## 2026-10-22 전체 파일 업로드 presigned 전환
+
+게시물 사진·동영상과 이전 대회 사진 제출을 모두 서명 발급 → 저장소 FormData POST → 완료 검증 → 게시/제출 흐름으로 통일했다. GraphQL에는 JSON 메타데이터만 보내며 uploadSubmissionPhoto·Upload scalar·/uploads raw 경로와 graphql-upload·apollo-upload-client를 제거했다. 브라우저 전송 helper는 shared/api에 두고 Apollo는 HttpLink를 사용한다. 앱 WebView와 테스트 seed도 같은 계약을 따른다.
+
+공통 MediaUploadService가 소유권·그룹/대회 권한·만료·정확한 크기/타입·완료 lease·동시성 제한·후보 파일 추적과 커밋 응답 유실 복구를 맡는다. 대회 사진은 5분 서명과 10MB 상한, sharp의 실제 디코딩·40MP 제한·방향 보정·1600px WebP 변환·EXIF 제거를 유지한다. 파일 확인 중 대회가 마감돼도 확정하지 않으며 대회용 업로드를 일반 게시물에 쓰지 못하게 검사한다. 제출된 대회 파일은 게시물 임시 파일 정리에서 제외한다. 기존 Upload 행은 nullable mediaUploadId 관계와 추가형 20261022030000_presigned_submission_uploads migration으로 보존한다.
+
+S3_KEY_PREFIX를 선택적으로 지원한다. S3_BUCKET=jingeon-side-project, S3_KEY_PREFIX=game-feedback/photo-contest이면 새 임시·최종 객체가 기존 game-feedback/* IAM 범위에 들어간다. DB에 전체 키를 기록해 기존 루트 경로의 파일도 계속 읽고 로컬 파일 경로는 유지한다. Compose와 .env 예시에 전달을 연결했으며 실제 AWS 설정은 변경하지 않았다.
+
+검증: API unit 130개·실제 PostgreSQL 통합 299개, Web unit/UI 346개·실제 API 문서 18개, production build/start의 Chrome·WebKit·데스크톱 E2E 18개와 Android/iOS WebView seed 회귀 2개가 통과했다. 이전 대회 제출의 전송 실패 후 초안 보존·재시도, GraphQL JSON 전송, 새로고침 후 사진 표시와 기존 게시물 사진/동영상 업로드·다운로드를 확인했다. API/Web/Mobile/test-kit 타입 검사와 프로젝트 lint도 통과했다. 첫 브라우저 실행에서 업로드 전 페이지 진입이 한 번 시간 초과됐고 전체 18개 재실행은 모두 통과했다. 실제 S3/IAM/CORS 송수신과 운영 배포는 미실행이며 개발 DB·개발 서버를 변경하지 않았다.
+
+## 2026-10-21 게시물 직접 업로드와 완료 복구
+
+게시물 파일은 발급한 presigned POST로 저장소에 직접 보낸 뒤 completePostUpload에서 최종 복사본의 크기·타입·사진 해상도·동영상 코덱과 길이를 검사한다. API의 /post-uploads raw 경로와 uploadPostMedia를 제거했다. 로컬은 본문 전에 URL HMAC을 확인하고 파일을 디스크로 스트리밍한다. 등록 버튼을 누를 때 전송하며 기존 대회 업로드는 유지한다. 사진·영상의 원본 메타데이터가 남을 수 있음을 개인정보와 첨부 문서에 반영했다.
+
+분석 캐시는 최대 4개 블록이며 사진 블록은 128KB, 영상은 1MB다. 동시 완료는 4개로 제한하고 실제 읽기 시작부터 30초·누적 32MB·128회 읽기 상한을 적용한다. 복사 후보를 DB에 먼저 기록하고 완료 경합은 lease와 조건부 갱신으로 확정한다. DB 커밋 응답을 잃으면 게시됐을 수 있는 파일을 삭제하지 않는다. 정리 실패는 항목별로 재시도하고 DB 참조 없는 로컬 staging·임시 파일도 1일 후 배치 정리한다.
+
+검증: Node 24에서 API unit 125개, 전체 integration 292개와 추가 장애 복구 사양 2개를 통과했다. 실제 PostgreSQL 55435의 격리 스키마에서 새 migration을 실행했다. 단위 검사는 실제 AWS SDK의 POST 정책·HEAD/CopyObject/Range 요청과 범위를 무시한 응답 거절, 실제 MediaInfo의 HEVC·338초 영상 거절을 포함한다. 통합 검사는 서명 없는 100MB 요청의 본문 전 거절, 다른 소유자·만료·형식·크기·픽셀 폭탄, 동시 완료·staging 재전송, 커밋 응답 유실·정리 재시도를 확인한다.
+
+웹 unit/UI 346개, 실제 API 문서 18개, Chrome·WebKit·데스크톱 첨부/개인정보 E2E 15개와 Android/iOS WebView seed 시나리오 2개를 통과했다. API/Web/Mobile/test-kit 타입 검사, 프로젝트 lint, 변경 파일 포맷·diff 검사와 웹 production build도 통과했다. test-kit check:cleanup에서 남은 스키마 0개를 확인했다. 개발 DB와 개발 서버는 변경하지 않았다.
+
+실제 S3 버킷/IAM/CORS 적용과 운영 배포는 실행하지 않았다. Photo Contest 전용 CORS·수명 주기 설정과 JPG/PNG 읽기 호환 버전의 선배포, NOT NULL tokenHash 유지, expand migration·API·Web 배포 순서는 [배포 문서](deployment.md)를 따른다. 의존성 추가에 따라 API package.json과 루트 yarn.lock을 함께 변경했다.
+
 ## 2026-10-21 사전 조회하지 않은 조회의 브라우저 시작
 
 가입 신청·카테고리·숨긴 게시물 관리, 대회 결과, 홈의 첫 개인 피드와 비공개 그룹 피드를 ClientOnly로 통째로 감싸지 않는다. 조회 부모가 `useIsSSR`이면 `skipToken`을 넘기고, QueryRef가 없는 동안 경계와 같은 fallback을 그린다. 제목·접힌 관리 메뉴·피드 틀·사이드바는 서버 HTML에 남는다. 재시도는 부모의 refetch가 소유한다. 자식의 `useSuspenseQuery`는 실패한 참조가 suspense 캐시에 남아 경계 리셋만으로 다시 요청하지 않으므로 쓰지 않는다. ClientOnly는 GroupContentFrame의 비공개 본문에만 남긴다. Promise `.catch`는 try/catch로 바꿨다.
@@ -135,11 +157,11 @@ Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이
 
 `galleryPosts`는 groupId를 지정하면 해당 그룹, 생략하면 가입한 그룹 전체를 조회한다. 최신순은 createdAt·id desc이고, 인기순은 KST 이번 달에 작성한 게시물의 좋아요 desc·createdAt/id desc다. 숨긴 사진은 홈·그룹 목록에서 제외하며 이관된 게시물은 기존 사진의 숨김도 확인한다.
 
-사진은 sharp 실제 디코딩·크기 검사 후 최대 1600px WebP로 저장한다. 동영상은 mediainfo.js WASM으로 실제 컨테이너·영상/음성 코덱·길이를 검사한다. MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원한다. 영상은 변환하지 않고 비공개로 저장한다.
+게시물 사진은 저장소 Range로 JPEG·PNG·WebP 형식과 40MP·10MB 상한을 검사하고 서버에서 다시 인코딩하지 않는다. 브라우저는 읽을 수 있는 사진을 줄여 JPEG로 보내며 변환할 수 없으면 지원 형식 원본을 보낸다. 서버는 사진·동영상의 위치정보 등 메타데이터를 제거하지 않는다. 기존 대회 사진의 sharp 디코딩·1600px WebP 변환은 유지한다. 동영상은 mediainfo.js WASM과 제한된 Range 읽기로 실제 컨테이너·영상/음성 코덱·길이를 검사한다. MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원한다. 영상은 변환하지 않고 비공개로 저장한다.
 
 `/media/:id`는 요청마다 그룹의 공개 범위와 멤버십을 검사하고 no-store·nosniff와 byte Range 206/416을 지원한다. 로컬·S3 저장소에서 스트리밍해 탐색할 때 파일 전체를 메모리에 올리지 않는다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
 
-웹의 파일 전송은 requestPostUpload → uploadPostMedia → createPost mutation이다. Apollo UploadHttpLink가 Blob/File을 multipart로 전송한다. 이전 사진 제출도 uploadSubmissionPhoto mutation을 사용한다. API는 Origin·세션·티켓 소유/만료·멤버십을 확인하고 크기가 제한된 스트림을 실제 사진/동영상 검사로 넘긴다. REST 업로드는 호환용으로 같은 저장 로직을 쓴다.
+웹의 게시물 전송은 등록 클릭 후 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost다. API는 파일 바이트를 직접 받지 않고 소유자·만료·멤버십과 최종 복사본을 검증한다. Range 캐시·동시 완료·분석 작업량을 제한하고 복사 후보를 추적해 정리를 재시도한다. 저장소 전송 실패는 RHF 미디어 필드에 표시하며 입력을 유지한다. 로컬도 URL 서명 검증 후 디스크 스트리밍으로 같은 FormData 계약을 사용한다. 이전 대회 사진 제출의 uploadSubmissionPhoto·/uploads 계약은 유지하고 uploadPostMedia·/post-uploads는 제거한다. [상세 계약](post-attachments.md)을 따른다.
 
 글쓰기에서 파일을 선택하면 선택 버튼 영역을 미리보기로 대체한다. 사진은 비율을 유지해 표시하고 동영상은 시트 안에서 재생한다. 파일 이름 옆의 바꾸기·제거로 선택을 관리하며 제거하면 원래 선택 영역으로 돌아온다. 파일 선택 취소는 기존 선택을 유지하며 같은 파일 재선택·다른 파일로 교체를 지원한다. 제출 중에는 선택·교체·제거를 막는다. 형식·크기 오류는 선택 즉시 알리고 디코드 실패는 미리보기 안에서 안내한다. 임시 Blob URL은 교체·제거·시트 해제 때 정리하고 재생 중인 영상도 멈춘다. HEIC의 MIME이 비어 있으면 확장자로 사진 여부를 판별한다.
 

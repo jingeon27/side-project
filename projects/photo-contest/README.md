@@ -56,7 +56,7 @@ corepack yarn dev:photo-contest
 
 ‘이달의 인기’는 한국 시간 기준 이번 달에 올라온 게시물 중 좋아요가 많은 순서로 3개를 보여 줍니다. 동률이면 작성 시각·ID 내림차순입니다. 최신 게시물은 24개씩 더 불러옵니다. 그룹·정렬별 Apollo 캐시를 분리하고 가입·작성·삭제 뒤 목록을 다시 받습니다.
 
-사진은 JPEG/PNG/WebP를 실제 디코딩해 최대 1600px WebP로 저장합니다. 브라우저가 읽을 수 있는 HEIC도 업로드 전에 변환합니다. 동영상은 실제 컨테이너·코덱·재생 시간을 검사하며 MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원합니다. 파일은 비공개로 저장하고 재생·탐색의 byte Range 요청에도 매번 그룹의 공개 범위와 멤버십을 검사합니다. 사용하지 않은 업로드와 삭제 실패 파일은 정리 작업이 재시도합니다.
+게시물은 서명된 POST로 저장소에 직접 업로드하고 완료 검증을 거쳐 등록합니다. 사진은 JPEG/PNG/WebP·10MB·40MP 이하를 검사하며 서버에서 재인코딩하지 않습니다. 브라우저가 읽을 수 있는 사진과 HEIC는 전송 전에 줄입니다. 동영상은 실제 컨테이너·코덱·재생 시간을 검사하며 MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원합니다. 파일은 비공개로 저장하고 재생·탐색의 byte Range 요청에도 매번 그룹의 공개 범위와 멤버십을 검사합니다. 사용하지 않은 업로드와 삭제 실패 파일은 정리 작업이 재시도합니다.
 
 웹은 최대 1440px이며 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드입니다. 흑백 UI·여백·명확한 글자 위계를 사용하고 제목·사진·본문을 펼쳐 보여 줍니다. 인기 게시물은 순위가 붙은 사각형 미리보기이며 프로필에 스토리 장식 테두리를 두지 않습니다. 데스크톱은 왼쪽 고정 메뉴와 오른쪽 인기 사진, 모바일·태블릿은 하단 메뉴와 피드 위의 인기 목록을 보여 줍니다. 최신·인기 조회는 별도 Suspense/실패 경계를 가지며 RSC에서 미리 준비합니다. 고정 메뉴와 정렬 항목은 JSX로 직접 선언합니다.
 
@@ -93,7 +93,7 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 
 운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, 영속 `STORAGE_DIR` 또는 private S3 호환 버킷이 필요합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
 
-웹은 일회용 티켓을 받은 뒤 GraphQL Upload mutation으로 파일을 전송합니다. Apollo UploadHttpLink가 multipart 요청과 쿠키를 처리합니다. 기존 업로드 REST 경로는 이전 클라이언트 호환용으로 유지합니다. API가 실제 형식·40MP·10MB를 검사하고 1600px WebP로 바꾸며 메타데이터를 제거합니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. S3/R2 어댑터는 실제 버킷 권한으로 별도 검증해야 합니다.
+웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost 순서로 전송하며 저장소에 세션 쿠키를 보내지 않습니다. 로컬은 HMAC 서명 업로드 URL로 디스크에 스트리밍하고 운영은 S3 presigned POST를 사용합니다. 게시물 서버는 사진·동영상의 위치정보 등 메타데이터를 제거하지 않으므로 공개 전에 확인해야 합니다. 기존 대회 제출도 requestUploadUrl → 저장소 FormData POST → completeSubmissionUpload → createSubmission으로 전송하고 완료 단계의 1600px WebP 변환·메타데이터 제거를 유지합니다. GraphQL multipart와 raw 업로드 경로는 제거했습니다. 매 파일 조회에서 그룹 권한을 확인하고 `private, no-store`로 응답합니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
 
 | 앱     | 오류 수집                                               | 사용자 행동 측정                |
 | ------ | ------------------------------------------------------- | ------------------------------- |
