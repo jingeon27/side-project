@@ -176,6 +176,14 @@ model Comment {
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
 }
+model CacheInvalidation {
+  tag String @id
+  revision String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([updatedAt,tag])
+}
+
 model Notification {
   id String @id @default(cuid())
   actorId String?

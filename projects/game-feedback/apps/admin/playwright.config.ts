@@ -8,6 +8,8 @@ target.searchParams.set('schema', schema);
 process.env.GF_ADMIN_E2E_SCHEMA = schema;
 process.env.GF_ADMIN_E2E_DATABASE_URL = target.toString();
 const env = {
+  GF_CACHE_REVALIDATION_SECRET: '',
+  GF_CACHE_REVALIDATION_URL: '',
   NODE_ENV: 'test',
   DATABASE_URL: target.toString(),
   TEST_DATABASE_URL: target.toString(),
