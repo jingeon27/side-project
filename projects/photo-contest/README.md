@@ -64,7 +64,7 @@ corepack yarn dev:photo-contest
 
 ## 서비스 정책
 
-이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 로그인 없이 읽을 수 있습니다. 로그인 화면·MY·데스크톱 메뉴에서 연결하며, 운영자 김진건과 문의처 jingeon27@gmail.com은 `apps/web/src/_pages/legal/@page/model/policy.ts`에서 관리합니다.
+이용약관(`/terms`)과 개인정보 처리방침(`/privacy`)은 로그인 없이 읽을 수 있습니다. 로그인 화면·MY·데스크톱 메뉴에서 연결하며, 운영자 김진건과 문의처 contact@bambyul.com은 `apps/web/src/_pages/legal/@page/model/policy.ts`에서 관리합니다.
 
 두 문서는 검토용 초안입니다. 계정·미디어·인증 정보의 처리는 현재 구현을 기준으로 설명합니다. 정식 공개 전 실제 호스팅·저장소·분석 서비스의 위탁·국외 이전, 문의·운영 이력·백업 보관 기간과 아동 개인정보 처리 기준을 확인해 확정해야 합니다. 작성 시 [개인정보보호위원회의 2026년 개인정보 처리방침 작성지침](https://pipc.go.kr/np/cop/bbs/selectBoardArticle.do?bbsId=BS074&nttId=12021)을 참고했습니다.
 
@@ -85,7 +85,7 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 
 로그인 화면에서 직접 정한 아이디·비밀번호로 회원가입하거나 로그인할 수 있습니다. 아이디는 영문·숫자·밑줄 3~24자로 대소문자를 구분하지 않으며, 가입 비밀번호는 15~128자입니다. 서버는 임의 salt를 쓴 scrypt 해시만 저장하고 기존 HttpOnly 세션 쿠키를 발급합니다. 반복 시도는 DB에서 제한합니다.
 
-소셜 로그인은 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`을 `.env`에 설정하면 사용할 수 있습니다. 미설정 수단은 화면에서 숨깁니다. Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<provider>/callback`입니다. 실제 OAuth 앱과 계정으로 하는 인증은 별도 설정 후 확인해야 합니다.
+소셜 로그인은 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`을 `.env`에 설정하면 사용할 수 있습니다. 미설정 수단은 화면에서 숨깁니다. Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<provider>/callback`입니다. 실제 OAuth 앱과 계정으로 하는 인증은 별도 설정 후 확인해야 합니다. `.env` 변경 후 `corepack yarn workspace @side/photo-contest dev`를 종료·재실행해야 API와 웹이 새 값을 읽습니다. 개발 callback은 `http://localhost:3200/backend/auth/google/callback`, 운영은 `https://contest.bambyul.com/backend/auth/google/callback`입니다. 포트가 다르면 실제 웹 포트를 등록합니다.
 
 운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, 영속 `STORAGE_DIR` 또는 private S3 호환 버킷이 필요합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
 

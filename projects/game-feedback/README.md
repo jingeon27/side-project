@@ -26,6 +26,28 @@
 
 채팅의 첨부 버튼으로 JPEG/PNG/GIF/WebP 이미지 또는 MP4/WebM 동영상을 보낸다. 파일당 최대 25MB이며 현재 화면은 메시지마다 파일 한 개를 선택한다. 본문 없이 파일만 보낼 수도 있고 실패한 전송의 파일과 초안을 유지한다. 이미지는 대화 안의 확대 창으로 열고 동영상은 재생 컨트롤을 사용한다. 모바일 Enter는 줄바꿈이며 전송 버튼으로 보낸다. 데스크톱 키보드에서만 Enter 전송/Shift+Enter 안내를 표시한다. 파일은 대화 참여자에게만 제공하며 차단/로그아웃/계정 삭제 정책을 적용한다.
 
+## `.env` 변경 반영
+
+로컬 설정은 **현재 실행하는 checkout의 `projects/game-feedback/.env`**에서 읽습니다. 저장소 루트 `.env`나 다른 worktree의 `.env`는 자동으로 공유하지 않습니다. Google client ID/secret과 문의 주소를 바꾼 뒤 실행 중인 개발 명령을 종료하고 저장소 루트에서 다시 실행합니다.
+
+```sh
+nvm use
+corepack yarn workspace @side/game-feedback dev
+```
+
+이 집계 명령이 프로젝트 `.env`를 읽어 API와 웹에 전달합니다. 앱만 직접 실행하는 `@game-feedback/web dev`는 이 로더를 거치지 않습니다. API의 OAuth 제공자는 시작할 때 구성되고, 웹의 공개 설정은 번들에 들어가므로 두 프로세스를 다시 시작한 뒤 화면을 새로고침합니다. 부모 셸에 같은 환경변수를 이미 export했다면 그 값이 `.env`보다 우선하므로 함께 확인합니다.
+
+```dotenv
+GOOGLE_CLIENT_ID=<Google 웹 애플리케이션 client ID>
+GOOGLE_CLIENT_SECRET=<client secret>
+GOOGLE_REDIRECT_URI=http://localhost:3300/api/auth/google/callback
+GAME_FEEDBACK_CONTACT_EMAIL=contact@bambyul.com
+```
+
+Google Cloud의 승인된 리디렉션 URI도 위 `GOOGLE_REDIRECT_URI`와 일치시킵니다. 별도 포트로 띄웠다면 해당 웹 포트를 사용합니다. 운영 callback은 `https://game.bambyul.com/api/auth/google/callback`이며 API 서브도메인으로 바꾸지 않습니다. Google 키를 브라우저용 `NEXT_PUBLIC_*` 변수에 넣지 않습니다.
+
+운영의 로컬 개발 `.env`는 서버에 자동 반영되지 않습니다. 공유 배포의 `/srv/side-project/services/game-feedback/.env`에서 Google 설정을 바꾸고 컨테이너를 재생성해야 하며, 문의 주소 등 웹 번들 값은 GitHub Variable `GF_CONTACT_EMAIL` 변경 후 새 웹 이미지 빌드·배포가 필요합니다. 서비스의 기존 설정·검증된 이미지·DB를 유지하는 절차는 [공유 배포 문서](../../deploy/shared-instance/README.md)를 따릅니다.
+
 ## 계정 등록, 인증과 관리자 문의
 
 게임 계정은 **설정 → 게임 계정 → 계정 등록**에서 사용자에게 등록한다. 글쓰기에 게임 프로필을 첨부하거나 게시글에 게임 프로필을 표시하지 않는다. 사용자 대표 Supercell 태그는 작성자/공개 프로필에서 확인한다. 등록만으로 인증되지 않으며 대표 태그를 바꾸면 기존 인증을 해제한다.
