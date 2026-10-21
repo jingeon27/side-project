@@ -1,6 +1,7 @@
 import 'server-only';
 import type { MetadataRoute } from 'next';
-import { cacheLife } from 'next/cache';
+import { cacheLife, cacheTag } from 'next/cache';
+import { DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
 import { getPublicPostList } from '@/features/post/index.server';
 import { getSeoConfig, pageUrl } from '@/shared/seo';
 import { getPublicCategories } from '@/features/category/index.server';
@@ -62,6 +63,7 @@ async function collectPosts(
 }
 export async function dailySitemap(): Promise<MetadataRoute.Sitemap> {
   'use cache';
+  cacheTag(DISCOVERY_CACHE_TAG);
   cacheLife({ stale: 86_400, revalidate: 86_400, expire: 172_800 });
   return sitemap();
 }
