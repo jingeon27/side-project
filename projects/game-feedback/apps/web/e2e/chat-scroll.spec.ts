@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { test, expect, type Locator } from '@playwright/test';
+
+import { expect, test, type Locator } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3301';
 

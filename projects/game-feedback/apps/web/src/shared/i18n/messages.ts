@@ -1,6 +1,6 @@
+import { infoMessages } from './info-messages';
 import type { TLocale } from './locale';
 import { profileMessages } from './profile-messages';
-import { infoMessages } from './info-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {

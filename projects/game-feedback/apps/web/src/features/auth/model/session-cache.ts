@@ -1,5 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
+
 import type { Session } from '@/shared/api';
+
 import { sessionOptions } from './auth.options';
 
 export async function replaceSession(client: QueryClient, session: Session) {

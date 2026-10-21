@@ -1,17 +1,17 @@
-import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
-import { NativeCapabilityError } from '@photo-contest/bridge/native';
-import type { TNativeCapabilities } from '@photo-contest/bridge/native';
 import type { ShareAction, ShareContent, ShareOptions } from 'react-native';
+
+import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
+import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/bridge/native';
 
 import { encodeBase64Url } from '@/shared/lib/base64url';
 
 import {
-  PKCE_VERIFIER_BYTES,
   buildAuthCallbackUrl,
   buildSocialLoginUrl,
+  PKCE_VERIFIER_BYTES,
   readAuthCallback,
+  type TSocialProvider,
 } from './social-login';
-import type { TSocialProvider } from './social-login';
 
 type TImpactStyle = 'light' | 'medium' | 'heavy';
 type TNotificationType = 'success' | 'warning' | 'error';

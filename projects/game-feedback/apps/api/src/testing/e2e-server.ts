@@ -1,7 +1,7 @@
 import { createApp } from '../app';
+import { ApiError } from '../common/http/api-error';
 import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
-import { ApiError } from '../common/http/api-error';
 
 async function main() {
   if (process.env.NODE_ENV !== 'test') throw new Error('E2E server requires NODE_ENV=test.');

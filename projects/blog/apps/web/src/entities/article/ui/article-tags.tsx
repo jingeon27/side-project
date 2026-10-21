@@ -1,4 +1,5 @@
 import Link from 'next/link';
+
 import type { Article } from '../model/types';
 
 export function ArticleTags({ article }: { article: Article }) {

@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
 
 import { encodeBase64Url } from './base64url';

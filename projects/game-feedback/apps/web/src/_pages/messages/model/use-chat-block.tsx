@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { useQueryClient } from '@tanstack/react-query';
 import { overlay } from 'overlay-kit';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { chatMessageOptions } from '@/features/chat';
-import { BlockUserDialog } from '@/widgets/moderation';
 import type { Author } from '@/shared/api';
 import { openOverlay, useNotify } from '@/shared/ui';
-import { appRoutes } from '@game-feedback/bridge';
+import { BlockUserDialog } from '@/widgets/moderation';
 
 interface IChatBlockOptions {
   userId: string;

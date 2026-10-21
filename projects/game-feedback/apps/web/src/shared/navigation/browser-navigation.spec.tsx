@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+
 import { appRoutes } from '@game-feedback/bridge';
+
 import {
   backNavigation,
   feedDestination,

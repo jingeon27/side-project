@@ -1,12 +1,17 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, Textarea } from '@side/design-system';
+
 import { LoaderCircle } from 'lucide-react';
+
+import { Button, Textarea } from '@side/design-system';
+
 import { useUpdateAnswerMutation } from '@/features/answer';
 import { useUpdateCommentMutation } from '@/features/comment';
-import { ErrorNotice, BottomSheet, useNotify } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
+import { BottomSheet, ErrorNotice, useNotify } from '@/shared/ui';
+
 import { answerFormSchema, commentFormSchema } from '../model/content.schema';
+
 interface IContentEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;

@@ -1,16 +1,17 @@
-import { Database } from '../database/database.service';
-
 import { Injectable } from '@nestjs/common';
 
 import type { IViewer } from '../auth/session.service';
 import { pageRange } from '../common/validation';
 import { PAGE_SIZE_DEFAULT } from '../config/limits';
-import type { TPhase } from '../contest/contest.policy';
-import { PHASE, phase } from '../contest/contest.policy';
+import { PHASE, phase, type TPhase } from '../contest/contest.policy';
+import { Database } from '../database/database.service';
 import { MembershipService } from '../group/membership.service';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
-import type { ISubmissionView } from '../submission/submission.presenter';
-import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
+import {
+  presentSubmission,
+  submissionInclude,
+  type ISubmissionView,
+} from '../submission/submission.presenter';
 
 export interface IFeedRange {
   offset?: unknown;

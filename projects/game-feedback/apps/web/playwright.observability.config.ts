@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
+
 import base from './playwright.config';
+
 if (!Array.isArray(base.webServer)) throw new Error('별도 API와 웹 서버가 필요합니다.');
 const production = process.env.GF_OBSERVABILITY_PRODUCTION === 'true';
 export default defineConfig({

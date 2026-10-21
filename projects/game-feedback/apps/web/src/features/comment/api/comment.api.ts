@@ -1,4 +1,5 @@
-import { createComment, updateComment, deleteComment } from '@game-feedback/sdk';
+import { createComment, deleteComment, updateComment } from '@game-feedback/sdk';
+
 export function postComment({ postId, body }: { postId: string; body: { body: string } }) {
   return createComment(postId, body);
 }

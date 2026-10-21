@@ -1,7 +1,8 @@
-import { UnitOfWork } from './unit-of-work';
 import { Global, Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { PrismaClient } from '../generated/prisma';
+import { UnitOfWork } from './unit-of-work';
 
 class DatabaseLifecycle implements OnApplicationShutdown {
   constructor(

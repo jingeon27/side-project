@@ -1,5 +1,4 @@
-import { clsx } from 'clsx';
-import type { ClassValue } from 'clsx';
+import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /** theme.css의 커스텀 토큰. 등록하지 않으면 tailwind-merge가 `text-title`을 글자색으로 보고 `text-ink`와 충돌시켜 지운다. */

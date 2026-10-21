@@ -1,5 +1,7 @@
 import { gunzipSync } from 'node:zlib';
+
 import { expect, test } from '@playwright/test';
+
 interface IEvent {
   event_type: string;
   event_properties?: Record<string, unknown>;

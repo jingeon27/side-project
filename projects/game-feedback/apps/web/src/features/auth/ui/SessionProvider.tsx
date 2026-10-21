@@ -1,9 +1,13 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { createContext, useContext, type ReactNode } from 'react';
+
 import { useSuspenseQuery } from '@tanstack/react-query';
+
 import type { Session } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { useNotify } from '@/shared/ui';
+
 import { sessionOptions } from '../model/auth.options';
 
 interface ISessionContext {

@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+
 import { labels, type UiLocale } from '@/shared/config/labels';
 import { trackEvent } from '@/shared/lib/analytics/events';
 

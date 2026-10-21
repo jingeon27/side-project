@@ -1,16 +1,19 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { MediaUploadPlanSchema } from '@game-feedback/contracts';
+
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
+import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
-import { S3Fixture, S3_FIXTURE_CREDENTIALS } from '../testing/s3-fixture';
-import { MediaStorage } from '../media-storage/media-storage.service';
+import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';

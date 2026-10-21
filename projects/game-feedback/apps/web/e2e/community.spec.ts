@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 const origin = 'http://127.0.0.1:3301';
 test('community boards publish and edit Quill formatting, stay separate from feedback and render without JavaScript', async ({
   page,

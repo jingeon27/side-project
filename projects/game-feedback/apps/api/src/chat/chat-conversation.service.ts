@@ -1,12 +1,14 @@
-import { type Conversation } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
+
+import { type Conversation } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, encodeCursor } from '../common/pagination';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { PrismaClient, Prisma } from '../generated/prisma';
+import { Prisma, PrismaClient } from '../generated/prisma';
 import { authorDto } from '../users/user.presenter';
 import { ChatAccessService } from './chat-access.service';
 import { historyWhere } from './chat-history';
@@ -20,6 +22,7 @@ import {
   userSelect,
   type ConversationRow,
 } from './chat.presenter';
+
 @Injectable()
 export class ChatConversationService {
   constructor(

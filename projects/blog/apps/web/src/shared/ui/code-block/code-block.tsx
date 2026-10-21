@@ -1,7 +1,9 @@
 'use client';
 
 import { Children, isValidElement, useState, type ComponentPropsWithoutRef, type ReactNode } from 'react';
+
 import { useLocale } from 'next-intl';
+
 import { labels } from '@/shared/config/labels';
 
 function textContent(node: ReactNode): string {

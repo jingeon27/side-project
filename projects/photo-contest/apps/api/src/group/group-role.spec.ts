@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { GROUP_ROLE, isAdmin, isOwner, toGroupRole } from './group-role';
 
 describe('그룹 운영 권한', () => {

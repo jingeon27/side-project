@@ -1,5 +1,4 @@
-import { captureException, init } from '@sentry/node';
-import type { ErrorEvent } from '@sentry/node';
+import { captureException, init, type ErrorEvent } from '@sentry/node';
 import { GraphQLError } from 'graphql';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

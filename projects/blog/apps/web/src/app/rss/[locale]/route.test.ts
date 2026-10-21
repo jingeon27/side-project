@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { GET as rssRoute } from './route';
-
 import { getArticles } from '@/entities/article/lib/get-articles';
-
 import { siteUrl } from '@/shared/config/site';
+
+import { GET as rssRoute } from './route';
 
 describe('multilingual SEO', () => {
   it('publishes translated English posts in its feed and rejects unsupported feed locales', async () => {

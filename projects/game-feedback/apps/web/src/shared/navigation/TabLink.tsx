@@ -1,8 +1,11 @@
 'use client';
+
+import type { ComponentProps } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { ComponentProps } from 'react';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { feedDestination } from './browser-navigation';
 
 export function TabLink(props: Omit<ComponentProps<typeof Link>, 'onNavigate'>) {

@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+
 import { labels } from '@/shared/config/labels';
 
 const size = { width: 1200, height: 630 };

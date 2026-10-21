@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 import { expect, seedGroup, test } from './support/test';

@@ -1,18 +1,23 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { Suspense, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+
 import { useQuery } from '@tanstack/react-query';
+
+import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { useSession } from '@/features/auth';
 import { conversationBadgeOptions } from '@/features/chat';
-import { useChatConnection } from '@/widgets/chat-realtime';
-import { ServiceErrorBoundary } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { RouteViewport } from '@/shared/navigation';
-import { resolveAppRoute } from '@game-feedback/bridge';
+import { ServiceErrorBoundary } from '@/shared/ui';
+import { useChatConnection } from '@/widgets/chat-realtime';
+
+import { CommunityFooter } from './CommunityFooter';
+import { GameBoardNavigation } from './GameBoardNavigation';
 import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
-import { GameBoardNavigation } from './GameBoardNavigation';
-import { CommunityFooter } from './CommunityFooter';
 
 interface ICommunityShellProps {
   children: ReactNode;

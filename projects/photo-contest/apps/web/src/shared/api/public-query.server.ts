@@ -3,8 +3,8 @@ import 'server-only';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { print } from 'graphql';
 
-import { buildServerRequestHeaders, getServerApiUrl, getWebOrigin } from './server-request.helper';
 import { publicCacheOptions } from './public-cache.policy';
+import { buildServerRequestHeaders, getServerApiUrl, getWebOrigin } from './server-request.helper';
 
 export class PublicQueryError extends Error {
   constructor(readonly code: string | undefined) {

@@ -1,4 +1,5 @@
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
+
 import { TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from './app';
 import { contestSchedule } from './fixtures';
 

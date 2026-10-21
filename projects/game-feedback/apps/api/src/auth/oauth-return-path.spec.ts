@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
+import { describe, expect, it } from 'vitest';
+
 import { AuthReturnPathSchema } from '@game-feedback/contracts';
+
 import {
+  loginRedirect,
   OAUTH_RETURN_COOKIE,
   requestedReturnPath,
   savedReturnPath,
-  loginRedirect,
 } from './oauth-return-path';
 
 describe('OAuth 로그인 복귀 경로', () => {

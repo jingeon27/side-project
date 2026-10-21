@@ -1,0 +1,9 @@
+@import 'tailwindcss' source(none);
+@import '../src/styles.css';
+
+@source '../src/**/*.{ts,tsx}';
+
+body.sb-show-main {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}

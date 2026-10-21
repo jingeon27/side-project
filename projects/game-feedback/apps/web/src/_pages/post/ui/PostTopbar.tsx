@@ -1,11 +1,15 @@
 'use client';
-import { appRoutes } from '@game-feedback/bridge';
+
 import { ChevronRight } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { boardByKind } from '@/features/board';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';
 import { Topbar } from '@/widgets/community-shell';
+
 export function PostTopbar({ locale, post }: { locale: string; post: Pick<Post, 'board' | 'category'> }) {
   const { t } = useI18n();
   const board = boardByKind(post.board);

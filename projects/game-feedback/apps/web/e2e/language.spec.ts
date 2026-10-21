@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('first visits use the browser region without JavaScript and retain feed filters', async ({
   browser,

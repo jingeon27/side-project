@@ -1,16 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+
+import { Inject, Injectable } from '@nestjs/common';
 import sharp from 'sharp';
-import { UpdateProfileInputSchema, POSTS_CACHE_TAG } from '@game-feedback/contracts';
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { PrismaClient } from '../generated/prisma';
+
+import { POSTS_CACHE_TAG, UpdateProfileInputSchema } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
+import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
-import { UsersService } from './users.service';
 import { UserVisibilityService } from './user-visibility.service';
+import { UsersService } from './users.service';
 
 export const AVATAR_LIMIT = 5 * 1024 * 1024;
 @Injectable()

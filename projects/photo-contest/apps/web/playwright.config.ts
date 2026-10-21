@@ -1,6 +1,7 @@
+import { defineConfig, devices } from '@playwright/test';
+
 import { buildAppUserAgent } from '@photo-contest/bridge';
 import { apiWebServer, prepareE2eDatabase } from '@photo-contest/test-kit';
-import { defineConfig, devices } from '@playwright/test';
 
 import { API_PORT, WEB_ORIGIN, WEB_PORT } from './e2e/support/env';
 

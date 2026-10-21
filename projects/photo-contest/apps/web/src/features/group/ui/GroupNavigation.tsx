@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
 import { ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/shared/lib/cn.helper';
 

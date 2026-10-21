@@ -1,16 +1,18 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, uniq } from 'es-toolkit';
 import { match } from 'ts-pattern';
+
+import { DISCOVERY_CACHE_TAG, postCacheTag } from '@game-feedback/contracts';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../../common/http/api-error';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient } from '../../generated/prisma';
 import { type HideContentDto, type ReviewReportDto } from './report-input.dto';
 import { hiddenNotificationScope } from './report.policy';
-import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
-import { postCacheTag, DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
+
 @Injectable()
 export class AdminReportsService {
   constructor(

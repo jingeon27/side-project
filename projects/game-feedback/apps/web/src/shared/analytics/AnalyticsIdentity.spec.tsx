@@ -1,8 +1,9 @@
 import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AnalyticsIdentity } from './AnalyticsIdentity';
-import { initAnalytics, resetAnalyticsClientForTest, trackEvent, flushAnalytics } from './analytics.store';
+
 import { ANALYTICS_EVENT } from './analytics.catalog';
+import { flushAnalytics, initAnalytics, resetAnalyticsClientForTest, trackEvent } from './analytics.store';
+import { AnalyticsIdentity } from './AnalyticsIdentity';
 import { LOGIN_MARKER_TTL, savePendingLogin } from './login-marker';
 
 const sdk = vi.hoisted(() => ({

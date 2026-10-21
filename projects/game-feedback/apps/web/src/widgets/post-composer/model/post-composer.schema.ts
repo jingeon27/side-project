@@ -1,6 +1,7 @@
-import { PostInputSchema } from '@game-feedback/contracts';
-import { z } from 'zod';
 import type { UseFormReturn } from 'react-hook-form';
+import { z } from 'zod';
+
+import { PostInputSchema } from '@game-feedback/contracts';
 
 export const postComposerSchema = PostInputSchema.extend({
   editorValid: z.boolean().refine(Boolean),

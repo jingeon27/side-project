@@ -1,11 +1,15 @@
 'use client';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system';
-import { Globe2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
+
+import { Globe2 } from 'lucide-react';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system';
+
 import { PageLoadingScreen } from '@/shared/loading';
+
 import { setLanguagePreference, useI18n } from './LanguageProvider';
 import { languagePreference, localePath } from './locale';
 

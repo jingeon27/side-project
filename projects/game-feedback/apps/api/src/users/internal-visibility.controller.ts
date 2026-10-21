@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, Req } from '@nestjs/common';
+
 import { SessionService } from '../auth/session.service';
 import type { SessionRequest } from '../auth/session.types';
 import { UserVisibilityService } from './user-visibility.service';

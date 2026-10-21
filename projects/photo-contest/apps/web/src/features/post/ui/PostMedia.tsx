@@ -1,7 +1,8 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
 import Image from 'next/image';
+
+import { useFragment } from '@apollo/client/react';
 import { match } from 'ts-pattern';
 
 import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';

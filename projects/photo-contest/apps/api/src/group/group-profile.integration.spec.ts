@@ -1,8 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createTestImage } from '@photo-contest/test-kit';
+
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { createTestImage } from '@photo-contest/test-kit';
+
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { SET_MODERATOR } from '../../test/support/group-contest';

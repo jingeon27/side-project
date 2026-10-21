@@ -1,9 +1,11 @@
-import { locale as rootLocale } from 'next/root-params';
 import { Suspense } from 'react';
-import { LoadingState } from '@/shared/ui';
-import { PublicPageJsonLd, staticPageMetadata } from '@/shared/seo';
+import { locale as rootLocale } from 'next/root-params';
+
 import { ContactPage } from '@/_pages/contact';
 import { InfoPage } from '@/_pages/info';
+import { PublicPageJsonLd, staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
+
 async function RouteContent(_props: { params: Promise<{ locale: string }> }) {
   const locale = await rootLocale();
   return (

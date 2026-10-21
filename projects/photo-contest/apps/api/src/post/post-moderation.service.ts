@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+
+import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
+import { ERROR_CODE, fail } from '../common/errors';
+import { pageRange } from '../common/validation';
 import { Database } from '../database/database.service';
 import { MembershipService } from '../group/membership.service';
-import { pageRange } from '../common/validation';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { ANALYTICS_EVENT } from '../analytics/analytics-event';
-import { fail, ERROR_CODE } from '../common/errors';
 
 @Injectable()
 export class PostModerationService {

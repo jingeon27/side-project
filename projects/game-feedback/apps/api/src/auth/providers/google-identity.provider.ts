@@ -1,4 +1,5 @@
 import { createPublicKey, verify, type JsonWebKey } from 'node:crypto';
+
 import { ApiError } from '../../common/http/api-error';
 import type { IdentityProvider } from './identity-provider';
 

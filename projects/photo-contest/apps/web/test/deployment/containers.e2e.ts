@@ -1,7 +1,9 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
+
 import { expect, test } from '@playwright/test';
+
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({ page, request }) => {
   const origin = new URL(process.env.DEPLOY_SMOKE_ORIGIN ?? 'https://localhost:3382').origin;

@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
-import { ServiceErrorBoundary } from '@/shared/ui';
+
 import { LanguageProvider, type TLocale } from '@/shared/i18n';
 import { ThemeProvider } from '@/shared/theme';
+import { ServiceErrorBoundary } from '@/shared/ui';
+
 import { Providers } from './Providers';
 import type { serviceContext } from './service-context.server';
 

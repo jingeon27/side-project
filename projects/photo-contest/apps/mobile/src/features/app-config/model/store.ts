@@ -1,5 +1,6 @@
-import { applicationId } from 'expo-application';
 import { Platform } from 'react-native';
+
+import { applicationId } from 'expo-application';
 
 import { STORE_URL } from '@/shared/config/env';
 

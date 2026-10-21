@@ -1,6 +1,8 @@
-import EmbeddedPostgres from 'embedded-postgres';
-import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import EmbeddedPostgres from 'embedded-postgres';
+
 async function main() {
   const testing = process.argv.includes('--test');
   const databaseDir = resolve(testing ? '.data/test-postgres' : '.data/postgres');

@@ -1,4 +1,5 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+
 import { updateFollow } from '../api/follow.api';
 import { followStatusOptions } from './follow.options';
 

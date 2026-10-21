@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../../../test/support/app';
-import type { ITestApi, ITestUser } from '../../../test/support/app';
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../../test/support/app';
 
 /** api 레인을 쓰면서 찾아 고친 버그. 같은 결함이 다시 생기면 여기서 드러난다. */
 describe('확인된 버그 회귀', () => {

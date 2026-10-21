@@ -1,7 +1,12 @@
-import type { TWebEventPayload } from '@photo-contest/bridge';
-import { buildNativeDispatchScript, createNativeRouter } from '@photo-contest/bridge/native';
-import type { INativeRouter, TNativeCapabilities } from '@photo-contest/bridge/native';
 import { useEffect, useState } from 'react';
+
+import type { TWebEventPayload } from '@photo-contest/bridge';
+import {
+  buildNativeDispatchScript,
+  createNativeRouter,
+  type INativeRouter,
+  type TNativeCapabilities,
+} from '@photo-contest/bridge/native';
 
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { useLatest } from '@/shared/lib/use-latest';

@@ -1,6 +1,7 @@
-import { productRequest, seedPost } from './support/photos';
 import { createTestUser } from '@photo-contest/test-kit';
+
 import { API_URL, WEB_ORIGIN } from './support/env';
+import { productRequest, seedPost } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
 test(

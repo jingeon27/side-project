@@ -1,13 +1,14 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { match } from 'ts-pattern';
+
 import { LoginPage } from '@/_pages/login';
-import { SupportPage } from '@/_pages/support';
 import { ReportsPage } from '@/_pages/reports';
+import { SupportPage } from '@/_pages/support';
 import { UsersPage } from '@/_pages/users';
-import { AdminShell } from '@/widgets/admin-shell';
 import { sessionOptions } from '@/features/auth';
 import { useAdminRoute } from '@/shared/lib';
 import { AsyncBoundary } from '@/shared/ui';
+import { AdminShell } from '@/widgets/admin-shell';
 
 export function AdminRouter() {
   const { data: session } = useSuspenseQuery(sessionOptions());

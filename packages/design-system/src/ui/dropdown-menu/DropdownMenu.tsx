@@ -1,8 +1,11 @@
 // Adapted from shadcn/ui base-nova. See SHADCN.md for source and license.
 'use client';
+
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
+
 import { cn } from '../../lib/cn.helper';
 import type { TStyledProps } from '../../lib/styled-props';
+
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }

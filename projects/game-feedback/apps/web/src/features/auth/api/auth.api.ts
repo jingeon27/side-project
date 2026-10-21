@@ -1,14 +1,16 @@
 import {
+  deleteAccount,
+  demoLogin,
   exchangeAppLogin,
   getSession,
-  demoLogin,
-  onboard,
-  logout,
-  deleteAccount,
   listTestAccounts,
+  logout,
+  onboard,
   testAccountLogin,
 } from '@game-feedback/sdk';
+
 import { withApiError, type Session, type TestAccountList } from '@/shared/api';
+
 import type { TDemoLoginInput, TOnboardInput, TTestLoginInput } from '../types/auth.type';
 
 export function fetchSession({ signal }: { signal?: AbortSignal } = {}): Promise<Session> {

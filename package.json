@@ -23,6 +23,8 @@
     "check": "yarn workspaces foreach -A --include \"@side/*\" run check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "storybook": "yarn workspace @side/design-system storybook",
+    "build:storybook": "yarn workspace @side/design-system build-storybook",
     "test:photo-contest:unit": "yarn workspace @side/photo-contest test:unit",
     "test:photo-contest:api": "yarn workspace @side/photo-contest test:api",
     "dev:game-feedback": "yarn workspace @side/game-feedback dev",
@@ -33,6 +35,7 @@
     "check:game-feedback": "yarn workspace @side/game-feedback check"
   },
   "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "prettier": "^3.9.0"
   },
   "dependenciesMeta": {

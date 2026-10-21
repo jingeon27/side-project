@@ -1,5 +1,5 @@
-import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import type { INestApplication } from '@nestjs/common';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
 export function configureHttp(app: INestApplication) {
   // Production API traffic enters through the single private reverse-proxy hop.

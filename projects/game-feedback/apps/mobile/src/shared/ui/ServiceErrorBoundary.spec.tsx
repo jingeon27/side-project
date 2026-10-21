@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
 import { Text, View } from 'react-native';
+
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ServiceErrorBoundary } from './ServiceErrorBoundary';
 
 beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));

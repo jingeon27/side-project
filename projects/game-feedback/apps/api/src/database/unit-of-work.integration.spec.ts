@@ -1,9 +1,11 @@
-import type { INestApplication } from '@nestjs/common';
 import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+
+import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app';
 import type { SessionRequest } from '../auth/session.types';
 import { historyWhere } from '../chat/chat-history';

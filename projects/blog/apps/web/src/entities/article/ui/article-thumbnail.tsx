@@ -1,6 +1,7 @@
 import Image from 'next/image';
-import type { Article } from '../model/types';
+
 import { getArticleThumbnail } from '../lib/article-thumbnails';
+import type { Article } from '../model/types';
 
 export function ArticleThumbnail({ article }: { article: Pick<Article, 'id' | 'coverImage'> }) {
   const image = getArticleThumbnail(article);

@@ -1,6 +1,7 @@
-import type { INativeRouter } from '@photo-contest/bridge/native';
 import { useEffect } from 'react';
 import { BackHandler, Platform } from 'react-native';
+
+import type { INativeRouter } from '@photo-contest/bridge/native';
 
 import { resolveBackPress } from '@/features/navigation/lib/back-press';
 import { useLatest } from '@/shared/lib/use-latest';

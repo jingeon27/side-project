@@ -3,8 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Response } from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
-import type { ITestApi } from '../../test/support/app';
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../test/support/app';
 import {
   cookieAttributes,
   cookiePair,

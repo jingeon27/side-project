@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import type { OnModuleDestroy } from '@nestjs/common';
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
 import { Prisma, PrismaClient } from '../../generated/prisma';

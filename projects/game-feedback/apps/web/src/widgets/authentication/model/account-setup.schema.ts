@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { NicknameSchema } from '@game-feedback/contracts';
 
 export const accountSetupSchema = z.object({

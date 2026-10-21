@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   appRoutes,
   buildBootstrapScript,
   buildDispatchScript,
   parseNativeMessage,
 } from '@game-feedback/bridge';
+
 import { NativeHost } from './native-host';
+
 const origin = 'https://feedback.example';
 function setup() {
   const send = vi.fn();

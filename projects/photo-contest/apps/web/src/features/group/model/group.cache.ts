@@ -1,7 +1,6 @@
 import type { ApolloCache } from '@apollo/client';
 
-import { MyGroupsDocument } from '@/shared/api/generated';
-import type { GroupCardFragment } from '@/shared/api/generated';
+import { MyGroupsDocument, type GroupCardFragment } from '@/shared/api/generated';
 
 /**
  * 새로 만들거나 가입한 그룹을 홈 목록 맨 앞에 넣는다. 홈 목록을 아직 불러오지 않았으면 그대로 둔다(홈에 가면 받아 온다).

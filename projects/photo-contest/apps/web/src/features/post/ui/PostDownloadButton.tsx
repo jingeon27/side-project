@@ -2,6 +2,7 @@
 
 import { useLazyQuery } from '@apollo/client/react';
 import { Download } from 'lucide-react';
+
 import { PostDownloadDocument } from '@/shared/api/generated';
 import { useBridge, useExternalLink } from '@/shared/model/bridge';
 import { getErrorMessage } from '@/shared/model/error';

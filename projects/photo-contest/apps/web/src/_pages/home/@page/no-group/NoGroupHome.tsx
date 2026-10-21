@@ -1,6 +1,7 @@
 'use client';
 
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+
 import { CreateGroupButton, DiscoverGroupCard, GroupSearchForm } from '@/features/group';
 import { PublicGalleryBoard } from '@/features/post';
 import { DiscoverGroupsDocument, GroupVisibility, type DiscoverGroupsQuery } from '@/shared/api/generated';

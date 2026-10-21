@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
 
 const at = new Date('2026-10-19T01:00:00.000Z');

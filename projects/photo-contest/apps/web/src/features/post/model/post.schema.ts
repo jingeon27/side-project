@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { isImageFile } from '@/features/submission';
+
 import { validPostLink } from './post-link.helper';
 
 export const postSchema = z

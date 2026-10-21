@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 
-import { SENTRY_DATA_COLLECTION, resolveServerSentryDsn, scrubSentryEvent } from '@/shared/lib/sentry.helper';
+import { resolveServerSentryDsn, scrubSentryEvent, SENTRY_DATA_COLLECTION } from '@/shared/lib/sentry.helper';
 
 /** Next 서버가 뜰 때 한 번. 서버 렌더링·라우트 오류를 Sentry로 보낸다. DSN이 없으면 켜지 않는다. */
 export function register() {

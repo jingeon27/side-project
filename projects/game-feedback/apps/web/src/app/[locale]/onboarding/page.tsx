@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
+
 import { OnboardingRoute } from '@/_pages/onboarding/index.server';
-import { LoadingState } from '@/shared/ui';
 import { staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   return staticPageMetadata('onboarding', (await params).locale);

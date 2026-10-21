@@ -1,11 +1,16 @@
 'use client';
+
 import Link from 'next/link';
-import { appRoutes } from '@game-feedback/bridge';
-import { useI18n } from '@/shared/i18n';
+
 import { Check } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import type { ChatMessage } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { formatTime, isAtOrBefore } from '@/shared/lib/date';
 import { Avatar } from '@/shared/ui';
+
 import { ChatAttachmentView } from './ChatAttachmentView';
 import { ChatMessageBody } from './ChatMessageBody';
 

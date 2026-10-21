@@ -1,7 +1,9 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
 import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { useIsSSR } from './use-is-ssr';
 
 function Probe() {

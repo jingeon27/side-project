@@ -1,7 +1,8 @@
+import type { Metadata } from 'next';
+
 import { ExplorePageTemplate } from '@/_pages/explore';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import { DiscoverGroupsDocument, MeDocument } from '@/shared/api/generated';
-import type { Metadata } from 'next';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata } from '@/shared/lib/seo.helper';

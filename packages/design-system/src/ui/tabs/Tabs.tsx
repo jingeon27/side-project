@@ -3,8 +3,9 @@
 
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { TStyledProps } from '../../lib/styled-props';
+
 import { cn } from '../../lib/cn.helper';
+import type { TStyledProps } from '../../lib/styled-props';
 
 function Tabs({ className, orientation = 'horizontal', ...props }: TStyledProps<TabsPrimitive.Root.Props>) {
   return (

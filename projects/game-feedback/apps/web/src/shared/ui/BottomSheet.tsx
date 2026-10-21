@@ -1,7 +1,9 @@
 'use client';
 
 import type { ComponentProps } from 'react';
+
 import { BottomSheet as DesignSystemBottomSheet } from '@side/design-system';
+
 import { useI18n } from '@/shared/i18n';
 
 type TBottomSheetProps = Omit<

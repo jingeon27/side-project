@@ -1,5 +1,6 @@
-import { BlockEmbed } from 'quill/blots/block';
 import type Quill from 'quill';
+import { BlockEmbed } from 'quill/blots/block';
+
 import { PostMediaUrlSchema } from '@game-feedback/contracts';
 
 class UploadedVideo extends BlockEmbed {

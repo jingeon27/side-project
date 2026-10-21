@@ -1,5 +1,3 @@
-import { Database } from '../database/database.service';
-
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
@@ -7,6 +5,7 @@ import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readCookie } from '../common/http/cookie-header';
 import { SESSION_TTL_MS } from '../config/limits';
+import { Database } from '../database/database.service';
 import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
 
 // randomToken()이 만드는 32바이트 base64url. 다른 모양은 DB를 조회하지 않고 비로그인으로 본다.

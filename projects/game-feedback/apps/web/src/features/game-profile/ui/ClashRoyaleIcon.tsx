@@ -1,5 +1,7 @@
 import Image from 'next/image';
+
 import { cn } from '@side/design-system';
+
 import clashRoyaleIcon from '../assets/clash-royale-icon.jpg';
 
 interface IClashRoyaleIconProps {

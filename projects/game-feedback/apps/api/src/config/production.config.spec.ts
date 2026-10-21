@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { resolveListenConfig, validateProductionEnvironment } from './production.config';
+
 import { resolveMediaStorageConfig } from '../media-storage/media-storage.config';
+import { resolveListenConfig, validateProductionEnvironment } from './production.config';
 
 const valid = {
   GF_CACHE_REVALIDATION_SECRET: 'production-cache-secret-'.repeat(3),

@@ -1,10 +1,14 @@
 import 'server-only';
+
 import { notFound } from 'next/navigation';
+
 import { appRoutes, GameSlugSchema } from '@game-feedback/bridge';
+import { BattleModeSchema, CoachingRoleSchema } from '@game-feedback/contracts';
+
 import { boardBySlug } from '@/features/board';
 import { getPublicCategories } from '@/features/category/index.server';
+
 import { PostComposePage } from './PostComposePage';
-import { BattleModeSchema, CoachingRoleSchema } from '@game-feedback/contracts';
 
 export async function ComposeRoute({
   locale,

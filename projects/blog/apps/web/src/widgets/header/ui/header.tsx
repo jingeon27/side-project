@@ -1,10 +1,12 @@
-import Link from 'next/link';
 import Image from 'next/image';
-import type { Locale } from '@/entities/article/model/types';
+import Link from 'next/link';
+
 import { getArticles } from '@/entities/article/lib/get-articles';
-import { labels } from '@/shared/config/labels';
+import type { Locale } from '@/entities/article/model/types';
 import { LocaleSwitch } from '@/features/locale-switch/ui/locale-switch';
 import { ThemeSwitch } from '@/features/theme-switch/ui/theme-switch';
+import { labels } from '@/shared/config/labels';
+
 import { HeaderNav } from './header-nav';
 
 export function Header({ locale }: { locale: Locale }) {

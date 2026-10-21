@@ -1,10 +1,11 @@
-import { ProfileLinksSchema } from '@game-feedback/contracts';
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
+import { ProfileLinksSchema } from '@game-feedback/contracts';
+
 import type { SessionRequest } from '../auth/session.types';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
+import { PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from './user-visibility.service';
 import { authorDto, authorSelect } from './user.presenter';
 

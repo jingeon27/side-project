@@ -1,6 +1,7 @@
 // Build both native bundles with Metro, then remove this command's export output.
 import { spawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
+
 const OUTPUT_DIR = '.expo-export-check';
 let exitCode = 0;
 try {

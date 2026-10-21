@@ -1,6 +1,7 @@
+import { createContext, use, useSyncExternalStore } from 'react';
+
 import type { TNativeAppInfo } from '@photo-contest/bridge';
 import type { IWebBridge } from '@photo-contest/bridge/web';
-import { createContext, use, useSyncExternalStore } from 'react';
 
 import { subscribeNothing } from '../is-ssr.hook';
 

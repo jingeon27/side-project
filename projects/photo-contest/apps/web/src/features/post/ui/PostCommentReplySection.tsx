@@ -1,8 +1,9 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
-import { CornerDownRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+
+import { useFragment } from '@apollo/client/react';
+import { ChevronDown, ChevronUp, CornerDownRight } from 'lucide-react';
 
 import { PostCommentCardFragmentDoc } from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';

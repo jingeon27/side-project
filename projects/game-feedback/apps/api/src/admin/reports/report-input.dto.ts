@@ -1,6 +1,8 @@
-import { ReportReviewInputSchema, HideInputSchema } from '@game-feedback/contracts';
-import { Length, IsBoolean, IsIn, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsString, Length, MinLength } from 'class-validator';
 import type { z } from 'zod';
+
+import { HideInputSchema, ReportReviewInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from '../../common/http/request-validation';
 
 export class ReviewReportDto {

@@ -12,13 +12,13 @@ import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { ContestHeader } from './header/ContestHeader';
 import { ContestGuide } from './guide/ContestGuide';
+import { ContestHeader } from './header/ContestHeader';
+import type { TContestQueryRef } from './model/contest-query.type';
+import { HiddenPhotos } from './moderation/HiddenPhotos';
 import { ContestPhaseSync } from './phase/ContestPhaseSync';
 import { ContestStage } from './phase/ContestStage';
 import { ContestSubmissionCta } from './submission/ContestSubmissionCta';
-import { HiddenPhotos } from './moderation/HiddenPhotos';
-import type { TContestQueryRef } from './model/contest-query.type';
 
 function ContestLoading() {
   return (

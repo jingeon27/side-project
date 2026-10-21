@@ -1,13 +1,12 @@
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
 import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { fail } from '../common/errors';
 import { phase, PHASE } from '../contest/contest.policy';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
 
 /** GraphQL Vote */

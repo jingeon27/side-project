@@ -1,5 +1,6 @@
-import type { Linter } from 'eslint';
 import { createRequire } from 'node:module';
+
+import type { Linter } from 'eslint';
 import { parser, plugin } from 'typescript-eslint';
 
 import { testFiles, testOverrides } from './base';

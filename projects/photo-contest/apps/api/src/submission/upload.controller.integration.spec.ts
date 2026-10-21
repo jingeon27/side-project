@@ -1,15 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 
-import { createTestImage } from '@photo-contest/test-kit';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestImage } from '@photo-contest/test-kit';
+
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
-import { createContest, createGroup } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import { createContest, createGroup, type ITestGroup } from '../../test/support/fixtures';
 import {
   CREATE_SUBMISSION,
   postPhoto,

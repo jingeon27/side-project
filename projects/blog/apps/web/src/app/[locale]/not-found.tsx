@@ -1,6 +1,9 @@
 import Link from 'next/link';
+
 import { getLocale } from 'next-intl/server';
+
 import { labels } from '@/shared/config/labels';
+
 export default async function NotFound() {
   const current = await getLocale();
   const locale = current === 'en' ? 'en' : 'ko';

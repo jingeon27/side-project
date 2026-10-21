@@ -1,18 +1,17 @@
 'use client';
 
-import { skipToken, useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
-import { Share2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+
+import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Share2 } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { RankBadge, ResultBanner, countByRank } from '@/features/ranking';
+import { countByRank, RankBadge, ResultBanner } from '@/features/ranking';
 import { buildResultShareText, useShareActions } from '@/features/share';
 import { SubmissionCard } from '@/features/submission';
-import { ContestResultsDocument } from '@/shared/api/generated';
-import type { ContestResultsQuery } from '@/shared/api/generated';
+import { ContestResultsDocument, type ContestResultsQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';

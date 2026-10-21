@@ -1,9 +1,9 @@
-import type { TIdentityProviders, IdentityProvider } from '../auth/providers/identity-provider';
 import { GoogleIdentityProvider } from '../auth/providers/google-identity.provider';
+import type { IdentityProvider, TIdentityProviders } from '../auth/providers/identity-provider';
 import {
-  createXIdentityProvider,
-  createKakaoIdentityProvider,
   createDiscordIdentityProvider,
+  createKakaoIdentityProvider,
+  createXIdentityProvider,
 } from '../auth/providers/oauth-identity.provider';
 
 export function resolveIdentityProviders(

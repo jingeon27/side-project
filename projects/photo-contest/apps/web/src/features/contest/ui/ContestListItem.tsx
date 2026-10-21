@@ -1,8 +1,8 @@
-import { ChevronRight, Trophy } from 'lucide-react';
 import Link from 'next/link';
 
-import { Phase } from '@/shared/api/generated';
-import type { ContestListItemFragment } from '@/shared/api/generated';
+import { ChevronRight, Trophy } from 'lucide-react';
+
+import { Phase, type ContestListItemFragment } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatDate, formatDateTime } from '@/shared/lib/format.helper';
 

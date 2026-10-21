@@ -1,14 +1,13 @@
 'use client';
 
-import { ImagePlus } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { useController, useWatch } from 'react-hook-form';
-import type { Control, UseFormTrigger } from 'react-hook-form';
+
+import { ImagePlus } from 'lucide-react';
+import { useController, useWatch, type Control, type UseFormTrigger } from 'react-hook-form';
 
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { postSchema } from '../model/post.schema';
-import type { TPostInput, TPostValues } from '../model/post.schema';
+import { postSchema, type TPostInput, type TPostValues } from '../model/post.schema';
 import { PostMediaPreview } from './PostMediaPreview';
 
 interface IPostMediaFieldProps {

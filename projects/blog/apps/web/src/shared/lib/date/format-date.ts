@@ -1,4 +1,5 @@
 import type { Locale } from '@/shared/config/site';
+
 export function formatDate(date: string, locale: Locale) {
   return new Intl.DateTimeFormat(locale === 'ko' ? 'ko-KR' : 'en-US', {
     year: 'numeric',

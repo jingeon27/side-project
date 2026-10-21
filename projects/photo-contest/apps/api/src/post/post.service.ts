@@ -1,18 +1,9 @@
-import type { Prisma } from '../../generated/prisma';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { assertContestParticipation } from '../contest/group-contest.policy';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-import { GroupCategoryService } from '../group/group-category.service';
-import { koreanMonth } from './post-order';
-import { presentPost } from './post.presenter';
-import { postInclude } from './post.query';
-
+import { Injectable } from '@nestjs/common';
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
-import { Injectable } from '@nestjs/common';
-
+import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
@@ -27,12 +18,19 @@ import {
   POST_TITLE_LIMIT,
   UPLOAD_TICKET_TTL_MS,
 } from '../config/limits';
+import { assertContestParticipation } from '../contest/group-contest.policy';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { GroupCategoryService } from '../group/group-category.service';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
 import { MediaProcessor } from './media-processor';
 import { postLink } from './post-link.policy';
+import { koreanMonth } from './post-order';
+import { presentPost } from './post.presenter';
+import { postInclude } from './post.query';
 
 interface IPostInput {
   categoryId?: string | null;

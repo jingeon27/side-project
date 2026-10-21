@@ -1,5 +1,5 @@
-import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { resetOverlayNavigation } from './overlay-history.store';
 import { routeHistoryStore } from './route-history.store';

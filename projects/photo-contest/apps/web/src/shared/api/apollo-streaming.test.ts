@@ -1,16 +1,17 @@
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+
 import { ApolloClient, ApolloLink, gql, InMemoryCache } from '@apollo/client';
 import {
-  TeeToReadableStreamLink,
-  ReadFromReadableStreamLink,
   readFromReadableStream,
+  ReadFromReadableStreamLink,
   teeToReadableStream,
+  TeeToReadableStreamLink,
   type ReadableStreamLinkEvent,
 } from '@apollo/client-react-streaming';
 import type { FormattedExecutionResult } from 'graphql';
 import { of, Subject } from 'rxjs';
 import { expect, it, vi } from 'vitest';
-import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { ReadFromReadableStreamLink: BrowserReadFromReadableStreamLink } = require(

@@ -1,5 +1,6 @@
 import { parse } from 'graphql';
 import { describe, expect, it } from 'vitest';
+
 import {
   PUBLIC_CACHE_TAG,
   PUBLIC_CONTENT_TTL,

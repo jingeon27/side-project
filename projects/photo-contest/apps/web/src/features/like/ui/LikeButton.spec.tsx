@@ -1,22 +1,21 @@
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider, useQuery } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
-import { installFakeNativeApp } from '@photo-contest/bridge/test';
-import type { IFakeNativeApp } from '@photo-contest/bridge/test';
-import { createWebBridge } from '@photo-contest/bridge/web';
-import type { IWebBridge } from '@photo-contest/bridge/web';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
+import { createWebBridge, type IWebBridge } from '@photo-contest/bridge/web';
+
 import { createErrorToastLink } from '@/shared/api/apollo-link.helper';
 import {
   LikeSubmissionDocument,
-  SubmissionSort,
   SubmissionsDocument,
+  SubmissionSort,
   UnlikeSubmissionDocument,
+  type SubmissionCardFragment,
 } from '@/shared/api/generated';
-import type { SubmissionCardFragment } from '@/shared/api/generated';
 import { trackEvent } from '@/shared/model/analytics';
 import { BridgeContext } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';

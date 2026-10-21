@@ -1,7 +1,5 @@
-import { createNativeRouter } from './native';
-import type { INativeRouter, TNativeCapabilities } from './native';
-import { APP_MARKER_KEY, NATIVE_EVENT_NAME, PROTOCOL_VERSION } from './protocol';
-import type { TWebRequestType } from './protocol';
+import { createNativeRouter, type INativeRouter, type TNativeCapabilities } from './native';
+import { APP_MARKER_KEY, NATIVE_EVENT_NAME, PROTOCOL_VERSION, type TWebRequestType } from './protocol';
 import type { TBridgeWindow } from './web';
 
 type TFakeWindow = TBridgeWindow & Pick<Window, 'dispatchEvent' | 'location'>;

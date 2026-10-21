@@ -1,18 +1,20 @@
-import { randomBytes } from 'node:crypto';
-import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import type { INestApplication } from '@nestjs/common';
-import supertest from 'supertest';
 import sharp from 'sharp';
-import { PrismaClient } from '../generated/prisma';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app';
 import { hash, token } from '../common/crypto';
-import { assertDatabaseUrl } from '../security';
+import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
+import { assertDatabaseUrl } from '../security';
 
 const require = createRequire(import.meta.url);
 const schema = `gf_test_profile_${randomBytes(8).toString('hex')}`;

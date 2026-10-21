@@ -1,8 +1,10 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+
 import {
   GalleryDocument,
   GroupVisibility,
@@ -13,6 +15,7 @@ import { ROUTES } from '@/shared/constants/routes';
 import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
+
 import { GroupMembershipButton } from './GroupMembershipButton';
 import { GroupNavigation } from './GroupNavigation';
 

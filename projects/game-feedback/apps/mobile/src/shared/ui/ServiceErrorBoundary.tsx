@@ -1,6 +1,8 @@
 import { Component, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS } from '@/shared/config/theme';
 
 interface IServiceErrorBoundaryProps {

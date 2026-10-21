@@ -5,8 +5,8 @@ import {
   fsdOptionsSchema,
   LAYER_RANK,
   ROUTE_IMPORTABLE_LAYERS,
+  type TFsdOptions,
 } from '../lib/fsd.helper';
-import type { TFsdOptions } from '../lib/fsd.helper';
 
 export const layerImports: TSESLint.RuleModule<'upward' | 'route', TFsdOptions> = {
   defaultOptions: [{}],

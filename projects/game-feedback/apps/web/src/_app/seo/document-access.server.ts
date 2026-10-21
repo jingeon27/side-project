@@ -1,6 +1,8 @@
 import 'server-only';
-import { ApiError, getPost, getPublicProfile, listCategories } from '@game-feedback/sdk';
+
 import { GameSlugSchema } from '@game-feedback/bridge';
+import { ApiError, getPost, getPublicProfile, listCategories } from '@game-feedback/sdk';
+
 import { boardBySlug } from '@/features/board';
 import { publicServerOptions } from '@/shared/api/server';
 

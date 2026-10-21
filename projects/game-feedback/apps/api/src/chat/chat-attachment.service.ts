@@ -1,10 +1,10 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
 import { validateChatFile } from './chat-file';

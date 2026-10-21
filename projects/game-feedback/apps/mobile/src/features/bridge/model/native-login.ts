@@ -1,7 +1,10 @@
 import * as Crypto from 'expo-crypto';
 import * as WebBrowser from 'expo-web-browser';
+
 import type { TLoginProvider } from '@game-feedback/bridge';
+
 import { socialLogin } from '../lib/social-login';
+
 function randomVerifier() {
   const bytes = Crypto.getRandomBytes(32);
   const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');

@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { validateSharedInstanceEnvironment } from './shared-instance.config';
+
 import { resolveCacheRevalidationConfig } from '../cache-invalidation/cache-invalidation.config';
+import { validateSharedInstanceEnvironment } from './shared-instance.config';
 
 const publicOrigin = z.url().refine((value) => {
   const url = new URL(value);

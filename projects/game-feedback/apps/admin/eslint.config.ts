@@ -1,8 +1,11 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'eslint/config';
-import { reactConfig } from '@side/eslint-config/react';
+
 import { tsconfigRootDir } from '@side/eslint-config/base';
 import { fsdBoundaries } from '@side/eslint-config/fsd-boundaries';
-import { fileURLToPath } from 'node:url';
+import { reactConfig } from '@side/eslint-config/react';
+
 export default defineConfig([
   ...reactConfig,
   tsconfigRootDir(import.meta.dirname),

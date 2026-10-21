@@ -1,11 +1,12 @@
 import {
   getAdminUser,
-  setUserVerification,
-  setUserBan,
+  hideContent,
   listReports,
   reviewReport,
-  hideContent,
+  setUserBan,
+  setUserVerification,
 } from '@game-feedback/sdk';
+
 export const fetchReports = () => listReports();
 export const fetchUser = (id: string) => getAdminUser(id);
 export const updateVerification = ({ id, isVerified }: { id: string; isVerified: boolean }) =>

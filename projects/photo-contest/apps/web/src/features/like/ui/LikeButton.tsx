@@ -1,11 +1,15 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
-import { Heart } from 'lucide-react';
 import { useId } from 'react';
 
-import { LikeSubmissionDocument, UnlikeSubmissionDocument } from '@/shared/api/generated';
-import type { SubmissionLikeFragment } from '@/shared/api/generated';
+import { useMutation } from '@apollo/client/react';
+import { Heart } from 'lucide-react';
+
+import {
+  LikeSubmissionDocument,
+  UnlikeSubmissionDocument,
+  type SubmissionLikeFragment,
+} from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';

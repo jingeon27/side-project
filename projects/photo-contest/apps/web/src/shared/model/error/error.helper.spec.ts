@@ -1,8 +1,9 @@
 import { CombinedGraphQLErrors, ServerError, ServerParseError } from '@apollo/client/errors';
-import { BridgeError } from '@photo-contest/bridge/web';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_ERROR_MESSAGE, RequestError, ensureOk, getErrorCode, getErrorMessage } from './error.helper';
+import { BridgeError } from '@photo-contest/bridge/web';
+
+import { DEFAULT_ERROR_MESSAGE, ensureOk, getErrorCode, getErrorMessage, RequestError } from './error.helper';
 
 function graphqlErrors(...errors: Array<{ message: string; code?: string }>) {
   return new CombinedGraphQLErrors({

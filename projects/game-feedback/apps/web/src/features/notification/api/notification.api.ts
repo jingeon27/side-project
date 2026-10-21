@@ -1,5 +1,7 @@
-import { listNotifications, readNotification, readAllNotifications } from '@game-feedback/sdk';
+import { listNotifications, readAllNotifications, readNotification } from '@game-feedback/sdk';
+
 import type { TNotificationListParams } from '../types/notification.type';
+
 export function fetchNotificationList(params: TNotificationListParams = {}) {
   return listNotifications(params);
 }

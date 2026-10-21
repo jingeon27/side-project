@@ -1,14 +1,18 @@
-import { randomBytes, createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+
 import type { Page } from '@playwright/test';
+
 import {
   buildBootstrapScript,
   buildDispatchScript,
   type TLoginResult,
   type TWebMessage,
 } from '@game-feedback/bridge';
+
 import { NativeHost } from '../../src/features/bridge/lib/native-host';
 import { socialLogin } from '../../src/features/bridge/lib/social-login';
 import { toWebPath } from '../../src/features/navigation/lib/navigation-policy';
+
 export const ORIGIN = 'http://127.0.0.1:3302';
 class NativeHostHarness {
   readonly messages: TWebMessage[] = [];

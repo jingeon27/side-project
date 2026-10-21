@@ -1,8 +1,10 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+
 import { notificationListOptions } from '@/features/notification';
+
 import { deletePostById, patchPost, postPost, postPostRead } from '../api/post.api';
-import { postDetailOptions, postListOptions } from './post.options';
 import { refreshServerPostDetail } from './post-detail-cache';
+import { postDetailOptions, postListOptions } from './post.options';
 
 export function createPostMutationOptions(client: QueryClient) {
   return mutationOptions({

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 export const groupCategorySchema = z.object({
   name: z.string().trim().min(1, '카테고리 이름을 입력해 주세요.').max(20, '20자 이내로 입력해 주세요.'),
 });

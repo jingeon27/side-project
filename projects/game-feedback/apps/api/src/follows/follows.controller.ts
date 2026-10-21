@@ -1,8 +1,9 @@
-import { UseGuards, Controller, Delete, Get, Inject, Param, Put, Req } from '@nestjs/common';
+import { Controller, Delete, Get, Inject, Param, Put, Req, UseGuards } from '@nestjs/common';
+
+import type { SessionRequest } from '../auth/session.types';
+import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { FollowUserDto } from './follow-input.dto';
-import { ValidatedBody } from '../common/http/request-validation';
-import type { SessionRequest } from '../auth/session.types';
 import { FollowsService } from './follows.service';
 
 @Controller('api/users/:id/follow')

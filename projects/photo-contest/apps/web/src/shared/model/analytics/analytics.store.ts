@@ -1,4 +1,5 @@
-import { Identify, createInstance } from '@amplitude/analytics-browser';
+import { createInstance, Identify } from '@amplitude/analytics-browser';
+
 import type { TNativeAppInfo } from '@photo-contest/bridge';
 
 import type { TAnalyticsEventName, TAnalyticsEventProperties } from './analytics.catalog';

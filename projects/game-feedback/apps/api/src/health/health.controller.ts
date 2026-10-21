@@ -1,7 +1,7 @@
-import { PrismaClient } from '../generated/prisma';
-
 import { Controller, Get, Inject } from '@nestjs/common';
+
 import { ApiError } from '../common/http/api-error';
+import { PrismaClient } from '../generated/prisma';
 
 @Controller('api/health')
 export class HealthController {

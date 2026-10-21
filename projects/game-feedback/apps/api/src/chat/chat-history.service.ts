@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
@@ -9,6 +10,7 @@ import { advancesBoundary, historyBoundary, historyWhere } from './chat-history'
 import { type ClearHistoryDto, type ReadMessageDto } from './chat-input.dto';
 import { readBoundary } from './chat-read.policy';
 import { ChatEvents } from './chat.events';
+
 @Injectable()
 export class ChatHistoryService {
   constructor(

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { openOverlay } from './open-overlay';
 
 beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => undefined));

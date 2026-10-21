@@ -1,5 +1,5 @@
-import type { SessionRequest } from './session.types';
 import { COOKIE, cookies } from '../common/http/cookies';
+import type { SessionRequest } from './session.types';
 
 export function sessionToken(req: SessionRequest) {
   const authorization = req.headers.authorization;

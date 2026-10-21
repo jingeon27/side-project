@@ -1,7 +1,9 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { useState, useTransition } from 'react';
+
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+
 import { CreateGroupContestButton, GroupContestCard } from '@/features/contest';
 import { GroupContentFrame } from '@/features/group';
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';

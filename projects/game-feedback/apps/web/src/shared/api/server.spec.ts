@@ -1,5 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
+
 import { publicServerOptions, serverRequestOptions } from './server';
+
 const { getCookie } = vi.hoisted(() => ({ getCookie: vi.fn() }));
 vi.mock('next/headers', () => ({ cookies: async () => ({ get: getCookie }) }));
 afterEach(() => {

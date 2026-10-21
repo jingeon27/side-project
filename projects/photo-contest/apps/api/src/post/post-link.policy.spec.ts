@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { postLink } from './post-link.policy';
 
 describe('게시물 첨부 링크', () => {

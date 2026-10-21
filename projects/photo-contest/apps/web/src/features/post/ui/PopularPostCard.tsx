@@ -1,9 +1,10 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
-import { Heart, Link2, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { useFragment } from '@apollo/client/react';
+import { Heart, Link2, Play } from 'lucide-react';
 
 import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';

@@ -1,7 +1,9 @@
 import { Button, Input } from '@side/design-system';
+
 import { useBanUserMutation, type TAdminUser } from '@/features/moderation';
 import { useZodForm } from '@/shared/model';
 import { ErrorNotice } from '@/shared/ui';
+
 import { userBanSchema } from '../model/user-ban.schema';
 
 export function UserBanForm({ user }: { user: TAdminUser }) {

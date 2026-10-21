@@ -1,6 +1,7 @@
 // Test-only S3 boundary: private bucket credentials, Range, and byte persistence.
-import { createServer } from 'node:https';
 import { readFileSync } from 'node:fs';
+import { createServer } from 'node:https';
+
 const objects = new Map();
 const allowed = { 'gf-smoke-private': 'gf-smoke-access', 'pc-smoke-private': 'pc-smoke-access' };
 createServer(

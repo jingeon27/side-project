@@ -1,12 +1,16 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { useId } from 'react';
+
 import { useSession } from '@/features/auth';
 import { CommentItem } from '@/features/comment';
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { Comment, Post } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+
 import { ContentActions } from './ContentActions';
 import { PostCommentForm } from './PostCommentForm';
+
 interface IPostCommentsSectionProps {
   post: Post;
   comments: Comment[];

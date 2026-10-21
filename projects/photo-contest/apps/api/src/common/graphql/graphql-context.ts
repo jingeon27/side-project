@@ -1,6 +1,5 @@
 import type { ExecutionContext } from '@nestjs/common';
-import { GqlExecutionContext } from '@nestjs/graphql';
-import type { GqlContextType } from '@nestjs/graphql';
+import { GqlExecutionContext, type GqlContextType } from '@nestjs/graphql';
 import type { Request, Response } from 'express';
 
 export interface IGraphqlContext {

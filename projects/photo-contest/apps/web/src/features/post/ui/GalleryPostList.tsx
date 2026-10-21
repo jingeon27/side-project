@@ -1,11 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
+
 import { Camera } from 'lucide-react';
-import { EmptyState } from '@/shared/ui/@core/empty-state';
+
 import { cn } from '@/shared/lib/cn.helper';
-import { PostCard } from './PostCard';
+import { EmptyState } from '@/shared/ui/@core/empty-state';
+
 import { PopularPostCard } from './PopularPostCard';
+import { PostCard } from './PostCard';
 
 export function GalleryPostList({
   posts,

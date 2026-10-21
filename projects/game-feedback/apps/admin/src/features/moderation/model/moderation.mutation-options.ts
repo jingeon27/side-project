@@ -1,5 +1,6 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { updateVerification, updateBan, updateReport, updateVisibility } from '../api/moderation.api';
+
+import { updateBan, updateReport, updateVerification, updateVisibility } from '../api/moderation.api';
 import { reportOptions, userOptions } from './moderation.options';
 
 export function verifyMutationOptions(client: QueryClient) {

@@ -1,5 +1,6 @@
 import { queryOptions, skipToken } from '@tanstack/react-query';
 import { compact } from 'es-toolkit';
+
 import { fetchGameAccounts, fetchGameProfile } from '../api/game-profile.api';
 
 export function gameAccountListOptions(userId?: string) {

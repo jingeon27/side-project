@@ -1,5 +1,6 @@
-import { Inbox } from 'lucide-react';
 import type { ReactNode } from 'react';
+
+import { Inbox } from 'lucide-react';
 
 import { cn } from '../../../lib/cn.helper';
 

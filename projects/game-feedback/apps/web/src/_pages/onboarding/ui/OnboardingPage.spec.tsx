@@ -1,11 +1,15 @@
 import { Suspense } from 'react';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SessionProvider, sessionOptions } from '@/features/auth';
-import { AuthOnboarding } from '@/widgets/authentication';
+
 import { appRoutes } from '@game-feedback/bridge';
+
+import { sessionOptions, SessionProvider } from '@/features/auth';
 import type { Session } from '@/shared/api';
+import { AuthOnboarding } from '@/widgets/authentication';
+
 import { OnboardingPage } from './OnboardingPage';
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));

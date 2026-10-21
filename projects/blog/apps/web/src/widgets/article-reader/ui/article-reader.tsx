@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+
 import type { Article } from '@/entities/article/model/types';
+import { ArticleCard } from '@/entities/article/ui/article-card';
 import { ArticleMeta } from '@/entities/article/ui/article-meta';
 import { ArticleTags } from '@/entities/article/ui/article-tags';
-import { ArticleCard } from '@/entities/article/ui/article-card';
 import { ArticleShare } from '@/features/article-share/ui/article-share';
 import { labels } from '@/shared/config/labels';
+
 import { TableOfContents } from './table-of-contents';
 
 export function ArticleReader({

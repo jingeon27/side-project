@@ -1,10 +1,14 @@
 'use client';
+
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import { useI18n } from '@/shared/i18n';
 import { isNativeApp } from '@/shared/native';
-import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
+
 import { openLoginDialog } from './login.overlay';
 
 export function useLoginNavigation() {

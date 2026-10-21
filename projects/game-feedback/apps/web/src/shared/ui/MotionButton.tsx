@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, type IButtonProps } from '@side/design-system';
+
 import { m, useMotionPreference } from '@/shared/motion';
 
 export function MotionButton(props: Omit<IButtonProps, 'render'>) {

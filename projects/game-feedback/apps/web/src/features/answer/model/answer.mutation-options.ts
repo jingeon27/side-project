@@ -1,7 +1,10 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { postDetailOptions, postListOptions, refreshServerPostDetail } from '@/features/post';
+
 import { notificationListOptions } from '@/features/notification';
+import { postDetailOptions, postListOptions, refreshServerPostDetail } from '@/features/post';
+
 import { deleteAnswerById, patchAnswer, postAnswer, postHelpfulAnswer } from '../api/answer.api';
+
 function createRefreshAnswerCaches(client: QueryClient) {
   return async (postId: string) => {
     await Promise.all([

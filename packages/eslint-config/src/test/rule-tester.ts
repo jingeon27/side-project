@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
 import { parser } from 'typescript-eslint';
 
 export const languageOptions = {

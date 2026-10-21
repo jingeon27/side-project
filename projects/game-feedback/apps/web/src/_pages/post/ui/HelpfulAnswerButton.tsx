@@ -1,10 +1,13 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { ThumbsUp } from 'lucide-react';
-import type { Answer } from '@/shared/api';
-import { ErrorNotice, useNotify } from '@/shared/ui';
+
 import { useHelpfulAnswerMutation } from '@/features/answer';
+import type { Answer } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { m, useMotionPreference } from '@/shared/motion';
+import { ErrorNotice, useNotify } from '@/shared/ui';
+
 interface IHelpfulAnswerButtonProps {
   answer: Answer;
 }

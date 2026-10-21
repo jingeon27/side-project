@@ -1,6 +1,7 @@
 'use client';
 
 import { useFragment, useMutation, useQuery } from '@apollo/client/react';
+
 import {
   CastGroupContestVoteDocument,
   GalleryPostCardFragmentDoc,

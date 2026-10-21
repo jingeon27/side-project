@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { assertContestParticipation } from './group-contest.policy';
 
 describe('게시물의 대회 참여', () => {

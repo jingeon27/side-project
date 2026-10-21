@@ -1,5 +1,4 @@
-import { Catch, HttpException, HttpStatus } from '@nestjs/common';
-import type { ArgumentsHost } from '@nestjs/common';
+import { Catch, HttpException, HttpStatus, type ArgumentsHost } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';

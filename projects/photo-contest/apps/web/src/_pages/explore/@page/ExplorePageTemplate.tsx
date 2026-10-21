@@ -3,7 +3,7 @@
 import { useBackgroundQuery } from '@apollo/client/react';
 
 import { ViewerBoundary } from '@/features/auth';
-import { CreateGroupButton } from '@/features/group';
+import { CreateGroupButton, GroupSearchForm } from '@/features/group';
 import { DiscoverGroupsDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { buildLoginRedirectPath } from '@/shared/lib/auth-gate.helper';
@@ -14,7 +14,6 @@ import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
 import { GroupDiscoveryResults } from './ui/GroupDiscoveryResults';
-import { GroupSearchForm } from '@/features/group';
 
 export function ExplorePageTemplate({ search }: { search: string }) {
   const [queryRef, { refetch }] = useBackgroundQuery(DiscoverGroupsDocument, {

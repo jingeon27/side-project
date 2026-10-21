@@ -2,8 +2,7 @@ import { Args, Query, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
-import { FeedService } from './feed.service';
-import type { IFeedRange } from './feed.service';
+import { FeedService, type IFeedRange } from './feed.service';
 
 @Resolver('PhotoFeedItem')
 export class FeedResolver {

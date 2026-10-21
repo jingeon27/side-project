@@ -1,11 +1,13 @@
+import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app';
+import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, hash } from '../security';
 
 const baseUrl = process.env.TEST_DATABASE_URL;

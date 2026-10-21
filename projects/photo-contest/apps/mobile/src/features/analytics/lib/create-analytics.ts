@@ -1,4 +1,5 @@
 import type * as Amplitude from '@amplitude/analytics-react-native';
+
 import type { TWebEventPayload } from '@photo-contest/bridge';
 
 import type { TAnalyticsEvent } from '../config/events';

@@ -1,8 +1,11 @@
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { Button } from '@side/design-system';
 import { uniqBy } from 'es-toolkit';
+
+import { Button } from '@side/design-system';
+
 import { messageOptions, type TSupportThread } from '@/features/support';
 import { formatDateTime } from '@/shared/lib';
+
 import { SupportReplyForm } from './SupportReplyForm';
 
 export function SupportConversation({ thread }: { thread: TSupportThread }) {

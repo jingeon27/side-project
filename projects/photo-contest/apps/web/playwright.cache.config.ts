@@ -1,5 +1,7 @@
-import { apiWebServer, prepareE2eDatabase } from '@photo-contest/test-kit';
 import { defineConfig, devices } from '@playwright/test';
+
+import { apiWebServer, prepareE2eDatabase } from '@photo-contest/test-kit';
+
 import { CACHE_API_PORT, CACHE_API_URL, CACHE_WEB_ORIGIN, CACHE_WEB_PORT } from './test/cache/env';
 
 const database = prepareE2eDatabase('web_cache');

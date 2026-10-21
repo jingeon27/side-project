@@ -1,6 +1,7 @@
+import { ACTIVE_CONTENT } from '../common/content';
 import type { Prisma } from '../generated/prisma';
 import { authorDto, authorSelect } from '../users/user.presenter';
-import { ACTIVE_CONTENT } from '../common/content';
+
 export const postInclude = {
   author: { select: authorSelect },
   category: true,

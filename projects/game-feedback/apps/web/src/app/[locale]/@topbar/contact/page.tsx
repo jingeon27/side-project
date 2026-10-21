@@ -1,4 +1,5 @@
 import { locale as rootLocale } from 'next/root-params';
+
 import { ContactTopbar } from '@/_pages/contact';
 
 export default async function Page() {

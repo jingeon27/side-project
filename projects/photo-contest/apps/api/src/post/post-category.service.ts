@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';

@@ -1,5 +1,7 @@
-import { translate, type TLocale } from '@/shared/i18n/index.server';
 import Link from 'next/link';
+
+import { translate, type TLocale } from '@/shared/i18n/index.server';
+
 export function TermsContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   return (
