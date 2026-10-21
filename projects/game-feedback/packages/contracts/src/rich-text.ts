@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { RichTextEmbedSchema } from './post-media';
 
 export const RichTextAttributesSchema = z
