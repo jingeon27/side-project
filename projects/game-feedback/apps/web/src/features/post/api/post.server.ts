@@ -2,17 +2,22 @@ import 'server-only';
 import { cache } from 'react';
 import { cacheLife, cacheTag } from 'next/cache';
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
 import { ApiError, getPost, listPosts } from '@game-feedback/sdk';
+import type { PostDetail } from '@/shared/api';
 import { hasSessionCookie, serverRequestOptions, publicServerOptions } from '@/shared/api/server';
 import type { TPostListParams } from '../types/post.type';
+import { POST_ID_PATTERN, postDetailCacheTag } from './post-cache';
+
+const ExcludedAuthorsSchema = z.object({ userIds: z.array(z.string()) });
 
 export async function getServerPostList(params: TPostListParams) {
   return listPosts(params, await serverRequestOptions());
 }
-// 비로그인 응답은 차단 관계가 반영되지 않는 공개 데이터라 게시글 id만으로 캐시한다. 없는 글은 null로 캐시한다.
+// 쿠키 없이 받은 공개 상세라 모든 사용자가 게시글 id 하나로 같은 캐시를 쓴다. 없는 글은 null로 캐시한다.
 async function getPublicPost(id: string) {
   'use cache';
-  cacheTag(`post:${id}`);
+  cacheTag(postDetailCacheTag(id));
   cacheLife({ stale: 60, revalidate: 60, expire: 3_600 });
   try {
     return await getPost(id, publicServerOptions());
@@ -21,15 +26,26 @@ async function getPublicPost(id: string) {
     throw error;
   }
 }
+// 차단 관계는 사용자마다 달라 캐시하지 않는다. 자신을 차단한 사람이 드러나지 않게 브라우저가 닿지 않는 내부 경로로 받는다.
+async function getServerExcludedAuthors(): Promise<ReadonlySet<string>> {
+  if (!(await hasSessionCookie())) return new Set();
+  const { baseUrl, headers, signal } = await serverRequestOptions();
+  const response = await fetch(`${baseUrl}/_internal/visibility/excluded-authors`, { headers, signal });
+  if (!response.ok) throw new Error(`Excluded authors request failed with ${response.status}.`);
+  return new Set(ExcludedAuthorsSchema.parse(await response.json()).userIds);
+}
+function withoutAuthors(detail: PostDetail, excluded: ReadonlySet<string>): PostDetail {
+  return {
+    ...detail,
+    answers: detail.answers.filter((answer) => !excluded.has(answer.author.id)),
+    comments: detail.comments.filter((comment) => !excluded.has(comment.author.id)),
+  };
+}
 export const getServerPost = cache(async (id: string) => {
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) notFound();
-  if (!(await hasSessionCookie())) return (await getPublicPost(id)) ?? notFound();
-  try {
-    return await getPost(id, await serverRequestOptions());
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) notFound();
-    throw error;
-  }
+  if (!POST_ID_PATTERN.test(id)) notFound();
+  const [detail, excluded] = await Promise.all([getPublicPost(id), getServerExcludedAuthors()]);
+  if (!detail || excluded.has(detail.post.author.id)) notFound();
+  return excluded.size ? withoutAuthors(detail, excluded) : detail;
 });
 export const getServerUserPosts = cache(async (authorId: string, cursor = '') => {
   try {
