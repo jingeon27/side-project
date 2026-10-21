@@ -22,7 +22,7 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
       },
     },
     android: {
-      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#111827' },
+      adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#12151c' },
       package: 'dev.side.gamefeedback',
       predictiveBackGestureEnabled: false,
     },
