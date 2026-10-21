@@ -67,7 +67,22 @@ corepack yarn workspace @side/game-feedback dev:demo
 
 ```sh
 corepack yarn workspace @side/design-system check
+corepack yarn storybook
+corepack yarn build:storybook
 ```
+
+## 코드 포맷과 import 순서
+
+루트 Prettier와 `@ianvs/prettier-plugin-sort-imports`가 모든 워크스페이스의 포맷과 import 순서를 관리합니다. [`.prettierrc.json`](.prettierrc.json)의 `importOrder`에서 Node.js 내장 모듈 → React·Next.js → 외부 패키지 → 워크스페이스 패키지 → `@/`·`~/` 별칭 → 상대 경로 순서를 설정하며 그룹 사이에는 빈 줄을 둡니다. 새 프로젝트의 패키지 scope를 만들면 워크스페이스 정규식에도 추가하세요. CSS나 `server-only`처럼 값 없이 가져오는 import는 실행 순서를 유지합니다.
+
+```sh
+corepack yarn format:check
+corepack yarn format
+# 수정한 파일만 정리할 때
+corepack yarn prettier --write packages/design-system/src/index.ts
+```
+
+편집기에서는 저장소에 설치된 Prettier와 루트 설정을 사용하세요. NestJS의 legacy decorator와 TypeScript 6.0.2 import 문법도 지원하도록 설정했습니다.
 
 ## 검증
 
