@@ -70,9 +70,13 @@ export function useBridgeLifecycle(bridge: IWebBridge | null) {
     if (!bridge) return;
     // 프로토콜이 같은 origin의 상대 경로만 통과시킨다.
     const stopOpen = bridge.onEvent('navigation.open', ({ path }) => router.push(path));
-    const stopState = bridge.onEvent('app.state', ({ state }) => {
-      // 각 쿼리의 실패는 그 화면이 보여 준다.
-      if (state === 'active') client.refetchQueries({ include: 'active' }).catch(() => undefined);
+    const stopState = bridge.onEvent('app.state', async ({ state }) => {
+      if (state !== 'active') return;
+      try {
+        await client.refetchQueries({ include: 'active' });
+      } catch {
+        // 각 쿼리의 실패는 그 화면이 보여 준다.
+      }
     });
     return () => {
       stopOpen();

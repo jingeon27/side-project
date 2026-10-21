@@ -59,11 +59,19 @@ export function resetAnalytics() {
   client?.reset();
 }
 
+const settle = async (pending: Promise<unknown>) => {
+  try {
+    await pending;
+  } catch {
+    // 이벤트 전송 실패가 문서 이동을 막지 않게 한다.
+  }
+};
+
 /** 문서를 떠나기 직전(외부 로그인 이동 등)에 쌓인 이벤트를 보낸다. 오래 걸리면 기다리지 않는다. */
 export async function flushAnalytics(timeoutMs = 400) {
   if (!client) return;
   await Promise.race([
-    client.flush().promise.catch(() => undefined),
+    settle(client.flush().promise),
     new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
   ]);
 }

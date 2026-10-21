@@ -93,7 +93,7 @@ export async function prepareUploadImage<TImage extends IDecodedImage>(
   }
 }
 
-const drawToJpeg = (
+const drawToJpeg = async (
   image: ImageBitmap,
   { width, height }: { width: number; height: number },
   quality: number,
@@ -108,13 +108,17 @@ const drawToJpeg = (
   };
   if (typeof OffscreenCanvas !== 'undefined') {
     const canvas = new OffscreenCanvas(width, height);
-    if (!draw(canvas.getContext('2d'))) return Promise.resolve(null);
-    return canvas.convertToBlob({ type: 'image/jpeg', quality }).catch(() => null);
+    if (!draw(canvas.getContext('2d'))) return null;
+    try {
+      return await canvas.convertToBlob({ type: 'image/jpeg', quality });
+    } catch {
+      return null;
+    }
   }
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  if (!draw(canvas.getContext('2d'))) return Promise.resolve(null);
+  if (!draw(canvas.getContext('2d'))) return null;
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
 };
 

@@ -149,8 +149,12 @@ function GroupJoinRequestsQuery({ groupId }: { groupId: string }) {
         <Button
           size="md"
           variant="ghost"
-          onClick={() => {
-            void refetch().catch(() => undefined);
+          onClick={async () => {
+            try {
+              await refetch();
+            } catch {
+              /* 조회 경계에서 재시도한다. */
+            }
           }}
         >
           신청 새로고침

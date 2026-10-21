@@ -63,8 +63,12 @@ function GroupContent({
           .otherwise(() => (
             <ErrorState
               message={getErrorMessage(error)}
-              onRetry={() => {
-                void onRefresh().catch(() => undefined);
+              onRetry={async () => {
+                try {
+                  await onRefresh();
+                } catch {
+                  /* 실패하면 같은 안내가 남는다. */
+                }
               }}
             />
           ))}
