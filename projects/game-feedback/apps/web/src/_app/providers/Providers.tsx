@@ -50,9 +50,9 @@ function SessionContent({ children }: { children: ReactNode }) {
       <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
         <NativeBridge />
       </AsyncBoundary>
-      <ServiceErrorBoundary title={t('회원가입 안내')}>
+      <AsyncBoundary title={t('회원가입 안내')} pendingFallback={null}>
         <AuthOnboarding />
-      </ServiceErrorBoundary>
+      </AsyncBoundary>
     </OverlayProvider>
   );
 }

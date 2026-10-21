@@ -1,0 +1,76 @@
+@layer components {
+  .ds-sheet-viewport {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--visual-viewport-top, 0px);
+    height: var(--visual-viewport-height, 100dvh);
+    z-index: var(--z-index-dialog);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .ds-sheet-popup {
+    /* Drawer의 고빈도 CSS 변수는 상속되지 않으므로 본문에는 계산된 별칭을 전달한다. */
+    --sheet-visible-offset: var(--drawer-snap-point-offset, 0px);
+    position: relative;
+    width: 100%;
+    max-width: var(--max-width-app);
+    height: calc(100% - 16px);
+    flex-shrink: 0;
+    border: 1px solid var(--color-line);
+    border-bottom: 0;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-sheet);
+    outline: none;
+    transform: translateY(calc(var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)));
+    transition: transform 250ms var(--ease-sheet);
+  }
+  .ds-sheet-popup[data-starting-style],
+  .ds-sheet-popup[data-ending-style] {
+    transform: translateY(100%);
+  }
+  .ds-sheet-popup[data-swiping] {
+    transition: none;
+    user-select: none;
+  }
+  .ds-sheet-frame {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - var(--sheet-visible-offset, 0px));
+  }
+  .ds-sheet-header {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ds-sheet-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: var(--spacing-touch);
+    margin-inline: auto;
+    border-radius: var(--radius-control);
+    touch-action: none;
+    cursor: grab;
+  }
+  .ds-sheet-handle:active {
+    cursor: grabbing;
+  }
+  .ds-sheet-grip {
+    width: 40px;
+    height: 4px;
+    border-radius: var(--radius-control);
+    background: var(--color-subtle);
+  }
+  .ds-sheet-body {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 24px max(24px, env(safe-area-inset-bottom, 0px));
+    scroll-padding-block: 16px;
+  }
+}

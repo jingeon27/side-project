@@ -31,9 +31,10 @@ export function preferredLocale(preference: unknown, acceptLanguage?: string | n
   return isLocale(preference) ? preference : detectLocale(acceptLanguage);
 }
 export function localePath(path: string, locale: TLocale): string {
-  if (/^\/(ko|en|ja)\/login(?:[/?]|$)/.test(path)) {
+  const authScreen = /^\/(ko|en|ja)\/(login|onboarding)(?:[/?]|$)/.exec(path)?.[2];
+  if (authScreen === 'login' || authScreen === 'onboarding') {
     const route = resolveAppRoute(path);
-    return appRoutes.login(locale, localePath(route?.parent ?? appRoutes.feed(locale), locale));
+    return appRoutes[authScreen](locale, localePath(route?.parent ?? appRoutes.feed(locale), locale));
   }
   return /^\/(ko|en|ja)(?=\/|\?|#|$)/.test(path)
     ? path.replace(/^\/(ko|en|ja)(?=\/|\?|#|$)/, `/${locale}`)

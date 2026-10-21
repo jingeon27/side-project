@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildBootstrapScript, buildDispatchScript, parseNativeMessage } from '@game-feedback/bridge';
+import {
+  appRoutes,
+  buildBootstrapScript,
+  buildDispatchScript,
+  parseNativeMessage,
+} from '@game-feedback/bridge';
 import { NativeHost } from './native-host';
 const origin = 'https://feedback.example';
 function setup() {
@@ -13,6 +18,17 @@ function setup() {
 }
 afterEach(() => vi.useRealTimers());
 describe('native bridge boundary', () => {
+  it('가입 안내 화면을 열고 위치를 보고하되 외부 주소나 인증 순환은 전달하지 않아야 한다', () => {
+    const { host, receive, send, onLocation } = setup();
+    const path = appRoutes.onboarding('ja', '/ja/privacy');
+    receive({ type: 'ready' });
+    expect(host.open(path)).toBe(true);
+    expect(send).toHaveBeenLastCalledWith({ type: 'open', path });
+    receive({ type: 'location', path });
+    expect(onLocation).toHaveBeenLastCalledWith(path);
+    expect(host.open(appRoutes.onboarding('ja', appRoutes.login('ja')))).toBe(false);
+    expect(host.open(appRoutes.onboarding('ja', 'https://outside.test'))).toBe(false);
+  });
   it('reports overlay gestures and exits only for a matching root-back response', async () => {
     const onOverlayChange = vi.fn();
     const onRootBack = vi.fn();

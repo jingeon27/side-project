@@ -120,6 +120,14 @@ test('login keeps destination through language changes and returns after session
 test('browser OAuth submits a validated login return path and unavailable providers stay disabled', async ({
   page,
 }) => {
+  await page.route('**/api/session', async (route) => {
+    const response = await route.fetch();
+    const session = await response.json();
+    await route.fulfill({
+      response,
+      json: { ...session, googleConfigured: false, socialProviders: [] },
+    });
+  });
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto('/ko/login?returnTo=https%3A%2F%2Foutside.test');
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
