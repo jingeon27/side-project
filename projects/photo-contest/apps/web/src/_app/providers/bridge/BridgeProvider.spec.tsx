@@ -1,13 +1,12 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
-import { decodeWebMessage } from '@photo-contest/bridge';
-import { installFakeNativeApp } from '@photo-contest/bridge/test';
-import type { IFakeNativeApp } from '@photo-contest/bridge/test';
-import { createWebBridge } from '@photo-contest/bridge/web';
-import type { IWebBridge, TBridgeWindow } from '@photo-contest/bridge/web';
 import { render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { decodeWebMessage } from '@photo-contest/bridge';
+import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
+import { createWebBridge, type IWebBridge, type TBridgeWindow } from '@photo-contest/bridge/web';
 
 import { routeHistoryStore } from '@/shared/model/router';
 import { hasOpenOverlay, pushOverlayEntry } from '@/shared/model/router/overlay-history.store';

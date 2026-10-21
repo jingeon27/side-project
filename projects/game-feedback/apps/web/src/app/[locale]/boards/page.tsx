@@ -1,7 +1,10 @@
 import { Suspense } from 'react';
-import { LoadingState } from '@/shared/ui';
 import { redirect } from 'next/navigation';
+
 import { appRoutes } from '@game-feedback/bridge';
+
+import { LoadingState } from '@/shared/ui';
+
 async function RouteContent({ params }: { params: Promise<{ locale: string }> }) {
   redirect(appRoutes.boards((await params).locale));
   return null;

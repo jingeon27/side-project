@@ -1,15 +1,19 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
 import { useId } from 'react';
 
-import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '@/features/submission';
+import { useMutation } from '@apollo/client/react';
+
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
   CreatePostDocument,
   GalleryPostsDocument,
+  GroupContestDocument,
+  GroupContestsDocument,
   RequestPostUploadDocument,
   UploadPostMediaDocument,
 } from '@/shared/api/generated';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
@@ -18,24 +22,37 @@ import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-fi
 
 import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
+import { PostCategoryField } from './PostCategoryField';
+import { PostContestField } from './PostContestField';
+import { PostLinkField } from './PostLinkField';
 import { PostMediaField } from './PostMediaField';
 
 export function CreatePostBottomSheet({
   groupId,
+  defaultContestId,
   isOpen,
   onClose,
   unmount,
-}: IBottomSheetControlProps & { groupId: string }) {
+}: IBottomSheetControlProps & { groupId: string; defaultContestId?: string }) {
   const formId = useId();
   const rightsErrorId = useId();
   const form = useZodForm(postSchema, {
-    defaultValues: { title: '', body: '', media: null, rightsConfirmed: false },
+    defaultValues: {
+      participateInContest: Boolean(defaultContestId),
+      categoryId: '',
+      contestId: defaultContestId ?? '',
+      title: '',
+      body: '',
+      media: null,
+      linkUrl: '',
+      rightsConfirmed: false,
+    },
   });
   const [uploadMedia] = useMutation(UploadPostMediaDocument);
   const [requestUpload] = useMutation(RequestPostUploadDocument);
   const [createPost, { data: created }] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [GalleryPostsDocument],
+    refetchQueries: [GalleryPostsDocument, GroupContestDocument, GroupContestsDocument],
     awaitRefetchQueries: true,
   });
 
@@ -62,24 +79,56 @@ export function CreatePostBottomSheet({
         <form
           id={formId}
           noValidate
-          onSubmit={form.handleSubmit(async ({ title, body, media: file, rightsConfirmed }) => {
-            try {
-              const content = file.type.startsWith('video/')
-                ? { body: file, contentType: file.type }
-                : await prepareUploadImage(file, browserImageCodec);
-              const { data } = await requestUpload({ variables: { groupId } });
-              if (!data) return;
-              await uploadMedia({ variables: { uploadId: data.requestPostUpload.id, file: content.body } });
-              await createPost({
-                variables: { groupId, uploadId: data.requestPostUpload.id, title, body, rightsConfirmed },
-              });
-              toast.success('게시물을 올렸어요');
-              onClose();
-            } catch (error) {
-              if (error instanceof ImagePrepareError)
-                form.setError('media', { message: error.message }, { shouldFocus: true });
-            }
-          })}
+          onSubmit={form.handleSubmit(
+            async ({
+              title,
+              body,
+              media: file,
+              linkUrl,
+              rightsConfirmed,
+              participateInContest,
+              contestId,
+              categoryId,
+            }) => {
+              try {
+                let uploadId: string | undefined;
+                if (file) {
+                  const content = file.type.startsWith('video/')
+                    ? { body: file, contentType: file.type }
+                    : await prepareUploadImage(file, browserImageCodec);
+                  const { data } = await requestUpload({ variables: { groupId } });
+                  if (!data) return;
+                  await uploadMedia({
+                    variables: { uploadId: data.requestPostUpload.id, file: content.body },
+                  });
+                  uploadId = data.requestPostUpload.id;
+                }
+                const { data: posted } = await createPost({
+                  variables: {
+                    groupId,
+                    categoryId: categoryId || null,
+                    uploadId,
+                    linkUrl: linkUrl || null,
+                    title,
+                    body,
+                    rightsConfirmed,
+                    ...(participateInContest ? { contestId } : {}),
+                  },
+                });
+                if (posted)
+                  trackEvent(ANALYTICS_EVENT.PostCreated, {
+                    group_id: groupId,
+                    category_id: categoryId || null,
+                    kind: posted.createPost.kind,
+                  });
+                toast.success('게시물을 올렸어요');
+                onClose();
+              } catch (error) {
+                if (error instanceof ImagePrepareError)
+                  form.setError('media', { message: error.message }, { shouldFocus: true });
+              }
+            },
+          )}
           className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 desktop:grid-cols-2 desktop:grid-rows-[auto_auto_1fr] desktop:items-start desktop:gap-x-10 desktop:gap-y-5"
         >
           <TextField
@@ -102,7 +151,10 @@ export function CreatePostBottomSheet({
             error={errors.body?.message}
             {...form.register('body')}
           />
-          <div className="desktop:col-start-2 desktop:row-start-3">
+          <div className="flex flex-col gap-4 desktop:col-start-2 desktop:row-start-3">
+            <PostLinkField form={form} />
+            <PostCategoryField form={form} groupId={groupId} />
+            <PostContestField groupId={groupId} form={form} />
             <label className="flex min-h-touch items-start gap-3 text-body text-ink">
               <input
                 type="checkbox"
@@ -113,8 +165,8 @@ export function CreatePostBottomSheet({
                 {...form.register('rightsConfirmed')}
               />
               <span>
-                <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹
-                멤버에게 공개됩니다.
+                <FieldRequirement required /> 공유할 권리가 있고 촬영된 사람의 동의를 확인했습니다. 그룹의
+                공개 범위에 따라 게시됩니다.
               </span>
             </label>
             {errors.rightsConfirmed ? (
@@ -127,7 +179,7 @@ export function CreatePostBottomSheet({
       </BottomSheet.Content>
       <BottomSheet.Footer>
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-          <p className="hidden text-caption text-muted desktop:block">그룹 멤버에게만 공개돼요.</p>
+          <p className="hidden text-caption text-muted desktop:block">그룹의 공개 범위에 따라 게시돼요.</p>
           <Button
             type="submit"
             form={formId}

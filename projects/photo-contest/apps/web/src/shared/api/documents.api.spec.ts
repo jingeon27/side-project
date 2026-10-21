@@ -1,54 +1,63 @@
-import {
-  createTestImage,
-  createTestVideo,
-  createTestUser,
-  graphqlRequest,
-  moveTestContest,
-} from '@photo-contest/test-kit';
 import { ApolloClient, InMemoryCache } from '@apollo/client';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import UploadHttpLink from 'apollo-upload-client/UploadHttpLink.mjs';
 import { print } from 'graphql';
-import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { beforeAll, describe, expect, inject, it } from 'vitest';
 
 import {
-  CreatePostDocument,
-  UploadPostMediaDocument,
-  UploadSubmissionPhotoDocument,
-  RegisterWithPasswordDocument,
-  LoginWithPasswordDocument,
-  DeletePostDocument,
-  GalleryPostsDocument,
-  LikePostDocument,
-  UnlikePostDocument,
-  CreatePostCommentDocument,
-  DeletePostCommentDocument,
-  PostCommentsDocument,
-  PostSort,
-  RequestPostUploadDocument,
+  createTestImage,
+  createTestUser,
+  createTestVideo,
+  graphqlRequest,
+  moveTestContest,
+} from '@photo-contest/test-kit';
+
+import {
   CastVoteDocument,
   ContestDocument,
   ContestResultsDocument,
   CreateContestDocument,
+  CreateGroupContestDocument,
   CreateGroupDocument,
+  CreatePostCommentDocument,
+  CreatePostDocument,
   CreateSubmissionDocument,
+  DeletePostCommentDocument,
+  DeletePostDocument,
   DeleteSubmissionDocument,
-  GroupDocument,
   GalleryDocument,
+  GalleryPostsDocument,
+  GroupDocument,
   GroupLeaderboardDocument,
+  GroupProfileDocument,
   HideSubmissionDocument,
   InvitePreviewDocument,
   JoinGroupDocument,
+  LikePostCommentDocument,
+  LikePostDocument,
   LikeSubmissionDocument,
+  LoginWithPasswordDocument,
   MeDocument,
   MyGroupsDocument,
   MyPhotoFeedDocument,
+  PostCommentsDocument,
+  PostDownloadDocument,
+  PostSort,
   RegenerateInviteLinkDocument,
+  RegisterWithPasswordDocument,
   ReportSubmissionDocument,
+  RequestPostUploadDocument,
   RequestUploadDocument,
-  SubmissionSort,
   SubmissionsDocument,
+  SubmissionSort,
+  UnlikePostCommentDocument,
+  UnlikePostDocument,
   UnlikeSubmissionDocument,
+  UpdateGroupProfileDocument,
+  UpdatePostDocument,
+  UploadGroupAvatarDocument,
+  UploadPostMediaDocument,
+  UploadSubmissionPhotoDocument,
 } from './generated';
 
 const url = inject('apiUrl');
@@ -137,6 +146,59 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       endsAt: new Date(now + 7_200_000).toISOString(),
     });
     contestId = contest.createContest.id;
+  });
+
+  it('그룹 사진 multipart와 프로필 JSON 문서로 저장·조회·삭제해야 한다', async () => {
+    const { createGroup: group } = await ok(CreateGroupDocument, owner, {
+      name: '프로필 문서 그룹',
+      description: '처음 소개',
+    });
+    const uploaded = await uploadMutation(UploadGroupAvatarDocument, owner, {
+      groupId: group.id,
+      file: new File([new Uint8Array(await createTestImage())], 'group.png', { type: 'image/png' }),
+    });
+    const avatarId = uploaded.data?.uploadGroupAvatar.id;
+    expect(avatarId).toBeTruthy();
+    const { updateGroupProfile: profile } = await ok(UpdateGroupProfileDocument, owner, {
+      groupId: group.id,
+      name: '바꾼 이름',
+      description: '바꾼 소개',
+      avatarId,
+    });
+    expect(profile).toMatchObject({
+      name: '바꾼 이름',
+      description: '바꾼 소개',
+      avatarUrl: expect.stringContaining(`/groups/${group.id}/avatar/`),
+    });
+    expect((await ok(GroupProfileDocument, undefined, { id: group.id })).group).toMatchObject({
+      name: profile.name,
+      description: profile.description,
+      avatarUrl: profile.avatarUrl,
+      role: null,
+    });
+    const removed = await ok(UpdateGroupProfileDocument, owner, {
+      groupId: group.id,
+      name: profile.name,
+      description: profile.description,
+      removeAvatar: true,
+    });
+    expect(removed.updateGroupProfile.avatarUrl).toBeNull();
+  });
+
+  it('그룹 대회 문서는 좋아요 한도 기본값 1과 지정값을 보존해야 한다', async () => {
+    const now = Date.now();
+    const schedule = {
+      groupId,
+      title: '문서 좋아요 한도',
+      startsAt: new Date(now).toISOString(),
+      submissionEndsAt: new Date(now + 3_600_000).toISOString(),
+      endsAt: new Date(now + 7_200_000).toISOString(),
+    };
+    expect((await ok(CreateGroupContestDocument, owner, schedule)).createGroupContest.likeLimit).toBe(1);
+    expect(
+      (await ok(CreateGroupContestDocument, owner, { ...schedule, likeLimit: 3 })).createGroupContest
+        .likeLimit,
+    ).toBe(3);
   });
 
   it('직접 가입·로그인 문서가 개발 로그인 없이도 실행돼야 한다', async () => {
@@ -327,6 +389,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
         })
       ).createPost;
       expect(post.kind).toBe(video ? 'VIDEO' : 'PHOTO');
+      const { postDownload } = await ok(PostDownloadDocument, member, { postId: post.id });
+      expect(postDownload.url).toBe(`/backend/media/${post.id}/download`);
+      expect(postDownload.filename).toMatch(video ? /\.mp4$/ : /\.webp$/);
       created.push(post);
     }
     const photo = created[0];
@@ -342,9 +407,28 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     expect((await ok(UnlikePostDocument, owner, { postId: photo.id })).unlikePost.likeCount).toBe(0);
     expect(
       (await ok(GalleryPostsDocument, outsider, variables)).galleryPosts.find((post) => post.id === photo.id),
-    ).toMatchObject({ canInteract: false, canDelete: false, likedByMe: false });
+    ).toMatchObject({ canModerate: false, canInteract: false, canDelete: false, likedByMe: false });
     expect(
       (await execute(LikePostDocument, outsider, { postId: photo.id })).errors?.[0]?.extensions?.code,
+    ).toBe('FORBIDDEN');
+    expect(
+      (
+        await ok(UpdatePostDocument, member, {
+          postId: photo.id,
+          title: '문서로 수정한 사진',
+          body: '수정한 내용',
+          categoryId: null,
+        })
+      ).updatePost,
+    ).toMatchObject({
+      id: photo.id,
+      title: '문서로 수정한 사진',
+      body: '수정한 내용',
+      mediaUrl: photo.mediaUrl,
+    });
+    expect(
+      (await execute(UpdatePostDocument, outsider, { postId: photo.id, title: '권한 없는 수정' })).errors?.[0]
+        ?.extensions?.code,
     ).toBe('FORBIDDEN');
     const comment = (
       await ok(CreatePostCommentDocument, member, { postId: photo.id, body: '문서로 남긴 댓글' })
@@ -357,7 +441,7 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
         ?.commentCount,
     ).toBe(1);
     expect((await ok(PostCommentsDocument, outsider, commentVariables)).postComments).toEqual([
-      { ...comment, canDelete: false },
+      { ...comment, canDelete: false, canInteract: false },
     ]);
     expect(
       (await execute(CreatePostCommentDocument, outsider, { postId: photo.id, body: '가입 전 댓글' }))
@@ -367,13 +451,117 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       (await execute(DeletePostCommentDocument, outsider, { commentId: comment.id })).errors?.[0]?.extensions
         ?.code,
     ).toBe('FORBIDDEN');
+    expect(comment).toMatchObject({ likeCount: 0, likedByMe: false, canInteract: true });
+    expect(
+      (await execute(LikePostCommentDocument, outsider, { commentId: comment.id })).errors?.[0]?.extensions
+        ?.code,
+    ).toBe('FORBIDDEN');
+    expect(
+      (await execute(UnlikePostCommentDocument, undefined, { commentId: comment.id })).errors?.[0]?.extensions
+        ?.code,
+    ).toBe('UNAUTHENTICATED');
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(
+        (await ok(LikePostCommentDocument, owner, { commentId: comment.id })).likePostComment,
+      ).toMatchObject({
+        id: comment.id,
+        likeCount: 1,
+        likedByMe: true,
+      });
+    expect((await ok(PostCommentsDocument, owner, commentVariables)).postComments[0]).toMatchObject({
+      likeCount: 1,
+      likedByMe: true,
+    });
+    expect((await ok(PostCommentsDocument, member, commentVariables)).postComments[0]).toMatchObject({
+      likeCount: 1,
+      likedByMe: false,
+    });
+    expect((await ok(PostCommentsDocument, undefined, commentVariables)).postComments[0]).toMatchObject({
+      likeCount: 1,
+      likedByMe: false,
+      canInteract: false,
+    });
+    for (let attempt = 0; attempt < 2; attempt++)
+      expect(
+        (await ok(UnlikePostCommentDocument, owner, { commentId: comment.id })).unlikePostComment,
+      ).toMatchObject({
+        id: comment.id,
+        likeCount: 0,
+        likedByMe: false,
+      });
+    const reply = (
+      await ok(CreatePostCommentDocument, owner, {
+        postId: photo.id,
+        parentId: comment.id,
+        body: '문서로 남긴 답글',
+      })
+    ).createPostComment;
+    expect(reply).toMatchObject({ parentId: comment.id, replyCount: 0, canInteract: true });
+    expect(await ok(PostCommentsDocument, owner, commentVariables)).toMatchObject({
+      postCommentCount: 1,
+      postComments: [{ id: comment.id, replyCount: 1 }],
+    });
+    const replyVariables = { ...commentVariables, parentId: comment.id };
+    expect((await ok(PostCommentsDocument, owner, replyVariables)).postComments).toEqual([reply]);
+    await ok(LikePostCommentDocument, member, { commentId: reply.id });
+    expect((await ok(PostCommentsDocument, undefined, replyVariables)).postComments[0]).toMatchObject({
+      id: reply.id,
+      likeCount: 1,
+      likedByMe: false,
+      canInteract: false,
+    });
     expect((await ok(DeletePostCommentDocument, owner, { commentId: comment.id })).deletePostComment).toBe(
       true,
     );
     expect((await ok(PostCommentsDocument, member, commentVariables)).postComments).toEqual([]);
+    expect(await ok(PostCommentsDocument, owner, replyVariables)).toMatchObject({
+      postCommentCount: 0,
+      postComments: [],
+    });
     await ok(DeletePostDocument, owner, { postId: photo.id });
     expect(
       (await ok(GalleryPostsDocument, member, variables)).galleryPosts.some((p) => p.id === photo.id),
     ).toBe(false);
+  });
+  it('링크 게시물 문서는 파일 없이 실행되고 비공개 링크는 멤버에게만 보여야 한다', async () => {
+    const { createGroup: group } = await ok(CreateGroupDocument, owner, {
+      name: '링크 문서 비공개',
+      visibility: 'PRIVATE',
+    });
+    const { createPost } = await ok(CreatePostDocument, owner, {
+      groupId: group.id,
+      title: '링크 사양',
+      linkUrl: 'https://youtu.be/abcdefghijk',
+      rightsConfirmed: true,
+    });
+    expect(createPost).toMatchObject({
+      kind: 'LINK',
+      mediaUrl: null,
+      linkUrl: 'https://youtu.be/abcdefghijk',
+    });
+    expect(
+      (
+        await ok(GalleryPostsDocument, owner, {
+          groupId: group.id,
+          sort: PostSort.Newest,
+          offset: 0,
+          limit: 24,
+        })
+      ).galleryPosts[0],
+    ).toMatchObject({ id: createPost.id });
+    expect(
+      (
+        await execute(GalleryPostsDocument, outsider, {
+          groupId: group.id,
+          sort: PostSort.Newest,
+          offset: 0,
+          limit: 24,
+        })
+      ).errors?.[0]?.extensions?.code,
+    ).toBe('FORBIDDEN');
+    expect(
+      (await execute(PostDownloadDocument, owner, { postId: createPost.id })).errors?.[0]?.extensions?.code,
+    ).toBe('NOT_FOUND');
+    await ok(DeletePostDocument, owner, { postId: createPost.id });
   });
 });

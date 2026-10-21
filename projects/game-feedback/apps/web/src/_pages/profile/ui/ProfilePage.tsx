@@ -1,18 +1,29 @@
 'use client';
+
+import Link from 'next/link';
+
+import { useQuery } from '@tanstack/react-query';
+
+import { appRoutes } from '@game-feedback/bridge';
+
+import { useSession } from '@/features/auth';
+import { FollowControls } from '@/features/follow';
+import { PostCard, userPostListOptions } from '@/features/post';
+import {
+  AuthorLink,
+  ProfileLinksEditor,
+  profileOptions,
+  ProfilePhotoEditor,
+  UserBadges,
+} from '@/features/user';
+import type { PostList, PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { useSession } from '@/features/auth';
-import { profileOptions, UserBadges, AuthorLink } from '@/features/user';
-import { userPostListOptions, PostCard } from '@/features/post';
+import { BackLink } from '@/shared/navigation';
+import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
-import { FollowControls } from '@/features/follow';
-import type { PublicProfile, PostList } from '@/shared/api';
-import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
+
 interface IProfilePageProps {
   id: string;
   locale: string;
@@ -52,7 +63,7 @@ function ProfileContent({
     initialData: sameViewer ? initialProfile : undefined,
   });
   if (!profile.data) return <LoadingState text={t('플레이어 프로필을 불러오고 있어요')} />;
-  const { author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
+  const { links, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
       <BackLink className="back-link" href={appRoutes.feed(locale)}>
@@ -60,7 +71,7 @@ function ProfileContent({
       </BackLink>
       <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
-          <Avatar name={author.nickname} size="large" />
+          <Avatar src={author.avatarUrl} name={author.nickname} size="large" />
           <div>
             <h1>{author.nickname}</h1>
             <UserBadges author={author} />
@@ -71,6 +82,24 @@ function ProfileContent({
             </p>
           </div>
         </div>
+        {(links ?? []).length > 0 && (
+          <ul className="profile-links" aria-label={t('프로필 링크')}>
+            {(links ?? []).map((link) => (
+              <li key={`${link.url}:${link.label}`}>
+                <a href={link.url} target="_blank" rel="nofollow ugc noopener noreferrer">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+        {author.id === session.user?.id && (
+          <details className="profile-editor">
+            <summary>{t('프로필 편집')}</summary>
+            <ProfilePhotoEditor hasPhoto={!!author.avatarUrl} />
+            <ProfileLinksEditor links={links} />
+          </details>
+        )}
         <p className="muted">{t('클래시 로얄 플레이 경험을 나누는 플레이어')}</p>
         <dl className="public-profile-stats">
           <div>
@@ -91,7 +120,9 @@ function ProfileContent({
             {t('게임 계정 소유권은 인증되지 않았습니다. 서비스 인증 표시와는 별개입니다.')}
           </p>
         )}
-        {author.id !== session?.user?.id && <StartChatLink userId={author.id} nickname={author.nickname} />}
+        {author.id !== session?.user?.id && (
+          <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
+        )}
         <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={login} />
         <ReportUserButton userId={author.id} />
       </section>

@@ -1,5 +1,5 @@
-import { isValidElement } from 'react';
-import type { ReactElement } from 'react';
+import { isValidElement, type ReactElement } from 'react';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import RootLayout, { viewport } from './layout';

@@ -26,6 +26,8 @@ model User {
   postUploads PostUpload[]
   postLikes PostLike[]
   postComments PostComment[]
+  postCommentLikes PostCommentLike[]
+  postContestVotes PostContestVote[]
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
 }
@@ -44,8 +46,13 @@ model OAuthAttempt {
   expiresAt DateTime
 }
 model Group {
+  categories GroupCategory[]
   id String @id @default(cuid())
   name String
+  description String @default("")
+  avatarId String?
+  avatar GroupAvatar? @relation("CurrentGroupAvatar", fields: [avatarId, id], references: [id, groupId], onDelete: NoAction, onUpdate: NoAction)
+  avatarUploads GroupAvatar[] @relation("GroupAvatarUploads")
   visibility String @default("PRIVATE")
   inviteHash String @unique
   inviteToken String
@@ -56,6 +63,16 @@ model Group {
   posts Post[]
   postUploads PostUpload[]
   @@index([createdAt, id])
+}
+model GroupAvatar {
+  id String @id @default(cuid())
+  groupId String
+  storageKey String @unique
+  expiresAt DateTime
+  group Group @relation("GroupAvatarUploads", fields: [groupId], references: [id], onDelete: Cascade)
+  currentGroups Group[] @relation("CurrentGroupAvatar")
+  @@unique([id, groupId])
+  @@index([expiresAt])
 }
 model GroupJoinRequest {
   id String @id @default(cuid())
@@ -78,10 +95,12 @@ model GroupMember {
   @@index([userId])
 }
 model Contest {
+  format String @default("LEGACY")
   completionTrackedAt DateTime?
   id String @id @default(cuid())
   groupId String
   title String
+  likeLimit Int @default(1)
   startsAt DateTime
   submissionEndsAt DateTime
   endsAt DateTime
@@ -90,6 +109,9 @@ model Contest {
   submissions Submission[]
   votes Vote[]
   uploads Upload[]
+  posts Post[]
+  postVotes PostContestVote[]
+  @@index([groupId, format, endsAt, id])
   @@index([groupId, createdAt])
 }
 model Upload {
@@ -186,10 +208,16 @@ model PostUpload {
   @@index([expiresAt])
 }
 model Post {
+  categoryId String?
+  category GroupCategory? @relation(fields: [categoryId, groupId], references: [id, groupId], onUpdate: NoAction, onDelete: Restrict)
+  @@index([groupId, categoryId, createdAt])
+  contestId String?
+  contest Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
   groupId String
   authorId String
-  uploadId String @unique
+  uploadId String? @unique
+  linkUrl String?
   title String
   body String @default("")
   hidden Boolean @default(false)
@@ -198,20 +226,38 @@ model Post {
   legacySubmission Submission? @relation(fields: [legacySubmissionId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  upload PostUpload @relation(fields: [uploadId], references: [id])
+  upload PostUpload? @relation(fields: [uploadId], references: [id], onDelete: Restrict)
   likes PostLike[]
   comments PostComment[]
+  contestVotes PostContestVote[]
+  @@unique([id, contestId])
+  @@index([contestId, createdAt, id])
   @@index([groupId, createdAt, id])
 }
 model PostComment {
   id String @id @default(cuid())
   postId String
   authorId String
+  parentId String?
   body String
   createdAt DateTime @default(now())
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes PostCommentLike[]
+  parent PostComment? @relation("PostCommentReplies", fields: [parentId, postId], references: [id, postId], onDelete: Cascade)
+  replies PostComment[] @relation("PostCommentReplies")
+  @@unique([id, postId])
   @@index([postId, createdAt, id])
+  @@index([postId, parentId, createdAt, id])
+}
+model PostCommentLike {
+  commentId String
+  userId String
+  createdAt DateTime @default(now())
+  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([commentId, userId])
+  @@index([userId])
 }
 model PostLike {
   postId String
@@ -233,4 +279,30 @@ model AuthAttempt {
   count Int @default(1)
   expiresAt DateTime
   @@index([expiresAt])
+}
+model PostContestVote {
+  id String @id @default(cuid())
+  contestId String
+  postId String
+  voterId String
+  createdAt DateTime @default(now())
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId, contestId], references: [id, contestId], onDelete: Cascade)
+  voter User @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  @@unique([contestId, voterId])
+  @@index([postId])
+}
+
+model GroupCategory {
+  id String @id @default(cuid())
+  groupId String
+  name String
+  position Int
+  archivedAt DateTime?
+  createdById String
+  createdAt DateTime @default(now())
+  group Group @relation(fields:[groupId],references:[id],onDelete:Cascade)
+  posts Post[]
+  @@unique([id,groupId])
+  @@index([groupId,archivedAt,position])
 }

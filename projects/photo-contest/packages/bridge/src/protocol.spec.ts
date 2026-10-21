@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  PROTOCOL_VERSION,
   buildAppUserAgent,
   decodeNativeMessage,
   decodeWebMessage,
   originOf,
   parseAppUserAgent,
   parseNativeAppInfo,
+  PROTOCOL_VERSION,
   readRequestId,
 } from './protocol';
 
@@ -16,6 +16,19 @@ function encode(value: unknown) {
 }
 
 describe('decodeWebMessage', () => {
+  it('앱 외부 브라우저로 긴 presigned 주소를 보내고 8KB를 넘는 주소는 거부해야 한다', () => {
+    const request = (url: string) =>
+      encode({
+        v: PROTOCOL_VERSION,
+        kind: 'request',
+        id: 'signed-download',
+        type: 'link.open',
+        payload: { url },
+      });
+    const url = 'https://storage.example/object?X-Amz-Security-Token=' + 'a'.repeat(3000);
+    expect(decodeWebMessage(request(url))).toMatchObject({ type: 'link.open', payload: { url } });
+    expect(decodeWebMessage(request('https://storage.example/' + 'a'.repeat(8192)))).toBeNull();
+  });
   it('알려진 요청을 본문 검증 후 돌려줘야 한다', () => {
     const message = decodeWebMessage(
       encode({

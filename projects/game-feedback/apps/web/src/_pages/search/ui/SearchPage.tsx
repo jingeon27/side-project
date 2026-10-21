@@ -1,16 +1,20 @@
 'use client';
 
 import { use } from 'react';
-import { Button, Input } from '@side/design-system';
-import { ArrowLeft, Search, X } from 'lucide-react';
+
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { ArrowLeft, Search, X } from 'lucide-react';
+
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+import { Button, Input } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
-import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
+import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { BackLink, useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary } from '@/shared/ui';
+
 import { searchQuery, type ISearchSnapshot } from '../model/search-query';
 import { usePostSearch } from '../model/use-post-search';
 

@@ -1,15 +1,16 @@
-import type { TNativeCapabilities } from '@photo-contest/bridge/native';
+import { Platform, Share } from 'react-native';
+
 import { setStringAsync } from 'expo-clipboard';
 import { CryptoDigestAlgorithm, digest, getRandomValues } from 'expo-crypto';
-import { ImpactFeedbackStyle, NotificationFeedbackType, impactAsync, notificationAsync } from 'expo-haptics';
+import { impactAsync, ImpactFeedbackStyle, notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { openAuthSessionAsync, openBrowserAsync } from 'expo-web-browser';
-import { Platform, Share } from 'react-native';
+
+import type { TNativeCapabilities } from '@photo-contest/bridge/native';
 
 import { API_BASE, APP_SCHEME } from '@/shared/config/env';
 import { COLORS } from '@/shared/config/theme';
 
-import { createCapabilities } from '../lib/create-capabilities';
-import type { ICapabilityDependencies } from '../lib/create-capabilities';
+import { createCapabilities, type ICapabilityDependencies } from '../lib/create-capabilities';
 
 const IMPACT_STYLE = {
   light: ImpactFeedbackStyle.Light,

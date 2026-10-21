@@ -1,6 +1,7 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
 
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = process.env.GF_MOBILE_E2E_SCHEMA ?? `gf_test_mobile_${randomUUID().replaceAll('-', '')}`;
@@ -22,6 +23,9 @@ databaseUrl.searchParams.set('schema', schema);
 process.env.GF_MOBILE_E2E_DATABASE_URL = databaseUrl.toString();
 const apiEnv = {
   NODE_ENV: 'test',
+  SENTRY_DSN: '',
+  NEXT_PUBLIC_SENTRY_DSN: '',
+  NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
   GF_DEMO_MODE: 'true',
   PORT: '4302',
   WEB_ORIGIN: 'http://127.0.0.1:3302',
@@ -65,17 +69,17 @@ export default defineConfig({
     },
     {
       command:
-        'corepack yarn workspace @game-feedback/web exec next dev --webpack --port 3302 --hostname 127.0.0.1',
+        'corepack yarn workspace @game-feedback/web build && corepack yarn workspace @game-feedback/web exec next start --port 3302 --hostname 127.0.0.1',
       cwd: rootDir,
       url: 'http://127.0.0.1:3302/ko',
       env: {
         ...apiEnv,
-        NODE_ENV: 'development',
+        NODE_ENV: 'production',
         GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4302',
         NEXT_DIST_DIR: '.next/e2e-mobile',
       },
       reuseExistingServer: false,
-      timeout: 90_000,
+      timeout: 180_000,
     },
   ],
 });

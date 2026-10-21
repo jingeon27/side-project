@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+
 import { isNativeApp, NATIVE_BOOTSTRAP_EVENT } from '@/shared/native';
 
 const query = '(hover: hover) and (pointer: fine)';

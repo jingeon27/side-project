@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require('../dist/generated/prisma/index.js');
 const { assertDatabaseUrl } = require('../dist/database/database-url.js');

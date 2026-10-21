@@ -1,11 +1,17 @@
 import { Component, Suspense, type ReactNode } from 'react';
+
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
+
 interface IRegionBoundaryProps {
   children: ReactNode;
   onReset: () => void;
 }
-class RegionBoundary extends Component<IRegionBoundaryProps, { failed: boolean }> {
+interface IRegionBoundaryState {
+  failed: boolean;
+}
+class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryState> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
@@ -36,13 +42,5 @@ export function AsyncBoundary({ children }: { children: ReactNode }) {
         </RegionBoundary>
       )}
     </QueryErrorResetBoundary>
-  );
-}
-export function ErrorNotice({ error }: { error: unknown }) {
-  if (!error) return null;
-  return (
-    <p role="alert" className="admin-error">
-      {error instanceof Error ? error.message : '요청을 처리하지 못했습니다.'}
-    </p>
   );
 }

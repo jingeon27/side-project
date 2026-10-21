@@ -1,5 +1,7 @@
 # MY 그룹 카드: 이름, 내 역할, 멤버 수
 fragment GroupCard on Group {
+  description
+  avatarUrl
   id
   name
   role
@@ -19,6 +21,8 @@ query MyGroups {
 
 query Group($id: ID!) {
   group(id: $id) {
+    description
+    avatarUrl
     id
     name
     role
@@ -37,14 +41,17 @@ query Group($id: ID!) {
   }
 }
 
-mutation CreateGroup($name: String!, $visibility: GroupVisibility! = PUBLIC) {
-  createGroup(name: $name, visibility: $visibility) {
+mutation CreateGroup($name: String!, $visibility: GroupVisibility! = PUBLIC, $description: String = "") {
+  createGroup(name: $name, visibility: $visibility, description: $description) {
     ...GroupCard
   }
 }
 
 query Gallery($id: ID!) {
   group(id: $id) {
+    ...GroupCategories
+    description
+    avatarUrl
     name
     ...GroupAccess
     inviteToken
@@ -69,13 +76,15 @@ fragment GroupAccess on Group {
 }
 
 fragment DiscoverGroup on Group {
+  description
+  avatarUrl
   id
   name
   ...GroupAccess
 }
 
-query DiscoverGroups($search: String, $offset: Int = 0, $limit: Int = 24) {
-  discoverGroups(search: $search, offset: $offset, limit: $limit) {
+query DiscoverGroups($search: String, $visibility: GroupVisibility, $offset: Int = 0, $limit: Int = 24) {
+  discoverGroups(search: $search, visibility: $visibility, offset: $offset, limit: $limit) {
     ...DiscoverGroup
   }
 }
@@ -114,6 +123,11 @@ mutation RejectGroupJoinRequest($requestId: ID!) {
 
 query PublicGroupSeo($id: ID!) {
   group(id: $id) {
+    description
+    avatarUrl
+    categories {
+      id
+    }
     id
     name
     visibility
@@ -127,6 +141,105 @@ query PublicGroupCount {
 
 query PublicGroupSitemap($offset: Int!, $limit: Int!) {
   discoverGroups(visibility: PUBLIC, offset: $offset, limit: $limit) {
+    id
+  }
+}
+
+fragment GroupAdministration on Group {
+  name
+  ...GroupAccess
+  members {
+    role
+    user {
+      id
+      nickname
+      avatar
+    }
+  }
+}
+mutation SetGroupModerator($groupId: ID!, $userId: ID!, $enabled: Boolean!) {
+  setGroupModerator(groupId: $groupId, userId: $userId, enabled: $enabled) {
+    ...GroupAdministration
+  }
+}
+mutation TransferGroupOwnership($groupId: ID!, $userId: ID!) {
+  transferGroupOwnership(groupId: $groupId, userId: $userId) {
+    ...GroupAdministration
+  }
+}
+
+fragment GroupCategoryRow on GroupCategory {
+  id
+  name
+  position
+  archivedAt
+}
+fragment GroupCategories on Group {
+  id
+  categories {
+    ...GroupCategoryRow
+  }
+}
+query GroupCategories($id: ID!) {
+  group(id: $id) {
+    ...GroupCategories
+    role
+  }
+}
+mutation CreateGroupCategory($groupId: ID!, $name: String!) {
+  createGroupCategory(groupId: $groupId, name: $name) {
+    ...GroupCategoryRow
+  }
+}
+mutation RenameGroupCategory($categoryId: ID!, $name: String!) {
+  renameGroupCategory(categoryId: $categoryId, name: $name) {
+    ...GroupCategoryRow
+  }
+}
+mutation ReorderGroupCategories($groupId: ID!, $categoryIds: [ID!]!) {
+  reorderGroupCategories(groupId: $groupId, categoryIds: $categoryIds) {
+    ...GroupCategoryRow
+  }
+}
+mutation ArchiveGroupCategory($categoryId: ID!) {
+  archiveGroupCategory(categoryId: $categoryId) {
+    ...GroupCategoryRow
+  }
+}
+
+query GroupProfile($id: ID!) {
+  group(id: $id) {
+    id
+    name
+    description
+    avatarUrl
+    role
+  }
+}
+mutation UpdateGroupProfile(
+  $groupId: ID!
+  $name: String!
+  $description: String!
+  $avatarId: ID
+  $removeAvatar: Boolean! = false
+) {
+  updateGroupProfile(
+    groupId: $groupId
+    name: $name
+    description: $description
+    avatarId: $avatarId
+    removeAvatar: $removeAvatar
+  ) {
+    id
+    name
+    description
+    avatarUrl
+    role
+  }
+}
+
+mutation UploadGroupAvatar($groupId: ID!, $file: Upload!) {
+  uploadGroupAvatar(groupId: $groupId, file: $file) {
     id
   }
 }

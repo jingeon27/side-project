@@ -1,5 +1,6 @@
-import { followUser, getUserFollow, unfollowUser } from '@game-feedback/sdk';
 import type { TFollowStatus } from '@game-feedback/contracts';
+import { followUser, getUserFollow, unfollowUser } from '@game-feedback/sdk';
+
 import { withApiError } from '@/shared/api';
 
 export function fetchFollowStatus(userId: string, signal?: AbortSignal) {

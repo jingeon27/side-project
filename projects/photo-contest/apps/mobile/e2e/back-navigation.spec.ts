@@ -15,6 +15,8 @@ test.describe('Android 뒤로 가기', () => {
     nativeHost,
   }) => {
     await webScreens.myPageLink(page).click();
+    await expect(page).toHaveURL('/me');
+    await expect(page.getByRole('heading', { name: '마이페이지', exact: true })).toBeVisible();
     await webScreens.createGroupButton(page).click();
     await expect(webScreens.dialog(page)).toBeVisible();
 

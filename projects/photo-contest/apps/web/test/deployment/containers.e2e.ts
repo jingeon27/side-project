@@ -1,7 +1,9 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
+
 import { expect, test } from '@playwright/test';
+
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({ page, request }) => {
   const origin = new URL(process.env.DEPLOY_SMOKE_ORIGIN ?? 'https://localhost:3382').origin;
@@ -41,7 +43,7 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
       mimeType: video ? 'video/mp4' : 'image/png',
       buffer: video ? await createTestVideo() : await createTestImage(),
     });
-    await form.getByRole('checkbox').check();
+    await form.getByRole('checkbox', { name: /공유할 권리/ }).check();
     await form.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(form).toHaveCount(0);
   };
@@ -122,6 +124,22 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     '-f',
     `${directory}/compose.yaml`,
     'restart',
+    'api',
+    'web',
+  ]);
+  await promisify(execFile)('docker', [
+    'compose',
+    '--project-name',
+    project,
+    '--env-file',
+    `${directory}/.env`,
+    '-f',
+    `${directory}/compose.yaml`,
+    'up',
+    '-d',
+    '--wait',
+    '--wait-timeout',
+    '120',
     'api',
     'web',
   ]);

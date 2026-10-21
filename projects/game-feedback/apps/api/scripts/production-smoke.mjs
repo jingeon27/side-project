@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { request } from 'node:https';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,6 +47,7 @@ class Stack {
         `GF_IMAGE_PREFIX=${imagePrefix}`,
         `GF_DB_PASSWORD=${randomBytes(32).toString('hex')}`,
         `GF_DB_ADMIN_PASSWORD=${randomBytes(32).toString('hex')}`,
+        `GF_CACHE_REVALIDATION_SECRET=${randomBytes(32).toString('hex')}`,
         'GOOGLE_CLIENT_ID=isolated-smoke-client',
         'GOOGLE_CLIENT_SECRET=isolated-smoke-secret',
         'GF_BIND_ADDRESS=127.0.0.1',
@@ -205,7 +206,16 @@ try {
   assert.equal((await original.json('/api/auth/demo', { nickname: 'forbidden' })).status, 404);
   assert.equal((await original.http('/api/auth/test-accounts')).status, 404);
   assert.equal(original.sql('SELECT rolsuper FROM pg_roles WHERE rolname = current_user;'), 'f');
-  assert.equal(original.sql('SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL;'), '1');
+  const expectedMigrations = readdirSync(join(project, 'apps/api/prisma/migrations'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  const appliedMigrations = original
+    .sql(
+      'SELECT migration_name FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY migration_name;',
+    )
+    .split('\n');
+  assert.deepEqual(appliedMigrations, expectedMigrations);
   assert.equal(original.sql('SELECT count(*) FROM "User";'), '0', 'Production must not seed test accounts');
   original.sql(
     `INSERT INTO "User" (id,nickname,"termsVersion","ageConfirmed") VALUES ('smoke-operator','운영확인','v1',true),('smoke-peer','대화상대','v1',true);`,

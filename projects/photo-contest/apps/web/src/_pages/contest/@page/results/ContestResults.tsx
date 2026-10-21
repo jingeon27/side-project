@@ -1,20 +1,20 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
-import { Share2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+
+import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Share2 } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { RankBadge, ResultBanner, countByRank } from '@/features/ranking';
+import { countByRank, RankBadge, ResultBanner } from '@/features/ranking';
 import { buildResultShareText, useShareActions } from '@/features/share';
 import { SubmissionCard } from '@/features/submission';
-import { ContestResultsDocument } from '@/shared/api/generated';
-import type { ContestResultsQuery } from '@/shared/api/generated';
+import { ContestResultsDocument, type ContestResultsQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
@@ -51,7 +51,7 @@ function ResultsContent({
     const method = await shareActions.share(
       window.location.origin + ROUTES.CONTEST(contest.id),
       {
-        title: '웃긴순간 대회 결과',
+        title: '별사대 대회 결과',
         text: buildResultShareText(
           contest.title,
           winners.map(({ submission, voteCount }) => ({
@@ -113,14 +113,19 @@ function ResultsQuerySection({
   contestRef: TContestQueryRef;
   viewerId: string;
 }) {
-  const [resultsRef, { refetch }] = useBackgroundQuery(ContestResultsDocument, { variables: { contestId } });
+  // 결과는 종료 뒤에만 허용되어 사전 조회하지 않으므로 브라우저에서 시작한다.
+  const [resultsRef, { refetch }] = useBackgroundQuery(
+    ContestResultsDocument,
+    useIsSSR() ? skipToken : { variables: { contestId } },
+  );
+  const fallback = <Skeleton className="aspect-square w-full" />;
   return (
-    <AsyncBoundary
-      resetKey={contestId}
-      fallback={<Skeleton className="aspect-square w-full" />}
-      onRetry={refetch}
-    >
-      <ResultsContent resultsRef={resultsRef} contestRef={contestRef} viewerId={viewerId} />
+    <AsyncBoundary resetKey={contestId} fallback={fallback} onRetry={refetch}>
+      {resultsRef ? (
+        <ResultsContent resultsRef={resultsRef} contestRef={contestRef} viewerId={viewerId} />
+      ) : (
+        fallback
+      )}
     </AsyncBoundary>
   );
 }

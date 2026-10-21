@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3301';
 async function background(page: Page) {
@@ -35,10 +35,18 @@ for (const width of [400, 1440]) {
     const write = page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true });
     await write.click();
     const login = page.getByRole('dialog');
-    await expect(login).toBeVisible();
-    await expect(login.getByRole('button', { name: 'Google로 시작하기', exact: true })).toBeVisible();
-    await expect(login).toHaveCSS('background-color', 'rgb(28, 27, 26)');
-    await login.getByRole('button', { name: '닫기', exact: true }).click();
+    if (width <= 760) {
+      await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
+      await expect(login).toHaveCount(0);
+      await expect(page.locator('.login-page')).toBeVisible();
+      await page.getByRole('link', { name: '돌아가기', exact: true }).click();
+    }
+    if (width > 760) {
+      await expect(login).toBeVisible();
+      await expect(login.getByRole('button', { name: 'Google로 시작하기', exact: true })).toBeVisible();
+      await expect(login).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+      await login.getByRole('button', { name: '닫기', exact: true }).click();
+    }
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_theme')?.value).toBe('dark');
   });
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { captureException } from '@sentry/nextjs';
 import { useEffect } from 'react';
+
+import { captureException } from '@sentry/nextjs';
 
 import { ErrorState } from '@/shared/ui/@core/error-state';
 

@@ -1,6 +1,8 @@
-import { ReportInputSchema } from '@game-feedback/contracts';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import type { z } from 'zod';
+
+import { ReportInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from '../common/http/request-validation';
 
 export class CreateReportDto {

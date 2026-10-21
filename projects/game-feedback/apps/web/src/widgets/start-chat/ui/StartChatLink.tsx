@@ -1,20 +1,26 @@
 'use client';
-import { Button } from '@side/design-system';
-import { useI18n } from '@/shared/i18n';
+
 import { useParams, useRouter } from 'next/navigation';
+
 import { LoaderCircle, MessageCircle } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { chatError, useCreateConversationMutation } from '@/features/chat';
-import { appRoutes } from '@game-feedback/bridge';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
+import { useI18n } from '@/shared/i18n';
 
 interface IStartChatLinkProps {
+  source: 'post' | 'comment' | 'profile';
   userId: string;
   nickname: string;
   label?: string;
   appearance?: 'text' | 'button';
 }
 
-export function StartChatLink({ userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
+export function StartChatLink({ source, userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
   const { t } = useI18n();
   const { session, login, notify } = useSession();
   const router = useRouter();
@@ -28,6 +34,7 @@ export function StartChatLink({ userId, nickname, label, appearance = 'text' }: 
     }
     mutation.mutate(userId, {
       onSuccess: (conversation) => {
+        trackEvent(ANALYTICS_EVENT.ChatStarted, { source });
         router.push(appRoutes.conversation(locale, conversation.id));
       },
       onError: (error) => notify(chatError(error)),

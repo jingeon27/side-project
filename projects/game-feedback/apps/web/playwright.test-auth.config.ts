@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+
 import baseConfig from './playwright.config';
 
 if (!Array.isArray(baseConfig.webServer)) throw new Error('Test authentication requires both owned servers.');

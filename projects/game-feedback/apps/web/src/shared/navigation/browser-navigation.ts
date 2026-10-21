@@ -92,8 +92,16 @@ export function backNavigation(parentOnly = false) {
   if (!route) return { action: 'unhandled' } as const;
   if (route.screen === 'feed') return { action: 'root' } as const;
   const previous = entry(window.history.state)?.previous;
-  const detail = ['post', 'compose', 'profile', 'conversation'].includes(route.screen);
-  if (previous && detail && (!parentOnly || resolveAppRoute(previous)?.pathname === route.parent))
+  const authScreen = ['login', 'onboarding'].includes(route.screen);
+  const previousRoute = previous ? resolveAppRoute(previous) : null;
+  const detail = ['post', 'compose', 'profile', 'conversation', 'login', 'onboarding'].includes(route.screen);
+  const previousAuthScreen = previousRoute && ['login', 'onboarding'].includes(previousRoute.screen);
+  if (
+    previous &&
+    detail &&
+    !(authScreen && previousAuthScreen) &&
+    (!parentOnly || previousRoute?.pathname === route.parent)
+  )
     return { action: 'back' } as const;
   const parent = logicalParents.get(route.path)?.parent ?? route.parent ?? appRoutes.feed(route.locale);
   return {

@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 const origin = 'http://127.0.0.1:3301';
 test('community boards publish and edit Quill formatting, stay separate from feedback and render without JavaScript', async ({
   page,
@@ -125,8 +126,12 @@ test('every game contains five shared boards on desktop and mobile and retired b
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   }
   for (const slug of ['account-trade', 'friends', 'marketplace']) {
-    const response = await page.request.get(`/ko/boards/${slug}`);
-    expect(response.status()).toBe(404);
+    // 스트리밍이 시작된 production 응답은 200이므로 실제 not-found 화면과 색인 차단을 확인한다.
+    await page.goto(`/ko/boards/${slug}`);
+    await expect(
+      page.getByRole('heading', { name: '이 플레이는 찾을 수 없어요', exact: true }),
+    ).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   }
 });
 test('category chips support direct links, keyboard navigation, short viewports and Quill context', async ({

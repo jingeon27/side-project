@@ -1,16 +1,22 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { useRouter } from 'next/navigation';
+
+import { Flag, Pencil, ShieldBan, Trash2 } from 'lucide-react';
+
 import { appRoutes } from '@game-feedback/bridge';
-import { Flag, Pencil, Trash2, ShieldBan } from 'lucide-react';
+
 import { useSession } from '@/features/auth';
-import { StartChatLink } from '@/widgets/start-chat';
-import { EditPostSheet } from '@/widgets/post-composer';
-import { BlockUserDialog, ReportDialog } from '@/widgets/moderation';
 import type { Author, Post } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { openOverlay, useNotify } from '@/shared/ui';
-import { ContentEditDialog } from './ContentEditDialog';
+import { BlockUserDialog, ReportDialog } from '@/widgets/moderation';
+import { EditPostSheet } from '@/widgets/post-composer';
+import { StartChatLink } from '@/widgets/start-chat';
+
 import { ContentDeleteDialog } from './ContentDeleteDialog';
+import { ContentEditDialog } from './ContentEditDialog';
+
 interface IContentActionsProps {
   type: 'POST' | 'ANSWER' | 'COMMENT';
   id: string;
@@ -80,7 +86,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
     );
   return (
     <div className="content-actions">
-      {type !== 'POST' && <StartChatLink userId={author.id} nickname={author.nickname} />}
+      {type !== 'POST' && <StartChatLink source="comment" userId={author.id} nickname={author.nickname} />}
       <button
         className="text-button"
         onClick={() => {

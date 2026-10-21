@@ -1,5 +1,5 @@
-import index from './index.json';
 import type { Article, Locale } from '../model/types';
+import index from './index.json';
 
 const articles = index as Article[];
 export function getArticles(locale: Locale): Article[] {

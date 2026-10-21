@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 for (const width of [320, 390, 768, 1440]) {
   test(`responsive screens and chat stay within a ${width}px viewport`, async ({ page }) => {
@@ -6,7 +6,11 @@ for (const width of [320, 390, 768, 1440]) {
     for (const path of ['/en', '/ja/settings', '/en/posts/sample-post-0', '/en/users/sample-user-0']) {
       await page.goto(path);
       await expect(page.locator('main')).toBeVisible();
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth), {
+          message: `${path} must fit the ${width}px viewport after rendering`,
+        })
+        .toBeLessThanOrEqual(1);
     }
     await page.request.post('/api/auth/test-login', {
       headers: { Origin: 'http://127.0.0.1:3301' },
@@ -35,6 +39,8 @@ for (const width of [320, 390, 768, 1440]) {
       await page.getByRole('link', { name: 'Back to conversations', exact: true }).click();
       await expect(page.getByRole('navigation', { name: 'Mobile menu' })).toBeVisible();
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth))
+      .toBeLessThanOrEqual(1);
   });
 }

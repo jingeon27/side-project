@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
 import { instant } from '@next/playwright';
+import { expect, test } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3353';
 
@@ -74,13 +74,22 @@ for (const width of [400, 1440]) {
 }
 
 test('a production navigation shows the prefetched guide with its own page header', async ({ page }) => {
+  const guidePrefetched = page.waitForResponse(async (response) => {
+    const headers = response.request().headers();
+    if (new URL(response.url()).pathname !== '/ko/guide') return false;
+    if (headers['next-router-segment-prefetch'] !== '/_tree') return false;
+    return response.ok() && (await response.finished()) === null;
+  });
   await page.goto('/ko');
   await expect(page.locator('.feed-heading:visible')).toBeVisible();
+  const guide = page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true });
+  await guide.hover();
+  await guidePrefetched;
   await page.evaluate(() =>
     Object.defineProperty(window, '__navigationDocument', { value: 'kept', configurable: true }),
   );
   await instant(page, async () => {
-    await page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true }).click();
+    await guide.click();
     await page.waitForURL((url) => url.pathname === '/ko/guide');
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('banner').locator('.mobile-page-title')).toHaveText('가이드');
@@ -165,7 +174,7 @@ test('initial documents render public content without JavaScript and inaccessibl
     const page = await context.newPage();
     await page.goto('/ja');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
-    await expect(page.getByRole('banner')).toContainText('Playmate');
+    await expect(page.getByRole('banner')).toContainText('Game Mate');
     await expect(page.locator('.post-card').first()).toBeVisible();
     for (const slug of ['feedback', 'friend-sale', 'friendly', 'coaching', 'free']) {
       const response = await page.goto(`/ko/boards/${slug}`);
@@ -175,7 +184,7 @@ test('initial documents render public content without JavaScript and inaccessibl
     await page.goto('/ko/posts/sample-post-0');
     await expect(page.locator('.detail-card:visible')).toBeVisible();
     await expect(page.locator('.detail-card:visible')).toHaveCSS('background-color', 'rgb(28, 27, 26)');
-    await expect(page).toHaveTitle(/ \| 플레이메이트$/);
+    await expect(page).toHaveTitle(/ \| Game Mate$/);
     const missing = await context.request.get('/ko/posts/missing-post');
     expect(missing.status()).toBe(404);
     await context.request.post('/api/auth/test-login', {

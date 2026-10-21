@@ -3,6 +3,7 @@ import 'server-only';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { print } from 'graphql';
 
+import { publicCacheOptions } from './public-cache.policy';
 import { buildServerRequestHeaders, getServerApiUrl, getWebOrigin } from './server-request.helper';
 
 export class PublicQueryError extends Error {
@@ -15,14 +16,18 @@ export class PublicQueryError extends Error {
 export async function publicQuery<TResult, TVariables extends Record<string, unknown>>(
   document: TypedDocumentNode<TResult, TVariables>,
   variables: TVariables,
+  cacheSeconds?: number,
 ): Promise<TResult> {
   const response = await fetch(`${getServerApiUrl()}/graphql`, {
     method: 'POST',
-    cache: 'no-store',
+    ...(cacheSeconds ? publicCacheOptions(document, cacheSeconds) : { cache: 'no-store' as const }),
     credentials: 'omit',
     signal: AbortSignal.timeout(10_000),
     headers: buildServerRequestHeaders(
-      { 'Content-Type': 'application/json' },
+      {
+        'Content-Type': 'application/json',
+        ...(cacheSeconds ? { 'x-photo-contest-public-query': 'true' } : {}),
+      },
       { cookie: null, webOrigin: getWebOrigin() },
     ),
     body: JSON.stringify({ query: print(document), variables }),

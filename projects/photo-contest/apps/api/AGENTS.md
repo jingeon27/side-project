@@ -1,6 +1,6 @@
 # API (NestJS 12 · schema-first GraphQL · Prisma 6)
 
-도메인 규칙과 인증 흐름은 `../../.claude/skills/contest-api/SKILL.md`, 테스트 레인은 `../../.claude/skills/testing/SKILL.md`를 먼저 읽는다.
+도메인 규칙과 인증 흐름은 `../../.agents/skills/contest-api/SKILL.md`, 테스트 레인은 `../../.agents/skills/testing/SKILL.md`를 먼저 읽는다.
 
 ## 모듈 지도 (`src`)
 
@@ -21,7 +21,7 @@
 
 ## 규칙
 
-- 상시 게시물은 Post 도메인에 둔다. Contest·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER만 한다.
+- 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
@@ -33,7 +33,7 @@
 
 ## 빌드·실행
 
-- `build`·`dev`는 `tsconfig.build.json`(src만, spec 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
+- `build`·`dev`는 `tsconfig.build.json`(src만, `*.spec.ts`·`*.test.ts` 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
 - 사용자의 개발 서버는 `dist/main.js`를 본다(`node --watch`). 검증용 빌드는 다른 outDir로 하고, 테스트 API는 test-kit이 `.e2e-build`로 빌드한다.
 - 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client·WASM·sharp도 포함한다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
 
@@ -41,16 +41,32 @@
 
 | 스크립트 | 내용 |
 | --- | --- |
-| `test` · `test:unit` | Vitest `unit`: `src/**/*.spec.ts`(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
-| `test:e2e` | Vitest `e2e`: `test/e2e/**/*.spec.ts`(확인된 버그 회귀는 `*.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
+| `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
 
 ## 앱 스킬
 
-- `.claude/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
-- `.claude/skills/auth/SKILL.md`: Cookie·Origin·OAuth·앱 PKCE 교환.
-- `.claude/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
-- `.claude/skills/api-test/SKILL.md`: unit·실제 DB/supertest e2e·하네스.
+- `.agents/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
+- `.agents/skills/auth/SKILL.md`: Cookie·Origin·OAuth·앱 PKCE 교환.
+- `.agents/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
+- `.agents/skills/api-test/SKILL.md`: unit·실제 DB/supertest integration·하네스.
 
 테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계·외부 성공 콜백 티켓을 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
+
+`test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
+
+그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 멤버 전용·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 묶어 읽는다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다.
+
+publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
+
+Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 S3 최대 60초 presigned GET을 만들거나 로컬 /media/:id/download를 반환한다. attachment·UTF-8 파일명·no-store를 유지하고 이미 발급한 S3 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다.
+
+GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
+
+PostComment.parentId는 한 단계 답글이다. createPostComment는 accessiblePost와 같은 tx에서 원댓글·게시물 일치·깊이를 검증하며 복합 FK(id,postId)가 다른 게시물 연결을 막는다. postComments/postCommentCount는 parentId가 없으면 원댓글만, 있으면 해당 답글만 읽는다. 원댓글 최신순·답글 오래된 순에 id를 마지막 기준으로 둔다. PostComment.replyCount는 _count.replies로 구하며 원댓글 삭제는 답글·좋아요를 cascade한다. updatePost는 작성자·관리자만 제목·내용·분류를 변경하고 기존 첨부·작성자·대회는 유지한다. 기존 보관 분류 유지는 허용하되 새로 지정하는 분류는 활성·같은 그룹이어야 한다.
+
+그룹 프로필은 GroupProfileService가 관리한다. uploadGroupAvatar는 관리자 권한·실제 이미지 형식·10MB 상한을 검사해 512px WebP를 준비하고, updateGroupProfile이 같은 그룹의 만료 전 자산만 지정한다. Group.avatarId와 GroupAvatar(id,groupId)의 복합 FK로 다른 그룹 연결을 막는다. Group 생성 시 nullable 복합 FK의 Prisma 기본값 처리 때문에 id를 명시한다. 대표 사진은 공개 메타데이터이며 현재 지정된 자산만 익명 GET으로 읽고 no-store를 유지한다. 버리거나 교체한 자산은 유지보수에서 재시도하며 현재 사용 중인 자산은 보존한다. 그룹 소개 상한은 500자다.
+
+Contest.likeLimit은 기본 1이며 그룹 대회 개최 시 관리자만 1~100으로 설정한다. PostService.like는 같은 Serializable tx에서 권한·기존 반응·대회별 해당 사용자 반응 수를 검사한다. 이미 누른 작품은 재요청에 성공하고 취소하면 한도를 돌려준다. 숨긴 작품의 좋아요도 집계하며 일반 게시물·댓글·별도 PostContestVote에는 이 한도를 적용하지 않는다. 기존 반응은 마이그레이션에서 지우지 않는다.

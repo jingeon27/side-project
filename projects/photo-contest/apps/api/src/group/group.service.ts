@@ -1,24 +1,24 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { GroupRepository } from './group.repository';
+import { randomUUID } from 'node:crypto';
+
 import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Group, Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { USER_VIEW_SELECT } from '../auth/user-view';
-import type { IUserView } from '../auth/user-view';
+import { USER_VIEW_SELECT, type IUserView } from '../auth/user-view';
 import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
-import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
-import { GROUP_ROLE, toGroupRole } from './group-role';
-import type { TGroupRole } from './group-role';
-import { buildLeaderboard } from './leaderboard';
-import type { ILeaderboardEntry } from './leaderboard';
-import { MembershipService } from './membership.service';
+import { GROUP_DESCRIPTION_LIMIT, PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility, type TGroupVisibility } from './group-visibility';
+import { buildLeaderboard, type ILeaderboardEntry } from './leaderboard';
+import { MembershipService } from './membership.service';
 
 const groupCount = { _count: { select: { members: true } } } as const;
 
@@ -40,6 +40,8 @@ export interface IMemberView {
 export interface IGroupNode {
   id: string;
   name: string;
+  description: string;
+  avatarUrl: string | null;
   /** 조회한 사용자의 역할 */
   role: TGroupRole | null;
   visibility: TGroupVisibility;
@@ -69,13 +71,13 @@ interface IGroupWithRole {
 @Injectable()
 export class GroupService {
   constructor(
-    private readonly repository: GroupRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
 
   async myGroups(viewer: IViewer): Promise<IGroupNode[]> {
-    const memberships = await this.repository.findManyGroupMember({
+    const memberships = await this.db.groupMember.findMany({
       where: { userId: viewer.id },
       include: { group: { include: groupCount } },
       orderBy: [{ joinedAt: 'desc' }, { groupId: 'asc' }],
@@ -84,7 +86,7 @@ export class GroupService {
   }
 
   async group(viewer: IViewer | null, groupId: string): Promise<IGroupNode> {
-    const group = await this.repository.findUniqueGroup({
+    const group = await this.db.group.findUnique({
       where: { id: groupId },
       include: viewerGroupInclude(viewer),
     });
@@ -108,7 +110,7 @@ export class GroupService {
     const range = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const search = query.search?.trim() ?? '';
     if (search.length > TEXT_LIMIT.GROUP_NAME) fail('검색어는 40자 이하로 입력해 주세요.');
-    const groups = await this.repository.findManyGroup({
+    const groups = await this.db.group.findMany({
       where: {
         ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
         ...(query.visibility ? { visibility: query.visibility } : {}),
@@ -128,31 +130,36 @@ export class GroupService {
   }
 
   publicGroupCount() {
-    return this.repository.countGroup({ where: { visibility: GROUP_VISIBILITY.PUBLIC } });
+    return this.db.group.count({ where: { visibility: GROUP_VISIBILITY.PUBLIC } });
   }
 
   async createGroup(
     viewer: IViewer,
     name: unknown,
     visibility: TGroupVisibility = GROUP_VISIBILITY.PUBLIC,
+    description?: string | null,
   ): Promise<IGroupNode> {
     const validName = textValue(name, TEXT_LIMIT.GROUP_NAME, '그룹 이름');
+    const validDescription = description?.trim() ?? '';
+    if (validDescription.length > GROUP_DESCRIPTION_LIMIT) fail('그룹 소개는 500자 이하로 입력해 주세요.');
     const inviteToken = randomToken();
     const group = await this.transactions.atomic(async (tx) => {
-      const created = await this.repository.createGroup(
-        {
-          data: {
-            name: validName,
-            visibility,
-            inviteToken,
-            inviteHash: sha256Hex(inviteToken),
-            members: { create: { userId: viewer.id, role: GROUP_ROLE.OWNER } },
+      const created = await (tx ?? this.db).group.create({
+        data: {
+          // nullable 복합 avatar FK가 기본 id 생성을 덮지 않도록 명시한다.
+          id: randomUUID(),
+          name: validName,
+          description: validDescription,
+          visibility,
+          inviteToken,
+          inviteHash: sha256Hex(inviteToken),
+          members: {
+            create: { userId: viewer.id, role: GROUP_ROLE.OWNER },
           },
-          include: groupCount,
         },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+        include: groupCount,
+      });
+      await recordEvent(tx ?? this.db, {
         id: `group:${created.id}`,
         type: ANALYTICS_EVENT.GROUP_CREATED,
         userId: viewer.id,
@@ -171,40 +178,31 @@ export class GroupService {
 
   async requestMembership(viewer: IViewer, groupId: string): Promise<IGroupNode> {
     await this.transactions.atomic(async (tx) => {
-      const group = await this.repository.findUniqueGroup({ where: { id: groupId } }, tx);
+      const group = await (tx ?? this.db).group.findUnique({ where: { id: groupId } });
       if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-      const existing = await this.repository.findUniqueGroupMember(
-        {
-          where: { groupId_userId: { groupId, userId: viewer.id } },
-        },
-        tx,
-      );
+      const existing = await (tx ?? this.db).groupMember.findUnique({
+        where: { groupId_userId: { groupId, userId: viewer.id } },
+      });
       if (existing) return;
       if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE) {
-        await this.repository.createManyGroupJoinRequest(
-          {
-            data: [{ groupId, userId: viewer.id }],
-            skipDuplicates: true,
-          },
-          tx,
-        );
+        await (tx ?? this.db).groupJoinRequest.createMany({
+          data: [{ groupId, userId: viewer.id }],
+          skipDuplicates: true,
+        });
         return;
       }
       // 같은 사용자의 동시 가입도 PK로 한 행만 남긴다.
-      await this.repository.createManyGroupMember(
-        {
-          data: [{ groupId: group.id, userId: viewer.id }],
-          skipDuplicates: true,
-        },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+      await (tx ?? this.db).groupMember.createMany({
+        data: [{ groupId: group.id, userId: viewer.id }],
+        skipDuplicates: true,
+      });
+      await recordEvent(tx ?? this.db, {
         id: `joined:${group.id}:${viewer.id}`,
         type: ANALYTICS_EVENT.GROUP_JOINED,
         userId: viewer.id,
         properties: { groupId: group.id },
       });
-      await this.repository.deleteManyGroupJoinRequest({ where: { groupId, userId: viewer.id } }, tx);
+      await (tx ?? this.db).groupJoinRequest.deleteMany({ where: { groupId, userId: viewer.id } });
     });
     return this.group(viewer, groupId);
   }
@@ -213,7 +211,7 @@ export class GroupService {
   async regenerateInviteLink(viewer: IViewer, groupId: string): Promise<IGroupNode> {
     const member = await this.membership.requireOwner(viewer.id, groupId);
     const inviteToken = randomToken();
-    const group = await this.repository.updateGroup({
+    const group = await this.db.group.update({
       where: { id: groupId },
       data: { inviteToken, inviteHash: sha256Hex(inviteToken) },
       include: groupCount,
@@ -225,19 +223,19 @@ export class GroupService {
   async invitePreview(viewer: IViewer | null, token: unknown): Promise<IInvitePreview> {
     const group = await this.groupByInvite(token);
     const [memberCount, owner, membership, pending] = await Promise.all([
-      this.repository.countGroupMember({ where: { groupId: group.id } }),
-      this.repository.findFirstGroupMember({
+      this.db.groupMember.count({ where: { groupId: group.id } }),
+      this.db.groupMember.findFirst({
         where: { groupId: group.id, role: GROUP_ROLE.OWNER },
         orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
         select: { user: { select: { nickname: true } } },
       }),
       viewer
-        ? this.repository.findUniqueGroupMember({
+        ? this.db.groupMember.findUnique({
             where: { groupId_userId: { groupId: group.id, userId: viewer.id } },
           })
         : null,
       viewer
-        ? this.repository.findUniqueGroupJoinRequest({
+        ? this.db.groupJoinRequest.findUnique({
             where: { groupId_userId: { groupId: group.id, userId: viewer.id } },
           })
         : null,
@@ -254,7 +252,7 @@ export class GroupService {
 
   /** 종료된 대회(endsAt <= now)의 숨기지 않은 사진만 집계한다. */
   async leaderboard(groupId: string, now = new Date()): Promise<ILeaderboardEntry<IUserView>[]> {
-    const rows = await this.repository.findManySubmission({
+    const rows = await this.db.submission.findMany({
       where: { hidden: false, contest: { groupId, endsAt: { lte: now } } },
       select: {
         contestId: true,
@@ -274,13 +272,13 @@ export class GroupService {
 
   private async groupByInvite(token: unknown) {
     const value = textValue(token, TEXT_LIMIT.INVITE_TOKEN, '초대 코드');
-    const group = await this.repository.findUniqueGroup({ where: { inviteHash: sha256Hex(value) } });
+    const group = await this.db.group.findUnique({ where: { inviteHash: sha256Hex(value) } });
     if (!group) fail(ERROR_MESSAGE.INVALID_INVITE, ERROR_CODE.NOT_FOUND);
     return group;
   }
 
   private async membersOf(groupIds: readonly string[]): Promise<Map<string, IMemberView[]>> {
-    const rows = await this.repository.findManyGroupMember({
+    const rows = await this.db.groupMember.findMany({
       where: { groupId: { in: [...groupIds] } },
       select: { groupId: true, role: true, user: { select: USER_VIEW_SELECT } },
       orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
@@ -316,6 +314,8 @@ export class GroupService {
     return {
       id: group.id,
       name: group.name,
+      description: group.description,
+      avatarUrl: group.avatarId ? `/backend/groups/${group.id}/avatar/${group.avatarId}` : null,
       role: role ? toGroupRole(role) : null,
       visibility: toGroupVisibility(group.visibility),
       memberCount: group._count.members,

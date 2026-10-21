@@ -1,6 +1,8 @@
 import { mkdir } from 'node:fs/promises';
-import { createTestUser } from '@photo-contest/test-kit';
+
 import type { Page } from '@playwright/test';
+
+import { createTestUser } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest, seedPost } from './support/photos';
@@ -80,6 +82,25 @@ test(
     const sheet = page.getByRole('dialog', { name: '댓글', exact: true });
     const list = sheet.getByRole('list', { name: '게시물 댓글' });
     await expect(list.getByText('친구가 남긴 웃음')).toBeVisible();
+    const friendComment = list.getByRole('listitem').filter({ hasText: '친구가 남긴 웃음' });
+    await expect(sheet.getByRole('button', { name: /시트.*확장|시트 축소/ })).toHaveCount(0);
+    await friendComment.getByRole('button', { name: '댓글 좋아요 0개', exact: true }).click();
+    await expect(friendComment.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(friendComment.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toBeEnabled();
+    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await post.getByRole('button', { name: '댓글이 있는 순간 댓글 1개' }).click();
+    await expect(friendComment.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await friendComment.getByRole('button', { name: '댓글 좋아요 1개', exact: true }).click();
+    await expect(friendComment.getByRole('button', { name: '댓글 좋아요 0개', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     const viewport = page.viewportSize();
     if (!viewport) throw new Error('화면 크기가 있어야 한다');
     const expectCompact = async () => {
@@ -101,16 +122,11 @@ test(
     await mkdir('.data/screens', { recursive: true });
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-peek.png` });
     await dragComments(page, browserName, isMobile, -viewport.height * 0.3);
-    await expect(sheet.getByRole('button', { name: '시트 축소' })).toHaveAttribute('aria-expanded', 'true');
     await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
     await expect.poll(opacity).toBeGreaterThan(compactOpacity);
     expect(await opacity()).toBeLessThan(1);
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-expanded.png` });
     await dragComments(page, browserName, isMobile, viewport.height * 0.3);
-    await expectCompact();
-    await sheet.getByRole('button', { name: '시트 전체 화면으로 확장' }).click();
-    await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
-    await sheet.getByRole('button', { name: '시트 축소' }).click();
     await expectCompact();
     await sheet.getByRole('button', { name: '댓글 올리기' }).click();
     await expect(sheet.getByText('댓글을 입력해 주세요.')).toBeVisible();

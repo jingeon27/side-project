@@ -1,15 +1,19 @@
 import 'server-only';
-import { initialDocumentData } from '@/shared/lib/initial-document-data';
+
 import { Suspense } from 'react';
-import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { notFound } from 'next/navigation';
+
 import { appRoutes, GameSlugSchema } from '@game-feedback/bridge';
-import { boardBySlug } from '@/features/board';
 import { BattleModeSchema, CoachingRoleSchema, FeedbackStatusSchema } from '@game-feedback/contracts';
-import { getPublicCategories } from '@/features/category/index.server';
+
 import { getServerSession } from '@/features/auth/index.server';
+import { boardBySlug } from '@/features/board';
+import { getPublicCategories } from '@/features/category/index.server';
 import { getServerPostList } from '@/features/post/index.server';
-import { createPageMetadata, pageUrl, JsonLd } from '@/shared/seo';
+import { initialDocumentData } from '@/shared/lib/initial-document-data';
+import { createPageMetadata, JsonLd, pageUrl } from '@/shared/seo';
+
+import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { BoardsPage } from './BoardsPage';
 
 async function resolveBoard(slug: string, game: unknown) {

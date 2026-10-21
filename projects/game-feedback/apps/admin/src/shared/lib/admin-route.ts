@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react';
+
 import { z } from 'zod';
+
 const tabSchema = z.enum(['support', 'reports', 'users']).catch('support');
+export type TAdminTab = z.output<typeof tabSchema>;
 const idSchema = z
   .string()
   .regex(/^[A-Za-z0-9_-]{1,100}$/)
@@ -29,4 +32,7 @@ export function useAdminRoute() {
 }
 export function adminUserPath(id: string) {
   return `#users?user=${encodeURIComponent(idSchema.parse(id))}`;
+}
+export function adminSupportPath(id: string) {
+  return `#support?thread=${encodeURIComponent(idSchema.parse(id))}`;
 }

@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+
 import { createTestImage, createTestUser } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
@@ -26,7 +27,7 @@ test(
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
     for (const width of [1024, 1280, 1440, 1920]) {
       await page.setViewportSize({ width, height: 960 });
-      await expect(page.getByRole('heading', { name: '홈 피드', exact: true })).toBeVisible();
+      await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
       await expect(latest.getByRole('article')).toHaveCount(2);
       const feed = await latest.boundingBox();
       const popular = await page.getByRole('region', { name: '이달의 인기', exact: true }).boundingBox();
@@ -84,7 +85,7 @@ test(
     await composer
       .getByLabel('내용', { exact: true })
       .fill('큰 화면에서도 사진과 내용을 함께 보며 작성해요.');
-    await composer.getByRole('checkbox').check();
+    await composer.getByRole('checkbox', { name: /공유할 권리/ }).check();
     await page.screenshot({ path: '.data/screens/desktop-composer-wide.png' });
     await composer.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(composer).toHaveCount(0);

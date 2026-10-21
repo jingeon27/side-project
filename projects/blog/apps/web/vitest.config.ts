@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -7,7 +8,7 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
     environment: 'jsdom',
-    include: ['tests/unit/**/*.{spec,test}.{ts,tsx}'],
+    include: ['src/**/*.{spec,test}.{ts,tsx}', 'scripts/**/*.{spec,test}.ts', '*.{spec,test}.ts'],
     setupFiles: ['tests/setup.ts'],
     restoreMocks: true,
     clearMocks: true,

@@ -1,8 +1,9 @@
-import { UseGuards, Controller, Get, HttpCode, Inject, Param, Post, Req } from '@nestjs/common';
-import { UserGuard } from '../common/http/session.guard';
-import { ValidatedQuery } from '../common/http/request-validation';
-import { ListQueryDto } from '../common/http/list-query.dto';
+import { Controller, Get, HttpCode, Inject, Param, Post, Req, UseGuards } from '@nestjs/common';
+
 import type { SessionRequest } from '../auth/session.types';
+import { ListQueryDto } from '../common/http/list-query.dto';
+import { ValidatedQuery } from '../common/http/request-validation';
+import { UserGuard } from '../common/http/session.guard';
 import { NotificationsService } from './notifications.service';
 
 @Controller('api')

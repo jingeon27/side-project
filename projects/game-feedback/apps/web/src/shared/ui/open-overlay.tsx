@@ -1,7 +1,11 @@
 'use client';
+
 import { catchError } from 'next/error';
-import { Dialog } from '@side/design-system';
+
 import { overlay, type OverlayControllerComponent } from 'overlay-kit';
+
+import { Dialog } from '@side/design-system';
+
 import { ErrorRecovery } from './ErrorRecovery';
 
 interface IOverlayErrorProps {

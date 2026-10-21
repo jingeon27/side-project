@@ -1,10 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import type { ReactNode } from 'react';
+
 import { Check, Eye } from 'lucide-react';
+
 import type { Answer } from '@/shared/api';
-import { Avatar } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
+import { Avatar } from '@/shared/ui';
+
 interface IAnswerCardProps {
   answer: Answer;
   authorContent?: ReactNode;
@@ -23,7 +27,7 @@ export function AnswerCard({ answer, authorContent, authorName, actions, helpful
         </div>
       )}
       <div className="detail-author">
-        <Avatar name={answer.author.nickname} />
+        <Avatar src={answer.author.avatarUrl} name={answer.author.nickname} />
         <div>
           <strong>{authorName ?? answer.author.nickname}</strong>
           {authorContent}

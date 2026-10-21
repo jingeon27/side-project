@@ -1,4 +1,3 @@
-import { SubmissionRepository } from './submission.repository';
 import { Module } from '@nestjs/common';
 
 import { GroupModule } from '../group/group.module';
@@ -9,7 +8,7 @@ import { UploadController } from './upload.controller';
 
 @Module({
   imports: [GroupModule],
-  providers: [SubmissionRepository, SubmissionService, SubmissionResolver],
+  providers: [SubmissionService, SubmissionResolver],
   controllers: [UploadController, PhotoController],
   exports: [SubmissionService],
 })

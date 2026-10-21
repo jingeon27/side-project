@@ -1,7 +1,8 @@
 'use client';
 
-import { OverlayProvider } from 'overlay-kit';
 import type { ReactNode } from 'react';
+
+import { OverlayProvider } from 'overlay-kit';
 
 import { AuthSessionSync } from '@/features/auth';
 import { ToastProvider } from '@/shared/ui/@core/toast';

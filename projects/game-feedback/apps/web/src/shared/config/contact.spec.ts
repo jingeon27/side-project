@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { getContactEmail } from './contact';
 
 afterEach(() => vi.unstubAllEnvs());
@@ -9,7 +10,7 @@ describe('public support contact', () => {
     expect(getContactEmail()).toBe('support@example.com');
     for (const value of ['', 'javascript:alert(1)', 'broken@example.com\nBcc:other@example.com']) {
       vi.stubEnv('NEXT_PUBLIC_GAME_FEEDBACK_CONTACT_EMAIL', value);
-      expect(getContactEmail()).toBe('jingeon27@gmail.com');
+      expect(getContactEmail()).toBe('contact@bambyul.com');
     }
   });
 });

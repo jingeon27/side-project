@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { resolveSeoConfig, canonicalPath, excerpt } from './config';
+
+import { canonicalPath, excerpt, resolveSeoConfig } from './config';
 import { createPageMetadata, pageContent, staticPageMetadata } from './metadata';
 import { profileStructuredData, publicPageStructuredData, serializeJsonLd } from './structured-data';
+
 afterEach(() => vi.unstubAllEnvs());
 describe('SEO metadata and visibility', () => {
   const production = {
@@ -29,7 +31,7 @@ describe('SEO metadata and visibility', () => {
     const titles = new Set<string>();
     for (const kind of Object.keys(pageContent) as (keyof typeof pageContent)[]) {
       const metadata = staticPageMetadata(kind, 'ko');
-      expect(metadata.title).toMatchObject({ absolute: expect.stringContaining(' | 플레이메이트') });
+      expect(metadata.title).toMatchObject({ absolute: expect.stringContaining(' | Game Mate') });
       titles.add(
         typeof metadata.title === 'object' && metadata.title && 'absolute' in metadata.title
           ? String(metadata.title.absolute)
@@ -47,7 +49,7 @@ describe('SEO metadata and visibility', () => {
     expect(createPageMetadata({ title: '공개', description: '공개', path: '/ko' }).robots).toMatchObject({
       index: true,
     });
-    for (const kind of ['write', 'messages', 'notifications', 'settings'] as const)
+    for (const kind of ['login', 'onboarding', 'write', 'messages', 'notifications', 'settings'] as const)
       expect(staticPageMetadata(kind, 'ko').robots).toMatchObject({ index: false, follow: false });
     expect(
       createPageMetadata({
@@ -57,6 +59,14 @@ describe('SEO metadata and visibility', () => {
         isTestAccount: true,
       }).robots,
     ).toMatchObject({ index: false });
+  });
+  it('가입 안내는 각 언어로 설명하되 검색에서 제외하고 복귀 경로를 canonical에 싣지 않아야 한다', () => {
+    for (const [key, value] of Object.entries(production)) vi.stubEnv(key, value);
+    const english = staticPageMetadata('onboarding', 'en');
+    expect(english.title).toMatchObject({ absolute: expect.stringContaining('Sign up') });
+    expect(english.alternates?.canonical).toBe('https://feedback.example/en/onboarding');
+    expect(english.robots).toMatchObject({ index: false, follow: false });
+    expect(staticPageMetadata('onboarding', 'ja').openGraph).toMatchObject({ locale: 'ja_JP' });
   });
   it('canonicalizes unfinished translations and preserves meaningful profile pagination', () => {
     vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
@@ -76,7 +86,7 @@ describe('SEO metadata and visibility', () => {
           '@type': 'WebSite',
           '@id': 'https://feedback.example/#website',
           url: 'https://feedback.example/',
-          name: '플레이메이트',
+          name: 'Game Mate',
         });
         expect(page).toMatchObject({
           '@type': kind === 'contact' ? 'ContactPage' : 'WebPage',

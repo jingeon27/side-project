@@ -1,11 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import Link from 'next/link';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { UserBadges } from '@/features/user';
 import type { Conversation } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
 import { Avatar } from '@/shared/ui';
-import { appRoutes } from '@game-feedback/bridge';
 
 interface IConversationRowProps {
   conversation: Conversation;
@@ -26,7 +29,7 @@ export function ConversationRow({ conversation, selected, locale, replace }: ICo
       aria-label={`${t('{name}님과의 대화', { name: conversation.peer.nickname })}${conversation.unreadCount ? `, ${t('읽지 않은 메시지 {count}개', { count: conversation.unreadCount })}` : ''}`}
       aria-current={selected ? 'page' : undefined}
     >
-      <Avatar name={conversation.peer.nickname} />
+      <Avatar src={conversation.peer.avatarUrl} name={conversation.peer.nickname} />
       <div className="conversation-preview">
         <div>
           <strong>{conversation.peer.nickname}</strong>

@@ -1,6 +1,9 @@
+import { createContext, use, useSyncExternalStore } from 'react';
+
 import type { TNativeAppInfo } from '@photo-contest/bridge';
 import type { IWebBridge } from '@photo-contest/bridge/web';
-import { createContext, use, useSyncExternalStore } from 'react';
+
+import { subscribeNothing } from '../is-ssr.hook';
 
 /** app의 BridgeProvider가 브라우저에서 만든 브리지를 넣는다. 서버 렌더링에서는 null. */
 export const BridgeContext = createContext<IWebBridge | null>(null);
@@ -10,7 +13,6 @@ export function useBridge() {
   return use(BridgeContext);
 }
 
-const subscribeNothing = () => () => undefined;
 const getServerAppInfo = () => null;
 
 /**

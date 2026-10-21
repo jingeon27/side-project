@@ -1,29 +1,43 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { AuthRepository } from './auth.repository';
-import { type OnboardDto, type TestLoginDto, type DemoLoginDto } from './auth-input.dto';
-import { Inject, Injectable } from '@nestjs/common';
-import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { createHash } from 'node:crypto';
+
+import { Inject, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
-import type { SessionRequest } from './session.types';
-import { AppAuthService } from './app-auth.service';
-import { SessionService } from './session.service';
-import { requireUser } from './session-access';
-import { parse } from '../common/validation';
+
+import {
+  DISCOVERY_CACHE_TAG,
+  POSTS_CACHE_TAG,
+  SocialProviderSchema,
+  type TSocialProvider,
+} from '@game-feedback/contracts';
+
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
+import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
 import { COOKIE, cookies, setCookie } from '../common/http/cookies';
-import { hash, token } from '../common/crypto';
-import { authorDto, userDto } from '../users/user.presenter';
-import { sessionToken } from './session-token';
+import { parse } from '../common/validation';
+import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { PrismaClient } from '../generated/prisma';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
+import { authorDto, userDto } from '../users/user.presenter';
+import { AppAuthService } from './app-auth.service';
+import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';
+import {
+  loginRedirect,
+  OAUTH_RETURN_COOKIE,
+  requestedReturnPath,
+  savedReturnPath,
+} from './oauth-return-path';
+import { requireUser } from './session-access';
+import { sessionToken } from './session-token';
+import { SessionService } from './session.service';
+import type { SessionRequest } from './session.types';
 import { SocialIdentityService } from './social-identity.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(AuthRepository) private readonly repository: AuthRepository,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
@@ -31,7 +45,7 @@ export class AuthService {
   ) {}
   async demo(req: SessionRequest, res: Response, input: DemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
-    const user = await this.repository.upsertUser({
+    const user = await this.db.user.upsert({
       where: { demoKey: `demo:${input.nickname.toLocaleLowerCase()}` },
       update: {},
       create: {
@@ -52,8 +66,8 @@ export class AuthService {
 
   async testAccounts() {
     this.requireTestAuth();
-    await this.repository.seedTestAccounts();
-    const users = await this.repository.findManyUser({
+    await seed(this.db, true);
+    const users = await this.db.user.findMany({
       where: { OR: TEST_ACCOUNT_FIXTURES.map((account) => ({ id: account.id, demoKey: account.demoKey })) },
     });
     return {
@@ -71,8 +85,8 @@ export class AuthService {
     const { accountId } = body;
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === accountId);
     if (!fixture) throw new ApiError(404, 'TEST_ACCOUNT_NOT_FOUND', '사용할 수 없는 테스트 계정입니다.');
-    await this.repository.seedTestAccounts();
-    const user = await this.repository.findFirstUser({ where: { id: fixture.id, demoKey: fixture.demoKey } });
+    await seed(this.db, true);
+    const user = await this.db.user.findFirst({ where: { id: fixture.id, demoKey: fixture.demoKey } });
     if (!user) throw new ApiError(404, 'TEST_ACCOUNT_NOT_FOUND', '테스트 계정을 찾을 수 없습니다.');
     await this.sessions.issueSession(req, res, user.id);
     return this.sessions.session(req);
@@ -83,8 +97,8 @@ export class AuthService {
     const { accountId } = body;
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === accountId);
     if (!fixture) throw new ApiError(404, 'TEST_ACCOUNT_NOT_FOUND', '사용할 수 없는 테스트 계정입니다.');
-    await this.repository.seedTestAccounts();
-    const user = await this.repository.findFirstUser({ where: { id: fixture.id, demoKey: fixture.demoKey } });
+    await seed(this.db, true);
+    const user = await this.db.user.findFirst({ where: { id: fixture.id, demoKey: fixture.demoKey } });
     if (!user) throw new ApiError(404, 'TEST_ACCOUNT_NOT_FOUND', '테스트 계정을 찾을 수 없습니다.');
     const issued = await this.sessions.issueSession(req, res, user.id, null, { durationMs: 60 * 60 * 1000 });
     res.setHeader('Cache-Control', 'no-store');
@@ -103,6 +117,7 @@ export class AuthService {
     const provider = name;
     const identity = this.config.identityProviders[provider];
     if (!identity) throw new ApiError(503, 'OAUTH_NOT_CONFIGURED', '소셜 로그인이 아직 설정되지 않았습니다.');
+    const returnPath = requestedReturnPath(req);
     const appChallenge = req.query.app_challenge;
     if (
       appChallenge !== undefined &&
@@ -112,7 +127,7 @@ export class AuthService {
     const state = token();
     const nonce = token();
     const verifier = token();
-    await this.repository.createOAuthAttempt({
+    await this.db.oAuthAttempt.create({
       data: {
         provider,
         stateHash: hash(state),
@@ -123,6 +138,13 @@ export class AuthService {
       },
     });
     setCookie(res, 'gamefeedback_oauth', state, 10 * 60 * 1000, this.config.production);
+    setCookie(
+      res,
+      OAUTH_RETURN_COOKIE,
+      Buffer.from(returnPath).toString('base64url'),
+      10 * 60 * 1000,
+      this.config.production,
+    );
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     res.redirect(identity.authorizationUrl({ state, nonce, challenge }));
   }
@@ -135,20 +157,22 @@ export class AuthService {
     const code = typeof req.query.code === 'string' ? req.query.code : '';
     if (!state || cookies(req).gamefeedback_oauth !== state)
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청을 확인할 수 없습니다.');
-    const attempt = await this.repository.findUniqueOAuthAttempt({ where: { stateHash: hash(state) } });
+    const attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: hash(state) } });
     if (!attempt || attempt.provider !== provider || attempt.expiresAt <= new Date())
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 만료되었거나 올바르지 않습니다.');
-    const consumed = await this.repository.deleteManyOAuthAttempt({
+    const consumed = await this.db.oAuthAttempt.deleteMany({
       where: { stateHash: hash(state), provider, expiresAt: { gt: new Date() } },
     });
     if (consumed.count !== 1)
       throw new ApiError(400, 'OAUTH_STATE_INVALID', '로그인 요청이 이미 사용되었습니다.');
     setCookie(res, 'gamefeedback_oauth', '', 0, this.config.production);
+    const returnPath = savedReturnPath(req);
+    setCookie(res, OAUTH_RETURN_COOKIE, '', 0, this.config.production);
     if (!code) {
       res.redirect(
         attempt.appChallenge
           ? 'gamefeedback://auth/callback?error=login_failed'
-          : `${this.config.webOrigin}/ko?login=cancelled`,
+          : loginRedirect(this.config.webOrigin, returnPath, 'cancelled'),
       );
       return;
     }
@@ -162,14 +186,14 @@ export class AuthService {
     }
     const user = await this.identities.findUser(provider, subject);
     if (provider === 'google' && user && process.env.GF_ADMIN_GOOGLE_SUB === subject && user.role !== 'ADMIN')
-      await this.repository.updateUser({ where: { id: user.id }, data: { role: 'ADMIN' } });
+      await this.db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
     if (attempt.appChallenge) {
       const ticket = await this.appAuth.issueTicket(subject, attempt.appChallenge, provider);
       res.redirect(`gamefeedback://auth/callback?code=${ticket}`);
       return;
     }
     await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : subject, { provider });
-    res.redirect(`${this.config.webOrigin}/ko${user ? '' : '?onboard=1'}`);
+    res.redirect(loginRedirect(this.config.webOrigin, returnPath, user ? undefined : 'onboarding'));
   }
 
   async onboard(req: SessionRequest, res: Response, input: OnboardDto) {
@@ -183,20 +207,23 @@ export class AuthService {
 
   async logout(req: SessionRequest, res: Response) {
     const raw = sessionToken(req);
-    if (raw) await this.repository.deleteManySession({ where: { tokenHash: hash(raw) } });
+    if (raw) await this.db.session.deleteMany({ where: { tokenHash: hash(raw) } });
     setCookie(res, COOKIE, '', 0, this.config.production);
     return { ok: true };
   }
 
   async deleteAccount(req: SessionRequest, res: Response) {
     const u = requireUser(req);
-    await this.transactions.run(async (tx) => {
-      await this.repository.deleteManyPost({ where: { authorId: u.id } }, tx);
-      await this.repository.deleteManyAnswer({ where: { authorId: u.id } }, tx);
-      await this.repository.deleteManyComment({ where: { authorId: u.id } }, tx);
-      await this.repository.deleteManyNotification({ where: { actorId: u.id } }, tx);
-      await this.repository.deleteUser({ where: { id: u.id } }, tx);
-    });
+    await this.cache.change(
+      async (tx) => {
+        await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
+        await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
+        await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
+        await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
+        await (tx ?? this.db).user.delete({ where: { id: u.id } });
+      },
+      [POSTS_CACHE_TAG, DISCOVERY_CACHE_TAG],
+    );
     setCookie(res, COOKIE, '', 0, this.config.production);
     return { ok: true };
   }

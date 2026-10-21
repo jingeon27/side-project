@@ -7,6 +7,7 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
+      - 'scripts/check-migrations.mjs'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -17,6 +18,7 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
+      - 'scripts/check-migrations.mjs'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -31,6 +33,11 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Reject incompatible new migrations
+        env:
+          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
+        run: node scripts/check-migrations.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -42,10 +49,29 @@ jobs:
         run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
       - run: yarn workspace @side/design-system check
       - run: yarn check:game-feedback
+      - run: yarn workspace @side/migration-check test
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
       - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
       - run: yarn workspace @side/game-feedback test:e2e
+      - name: Verify telemetry with intercepted SDK requests
+        if: always() && !cancelled()
+        env:
+          GF_OBSERVABILITY_PRODUCTION: 'true'
+        run: yarn workspace @game-feedback/web test:observability
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: game-feedback-playwright
+          path: |
+            projects/game-feedback/apps/web/test-results
+            projects/game-feedback/apps/web/.e2e-build/observability-results
+            projects/game-feedback/apps/web/.e2e-build/test-auth-results
+            projects/game-feedback/apps/web/.e2e-build/prefetch-results
+            projects/game-feedback/apps/admin/test-results
+            projects/game-feedback/apps/mobile/test-results
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Stop owned test database
         if: always()
         run: yarn workspace @side/game-feedback db:test:stop
@@ -79,12 +105,12 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import { appendFileSync } from 'node:fs';
-          const site = process.env.SITE_URL || 'https://game-feedback.test';
+          const site = process.env.SITE_URL || 'https://game.bambyul.com';
           const url = new URL(site);
           if (url.origin !== site || url.protocol !== 'https:') throw new Error('GF_SITE_URL must be an HTTPS origin.');
           if (process.env.DEPLOY_ENABLED === 'true' && (!process.env.SITE_URL || !process.env.CONTACT_EMAIL))
             throw new Error('Configure GF_SITE_URL and GF_CONTACT_EMAIL before enabling deployment.');
-          const email = process.env.CONTACT_EMAIL || 'operator@game-feedback.test';
+          const email = process.env.CONTACT_EMAIL || 'contact@bambyul.com';
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid GF_CONTACT_EMAIL.');
           appendFileSync(process.env.GITHUB_ENV, `GF_BUILD_SITE_URL=${site}\nGF_BUILD_CONTACT_EMAIL=${email}\nGF_SMOKE_DOMAIN=${url.hostname}\n`);
           JS

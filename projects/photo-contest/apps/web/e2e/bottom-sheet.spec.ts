@@ -33,7 +33,7 @@ test(
       'true',
     );
     await expect(sheet.getByLabel('내용', { exact: true })).not.toHaveAttribute('required');
-    await expect(sheet.getByRole('checkbox')).toHaveAttribute('required', '');
+    await expect(sheet.getByRole('checkbox', { name: /공유할 권리/ })).toHaveAttribute('required', '');
     expect(await content.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     await content.evaluate((el) => {
       el.scrollTop = el.scrollHeight;

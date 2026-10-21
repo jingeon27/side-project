@@ -1,17 +1,16 @@
 'use client';
-import { Suspense, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react';
-import { ServiceErrorBoundary } from './ServiceErrorBoundary';
+
+import { Suspense, type ComponentProps, type ReactNode } from 'react';
+
+import { useIsSSR } from '../lib/use-is-ssr';
 import { LoadingState } from './LoadingState';
+import { ServiceErrorBoundary } from './ServiceErrorBoundary';
 
 type TAsyncBoundaryProps = ComponentProps<typeof ServiceErrorBoundary> & {
   pendingFallback?: ReactNode;
   clientOnly?: boolean;
   suspense?: boolean;
 };
-
-const subscribe = () => () => undefined;
-const clientSnapshot = () => true;
-const serverSnapshot = () => false;
 
 export function AsyncBoundary({
   children,
@@ -20,11 +19,11 @@ export function AsyncBoundary({
   suspense = true,
   ...props
 }: TAsyncBoundaryProps) {
-  const hydrated = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot);
+  const isSSR = useIsSSR();
   return (
     <ServiceErrorBoundary {...props}>
       {suspense ? (
-        <Suspense fallback={pendingFallback}>{clientOnly && !hydrated ? pendingFallback : children}</Suspense>
+        <Suspense fallback={pendingFallback}>{clientOnly && isSSR ? pendingFallback : children}</Suspense>
       ) : (
         children
       )}

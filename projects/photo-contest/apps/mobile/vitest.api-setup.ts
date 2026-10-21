@@ -1,6 +1,6 @@
-import { startIsolatedApi } from '@photo-contest/test-kit';
-import type { IIsolatedApi } from '@photo-contest/test-kit';
 import type { TestProject } from 'vitest/node';
+
+import { startIsolatedApi, type IIsolatedApi } from '@photo-contest/test-kit';
 
 /** 모바일 api 레인 전용 포트. 개발 서버(4200)·다른 레인과 겹치지 않는다. */
 const API_PORT = 4331;

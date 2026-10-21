@@ -1,6 +1,7 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
 
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = process.env.GF_E2E_SCHEMA ?? `gf_test_web_${randomUUID().replaceAll('-', '')}`;
@@ -21,7 +22,12 @@ if (
 databaseUrl.searchParams.set('schema', schema);
 process.env.GF_E2E_DATABASE_URL = databaseUrl.toString();
 const apiEnv = {
+  GF_CACHE_REVALIDATION_SECRET: 'game-feedback-e2e-cache-secret-'.repeat(2),
+  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3301/_internal/cache/revalidate',
   NODE_ENV: 'test',
+  SENTRY_DSN: '',
+  NEXT_PUBLIC_SENTRY_DSN: '',
+  NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
   GF_DEMO_MODE: 'true',
   PORT: '4301',
   WEB_ORIGIN: 'http://127.0.0.1:3301',
@@ -43,7 +49,7 @@ const apiEnv = {
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: '**/test-token-chat.spec.ts',
+  testIgnore: ['**/test-token-chat.spec.ts', '**/observability.spec.ts'],
   fullyParallel: false,
   workers: 1,
   timeout: 45_000,
@@ -63,19 +69,19 @@ export default defineConfig({
     },
     {
       command:
-        'corepack yarn workspace @game-feedback/web exec next dev --webpack --port 3301 --hostname 127.0.0.1',
+        'corepack yarn workspace @game-feedback/web build && corepack yarn workspace @game-feedback/web exec next start --port 3301 --hostname 127.0.0.1',
       cwd: rootDir,
       url: 'http://127.0.0.1:3301/ko',
       env: {
         ...apiEnv,
-        NODE_ENV: 'development',
+        NODE_ENV: 'production',
         GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4301',
         NEXT_DIST_DIR: '.next/e2e',
         GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
         GAME_FEEDBACK_INDEXING: 'false',
       },
       reuseExistingServer: false,
-      timeout: 90_000,
+      timeout: 180_000,
     },
   ],
 });

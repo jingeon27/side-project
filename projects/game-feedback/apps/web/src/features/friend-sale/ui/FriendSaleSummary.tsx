@@ -1,5 +1,7 @@
 'use client';
+
 import type { TFriendSaleDetails } from '@game-feedback/contracts';
+
 import { useI18n } from '@/shared/i18n';
 import { formatWon } from '@/shared/lib/money';
 

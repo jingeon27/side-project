@@ -7,8 +7,10 @@ describe('게시물 파일 검증', () => {
     expect(postSchema.shape.media.safeParse(new File(['photo'], 'moment.HEIC')).success).toBe(true);
   });
 
-  it('확장자만 이미지인 일반 파일과 없는 파일은 거부해야 한다', () => {
+  it('확장자만 이미지인 일반 파일을 거부하고 첨부 없는 게시물도 거부해야 한다', () => {
     expect(postSchema.shape.media.safeParse(new File(['text'], 'fake.png')).success).toBe(false);
-    expect(postSchema.shape.media.safeParse(null).success).toBe(false);
+    expect(
+      postSchema.safeParse({ title: '빈 글', body: '', media: null, rightsConfirmed: true }).success,
+    ).toBe(false);
   });
 });

@@ -1,8 +1,12 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import Link from 'next/link';
-import type { Author } from '@/shared/api';
+
 import { appRoutes } from '@game-feedback/bridge';
+
+import type { Author } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+
 export function AuthorLink({ author, locale }: { author: Author; locale: string }) {
   const { t } = useI18n();
   return (

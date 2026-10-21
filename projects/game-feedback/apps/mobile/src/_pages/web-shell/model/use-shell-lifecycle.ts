@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { AppState, BackHandler, Platform } from 'react-native';
+
 import * as Linking from 'expo-linking';
+
 import { ShellLifecycle, type IShellLifecycleOptions } from './shell-lifecycle';
 
 export function useShellLifecycle({ openLink, onState, onBack, onFallbackBack }: IShellLifecycleOptions) {

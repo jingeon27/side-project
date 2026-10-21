@@ -1,15 +1,12 @@
 import { MockedProvider } from '@apollo/client/testing/react';
-
-import { BRIDGE_ERROR_CODE, decodeWebMessage } from '@photo-contest/bridge';
-import { NativeCapabilityError } from '@photo-contest/bridge/native';
-import type { TNativeCapabilities } from '@photo-contest/bridge/native';
-import { installFakeNativeApp } from '@photo-contest/bridge/test';
-import type { IFakeNativeApp } from '@photo-contest/bridge/test';
-import { createWebBridge } from '@photo-contest/bridge/web';
-import type { IWebBridge, TBridgeWindow } from '@photo-contest/bridge/web';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { BRIDGE_ERROR_CODE, decodeWebMessage } from '@photo-contest/bridge';
+import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/bridge/native';
+import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
+import { createWebBridge, type IWebBridge, type TBridgeWindow } from '@photo-contest/bridge/web';
 
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
 import { trackEvent } from '@/shared/model/analytics';

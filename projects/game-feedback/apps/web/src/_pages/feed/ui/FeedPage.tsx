@@ -1,18 +1,24 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+
 import { use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useBrowserSearch } from '@/shared/navigation';
+
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, MessageSquare, LoaderCircle } from 'lucide-react';
-import { useSession } from '@/features/auth';
-import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
-import { AuthorLink, UserBadges } from '@/features/user';
-import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { ArrowUpRight, LoaderCircle, MessageSquare, Plus } from 'lucide-react';
+
 import { appRoutes } from '@game-feedback/bridge';
-import { FeedFilters } from './FeedFilters';
+import { Button } from '@side/design-system';
+
+import { useSession } from '@/features/auth';
+import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import { AuthorLink, UserBadges } from '@/features/user';
+import { useI18n } from '@/shared/i18n';
+import { useBrowserSearch } from '@/shared/navigation';
+import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+
 import type { IFeedSnapshot } from '../model/feed-snapshot.type';
+import { FeedFilters } from './FeedFilters';
+
 export function FeedPage({
   locale,
   initialFeed,

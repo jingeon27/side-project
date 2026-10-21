@@ -2,9 +2,9 @@
 
 import { useMutation } from '@apollo/client/react';
 
+import { resetPhotoFeed } from '@/features/feed';
 import { prependMyGroup } from '@/features/group';
 import { resetGalleryPosts } from '@/features/post';
-import { resetPhotoFeed } from '@/features/feed';
 import { GroupVisibility, JoinGroupDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';

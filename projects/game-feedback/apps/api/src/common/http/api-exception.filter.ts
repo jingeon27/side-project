@@ -1,11 +1,19 @@
 import { Catch, HttpException, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+
+import { reportUnexpectedError } from '../../monitoring/sentry';
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   catch(error: unknown, host: ArgumentsHost) {
+    const req = host.switchToHttp().getRequest<Request>();
+    const tags = {
+      method: req.method,
+      route: typeof req.route?.path === 'string' ? req.route.path : 'unmatched',
+    };
     const res = host.switchToHttp().getResponse<Response>();
     if (error instanceof HttpException) {
+      if (error.getStatus() >= 500) reportUnexpectedError(error, tags);
       const data = error.getResponse();
       if (typeof data === 'object' && data && 'errorCode' in data) {
         res.status(error.getStatus()).json(data);
@@ -26,6 +34,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
       res.status(404).json({ errorCode: 'NOT_FOUND', message: '대상을 찾을 수 없습니다.' });
       return;
     }
+    reportUnexpectedError(error, tags);
     console.error('Game Feedback API request failed', error instanceof Error ? error.name : 'UnknownError');
     res
       .status(500)

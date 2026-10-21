@@ -1,11 +1,12 @@
-import { readNativeAppInfo } from '@photo-contest/bridge/web';
 import * as Sentry from '@sentry/nextjs';
 
+import { readNativeAppInfo } from '@photo-contest/bridge/web';
+
 import {
-  SENTRY_DATA_COLLECTION,
   buildSentryClientTags,
   resolveClientSentryDsn,
   scrubSentryEvent,
+  SENTRY_DATA_COLLECTION,
 } from '@/shared/lib/sentry.helper';
 
 // 화면이 상호작용 가능해지기 전에 한 번 실행된다. DSN이 없으면(로컬·e2e) Sentry를 켜지 않는다.

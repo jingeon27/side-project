@@ -1,10 +1,12 @@
 'use client';
 
-import { createContext, useContext, useCallback, Suspense, type ReactNode } from 'react';
+import { createContext, Suspense, useCallback, useContext, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { Toaster, toast } from '@side/design-system';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
-import { useI18n, translate } from '@/shared/i18n';
+import { toast, Toaster } from '@side/design-system';
+
+import { translate, useI18n } from '@/shared/i18n';
 import { useThemePreference } from '@/shared/theme';
 
 const toasterId = 'game-feedback';

@@ -1,12 +1,18 @@
 'use client';
+
 import Link from 'next/link';
-import { appRoutes } from '@game-feedback/bridge';
-import { useI18n } from '@/shared/i18n';
+
 import { Check } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import type { ChatMessage } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { formatTime, isAtOrBefore } from '@/shared/lib/date';
 import { Avatar } from '@/shared/ui';
+
 import { ChatAttachmentView } from './ChatAttachmentView';
+import { ChatMessageBody } from './ChatMessageBody';
 
 interface IMessageBubbleProps {
   message: ChatMessage;
@@ -31,7 +37,7 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
           href={appRoutes.profile(textLocale, message.sender.id)}
           aria-label={t('{name} 프로필 보기', { name: message.sender.nickname })}
         >
-          <Avatar name={message.sender.nickname} size="small" />
+          <Avatar src={message.sender.avatarUrl} name={message.sender.nickname} size="small" />
         </Link>
       )}
       <div className="chat-message-content">
@@ -39,7 +45,7 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
           {message.attachments?.map((attachment) => (
             <ChatAttachmentView key={attachment.id} attachment={attachment} />
           ))}
-          {message.body && <p>{message.body}</p>}
+          {message.body && <ChatMessageBody body={message.body} />}
         </div>
         <div className="chat-message-meta">
           <time dateTime={message.createdAt}>{formatTime(message.createdAt, textLocale)}</time>

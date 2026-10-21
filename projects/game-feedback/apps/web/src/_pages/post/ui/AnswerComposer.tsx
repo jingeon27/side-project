@@ -1,12 +1,17 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
+import { ArrowUpRight, LoaderCircle, MessageSquare, Send } from 'lucide-react';
+
 import { Button, Textarea } from '@side/design-system';
-import { MessageSquare, Send, ArrowUpRight, LoaderCircle } from 'lucide-react';
-import { useSession } from '@/features/auth';
+
 import { useCreateAnswerMutation } from '@/features/answer';
-import { Avatar, ErrorNotice, useNotify } from '@/shared/ui';
+import { useSession } from '@/features/auth';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
+import { Avatar, ErrorNotice, useNotify } from '@/shared/ui';
+
 import { answerFormSchema } from '../model/content.schema';
+
 interface IAnswerComposerProps {
   postId: string;
 }
@@ -23,7 +28,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
           <MessageSquare size={18} />
           {t('당신의 시선을 나눠주세요')}
         </h3>
-        {session?.user && <Avatar name={session.user.nickname} size="small" />}
+        {session?.user && <Avatar src={session.user.avatarUrl} name={session.user.nickname} size="small" />}
       </div>
       {session?.user ? (
         <form

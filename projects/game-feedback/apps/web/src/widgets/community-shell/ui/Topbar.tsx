@@ -1,10 +1,15 @@
 'use client';
+
 import type { ReactNode } from 'react';
-import { ArrowLeft, Gamepad2 } from 'lucide-react';
+import Image from 'next/image';
+
+import { ArrowLeft } from 'lucide-react';
+
 import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { BackLink, TabLink } from '@/shared/navigation';
-import { TopbarActions } from './TopbarActions';
+
 import { TopbarAccount } from './TopbarAccount';
+import { TopbarActions } from './TopbarActions';
 import { TopbarNotifications } from './TopbarNotifications';
 import { TopbarSearch } from './TopbarSearch';
 
@@ -18,11 +23,11 @@ function TopbarRoot({ children }: { children: ReactNode }) {
 function TopbarBrand({ home }: { home: string }) {
   const { t } = useI18n();
   return (
-    <TabLink href={home} className="brand" aria-label={t('플레이메이트 홈')}>
+    <TabLink href={home} className="brand" aria-label={t('Game Mate 홈')}>
       <span className="brand-mark">
-        <Gamepad2 size={24} strokeWidth={2.5} />
+        <Image src="/icon.svg" alt="" aria-hidden width={35} height={35} unoptimized />
       </span>
-      <span>{t('플레이메이트')}</span>
+      <span>{t('Game Mate')}</span>
     </TabLink>
   );
 }

@@ -1,21 +1,24 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { ContestRepository } from './contest.repository';
 import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Contest } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
-import { GROUP_ROLE, isOwner, toGroupRole } from '../group/group-role';
-import type { TGroupRole } from '../group/group-role';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { isAdmin, toGroupRole, type TGroupRole } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
-import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
-import type { ISubmissionView } from '../submission/submission.presenter';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
+import {
+  presentSubmission,
+  submissionInclude,
+  type ISubmissionView,
+} from '../submission/submission.presenter';
 import { contestDates, phase, PHASE } from './contest.policy';
 import { rankResults } from './result-ranking';
 
@@ -64,7 +67,7 @@ const EMPTY_STATS: IContestViewerStats = {
 @Injectable()
 export class ContestService {
   constructor(
-    private readonly repository: ContestRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
   ) {}
@@ -76,8 +79,8 @@ export class ContestService {
 
   /** 그룹 멤버로 확인된 Group 노드 아래에서만 부른다. 최근 50개, 최신순 */
   async contestsOfGroup(viewer: IViewer, group: { id: string; role: TGroupRole }): Promise<IContestNode[]> {
-    const contests = await this.repository.findManyContest({
-      where: { groupId: group.id },
+    const contests = await this.db.contest.findMany({
+      where: { groupId: group.id, format: 'LEGACY' },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: GROUP_CONTEST_HISTORY,
     });
@@ -86,35 +89,34 @@ export class ContestService {
 
   /** 관리자만. 권한을 먼저 확인한 뒤 입력을 검사한다. */
   async createContest(viewer: IViewer, input: ICreateContestInput): Promise<IContestNode> {
-    const member = await this.membership.requireOwner(viewer.id, input.groupId);
-    const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
-    const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
-    const contest = await this.transactions.atomic(async (tx) => {
-      const created = await this.repository.createContest(
-        { data: { groupId: input.groupId, title, ...dates } },
-        tx,
-      );
-      await this.repository.recordEvent(tx, {
+    const { contest, role } = await this.transactions.atomic(async (tx) => {
+      const member = await this.membership.requireAdmin(viewer.id, input.groupId, tx);
+      const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
+      const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
+      const created = await (tx ?? this.db).contest.create({
+        data: { groupId: input.groupId, title, ...dates },
+      });
+      await recordEvent(tx ?? this.db, {
         id: `contest:${created.id}`,
         type: ANALYTICS_EVENT.CONTEST_CREATED,
         userId: viewer.id,
         properties: { groupId: input.groupId, contestId: created.id },
       });
-      return created;
+      return { contest: created, role: member.role };
     });
-    return this.toNode(viewer.id, contest, member.role);
+    return this.toNode(viewer.id, contest, role);
   }
 
   /** 종료된 대회만. 숨긴 사진은 빼고 득표순 경쟁 순위로 돌려준다. */
   async results(viewer: IViewer, contestId: string): Promise<IResultView[]> {
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.COMPLETED) fail('대회가 끝난 후 결과를 확인할 수 있습니다.');
-    const admin = isOwner(member);
-    const rows = await this.repository.findManySubmission({
+    const admin = isAdmin(member);
+    const rows = await this.db.submission.findMany({
       where: { contestId, hidden: false },
       include: submissionInclude(viewer.id, admin),
     });
-    await this.repository.recordEvent(undefined, {
+    await recordEvent(this.db, {
       id: `result:${contestId}:${viewer.id}`,
       type: ANALYTICS_EVENT.RESULT_VIEWED,
       userId: viewer.id,
@@ -158,7 +160,7 @@ export class ContestService {
   }
 
   private node(contest: Contest, viewerRole: TGroupRole, loaders: IContestLoaders): IContestNode {
-    const admin = viewerRole === GROUP_ROLE.OWNER;
+    const admin = isAdmin({ role: viewerRole });
     return {
       ...contest,
       viewerRole,
@@ -170,15 +172,19 @@ export class ContestService {
   private async viewerStats(viewerId: string, contestIds: readonly string[]) {
     const ids = [...contestIds];
     const [mine, votes, counts] = await Promise.all([
-      this.repository.findManySubmission({
+      this.db.submission.findMany({
         where: { contestId: { in: ids }, authorId: viewerId },
         select: { id: true, contestId: true },
       }),
-      this.repository.findManyVote({
+      this.db.vote.findMany({
         where: { contestId: { in: ids }, voterId: viewerId },
         select: { contestId: true, submissionId: true },
       }),
-      this.repository.visibleSubmissionCounts(ids),
+      this.db.submission.groupBy({
+        by: ['contestId'],
+        where: { contestId: { in: [...ids] }, hidden: false },
+        _count: { _all: true },
+      }),
     ]);
     const mySubmission = new Map(mine.map((submission) => [submission.contestId, submission.id]));
     const myVote = new Map(votes.map((vote) => [vote.contestId, vote.submissionId]));
@@ -201,7 +207,7 @@ export class ContestService {
     contestIds: readonly string[],
     completed: ReadonlySet<string>,
   ): Promise<Map<string, ISubmissionView[]>> {
-    const rows = await this.repository.findManySubmission({
+    const rows = await this.db.submission.findMany({
       where: { contestId: { in: [...contestIds] }, hidden: true },
       include: submissionInclude(viewerId, true),
       orderBy: submissionOrderBy(SUBMISSION_SORT.NEWEST),

@@ -1,9 +1,22 @@
-import type { TLocale } from './locale';
 import { infoMessages } from './info-messages';
+import type { TLocale } from './locale';
+import { profileMessages } from './profile-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
   ...infoMessages,
+  ...profileMessages,
+  '소셜 계정으로 로그인하세요.': [
+    'Sign in with your social account.',
+    'ソーシャルアカウントでログインしてください。',
+  ],
+  '로그인이 취소됐어요. 다시 선택해주세요.': [
+    'Sign-in was cancelled. Choose a method to try again.',
+    'ログインがキャンセルされました。もう一度選択してください。',
+  ],
+  '카카오 로그인': ['Login with Kakao', 'カカオでログイン'],
+  '준비 중': ['Soon', '準備中'],
+  '서비스 이용 안내': ['Service information', 'サービスのご案内'],
   '답변 상태': ['Reply status', '回答状況'],
   '답변 있음': ['Answered', '回答あり'],
   '답변을 기다리는 요청이 없어요.': [
@@ -612,7 +625,7 @@ const messages: Record<string, readonly [string, string]> = {
   '작성글 페이지': ['Post pages', '投稿ページ'],
   처음으로: ['First page', '最初のページ'],
   '이전 요청 보기 →': ['Earlier requests →', '以前の依頼を見る →'],
-  '플레이메이트를 떠나시겠어요?': ['Leave Playmate?', 'Playmateを退会しますか？'],
+  'Game Mate를 떠나시겠어요?': ['Leave Game Mate?', 'Game Mateを退会しますか？'],
   '계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.': [
     'Your account, game profiles and content will be deleted. This cannot be undone.',
     'アカウント、ゲームプロフィール、投稿を削除します。取り消すことはできません。',
@@ -710,7 +723,7 @@ const messages: Record<string, readonly [string, string]> = {
   '어떤 이름으로 만날까요?': ['What should we call you?', 'どんな名前で参加しますか？'],
   '함께 플레이할 계정을 골라보세요': ['Choose an account to play with', '利用するアカウントを選んでください'],
   '다음 플레이는 함께, 더 좋게': ['Make your next game better, together', '次のプレイを、一緒にもっと良く'],
-  '플레이메이트에 오신 것을 환영해요.': ['Welcome to Playmate.', 'Playmateへようこそ。'],
+  'Game Mate에 오신 것을 환영해요.': ['Welcome to Game Mate.', 'Game Mateへようこそ。'],
   'Google로 시작하기': ['Continue with Google', 'Googleで続ける'],
   'Google의 공개 이름과 사진은 수집하지 않아요.': [
     'We do not collect your Google name or photo.',
@@ -727,6 +740,16 @@ const messages: Record<string, readonly [string, string]> = {
   '에 동의합니다.': ['I agree to the above.', 'に同意します。'],
   '만 14세 이상입니다.': ['I am at least 14 years old.', '14歳以上です。'],
   '가입 완료하기': ['Complete sign-up', '登録を完了'],
+  회원가입: ['Sign up', '新規登録'],
+  '시트 높이 조절': ['Adjust sheet height', 'シートの高さを調整'],
+  '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.': [
+    'Choose a nickname and agree to the required items.',
+    'ニックネームを決めて、必須項目に同意してください。',
+  ],
+  '닉네임에는 문자, 숫자, 공백과 _ . -만 사용할 수 있어요.': [
+    'Use letters, numbers, spaces, or _ . - in your nickname.',
+    'ニックネームには文字、数字、空白と _ . - を使用できます。',
+  ],
   '서로를 존중하는 건강한 피드백 공간': [
     'A respectful place to share feedback',
     '互いを尊重するフィードバックの場',
@@ -805,8 +828,8 @@ const messages: Record<string, readonly [string, string]> = {
     '健全なゲーム文化を一緒につくりましょう。',
   ],
   '지금은 함께 만들어가는 알파 기간': ['Help us shape this alpha', '一緒につくるアルファ版です'],
-  '플레이메이트 홈': ['Playmate home', 'Playmateホーム'],
-  플레이메이트: ['Playmate', 'Playmate'],
+  'Game Mate 홈': ['Game Mate home', 'Game Mateホーム'],
+  'Game Mate': ['Game Mate', 'Game Mate'],
   '주 메뉴': ['Main menu', 'メインメニュー'],
   '이용 가이드': ['How to use', '使い方'],
   로그인: ['Sign in', 'ログイン'],

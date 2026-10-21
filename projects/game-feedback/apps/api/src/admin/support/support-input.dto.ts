@@ -1,6 +1,7 @@
-import { SupportStatusInputSchema } from '@game-feedback/contracts';
 import { IsIn } from 'class-validator';
 import type { z } from 'zod';
+
+import { SupportStatusInputSchema } from '@game-feedback/contracts';
 
 export class SupportStatusDto {
   static readonly contract = SupportStatusInputSchema;

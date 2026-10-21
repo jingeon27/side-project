@@ -1,6 +1,8 @@
 import { match } from 'ts-pattern';
+
 import { BRIDGE_EVENT, parseNativeMessage, WebPathSchema } from '@game-feedback/bridge';
-import { isNativeApp, postToNative, NATIVE_BOOTSTRAP_EVENT } from './native-client';
+
+import { isNativeApp, NATIVE_BOOTSTRAP_EVENT, postToNative } from './native-client';
 
 interface INativeBridgeBinding {
   path: string;

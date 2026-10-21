@@ -21,6 +21,8 @@ export type TBridgeErrorCode = (typeof BRIDGE_ERROR_CODE)[keyof typeof BRIDGE_ER
 /** URL 생성자가 불완전한 런타임(구형 WKWebView, React Native)에서도 같은 결과를 내도록 정규식으로 검사한다. */
 const HTTP_URL = /^https?:\/\/[^\s/?#@]+(?:[/?#][^\s]*)?$/i;
 const httpUrl = z.string().max(2048).regex(HTTP_URL, 'http(s) URL만 허용합니다.');
+// S3 임시 자격 증명과 한글 파일명이 포함된 서명 URL은 일반 공유 링크보다 길다.
+const downloadCapableUrl = z.string().max(8192).regex(HTTP_URL, 'http(s) URL만 허용합니다.');
 
 /** `https://a.example:3000/path` → `https://a.example:3000`. 형식이 다르면 null. */
 export function originOf(url: string): string | null {
@@ -49,7 +51,7 @@ export const WEB_REQUEST = {
     result: z.object({}),
   },
   'link.open': {
-    payload: z.object({ url: httpUrl }),
+    payload: z.object({ url: downloadCapableUrl }),
     result: z.object({ opened: z.boolean() }),
   },
   /** 시스템 브라우저로 소셜 로그인한 뒤 앱 로그인 교환에 쓸 일회용 코드와 verifier를 돌려준다. */

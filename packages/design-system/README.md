@@ -3,7 +3,7 @@
 Game Feedback와 Photo Contest 웹이 공유하는 디자인 토큰과 React UI다. 공식 shadcn/ui의 Base UI / base-nova 소스를 공통 토큰과 기존 공개 API에 연결한다. 설치 원본, 조정 범위와 MIT 라이선스는 [shadcn 구성](SHADCN.md)에 정리했다. API 클라이언트, 인증, 도메인 상태, 라우터, overlay-kit provider는 앱이 소유한다. API·모바일 앱에서 이 웹 패키지를 가져오지 않는다.
 
 ```tsx
-import { Button, Dialog, FormField, TextField, cn } from '@side/design-system';
+import { Button, cn, Dialog, FormField, TextField } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 ```
 
@@ -42,10 +42,31 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `FormField`: 기존 native `<label>` 폼용 `label`, `children`, `hint`, `error`. 직접 자식인 native 입력의 ref를 유지하며 도움말·오류를 연결한다. 단독 native 입력은 `.ds-input`, `.ds-textarea`, `.ds-select`로 같은 공통 스타일을 사용할 수 있다.
 - `Badge`, `Avatar`, `Spinner`: 상태 글자·이름 fallback·진행 표시를 제공한다. `Avatar`는 이름 옆 장식이며 스크린 리더에서 숨긴다. `Spinner`에 `label`을 주면 진행 상태로 읽힌다.
 - `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
+- `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·Home·End·Enter·Space 조작도 지원한다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 소비 앱에서 번역한다. 나머지 제어 props는 Dialog와 동일하며, `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 기존 `Dialog placement="bottom"`은 제스처가 없는 하단 배치 API로 유지한다.
 
 컴포넌트는 모두 `className`을 지원한다. 클래스 병합은 공통 `cn`을 사용하며 뒤의 같은 종류 값이 우선한다. 공개 props 타입은 `I` 접두사, 배지 tone 타입은 `TBadgeTone`으로 내보낸다.
 
 Photo Contest의 `AlertDialog`·바텀시트는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.
+
+## Storybook
+
+저장소 루트에서 실행한다.
+
+```sh
+corepack yarn storybook
+```
+
+`http://localhost:6006`에서 공통 토큰과 UI의 기본·오류·로딩·비활성 상태를 확인한다. Controls로 props를 바꾸고 테마 툴바에서 light·dark·system을 전환할 수 있다. Accessibility 패널은 각 예제의 접근성 점검 결과를 보여 준다.
+
+React + Vite와 Tailwind 4를 사용하며 앱과 같은 `src/styles.css`를 가져온다. 테마는 iframe의 html에 적용해 다이얼로그·메뉴 같은 포털에도 전달한다. Next 전용 `ButtonLink`는 소비 앱에서 검증한다.
+
+스토리는 컴포넌트 옆의 `*.stories.tsx`에 CSF 형식으로 추가한다. 자동 문서와 타입 검사를 공통 적용하며 상태가 필요한 예제는 이름 있는 함수 컴포넌트로 작성한다.
+
+```sh
+corepack yarn build:storybook
+```
+
+정적 결과는 `packages/design-system/dist/storybook`에 생성된다. 기존 `check`에도 정적 빌드를 포함해 CI에서 설정과 스토리 빌드를 함께 검증한다.
 
 ## 검사
 

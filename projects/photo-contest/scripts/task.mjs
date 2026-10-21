@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+
 const [workspace, task] = process.argv.slice(2);
 const child = spawn('corepack', ['yarn', 'workspace', workspace, task], {
   stdio: 'inherit',

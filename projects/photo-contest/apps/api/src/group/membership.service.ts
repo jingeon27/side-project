@@ -1,10 +1,9 @@
-import { GroupRepository } from './group.repository';
 import { Injectable } from '@nestjs/common';
 
 import type { Contest, GroupMember, Submission } from '../../generated/prisma';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import type { TDatabaseClient } from '../database/database.service';
-import { isOwner } from './group-role';
+import { Database, type TDatabaseClient } from '../database/database.service';
+import { isAdmin, isOwner } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility } from './group-visibility';
 
 export interface IContestAccess {
@@ -27,11 +26,11 @@ interface IAccessOptions {
 /** 공개 Post 읽기와 멤버 전용 쓰기·기존 대회 접근을 구분한다. */
 @Injectable()
 export class MembershipService {
-  constructor(private readonly repository: GroupRepository) {}
+  constructor(private readonly db: Database) {}
 
   /** 여러 그룹을 합친 조회도 멤버십 범위를 먼저 고정한다. */
   async memberGroupIds(userId: string): Promise<string[]> {
-    const memberships = await this.repository.findManyGroupMember({
+    const memberships = await this.db.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
     });
@@ -39,10 +38,9 @@ export class MembershipService {
   }
 
   async requireMember(userId: string, groupId: string, client?: TDatabaseClient): Promise<GroupMember> {
-    const member = await this.repository.findUniqueGroupMember(
-      { where: { groupId_userId: { groupId, userId } } },
-      client,
-    );
+    const member = await (client ?? this.db).groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId } },
+    });
     if (!member) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
     return member;
   }
@@ -53,14 +51,17 @@ export class MembershipService {
     return member;
   }
 
+  async requireAdmin(userId: string, groupId: string, client?: TDatabaseClient): Promise<GroupMember> {
+    const member = await this.requireMember(userId, groupId, client);
+    if (!isAdmin(member)) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
+    return member;
+  }
+
   async readableGroup(userId: string | null, groupId: string, client?: TDatabaseClient) {
-    const group = await this.repository.findUniqueGroup({ where: { id: groupId } }, client);
+    const group = await (client ?? this.db).group.findUnique({ where: { id: groupId } });
     if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     const member = userId
-      ? await this.repository.findUniqueGroupMember(
-          { where: { groupId_userId: { groupId, userId } } },
-          client,
-        )
+      ? await (client ?? this.db).groupMember.findUnique({ where: { groupId_userId: { groupId, userId } } })
       : null;
     if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE && !member) {
       if (!userId) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
@@ -70,32 +71,31 @@ export class MembershipService {
   }
 
   async readablePost(userId: string | null, postId: string, client?: TDatabaseClient) {
-    const post = await this.repository.findUniquePost(
-      {
-        where: { id: postId },
-        include: { upload: true, legacySubmission: { select: { hidden: true } } },
+    const post = await (client ?? this.db).post.findUnique({
+      where: { id: postId },
+      include: {
+        upload: true,
+        legacySubmission: {
+          select: { hidden: true },
+        },
       },
-      client,
-    );
+    });
     if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     const { member } = await this.readableGroup(userId, post.groupId, client);
-    const admin = member ? isOwner(member) : false;
+    const admin = member ? isAdmin(member) : false;
     if ((post.hidden || post.legacySubmission?.hidden) && !admin)
       fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-    return { post, admin };
+    return { post, admin, member };
   }
 
   async accessiblePost(userId: string, postId: string, client?: TDatabaseClient) {
-    const post = await this.repository.findUniquePost(
-      {
-        where: { id: postId },
-        include: { upload: true, legacySubmission: { select: { hidden: true } } },
-      },
-      client,
-    );
+    const post = await (client ?? this.db).post.findUnique({
+      where: { id: postId },
+      include: { upload: true, legacySubmission: { select: { hidden: true } } },
+    });
     if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     const member = await this.requireMember(userId, post.groupId, client);
-    const admin = isOwner(member);
+    const admin = isAdmin(member);
     if ((post.hidden || post.legacySubmission?.hidden) && !admin)
       fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     return { post, admin };
@@ -107,10 +107,10 @@ export class MembershipService {
     contestId: string,
     { owner = false, client }: IAccessOptions = {},
   ): Promise<IContestAccess> {
-    const contest = await this.repository.findUniqueContest({ where: { id: contestId } }, client);
-    if (!contest) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
+    const contest = await (client ?? this.db).contest.findUnique({ where: { id: contestId } });
+    if (!contest || contest.format !== 'LEGACY') fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const member = owner
-      ? await this.requireOwner(userId, contest.groupId, client)
+      ? await this.requireAdmin(userId, contest.groupId, client)
       : await this.requireMember(userId, contest.groupId, client);
     return { contest, member };
   }
@@ -121,19 +121,16 @@ export class MembershipService {
     submissionId: string,
     { owner = false, client }: IAccessOptions = {},
   ): Promise<ISubmissionAccess> {
-    const found = await this.repository.findUniqueSubmission(
-      {
-        where: { id: submissionId },
-        include: { contest: true },
-      },
-      client,
-    );
+    const found = await (client ?? this.db).submission.findUnique({
+      where: { id: submissionId },
+      include: { contest: true },
+    });
     if (!found) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const { contest, ...submission } = found;
     const member = owner
-      ? await this.requireOwner(userId, contest.groupId, client)
+      ? await this.requireAdmin(userId, contest.groupId, client)
       : await this.requireMember(userId, contest.groupId, client);
-    const admin = isOwner(member);
+    const admin = isAdmin(member);
     if (submission.hidden && !admin) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return { submission, contest, member, admin };
   }

@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
@@ -69,32 +69,19 @@ afterEach(() => {
 });
 
 describe('BottomSheet', () => {
-  it('키보드로 시트를 확장·축소하고 다시 열면 기본 크기로 돌아와야 한다', async () => {
+  it('크기 조절 시트도 확대·축소 버튼 없이 닫기 버튼만 보여야 한다', async () => {
     const user = userEvent.setup();
     render(
       <OverlayProvider>
         <Opener resizable />
       </OverlayProvider>,
     );
-    const opener = screen.getByRole('button', { name: '그룹 만들기 열기' });
-    await user.click(opener);
-    const expand = await screen.findByRole('button', { name: '시트 전체 화면으로 확장' });
-    expand.focus();
-    await user.keyboard('{Enter}');
-    expect(screen.getByRole('button', { name: '시트 축소' })).toHaveAttribute('aria-expanded', 'true');
-    await user.keyboard(' ');
-    expect(screen.getByRole('button', { name: '시트 전체 화면으로 확장' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
-    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('button', { name: '그룹 만들기 열기' }));
+    const sheet = await screen.findByRole('dialog', { name: '그룹 만들기' });
+    expect(sheet).toHaveAccessibleDescription('친구들과 함께할 그룹 이름을 정해요.');
+    expect(screen.queryByRole('button', { name: /시트.*확장|시트 축소/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '닫기' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await user.click(opener);
-    expect(await screen.findByRole('button', { name: '시트 전체 화면으로 확장' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
   });
 
   it('제목을 이름으로 가진 대화상자로 열리고 본문과 하단 버튼을 보여 줘야 한다', async () => {

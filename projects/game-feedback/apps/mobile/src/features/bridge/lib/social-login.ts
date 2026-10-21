@@ -1,4 +1,4 @@
-import { APP_CALLBACK, type TLoginResult, type TLoginProvider } from '@game-feedback/bridge';
+import { APP_CALLBACK, type TLoginProvider, type TLoginResult } from '@game-feedback/bridge';
 
 export function parseLoginCallback(url: string, verifier: string): TLoginResult {
   const match = /^gamefeedback:\/\/auth\/callback\?code=([A-Za-z0-9_-]{43})$/.exec(url);

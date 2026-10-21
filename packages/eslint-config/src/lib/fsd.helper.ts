@@ -1,5 +1,6 @@
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 import path from 'node:path';
+
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
 
 export interface IFsdOptions {
   srcDir?: string;

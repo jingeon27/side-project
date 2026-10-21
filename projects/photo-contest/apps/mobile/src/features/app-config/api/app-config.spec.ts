@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchAppConfig, fetchHealth } from './app-config.api';
-import type { TFetch } from './app-config.api';
+import { fetchAppConfig, fetchHealth, type TFetch } from './app-config.api';
 
 const BASE_URL = 'https://contest.example/backend';
 

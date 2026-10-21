@@ -1,13 +1,21 @@
 import type { Prisma } from '../../generated/prisma';
 
 export const ANALYTICS_EVENT = {
+  POST_VISIBILITY_CHANGED: 'post_visibility_changed',
+  GROUP_CATEGORY_CREATED: 'category_created',
+  POST_CATEGORY_CHANGED: 'post_category_changed',
   POST_CREATED: 'post_created',
+  POST_UPDATED: 'post_updated',
   POST_LIKED: 'post_liked',
   POST_DELETED: 'post_deleted',
   COMMENT_CREATED: 'comment_created',
   COMMENT_DELETED: 'comment_deleted',
+  COMMENT_LIKED: 'comment_liked',
   GROUP_CREATED: 'group_created',
+  GROUP_PROFILE_UPDATED: 'group_profile_updated',
   GROUP_JOINED: 'group_joined',
+  GROUP_MODERATOR_CHANGED: 'group_moderator_changed',
+  GROUP_OWNERSHIP_TRANSFERRED: 'group_ownership_transferred',
   CONTEST_CREATED: 'contest_created',
   SUBMISSION_CREATED: 'submission_created',
   NEXT_CONTEST_JOINED: 'next_contest_joined',

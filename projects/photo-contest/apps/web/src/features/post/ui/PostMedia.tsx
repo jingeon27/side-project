@@ -1,7 +1,8 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
 import Image from 'next/image';
+
+import { useFragment } from '@apollo/client/react';
 import { match } from 'ts-pattern';
 
 import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
@@ -13,6 +14,8 @@ export function PostMedia({ postId, detail = false }: { postId: string; detail?:
     from: { __typename: 'GalleryPost', id: postId },
   });
   if (!complete) return null;
+  const mediaUrl = post.mediaUrl;
+  if (!mediaUrl) return null;
   const frameClassName = cn(
     'w-full overflow-hidden rounded-card bg-sunken object-contain',
     detail ? 'min-h-56 flex-1' : 'aspect-square desktop:aspect-4/3 desktop:max-h-[60dvh]',
@@ -20,7 +23,7 @@ export function PostMedia({ postId, detail = false }: { postId: string; detail?:
   return match(post.kind)
     .with(PostKind.Video, () => (
       <video
-        src={post.mediaUrl}
+        src={mediaUrl}
         controls
         playsInline
         preload={detail ? 'none' : 'metadata'}
@@ -31,7 +34,7 @@ export function PostMedia({ postId, detail = false }: { postId: string; detail?:
     .with(PostKind.Photo, () => (
       <div className={cn('relative', frameClassName)}>
         <Image
-          src={post.mediaUrl}
+          src={mediaUrl}
           alt={post.title}
           fill
           unoptimized
@@ -44,5 +47,6 @@ export function PostMedia({ postId, detail = false }: { postId: string; detail?:
         />
       </div>
     ))
+    .with(PostKind.Link, () => null)
     .exhaustive();
 }

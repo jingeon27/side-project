@@ -1,9 +1,11 @@
-import { test, expect, type Page } from '@playwright/test';
-import index from '../../src/entities/article/lib/index.json' with { type: 'json' };
-import ko from '../../messages/ko.json' with { type: 'json' };
-import en from '../../messages/en.json' with { type: 'json' };
-import redirects from '../../content/generated-redirects.json' with { type: 'json' };
 import { readFileSync } from 'node:fs';
+
+import { expect, test, type Page } from '@playwright/test';
+
+import redirects from '../../content/generated-redirects.json' with { type: 'json' };
+import en from '../../messages/en.json' with { type: 'json' };
+import ko from '../../messages/ko.json' with { type: 'json' };
+import index from '../../src/entities/article/lib/index.json' with { type: 'json' };
 
 const articles = index.filter((article) => article.locale === 'ko');
 const article = articles.find((entry) => entry.toc.length > 0) || articles[0]!;
@@ -39,9 +41,9 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('heading', { level: 1, name: article.title })).toBeVisible();
   await expect(page.locator('.article-prose')).toBeVisible();
   await page.getByRole('navigation').getByRole('link', { name: ko.nav.about, exact: true }).click();
-  await expect(page.getByRole('link', { name: 'jingeon27@gmail.com' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'contact@bambyul.com' })).toHaveAttribute(
     'href',
-    'mailto:jingeon27@gmail.com',
+    'mailto:contact@bambyul.com',
   );
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });

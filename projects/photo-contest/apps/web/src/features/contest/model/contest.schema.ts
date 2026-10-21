@@ -59,3 +59,14 @@ export function buildContestDefaults(now: Date): TCreateContestInput {
     endsAt: toDateTimeLocalValue(new Date(now.getTime() + 7 * DAY)),
   };
 }
+
+export const createGroupContestSchema = createContestSchema.and(
+  z.object({
+    likeLimit: z
+      .number()
+      .int('정수를 입력해 주세요.')
+      .min(1, '1개 이상으로 정해 주세요.')
+      .max(100, '100개 이하로 정해 주세요.')
+      .default(1),
+  }),
+);

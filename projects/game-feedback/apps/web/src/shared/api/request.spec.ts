@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import { ApiResponseValidationError } from '@game-feedback/sdk';
+
 import { ApiError, withApiError } from './request';
 
 describe('REST error presentation boundary', () => {

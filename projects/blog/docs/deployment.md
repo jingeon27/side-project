@@ -18,7 +18,7 @@
 | `SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | 서버·브라우저 환경 이름                                                                      |
 | `SENTRY_RELEASE`, `NEXT_PUBLIC_SENTRY_RELEASE`         | 동일 빌드의 release 식별자. 업로드와 런타임에서 일치시킬 것                                  |
 
-`SITE_URL` 미설정 시 로컬 빌드 검증을 위해 `http://localhost:3100`을 사용합니다. 배포 환경에서는 이 기본값을 사용하지 마세요. URL의 경로·쿼리·fragment는 제거하여 원점 하나를 사용합니다. `NEXT_PUBLIC_*`는 빌드 시 브라우저 번들에 들어가므로 값을 변경하면 재빌드합니다.
+`SITE_URL` 미설정 시 개발은 `http://localhost:3100`, production은 `https://blog.bambyul.com`을 사용합니다. 운영 설정 예시는 `apps/web/.env.production.example`입니다. URL의 경로·쿼리·fragment는 제거하여 원점 하나를 사용합니다. `NEXT_PUBLIC_*`는 빌드 시 브라우저 번들에 들어가므로 값을 변경하면 재빌드합니다.
 
 ## Vercel
 
@@ -27,7 +27,7 @@
 3. 설치 명령은 저장소 루트 기준 `yarn install --immutable`입니다. 앱 디렉터리에서 명령을 실행하는 설정이라면 `cd ../../../.. && yarn install --immutable`을 사용합니다.
 4. 빌드 명령은 `yarn workspace @blog/web build`, 출력 디렉터리는 기본 `.next`를 사용합니다.
 5. Production·Preview 환경변수를 분리합니다. Preview에는 운영 GA ID를 넣지 않아 통계 혼합을 피할 수 있습니다. 각 공개 배포의 canonical 정책에 맞는 `SITE_URL`을 지정합니다.
-6. Production branch를 `main`으로 정하고 도메인·HTTPS를 연결한 뒤 실제 페이지와 canonical을 확인합니다.
+6. Production branch를 `main`으로 정하고 `blog.bambyul.com` 도메인·HTTPS를 연결한 뒤 실제 페이지와 canonical을 확인합니다.
 
 GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, production build, Chromium 데스크톱·모바일 E2E를 수행합니다. Vercel은 Git 연결을 통해 별도로 빌드·배포하므로 Actions에 중복 배포 job은 두지 않았습니다. GitHub Actions 실패가 Vercel Preview를 자동 차단한다는 가정은 하지 않습니다. `main` 보호 규칙에 이 검증을 필수로 추가하고 검증을 통과한 PR만 병합하도록 설정하세요. Vercel 자체 빌드 실패는 해당 배포를 차단합니다.
 
@@ -51,7 +51,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 - robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 `/sitemap.xml`을 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
 
 1. 실제 도메인을 등록하고 DNS TXT로 소유권을 확인합니다. URL-prefix 방식이라면 HTML tag의 verification 값만 `GOOGLE_SITE_VERIFICATION`에 지정할 수 있습니다.
-2. `https://<domain>/sitemap.xml`을 제출합니다.
+2. `https://blog.bambyul.com/sitemap.xml`을 제출합니다.
 3. `/robots.txt`, 한국어·영어 홈과 대표 글 URL을 URL 검사로 확인합니다.
 4. Canonical이 자기 언어 URL인지, `hreflang`이 실제 존재하는 번역만 가리키는지 확인합니다. 영어 본문이 없는 한국어 글의 영어 상세 URL은 제공하지 않습니다.
 5. 검색 실적과 Core Web Vitals는 실제 운영 데이터가 쌓인 뒤 확인합니다. LCP 2.5초·INP 200ms·CLS 0.1은 목표이며 로컬 빌드 성공이 이를 보장하지 않습니다.
@@ -76,3 +76,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 - Sentry 테스트 이벤트와 source map, Search Console 소유권·sitemap 접수
 
 확인한 날짜·배포 URL·commit·실제 결과를 배포 기록에 남깁니다.
+
+## 밤별 블로그 도메인
+
+Vercel 프로젝트에 `blog.bambyul.com`을 추가하고 콘솔에서 안내하는 DNS 레코드를 등록한다. 운영 `SITE_URL=https://blog.bambyul.com`으로 canonical·JSON-LD·OG·RSS·사이트맵을 통일한다. 작성자 이름은 김진건, 제품명은 밤별 블로그(Bambyul Blog)다. 별도 API 서버가 없어 `api.blog.bambyul.com`은 현재 연결하지 않는다.

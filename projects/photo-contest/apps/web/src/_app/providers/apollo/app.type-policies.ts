@@ -1,8 +1,8 @@
 import { contestTypePolicies } from '@/features/contest';
-import { postTypePolicies } from '@/features/post';
 import { feedTypePolicies } from '@/features/feed';
 import { groupTypePolicies } from '@/features/group';
 import { inviteTypePolicies } from '@/features/invite';
+import { postTypePolicies } from '@/features/post';
 import { rankingTypePolicies } from '@/features/ranking';
 import { submissionTypePolicies } from '@/features/submission';
 import { mergeTypePolicies } from '@/shared/api/type-policies.helper';

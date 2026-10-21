@@ -1,1 +1,2 @@
-export { AsyncBoundary, ErrorNotice } from './AsyncBoundary';
+export { AsyncBoundary } from './AsyncBoundary';
+export { ErrorNotice } from './ErrorNotice';

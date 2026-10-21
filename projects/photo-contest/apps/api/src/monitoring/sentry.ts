@@ -1,5 +1,4 @@
-import { captureException, init } from '@sentry/node';
-import type { Event, NodeOptions } from '@sentry/node';
+import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
 import { sentryDsn, sentryEnvironment, sentryRelease, sentryTracesSampleRate } from '../config/env';
 

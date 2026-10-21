@@ -1,9 +1,11 @@
 'use client';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system';
 import { SunMoon } from 'lucide-react';
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system';
+
 import { useI18n } from '@/shared/i18n';
-import { useThemePreference, setThemePreference, themePreference } from '@/shared/theme';
+import { setThemePreference, themePreference, useThemePreference } from '@/shared/theme';
 
 export function ThemeSettings() {
   const { t } = useI18n();

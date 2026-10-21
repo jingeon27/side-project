@@ -34,16 +34,19 @@ test(
     await context.clearCookies();
     await page.goto('/');
     await page.getByRole('link', { name: '로그인 없이 그룹 둘러보기' }).click();
-    await page.getByLabel('그룹 검색').fill(name);
+    await expect(page).toHaveURL('/explore');
+    await expect(page.getByRole('heading', { name: '그룹 탐색', exact: true })).toBeVisible();
+    await page.getByRole('search').getByRole('textbox', { name: '그룹 검색', exact: true }).fill(name);
     await page.getByRole('button', { name: '검색', exact: true }).click();
-    await expect(page.getByRole('region', { name: '탐색할 그룹' }).getByRole('link')).toHaveCount(1);
+    await expect(page).toHaveURL((url) => url.pathname === '/explore' && url.searchParams.get('q') === name);
+    await expect(page.getByRole('region', { name: '탐색할 그룹' }).getByRole('article')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await mkdir('.data/screens', { recursive: true });
     await page.screenshot({
       path: `.data/screens/${testInfo.project.name}-group-explore.png`,
       fullPage: true,
     });
-    await page.getByRole('region', { name: '탐색할 그룹' }).getByRole('link').click();
+    await page.getByRole('region', { name: '탐색할 그룹' }).getByRole('link', { name, exact: true }).click();
     await expect(page).toHaveURL(groupPath);
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
     const article = latest.getByRole('article', { name: title, exact: true });
@@ -78,7 +81,7 @@ test(
       },
       await response.text(),
     );
-    expect(seo.title).toBe(`${name} · 웃긴순간`);
+    expect(seo.title).toBe(`${name} · 별사대`);
     expect(seo.canonical).toBe(WEB_ORIGIN + groupPath);
     expect(seo.ogImage).toBe(`${WEB_ORIGIN}/backend/media/${postId}`);
     expect(seo.robots).toContain('index');

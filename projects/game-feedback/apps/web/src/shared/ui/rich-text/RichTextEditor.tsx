@@ -1,7 +1,11 @@
 'use client';
+
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import type { TRichTextDocument, TPostMedia } from '@game-feedback/contracts';
+
+import type { TPostMedia, TRichTextDocument } from '@game-feedback/contracts';
+
 import { useI18n } from '@/shared/i18n';
+
 import { QuillController, type IEditorValue } from './quill-session';
 
 interface IRichTextEditorProps {

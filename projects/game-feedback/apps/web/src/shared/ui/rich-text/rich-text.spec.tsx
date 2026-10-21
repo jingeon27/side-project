@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+
+import { describe, expect, it } from 'vitest';
+
 import { RichTextDocumentSchema, richTextToPlainText } from '@game-feedback/contracts';
+
 import { RichTextBody } from './RichTextBody';
 
 describe('rich text contract and safe server rendering', () => {

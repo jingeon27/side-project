@@ -51,6 +51,8 @@ export const MAX_MEDIA_BODY = '100mb';
 export const MAX_VIDEO_SECONDS = 300;
 export const POST_TITLE_LIMIT = 80;
 export const POST_BODY_LIMIT = 5000;
+export const POST_LINK_LIMIT = 2048;
+export const DOWNLOAD_URL_TTL_SECONDS = 60;
 export const COMMENT_BODY_LIMIT = 1000;
 
 export const PASSWORD_MIN_LENGTH = 15;
@@ -65,3 +67,9 @@ export const AUTH_REGISTER_IP_LIMIT = 5;
 
 export const MAX_GRAPHQL_FIELD_BYTES = 64 * 1024;
 export const MAX_GRAPHQL_UPLOAD_FILES = 1;
+
+export const GROUP_CATEGORY_LIMIT = 20;
+export const GROUP_CATEGORY_NAME_LIMIT = 20;
+export const GROUP_DESCRIPTION_LIMIT = 500;
+export const GROUP_AVATAR_EDGE_PX = 512;
+export const CONTEST_LIKE_LIMIT_MAX = 100;

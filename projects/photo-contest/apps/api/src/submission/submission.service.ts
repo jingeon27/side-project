@@ -1,29 +1,31 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { SubmissionRepository } from './submission.repository';
+import { Injectable } from '@nestjs/common';
 import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { Prisma } from '../../generated/prisma';
-
-import { Injectable } from '@nestjs/common';
-
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { readUpload } from '../common/graphql/read-upload';
-import { MAX_UPLOAD_BYTES } from '../config/limits';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { readUpload } from '../common/graphql/read-upload';
 import { pageRange, textValue } from '../common/validation';
-import { MAX_PENDING_UPLOADS, PAGE_SIZE_DEFAULT, TEXT_LIMIT, UPLOAD_TICKET_TTL_MS } from '../config/limits';
+import {
+  MAX_PENDING_UPLOADS,
+  MAX_UPLOAD_BYTES,
+  PAGE_SIZE_DEFAULT,
+  TEXT_LIMIT,
+  UPLOAD_TICKET_TTL_MS,
+} from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
-import { isOwner } from '../group/group-role';
-import { MembershipService } from '../group/membership.service';
-import type { ISubmissionAccess } from '../group/membership.service';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { isAdmin } from '../group/group-role';
+import { MembershipService, type ISubmissionAccess } from '../group/membership.service';
 import { createPhotoKey } from '../storage/photo-key';
 import { PhotoStorage } from '../storage/photo-storage.service';
 import { processPhoto } from './photo-processor';
-import { presentSubmission, submissionInclude } from './submission.presenter';
-import type { ISubmissionView } from './submission.presenter';
 import { submissionOrderBy, toSubmissionSort } from './submission-sort';
+import { presentSubmission, submissionInclude, type ISubmissionView } from './submission.presenter';
 
 export interface ISubmissionListQuery {
   offset?: unknown;
@@ -61,7 +63,7 @@ function uploadUrl(token: string) {
 @Injectable()
 export class SubmissionService {
   constructor(
-    private readonly repository: SubmissionRepository,
+    private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: PhotoStorage,
@@ -72,8 +74,8 @@ export class SubmissionService {
     const { offset, limit } = pageRange(query.offset ?? 0, query.limit ?? PAGE_SIZE_DEFAULT);
     const sort = toSubmissionSort(query.sort);
     const { contest, member } = await this.membership.accessibleContest(viewer.id, contestId);
-    const admin = isOwner(member);
-    const rows = await this.repository.findManySubmission({
+    const admin = isAdmin(member);
+    const rows = await this.db.submission.findMany({
       where: { contestId, ...(admin ? {} : { hidden: false }) },
       include: submissionInclude(viewer.id, admin),
       orderBy: submissionOrderBy(sort),
@@ -86,7 +88,7 @@ export class SubmissionService {
 
   /** 접근을 확인한 사진 하나를 조회자 기준으로 다시 읽는다. 좋아요처럼 사진을 바꾼 뒤 돌려줄 때 쓴다. */
   async view(viewer: IViewer, { submission, contest, admin }: ISubmissionAccess): Promise<ISubmissionView> {
-    const row = await this.repository.findUniqueSubmission({
+    const row = await this.db.submission.findUnique({
       where: { id: submission.id },
       include: submissionInclude(viewer.id, admin),
     });
@@ -99,12 +101,12 @@ export class SubmissionService {
     const { contest } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
     const now = new Date();
-    const pending = await this.repository.countUpload({
+    const pending = await this.db.upload.count({
       where: { userId: viewer.id, contestId, expiresAt: { gt: now }, submission: null },
     });
     if (pending >= MAX_PENDING_UPLOADS) fail(MESSAGE.TOO_MANY_UPLOADS, ERROR_CODE.RATE_LIMITED);
     const token = randomToken();
-    const upload = await this.repository.createUpload({
+    const upload = await this.db.upload.create({
       data: {
         userId: viewer.id,
         contestId,
@@ -132,7 +134,7 @@ export class SubmissionService {
   }
 
   private async uploadGrant(viewer: IViewer, where: Prisma.UploadWhereUniqueInput) {
-    const grant = await this.repository.findUniqueUpload({ where });
+    const grant = await this.db.upload.findUnique({ where });
     if (!grant || grant.userId !== viewer.id || grant.imageKey || grant.expiresAt < new Date())
       fail(MESSAGE.UPLOAD_REJECTED, ERROR_CODE.FORBIDDEN);
     const { contest } = await this.membership.accessibleContest(viewer.id, grant.contestId);
@@ -146,7 +148,7 @@ export class SubmissionService {
     await this.storage.put(imageKey, image);
     try {
       // 같은 티켓으로 동시에 올려도 imageKey를 먼저 기록한 한 요청만 남는다.
-      const updated = await this.repository.updateManyUpload({
+      const updated = await this.db.upload.updateMany({
         where: { id: grant.id, imageKey: null, expiresAt: { gt: new Date() } },
         data: { imageKey },
       });
@@ -166,7 +168,7 @@ export class SubmissionService {
         client: tx,
       });
       if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-      const upload = await this.repository.findUniqueUpload({ where: { id: input.uploadId } }, tx);
+      const upload = await (tx ?? this.db).upload.findUnique({ where: { id: input.uploadId } });
       if (
         !upload ||
         upload.userId !== viewer.id ||
@@ -175,39 +177,33 @@ export class SubmissionService {
         upload.expiresAt < new Date()
       )
         fail(MESSAGE.UPLOAD_INCOMPLETE);
-      const created = await this.repository.createSubmission(
-        {
-          data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
-          include: submissionInclude(viewer.id, isOwner(member)),
-        },
-        tx,
-      );
+      const created = await (tx ?? this.db).submission.create({
+        data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
+        include: submissionInclude(viewer.id, isAdmin(member)),
+      });
       const properties = { contestId: contest.id, groupId: contest.groupId };
-      await this.repository.recordEvent(tx, {
+      await recordEvent(tx ?? this.db, {
         id: `submission:${created.id}`,
         type: ANALYTICS_EVENT.SUBMISSION_CREATED,
         userId: viewer.id,
         properties,
       });
       // 같은 그룹의 이전 대회에 참여했던 사람이 다시 참여했는지(재참여율)를 본다.
-      const previous = await this.repository.findFirstSubmission(
-        {
-          where: {
-            authorId: viewer.id,
-            contest: { groupId: contest.groupId, endsAt: { lt: contest.startsAt } },
-          },
-          select: { id: true },
+      const previous = await (tx ?? this.db).submission.findFirst({
+        where: {
+          authorId: viewer.id,
+          contest: { groupId: contest.groupId, endsAt: { lt: contest.startsAt } },
         },
-        tx,
-      );
+        select: { id: true },
+      });
       if (previous)
-        await this.repository.recordEvent(tx, {
+        await recordEvent(tx ?? this.db, {
           id: `return:${contest.id}:${viewer.id}`,
           type: ANALYTICS_EVENT.NEXT_CONTEST_JOINED,
           userId: viewer.id,
           properties,
         });
-      return { row: created, admin: isOwner(member) };
+      return { row: created, admin: isAdmin(member) };
     });
     return presentSubmission(row, { completed: false, admin });
   }
@@ -215,7 +211,7 @@ export class SubmissionService {
   /** 비공개 사진 파일. 매 요청 멤버십을 확인하고, 숨긴 사진은 관리자에게만 준다. */
   async photoFile(viewer: IViewer, submissionId: string): Promise<Buffer> {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
-    const upload = await this.repository.findUniqueUpload({
+    const upload = await this.db.upload.findUnique({
       where: { id: submission.uploadId },
       select: { imageKey: true },
     });

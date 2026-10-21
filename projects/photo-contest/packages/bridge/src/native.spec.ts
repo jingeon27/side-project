@@ -1,14 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  NativeCapabilityError,
   buildBootstrapScript,
   buildNativeDispatchScript,
   createNativeRouter,
+  NativeCapabilityError,
+  type TNativeCapabilities,
 } from './native';
-import type { TNativeCapabilities } from './native';
-import { APP_MARKER_KEY, NATIVE_EVENT_NAME, PROTOCOL_VERSION } from './protocol';
-import type { TNativeMessage } from './protocol';
+import { APP_MARKER_KEY, NATIVE_EVENT_NAME, PROTOCOL_VERSION, type TNativeMessage } from './protocol';
 
 const ORIGIN = 'https://contest.example';
 

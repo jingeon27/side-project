@@ -1,4 +1,5 @@
-import { GroupVisibility, PostKind } from '@/shared/api/generated';
+import { postAttachmentJsonLd, postImageUrls } from '@/features/post';
+import { GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
 
@@ -16,15 +17,17 @@ export function groupMetadata(data: IGroupSeoData, origin: string) {
       index: false,
       images: [],
     });
-  const images = posts
-    .filter((post) => post.kind === PostKind.Photo)
-    .slice(0, 3)
-    .map((post) => siteUrl(post.mediaUrl, origin));
+  const images = [
+    ...(group.avatarUrl ? [siteUrl(group.avatarUrl, origin)] : []),
+    ...postImageUrls(posts, origin),
+  ].slice(0, 3);
   return createPageMetadata({
     origin,
     path,
     title: group.name,
-    description: `${group.name}에서 ${group.memberCount}명의 멤버와 사진·동영상·합성으로 웃긴 순간을 나눠보세요. 누구나 둘러보고 가입할 수 있는 공개 그룹입니다.`,
+    description:
+      group.description ||
+      `${group.name}에서 ${group.memberCount}명의 멤버와 사진·동영상·합성으로 웃긴 순간을 나눠보세요. 누구나 둘러보고 가입할 수 있는 공개 그룹입니다.`,
     ...(images.length ? { images } : {}),
   });
 }
@@ -58,6 +61,8 @@ export function groupJsonLd(data: IGroupSeoData, origin: string) {
         '@id': url,
         url,
         name: group.name,
+        ...(group.description ? { description: group.description } : {}),
+        ...(group.avatarUrl ? { image: siteUrl(group.avatarUrl, origin) } : {}),
         inLanguage: 'ko-KR',
         isPartOf: { '@id': websiteId },
         breadcrumb: { '@id': `${url}#breadcrumb` },
@@ -82,15 +87,7 @@ export function groupJsonLd(data: IGroupSeoData, origin: string) {
                 interactionType: 'https://schema.org/LikeAction',
                 userInteractionCount: post.likeCount,
               },
-              ...(post.kind === PostKind.Photo
-                ? { image: siteUrl(post.mediaUrl, origin) }
-                : {
-                    associatedMedia: {
-                      '@type': 'MediaObject',
-                      name: post.title,
-                      contentUrl: siteUrl(post.mediaUrl, origin),
-                    },
-                  }),
+              ...postAttachmentJsonLd(post, origin),
             },
           })),
         },

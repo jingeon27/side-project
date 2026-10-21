@@ -1,6 +1,8 @@
 import { createReadStream } from 'node:fs';
+
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
+
 const name = process.argv[2];
 if (!/^\d{8}T\d{6}Z-[a-f0-9]{8}-[a-f0-9]{40}$/.test(name ?? '')) throw new Error('Invalid backup name.');
 const bucket = process.env.GF_BACKUP_BUCKET;

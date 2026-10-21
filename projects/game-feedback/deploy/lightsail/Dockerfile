@@ -18,6 +18,9 @@ RUN corepack yarn workspace @game-feedback/api build \
     && YARN_ENABLE_IMMUTABLE_INSTALLS=true corepack yarn workspaces focus @game-feedback/api --production
 
 FROM build AS web-build
+ARG NEXT_PUBLIC_SENTRY_DSN=
+ARG NEXT_PUBLIC_AMPLITUDE_API_KEY=
+ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} NEXT_PUBLIC_AMPLITUDE_API_KEY=${NEXT_PUBLIC_AMPLITUDE_API_KEY}
 ARG GF_SITE_URL=https://preview.invalid
 ARG GF_CONTACT_EMAIL=operator@example.invalid
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 GF_STANDALONE=true \
@@ -25,7 +28,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 GF_STANDALONE=true \
     GAME_FEEDBACK_SITE_URL=${GF_SITE_URL} WEB_ORIGIN=${GF_SITE_URL} \
     GAME_FEEDBACK_CONTACT_EMAIL=${GF_CONTACT_EMAIL} \
     GF_DEMO_MODE=false GF_TEST_AUTH_ENABLED=false GF_PREFETCH_TESTING=false GAME_FEEDBACK_INDEXING=false
-RUN mkdir -p projects/game-feedback/apps/web/public \
+RUN --mount=type=cache,id=gf-next-cache,target=/app/projects/game-feedback/apps/web/.next/cache \
+    mkdir -p projects/game-feedback/apps/web/public \
     && corepack yarn workspace @game-feedback/web build
 
 FROM base AS api

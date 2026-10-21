@@ -1,9 +1,12 @@
 'use client';
 
 import { useQuery, useReadQuery } from '@apollo/client/react';
-import { GroupJoinRequests, isGroupOwner } from '@/features/group';
+
+import { GroupCategoryManager, GroupJoinRequests, isGroupAdmin, isGroupOwner } from '@/features/group';
 import { InviteCard } from '@/features/invite';
+import { HiddenPostManager } from '@/features/post';
 import { GroupVisibility, MeDocument } from '@/shared/api/generated';
+
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
 
@@ -29,7 +32,9 @@ export function GroupSidebar({ groupRef }: { groupRef: TGroupQueryRef }) {
           <GroupCommunity groupRef={groupRef} viewerId={viewer?.me?.id ?? ''} />
         </div>
       </details>
-      {isGroupOwner(group.role) && group.visibility === GroupVisibility.Private ? (
+      {isGroupAdmin(group.role) ? <GroupCategoryManager groupId={group.id} /> : null}
+      {isGroupAdmin(group.role) ? <HiddenPostManager groupId={group.id} /> : null}
+      {isGroupAdmin(group.role) && group.visibility === GroupVisibility.Private ? (
         <GroupJoinRequests groupId={group.id} />
       ) : null}
     </div>

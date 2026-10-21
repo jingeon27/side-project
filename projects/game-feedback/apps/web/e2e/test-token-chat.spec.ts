@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+
 import { ChatMessageSchema, SessionSchema } from '@game-feedback/contracts';
 
 const headers = { Origin: 'http://127.0.0.1:3301' };

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('composer examples follow the classification, battle type, coaching role and fee while keeping drafts', async ({
   page,
@@ -79,7 +79,7 @@ for (const width of [320, 1440]) {
     await expect(page.getByRole('banner')).toBeHidden();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('complementary', { name: '프로필 인증 안내' })).toBeVisible();
-    if (width <= 760) await expect(page.locator('.mobile-nav')).toBeHidden();
+    if (width <= 760) await expect(page.locator('.mobile-nav:visible')).toHaveCount(0);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
     const form = page.getByRole('form', { name: '글쓰기', exact: true });
     const title = `짧은 글쓰기 ${width} ${Date.now().toString(36)}`;

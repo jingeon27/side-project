@@ -18,3 +18,4 @@ export {
   readPostMutationOptions,
 } from './model/post.mutation-options';
 export { parseFeedbackStatus } from './model/feedback-status';
+export { refreshServerPostDetail } from './model/post-detail-cache';

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  SHARE_TEXT_MAX_LENGTH,
   buildContestShareText,
   buildInviteShareText,
   buildResultShareText,
+  SHARE_TEXT_MAX_LENGTH,
 } from './share-text.helper';
 
 describe('buildResultShareText', () => {
@@ -59,7 +59,7 @@ describe('공유 문구', () => {
       '‘가을 사진전’ 사진 대회가 열렸어요! 웃긴 순간을 한 장 골라 주세요.',
     );
     expect(buildInviteShareText('웃음 연구소')).toBe(
-      '‘웃음 연구소’ 그룹에 초대할게요. 웃긴순간에서 사진과 동영상을 함께 나눠요!',
+      '‘웃음 연구소’ 그룹에 초대할게요. 별사대에서 사진과 동영상을 함께 나눠요!',
     );
   });
 });

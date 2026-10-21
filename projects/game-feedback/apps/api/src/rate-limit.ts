@@ -8,6 +8,11 @@ const authAttempts = new Set([
   '/api/auth/google/callback',
   '/api/auth/app/exchange',
 ]);
+const healthPaths = new Set(['/api/health', '/api/health/live', '/api/health/ready']);
+
+export function isHealthProbe(request: Pick<RequestIdentity, 'method' | 'path'>): boolean {
+  return ['GET', 'HEAD'].includes(request.method) && healthPaths.has(request.path.replace(/\/+$/, ''));
+}
 
 export function requestRateBucket(request: RequestIdentity): { key: string; limit: number } {
   const path = request.path.replace(/\/+$/, '');
@@ -17,9 +22,17 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
   const identity = request.userId ? `user:${request.userId}` : `ip:${request.ip}`;
   if (
     request.method === 'POST' &&
-    (path === '/api/post-media' || /^\/api\/conversations\/[^/]+\/attachments$/.test(path))
+    (path === '/api/post-media' ||
+      path === '/api/post-media/uploads' ||
+      /^\/api\/conversations\/[^/]+\/attachments(?:\/uploads)?$/.test(path))
   )
     return { key: `upload:${identity}`, limit: 20 };
+  if (
+    request.method === 'POST' &&
+    (/^\/api\/post-media\/[^/]+\/complete$/.test(path) ||
+      /^\/api\/conversations\/[^/]+\/attachments\/[^/]+\/complete$/.test(path))
+  )
+    return { key: `upload-complete:${identity}`, limit: 20 };
   return { key: `${action}:${identity}`, limit: action === 'read' ? 240 : 60 };
 }
 

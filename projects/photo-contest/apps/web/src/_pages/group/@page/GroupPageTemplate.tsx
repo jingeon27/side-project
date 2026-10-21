@@ -1,22 +1,23 @@
 'use client';
 
-import type { TGroupQueryRef } from './model/group-query.type';
+import type { ReactNode } from 'react';
 
 import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { ReactNode } from 'react';
 import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
-import { GroupMembershipButton } from '@/features/group';
+import { GroupMembershipButton, GroupNavigation } from '@/features/group';
+import { CreatePostButton } from '@/features/post';
 import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
-import { AsyncBoundary, ClientOnly } from '@/shared/ui/@core/async-boundary';
+import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { CreatePostButton, GalleryFeed } from '@/features/post';
+import type { TGroupQueryRef } from './model/group-query.type';
+import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
 import { GroupIdentity } from './ui/GroupIdentity';
 import { GroupSidebar } from './ui/GroupSidebar';
 import { PrivateGroupNotice } from './ui/PrivateGroupNotice';
@@ -62,8 +63,12 @@ function GroupContent({
           .otherwise(() => (
             <ErrorState
               message={getErrorMessage(error)}
-              onRetry={() => {
-                void onRefresh().catch(() => undefined);
+              onRetry={async () => {
+                try {
+                  await onRefresh();
+                } catch {
+                  /* 실패하면 같은 안내가 남는다. */
+                }
               }}
             />
           ))}
@@ -82,6 +87,7 @@ function GroupContent({
       }
     >
       <GroupIdentity groupRef={groupRef} />
+      {group.canViewPosts ? <GroupNavigation groupId={group.id} /> : null}
       {group.canViewPosts ? (
         <GroupFeed groupRef={groupRef} sidebar={<GroupSidebar groupRef={groupRef} />} />
       ) : (
@@ -93,10 +99,14 @@ function GroupContent({
 function GroupFeed({ groupRef, sidebar }: { groupRef: TGroupQueryRef; sidebar?: ReactNode }) {
   const { data } = useReadQuery(groupRef);
   if (!data) return null;
-  const feed = <GalleryFeed groupId={data.group.id} sidebar={sidebar} />;
-  if (data.group.visibility === GroupVisibility.Private)
-    return <ClientOnly fallback={<Skeleton className="h-48 w-full" />}>{feed}</ClientOnly>;
-  return feed;
+  // 비공개 그룹의 게시물은 라우트가 사전 조회하지 않는다.
+  return (
+    <GroupCategoryFilter
+      group={data.group}
+      sidebar={sidebar}
+      clientOnly={data.group.visibility === GroupVisibility.Private}
+    />
+  );
 }
 function GroupQuerySection({ id }: { id: string }) {
   const [groupRef, { refetch }] = useBackgroundQuery(GalleryDocument, {

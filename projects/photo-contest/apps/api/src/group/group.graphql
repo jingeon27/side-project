@@ -1,5 +1,6 @@
 enum GroupRole {
   OWNER
+  MODERATOR
   MEMBER
 }
 enum GroupVisibility {
@@ -25,6 +26,8 @@ type LeaderboardEntry {
 type Group {
   id: ID!
   name: String!
+  description: String!
+  avatarUrl: String
   "조회한 사용자의 역할"
   role: GroupRole
   visibility: GroupVisibility!
@@ -69,7 +72,16 @@ type Query {
 }
 
 type Mutation {
-  createGroup(name: String!, visibility: GroupVisibility! = PUBLIC): Group!
+  setGroupModerator(groupId: ID!, userId: ID!, enabled: Boolean!): Group!
+  transferGroupOwnership(groupId: ID!, userId: ID!): Group!
+  createGroup(name: String!, visibility: GroupVisibility! = PUBLIC, description: String = ""): Group!
+  updateGroupProfile(
+    groupId: ID!
+    name: String!
+    description: String!
+    avatarId: ID
+    removeAvatar: Boolean! = false
+  ): Group!
   "공개 그룹은 즉시 가입하고 비공개 그룹은 승인 대기 신청을 만든다"
   requestGroupMembership(groupId: ID!): Group!
   approveGroupJoinRequest(requestId: ID!): Boolean!
@@ -77,4 +89,11 @@ type Mutation {
   joinGroup(token: String!): Group!
   "관리자만. 이전 초대 링크는 더 이상 쓸 수 없다"
   regenerateInviteLink(groupId: ID!): Group!
+}
+
+type GroupAvatarTicket {
+  id: ID!
+}
+extend type Mutation {
+  uploadGroupAvatar(groupId: ID!, file: Upload!): GroupAvatarTicket!
 }

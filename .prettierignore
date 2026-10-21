@@ -9,7 +9,7 @@ yarn.lock
 **/*.tsbuildinfo
 **/next-env.d.ts
 **/AGENTS.md
-**/.claude
+**/.agents
 **/prisma/migrations
 **/src/shared/api/generated.ts
 **/.e2e-build

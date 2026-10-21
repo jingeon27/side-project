@@ -1,10 +1,10 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import mediaInfoFactory, {
   isTrackType,
-  type MediaInfo,
-  type GeneralTrack,
-  type VideoTrack,
   type AudioTrack,
+  type GeneralTrack,
+  type MediaInfo,
+  type VideoTrack,
 } from 'mediainfo.js';
 
 import { fail } from '../common/errors';

@@ -1,8 +1,12 @@
 'use client';
-import { useEffect, useRef, Suspense, type ReactNode } from 'react';
+
+import { Suspense, useEffect, useRef, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+
 import { useAnimate, useMotionPreference } from '@/shared/motion';
+
 import { getNavigationDirection } from './browser-navigation';
 
 export function RouteViewport({ children }: { children: ReactNode }) {
@@ -37,7 +41,17 @@ function RouteMotion({
       before !== key &&
       beforeRoute?.locale === route?.locale &&
       route &&
-      ['feed', 'boards', 'search', 'messages', 'notifications', 'settings', 'guide'].includes(route.screen) &&
+      [
+        'feed',
+        'boards',
+        'search',
+        'messages',
+        'notifications',
+        'settings',
+        'guide',
+        'login',
+        'onboarding',
+      ].includes(route.screen) &&
       getNavigationDirection() !== 'back' &&
       !window.location.hash
     )

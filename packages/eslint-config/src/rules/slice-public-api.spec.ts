@@ -1,7 +1,7 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
 import type { TFsdOptions } from '../lib/fsd.helper';
-import { languageOptions, readFixture, fixtureRoot } from '../test/rule-tester';
+import { fixtureRoot, languageOptions, readFixture } from '../test/rule-tester';
 import { slicePublicApi } from './slice-public-api';
 
 const options: TFsdOptions = [{ srcDir: fixtureRoot('fsd/src') }];

@@ -1,14 +1,17 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Users } from 'lucide-react';
 import { match, P } from 'ts-pattern';
 
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { JoinGroupButton } from '@/features/invite';
-import { GroupVisibility, InvitePreviewDocument } from '@/shared/api/generated';
-import type { InvitePreviewQuery, InvitePreviewQueryVariables } from '@/shared/api/generated';
+import {
+  GroupVisibility,
+  InvitePreviewDocument,
+  type InvitePreviewQuery,
+  type InvitePreviewQueryVariables,
+} from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { getErrorMessage } from '@/shared/model/error';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -31,8 +34,12 @@ function InviteContent({
       <ErrorState
         title="초대 링크를 확인해 주세요"
         message={getErrorMessage(error)}
-        onRetry={() => {
-          void refetch().catch(() => undefined);
+        onRetry={async () => {
+          try {
+            await refetch();
+          } catch {
+            /* 실패하면 같은 안내가 남는다. */
+          }
         }}
       />
     );

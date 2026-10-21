@@ -1,7 +1,9 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+
 import { sessionOptions } from '@/features/auth';
 import { chatScopeOptions } from '@/features/chat';
-import { postListOptions, postDetailOptions } from '@/features/post';
+import { postDetailOptions, postListOptions } from '@/features/post';
+
 import { postGameAccount } from '../api/game-profile.api';
 import { gameAccountListOptions, gameProfileOptions } from './game-profile.options';
 

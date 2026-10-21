@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { parseAdminRoute, adminUserPath } from './admin-route';
+
+import { adminSupportPath, adminUserPath, parseAdminRoute } from './admin-route';
+
 describe('local admin routes', () => {
   it('restores a selected support thread or user from the URL', () => {
-    expect(parseAdminRoute('#support?thread=thread-1')).toEqual({
+    expect(parseAdminRoute(adminSupportPath('thread-1'))).toEqual({
       tab: 'support',
       threadId: 'thread-1',
       userId: '',

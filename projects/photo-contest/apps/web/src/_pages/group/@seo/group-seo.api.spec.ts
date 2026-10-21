@@ -1,7 +1,8 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
+
+import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 
 import {
   ApproveGroupJoinRequestDocument,
@@ -75,7 +76,12 @@ describe('공개 그룹의 SEO·사이트맵 실제 API', () => {
   it('공개 스냅샷에는 실제 게시물만 담고 비공개 그룹은 그룹장이 읽는 요청과 구분해야 한다', async () => {
     const publicData = await getGroupSeoData(publicId);
     expect(publicData?.posts.map((post) => post.title)).toEqual(['공개 SEO 사진']);
-    expect(publicData?.posts[0]).toMatchObject({ canInteract: false, canDelete: false, likedByMe: false });
+    expect(publicData?.posts[0]).toMatchObject({
+      canModerate: false,
+      canInteract: false,
+      canDelete: false,
+      likedByMe: false,
+    });
     const ownerView = await execute(owner, GalleryDocument, { id: privateId });
     expect(ownerView.group.canViewPosts).toBe(true);
     const privateData = await getGroupSeoData(privateId);

@@ -1,7 +1,9 @@
 import { mkdir } from 'node:fs/promises';
+
 import { graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
+import { seedPost } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
 test('열어둔 대회는 서버 단계가 바뀌면 새로고침 없이 투표 화면으로 넘어가야 한다', async ({
@@ -40,7 +42,7 @@ test(
   '홈과 MY의 사용자 정보는 브라우저 JS 실행 전 서버 HTML에 있어야 한다',
   { tag: '@ios' },
   async ({ page, signIn }) => {
-    await signIn('SSR 사용자');
+    const cookie = await signIn('SSR 사용자');
     const readServerText = async (path: string) => {
       const response = await page.request.get(path);
       expect(response.status()).toBe(200);
@@ -56,8 +58,15 @@ test(
       );
     };
     const home = await readServerText('/');
-    expect(home.text).toContain('아직 올라온 게시물이 없어요');
+    expect(home.text).toContain('공개 그룹');
+    expect(home.text).toContain('공개 그룹의 최신 사진');
     expect(home.errors).toBe(0);
+    const group = await seedGroup(cookie, 'SSR 가입 그룹');
+    await seedPost(cookie, group.id, 'SSR 개인 피드 사진');
+    const memberHome = await readServerText('/');
+    expect(memberHome.text).toContain('최신 게시물');
+    expect(memberHome.text).toContain('SSR 개인 피드 사진');
+    expect(memberHome.errors).toBe(0);
     const me = await readServerText('/me');
     expect(me.text).toContain('SSR 사용자');
     expect(me.text).toContain('내 그룹');
@@ -112,7 +121,7 @@ test(
   async ({ page, signIn }, testInfo) => {
     await signIn('레이아웃-사용자');
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const main = await page.locator('#pc-main').boundingBox();
     expect(main?.width).toBeLessThanOrEqual(1440);
@@ -126,7 +135,7 @@ test(
     }
     if (viewport && main) expect(Math.abs(main.x - (viewport.width - main.width) / 2)).toBeLessThan(2);
     await mkdir('.data/screens', { recursive: true });
-    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-home.png`, fullPage: true });
+    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-home.png` });
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page.getByRole('heading', { name: '레이아웃-사용자' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '내 그룹' })).toBeVisible();

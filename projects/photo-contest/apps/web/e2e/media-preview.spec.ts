@@ -1,4 +1,5 @@
 import { mkdir } from 'node:fs/promises';
+
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
 import { expect, seedGroup, test } from './support/test';
@@ -73,7 +74,7 @@ test(
     await (await selectionChooser).setFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '선택한 파일 제거' }).click();
-    await expect(sheet.getByText('사진이나 동영상을 선택해 주세요.')).toBeVisible();
+    await expect(sheet.getByText('사진·동영상 또는 링크를 첨부해 주세요.')).toBeVisible();
     await picker.setInputFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();
@@ -85,7 +86,7 @@ test(
       .poll(() => image.evaluate((el: HTMLImageElement) => [el.naturalWidth, el.naturalHeight]))
       .toEqual([80, 120]);
     await sheet.getByLabel('제목', { exact: true }).fill('세로 사진의 순간');
-    await sheet.getByRole('checkbox').check();
+    await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();
     await sheet.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(sheet).toHaveCount(0);
     const uploaded = page

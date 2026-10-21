@@ -1,5 +1,6 @@
-import type { TNativeAppInfo } from '@photo-contest/bridge';
 import type { ErrorEvent, init } from '@sentry/nextjs';
+
+import type { TNativeAppInfo } from '@photo-contest/bridge';
 
 type TEnv = Record<string, string | undefined>;
 type TDataCollection = NonNullable<Parameters<typeof init>[0]['dataCollection']>;

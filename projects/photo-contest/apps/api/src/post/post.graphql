@@ -3,12 +3,23 @@ scalar Upload
 enum PostKind {
   PHOTO
   VIDEO
+  LINK
 }
 enum PostSort {
   NEWEST
   MONTHLY_POPULAR
 }
+type PostContest {
+  id: ID!
+  groupId: ID!
+  title: String!
+  likeLimit: Int!
+  phase: Phase!
+}
 type GalleryPost {
+  category: GroupCategory
+  contestId: ID
+  contest: PostContest
   id: ID!
   groupId: ID!
   groupName: String!
@@ -17,31 +28,65 @@ type GalleryPost {
   author: User!
   createdAt: DateTime!
   kind: PostKind!
-  mediaUrl: String!
+  mediaUrl: String
+  linkUrl: String
   likeCount: Int!
   commentCount: Int!
   likedByMe: Boolean!
   canDelete: Boolean!
+  canModerate: Boolean!
   canInteract: Boolean!
 }
 type PostComment {
   id: ID!
   postId: ID!
+  parentId: ID
+  replyCount: Int!
   body: String!
   author: User!
   createdAt: DateTime!
   canDelete: Boolean!
+  likeCount: Int!
+  likedByMe: Boolean!
+  canInteract: Boolean!
+}
+type PostDownload {
+  url: String!
+  filename: String!
+  expiresAt: DateTime
+}
+type HiddenGalleryPost {
+  id: ID!
+  title: String!
+  createdAt: DateTime!
 }
 extend type Query {
-  galleryPosts(groupId: ID, sort: PostSort = NEWEST, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
-  postComments(postId: ID!, offset: Int = 0, limit: Int = 24): [PostComment!]!
+  galleryPost(id: ID!): GalleryPost!
+  hiddenGalleryPosts(groupId: ID!, offset: Int = 0, limit: Int = 24): [HiddenGalleryPost!]!
+  publicGalleryPosts(sort: PostSort!, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  postDownload(postId: ID!): PostDownload!
+  galleryPosts(
+    categoryId: ID
+    groupId: ID
+    contestId: ID
+    sort: PostSort = NEWEST
+    offset: Int = 0
+    limit: Int = 24
+  ): [GalleryPost!]!
+  postComments(postId: ID!, parentId: ID, offset: Int = 0, limit: Int = 24): [PostComment!]!
+  postCommentCount(postId: ID!, parentId: ID): Int!
 }
 extend type Mutation {
+  setPostCategory(postId: ID!, categoryId: ID): GalleryPost!
+  setPostHidden(postId: ID!, hidden: Boolean!): Boolean!
   uploadPostMedia(uploadId: ID!, file: Upload!): Boolean!
   requestPostUpload(groupId: ID!): UploadTicket!
   createPost(
+    categoryId: ID
+    contestId: ID
     groupId: ID!
-    uploadId: ID!
+    uploadId: ID
+    linkUrl: String
     title: String!
     body: String
     rightsConfirmed: Boolean!
@@ -49,6 +94,9 @@ extend type Mutation {
   likePost(postId: ID!): GalleryPost!
   unlikePost(postId: ID!): GalleryPost!
   deletePost(postId: ID!): Boolean!
-  createPostComment(postId: ID!, body: String!): PostComment!
+  updatePost(postId: ID!, title: String!, body: String, categoryId: ID): GalleryPost!
+  createPostComment(postId: ID!, parentId: ID, body: String!): PostComment!
   deletePostComment(commentId: ID!): Boolean!
+  likePostComment(commentId: ID!): PostComment!
+  unlikePostComment(commentId: ID!): PostComment!
 }

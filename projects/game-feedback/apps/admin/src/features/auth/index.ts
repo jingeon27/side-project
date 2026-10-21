@@ -1,1 +1,2 @@
-export { sessionOptions, loginMutationOptions, logoutMutationOptions } from './model/auth.options';
+export { sessionOptions } from './model/auth.options';
+export { useLoginMutation, useLogoutMutation } from './model/auth.hook';

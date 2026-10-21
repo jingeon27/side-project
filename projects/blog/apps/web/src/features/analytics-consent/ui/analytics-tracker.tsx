@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+
 import { consentChangedEvent, trackPageView } from '@/shared/lib/analytics/events';
 
 export function AnalyticsTracker() {

@@ -1,7 +1,9 @@
 import { infiniteQueryOptions, queryOptions, skipToken } from '@tanstack/react-query';
 import { compact } from 'es-toolkit';
+
 import { fetchNotificationList } from '../api/notification.api';
 import type { TNotificationListParams } from '../types/notification.type';
+
 function notificationListScope(userId?: string, params?: TNotificationListParams) {
   return queryOptions({ queryKey: compact(['fetchNotificationList', userId, params]), queryFn: skipToken });
 }

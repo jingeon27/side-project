@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
-const integrationFiles = ['src/**/*.integration.{spec,test}.ts', 'src/integration.test.ts'];
+const integrationFiles = ['src/**/*.integration.{spec,test}.ts'];
 
 export default defineConfig({
   test: {
@@ -10,7 +10,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.{spec,test}.ts'],
+          include: ['src/**/*.{spec,test}.ts', '../../scripts/**/*.{spec,test}.ts'],
           exclude: integrationFiles,
         },
       },

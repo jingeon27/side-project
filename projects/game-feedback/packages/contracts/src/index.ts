@@ -1,6 +1,27 @@
 import { z } from 'zod';
-import { RichTextDocumentSchema } from './rich-text';
+
+import {
+  MediaMimeTypeSchema,
+  MediaSizeSchema,
+  MediaUploadInputSchema,
+  MediaUploadPlanSchema,
+} from './media-upload';
 import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
+import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+import { RichTextDocumentSchema } from './rich-text';
+
+export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+
+export {
+  POSTS_CACHE_TAG,
+  DISCOVERY_CACHE_TAG,
+  CacheTagSchema,
+  CacheRevalidationSchema,
+  postCacheTag,
+} from './cache-revalidation';
+
+export { MediaUploadInputSchema, MediaUploadPlanSchema } from './media-upload';
+export type { TMediaUploadInput, TMediaUploadPlan } from './media-upload';
 export {
   RichTextDocumentSchema,
   RichTextAttributesSchema,
@@ -65,6 +86,7 @@ export const AuthorSchema = z.object({
   isVerified: z.boolean(),
   supercellTag: z.string().nullable(),
   isTestAccount: z.boolean(),
+  avatarUrl: z.string().nullable().optional(),
 });
 export const UserSchema = AuthorSchema.extend({
   role: z.enum(['USER', 'ADMIN']),
@@ -97,6 +119,7 @@ export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
 export const PublicProfileSchema = z.object({
   author: AuthorSchema,
+  links: ProfileLinksSchema.optional(),
   joinedAt: ResponseTimestampSchema,
   postCount: ResponseCountSchema,
   answerCount: ResponseCountSchema,
@@ -212,12 +235,8 @@ export const SessionSchema = z.object({
 export const ChatAttachmentSchema = z.object({
   id: ResponseIdSchema,
   name: z.string().min(1).max(200),
-  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
-  size: z
-    .number()
-    .int()
-    .positive()
-    .max(25 * 1024 * 1024),
+  mimeType: MediaMimeTypeSchema,
+  size: MediaSizeSchema,
   kind: z.enum(['IMAGE', 'VIDEO']),
   url: z.string().regex(/^\/api\/conversations\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
 });
@@ -392,6 +411,8 @@ export const schemas = {
   SupportThread: SupportThreadSchema,
   PostMedia: PostMediaSchema,
   PostMediaUpload: PostMediaUploadSchema,
+  MediaUploadInput: MediaUploadInputSchema,
+  MediaUploadPlan: MediaUploadPlanSchema,
   CoachingPricing: CoachingPricingSchema,
   CoachingPricingType: CoachingPricingTypeSchema,
   CoachingDetails: CoachingDetailsSchema,
@@ -451,6 +472,19 @@ export type OperationSpec = {
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
+  {
+    method: 'post',
+    path: '/api/post-media/uploads',
+    id: 'requestPostMediaUpload',
+    body: MediaUploadInputSchema,
+    response: MediaUploadPlanSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/post-media/{id}/complete',
+    id: 'completePostMediaUpload',
+    response: PostMediaSchema,
+  },
   { method: 'get', path: '/api/admin/users/{id}', id: 'getAdminUser', response: UserSchema },
   {
     method: 'post',
@@ -496,6 +530,22 @@ export const operations: OperationSpec[] = [
     response: SupportThreadSchema,
   },
   { method: 'get', path: '/api/users/{id}', id: 'getPublicProfile', response: PublicProfileSchema },
+  {
+    method: 'patch',
+    path: '/api/profile',
+    id: 'updateProfile',
+    body: UpdateProfileInputSchema,
+    response: PublicProfileSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/profile/avatar',
+    id: 'uploadProfileAvatar',
+    body: PostMediaUploadSchema,
+    contentType: 'multipart/form-data',
+    response: PublicProfileSchema,
+  },
+  { method: 'delete', path: '/api/profile/avatar', id: 'deleteProfileAvatar', response: PublicProfileSchema },
   {
     method: 'post',
     path: '/api/auth/app/exchange',
@@ -566,6 +616,19 @@ export const operations: OperationSpec[] = [
     id: 'uploadChatAttachment',
     body: ChatAttachmentUploadSchema,
     contentType: 'multipart/form-data',
+    response: ChatAttachmentSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/conversations/{id}/attachments/uploads',
+    id: 'requestChatAttachmentUpload',
+    body: MediaUploadInputSchema,
+    response: MediaUploadPlanSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/conversations/{id}/attachments/{attachmentId}/complete',
+    id: 'completeChatAttachmentUpload',
     response: ChatAttachmentSchema,
   },
   {
@@ -695,3 +758,4 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/admin/hide', id: 'hideContent', body: HideInputSchema, response: OkSchema },
 ];
+export { AuthReturnPathSchema } from './auth-return-path';

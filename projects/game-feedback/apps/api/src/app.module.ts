@@ -1,28 +1,31 @@
 import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { resolveAppConfig, type AppOptions } from './config/app.config';
-import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { PostsModule } from './posts/posts.module';
-import { AnswersModule } from './answers/answers.module';
-import { CommentsModule } from './comments/comments.module';
+
 import { AdminModule } from './admin/admin.module';
-import { CategoriesModule } from './categories/categories.module';
-import { GameProfilesModule } from './game-profiles/game-profiles.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { AnswersModule } from './answers/answers.module';
+import { AuthModule } from './auth/auth.module';
 import { BlocksModule } from './blocks/blocks.module';
-import { ModerationModule } from './moderation/moderation.module';
+import { CacheInvalidationModule } from './cache-invalidation/cache-invalidation.module';
+import { CategoriesModule } from './categories/categories.module';
 import { ChatModule } from './chat/chat.module';
-import { HealthModule } from './health/health.module';
-import { SupportModule } from './support/support.module';
-import { FollowsModule } from './follows/follows.module';
+import { CommentsModule } from './comments/comments.module';
 import { ApiAccessMiddleware } from './common/http/api-access.middleware';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
+import { resolveAppConfig, type AppOptions } from './config/app.config';
+import { DatabaseModule } from './database/database.module';
+import { FollowsModule } from './follows/follows.module';
+import { GameProfilesModule } from './game-profiles/game-profiles.module';
+import { HealthModule } from './health/health.module';
 import { MediaStorageModule } from './media-storage/media-storage.module';
+import { ModerationModule } from './moderation/moderation.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PostsModule } from './posts/posts.module';
+import { SupportModule } from './support/support.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
+    CacheInvalidationModule,
     MediaStorageModule,
     AuthModule,
     UsersModule,

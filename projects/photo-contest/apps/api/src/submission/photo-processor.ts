@@ -1,5 +1,4 @@
-import sharp from 'sharp';
-import type { Metadata } from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 
 import { fail } from '../common/errors';
 import { MAX_IMAGE_EDGE_PX, MAX_INPUT_PIXELS, MAX_UPLOAD_BYTES, WEBP_QUALITY } from '../config/limits';
@@ -36,7 +35,7 @@ async function readMetadata(body: Buffer) {
  * 업로드 원본을 검사하고 긴 변 1600px 이하 WebP로 다시 인코딩한다.
  * 방향은 EXIF대로 돌린 뒤 EXIF·GPS 같은 메타데이터를 모두 버린다(sharp는 기본적으로 메타데이터를 옮기지 않는다).
  */
-export async function processPhoto(body: unknown): Promise<Buffer> {
+export async function processPhoto(body: unknown, maxEdge = MAX_IMAGE_EDGE_PX): Promise<Buffer> {
   if (!Buffer.isBuffer(body) || body.length === 0 || body.length > MAX_UPLOAD_BYTES)
     fail(PHOTO_ERROR.INVALID_BODY);
   if (!isSupported(await readMetadata(body))) fail(PHOTO_ERROR.UNSUPPORTED);
@@ -44,8 +43,8 @@ export async function processPhoto(body: unknown): Promise<Buffer> {
     return await sharp(body, { limitInputPixels: MAX_INPUT_PIXELS, failOn: 'warning' })
       .rotate()
       .resize({
-        width: MAX_IMAGE_EDGE_PX,
-        height: MAX_IMAGE_EDGE_PX,
+        width: maxEdge,
+        height: maxEdge,
         fit: 'inside',
         withoutEnlargement: true,
       })

@@ -1,12 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('first visits use the browser region without JavaScript and retain feed filters', async ({
   browser,
 }) => {
   for (const [locale, path, heading] of [
-    ['ko-KR', 'ko', '플레이메이트'],
-    ['ja-JP', 'ja', 'Playmate'],
-    ['en-GB', 'en', 'Playmate'],
+    ['ko-KR', 'ko', 'Game Mate'],
+    ['ja-JP', 'ja', 'Game Mate'],
+    ['en-GB', 'en', 'Game Mate'],
   ] as const) {
     const context = await browser.newContext({
       locale,

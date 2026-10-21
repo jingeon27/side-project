@@ -1,12 +1,11 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
 import type { ReactNode } from 'react';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { match, P } from 'ts-pattern';
 
-import { MeDocument } from '@/shared/api/generated';
-import type { MeQuery } from '@/shared/api/generated';
+import { MeDocument, type MeQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 
 interface IViewerBoundaryProps {

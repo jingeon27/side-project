@@ -1,28 +1,33 @@
-import { ValidatedQuery, ValidatedBody } from '../common/http/request-validation';
-import { ListQueryDto } from '../common/http/list-query.dto';
-import { UseGuards, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Sse } from '@nestjs/common';
-import { UserGuard } from '../common/http/session.guard';
-import { ReadMessageDto, ClearHistoryDto, SendMessageDto, CreateConversationDto } from './chat-input.dto';
-import { ChatService } from './chat.service';
-import { ChatEvents } from './chat.events';
+import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Sse, UseGuards } from '@nestjs/common';
+
 import type { SessionRequest } from '../auth/session.types';
+import { ListQueryDto } from '../common/http/list-query.dto';
+import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
+import { UserGuard } from '../common/http/session.guard';
+import { ChatConversationService } from './chat-conversation.service';
+import { ChatHistoryService } from './chat-history.service';
+import { ClearHistoryDto, CreateConversationDto, ReadMessageDto, SendMessageDto } from './chat-input.dto';
+import { ChatMessageService } from './chat-message.service';
+import { ChatEvents } from './chat.events';
 
 @Controller('api')
 export class ChatController {
   constructor(
-    @Inject(ChatService) private readonly chat: ChatService,
+    @Inject(ChatConversationService) private readonly conversations: ChatConversationService,
+    @Inject(ChatMessageService) private readonly messagesService: ChatMessageService,
+    @Inject(ChatHistoryService) private readonly history: ChatHistoryService,
     @Inject(ChatEvents) private readonly events: ChatEvents,
   ) {}
   @Get('conversations')
   @UseGuards(UserGuard)
   list(@Req() req: SessionRequest, @ValidatedQuery(ListQueryDto) query: ListQueryDto) {
-    return this.chat.list(req, query);
+    return this.conversations.list(req, query);
   }
   @Post('conversations')
   @HttpCode(200)
   @UseGuards(UserGuard)
   create(@Req() req: SessionRequest, @ValidatedBody(CreateConversationDto) body: CreateConversationDto) {
-    return this.chat.create(req, body);
+    return this.conversations.create(req, body);
   }
   @Get('conversations/:id/messages')
   @UseGuards(UserGuard)
@@ -31,7 +36,7 @@ export class ChatController {
     @Param('id') id: string,
     @ValidatedQuery(ListQueryDto) query: ListQueryDto,
   ) {
-    return this.chat.messages(req, id, query);
+    return this.messagesService.messages(req, id, query);
   }
   @Delete('conversations/:id/messages')
   @UseGuards(UserGuard)
@@ -40,7 +45,7 @@ export class ChatController {
     @Param('id') id: string,
     @ValidatedBody(ClearHistoryDto) body: ClearHistoryDto,
   ) {
-    return this.chat.clearHistory(req, id, body);
+    return this.history.clearHistory(req, id, body);
   }
   @Post('conversations/:id/messages')
   @HttpCode(200)
@@ -50,7 +55,7 @@ export class ChatController {
     @Param('id') id: string,
     @ValidatedBody(SendMessageDto) body: SendMessageDto,
   ) {
-    return this.chat.send(req, id, body);
+    return this.messagesService.send(req, id, body);
   }
   @Post('conversations/:id/read')
   @HttpCode(200)
@@ -60,7 +65,7 @@ export class ChatController {
     @Param('id') id: string,
     @ValidatedBody(ReadMessageDto) body: ReadMessageDto,
   ) {
-    return this.chat.read(req, id, body);
+    return this.history.read(req, id, body);
   }
   @Sse('chat/events')
   stream(@Req() req: SessionRequest) {

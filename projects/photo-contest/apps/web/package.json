@@ -14,7 +14,8 @@
     "test:unit": "node scripts/test.mjs --project unit",
     "test:api": "node scripts/test.mjs --project api",
     "test:e2e": "playwright test",
-    "test:deploy": "playwright test --config playwright.deploy.config.ts"
+    "test:deploy": "playwright test --config playwright.deploy.config.ts",
+    "test:cache": "playwright test --config playwright.cache.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.47.4",
@@ -40,6 +41,7 @@
     "zod": "^4.4.0"
   },
   "devDependencies": {
+    "@apollo/client-react-streaming": "patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch",
     "@graphql-codegen/cli": "^6.0.0",
     "@graphql-codegen/typed-document-node": "^6.0.0",
     "@graphql-codegen/typescript": "^5.0.0",

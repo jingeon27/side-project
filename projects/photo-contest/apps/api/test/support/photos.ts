@@ -3,8 +3,7 @@ import { join } from 'node:path';
 
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { TEST_WEB_ORIGIN } from './app';
-import type { ITestApi, ITestUser } from './app';
+import { TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from './app';
 
 export interface IUploadTicket {
   id: string;

@@ -1,10 +1,12 @@
+import { createRef } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { createRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+
 import { Button } from '../button/Button';
 import { FormField } from '../form-field/FormField';
 import { TextArea, TextField } from './TextField';

@@ -1,4 +1,4 @@
-import { test, expect } from './support/fixtures';
+import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
 test('WebView test account persists posts, comments and private chat across reload', async ({
@@ -9,7 +9,8 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '로그인', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/ko\/login\?returnTo=/);
+  await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await page.request.post('/api/auth/test-token', {
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-user-0' },
@@ -64,16 +65,17 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.screenshot({ path: `test-results/chat-${testInfo.project.name}.png`, fullPage: true });
 });
 
-test('native back closes the web dialog, deep links keep the document, and foreground refreshes the session', async ({
+test('native back leaves the login page, deep links keep the document, and foreground refreshes the session', async ({
   page,
   nativeHost,
 }) => {
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
+  await expect.poll(nativeHost.hasOverlay).toBe(false);
   expect(await nativeHost.requestBack()).toBe(true);
-  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page).toHaveURL(/\/ko$/);
   expect(nativeHost.openDeepLink('gamefeedback://ko/guide')).toBe(true);
   await expect(page).toHaveURL(/\/ko\/guide$/);
   expect(nativeHost.openDeepLink('gamefeedback://ko/posts/%2Fetc')).toBe(false);
@@ -92,11 +94,11 @@ test('native back closes the web dialog, deep links keep the document, and foreg
     '덱연구소',
   );
   expect(nativeHost.openDeepLink('gamefeedback://ko/settings')).toBe(true);
-  await expect(page.locator('.settings-profile')).toContainText('덱연구소');
-  await expect(page.locator('.settings-profile')).toContainText('인증 유저');
+  await expect(page.locator('.settings-profile:visible')).toContainText('덱연구소');
+  await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저');
 });
 
-test('native Google login opens the system auth session and cancellation keeps the login dialog usable', async ({
+test('native Google login opens the system auth session and cancellation keeps the login page usable', async ({
   page,
   nativeHost,
 }) => {
@@ -118,7 +120,7 @@ test('native Google login opens the system auth session and cancellation keeps t
   await page.getByRole('button', { name: /Google로 시작하기/ }).click();
   await expect.poll(() => nativeHost.authSessions.length).toBe(1);
   expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/social\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await page.request.post('/api/auth/test-token', {
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-user-0' },
@@ -126,6 +128,7 @@ test('native Google login opens the system auth session and cancellation keeps t
   nativeHost.state('background');
   nativeHost.state('active');
   await expect(page.getByRole('dialog')).not.toBeVisible();
+  await expect(page).toHaveURL(/\/ko$/);
 });
 
 test('native back dismisses the conversation menu and report dialog before leaving the chat', async ({

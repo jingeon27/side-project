@@ -1,5 +1,7 @@
 'use client';
 
+import { useTransition } from 'react';
+
 import {
   useFragment,
   useQuery,
@@ -8,7 +10,6 @@ import {
   type QueryRef,
 } from '@apollo/client/react';
 import { MessageCircle } from 'lucide-react';
-import { useTransition } from 'react';
 
 import { GalleryPostCardFragmentDoc, MeDocument, type PostCommentsQuery } from '@/shared/api/generated';
 import { formatCount } from '@/shared/lib/format.helper';
@@ -63,7 +64,7 @@ export function PostCommentList({
           <p className="text-caption text-muted">함께 웃은 포인트, 가벼운 한마디면 충분해요.</p>
         </div>
       )}
-      {complete && data.postComments.length < post.commentCount ? (
+      {data.postComments.length < data.postCommentCount ? (
         <Button
           variant="ghost"
           size="md"

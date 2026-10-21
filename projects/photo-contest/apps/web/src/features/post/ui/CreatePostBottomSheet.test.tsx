@@ -1,9 +1,10 @@
+import { StrictMode } from 'react';
+
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
-import { StrictMode } from 'react';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CreatePostBottomSheet } from './CreatePostBottomSheet';
@@ -84,7 +85,7 @@ describe('선택한 게시물 파일 미리보기', () => {
     expect(pause).toHaveBeenCalled();
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-2');
     await user.click(screen.getByRole('button', { name: '선택한 파일 제거' }));
-    expect(await screen.findByText('사진이나 동영상을 선택해 주세요.')).toBeVisible();
+    expect(await screen.findByText('사진·동영상 또는 링크를 첨부해 주세요.')).toBeVisible();
     expect(screen.queryByRole('figure', { name: '선택한 파일 미리보기' })).not.toBeInTheDocument();
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-3');
   });

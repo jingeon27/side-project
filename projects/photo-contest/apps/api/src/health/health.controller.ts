@@ -1,9 +1,8 @@
-import { HealthRepository } from './health.repository';
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { appVersions } from '../config/env';
-import type { IAppVersions } from '../config/env';
+import { appVersions, type IAppVersions } from '../config/env';
+import { Database } from '../database/database.service';
 
 const HEALTH_STATUS = { OK: 'ok', UNAVAILABLE: 'unavailable' } as const;
 
@@ -11,7 +10,7 @@ type THealthStatus = (typeof HEALTH_STATUS)[keyof typeof HEALTH_STATUS];
 
 @Controller()
 export class HealthController {
-  constructor(private readonly repository: HealthRepository) {}
+  constructor(private readonly db: Database) {}
 
   @Get('health/live')
   live() {
@@ -22,7 +21,7 @@ export class HealthController {
   @Get(['health', 'health/ready'])
   async health(@Res({ passthrough: true }) res: Response): Promise<{ status: THealthStatus }> {
     try {
-      await this.repository.ping();
+      await this.db.$queryRaw`SELECT 1`;
       return { status: HEALTH_STATUS.OK };
     } catch {
       res.status(HttpStatus.SERVICE_UNAVAILABLE);

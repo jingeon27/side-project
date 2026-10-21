@@ -1,11 +1,12 @@
 import {
   getAdminUser,
-  setUserVerification,
-  setUserBan,
+  hideContent,
   listReports,
   reviewReport,
-  hideContent,
+  setUserBan,
+  setUserVerification,
 } from '@game-feedback/sdk';
+
 export const fetchReports = () => listReports();
 export const fetchUser = (id: string) => getAdminUser(id);
 export const updateVerification = ({ id, isVerified }: { id: string; isVerified: boolean }) =>
@@ -16,3 +17,4 @@ export const updateReport = ({ id, status }: { id: string; status: 'REVIEWED' | 
   reviewReport(id, { status });
 export const updateVisibility = (input: Parameters<typeof hideContent>[0]) => hideContent(input);
 export type TAdminReport = Awaited<ReturnType<typeof fetchReports>>[number];
+export type TAdminUser = Awaited<ReturnType<typeof fetchUser>>;

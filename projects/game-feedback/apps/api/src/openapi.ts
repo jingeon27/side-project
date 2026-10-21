@@ -1,8 +1,10 @@
 import { writeFileSync } from 'node:fs';
+
 import { z } from 'zod';
+
 import {
-  BoardKindSchema,
   BattleModeSchema,
+  BoardKindSchema,
   CoachingRoleSchema,
   FeedbackStatusSchema,
   operations,
@@ -96,7 +98,7 @@ export function createOpenApi() {
   }
   return {
     openapi: '3.1.0',
-    info: { title: 'Game Feedback API', version: '0.1.0' },
+    info: { title: 'Game Mate API', version: '0.1.0' },
     servers: [{ url: '/' }],
     paths,
     components: {

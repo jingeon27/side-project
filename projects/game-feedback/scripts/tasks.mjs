@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+
 import { assertNode, environment, projectDir, yarn } from './env.mjs';
 
 const env = environment();
@@ -47,6 +48,7 @@ export async function runTask(task) {
     await prerequisites();
     await workspace('api', 'test', { NODE_ENV: 'test' });
     await workspace('sdk', 'test');
+    await workspace('bridge', 'test');
     await workspace('web', 'test');
     await workspace('mobile', 'test');
     await workspace('admin', 'test');

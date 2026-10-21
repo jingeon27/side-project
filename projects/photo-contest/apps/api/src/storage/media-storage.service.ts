@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-import { match } from 'ts-pattern';
-
 import { Injectable } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import { s3Settings, storageBackend, storageDir } from '../config/env';
 import { LocalPhotoStore } from './local-photo-store';
@@ -26,6 +25,10 @@ export class MediaStorage {
   }
   delete(key: string) {
     return this.store().delete(mediaKey(key));
+  }
+  async presignDownload(key: string, disposition: string, expiresIn: number): Promise<string | null> {
+    if (storageBackend() !== 's3') return null;
+    return this.s3Store().presignDownload(mediaKey(key), disposition, expiresIn);
   }
   private store() {
     return match(storageBackend())

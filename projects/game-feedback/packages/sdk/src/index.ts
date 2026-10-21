@@ -1,6 +1,8 @@
 export { ApiError } from './api-error';
 export { ApiResponseValidationError, type IResponseIssue } from './response/validation-error';
 export {
+  requestPostMediaUpload,
+  completePostMediaUpload,
   uploadPostMedia,
   deletePostMedia,
   setUserBan,
@@ -12,6 +14,9 @@ export {
   exchangeAppLogin,
   getHealth,
   getPublicProfile,
+  updateProfile,
+  uploadProfileAvatar,
+  deleteProfileAvatar,
   getSession,
   demoLogin,
   onboard,
@@ -51,6 +56,8 @@ export {
   clearChatHistory,
   sendChatMessage,
   uploadChatAttachment,
+  requestChatAttachmentUpload,
+  completeChatAttachmentUpload,
   deleteChatAttachment,
   readConversation,
   listTestAccounts,

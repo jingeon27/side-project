@@ -1,4 +1,4 @@
-import { InMemoryCache, gql } from '@apollo/client';
+import { gql, InMemoryCache } from '@apollo/client';
 import type { TypePolicies } from '@apollo/client/cache';
 import { describe, expect, it } from 'vitest';
 

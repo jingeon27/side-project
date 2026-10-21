@@ -1,14 +1,13 @@
 'use client';
 
-import { ImagePlus } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { useController } from 'react-hook-form';
-import type { Control, UseFormTrigger } from 'react-hook-form';
+
+import { ImagePlus } from 'lucide-react';
+import { useController, useWatch, type Control, type UseFormTrigger } from 'react-hook-form';
 
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { postSchema } from '../model/post.schema';
-import type { TPostInput, TPostValues } from '../model/post.schema';
+import { postSchema, type TPostInput, type TPostValues } from '../model/post.schema';
 import { PostMediaPreview } from './PostMediaPreview';
 
 interface IPostMediaFieldProps {
@@ -28,6 +27,8 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
   } = useController({ control, name: 'media' });
   const previewUrlRef = useRef<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const linkUrl = useWatch({ control, name: 'linkUrl' });
+  const required = !linkUrl?.trim();
 
   useEffect(
     () => () => {
@@ -49,12 +50,12 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
     <div className="flex flex-col gap-2 rounded-card has-focus-visible:outline-3 has-focus-visible:outline-accent">
       <label htmlFor={inputId} className="text-label text-ink">
         사진·동영상 선택
-        <FieldRequirement required />
+        <FieldRequirement required={required} />
       </label>
       <input
         id={inputId}
         type="file"
-        aria-required="true"
+        aria-required={required}
         accept="image/*,.heic,.heif,video/mp4,video/webm"
         aria-label="사진·동영상 선택"
         ref={(element) => {
@@ -93,7 +94,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         >
           <ImagePlus aria-hidden className="size-7" />
           파일 선택
-          <span className="text-caption text-muted">사진이나 동영상을 올려 주세요</span>
+          <span className="text-caption text-muted">사진·동영상을 선택하거나 링크를 첨부해 주세요</span>
         </button>
       )}
       <p id={helpId} className="text-caption text-muted">

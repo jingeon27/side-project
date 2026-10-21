@@ -92,9 +92,9 @@
 
 ## 앱 스킬
 
-- `.claude/skills/webview-shell/SKILL.md`: WebView·탐색·딥링크·뒤로 가기·복구.
-- `.claude/skills/native-capability/SKILL.md`: 공유·복사·햅틱·시스템 브라우저·소셜 로그인.
-- `.claude/skills/mobile-test/SKILL.md`: unit/UI/API·실제 웹과 가짜 OS 경계.
-- `.claude/skills/release/SKILL.md`: dev client·빌드·환경변수·버전·Sentry 설정.
+- `.agents/skills/webview-shell/SKILL.md`: WebView·탐색·딥링크·뒤로 가기·복구.
+- `.agents/skills/native-capability/SKILL.md`: 공유·복사·햅틱·시스템 브라우저·소셜 로그인.
+- `.agents/skills/mobile-test/SKILL.md`: unit/UI/API·실제 웹과 가짜 OS 경계.
+- `.agents/skills/release/SKILL.md`: dev client·빌드·환경변수·버전·Sentry 설정.
 
 e2e의 사용자·로그인 티켓은 테스트 API로 준비하고 DB를 직접 수정하지 않는다. 웹/앱 Sentry·Amplitude 키를 비우며 pageerror를 검사한다. iOS에서는 Android 하드웨어 뒤로 가기 케이스만 실행하지 않는다.

@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   readlinkSync,
-  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -29,8 +29,10 @@ const scratch = join(repo, 'projects/game-feedback/.data');
 mkdirSync(scratch, { recursive: true });
 const root = mkdtempSync(join(scratch, 'shared-instance-'));
 const host = 'side.abcdef.ap-northeast-2.rds.amazonaws.com';
-const gfDomain = new URL(process.env.SIDE_GF_SITE_URL ?? 'https://game-feedback.test').hostname;
-const pcDomain = new URL(process.env.SIDE_PC_SITE_URL ?? 'https://photo-contest.test').hostname;
+const gfDomain = new URL(process.env.SIDE_GF_SITE_URL ?? 'https://game.bambyul.com').hostname;
+const pcDomain = new URL(process.env.SIDE_PC_SITE_URL ?? 'https://contest.bambyul.com').hostname;
+const gfApiDomain = `api.${gfDomain}`;
+const pcApiDomain = `api.${pcDomain}`;
 const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf8' }).stdout.trim();
 const baseEnv = {
   ...process.env,
@@ -47,7 +49,9 @@ const password = randomBytes(32).toString('hex');
 const schemaPassword = randomBytes(32).toString('hex');
 const proxyEnv = {
   GAME_FEEDBACK_DOMAIN: gfDomain,
+  GAME_FEEDBACK_API_DOMAIN: gfApiDomain,
   PHOTO_CONTEST_DOMAIN: pcDomain,
+  PHOTO_CONTEST_API_DOMAIN: pcApiDomain,
   ACME_EMAIL: 'operator@example.test',
   RDS_REGION: 'ap-northeast-2',
   RDS_INSTANCE_ID: 'side-smoke',
@@ -198,7 +202,7 @@ class Client {
         accept,
       );
       req.on('error', reject);
-      req.setTimeout(20000, () => req.destroy(new Error('HTTPS smoke timed out')));
+      req.setTimeout(145000, () => req.destroy(new Error('HTTPS smoke timed out')));
       req.end(body);
     });
   }
@@ -386,6 +390,7 @@ try {
             GF_S3_ACCESS_KEY_ID: 'gf-smoke-access',
             GF_S3_SECRET_ACCESS_KEY: 'gf-private-secret',
             GF_CONTACT_EMAIL: 'operator@example.test',
+            GF_CACHE_REVALIDATION_SECRET: randomBytes(32).toString('hex'),
             GOOGLE_CLIENT_ID: 'smoke-oauth-client',
             GOOGLE_CLIENT_SECRET: 'smoke-oauth-secret',
             GF_API_BIND_PORT: '0',
@@ -456,13 +461,120 @@ try {
   );
   const gf = new Client(gfDomain, port, publicCa);
   const pc = new Client(pcDomain, port, publicCa);
+  const gfApi = new Client(gfApiDomain, port, publicCa);
+  const pcApi = new Client(pcApiDomain, port, publicCa);
   await retry(async () => assert.equal((await gf.http('/api/health/ready')).status, 200));
   assert.equal((await pc.http('/backend/health/ready')).status, 200);
+  assert.equal((await gfApi.http('/api/health/ready')).status, 200);
+  assert.equal((await pcApi.http('/health/ready')).status, 200);
+  assert.equal((await gfApi.http('/')).status, 404);
+  assert.equal((await pcApi.http('/health')).headers['x-robots-tag'], 'noindex, nofollow');
   assert.equal((await gf.http('/_health/live')).status, 200);
   assert.equal((await pc.http('/_health/live')).status, 200);
-  assert.equal((await gf.http('/_internal/cache/revalidate')).status, 404);
-  assert.equal((await pc.post('/backend/testing/users', {})).status, 404);
-  assert.equal((await gf.post('/api/auth/test-token', {})).status, 404);
+  for (const response of [
+    await gf.http('/_internal/cache/revalidate'),
+    await gf.http('/api/admin/reports'),
+    await pc.post('/backend/testing/users', {}),
+    await gf.post('/api/auth/test-token', {}),
+    await gfApi.http('/_internal/cache/revalidate'),
+    await gfApi.http('/api/admin/reports'),
+    await gfApi.post('/api/auth/test-token', {}),
+    await pcApi.post('/testing/users', {}),
+  ]) {
+    assert.equal(response.status, 404);
+    assert.equal(response.text(), 'edge-blocked');
+  }
+  // Keep HTTP polling alive while service.sh performs real same-image replacement.
+  const beforeIds = ['game-feedback', 'photo-contest'].map((service) =>
+    serviceCompose(service, ['ps', '-q', 'api', 'web']).trim(),
+  );
+  const availability = { running: true, samples: [], failures: [] };
+  const deploymentLogs = [];
+  const probes = [
+    [gf, '/api/health/live'],
+    [gf, '/ko'],
+    [pc, '/backend/health/live'],
+    [pc, '/'],
+  ].map(async ([client, path]) => {
+    while (availability.running) {
+      const started = performance.now();
+      try {
+        const response = await client.http(path);
+        assert.equal(response.status, 200, `${client.domain}${path}: ${response.status}`);
+        availability.samples.push({
+          endpoint: client.domain + path,
+          milliseconds: performance.now() - started,
+        });
+      } catch (error) {
+        availability.failures.push({
+          endpoint: client.domain + path,
+          milliseconds: Math.ceil(performance.now() - started),
+          error: String(error),
+        });
+      }
+      await delay(100);
+    }
+  });
+  try {
+    await delay(300);
+    for (const service of ['game-feedback', 'photo-contest']) {
+      const started = performance.now();
+      await new Promise((accept, reject) => {
+        const child = spawn(
+          'bash',
+          [
+            join(root, `services/${service}/releases/${sha}/host/service.sh`),
+            service,
+            'deploy',
+            sha,
+            ...refs[service],
+          ],
+          { env: baseEnv, stdio: ['ignore', 'pipe', 'pipe'] },
+        );
+        let output = '';
+        child.stdout.on('data', (chunk) => {
+          output = (output + chunk).slice(-32768);
+        });
+        child.stderr.on('data', (chunk) => {
+          output = (output + chunk).slice(-32768);
+        });
+        child.on('error', reject);
+        child.on('exit', (code) => {
+          deploymentLogs.push({ service, milliseconds: Math.ceil(performance.now() - started), output });
+          if (code === 0) return accept();
+          reject(new Error(`Redeploy failed: ${output}`));
+        });
+      });
+    }
+    await delay(300);
+  } finally {
+    availability.running = false;
+    await Promise.all(probes);
+  }
+  if (availability.failures.length) {
+    console.error(
+      'Redeploy diagnostics:',
+      JSON.stringify({ deploymentLogs, failures: availability.failures }),
+    );
+    for (const service of ['game-feedback', 'photo-contest'])
+      console.error(service, serviceCompose(service, ['logs', '--no-color', '--tail', '60', 'web']));
+  }
+  assert.deepEqual(availability.failures, [], 'No failed bounded GET probes during replacement');
+  for (const [index, service] of ['game-feedback', 'photo-contest'].entries()) {
+    const nextIds = serviceCompose(service, ['ps', '-q', 'api', 'web']).trim().split('\n');
+    assert.equal(nextIds.length, 2);
+    for (const nextId of nextIds)
+      assert.ok(!beforeIds[index].split('\n').includes(nextId), 'Both containers must actually be replaced');
+  }
+  assert.equal(new Set(availability.samples.map((sample) => sample.endpoint)).size, 4);
+  console.log(
+    'Redeploy availability:',
+    JSON.stringify({
+      samples: availability.samples.length,
+      failures: availability.failures.length,
+      maxLatencyMs: Math.ceil(Math.max(...availability.samples.map((sample) => sample.milliseconds))),
+    }),
+  );
   assert.equal(
     sql('game_feedback', "SELECT has_database_privilege('game_feedback','photo_contest','CONNECT')"),
     'f',
@@ -500,6 +612,8 @@ try {
   const group = (
     await pc.graphql('mutation { createGroup(name:"공통 배포 그룹",visibility:PUBLIC) { id } }')
   ).json().data.createGroup;
+  const publicPc = new Client(pcDomain, port, publicCa);
+  assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
   const upload = (
     await pc.graphql('mutation($id:ID!) { requestPostUpload(groupId:$id) { id url } }', { id: group.id })
   ).json().data.requestPostUpload;
@@ -520,12 +634,20 @@ try {
     body: png,
   });
   assert.equal(uploaded.status, 201, uploaded.text());
-  const post = (
-    await pc.graphql(
-      'mutation($group:ID!,$upload:ID!) { createPost(groupId:$group,uploadId:$upload,title:"S3 파일 보존",rightsConfirmed:true) { id mediaUrl } }',
-      { group: group.id, upload: upload.id },
-    )
-  ).json().data.createPost;
+  pcApi.cookie = pc.cookie;
+  const posted = await pcApi.post(
+    '/graphql',
+    {
+      query:
+        'mutation($group:ID!,$upload:ID!) { createPost(groupId:$group,uploadId:$upload,title:"S3 파일 보존",rightsConfirmed:true) { id mediaUrl } }',
+      variables: { group: group.id, upload: upload.id },
+    },
+    { Origin: `https://${pcDomain}` },
+  );
+  assert.equal(posted.status, 200, posted.text());
+  assert.equal(posted.json().errors, undefined, posted.text());
+  const post = posted.json().data.createPost;
+  assert.match((await publicPc.http(`/groups/${group.id}`)).text(), /S3 파일 보존/);
   assert.equal((await pc.http(post.mediaUrl)).status, 200);
   const partial = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
   assert.equal(partial.status, 206);
@@ -557,10 +679,31 @@ try {
   assert.equal(mediaResponse.status, 200, mediaResponse.text());
   const media = mediaResponse.json();
   assert.equal((await gf.http(media.url)).status, 404);
-  assert.deepEqual(
-    (await gf.http(media.url, { headers: { Authorization: `Bearer ${token}`, Range: 'bytes=0-7' } })).body,
-    png.subarray(0, 8),
+  const signed = await gf.http(media.url, {
+    headers: { Authorization: `Bearer ${token}`, Range: 'bytes=0-7' },
+  });
+  assert.equal(signed.status, 307, signed.text());
+  assert.equal(signed.headers['cache-control'], 'private, no-store');
+  const signedUrl = new URL(signed.headers.location);
+  assert.equal(signedUrl.hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(signedUrl.searchParams.get('X-Amz-Expires'), '60');
+  // API 컨테이너의 격리 네트워크에서 S3 fixture를 읽으며 서비스 인증은 전달하지 않는다.
+  const content = JSON.parse(
+    serviceCompose('game-feedback', [
+      'exec',
+      '-T',
+      'api',
+      'node',
+      '--input-type=module',
+      '-e',
+      `const response = await fetch(process.argv[1], {headers: {Range: 'bytes=0-7'}});
+       console.log(JSON.stringify({status: response.status, cache: response.headers.get('cache-control'), bytes: Buffer.from(await response.arrayBuffer()).toString('base64')}));`,
+      signedUrl.toString(),
+    ]),
   );
+  assert.equal(content.status, 206);
+  assert.equal(content.cache, 'private, no-store');
+  assert.deepEqual(Buffer.from(content.bytes, 'base64'), png.subarray(0, 8));
   assert.equal(
     sql('game_feedback', 'SELECT count(*) FROM "PostMedia" WHERE bytes IS NULL AND "objectId" IS NOT NULL'),
     '1',

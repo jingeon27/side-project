@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
+
 import type { Prisma } from '../../generated/prisma';
 import { Database, type TDatabaseClient } from './database.service';
 
 type TResults<T extends Prisma.PrismaPromise<unknown>[]> = { [K in keyof T]: Awaited<T[K]> };
 
-/** Coordinates domain repositories without opening an independent connection inside a transaction. */
+/** 같은 트랜잭션의 조회·쓰기·이벤트를 한 연결에서 실행한다. */
 @Injectable()
 export class UnitOfWork {
   constructor(private readonly db: Database) {}

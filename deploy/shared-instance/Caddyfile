@@ -26,21 +26,31 @@
 	}
 }
 
+# Bound web drain (30s), API replacement (20s + 30s) and web startup (20s).
+(upstream_retry) {
+	lb_try_duration 140s
+	lb_try_interval 250ms
+}
+
 {$GAME_FEEDBACK_DOMAIN} {
 	import private_logs
 	request_body {
 		max_size 27MB
 	}
-	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|api/auth/(?:demo|test-))
-	respond @internal 404
-	handle /api/* {
-		reverse_proxy gf-api:4300 {
-			flush_interval -1
+	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|api/auth/(?:demo|test-)|api/admin(?:/|$))
+	route {
+		respond @internal "edge-blocked" 404
+		handle /api/* {
+			reverse_proxy gf-api:4300 {
+				flush_interval -1
+				import upstream_retry
+			}
 		}
-	}
-	handle {
-		reverse_proxy gf-web:3300 {
-			flush_interval -1
+		handle {
+			reverse_proxy gf-web:3300 {
+				flush_interval -1
+				import upstream_retry
+			}
 		}
 	}
 }
@@ -51,15 +61,72 @@
 		max_size 110MB
 	}
 	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|backend/testing(?:/|$))
-	respond @internal 404
-	handle_path /backend/* {
-		reverse_proxy pc-api:4200 {
-			flush_interval -1
+	@graphql path_regexp graphql (?i)^/backend/graphql/?$
+	route {
+		respond @internal "edge-blocked" 404
+		handle @graphql {
+			rewrite * /backend/graphql
+			reverse_proxy pc-web:3200 {
+				import upstream_retry
+			}
+		}
+		handle_path /backend/* {
+			reverse_proxy pc-api:4200 {
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+		handle {
+			reverse_proxy pc-web:3200 {
+				flush_interval -1
+				import upstream_retry
+			}
 		}
 	}
-	handle {
-		reverse_proxy pc-web:3200 {
-			flush_interval -1
+}
+
+{$GAME_FEEDBACK_API_DOMAIN} {
+	import private_logs
+	header X-Robots-Tag "noindex, nofollow"
+	request_body {
+		max_size 27MB
+	}
+	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|api/auth/(?:demo|test-)|api/admin(?:/|$))
+	route {
+		respond @internal "edge-blocked" 404
+		handle /api/* {
+			reverse_proxy gf-api:4300 {
+				flush_interval -1
+				import upstream_retry
+			}
+		}
+		handle {
+			respond 404
+		}
+	}
+}
+
+{$PHOTO_CONTEST_API_DOMAIN} {
+	import private_logs
+	header X-Robots-Tag "noindex, nofollow"
+	request_body {
+		max_size 110MB
+	}
+	@internal path_regexp internal (?i)^/(?:_internal(?:/|$)|testing(?:/|$)|backend/testing(?:/|$))
+	@graphql path_regexp graphql (?i)^/graphql/?$
+	route {
+		respond @internal "edge-blocked" 404
+		handle @graphql {
+			rewrite * /backend/graphql
+			reverse_proxy pc-web:3200 {
+				import upstream_retry
+			}
+		}
+		handle {
+			reverse_proxy pc-api:4200 {
+				flush_interval -1
+				import upstream_retry
+			}
 		}
 	}
 }

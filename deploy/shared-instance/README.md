@@ -3,10 +3,16 @@
 Photo Contest와 Game Feedback을 서울 리전의 **EC2 한 대 + 외부 RDS PostgreSQL 한 인스턴스 + 서비스별 비공개 S3 버킷**으로 운영한다. 두 서비스의 API 프로토콜은 각각 GraphQL과 REST를 유지한다. 운영 이미지는 모두 `linux/amd64`다.
 
 ```text
-game.example.com  ─┐                    ┌─ GF Web / GF API ─ game_feedback DB / GF S3
-                  ├─ Caddy :443 ────────┤
-photo.example.com ─┘                    └─ PC Web / PC API ─ photo_contest DB / PC S3
+game.bambyul.com         ─┐              ┌─ GF Web
+api.game.bambyul.com     ─┤              ├─ GF API ─ game_feedback DB / GF S3
+                         ├─ Caddy :443 ─┤
+contest.bambyul.com      ─┤              ├─ PC Web
+api.contest.bambyul.com  ─┘              └─ PC API ─ photo_contest DB / PC S3
 ```
+
+제품명은 Game Mate와 별사대(별난 사진 대회)다. 밤별 블로그는 `blog.bambyul.com`에서 별도 Vercel 프로젝트로 운영한다. `api.blog.bambyul.com`은 주소만 예약하며 현재 별도 API 서버는 없다.
+
+웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 별사대 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
 
 Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. DB·원본 미디어는 EC2 볼륨에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스가 함께 중단되는 구조다.
 
@@ -24,7 +30,7 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 | 6    | [S3 버킷](https://console.aws.amazon.com/s3/home?region=ap-northeast-2)                                                                                                                                                                                    | 서울 리전에 서비스별 일반 목적 버킷 2개를 만든다. 모든 퍼블릭 액세스 차단, 기본 암호화, Versioning을 켜고 아래 lifecycle JSON을 등록한다.                                                            | 서로 다른 버킷 이름 2개, 비공개·버전 관리 활성화     |
 | 7    | [IAM 정책](https://console.aws.amazon.com/iam/home#/policies) / [역할](https://console.aws.amazon.com/iam/home#/roles)                                                                                                                                     | 아래 RDS 조회 JSON으로 EC2용 역할을 만든다. EC2 → 작업 → 보안 → IAM 역할 수정에서 연결한다. 메타데이터는 IMDSv2 필수, hop limit 2로 설정한다.                                                        | EC2 역할로 서울 RDS 인스턴스 조회 성공               |
 | 8    | [IAM 사용자](https://console.aws.amazon.com/iam/home#/users)                                                                                                                                                                                               | 콘솔 로그인 없는 앱 자격 증명을 서비스별로 준비한다. 아래 S3 JSON의 버킷 이름을 바꾸어 각자 자기 버킷에만 권한을 준다.                                                                               | 각 버킷 읽기·쓰기 성공, 상대 버킷 요청 거부          |
-| 9    | [Route 53 호스팅 영역](https://console.aws.amazon.com/route53/v2/hostedzones) 또는 도메인을 관리하는 DNS 화면                                                                                                                                              | 두 서비스의 A 레코드를 같은 Elastic IP로 연결한다. Route 53 사용은 필수가 아니다.                                                                                                                    | `dig +short`로 두 도메인이 고정 IP를 반환            |
+| 9    | [Route 53 호스팅 영역](https://console.aws.amazon.com/route53/v2/hostedzones) 또는 도메인을 관리하는 DNS 화면                                                                                                                                              | 네 서비스 호스트의 A 레코드를 같은 Elastic IP로 연결한다. Route 53 사용은 필수가 아니다.                                                                                                             | `dig +short`로 네 호스트가 고정 IP를 반환            |
 | 10   | [Docker Ubuntu 설치 안내](https://docs.docker.com/engine/install/ubuntu/)                                                                                                                                                                                  | 아래 서버 준비, 환경 파일 입력, 최초 DB 초기화를 수행한다.                                                                                                                                           | Docker/Compose 실행, 서비스별 DB와 역할 생성         |
 | 11   | 아래 소셜 로그인 설정 화면                                                                                                                                                                                                                                 | 사용할 제공자의 앱과 콜백 주소를 등록하고 서버 환경 파일에 키를 넣는다. GF는 제공자 하나 이상이 필수다.                                                                                              | 실제 도메인과 콜백 주소가 정확히 일치                |
 | 12   | [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments) / [Variables](https://github.com/jingeon27/side-project/settings/variables/actions) / [Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions) | 두 Environment와 아래 이름의 변수·SSH Secret을 등록한다. 배포 활성화 값은 준비가 끝날 때까지 `false`로 둔다.                                                                                         | Environment 2개와 필수 값 등록                       |
@@ -34,14 +40,14 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 
 기본 CD는 GitHub `ubuntu-latest`에서 서버로 SSH 접속한다. **SSH를 본인 IP에만 허용하면 CD는 연결할 수 없다.** 현재 코드에는 VPN 가입이나 SSM 전송 단계가 없으며, OIDC용 AWS 역할을 등록해도 SSH 접속을 대신하지 않는다. 제한된 SSH 소스 정책을 쓰려면 VPN을 연결하는 단계 또는 고정 IP 배포 러너를 추가하고 실제 접속을 먼저 확인해야 한다. 일반 GitHub 호스트 러너의 전체 IP 대역을 고정 허용 목록으로 취급하지 않는다. [GitHub 공식 네트워크 안내](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#ip-addresses)를 따른다.
 
-준비할 공개 값은 EC2 IP·instance ID·보안 그룹 ID, 두 도메인, RDS endpoint·instance ID, 두 버킷 이름, 배포 SSH 사용자·포트·확인한 host key다. 비밀번호·비밀 키·OAuth secret은 서버 환경 파일이나 지정한 GitHub Secret에 직접 입력하며 이 문서나 이슈에 적지 않는다.
+준비할 공개 값은 EC2 IP·instance ID·보안 그룹 ID, 네 호스트 이름, RDS endpoint·instance ID, 두 버킷 이름, 배포 SSH 사용자·포트·확인한 host key다. 비밀번호·비밀 키·OAuth secret은 서버 환경 파일이나 지정한 GitHub Secret에 직접 입력하며 이 문서나 이슈에 적지 않는다.
 
 ## AWS에서 먼저 준비할 것
 
-1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 두 도메인의 DNS를 준비한다. Docker Engine/Compose plugin, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다. [EC2 생성 안내](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EC2_GetStarted.html)를 참고한다.
+1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 네 호스트의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다. [EC2 생성 안내](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EC2_GetStarted.html)를 참고한다.
 2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
 3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. 컨테이너에서 IMDSv2로 인스턴스 역할을 읽으려면 EC2 metadata 응답 hop limit을 2로 설정한다.
-4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. 버킷 → 권한에서 퍼블릭 접근 차단, 속성에서 버전 관리·암호화, 관리에서 [수명 주기](s3-lifecycle.json)와 같은 규칙을 설정한다. 이전 버전은 30일 후 만료, 미완료 multipart는 1일 후 중단으로 설정하고 현재 객체 만료는 켜지 않는다. JSON을 그대로 적용하려면 해당 권한이 있는 운영자 세션에서 아래 CLI를 버킷별로 실행한다. 브라우저는 API를 거쳐 파일을 받으므로 퍼블릭 버킷이나 S3 CORS 허용이 필요하지 않다.
+4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. 버킷 → 권한에서 퍼블릭 접근 차단, 속성에서 버전 관리·암호화, 관리에서 [수명 주기](s3-lifecycle.json)와 같은 규칙을 설정한다. 이전 버전은 30일 후 만료, 미완료 multipart는 1일 후 중단으로 설정하고 현재 객체 만료는 켜지 않는다. JSON을 그대로 적용하려면 해당 권한이 있는 운영자 세션에서 아래 CLI를 버킷별로 실행한다. Game Feedback 게시글·채팅 첨부는 presigned POST로 직접 전송하므로 해당 버킷에 [CORS 예시](../../projects/game-feedback/deploy/shared-instance/s3-cors.json)의 origin을 실제 도메인으로 바꿔 적용한다. 버킷 공개 접근은 계속 차단한다. [업로드와 조회 검증](../../projects/game-feedback/docs/media-upload.md)을 확인한다.
 5. [S3 앱 정책](s3-app-policy.json)의 `SERVICE_BUCKET_NAME`을 각 버킷으로 바꾸고 서비스별 IAM 자격 증명을 발급한다. 각 계정은 자기 버킷만 읽고 쓸 수 있어야 한다. 한쪽 자격 증명으로 다른 버킷을 읽거나 쓰는 요청이 거부되는지 AWS에서 직접 확인한다. RDS 복구 지점 조회용 EC2 역할과 이 두 자격 증명을 구분한다.
 
 상시 컨테이너 메모리 한도 합계는 약 2.7GiB이며 운영 도구·OS·업로드 처리에는 추가 메모리가 필요하다. 실제 인스턴스 크기와 RDS 연결 수는 업로드·동시 채팅·SSR 부하를 측정해 결정한다. 호스트에서 운영 이미지를 빌드하지 않는다.
@@ -77,13 +83,13 @@ bash deploy/shared-instance/scripts/prepare.sh
 
 다음 파일을 서버에서 편집한다. Git이나 Actions 로그에 실제 값을 올리지 않는다. Compose가 읽는 파일이므로 `source`하지 않는다.
 
-| 파일                                            | 설정                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------- |
-| `/srv/side-project/.env`                        | 두 도메인, ACME 메일, RDS 실제 endpoint·instance ID, 두 버킷 이름   |
-| `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정 |
-| `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정   |
+| 파일                                            | 설정                                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------------------- |
+| `/srv/side-project/.env`                        | 네 호스트 이름, ACME 메일, RDS 실제 endpoint·instance ID, 두 버킷 이름 |
+| `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정    |
+| `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정      |
 
-원본 예시는 [호스트 환경 파일](host.env.example), [GF 환경 파일](../../projects/game-feedback/deploy/shared-instance/service.env.example), [PC 환경 파일](../../projects/photo-contest/deploy/shared-instance/service.env.example)이다. `GAME_FEEDBACK_DOMAIN`과 `PHOTO_CONTEST_DOMAIN`에는 `https://`나 경로를 붙이지 않는다. GitHub의 `*_SITE_URL`에는 `https://`를 포함하고 마지막 `/`는 붙이지 않는다. 호스트의 버킷 이름과 각 서비스 자격 증명의 권한 대상이 일치해야 한다. 공개 출시 때 GF 환경 파일의 `GF_INDEXING=true`로 검색 수집을 허용한다.
+원본 예시는 [호스트 환경 파일](host.env.example), [GF 환경 파일](../../projects/game-feedback/deploy/shared-instance/service.env.example), [PC 환경 파일](../../projects/photo-contest/deploy/shared-instance/service.env.example)이다. `GAME_FEEDBACK_DOMAIN`, `GAME_FEEDBACK_API_DOMAIN`, `PHOTO_CONTEST_DOMAIN`, `PHOTO_CONTEST_API_DOMAIN`에는 `https://`나 경로를 붙이지 않는다. GitHub의 `*_SITE_URL`에는 `https://`를 포함하고 마지막 `/`는 붙이지 않는다. 호스트의 버킷 이름과 각 서비스 자격 증명의 권한 대상이 일치해야 한다. 공개 출시 때 GF 환경 파일의 `GF_INDEXING=true`로 검색 수집을 허용한다.
 
 `prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 현재 저장소 버전으로 복사하므로 변경 시 검토 후 `proxy.sh reload`를 실행한다.
 
@@ -110,21 +116,21 @@ CA를 갱신하면 기존 bind mount가 이전 파일을 유지할 수 있으므
 
 서비스별로 별도 OAuth 앱·클라이언트를 만들고, 발급한 ID/secret을 **해당 서비스 서버 환경 파일**에 넣는다. GF는 ID와 secret 한 쌍을 하나 이상 설정해야 시작한다. 운영에서는 데모 로그인과 테스트 토큰 발급 API가 비활성화된다. PC는 아이디·비밀번호 로그인도 제공한다.
 
-| 제공자  | 설정 화면과 행동                                                                                                                                                                                                                                                                                                                                               | GF 콜백                                               | PC 콜백                                           |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------- |
-| Google  | [Google Auth Platform](https://console.cloud.google.com/auth/overview)에서 프로젝트 선택 → Branding/Audience 설정 → [Clients](https://console.cloud.google.com/auth/clients)에서 웹 애플리케이션 클라이언트 생성. 승인된 리디렉션 URI 입력, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 저장. 공개 출시 시 Audience의 게시 상태와 필요한 도메인 확인을 완료한다. | `https://게임도메인/api/auth/google/callback`         | `https://사진도메인/backend/auth/google/callback` |
-| Kakao   | [Kakao 앱 관리](https://developers.kakao.com/console/app)에서 앱 생성 → 카카오 로그인 활성화 → 리디렉션 URI 등록. 플랫폼 키의 REST API 키와 해당 Client Secret을 `KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`에 저장한다.                                                                                                                                           | `https://게임도메인/api/auth/social/kakao/callback`   | `https://사진도메인/backend/auth/kakao/callback`  |
-| X       | [Developer Console](https://console.x.com/)에서 앱의 OAuth 2.0 사용자 인증을 설정한다. 서버용 confidential/web app의 Client ID/secret을 `X_CLIENT_ID`/`X_CLIENT_SECRET`에 저장하고 콜백 URL·웹사이트 URL을 입력한다. 현재 코드는 `tweet.read users.read`와 PKCE를 사용한다. 콘솔의 이용 조건과 API 접근 가능 여부도 확인한다.                                  | `https://게임도메인/api/auth/social/x/callback`       | 미지원                                            |
-| Discord | [Developer Portal](https://discord.com/developers/applications) → New Application → OAuth2에서 Redirects를 추가한다. Client ID/secret을 `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`에 저장한다. 로그인 범위는 `identify`다. 봇 생성·서버 초대는 필요 없다.                                                                                                     | `https://게임도메인/api/auth/social/discord/callback` | 미지원                                            |
+| 제공자  | 설정 화면과 행동                                                                                                                                                                                                                                                                                                                                               | GF 콜백                                                     | PC 콜백                                                    |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------- |
+| Google  | [Google Auth Platform](https://console.cloud.google.com/auth/overview)에서 프로젝트 선택 → Branding/Audience 설정 → [Clients](https://console.cloud.google.com/auth/clients)에서 웹 애플리케이션 클라이언트 생성. 승인된 리디렉션 URI 입력, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` 저장. 공개 출시 시 Audience의 게시 상태와 필요한 도메인 확인을 완료한다. | `https://game.bambyul.com/api/auth/google/callback`         | `https://contest.bambyul.com/backend/auth/google/callback` |
+| Kakao   | [Kakao 앱 관리](https://developers.kakao.com/console/app)에서 앱 생성 → 카카오 로그인 활성화 → 리디렉션 URI 등록. 플랫폼 키의 REST API 키와 해당 Client Secret을 `KAKAO_CLIENT_ID`/`KAKAO_CLIENT_SECRET`에 저장한다.                                                                                                                                           | `https://game.bambyul.com/api/auth/social/kakao/callback`   | `https://contest.bambyul.com/backend/auth/kakao/callback`  |
+| X       | [Developer Console](https://console.x.com/)에서 앱의 OAuth 2.0 사용자 인증을 설정한다. 서버용 confidential/web app의 Client ID/secret을 `X_CLIENT_ID`/`X_CLIENT_SECRET`에 저장하고 콜백 URL·웹사이트 URL을 입력한다. 현재 코드는 `tweet.read users.read`와 PKCE를 사용한다. 콘솔의 이용 조건과 API 접근 가능 여부도 확인한다.                                  | `https://game.bambyul.com/api/auth/social/x/callback`       | 미지원                                                     |
+| Discord | [Developer Portal](https://discord.com/developers/applications) → New Application → OAuth2에서 Redirects를 추가한다. Client ID/secret을 `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`에 저장한다. 로그인 범위는 `identify`다. 봇 생성·서버 초대는 필요 없다.                                                                                                     | `https://game.bambyul.com/api/auth/social/discord/callback` | 미지원                                                     |
 
 콜백은 문자 단위로 맞춘다. Google은 [공식 웹 서버 OAuth 안내](https://developers.google.com/identity/protocols/oauth2/web-server), Kakao는 [사전 설정 안내](https://developers.kakao.com/docs/ko/kakaologin/prerequisite), X는 [OAuth 2.0 PKCE 안내](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code), Discord는 [OAuth2 안내](https://docs.discord.com/developers/topics/oauth2)를 따른다. 초기에는 테스트 사용자로 실제 로그인·취소·재로그인을 확인한 뒤 제공자의 공개 설정을 적용한다.
 
 Google Branding에 입력할 서비스 홈페이지·약관·개인정보 주소는 아래 경로를 실제 도메인과 조합한다. 도메인 소유권 확인이 필요하면 [Search Console](https://search.google.com/search-console/)에서 제공하는 DNS 레코드를 등록한다. OAuth 동의 화면을 테스트 상태로 두면 일반 사용자 공개 로그인 확인을 마친 것이 아니다. [Google OAuth 정책](https://developers.google.com/identity/protocols/oauth2/policies)의 홈페이지·도메인 요구사항도 확인한다.
 
-| 서비스 | 홈페이지                | 이용약관                      | 개인정보처리방침                |
-| ------ | ----------------------- | ----------------------------- | ------------------------------- |
-| GF     | `https://게임도메인/ko` | `https://게임도메인/ko/terms` | `https://게임도메인/ko/privacy` |
-| PC     | `https://사진도메인`    | `https://사진도메인/terms`    | `https://사진도메인/privacy`    |
+| 서비스 | 홈페이지                      | 이용약관                            | 개인정보처리방침                      |
+| ------ | ----------------------------- | ----------------------------------- | ------------------------------------- |
+| GF     | `https://game.bambyul.com/ko` | `https://game.bambyul.com/ko/terms` | `https://game.bambyul.com/ko/privacy` |
+| PC     | `https://contest.bambyul.com` | `https://contest.bambyul.com/terms` | `https://contest.bambyul.com/privacy` |
 
 Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https://developer.clashroyale.com/)에서 키를 발급하고 EC2의 실제 외부 통신 IP를 허용한 뒤 `SUPERCELL_API_TOKEN`에 저장한다. 이 키는 관리자에 의한 수동 프로필 인증과 별개다.
 
@@ -132,26 +138,27 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 
 현재 연결 상태부터 확인한다. 콘솔에서 키를 만들었다는 것과 운영에서 이벤트가 수집된다는 것은 별도로 확인해야 한다.
 
-| 대상              | 키 입력으로 사용할 수 있는 경로                                            | 코드 보완이 필요한 부분                                                                                                                |
-| ----------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| PC API            | 서버 환경 파일의 `SENTRY_DSN`으로 예상하지 못한 오류 수집                  | 자동 HTTP/DB tracing은 꺼져 있다. `SENTRY_TRACES_SAMPLE_RATE`만 올려도 자동 계측이 추가되지는 않는다.                                  |
-| PC Web 브라우저   | repository Variables의 Sentry DSN·Amplitude API key를 이미지 빌드에 주입   | `tracesSampleRate: 0`이므로 운영 Web Vitals 수집을 완료했다고 볼 수 없다. 소스맵 업로드 연결도 필요하다.                               |
-| PC Next 서버      | 소스는 런타임 `SENTRY_DSN`을 읽는다.                                       | 현재 Web Compose에는 런타임 DSN 주입이 없다. Web용 DSN을 Web 컨테이너에 전달하는 연결이 필요하다. API DSN은 API 컨테이너에만 전달된다. |
-| PC Mobile         | Expo 빌드 환경의 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY` | EC2 웹 배포와 별도로 앱을 새로 빌드해야 한다.                                                                                          |
-| GF Web/API/Mobile | 현재 운영 SDK·환경변수 연결 없음                                           | SDK, 이벤트 카탈로그, 계정 식별, 배포 키 주입을 먼저 연결해야 한다. 임의로 GitHub 변수를 추가해도 수집되지 않는다.                     |
+| 대상            | 키 입력으로 사용할 수 있는 경로                                                                                                             | 코드 보완이 필요한 부분                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| PC API          | 서버 환경 파일의 `SENTRY_DSN`으로 예상하지 못한 오류 수집                                                                                   | 자동 HTTP/DB tracing은 꺼져 있다. `SENTRY_TRACES_SAMPLE_RATE`만 올려도 자동 계측이 추가되지는 않는다.    |
+| PC Web 브라우저 | repository Variables의 Sentry DSN·Amplitude API key를 이미지 빌드에 주입                                                                    | `tracesSampleRate: 0`이므로 운영 Web Vitals 수집을 완료했다고 볼 수 없다. 소스맵 업로드 연결도 필요하다. |
+| PC Next 서버    | 런타임 `SENTRY_DSN`을 우선하고, 없으면 빌드에 들어간 공개 DSN을 사용한다.                                                                   | 별도 서버 프로젝트를 쓰려면 Web Compose에 런타임 DSN을 주입해야 한다. 서버 tracing은 꺼져 있다.          |
+| PC Mobile       | Expo 빌드 환경의 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY`                                                                  | EC2 웹 배포와 별도로 앱을 새로 빌드해야 한다.                                                            |
+| GF Web/API      | Web 빌드의 `GF_WEB_SENTRY_DSN`·`GF_AMPLITUDE_API_KEY`, API 서버 환경 파일의 `SENTRY_DSN`을 사용한다. Next 서버는 공개 DSN으로 fallback한다. | tracing과 소스맵 업로드는 꺼져 있다. 실제 수신은 외부 콘솔에서 확인한다.                                 |
+| GF Mobile       | WebView 안의 웹 이벤트가 GF Web 키로 전송된다.                                                                                              | 네이티브 셸 전용 관측 SDK는 없다.                                                                        |
 
 ### Sentry 프로젝트와 DSN
 
-1. [Sentry](https://sentry.io/)에 로그인하고 Organization을 준비한다. Projects → Create Project에서 `photo-contest-web`은 Next.js, `photo-contest-api`는 Node.js/NestJS 플랫폼으로 만든다. GF를 연결할 때는 별도 `game-feedback-web`, `game-feedback-api` 프로젝트를 만든다. 네이티브 앱 오류를 수집할 때는 서비스별 React Native 프로젝트를 따로 둔다.
+1. [Sentry](https://sentry.io/)에 로그인하고 Organization을 준비한다. Projects → Create Project에서 `photo-contest-web`은 Next.js, `photo-contest-api`는 Node.js/NestJS 플랫폼으로 만든다. GF도 별도 `game-feedback-web`, `game-feedback-api` 프로젝트를 만든다. 네이티브 앱 오류를 수집할 때는 서비스별 React Native 프로젝트를 따로 둔다.
 2. [프로젝트 설정](https://sentry.io/settings/) → 해당 Organization → Projects → 프로젝트 → Client Keys (DSN)에서 DSN을 복사한다. **Auth Token이 아니라 DSN**을 아래 대응 위치에 입력한다. 브라우저 DSN은 공개 번들에 포함될 수 있는 값이다. [Sentry Next.js 설정 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/)를 참고한다.
-3. PC API DSN을 `/srv/side-project/services/photo-contest/.env`의 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다.
+3. PC API DSN을 `/srv/side-project/services/photo-contest/.env`의 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다. GF API DSN은 `/srv/side-project/services/game-feedback/.env`의 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GF_WEB_SENTRY_DSN`에 넣는다.
 4. 프로젝트의 알림 설정에서 예상하지 못한 오류와 새 오류 알림의 수신자를 지정한다. 운영·개발 확인을 분리하려면 테스트 환경 또는 별도 테스트 프로젝트에서 먼저 검증한다.
 
 ### Amplitude 프로젝트와 API key
 
 1. [Amplitude](https://app.amplitude.com/) → Settings → Organization settings → Projects → Create Project에서 서비스별 프로젝트 `photo-contest-production`, `game-feedback-production`을 만든다. 개발 검증용 프로젝트도 별도로 둔다. 현재 PC SDK에는 EU `serverZone` 설정이 없으므로 기본 US 수집 경로에 맞는 프로젝트를 사용한다. EU를 선택하려면 Web/Mobile SDK 설정도 함께 바꾼다. [프로젝트 생성 안내](https://amplitude.com/docs/get-started/create-project), [지역별 수집 안내](https://amplitude.com/docs/apis/analytics/http-api-quickstart)를 참고한다.
 2. Organization settings → API Keys에서 해당 프로젝트를 선택하고 API key를 확인한다. 이 키는 이벤트 수집용이며 데이터 조회·관리용 secret key와 용도가 다르다. [키 관리 안내](https://amplitude.com/docs/admin/account-management/manage-your-api-keys-and-secret-keys)를 따른다.
-3. PC API key를 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_AMPLITUDE_API_KEY`에 넣는다. 한 서비스의 Web과 Mobile은 같은 Amplitude 프로젝트를 사용하고 서비스 간에는 분리한다. PC 앱을 배포할 때는 같은 키를 Expo 빌드 환경의 `EXPO_PUBLIC_AMPLITUDE_API_KEY`에도 넣는다.
+3. PC Amplitude API key를 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_AMPLITUDE_API_KEY`에 넣는다. GF Amplitude API key는 repository Variable `GF_AMPLITUDE_API_KEY`에 넣는다. 한 서비스의 Web과 Mobile은 같은 Amplitude 프로젝트를 사용하고 서비스 간에는 분리한다. PC 앱을 배포할 때는 같은 키를 Expo 빌드 환경의 `EXPO_PUBLIC_AMPLITUDE_API_KEY`에도 넣는다.
 4. PC 코드는 `page_viewed`와 도메인 성공 이벤트를 직접 보낸다. 콘솔에서 제공하는 자동 수집 스크립트를 추가로 붙이지 않는다. 로그인한 계정의 DB 사용자 ID로 Web/Mobile을 식별하며, WebView의 기기 ID는 네이티브와 공유한다. 닉네임·채팅 본문·세션 토큰은 이벤트 속성에 넣지 않는다.
 
 ### 키를 넣는 위치와 적용 시점
@@ -160,12 +167,15 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 | -------------------------- | --------------------------------- | ----------------------------- | ---------------------- |
 | GitHub repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN`    | PC Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
 | GitHub repository Variable | `PHOTO_CONTEST_AMPLITUDE_API_KEY` | PC Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
+| GitHub repository Variable | `GF_WEB_SENTRY_DSN`               | GF Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
+| GitHub repository Variable | `GF_AMPLITUDE_API_KEY`            | GF Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
+| 서버 GF 환경 파일          | `SENTRY_DSN`                      | GF API 프로젝트 DSN           | 다음 API 배포에 적용   |
 | 서버 PC 환경 파일          | `SENTRY_DSN`                      | PC API 프로젝트 DSN           | 다음 API 배포에 적용   |
 | 서버 PC 환경 파일          | `SENTRY_TRACES_SAMPLE_RATE`       | 현재 오류 수집 경로는 `0`     | 다음 API 배포에 적용   |
 | Expo 빌드 환경             | `EXPO_PUBLIC_SENTRY_DSN`          | PC Mobile 프로젝트 DSN        | 앱 새 빌드·배포        |
 | Expo 빌드 환경             | `EXPO_PUBLIC_AMPLITUDE_API_KEY`   | PC Amplitude 프로젝트 API key | 앱 새 빌드·배포        |
 
-브라우저의 `NEXT_PUBLIC_*` 값은 Next 빌드 때 포함된다. 서버 환경 파일 수정이나 기존 컨테이너 재시작만으로 웹 키가 바뀌지 않으므로 새 이미지가 필요하다. GF 변수 이름이나 Web 서버용 별도 키는 아직 지원되는 설정처럼 등록하지 않는다.
+브라우저의 `NEXT_PUBLIC_*` 값은 Next 빌드 때 포함된다. 서버 환경 파일 수정이나 기존 컨테이너 재시작만으로 웹 키가 바뀌지 않으므로 새 이미지가 필요하다. GF의 로컬 설정과 이벤트 카탈로그는 [오류와 이용 흐름 관측](../../projects/game-feedback/docs/observability.md)을 따른다. GF Web과 PC Web 모두 Next 서버의 별도 런타임 DSN 전달은 현재 Web Compose에 포함되지 않으므로 공개 DSN fallback을 사용한다.
 
 ### Web Vitals와 소스맵
 
@@ -204,11 +214,12 @@ GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) �
 | Variable            | `SIDE_DEPLOY_SSH_PORT`                                             | 보통 `22`                                                                                 |
 | Variable            | `SIDE_DEPLOY_SSH_KNOWN_HOSTS`                                      | 신뢰할 경로로 확인한 서버 host key. 검증 없는 `ssh-keyscan` 결과를 그대로 신뢰하지 않는다 |
 | Secret              | `SIDE_DEPLOY_SSH_KEY`                                              | 배포용 SSH private key                                                                    |
-| Repository Variable | `GF_SITE_URL`                                                      | GF의 `https://실제도메인`                                                                 |
-| Repository Variable | `GF_CONTACT_EMAIL`                                                 | `jingeon27@gmail.com`                                                                     |
-| Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | PC의 `https://실제도메인`                                                                 |
+| Repository Variable | `GF_SITE_URL`                                                      | `https://game.bambyul.com`                                                                |
+| Repository Variable | `GF_CONTACT_EMAIL`                                                 | `contact@bambyul.com`                                                                     |
+| Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | `https://contest.bambyul.com`                                                             |
 | Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치, 예: `main`                                                              |
 | Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택적 공개 Web 빌드 설정                                                                 |
+| Repository Variable | `GF_WEB_SENTRY_DSN` / `GF_AMPLITUDE_API_KEY`                       | 선택적 GF Web 빌드 설정                                                                   |
 | Repository Variable | `GF_DEPLOY_ENABLED`                                                | 준비 중 `false`, 공개 배포 준비 후 `true`                                                 |
 | Repository Variable | `PHOTO_CONTEST_DEPLOY_ENABLED`                                     | 준비 중 `false`, 공개 배포 준비 후 `true`                                                 |
 
@@ -252,10 +263,10 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
 
-| 서비스 | 공개 readiness URL                        | Web liveness URL                  |
-| ------ | ----------------------------------------- | --------------------------------- |
-| GF     | `https://게임도메인/api/health/ready`     | `https://게임도메인/_health/live` |
-| PC     | `https://사진도메인/backend/health/ready` | `https://사진도메인/_health/live` |
+| 서비스 | 공개 readiness URL                                 | Web liveness URL                           |
+| ------ | -------------------------------------------------- | ------------------------------------------ |
+| GF     | `https://game.bambyul.com/api/health/ready`        | `https://game.bambyul.com/_health/live`    |
+| PC     | `https://contest.bambyul.com/backend/health/ready` | `https://contest.bambyul.com/_health/live` |
 
 [Google Search Console](https://search.google.com/search-console/)에서 소유권을 확인하고 실제 서비스의 `/sitemap.xml`을 제출한다. GF는 `GF_INDEXING=true`를 적용한 뒤 `/robots.txt`, canonical, 사이트맵 URL이 운영 도메인을 사용하는지 먼저 확인한다.
 
@@ -315,7 +326,7 @@ docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
 docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
   -f projects/game-feedback/deploy/lightsail/Dockerfile --target web \
   --build-arg GF_SITE_URL=https://game-feedback.test \
-  --build-arg GF_CONTACT_EMAIL=jingeon27@gmail.com \
+  --build-arg GF_CONTACT_EMAIL=contact@bambyul.com \
   -t "side-shared-gf-web:$deployment_test_sha" .
 docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
   -f projects/photo-contest/apps/api/Dockerfile \
@@ -370,3 +381,28 @@ API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instanc
 실제 AWS 리소스 생성, 운영 IAM 권한, RDS의 실제 PITR 복원, 공인 DNS/인증서, 외부 OAuth 제공자의 로그인과 실제 운영 SSH 전송은 이번 로컬 실행 범위에 포함되지 않는다. 위 최초 배포 절차에서 계정 소유자가 리소스를 준비한 뒤 확인해야 한다.
 
 `projects/game-feedback/deploy/lightsail`과 `projects/photo-contest/deploy/compose.yaml`은 이전 단독 배포 및 별도 컨테이너 회귀 테스트용이다. 새 Actions CD는 이 문서의 shared-instance 구성만 사용한다. 이전 Lightsail/Oracle/로컬 PostgreSQL volume/R2 중심의 운영 명령을 이 호스트에 적용하지 않는다. 첨부 계획의 전체 캐시 개편과 나머지 제품 결함은 이 배포 변경의 완료 범위에 포함하지 않는다.
+
+Photo Contest의 `/backend/graphql`은 pc-web의 Next Route Handler로 보내 공개 SEO·사이트맵 캐시 무효화를 수행한다. 나머지 `/backend/*`는 pc-api로 보낸다. 해당 릴리스에서는 운영 `proxy/Caddyfile`을 동기화하고 `scripts/proxy.sh validate` 후 `reload`를 실행해야 한다. PC route 블록의 내부 경로 차단·GraphQL·일반 API·Web 순서를 유지한다.
+
+## 재생성 동안의 요청과 호환성
+
+Caddy route 블록은 내부·테스트·GF 관리자 경로를 프록시보다 먼저 차단한다. 차단 본문은 `edge-blocked`이며 관리자 앱은 기존 SSH 터널로 loopback API에 붙는다. 호스트 Caddyfile은 prepare.sh의 cp로 반영하고 `proxy.sh validate` 후 `proxy.sh reload`한다. 바인드 마운트 파일을 원자 교체하면 컨테이너에서 이전 inode를 볼 수 있어 에디터/rsync의 교체 방식으로 갱신하지 않는다.
+
+모든 업스트림은 연결 실패를 250ms 간격으로 최대 140초 기다린다. 웹 요청을 먼저 종료 유예 30초 동안 마친 뒤 API 교체(종료 유예 20초 + 시작 구간 30초), 웹 시작 구간 20초를 순서대로 기다릴 여유를 뒀다. API를 먼저 내리면 진행 중인 SSR의 API 요청이 끊겨 이미 시작한 응답을 프록시가 재시도할 수 없다. 헬스체크 시작 구간은 API 30초/Web 20초이며 매초 검사한다. 재시도에서 모든 HTTP 메서드를 허용하도록 바꾸지 않는다. 연결 후 실패의 기본 GET 재시도 정책을 유지한다. 장시간 업로드·스트림·인프라 장애의 무중단을 보장하지 않는다. 종료 유예를 넘는 요청과 140초가 넘는 시작 실패는 사용자 오류가 될 수 있다. 교체 시 웹 종료 시간과 exit/OOM 상태를 기록하고, smoke가 실패하면 요청 경과 시간·교체 출력·웹 로그를 함께 남긴다.
+
+service.sh는 같은 이미지도 실제로 재생성한다. API의 SSE는 종료 훅에서 닫고 클라이언트가 재연결한다. 공통 smoke는 서비스 스크립트로 두 서비스를 재배포하면서 실제 API/Web GET을 계속 보내 실패 수·최대 대기 시간을 기록하고 네 컨테이너 ID가 모두 바뀌었는지 검사한다. 실제 컨테이너 검증은 Docker가 있는 CI에서 수행한다.
+
+## 확장 → 배포 → 정리
+
+SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 컬럼 추가와 이중 쓰기, (2) 새 컬럼 읽는 앱 배포와 이전 앱 종료 확인, (3) 보관 기간 후 옛 컬럼 정리로 나눈다. `node scripts/check-migrations.mjs`는 기준 ref 이후 새 migration.sql만 검사한다. 기존 위험 SQL이나 기존 migration 수정을 재검사하는 규칙이 아니다. DROP TABLE/COLUMN/CONSTRAINT/INDEX, 컬럼 타입·NOT NULL 변경, RENAME은 실패한다. 정리 단계는 해당 DDL 바로 앞에 `-- migration-lint: allow DROP COLUMN — 이전 읽기 앱 종료 후 2주 경과`처럼 정확한 규칙과 검토 가능한 사유를 쓴다. CI에서는 PR base SHA 또는 push의 before SHA를 기준으로 사용한다.
+
+## Next 컴파일 캐시
+
+두 웹 빌드는 각각 gf-next-cache/pc-next-cache BuildKit mount를 사용한다. shared-instance workflow는 SHA 키와 OS restore prefix의 Actions cache, 고정 커밋의 cache-dance로 mount를 복원·추출한다. 기존 GHA 이미지 레이어 캐시도 유지한다. 같은 브랜치의 두 번째 소스 변경 빌드에서 캐시 복원 로그와 Next 컴파일 시간을 비교한다. 캐시를 적용했다고 실제 속도 향상을 측정한 것으로 간주하지 않는다. 저장 한도·보존 정책은 GitHub 설정을 따른다.
+
+## Bambyul DNS와 클라이언트 설정
+
+- `game.bambyul.com`, `api.game.bambyul.com`, `contest.bambyul.com`, `api.contest.bambyul.com`의 A/AAAA 레코드를 같은 EC2 고정 주소로 연결한다. Caddy가 각 호스트의 TLS 인증서를 발급한다.
+- `host.env.example`의 네 DOMAIN 값을 복사하고 `proxy.sh validate` 후 시작한다. API 주소는 `api.<웹 도메인>` 규칙이며 네 호스트는 서로 달라야 한다.
+- GitHub Variables의 `GF_SITE_URL`은 `https://game.bambyul.com`, `PHOTO_CONTEST_SITE_URL`은 `https://contest.bambyul.com`으로 지정한다. 빌드·통합 검사의 기본 운영 origin도 이 값이다. CI HTTPS 요청은 loopback·테스트 CA를 사용하므로 실제 DNS나 운영 서버에 연결하지 않는다.
+- 모바일 release의 `EXPO_PUBLIC_WEB_ORIGIN`은 각 앱의 `.env.production.example`을 참고한다. 앱 이름·홈 화면 아이콘은 네이티브 앱을 새로 빌드해야 반영된다.

@@ -1,0 +1,360 @@
+diff --git a/dist/SimulatePreloadedQuery.cc.cjs b/dist/SimulatePreloadedQuery.cc.cjs
+index d7237ebd1dd7eead574dd557f4ff1b83197c4f7d..ec7366c18d42d2a133a7732fbce73f07b9e4b4da 100644
+--- a/dist/SimulatePreloadedQuery.cc.cjs
++++ b/dist/SimulatePreloadedQuery.cc.cjs
+@@ -68,20 +68,20 @@ var TeeToReadableStreamLink = class extends import_client.ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -116,14 +116,14 @@ var ReadFromReadableStreamLink = class extends import_client.ApolloLink {
+             return () => subscription.unsubscribe();
+           }
+           let forwarded = false;
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(new Error("Error from event stream. Redacted for security concerns.")); }).finally(() => {
+             if (!observer.closed && !forwarded) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/SimulatePreloadedQuery.cc.js b/dist/SimulatePreloadedQuery.cc.js
+index cb19d6f4a59f99bd316058a9824fada05b6e28a1..cb4d323d6b39da3d9546002dd231c1a90df7c00a 100644
+--- a/dist/SimulatePreloadedQuery.cc.js
++++ b/dist/SimulatePreloadedQuery.cc.js
+@@ -35,20 +35,20 @@ var TeeToReadableStreamLink = class extends ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -83,14 +83,14 @@ var ReadFromReadableStreamLink = class extends ApolloLink {
+             return () => subscription.unsubscribe();
+           }
+           let forwarded = false;
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(new Error("Error from event stream. Redacted for security concerns.")); }).finally(() => {
+             if (!observer.closed && !forwarded) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/index.browser.cjs b/dist/index.browser.cjs
+index b62f529913035e7107207c03b026e4e4c9b09914..53cf2eda2d5118ad79fdb5640607ead1d34232d6 100644
+--- a/dist/index.browser.cjs
++++ b/dist/index.browser.cjs
+@@ -216,20 +216,20 @@ var TeeToReadableStreamLink = class extends client.ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -264,14 +264,14 @@ var ReadFromReadableStreamLink = class extends client.ApolloLink {
+             return () => subscription.unsubscribe();
+           }
+           let forwarded = false;
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(error); }).finally(() => {
+             if (!observer.closed && !forwarded) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/index.browser.js b/dist/index.browser.js
+index 303d477288edde6fb66adb3dc22c583409d7c4f2..473d8e271051b1f8121716dd9ff6c661f69db3dd 100644
+--- a/dist/index.browser.js
++++ b/dist/index.browser.js
+@@ -210,20 +210,20 @@ var TeeToReadableStreamLink = class extends ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -258,14 +258,14 @@ var ReadFromReadableStreamLink = class extends ApolloLink {
+             return () => subscription.unsubscribe();
+           }
+           let forwarded = false;
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(error); }).finally(() => {
+             if (!observer.closed && !forwarded) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/index.rsc.cjs b/dist/index.rsc.cjs
+index f8cfe4e8ea3dfd106c3fc762990aaa5b1577dcee..f85984db94ed2bde0ed9a9558ef23df0d2a0036c 100644
+--- a/dist/index.rsc.cjs
++++ b/dist/index.rsc.cjs
+@@ -48,20 +48,20 @@ var TeeToReadableStreamLink = class extends client.ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -96,14 +96,14 @@ var ReadFromReadableStreamLink = class extends client.ApolloLink {
+             return () => subscription.unsubscribe();
+           }
+           let forwarded = false;
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(error); }).finally(() => {
+             if (!observer.closed && !forwarded) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/index.rsc.js b/dist/index.rsc.js
+index a3ea1ba814266a4d48b1ba1cc71b239e97839600..9b29710451eec6eb43ca81e336cf17753935c195 100644
+--- a/dist/index.rsc.js
++++ b/dist/index.rsc.js
+@@ -42,20 +42,20 @@ var TeeToReadableStreamLink = class extends ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -90,14 +90,14 @@ var ReadFromReadableStreamLink = class extends ApolloLink {
+             return () => subscription.unsubscribe();
+           }
+           let forwarded = false;
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(error); }).finally(() => {
+             if (!observer.closed && !forwarded) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/index.ssr.cjs b/dist/index.ssr.cjs
+index 34180731aaf13022b0ae6156858dad0de7b9cbf8..8a7a126b68c00d0c3b13056438816332d812bb18 100644
+--- a/dist/index.ssr.cjs
++++ b/dist/index.ssr.cjs
+@@ -235,20 +235,20 @@ var TeeToReadableStreamLink = class extends client.ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -282,14 +282,14 @@ var ReadFromReadableStreamLink = class extends client.ApolloLink {
+             const subscription = forward(operation).subscribe(observer);
+             return () => subscription.unsubscribe();
+           }
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(new Error("Error from event stream. Redacted for security concerns.")); }).finally(() => {
+             if (!observer.closed && true) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {
+diff --git a/dist/index.ssr.js b/dist/index.ssr.js
+index 2975bd5fed0add49eef945ddf72a8111195dbebd..b89f0a6395754f5fd2f545ac7a1e713035d65ed9 100644
+--- a/dist/index.ssr.js
++++ b/dist/index.ssr.js
+@@ -229,20 +229,20 @@ var TeeToReadableStreamLink = class extends ApolloLink {
+           let subscribed = true;
+           forward(operation).subscribe({
+             next(result) {
+-              controller.enqueue({ type: "next", value: result });
++              try { controller.enqueue({ type: "next", value: result }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               if (subscribed) {
+                 observer.next(result);
+               }
+             },
+             error(error) {
+-              controller.enqueue({ type: "error" });
++              try { controller.enqueue({ type: "error" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.error(error);
+               }
+             },
+             complete() {
+-              controller.enqueue({ type: "completed" });
++              try { controller.enqueue({ type: "completed" }); } catch (error) { if (!(error instanceof TypeError && error.code === "ERR_INVALID_STATE")) throw error; }
+               tryClose();
+               if (subscribed) {
+                 observer.complete();
+@@ -276,14 +276,14 @@ var ReadFromReadableStreamLink = class extends ApolloLink {
+             const subscription = forward(operation).subscribe(observer);
+             return () => subscription.unsubscribe();
+           }
+-          consume(reader).finally(() => {
++          consume(reader).catch((error) => { if (!aborted) observer.error(new Error("Error from event stream. Redacted for security concerns.")); }).finally(() => {
+             if (!observer.closed && true) {
+               observer.complete();
+             }
+           });
+           let onAbort = () => {
+             aborted = true;
+-            reader.cancel();
++            reader.cancel().catch(() => {});
+           };
+           return () => onAbort();
+           async function consume(reader2) {

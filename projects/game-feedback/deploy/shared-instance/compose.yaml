@@ -12,6 +12,8 @@ x-api: &api
   GF_DEMO_MODE: 'false'
   GF_TEST_AUTH_ENABLED: 'false'
   GF_PREFETCH_TESTING: 'false'
+  GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
+  GF_CACHE_REVALIDATION_URL: http://gf-web:3300/_internal/cache/revalidate
   GF_MEDIA_STORAGE: S3
   GF_S3_BUCKET: ${GAME_FEEDBACK_S3_BUCKET:?Set GAME_FEEDBACK_S3_BUCKET}
   OTHER_SERVICE_S3_BUCKET: ${PHOTO_CONTEST_S3_BUCKET:?Set PHOTO_CONTEST_S3_BUCKET}
@@ -28,6 +30,9 @@ x-api: &api
   DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
   SUPERCELL_API_TOKEN: ${SUPERCELL_API_TOKEN:-}
   GF_ADMIN_GOOGLE_SUB: ${GF_ADMIN_GOOGLE_SUB:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+  SENTRY_RELEASE: ${RELEASE_SHA:-}
   NODE_OPTIONS: --max-old-space-size=256
 x-ca: &ca
   - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro
@@ -37,6 +42,7 @@ x-logging: &logging
 services:
   api:
     image: ${API_IMAGE:?Set API_IMAGE digest}
+    stop_grace_period: 20s
     restart: unless-stopped
     init: true
     environment: *api
@@ -56,13 +62,15 @@ services:
       interval: 15s
       timeout: 5s
       retries: 8
-      start_period: 15s
+      start_period: 30s
+      start_interval: 1s
     mem_limit: 512m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     logging: *logging
   web:
     image: ${WEB_IMAGE:?Set WEB_IMAGE digest}
+    stop_grace_period: 30s
     restart: unless-stopped
     init: true
     environment:
@@ -72,6 +80,7 @@ services:
       NEXT_TELEMETRY_DISABLED: '1'
       NODE_OPTIONS: --max-old-space-size=384
       GAME_FEEDBACK_API_URL: http://gf-api:4300
+      GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
       GAME_FEEDBACK_SITE_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
       GAME_FEEDBACK_CONTACT_EMAIL: ${GF_CONTACT_EMAIL:?Set GF_CONTACT_EMAIL}
       GAME_FEEDBACK_INDEXING: ${GF_INDEXING:-false}
@@ -90,6 +99,8 @@ services:
       interval: 15s
       timeout: 4s
       retries: 8
+      start_period: 20s
+      start_interval: 1s
     tmpfs: ['/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700']
     mem_limit: 640m
     cap_drop: [ALL]

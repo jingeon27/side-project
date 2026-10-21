@@ -1,8 +1,9 @@
-import type { TBoardKind } from '@game-feedback/contracts';
-import { translate, type TLocale } from '@/shared/i18n/index.server';
-import { ButtonLink } from '@side/design-system/next';
 import { appRoutes } from '@game-feedback/bridge';
+import type { TBoardKind } from '@game-feedback/contracts';
+import { ButtonLink } from '@side/design-system/next';
+
 import { boardByKind, gameBoardPath } from '@/features/board';
+import { translate, type TLocale } from '@/shared/i18n/index.server';
 
 export function GuideContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);

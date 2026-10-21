@@ -1,19 +1,24 @@
 'use client';
+
 import Link from 'next/link';
-import { useI18n } from '@/shared/i18n';
+
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowLeft } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { chatMessageOptions } from '@/features/chat';
 import { UserBadges } from '@/features/user';
+import { useI18n } from '@/shared/i18n';
+import { BackLink } from '@/shared/navigation';
 import { Avatar } from '@/shared/ui';
 import { useChatConnection } from '@/widgets/chat-realtime';
-import { ConversationActions } from './ConversationActions';
+
 import { useChatScroll } from '../model/use-chat-scroll';
 import { useVisibleRead } from '../model/use-visible-read';
 import { ChatComposer } from './ChatComposer';
 import { ChatHistory } from './ChatHistory';
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
+import { ConversationActions } from './ConversationActions';
 
 interface IConversationPaneProps {
   conversationId: string;
@@ -73,7 +78,7 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
           href={appRoutes.profile(locale, conversation.peer.id)}
           aria-label={t('{name} 프로필 보기', { name: conversation.peer.nickname })}
         >
-          <Avatar name={conversation.peer.nickname} size="small" />
+          <Avatar src={conversation.peer.avatarUrl} name={conversation.peer.nickname} size="small" />
           <div className="conversation-peer-info">
             <h2>{conversation.peer.nickname}</h2>
             {(conversation.peer.isVerified ||

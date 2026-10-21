@@ -1,5 +1,6 @@
-import { PostRoute, postMetadata } from '@/_pages/post/index.server';
 import { DocumentContent } from '@/_app/index.server';
+import { postMetadata, PostRoute } from '@/_pages/post/index.server';
+
 export { postMetadata as generateMetadata };
 export default function Page(props: Parameters<typeof PostRoute>[0]) {
   return (

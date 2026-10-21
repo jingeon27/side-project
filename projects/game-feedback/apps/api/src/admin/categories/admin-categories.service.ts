@@ -1,21 +1,25 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { CategoriesRepository } from './categories.repository';
-import type { CreateCategoryDto } from './category-input.dto';
 import { Inject, Injectable } from '@nestjs/common';
-import type { SessionRequest } from '../../auth/session.types';
+
+import { DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
+
 import { requireAdmin } from '../../auth/session-access';
+import type { SessionRequest } from '../../auth/session.types';
+import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
+import { PrismaClient } from '../../generated/prisma';
+import type { CreateCategoryDto } from './category-input.dto';
+
 @Injectable()
 export class AdminCategoriesService {
   constructor(
-    @Inject(CategoriesRepository) private readonly repository: CategoriesRepository,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
   async create(req: SessionRequest, input: CreateCategoryDto) {
     const u = requireAdmin(req);
-    return this.transactions.run(async (tx) => {
-      const c = await this.repository.createCategory({ data: input }, tx);
-      await this.repository.createAuditLog(
-        {
+    return this.cache.change(
+      async (tx) => {
+        const c = await (tx ?? this.db).category.create({ data: input });
+        await (tx ?? this.db).auditLog.create({
           data: {
             actorId: u.id,
             action: 'CREATE_CATEGORY',
@@ -23,10 +27,10 @@ export class AdminCategoriesService {
             targetId: c.id,
             detail: input.name,
           },
-        },
-        tx,
-      );
-      return c;
-    });
+        });
+        return c;
+      },
+      [DISCOVERY_CACHE_TAG],
+    );
   }
 }

@@ -3,11 +3,16 @@ import { ApolloProvider } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CreateContestDocument, GroupDocument, GroupRole, Phase } from '@/shared/api/generated';
-import type { ContestListItemFragment } from '@/shared/api/generated';
+import {
+  CreateContestDocument,
+  GroupDocument,
+  GroupRole,
+  Phase,
+  type ContestListItemFragment,
+} from '@/shared/api/generated';
 import { trackEvent } from '@/shared/model/analytics';
 
 import { CreateContestBottomSheet } from './CreateContestBottomSheet';
@@ -49,6 +54,8 @@ function renderSheet(mocks: MockLink.MockedResponse[] = []) {
     data: {
       group: {
         __typename: 'Group',
+        description: '',
+        avatarUrl: null,
         id: 'group-1',
         name: '웃음 연구소',
         role: GroupRole.Owner,

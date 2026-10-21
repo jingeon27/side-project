@@ -29,7 +29,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   await postEditor.getByRole('button', { name: '수정 완료', exact: true }).click();
   await expect(postEditor).not.toBeVisible();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-  await expect(page).toHaveTitle(`${title} | 플레이메이트`);
+  await expect(page).toHaveTitle(`${title} | Game Mate`);
 
   const commentBody = `방금 수정한 요청에 댓글을 남겨요. ${suffix}`;
   await page.getByRole('textbox', { name: '댓글 내용', exact: true }).fill(commentBody);
@@ -131,9 +131,9 @@ test('a session changed outside the screen clears the previous account confirmat
   });
   expect(signedIn.ok()).toBeTruthy();
   await page.goto('/ko/settings');
-  await expect(page.locator('.settings-profile')).toContainText('새벽의호그');
+  await expect(page.locator('.settings-profile:visible')).toContainText('새벽의호그');
   await page.getByRole('button', { name: '회원 탈퇴', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '플레이메이트를 떠나시겠어요?' });
+  const dialog = page.getByRole('dialog', { name: 'Game Mate를 떠나시겠어요?' });
   await dialog.getByRole('textbox').fill('탈퇴');
   await expect(dialog.getByRole('button', { name: '계정 영구 삭제하기' })).toBeEnabled();
 
@@ -144,7 +144,7 @@ test('a session changed outside the screen clears the previous account confirmat
   });
   expect(switched.ok()).toBeTruthy();
   await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')));
-  await expect(page.locator('.settings-profile')).toContainText('덱연구소');
+  await expect(page.locator('.settings-profile:visible')).toContainText('덱연구소');
   await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: '회원 탈퇴', exact: true }).click();
   await expect(dialog.getByRole('textbox')).toHaveValue('');

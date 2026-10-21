@@ -25,7 +25,7 @@ packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 V
 
 루트·프로젝트의 검사 명령은 앱과 패키지에 위임합니다. 테스트 러너·설정·파일·의존성은 각 앱 또는 패키지가 소유합니다. 화면 없는 API의 e2e는 Vitest·supertest로 실행하며, 공용 e2e 워크스페이스는 없습니다.
 
-웃긴순간은 사진·동영상·합성을 공유하는 상시 그룹 커뮤니티입니다. 홈은 가입한 그룹의 최신 게시물과 이달의 인기를, MY는 내 그룹을 보여 줍니다. 탐색에서 공개·비공개 그룹을 찾고 공개 게시물을 로그인 없이 감상합니다. 공개 그룹은 바로 가입하고 비공개 그룹은 그룹장이 수락합니다. 공개 그룹 SEO·사이트맵은 [SEO 안내](projects/photo-contest/docs/seo.md)에 정리했습니다.
+웃긴순간은 사진·동영상·합성을 공유하는 상시 그룹 커뮤니티입니다. 홈은 가입한 그룹의 최신 게시물과 이달의 인기를, MY는 내 그룹을 보여 줍니다. 탐색에서 공개·비공개 그룹을 찾고 공개 게시물을 로그인 없이 감상합니다. 공개 그룹은 바로 가입하고 비공개 그룹은 그룹장이 수락합니다. 그룹 안에서 대회를 열고 게시물 참여·투표·지난 대회 명예의 전당을 이용합니다. 그룹장은 부관리자 임명·해제와 관리자 양도를 관리합니다. 공개 그룹·대회·명예의 전당 SEO·사이트맵은 [SEO 안내](projects/photo-contest/docs/seo.md)에 정리했습니다.
 
 ## 시작
 
@@ -67,7 +67,22 @@ corepack yarn workspace @side/game-feedback dev:demo
 
 ```sh
 corepack yarn workspace @side/design-system check
+corepack yarn storybook
+corepack yarn build:storybook
 ```
+
+## 코드 포맷과 import 순서
+
+루트 Prettier와 `@ianvs/prettier-plugin-sort-imports`가 모든 워크스페이스의 포맷과 import 순서를 관리합니다. [`.prettierrc.json`](.prettierrc.json)의 `importOrder`에서 Node.js 내장 모듈 → React·Next.js → 외부 패키지 → 워크스페이스 패키지 → `@/`·`~/` 별칭 → 상대 경로 순서를 설정하며 그룹 사이에는 빈 줄을 둡니다. 새 프로젝트의 패키지 scope를 만들면 워크스페이스 정규식에도 추가하세요. CSS나 `server-only`처럼 값 없이 가져오는 import는 실행 순서를 유지합니다.
+
+```sh
+corepack yarn format:check
+corepack yarn format
+# 수정한 파일만 정리할 때
+corepack yarn prettier --write packages/design-system/src/index.ts
+```
+
+편집기에서는 저장소에 설치된 Prettier와 루트 설정을 사용하세요. NestJS의 legacy decorator와 TypeScript 6.0.2 import 문법도 지원하도록 설정했습니다.
 
 ## 검증
 
@@ -86,7 +101,7 @@ corepack yarn build:photo-contest
 corepack yarn format:check
 ```
 
-`test:api`는 웹·모바일이 소비하는 실제 API 계약을, `test:e2e`는 API의 supertest와 웹·모바일의 Playwright를 실행합니다. `TEST_DATABASE_URL`을 우선 사용하고 실행마다 임시 스키마를 만든 뒤 제거합니다. 개발 서버의 포트·빌드 폴더·데이터를 재사용하지 않습니다.
+`test:api`는 웹·모바일이 소비하는 실제 API 계약을, API의 `test:integration`은 실제 DB+supertest를 실행하며 기존 `test:e2e`는 호환 위임입니다. 웹·모바일의 `test:e2e`는 Playwright를 실행합니다. 새 단위·통합 사양은 `.spec.ts(x)`를 사용합니다. `TEST_DATABASE_URL`을 우선 사용하고 실행마다 임시 스키마를 만든 뒤 제거합니다. 개발 서버의 포트·빌드 폴더·데이터를 재사용하지 않습니다.
 
 새 프로젝트는 `@side/<name>` 집계 패키지에 `test`·`build`·`typecheck`·`check`를 정의합니다. 여러 프로젝트가 함께 쓰는 코드만 루트 `packages/*`에 둡니다.
 
@@ -95,3 +110,17 @@ corepack yarn format:check
 웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/typescript-config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
 
 새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.
+
+## Bambyul · 밤별
+
+‘밤하늘의 별’이라는 의미의 공통 브랜드다. 작성자 김진건의 이름에 담긴 ‘별’과 ‘하늘’에서 가져왔다.
+
+| 제품                    | 프로젝트      | 운영 웹                     | 운영 API                                         |
+| ----------------------- | ------------- | --------------------------- | ------------------------------------------------ |
+| 밤별 블로그             | blog          | https://blog.bambyul.com    | 별도 API 서버 없음 (`api.blog.bambyul.com` 예약) |
+| Game Mate               | game-feedback | https://game.bambyul.com    | https://api.game.bambyul.com/api                 |
+| 별사대 · 별난 사진 대회 | photo-contest | https://contest.bambyul.com | https://api.contest.bambyul.com/graphql          |
+
+서비스 로고는 서로 다른 실루엣과 색을 쓴다. 밤별 블로그는 남색의 책과 별, Game Mate는 초록색 게임패드, 별사대는 코랄색의 카메라와 별 렌즈다. 각 서비스의 favicon·Apple 아이콘·공유 이미지·네이티브 앱 아이콘은 해당 로고를 따른다.
+
+웹·WebView는 각 웹 origin의 `/api` 또는 `/backend` 프록시를 사용한다. API 공개 도메인과 서버 간 내부 upstream 주소를 구분하며, 별사대의 API GraphQL도 Next 프록시를 거쳐 공개 캐시를 무효화한다. DNS·TLS·호스팅 연결은 [공통 배포 안내](deploy/shared-instance/README.md)와 [블로그 배포 안내](projects/blog/docs/deployment.md)를 따른다.

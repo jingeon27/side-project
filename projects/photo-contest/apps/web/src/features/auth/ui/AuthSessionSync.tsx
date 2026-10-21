@@ -1,7 +1,8 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
 import { useEffect } from 'react';
+
+import { useQuery } from '@apollo/client/react';
 
 import { MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';

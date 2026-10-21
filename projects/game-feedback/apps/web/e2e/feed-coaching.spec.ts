@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 const origin = 'http://127.0.0.1:3301';
 
 test('the feed combines general posts and paid coaching and connects a student to the coach', async ({
@@ -136,7 +137,7 @@ test('students can recruit a paid coach and a new game receives the same five bo
   await page.getByRole('banner').getByRole('link', { name: '검색', exact: true }).click();
   await page.getByRole('textbox', { name: '게시판 검색', exact: true }).fill(suffix);
   await page.getByRole('button', { name: '검색', exact: true }).click();
-  await expect(page.locator('.post-list .post-card')).toHaveCount(1);
+  await expect(page.locator('.post-list .post-card:visible')).toHaveCount(1);
   await expect(page).toHaveURL(
     (url) =>
       url.pathname === '/ko/search' &&

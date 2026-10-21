@@ -1,6 +1,9 @@
 'use client';
+
 import { ArrowUpRight } from 'lucide-react';
+
 import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { TabLink } from '@/shared/navigation';
@@ -13,7 +16,7 @@ export function TopbarAccount({ href }: { href: string }) {
     <div className="header-account">
       {session.user ? (
         <TabLink href={href} className="user-button" aria-label={t('프로필')}>
-          <Avatar name={session.user.nickname} size="small" />
+          <Avatar src={session.user.avatarUrl} name={session.user.nickname} size="small" />
           <span>{session.user.nickname}</span>
         </TabLink>
       ) : (

@@ -1,4 +1,4 @@
-import { ApolloClient, ApolloLink, InMemoryCache, gql } from '@apollo/client';
+import { ApolloClient, ApolloLink, gql, InMemoryCache } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';

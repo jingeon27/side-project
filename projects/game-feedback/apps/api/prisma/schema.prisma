@@ -11,6 +11,8 @@ model User {
   googleSubject String? @unique
   demoKey String? @unique
   nickname String
+  profileLinks Json @default("[]")
+  avatar UserAvatar?
   isVerified Boolean @default(false)
   verifiedAt DateTime?
   bannedAt DateTime?
@@ -39,6 +41,16 @@ model User {
   following UserFollow[] @relation("followFollower")
   followers UserFollow[] @relation("followAuthor")
   socialIdentities SocialIdentity[]
+}
+model UserAvatar {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @unique @default(cuid())
+  bytes Bytes?
+  objectId String? @unique
+  object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
+  mimeType String
+  size Int
 }
 model SocialIdentity {
   provider String
@@ -164,6 +176,14 @@ model Comment {
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
 }
+model CacheInvalidation {
+  tag String @id
+  revision String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([updatedAt,tag])
+}
+
 model Notification {
   id String @id @default(cuid())
   actorId String?
@@ -261,6 +281,7 @@ model ChatAttachment {
   objectId String? @unique
   object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
+  uploadedAt DateTime? @default(now())
   @@index([conversationId,messageId])
   @@index([uploaderId,createdAt])
 }
@@ -278,6 +299,7 @@ model PostMedia {
   objectId String? @unique
   object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
+  uploadedAt DateTime? @default(now())
   @@index([uploaderId,postId,createdAt])
   @@index([postId])
 }
@@ -288,6 +310,7 @@ model MediaObject {
   key String @unique
   createdAt DateTime @default(now())
   retiredAt DateTime?
+  avatar UserAvatar?
   postMedia PostMedia?
   chatAttachment ChatAttachment?
   @@index([createdAt])

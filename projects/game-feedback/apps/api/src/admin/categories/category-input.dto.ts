@@ -1,6 +1,8 @@
-import { CategoryInputSchema } from '@game-feedback/contracts';
-import { Length, IsString, Matches, MaxLength } from 'class-validator';
+import { IsString, Length, Matches, MaxLength } from 'class-validator';
 import type { z } from 'zod';
+
+import { CategoryInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from '../../common/http/request-validation';
 
 export class CreateCategoryDto {

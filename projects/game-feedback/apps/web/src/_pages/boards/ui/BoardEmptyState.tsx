@@ -1,7 +1,8 @@
 'use client';
 
-import { ButtonLink } from '@side/design-system/next';
 import type { TBoardKind, TFeedbackStatus } from '@game-feedback/contracts';
+import { ButtonLink } from '@side/design-system/next';
+
 import { useI18n } from '@/shared/i18n';
 
 interface IBoardEmptyStateProps {

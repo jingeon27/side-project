@@ -29,7 +29,17 @@ compose() {
 }
 activate() {
   local directory=$1
-  compose "$directory" up -d --no-deps --pull never --wait --wait-timeout "$WAIT" api web || return 1
+  local web_id drain_started
+  web_id=$(compose "$directory" ps -aq web) || return 1
+  drain_started=$SECONDS
+  # Drain SSR while the old API still serves its in-flight reads.
+  compose "$directory" stop web || return 1
+  printf 'Web drain completed in %ss\n' "$((SECONDS - drain_started))"
+  if [[ -n "$web_id" ]]; then
+    docker inspect --format 'Web shutdown: exit={{.State.ExitCode}} oom={{.State.OOMKilled}}' "$web_id" || return 1
+  fi
+  compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" api || return 1
+  compose "$directory" up -d --force-recreate --no-deps --pull never --wait --wait-timeout "$WAIT" web || return 1
   compose "$directory" exec -T web node -e \
     "fetch('http://127.0.0.1:'+process.env.PORT+'/_health/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 }
@@ -45,6 +55,14 @@ mark() {
   if [[ -n "$old" && "$old" != "$next" ]]; then ln -sfn "$old" "$SERVICE_ROOT/previous"; fi
   ln -sfn "$next" "$SERVICE_ROOT/current"
 }
+
+if [[ "$ACTION" == deploy || "$ACTION" == rollback ]]; then
+  engine=$(docker version --format '{{.Server.Version}}')
+  [[ "${engine%%.*}" =~ ^[0-9]+$ && "${engine%%.*}" -ge 25 ]] || {
+    echo 'Docker Engine 25+ is required for startup health intervals.' >&2
+    exit 1
+  }
+fi
 
 if [[ "$ACTION" == deploy ]]; then
   [[ $# == 3 ]]

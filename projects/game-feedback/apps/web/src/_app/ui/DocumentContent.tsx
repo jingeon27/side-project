@@ -1,6 +1,8 @@
 import { Suspense, type ReactNode } from 'react';
-import { serviceContext } from '../providers/service-context.server';
+
 import { LoadingState } from '@/shared/ui';
+
+import { serviceContext } from '../providers/service-context.server';
 
 export async function isClientNavigation() {
   return (await serviceContext()).navigation;

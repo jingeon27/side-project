@@ -1,8 +1,11 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, cn } from '@side/design-system';
+
 import type { ReactNode } from 'react';
+
+import { Button, cn } from '@side/design-system';
+
 import { getContactEmail } from '@/shared/config';
+import { useI18n } from '@/shared/i18n';
 
 interface IErrorRecoveryProps {
   title: string;

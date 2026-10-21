@@ -1,9 +1,11 @@
-import { UseGuards, Controller, HttpCode, Inject, Post, Req } from '@nestjs/common';
-import { AdminGuard } from '../../common/http/session.guard';
-import { CreateCategoryDto } from './category-input.dto';
-import { ValidatedBody } from '../../common/http/request-validation';
+import { Controller, HttpCode, Inject, Post, Req, UseGuards } from '@nestjs/common';
+
 import type { SessionRequest } from '../../auth/session.types';
+import { ValidatedBody } from '../../common/http/request-validation';
+import { AdminGuard } from '../../common/http/session.guard';
 import { AdminCategoriesService } from './admin-categories.service';
+import { CreateCategoryDto } from './category-input.dto';
+
 @UseGuards(AdminGuard)
 @Controller('api/admin/categories')
 export class AdminCategoriesController {
