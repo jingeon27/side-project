@@ -49,7 +49,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 
 `/sitemap.xml`과 `/robots.txt`는 언어 경로 밖의 루트에서 제공합니다. Next.js의 `app/sitemap.ts`, `app/robots.ts`가 빌드 시 생성하므로 `public`에 별도 파일을 복사할 필요는 없습니다. `SITE_URL`을 바꾸면 다시 빌드해야 두 파일에도 새 도메인이 반영됩니다.
 
-- 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 태그와 실제 본문이 있는 글을 포함합니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 현재 글은 한국어 27편·영어 27편이며, 글별 `lastmod`와 실제 번역의 `hreflang`을 제공합니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
+- 사이트맵은 한국어·영어 홈, 목록, 소개, 글이 있는 카테고리, 태그와 실제 본문이 있는 글을 포함합니다. 글이 없는 카테고리 페이지는 만들지 않고(404) `hreflang`에도 넣지 않습니다. 현재 글은 한국어 28편·영어 28편이며, 글별 `lastmod`와 실제 번역의 `hreflang`을 제공합니다. 새 글과 번역은 콘텐츠 생성·빌드 후 반영됩니다.
 - robots.txt는 공개 페이지와 렌더링에 필요한 `/_next/`의 JS·CSS·이미지 접근을 허용하고 `/api/`만 제외합니다. `Sitemap`에는 같은 `SITE_URL`의 `/sitemap.xml`을 지정합니다. [Google의 JavaScript 수집·렌더링 안내](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics#how-google-processes-javascript)
 
 1. 실제 도메인을 등록하고 DNS TXT로 소유권을 확인합니다. URL-prefix 방식이라면 HTML tag의 verification 값만 `GOOGLE_SITE_VERIFICATION`에 지정할 수 있습니다.
