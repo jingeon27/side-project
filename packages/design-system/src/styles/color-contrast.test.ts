@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { colorModes, contrastRatio, readStyle, resolveColor } from '../test/color-tokens';
+import {
+  colorModes,
+  contrastRatio,
+  parseHexTokens,
+  readSchemeTokens,
+  readStyle,
+  resolveColor,
+} from '../test/color-tokens';
 
 const pageBackgrounds = ['canvas', 'surface', 'sunken', 'neutral-soft', 'brand-soft'];
 
@@ -37,5 +44,24 @@ describe('글자 토큰 대비', () => {
           .toBeGreaterThanOrEqual(4.5);
       }
     }
+  });
+});
+
+describe('light-dark() 대체값', () => {
+  const css = readStyle('color-schemes.css');
+  const fallbackStart = css.indexOf('@supports not (color: light-dark(#000, #fff))');
+  const fallback = fallbackStart < 0 ? '' : css.slice(fallbackStart);
+
+  function fallbackTokens(selector: string) {
+    const start = fallback.indexOf(`${selector} {`);
+    if (start < 0) throw new Error(`${selector} 대체 블록이 없습니다.`);
+    return parseHexTokens(fallback.slice(start, fallback.indexOf('}', start)));
+  }
+
+  it('미지원 브라우저용 hex 값은 light-dark()의 라이트·다크 인자와 같아야 한다', () => {
+    expect(fallback).not.toBe('');
+    expect(fallbackTokens(':root[data-theme]')).toEqual(readSchemeTokens('light'));
+    expect(fallbackTokens(":root[data-theme='dark']")).toEqual(readSchemeTokens('dark'));
+    expect(fallbackTokens(":root[data-theme]:not([data-theme='light'])")).toEqual(readSchemeTokens('dark'));
   });
 });

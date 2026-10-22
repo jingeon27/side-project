@@ -12,7 +12,7 @@ export function readStyle(file: string) {
   return readFileSync(join(stylesDir, file), 'utf8');
 }
 
-function parseHexTokens(css: string) {
+export function parseHexTokens(css: string) {
   return Object.fromEntries(
     [...css.matchAll(/--color-([a-z0-9-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map(([, name, value]) => [
       name,
