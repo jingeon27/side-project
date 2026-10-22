@@ -43,10 +43,9 @@ jobs:
           node-version: 24
       - run: corepack enable
       - run: yarn install --immutable
-      - name: Generate and validate content and SEO
-        run: |
-          yarn workspace @blog/web content:generate
-          yarn workspace @blog/web content:validate
+      # Validate the committed registry before anything regenerates it; later steps run content:generate themselves.
+      - name: Validate committed content and SEO registry
+        run: yarn workspace @blog/web content:validate
       - run: yarn workspace @blog/web typecheck
       - run: yarn workspace @blog/web lint
       - run: yarn workspace @blog/web test
