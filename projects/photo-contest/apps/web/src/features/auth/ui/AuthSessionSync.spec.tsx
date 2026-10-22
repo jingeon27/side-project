@@ -94,7 +94,7 @@ describe('AuthSessionSync', () => {
     expect(trackEvent).not.toHaveBeenCalled();
   });
 
-  it('로그인이 끝나지 않았으면(비로그인) 표시만 지우고 아무것도 보내지 않아야 한다', async () => {
+  it('로그인이 끝나지 않았으면(비로그인) 표시를 지우고 로그인 성공·사용자 식별을 보내지 않아야 한다', async () => {
     savePendingLogin({ method: 'kakao', next: '/me' });
     renderSync(null);
 
@@ -102,6 +102,7 @@ describe('AuthSessionSync', () => {
     expect(trackEvent).not.toHaveBeenCalled();
     expect(identifyUser).not.toHaveBeenCalled();
     expect(router.replace).not.toHaveBeenCalled();
-    expect(authEvents()).toEqual([]);
+    // 앱은 식별된 사용자가 없으면 이 알림을 무시한다.
+    expect(authEvents()).toEqual([expect.objectContaining({ payload: { signedIn: false } })]);
   });
 });

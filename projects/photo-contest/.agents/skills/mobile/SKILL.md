@@ -21,8 +21,8 @@ description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView �
 
 ## 실행
 
-- Expo Go로는 열지 않는다(앱 스킴 콜백·네이티브 모듈). `APP_VARIANT=development`로 dev client를 만든 뒤 `start`. 개발 빌드만 평문 http를 허용한다.
-- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(기본 `http://localhost:3200`). Android 에뮬레이터는 `adb reverse tcp:3200 tcp:3200`(10.0.2.2를 쓰면 API의 Origin 검사가 POST를 막는다).
+- Expo Go로는 열지 않는다(앱 스킴 콜백·네이티브 모듈). `APP_VARIANT=development`로 dev client를 만든 뒤 `start`. 개발 빌드만 평문 http와 iOS 로컬 네트워크 예외를 허용한다.
+- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(개발 빌드만 기본 `http://localhost:3200`, 그 밖에는 https origin이 없으면 설정 단계에서 실패). Android 에뮬레이터는 `adb reverse tcp:3200 tcp:3200`(10.0.2.2를 쓰면 API의 Origin 검사가 POST를 막는다).
 - 앱은 웹 origin의 `/backend/*`만 부른다. API 주소를 따로 두지 않는다.
 - 네이티브 빌드·실기기 확인(키보드, 소셜 로그인 복귀, 파일 업로드, 공유 시트)은 테스트가 대신하지 못한다. 바꾼 뒤에는 실기기에서 직접 확인한다.
 

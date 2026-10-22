@@ -45,7 +45,7 @@ describe('createAnalytics', () => {
     expect(sdk.init).toHaveBeenCalledTimes(1);
     expect(sdk.init).toHaveBeenCalledWith(API_KEY, undefined, {
       autocapture: false,
-      trackingOptions: { adid: false, appSetId: false, idfv: false },
+      trackingOptions: { adid: false, appSetId: false, idfv: false, ipAddress: false },
     });
   });
 

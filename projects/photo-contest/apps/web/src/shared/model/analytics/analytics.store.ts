@@ -60,6 +60,11 @@ export function resetAnalytics() {
   client?.reset();
 }
 
+/** 세션이 끝나(만료 등) 비로그인으로 확인됐을 때. 식별된 사용자가 남아 있을 때만 지워 익명 방문의 기기 ID는 유지한다. */
+export function forgetAnalyticsUser() {
+  if (client?.getUserId()) client.reset();
+}
+
 const settle = async (pending: Promise<unknown>) => {
   try {
     await pending;
