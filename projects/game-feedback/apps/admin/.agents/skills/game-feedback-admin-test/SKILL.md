@@ -7,12 +7,13 @@ description: Admin(apps/admin)의 Vitest 단위 테스트(`scripts/test.mjs`)나
 
 ## Vitest (단위)
 
-- `vitest.config.ts`는 `src/**/*.{spec,test}.ts`만 `environment: 'node'`로 수집한다. `.tsx`·DOM 테스트는 수집되지 않고 jsdom 의존성도 없다. 컴포넌트 동작은 E2E로, 순수 함수와 options·mutation-options는 대상 파일 옆 Vitest로 검증한다.
+- `vitest.config.ts`는 `src/**/*.{spec,test}.ts`와 앱 루트의 `*.{spec,test}.ts`(설정 파일 옆, 예: `vite.config.spec.ts`)를 `environment: 'node'`로 수집한다. `.tsx`·DOM 테스트는 수집되지 않고 jsdom 의존성도 없다. 컴포넌트 동작은 E2E로, 순수 함수와 options·mutation-options는 대상 파일 옆 Vitest로 검증한다.
 - `scripts/test.mjs`는 `vitest/package.json`을 Node로 찾아 `vitest run <인자>`를 실행한다(Yarn의 workspace bin 누락 회피). 파일 경로·`-t` 같은 인자는 그대로 전달된다.
 - mutation 본보기 `src/features/auth/model/auth.mutation-options.spec.ts`: `vi.hoisted` + `vi.mock('../api/auth.api')`로 REST 경계만 바꾸고, 실제 `QueryClient`에서 `new MutationObserver(client, xMutationOptions(client)).mutate()`를 실행해 캐시 결과를 단언한다. 응답 fixture는 `@game-feedback/contracts` 스키마(`SessionSchema.parse`)로 만든다. React 훅을 렌더링하지 않는다.
 - 바꾼 곳에 따라 고칠 테스트
   - hash 경로·딥링크: `src/shared/lib/admin-route.spec.ts`. 잘못된 hash가 API ID가 되지 않는 사례를 유지한다.
   - 로그인·로그아웃·캐시 정리: `src/features/auth/model/auth.mutation-options.spec.ts`
+  - Vite 프록시 Origin 가드·운영 토큰 주입·설정 검증·`define`: `vite.config.spec.ts`(`localAdminGuard`·`adminServerSettings`를 실제 `IncomingMessage`/`ServerResponse`로 호출)
   - 화면 문구·흐름: `e2e/admin.spec.ts`
 
 ## Playwright 구성 (`playwright.config.ts`)

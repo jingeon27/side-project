@@ -46,7 +46,7 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
 ## 확인 (side 루트)
 
 - 쓰기 가드와 권한 분기는 `e2e/admin.spec.ts`의 첫 테스트가 검증한다. 다른 Origin의 `POST /api/auth/test-token`은 403, 일반 계정의 `GET /api/admin/support`는 403이고 관리자 메뉴가 없어야 한다.
-- 운영 모드에는 자동 테스트가 없다. 프록시나 `define`을 바꿨다면 43자 더미 토큰으로 build한 뒤 `dist/`에 그 값이 없는지 확인한다.
+- `vite.config.spec.ts`가 Origin 가드(허용 Origin·다른 사이트·다른 포트·Origin 없음·읽기 요청), 로컬/운영 모드의 프록시 헤더, 시작 검증, `define`에 토큰이 없는지를 단위 테스트한다. 실제 운영 API 연결은 자동 테스트가 없다. 프록시나 `define`을 바꿨다면 43자 더미 토큰으로 build한 뒤 `dist/`에 그 값이 없는지도 확인한다.
 
 ```sh
 corepack yarn workspace @game-feedback/admin test

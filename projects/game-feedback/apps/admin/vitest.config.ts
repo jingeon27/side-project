@@ -4,5 +4,5 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  test: { include: ['src/**/*.{spec,test}.ts'], environment: 'node' },
+  test: { include: ['src/**/*.{spec,test}.ts', '*.{spec,test}.ts'], environment: 'node' },
 });
