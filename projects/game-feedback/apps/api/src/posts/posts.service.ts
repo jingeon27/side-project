@@ -219,11 +219,16 @@ export class PostsService {
     );
   }
   async deletePost(req: SessionRequest, id: string) {
-    const u = requireUser(req),
-      p = await this.visiblePost(req, id);
-    if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.');
+    const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+        // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 글도 지울 수 있어야 한다.
+        const own = await tx.post.findFirst({
+          where: { id, authorId: u.id, deletedAt: null },
+          select: { id: true },
+        });
+        if (!own) throw await this.deletionDenied(req, id, tx);
         await tx.post.update({
           where: { id },
           data: {
@@ -234,14 +239,26 @@ export class PostsService {
             document: Prisma.DbNull,
             coaching: Prisma.DbNull,
             friendSale: Prisma.DbNull,
+            battle: Prisma.DbNull,
           },
         });
         await tx.notification.deleteMany({ where: { postId: id } });
         await tx.postMedia.deleteMany({ where: { postId: id } });
       },
-      [postCacheTag(id), DISCOVERY_CACHE_TAG],
+      () => [postCacheTag(id), DISCOVERY_CACHE_TAG],
     );
     return { ok: true };
+  }
+  /** 남의 글이면 볼 수 있을 때만 403, 볼 수 없거나 이미 지운 글은 404로 존재를 숨긴다. */
+  private async deletionDenied(req: SessionRequest, id: string, tx: Prisma.TransactionClient) {
+    const excluded = await this.visibility.excluded(req, tx);
+    const visible = await tx.post.findFirst({
+      where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
+      select: { id: true },
+    });
+    return visible
+      ? new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.')
+      : new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
   }
   async readPost(req: SessionRequest, id: string) {
     const u = requireUser(req),

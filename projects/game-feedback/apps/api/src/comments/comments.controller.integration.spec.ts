@@ -255,7 +255,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
     expect((await detail(postAuthor.agent, post.id)).comments).toEqual([]);
   });
 
-  it('omits hidden roots with every reply and denies reply mutations and reports through a hidden parent', async () => {
+  it('omits hidden roots with every reply and denies reply edits and reports through a hidden parent', async () => {
     const post = await createPost();
     const root = await comment(commenter.agent, post.id, '숨길 댓글');
     const reply = await comment(replier.agent, post.id, '숨겨질 답글', root.id);
@@ -271,12 +271,17 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       .set('Origin', origin)
       .send({ body: '숨김 후 수정' })
       .expect(404);
-    await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(404);
     await postAuthor.agent
       .post('/api/reports')
       .set('Origin', origin)
       .send({ targetType: 'COMMENT', targetId: reply.id, reason: 'SPAM' })
       .expect(404);
+    await postAuthor.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(404);
+    // 작성자 삭제는 소유권만 확인한다. 숨겨진 원댓글 아래 자기 답글도 지울 수 있다.
+    await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(200);
+    expect(await db.comment.findUniqueOrThrow({ where: { id: reply.id } })).toMatchObject({ body: '' });
+    await commenter.agent.delete(`/api/comments/${root.id}`).set('Origin', origin).expect(200);
+    await commenter.agent.delete(`/api/comments/${root.id}`).set('Origin', origin).expect(404);
   });
 
   it('hides active blocked-root threads but keeps anonymous deleted-root replies visible', async () => {
@@ -296,7 +301,6 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
         .set('Origin', origin)
         .send({ body: '차단 후 수정' })
         .expect(404);
-      await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(404);
       await replier.agent
         .post('/api/reports')
         .set('Origin', origin)
@@ -307,6 +311,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       expect(visible).toHaveLength(2);
       expect(visible[0]).toMatchObject({ id: root.id, author: null, body: '', isDeleted: true });
       expect(visible[1].id).toBe(reply.id);
+      await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(200);
     } finally {
       await db.block.delete({ where: { id: block.id } });
     }

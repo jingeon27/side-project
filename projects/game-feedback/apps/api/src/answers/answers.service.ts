@@ -5,9 +5,9 @@ import { postCacheTag } from '@game-feedback/contracts';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { ACTIVE_CONTENT } from '../common/content';
+import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
@@ -79,20 +79,42 @@ export class AnswersService {
     );
   }
   async deleteAnswer(req: SessionRequest, id: string) {
-    const u = requireUser(req),
-      a = await this.visibleAnswer(req, id);
-    if (a.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.');
+    const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Answer" WHERE "id" = ${id} FOR UPDATE`;
+        // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 답변도 지울 수 있어야 한다.
+        const own = await tx.answer.findFirst({
+          where: { id, authorId: u.id, deletedAt: null },
+          select: { postId: true },
+        });
+        if (!own) throw await this.deletionDenied(req, id, tx);
         await tx.answer.update({
           where: { id },
           data: { deletedAt: new Date(), body: '', helpful: false },
         });
         await tx.notification.deleteMany({ where: { answerId: id } });
+        return own;
       },
-      [postCacheTag(a.postId)],
+      (own) => [postCacheTag(own.postId)],
     );
     return { ok: true };
+  }
+  /** 남의 답변이면 볼 수 있을 때만 403, 볼 수 없거나 이미 지운 답변은 404로 존재를 숨긴다. */
+  private async deletionDenied(req: SessionRequest, id: string, tx: Prisma.TransactionClient) {
+    const excluded = await this.visibility.excluded(req, tx);
+    const visible = await tx.answer.findFirst({
+      where: {
+        id,
+        ...ACTIVE_CONTENT,
+        authorId: { notIn: excluded },
+        post: { ...ACTIVE_POST, authorId: { notIn: excluded } },
+      },
+      select: { id: true },
+    });
+    return visible
+      ? new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.')
+      : new ApiError(404, 'ANSWER_NOT_FOUND', '답변을 찾을 수 없습니다.');
   }
   async helpful(req: SessionRequest, id: string, input: HelpfulDto) {
     const u = requireUser(req),
