@@ -3,6 +3,7 @@ import { test as base, expect, type BrowserContext } from '@playwright/test';
 import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './env';
+import { waitForHydrationOnLoad } from './hydration';
 import { observeRuntimeErrors } from './runtime-errors';
 
 export async function authenticate(context: BrowserContext, nickname: string) {
@@ -44,7 +45,7 @@ export const test = base.extend<{ signIn: (nickname: string) => Promise<string> 
         document.head.append(style);
       }),
     );
-    await provide(page);
+    await provide(waitForHydrationOnLoad(page));
     expect(errors).toEqual([]);
   },
   signIn: async ({ context }, provide) => {
@@ -53,3 +54,4 @@ export const test = base.extend<{ signIn: (nickname: string) => Promise<string> 
 });
 
 export { expect };
+export { waitForHydrationOnLoad } from './hydration';
