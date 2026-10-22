@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 
 import { WEB_ORIGIN } from './support/env';
 import { productRequest, seedPost } from './support/photos';
-import { authenticate, expect, seedGroup, test } from './support/test';
+import { authenticate, expect, seedGroup, test, waitForHydrationOnLoad } from './support/test';
 
 test(
   '공개 그룹은 링크 없이 탐색하고 로그인 없이 사진·댓글·SEO를 읽을 수 있어야 한다',
@@ -176,7 +176,7 @@ test(
     const errors: string[] = [];
     try {
       const applicant = await authenticate(applicantContext, nickname);
-      const applicantPage = await applicantContext.newPage();
+      const applicantPage = waitForHydrationOnLoad(await applicantContext.newPage());
       applicantPage.on('pageerror', (error) => errors.push(error.message));
       await applicantPage.goto(groupPath);
       await expect(applicantPage.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();

@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
-import { authenticate, expect, test } from './support/test';
+import { authenticate, expect, test, waitForHydrationOnLoad } from './support/test';
 
 async function writePost(page: Page, title: string, video = false) {
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
@@ -54,7 +54,7 @@ test(
     const friendContext = await browser.newContext({ viewport: { width: 393, height: 851 } });
     try {
       await authenticate(friendContext, '통합 회원');
-      const friend = await friendContext.newPage();
+      const friend = waitForHydrationOnLoad(await friendContext.newPage());
       await friend.goto(invite);
       await friend.getByRole('button', { name: '초대 수락하고 가입하기' }).click();
       await expect(friend).toHaveURL(galleryUrl);

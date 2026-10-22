@@ -103,7 +103,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - run: corepack enable
-      - run: yarn install --immutable
+      - id: install
+        run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
       - name: Check deployment scripts
@@ -118,7 +119,7 @@ jobs:
       - run: yarn workspace @photo-contest/mobile test:api
       - run: yarn build:photo-contest
       - name: Check test schema cleanup
-        if: always()
+        if: always() && steps.install.outcome == 'success'
         run: yarn workspace @photo-contest/test-kit check:cleanup
   browser:
     runs-on: ubuntu-latest

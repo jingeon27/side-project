@@ -103,9 +103,23 @@ export function newlyAddedMigrations({ base, head = 'HEAD', cwd = process.cwd() 
   ];
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).split('\0').filter(Boolean);
 }
+// 강제 push의 before는 새 HEAD의 조상이 아니라서, 그대로 쓰면 그 사이 develop에 합쳐진 migration까지 새 파일로 센다.
+export function migrationBase({
+  requested,
+  head = 'HEAD',
+  fallback = 'origin/develop',
+  cwd = process.cwd(),
+}) {
+  if (!requested || /^0+$/.test(requested)) return fallback;
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', requested, head], { cwd, stdio: 'ignore' });
+    return requested;
+  } catch {
+    return fallback;
+  }
+}
 export function main() {
-  const requestedBase = process.env.MIGRATION_BASE_REF;
-  const base = !requestedBase || /^0+$/.test(requestedBase) ? 'origin/develop' : requestedBase;
+  const base = migrationBase({ requested: process.env.MIGRATION_BASE_REF });
   const files = newlyAddedMigrations({ base });
   const errors = files.flatMap((file) =>
     checkMigration(readFileSync(file, 'utf8')).map(
