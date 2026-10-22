@@ -109,7 +109,12 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
         </ServiceErrorBoundary>
       )}
       <ServiceErrorBoundary title={t('댓글')} resetKey={id}>
-        <PostCommentsSection post={post} comments={comments} locale={locale} />
+        <PostCommentsSection
+          post={post}
+          comments={comments}
+          cursor={detail.data.commentsCursor}
+          locale={locale}
+        />
       </ServiceErrorBoundary>
     </>
   );

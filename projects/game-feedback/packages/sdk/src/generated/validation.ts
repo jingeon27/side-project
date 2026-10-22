@@ -1885,6 +1885,7 @@ export const getPostResponseCommentsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:
 export const getPostResponseCommentsItemTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
+
 export const GetPostResponse = zod.object({
   "post": zod.object({
   "id": zod.string().min(1).max(getPostResponsePostIdMax),
@@ -2010,7 +2011,8 @@ export const GetPostResponse = zod.object({
   "isDeleted": zod.literal(true),
   "body": zod.literal(""),
   "author": zod.null()
-})]))
+})])),
+  "commentsCursor": zod.union([zod.string().min(1),zod.null()])
 })
 
 
@@ -2419,6 +2421,72 @@ export const recordPostViewResponseViewCountMax = 9007199254740991;
 
 export const RecordPostViewResponse = zod.object({
   "viewCount": zod.int().min(recordPostViewResponseViewCountMin).max(recordPostViewResponseViewCountMax)
+})
+
+
+export const ListPostCommentsParams = zod.object({
+  "id": zod.string()
+})
+
+export const listPostCommentsQueryLimitDefault = 12;
+export const listPostCommentsQueryLimitMax = 50;
+
+
+
+export const ListPostCommentsQueryParams = zod.object({
+  "cursor": zod.string().optional(),
+  "limit": zod.int().min(1).max(listPostCommentsQueryLimitMax).default(listPostCommentsQueryLimitDefault)
+})
+
+export const listPostCommentsResponseItemsItemOneIdMax = 100;
+
+export const listPostCommentsResponseItemsItemOnePostIdMax = 100;
+
+export const listPostCommentsResponseItemsItemOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listPostCommentsResponseItemsItemOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listPostCommentsResponseItemsItemOneParentIdOneMax = 100;
+
+
+export const listPostCommentsResponseItemsItemOneAuthorIdMax = 100;
+
+
+export const listPostCommentsResponseItemsItemTwoIdMax = 100;
+
+export const listPostCommentsResponseItemsItemTwoPostIdMax = 100;
+
+export const listPostCommentsResponseItemsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listPostCommentsResponseItemsItemTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+
+export const ListPostCommentsResponse = zod.object({
+  "items": zod.array(zod.union([zod.object({
+  "id": zod.string().min(1).max(listPostCommentsResponseItemsItemOneIdMax),
+  "postId": zod.string().min(1).max(listPostCommentsResponseItemsItemOnePostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemOneCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemOneUpdatedAtRegExp),
+  "parentId": zod.union([zod.string().min(1).max(listPostCommentsResponseItemsItemOneParentIdOneMax),zod.null()]),
+  "isDeleted": zod.literal(false),
+  "body": zod.string().min(1),
+  "author": zod.object({
+  "id": zod.string().min(1).max(listPostCommentsResponseItemsItemOneAuthorIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+})
+}),zod.object({
+  "id": zod.string().min(1).max(listPostCommentsResponseItemsItemTwoIdMax),
+  "postId": zod.string().min(1).max(listPostCommentsResponseItemsItemTwoPostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemTwoCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemTwoUpdatedAtRegExp),
+  "parentId": zod.null(),
+  "isDeleted": zod.literal(true),
+  "body": zod.literal(""),
+  "author": zod.null()
+})])),
+  "nextCursor": zod.union([zod.string().min(1),zod.null()])
 })
 
 

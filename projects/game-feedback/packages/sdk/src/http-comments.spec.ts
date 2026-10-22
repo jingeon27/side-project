@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiResponseValidationError, createComment, getPost, listNotifications } from './index';
+import {
+  ApiResponseValidationError,
+  createComment,
+  getPost,
+  listNotifications,
+  listPostComments,
+} from './index';
 import { authorFixture, postFixture } from './test/fixtures';
 
 const timestamp = '2026-10-22T00:00:00.000Z';
@@ -70,6 +76,20 @@ describe('comment thread response validation', () => {
     };
     respond(fixture);
     expect(await getPost('post-1')).toEqual(fixture);
+  });
+
+  it('pages earlier comment threads by cursor and rejects a detail without the comment cursor', async () => {
+    const page = { items: [rootComment, replyComment], nextCursor: 'older-cursor' };
+    const fetcher = respond(page);
+    expect(await listPostComments('post-1', { cursor: 'cursor-1', limit: 30 })).toEqual(page);
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/posts/post-1/comments?cursor=cursor-1&limit=30');
+    respond({ ...page, nextCursor: '' });
+    await expect(listPostComments('post-1', { cursor: 'cursor-1' })).rejects.toBeInstanceOf(
+      ApiResponseValidationError,
+    );
+    const { commentsCursor: _cursor, ...withoutCursor } = postFixture();
+    respond(withoutCursor);
+    await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
   });
 
   it.each([

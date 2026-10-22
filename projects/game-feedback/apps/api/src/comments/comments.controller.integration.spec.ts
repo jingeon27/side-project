@@ -6,7 +6,13 @@ import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { CommentSchema, PostDetailSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
+import {
+  CommentPageSchema,
+  CommentSchema,
+  PostDetailSchema,
+  PostSchema,
+  SessionSchema,
+} from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
@@ -97,6 +103,37 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       root.id,
       reply.id,
     ]);
+  });
+
+  it('returns the latest comment threads in the detail and pages earlier threads with their replies', async () => {
+    const post = await createPost();
+    const roots = [];
+    for (let index = 0; index < 32; index += 1)
+      roots.push(await comment(commenter.agent, post.id, `페이지 원댓글 ${index}`));
+    const oldest = roots[0];
+    if (!oldest) throw new Error('Expected comment fixtures');
+    const reply = await comment(replier.agent, post.id, '가장 오래된 댓글의 답글', oldest.id);
+    const first = await detail(postAuthor.agent, post.id);
+    expect(first.comments.filter((item) => item.parentId === null)).toHaveLength(30);
+    expect(first.comments.map(({ id }) => id)).not.toContain(oldest.id);
+    expect(first.commentsCursor).toEqual(expect.any(String));
+    const earlier = CommentPageSchema.parse(
+      (
+        await postAuthor.agent
+          .get(`/api/posts/${post.id}/comments`)
+          .query({ cursor: first.commentsCursor, limit: 30 })
+          .expect(200)
+      ).body,
+    );
+    expect(earlier.items.map(({ id }) => id)).toEqual([oldest.id, roots[1]?.id, reply.id]);
+    expect(earlier.nextCursor).toBeNull();
+    await postAuthor.agent.get(`/api/posts/${post.id}/comments`).query({ cursor: 'broken' }).expect(400);
+    await db.post.update({ where: { id: post.id }, data: { hidden: true } });
+    await postAuthor.agent
+      .get(`/api/posts/${post.id}/comments`)
+      .query({ cursor: first.commentsCursor })
+      .expect(404);
+    expect((await detail(postAuthor.agent, (await createPost()).id)).commentsCursor).toBeNull();
   });
 
   it('notifies the root and post authors once each and skips self notifications', async () => {

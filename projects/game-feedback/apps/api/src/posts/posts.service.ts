@@ -6,7 +6,7 @@ import { responseAnswer } from '../answers/answer.presenter';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { responseComment } from '../comments/comment.presenter';
+import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
@@ -70,41 +70,13 @@ export class PostsService {
         include: { author: { select: authorSelect } },
         orderBy: [{ helpful: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
       }),
-      this.db.comment.findMany({
-        where: {
-          postId: id,
-          hidden: false,
-          OR: [
-            {
-              parentId: null,
-              OR: [{ deletedAt: null, authorId: { notIn: excluded } }, { deletedAt: { not: null } }],
-            },
-            {
-              parentId: { not: null },
-              deletedAt: null,
-              authorId: { notIn: excluded },
-              parent: {
-                hidden: false,
-                OR: [{ deletedAt: null, authorId: { notIn: excluded } }, { deletedAt: { not: null } }],
-              },
-            },
-          ],
-        },
-        include: {
-          author: {
-            select: authorSelect,
-          },
-        },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      }),
+      commentThreadPage(this.db, id, excluded, { limit: COMMENT_THREAD_PAGE }),
     ]);
-    const parentsWithReplies = new Set(comments.map((comment) => comment.parentId));
     return {
       post: responsePost({ ...p, answers }),
       answers: answers.map(responseAnswer),
-      comments: comments
-        .filter((comment) => comment.deletedAt === null || parentsWithReplies.has(comment.id))
-        .map((comment) => responseComment(comment)),
+      comments: comments.items,
+      commentsCursor: comments.nextCursor,
     };
   }
   async createPost(req: SessionRequest, input: CreatePostDto) {

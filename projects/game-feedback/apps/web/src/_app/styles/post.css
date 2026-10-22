@@ -316,6 +316,14 @@
     font-size: var(--text-caption);
     color: var(--color-muted);
   }
+  .comments-older {
+    display: grid;
+    justify-items: start;
+    gap: 6px;
+    padding-top: 12px;
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+  }
   .comment-list {
     display: grid;
     gap: 18px;

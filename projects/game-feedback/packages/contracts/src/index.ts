@@ -215,10 +215,17 @@ export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),
 });
+/** 최근 원댓글 스레드부터 나눈 댓글 한 페이지. 페이지 안은 오래된 순이고 각 원댓글의 답글을 함께 싣는다. */
+export const CommentPageSchema = z.object({
+  items: z.array(CommentSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
   answers: z.array(AnswerSchema),
   comments: z.array(CommentSchema),
+  /** 상세에 싣지 않은 이전 원댓글 스레드를 `listPostComments`로 받는 커서. 없으면 null. */
+  commentsCursor: z.string().min(1).nullable(),
 });
 export const PostViewInputSchema = z.object({ visitorId: z.uuid() }).strict();
 export const PostViewSchema = z.object({ viewCount: ResponseCountSchema });
@@ -411,6 +418,7 @@ export type Notification = z.infer<typeof NotificationSchema>;
 export type Session = z.infer<typeof SessionSchema>;
 export type PostList = z.infer<typeof PostListSchema>;
 export type PostDetail = z.infer<typeof PostDetailSchema>;
+export type CommentPage = z.infer<typeof CommentPageSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -478,6 +486,7 @@ export const schemas = {
   Notification: NotificationSchema,
   PostList: PostListSchema,
   PostDetail: PostDetailSchema,
+  CommentPage: CommentPageSchema,
   NotificationList: NotificationListSchema,
   Session: SessionSchema,
   OnboardInput: OnboardInputSchema,
@@ -730,6 +739,13 @@ export const operations: OperationSpec[] = [
     id: 'recordPostView',
     body: PostViewInputSchema,
     response: PostViewSchema,
+  },
+  {
+    method: 'get',
+    path: '/api/posts/{id}/comments',
+    id: 'listPostComments',
+    response: CommentPageSchema,
+    query: true,
   },
   {
     method: 'post',

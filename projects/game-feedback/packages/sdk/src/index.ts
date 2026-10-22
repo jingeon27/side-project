@@ -34,6 +34,7 @@ export {
   markHelpful,
   readAnswers,
   recordPostView,
+  listPostComments,
   createComment,
   updateComment,
   deleteComment,

@@ -552,6 +552,13 @@ const messages: Record<string, readonly [string, string]> = {
   '작성자와 1:1 채팅': ['Chat with the author', '投稿者と1対1チャット'],
   작성자: ['Author', '投稿者'],
   '아직 댓글이 없어요.': ['No comments yet.', 'コメントはまだありません。'],
+  '{count}개 이상': ['{count}+', '{count}件以上'],
+  '이전 댓글 더 보기': ['Show earlier comments', '以前のコメントを表示'],
+  '이전 댓글을 불러오고 있어요': ['Loading earlier comments', '以前のコメントを読み込んでいます'],
+  '이전 댓글을 불러오지 못했어요. 다시 시도해주세요.': [
+    'Could not load earlier comments. Please try again.',
+    '以前のコメントを読み込めませんでした。もう一度お試しください。',
+  ],
   '댓글을 남겨주세요': ['Write a comment', 'コメントを入力'],
   '로그인하고 댓글 남기기': ['Sign in to comment', 'ログインしてコメント'],
   '댓글을 남겼어요.': ['Comment posted.', 'コメントを投稿しました。'],

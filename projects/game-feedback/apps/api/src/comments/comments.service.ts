@@ -8,11 +8,13 @@ import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
+import type { ListQueryDto } from '../common/http/list-query.dto';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import type { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
+import { commentThreadPage } from './comment-page';
 import { activeCommentWhere } from './comment-visibility';
 import { responseComment } from './comment.presenter';
 
@@ -71,6 +73,14 @@ export class CommentsService {
       (row) => [postCacheTag(row.postId)],
     );
     return responseComment(c);
+  }
+  /** 상세 첫 페이지보다 이전의 원댓글 스레드. 게시글 가시성과 차단 관계는 상세와 같다. */
+  async page(req: SessionRequest, postId: string, query: ListQueryDto) {
+    await this.posts.visiblePost(req, postId);
+    return commentThreadPage(this.db, postId, await this.visibility.excluded(req), {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
   }
   async visibleComment(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
