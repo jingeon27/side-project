@@ -8,6 +8,15 @@ export type { IAppRoute, TAppScreen, TAppTab } from './routes';
 export const BRIDGE_EVENT = 'game-feedback:native';
 export const APP_SCHEME = 'gamefeedback';
 export const APP_CALLBACK = `${APP_SCHEME}://auth/callback`;
+/**
+ * 앱 소셜 로그인 콜백 경로. 웹 origin의 이 경로만 검증된 App Link·Universal Link로 앱에 연결한다(웹 AASA·assetlinks,
+ * 앱 associated domains·intent filter, API `APP_AUTH_CALLBACK_PATH`와 같다). 커스텀 스킴은 로그인 밖 딥링크에만 쓴다.
+ */
+export const APP_AUTH_CALLBACK_PATH = '/app-auth/callback';
+/** 예: https://game.example → https://game.example/app-auth/callback */
+export function buildAppAuthCallbackUrl(origin: string) {
+  return `${origin}${APP_AUTH_CALLBACK_PATH}`;
+}
 const id = z.string().min(1).max(100);
 const ticket = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const LoginProviderSchema = z.enum(['x', 'kakao', 'discord', 'google']);
