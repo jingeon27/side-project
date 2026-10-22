@@ -4,6 +4,7 @@ import { createTestImage } from '@photo-contest/test-kit';
 
 import { createTestApp, uploadToStorage, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
+import { createEntry, createGroupContest } from '../../test/support/group-contest';
 import { MaintenanceService } from '../maintenance/maintenance.service';
 
 const REQUEST =
@@ -12,6 +13,8 @@ const COMPLETE = 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}';
 const CREATE =
   'mutation($group:ID!,$upload:ID!){createPost(groupId:$group,uploadId:$upload,title:"정책 안 삭제",rightsConfirmed:true){id}}';
 const DELETE = 'mutation($id:ID!){deletePost(postId:$id)}';
+const LIKE = 'mutation($id:ID!){likePost(postId:$id){id likedByMe}}';
+const HIDE = 'mutation($id:ID!,$hidden:Boolean!){setPostHidden(postId:$id,hidden:$hidden)}';
 
 interface ITicket {
   id: string;
@@ -19,7 +22,7 @@ interface ITicket {
   fields: Array<{ name: string; value: string }>;
 }
 
-describe('PostService 삭제 회귀', () => {
+describe('PostService 회귀', () => {
   let api: ITestApi;
   let owner: ITestUser;
   let groupId: string;
@@ -69,5 +72,25 @@ describe('PostService 삭제 회귀', () => {
     await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 21 * 60_000));
     await expect(api.storage.head(key)).rejects.toThrow();
     expect(await api.db.postUpload.findUnique({ where: { id: ticket.id } })).toBeNull();
+  });
+
+  it('좋아요한 대회 작품이 숨겨져도 그 대회의 좋아요 한도가 잠기지 않아야 한다', async () => {
+    // 한도 집계에 숨긴 작품이 섞였는데 숨긴 작품은 목록에 없어 취소할 수도 없었다.
+    const member = await api.signIn('정책삭제-좋아요 회원');
+    const group = await createGroup(api, owner, '좋아요 잠김 그룹', [member]);
+    const contestId = await createGroupContest(api, owner, group.id, '좋아요 잠김 대회');
+    const first = await createEntry(api, owner, group.id, contestId);
+    const second = await createEntry(api, owner, group.id, contestId);
+    await api.gqlOk(member.cookie, LIKE, { id: first.id });
+    expect((await api.gqlFail(member.cookie, LIKE, { id: second.id })).message).toContain('1개 작품까지만');
+
+    await api.gqlOk(owner.cookie, HIDE, { id: first.id, hidden: true });
+    const { likePost } = await api.gqlOk<{ likePost: { likedByMe: boolean } }>(member.cookie, LIKE, {
+      id: second.id,
+    });
+    expect(likePost.likedByMe).toBe(true);
+    expect(
+      await api.db.postLike.count({ where: { userId: member.id, post: { contestId, hidden: false } } }),
+    ).toBe(1);
   });
 });

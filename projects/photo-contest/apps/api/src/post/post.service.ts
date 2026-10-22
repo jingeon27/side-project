@@ -206,8 +206,9 @@ export class PostService {
         : null;
       if (liked && !existing && post.contestId) {
         const contest = await tx.contest.findUniqueOrThrow({ where: { id: post.contestId } });
+        // 숨긴 작품은 목록에 없어 취소할 수 없으므로 한도에서 뺀다. 그렇지 않으면 그 대회의 좋아요가 잠긴다.
         const count = await tx.postLike.count({
-          where: { userId: viewer.id, post: { contestId: post.contestId } },
+          where: { userId: viewer.id, post: { contestId: post.contestId, hidden: false } },
         });
         if (count >= contest.likeLimit)
           fail(

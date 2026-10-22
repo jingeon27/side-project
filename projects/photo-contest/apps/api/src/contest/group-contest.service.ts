@@ -24,7 +24,11 @@ import { rankResults } from './result-ranking';
 function contestInclude(viewerId: string | null) {
   return {
     _count: { select: { posts: { where: { hidden: false } } } },
-    postVotes: { where: { voterId: { in: viewerId ? [viewerId] : [] } }, select: { postId: true } },
+    // 숨긴 작품에 던진 표는 결과에서 빠지므로 아직 투표하지 않은 것으로 보여 준다.
+    postVotes: {
+      where: { voterId: { in: viewerId ? [viewerId] : [] }, post: { hidden: false } },
+      select: { postId: true },
+    },
   } satisfies Prisma.ContestInclude;
 }
 type TContestRow = Prisma.ContestGetPayload<{ include: ReturnType<typeof contestInclude> }>;
@@ -125,9 +129,15 @@ export class GroupContestService {
       if (!post || post.hidden || post.contestId !== contestId || post.groupId !== contest.groupId)
         fail('대회 참여 게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       if (post.authorId === viewer.id) fail('자신의 게시물에는 투표할 수 없습니다.');
-      await (tx ?? this.db).postContestVote.create({ data: { contestId, postId, voterId: viewer.id } });
+      // 숨긴 작품에 던진 표는 결과에서 빠진다. 그 표에 묶여 다시 투표하지 못하는 일이 없도록 새 표로 바꾼다.
+      await (tx ?? this.db).postContestVote.deleteMany({
+        where: { contestId, voterId: viewer.id, post: { hidden: true } },
+      });
+      const vote = await (tx ?? this.db).postContestVote.create({
+        data: { contestId, postId, voterId: viewer.id },
+      });
       await recordEvent(tx ?? this.db, {
-        id: `post-vote:${contestId}:${viewer.id}`,
+        id: `post-vote:${vote.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,
         properties: { contestId, postId },
