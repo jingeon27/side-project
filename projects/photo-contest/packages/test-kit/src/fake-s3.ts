@@ -37,6 +37,16 @@ interface IObjectMeta {
   lastModified: string;
 }
 
+interface IFormFile {
+  name: string;
+  size: number;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
+
+interface IFormEntries {
+  forEach: (callback: (value: string | IFormFile, name: string) => void) => void;
+}
+
 interface IStoredObject {
   body: Buffer;
   contentType: string;
@@ -321,8 +331,11 @@ export async function startFakeS3(options: IFakeS3Options): Promise<IFakeS3> {
       throw new S3Error(400, 'MalformedPOSTRequest', 'multipart 본문을 읽을 수 없습니다.');
     });
     const fields = new Map<string, string>();
-    let file: File | undefined;
-    for (const [name, value] of form) {
+    let file: IFormFile | undefined;
+    // 앱마다 다른 DOM 타입 설정(React Native 포함)에서도 같은 순서로 읽도록 forEach로 꺼낸다.
+    const entries: Array<[string, string | IFormFile]> = [];
+    (form as unknown as IFormEntries).forEach((value, name) => entries.push([name, value]));
+    for (const [name, value] of entries) {
       const lower = name.toLowerCase();
       if (lower === 'file') {
         if (typeof value === 'string')
