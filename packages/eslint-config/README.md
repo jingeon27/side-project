@@ -15,15 +15,16 @@
 | `src/rules/fsd/fsd.helper.ts`            | FSD 규칙이 함께 쓰는 경로·import 분석                   |
 | `src/test`                               | 모든 spec이 쓰는 RuleTester 연결·파서 옵션·fixture 로더 |
 
-`<분류>`는 규칙이 걸리는 범위입니다.
+`<분류>`는 규칙이 걸리는 범위입니다. web·mobile·api 중 둘 이상에 걸리는 규칙은 `common`에 둡니다. 규칙이 아직 없는 분류는 `.gitkeep`으로 자리만 둡니다.
 
-| 분류                 | 규칙                                               | 적용 preset                                        |
-| -------------------- | -------------------------------------------------- | -------------------------------------------------- |
-| `conventions/common` | `side/no-else`                                     | `baseConfig`(모든 워크스페이스)                    |
-| `conventions/web`    | `side/no-component-fetch`, `side/no-overlay-state` | `reactConfig`, `nextConfig`                        |
-| `conventions/api`    | 아직 없음                                          | API 전용 규칙                                      |
-| `fsd`                | `fsd/*`                                            | `fsdBoundaries(srcDir)`                            |
-| `react`              | `react/jsx-handler-names`                          | 구현 없이 `eslint-plugin-react`의 preset 옵션 검증 |
+| 분류     | 규칙                                      | 적용 preset                                               |
+| -------- | ----------------------------------------- | --------------------------------------------------------- |
+| `common` | `side/no-else`, `side/no-component-fetch` | `baseConfig`(모든 워크스페이스), `reactConfig`(웹·모바일) |
+| `web`    | `side/no-overlay-state`                   | `nextConfig`                                              |
+| `mobile` | 아직 없음                                 | `expoConfig`                                              |
+| `api`    | 아직 없음                                 | `baseConfig`를 쓰는 API 전용                              |
+| `fsd`    | `fsd/*`                                   | `fsdBoundaries(srcDir)`                                   |
+| `react`  | `react/jsx-handler-names`                 | 구현 없이 `eslint-plugin-react`의 preset 옵션 검증        |
 
 spec은 `createFixtures(import.meta.dirname)`로 자기 폴더의 `__fixtures__`만 읽습니다. FSD 규칙은 `__fixtures__`를 앱의 `src`로 보고 `srcDir`에 넘깁니다. 둘 이상의 규칙이 같은 fixture를 읽게 되면 그 분류 폴더(예: `rules/fsd/__fixtures__`)로 올립니다.
 
