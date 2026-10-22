@@ -78,6 +78,39 @@ export function analyzeMdx(source: string) {
   return { toc, readingMinutes, tree };
 }
 
+// Components registered in src/mdx-components.tsx. Unknown JSX would fail at render time.
+export const mdxComponents = ['Summary', 'Decision', 'Callout', 'Figure', 'CodeBlock'] as const;
+const allowedJsx = new Set<string>(mdxComponents);
+const numericExpression = /^\s*-?\d+(?:\.\d+)?\s*$/;
+
+/**
+ * Keeps MDX to Markdown plus the registered components: ESM, JavaScript expressions, spread
+ * props and unknown JSX are rejected. Numeric props such as `width={640}` stay allowed.
+ * Returns JSX `src` values so they can be checked like Markdown images.
+ */
+export function validateMdxNodes(tree: ReturnType<typeof analyzeMdx>['tree'], label: string): string[] {
+  const sources: string[] = [];
+  visit(tree, (node) => {
+    if (node.type === 'mdxjsEsm') throw new Error(`${label}: import/export is not allowed in MDX`);
+    if (node.type === 'mdxFlowExpression' || node.type === 'mdxTextExpression')
+      throw new Error(`${label}: JavaScript expressions are not allowed in MDX`);
+    if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return;
+    if (!node.name || !allowedJsx.has(node.name))
+      throw new Error(`${label}: unsupported JSX <${node.name ?? ''}>. Use ${mdxComponents.join(', ')}`);
+    for (const attribute of node.attributes) {
+      if (attribute.type === 'mdxJsxExpressionAttribute')
+        throw new Error(`${label}: spread props are not allowed on <${node.name}>`);
+      const { value } = attribute;
+      if (value && typeof value === 'object' && !numericExpression.test(value.value))
+        throw new Error(`${label}: only numeric expression props are allowed on <${node.name}>`);
+      if (attribute.name !== 'src') continue;
+      if (typeof value !== 'string') throw new Error(`${label}: <${node.name} src> must be a string`);
+      sources.push(value);
+    }
+  });
+  return sources;
+}
+
 async function json(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
@@ -145,7 +178,7 @@ export async function readContent(root: string) {
       if (!source.trim()) throw new Error(`${id}/${locale}: empty content`);
       await compile(source, { remarkPlugins: [remarkGfm] });
       const { toc, readingMinutes, tree } = analyzeMdx(source);
-      const images: string[] = [];
+      const images = validateMdxNodes(tree, `${id}/${locale}`);
       visit(tree, 'image', (node) => {
         images.push(node.url);
       });

@@ -99,6 +99,32 @@ describe('content registry contract', () => {
     expect(findMissingRedirects(published, redirected.articles, redirected.redirects)).toEqual([]);
     expect(findMissingRedirects([], redirected.articles, [])).toEqual([]);
   });
+  it('allows only registered MDX components with literal or numeric props and checks their src', async () => {
+    const { root } = await fixture();
+    const file = path.join(root, 'content/posts/cache/en.mdx');
+    await mkdir(path.join(root, 'public/images'), { recursive: true });
+    await writeFile(path.join(root, 'public/images/cache.png'), 'png');
+    await writeFile(
+      file,
+      '<Figure src="/images/cache.png" alt="Cache" width={640} caption="Flow" />\n\n<Callout title="Note">Text</Callout>',
+    );
+    await expect(readContent(root)).resolves.toBeTruthy();
+
+    for (const [source, message] of [
+      ["import Chart from './chart'\n\nText", 'import/export is not allowed'],
+      ['export const meta = {}\n\nText', 'import/export is not allowed'],
+      ['Total: {1 + 1}', 'JavaScript expressions are not allowed'],
+      ['<Chart />', 'unsupported JSX <Chart>'],
+      ['<div>raw</div>', 'unsupported JSX <div>'],
+      ['<Callout {...props}>Text</Callout>', 'spread props are not allowed'],
+      ['<Callout title={fetch("/x")}>Text</Callout>', 'only numeric expression props'],
+      ['<Figure src="/images/missing.png" />', 'ENOENT'],
+      ['<Figure src="http://example.com/a.png" />', 'unresolved image'],
+    ]) {
+      await writeFile(file, source!);
+      await expect(readContent(root), source).rejects.toThrow(message);
+    }
+  });
   it('refuses malformed MDX and unresolved internal article links', async () => {
     const { root } = await fixture();
     const file = path.join(root, 'content/posts/cache/en.mdx');
