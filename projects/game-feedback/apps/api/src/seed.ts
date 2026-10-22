@@ -1,7 +1,7 @@
 import { conversationPair } from './chat/conversation-pair';
 import { Prisma, PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';
-import { seedCommunityPosts } from './testing/community-fixtures';
+import { seedCommunityPosts } from './seed-community-posts';
 
 export const TEST_ACCOUNT_FIXTURES = [
   {
