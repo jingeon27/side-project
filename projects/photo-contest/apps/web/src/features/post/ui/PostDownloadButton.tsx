@@ -26,7 +26,7 @@ export function PostDownloadButton({ postId, title }: { postId: string; title: s
           if (!data) return;
           const file = data.postDownload;
           // 앱의 시스템 브라우저에는 세션을 넘기지 않고 발급된 짧은 다운로드 권한만 전달한다.
-          if (file.expiresAt && bridge?.supports('link.open')) {
+          if (bridge?.supports('link.open')) {
             await external.open(file.url);
             return;
           }
