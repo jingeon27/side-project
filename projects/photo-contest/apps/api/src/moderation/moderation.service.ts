@@ -7,6 +7,7 @@ import { TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
+import { reportUnexpectedError } from '../monitoring/sentry';
 import { MediaStorage } from '../storage/media-storage.service';
 
 @Injectable()
@@ -60,7 +61,13 @@ export class ModerationService {
       });
       return upload?.imageKey ?? null;
     });
-    if (imageKey) await this.storage.delete(imageKey);
+    if (!imageKey) return true;
+    // 삭제는 이미 커밋됐다. 파일 삭제 실패는 만료시킨 업로드 행을 정리 작업이 다시 지운다.
+    try {
+      await this.storage.delete(imageKey);
+    } catch (error) {
+      reportUnexpectedError(error, { operationName: 'deleteSubmission', location: 'media-cleanup' });
+    }
     return true;
   }
 }
