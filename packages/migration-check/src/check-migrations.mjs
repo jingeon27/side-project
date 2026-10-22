@@ -96,16 +96,17 @@ function scanSql(sql) {
       const closing = sql.indexOf(tag, bodyStart);
       const bodyEnd = closing < 0 ? sql.length : closing;
       const end = closing < 0 ? sql.length : closing + tag.length;
-      if (CODE_BODY_PREFIX.test(maskedBefore(cursor))) {
-        const inner = scanSql(sql.slice(bodyStart, bodyEnd));
-        fill(cursor, bodyStart, ' ');
-        for (let index = 0; index < inner.masked.length; index++)
-          output[bodyStart + index] = inner.masked[index];
-        opaqueBodies.push(...inner.opaqueBodies.map((index) => bodyStart + index));
-        fill(bodyEnd, end, ' ');
-      } else {
+      if (!CODE_BODY_PREFIX.test(maskedBefore(cursor))) {
         fill(cursor, end, ' ');
+        cursor = end;
+        continue;
       }
+      const inner = scanSql(sql.slice(bodyStart, bodyEnd));
+      fill(cursor, bodyStart, ' ');
+      for (let index = 0; index < inner.masked.length; index++)
+        output[bodyStart + index] = inner.masked[index];
+      opaqueBodies.push(...inner.opaqueBodies.map((index) => bodyStart + index));
+      fill(bodyEnd, end, ' ');
       cursor = end;
       continue;
     }
