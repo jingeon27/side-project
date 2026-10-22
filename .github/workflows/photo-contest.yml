@@ -62,7 +62,7 @@ jobs:
             docker tag "side-shared-pc-$app:$GITHUB_SHA" "photo-contest-$app:$GITHUB_SHA"
           done
       - run: yarn workspace @photo-contest/web exec playwright install --with-deps chromium
-      - name: Verify production containers and backup restore
+      - name: Verify the images on the legacy single-host stack and its backup restore
         run: bash projects/photo-contest/apps/web/test/deployment/containers.sh
       - name: Archive the verified images
         if: >-
@@ -114,9 +114,10 @@ jobs:
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
       - name: Check deployment scripts
-        run: shellcheck -x projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
+        run: shellcheck -x deploy/shared-instance/scripts/*.sh projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
       - run: yarn format:check
       - run: yarn workspace @side/eslint-config check
+      - run: yarn workspace @side/migration-check test
       - run: yarn workspace @side/design-system check
       - run: yarn workspace @side/photo-contest check
       - run: yarn workspace @photo-contest/web lint && yarn workspace @photo-contest/mobile lint
