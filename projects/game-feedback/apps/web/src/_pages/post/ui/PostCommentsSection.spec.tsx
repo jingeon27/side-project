@@ -11,15 +11,26 @@ const state = vi.hoisted(() => ({
   login: vi.fn(),
   create: vi.fn(),
   notify: vi.fn(),
+  older: vi.fn(),
 }));
 
 vi.mock('@/features/auth', () => ({
   useSession: () => ({ session: { user: state.user }, login: state.login }),
 }));
-vi.mock('@/features/comment', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/features/comment')>()),
-  useCreateCommentMutation: () => useMutation({ mutationFn: state.create }),
-}));
+vi.mock('@/features/comment', async (importOriginal) => {
+  const { infiniteQueryOptions } = await import('@tanstack/react-query');
+  return {
+    ...(await importOriginal<typeof import('@/features/comment')>()),
+    useCreateCommentMutation: () => useMutation({ mutationFn: state.create }),
+    olderCommentOptions: (postId: string, cursor: string | null) =>
+      infiniteQueryOptions({
+        queryKey: ['older-comments', postId, cursor],
+        queryFn: ({ pageParam }: { pageParam: string }) => state.older(pageParam),
+        initialPageParam: cursor ?? '',
+        getNextPageParam: (page: { nextCursor: string | null }) => page.nextCursor ?? undefined,
+      }),
+  };
+});
 vi.mock('@/features/user', () => ({
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
   UserBadges: () => null,
@@ -67,11 +78,13 @@ function comment(id: string, parentId: string | null = null): Comment {
   };
 }
 
-function renderComments(comments: Comment[]) {
-  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+function renderComments(comments: Comment[], cursor: string | null = null) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return render(
     <QueryClientProvider client={client}>
-      <PostCommentsSection post={post} comments={comments} locale="ko" />
+      <PostCommentsSection post={post} comments={comments} cursor={cursor} locale="ko" />
     </QueryClientProvider>,
   );
 }
@@ -81,6 +94,7 @@ beforeEach(() => {
   state.login.mockReset();
   state.create.mockReset().mockResolvedValue(comment('new-reply', 'first'));
   state.notify.mockReset();
+  state.older.mockReset();
 });
 
 describe('comment replies', () => {
@@ -180,5 +194,47 @@ describe('comment replies', () => {
     expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '답글' }));
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '답글 내용' }).value).toBe('');
+  });
+});
+
+describe('earlier comment pages', () => {
+  it('prepends older threads page by page and hides the button after the oldest page', async () => {
+    state.older.mockImplementation(async (cursor: string) =>
+      cursor === 'cursor-1'
+        ? { items: [comment('older-2'), comment('older-2-reply', 'older-2')], nextCursor: 'cursor-2' }
+        : { items: [comment('older-1')], nextCursor: null },
+    );
+    renderComments([comment('latest')], 'cursor-1');
+    expect(screen.getByRole('heading', { name: '댓글1개 이상' })).toBeTruthy();
+    expect(state.older).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '이전 댓글 더 보기' }));
+    await waitFor(() => expect(screen.getByText('older-2 본문')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: '이전 댓글 더 보기' }));
+    await waitFor(() => expect(screen.getByText('older-1 본문')).toBeTruthy());
+    expect(state.older.mock.calls.map(([cursor]) => cursor)).toEqual(['cursor-1', 'cursor-2']);
+    const list = screen.getByRole('list', { name: '댓글' });
+    const roots = within(list)
+      .getAllByRole('listitem')
+      .filter((item) => item.parentElement === list)
+      .map((item) => item.querySelector('p')?.textContent);
+    expect(roots).toEqual(['older-1 본문', 'older-2 본문', 'latest 본문']);
+    expect(within(list).getByRole('list', { name: '답글' }).textContent).toContain('older-2-reply 본문');
+    expect(screen.queryByRole('button', { name: '이전 댓글 더 보기' })).toBeNull();
+    expect(screen.getByRole('heading', { name: '댓글4' })).toBeTruthy();
+  });
+
+  it('keeps the button for a retry when an older page fails', async () => {
+    state.older.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({
+      items: [comment('older')],
+      nextCursor: null,
+    });
+    renderComments([comment('latest')], 'cursor-1');
+    fireEvent.click(screen.getByRole('button', { name: '이전 댓글 더 보기' }));
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toBe('이전 댓글을 불러오지 못했어요. 다시 시도해주세요.'),
+    );
+    fireEvent.click(screen.getByRole('button', { name: '이전 댓글 더 보기' }));
+    await waitFor(() => expect(screen.getByText('older 본문')).toBeTruthy());
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

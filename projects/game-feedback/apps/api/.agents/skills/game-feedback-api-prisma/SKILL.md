@@ -18,6 +18,7 @@ DB·포트 격리와 금지 옵션은 프로젝트 `AGENTS.md`, 커밋 범위는
 ## schema.prisma로 표현하지 못하는 제약
 
 - CHECK 제약은 migration SQL에만 있다: `PostMedia_published_upload_ready`, `ChatAttachment_sent_upload_ready`(미완료 업로드를 글·메시지에 연결 금지), `UserAvatar_storage_check`(`bytes`·`objectId` 중 하나), `UserAvatar_size_check`.
+- 게시글 검색의 pg_trgm GIN 인덱스(`Post_title_trgm_idx`·`Post_body_trgm_idx`)도 migration SQL에만 있다. 확장은 DB 단위라 `public`에 두고 연산자 클래스를 `public.gin_trgm_ops`로 지정한다(DB 소유 역할이 만들 수 있는 trusted extension).
 - `db push`로 만든 스키마(로컬 `db:sync`, 옛 `*.integration.test.ts` 하네스)에는 이 제약이 없다. 제약에 기대는 테스트는 `migrate deploy`로 스키마를 만드는 `*.integration.spec.ts` 형식으로 쓴다.
 
 ## migration 만들기 (DB에 접속하지 않는다)

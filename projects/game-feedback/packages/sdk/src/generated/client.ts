@@ -16,6 +16,7 @@ import {
   ChatMessage,
   ChatMessageList,
   Comment,
+  CommentPage,
   Conversation,
   ConversationList,
   FollowUser200,
@@ -60,6 +61,7 @@ import type {
   ListChatMessagesParams,
   ListConversationsParams,
   ListNotificationsParams,
+  ListPostCommentsParams,
   ListPostsParams,
   ListReportsParams,
   MediaUploadInput,
@@ -1506,6 +1508,37 @@ return apiFetch<RecordPostView200>(getRecordPostViewUrl(id),
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(recordPostViewBody),
     schema: RecordPostView200
+  }
+);}
+
+
+
+export const getListPostCommentsUrl = (id: string,
+    params?: ListPostCommentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/posts/${encodeURIComponent(String(id))}/comments?${stringifiedParams}` : `/api/posts/${encodeURIComponent(String(id))}/comments`
+}
+
+export const listPostComments = async (id: string,
+    params?: ListPostCommentsParams, options?: Parameters<typeof apiFetch>[1]): Promise<CommentPage> => {
+
+  return apiFetch<CommentPage>(getListPostCommentsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: CommentPage
   }
 );}
 

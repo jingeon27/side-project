@@ -52,6 +52,7 @@ describe('삭제된 원댓글이 있는 공개 글의 구조화 데이터', () =
           updatedAt: timestamp,
         },
       ],
+      commentsCursor: null,
     };
     const data = postStructuredData(detail);
     expect(data.commentCount).toBe(1);
