@@ -460,13 +460,16 @@ describe('OAuth와 앱 로그인', () => {
       expect(responses.filter((response) => findSetCookie(response, SESSION_COOKIE))).toHaveLength(1);
     });
 
-    it('운영 모드에서 교환한 세션 쿠키는 Secure여야 한다', async () => {
+    it('운영 모드에서 교환한 세션 쿠키는 Secure인 __Host- 쿠키여야 한다', async () => {
       const verifier = newVerifier();
       const code = await appLoginCode(verifier, 'google-secure-exchange');
       vi.stubEnv('NODE_ENV', 'production');
       const response = await exchange({ code, verifier });
       expect(response.status).toBe(200);
-      expect(cookieAttributes(findSetCookie(response, SESSION_COOKIE)!)).toContain('Secure');
+      expect(findSetCookie(response, SESSION_COOKIE)).toBeUndefined();
+      const attributes = cookieAttributes(findSetCookie(response, `__Host-${SESSION_COOKIE}`)!);
+      expect(attributes).toEqual(expect.arrayContaining(['Secure', 'Path=/']));
+      expect(attributes.some((attribute) => attribute.startsWith('Domain='))).toBe(false);
     });
   });
 });

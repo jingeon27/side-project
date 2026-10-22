@@ -19,7 +19,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 ## 인증
 
-- 세션은 HttpOnly 쿠키 `contest_session` 하나(43자 base64url). cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 4KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
+- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. OAuth state 쿠키도 같은 원칙(`__Host-contest_oauth_state`)이다. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
 - `session.service`가 요청당 한 번만 조회한다(WeakMap). GraphQL·REST 모두 `@Viewer()`/`@OptionalViewer()`를 쓴다. Authorization 헤더는 보지 않는다.
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
@@ -50,6 +50,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - OWNER·MODERATOR만 같은 그룹에서 개최한다. Post.contestId는 선택이며 접수 중 같은 그룹 POST 대회만 허용한다. 일반 게시물과 사진·동영상·복수 참여작을 구분한다.
 - 공개 대회·결과는 익명 읽기, 비공개는 멤버만. 투표는 VOTING 중 멤버만, 본인·숨긴 글은 거부한다. (contestId,voterId) unique와 (postId,contestId) 복합 FK로 대회당 1표·다른 대회 투표를 DB에서도 보장한다.
 - 종료 후 보이는 참여작으로 득표수 경쟁 순위(1,1,3)를 계산한다. 동률 표시는 작성 시각 asc·id asc이며 일반 좋아요가 수상 순위를 바꾸지 않는다. 최다 득표 > 0이면 공동 우승, 0표는 우승 없음이다. 완료 이벤트는 형식에 맞는 참여작·투표를 집계한다.
+- removeGroupMember는 OWNER·MODERATOR만: OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. leaveGroup은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 남긴 게시물·댓글은 지우지 않는다.
 - OWNER만 setGroupModerator·transferGroupOwnership을 실행한다. 대상은 같은 그룹의 멤버이고 OWNER 역할은 임명 API로 바꾸지 않는다. 양도는 원 OWNER→MEMBER와 대상→OWNER를 하나의 Serializable 트랜잭션에서 처리한다.
 - publicGroupContests·publicGroupContestCount는 PUBLIC/POST만 포함한다. winners는 siblingLoader로 묶어 읽고 private 결과·미디어를 SEO에 섞지 않는다.
 

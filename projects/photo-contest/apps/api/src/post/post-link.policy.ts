@@ -6,8 +6,9 @@ export function postLink(value: string | null | undefined): string | null {
   if (!link) return null;
   try {
     const url = new URL(link);
+    // 저장하는 값은 정규화한 href다. 퍼센트 인코딩으로 길어진 주소도 상한 안이어야 한다.
     if (
-      link.length <= POST_LINK_LIMIT &&
+      url.href.length <= POST_LINK_LIMIT &&
       ['https:', 'http:'].includes(url.protocol) &&
       !url.username &&
       !url.password

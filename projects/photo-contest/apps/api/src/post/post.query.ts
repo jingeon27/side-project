@@ -1,4 +1,5 @@
 import type { Prisma } from '../../generated/prisma';
+import { USER_VIEW_SELECT } from '../auth/user-view';
 
 export function postInclude(viewerId: string | null) {
   const userId = { in: viewerId ? [viewerId] : [] };
@@ -16,7 +17,7 @@ export function postInclude(viewerId: string | null) {
       },
     },
     category: true,
-    author: true,
+    author: { select: USER_VIEW_SELECT },
     upload: true,
     _count: { select: { likes: true, comments: true, contestVotes: true } },
     likes: { where: { userId }, select: { userId: true } },

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import { ClientAddress } from '../rate-limit/client-address.decorator';
 import { AuthService, type IAuthConfig } from './auth.service';
 
 const OK = { ok: true } as const;
@@ -53,9 +54,10 @@ export class AuthController {
   async start(
     @Param('provider') provider: string,
     @Query('app_challenge') appChallenge: unknown,
+    @ClientAddress() address: string | null,
     @Res({ passthrough: true }) res: Response,
   ) {
-    return { url: await this.auth.startOAuth(provider, appChallenge, res) };
+    return { url: await this.auth.startOAuth(provider, appChallenge, res, address) };
   }
 
   @Get(':provider/callback')

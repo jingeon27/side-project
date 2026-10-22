@@ -2,6 +2,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
 import { PostModerationService } from './post-moderation.service';
 import { PostService } from './post.service';
 
@@ -57,8 +58,12 @@ export class PostResolver {
     return this.posts.completeUpload(viewer, uploadId);
   }
   @Mutation()
-  createPost(@Viewer() viewer: IViewer, @Args() input: Parameters<PostService['create']>[1]) {
-    return this.posts.create(viewer, input);
+  createPost(
+    @Viewer() viewer: IViewer,
+    @Args() input: Parameters<PostService['create']>[1],
+    @ClientAddress() address: string | null,
+  ) {
+    return this.posts.create(viewer, input, address);
   }
   @Mutation()
   likePost(@Viewer() viewer: IViewer, @Args('postId') id: string) {

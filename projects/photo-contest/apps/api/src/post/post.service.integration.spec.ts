@@ -71,8 +71,9 @@ describe('상시 그룹 게시물', () => {
   it('파일은 매번 멤버십을 검사하고 저장소의 구간 요청으로 재생·탐색해야 한다', async () => {
     const v = await create(member, '구간 재생', true);
     const path = v.mediaUrl.replace('/backend', '');
-    expect((await api.http().get(path)).status).toBe(401);
-    expect((await api.http().get(path).set('Cookie', outsider.cookie)).status).toBe(403);
+    // 비공개 그룹의 파일은 비멤버(비로그인 포함)에게 없는 파일과 같은 404다.
+    expect((await api.http().get(path)).status).toBe(404);
+    expect((await api.http().get(path).set('Cookie', outsider.cookie)).status).toBe(404);
     const signed = () => api.http().get(path).set('Cookie', owner.cookie);
     const res = await openStorageRedirect(await signed(), { Range: 'bytes=0-15' });
     expect(res.status).toBe(206);
@@ -173,8 +174,9 @@ describe('상시 그룹 게시물', () => {
       { id: post.id, body: '멤버끼리만' },
     );
     for (const cookie of [undefined, outsider.cookie]) {
-      const code = cookie ? 'FORBIDDEN' : 'UNAUTHENTICATED';
-      expect((await api.gqlFail(cookie, COMMENTS, { id: post.id })).code).toBe(code);
+      // 읽기는 비공개 게시물이 있는지 숨기고, 로그인이 필요한 쓰기는 먼저 UNAUTHENTICATED다.
+      const code = cookie ? 'NOT_FOUND' : 'UNAUTHENTICATED';
+      expect((await api.gqlFail(cookie, COMMENTS, { id: post.id })).code).toBe('NOT_FOUND');
       expect((await api.gqlFail(cookie, CREATE_COMMENT, { id: post.id, body: '침입' })).code).toBe(code);
       expect((await api.gqlFail(cookie, DELETE_COMMENT, { id: comment.id })).code).toBe(code);
     }

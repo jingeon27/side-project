@@ -18,7 +18,8 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 - `PasswordAuthService`의 `registerWithPassword`·`loginWithPassword` GraphQL mutation이 기존 `SessionService`로 같은 쿠키를 발급한다. 성공 시 요청의 이전 세션을 폐기한다.
 - 아이디는 trim·소문자 처리한 영문/숫자/밑줄 3~24자, 닉네임 1~24자다. 가입 비밀번호는 15~128자로 앞뒤 공백·유니코드를 바꾸지 않는다.
 - User와 1:1인 PasswordCredential에 아이디·scrypt-v1 해시를 둔다. salt 16바이트, N=32768·r=8·p=3·64바이트 결과이며 timingSafeEqual로 비교한다. 없는 아이디도 같은 scrypt 비용을 쓴다. 비밀번호·해시는 GraphQL·이벤트·로그·Sentry에 싣지 않는다.
-- AuthAttempt는 15분 버킷의 IP/아이디를 SHA-256 키로만 저장하고 DB upsert 증가로 여러 API 인스턴스에도 제한한다. 가입 IP 5회, 로그인 IP 30회·아이디 10회이며 만료 행은 maintenance가 지운다. IP는 Express가 확인한 요청 주소를 사용하고 클라이언트의 전달 헤더를 직접 신뢰하지 않는다.
+- AuthAttempt는 15분 버킷의 IP/아이디를 SHA-256 키로만 저장하고 DB upsert 증가로 여러 API 인스턴스에도 제한한다. 가입 IP 5회, 로그인 IP 30회(시도마다)·아이디 10회(실패만 센다, 차면 검증 전에 거절)이며 만료 행은 maintenance가 지운다. IP는 Express가 확인한 요청 주소를 `clientAddressKey()`로 묶어 쓰고(IPv6는 /64) 클라이언트의 전달 헤더를 직접 신뢰하지 않는다.
+- scrypt는 프로세스당 동시 2개까지만 실행하고 16개를 넘게 기다리면 바로 RATE_LIMITED로 거절한다(`createScryptGate`).
 - 비밀번호 계정을 OAuth 이메일과 합치지 않는다. 검증은 `src/auth/password-auth.service.integration.spec.ts`와 `src/auth/password.spec.ts`를 함께 확인한다.
 
 ## 개발 로그인
@@ -28,7 +29,9 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 
 ## OAuth provider 추가
 
-1. `src/config/env.ts`의 `TOAuthProviderName`에 이름을 더한다(`oauthCredentials()`가 `<NAME>_CLIENT_ID`·`<NAME>_CLIENT_SECRET`을 읽는다). 키는 `../../.env.example`에 더한다.
+provider가 토큰·프로필 요청을 거절(HTTP 4xx·5xx)하면 사용자는 `/?loginError=1`로 돌아가고, 설정 오류를 알 수 있게 `reportUnexpectedError`로 route·provider·stage·status·표준 오류 코드(`invalid_client` 등)만 태그로 보낸다. 오류 설명·코드·토큰은 싣지 않는다.
+
+1. `src/config/env.ts`의 `TOAuthProviderName`에 이름을 더한다(`oauthCredentials()`가 `<NAME>_CLIENT_ID`·`<NAME>_CLIENT_SECRET`을 읽는다). 토큰 교환에 secret이 필수인지 `OAUTH_SECRET_REQUIRED`에 적는다 — 운영 시작 때 `assertProductionConfig()`가 아이디 없는 secret과 필수 secret 누락을 거절한다. 키는 `../../.env.example`에 더한다.
 2. `src/auth/oauth-provider.ts`: `OAUTH_PROVIDER`, `ENDPOINTS`(빠지면 타입 오류), 프로필 zod 스키마, `identityOf` 분기(ts-pattern `match(provider)…exhaustive()`), `isOAuthProviderName`(손으로 쓴 비교라 타입이 잡지 못한다). `providerId`는 provider의 고정 사용자 ID다 — 이메일로 찾거나 계정을 합치지 않는다. scope는 프로필에 필요한 만큼만.
 3. `src/auth/auth.service.ts`의 `IAuthConfig`·`config()`에 키를 더한다(웹이 로그인 버튼 표시에 쓴다).
 4. provider 콘솔의 redirect URI는 `${WEB_ORIGIN}/backend/auth/<name>/callback`이다(같은 origin이라야 state 쿠키가 돌아온다).
@@ -43,6 +46,6 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/common/http/cookie-header.spec.ts`(섞인 쿠키, 같은 이름 중복, 따옴표·퍼센트, 4KB 초과, 깨진 형식), `src/common/crypto.spec.ts`(RFC 7636 벡터), `src/config/env.spec.ts`(개발 로그인 조건, 앱 scheme).
+- unit: `src/common/http/cookie-header.spec.ts`(섞인 쿠키, 같은 이름 중복, 따옴표·퍼센트, 8KB 초과, 깨진 형식), `src/auth/auth-cookie.spec.ts`(운영 `__Host-` 이름), `src/common/crypto.spec.ts`(RFC 7636 벡터), `src/config/env.spec.ts`(개발 로그인 조건, 앱 scheme).
 - integration 레인(`api-test` 스킬): 모든 변경 엔드포인트의 Origin 없음·다른 Origin 403(비로그인이어도), 세션 쿠키 HttpOnly·SameSite=Lax·Path=/, DB에 토큰 원문 없음, 깨진 Cookie 헤더는 비로그인, 로그아웃 뒤 같은 쿠키 거부, 앱을 만든 뒤 `vi.stubEnv('NODE_ENV', 'production')`이면 개발 로그인 403.
 - OAuth(provider fetch stub): `/auth/unknown` 400, client id 없음 503, state 불일치·만료·재사용은 `/?loginError=1`로 302, token 요청의 `code_verifier`가 authorize의 `code_challenge`와 맞음, 같은 provider ID로 다시 로그인하면 같은 사용자. 앱 핸드오프: 잘못된 challenge 400, 콜백은 세션 쿠키 없이 앱 scheme으로, 교환 성공·재사용 403·틀린 verifier 뒤 올바른 verifier 성공·만료 403·동시 교환 정확히 1건.

@@ -138,9 +138,10 @@ describe('사진 업로드와 열람', () => {
     );
     const photoId = createSubmission.id;
 
+    // 기존 대회 사진은 멤버 전용이라 비회원에게는 없는 사진과 같은 404다.
     const denied = await getPhoto(photoId, outsider.cookie);
-    expect(denied.status).toBe(403);
-    expect(denied.body).toEqual({ message: '이 그룹에 접근할 권한이 없습니다.' });
+    expect(denied.status).toBe(404);
+    expect(denied.body).toEqual({ message: '사진을 찾을 수 없습니다.' });
     const anonymous = await getPhoto(photoId);
     expect(anonymous.status).toBe(401);
 
@@ -266,8 +267,8 @@ describe('사진 업로드와 열람', () => {
       );
     }
     expect(await api.gqlFail(outsider.cookie, REQUEST_UPLOAD, { contestId })).toEqual({
-      code: 'FORBIDDEN',
-      message: '이 그룹에 접근할 권한이 없습니다.',
+      code: 'NOT_FOUND',
+      message: '대회를 찾을 수 없습니다.',
     });
   });
 
@@ -323,7 +324,7 @@ describe('사진 업로드와 열람', () => {
     ).toEqual(UPLOAD_INCOMPLETE);
     expect(
       await api.gqlFail(outsider.cookie, CREATE_SUBMISSION, { contestId, uploadId, caption: '외부인' }),
-    ).toEqual({ code: 'FORBIDDEN', message: '이 그룹에 접근할 권한이 없습니다.' });
+    ).toEqual({ code: 'NOT_FOUND', message: '대회를 찾을 수 없습니다.' });
 
     const created = await api.gqlOk<{ createSubmission: Record<string, unknown> }>(
       friend.cookie,
