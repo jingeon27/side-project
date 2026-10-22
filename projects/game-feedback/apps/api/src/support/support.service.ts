@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ChatConversationService } from '../chat/chat-conversation.service';
+import { conversationPair } from '../chat/conversation-pair';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { UnitOfWork } from '../database/unit-of-work';
@@ -48,7 +49,7 @@ export class SupportService {
           'SUPPORT_UNAVAILABLE',
           '지금은 문의를 시작할 수 없습니다. 잠시 후 다시 시도해주세요.',
         );
-      const [firstUserId, secondUserId] = [user.id, admin.id].sort();
+      const { firstUserId, secondUserId } = conversationPair(user.id, admin.id);
       const conversation = await (tx ?? this.db).chatConversation.upsert({
         where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
         update: {},

@@ -6,7 +6,7 @@ import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
-import { decodeCursor, encodeCursor } from '../common/pagination';
+import { decodeCursor, nextCursor } from '../common/pagination';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 
@@ -68,7 +68,7 @@ export class NotificationsService {
         createdAt: n.createdAt.toISOString(),
       })),
       unreadCount,
-      nextCursor: rows.length > q.limit ? encodeCursor(items[items.length - 1]) : null,
+      nextCursor: nextCursor(rows, q.limit),
     };
   }
   async readNotification(req: SessionRequest, id?: string) {

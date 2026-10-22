@@ -10,7 +10,7 @@ import { responseComment } from '../comments/comment.presenter';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
-import { decodeCursor, encodeCursor } from '../common/pagination';
+import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
@@ -54,11 +54,9 @@ export class PostsService {
     )
       throw new ApiError(400, 'INVALID_FEEDBACK_FILTER', '피드백의 답변 상태를 확인해주세요.');
     const rows = await this.listVisiblePosts(q, excluded);
-    const more = rows.length > q.limit,
-      items = rows.slice(0, q.limit);
     return {
-      items: items.map(responsePost),
-      nextCursor: more ? encodeCursor(items[items.length - 1]) : null,
+      items: rows.slice(0, q.limit).map(responsePost),
+      nextCursor: nextCursor(rows, q.limit),
     };
   }
   async detail(req: SessionRequest, id: string) {
