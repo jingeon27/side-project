@@ -62,10 +62,10 @@ export function MemberRoleActions({
         disabled={state.loading || transferState.loading}
         aria-label={`${nickname} 관리자 양도`}
         onClick={() =>
-          overlay.open(({ isOpen, close, unmount }) => (
+          overlay.open(({ isOpen, close: onClose, unmount }) => (
             <ConfirmDialog
               isOpen={isOpen}
-              onClose={close}
+              onClose={onClose}
               unmount={unmount}
               title={`${nickname}님에게 관리자를 양도할까요?`}
               description="선택한 멤버가 그룹장이 되고 나는 일반 멤버로 변경됩니다. 이후 부관리자 임명과 관리자 양도는 새 그룹장만 할 수 있어요."

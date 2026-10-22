@@ -48,6 +48,7 @@ export function PostCommentReplyForm({
     >
       <p className="comment-reply-target">{t('{name}님에게 답글 남기기', { name: nickname })}</p>
       <Textarea
+        // eslint-disable-next-line jsx-a11y/no-autofocus -- 답글 버튼을 눌러 연 입력창으로 포커스를 옮긴다(e2e comment-replies가 확인).
         autoFocus
         aria-label={t('답글 내용')}
         aria-invalid={!!form.formState.errors.body}

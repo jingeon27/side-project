@@ -49,7 +49,7 @@ export function MemberHome({
 }) {
   const [queryRef, { refetch }] = useBackgroundQuery(MyGroupsDocument);
   return (
-    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
+    <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-48 w-full" />}>
       <MemberHomeContent
         queryRef={queryRef}
         feedPreloaded={feedPreloaded}

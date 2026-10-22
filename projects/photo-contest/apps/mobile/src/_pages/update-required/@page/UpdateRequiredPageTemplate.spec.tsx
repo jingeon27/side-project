@@ -34,7 +34,7 @@ describe('UpdateRequiredPageTemplate', () => {
         currentVersion="1.0.0"
         minimumVersion="2.0.0"
         storeUrl={null}
-        onShown={vi.fn()}
+        onShown={() => undefined}
       />,
     );
 

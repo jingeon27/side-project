@@ -71,8 +71,13 @@ function renderSheet(mocks: MockLink.MockedResponse[] = []) {
         <button
           type="button"
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
-              <CreateContestBottomSheet groupId="group-1" isOpen={isOpen} onClose={close} unmount={unmount} />
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
+              <CreateContestBottomSheet
+                groupId="group-1"
+                isOpen={isOpen}
+                onClose={onClose}
+                unmount={unmount}
+              />
             ))
           }
         >

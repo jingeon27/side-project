@@ -1,5 +1,7 @@
 # 2026-10-22 API·패키지 ESLint와 엄격한 tsconfig 연결
 
+PR #49 병합 후 후속 충돌 해소: develop `899349f7`을 병합했다. 공용 ESLint README에 React DOM 접근성 preset·모바일 FSD 경계와 #50의 API·패키지·migration-check 적용 범위를 모두 남겼다. 자동 병합된 오류 경계와 글쓰기 테스트는 `override`·`on*` 콜백을 함께 유지했다. Node 24에서 immutable 설치, Game Feedback 집계 `check`, photo-contest 전체 타입·루트/Web/Mobile lint, design-system 타입·lint, eslint-config `check`(89개), migration-check `check`(70개), Admin 21개와 photo-contest 글쓰기·오류 경계 테스트가 통과했다. SDK 재생성 추가 diff가 없었다. 이번 후속 병합은 API 구현·계약을 바꾸지 않았으며 DB 통합·브라우저 E2E·운영 빌드는 다시 실행하지 않았다.
+
 PR #50 충돌 해소: 작업 도중 반영된 원격 rebase(`c0401942`)를 보존하고 develop `87b48331`을 병합했다. 최신 채팅의 상대 목록 숨김·일괄 조회·SQL 미읽음 집계와 `conversationPair`·`nextPageAnchor`를 함께 유지했다. 신고 목록도 공통 커서 도우미로 바꾸고, 새 통합 테스트의 Location 헤더·문의 이력 관계·댓글 DTO를 엄격한 타입에 맞췄다. 새 코드의 미사용 변수·else를 고쳐 프로젝트 lint와 migration-check lint를 유지했다. 공통 ESLint 안내는 최신 preset·플러그인 설명과 API·패키지 적용 현황을 합쳤다.
 
 검증(Node 24, 이 worktree): 집계 `check`(7개 워크스페이스 타입·API/패키지·Web/Mobile/Admin lint), API unit 155개·격리 PostgreSQL 통합 170개, SDK 69개·Bridge 11개·Web 192개·Mobile 54개·Admin 21개, migration-check `check` 70개, eslint-config `check` 80개가 통과했다. photo-contest 전체 타입, design-system·blog 타입 검사와 API 운영 빌드도 통과했다. SDK 재생성의 추가 diff가 없고, 운영 모듈 로드 및 `dist/testing` 제외를 확인했다. 통합 테스트가 만든 스키마는 테스트가 정리했으며, 이 worktree가 소유한 테스트 DB는 종료했다. 브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다. 아래 검증 수치는 원래 구현 시점의 기록이다.

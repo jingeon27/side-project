@@ -12,8 +12,8 @@ export function CreateGroupButton() {
     <Button
       size="md"
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
-          <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} />
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
+          <CreateGroupBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} />
         ))
       }
     >

@@ -117,18 +117,18 @@ function GroupQuerySection({ id }: { id: string }) {
     <AsyncBoundary
       resetKey={id}
       fallback={<GroupLoading />}
-      onRetry={refetch}
-      renderError={(error, retry) => (
+      onRetry={() => refetch()}
+      renderError={(error, onRetry) => (
         <GroupFrame>
           {match(getErrorCode(error))
             .with(ERROR_CODE.Unauthenticated, () => <LoginPanel nextPath={ROUTES.GROUP(id)} />)
             .otherwise(() => (
-              <ErrorState message={getErrorMessage(error)} onRetry={retry} />
+              <ErrorState message={getErrorMessage(error)} onRetry={onRetry} />
             ))}
         </GroupFrame>
       )}
     >
-      <GroupContent id={id} groupRef={groupRef} onRefresh={refetch} />
+      <GroupContent id={id} groupRef={groupRef} onRefresh={() => refetch()} />
     </AsyncBoundary>
   );
 }

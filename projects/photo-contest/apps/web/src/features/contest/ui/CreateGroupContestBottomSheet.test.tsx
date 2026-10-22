@@ -38,11 +38,11 @@ async function openSheet() {
       <OverlayProvider>
         <button
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
               <CreateGroupContestBottomSheet
                 groupId="group-1"
                 isOpen={isOpen}
-                onClose={close}
+                onClose={onClose}
                 unmount={unmount}
               />
             ))

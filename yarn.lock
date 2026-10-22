@@ -8076,6 +8076,7 @@ __metadata:
     eslint: "npm:^9.39.0"
     eslint-config-expo: "npm:~57.0.2"
     eslint-config-next: "npm:16.4.2"
+    eslint-plugin-jsx-a11y: "npm:6.10.2"
     eslint-plugin-react: "npm:7.37.5"
     jiti: "npm:^2.6.1"
     typescript: "npm:6.0.2"
@@ -12679,7 +12680,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-jsx-a11y@npm:^6.10.0":
+"eslint-plugin-jsx-a11y@npm:6.10.2, eslint-plugin-jsx-a11y@npm:^6.10.0":
   version: 6.10.2
   resolution: "eslint-plugin-jsx-a11y@npm:6.10.2"
   dependencies:

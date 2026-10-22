@@ -13,7 +13,7 @@ function Appearance() {
     { value: 'dark', label: '다크 모드' },
   ];
   return (
-    <Select items={items} value={value} onValueChange={setValue}>
+    <Select items={items} value={value} onValueChange={(nextValue) => setValue(nextValue)}>
       <SelectTrigger aria-label="화면 모드">
         <SelectValue />
       </SelectTrigger>

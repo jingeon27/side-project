@@ -18,7 +18,7 @@ function ChatMenu({ onReport }: { onReport: () => void }) {
 
 it('키보드로 열고 이동하며 Escape로 닫으면 트리거로 포커스를 돌려야 한다', async () => {
   const user = userEvent.setup();
-  render(<ChatMenu onReport={vi.fn()} />);
+  render(<ChatMenu onReport={() => undefined} />);
   const trigger = screen.getByRole('button', { name: '대화 메뉴' });
   trigger.focus();
 

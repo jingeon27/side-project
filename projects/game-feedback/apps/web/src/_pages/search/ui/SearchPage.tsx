@@ -51,6 +51,7 @@ export function SearchPage({ locale, initialPath, initialSearch }: ISearchPagePr
           {...form.register('q')}
           maxLength={100}
           autoComplete="off"
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- 검색 전용 화면이라 진입 목적이 입력이고 앞에는 뒤로 가기와 제목만 있다.
           autoFocus
           aria-label={t(board ? '게시판 검색' : '게시글 검색')}
           placeholder={t('제목이나 내용으로 검색')}

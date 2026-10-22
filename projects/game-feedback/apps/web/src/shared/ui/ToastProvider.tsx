@@ -18,14 +18,14 @@ export function useNotify() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const { locale } = useI18n();
-  const handleNotify = useCallback(
+  const notify = useCallback(
     (text: string) => {
       toast(translate(locale, text), { id: 'game-feedback-notice', toasterId });
     },
     [locale],
   );
   return (
-    <NotifyContext.Provider value={handleNotify}>
+    <NotifyContext.Provider value={notify}>
       {children}
       <Suspense fallback={null}>
         <ServiceToaster />

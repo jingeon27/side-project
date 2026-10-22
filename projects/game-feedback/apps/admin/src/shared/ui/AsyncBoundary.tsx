@@ -36,8 +36,8 @@ class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryStat
 export function AsyncBoundary({ children }: { children: ReactNode }) {
   return (
     <QueryErrorResetBoundary>
-      {({ reset }) => (
-        <RegionBoundary onReset={reset}>
+      {({ reset: onReset }) => (
+        <RegionBoundary onReset={onReset}>
           <Suspense fallback={<p role="status">불러오는 중</p>}>{children}</Suspense>
         </RegionBoundary>
       )}

@@ -94,7 +94,7 @@ function OpenContests({ form, groupId }: { form: TPostForm; groupId: string }) {
     fetchPolicy: 'network-only',
   });
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-14 w-full" />} onRetry={refetch}>
+    <AsyncBoundary fallback={<Skeleton className="h-14 w-full" />} onRetry={() => refetch()}>
       <ContestSelection form={form} groupId={groupId} queryRef={queryRef} />
     </AsyncBoundary>
   );

@@ -72,7 +72,7 @@ export function PostCommentReplies({
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-20 w-full" />}>
+    <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-20 w-full" />}>
       <ReplyList queryRef={queryRef} viewerId={viewerId} postAuthorId={postAuthorId} />
     </AsyncBoundary>
   );

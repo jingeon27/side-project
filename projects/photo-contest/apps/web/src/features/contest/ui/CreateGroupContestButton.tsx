@@ -19,11 +19,11 @@ export function CreateGroupContestButton({ groupId }: { groupId: string }) {
   return (
     <Button
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
           <CreateGroupContestBottomSheet
             groupId={groupId}
             isOpen={isOpen}
-            onClose={close}
+            onClose={onClose}
             unmount={unmount}
           />
         ))

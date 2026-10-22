@@ -6,6 +6,7 @@
   "exports": {
     "./base": "./src/base.ts",
     "./react": "./src/react.ts",
+    "./react-dom": "./src/react-dom.ts",
     "./next": "./src/next.ts",
     "./expo": "./src/expo.ts",
     "./fsd-boundaries": "./src/fsd-boundaries.ts"
@@ -35,6 +36,7 @@
   "dependencies": {
     "eslint-config-expo": "~57.0.2",
     "eslint-config-next": "16.4.2",
+    "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react": "7.37.5",
     "typescript-eslint": "^8.50.0"
   }

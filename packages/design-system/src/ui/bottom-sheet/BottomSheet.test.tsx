@@ -1,13 +1,13 @@
 import { render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 
 import { BottomSheet } from './BottomSheet';
 
 it('높이 핸들은 값 글자를 알리고 좌우·PageUp·PageDown 키로도 조절되어야 한다', async () => {
   const user = userEvent.setup();
   render(
-    <BottomSheet open onOpenChange={vi.fn()} title="게임 계정">
+    <BottomSheet open onOpenChange={() => undefined} title="게임 계정">
       <p>내용</p>
     </BottomSheet>,
   );

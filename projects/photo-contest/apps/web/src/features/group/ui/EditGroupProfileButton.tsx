@@ -23,8 +23,13 @@ export function EditGroupProfileButton({ groupId, className }: { groupId: string
       size="sm"
       className={cn('gap-2 rounded-full', className)}
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
-          <EditGroupProfileBottomSheet groupId={groupId} isOpen={isOpen} onClose={close} unmount={unmount} />
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
+          <EditGroupProfileBottomSheet
+            groupId={groupId}
+            isOpen={isOpen}
+            onClose={onClose}
+            unmount={unmount}
+          />
         ))
       }
     >

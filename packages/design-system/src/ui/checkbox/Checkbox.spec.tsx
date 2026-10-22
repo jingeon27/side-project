@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -13,14 +15,16 @@ type TValues = z.infer<typeof schema>;
 
 function TermsForm({ onSubmit }: { onSubmit: (values: TValues) => void }) {
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { acceptedTerms: false } });
+  const checkboxId = useId();
   return (
     <form noValidate onSubmit={form.handleSubmit(onSubmit)}>
-      <label className="flex items-center gap-2">
+      <label htmlFor={checkboxId} className="flex items-center gap-2">
         <Controller
           name="acceptedTerms"
           control={form.control}
           render={({ field, fieldState }) => (
             <Checkbox
+              id={checkboxId}
               name={field.name}
               checked={field.value}
               onCheckedChange={(checked) => field.onChange(checked)}

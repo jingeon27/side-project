@@ -6,14 +6,17 @@ import type { WebViewProps } from 'react-native-webview';
 import { buildAppUserAgent, originOf, PROTOCOL_VERSION } from '@photo-contest/bridge';
 import { buildBootstrapScript } from '@photo-contest/bridge/native';
 
-import { applyAnalyticsAuth, trackEvent } from '@/features/analytics/model/analytics';
-import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
-import { createNativeCapabilities } from '@/features/bridge/model/native-capabilities';
-import { isRelativeWebPath } from '@/features/navigation/lib/deep-link';
-import { decideNavigation, decideOpenWindow } from '@/features/navigation/lib/navigation-policy';
-import { LINK_OPTIONS, toWebUrl } from '@/features/navigation/model/link-options';
-import { openExternalUrl } from '@/features/navigation/model/open-external';
-import { useDeepLinkEvents } from '@/features/navigation/model/use-deep-link-events';
+import { applyAnalyticsAuth, trackEvent } from '@/features/analytics';
+import { createNativeCapabilities, type TCapabilityOutcome } from '@/features/bridge';
+import {
+  decideNavigation,
+  decideOpenWindow,
+  isRelativeWebPath,
+  LINK_OPTIONS,
+  openExternalUrl,
+  toWebUrl,
+  useDeepLinkEvents,
+} from '@/features/navigation';
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { captureWarning } from '@/shared/lib/monitoring/monitoring';
 import { useLatest } from '@/shared/lib/use-latest';

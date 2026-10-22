@@ -29,10 +29,10 @@ export function RemoveMemberButton({
       loading={loading}
       aria-label={`${nickname} 내보내기`}
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
           <ConfirmDialog
             isOpen={isOpen}
-            onClose={close}
+            onClose={onClose}
             unmount={unmount}
             tone="danger"
             title={`${nickname}님을 그룹에서 내보낼까요?`}
