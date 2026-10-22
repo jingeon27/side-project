@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { checkMigration, newlyAddedMigrations } from './check-migrations.mjs';
+import { checkMigration, migrationBase, newlyAddedMigrations } from './check-migrations.mjs';
 
 describe('배포 호환 migration 검사', () => {
   it.each([
@@ -65,6 +65,35 @@ describe('배포 호환 migration 검사', () => {
       git('add', '.');
       git('commit', '-qm', 'next');
       expect(newlyAddedMigrations({ base, cwd })).toEqual([`${root}/new/migration.sql`]);
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+  it('강제 push로 HEAD의 조상이 아닌 before는 develop 기준으로 바꾼다', () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'migration-base-'));
+    const git = (...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+    const commit = (file: string) => {
+      writeFileSync(join(cwd, file), file);
+      git('add', file);
+      git('commit', '-qm', file);
+      return git('rev-parse', 'HEAD');
+    };
+    try {
+      git('init', '-q', '-b', 'develop');
+      git('config', 'user.name', 'Test');
+      git('config', 'user.email', 'test@example.invalid');
+      commit('base');
+      git('checkout', '-qb', 'feature');
+      const previousTip = commit('feature-old');
+      git('checkout', '-q', 'develop');
+      commit('develop-migration');
+      git('checkout', '-qB', 'feature');
+      const tip = commit('feature-rebased');
+      expect(migrationBase({ requested: previousTip, fallback: 'develop', cwd })).toBe('develop');
+      expect(migrationBase({ requested: 'f'.repeat(40), fallback: 'develop', cwd })).toBe('develop');
+      expect(migrationBase({ requested: '0'.repeat(40), fallback: 'develop', cwd })).toBe('develop');
+      commit('feature-next');
+      expect(migrationBase({ requested: tip, fallback: 'develop', cwd })).toBe(tip);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
