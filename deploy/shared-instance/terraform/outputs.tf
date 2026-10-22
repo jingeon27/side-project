@@ -56,3 +56,15 @@ output "rds_master_user_secret_arn" {
   description = "RDS 관리자 비밀번호가 든 Secrets Manager 비밀의 ARN. 비밀번호 자체는 출력하지 않는다."
   value       = aws_db_instance.this.master_user_secret[0].secret_arn
 }
+
+# S3
+
+output "s3_bucket_names" {
+  description = "서비스별 비공개 S3 버킷 이름. /srv/side-project/.env의 GAME_FEEDBACK_S3_BUCKET·PHOTO_CONTEST_S3_BUCKET."
+  value       = { for service, bucket in aws_s3_bucket.service : service => bucket.bucket }
+}
+
+output "s3_cors_origins" {
+  description = "서비스별 버킷에 적용한 CORS AllowedOrigins."
+  value       = { for service, config in local.services : service => config.cors.allowed_origins }
+}
