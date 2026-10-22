@@ -365,8 +365,10 @@ const commitOf = (ref, cwd) =>
 const isAncestor = (ancestor, descendant, cwd) =>
   git(['merge-base', '--is-ancestor', ancestor, descendant], cwd) !== null;
 
-// 기준은 (1) PR base·push before, (2) 배포 브랜치와의 merge-base, (3) fallback 순서로 고른다.
-// 강제 push의 before는 새 HEAD의 조상이 아니고, develop push에서 origin/develop은 HEAD 자신이라 둘 다 비교 기준이 될 수 없다.
+// 기준은 HEAD와 다른 조상 중 (1) PR base·push before, (2) fallback(origin/develop)과의 merge-base,
+// (3) 배포 브랜치(origin/main)와의 merge-base 순서로 고른다. 새 브랜치 첫 push의 before는 0000이고 강제 push의 before는
+// 새 HEAD의 조상이 아니다. 기능 브랜치는 develop에서 갈라진 뒤 더한 migration만 보고, develop 자신(merge-base가 HEAD)만
+// 아직 배포되지 않은 migration 전체를 origin/main 기준으로 다시 본다.
 export function migrationBase({
   requested,
   event,
@@ -377,9 +379,12 @@ export function migrationBase({
 }) {
   const headCommit = commitOf(head, cwd);
   if (!headCommit) throw new Error(`Migration compatibility: cannot resolve ${head}.`);
+  const mergeBase = (ref) => {
+    const commit = commitOf(ref, cwd);
+    return commit ? git(['merge-base', commit, headCommit], cwd) : null;
+  };
   const deployCommit = commitOf(deployRef, cwd);
-  const deployBase = deployCommit ? git(['merge-base', deployCommit, headCommit], cwd) : null;
-  for (const candidate of [requested, deployBase, fallback]) {
+  for (const candidate of [requested, mergeBase(fallback), mergeBase(deployRef)]) {
     const commit = commitOf(candidate, cwd);
     if (commit && commit !== headCommit && isAncestor(commit, headCommit, cwd)) return candidate;
   }

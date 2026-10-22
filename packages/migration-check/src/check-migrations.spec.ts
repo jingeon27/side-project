@@ -193,12 +193,12 @@ describe('migration 비교 기준', () => {
       git('checkout', '-qb', 'feature');
       const previousTip = commit('feature-old');
       git('checkout', '-q', 'develop');
-      commit('develop-migration');
+      const developTip = commit('develop-migration');
       git('checkout', '-qB', 'feature');
       const tip = commit('feature-rebased');
-      expect(migrationBase({ requested: previousTip, fallback: 'develop', cwd })).toBe('develop');
-      expect(migrationBase({ requested: 'f'.repeat(40), fallback: 'develop', cwd })).toBe('develop');
-      expect(migrationBase({ requested: '0'.repeat(40), fallback: 'develop', cwd })).toBe('develop');
+      expect(migrationBase({ requested: previousTip, fallback: 'develop', cwd })).toBe(developTip);
+      expect(migrationBase({ requested: 'f'.repeat(40), fallback: 'develop', cwd })).toBe(developTip);
+      expect(migrationBase({ requested: '0'.repeat(40), fallback: 'develop', cwd })).toBe(developTip);
       commit('feature-next');
       expect(migrationBase({ requested: tip, fallback: 'develop', cwd })).toBe(tip);
     });

@@ -83,4 +83,24 @@ describe('감사에서 재현한 migration 검사 미탐·오탐', () => {
       expect(() => migrationBase({ requested: '0'.repeat(40), event: 'push', cwd })).toThrow(/no base ref/);
     });
   });
+
+  // PR #40 CI: 새 브랜치 첫 push(before 0000)가 origin/main merge-base로 develop의 기존 migration 18개까지 검사했다.
+  it('기능 브랜치 첫 push는 develop에서 갈라진 뒤 더한 migration만 검사한다', () => {
+    withGitRepo(({ cwd, git, put, commit }) => {
+      const released = commit('released');
+      git('update-ref', 'refs/remotes/origin/main', released);
+      put('20250101_legacy', 'CREATE INDEX "Post_x_idx" ON "Post"("x");');
+      const forkPoint = commit('develop-legacy');
+      git('checkout', '-qb', 'feature');
+      put('20250103_feature', 'CREATE TABLE "Feature" (id text);');
+      commit('feature-migration');
+      git('checkout', '-q', 'develop');
+      commit('develop-after-fork');
+      git('update-ref', 'refs/remotes/origin/develop', 'HEAD');
+      git('checkout', '-q', 'feature');
+      const base = migrationBase({ requested: '0'.repeat(40), event: 'push', cwd });
+      expect(base).toBe(forkPoint);
+      expect(migrationChanges({ base, cwd }).added).toEqual([`${MIGRATIONS}/20250103_feature/migration.sql`]);
+    });
+  });
 });
