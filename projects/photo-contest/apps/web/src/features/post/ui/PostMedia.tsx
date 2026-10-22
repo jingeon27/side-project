@@ -22,6 +22,7 @@ export function PostMedia({ postId, detail = false }: { postId: string; detail?:
   );
   return match(post.kind)
     .with(PostKind.Video, () => (
+      // eslint-disable-next-line jsx-a11y/media-has-caption -- 사용자가 올린 동영상이라 함께 제공할 자막 파일이 없다.
       <video
         src={mediaUrl}
         controls
