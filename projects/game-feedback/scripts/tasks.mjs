@@ -37,6 +37,8 @@ async function check() {
   await prerequisites();
   for (const name of ['contracts', 'api', 'sdk', 'bridge', 'web', 'mobile', 'admin'])
     await workspace(name, 'typecheck');
+  // API·contracts·sdk·bridge와 프로젝트 스크립트는 프로젝트 루트 eslint.config.ts가 검사한다.
+  await yarn(['workspace', '@side/game-feedback', 'lint'], env);
   await workspace('web', 'lint');
   await workspace('mobile', 'lint');
   await workspace('admin', 'lint');
