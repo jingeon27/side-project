@@ -8,7 +8,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 ## 순서
 
 1. **계약** `../../packages/contracts/src/index.ts`: 입력은 `.strict()` Zod 객체로 쓴다(trim·정규화·한국어 오류 문장이 여기 있다). 응답의 시각은 `ResponseTimestampSchema`(ISO 문자열), ID는 `ResponseIdSchema`. 이름 있는 모델이 필요하면 `schemas`에 더하고 `operations`에 `{ method, path: '/api/x/{id}', id, body?, response, query?, contentType? }`를 더한다. `id`가 SDK 함수 이름이 된다.
-2. **OpenAPI 한계** (`src/openapi.ts`): 성공 응답은 항상 `'200'`만 기록한다. `query: true`는 `cursor`·`limit`만 만들고, 그 밖의 쿼리는 `listPosts` 분기처럼 이 파일에 직접 적는다. SSE(`/api/chat/events`)와 바이너리 GET(`/api/post-media/:id`, `/api/users/:id/avatar`, 채팅 첨부 GET)은 `operations`에 넣지 않는다.
+2. **OpenAPI 한계** (`src/openapi.ts`): 성공 응답은 항상 `'200'`만 기록한다. `query: true`는 `cursor`·`limit`만 만들고, 그 밖의 쿼리는 `listPosts`·`listReports`(status) 분기처럼 이 파일에 직접 적는다. SSE(`/api/chat/events`)와 바이너리 GET(`/api/post-media/:id`, `/api/users/:id/avatar`, 채팅 첨부 GET)은 `operations`에 넣지 않는다.
 3. **계약 빌드**: API는 `@game-feedback/contracts`의 `dist`를 import한다. 계약을 고친 뒤 `codegen`(또는 contracts `build`) 전에는 API `typecheck`가 옛 타입을 본다. API `test` 스크립트는 빌드를 먼저 한다.
 4. **DTO** `src/<domain>/<name>-input.dto.ts`: `static readonly contract = XInputSchema`, 필드는 `declare f: z.output<typeof XInputSchema>['f']` + Zod와 같은 범위의 class-validator 데코레이터, trim은 `Trim()`. `RequestValidationPipe`(`src/common/http/request-validation.ts`)는 Zod parse(정규화, 첫 issue 문장) → class-validator(body는 `forbidNonWhitelisted`, query는 모르는 키 허용) → **Zod 결과 plain object**를 넘긴다. DTO 인스턴스가 아니다. 실패는 400 `VALIDATION_ERROR`.
 5. **Controller** `src/<domain>/<domain>.controller.ts`: `@Controller('api')` 또는 `'api/<prefix>'`. 본문 `@ValidatedBody(Dto)`, 쿼리 `@ValidatedQuery(Dto)`(목록은 `ListQueryDto`), enum 경로 값 `@Param('x', new ContractValuePipe(Schema))`. `@Req() req: SessionRequest`를 서비스로 넘기고 규칙은 서비스에 둔다. `PATCH /api/profile`의 `@Body() body: unknown` + 서비스 `parse()`는 남은 예외다 — 따라 하지 않는다.
@@ -42,8 +42,8 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 ## 경로를 하드코딩한 곳
 
 새 경로를 만들거나 이름을 바꾸면 함께 본다.
-- `src/common/http/api-access.middleware.ts`: 밴 사용자에게 허용하는 쓰기 경로.
-- `src/rate-limit.ts`: 인증 시도(`authAttempts`)·업로드·업로드 완료 버킷, health 경로.
+- `src/common/http/banned-access.ts`: 밴 사용자에게 허용하는 쓰기 경로.
+- `src/rate-limit.ts`: 인증 시도(`authAttempts`)·업로드·업로드 완료·게임 프로필 조회 버킷, health 경로.
 - `src/chat/chat-lifecycle.middleware.ts`: 세션을 바꾸는 POST, `DELETE /api/me`, 차단 경로의 SSE 종료·알림.
 - `../../packages/sdk/src/index.ts`: 생성 함수 re-export 목록(손으로 관리한다). 빠지면 Web·Admin이 `@game-feedback/sdk`에서 import하지 못한다.
 
