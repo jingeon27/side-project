@@ -7,3 +7,9 @@
 - 운영 세션은 로컬 Vite 프록시에서만 사용한다. `GF_ADMIN_ACCESS_TOKEN`을 브라우저·스토리지·로그로 보내지 않는다. 운영 모드에서 테스트 로그인 버튼을 노출하지 않으며 권한은 API에서 검증한다.
 - Admin은 loopback 3303, E2E는 3304/API 4304와 전용 테스트 DB 55444의 새 `gf_test_admin_*` 스키마를 사용한다. 다른 worktree의 개발 서버·DB 프로세스를 종료하지 않는다. 실행·운영 연결 절차는 `README.md`를 따른다.
 - 타입·lint·Vitest·build는 `@game-feedback/admin`이 소유한다. 브라우저 검증은 이 앱의 Playwright 설정으로 실행하고 해당 실행에서 생성한 스키마만 정리한다.
+
+## 앱 스킬
+
+- `.agents/skills/game-feedback-admin-screen/SKILL.md`: hash 경로·관리자 화면/탭 추가·관리자 API와 SDK 연결.
+- `.agents/skills/game-feedback-admin-session/SKILL.md`: Vite 프록시·Origin 가드·운영 토큰 경계·계정 전환·로컬 실행.
+- `.agents/skills/game-feedback-admin-test/SKILL.md`: Vitest 단위·Playwright E2E·격리 스키마 정리.
