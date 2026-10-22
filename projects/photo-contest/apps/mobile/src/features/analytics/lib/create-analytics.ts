@@ -17,8 +17,8 @@ const MAX_DEVICE_ID_LENGTH = 128;
 const INIT_OPTIONS = {
   // 카탈로그의 이벤트만 보낸다. 세션·화면·앱 수명 주기 자동 수집은 끈다.
   autocapture: false,
-  // 광고·기기 식별자는 모으지 않는다. SDK가 만든 무작위 기기 ID만 웹과 함께 쓴다.
-  trackingOptions: { adid: false, appSetId: false, idfv: false },
+  // 광고·기기 식별자와 IP는 모으지 않는다(웹과 같다). SDK가 만든 무작위 기기 ID만 웹과 함께 쓴다.
+  trackingOptions: { adid: false, appSetId: false, idfv: false, ipAddress: false },
 } satisfies Amplitude.Types.ReactNativeOptions;
 
 export type TIdentityChange =
