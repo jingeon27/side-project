@@ -35,3 +35,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 실제 데이터에 근거하지 않는 LIVE/ACTIVE 상태, 장식용 점과 가운데 점, 불필요한 영문 대문자 라벨과 별/궤도/떠 있는 카드 장식을 추가하지 않는다. 읽지 않은 항목은 숫자나 문구로 표시하고 실제 SSE 상태는 텍스트로 전달한다. 사용자 콘텐츠 원문은 바꾸지 않는다.
 
 - 게임 프로필은 사용자 계정 설정에서 등록하며 글쓰기에 첨부하지 않는다. 인증 문의는 기존 관리자 1:1 대화로 연결하고 인증은 관리자가 수동 승인한다. 대표 태그 변경은 인증을 해제한다. /:locale/admin은 문의함, 신고 검토, 인증과 밴/해제를 제공하며 API에서도 관리자 권한을 검증한다. 밴 중에도 관리자 문의는 유지한다.
+
+## 앱 스킬
+
+| 작업 | 스킬 |
+| --- | --- |
+| 화면·라우트·`@topbar`·첫 문서 데이터·SEO·오류 경계 | `.agents/skills/game-feedback-web-page-structure/SKILL.md` |
+| 링크·뒤로 가기·게시판 문맥·URL 상태·locale·앱 WebView 연동 | `.agents/skills/game-feedback-web-navigation/SKILL.md` |
+| REST 조회·mutation·쿼리 키·계정 전환·채팅 SSE | `.agents/skills/game-feedback-web-server-state/SKILL.md` |
+| 글쓰기·Quill 본문·사진/동영상·채팅 첨부 업로드 | `.agents/skills/game-feedback-web-compose-media/SKILL.md` |
+| Playwright 설정·격리 서버·로그인·한 spec 실행 | `.agents/skills/game-feedback-web-e2e/SKILL.md` |
