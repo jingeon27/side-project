@@ -3,7 +3,7 @@ import { Controller, Delete, HttpCode, Inject, Param, Patch, Post, Req, UseGuard
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { CommentBodyDto } from './comment-input.dto';
+import { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
 import { CommentsService } from './comments.service';
 
 @Controller('api')
@@ -15,7 +15,7 @@ export class CommentsController {
   comment(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(CommentBodyDto) body: CommentBodyDto,
+    @ValidatedBody(CreateCommentBodyDto) body: CreateCommentBodyDto,
   ) {
     return this.service.createComment(req, id, body);
   }

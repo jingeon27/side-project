@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
@@ -21,7 +22,10 @@ export class NotificationsService {
       cursor = decodeCursor(q.cursor),
       excluded = await this.visibility.excluded(req);
     const visible: Prisma.NotificationWhereInput = {
-      OR: [{ actorId: null }, { actorId: { notIn: excluded } }],
+      AND: [
+        { OR: [{ actorId: null }, { actorId: { notIn: excluded } }] },
+        { OR: [{ commentId: null }, { comment: { is: activeCommentWhere(excluded) } }] },
+      ],
     };
     const where: Prisma.NotificationWhereInput = {
       AND: [visible],
@@ -58,6 +62,7 @@ export class NotificationsService {
         type: n.type,
         postId: n.postId,
         answerId: n.answerId,
+        commentId: n.commentId,
         message: n.message,
         readAt: n.readAt?.toISOString() ?? null,
         createdAt: n.createdAt.toISOString(),

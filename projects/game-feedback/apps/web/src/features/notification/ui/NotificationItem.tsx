@@ -17,6 +17,7 @@ const notificationTitles: Record<Notification['type'], string> = {
   ANSWER: '새로운 피드백이 도착했어요',
   HELPFUL: '당신의 피드백이 도움이 됐어요',
   COMMENT: '새로운 댓글이 달렸어요',
+  COMMENT_REPLY: '새로운 답글이 달렸어요',
   FOLLOWED_POST: '팔로우한 사용자의 새 글',
 };
 export function NotificationItem({ notification, href, onRead }: INotificationItemProps) {

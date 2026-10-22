@@ -326,7 +326,38 @@
   .comment-list:empty {
     padding: 0;
   }
+  .comment-thread {
+    min-width: 0;
+  }
+  .comment-replies {
+    display: grid;
+    gap: 18px;
+    list-style: none;
+    margin: 12px 0 0 20px;
+    border-inline-start: 2px solid var(--color-line);
+    padding: 4px 0 4px 16px;
+  }
+  .comment-reply-action {
+    margin-top: 4px;
+  }
+  .comment-reply-form {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .comment-reply-target,
+  .comment-deleted {
+    font-size: var(--text-caption);
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+  }
+  .comment-reply-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
   .comment {
+    scroll-margin-block-start: calc(var(--spacing-app-bar) + 24px);
     display: flex;
     align-items: flex-start;
     gap: 9px;
@@ -335,6 +366,10 @@
   .comment.mine {
     margin-inline-start: auto;
     justify-content: flex-end;
+  }
+  .comment:target .comment-bubble {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
   }
   .comment > .avatar {
     flex-shrink: 0;

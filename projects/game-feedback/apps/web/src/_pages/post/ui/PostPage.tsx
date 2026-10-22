@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { useQuery } from '@tanstack/react-query';
 
@@ -48,7 +48,6 @@ export function PostPage(props: IPostPageProps) {
 }
 function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
   const { t } = useI18n();
-  const router = useRouter();
   const params = useSearchParams();
   const { session } = useSession(),
     detail = useQuery({
@@ -69,8 +68,13 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
       (params.get('game') ?? 'clash-royale') === game
     )
       return;
-    router.replace(appRoutes.post(locale, id, boardContext.kind, game), { scroll: false });
-  }, [boardContext, game, id, locale, params, router]);
+    // 주소만 맞춘다. router.replace는 page 세그먼트를 새로 받아 열린 답글 입력과 #comment 위치를 잃는다.
+    window.history.replaceState(
+      null,
+      '',
+      `${appRoutes.post(locale, id, boardContext.kind, game)}${window.location.hash}`,
+    );
+  }, [boardContext, game, id, locale, params]);
   if (!detail.data) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
   const { post, answers, comments } = detail.data;
   const board = boardByKind(post.board);

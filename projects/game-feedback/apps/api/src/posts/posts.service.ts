@@ -73,10 +73,22 @@ export class PostsService {
       this.db.comment.findMany({
         where: {
           postId: id,
-          ...ACTIVE_CONTENT,
-          authorId: {
-            notIn: excluded,
-          },
+          hidden: false,
+          OR: [
+            {
+              parentId: null,
+              OR: [{ deletedAt: null, authorId: { notIn: excluded } }, { deletedAt: { not: null } }],
+            },
+            {
+              parentId: { not: null },
+              deletedAt: null,
+              authorId: { notIn: excluded },
+              parent: {
+                hidden: false,
+                OR: [{ deletedAt: null, authorId: { notIn: excluded } }, { deletedAt: { not: null } }],
+              },
+            },
+          ],
         },
         include: {
           author: {
@@ -86,10 +98,13 @@ export class PostsService {
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       }),
     ]);
+    const parentsWithReplies = new Set(comments.map((comment) => comment.parentId));
     return {
       post: responsePost({ ...p, answers }),
       answers: answers.map(responseAnswer),
-      comments: comments.map(responseComment),
+      comments: comments
+        .filter((comment) => comment.deletedAt === null || parentsWithReplies.has(comment.id))
+        .map((comment) => responseComment(comment)),
     };
   }
   async createPost(req: SessionRequest, input: CreatePostDto) {

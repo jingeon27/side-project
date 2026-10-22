@@ -13,6 +13,7 @@ import type { PostDetail } from '@/shared/api';
 import { hasSessionCookie, publicServerOptions, serverRequestOptions } from '@/shared/api/server';
 
 import type { TPostListParams } from '../types/post.type';
+import { filterCommentThreads } from './filter-comment-threads';
 import { POST_ID_PATTERN, postDetailCacheTag } from './post-cache';
 
 const ExcludedAuthorsSchema = z.object({ userIds: z.array(z.string()) });
@@ -44,7 +45,7 @@ function withoutAuthors(detail: PostDetail, excluded: ReadonlySet<string>): Post
   return {
     ...detail,
     answers: detail.answers.filter((answer) => !excluded.has(answer.author.id)),
-    comments: detail.comments.filter((comment) => !excluded.has(comment.author.id)),
+    comments: filterCommentThreads(detail.comments, excluded),
   };
 }
 export const getServerPost = cache(async (id: string) => {
