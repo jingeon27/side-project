@@ -26,7 +26,7 @@ API는 항상 S3 호환 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGI
 
 기존 대회 Submission도 `requestUploadUrl(contestId, contentType, byteSize)` → 저장소 FormData POST → `completeSubmissionUpload(uploadId)` → `createSubmission`으로 전송한다. 서명은 5분이며 JPEG·PNG·WebP 10MB 이하만 예약한다. 완료할 때 접수 기간과 소유자·멤버십을 다시 확인한다. 대회 파일은 게시물 업로드 ID로 쓸 수 없다. 서버의 sharp 디코딩·1600px WebP 변환은 없앴으며 이전에 변환한 WebP는 그대로 읽는다.
 
-그룹 대표 사진도 `requestGroupAvatarUpload(groupId, contentType, byteSize)` → 저장소 FormData POST → `completeGroupAvatarUpload(uploadId)` → `updateGroupProfile(avatarId)`로 전송한다. 서명은 5분, JPEG·PNG·WebP 10MB 이하이며 완료 전에는 프로필에 지정할 수 없다. 서버의 512px WebP 변환을 없앤 대신 웹이 올리기 전에 긴 변 512px JPEG로 줄인다. 사용 중인 대표 사진은 정리에서 제외하고 교체·포기한 사진만 지운다.
+그룹 대표 사진도 `requestGroupAvatarUpload(groupId, contentType, byteSize)` → 저장소 FormData POST → `completeGroupAvatarUpload(uploadId)` → `updateGroupProfile(avatarId)`로 전송한다. 서명은 5분, JPEG·PNG·WebP 10MB 이하이며 완료 전에는 프로필에 지정할 수 없다. 서버의 512px WebP 변환은 없애고 원본을 그대로 저장한다. 사용 중인 대표 사진은 정리에서 제외하고 교체·포기한 사진만 지운다.
 
 `uploadPostMedia`·`uploadSubmissionPhoto`·`uploadGroupAvatar`·`Upload` scalar, `/post-uploads/:token`·`/uploads/:token`, 로컬 디스크 저장소와 `/local-post-uploads`는 제거했다. 이전 탭은 새로고침해야 한다. `PostUpload.completionKey`·`completionStartedAt`과 `PostUploadAttempt` 테이블은 더 이상 쓰지 않지만 파괴적 migration을 피하려고 남겨 둔다.
 

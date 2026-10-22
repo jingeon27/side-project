@@ -2,7 +2,7 @@
 
 사용자 결정으로 게시물·기존 대회 사진·그룹 대표 사진의 업로드와 조회를 모두 S3 presigned URL로만 처리한다. 발급은 권한·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 content-length-range를 고정한 POST 정책을 서명한다. 완료는 HEAD로 크기·형식만 확인하며 staging→최종 복사, 완료 lease·후보 추적은 없앴다. 서버가 내용을 검사하지 않으므로 복사본으로 고정할 불변식이 없고, 정책이 끝나기 전(최대 15분)에는 업로더가 같은 크기·형식으로 다시 올릴 수 있다.
 
-`/media/:id`·다운로드·`/photos/:id`·대표 사진 경로는 권한 확인 뒤 `private, no-store` 307로 60초 서명 GET에 보낸다. Range와 다운로드 이름·응답 형식은 저장소가 처리하고 postDownload도 같은 서명 URL을 준다. MediaProcessor(image-size·mediainfo.js)·MediaReader·readRange, 대회 1600px·대표 사진 512px sharp WebP 변환, PNG·움직이는 WebP·코덱·길이 검사와 관련 한도·테스트, 로컬 디스크 저장소·로컬 업로드 서명·STORAGE_BACKEND/STORAGE_DIR을 지웠다. 위치·EXIF 메타데이터는 일부러 유지한다. 동영상 5분 제한은 브라우저가 메타데이터로 읽은 길이로만 확인하고, 대표 사진은 웹이 512px JPEG로 줄여 올린다. 쓰지 않는 `PostUpload.completionKey`·`completionStartedAt`·`PostUploadAttempt`는 파괴적 migration을 피하려고 남겼다.
+`/media/:id`·다운로드·`/photos/:id`·대표 사진 경로는 권한 확인 뒤 `private, no-store` 307로 60초 서명 GET에 보낸다. Range와 다운로드 이름·응답 형식은 저장소가 처리하고 postDownload도 같은 서명 URL을 준다. MediaProcessor(image-size·mediainfo.js)·MediaReader·readRange, 대회 1600px·대표 사진 512px sharp WebP 변환, PNG·움직이는 WebP·코덱·길이 검사와 관련 한도·테스트, 로컬 디스크 저장소·로컬 업로드 서명·STORAGE_BACKEND/STORAGE_DIR을 지웠다. 위치·EXIF 메타데이터는 일부러 유지한다. 동영상 5분 제한은 브라우저가 메타데이터로 읽은 길이로만 확인하고, 대표 사진은 원본 그대로 올린다. 쓰지 않는 `PostUpload.completionKey`·`completionStartedAt`·`PostUploadAttempt`는 파괴적 migration을 피하려고 남겼다.
 
 로컬 개발·테스트는 Docker 없이 `@photo-contest/test-kit`의 S3 호환 대역을 쓴다. 서명 POST 정책, SigV4 헤더·query 서명, 서명 GET의 Range·응답 헤더 덮어쓰기, HEAD·PUT·DELETE, 웹 origin CORS를 디스크 폴더로 처리한다. API 통합·웹/모바일 test:api·test:e2e·test:cache는 빈 포트에 대역을 자동으로 띄우고 dev는 `S3_ENDPOINT`가 로컬이면 4210으로 함께 띄운다. 단독 Compose는 S3 설정을 필수로 받고 미디어 volume·`backup.sh --with-media`를 없앴으며 컨테이너 검증은 대역을 붙여 실행한다. 공통 배포 스모크도 서명 POST → 완료 → 307 서명 GET 흐름으로 바꿨다.
 
