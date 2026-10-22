@@ -19,7 +19,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 ## 인증
 
-- 세션은 HttpOnly 쿠키 `contest_session` 하나(43자 base64url). cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 4KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
+- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. OAuth state 쿠키도 같은 원칙(`__Host-contest_oauth_state`)이다. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
 - `session.service`가 요청당 한 번만 조회한다(WeakMap). GraphQL·REST 모두 `@Viewer()`/`@OptionalViewer()`를 쓴다. Authorization 헤더는 보지 않는다.
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.

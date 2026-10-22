@@ -21,7 +21,7 @@ import {
 } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
-import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
+import { authCookieOptions, oauthStateCookieName } from './auth-cookie';
 import {
   accessTokenOf,
   identityOf,
@@ -137,7 +137,7 @@ export class AuthService {
         expiresAt: new Date(Date.now() + OAUTH_ATTEMPT_TTL_MS),
       },
     });
-    res.cookie(AUTH_COOKIE.OAUTH_STATE, state, authCookieOptions(OAUTH_ATTEMPT_TTL_MS));
+    res.cookie(oauthStateCookieName(), state, authCookieOptions(OAUTH_ATTEMPT_TTL_MS));
     const url = new URL(provider.authorizeUrl);
     url.search = new URLSearchParams({
       client_id: provider.clientId,
@@ -157,13 +157,13 @@ export class AuthService {
    */
   async completeOAuth(providerName: string, req: Request, res: Response): Promise<string> {
     let attempt: OAuthAttempt | null = null;
-    res.clearCookie(AUTH_COOKIE.OAUTH_STATE, authCookieOptions());
+    res.clearCookie(oauthStateCookieName(), authCookieOptions());
     try {
       const provider = oauthProvider(providerName);
       const state = queryValue(req.query.state);
       const code = queryValue(req.query.code);
       if (state) attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: sha256Hex(state) } });
-      const cookieState = readCookie(req.headers.cookie, AUTH_COOKIE.OAUTH_STATE);
+      const cookieState = readCookie(req.headers.cookie, oauthStateCookieName());
       if (!state || !code || !cookieState || !safeEqual(cookieState, state))
         fail(MESSAGE.CALLBACK_REJECTED, ERROR_CODE.FORBIDDEN);
       const verified = await this.consumeAttempt(attempt, provider);
