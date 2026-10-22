@@ -27,7 +27,8 @@ export class ApiAccessMiddleware implements NestMiddleware {
 
   async use(req: SessionRequest, res: Response, next: NextFunction) {
     try {
-      if (!req.path.startsWith('/api')) return next();
+      // Routing is case-sensitive, but any spelling the router could have matched must pass these checks.
+      if (!req.path.toLowerCase().startsWith('/api')) return next();
       if (isHealthProbe(req)) return next();
       if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) assertOrigin(req, this.config.webOrigin);
       const ip = req.ip ?? 'unknown';
@@ -53,8 +54,8 @@ export class ApiAccessMiddleware implements NestMiddleware {
       }
       next();
     } catch (error) {
-      if (error instanceof ApiError) res.status(error.getStatus()).json(error.getResponse());
-      else next(error);
+      if (!(error instanceof ApiError)) return next(error);
+      res.status(error.getStatus()).json(error.getResponse());
     }
   }
 }
