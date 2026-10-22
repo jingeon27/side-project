@@ -6,6 +6,7 @@
   "exports": {
     "./base": "./src/base.ts",
     "./react": "./src/react.ts",
+    "./react-dom": "./src/react-dom.ts",
     "./next": "./src/next.ts",
     "./expo": "./src/expo.ts",
     "./fsd-boundaries": "./src/fsd-boundaries.ts"
