@@ -15,6 +15,7 @@ const valid = {
   DATABASE_URL: `postgresql://game_feedback:${'a'.repeat(64)}@db:5432/game_feedback`,
   GOOGLE_CLIENT_ID: 'production-client',
   GOOGLE_CLIENT_SECRET: 'production-secret',
+  MOBILE_AUTH_CALLBACK_URL: 'https://play.game-feedback.test/app-auth/callback',
 };
 
 describe('production startup configuration', () => {
@@ -36,6 +37,10 @@ describe('production startup configuration', () => {
     { GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '' },
     { X_CLIENT_ID: 'partial-provider' },
     { GOOGLE_REDIRECT_URI: 'https://other.game-feedback.test/callback' },
+    { MOBILE_AUTH_CALLBACK_URL: '' },
+    { MOBILE_AUTH_CALLBACK_URL: 'gamefeedback://auth/callback' },
+    { MOBILE_AUTH_CALLBACK_URL: 'https://other.game-feedback.test/app-auth/callback' },
+    { MOBILE_AUTH_CALLBACK_URL: 'https://play.game-feedback.test/other' },
   ])('refuses unsafe production configuration: %j', (override) => {
     expect(() => validateProductionEnvironment({ ...valid, ...override })).toThrow();
   });

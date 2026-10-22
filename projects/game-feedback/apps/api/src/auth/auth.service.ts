@@ -34,6 +34,14 @@ import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
 import { SocialIdentityService } from './social-identity.service';
 
+/**
+ * 앱 로그인 결과는 검증된 https 콜백(App Link·Universal Link)으로만 보낸다. 코드 원문은 이 URL에만 실린다.
+ * 커스텀 스킴은 다른 앱도 등록할 수 있어 그 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다.
+ */
+function appCallbackUrl(callbackUrl: string, params: Record<string, string>) {
+  return `${callbackUrl}?${new URLSearchParams(params).toString()}`;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -174,7 +182,7 @@ export class AuthService {
     if (!code) {
       res.redirect(
         attempt.appChallenge
-          ? 'gamefeedback://auth/callback?error=login_failed'
+          ? appCallbackUrl(this.config.appAuthCallbackUrl, { error: 'login_failed' })
           : loginRedirect(this.config.webOrigin, returnPath, 'cancelled'),
       );
       return;
@@ -184,7 +192,7 @@ export class AuthService {
       throw error;
     });
     if (!subject) {
-      res.redirect('gamefeedback://auth/callback?error=login_failed');
+      res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { error: 'login_failed' }));
       return;
     }
     const user = await this.identities.findUser(provider, subject);
@@ -200,7 +208,7 @@ export class AuthService {
       await this.db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
     if (attempt.appChallenge) {
       const ticket = await this.appAuth.issueTicket(subject, attempt.appChallenge, provider);
-      res.redirect(`gamefeedback://auth/callback?code=${ticket}`);
+      res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { code: ticket }));
       return;
     }
     await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : subject, { provider });
