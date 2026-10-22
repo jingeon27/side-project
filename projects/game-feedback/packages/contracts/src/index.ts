@@ -207,7 +207,10 @@ export const NotificationSchema = z.object({
   postId: ResponseIdSchema,
   answerId: ResponseIdSchema.nullable(),
   commentId: ResponseIdSchema.nullable().optional(),
-  message: z.string().min(1),
+  /** 알림을 만든 사용자의 현재 공개 정보. 탈퇴 등으로 없으면 null이다. 문구는 클라이언트가 번역해 조합한다. */
+  actor: AuthorSchema.nullable(),
+  /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
+  postTitle: z.string().min(1),
   readAt: ResponseTimestampSchema.nullable(),
   createdAt: ResponseTimestampSchema,
 });
@@ -215,13 +218,22 @@ export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),
 });
+/** 최근 원댓글 스레드부터 나눈 댓글 한 페이지. 페이지 안은 오래된 순이고 각 원댓글의 답글을 함께 싣는다. */
+export const CommentPageSchema = z.object({
+  items: z.array(CommentSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
   answers: z.array(AnswerSchema),
   comments: z.array(CommentSchema),
+  /** 상세에 싣지 않은 이전 원댓글 스레드를 `listPostComments`로 받는 커서. 없으면 null. */
+  commentsCursor: z.string().min(1).nullable(),
 });
 export const PostViewInputSchema = z.object({ visitorId: z.uuid() }).strict();
 export const PostViewSchema = z.object({ viewCount: ResponseCountSchema });
+export const ReportStatusSchema = z.enum(['OPEN', 'REVIEWED', 'DISMISSED']);
+export type TReportStatus = z.infer<typeof ReportStatusSchema>;
 export const AdminReportSchema = z.object({
   targetPostId: ResponseIdSchema.nullable().optional(),
   targetPreview: z.string().nullable().optional(),
@@ -234,6 +246,15 @@ export const AdminReportSchema = z.object({
   detail: z.string().nullable(),
   status: z.string(),
   createdAt: ResponseTimestampSchema,
+});
+export const AdminReportListSchema = z.object({
+  items: z.array(AdminReportSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+export const AdminReportListQuerySchema = z.object({
+  status: ReportStatusSchema.default('OPEN'),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
 });
 export const NotificationListSchema = z.object({
   items: z.array(NotificationSchema),
@@ -400,6 +421,7 @@ export type Notification = z.infer<typeof NotificationSchema>;
 export type Session = z.infer<typeof SessionSchema>;
 export type PostList = z.infer<typeof PostListSchema>;
 export type PostDetail = z.infer<typeof PostDetailSchema>;
+export type CommentPage = z.infer<typeof CommentPageSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -452,6 +474,7 @@ export const schemas = {
   ChatMessageInput: ChatMessageInputSchema,
   ChatReadInput: ChatReadInputSchema,
   AdminReport: AdminReportSchema,
+  AdminReportList: AdminReportListSchema,
   Error: ErrorSchema,
   Ok: OkSchema,
   PublicProfile: PublicProfileSchema,
@@ -466,6 +489,7 @@ export const schemas = {
   Notification: NotificationSchema,
   PostList: PostListSchema,
   PostDetail: PostDetailSchema,
+  CommentPage: CommentPageSchema,
   NotificationList: NotificationListSchema,
   Session: SessionSchema,
   OnboardInput: OnboardInputSchema,
@@ -665,7 +689,13 @@ export const operations: OperationSpec[] = [
     response: OkSchema,
   },
   { method: 'get', path: '/api/health', id: 'getHealth', response: OkSchema },
-  { method: 'get', path: '/api/admin/reports', id: 'listReports', response: z.array(AdminReportSchema) },
+  {
+    method: 'get',
+    path: '/api/admin/reports',
+    id: 'listReports',
+    response: AdminReportListSchema,
+    query: true,
+  },
   { method: 'get', path: '/api/session', id: 'getSession', response: SessionSchema },
   { method: 'post', path: '/api/auth/demo', id: 'demoLogin', body: DemoInputSchema, response: SessionSchema },
   {
@@ -712,6 +742,13 @@ export const operations: OperationSpec[] = [
     id: 'recordPostView',
     body: PostViewInputSchema,
     response: PostViewSchema,
+  },
+  {
+    method: 'get',
+    path: '/api/posts/{id}/comments',
+    id: 'listPostComments',
+    response: CommentPageSchema,
+    query: true,
   },
   {
     method: 'post',

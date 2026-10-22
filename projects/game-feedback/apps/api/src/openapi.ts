@@ -8,6 +8,7 @@ import {
   CoachingRoleSchema,
   FeedbackStatusSchema,
   operations,
+  ReportStatusSchema,
   schemas,
 } from '@game-feedback/contracts';
 
@@ -65,6 +66,15 @@ export function createOpenApi() {
                     type: 'string',
                     enum: ['ALL', ...BoardKindSchema.options],
                   },
+                },
+              ]
+            : []),
+          ...(operation.id === 'listReports'
+            ? [
+                {
+                  name: 'status',
+                  in: 'query',
+                  schema: { type: 'string', enum: ReportStatusSchema.options, default: 'OPEN' },
                 },
               ]
             : []),

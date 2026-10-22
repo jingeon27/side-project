@@ -16,7 +16,9 @@ description: 모바일 앱의 WebView 동작(필수 prop, 탐색 정책, 딥링�
 
 - `originWhitelist={['*']}`: 기본값은 http(s)가 아닌 링크를 판단 없이 OS로 넘긴다. 모든 URL이 `decideNavigation`을 거치게 한다.
 - `setSupportMultipleWindows={false}` + `onOpenWindow` → `decideOpenWindow`: 창은 하나다. 같은 origin 새 창은 지금 WebView의 웹 이동으로 바꾼다.
-- `sharedCookiesEnabled`·`thirdPartyCookiesEnabled`: 세션 쿠키 `contest_session`이 WebView에 산다. 끄지 않는다.
+- `sharedCookiesEnabled={false}`(iOS): 세션 쿠키 `contest_session`은 WebView 쿠키 저장소에만 산다. 로그인은 웹이 WebView 안에서 `/auth/app/exchange`로 교환해 Set-Cookie를 받고, Max-Age 쿠키는 WKWebView 기본 영속 저장소(`cacheEnabled` 기본값)에 남아 앱을 다시 열어도 유지된다. 켜면 react-native-webview가 WebView 쿠키 전체(HttpOnly 포함)를 `NSHTTPCookieStorage`로 복사해 앱의 네이티브 fetch(`/app/config` 등)에도 세션이 실리므로 켜지 않는다. 네이티브가 쿠키를 심어야 하는 기능을 만들지 않는다.
+- `thirdPartyCookiesEnabled`(Android, 기본값 true): 그대로 둔다.
+- `allowsInlineMediaPlayback`(iOS): 기본값 false면 `<video>`·유튜브 iframe이 항상 전체 화면으로 열린다. 피드에서 제자리 재생한다.
 - `applicationNameForUserAgent={buildAppUserAgent(appVersion)}`: 웹 서버가 `PhotoContestApp/x.y.z`로 앱을 알아본다. `userAgent` prop을 쓰면 이 토큰이 사라진다.
 - `injectedJavaScriptBeforeContentLoaded={buildBootstrapScript(...)}`: 웹은 브리지를 만들 때 앱 정보를 한 번만 읽는다. 나중에 `injectJavaScript`로 넣지 않는다.
 - `contentInsetAdjustmentBehavior="never"`: 여백은 `SafeAreaView`가 준다. iOS 스크롤 뷰가 안전 영역을 한 번 더 더하지 않게 한다.
@@ -26,7 +28,7 @@ description: 모바일 앱의 WebView 동작(필수 prop, 탐색 정책, 딥링�
 
 - `onShouldStartLoadWithRequest`는 동기로 바로 `true`/`false`를 돌려준다. Android는 250ms 안에 답이 없으면 그냥 연다(react-native-webview `SHOULD_OVERRIDE_URL_LOADING_TIMEOUT`). 밖에서 열기는 `void openExternalUrl(url, fallbackUrl)`로 던져 둔다.
 - Android는 첫 로드에 이 판단을 부르지 않는다. `sourceUrl`에는 웹 origin 주소(`toWebUrl(검증된 경로)`나 `currentUrlRef`)만 넣는다.
-- `decideNavigation` 세부: 웹 origin은 스킴·호스트·포트까지 같아야 한다(http/https가 다르면 밖). `about:srcdoc`과 iOS의 다른 origin iframe(`isTopFrame === false`)도 허용한다. 앱 스킴을 가리키는 `intent:`는 웹 이동, 그 밖 `intent:`는 대상 스킴 URL로 열고 대체 주소는 http(s) `S.browser_fallback_url` → `market://details?id=` 순. 막을 스킴은 `BLOCKED_SCHEMES` 한 곳에서 고친다.
+- `decideNavigation` 세부: 웹 origin은 스킴·호스트·포트까지 같아야 한다(http/https가 다르면 밖). `about:srcdoc`과 iOS의 다른 origin iframe(`isTopFrame === false`)의 http(s) 이동도 허용한다. 하위 프레임이 http(s)가 아닌 스킴(앱 스킴·intent·카카오톡·전화 등)으로 이동하면 사용자 동작 없이도 외부 앱이 열릴 수 있으므로 막는다. 앱 스킴을 가리키는 `intent:`는 웹 이동, 그 밖 `intent:`는 대상 스킴 URL로 열고 대체 주소는 http(s) `S.browser_fallback_url` → `market://details?id=` 순. 막을 스킴은 `BLOCKED_SCHEMES` 한 곳에서 고친다.
 - `toWebPath`: route는 `LINK_ROUTES`(대소문자 구분), id는 `^[A-Za-z0-9_-]{1,128}$`, 끝 슬래시 하나 허용, 쿼리·해시는 버림, 2048자 이하, `WEB_ORIGIN` 자체는 `/`. `auth/callback`과 모르는 링크는 `null` — 첫 링크면 홈을 열고 실행 중이면 무시한다. URL은 정규식으로만 나눈다(RN `URL` 생성자 금지).
 - route를 더하면 웹에 그 화면이 있는지 확인하고 `deep-link.spec.ts`에 `..`·`%2F`·공백·한글·129자·`contest.example@evil.example`·비슷한 도메인 케이스를 함께 넣는다. 탐색 분기를 바꾸면 `navigation-policy.spec.ts`도 같은 식으로 채운다.
 - https 링크는 파서만 있다. 앱이 직접 받으려면 `app.config.ts`에 iOS associated domains·Android intent filter(autoVerify)와 웹 origin의 `/.well-known` 검증 파일이 필요하다(지금 없다).

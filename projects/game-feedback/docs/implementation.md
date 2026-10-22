@@ -4,6 +4,39 @@ URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼�
 
 검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
 
+PR #47 충돌 해소: develop `346b3ee8`을 병합하고 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL도 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Lightsail의 대소문자 무시·관리자 경로 차단, Terraform 안내와 #51 이미지 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 두 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다. SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
+
+# 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
+
+develop a8e2aae4 감사의 클라이언트 항목을 고쳤다. 아래 10월 22일 태그 만료 기록 중 "작성자의 Router Cache를 갱신하는 기존 액션에 유지한다"는 더 이상 맞지 않는다.
+
+- 문서 접근 판정: Next 16.4 proxy는 `'use cache'`를 실행하지 못한다(proxy adapter의 cacheLife 프로필이 "Proxy does not support `use cache`"를 던진다). 그래서 렌더의 태그 캐시를 쓰지 않고, 게시글 상세 판정(`features/post/api/post-access.server.ts`)이 공개 조회 결과(작성자 id 또는 없는 글)만 프로세스 안에 30초·500개까지 기억한다. 로그인 요청은 세션별 전체 상세 대신 렌더와 같은 차단 목록만 받는다. API 장애는 기억하지 않고 404로 바꾸지 않는다. 캐시가 살아 있는 동안 삭제·숨김된 글은 렌더가 태그 캐시로 다시 막으므로 본문은 보이지 않고, 상태 코드만 최대 30초 늦게 404가 된다.
+- 캐시 만료 Server Action `expirePostDetailCache`를 없앴다. API가 커밋 직후 무효화 콜백을 응답 전에 기다리고 실패하면 DB 큐에서 재시도한다. 모바일 e2e 웹 서버(3302)에도 콜백 URL·비밀을 넣었다.
+- 가이드 제목 링크: 홈·채팅·프로필·알림과 "홈으로 이동"은 `TabLink`, 게시판·글쓰기·문의는 `ChildLink`(`registerNextLogicalParent`)로 연다. 뒤로 가기(브라우저·Android)가 게시판·문의에서 가이드로 돌아오고, 탭 이동은 기록을 쌓지 않는다.
+- 글 삭제 성공 뒤 상세 쿼리를 다시 받지 않고 취소·제거하며, 이동은 피드로 replace한다.
+- 웹 응답 헤더: `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. cacheComponents(PPR) 정적 셸은 nonce를 받을 수 없어 script/style/connect를 제한하는 CSP는 넣지 않았다. Admin Vite dev·preview도 frame 차단 헤더를 보낸다.
+- SDK: Orval `urlEncodeParameters`로 경로 파라미터를 인코딩하고, `apiFetch`가 빈·점 세그먼트와 `/`·`\`·`?`·`#`가 든 세그먼트를 `INVALID_REQUEST_PATH`로 거부한다. 웹의 Player Tag 조회는 `#` 없이 보낸다.
+- 모바일: `EXPO_PUBLIC_WEB_ORIGIN`을 `new URL().origin`으로 정규화한다. iOS 하위 frame 이동은 외부 열기·앱 화면 이동 없이 같은 origin·`about:blank`만 허용한다.
+- 답글 버튼의 렌더되지 않은 폼을 가리키던 `aria-controls`와 고정 `aria-expanded`를 없앴다.
+- 문서: 모바일 build 스킬의 앱 이름, webview-shell 스킬의 쿠키 prop 설명, Admin `.env.example`의 운영 토큰 안내를 실제와 맞췄다. Admin Vite 프록시의 Origin 가드·운영 토큰 주입을 단위 테스트한다.
+
+검증(이 worktree, Node 24): `@side/game-feedback codegen` 뒤 생성 diff 없음. sdk·bridge·web·mobile·admin `typecheck`, web·mobile·admin `lint`, 단위 테스트(SDK 68, bridge 11, Web unit/UI 182, Mobile unit/UI 54, Admin 20), 루트 `format:check`가 통과했다. 운영 토큰 더미값으로 Admin을 build해 `dist/`에 토큰이 없음을 확인했다. Web·Admin·Mobile Playwright와 `next build`는 로컬에서 돌리지 않았고 CI에 맡긴다(가이드·보안 헤더·글 삭제·게임 프로필 e2e를 고치거나 더했다). Android 하드웨어 뒤로 가기와 iOS iframe 동작은 실기기로 확인하지 않았다.
+
+PR #42 충돌 해소: 최신 develop `46e5d0cd`를 병합하면서 클라이언트·API 수정 기록을 모두 보존했다. 공개 게시글 접근 테스트는 새 내부 서명 헤더를 허용하되 세션 쿠키가 없음을 확인하도록 맞췄다. Node 24의 별도 worktree에서 codegen 후 SDK 생성 diff 없음, SDK·Web·Admin typecheck, Web·Admin lint, SDK 68·Web 188·Admin 21개 테스트, 병합 파일의 Prettier 검사가 통과했다. 이번 충돌 해소에서는 DB 통합 테스트·Playwright·프로덕션 build를 실행하지 않았다. 공통 파일과 다른 서비스의 변경은 기존 develop 커밋을 병합해 들어온 내용이며 별도로 수정하지 않았다.
+
+# 2026-10-22 API 요청 제한과 접근 검사 보정
+
+감사(origin/develop a8e2aae4)에서 확인한 API 결함을 고쳤다.
+
+- SSR 요청 제한: 웹 서버가 API를 내부 주소로 부르며 모든 SSR이 웹 컨테이너 IP 하나의 버킷을 썼다. 웹은 `X-Forwarded-For` 첫 값 또는 `internal`을 `GF_CACHE_REVALIDATION_SECRET`에서 HMAC으로 파생한 키로 서명하고(60초 창), API는 유효한 서명일 때만 그 값을 버킷 키로 쓴다. 새 환경변수는 없다. 세션 쿠키가 없으면 SSR이 사용자별 `getSession` 대신 캐시된 익명 세션을 쓰고, 카테고리는 `discovery` 태그로 캐시한다.
+- 대소문자 경로: Express 5가 라우트를 대소문자 무시로 찾아 `/API/posts`가 접근 미들웨어를 건너뛰었다. `case sensitive routing`을 켠 Express 인스턴스로 Nest를 만들고 미들웨어도 접두사를 대소문자 무시로 판정한다.
+- 만료 행: 새 OAuth 시도·세션 발급 때 만료 행을 지우고 `OAuthAttempt.expiresAt` 인덱스를 더했다.
+- 밴 회피: 밴·밴 사용자 탈퇴 때 `BannedIdentity(provider, sha256(subject))`를 남기고 계정 없는 식별자의 callback·앱 교환·onboard를 거부한다.
+- 관리자 신고 목록: `status`(기본 `OPEN`)·커서 페이지(`{ items, nextCursor }`)와 `(status, createdAt, id)` 인덱스. Admin 신고함에 상태 필터와 더 보기를 더했다.
+- 게임 프로필 조회는 로그인·사용자별 분당 10회·60초 공유 캐시를 쓴다. 밴 사용자의 문의 첨부 `complete`를 허용했다. 탈퇴 시 분리한 남의 답글은 `updatedAt`을 보존한다. Lightsail Caddy가 `/_internal`·데모 인증·`/api/admin`을 대소문자 무시로 차단한다(기존 `respond`는 `handle` 뒤로 정렬돼 적용되지 않았다).
+
+추가형 migration `20261022100000_oauth_attempt_expiry_index`, `20261022100100_banned_identities`, `20261022100200_report_status_index`를 운영 `migrate deploy`로 적용한다. DB 통합 테스트는 로컬 DB를 띄우지 않아 CI에서 확인한다.
+
 # 2026-10-22 NestJS 변경에 따른 Next.js 태그 만료
 
 공개 게시글 상세는 `'use cache'` 안에서 `cacheTag('posts', 'post:<id>')`와 `cacheLife('max')`를 사용한다. 60초 간격 재검증 대신 NestJS의 변경 커밋이 태그를 만료한다. `updateTag`는 Server Action에서만 사용할 수 있으므로 작성자의 Router Cache를 갱신하는 기존 액션에 유지한다. API가 호출하는 `POST /internal/cache/revalidate` Route Handler는 `revalidateTag(tag, { expire: 0 })`를 사용해 첫 후속 조회부터 새 데이터를 기다린다. `'max'` 재검증의 stale 응답을 첫 조회에 반환하지 않는다.
@@ -20,7 +53,7 @@ URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼�
 
 게시글 상세의 서버 조회(본문·메타데이터·상단바)는 모든 사용자가 쿠키 없이 받은 공개 응답을 `'use cache'`로 게시글 id마다 함께 쓴다(`post:<id>` 태그, 60초 재검증, 1시간 만료). 로그인 요청만 API의 `/_internal/visibility/excluded-authors`에서 양방향 차단 관계를 받아, 작성자와 차단 관계면 404로 막고 그런 사람의 답변·댓글을 뺀다. Caddy는 `/api`만 API로 전달하고 `/_internal`을 edge에서 막으므로 이 경로는 웹 서버만 부른다. 사용자가 자신을 차단한 사람을 응답에서 알 수 없다. 화면은 계속 요청마다 렌더하므로 댓글의 상대 시각 처리는 그대로다.
 
-게시글 수정·삭제, 답변 작성·수정·삭제·도움됨·읽음, 댓글 작성·수정·삭제가 성공하면 서버 액션 `updateTag`로 해당 태그를 만료해 쓴 사람이 새로고침해도 바로 반영된다. 만료 실패는 60초 재검증으로 따라잡으므로 쓰기 결과를 실패로 바꾸지 않는다. 관리자 앱의 숨김·삭제와 다른 사용자의 쓰기는 최대 1분 늦게 반영될 수 있다. 공개 상세의 답변 수·상태는 차단한 사람의 답변을 포함한 값이다. 비로그인 세션 조회(`getServerSession`)는 여전히 요청마다 API를 부르며, 설정값만 담기므로 같은 방식으로 캐시할 수 있다.
+게시글 수정·삭제, 답변 작성·수정·삭제·도움됨·읽음, 댓글 작성·수정·삭제가 성공하면 서버 액션 `updateTag`로 해당 태그를 만료해 쓴 사람이 새로고침해도 바로 반영된다. 만료 실패는 60초 재검증으로 따라잡으므로 쓰기 결과를 실패로 바꾸지 않는다. 관리자 앱의 숨김·삭제와 다른 사용자의 쓰기는 최대 1분 늦게 반영될 수 있다. 공개 상세의 답변 수·상태는 차단한 사람의 답변을 포함한 값이다. 비로그인 세션 조회(`getServerSession`)는 세션 쿠키가 없으면 캐시된 익명 세션(`cacheLife('minutes')`)을 쓴다.
 
 검증: 웹 unit/UI 133개(공개 캐시·내부 차단 조회·작성자 404·답변/댓글 제외·조회 실패·404·잘못된 id·만료 액션·만료 실패 무시 사양 포함), API unit/통합 196개(웹 서버 전용 조회의 양방향 차단·세션 없음·`/api` 비노출 사양 포함), 웹·API `tsc7 --noEmit`, 변경 파일 eslint·prettier 통과. 작성자 404와 답변·댓글 제외 코드를 없애면 사양이 실패하는 것을 확인했다. 프로덕션 빌드와 Playwright는 CI에서 확인한다.
 
@@ -149,7 +182,7 @@ SSE는 live 세션을 확인하고 메시지 본문 없이 대화 갱신만 전�
 
 ## 요청 제한
 
-60초 단위로 인증된 조회는 userId별 240회, 쓰기는 userId별 60회다. 같은 사용자는 세션·IP 변경으로 한도를 나누지 않는다. 비로그인 일반 요청은 IP별 한도, 로그인·가입·OAuth 시도는 IP별 30회를 적용한다. 테스트 계정 목록은 조회, 로그아웃은 쓰기다. 세션 조회 전에는 IP별 전체 1,000회 상한을 적용한다.
+60초 단위로 인증된 조회는 userId별 240회, 쓰기는 userId별 60회다. 같은 사용자는 세션·IP 변경으로 한도를 나누지 않는다. 비로그인 일반 요청은 IP별 한도, 로그인·가입·OAuth 시도는 IP별 30회를 적용한다. 테스트 계정 목록은 조회, 로그아웃은 쓰기다. 세션 조회 전에는 IP별 전체 1,000회 상한을 적용한다. SSR 호출은 웹 서버가 서명한 방문자 IP로, 방문자 IP가 없는 공유 조회는 `internal` 버킷(조회 3,000회)으로 센다. 게임 프로필 조회는 사용자별 10회다.
 
 `rate-limit.test.ts`의 단위 테스트 4개는 공유 IP 사용자 분리, 세션·IP 변경 시 사용자 한도 공유, 비로그인·인증 경로, 목록·로그아웃 분류를 다룬다. 제한 상태는 단일 프로세스 메모리에 있으며 초과 응답은 `429 RATE_LIMITED`와 `Retry-After`다.
 

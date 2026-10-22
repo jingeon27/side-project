@@ -54,11 +54,13 @@ export class PostsController {
     return this.service.updatePost(req, id, body);
   }
   @Delete('posts/:id')
+  @UseGuards(UserGuard)
   deletePost(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.deletePost(req, id);
   }
   @HttpCode(200)
   @Post('posts/:id/read')
+  @UseGuards(UserGuard)
   read(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.readPost(req, id);
   }

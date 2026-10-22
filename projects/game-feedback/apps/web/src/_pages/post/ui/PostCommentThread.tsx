@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useState } from 'react';
 
 import { Reply } from 'lucide-react';
 
@@ -53,7 +53,6 @@ export function PostCommentThread({ thread, post, locale }: IPostCommentThreadPr
   const { t } = useI18n();
   const { session, login } = useSession();
   const [replying, setReplying] = useState(false);
-  const formId = useId();
   const { comment, replies } = thread;
   const author = comment.author;
 
@@ -74,22 +73,15 @@ export function PostCommentThread({ thread, post, locale }: IPostCommentThreadPr
       <ThreadComment comment={comment} post={post} locale={locale} />
       {!comment.isDeleted && author && (
         <div className="comment-reply-action">
+          {/* 답글 버튼은 입력 폼으로 바뀌는 진입점이다. 펼침 상태를 가진 토글이 아니므로 aria-expanded·aria-controls를 두지 않는다. */}
           {!replying && (
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              aria-controls={formId}
-              aria-expanded={false}
-              onClick={handleReply}
-            >
+            <Button variant="ghost" size="sm" type="button" onClick={handleReply}>
               <Reply size={14} aria-hidden="true" />
               {t('답글')}
             </Button>
           )}
           {replying && (
             <PostCommentReplyForm
-              id={formId}
               postId={post.id}
               parentId={comment.id}
               nickname={author.nickname}

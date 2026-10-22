@@ -1,7 +1,7 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 
 import { updateBan, updateReport, updateVerification, updateVisibility } from '../api/moderation.api';
-import { reportOptions, userOptions } from './moderation.options';
+import { reportScopeOptions, userOptions } from './moderation.options';
 
 export function verifyMutationOptions(client: QueryClient) {
   return mutationOptions({
@@ -23,7 +23,7 @@ export function reviewMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['admin-review'],
     mutationFn: updateReport,
-    onSuccess: () => client.invalidateQueries(reportOptions()),
+    onSuccess: () => client.invalidateQueries(reportScopeOptions()),
   });
 }
 
@@ -31,6 +31,6 @@ export function visibilityMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['admin-visibility'],
     mutationFn: updateVisibility,
-    onSuccess: () => client.invalidateQueries(reportOptions()),
+    onSuccess: () => client.invalidateQueries(reportScopeOptions()),
   });
 }

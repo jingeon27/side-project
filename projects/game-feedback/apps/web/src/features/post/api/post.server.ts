@@ -4,8 +4,6 @@ import { cache } from 'react';
 import { cacheLife, cacheTag } from 'next/cache';
 import { notFound } from 'next/navigation';
 
-import { z } from 'zod';
-
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 import { ApiError, getPost, listPosts } from '@game-feedback/sdk';
 
@@ -13,15 +11,16 @@ import type { PostDetail } from '@/shared/api';
 import { hasSessionCookie, publicServerOptions, serverRequestOptions } from '@/shared/api/server';
 
 import type { TPostListParams } from '../types/post.type';
+import { requestExcludedAuthors } from './excluded-authors.server';
 import { filterCommentThreads } from './filter-comment-threads';
 import { POST_ID_PATTERN, postDetailCacheTag } from './post-cache';
-
-const ExcludedAuthorsSchema = z.object({ userIds: z.array(z.string()) });
 
 export async function getServerPostList(params: TPostListParams) {
   return listPosts(params, await serverRequestOptions());
 }
 // 쿠키 없이 받은 공개 상세라 모든 사용자가 게시글 id 하나로 같은 캐시를 쓴다. 없는 글은 null로 캐시한다.
+// viewCount는 마지막 내용 변경 때의 값이다. 조회 집계는 이 태그를 만료하지 않고, 화면은 마운트 재조회와
+// 조회 기록 응답(recordPostViewMutationOptions)으로 최신 값을 보여준다.
 async function getPublicPost(id: string) {
   'use cache';
   cacheTag(POSTS_CACHE_TAG, postDetailCacheTag(id));
@@ -33,13 +32,9 @@ async function getPublicPost(id: string) {
     throw error;
   }
 }
-// 차단 관계는 사용자마다 달라 캐시하지 않는다. 자신을 차단한 사람이 드러나지 않게 브라우저가 닿지 않는 내부 경로로 받는다.
 async function getServerExcludedAuthors(): Promise<ReadonlySet<string>> {
   if (!(await hasSessionCookie())) return new Set();
-  const { baseUrl, headers, signal } = await serverRequestOptions();
-  const response = await fetch(`${baseUrl}/internal/visibility/excluded-authors`, { headers, signal });
-  if (!response.ok) throw new Error(`Excluded authors request failed with ${response.status}.`);
-  return new Set(ExcludedAuthorsSchema.parse(await response.json()).userIds);
+  return requestExcludedAuthors(await serverRequestOptions());
 }
 function withoutAuthors(detail: PostDetail, excluded: ReadonlySet<string>): PostDetail {
   return {

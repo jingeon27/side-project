@@ -7,8 +7,9 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 
 ## 요청 한 건의 경로 (`src/app.ts`)
 
-1. `configureHttp`(`src/common/http/configure-http.ts`): `Cache-Control: no-store`·`nosniff`·`Referrer-Policy`, JSON 256kb(깨진 JSON 400, 초과 413 `INVALID_BODY`), 운영에서만 `trust proxy` 1.
-2. `ApiAccessMiddleware`(`src/common/http/api-access.middleware.ts`, `/api`만): health GET·HEAD 통과 → GET·HEAD·OPTIONS 밖은 `assertOrigin`(`Origin === webOrigin`이고 `Sec-Fetch-Site: cross-site`가 아니어야 한다, 아니면 403 `INVALID_ORIGIN`) → IP당 분당 1000 → `SessionService.loadSession` → 밴 검사 → `requestRateBucket` 제한(429 `RATE_LIMITED` + `Retry-After`). 제한은 `rateLimit` 설정이 켜졌을 때만이다.
+1. `createHttpAdapter`·`configureHttp`(`src/common/http/configure-http.ts`): 라우팅은 대소문자를 구분한다(`case sensitive routing`은 `ExpressAdapter` 생성 전에 켜야 한다 — 생성자가 라우터를 만든다). `Cache-Control: no-store`·`nosniff`·`Referrer-Policy`, JSON 256kb(깨진 JSON 400, 초과 413 `INVALID_BODY`), 운영에서만 `trust proxy` 1.
+2. `ApiAccessMiddleware`(`src/common/http/api-access.middleware.ts`, 경로가 대소문자 무시로 `/api`로 시작하면): health GET·HEAD 통과 → GET·HEAD·OPTIONS 밖은 `assertOrigin`(`Origin === webOrigin`이고 `Sec-Fetch-Site: cross-site`가 아니어야 한다, 아니면 403 `INVALID_ORIGIN`) → 클라이언트 식별 → `coarseRateBucket`(IP당 분당 1000) → `SessionService.loadSession` → 밴 검사 → `requestRateBucket` 제한(429 `RATE_LIMITED` + `Retry-After`). 제한은 `rateLimit` 설정이 켜졌을 때만이다.
+   - 클라이언트 식별(`src/common/http/forwarded-client.ts`): Next 서버는 내부 주소로 API를 부르므로 소켓 IP가 항상 웹 컨테이너다. 웹(`apps/web/src/shared/api/server.ts`)은 `X-Forwarded-For` 첫 값(Caddy가 덮어쓴다) 또는 쿠키 없는 공유 조회의 `internal`을 `x-gf-client-ip`·`x-gf-client-timestamp`·`x-gf-client-signature`로 보낸다. 키는 `GF_CACHE_REVALIDATION_SECRET`에서 HMAC으로 파생하고(`AppOptions.forwardedClientSecret`로 덮는다) 60초 창 안의 서명만 믿는다. 서명이 유효하면 그 IP, `internal`이면 별도 `internal` 버킷(조회 분당 3000), 아니면 소켓 IP를 쓴다. 두 구현은 같은 테스트 벡터를 고정한다.
 3. Origin이 세션보다 먼저라 Bearer 요청도 쓰기에는 `Origin`이 필요하고, 다른 Origin은 비로그인이어도 401보다 403이 먼저다. 이어서 `ChatLifecycleMiddleware` → Guard → 파이프 → 서비스.
 
 ## 세션 (`src/auth/session.service.ts`, `src/auth/session-token.ts`)
@@ -28,13 +29,13 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 ## OAuth 제공자
 
 - 계약 `SocialProviderSchema`(`x`·`kakao`·`discord`·`google`, `../../packages/contracts/src/index.ts`)와 인터페이스 `IdentityProvider { authorizationUrl({ state, nonce, challenge }), exchange(code, verifier, nonce) → subject }`(`src/auth/providers/identity-provider.ts`).
-- 구현: Google은 `GoogleIdentityProvider`(scope `openid`, PKCE, id_token 검증). 나머지는 `src/auth/providers/oauth-identity.provider.ts`의 `createXIdentityProvider`·`createKakaoIdentityProvider`·`createDiscordIdentityProvider`이며 `subject`를 Zod로 좁히고 실패는 502 `OAUTH_FAILED`.
+- 구현: Google은 `GoogleIdentityProvider`(scope `openid`, PKCE, id_token 검증). X는 `tweet.read users.read`, Discord는 `identify`, 카카오는 scope 없이 ID만 조회한다. 나머지는 `src/auth/providers/oauth-identity.provider.ts`의 `createXIdentityProvider`·`createKakaoIdentityProvider`·`createDiscordIdentityProvider`이며 `subject`를 Zod로 좁히고 실패는 502 `OAUTH_FAILED`.
 - 연결: `resolveIdentityProviders`(`src/config/identity-providers.ts`)가 `<PREFIX>_CLIENT_ID`·`_CLIENT_SECRET`·`_REDIRECT_URI`를 읽는다. 기본 redirect는 `${webOrigin}/api/auth/social/<p>/callback`(Google은 `/api/auth/google/callback`) — Web origin의 `/api` rewrite를 거쳐야 state 쿠키가 돌아온다.
 - 제공자 추가 순서: `SocialProviderSchema` → 어댑터 팩토리 → `identity-providers.ts` → `production.config.ts`의 `providers` → 프로젝트 `.env.example` → `scripts/test.mjs`에서 키 비우기 → `oauth-identity.provider.test.ts` 케이스 → `codegen`. `GET /api/session`의 `socialProviders`는 enum에서 자동으로 만들어진다.
 
 ## OAuth 흐름 불변식 (`AuthService.social`·`socialCallback`)
 
-- 시작: 미설정이면 503 `OAUTH_NOT_CONFIGURED`. `app_challenge`는 정확히 43자 `[A-Za-z0-9_-]`, 아니면 400 `APP_CHALLENGE_INVALID`. `OAuthAttempt`에 `stateHash`·`nonce`·`verifier`·`appChallenge`(10분)를 두고 state 원문은 `gamefeedback_oauth` 쿠키로만 준다.
+- 시작: 미설정이면 503 `OAUTH_NOT_CONFIGURED`. `app_challenge`는 정확히 43자 `[A-Za-z0-9_-]`, 아니면 400 `APP_CHALLENGE_INVALID`. 만료된 `OAuthAttempt`를 지운 뒤 `stateHash`·`nonce`·`verifier`·`appChallenge`(10분)를 두고 state 원문은 `gamefeedback_oauth` 쿠키로만 준다. 세션도 `issueSession`이 만료 행을 함께 지운다.
 - 콜백: 쿼리 state = 쿠키 state, 시도의 provider = 경로 provider, 소비는 `deleteMany({ stateHash, provider, expiresAt: { gt } })`의 `count === 1`(재사용 불가). 어기면 400 `OAUTH_STATE_INVALID`.
 - 계정 식별은 `SocialIdentityService.findUser`(`(provider, subject)`, Google만 레거시 `User.googleSubject`)다. 제공자가 달라도 subject로 계정을 합치지 않는다. 없는 계정은 `pendingSubject`·`pendingProvider` 15분 세션 → `/ko?onboard=1` → `POST /api/auth/onboard`(`acceptedTerms`·`ageConfirmed`는 `@Equals(true)`)가 `pg_advisory_xact_lock(hashtextextended('<provider>:<subject>', 0))` 아래에서 사용자를 만든다.
 
@@ -45,14 +46,16 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 
 ## 밴·관리자
 
-- 밴 사용자(`User.bannedAt`)의 쓰기는 `ApiAccessMiddleware`의 허용 목록(`/api/support/conversations`, `/api/auth/logout`, `DELETE /api/me`, 대화의 `messages|read|attachments` 한 단계 하위)만 통과하고 나머지는 403 `USER_BANNED`. 대화는 `ChatAccessService.visible`이 지원 문의 대화만 남긴다. 밴 사용자에게 새 쓰기 경로를 열려면 허용 목록 정규식을 고친다.
+- 밴 사용자(`User.bannedAt`)의 쓰기는 `bannedUserMayWrite`(`src/common/http/banned-access.ts`)의 허용 목록(`/api/support/conversations`, `/api/auth/logout`, `DELETE /api/me`, 대화의 `messages|read|attachments` 한 단계 하위, `attachments/:id/complete`)만 통과하고 나머지는 403 `USER_BANNED`. 대화는 `ChatAccessService.visible`이 지원 문의 대화만 남긴다. 밴 사용자에게 새 쓰기 경로를 열려면 이 함수와 `banned-access.test.ts`를 고친다.
 - `AdminUsersService.ban`: 대상 행 `FOR UPDATE`, ADMIN 대상은 400 `ADMIN_PROTECTED`, AuditLog `BAN_USER`/`UNBAN_USER`, 커밋 뒤 `ChatEvents.closeUser`.
+- 밴 회피 방지(`src/auth/banned-identity.ts`): 밴하면 사용자의 모든 로그인 식별자를 `BannedIdentity(provider, sha256(subject))`에 남기고 해제하면 지운다. 밴 사용자의 탈퇴도 같은 트랜잭션에서 기록한다. 계정이 없는 식별자는 social callback(웹 403 `USER_BANNED`, 앱 `?error=login_failed`), `/api/auth/app/exchange`, `onboard`에서 거부된다. 계정이 남은 밴 사용자는 문의를 위해 로그인할 수 있다.
 - `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). ADMIN이 되는 길은 Google subject가 `GF_ADMIN_GOOGLE_SUB`와 같을 때, 운영 SSH의 `scripts/operator.mjs grant`(`src/admin/operator-session.ts`, AuditLog `GRANT_ADMIN`), 테스트 픽스처뿐이다. HTTP로 권한을 올리는 경로를 만들지 않는다.
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/security.test.ts`(Origin·DB URL), `src/rate-limit.test.ts`·`src/rate-limit.spec.ts`, `src/auth/providers/oauth-identity.provider.test.ts`(`fetch` stub), `src/config/production.config.spec.ts`.
-- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 네 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
+- unit: `src/security.test.ts`(Origin·DB URL), `src/rate-limit.test.ts`·`src/rate-limit.spec.ts`, `src/common/http/forwarded-client.spec.ts`, `src/common/http/api-access.middleware.test.ts`(대소문자 경로), `src/common/http/banned-access.test.ts`, `src/auth/providers/oauth-identity.provider.test.ts`(`fetch` stub), `src/config/production.config.spec.ts`.
+- DB를 쓰지 않는 integration: `src/common/http/api-access.middleware.integration.test.ts`(SSR 방문자 버킷·위조 헤더), `src/common/http/configure-http.integration.test.ts`(대소문자 경로 404).
+- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 네 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
 
 ## 명령 (side 루트)
 

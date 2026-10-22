@@ -1193,33 +1193,47 @@ export const GetHealthResponse = zod.object({
 })
 
 
-export const listReportsResponseTargetPostIdOneMax = 100;
+export const listReportsQueryLimitDefault = 12;
+export const listReportsQueryLimitMax = 50;
 
-export const listReportsResponseTargetUserIdOneMax = 100;
+export const listReportsQueryStatusDefault = `OPEN`;
 
-export const listReportsResponseIdMax = 100;
+export const ListReportsQueryParams = zod.object({
+  "cursor": zod.string().optional(),
+  "limit": zod.int().min(1).max(listReportsQueryLimitMax).default(listReportsQueryLimitDefault),
+  "status": zod.enum(['OPEN', 'REVIEWED', 'DISMISSED']).default(listReportsQueryStatusDefault)
+})
 
-export const listReportsResponseReporterIdMax = 100;
+export const listReportsResponseItemsItemTargetPostIdOneMax = 100;
 
-export const listReportsResponseTargetIdMax = 100;
+export const listReportsResponseItemsItemTargetUserIdOneMax = 100;
 
-export const listReportsResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listReportsResponseItemsItemIdMax = 100;
+
+export const listReportsResponseItemsItemReporterIdMax = 100;
+
+export const listReportsResponseItemsItemTargetIdMax = 100;
+
+export const listReportsResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
-export const ListReportsResponseItem = zod.object({
-  "targetPostId": zod.union([zod.string().min(1).max(listReportsResponseTargetPostIdOneMax),zod.null()]).optional(),
+
+export const ListReportsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "targetPostId": zod.union([zod.string().min(1).max(listReportsResponseItemsItemTargetPostIdOneMax),zod.null()]).optional(),
   "targetPreview": zod.string().nullish(),
-  "targetUserId": zod.union([zod.string().min(1).max(listReportsResponseTargetUserIdOneMax),zod.null()]).optional(),
-  "id": zod.string().min(1).max(listReportsResponseIdMax),
-  "reporterId": zod.string().min(1).max(listReportsResponseReporterIdMax),
+  "targetUserId": zod.union([zod.string().min(1).max(listReportsResponseItemsItemTargetUserIdOneMax),zod.null()]).optional(),
+  "id": zod.string().min(1).max(listReportsResponseItemsItemIdMax),
+  "reporterId": zod.string().min(1).max(listReportsResponseItemsItemReporterIdMax),
   "targetType": zod.string(),
-  "targetId": zod.string().min(1).max(listReportsResponseTargetIdMax),
+  "targetId": zod.string().min(1).max(listReportsResponseItemsItemTargetIdMax),
   "reason": zod.string(),
   "detail": zod.string().nullable(),
   "status": zod.string(),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(listReportsResponseCreatedAtRegExp)
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listReportsResponseItemsItemCreatedAtRegExp)
+})),
+  "nextCursor": zod.union([zod.string().min(1),zod.null()])
 })
-export const ListReportsResponse = zod.array(ListReportsResponseItem)
 
 
 export const getSessionResponseUserOneIdMax = 100;
@@ -1871,6 +1885,7 @@ export const getPostResponseCommentsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:
 export const getPostResponseCommentsItemTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
+
 export const GetPostResponse = zod.object({
   "post": zod.object({
   "id": zod.string().min(1).max(getPostResponsePostIdMax),
@@ -1996,7 +2011,8 @@ export const GetPostResponse = zod.object({
   "isDeleted": zod.literal(true),
   "body": zod.literal(""),
   "author": zod.null()
-})]))
+})])),
+  "commentsCursor": zod.union([zod.string().min(1),zod.null()])
 })
 
 
@@ -2408,6 +2424,72 @@ export const RecordPostViewResponse = zod.object({
 })
 
 
+export const ListPostCommentsParams = zod.object({
+  "id": zod.string()
+})
+
+export const listPostCommentsQueryLimitDefault = 12;
+export const listPostCommentsQueryLimitMax = 50;
+
+
+
+export const ListPostCommentsQueryParams = zod.object({
+  "cursor": zod.string().optional(),
+  "limit": zod.int().min(1).max(listPostCommentsQueryLimitMax).default(listPostCommentsQueryLimitDefault)
+})
+
+export const listPostCommentsResponseItemsItemOneIdMax = 100;
+
+export const listPostCommentsResponseItemsItemOnePostIdMax = 100;
+
+export const listPostCommentsResponseItemsItemOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listPostCommentsResponseItemsItemOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listPostCommentsResponseItemsItemOneParentIdOneMax = 100;
+
+
+export const listPostCommentsResponseItemsItemOneAuthorIdMax = 100;
+
+
+export const listPostCommentsResponseItemsItemTwoIdMax = 100;
+
+export const listPostCommentsResponseItemsItemTwoPostIdMax = 100;
+
+export const listPostCommentsResponseItemsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listPostCommentsResponseItemsItemTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+
+export const ListPostCommentsResponse = zod.object({
+  "items": zod.array(zod.union([zod.object({
+  "id": zod.string().min(1).max(listPostCommentsResponseItemsItemOneIdMax),
+  "postId": zod.string().min(1).max(listPostCommentsResponseItemsItemOnePostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemOneCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemOneUpdatedAtRegExp),
+  "parentId": zod.union([zod.string().min(1).max(listPostCommentsResponseItemsItemOneParentIdOneMax),zod.null()]),
+  "isDeleted": zod.literal(false),
+  "body": zod.string().min(1),
+  "author": zod.object({
+  "id": zod.string().min(1).max(listPostCommentsResponseItemsItemOneAuthorIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+})
+}),zod.object({
+  "id": zod.string().min(1).max(listPostCommentsResponseItemsItemTwoIdMax),
+  "postId": zod.string().min(1).max(listPostCommentsResponseItemsItemTwoPostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemTwoCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listPostCommentsResponseItemsItemTwoUpdatedAtRegExp),
+  "parentId": zod.null(),
+  "isDeleted": zod.literal(true),
+  "body": zod.literal(""),
+  "author": zod.null()
+})])),
+  "nextCursor": zod.union([zod.string().min(1),zod.null()])
+})
+
+
 export const CreateCommentParams = zod.object({
   "id": zod.string()
 })
@@ -2684,6 +2766,9 @@ export const listNotificationsResponseItemsItemAnswerIdOneMax = 100;
 
 export const listNotificationsResponseItemsItemCommentIdOneMax = 100;
 
+export const listNotificationsResponseItemsItemActorOneIdMax = 100;
+
+
 
 export const listNotificationsResponseItemsItemReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const listNotificationsResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
@@ -2700,7 +2785,15 @@ export const ListNotificationsResponse = zod.object({
   "postId": zod.string().min(1).max(listNotificationsResponseItemsItemPostIdMax),
   "answerId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemAnswerIdOneMax),zod.null()]),
   "commentId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemCommentIdOneMax),zod.null()]).optional(),
-  "message": zod.string().min(1),
+  "actor": zod.union([zod.object({
+  "id": zod.string().min(1).max(listNotificationsResponseItemsItemActorOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),zod.null()]),
+  "postTitle": zod.string().min(1),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemReadAtOneRegExp),zod.null()]),
   "createdAt": zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemCreatedAtRegExp)
 })),

@@ -57,6 +57,7 @@ export class ChatAttachmentService {
     const user = requireUser(req);
     const conversation = await this.db.chatConversation.findFirst({
       where: { id: conversationId, OR: [{ firstUserId: user.id }, { secondUserId: user.id }] },
+      include: { support: { select: { historyStartAt: true, historyStartId: true } } },
     });
     if (!conversation) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     const file = await this.db.chatAttachment.findFirst({

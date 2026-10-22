@@ -5,8 +5,9 @@ import { createRequire } from 'node:module';
 import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
-import { SocialProviderSchema } from '@game-feedback/contracts';
+import { SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
@@ -124,6 +125,33 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .get('/api/notifications')
       .set('Authorization', `Bearer ${expired.body.accessToken}`)
       .expect(401);
+  });
+
+  it('prunes expired OAuth attempts and sessions when new ones are issued', async () => {
+    const { request, db } = fixture();
+    const past = new Date(Date.now() - 1000);
+    const attempt = (stateHash: string, expiresAt: Date) =>
+      db.oAuthAttempt.create({
+        data: { provider: 'google', stateHash, nonce: 'n', verifier: 'v', expiresAt },
+      });
+    await attempt(hash('expired-oauth-state'), past);
+    await attempt(hash('live-oauth-state'), new Date(Date.now() + 60_000));
+    await request.get('/api/auth/social/google').expect(302);
+    expect(
+      await db.oAuthAttempt.findUnique({ where: { stateHash: hash('expired-oauth-state') } }),
+    ).toBeNull();
+    expect(
+      await db.oAuthAttempt.findUnique({ where: { stateHash: hash('live-oauth-state') } }),
+    ).not.toBeNull();
+    const stale = await db.session.create({
+      data: { tokenHash: hash('expired-session-token'), userId: 'sample-user-0', expiresAt: past },
+    });
+    await request
+      .post('/api/auth/test-token')
+      .set('Origin', origin)
+      .send({ accountId: 'sample-user-3' })
+      .expect(200);
+    expect(await db.session.findUnique({ where: { id: stale.id } })).toBeNull();
   });
 
   it('limits token issuance to explicitly enabled testing and predefined accounts', async () => {
@@ -257,8 +285,15 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect((await requester.get('/api/conversations').expect(200)).body.items).toContainEqual(
       expect.objectContaining({ id: general.id }),
     );
-    expect((await admin.get('/api/admin/support').expect(200)).body).toContainEqual(
-      expect.objectContaining({ conversationId: general.id, requesterId: 'sample-user-0' }),
+    // 관리자 문의 목록은 계약(SupportThreadSchema)의 requester로 요청자를 알린다.
+    const threads = z
+      .array(SupportThreadSchema)
+      .parse((await admin.get('/api/admin/support').expect(200)).body);
+    expect(threads).toContainEqual(
+      expect.objectContaining({
+        conversationId: general.id,
+        requester: expect.objectContaining({ id: 'sample-user-0' }),
+      }),
     );
     await outsider.get(`/api/conversations/${general.id}/messages`).expect(404);
   });

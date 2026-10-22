@@ -15,7 +15,7 @@ import {
   type GroupProfileQuery,
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
-import { useZodForm } from '@/shared/model/form';
+import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
@@ -26,14 +26,23 @@ import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 import { groupProfileSchema } from '../model/group-profile.schema';
 import { GroupAvatarField } from './GroupAvatarField';
 
-function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQuery>; onClose: () => void }) {
+function ProfileForm({
+  queryRef,
+  isOpen,
+  onClose,
+}: {
+  queryRef: QueryRef<GroupProfileQuery>;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const { data } = useReadQuery(queryRef);
   const group = data.group;
   const form = useZodForm(groupProfileSchema, {
     defaultValues: { name: group.name, description: group.description, avatar: null, removeAvatar: false },
   });
   const formId = useId();
-  const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument, { fetchPolicy: 'no-cache' });
   const [completeUpload] = useMutation(CompleteGroupAvatarUploadDocument);
   const [save] = useMutation(UpdateGroupProfileDocument, {
     refetchQueries: [
@@ -43,6 +52,7 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
     ],
     awaitRefetchQueries: true,
   });
+  const beginSubmit = useAbortOnClose(isOpen);
   const { errors, isSubmitting } = form.formState;
   return (
     <>
@@ -52,6 +62,7 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
           noValidate
           className="mx-auto flex w-full max-w-app flex-col gap-6 py-3"
           onSubmit={form.handleSubmit(async ({ avatar, ...values }) => {
+            const signal = beginSubmit();
             try {
               let avatarId: string | undefined;
               if (avatar) {
@@ -59,19 +70,25 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
                   variables: { groupId: group.id, contentType: avatar.type, byteSize: avatar.size },
                 });
                 if (!data) return;
-                await uploadToStorage(data.requestGroupAvatarUpload, avatar);
+                await uploadToStorage(data.requestGroupAvatarUpload, avatar, { signal });
                 const { data: completed } = await completeUpload({
                   variables: { uploadId: data.requestGroupAvatarUpload.id },
                 });
                 if (!completed) return;
                 avatarId = completed.completeGroupAvatarUpload.id;
               }
+              // 닫힌 시트에서는 저장하지 않는다. 저장 요청을 보낸 뒤에는 결과를 토스트로 알린다.
+              throwIfClosed(signal);
               await save({
                 variables: { groupId: group.id, ...values, avatarId },
               });
               toast.success('그룹 프로필을 수정했어요');
               onClose();
             } catch (error) {
+              if (signal.aborted) {
+                notifyClosedSubmit('그룹 프로필을 저장하지 않았어요');
+                return;
+              }
               if (error instanceof StorageUploadError) form.setError('avatar', { message: error.message });
             }
           })}
@@ -120,7 +137,7 @@ export function EditGroupProfileBottomSheet({
     <BottomSheet.Root {...controls}>
       <BottomSheet.Header title="그룹 프로필 수정" />
       <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
-        <ProfileForm queryRef={queryRef} onClose={() => controls.onClose()} />
+        <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={() => controls.onClose()} />
       </AsyncBoundary>
     </BottomSheet.Root>
   );

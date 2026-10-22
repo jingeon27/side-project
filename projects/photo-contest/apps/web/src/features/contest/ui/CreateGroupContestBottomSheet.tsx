@@ -13,7 +13,11 @@ import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bo
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
 
-import { startNowIfPast } from '../lib/contest-schedule.helper';
+import {
+  hasSubmissionWindow,
+  startNowIfPast,
+  SUBMISSION_END_PASSED_MESSAGE,
+} from '../lib/contest-schedule.helper';
 import { buildContestDefaults, createGroupContestSchema } from '../model/contest.schema';
 
 export function CreateGroupContestBottomSheet({
@@ -47,8 +51,17 @@ export function CreateGroupContestBottomSheet({
           noValidate
           className="mx-auto flex w-full max-w-app flex-col gap-5"
           onSubmit={form.handleSubmit(async (values) => {
+            const schedule = startNowIfPast(values);
+            if (!hasSubmissionWindow(schedule)) {
+              form.setError(
+                'submissionEndsAt',
+                { message: SUBMISSION_END_PASSED_MESSAGE },
+                { shouldFocus: true },
+              );
+              return;
+            }
             try {
-              await create({ variables: { groupId, ...startNowIfPast(values) } });
+              await create({ variables: { groupId, ...schedule } });
             } catch {
               /* ErrorLink가 알린다. */
             }

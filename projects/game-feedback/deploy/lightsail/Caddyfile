@@ -13,12 +13,11 @@
 		Referrer-Policy strict-origin-when-cross-origin
 		Strict-Transport-Security "max-age=31536000"
 	}
-	@localAuth path /api/auth/demo /api/auth/test-* /api/auth/test-accounts
-	@internal path /internal /internal/*
-	# Caddy runs top-level handle before respond, so keep the blocks ahead of the proxies in one route.
+	# Same edge block as deploy/shared-instance/Caddyfile. Case-insensitive because path matchers are, and
+	# `route` keeps the block ahead of `handle` (Caddy otherwise orders `respond` after `handle`).
+	@internal path_regexp internal (?i)^/(?:internal(?:/|$)|api/auth/(?:demo|test-)|api/admin(?:/|$))
 	route {
-		respond @localAuth 404
-		respond @internal 404
+		respond @internal "edge-blocked" 404
 		handle /api/* {
 			reverse_proxy api:4300 {
 				flush_interval -1

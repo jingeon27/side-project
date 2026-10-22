@@ -1,0 +1,52 @@
+name: Terraform
+
+# 공용 배포 환경 Terraform의 오프라인 검사. AWS 자격 증명을 쓰지 않고 plan·apply를 실행하지 않는다.
+on:
+  pull_request:
+    paths:
+      - 'deploy/shared-instance/terraform/**'
+      - '.github/workflows/terraform.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'deploy/shared-instance/terraform/**'
+      - '.github/workflows/terraform.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: fmt · validate · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: deploy/shared-instance/terraform
+    env:
+      TF_IN_AUTOMATION: '1'
+      TF_INPUT: '0'
+      CHECKPOINT_DISABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+      - name: terraform init
+        # lock 파일의 linux_amd64 해시로만 provider를 받는다. 해시가 없거나 바뀌면 실패한다.
+        run: terraform init -backend=false -lockfile=readonly
+      - name: terraform validate
+        run: terraform validate
+      - name: terraform test
+        # mock provider를 쓰므로 AWS API를 호출하지 않는다.
+        run: terraform test

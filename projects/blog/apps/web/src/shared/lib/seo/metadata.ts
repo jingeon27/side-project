@@ -37,16 +37,27 @@ export function articleAlternates(article: ArticleSeo): Record<string, string> {
   );
 }
 
+/**
+ * Adds x-default to a multilingual hreflang set. Unmatched languages land on the Korean
+ * version, the site's default locale.
+ */
+export function withDefaultLanguage(languages: Record<string, string>): Record<string, string> {
+  const { ko } = languages;
+  return ko && Object.keys(languages).length > 1 ? { ...languages, 'x-default': ko } : languages;
+}
+
 export function pageMetadata(
   locale: Locale,
   page: 'home' | 'blog' | 'about',
   path = page === 'home' ? '' : `/${page}`,
   title = seo[locale].pages[page].title,
   description = seo[locale].pages[page].description,
+  /** Locales where the same path exists. Tag and category pages only exist where they have articles. */
+  alternateLocales: readonly Locale[] = path.includes('/tag/') ? [locale] : locales,
 ): Metadata {
   const url = absoluteUrl(`/${locale}${path}`);
-  const languages = Object.fromEntries(
-    (path.includes('/tag/') ? [locale] : locales).map((value) => [value, absoluteUrl(`/${value}${path}`)]),
+  const languages = withDefaultLanguage(
+    Object.fromEntries(alternateLocales.map((value) => [value, absoluteUrl(`/${value}${path}`)])),
   );
   const image = absoluteUrl('/opengraph-image');
   return {
@@ -80,12 +91,18 @@ export function pageMetadata(
 export function articleMetadata(article: ArticleSeo): Metadata {
   const url = absoluteUrl(articlePath(article.locale, article.slug));
   const image = absoluteUrl(article.coverImage || `/og/${article.locale}/${article.id}`);
+  const base = pageMetadata(article.locale, 'blog');
   return {
-    ...pageMetadata(article.locale, 'blog'),
+    ...base,
     title: { absolute: `${article.title} - ${seo[article.locale].site.title}` },
     description: article.description,
     keywords: article.keywords,
-    alternates: { canonical: url, languages: articleAlternates(article) },
+    // Keep the RSS alternate from the base metadata; only canonical and hreflang are per article.
+    alternates: {
+      ...base.alternates,
+      canonical: url,
+      languages: withDefaultLanguage(articleAlternates(article)),
+    },
     openGraph: {
       type: 'article',
       title: article.title,

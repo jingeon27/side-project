@@ -39,10 +39,16 @@ export const articleThumbnails = {
   'zod-assertion-boundaries': { src: '/images/thumbnails/zod-assertion-boundaries.svg', fit: 'cover' },
 } satisfies Record<string, ArticleThumbnailImage>;
 
+/** Neutral artwork for an article without a cover image or mapped thumbnail. */
+export const defaultArticleThumbnail: ArticleThumbnailImage = {
+  src: '/images/thumbnails/default.svg',
+  fit: 'cover',
+};
+
 export function getArticleThumbnail(article: Pick<Article, 'id' | 'coverImage'>): ArticleThumbnailImage {
   if (article.coverImage) return { src: article.coverImage, fit: 'cover' };
   if (Object.hasOwn(articleThumbnails, article.id)) {
     return articleThumbnails[article.id as keyof typeof articleThumbnails];
   }
-  return articleThumbnails['nextjs-tanstack-query-ssr'];
+  return defaultArticleThumbnail;
 }

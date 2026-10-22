@@ -144,6 +144,8 @@ test(
     const robots = await request.get('/robots.txt');
     expect(await robots.text()).toContain(`Sitemap: ${WEB_ORIGIN}/sitemap.xml`);
     expect((await request.get('/sitemaps/groups/invalid.xml')).status()).toBe(404);
+    // 색인에 없는 번호는 실제 페이지 수를 넘으므로 조회하지 않고 404다.
+    expect((await request.get(`/sitemaps/groups/${index.length + 1000}.xml`)).status()).toBe(404);
     const missing = await request.get('/groups/missing-seo-group', {
       headers: { 'User-Agent': 'Twitterbot' },
     });

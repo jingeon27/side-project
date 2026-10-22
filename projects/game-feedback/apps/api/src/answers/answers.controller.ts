@@ -29,6 +29,7 @@ export class AnswersController {
     return this.service.updateAnswer(req, id, body);
   }
   @Delete('answers/:id')
+  @UseGuards(UserGuard)
   deleteAnswer(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.deleteAnswer(req, id);
   }

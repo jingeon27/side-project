@@ -20,7 +20,8 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.{spec,test}.ts'],
+          // 루트의 *.test.ts는 app.config 같은 앱 설정 파일 옆에 둔 테스트다.
+          include: ['*.{spec,test}.ts', 'src/**/*.{spec,test}.ts'],
           exclude: [...configDefaults.exclude, 'src/**/*.api.{spec,test}.ts'],
         },
       },

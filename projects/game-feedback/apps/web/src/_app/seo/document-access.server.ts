@@ -1,9 +1,11 @@
 import 'server-only';
 
 import { GameSlugSchema } from '@game-feedback/bridge';
-import { ApiError, getPost, getPublicProfile, listCategories } from '@game-feedback/sdk';
+import { ApiError, getPublicProfile, listCategories } from '@game-feedback/sdk';
 
 import { boardBySlug } from '@/features/board';
+// index.server는 'use cache' 조회를 함께 공개한다. Proxy 번들에는 접근 판정 모듈만 가져온다.
+import { isPostDocumentUnavailable } from '@/features/post/api/post-access.server';
 import { publicServerOptions } from '@/shared/api/server';
 
 // PPR can send HTML headers before notFound() resolves. Check document access
@@ -22,16 +24,17 @@ export async function documentUnavailable(path: string, session?: string, games:
       return false;
     }
   }
-  const match = /^\/(?:ko|en|ja)\/(posts|users)\/([^/]+)$/.exec(path);
-  if (!match) return false;
-  const [, domain, id] = match;
+  const post = /^\/(?:ko|en|ja)\/posts\/([^/]+)$/.exec(path);
+  if (post) return isPostDocumentUnavailable(post[1] ?? '', session);
+  const profile = /^\/(?:ko|en|ja)\/users\/([^/]+)$/.exec(path);
+  if (!profile) return false;
+  const id = profile[1];
   if (!id || !/^[A-Za-z0-9_-]{1,100}$/.test(id)) return true;
   try {
-    const options = {
+    await getPublicProfile(id, {
       ...publicServerOptions(),
       headers: session ? { Cookie: `gamefeedback_session=${session}` } : undefined,
-    };
-    await (domain === 'posts' ? getPost(id, options) : getPublicProfile(id, options));
+    });
     return false;
   } catch (error) {
     // API failures belong to the service recovery boundary, not a fake 404.
