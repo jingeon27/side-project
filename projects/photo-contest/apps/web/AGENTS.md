@@ -27,7 +27,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저장소 `packages/eslint-config/src/base.ts`·`next.ts`·`expo.ts`가 관리한다. 앱 설정은 preset과 경로만 조합하고, 커스텀 규칙은 `src/rules/<분류>/<규칙>/` 폴더에 구현·`<규칙>.spec.ts`·그 규칙만 읽는 `__fixtures__`를 함께 둔다. FSD 공통 분석은 `src/rules/fsd/fsd.helper.ts`가 맡는다. else 없이 가드·조기 반환·ts-pattern으로 분기하며, 한 번 쓰는 이벤트는 JSX에 인라인으로 선언한다.
 
-서버 상태는 Apollo 캐시, 입력은 RHF·Zod, 오버레이는 overlay-kit이다. mutation 오류·시트 열림을 useState로 복제하지 않는다. RSC Cookie는 서버 API 모듈에서만 읽어 요청 헤더에 보내고 클라이언트에 넘기지 않는다.
+서버 상태는 Apollo 캐시, 입력은 RHF·Zod, 오버레이는 overlay-kit이다. mutation 오류·시트 열림을 useState로 복제하지 않는다. RSC Cookie는 서버 API 모듈에서만 읽어 요청 헤더에 보내고 클라이언트에 넘기지 않는다. 같은 모듈이 들어온 X-Forwarded-For도 API로 넘겨 운영 API의 주소별 요청 제한이 웹 서버 주소가 아니라 사용자에게 걸리게 한다(쿠키 없는 `publicQuery`는 넘기지 않는다).
 
 홈은 `GalleryPostsDocument`로 가입한 모든 그룹의 사진·동영상을 최신순으로 보여 주며 이달의 인기도 독립 조회한다. 가입 그룹은 MY, 공개 탐색·이름 검색은 `/explore`에 둔다. 로그인하면 두 화면에서 공개·비공개를 골라 생성한다. 공개 그룹과 탐색은 proxy 인증 게이트에서 제외한다. 비공개 그룹의 대기·수락·거절 상태는 Apollo가 소유하며 멤버가 되기 전에는 게시물 쿼리를 미리 실행하지 않는다. 그룹 정보는 대회 필드가 없는 `GalleryDocument`로 조회한다. 웹 폭은 최대 1440px이다. 최신 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드로 보여 준다. 데스크톱(1024px 이상)은 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진, 모바일·태블릿은 하단 메뉴와 피드 위의 인기 목록을 쓴다. 흑백 UI·여백·명확한 글자 위계로 그룹의 성격을 살린다. 제목은 사진 위, 본문은 사진 아래에 바로 보여 준다. 인기 게시물은 순위가 붙은 사각형 미리보기이며 프로필에 스토리를 뜻하는 장식 테두리를 두지 않는다. 바텀시트는 모든 기기에서 화면 하단에 붙고 화면 너비를 채운다. 폼은 검증 조건에 따라 필수·선택 표시와 required/aria-required를 연결한다. 직접 찍은 사진·동영상·합성을 환영한다. 그룹은 상시 운영하며 일반 게시물 또는 접수 중인 그룹 대회 참여를 선택해 여러 게시물을 올린다. 고정 메뉴와 정렬 항목은 JSX로 직접 선언한다.
 
