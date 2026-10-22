@@ -1,8 +1,8 @@
 import type { TSESLint } from '@typescript-eslint/utils';
 
-import { createImportVisitor, fsdOptionsSchema, type TFsdOptions } from '../fsd.helper';
+import { createImportVisitor, fsdOptionsSchema, SRC_DIR_MESSAGE, type TFsdOptions } from '../fsd.helper';
 
-export const noCrossPage: TSESLint.RuleModule<'crossPage', TFsdOptions> = {
+export const noCrossPage: TSESLint.RuleModule<'crossPage' | 'srcDir', TFsdOptions> = {
   defaultOptions: [{}],
   meta: {
     type: 'problem',
@@ -10,6 +10,7 @@ export const noCrossPage: TSESLint.RuleModule<'crossPage', TFsdOptions> = {
     schema: fsdOptionsSchema,
     messages: {
       crossPage: 'pages/{{importer}}에서 다른 화면 pages/{{target}}을 import할 수 없습니다: {{source}}',
+      srcDir: SRC_DIR_MESSAGE,
     },
   },
   create(context) {

@@ -1,3 +1,4 @@
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
@@ -38,15 +39,16 @@ const LAYER_DIRS: Readonly<Record<string, TLayer | undefined>> = {
 export const SLICED_LAYERS = new Set<TLayer>(['pages', 'widgets', 'features']);
 export const ROUTE_IMPORTABLE_LAYERS = new Set<TLayer>(['app', 'pages', 'shared']);
 const PUBLIC_SEGMENTS = new Set(['types', 'mocks']);
-const ROOT_FILES = new Set(['proxy', 'instrumentation', 'instrumentation-client']);
+const SRC_DIR_MARKERS = new Set(['app', ...Object.keys(LAYER_DIRS)]);
 
+// src 바로 아래 파일(Next proxy·instrumentation, Vite main.tsx 같은 진입 파일)은 라우트와 같은 최상위로 본다.
 function locate(srcDir: string, filename: string): ILocation | null {
   const relative = path.relative(srcDir, filename);
   if (relative.startsWith('..') || path.isAbsolute(relative)) return null;
   const parts = relative.replace(/\.(d\.)?[cm]?[jt]sx?$/, '').split(path.sep);
-  if (parts[0] === 'app' || (parts.length === 1 && ROOT_FILES.has(parts[0] ?? '')))
-    return { layer: 'routes', slice: null, rest: parts };
   const layer = LAYER_DIRS[parts[0] ?? ''];
+  if (parts[0] === 'app' || (!layer && parts.length === 1))
+    return { layer: 'routes', slice: null, rest: parts };
   if (!layer) return null;
   if (!SLICED_LAYERS.has(layer)) return { layer, slice: null, rest: parts.slice(1) };
   return { layer, slice: parts[1] ?? null, rest: parts.slice(2) };
@@ -58,6 +60,22 @@ function resolveImport(srcDir: string, source: string, filename: string): string
     return path.resolve(path.dirname(filename), source);
   return null;
 }
+
+const srcDirChecks = new Map<string, boolean>();
+// srcDir이 없거나 FSD 레이어 폴더가 하나도 없으면 모든 파일이 분류 밖이 되어 규칙이 조용히 아무것도 하지 않는다.
+function isFsdSrcDir(srcDir: string) {
+  const cached = srcDirChecks.get(srcDir);
+  if (cached !== undefined) return cached;
+  const valid =
+    existsSync(srcDir) &&
+    statSync(srcDir).isDirectory() &&
+    readdirSync(srcDir).some((entry) => SRC_DIR_MARKERS.has(entry));
+  srcDirChecks.set(srcDir, valid);
+  return valid;
+}
+
+export const SRC_DIR_MESSAGE =
+  'FSD srcDir({{srcDir}})이 없거나 app·_app·_pages·widgets·features·shared 폴더가 없어 경계를 검사하지 못합니다. 앱의 src 경로를 넘기세요.';
 
 export function isBarrel(rest: readonly string[]) {
   return rest.length === 0 || (rest.length === 1 && rest[0] === 'index');
@@ -82,14 +100,19 @@ function importTypeSource(node: TSESTree.TSImportType): TSESTree.Node | null {
 }
 
 export function createImportVisitor<TMessageId extends string>(
-  context: Readonly<TSESLint.RuleContext<TMessageId, TFsdOptions>>,
+  context: Readonly<TSESLint.RuleContext<TMessageId | 'srcDir', TFsdOptions>>,
   check: (reference: IImportReference) => void,
 ): TSESLint.RuleListener {
   const srcDir = path.resolve(context.cwd, context.options[0]?.srcDir ?? 'src');
+  if (!isFsdSrcDir(srcDir))
+    return {
+      Program: (node) => context.report({ node, messageId: 'srcDir', data: { srcDir } }),
+    };
   const importer = locate(srcDir, context.filename);
+  if (!importer) return {};
   const visit = (node: TSESTree.Node | null | undefined) => {
     const source = staticSource(node);
-    if (!importer || !node || source === null) return;
+    if (!node || source === null) return;
     const targetPath = resolveImport(srcDir, source, context.filename);
     if (!targetPath) return;
     const target = locate(srcDir, targetPath);

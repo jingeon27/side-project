@@ -6,10 +6,11 @@ import {
   isBarrel,
   isPublicDeepImport,
   SLICED_LAYERS,
+  SRC_DIR_MESSAGE,
   type TFsdOptions,
 } from '../fsd.helper';
 
-export const slicePublicApi: TSESLint.RuleModule<'deep' | 'ownBarrel', TFsdOptions> = {
+export const slicePublicApi: TSESLint.RuleModule<'deep' | 'ownBarrel' | 'srcDir', TFsdOptions> = {
   defaultOptions: [{}],
   meta: {
     type: 'problem',
@@ -19,6 +20,7 @@ export const slicePublicApi: TSESLint.RuleModule<'deep' | 'ownBarrel', TFsdOptio
       deep: '{{layer}}/{{slice}}의 내부 파일 대신 공개 API(index.ts)를 import하세요: {{source}}',
       ownBarrel:
         '자기 slice의 index.ts를 import하면 순환 참조가 생깁니다. 상대 경로로 직접 가져오세요: {{source}}',
+      srcDir: SRC_DIR_MESSAGE,
     },
   },
   create(context) {
