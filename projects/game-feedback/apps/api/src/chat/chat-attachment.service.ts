@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { omit } from 'es-toolkit';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
@@ -20,7 +21,7 @@ export class ChatAttachmentService {
   async upload(req: SessionRequest, conversationId: string, input: unknown) {
     const user = requireUser(req);
     const file = validateChatFile(input);
-    const { bytes: _bytes, ...metadata } = file;
+    const metadata = omit(file, ['bytes']);
     const stored = await this.storage.save(file.bytes, file.mimeType);
     return attachmentDto(await this.register(user.id, conversationId, metadata, stored));
   }

@@ -28,7 +28,7 @@ describe('CommentsService.createComment', () => {
   it('answers a malformed post id with POST_NOT_FOUND instead of a cache tag validation error', async () => {
     const service = new CommentsService({} as PrismaClient, cache, visibility, {} as PostsService);
     const error = await service
-      .createComment(req, 'a.b', { body: '댓글' })
+      .createComment(req, 'a.b', { body: '댓글', parentId: undefined })
       .catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ status: 404, response: { errorCode: 'POST_NOT_FOUND' } });

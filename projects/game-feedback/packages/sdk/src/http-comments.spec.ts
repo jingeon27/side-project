@@ -88,7 +88,8 @@ describe('comment thread response validation', () => {
     await expect(listPostComments('post-1', { cursor: 'cursor-1' })).rejects.toBeInstanceOf(
       ApiResponseValidationError,
     );
-    const { commentsCursor: _cursor, ...withoutCursor } = postFixture();
+    const withoutCursor: Record<string, unknown> = { ...postFixture() };
+    delete withoutCursor.commentsCursor;
     respond(withoutCursor);
     await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
   });

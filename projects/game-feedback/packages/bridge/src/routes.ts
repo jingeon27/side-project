@@ -323,7 +323,7 @@ function resolveProfileRoute({ pathname, locale, home, query, id }: IRouteContex
   };
 }
 
-function resolveMessagesRoute({ pathname, locale, home, query, id }: IRouteContext): IAppRoute | null {
+function resolveMessagesRoute({ locale, home, query, id }: IRouteContext): IAppRoute | null {
   const conversation = id ?? query.conversation;
   if (conversation && !RouteIdSchema.safeParse(conversation).success) return null;
   const href = conversation ? appRoutes.conversation(locale, conversation) : appRoutes.messages(locale);

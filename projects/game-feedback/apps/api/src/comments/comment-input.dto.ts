@@ -14,7 +14,7 @@ export class CommentBodyDto {
 }
 
 export class CreateCommentBodyDto extends CommentBodyDto {
-  static readonly contract = CreateCommentInputSchema;
+  static override readonly contract = CreateCommentInputSchema;
   @IsOptional()
   @IsString()
   declare parentId: z.output<typeof CreateCommentInputSchema>['parentId'];

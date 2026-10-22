@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';

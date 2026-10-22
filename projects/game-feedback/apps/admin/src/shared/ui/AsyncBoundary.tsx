@@ -12,7 +12,7 @@ interface IRegionBoundaryState {
   failed: boolean;
 }
 class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryState> {
-  state = { failed: false };
+  override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
   }
@@ -20,7 +20,7 @@ class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryStat
     this.props.onReset();
     this.setState({ failed: false });
   };
-  render() {
+  override render() {
     if (this.state.failed)
       return (
         <div role="alert" className="admin-error">

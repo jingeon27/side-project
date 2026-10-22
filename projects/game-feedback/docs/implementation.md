@@ -1,3 +1,21 @@
+# 2026-10-22 API·패키지 ESLint와 엄격한 tsconfig 연결
+
+PR #49 병합 후 후속 충돌 해소: develop `899349f7`을 병합했다. 공용 ESLint README에 React DOM 접근성 preset·모바일 FSD 경계와 #50의 API·패키지·migration-check 적용 범위를 모두 남겼다. 자동 병합된 오류 경계와 글쓰기 테스트는 `override`·`on*` 콜백을 함께 유지했다. Node 24에서 immutable 설치, Game Feedback 집계 `check`, photo-contest 전체 타입·루트/Web/Mobile lint, design-system 타입·lint, eslint-config `check`(89개), migration-check `check`(70개), Admin 21개와 photo-contest 글쓰기·오류 경계 테스트가 통과했다. SDK 재생성 추가 diff가 없었다. 이번 후속 병합은 API 구현·계약을 바꾸지 않았으며 DB 통합·브라우저 E2E·운영 빌드는 다시 실행하지 않았다.
+
+PR #50 충돌 해소: 작업 도중 반영된 원격 rebase(`c0401942`)를 보존하고 develop `87b48331`을 병합했다. 최신 채팅의 상대 목록 숨김·일괄 조회·SQL 미읽음 집계와 `conversationPair`·`nextPageAnchor`를 함께 유지했다. 신고 목록도 공통 커서 도우미로 바꾸고, 새 통합 테스트의 Location 헤더·문의 이력 관계·댓글 DTO를 엄격한 타입에 맞췄다. 새 코드의 미사용 변수·else를 고쳐 프로젝트 lint와 migration-check lint를 유지했다. 공통 ESLint 안내는 최신 preset·플러그인 설명과 API·패키지 적용 현황을 합쳤다.
+
+검증(Node 24, 이 worktree): 집계 `check`(7개 워크스페이스 타입·API/패키지·Web/Mobile/Admin lint), API unit 155개·격리 PostgreSQL 통합 170개, SDK 69개·Bridge 11개·Web 192개·Mobile 54개·Admin 21개, migration-check `check` 70개, eslint-config `check` 80개가 통과했다. photo-contest 전체 타입, design-system·blog 타입 검사와 API 운영 빌드도 통과했다. SDK 재생성의 추가 diff가 없고, 운영 모듈 로드 및 `dist/testing` 제외를 확인했다. 통합 테스트가 만든 스키마는 테스트가 정리했으며, 이 worktree가 소유한 테스트 DB는 종료했다. 브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다. 아래 검증 수치는 원래 구현 시점의 기록이다.
+
+프로젝트 루트 `eslint.config.ts`가 Web·Admin·Mobile을 제외한 `apps/api`, `packages/{contracts,sdk,bridge}`, 프로젝트·API 스크립트를 공용 `baseConfig`로 검사하고 집계 `check`가 실행한다. 생성 코드(`src/generated`, SDK `generated`)와 `dist`는 산출물 제외로 빠진다. 위반 44건(`side/no-else` 19, `no-unused-vars` 16, `no-explicit-any` 6, `no-require-imports` 3)을 고쳤다. 루트 `migration-check`에도 `baseConfig`와 `check`를 연결해 `side/no-else` 1건을 고쳤고, game-feedback·photo-contest CI가 `test` 대신 `check`를 실행한다.
+
+API·contracts·bridge·sdk tsconfig는 `@side/typescript-config/base`를 상속한다. 서버 API와 React Native 공용 bridge는 `lib`를 ES2022로 명시해 DOM을 뺐고, Web·API 공용 contracts는 `URL` 때문에 DOM만, 브라우저 SDK는 기존 DOM·DOM.Iterable을 유지한다. `noUncheckedIndexedAccess` 오류는 목록 커서(`nextPageAnchor`·`nextCursor`)·대화 쌍(`conversationPair`) 도우미와 명시적 검사로 any·non-null 없이 고쳤다.
+
+API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/**` 제외)과 테스트를 포함한 `tsconfig.json`(Vitest와 같은 `module: Preserve`·Bundler)으로 나눴고 `typecheck`가 둘 다 검사한다. 운영 seed가 쓰는 데모 커뮤니티 글은 `src/seed-community-posts.ts`로 옮겨 dist에는 S3 fixture·E2E 서버가 들어가지 않는다. Dockerfile·운영 스크립트의 `dist/main.js`·`dist/seed.js` 경로는 그대로다. 테스트 타입 오류 40건(실제 오류 2곳, `Location`·`Set-Cookie`·배열 색인)을 고쳤다.
+
+공용 base에 `isolatedModules`·`noImplicitOverride`·`noFallthroughCasesInSwitch`를 켰다. CommonJS 출력과 충돌하는 `verbatimModuleSyntax` 대신 `isolatedModules`를 골랐고, `override` 누락 16건(game-feedback 8, photo-contest 8)을 고쳤다. `tsc7`은 SIGINT·SIGTERM·SIGHUP을 tsc에 넘기고 신호로 끝난 tsc의 신호를 그대로 전달한다.
+
+검증(develop 95188270 기준 rebase 후): 집계 `check`(타입·새 lint·앱 lint), API unit 143개, SDK 68개, Bridge 11개, Web 188개, Mobile 54개, Admin 21개, migration-check `check`(70개), photo-contest `lint`·`typecheck`와 변경 파일 테스트, design-system·eslint-config `check`, blog 타입 검사, 전체 format 검사가 통과했다. API 빌드 산출물에 `testing/`이 없고 `dist/seed.js` 등 운영 스크립트 모듈이 로드되는 것과 OpenAPI·SDK 재생성 diff 0을 확인했다. `tsc7 -w`의 재컴파일·Ctrl+C·단독 SIGTERM 종료와 고아 프로세스 없음, SIGKILL 전달을 확인했다. DB를 띄우지 않아 PostgreSQL 통합 테스트와 E2E, 컨테이너 빌드는 실행하지 않았다.
+
 # 2026-10-22 헬스·내부 라우트 폴더 이름 정리
 
 URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. Lightsail Caddy는 최상위 `handle`이 `respond`보다 먼저 실행돼 차단이 동작하지 않았으므로 `route`로 순서를 고정했다.

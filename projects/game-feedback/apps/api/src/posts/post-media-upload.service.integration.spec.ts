@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
@@ -13,6 +13,7 @@ import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
 import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
 
 const require = createRequire(import.meta.url);
@@ -189,7 +190,7 @@ describe('게시글 S3 직접 업로드', () => {
     ).toContain(plan.fields.key);
     expect((await transfer(plan, Buffer.alloc(png.length, 120))).status).toBe(204);
     const redirected = await state.owner.get(`/api/post-media/${plan.id}`).expect(307);
-    const location = new URL(redirected.headers.location);
+    const location = new URL(responseLocation(redirected));
     expect(location.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(location.searchParams.get('X-Amz-Signature')).toMatch(/^[a-f0-9]{64}$/);
     expect(location.searchParams.get('response-cache-control')).toBe('private, no-store');
@@ -198,7 +199,7 @@ describe('게시글 S3 직접 업로드', () => {
     await state.outsider.get(`/api/post-media/${plan.id}`).expect(404);
     await state.owner.get(`/api/post-media/${plan.id}`).set('Range', 'bytes=999-1000').expect(416);
     const ranged = await state.owner.get(`/api/post-media/${plan.id}`).set('Range', 'bytes=8-11').expect(307);
-    const bytes = await fetch(ranged.headers.location, { headers: { Range: 'bytes=8-11' } });
+    const bytes = await fetch(responseLocation(ranged), { headers: { Range: 'bytes=8-11' } });
     expect(bytes.status).toBe(206);
     expect(Buffer.from(await bytes.arrayBuffer())).toEqual(png.subarray(8, 12));
     const head = await state.owner.head(`/api/post-media/${plan.id}`).expect(200);

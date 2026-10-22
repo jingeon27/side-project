@@ -48,8 +48,11 @@ export class ConcurrencyLimit {
       released = true;
       // 기다리는 요청이 있으면 슬롯을 그대로 넘긴다.
       const next = this.waiting.shift();
-      if (next) next();
-      else this.active -= 1;
+      if (next) {
+        next();
+        return;
+      }
+      this.active -= 1;
     };
   }
 }

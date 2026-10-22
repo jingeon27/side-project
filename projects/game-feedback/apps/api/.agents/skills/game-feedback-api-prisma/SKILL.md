@@ -7,7 +7,7 @@ DB·포트 격리와 금지 옵션은 프로젝트 `AGENTS.md`, 커밋 범위는
 
 ## 스키마 편집 (`prisma/schema.prisma`)
 
-- client는 `src/generated/prisma`로 생성되고 gitignore다(손대지 않는다). 서비스는 `../generated/prisma`에서 `PrismaClient`·`Prisma`·모델 타입을 import하고, `scripts/build.cjs`가 이 폴더를 `dist/generated/prisma`로 복사한다.
+- client는 `src/generated/prisma`로 생성되고 gitignore다(손대지 않는다). 서비스는 `../generated/prisma`에서 `PrismaClient`·`Prisma`·모델 타입을 import하고, `scripts/build.mjs`가 이 폴더를 `dist/generated/prisma`로 복사한다.
 - 파일은 `prisma format` 정렬 상태가 아니다(열 정렬 없음, `@relation(fields:[…])`처럼 공백 없는 줄이 섞여 있다). 포맷터를 돌리면 전체가 바뀌므로 바꾼 줄만 주변 형식대로 쓴다.
 - 역할·상태·게시판·신고 대상은 Prisma enum이 아니라 `String`이다(`User.role`, `Post.board`, `Report.status`·`targetType`, `SupportConversation.topic`·`status`). 허용 값은 계약 Zod가 HTTP 경계에서 정한다. `ACTIVE_POST`(`src/common/content.ts`)가 `board in BoardKindSchema.options`로 거르므로 계약에서 게시판을 빼면 기존 행은 남고 모든 공개 화면에서 사라진다.
 - JSON 열(`Post.document`·`coaching`·`friendSale`·`battle`·`gameProfile`, `User.profileLinks`, `GameAccount.profile`)의 모양은 계약 Zod만 보장한다. 값을 비울 때는 `Prisma.DbNull`.

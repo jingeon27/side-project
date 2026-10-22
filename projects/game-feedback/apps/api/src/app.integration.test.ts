@@ -11,16 +11,18 @@ import { hash, token } from './common/crypto';
 import { PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider, type IdentityProvider } from './security';
 import { seed } from './seed';
+import { responseLocation } from './testing/http-response';
 
 const baseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
+type TRecord = { id: string };
 describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => {
   let app: INestApplication, db: PrismaClient, url: string, schema: string;
   let requester: ReturnType<typeof supertest.agent>,
     coach: ReturnType<typeof supertest.agent>,
     stranger: ReturnType<typeof supertest.agent>;
-  let post: any, answer: any, coachUser: any;
+  let post: TRecord & { gameProfile: unknown }, answer: TRecord, coachUser: TRecord;
   const login = async (agent: ReturnType<typeof supertest.agent>, nickname: string) =>
     agent.post('/api/auth/demo').set('Origin', origin).send({ nickname }).expect(200);
   beforeAll(async () => {
@@ -144,7 +146,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect(notifications.unreadCount).toBe(1);
     expect(notifications.items[0].answerId).toBe(answer.id);
     expect(
-      (await requester.get('/api/posts?unanswered=true')).body.items.some((p: any) => p.id === post.id),
+      (await requester.get('/api/posts?unanswered=true')).body.items.some((p: TRecord) => p.id === post.id),
     ).toBe(false);
   });
   it('enforces helpful requester-only and avoids duplicate notifications', async () => {
@@ -232,7 +234,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       .send({ blockedUserId: coachUser.id })
       .expect(200);
     expect(
-      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: any) => a.id === answer.id),
+      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: TRecord) => a.id === answer.id),
     ).toBe(false);
     await coach.get(`/api/posts/${post.id}`).expect(404);
     await coach
@@ -252,7 +254,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       .send({ targetType: 'ANSWER', targetId: answer.id, hidden: true, reason: '운영자 확인' })
       .expect(200);
     expect(
-      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: any) => a.id === answer.id),
+      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: TRecord) => a.id === answer.id),
     ).toBe(false);
     expect(await db.auditLog.count({ where: { targetId: answer.id } })).toBe(1);
   });
@@ -284,7 +286,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect((await agent.get('/api/posts').expect(200)).body.items).toHaveLength(0);
     await agent.get(`/api/posts/${post.id}`).expect(404);
     const start = await agent.get('/api/auth/google').expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     await agent.get(`/api/auth/google/callback?code=fake&state=${state}`).expect(302);
     expect((await agent.get('/api/session')).body.needsOnboarding).toBe(true);
     await agent
@@ -300,7 +302,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect((await agent.get('/api/session')).body.user.nickname).toBe('직접지은이름');
     await agent.post('/api/auth/logout').set('Origin', origin).expect(200);
     const second = await agent.get('/api/auth/google');
-    const secondState = new URL(second.headers.location).searchParams.get('state');
+    const secondState = new URL(responseLocation(second)).searchParams.get('state');
     await agent.get(`/api/auth/google/callback?code=fake&state=${secondState}`).expect(302);
     expect((await agent.get('/api/session')).body.user.nickname).toBe('직접지은이름');
     await agent.post('/api/auth/demo').set('Origin', origin).send({ nickname: '공개위험' }).expect(404);

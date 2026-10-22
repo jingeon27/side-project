@@ -10,7 +10,7 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 - `unit`: `src/**/*.{spec,test}.ts` + 프로젝트 `../../scripts/**/*.{spec,test}.ts`(`database-guard.test.ts`)에서 integration 파일을 뺀 것. DB·Nest 앱 없이 도는 정책·검증이다(`src/common/http/request-validation.spec.ts`, `src/rate-limit.*`, `src/chat/chat-history.spec.ts`, `src/admin/reports/report.policy.spec.ts`, `src/common/pagination.spec.ts`, `src/config/production.config.spec.ts`).
 - `integration`: `src/**/*.integration.{spec,test}.ts`, `globalSetup: ./scripts/integration-setup.mjs`(`TEST_DATABASE_URL`이 없거나 가드를 못 넘으면 실패). 파일은 병렬로 돌고 각자 스키마를 만든다. 새 파일은 `describe.skipIf`를 두지 않는다 — DB가 없으면 건너뛴 성공이 아니라 실패여야 한다.
 - SWC 플러그인이 없어 데코레이터 메타데이터가 없다. 테스트에서 만드는 provider·서비스도 `@Inject(Token)`을 명시해야 주입된다.
-- `tsconfig.json`이 `*.spec.ts`·`*.test.ts`를 제외하므로 `typecheck`는 테스트 파일을 검사하지 않는다.
+- `typecheck`는 테스트를 포함한 `tsconfig.json`(Vitest처럼 `module: Preserve`·Bundler, `import.meta` 허용)과 빌드 전용 `tsconfig.build.json`(Node16 CJS 출력, 테스트·`src/testing/**` 제외)을 모두 검사한다. 공통 하네스는 `src/testing/`에 두고 운영 코드에서 import하지 않는다. 테스트의 `Location`·`Set-Cookie`는 `src/testing/http-response.ts`의 `responseLocation`·`responseCookies`로 읽는다.
 
 ## 실행기 (`scripts/test.mjs`)
 

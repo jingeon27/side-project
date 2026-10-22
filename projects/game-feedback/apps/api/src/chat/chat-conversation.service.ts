@@ -6,7 +6,7 @@ import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
-import { decodeCursor, encodeCursor } from '../common/pagination';
+import { decodeCursor, encodeCursor, nextPageAnchor } from '../common/pagination';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { authorDto } from '../users/user.presenter';
@@ -21,6 +21,7 @@ import {
   userSelect,
   type ConversationRow,
 } from './chat.presenter';
+import { conversationPair } from './conversation-pair';
 
 @Injectable()
 export class ChatConversationService {
@@ -98,7 +99,7 @@ export class ChatConversationService {
     ) {
       throw new ApiError(404, 'RECIPIENT_UNAVAILABLE', '이 사용자와 대화를 시작할 수 없습니다.');
     }
-    const [firstUserId, secondUserId] = [user.id, recipientId].sort();
+    const { firstUserId, secondUserId } = conversationPair(user.id, recipientId);
     const mine = firstUserId === user.id ? 'firstHidden' : 'secondHidden';
     const peerSide = mine === 'firstHidden' ? 'secondHidden' : 'firstHidden';
     let row: ConversationRow;
@@ -185,11 +186,11 @@ export class ChatConversationService {
       this.presentMany(rows.slice(0, query.limit), user.id),
       this.unreadTotal(user.id, excluded),
     ]);
-    const last = rows[Math.min(query.limit, rows.length) - 1];
+    const last = nextPageAnchor(rows, query.limit);
     return {
       items,
       unreadCount,
-      nextCursor: rows.length > query.limit ? encodeCursor({ id: last.id, createdAt: last.updatedAt }) : null,
+      nextCursor: last ? encodeCursor({ id: last.id, createdAt: last.updatedAt }) : null,
     };
   }
   /**

@@ -15,6 +15,7 @@ import { resolveAppConfig } from '../config/app.config';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from '../security';
 import { seed } from '../seed';
+import { responseCookies, responseLocation } from '../testing/http-response';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
@@ -460,7 +461,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     for (const provider of SocialProviderSchema.options) {
       const agent = supertest.agent(app.getHttpServer());
       const start = await agent.get(`/api/auth/social/${provider}`).expect(302);
-      const oauthState = new URL(start.headers.location).searchParams.get('state');
+      const oauthState = new URL(responseLocation(start)).searchParams.get('state');
       await agent
         .get(`/api/auth/social/${provider}/callback`)
         .query({ state: oauthState, code: 'fake-code' })
@@ -478,7 +479,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       await agent
         .get(`/api/auth/social/${provider}/callback`)
         .query({
-          state: new URL(again.headers.location).searchParams.get('state'),
+          state: new URL(responseLocation(again)).searchParams.get('state'),
           code: 'another-fake-code',
         })
         .expect(302);
@@ -492,13 +493,13 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const start = await agent.get('/api/auth/social/x').query({ app_challenge: challenge }).expect(302);
-    const oauthState = new URL(start.headers.location).searchParams.get('state');
+    const oauthState = new URL(responseLocation(start)).searchParams.get('state');
     await agent.get('/api/auth/social/kakao/callback').query({ state: oauthState, code: 'fake' }).expect(400);
     const callback = await agent
       .get('/api/auth/social/x/callback')
       .query({ state: oauthState, code: 'fake' })
       .expect(302);
-    const code = new URL(callback.headers.location).searchParams.get('code');
+    const code = new URL(responseLocation(callback)).searchParams.get('code');
     const exchange = await agent
       .post('/api/auth/app/exchange')
       .set('Origin', origin)
@@ -512,28 +513,28 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const agent = supertest.agent(fixture().app.getHttpServer());
     const returnTo = '/ja/login?returnTo=' + encodeURIComponent('/ja/boards/coaching?coachingRole=STUDENT');
     const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const callback = await agent
       .get('/api/auth/social/google/callback')
       .query({ state, code: 'fake-code' })
       .expect(302);
-    const destination = new URL(callback.headers.location);
+    const destination = new URL(responseLocation(callback));
     expect(destination.origin).toBe(origin);
     expect(destination.pathname).toBe('/ja/boards/coaching');
     expect(destination.searchParams.get('coachingRole')).toBe('STUDENT');
     expect(destination.searchParams.has('returnTo')).toBe(false);
-    expect(
-      callback.headers['set-cookie'].some((value: string) => value.startsWith('gamefeedback_oauth_return=;')),
-    ).toBe(true);
+    expect(responseCookies(callback).some((value) => value.startsWith('gamefeedback_oauth_return=;'))).toBe(
+      true,
+    );
   });
   it('OAuth cancellation returns to the selected locale and external return destinations are rejected', async () => {
     const agent = supertest.agent(fixture().app.getHttpServer());
     await agent.get('/api/auth/social/google').query({ returnTo: 'https://outside.test' }).expect(400);
     const returnTo = '/en/login?returnTo=%2Fen%2Fsettings';
     const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const cancelled = await agent.get('/api/auth/social/google/callback').query({ state }).expect(302);
-    const destination = new URL(cancelled.headers.location);
+    const destination = new URL(responseLocation(cancelled));
     expect(destination.pathname).toBe('/en/login');
     expect(destination.searchParams.get('returnTo')).toBe('/en/settings');
     expect(destination.searchParams.get('login')).toBe('cancelled');

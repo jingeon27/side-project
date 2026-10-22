@@ -199,9 +199,12 @@ describe('generated REST client response validation', () => {
   });
   it('fills only explicitly allowed missing display fields', async () => {
     const fixture = postFixture();
-    const { nickname: _nickname, ...author } = fixture.post.author;
-    const { answerCount: _answerCount, ...post } = fixture.post;
-    respond({ ...fixture, post: { ...post, author } });
+    const without = (value: object, omitted: string) =>
+      Object.fromEntries(Object.entries(value).filter(([key]) => key !== omitted));
+    respond({
+      ...fixture,
+      post: { ...without(fixture.post, 'answerCount'), author: without(fixture.post.author, 'nickname') },
+    });
     const result = await getPost('post-1');
     expect(result.post.answerCount).toBe(0);
     expect(result.post.author.nickname).toBe('알 수 없는 플레이어');

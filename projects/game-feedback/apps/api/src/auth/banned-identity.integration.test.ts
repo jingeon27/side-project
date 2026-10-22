@@ -13,6 +13,7 @@ import { hash, token } from '../common/crypto';
 import { assertDatabaseUrl } from '../database/database-url';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
@@ -27,7 +28,7 @@ describe('banned social identities after account deletion', () => {
   // The fake provider returns the authorization code as the external subject.
   async function startSocial(agent: TAgent, provider: TSocialProvider, query: Record<string, string> = {}) {
     const start = await agent.get(`/api/auth/social/${provider}`).query(query).expect(302);
-    return new URL(start.headers.location).searchParams.get('state') ?? '';
+    return new URL(responseLocation(start)).searchParams.get('state') ?? '';
   }
   async function signUp(provider: TSocialProvider, subject: string, nickname: string) {
     const agent = supertest.agent(app.getHttpServer());

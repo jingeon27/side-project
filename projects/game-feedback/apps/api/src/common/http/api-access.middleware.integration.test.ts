@@ -33,7 +33,7 @@ describe('rate limits for server-side rendering requests from one web container'
     return supertest(app.getHttpServer());
   }
   async function exhaust(request: ReturnType<typeof supertest>, headers: () => Record<string, string>) {
-    for (const _ of Array.from({ length: anonymousReadLimit }))
+    for (let count = 0; count < anonymousReadLimit; count++)
       await request.get('/api/session').set(headers()).expect(200);
   }
   afterEach(async () => {
@@ -70,7 +70,7 @@ describe('rate limits for server-side rendering requests from one web container'
 
   it('gives signed internal reads their own larger budget', async () => {
     const request = await start();
-    for (const _ of Array.from({ length: anonymousReadLimit + 60 }))
+    for (let count = 0; count < anonymousReadLimit + 60; count++)
       await request.get('/api/session').set(signed('internal')).expect(200);
     await exhaust(request, () => ({}));
     await request.get('/api/session').expect(429);

@@ -15,8 +15,8 @@ beforeEach(() => {
   vi.stubGlobal(
     'URL',
     class extends URL {
-      static createObjectURL = () => 'blob:clip';
-      static revokeObjectURL = () => undefined;
+      static override createObjectURL = () => 'blob:clip';
+      static override revokeObjectURL = () => undefined;
     },
   );
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);

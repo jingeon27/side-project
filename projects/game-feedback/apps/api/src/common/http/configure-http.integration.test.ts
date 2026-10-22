@@ -52,7 +52,7 @@ describe('API paths that differ only by letter case', () => {
     });
     try {
       const target = supertest(limited.getHttpServer());
-      for (const _ of Array.from({ length: 240 })) await target.get('/API/posts').expect(404);
+      for (let count = 0; count < 240; count++) await target.get('/API/posts').expect(404);
       const response = await target.get('/api/session').expect(429);
       expect(response.body.errorCode).toBe('RATE_LIMITED');
     } finally {

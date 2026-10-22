@@ -39,9 +39,15 @@ export class GoogleIdentityProvider implements IdentityProvider {
       });
       const data = (await response.json()) as { id_token?: string };
       if (!response.ok || !data.id_token) throw new Error('Token exchange failed');
-      const parts = data.id_token.split('.');
-      if (parts.length !== 3) throw new Error('Invalid ID token');
-      const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString()) as {
+      const [encodedHeader, encodedClaims, encodedSignature, ...extraParts] = data.id_token.split('.');
+      if (
+        encodedHeader === undefined ||
+        encodedClaims === undefined ||
+        encodedSignature === undefined ||
+        extraParts.length > 0
+      )
+        throw new Error('Invalid ID token');
+      const header = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString()) as {
         alg?: string;
         kid?: string;
       };
@@ -56,13 +62,13 @@ export class GoogleIdentityProvider implements IdentityProvider {
         !jwk ||
         !verify(
           'RSA-SHA256',
-          Buffer.from(`${parts[0]}.${parts[1]}`),
+          Buffer.from(`${encodedHeader}.${encodedClaims}`),
           createPublicKey({ key: jwk, format: 'jwk' }),
-          Buffer.from(parts[2], 'base64url'),
+          Buffer.from(encodedSignature, 'base64url'),
         )
       )
         throw new Error('Invalid signature');
-      const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString()) as {
+      const claims = JSON.parse(Buffer.from(encodedClaims, 'base64url').toString()) as {
         sub?: string;
         iss?: string;
         aud?: string | string[];

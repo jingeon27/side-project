@@ -18,6 +18,7 @@ import {
   type ProfileProvider,
 } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
@@ -52,7 +53,7 @@ describe.skipIf(!testDatabaseUrl)(
       agent.post('/api/auth/test-login').set('Origin', origin).send({ accountId });
     async function googleLogin() {
       const start = await google.get('/api/auth/google').expect(302);
-      const state = new URL(start.headers.location).searchParams.get('state');
+      const state = new URL(responseLocation(start)).searchParams.get('state');
       await google.get('/api/auth/google/callback').query({ code: 'fake-code', state }).expect(302);
     }
 
@@ -172,12 +173,14 @@ describe.skipIf(!testDatabaseUrl)(
         select: { id: true },
       });
       try {
+        const [visiblePost, , hiddenPost, deletedPost] = created;
+        if (!visiblePost || !hiddenPost || !deletedPost) throw new Error('Expected the four created posts.');
         await db.answer.createMany({
           data: [
-            { postId: created[0].id, authorId: coachId, body: '공개 답변', helpful: true },
-            { postId: created[0].id, authorId: coachId, body: '숨긴 답변', hidden: true, helpful: true },
-            { postId: created[2].id, authorId: coachId, body: '숨긴 부모의 답변', helpful: true },
-            { postId: created[3].id, authorId: coachId, body: '삭제한 부모의 답변', helpful: true },
+            { postId: visiblePost.id, authorId: coachId, body: '공개 답변', helpful: true },
+            { postId: visiblePost.id, authorId: coachId, body: '숨긴 답변', hidden: true, helpful: true },
+            { postId: hiddenPost.id, authorId: coachId, body: '숨긴 부모의 답변', helpful: true },
+            { postId: deletedPost.id, authorId: coachId, body: '삭제한 부모의 답변', helpful: true },
           ],
         });
         const after = (await anonymous.get(`/api/users/${coachId}`)).body;
@@ -197,7 +200,7 @@ describe.skipIf(!testDatabaseUrl)(
         expect(first.items[0].id).not.toBe(second.items[0].id);
         const all = (await anonymous.get('/api/posts').query({ authorId: coachId, limit: 50 })).body.items;
         expect(
-          all.some((post: { id: string }) => post.id === created[2].id || post.id === created[3].id),
+          all.some((post: { id: string }) => post.id === hiddenPost.id || post.id === deletedPost.id),
         ).toBe(false);
         expect(all.every((post: { author: { id: string } }) => post.author.id === coachId)).toBe(true);
       } finally {

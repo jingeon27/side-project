@@ -352,7 +352,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       const visible = (await detail(replier.agent, post.id)).comments;
       expect(visible).toHaveLength(2);
       expect(visible[0]).toMatchObject({ id: root.id, author: null, body: '', isDeleted: true });
-      expect(visible[1].id).toBe(reply.id);
+      expect(visible[1]?.id).toBe(reply.id);
       await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(200);
     } finally {
       await db.block.delete({ where: { id: block.id } });

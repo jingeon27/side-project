@@ -10,9 +10,9 @@ import { MediaUploadPlanSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
-import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
 import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
 
 const require = createRequire(import.meta.url);
@@ -172,12 +172,12 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
         .expect(200)
     ).body;
     const content = await state.outsider.get(file.url).expect(307);
-    const signed = new URL(content.headers.location);
+    const signed = new URL(responseLocation(content));
     expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(content.headers['cache-control']).toBe('private, no-store');
     expect(Buffer.from(await (await fetch(signed)).arrayBuffer())).toEqual(png);
     const ranged = await state.outsider.get(file.url).set('Range', 'bytes=8-11').expect(307);
-    const bytes = await fetch(ranged.headers.location, { headers: { Range: 'bytes=8-11' } });
+    const bytes = await fetch(responseLocation(ranged), { headers: { Range: 'bytes=8-11' } });
     expect(bytes.status).toBe(206);
     expect(Buffer.from(await bytes.arrayBuffer())).toEqual(png.subarray(8, 12));
     const head = await state.outsider.head(file.url).expect(200);

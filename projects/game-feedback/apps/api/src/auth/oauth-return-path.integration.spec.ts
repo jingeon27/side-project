@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
 import { PrismaClient } from '../generated/prisma';
+import { responseLocation } from '../testing/http-response';
 import { OAUTH_RETURN_COOKIE } from './oauth-return-path';
 
 const target = process.env.TEST_DATABASE_URL;
@@ -64,11 +65,11 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       const callback = await agent
         .get('/api/auth/google/callback')
         .query({
-          state: new URL(start.headers.location).searchParams.get('state'),
+          state: new URL(responseLocation(start)).searchParams.get('state'),
           code: subject,
         })
         .expect(302);
-      const onboarding = new URL(callback.headers.location);
+      const onboarding = new URL(responseLocation(callback));
       expect(onboarding.origin).toBe(origin);
       expect(onboarding.pathname).toBe(`/${locale}/onboarding`);
       expect(onboarding.searchParams.get('returnTo')).toBe(original);
@@ -90,7 +91,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       const existing = await agent
         .get('/api/auth/google/callback')
         .query({
-          state: new URL(again.headers.location).searchParams.get('state'),
+          state: new URL(responseLocation(again)).searchParams.get('state'),
           code: subject,
         })
         .expect(302);
@@ -106,10 +107,10 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
     const callback = await agent
       .get('/api/auth/google/callback')
       .query({
-        state: new URL(start.headers.location).searchParams.get('state'),
+        state: new URL(responseLocation(start)).searchParams.get('state'),
       })
       .expect(302);
-    const cancelled = new URL(callback.headers.location);
+    const cancelled = new URL(responseLocation(callback));
     expect(cancelled.origin).toBe(origin);
     expect(cancelled.pathname).toBe('/en/login');
     expect(cancelled.searchParams.get('returnTo')).toBe('/en/settings');
@@ -133,7 +134,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
 
   it('변조한 복귀 쿠키는 외부로 보내지 않고 한국어 가입 화면의 홈 목적지로 대체해야 한다', async () => {
     const start = await supertest(app.getHttpServer()).get('/api/auth/google').expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const unsafe = '/ja/login?returnTo=https%3A%2F%2Foutside.test';
     const callback = await supertest(app.getHttpServer())
       .get('/api/auth/google/callback')
@@ -143,7 +144,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       ])
       .query({ state, code: 'tampered-return-cookie' })
       .expect(302);
-    const destination = new URL(callback.headers.location);
+    const destination = new URL(responseLocation(callback));
     expect(destination.origin).toBe(origin);
     expect(destination.pathname).toBe('/ko/onboarding');
     expect(destination.searchParams.get('returnTo')).toBe('/ko');
