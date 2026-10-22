@@ -37,7 +37,7 @@ async function getPublicPost(id: string) {
 async function getServerExcludedAuthors(): Promise<ReadonlySet<string>> {
   if (!(await hasSessionCookie())) return new Set();
   const { baseUrl, headers, signal } = await serverRequestOptions();
-  const response = await fetch(`${baseUrl}/_internal/visibility/excluded-authors`, { headers, signal });
+  const response = await fetch(`${baseUrl}/internal/visibility/excluded-authors`, { headers, signal });
   if (!response.ok) throw new Error(`Excluded authors request failed with ${response.status}.`);
   return new Set(ExcludedAuthorsSchema.parse(await response.json()).userIds);
 }
