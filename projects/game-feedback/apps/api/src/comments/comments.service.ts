@@ -67,7 +67,8 @@ export class CommentsService {
           });
         return row;
       },
-      [postCacheTag(postId)],
+      // 태그는 게시글을 확인한 뒤 만든다. 형식이 틀린 id는 태그 검증보다 404가 먼저여야 한다.
+      (row) => [postCacheTag(row.postId)],
     );
     return responseComment(c);
   }
