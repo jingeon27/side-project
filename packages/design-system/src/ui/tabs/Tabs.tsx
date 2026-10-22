@@ -69,7 +69,8 @@ function TabsContent({ className, ...props }: TStyledProps<TabsPrimitive.Panel.P
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn('flex-1 text-sm outline-none', className)}
+      // 포커스할 내용이 없으면 패널 자체가 Tab 순서에 들어가므로 키보드 포커스를 보이게 한다.
+      className={cn('flex-1 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50', className)}
       {...props}
     />
   );
