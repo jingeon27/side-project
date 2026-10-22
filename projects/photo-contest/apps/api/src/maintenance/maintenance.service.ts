@@ -28,8 +28,9 @@ export class MaintenanceService {
       });
     }
     // 완료하지 않은 티켓의 최종 키다. POST 정책도 같은 시각에 끝나므로 지운 뒤 다시 쓰이지 않는다.
+    // 만료 직전에 시작한 완료 확정과 겹치지 않도록 다른 정리처럼 유예 시간이 지난 뒤에 지운다.
     const staged = await this.db.postUpload.findMany({
-      where: { stagingKey: { not: null }, expiresAt: { lt: now } },
+      where: { stagingKey: { not: null }, expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) } },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const upload of staged) {
