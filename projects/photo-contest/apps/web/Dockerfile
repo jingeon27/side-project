@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
+ENV YARN_ENABLE_IMMUTABLE_INSTALLS=true
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/* && corepack enable
 COPY . .
