@@ -89,6 +89,9 @@ export class MediaUploadService {
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
       // 브라우저는 공개될 최종 키에 바로 올린다. 완료 전까지는 stagingKey에만 두어 게시에 쓰지 못한다.
       const key = createMediaKey(policy.extension);
+      const expiresAt = new Date(
+        now.getTime() + (contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000),
+      );
       const upload = await tx.postUpload.create({
         data: {
           userId: viewer.id,
@@ -98,9 +101,9 @@ export class MediaUploadService {
           kind: policy.kind,
           contentType,
           byteSize,
-          expiresAt: new Date(
-            now.getTime() + (contestId || avatar ? UPLOAD_TICKET_TTL_MS : POST_UPLOAD_TTL_SECONDS * 1000),
-          ),
+          expiresAt,
+          // 완료하면 expiresAt은 게시 유효기간으로 바뀐다. 저장소가 이 키에 쓰기를 받는 마지막 시각은 따로 둔다.
+          policyExpiresAt: expiresAt,
         },
       });
       const submission = contestId

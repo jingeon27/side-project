@@ -261,6 +261,8 @@ export class PostService {
     try {
       if (upload.storageKey) await this.storage.delete(upload.storageKey);
       if (upload.stagingKey) await this.storage.delete(upload.stagingKey);
+      // POST 정책이 아직 유효하면 업로더가 같은 키에 다시 올릴 수 있다. 행을 남겨 정리 작업이 정책 만료 뒤에 다시 지운다.
+      if (upload.policyExpiresAt && upload.policyExpiresAt > new Date()) return true;
       await this.db.postUpload.deleteMany({ where: { id: upload.id, post: null } });
     } catch (error) {
       reportUnexpectedError(error, { operationName: 'deletePost', location: 'media-cleanup' });

@@ -25,7 +25,7 @@ describe('직접 업로드 파일 정리 회귀', () => {
     const second = await postUpload(api, owner, groupId);
     await api.db.postUpload.updateMany({
       where: { id: { in: [first, second] } },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: new Date(0), policyExpiresAt: new Date(0) },
     });
     const [failing, removed] = await Promise.all(
       [first, second].map((id) => api.db.postUpload.findUniqueOrThrow({ where: { id } })),
@@ -63,9 +63,10 @@ describe('직접 업로드 파일 정리 회귀', () => {
     );
     expect((await uploadToStorage(ticket, body, 'image/png')).status).toBe(204);
     const { stagingKey } = await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } });
+    const expiredAt = new Date(Date.now() - 1000);
     await api.db.postUpload.update({
       where: { id: ticket.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: expiredAt, policyExpiresAt: expiredAt },
     });
     // 막 만료된 키는 만료 직전에 시작한 완료 확정과 겹칠 수 있어 유예 시간 동안 남긴다.
     await api.app.get(MaintenanceService).cleanup();

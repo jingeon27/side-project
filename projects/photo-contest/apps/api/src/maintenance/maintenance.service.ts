@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import type { Prisma } from '../../generated/prisma';
 import { CLEANUP_BATCH_SIZE, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
@@ -13,12 +14,16 @@ export class MaintenanceService {
   ) {}
 
   async cleanup(now = new Date()) {
+    // 만료 직전에 시작한 완료 확정과 겹치지 않도록 모든 업로드 정리는 만료 뒤 유예 시간이 지나야 한다.
+    const cutoff = new Date(now.getTime() - UPLOAD_TICKET_TTL_MS);
+    // 저장소는 POST 정책이 끝날 때까지 같은 키에 다시 쓰기를 받으므로 그 뒤에 지워야 다시 올린 파일까지 정리된다.
+    const policyClosed = [
+      { policyExpiresAt: null },
+      { policyExpiresAt: { lt: cutoff } },
+    ] satisfies Prisma.PostUploadWhereInput[];
     await this.removeAbandonedUploads(now);
     const avatars = await this.db.groupAvatar.findMany({
-      where: {
-        expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) },
-        currentGroups: { none: {} },
-      },
+      where: { expiresAt: { lt: cutoff }, currentGroups: { none: {} } },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const avatar of avatars) {
@@ -27,10 +32,9 @@ export class MaintenanceService {
         await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
       });
     }
-    // 완료하지 않은 티켓의 최종 키다. POST 정책도 같은 시각에 끝나므로 지운 뒤 다시 쓰이지 않는다.
-    // 만료 직전에 시작한 완료 확정과 겹치지 않도록 다른 정리처럼 유예 시간이 지난 뒤에 지운다.
+    // 완료하지 않은 티켓의 최종 키다.
     const staged = await this.db.postUpload.findMany({
-      where: { stagingKey: { not: null }, expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) } },
+      where: { stagingKey: { not: null }, expiresAt: { lt: cutoff }, OR: policyClosed },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const upload of staged) {
@@ -42,22 +46,20 @@ export class MaintenanceService {
         });
       });
     }
-    const abandoned = await this.db.postUpload.findMany({
-      where: {
-        expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) },
-        post: null,
-        submissionUpload: null,
-        groupAvatar: null,
-      },
-      take: CLEANUP_BATCH_SIZE,
-    });
+    // 쓰지 않은 완료 파일과 게시물을 지운 업로드
+    const unused = {
+      expiresAt: { lt: cutoff },
+      OR: policyClosed,
+      post: null,
+      submissionUpload: null,
+      groupAvatar: null,
+    } satisfies Prisma.PostUploadWhereInput;
+    const abandoned = await this.db.postUpload.findMany({ where: unused, take: CLEANUP_BATCH_SIZE });
     for (const upload of abandoned) {
       await this.attempt(async () => {
         if (upload.storageKey) await this.media.delete(upload.storageKey);
         if (upload.stagingKey) await this.media.delete(upload.stagingKey);
-        await this.db.postUpload.deleteMany({
-          where: { id: upload.id, post: null, submissionUpload: null, groupAvatar: null },
-        });
+        await this.db.postUpload.deleteMany({ where: { id: upload.id, ...unused } });
       });
     }
     await this.db.authAttempt.deleteMany({ where: { expiresAt: { lte: now } } });
