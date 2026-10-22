@@ -193,6 +193,10 @@ test('article SEO matches canonical, language availability, and structured data'
       'href',
       new RegExp(`/${locale}/blog/${encodeURIComponent(slug)}$`),
     );
+  await expect(page.locator('link[rel="alternate"][type="application/rss+xml"]')).toHaveAttribute(
+    'href',
+    new RegExp(`/rss/${article.locale}$`),
+  );
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(jsonLd.some((value) => value.includes('BlogPosting') && value.includes('BreadcrumbList'))).toBe(
     true,
@@ -436,13 +440,12 @@ test('sitemap and robots expose published translations and allow rendering asset
   for (const article of index) {
     const entry = sitemap.entries.find((entry) => entry.url === articleUrl(article))!;
     expect(entry.lastModified).toBe(article.updatedAt || article.publishedAt);
-    expect(entry.languages).toEqual(
-      Object.fromEntries(
-        index
-          .filter((translation) => translation.id === article.id)
-          .map((translation) => [translation.locale, articleUrl(translation)]),
-      ),
-    );
+    const translations = index.filter((translation) => translation.id === article.id);
+    const korean = translations.find((translation) => translation.locale === 'ko');
+    expect(entry.languages).toEqual({
+      ...Object.fromEntries(translations.map((translation) => [translation.locale, articleUrl(translation)])),
+      ...(korean && translations.length > 1 ? { 'x-default': articleUrl(korean) } : {}),
+    });
   }
   const robots = await request.get('/robots.txt', { maxRedirects: 0 });
   expect(robots.status()).toBe(200);

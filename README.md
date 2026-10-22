@@ -19,6 +19,7 @@ projects/game-feedback/
   packages/sdk/    # Orval API Client · 응답 검증 스키마
   docs/
 packages/design-system/ # 두 웹이 공유하는 Base UI·토큰·스타일·cn, 자체 Vitest
+packages/migration-check/ # Prisma migration의 파괴적 DDL 검사, 자체 Vitest
 packages/typescript-config/
 packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
