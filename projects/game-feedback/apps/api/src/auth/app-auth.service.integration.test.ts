@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, hash } from '../security';
+import { responseCookies, responseLocation } from '../testing/http-response';
 
 const baseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
@@ -22,16 +23,16 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
   async function issue(subject = 'mobile-existing') {
     const browser = supertest.agent(app.getHttpServer());
     const start = await browser.get(`/api/auth/google?app_challenge=${challenge}`).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const result = await browser.get('/api/auth/google/callback').query({ state, code: subject }).expect(302);
     expect(result.headers.location).toMatch(/^gamefeedback:\/\/auth\/callback\?code=[A-Za-z0-9_-]{43}$/);
     const rawCookies = result.headers['set-cookie'] as unknown as string[];
     expect(rawCookies.some((cookie) => cookie.startsWith('gamefeedback_session='))).toBe(false);
-    const code = new URL(result.headers.location).searchParams.get('code');
+    const code = new URL(responseLocation(result)).searchParams.get('code');
     if (!code) throw new Error('Missing app ticket');
     return { code, verifier };
   }
-  const exchange = (body: unknown, agent = supertest.agent(app.getHttpServer())) =>
+  const exchange = (body: object, agent = supertest.agent(app.getHttpServer())) =>
     agent.post('/api/auth/app/exchange').set('Origin', origin).send(body);
   beforeAll(async () => {
     if (!baseUrl) throw new Error('Missing isolated test DB');
@@ -84,7 +85,7 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const webview = supertest.agent(app.getHttpServer());
     const result = await exchange(body, webview).expect(200);
     expect(result.body.user.nickname).toBe('앱사용자');
-    expect(result.headers['set-cookie'][0]).toContain('HttpOnly');
+    expect(responseCookies(result)[0]).toContain('HttpOnly');
     expect((await webview.get('/api/session').expect(200)).body.user.nickname).toBe('앱사용자');
     await exchange(body).expect(400);
   });
@@ -131,7 +132,7 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     await supertest(app.getHttpServer()).get('/api/auth/google?app_challenge=bad').expect(400);
     const browser = supertest.agent(app.getHttpServer());
     const start = await browser.get(`/api/auth/google?app_challenge=${challenge}`).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     await browser.get('/api/auth/google/callback').query({ state: 'forged', code: 'failure' }).expect(400);
     const failed = await browser
       .get('/api/auth/google/callback')

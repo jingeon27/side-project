@@ -11,6 +11,7 @@ import { hash, token } from './common/crypto';
 import { PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider, type IdentityProvider } from './security';
 import { seed } from './seed';
+import { responseLocation } from './testing/http-response';
 
 const baseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
@@ -285,7 +286,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect((await agent.get('/api/posts').expect(200)).body.items).toHaveLength(0);
     await agent.get(`/api/posts/${post.id}`).expect(404);
     const start = await agent.get('/api/auth/google').expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     await agent.get(`/api/auth/google/callback?code=fake&state=${state}`).expect(302);
     expect((await agent.get('/api/session')).body.needsOnboarding).toBe(true);
     await agent
@@ -301,7 +302,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect((await agent.get('/api/session')).body.user.nickname).toBe('직접지은이름');
     await agent.post('/api/auth/logout').set('Origin', origin).expect(200);
     const second = await agent.get('/api/auth/google');
-    const secondState = new URL(second.headers.location).searchParams.get('state');
+    const secondState = new URL(responseLocation(second)).searchParams.get('state');
     await agent.get(`/api/auth/google/callback?code=fake&state=${secondState}`).expect(302);
     expect((await agent.get('/api/session')).body.user.nickname).toBe('직접지은이름');
     await agent.post('/api/auth/demo').set('Origin', origin).send({ nickname: '공개위험' }).expect(404);

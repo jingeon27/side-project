@@ -62,7 +62,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
     for (const [userId, value] of [
       [user.id, state.accessToken],
       [other.id, state.otherToken],
-    ])
+    ] as const)
       await state.db.session.create({
         data: { userId, tokenHash: hash(value), expiresAt: new Date(Date.now() + 3_600_000) },
       });
