@@ -2,15 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { StatusBar } from 'expo-status-bar';
 
-import { UpdateRequiredPageTemplate } from '@/_pages/update-required/@page/UpdateRequiredPageTemplate';
-import { WebShellPageTemplate } from '@/_pages/web-shell/@page/WebShellPageTemplate';
-import { toDeepLinkEvent } from '@/_pages/web-shell/lib/shell-events';
-import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
-import { startAnalytics, trackEvent } from '@/features/analytics/model/analytics';
-import { readAppVersion, UNKNOWN_APP_VERSION } from '@/features/app-config/model/app-version';
-import { readStoreUrl } from '@/features/app-config/model/store';
-import { useVersionGate } from '@/features/app-config/model/use-version-gate';
-import { readInitialLink, type IInitialLink } from '@/features/navigation/model/read-initial-link';
+import { UpdateRequiredPageTemplate } from '@/_pages/update-required';
+import { toDeepLinkEvent, WebShellPageTemplate } from '@/_pages/web-shell';
+import { ANALYTICS_EVENT, startAnalytics, trackEvent } from '@/features/analytics';
+import { readAppVersion, readStoreUrl, UNKNOWN_APP_VERSION, useVersionGate } from '@/features/app-config';
+import { readInitialLink, type IInitialLink } from '@/features/navigation';
 
 import { keepSplashScreen, useSplashScreen } from './model/use-splash-screen';
 import { AppProviders } from './providers/AppProviders';
