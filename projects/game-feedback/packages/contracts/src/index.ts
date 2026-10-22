@@ -222,6 +222,8 @@ export const PostDetailSchema = z.object({
 });
 export const PostViewInputSchema = z.object({ visitorId: z.uuid() }).strict();
 export const PostViewSchema = z.object({ viewCount: ResponseCountSchema });
+export const ReportStatusSchema = z.enum(['OPEN', 'REVIEWED', 'DISMISSED']);
+export type TReportStatus = z.infer<typeof ReportStatusSchema>;
 export const AdminReportSchema = z.object({
   targetPostId: ResponseIdSchema.nullable().optional(),
   targetPreview: z.string().nullable().optional(),
@@ -234,6 +236,15 @@ export const AdminReportSchema = z.object({
   detail: z.string().nullable(),
   status: z.string(),
   createdAt: ResponseTimestampSchema,
+});
+export const AdminReportListSchema = z.object({
+  items: z.array(AdminReportSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+export const AdminReportListQuerySchema = z.object({
+  status: ReportStatusSchema.default('OPEN'),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
 });
 export const NotificationListSchema = z.object({
   items: z.array(NotificationSchema),
@@ -452,6 +463,7 @@ export const schemas = {
   ChatMessageInput: ChatMessageInputSchema,
   ChatReadInput: ChatReadInputSchema,
   AdminReport: AdminReportSchema,
+  AdminReportList: AdminReportListSchema,
   Error: ErrorSchema,
   Ok: OkSchema,
   PublicProfile: PublicProfileSchema,
@@ -665,7 +677,13 @@ export const operations: OperationSpec[] = [
     response: OkSchema,
   },
   { method: 'get', path: '/api/health', id: 'getHealth', response: OkSchema },
-  { method: 'get', path: '/api/admin/reports', id: 'listReports', response: z.array(AdminReportSchema) },
+  {
+    method: 'get',
+    path: '/api/admin/reports',
+    id: 'listReports',
+    response: AdminReportListSchema,
+    query: true,
+  },
   { method: 'get', path: '/api/session', id: 'getSession', response: SessionSchema },
   { method: 'post', path: '/api/auth/demo', id: 'demoLogin', body: DemoInputSchema, response: SessionSchema },
   {

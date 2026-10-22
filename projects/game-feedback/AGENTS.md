@@ -24,7 +24,7 @@
 - DB 작업은 프로젝트의 `scripts/db.mjs` URL 검증을 거친다. 테스트 정리는 생성한 `gf_test_` 스키마에만 허용한다.
 - `db:stop`은 이 프로젝트가 토큰으로 소유권을 확인한 로컬 DB만 종료한다. 포트 사용자를 임의로 kill하지 않는다.
 - 외부 OAuth·게임 API는 인터페이스 뒤에 둔다. 테스트는 가짜 제공자를 강제한다. 데모 모드는 명시적 실행에만 허용하고 production에서는 거부한다.
-- 인증 정보, 세션 쿠키, Player Tag 원본을 로그에 무분별하게 기록하지 않는다. OAuth는 `openid`만 요청하고 이름·사진·이메일을 자동 수집하지 않는다.
+- 인증 정보, 세션 쿠키, Player Tag 원본을 로그에 무분별하게 기록하지 않는다. OAuth는 제공자 식별자 확인에 필요한 최소 scope만 요청한다(Google `openid`, X `tweet.read users.read`, Discord `identify`, 카카오는 scope 없이 `property_keys=[]` 조회). 제공자 subject만 저장하고 이름·사진·이메일을 자동 수집하지 않는다.
 
 ## 검증 및 완료 기록
 

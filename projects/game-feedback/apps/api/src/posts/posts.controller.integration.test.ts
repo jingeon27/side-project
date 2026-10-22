@@ -368,7 +368,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .set('Origin', origin)
       .send({ targetType: 'POST', targetId: created.id, reason: 'SPAM' })
       .expect(200);
-    const reports = (await admin.get('/api/admin/reports').expect(200)).body;
+    const reports = (await admin.get('/api/admin/reports').expect(200)).body.items;
     expect(reports.find((row: { targetId: string }) => row.targetId === created.id)).toMatchObject({
       targetPostId: created.id,
       targetPreview: expect.stringContaining(input.body),

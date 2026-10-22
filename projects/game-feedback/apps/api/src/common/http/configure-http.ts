@@ -1,5 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
+
+/**
+ * Express 5 matches routes case-insensitively, so `/API/posts` would reach a controller while the
+ * path-based access middleware and rate buckets treat it as another path. The router reads this flag
+ * once, when the first middleware creates it, and `ExpressAdapter`'s constructor already adds one.
+ */
+export function createHttpAdapter() {
+  const server = express();
+  server.set('case sensitive routing', true);
+  return new ExpressAdapter(server);
+}
 
 export function configureHttp(app: INestApplication) {
   // Production API traffic enters through the single private reverse-proxy hop.

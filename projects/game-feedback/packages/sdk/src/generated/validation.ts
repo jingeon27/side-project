@@ -1193,33 +1193,47 @@ export const GetHealthResponse = zod.object({
 })
 
 
-export const listReportsResponseTargetPostIdOneMax = 100;
+export const listReportsQueryLimitDefault = 12;
+export const listReportsQueryLimitMax = 50;
 
-export const listReportsResponseTargetUserIdOneMax = 100;
+export const listReportsQueryStatusDefault = `OPEN`;
 
-export const listReportsResponseIdMax = 100;
+export const ListReportsQueryParams = zod.object({
+  "cursor": zod.string().optional(),
+  "limit": zod.int().min(1).max(listReportsQueryLimitMax).default(listReportsQueryLimitDefault),
+  "status": zod.enum(['OPEN', 'REVIEWED', 'DISMISSED']).default(listReportsQueryStatusDefault)
+})
 
-export const listReportsResponseReporterIdMax = 100;
+export const listReportsResponseItemsItemTargetPostIdOneMax = 100;
 
-export const listReportsResponseTargetIdMax = 100;
+export const listReportsResponseItemsItemTargetUserIdOneMax = 100;
 
-export const listReportsResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listReportsResponseItemsItemIdMax = 100;
+
+export const listReportsResponseItemsItemReporterIdMax = 100;
+
+export const listReportsResponseItemsItemTargetIdMax = 100;
+
+export const listReportsResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
-export const ListReportsResponseItem = zod.object({
-  "targetPostId": zod.union([zod.string().min(1).max(listReportsResponseTargetPostIdOneMax),zod.null()]).optional(),
+
+export const ListReportsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "targetPostId": zod.union([zod.string().min(1).max(listReportsResponseItemsItemTargetPostIdOneMax),zod.null()]).optional(),
   "targetPreview": zod.string().nullish(),
-  "targetUserId": zod.union([zod.string().min(1).max(listReportsResponseTargetUserIdOneMax),zod.null()]).optional(),
-  "id": zod.string().min(1).max(listReportsResponseIdMax),
-  "reporterId": zod.string().min(1).max(listReportsResponseReporterIdMax),
+  "targetUserId": zod.union([zod.string().min(1).max(listReportsResponseItemsItemTargetUserIdOneMax),zod.null()]).optional(),
+  "id": zod.string().min(1).max(listReportsResponseItemsItemIdMax),
+  "reporterId": zod.string().min(1).max(listReportsResponseItemsItemReporterIdMax),
   "targetType": zod.string(),
-  "targetId": zod.string().min(1).max(listReportsResponseTargetIdMax),
+  "targetId": zod.string().min(1).max(listReportsResponseItemsItemTargetIdMax),
   "reason": zod.string(),
   "detail": zod.string().nullable(),
   "status": zod.string(),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(listReportsResponseCreatedAtRegExp)
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listReportsResponseItemsItemCreatedAtRegExp)
+})),
+  "nextCursor": zod.union([zod.string().min(1),zod.null()])
 })
-export const ListReportsResponse = zod.array(ListReportsResponseItem)
 
 
 export const getSessionResponseUserOneIdMax = 100;
