@@ -41,7 +41,7 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
 2. 별도 터미널에서 `corepack yarn workspace @side/game-feedback admin:dev`를 실행하고 http://127.0.0.1:3303 에서 "로컬 관리자 로그인"을 누른다.
 3. 다른 API에 붙일 때는 `GF_ADMIN_API_ORIGIN`·`GF_ADMIN_WEB_ORIGIN`·`GF_ADMIN_PORT`를 쓴다. 쓰기 요청이 통과하려면 `GF_ADMIN_WEB_ORIGIN`이 그 API의 `WEB_ORIGIN`과 같아야 한다.
 
-- 운영 연결은 `../../deploy/lightsail/README.md`처럼 셸 환경변수로 한 번만 넘긴다. `.env.example`대로 이 앱의 `.env.local`에 두면 Git에서는 제외되지만, 이후 E2E를 포함한 모든 `dev`가 그 값을 읽는다. E2E는 http Origin이므로 `Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.`으로 시작에 실패한다. 운영 작업이 끝나면 파일에서 토큰을 지운다.
+- 운영 연결은 `../../deploy/lightsail/README.md`와 `.env.example`의 안내처럼 셸 환경변수로 한 번만 넘긴다. 이 앱의 `.env.local`에 두면 Git에서는 제외되지만, 이후 E2E를 포함한 모든 `dev`가 그 값을 읽는다. E2E는 http Origin이므로 `Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.`으로 시작에 실패한다. 실수로 파일에 넣었다면 운영 작업이 끝난 뒤 토큰을 지운다.
 
 ## 확인 (side 루트)
 
