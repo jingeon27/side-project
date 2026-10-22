@@ -6145,6 +6145,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@photo-contest/test-kit@workspace:projects/photo-contest/packages/test-kit"
   dependencies:
+    "@aws-sdk/client-s3": "npm:^3.0.0"
+    "@aws-sdk/s3-presigned-post": "npm:3.1149.0"
+    "@aws-sdk/s3-request-presigner": "npm:3.1149.0"
     "@photo-contest/api": "workspace:*"
     "@side/typescript-config": "workspace:*"
     "@types/node": "npm:^24.0.0"
@@ -6152,6 +6155,7 @@ __metadata:
     sharp: "npm:^0.34.0"
     tsx: "npm:^4.20.0"
     typescript: "npm:6.0.2"
+    vitest: "npm:^4.1.0"
   bin:
     photo-contest-test-api: ./bin/serve-test-api.mjs
   languageName: unknown
