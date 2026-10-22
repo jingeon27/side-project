@@ -26,7 +26,10 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   };
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
+  const home = await page.goto('/');
+  // 운영 이미지가 프레임워크를 알리지 않고, CSP를 지킨 채 http 저장소 대역으로 업로드·조회까지 이어지는지 본다.
+  expect(home?.headers()['x-powered-by']).toBeUndefined();
+  expect(home?.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
   await expect(page.getByRole('link', { name: /구글|카카오/ })).toHaveCount(0);
   await page.getByRole('tab', { name: '회원가입', exact: true }).click();
   await page.getByLabel('아이디', { exact: true }).fill('container_owner');
