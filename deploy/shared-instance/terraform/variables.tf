@@ -76,3 +76,143 @@ variable "ssh_allowed_cidrs" {
     error_message = "IPv4 CIDR이어야 한다(예: 203.0.113.10/32)."
   }
 }
+
+# RDS PostgreSQL
+
+variable "rds_engine_version" {
+  description = <<-EOT
+    RDS PostgreSQL 엔진 버전. 메이저만 쓰면(예: 18) RDS가 그 메이저의 기본 마이너를 고르고 auto minor upgrade로 올린다.
+    기본값 18은 로컬 개발·CI가 쓰는 메이저(embedded-postgres 18.4, postgres:18 이미지)와 같다. RDS는 2025-11-14부터 18을 지원하며 표준 지원은 2031-02-28까지다.
+    파라미터 그룹 family(postgres<메이저>)도 이 값에서 정한다. 메이저 업그레이드는 rds_allow_major_version_upgrade를 함께 켠다.
+  EOT
+  type        = string
+  default     = "18"
+
+  validation {
+    condition     = can(regex("^(1[6-9]|[2-9][0-9])(\\.[0-9]+)?$", var.rds_engine_version))
+    error_message = "16 이상의 메이저(예: 18) 또는 메이저.마이너(예: 18.6)여야 한다."
+  }
+}
+
+variable "rds_allow_major_version_upgrade" {
+  description = "rds_engine_version의 메이저를 올릴 때만 true로 둔다. 복구 지점 확인과 migration 호환성 검토를 먼저 한다."
+  type        = bool
+  default     = false
+}
+
+variable "rds_engine_lifecycle_support" {
+  description = "메이저 버전 표준 지원이 끝난 뒤의 처리. 기본값은 유료 Extended Support에 자동 가입하지 않는다(그 시점에 RDS가 메이저 업그레이드를 진행한다). 가입하려면 open-source-rds-extended-support로 바꾼다."
+  type        = string
+  default     = "open-source-rds-extended-support-disabled"
+
+  validation {
+    condition     = contains(["open-source-rds-extended-support", "open-source-rds-extended-support-disabled"], var.rds_engine_lifecycle_support)
+    error_message = "open-source-rds-extended-support 또는 open-source-rds-extended-support-disabled여야 한다."
+  }
+}
+
+variable "rds_instance_class" {
+  description = "RDS 인스턴스 클래스. 두 API 풀(각 5) + migrator(각 2) + 관리자 연결은 db.t4g.micro(1GiB)의 기본 max_connections 안에 들어가지만 메모리가 작다. 부하를 측정해 db.t4g.small 이상으로 올린다. RDS의 T 클래스는 항상 Unlimited 크레딧 모드라 기준 성능을 넘겨 오래 쓰면 추가 요금이 붙는다."
+  type        = string
+  default     = "db.t4g.micro"
+
+  validation {
+    condition     = can(regex("^db\\.[a-z0-9]+\\.[a-z0-9]+$", var.rds_instance_class))
+    error_message = "db.<family>.<size> 형식이어야 한다(예: db.t4g.micro)."
+  }
+}
+
+variable "rds_multi_az" {
+  description = "Multi-AZ 대기 인스턴스. 켜면 인스턴스·스토리지 요금이 약 두 배가 된다. 기본은 Single-AZ이며 첫 번째 AZ(EC2와 같은 AZ)에 둔다."
+  type        = bool
+  default     = false
+}
+
+variable "rds_allocated_storage_gib" {
+  description = "gp3 스토리지 초기 크기(GiB). RDS gp3 최소값은 20이다. 늘릴 수는 있어도 줄일 수 없다."
+  type        = number
+  default     = 20
+
+  validation {
+    condition     = var.rds_allocated_storage_gib >= 20 && var.rds_allocated_storage_gib <= 65536 && floor(var.rds_allocated_storage_gib) == var.rds_allocated_storage_gib
+    error_message = "20~65536 사이의 정수여야 한다."
+  }
+}
+
+variable "rds_max_allocated_storage_gib" {
+  description = "스토리지 자동 확장 상한(GiB). 0이면 자동 확장을 끈다. 자동 확장된 용량은 줄어들지 않으며 그만큼 요금이 붙는다."
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.rds_max_allocated_storage_gib == 0 || (var.rds_max_allocated_storage_gib > var.rds_allocated_storage_gib && var.rds_max_allocated_storage_gib <= 65536)
+    error_message = "0이거나 rds_allocated_storage_gib보다 크고 65536 이하여야 한다."
+  }
+}
+
+variable "rds_master_username" {
+  description = "RDS 관리자 사용자 이름. 비밀번호는 RDS가 Secrets Manager에 만들고 관리한다(state에 남지 않는다). 관리자 URL을 앱 runtime에 넣지 않는다."
+  type        = string
+  default     = "side_admin"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9_]{0,62}$", var.rds_master_username)) && !contains(["rdsadmin", "rdsrepladmin", "postgres", "admin"], var.rds_master_username)
+    error_message = "소문자로 시작하는 63자 이하의 소문자·숫자·밑줄이어야 하며 rdsadmin·rdsrepladmin·postgres·admin은 쓰지 않는다."
+  }
+}
+
+variable "rds_backup_retention_days" {
+  description = "자동 백업(PITR) 보존 기간(일). 공용 배포 스크립트가 7일 미만을 거부하므로 7~35만 허용한다. DB 크기를 넘는 백업 스토리지는 요금이 붙는다."
+  type        = number
+  default     = 7
+
+  validation {
+    condition     = var.rds_backup_retention_days >= 7 && var.rds_backup_retention_days <= 35 && floor(var.rds_backup_retention_days) == var.rds_backup_retention_days
+    error_message = "7~35 사이의 정수여야 한다."
+  }
+}
+
+variable "rds_backup_window" {
+  description = "자동 백업 시간대(UTC, hh24:mi-hh24:mi). 기본값은 한국 시간 02:00~02:30이다. 유지 관리 시간대와 겹치면 안 된다."
+  type        = string
+  default     = "17:00-17:30"
+
+  validation {
+    condition     = can(regex("^([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]$", var.rds_backup_window))
+    error_message = "hh24:mi-hh24:mi 형식(UTC)이어야 한다."
+  }
+}
+
+variable "rds_maintenance_window" {
+  description = "유지 관리 시간대(UTC, ddd:hh24:mi-ddd:hh24:mi). 기본값은 한국 시간 월요일 03:00~04:00이다. auto minor upgrade도 이때 적용된다."
+  type        = string
+  default     = "sun:18:00-sun:19:00"
+
+  validation {
+    condition     = can(regex("^(mon|tue|wed|thu|fri|sat|sun):([01][0-9]|2[0-3]):[0-5][0-9]-(mon|tue|wed|thu|fri|sat|sun):([01][0-9]|2[0-3]):[0-5][0-9]$", var.rds_maintenance_window))
+    error_message = "ddd:hh24:mi-ddd:hh24:mi 형식(UTC)이어야 한다."
+  }
+}
+
+variable "rds_deletion_protection" {
+  description = "RDS 삭제 방지. 공용 배포 스크립트(rds-receipt.py)가 false인 인스턴스로의 배포를 거부한다. 파기할 때만 false로 apply한 뒤 destroy한다."
+  type        = bool
+  default     = true
+}
+
+variable "rds_apply_immediately" {
+  description = "RDS 변경을 즉시 적용할지 여부. false면 클래스·스토리지 등 재시작이 필요한 변경은 다음 유지 관리 시간대에 적용된다."
+  type        = bool
+  default     = false
+}
+
+variable "rds_final_snapshot_identifier" {
+  description = "RDS를 삭제할 때 남길 최종 스냅샷 이름. 비워 두면 <name_prefix>-postgres-final을 쓴다. 같은 이름의 스냅샷이 이미 있으면 삭제가 실패하므로 두 번째 파기부터는 새 이름을 넣는다."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.rds_final_snapshot_identifier == "" || (can(regex("^[a-z][a-z0-9-]{0,254}$", var.rds_final_snapshot_identifier)) && !strcontains(var.rds_final_snapshot_identifier, "--") && !endswith(var.rds_final_snapshot_identifier, "-"))
+    error_message = "소문자로 시작하는 소문자·숫자·하이픈이어야 하고, 하이픈으로 끝나거나 하이픈을 연속으로 쓸 수 없다."
+  }
+}
