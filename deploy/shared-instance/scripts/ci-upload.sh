@@ -24,8 +24,10 @@ printf '%s\n' "$DEPLOY_SSH_KEY" >"$temporary/key"
 printf '%s\n' "$DEPLOY_KNOWN_HOSTS" >"$temporary/known_hosts"
 mkdir "$temporary/release"
 cp "projects/$SERVICE/deploy/shared-instance/compose.yaml" "$temporary/release/compose.yaml"
+# service.sh compares this with the host proxy and refuses to deploy against a drifted shared Caddyfile.
+cp deploy/shared-instance/Caddyfile "$temporary/release/Caddyfile"
 cp -R deploy/shared-instance/scripts "$temporary/release/host"
-tar -czf "$temporary/release.tar.gz" -C "$temporary/release" compose.yaml host
+tar -czf "$temporary/release.tar.gz" -C "$temporary/release" compose.yaml Caddyfile host
 options=(-i "$temporary/key" -p "${DEPLOY_PORT:-22}" -o BatchMode=yes -o ConnectTimeout=15 \
   -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
   -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$temporary/known_hosts")

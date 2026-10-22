@@ -33,6 +33,7 @@ case "$1" in
   version) echo 27.3.1 ;;
   login) cat >/dev/null; echo 'Login Succeeded' ;;
   inspect) echo 'Web shutdown: exit=0 oom=false' ;;
+  network) if [[ "$*" == *--format* ]]; then echo "$SIDE_DEPLOY_ROOT"; fi ;;
   run)
     printf '{"DBInstances":[{"Engine":"postgres","Endpoint":{"Address":"shared.abcdef.ap-northeast-2.rds.amazonaws.com"},"BackupRetentionPeriod":7,"StorageEncrypted":true,"PubliclyAccessible":false,"DeletionProtection":true,"LatestRestorableTime":"%s","DBInstanceArn":"arn:aws:rds:ap-northeast-2:123456789012:db:shared"}]}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
   compose)
@@ -70,10 +71,23 @@ beforeEach(() => {
     mkdirSync(join(state.root, directory), { recursive: true });
   writeFileSync(
     join(state.root, '.env'),
-    'RDS_REGION=ap-northeast-2\nRDS_INSTANCE_ID=shared\nRDS_HOST=shared.abcdef.ap-northeast-2.rds.amazonaws.com\n',
+    [
+      'GAME_FEEDBACK_DOMAIN=game.example.test',
+      'GAME_FEEDBACK_API_DOMAIN=api.game.example.test',
+      'PHOTO_CONTEST_DOMAIN=contest.example.test',
+      'PHOTO_CONTEST_API_DOMAIN=api.contest.example.test',
+      'GAME_FEEDBACK_S3_BUCKET=gf-private',
+      'PHOTO_CONTEST_S3_BUCKET=pc-private',
+      'RDS_REGION=ap-northeast-2',
+      'RDS_INSTANCE_ID=shared',
+      'RDS_HOST=shared.abcdef.ap-northeast-2.rds.amazonaws.com',
+      '',
+    ].join('\n'),
   );
   writeFileSync(join(state.root, 'services/photo-contest/.env'), 'DATABASE_URL=fixture\n');
   writeFileSync(join(state.root, 'certs/rds-ca.pem'), 'fixture\n');
+  cpSync(join(repo, 'deploy/shared-instance/Caddyfile'), join(state.root, 'proxy/Caddyfile'));
+  cpSync(join(repo, 'deploy/shared-instance/compose.yaml'), join(state.root, 'proxy/compose.yaml'));
   const tools = { docker: FAKE_DOCKER, ssh: FAKE_SSH, flock: FAKE_FLOCK, setsid: '#!/bin/sh\nexec "$@"\n' };
   for (const [name, source] of Object.entries(tools))
     writeFileSync(join(state.tools, name), source, { mode: 0o700 });
@@ -127,6 +141,7 @@ function prepareRelease() {
     join(repo, 'projects/photo-contest/deploy/shared-instance/compose.yaml'),
     join(directory, 'compose.yaml'),
   );
+  cpSync(join(repo, 'deploy/shared-instance/Caddyfile'), join(directory, 'Caddyfile'));
   cpSync(scripts, join(directory, 'host'), { recursive: true });
   return directory;
 }
@@ -169,6 +184,33 @@ describe('공유 호스트 원격 배포', () => {
     expect(result.stderr).toContain('failed');
     expect(existsSync(join(state.root, 'services/photo-contest/current'))).toBe(false);
   }, 60_000);
+
+  it('호스트 Caddyfile이 릴리스와 다르면 검사·마이그레이션 전에 배포를 거부해야 한다', () => {
+    writeFileSync(join(state.root, 'proxy/Caddyfile'), '# drifted\n');
+    const result = upload();
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).toContain('proxy Caddyfile differs');
+    expect(result.stdout).toContain(`proxy.sh sync ${join(releaseDirectory(), 'Caddyfile')}`);
+    expect(dockerCalls().some((call) => call.includes(' ops ') || call.includes('-T migrate'))).toBe(false);
+  }, 60_000);
+
+  it.each([
+    ['검증을 통과하면 같은 파일을 덮어쓰고 다시 읽혀야', '', true],
+    ['검증에 실패하면 이전 파일을 되돌리고 다시 읽지 않아야', 'caddy validate', false],
+  ])('proxy.sh sync는 %s 한다', (_, failure, applied) => {
+    const release = prepareRelease();
+    const proxy = join(state.root, 'proxy/Caddyfile');
+    writeFileSync(proxy, '# previous\n');
+    const result = spawnSync('bash', [join(release, 'host/proxy.sh'), 'sync', join(release, 'Caddyfile')], {
+      encoding: 'utf8',
+      env: environment({ SIDE_DEPLOY_ROOT: state.root, FAKE_DOCKER_FAIL: failure }),
+    });
+    expect(result.status === 0, result.stderr).toBe(applied);
+    expect(readFileSync(proxy, 'utf8')).toBe(
+      applied ? readFileSync(join(release, 'Caddyfile'), 'utf8') : '# previous\n',
+    );
+    expect(dockerCalls().some((call) => call.includes('caddy reload'))).toBe(applied);
+  });
 
   it('SSH 세션이 끝난 뒤에도 분리된 작업이 배포를 마쳐야 한다', async () => {
     prepareRelease();

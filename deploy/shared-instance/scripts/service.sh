@@ -78,6 +78,15 @@ if [[ "$ACTION" == deploy ]]; then
       exit 1
     }
   fi
+  if [[ -f "$directory/Caddyfile" ]]; then
+    # The shared proxy is not replaced by a service deployment, so refuse to run against a drifted one.
+    proxy="$ROOT/proxy/Caddyfile"
+    if [[ ! -f "$proxy" || "$(<"$directory/Caddyfile")" != "$(<"$proxy")" ]]; then
+      printf 'The host proxy Caddyfile differs from release %s. Sync it, then deploy again:\n' "$1" >&2
+      printf '  bash %q sync %q\n' "$directory/host/proxy.sh" "$directory/Caddyfile" >&2
+      exit 1
+    fi
+  fi
   old=$(previous current)
   prior=$(previous previous)
   if [[ "$directory" == "$old" || "$directory" == "$prior" ]]; then
