@@ -127,6 +127,8 @@ export class AuthService {
     const state = token();
     const nonce = token();
     const verifier = token();
+    // Abandoned attempts are only removed here; the table stays bounded by the auth rate limit × 10 minutes.
+    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lte: new Date() } } });
     await this.db.oAuthAttempt.create({
       data: {
         provider,
