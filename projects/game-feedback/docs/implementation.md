@@ -1,3 +1,15 @@
+# 2026-10-22 API·패키지 ESLint와 엄격한 tsconfig 연결
+
+프로젝트 루트 `eslint.config.ts`가 Web·Admin·Mobile을 제외한 `apps/api`, `packages/{contracts,sdk,bridge}`, 프로젝트·API 스크립트를 공용 `baseConfig`로 검사하고 집계 `check`가 실행한다. 생성 코드(`src/generated`, SDK `generated`)와 `dist`는 산출물 제외로 빠진다. 위반 44건(`side/no-else` 19, `no-unused-vars` 16, `no-explicit-any` 6, `no-require-imports` 3)을 고쳤다. 루트 `migration-check`에도 `baseConfig`와 `check`를 연결해 `side/no-else` 1건을 고쳤고, game-feedback·photo-contest CI가 `test` 대신 `check`를 실행한다.
+
+API·contracts·bridge·sdk tsconfig는 `@side/typescript-config/base`를 상속한다. 서버 API와 React Native 공용 bridge는 `lib`를 ES2022로 명시해 DOM을 뺐고, Web·API 공용 contracts는 `URL` 때문에 DOM만, 브라우저 SDK는 기존 DOM·DOM.Iterable을 유지한다. `noUncheckedIndexedAccess` 오류는 목록 커서(`nextPageAnchor`·`nextCursor`)·대화 쌍(`conversationPair`) 도우미와 명시적 검사로 any·non-null 없이 고쳤다.
+
+API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/**` 제외)과 테스트를 포함한 `tsconfig.json`(Vitest와 같은 `module: Preserve`·Bundler)으로 나눴고 `typecheck`가 둘 다 검사한다. 운영 seed가 쓰는 데모 커뮤니티 글은 `src/seed-community-posts.ts`로 옮겨 dist에는 S3 fixture·E2E 서버가 들어가지 않는다. Dockerfile·운영 스크립트의 `dist/main.js`·`dist/seed.js` 경로는 그대로다. 테스트 타입 오류 40건(실제 오류 2곳, `Location`·`Set-Cookie`·배열 색인)을 고쳤다.
+
+공용 base에 `isolatedModules`·`noImplicitOverride`·`noFallthroughCasesInSwitch`를 켰다. CommonJS 출력과 충돌하는 `verbatimModuleSyntax` 대신 `isolatedModules`를 골랐고, `override` 누락 16건(game-feedback 8, photo-contest 8)을 고쳤다. `tsc7`은 SIGINT·SIGTERM·SIGHUP을 tsc에 넘기고 신호로 끝난 tsc의 신호를 그대로 전달한다.
+
+검증(develop 95188270 기준 rebase 후): 집계 `check`(타입·새 lint·앱 lint), API unit 143개, SDK 68개, Bridge 11개, Web 188개, Mobile 54개, Admin 21개, migration-check `check`(70개), photo-contest `lint`·`typecheck`와 변경 파일 테스트, design-system·eslint-config `check`, blog 타입 검사, 전체 format 검사가 통과했다. API 빌드 산출물에 `testing/`이 없고 `dist/seed.js` 등 운영 스크립트 모듈이 로드되는 것과 OpenAPI·SDK 재생성 diff 0을 확인했다. `tsc7 -w`의 재컴파일·Ctrl+C·단독 SIGTERM 종료와 고아 프로세스 없음, SIGKILL 전달을 확인했다. DB를 띄우지 않아 PostgreSQL 통합 테스트와 E2E, 컨테이너 빌드는 실행하지 않았다.
+
 # 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
 
 develop a8e2aae4 감사의 클라이언트 항목을 고쳤다. 아래 10월 22일 태그 만료 기록 중 "작성자의 Router Cache를 갱신하는 기존 액션에 유지한다"는 더 이상 맞지 않는다.
