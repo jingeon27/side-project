@@ -81,6 +81,25 @@ export function analyzeMdx(source: string) {
 async function json(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
+export const articleUrlPath = (article: Pick<ContentArticle, 'locale' | 'slug'>) =>
+  `/${article.locale}/blog/${article.slug}`;
+
+/**
+ * Returns previously published article paths that are neither live nor a 301 source.
+ * Changing a slug or unpublishing an article must keep its old path in content/redirects.json.
+ */
+export function findMissingRedirects(
+  previous: readonly Pick<ContentArticle, 'locale' | 'slug'>[],
+  next: readonly Pick<ContentArticle, 'locale' | 'slug'>[],
+  redirects: readonly { source: string }[],
+): string[] {
+  const live = new Set(next.map(articleUrlPath));
+  const redirected = new Set(redirects.map((redirect) => redirect.source));
+  return [...new Set(previous.map(articleUrlPath))]
+    .filter((urlPath) => !live.has(urlPath) && !redirected.has(urlPath))
+    .sort();
+}
+
 export async function readContent(root: string) {
   const seo = Object.fromEntries(
     await Promise.all(
@@ -140,7 +159,7 @@ export async function readContent(root: string) {
   }
   articles.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.id.localeCompare(b.id));
   // Validate internal article references after building the complete index.
-  const validPaths = new Set(articles.map((article) => `/${article.locale}/blog/${article.slug}`));
+  const validPaths = new Set(articles.map(articleUrlPath));
   for (const { id, locale } of imports) {
     const source = await readFile(path.join(postsDir, id, `${locale}.mdx`), 'utf8');
     const { tree } = analyzeMdx(source);

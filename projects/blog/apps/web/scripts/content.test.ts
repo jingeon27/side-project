@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { analyzeMdx, metaSchema, readContent } from './content';
+import { analyzeMdx, findMissingRedirects, metaSchema, readContent } from './content';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -84,6 +84,20 @@ describe('content registry contract', () => {
     ]);
     await write('content/redirects.json', [{ locale: 'en', from: 'cache-design', to: 'missing' }]);
     await expect(readContent(root)).rejects.toThrow('Invalid redirect');
+  });
+  it('requires a 301 redirect for every previously published path that disappears', async () => {
+    const { root, write, seo } = await fixture();
+    const published = (await readContent(root)).articles;
+    await write('seo/en.json', seo({ cache: post('cache-strategy') }));
+    const renamed = await readContent(root);
+    expect(findMissingRedirects(published, renamed.articles, renamed.redirects)).toEqual([
+      '/en/blog/cache-design',
+    ]);
+
+    await write('content/redirects.json', [{ locale: 'en', from: 'cache-design', to: 'cache-strategy' }]);
+    const redirected = await readContent(root);
+    expect(findMissingRedirects(published, redirected.articles, redirected.redirects)).toEqual([]);
+    expect(findMissingRedirects([], redirected.articles, [])).toEqual([]);
   });
   it('refuses malformed MDX and unresolved internal article links', async () => {
     const { root } = await fixture();
