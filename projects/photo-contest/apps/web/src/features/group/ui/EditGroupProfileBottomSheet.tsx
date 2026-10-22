@@ -33,7 +33,8 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
     defaultValues: { name: group.name, description: group.description, avatar: null, removeAvatar: false },
   });
   const formId = useId();
-  const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument, { fetchPolicy: 'no-cache' });
   const [completeUpload] = useMutation(CompleteGroupAvatarUploadDocument);
   const [save] = useMutation(UpdateGroupProfileDocument, {
     refetchQueries: [

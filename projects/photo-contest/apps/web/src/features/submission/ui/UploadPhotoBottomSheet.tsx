@@ -51,7 +51,8 @@ export function UploadPhotoBottomSheet({
     defaultValues: { photo: null, caption: '', rightsConfirmed: false },
   });
   const [completeUpload] = useMutation(CompleteSubmissionUploadDocument);
-  const [requestUpload] = useMutation(RequestUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestUploadDocument, { fetchPolicy: 'no-cache' });
   const [createSubmission] = useMutation(CreateSubmissionDocument, {
     update: (cache, { data }) => {
       if (data) markContestSubmitted(cache, contestId, data.createSubmission.id);

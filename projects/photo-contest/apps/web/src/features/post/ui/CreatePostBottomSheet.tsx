@@ -51,7 +51,8 @@ export function CreatePostBottomSheet({
     },
   });
   const [completeUpload] = useMutation(CompletePostUploadDocument);
-  const [requestUpload] = useMutation(RequestPostUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestPostUploadDocument, { fetchPolicy: 'no-cache' });
   const [createPost, { data: created }] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
     refetchQueries: [GalleryPostsDocument, GroupContestDocument, GroupContestsDocument],
