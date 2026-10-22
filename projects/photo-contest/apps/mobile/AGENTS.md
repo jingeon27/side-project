@@ -5,8 +5,8 @@
 ## 실행
 
 - Expo Go로는 열지 않는다. 앱 스킴(`photocontest://`) 콜백과 네이티브 모듈은 dev client·스토어 빌드에서만 동작한다.
-  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android가 http(평문)를 허용한다.
-- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 없으면 `http://localhost:3200`. origin 형식이 아니면 시작할 때 오류를 낸다. 운영은 https만 쓴다.
+  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android 평문 http와 iOS 로컬 네트워크 ATS 예외(`NSAllowsLocalNetworking`)를 넣는다. `start`·`bundle:check`는 `APP_VARIANT`가 없으면 development로 실행한다.
+- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 개발 빌드만 없으면 `http://localhost:3200`을 쓰고 http를 허용한다. 그 밖의 빌드는 https origin이 아니면 `app.config.ts`가 설정 단계(prebuild·번들링)에서 멈추고, 번들(`__DEV__` false)도 시작할 때 오류를 낸다.
 - Android 에뮬레이터는 `adb reverse tcp:3200 tcp:3200`으로 같은 `localhost` 주소를 쓴다. `10.0.2.2`로 열면 API의 Origin 검사(WEB_ORIGIN)가 POST를 막는다.
 - 앱은 웹 origin의 `/backend/*` 프록시만 부른다(`API_BASE`). API 주소를 따로 두지 않는다.
 - 업데이트 화면의 스토어 링크는 `EXPO_PUBLIC_STORE_URL`. 없으면 Android만 `market://details?id=<패키지>`, iOS는 버튼을 숨긴다.
