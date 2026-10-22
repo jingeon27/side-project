@@ -13,6 +13,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "node scripts/install-git-hooks.mjs",
     "dev:photo-contest": "yarn workspace @side/photo-contest dev",
     "build": "yarn workspaces foreach -A --include \"@side/*\" run build",
     "build:photo-contest": "yarn workspace @side/photo-contest build",
