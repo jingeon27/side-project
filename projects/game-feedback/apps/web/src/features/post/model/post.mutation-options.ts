@@ -3,7 +3,6 @@ import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 import { notificationListOptions } from '@/features/notification';
 
 import { deletePostById, patchPost, postPost, postPostRead } from '../api/post.api';
-import { refreshServerPostDetail } from './post-detail-cache';
 import { postDetailOptions, postListOptions } from './post.options';
 
 export function createPostMutationOptions(client: QueryClient) {
@@ -27,7 +26,6 @@ export function updatePostMutationOptions(client: QueryClient) {
       await Promise.all([
         client.invalidateQueries(postListOptions()),
         client.invalidateQueries(postDetailOptions(post.id)),
-        refreshServerPostDetail(post.id),
       ]);
     },
   });
@@ -42,7 +40,6 @@ export function deletePostMutationOptions(client: QueryClient) {
         client.invalidateQueries(postListOptions()),
         client.invalidateQueries(postDetailOptions(id)),
         client.invalidateQueries(notificationListOptions()),
-        refreshServerPostDetail(id),
       ]);
     },
   });
@@ -56,7 +53,6 @@ export function readPostMutationOptions(client: QueryClient) {
       await Promise.all([
         client.invalidateQueries(postDetailOptions(id)),
         client.invalidateQueries(notificationListOptions()),
-        refreshServerPostDetail(id),
       ]);
     },
   });
