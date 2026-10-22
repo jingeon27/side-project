@@ -34,3 +34,7 @@ export function decideNavigation(url: string, origin: string): TNavigation {
   if (/^(https?:\/\/|mailto:|tel:)/i.test(url) && !/[\s\\]/.test(url)) return { action: 'external', url };
   return { action: 'block' };
 }
+/** 하위 frame의 이동은 앱 화면 이동이나 외부 앱 열기로 이어지지 않는다. 같은 origin·about:blank만 그 frame 안에서 연다. */
+export function decideSubframeNavigation(url: string, origin: string): { action: 'allow' | 'block' } {
+  return decideNavigation(url, origin).action === 'allow' ? { action: 'allow' } : { action: 'block' };
+}

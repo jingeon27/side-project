@@ -1,9 +1,13 @@
 // Adapted from shadcn/ui base-nova. See SHADCN.md for source and license.
+'use client';
+
 import type { ComponentProps } from 'react';
 
 import { cn } from '../../lib/cn.helper';
+import { useFormFieldAria } from '../form-field/form-field-context';
 
 function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
+  const fieldAria = useFormFieldAria(props);
   return (
     <textarea
       data-slot="textarea"
@@ -12,6 +16,7 @@ function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
         className,
       )}
       {...props}
+      {...fieldAria}
     />
   );
 }

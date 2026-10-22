@@ -18,6 +18,8 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 
 ## AWS에서 먼저 준비할 것
 
+새 환경은 [Terraform 구성](terraform/README.md)으로 아래 1~5의 리소스를 만들 수 있다.
+
 1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 네 호스트의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, util-linux의 `flock`·`setsid`가 필요하다. 배포는 SSH 세션이 끝나도 계속 돌아야 하므로 systemd-logind `KillUserProcesses=no`(Ubuntu·Amazon Linux 기본값)를 유지한다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
 2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
 3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. IMDSv2를 필수로 하고 metadata 응답 hop limit은 1로 둔다. PITR 확인용 aws-cli만 `--network host`로 역할을 읽고, bridge 네트워크의 앱 컨테이너는 IMDS에 닿지 않는다.
@@ -165,7 +167,7 @@ service.sh는 같은 이미지도 실제로 재생성한다. API의 SSE는 종�
 
 ## 확장 → 배포 → 정리
 
-SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 컬럼 추가와 이중 쓰기, (2) 새 컬럼 읽는 앱 배포와 이전 앱 종료 확인, (3) 보관 기간 후 옛 컬럼 정리로 나눈다. `node scripts/check-migrations.mjs`는 기준 ref 이후 새 migration.sql만 검사한다. 기존 위험 SQL이나 기존 migration 수정을 재검사하는 규칙이 아니다. DROP TABLE/COLUMN/CONSTRAINT/INDEX, 컬럼 타입·NOT NULL 변경, RENAME은 실패한다. 정리 단계는 해당 DDL 바로 앞에 `-- migration-lint: allow DROP COLUMN — 이전 읽기 앱 종료 후 2주 경과`처럼 정확한 규칙과 검토 가능한 사유를 쓴다. CI에서는 PR base SHA 또는 push의 before SHA를 기준으로 사용한다.
+SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 컬럼 추가와 이중 쓰기, (2) 새 컬럼 읽는 앱 배포와 이전 앱 종료 확인, (3) 보관 기간 후 옛 컬럼 정리로 나눈다. `node scripts/check-migrations.mjs`(구현 `packages/migration-check`)는 기준 ref 이후 새로 추가된 migration.sql을 검사하고, 이미 있던 migration.sql의 수정·삭제·디렉터리 이동은 거부한다. 기존 migration의 위험 SQL을 다시 검사하지는 않는다. 실패하는 문장은 DROP TABLE/COLUMN/CONSTRAINT/INDEX와 VIEW·MATERIALIZED VIEW·TYPE·FUNCTION·PROCEDURE·SEQUENCE·SCHEMA·TRIGGER·EXTENSION·DOMAIN 삭제, DROP DEFAULT/IDENTITY/EXPRESSION, 컬럼 타입·NOT NULL 변경, RENAME(`ALTER INDEX ... RENAME TO` 제외), 기본값 없는 ADD COLUMN NOT NULL, TRUNCATE, WHERE 없는 DELETE·UPDATE, CONCURRENTLY 없는 CREATE INDEX, CREATE UNIQUE INDEX, ADD UNIQUE·PRIMARY KEY(`USING INDEX` 제외), NOT VALID 없는 ADD FOREIGN KEY·CHECK, 동적 SQL(EXECUTE, 작은따옴표 DO 본문)이다. DO 블록과 함수 본문 안의 문장도 같은 규칙으로 검사한다. 같은 migration에서 만든 테이블에 거는 인덱스·제약·컬럼은 빈 테이블이라 허용한다. Prisma가 넣은 `/* Warnings: ... */` 주석이 남아 있으면 실패하므로 검토하고 지운다. 정리 단계는 해당 문장 바로 앞 줄에 `-- migration-lint: allow DROP COLUMN — 이전 읽기 앱 종료 후 2주 경과`처럼 정확한 규칙명과 검토 가능한 사유를 쓴다. 허용 표시는 연속한 주석 줄로 쌓을 수 있고 바로 다음 문장 하나에만 적용한다. CI에서는 PR base SHA 또는 push의 before SHA를 기준으로 사용한다. before가 HEAD의 조상이 아니면(강제 push·새 브랜치 첫 push) `origin/develop`과의 merge-base(HEAD와 다를 때), 그다음 `origin/main`과의 merge-base를 기준으로 삼아 기능 브랜치는 develop에서 갈라진 뒤 더한 migration만 검사한다. 어느 기준도 HEAD와 다르지 않은 push는 실패한다. develop 자체를 강제 push하면 `origin/main` 기준으로 아직 배포되지 않은 migration 전체를 다시 검사하므로, main이 develop을 따라오기 전에는 강화한 규칙 이전의 기존 migration 때문에 실패할 수 있다.
 
 ## Next 컴파일 캐시
 

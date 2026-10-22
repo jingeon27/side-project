@@ -25,6 +25,7 @@ const colors = [
   'accent-soft',
   'accent-ink',
   'on-accent',
+  'focus-ring',
   'danger',
   'danger-soft',
   'info',
@@ -33,6 +34,7 @@ const colors = [
   'gold',
   'silver',
   'bronze',
+  'on-medal',
 ] as const;
 
 export const Colors: TStory = {

@@ -21,7 +21,7 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     
 ## 두 스위치: `APP_VARIANT`와 `__DEV__`
 
 - `APP_VARIANT === 'development'`는 `app.config.ts`(네이티브 설정)만 바꾼다: iOS `infoPlist.NSAppTransportSecurity = { NSAllowsLocalNetworking: true }`, Android `expo-build-properties` `usesCleartextTraffic: true`. 그 밖의 값에서는 둘 다 빈 설정이다.
-- JS의 origin 규칙은 `src/shared/config/web-origin.ts` `parseWebOrigin(value, __DEV__)`가 정한다: `^https?://host(:port)?$`만 받고(경로·끝 슬래시·userinfo 거부), `__DEV__`가 아니면 `https://`만 받는다. 값이 없으면 dev는 `http://localhost:3300`, release는 throw.
+- JS의 origin 규칙은 `src/shared/config/web-origin.ts` `parseWebOrigin(value, __DEV__)`가 정한다: `^https?://host(:port)?$`만 받고(경로·끝 슬래시·userinfo 거부), `__DEV__`가 아니면 `https://`만 받는다. 통과한 값은 `new URL(value).origin`으로 정규화한다(호스트 소문자, `:443`·`:80` 생략). WebView가 보고하는 URL과 문자열 접두로 비교하기 때문이다(`isSameOrigin`, `NativeHost.receive`). 값이 없으면 dev는 `http://localhost:3300`, release는 throw.
 - 두 스위치는 서로를 대신하지 않는다. release JS는 `APP_VARIANT`와 무관하게 HTTP origin을 거부하고, release 바이너리에 `APP_VARIANT=development`가 섞이면 cleartext·local networking 허용이 들어간다.
 - 검사는 `src/shared/config/env.ts`가 import되는 앱 시작 시점에 실행된다. `bundle:check`(Metro export)는 코드를 실행하지 않으므로 빠지거나 잘못된 origin을 잡지 못한다.
 
@@ -32,7 +32,7 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     
 
 ## `app.config.ts`가 원본이다
 
-- `name` '플레이메이트', `slug` 'game-feedback', `scheme` 'gamefeedback', `ios.bundleIdentifier`·`android.package` `dev.side.gamefeedback`, `orientation` portrait, `userInterfaceStyle` 'light', `backgroundColor` '#ffffff'.
+- `name` 'Game Mate', `icon` `./assets/icon.png`(Android adaptive icon `./assets/adaptive-icon.png`, 배경 `#147d64`), `slug` 'game-feedback', `scheme` 'gamefeedback', `ios.bundleIdentifier`·`android.package` `dev.side.gamefeedback`, `orientation` portrait, `userInterfaceStyle` 'light', `backgroundColor` '#ffffff'.
 - iOS `NSPhotoLibraryUsageDescription`·`NSCameraUsageDescription`·`NSMicrophoneUsageDescription`은 WebView 파일 선택·촬영용이다. 웹 첨부 기능을 바꾸면 문구도 확인한다.
 - `android.predictiveBackGestureEnabled: false`는 Android back을 웹에 먼저 묻는 흐름의 전제다(`game-feedback-mobile-webview-shell`).
 - universal/app link(associated domains, intent filter)는 없다. 스킴을 바꾸면 bridge `APP_SCHEME`과 API 콜백 문자열까지 함께 바꾼다(`game-feedback-mobile-bridge`).
@@ -59,5 +59,5 @@ corepack yarn workspace @game-feedback/mobile bundle:check
 ```
 
 - `bundle:check`(`scripts/bundle-check.mjs`)는 `expo export --platform android`, 이어서 `ios`를 `.expo-export-check/<platform>`에 만들고 첫 실패에서 멈춘 뒤 폴더를 항상 지운다. 프로젝트 `build`도 이것을 실행한다.
-- origin 규칙을 바꾸면 `src/shared/config/web-origin.spec.ts`(unit)에 release HTTP·경로·userinfo·`javascript:` 거부 사례를 유지한다.
+- origin 규칙을 바꾸면 `src/shared/config/web-origin.spec.ts`(unit)에 release HTTP·경로·userinfo·`javascript:` 거부 사례를 유지하고, 정규화 회귀(`web-origin.test.ts`, `navigation-policy.test.ts`, `native-host.test.ts`)도 함께 돌린다.
 - Metro export·Playwright 통과는 서명된 네이티브 빌드나 dev client 실기기 확인을 대신하지 않는다. 보고할 때 따로 적는다.

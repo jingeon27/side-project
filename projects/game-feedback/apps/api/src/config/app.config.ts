@@ -3,6 +3,7 @@ import {
   resolveCacheRevalidationConfig,
   type ICacheRevalidationConfig,
 } from '../cache-invalidation/cache-invalidation.config';
+import { forwardedClientKey } from '../common/http/forwarded-client';
 import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import type { ProfileProvider } from '../game-profiles/providers/profile-provider';
@@ -15,6 +16,8 @@ export const APP_CONFIG = Symbol('APP_CONFIG');
 
 export interface AppOptions {
   cacheRevalidation?: ICacheRevalidationConfig;
+  /** Verifies the client address the web server forwards. Defaults to the cache revalidation secret. */
+  forwardedClientSecret?: string;
   databaseUrl?: string;
   webOrigin?: string;
   demoMode?: boolean;
@@ -30,6 +33,7 @@ export interface AppOptions {
 
 export interface AppConfig {
   cacheRevalidation?: ICacheRevalidationConfig;
+  forwardedClientKey?: Buffer;
   databaseUrl: string;
   production: boolean;
   demoMode: boolean;
@@ -60,8 +64,11 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     options.identityProviders,
     options.identityProvider,
   );
+  const cacheRevalidation = options.cacheRevalidation ?? resolveCacheRevalidationConfig(process.env);
+  const forwardedClientSecret = options.forwardedClientSecret ?? cacheRevalidation?.secret;
   return {
-    cacheRevalidation: options.cacheRevalidation ?? resolveCacheRevalidationConfig(process.env),
+    cacheRevalidation,
+    forwardedClientKey: forwardedClientSecret ? forwardedClientKey(forwardedClientSecret) : undefined,
     databaseUrl: assertDatabaseUrl(options.databaseUrl ?? process.env.DATABASE_URL),
     production,
     demoMode,

@@ -4,6 +4,7 @@ import type { TSocialProvider } from '@game-feedback/contracts';
 
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../generated/prisma';
+import { assertIdentityNotBanned } from './banned-identity';
 
 @Injectable()
 export class SocialIdentityService {
@@ -38,6 +39,7 @@ export class SocialIdentityService {
         await (tx ?? this.db).socialIdentity.create({ data: { provider, subject, userId: legacy.id } });
         return legacy;
       }
+      await assertIdentityNotBanned(tx, provider, subject);
       return (tx ?? this.db).user.create({
         data: {
           nickname,

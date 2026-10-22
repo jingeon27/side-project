@@ -7,10 +7,10 @@ description: Game Feedback 웹(apps/web)에 새 화면·라우트를 추가하�
 
 ## 구성
 
-- `next.config.mjs`: `cacheComponents`·`partialPrefetching`·`skipProxyUrlNormalize`가 켜져 있다. 브라우저 REST는 같은 origin `/api/*` rewrite(`GAME_FEEDBACK_API_URL` → `API_ORIGIN` → `http://127.0.0.1:4300`)를 탄다.
+- `next.config.mjs`: `cacheComponents`·`partialPrefetching`·`skipProxyUrlNormalize`가 켜져 있다. 브라우저 REST는 같은 origin `/api/*` rewrite(`GAME_FEEDBACK_API_URL` → `API_ORIGIN` → `http://127.0.0.1:4300`)를 탄다. `headers()`는 모든 경로에 `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`(카메라·마이크·위치 등 미사용 기능 차단)를 붙인다(`e2e/security-headers.spec.ts`). nonce CSP는 PPR 정적 셸과 함께 쓸 수 없어 script/style/connect를 제한하는 CSP는 두지 않는다. 브라우저 기능이나 외부 로드를 추가하면 이 헤더와 충돌하는지 확인한다.
 - `src/app/[locale]/layout.tsx`가 `rootLocale()`로 locale을 검증하고 `RootDocument` → `CommunityShell`을 그린다. 라우트의 locale은 `await rootLocale()`, 동적 id는 `params`에서 읽는다.
 - `[locale]`은 `children`과 `@topbar` 병렬 슬롯을 받는다. 상단바는 `_pages/<screen>/index.ts`의 `<Screen>Topbar`를 `@topbar/<같은 경로>/page.tsx`에서 그린다. 경로가 없으면 `@topbar/default.tsx`(null)다. 모든 `@topbar` 페이지는 `export const instant = false`.
-- `src/proxy.ts`(matcher `/`, `/ko|en|ja/:path*`): `/` 리다이렉트(`q`·`tab`만 유지), `/<locale>/admin` 404, 문서 요청(`rsc` 헤더 없음)은 `documentUnavailable` 검사 후 `/<locale>/unavailable`로 404 rewrite, 그 외에는 `x-game-feedback-navigation` 헤더(RSC 이동이면 `1`)를 붙인다.
+- `src/proxy.ts`(matcher `/`, `/ko|en|ja/:path*`): `/` 리다이렉트(`q`·`tab`만 유지), `/<locale>/admin` 404, 문서 요청(`rsc` 헤더 없음)은 `documentUnavailable` 검사 후 `/<locale>/unavailable`로 404 rewrite, 그 외에는 `x-game-feedback-navigation` 헤더(RSC 이동이면 `1`)를 붙인다. 게시글 상세 판정(`features/post/api/post-access.server.ts`)은 렌더의 `getServerPost`와 같은 규칙(공개 상세 + 로그인이면 차단 목록)이다. Proxy는 `'use cache'`를 실행하지 못하므로 공개 조회 결과만 프로세스 안에 30초·500개까지 기억하고, 차단 목록은 매번 받는다. 그 사이 삭제·숨김된 글은 렌더가 태그 캐시로 다시 막는다. Proxy에서는 `'use cache'`가 든 `index.server`가 아니라 이 모듈을 직접 가져온다.
 - `_app/providers/service-context.server.ts`의 `serviceContext()`(`'use cache: private'`)가 세션·테마·언어·`navigation`을 한 번에 읽는다. 요청 쿠키는 여기와 `shared/api/server.ts`의 `serverRequestOptions()`만 읽는다.
 
 ## 첫 문서와 클라이언트 이동

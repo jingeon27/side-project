@@ -19,7 +19,7 @@ export function AdminRouter() {
       <AsyncBoundary key={route.tab}>
         {match(route.tab)
           .with('support', () => <SupportPage threadId={route.threadId} />)
-          .with('reports', () => <ReportsPage />)
+          .with('reports', () => <ReportsPage status={route.reportStatus} />)
           .with('users', () => <UsersPage userId={route.userId} />)
           .exhaustive()}
       </AsyncBoundary>

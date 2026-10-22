@@ -126,6 +126,33 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .expect(401);
   });
 
+  it('prunes expired OAuth attempts and sessions when new ones are issued', async () => {
+    const { request, db } = fixture();
+    const past = new Date(Date.now() - 1000);
+    const attempt = (stateHash: string, expiresAt: Date) =>
+      db.oAuthAttempt.create({
+        data: { provider: 'google', stateHash, nonce: 'n', verifier: 'v', expiresAt },
+      });
+    await attempt(hash('expired-oauth-state'), past);
+    await attempt(hash('live-oauth-state'), new Date(Date.now() + 60_000));
+    await request.get('/api/auth/social/google').expect(302);
+    expect(
+      await db.oAuthAttempt.findUnique({ where: { stateHash: hash('expired-oauth-state') } }),
+    ).toBeNull();
+    expect(
+      await db.oAuthAttempt.findUnique({ where: { stateHash: hash('live-oauth-state') } }),
+    ).not.toBeNull();
+    const stale = await db.session.create({
+      data: { tokenHash: hash('expired-session-token'), userId: 'sample-user-0', expiresAt: past },
+    });
+    await request
+      .post('/api/auth/test-token')
+      .set('Origin', origin)
+      .send({ accountId: 'sample-user-3' })
+      .expect(200);
+    expect(await db.session.findUnique({ where: { id: stale.id } })).toBeNull();
+  });
+
   it('limits token issuance to explicitly enabled testing and predefined accounts', async () => {
     const { request } = fixture();
     if (!state.normal) throw new Error('Normal application missing.');

@@ -9,6 +9,7 @@ import {
 } from 'zod';
 
 import {
+  AdminReportList,
   Answer,
   Category,
   ChatAttachment,
@@ -24,7 +25,6 @@ import {
   ListBlocks200Item,
   ListCategories200Item,
   ListGameAccounts200Item,
-  ListReports200Item,
   ListSupportThreads200Item,
   MediaUploadPlan,
   NotificationList,
@@ -61,6 +61,7 @@ import type {
   ListConversationsParams,
   ListNotificationsParams,
   ListPostsParams,
+  ListReportsParams,
   MediaUploadInput,
   OnboardInput,
   PostInput,
@@ -119,7 +120,7 @@ export const getCompletePostMediaUploadUrl = (id: string,) => {
 
 
 
-  return `/api/post-media/${id}/complete`
+  return `/api/post-media/${encodeURIComponent(String(id))}/complete`
 }
 
 export const completePostMediaUpload = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<PostMedia> => {
@@ -141,7 +142,7 @@ export const getGetAdminUserUrl = (id: string,) => {
 
 
 
-  return `/api/admin/users/${id}`
+  return `/api/admin/users/${encodeURIComponent(String(id))}`
 }
 
 export const getAdminUser = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<User> => {
@@ -187,7 +188,7 @@ export const getDeletePostMediaUrl = (id: string,) => {
 
 
 
-  return `/api/post-media/${id}`
+  return `/api/post-media/${encodeURIComponent(String(id))}`
 }
 
 export const deletePostMedia = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -209,7 +210,7 @@ export const getSetUserBanUrl = (id: string,) => {
 
 
 
-  return `/api/admin/users/${id}/ban`
+  return `/api/admin/users/${encodeURIComponent(String(id))}/ban`
 }
 
 export const setUserBan = async (id: string,
@@ -246,7 +247,7 @@ export const getReviewReportUrl = (id: string,) => {
 
 
 
-  return `/api/admin/reports/${id}`
+  return `/api/admin/reports/${encodeURIComponent(String(id))}`
 }
 
 export const reviewReport = async (id: string,
@@ -341,7 +342,7 @@ export const getSetSupportStatusUrl = (id: string,) => {
 
 
 
-  return `/api/admin/support/${id}`
+  return `/api/admin/support/${encodeURIComponent(String(id))}`
 }
 
 export const setSupportStatus = async (id: string,
@@ -378,7 +379,7 @@ export const getGetPublicProfileUrl = (id: string,) => {
 
 
 
-  return `/api/users/${id}`
+  return `/api/users/${encodeURIComponent(String(id))}`
 }
 
 export const getPublicProfile = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<PublicProfile> => {
@@ -612,7 +613,7 @@ export const getSetUserVerificationUrl = (id: string,) => {
 
 
 
-  return `/api/admin/users/${id}/verification`
+  return `/api/admin/users/${encodeURIComponent(String(id))}/verification`
 }
 
 export const setUserVerification = async (id: string,
@@ -722,7 +723,7 @@ export const getListChatMessagesUrl = (id: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/conversations/${id}/messages?${stringifiedParams}` : `/api/conversations/${id}/messages`
+  return stringifiedParams.length > 0 ? `/api/conversations/${encodeURIComponent(String(id))}/messages?${stringifiedParams}` : `/api/conversations/${encodeURIComponent(String(id))}/messages`
 }
 
 export const listChatMessages = async (id: string,
@@ -745,7 +746,7 @@ export const getClearChatHistoryUrl = (id: string,) => {
 
 
 
-  return `/api/conversations/${id}/messages`
+  return `/api/conversations/${encodeURIComponent(String(id))}/messages`
 }
 
 export const clearChatHistory = async (id: string,
@@ -782,7 +783,7 @@ export const getSendChatMessageUrl = (id: string,) => {
 
 
 
-  return `/api/conversations/${id}/messages`
+  return `/api/conversations/${encodeURIComponent(String(id))}/messages`
 }
 
 export const sendChatMessage = async (id: string,
@@ -819,7 +820,7 @@ export const getUploadChatAttachmentUrl = (id: string,) => {
 
 
 
-  return `/api/conversations/${id}/attachments`
+  return `/api/conversations/${encodeURIComponent(String(id))}/attachments`
 }
 
 export const uploadChatAttachment = async (id: string,
@@ -844,7 +845,7 @@ export const getRequestChatAttachmentUploadUrl = (id: string,) => {
 
 
 
-  return `/api/conversations/${id}/attachments/uploads`
+  return `/api/conversations/${encodeURIComponent(String(id))}/attachments/uploads`
 }
 
 export const requestChatAttachmentUpload = async (id: string,
@@ -882,7 +883,7 @@ export const getCompleteChatAttachmentUploadUrl = (id: string,
 
 
 
-  return `/api/conversations/${id}/attachments/${attachmentId}/complete`
+  return `/api/conversations/${encodeURIComponent(String(id))}/attachments/${encodeURIComponent(String(attachmentId))}/complete`
 }
 
 export const completeChatAttachmentUpload = async (id: string,
@@ -906,7 +907,7 @@ export const getDeleteChatAttachmentUrl = (id: string,
 
 
 
-  return `/api/conversations/${id}/attachments/${attachmentId}`
+  return `/api/conversations/${encodeURIComponent(String(id))}/attachments/${encodeURIComponent(String(attachmentId))}`
 }
 
 export const deleteChatAttachment = async (id: string,
@@ -929,7 +930,7 @@ export const getReadConversationUrl = (id: string,) => {
 
 
 
-  return `/api/conversations/${id}/read`
+  return `/api/conversations/${encodeURIComponent(String(id))}/read`
 }
 
 export const readConversation = async (id: string,
@@ -983,23 +984,30 @@ export const getHealth = async ( options?: Parameters<typeof apiFetch>[1]): Prom
 
 
 
-export const getListReportsUrl = () => {
+export const getListReportsUrl = (params?: ListReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/reports`
+  return stringifiedParams.length > 0 ? `/api/admin/reports?${stringifiedParams}` : `/api/admin/reports`
 }
 
-export const listReports = async ( options?: Parameters<typeof apiFetch>[1]): Promise<ListReports200Item[]> => {
+export const listReports = async (params?: ListReportsParams, options?: Parameters<typeof apiFetch>[1]): Promise<AdminReportList> => {
 
-  return apiFetch<ListReports200Item[]>(getListReportsUrl(),
+  return apiFetch<AdminReportList>(getListReportsUrl(params),
   {
     ...options,
     method: 'GET'
 
     ,
-    schema: zod.array(ListReports200Item)
+    schema: AdminReportList
   }
 );}
 
@@ -1235,7 +1243,7 @@ export const getGetPostUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}`
+  return `/api/posts/${encodeURIComponent(String(id))}`
 }
 
 export const getPost = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<PostDetail> => {
@@ -1257,7 +1265,7 @@ export const getUpdatePostUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}`
+  return `/api/posts/${encodeURIComponent(String(id))}`
 }
 
 export const updatePost = async (id: string,
@@ -1294,7 +1302,7 @@ export const getDeletePostUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}`
+  return `/api/posts/${encodeURIComponent(String(id))}`
 }
 
 export const deletePost = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -1316,7 +1324,7 @@ export const getCreateAnswerUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}/answers`
+  return `/api/posts/${encodeURIComponent(String(id))}/answers`
 }
 
 export const createAnswer = async (id: string,
@@ -1353,7 +1361,7 @@ export const getUpdateAnswerUrl = (id: string,) => {
 
 
 
-  return `/api/answers/${id}`
+  return `/api/answers/${encodeURIComponent(String(id))}`
 }
 
 export const updateAnswer = async (id: string,
@@ -1390,7 +1398,7 @@ export const getDeleteAnswerUrl = (id: string,) => {
 
 
 
-  return `/api/answers/${id}`
+  return `/api/answers/${encodeURIComponent(String(id))}`
 }
 
 export const deleteAnswer = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -1412,7 +1420,7 @@ export const getMarkHelpfulUrl = (id: string,) => {
 
 
 
-  return `/api/answers/${id}/helpful`
+  return `/api/answers/${encodeURIComponent(String(id))}/helpful`
 }
 
 export const markHelpful = async (id: string,
@@ -1449,7 +1457,7 @@ export const getReadAnswersUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}/read`
+  return `/api/posts/${encodeURIComponent(String(id))}/read`
 }
 
 export const readAnswers = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -1471,7 +1479,7 @@ export const getRecordPostViewUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}/views`
+  return `/api/posts/${encodeURIComponent(String(id))}/views`
 }
 
 export const recordPostView = async (id: string,
@@ -1508,7 +1516,7 @@ export const getCreateCommentUrl = (id: string,) => {
 
 
 
-  return `/api/posts/${id}/comments`
+  return `/api/posts/${encodeURIComponent(String(id))}/comments`
 }
 
 export const createComment = async (id: string,
@@ -1545,7 +1553,7 @@ export const getUpdateCommentUrl = (id: string,) => {
 
 
 
-  return `/api/comments/${id}`
+  return `/api/comments/${encodeURIComponent(String(id))}`
 }
 
 export const updateComment = async (id: string,
@@ -1582,7 +1590,7 @@ export const getDeleteCommentUrl = (id: string,) => {
 
 
 
-  return `/api/comments/${id}`
+  return `/api/comments/${encodeURIComponent(String(id))}`
 }
 
 export const deleteComment = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -1604,7 +1612,7 @@ export const getGetGameProfileUrl = (playerTag: string,) => {
 
 
 
-  return `/api/game-profiles/${playerTag}`
+  return `/api/game-profiles/${encodeURIComponent(String(playerTag))}`
 }
 
 export const getGameProfile = async (playerTag: string, options?: Parameters<typeof apiFetch>[1]): Promise<GameProfile> => {
@@ -1713,7 +1721,7 @@ export const getReadNotificationUrl = (id: string,) => {
 
 
 
-  return `/api/notifications/${id}/read`
+  return `/api/notifications/${encodeURIComponent(String(id))}/read`
 }
 
 export const readNotification = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -1851,7 +1859,7 @@ export const getGetUserFollowUrl = (id: string,) => {
 
 
 
-  return `/api/users/${id}/follow`
+  return `/api/users/${encodeURIComponent(String(id))}/follow`
 }
 
 export const getUserFollow = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<GetUserFollow200> => {
@@ -1873,7 +1881,7 @@ export const getFollowUserUrl = (id: string,) => {
 
 
 
-  return `/api/users/${id}/follow`
+  return `/api/users/${encodeURIComponent(String(id))}/follow`
 }
 
 export const followUser = async (id: string,
@@ -1910,7 +1918,7 @@ export const getUnfollowUserUrl = (id: string,) => {
 
 
 
-  return `/api/users/${id}/follow`
+  return `/api/users/${encodeURIComponent(String(id))}/follow`
 }
 
 export const unfollowUser = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
@@ -1932,7 +1940,7 @@ export const getUnblockUserUrl = (id: string,) => {
 
 
 
-  return `/api/blocks/${id}`
+  return `/api/blocks/${encodeURIComponent(String(id))}`
 }
 
 export const unblockUser = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
