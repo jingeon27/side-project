@@ -1,3 +1,21 @@
+/*
+ * `dark:` 변형은 OS 설정이 아니라 html의 data-theme을 따른다.
+ * data-theme이 없는 소비 앱은 라이트 전용이므로 `dark:`가 적용되지 않는다.
+ */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      [data-theme]:not([data-theme='light'], [data-theme='dark']),
+      [data-theme]:not([data-theme='light'], [data-theme='dark']) *
+    ) {
+      @slot;
+    }
+  }
+}
+
 @layer base {
   /* Theme support is opt-in; consumers without data-theme retain the default tokens. */
   :root[data-theme] {
