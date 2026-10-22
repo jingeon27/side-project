@@ -1,9 +1,7 @@
-import type { ESLint, Linter } from 'eslint';
+import type { Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
 
-import { noElse } from './rules/common/no-else/no-else';
-import { noComponentFetch } from './rules/web/no-component-fetch/no-component-fetch';
-import { noOverlayState } from './rules/web/no-overlay-state/no-overlay-state';
+import { sidePlugin } from './plugin';
 
 export const buildArtifactIgnores = [
   '**/node_modules/**',
@@ -27,22 +25,13 @@ export const testFiles = [
   '**/vitest.*.{ts,mts}',
 ];
 
-// typescript-eslint의 AST 타입은 ESLint 플러그인 등록 경계에서만 맞춘다.
-const plugin = {
-  meta: { name: '@side/eslint-config', version: '0.0.0' },
-  rules: {
-    'no-else': noElse,
-    'no-component-fetch': noComponentFetch,
-    'no-overlay-state': noOverlayState,
-  },
-} as unknown as ESLint.Plugin;
-
 export const baseConfig: Linter.Config[] = [
   { ignores: buildArtifactIgnores },
   ...tseslint.configs.recommended,
   {
     name: 'side/base',
-    plugins: { side: plugin },
+    plugins: { side: sidePlugin },
+    // common 규칙만 켠다. web 규칙은 reactConfig·nextConfig가 켠다.
     rules: {
       'side/no-else': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
