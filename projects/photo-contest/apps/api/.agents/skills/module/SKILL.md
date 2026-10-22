@@ -36,7 +36,7 @@ description: API(apps/api)에 GraphQL 쿼리·뮤테이션·필드나 REST 엔�
 
 - 웹·앱은 같은 origin의 `/backend/<path>` 프록시로 부르므로 응답에 넣는 API 경로는 `/backend/…`다(`photoUrl()`).
 - POST 기본 상태는 201 — 계약이 200이면 `@HttpCode(HttpStatus.OK)`. 쿠키를 쓰면서 JSON을 돌려주면 `@Res({ passthrough: true })`. 고정 경로를 파라미터 경로보다 먼저 선언한다(`@Get('config')` → `@Get(':provider')`).
-- 상태를 바꾸는 요청을 GET으로 만들지 않는다(Origin 검사가 GET을 통과시킨다). JSON 본문은 `MAX_JSON_BODY`(64kb)까지, raw 본문 파서는 `src/bootstrap.ts`가 `/uploads`에만 붙인다. `Cache-Control: private, no-store`를 덮어쓰지 않는다.
+- 상태를 바꾸는 요청을 GET으로 만들지 않는다(Origin 검사가 GET을 통과시킨다). JSON 본문은 `MAX_JSON_BODY`(64kb)까지이며 파일 본문을 받는 경로는 두지 않는다(저장소 서명 POST). `Cache-Control: private, no-store`를 덮어쓰지 않는다.
 
 ## 체크리스트
 
