@@ -12,7 +12,7 @@ x-api-environment: &api-environment
   GF_TEST_AUTH_ENABLED: 'false'
   GF_PREFETCH_TESTING: 'false'
   GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
-  GF_CACHE_REVALIDATION_URL: http://web:3300/_internal/cache/revalidate
+  GF_CACHE_REVALIDATION_URL: http://web:3300/internal/cache/revalidate
   GF_MEDIA_STORAGE: ${GF_MEDIA_STORAGE:-FILESYSTEM}
   GF_MEDIA_DIRECTORY: /var/lib/game-feedback/media
   GF_S3_BUCKET: ${GF_S3_BUCKET:-}

@@ -21,12 +21,12 @@ export function resolveCacheRevalidationConfig(env: NodeJS.ProcessEnv): ICacheRe
     !['http:', 'https:'].includes(parsed.protocol) ||
     parsed.username ||
     parsed.password ||
-    parsed.pathname !== '/_internal/cache/revalidate' ||
+    parsed.pathname !== '/internal/cache/revalidate' ||
     parsed.search ||
     parsed.hash
   )
     throw new Error(
-      'GF_CACHE_REVALIDATION_URL must point to /_internal/cache/revalidate without credentials or query parameters.',
+      'GF_CACHE_REVALIDATION_URL must point to /internal/cache/revalidate without credentials or query parameters.',
     );
   return { url, secret };
 }

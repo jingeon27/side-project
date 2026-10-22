@@ -7,7 +7,7 @@ import { revalidatePublicCache } from './revalidate-public-cache';
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 const secret = 'test-only-cache-secret-'.repeat(3);
 function request(body: unknown, token = secret) {
-  return new Request('http://localhost/_internal/cache/revalidate', {
+  return new Request('http://localhost/internal/cache/revalidate', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -59,7 +59,7 @@ describe('authenticated cache revalidation callback', () => {
       ['{broken', 400],
       [' '.repeat(16_385), 413],
     ] as const) {
-      const input = new Request('http://localhost/_internal/cache/revalidate', {
+      const input = new Request('http://localhost/internal/cache/revalidate', {
         method: 'POST',
         headers: { Authorization: `Bearer ${secret}` },
         body,

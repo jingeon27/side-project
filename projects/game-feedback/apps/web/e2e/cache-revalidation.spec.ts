@@ -113,8 +113,8 @@ test('administrator answer visibility changes invalidate an already cached publi
 });
 
 test('the revalidation route rejects browser requests without the server credential', async ({ request }) => {
-  const response = await request.post('/_internal/cache/revalidate', { data: { tags: ['posts'] } });
+  const response = await request.post('/internal/cache/revalidate', { data: { tags: ['posts'] } });
   expect(response.status()).toBe(401);
   expect(response.headers()['cache-control']).toBe('no-store');
-  expect((await request.get('/_internal/cache/revalidate')).status()).toBe(405);
+  expect((await request.get('/internal/cache/revalidate')).status()).toBe(405);
 });
