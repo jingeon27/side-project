@@ -13,6 +13,7 @@ new RuleTester({ languageOptions }).run('no-cross-page', noCrossPage, {
       ...fixtures.read('_pages/group/@page/LocalHeader.tsx'),
       options,
     },
+    { ...fixtures.read('_pages/group/@page/SameSliceAlias.tsx'), options },
     { ...fixtures.read('app/groups/[id]/route.tsx'), options },
   ],
   invalid: [
