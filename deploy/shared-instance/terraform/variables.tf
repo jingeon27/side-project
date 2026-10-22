@@ -301,3 +301,100 @@ variable "enable_ssm_session_manager" {
   type        = bool
   default     = true
 }
+
+# EC2
+
+variable "instance_type" {
+  description = <<-EOT
+    EC2 인스턴스 타입(x86_64). 상시 컨테이너 메모리 한도 합계는 약 2.7GiB(Caddy 128M, GF API 512M·Web 640M, PC API 768M·Web 640M)이고,
+    배포 중 일회성 ops·migrate(각 256M)와 OS·Docker가 더 필요하다. 기본 t3.medium(2 vCPU, 4GiB)에 swap(swap_size_gib)을 더한다.
+    업로드·SSR 부하에서 메모리가 모자라면 t3.large(8GiB)로 올린다(요금 약 두 배).
+  EOT
+  type        = string
+  default     = "t3.medium"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*\\.[a-z0-9]+$", var.instance_type))
+    error_message = "EC2 인스턴스 타입 형식이어야 한다(예: t3.medium)."
+  }
+}
+
+variable "instance_cpu_credits" {
+  description = "버스터블(T) 인스턴스의 CPU 크레딧 모드. standard는 크레딧이 떨어지면 기준 성능(t3.medium은 vCPU당 20%)으로 제한해 추가 요금이 없다. unlimited는 제한 없이 초과분을 과금한다(AWS 기본값). T 계열이 아니면 무시한다."
+  type        = string
+  default     = "standard"
+
+  validation {
+    condition     = contains(["standard", "unlimited"], var.instance_cpu_credits)
+    error_message = "standard 또는 unlimited여야 한다."
+  }
+}
+
+variable "ami_ssm_parameter" {
+  description = <<-EOT
+    AMI ID를 담은 Canonical Ubuntu Server 공개 SSM 파라미터(amd64). 기본은 Ubuntu 24.04 LTS gp3 최신 이미지다.
+    user_data가 apt·Docker 공식 Ubuntu 저장소를 쓰므로 Ubuntu LTS만 지원한다. 이미 만든 인스턴스는 새 AMI가 나와도 교체하지 않는다(ignore_changes).
+  EOT
+  type        = string
+  default     = "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+
+  validation {
+    condition     = can(regex("^/aws/service/canonical/ubuntu/server/[0-9]{2}\\.04/stable/current/amd64/hvm/ebs-gp3/ami-id$", var.ami_ssm_parameter))
+    error_message = "/aws/service/canonical/ubuntu/server/<YY>.04/stable/current/amd64/hvm/ebs-gp3/ami-id 형식(Ubuntu LTS, amd64)이어야 한다."
+  }
+}
+
+variable "root_volume_size_gib" {
+  description = "암호화된 gp3 루트 볼륨 크기(GiB). 네 서비스 이미지의 current/previous와 최근 7일 이미지, 컨테이너 로그, swap을 담는다. 늘릴 수는 있어도 줄일 수 없다."
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = var.root_volume_size_gib >= 20 && var.root_volume_size_gib <= 16384 && floor(var.root_volume_size_gib) == var.root_volume_size_gib
+    error_message = "20~16384 사이의 정수여야 한다."
+  }
+}
+
+variable "metadata_hop_limit" {
+  description = <<-EOT
+    IMDSv2 PUT 응답 hop limit. 기본 1이면 호스트 네트워크의 프로세스만 인스턴스 역할 자격 증명을 읽고 bridge 네트워크의 컨테이너는 읽지 못한다.
+    공용 스크립트가 aws-cli 컨테이너를 host 네트워크로 실행하도록 바뀌는 중이며, 그 변경이 배포된 뒤에는 1로 충분하다.
+    현재처럼 rds-receipt.py가 aws-cli를 bridge 네트워크(--network bridge)로 실행하는 버전을 배포하면 2로 둬야 RDS 복구 지점 조회가 동작한다.
+    2로 올리면 같은 호스트의 모든 bridge 컨테이너가 인스턴스 역할(RDS 조회·SSM)을 쓸 수 있다는 점을 감안한다.
+  EOT
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = contains([1, 2], var.metadata_hop_limit)
+    error_message = "1 또는 2여야 한다."
+  }
+}
+
+variable "ssh_public_key" {
+  description = "운영자 SSH 공개 키(OpenSSH 한 줄). 비워 두면 키 페어를 만들지 않고 SSM으로 접속한다. 키는 첫 부팅에만 ubuntu 사용자에 들어가며, 이후 키 변경·배포용 키 추가는 서버의 ~/.ssh/authorized_keys에서 한다."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.ssh_public_key == "" || can(regex("^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) [A-Za-z0-9+/=]+( .*)?$", var.ssh_public_key))
+    error_message = "비워 두거나 ssh-ed25519·ecdsa·ssh-rsa 형식의 공개 키 한 줄이어야 한다."
+  }
+}
+
+variable "swap_size_gib" {
+  description = "첫 부팅 때 만드는 swap 파일 크기(GiB). 0이면 만들지 않는다. 일시적인 메모리 부족에 따른 OOM을 줄이지만 처리량을 보장하지 않는다."
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.swap_size_gib >= 0 && var.swap_size_gib <= 16 && floor(var.swap_size_gib) == var.swap_size_gib
+    error_message = "0~16 사이의 정수여야 한다."
+  }
+}
+
+variable "instance_termination_protection" {
+  description = "EC2 종료 방지(disable_api_termination). 파기할 때만 false로 apply한 뒤 destroy한다."
+  type        = bool
+  default     = true
+}

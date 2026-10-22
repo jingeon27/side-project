@@ -80,3 +80,30 @@ output "host_iam_role_name" {
   description = "EC2 인스턴스 역할 이름(RDS DescribeDBInstances, 선택적으로 SSM)."
   value       = aws_iam_role.host.name
 }
+
+# EC2
+
+output "instance_id" {
+  description = "공용 EC2 인스턴스 ID."
+  value       = aws_instance.host.id
+}
+
+output "public_ip" {
+  description = "EC2에 연결한 탄력적 IP. 네 호스트의 DNS A 레코드와 SIDE_DEPLOY_HOST에 쓴다."
+  value       = aws_eip.host.public_ip
+}
+
+output "ssh_user" {
+  description = "SSH·배포 사용자(SIDE_DEPLOY_SSH_USER). /srv/side-project 소유자이며 docker 그룹에 속한다."
+  value       = local.ssh_user
+}
+
+output "ssm_session_command" {
+  description = "SSM Session Manager로 셸에 접속하는 명령(Session Manager plugin 필요)."
+  value       = var.enable_ssm_session_manager ? "aws ssm start-session --region ${var.region} --target ${aws_instance.host.id}" : null
+}
+
+output "ssh_host_keys_command" {
+  description = "cloud-init이 콘솔 출력에 남긴 SSH host key를 AWS API로 읽는 명령. 검증한 host key로 SIDE_DEPLOY_SSH_KNOWN_HOSTS를 만든다."
+  value       = "aws ec2 get-console-output --region ${var.region} --instance-id ${aws_instance.host.id} --latest --output text | sed -n '/BEGIN SSH HOST KEY KEYS/,/END SSH HOST KEY KEYS/p'"
+}
