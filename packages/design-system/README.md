@@ -56,7 +56,7 @@ Photo Contest의 `AlertDialog`·바텀시트는 앱에 남는다. 그 앱은 `di
 corepack yarn storybook
 ```
 
-`http://localhost:6006`에서 공통 토큰과 UI의 기본·오류·로딩·비활성 상태를 확인한다. Controls로 props를 바꾸고 테마 툴바에서 light·dark·system을 전환할 수 있다. Accessibility 패널은 각 예제의 접근성 점검 결과를 보여 준다.
+`http://localhost:6006`에서 공통 토큰과 UI의 기본·오류·로딩·비활성 상태를 확인한다. Controls로 props를 바꾸고 테마 툴바에서 light·dark·system을 전환할 수 있다. Accessibility 패널은 각 예제의 접근성 점검 결과를 보여 주며 `a11y.test`는 `'error'`라 위반을 실패로 다룬다. `yarn test`의 `src/stories/stories-a11y.spec.tsx`가 모든 스토리를 jsdom에서 axe로 검사한다. jsdom은 스타일을 계산하지 않으므로 색 대비는 토큰 대비 테스트(`color-contrast.test.ts`, `Badge.test.tsx`)가 맡는다.
 
 React + Vite와 Tailwind 4를 사용하며 앱과 같은 `src/styles.css`를 가져온다. 테마는 iframe의 html에 적용해 다이얼로그·메뉴 같은 포털에도 전달한다. Next 전용 `ButtonLink`는 소비 앱에서 검증한다.
 
