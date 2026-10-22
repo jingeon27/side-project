@@ -72,8 +72,14 @@ type Query {
 }
 
 type Mutation {
+  "그룹장만. 그룹장 역할은 바꾸지 않고 멤버를 부관리자로 임명하거나 해제한다"
   setGroupModerator(groupId: ID!, userId: ID!, enabled: Boolean!): Group!
+  "그룹장만. 대상이 그룹장이 되고 이전 그룹장은 일반 멤버가 된다"
   transferGroupOwnership(groupId: ID!, userId: ID!): Group!
+  "그룹장·부관리자만. 그룹장은 내보낼 수 없고 부관리자는 일반 멤버만, 그룹장은 부관리자도 내보낸다"
+  removeGroupMember(groupId: ID!, userId: ID!): Group!
+  "본인이 그룹을 나간다. 그룹장은 관리자를 양도한 뒤에만 나갈 수 있다"
+  leaveGroup(groupId: ID!): Group!
   createGroup(name: String!, visibility: GroupVisibility! = PUBLIC, description: String = ""): Group!
   updateGroupProfile(
     groupId: ID!

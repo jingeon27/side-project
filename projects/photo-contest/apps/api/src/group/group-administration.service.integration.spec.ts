@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
-import { createGroup } from '../../test/support/fixtures';
+import { createGroup, joinGroup } from '../../test/support/fixtures';
 import {
   createEntry,
   createGroupContest,
@@ -155,5 +155,91 @@ describe('그룹장·부관리자 권한 통합', () => {
       ownerId: deputy.id,
     });
     expect(JSON.stringify(events.map((event) => event.properties))).not.toContain(owner.nickname);
+  });
+
+  const REMOVE =
+    'mutation($id:ID!,$user:ID!){removeGroupMember(groupId:$id,userId:$user){id role members{role user{id}}}}';
+  const LEAVE = 'mutation($id:ID!){leaveGroup(groupId:$id){id role canViewPosts members{user{id}}}}';
+  const isMember = async (groupId: string, userId: string) =>
+    Boolean(await api.db.groupMember.findUnique({ where: { groupId_userId: { groupId, userId } } }));
+
+  it('그룹장은 부관리자·멤버를, 부관리자는 일반 멤버만 내보내고 그룹장은 아무도 내보낼 수 없어야 한다', async () => {
+    const extra = await api.signIn('권한 운영-추방 대상');
+    const group = await createGroup(api, owner, '멤버 추방', [deputy, member, extra], 'PRIVATE');
+    await api.gqlOk(owner.cookie, SET_MODERATOR, { id: group.id, user: deputy.id, enabled: true });
+    for (const actor of [undefined, member.cookie, outsider.cookie])
+      expect((await api.gqlFail(actor, REMOVE, { id: group.id, user: extra.id })).code).toBe(
+        actor ? 'FORBIDDEN' : 'UNAUTHENTICATED',
+      );
+    expect(await api.gqlFail(deputy.cookie, REMOVE, { id: group.id, user: owner.id })).toEqual({
+      code: 'FORBIDDEN',
+      message: '그룹장은 내보낼 수 없습니다.',
+    });
+    const peer = await api.signIn('권한 운영-다른 부관리자');
+    await joinGroup(api, peer, group.inviteToken, owner);
+    await api.gqlOk(owner.cookie, SET_MODERATOR, { id: group.id, user: peer.id, enabled: true });
+    expect(await api.gqlFail(deputy.cookie, REMOVE, { id: group.id, user: peer.id })).toEqual({
+      code: 'FORBIDDEN',
+      message: '부관리자는 일반 멤버만 내보낼 수 있습니다.',
+    });
+    expect((await api.gqlFail(deputy.cookie, REMOVE, { id: group.id, user: deputy.id })).code).toBe(
+      'BAD_USER_INPUT',
+    );
+    expect((await api.gqlFail(owner.cookie, REMOVE, { id: group.id, user: outsider.id })).code).toBe(
+      'NOT_FOUND',
+    );
+
+    const removed = await api.gqlOk<{ removeGroupMember: { members: Array<{ user: { id: string } }> } }>(
+      deputy.cookie,
+      REMOVE,
+      { id: group.id, user: extra.id },
+    );
+    expect(removed.removeGroupMember.members.map(({ user }) => user.id)).not.toContain(extra.id);
+    await api.gqlOk(owner.cookie, REMOVE, { id: group.id, user: peer.id });
+    expect(await isMember(group.id, extra.id)).toBe(false);
+    expect(await isMember(group.id, peer.id)).toBe(false);
+    // 비공개 그룹에서 내보낸 멤버는 게시물을 볼 수 없고, 같은 초대 링크로는 승인 대기만 된다.
+    expect(
+      (await api.gqlFail(extra.cookie, 'query($id:ID!){galleryPosts(groupId:$id){id}}', { id: group.id }))
+        .code,
+    ).toBe('FORBIDDEN');
+    await api.gqlOk(extra.cookie, 'mutation($token:String!){joinGroup(token:$token){id}}', {
+      token: group.inviteToken,
+    });
+    expect(await isMember(group.id, extra.id)).toBe(false);
+    const events = await api.db.analyticsEvent.findMany({
+      where: { type: 'group_member_removed', properties: { path: ['groupId'], equals: group.id } },
+    });
+    expect(events).toHaveLength(2);
+  });
+
+  it('본인은 그룹을 나갈 수 있고 그룹장은 양도한 뒤에만 나갈 수 있어야 한다', async () => {
+    const group = await createGroup(api, owner, '그룹 나가기', [deputy, member]);
+    expect(await api.gqlFail(owner.cookie, LEAVE, { id: group.id })).toEqual({
+      code: 'BAD_USER_INPUT',
+      message: '그룹장은 다른 멤버에게 관리자를 양도한 뒤 나갈 수 있습니다.',
+    });
+    expect((await api.gqlFail(outsider.cookie, LEAVE, { id: group.id })).code).toBe('FORBIDDEN');
+    expect(
+      await api.gqlOk<{ leaveGroup: { role: string | null; canViewPosts: boolean; members: unknown[] } }>(
+        member.cookie,
+        LEAVE,
+        { id: group.id },
+      ),
+    ).toEqual({ leaveGroup: { id: group.id, role: null, canViewPosts: true, members: [] } });
+    expect(await isMember(group.id, member.id)).toBe(false);
+    // 공개 그룹은 다시 가입할 수 있고 가입 기록도 새로 남는다.
+    await api.gqlOk(member.cookie, 'mutation($id:ID!){requestGroupMembership(groupId:$id){id}}', {
+      id: group.id,
+    });
+    expect(await isMember(group.id, member.id)).toBe(true);
+    const joins = await api.db.analyticsEvent.findMany({
+      where: { type: 'group_joined', userId: member.id, properties: { path: ['groupId'], equals: group.id } },
+    });
+    expect(joins).toHaveLength(2);
+
+    await api.gqlOk(owner.cookie, TRANSFER_OWNER, { id: group.id, user: deputy.id });
+    await api.gqlOk(owner.cookie, LEAVE, { id: group.id });
+    expect(await isMember(group.id, owner.id)).toBe(false);
   });
 });

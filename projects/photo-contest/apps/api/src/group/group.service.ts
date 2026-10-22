@@ -217,12 +217,14 @@ export class GroupService {
         return;
       }
       // 같은 사용자의 동시 가입도 PK로 한 행만 남긴다.
-      await (tx ?? this.db).groupMember.createMany({
+      const joined = await (tx ?? this.db).groupMember.createMany({
         data: [{ groupId: group.id, userId: viewer.id }],
         skipDuplicates: true,
       });
+      if (joined.count !== 1) return;
+      // 나갔다가 다시 가입할 수 있으므로 가입마다 새 id로 기록한다.
       await recordEvent(tx ?? this.db, {
-        id: `joined:${group.id}:${viewer.id}`,
+        id: `joined:${group.id}:${viewer.id}:${randomUUID()}`,
         type: ANALYTICS_EVENT.GROUP_JOINED,
         userId: viewer.id,
         properties: { groupId: group.id },
