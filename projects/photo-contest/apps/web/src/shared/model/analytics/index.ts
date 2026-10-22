@@ -6,5 +6,12 @@ export type {
   TPhotoSortValue,
   TShareMethod,
 } from './analytics.catalog';
-export { flushAnalytics, identifyUser, initAnalytics, resetAnalytics, trackEvent } from './analytics.store';
+export {
+  flushAnalytics,
+  forgetAnalyticsUser,
+  identifyUser,
+  initAnalytics,
+  resetAnalytics,
+  trackEvent,
+} from './analytics.store';
 export { toPathTemplate } from './path-template.helper';
