@@ -11,6 +11,8 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { z } from 'zod';
 
+import { parseContentDate } from '../src/shared/lib/date/content-date';
+
 export const locales = ['ko', 'en'] as const;
 export const categories = ['engineering', 'til', 'perspectives', 'misc'] as const;
 export const slugSchema = z
@@ -31,7 +33,7 @@ export const metaSchema = z
   })
   .strict()
   .refine(
-    (meta) => !meta.updatedAt || Date.parse(meta.updatedAt) >= Date.parse(meta.publishedAt),
+    (meta) => !meta.updatedAt || parseContentDate(meta.updatedAt) >= parseContentDate(meta.publishedAt),
     'updatedAt precedes publishedAt',
   );
 const seoBase = z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1) });
@@ -190,7 +192,9 @@ export async function readContent(root: string) {
       imports.push({ id, locale });
     }
   }
-  articles.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.id.localeCompare(b.id));
+  articles.sort(
+    (a, b) => parseContentDate(b.publishedAt) - parseContentDate(a.publishedAt) || a.id.localeCompare(b.id),
+  );
   // Validate internal article references after building the complete index.
   const validPaths = new Set(articles.map(articleUrlPath));
   for (const { id, locale } of imports) {

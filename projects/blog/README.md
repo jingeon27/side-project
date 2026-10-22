@@ -35,7 +35,7 @@ Playwright는 빌드한 서버를 별도 포트 `3101`에서 실행합니다. �
 
 ## 콘텐츠 작성
 
-1. `apps/web/content/posts/<content-id>/meta.json`에 대표 카테고리, 태그, 발행일을 작성합니다.
+1. `apps/web/content/posts/<content-id>/meta.json`에 대표 카테고리, 태그, 발행일을 작성합니다. 날짜는 시간대를 포함한 ISO 시각이나 `YYYY-MM-DD`로 쓰며, 날짜만 쓰면 한국 시간 자정으로 해석해 시각 값과 비교합니다.
 2. `ko.mdx` 또는 `en.mdx`를 작성합니다. 두 언어는 독립적으로 발행할 수 있습니다.
 3. `apps/web/seo/<locale>.json`의 `posts`에 해당 ID의 제목, 고정 slug, 설명, keywords를 추가합니다.
 4. 이미지 파일은 `apps/web/public/images/posts/<content-id>/`에 둡니다.

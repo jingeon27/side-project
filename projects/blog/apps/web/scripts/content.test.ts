@@ -157,3 +157,15 @@ it('validates category IDs, normalized unique tags, and date chronology', () => 
   ])
     expect(metaSchema.safeParse(invalid).success).toBe(false);
 });
+it('compares date-only and offset datetimes on the Asia/Seoul calendar', () => {
+  const base = { category: 'engineering', tags: ['nextjs'] };
+  // A same-day edit in KST is 23:00 UTC of the previous day; UTC midnight parsing rejected it.
+  expect(
+    metaSchema.safeParse({ ...base, publishedAt: '2026-10-01', updatedAt: '2026-10-01T08:00:00+09:00' })
+      .success,
+  ).toBe(true);
+  expect(
+    metaSchema.safeParse({ ...base, publishedAt: '2026-10-01T10:00:00+09:00', updatedAt: '2026-10-01' })
+      .success,
+  ).toBe(false);
+});
