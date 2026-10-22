@@ -1,8 +1,8 @@
 import type { ESLint, Linter } from 'eslint';
 
-import { layerImports } from './rules/layer-imports';
-import { noCrossPage } from './rules/no-cross-page';
-import { slicePublicApi } from './rules/slice-public-api';
+import { layerImports } from './rules/fsd/layer-imports/layer-imports';
+import { noCrossPage } from './rules/fsd/no-cross-page/no-cross-page';
+import { slicePublicApi } from './rules/fsd/slice-public-api/slice-public-api';
 
 const plugin = {
   meta: { name: '@side/fsd-boundaries', version: '0.0.0' },

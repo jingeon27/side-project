@@ -1,6 +1,6 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
-import { languageOptions, readFixture } from '../test/rule-tester';
+import { languageOptions, readFixture } from '../../../../test/rule-tester';
 import { noElse } from './no-else';
 
 new RuleTester({ languageOptions }).run('no-else', noElse, {

@@ -1,6 +1,6 @@
 import type { TSESLint } from '@typescript-eslint/utils';
 
-import { createImportVisitor, fsdOptionsSchema, type TFsdOptions } from '../lib/fsd.helper';
+import { createImportVisitor, fsdOptionsSchema, type TFsdOptions } from '../fsd.helper';
 
 export const noCrossPage: TSESLint.RuleModule<'crossPage', TFsdOptions> = {
   defaultOptions: [{}],
