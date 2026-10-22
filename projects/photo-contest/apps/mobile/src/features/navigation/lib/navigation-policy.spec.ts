@@ -43,6 +43,21 @@ describe('decideNavigation', () => {
     expect(decide('https://www.youtube.com/embed/x', false)).toEqual({ action: 'allow' });
   });
 
+  it('iframe이 http(s)가 아닌 스킴으로 이동하면 외부 앱·앱 이동 없이 막아야 한다', () => {
+    for (const url of [
+      'kakaotalk://inappbrowser?url=x',
+      'tel:01012345678',
+      'market://details?id=com.evil.app',
+      'intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end',
+      'photocontest://groups/12',
+      'javascript:alert(1)',
+    ])
+      expect(decide(url, false)).toEqual({ action: 'block' });
+    // 빈 문서·srcdoc iframe은 그대로 연다.
+    expect(decide('about:blank', false)).toEqual({ action: 'allow' });
+    expect(decide('about:srcdoc', false)).toEqual({ action: 'allow' });
+  });
+
   it('전화·메일·다른 앱 스킴은 밖에서 열어야 한다', () => {
     expect(decide('tel:01012345678')).toEqual({
       action: 'open-external',
