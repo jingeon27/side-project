@@ -35,6 +35,9 @@
     "test:game-feedback": "yarn workspace @side/game-feedback test",
     "check:game-feedback": "yarn workspace @side/game-feedback check"
   },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown"
+  },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "husky": "^9.1.7",
