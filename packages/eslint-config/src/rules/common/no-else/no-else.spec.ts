@@ -1,6 +1,6 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
-import { createFixtures, languageOptions } from '../../../../test/rule-tester';
+import { createFixtures, languageOptions } from '../../../test/rule-tester';
 import { noElse } from './no-else';
 
 const fixtures = createFixtures(import.meta.dirname);

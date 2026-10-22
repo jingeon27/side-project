@@ -1,9 +1,9 @@
 import type { ESLint, Linter } from 'eslint';
 import tseslint from 'typescript-eslint';
 
-import { noElse } from './rules/conventions/common/no-else/no-else';
-import { noComponentFetch } from './rules/conventions/web/no-component-fetch/no-component-fetch';
-import { noOverlayState } from './rules/conventions/web/no-overlay-state/no-overlay-state';
+import { noComponentFetch } from './rules/common/no-component-fetch/no-component-fetch';
+import { noElse } from './rules/common/no-else/no-else';
+import { noOverlayState } from './rules/web/no-overlay-state/no-overlay-state';
 
 export const buildArtifactIgnores = [
   '**/node_modules/**',
