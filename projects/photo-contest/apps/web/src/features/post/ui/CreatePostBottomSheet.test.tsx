@@ -35,8 +35,8 @@ beforeEach(() => {
   vi.stubGlobal(
     'URL',
     class extends URL {
-      static createObjectURL = createUrl;
-      static revokeObjectURL = revokeUrl;
+      static override createObjectURL = createUrl;
+      static override revokeObjectURL = revokeUrl;
     },
   );
   vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(pause);
