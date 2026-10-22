@@ -8,6 +8,7 @@ import {
   getNavigationDirection,
   installBrowserNavigation,
   registerLogicalParent,
+  registerNextLogicalParent,
 } from './browser-navigation';
 
 let stop = () => {};
@@ -53,6 +54,35 @@ describe('application history', () => {
     expect(backNavigation()).toEqual({ action: 'replace', path: '/ko/boards/friendly' });
     release();
     expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+  });
+  it('returns from a guide child destination to the guide while root tabs still use their parent', () => {
+    start('/ko/guide');
+    registerNextLogicalParent('/ko/boards/friendly');
+    window.history.pushState({ __NA: true, tree: 'board-tree' }, '', '/ko/boards/friendly');
+    expect(window.history.state).toMatchObject({ __NA: true, tree: 'board-tree' });
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.replaceState(window.history.state, '', '/ko/boards/friendly?battleMode=TEAM');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.pushState({}, '', '/ko/posts/post-1');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.pushState({}, '', '/ko/contact');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+    stop();
+    start('/ko/guide');
+    registerNextLogicalParent('/ko/contact');
+    window.history.pushState({}, '', '/ko/contact');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.replaceState(window.history.state, '', '/ko/messages');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+  });
+  it('ignores a child registration that does not match the pushed destination', () => {
+    start('/ko/guide');
+    registerNextLogicalParent('/ko/contact');
+    window.history.pushState({}, '', '/ko/boards/free');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+    registerNextLogicalParent('/en/contact');
+    window.history.pushState({}, '', '/en/contact');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/en' });
   });
   it('preserves Next state and the filtered source when details are pushed', () => {
     start('/ko?tab=unanswered&q=%ED%98%B8%EA%B7%B8');
