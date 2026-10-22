@@ -81,6 +81,15 @@ export function isBarrel(rest: readonly string[]) {
   return rest.length === 0 || (rest.length === 1 && rest[0] === 'index');
 }
 
+// 자기 slice의 서버 전용 배럴(index.server)도 자기 배럴이라 순환 참조를 만든다.
+export function isOwnBarrel(rest: readonly string[]) {
+  return isBarrel(rest) || (rest.length === 1 && rest[0] === 'index.server');
+}
+
+export function isLayerRootBarrel(target: ILocation) {
+  return SLICED_LAYERS.has(target.layer) && (target.slice === null || target.slice === 'index');
+}
+
 export function isPublicDeepImport(rest: readonly string[]) {
   return PUBLIC_SEGMENTS.has(rest[0] ?? '') || /\.(schema|server)$/.test(rest[rest.length - 1] ?? '');
 }
