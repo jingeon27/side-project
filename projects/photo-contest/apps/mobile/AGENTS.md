@@ -86,7 +86,7 @@
 | `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`) |
 | `bundle:check` | `expo export --platform android`로 Metro 번들이 만들어지는지 확인하고 결과 폴더를 지운다 | 없음 |
 
-- 개발 서버 포트(3200/4200/55433)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
+- 개발 서버 포트(3200/4200/55432)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
 - 웹 화면의 선택자는 `e2e/support/web-screens.ts`에만 둔다.
 - 네이티브 빌드·실기기 확인(키보드가 입력창을 가리는지, 소셜 로그인 복귀, 파일 업로드)은 이 테스트들이 대신하지 못한다.
 

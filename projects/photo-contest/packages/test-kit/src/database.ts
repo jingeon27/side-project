@@ -5,66 +5,96 @@ import { PrismaClient } from '@photo-contest/api/database-client';
 
 import { PRISMA_CLI, PRISMA_SCHEMA } from './paths';
 
-const SCHEMA_NAME = /^[a-z][a-z0-9_]{0,62}$/;
-const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+/** 테스트 레인이 만드는 격리 스키마의 접두사. 만들고 지우는 스키마는 `<접두사>_<uuid 32자>`뿐이다. */
+export const TEST_SCHEMA_PREFIXES = [
+  'api_test',
+  'web_api',
+  'web_e2e',
+  'web_cache',
+  'mobile_api',
+  'mobile_e2e',
+] as const;
+export type TTestSchemaPrefix = (typeof TEST_SCHEMA_PREFIXES)[number];
 
-function assertSchemaName(schema: string) {
-  if (!SCHEMA_NAME.test(schema)) throw new Error(`격리 스키마 이름이 올바르지 않습니다: ${schema}`);
+const OWNED_SCHEMA = new RegExp(`^(?:${TEST_SCHEMA_PREFIXES.join('|')})_[0-9a-f]{32}$`);
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+const TEST_DATABASE_NAME = 'photo_contest_test';
+const DEFAULT_TEST_PORT = '55434';
+const DEFAULT_DEVELOPMENT_PORT = '55432';
+
+/** 오류 메시지에 URL을 넣지 않는다(비밀번호가 들어 있을 수 있다). */
+function testDatabasePort() {
+  const port = process.env.LOCAL_TEST_POSTGRES_PORT ?? DEFAULT_TEST_PORT;
+  const development = process.env.LOCAL_POSTGRES_PORT ?? DEFAULT_DEVELOPMENT_PORT;
+  if (!/^[1-9][0-9]{0,4}$/.test(port) || port === development)
+    throw new Error('LOCAL_TEST_POSTGRES_PORT는 개발 DB(LOCAL_POSTGRES_PORT)와 다른 포트여야 합니다.');
+  return port;
+}
+
+/** 격리 스키마 이름이 테스트 레인이 만든 형식인지 확인한다. prefix를 주면 그 레인의 이름만 허용한다. */
+export function assertTestSchemaName(schema: string, prefix?: TTestSchemaPrefix) {
+  const owned = prefix ? new RegExp(`^${prefix}_[0-9a-f]{32}$`) : OWNED_SCHEMA;
+  if (!OWNED_SCHEMA.test(schema) || !owned.test(schema))
+    throw new Error(
+      `테스트가 만든 격리 스키마(<레인 접두사>_<uuid>)만 쓸 수 있습니다: ${schema.slice(0, 80)}`,
+    );
   return schema;
 }
 
-/** 실행마다 겹치지 않는 스키마 이름. prefix는 소문자·숫자·_만 쓴다. */
-export function isolatedSchemaName(prefix: string) {
-  return assertSchemaName(`${prefix}_${randomUUID().replaceAll('-', '')}`);
+/**
+ * 테스트 DB는 loopback의 전용 포트(기본 55434, LOCAL_TEST_POSTGRES_PORT)·photo_contest_test만 허용한다.
+ * 개발 DB(55432)나 원격 DB에는 스키마를 만들거나 지우지 않는다.
+ */
+export function assertTestDatabaseUrl(databaseUrl: string) {
+  let url: URL;
+  try {
+    url = new URL(databaseUrl);
+  } catch {
+    throw new Error('TEST_DATABASE_URL은 올바른 PostgreSQL URL이어야 합니다.');
+  }
+  const port = testDatabasePort();
+  if (url.protocol !== 'postgresql:' && url.protocol !== 'postgres:')
+    throw new Error('테스트 DB는 PostgreSQL URL만 허용합니다.');
+  if (!LOOPBACK_HOSTS.has(url.hostname))
+    throw new Error('테스트 DB는 loopback 주소(127.0.0.1·localhost·[::1])만 허용합니다.');
+  if (url.port !== port) throw new Error(`테스트 DB는 전용 포트 ${port}만 허용합니다.`);
+  if (url.pathname !== `/${TEST_DATABASE_NAME}`)
+    throw new Error(`테스트 DB는 ${TEST_DATABASE_NAME} 데이터베이스만 허용합니다.`);
+  const schema = url.searchParams.get('schema');
+  if (schema !== null && schema !== 'public') assertTestSchemaName(schema);
+  return databaseUrl;
 }
 
-/**
- * 테스트가 쓸 DB. 테스트 전용 TEST_DATABASE_URL이 있으면 그것을(원격이어도 명시했으므로 허용),
- * 없으면 개발 DATABASE_URL을 쓰되 로컬 DB만 허용한다. 어느 쪽이든 실행마다 격리 스키마를 만들고 지운다.
- */
+/** 실행마다 겹치지 않는 스키마 이름. 접두사는 TEST_SCHEMA_PREFIXES 중 하나다. */
+export function isolatedSchemaName(prefix: TTestSchemaPrefix) {
+  return assertTestSchemaName(`${prefix}_${randomUUID().replaceAll('-', '')}`, prefix);
+}
+
+/** 테스트 전용 DB URL. 개발 DATABASE_URL로 대신하지 않는다. */
 export function resolveTestDatabaseUrl() {
   const dedicated = process.env.TEST_DATABASE_URL;
-  if (dedicated) return dedicated;
-  const fallback = process.env.DATABASE_URL;
-  if (!fallback)
+  if (!dedicated)
     throw new Error(
-      'TEST_DATABASE_URL(테스트 전용 DB) 또는 DATABASE_URL이 필요합니다. projects/photo-contest/.env를 확인하세요.',
+      'TEST_DATABASE_URL이 필요합니다. `yarn workspace @side/photo-contest db:test:local`로 테스트 DB(기본 55434)를 띄우고 projects/photo-contest/.env를 확인하세요.',
     );
-  assertLocalDatabase(fallback);
-  return fallback;
-}
-
-/** 테스트 전용으로 명시한 DB가 아니면 로컬 DB만 허용한다. */
-function assertTestDatabase(databaseUrl: string) {
-  if (process.env.TEST_DATABASE_URL && databaseUrl === process.env.TEST_DATABASE_URL) return;
-  assertLocalDatabase(databaseUrl);
-}
-
-/** 테스트가 운영 DB를 건드리지 않도록 로컬 DB만 허용한다. */
-export function assertLocalDatabase(databaseUrl: string) {
-  const { hostname } = new URL(databaseUrl);
-  if (!LOCAL_HOSTS.has(hostname) && process.env.PC_TEST_ALLOW_REMOTE_DATABASE !== 'true')
-    throw new Error(
-      '테스트는 로컬 개발 DB에서만 실행합니다. 원격 DB라면 PC_TEST_ALLOW_REMOTE_DATABASE=true를 명시하세요.',
-    );
+  return assertTestDatabaseUrl(dedicated);
 }
 
 export function schemaUrl(databaseUrl: string, schema: string) {
-  const url = new URL(databaseUrl);
-  url.searchParams.set('schema', assertSchemaName(schema));
+  const url = new URL(assertTestDatabaseUrl(databaseUrl));
+  url.searchParams.set('schema', assertTestSchemaName(schema));
   return url.toString();
 }
 
 /** 스키마를 만들고 마이그레이션을 적용한 뒤 그 스키마를 가리키는 URL을 돌려준다. */
 export async function createIsolatedDatabase(databaseUrl: string, schema: string) {
-  assertTestDatabase(databaseUrl);
+  const url = schemaUrl(databaseUrl, schema);
   const admin = new PrismaClient({ datasourceUrl: databaseUrl });
   try {
-    await admin.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${assertSchemaName(schema)}"`);
+    await admin.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
   } finally {
     await admin.$disconnect();
   }
-  const url = schemaUrl(databaseUrl, schema);
   execFileSync(process.execPath, [PRISMA_CLI, 'migrate', 'deploy', '--schema', PRISMA_SCHEMA], {
     env: { ...process.env, DATABASE_URL: url },
     stdio: 'pipe',
@@ -72,11 +102,13 @@ export async function createIsolatedDatabase(databaseUrl: string, schema: string
   return url;
 }
 
-/** 격리 스키마만 지운다. 다른 스키마와 데이터는 건드리지 않는다. */
+/** 테스트가 만든 격리 스키마만 지운다. public 등 다른 스키마는 연결하기 전에 거부한다. */
 export async function dropIsolatedDatabase(databaseUrl: string, schema: string) {
+  assertTestDatabaseUrl(databaseUrl);
+  assertTestSchemaName(schema);
   const admin = new PrismaClient({ datasourceUrl: databaseUrl });
   try {
-    await admin.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${assertSchemaName(schema)}" CASCADE`);
+    await admin.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   } finally {
     await admin.$disconnect();
   }
