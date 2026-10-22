@@ -59,7 +59,8 @@ description: Game Feedback 모바일 셸의 WebView prop, 탐색 정책·딥링�
 ## 안전 영역·고정 prop
 
 - 여백은 `SafeAreaView`(WebShellPage·ServiceErrorBoundary)가 주고 `contentInsetAdjustmentBehavior: 'never'`로 중복을 막는다. 네이티브 색은 `src/shared/config/theme.ts` `COLORS`와 `app.config.ts` `backgroundColor`를 함께 바꾼다. `LaunchScreen`은 `useColorScheme()`로 자체 색을 고른다.
-- 유지할 prop: `sharedCookiesEnabled`·`thirdPartyCookiesEnabled`(HttpOnly 세션), `applicationNameForUserAgent: GameFeedbackApp/<APP_VERSION>`, `webviewDebuggingEnabled: __DEV__`, `pullToRefreshEnabled`, `allowsInlineMediaPlayback: true` + `mediaPlaybackRequiresUserAction: true`.
+- 세션은 `WEB_ORIGIN`의 1st-party HttpOnly 쿠키다. WebView가 그 origin 문서를 열고 `/api`도 같은 origin rewrite로 부르므로 세션에는 3rd-party 쿠키 허용이 필요 없다. `thirdPartyCookiesEnabled`(Android)는 다른 사이트 frame·요청의 쿠키만 허용하고, `sharedCookiesEnabled`(iOS)는 앱의 `NSHTTPCookieStorage`를 WebView 요청에 함께 쓴다. 둘 다 현재 켜져 있고 `WebShellPage.spec.tsx`가 값을 고정하지만 세션 유지의 근거는 아니다. 끄려면 실기기에서 로그인 유지·앱 복귀·소셜 로그인 교환을 확인한다.
+- 유지할 prop: `applicationNameForUserAgent: GameFeedbackApp/<APP_VERSION>`, `webviewDebuggingEnabled: __DEV__`, `pullToRefreshEnabled`, `allowsInlineMediaPlayback: true` + `mediaPlaybackRequiresUserAction: true`.
 
 ## 확인
 

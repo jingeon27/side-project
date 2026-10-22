@@ -32,7 +32,7 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     
 
 ## `app.config.ts`가 원본이다
 
-- `name` '플레이메이트', `slug` 'game-feedback', `scheme` 'gamefeedback', `ios.bundleIdentifier`·`android.package` `dev.side.gamefeedback`, `orientation` portrait, `userInterfaceStyle` 'light', `backgroundColor` '#ffffff'.
+- `name` 'Game Mate', `icon` `./assets/icon.png`(Android adaptive icon `./assets/adaptive-icon.png`, 배경 `#147d64`), `slug` 'game-feedback', `scheme` 'gamefeedback', `ios.bundleIdentifier`·`android.package` `dev.side.gamefeedback`, `orientation` portrait, `userInterfaceStyle` 'light', `backgroundColor` '#ffffff'.
 - iOS `NSPhotoLibraryUsageDescription`·`NSCameraUsageDescription`·`NSMicrophoneUsageDescription`은 WebView 파일 선택·촬영용이다. 웹 첨부 기능을 바꾸면 문구도 확인한다.
 - `android.predictiveBackGestureEnabled: false`는 Android back을 웹에 먼저 묻는 흐름의 전제다(`game-feedback-mobile-webview-shell`).
 - universal/app link(associated domains, intent filter)는 없다. 스킴을 바꾸면 bridge `APP_SCHEME`과 API 콜백 문자열까지 함께 바꾼다(`game-feedback-mobile-bridge`).
