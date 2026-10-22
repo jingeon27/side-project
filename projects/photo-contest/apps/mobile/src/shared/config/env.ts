@@ -1,10 +1,13 @@
+import { buildAuthCallbackUrl } from './app-links';
 import { resolveWebOrigin } from './web-origin';
 
 export const WEB_ORIGIN = resolveWebOrigin(process.env.EXPO_PUBLIC_WEB_ORIGIN, __DEV__);
-/** API의 MOBILE_APP_SCHEME 기본값과 같아야 소셜 로그인 콜백이 앱으로 돌아온다. */
+/** 로그인 밖의 딥링크(`photocontest://groups/1`)용. 소셜 로그인 코드는 이 스킴으로 받지 않는다. */
 export const APP_SCHEME = 'photocontest';
 /** 세션 쿠키가 웹 origin에 붙으므로 앱도 웹 origin의 `/backend/*` 프록시만 쓴다. */
 export const API_BASE = `${WEB_ORIGIN}/backend`;
+/** 소셜 로그인 코드를 받는 https 콜백. API MOBILE_AUTH_CALLBACK_URL과 같아야 한다. */
+export const AUTH_CALLBACK_URL = buildAuthCallbackUrl(WEB_ORIGIN);
 /** 업데이트 화면의 스토어 링크. 플랫폼별 빌드에서 넣고, 없으면 Android만 패키지 이름으로 만든다. */
 export const STORE_URL = process.env.EXPO_PUBLIC_STORE_URL ?? null;
 

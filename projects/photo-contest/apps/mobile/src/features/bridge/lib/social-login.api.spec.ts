@@ -2,18 +2,14 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { describe, expect, inject, it } from 'vitest';
 
+import { buildAuthCallbackUrl } from '@/shared/config/app-links';
 import { encodeBase64Url } from '@/shared/lib/base64url';
 
-import {
-  buildAuthCallbackUrl,
-  buildSocialLoginUrl,
-  PKCE_VERIFIER_BYTES,
-  readAuthCallback,
-} from './social-login';
+import { buildSocialLoginUrl, PKCE_VERIFIER_BYTES, readAuthCallback } from './social-login';
 
 const apiUrl = inject('apiUrl');
 const webOrigin = inject('webOrigin');
-const CALLBACK_URL = buildAuthCallbackUrl('photocontest');
+const CALLBACK_URL = buildAuthCallbackUrl(webOrigin);
 const APP_LOGIN_REJECTED = '앱 로그인 요청을 확인할 수 없습니다.';
 
 /** 앱의 auth.socialLogin과 같은 방식으로 verifier와 challenge를 만든다. */
@@ -70,7 +66,7 @@ describe('소셜 로그인 핸드오프 API', () => {
     }
   });
 
-  it('앱에서 시작한 로그인이 실패하면 앱 콜백으로 실패를 돌려주고, 앱은 그것을 실패로 읽어야 한다', async () => {
+  it('앱에서 시작한 로그인이 실패하면 웹 origin의 https 앱 콜백으로 실패를 돌려주고, 앱은 그것을 실패로 읽어야 한다', async () => {
     const { challenge } = createPkcePair();
     const started = await startLogin(challenge);
     const state = new URL(started.headers.get('location') ?? '').searchParams.get('state') ?? '';

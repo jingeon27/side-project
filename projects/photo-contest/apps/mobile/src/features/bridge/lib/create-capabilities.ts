@@ -6,7 +6,6 @@ import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/
 import { encodeBase64Url } from '@/shared/lib/base64url';
 
 import {
-  buildAuthCallbackUrl,
   buildSocialLoginUrl,
   PKCE_VERIFIER_BYTES,
   readAuthCallback,
@@ -30,7 +29,8 @@ export interface ICapabilityDependencies {
   platform: 'ios' | 'android';
   /** 예: https://contest.example/backend */
   apiBase: string;
-  appScheme: string;
+  /** 검증된 App Link·Universal Link 콜백. 예: https://contest.example/app-auth/callback */
+  authCallbackUrl: string;
   share: (content: ShareContent, options: ShareOptions) => Promise<ShareAction>;
   /** 복사에 실패하면 false */
   copyText: (text: string) => Promise<boolean>;
@@ -38,7 +38,7 @@ export interface ICapabilityDependencies {
   notify: (type: TNotificationType) => Promise<void>;
   /** expo-web-browser openBrowserAsync. iOS는 사용자가 닫을 때, Android는 연 직후에 끝난다. */
   openBrowser: (url: string) => Promise<{ type: string }>;
-  /** expo-web-browser openAuthSessionAsync */
+  /** expo-web-browser openAuthSessionAsync. redirectUrl은 https 콜백이다(iOS는 Universal Link 콜백으로 연다). */
   openAuthSession: (url: string, redirectUrl: string) => Promise<{ type: string; url?: string }>;
   randomBytes: (count: number) => Uint8Array;
   sha256: (text: string) => Promise<Uint8Array>;
@@ -73,7 +73,7 @@ export function createCapabilities(deps: ICapabilityDependencies): Required<TNat
   async function runSocialLogin(provider: TSocialProvider) {
     const verifier = encodeBase64Url(deps.randomBytes(PKCE_VERIFIER_BYTES));
     const challenge = encodeBase64Url(await deps.sha256(verifier));
-    const callbackUrl = buildAuthCallbackUrl(deps.appScheme);
+    const callbackUrl = deps.authCallbackUrl;
     const result = await deps
       .openAuthSession(buildSocialLoginUrl(deps.apiBase, provider, challenge), callbackUrl)
       .catch(() => {
