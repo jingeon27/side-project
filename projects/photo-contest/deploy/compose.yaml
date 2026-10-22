@@ -9,14 +9,14 @@ x-api-environment: &api-environment
   DATABASE_URL: postgresql://photo_contest:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/photo_contest?schema=public
   ENABLE_DEV_LOGIN: 'false'
   ENABLE_TEST_API: 'false'
-  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
-  STORAGE_DIR: /var/lib/photo-contest/media
-  S3_BUCKET: ${S3_BUCKET:-}
+  # 사진·동영상은 비공개 S3 호환 버킷에만 둔다. 브라우저가 서명 URL로 직접 올리고 읽는다.
+  S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
   S3_ENDPOINT: ${S3_ENDPOINT:-}
   S3_REGION: ${S3_REGION:-auto}
   S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  S3_KEY_PREFIX: ${S3_KEY_PREFIX:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}
 
 services:
   db:
@@ -50,8 +50,6 @@ services:
     restart: unless-stopped
     init: true
     environment: *api-environment
-    volumes:
-      - media:/var/lib/photo-contest/media
     networks: [app, data]
     depends_on:
       db: { condition: service_healthy }
@@ -126,6 +124,5 @@ networks:
 
 volumes:
   pgdata:
-  media:
   caddy_data:
   caddy_config:

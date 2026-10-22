@@ -5,11 +5,25 @@ import { expect, test } from '@playwright/test';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
-test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({ page, request }) => {
+test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({
+  page,
+  request,
+}) => {
   const origin = new URL(process.env.DEPLOY_SMOKE_ORIGIN ?? 'https://localhost:3382').origin;
+  // 미디어는 서버 volume이 아니라 S3 호환 버킷(검증에서는 test-kit 대역)으로 브라우저가 직접 오간다.
+  const storage = new URL(process.env.DEPLOY_SMOKE_STORAGE ?? 'http://storage.localhost:3383').origin;
   await page.route('**/*', (route) =>
-    new URL(route.request().url()).origin === origin ? route.continue() : route.abort(),
+    [origin, storage].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort(),
   );
+  /** 고정 경로는 권한만 확인하고 캐시 금지 307로 짧은 서명 GET에 보낸다. */
+  const expectStorageRedirect = async (response: { status(): number; headers(): Record<string, string> }) => {
+    expect(response.status()).toBe(307);
+    expect(response.headers()['cache-control']).toBe('private, no-store');
+    const signed = new URL(response.headers()['location'] ?? '');
+    expect(signed.origin).toBe(storage);
+    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+    return signed.toString();
+  };
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
@@ -51,18 +65,26 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   await createMediaPost('운영 동영상', true);
   const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
   const photo = latest.getByRole('article', { name: '운영 사진', exact: true });
-  const mediaUrl = await photo.getByRole('img', { name: '운영 사진', exact: true }).getAttribute('src');
+  const photoImage = photo.getByRole('img', { name: '운영 사진', exact: true });
+  const mediaUrl = await photoImage.getAttribute('src');
   if (!mediaUrl) throw new Error('사진 주소가 있어야 한다');
-  expect((await page.request.get(mediaUrl)).status()).toBe(200);
-  expect((await request.get(mediaUrl)).status()).toBe(200);
+  await expectStorageRedirect(await page.request.get(mediaUrl, { maxRedirects: 0 }));
+  await expectStorageRedirect(await request.get(mediaUrl, { maxRedirects: 0 }));
+  await expect
+    .poll(() => photoImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
   const videoUrl = await latest
     .getByRole('article', { name: '운영 동영상', exact: true })
     .locator('video')
     .getAttribute('src');
   if (!videoUrl) throw new Error('영상 주소가 있어야 한다');
-  const range = await page.request.get(videoUrl, { headers: { Range: 'bytes=0-31' } });
-  expect(range.status()).toBe(206);
-  expect((await range.body()).length).toBe(32);
+  const signedVideo = await expectStorageRedirect(await page.request.get(videoUrl, { maxRedirects: 0 }));
+  // 브라우저처럼 서명 GET에 Range를 보내 저장소가 구간을 돌려주는지 확인한다.
+  const range = await page.evaluate(async (url) => {
+    const response = await fetch(url, { headers: { Range: 'bytes=0-31' } });
+    return { status: response.status, length: (await response.arrayBuffer()).byteLength };
+  }, signedVideo);
+  expect(range).toEqual({ status: 206, length: 32 });
   const authConfig = await request.get('/backend/auth/config');
   expect(authConfig.status()).toBe(200);
   expect(await authConfig.json()).toEqual({ developmentLogin: false, google: false, kakao: false });
@@ -102,8 +124,8 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     .getByRole('img', { name: '운영 비공개 사진', exact: true })
     .getAttribute('src');
   if (!privateUrl) throw new Error('비공개 사진 주소가 있어야 한다');
-  expect((await page.request.get(privateUrl)).status()).toBe(200);
-  expect((await request.get(privateUrl)).status()).toBe(401);
+  await expectStorageRedirect(await page.request.get(privateUrl, { maxRedirects: 0 }));
+  expect((await request.get(privateUrl, { maxRedirects: 0 })).status()).toBe(401);
   const privateHtml = await (
     await request.get(privatePath, { headers: { 'User-Agent': 'Twitterbot' } })
   ).text();
@@ -115,14 +137,15 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   const directory = process.env.SMOKE_COMPOSE_DIR;
   const project = process.env.SMOKE_COMPOSE_PROJECT;
   if (!directory || !project?.startsWith('pc-smoke-')) throw new Error('격리 Compose 정보가 필요합니다.');
+  const files = ['-f', `${directory}/compose.yaml`];
+  if (process.env.SMOKE_COMPOSE_OVERRIDE) files.push('-f', process.env.SMOKE_COMPOSE_OVERRIDE);
   await promisify(execFile)('docker', [
     'compose',
     '--project-name',
     project,
     '--env-file',
     `${directory}/.env`,
-    '-f',
-    `${directory}/compose.yaml`,
+    ...files,
     'restart',
     'api',
     'web',
@@ -133,8 +156,7 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     project,
     '--env-file',
     `${directory}/.env`,
-    '-f',
-    `${directory}/compose.yaml`,
+    ...files,
     'up',
     '-d',
     '--wait',
@@ -150,7 +172,10 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     expect(response?.status()).toBe(200);
     await expect(photo.getByRole('button', { name: '운영 사진 댓글 1개', exact: true })).toBeVisible();
   }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
-  expect((await page.request.get(mediaUrl)).status()).toBe(200);
+  await expectStorageRedirect(await page.request.get(mediaUrl, { maxRedirects: 0 }));
+  await expect
+    .poll(() => photoImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
   await page.goto('/me');
   await expect(page.getByRole('heading', { name: '배포 검증 회원', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /운영 이미지 그룹/ })).toBeVisible();
