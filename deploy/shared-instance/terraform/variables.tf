@@ -398,3 +398,27 @@ variable "instance_termination_protection" {
   type        = bool
   default     = true
 }
+
+# DNS(선택)
+
+variable "route53_zone_id" {
+  description = "네 호스트(game, api.game, contest, api.contest)의 A 레코드를 만들 Route 53 호스팅 영역 ID. 비워 두면 레코드를 만들지 않고 dns_records 출력으로 안내한다. 같은 이름의 레코드가 이미 있으면 덮어쓰지 않고 실패한다."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.route53_zone_id == "" || can(regex("^Z[A-Z0-9]{1,31}$", var.route53_zone_id))
+    error_message = "비워 두거나 Route 53 호스팅 영역 ID(Z로 시작)여야 한다."
+  }
+}
+
+variable "dns_ttl" {
+  description = "Route 53 A 레코드 TTL(초)."
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.dns_ttl >= 60 && var.dns_ttl <= 86400 && floor(var.dns_ttl) == var.dns_ttl
+    error_message = "60~86400 사이의 정수여야 한다."
+  }
+}

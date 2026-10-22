@@ -107,3 +107,41 @@ output "ssh_host_keys_command" {
   description = "cloud-init이 콘솔 출력에 남긴 SSH host key를 AWS API로 읽는 명령. 검증한 host key로 SIDE_DEPLOY_SSH_KNOWN_HOSTS를 만든다."
   value       = "aws ec2 get-console-output --region ${var.region} --instance-id ${aws_instance.host.id} --latest --output text | sed -n '/BEGIN SSH HOST KEY KEYS/,/END SSH HOST KEY KEYS/p'"
 }
+
+# DNS
+
+output "dns_records" {
+  description = "네 호스트가 가리킬 A 레코드(이름 => 탄력적 IP)."
+  value       = { for key, host in local.dns_hosts : host => aws_eip.host.public_ip }
+}
+
+output "dns_managed_by_terraform" {
+  description = "Terraform이 Route 53 A 레코드를 만들었는지. false면 dns_records대로 DNS 공급자에서 직접 만든다."
+  value       = local.manage_dns
+}
+
+# 서버·GitHub 설정 안내(비밀 없음)
+
+output "host_env" {
+  description = "/srv/side-project/.env에 옮길 값. ACME_EMAIL은 host.env.example 값을 확인해 함께 둔다. 비밀은 없다."
+  value       = <<-EOT
+    GAME_FEEDBACK_DOMAIN=${var.game_feedback_domain}
+    GAME_FEEDBACK_API_DOMAIN=api.${var.game_feedback_domain}
+    PHOTO_CONTEST_DOMAIN=${var.photo_contest_domain}
+    PHOTO_CONTEST_API_DOMAIN=api.${var.photo_contest_domain}
+    RDS_REGION=${var.region}
+    RDS_INSTANCE_ID=${aws_db_instance.this.identifier}
+    RDS_HOST=${aws_db_instance.this.address}
+    GAME_FEEDBACK_S3_BUCKET=${aws_s3_bucket.service["game-feedback"].bucket}
+    PHOTO_CONTEST_S3_BUCKET=${aws_s3_bucket.service["photo-contest"].bucket}
+  EOT
+}
+
+output "github_environment_variables" {
+  description = "GitHub Environment production·photo-contest-production에 넣을 Variable. SIDE_DEPLOY_SSH_KNOWN_HOSTS(ssh_host_keys_command로 확인)와 Secret SIDE_DEPLOY_SSH_KEY는 따로 등록한다."
+  value = {
+    SIDE_DEPLOY_HOST     = aws_eip.host.public_ip
+    SIDE_DEPLOY_SSH_USER = local.ssh_user
+    SIDE_DEPLOY_SSH_PORT = "22"
+  }
+}
