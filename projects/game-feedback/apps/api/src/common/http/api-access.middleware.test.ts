@@ -45,7 +45,7 @@ describe('API access checks for paths that differ only by letter case', () => {
   );
   it('loads the session and applies the read budget to case variants', async () => {
     const { access, loadSession } = middleware();
-    for (const _ of Array.from({ length: 240 })) await call(access, '/API/posts').done;
+    for (let count = 0; count < 240; count++) await call(access, '/API/posts').done;
     expect(loadSession).toHaveBeenCalledTimes(240);
     const { done, res } = call(access, '/api/posts');
     await done;
