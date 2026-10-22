@@ -1161,8 +1161,8 @@ Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게
 
 검증 결과:
 
-- API 단위 Vitest(앱 로그인 콜백 회귀·운영 설정 포함) 통과, typecheck 통과. 통합 레인(`app-auth.service.integration.test.ts`)은 수정만 하고 CI에 맡겼다.
-- Web Vitest 46개 파일·190개, Bridge 13개, Mobile 74개(`app.config.spec.ts`·`native-login.test.tsx` 포함) 통과. Web/Mobile/Bridge typecheck, Web·Mobile lint, Mobile `bundle:check`(Android·iOS Metro) 통과.
+- develop(#41~#52 머지 후, 99caadd8) 위로 rebase한 뒤 다시 검증했다. `check:game-feedback`(전체 typecheck, #50의 API·패키지 ESLint, Web·Mobile·Admin lint)와 SDK 재생성 diff 없음, API 단위 Vitest 26개 파일·161개(앱 로그인 콜백 회귀·운영 설정 포함) 통과. 통합 레인(`app-auth.service.integration.test.ts`, #41의 `banned-identity.integration.test.ts` 기대값을 https 콜백으로 수정)은 수정만 하고 CI에 맡겼다.
+- Web Vitest 52개 파일·216개(`next.config.spec.ts`: #42 공통 보안 헤더에서 콜백 경로 제외·`/.well-known` 다시 쓰기), Bridge 13개, Mobile 15개 파일·83개(`app.config.spec.ts`·`native-login.test.tsx` 포함) 통과. Mobile `bundle:check`(Android·iOS Metro)와 변경 파일 Prettier 통과.
 - `expo config`: 운영 값을 주면 entitlements `applinks:`·`webcredentials:`, MainActivity `android:autoVerify="true"` https·host·`/app-auth/callback` intent filter, Podfile `ios.deploymentTarget` 17.4. 값 없이 실행하면 빠진 이름을 담은 오류로 멈춘다.
 - Playwright(Web `e2e/app-links.spec.ts`, Mobile `app-shell` 콜백 단언)와 production·공통 인스턴스 smoke의 `/.well-known`·콜백 확인은 작성만 하고 CI에 맡겼다. 서버·시뮬레이터·Docker·`next build`·EAS 빌드는 실행하지 않았다.
 
