@@ -175,7 +175,7 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 공용 린트와 오버레이
 
-저장소 packages/eslint-config의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 바로 옆 <규칙>.spec.ts에서 실제 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/lib가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
+저장소 packages/eslint-config의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<분류>/<규칙>/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 같은 폴더의 <규칙>.spec.ts가 그 규칙의 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/rules/fsd/fsd.helper.ts가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
 
 시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
 
