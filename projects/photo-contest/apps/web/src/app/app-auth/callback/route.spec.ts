@@ -33,6 +33,7 @@ describe('앱 로그인 콜백 안내 페이지', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('referrer-policy')).toBe('no-referrer');
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
     expect(policy).toContain("default-src 'none'");
     expect(policy).toContain(`script-src ${inlineHashes(html, 'script').join(' ')}`);
     expect(policy).toContain(`style-src ${inlineHashes(html, 'style').join(' ')}`);

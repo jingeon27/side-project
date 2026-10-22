@@ -59,6 +59,8 @@ export function appAuthCallbackResponse() {
       'Referrer-Policy': 'no-referrer',
       'X-Robots-Tag': 'noindex, nofollow',
       'X-Content-Type-Options': 'nosniff',
+      // next.config의 공통 보안 헤더에서 이 경로만 빠지므로 프레임 차단을 직접 붙인다.
+      'X-Frame-Options': 'DENY',
       'Content-Security-Policy': CONTENT_SECURITY_POLICY,
     },
   });
