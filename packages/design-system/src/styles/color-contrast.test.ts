@@ -24,3 +24,18 @@ describe('포커스 링 대비', () => {
     expect(resolveColor('focus-ring', 'dark')).toBe(resolveColor('accent', 'dark'));
   });
 });
+
+describe('글자 토큰 대비', () => {
+  it.each(colorModes)('%s 모드에서 muted·danger 글자가 바탕과 4.5:1 이상이어야 한다', (mode) => {
+    for (const text of ['muted', 'danger']) {
+      for (const background of pageBackgrounds) {
+        expect
+          .soft(
+            contrastRatio(resolveColor(text, mode), resolveColor(background, mode)),
+            `${text} / ${background}`,
+          )
+          .toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});

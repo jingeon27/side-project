@@ -24,7 +24,7 @@ import { ButtonLink } from '@side/design-system/next';
 
 입력은 16px, 일반 버튼은 44px, 주 버튼은 50px를 기준으로 한다. 공통 base는 키보드 포커스·터치·reduced motion을 포함한다. 전역 포커스 링은 `focus-ring` 토큰으로 그리며 라이트에서는 짙은 오렌지(흰 바탕 5.98:1), 다크에서는 accent를 써서 WCAG 1.4.11의 3:1을 지킨다. 앱의 `#pc-main`, 토스트 위치, 내비게이션, 화면 레이아웃은 포함하지 않는다. 새 토큰을 더하면 `src/lib/cn.helper.ts`의 tailwind-merge 설정도 함께 갱신한다.
 
-html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이 기기 설정 또는 명시한 모드를 따른다. 쿠키 저장과 프로필 설정은 앱에서 처리한다. 속성을 지정하지 않은 소비 앱은 기존 기본 테마를 사용한다. 오렌지 accent 위의 글자는 `on-accent`로 고정해 다크 모드에서도 대비를 유지한다.
+html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이 기기 설정 또는 명시한 모드를 따른다. 쿠키 저장과 프로필 설정은 앱에서 처리한다. 속성을 지정하지 않은 소비 앱은 기존 기본 테마를 사용한다. 오렌지 accent 위의 글자는 `on-accent`, 메달(gold·silver·bronze) 배경 위의 글자는 `on-medal`로 고정해 다크 모드에서도 대비를 유지한다. 배지 tone은 모든 모드에서 글자 대비 4.5:1 이상을 지키며 `Badge.test.tsx`가 토큰 값으로 계산해 확인한다.
 
 ## 공개 UI
 

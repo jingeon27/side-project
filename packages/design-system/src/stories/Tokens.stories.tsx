@@ -34,6 +34,7 @@ const colors = [
   'gold',
   'silver',
   'bronze',
+  'on-medal',
 ] as const;
 
 export const Colors: TStory = {
