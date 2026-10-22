@@ -62,3 +62,17 @@ variable "availability_zones" {
     error_message = "region에 속한 서로 다른 AZ 두 개를 지정한다."
   }
 }
+
+variable "ssh_allowed_cidrs" {
+  description = <<-EOT
+    SSH(22)를 허용할 IPv4 CIDR 목록. 기본 빈 목록이면 22번 규칙을 만들지 않고 SSM Session Manager(enable_ssm_session_manager)로 접속한다.
+    GitHub-hosted runner의 SSH 배포(ci-upload.sh)는 22번이 runner에 열려 있어야 한다. runner IP는 범위가 넓고 바뀌므로 키 전용 인증과 함께 0.0.0.0/0을 열지, self-hosted·고정 IP runner를 쓸지 정한다.
+  EOT
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for cidr in var.ssh_allowed_cidrs : can(cidrnetmask(cidr))])
+    error_message = "IPv4 CIDR이어야 한다(예: 203.0.113.10/32)."
+  }
+}
