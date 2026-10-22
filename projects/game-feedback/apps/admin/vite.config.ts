@@ -4,6 +4,13 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
+// 다른 사이트가 로컬 관리자 화면을 frame으로 띄워 운영 세션으로 클릭을 유도하지 못하게 한다.
+const adminSecurityHeaders = {
+  'Content-Security-Policy': "frame-ancestors 'none'",
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+};
 function localAdmin(port: number): Plugin {
   const guard = (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     if (
@@ -65,7 +72,21 @@ export default defineConfig(({ mode }) => {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
       dedupe: ['react', 'react-dom'],
     },
-    server: { host: '127.0.0.1', port, strictPort: true, allowedHosts: ['localhost', '127.0.0.1'], proxy },
-    preview: { host: '127.0.0.1', port, strictPort: true, allowedHosts: ['localhost', '127.0.0.1'], proxy },
+    server: {
+      host: '127.0.0.1',
+      port,
+      strictPort: true,
+      allowedHosts: ['localhost', '127.0.0.1'],
+      headers: adminSecurityHeaders,
+      proxy,
+    },
+    preview: {
+      host: '127.0.0.1',
+      port,
+      strictPort: true,
+      allowedHosts: ['localhost', '127.0.0.1'],
+      headers: adminSecurityHeaders,
+      proxy,
+    },
   };
 });

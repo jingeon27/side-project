@@ -14,6 +14,7 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
    - `GF_ADMIN_API_ORIGIN`(기본 `http://localhost:4300`)은 `localhost`·`127.0.0.1`의 `http:` origin만 허용하고 경로·계정 정보를 거부한다. 운영 API도 SSH 터널의 로컬 포트로만 연결한다.
    - `GF_ADMIN_ACCESS_TOKEN`은 `^[A-Za-z0-9_-]{43}$`이어야 하고, 값이 있으면 `GF_ADMIN_WEB_ORIGIN`은 `https://`로 시작해야 한다.
 5. dev·preview 모두 `host: '127.0.0.1'`, `strictPort: true`, `allowedHosts: ['localhost', '127.0.0.1']`이다. 포트는 `GF_ADMIN_PORT`(기본 3303)이며 공인 IP 바인딩이나 host 허용 확장을 하지 않는다.
+6. dev·preview 응답은 `X-Frame-Options: DENY`·CSP `frame-ancestors 'none'`·`nosniff`·`Referrer-Policy: no-referrer`를 보낸다. 운영 모드에서는 모든 요청에 토큰이 붙으므로 다른 사이트가 이 화면을 frame으로 띄워 클릭을 유도하지 못하게 하는 장치다.
 
 ## 토큰 경계
 
