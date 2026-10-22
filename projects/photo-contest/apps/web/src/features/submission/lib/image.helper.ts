@@ -68,13 +68,12 @@ function keepOriginal(file: File): IPreparedImage {
 }
 
 /**
- * 올리기 전에 긴 변 maxSide(기본 2048px) 이하 JPEG로 다시 그린다(방향을 바로잡고 위치 정보 같은 메타데이터를 버린다).
+ * 올리기 전에 긴 변 2048px 이하 JPEG로 다시 그린다(방향을 바로잡고 위치 정보 같은 메타데이터를 버린다).
  * 브라우저가 디코드하지 못하면 지원 형식(JPEG/PNG/WebP)의 원본을 보낸다. 이 경우 메타데이터도 남는다.
  */
 export async function prepareUploadImage<TImage extends IDecodedImage>(
   file: File,
   codec: IImageCodec<TImage>,
-  maxSide = UPLOAD_MAX_SIDE,
 ): Promise<IPreparedImage> {
   let image: TImage;
   try {
@@ -85,7 +84,7 @@ export async function prepareUploadImage<TImage extends IDecodedImage>(
   try {
     const blob = await codec.encodeJpeg(
       image,
-      fitWithin(image.width, image.height, maxSide),
+      fitWithin(image.width, image.height, UPLOAD_MAX_SIDE),
       UPLOAD_JPEG_QUALITY,
     );
     return blob ? { body: blob, contentType: 'image/jpeg' } : keepOriginal(file);

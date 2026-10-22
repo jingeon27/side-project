@@ -4,7 +4,6 @@ import { useId } from 'react';
 
 import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
   CompleteGroupAvatarUploadDocument,
   DiscoverGroupsDocument,
@@ -26,8 +25,6 @@ import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { groupProfileSchema } from '../model/group-profile.schema';
 import { GroupAvatarField } from './GroupAvatarField';
-
-const AVATAR_MAX_SIDE = 512;
 
 function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQuery>; onClose: () => void }) {
   const { data } = useReadQuery(queryRef);
@@ -58,13 +55,11 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
             try {
               let avatarId: string | undefined;
               if (avatar) {
-                // 서버가 줄이지 않으므로 목록·탐색에 그대로 쓰일 대표 사진을 브라우저에서 줄인다.
-                const image = await prepareUploadImage(avatar, browserImageCodec, AVATAR_MAX_SIDE);
                 const { data } = await requestUpload({
-                  variables: { groupId: group.id, contentType: image.contentType, byteSize: image.body.size },
+                  variables: { groupId: group.id, contentType: avatar.type, byteSize: avatar.size },
                 });
                 if (!data) return;
-                await uploadToStorage(data.requestGroupAvatarUpload, image.body);
+                await uploadToStorage(data.requestGroupAvatarUpload, avatar);
                 const { data: completed } = await completeUpload({
                   variables: { uploadId: data.requestGroupAvatarUpload.id },
                 });
@@ -77,8 +72,7 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
               toast.success('그룹 프로필을 수정했어요');
               onClose();
             } catch (error) {
-              if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
-                form.setError('avatar', { message: error.message });
+              if (error instanceof StorageUploadError) form.setError('avatar', { message: error.message });
             }
           })}
         >

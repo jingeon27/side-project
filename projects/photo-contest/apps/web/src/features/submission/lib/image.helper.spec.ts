@@ -53,16 +53,6 @@ describe('파일 종류', () => {
 });
 
 describe('prepareUploadImage', () => {
-  it('대표 사진처럼 작게 쓰는 사진은 지정한 긴 변으로 줄여야 한다', async () => {
-    const { value, encodeJpeg } = codec({ width: 1024, height: 768 });
-    await prepareUploadImage(file('avatar.png', 'image/png'), value, 512);
-    expect(encodeJpeg).toHaveBeenCalledWith(
-      expect.anything(),
-      { width: 512, height: 384 },
-      expect.any(Number),
-    );
-  });
-
   it('디코드할 수 있으면 긴 변 2048px JPEG로 다시 그려야 한다', async () => {
     const { value, close, encodeJpeg } = codec();
 
