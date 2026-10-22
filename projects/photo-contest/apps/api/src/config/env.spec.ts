@@ -4,7 +4,7 @@ import {
   appVersions,
   assertProductionConfig,
   developmentLoginEnabled,
-  mobileAppScheme,
+  mobileAuthCallbackUrl,
   trustedProxyHops,
   webOrigin,
 } from './env';
@@ -42,16 +42,67 @@ describe('앱 버전 설정', () => {
   });
 });
 
-describe('앱 scheme 설정', () => {
-  it('설정이 없거나 형식이 틀리거나 웹 scheme이면 photocontest를 써야 한다', () => {
-    vi.stubEnv('MOBILE_APP_SCHEME', '');
-    expect(mobileAppScheme()).toBe('photocontest');
-    for (const invalid of ['Photo', '1app', 'my app', 'app://', 'https', 'javascript']) {
-      vi.stubEnv('MOBILE_APP_SCHEME', invalid);
-      expect(mobileAppScheme()).toBe('photocontest');
+describe('앱 로그인 콜백 설정', () => {
+  it('설정이 없으면 WEB_ORIGIN의 /app-auth/callback을 써야 한다', () => {
+    vi.stubEnv('WEB_ORIGIN', 'http://localhost:3200');
+    vi.stubEnv('MOBILE_AUTH_CALLBACK_URL', '');
+    expect(mobileAuthCallbackUrl()).toBe('http://localhost:3200/app-auth/callback');
+  });
+
+  it('WEB_ORIGIN의 콜백 경로와 정확히 같을 때만 설정을 따르고 아니면 기본값을 써야 한다', () => {
+    vi.stubEnv('WEB_ORIGIN', 'https://contest.example');
+    vi.stubEnv('MOBILE_AUTH_CALLBACK_URL', 'https://CONTEST.example:443/app-auth/callback');
+    expect(mobileAuthCallbackUrl()).toBe('https://contest.example/app-auth/callback');
+    for (const invalid of [
+      'photocontest://auth/callback',
+      'http://contest.example/app-auth/callback',
+      'https://contest.example.evil.example/app-auth/callback',
+      'https://contest.example/app-auth/callback/',
+      'https://contest.example/App-Auth/callback',
+      'https://contest.example/app-auth/callback?next=/',
+      'https://contest.example/app-auth/callback#x',
+      'https://user@contest.example/app-auth/callback',
+      'not a url',
+    ]) {
+      vi.stubEnv('MOBILE_AUTH_CALLBACK_URL', invalid);
+      expect(mobileAuthCallbackUrl(), invalid).toBe('https://contest.example/app-auth/callback');
     }
-    vi.stubEnv('MOBILE_APP_SCHEME', 'photo-contest.dev+1');
-    expect(mobileAppScheme()).toBe('photo-contest.dev+1');
+  });
+});
+
+describe('운영 설정 검증', () => {
+  function stubProductionEnv() {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('DEPLOYMENT_TARGET', '');
+    vi.stubEnv('WEB_ORIGIN', 'https://contest.example');
+    vi.stubEnv('DATABASE_URL', 'postgresql://contest@db.example/contest');
+    vi.stubEnv('S3_BUCKET', 'contest-media');
+    vi.stubEnv('S3_ENDPOINT', '');
+    vi.stubEnv('S3_KEY_PREFIX', '');
+    for (const name of ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'KAKAO_CLIENT_ID', 'KAKAO_CLIENT_SECRET'])
+      vi.stubEnv(name, '');
+  }
+
+  it('앱 로그인 콜백이 WEB_ORIGIN과 같은 origin의 https 콜백이면 시작을 허용해야 한다', () => {
+    stubProductionEnv();
+    vi.stubEnv('MOBILE_AUTH_CALLBACK_URL', 'https://contest.example/app-auth/callback');
+    expect(() => assertProductionConfig()).not.toThrow();
+  });
+
+  it('앱 로그인 콜백이 없거나 다른 origin·커스텀 스킴이면 시작을 멈춰야 한다', () => {
+    stubProductionEnv();
+    for (const invalid of [
+      '',
+      'photocontest://auth/callback',
+      'https://other.example/app-auth/callback',
+      'http://contest.example/app-auth/callback',
+      'https://contest.example/other',
+    ]) {
+      vi.stubEnv('MOBILE_AUTH_CALLBACK_URL', invalid);
+      expect(() => assertProductionConfig(), invalid).toThrow(
+        'Production requires MOBILE_AUTH_CALLBACK_URL=https://contest.example/app-auth/callback',
+      );
+    }
   });
 });
 
@@ -91,6 +142,7 @@ describe('실행 환경 설정', () => {
       KAKAO_CLIENT_ID: '',
       KAKAO_CLIENT_SECRET: '',
       DEPLOYMENT_TARGET: '',
+      MOBILE_AUTH_CALLBACK_URL: 'https://contest.example/app-auth/callback',
     };
     const check = (overrides: Record<string, string>) => {
       for (const [name, value] of Object.entries({ ...production, ...overrides })) vi.stubEnv(name, value);

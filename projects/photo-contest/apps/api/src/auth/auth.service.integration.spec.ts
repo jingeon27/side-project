@@ -25,7 +25,9 @@ const KAKAO = {
 const STATE_COOKIE = 'contest_oauth_state';
 const SESSION_COOKIE = 'contest_session';
 const WEB_LOGIN_ERROR = `${TEST_WEB_ORIGIN}/?loginError=1`;
-const APP_LOGIN_ERROR = 'photocontest://auth/callback?error=login_failed';
+/** 개발·테스트의 기본 앱 로그인 콜백: WEB_ORIGIN의 검증된 https 링크 경로 */
+const APP_CALLBACK_URL = `${TEST_WEB_ORIGIN}/app-auth/callback`;
+const APP_LOGIN_ERROR = `${APP_CALLBACK_URL}?error=login_failed`;
 const APP_LOGIN_REJECTED = { message: '앱 로그인 요청을 확인할 수 없습니다.' };
 const INVALID_APP_CHALLENGE = { message: '앱 로그인 요청 형식이 올바르지 않습니다.' };
 
@@ -97,14 +99,14 @@ describe('OAuth와 앱 로그인', () => {
     return api.http().post('/auth/app/exchange').set('Origin', TEST_WEB_ORIGIN).send(body);
   }
 
-  /** 앱이 시작한 OAuth를 끝까지 진행해 앱 scheme으로 받은 일회용 코드를 돌려준다. */
+  /** 앱이 시작한 OAuth를 끝까지 진행해 앱 로그인 콜백으로 받은 일회용 코드를 돌려준다. */
   async function appLoginCode(verifier: string, sub: string) {
     const start = await startLogin('google', { app_challenge: pkceChallenge(verifier) });
     stubGoogle({ sub, name: '앱 친구' });
     const response = await callback('google', { state: start.state, code: 'provider-code' }, start.cookie);
     expect(response.status).toBe(302);
     const location = new URL(locationOf(response));
-    expect(`${location.protocol}//${location.host}${location.pathname}`).toBe('photocontest://auth/callback');
+    expect(`${location.origin}${location.pathname}`).toBe(APP_CALLBACK_URL);
     return location.searchParams.get('code') ?? '';
   }
 
@@ -323,7 +325,7 @@ describe('OAuth와 앱 로그인', () => {
       expect(response.body).toEqual({ message: '이 소셜 로그인은 아직 설정되지 않았습니다.' });
     });
 
-    it('콜백이 성공하면 세션 대신 2분짜리 일회용 코드를 앱 scheme으로 넘겨야 한다', async () => {
+    it('콜백이 성공하면 세션 대신 2분짜리 일회용 코드를 앱 로그인 콜백으로 넘겨야 한다', async () => {
       const verifier = newVerifier();
       const start = await startLogin('google', { app_challenge: pkceChallenge(verifier) });
       stubGoogle({ sub: 'google-app-user', name: '앱 사용자' });
@@ -331,7 +333,8 @@ describe('OAuth와 앱 로그인', () => {
       const response = await callback('google', { state: start.state, code: 'provider-code' }, start.cookie);
       expect(response.status).toBe(302);
       const location = new URL(locationOf(response));
-      expect(response.headers.location).toMatch(/^photocontest:\/\/auth\/callback\?code=[A-Za-z0-9_-]{43}$/);
+      expect(locationOf(response).slice(0, APP_CALLBACK_URL.length + 6)).toBe(`${APP_CALLBACK_URL}?code=`);
+      expect(locationOf(response).slice(APP_CALLBACK_URL.length + 6)).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(findSetCookie(response, SESSION_COOKIE)).toBeUndefined();
       expect(isClearingCookie(findSetCookie(response, STATE_COOKIE)!)).toBe(true);
 
@@ -347,7 +350,7 @@ describe('OAuth와 앱 로그인', () => {
       expect(await api.db.session.count({ where: { userId: user.id } })).toBe(0);
     });
 
-    it('앱에서 시작한 시도가 실패하면 앱 scheme으로 오류를 보내야 한다', async () => {
+    it('앱에서 시작한 시도가 실패하면 앱 로그인 콜백으로 오류를 보내야 한다', async () => {
       const failing = await startLogin('google', { app_challenge: pkceChallenge(newVerifier()) });
       stubExternalFetch({ [GOOGLE.token]: () => jsonResponse({ error: 'invalid_grant' }, 400) });
       const providerFailure = await callback(
@@ -373,23 +376,6 @@ describe('OAuth와 앱 로그인', () => {
         expired.cookie,
       );
       expect(expiredCallback.headers.location).toBe(APP_LOGIN_ERROR);
-    });
-
-    it('MOBILE_APP_SCHEME을 따르되 웹 scheme이나 틀린 형식이면 기본 scheme을 써야 한다', async () => {
-      const expectations: Array<[string, string]> = [
-        ['contestapp', 'contestapp://auth/callback?code='],
-        ['https', 'photocontest://auth/callback?code='],
-        ['Contest_App', 'photocontest://auth/callback?code='],
-      ];
-      for (const [scheme, prefix] of expectations) {
-        vi.stubEnv('MOBILE_APP_SCHEME', scheme);
-        const start = await startLogin('google', { app_challenge: pkceChallenge(newVerifier()) });
-        stubGoogle({ sub: 'google-scheme-user', name: '스킴 사용자' });
-        const response = await callback('google', { state: start.state, code: 'code' }, start.cookie);
-        const location = locationOf(response);
-        expect(location.slice(0, prefix.length), scheme).toBe(prefix);
-        expect(location.slice(prefix.length), scheme).toMatch(/^[A-Za-z0-9_-]{43}$/);
-      }
     });
 
     it('교환은 verifier가 맞으면 세션 쿠키를 만들고 코드를 한 번만 쓰게 해야 한다', async () => {

@@ -3,23 +3,13 @@ import { assertSharedInstanceConfig } from './shared-instance';
 // 테스트가 실행 중에 NODE_ENV 같은 값을 바꾸므로 모든 값은 호출할 때마다 읽는다.
 
 const DEFAULT_WEB_ORIGIN = 'http://localhost:3200';
-const DEFAULT_APP_SCHEME = 'photocontest';
 const DEFAULT_APP_VERSION = '1.0.0';
 const APP_VERSION_PATTERN = /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})$/;
-const APP_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*$/;
-// 웹 scheme으로 설정하면 일회용 코드가 웹으로 새므로 허용하지 않는다.
-const RESERVED_SCHEMES = new Set([
-  'http',
-  'https',
-  'javascript',
-  'data',
-  'file',
-  'about',
-  'blob',
-  'ftp',
-  'ws',
-  'wss',
-]);
+/**
+ * 앱 로그인 일회용 코드를 받는 웹 경로. 웹 안내 페이지, AASA·assetlinks, 앱의 associated domains·intent filter와 같은 값이다.
+ * 검증된 App Link·Universal Link만 이 경로를 앱으로 넘기므로 같은 스킴을 등록한 다른 앱이 코드를 가로채지 못한다.
+ */
+export const MOBILE_AUTH_CALLBACK_PATH = '/app-auth/callback';
 
 /** 새 S3 객체에만 붙이며 DB에 전체 키를 저장해 기존 객체도 계속 읽는다. */
 export function s3KeyPrefix() {
@@ -93,11 +83,31 @@ export function developmentLoginEnabled() {
   return process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_LOGIN === 'true';
 }
 
-/** 형식이 틀리거나 웹 scheme이면 기본값을 쓴다. */
-export function mobileAppScheme() {
-  const value = process.env.MOBILE_APP_SCHEME;
-  if (!value || !APP_SCHEME_PATTERN.test(value) || RESERVED_SCHEMES.has(value)) return DEFAULT_APP_SCHEME;
-  return value;
+/** WEB_ORIGIN의 앱 로그인 콜백 경로와 정확히 같은 URL만 받는다(쿼리·해시·계정 정보 없음). */
+function configuredMobileAuthCallbackUrl() {
+  const value = optional('MOBILE_AUTH_CALLBACK_URL');
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    const exact =
+      url.origin === webOrigin() &&
+      url.pathname === MOBILE_AUTH_CALLBACK_PATH &&
+      !url.search &&
+      !url.hash &&
+      !url.username &&
+      !url.password;
+    return exact ? `${url.origin}${url.pathname}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 앱 로그인 코드를 보낼 콜백 URL. 커스텀 스킴으로는 보내지 않는다.
+ * 개발·테스트는 설정이 없거나 틀리면 WEB_ORIGIN의 같은 경로를 쓰고, 운영은 assertProductionConfig가 시작 전에 막는다.
+ */
+export function mobileAuthCallbackUrl() {
+  return configuredMobileAuthCallbackUrl() ?? `${webOrigin()}${MOBILE_AUTH_CALLBACK_PATH}`;
 }
 
 function appVersion(value: string | undefined) {
@@ -190,4 +200,9 @@ export function assertProductionConfig() {
     throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and S3_BUCKET.');
   assertS3Settings();
   assertOAuthCredentials();
+  // 앱 로그인 코드는 검증된 https 콜백으로만 보낸다. 다른 origin·경로로 잘못 설정하면 코드가 앱 링크 밖으로 샌다.
+  if (!configuredMobileAuthCallbackUrl())
+    throw new Error(
+      `Production requires MOBILE_AUTH_CALLBACK_URL=${webOrigin()}${MOBILE_AUTH_CALLBACK_PATH} (same origin as WEB_ORIGIN).`,
+    );
 }
