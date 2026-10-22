@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageUploadError, uploadToStorage } from './upload-to-storage.helper';
 
+const EXPIRES_AT = '2026-10-22T00:15:00.000Z';
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('저장소 직접 업로드', () => {
@@ -13,6 +15,7 @@ describe('저장소 직접 업로드', () => {
       {
         url: 'https://storage.example',
         fields: [{ name: 'key', value: 'photos/00000000-0000-0000-0000-000000000000.jpg' }],
+        expiresAt: EXPIRES_AT,
       },
       file,
     );
@@ -37,7 +40,10 @@ describe('저장소 직접 업로드', () => {
       if (failure === 'rejected') send.mockResolvedValue(new Response(null, { status: 403 }));
       vi.stubGlobal('fetch', send);
       await expect(
-        uploadToStorage({ url: 'https://storage.example/bucket', fields: [] }, new Blob(['image'])),
+        uploadToStorage(
+          { url: 'https://storage.example/bucket', fields: [], expiresAt: EXPIRES_AT },
+          new Blob(['image']),
+        ),
       ).rejects.toThrow(StorageUploadError);
     },
   );

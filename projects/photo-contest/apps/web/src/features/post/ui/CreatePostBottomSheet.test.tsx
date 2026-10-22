@@ -5,8 +5,10 @@ import { ApolloProvider } from '@apollo/client/react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { overlay, OverlayProvider } from 'overlay-kit';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, Subject, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { toast } from '@/shared/model/toast';
 
 import { CreatePostBottomSheet } from './CreatePostBottomSheet';
 import { PostMediaPreview } from './PostMediaPreview';
@@ -177,8 +179,13 @@ describe('선택한 게시물 파일 미리보기', () => {
   });
 });
 
-/** 게시 단계까지 채운 시트. 업로드 요청은 티켓을 주고, 나머지 연산은 operationNames에 기록만 한다. */
-async function fillUploadSheet() {
+/**
+ * 게시 단계까지 채운 시트. 업로드 요청은 티켓을, 업로드 완료는 completeUpload를 응답으로 주고
+ * 모든 연산 이름을 operationNames에 기록한다.
+ */
+async function fillUploadSheet({
+  completeUpload = EMPTY,
+}: { completeUpload?: Observable<ApolloLink.Result> } = {}) {
   const user = userEvent.setup({ applyAccept: false });
   const operationNames: string[] = [];
   const client = new ApolloClient({
@@ -186,6 +193,7 @@ async function fillUploadSheet() {
     link: new ApolloLink((operation) => {
       operationNames.push(operation.operationName ?? '');
       if (operation.operationName === 'RequestPostUpload') return of({ data: { requestPostUpload: TICKET } });
+      if (operation.operationName === 'CompletePostUpload') return completeUpload;
       return EMPTY;
     }),
   });
@@ -226,5 +234,61 @@ describe('게시물 업로드 티켓', () => {
     const cached = JSON.stringify(client.extract());
     expect(cached).not.toContain('PostUploadTicket');
     expect(cached).not.toContain(TICKET.url);
+  });
+});
+
+describe('업로드 중 시트 닫기', () => {
+  it('저장소로 올리는 중에 닫으면 전송을 끊고 게시하지 않은 사실을 알려야 한다', async () => {
+    const info = vi.spyOn(toast, 'info');
+    const send = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+        }),
+    );
+    vi.stubGlobal('fetch', send);
+    const { user, operationNames } = await fillUploadSheet();
+    await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole('button', { name: '닫기' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(info).toHaveBeenCalledWith('게시물을 올리지 않았어요', expect.anything()));
+    expect(send.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+    expect(operationNames).not.toContain('CompletePostUpload');
+    expect(operationNames).not.toContain('CreatePost');
+  });
+
+  it('업로드를 마친 뒤 게시 전에 닫았으면 게시물을 만들지 않아야 한다', async () => {
+    const info = vi.spyOn(toast, 'info');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(null, { status: 204 })),
+    );
+    const completeUpload = new Subject<ApolloLink.Result>();
+    const { user, operationNames } = await fillUploadSheet({ completeUpload });
+    await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
+    await waitFor(() => expect(operationNames).toContain('CompletePostUpload'));
+
+    await user.click(screen.getByRole('button', { name: '닫기' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    act(() => {
+      completeUpload.next({
+        data: {
+          completePostUpload: {
+            __typename: 'PostUploadResult',
+            id: TICKET.id,
+            kind: 'PHOTO',
+            contentType: 'image/png',
+            byteSize: 5,
+          },
+        },
+      });
+      completeUpload.complete();
+    });
+
+    await waitFor(() => expect(info).toHaveBeenCalledWith('게시물을 올리지 않았어요', expect.anything()));
+    expect(operationNames).not.toContain('CreatePost');
   });
 });

@@ -15,7 +15,7 @@ import {
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
-import { useZodForm } from '@/shared/model/form';
+import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
@@ -66,6 +66,7 @@ export function UploadPhotoBottomSheet({
       onClose();
     },
   });
+  const beginSubmit = useAbortOnClose(isOpen);
 
   useEffect(
     () => () => {
@@ -91,18 +92,26 @@ export function UploadPhotoBottomSheet({
         <form
           id={FORM_ID}
           onSubmit={form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
+            const signal = beginSubmit();
             try {
               const image = await prepareUploadImage(photo, browserImageCodec);
+              throwIfClosed(signal);
               const { data } = await requestUpload({
                 variables: { contestId, contentType: image.body.type, byteSize: image.body.size },
               });
               if (!data) return;
-              await uploadToStorage(data.requestUploadUrl, image.body);
+              await uploadToStorage(data.requestUploadUrl, image.body, { signal });
               await completeUpload({ variables: { uploadId: data.requestUploadUrl.id } });
+              // 제출은 되돌릴 수 없으므로 닫힌 시트에서는 보내지 않는다.
+              throwIfClosed(signal);
               await createSubmission({
                 variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
               });
             } catch (error) {
+              if (signal.aborted) {
+                notifyClosedSubmit('사진을 제출하지 않았어요');
+                return;
+              }
               // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
               if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
                 form.setError('photo', { message: error.message }, { shouldFocus: true });
