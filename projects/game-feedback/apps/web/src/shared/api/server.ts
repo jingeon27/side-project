@@ -22,11 +22,20 @@ function apiOptions() {
   return { baseUrl: url.origin, signal: AbortSignal.timeout(10_000) };
 }
 /**
+ * Next aborts on `Date.now()` while prerendering, including the runtime stages tracked by
+ * `partialPrefetching` where this runs after cookies()/headers() resolve. `connection()` is not an option
+ * because `serviceContext`'s `'use cache: private'` scope also reaches here. The timestamp is never
+ * rendered, so read the wall clock through `performance`, which Next documents as unguarded.
+ */
+function epochMilliseconds() {
+  return performance.timeOrigin + performance.now();
+}
+/**
  * The API sees this server's address on every call, so SSR would share one rate-limit budget. Sign the
  * visitor address (or `internal`) with a key derived from the secret both servers already share.
  * `apps/api/src/common/http/forwarded-client.ts` verifies the same derivation within a 60-second window.
  */
-export function forwardedClientHeaders(client: string, now = Date.now()): Record<string, string> {
+export function forwardedClientHeaders(client: string, now = epochMilliseconds()): Record<string, string> {
   const secret = process.env.GF_CACHE_REVALIDATION_SECRET;
   if (!secret || secret.length < 32) return {};
   const key = createHmac('sha256', secret).update('game-feedback:forwarded-client:v1').digest();
