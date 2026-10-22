@@ -51,10 +51,16 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
     g: group.id,
     u: await userId(moderator),
   });
+  const manager = page.locator('details').filter({ has: page.getByText('카테고리 관리', { exact: true }) });
+  // 서버 HTML의 details는 hydration 전에도 열 수 있다. 스트리밍·hydration과 겹친 토글이 닫힌 채 남지 않도록
+  // 브라우저에서만 그리는 카테고리 폼이 붙은 뒤(hydration 완료) 연다.
+  const openManager = async () => {
+    await expect(manager.getByRole('textbox', { name: /새 카테고리/, includeHidden: true })).toBeAttached();
+    await page.getByText('카테고리 관리', { exact: true }).click();
+  };
   await setUser(owner);
   await page.goto(`/groups/${group.id}`);
-  await page.getByText('카테고리 관리', { exact: true }).click();
-  const manager = page.locator('details').filter({ has: page.getByText('카테고리 관리', { exact: true }) });
+  await openManager();
   for (const name of ['합성', '순간포착']) {
     await manager.getByRole('textbox', { name: /새 카테고리/ }).fill(name);
     await manager.getByRole('button', { name: '카테고리 만들기', exact: true }).click();
@@ -107,7 +113,7 @@ test('실제 프로덕션에서 카테고리 생성·등록·필터·부관리�
   expect(await canonical.text()).toContain(`rel="canonical" href="${CACHE_WEB_ORIGIN}/groups/${group.id}"`);
   await setUser(moderator);
   await page.goto(`/groups/${group.id}`);
-  await page.getByText('카테고리 관리', { exact: true }).click();
+  await openManager();
   await manager.getByRole('textbox', { name: '합성 이름', exact: false }).fill('편집');
   await manager
     .locator('li')
