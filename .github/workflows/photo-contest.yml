@@ -1,6 +1,9 @@
 name: Photo Contest
 on:
   push:
+    # Branch pushes only: a tag named like the deploy branch must not reach the deployment gate.
+    # PHOTO_CONTEST_DEPLOY_BRANCH must be one of these branches.
+    branches: [main, develop]
     paths:
       - 'projects/photo-contest/**'
       - 'packages/**'
@@ -64,13 +67,13 @@ jobs:
         if: >-
           github.event_name == 'push' &&
           vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
-          github.ref_name == vars.PHOTO_CONTEST_DEPLOY_BRANCH
+          github.ref == format('refs/heads/{0}', vars.PHOTO_CONTEST_DEPLOY_BRANCH)
         run: docker save "photo-contest-api:$GITHUB_SHA" "photo-contest-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/photo-contest-images.tar.gz"
       - uses: actions/upload-artifact@v4
         if: >-
           github.event_name == 'push' &&
           vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
-          github.ref_name == vars.PHOTO_CONTEST_DEPLOY_BRANCH
+          github.ref == format('refs/heads/{0}', vars.PHOTO_CONTEST_DEPLOY_BRANCH)
         with:
           name: photo-contest-images-${{ github.sha }}
           path: ${{ runner.temp }}/photo-contest-images.tar.gz
@@ -171,7 +174,7 @@ jobs:
     if: >-
       github.event_name == 'push' &&
       vars.PHOTO_CONTEST_DEPLOY_ENABLED == 'true' &&
-      github.ref_name == vars.PHOTO_CONTEST_DEPLOY_BRANCH
+      github.ref == format('refs/heads/{0}', vars.PHOTO_CONTEST_DEPLOY_BRANCH)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
