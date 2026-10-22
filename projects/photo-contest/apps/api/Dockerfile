@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:24-bookworm-slim AS build
+FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS build
 WORKDIR /app
 ENV YARN_ENABLE_IMMUTABLE_INSTALLS=true
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
@@ -14,7 +14,7 @@ RUN mkdir /app/graphql-schema \
     && cd projects/photo-contest/apps/api \
     && find src -name '*.graphql' -exec cp --parents {} /app/graphql-schema \;
 
-FROM node:24-bookworm-slim AS runtime
+FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/projects/photo-contest/apps/api

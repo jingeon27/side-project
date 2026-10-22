@@ -8,6 +8,8 @@ import re
 import subprocess
 import sys
 
+# Docker Hub publishes exact aws-cli versions only (there is no `2` tag); pin the reviewed multi-arch index.
+AWSCLI_IMAGE = 'amazon/aws-cli:2.38.1@sha256:733d5be1015825e4038c6016f3fa9954868ddee1f611b73be795a9cc2e706bfd'
 directory, destination = sys.argv[1:]
 settings = dict(line.strip().split('=', 1) for line in (pathlib.Path(directory) / '.env').read_text().splitlines()
                 if line.strip() and not line.lstrip().startswith('#'))
@@ -16,9 +18,10 @@ identifier = settings.get('RDS_INSTANCE_ID', '')
 host = settings.get('RDS_HOST', '')
 if region != 'ap-northeast-2' or not re.fullmatch(r'[a-z][a-z0-9-]{0,62}', identifier):
     raise SystemExit('Configure the Seoul RDS instance identifier.')
+# Host networking reaches IMDS with hop limit 1, which keeps bridge-network app containers away from the role.
 result = subprocess.run([
-    'docker', 'run', '--rm', '--network', 'bridge',
-    os.environ.get('SIDE_AWSCLI_IMAGE', 'amazon/aws-cli:2'),
+    'docker', 'run', '--rm', '--network', 'host', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true',
+    os.environ.get('SIDE_AWSCLI_IMAGE', AWSCLI_IMAGE),
     'rds', 'describe-db-instances', '--region', region,
     '--db-instance-identifier', identifier, '--output', 'json',
 ], capture_output=True, text=True)
