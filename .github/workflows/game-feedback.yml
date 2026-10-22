@@ -42,7 +42,8 @@ jobs:
         with:
           node-version: '24'
       - run: corepack enable
-      - run: yarn install --immutable
+      - id: install
+        run: yarn install --immutable
       - run: yarn format:check
       - run: yarn workspace @side/game-feedback codegen
       - name: Check generated SDK
@@ -55,7 +56,7 @@ jobs:
       - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
       - run: yarn workspace @side/game-feedback test:e2e
       - name: Verify telemetry with intercepted SDK requests
-        if: always() && !cancelled()
+        if: always() && !cancelled() && steps.install.outcome == 'success'
         env:
           GF_OBSERVABILITY_PRODUCTION: 'true'
         run: yarn workspace @game-feedback/web test:observability
@@ -73,7 +74,7 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
       - name: Stop owned test database
-        if: always()
+        if: always() && steps.install.outcome == 'success'
         run: yarn workspace @side/game-feedback db:test:stop
 
   shared-contract:
