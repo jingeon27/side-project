@@ -159,10 +159,13 @@ jobs:
     needs: [verify, containers, shared-contract]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Covers waiting for the other service on the host lock plus one deployment and its rollback.
+    # The deployment itself runs detached on the host, so a timeout only stops following it.
+    timeout-minutes: 45
     environment: production
     concurrency:
-      group: side-project-shared-instance
+      # Per service: the host flock serializes the two services without cancelling each other's queued job.
+      group: shared-instance-deploy-game-feedback
       cancel-in-progress: false
     permissions:
       contents: read
@@ -188,4 +191,5 @@ jobs:
           DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
           DEPLOY_KNOWN_HOSTS: ${{ vars.SIDE_DEPLOY_SSH_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.SIDE_DEPLOY_SSH_KEY }}
+          DEPLOY_WAIT_SECONDS: '2400'
         run: bash deploy/shared-instance/scripts/ci-upload.sh game-feedback
