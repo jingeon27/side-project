@@ -57,7 +57,7 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 데스크톱에서는 `wide:`(1280px)부터 메뉴 폭을 늘리고 피드·인기 목록을 카드로 구분한다. 그룹 글쓰기는 상단바에, 초대·멤버 정보는 GalleryFeed.sidebar에 둔다. MY는 프로필·그룹을 좌우로 나눈다. 글쓰기는 미디어·내용 2열, 댓글은 원본 게시물·대화 2열이며 시트 외곽은 화면 너비를 채운다. 댓글 시트는 높이 75%로 열리고 헤더 드래그로 안전 영역과 키보드를 제외한 전체 높이까지 확장한다. BottomSheet.Root의 snapPoints와 Base UI가 크기·드래그를 소유하며 스냅 오프셋에 맞춘 하단 패딩으로 입력창을 화면 안에 둔다.
 
-그룹 메뉴는 게시물·대회·명예의 전당을 JSX로 직접 선언한다. 대회 목록·상세·결과는 각각 QueryRef·AsyncBoundary를 갖고 공개 데이터는 RSC PreloadQuery로 HTML을 만든다. 비공개 내용은 GroupContentFrame이 canViewPosts로 막고 ClientOnly로 조회한다. 작성 폼의 PostContestField는 대회 선택 쿼리·필수값을 소유한다. 일반 좋아요와 대회 투표를 구분하고 종료 후만 결과를 조회한다. 역할 변경은 GraphQL mutation 결과와 활성 쿼리 재조회로 반영한다. 새 기능의 단위·실제 API·브라우저 테스트는 `.spec`으로 둔다.
+그룹 메뉴는 게시물·대회·명예의 전당을 JSX로 직접 선언한다. 대회 목록·상세·결과는 각각 QueryRef·AsyncBoundary를 갖고 공개 데이터는 RSC PreloadQuery로 HTML을 만든다. 비공개 내용은 GroupContentFrame이 canViewPosts로 막고 ClientOnly로 조회한다. 작성 폼의 PostContestField는 대회 선택 쿼리·필수값을 소유한다. 일반 좋아요와 대회 투표를 구분하고 종료 후만 결과를 조회한다. 역할 변경은 GraphQL mutation 결과와 활성 쿼리 재조회로 반영한다. 멤버 목록의 내보내기(그룹장은 부관리자·멤버, 부관리자는 멤버만)와 그룹장이 아닌 멤버의 그룹 나가기는 ConfirmDialog로 한 번 더 묻고, 나가면 홈 그룹 목록에서 바로 뺀다. 새 기능의 단위·실제 API·브라우저 테스트는 `.spec`으로 둔다.
 
 공개 SEO 콘텐츠와 사이트맵만 shared/api/public-cache.policy의 주기·태그로 Next fetch Data Cache를 사용한다. 공개 여부·대회 일정은 no-store로 먼저 확인한다. 개인화된 Apollo SSR·브라우저 전송은 no-store를 유지한다. app/backend/graphql은 JSON mutation의 정상·부분 성공 뒤 expire:0으로 공개 태그를 만료시키고 multipart는 스트리밍한다. sitemap Route Handler는 connection()으로 런타임 Origin을 읽되 force-dynamic으로 명시적 데이터 캐시까지 끄지 않는다. test:cache는 실제 standalone 빌드·4324/3324·격리 DB·S3 대역에서 HIT·무효화·쿠키·직접 업로드와 미디어 경로의 307 전달을 확인한다.
 

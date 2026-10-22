@@ -167,6 +167,17 @@ mutation TransferGroupOwnership($groupId: ID!, $userId: ID!) {
     ...GroupAdministration
   }
 }
+mutation RemoveGroupMember($groupId: ID!, $userId: ID!) {
+  removeGroupMember(groupId: $groupId, userId: $userId) {
+    ...GroupAdministration
+  }
+}
+mutation LeaveGroup($groupId: ID!) {
+  leaveGroup(groupId: $groupId) {
+    ...GroupAdministration
+    inviteToken
+  }
+}
 
 fragment GroupCategoryRow on GroupCategory {
   id
