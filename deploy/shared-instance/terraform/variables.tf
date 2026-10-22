@@ -293,3 +293,11 @@ variable "s3_noncurrent_version_retention_days" {
     error_message = "1 이상의 정수여야 한다."
   }
 }
+
+# IAM
+
+variable "enable_ssm_session_manager" {
+  description = "EC2 역할에 AmazonSSMManagedInstanceCore를 붙여 SSM Session Manager로 접속한다. SSH를 닫아 두는 기본 구성(ssh_allowed_cidrs = [])에서는 유일한 셸 접속 경로다."
+  type        = bool
+  default     = true
+}

@@ -68,3 +68,15 @@ output "s3_cors_origins" {
   description = "서비스별 버킷에 적용한 CORS AllowedOrigins."
   value       = { for service, config in local.services : service => config.cors.allowed_origins }
 }
+
+# IAM
+
+output "s3_iam_user_names" {
+  description = "서비스별 S3 IAM 사용자 이름. 액세스 키는 Terraform 밖에서 발급한다(README 참고)."
+  value       = { for service, user in aws_iam_user.s3 : service => user.name }
+}
+
+output "host_iam_role_name" {
+  description = "EC2 인스턴스 역할 이름(RDS DescribeDBInstances, 선택적으로 SSM)."
+  value       = aws_iam_role.host.name
+}
