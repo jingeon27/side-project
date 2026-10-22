@@ -136,7 +136,9 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
               </Button>
             </>
           )}
-          {post.mediaUrl ? <PostDownloadButton postId={id} title={post.title} /> : null}
+          {post.mediaUrl ? (
+            <PostDownloadButton postId={id} title={post.title} mediaUrl={post.mediaUrl} />
+          ) : null}
         </div>
         <p className="text-caption text-muted">
           <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>

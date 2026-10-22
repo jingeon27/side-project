@@ -1,7 +1,6 @@
 import type { ApolloDriverConfig } from '@nestjs/apollo';
 import type { GraphQLFormattedError } from 'graphql';
 import depthLimit from 'graphql-depth-limit';
-import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 
 import { isProduction } from '../../config/env';
 import { GRAPHQL_MAX_DEPTH } from '../../config/limits';
@@ -32,7 +31,6 @@ export async function graphqlOptions(): Promise<ApolloDriverConfig> {
     csrfPrevention: true,
     // 실행 오류의 기본 HTTP 200은 publicQueryCachePlugin이 유지하고 캐시용 조회만 구분한다.
     preserveHttpStatusForExecutionErrors: false,
-    resolvers: { Upload: GraphQLUpload },
     plugins: [
       // 기본 cache control 플러그인이 no-store 미들웨어의 `private, no-store`를 `no-store`로 덮어쓴다.
       ApolloServerPluginCacheControlDisabled(),

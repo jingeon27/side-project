@@ -1,0 +1,8 @@
+[
+  {
+    "AllowedOrigins": ["http://localhost:3200", "http://127.0.0.1:3200", "https://contest.example"],
+    "AllowedMethods": ["POST"],
+    "AllowedHeaders": ["Content-Type"],
+    "MaxAgeSeconds": 300
+  }
+]

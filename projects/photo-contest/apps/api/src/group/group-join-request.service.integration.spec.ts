@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
-
-import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
+import { postUpload } from '../../test/support/group-contest';
 
 const GROUP_FIELDS =
   'id name visibility role memberCount canViewPosts joinRequestPending inviteToken members{user{id}}';
@@ -59,24 +58,12 @@ describe('그룹 탐색과 가입 승인', () => {
     ).groupJoinRequests;
 
   async function createPost(groupId: string, video = false) {
-    const { requestPostUpload: ticket } = await api.gqlOk<{ requestPostUpload: { id: string; url: string } }>(
-      owner.cookie,
-      'mutation($id:ID!){requestPostUpload(groupId:$id){id url}}',
-      { id: groupId },
-    );
-    const upload = await api
-      .http()
-      .post(ticket.url.replace('/backend', ''))
-      .set('Cookie', owner.cookie)
-      .set('Origin', TEST_WEB_ORIGIN)
-      .set('Content-Type', video ? 'video/mp4' : 'image/png')
-      .send(video ? await createTestVideo() : await createTestImage());
-    expect(upload.status).toBe(201);
+    const uploadId = await postUpload(api, owner, groupId, video);
     return (
       await api.gqlOk<{ createPost: { id: string; mediaUrl: string } }>(
         owner.cookie,
         'mutation($g:ID!,$u:ID!){createPost(groupId:$g,uploadId:$u,title:"탐색 게시물",rightsConfirmed:true){id mediaUrl}}',
-        { g: groupId, u: ticket.id },
+        { g: groupId, u: uploadId },
       )
     ).createPost;
   }
@@ -132,10 +119,14 @@ describe('그룹 탐색과 가입 승인', () => {
     expect(posts.galleryPosts).toHaveLength(2);
     for (const post of posts.galleryPosts)
       expect(post).toMatchObject({ canInteract: false, canDelete: false, likedByMe: false });
-    expect((await api.http().get(photo.mediaUrl.replace('/backend', ''))).status).toBe(200);
-    const range = await api.http().get(video.mediaUrl.replace('/backend', '')).set('Range', 'bytes=0-31');
+    expect(
+      (await openStorageRedirect(await api.http().get(photo.mediaUrl.replace('/backend', '')))).status,
+    ).toBe(200);
+    const range = await openStorageRedirect(await api.http().get(video.mediaUrl.replace('/backend', '')), {
+      Range: 'bytes=0-31',
+    });
     expect(range.status).toBe(206);
-    expect(range.body.length).toBe(32);
+    expect((await range.arrayBuffer()).byteLength).toBe(32);
     expect(
       await api.gqlOk(undefined, 'query($id:ID!){postComments(postId:$id){body canDelete}}', {
         id: photo.id,
@@ -219,7 +210,7 @@ describe('그룹 탐색과 가입 승인', () => {
     });
     expect(
       (await api.http().get(post.mediaUrl.replace('/backend', '')).set('Cookie', applicant.cookie)).status,
-    ).toBe(200);
+    ).toBe(307);
     expect(
       (
         await api.gqlOk<{ galleryPosts: Array<{ id: string }> }>(applicant.cookie, POSTS, { id: group.id })
@@ -257,6 +248,6 @@ describe('그룹 탐색과 가입 승인', () => {
       ).toBe('FORBIDDEN');
     expect(
       (await api.http().get(post.mediaUrl.replace('/backend', '')).set('Cookie', owner.cookie)).status,
-    ).toBe(200);
+    ).toBe(307);
   });
 });

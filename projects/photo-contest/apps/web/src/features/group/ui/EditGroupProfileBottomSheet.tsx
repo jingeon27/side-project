@@ -5,14 +5,16 @@ import { useId } from 'react';
 import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import {
+  CompleteGroupAvatarUploadDocument,
   DiscoverGroupsDocument,
   GalleryDocument,
   GroupProfileDocument,
   MyGroupsDocument,
+  RequestGroupAvatarUploadDocument,
   UpdateGroupProfileDocument,
-  UploadGroupAvatarDocument,
   type GroupProfileQuery,
 } from '@/shared/api/generated';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -31,7 +33,8 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
     defaultValues: { name: group.name, description: group.description, avatar: null, removeAvatar: false },
   });
   const formId = useId();
-  const [upload] = useMutation(UploadGroupAvatarDocument);
+  const [requestUpload] = useMutation(RequestGroupAvatarUploadDocument);
+  const [completeUpload] = useMutation(CompleteGroupAvatarUploadDocument);
   const [save] = useMutation(UpdateGroupProfileDocument, {
     refetchQueries: [
       MyGroupsDocument,
@@ -50,16 +53,26 @@ function ProfileForm({ queryRef, onClose }: { queryRef: QueryRef<GroupProfileQue
           className="mx-auto flex w-full max-w-app flex-col gap-6 py-3"
           onSubmit={form.handleSubmit(async ({ avatar, ...values }) => {
             try {
-              const uploaded = avatar
-                ? await upload({ variables: { groupId: group.id, file: avatar } })
-                : null;
+              let avatarId: string | undefined;
+              if (avatar) {
+                const { data } = await requestUpload({
+                  variables: { groupId: group.id, contentType: avatar.type, byteSize: avatar.size },
+                });
+                if (!data) return;
+                await uploadToStorage(data.requestGroupAvatarUpload, avatar);
+                const { data: completed } = await completeUpload({
+                  variables: { uploadId: data.requestGroupAvatarUpload.id },
+                });
+                if (!completed) return;
+                avatarId = completed.completeGroupAvatarUpload.id;
+              }
               await save({
-                variables: { groupId: group.id, ...values, avatarId: uploaded?.data?.uploadGroupAvatar.id },
+                variables: { groupId: group.id, ...values, avatarId },
               });
               toast.success('그룹 프로필을 수정했어요');
               onClose();
-            } catch {
-              /* ErrorLink가 알리고 입력은 유지한다. */
+            } catch (error) {
+              if (error instanceof StorageUploadError) form.setError('avatar', { message: error.message });
             }
           })}
         >

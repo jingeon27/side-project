@@ -614,26 +614,44 @@ try {
   ).json().data.createGroup;
   const publicPc = new Client(pcDomain, port, publicCa);
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
-  const upload = (
-    await pc.graphql('mutation($id:ID!) { requestPostUpload(groupId:$id) { id url } }', { id: group.id })
-  ).json().data.requestPostUpload;
+  // Photo Contest no longer ships sharp; an 8x8 PNG keeps both services' upload checks real.
   const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGNwav+KFTEMLQkAZI1vgcNLzfoAAAAASUVORK5CYII=',
+    'base64',
+  );
+  const upload = (
+    await pc.graphql(
+      'mutation($id:ID!,$size:Int!) { requestPostUpload(groupId:$id,contentType:"image/png",byteSize:$size) { id url fields { name value } } }',
+      { id: group.id, size: png.length },
+    )
+  ).json().data.requestPostUpload;
+  assert.equal(new URL(upload.url).hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  // Browsers POST the signed form straight to the bucket; the host resolves the bucket alias only on the service network.
+  const stored = JSON.parse(
     serviceCompose('photo-contest', [
       'exec',
       '-T',
       'api',
       'node',
+      '--input-type=module',
       '-e',
-      'require("sharp")({create:{width:8,height:8,channels:3,background:"#4287f5"}}).png().toBuffer().then(b=>process.stdout.write(b.toString("base64")))',
-    ]).trim(),
-    'base64',
+      `const [url, fields, body] = JSON.parse(process.argv[1]);
+       const form = new FormData();
+       for (const { name, value } of fields) form.append(name, value);
+       form.append('file', new Blob([Buffer.from(body, 'base64')], { type: 'image/png' }), 'shared.png');
+       const response = await fetch(url, { method: 'POST', body: form });
+       console.log(JSON.stringify({ status: response.status, body: await response.text() }));`,
+      JSON.stringify([upload.url, upload.fields, png.toString('base64')]),
+    ]),
   );
-  const uploaded = await pc.http(upload.url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'image/png' },
-    body: png,
-  });
-  assert.equal(uploaded.status, 201, uploaded.text());
+  assert.equal(stored.status, 204, stored.body);
+  const completed = await pc.graphql(
+    'mutation($id:ID!) { completePostUpload(uploadId:$id) { id byteSize } }',
+    {
+      id: upload.id,
+    },
+  );
+  assert.deepEqual(completed.json().data.completePostUpload, { id: upload.id, byteSize: png.length });
   pcApi.cookie = pc.cookie;
   const posted = await pcApi.post(
     '/graphql',
@@ -648,10 +666,29 @@ try {
   assert.equal(posted.json().errors, undefined, posted.text());
   const post = posted.json().data.createPost;
   assert.match((await publicPc.http(`/groups/${group.id}`)).text(), /S3 파일 보존/);
-  assert.equal((await pc.http(post.mediaUrl)).status, 200);
-  const partial = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
-  assert.equal(partial.status, 206);
-  assert.equal(partial.body.length, 8);
+  // The stable media path checks access and redirects to a 60-second signed GET; storage serves Range.
+  const redirected = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
+  assert.equal(redirected.status, 307, redirected.text());
+  assert.equal(redirected.headers['cache-control'], 'private, no-store');
+  const pcSigned = new URL(redirected.headers.location);
+  assert.equal(pcSigned.hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(pcSigned.searchParams.get('X-Amz-Expires'), '60');
+  const pcContent = JSON.parse(
+    serviceCompose('photo-contest', [
+      'exec',
+      '-T',
+      'api',
+      'node',
+      '--input-type=module',
+      '-e',
+      `const response = await fetch(process.argv[1], {headers: {Range: 'bytes=0-7'}});
+       console.log(JSON.stringify({status: response.status, cache: response.headers.get('cache-control'), bytes: Buffer.from(await response.arrayBuffer()).toString('base64')}));`,
+      pcSigned.toString(),
+    ]),
+  );
+  assert.equal(pcContent.status, 206);
+  assert.equal(pcContent.cache, 'private, no-store');
+  assert.deepEqual(Buffer.from(pcContent.bytes, 'base64'), png.subarray(0, 8));
   assert.equal((await gf.http('/api/session', { headers: { Cookie: pc.cookie } })).json().user, null);
   sql(
     'game_feedback',
@@ -777,7 +814,7 @@ try {
   assert.match(failed.stderr, /Previous application images restored/);
   assert.equal(serviceCompose('photo-contest', ['ps', '-q', 'api']).trim(), pcId);
   assert.equal(compose(`${prefix}-proxy`, proxyFile, ['ps', '-q', 'proxy']).trim(), proxyId);
-  assert.equal((await pc.http(post.mediaUrl)).status, 200);
+  assert.equal((await pc.http(post.mediaUrl)).status, 307);
   // A rolling application restart closes its process-local SSE connections; clients reconnect.
   const reconnected = await gf.open('/api/chat/events', { headers: { Authorization: `Bearer ${token}` } });
   const resumed = new EventReader(reconnected);
@@ -803,7 +840,7 @@ try {
   reconnected.destroy();
   serviceCompose('photo-contest', ['restart', 'api', 'web']);
   serviceCompose('photo-contest', ['up', '-d', '--wait', 'api', 'web']);
-  assert.equal((await pc.http(post.mediaUrl)).status, 200);
+  assert.equal((await pc.http(post.mediaUrl)).status, 307);
   dependency(['stop', 'db']);
   assert.equal((await gf.http('/api/health/live')).status, 200);
   assert.equal((await pc.http('/backend/health/live')).status, 200);
@@ -813,7 +850,7 @@ try {
   assert.equal((await pc.http('/_health/live')).status, 200);
   dependency(['up', '-d', '--wait', '--wait-timeout', '120', 'db']);
   console.log(
-    'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, S3/Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
+    'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, presigned POST/S3 Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
   for (const project of projects.toReversed()) {

@@ -12,8 +12,5 @@ export function bodyParserErrorHandler(error: unknown, req: Request, res: Respon
     next(error);
     return;
   }
-  const message = req.path.startsWith('/uploads/')
-    ? '10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.'
-    : '요청 본문을 읽을 수 없습니다.';
-  res.status(errorStatus(error)).json({ message });
+  res.status(errorStatus(error)).json({ message: '요청 본문을 읽을 수 없습니다.' });
 }

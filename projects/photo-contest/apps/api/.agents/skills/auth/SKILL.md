@@ -7,7 +7,7 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 
 ## 요청 한 건의 경로
 
-1. `src/bootstrap.ts` `createApp()`: `noStore` → `originGuard` → `/graphql` multipart → `/uploads`·`/post-uploads` raw → `json` → `bodyParserErrorHandler` → 라우트(파이프에서 세션 조회). 본문·세션을 읽는 새 미들웨어는 `originGuard` 뒤에 둔다 — 그래야 다른 Origin은 비로그인이어도 401보다 403이 먼저다.
+1. `src/bootstrap.ts` `createApp()`: `noStore` → `originGuard` → `json`(GraphQL 메타데이터만, 파일은 브라우저가 저장소로 직접 보낸다) → `bodyParserErrorHandler` → 라우트(파이프에서 세션 조회). GraphQL multipart와 `/uploads` raw는 등록하지 않는다. 본문·세션을 읽는 새 미들웨어는 `originGuard` 뒤에 둔다 — 그래야 다른 Origin은 비로그인이어도 401보다 403이 먼저다.
 2. `src/common/http/origin-guard.middleware.ts`: GET·HEAD·OPTIONS 밖은 `req.headers.origin === webOrigin()`일 때만 통과한다(403 `ERROR_MESSAGE.FORBIDDEN_ORIGIN`). 경로별 예외를 두지 않고, 상태를 바꾸는 엔드포인트를 GET으로 만들지 않는다(OAuth 시작·콜백은 브라우저 이동이라 GET이고 state 쿠키 + PKCE가 지킨다). GraphQL은 여기에 Apollo `csrfPrevention`이 더해진다.
 3. `src/common/http/cookie-header.ts`의 `readCookie(header, name)`만 쿠키를 읽는다. cookie-parser가 없어 `req.cookies`는 undefined다. `Authorization` 헤더를 읽는 코드를 더하지 않는다.
 4. `src/auth/session.service.ts`: 값이 43자 base64url이 아니면 DB를 보지 않는다. `viewer(req)`는 `WeakMap<Request, Promise>`로 요청당 한 번 조회하고 만료 세션은 오류 없이 null, `requireViewer(req)`는 UNAUTHENTICATED. 세션은 `start(res, userId)`·`end(req, res)`로만 만들고 지운다 — DB에는 `sha256Hex(token)`만, 쿠키는 `authCookieOptions()`(지울 때도 같은 옵션이어야 브라우저가 지운다).

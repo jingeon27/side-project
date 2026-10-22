@@ -1,5 +1,3 @@
-scalar Upload
-
 enum PostKind {
   PHOTO
   VIDEO
@@ -79,8 +77,8 @@ extend type Query {
 extend type Mutation {
   setPostCategory(postId: ID!, categoryId: ID): GalleryPost!
   setPostHidden(postId: ID!, hidden: Boolean!): Boolean!
-  uploadPostMedia(uploadId: ID!, file: Upload!): Boolean!
-  requestPostUpload(groupId: ID!): UploadTicket!
+  requestPostUpload(groupId: ID!, contentType: String!, byteSize: Int!): PostUploadTicket!
+  completePostUpload(uploadId: ID!): PostUploadResult!
   createPost(
     categoryId: ID
     contestId: ID
@@ -99,4 +97,21 @@ extend type Mutation {
   deletePostComment(commentId: ID!): Boolean!
   likePostComment(commentId: ID!): PostComment!
   unlikePostComment(commentId: ID!): PostComment!
+}
+
+type UploadFormField {
+  name: String!
+  value: String!
+}
+type PostUploadTicket {
+  id: ID!
+  url: String!
+  fields: [UploadFormField!]!
+  expiresAt: DateTime!
+}
+type PostUploadResult {
+  id: ID!
+  kind: PostKind!
+  contentType: String!
+  byteSize: Int!
 }

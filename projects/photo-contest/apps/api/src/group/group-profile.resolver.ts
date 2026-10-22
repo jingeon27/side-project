@@ -1,5 +1,4 @@
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
@@ -9,12 +8,17 @@ import { GroupProfileService } from './group-profile.service';
 export class GroupProfileResolver {
   constructor(private readonly profiles: GroupProfileService) {}
   @Mutation()
-  uploadGroupAvatar(
+  requestGroupAvatarUpload(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
-    @Args('file') file: Promise<FileUpload>,
+    @Args('contentType') contentType: string,
+    @Args('byteSize') byteSize: number,
   ) {
-    return this.profiles.upload(viewer, groupId, file);
+    return this.profiles.requestUpload(viewer, groupId, contentType, byteSize);
+  }
+  @Mutation()
+  completeGroupAvatarUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
+    return this.profiles.completeUpload(viewer, uploadId);
   }
   @Mutation()
   updateGroupProfile(@Viewer() viewer: IViewer, @Args() input: Parameters<GroupProfileService['update']>[1]) {

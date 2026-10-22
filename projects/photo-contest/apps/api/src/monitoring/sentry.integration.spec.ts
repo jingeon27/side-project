@@ -10,7 +10,7 @@ import { ContestCompletionService } from '../analytics/contest-completion.servic
 import { AuthService } from '../auth/auth.service';
 import { GroupService } from '../group/group.service';
 import { MaintenanceService } from '../maintenance/maintenance.service';
-import { PhotoStorage } from '../storage/photo-storage.service';
+import { MediaStorage } from '../storage/media-storage.service';
 
 // 실제 구현은 그대로 두고 호출만 지켜본다. SENTRY_DSN이 없으므로 밖으로는 아무것도 나가지 않는다.
 vi.mock('@sentry/node', { spy: true });
@@ -101,7 +101,7 @@ describe('Sentry 오류 보고', () => {
       [404, () => api.http().get('/missing-route')],
       [403, () => api.http().post('/auth/dev').send({ nickname: '출처 없음' })],
       [
-        403,
+        404,
         () =>
           api.http().post('/uploads/bad-token').set('Origin', TEST_WEB_ORIGIN).set('Cookie', member.cookie),
       ],
@@ -166,7 +166,7 @@ describe('Sentry 오류 보고', () => {
   });
 
   it('REST 5xx는 라우트 패턴 태그와 함께 원문·쿠키·본문 없이 보내야 한다', async () => {
-    vi.spyOn(api.app.get(PhotoStorage), 'get').mockRejectedValueOnce(new Error(`EACCES ${SECRET}`));
+    vi.spyOn(api.app.get(MediaStorage), 'presignRead').mockRejectedValueOnce(new Error(`EACCES ${SECRET}`));
     const photo = await api.http().get(`/photos/${photoId}`).set('Cookie', member.cookie);
     expect(photo.status).toBe(500);
     expect(photo.text).not.toContain(SECRET);

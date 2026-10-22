@@ -37,7 +37,7 @@ async function waitForHealth(url: string, isAlive: () => boolean, timeoutMs: num
   throw new Error(`격리 API가 ${timeoutMs / 1000}초 안에 준비되지 않았습니다.`);
 }
 
-/** vitest globalSetup에서 쓴다. 격리 스키마로 API를 띄우고 stop()에서 스키마와 사진 폴더까지 지운다. */
+/** vitest globalSetup에서 쓴다. 격리 스키마로 API를 띄우고 stop()에서 스키마와 S3 대역 폴더까지 지운다. */
 export async function startIsolatedApi({
   port,
   webOrigin,
@@ -61,7 +61,7 @@ export async function startIsolatedApi({
       PC_E2E_SCHEMA: schema,
       PORT: String(port),
       WEB_ORIGIN: webOrigin,
-      STORAGE_DIR: resolve(PROJECT_ROOT, '.data', schema),
+      PC_E2E_STORAGE_DIR: resolve(PROJECT_ROOT, '.data', schema),
     },
   });
   const url = `http://127.0.0.1:${port}`;

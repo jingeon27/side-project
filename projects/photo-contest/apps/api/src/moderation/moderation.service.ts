@@ -7,7 +7,7 @@ import { TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
-import { PhotoStorage } from '../storage/photo-storage.service';
+import { MediaStorage } from '../storage/media-storage.service';
 
 @Injectable()
 export class ModerationService {
@@ -15,7 +15,7 @@ export class ModerationService {
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
-    private readonly storage: PhotoStorage,
+    private readonly storage: MediaStorage,
   ) {}
 
   /** 그룹 멤버 누구나. 같은 사람의 신고는 처음 한 건만 남는다. 숨긴 사진은 NOT_FOUND */

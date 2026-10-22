@@ -11,6 +11,8 @@
   },
   "scripts": {
     "typecheck": "tsc7 --noEmit",
+    "test": "vitest run",
+    "s3": "node --disable-warning=ExperimentalWarning bin/fake-s3.mjs",
     "check:cleanup": "node --import tsx scripts/check-cleanup.ts"
   },
   "dependencies": {
@@ -22,6 +24,10 @@
     "typescript": "6.0.2"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0"
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-presigned-post": "3.1149.0",
+    "@aws-sdk/s3-request-presigner": "3.1149.0",
+    "@types/node": "^24.0.0",
+    "vitest": "^4.1.0"
   }
 }

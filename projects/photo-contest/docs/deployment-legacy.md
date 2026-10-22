@@ -2,7 +2,7 @@
 
 # 단일 VM 배포
 
-Oracle A1(ARM64) VM 한 대에 Caddy·Next.js·NestJS·PostgreSQL을 Docker Compose로 실행한다. 현재는 아이디·비밀번호 가입만 사용하며 소셜·개발 로그인·테스트 API는 운영에서 켜지 않는다. 사진·영상은 영속 volume 또는 비공개 R2/S3 버킷에 저장한다.
+Oracle A1(ARM64) VM 한 대에 Caddy·Next.js·NestJS·PostgreSQL을 Docker Compose로 실행한다. 현재는 아이디·비밀번호 가입만 사용하며 소셜·개발 로그인·테스트 API는 운영에서 켜지 않는다. 사진·영상은 비공개 S3 호환(R2/S3/MinIO) 버킷에만 저장하고 서버에는 미디어 volume이 없다.
 
 서버 정보가 없어도 CI의 `containers` 작업은 ARM64 운영 이미지를 빌드하고 격리한 PostgreSQL·HTTPS Caddy에서 가입·파일·댓글·재시작·백업 복원을 검사한다. 실제 운영 배포는 명시적으로 활성화하기 전에는 실행되지 않는다.
 
@@ -38,9 +38,9 @@ chmod 600 /opt/photo-contest/.env
 openssl rand -hex 32
 ```
 
-생성한 64자리 값을 POSTGRES_PASSWORD에 넣는다. URL 인코딩 문제를 피하도록 이 템플릿에서는 hex 비밀번호를 사용한다. DOMAIN과 WEB_ORIGIN(`https://DOMAIN`)은 일치해야 한다. ACME_EMAIL은 인증서 알림을 받을 주소다. 인증서·DB·로컬 미디어는 각각 영속 volume에 남는다. 기존 DB의 비밀번호 변경은 `.env` 수정만으로 처리되지 않는다.
+생성한 64자리 값을 POSTGRES_PASSWORD에 넣는다. URL 인코딩 문제를 피하도록 이 템플릿에서는 hex 비밀번호를 사용한다. DOMAIN과 WEB_ORIGIN(`https://DOMAIN`)은 일치해야 한다. ACME_EMAIL은 인증서 알림을 받을 주소다. 인증서·DB는 각각 영속 volume에 남고 미디어는 버킷에 있다. 기존 DB의 비밀번호 변경은 `.env` 수정만으로 처리되지 않는다.
 
-R2를 쓰면 STORAGE_BACKEND=s3와 S3_BUCKET·S3_ENDPOINT·AWS_ACCESS_KEY_ID·AWS_SECRET_ACCESS_KEY를 채운다. S3_REGION은 R2의 경우 auto다. 키는 서버 `.env`에만 둔다. 이미지·GitHub artifact·채팅에 넣지 않는다. R2의 실제 권한·연결 검증은 키를 설정한 뒤 별도로 한다.
+S3_BUCKET·AWS_ACCESS_KEY_ID·AWS_SECRET_ACCESS_KEY는 필수다. R2·MinIO는 브라우저가 직접 접속할 https:// S3_ENDPOINT를 채우고 AWS S3는 비운다. S3_REGION은 R2의 경우 auto다. 버킷 CORS에 WEB_ORIGIN의 POST를 허용한다. 키는 서버 `.env`에만 둔다. 이미지·GitHub artifact·채팅에 넣지 않는다. R2의 실제 권한·연결 검증은 키를 설정한 뒤 별도로 한다.
 
 ## GitHub 설정
 
@@ -67,17 +67,14 @@ GitHub Environment `photo-contest-production`에서 배포 이력을 확인할 �
 현재 릴리스는 `/opt/photo-contest/current`, 이전 릴리스는 `previous`다. 모든 작업은 같은 파일 잠금으로 동시에 실행되지 않게 한다.
 
 ```sh
-# DB만 custom-format으로 백업한다.
+# DB를 custom-format으로 백업한다. 미디어는 버킷에 있으므로 서버 백업에 포함하지 않는다.
 bash /opt/photo-contest/current/scripts/backup.sh
-
-# local 저장소를 쓰면 API를 잠깐 멈춰 DB와 미디어를 함께 백업한다.
-bash /opt/photo-contest/current/scripts/backup.sh --with-media
 
 # 캐시에 보존한 이전 앱 이미지로 복구한다. DB 마이그레이션은 되돌리지 않는다.
 bash /opt/photo-contest/current/scripts/rollback.sh
 ```
 
-백업은 `/opt/photo-contest/backups/<시각-릴리스>/`에 0600으로 만들고 SHA-256 체크섬을 함께 저장한다. 미디어 백업이 실패해도 API를 다시 시작한다. 백업·이전 이미지·릴리스를 자동 삭제하거나 전역 Docker prune을 실행하지 않는다. VM 밖으로 백업을 복사하고 보관 용량을 관리해야 한다. R2 미디어는 버킷 복제·보관 방법을 별도로 정한다.
+백업은 `/opt/photo-contest/backups/<시각-릴리스>/`에 0600으로 만들고 SHA-256 체크섬을 함께 저장한다. API를 멈추지 않는다. 백업·이전 이미지·릴리스를 자동 삭제하거나 전역 Docker prune을 실행하지 않는다. VM 밖으로 백업을 복사하고 보관 용량을 관리해야 한다. 미디어는 버킷의 버전 관리·복제·수명 주기로 보존 방법을 별도로 정한다.
 
 예를 들어 DB 백업만 매일 실행하려면 배포 사용자 crontab에 다음을 등록한다. 실제 사용량에 맞춰 시간을 정한다.
 
@@ -89,8 +86,8 @@ DB 복원은 먼저 별도 DB에 pg_restore로 검증하고, 쓰기를 멈춘 �
 
 ## 운영 경로와 검증 한계
 
-- Caddy는 `/backend/*`를 API로 직접 전달하고 나머지는 웹으로 보낸다. 100MiB 영상과 multipart 부가 데이터를 받을 수 있도록 앞단은 110MB로 제한한다. 파일 형식·크기·멤버십의 최종 판정은 API가 한다.
-- Next.js는 monorepo root를 tracing root로 둔 standalone 산출물과 static/public 파일만 실행한다. API 이미지는 GraphQL schema·Prisma client·migrate CLI·MediaInfo WASM·sharp 런타임을 포함한다.
+- Caddy는 `/backend/*`를 API로 직접 전달하고 나머지는 웹으로 보낸다. 파일은 브라우저가 버킷에 직접 올리므로 프록시를 지나지 않는다. 형식·크기는 API가 발급할 때 정하고 서명 POST 정책과 완료 시 HEAD로 제한한다.
+- Next.js는 monorepo root를 tracing root로 둔 standalone 산출물과 static/public 파일만 실행한다. API 이미지는 GraphQL schema·Prisma client·migrate CLI를 포함하며 미디어 처리 런타임(sharp·MediaInfo)은 없다.
 - 운영 환경에는 OAuth·Sentry·Amplitude 키를 넣지 않는다. 현재 기존 아이디·비밀번호 가입/로그인을 사용한다. 게스트 자동 계정은 별도 기능이며 이번 배포 설정에서 추가하지 않는다.
-- 컨테이너 검증은 자체 인증서를 쓰는 격리한 localhost와 local 저장소에서 실행한다. 실제 도메인 인증서, Oracle 네트워크, GHCR 서버 접근, R2 버킷 권한은 서버·계정 설정 후 확인할 항목이다.
+- 컨테이너 검증은 자체 인증서를 쓰는 격리한 localhost와 같은 네트워크의 test-kit S3 대역(`storage.localhost:3383`)에서 실행한다. 실제 도메인 인증서, Oracle 네트워크, GHCR 서버 접근, R2 버킷 권한·CORS는 서버·계정 설정 후 확인할 항목이다.
 - 개인정보 처리방침·보관 기간은 실제 사용하는 호스팅·저장소와 백업 정책에 맞게 공개 전에 확정한다.

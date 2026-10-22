@@ -23,7 +23,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 두 웹 서비스가 공유하는 색·글자·간격 토큰과 UI primitive·`cn`은 루트 `packages/design-system`(`@side/design-system`)이 소유한다. `shared/ui/@core`의 Button·IconButton·TextField·TextArea·Badge·Avatar·Spinner와 `shared/lib/cn.helper.ts`는 기존 import 경로를 유지하는 명시적 re-export다. Next 링크는 공통 패키지의 `/next`, 스타일은 `/styles.css` 공개 경로를 사용한다. 이 앱의 `_app/styles/tailwind.css`는 공통 스타일과 앱 소스를 연결하고 `globals.css`에는 `#pc-main` 토스트 위치만 둔다. ConfirmDialog·BottomSheet의 뒤로 가기, 포털 위치, 비동기 동작은 앱에 남기고 공통 토큰·스타일·버튼을 조합한다.
 
-아이디·비밀번호 가입/로그인은 RHF/Zod 폼과 GraphQL useMutation을 쓰며 구글·카카오 OAuth도 제공한다. 설정을 못 불러와도 직접 로그인 폼은 사용할 수 있다. 업로드는 UploadHttpLink와 파일 mutation을 쓰고 컴포넌트에서 fetch를 호출하지 않는다.
+아이디·비밀번호 가입/로그인은 RHF/Zod 폼과 GraphQL useMutation을 쓰며 구글·카카오 OAuth도 제공한다. 설정을 못 불러와도 직접 로그인 폼은 사용할 수 있다. 게시물 업로드는 requestPostUpload → shared/api의 uploadToStorage helper(FormData POST, 세션 쿠키 제외) → completePostUpload → createPost를 쓰고 컴포넌트에서 fetch를 호출하지 않는다. 저장소 전송 실패는 RHF 미디어 오류로 표시한다. 기존 대회 제출도 requestUploadUrl(contentType, byteSize) → 같은 helper → completeSubmissionUpload → createSubmission으로 전송한다. Apollo HttpLink는 JSON 메타데이터만 보내며 GraphQL Upload는 제공하지 않는다.
 
 eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저장소 `packages/eslint-config/src/base.ts`·`next.ts`·`expo.ts`가 관리한다. 앱 설정은 preset과 경로만 조합하고, 커스텀 규칙은 `src/rules/<분류>/<규칙>/` 폴더에 구현·`<규칙>.spec.ts`·그 규칙만 읽는 `__fixtures__`를 함께 둔다. FSD 공통 분석은 `src/rules/fsd/fsd.helper.ts`가 맡는다. else 없이 가드·조기 반환·ts-pattern으로 분기하며, 한 번 쓰는 이벤트는 JSX에 인라인으로 선언한다.
 
@@ -38,7 +38,7 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 ## 검사
 
 - `codegen` → `typecheck` → `lint` → `test`(unit/UI) → `test:api`(생성 문서와 실제 API) → `test:e2e`(Playwright).
-- API 레인은 4321, 웹 e2e는 3320/4320이다. 테스트용 사용자·단계·티켓은 /testing API로 준비하고 DB를 직접 수정하지 않는다.
+- API 레인은 4321, 웹 e2e는 3320/4320이다. 각 테스트 API는 빈 포트의 test-kit S3 대역을 함께 띄운다(브라우저 업로드 실패는 `e2e/support/photos.ts`의 `isStorageUpload`로 가로챈다). 테스트용 사용자·단계·티켓은 /testing API로 준비하고 DB를 직접 수정하지 않는다.
 - `build`는 실제 프로덕션 빌드를 확인한다. 개발 서버와 함께 검사하면 NEXT_DIST_DIR을 따로 지정한다.
 - 공통 primitive 변경은 `@side/design-system`의 검사와 이 앱의 기존 UI 테스트를 함께 확인한다. 테스트 러너·의존성은 해당 패키지와 앱이 각각 소유한다.
 - 운영은 monorepo root를 tracing root로 둔 standalone 서버와 static/public 파일을 사용한다. Docker 검증은 playwright.deploy.config.ts의 test:deploy이며 격리한 HTTPS localhost에서만 실행한다. 배포 스크립트의 외부 CLI 경계·복구·잠금은 test/deployment의 Vitest로 검증한다.
@@ -59,10 +59,10 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 그룹 메뉴는 게시물·대회·명예의 전당을 JSX로 직접 선언한다. 대회 목록·상세·결과는 각각 QueryRef·AsyncBoundary를 갖고 공개 데이터는 RSC PreloadQuery로 HTML을 만든다. 비공개 내용은 GroupContentFrame이 canViewPosts로 막고 ClientOnly로 조회한다. 작성 폼의 PostContestField는 대회 선택 쿼리·필수값을 소유한다. 일반 좋아요와 대회 투표를 구분하고 종료 후만 결과를 조회한다. 역할 변경은 GraphQL mutation 결과와 활성 쿼리 재조회로 반영한다. 새 기능의 단위·실제 API·브라우저 테스트는 `.spec`으로 둔다.
 
-공개 SEO 콘텐츠와 사이트맵만 shared/api/public-cache.policy의 주기·태그로 Next fetch Data Cache를 사용한다. 공개 여부·대회 일정은 no-store로 먼저 확인한다. 개인화된 Apollo SSR·브라우저 전송은 no-store를 유지한다. app/backend/graphql은 JSON mutation의 정상·부분 성공 뒤 expire:0으로 공개 태그를 만료시키고 multipart는 스트리밍한다. sitemap Route Handler는 connection()으로 런타임 Origin을 읽되 force-dynamic으로 명시적 데이터 캐시까지 끄지 않는다. test:cache는 실제 standalone 빌드·4324/3324·격리 DB에서 HIT·무효화·쿠키·업로드를 확인한다.
+공개 SEO 콘텐츠와 사이트맵만 shared/api/public-cache.policy의 주기·태그로 Next fetch Data Cache를 사용한다. 공개 여부·대회 일정은 no-store로 먼저 확인한다. 개인화된 Apollo SSR·브라우저 전송은 no-store를 유지한다. app/backend/graphql은 JSON mutation의 정상·부분 성공 뒤 expire:0으로 공개 태그를 만료시키고 multipart는 스트리밍한다. sitemap Route Handler는 connection()으로 런타임 Origin을 읽되 force-dynamic으로 명시적 데이터 캐시까지 끄지 않는다. test:cache는 실제 standalone 빌드·4324/3324·격리 DB·S3 대역에서 HIT·무효화·쿠키·직접 업로드와 미디어 경로의 307 전달을 확인한다.
 
-PostMediaField와 PostLinkField는 파일 또는 링크 하나 이상을 RHF/Zod로 검증한다. 파일 없이 링크만 등록하면 업로드 mutation을 실행하지 않는다. PostAttachments가 파일·첨부 링크 표시를 조립하며 PostLink는 정확한 유튜브 호스트·ID만 클릭 후 iframe으로 재생한다. PostDownloadButton은 PostDownload를 no-cache로 매번 실행하고 파일 저장을 시작한다. 링크 게시물에는 저장 버튼이나 가짜 이미지·미디어 SEO를 만들지 않고 공개 citation만 제공한다. 외부 영상 재생과 첨부 링크 처리 변경은 약관·개인정보 안내에 반영한다.
+PostMediaField와 PostLinkField는 파일 또는 링크 하나 이상을 RHF/Zod로 검증한다. 파일 없이 링크만 등록하면 업로드 mutation을 실행하지 않는다. PostAttachments가 파일·첨부 링크 표시를 조립하며 PostLink는 정확한 유튜브 호스트·ID만 클릭 후 iframe으로 재생한다. PostDownloadButton은 PostDownload를 no-cache로 매번 실행해 받은 60초 서명 URL로 파일 저장을 시작한다. 미디어 `<img>`·`<video>`는 고정 경로(`/backend/media/:id` 등)를 쓰고 API가 307로 저장소에 보낸다. 동영상 5분 제한은 CreatePostBottomSheet가 올리기 전에 브라우저에서 확인한다. 링크 게시물에는 저장 버튼이나 가짜 이미지·미디어 SEO를 만들지 않고 공개 citation만 제공한다. 외부 영상 재생과 첨부 링크 처리 변경은 약관·개인정보 안내에 반영한다.
 
 게시물의 수정·숨기기·삭제는 PostActionsMenu의 Base UI Menu에서 JSX로 직접 선언한다. 작성자·관리자에게만 메뉴를 보이고 숨기기는 관리자 전용이다. EditPostBottomSheet가 RHF/Zod와 카테고리 QueryRef·AsyncBoundary를 소유하며 제목·내용·분류를 함께 저장한다. 댓글은 PostCommentRow·ReplySection·Replies·Composer로 맥락을 나눈다. 원댓글과 한 단계 답글은 PostCommentsDocument의 parentId로 나누고 postCommentCount로 각 목록의 끝을 판단한다. replyCount는 펼침 버튼에, GalleryPost.commentCount는 답글 포함 전체 개수에 쓴다. 답글은 오래된 순이며 캐시 keyArgs에 postId·parentId를 포함한다. 원댓글 삭제 확인창은 답글도 함께 삭제됨을 알린다.
 
-그룹 프로필 편집은 EditGroupProfileBottomSheet의 QueryRef·AsyncBoundary·RHF가 소유하고 사진 선택·미리보기·교체·삭제는 GroupAvatarField로 분리한다. UploadGroupAvatar의 multipart로 준비한 id를 UpdateGroupProfile JSON mutation으로 지정해 공개 Next 캐시 무효화를 유지한다. 사진·소개는 그룹 상단·탐색·MY, 공개 그룹의 SEO에 반영한다. 비공개 그룹에서도 프로필은 탐색에 보인다는 안내를 표시한다. 그룹 대회 개최의 좋아요 한도는 기본 1, 1~100 정수이며 게시물의 대회 라벨·상세 안내에 한도를 표시한다. 좋아요 취소 후 재선택과 별도 최종 투표를 구분한다.
+그룹 프로필 편집은 EditGroupProfileBottomSheet의 QueryRef·AsyncBoundary·RHF가 소유하고 사진 선택·미리보기·교체·삭제는 GroupAvatarField로 분리한다. 대표 사진은 원본 그대로 RequestGroupAvatarUpload → uploadToStorage → CompleteGroupAvatarUpload로 준비하고, 그 id를 UpdateGroupProfile JSON mutation으로 지정해 공개 Next 캐시 무효화를 유지한다. 사진·소개는 그룹 상단·탐색·MY, 공개 그룹의 SEO에 반영한다. 비공개 그룹에서도 프로필은 탐색에 보인다는 안내를 표시한다. 그룹 대회 개최의 좋아요 한도는 기본 1, 1~100 정수이며 게시물의 대회 라벨·상세 안내에 한도를 표시한다. 좋아요 취소 후 재선택과 별도 최종 투표를 구분한다.

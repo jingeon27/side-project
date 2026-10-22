@@ -8,13 +8,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createErrorToastLink } from '@/shared/api/apollo-link.helper';
 import {
+  CompleteSubmissionUploadDocument,
   ContestDocument,
   CreateSubmissionDocument,
   Phase,
   RequestUploadDocument,
   SubmissionsDocument,
   SubmissionSort,
-  UploadSubmissionPhotoDocument,
   type ContestQuery,
   type SubmissionCardFragment,
 } from '@/shared/api/generated';
@@ -65,33 +65,31 @@ const png = (name = 'moment.png') =>
 
 const successMocks = (): MockLink.MockedResponse[] => [
   {
-    request: {
-      query: UploadSubmissionPhotoDocument,
-      variables: (variables) => variables.uploadId === 'upload-1' && variables.file instanceof Blob,
-    },
-    result: (variables) => {
-      uploads.push({ uploadId: variables.uploadId, contentType: variables.file.type });
-      if (uploadStatus >= 400)
-        return {
-          errors: [
-            {
-              message: '10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.',
-              extensions: { code: 'BAD_USER_INPUT' },
-            },
-          ],
-        };
-      return { data: { uploadSubmissionPhoto: true } };
-    },
+    request: { query: CompleteSubmissionUploadDocument, variables: { uploadId: 'upload-1' } },
+    result: { data: { completeSubmissionUpload: true } },
   },
 
   {
-    request: { query: RequestUploadDocument, variables: { contestId: 'contest-1' } },
+    request: {
+      query: RequestUploadDocument,
+      variables: (variables) =>
+        variables.contestId === 'contest-1' &&
+        variables.contentType === 'image/png' &&
+        variables.byteSize > 0,
+    },
     result: {
       data: {
         requestUploadUrl: {
           __typename: 'UploadTicket',
           id: 'upload-1',
-          url: '/backend/uploads/ticket-1',
+          url: 'https://storage.test/upload',
+          fields: [
+            {
+              __typename: 'UploadFormField',
+              name: 'key',
+              value: 'photos/00000000-0000-0000-0000-000000000000.jpg',
+            },
+          ],
           expiresAt: '2026-10-14T04:05:00.000Z',
         },
       },
@@ -181,6 +179,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   uploads = [];
   uploadStatus = 201;
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (_url: string, options: RequestInit) => {
+      const form = options.body as FormData;
+      const file = form.get('file') as Blob;
+      uploads.push({ uploadId: 'upload-1', contentType: file.type });
+      return new Response(null, { status: uploadStatus });
+    }),
+  );
   vi.spyOn(toast, 'success');
   vi.spyOn(toast, 'error');
   let sequence = 0;
@@ -265,7 +272,7 @@ describe('UploadPhotoBottomSheet', () => {
     expect(within(screen.getByRole('list', { name: '피드' })).getByText('고양이 기지개')).toBeVisible();
   });
 
-  it('원본 업로드가 거절되면 서버 안내를 토스트로 보여 주고 시트를 열어 두어야 한다', async () => {
+  it('저장소 전송이 실패하면 초안을 유지하고 파일 칸에 재시도 안내를 보여 줘야 한다', async () => {
     uploadStatus = 400;
     const { user } = await openSheet(successMocks());
 
@@ -275,7 +282,7 @@ describe('UploadPhotoBottomSheet', () => {
     await submit(user);
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.'),
+      expect(screen.getByText('파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.')).toBeVisible(),
     );
     expect(screen.getByRole('dialog', { name: '내 웃긴 순간 제출하기' })).toBeVisible();
     expect(trackEvent).not.toHaveBeenCalled();

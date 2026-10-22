@@ -9,10 +9,11 @@
 | `main.ts` · `bootstrap.ts` · `app.module.ts` · `instrumentation.ts` | listen, `createApp()`(미들웨어·필터·body parser 연결만, listen 안 함), 모듈 조립, Sentry 초기화(main의 첫 import) |
 | `config/` | `env.ts`(호출할 때마다 읽는 getter), `limits.ts`(모든 숫자 한도), `paths.ts`(package.json 기준 API·프로젝트 루트) |
 | `common/` | `errors.ts`(fail·ERROR_CODE·HTTP 매핑), `validation.ts`, `crypto.ts`, `http/`(cookie-header 파서, Origin 검사, no-store, 예외 필터), `graphql/`(DateTime, context, Apollo 옵션) |
-| `database/` · `storage/` | 전역 모듈. `Database.atomic()`(Serializable 재시도), 비공개 사진 저장소(local·S3) |
+| `database/` · `storage/` | 전역 모듈. `Database.atomic()`(Serializable 재시도), 비공개 S3 미디어 저장소(서명 POST·서명 GET·HEAD·DELETE만, 파일 바이트를 다루지 않는다) |
 | `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·개발 로그인·로그아웃·OAuth·앱 로그인 교환, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `@Viewer()`/`@OptionalViewer()` |
-| `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·업로드(`POST /uploads/:token`)·사진 조회(`GET /photos/:id`)·sharp 변환 |
-| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, GraphQL multipart 일회용 업로드·공개 범위를 확인하는 byte Range 스트리밍 |
+| `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·presigned 대회 업로드 발급·완료·사진 조회(`GET /photos/:id` 307) |
+| `media-upload/` | 게시물·대회·대표 사진의 최종 키 서명 발급, 소유권·만료·용도 확인, HEAD로 크기·형식을 본 뒤 완료 |
+| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 60초 서명 GET으로 보내는 `/media/:id` 307 |
 | `feed/` | `myPhotoFeed`: 가입한 모든 그룹의 공개 사진을 전체 최신순(createdAt·id desc)으로 offset 조회. 홈에는 관리자도 숨긴 사진·신고 정보를 받지 않는다 |
 | `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·OAuth 시도·앱 로그인 티켓) — 테스트는 `SchedulerService.runOnce()` |
 | `testing/` | NODE_ENV=test와 ENABLE_TEST_API=true에서만 사용자·세션·단계·외부 콜백 티켓 fixture를 만든다 |
@@ -35,14 +36,14 @@
 
 - `build`·`dev`는 `tsconfig.build.json`(src만, `*.spec.ts`·`*.test.ts` 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
 - 사용자의 개발 서버는 `dist/main.js`를 본다(`node --watch`). 검증용 빌드는 다른 outDir로 하고, 테스트 API는 test-kit이 `.e2e-build`로 빌드한다.
-- 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client·WASM·sharp도 포함한다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
+- 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client도 포함한다. 미디어 처리 런타임(sharp·MediaInfo)은 없다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
 
 ## 테스트
 
 | 스크립트 | 내용 |
 | --- | --- |
-| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, sharp 변환 등) |
-| `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마를 하나 만들고(`api_test_*`) 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, S3 대역에 대한 저장소 서명 등) |
+| `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마(`api_test_*`)와 test-kit S3 대역을 하나씩 만들고 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
 
@@ -61,12 +62,12 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
 
-Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 S3 최대 60초 presigned GET을 만들거나 로컬 /media/:id/download를 반환한다. attachment·UTF-8 파일명·no-store를 유지하고 이미 발급한 S3 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다.
+Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 60초 presigned GET을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·테스트는 test-kit S3 대역을 가리킨다.
 
 GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
 
 PostComment.parentId는 한 단계 답글이다. createPostComment는 accessiblePost와 같은 tx에서 원댓글·게시물 일치·깊이를 검증하며 복합 FK(id,postId)가 다른 게시물 연결을 막는다. postComments/postCommentCount는 parentId가 없으면 원댓글만, 있으면 해당 답글만 읽는다. 원댓글 최신순·답글 오래된 순에 id를 마지막 기준으로 둔다. PostComment.replyCount는 _count.replies로 구하며 원댓글 삭제는 답글·좋아요를 cascade한다. updatePost는 작성자·관리자만 제목·내용·분류를 변경하고 기존 첨부·작성자·대회는 유지한다. 기존 보관 분류 유지는 허용하되 새로 지정하는 분류는 활성·같은 그룹이어야 한다.
 
-그룹 프로필은 GroupProfileService가 관리한다. uploadGroupAvatar는 관리자 권한·실제 이미지 형식·10MB 상한을 검사해 512px WebP를 준비하고, updateGroupProfile이 같은 그룹의 만료 전 자산만 지정한다. Group.avatarId와 GroupAvatar(id,groupId)의 복합 FK로 다른 그룹 연결을 막는다. Group 생성 시 nullable 복합 FK의 Prisma 기본값 처리 때문에 id를 명시한다. 대표 사진은 공개 메타데이터이며 현재 지정된 자산만 익명 GET으로 읽고 no-store를 유지한다. 버리거나 교체한 자산은 유지보수에서 재시도하며 현재 사용 중인 자산은 보존한다. 그룹 소개 상한은 500자다.
+그룹 프로필은 GroupProfileService가 관리한다. requestGroupAvatarUpload는 관리자에게만 5분짜리 presigned POST를 발급한다. completeGroupAvatarUpload는 소유권·관리 권한을 다시 검사하고 HEAD로 크기·형식만 확인한다(서버 변환 없음, 원본 그대로). GroupAvatar.mediaUploadId는 nullable unique FK이며 updateGroupProfile은 같은 그룹의 완료된 만료 전 자산만 지정한다. MembershipModule을 GroupModule과 MediaUploadModule이 공유해 모듈 순환을 피한다. Group.avatarId와 GroupAvatar(id,groupId)의 복합 FK로 다른 그룹 연결을 막는다. Group 생성 시 nullable 복합 FK의 Prisma 기본값 처리 때문에 id를 명시한다. 대표 사진은 공개 메타데이터이며 현재 지정된 자산만 익명 GET에 no-store 307 서명 이동으로 준다. 버리거나 교체한 자산은 유지보수에서 재시도하며 현재 사용 중인 자산은 보존한다. 그룹 소개 상한은 500자다.
 
 Contest.likeLimit은 기본 1이며 그룹 대회 개최 시 관리자만 1~100으로 설정한다. PostService.like는 같은 Serializable tx에서 권한·기존 반응·대회별 해당 사용자 반응 수를 검사한다. 이미 누른 작품은 재요청에 성공하고 취소하면 한도를 돌려준다. 숨긴 작품의 좋아요도 집계하며 일반 게시물·댓글·별도 PostContestVote에는 이 한도를 적용하지 않는다. 기존 반응은 마이그레이션에서 지우지 않는다.

@@ -257,9 +257,13 @@ describe('그룹 게시물 대회 통합', () => {
     ).toBe('NOT_FOUND');
     expect(
       (
-        await api.gqlFail(author.cookie, 'mutation($id:ID!){requestUploadUrl(contestId:$id){id}}', {
-          id: ids[0],
-        })
+        await api.gqlFail(
+          author.cookie,
+          'mutation($id:ID!){requestUploadUrl(contestId:$id,contentType:"image/png",byteSize:1){id}}',
+          {
+            id: ids[0],
+          },
+        )
       ).code,
     ).toBe('NOT_FOUND');
   });

@@ -1,5 +1,4 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
@@ -45,17 +44,17 @@ export class PostResolver {
     return this.posts.list(viewer, query);
   }
   @Mutation()
-  uploadPostMedia(
+  requestPostUpload(
     @Viewer() viewer: IViewer,
-    @Args('uploadId') uploadId: string,
-    @Args('file') file: Promise<FileUpload>,
+    @Args('groupId') groupId: string,
+    @Args('contentType') contentType: string,
+    @Args('byteSize') byteSize: number,
   ) {
-    return this.posts.uploadFile(viewer, uploadId, file);
+    return this.posts.requestUpload(viewer, groupId, contentType, byteSize);
   }
-
   @Mutation()
-  requestPostUpload(@Viewer() viewer: IViewer, @Args('groupId') groupId: string) {
-    return this.posts.requestUpload(viewer, groupId);
+  completePostUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
+    return this.posts.completeUpload(viewer, uploadId);
   }
   @Mutation()
   createPost(@Viewer() viewer: IViewer, @Args() input: Parameters<PostService['create']>[1]) {

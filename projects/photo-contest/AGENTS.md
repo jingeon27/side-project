@@ -10,7 +10,7 @@
 | `apps/web` | `@photo-contest/web` | Next.js 16 App Router, 모바일 우선 반응형 웹(최대 1440px), Apollo Client 4, Base UI |
 | `apps/mobile` | `@photo-contest/mobile` | Expo SDK 57 WebView 셸. 웹을 감싸고 브리지로 네이티브 기능을 제공 |
 | `packages/bridge` | `@photo-contest/bridge` | 웹 ↔ 앱 메시지 계약(zod). web·mobile만 쓴다 |
-| `packages/test-kit` | `@photo-contest/test-kit` | 격리 DB 스키마·테스트용 API 기동·테스트 이미지. 테스트에서만 쓴다 |
+| `packages/test-kit` | `@photo-contest/test-kit` | 격리 DB 스키마·테스트용 API 기동·테스트 이미지, 로컬 개발·테스트용 S3 호환 대역. 운영 코드에서 쓰지 않는다 |
 
 각 앱의 `AGENTS.md`가 그 앱의 구조·실행·테스트를 정한다. 작업 전에 해당 앱 문서와 아래 스킬을 읽는다.
 
@@ -50,6 +50,6 @@
 
 다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
 
-운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB·미디어 volume을 지우거나 DB를 자동으로 되돌리지 않는다.
+운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB volume을 지우거나 DB를 자동으로 되돌리지 않는다. 미디어는 서버 volume이 아니라 비공개 버킷에 있다.
 
-게시물 첨부는 파일 또는 HTTP·HTTPS 링크 중 하나 이상이다. Post.uploadId는 nullable, linkUrl은 선택이며 링크만 있으면 kind=LINK·mediaUrl=null이다. postDownload는 기존 읽기 권한을 검사한 뒤 S3 최대 60초 presigned GET 또는 매번 권한을 검사하는 로컬 attachment 경로를 반환한다. URL은 조회할 때마다 새로 받고 Apollo·Next 공개 캐시에 넣지 않는다. 링크 URL로 서버가 외부 메타데이터를 가져오지 않는다. 전체 계약·투네이션 확인 범위는 docs/post-attachments.md를 따른다.
+게시물 첨부는 파일 또는 HTTP·HTTPS 링크 중 하나 이상이다. Post.uploadId는 nullable, linkUrl은 선택이며 링크만 있으면 kind=LINK·mediaUrl=null이다. 모든 미디어 업로드·조회는 S3 presigned URL로만 처리하며 API는 파일을 받거나 읽거나 변환·중계하지 않는다(발급 시 권한·형식·크기, 완료 시 HEAD만). `/media/:id` 등 고정 경로는 읽기 권한을 확인한 뒤 `private, no-store` 307로 60초 서명 GET에 보내고, postDownload도 같은 60초 서명 URL을 반환한다. 서명 URL은 조회할 때마다 새로 받고 Apollo·Next 공개 캐시에는 고정 경로만 넣는다. 로컬 개발·테스트는 test-kit S3 대역을 쓴다. 링크 URL로 서버가 외부 메타데이터를 가져오지 않는다. 전체 계약·투네이션 확인 범위는 docs/post-attachments.md를 따른다.

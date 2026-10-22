@@ -1,12 +1,8 @@
-import { resolve } from 'node:path';
-
-import { PROJECT_ROOT } from './paths';
 import { assertSharedInstanceConfig } from './shared-instance';
 
 // 테스트가 실행 중에 NODE_ENV 같은 값을 바꾸므로 모든 값은 호출할 때마다 읽는다.
 
 const DEFAULT_WEB_ORIGIN = 'http://localhost:3200';
-const DEFAULT_STORAGE_DIR = '.data/photos';
 const DEFAULT_APP_SCHEME = 'photocontest';
 const DEFAULT_APP_VERSION = '1.0.0';
 const APP_VERSION_PATTERN = /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})$/;
@@ -25,7 +21,13 @@ const RESERVED_SCHEMES = new Set([
   'wss',
 ]);
 
-export type TStorageBackend = 'local' | 's3';
+/** 새 S3 객체에만 붙이며 DB에 전체 키를 저장해 기존 객체도 계속 읽는다. */
+export function s3KeyPrefix() {
+  const prefix = (process.env.S3_KEY_PREFIX ?? '').trim().replace(/\/$/, '');
+  if (prefix.length > 128 || (prefix && !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(prefix)))
+    throw new Error('S3_KEY_PREFIX must contain relative path segments.');
+  return prefix ? `${prefix}/` : '';
+}
 export type TOAuthProviderName = 'google' | 'kakao';
 
 export interface IAppVersions {
@@ -121,18 +123,10 @@ export function appVersions(): IAppVersions {
   return { minimumVersion, latestVersion };
 }
 
-export function storageBackend(): TStorageBackend {
-  return process.env.STORAGE_BACKEND === 's3' ? 's3' : 'local';
-}
-
-/** 상대 경로는 실행 위치와 상관없이 projects/photo-contest 기준으로 해석한다. */
-export function storageDir() {
-  return resolve(PROJECT_ROOT, optional('STORAGE_DIR') ?? DEFAULT_STORAGE_DIR);
-}
-
+/** 미디어는 항상 비공개 S3 호환 버킷에 둔다. 로컬 개발·테스트는 test-kit의 S3 대역을 가리킨다. */
 export function s3Settings(): IS3Settings {
   const bucket = optional('S3_BUCKET');
-  if (!bucket) throw new Error('S3_BUCKET is required for S3 storage.');
+  if (!bucket) throw new Error('S3_BUCKET is required for media storage.');
   return {
     bucket,
     region: optional('S3_REGION') ?? 'auto',
@@ -168,8 +162,6 @@ export function sentryTracesSampleRate() {
 export function assertProductionConfig() {
   if (!isProduction()) return;
   assertSharedInstanceConfig(process.env);
-  const storageReady =
-    storageBackend() === 's3' ? Boolean(optional('S3_BUCKET')) : Boolean(optional('STORAGE_DIR'));
-  if (!process.env.WEB_ORIGIN?.startsWith('https://') || !optional('DATABASE_URL') || !storageReady)
-    throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and persistent STORAGE_DIR.');
+  if (!process.env.WEB_ORIGIN?.startsWith('https://') || !optional('DATABASE_URL') || !optional('S3_BUCKET'))
+    throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and S3_BUCKET.');
 }

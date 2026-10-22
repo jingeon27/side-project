@@ -8,11 +8,12 @@ import { ImagePlus } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 
 import {
+  CompleteSubmissionUploadDocument,
   CreateSubmissionDocument,
   RequestUploadDocument,
   SubmissionsDocument,
-  UploadSubmissionPhotoDocument,
 } from '@/shared/api/generated';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
@@ -49,7 +50,7 @@ export function UploadPhotoBottomSheet({
   const form = useZodForm(uploadPhotoSchema, {
     defaultValues: { photo: null, caption: '', rightsConfirmed: false },
   });
-  const [uploadPhoto] = useMutation(UploadSubmissionPhotoDocument);
+  const [completeUpload] = useMutation(CompleteSubmissionUploadDocument);
   const [requestUpload] = useMutation(RequestUploadDocument);
   const [createSubmission] = useMutation(CreateSubmissionDocument, {
     update: (cache, { data }) => {
@@ -91,15 +92,18 @@ export function UploadPhotoBottomSheet({
           onSubmit={form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
             try {
               const image = await prepareUploadImage(photo, browserImageCodec);
-              const { data } = await requestUpload({ variables: { contestId } });
+              const { data } = await requestUpload({
+                variables: { contestId, contentType: image.body.type, byteSize: image.body.size },
+              });
               if (!data) return;
-              await uploadPhoto({ variables: { uploadId: data.requestUploadUrl.id, file: image.body } });
+              await uploadToStorage(data.requestUploadUrl, image.body);
+              await completeUpload({ variables: { uploadId: data.requestUploadUrl.id } });
               await createSubmission({
                 variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
               });
             } catch (error) {
               // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
-              if (error instanceof ImagePrepareError)
+              if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
                 form.setError('photo', { message: error.message }, { shouldFocus: true });
             }
           })}
