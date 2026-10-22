@@ -67,5 +67,5 @@ git diff --stat -- projects/game-feedback/packages/sdk/src/generated   # CI는 �
 corepack yarn workspace @game-feedback/sdk test            # 모든 operation이 응답 스키마를 넘기는지
 corepack yarn workspace @game-feedback/api typecheck       # 테스트 포함 tsconfig.json + 빌드 전용 tsconfig.build.json
 corepack yarn workspace @game-feedback/api test:integration
-corepack yarn workspace @side/game-feedback check          # 전체 typecheck + web·mobile·admin lint (API lint는 없다)
+corepack yarn workspace @side/game-feedback check          # 전체 typecheck + API·패키지 lint(프로젝트 루트) + web·mobile·admin lint
 ```
