@@ -78,7 +78,7 @@ describe('WebShellPageTemplate', () => {
     expect(props.originWhitelist).toEqual(['*']);
     expect(props).toMatchObject({
       setSupportMultipleWindows: false,
-      sharedCookiesEnabled: true,
+      sharedCookiesEnabled: false,
       thirdPartyCookiesEnabled: true,
       allowsBackForwardNavigationGestures: true,
       pullToRefreshEnabled: true,

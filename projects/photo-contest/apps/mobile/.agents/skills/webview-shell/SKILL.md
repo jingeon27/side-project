@@ -16,7 +16,8 @@ description: 모바일 앱의 WebView 동작(필수 prop, 탐색 정책, 딥링�
 
 - `originWhitelist={['*']}`: 기본값은 http(s)가 아닌 링크를 판단 없이 OS로 넘긴다. 모든 URL이 `decideNavigation`을 거치게 한다.
 - `setSupportMultipleWindows={false}` + `onOpenWindow` → `decideOpenWindow`: 창은 하나다. 같은 origin 새 창은 지금 WebView의 웹 이동으로 바꾼다.
-- `sharedCookiesEnabled`·`thirdPartyCookiesEnabled`: 세션 쿠키 `contest_session`이 WebView에 산다. 끄지 않는다.
+- `sharedCookiesEnabled={false}`(iOS): 세션 쿠키 `contest_session`은 WebView 쿠키 저장소에만 산다. 로그인은 웹이 WebView 안에서 `/auth/app/exchange`로 교환해 Set-Cookie를 받고, Max-Age 쿠키는 WKWebView 기본 영속 저장소(`cacheEnabled` 기본값)에 남아 앱을 다시 열어도 유지된다. 켜면 react-native-webview가 WebView 쿠키 전체(HttpOnly 포함)를 `NSHTTPCookieStorage`로 복사해 앱의 네이티브 fetch(`/app/config` 등)에도 세션이 실리므로 켜지 않는다. 네이티브가 쿠키를 심어야 하는 기능을 만들지 않는다.
+- `thirdPartyCookiesEnabled`(Android, 기본값 true): 그대로 둔다.
 - `applicationNameForUserAgent={buildAppUserAgent(appVersion)}`: 웹 서버가 `PhotoContestApp/x.y.z`로 앱을 알아본다. `userAgent` prop을 쓰면 이 토큰이 사라진다.
 - `injectedJavaScriptBeforeContentLoaded={buildBootstrapScript(...)}`: 웹은 브리지를 만들 때 앱 정보를 한 번만 읽는다. 나중에 `injectJavaScript`로 넣지 않는다.
 - `contentInsetAdjustmentBehavior="never"`: 여백은 `SafeAreaView`가 준다. iOS 스크롤 뷰가 안전 영역을 한 번 더 더하지 않게 한다.

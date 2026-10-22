@@ -44,7 +44,9 @@ export function WebShellPageTemplate({
           source={{ uri: sourceUrl }}
           originWhitelist={ORIGIN_WHITELIST}
           setSupportMultipleWindows={false}
-          sharedCookiesEnabled
+          // 세션 쿠키(Max-Age)는 WKWebView 기본 영속 저장소에 남는다. 켜면 HttpOnly 세션이 네이티브
+          // NSHTTPCookieStorage로 복사돼 앱의 fetch에도 실리므로 iOS 쿠키 공유를 끈다.
+          sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled
           allowsBackForwardNavigationGestures
           pullToRefreshEnabled
