@@ -29,6 +29,8 @@
 
 spec은 `createFixtures(import.meta.dirname)`로 자기 폴더의 `__fixtures__`만 읽습니다. FSD 규칙은 `__fixtures__`를 앱의 `src`로 보고 `srcDir`에 넘깁니다. 둘 이상의 규칙이 같은 fixture를 읽게 되면 그 분류 폴더(예: `rules/fsd/__fixtures__`)로 올립니다.
 
+FSD 규칙이 막는 것은 위 레이어 import(`fsd/layer-imports`), 다른 slice의 내부 파일·자기 배럴 import(`fsd/slice-public-api`), 화면 slice끼리의 import(`fsd/no-cross-page`)입니다. 같은 레이어의 다른 slice(`features` → `features`, `widgets` → `widgets`)를 배럴로 가져오는 것은 막지 않습니다. photo-contest mobile의 "기능끼리 import하지 않는다" 같은 앱 규칙은 리뷰로 지킵니다.
+
 웹은 `nextConfig`와 `fsdBoundaries(srcDir)`, Next가 아닌 React DOM 앱(Vite 관리자·디자인 시스템)은 `reactDomConfig`, 모바일은 `expoConfig`, API·공용 패키지는 `baseConfig`를 사용합니다. 프레임워크별 심각도와 테스트 예외는 해당 preset에서 관리합니다.
 
 `jsx-a11y`는 DOM 요소 규칙이라 React DOM 앱에만 겁니다. `eslint-config-next`가 플러그인을 다른 객체로 이미 등록하므로 `nextConfig`는 `jsxA11yRules`만 더하고, `reactDomConfig`는 플러그인까지 등록합니다. `label-has-associated-control`은 디자인 시스템의 `Input`·`Textarea`·`NativeSelect`·`Checkbox`를 입력으로, `Label`을 label로 봅니다. 사용자가 올린 동영상의 자막(`media-has-caption`), 사용자가 연 입력창·검색 전용 화면의 포커스 이동(`no-autofocus`)처럼 규칙이 의도를 구분하지 못하는 경우만 이유를 적은 줄 단위 disable로 남깁니다.
