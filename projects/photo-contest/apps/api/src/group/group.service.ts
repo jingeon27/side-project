@@ -234,7 +234,7 @@ export class GroupService {
     return this.group(viewer, groupId);
   }
 
-  /** 관리자만. 이전 토큰은 가입·미리보기 모두 NOT_FOUND가 된다. */
+  /** 그룹장(OWNER)만. 이전 토큰은 가입·미리보기 모두 NOT_FOUND가 된다. */
   async regenerateInviteLink(viewer: IViewer, groupId: string): Promise<IGroupNode> {
     const member = await this.membership.requireOwner(viewer.id, groupId);
     const inviteToken = randomToken();

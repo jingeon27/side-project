@@ -65,7 +65,7 @@ type Query {
   "공개·비공개 그룹의 이름을 탐색한다. 비공개 게시물·초대 토큰·멤버 명단은 노출하지 않는다"
   discoverGroups(search: String, visibility: GroupVisibility, offset: Int = 0, limit: Int = 24): [Group!]!
   publicGroupCount: Int!
-  "그룹장만 가입 신청을 조회한다"
+  "그룹장·부관리자만 가입 신청을 조회한다"
   groupJoinRequests(groupId: ID!, offset: Int = 0, limit: Int = 24): [GroupJoinRequest!]!
   "로그인하지 않아도 초대 토큰으로 그룹을 미리 본다"
   invitePreview(token: String!): InvitePreview!
@@ -90,10 +90,12 @@ type Mutation {
   ): Group!
   "공개 그룹은 즉시 가입하고 비공개 그룹은 승인 대기 신청을 만든다"
   requestGroupMembership(groupId: ID!): Group!
+  "그룹장·부관리자만"
   approveGroupJoinRequest(requestId: ID!): Boolean!
+  "그룹장·부관리자만"
   rejectGroupJoinRequest(requestId: ID!): Boolean!
   joinGroup(token: String!): Group!
-  "관리자만. 이전 초대 링크는 더 이상 쓸 수 없다"
+  "그룹장만. 이전 초대 링크는 더 이상 쓸 수 없다"
   regenerateInviteLink(groupId: ID!): Group!
 }
 
