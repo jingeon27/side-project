@@ -13,12 +13,11 @@ import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 
-const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 type Agent = ReturnType<typeof supertest.agent>;
 
-describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', () => {
+describe('comment threads with deployed PostgreSQL migrations', () => {
   let app: INestApplication;
   let db: PrismaClient;
   let schema: string;
@@ -55,7 +54,7 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
   }
 
   beforeAll(async () => {
-    const url = new URL(target ?? '');
+    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
     schema = `gf_test_comment_replies_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
