@@ -63,6 +63,7 @@ export class MaintenanceService {
       });
     }
     await this.db.authAttempt.deleteMany({ where: { expiresAt: { lte: now } } });
+    await this.db.rateLimitBucket.deleteMany({ where: { expiresAt: { lte: now } } });
     await this.db.session.deleteMany({ where: { expiresAt: { lt: now } } });
     await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lt: now } } });
     await this.db.appLoginTicket.deleteMany({ where: { expiresAt: { lt: now } } });

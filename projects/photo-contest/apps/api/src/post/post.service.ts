@@ -19,6 +19,7 @@ import { GroupCategoryService } from '../group/group-category.service';
 import { MembershipService } from '../group/membership.service';
 import { MediaUploadService } from '../media-upload/media-upload.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { MediaStorage } from '../storage/media-storage.service';
 import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
 import { postLink } from './post-link.policy';
@@ -53,6 +54,7 @@ export class PostService {
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
     private readonly uploads: MediaUploadService,
+    private readonly limits: RateLimitService,
   ) {}
 
   async list(viewer: IViewer | null, query: IPostQuery) {
@@ -105,13 +107,14 @@ export class PostService {
   completeUpload(viewer: IViewer, uploadId: string) {
     return this.uploads.completeUpload(viewer, uploadId);
   }
-  async create(viewer: IViewer, input: IPostInput) {
+  async create(viewer: IViewer, input: IPostInput, address: string | null = null) {
     if (!input.rightsConfirmed) fail('공유할 권리와 촬영된 사람의 동의를 확인해 주세요.');
     const title = textValue(input.title, POST_TITLE_LIMIT, '제목');
     const body = input.body?.trim() ?? '';
     if (body.length > POST_BODY_LIMIT) fail('내용은 5000자 이하로 입력해 주세요.');
     const linkUrl = postLink(input.linkUrl);
     if (!input.uploadId && !linkUrl) fail('사진·동영상 또는 링크를 첨부해 주세요.');
+    await this.limits.consume('POST_CREATE', { userId: viewer.id, address });
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireMember(viewer.id, input.groupId, tx);
       const upload = input.uploadId

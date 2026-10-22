@@ -21,6 +21,7 @@ import {
 } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { authCookieOptions, oauthStateCookieName } from './auth-cookie';
 import {
   accessTokenOf,
@@ -93,6 +94,7 @@ export class AuthService {
   constructor(
     private readonly db: Database,
     private readonly sessions: SessionService,
+    private readonly limits: RateLimitService,
   ) {}
 
   config(): IAuthConfig {
@@ -123,9 +125,15 @@ export class AuthService {
    * state·PKCE를 만들고 provider 인가 URL을 돌려준다.
    * app_challenge가 있으면 콜백에서 세션 대신 앱 로그인 티켓을 만든다.
    */
-  async startOAuth(providerName: string, appChallenge: unknown, res: Response): Promise<string> {
+  async startOAuth(
+    providerName: string,
+    appChallenge: unknown,
+    res: Response,
+    address: string | null = null,
+  ): Promise<string> {
     const provider = oauthProvider(providerName);
     const challenge = parseAppChallenge(appChallenge);
+    await this.limits.consume('OAUTH_START', { userId: null, address });
     const state = randomToken();
     const verifier = randomToken();
     await this.db.oAuthAttempt.create({

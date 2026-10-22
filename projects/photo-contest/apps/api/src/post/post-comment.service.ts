@@ -11,6 +11,7 @@ import { COMMENT_BODY_LIMIT, PAGE_SIZE_DEFAULT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 
 function commentInclude(viewerId: string | null) {
   return {
@@ -44,6 +45,7 @@ export class PostCommentService {
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
+    private readonly limits: RateLimitService,
   ) {}
 
   async list(
@@ -78,8 +80,15 @@ export class PostCommentService {
     return this.db.postComment.count({ where: { postId, parentId: parentId ?? null } });
   }
 
-  async create(viewer: IViewer, postId: string, input: unknown, parentId?: string | null) {
+  async create(
+    viewer: IViewer,
+    postId: string,
+    input: unknown,
+    parentId?: string | null,
+    address: string | null = null,
+  ) {
     const body = textValue(input, COMMENT_BODY_LIMIT, '댓글');
+    await this.limits.consume('COMMENT_CREATE', { userId: viewer.id, address });
     return this.transactions.atomic(async (tx) => {
       const { admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
       if (parentId !== undefined && parentId !== null) {

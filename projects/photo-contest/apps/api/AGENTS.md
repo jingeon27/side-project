@@ -39,6 +39,7 @@
 - 사용자의 개발 서버는 `dist/main.js`를 본다(`node --watch`). 검증용 빌드는 다른 outDir로 하고, 테스트 API는 test-kit이 `.e2e-build`로 빌드한다.
 - 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client도 포함한다. 미디어 처리 런타임(sharp·MediaInfo)은 없다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
 - 운영(NODE_ENV=production)에서만 GraphQL을 주소별 분당 600회로 제한한다(`graphql-rate-limit.middleware.ts`, 프로세스 메모리). 주소는 Express가 TRUST_PROXY_HOPS로 확인한 `req.ip`를 `rateLimitAddress()`로 묶은 값(IPv6 /64)이다. 브라우저 GraphQL은 Caddy → 웹 `/backend/graphql` 프록시 → API로 오며 프록시가 Caddy의 X-Forwarded-For를 그대로 넘기고(Next는 없을 때만 채운다), 웹 SSR도 들어온 X-Forwarded-For를 넘긴다. 프록시를 신뢰하는데 X-Forwarded-For가 없는 요청은 웹 서버의 공개 캐시 조회·헬스 체크이므로 제한하지 않는다(웹 컨테이너 주소 하나로 묶으면 한 사용자가 사이트 전체 SSR을 막는다).
+- 운영에서 그룹 생성·게시물·댓글·가입 신청(초대 가입 포함)·신고·OAuth 시작은 `RateLimitService.consume()`이 사용자·주소마다 DB 고정 창 버킷(`RateLimitBucket`)으로 센다. 한도는 `limits.ts`의 `WRITE_RATE_LIMIT`, 주소는 리졸버·컨트롤러의 `@ClientAddress()`가 넘긴다. 업로드 발급은 사용자가 맡긴 원본 합계를 `USER_STORAGE_QUOTA_BYTES`(5GB)까지 허용한다(모든 환경).
 
 ## 테스트
 

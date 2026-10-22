@@ -22,6 +22,7 @@ import {
 import { CONTEST_FORMAT } from '../contest/group-contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { GroupCategoryService } from './group-category.service';
 import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility, type TGroupVisibility } from './group-visibility';
@@ -90,6 +91,7 @@ export class GroupService {
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly categories: GroupCategoryService,
+    private readonly limits: RateLimitService,
   ) {}
 
   async myGroups(viewer: IViewer): Promise<IGroupNode[]> {
@@ -154,10 +156,12 @@ export class GroupService {
     name: unknown,
     visibility: TGroupVisibility = GROUP_VISIBILITY.PUBLIC,
     description?: string | null,
+    address: string | null = null,
   ): Promise<IGroupNode> {
     const validName = textValue(name, TEXT_LIMIT.GROUP_NAME, '그룹 이름');
     const validDescription = description?.trim() ?? '';
     if (validDescription.length > GROUP_DESCRIPTION_LIMIT) fail('그룹 소개는 500자 이하로 입력해 주세요.');
+    await this.limits.consume('GROUP_CREATE', { userId: viewer.id, address });
     const inviteToken = randomToken();
     const group = await this.transactions.atomic(async (tx) => {
       const created = await (tx ?? this.db).group.create({
@@ -187,12 +191,17 @@ export class GroupService {
   }
 
   /** 이미 멤버면 역할을 바꾸지 않고 그대로 돌려준다. */
-  async joinGroup(viewer: IViewer, token: unknown): Promise<IGroupNode> {
+  async joinGroup(viewer: IViewer, token: unknown, address: string | null = null): Promise<IGroupNode> {
     const group = await this.groupByInvite(token);
-    return this.requestMembership(viewer, group.id);
+    return this.requestMembership(viewer, group.id, address);
   }
 
-  async requestMembership(viewer: IViewer, groupId: string): Promise<IGroupNode> {
+  async requestMembership(
+    viewer: IViewer,
+    groupId: string,
+    address: string | null = null,
+  ): Promise<IGroupNode> {
+    await this.limits.consume('JOIN_REQUEST', { userId: viewer.id, address });
     await this.transactions.atomic(async (tx) => {
       const group = await (tx ?? this.db).group.findUnique({ where: { id: groupId } });
       if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);

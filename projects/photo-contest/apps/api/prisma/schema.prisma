@@ -299,6 +299,12 @@ model AuthAttempt {
   expiresAt DateTime
   @@index([expiresAt])
 }
+model RateLimitBucket {
+  keyHash String @id
+  count Int @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
+}
 model PostContestVote {
   id String @id @default(cuid())
   contestId String

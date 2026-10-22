@@ -3,6 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
 import type { TGroupVisibility } from './group-visibility';
 import { GroupService, type IGroupNode } from './group.service';
 
@@ -44,19 +45,28 @@ export class GroupResolver {
     @Viewer() viewer: IViewer,
     @Args('name') name: string,
     @Args('visibility') visibility: TGroupVisibility,
+    @ClientAddress() address: string | null,
     @Args('description') description?: string | null,
   ) {
-    return this.groups.createGroup(viewer, name, visibility, description);
+    return this.groups.createGroup(viewer, name, visibility, description, address);
   }
 
   @Mutation()
-  requestGroupMembership(@Viewer() viewer: IViewer, @Args('groupId') groupId: string) {
-    return this.groups.requestMembership(viewer, groupId);
+  requestGroupMembership(
+    @Viewer() viewer: IViewer,
+    @Args('groupId') groupId: string,
+    @ClientAddress() address: string | null,
+  ) {
+    return this.groups.requestMembership(viewer, groupId, address);
   }
 
   @Mutation()
-  joinGroup(@Viewer() viewer: IViewer, @Args('token') token: string) {
-    return this.groups.joinGroup(viewer, token);
+  joinGroup(
+    @Viewer() viewer: IViewer,
+    @Args('token') token: string,
+    @ClientAddress() address: string | null,
+  ) {
+    return this.groups.joinGroup(viewer, token, address);
   }
 
   @Mutation()

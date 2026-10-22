@@ -8,6 +8,7 @@ import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { MediaStorage } from '../storage/media-storage.service';
 
 @Injectable()
@@ -17,13 +18,20 @@ export class ModerationService {
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
+    private readonly limits: RateLimitService,
   ) {}
 
   /** 그룹 멤버 누구나. 같은 사람의 신고는 처음 한 건만 남는다. 숨긴 사진은 NOT_FOUND */
-  async report(viewer: IViewer, submissionId: string, reason: unknown): Promise<boolean> {
+  async report(
+    viewer: IViewer,
+    submissionId: string,
+    reason: unknown,
+    address: string | null = null,
+  ): Promise<boolean> {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
     if (submission.hidden) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const validReason = textValue(reason, TEXT_LIMIT.REPORT_REASON, '신고 이유');
+    await this.limits.consume('REPORT', { userId: viewer.id, address });
     await this.db.report.createMany({
       data: [{ submissionId, reporterId: viewer.id, reason: validReason }],
       skipDuplicates: true,
