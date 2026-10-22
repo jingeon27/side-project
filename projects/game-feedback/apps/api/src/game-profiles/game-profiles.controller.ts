@@ -13,11 +13,16 @@ export class GameProfilesController {
   constructor(@Inject(GameProfilesService) private readonly profiles: GameProfilesService) {}
 
   @Get('game-profiles/:playerTag')
-  lookup(@Param('playerTag', new ContractValuePipe(PlayerTagSchema)) playerTag: string) {
-    return this.profiles.lookup(playerTag);
+  @UseGuards(UserGuard)
+  lookup(
+    @Req() req: SessionRequest,
+    @Param('playerTag', new ContractValuePipe(PlayerTagSchema)) playerTag: string,
+  ) {
+    return this.profiles.preview(req, playerTag);
   }
 
   @Get('me/game-accounts')
+  @UseGuards(UserGuard)
   gameAccounts(@Req() req: SessionRequest) {
     return this.profiles.gameAccounts(req);
   }

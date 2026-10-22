@@ -37,3 +37,14 @@ it('서명된 내부 조회는 방문자 주소와 분리된 넉넉한 예산을
   // 주소 문자열이 우연히 internal이어도 서명된 내부 호출로 취급하지 않는다.
   expect(requestRateBucket({ ...visitor, ip: 'internal' }).key).toBe('read:ip:internal');
 });
+
+it('게임 프로필 조회는 서버 토큰을 쓰므로 사용자별 전용 예산을 사용해야 한다', () => {
+  const lookup = {
+    ip: '203.0.113.7',
+    userId: 'owner',
+    method: 'GET',
+    path: '/api/game-profiles/%23P0LYQ829',
+  };
+  expect(requestRateBucket(lookup)).toEqual({ key: 'game-profile:user:owner', limit: 10 });
+  expect(requestRateBucket({ ...lookup, path: '/api/me/game-accounts' }).key).toBe('read:user:owner');
+});

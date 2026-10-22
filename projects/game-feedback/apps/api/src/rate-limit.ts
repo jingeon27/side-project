@@ -45,6 +45,9 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
       /^\/api\/conversations\/[^/]+\/attachments(?:\/uploads)?$/.test(path))
   )
     return { key: `upload:${identity}`, limit: 20 };
+  // Each preview may call the Supercell API with the server token.
+  if (request.method === 'GET' && /^\/api\/game-profiles\/[^/]+$/.test(path))
+    return { key: `game-profile:${identity}`, limit: 10 };
   if (
     request.method === 'POST' &&
     (/^\/api\/post-media\/[^/]+\/complete$/.test(path) ||
