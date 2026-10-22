@@ -90,7 +90,13 @@ export class GroupContestService {
     });
     if (!row || row.format !== CONTEST_FORMAT.POST)
       fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
-    const { member } = await this.membership.readableGroup(viewer?.id ?? null, row.groupId);
+    // 비공개 그룹의 대회는 비멤버에게 있는지도 알리지 않는다.
+    const { member } = await this.membership.readableGroup(
+      viewer?.id ?? null,
+      row.groupId,
+      undefined,
+      ERROR_MESSAGE.CONTEST_NOT_FOUND,
+    );
     const node = this.nodes([row], viewer, member)[0];
     if (!node) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return node;
@@ -123,7 +129,7 @@ export class GroupContestService {
       const contest = await (tx ?? this.db).contest.findUnique({ where: { id: contestId } });
       if (!contest || contest.format !== CONTEST_FORMAT.POST)
         fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
-      await this.membership.requireMember(viewer.id, contest.groupId, tx);
+      await this.membership.requireMemberOf(viewer.id, contest.groupId, ERROR_MESSAGE.CONTEST_NOT_FOUND, tx);
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간에만 투표할 수 있습니다.');
       const post = await (tx ?? this.db).post.findUnique({ where: { id: postId } });
       if (!post || post.hidden || post.contestId !== contestId || post.groupId !== contest.groupId)

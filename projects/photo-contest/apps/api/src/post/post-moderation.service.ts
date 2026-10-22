@@ -5,10 +5,13 @@ import { Injectable } from '@nestjs/common';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { ERROR_CODE, fail } from '../common/errors';
+import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange } from '../common/validation';
 import { Database } from '../database/database.service';
+import { isAdmin } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
+
+const POST_NOT_FOUND = '게시물을 찾을 수 없습니다.';
 
 @Injectable()
 export class PostModerationService {
@@ -31,8 +34,9 @@ export class PostModerationService {
   async setHidden(viewer: IViewer, postId: string, hidden: boolean) {
     return this.db.atomic(async (tx) => {
       const post = await tx.post.findUnique({ where: { id: postId } });
-      if (!post) fail('게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-      await this.membership.requireAdmin(viewer.id, post.groupId, tx);
+      if (!post) fail(POST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
+      const member = await this.membership.requireMemberOf(viewer.id, post.groupId, POST_NOT_FOUND, tx);
+      if (!isAdmin(member)) fail(ERROR_MESSAGE.GROUP_FORBIDDEN, ERROR_CODE.FORBIDDEN);
       if (post.hidden === hidden) return true;
       await tx.post.update({ where: { id: postId }, data: { hidden } });
       if (post.legacySubmissionId)
