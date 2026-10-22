@@ -43,8 +43,8 @@ export class ChatEvents implements OnModuleDestroy {
       const heartbeat = setInterval(() => {
         void this.authenticated(client)
           .then((valid) => {
-            if (!valid) subscriber.complete();
-            else if (!subscriber.closed) subscriber.next({ type: 'heartbeat', data: {} });
+            if (!valid) return subscriber.complete();
+            if (!subscriber.closed) subscriber.next({ type: 'heartbeat', data: {} });
           })
           .catch(() => subscriber.complete());
       }, 5000);
