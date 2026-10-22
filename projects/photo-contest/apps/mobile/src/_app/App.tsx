@@ -69,7 +69,7 @@ function AppScreens({ launch, onReady }: IAppScreensProps) {
 }
 
 export function App() {
-  const hideSplash = useSplashScreen();
+  const handleScreenReady = useSplashScreen();
   const [launch, setLaunch] = useState<IAppLaunch | null>(null);
 
   // 기기 ID는 웹 문서보다 먼저 심어야 해서 첫 링크와 함께 WebView를 열기 전에 받는다.
@@ -90,7 +90,7 @@ export function App() {
   return (
     <AppProviders>
       <StatusBar style="dark" />
-      <AppScreens launch={launch} onReady={hideSplash} />
+      <AppScreens launch={launch} onReady={handleScreenReady} />
     </AppProviders>
   );
 }
