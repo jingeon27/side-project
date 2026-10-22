@@ -88,12 +88,26 @@ export class CommentsService {
     if (c.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     return responseComment(
       await this.cache.change(
-        (tx) =>
-          tx.comment.update({
+        async (tx) => {
+          // createComment와 같은 글 → 댓글 순서로 잠근 뒤 숨김·삭제·차단을 다시 확인한다.
+          await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${c.postId} FOR UPDATE`;
+          await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "id" = ${id} FOR UPDATE`;
+          const excluded = await this.visibility.excluded(req, tx);
+          const current = await tx.comment.findFirst({
+            where: {
+              id,
+              ...activeCommentWhere(excluded),
+              post: { ...ACTIVE_POST, authorId: { notIn: excluded } },
+            },
+            select: { id: true },
+          });
+          if (!current) throw new ApiError(404, 'COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+          return tx.comment.update({
             where: { id },
             data: { body: input.body },
             include: { author: { select: authorSelect } },
-          }),
+          });
+        },
         [postCacheTag(c.postId)],
       ),
     );

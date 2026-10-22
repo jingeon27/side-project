@@ -192,6 +192,12 @@ export class PostsService {
       await this.cache.change(
         async (tx) => {
           await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+          // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
+          const current = await tx.post.findFirst({
+            where: { id, ...ACTIVE_POST, authorId: u.id },
+            select: { id: true },
+          });
+          if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
           if (input.body !== undefined || document !== undefined)
             await this.media.sync(tx, u.id, id, document);
           return (tx ?? this.db).post.update({

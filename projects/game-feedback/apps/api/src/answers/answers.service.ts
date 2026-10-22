@@ -23,10 +23,17 @@ export class AnswersService {
     @Inject(PostsService) private readonly posts: PostsService,
   ) {}
   async createAnswer(req: SessionRequest, postId: string, input: AnswerBodyDto) {
-    const u = requireUser(req),
-      p = await this.posts.visiblePost(req, postId);
+    const u = requireUser(req);
     const a = await this.cache.change(
       async (tx) => {
+        // 잠금 뒤 다시 확인해 그 사이 숨김·삭제·차단된 글에 답변이 붙지 않게 한다.
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${postId} FOR UPDATE`;
+        const excluded = await this.visibility.excluded(req, tx);
+        const p = await tx.post.findFirst({
+          where: { id: postId, ...ACTIVE_POST, authorId: { notIn: excluded } },
+          select: { authorId: true },
+        });
+        if (!p) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
         const row = await (tx ?? this.db).answer.create({
           data: { postId, authorId: u.id, body: input.body },
           include: { author: { select: authorSelect } },
@@ -44,7 +51,7 @@ export class AnswersService {
           });
         return row;
       },
-      [postCacheTag(postId)],
+      (row) => [postCacheTag(row.postId)],
     );
     return responseAnswer(a);
   }
@@ -59,6 +66,26 @@ export class AnswersService {
       throw new ApiError(404, 'ANSWER_NOT_FOUND', '답변을 찾을 수 없습니다.');
     return a;
   }
+  /** 글 → 답변 순서로 잠근 뒤 트랜잭션 안에서 가시성을 다시 확인한다(createComment와 같은 순서). */
+  private async lockVisibleAnswer(
+    req: SessionRequest,
+    tx: Prisma.TransactionClient,
+    answer: { id: string; postId: string },
+  ) {
+    await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${answer.postId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT "id" FROM "Answer" WHERE "id" = ${answer.id} FOR UPDATE`;
+    const excluded = await this.visibility.excluded(req, tx);
+    const visible = await tx.answer.findFirst({
+      where: {
+        id: answer.id,
+        ...ACTIVE_CONTENT,
+        authorId: { notIn: excluded },
+        post: { ...ACTIVE_POST, authorId: { notIn: excluded } },
+      },
+      select: { id: true },
+    });
+    if (!visible) throw new ApiError(404, 'ANSWER_NOT_FOUND', '답변을 찾을 수 없습니다.');
+  }
   async updateAnswer(req: SessionRequest, id: string, input: AnswerBodyDto) {
     const u = requireUser(req),
       a = await this.visibleAnswer(req, id);
@@ -66,6 +93,7 @@ export class AnswersService {
     return responseAnswer(
       await this.cache.change(
         async (tx) => {
+          await this.lockVisibleAnswer(req, tx, a);
           // 수정하면 도움됨 표시가 풀리므로 그 알림도 남기지 않는다.
           await tx.notification.deleteMany({ where: { answerId: id, type: 'HELPFUL' } });
           return tx.answer.update({
@@ -124,6 +152,7 @@ export class AnswersService {
       throw new ApiError(403, 'FORBIDDEN', '요청자만 다른 사용자의 답변에 도움됨을 표시할 수 있습니다.');
     const row = await this.cache.change(
       async (tx) => {
+        await this.lockVisibleAnswer(req, tx, a);
         const changed = await (tx ?? this.db).answer.updateMany({
           where: { id, helpful: !input.helpful },
           data: { helpful: input.helpful, readAt: new Date() },

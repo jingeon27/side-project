@@ -120,4 +120,31 @@ describe('answer regressions with deployed migrations', () => {
     expect(await helpfulNotifications(created.id)).toBe(0);
     expect(await state.db.notification.count({ where: { answerId: created.id, type: 'ANSWER' } })).toBe(1);
   });
+
+  it('rechecks post visibility inside the write transaction for answers and helpful marks', async () => {
+    const post = await feedbackPost();
+    const created = await answer(post.id);
+    await state.db.post.update({ where: { id: post.id }, data: { hidden: true } });
+    await state.reviewer.agent
+      .post(`/api/posts/${post.id}/answers`)
+      .set('Origin', origin)
+      .send({ body: '숨겨진 글에는 답변이 붙지 않아야 합니다.' })
+      .expect(404);
+    await state.reviewer.agent
+      .patch(`/api/answers/${created.id}`)
+      .set('Origin', origin)
+      .send({ body: '숨겨진 글의 답변은 고칠 수 없어야 합니다.' })
+      .expect(404);
+    await state.requester.agent
+      .post(`/api/answers/${created.id}/helpful`)
+      .set('Origin', origin)
+      .send({ helpful: true })
+      .expect(404);
+    await state.reviewer.agent
+      .post('/api/posts/a.b/answers')
+      .set('Origin', origin)
+      .send({ body: '형식이 틀린 글에는 답변할 수 없어야 합니다.' })
+      .expect(404);
+    expect(await state.db.answer.count({ where: { postId: post.id } })).toBe(1);
+  });
 });
