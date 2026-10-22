@@ -243,10 +243,10 @@ describe('generated REST client response validation', () => {
   it('preserves valid game data but rejects false source or ownership claims', async () => {
     const profile = profileFixture();
     respond(profile);
-    expect(await getGameProfile('#GG829JGY')).toEqual(profile);
+    expect(await getGameProfile('GG829JGY')).toEqual(profile);
     for (const patch of [{ source: 'UNKNOWN' }, { verification: 'VERIFIED' }, { trophies: '7000' }]) {
       respond({ ...profile, ...patch });
-      await expect(getGameProfile('#GG829JGY')).rejects.toBeInstanceOf(ApiResponseValidationError);
+      await expect(getGameProfile('GG829JGY')).rejects.toBeInstanceOf(ApiResponseValidationError);
     }
   });
   it('does not turn a failed or empty mutation response into success', async () => {

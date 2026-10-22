@@ -8,6 +8,8 @@ export default defineConfig({
       schemas: { path: './src/generated/models', type: 'zod' },
       client: 'fetch',
       clean: true,
+      // 경로 파라미터를 encodeURIComponent로 감싼다. 남은 점 세그먼트와 구분자는 apiFetch가 거부한다.
+      urlEncodeParameters: true,
       override: {
         fetch: { includeHttpResponseReturnType: false, forceSuccessResponse: true, runtimeValidation: true },
         includeZodSchemaInArguments: true,
