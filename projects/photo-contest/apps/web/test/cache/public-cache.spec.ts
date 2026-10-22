@@ -257,11 +257,12 @@ test('프록시는 Origin·본문 한도·인증 쿠키를 지키고 직접 업�
   const multipart = new FormData();
   for (const field of ticket.fields) multipart.append(field.name, field.value);
   multipart.append('file', new Blob([new Uint8Array(image)], { type: 'image/png' }), 'stream.png');
+  expect(new URL(ticket.url).origin).not.toBe(CACHE_WEB_ORIGIN);
   const media = await request.post(ticket.url, {
     headers: { Origin: CACHE_WEB_ORIGIN },
     multipart,
   });
-  expect(media.status(), await media.text()).toBe(201);
+  expect(media.status(), await media.text()).toBe(204);
   const completed = await request.post('/backend/graphql', {
     headers: { Origin: CACHE_WEB_ORIGIN },
     data: {
@@ -278,5 +279,13 @@ test('프록시는 Origin·본문 한도·인증 쿠키를 지키고 직접 업�
       variables: { group: groupId, upload: uploadId, title: '프록시 스트림 업로드' },
     },
   });
-  expect((await post.json()).errors).toBeUndefined();
+  const posted = await post.json();
+  expect(posted.errors).toBeUndefined();
+  // 프로덕션 프록시는 307과 캐시 금지를 그대로 넘기고 만료되는 서명 주소를 캐시하지 않는다.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const redirect = await request.get(`/backend/media/${posted.data.createPost.id}`, { maxRedirects: 0 });
+    expect(redirect.status()).toBe(307);
+    expect(redirect.headers()['cache-control']).toBe('private, no-store');
+    expect(new URL(redirect.headers()['location'] ?? '').searchParams.get('X-Amz-Expires')).toBe('60');
+  }
 });

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
+import { isStorageUpload } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
 test(
@@ -20,14 +21,13 @@ test(
     });
     await form.getByLabel('제목', { exact: true }).fill('다시 올리는 순간');
     await form.getByRole('checkbox', { name: /공유할 권리/ }).check();
-    const storage = /\/backend\/local-post-uploads\?/;
-    await page.route(storage, (route) => route.abort('failed'));
+    await page.route(isStorageUpload, (route) => route.abort('failed'));
     await form.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(form.getByRole('alert')).toHaveText(
       '파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
     );
     await expect(form.getByLabel('제목', { exact: true })).toHaveValue('다시 올리는 순간');
-    await page.unroute(storage);
+    await page.unroute(isStorageUpload);
     await form.getByRole('button', { name: '게시물 올리기', exact: true }).click();
     await expect(form).toHaveCount(0);
     await expect(
@@ -135,6 +135,23 @@ for (const video of [false, true]) {
       const article = page
         .getByRole('region', { name: '최신 게시물', exact: true })
         .getByRole('article', { name: title, exact: true });
+      const media = video ? article.locator('video') : article.getByRole('img', { name: title, exact: true });
+      const source = await media.getAttribute('src');
+      if (!source) throw new Error('고정 미디어 경로가 있어야 한다');
+      // 공개 캐시에는 고정 경로만 남기고, 매 요청 권한을 확인한 뒤 짧은 서명 GET으로 보낸다.
+      const redirect = await page.request.get(source, { maxRedirects: 0 });
+      expect(redirect.status()).toBe(307);
+      expect(redirect.headers()['cache-control']).toBe('private, no-store');
+      const signed = new URL(redirect.headers()['location'] ?? '');
+      expect(signed.origin).not.toBe(new URL(page.url()).origin);
+      expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+      const range = await page.request.get(signed.toString(), { headers: { Range: 'bytes=0-31' } });
+      expect(range.status()).toBe(206);
+      expect((await range.body()).length).toBe(32);
+      if (!video)
+        await expect
+          .poll(() => media.evaluate((image: HTMLImageElement) => image.naturalWidth))
+          .toBeGreaterThan(0);
       const saved = page.waitForEvent('download');
       const metadata = page.waitForResponse((response) => {
         const request = response.request();

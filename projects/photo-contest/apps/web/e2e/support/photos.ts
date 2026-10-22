@@ -1,11 +1,17 @@
 import {
   createTestImage,
+  FAKE_S3_DEFAULTS,
   graphqlRequest,
   uploadTestPostMedia,
   uploadTestSubmissionMedia,
 } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './env';
+
+/** 브라우저가 서명 POST로 S3 대역 버킷에 직접 올리는 요청. 객체 조회(/버킷/키)와 구분한다. */
+export function isStorageUpload(url: URL) {
+  return url.origin !== WEB_ORIGIN && url.pathname === `/${FAKE_S3_DEFAULTS.bucket}`;
+}
 
 export async function productRequest<T>(
   cookie: string,

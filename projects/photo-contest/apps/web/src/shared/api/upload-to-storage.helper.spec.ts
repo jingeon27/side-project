@@ -12,7 +12,7 @@ describe('저장소 직접 업로드', () => {
     await uploadToStorage(
       {
         url: 'https://storage.example',
-        fields: [{ name: 'key', value: 'staging/photo' }],
+        fields: [{ name: 'key', value: 'photos/00000000-0000-0000-0000-000000000000.jpg' }],
       },
       file,
     );
@@ -23,7 +23,7 @@ describe('저장소 직접 업로드', () => {
     const body = options?.body;
     if (!(body instanceof FormData)) throw new Error('multipart 본문이 필요합니다.');
     expect([...body.keys()]).toEqual(['key', 'file']);
-    expect(body.get('key')).toBe('staging/photo');
+    expect(body.get('key')).toBe('photos/00000000-0000-0000-0000-000000000000.jpg');
     const uploaded = body.get('file');
     if (!(uploaded instanceof Blob)) throw new Error('파일이 필요합니다.');
     expect(await uploaded.text()).toBe('image');
@@ -37,7 +37,7 @@ describe('저장소 직접 업로드', () => {
       if (failure === 'rejected') send.mockResolvedValue(new Response(null, { status: 403 }));
       vi.stubGlobal('fetch', send);
       await expect(
-        uploadToStorage({ url: '/backend/local-post-uploads', fields: [] }, new Blob(['image'])),
+        uploadToStorage({ url: 'https://storage.example/bucket', fields: [] }, new Blob(['image'])),
       ).rejects.toThrow(StorageUploadError);
     },
   );

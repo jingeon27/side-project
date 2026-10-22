@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { createTestImage, uploadTestPostMedia } from '@photo-contest/test-kit';
 
 import { API_URL, WEB_ORIGIN } from './support/env';
-import { productRequest } from './support/photos';
+import { isStorageUpload, productRequest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
 test(
@@ -38,15 +38,14 @@ test(
       path: `.data/screens/${testInfo.project.name}-group-profile.png`,
       animations: 'disabled',
     });
-    const storage = /\/backend\/local-post-uploads\?/;
-    await page.route(storage, (route) => route.abort('failed'));
+    await page.route(isStorageUpload, (route) => route.abort('failed'));
     await editor.getByRole('button', { name: '프로필 저장하기' }).click();
     await expect(editor.getByRole('alert')).toHaveText(
       '파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
     );
     await expect(editor.getByLabel('그룹 이름')).toHaveValue(name);
     await expect(preview).toBeVisible();
-    await page.unroute(storage);
+    await page.unroute(isStorageUpload);
     const mutations: string[] = [];
     page.on('request', (req) => {
       if (req.url().endsWith('/backend/graphql')) {

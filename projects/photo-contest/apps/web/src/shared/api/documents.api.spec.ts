@@ -92,13 +92,13 @@ async function submit(cookie: string, contestId: string, caption: string) {
   form.append('file', new Blob([bytes], { type: 'image/png' }), 'photo.png');
   expect(
     (
-      await fetch(new URL(ticket.url.replace(/^\/backend/, ''), url), {
+      await fetch(ticket.url, {
         method: 'POST',
         headers: { Origin: origin },
         body: form,
       })
-    ).ok,
-  ).toBe(true);
+    ).status,
+  ).toBe(204);
   expect(
     (await ok(CompleteSubmissionUploadDocument, cookie, { uploadId: ticket.id })).completeSubmissionUpload,
   ).toBe(true);
@@ -154,12 +154,8 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     const form = new FormData();
     for (const field of ticket.fields) form.append(field.name, field.value);
     form.append('file', new Blob([new Uint8Array(image)], { type: 'image/png' }), 'group.png');
-    const response = await fetch(url + ticket.url.replace('/backend', ''), {
-      method: 'POST',
-      headers: { Origin: origin },
-      body: form,
-    });
-    expect(response.status).toBe(201);
+    const response = await fetch(ticket.url, { method: 'POST', headers: { Origin: origin }, body: form });
+    expect(response.status).toBe(204);
     const {
       completeGroupAvatarUpload: { id: avatarId },
     } = await ok(CompleteGroupAvatarUploadDocument, owner, { uploadId: ticket.id });
@@ -386,13 +382,8 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       const form = new FormData();
       for (const field of ticket.fields) form.append(field.name, field.value);
       form.append('file', new Blob([new Uint8Array(bytes)], { type: contentType }), 'media');
-      const uploaded = await fetch(new URL(ticket.url.replace(/^\/backend/, ''), url), {
-        method: 'POST',
-        headers: { Origin: origin },
-        credentials: 'omit',
-        body: form,
-      });
-      expect(uploaded.status).toBe(201);
+      const uploaded = await fetch(ticket.url, { method: 'POST', headers: { Origin: origin }, body: form });
+      expect(uploaded.status).toBe(204);
       const completed = await ok(CompletePostUploadDocument, member, { uploadId: ticket.id });
       expect(completed.completePostUpload).toMatchObject({
         id: ticket.id,
@@ -411,8 +402,12 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       ).createPost;
       expect(post.kind).toBe(video ? 'VIDEO' : 'PHOTO');
       const { postDownload } = await ok(PostDownloadDocument, member, { postId: post.id });
-      expect(postDownload.url).toBe(`/backend/media/${post.id}/download`);
+      expect(new URL(postDownload.url).searchParams.get('X-Amz-Expires')).toBe('60');
+      expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
       expect(postDownload.filename).toMatch(video ? /\.mp4$/ : /\.png$/);
+      const saved = await fetch(postDownload.url);
+      expect(saved.headers.get('content-disposition')).toContain('attachment;');
+      expect((await saved.arrayBuffer()).byteLength).toBe(bytes.length);
       created.push(post);
     }
     const photo = created[0];

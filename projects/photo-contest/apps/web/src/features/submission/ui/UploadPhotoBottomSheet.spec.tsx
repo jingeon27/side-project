@@ -83,7 +83,13 @@ const successMocks = (): MockLink.MockedResponse[] => [
           __typename: 'UploadTicket',
           id: 'upload-1',
           url: 'https://storage.test/upload',
-          fields: [{ __typename: 'UploadFormField', name: 'key', value: 'staging/photo' }],
+          fields: [
+            {
+              __typename: 'UploadFormField',
+              name: 'key',
+              value: 'photos/00000000-0000-0000-0000-000000000000.jpg',
+            },
+          ],
           expiresAt: '2026-10-14T04:05:00.000Z',
         },
       },

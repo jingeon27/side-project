@@ -1,6 +1,6 @@
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { seedContest } from './support/photos';
+import { isStorageUpload, seedContest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
 
 test(
@@ -18,14 +18,13 @@ test(
       .setInputFiles({ name: 'moment.png', mimeType: 'image/png', buffer: await createTestImage() });
     await form.getByLabel('사진 설명').fill('직접 전송한 대회 사진');
     await form.getByRole('checkbox', { name: /공유할 권리/ }).check();
-    const storage = /\/backend\/local-post-uploads\?/;
-    await page.route(storage, (route) => route.abort('failed'));
+    await page.route(isStorageUpload, (route) => route.abort('failed'));
     await form.getByRole('button', { name: '사진 제출하기', exact: true }).click();
     await expect(form.getByRole('alert')).toHaveText(
       '파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.',
     );
     await expect(form.getByLabel('사진 설명')).toHaveValue('직접 전송한 대회 사진');
-    await page.unroute(storage);
+    await page.unroute(isStorageUpload);
     const requests: string[] = [];
     page.on('request', (request) => {
       if (request.url().endsWith('/backend/graphql')) {
