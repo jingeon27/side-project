@@ -199,7 +199,7 @@ export class AuthService {
     // A banned user who still has an account may sign in for support; only a fresh signup is refused.
     if (!user && (await isBannedIdentity(this.db, provider, subject))) {
       if (attempt.appChallenge) {
-        res.redirect('gamefeedback://auth/callback?error=login_failed');
+        res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { error: 'login_failed' }));
         return;
       }
       throw bannedIdentityError();
