@@ -353,20 +353,42 @@ export function migrationChanges({ base, head = 'HEAD', cwd = process.cwd() }) {
   return { added, changed };
 }
 
-// 강제 push의 before는 새 HEAD의 조상이 아니라서, 그대로 쓰면 그 사이 develop에 합쳐진 migration까지 새 파일로 센다.
+function git(args, cwd) {
+  try {
+    return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return null;
+  }
+}
+const commitOf = (ref, cwd) =>
+  ref && !/^0+$/.test(ref) ? git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], cwd) : null;
+const isAncestor = (ancestor, descendant, cwd) =>
+  git(['merge-base', '--is-ancestor', ancestor, descendant], cwd) !== null;
+
+// 기준은 (1) PR base·push before, (2) 배포 브랜치와의 merge-base, (3) fallback 순서로 고른다.
+// 강제 push의 before는 새 HEAD의 조상이 아니고, develop push에서 origin/develop은 HEAD 자신이라 둘 다 비교 기준이 될 수 없다.
 export function migrationBase({
   requested,
+  event,
   head = 'HEAD',
+  deployRef = 'origin/main',
   fallback = 'origin/develop',
   cwd = process.cwd(),
 }) {
-  if (!requested || /^0+$/.test(requested)) return fallback;
-  try {
-    execFileSync('git', ['merge-base', '--is-ancestor', requested, head], { cwd, stdio: 'ignore' });
-    return requested;
-  } catch {
-    return fallback;
+  const headCommit = commitOf(head, cwd);
+  if (!headCommit) throw new Error(`Migration compatibility: cannot resolve ${head}.`);
+  const deployCommit = commitOf(deployRef, cwd);
+  const deployBase = deployCommit ? git(['merge-base', deployCommit, headCommit], cwd) : null;
+  for (const candidate of [requested, deployBase, fallback]) {
+    const commit = commitOf(candidate, cwd);
+    if (commit && commit !== headCommit && isAncestor(commit, headCommit, cwd)) return candidate;
   }
+  // HEAD가 이미 배포 브랜치에 있으면 새로 배포될 migration이 없다. push는 새 커밋을 가져오므로 빈 비교를 허용하지 않는다.
+  if (event !== 'push' && deployCommit && isAncestor(headCommit, deployCommit, cwd)) return headCommit;
+  throw new Error(
+    `Migration compatibility: no base ref differs from ${head} (requested ${requested || '(none)'}, ${deployRef}, ${fallback}). ` +
+      'Set MIGRATION_BASE_REF to the last checked commit.',
+  );
 }
 
 function explain(rule) {
@@ -376,7 +398,14 @@ function explain(rule) {
 }
 
 export function main({ env = process.env, cwd = process.cwd() } = {}) {
-  const base = migrationBase({ requested: env.MIGRATION_BASE_REF, cwd });
+  let base;
+  try {
+    base = migrationBase({ requested: env.MIGRATION_BASE_REF, event: env.GITHUB_EVENT_NAME, cwd });
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+    return;
+  }
   const { added, changed } = migrationChanges({ base, cwd });
   const errors = [
     ...changed.map(

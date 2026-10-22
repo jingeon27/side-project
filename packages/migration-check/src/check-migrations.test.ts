@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkMigration, migrationChanges } from './check-migrations.mjs';
+import { checkMigration, migrationBase, migrationChanges } from './check-migrations.mjs';
 import { MIGRATIONS, withGitRepo } from './test/git-repo';
 
 const rules = (sql: string) => checkMigration(sql).map((error) => error.rule);
@@ -60,6 +60,27 @@ describe('감사에서 재현한 migration 검사 미탐·오탐', () => {
         added: [`${MIGRATIONS}/20250102_a/migration.sql`],
         changed: [{ file: `${MIGRATIONS}/20250101_a/migration.sql`, status: 'deleted' }],
       });
+    });
+  });
+
+  it('develop 강제 push에서 fallback이 HEAD와 같으면 배포 브랜치와의 merge-base로 검사한다', () => {
+    withGitRepo(({ cwd, git, commit }) => {
+      const released = commit('released');
+      git('update-ref', 'refs/remotes/origin/main', released);
+      commit('develop-migration');
+      git('update-ref', 'refs/remotes/origin/develop', 'HEAD');
+      expect(migrationBase({ requested: 'f'.repeat(40), event: 'push', cwd })).toBe(released);
+    });
+  });
+
+  it('push에서 비교 기준이 모두 HEAD 자신이면 0건으로 통과하지 않고 실패한다', () => {
+    withGitRepo(({ cwd, git, commit }) => {
+      commit('base');
+      commit('develop-migration');
+      git('update-ref', 'refs/remotes/origin/develop', 'HEAD');
+      expect(() => migrationBase({ requested: 'f'.repeat(40), event: 'push', cwd })).toThrow(/no base ref/);
+      git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+      expect(() => migrationBase({ requested: '0'.repeat(40), event: 'push', cwd })).toThrow(/no base ref/);
     });
   });
 });

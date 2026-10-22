@@ -203,4 +203,16 @@ describe('migration 비교 기준', () => {
       expect(migrationBase({ requested: tip, fallback: 'develop', cwd })).toBe(tip);
     });
   });
+
+  it('main에서 workflow_dispatch로 다시 돌리면 배포되지 않은 커밋이 없어 HEAD를 기준으로 삼는다', () => {
+    withGitRepo(({ cwd, git, commit }) => {
+      commit('base');
+      const released = commit('released');
+      git('update-ref', 'refs/remotes/origin/main', released);
+      commit('develop-only');
+      git('update-ref', 'refs/remotes/origin/develop', 'HEAD');
+      git('checkout', '-q', released);
+      expect(migrationBase({ requested: 'origin/develop', event: 'workflow_dispatch', cwd })).toBe(released);
+    });
+  });
 });
