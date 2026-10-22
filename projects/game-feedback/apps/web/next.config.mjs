@@ -30,7 +30,9 @@ const config = {
   },
   transpilePackages: ['@game-feedback/contracts', '@game-feedback/sdk', '@side/design-system'],
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    // 앱 로그인 콜백 안내 페이지는 Route Handler가 더 엄격한 CSP·no-referrer를 직접 붙인다. Next는 설정 헤더가 이미 있으면
+    // 같은 이름의 응답 헤더를 버리므로(send-response) 이 경로만 공통 헤더에서 뺀다.
+    return [{ source: '/:path((?!app-auth/callback$).*)', headers: securityHeaders }];
   },
   async rewrites() {
     const origin = process.env.GAME_FEEDBACK_API_URL || process.env.API_ORIGIN || 'http://127.0.0.1:4300';

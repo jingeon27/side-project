@@ -28,6 +28,7 @@ describe('app login callback page', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('referrer-policy')).toBe('no-referrer');
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
     expect(html).toContain('<meta name="referrer" content="no-referrer">');
     expect(policy).toContain("default-src 'none'");
     expect(html.match(/<script>([^<]*)<\/script>/)?.[1]).toBe(
