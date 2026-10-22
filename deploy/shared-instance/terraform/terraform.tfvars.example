@@ -1,0 +1,48 @@
+# terraform.tfvars로 복사해 값을 넣는다(terraform.tfvars는 .gitignore 대상). 비밀은 넣지 않는다.
+# 주석 처리한 값은 기본값이다. 각 변수의 설명과 검증 규칙은 variables.tf에 있다.
+
+# 필수: 전역에서 고유한 서비스별 비공개 버킷 이름(만든 뒤 바꾸면 버킷이 교체된다)
+game_feedback_bucket_name = "your-game-feedback-private-bucket"
+photo_contest_bucket_name = "your-photo-contest-private-bucket"
+
+# 권장: 운영 계정에서만 적용되게 한다.
+# allowed_account_ids = ["123456789012"]
+
+# 서비스 도메인. API는 api.<도메인>이고 S3 CORS 기본 origin은 https://<도메인>이다.
+# game_feedback_domain = "game.bambyul.com"
+# photo_contest_domain = "contest.bambyul.com"
+# game_feedback_cors_origins = []
+# photo_contest_cors_origins = []
+
+# Route 53 호스팅 영역이 있으면 네 호스트의 A 레코드를 만든다. 비우면 dns_records 출력대로 직접 만든다.
+# route53_zone_id = "Z0123456789ABCDEFGHIJ"
+
+# SSH. 비워 두면 22번을 열지 않고 SSM Session Manager로 접속한다.
+# GitHub-hosted runner의 SSH 배포를 쓰려면 runner가 접속할 수 있게 열어야 한다(README "SSH와 배포 runner").
+# ssh_allowed_cidrs = ["203.0.113.10/32"]
+# ssh_public_key    = "ssh-ed25519 AAAA... operator@example"
+
+# 배포할 rds-receipt.py가 aws-cli를 bridge 네트워크(--network bridge)로 실행하면 2로 둔다.
+# host 네트워크로 바뀐 버전이면 1로 충분하다(variables.tf 설명 참고).
+# metadata_hop_limit = 1
+
+# 비용에 영향을 주는 값
+# instance_type                 = "t3.medium"
+# instance_cpu_credits          = "standard"
+# root_volume_size_gib          = 30
+# swap_size_gib                 = 2
+# rds_instance_class            = "db.t4g.micro"
+# rds_multi_az                  = false
+# rds_allocated_storage_gib     = 20
+# rds_max_allocated_storage_gib = 100
+# rds_backup_retention_days     = 7
+# rds_engine_lifecycle_support  = "open-source-rds-extended-support-disabled"
+# s3_noncurrent_version_retention_days = 30
+
+# RDS 메이저 업그레이드는 rds_allow_major_version_upgrade = true와 함께 바꾼다.
+# rds_engine_version = "18"
+
+# 처음 만든 뒤 바꾸지 않는 값(바꾸면 리소스가 교체된다)
+# name_prefix        = "side-shared"
+# vpc_cidr           = "10.40.0.0/16"
+# availability_zones = ["ap-northeast-2a", "ap-northeast-2c"]
