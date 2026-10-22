@@ -47,6 +47,9 @@ export const GRAPHQL_MAX_DEPTH = 8;
 // 웹 문서 중 가장 큰 연산이 필드 약 50개(Apollo가 붙이는 __typename 포함 약 70개)이고 alias는 쓰지 않는다.
 export const GRAPHQL_MAX_FIELDS = 300;
 export const GRAPHQL_MAX_ALIASES = 10;
+// 운영의 주소별 GraphQL 요청 수. 화면 하나가 SSR·브라우저를 합쳐 10번 안팎을 부르므로 분당 60화면을 넘는 양이다.
+export const GRAPHQL_RATE_LIMIT_WINDOW_MS = MINUTE_MS;
+export const GRAPHQL_RATE_LIMIT_PER_WINDOW = 600;
 
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 export const POST_TITLE_LIMIT = 80;
