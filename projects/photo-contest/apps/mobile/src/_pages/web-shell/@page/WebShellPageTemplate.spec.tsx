@@ -80,6 +80,7 @@ describe('WebShellPageTemplate', () => {
       setSupportMultipleWindows: false,
       sharedCookiesEnabled: false,
       thirdPartyCookiesEnabled: true,
+      allowsInlineMediaPlayback: true,
       allowsBackForwardNavigationGestures: true,
       pullToRefreshEnabled: true,
       webviewDebuggingEnabled: true,

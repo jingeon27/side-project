@@ -48,6 +48,8 @@ export function WebShellPageTemplate({
           // NSHTTPCookieStorage로 복사돼 앱의 fetch에도 실리므로 iOS 쿠키 공유를 끈다.
           sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled
+          // iOS는 기본으로 동영상을 전체 화면으로만 재생한다. 피드의 동영상·유튜브를 제자리에서 재생한다.
+          allowsInlineMediaPlayback
           allowsBackForwardNavigationGestures
           pullToRefreshEnabled
           webviewDebuggingEnabled={__DEV__}
