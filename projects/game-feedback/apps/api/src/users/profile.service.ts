@@ -16,6 +16,17 @@ import { UserVisibilityService } from './user-visibility.service';
 import { UsersService } from './users.service';
 
 export const AVATAR_LIMIT = 5 * 1024 * 1024;
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+// libvips는 선언된 MIME이 아니라 바이트 서명으로 디코더를 고른다. sharp에 넘기기 전에 JPEG·PNG·WebP 서명만
+// 통과시켜 SVG(librsvg)·HEIF(libheif)·TIFF 같은 다른 디코더가 사용자 바이트를 파싱하지 않게 한다.
+function isAvatarImage(bytes: Buffer) {
+  const ascii = (start: number, end: number) => bytes.toString('ascii', start, end);
+  return (
+    bytes.subarray(0, 8).equals(PNG_SIGNATURE) ||
+    (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) ||
+    (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP')
+  );
+}
 @Injectable()
 export class ProfileService {
   constructor(
@@ -38,7 +49,8 @@ export class ProfileService {
       !Buffer.isBuffer(file?.buffer) ||
       !file.buffer.length ||
       file.buffer.length > AVATAR_LIMIT ||
-      !['image/jpeg', 'image/png', 'image/webp'].includes(String(file.mimetype))
+      !['image/jpeg', 'image/png', 'image/webp'].includes(String(file.mimetype)) ||
+      !isAvatarImage(file.buffer)
     )
       throw new ApiError(400, 'INVALID_AVATAR', '5MB 이하의 JPEG, PNG, WebP 사진을 선택해주세요.');
     const bytes = await this.normalize(file.buffer);
