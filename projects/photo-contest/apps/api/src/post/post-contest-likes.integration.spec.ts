@@ -66,9 +66,9 @@ describe('대회별 1인당 게시물 좋아요 한도', () => {
 
   it('사용자·대회별로 독립 집계하고 일반 게시물은 제한하지 않아야 한다', async () => {
     const event = await contest(2);
-    const entries = await Promise.all(
-      Array.from({ length: 3 }, () => createEntry(api, owner, groupId, event.id)),
-    );
+    // 같은 사용자의 동시 게시는 직렬화 충돌로 거절될 수 있어, 집계만 보는 이 사양은 차례로 만든다.
+    const entries = [];
+    for (let i = 0; i < 3; i++) entries.push(await createEntry(api, owner, groupId, event.id));
     for (const entry of entries.slice(0, 2)) await api.gqlOk(member.cookie, LIKE, { id: entry.id });
     expect((await api.gqlFail(member.cookie, LIKE, { id: entries[2]!.id })).message).toContain(
       '2개 작품까지만',
