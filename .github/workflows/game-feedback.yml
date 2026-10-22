@@ -8,6 +8,11 @@ on:
       - 'package.json'
       - 'yarn.lock'
       - 'scripts/check-migrations.mjs'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.dockerignore'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -19,6 +24,11 @@ on:
       - 'package.json'
       - 'yarn.lock'
       - 'scripts/check-migrations.mjs'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.dockerignore'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -159,11 +169,14 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@v4
-      - name: Refuse an obsolete main revision
-        run: |
-          git fetch origin main
-          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+        with: { fetch-depth: 0 }
+      - name: Skip when a newer commit changed this service
+        id: latest
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: bash deploy/shared-instance/scripts/ci-superseded.sh game-feedback main
       - name: Deploy the tested image digests to the shared host
+        if: steps.latest.outputs.deploy == 'true'
         env:
           RELEASE_SHA: ${{ github.sha }}
           API_IMAGE: ${{ needs.containers.outputs.api_image }}
