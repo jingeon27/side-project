@@ -43,7 +43,7 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Reject incompatible new migrations
         env:
           MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
@@ -92,19 +92,14 @@ jobs:
 
   containers:
     needs: [verify, shared-contract]
-    outputs:
-      api_image: ${{ steps.publish.outputs.api_image }}
-      web_image: ${{ steps.publish.outputs.web_image }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    permissions:
-      contents: read
-      packages: write
     env:
       GF_SMOKE_TAG: ${{ github.sha }}
       GF_SMOKE_IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: false }
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -137,26 +132,45 @@ jobs:
           done
       - name: Verify the deployed stack and restore a backup into fresh volumes
         run: node projects/game-feedback/apps/api/scripts/production-smoke.mjs
-      - name: Sign in to GHCR
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
-        uses: docker/login-action@v3
+
+  # Only this job can write packages; it publishes the same archive both smoke tests verified.
+  publish:
+    needs: [verify, containers, shared-contract]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api_image: ${{ steps.push.outputs.api_image }}
+      web_image: ${{ steps.push.outputs.web_image }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: shared-game-feedback-images-${{ github.sha }}
+          path: ${{ runner.temp }}/shared-images
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish the tested images
-        id: publish
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+      - name: Publish the exact verified images
+        id: push
+        env:
+          IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
         run: |
-          docker push "${GF_SMOKE_IMAGE_PREFIX}-api:${GF_SMOKE_TAG}"
-          docker push "${GF_SMOKE_IMAGE_PREFIX}-web:${GF_SMOKE_TAG}"
+          gzip -dc "$RUNNER_TEMP/shared-images/game-feedback.tar.gz" | docker load
           for app in api web; do
-            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "${GF_SMOKE_IMAGE_PREFIX}-$app:${GF_SMOKE_TAG}")
+            image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
+            docker tag "side-shared-gf-$app:$GITHUB_SHA" "$image"
+            docker push "$image"
+            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
             echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
           done
 
   deploy:
-    needs: [verify, containers, shared-contract]
+    needs: publish
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     # Covers waiting for the other service on the host lock plus one deployment and its rollback.
@@ -172,7 +186,7 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Skip when a newer commit changed this service
         id: latest
         env:
@@ -182,8 +196,8 @@ jobs:
         if: steps.latest.outputs.deploy == 'true'
         env:
           RELEASE_SHA: ${{ github.sha }}
-          API_IMAGE: ${{ needs.containers.outputs.api_image }}
-          WEB_IMAGE: ${{ needs.containers.outputs.web_image }}
+          API_IMAGE: ${{ needs.publish.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.publish.outputs.web_image }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
           DEPLOY_HOST: ${{ vars.SIDE_DEPLOY_HOST }}

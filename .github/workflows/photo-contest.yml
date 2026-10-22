@@ -45,6 +45,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: false }
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - run: corepack enable
@@ -100,7 +101,7 @@ jobs:
       TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Reject incompatible new migrations
         env:
           MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
@@ -146,6 +147,7 @@ jobs:
       TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: false }
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - run: corepack enable
@@ -185,6 +187,7 @@ jobs:
       web_image: ${{ steps.push.outputs.web_image }}
     steps:
       - uses: actions/checkout@v4
+        with: { persist-credentials: false }
       - uses: actions/download-artifact@v4
         with:
           name: photo-contest-images-${{ github.sha }}
@@ -228,7 +231,7 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Skip when a newer commit changed this service
         id: latest
         env:
