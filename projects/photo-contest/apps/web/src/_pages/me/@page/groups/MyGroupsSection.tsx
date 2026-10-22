@@ -37,7 +37,7 @@ export function MyGroupsSection() {
         <h2 className="text-title text-ink">내 그룹</h2>
         <CreateGroupButton />
       </div>
-      <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={refetch}>
+      <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={() => refetch()}>
         <MyGroupsContent groupsRef={groupsRef} />
       </AsyncBoundary>
     </section>

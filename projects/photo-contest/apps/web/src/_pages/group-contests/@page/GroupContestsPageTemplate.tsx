@@ -73,7 +73,7 @@ function ContestQuery({ groupId, hallOfFame }: { groupId: string; hallOfFame: bo
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
+    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
       <ContestList queryRef={queryRef} hallOfFame={hallOfFame} />
     </AsyncBoundary>
   );

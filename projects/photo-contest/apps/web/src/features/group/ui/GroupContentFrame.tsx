@@ -106,10 +106,10 @@ export function GroupContentFrame({ groupId, title, children, actions }: IGroupC
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 tablet:px-8">
         <AsyncBoundary
           fallback={<Skeleton className="h-64 w-full" />}
-          onRetry={refetch}
-          renderError={(error, retry) => <GroupContentFailure error={error} onRetry={retry} />}
+          onRetry={() => refetch()}
+          renderError={(error, onRetry) => <GroupContentFailure error={error} onRetry={onRetry} />}
         >
-          <GroupContent groupRef={groupRef} onRefresh={refetch} actions={actions}>
+          <GroupContent groupRef={groupRef} onRefresh={() => refetch()} actions={actions}>
             {children}
           </GroupContent>
         </AsyncBoundary>

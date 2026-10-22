@@ -11,12 +11,12 @@ export function CreatePostButton({ groupId, contestId }: { groupId: string; cont
   return (
     <Button
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
           <CreatePostBottomSheet
             groupId={groupId}
             defaultContestId={contestId}
             isOpen={isOpen}
-            onClose={close}
+            onClose={onClose}
             unmount={unmount}
           />
         ))

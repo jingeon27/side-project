@@ -37,7 +37,7 @@ function ContestScreen() {
     errorPolicy: 'all',
   });
   return (
-    <AsyncBoundary fallback={<p>불러오는 중</p>} onRetry={refetch}>
+    <AsyncBoundary fallback={<p>불러오는 중</p>} onRetry={() => refetch()}>
       <ContestPhaseSync contestRef={contestRef} />
       <ContestTitle contestRef={contestRef} />
     </AsyncBoundary>

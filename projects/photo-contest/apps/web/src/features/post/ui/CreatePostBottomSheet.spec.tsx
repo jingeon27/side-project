@@ -48,8 +48,13 @@ describe('CreatePostBottomSheet', () => {
         <OverlayProvider>
           <button
             onClick={() =>
-              overlay.open(({ isOpen, close, unmount }) => (
-                <CreatePostBottomSheet groupId="gallery" isOpen={isOpen} onClose={close} unmount={unmount} />
+              overlay.open(({ isOpen, close: onClose, unmount }) => (
+                <CreatePostBottomSheet
+                  groupId="gallery"
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  unmount={unmount}
+                />
               ))
             }
           >

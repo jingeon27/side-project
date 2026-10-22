@@ -4,10 +4,12 @@ import react from 'eslint-plugin-react';
 import { baseConfig } from './base';
 import { sidePlugin } from './plugin';
 
-// spec이 같은 옵션으로 규칙을 검증하도록 preset 옵션을 상수로 둔다.
+// 한 번 쓰는 핸들러는 JSX에 인라인으로 두고, 분리한 핸들러는 handle*, 받은 props 콜백은 on*으로 넘긴다.
+// checkLocalVariables가 없으면 `onClick={submit}` 같은 지역 함수는 검사하지 않고 멤버식만 걸린다.
 export const jsxHandlerNamesOptions = {
-  eventHandlerPrefix: 'handle',
+  eventHandlerPrefix: '(?:handle|on)',
   eventHandlerPropPrefix: 'on',
+  checkLocalVariables: true,
   checkInlineFunction: false,
 } as const;
 

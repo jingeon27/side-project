@@ -120,10 +120,10 @@ function CategoryRow({
           disabled={disabled}
           aria-label={`${category.name} 보관`}
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
               <ConfirmDialog
                 isOpen={isOpen}
-                onClose={close}
+                onClose={onClose}
                 unmount={unmount}
                 title="카테고리를 보관할까요?"
                 description="새 글에서는 선택할 수 없고 기존 글의 분류는 그대로 남아요."
@@ -224,7 +224,7 @@ export function GroupCategoryManager({ groupId }: { groupId: string }) {
         카테고리 관리
       </summary>
       <div className="mt-4">
-        <AsyncBoundary onRetry={refetch} fallback={fallback}>
+        <AsyncBoundary onRetry={() => refetch()} fallback={fallback}>
           {queryRef ? <CategoryManagement queryRef={queryRef} /> : fallback}
         </AsyncBoundary>
       </div>

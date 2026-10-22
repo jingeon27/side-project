@@ -1,10 +1,12 @@
+/* eslint-disable fsd/slice-public-api -- unit 레인(node)이 이 순수 매핑을 읽으므로 배럴이 함께 불러오는 Amplitude·expo-linking(react-native) 대신 순수 모듈만 가져온다. */
 import {
   ANALYTICS_EVENT,
   type TAnalyticsEvent,
   type TAnalyticsEventName,
 } from '@/features/analytics/config/events';
-import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
+import type { TCapabilityOutcome } from '@/features/bridge';
 import { toLinkTemplate } from '@/features/navigation/lib/deep-link';
+/* eslint-enable fsd/slice-public-api */
 import type { TMonitoringTags } from '@/shared/lib/monitoring/create-monitoring';
 
 type TSocialLoginStatus = Extract<TCapabilityOutcome, { type: 'social-login' }>['status'];

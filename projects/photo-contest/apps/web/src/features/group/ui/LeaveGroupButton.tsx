@@ -41,10 +41,10 @@ export function LeaveGroupButton({
       variant="secondary"
       loading={loading}
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
           <ConfirmDialog
             isOpen={isOpen}
-            onClose={close}
+            onClose={onClose}
             unmount={unmount}
             tone="danger"
             title={`${groupName}에서 나갈까요?`}

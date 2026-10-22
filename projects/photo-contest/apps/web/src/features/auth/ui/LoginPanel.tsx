@@ -193,7 +193,7 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
         .with({ status: 'failed' }, () => (
           <div role="alert" className="flex flex-col items-start gap-2 rounded-control bg-sunken p-3">
             <p className="text-body text-ink">로그인 방법을 불러오지 못했어요.</p>
-            <Button variant="secondary" size="sm" onClick={retryAuthConfig}>
+            <Button variant="secondary" size="sm" onClick={() => retryAuthConfig()}>
               <RotateCw aria-hidden className="size-4" />
               다시 시도
             </Button>

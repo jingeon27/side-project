@@ -123,7 +123,7 @@ function ProfileContent({
         {author.id !== session?.user?.id && (
           <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
         )}
-        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={login} />
+        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => login()} />
         <ReportUserButton userId={author.id} />
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>

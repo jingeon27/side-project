@@ -94,10 +94,10 @@ export function InviteCard({ groupId, groupName, inviteToken, canRegenerate }: I
           size="sm"
           className="self-start text-muted"
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
               <ConfirmDialog
                 isOpen={isOpen}
-                onClose={close}
+                onClose={onClose}
                 unmount={unmount}
                 title="초대 링크를 새로 만들까요?"
                 description="지금 링크는 더 이상 쓸 수 없어요. 새 링크를 친구들에게 다시 보내 주세요."

@@ -34,7 +34,7 @@ export function PostCategoryField({ groupId, form }: { groupId: string; form: TP
     fetchPolicy: 'network-only',
   });
   return (
-    <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-14 w-full" />}>
+    <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-14 w-full" />}>
       <CategoryFieldContent queryRef={queryRef} form={form} />
     </AsyncBoundary>
   );

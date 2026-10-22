@@ -3,7 +3,7 @@ import { BackHandler, Platform } from 'react-native';
 
 import type { INativeRouter } from '@photo-contest/bridge/native';
 
-import { resolveBackPress } from '@/features/navigation/lib/back-press';
+import { resolveBackPress } from '@/features/navigation';
 import { useLatest } from '@/shared/lib/use-latest';
 
 /** 웹이 바텀시트·모달을 닫는 데 충분하고, 사용자가 느끼기 전에 기본 동작으로 넘어가는 시간 */

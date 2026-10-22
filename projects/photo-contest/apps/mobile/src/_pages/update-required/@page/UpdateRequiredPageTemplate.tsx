@@ -3,9 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
-import { trackEvent } from '@/features/analytics/model/analytics';
-import { openExternalUrl } from '@/features/navigation/model/open-external';
+import { ANALYTICS_EVENT, trackEvent } from '@/features/analytics';
+import { openExternalUrl } from '@/features/navigation';
 import { COLORS } from '@/shared/config/theme';
 
 interface IUpdateRequiredPageTemplateProps {

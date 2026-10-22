@@ -3,8 +3,7 @@ import { AppState } from 'react-native';
 
 import type { INativeRouter } from '@photo-contest/bridge/native';
 
-import { ANALYTICS_EVENT } from '@/features/analytics/config/events';
-import { trackEvent } from '@/features/analytics/model/analytics';
+import { ANALYTICS_EVENT, trackEvent } from '@/features/analytics';
 import { useLatest } from '@/shared/lib/use-latest';
 
 import { nextBridgeAppState, type TBridgeAppState } from '../lib/app-state';

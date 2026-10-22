@@ -28,7 +28,7 @@ function ContestLoading() {
     </>
   );
 }
-function ContestFailure({ id, error, retry }: { id: string; error: unknown; retry: () => void }) {
+function ContestFailure({ id, error, onRetry }: { id: string; error: unknown; onRetry: () => void }) {
   return (
     <>
       <TopAppBar title="대회" backHref={ROUTES.HOME} />
@@ -36,7 +36,7 @@ function ContestFailure({ id, error, retry }: { id: string; error: unknown; retr
         {match(getErrorCode(error))
           .with(ERROR_CODE.Unauthenticated, () => <LoginPanel nextPath={ROUTES.CONTEST(id)} />)
           .otherwise(() => (
-            <ErrorState message={getErrorMessage(error)} onRetry={retry} />
+            <ErrorState message={getErrorMessage(error)} onRetry={onRetry} />
           ))}
       </div>
     </>
@@ -46,15 +46,15 @@ function ContestContent({
   id,
   contestRef,
   viewerId,
-  retry,
+  onRetry,
 }: {
   id: string;
   contestRef: TContestQueryRef;
   viewerId: string;
-  retry: () => void;
+  onRetry: () => void;
 }) {
   const { data, error } = useReadQuery(contestRef);
-  if (!data) return <ContestFailure id={id} error={error} retry={retry} />;
+  if (!data) return <ContestFailure id={id} error={error} onRetry={onRetry} />;
   return (
     <>
       <ContestPhaseSync contestRef={contestRef} />
@@ -84,10 +84,10 @@ function ContestQuerySection({ id, viewerId }: { id: string; viewerId: string })
     <AsyncBoundary
       resetKey={id}
       fallback={<ContestLoading />}
-      onRetry={refetch}
-      renderError={(error, retry) => <ContestFailure id={id} error={error} retry={retry} />}
+      onRetry={() => refetch()}
+      renderError={(error, onRetry) => <ContestFailure id={id} error={error} onRetry={onRetry} />}
     >
-      <ContestContent id={id} contestRef={contestRef} viewerId={viewerId} retry={handleRetry} />
+      <ContestContent id={id} contestRef={contestRef} viewerId={viewerId} onRetry={handleRetry} />
     </AsyncBoundary>
   );
 }

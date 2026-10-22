@@ -15,7 +15,7 @@ function SheetExample({ dismissible = true }: { dismissible?: boolean }) {
       <Button onClick={() => setOpen(true)}>계정 등록</Button>
       <BottomSheet
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(nextOpen) => setOpen(nextOpen)}
         title="게임 계정"
         description="플레이어 태그를 입력하세요."
         dismissible={dismissible}

@@ -23,7 +23,8 @@
 - `features/app-config`: `/app/config`·`/health` 호출과 zod 스키마, 버전 비교.
 - `features/analytics`: `config/events.ts`(이벤트 카탈로그), `lib/create-analytics.ts`(순수, SDK 주입), `model/analytics.ts`(Amplitude 연결).
 - `shared`: `config/env.ts`, `config/theme.ts`(웹 토큰 색), `lib`(`monitoring/`은 Sentry 연결).
-- 기능(feature)끼리는 서로 import하지 않는다. 분석 연결은 화면(`_pages`)·앱(`_app`)이 한다.
+- 기능(feature)끼리는 서로 import하지 않는다. 분석 연결은 화면(`_pages`)·앱(`_app`)이 한다. 공용 FSD lint가 같은 레이어 import는 막지 않으므로 리뷰로 지킨다.
+- slice 간 import는 각 slice의 named export `index.ts`를 통한다(`fsdBoundaries`). 배럴은 네이티브 모듈을 함께 불러오므로 unit 레인(node)이 읽는 `shell-events.ts`만 이유를 적고 순수 모듈을 직접 가져온다.
 
 ## 동작 규칙
 
