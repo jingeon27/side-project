@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 
@@ -24,9 +24,16 @@ function policyCondition(condition: unknown, fields: Map<string, string>, size: 
   return Object.entries(condition).every(([key, value]) => fields.get(key.toLowerCase()) === value);
 }
 
+function etag(bytes: Buffer) {
+  return `"${createHash('md5').update(bytes).digest('hex')}"`;
+}
+
 /** S3 외부 경계. 실제 SDK가 만든 POST 서명과 정책을 검증하며 AWS로 요청하지 않는다. */
 export class S3Fixture {
   readonly objects = new Map<string, IStoredObject>();
+  readonly requests: Array<{ method: string; path: string; range?: string; copySource?: string }> = [];
+  /** CopyObject 조건을 평가하기 직전에 부른다. 검증과 복사 사이의 바꿔치기를 재현할 때 쓴다. */
+  beforeCopy?: (source: string) => void;
   private readonly server = createServer((req, res) => {
     void this.handle(req, res).catch(() => res.writeHead(500).end());
   });
@@ -95,15 +102,47 @@ export class S3Fixture {
     res.writeHead(204).end();
   }
 
+  private copy(req: IncomingMessage, res: ServerResponse, target: string, header: string) {
+    const source = `/${decodeURIComponent(header).replace(/^\//, '')}`;
+    this.beforeCopy?.(source);
+    const object = this.objects.get(source);
+    if (!object) {
+      res.writeHead(404).end();
+      return;
+    }
+    const expected = req.headers['x-amz-copy-source-if-match'];
+    if (expected && expected !== etag(object.bytes)) {
+      res.writeHead(412).end();
+      return;
+    }
+    const mimeType =
+      req.headers['x-amz-metadata-directive'] === 'REPLACE'
+        ? String(req.headers['content-type'] ?? '')
+        : object.mimeType;
+    this.objects.set(target, { bytes: Buffer.from(object.bytes), mimeType });
+    res
+      .writeHead(200, { 'Content-Type': 'application/xml' })
+      .end(
+        `<?xml version="1.0" encoding="UTF-8"?><CopyObjectResult><ETag>${etag(object.bytes)}</ETag><LastModified>${new Date().toISOString()}</LastModified></CopyObjectResult>`,
+      );
+  }
+
   private async handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', this.endpoint);
+    const copySource = req.headers['x-amz-copy-source'];
+    this.requests.push({
+      method: req.method ?? '',
+      path: url.pathname,
+      ...(req.headers.range ? { range: req.headers.range } : {}),
+      ...(typeof copySource === 'string' ? { copySource } : {}),
+    });
     if (req.method === 'POST') return this.post(req, res);
+    if (req.method === 'PUT' && typeof copySource === 'string')
+      return this.copy(req, res, url.pathname, copySource);
     if (req.method === 'PUT') {
-      this.objects.set(url.pathname, {
-        bytes: await buffer(req),
-        mimeType: String(req.headers['content-type'] ?? ''),
-      });
-      res.writeHead(200, { ETag: '"fixture-etag"' }).end();
+      const bytes = await buffer(req);
+      this.objects.set(url.pathname, { bytes, mimeType: String(req.headers['content-type'] ?? '') });
+      res.writeHead(200, { ETag: etag(bytes) }).end();
       return;
     }
     if (req.method === 'DELETE') {
@@ -117,7 +156,17 @@ export class S3Fixture {
       return;
     }
     if (req.method === 'HEAD') {
-      res.writeHead(200, { 'Content-Type': object.mimeType, 'Content-Length': object.bytes.length }).end();
+      res
+        .writeHead(200, {
+          'Content-Type': object.mimeType,
+          'Content-Length': object.bytes.length,
+          ETag: etag(object.bytes),
+        })
+        .end();
+      return;
+    }
+    if (req.headers['if-match'] && req.headers['if-match'] !== etag(object.bytes)) {
+      res.writeHead(412).end();
       return;
     }
     const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range ?? '');
@@ -127,6 +176,7 @@ export class S3Fixture {
         'Content-Type': url.searchParams.get('response-content-type') ?? object.mimeType,
         'Content-Length': bytes.length,
         'Cache-Control': url.searchParams.get('response-cache-control') ?? 'private, no-store',
+        ETag: etag(object.bytes),
         ...(range ? { 'Content-Range': `bytes ${range[1]}-${range[2]}/${object.bytes.length}` } : {}),
       })
       .end(bytes);
