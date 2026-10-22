@@ -6,11 +6,14 @@ import createMDX from '@next/mdx';
 import { withSentryConfig } from '@sentry/nextjs/config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+import { headers } from './security-headers';
+
 const config: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
   experimental: { globalNotFound: true },
   pageExtensions: ['ts', 'tsx', 'md', 'mdx'],
+  headers,
   async redirects() {
     return JSON.parse(readFileSync(new URL('./content/generated-redirects.json', import.meta.url), 'utf8'));
   },
