@@ -26,8 +26,9 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const start = await browser.get(`/api/auth/google?app_challenge=${challenge}`).expect(302);
     const state = new URL(responseLocation(start)).searchParams.get('state');
     const result = await browser.get('/api/auth/google/callback').query({ state, code: subject }).expect(302);
-    expect(result.headers.location.slice(0, appCallback.length + 6)).toBe(`${appCallback}?code=`);
-    expect(result.headers.location.slice(appCallback.length + 6)).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const location = responseLocation(result);
+    expect(location.slice(0, appCallback.length + 6)).toBe(`${appCallback}?code=`);
+    expect(location.slice(appCallback.length + 6)).toMatch(/^[A-Za-z0-9_-]{43}$/);
     const rawCookies = result.headers['set-cookie'] as unknown as string[];
     expect(rawCookies.some((cookie) => cookie.startsWith('gamefeedback_session='))).toBe(false);
     const code = new URL(responseLocation(result)).searchParams.get('code');
