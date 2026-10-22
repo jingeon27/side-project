@@ -1,11 +1,7 @@
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, expect, it } from 'vitest';
-
-import { checkMigration, migrationBase, newlyAddedMigrations } from './check-migrations.mjs';
+import { checkMigration, main, migrationBase, migrationChanges } from './check-migrations.mjs';
+import { MIGRATIONS, withGitRepo } from './test/git-repo';
 
 const rules = (sql: string) => checkMigration(sql).map((error) => error.rule);
 
@@ -143,44 +139,56 @@ describe('배포 호환 migration 검사', () => {
       ),
     ).toEqual([{ line: 6, rule: 'DROP COLUMN' }]);
   });
-  it('기존 SQL 수정·기존 위험한 SQL을 제외하고 새 migration만 고른다', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'migration-check-'));
-    const git = (...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8' });
-    const root = 'projects/game-feedback/apps/api/prisma/migrations';
-    const put = (name: string, sql: string) => {
-      mkdirSync(join(cwd, root, name), { recursive: true });
-      writeFileSync(join(cwd, root, name, 'migration.sql'), sql);
-    };
-    try {
-      git('init', '-q');
-      git('config', 'user.name', 'Test');
-      git('config', 'user.email', 'test@example.invalid');
+});
+
+describe('기준 ref 이후 바뀐 migration 파일', () => {
+  it('새 migration은 검사 대상으로, 이미 있던 migration의 수정·삭제는 거부 대상으로 나눈다', () => {
+    withGitRepo(({ cwd, put, commit, git }) => {
       put('old', 'DROP TABLE old;');
-      git('add', '.');
-      git('commit', '-qm', 'base');
-      const base = git('rev-parse', 'HEAD').trim();
+      put('gone', 'CREATE TABLE gone(id text);');
+      const base = commit('base');
       put('old', 'DROP TABLE old; -- changed');
       put('new', 'CREATE TABLE new(id text);');
-      git('add', '.');
-      git('commit', '-qm', 'next');
-      expect(newlyAddedMigrations({ base, cwd })).toEqual([`${root}/new/migration.sql`]);
-    } finally {
-      rmSync(cwd, { recursive: true, force: true });
-    }
+      git('rm', '-q', `${MIGRATIONS}/gone/migration.sql`);
+      commit('next');
+      expect(migrationChanges({ base, cwd })).toEqual({
+        added: [`${MIGRATIONS}/new/migration.sql`],
+        changed: [
+          { file: `${MIGRATIONS}/gone/migration.sql`, status: 'deleted' },
+          { file: `${MIGRATIONS}/old/migration.sql`, status: 'modified' },
+        ],
+      });
+    });
   });
+
+  it('main은 수정된 migration과 새 migration의 위반을 보고하고 실패 코드를 남긴다', () => {
+    const errors: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((message: string) => errors.push(message));
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    withGitRepo(({ cwd, put, commit }) => {
+      put('old', 'CREATE TABLE old(id text);');
+      const base = commit('base');
+      put('old', 'CREATE TABLE old(id text, x text);');
+      put('new', 'ALTER TABLE old ADD COLUMN y TEXT NOT NULL;');
+      commit('next');
+      main({ env: { MIGRATION_BASE_REF: base, GITHUB_EVENT_NAME: 'pull_request' }, cwd });
+    });
+    expect(process.exitCode).toBe(1);
+    expect(errors).toEqual([
+      expect.stringContaining('old/migration.sql: existing migration.sql was modified'),
+      expect.stringContaining('new/migration.sql:1: ADD COLUMN NOT NULL requires'),
+    ]);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    process.exitCode = undefined;
+  });
+});
+
+describe('migration 비교 기준', () => {
   it('강제 push로 HEAD의 조상이 아닌 before는 develop 기준으로 바꾼다', () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'migration-base-'));
-    const git = (...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
-    const commit = (file: string) => {
-      writeFileSync(join(cwd, file), file);
-      git('add', file);
-      git('commit', '-qm', file);
-      return git('rev-parse', 'HEAD');
-    };
-    try {
-      git('init', '-q', '-b', 'develop');
-      git('config', 'user.name', 'Test');
-      git('config', 'user.email', 'test@example.invalid');
+    withGitRepo(({ cwd, git, commit }) => {
       commit('base');
       git('checkout', '-qb', 'feature');
       const previousTip = commit('feature-old');
@@ -193,8 +201,6 @@ describe('배포 호환 migration 검사', () => {
       expect(migrationBase({ requested: '0'.repeat(40), fallback: 'develop', cwd })).toBe('develop');
       commit('feature-next');
       expect(migrationBase({ requested: tip, fallback: 'develop', cwd })).toBe(tip);
-    } finally {
-      rmSync(cwd, { recursive: true, force: true });
-    }
+    });
   });
 });

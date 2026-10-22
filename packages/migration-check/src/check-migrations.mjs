@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 const MIGRATION_PATHSPEC = 'projects/*/apps/api/prisma/migrations/*/migration.sql';
 // 식별자를 잇는 글자 뒤의 $·E·U&는 달러 인용이나 접두 문자열이 아니라 식별자의 일부다(`a$$`, `nameE`).
@@ -334,18 +335,24 @@ export function checkMigration(sql) {
   return errors.sort((left, right) => left.line - right.line);
 }
 
-export function newlyAddedMigrations({ base, head = 'HEAD', cwd = process.cwd() }) {
-  const args = [
-    'diff',
-    '--name-only',
-    '--diff-filter=A',
-    '-z',
-    `${base}...${head}`,
-    '--',
-    MIGRATION_PATHSPEC,
-  ];
-  return execFileSync('git', args, { cwd, encoding: 'utf8' }).split('\0').filter(Boolean);
+const STATUS_LABELS = { M: 'modified', D: 'deleted', T: 'changed type' };
+
+// 이동한 migration을 새 파일로 보도록 rename 감지를 끈다. 이미 있던 migration.sql은 고치거나 지우지 않는다.
+export function migrationChanges({ base, head = 'HEAD', cwd = process.cwd() }) {
+  const args = ['diff', '--name-status', '--no-renames', '-z', `${base}...${head}`, '--', MIGRATION_PATHSPEC];
+  const fields = execFileSync('git', args, { cwd, encoding: 'utf8' }).split('\0');
+  const added = [];
+  const changed = [];
+  for (let index = 0; index + 1 < fields.length; index += 2) {
+    const status = fields[index];
+    const file = fields[index + 1];
+    if (!status || !file) continue;
+    if (status === 'A') added.push(file);
+    if (status !== 'A') changed.push({ file, status: STATUS_LABELS[status] ?? status });
+  }
+  return { added, changed };
 }
+
 // 강제 push의 before는 새 HEAD의 조상이 아니라서, 그대로 쓰면 그 사이 develop에 합쳐진 migration까지 새 파일로 센다.
 export function migrationBase({
   requested,
@@ -368,15 +375,21 @@ function explain(rule) {
   return `${rule} requires expand/deploy/contract or a reviewed migration-lint allowance.`;
 }
 
-export function main() {
-  const base = migrationBase({ requested: process.env.MIGRATION_BASE_REF });
-  const files = newlyAddedMigrations({ base });
-  const errors = files.flatMap((file) =>
-    checkMigration(readFileSync(file, 'utf8')).map(
-      (error) => `${file}:${error.line}: ${explain(error.rule)}`,
+export function main({ env = process.env, cwd = process.cwd() } = {}) {
+  const base = migrationBase({ requested: env.MIGRATION_BASE_REF, cwd });
+  const { added, changed } = migrationChanges({ base, cwd });
+  const errors = [
+    ...changed.map(
+      ({ file, status }) =>
+        `${file}: existing migration.sql was ${status}; add a new migration instead of rewriting history.`,
     ),
-  );
+    ...added.flatMap((file) =>
+      checkMigration(readFileSync(path.join(cwd, file), 'utf8')).map(
+        (error) => `${file}:${error.line}: ${explain(error.rule)}`,
+      ),
+    ),
+  ];
   for (const error of errors) console.error(error);
-  console.log(`Migration compatibility: ${files.length} newly added SQL files checked against ${base}.`);
+  console.log(`Migration compatibility: ${added.length} newly added SQL files checked against ${base}.`);
   if (errors.length) process.exitCode = 1;
 }

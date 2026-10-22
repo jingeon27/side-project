@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkMigration } from './check-migrations.mjs';
+import { checkMigration, migrationChanges } from './check-migrations.mjs';
+import { MIGRATIONS, withGitRepo } from './test/git-repo';
 
 const rules = (sql: string) => checkMigration(sql).map((error) => error.rule);
 
@@ -42,5 +43,23 @@ describe('감사에서 재현한 migration 검사 미탐·오탐', () => {
         '-- migration-lint: allow DROP COLUMN — reviewed retire\nALTER TABLE p DROP COLUMN a, DROP COLUMN b; ALTER TABLE q DROP COLUMN c;',
       ),
     ).toEqual([{ line: 2, rule: 'DROP COLUMN' }]);
+  });
+
+  it('디렉터리를 옮기며 DDL을 더한 migration을 rename으로 놓치지 않는다', () => {
+    withGitRepo(({ cwd, put, move, commit }) => {
+      // 내용 대부분이 같아 git의 rename 감지가 R로 묶는 크기다.
+      const tables = Array.from({ length: 20 }, (_, index) => `CREATE TABLE "t${index}" (id text);`).join(
+        '\n',
+      );
+      put('20250101_a', tables);
+      const base = commit('base');
+      move('20250101_a', '20250102_a');
+      put('20250102_a', `${tables}\nALTER TABLE p DROP COLUMN old;`);
+      commit('move');
+      expect(migrationChanges({ base, cwd })).toEqual({
+        added: [`${MIGRATIONS}/20250102_a/migration.sql`],
+        changed: [{ file: `${MIGRATIONS}/20250101_a/migration.sql`, status: 'deleted' }],
+      });
+    });
   });
 });
