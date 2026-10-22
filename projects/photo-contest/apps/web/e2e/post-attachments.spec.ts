@@ -115,7 +115,7 @@ for (const video of [false, true]) {
   test(
     `${video ? '동영상' : '사진'}을 등록하고 한글 이름의 파일로 저장해야 한다`,
     { tag: ['@ios', '@desktop'] },
-    async ({ page, signIn }) => {
+    async ({ page, signIn, browserName }) => {
       const cookie = await signIn('파일 저장 작성자');
       const group = await seedGroup(cookie, '편하게 파일 저장');
       const title = video ? '동영상으로 남긴 순간' : '사진으로 남긴 순간';
@@ -152,6 +152,19 @@ for (const video of [false, true]) {
         await expect
           .poll(() => media.evaluate((image: HTMLImageElement) => image.naturalWidth))
           .toBeGreaterThan(0);
+      const expectedFilename = `${title}.${video ? 'mp4' : 'jpg'}`;
+      // 웹은 세션으로 권한을 확인하는 고정 다운로드 경로를 열고, 서버는 첨부 이름을 넣은 서명 GET으로 보낸다.
+      const attachment = await page.request.get(`${source}/download`, { maxRedirects: 0 });
+      expect(attachment.status()).toBe(307);
+      const signedDownload = await page.request.get(attachment.headers()['location'] ?? '');
+      expect(signedDownload.headers()['content-disposition']).toContain(
+        `filename*=UTF-8''${encodeURIComponent(expectedFilename)}`,
+      );
+      const signedBytes = await signedDownload.body();
+      if (video) expect(signedBytes.subarray(4, 8).toString()).toBe('ftyp');
+      if (!video) expect([...signedBytes.subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+      // Linux WebKit은 다른 origin으로 이동한 첨부 응답을 내려받지 않고 화면에 연다. macOS WebKit·Chrome은 내려받는다.
+      if (browserName === 'webkit' && process.platform === 'linux') return;
       const saved = page.waitForEvent('download');
       const metadata = page.waitForResponse((response) => {
         const request = response.request();
@@ -161,7 +174,6 @@ for (const video of [false, true]) {
       });
       await article.getByRole('button', { name: `${title} 파일 저장`, exact: true }).click();
       const download = await saved;
-      const expectedFilename = `${title}.${video ? 'mp4' : 'jpg'}`;
       expect((await (await metadata).json()).data.postDownload.filename).toBe(expectedFilename);
       // 서버가 지정한 한글 이름을 확인하고 브라우저/OS의 공백 치환만 허용한다.
       expect(download.suggestedFilename().normalize('NFC').replaceAll('_', ' ')).toBe(expectedFilename);
