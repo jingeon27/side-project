@@ -111,9 +111,11 @@ test('the guide describes current classifications, account verification and chat
   const main = page.getByRole('main');
   await expect(main.getByRole('heading', { name: '이용 가이드', exact: true })).toBeVisible();
   await expect(main.getByRole('heading', { name: '코치와 수강생 모집', exact: true })).toBeVisible();
-  await expect(main.getByText('게시글에 별도로 첨부하지 않습니다.', { exact: false })).toBeVisible();
-  await expect(main.getByRole('navigation', { name: '분류별 바로가기' }).getByRole('link')).toHaveText([
-    '전체',
+  await expect(main.getByText('글마다 따로 첨부할 필요가 없어요.', { exact: false })).toBeVisible();
+  await expect(
+    main.getByText('휴대폰 키보드의 줄바꿈은 메시지를 보내지 않고', { exact: false }),
+  ).toBeVisible();
+  await expect(main.getByRole('term')).toHaveText([
     '피드백',
     '친추판매',
     '전투 모집',
@@ -121,9 +123,6 @@ test('the guide describes current classifications, account verification and chat
     '자유게시판',
   ]);
   await expect(main.getByText(/불러온 게임 프로필을.*첨부/)).toHaveCount(0);
-  await main
-    .getByRole('navigation', { name: '분류별 바로가기' })
-    .getByRole('link', { name: '게임코치', exact: true })
-    .click();
+  await main.getByRole('term').getByRole('link', { name: '게임코치', exact: true }).click();
   await expect(page).toHaveURL('/ko/boards/coaching');
 });

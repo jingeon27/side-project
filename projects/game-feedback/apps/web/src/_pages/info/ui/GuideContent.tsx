@@ -5,18 +5,24 @@ import { ButtonLink } from '@side/design-system/next';
 import { boardByKind, gameBoardPath } from '@/features/board';
 import { translate, type TLocale } from '@/shared/i18n/index.server';
 
+import { GuideTitleLink } from './GuideTitleLink';
+
 export function GuideContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   return (
     <>
       <p className="info-lead">
-        {t('게시글을 찾고, 모집 글을 올리고, 채팅으로 이야기하는 방법을 안내합니다.')}
+        {t(
+          '휴대폰에서 게시글을 찾고, 글을 올리고, 채팅하는 방법을 안내해요. 제목과 화살표를 누르면 해당 화면으로 바로 이동해요.',
+        )}
       </p>
       <section className="guide-section">
-        <h2>{t('전체와 다섯 분류')}</h2>
+        <h2>
+          <GuideTitleLink href={appRoutes.feed(locale)}>{t('전체와 다섯 분류')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
-            '홈의 전체에서는 모든 분류의 최신 글을 볼 수 있습니다. 게임 이름 아래 칩에서 분류를 선택하고, 헤더의 검색 아이콘으로 검색 페이지를 열 수 있습니다. 공개 게시글과 댓글, 사용자 프로필은 로그인 없이 읽을 수 있습니다.',
+            '화면 아래 홈을 누르면 모든 게임과 분류의 최신 글을 볼 수 있어요. 게임 이름 아래 분류 버튼을 좌우로 밀어 원하는 게시판을 선택하세요. 화면 위 검색 아이콘으로 글을 찾을 수 있어요. 공개 게시글·댓글·프로필은 로그인 없이 볼 수 있어요.',
           )}
         </p>
         <dl className="guide-board-list">
@@ -26,22 +32,14 @@ export function GuideContent({ locale }: { locale: TLocale }) {
           <GuideBoardDescription kind="COACHING" locale={locale} />
           <GuideBoardDescription kind="FREE" locale={locale} />
         </dl>
-        <nav className="guide-board-links" aria-label={t('분류별 바로가기')}>
-          <ButtonLink variant="secondary" size="sm" href={appRoutes.feed(locale)}>
-            {t('전체')}
-          </ButtonLink>
-          <GuideBoardLink kind="FEEDBACK" locale={locale} />
-          <GuideBoardLink kind="FRIEND_SALE" locale={locale} />
-          <GuideBoardLink kind="FRIENDLY" locale={locale} />
-          <GuideBoardLink kind="COACHING" locale={locale} />
-          <GuideBoardLink kind="FREE" locale={locale} />
-        </nav>
       </section>
       <section className="guide-section">
-        <h2>{t('글쓰기와 사진·동영상')}</h2>
+        <h2>
+          <GuideTitleLink href={appRoutes.compose(locale)}>{t('글쓰기와 사진·동영상')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
-            '로그인 후 글쓰기를 누르고 게임과 분류를 선택하세요. 분류를 바꿔도 입력한 제목과 본문은 유지됩니다. 본문 편집기의 사진·동영상 버튼으로 파일을 넣고, 서식과 링크도 함께 작성할 수 있습니다.',
+            '로그인한 뒤 글쓰기 버튼을 누르고 게임과 분류를 선택하세요. 제목과 본문을 입력하고, 사진·동영상 버튼으로 휴대폰의 파일을 첨부하거나 링크를 넣을 수 있어요. 분류를 바꿔도 입력한 제목과 본문은 유지돼요.',
           )}
         </p>
         <p>
@@ -51,12 +49,19 @@ export function GuideContent({ locale }: { locale: TLocale }) {
         </p>
       </section>
       <section className="guide-section">
-        <h2>{t('친추판매와 전투 모집')}</h2>
+        <h2>
+          <GuideTitleLink href={gameBoardPath(locale, 'FRIEND_SALE')}>{t('친추판매')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
             '친추판매는 판매 금액을 입력하고 이용 기간과 제공 내용을 본문에 적습니다. 금액을 비워두면 가격 협의로 표시됩니다.',
           )}
         </p>
+      </section>
+      <section className="guide-section">
+        <h2>
+          <GuideTitleLink href={gameBoardPath(locale, 'FRIENDLY')}>{t('전투 모집')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
             '전투 모집은 1:1 또는 팀전을 선택합니다. 가능한 시간, 규칙, 모집 인원과 참가 조건을 적어주세요. 목록의 전체·1:1·팀전 필터에서 원하는 모집만 볼 수 있습니다.',
@@ -64,7 +69,9 @@ export function GuideContent({ locale }: { locale: TLocale }) {
         </p>
       </section>
       <section className="guide-section">
-        <h2>{t('코치와 수강생 모집')}</h2>
+        <h2>
+          <GuideTitleLink href={gameBoardPath(locale, 'COACHING')}>{t('코치와 수강생 모집')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
             '가르치는 사람은 수강생 모집, 배우려는 사람은 코치 구함을 선택합니다. 게임코치 목록에서도 같은 모집 유형으로 글을 골라볼 수 있습니다.',
@@ -82,10 +89,12 @@ export function GuideContent({ locale }: { locale: TLocale }) {
         </p>
       </section>
       <section className="guide-section">
-        <h2>{t('채팅과 대화내역')}</h2>
+        <h2>
+          <GuideTitleLink href={appRoutes.messages(locale)}>{t('채팅과 대화내역')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
-            '게시글이나 사용자 프로필의 채팅하기에서 대화를 시작합니다. 채팅에서는 사진·동영상과 텍스트를 보낼 수 있습니다. 데스크톱 Enter는 전송, Shift+Enter는 줄바꿈이며 모바일 Enter는 줄바꿈입니다.',
+            '게시글이나 상대 프로필의 채팅하기를 누르면 1:1 대화가 열려요. 화면 아래 채팅 메뉴에서 대화를 다시 찾을 수 있어요. 입력창 옆 첨부 버튼으로 사진·동영상을 고르고, 오른쪽 보내기 버튼을 눌러 전송하세요. 휴대폰 키보드의 줄바꿈은 메시지를 보내지 않고 다음 줄로 내려가요.',
           )}
         </p>
         <p>
@@ -95,10 +104,12 @@ export function GuideContent({ locale }: { locale: TLocale }) {
         </p>
       </section>
       <section className="guide-section">
-        <h2>{t('게임 계정과 프로필 인증')}</h2>
+        <h2>
+          <GuideTitleLink href={appRoutes.settings(locale)}>{t('게임 계정과 프로필 인증')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
-            '프로필의 게임 계정에서 플레이어 태그를 조회하고 내 계정에 등록하세요. 게임 계정은 사용자 계정에 연결하며 게시글에 별도로 첨부하지 않습니다.',
+            '화면 아래 프로필을 누르고 게임 계정의 계정 등록을 선택하세요. 플레이어 태그를 입력해 조회한 뒤 내 계정에 등록할 수 있어요. 등록한 게임 계정은 프로필에 연결되므로 글마다 따로 첨부할 필요가 없어요.',
           )}
         </p>
         <p>
@@ -106,29 +117,27 @@ export function GuideContent({ locale }: { locale: TLocale }) {
             '프로필 인증 신청은 관리자와의 비공개 1:1 채팅으로 연결됩니다. 관리자 확인 후 인증되며, 인증 전에도 글을 작성할 수 있습니다. 대표 태그를 바꾸면 다시 인증을 받아야 합니다.',
           )}
         </p>
-        <ButtonLink variant="secondary" size="sm" href={appRoutes.settings(locale)}>
-          {t('프로필에서 계정 등록하기')}
-        </ButtonLink>
       </section>
       <section className="guide-section">
-        <h2>{t('팔로우와 새 소식')}</h2>
+        <h2>
+          <GuideTitleLink href={appRoutes.notifications(locale)}>{t('팔로우와 새 소식')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
-            '사용자 프로필에서 팔로우하고 새 글 알림을 설정할 수 있습니다. 새 답변·댓글과 구독한 사용자의 새 글은 헤더의 알림에서 확인하세요. 읽지 않은 채팅은 하단 채팅 메뉴에 개수로 표시됩니다.',
+            '상대 프로필에서 팔로우하고 새 글 알림을 설정할 수 있어요. 화면 위 알림 아이콘을 누르면 새 답변·댓글과 구독한 사용자의 새 글을 확인할 수 있어요. 읽지 않은 메시지 수는 화면 아래 채팅 메뉴에 표시돼요.',
           )}
         </p>
         <p>{t('피드백 요청자는 도움이 된 답변에 도움됨을 표시할 수 있습니다.')}</p>
       </section>
       <section className="guide-section">
-        <h2>{t('문의와 신고')}</h2>
+        <h2>
+          <GuideTitleLink href={appRoutes.contact(locale)}>{t('문의와 신고')}</GuideTitleLink>
+        </h2>
         <p>
           {t(
-            '운영 문의와 프로필 인증은 프로필의 관리자 문의에서 상담할 수 있습니다. 게시글·댓글·프로필·채팅의 신고 기능으로 욕설·괴롭힘, 사칭, 사기·거래 피해 등을 접수할 수 있습니다.',
+            '화면 아래 프로필에서 관리자 문의를 누르면 운영 문의와 프로필 인증을 상담할 수 있어요. 게시글·댓글·상대 프로필·채팅에서 신고를 선택하면 욕설·괴롭힘, 사칭, 사기·거래 피해 등을 접수할 수 있어요.',
           )}
         </p>
-        <ButtonLink variant="secondary" size="sm" href={appRoutes.contact(locale)}>
-          {t('문의 안내 보기')}
-        </ButtonLink>
       </section>
       <ButtonLink variant="primary" size="md" href={appRoutes.feed(locale)}>
         {t('홈으로 이동')}
@@ -142,17 +151,10 @@ function GuideBoardDescription({ kind, locale }: { kind: TBoardKind; locale: TLo
   if (!board) return null;
   return (
     <div>
-      <dt>{translate(locale, board.name)}</dt>
+      <dt>
+        <GuideTitleLink href={gameBoardPath(locale, kind)}>{translate(locale, board.name)}</GuideTitleLink>
+      </dt>
       <dd>{translate(locale, board.description)}</dd>
     </div>
-  );
-}
-function GuideBoardLink({ kind, locale }: { kind: TBoardKind; locale: TLocale }) {
-  const board = boardByKind(kind);
-  if (!board) return null;
-  return (
-    <ButtonLink variant="secondary" size="sm" href={gameBoardPath(locale, kind)}>
-      {translate(locale, board.name)}
-    </ButtonLink>
   );
 }

@@ -7,6 +7,30 @@
     color: var(--color-muted);
     line-height: 1.9;
   }
+  .guide-title-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    color: var(--color-ink);
+    border-radius: var(--radius-control);
+  }
+  .guide-title-link > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .guide-title-link > svg {
+    flex-shrink: 0;
+  }
+  .guide-title-link:hover > span {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .guide-title-link:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 4px;
+  }
   .guide-board-list {
     display: grid;
     gap: 12px;
@@ -19,11 +43,6 @@
     margin-top: 4px;
     color: var(--color-muted);
     line-height: 1.8;
-  }
-  .guide-board-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
   }
   .guide-step {
     display: flex;
