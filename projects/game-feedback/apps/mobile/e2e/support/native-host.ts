@@ -17,6 +17,7 @@ export const ORIGIN = 'http://127.0.0.1:3302';
 class NativeHostHarness {
   readonly messages: TWebMessage[] = [];
   readonly authSessions: string[] = [];
+  readonly authCallbacks: string[] = [];
   private ready = false;
   private closed = false;
   private loginResult: TLoginResult | null = null;
@@ -50,8 +51,9 @@ class NativeHostHarness {
               {
                 randomVerifier: () => randomBytes(32).toString('base64url'),
                 challenge: async (verifier) => createHash('sha256').update(verifier).digest('base64url'),
-                openSession: async (url) => {
+                openSession: async (url, callback) => {
                   this.authSessions.push(url);
+                  this.authCallbacks.push(callback);
                   return { type: 'cancel' };
                 },
               },

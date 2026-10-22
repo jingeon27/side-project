@@ -1,4 +1,4 @@
-import { APP_CALLBACK, APP_SCHEME, WebPathSchema } from '@game-feedback/bridge';
+import { APP_AUTH_CALLBACK_PATH, APP_SCHEME, WebPathSchema } from '@game-feedback/bridge';
 
 export function isSameOrigin(url: string, origin: string) {
   return (
@@ -8,14 +8,20 @@ export function isSameOrigin(url: string, origin: string) {
     url.startsWith(`${origin}#`)
   );
 }
+/** 소셜 로그인 콜백(`/app-auth/callback`)인지. 인증 세션만 이 주소를 받는다. */
+function isAuthCallbackPath(path: string) {
+  if (!path.startsWith(APP_AUTH_CALLBACK_PATH)) return false;
+  return ['', '/', '?', '#'].includes(path.charAt(APP_AUTH_CALLBACK_PATH.length));
+}
 export function toWebPath(url: string, origin: string): string | null {
-  if (url.length > 2048 || url.startsWith(APP_CALLBACK)) return null;
+  if (url.length > 2048) return null;
   const candidate = isSameOrigin(url, origin)
     ? url.slice(origin.length)
     : url.startsWith(`${APP_SCHEME}://`)
       ? `/${url.slice(APP_SCHEME.length + 3)}`
       : null;
-  if (candidate === null) return null;
+  // 인증 세션 밖에서 들어온 콜백(다른 앱이 시작한 흐름, 끝난 세션)은 일반 탐색으로 열지 않는다.
+  if (candidate === null || isAuthCallbackPath(candidate)) return null;
   const normalized =
     candidate === '' || candidate === '/'
       ? '/ko'

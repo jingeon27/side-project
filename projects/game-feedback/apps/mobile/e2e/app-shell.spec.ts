@@ -120,6 +120,7 @@ test('native Google login opens the system auth session and cancellation keeps t
   await page.getByRole('button', { name: /Google로 시작하기/ }).click();
   await expect.poll(() => nativeHost.authSessions.length).toBe(1);
   expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/social\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
+  expect(nativeHost.authCallbacks[0]).toBe(`${ORIGIN}/app-auth/callback`);
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await page.request.post('/api/auth/test-token', {
     headers: { Origin: ORIGIN },
