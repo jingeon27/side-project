@@ -135,7 +135,7 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
   const release = Promise.withResolvers<void>();
   await page.route('**/api/game-profiles/**', async (route) => {
     const response = await route.fetch();
-    if (decodeURIComponent(new URL(route.request().url()).pathname).endsWith('#GG829JGY')) {
+    if (new URL(route.request().url()).pathname.endsWith('/GG829JGY')) {
       responseReady.resolve();
       await release.promise;
     }
@@ -149,7 +149,7 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
   await responseReady.promise;
   await sheet.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#P0LYQ829');
   const firstResponse = page.waitForResponse((response) =>
-    decodeURIComponent(response.url()).endsWith('#GG829JGY'),
+    new URL(response.url()).pathname.endsWith('/GG829JGY'),
   );
   release.resolve();
   await firstResponse;
