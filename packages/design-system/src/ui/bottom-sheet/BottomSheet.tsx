@@ -45,7 +45,7 @@ export function BottomSheet({
       open={open}
       snapPoints={snapPoints}
       snapPoint={snapPoint}
-      onSnapPointChange={setSnapPoint}
+      onSnapPointChange={(nextSnapPoint) => setSnapPoint(nextSnapPoint)}
       snapToSequentialPoints
       disablePointerDismissal={!dismissible}
       onOpenChange={(nextOpen, details) => {
