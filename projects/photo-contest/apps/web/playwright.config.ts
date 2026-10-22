@@ -60,7 +60,7 @@ export default defineConfig({
     {
       command:
         'yarn workspace @photo-contest/web build && yarn workspace @photo-contest/web exec node scripts/serve-cache-build.mjs',
-      url: `${WEB_ORIGIN}/_health/live`,
+      url: `${WEB_ORIGIN}/health-check/live`,
       reuseExistingServer: false,
       timeout: 180_000,
       gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
