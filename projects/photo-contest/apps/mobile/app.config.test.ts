@@ -25,6 +25,12 @@ describe('app.config 빌드 설정', () => {
     expect(config.plugins).toContainEqual(['expo-build-properties', { android: {} }]);
   });
 
+  it('Android 자동 백업으로 WebView 세션 쿠키가 기기 밖에 복사되지 않아야 한다', () => {
+    vi.stubEnv('APP_VARIANT', '');
+    vi.stubEnv('EXPO_PUBLIC_WEB_ORIGIN', 'https://contest.example');
+    expect(resolve().android?.allowBackup).toBe(false);
+  });
+
   it('개발 빌드만 localhost 기본값과 로컬 네트워크·평문 예외를 써야 한다', () => {
     vi.stubEnv('APP_VARIANT', 'development');
     vi.stubEnv('EXPO_PUBLIC_WEB_ORIGIN', '');
