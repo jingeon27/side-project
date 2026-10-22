@@ -31,8 +31,9 @@ export const TEXT_LIMIT = {
   REPORT_REASON: 500,
 } as const;
 
-// 브라우저가 보내는 Cookie 헤더 상한(RFC 6265 권장 최소 4096바이트). 넘으면 조작된 요청으로 본다.
-export const COOKIE_HEADER_MAX_LENGTH = 4096;
+// Cookie 헤더 상한. 같은 사이트의 다른 쿠키가 많아도 로그인이 풀리지 않게 RFC 6265 최소(4096)의 두 배로 두고,
+// Node의 전체 요청 헤더 상한(16KB) 안에 머문다. 넘으면 조작된 요청으로 보고 비로그인으로 처리한다.
+export const COOKIE_HEADER_MAX_LENGTH = 8 * 1024;
 // RFC 7636: verifier는 43~128자, S256 challenge는 base64url 43자
 export const PKCE_VERIFIER_MIN_LENGTH = 43;
 export const PKCE_VERIFIER_MAX_LENGTH = 128;
