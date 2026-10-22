@@ -13,6 +13,8 @@ export const MAX_PENDING_UPLOADS = 10;
 
 export const PAGE_SIZE_DEFAULT = 24;
 export const PAGE_SIZE_MAX = 48;
+// 무한 스크롤 약 400쪽, 공개 사이트맵 약 200쪽(48개씩)까지 덮는다.
+export const PAGE_OFFSET_MAX = 10_000;
 export const GROUP_CONTEST_HISTORY = 50;
 
 export const CONTEST_MAX_DURATION_MS = 90 * DAY_MS;
@@ -41,6 +43,9 @@ export const CLEANUP_BATCH_SIZE = 100;
 export const OAUTH_PROVIDER_TIMEOUT_MS = 10 * SECOND_MS;
 export const SERIALIZABLE_ATTEMPTS = 4;
 export const GRAPHQL_MAX_DEPTH = 8;
+// 웹 문서 중 가장 큰 연산이 필드 약 50개(Apollo가 붙이는 __typename 포함 약 70개)이고 alias는 쓰지 않는다.
+export const GRAPHQL_MAX_FIELDS = 300;
+export const GRAPHQL_MAX_ALIASES = 10;
 
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 export const POST_TITLE_LIMIT = 80;

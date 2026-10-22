@@ -27,7 +27,8 @@
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
 - 닫힌 집합 분기는 ts-pattern `exhaustive()`, 일반 유틸은 es-toolkit.
-- 사진 목록은 offset/limit(`pageRange`)이고 정렬 마지막 기준은 id다. 좋아요 수는 읽을 때 `_count`로 센다 — 카운터 컬럼이나 커서를 두지 않는다.
+- GraphQL 검증 규칙은 depth 8, 조각을 펼친 연산당 필드 300개·alias 10개(`query-cost.rule.ts`)를 넘는 요청을 실행 전에 거절한다. 웹 문서를 늘려 상한에 가까워지면 상한과 근거를 함께 고친다.
+- 사진 목록은 offset/limit(`pageRange`, offset 최대 10,000)이고 정렬 마지막 기준은 id다. 좋아요 수는 읽을 때 `_count`로 센다 — 카운터 컬럼이나 커서를 두지 않는다.
 - Amplitude로 보내지 않는다. 이벤트는 같은 트랜잭션에서 `AnalyticsEvent`에 기록만 하고 개인정보(닉네임·캡션·토큰)를 넣지 않는다.
 - Sentry는 예상하지 못한 오류만: GraphQL `INTERNAL_SERVER_ERROR`는 `internal-error.plugin`이 operationName 태그로, REST 5xx는 `ApiExceptionFilter`가 라우트 패턴 태그로 보낸다. 업무 오류는 `fail()`로 던져 4xx로 끝나게 하고, 직접 보고할 때도 `captureException` 대신 `reportUnexpectedError()`를 쓴다.
 - Prisma 스키마를 바꾸면 마이그레이션을 추가하고 `db:generate`. 파괴적 변경은 피한다. 개발 DB에는 사용자가 `db:migrate`로 적용한다.
