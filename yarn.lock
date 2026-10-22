@@ -8102,6 +8102,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@side/migration-check@workspace:packages/migration-check"
   dependencies:
+    "@side/eslint-config": "workspace:*"
+    eslint: "npm:^9.39.0"
+    jiti: "npm:^2.6.1"
+    typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
   languageName: unknown
   linkType: soft
