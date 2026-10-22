@@ -32,9 +32,23 @@ for service in game-feedback photo-contest; do
   fi
   [[ "$(docker network inspect "$network" --format '{{index .Labels "dev.side.shared-instance"}}')" == "$ROOT" ]]
 done
+validate() { compose run --rm --no-deps -T proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; }
+reload() { compose exec -T proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; }
 case "${1:-}" in
   start) compose up -d proxy ;;
-  reload) compose exec -T proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile ;;
-  validate) compose run --rm --no-deps -T proxy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile ;;
-  *) echo 'Usage: proxy.sh start | reload | validate' >&2; exit 2 ;;
+  reload) reload ;;
+  validate) validate ;;
+  sync)
+    # Apply a release's Caddyfile in place: the running container's bind mount keeps the original inode.
+    [[ $# == 2 && -f "$2" ]] || { echo 'Usage: proxy.sh sync <release Caddyfile>' >&2; exit 2; }
+    cp "$ROOT/proxy/Caddyfile" "$ROOT/proxy/Caddyfile.previous"
+    cat "$2" >"$ROOT/proxy/Caddyfile"
+    if ! validate; then
+      cat "$ROOT/proxy/Caddyfile.previous" >"$ROOT/proxy/Caddyfile"
+      echo 'The new Caddyfile is invalid; the previous file was restored.' >&2
+      exit 1
+    fi
+    reload
+    ;;
+  *) echo 'Usage: proxy.sh start | reload | validate | sync <release Caddyfile>' >&2; exit 2 ;;
 esac

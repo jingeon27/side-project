@@ -1,15 +1,15 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl } from './database';
+import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl, type TTestSchemaPrefix } from './database';
 import { loadProjectEnv } from './env';
 import { PROJECT_ROOT, SERVE_TEST_API_BIN } from './paths';
 
 interface IStartIsolatedApiOptions {
   port: number;
   webOrigin: string;
-  /** 격리 스키마 이름 앞부분. 소문자·숫자·_만 쓴다. */
-  prefix: string;
+  /** 격리 스키마 이름 앞부분(TEST_SCHEMA_PREFIXES) */
+  prefix: TTestSchemaPrefix;
   /** API에만 더 넘길 환경변수 (예: 가짜 OAuth client id) */
   env?: Record<string, string>;
 }

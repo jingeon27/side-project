@@ -8,8 +8,10 @@ mkdir -p projects/photo-contest/apps/web/.data
 directory=$(mktemp -d "$repo_root/projects/photo-contest/apps/web/.data/containers-XXXXXX")
 project="pc-smoke-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}"
 revision=${GITHUB_SHA:-local}
+# 이전 단독 배포 구성(로컬 PostgreSQL·자체 Caddy)으로 운영 이미지와 pg_dump 복원을 검사한다.
+# 현재 운영(shared-instance)은 GF shared-instance-smoke.mjs가 검사한다.
 cp projects/photo-contest/deploy/compose.yaml "$directory/compose.yaml"
-# 운영 라우팅은 그대로 검사하고 인증서 발급만 로컬 CA로 대체한다.
+# 이전 구성의 라우팅은 그대로 검사하고 인증서 발급만 로컬 CA로 대체한다.
 python3 - projects/photo-contest/deploy/Caddyfile "$directory/Caddyfile" <<'PY'
 import pathlib, sys
 source, destination = map(pathlib.Path, sys.argv[1:])

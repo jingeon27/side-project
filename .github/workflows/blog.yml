@@ -36,23 +36,24 @@ jobs:
       SITE_URL: http://127.0.0.1:3101
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # content:validate compares published URLs with the merge base of the PR base (or origin/develop).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
       - run: corepack enable
       - run: yarn install --immutable
-      - name: Generate and validate content and SEO
-        run: |
-          yarn workspace @blog/web content:generate
-          yarn workspace @blog/web content:validate
+      # Validate the committed registry before anything regenerates it; later steps run content:generate themselves.
+      - name: Validate committed content and SEO registry
+        run: yarn workspace @blog/web content:validate
       - run: yarn workspace @blog/web typecheck
       - run: yarn workspace @blog/web lint
       - run: yarn workspace @blog/web test
       - run: yarn workspace @blog/web build
       - run: yarn workspace @blog/web exec playwright install --with-deps chromium
       - run: yarn workspace @blog/web test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: blog-playwright

@@ -101,7 +101,12 @@ services:
       retries: 8
       start_period: 20s
       start_interval: 1s
-    tmpfs: ['/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700']
+    # Next writes only its data/image cache and /tmp at runtime. ISR re-renders it cannot persist under
+    # .next/server stay in the in-memory cache (Next logs "Failed to update prerender cache").
+    read_only: true
+    tmpfs:
+      - '/tmp:size=64m,mode=1777'
+      - '/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700'
     mem_limit: 640m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
@@ -117,6 +122,8 @@ services:
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging: *logging
   migrate:
     profiles: [tools]
@@ -131,6 +138,8 @@ services:
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging: *logging
 networks:
   edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-edge' }

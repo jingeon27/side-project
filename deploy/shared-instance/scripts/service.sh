@@ -71,6 +71,22 @@ if [[ "$ACTION" == deploy ]]; then
   [[ "$api" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]]
   [[ "$web" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-web@sha256:[a-f0-9]{64}$ ]]
   [[ "${api%-api@*}" == "${web%-web@*}" ]]
+  if [[ -n "${SIDE_DEPLOY_REQUEST:-}" ]]; then
+    # A detached worker can outlive its CI job; only the newest request for this service may proceed.
+    [[ "$(cat "$SERVICE_ROOT/.deploy-request" 2>/dev/null)" == "$SIDE_DEPLOY_REQUEST" ]] || {
+      echo 'A newer deployment request replaced this one; nothing was changed.' >&2
+      exit 1
+    }
+  fi
+  if [[ -f "$directory/Caddyfile" ]]; then
+    # The shared proxy is not replaced by a service deployment, so refuse to run against a drifted one.
+    proxy="$ROOT/proxy/Caddyfile"
+    if [[ ! -f "$proxy" || "$(<"$directory/Caddyfile")" != "$(<"$proxy")" ]]; then
+      printf 'The host proxy Caddyfile differs from release %s. Sync it, then deploy again:\n' "$1" >&2
+      printf '  bash %q sync %q\n' "$directory/host/proxy.sh" "$directory/Caddyfile" >&2
+      exit 1
+    fi
+  fi
   old=$(previous current)
   prior=$(previous previous)
   if [[ "$directory" == "$old" || "$directory" == "$prior" ]]; then
@@ -82,7 +98,12 @@ if [[ "$ACTION" == deploy ]]; then
   fi
   printf 'RELEASE_SHA=%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$1" "$api" "$web" >"$directory/.release.env"
   compose "$directory" config --quiet
-  if [[ "${SIDE_LOCAL_IMAGES:-0}" != 1 ]]; then compose "$directory" pull api web ops migrate; fi
+  if [[ "${SIDE_LOCAL_IMAGES:-0}" == 1 ]]; then
+    # Already local: receive.sh pulled them with the short-lived token before detaching (or a smoke built them).
+    docker image inspect --format '{{.Id}}' "$api" "$web" >/dev/null
+  else
+    compose "$directory" pull api web ops migrate
+  fi
   # Runtime checks never receive the DDL credential. The migration container is one-shot.
   compose "$directory" run --rm --no-deps -T ops scripts/verify-services.mjs
   python3 "$directory/host/rds-receipt.py" "$ROOT" "$directory/rds-pitr.json"

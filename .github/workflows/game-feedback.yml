@@ -8,6 +8,11 @@ on:
       - 'package.json'
       - 'yarn.lock'
       - 'scripts/check-migrations.mjs'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.dockerignore'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -19,6 +24,11 @@ on:
       - 'package.json'
       - 'yarn.lock'
       - 'scripts/check-migrations.mjs'
+      - '.yarnrc.yml'
+      - '.nvmrc'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.dockerignore'
       - '.github/workflows/game-feedback.yml'
       - '.github/workflows/shared-instance.yml'
       - 'deploy/shared-instance/**'
@@ -27,18 +37,24 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request replaces its older run. Push and manual runs (and their deployments) get their own
+# group, so they are never cancelled here; the deploy job serializes itself.
+concurrency:
+  group: game-feedback-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Reject incompatible new migrations
         env:
           MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
         run: node scripts/check-migrations.mjs
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
       - run: corepack enable
@@ -60,7 +76,7 @@ jobs:
         env:
           GF_OBSERVABILITY_PRODUCTION: 'true'
         run: yarn workspace @game-feedback/web test:observability
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: game-feedback-playwright
@@ -82,20 +98,15 @@ jobs:
 
   containers:
     needs: [verify, shared-contract]
-    outputs:
-      api_image: ${{ steps.publish.outputs.api_image }}
-      web_image: ${{ steps.publish.outputs.web_image }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    permissions:
-      contents: read
-      packages: write
     env:
       GF_SMOKE_TAG: ${{ github.sha }}
       GF_SMOKE_IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
       - name: Resolve public build settings
@@ -115,7 +126,7 @@ jobs:
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid GF_CONTACT_EMAIL.');
           appendFileSync(process.env.GITHUB_ENV, `GF_BUILD_SITE_URL=${site}\nGF_BUILD_CONTACT_EMAIL=${email}\nGF_SMOKE_DOMAIN=${url.hostname}\n`);
           JS
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: shared-game-feedback-images-${{ github.sha }}
           path: ${{ runner.temp }}/shared-images
@@ -127,47 +138,72 @@ jobs:
           done
       - name: Verify the deployed stack and restore a backup into fresh volumes
         run: node projects/game-feedback/apps/api/scripts/production-smoke.mjs
-      - name: Sign in to GHCR
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
-        uses: docker/login-action@v3
+
+  # Only this job can write packages; it publishes the same archive both smoke tests verified.
+  publish:
+    needs: [verify, containers, shared-contract]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api_image: ${{ steps.push.outputs.api_image }}
+      web_image: ${{ steps.push.outputs.web_image }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: shared-game-feedback-images-${{ github.sha }}
+          path: ${{ runner.temp }}/shared-images
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish the tested images
-        id: publish
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+      - name: Publish the exact verified images
+        id: push
+        env:
+          IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
         run: |
-          docker push "${GF_SMOKE_IMAGE_PREFIX}-api:${GF_SMOKE_TAG}"
-          docker push "${GF_SMOKE_IMAGE_PREFIX}-web:${GF_SMOKE_TAG}"
+          gzip -dc "$RUNNER_TEMP/shared-images/game-feedback.tar.gz" | docker load
           for app in api web; do
-            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "${GF_SMOKE_IMAGE_PREFIX}-$app:${GF_SMOKE_TAG}")
+            image="$IMAGE_PREFIX-$app:$GITHUB_SHA"
+            docker tag "side-shared-gf-$app:$GITHUB_SHA" "$image"
+            docker push "$image"
+            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
             echo "${app}_image=$digest" >> "$GITHUB_OUTPUT"
           done
 
   deploy:
-    needs: [verify, containers, shared-contract]
+    needs: publish
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Covers waiting for the other service on the host lock plus one deployment and its rollback.
+    # The deployment itself runs detached on the host, so a timeout only stops following it.
+    timeout-minutes: 45
     environment: production
     concurrency:
-      group: side-project-shared-instance
+      # Per service: the host flock serializes the two services without cancelling each other's queued job.
+      group: shared-instance-deploy-game-feedback
       cancel-in-progress: false
     permissions:
       contents: read
       packages: read
     steps:
-      - uses: actions/checkout@v4
-      - name: Refuse an obsolete main revision
-        run: |
-          git fetch origin main
-          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
-      - name: Deploy the tested image digests to the shared host
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: Skip when a newer commit changed this service
+        id: latest
         env:
           RELEASE_SHA: ${{ github.sha }}
-          API_IMAGE: ${{ needs.containers.outputs.api_image }}
-          WEB_IMAGE: ${{ needs.containers.outputs.web_image }}
+        run: bash deploy/shared-instance/scripts/ci-superseded.sh game-feedback main
+      - name: Deploy the tested image digests to the shared host
+        if: steps.latest.outputs.deploy == 'true'
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          API_IMAGE: ${{ needs.publish.outputs.api_image }}
+          WEB_IMAGE: ${{ needs.publish.outputs.web_image }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
           DEPLOY_HOST: ${{ vars.SIDE_DEPLOY_HOST }}
@@ -175,4 +211,5 @@ jobs:
           DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
           DEPLOY_KNOWN_HOSTS: ${{ vars.SIDE_DEPLOY_SSH_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.SIDE_DEPLOY_SSH_KEY }}
+          DEPLOY_WAIT_SECONDS: '2400'
         run: bash deploy/shared-instance/scripts/ci-upload.sh game-feedback

@@ -13,7 +13,7 @@ description: API(apps/api)의 구현 파일 옆 unit 테스트나 실제 Postgre
 ## 레인 설정
 
 - `vitest.config.mts`: unplugin-swc가 데코레이터 메타데이터를 살리므로 테스트는 대상 TS 소스를 상대 경로로 바로 import한다(`dist`·`.e2e-build`를 import하지 않는다). integration 프로젝트는 `globalSetup: test/support/global-setup.ts`, `setupFiles: test/support/setup.ts`, `fileParallelism: false`, 타임아웃 30초. 공용 하네스는 계속 `test/support/`에 둔다.
-- `test/support/global-setup.ts`: `loadProjectEnv()` → 테스트 DB(test-kit `resolveTestDatabaseUrl()` 규칙: `TEST_DATABASE_URL` 우선, 없으면 로컬 `DATABASE_URL`만) → `isolatedSchemaName('api_test')` → `createIsolatedDatabase(…)`(마이그레이션 적용) → `project.provide('databaseUrl', …)`, teardown에서 `dropIsolatedDatabase`. 실행 전체가 이 스키마 하나를 쓰고 테스트는 `inject('databaseUrl')`로 받는다. `.env`는 열거나 출력하지 않는다.
+- `test/support/global-setup.ts`: `loadProjectEnv()` → 테스트 DB(test-kit `resolveTestDatabaseUrl()` 규칙: loopback 전용 포트의 `TEST_DATABASE_URL`만, 개발 DB로 대신하지 않음) → `isolatedSchemaName('api_test')` → `createIsolatedDatabase(…)`(마이그레이션 적용) → `project.provide('databaseUrl', …)`, teardown에서 `dropIsolatedDatabase`. 실행 전체가 이 스키마 하나를 쓰고 테스트는 `inject('databaseUrl')`로 받는다. `.env`는 열거나 출력하지 않는다.
 
 ## 하네스 (`test/support/`)
 

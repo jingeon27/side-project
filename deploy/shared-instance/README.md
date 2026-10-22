@@ -20,9 +20,9 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 
 새 환경은 [Terraform 구성](terraform/README.md)으로 아래 1~5의 리소스를 만들 수 있다.
 
-1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 네 호스트의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, `flock`이 필요하다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
+1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 네 호스트의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, util-linux의 `flock`·`setsid`가 필요하다. 배포는 SSH 세션이 끝나도 계속 돌아야 하므로 systemd-logind `KillUserProcesses=no`(Ubuntu·Amazon Linux 기본값)를 유지한다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
 2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
-3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. 컨테이너에서 IMDSv2로 인스턴스 역할을 읽으려면 EC2 metadata 응답 hop limit을 2로 설정한다.
+3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. IMDSv2를 필수로 하고 metadata 응답 hop limit은 1로 둔다. PITR 확인용 aws-cli만 `--network host`로 역할을 읽고, bridge 네트워크의 앱 컨테이너는 IMDS에 닿지 않는다.
 4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. [수명 주기](s3-lifecycle.json)는 오래된 이전 버전과 미완료 multipart만 정리하며 현재 객체를 만료시키지 않는다. Game Feedback 게시글·채팅 첨부는 presigned POST로 직접 전송하므로 해당 버킷에 [CORS 예시](../../projects/game-feedback/deploy/shared-instance/s3-cors.json)의 origin을 실제 도메인으로 바꿔 적용한다. Photo Contest는 모든 사진·동영상을 presigned POST로 올리고 60초 presigned GET으로 읽으므로 해당 버킷에 [PC CORS](../../projects/photo-contest/deploy/shared-instance/s3-cors.json)의 실제 웹 origin(POST)을 적용한다. 수명 주기는 위 공통 규칙을 그대로 쓰며 staging 접두사 규칙은 필요 없다. 완료하지 않은 업로드는 API 정리 작업이 지운다. 버킷 공개 접근은 계속 차단한다. [Game Feedback 업로드와 조회 검증](../../projects/game-feedback/docs/media-upload.md), [Photo Contest 배포 순서](../../projects/photo-contest/docs/deployment.md)를 확인한다.
 5. [S3 앱 정책](s3-app-policy.json)의 `SERVICE_BUCKET_NAME`을 각 버킷으로 바꾸고 서비스별 IAM 자격 증명을 발급한다. 각 계정은 자기 버킷만 읽고 쓸 수 있어야 한다. 한쪽 자격 증명으로 다른 버킷을 읽거나 쓰는 요청이 거부되는지 AWS에서 직접 확인한다. RDS 복구 지점 조회용 EC2 역할과 이 두 자격 증명을 구분한다.
 
@@ -45,7 +45,7 @@ bash deploy/shared-instance/scripts/prepare.sh
 | `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정 |
 | `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정   |
 
-`prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 현재 저장소 버전으로 복사하므로 변경 시 검토 후 `proxy.sh reload`를 실행한다.
+`prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 처음 한 번 현재 저장소 버전으로 복사한다. 이후 변경은 아래 [공용 Caddyfile 동기화](#공용-caddyfile-동기화)를 따른다.
 
 새 RDS에만 관리자 계정으로 다음 SQL을 **한 번** 적용한다. 각 `\password` 프롬프트에 서로 다른 32자 이상의 비밀번호를 입력한다. `psql` 클라이언트가 필요하다. DB URL 비밀번호는 URL 인코딩한다.
 
@@ -60,7 +60,7 @@ PGSSLMODE=verify-full PGSSLROOTCERT=/srv/side-project/certs/rds-ca.pem \
 | Game Feedback | `game_feedback` | `game_feedback`  | `game_feedback_migrator` |
 | Photo Contest | `photo_contest` | `photo_contest`  | `photo_contest_migrator` |
 
-각 DB의 PUBLIC 접속 권한을 회수하고 자기 서비스만 접속하도록 설정한다. runtime 계정은 schema 생성, role 생성, DB 생성, superuser 권한을 갖지 않는다. migration 실행 후 앱 테이블의 DML 권한을 부여하고 `_prisma_migrations` 접근은 회수한다. DDL 비밀번호는 일회성 migrate 컨테이너에만 전달한다. 관리자 DB URL을 runtime에 넣지 않는다.
+각 DB와 `postgres`·`template1`의 PUBLIC 접속 권한을 회수하고 자기 서비스만 접속하도록 설정한다. 이 회수가 들어가기 전에 부트스트랩한 RDS라면 관리자 계정으로 `REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;`와 `REVOKE CONNECT ON DATABASE template1 FROM PUBLIC;`만 실행한다. runtime 계정은 schema 생성, role 생성, DB 생성, superuser 권한을 갖지 않는다. migration 실행 후 앱 테이블의 DML 권한을 부여하고 `_prisma_migrations` 접근은 회수한다. DDL 비밀번호는 일회성 migrate 컨테이너에만 전달한다. 관리자 DB URL을 runtime에 넣지 않는다.
 
 Prisma 6 URL은 `sslmode=require&sslaccept=strict&sslcert=/run/rds/ca.pem`을 사용한다. [Prisma PostgreSQL TLS 옵션](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql)은 `psql`의 `verify-full` 설정과 다르다. URL의 endpoint, DB, role, CA 경로, 연결·풀 대기 한도를 시작 시 검사한다. 각 API의 기본 풀은 5개이며 migrator는 2개다.
 
@@ -75,7 +75,7 @@ bash deploy/shared-instance/scripts/proxy.sh validate
 bash deploy/shared-instance/scripts/proxy.sh start
 ```
 
-GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) 또는 repository 설정에 다음을 등록한다. 기존 GitHub 연결을 다시 만들 필요는 없다.
+SSH 접속 값과 키는 두 배포 Environment(GF `production`, PC `photo-contest-production`, 둘 다 배포 브랜치 `main`으로 제한)에 각각 등록하고 repository secret에는 두지 않는다. 나머지는 repository variable이다.
 
 | 종류                | 이름                                                               | 값                                                                                        |
 | ------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
@@ -87,14 +87,32 @@ GitHub의 해당 배포 Environment(`production`, `photo-contest-production`) �
 | Repository Variable | `GF_SITE_URL`                                                      | `https://game.bambyul.com`                                                                |
 | Repository Variable | `GF_CONTACT_EMAIL`                                                 | `contact@bambyul.com`                                                                     |
 | Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | `https://contest.bambyul.com`                                                             |
-| Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치, 예: `main`                                                              |
+| Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치. push 트리거와 Environment 제한에 맞춰 `main`                            |
 | Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택적 공개 Web 빌드 설정                                                                 |
 
 공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. DB·S3·OAuth 비밀은 서버의 서비스별 환경 파일에만 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
 
-설정과 복구 연습을 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정한다. GF는 main push, PC는 설정한 브랜치 push에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
+설정과 복구 연습을 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
 
-Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 서비스 배포와 이미지 정리는 GitHub concurrency와 서버의 공통 `flock`으로 직렬화한다. 배포 순서는 runtime RDS/S3 접근 검사 → 최신 PITR 확인·기록 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
+Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime RDS/S3 접근 검사 → 최신 PITR 확인·기록 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
+
+배포 job은 먼저 `ci-superseded.sh`로 이 커밋 뒤에 같은 서비스의 경로 필터에 걸리는 커밋이 배포 브랜치에 있는지 본다. 있으면 그 커밋의 실행이 새 릴리스를 배포하므로 job summary에 이유를 남기고 생략한다. 다른 서비스나 문서만 바꾼 커밋은 검증한 릴리스를 생략시키지 않는다.
+
+### 원격 배포 실행과 로그
+
+`ci-upload.sh`가 릴리스(서비스 compose, 공용 Caddyfile, 호스트 스크립트)를 올리면 `receive.sh`가 SSH 세션 안에서 단기 `GITHUB_TOKEN`으로 두 digest를 받은 뒤 토큰을 지우고, `setsid`·`nohup`으로 분리한 `deploy-job.sh`에 배포를 넘긴다. 분리된 작업은 레지스트리 자격 증명 없이 미리 받은 이미지로 `service.sh deploy`를 끝까지 실행하므로 runner 취소·timeout·SSH 끊김이 web 정지 뒤나 롤백 도중의 배포를 끊지 않는다. CI는 `job-status.sh`로 로그와 결과를 최대 40분 따라가며(job timeout 45분) 원격 결과대로 성공·실패한다. 따라가기를 멈춰도 배포는 호스트에서 계속된다.
+
+각 실행의 로그와 종료 코드는 `/srv/side-project/services/<서비스>/releases/<sha>/.deploy/run-*/{log,status}`에 남는다. 서비스마다 마지막 요청(`.deploy-request`)만 진행하므로, 호스트 잠금을 오래 기다린 이전 작업이 더 새 배포를 덮어쓰지 않고 아무것도 바꾸지 않은 채 끝난다.
+
+### 공용 Caddyfile 동기화
+
+공용 Caddyfile은 서비스 배포가 교체하지 않는다. 대신 릴리스에 CI가 검증한 `Caddyfile`을 함께 올리고, `service.sh deploy`는 호스트 `proxy/Caddyfile`과 다르면 검사·마이그레이션 전에 멈추며 동기화 명령을 출력한다. 이 경우 서버에서 다음을 실행한 뒤 실패한 배포 job을 다시 실행한다. `sync`는 기존 파일을 `Caddyfile.previous`로 남기고 같은 inode에 새 내용을 쓴 뒤 validate에 실패하면 되돌리고, 통과하면 reload한다.
+
+```sh
+bash /srv/side-project/services/<서비스>/releases/<sha>/host/proxy.sh sync /srv/side-project/services/<서비스>/releases/<sha>/Caddyfile
+```
+
+두 서비스의 릴리스는 같은 Caddyfile을 가져야 하므로 두 배포 브랜치를 같게(`main`) 둔다. 요청 본문 상한은 GF 아바타 업로드(5MB 파일)만 6MB, 나머지는 1MB다. 미디어는 브라우저가 presigned 양식으로 S3에 직접 올린다.
 
 ## 운영·롤백
 
@@ -137,11 +155,11 @@ API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instanc
 
 `projects/game-feedback/deploy/lightsail`과 `projects/photo-contest/deploy/compose.yaml`은 이전 단독 배포 및 별도 컨테이너 회귀 테스트용이다. 새 Actions CD는 이 문서의 shared-instance 구성만 사용한다. 이전 Lightsail/Oracle/로컬 PostgreSQL volume/R2 중심의 운영 명령을 이 호스트에 적용하지 않는다. 첨부 계획의 전체 캐시 개편과 나머지 제품 결함은 이 배포 변경의 완료 범위에 포함하지 않는다.
 
-Photo Contest의 `/backend/graphql`은 pc-web의 Next Route Handler로 보내 공개 SEO·사이트맵 캐시 무효화를 수행한다. 나머지 `/backend/*`는 pc-api로 보낸다. 해당 릴리스에서는 운영 `proxy/Caddyfile`을 동기화하고 `scripts/proxy.sh validate` 후 `reload`를 실행해야 한다. PC route 블록의 내부 경로 차단·GraphQL·일반 API·Web 순서를 유지한다.
+Photo Contest의 `/backend/graphql`은 pc-web의 Next Route Handler로 보내 공개 SEO·사이트맵 캐시 무효화를 수행한다. 나머지 `/backend/*`는 pc-api로 보낸다. Caddyfile이 바뀐 릴리스는 [공용 Caddyfile 동기화](#공용-caddyfile-동기화)로 반영한다. PC route 블록의 내부 경로 차단·GraphQL·일반 API·Web 순서를 유지한다.
 
 ## 재생성 동안의 요청과 호환성
 
-Caddy route 블록은 내부·테스트·GF 관리자 경로를 프록시보다 먼저 차단한다. 차단 본문은 `edge-blocked`이며 관리자 앱은 기존 SSH 터널로 loopback API에 붙는다. 호스트 Caddyfile은 prepare.sh의 cp로 반영하고 `proxy.sh validate` 후 `proxy.sh reload`한다. 바인드 마운트 파일을 원자 교체하면 컨테이너에서 이전 inode를 볼 수 있어 에디터/rsync의 교체 방식으로 갱신하지 않는다.
+Caddy route 블록은 내부·테스트·GF 관리자 경로를 프록시보다 먼저 차단한다. 차단 본문은 `edge-blocked`이며 관리자 앱은 기존 SSH 터널로 loopback API에 붙는다. 호스트 Caddyfile은 `proxy.sh sync`로 반영한다. 바인드 마운트 파일을 원자 교체하면 컨테이너에서 이전 inode를 볼 수 있어 에디터/rsync의 교체 방식으로 갱신하지 않는다.
 
 모든 업스트림은 연결 실패를 250ms 간격으로 최대 140초 기다린다. 웹 요청을 먼저 종료 유예 30초 동안 마친 뒤 API 교체(종료 유예 20초 + 시작 구간 30초), 웹 시작 구간 20초를 순서대로 기다릴 여유를 뒀다. API를 먼저 내리면 진행 중인 SSR의 API 요청이 끊겨 이미 시작한 응답을 프록시가 재시도할 수 없다. 헬스체크 시작 구간은 API 30초/Web 20초이며 매초 검사한다. 재시도에서 모든 HTTP 메서드를 허용하도록 바꾸지 않는다. 연결 후 실패의 기본 GET 재시도 정책을 유지한다. 장시간 업로드·스트림·인프라 장애의 무중단을 보장하지 않는다. 종료 유예를 넘는 요청과 140초가 넘는 시작 실패는 사용자 오류가 될 수 있다. 교체 시 웹 종료 시간과 exit/OOM 상태를 기록하고, smoke가 실패하면 요청 경과 시간·교체 출력·웹 로그를 함께 남긴다.
 

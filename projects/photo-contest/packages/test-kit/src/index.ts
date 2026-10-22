@@ -1,12 +1,15 @@
 export {
-  assertLocalDatabase,
+  assertTestDatabaseUrl,
+  assertTestSchemaName,
   createDatabaseClient,
   createIsolatedDatabase,
   dropIsolatedDatabase,
   isolatedSchemaName,
   resolveTestDatabaseUrl,
   schemaUrl,
+  TEST_SCHEMA_PREFIXES,
 } from './database';
+export type { TTestSchemaPrefix } from './database';
 export { apiWebServer, prepareE2eDatabase } from './e2e';
 export type { IE2eDatabase } from './e2e';
 export { loadProjectEnv } from './env';

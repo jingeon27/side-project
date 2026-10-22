@@ -24,8 +24,8 @@ declare module 'vitest' {
 }
 
 /**
- * api 레인 전체가 격리 스키마와 S3 대역 하나를 함께 쓴다. 테스트 전용 DB(TEST_DATABASE_URL)가 있으면 그곳에,
- * 없으면 로컬 개발 DB에 만든다. 어느 쪽이든 public 스키마는 건드리지 않는다.
+ * api 레인 전체가 격리 스키마와 S3 대역 하나를 함께 쓴다. 스키마는 테스트 전용 DB(TEST_DATABASE_URL)에만 만들고
+ * public 스키마는 건드리지 않는다.
  */
 export default async function setup(project: TestProject) {
   loadProjectEnv();
