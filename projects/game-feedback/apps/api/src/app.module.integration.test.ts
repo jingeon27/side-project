@@ -25,12 +25,12 @@ describe('application module composition and shutdown', () => {
     const sessions = vi.spyOn(app.get(SessionService), 'loadSession');
     try {
       const request = supertest(app.getHttpServer());
-      for (const _ of Array.from({ length: 1001 })) await request.get('/api/health/live').expect(200);
+      for (let count = 0; count < 1001; count++) await request.get('/api/health/live').expect(200);
       await request.head('/api/health/live').expect(200);
       await request.get('/api/health/ready').expect(200);
       await request.get('/api/health').expect(200);
       expect(sessions).not.toHaveBeenCalled();
-      for (const _ of Array.from({ length: 240 })) await request.get('/api/session').expect(200);
+      for (let count = 0; count < 240; count++) await request.get('/api/session').expect(200);
       await request.get('/api/session').expect(429);
     } finally {
       sessions.mockRestore();

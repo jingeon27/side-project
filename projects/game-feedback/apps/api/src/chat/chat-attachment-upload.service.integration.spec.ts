@@ -10,7 +10,6 @@ import { MediaUploadPlanSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
-import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';

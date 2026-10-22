@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { omit } from 'es-toolkit';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
 
@@ -24,7 +25,7 @@ export class PostMediaService {
   async upload(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
     const file = validateMediaFile(input);
-    const { bytes: _bytes, ...metadata } = file;
+    const metadata = omit(file, ['bytes']);
     const stored = await this.storage.save(file.bytes, file.mimeType);
     return presentPostMedia(await this.register(user.id, metadata, stored));
   }
