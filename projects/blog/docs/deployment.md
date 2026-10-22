@@ -55,7 +55,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 1. 실제 도메인을 등록하고 DNS TXT로 소유권을 확인합니다. URL-prefix 방식이라면 HTML tag의 verification 값만 `GOOGLE_SITE_VERIFICATION`에 지정할 수 있습니다.
 2. `https://blog.bambyul.com/sitemap.xml`을 제출합니다.
 3. `/robots.txt`, 한국어·영어 홈과 대표 글 URL을 URL 검사로 확인합니다.
-4. Canonical이 자기 언어 URL인지, `hreflang`이 실제 존재하는 번역만 가리키는지 확인합니다. 영어 본문이 없는 한국어 글의 영어 상세 URL은 제공하지 않습니다.
+4. Canonical이 자기 언어 URL인지, `hreflang`이 실제 존재하는 번역만 가리키는지 확인합니다. 두 언어가 모두 있는 페이지는 `x-default`로 한국어 버전을 가리키며 글 페이지에도 RSS `alternate`가 남아 있어야 합니다. 영어 본문이 없는 한국어 글의 영어 상세 URL은 제공하지 않습니다.
 5. 검색 실적과 Core Web Vitals는 실제 운영 데이터가 쌓인 뒤 확인합니다. LCP 2.5초·INP 200ms·CLS 0.1은 목표이며 로컬 빌드 성공이 이를 보장하지 않습니다.
 
 티스토리 원본은 기존 서비스에서 계속 공개됩니다. 원본 플랫폼에서의 canonical 변경이나 redirect는 이 저장소에서 제어할 수 없으므로 필요하면 원문에 새 주소를 안내하고 각 플랫폼의 지원 범위를 별도로 확인합니다.

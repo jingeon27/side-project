@@ -37,6 +37,20 @@ describe('multilingual SEO', () => {
       }
     expect(entries.some((entry) => entry.url.endsWith('/ko/blog/category/engineering'))).toBe(true);
   });
+  it('points x-default to the Korean version of every multilingual entry', () => {
+    for (const entry of sitemap()) {
+      const languages = entry.alternates?.languages ?? {};
+      const versions = Object.keys(languages).filter((key) => key !== 'x-default');
+      if (versions.length > 1 && 'ko' in languages)
+        expect(languages['x-default'], entry.url).toBe(languages.ko);
+      else expect(languages, entry.url).not.toHaveProperty('x-default');
+    }
+    expect(sitemap().find((entry) => entry.url === `${siteUrl.origin}/en`)?.alternates?.languages).toEqual({
+      ko: `${siteUrl.origin}/ko`,
+      en: `${siteUrl.origin}/en`,
+      'x-default': `${siteUrl.origin}/ko`,
+    });
+  });
 
   it('lists and offers hreflang only for categories that have articles', () => {
     const entries = sitemap();

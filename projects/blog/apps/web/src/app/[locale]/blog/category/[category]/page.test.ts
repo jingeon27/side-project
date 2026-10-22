@@ -22,7 +22,10 @@ describe('category pages', () => {
       const locales = (['ko', 'en'] as const).filter((value) =>
         getArticles(value).some((article) => article.category === category),
       );
-      expect(Object.keys(metadata.alternates?.languages ?? {}).sort()).toEqual([...locales].sort());
+      const languages = Object.keys(metadata.alternates?.languages ?? {}).filter(
+        (key) => key !== 'x-default',
+      );
+      expect(languages.sort()).toEqual([...locales].sort());
     }
   });
 });
