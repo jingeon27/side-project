@@ -33,6 +33,7 @@ new RuleTester({ languageOptions }).run('slice-public-api', slicePublicApi, {
       ...fixtures.read('_pages/group/@page/PublicServer.tsx'),
       options,
     },
+    { ...fixtures.read('_pages/group/@page/PublicServerBarrel.tsx'), options },
     {
       ...fixtures.read('features/group/ui/LocalModel.tsx'),
       options,
@@ -68,5 +69,7 @@ new RuleTester({ languageOptions }).run('slice-public-api', slicePublicApi, {
       options,
       errors: [{ messageId: 'ownBarrel' }],
     },
+    { ...fixtures.read('features/group/group.helper.ts'), options, errors: [{ messageId: 'ownBarrel' }] },
+    { ...fixtures.read('app/groups/[id]/page.tsx'), options, errors: [{ messageId: 'deep' }] },
   ],
 });
