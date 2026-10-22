@@ -143,14 +143,11 @@ function CategoryManagement({ queryRef }: { queryRef: QueryRef<GroupCategoriesQu
   const { data } = useReadQuery(queryRef);
   const group = data.group;
   const form = useZodForm(groupCategorySchema, { defaultValues: { name: '' } });
+  // 다른 화면의 목록 갱신까지 기다리지 않고 생성 결과로 입력을 비워 다음 이름을 바로 쓸 수 있게 한다.
   const [create, { loading, error }] = useMutation(CreateGroupCategoryDocument, {
     refetchQueries: REFRESH,
-    awaitRefetchQueries: true,
     context: { errorToast: false },
-    onCompleted: () => {
-      form.reset();
-      trackEvent(ANALYTICS_EVENT.CategoryCreated, { group_id: group.id });
-    },
+    onCompleted: () => trackEvent(ANALYTICS_EVENT.CategoryCreated, { group_id: group.id }),
   });
   const [reorder, { loading: reordering }] = useMutation(ReorderGroupCategoriesDocument, {
     refetchQueries: REFRESH,
@@ -189,6 +186,8 @@ function CategoryManagement({ queryRef }: { queryRef: QueryRef<GroupCategoriesQu
         onSubmit={form.handleSubmit(async ({ name }) => {
           try {
             await create({ variables: { groupId: group.id, name } });
+            // 생성을 기다리는 동안 새로 입력한 이름은 지우지 않는다.
+            if (form.getValues('name').trim() === name) form.reset();
           } catch {
             /* 이 폼 아래에 오류를 표시한다. */
           }
