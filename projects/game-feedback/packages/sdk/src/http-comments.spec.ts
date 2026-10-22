@@ -56,7 +56,8 @@ describe('comment thread response validation', () => {
       answerId: null,
       commentId: replyComment.id,
       type: 'COMMENT_REPLY',
-      message: '새 답글',
+      actor: authorFixture(),
+      postTitle: '게시글 제목',
       readAt: null,
       createdAt: timestamp,
     };

@@ -137,7 +137,6 @@ export class PostsService {
               actorId: u.id,
               postId: created.id,
               type: 'FOLLOWED_POST',
-              message: `${u.nickname}: ${created.title}`,
             })),
           });
         return created;

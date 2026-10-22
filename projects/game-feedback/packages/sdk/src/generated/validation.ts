@@ -2766,6 +2766,9 @@ export const listNotificationsResponseItemsItemAnswerIdOneMax = 100;
 
 export const listNotificationsResponseItemsItemCommentIdOneMax = 100;
 
+export const listNotificationsResponseItemsItemActorOneIdMax = 100;
+
+
 
 export const listNotificationsResponseItemsItemReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const listNotificationsResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
@@ -2782,7 +2785,15 @@ export const ListNotificationsResponse = zod.object({
   "postId": zod.string().min(1).max(listNotificationsResponseItemsItemPostIdMax),
   "answerId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemAnswerIdOneMax),zod.null()]),
   "commentId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemCommentIdOneMax),zod.null()]).optional(),
-  "message": zod.string().min(1),
+  "actor": zod.union([zod.object({
+  "id": zod.string().min(1).max(listNotificationsResponseItemsItemActorOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),zod.null()]),
+  "postTitle": zod.string().min(1),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemReadAtOneRegExp),zod.null()]),
   "createdAt": zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemCreatedAtRegExp)
 })),

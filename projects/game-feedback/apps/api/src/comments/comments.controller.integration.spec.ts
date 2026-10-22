@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   CommentPageSchema,
   CommentSchema,
+  NotificationListSchema,
   PostDetailSchema,
   PostSchema,
   SessionSchema,
@@ -146,7 +147,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       orderBy: { userId: 'asc' },
     });
     expect(recipients.map(({ userId }) => userId).sort()).toEqual([postAuthor.id, commenter.id].sort());
-    expect(recipients.every(({ message }) => message.includes('답글'))).toBe(true);
+    expect(recipients.every(({ message, actorId }) => message === '' && actorId === replier.id)).toBe(true);
     expect(recipients.every((item) => item.type === 'COMMENT_REPLY' && item.commentId === reply.id)).toBe(
       true,
     );
@@ -155,9 +156,13 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
       {
         type: 'COMMENT_REPLY',
         commentId: reply.id,
+        actor: { id: replier.id, nickname: '대댓글답글작성자' },
+        postTitle: post.title,
         readAt: null,
       },
     );
+    expect(NotificationListSchema.parse(inbox.body).unreadCount).toBeGreaterThan(0);
+    expect(inbox.body.items.some((item: object) => 'message' in item)).toBe(false);
     await db.notification.deleteMany({ where: { postId: post.id } });
     await comment(commenter.agent, post.id, '제가 추가할게요.', root.id);
     expect(await db.notification.count({ where: { postId: post.id } })).toBe(1);

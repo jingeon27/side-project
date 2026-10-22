@@ -46,7 +46,6 @@ export class AnswersService {
               postId,
               answerId: row.id,
               type: 'ANSWER',
-              message: `${u.nickname}님이 피드백을 남겼어요.`,
             },
           });
         return row;
@@ -168,7 +167,6 @@ export class AnswersService {
               postId: a.postId,
               answerId: a.id,
               type: 'HELPFUL',
-              message: `${u.nickname}님이 피드백을 도움됨으로 표시했어요.`,
             },
           });
         return (tx ?? this.db).answer.findUniqueOrThrow({

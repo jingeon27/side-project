@@ -64,7 +64,6 @@ export class CommentsService {
               postId,
               commentId: row.id,
               type: parent ? 'COMMENT_REPLY' : 'COMMENT',
-              message: `${u.nickname}님이 ${parent ? '답글' : '댓글'}을 남겼어요.`,
             })),
           });
         return row;

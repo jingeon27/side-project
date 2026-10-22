@@ -207,7 +207,10 @@ export const NotificationSchema = z.object({
   postId: ResponseIdSchema,
   answerId: ResponseIdSchema.nullable(),
   commentId: ResponseIdSchema.nullable().optional(),
-  message: z.string().min(1),
+  /** 알림을 만든 사용자의 현재 공개 정보. 탈퇴 등으로 없으면 null이다. 문구는 클라이언트가 번역해 조합한다. */
+  actor: AuthorSchema.nullable(),
+  /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
+  postTitle: z.string().min(1),
   readAt: ResponseTimestampSchema.nullable(),
   createdAt: ResponseTimestampSchema,
 });
