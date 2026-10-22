@@ -190,6 +190,11 @@ test('a reply notifies both authors, updates unread counts and opens the exact r
     await page
       .getByRole('textbox', { name: '답글 내용', exact: true })
       .fill('새 답글을 알림으로 확인해 보세요.');
+    // 분류 주소로 바뀌어도 화면을 다시 받지 않아 작성 중인 답글이 남아야 한다.
+    await expect(page).toHaveURL(`/ko/posts/${post.id}?board=free`);
+    await expect(page.getByRole('textbox', { name: '답글 내용', exact: true })).toHaveValue(
+      '새 답글을 알림으로 확인해 보세요.',
+    );
     await page.getByRole('button', { name: '답글 등록', exact: true }).click();
     await expect(page.locator('.comment-replies .comment-bubble')).toHaveText(
       '새 답글을 알림으로 확인해 보세요.',
@@ -215,7 +220,9 @@ test('a reply notifies both authors, updates unread counts and opens the exact r
     await expect(row).toHaveClass(/unread/);
     await expect(row).toHaveAttribute('href', `/ko/posts/${post.id}#comment-${notification.commentId}`);
     await row.click();
-    await expect(inboxPage).toHaveURL(origin + `/ko/posts/${post.id}#comment-${notification.commentId}`);
+    await expect(inboxPage).toHaveURL(
+      origin + `/ko/posts/${post.id}?board=free#comment-${notification.commentId}`,
+    );
     await expect(inboxPage.locator(`#comment-${notification.commentId}`)).toBeInViewport();
     await expect
       .poll(
