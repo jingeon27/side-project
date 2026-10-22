@@ -1,5 +1,3 @@
-import { readdir } from 'node:fs/promises';
-
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
@@ -121,10 +119,15 @@ describe('상시 그룹 게시물', () => {
     await joinGroup(api, peer, group.inviteToken, owner);
     expect((await list(owner, { groupId })).find((p) => p.id === post.id)?.canDelete).toBe(true);
     expect((await api.gqlFail(peer.cookie, del, { id: post.id })).code).toBe('FORBIDDEN');
-    const before = (await readdir(api.storageDir)).length;
+    const { upload } = await api.db.post.findUniqueOrThrow({
+      where: { id: post.id },
+      include: { upload: true },
+    });
+    const key = upload?.storageKey ?? '';
+    expect(await api.storage.head(key)).toMatchObject({ contentType: 'image/png' });
     await api.gqlOk(owner.cookie, del, { id: post.id });
     expect((await list(member, { groupId })).some((p) => p.id === post.id)).toBe(false);
-    expect((await readdir(api.storageDir)).length).toBe(before - 1);
+    await expect(api.storage.head(key)).rejects.toThrow();
     expect(
       (await api.http().get(post.mediaUrl.replace('/backend', '')).set('Cookie', owner.cookie)).status,
     ).toBe(404);

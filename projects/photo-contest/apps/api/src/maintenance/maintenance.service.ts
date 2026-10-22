@@ -1,21 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
-import { CLEANUP_BATCH_SIZE, COMPLETED_POST_UPLOAD_TTL_MS, UPLOAD_TICKET_TTL_MS } from '../config/limits';
+import { CLEANUP_BATCH_SIZE, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { MediaStorage } from '../storage/media-storage.service';
-import { PhotoStorage } from '../storage/photo-storage.service';
 
 @Injectable()
 export class MaintenanceService {
   constructor(
     private readonly db: Database,
-    private readonly storage: PhotoStorage,
     private readonly media: MediaStorage,
   ) {}
 
   async cleanup(now = new Date()) {
-    await this.attempt(() => this.media.pruneAbandoned(now));
     await this.removeAbandonedUploads(now);
     const avatars = await this.db.groupAvatar.findMany({
       where: {
@@ -30,18 +27,7 @@ export class MaintenanceService {
         await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
       });
     }
-    // 실패한 항목의 추적 행을 남겨 다음 정리에서 다시 시도한다.
-    const candidates = await this.db.postUploadAttempt.findMany({
-      where: { createdAt: { lt: new Date(now.getTime() - COMPLETED_POST_UPLOAD_TTL_MS) } },
-      take: CLEANUP_BATCH_SIZE,
-    });
-    for (const candidate of candidates) {
-      await this.attempt(async () => {
-        if (await this.db.postUpload.count({ where: { storageKey: candidate.key } })) return;
-        await this.media.delete(candidate.key);
-        await this.db.postUploadAttempt.deleteMany({ where: { key: candidate.key } });
-      });
-    }
+    // 완료하지 않은 티켓의 최종 키다. POST 정책도 같은 시각에 끝나므로 지운 뒤 다시 쓰이지 않는다.
     const staged = await this.db.postUpload.findMany({
       where: { stagingKey: { not: null }, expiresAt: { lt: now } },
       take: CLEANUP_BATCH_SIZE,
@@ -68,7 +54,6 @@ export class MaintenanceService {
       await this.attempt(async () => {
         if (upload.storageKey) await this.media.delete(upload.storageKey);
         if (upload.stagingKey) await this.media.delete(upload.stagingKey);
-        if (await this.db.postUploadAttempt.count({ where: { uploadId: upload.id } })) return;
         await this.db.postUpload.deleteMany({
           where: { id: upload.id, post: null, submissionUpload: null, groupAvatar: null },
         });
@@ -94,7 +79,7 @@ export class MaintenanceService {
     });
     for (const upload of abandoned) {
       await this.attempt(async () => {
-        if (upload.imageKey) await this.storage.delete(upload.imageKey);
+        if (upload.imageKey) await this.media.delete(upload.imageKey);
         await this.db.upload.deleteMany({ where: { id: upload.id, submission: null } });
       });
     }

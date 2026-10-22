@@ -9,9 +9,6 @@ export const APP_LOGIN_TICKET_TTL_MS = 2 * MINUTE_MS;
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const MAX_JSON_BODY = '64kb';
-export const MAX_INPUT_PIXELS = 40_000_000;
-export const MAX_IMAGE_EDGE_PX = 1600;
-export const WEBP_QUALITY = 82;
 export const MAX_PENDING_UPLOADS = 10;
 
 export const PAGE_SIZE_DEFAULT = 24;
@@ -46,25 +43,13 @@ export const SERIALIZABLE_ATTEMPTS = 4;
 export const GRAPHQL_MAX_DEPTH = 8;
 
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-export const MAX_VIDEO_SECONDS = 300;
 export const POST_TITLE_LIMIT = 80;
 export const POST_BODY_LIMIT = 5000;
 export const POST_LINK_LIMIT = 2048;
 export const DOWNLOAD_URL_TTL_SECONDS = 60;
 export const POST_UPLOAD_TTL_SECONDS = 15 * 60;
 export const COMPLETED_POST_UPLOAD_TTL_MS = 60 * MINUTE_MS;
-export const LOCAL_UPLOAD_ORPHAN_TTL_MS = DAY_MS;
-export const POST_UPLOAD_LEASE_MS = 4 * MINUTE_MS;
 export const MEDIA_IO_TIMEOUT_MS = 10 * SECOND_MS;
-export const MEDIA_ANALYSIS_TIMEOUT_MS = 30 * SECOND_MS;
-export const MAX_MEDIA_COMPLETIONS = 4;
-export const MEDIA_RANGE_BLOCK_BYTES = 1024 * 1024;
-export const MEDIA_RANGE_CACHE_BLOCKS = 4;
-export const MAX_MEDIA_RANGE_REQUESTS = 128;
-export const MAX_MEDIA_ANALYSIS_BYTES = 32 * 1024 * 1024;
-export const IMAGE_HEADER_BYTES = 128 * 1024;
-export const MAX_UPLOAD_FORM_FIELDS = 2;
-export const MAX_UPLOAD_FORM_FIELD_BYTES = 1024;
 export const COMMENT_BODY_LIMIT = 1000;
 
 export const PASSWORD_MIN_LENGTH = 15;
@@ -80,5 +65,4 @@ export const AUTH_REGISTER_IP_LIMIT = 5;
 export const GROUP_CATEGORY_LIMIT = 20;
 export const GROUP_CATEGORY_NAME_LIMIT = 20;
 export const GROUP_DESCRIPTION_LIMIT = 500;
-export const GROUP_AVATAR_EDGE_PX = 512;
 export const CONTEST_LIKE_LIMIT_MAX = 100;

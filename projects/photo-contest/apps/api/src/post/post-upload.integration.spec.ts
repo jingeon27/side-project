@@ -1,15 +1,11 @@
-import { readdir, readFile } from 'node:fs/promises';
-import { request as httpRequest, type Server } from 'node:http';
-import { join } from 'node:path';
-
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
-import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, uploadToStorage, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
-import { MAX_INPUT_PIXELS, MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../config/limits';
-import { createLocalUploadGrant } from '../storage/local-upload-grant';
+import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../config/limits';
 
 const REQUEST =
   'mutation($group:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$group,contentType:$type,byteSize:$size){id url expiresAt fields{name value}}}';
@@ -41,11 +37,11 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     tickets.add(requestPostUpload.id);
     return requestPostUpload;
   };
-  const upload = (grant: ITicket, body: Buffer, type = 'image/png', fields = grant.fields) => {
-    const request = api.http().post(grant.url.replace('/backend', '')).set('Origin', TEST_WEB_ORIGIN);
-    for (const field of fields) request.field(field.name, field.value);
-    return request.attach('file', body, { filename: 'media', contentType: type });
-  };
+  const field = (grant: ITicket, name: string) => grant.fields.find((entry) => entry.name === name)?.value;
+  const withField = (grant: ITicket, name: string, value: string) => ({
+    url: grant.url,
+    fields: grant.fields.map((entry) => (entry.name === name ? { name, value } : entry)),
+  });
   const complete = async (grant: ITicket, user = member) =>
     (await api.gqlOk<{ completePostUpload: ICompleted }>(user.cookie, COMPLETE, { id: grant.id }))
       .completePostUpload;
@@ -70,7 +66,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     await api?.close();
   });
 
-  it('발급은 로그인한 멤버만 허용하고 키·타입·크기와 15분 만료를 서버가 정해야 한다', async () => {
+  it('발급은 로그인한 멤버만 허용하고 최종 키·타입·정확한 크기와 15분 만료를 정책에 서명해야 한다', async () => {
     const image = await createTestImage();
     const variables = { group: groupId, type: 'image/png', size: image.length };
     expect((await api.gqlFail(undefined, REQUEST, variables)).code).toBe('UNAUTHENTICATED');
@@ -84,16 +80,23 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
       byteSize: image.length,
       storageKey: null,
     });
-    expect(row.stagingKey).toMatch(/^staging\/[a-f0-9-]{36}$/);
-    expect(grant.fields).toEqual([
-      { name: 'key', value: row.stagingKey },
-      { name: 'Content-Type', value: 'image/png' },
-    ]);
+    expect(row.stagingKey).toMatch(/^[a-f0-9-]{36}\.png$/);
+    const { S3_ENDPOINT, S3_BUCKET } = inject('s3Env');
+    expect(grant.url).toBe(`${S3_ENDPOINT}/${S3_BUCKET}`);
+    expect(field(grant, 'key')).toBe(row.stagingKey);
+    expect(field(grant, 'Content-Type')).toBe('image/png');
+    const policy = JSON.parse(Buffer.from(field(grant, 'Policy') ?? '', 'base64').toString());
+    expect(policy.conditions).toEqual(
+      expect.arrayContaining([
+        ['content-length-range', image.length, image.length],
+        ['eq', '$Content-Type', 'image/png'],
+        { key: row.stagingKey },
+      ]),
+    );
+    expect(Date.parse(policy.expiration)).toBeLessThanOrEqual(Date.parse(grant.expiresAt));
     expect(Date.parse(grant.expiresAt) - Date.now()).toBeGreaterThan(14 * 60_000);
     expect(Date.parse(grant.expiresAt) - Date.now()).toBeLessThanOrEqual(15 * 60_000);
-    await expect(readFile(join(api.storageDir, row.stagingKey ?? 'missing'))).rejects.toMatchObject({
-      code: 'ENOENT',
-    });
+    await expect(api.storage.head(row.stagingKey ?? '')).rejects.toThrow();
   });
 
   it.each([
@@ -109,19 +112,23 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     );
   });
 
-  it('파일 전송과 검증 완료 전에는 게시하지 못하고 완료는 티켓 소유자만 실행해야 한다', async () => {
+  it('파일 전송 전에는 완료·게시하지 못하고 완료는 티켓 소유자만 실행하며 같은 키를 확정해야 한다', async () => {
     const image = await createTestImage();
     const grant = await ticket(image);
-    expect((await api.gqlFail(member.cookie, COMPLETE, { id: grant.id })).code).toBe('BAD_USER_INPUT');
+    expect(await api.gqlFail(member.cookie, COMPLETE, { id: grant.id })).toEqual({
+      code: 'BAD_USER_INPUT',
+      message: '파일 전송을 완료한 뒤 다시 시도해 주세요.',
+    });
     expect((await api.gqlFail(member.cookie, CREATE, { group: groupId, upload: grant.id })).code).toBe(
       'BAD_USER_INPUT',
     );
-    expect((await upload(grant, image)).status).toBe(201);
+    expect((await uploadToStorage(grant, image, 'image/png')).status).toBe(204);
     expect((await api.gqlFail(undefined, COMPLETE, { id: grant.id })).code).toBe('UNAUTHENTICATED');
     expect((await api.gqlFail(owner.cookie, COMPLETE, { id: grant.id })).code).toBe('FORBIDDEN');
     expect((await api.gqlFail(member.cookie, CREATE, { group: groupId, upload: grant.id })).code).toBe(
       'BAD_USER_INPUT',
     );
+    const pending = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
     expect(await complete(grant)).toEqual({
       id: grant.id,
       kind: 'PHOTO',
@@ -129,19 +136,20 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
       byteSize: image.length,
     });
     const row = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
-    expect(row.storageKey).toMatch(/^[a-f0-9-]{36}\.png$/);
-    expect(row.storageKey).not.toBe(row.stagingKey);
+    expect(row).toMatchObject({ storageKey: pending.stagingKey, stagingKey: null });
     expect(row.expiresAt.getTime() - Date.now()).toBeGreaterThan(59 * 60_000);
+    expect(await api.storage.head(row.storageKey ?? '')).toEqual({
+      byteSize: image.length,
+      contentType: 'image/png',
+    });
   });
 
-  it('저장소 POST는 쿠키 없이 실제 사진·동영상 바이트를 받고 완료 후 원본을 그대로 제공해야 한다', async () => {
+  it('저장소가 실제 사진·동영상 바이트를 받고 완료한 원본을 그대로 게시해야 한다', async () => {
     for (const video of [false, true]) {
       const body = video ? await createTestVideo() : await createTestImage();
       const type = video ? 'video/mp4' : 'image/png';
       const grant = await ticket(body, type);
-      const sent = await upload(grant, body, type);
-      expect(sent.status).toBe(201);
-      expect(sent.headers['cache-control']).toContain('no-store');
+      expect((await uploadToStorage(grant, body, type)).status).toBe(204);
       expect(await complete(grant)).toMatchObject({
         kind: video ? 'VIDEO' : 'PHOTO',
         contentType: type,
@@ -159,115 +167,97 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toContain(type);
       expect(Number(response.headers['content-length'])).toBe(body.length);
-      const stored = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
-      expect(await readFile(join(api.storageDir, stored.storageKey ?? 'missing'))).toEqual(body);
     }
   });
 
-  it('POST 폼의 정확한 크기·타입·키와 파일 앞의 필드를 검사하고 실패한 본문을 저장하지 않아야 한다', async () => {
+  it('서명 정책과 다른 크기·형식·키나 추가 필드는 저장소가 거부하고 완료할 파일이 남지 않아야 한다', async () => {
     const image = await createTestImage();
     const grant = await ticket(image);
-    const wrongFields = (name: string, value: string) =>
-      grant.fields.map((field) => (field.name === name ? { name, value } : field));
-    expect((await upload(grant, image.subarray(0, image.length - 1))).status).toBe(400);
-    expect((await upload(grant, Buffer.concat([image, Buffer.from('extra')]))).status).toBe(400);
-    expect((await upload(grant, image, 'image/jpeg')).status).toBe(400);
-    expect((await upload(grant, image, 'image/png', wrongFields('Content-Type', 'image/jpeg'))).status).toBe(
-      400,
-    );
-    expect((await upload(grant, image, 'image/png', wrongFields('key', '../outside.png'))).status).toBe(400);
+    const key = field(grant, 'key') ?? '';
+    expect((await uploadToStorage(grant, image.subarray(0, image.length - 1), 'image/png')).status).toBe(400);
     expect(
-      (await upload(grant, image, 'image/png', [...grant.fields, { name: 'extra', value: 'ignored' }]))
-        .status,
+      (await uploadToStorage(grant, Buffer.concat([image, Buffer.from('extra')]), 'image/png')).status,
     ).toBe(400);
-    const reversed = api
-      .http()
-      .post(grant.url.replace('/backend', ''))
-      .set('Origin', TEST_WEB_ORIGIN)
-      .attach('file', image, { filename: 'media', contentType: 'image/png' });
-    for (const field of grant.fields) reversed.field(field.name, field.value);
-    expect((await reversed).status).toBe(400);
-    const row = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
-    await expect(readFile(join(api.storageDir, row.stagingKey ?? 'missing'))).rejects.toMatchObject({
-      code: 'ENOENT',
-    });
-    expect((await readdir(api.storageDir)).some((name) => name.endsWith('.upload'))).toBe(false);
-    expect((await upload(grant, image)).status).toBe(201);
+    expect(
+      (await uploadToStorage(withField(grant, 'Content-Type', 'text/html'), image, 'text/html')).status,
+    ).toBe(403);
+    expect(
+      (await uploadToStorage(withField(grant, 'key', `${key.slice(0, -4)}.mp4`), image, 'image/png')).status,
+    ).toBe(403);
+    expect(
+      (
+        await uploadToStorage(
+          { url: grant.url, fields: [...grant.fields, { name: 'x-amz-meta-owner', value: 'other' }] },
+          image,
+          'image/png',
+        )
+      ).status,
+    ).toBe(403);
+    await expect(api.storage.head(key)).rejects.toThrow();
+    expect((await api.gqlFail(member.cookie, COMPLETE, { id: grant.id })).code).toBe('BAD_USER_INPUT');
+    expect((await uploadToStorage(grant, image, 'image/png')).status).toBe(204);
     expect((await complete(grant)).id).toBe(grant.id);
   });
 
-  it('서명 주소 재전송과 완료 재시도는 허용하되 완료 후 staging 덮어쓰기가 게시 파일을 바꾸지 못해야 한다', async () => {
+  it('HEAD의 크기·형식이 발급과 다르면 확정하지 않고 파일 내용은 서버가 읽지 않아야 한다', async () => {
     const image = await createTestImage();
     const grant = await ticket(image);
-    expect((await upload(grant, image)).status).toBe(201);
-    expect((await upload(grant, image)).status).toBe(201);
-    const first = await complete(grant);
-    const saved = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
-    expect((await upload(grant, Buffer.alloc(image.length))).status).toBe(201);
-    expect(await complete(grant)).toEqual(first);
-    expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).storageKey).toBe(
-      saved.storageKey,
-    );
-    const { createPost } = await api.gqlOk<{ createPost: { id: string; mediaUrl: string } }>(
-      member.cookie,
-      CREATE,
-      { group: groupId, upload: grant.id },
-    );
-    expect(
-      (await api.http().get(createPost.mediaUrl.replace('/backend', '')).set('Cookie', owner.cookie)).body,
-    ).toEqual(image);
-    expect(await readFile(join(api.storageDir, saved.storageKey ?? 'missing'))).toEqual(image);
-  });
-
-  it('잘못된 이미지·실제 형식 불일치·픽셀 폭탄과 손상 동영상은 완료하지 않고 복사 후보를 정리해야 한다', async () => {
-    const bomb = Buffer.from(await createTestImage());
-    bomb.writeUInt32BE(MAX_INPUT_PIXELS + 1, 16);
-    bomb.writeUInt32BE(1, 20);
-    for (const [body, type] of [
-      [Buffer.from('fake image'), 'image/png'],
-      [await createTestImage({ format: 'jpeg' }), 'image/png'],
-      [bomb, 'image/png'],
-      [Buffer.from('fake video'), 'video/mp4'],
-    ] as const) {
-      const grant = await ticket(body, type);
-      expect((await upload(grant, body, type)).status).toBe(201);
-      expect((await api.gqlFail(member.cookie, COMPLETE, { id: grant.id })).code).toBe('BAD_USER_INPUT');
-      expect(await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).toMatchObject({
-        storageKey: null,
-        completionKey: null,
-        completionStartedAt: null,
+    const key = field(grant, 'key') ?? '';
+    const env = inject('s3Env');
+    const client = new S3Client({
+      region: env.S3_REGION,
+      endpoint: env.S3_ENDPOINT,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.AWS_ACCESS_KEY_ID ?? '',
+        secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? '',
+      },
+    });
+    try {
+      // 정책을 따르지 않는 저장소 쓰기를 흉내 낸다.
+      await client.send(
+        new PutObjectCommand({
+          Bucket: env.S3_BUCKET,
+          Key: key,
+          Body: Buffer.alloc(3),
+          ContentType: 'image/png',
+        }),
+      );
+      expect(await api.gqlFail(member.cookie, COMPLETE, { id: grant.id })).toEqual({
+        code: 'BAD_USER_INPUT',
+        message: '업로드한 파일의 크기와 형식을 확인해 주세요.',
       });
-      expect(await api.db.postUploadAttempt.count({ where: { uploadId: grant.id } })).toBe(0);
+      expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).storageKey).toBeNull();
+    } finally {
+      client.destroy();
     }
+    // 서버는 바이트를 검사하지 않는다. 형식은 발급 허용 목록과 저장소 정책·응답 형식 고정으로 제한한다.
+    const notImage = Buffer.from('not really a png');
+    const unchecked = await ticket(notImage);
+    expect((await uploadToStorage(unchecked, notImage, 'image/png')).status).toBe(204);
+    expect(await complete(unchecked)).toMatchObject({ kind: 'PHOTO', byteSize: notImage.length });
   });
 
-  it('동일 티켓의 동시 완료는 최종 파일 하나만 남기고 다른 사용자를 거부하며 재시도는 같은 결과를 반환해야 한다', async () => {
+  it('완료 재시도와 동시 완료는 같은 결과를 돌려주고 다른 사용자는 거부해야 한다', async () => {
     const image = await createTestImage();
     const grant = await ticket(image);
-    expect((await upload(grant, image)).status).toBe(201);
-    const before = new Set(await readdir(api.storageDir));
+    expect((await uploadToStorage(grant, image, 'image/png')).status).toBe(204);
     const [first, second, otherUser] = await Promise.all([
       api.gql<{ completePostUpload: ICompleted }>(member.cookie, COMPLETE, { id: grant.id }),
       api.gql<{ completePostUpload: ICompleted }>(member.cookie, COMPLETE, { id: grant.id }),
       api.gql<{ completePostUpload: ICompleted }>(owner.cookie, COMPLETE, { id: grant.id }),
     ]);
     expect(otherUser.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
-    const successes = [first, second].filter((result) => result.data?.completePostUpload);
-    expect(successes.length).toBeGreaterThanOrEqual(1);
-    for (const result of [first, second]) {
-      if (result.errors?.length) expect(result.errors[0]?.extensions?.code).toBe('CONFLICT');
-      if (result.data) expect(result.data.completePostUpload.id).toBe(grant.id);
-    }
+    expect(first.data?.completePostUpload).toEqual({
+      id: grant.id,
+      kind: 'PHOTO',
+      contentType: 'image/png',
+      byteSize: image.length,
+    });
+    expect(second.data?.completePostUpload).toEqual(first.data?.completePostUpload);
     const stored = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
-    expect(stored.storageKey).toMatch(/^[a-f0-9-]{36}\.png$/);
-    expect(stored.completionKey).toBeNull();
-    expect(stored.completionStartedAt).toBeNull();
-    expect(await api.db.postUploadAttempt.count({ where: { uploadId: grant.id } })).toBe(0);
-    expect(
-      (await readdir(api.storageDir)).filter((name) => name.endsWith('.png') && !before.has(name)),
-    ).toEqual([stored.storageKey]);
-    expect(await readFile(join(api.storageDir, stored.storageKey ?? 'missing'))).toEqual(image);
-    expect(await complete(grant)).toEqual(successes[0]?.data?.completePostUpload);
+    expect(stored.storageKey).toBe(field(grant, 'key'));
+    expect(await complete(grant)).toEqual(first.data?.completePostUpload);
   });
 
   it('만료된 티켓과 완료 전에 멤버십이 사라진 사용자의 첨부를 거부해야 한다', async () => {
@@ -278,76 +268,22 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     const peer = await api.signIn('직접 전송 탈퇴 회원');
     const group = (await createGroup(api, owner, '직접 전송 권한 재검사', [peer], 'PRIVATE')).id;
     const grant = await ticket(image, 'image/png', peer, group);
-    expect((await upload(grant, image)).status).toBe(201);
+    expect((await uploadToStorage(grant, image, 'image/png')).status).toBe(204);
     await api.db.groupMember.delete({ where: { groupId_userId: { groupId: group, userId: peer.id } } });
     expect((await api.gqlFail(peer.cookie, COMPLETE, { id: grant.id })).code).toBe('FORBIDDEN');
     expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } })).storageKey).toBeNull();
   });
 
-  it('만료·변조된 로컬 서명과 다른 Origin은 본문 저장 전에 거부해야 한다', async () => {
-    const image = await createTestImage();
-    const grant = await ticket(image);
-    const tampered = new URL(grant.url, TEST_WEB_ORIGIN);
-    tampered.searchParams.set('signature', 'a'.repeat(43));
-    expect(
-      (
-        await api
-          .http()
-          .post(tampered.pathname.replace('/backend', '') + tampered.search)
-          .set('Origin', TEST_WEB_ORIGIN)
-      ).status,
-    ).toBe(403);
-    const row = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
-    const expired = createLocalUploadGrant({
-      key: row.stagingKey ?? '',
-      contentType: 'image/png',
-      byteSize: image.length,
-      expiresAt: Date.now() - 1,
-    });
-    expect(
-      (await api.http().post(expired.url.replace('/backend', '')).set('Origin', TEST_WEB_ORIGIN)).status,
-    ).toBe(403);
-    expect(
-      (await api.http().post(grant.url.replace('/backend', '')).set('Origin', 'https://evil.example')).status,
-    ).toBe(403);
-  });
-
-  it('서명 없는 100MB 요청은 본문을 한 바이트도 보내지 않은 상태에서 즉시 403으로 응답해야 한다', async () => {
-    const server = api.app.getHttpServer() as Server;
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    try {
-      const address = server.address();
-      if (!address || typeof address === 'string') throw new Error('격리 HTTP 포트가 필요합니다.');
-      const status = await new Promise<number | undefined>((resolve, reject) => {
-        const pending = httpRequest(
-          {
-            host: '127.0.0.1',
-            port: address.port,
-            method: 'POST',
-            path: '/local-post-uploads',
-            headers: {
-              Origin: TEST_WEB_ORIGIN,
-              'Content-Type': 'multipart/form-data; boundary=unsigned',
-              'Content-Length': MAX_VIDEO_BYTES,
-            },
-          },
-          (response) => {
-            response.resume();
-            response.once('end', () => {
-              pending.destroy();
-              resolve(response.statusCode);
-            });
-          },
-        );
-        pending.once('error', reject);
-        pending.setTimeout(2000, () => pending.destroy(new Error('본문을 보내기 전에 응답하지 않았습니다.')));
-        pending.flushHeaders();
-      });
-      expect(status).toBe(403);
-    } finally {
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      );
-    }
+  it('API에는 파일 본문을 받는 업로드 경로가 없어야 한다', async () => {
+    for (const path of ['/local-post-uploads', '/post-uploads/unused', '/uploads/unused'])
+      expect(
+        (
+          await api
+            .http()
+            .post(path)
+            .set('Origin', 'http://web.test')
+            .set('Content-Type', 'multipart/form-data; boundary=unused')
+        ).status,
+      ).toBe(404);
   });
 });

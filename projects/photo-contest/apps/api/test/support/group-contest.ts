@@ -1,6 +1,6 @@
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
-import { TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from './app';
+import { uploadToStorage, type ITestApi, type ITestUser } from './app';
 import { contestSchedule } from './fixtures';
 
 export const GROUP_CONTEST_FIELDS =
@@ -38,10 +38,8 @@ export async function postUpload(api: ITestApi, author: ITestUser, groupId: stri
     'mutation($id:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$id,contentType:$type,byteSize:$size){id url fields{name value}}}',
     { id: groupId, type: contentType, size: body.length },
   );
-  const request = api.http().post(ticket.url.replace('/backend', '')).set('Origin', TEST_WEB_ORIGIN);
-  for (const field of ticket.fields) request.field(field.name, field.value);
-  const response = await request.attach('file', body, { filename: 'media', contentType });
-  if (response.status !== 201) throw new Error('실제 게시물 미디어 업로드 실패');
+  const response = await uploadToStorage(ticket, body, contentType);
+  if (response.status !== 204) throw new Error('실제 게시물 미디어 업로드 실패');
   await api.gqlOk(author.cookie, 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}', {
     id: ticket.id,
   });

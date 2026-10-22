@@ -12,7 +12,6 @@ import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
 import { MembershipService, type ISubmissionAccess } from '../group/membership.service';
 import { MediaUploadService } from '../media-upload/media-upload.service';
-import { PhotoStorage } from '../storage/photo-storage.service';
 import { submissionOrderBy, toSubmissionSort } from './submission-sort';
 import { presentSubmission, submissionInclude, type ISubmissionView } from './submission.presenter';
 
@@ -41,7 +40,6 @@ export class SubmissionService {
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
-    private readonly storage: PhotoStorage,
     private readonly uploads: MediaUploadService,
   ) {}
 
@@ -138,14 +136,14 @@ export class SubmissionService {
     return presentSubmission(row, { completed: false, admin });
   }
 
-  /** 비공개 사진 파일. 매 요청 멤버십을 확인하고, 숨긴 사진은 관리자에게만 준다. */
-  async photoFile(viewer: IViewer, submissionId: string): Promise<Buffer> {
+  /** 비공개 사진 파일의 저장소 키. 매 요청 멤버십을 확인하고, 숨긴 사진은 관리자에게만 준다. */
+  async photoKey(viewer: IViewer, submissionId: string): Promise<string> {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
     const upload = await this.db.upload.findUnique({
       where: { id: submission.uploadId },
       select: { imageKey: true },
     });
     if (!upload?.imageKey) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
-    return this.storage.get(upload.imageKey);
+    return upload.imageKey;
   }
 }

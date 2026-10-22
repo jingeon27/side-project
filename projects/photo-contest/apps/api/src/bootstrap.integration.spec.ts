@@ -89,20 +89,6 @@ describe('HTTP 계약', () => {
     ).toBe(404);
   });
 
-  it('S3 저장소에서는 로컬 서명 업로드 경로를 등록하지 않아야 한다', async () => {
-    const s3Api = await createTestApp({ STORAGE_BACKEND: 's3', S3_BUCKET: 'route-registration-test' });
-    try {
-      const response = await s3Api
-        .http()
-        .post('/local-post-uploads')
-        .set('Origin', TEST_WEB_ORIGIN)
-        .set('Content-Type', 'multipart/form-data; boundary=unused');
-      expect(response.status).toBe(404);
-    } finally {
-      await s3Api.close();
-    }
-  });
-
   describe('Origin 검사', () => {
     it.each(MUTATING_ENDPOINTS)('POST $path는 Origin이 없으면 403이어야 한다', async ({ path, body }) => {
       const response = await api.http().post(path).set('Cookie', user.cookie).send(body);

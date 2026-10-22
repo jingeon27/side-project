@@ -1,18 +1,13 @@
-import { access } from 'node:fs/promises';
-import { join } from 'node:path';
-
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from './app';
+import { uploadToStorage, type ITestApi, type ITestUser } from './app';
 
 export interface IUploadTicket {
   id: string;
   fields: Array<{ name: string; value: string }>;
-  /** 서명된 저장소 경로 */
+  /** 서명 POST를 받는 저장소 주소 */
   url: string;
   expiresAt: string;
-  /** API의 로컬 저장소 경로 */
-  path: string;
 }
 
 const REQUEST_UPLOAD =
@@ -25,7 +20,7 @@ export const CREATE_SUBMISSION = `
   }
 `;
 
-/** 업로드 티켓을 받는다. 웹은 /backend 프록시를 거치지만 테스트는 API에 바로 보내므로 접두사를 뗀다. */
+/** 업로드 티켓을 받는다. */
 export async function requestUpload(
   api: ITestApi,
   cookie: string,
@@ -33,29 +28,17 @@ export async function requestUpload(
   body?: Buffer,
   contentType = 'image/png',
 ): Promise<IUploadTicket> {
-  const { requestUploadUrl: ticket } = await api.gqlOk<{
-    requestUploadUrl: Omit<IUploadTicket, 'path'>;
-  }>(cookie, REQUEST_UPLOAD, {
-    contestId,
-    size: (body ?? (await createTestImage())).length,
-    type: contentType,
-  });
-  return { ...ticket, path: ticket.url.replace(/^\/backend/, '') };
+  const { requestUploadUrl: ticket } = await api.gqlOk<{ requestUploadUrl: IUploadTicket }>(
+    cookie,
+    REQUEST_UPLOAD,
+    { contestId, size: (body ?? (await createTestImage())).length, type: contentType },
+  );
+  return ticket;
 }
 
-/** 브라우저처럼 Origin을 붙여 원본 사진을 올린다. */
-export function postPhoto(
-  api: ITestApi,
-  ticket: IUploadTicket,
-  body: Buffer | string,
-  contentType = 'image/png',
-) {
-  const request = api.http().post(ticket.path).set('Origin', TEST_WEB_ORIGIN);
-  for (const field of ticket.fields) request.field(field.name, field.value);
-  return request.attach('file', Buffer.isBuffer(body) ? body : Buffer.from(body), {
-    filename: 'photo',
-    contentType,
-  });
+/** 브라우저처럼 서명 POST로 원본 사진을 저장소에 바로 올린다. */
+export function postPhoto(ticket: IUploadTicket, body: Buffer | string, contentType = 'image/png') {
+  return uploadToStorage(ticket, Buffer.isBuffer(body) ? body : Buffer.from(body), contentType);
 }
 export const COMPLETE_UPLOAD = 'mutation($id: ID!) { completeSubmissionUpload(uploadId:$id) }';
 
@@ -68,8 +51,9 @@ export async function uploadPhoto(
 ): Promise<string> {
   const body = image ?? (await createTestImage());
   const ticket = await requestUpload(api, cookie, contestId, body);
-  const response = await postPhoto(api, ticket, body);
-  if (response.status !== 201) throw new Error(`사진 업로드 실패 (${response.status}): ${response.text}`);
+  const response = await postPhoto(ticket, body);
+  if (response.status !== 204)
+    throw new Error(`사진 업로드 실패 (${response.status}): ${await response.text()}`);
   await api.gqlOk(cookie, COMPLETE_UPLOAD, { id: ticket.id });
   return ticket.id;
 }
@@ -94,7 +78,7 @@ export async function submitPhoto(
 /** 앱의 사진 저장소에 그 파일이 남아 있는지 */
 export async function storedPhotoExists(api: ITestApi, imageKey: string) {
   try {
-    await access(join(api.storageDir, imageKey));
+    await api.storage.head(imageKey);
     return true;
   } catch {
     return false;

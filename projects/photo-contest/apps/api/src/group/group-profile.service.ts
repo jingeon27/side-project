@@ -76,7 +76,7 @@ export class GroupProfileService {
     const group = await this.db.group.findUnique({ where: { id: groupId }, include: { avatar: true } });
     if (!group?.avatar || group.avatarId !== avatarId)
       fail('그룹 사진을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-    return this.storage.stream(group.avatar.storageKey);
+    return { key: group.avatar.storageKey, file: await this.storage.stream(group.avatar.storageKey) };
   }
 
   requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {

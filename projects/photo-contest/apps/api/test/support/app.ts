@@ -1,6 +1,4 @@
-import { mkdir, mkdtemp } from 'node:fs/promises';
 import type { Server } from 'node:http';
-import { join } from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -10,13 +8,14 @@ import { createDatabaseClient } from '@photo-contest/test-kit';
 
 import { createApp } from '../../src/bootstrap';
 import { SchedulerService } from '../../src/maintenance/scheduler.service';
+import { MediaStorage } from '../../src/storage/media-storage.service';
 
 /** 테스트 요청이 보내는 Origin. API는 listen하지 않으므로 실제 웹 서버와 겹치지 않는다. */
 export const TEST_WEB_ORIGIN = 'http://web.test';
 /** 한 테스트가 한꺼번에 보내는 요청 수의 상한 */
 const CONCURRENT_REQUESTS_MAX = 32;
 
-// 개발자 .env의 실제 키(OAuth·Sentry·S3)가 테스트 요청으로 새지 않도록 앱을 만들기 전에 지운다.
+// 개발자 .env의 실제 키(OAuth·Sentry·S3·AWS)가 테스트 요청으로 새지 않도록 앱을 만들기 전에 지운다.
 const CLEARED_ENV = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
@@ -31,6 +30,10 @@ const CLEARED_ENV = [
   'S3_REGION',
   'S3_ENDPOINT',
   'S3_FORCE_PATH_STYLE',
+  'AWS_ACCESS_KEY_ID',
+  'AWS_SECRET_ACCESS_KEY',
+  'AWS_SESSION_TOKEN',
+  'AWS_PROFILE',
 ] as const;
 
 export type TTestDatabase = ReturnType<typeof createDatabaseClient>;
@@ -50,6 +53,11 @@ export interface IGraphqlFailure {
   message: string;
 }
 
+export interface IStorageForm {
+  url: string;
+  fields: ReadonlyArray<{ name: string; value: string }>;
+}
+
 export interface ITestUser {
   id: string;
   nickname: string;
@@ -61,8 +69,8 @@ export interface ITestApi {
   app: INestApplication;
   /** 격리 스키마를 직접 준비·확인하는 클라이언트. 앱과 다른 연결이다. */
   db: TTestDatabase;
-  /** 이 앱이 사진을 저장하는 임시 폴더 */
-  storageDir: string;
+  /** S3 대역을 가리키는 앱의 저장소. 테스트에서 HEAD·DELETE로 객체를 확인한다. */
+  storage: MediaStorage;
   /** supertest 요청. 포트를 직접 열지 않고 Nest HTTP 서버에 보낸다. */
   http: () => ReturnType<typeof request>;
   /** 개발 로그인으로 세션 Cookie 헤더 값을 받는다. */
@@ -92,14 +100,15 @@ export interface ITestApi {
   close: () => Promise<void>;
 }
 
-let fileStorageDir: Promise<string> | undefined;
+// 브라우저 역할의 저장소 전송은 API의 외부 요청을 대체하는 stubExternalFetch와 섞이지 않게 원래 fetch를 쓴다.
+const browserFetch = globalThis.fetch;
 
-// 설정을 요청마다 읽으므로 한 파일의 앱들이 같은 폴더를 써야 먼저 만든 앱의 사진을 잃지 않는다.
-function storageDirOfFile() {
-  fileStorageDir ??= mkdir(inject('storageDir'), { recursive: true }).then(() =>
-    mkdtemp(join(inject('storageDir'), 'photos-')),
-  );
-  return fileStorageDir;
+/** 브라우저처럼 서명 POST 필드를 먼저, 파일을 마지막에 넣어 S3 대역에 직접 올린다(쿠키 없음). */
+export function uploadToStorage(form: IStorageForm, body: Buffer | Uint8Array, contentType: string) {
+  const multipart = new FormData();
+  for (const field of form.fields) multipart.append(field.name, field.value);
+  multipart.append('file', new Blob([new Uint8Array(body)], { type: contentType }), 'media');
+  return browserFetch(form.url, { method: 'POST', body: multipart });
 }
 
 /** 앱이 바꾼 환경변수를 만들기 전 값으로 되돌리는 함수를 돌려준다. */
@@ -122,15 +131,13 @@ function applyEnv(values: Record<string, string>) {
  * env로 넘긴 값은 close()가 되돌린다.
  */
 export async function createTestApp(env: Record<string, string> = {}): Promise<ITestApi> {
-  const storageDir = await storageDirOfFile();
   const restoreEnv = applyEnv({
+    ...inject('s3Env'),
     DATABASE_URL: inject('databaseUrl'),
     NODE_ENV: 'development',
     ENABLE_DEV_LOGIN: 'true',
     TRUST_PROXY_HOPS: '0',
     WEB_ORIGIN: TEST_WEB_ORIGIN,
-    STORAGE_BACKEND: 'local',
-    STORAGE_DIR: storageDir,
     ...env,
   });
   const app = await createApp({ logger: false }).catch((error: unknown) => {
@@ -199,7 +206,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
   return {
     app,
     db,
-    storageDir,
+    storage: app.get(MediaStorage),
     http,
     login,
     signIn,

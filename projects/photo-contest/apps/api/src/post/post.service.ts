@@ -279,15 +279,15 @@ export class PostService {
   }
   async download(viewer: IViewer | null, postId: string) {
     const file = await this.file(viewer, postId);
-    const signedUrl = await this.storage.presignDownload(
+    const url = await this.storage.presignDownload(
       file.key,
       mediaDownloadDisposition(file.filename),
       DOWNLOAD_URL_TTL_SECONDS,
     );
     return {
-      url: signedUrl ?? `/backend/media/${postId}/download`,
+      url,
       filename: file.filename,
-      expiresAt: signedUrl ? new Date(Date.now() + DOWNLOAD_URL_TTL_SECONDS * 1000) : null,
+      expiresAt: new Date(Date.now() + DOWNLOAD_URL_TTL_SECONDS * 1000),
     };
   }
 }

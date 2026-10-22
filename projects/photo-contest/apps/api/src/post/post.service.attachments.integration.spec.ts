@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
@@ -110,16 +110,21 @@ describe('링크 게시물과 미디어 저장', () => {
       const { postDownload: download } = await api.gqlOk<{ postDownload: IDownload }>(undefined, DOWNLOAD, {
         id: post.id,
       });
-      expect(download).toMatchObject({ url: `/backend/media/${post.id}/download`, expiresAt: null });
+      const url = new URL(download.url);
+      expect(`${url.origin}/${url.pathname.split('/')[1]}`).toBe(
+        `${inject('s3Env').S3_ENDPOINT}/${inject('s3Env').S3_BUCKET}`,
+      );
+      expect(url.searchParams.get('X-Amz-Expires')).toBe('60');
+      expect(Date.parse(download.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
       expect(download.filename).toBe(video ? '저장할 동영상.mp4' : '저장할 한글 사진.png');
-      const response = await api.http().get(download.url.replace('/backend', ''));
+      const response = await fetch(download.url);
       expect(response.status).toBe(200);
-      expect(response.headers['content-disposition']).toContain("filename*=UTF-8''");
-      expect(response.headers['content-type']).toContain(video ? 'video/mp4' : 'image/png');
-      expect(response.headers['cache-control']).toContain('no-store');
-      const range = await api.http().get(download.url.replace('/backend', '')).set('Range', 'bytes=0-3');
+      expect(response.headers.get('content-disposition')).toContain("filename*=UTF-8''");
+      expect(response.headers.get('content-type')).toContain(video ? 'video/mp4' : 'image/png');
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      const range = await fetch(download.url, { headers: { Range: 'bytes=0-3' } });
       expect(range.status).toBe(206);
-      expect(range.headers['content-length']).toBe('4');
+      expect(range.headers.get('content-length')).toBe('4');
     },
   );
   it('비공개 다운로드는 매번 권한을 확인하고 숨긴 파일·삭제된 파일을 외부에 내주지 않아야 한다', async () => {
@@ -141,9 +146,8 @@ describe('링크 게시물과 미디어 저장', () => {
     expect((await api.gqlFail(undefined, DOWNLOAD, { id: hidden.id })).code).toBe('NOT_FOUND');
     expect((await api.http().get(`/media/${hidden.id}/download`)).status).toBe(404);
   });
-  it('S3는 권한 확인 뒤 60초 서명 URL을 발급하고 파일명·캐시 헤더까지 서명해야 한다', async () => {
+  it('운영 S3 설정에서도 권한 확인 뒤 60초 서명 URL을 발급하고 파일명·캐시 헤더까지 서명해야 한다', async () => {
     const post = await media(privateId);
-    vi.stubEnv('STORAGE_BACKEND', 's3');
     vi.stubEnv('S3_BUCKET', 'attachments');
     vi.stubEnv('S3_REGION', 'ap-northeast-2');
     vi.stubEnv('S3_ENDPOINT', 'https://s3.example.test');

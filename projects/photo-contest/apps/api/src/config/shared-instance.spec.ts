@@ -10,7 +10,6 @@ const valid = {
   RDS_HOST: host,
   DATABASE_URL: url('photo_contest'),
   DATABASE_MIGRATION_URL: url('photo_contest_migrator'),
-  STORAGE_BACKEND: 's3',
   S3_REGION: 'ap-northeast-2',
   S3_BUCKET: 'pc-private',
   OTHER_SERVICE_S3_BUCKET: 'gf-private',
@@ -37,8 +36,9 @@ describe('공통 EC2 운영 환경', () => {
       expect(String(error)).not.toContain('a'.repeat(64));
     }
   });
-  it('로컬 저장소, R2 endpoint와 공용 버킷 설정을 거부해야 한다', () => {
-    expect(() => assertSharedInstanceConfig({ ...valid, STORAGE_BACKEND: 'local' })).toThrow();
+  it('버킷 누락, 다른 리전, R2 endpoint와 공용 버킷 설정을 거부해야 한다', () => {
+    expect(() => assertSharedInstanceConfig({ ...valid, S3_BUCKET: '' })).toThrow();
+    expect(() => assertSharedInstanceConfig({ ...valid, S3_REGION: 'us-east-1' })).toThrow();
     expect(() => assertSharedInstanceConfig({ ...valid, S3_ENDPOINT: 'https://storage.test' })).toThrow();
     expect(() => assertSharedInstanceConfig({ ...valid, S3_BUCKET: 'gf-private' })).toThrow();
   });

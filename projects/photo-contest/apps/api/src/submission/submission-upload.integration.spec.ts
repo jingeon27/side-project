@@ -1,7 +1,4 @@
-import { readdir } from 'node:fs/promises';
-
-import sharp from 'sharp';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
 
@@ -13,13 +10,11 @@ import {
   CREATE_SUBMISSION,
   postPhoto,
   requestUpload,
-  submitPhoto,
   uploadPhoto,
 } from '../../test/support/photos';
 import type { TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MaintenanceService } from '../maintenance/maintenance.service';
-import { MediaStorage } from '../storage/media-storage.service';
 
 const NOT_SUBMISSION_PHASE = { code: 'BAD_USER_INPUT', message: '사진 제출 기간이 아닙니다.' };
 const UPLOAD_INCOMPLETE = {
@@ -28,10 +23,6 @@ const UPLOAD_INCOMPLETE = {
 };
 const REQUEST_UPLOAD =
   'mutation($contestId: ID!) { requestUploadUrl(contestId: $contestId,contentType:"image/png",byteSize:1) { id } }';
-
-function solidImage(width: number, height: number) {
-  return sharp({ create: { width, height, channels: 3, background: '#316447' } });
-}
 
 describe('사진 업로드와 열람', () => {
   let api: ITestApi;
@@ -74,23 +65,23 @@ describe('사진 업로드와 열람', () => {
     expect(await api.db.upload.count({ where: { contestId } })).toBe(0);
   });
 
-  it('완료 DB 커밋 응답을 잃어도 대회 사진과 업로드 상태를 함께 보존해야 한다', async () => {
+  it('완료 DB 커밋 응답을 잃어도 대회 사진과 업로드 상태를 함께 보존하고 다시 완료할 수 있어야 한다', async () => {
     const contestId = await createContest(api, owner, group.id, '대회 커밋 복구');
     const bytes = await createTestImage();
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-    await postPhoto(api, ticket, bytes);
+    await postPhoto(ticket, bytes);
     const transactions = api.app.get(UnitOfWork);
     const atomic = transactions.atomic.bind(transactions);
-    let calls = 0;
     const failure = vi
       .spyOn(transactions, 'atomic')
-      .mockImplementation(async <T>(work: (tx: TDatabaseClient) => Promise<T>) => {
-        const result = await atomic(work);
-        if (++calls === 2) throw new Error('Commit response lost');
-        return result;
+      .mockImplementationOnce(async <T>(work: (tx: TDatabaseClient) => Promise<T>) => {
+        await atomic(work);
+        throw new Error('Commit response lost');
       });
     try {
-      await api.gqlOk(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id });
+      expect((await api.gqlFail(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id })).code).toBe(
+        'INTERNAL_SERVER_ERROR',
+      );
     } finally {
       failure.mockRestore();
     }
@@ -99,22 +90,24 @@ describe('사진 업로드와 열람', () => {
       include: { mediaUpload: true },
     });
     expect(upload.imageKey).toBe(upload.mediaUpload?.storageKey);
-    expect(upload.imageKey).toBeTruthy();
-    expect(await api.app.get(MediaStorage).head(upload.imageKey ?? '')).toMatchObject({
-      contentType: 'image/webp',
+    expect(upload.imageKey).toMatch(/^[a-f0-9-]{36}\.png$/);
+    expect(await api.storage.head(upload.imageKey ?? '')).toEqual({
+      byteSize: bytes.length,
+      contentType: 'image/png',
     });
+    await api.gqlOk(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id });
   });
 
   it('파일 확인 중 대회가 마감되면 대회 사진을 확정하지 않아야 한다', async () => {
     const contestId = await createContest(api, owner, group.id, '대회 확인 중 마감');
     const bytes = await createTestImage();
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-    await postPhoto(api, ticket, bytes);
-    const storage = api.app.get(MediaStorage);
-    const originalCopy = storage.copy.bind(storage);
-    const copying = vi.spyOn(storage, 'copy').mockImplementation(async (source, destination) => {
-      await originalCopy(source, destination);
+    await postPhoto(ticket, bytes);
+    const head = api.storage.head.bind(api.storage);
+    const copying = vi.spyOn(api.storage, 'head').mockImplementation(async (key) => {
+      const result = await head(key);
       await moveContestTo(api, contestId, 'VOTING');
+      return result;
     });
     try {
       expect(await api.gqlFail(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id })).toEqual(
@@ -131,16 +124,19 @@ describe('사진 업로드와 열람', () => {
     expect(row.mediaUpload?.storageKey).toBeNull();
   });
 
-  it('사진을 EXIF 방향대로 돌린 1600px 이하 WebP로 바꾸고 그룹 멤버에게만 제공해야 한다', async () => {
-    const contestId = await createContest(api, owner, group.id, '변환 대회');
-    // 가로 2400 × 세로 1200 원본에 '90도 회전' 방향과 촬영 정보 EXIF를 넣는다.
-    const original = await solidImage(2400, 1200)
-      .jpeg()
-      .withExif({ IFD0: { Copyright: 'secret-photographer', ImageDescription: 'home-address' } })
-      .withMetadata({ orientation: 6 })
-      .toBuffer();
-    expect((await sharp(original).metadata()).exif).toBeDefined();
-    const photoId = await submitPhoto(api, owner, contestId, '관리자의 사진', original);
+  it('올린 사진을 변환하지 않고 그룹 멤버에게만 제공해야 한다', async () => {
+    const contestId = await createContest(api, owner, group.id, '원본 대회');
+    const original = await createTestImage({ format: 'jpeg', width: 240, height: 120 });
+    const contentType = 'image/jpeg';
+    const ticket = await requestUpload(api, owner.cookie, contestId, original, contentType);
+    expect((await postPhoto(ticket, original, contentType)).status).toBe(204);
+    await api.gqlOk(owner.cookie, COMPLETE_UPLOAD, { id: ticket.id });
+    const { createSubmission } = await api.gqlOk<{ createSubmission: { id: string } }>(
+      owner.cookie,
+      CREATE_SUBMISSION,
+      { contestId, uploadId: ticket.id, caption: '관리자의 사진' },
+    );
+    const photoId = createSubmission.id;
 
     const denied = await getPhoto(photoId, outsider.cookie);
     expect(denied.status).toBe(403);
@@ -150,15 +146,9 @@ describe('사진 업로드와 열람', () => {
 
     const allowed = await getPhoto(photoId, friend.cookie);
     expect(allowed.status).toBe(200);
-    expect(allowed.headers['content-type']).toBe('image/webp');
+    expect(allowed.headers['content-type']).toBe('image/jpeg');
     expect(allowed.headers['cache-control']).toBe('private, no-store');
-    expect(allowed.headers['x-content-type-options']).toBe('nosniff');
-    const photo: Buffer = allowed.body;
-    const metadata = await sharp(photo).metadata();
-    expect(metadata).toMatchObject({ format: 'webp', width: 800, height: 1600 });
-    expect(metadata.exif).toBeUndefined();
-    expect(metadata.orientation).toBeUndefined();
-    expect(photo.includes('secret-photographer')).toBe(false);
+    expect(Buffer.from(allowed.body)).toEqual(original);
 
     const missing = await getPhoto('missing-photo', friend.cookie);
     expect(missing.status).toBe(404);
@@ -169,11 +159,11 @@ describe('사진 업로드와 열람', () => {
     const contestId = await createContest(api, owner, group.id, '직접 업로드 계약');
     const bytes = await createTestImage();
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-    expect(ticket.url).toMatch(/^\/backend\/local-post-uploads\?/);
+    expect(ticket.url).toBe(`${inject('s3Env').S3_ENDPOINT}/${inject('s3Env').S3_BUCKET}`);
     const ttl = Date.parse(ticket.expiresAt) - Date.now();
     expect(ttl).toBeGreaterThan(4.5 * 60_000);
     expect(ttl).toBeLessThanOrEqual(5 * 60_000);
-    expect((await postPhoto(api, ticket, Buffer.concat([bytes, Buffer.from('extra')]))).status).toBe(400);
+    expect((await postPhoto(ticket, Buffer.concat([bytes, Buffer.from('extra')]))).status).toBe(400);
     expect(
       await api.gqlFail(friend.cookie, CREATE_SUBMISSION, {
         contestId,
@@ -181,7 +171,7 @@ describe('사진 업로드와 열람', () => {
         caption: '미완료',
       }),
     ).toEqual(UPLOAD_INCOMPLETE);
-    expect((await postPhoto(api, ticket, bytes)).status).toBe(201);
+    expect((await postPhoto(ticket, bytes)).status).toBe(204);
     expect(
       await api.gqlFail(friend.cookie, CREATE_SUBMISSION, {
         contestId,
@@ -190,45 +180,17 @@ describe('사진 업로드와 열람', () => {
       }),
     ).toEqual(UPLOAD_INCOMPLETE);
     await api.gqlOk(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id });
-    expect((await api.db.upload.findUniqueOrThrow({ where: { id: ticket.id } })).imageKey).toMatch(/\.webp$/);
+    expect((await api.db.upload.findUniqueOrThrow({ where: { id: ticket.id } })).imageKey).toMatch(/\.png$/);
   });
 
-  it('사진이 아닌 파일·움직이는 사진·픽셀 폭탄은 완료할 수 없어야 한다', async () => {
-    const contestId = await createContest(api, owner, group.id, '실제 파일 검사');
-    const frames = await Promise.all(
-      ['#ff0000', '#00ff00'].map((background) =>
-        sharp({ create: { width: 30, height: 20, channels: 3, background } })
-          .png()
-          .toBuffer(),
-      ),
-    );
-    const files = [
-      Buffer.from('not an image'),
-      await solidImage(20, 20).gif().toBuffer(),
-      await sharp(frames, { join: { animated: true } })
-        .webp()
-        .toBuffer(),
-      await solidImage(8000, 5001).png().toBuffer(),
-    ];
-    for (const bytes of files) {
-      const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-      expect((await postPhoto(api, ticket, bytes)).status).toBe(201);
-      expect((await api.gqlFail(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id })).code).toBe(
-        'BAD_USER_INPUT',
-      );
-      expect((await api.db.upload.findUniqueOrThrow({ where: { id: ticket.id } })).imageKey).toBeNull();
-    }
-  });
-
-  it('완료는 소유자만 할 수 있고 staging 재전송은 확정한 사진을 바꾸지 않아야 한다', async () => {
-    const contestId = await createContest(api, owner, group.id, '소유권과 재전송');
+  it('완료는 소유자만 할 수 있고 다시 완료해도 확정한 같은 사진을 가리켜야 한다', async () => {
+    const contestId = await createContest(api, owner, group.id, '소유권과 재완료');
     const bytes = await createTestImage();
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-    expect((await postPhoto(api, ticket, bytes)).status).toBe(201);
+    expect((await postPhoto(ticket, bytes)).status).toBe(204);
     expect((await api.gqlFail(voter.cookie, COMPLETE_UPLOAD, { id: ticket.id })).code).toBe('FORBIDDEN');
     await api.gqlOk(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id });
     const before = await api.db.upload.findUniqueOrThrow({ where: { id: ticket.id } });
-    expect((await postPhoto(api, ticket, Buffer.alloc(bytes.length))).status).toBe(201);
     await api.gqlOk(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id });
     expect((await api.db.upload.findUniqueOrThrow({ where: { id: ticket.id } })).imageKey).toBe(
       before.imageKey,
@@ -263,7 +225,7 @@ describe('사진 업로드와 열람', () => {
     const contestId = await createContest(api, owner, group.id, '완료 만료');
     const bytes = await createTestImage();
     const expired = await requestUpload(api, friend.cookie, contestId, bytes);
-    await postPhoto(api, expired, bytes);
+    await postPhoto(expired, bytes);
     await api.db.upload.update({
       where: { id: expired.id },
       data: { expiresAt: new Date(Date.now() - 1000) },
@@ -272,7 +234,7 @@ describe('사진 업로드와 열람', () => {
       'BAD_USER_INPUT',
     );
     const late = await requestUpload(api, friend.cookie, contestId, bytes);
-    await postPhoto(api, late, bytes);
+    await postPhoto(late, bytes);
     await moveContestTo(api, contestId, 'VOTING');
     expect(await api.gqlFail(friend.cookie, COMPLETE_UPLOAD, { id: late.id })).toEqual(NOT_SUBMISSION_PHASE);
   });
@@ -281,15 +243,18 @@ describe('사진 업로드와 열람', () => {
     const contestId = await createContest(api, owner, group.id, '동시 완료');
     const bytes = await createTestImage();
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-    await postPhoto(api, ticket, bytes);
+    await postPhoto(ticket, bytes);
     const responses = await Promise.all(
       Array.from({ length: 5 }, () => api.gql(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id })),
     );
     expect(responses.some((response) => !response.errors)).toBe(true);
     await api.gqlOk(friend.cookie, COMPLETE_UPLOAD, { id: ticket.id });
-    const row = await api.db.upload.findUniqueOrThrow({ where: { id: ticket.id } });
-    expect((await readdir(api.storageDir)).filter((file) => file === row.imageKey)).toHaveLength(1);
-    expect(await api.db.postUploadAttempt.count({ where: { uploadId: row.mediaUploadId } })).toBe(0);
+    const row = await api.db.upload.findUniqueOrThrow({
+      where: { id: ticket.id },
+      include: { mediaUpload: true },
+    });
+    expect(row.imageKey).toBe(row.mediaUpload?.storageKey);
+    expect(await api.storage.head(row.imageKey ?? '')).toMatchObject({ byteSize: bytes.length });
   });
 
   it('제출 기간이 아니면 업로드 티켓을 주지 않아야 한다', async () => {
