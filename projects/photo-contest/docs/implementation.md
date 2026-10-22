@@ -1,3 +1,13 @@
+## 2026-10-22 서버 파일 처리 제거와 test-kit S3 대역
+
+사용자 결정으로 게시물·기존 대회 사진·그룹 대표 사진의 업로드와 조회를 모두 S3 presigned URL로만 처리한다. 발급은 권한·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 content-length-range를 고정한 POST 정책을 서명한다. 완료는 HEAD로 크기·형식만 확인하며 staging→최종 복사, 완료 lease·후보 추적은 없앴다. 서버가 내용을 검사하지 않으므로 복사본으로 고정할 불변식이 없고, 정책이 끝나기 전(최대 15분)에는 업로더가 같은 크기·형식으로 다시 올릴 수 있다.
+
+`/media/:id`·다운로드·`/photos/:id`·대표 사진 경로는 권한 확인 뒤 `private, no-store` 307로 60초 서명 GET에 보낸다. Range와 다운로드 이름·응답 형식은 저장소가 처리하고 postDownload도 같은 서명 URL을 준다. MediaProcessor(image-size·mediainfo.js)·MediaReader·readRange, 대회 1600px·대표 사진 512px sharp WebP 변환, PNG·움직이는 WebP·코덱·길이 검사와 관련 한도·테스트, 로컬 디스크 저장소·로컬 업로드 서명·STORAGE_BACKEND/STORAGE_DIR을 지웠다. 위치·EXIF 메타데이터는 일부러 유지한다. 동영상 5분 제한은 브라우저가 메타데이터로 읽은 길이로만 확인하고, 대표 사진은 웹이 512px JPEG로 줄여 올린다. 쓰지 않는 `PostUpload.completionKey`·`completionStartedAt`·`PostUploadAttempt`는 파괴적 migration을 피하려고 남겼다.
+
+로컬 개발·테스트는 Docker 없이 `@photo-contest/test-kit`의 S3 호환 대역을 쓴다. 서명 POST 정책, SigV4 헤더·query 서명, 서명 GET의 Range·응답 헤더 덮어쓰기, HEAD·PUT·DELETE, 웹 origin CORS를 디스크 폴더로 처리한다. API 통합·웹/모바일 test:api·test:e2e·test:cache는 빈 포트에 대역을 자동으로 띄우고 dev는 `S3_ENDPOINT`가 로컬이면 4210으로 함께 띄운다. 단독 Compose는 S3 설정을 필수로 받고 미디어 volume·`backup.sh --with-media`를 없앴으며 컨테이너 검증은 대역을 붙여 실행한다. 공통 배포 스모크도 서명 POST → 완료 → 307 서명 GET 흐름으로 바꿨다.
+
+CI의 데스크톱 test:cache 카테고리 사양 실패는 이 전환과 무관한 타이밍 경합이었다. 같은 커밋의 다른 실행은 통과했고, 실패 trace에서는 이달의 인기 경계가 아직 스트리밍 중이고 사이드바가 hydration되기 전에 서버 HTML의 details를 눌러 닫힌 채 남았다. 사양은 브라우저에서만 그리는 카테고리 폼이 붙은 뒤 연다. 같은 사양에서 드러난 카테고리 생성 폼의 경합(다른 목록 재조회가 끝난 뒤 폼을 비워 이어 입력한 이름이 지워짐)은 생성 결과로 바로 비우도록 고쳤다.
+
 ## 2026-10-22 전체 파일 업로드 presigned 전환
 
 게시물 사진·동영상과 이전 대회 사진 제출, 그룹 대표 사진을 모두 서명 발급 → 저장소 FormData POST → 완료 검증 → 게시/제출 흐름으로 통일했다. GraphQL에는 JSON 메타데이터만 보내며 uploadSubmissionPhoto·uploadGroupAvatar·Upload scalar·/uploads raw 경로와 graphql-upload·apollo-upload-client를 제거했다. 브라우저 전송 helper는 shared/api에 두고 Apollo는 HttpLink를 사용한다. 앱 WebView와 테스트 seed도 같은 계약을 따른다.
@@ -159,11 +169,11 @@ Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이
 
 `galleryPosts`는 groupId를 지정하면 해당 그룹, 생략하면 가입한 그룹 전체를 조회한다. 최신순은 createdAt·id desc이고, 인기순은 KST 이번 달에 작성한 게시물의 좋아요 desc·createdAt/id desc다. 숨긴 사진은 홈·그룹 목록에서 제외하며 이관된 게시물은 기존 사진의 숨김도 확인한다.
 
-게시물 사진은 저장소 Range로 JPEG·PNG·WebP 형식과 40MP·10MB 상한을 검사하고 서버에서 다시 인코딩하지 않는다. 브라우저는 읽을 수 있는 사진을 줄여 JPEG로 보내며 변환할 수 없으면 지원 형식 원본을 보낸다. 서버는 사진·동영상의 위치정보 등 메타데이터를 제거하지 않는다. 기존 대회 사진의 sharp 디코딩·1600px WebP 변환은 유지한다. 동영상은 mediainfo.js WASM과 제한된 Range 읽기로 실제 컨테이너·영상/음성 코덱·길이를 검사한다. MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원한다. 영상은 변환하지 않고 비공개로 저장한다.
+서버는 사진·동영상을 열거나 변환하지 않는다. 발급할 때 JPEG·PNG·WebP 10MB, MP4·WebM 100MB만 허용하고 완료할 때 HEAD로 크기·형식만 확인한다. 브라우저는 읽을 수 있는 사진을 줄여 JPEG로 보내며 변환할 수 없으면 지원 형식 원본을 보낸다. 동영상은 브라우저가 읽은 길이로 5분 이하만 올린다. 서버는 위치정보 등 메타데이터를 제거하지 않는다. 파일은 비공개 버킷에 저장한다.
 
-`/media/:id`는 요청마다 그룹의 공개 범위와 멤버십을 검사하고 no-store·nosniff와 byte Range 206/416을 지원한다. 로컬·S3 저장소에서 스트리밍해 탐색할 때 파일 전체를 메모리에 올리지 않는다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
+`/media/:id`는 요청마다 그룹의 공개 범위와 멤버십을 검사하고 `private, no-store` 307로 60초 서명 GET에 보낸다. Range는 저장소가 처리한다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
 
-웹의 게시물 전송은 등록 클릭 후 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost다. API는 파일 바이트를 직접 받지 않고 소유자·만료·멤버십과 최종 복사본을 검증한다. Range 캐시·동시 완료·분석 작업량을 제한하고 복사 후보를 추적해 정리를 재시도한다. 저장소 전송 실패는 RHF 미디어 필드에 표시하며 입력을 유지한다. 로컬도 URL 서명 검증 후 디스크 스트리밍으로 같은 FormData 계약을 사용한다. 이전 대회 사진 제출의 uploadSubmissionPhoto·/uploads 계약은 유지하고 uploadPostMedia·/post-uploads는 제거한다. [상세 계약](post-attachments.md)을 따른다.
+웹의 게시물 전송은 등록 클릭 후 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost다. API는 파일 바이트를 받지 않고 소유자·만료·멤버십과 HEAD의 크기·형식만 확인한다. 저장소 전송 실패는 RHF 미디어 필드에 표시하며 입력을 유지한다. 로컬과 테스트는 test-kit S3 대역으로 같은 계약을 쓴다. [상세 계약](post-attachments.md)을 따른다.
 
 글쓰기에서 파일을 선택하면 선택 버튼 영역을 미리보기로 대체한다. 사진은 비율을 유지해 표시하고 동영상은 시트 안에서 재생한다. 파일 이름 옆의 바꾸기·제거로 선택을 관리하며 제거하면 원래 선택 영역으로 돌아온다. 파일 선택 취소는 기존 선택을 유지하며 같은 파일 재선택·다른 파일로 교체를 지원한다. 제출 중에는 선택·교체·제거를 막는다. 형식·크기 오류는 선택 즉시 알리고 디코드 실패는 미리보기 안에서 안내한다. 임시 Blob URL은 교체·제거·시트 해제 때 정리하고 재생 중인 영상도 멈춘다. HEIC의 MIME이 비어 있으면 확장자로 사진 여부를 판별한다.
 

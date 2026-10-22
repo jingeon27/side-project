@@ -9,7 +9,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 모듈 하나 = `<name>.graphql` + `<name>.module.ts` + `<name>.resolver.ts` + `<name>.service.ts`. GraphQL 스키마는 모듈별 `.graphql`이 계약이고(웹 codegen 입력), `app.module.ts`가 `src/**/*.graphql`을 합친다.
 - resolver·controller는 얇게: 조회자 확인 + service 위임. 규칙과 권한은 service에 둔다. 권한 확인은 `membership.service`(requireMember·requireAdmin·requireOwner·accessibleContest)로만 한다.
 - 조회자별 필드(likedByMe, isAdmin, votedSubmissionId, hiddenSubmissions)와 비싼 필드(members, contests, leaderboard)는 field resolver로 선택될 때만 계산하고 N+1을 만들지 않는다.
-- 매직 넘버는 `config/limits.ts`, 환경변수는 `config/env.ts`의 getter로 호출할 때마다 읽는다(테스트가 실행 중에 바꾼다). 상대 STORAGE_DIR는 프로젝트 루트 기준.
+- 매직 넘버는 `config/limits.ts`, 환경변수는 `config/env.ts`의 getter로 호출할 때마다 읽는다(테스트가 실행 중에 바꾼다). 미디어 저장소는 항상 S3 설정(`S3_*`)을 쓴다.
 - 닫힌 집합 분기(Phase, 오류 코드→HTTP, provider)는 ts-pattern `exhaustive()`, 묶기·nil 검사는 es-toolkit. 직접 유틸을 만들지 않는다.
 
 ## 오류
@@ -31,9 +31,9 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 현재 제품은 Post·PostUpload·PostLike·PostComment다. 그룹은 종료되지 않으며 대회 없이 여러 번 등록한다.
 - galleryPosts의 groupId가 없으면 로그인 후 가입한 모든 그룹, 있으면 readableGroup으로 공개 범위·멤버십을 검사한다. PUBLIC은 익명 읽기, PRIVATE는 승인된 멤버만 허용한다. 최신순은 createdAt·id desc. 이달의 인기는 KST 월 경계·좋아요 desc·createdAt/id desc다.
 - 작성자와 OWNER·MODERATOR만 삭제한다. 파일도 매 요청 공개 범위·멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
-- 게시물 업로드는 requestPostUpload(groupId, contentType, byteSize) → 저장소 FormData POST → completePostUpload → createPost다. 발급·완료 시 티켓 소유·만료·멤버십을 검사하고 POST policy로 정확한 키·크기·타입을 제한한다. 최종 키로 복사한 객체만 검증하고 완료한 storageKey만 게시에 쓴다. uploadPostMedia와 /post-uploads는 제공하지 않는다.
-- 게시물 POST 티켓은 15분, 완료 후 등록은 1시간이다. 사진은 10MB·40MP 이하 JPEG/PNG/WebP의 형식·해상도를 Range로 검사하고 서버에서 재인코딩·메타데이터 제거를 하지 않는다. 동영상은 100MB·5분 이하 MP4 H.264/AAC·WebM VP8/VP9+Opus/Vorbis를 제한된 Range 캐시·동시성·작업량으로 검사한다. 복사 후보를 외부 I/O 전에 추적하며 정리 실패를 재시도한다. 로컬은 URL HMAC을 본문 전에 검사한 뒤 임시 파일로 스트리밍하고 원자적으로 staging을 교체한다. 기존 Submission sharp 변환은 유지한다.
-- /media/:id는 비공개 no-store 스트리밍·byte Range 206/416을 지원한다. 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
+- 게시물 업로드는 requestPostUpload(groupId, contentType, byteSize) → 저장소 FormData POST → completePostUpload → createPost다. 발급할 때 멤버십·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 크기·만료를 POST 정책으로 고정한다. 완료는 티켓 소유·만료·용도를 확인하고 HEAD로 크기·형식만 본 뒤 같은 트랜잭션에서 권한을 다시 확인해 stagingKey를 storageKey로 옮긴다. 완료한 storageKey만 게시에 쓴다. uploadPostMedia와 /post-uploads는 제공하지 않는다.
+- 게시물 POST 티켓은 15분, 완료 후 등록은 1시간이다. 사진 JPEG/PNG/WebP 10MB, 동영상 MP4/WebM 100MB만 발급한다. 서버는 파일 내용을 읽거나 변환·메타데이터 제거를 하지 않는다(사용자 결정). 동영상 길이는 웹이 올리기 전에만 확인한다. staging 복사가 없으므로 정책 만료 전에는 같은 크기·형식으로 다시 올릴 수 있다. 정리 작업은 만료된 미완료 키와 쓰지 않은 파일을 재시도하며 지운다.
+- /media/:id·/media/:id/download는 readablePost로 권한을 확인한 뒤 `private, no-store` 307로 60초 서명 GET에 보낸다(Range·다운로드 이름은 저장소가 처리). 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
 - 댓글 읽기는 readablePost, 쓰기·삭제는 accessiblePost로 공개 범위·멤버십·숨김 규칙을 적용한다. 본문은 trim 후 1~1000자, 최신순(createdAt·id desc) offset 목록이다. 작성자·관리자만 삭제하며 개수는 게시물 조회의 _count로 함께 구한다. 댓글 내용은 이벤트에 넣지 않는다.
 - 생성·좋아요·삭제 도메인 이벤트는 같은 DB 트랜잭션에 ID·종류만 기록한다.
 
@@ -63,7 +63,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 정렬: NEWEST·OLDEST·MOST_LIKED(같으면 최신), limit 1~48. 관리자가 아니면 숨긴 사진을 빼고 센다.
 - 결과 순위: 득표수 경쟁 순위(1, 1, 3), 같은 순위 안은 좋아요 desc → 제출 시각 asc. 우승은 최다 득표 > 0인 사진 전부(공동 우승), 무투표는 우승 없음.
 - 그룹 순위: 종료된 대회의 숨기지 않은 사진만. 우승 횟수 → 받은 표 → 받은 좋아요 → 닉네임 순, (우승·표)가 같으면 같은 순위.
-- 사진: requestUploadUrl(contestId, contentType, byteSize) → 저장소 POST → completeSubmissionUpload → createSubmission이다. 5분 서명이며 완료본을 고정한다. JPEG/PNG/WebP 실제 디코딩, 40MP·10MB 제한, 1600px WebP 변환과 메타데이터 제거를 유지한다. 공용 MediaUploadService가 게시물과 대회의 완료 lease·동시성·복구를 소유하며 대회 사진을 게시물 업로드로 사용할 수 없다. 비공개 저장소, 매 요청 멤버십 검사, `Cache-Control: private, no-store`.
+- 사진: requestUploadUrl(contestId, contentType, byteSize) → 저장소 POST → completeSubmissionUpload → createSubmission이다. 5분 서명, JPEG/PNG/WebP 10MB이며 서버 변환은 없다. 공용 MediaUploadService가 게시물·대회·대표 사진의 발급·HEAD 완료·용도 분리를 소유하며 대회 사진을 게시물 업로드로 사용할 수 없다. `/photos/:id`는 매 요청 멤버십을 확인하고 `private, no-store` 307로 서명 GET에 보낸다.
 - 신고는 사람·사진당 1건, 내용은 관리자만. 숨김은 보존, 삭제는 투표·좋아요·신고·파일까지 지운다.
 
 ## 이벤트·모니터링
@@ -79,4 +79,4 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 Service에서 Database(Prisma)를 직접 사용한다. Repository 전달 계층을 만들지 않으며 UnitOfWork.atomic의 tx를 모든 권한·읽기·쓰기·이벤트에 전달한다.
 
-게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 S3 최대 60초 presigned GET 또는 로컬 attachment 다운로드 경로를 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.
+게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 60초 presigned GET(attachment)을 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.
