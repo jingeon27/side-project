@@ -65,12 +65,15 @@ export class AnswersService {
     if (a.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
     return responseAnswer(
       await this.cache.change(
-        (tx) =>
-          tx.answer.update({
+        async (tx) => {
+          // 수정하면 도움됨 표시가 풀리므로 그 알림도 남기지 않는다.
+          await tx.notification.deleteMany({ where: { answerId: id, type: 'HELPFUL' } });
+          return tx.answer.update({
             where: { id },
             data: { body: input.body, readAt: null, helpful: false },
             include: { author: { select: authorSelect } },
-          }),
+          });
+        },
         [postCacheTag(a.postId)],
       ),
     );
@@ -103,6 +106,9 @@ export class AnswersService {
           where: { id, helpful: !input.helpful },
           data: { helpful: input.helpful, readAt: new Date() },
         });
+        // 도움됨 알림은 답변마다 하나만 둔다. 해제하면 지우고, 다시 표시하면 이전 알림을 바꾼다.
+        if (changed.count)
+          await (tx ?? this.db).notification.deleteMany({ where: { answerId: a.id, type: 'HELPFUL' } });
         if (input.helpful && changed.count)
           await (tx ?? this.db).notification.create({
             data: {
