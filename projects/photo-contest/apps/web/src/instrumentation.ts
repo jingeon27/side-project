@@ -13,6 +13,7 @@ export function register() {
     dataCollection: SENTRY_DATA_COLLECTION,
     tracesSampleRate: 0,
     beforeSend: scrubSentryEvent,
+    beforeSendTransaction: scrubSentryEvent,
   });
 }
 
