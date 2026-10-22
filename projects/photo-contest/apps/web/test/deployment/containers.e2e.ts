@@ -134,7 +134,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     .getAttribute('src');
   if (!privateUrl) throw new Error('비공개 사진 주소가 있어야 한다');
   await expectStorageRedirect(await page.request.get(privateUrl, { maxRedirects: 0 }));
-  expect((await request.get(privateUrl, { maxRedirects: 0 })).status()).toBe(401);
+  expect((await request.get(privateUrl, { maxRedirects: 0 })).status()).toBe(404);
   const privateHtml = await (
     await request.get(privatePath, { headers: { 'User-Agent': 'Twitterbot' } })
   ).text();
