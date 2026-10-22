@@ -8,7 +8,7 @@ vi.mock('@sentry/node', () => ({ init: vi.fn(), captureException: vi.fn() }));
 
 class FakePrismaError extends Error {
   code = 'P2002';
-  name = 'PrismaClientKnownRequestError';
+  override name = 'PrismaClientKnownRequestError';
 }
 
 afterEach(() => {
