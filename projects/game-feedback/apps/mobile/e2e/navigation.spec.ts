@@ -90,6 +90,41 @@ test('category chips navigate directly and native back restores the saved filter
   );
 });
 
+test('guide shortcuts return from child screens with native back and switch root tabs like the menu', async ({
+  page,
+  nativeHost,
+}) => {
+  await page.goto('/ko/guide');
+  await expect.poll(nativeHost.isReady).toBe(true);
+  const guide = page.getByRole('article');
+  const shortcut = (title: string) =>
+    guide.getByRole('heading', { name: title, exact: true }).getByRole('link');
+  // 게시판·문의는 가이드를 상위로 두고 열려 앱의 뒤로 가기가 가이드로 돌아온다.
+  for (const [title, path] of [
+    ['전투 모집', '/ko/boards/friendly'],
+    ['문의와 신고', '/ko/contact'],
+  ] as const) {
+    await shortcut(title).click();
+    await expect.poll(nativeHost.currentPath).toBe(path);
+    expect(await nativeHost.requestBack()).toBe(true);
+    await expect.poll(nativeHost.currentPath).toBe('/ko/guide');
+  }
+  await guide.getByRole('term').getByRole('link', { name: '자유게시판', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/boards/free');
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe('/ko/guide');
+  expect(nativeHost.rootBacks()).toBe(0);
+  // 채팅은 루트 탭이라 하단 메뉴처럼 가이드 기록을 바꾼다. 뒤로 가기는 홈, 홈에서는 앱 종료다.
+  const length = await page.evaluate(() => history.length);
+  await shortcut('채팅과 대화내역').click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/messages');
+  expect(await page.evaluate(() => history.length)).toBe(length);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe('/ko');
+  expect(await nativeHost.requestBack()).toBe(true);
+  expect(nativeHost.rootBacks()).toBe(1);
+});
+
 test('management routes are unavailable in the public web and native route parser', async ({
   page,
   nativeHost,

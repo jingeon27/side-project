@@ -7,7 +7,10 @@ const headers = { Origin: origin };
 test('anonymous and ordinary sessions do not expose administration and foreign origins cannot write', async ({
   page,
 }) => {
-  await page.goto('/');
+  const document = await page.goto('/');
+  // 다른 사이트가 관리자 화면을 frame으로 띄우지 못해야 한다.
+  expect(document?.headers()['x-frame-options']).toBe('DENY');
+  expect(document?.headers()['content-security-policy']).toBe("frame-ancestors 'none'");
   await expect(page.getByRole('heading', { name: '관리자 로그인이 필요합니다.' })).toBeVisible();
   expect(
     (

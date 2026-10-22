@@ -14,6 +14,7 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
    - `GF_ADMIN_API_ORIGIN`(기본 `http://localhost:4300`)은 `localhost`·`127.0.0.1`의 `http:` origin만 허용하고 경로·계정 정보를 거부한다. 운영 API도 SSH 터널의 로컬 포트로만 연결한다.
    - `GF_ADMIN_ACCESS_TOKEN`은 `^[A-Za-z0-9_-]{43}$`이어야 하고, 값이 있으면 `GF_ADMIN_WEB_ORIGIN`은 `https://`로 시작해야 한다.
 5. dev·preview 모두 `host: '127.0.0.1'`, `strictPort: true`, `allowedHosts: ['localhost', '127.0.0.1']`이다. 포트는 `GF_ADMIN_PORT`(기본 3303)이며 공인 IP 바인딩이나 host 허용 확장을 하지 않는다.
+6. dev·preview 응답은 `X-Frame-Options: DENY`·CSP `frame-ancestors 'none'`·`nosniff`·`Referrer-Policy: no-referrer`를 보낸다. 운영 모드에서는 모든 요청에 토큰이 붙으므로 다른 사이트가 이 화면을 frame으로 띄워 클릭을 유도하지 못하게 하는 장치다.
 
 ## 토큰 경계
 
@@ -40,12 +41,12 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
 2. 별도 터미널에서 `corepack yarn workspace @side/game-feedback admin:dev`를 실행하고 http://127.0.0.1:3303 에서 "로컬 관리자 로그인"을 누른다.
 3. 다른 API에 붙일 때는 `GF_ADMIN_API_ORIGIN`·`GF_ADMIN_WEB_ORIGIN`·`GF_ADMIN_PORT`를 쓴다. 쓰기 요청이 통과하려면 `GF_ADMIN_WEB_ORIGIN`이 그 API의 `WEB_ORIGIN`과 같아야 한다.
 
-- 운영 연결은 `../../deploy/lightsail/README.md`처럼 셸 환경변수로 한 번만 넘긴다. `.env.example`대로 이 앱의 `.env.local`에 두면 Git에서는 제외되지만, 이후 E2E를 포함한 모든 `dev`가 그 값을 읽는다. E2E는 http Origin이므로 `Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.`으로 시작에 실패한다. 운영 작업이 끝나면 파일에서 토큰을 지운다.
+- 운영 연결은 `../../deploy/lightsail/README.md`와 `.env.example`의 안내처럼 셸 환경변수로 한 번만 넘긴다. 이 앱의 `.env.local`에 두면 Git에서는 제외되지만, 이후 E2E를 포함한 모든 `dev`가 그 값을 읽는다. E2E는 http Origin이므로 `Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.`으로 시작에 실패한다. 실수로 파일에 넣었다면 운영 작업이 끝난 뒤 토큰을 지운다.
 
 ## 확인 (side 루트)
 
 - 쓰기 가드와 권한 분기는 `e2e/admin.spec.ts`의 첫 테스트가 검증한다. 다른 Origin의 `POST /api/auth/test-token`은 403, 일반 계정의 `GET /api/admin/support`는 403이고 관리자 메뉴가 없어야 한다.
-- 운영 모드에는 자동 테스트가 없다. 프록시나 `define`을 바꿨다면 43자 더미 토큰으로 build한 뒤 `dist/`에 그 값이 없는지 확인한다.
+- `vite.config.spec.ts`가 Origin 가드(허용 Origin·다른 사이트·다른 포트·Origin 없음·읽기 요청), 로컬/운영 모드의 프록시 헤더, 시작 검증, `define`에 토큰이 없는지를 단위 테스트한다. 실제 운영 API 연결은 자동 테스트가 없다. 프록시나 `define`을 바꿨다면 43자 더미 토큰으로 build한 뒤 `dist/`에 그 값이 없는지도 확인한다.
 
 ```sh
 corepack yarn workspace @game-feedback/admin test

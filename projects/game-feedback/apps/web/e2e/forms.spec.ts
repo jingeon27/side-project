@@ -59,11 +59,18 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   await expect(editedComment).toHaveCount(0);
 
   await page.locator('.detail-card').getByRole('button', { name: '삭제', exact: true }).click();
+  // 삭제한 글을 다시 받으면 404가 오류 경계로 잠깐 보인다.
+  const detailRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname === `/api/posts/${post.id}`)
+      detailRequests.push(request.url());
+  });
   await page
     .getByRole('dialog', { name: '정말 삭제할까요?' })
     .getByRole('button', { name: '삭제하기' })
     .click();
   await expect(page).toHaveURL('/ko');
+  expect(detailRequests).toEqual([]);
   expect((await page.request.get(`/api/posts/${post.id}`)).status()).toBe(404);
 });
 

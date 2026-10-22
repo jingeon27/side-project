@@ -1,3 +1,21 @@
+# 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
+
+develop a8e2aae4 감사의 클라이언트 항목을 고쳤다. 아래 10월 22일 태그 만료 기록 중 "작성자의 Router Cache를 갱신하는 기존 액션에 유지한다"는 더 이상 맞지 않는다.
+
+- 문서 접근 판정: Next 16.4 proxy는 `'use cache'`를 실행하지 못한다(proxy adapter의 cacheLife 프로필이 "Proxy does not support `use cache`"를 던진다). 그래서 렌더의 태그 캐시를 쓰지 않고, 게시글 상세 판정(`features/post/api/post-access.server.ts`)이 공개 조회 결과(작성자 id 또는 없는 글)만 프로세스 안에 30초·500개까지 기억한다. 로그인 요청은 세션별 전체 상세 대신 렌더와 같은 차단 목록만 받는다. API 장애는 기억하지 않고 404로 바꾸지 않는다. 캐시가 살아 있는 동안 삭제·숨김된 글은 렌더가 태그 캐시로 다시 막으므로 본문은 보이지 않고, 상태 코드만 최대 30초 늦게 404가 된다.
+- 캐시 만료 Server Action `expirePostDetailCache`를 없앴다. API가 커밋 직후 무효화 콜백을 응답 전에 기다리고 실패하면 DB 큐에서 재시도한다. 모바일 e2e 웹 서버(3302)에도 콜백 URL·비밀을 넣었다.
+- 가이드 제목 링크: 홈·채팅·프로필·알림과 "홈으로 이동"은 `TabLink`, 게시판·글쓰기·문의는 `ChildLink`(`registerNextLogicalParent`)로 연다. 뒤로 가기(브라우저·Android)가 게시판·문의에서 가이드로 돌아오고, 탭 이동은 기록을 쌓지 않는다.
+- 글 삭제 성공 뒤 상세 쿼리를 다시 받지 않고 취소·제거하며, 이동은 피드로 replace한다.
+- 웹 응답 헤더: `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. cacheComponents(PPR) 정적 셸은 nonce를 받을 수 없어 script/style/connect를 제한하는 CSP는 넣지 않았다. Admin Vite dev·preview도 frame 차단 헤더를 보낸다.
+- SDK: Orval `urlEncodeParameters`로 경로 파라미터를 인코딩하고, `apiFetch`가 빈·점 세그먼트와 `/`·`\`·`?`·`#`가 든 세그먼트를 `INVALID_REQUEST_PATH`로 거부한다. 웹의 Player Tag 조회는 `#` 없이 보낸다.
+- 모바일: `EXPO_PUBLIC_WEB_ORIGIN`을 `new URL().origin`으로 정규화한다. iOS 하위 frame 이동은 외부 열기·앱 화면 이동 없이 같은 origin·`about:blank`만 허용한다.
+- 답글 버튼의 렌더되지 않은 폼을 가리키던 `aria-controls`와 고정 `aria-expanded`를 없앴다.
+- 문서: 모바일 build 스킬의 앱 이름, webview-shell 스킬의 쿠키 prop 설명, Admin `.env.example`의 운영 토큰 안내를 실제와 맞췄다. Admin Vite 프록시의 Origin 가드·운영 토큰 주입을 단위 테스트한다.
+
+검증(이 worktree, Node 24): `@side/game-feedback codegen` 뒤 생성 diff 없음. sdk·bridge·web·mobile·admin `typecheck`, web·mobile·admin `lint`, 단위 테스트(SDK 68, bridge 11, Web unit/UI 182, Mobile unit/UI 54, Admin 20), 루트 `format:check`가 통과했다. 운영 토큰 더미값으로 Admin을 build해 `dist/`에 토큰이 없음을 확인했다. Web·Admin·Mobile Playwright와 `next build`는 로컬에서 돌리지 않았고 CI에 맡긴다(가이드·보안 헤더·글 삭제·게임 프로필 e2e를 고치거나 더했다). Android 하드웨어 뒤로 가기와 iOS iframe 동작은 실기기로 확인하지 않았다.
+
+PR #42 충돌 해소: 최신 develop `46e5d0cd`를 병합하면서 클라이언트·API 수정 기록을 모두 보존했다. 공개 게시글 접근 테스트는 새 내부 서명 헤더를 허용하되 세션 쿠키가 없음을 확인하도록 맞췄다. Node 24의 별도 worktree에서 codegen 후 SDK 생성 diff 없음, SDK·Web·Admin typecheck, Web·Admin lint, SDK 68·Web 188·Admin 21개 테스트, 병합 파일의 Prettier 검사가 통과했다. 이번 충돌 해소에서는 DB 통합 테스트·Playwright·프로덕션 build를 실행하지 않았다. 공통 파일과 다른 서비스의 변경은 기존 develop 커밋을 병합해 들어온 내용이며 별도로 수정하지 않았다.
+
 # 2026-10-22 API 요청 제한과 접근 검사 보정
 
 감사(origin/develop a8e2aae4)에서 확인한 API 결함을 고쳤다.

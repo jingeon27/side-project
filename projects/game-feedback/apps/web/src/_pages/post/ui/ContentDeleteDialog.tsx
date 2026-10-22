@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 
 import { LoaderCircle } from 'lucide-react';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
 import { useDeleteAnswerMutation } from '@/features/answer';
@@ -58,7 +59,8 @@ export function ContentDeleteDialog({
             if (type === 'COMMENT') await comment.mutateAsync({ id, postId });
             onOpenChange(false);
             notify(t('삭제했어요.'));
-            if (type === 'POST') router.push(`/${locale}`);
+            // 지운 글의 기록을 남기지 않아 뒤로 가기가 404 문서를 다시 열지 않는다.
+            if (type === 'POST') router.replace(appRoutes.feed(locale));
           } catch {
             /* Mutation errors remain visible. */
           }
