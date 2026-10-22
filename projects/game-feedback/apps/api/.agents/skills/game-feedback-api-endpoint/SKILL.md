@@ -65,7 +65,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 corepack yarn workspace @side/game-feedback codegen        # contracts build → db:generate → openapi → Orval
 git diff --stat -- projects/game-feedback/packages/sdk/src/generated   # CI는 재생성 뒤 diff가 있으면 실패한다
 corepack yarn workspace @game-feedback/sdk test            # 모든 operation이 응답 스키마를 넘기는지
-corepack yarn workspace @game-feedback/api typecheck       # tsconfig가 *.spec.ts·*.test.ts를 제외한다
+corepack yarn workspace @game-feedback/api typecheck       # 테스트 포함 tsconfig.json + 빌드 전용 tsconfig.build.json
 corepack yarn workspace @game-feedback/api test:integration
 corepack yarn workspace @side/game-feedback check          # 전체 typecheck + web·mobile·admin lint (API lint는 없다)
 ```

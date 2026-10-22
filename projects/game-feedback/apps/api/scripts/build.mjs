@@ -11,7 +11,7 @@ const result = spawnSync(
   [
     require.resolve('@side/typescript-config/compiler'),
     '-p',
-    fileURLToPath(new URL('../tsconfig.json', import.meta.url)),
+    fileURLToPath(new URL('../tsconfig.build.json', import.meta.url)),
   ],
   { stdio: 'inherit' },
 );

@@ -2,16 +2,13 @@
   "extends": "@side/typescript-config/base",
   "compilerOptions": {
     "lib": ["ES2022"],
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "sourceMap": true,
-    "declaration": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/generated"]
+  "include": ["src/**/*.ts", "*.mts"],
+  "exclude": ["src/generated"]
 }
