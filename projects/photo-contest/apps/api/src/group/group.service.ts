@@ -279,7 +279,7 @@ export class GroupService {
 
   /**
    * 최근 종료된(endsAt <= now) 기존 대회 50개의 숨기지 않은 사진만 집계해 상위 100명을 돌려준다.
-   * 표·좋아요 수는 DB가 세고, 작성자는 순위에 오른 사람만 따로 읽는다.
+   * 표·좋아요 수는 DB가 사진마다 세고, 작성자 공개 정보는 한 번에 따로 읽는다.
    */
   async leaderboard(groupId: string, now = new Date()): Promise<ILeaderboardEntry<IUserView>[]> {
     const contests = await this.db.contest.findMany({
