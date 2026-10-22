@@ -1154,3 +1154,16 @@ Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게
 
 테스트는 전용 55444의 격리 gf_test_ 스키마와 별도 Web/API 포트를 사용했다. 실행 중인 개발 서버·개발 DB와 다른 서비스 코드는 변경하지 않았다. 새 의존성은 없으며 운영 migration 적용·공개 배포·실기기 WebView 검증은 수행하지 않았다.
 검증 후 이번 작업에서 시작한 테스트 DB만 중지하고 데이터를 보존했다.
+
+## 앱 소셜 로그인 콜백의 https App Link·Universal Link 전환 (2026-10-22)
+
+감사 M3: 콜백이 검증되지 않는 커스텀 스킴(`gamefeedback://auth/callback`)이라 같은 스킴을 등록한 앱이 자기 `app_challenge`로 흐름을 열면 피해자가 진짜 제공자에서 로그인한 코드를 받아 교환할 수 있었다. PKCE는 흐름을 시작한 쪽에 묶여 막지 못한다. API는 코드와 실패를 `<WEB_ORIGIN>/app-auth/callback`(`MOBILE_AUTH_CALLBACK_URL`, WEB_ORIGIN과 같은 origin의 그 경로만)으로만 보내고 운영은 값이 없거나 틀리면 시작하지 않는다. 웹은 `/.well-known/apple-app-site-association`·`assetlinks.json`(rewrites → `app-links/*`)과 코드를 다시 보여 주지 않는 `/app-auth/callback` 안내 페이지를 제공한다. 앱은 associated domains(applinks·webcredentials)·`autoVerify` intent filter·최소 iOS 17.4·`preferUniversalLinks`로 https 콜백만 엄격히 읽고, 딥링크 처리기는 콜백을 열지 않는다. Apple Team ID·bundle id·Android package·서명 SHA-256은 아직 없어 배포 환경변수·EAS 환경변수로 받고 운영 빌드·서버는 값이 없으면 멈춘다. 운영 사용자가 없어 이전 콜백과의 호환 기간은 두지 않는다.
+
+검증 결과:
+
+- API 단위 Vitest(앱 로그인 콜백 회귀·운영 설정 포함) 통과, typecheck 통과. 통합 레인(`app-auth.service.integration.test.ts`)은 수정만 하고 CI에 맡겼다.
+- Web Vitest 46개 파일·190개, Bridge 13개, Mobile 74개(`app.config.spec.ts`·`native-login.test.tsx` 포함) 통과. Web/Mobile/Bridge typecheck, Web·Mobile lint, Mobile `bundle:check`(Android·iOS Metro) 통과.
+- `expo config`: 운영 값을 주면 entitlements `applinks:`·`webcredentials:`, MainActivity `android:autoVerify="true"` https·host·`/app-auth/callback` intent filter, Podfile `ios.deploymentTarget` 17.4. 값 없이 실행하면 빠진 이름을 담은 오류로 멈춘다.
+- Playwright(Web `e2e/app-links.spec.ts`, Mobile `app-shell` 콜백 단언)와 production·공통 인스턴스 smoke의 `/.well-known`·콜백 확인은 작성만 하고 CI에 맡겼다. 서버·시뮬레이터·Docker·`next build`·EAS 빌드는 실행하지 않았다.
+
+실제 제공자 로그인 뒤 iOS 세션 콜백·Android App Link 복귀, Apple CDN의 AASA 반영, Play App Signing 지문 검증은 실기기·콘솔 확인이 필요하다.
