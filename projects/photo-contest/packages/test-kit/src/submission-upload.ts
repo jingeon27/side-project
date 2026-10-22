@@ -27,12 +27,7 @@ export async function uploadTestSubmissionMedia(
   const form = new FormData();
   for (const field of ticket.fields) form.append(field.name, field.value);
   form.append('file', new Blob([new Uint8Array(body)], { type: contentType }), 'media');
-  const response = await fetch(new URL(ticket.url.replace(/^\/backend/, ''), apiUrl), {
-    method: 'POST',
-    headers: { Origin: origin },
-    credentials: 'omit',
-    body: form,
-  });
+  const response = await fetch(ticket.url, { method: 'POST', headers: { Origin: origin }, body: form });
   if (!response.ok) throw new Error(`테스트 사진 업로드 실패 (${response.status})`);
   const completed = await graphqlRequest<{ completeSubmissionUpload: boolean }>(apiUrl, {
     cookie,

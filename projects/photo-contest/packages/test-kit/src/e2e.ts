@@ -36,7 +36,7 @@ interface IApiWebServerOptions {
   env?: Record<string, string>;
 }
 
-/** 격리 스키마로 API를 띄우는 Playwright webServer 항목. 종료하면 스키마와 사진 폴더를 지운다. */
+/** 격리 스키마로 API를 띄우는 Playwright webServer 항목. 종료하면 스키마와 S3 대역 폴더를 지운다. */
 export function apiWebServer({ port, webOrigin, database, env = {} }: IApiWebServerOptions) {
   return {
     command: `node ${SERVE_TEST_API_BIN}`,
@@ -57,7 +57,7 @@ export function apiWebServer({ port, webOrigin, database, env = {} }: IApiWebSer
       PC_E2E_SCHEMA: database.schema,
       PORT: String(port),
       WEB_ORIGIN: webOrigin,
-      STORAGE_DIR: database.storageDir,
+      PC_E2E_STORAGE_DIR: database.storageDir,
     },
   };
 }
