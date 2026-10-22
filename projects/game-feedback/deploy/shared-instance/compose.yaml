@@ -13,7 +13,7 @@ x-api: &api
   GF_TEST_AUTH_ENABLED: 'false'
   GF_PREFETCH_TESTING: 'false'
   GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
-  GF_CACHE_REVALIDATION_URL: http://gf-web:3300/_internal/cache/revalidate
+  GF_CACHE_REVALIDATION_URL: http://gf-web:3300/internal/cache/revalidate
   GF_MEDIA_STORAGE: S3
   GF_S3_BUCKET: ${GAME_FEEDBACK_S3_BUCKET:?Set GAME_FEEDBACK_S3_BUCKET}
   OTHER_SERVICE_S3_BUCKET: ${PHOTO_CONTEST_S3_BUCKET:?Set PHOTO_CONTEST_S3_BUCKET}
@@ -94,7 +94,7 @@ services:
           CMD,
           node,
           -e,
-          "fetch('http://127.0.0.1:3300/_health/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:3300/health-check/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 15s
       timeout: 4s

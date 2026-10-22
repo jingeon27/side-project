@@ -1,7 +1,19 @@
-import { Controller, Delete, HttpCode, Inject, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 
 import type { SessionRequest } from '../auth/session.types';
-import { ValidatedBody } from '../common/http/request-validation';
+import { ListQueryDto } from '../common/http/list-query.dto';
+import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
 import { CommentsService } from './comments.service';
@@ -9,6 +21,14 @@ import { CommentsService } from './comments.service';
 @Controller('api')
 export class CommentsController {
   constructor(@Inject(CommentsService) private readonly service: CommentsService) {}
+  @Get('posts/:id/comments')
+  comments(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedQuery(ListQueryDto) query: ListQueryDto,
+  ) {
+    return this.service.page(req, id, query);
+  }
   @HttpCode(200)
   @Post('posts/:id/comments')
   @UseGuards(UserGuard)

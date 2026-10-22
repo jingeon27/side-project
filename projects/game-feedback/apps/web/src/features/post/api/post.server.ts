@@ -19,6 +19,8 @@ export async function getServerPostList(params: TPostListParams) {
   return listPosts(params, await serverRequestOptions());
 }
 // 쿠키 없이 받은 공개 상세라 모든 사용자가 게시글 id 하나로 같은 캐시를 쓴다. 없는 글은 null로 캐시한다.
+// viewCount는 마지막 내용 변경 때의 값이다. 조회 집계는 이 태그를 만료하지 않고, 화면은 마운트 재조회와
+// 조회 기록 응답(recordPostViewMutationOptions)으로 최신 값을 보여준다.
 async function getPublicPost(id: string) {
   'use cache';
   cacheTag(POSTS_CACHE_TAG, postDetailCacheTag(id));

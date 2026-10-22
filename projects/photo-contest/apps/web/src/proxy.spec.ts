@@ -22,6 +22,12 @@ describe('proxy', () => {
     expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
+  it('운영의 __Host- 세션 쿠키로도 멤버 전용 화면을 열어야 한다', () => {
+    const response = proxy(request('/me', 'theme=light; __Host-contest_session=abc'));
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
   it('멤버 전용 경로만 검사해야 한다', () => {
     expect(config.matcher).toEqual(['/contests/:path*', '/me']);
   });

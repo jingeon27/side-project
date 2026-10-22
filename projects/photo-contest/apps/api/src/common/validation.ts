@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { PAGE_SIZE_MAX } from '../config/limits';
+import { PAGE_OFFSET_MAX, PAGE_SIZE_MAX } from '../config/limits';
 import { fail } from './errors';
 
 export interface IPageRange {
@@ -9,7 +9,8 @@ export interface IPageRange {
 }
 
 const pageRangeSchema = z.object({
-  offset: z.int().min(0),
+  // 깊은 OFFSET은 건너뛰는 행을 모두 읽으므로 반복 요청으로 DB를 붙잡지 못하게 막는다.
+  offset: z.int().min(0).max(PAGE_OFFSET_MAX),
   limit: z.int().min(1).max(PAGE_SIZE_MAX),
 });
 

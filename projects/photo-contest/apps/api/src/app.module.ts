@@ -14,6 +14,7 @@ import { LikeModule } from './like/like.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { PostModule } from './post/post.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
 import { TestingModule } from './testing/testing.module';
@@ -25,6 +26,7 @@ import { VoteModule } from './vote/vote.module';
     GraphQLModule.forRootAsync<ApolloDriverConfig>({ driver: ApolloDriver, useFactory: graphqlOptions }),
     DatabaseModule,
     StorageModule,
+    RateLimitModule,
     AuthModule,
     GroupModule,
     ContestModule,

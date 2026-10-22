@@ -236,6 +236,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
         firstClearedAt: at,
         firstClearedId: 'history-b',
       },
+      include: { support: true },
     });
     await state.db.chatMessage.createMany({
       data: ['a', 'b', 'c'].map((id) => ({

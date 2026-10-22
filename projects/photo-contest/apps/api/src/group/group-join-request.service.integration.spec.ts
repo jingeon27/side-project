@@ -182,14 +182,15 @@ describe('그룹 탐색과 가입 승인', () => {
     );
     expect(await api.db.groupMember.count({ where: { groupId: group.id } })).toBe(1);
     expect((await api.gqlFail(applicant.cookie, POSTS, { id: group.id })).code).toBe('FORBIDDEN');
-    expect((await api.http().get(photo.mediaUrl.replace('/backend', ''))).status).toBe(401);
+    // 그룹은 탐색에 보이지만 그 안의 게시물·파일은 승인 전까지 있는지도 알리지 않는다.
+    expect((await api.http().get(photo.mediaUrl.replace('/backend', ''))).status).toBe(404);
     expect(
       (await api.http().get(photo.mediaUrl.replace('/backend', '')).set('Cookie', applicant.cookie)).status,
-    ).toBe(403);
+    ).toBe(404);
     expect(
       (await api.gqlFail(applicant.cookie, 'query($id:ID!){postComments(postId:$id){id}}', { id: photo.id }))
         .code,
-    ).toBe('FORBIDDEN');
+    ).toBe('NOT_FOUND');
     expect((await preview(outsider.cookie, group.id)).joinRequestPending).toBe(false);
   });
 

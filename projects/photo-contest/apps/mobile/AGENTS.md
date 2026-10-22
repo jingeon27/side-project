@@ -1,6 +1,6 @@
 # Mobile (Expo WebView 셸)
 
-웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 쿠키 `contest_session`이 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
+웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 세션 쿠키(운영 `__Host-contest_session`, 개발 http `contest_session`)가 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
 
 ## 실행
 

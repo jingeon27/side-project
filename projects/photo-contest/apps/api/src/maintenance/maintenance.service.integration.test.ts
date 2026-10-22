@@ -25,7 +25,7 @@ describe('직접 업로드 파일 정리 회귀', () => {
     const second = await postUpload(api, owner, groupId);
     await api.db.postUpload.updateMany({
       where: { id: { in: [first, second] } },
-      data: { expiresAt: new Date(0) },
+      data: { expiresAt: new Date(0), policyExpiresAt: new Date(0) },
     });
     const [failing, removed] = await Promise.all(
       [first, second].map((id) => api.db.postUpload.findUniqueOrThrow({ where: { id } })),
@@ -52,7 +52,7 @@ describe('직접 업로드 파일 정리 회귀', () => {
     await expect(api.storage.head(failing?.storageKey ?? '')).rejects.toThrow();
   });
 
-  it('완료하지 않고 만료된 티켓의 최종 키 파일을 지워 늦게 완료해도 게시에 쓰지 못해야 한다', async () => {
+  it('완료하지 않고 만료된 티켓의 최종 키 파일을 유예 뒤에 지워 늦게 완료해도 게시에 쓰지 못해야 한다', async () => {
     const body = await createTestImage();
     const { requestPostUpload: ticket } = await api.gqlOk<{
       requestPostUpload: { id: string; url: string; fields: Array<{ name: string; value: string }> };
@@ -63,14 +63,19 @@ describe('직접 업로드 파일 정리 회귀', () => {
     );
     expect((await uploadToStorage(ticket, body, 'image/png')).status).toBe(204);
     const { stagingKey } = await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } });
+    const expiredAt = new Date(Date.now() - 1000);
     await api.db.postUpload.update({
       where: { id: ticket.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: expiredAt, policyExpiresAt: expiredAt },
     });
+    // 막 만료된 키는 만료 직전에 시작한 완료 확정과 겹칠 수 있어 유예 시간 동안 남긴다.
     await api.app.get(MaintenanceService).cleanup();
+    expect(await api.storage.head(stagingKey ?? '')).toMatchObject({ byteSize: body.length });
+    expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } })).stagingKey).toBe(
+      stagingKey,
+    );
+    await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 6 * 60_000));
     await expect(api.storage.head(stagingKey ?? '')).rejects.toThrow();
-    expect((await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } })).stagingKey).toBeNull();
-    await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 10 * 60_000));
     expect(await api.db.postUpload.findUnique({ where: { id: ticket.id } })).toBeNull();
   });
 });

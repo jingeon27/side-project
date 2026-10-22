@@ -8,6 +8,7 @@ import { json } from 'express';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { bodyParserErrorHandler } from './common/http/body-parser-error.middleware';
+import { graphqlRateLimit } from './common/http/graphql-rate-limit.middleware';
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
 import { assertProductionConfig, assertTestingConfig, isTest, trustedProxyHops } from './config/env';
@@ -22,7 +23,8 @@ export interface ICreateAppOptions {
 
 /**
  * 미들웨어와 필터만 연결하고 listen은 하지 않는다(테스트는 app.getHttpServer()에 직접 요청한다).
- * 순서: no-store → Origin 검사(본문을 읽기 전에 거절) → JSON 본문 파서 → 파서 오류 응답. 파일은 저장소로 직접 보낸다.
+ * 순서: no-store → Origin 검사(본문을 읽기 전에 거절) → 운영 GraphQL 주소별 요청 제한 → JSON 본문 파서 → 파서 오류 응답.
+ * 파일은 저장소로 직접 보낸다.
  */
 export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INestApplication> {
   assertTestingConfig();
@@ -35,6 +37,7 @@ export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INe
   app.set('trust proxy', trustedProxyHops());
   app.use(noStore);
   app.use(originGuard);
+  app.use('/graphql', graphqlRateLimit());
   app.use(json({ limit: MAX_JSON_BODY }));
   app.use(bodyParserErrorHandler);
   app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));

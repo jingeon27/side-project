@@ -11,7 +11,8 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 - `MediaStorage`(`media-storage.service.ts`, `@Global`):
   - `save`: `MediaObject`(`objects/<uuid>`) 행을 **외부 IO 전에** 만들고 덮어쓰기 없이 쓴다(`wx`, S3 `IfNoneMatch: '*'`). 실패한 업로드도 정리 대상에 남기려는 순서다.
   - `reserveUpload`: S3일 때만 `staging/<uuid>`에 presigned POST(정확한 `content-length-range`·`Content-Type`, `MEDIA_UPLOAD_TTL_SECONDS` 300초). 아니면 null.
-  - `completeUpload`: HEAD로 크기·타입 확인 → 바이트를 읽어 `validateMediaFile` → **새 `objects/` 키로 다시 저장**. staging 주소를 재사용해도 확정 파일은 바뀌지 않는다.
+  - `completeUpload`: HEAD로 크기·타입·ETag 확인 → 같은 ETag로 앞 `MEDIA_SIGNATURE_BYTES`(4KB)만 Range로 읽어 `validateMediaHeader` → **같은 ETag 조건의 CopyObject로 새 `objects/` 키에 확정**(본문을 API로 내려받지 않는다). staging 주소를 재사용해도 확정 파일은 바뀌지 않고, 검사 뒤 바뀌면 412 → 409 `UPLOAD_CHANGED`.
+  - `assertProxyUpload`: S3면 multipart 경로를 409 `DIRECT_UPLOAD_REQUIRED`로 막는다. 컨트롤러는 `ProxyUploadGuard`(`media-work.ts`)로 multer보다 먼저 부른다.
   - `presignRead`: S3만 `MEDIA_READ_TTL_SECONDS`(60초) GET 주소를 만들고 컨트롤러가 307 + `Referrer-Policy: no-referrer`로 보낸다.
   - `prune`: 연결 안 된 초안을 24시간 뒤 삭제 → 참조 없는 객체 retire → retire 14일·staging 24시간 지난 객체를 100개씩 삭제. 운영자 `scripts/maintenance.mjs`만 부른다(HTTP 경로 없음).
 - 파일 검증 `src/common/media-file.ts`: 25MB(`MEDIA_FILE_LIMIT`), 매직 바이트로 png·jpeg·gif·webp·mp4·webm을 판별하고 선언 MIME·크기와 같아야 한다(아니면 400 `INVALID_ATTACHMENT`). 채팅은 `src/chat/chat-file.ts`가 같은 함수를 다시 내보낸다.
@@ -26,6 +27,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 - 본문 참조는 계약 `richTextMediaReferences(document)`가 찾는 `/api/post-media/<id>`뿐이다. `sync`는 글 트랜잭션 안에서 참조를 연결하고(`image/`·`video/` 종류 일치, 개수가 다르면 400 `INVALID_MEDIA`) 그 글에서 참조가 사라진 미디어를 지운다. 글 삭제도 `postMedia`를 지운다.
 - 조회 GET: 게시글 미디어는 미연결이면 업로더만, 연결되면 `ACTIVE_POST` + 제외 작성자 필터. 채팅 첨부는 참여자(`ChatAttachmentGuard`) + 내 기록 경계 안의 메시지 또는 내 미전송 초안. 응답은 `private, no-store`, `Content-Security-Policy: default-src 'none'; sandbox`, Range 206/416, HEAD. 서명 URL을 로그·이벤트에 남기지 않는다.
 - 요청 제한(`src/rate-limit.ts`): multipart와 예약이 `upload:` 분당 20, 완료가 `upload-complete:` 분당 20. 경로를 바꾸면 `src/rate-limit.spec.ts`도 바꾼다.
+- 메모리 상한(`src/media-storage/media-work.ts`): multipart 수신과 프로필 사진 변환은 `@UseInterceptors(MediaWorkInterceptor, FileInterceptor(…))` 순서로 두어 multer가 본문을 읽기 전에 프로세스 슬롯(동시 3, 대기 12, 넘치면 503 `MEDIA_BUSY`)을 잡는다. 새 업로드 경로도 같은 순서를 쓴다.
 
 ## 채팅 (`src/chat/`)
 

@@ -126,9 +126,7 @@ describe('대댓글', () => {
       id: privateGroup.id,
     });
     for (const cookie of [undefined, outsider.cookie])
-      expect((await api.gqlFail(cookie, LIST, { postId, parentId: parent.id })).code).toBe(
-        cookie ? 'FORBIDDEN' : 'UNAUTHENTICATED',
-      );
+      expect((await api.gqlFail(cookie, LIST, { postId, parentId: parent.id })).code).toBe('NOT_FOUND');
     await api.gqlOk(owner.cookie, 'mutation($id:ID!){setPostHidden(postId:$id,hidden:true)}', { id: postId });
     expect((await api.gqlFail(member.cookie, LIST, { postId, parentId: parent.id })).code).toBe('NOT_FOUND');
     expect(

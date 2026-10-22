@@ -79,7 +79,7 @@ describe('링크 게시물과 미디어 저장', () => {
       (await api.gqlFail(undefined, `query($id:ID!){galleryPosts(groupId:$id){linkUrl}}`, { id: privateId }))
         .code,
     ).toBe('UNAUTHENTICATED');
-    expect((await api.gqlFail(outsider.cookie, DOWNLOAD, { id: post.id })).code).toBe('FORBIDDEN');
+    expect((await api.gqlFail(outsider.cookie, DOWNLOAD, { id: post.id })).code).toBe('NOT_FOUND');
   });
   it('링크 글의 반응·댓글·삭제는 기존 게시물 권한과 cascade를 따라야 한다', async () => {
     const post = await create(publicId, 'https://example.com/delete');
@@ -129,19 +129,20 @@ describe('링크 게시물과 미디어 저장', () => {
   );
   it('비공개 다운로드는 매번 권한을 확인하고 숨긴 파일·삭제된 파일을 외부에 내주지 않아야 한다', async () => {
     const post = await media(privateId);
+    // 비공개 그룹의 게시물 ID는 비멤버(비로그인 포함)에게 없는 게시물과 같은 응답이다.
     for (const cookie of [undefined, outsider.cookie]) {
       const query = await api.gqlFail(cookie, DOWNLOAD, { id: post.id });
-      expect(query.code).toBe(cookie ? 'FORBIDDEN' : 'UNAUTHENTICATED');
+      expect(query).toEqual({ code: 'NOT_FOUND', message: '게시물을 찾을 수 없습니다.' });
       const req = api.http().get(`/media/${post.id}/download`);
       if (cookie) req.set('Cookie', cookie);
-      expect((await req).status).toBe(cookie ? 403 : 401);
+      expect((await req).status).toBe(404);
     }
     const attachment = await openStorageRedirect(
       await api.http().get(`/media/${post.id}/download`).set('Cookie', owner.cookie),
     );
     expect(attachment.headers.get('content-disposition')).toContain('attachment;');
     await api.db.post.update({ where: { id: post.id }, data: { hidden: true } });
-    expect((await api.gqlFail(undefined, DOWNLOAD, { id: post.id })).code).toBe('UNAUTHENTICATED');
+    expect((await api.gqlFail(undefined, DOWNLOAD, { id: post.id })).code).toBe('NOT_FOUND');
     await api.gqlOk(owner.cookie, 'mutation($id:ID!){deletePost(postId:$id)}', { id: post.id });
     expect((await api.http().get(`/media/${post.id}/download`).set('Cookie', owner.cookie)).status).toBe(404);
     const hidden = await media(publicId);
@@ -172,6 +173,6 @@ describe('링크 게시물과 미디어 저장', () => {
     expect(url.searchParams.get('response-content-disposition')).toContain('attachment;');
     expect(url.searchParams.get('response-cache-control')).toBe('private, no-store');
     expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
-    expect((await api.gqlFail(outsider.cookie, DOWNLOAD, { id: post.id })).code).toBe('FORBIDDEN');
+    expect((await api.gqlFail(outsider.cookie, DOWNLOAD, { id: post.id })).code).toBe('NOT_FOUND');
   });
 });

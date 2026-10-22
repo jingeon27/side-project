@@ -23,7 +23,7 @@ databaseUrl.searchParams.set('schema', schema);
 process.env.GF_E2E_DATABASE_URL = databaseUrl.toString();
 const apiEnv = {
   GF_CACHE_REVALIDATION_SECRET: 'game-feedback-e2e-cache-secret-'.repeat(2),
-  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3301/_internal/cache/revalidate',
+  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3301/internal/cache/revalidate',
   NODE_ENV: 'test',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',

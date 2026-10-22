@@ -66,7 +66,7 @@ model Group {
 }
 model GroupAvatar {
   mediaUploadId String? @unique
-  mediaUpload PostUpload? @relation(fields: [mediaUploadId], references: [id], onDelete: Restrict)
+  mediaUpload PostUpload? @relation(fields: [mediaUploadId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
   groupId String
   storageKey String @unique
@@ -202,6 +202,7 @@ model PostUpload {
   userId String
   groupId String
   expiresAt DateTime
+  policyExpiresAt DateTime?
   storageKey String? @unique
   stagingKey String? @unique
   completionKey String? @unique
@@ -293,6 +294,12 @@ model PasswordCredential {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 model AuthAttempt {
+  keyHash String @id
+  count Int @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model RateLimitBucket {
   keyHash String @id
   count Int @default(1)
   expiresAt DateTime

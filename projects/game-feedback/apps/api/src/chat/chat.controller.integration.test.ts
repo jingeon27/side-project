@@ -174,6 +174,25 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     expect((await bob.agent.get('/api/conversations')).body.items).toHaveLength(1);
   });
 
+  it('shows an empty conversation only to the user who opened it until the first message', async () => {
+    const starter = await login('빈대화시작자');
+    const recipient = await login('빈대화상대방');
+    const room = (
+      await starter.agent
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: recipient.id })
+        .expect(200)
+    ).body;
+    const ids = (body: { items: Array<{ id: string }> }) => body.items.map(({ id }) => id);
+    expect(ids((await starter.agent.get('/api/conversations').expect(200)).body)).toEqual([room.id]);
+    expect(ids((await recipient.agent.get('/api/conversations').expect(200)).body)).toEqual([]);
+    await send(starter, room.id, '먼저 인사드려요.').expect(200);
+    const inbox = (await recipient.agent.get('/api/conversations').expect(200)).body;
+    expect(ids(inbox)).toEqual([room.id]);
+    expect(inbox.unreadCount).toBe(1);
+  });
+
   it('protects message reads, sends, and read receipts from nonparticipants', async () => {
     await outsider.agent.get(`/api/conversations/${conversationId}/messages`).expect(404);
     await send(outsider, conversationId, '참여자가 아닌 사용자의 메시지').expect(404);
@@ -193,6 +212,11 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     expect(reloaded.items).toHaveLength(1);
     expect(reloaded.items[0].id).toBe(responses[0].body.id);
     expect(reloaded.conversation.unreadCount).toBe(1);
+    const inbox = (await bob.agent.get('/api/conversations').expect(200)).body;
+    expect(inbox.items.map((item: { id: string }) => item.id)).toEqual([conversationId]);
+    expect(inbox.items[0]).toMatchObject({ unreadCount: 1, lastMessage: { id: responses[0].body.id } });
+    expect(inbox.unreadCount).toBe(1);
+    expect((await alice.agent.get('/api/conversations')).body.items[0]).toMatchObject({ unreadCount: 0 });
     await send(alice, conversationId, '같은 식별자의 본문을 바꿀 수는 없습니다.', clientMessageId).expect(
       409,
     );

@@ -74,7 +74,7 @@ describe('게시글 상세 서버 조회', () => {
       expect.objectContaining({ headers: expect.not.objectContaining({ Cookie: expect.anything() }) }),
     );
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
-      'https://api.feedback.example/_internal/visibility/excluded-authors',
+      'https://api.feedback.example/internal/visibility/excluded-authors',
       expect.objectContaining({ headers: { Cookie: 'gamefeedback_session=test-only-session' } }),
     );
   });

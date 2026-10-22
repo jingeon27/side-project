@@ -15,7 +15,7 @@ export async function requestExcludedAuthors({
   headers,
   signal,
 }: IExcludedAuthorsRequest): Promise<ReadonlySet<string>> {
-  const response = await fetch(`${baseUrl}/_internal/visibility/excluded-authors`, { headers, signal });
+  const response = await fetch(`${baseUrl}/internal/visibility/excluded-authors`, { headers, signal });
   if (!response.ok) throw new Error(`Excluded authors request failed with ${response.status}.`);
   return new Set(ExcludedAuthorsSchema.parse(await response.json()).userIds);
 }

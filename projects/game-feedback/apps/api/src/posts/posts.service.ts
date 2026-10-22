@@ -6,7 +6,7 @@ import { responseAnswer } from '../answers/answer.presenter';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
-import { responseComment } from '../comments/comment.presenter';
+import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
@@ -68,41 +68,13 @@ export class PostsService {
         include: { author: { select: authorSelect } },
         orderBy: [{ helpful: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
       }),
-      this.db.comment.findMany({
-        where: {
-          postId: id,
-          hidden: false,
-          OR: [
-            {
-              parentId: null,
-              OR: [{ deletedAt: null, authorId: { notIn: excluded } }, { deletedAt: { not: null } }],
-            },
-            {
-              parentId: { not: null },
-              deletedAt: null,
-              authorId: { notIn: excluded },
-              parent: {
-                hidden: false,
-                OR: [{ deletedAt: null, authorId: { notIn: excluded } }, { deletedAt: { not: null } }],
-              },
-            },
-          ],
-        },
-        include: {
-          author: {
-            select: authorSelect,
-          },
-        },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      }),
+      commentThreadPage(this.db, id, excluded, { limit: COMMENT_THREAD_PAGE }),
     ]);
-    const parentsWithReplies = new Set(comments.map((comment) => comment.parentId));
     return {
       post: responsePost({ ...p, answers }),
       answers: answers.map(responseAnswer),
-      comments: comments
-        .filter((comment) => comment.deletedAt === null || parentsWithReplies.has(comment.id))
-        .map((comment) => responseComment(comment)),
+      comments: comments.items,
+      commentsCursor: comments.nextCursor,
     };
   }
   async createPost(req: SessionRequest, input: CreatePostDto) {
@@ -163,7 +135,6 @@ export class PostsService {
               actorId: u.id,
               postId: created.id,
               type: 'FOLLOWED_POST',
-              message: `${u.nickname}: ${created.title}`,
             })),
           });
         return created;
@@ -190,6 +161,12 @@ export class PostsService {
       await this.cache.change(
         async (tx) => {
           await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+          // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
+          const current = await tx.post.findFirst({
+            where: { id, ...ACTIVE_POST, authorId: u.id },
+            select: { id: true },
+          });
+          if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
           if (input.body !== undefined || document !== undefined)
             await this.media.sync(tx, u.id, id, document);
           return (tx ?? this.db).post.update({
@@ -217,11 +194,16 @@ export class PostsService {
     );
   }
   async deletePost(req: SessionRequest, id: string) {
-    const u = requireUser(req),
-      p = await this.visiblePost(req, id);
-    if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.');
+    const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+        // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 글도 지울 수 있어야 한다.
+        const own = await tx.post.findFirst({
+          where: { id, authorId: u.id, deletedAt: null },
+          select: { id: true },
+        });
+        if (!own) throw await this.deletionDenied(req, id, tx);
         await tx.post.update({
           where: { id },
           data: {
@@ -232,14 +214,26 @@ export class PostsService {
             document: Prisma.DbNull,
             coaching: Prisma.DbNull,
             friendSale: Prisma.DbNull,
+            battle: Prisma.DbNull,
           },
         });
         await tx.notification.deleteMany({ where: { postId: id } });
         await tx.postMedia.deleteMany({ where: { postId: id } });
       },
-      [postCacheTag(id), DISCOVERY_CACHE_TAG],
+      () => [postCacheTag(id), DISCOVERY_CACHE_TAG],
     );
     return { ok: true };
+  }
+  /** 남의 글이면 볼 수 있을 때만 403, 볼 수 없거나 이미 지운 글은 404로 존재를 숨긴다. */
+  private async deletionDenied(req: SessionRequest, id: string, tx: Prisma.TransactionClient) {
+    const excluded = await this.visibility.excluded(req, tx);
+    const visible = await tx.post.findFirst({
+      where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
+      select: { id: true },
+    });
+    return visible
+      ? new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.')
+      : new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
   }
   async readPost(req: SessionRequest, id: string) {
     const u = requireUser(req),
