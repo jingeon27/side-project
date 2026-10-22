@@ -27,7 +27,7 @@ description: Game Feedback 모바일 셸의 WebView prop, 탐색 정책·딥링�
 
 ## 탐색 정책·딥링크
 
-- `onShouldStartLoadWithRequest`와 `onOpenWindow`는 같은 `navigate(url, newWindow)`를 쓴다. 동기로 boolean을 돌려주고 외부 열기는 react-native `Linking.openURL(...).catch(() => undefined)`로 던져 둔다. `originWhitelist: ['*']`·`setSupportMultipleWindows: false`를 유지해야 모든 URL이 이 판단을 거친다.
+- `onShouldStartLoadWithRequest`와 `onOpenWindow`는 같은 `navigate(url, newWindow)`를 쓴다. 단 `isTopFrame`이 거짓인 요청(iOS의 iframe 이동, Android는 항상 참)은 `decideSubframeNavigation`으로 같은 origin·`about:blank`만 허용하고 나머지는 외부 열기·앱 화면 이동 없이 막는다. 동기로 boolean을 돌려주고 외부 열기는 react-native `Linking.openURL(...).catch(() => undefined)`로 던져 둔다. `originWhitelist: ['*']`·`setSupportMultipleWindows: false`를 유지해야 모든 URL이 이 판단을 거친다.
 - `decideNavigation` 순서: `about:blank`·같은 origin → allow / `toWebPath` 성공 → navigate(`handleOpenLink`) / 공백·`\` 없는 `http(s)`·`mailto:`·`tel:` → external / 나머지(`javascript:`·`data:`·`file:`·`content:`·`intent:`·`//`) → block. 같은 origin 새 창은 알려진 경로일 때만 현재 WebView로 연다.
 - `isSameOrigin`은 origin 문자열 바로 뒤가 끝·`/`·`?`·`#`일 때만 참이다. 스킴·포트가 다르거나 `origin.evil`·`origin@evil`이면 외부다. 같은 origin 이동은 경로를 검증하지 않는다.
 - `toWebPath`: 2048자 초과·`APP_CALLBACK` 접두는 `null`. 같은 origin 또는 `gamefeedback://` 뒤를 경로로 만들고 `''`·`/` → `/ko`, `/?…` → `/ko?…`로 바꾼 뒤 bridge `WebPathSchema`(`resolveAppRoute`)로 정규화한다. locale `ko|en|ja`, ID `[A-Za-z0-9_-]{1,100}`, `messages?conversation=`은 중첩 경로로 바꾸고, 경로가 소유하지 않는 query는 버리며 중복 key·제어문자·잘못된 인코딩·`admin`은 거부한다.

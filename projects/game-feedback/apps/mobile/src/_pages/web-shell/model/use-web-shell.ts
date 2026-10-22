@@ -6,7 +6,7 @@ import type { WebViewProps } from 'react-native-webview';
 import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge';
 
 import { NativeHost, nativeLogin } from '@/features/bridge';
-import { decideNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
+import { decideNavigation, decideSubframeNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
 import { APP_VERSION, WEB_ORIGIN } from '@/shared/config/env';
 
 import { isLoadFailure } from '../lib/load-error';
@@ -91,7 +91,11 @@ export function useWebShell() {
     webviewDebuggingEnabled: __DEV__,
     allowsBackForwardNavigationGestures: !overlayOpen,
     pullToRefreshEnabled: true,
-    onShouldStartLoadWithRequest: (request) => navigate(request.url),
+    // iOS는 iframe 이동도 이 콜백으로 보낸다(Android는 항상 isTopFrame=true). 하위 frame은 외부 열기 없이 허용·차단만 한다.
+    onShouldStartLoadWithRequest: (request) =>
+      request.isTopFrame
+        ? navigate(request.url)
+        : decideSubframeNavigation(request.url, WEB_ORIGIN).action === 'allow',
     onOpenWindow: (event) => {
       navigate(event.nativeEvent.targetUrl, true);
     },
