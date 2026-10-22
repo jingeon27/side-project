@@ -12,7 +12,7 @@ const env = environment({
 });
 // Both child processes share one server-only credential, without writing it to disk or logs.
 env.GF_CACHE_REVALIDATION_SECRET ||= randomBytes(32).toString('hex');
-env.GF_CACHE_REVALIDATION_URL ||= 'http://localhost:3300/_internal/cache/revalidate';
+env.GF_CACHE_REVALIDATION_URL ||= 'http://localhost:3300/internal/cache/revalidate';
 const children = new Set();
 let stopping = false;
 

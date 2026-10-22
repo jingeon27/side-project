@@ -469,14 +469,16 @@ try {
   assert.equal((await pcApi.http('/health/ready')).status, 200);
   assert.equal((await gfApi.http('/')).status, 404);
   assert.equal((await pcApi.http('/health')).headers['x-robots-tag'], 'noindex, nofollow');
-  assert.equal((await gf.http('/_health/live')).status, 200);
-  assert.equal((await pc.http('/_health/live')).status, 200);
+  assert.equal((await gf.http('/health-check/live')).status, 200);
+  assert.equal((await pc.http('/health-check/live')).status, 200);
   for (const response of [
-    await gf.http('/_internal/cache/revalidate'),
+    await gf.http('/internal/cache/revalidate'),
+    await gf.http('/Internal/cache/revalidate'),
     await gf.http('/api/admin/reports'),
     await pc.post('/backend/testing/users', {}),
     await gf.post('/api/auth/test-token', {}),
-    await gfApi.http('/_internal/cache/revalidate'),
+    await gfApi.http('/internal/cache/revalidate'),
+    await gfApi.http('/internal/visibility/excluded-authors'),
     await gfApi.http('/api/admin/reports'),
     await gfApi.post('/api/auth/test-token', {}),
     await pcApi.post('/testing/users', {}),
@@ -484,6 +486,8 @@ try {
     assert.equal(response.status, 404);
     assert.equal(response.text(), 'edge-blocked');
   }
+  // Only the /internal segment is reserved; similarly named public paths still reach the app.
+  assert.notEqual((await gf.http('/internals-guide')).text(), 'edge-blocked');
   // Keep HTTP polling alive while service.sh performs real same-image replacement.
   const beforeIds = ['game-feedback', 'photo-contest'].map((service) =>
     serviceCompose(service, ['ps', '-q', 'api', 'web']).trim(),
@@ -846,8 +850,8 @@ try {
   assert.equal((await pc.http('/backend/health/live')).status, 200);
   assert.equal((await gf.http('/api/health/ready')).status, 503);
   assert.equal((await pc.http('/backend/health/ready')).status, 503);
-  assert.equal((await gf.http('/_health/live')).status, 200);
-  assert.equal((await pc.http('/_health/live')).status, 200);
+  assert.equal((await gf.http('/health-check/live')).status, 200);
+  assert.equal((await pc.http('/health-check/live')).status, 200);
   dependency(['up', '-d', '--wait', '--wait-timeout', '120', 'db']);
   console.log(
     'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, presigned POST/S3 Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',

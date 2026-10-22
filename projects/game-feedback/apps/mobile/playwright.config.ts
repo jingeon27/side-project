@@ -24,7 +24,7 @@ process.env.GF_MOBILE_E2E_DATABASE_URL = databaseUrl.toString();
 // 쓰기 뒤 공개 상세 캐시는 API의 무효화 콜백만 만료한다. 앱이 여는 3302 웹 서버에도 같은 비밀을 준다.
 const apiEnv = {
   GF_CACHE_REVALIDATION_SECRET: 'game-feedback-mobile-e2e-cache-secret-'.repeat(2),
-  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3302/_internal/cache/revalidate',
+  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3302/internal/cache/revalidate',
   NODE_ENV: 'test',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',

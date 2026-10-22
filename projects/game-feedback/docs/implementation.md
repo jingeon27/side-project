@@ -1,3 +1,11 @@
+# 2026-10-22 헬스·내부 라우트 폴더 이름 정리
+
+URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. Lightsail Caddy는 최상위 `handle`이 `respond`보다 먼저 실행돼 차단이 동작하지 않았으므로 `route`로 순서를 고정했다.
+
+검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
+
+PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Lightsail의 대소문자 무시·관리자 경로 차단, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 두 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
+
 # 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
 
 develop a8e2aae4 감사의 클라이언트 항목을 고쳤다. 아래 10월 22일 태그 만료 기록 중 "작성자의 Router Cache를 갱신하는 기존 액션에 유지한다"는 더 이상 맞지 않는다.
@@ -31,13 +39,13 @@ PR #42 충돌 해소: 최신 develop `46e5d0cd`를 병합하면서 클라이언�
 
 # 2026-10-22 NestJS 변경에 따른 Next.js 태그 만료
 
-공개 게시글 상세는 `'use cache'` 안에서 `cacheTag('posts', 'post:<id>')`와 `cacheLife('max')`를 사용한다. 60초 간격 재검증 대신 NestJS의 변경 커밋이 태그를 만료한다. `updateTag`는 Server Action에서만 사용할 수 있으므로 작성자의 Router Cache를 갱신하는 기존 액션에 유지한다. API가 호출하는 `POST /_internal/cache/revalidate` Route Handler는 `revalidateTag(tag, { expire: 0 })`를 사용해 첫 후속 조회부터 새 데이터를 기다린다. `'max'` 재검증의 stale 응답을 첫 조회에 반환하지 않는다.
+공개 게시글 상세는 `'use cache'` 안에서 `cacheTag('posts', 'post:<id>')`와 `cacheLife('max')`를 사용한다. 60초 간격 재검증 대신 NestJS의 변경 커밋이 태그를 만료한다. `updateTag`는 Server Action에서만 사용할 수 있으므로 작성자의 Router Cache를 갱신하는 기존 액션에 유지한다. API가 호출하는 `POST /internal/cache/revalidate` Route Handler는 `revalidateTag(tag, { expire: 0 })`를 사용해 첫 후속 조회부터 새 데이터를 기다린다. `'max'` 재검증의 stale 응답을 첫 조회에 반환하지 않는다.
 
 게시글·답변·댓글·도움됨·읽음·조회수, 관리자 숨김/복원과 작성자 인증/밴/게임 태그/프로필 사진·탈퇴 변경을 연결했다. 개별 변경은 `post:<id>`, 작성자 정보 변경은 `posts`를 만료한다. 글 생성/수정/삭제·숨김/복원·탈퇴·카테고리 생성은 `discovery`도 만료해 sitemap에 반영한다. 개인화된 차단 필터는 공유 캐시 밖에 유지한다.
 
 데이터 변경과 태그 기록은 하나의 DB 트랜잭션이다. 커밋 후 최대 1.5초 안에 콜백을 시도하고, 실패해도 쓰기는 성공한다. 미전달 태그는 `CacheInvalidation` 테이블에서 5초 주기로 재시도하며 API 재시작 후에도 남는다. 태그별 revision을 비교해 오래된 콜백의 성공이 그 사이 발생한 새 쓰기를 지우지 않게 했다. 실패는 일반 경고와 설정된 Sentry로 보고하며 요청 헤더·비밀·게시글 내용은 보고하지 않는다.
 
-콜백은 양쪽 서버에만 주입한 `GF_CACHE_REVALIDATION_SECRET`으로 인증한다. 상수 시간 해시 비교, 허용된 태그·최대 64개·본문 크기 검사와 `no-store` 응답을 적용했다. Caddy는 `/_internal`을 외부에서 차단하고 API는 단일 Web 컨테이너의 내부 주소를 호출한다. 운영 `.env`에 `openssl rand -hex 32`로 생성한 비밀을 추가해야 하며 두 Compose 구성과 smoke fixture에 전달을 연결했다. 로컬 통합 dev 명령은 메모리에서만 공유하는 임시 비밀을 생성한다. 독립 실행은 두 프로세스의 비밀을 일치시키고 API에 콜백 URL을 설정한다. 추가형 migration `20261022020000_cache_invalidations`를 운영 `migrate deploy`로 적용한다.
+콜백은 양쪽 서버에만 주입한 `GF_CACHE_REVALIDATION_SECRET`으로 인증한다. 상수 시간 해시 비교, 허용된 태그·최대 64개·본문 크기 검사와 `no-store` 응답을 적용했다. Caddy는 `/internal`과 그 하위 경로를 외부에서 차단하고 API는 단일 Web 컨테이너의 내부 주소를 호출한다. 운영 `.env`에 `openssl rand -hex 32`로 생성한 비밀을 추가해야 하며 두 Compose 구성과 smoke fixture에 전달을 연결했다. 로컬 통합 dev 명령은 메모리에서만 공유하는 임시 비밀을 생성한다. 독립 실행은 두 프로세스의 비밀을 일치시키고 API에 콜백 URL을 설정한다. 추가형 migration `20261022020000_cache_invalidations`를 운영 `migrate deploy`로 적용한다.
 
 검증: API unit 92개와 PostgreSQL 통합 122개, Web unit/UI 144개, SDK 43개, Admin unit 5개가 통과했다. 새 통합 사양은 실제 migration 실행, 커밋 이후 콜백, 롤백 시 이벤트 미생성, 콜백 실패·재시작 후 재전송, 동시 쓰기의 revision 보존을 검증한다. production build/start의 캐시·댓글 Playwright 5개와 PPR/프리패치 12개가 통과했으며 JavaScript 없는 첫 후속 HTML에서 API 직접 수정·댓글 생성/수정/삭제·관리자 숨김/복원이 반영되는지 확인했다. API/Web/Admin/계약/SDK 타입 검사, Web/Admin lint, 변경 파일 Prettier, 추가 migration 호환 검사와 스크립트 구문 검사도 통과했다. SDK 재생성 diff는 0개다. 실제 AWS 설정·운영 배포는 하지 않았고 Docker CLI가 없어 컨테이너 smoke는 실행하지 않았다.
 

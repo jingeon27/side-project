@@ -61,12 +61,12 @@ describe('게시글 문서 접근 판정', () => {
     expect(getPost).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://api.feedback.example/_internal/visibility/excluded-authors',
+      'https://api.feedback.example/internal/visibility/excluded-authors',
       expect.objectContaining({ headers: { Cookie: 'gamefeedback_session=test-only-session' } }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://api.feedback.example/_internal/visibility/excluded-authors',
+      'https://api.feedback.example/internal/visibility/excluded-authors',
       expect.objectContaining({ headers: { Cookie: 'gamefeedback_session=other-session' } }),
     );
   });

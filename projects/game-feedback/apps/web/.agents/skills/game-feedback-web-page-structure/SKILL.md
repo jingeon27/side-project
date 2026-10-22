@@ -43,7 +43,7 @@ description: Game Feedback 웹(apps/web)에 새 화면·라우트를 추가하�
 
 - origin은 `GAME_FEEDBACK_SITE_URL`(없으면 `WEB_ORIGIN`)이다. 색인은 production + `GAME_FEEDBACK_INDEXING=true` + 데모 아님 + HTTPS 비로컬일 때만 켠다(`shared/seo/config.ts`). canonical은 guide·terms·privacy·contact만 locale을 유지하고 나머지는 `/ko`다.
 - JSON-LD는 `JsonLd`·`PublicPageJsonLd`(`shared/seo`), `/og`는 `_app/seo/ShareImage.tsx`, 사이트맵은 `dailySitemap`(`'use cache'`)을 `connection()` 뒤에 부른다. 테스트 계정 글·작성자는 사이트맵과 색인에서 빠진다.
-- `/_health/live`는 `src/app/%5Fhealth/live/route.ts`다(`_` 폴더는 private). 배포 compose healthcheck가 쓴다.
+- `/health-check/live`는 `src/app/health-check/live/route.ts`다. 배포 compose healthcheck와 공용 인스턴스 배포 스크립트가 쓴다. 라우트 폴더는 `_` 접두나 URL 인코딩 이름 없이 kebab-case로 짓는다(`_` 접두 폴더는 private).
 
 ## 확인 (side 루트)
 

@@ -53,7 +53,7 @@ describe('API access checks for paths that differ only by letter case', () => {
   });
   it('leaves non-API paths to other handlers', async () => {
     const { access, loadSession } = middleware();
-    const { done, next } = call(access, '/_internal/visibility/excluded-authors');
+    const { done, next } = call(access, '/internal/visibility/excluded-authors');
     await done;
     expect(next).toHaveBeenCalledWith();
     expect(loadSession).not.toHaveBeenCalled();
