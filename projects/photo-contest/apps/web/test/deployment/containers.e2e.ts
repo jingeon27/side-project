@@ -39,7 +39,13 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   await expect(page.getByRole('tab', { name: '회원가입', exact: true })).toHaveCount(0);
   expect(await page.context().cookies()).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ name: 'contest_session', httpOnly: true, secure: true, sameSite: 'Lax' }),
+      expect.objectContaining({
+        name: '__Host-contest_session',
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax',
+      }),
     ]),
   );
   await page.goto('/me');
