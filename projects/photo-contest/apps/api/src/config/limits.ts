@@ -58,6 +58,9 @@ export const PASSWORD_MAX_LENGTH = 128;
 export const PASSWORD_SCRYPT = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 } as const;
 export const PASSWORD_KEY_BYTES = 64;
 export const PASSWORD_SALT_BYTES = 16;
+// scrypt 한 번이 32MB를 쓴다. libuv 기본 스레드 4개 중 절반만 쓰고 나머지 대기는 짧게 둔다.
+export const PASSWORD_HASH_CONCURRENCY = 2;
+export const PASSWORD_HASH_WAITING_LIMIT = 16;
 export const AUTH_ATTEMPT_WINDOW_MS = 15 * MINUTE_MS;
 export const AUTH_LOGIN_IP_LIMIT = 30;
 export const AUTH_LOGIN_ID_LIMIT = 10;

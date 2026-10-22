@@ -18,7 +18,8 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 - `PasswordAuthService`의 `registerWithPassword`·`loginWithPassword` GraphQL mutation이 기존 `SessionService`로 같은 쿠키를 발급한다. 성공 시 요청의 이전 세션을 폐기한다.
 - 아이디는 trim·소문자 처리한 영문/숫자/밑줄 3~24자, 닉네임 1~24자다. 가입 비밀번호는 15~128자로 앞뒤 공백·유니코드를 바꾸지 않는다.
 - User와 1:1인 PasswordCredential에 아이디·scrypt-v1 해시를 둔다. salt 16바이트, N=32768·r=8·p=3·64바이트 결과이며 timingSafeEqual로 비교한다. 없는 아이디도 같은 scrypt 비용을 쓴다. 비밀번호·해시는 GraphQL·이벤트·로그·Sentry에 싣지 않는다.
-- AuthAttempt는 15분 버킷의 IP/아이디를 SHA-256 키로만 저장하고 DB upsert 증가로 여러 API 인스턴스에도 제한한다. 가입 IP 5회, 로그인 IP 30회·아이디 10회이며 만료 행은 maintenance가 지운다. IP는 Express가 확인한 요청 주소를 사용하고 클라이언트의 전달 헤더를 직접 신뢰하지 않는다.
+- AuthAttempt는 15분 버킷의 IP/아이디를 SHA-256 키로만 저장하고 DB upsert 증가로 여러 API 인스턴스에도 제한한다. 가입 IP 5회, 로그인 IP 30회(시도마다)·아이디 10회(실패만 센다, 차면 검증 전에 거절)이며 만료 행은 maintenance가 지운다. IP는 Express가 확인한 요청 주소를 `clientAddressKey()`로 묶어 쓰고(IPv6는 /64) 클라이언트의 전달 헤더를 직접 신뢰하지 않는다.
+- scrypt는 프로세스당 동시 2개까지만 실행하고 16개를 넘게 기다리면 바로 RATE_LIMITED로 거절한다(`createScryptGate`).
 - 비밀번호 계정을 OAuth 이메일과 합치지 않는다. 검증은 `src/auth/password-auth.service.integration.spec.ts`와 `src/auth/password.spec.ts`를 함께 확인한다.
 
 ## 개발 로그인
