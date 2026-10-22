@@ -23,8 +23,13 @@ const dateSchema = z.union([z.iso.date(), z.iso.datetime({ offset: true })]);
 export const metaSchema = z
   .object({
     category: z.enum(categories),
+    // Tags live in meta.json and are shown as-is in every locale, so they are English slugs.
     tags: z
-      .array(slugSchema.refine((tag) => tag === tag.toLowerCase(), 'Tags must be lowercase'))
+      .array(
+        z
+          .string()
+          .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Tags are shared by all locales: use lowercase ASCII slugs'),
+      )
       .refine((tags) => new Set(tags).size === tags.length, 'Duplicate tags'),
     publishedAt: dateSchema,
     updatedAt: dateSchema.optional(),

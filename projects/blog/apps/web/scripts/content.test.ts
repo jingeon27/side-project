@@ -152,6 +152,7 @@ it('validates category IDs, normalized unique tags, and date chronology', () => 
     { ...meta, category: 'projects' },
     { ...meta, tags: ['nextjs', 'nextjs'] },
     { ...meta, tags: ['React Query'] },
+    { ...meta, tags: ['리펙토링'] },
     { ...meta, updatedAt: '2026-09-01' },
     { ...meta, publishedAt: 'yesterday' },
   ])
