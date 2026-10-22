@@ -23,7 +23,7 @@ interface ILocation {
   rest: string[];
 }
 interface IImportReference {
-  node: TSESTree.StringLiteral;
+  node: TSESTree.Node;
   source: string;
   importer: ILocation;
   target: ILocation;
@@ -67,6 +67,20 @@ export function isPublicDeepImport(rest: readonly string[]) {
   return PUBLIC_SEGMENTS.has(rest[0] ?? '') || /\.(schema|server)$/.test(rest[rest.length - 1] ?? '');
 }
 
+function staticSource(node: TSESTree.Node | null | undefined) {
+  if (node?.type === 'Literal' && typeof node.value === 'string') return node.value;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0)
+    return node.quasis[0]?.value.cooked ?? null;
+  return null;
+}
+
+// typescript-eslint 8.x 초기 파서는 TSImportType.source 없이 argument(TSLiteralType)만 채운다.
+function importTypeSource(node: TSESTree.TSImportType): TSESTree.Node | null {
+  const source = (node as Partial<TSESTree.TSImportType>).source;
+  if (source) return source;
+  return node.argument.type === 'TSLiteralType' ? node.argument.literal : null;
+}
+
 export function createImportVisitor<TMessageId extends string>(
   context: Readonly<TSESLint.RuleContext<TMessageId, TFsdOptions>>,
   check: (reference: IImportReference) => void,
@@ -74,17 +88,23 @@ export function createImportVisitor<TMessageId extends string>(
   const srcDir = path.resolve(context.cwd, context.options[0]?.srcDir ?? 'src');
   const importer = locate(srcDir, context.filename);
   const visit = (node: TSESTree.Node | null | undefined) => {
-    if (!importer || node?.type !== 'Literal' || typeof node.value !== 'string') return;
-    const targetPath = resolveImport(srcDir, node.value, context.filename);
+    const source = staticSource(node);
+    if (!importer || !node || source === null) return;
+    const targetPath = resolveImport(srcDir, source, context.filename);
     if (!targetPath) return;
     const target = locate(srcDir, targetPath);
     if (!target) return;
-    check({ node, source: node.value, importer, target });
+    check({ node, source, importer, target });
   };
   return {
     ImportDeclaration: (node) => visit(node.source),
     ExportNamedDeclaration: (node) => visit(node.source),
     ExportAllDeclaration: (node) => visit(node.source),
     ImportExpression: (node) => visit(node.source),
+    TSImportType: (node) => visit(importTypeSource(node)),
+    TSExternalModuleReference: (node) => visit(node.expression),
+    CallExpression: (node) => {
+      if (node.callee.type === 'Identifier' && node.callee.name === 'require') visit(node.arguments[0]);
+    },
   };
 }
