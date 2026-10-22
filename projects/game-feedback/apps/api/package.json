@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node --watch --require tsx/cjs src/main.ts",
-    "build": "node scripts/build.cjs",
+    "build": "node scripts/build.mjs",
     "start": "node dist/main.js",
     "typecheck": "tsc7 --noEmit",
     "test": "node scripts/test.mjs",
