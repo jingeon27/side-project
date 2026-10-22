@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { describe, expect, it } from 'vitest';
 
 import { CreateCategoryDto } from '../../admin/categories/category-input.dto';
+import { AdminReportListQueryDto } from '../../admin/reports/report-input.dto';
 import { UserBanDto } from '../../admin/users/user-input.dto';
 import { SendMessageDto } from '../../chat/chat-input.dto';
 import { GameAccountDto } from '../../game-profiles/game-account-input.dto';
@@ -84,6 +85,22 @@ describe('decorated HTTP requests and generated contract compatibility', () => {
     await expect(query.transform({ limit: '5' }, { type: 'query' })).resolves.toEqual({ limit: 5 });
     for (const limit of ['0', '1.5', '51', 'abc', ['5', '10']])
       await expect(query.transform({ limit }, { type: 'query' })).rejects.toMatchObject({
+        response: { errorCode: 'VALIDATION_ERROR' },
+      });
+  });
+  it('defaults the administrator report queue to open reports and rejects unknown statuses', async () => {
+    const reports = new RequestValidationPipe(AdminReportListQueryDto, true);
+    await expect(reports.transform({}, { type: 'query' })).resolves.toEqual({ status: 'OPEN', limit: 12 });
+    await expect(
+      reports.transform({ status: 'DISMISSED', limit: '30', cursor: 'next' }, { type: 'query' }),
+    ).resolves.toEqual({ status: 'DISMISSED', limit: 30, cursor: 'next' });
+    for (const input of [
+      { status: 'CLOSED' },
+      { status: 'open' },
+      { limit: '51' },
+      { cursor: 'x'.repeat(201) },
+    ])
+      await expect(reports.transform(input, { type: 'query' })).rejects.toMatchObject({
         response: { errorCode: 'VALIDATION_ERROR' },
       });
   });

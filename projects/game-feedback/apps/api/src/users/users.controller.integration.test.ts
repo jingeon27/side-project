@@ -455,6 +455,18 @@ describe.skipIf(!testDatabaseUrl)(
       },
     );
 
+    it('requires sign-in before a profile lookup can spend the game API token', async () => {
+      const anonymous = supertest(app.getHttpServer());
+      for (const playerTag of ['#P0LYQ829', '#AB12CD3'])
+        expect(
+          (await anonymous.get(`/api/game-profiles/${encodeURIComponent(playerTag)}`).expect(401)).body
+            .errorCode,
+        ).toBe('AUTH_REQUIRED');
+      await anonymous.get('/api/me/game-accounts').expect(401);
+      const preview = await google.get(`/api/game-profiles/${encodeURIComponent('#P0LYQ829')}`).expect(200);
+      expect(preview.body).toMatchObject({ playerTag: '#P0LYQ829' });
+    });
+
     it('registers the user tag on the account while posts use the current author identity', async () => {
       const linked = (
         await google

@@ -174,7 +174,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     await peer.post('/api/reports').set('Origin', origin).send(report).expect(200);
     expect(await db.report.count({ where: { targetId: id, targetType: 'USER' } })).toBe(1);
     await author.post('/api/reports').set('Origin', origin).send(report).expect(400);
-    const reports = (await admin.get('/api/admin/reports').expect(200)).body;
+    const reports = (await admin.get('/api/admin/reports').expect(200)).body.items;
     const received = reports.find((row: { targetId: string }) => row.targetId === id);
     expect(received).toMatchObject({ targetUserId: id, reason: report.reason, detail: report.detail });
     await peer
@@ -242,6 +242,26 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       .set('Origin', origin)
       .send({ body: '이용 제한에 대해 문의합니다.', clientMessageId: randomUUID() })
       .expect(200);
+    // A direct upload reserved before completion must still be confirmable while banned.
+    const draft = await db.chatAttachment.create({
+      data: {
+        conversationId: support.id,
+        uploaderId: id,
+        name: 'ban-evidence.png',
+        mimeType: 'image/png',
+        size: 8,
+        bytes: Buffer.from('89504e470d0a1a0a', 'hex'),
+      },
+    });
+    const completed = await author
+      .post(`/api/conversations/${support.id}/attachments/${draft.id}/complete`)
+      .set('Origin', origin)
+      .expect(200);
+    expect(completed.body.id).toBe(draft.id);
+    await author
+      .post(`/api/conversations/${privateRoom.id}/attachments/${draft.id}/complete`)
+      .set('Origin', origin)
+      .expect(403);
     await admin
       .patch(`/api/admin/users/${id}/ban`)
       .set('Origin', origin)

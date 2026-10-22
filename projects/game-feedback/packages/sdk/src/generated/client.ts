@@ -9,6 +9,7 @@ import {
 } from 'zod';
 
 import {
+  AdminReportList,
   Answer,
   Category,
   ChatAttachment,
@@ -24,7 +25,6 @@ import {
   ListBlocks200Item,
   ListCategories200Item,
   ListGameAccounts200Item,
-  ListReports200Item,
   ListSupportThreads200Item,
   MediaUploadPlan,
   NotificationList,
@@ -61,6 +61,7 @@ import type {
   ListConversationsParams,
   ListNotificationsParams,
   ListPostsParams,
+  ListReportsParams,
   MediaUploadInput,
   OnboardInput,
   PostInput,
@@ -983,23 +984,30 @@ export const getHealth = async ( options?: Parameters<typeof apiFetch>[1]): Prom
 
 
 
-export const getListReportsUrl = () => {
+export const getListReportsUrl = (params?: ListReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/reports`
+  return stringifiedParams.length > 0 ? `/api/admin/reports?${stringifiedParams}` : `/api/admin/reports`
 }
 
-export const listReports = async ( options?: Parameters<typeof apiFetch>[1]): Promise<ListReports200Item[]> => {
+export const listReports = async (params?: ListReportsParams, options?: Parameters<typeof apiFetch>[1]): Promise<AdminReportList> => {
 
-  return apiFetch<ListReports200Item[]>(getListReportsUrl(),
+  return apiFetch<AdminReportList>(getListReportsUrl(params),
   {
     ...options,
     method: 'GET'
 
     ,
-    schema: zod.array(ListReports200Item)
+    schema: AdminReportList
   }
 );}
 

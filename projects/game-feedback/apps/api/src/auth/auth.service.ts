@@ -21,6 +21,7 @@ import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
 import { AppAuthService } from './app-auth.service';
 import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';
+import { bannedIdentityError, isBannedIdentity, recordBannedIdentities } from './banned-identity';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
@@ -127,6 +128,8 @@ export class AuthService {
     const state = token();
     const nonce = token();
     const verifier = token();
+    // Abandoned attempts are only removed here; the table stays bounded by the auth rate limit × 10 minutes.
+    await this.db.oAuthAttempt.deleteMany({ where: { expiresAt: { lte: new Date() } } });
     await this.db.oAuthAttempt.create({
       data: {
         provider,
@@ -185,6 +188,14 @@ export class AuthService {
       return;
     }
     const user = await this.identities.findUser(provider, subject);
+    // A banned user who still has an account may sign in for support; only a fresh signup is refused.
+    if (!user && (await isBannedIdentity(this.db, provider, subject))) {
+      if (attempt.appChallenge) {
+        res.redirect('gamefeedback://auth/callback?error=login_failed');
+        return;
+      }
+      throw bannedIdentityError();
+    }
     if (provider === 'google' && user && process.env.GF_ADMIN_GOOGLE_SUB === subject && user.role !== 'ADMIN')
       await this.db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
     if (attempt.appChallenge) {
@@ -216,11 +227,16 @@ export class AuthService {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        // Serialize with AdminUsersService.ban so a ban racing the deletion is still recorded.
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;
+        const current = await tx.user.findUniqueOrThrow({ where: { id: u.id }, select: { bannedAt: true } });
+        if (current.bannedAt) await recordBannedIdentities(tx, u.id);
         await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
         await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
         await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "authorId" = ${u.id} ORDER BY "id" FOR UPDATE`;
-        // 타인의 답글은 탈퇴한 원댓글에서 분리해 보존한다.
-        await tx.comment.updateMany({ where: { parent: { authorId: u.id } }, data: { parentId: null } });
+        // 타인의 답글은 탈퇴한 원댓글에서 분리해 보존한다. Prisma의 @updatedAt이 답글을 "(수정됨)"으로
+        // 바꾸지 않도록 raw SQL로 parentId만 비운다.
+        await tx.$executeRaw`UPDATE "Comment" SET "parentId" = NULL WHERE "parentId" IN (SELECT "id" FROM "Comment" WHERE "authorId" = ${u.id})`;
         await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
         await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
         await (tx ?? this.db).user.delete({ where: { id: u.id } });

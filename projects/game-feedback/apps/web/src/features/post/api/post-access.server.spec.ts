@@ -38,7 +38,7 @@ describe('게시글 문서 접근 판정', () => {
     await expect(isPostDocumentUnavailable(id)).resolves.toBe(false);
     expect(getPost).toHaveBeenCalledExactlyOnceWith(
       id,
-      expect.not.objectContaining({ headers: expect.anything() }),
+      expect.objectContaining({ headers: expect.not.objectContaining({ Cookie: expect.anything() }) }),
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });

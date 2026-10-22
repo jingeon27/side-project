@@ -13,9 +13,10 @@ Web과 이 패키지의 components.json은 base-nova/neutral/lucide 설정을 �
 
 - Button의 공식 CVA/포커스/invalid/disabled 기반에 기존 primary/secondary/danger/accent, fullWidth/loading props를 연결한다. 기존 서비스의 API와 loading 중 포커스 동작을 유지한다. IconButton과 Next ButtonLink도 이 기반을 사용한다.
 - Dialog는 공식 Root/Trigger/Portal/Close/Content/Header/Footer/Title/Description 구성을 제공한다. 기존 Dialog props는 이를 조합한다. Base UI Viewport, 포털 컨테이너, 중첩 모달, dismissible 정책과 앱이 정한 번역된 닫기 레이블을 유지한다.
-- Input, Textarea, NativeSelect는 ref와 native 이벤트를 전달한다. FormField는 이 컨트롤의 레이블/설명/오류를 연결하므로 RHF register를 그대로 사용할 수 있다. Checkbox의 boolean 필드는 RHF Controller로 연결한다.
+- Input, Textarea, NativeSelect는 ref와 native 이벤트를 전달한다. FormField는 context로 이 컨트롤의 레이블/설명/오류를 연결하므로 RHF register를 그대로 사용할 수 있다. NativeSelect 래퍼는 label 안에 둘 수 있게 원본의 div 대신 span을 쓴다. Checkbox의 boolean 필드는 RHF Controller로 연결한다.
 - Tabs는 Base UI의 방향키/포커스/ARIA 동작을 제공한다. 피드의 선택값은 앱 URL에서 제어한다.
 - 스타일은 공통 theme.css에서 파생한 shadcn.css가 primary/ring/border/input-border/foreground/popover 토큰을 연결한다. 기존 text-input 글자 크기와 text-input 색상 유틸리티가 충돌하지 않게 input 색 토큰은 input-border로 사용한다. 기존 muted 글자색을 배경색으로 재해석하지 않고 muted surface는 neutral-soft에 연결한다.
+- registry 원본의 tw-animate-css 클래스(`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*`)와 정의 없는 `accent-foreground`는 쓰지 않는다. 팝업 전환은 Base UI의 `data-starting-style`·`data-ending-style`로 만들고 `tailwind-utilities.test.ts`가 ui 클래스가 모두 생성되는지 확인한다.
 - 입력은 16px, 기본 조작 영역은 44px 이상을 유지한다. NativeSelect는 모바일 OS 선택창을 사용하며 WYSIWYG와 파일 업로드의 전용 DOM은 앱이 소유한다.
 
 Game Feedback의 실제 작성/수정/신고/로그인/언어/검색/채팅 폼이 이 컴포넌트를 사용한다. Photo Contest는 기존 공통 UI 진입점을 유지하며 같은 버튼/모달 기반과 토큰을 사용한다. 앱의 라우팅·서버 상태·도메인 로직은 공통 패키지에 넣지 않는다.

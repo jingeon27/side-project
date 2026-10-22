@@ -60,6 +60,8 @@ export class SessionService {
     const expiresAt = new Date(Date.now() + maxAge);
     const current = sessionToken(req);
     await this.transactions.run(async (tx) => {
+      // Expired rows are never read again (loadSession treats them as signed out); prune them on issuance.
+      await tx.session.deleteMany({ where: { expiresAt: { lte: new Date() } } });
       if (current) await (tx ?? this.db).session.deleteMany({ where: { tokenHash: hash(current) } });
       await (tx ?? this.db).session.create({
         data: {

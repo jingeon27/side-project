@@ -432,12 +432,12 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
       .set('Authorization', `Bearer ${state.adminToken}`)
       .expect(200);
     expect(
-      reports.body.filter(
+      reports.body.items.filter(
         (report: { targetType: string; targetId: string }) =>
           report.targetType === 'POST' && report.targetId === post.id,
       ),
     ).toHaveLength(2);
-    expect(reports.body).toEqual(
+    expect(reports.body.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           targetType: 'POST',

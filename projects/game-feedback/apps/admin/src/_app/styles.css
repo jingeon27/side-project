@@ -81,6 +81,10 @@
     text-decoration: underline;
     text-underline-offset: 4px;
   }
+  .admin-actions a[aria-current] {
+    font-weight: 700;
+    text-decoration: none;
+  }
   .admin-inbox {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

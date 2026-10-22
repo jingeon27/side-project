@@ -23,8 +23,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* 라이트는 짙은 오렌지(흰 바탕 5.98:1), 다크는 accent(바탕 8.85:1). accent(#ff9b42)는 흰 바탕에서 2.10:1이다. */
   :focus-visible {
-    outline: 3px solid var(--color-accent);
+    outline: 3px solid var(--color-focus-ring);
     outline-offset: 2px;
   }
 

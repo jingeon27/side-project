@@ -60,6 +60,15 @@ model SocialIdentity {
   @@id([provider,subject])
   @@unique([userId,provider])
 }
+// Survives account deletion so a banned social login cannot onboard a fresh account.
+model BannedIdentity {
+  provider String
+  subjectHash String
+  userId String
+  createdAt DateTime @default(now())
+  @@id([provider,subjectHash])
+  @@index([userId])
+}
 model UserFollow {
   followerId String
   follower User @relation("followFollower", fields: [followerId], references: [id], onDelete: Cascade)
@@ -88,6 +97,7 @@ model OAuthAttempt {
   nonce String
   verifier String
   expiresAt DateTime
+  @@index([expiresAt])
 }
 model AppLoginTicket {
   provider String @default("google")
@@ -218,6 +228,7 @@ model Report {
   status String @default("OPEN")
   createdAt DateTime @default(now())
   @@unique([reporterId,targetType,targetId])
+  @@index([status,createdAt,id])
 }
 model Block {
   id String @id @default(cuid())

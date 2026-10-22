@@ -43,7 +43,7 @@ export function DialogContent({
   children,
   container,
   showCloseButton = true,
-  closeLabel = 'Close',
+  closeLabel = '닫기',
   placement = 'center',
   ...props
 }: TDialogContentProps) {

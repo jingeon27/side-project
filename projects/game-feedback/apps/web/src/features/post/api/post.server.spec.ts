@@ -10,7 +10,10 @@ const { getCookie, getPost, cacheTag, cacheLife } = vi.hoisted(() => ({
   cacheTag: vi.fn(),
   cacheLife: vi.fn(),
 }));
-vi.mock('next/headers', () => ({ cookies: async () => ({ get: getCookie }) }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: getCookie }),
+  headers: async () => ({ get: () => null }),
+}));
 vi.mock('next/cache', () => ({ cacheTag, cacheLife }));
 vi.mock('next/navigation', () => ({
   notFound: () => {
@@ -55,7 +58,7 @@ describe('게시글 상세 서버 조회', () => {
     await expect(getServerPost('post-1')).resolves.toBe(detail);
     expect(getPost).toHaveBeenCalledExactlyOnceWith(
       'post-1',
-      expect.not.objectContaining({ headers: expect.anything() }),
+      expect.objectContaining({ headers: expect.not.objectContaining({ Cookie: expect.anything() }) }),
     );
     expect(cacheTag).toHaveBeenCalledExactlyOnceWith('posts', 'post:post-1');
     expect(cacheLife).toHaveBeenCalledExactlyOnceWith('max');
@@ -68,7 +71,7 @@ describe('게시글 상세 서버 조회', () => {
     await expect(getServerPost('post-1')).resolves.toBe(detail);
     expect(getPost).toHaveBeenCalledExactlyOnceWith(
       'post-1',
-      expect.not.objectContaining({ headers: expect.anything() }),
+      expect.objectContaining({ headers: expect.not.objectContaining({ Cookie: expect.anything() }) }),
     );
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
       'https://api.feedback.example/_internal/visibility/excluded-authors',
