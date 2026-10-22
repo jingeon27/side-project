@@ -47,7 +47,7 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 
 ## 인증·이동
 
-- `src/proxy.ts`가 요청 쿠키에 `contest_session`이 없으면 `/groups/*`·`/contests/*`·`/me`를 `/?next=<경로>`로 보낸다. 쿠키가 있어도 만료일 수 있으니 화면은 Me가 없으면 로그인 패널을 보여 준다.
+- `src/proxy.ts`가 요청 쿠키에 `contest_session`이 없으면 `/contests/*`·`/me`를 `/?next=<경로>`로 보낸다. `/groups/*`는 공개 그룹의 익명 감상과 비공개 그룹 안내를 위해 막지 않고 API 공개 범위와 화면의 GroupAccess가 판단한다. 쿠키가 있어도 만료일 수 있으니 화면은 Me가 없거나 UNAUTHENTICATED이면 로그인 패널을 보여 준다.
 - 로그인·로그아웃 뒤에는 `navigateDocument`(문서 이동)로 Apollo 캐시를 버린다. `next`는 `getSafeNextPath`를 거친 같은 origin 상대 경로만 쓴다.
 - 서버 데이터는 라우트 RSC의 `PreloadQuery`(`shared/api/apollo-client.server.ts`, 요청 Cookie 헤더를 API로만 전달)로 받는다. Cookie 원문을 props·캐시·로그에 넣지 않는다.
 - 내부 경로는 `ROUTES`, 백엔드 경로는 `BACKEND_ROUTES`만 쓴다. 앱 안 기록이 없으면(카톡 링크로 바로 들어온 경우) 뒤로 가기는 상위 화면으로 간다.

@@ -43,6 +43,7 @@ description: 웹(apps/web)에서 입력 폼(그룹·대회 만들기, 사진 제
 
 - onValid 안에서 던진 오류는 `form.handleSubmit` 밖으로 다시 던져진다. 반드시 onValid 안에서 잡는다.
 - 제출 버튼 `loading`에는 `form.formState.isSubmitting`(검증 시작부터 onValid가 끝날 때까지)을 준다. 사진 줄이기 → 업로드 → mutation처럼 단계가 여럿이면 mutation 하나의 `loading`으로는 다른 단계 동안 다시 눌린다. 진행 상태를 useState로 따로 두지 않는다.
+- 시트를 닫아도 시작한 onValid Promise는 끝까지 돈다. 업로드처럼 오래 걸리는 제출은 `useAbortOnClose(isOpen)`(`@/shared/model/form`)로 제출마다 signal을 받아 전송에 넘기고, 되돌릴 수 없는 mutation 직전에 `throwIfClosed(signal)`, catch에서 `signal.aborted`면 `notifyClosedSubmit(제목)`으로 알린다(닫힌 시트의 칸 오류는 보이지 않는다).
 - `formState.isSubmitSuccessful`은 mutation 성공을 뜻하지 않는다(catch로 삼켜도 true다). 성공 뒤 일(캐시 갱신·이동·닫기·이벤트)은 mutation의 `update`·`onCompleted`나 `await` 다음 줄에 둔다.
 
 ## 서버 오류
