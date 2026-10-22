@@ -43,10 +43,12 @@ export function pageMetadata(
   path = page === 'home' ? '' : `/${page}`,
   title = seo[locale].pages[page].title,
   description = seo[locale].pages[page].description,
+  /** Locales where the same path exists. Tag and category pages only exist where they have articles. */
+  alternateLocales: readonly Locale[] = path.includes('/tag/') ? [locale] : locales,
 ): Metadata {
   const url = absoluteUrl(`/${locale}${path}`);
   const languages = Object.fromEntries(
-    (path.includes('/tag/') ? [locale] : locales).map((value) => [value, absoluteUrl(`/${value}${path}`)]),
+    alternateLocales.map((value) => [value, absoluteUrl(`/${value}${path}`)]),
   );
   const image = absoluteUrl('/opengraph-image');
   return {
