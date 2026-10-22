@@ -5,6 +5,8 @@ x-api-environment: &api-environment
   HOST: 0.0.0.0
   PORT: '4300'
   WEB_ORIGIN: https://${GF_DOMAIN:?Set GF_DOMAIN}
+  # 앱 소셜 로그인 코드는 웹 origin의 검증된 https 앱 링크로만 보낸다.
+  MOBILE_AUTH_CALLBACK_URL: https://${GF_DOMAIN:?Set GF_DOMAIN}/app-auth/callback
   GAME_FEEDBACK_SITE_URL: https://${GF_DOMAIN:?Set GF_DOMAIN}
   GAME_FEEDBACK_CONTACT_EMAIL: ${GF_CONTACT_EMAIL:?Set GF_CONTACT_EMAIL}
   DATABASE_URL: postgresql://game_feedback:${GF_DB_PASSWORD:?Set GF_DB_PASSWORD}@db:5432/game_feedback?schema=public&connection_limit=5&pool_timeout=15
@@ -101,6 +103,11 @@ services:
       GAME_FEEDBACK_INDEXING: ${GF_INDEXING:-false}
       GF_DEMO_MODE: 'false'
       GF_TEST_AUTH_ENABLED: 'false'
+      # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.
+      MOBILE_APPLE_TEAM_ID: ${MOBILE_APPLE_TEAM_ID:?Set MOBILE_APPLE_TEAM_ID}
+      MOBILE_IOS_BUNDLE_ID: ${MOBILE_IOS_BUNDLE_ID:?Set MOBILE_IOS_BUNDLE_ID}
+      MOBILE_ANDROID_PACKAGE: ${MOBILE_ANDROID_PACKAGE:?Set MOBILE_ANDROID_PACKAGE}
+      MOBILE_ANDROID_SHA256_FINGERPRINTS: ${MOBILE_ANDROID_SHA256_FINGERPRINTS:?Set MOBILE_ANDROID_SHA256_FINGERPRINTS}
     depends_on: { api: { condition: service_healthy } }
     healthcheck:
       test:

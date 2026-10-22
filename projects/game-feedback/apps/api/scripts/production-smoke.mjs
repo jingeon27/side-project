@@ -50,6 +50,11 @@ class Stack {
         `GF_CACHE_REVALIDATION_SECRET=${randomBytes(32).toString('hex')}`,
         'GOOGLE_CLIENT_ID=isolated-smoke-client',
         'GOOGLE_CLIENT_SECRET=isolated-smoke-secret',
+        // Test-only App Link identifiers required by the production web.
+        'MOBILE_APPLE_TEAM_ID=GFSMOKE000',
+        'MOBILE_IOS_BUNDLE_ID=test.smoke.gamefeedback',
+        'MOBILE_ANDROID_PACKAGE=test.smoke.gamefeedback',
+        `MOBILE_ANDROID_SHA256_FINGERPRINTS=${Array.from({ length: 32 }, () => '6B').join(':')}`,
         'GF_BIND_ADDRESS=127.0.0.1',
         'GF_API_BIND_PORT=0',
         'GF_HTTP_BIND_PORT=0',
@@ -203,6 +208,15 @@ try {
     home.text(),
     new RegExp(`<link rel="canonical" href="https://${domain.replaceAll('.', '\\.')}/ko"`),
   );
+  // Caddy must pass the standard App Link files and the app login callback page through to the web.
+  const association = await original.http('/.well-known/apple-app-site-association');
+  assert.equal(association.status, 200, association.text());
+  assert.deepEqual(association.json().webcredentials, { apps: ['GFSMOKE000.test.smoke.gamefeedback'] });
+  assert.equal((await original.http('/.well-known/assetlinks.json')).status, 200);
+  const appCallback = await original.http('/app-auth/callback?code=production-smoke-login-code-0123');
+  assert.equal(appCallback.status, 200);
+  assert.equal(appCallback.headers['cache-control'], 'no-store');
+  assert.equal(appCallback.text().includes('production-smoke-login-code'), false);
   assert.equal((await original.json('/api/auth/demo', { nickname: 'forbidden' })).status, 404);
   assert.equal((await original.http('/api/auth/test-accounts')).status, 404);
   // The web callback answers an uncredentialed POST with 401, so 404 means Caddy blocked it first.
