@@ -21,6 +21,7 @@ import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bo
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
+import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
 import { resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
 import { PostCategoryField } from './PostCategoryField';
@@ -94,6 +95,14 @@ export function CreatePostBottomSheet({
               try {
                 let uploadId: string | undefined;
                 if (file) {
+                  if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
+                    form.setError(
+                      'media',
+                      { message: '5분 이하의 동영상을 선택해 주세요.' },
+                      { shouldFocus: true },
+                    );
+                    return;
+                  }
                   const content = file.type.startsWith('video/')
                     ? { body: file, contentType: file.type }
                     : await prepareUploadImage(file, browserImageCodec);

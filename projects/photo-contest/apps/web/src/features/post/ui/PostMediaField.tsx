@@ -98,7 +98,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         </button>
       )}
       <p id={helpId} className="text-caption text-muted">
-        사진은 자동으로 줄여요. 동영상 MP4(H.264)·WebM · 100MB · 5분 이하
+        사진은 자동으로 줄여요. 동영상 MP4·WebM · 100MB · 5분 이하
       </p>
       {error ? (
         <p id={errorId} role="alert" className="text-caption text-danger">
