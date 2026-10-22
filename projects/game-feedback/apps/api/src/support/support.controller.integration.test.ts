@@ -174,7 +174,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     await peer.post('/api/reports').set('Origin', origin).send(report).expect(200);
     expect(await db.report.count({ where: { targetId: id, targetType: 'USER' } })).toBe(1);
     await author.post('/api/reports').set('Origin', origin).send(report).expect(400);
-    const reports = (await admin.get('/api/admin/reports').expect(200)).body;
+    const reports = (await admin.get('/api/admin/reports').expect(200)).body.items;
     const received = reports.find((row: { targetId: string }) => row.targetId === id);
     expect(received).toMatchObject({ targetUserId: id, reason: report.reason, detail: report.detail });
     await peer

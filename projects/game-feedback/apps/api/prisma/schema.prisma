@@ -228,6 +228,7 @@ model Report {
   status String @default("OPEN")
   createdAt DateTime @default(now())
   @@unique([reporterId,targetType,targetId])
+  @@index([status,createdAt,id])
 }
 model Block {
   id String @id @default(cuid())

@@ -6,6 +6,7 @@
  */
 
 export * from './adminReport.zod';
+export * from './adminReportList.zod';
 export * from './answer.zod';
 export * from './answerInput.zod';
 export * from './appExchangeInput.zod';
@@ -59,7 +60,7 @@ export * from './listConversationsParams.zod';
 export * from './listGameAccounts200Item.zod';
 export * from './listNotificationsParams.zod';
 export * from './listPostsParams.zod';
-export * from './listReports200Item.zod';
+export * from './listReportsParams.zod';
 export * from './listSupportThreads200Item.zod';
 export * from './markHelpfulBody.zod';
 export * from './mediaUploadInput.zod';
