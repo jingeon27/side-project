@@ -8,7 +8,7 @@ import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../../common/http/api-error';
-import { decodeCursor, encodeCursor } from '../../common/pagination';
+import { decodeCursor, nextCursor } from '../../common/pagination';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient } from '../../generated/prisma';
 import { type AdminReportListQueryDto, type HideContentDto, type ReviewReportDto } from './report-input.dto';
@@ -108,7 +108,7 @@ export class AdminReportsService {
         targetPostId: targets.get(row.targetId)?.postId ?? null,
         targetPreview: targets.get(row.targetId)?.preview ?? null,
       })),
-      nextCursor: page.length > query.limit ? encodeCursor(rows[rows.length - 1]) : null,
+      nextCursor: nextCursor(page, query.limit),
     };
   }
   async review(req: SessionRequest, id: string, body: ReviewReportDto) {
