@@ -29,7 +29,9 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 
 ## OAuth provider 추가
 
-1. `src/config/env.ts`의 `TOAuthProviderName`에 이름을 더한다(`oauthCredentials()`가 `<NAME>_CLIENT_ID`·`<NAME>_CLIENT_SECRET`을 읽는다). 키는 `../../.env.example`에 더한다.
+provider가 토큰·프로필 요청을 거절(HTTP 4xx·5xx)하면 사용자는 `/?loginError=1`로 돌아가고, 설정 오류를 알 수 있게 `reportUnexpectedError`로 route·provider·stage·status·표준 오류 코드(`invalid_client` 등)만 태그로 보낸다. 오류 설명·코드·토큰은 싣지 않는다.
+
+1. `src/config/env.ts`의 `TOAuthProviderName`에 이름을 더한다(`oauthCredentials()`가 `<NAME>_CLIENT_ID`·`<NAME>_CLIENT_SECRET`을 읽는다). 토큰 교환에 secret이 필수인지 `OAUTH_SECRET_REQUIRED`에 적는다 — 운영 시작 때 `assertProductionConfig()`가 아이디 없는 secret과 필수 secret 누락을 거절한다. 키는 `../../.env.example`에 더한다.
 2. `src/auth/oauth-provider.ts`: `OAUTH_PROVIDER`, `ENDPOINTS`(빠지면 타입 오류), 프로필 zod 스키마, `identityOf` 분기(ts-pattern `match(provider)…exhaustive()`), `isOAuthProviderName`(손으로 쓴 비교라 타입이 잡지 못한다). `providerId`는 provider의 고정 사용자 ID다 — 이메일로 찾거나 계정을 합치지 않는다. scope는 프로필에 필요한 만큼만.
 3. `src/auth/auth.service.ts`의 `IAuthConfig`·`config()`에 키를 더한다(웹이 로그인 버튼 표시에 쓴다).
 4. provider 콘솔의 redirect URI는 `${WEB_ORIGIN}/backend/auth/<name>/callback`이다(같은 origin이라야 state 쿠키가 돌아온다).

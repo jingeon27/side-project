@@ -89,6 +89,36 @@ async function readJson(response: globalThis.Response): Promise<unknown> {
   }
 }
 
+const OAUTH_ERROR_CODE = /^[a-z_]{1,64}$/;
+
+/** provider가 보낸 표준 오류 코드(invalid_client 등)만 남긴다. 설명·토큰 같은 다른 값은 싣지 않는다. */
+function oauthErrorCode(body: unknown) {
+  if (typeof body !== 'object' || body === null || !('error' in body)) return 'unknown';
+  return typeof body.error === 'string' && OAUTH_ERROR_CODE.test(body.error) ? body.error : 'unknown';
+}
+
+/**
+ * provider가 토큰·프로필 요청을 거절하면 사용자에게는 로그인 실패로 돌려보내지만, 잘못된 client secret·redirect URI 같은
+ * 설정 오류는 운영자가 알아야 하므로 상태·표준 오류 코드만 태그로 보고한다.
+ */
+async function reportProviderRejection(
+  provider: IOAuthProvider,
+  stage: 'token' | 'profile',
+  response: globalThis.Response,
+) {
+  const rejection = Object.assign(new Error('OAuth provider rejected the request'), {
+    name: 'OAuthProviderRejected',
+    code: String(response.status),
+  });
+  reportUnexpectedError(rejection, {
+    route: OAUTH_CALLBACK_ROUTE,
+    provider: provider.name,
+    stage,
+    status: String(response.status),
+    oauthError: oauthErrorCode(await readJson(response)),
+  });
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -245,13 +275,20 @@ export class AuthService {
       }),
       signal: AbortSignal.timeout(OAUTH_PROVIDER_TIMEOUT_MS),
     });
-    const accessToken = tokenResponse.ok ? accessTokenOf(await readJson(tokenResponse)) : undefined;
+    if (!tokenResponse.ok) {
+      await reportProviderRejection(provider, 'token', tokenResponse);
+      fail(MESSAGE.PROVIDER_AUTH_FAILED, ERROR_CODE.UNAUTHENTICATED);
+    }
+    const accessToken = accessTokenOf(await readJson(tokenResponse));
     if (!accessToken) fail(MESSAGE.PROVIDER_AUTH_FAILED, ERROR_CODE.UNAUTHENTICATED);
     const profileResponse = await fetch(provider.profileUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
       signal: AbortSignal.timeout(OAUTH_PROVIDER_TIMEOUT_MS),
     });
-    if (!profileResponse.ok) fail(MESSAGE.PROFILE_UNAVAILABLE, ERROR_CODE.UNAUTHENTICATED);
+    if (!profileResponse.ok) {
+      await reportProviderRejection(provider, 'profile', profileResponse);
+      fail(MESSAGE.PROFILE_UNAVAILABLE, ERROR_CODE.UNAUTHENTICATED);
+    }
     const identity = identityOf(provider.name, await readJson(profileResponse));
     if (!identity) fail(MESSAGE.IDENTITY_UNAVAILABLE, ERROR_CODE.UNAUTHENTICATED);
     return identity;

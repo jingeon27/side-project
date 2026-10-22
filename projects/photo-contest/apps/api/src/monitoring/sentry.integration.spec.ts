@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { cookiePair, findSetCookie } from '../../test/support/cookies';
-import { stubExternalFetch } from '../../test/support/external-fetch';
+import { jsonResponse, stubExternalFetch } from '../../test/support/external-fetch';
 import { createContest, createGroup } from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';
 import { ContestCompletionService } from '../analytics/contest-completion.service';
@@ -215,6 +215,40 @@ describe('Sentry 오류 보고', () => {
     expect(callback.headers.location).toBe(`${TEST_WEB_ORIGIN}/?loginError=1`);
     expect(reportedCalls()).toEqual([
       { message: 'Unexpected TypeError', context: { tags: { route: 'GET /auth/:provider/callback' } } },
+    ]);
+    expect(reportedPayload()).not.toContain(SECRET);
+  });
+
+  it('provider가 토큰 요청을 거절하면 웹으로 돌려보내고 상태·표준 오류 코드만 태그로 보내야 한다', async () => {
+    vi.stubEnv('GOOGLE_CLIENT_ID', 'monitoring-google-client');
+    const start = await api.http().get('/auth/google');
+    const state = new URL(String(start.headers.location)).searchParams.get('state') ?? '';
+    const stateCookie = findSetCookie(start, 'contest_oauth_state') ?? '';
+    stubExternalFetch({
+      'https://oauth2.googleapis.com/token': () =>
+        jsonResponse({ error: 'invalid_client', error_description: `secret ${SECRET}` }, 401),
+    });
+
+    const callback = await api
+      .http()
+      .get('/auth/google/callback')
+      .query({ state, code: `${SECRET}-code` })
+      .set('Cookie', cookiePair(stateCookie));
+    expect(callback.status).toBe(302);
+    expect(callback.headers.location).toBe(`${TEST_WEB_ORIGIN}/?loginError=1`);
+    expect(reportedCalls()).toEqual([
+      {
+        message: 'Unexpected OAuthProviderRejected 401',
+        context: {
+          tags: {
+            route: 'GET /auth/:provider/callback',
+            provider: 'google',
+            stage: 'token',
+            status: '401',
+            oauthError: 'invalid_client',
+          },
+        },
+      },
     ]);
     expect(reportedPayload()).not.toContain(SECRET);
   });
