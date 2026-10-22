@@ -11,8 +11,7 @@ RUN yarn workspace @photo-contest/api db:generate \
 
 FROM node:24-bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /var/lib/photo-contest/media && chown -R node:node /var/lib/photo-contest
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/projects/photo-contest/apps/api
 ENV NODE_ENV=production API_HOST=0.0.0.0 PORT=4200
 COPY --from=build /app/node_modules /app/node_modules
