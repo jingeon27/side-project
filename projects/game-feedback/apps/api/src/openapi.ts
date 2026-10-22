@@ -78,8 +78,8 @@ export function createOpenApi() {
             : []),
         ],
       );
-    paths[operation.path] ??= {};
-    paths[operation.path][operation.method] = {
+    const pathItem = (paths[operation.path] ??= {});
+    pathItem[operation.method] = {
       operationId: operation.id,
       parameters,
       ...(operation.body

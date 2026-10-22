@@ -36,7 +36,7 @@ export class ChatEvents implements OnModuleDestroy {
     return new Observable((subscriber) => {
       const client: Client = { userId: session.user!.id, sessionHash: session.tokenHash, subscriber };
       const existing = [...this.clients].filter((item) => item.sessionHash === client.sessionHash);
-      if (existing.length >= 4) existing[0].subscriber.complete();
+      if (existing.length >= 4) existing[0]?.subscriber.complete();
       this.clients.add(client);
       // Reconnection always refreshes the complete list, covering events missed while disconnected.
       void this.checkAndSend(client, null);

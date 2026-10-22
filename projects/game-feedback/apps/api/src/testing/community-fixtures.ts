@@ -107,13 +107,15 @@ const communityPosts = [
 export async function seedCommunityPosts(db: PrismaClient, categoryId: string, authorIds: string[]) {
   for (const [index, entry] of communityPosts.entries()) {
     const { author, ...post } = entry;
+    const authorId = authorIds[author];
+    if (!authorId) throw new Error(`Community fixture ${post.id} needs sample author ${author}.`);
     await db.post.upsert({
       where: { id: post.id },
       update: {},
       create: {
         ...post,
         categoryId,
-        authorId: authorIds[author],
+        authorId,
         createdAt: new Date(Date.now() - (index + 1) * 45 * 60 * 1000),
       },
     });

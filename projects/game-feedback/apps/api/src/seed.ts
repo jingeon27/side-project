@@ -1,3 +1,4 @@
+import { conversationPair } from './chat/conversation-pair';
 import { Prisma, PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';
 import { seedCommunityPosts } from './testing/community-fixtures';
@@ -43,7 +44,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
   const category = await db.category.findUniqueOrThrow({ where: { slug: 'clash-royale' } });
   const names = ['새벽의호그', '아레나산책', '메가나이트', '덱연구소', '로얄메이트', '느긋한라바'];
   const authors = [];
-  for (let i = 0; i < names.length; i++) {
+  for (const [i, nickname] of names.entries()) {
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === `sample-user-${i}`);
     authors.push(
       await db.user.upsert({
@@ -52,7 +53,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
         create: {
           id: `sample-user-${i}`,
           demoKey: `sample:${i}`,
-          nickname: names[i],
+          nickname,
           termsVersion: 'demo',
           ageConfirmed: true,
           isVerified: fixture?.isVerified ?? false,
@@ -62,6 +63,8 @@ export async function seed(db: PrismaClient, demoMode = false) {
       }),
     );
   }
+  const [requester, , , coach] = authors;
+  if (!requester || !coach) throw new Error('Sample requester and coach accounts are required.');
   const admin = TEST_ACCOUNT_FIXTURES[2];
   await db.user.upsert({
     where: { demoKey: admin.demoKey },
@@ -77,7 +80,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
     },
   });
   // The saved account follows each fixture's current tag; startup never replaces user edits.
-  for (const author of [authors[0], authors[3]]) {
+  for (const author of [requester, coach]) {
     if (!author.supercellTag) continue;
     const accountProfile = await new DemoProfileProvider().lookup(author.supercellTag);
     await db.gameAccount.upsert({
@@ -90,7 +93,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
       },
     });
   }
-  const entries = [
+  const entries: [title: string, body: string][] = [
     [
       '호그 2.6으로 메가나이트를 막는 타이밍이 궁금해요',
       '6800점 구간에서 호그 2.6 덱을 쓰고 있어요. 상대가 메가나이트를 다리 뒤에 놓으면 얼음 골렘으로 유도해도 머스킷병이 자주 잡혀요. 대포를 놓는 위치와 엘릭서 운영을 어떻게 바꾸면 좋을까요?',
@@ -116,20 +119,22 @@ export async function seed(db: PrismaClient, demoMode = false) {
       '오랜만에 복귀해서 익숙한 라바 덱으로 플레이하고 있어요. 달라진 카드와 수비 패턴에 적응하는 중인데 먼저 연습하면 좋은 운영이나 덱 조합을 추천해주세요.',
     ],
   ];
-  for (let i = 0; i < entries.length; i++)
+  for (const [i, [title, body]] of entries.entries()) {
+    const author = authors[i];
+    if (!author) throw new Error(`Sample post ${i} needs a sample author.`);
     await db.post.upsert({
       where: { id: `sample-post-${i}` },
       update: {},
       create: {
         id: `sample-post-${i}`,
-        authorId: authors[i].id,
+        authorId: author.id,
         categoryId: category.id,
-        title: entries[i][0],
-        body: entries[i][1],
+        title,
+        body,
         createdAt: new Date(Date.now() - (i + 1) * 1000 * 60 * 37),
       },
     });
-  const coach = authors[3];
+  }
   await seedCommunityPosts(
     db,
     category.id,
@@ -152,7 +157,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
     create: {
       id: 'sample-answer-2',
       postId: 'sample-post-2',
-      authorId: authors[0].id,
+      authorId: requester.id,
       body: '공중 대응이 부족하다면 피닉스나 사냥꾼을 고려해 보세요. 낚시꾼으로 탱커를 중앙으로 끌어오고 사냥꾼을 가까이 배치하면 한 번에 큰 피해를 줄 수 있습니다. 먼저 친선전에서 새로운 조합을 연습해 보세요.',
     },
   });
@@ -162,7 +167,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
     create: {
       id: 'sample-comment-0',
       postId: 'sample-post-0',
-      authorId: authors[3].id,
+      authorId: coach.id,
       body: '메가나이트가 점프하기 직전의 배치를 채팅으로 함께 살펴봐요.',
     },
   });
@@ -172,11 +177,11 @@ export async function seed(db: PrismaClient, demoMode = false) {
     create: {
       id: 'sample-comment-1',
       postId: 'sample-post-0',
-      authorId: authors[0].id,
+      authorId: requester.id,
       body: '감사합니다! 대포 위치를 바꿔보고 채팅으로 질문드릴게요.',
     },
   });
-  const [firstUserId, secondUserId] = [authors[0].id, authors[3].id].sort();
+  const { firstUserId, secondUserId } = conversationPair(requester.id, coach.id);
   const conversation = await db.chatConversation.upsert({
     where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
     update: {},
@@ -190,19 +195,18 @@ export async function seed(db: PrismaClient, demoMode = false) {
   const sampleMessages = [
     {
       id: 'sample-chat-message-0',
-      senderId: authors[0].id,
+      senderId: requester.id,
       clientMessageId: '00000000-0000-4000-8000-000000000001',
       body: '안녕하세요! 호그 덱 피드백을 보고 수비 위치를 더 질문하고 싶어요.',
     },
     {
       id: 'sample-chat-message-1',
-      senderId: authors[3].id,
+      senderId: coach.id,
       clientMessageId: '00000000-0000-4000-8000-000000000002',
       body: '반가워요. 대포를 중앙에 두고 얼음 골렘으로 유도하는 상황부터 같이 살펴봐요.',
     },
   ];
-  for (let i = 0; i < sampleMessages.length; i++) {
-    const message = sampleMessages[i];
+  for (const [i, message] of sampleMessages.entries()) {
     await db.chatMessage.upsert({
       where: {
         senderId_clientMessageId: { senderId: message.senderId, clientMessageId: message.clientMessageId },
