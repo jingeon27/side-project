@@ -77,7 +77,7 @@ export function GroupContentFrame({ groupId, title, children, actions }: IGroupC
     <div className="flex flex-1 flex-col">
       <TopAppBar title={title} backHref={ROUTES.GROUP(groupId)} />
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 tablet:px-8">
-        <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
+        <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
           <GroupContent groupRef={groupRef} actions={actions}>
             {children}
           </GroupContent>

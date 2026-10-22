@@ -80,7 +80,7 @@ export function HiddenPostManager({ groupId }: { groupId: string }) {
         숨긴 게시물 관리
       </summary>
       <div className="mt-4">
-        <AsyncBoundary onRetry={refetch} fallback={fallback}>
+        <AsyncBoundary onRetry={() => refetch()} fallback={fallback}>
           {queryRef ? <HiddenPosts queryRef={queryRef} /> : fallback}
         </AsyncBoundary>
       </div>

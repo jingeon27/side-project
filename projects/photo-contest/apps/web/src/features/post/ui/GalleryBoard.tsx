@@ -105,7 +105,7 @@ export function GalleryBoard({
         {popular ? <Sparkles aria-hidden className="size-4 text-muted" /> : null}
         {popular ? '이달의 인기' : '최신 게시물'}
       </h2>
-      <AsyncBoundary onRetry={refetch} fallback={fallback}>
+      <AsyncBoundary onRetry={() => refetch()} fallback={fallback}>
         {postsRef ? (
           <BoardContent
             postsRef={postsRef}

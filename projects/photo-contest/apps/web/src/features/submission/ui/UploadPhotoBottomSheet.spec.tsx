@@ -147,11 +147,11 @@ function renderSheet(mocks: MockLink.MockedResponse[] = [], { withFeed = false }
         <button
           type="button"
           onClick={() =>
-            overlay.open(({ isOpen, close, unmount }) => (
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
               <UploadPhotoBottomSheet
                 contestId="contest-1"
                 isOpen={isOpen}
-                onClose={close}
+                onClose={onClose}
                 unmount={unmount}
               />
             ))

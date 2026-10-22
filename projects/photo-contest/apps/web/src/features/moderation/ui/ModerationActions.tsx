@@ -60,21 +60,21 @@ export function ModerationActions({
   };
 
   const handleReport = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
+    overlay.open(({ isOpen, close: onClose, unmount }) => (
       <ReportBottomSheet
         contestId={contestId}
         submissionId={submission.id}
         isOpen={isOpen}
-        onClose={close}
+        onClose={onClose}
         unmount={unmount}
       />
     ));
 
   const handleDelete = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
+    overlay.open(({ isOpen, close: onClose, unmount }) => (
       <ConfirmDialog
         isOpen={isOpen}
-        onClose={close}
+        onClose={onClose}
         unmount={unmount}
         tone="danger"
         title="사진을 삭제할까요?"

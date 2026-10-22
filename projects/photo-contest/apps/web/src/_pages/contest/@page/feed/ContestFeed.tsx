@@ -149,7 +149,7 @@ function FeedQuerySection({
     <AsyncBoundary
       resetKey={contestId + ':' + sort}
       fallback={<Skeleton className="aspect-square w-full" />}
-      onRetry={refetch}
+      onRetry={() => refetch()}
     >
       <FeedContent contestRef={contestRef} submissionsRef={submissionsRef} viewerId={viewerId} />
     </AsyncBoundary>
