@@ -3,7 +3,13 @@ import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vi
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
-import { createTestApp, uploadToStorage, type ITestApi, type ITestUser } from '../../test/support/app';
+import {
+  createTestApp,
+  openStorageRedirect,
+  uploadToStorage,
+  type ITestApi,
+  type ITestUser,
+} from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { MAX_UPLOAD_BYTES, MAX_VIDEO_BYTES } from '../config/limits';
 
@@ -144,7 +150,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     });
   });
 
-  it('저장소가 실제 사진·동영상 바이트를 받고 완료한 원본을 그대로 게시해야 한다', async () => {
+  it('저장소가 실제 사진·동영상 바이트를 받고 고정 경로는 완료한 원본의 서명 GET으로 보내야 한다', async () => {
     for (const video of [false, true]) {
       const body = video ? await createTestVideo() : await createTestImage();
       const type = video ? 'video/mp4' : 'image/png';
@@ -164,9 +170,11 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
         .http()
         .get(createPost.mediaUrl.replace('/backend', ''))
         .set('Cookie', owner.cookie);
-      expect(response.status).toBe(200);
-      expect(response.headers['content-type']).toContain(type);
-      expect(Number(response.headers['content-length'])).toBe(body.length);
+      const stored = await openStorageRedirect(response);
+      expect(stored.status).toBe(200);
+      expect(stored.headers.get('content-type')).toBe(type);
+      expect(stored.headers.get('cache-control')).toBe('private, no-store');
+      expect(Buffer.from(await stored.arrayBuffer())).toEqual(body);
     }
   });
 

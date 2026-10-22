@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { Readable } from 'node:stream';
 
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
@@ -8,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 
 import { NO_STORE } from '../common/http/no-store.middleware';
 import { s3KeyPrefix, s3Settings } from '../config/env';
-import { MEDIA_IO_TIMEOUT_MS } from '../config/limits';
+import { MEDIA_IO_TIMEOUT_MS, MEDIA_URL_TTL_SECONDS } from '../config/limits';
 
 const MEDIA_TYPES = {
   jpg: 'image/jpeg',
@@ -36,7 +35,7 @@ export function createMediaKey(extension: TMediaExtension) {
   return `${s3KeyPrefix()}${randomUUID()}.${extension}`;
 }
 
-/** 비공개 S3 호환 버킷. API는 서명과 HEAD·DELETE만 하고 파일 바이트를 읽거나 바꾸지 않는다. */
+/** 비공개 S3 호환 버킷. API는 서명과 HEAD·DELETE만 하고 파일 바이트를 읽거나 바꾸거나 중계하지 않는다. */
 @Injectable()
 export class MediaStorage {
   private s3?: { signature: string; client: S3Client; bucket: string };
@@ -75,30 +74,22 @@ export class MediaStorage {
     });
   }
 
-  async stream(key: string, range?: { start: number; end: number }) {
-    const { client, bucket } = this.connection();
-    const result = await client.send(
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: mediaKey(key),
-        ...(range ? { Range: `bytes=${range.start}-${range.end}` } : {}),
-      }),
-    );
-    if (!(result.Body instanceof Readable)) throw new Error('Media stream unavailable');
-    return { body: result.Body, size: result.ContentLength ?? 0 };
-  }
-
-  presignDownload(key: string, disposition: string, expiresIn: number) {
+  /**
+   * 권한을 확인한 요청에만 주는 짧은 서명 GET. 응답 형식·캐시 금지·다운로드 이름을 서명에 넣고
+   * Range는 저장소가 처리한다. 발급한 URL은 만료 전까지 권한 없이 읽을 수 있다.
+   */
+  presignRead(key: string, disposition?: string) {
     const { client, bucket } = this.connection();
     return getSignedUrl(
       client,
       new GetObjectCommand({
         Bucket: bucket,
         Key: mediaKey(key),
-        ResponseContentDisposition: disposition,
+        ResponseContentType: mediaContentType(key),
         ResponseCacheControl: NO_STORE,
+        ...(disposition ? { ResponseContentDisposition: disposition } : {}),
       }),
-      { expiresIn },
+      { expiresIn: MEDIA_URL_TTL_SECONDS },
     );
   }
 

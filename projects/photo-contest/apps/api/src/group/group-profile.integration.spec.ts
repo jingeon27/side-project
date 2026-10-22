@@ -2,7 +2,13 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { createTestApp, uploadToStorage, type ITestApi, type ITestUser } from '../../test/support/app';
+import {
+  createTestApp,
+  openStorageRedirect,
+  uploadToStorage,
+  type ITestApi,
+  type ITestUser,
+} from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { SET_MODERATOR } from '../../test/support/group-contest';
 import { MaintenanceService } from '../maintenance/maintenance.service';
@@ -128,11 +134,10 @@ describe('그룹 사진과 소개', () => {
       canViewPosts: false,
       members: [],
     });
-    const file = await api.http().get(saved.avatarUrl!.replace('/backend', ''));
+    const file = await openStorageRedirect(await api.http().get(saved.avatarUrl!.replace('/backend', '')));
     expect(file.status).toBe(200);
-    expect(file.headers['content-type']).toContain('image/png');
-    expect(file.headers['cache-control']).toContain('no-store');
-    expect(Number(file.headers['content-length'])).toBe(image.length);
+    expect(file.headers.get('content-type')).toBe('image/png');
+    expect(Buffer.from(await file.arrayBuffer())).toEqual(image);
     expect((await api.http().get(`/groups/${another.id}/avatar/${avatarId}`)).status).toBe(404);
     expect((await api.gqlFail(owner.cookie, UPDATE, values({ avatarId, removeAvatar: true }))).code).toBe(
       'BAD_USER_INPUT',
@@ -162,7 +167,7 @@ describe('그룹 사진과 소개', () => {
     await expect(api.storage.head(orphanRow.storageKey)).rejects.toThrow();
     expect(await api.db.groupAvatar.findUnique({ where: { id: active } })).not.toBeNull();
     const group = (await api.gqlOk<{ group: IProfile }>(undefined, READ, { id: groupId })).group;
-    expect((await api.http().get(group.avatarUrl!.replace('/backend', ''))).status).toBe(200);
+    expect((await api.http().get(group.avatarUrl!.replace('/backend', ''))).status).toBe(307);
   });
   it('완료 전 자산·다른 소유자·게시물 티켓으로의 재사용을 거절하고 완료는 재시도해도 같은 사진이어야 한다', async () => {
     const image = await createTestImage();

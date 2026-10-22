@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
 import { createContest, createGroup, type ITestGroup } from '../../test/support/fixtures';
 import {
@@ -124,7 +124,7 @@ describe('사진 업로드와 열람', () => {
     expect(row.mediaUpload?.storageKey).toBeNull();
   });
 
-  it('올린 사진을 변환하지 않고 그룹 멤버에게만 제공해야 한다', async () => {
+  it('올린 사진을 변환하지 않고 그룹 멤버에게만 서명 GET으로 보내야 한다', async () => {
     const contestId = await createContest(api, owner, group.id, '원본 대회');
     const original = await createTestImage({ format: 'jpeg', width: 240, height: 120 });
     const contentType = 'image/jpeg';
@@ -144,11 +144,11 @@ describe('사진 업로드와 열람', () => {
     const anonymous = await getPhoto(photoId);
     expect(anonymous.status).toBe(401);
 
-    const allowed = await getPhoto(photoId, friend.cookie);
+    const allowed = await openStorageRedirect(await getPhoto(photoId, friend.cookie));
     expect(allowed.status).toBe(200);
-    expect(allowed.headers['content-type']).toBe('image/jpeg');
-    expect(allowed.headers['cache-control']).toBe('private, no-store');
-    expect(Buffer.from(allowed.body)).toEqual(original);
+    expect(allowed.headers.get('content-type')).toBe('image/jpeg');
+    expect(allowed.headers.get('cache-control')).toBe('private, no-store');
+    expect(Buffer.from(await allowed.arrayBuffer())).toEqual(original);
 
     const missing = await getPhoto('missing-photo', friend.cookie);
     expect(missing.status).toBe(404);
@@ -200,7 +200,7 @@ describe('사진 업로드와 열람', () => {
       uploadId: ticket.id,
       caption: '고정된 사진',
     });
-    expect((await getPhoto(created.createSubmission.id, friend.cookie)).status).toBe(200);
+    expect((await getPhoto(created.createSubmission.id, friend.cookie)).status).toBe(307);
     expect(
       (
         await api.gqlFail(friend.cookie, 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}', {
@@ -218,7 +218,7 @@ describe('사진 업로드와 열람', () => {
       ).code,
     ).toBe('BAD_USER_INPUT');
     await api.app.get(MaintenanceService).cleanup(new Date(Date.now() + 24 * 60 * 60_000));
-    expect((await getPhoto(created.createSubmission.id, friend.cookie)).status).toBe(200);
+    expect((await getPhoto(created.createSubmission.id, friend.cookie)).status).toBe(307);
   });
 
   it('만료되거나 접수 마감 뒤인 업로드는 완료할 수 없어야 한다', async () => {

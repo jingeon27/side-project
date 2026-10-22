@@ -10,7 +10,6 @@ import { textValue } from '../common/validation';
 import { GROUP_DESCRIPTION_LIMIT, TEXT_LIMIT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { MediaUploadService } from '../media-upload/media-upload.service';
-import { MediaStorage } from '../storage/media-storage.service';
 import { GroupService } from './group.service';
 import { MembershipService } from './membership.service';
 
@@ -28,7 +27,6 @@ export class GroupProfileService {
     private readonly db: Database,
     private readonly groups: GroupService,
     private readonly membership: MembershipService,
-    private readonly storage: MediaStorage,
     private readonly uploads: MediaUploadService,
   ) {}
 
@@ -72,11 +70,12 @@ export class GroupProfileService {
     return this.groups.group(viewer, input.groupId);
   }
 
-  async file(groupId: string, avatarId: string) {
+  /** 대표 사진은 공개 메타데이터라 익명으로 읽지만 현재 지정된 사진만 내준다. */
+  async avatarKey(groupId: string, avatarId: string) {
     const group = await this.db.group.findUnique({ where: { id: groupId }, include: { avatar: true } });
     if (!group?.avatar || group.avatarId !== avatarId)
       fail('그룹 사진을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-    return { key: group.avatar.storageKey, file: await this.storage.stream(group.avatar.storageKey) };
+    return group.avatar.storageKey;
   }
 
   requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {

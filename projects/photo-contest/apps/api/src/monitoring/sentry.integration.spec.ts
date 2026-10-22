@@ -166,7 +166,7 @@ describe('Sentry 오류 보고', () => {
   });
 
   it('REST 5xx는 라우트 패턴 태그와 함께 원문·쿠키·본문 없이 보내야 한다', async () => {
-    vi.spyOn(api.app.get(MediaStorage), 'stream').mockRejectedValueOnce(new Error(`EACCES ${SECRET}`));
+    vi.spyOn(api.app.get(MediaStorage), 'presignRead').mockRejectedValueOnce(new Error(`EACCES ${SECRET}`));
     const photo = await api.http().get(`/photos/${photoId}`).set('Cookie', member.cookie);
     expect(photo.status).toBe(500);
     expect(photo.text).not.toContain(SECRET);

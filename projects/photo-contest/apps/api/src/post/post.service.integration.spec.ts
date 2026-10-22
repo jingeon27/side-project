@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup, joinGroup } from '../../test/support/fixtures';
 import { postUpload } from '../../test/support/group-contest';
 import { koreanMonth } from './post-order';
@@ -68,19 +68,18 @@ describe('상시 그룹 게시물', () => {
     expect(await api.db.contest.count({ where: { groupId } })).toBe(0);
     expect((await list(owner, { groupId, offset: 1, limit: 1 }))[0]?.id).toBe(b.id);
   });
-  it('파일은 매번 멤버십을 검사하고 구간 요청으로 재생·탐색해야 한다', async () => {
+  it('파일은 매번 멤버십을 검사하고 저장소의 구간 요청으로 재생·탐색해야 한다', async () => {
     const v = await create(member, '구간 재생', true);
     const path = v.mediaUrl.replace('/backend', '');
     expect((await api.http().get(path)).status).toBe(401);
     expect((await api.http().get(path).set('Cookie', outsider.cookie)).status).toBe(403);
-    const res = await api.http().get(path).set('Cookie', owner.cookie).set('Range', 'bytes=0-15');
+    const signed = () => api.http().get(path).set('Cookie', owner.cookie);
+    const res = await openStorageRedirect(await signed(), { Range: 'bytes=0-15' });
     expect(res.status).toBe(206);
-    expect(res.headers['content-type']).toContain('video/mp4');
-    expect(res.headers['content-length']).toBe('16');
-    expect(res.headers['cache-control']).toContain('no-store');
-    expect(
-      (await api.http().get(path).set('Cookie', owner.cookie).set('Range', 'bytes=999999-')).status,
-    ).toBe(416);
+    expect(res.headers.get('content-type')).toBe('video/mp4');
+    expect(res.headers.get('content-length')).toBe('16');
+    expect(res.headers.get('cache-control')).toBe('private, no-store');
+    expect((await openStorageRedirect(await signed(), { Range: 'bytes=999999-' })).status).toBe(416);
   });
   it('외부인의 그룹 조회와 다른 그룹에 속한 첨부의 게시를 거부해야 한다', async () => {
     expect((await api.gqlFail(outsider.cookie, LIST, { groupId })).code).toBe('FORBIDDEN');

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 
-import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
+import { createTestApp, openStorageRedirect, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { postUpload } from '../../test/support/group-contest';
 
@@ -136,7 +136,10 @@ describe('링크 게시물과 미디어 저장', () => {
       if (cookie) req.set('Cookie', cookie);
       expect((await req).status).toBe(cookie ? 403 : 401);
     }
-    expect((await api.http().get(`/media/${post.id}/download`).set('Cookie', owner.cookie)).status).toBe(200);
+    const attachment = await openStorageRedirect(
+      await api.http().get(`/media/${post.id}/download`).set('Cookie', owner.cookie),
+    );
+    expect(attachment.headers.get('content-disposition')).toContain('attachment;');
     await api.db.post.update({ where: { id: post.id }, data: { hidden: true } });
     expect((await api.gqlFail(undefined, DOWNLOAD, { id: post.id })).code).toBe('UNAUTHENTICATED');
     await api.gqlOk(owner.cookie, 'mutation($id:ID!){deletePost(postId:$id)}', { id: post.id });

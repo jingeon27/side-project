@@ -7,7 +7,7 @@ import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
 import {
-  DOWNLOAD_URL_TTL_SECONDS,
+  MEDIA_URL_TTL_SECONDS,
   PAGE_SIZE_DEFAULT,
   POST_BODY_LIMIT,
   POST_TITLE_LIMIT,
@@ -272,22 +272,12 @@ export class PostService {
     if (!post.upload?.storageKey) fail('파일을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
     return {
       key: post.upload.storageKey,
-      size: post.upload.byteSize,
-      contentType: post.upload.contentType,
       filename: mediaDownloadFilename(post.title, post.upload.storageKey),
     };
   }
   async download(viewer: IViewer | null, postId: string) {
     const file = await this.file(viewer, postId);
-    const url = await this.storage.presignDownload(
-      file.key,
-      mediaDownloadDisposition(file.filename),
-      DOWNLOAD_URL_TTL_SECONDS,
-    );
-    return {
-      url,
-      filename: file.filename,
-      expiresAt: new Date(Date.now() + DOWNLOAD_URL_TTL_SECONDS * 1000),
-    };
+    const url = await this.storage.presignRead(file.key, mediaDownloadDisposition(file.filename));
+    return { url, filename: file.filename, expiresAt: new Date(Date.now() + MEDIA_URL_TTL_SECONDS * 1000) };
   }
 }

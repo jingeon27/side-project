@@ -159,7 +159,7 @@ describe('주기 작업', () => {
     expect(await storedPhotoExists(api, abandonedKey)).toBe(false);
     expect(await storedPhotoExists(api, recentKey)).toBe(true);
     expect(await storedPhotoExists(api, submittedUpload.imageKey ?? '')).toBe(true);
-    expect((await api.http().get(`/photos/${submitted}`).set('Cookie', ara.cookie)).status).toBe(200);
+    expect((await api.http().get(`/photos/${submitted}`).set('Cookie', ara.cookie)).status).toBe(307);
   });
 
   it('만료된 세션·OAuth 시도·앱 로그인 티켓만 지워야 한다', async () => {
