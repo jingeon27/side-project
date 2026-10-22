@@ -66,7 +66,7 @@ model Group {
 }
 model GroupAvatar {
   mediaUploadId String? @unique
-  mediaUpload PostUpload? @relation(fields: [mediaUploadId], references: [id], onDelete: Restrict)
+  mediaUpload PostUpload? @relation(fields: [mediaUploadId], references: [id], onDelete: SetNull)
   id String @id @default(cuid())
   groupId String
   storageKey String @unique
