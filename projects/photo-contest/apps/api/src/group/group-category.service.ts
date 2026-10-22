@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { groupBy, mapValues } from 'es-toolkit';
 
-import { Prisma } from '../../generated/prisma';
+import { Prisma, type GroupCategory } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
@@ -17,13 +18,17 @@ export class GroupCategoryService {
     private readonly membership: MembershipService,
   ) {}
 
-  async list(viewer: IViewer | null, groupId: string) {
-    await this.membership.readableGroup(viewer?.id ?? null, groupId);
-    return this.db.groupCategory.findMany({
-      where: { groupId, archivedAt: null },
-      take: GROUP_CATEGORY_LIMIT,
+  /** 여러 그룹의 활성 카테고리를 한 번에 읽는다. 권한은 호출하는 쪽(Group 노드의 canViewPosts)이 확인한다. */
+  async activeOf(groupIds: readonly string[]): Promise<Map<string, GroupCategory[]>> {
+    const rows = await this.db.groupCategory.findMany({
+      where: { groupId: { in: [...groupIds] }, archivedAt: null },
       orderBy: [{ position: 'asc' }, { id: 'asc' }],
     });
+    const byGroup = mapValues(
+      groupBy(rows, (row) => row.groupId),
+      (categories) => categories.slice(0, GROUP_CATEGORY_LIMIT),
+    );
+    return new Map(Object.entries(byGroup));
   }
   async requireActive(groupId: string, categoryId: string, client: TDatabaseClient) {
     const category = await client.groupCategory.findFirst({

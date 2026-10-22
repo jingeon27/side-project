@@ -13,7 +13,7 @@ type Member {
   role: GroupRole!
 }
 
-"종료된 대회만 집계한다. 우승 횟수와 받은 표가 같으면 같은 순위"
+"최근 종료된 기존 대회 50개만 집계해 상위 100명까지 준다. 우승 횟수와 받은 표가 같으면 같은 순위"
 type LeaderboardEntry {
   rank: Int!
   user: User!

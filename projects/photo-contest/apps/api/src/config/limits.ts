@@ -16,6 +16,7 @@ export const PAGE_SIZE_MAX = 48;
 // 무한 스크롤 약 400쪽, 공개 사이트맵 약 200쪽(48개씩)까지 덮는다.
 export const PAGE_OFFSET_MAX = 10_000;
 export const GROUP_CONTEST_HISTORY = 50;
+export const LEADERBOARD_LIMIT = 100;
 
 export const CONTEST_MAX_DURATION_MS = 90 * DAY_MS;
 // 폼 입력과 요청 사이의 지연 때문에 막 지난 시작 시각은 허용한다.
