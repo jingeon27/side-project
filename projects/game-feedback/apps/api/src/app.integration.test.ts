@@ -15,12 +15,13 @@ import { seed } from './seed';
 const baseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
+type TRecord = { id: string };
 describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => {
   let app: INestApplication, db: PrismaClient, url: string, schema: string;
   let requester: ReturnType<typeof supertest.agent>,
     coach: ReturnType<typeof supertest.agent>,
     stranger: ReturnType<typeof supertest.agent>;
-  let post: any, answer: any, coachUser: any;
+  let post: TRecord & { gameProfile: unknown }, answer: TRecord, coachUser: TRecord;
   const login = async (agent: ReturnType<typeof supertest.agent>, nickname: string) =>
     agent.post('/api/auth/demo').set('Origin', origin).send({ nickname }).expect(200);
   beforeAll(async () => {
@@ -144,7 +145,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     expect(notifications.unreadCount).toBe(1);
     expect(notifications.items[0].answerId).toBe(answer.id);
     expect(
-      (await requester.get('/api/posts?unanswered=true')).body.items.some((p: any) => p.id === post.id),
+      (await requester.get('/api/posts?unanswered=true')).body.items.some((p: TRecord) => p.id === post.id),
     ).toBe(false);
   });
   it('enforces helpful requester-only and avoids duplicate notifications', async () => {
@@ -232,7 +233,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       .send({ blockedUserId: coachUser.id })
       .expect(200);
     expect(
-      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: any) => a.id === answer.id),
+      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: TRecord) => a.id === answer.id),
     ).toBe(false);
     await coach.get(`/api/posts/${post.id}`).expect(404);
     await coach
@@ -252,7 +253,7 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       .send({ targetType: 'ANSWER', targetId: answer.id, hidden: true, reason: '운영자 확인' })
       .expect(200);
     expect(
-      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: any) => a.id === answer.id),
+      (await requester.get(`/api/posts/${post.id}`)).body.answers.some((a: TRecord) => a.id === answer.id),
     ).toBe(false);
     expect(await db.auditLog.count({ where: { targetId: answer.id } })).toBe(1);
   });
