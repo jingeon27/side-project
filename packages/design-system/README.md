@@ -22,7 +22,7 @@ import { ButtonLink } from '@side/design-system/next';
 
 공유 컴포넌트의 소스 검색은 패키지의 `styles.css`가 맡는다. 앱은 자신의 소스만 등록한다. `theme.css`는 색·글자 크기·분기점의 Tailwind 기본값을 초기화하고 흑백·오렌지 semantic palette와 공통 typography·radius·shadow·z-index·터치 크기를 제공한다. 모든 토큰은 `@theme static`으로 내보내므로 앱의 일반 CSS에서도 `var(--color-ink)`처럼 읽을 수 있다. `styles.css`는 이 테마와 공통 base 스타일을 함께 가져온다. shadcn.css는 같은 테마에서 primary/foreground/ring/border/input-border/popover 등의 shadcn 토큰을 파생하며 색을 앱별로 중복 정의하지 않는다. 테마만 필요한 경우 `@side/design-system/theme.css`를 사용할 수 있다.
 
-입력은 16px, 일반 버튼은 44px, 주 버튼은 50px를 기준으로 한다. 공통 base는 키보드 포커스·터치·reduced motion을 포함한다. 앱의 `#pc-main`, 토스트 위치, 내비게이션, 화면 레이아웃은 포함하지 않는다. 새 토큰을 더하면 `src/lib/cn.helper.ts`의 tailwind-merge 설정도 함께 갱신한다.
+입력은 16px, 일반 버튼은 44px, 주 버튼은 50px를 기준으로 한다. 공통 base는 키보드 포커스·터치·reduced motion을 포함한다. 전역 포커스 링은 `focus-ring` 토큰으로 그리며 라이트에서는 짙은 오렌지(흰 바탕 5.98:1), 다크에서는 accent를 써서 WCAG 1.4.11의 3:1을 지킨다. 앱의 `#pc-main`, 토스트 위치, 내비게이션, 화면 레이아웃은 포함하지 않는다. 새 토큰을 더하면 `src/lib/cn.helper.ts`의 tailwind-merge 설정도 함께 갱신한다.
 
 html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이 기기 설정 또는 명시한 모드를 따른다. 쿠키 저장과 프로필 설정은 앱에서 처리한다. 속성을 지정하지 않은 소비 앱은 기존 기본 테마를 사용한다. 오렌지 accent 위의 글자는 `on-accent`로 고정해 다크 모드에서도 대비를 유지한다.
 

@@ -21,6 +21,8 @@
   --color-accent: #ff9b42;
   --color-accent-soft: #fff3e8;
   --color-accent-ink: #995014;
+  /* 키보드 포커스 링. 바탕과 3:1 이상이어야 해서 라이트에서는 accent 대신 accent-ink 값을 쓴다. */
+  --color-focus-ring: #995014;
   --color-ink: #101010;
   --color-muted: #737373;
   --color-subtle: #a3a3a3;

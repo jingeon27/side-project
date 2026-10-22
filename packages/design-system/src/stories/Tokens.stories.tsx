@@ -25,6 +25,7 @@ const colors = [
   'accent-soft',
   'accent-ink',
   'on-accent',
+  'focus-ring',
   'danger',
   'danger-soft',
   'info',

@@ -17,6 +17,7 @@
     --color-on-brand: light-dark(#ffffff, #191715);
     --color-accent-soft: light-dark(#fff3e8, #3b291c);
     --color-accent-ink: light-dark(#995014, #ffb974);
+    --color-focus-ring: light-dark(#995014, #ff9b42);
     --color-neutral-soft: light-dark(#f2f2f2, #282522);
     --color-danger: light-dark(#d32f43, #ff8a97);
     --color-danger-soft: light-dark(#fff0f1, #3c2025);
