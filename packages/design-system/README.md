@@ -31,7 +31,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. NativeSelect는 모바일 OS 선택창을 사용한다.
 - `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`: Base UI의 키보드 선택/포털/포커스 복귀를 사용하는 shadcn 드롭다운이다. 기본 트리거와 옵션은 44px이다.
 - `Toaster`, `toast`: Sonner 알림. 공통 색/폰트/모서리/닫기 크기를 적용하며 theme과 번역/위치는 앱이 전달한다.
-- `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다.
+- `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다. 보이는 상자는 16px이고 누르는 영역은 44×44px이다.
 - `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 제어형 탭이다. 선택값과 URL은 앱이 소유한다.
 - `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogPortal`, `DialogOverlay`: shadcn 조합 API다. 기존 `Dialog`는 이를 조합하며 호출부의 props를 유지한다.
 
