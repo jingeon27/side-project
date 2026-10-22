@@ -1,22 +1,23 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
-import { fixtureRoot, languageOptions, readFixture } from '../../../test/rule-tester';
+import { createFixtures, languageOptions } from '../../../test/rule-tester';
 import type { TFsdOptions } from '../fsd.helper';
 import { noCrossPage } from './no-cross-page';
 
-const options: TFsdOptions = [{ srcDir: fixtureRoot('fsd/src') }];
+const fixtures = createFixtures(import.meta.dirname);
+const options: TFsdOptions = [{ srcDir: fixtures.root }];
 
 new RuleTester({ languageOptions }).run('no-cross-page', noCrossPage, {
   valid: [
     {
-      ...readFixture('fsd/src/_pages/group/@page/LocalHeader.tsx'),
+      ...fixtures.read('_pages/group/@page/LocalHeader.tsx'),
       options,
     },
-    { ...readFixture('fsd/src/app/groups/[id]/route.tsx'), options },
+    { ...fixtures.read('app/groups/[id]/route.tsx'), options },
   ],
   invalid: [
     {
-      ...readFixture('fsd/src/_pages/contest/@page/CrossPage.tsx'),
+      ...fixtures.read('_pages/contest/@page/CrossPage.tsx'),
       options,
       errors: [{ messageId: 'crossPage' }],
     },

@@ -1,20 +1,19 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
-import { languageOptions, readFixture } from '../../../../test/rule-tester';
+import { createFixtures, languageOptions } from '../../../../test/rule-tester';
 import { noOverlayState } from './no-overlay-state';
 
+const fixtures = createFixtures(import.meta.dirname);
+
 new RuleTester({ languageOptions }).run('no-overlay-state', noOverlayState, {
-  valid: [
-    readFixture('code/no-overlay-state/valid/pagination.tsx'),
-    readFixture('code/no-overlay-state/valid/overlay.tsx'),
-  ],
+  valid: [fixtures.read('valid/pagination.tsx'), fixtures.read('valid/overlay.tsx')],
   invalid: [
     {
-      ...readFixture('code/no-overlay-state/invalid/direct.tsx'),
+      ...fixtures.read('invalid/direct.tsx'),
       errors: [{ messageId: 'overlayState' }, { messageId: 'overlayState' }],
     },
     {
-      ...readFixture('code/no-overlay-state/invalid/namespace.tsx'),
+      ...fixtures.read('invalid/namespace.tsx'),
       errors: [{ messageId: 'overlayState' }, { messageId: 'overlayState' }],
     },
   ],

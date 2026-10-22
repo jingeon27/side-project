@@ -1,12 +1,14 @@
 import { RuleTester } from 'eslint';
 import react from 'eslint-plugin-react';
 
-import { languageOptions, readFixture } from '../../../test/rule-tester';
+import { createFixtures, languageOptions } from '../../../test/rule-tester';
+
+const fixtures = createFixtures(import.meta.dirname);
 
 new RuleTester({ languageOptions }).run('jsx-handler-names', react.rules['jsx-handler-names'], {
   valid: [
-    { ...readFixture('react/inline.tsx'), options: [{ checkInlineFunction: false }] },
-    readFixture('react/forwarded.tsx'),
+    { ...fixtures.read('valid/inline.tsx'), options: [{ checkInlineFunction: false }] },
+    fixtures.read('valid/forwarded.tsx'),
   ],
-  invalid: [{ ...readFixture('react/invalid.tsx'), errors: [{ messageId: 'badHandlerName' }] }],
+  invalid: [{ ...fixtures.read('invalid/unprefixed.tsx'), errors: [{ messageId: 'badHandlerName' }] }],
 });

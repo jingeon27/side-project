@@ -1,61 +1,62 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
-import { fixtureRoot, languageOptions, readFixture } from '../../../test/rule-tester';
+import { createFixtures, languageOptions } from '../../../test/rule-tester';
 import type { TFsdOptions } from '../fsd.helper';
 import { layerImports } from './layer-imports';
 
-const options: TFsdOptions = [{ srcDir: fixtureRoot('fsd/src') }];
+const fixtures = createFixtures(import.meta.dirname);
+const options: TFsdOptions = [{ srcDir: fixtures.root }];
 
 new RuleTester({ languageOptions }).run('layer-imports', layerImports, {
   valid: [
     {
-      ...readFixture('fsd/src/features/group/ui/GroupCardShared.tsx'),
+      ...fixtures.read('features/group/ui/GroupCardShared.tsx'),
       options,
     },
     {
-      ...readFixture('fsd/src/_pages/group/@page/GroupNavigation.tsx'),
+      ...fixtures.read('_pages/group/@page/GroupNavigation.tsx'),
       options,
     },
     {
-      ...readFixture('fsd/src/_app/providers/FeatureProviders.tsx'),
+      ...fixtures.read('_app/providers/FeatureProviders.tsx'),
       options,
     },
     {
-      ...readFixture('fsd/src/shared/ui/@core/button/Button.tsx'),
+      ...fixtures.read('shared/ui/@core/button/Button.tsx'),
       options,
     },
-    { ...readFixture('fsd/src/app/groups/[id]/page.tsx'), options },
-    { ...readFixture('fsd/src/app/layout.tsx'), options },
-    { ...readFixture('fsd/src/app/groups/[id]/preload.tsx'), options },
-    { ...readFixture('fsd/src/proxy.ts'), options },
+    { ...fixtures.read('app/groups/[id]/page.tsx'), options },
+    { ...fixtures.read('app/layout.tsx'), options },
+    { ...fixtures.read('app/groups/[id]/preload.tsx'), options },
+    { ...fixtures.read('proxy.ts'), options },
     {
-      ...readFixture('fsd/src/features/group/ui/ExternalQuery.tsx'),
+      ...fixtures.read('features/group/ui/ExternalQuery.tsx'),
       options,
     },
   ],
   invalid: [
     {
-      ...readFixture('fsd/src/shared/lib/upward-import.helper.ts'),
+      ...fixtures.read('shared/lib/upward-import.helper.ts'),
       options,
       errors: [{ messageId: 'upward' }],
     },
     {
-      ...readFixture('fsd/src/features/group/ui/UpwardNavigation.tsx'),
+      ...fixtures.read('features/group/ui/UpwardNavigation.tsx'),
       options,
       errors: [{ messageId: 'upward' }],
     },
     {
-      ...readFixture('fsd/src/widgets/bottom-nav/ui/UpwardExport.tsx'),
+      ...fixtures.read('widgets/bottom-nav/ui/UpwardExport.tsx'),
       options,
       errors: [{ messageId: 'upward' }],
     },
     {
-      ...readFixture('fsd/src/_pages/home/@page/UpwardDynamicImport.tsx'),
+      ...fixtures.read('_pages/home/@page/UpwardDynamicImport.tsx'),
       options,
       errors: [{ messageId: 'upward' }],
     },
     {
-      ...readFixture('fsd/src/app/page.tsx'),
+      ...fixtures.read('app/page.tsx'),
       options,
       errors: [{ messageId: 'route' }],
     },

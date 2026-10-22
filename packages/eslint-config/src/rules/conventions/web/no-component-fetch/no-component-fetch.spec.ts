@@ -1,15 +1,14 @@
 import { RuleTester } from '@typescript-eslint/rule-tester';
 
-import { languageOptions, readFixture } from '../../../../test/rule-tester';
+import { createFixtures, languageOptions } from '../../../../test/rule-tester';
 import { noComponentFetch } from './no-component-fetch';
 
+const fixtures = createFixtures(import.meta.dirname);
+
 new RuleTester({ languageOptions }).run('no-component-fetch', noComponentFetch, {
-  valid: [
-    readFixture('code/no-component-fetch/valid/request.ts'),
-    readFixture('code/no-component-fetch/valid/Component.tsx'),
-  ],
+  valid: [fixtures.read('valid/request.ts'), fixtures.read('valid/Component.tsx')],
   invalid: [
-    { ...readFixture('code/no-component-fetch/invalid/Fetch.tsx'), errors: [{ messageId: 'mutation' }] },
-    { ...readFixture('code/no-component-fetch/invalid/Window.tsx'), errors: [{ messageId: 'mutation' }] },
+    { ...fixtures.read('invalid/Fetch.tsx'), errors: [{ messageId: 'mutation' }] },
+    { ...fixtures.read('invalid/Window.tsx'), errors: [{ messageId: 'mutation' }] },
   ],
 });
