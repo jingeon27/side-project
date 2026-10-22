@@ -349,6 +349,8 @@ model SupportConversation {
   conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
   topic String
   status String @default("OPEN")
+  historyStartAt DateTime?
+  historyStartId String?
   createdAt DateTime @default(now())
   @@index([adminId,status,createdAt])
 }

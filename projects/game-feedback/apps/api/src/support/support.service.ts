@@ -54,8 +54,23 @@ export class SupportService {
         update: {},
         create: { firstUserId, secondUserId },
       });
+      // 같은 쌍의 일반 대화를 이어 쓰면 문의 시작 시점을 기록 경계로 둔다. 문의의 밴·차단 예외는
+      // 이 경계 뒤의 메시지에만 적용된다. 전송과 같은 대화 행 잠금으로 경계 직후 메시지를 놓치지 않는다.
+      await tx.$queryRaw`SELECT "id" FROM "ChatConversation" WHERE "id" = ${conversation.id} FOR UPDATE`;
+      const latest = await (tx ?? this.db).chatMessage.findFirst({
+        where: { conversationId: conversation.id },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: { id: true, createdAt: true },
+      });
       return (tx ?? this.db).supportConversation.create({
-        data: { requesterId: user.id, adminId: admin.id, conversationId: conversation.id, topic },
+        data: {
+          requesterId: user.id,
+          adminId: admin.id,
+          conversationId: conversation.id,
+          topic,
+          historyStartAt: latest?.createdAt ?? null,
+          historyStartId: latest?.id ?? null,
+        },
       });
     });
     return this.chat.conversation(req, thread.conversationId);

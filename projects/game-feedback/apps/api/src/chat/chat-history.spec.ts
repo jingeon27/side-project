@@ -9,6 +9,7 @@ const row = {
   firstClearedId: 'message-b',
   secondClearedAt: null,
   secondClearedId: null,
+  support: null,
 };
 
 describe('채팅 기록 경계', () => {
@@ -33,6 +34,20 @@ describe('채팅 기록 경계', () => {
   });
   it('삭제 경계가 없으면 과거 메시지도 읽을 수 있어야 한다', () => {
     expect(advancesBoundary({ id: 'old', createdAt: new Date(0) }, { at: null, id: null })).toBe(true);
+  });
+  it('문의 대화는 문의 시작 이전 기록을 두 참여자 모두에게 숨겨야 한다', () => {
+    const started = new Date(at.getTime() + 1000);
+    const support = { ...row, support: { historyStartAt: started, historyStartId: 'message-s' } };
+    expect(historyBoundary(support, 'first')).toEqual({ at: started, id: 'message-s' });
+    expect(historyBoundary(support, 'second')).toEqual({ at: started, id: 'message-s' });
+    const cleared = new Date(started.getTime() + 1000);
+    expect(historyBoundary({ ...support, firstClearedAt: cleared }, 'first')).toEqual({
+      at: cleared,
+      id: 'message-b',
+    });
+    expect(
+      historyBoundary({ ...row, support: { historyStartAt: null, historyStartId: null } }, 'first'),
+    ).toEqual({ at, id: 'message-b' });
   });
   it('기존 데이터에 경계 ID가 없으면 같은 시각의 메시지를 ID 순서로 처리해야 한다', () => {
     const boundary = { at, id: null };
