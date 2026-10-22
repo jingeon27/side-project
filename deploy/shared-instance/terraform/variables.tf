@@ -38,3 +38,27 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# 네트워크
+
+variable "vpc_cidr" {
+  description = "새 VPC의 IPv4 CIDR(/16~/20). 서브넷은 이 범위를 /24로 나눠 공개 0번, 비공개 10·11번을 쓴다."
+  type        = string
+  default     = "10.40.0.0/16"
+
+  validation {
+    condition     = can(regex("^[0-9.]+/(1[6-9]|20)$", var.vpc_cidr)) && can(cidrnetmask(var.vpc_cidr)) && try(cidrsubnet(var.vpc_cidr, 0, 0) == var.vpc_cidr, false)
+    error_message = "네트워크 주소로 시작하는 /16~/20 IPv4 CIDR이어야 한다(예: 10.40.0.0/16)."
+  }
+}
+
+variable "availability_zones" {
+  description = "서로 다른 AZ 두 개. 비공개 서브넷(RDS subnet group)을 하나씩 두고, 첫 번째 AZ에 공개 서브넷(EC2)과 Single-AZ RDS를 둔다. EC2와 RDS를 같은 AZ에 두면 AZ 간 전송 요금이 생기지 않는다. 바꾸면 서브넷과 그 안의 리소스가 교체된다."
+  type        = list(string)
+  default     = ["ap-northeast-2a", "ap-northeast-2c"]
+
+  validation {
+    condition     = length(var.availability_zones) == 2 && length(distinct(var.availability_zones)) == 2 && alltrue([for az in var.availability_zones : startswith(az, var.region)])
+    error_message = "region에 속한 서로 다른 AZ 두 개를 지정한다."
+  }
+}
