@@ -16,7 +16,8 @@ const preview: Preview = {
   parameters: {
     layout: 'padded',
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
-    a11y: { test: 'todo' },
+    // 위반을 실패로 다룬다. yarn test의 stories-a11y.spec.tsx가 모든 스토리를 axe로 검사한다.
+    a11y: { test: 'error' },
     options: {
       storySort: {
         order: ['Foundations', 'Actions', 'Forms', 'Data display', 'Navigation', 'Overlays', 'Feedback'],
