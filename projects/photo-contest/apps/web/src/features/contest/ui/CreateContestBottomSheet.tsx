@@ -13,6 +13,7 @@ import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bo
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
 
+import { startNowIfPast } from '../lib/contest-schedule.helper';
 import { prependGroupContest } from '../model/contest.cache';
 import { buildContestDefaults, createContestSchema } from '../model/contest.schema';
 
@@ -46,7 +47,7 @@ export function CreateContestBottomSheet({
 
   const handleSubmit = form.handleSubmit(async (values) => {
     try {
-      await createContest({ variables: { groupId, ...values } });
+      await createContest({ variables: { groupId, ...startNowIfPast(values) } });
     } catch {
       // 실패는 ErrorLink가 토스트로 알린다.
     }
