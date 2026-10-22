@@ -5,10 +5,11 @@ import {
   fsdOptionsSchema,
   LAYER_RANK,
   ROUTE_IMPORTABLE_LAYERS,
+  SRC_DIR_MESSAGE,
   type TFsdOptions,
 } from '../fsd.helper';
 
-export const layerImports: TSESLint.RuleModule<'upward' | 'route', TFsdOptions> = {
+export const layerImports: TSESLint.RuleModule<'upward' | 'route' | 'srcDir', TFsdOptions> = {
   defaultOptions: [{}],
   meta: {
     type: 'problem',
@@ -17,7 +18,8 @@ export const layerImports: TSESLint.RuleModule<'upward' | 'route', TFsdOptions> 
     messages: {
       upward: '{{importer}} 레이어는 위 레이어({{target}})를 import할 수 없습니다: {{source}}',
       route:
-        'Next 라우트는 화면(pages)·app·shared만 import합니다. {{target}}은 화면 slice를 거쳐 쓰세요: {{source}}',
+        '라우트·진입 파일(app/, src 루트)은 화면(pages)·app·shared만 import합니다. {{target}}은 화면 slice를 거쳐 쓰세요: {{source}}',
+      srcDir: SRC_DIR_MESSAGE,
     },
   },
   create(context) {

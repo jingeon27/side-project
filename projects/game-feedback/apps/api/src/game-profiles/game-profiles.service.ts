@@ -9,18 +9,26 @@ import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import type { GameAccountDto } from './game-account-input.dto';
+import { ProfileLookupCache } from './profile-lookup-cache';
 
 @Injectable()
 export class GameProfilesService {
+  private readonly lookups = new ProfileLookupCache();
+
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
-  async lookup(playerTag: string) {
-    if (!this.config.profileProvider)
-      throw new ApiError(503, 'PROFILE_UNAVAILABLE', '게임 API가 아직 설정되지 않았습니다.');
-    return this.config.profileProvider.lookup(playerTag);
+  async preview(req: SessionRequest, playerTag: string) {
+    requireUser(req);
+    return this.lookup(playerTag);
+  }
+
+  private async lookup(playerTag: string) {
+    const provider = this.config.profileProvider;
+    if (!provider) throw new ApiError(503, 'PROFILE_UNAVAILABLE', '게임 API가 아직 설정되지 않았습니다.');
+    return this.lookups.get(playerTag, () => provider.lookup(playerTag));
   }
 
   async gameAccounts(req: SessionRequest) {

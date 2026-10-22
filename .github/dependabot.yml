@@ -1,0 +1,33 @@
+# Actions and base images are pinned by digest/SHA; Dependabot proposes the updates as reviewable PRs.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ['*']
+  - package-ecosystem: docker
+    directories:
+      - /projects/photo-contest/apps/api
+      - /projects/photo-contest/apps/web
+      - /projects/game-feedback/deploy/lightsail
+    target-branch: develop
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      base-images:
+        patterns: ['*']
+  - package-ecosystem: docker-compose
+    directory: /deploy/shared-instance
+    target-branch: develop
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

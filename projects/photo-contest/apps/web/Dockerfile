@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM node:24-bookworm-slim AS build
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS build
 WORKDIR /app
+ENV YARN_ENABLE_IMMUTABLE_INSTALLS=true
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/* && corepack enable
 COPY . .
@@ -16,7 +17,7 @@ RUN --mount=type=cache,id=pc-next-cache,target=/app/projects/photo-contest/apps/
     && mkdir -p projects/photo-contest/apps/web/public \
     && yarn workspace @photo-contest/web build
 
-FROM node:24-bookworm-slim AS runtime
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3200
 COPY --from=build --chown=node:node /app/projects/photo-contest/apps/web/.next/standalone ./

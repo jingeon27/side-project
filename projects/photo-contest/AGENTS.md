@@ -32,10 +32,10 @@
 
 ## 정해진 결정
 
-- 인증: HttpOnly 쿠키 `contest_session` 하나. API는 cookie-parser 없이 요청 `Cookie` 헤더를 직접 파싱하고 요청당 한 번만 조회한다. 웹 `proxy.ts`는 요청 쿠키로 멤버 전용 화면을 막고, SSR은 요청의 Cookie 헤더를 API로만 넘긴다. 앱 WebView도 같은 쿠키를 쓰고 토큰을 네이티브로 넘기지 않는다.
+- 인증: HttpOnly 세션 쿠키 하나. 운영(https)은 `__Host-contest_session`(Secure·Path=/·Domain 없음), 개발·테스트(http)는 `contest_session`이다. API는 cookie-parser 없이 요청 `Cookie` 헤더를 직접 파싱하고 요청당 한 번만 조회한다. 웹 `proxy.ts`는 요청 쿠키로 멤버 전용 화면을 막고, SSR은 요청의 Cookie 헤더를 API로만 넘긴다. 앱 WebView도 같은 쿠키를 쓰고 토큰을 네이티브로 넘기지 않는다.
 - 앱 소셜 로그인: Google이 WebView 로그인을 막으므로 시스템 브라우저 + PKCE + 일회용 코드 교환(`/auth/app/exchange`).
 - 모니터링: API는 Sentry만(도메인 이벤트는 DB에만 기록), 웹·모바일은 Sentry + Amplitude. 키가 없으면 아무것도 보내지 않는다.
-- 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 관리자만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인을 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. 양도한 OWNER는 MEMBER가 된다.
+- 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 OWNER만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인·멤버 내보내기(MODERATOR는 MEMBER만)를 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. OWNER는 내보낼 수 없고 양도한 뒤에만 그룹을 나간다. 양도한 OWNER는 MEMBER가 된다.
 - 서버 상태는 Apollo(정규화 캐시가 단일 출처). TanStack Query로 바꾸지 않는다.
 
 ## 스킬 (관련 작업 전에 해당 파일 전체를 읽는다)
@@ -48,7 +48,7 @@
 - 테스트 레인·격리 DB·포트: `.agents/skills/testing/SKILL.md`
 - 커밋 단위·메시지: `.agents/skills/commit/SKILL.md`
 
-다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55433) 프로세스를 끄거나 재시작하지 않는다.
+다른 프로젝트나 사용자의 개발 서버(웹 3200, API 4200, DB 55432) 프로세스를 끄거나 재시작하지 않는다.
 
 운영 배포는 `docs/deployment.md`·`deploy/`를 따른다. 앱 Dockerfile은 앱 안에, 운영 Compose·Caddy·배포/백업 스크립트는 deploy에 둔다. 배포 스크립트의 Vitest와 컨테이너 Playwright는 apps/web/test/deployment가 소유한다. CI가 검증한 동일 이미지의 digest를 배포하며 운영 브랜치·활성화 값이 없으면 GHCR 게시·서버 접속을 하지 않는다. DB volume을 지우거나 DB를 자동으로 되돌리지 않는다. 미디어는 서버 volume이 아니라 비공개 버킷에 있다.
 

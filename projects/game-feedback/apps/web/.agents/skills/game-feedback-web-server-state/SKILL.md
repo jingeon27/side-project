@@ -10,7 +10,7 @@ description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가�
 | 파일 | 내용 |
 | --- | --- |
 | `features/<d>/api/<d>.api.ts` | 브라우저 SDK 호출(`fetchX`·`postX`), 같은 origin `/api` |
-| `features/<d>/api/<d>.server.ts` | `import 'server-only'`, `serverRequestOptions()`(세션 쿠키) 또는 `publicServerOptions()`, React `cache()`, 404·400 → `notFound()` |
+| `features/<d>/api/<d>.server.ts` | `import 'server-only'`, `serverRequestOptions()`(세션 쿠키 + 서명된 방문자 IP) 또는 `publicServerOptions()`(쿠키 없는 공유 조회, API `internal` 버킷), React `cache()`, 404·400 → `notFound()`. 쿠키 없는 공개 조회는 `'use cache'`로 감싼다(`getPublicCategories`, 익명 `getServerSession`) |
 | `features/<d>/model/<d>.options.ts` | `queryOptions`·`infiniteQueryOptions` |
 | `features/<d>/model/<d>.mutation-options.ts` | `xxxMutationOptions(client, …ids)` |
 | `features/<d>/model/<d>.hook.ts` | `useQueryClient()` + `useMutation(options)` 원본 반환 |

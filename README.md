@@ -19,6 +19,7 @@ projects/game-feedback/
   packages/sdk/    # Orval API Client · 응답 검증 스키마
   docs/
 packages/design-system/ # 두 웹이 공유하는 Base UI·토큰·스타일·cn, 자체 Vitest
+packages/migration-check/ # Prisma migration의 파괴적 DDL 검사, 자체 Vitest
 packages/typescript-config/
 packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
@@ -83,6 +84,20 @@ corepack yarn prettier --write packages/design-system/src/index.ts
 ```
 
 편집기에서는 저장소에 설치된 Prettier와 루트 설정을 사용하세요. NestJS의 legacy decorator와 TypeScript 6.0.2 import 문법도 지원하도록 설정했습니다.
+
+## Git hook
+
+`yarn install`이 루트 `postinstall`([`scripts/install-git-hooks.mjs`](scripts/install-git-hooks.mjs))로 [husky](https://typicode.github.io/husky/) hook을 설치합니다. Yarn 4는 `prepare`를 실행하지 않아 husky 문서의 Yarn 방식을 따릅니다. `HUSKY=0`, CI, `.git`이 없는 Docker 빌드, husky가 없는 production 설치에서는 조용히 건너뜁니다.
+
+- `pre-commit`: lint-staged가 스테이징된 파일만 루트 설정으로 `prettier --write`합니다. `.prettierignore` 대상과 Prettier가 모르는 파일은 건드리지 않습니다. lint는 각 프로젝트의 검사 명령으로 실행합니다.
+- `commit-msg`: 커밋 스킬의 `<type>(<scope>): <내용>` 형식을 검사합니다. type은 `feat`·`fix`·`refactor`·`test`·`docs`·`chore`·`perf`·`ci`·`build`·`style`·`revert`·`merge`이고 scope는 선택입니다. Git이 만드는 merge·revert·fixup·squash 메시지는 통과합니다. 검사 구현과 Vitest는 `@side/commit-message-check`가 소유합니다.
+
+worktree는 `core.hooksPath`(`.husky/_`) 설정을 공유하지만 hook 파일은 각 worktree에 생기므로 새 worktree에서도 `yarn install`을 실행해야 hook이 동작합니다. 버전 관리자로 설치한 Node를 GUI Git 클라이언트가 찾지 못하면 `~/.config/husky/init.sh`에서 PATH를 설정합니다.
+
+```sh
+HUSKY=0 git rebase -i develop   # hook이 필요 없는 명령·자동화에서 끈다
+git commit --no-verify          # 비상시에만 사용한다
+```
 
 ## 검증
 

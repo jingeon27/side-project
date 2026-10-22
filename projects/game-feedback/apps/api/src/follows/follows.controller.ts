@@ -11,6 +11,7 @@ export class FollowsController {
   constructor(@Inject(FollowsService) private readonly follows: FollowsService) {}
 
   @Get()
+  @UseGuards(UserGuard)
   status(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.follows.status(req, id);
   }
@@ -26,6 +27,7 @@ export class FollowsController {
   }
 
   @Delete()
+  @UseGuards(UserGuard)
   unfollow(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.follows.unfollow(req, id);
   }

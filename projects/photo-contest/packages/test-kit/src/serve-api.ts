@@ -1,9 +1,14 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 
-import { createIsolatedDatabase, dropIsolatedDatabase } from './database';
+import {
+  assertTestDatabaseUrl,
+  assertTestSchemaName,
+  createIsolatedDatabase,
+  dropIsolatedDatabase,
+} from './database';
 import { loadProjectEnv } from './env';
 import { FAKE_S3_DEFAULTS, startFakeS3 } from './fake-s3';
 import { API_ROOT, PROJECT_ROOT, TSC } from './paths';
@@ -18,7 +23,13 @@ async function main() {
   const baseUrl = process.env.DATABASE_URL;
   const schema = process.env.PC_E2E_SCHEMA;
   if (!baseUrl || !schema) throw new Error('DATABASE_URL과 PC_E2E_SCHEMA가 필요합니다.');
-  const storageDir = process.env.PC_E2E_STORAGE_DIR ?? resolve(PROJECT_ROOT, '.data', schema);
+  assertTestDatabaseUrl(baseUrl);
+  assertTestSchemaName(schema);
+  const storageDir = resolve(process.env.PC_E2E_STORAGE_DIR ?? resolve(PROJECT_ROOT, '.data', schema));
+  // 종료할 때 이 폴더를 통째로 지우므로 프로젝트 .data 아래만 허용한다.
+  const fromData = relative(resolve(PROJECT_ROOT, '.data'), storageDir);
+  if (!fromData || fromData.startsWith('..') || isAbsolute(fromData))
+    throw new Error('PC_E2E_STORAGE_DIR는 projects/photo-contest/.data 아래여야 합니다.');
   const outDir = resolve(API_ROOT, '.e2e-build');
   const buildConfig = existsSync(resolve(API_ROOT, 'tsconfig.build.json'))
     ? 'tsconfig.build.json'

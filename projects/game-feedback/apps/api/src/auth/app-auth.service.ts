@@ -10,6 +10,7 @@ import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
 import { PrismaClient } from '../generated/prisma';
 import type { AppExchangeDto } from './auth-input.dto';
+import { assertIdentityNotBanned } from './banned-identity';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
 import { SocialIdentityService } from './social-identity.service';
@@ -52,6 +53,7 @@ export class AppAuthService {
     if (consumed.count !== 1) throw new ApiError(400, 'APP_LOGIN_INVALID', '이미 사용된 로그인 요청입니다.');
     const provider = parse(SocialProviderSchema, ticket.provider);
     const user = await this.identities.findUser(provider, ticket.subject);
+    if (!user) await assertIdentityNotBanned(this.db, provider, ticket.subject);
     await this.sessions.issueSession(req, res, user?.id ?? null, user ? null : ticket.subject, { provider });
     return this.sessions.session(req);
   }

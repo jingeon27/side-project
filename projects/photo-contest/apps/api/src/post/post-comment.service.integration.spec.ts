@@ -107,13 +107,12 @@ describe('댓글 좋아요', () => {
     await api.gqlOk(outsider.cookie, 'mutation($id:ID!){requestGroupMembership(groupId:$id){id}}', {
       id: privateGroupId,
     });
+    // 비공개 그룹의 게시물은 비멤버에게 있는지도 알리지 않는다(로그인 필요한 쓰기는 먼저 UNAUTHENTICATED).
     for (const cookie of [undefined, outsider.cookie]) {
-      expect((await api.gqlFail(cookie, LIST, { postId: comment.postId })).code).toBe(
-        cookie ? 'FORBIDDEN' : 'UNAUTHENTICATED',
-      );
+      expect((await api.gqlFail(cookie, LIST, { postId: comment.postId })).code).toBe('NOT_FOUND');
       for (const mutation of [LIKE, UNLIKE])
         expect((await api.gqlFail(cookie, mutation, { id: comment.id })).code).toBe(
-          cookie ? 'FORBIDDEN' : 'UNAUTHENTICATED',
+          cookie ? 'NOT_FOUND' : 'UNAUTHENTICATED',
         );
     }
     await api.gqlOk(owner.cookie, 'mutation($id:ID!){setPostHidden(postId:$id,hidden:true)}', {

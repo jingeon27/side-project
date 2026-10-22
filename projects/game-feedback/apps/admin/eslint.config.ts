@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'eslint/config';
 
-import { tsconfigRootDir } from '@side/eslint-config/base';
+import { testOverrides, tsconfigRootDir } from '@side/eslint-config/base';
 import { fsdBoundaries } from '@side/eslint-config/fsd-boundaries';
 import { reactDomConfig } from '@side/eslint-config/react-dom';
 
@@ -72,5 +72,6 @@ export default defineConfig([
       ],
     },
   },
+  ...testOverrides,
   { ignores: ['dist/**', 'test-results/**', 'playwright-report/**'] },
 ]);

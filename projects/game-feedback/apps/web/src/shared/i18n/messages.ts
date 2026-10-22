@@ -552,6 +552,13 @@ const messages: Record<string, readonly [string, string]> = {
   '작성자와 1:1 채팅': ['Chat with the author', '投稿者と1対1チャット'],
   작성자: ['Author', '投稿者'],
   '아직 댓글이 없어요.': ['No comments yet.', 'コメントはまだありません。'],
+  '{count}개 이상': ['{count}+', '{count}件以上'],
+  '이전 댓글 더 보기': ['Show earlier comments', '以前のコメントを表示'],
+  '이전 댓글을 불러오고 있어요': ['Loading earlier comments', '以前のコメントを読み込んでいます'],
+  '이전 댓글을 불러오지 못했어요. 다시 시도해주세요.': [
+    'Could not load earlier comments. Please try again.',
+    '以前のコメントを読み込めませんでした。もう一度お試しください。',
+  ],
   '댓글을 남겨주세요': ['Write a comment', 'コメントを入力'],
   '로그인하고 댓글 남기기': ['Sign in to comment', 'ログインしてコメント'],
   '댓글을 남겼어요.': ['Comment posted.', 'コメントを投稿しました。'],
@@ -700,6 +707,24 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '새로운 피드백이 도착했어요': ['New feedback received', '新しいフィードバックがあります'],
   '당신의 피드백이 도움이 됐어요': ['Your feedback helped someone', 'あなたのフィードバックが役に立ちました'],
+  '알 수 없는 플레이어': ['Unknown player', '不明なプレイヤー'],
+  '{name}님이 "{title}"에 피드백을 남겼어요.': [
+    '{name} left feedback on "{title}".',
+    '{name}さんが「{title}」にフィードバックを残しました。',
+  ],
+  '{name}님이 "{title}"의 피드백을 도움됨으로 표시했어요.': [
+    '{name} marked your feedback on "{title}" as helpful.',
+    '{name}さんが「{title}」のフィードバックを役に立ったとマークしました。',
+  ],
+  '{name}님이 "{title}"에 댓글을 남겼어요.': [
+    '{name} commented on "{title}".',
+    '{name}さんが「{title}」にコメントしました。',
+  ],
+  '{name}님이 "{title}"에 답글을 남겼어요.': [
+    '{name} replied on "{title}".',
+    '{name}さんが「{title}」に返信しました。',
+  ],
+  '{name}님의 새 글: {title}': ['New post from {name}: {title}', '{name}さんの新着投稿：{title}'],
   '새로운 댓글이 달렸어요': ['New comment received', '新しいコメントがあります'],
   '새로운 답글이 달렸어요': ['New reply received', 'コメントに返信が届きました'],
   '(수정됨)': ['(edited)', '（編集済み）'],

@@ -6,13 +6,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ChatLifecycleMiddleware } from './chat/chat-lifecycle.middleware';
 import { ApiAccessMiddleware } from './common/http/api-access.middleware';
-import { configureHttp } from './common/http/configure-http';
+import { configureHttp, createHttpAdapter } from './common/http/configure-http';
 import type { AppOptions } from './config/app.config';
 
 export type { AppOptions } from './config/app.config';
 
 export async function createApp(options: AppOptions = {}): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule.register(options), {
+  const app = await NestFactory.create(AppModule.register(options), createHttpAdapter(), {
     logger: options.logger ?? false,
     bodyParser: false,
   });

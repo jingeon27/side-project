@@ -12,7 +12,6 @@ import { ErrorNotice, useNotify } from '@/shared/ui';
 import { commentFormSchema } from '../model/content.schema';
 
 interface IPostCommentReplyFormProps {
-  id: string;
   postId: string;
   parentId: string;
   nickname: string;
@@ -21,7 +20,6 @@ interface IPostCommentReplyFormProps {
 }
 
 export function PostCommentReplyForm({
-  id,
   postId,
   parentId,
   nickname,
@@ -35,7 +33,6 @@ export function PostCommentReplyForm({
 
   return (
     <form
-      id={id}
       className="comment-reply-form"
       aria-label={t('{name}님에게 답글 남기기', { name: nickname })}
       onSubmit={form.handleSubmit(async (body) => {

@@ -22,6 +22,7 @@ import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { MediaUploadDto } from '../common/media-upload.dto';
+import { MediaWorkInterceptor, ProxyUploadGuard } from '../media-storage/media-work';
 import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
 import { ChatAttachmentService } from './chat-attachment.service';
@@ -59,7 +60,11 @@ export class ChatAttachmentController {
   }
   @Post()
   @HttpCode(200)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: CHAT_FILE_LIMIT, files: 1, fields: 0 } }))
+  @UseGuards(ProxyUploadGuard)
+  @UseInterceptors(
+    MediaWorkInterceptor,
+    FileInterceptor('file', { limits: { fileSize: CHAT_FILE_LIMIT, files: 1, fields: 0 } }),
+  )
   upload(@Req() req: SessionRequest, @Param('id') id: string, @UploadedFile() file: unknown) {
     return this.attachments.upload(req, id, file);
   }

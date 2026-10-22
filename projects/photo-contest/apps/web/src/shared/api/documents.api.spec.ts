@@ -248,10 +248,14 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       }),
       execute(ContestResultsDocument, outsider, { contestId }),
     ]);
-    for (const response of responses) {
-      expect(response.data).toBeNull();
-      expect(response.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
-    }
+    // 그룹은 탐색에 보이므로 멤버 전용 필드만 FORBIDDEN이고, 기존 대회·사진은 비회원에게 있는지도 알리지 않는다.
+    expect(responses.map((response) => response.data)).toEqual([null, null, null, null]);
+    expect(responses.map((response) => response.errors?.[0]?.extensions?.code)).toEqual([
+      'FORBIDDEN',
+      'NOT_FOUND',
+      'NOT_FOUND',
+      'NOT_FOUND',
+    ]);
   });
 
   it('제출·좋아요·투표·결과·순위·신고·숨김·삭제 문서가 실제 흐름을 처리해야 한다', async () => {

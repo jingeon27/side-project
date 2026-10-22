@@ -6,19 +6,25 @@ import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { CommentSchema, PostDetailSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
+import {
+  CommentPageSchema,
+  CommentSchema,
+  NotificationListSchema,
+  PostDetailSchema,
+  PostSchema,
+  SessionSchema,
+} from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 
-const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 type Agent = ReturnType<typeof supertest.agent>;
 
-describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', () => {
+describe('comment threads with deployed PostgreSQL migrations', () => {
   let app: INestApplication;
   let db: PrismaClient;
   let schema: string;
@@ -55,7 +61,7 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
   }
 
   beforeAll(async () => {
-    const url = new URL(target ?? '');
+    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
     schema = `gf_test_comment_replies_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
@@ -100,6 +106,37 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
     ]);
   });
 
+  it('returns the latest comment threads in the detail and pages earlier threads with their replies', async () => {
+    const post = await createPost();
+    const roots = [];
+    for (let index = 0; index < 32; index += 1)
+      roots.push(await comment(commenter.agent, post.id, `페이지 원댓글 ${index}`));
+    const oldest = roots[0];
+    if (!oldest) throw new Error('Expected comment fixtures');
+    const reply = await comment(replier.agent, post.id, '가장 오래된 댓글의 답글', oldest.id);
+    const first = await detail(postAuthor.agent, post.id);
+    expect(first.comments.filter((item) => item.parentId === null)).toHaveLength(30);
+    expect(first.comments.map(({ id }) => id)).not.toContain(oldest.id);
+    expect(first.commentsCursor).toEqual(expect.any(String));
+    const earlier = CommentPageSchema.parse(
+      (
+        await postAuthor.agent
+          .get(`/api/posts/${post.id}/comments`)
+          .query({ cursor: first.commentsCursor, limit: 30 })
+          .expect(200)
+      ).body,
+    );
+    expect(earlier.items.map(({ id }) => id)).toEqual([oldest.id, roots[1]?.id, reply.id]);
+    expect(earlier.nextCursor).toBeNull();
+    await postAuthor.agent.get(`/api/posts/${post.id}/comments`).query({ cursor: 'broken' }).expect(400);
+    await db.post.update({ where: { id: post.id }, data: { hidden: true } });
+    await postAuthor.agent
+      .get(`/api/posts/${post.id}/comments`)
+      .query({ cursor: first.commentsCursor })
+      .expect(404);
+    expect((await detail(postAuthor.agent, (await createPost()).id)).commentsCursor).toBeNull();
+  });
+
   it('notifies the root and post authors once each and skips self notifications', async () => {
     const post = await createPost();
     const root = await comment(commenter.agent, post.id, '질문이 있어요.');
@@ -110,7 +147,7 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
       orderBy: { userId: 'asc' },
     });
     expect(recipients.map(({ userId }) => userId).sort()).toEqual([postAuthor.id, commenter.id].sort());
-    expect(recipients.every(({ message }) => message.includes('답글'))).toBe(true);
+    expect(recipients.every(({ message, actorId }) => message === '' && actorId === replier.id)).toBe(true);
     expect(recipients.every((item) => item.type === 'COMMENT_REPLY' && item.commentId === reply.id)).toBe(
       true,
     );
@@ -119,9 +156,13 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
       {
         type: 'COMMENT_REPLY',
         commentId: reply.id,
+        actor: { id: replier.id, nickname: '대댓글답글작성자' },
+        postTitle: post.title,
         readAt: null,
       },
     );
+    expect(NotificationListSchema.parse(inbox.body).unreadCount).toBeGreaterThan(0);
+    expect(inbox.body.items.some((item: object) => 'message' in item)).toBe(false);
     await db.notification.deleteMany({ where: { postId: post.id } });
     await comment(commenter.agent, post.id, '제가 추가할게요.', root.id);
     expect(await db.notification.count({ where: { postId: post.id } })).toBe(1);
@@ -256,7 +297,7 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
     expect((await detail(postAuthor.agent, post.id)).comments).toEqual([]);
   });
 
-  it('omits hidden roots with every reply and denies reply mutations and reports through a hidden parent', async () => {
+  it('omits hidden roots with every reply and denies reply edits and reports through a hidden parent', async () => {
     const post = await createPost();
     const root = await comment(commenter.agent, post.id, '숨길 댓글');
     const reply = await comment(replier.agent, post.id, '숨겨질 답글', root.id);
@@ -272,12 +313,17 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
       .set('Origin', origin)
       .send({ body: '숨김 후 수정' })
       .expect(404);
-    await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(404);
     await postAuthor.agent
       .post('/api/reports')
       .set('Origin', origin)
       .send({ targetType: 'COMMENT', targetId: reply.id, reason: 'SPAM' })
       .expect(404);
+    await postAuthor.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(404);
+    // 작성자 삭제는 소유권만 확인한다. 숨겨진 원댓글 아래 자기 답글도 지울 수 있다.
+    await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(200);
+    expect(await db.comment.findUniqueOrThrow({ where: { id: reply.id } })).toMatchObject({ body: '' });
+    await commenter.agent.delete(`/api/comments/${root.id}`).set('Origin', origin).expect(200);
+    await commenter.agent.delete(`/api/comments/${root.id}`).set('Origin', origin).expect(404);
   });
 
   it('hides active blocked-root threads but keeps anonymous deleted-root replies visible', async () => {
@@ -297,7 +343,6 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
         .set('Origin', origin)
         .send({ body: '차단 후 수정' })
         .expect(404);
-      await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(404);
       await replier.agent
         .post('/api/reports')
         .set('Origin', origin)
@@ -308,6 +353,7 @@ describe.skipIf(!target)('comment threads with deployed PostgreSQL migrations', 
       expect(visible).toHaveLength(2);
       expect(visible[0]).toMatchObject({ id: root.id, author: null, body: '', isDeleted: true });
       expect(visible[1].id).toBe(reply.id);
+      await replier.agent.delete(`/api/comments/${reply.id}`).set('Origin', origin).expect(200);
     } finally {
       await db.block.delete({ where: { id: block.id } });
     }

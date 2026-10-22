@@ -1,10 +1,10 @@
 import { appRoutes } from '@game-feedback/bridge';
 import type { TBoardKind } from '@game-feedback/contracts';
-import { ButtonLink } from '@side/design-system/next';
 
 import { boardByKind, gameBoardPath } from '@/features/board';
 import { translate, type TLocale } from '@/shared/i18n/index.server';
 
+import { GuideHomeLink } from './GuideHomeLink';
 import { GuideTitleLink } from './GuideTitleLink';
 
 export function GuideContent({ locale }: { locale: TLocale }) {
@@ -18,7 +18,9 @@ export function GuideContent({ locale }: { locale: TLocale }) {
       </p>
       <section className="guide-section">
         <h2>
-          <GuideTitleLink href={appRoutes.feed(locale)}>{t('전체와 다섯 분류')}</GuideTitleLink>
+          <GuideTitleLink tab href={appRoutes.feed(locale)}>
+            {t('전체와 다섯 분류')}
+          </GuideTitleLink>
         </h2>
         <p>
           {t(
@@ -90,7 +92,9 @@ export function GuideContent({ locale }: { locale: TLocale }) {
       </section>
       <section className="guide-section">
         <h2>
-          <GuideTitleLink href={appRoutes.messages(locale)}>{t('채팅과 대화내역')}</GuideTitleLink>
+          <GuideTitleLink tab href={appRoutes.messages(locale)}>
+            {t('채팅과 대화내역')}
+          </GuideTitleLink>
         </h2>
         <p>
           {t(
@@ -105,7 +109,9 @@ export function GuideContent({ locale }: { locale: TLocale }) {
       </section>
       <section className="guide-section">
         <h2>
-          <GuideTitleLink href={appRoutes.settings(locale)}>{t('게임 계정과 프로필 인증')}</GuideTitleLink>
+          <GuideTitleLink tab href={appRoutes.settings(locale)}>
+            {t('게임 계정과 프로필 인증')}
+          </GuideTitleLink>
         </h2>
         <p>
           {t(
@@ -120,7 +126,9 @@ export function GuideContent({ locale }: { locale: TLocale }) {
       </section>
       <section className="guide-section">
         <h2>
-          <GuideTitleLink href={appRoutes.notifications(locale)}>{t('팔로우와 새 소식')}</GuideTitleLink>
+          <GuideTitleLink tab href={appRoutes.notifications(locale)}>
+            {t('팔로우와 새 소식')}
+          </GuideTitleLink>
         </h2>
         <p>
           {t(
@@ -139,9 +147,7 @@ export function GuideContent({ locale }: { locale: TLocale }) {
           )}
         </p>
       </section>
-      <ButtonLink variant="primary" size="md" href={appRoutes.feed(locale)}>
-        {t('홈으로 이동')}
-      </ButtonLink>
+      <GuideHomeLink href={appRoutes.feed(locale)}>{t('홈으로 이동')}</GuideHomeLink>
     </>
   );
 }

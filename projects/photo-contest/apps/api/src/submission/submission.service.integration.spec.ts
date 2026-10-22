@@ -163,8 +163,8 @@ describe('사진 목록', () => {
   it('비회원은 목록을 볼 수 없고 없는 대회는 NOT_FOUND여야 한다', async () => {
     const outsider = await api.signIn('목록-외부인');
     expect(await api.gqlFail(outsider.cookie, LIST, { contestId })).toEqual({
-      code: 'FORBIDDEN',
-      message: '이 그룹에 접근할 권한이 없습니다.',
+      code: 'NOT_FOUND',
+      message: '대회를 찾을 수 없습니다.',
     });
     expect(await api.gqlFail(first.cookie, LIST, { contestId: 'missing-contest' })).toEqual({
       code: 'NOT_FOUND',

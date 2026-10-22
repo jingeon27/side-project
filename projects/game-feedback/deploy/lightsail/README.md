@@ -39,7 +39,7 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
 
    운영은 HTTPS origin, 강한 DB 암호, 완전한 OAuth 설정을 검사한다. 테스트 계정·데모·Next testing API는 꺼져 있고 설정으로 켜면 시작을 거부한다. Supercell 조회에는 실제 API 토큰과 서버 Static IP 등록이 별도로 필요하다.
 
-   Compose는 캐시 무효화 비밀을 API/Web에 동일하게 전달한다. API는 Docker 내부의 `http://web:3300/_internal/cache/revalidate`를 호출하며 이 경로는 Caddy에서 차단한다. 콜백 실패는 DB 큐에서 재시도하고, 성공한 쓰기를 실패로 바꾸지 않는다. 기존 설치도 새 비밀을 설정하고 `CacheInvalidation` migration을 적용한 뒤 배포한다.
+   Compose는 캐시 무효화 비밀을 API/Web에 동일하게 전달한다. API는 Docker 내부의 `http://web:3300/internal/cache/revalidate`를 호출하며 이 경로는 Caddy에서 차단한다. 콜백 실패는 DB 큐에서 재시도하고, 성공한 쓰기를 실패로 바꾸지 않는다. 기존 설치도 새 비밀을 설정하고 `CacheInvalidation` migration을 적용한 뒤 배포한다.
 
 6. OAuth 제공자에 실제 도메인의 callback을 등록한다. 제공자가 허용한 앱 상태·동의 항목도 확인한다.
 

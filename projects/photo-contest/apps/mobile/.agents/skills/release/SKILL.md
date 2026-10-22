@@ -20,13 +20,13 @@ adb reverse tcp:3200 tcp:3200                                                   
 
 | 변수 | 쓰는 곳 | 비었을 때 |
 | --- | --- | --- |
-| `EXPO_PUBLIC_WEB_ORIGIN` | `src/shared/config/env.ts`(`WEB_ORIGIN`·`API_BASE`), `app.config.ts` `extra.webOrigin` | `http://localhost:3200`. origin 형식이 아니면 시작할 때 throw |
+| `EXPO_PUBLIC_WEB_ORIGIN` | `src/shared/config/env.ts`(`WEB_ORIGIN`·`API_BASE`, 판단은 `web-origin.ts`), `app.config.ts` `extra.webOrigin` | 개발 빌드(`APP_VARIANT=development`, `__DEV__`)만 `http://localhost:3200`. 그 밖에는 https origin이 아니면 `app.config.ts`가 설정 단계에서, 번들이 시작할 때 throw |
 | `EXPO_PUBLIC_STORE_URL` | `env.ts` `STORE_URL` → `resolveStoreUrl`(https·itms-apps·market만) | Android는 `market://details?id=<패키지>`, iOS는 업데이트 버튼 없음 |
 | `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY` | 모니터링 초기화(`monitoring` 스킬) | 아무것도 보내지 않는다 |
 
 - `process.env.EXPO_PUBLIC_X`를 점 표기 그대로 `src/shared/config/env.ts`에서만 읽는다. 구조분해나 `process.env['…']`는 빌드 때 치환되지 않는다.
 - Expo는 `apps/mobile`의 `.env*`만 읽는다(프로젝트 루트 `.env`는 API·웹용). 셸 변수나 `apps/mobile/.env.local`(커밋 금지)로 주고, 토큰 같은 비밀은 넣지 않는다.
-- 운영 빌드에는 https `EXPO_PUBLIC_WEB_ORIGIN`을 반드시 넣는다. 빠지면 `http://localhost:3200`이 박혀 모든 사용자가 오프라인 화면을 본다. 값을 바꾸면 바이너리를 다시 만들어 내야 반영된다.
+- 운영 빌드에는 https `EXPO_PUBLIC_WEB_ORIGIN`을 반드시 넣는다. 빠지거나 http면 prebuild·번들링이 설정 오류로 멈춘다(localhost가 박히면 모든 사용자가 오프라인 화면을 본다). 값을 바꾸면 바이너리를 다시 만들어 내야 반영된다.
 
 ## 버전과 강제 업데이트
 
@@ -50,7 +50,8 @@ adb reverse tcp:3200 tcp:3200                                                   
 corepack yarn workspace @photo-contest/mobile typecheck
 corepack yarn workspace @photo-contest/mobile lint
 corepack yarn workspace @photo-contest/mobile bundle:check   # Metro android 번들(워크스페이스 브리지·zod 해석), 결과 폴더는 지운다
-APP_VARIANT=development corepack yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c usesCleartextTraffic   # 1, 변수 없이는 0
+APP_VARIANT=development corepack yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c usesCleartextTraffic   # 1
+EXPO_PUBLIC_WEB_ORIGIN=https://contest.example corepack yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c 'usesCleartextTraffic\|NSAllowsLocalNetworking'   # 0, 두 변수가 모두 없으면 설정 오류
 ```
 
 ## Sentry 빌드

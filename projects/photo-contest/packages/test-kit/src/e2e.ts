@@ -1,6 +1,13 @@
 import { resolve } from 'node:path';
 
-import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl } from './database';
+import {
+  assertTestDatabaseUrl,
+  assertTestSchemaName,
+  isolatedSchemaName,
+  resolveTestDatabaseUrl,
+  schemaUrl,
+  type TTestSchemaPrefix,
+} from './database';
 import { loadProjectEnv } from './env';
 import { PROJECT_ROOT, SERVE_TEST_API_BIN } from './paths';
 
@@ -8,21 +15,21 @@ export interface IE2eDatabase {
   schema: string;
   /** 격리 스키마를 가리키는 URL. 테스트에서 직접 DB를 바꿀 때 쓴다. */
   url: string;
-  /** 스키마를 만들고 지울 때 쓰는 개발 DB URL */
+  /** 스키마를 만들고 지울 때 쓰는 테스트 DB URL */
   baseUrl: string;
   storageDir: string;
 }
 
 /**
  * Playwright 설정 파일에서 호출한다. 설정은 워커마다 다시 읽히므로 스키마 이름을 환경변수에 고정해
- * 메인 프로세스·워커·webServer가 같은 스키마를 쓰게 한다.
+ * 메인 프로세스·워커·webServer가 같은 스키마를 쓰게 한다. 밖에서 넣은 값도 같은 규칙으로 검사한다.
  */
-export function prepareE2eDatabase(prefix: string): IE2eDatabase {
+export function prepareE2eDatabase(prefix: TTestSchemaPrefix): IE2eDatabase {
   loadProjectEnv();
-  const baseUrl = process.env.PC_E2E_BASE_DATABASE_URL ?? resolveTestDatabaseUrl();
+  const baseUrl = assertTestDatabaseUrl(process.env.PC_E2E_BASE_DATABASE_URL ?? resolveTestDatabaseUrl());
   process.env.PC_E2E_BASE_DATABASE_URL = baseUrl;
   process.env.PC_E2E_SCHEMA ??= isolatedSchemaName(prefix);
-  const schema = process.env.PC_E2E_SCHEMA;
+  const schema = assertTestSchemaName(process.env.PC_E2E_SCHEMA, prefix);
   const url = schemaUrl(baseUrl, schema);
   process.env.PC_E2E_DATABASE_URL = url;
   return { schema, url, baseUrl, storageDir: resolve(PROJECT_ROOT, '.data', schema) };

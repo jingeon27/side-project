@@ -8,7 +8,7 @@
     "hoistingLimits": "workspaces"
   },
   "scripts": {
-    "start": "expo start",
+    "start": "APP_VARIANT=${APP_VARIANT:-development} expo start",
     "ios": "expo run:ios",
     "android": "expo run:android",
     "typecheck": "tsc7 --noEmit",

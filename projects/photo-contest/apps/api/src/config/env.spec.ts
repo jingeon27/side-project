@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { appVersions, developmentLoginEnabled, mobileAppScheme, trustedProxyHops, webOrigin } from './env';
+import {
+  appVersions,
+  assertProductionConfig,
+  developmentLoginEnabled,
+  mobileAppScheme,
+  trustedProxyHops,
+  webOrigin,
+} from './env';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -69,6 +76,48 @@ describe('실행 환경 설정', () => {
     vi.stubEnv('NODE_ENV', 'development');
     vi.stubEnv('ENABLE_DEV_LOGIN', '1');
     expect(developmentLoginEnabled()).toBe(false);
+  });
+
+  it('운영 시작 때 S3 경로·주소와 OAuth 키 짝을 검사해 첫 요청 전에 실패해야 한다', () => {
+    const production = {
+      NODE_ENV: 'production',
+      WEB_ORIGIN: 'https://contest.example',
+      DATABASE_URL: 'postgresql://contest@db/contest',
+      S3_BUCKET: 'contest-media',
+      S3_ENDPOINT: '',
+      S3_KEY_PREFIX: '',
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CLIENT_SECRET: '',
+      KAKAO_CLIENT_ID: '',
+      KAKAO_CLIENT_SECRET: '',
+      DEPLOYMENT_TARGET: '',
+    };
+    const check = (overrides: Record<string, string>) => {
+      for (const [name, value] of Object.entries({ ...production, ...overrides })) vi.stubEnv(name, value);
+      return () => assertProductionConfig();
+    };
+    expect(check({})).not.toThrow();
+    expect(check({ S3_KEY_PREFIX: 'photo-contest/media' })).not.toThrow();
+    expect(check({ S3_KEY_PREFIX: '../escape' })).toThrow(
+      'S3_KEY_PREFIX must contain relative path segments.',
+    );
+    expect(check({ S3_ENDPOINT: 'not a url' })).toThrow('S3_ENDPOINT must be an http(s) URL.');
+    expect(check({ S3_ENDPOINT: 'ftp://storage.example' })).toThrow('S3_ENDPOINT must be an http(s) URL.');
+    expect(check({ S3_ENDPOINT: 'https://storage.example' })).not.toThrow();
+    expect(check({ GOOGLE_CLIENT_ID: 'google-id' })).toThrow(
+      'GOOGLE_CLIENT_ID requires GOOGLE_CLIENT_SECRET.',
+    );
+    expect(check({ GOOGLE_CLIENT_SECRET: 'google-secret' })).toThrow(
+      'GOOGLE_CLIENT_SECRET is set without GOOGLE_CLIENT_ID.',
+    );
+    expect(check({ GOOGLE_CLIENT_ID: 'google-id', GOOGLE_CLIENT_SECRET: 'google-secret' })).not.toThrow();
+    // 카카오 client secret은 콘솔에서 켤 때만 쓰므로 아이디만 있어도 된다.
+    expect(check({ KAKAO_CLIENT_ID: 'kakao-id' })).not.toThrow();
+    expect(check({ KAKAO_CLIENT_SECRET: 'kakao-secret' })).toThrow(
+      'KAKAO_CLIENT_SECRET is set without KAKAO_CLIENT_ID.',
+    );
+    // 개발·테스트는 검사하지 않는다.
+    expect(check({ NODE_ENV: 'development', S3_KEY_PREFIX: '../escape' })).not.toThrow();
   });
 
   it('WEB_ORIGIN은 경로를 뺀 origin으로 비교해야 한다', () => {

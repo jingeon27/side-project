@@ -112,7 +112,7 @@ describe.skipIf(!target)('transactional cache invalidation with deployed migrati
       webOrigin: origin,
       demoMode: true,
       rateLimit: false,
-      cacheRevalidation: { url: `http://127.0.0.1:${address.port}/_internal/cache/revalidate`, secret },
+      cacheRevalidation: { url: `http://127.0.0.1:${address.port}/internal/cache/revalidate`, secret },
     };
     app = await createApp(options);
     cache = app.get(CacheInvalidationService);

@@ -99,7 +99,7 @@ Service는 명시적인 `@Inject` 토큰으로 PrismaClient·AppConfig·필요�
 
 ## 인증과 도메인
 
-Google 제공자는 OAuth code를 검증해 `sub`를 서비스 계정과 연결한다. scope는 `openid`만 사용하며 공개 이름·사진·이메일을 자동 수집하지 않는다. 닉네임은 서비스 가입 입력으로 정하고 재로그인에도 유지한다. 세션은 HttpOnly 쿠키 `gamefeedback_session`으로 전달한다. production 쿠키는 HTTPS/Secure 설정을 전제로 한다.
+Google 제공자는 OAuth code를 검증해 `sub`를 서비스 계정과 연결한다. Google scope는 `openid`만 사용하고, X·Discord·카카오도 사용자 ID 조회에 필요한 최소 scope(`tweet.read users.read`, `identify`, 없음)만 요청한다. 공개 이름·사진·이메일은 자동 수집하지 않는다. 닉네임은 서비스 가입 입력으로 정하고 재로그인에도 유지한다. 세션은 HttpOnly 쿠키 `gamefeedback_session`으로 전달한다. production 쿠키는 HTTPS/Secure 설정을 전제로 한다.
 
 Category는 DB에서 관리하고 카테고리 생성은 관리자만 수행한다. 공유 계약인 GameProfile은 정규화한 Player Tag와 게임 데이터를 표현하며 Prisma의 GameAccount는 사용자의 연결 프로필을 저장한다. 초기 소유권은 UNVERIFIED다. 피드백 요청에는 조회 시점 프로필·덱의 스냅샷을 보존해 이후 변경과 분리한다.
 
@@ -139,7 +139,7 @@ Zod 서버 검증 스키마를 OpenAPI에 연결하고 Orval로 SDK와 검증 �
 
 초기 사용자 콘텐츠에는 Next.js 데이터 캐시를 적용하지 않는다. Mutation 성공 후 TanStack Query의 관련 query를 갱신하고 재방문·포커스 복귀 때 새 상태를 조회한다. Cache Tags는 실제 성능 측정 후 검토한다.
 
-요청 제한은 60초 단위로 적용한다. 인증된 일반 조회는 userId별 240회, 쓰기는 userId별 60회이며 같은 사용자의 세션·IP 변경으로 한도를 나누지 않는다. 비로그인 일반 요청은 IP별 한도를 사용한다. 로그인·가입·OAuth 시도는 사용자와 무관하게 IP별 30회다. 테스트 계정 목록은 일반 조회, 로그아웃은 일반 쓰기로 분류한다. 세션 조회 전에는 IP별 1,000회의 전체 요청 상한을 적용한다. 한도를 초과하면 `429 RATE_LIMITED`와 `Retry-After`를 반환한다. 이 제한은 API 프로세스 메모리에 있으므로 다중 인스턴스 운영의 공유 한도는 별도 검증이 필요하다.
+요청 제한은 60초 단위로 적용한다. 인증된 일반 조회는 userId별 240회, 쓰기는 userId별 60회이며 같은 사용자의 세션·IP 변경으로 한도를 나누지 않는다. 비로그인 일반 요청은 IP별 한도를 사용한다. 로그인·가입·OAuth 시도는 사용자와 무관하게 IP별 30회다. 테스트 계정 목록은 일반 조회, 로그아웃은 일반 쓰기로 분류한다. 세션 조회 전에는 IP별 1,000회의 전체 요청 상한을 적용한다. Next 서버의 SSR 호출은 API가 보는 주소가 웹 컨테이너 하나이므로, 웹 서버가 Caddy의 `X-Forwarded-For` 첫 값을 캐시 무효화 비밀에서 파생한 HMAC 키로 서명해 보내고 API는 60초 안의 유효한 서명일 때만 그 IP를 키로 쓴다. 방문자 IP가 없는 쿠키 없는 공유 조회(`'use cache'` 공개 데이터·사이트맵)는 `internal` 버킷(조회 3,000회, 전체 6,000회)을 쓰고, 서명이 없거나 틀리면 소켓 IP로 제한한다. 서버 Supercell 토큰을 쓰는 게임 프로필 조회는 로그인 사용자별 10회다. 한도를 초과하면 `429 RATE_LIMITED`와 `Retry-After`를 반환한다. 이 제한은 API 프로세스 메모리에 있으므로 다중 인스턴스 운영의 공유 한도는 별도 검증이 필요하다.
 
 ## 외부 서비스 경계
 

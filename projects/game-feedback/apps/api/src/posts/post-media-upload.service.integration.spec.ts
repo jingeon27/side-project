@@ -176,6 +176,17 @@ describe('게시글 S3 직접 업로드', () => {
     expect(file.uploadedAt).not.toBeNull();
     expect(file.bytes).toBeNull();
     expect(file.object?.key).toMatch(/^objects\//);
+    // 확정은 앞부분 Range 읽기와 서버 쪽 복사로만 한다. 임시 객체 전체를 API로 내려받지 않는다.
+    const staged = `/media-test/${plan.fields.key}`;
+    const reads = s3.requests.filter((request) => request.method === 'GET' && request.path === staged);
+    expect(reads.length).toBeGreaterThan(0);
+    expect(reads.every((request) => request.range === `bytes=0-${png.length - 1}`)).toBe(true);
+    expect(s3.requests).toContainEqual(
+      expect.objectContaining({ method: 'PUT', path: `/media-test/${file.object?.key}` }),
+    );
+    expect(
+      s3.requests.find((request) => request.path === `/media-test/${file.object?.key}`)?.copySource,
+    ).toContain(plan.fields.key);
     expect((await transfer(plan, Buffer.alloc(png.length, 120))).status).toBe(204);
     const redirected = await state.owner.get(`/api/post-media/${plan.id}`).expect(307);
     const location = new URL(redirected.headers.location);
@@ -218,5 +229,30 @@ describe('게시글 S3 직접 업로드', () => {
     expect(result.failed).toBe(0);
     expect(result.removed).toBe(1);
     expect(s3.objects.has(`/media-test/${invalid.fields.key}`)).toBe(false);
+  });
+
+  it('S3 배포는 multipart 수신을 막고 검증 뒤 바뀐 임시 객체를 확정하지 않아야 한다', async () => {
+    const blocked = await state.owner
+      .post('/api/post-media')
+      .set('Origin', origin)
+      .attach('file', png, { filename: 'image.png', contentType: 'image/png' })
+      .expect(409);
+    expect(blocked.body.errorCode).toBe('DIRECT_UPLOAD_REQUIRED');
+    const plan = await reserve();
+    expect((await transfer(plan)).status).toBe(204);
+    s3.beforeCopy = (source) => {
+      const object = s3.objects.get(source);
+      if (object) s3.objects.set(source, { ...object, bytes: Buffer.alloc(png.length, 120) });
+    };
+    try {
+      const changed = await state.owner
+        .post(`/api/post-media/${plan.id}/complete`)
+        .set('Origin', origin)
+        .expect(409);
+      expect(changed.body.errorCode).toBe('UPLOAD_CHANGED');
+    } finally {
+      s3.beforeCopy = undefined;
+    }
+    expect((await state.db.postMedia.findUniqueOrThrow({ where: { id: plan.id } })).uploadedAt).toBeNull();
   });
 });

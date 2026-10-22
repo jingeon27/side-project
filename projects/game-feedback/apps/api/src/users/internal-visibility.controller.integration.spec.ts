@@ -56,7 +56,7 @@ describe.skipIf(!testDatabaseUrl)('웹 서버 전용 제외 작성자 조회', (
 
   it('세션이 없으면 차단으로 제외할 작성자가 없어야 한다', async () => {
     const body = (
-      await supertest(app.getHttpServer()).get('/_internal/visibility/excluded-authors').expect(200)
+      await supertest(app.getHttpServer()).get('/internal/visibility/excluded-authors').expect(200)
     ).body;
     expect(body).toEqual({ userIds: [] });
   });
@@ -66,21 +66,21 @@ describe.skipIf(!testDatabaseUrl)('웹 서버 전용 제외 작성자 조회', (
     await login(coach, coachId);
     await coach.post('/api/blocks').set('Origin', origin).send({ blockedUserId: requesterId }).expect(200);
     try {
-      expect((await coach.get('/_internal/visibility/excluded-authors').expect(200)).body).toEqual({
+      expect((await coach.get('/internal/visibility/excluded-authors').expect(200)).body).toEqual({
         userIds: [requesterId],
       });
-      expect((await requester.get('/_internal/visibility/excluded-authors').expect(200)).body).toEqual({
+      expect((await requester.get('/internal/visibility/excluded-authors').expect(200)).body).toEqual({
         userIds: [coachId],
       });
     } finally {
       await coach.delete(`/api/blocks/${requesterId}`).set('Origin', origin).expect(200);
     }
-    expect((await requester.get('/_internal/visibility/excluded-authors').expect(200)).body).toEqual({
+    expect((await requester.get('/internal/visibility/excluded-authors').expect(200)).body).toEqual({
       userIds: [],
     });
   });
 
   it('브라우저용 /api 경로에는 같은 정보를 두지 않아야 한다', async () => {
-    await coach.get('/api/_internal/visibility/excluded-authors').expect(404);
+    await coach.get('/api/internal/visibility/excluded-authors').expect(404);
   });
 });

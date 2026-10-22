@@ -5,6 +5,7 @@ import { jsxHandlerNamesOptions } from '../../../react';
 import { createFixtures, languageOptions } from '../../../test/rule-tester';
 
 const fixtures = createFixtures(import.meta.dirname);
+// reactConfig가 켜는 옵션 그대로 검증한다.
 const options = [jsxHandlerNamesOptions];
 
 new RuleTester({ languageOptions }).run('jsx-handler-names', react.rules['jsx-handler-names'], {

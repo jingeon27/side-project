@@ -14,6 +14,8 @@ export const ANALYTICS_EVENT = {
   GROUP_CREATED: 'group_created',
   GROUP_PROFILE_UPDATED: 'group_profile_updated',
   GROUP_JOINED: 'group_joined',
+  GROUP_LEFT: 'group_left',
+  GROUP_MEMBER_REMOVED: 'group_member_removed',
   GROUP_MODERATOR_CHANGED: 'group_moderator_changed',
   GROUP_OWNERSHIP_TRANSFERRED: 'group_ownership_transferred',
   CONTEST_CREATED: 'contest_created',

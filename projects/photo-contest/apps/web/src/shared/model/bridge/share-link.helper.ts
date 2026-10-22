@@ -1,9 +1,12 @@
 import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
 import { BridgeError, type IWebBridge } from '@photo-contest/bridge/web';
 
+/** 앱 기능이 실패해 웹 방식으로 이어서 성공할 수 있으므로, 실제로 성공한 경로를 결과에 담는다. */
 export const SHARE_OUTCOME = {
-  /** 공유 시트로 보냈다 */
-  Shared: 'shared',
+  /** 앱 공유 시트(share.open)로 보냈다 */
+  SharedInApp: 'shared_in_app',
+  /** 브라우저 공유 시트(Web Share API)로 보냈다 */
+  SharedOnWeb: 'shared_on_web',
   /** 공유할 수 없어 클립보드에 복사했다 */
   Copied: 'copied',
   /** 사용자가 공유 시트를 닫았다 */
@@ -12,6 +15,13 @@ export const SHARE_OUTCOME = {
   Failed: 'failed',
 } as const;
 export type TShareOutcome = (typeof SHARE_OUTCOME)[keyof typeof SHARE_OUTCOME];
+
+/** 복사에 성공한 경로: 앱 clipboard.copy 또는 웹(navigator.clipboard·숨긴 textarea) */
+export const COPY_METHOD = {
+  App: 'app',
+  Web: 'web',
+} as const;
+export type TCopyMethod = (typeof COPY_METHOD)[keyof typeof COPY_METHOD];
 
 export interface IShareContent {
   title?: string;
@@ -53,12 +63,15 @@ function copyWithTextarea(text: string, doc: Document) {
   return copied;
 }
 
-/** 앱 clipboard.copy → navigator.clipboard → 숨긴 textarea 순서로 복사한다. 하나라도 성공하면 true. */
-export async function copyText(text: string, { bridge, navigator: nav, document: doc }: IShareEnvironment) {
+/** 앱 clipboard.copy → navigator.clipboard → 숨긴 textarea 순서로 복사한다. 성공한 경로를, 모두 실패하면 null을 돌려준다. */
+export async function copyText(
+  text: string,
+  { bridge, navigator: nav, document: doc }: IShareEnvironment,
+): Promise<TCopyMethod | null> {
   if (bridge?.supports('clipboard.copy')) {
     try {
       await bridge.request('clipboard.copy', { text });
-      return true;
+      return COPY_METHOD.App;
     } catch {
       // 앱이 복사하지 못하면 웹 방식으로 이어서 시도한다.
     }
@@ -66,12 +79,12 @@ export async function copyText(text: string, { bridge, navigator: nav, document:
   if (typeof nav?.clipboard?.writeText === 'function') {
     try {
       await nav.clipboard.writeText(text);
-      return true;
+      return COPY_METHOD.Web;
     } catch {
       // 권한이 없거나 보안 컨텍스트가 아니면 거절된다.
     }
   }
-  return doc ? copyWithTextarea(text, doc) : false;
+  return doc && copyWithTextarea(text, doc) ? COPY_METHOD.Web : null;
 }
 
 /**
@@ -86,7 +99,7 @@ export async function shareLink(
   if (env.bridge?.supports('share.open')) {
     try {
       const { shared } = await env.bridge.request('share.open', { url, ...content });
-      return shared ? SHARE_OUTCOME.Shared : SHARE_OUTCOME.Cancelled;
+      return shared ? SHARE_OUTCOME.SharedInApp : SHARE_OUTCOME.Cancelled;
     } catch (error) {
       if (isCancellation(error)) return SHARE_OUTCOME.Cancelled;
     }
@@ -96,7 +109,7 @@ export async function shareLink(
   if (typeof share === 'function' && (env.navigator?.canShare?.(data) ?? true)) {
     try {
       await share.call(env.navigator, data);
-      return SHARE_OUTCOME.Shared;
+      return SHARE_OUTCOME.SharedOnWeb;
     } catch (error) {
       if (isCancellation(error)) return SHARE_OUTCOME.Cancelled;
     }

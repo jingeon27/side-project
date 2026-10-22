@@ -1,3 +1,3 @@
-function Component() {
-  return <button onClick={() => submit()}>저장</button>;
+function Component({ form }) {
+  return <button onClick={() => form.submit()}>저장</button>;
 }

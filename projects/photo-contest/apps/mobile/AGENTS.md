@@ -1,12 +1,12 @@
 # Mobile (Expo WebView 셸)
 
-웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 쿠키 `contest_session`이 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
+웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 세션 쿠키(운영 `__Host-contest_session`, 개발 http `contest_session`)가 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
 
 ## 실행
 
 - Expo Go로는 열지 않는다. 앱 스킴(`photocontest://`) 콜백과 네이티브 모듈은 dev client·스토어 빌드에서만 동작한다.
-  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android가 http(평문)를 허용한다.
-- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 없으면 `http://localhost:3200`. origin 형식이 아니면 시작할 때 오류를 낸다. 운영은 https만 쓴다.
+  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android 평문 http와 iOS 로컬 네트워크 ATS 예외(`NSAllowsLocalNetworking`)를 넣는다. `start`·`bundle:check`는 `APP_VARIANT`가 없으면 development로 실행한다.
+- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 개발 빌드만 없으면 `http://localhost:3200`을 쓰고 http를 허용한다. 그 밖의 빌드는 https origin이 아니면 `app.config.ts`가 설정 단계(prebuild·번들링)에서 멈추고, 번들(`__DEV__` false)도 시작할 때 오류를 낸다.
 - Android 에뮬레이터는 `adb reverse tcp:3200 tcp:3200`으로 같은 `localhost` 주소를 쓴다. `10.0.2.2`로 열면 API의 Origin 검사(WEB_ORIGIN)가 POST를 막는다.
 - 앱은 웹 origin의 `/backend/*` 프록시만 부른다(`API_BASE`). API 주소를 따로 두지 않는다.
 - 업데이트 화면의 스토어 링크는 `EXPO_PUBLIC_STORE_URL`. 없으면 Android만 `market://details?id=<패키지>`, iOS는 버튼을 숨긴다.
@@ -87,7 +87,7 @@
 | `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`) |
 | `bundle:check` | `expo export --platform android`로 Metro 번들이 만들어지는지 확인하고 결과 폴더를 지운다 | 없음 |
 
-- 개발 서버 포트(3200/4200/55433)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
+- 개발 서버 포트(3200/4200/55432)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
 - 웹 화면의 선택자는 `e2e/support/web-screens.ts`에만 둔다.
 - 네이티브 빌드·실기기 확인(키보드가 입력창을 가리는지, 소셜 로그인 복귀, 파일 업로드)은 이 테스트들이 대신하지 못한다.
 

@@ -13,14 +13,14 @@ description: API(apps/api)의 구현 파일 옆 unit 테스트나 실제 Postgre
 ## 레인 설정
 
 - `vitest.config.mts`: unplugin-swc가 데코레이터 메타데이터를 살리므로 테스트는 대상 TS 소스를 상대 경로로 바로 import한다(`dist`·`.e2e-build`를 import하지 않는다). integration 프로젝트는 `globalSetup: test/support/global-setup.ts`, `setupFiles: test/support/setup.ts`, `fileParallelism: false`, 타임아웃 30초. 공용 하네스는 계속 `test/support/`에 둔다.
-- `test/support/global-setup.ts`: `loadProjectEnv()` → 테스트 DB(test-kit `resolveTestDatabaseUrl()` 규칙: `TEST_DATABASE_URL` 우선, 없으면 로컬 `DATABASE_URL`만) → `isolatedSchemaName('api_test')` → `createIsolatedDatabase(…)`(마이그레이션 적용) → `project.provide('databaseUrl', …)`, teardown에서 `dropIsolatedDatabase`. 실행 전체가 이 스키마 하나를 쓰고 테스트는 `inject('databaseUrl')`로 받는다. `.env`는 열거나 출력하지 않는다.
+- `test/support/global-setup.ts`: `loadProjectEnv()` → 테스트 DB(test-kit `resolveTestDatabaseUrl()` 규칙: loopback 전용 포트의 `TEST_DATABASE_URL`만, 개발 DB로 대신하지 않음) → `isolatedSchemaName('api_test')` → `createIsolatedDatabase(…)`(마이그레이션 적용) → `project.provide('databaseUrl', …)`, teardown에서 `dropIsolatedDatabase`. 실행 전체가 이 스키마 하나를 쓰고 테스트는 `inject('databaseUrl')`로 받는다. `.env`는 열거나 출력하지 않는다.
 
 ## 하네스 (`test/support/`)
 
 - env를 먼저 맞추고 앱을 만든다: `DATABASE_URL=inject('databaseUrl')`, `NODE_ENV=development`, `ENABLE_DEV_LOGIN=true`, `WEB_ORIGIN`, globalSetup이 띄운 S3 대역의 `inject('s3Env')`(격리 스키마 이름의 `.data` 폴더 아래 객체). `loadProjectEnv()`가 읽어 온 개발자 키(OAuth·Sentry·S3·AWS)는 지우고, 필요한 테스트만 `vi.stubEnv`로 넣는다. 브라우저 역할의 저장소 POST는 `uploadToStorage`, 고정 경로의 307 확인과 서명 GET은 `openStorageRedirect`, 객체 확인은 `api.storage.head`를 쓴다.
 - `createApp({ logger: false })`(`src/bootstrap.ts`)만 하고 `listen()`하지 않는다. 파일마다 `beforeAll`에서 만들고 `afterAll`에서 `app.close()`. 요청은 `request(app.getHttpServer())`.
 - `app.get(SchedulerService).stop()`으로 주기 실행을 끄고, 정리·대회 종료 기록은 `runOnce()`를 직접 await 한다.
-- `login(nickname)`은 `POST /auth/dev`로 받은 `contest_session=…` Cookie 문자열, `gql(cookie, query, variables)`는 `Origin`·`Apollo-Require-Preflight: true`를 붙여 `{ data, errors }`를 돌려준다. 그룹·대회·사진 준비와 GraphQL 문자열은 공용 헬퍼에 모으고 파일마다 복사하지 않는다.
+- `login(nickname)`은 `POST /auth/dev`로 받은 `contest_session=…` Cookie 문자열(운영 모드로 만든 앱의 세션 쿠키는 `__Host-contest_session`이고 개발 로그인이 닫혀 있다), `gql(cookie, query, variables)`는 `Origin`·`Apollo-Require-Preflight: true`를 붙여 `{ data, errors }`를 돌려준다. 그룹·대회·사진 준비와 GraphQL 문자열은 공용 헬퍼에 모으고 파일마다 복사하지 않는다.
 - supertest로 직접 보내는 POST에는 하네스의 `WEB_ORIGIN`을 `Origin`으로 붙인다(없으면 403). 쿠키를 이어 써야 하는 흐름(OAuth state 쿠키 → 콜백)은 `request.agent(app.getHttpServer())`를 쓰거나 받은 `Set-Cookie`의 `name=value`를 다음 `Cookie`로 넘긴다.
 - API가 돌려준 `/backend/…` 경로(업로드 URL, `imageUrl`)는 웹 프록시 경로다 — 접두사를 떼고 부른다.
 - 업로드는 test-kit `createTestImage()`(실제 PNG)를 `Content-Type: image/png`로 보낸다(raw 파서는 jpeg·png·webp에만 붙는다). 성공은 201.

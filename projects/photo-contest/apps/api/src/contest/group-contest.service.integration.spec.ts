@@ -76,8 +76,12 @@ describe('그룹 게시물 대회 통합', () => {
     await createEntry(api, author, privateGroup.id, id);
     await moveGroupContest(api, id, 'COMPLETED');
     for (const query of [GROUP_CONTEST, RESULTS]) {
-      expect((await api.gqlFail(undefined, query, { id })).code).toBe('UNAUTHENTICATED');
-      expect((await api.gqlFail(outsider.cookie, query, { id })).code).toBe('FORBIDDEN');
+      // 비공개 그룹의 대회 ID는 비멤버에게 없는 대회와 같은 응답이어야 한다.
+      for (const cookie of [undefined, outsider.cookie])
+        expect(await api.gqlFail(cookie, query, { id })).toEqual(
+          await api.gqlFail(cookie, query, { id: 'missing-contest' }),
+        );
+      expect((await api.gqlFail(outsider.cookie, query, { id })).code).toBe('NOT_FOUND');
       expect((await api.gql(author.cookie, query, { id })).errors).toBeUndefined();
     }
     expect((await api.gqlFail(undefined, LIST, { group: privateGroup.id })).code).toBe('UNAUTHENTICATED');
@@ -274,7 +278,10 @@ describe('그룹 게시물 대회 통합', () => {
     await moveGroupContest(api, id, 'VOTING');
     await api.gqlOk(voter.cookie, CAST_POST_VOTE, { id, postId: first.id });
     await moveGroupContest(api, id, 'COMPLETED');
-    const votes = await api.db.analyticsEvent.findMany({ where: { id: `post-vote:${id}:${voter.id}` } });
+    const vote = await api.db.postContestVote.findFirstOrThrow({
+      where: { contestId: id, voterId: voter.id },
+    });
+    const votes = await api.db.analyticsEvent.findMany({ where: { id: `post-vote:${vote.id}` } });
     expect(votes).toHaveLength(1);
     expect(votes[0]?.properties).toMatchObject({ contestId: id, postId: first.id });
     await api.runScheduledWork();

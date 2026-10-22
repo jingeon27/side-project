@@ -16,6 +16,10 @@ REVOKE ALL ON DATABASE game_feedback FROM PUBLIC;
 REVOKE ALL ON DATABASE photo_contest FROM PUBLIC;
 GRANT CONNECT ON DATABASE game_feedback TO game_feedback;
 GRANT CONNECT ON DATABASE photo_contest TO photo_contest;
+-- Service roles must not open the maintenance databases either. The owner keeps access; if the administrator is
+-- not the owner, PostgreSQL only warns and leaves the grant unchanged.
+REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;
+REVOKE CONNECT ON DATABASE template1 FROM PUBLIC;
 \connect game_feedback
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO game_feedback;

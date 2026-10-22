@@ -6,7 +6,7 @@ import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readCookie } from '../common/http/cookie-header';
 import { SESSION_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
-import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
+import { authCookieOptions, sessionCookieName } from './auth-cookie';
 
 // randomToken()이 만드는 32바이트 base64url. 다른 모양은 DB를 조회하지 않고 비로그인으로 본다.
 const SESSION_TOKEN = /^[A-Za-z0-9_-]{43}$/;
@@ -18,7 +18,7 @@ export interface IViewer {
 }
 
 function sessionToken(req: Request) {
-  const token = readCookie(req.headers.cookie, AUTH_COOKIE.SESSION);
+  const token = readCookie(req.headers.cookie, sessionCookieName());
   return token && SESSION_TOKEN.test(token) ? token : undefined;
 }
 
@@ -52,13 +52,13 @@ export class SessionService {
         expiresAt: new Date(Date.now() + SESSION_TTL_MS),
       },
     });
-    res.cookie(AUTH_COOKIE.SESSION, token, authCookieOptions(SESSION_TTL_MS));
+    res.cookie(sessionCookieName(), token, authCookieOptions(SESSION_TTL_MS));
   }
 
   async end(req: Request, res: Response) {
     const token = sessionToken(req);
     if (token) await this.db.session.deleteMany({ where: { tokenHash: sha256Hex(token) } });
-    res.clearCookie(AUTH_COOKIE.SESSION, authCookieOptions());
+    res.clearCookie(sessionCookieName(), authCookieOptions());
   }
 
   private async findViewer(token: string | undefined): Promise<IViewer | null> {

@@ -158,10 +158,36 @@ export function sentryTracesSampleRate() {
   return Number.isFinite(rate) && rate >= 0 && rate <= 1 ? rate : 0;
 }
 
-/** 운영에서 설정이 빠지면 조용히 기본값으로 뜨지 않고 시작을 멈춘다. */
+// Google 웹 클라이언트는 토큰 교환에 secret이 필요하다. 카카오는 콘솔에서 client secret을 켤 때만 쓴다.
+const OAUTH_SECRET_REQUIRED: Record<TOAuthProviderName, boolean> = { google: true, kakao: false };
+
+/** 짝이 맞지 않는 OAuth 키는 첫 로그인의 provider 오류가 아니라 시작할 때 드러낸다. */
+function assertOAuthCredentials() {
+  for (const provider of Object.keys(OAUTH_SECRET_REQUIRED) as TOAuthProviderName[]) {
+    const prefix = provider.toUpperCase();
+    const { clientId, clientSecret } = oauthCredentials(provider);
+    if (clientSecret && !clientId)
+      throw new Error(`${prefix}_CLIENT_SECRET is set without ${prefix}_CLIENT_ID.`);
+    if (clientId && !clientSecret && OAUTH_SECRET_REQUIRED[provider])
+      throw new Error(`${prefix}_CLIENT_ID requires ${prefix}_CLIENT_SECRET.`);
+  }
+}
+
+function assertS3Settings() {
+  const { endpoint } = s3Settings();
+  s3KeyPrefix();
+  if (!endpoint) return;
+  const url = URL.parse(endpoint);
+  if (!url || !['http:', 'https:'].includes(url.protocol))
+    throw new Error('S3_ENDPOINT must be an http(s) URL.');
+}
+
+/** 운영에서 설정이 빠지거나 틀리면 조용히 기본값으로 뜨거나 첫 요청에서 실패하지 않고 시작을 멈춘다. */
 export function assertProductionConfig() {
   if (!isProduction()) return;
   assertSharedInstanceConfig(process.env);
   if (!process.env.WEB_ORIGIN?.startsWith('https://') || !optional('DATABASE_URL') || !optional('S3_BUCKET'))
     throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and S3_BUCKET.');
+  assertS3Settings();
+  assertOAuthCredentials();
 }

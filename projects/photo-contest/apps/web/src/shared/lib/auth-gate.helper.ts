@@ -1,8 +1,8 @@
-import { NEXT_PATH_PARAM, SESSION_COOKIE_NAME } from '../constants/auth';
+import { NEXT_PATH_PARAM, SESSION_COOKIE_NAMES } from '../constants/auth';
 import { ROUTES } from '../constants/routes';
 
-/** API의 cookie-header 파서와 같은 상한. 넘으면 형식 오류로 보고 비로그인 취급한다. */
-const MAX_COOKIE_HEADER_LENGTH = 4096;
+/** API의 cookie-header 파서와 같은 상한(8KB). 넘으면 형식 오류로 보고 비로그인 취급한다. */
+const MAX_COOKIE_HEADER_LENGTH = 8 * 1024;
 const MAX_NEXT_PATH_LENGTH = 2048;
 // 줄바꿈 등 제어 문자로 헤더·로그를 오염시키는 값을 막는다.
 const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
@@ -31,7 +31,7 @@ export function readCookie(cookieHeader: string | null | undefined, name: string
 
 /** 세션 쿠키가 있는지만 본다. 만료 여부는 API가 판단한다. */
 export function hasSessionCookie(cookieHeader: string | null | undefined) {
-  return Boolean(readCookie(cookieHeader, SESSION_COOKIE_NAME));
+  return SESSION_COOKIE_NAMES.some((name) => Boolean(readCookie(cookieHeader, name)));
 }
 
 /** 로그인해야 볼 수 있는 화면인지. proxy.ts의 matcher와 같은 범위다. */

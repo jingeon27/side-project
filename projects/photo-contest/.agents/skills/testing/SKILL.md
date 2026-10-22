@@ -26,9 +26,10 @@ description: 웃긴순간의 앱별 테스트 레인(Vitest unit·ui·api·integ
 
 ## DB·서버 격리
 
-- DB를 쓰는 테스트는 `@photo-contest/test-kit`으로 임의 이름의 스키마를 만들고(마이그레이션 적용) 끝나면 그 스키마만 지운다. 로컬 DB(`127.0.0.1`·`localhost`)가 아니면 실행을 거부한다. 남은 `*_test_*`·`*_e2e_*` 스키마가 있으면 지운다.
+- DB를 쓰는 테스트는 `@photo-contest/test-kit`으로 `<레인 접두사>_<uuid 32자>` 스키마를 만들고(마이그레이션 적용) 끝나면 그 스키마만 지운다. 접두사는 `TEST_SCHEMA_PREFIXES`(`api_test`·`web_api`·`web_e2e`·`web_cache`·`mobile_api`·`mobile_e2e`)만 쓰고, 새 레인은 거기에 먼저 추가한다. `public` 등 다른 이름은 만들거나 지우기 전에 거부한다.
+- 테스트 DB는 `TEST_DATABASE_URL` 하나다. loopback(`127.0.0.1`·`localhost`·`[::1]`)·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`만 허용하고, 비어 있어도 개발 `DATABASE_URL`(55432)로 대신하지 않는다. 밖에서 넣은 `PC_E2E_SCHEMA`·`PC_E2E_BASE_DATABASE_URL`·`PC_E2E_STORAGE_DIR`(프로젝트 `.data` 아래만)도 같은 규칙으로 검사한다.
 - 테스트 API는 test-kit이 `apps/api/.e2e-build`로 빌드해 띄운다(개발 서버가 보는 `dist`를 건드리지 않는다). 웹 e2e의 Next dev는 `NEXT_DIST_DIR=.next/e2e`(모바일 e2e는 `.next/e2e-mobile`)로 띄워 개발 서버의 `.next/dev` 잠금과 겹치지 않게 한다.
-- 개발 서버 포트(웹 3200, API 4200, DB 55433)는 테스트에 쓰지 않고, 실행 중인 서버를 재사용하거나 끄지 않는다(`reuseExistingServer: false`).
+- 개발 서버 포트(웹 3200, API 4200, DB 55432)는 테스트에 쓰지 않고, 실행 중인 서버를 재사용하거나 끄지 않는다(`reuseExistingServer: false`).
 - `.env`는 설정 파일이 `process.loadEnvFile`로 읽는다. 테스트에 필요한 환경변수는 설정에서 명시한다.
 - 미디어는 test-kit S3 대역(`startFakeS3`)을 쓴다. API 통합은 globalSetup이, 웹·모바일 레인은 테스트 API 실행기가 빈 포트에 띄우고 끝나면 객체 폴더까지 지운다. 개발자 `.env`의 실제 S3·AWS 값은 테스트 API에 넘기지 않는다.
 

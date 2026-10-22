@@ -18,6 +18,7 @@ DB·포트 격리와 금지 옵션은 프로젝트 `AGENTS.md`, 커밋 범위는
 ## schema.prisma로 표현하지 못하는 제약
 
 - CHECK 제약은 migration SQL에만 있다: `PostMedia_published_upload_ready`, `ChatAttachment_sent_upload_ready`(미완료 업로드를 글·메시지에 연결 금지), `UserAvatar_storage_check`(`bytes`·`objectId` 중 하나), `UserAvatar_size_check`.
+- 게시글 검색의 pg_trgm GIN 인덱스(`Post_title_trgm_idx`·`Post_body_trgm_idx`)도 migration SQL에만 있다. 확장은 DB 단위라 `public`에 두고 연산자 클래스를 `public.gin_trgm_ops`로 지정한다(DB 소유 역할이 만들 수 있는 trusted extension).
 - `db push`로 만든 스키마(로컬 `db:sync`, 옛 `*.integration.test.ts` 하네스)에는 이 제약이 없다. 제약에 기대는 테스트는 `migrate deploy`로 스키마를 만드는 `*.integration.spec.ts` 형식으로 쓴다.
 
 ## migration 만들기 (DB에 접속하지 않는다)
@@ -36,7 +37,7 @@ corepack yarn workspace @game-feedback/api db:generate
 
 - `exec`는 apps/api에서 돌므로 prisma 인자는 앱 기준, `mkdir`·`>`는 side 루트 기준이다. `--from`은 마지막 migration까지 반영된 스키마(보통 HEAD)다. 빈 결과면 폴더를 지운다. CHECK 같은 수동 제약은 기존 migration처럼 SQL에 직접 더한다.
 - 커밋된 `migration.sql`은 고치지 않고 새 폴더를 더한다.
-- side 루트 `scripts/check-migrations.mjs`(CI 첫 단계)가 base 대비 **새로 추가된** migration에서 `DROP TABLE`·`DROP COLUMN`·`ALTER COLUMN TYPE`·`SET NOT NULL`·`DROP NOT NULL`·`RENAME`·`DROP CONSTRAINT`·`DROP INDEX`를 거부한다. 기본은 expand → 배포 → contract로 나눈다. 의도한 경우만 바로 윗줄에 `-- migration-lint: allow <규칙> — <5자 이상 이유>`를 단다.
+- side 루트 `scripts/check-migrations.mjs`(CI 첫 단계)가 base 대비 **새로 추가된** migration에서 삭제·이름 변경·타입/NOT NULL 변경, 기본값 없는 `ADD COLUMN NOT NULL`, `TRUNCATE`, WHERE 없는 `DELETE`·`UPDATE`, CONCURRENTLY 없는 `CREATE INDEX`, `CREATE UNIQUE INDEX`, NOT VALID 없는 FK·CHECK 추가 등을 거부하고 기존 migration.sql 수정·삭제도 거부한다(전체 목록은 side 루트 `deploy/shared-instance/README.md`의 확장 → 배포 → 정리). 같은 migration에서 만든 테이블의 인덱스·제약은 통과한다. `prisma migrate diff`가 넣은 `/* Warnings: */` 주석은 검토 후 지운다. 기본은 expand → 배포 → contract로 나눈다. 의도한 경우만 그 문장 바로 윗줄에 `-- migration-lint: allow <규칙> — <5자 이상 이유>`를 단다(바로 다음 문장 하나에만 적용).
 - 새 열은 `?`이거나 기본값을 둔다(`profileLinks`의 `NOT NULL DEFAULT '[]'`처럼). 기존 데이터에 새 unique를 걸면 중복 행 때문에 실패할 수 있다.
 
 ## 적용 경로 — 에이전트는 실행하지 않는다
