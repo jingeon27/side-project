@@ -3,6 +3,13 @@ import react from 'eslint-plugin-react';
 
 import { baseConfig } from './base';
 
+// spec이 같은 옵션으로 규칙을 검증하도록 preset 옵션을 상수로 둔다.
+export const jsxHandlerNamesOptions = {
+  eventHandlerPrefix: 'handle',
+  eventHandlerPropPrefix: 'on',
+  checkInlineFunction: false,
+} as const;
+
 export const reactConfig: Linter.Config[] = [
   ...baseConfig,
   {
@@ -13,10 +20,7 @@ export const reactConfig: Linter.Config[] = [
         'error',
         { namedComponents: 'function-declaration', unnamedComponents: 'arrow-function' },
       ],
-      'react/jsx-handler-names': [
-        'error',
-        { eventHandlerPrefix: 'handle', eventHandlerPropPrefix: 'on', checkInlineFunction: false },
-      ],
+      'react/jsx-handler-names': ['error', jsxHandlerNamesOptions],
       'side/no-component-fetch': 'error',
     },
   },
