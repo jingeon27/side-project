@@ -29,6 +29,7 @@ export class CommentsController {
     return this.service.updateComment(req, id, body);
   }
   @Delete('comments/:id')
+  @UseGuards(UserGuard)
   deleteComment(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.deleteComment(req, id);
   }

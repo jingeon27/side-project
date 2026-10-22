@@ -11,6 +11,7 @@ export class BlocksController {
   constructor(@Inject(BlocksService) private readonly blocks: BlocksService) {}
 
   @Get('blocks')
+  @UseGuards(UserGuard)
   list(@Req() req: SessionRequest) {
     return this.blocks.blocks(req);
   }
@@ -23,6 +24,7 @@ export class BlocksController {
   }
 
   @Delete('blocks/:id')
+  @UseGuards(UserGuard)
   unblock(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.blocks.unblock(req, id);
   }
