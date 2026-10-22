@@ -21,6 +21,7 @@ import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
 import { AppAuthService } from './app-auth.service';
 import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';
+import { bannedIdentityError, isBannedIdentity, recordBannedIdentities } from './banned-identity';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
@@ -187,6 +188,14 @@ export class AuthService {
       return;
     }
     const user = await this.identities.findUser(provider, subject);
+    // A banned user who still has an account may sign in for support; only a fresh signup is refused.
+    if (!user && (await isBannedIdentity(this.db, provider, subject))) {
+      if (attempt.appChallenge) {
+        res.redirect('gamefeedback://auth/callback?error=login_failed');
+        return;
+      }
+      throw bannedIdentityError();
+    }
     if (provider === 'google' && user && process.env.GF_ADMIN_GOOGLE_SUB === subject && user.role !== 'ADMIN')
       await this.db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
     if (attempt.appChallenge) {
@@ -218,6 +227,10 @@ export class AuthService {
     const u = requireUser(req);
     await this.cache.change(
       async (tx) => {
+        // Serialize with AdminUsersService.ban so a ban racing the deletion is still recorded.
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;
+        const current = await tx.user.findUniqueOrThrow({ where: { id: u.id }, select: { bannedAt: true } });
+        if (current.bannedAt) await recordBannedIdentities(tx, u.id);
         await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
         await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
         await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "authorId" = ${u.id} ORDER BY "id" FOR UPDATE`;
