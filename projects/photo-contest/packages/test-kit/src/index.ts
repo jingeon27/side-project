@@ -10,6 +10,8 @@ export {
 export { apiWebServer, prepareE2eDatabase } from './e2e';
 export type { IE2eDatabase } from './e2e';
 export { loadProjectEnv } from './env';
+export { FAKE_S3_DEFAULTS, startFakeS3 } from './fake-s3';
+export type { IFakeS3, IFakeS3Options } from './fake-s3';
 export { createTestAppLoginTicket, createTestUser, devLogin, graphqlRequest, moveTestContest } from './http';
 export type { IGraphqlResponse } from './http';
 export { createTestImage } from './image';

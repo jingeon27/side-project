@@ -11,6 +11,8 @@
   },
   "scripts": {
     "typecheck": "tsc7 --noEmit",
+    "test": "vitest run",
+    "s3": "node --disable-warning=ExperimentalWarning bin/fake-s3.mjs",
     "check:cleanup": "node --import tsx scripts/check-cleanup.ts"
   },
   "dependencies": {
