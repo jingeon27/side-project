@@ -12,3 +12,10 @@ Expo 57 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글�
 - `WebViewChannel`은 화면 snapshot을 소유하고 `useWebShell`이 useSyncExternalStore로 구독한다. `ShellLifecycle`은 OS 전환·back 중복·초기/후속 링크 경합과 폐기를 관리한다. lifecycle 훅에 가변 let/ref 플래그를 두지 않으며 useCallback과 개별 의존성으로 OS 구독을 안정화한다. WebView props는 `satisfies WebViewProps`로 검증해 타입 추론을 유지한다.
 - 테스트 설정·파일은 이 앱이 소유한다. Vitest unit은 순수 함수, UI는 RN Web과 OS 모듈 대역, Playwright는 실제 웹/API + 실제 native host 로직을 쓴다. Web 3302/API 4302, `.next/e2e-mobile`, 전용 55444 DB의 `gf_test_mobile_*`만 사용한다. DB를 reset하지 않는다.
 - `bundle:check`는 Metro Android/iOS export를 검사한다. Playwright 통과를 dev client·실기기 또는 스토어 빌드 검증으로 표현하지 않는다.
+
+## 앱 스킬
+
+- `.agents/skills/game-feedback-mobile-webview-shell/SKILL.md`: WebView prop·탐색 정책·딥링크·채널 snapshot·복구·뒤로 가기.
+- `.agents/skills/game-feedback-mobile-bridge/SKILL.md`: 브리지 메시지 계약·출처 검증·시스템 브라우저 로그인과 PKCE 인계.
+- `.agents/skills/game-feedback-mobile-test/SKILL.md`: unit/ui 레인·FakeWebView·Playwright native host·실기기 확인 범위.
+- `.agents/skills/game-feedback-mobile-build/SKILL.md`: dev client 실행·`app.config.ts`·`APP_VARIANT`와 `__DEV__`·버전·`bundle:check`.
