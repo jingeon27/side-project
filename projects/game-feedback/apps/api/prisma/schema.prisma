@@ -155,8 +155,10 @@ model PostView {
   postId String
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   visitorHash String
+  networkHash String?
   lastViewedAt DateTime @default(now())
   @@id([postId,visitorHash])
+  @@index([postId,networkHash,lastViewedAt])
 }
 model Answer {
   id String @id @default(cuid())
