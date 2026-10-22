@@ -35,6 +35,8 @@ spec은 `createFixtures(import.meta.dirname)`로 자기 폴더의 `__fixtures__`
 corepack yarn workspace @side/eslint-config check
 ```
 
-Vitest와 RuleTester는 이 패키지가 소유합니다. 오류 메시지 ID와 옵션은 규칙 옆의 spec에 직접 작성합니다. 한 번 쓰는 인라인 핸들러는 허용하며, 오버레이 상태는 `side/no-overlay-state`가 검사합니다.
+Vitest와 RuleTester는 이 패키지가 소유합니다. 오류 메시지 ID와 옵션은 규칙 옆의 spec에 직접 작성합니다. 오버레이 상태는 `side/no-overlay-state`가 검사합니다.
+
+`react/jsx-handler-names`는 `react.ts`가 내보내는 `jsxHandlerNamesOptions`를 preset과 spec이 함께 씁니다. `on*` prop에 넘기는 값은 인라인 함수, 분리한 핸들러 `handle*`, 받은 props 콜백 `on*`(멤버식 `field.onChange` 포함) 중 하나여야 하며, `checkLocalVariables`로 `onClick={submit}` 같은 지역 함수도 검사합니다. 라이브러리가 넘기는 콜백은 `overlay.open(({ close: onClose }) => …)`처럼 `on*`으로 받고, `refetch`·state setter처럼 콜백이 아닌 함수는 `onRetry={() => refetch()}`로 인라인에서 호출합니다.
 
 `installConfig.hoistingLimits`는 이 패키지의 의존성을 워크스페이스 안에 둡니다. 다른 앱의 Vitest peer 구성과 합쳐지며 Yarn의 실행 파일 경로가 누락되는 문제를 방지합니다.
