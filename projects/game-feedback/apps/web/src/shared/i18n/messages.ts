@@ -5,7 +5,18 @@ import { profileMessages } from './profile-messages';
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
   ...infoMessages,
+  '화면 모드를 변경했어요': ['Display mode updated', '画面モードを変更しました'],
+  '변경한 화면 모드는 이 기기에 저장돼요.': [
+    'Your display mode is saved on this device.',
+    '変更した画面モードはこの端末に保存されます。',
+  ],
   ...profileMessages,
+  '로그인이 필요해요': ['Sign in required', 'ログインが必要です'],
+  '로그인 후 이 기능을 이용할 수 있어요.': [
+    'Sign in to use this feature.',
+    'この機能を利用するにはログインしてください。',
+  ],
+  로그인하기: ['Sign in', 'ログインする'],
   '소셜 계정으로 로그인하세요.': [
     'Sign in with your social account.',
     'ソーシャルアカウントでログインしてください。',
