@@ -21,7 +21,7 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 ## 상태와 비동기
 
 - 조회 키와 요청은 `*.options.ts`의 `queryOptions`·`infiniteQueryOptions`로 정의한다. 캐시 갱신도 해당 팩토리를 사용하고 컴포넌트에서 키 배열을 다시 만들지 않는다. 전용 조회 훅으로 useQuery를 감싸지 않는다.
-- mutation의 요청·key·캐시 갱신은 `*.mutation-options.ts`, React 연결은 `*.hook.ts`에 둔다. mutation 훅은 원래 useMutation 결과를 반환한다. pending·오류·재시도 변수를 useState/ref로 복제하지 않는다.
+- mutation의 요청·key·캐시 갱신은 `*.mutation-options.ts`에 두고 named public export로 공개한다. 화면이나 기능 흐름의 호출부에서 `useMutation(xMutationOptions(client, …))`로 직접 조립하며 단순히 감싸 반환하는 전용 훅은 만들지 않는다. pending·오류·재시도 변수를 useState/ref로 복제하지 않는다.
 - 폼은 `useZodForm`과 목적별 `model/*.schema.ts`를 사용한다. 입력값을 별도 useState에 복제하지 않는다. 실패한 답변 초안·재전송 UUID와 제재 사유는 보존하고 서버 성공 뒤 폼을 초기화한다.
 - 로딩과 조회 실패는 영역별 `AsyncBoundary`로 제한한다. 문의 하나가 실패해도 메뉴와 문의 목록을 사용할 수 있어야 한다. 계정 전환은 실행 중 쿼리 취소 → 이전 캐시 삭제 → 새 세션 저장 순서를 유지한다.
 - URL이 선택 화면·사용자·문의의 단일 출처다. 외부 구독은 useSyncExternalStore를 사용한다. useRef는 외부 자원 식별 등 실제 필요한 경우에 제한하며 DOM 연결은 정리 가능한 callback ref를 우선한다. QueryClient처럼 수명이 고정된 자원을 만드는 lazy useState는 허용한다.
