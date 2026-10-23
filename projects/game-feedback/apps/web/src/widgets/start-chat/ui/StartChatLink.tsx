@@ -24,14 +24,14 @@ interface IStartChatLinkProps {
 export function StartChatLink({ source, userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
   const client = useQueryClient();
   const { t } = useI18n();
-  const { session, login, notify } = useSession();
+  const { session, requireLogin, notify } = useSession();
   const router = useRouter();
   const { locale } = useParams<{ locale: string }>();
   const mutation = useMutation(createConversationMutationOptions(client, session?.user?.id));
 
   function handleStart() {
     if (!session?.user) {
-      login();
+      requireLogin();
       return;
     }
     mutation.mutate(userId, {

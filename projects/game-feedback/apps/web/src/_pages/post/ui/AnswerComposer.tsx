@@ -19,7 +19,7 @@ interface IAnswerComposerProps {
 export function AnswerComposer({ postId }: IAnswerComposerProps) {
   const client = useQueryClient();
   const { t } = useI18n();
-  const { session, login } = useSession(),
+  const { session, requireLogin } = useSession(),
     notify = useNotify(),
     mutation = useMutation(createAnswerMutationOptions(client)),
     form = useZodForm(answerFormSchema, { defaultValues: { body: '' } });
@@ -70,7 +70,13 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
       ) : (
         <div className="login-prompt">
           <p>{t('로그인하고 함께 플레이를 이야기해요.')}</p>
-          <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
+          <Button
+            variant="primary"
+            size="md"
+            type="submit"
+            className="button dark"
+            onClick={() => requireLogin()}
+          >
             {t('로그인하고 피드백 남기기')}
             <ArrowUpRight size={16} />
           </Button>

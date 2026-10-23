@@ -16,7 +16,7 @@ import { commentFormSchema } from '../model/content.schema';
 export function PostCommentForm({ postId }: { postId: string }) {
   const client = useQueryClient();
   const { t } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const mutation = useMutation(createCommentMutationOptions(client));
   const notify = useNotify();
   const form = useZodForm(commentFormSchema, { defaultValues: { body: '' } });
@@ -24,7 +24,7 @@ export function PostCommentForm({ postId }: { postId: string }) {
   if (!session.user)
     return (
       <div className="comment-login">
-        <Button variant="outline" size="md" type="button" onClick={() => login()}>
+        <Button variant="outline" size="md" type="button" onClick={() => requireLogin()}>
           {t('로그인하고 댓글 남기기')}
         </Button>
       </div>
