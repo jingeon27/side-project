@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
+import { createPrismaAdapter } from '@photo-contest/api/database-adapter';
 import { PrismaClient } from '@photo-contest/api/database-client';
 
-import { PRISMA_CLI, PRISMA_SCHEMA } from './paths';
+import { PRISMA_CLI, PRISMA_CONFIG } from './paths';
 
 /** 테스트 레인이 만드는 격리 스키마의 접두사. 만들고 지우는 스키마는 `<접두사>_<uuid 32자>`뿐이다. */
 export const TEST_SCHEMA_PREFIXES = [
@@ -89,13 +90,13 @@ export function schemaUrl(databaseUrl: string, schema: string) {
 /** 스키마를 만들고 마이그레이션을 적용한 뒤 그 스키마를 가리키는 URL을 돌려준다. */
 export async function createIsolatedDatabase(databaseUrl: string, schema: string) {
   const url = schemaUrl(databaseUrl, schema);
-  const admin = new PrismaClient({ datasourceUrl: databaseUrl });
+  const admin = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
   try {
     await admin.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
   } finally {
     await admin.$disconnect();
   }
-  execFileSync(process.execPath, [PRISMA_CLI, 'migrate', 'deploy', '--schema', PRISMA_SCHEMA], {
+  execFileSync(process.execPath, [PRISMA_CLI, 'migrate', 'deploy', '--config', PRISMA_CONFIG], {
     env: { ...process.env, DATABASE_URL: url },
     stdio: 'pipe',
   });
@@ -106,7 +107,7 @@ export async function createIsolatedDatabase(databaseUrl: string, schema: string
 export async function dropIsolatedDatabase(databaseUrl: string, schema: string) {
   assertTestDatabaseUrl(databaseUrl);
   assertTestSchemaName(schema);
-  const admin = new PrismaClient({ datasourceUrl: databaseUrl });
+  const admin = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
   try {
     await admin.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   } finally {
@@ -116,5 +117,5 @@ export async function dropIsolatedDatabase(databaseUrl: string, schema: string) 
 
 /** 테스트에서 마감 시각 변경처럼 화면으로 만들 수 없는 상태를 준비할 때 쓴다. */
 export function createDatabaseClient(databaseUrl: string) {
-  return new PrismaClient({ datasourceUrl: databaseUrl });
+  return new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
 }
