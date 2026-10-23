@@ -3,6 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
 
 describe('community board navigation', () => {
+  it('가이드는 프로필 안내 아래의 화면이며 별도 탭을 만들지 않아야 한다', () => {
+    for (const locale of ['ko', 'en', 'ja'])
+      expect(resolveAppRoute(appRoutes.guide(locale))).toMatchObject({
+        screen: 'guide',
+        tab: 'settings',
+        parent: appRoutes.settings(locale),
+      });
+  });
   it.each(['login', 'onboarding'] as const)(
     '인증 화면 %s는 같은 언어의 안전한 복귀 경로만 보존해야 한다',
     (screen) => {
