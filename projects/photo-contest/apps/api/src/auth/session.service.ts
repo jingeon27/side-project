@@ -7,6 +7,7 @@ import { readCookie } from '../common/http/cookie-header';
 import { SESSION_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
 import { authCookieOptions, sessionCookieName } from './auth-cookie';
+import { USER_VIEW_SELECT } from './user-view';
 
 // randomToken()이 만드는 32바이트 base64url. 다른 모양은 DB를 조회하지 않고 비로그인으로 본다.
 const SESSION_TOKEN = /^[A-Za-z0-9_-]{43}$/;
@@ -15,6 +16,8 @@ export interface IViewer {
   id: string;
   nickname: string;
   avatar: string | null;
+  needsOnboarding?: boolean;
+  avatarUploadId?: string | null;
 }
 
 function sessionToken(req: Request) {
@@ -39,7 +42,9 @@ export class SessionService {
   }
 
   async requireViewer(req: Request): Promise<IViewer> {
-    return (await this.viewer(req)) ?? fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
+    const viewer = (await this.viewer(req)) ?? fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
+    if (viewer.needsOnboarding) fail('약관 동의와 프로필 설정을 먼저 완료해 주세요.', ERROR_CODE.FORBIDDEN);
+    return viewer;
   }
 
   /** 새 세션을 만들고 쿠키로 내려준다. DB에는 토큰 해시만 저장한다. */
@@ -65,7 +70,7 @@ export class SessionService {
     if (!token) return null;
     const session = await this.db.session.findUnique({
       where: { tokenHash: sha256Hex(token) },
-      select: { expiresAt: true, user: { select: { id: true, nickname: true, avatar: true } } },
+      select: { expiresAt: true, user: { select: USER_VIEW_SELECT } },
     });
     return session && session.expiresAt > new Date() ? session.user : null;
   }

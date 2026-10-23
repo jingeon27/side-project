@@ -78,7 +78,11 @@ export class MediaUploadService {
         where: { userId: viewer.id },
         _sum: { byteSize: true },
       });
-      if ((stored._sum.byteSize ?? 0) + byteSize > USER_STORAGE_QUOTA_BYTES)
+      const profiles = await tx.profileUpload.aggregate({
+        where: { userId: viewer.id },
+        _sum: { byteSize: true },
+      });
+      if ((stored._sum.byteSize ?? 0) + (profiles._sum.byteSize ?? 0) + byteSize > USER_STORAGE_QUOTA_BYTES)
         fail(STORAGE_QUOTA_EXCEEDED, ERROR_CODE.RATE_LIMITED);
       const pending = contestId
         ? await tx.upload.count({

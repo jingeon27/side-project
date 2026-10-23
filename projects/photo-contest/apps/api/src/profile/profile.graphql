@@ -1,0 +1,15 @@
+type ProfileAvatarUpload {
+  id: ID!
+}
+
+extend type Mutation {
+  requestProfileAvatarUpload(contentType: String!, byteSize: Int!): UploadTicket!
+  completeProfileAvatarUpload(uploadId: ID!): ProfileAvatarUpload!
+  completeOnboarding(
+    nickname: String!
+    avatarId: ID
+    removeAvatar: Boolean = false
+    acceptedTerms: Boolean!
+  ): User!
+  updateMyProfile(nickname: String!, avatarId: ID, removeAvatar: Boolean = false): User!
+}

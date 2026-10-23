@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
 
 import { Prisma } from '../../generated/prisma';
 import { sha256Hex } from '../common/crypto';
@@ -11,37 +10,13 @@ import {
   AUTH_LOGIN_ID_LIMIT,
   AUTH_LOGIN_IP_LIMIT,
   AUTH_REGISTER_IP_LIMIT,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  TEXT_LIMIT,
 } from '../config/limits';
 import { Database } from '../database/database.service';
+import type { LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
 import { hashPassword, verifyPassword } from './password';
 import { SessionService } from './session.service';
 import { USER_VIEW_SELECT } from './user-view';
 
-const loginIdSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(/^[a-z0-9_]{3,24}$/, '아이디는 영문·숫자·밑줄 3~24자로 입력해 주세요.');
-const passwordSchema = z
-  .string()
-  .min(PASSWORD_MIN_LENGTH, '비밀번호는 15자 이상 입력해 주세요.')
-  .max(PASSWORD_MAX_LENGTH, '비밀번호는 128자 이내로 입력해 주세요.');
-const loginSchema = z.object({
-  loginId: loginIdSchema,
-  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
-});
-const registerSchema = z.object({
-  loginId: loginIdSchema,
-  password: passwordSchema,
-  nickname: z
-    .string()
-    .trim()
-    .min(1, '닉네임을 입력해 주세요.')
-    .max(TEXT_LIMIT.NICKNAME, '닉네임은 24자 이내로 입력해 주세요.'),
-});
 const LOGIN_FAILED = '아이디 또는 비밀번호를 확인해 주세요.';
 const THROTTLED = '로그인 요청이 너무 많습니다. 15분 뒤 다시 시도해 주세요.';
 
@@ -65,11 +40,8 @@ export class PasswordAuthService {
     private readonly sessions: SessionService,
   ) {}
 
-  async register(input: unknown, req: Request, res: Response) {
-    await this.throttle(`register:ip:${clientAddress(req)}`, AUTH_REGISTER_IP_LIMIT);
-    const parsed = registerSchema.safeParse(input);
-    if (!parsed.success) fail(parsed.error.issues[0]?.message ?? '입력 내용을 확인해 주세요.');
-    const { loginId, password, nickname } = parsed.data;
+  async register(input: RegisterWithPasswordDto, req: Request, res: Response) {
+    const { loginId, password, nickname } = input;
     const passwordHash = await hashPassword(password);
     const user = await this.db.user
       .create({
@@ -91,11 +63,8 @@ export class PasswordAuthService {
     return user;
   }
 
-  async login(input: unknown, req: Request, res: Response) {
-    await this.throttle(`login:ip:${clientAddress(req)}`, AUTH_LOGIN_IP_LIMIT);
-    const parsed = loginSchema.safeParse(input);
-    if (!parsed.success) fail(LOGIN_FAILED, ERROR_CODE.UNAUTHENTICATED);
-    const { loginId, password } = parsed.data;
+  async login(input: LoginWithPasswordDto, req: Request, res: Response) {
+    const { loginId, password } = input;
     // 아이디 버킷은 실패만 센다. 성공한 로그인이 한도를 쓰거나 남이 성공 횟수로 계정을 잠그지 못한다.
     const idKey = `login:id:${loginId}`;
     if ((await this.attempts(idKey)) >= AUTH_LOGIN_ID_LIMIT) fail(THROTTLED, ERROR_CODE.RATE_LIMITED);
@@ -111,6 +80,13 @@ export class PasswordAuthService {
     await this.sessions.end(req, res);
     await this.sessions.start(res, credential.userId);
     return credential.user;
+  }
+
+  consumeRequest(kind: 'register' | 'login', req: Request) {
+    return this.throttle(
+      `${kind}:ip:${clientAddress(req)}`,
+      kind === 'register' ? AUTH_REGISTER_IP_LIMIT : AUTH_LOGIN_IP_LIMIT,
+    );
   }
 
   private async throttle(key: string, limit: number) {

@@ -1,28 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';
-import { z } from 'zod';
 
 import type { OAuthAttempt } from '../../generated/prisma';
 import { pkceChallenge, randomToken, safeEqual, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readCookie } from '../common/http/cookie-header';
-import { textValue } from '../common/validation';
 import { developmentLoginEnabled, mobileAuthCallbackUrl, oauthCredentials, webOrigin } from '../config/env';
 import {
-  APP_LOGIN_CODE_MAX_LENGTH,
   APP_LOGIN_TICKET_TTL_MS,
   OAUTH_ATTEMPT_TTL_MS,
   OAUTH_PROVIDER_TIMEOUT_MS,
   PKCE_CHALLENGE_LENGTH,
-  PKCE_VERIFIER_MAX_LENGTH,
-  PKCE_VERIFIER_MIN_LENGTH,
-  TEXT_LIMIT,
 } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { authCookieOptions, oauthStateCookieName } from './auth-cookie';
+import type { AppLoginExchangeDto } from './auth.dto';
 import {
   accessTokenOf,
   identityOf,
@@ -49,17 +44,6 @@ const OAUTH_CALLBACK_ROUTE = 'GET /auth/:provider/callback';
 
 // 앱이 만든 S256 challenge: base64url(SHA-256(verifier))
 const APP_CHALLENGE = new RegExp(`^[A-Za-z0-9_-]{${PKCE_CHALLENGE_LENGTH}}$`);
-// RFC 7636 unreserved 문자
-const PKCE_VERIFIER = new RegExp(
-  `^[A-Za-z0-9._~-]{${PKCE_VERIFIER_MIN_LENGTH},${PKCE_VERIFIER_MAX_LENGTH}}$`,
-);
-
-const devLoginSchema = z.object({ nickname: z.unknown() });
-const appExchangeSchema = z.object({
-  code: z.string().min(1).max(APP_LOGIN_CODE_MAX_LENGTH),
-  verifier: z.string().regex(PKCE_VERIFIER),
-});
-
 export interface IAuthConfig {
   developmentLogin: boolean;
   google: boolean;
@@ -139,9 +123,8 @@ export class AuthService {
   }
 
   /** NODE_ENV=development와 ENABLE_DEV_LOGIN=true가 모두 있을 때만 연다. */
-  async devLogin(body: unknown, res: Response) {
+  async devLogin(nickname: string, res: Response) {
     if (!developmentLoginEnabled()) fail(MESSAGE.DEV_LOGIN_DISABLED, ERROR_CODE.FORBIDDEN);
-    const nickname = textValue(devLoginSchema.safeParse(body).data?.nickname, TEXT_LIMIT.NICKNAME, '닉네임');
     const user = await this.db.user.upsert({
       where: { provider_providerId: { provider: 'dev', providerId: nickname } },
       create: { provider: 'dev', providerId: nickname, nickname },
@@ -211,12 +194,12 @@ export class AuthService {
       const identity = await this.fetchIdentity(provider, code, verified.verifier);
       const user = await this.db.user.upsert({
         where: { provider_providerId: { provider: provider.name, providerId: identity.providerId } },
-        create: { provider: provider.name, ...identity },
-        update: { nickname: identity.nickname, avatar: identity.avatar },
+        create: { provider: provider.name, ...identity, needsOnboarding: true },
+        update: {},
       });
       if (verified.appChallenge) return await this.issueAppTicket(user.id, verified.appChallenge);
       await this.sessions.start(res, user.id);
-      return `${webOrigin()}/`;
+      return `${webOrigin()}${user.needsOnboarding ? '/onboarding' : '/'}`;
     } catch (error) {
       // 콜백은 4xx 대신 리다이렉트하므로 예상하지 못한 오류(provider 통신·DB)만 따로 보고한다.
       if (!(error instanceof GraphQLError)) reportUnexpectedError(error, { route: OAUTH_CALLBACK_ROUTE });
@@ -230,17 +213,11 @@ export class AuthService {
    * 앱이 받은 일회용 코드와 PKCE verifier를 확인하고 WebView 쿠키 저장소에 세션을 만든다.
    * 형식 오류·만료·불일치·재사용은 모두 같은 403으로 답한다.
    */
-  async exchangeAppLogin(body: unknown, res: Response) {
-    const parsed = appExchangeSchema.safeParse(body);
-    if (!parsed.success) fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
-    const codeHash = sha256Hex(parsed.data.code);
+  async exchangeAppLogin(body: AppLoginExchangeDto, res: Response) {
+    const codeHash = sha256Hex(body.code);
     const now = new Date();
     const ticket = await this.db.appLoginTicket.findUnique({ where: { codeHash } });
-    if (
-      !ticket ||
-      ticket.expiresAt <= now ||
-      !safeEqual(pkceChallenge(parsed.data.verifier), ticket.challenge)
-    )
+    if (!ticket || ticket.expiresAt <= now || !safeEqual(pkceChallenge(body.verifier), ticket.challenge))
       fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
     // 같은 코드로 동시에 교환해도 삭제에 성공한 한 요청만 세션을 받는다.
     const consumed = await this.db.appLoginTicket.deleteMany({

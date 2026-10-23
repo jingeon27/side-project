@@ -8,7 +8,13 @@ datasource db {
 model User {
   id String @id @default(cuid())
   nickname String
+  needsOnboarding Boolean @default(false)
+  termsAcceptedAt DateTime?
+  termsVersion String?
   avatar String?
+  avatarUploadId String? @unique
+  avatarUpload ProfileUpload? @relation("CurrentUserAvatar", fields: [avatarUploadId], references: [id], onDelete: SetNull)
+  profileUploads ProfileUpload[] @relation("UserProfileUploads")
   provider String
   providerId String
   memberships GroupMember[]
@@ -329,4 +335,18 @@ model GroupCategory {
   posts Post[]
   @@unique([id,groupId])
   @@index([groupId,archivedAt,position])
+}
+model ProfileUpload {
+  id String @id @default(cuid())
+  userId String
+  user User @relation("UserProfileUploads", fields: [userId], references: [id], onDelete: Cascade)
+  currentUsers User[] @relation("CurrentUserAvatar")
+  storageKey String @unique
+  contentType String
+  byteSize Int
+  completedAt DateTime?
+  expiresAt DateTime
+  policyExpiresAt DateTime
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
 }
