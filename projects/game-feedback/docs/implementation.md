@@ -1185,3 +1185,9 @@ Node 24.18.0에서 API typecheck·build, 단위 164개, 격리 PostgreSQL/Supert
 Admin ESLint는 호출부의 useMutation을 허용하면서 mutationOptions 정의와 SDK 호출 경계를 유지한다. Web·Admin AGENTS와 앱·프로젝트 스킬, 아키텍처 안내도 전용 mutation 래퍼 없이 직접 조립하는 기준으로 맞췄다. 댓글 UI 테스트는 제거한 훅 대신 API 경계만 대체해 실제 options·QueryClient의 대기/실패/재시도·캐시 처리를 검증한다. 인증 다이얼로그 테스트도 실제 native-login options를 조립하고 보이는 로그인 방식과 폼의 책임을 확인한다.
 
 Node 24에서 Web·Admin의 typecheck·lint, Web 단위/UI 216개와 Admin 단위 21개가 통과했다. Admin production build와 Web E2E용 production build도 통과했다. Chromium 브라우저 E2E는 Web 9개 파일의 28개(로그인·가입·폼 수정/삭제·댓글/답글·알림·도움됨·채팅·차단·3개 언어 게임 계정), Admin 5개(권한·문의 재시도·신고·인증·밴)를 통과했다. 테스트는 이 Worktree의 전용 DB 55444와 각 실행의 새 gf_test_ 스키마를 사용했다. 남은 테스트 스키마가 0개임을 확인하고 소유 테스트 DB를 종료했다. codegen SDK diff는 없고 기존 개발 DB·서버는 변경하지 않았다. 모든 브라우저 레인·실기기·실제 외부 OAuth·배포 검증은 포함하지 않는다.
+
+## 2026-10-23 신고 목록 options 통합
+
+Admin의 reportScopeOptions를 제거하고 reportOptions 하나가 상태별 조회와 전체 상태 무효화 키를 함께 정의하도록 합쳤다. 상태를 넘기면 기존 ['admin-reports', status]로 무한 목록을 조회하고, 생략하면 ['admin-reports']와 skipToken을 반환한다. 신고 검토·공개 상태 변경의 성공 처리는 reportOptions()로 모든 상태 목록을 무효화한다. 상태를 넘긴 호출은 오버로드로 조회 함수 타입을 좁혀 useSuspenseInfiniteQuery의 타입 추론을 유지한다.
+
+Node 24에서 immutable install, Admin typecheck·lint·단위 21개·production build, Chromium의 관리자 문의·신고 검토 E2E 1개가 통과했다. 실제 신고 검토 뒤 기본 대기 목록에서 사라지고 검토 완료 목록에 표시되는 흐름을 확인했다. codegen SDK diff는 없고, 이번 Worktree의 전용 DB 55444와 새 gf_test_admin_ 스키마만 사용했다. 남은 테스트 스키마 0개와 소유 테스트 DB 종료를 확인했다. 전체 브라우저 레인·외부 OAuth·배포 검증은 실행하지 않았다.
