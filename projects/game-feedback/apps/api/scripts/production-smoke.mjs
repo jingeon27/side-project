@@ -205,8 +205,10 @@ try {
   );
   assert.equal((await original.json('/api/auth/demo', { nickname: 'forbidden' })).status, 404);
   assert.equal((await original.http('/api/auth/test-accounts')).status, 404);
-  // The web callback answers an uncredentialed POST with 401, so 404 means Caddy blocked it first.
-  assert.equal((await original.json('/internal/cache/revalidate', { tags: ['posts'] })).status, 404);
+  // The web callback answers an uncredentialed POST with 401, so this proves Caddy blocked it first.
+  const internalCallback = await original.json('/internal/cache/revalidate', { tags: ['posts'] });
+  assert.equal(internalCallback.status, 404);
+  assert.equal(internalCallback.text(), 'edge-blocked');
   assert.equal(original.sql('SELECT rolsuper FROM pg_roles WHERE rolname = current_user;'), 'f');
   const expectedMigrations = readdirSync(join(project, 'apps/api/prisma/migrations'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
