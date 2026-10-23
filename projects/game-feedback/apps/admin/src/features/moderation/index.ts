@@ -1,8 +1,8 @@
 export { reportOptions, userOptions } from './model/moderation.options';
 export {
-  useVerifyUserMutation,
-  useBanUserMutation,
-  useReviewReportMutation,
-  useContentVisibilityMutation,
-} from './model/moderation.hook';
+  verifyMutationOptions,
+  banMutationOptions,
+  reviewMutationOptions,
+  visibilityMutationOptions,
+} from './model/moderation.mutation-options';
 export type { TAdminReport, TAdminUser } from './api/moderation.api';

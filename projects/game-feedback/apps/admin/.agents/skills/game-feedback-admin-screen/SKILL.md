@@ -27,9 +27,9 @@ FSD 레이어·명명·폼·React Query 일반 규칙은 프로젝트 `game-feed
 2. `src/features/<domain>/`
    - `api/<domain>.api.ts`: SDK 호출과 인자 모양 변환만 둔다. ESLint가 `@game-feedback/sdk` import를 `src/features/*/api/**`에만 허용한다. 화면 타입은 `Awaited<ReturnType<typeof fetchX>>`로 여기서 만든다(`TAdminReport`, `TAdminUser`, `TSupportThread`).
    - `model/<domain>.options.ts`: `queryOptions`·`infiniteQueryOptions`. 기존 key는 `admin-` 접두사(`['admin-reports']`, `['admin-user', id]`)다. 주기 갱신은 여기의 `refetchInterval`에 둔다(문의 목록 10초, 메시지 5초).
-   - `model/<domain>.mutation-options.ts`: `xMutationOptions(client: QueryClient)`가 `mutationOptions({ mutationKey, mutationFn, onSuccess })`를 반환하고, 갱신은 `client.invalidateQueries(xOptions(...))`처럼 options 팩토리를 넘긴다. `useMutation`·`mutationOptions` import는 `src/features/*/model/**`에서만 허용된다.
-   - `model/<domain>.hook.ts`: `use<Action>Mutation()`이 `useMutation(xMutationOptions(useQueryClient()))` 결과를 그대로 반환한다.
-   - `index.ts`: options·mutation 훅·타입만 export한다.
+   - `model/<domain>.mutation-options.ts`: `xMutationOptions(client: QueryClient)`가 `mutationOptions({ mutationKey, mutationFn, onSuccess })`를 반환하고, 갱신은 `client.invalidateQueries(xOptions(...))`처럼 options 팩토리를 넘긴다. `mutationOptions` 정의는 `src/features/*/model/**`가 소유한다. 호출부는 public export를 통해 팩토리를 가져온다.
+   - 화면·기능 흐름의 호출부에서 `const client = useQueryClient()`와 `useMutation(xMutationOptions(client))`로 직접 조립한다. 단순히 감싸 반환하는 전용 훅은 만들지 않는다.
+   - `index.ts`: query options·mutation options·타입을 export한다.
 3. 독립 조회나 폼을 가진 재사용 영역은 `src/widgets/<name>/`(`ui/`, 폼 스키마 `model/*.schema.ts`), 한 화면 전용은 `src/_pages/<domain>/ui/`·`model/`에 둔다. `src/_pages/<domain>/index.ts`는 `<Domain>Page`만 export한다.
 4. 탭이면 세 곳을 함께 바꾼다.
    - `admin-route.ts`의 `tabSchema`. 선택 ID가 있으면 `idSchema`로 읽는 파라미터와 `admin<X>Path`를 더하고 `src/shared/lib/index.ts`에서 export한다.

@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
 
-import { useLogoutMutation } from '@/features/auth';
+import { logoutMutationOptions } from '@/features/auth';
 import type { TAdminTab } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
 
@@ -15,7 +17,8 @@ interface IAdminShellProps {
 }
 
 export function AdminShell({ nickname, tab, children }: IAdminShellProps) {
-  const logout = useLogoutMutation();
+  const client = useQueryClient();
+  const logout = useMutation(logoutMutationOptions(client));
   return (
     <div className="admin-shell">
       <header className="admin-header">
