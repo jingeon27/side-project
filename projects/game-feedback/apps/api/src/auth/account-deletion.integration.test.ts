@@ -10,6 +10,7 @@ import { CommentSchema, PostDetailSchema, PostSchema, SessionSchema } from '@gam
 
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 
@@ -49,7 +50,7 @@ describe('account deletion keeps other users’ replies unchanged', () => {
     );
     if (result.status !== 0)
       throw new Error(`Migration deployment failed: ${result.stderr}\n${result.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
   }, 30000);

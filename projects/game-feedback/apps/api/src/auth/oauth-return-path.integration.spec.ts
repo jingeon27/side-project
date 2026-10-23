@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { responseLocation } from '../testing/http-response';
 import { OAUTH_RETURN_COOKIE } from './oauth-return-path';
@@ -32,7 +33,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
     );
     if (migration.status !== 0)
       throw new Error(`OAuth return schema setup failed: ${migration.stdout}\n${migration.stderr}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     app = await createApp({
       databaseUrl,
       prisma: db,

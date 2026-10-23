@@ -1,4 +1,5 @@
 import { conversationPair } from './chat/conversation-pair';
+import { createPrismaAdapter } from './database/prisma-adapter';
 import { Prisma, PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from './security';
 import { seedCommunityPosts } from './seed-community-posts';
@@ -221,7 +222,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
   }
 }
 if (require.main === module) {
-  const db = new PrismaClient({ datasources: { db: { url: assertDatabaseUrl(process.env.DATABASE_URL) } } });
+  const db = new PrismaClient({ adapter: createPrismaAdapter(assertDatabaseUrl(process.env.DATABASE_URL)) });
   seed(db, process.env.GF_DEMO_MODE === 'true' || process.env.GF_TEST_AUTH_ENABLED === 'true')
     .then(() => console.log('Game Feedback seed complete (existing content preserved).'))
     .finally(() => db.$disconnect())

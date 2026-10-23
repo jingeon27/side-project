@@ -1167,3 +1167,11 @@ Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게
 - Playwright(Web `e2e/app-links.spec.ts`, Mobile `app-shell` 콜백 단언)와 production·공통 인스턴스 smoke의 `/.well-known`·콜백 확인은 작성만 하고 CI에 맡겼다. 서버·시뮬레이터·Docker·`next build`·EAS 빌드는 실행하지 않았다.
 
 실제 제공자 로그인 뒤 iOS 세션 콜백·Android App Link 복귀, Apple CDN의 AASA 반영, Play App Signing 지문 검증은 실기기·콘솔 확인이 필요하다.
+
+## 2026-10-23 Prisma 7 업그레이드
+
+Prisma CLI·Client·PostgreSQL 어댑터를 7.10.1로 맞췄다(2026-10-15 배포, Yarn의 24시간 게이트 유지). 루트 yarn.lock은 두 API와 Photo Contest test-kit이 함께 쓰는 의존성 해석을 기록하기 위해 변경했다. 앱 전용 prisma.config.ts가 CLI URL과 프로젝트 환경변수 로딩을 맡고, 운영 이미지에도 포함한다. 기존 CommonJS 산출물·생성 경로는 prisma-client-js로 유지하며 런타임은 pg 어댑터를 쓴다. DB 모델·migration SQL은 변경하지 않았다.
+
+API·seed·운영 관리 스크립트·통합 하네스와 Web/Admin/Mobile teardown이 같은 어댑터를 사용한다. schema는 ORM과 raw SQL의 search_path에 함께 전달하고 connection_limit은 풀 최대 연결 수로 옮겼다. pg의 단일 connectionTimeoutMillis에는 pool_timeout을 우선하고 connect_timeout을 기본값으로 사용한다. 운영 URL의 sslcert는 서버 CA로 읽어 인증서 검증을 유지한다. Prisma 7에서 제거된 --skip-generate와 migrate diff 플래그도 현재 안내·실행 경로에서 교체했다.
+
+Node 24.18.0에서 API typecheck·build, 단위 164개, 격리 PostgreSQL/Supertest 통합 170개가 통과했다. Admin typecheck·변경 파일 lint·단위 21개, Web/Mobile typecheck·변경 파일 lint도 통과했다. codegen 후 SDK diff는 없다. Web/Admin/Mobile teardown은 실제 전용 DB에서 각각 새 스키마를 생성하고 제거되는지 확인했다. 종료 시 남은 gf_test_ 스키마가 0개임을 확인하고 소유권 가드를 거쳐 이번 Worktree의 테스트 DB를 종료했다. 최초 테스트 DB 초기화는 실행 환경의 locale 때문에 실패했고 LC_ALL=C LANG=C로 같은 실행을 통과했다. 이번 Worktree의 전용 55444 DB와 새 gf_test_ 스키마만 사용했으며 기존 개발 서버·DB는 변경하지 않았다. 브라우저 전체 E2E·컨테이너 빌드·실제 RDS TLS 연결·배포는 실행하지 않았다.

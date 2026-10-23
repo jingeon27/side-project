@@ -17,7 +17,7 @@
     "db:generate": "prisma generate",
     "openapi": "tsx src/openapi.ts",
     "db:sync": "node ../../scripts/db.mjs sync",
-    "prisma:sync": "prisma db push --skip-generate"
+    "prisma:sync": "prisma db push"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1149.0",

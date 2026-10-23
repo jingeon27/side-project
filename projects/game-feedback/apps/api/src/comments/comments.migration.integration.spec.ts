@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, it } from 'vitest';
 
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 
@@ -22,7 +23,7 @@ it('upgrades existing comments to root comments without losing their text', asyn
   assertDatabaseUrl(databaseUrl, 'test');
   const fixture = mkdtempSync(join(tmpdir(), 'gf-comment-migration-'));
   const prismaDir = fileURLToPath(new URL('../../prisma/', import.meta.url));
-  const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  const db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
   function deploy() {
     const result = spawnSync(
       process.execPath,
