@@ -263,3 +263,11 @@ API·운영 migration/서비스 검사·test-kit이 같은 어댑터를 사용�
 통합 검증에서 Prisma 7의 커밋 충돌이 P2034가 아닌 DriverAdapterError(TransactionWriteConflict)로 직접 전달되어 동시 좋아요 요청이 간헐적으로 내부 오류가 되는 문제를 재현했다. 어댑터 충돌도 기존 4회 재시도·CONFLICT 정책으로 처리하며, 다른 어댑터 오류는 그대로 전파한다. 단위 회귀 5개를 추가하고 기존 동시 좋아요 통합 사양에서 내부 오류 보고가 없고 실패 7건 모두 한도 안내인지 확인한다. 운영 모드 통합 하네스에는 WEB_ORIGIN과 일치하는 앱 로그인 콜백 기본값을 더해 최신 운영 설정을 충족시켰다.
 
 Node 24.18.0에서 API·test-kit typecheck, API build, API 단위 127개, test-kit 단위 35개와 변경 파일 ESLint가 통과했다. 사용자 승인 후 이 Worktree에 UTF-8 테스트 DB(55434/photo_contest_test)를 새로 기동해 PostgreSQL/Supertest 통합 55개 파일·346개를 모두 통과했다(skip 없음). 동시 좋아요 사양은 수정 후 8회 연속 통과했다. test-kit check:cleanup으로 남은 테스트 스키마가 0개임을 확인하고 이번 Worktree의 테스트 DB를 종료했다. 기존 개발 DB·서버는 변경하지 않았다. 실제 RDS TLS 연결·컨테이너 빌드·배포는 실행하지 않았다.
+
+## 2026-10-23 sharp·GraphQL Tools 보안 업데이트
+
+테스트킷의 sharp를 ^0.35.5로 올려 0.34.5와 해당 네이티브 바이너리를 lockfile에서 제거했다. 웹은 GraphQL Codegen CLI 7.4.6·typescript-operations 6.1.10·typed-document-node 7.2.0으로 올려 GraphQL Tools utils 11.2.2를 제거했다. 공식 v6 생성 파이프라인에 맞춰 중복 typescript 플러그인을 빼고 enumType: const·문자열 ID·기존 Apollo __typename 정책으로 재생성했다. 생성 JavaScript를 이전 버전과 비교해 모든 GraphQL 문서·enum 값이 동일함을 확인했고 재생성 결과도 동일하다.
+
+추가 audit에서 NestJS GraphQL 14.0.3이 정확히 고정한 utils 12.0.1에도 GHSA-c4qx-w738-7hr3이 적용됨을 확인했다. 상위 패키지의 수정 릴리스가 없어 루트 package.json의 해당 버전 descriptor에만 12.0.3 resolution을 적용했다. 이 보안 패치를 모든 설치·CI에서 일치시키기 위해 루트 manifest와 yarn.lock을 함께 변경했다. 최종 utils는 12.0.3·12.1.0만 남는다. Yarn의 24시간 게이트(1440분)는 유지했다.
+
+Node 24.18.0에서 immutable install, Web·API·test-kit typecheck, Web·API·test-kit lint, API의 별도 .data 출력 경로 빌드가 통과했다. Web unit/UI 440개·API unit 127개·test-kit 35개·실제 생성 문서 API 계약 20개, 총 622개가 통과했다. 계약 테스트는 새 web_api 스키마·전용 55434 DB와 S3 대역에서 실제 sharp 이미지의 업로드·조회도 확인했다. 최초 계약 실행은 TEST_DATABASE_URL 누락으로 시작하지 못했고, 전용 URL을 명시한 뒤 통과했다. 최종 Yarn audit에서 sharp·utils 항목은 0개이며 다른 의존성의 기존 항목 때문에 전체 audit 종료 코드는 1이다. 남은 테스트 스키마 0개와 이번 Worktree의 테스트 DB 종료를 확인했다. 개발 DB·서버는 변경하지 않았다. 전체 브라우저 E2E·Web production build·컨테이너·배포 검증은 실행하지 않았다.
