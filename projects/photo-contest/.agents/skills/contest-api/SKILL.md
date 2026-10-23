@@ -24,7 +24,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
 - OAuth(Google·카카오): state + PKCE, 시도 10분, 콜백은 항상 302. 다른 provider의 이메일로 계정을 합치지 않는다. 개발 로그인은 NODE_ENV=development && ENABLE_DEV_LOGIN=true에서만, 운영은 fail-closed.
-- 앱 핸드오프: `/auth/<provider>?app_challenge=<43자>`면 콜백에서 세션 쿠키를 만들지 않고 2분짜리 AppLoginTicket(코드 해시·challenge) 후 `<MOBILE_APP_SCHEME>://auth/callback?code=`로 보낸다. `POST /auth/app/exchange {code, verifier}`는 base64url(SHA-256(verifier))를 timingSafeEqual로 비교하고 한 번만 소비한다. 실패는 모두 403 같은 메시지. 틀린 verifier는 티켓을 소비하지 않는다.
+- 앱 핸드오프: `/auth/<provider>?app_challenge=<43자>`면 콜백에서 세션 쿠키를 만들지 않고 2분짜리 AppLoginTicket(코드 해시·challenge) 후 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback?code=`(`MOBILE_AUTH_CALLBACK_URL`)로만 보낸다. 커스텀 스킴으로는 보내지 않는다. 운영은 `MOBILE_AUTH_CALLBACK_URL`이 WEB_ORIGIN과 같은 origin의 그 경로가 아니면 시작하지 않는다. `POST /auth/app/exchange {code, verifier}`는 base64url(SHA-256(verifier))를 timingSafeEqual로 비교하고 한 번만 소비한다. 실패는 모두 403 같은 메시지. 틀린 verifier는 티켓을 소비하지 않는다.
 
 ## 상시 그룹 게시물
 

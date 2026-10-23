@@ -8,14 +8,14 @@ import { createNativeRouter, NativeCapabilityError } from '@photo-contest/bridge
 import { createCapabilities, type ICapabilityDependencies } from './create-capabilities';
 
 const API_BASE = 'https://contest.example/backend';
-const CALLBACK_URL = 'photocontest://auth/callback';
+const CALLBACK_URL = 'https://contest.example/app-auth/callback';
 const LOGIN_CODE = 'aGVsbG8td29ybGQtbG9naW4tY29kZQ';
 
 function createFakeDependencies(platform: ICapabilityDependencies['platform'] = 'ios') {
   return {
     platform,
     apiBase: API_BASE,
-    appScheme: 'photocontest',
+    authCallbackUrl: CALLBACK_URL,
     share: vi.fn<ICapabilityDependencies['share']>(async () => ({ action: 'sharedAction' })),
     copyText: vi.fn<ICapabilityDependencies['copyText']>(async () => true),
     impact: vi.fn<ICapabilityDependencies['impact']>(async () => undefined),
@@ -232,6 +232,8 @@ describe('auth.socialLogin', () => {
     const results = [
       { type: 'success', url: `${CALLBACK_URL}?code=short` },
       { type: 'success', url: `photocontest://groups/1?code=${LOGIN_CODE}` },
+      { type: 'success', url: `photocontest://auth/callback?code=${LOGIN_CODE}` },
+      { type: 'success', url: `https://evil.example/app-auth/callback?code=${LOGIN_CODE}` },
       { type: 'success' },
       { type: 'locked' },
     ];

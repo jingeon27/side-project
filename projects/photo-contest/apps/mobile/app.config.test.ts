@@ -5,6 +5,13 @@ import appConfig from './app.config';
 
 const resolve = () => appConfig({ config: {} } as ConfigContext);
 
+/** 운영 빌드가 함께 요구하는 앱 링크 식별자(app.config.spec.ts가 따로 검증한다). */
+function stubReleaseIds() {
+  vi.stubEnv('MOBILE_APPLE_TEAM_ID', 'ABCDE12345');
+  vi.stubEnv('MOBILE_IOS_BUNDLE_ID', 'com.example.contest');
+  vi.stubEnv('MOBILE_ANDROID_PACKAGE', 'com.example.contest');
+}
+
 afterEach(() => vi.unstubAllEnvs());
 
 describe('app.config 빌드 설정', () => {
@@ -18,6 +25,7 @@ describe('app.config 빌드 설정', () => {
 
   it('운영 빌드는 https origin만 담고 로컬 네트워크·평문 예외를 두지 않아야 한다', () => {
     vi.stubEnv('APP_VARIANT', '');
+    stubReleaseIds();
     vi.stubEnv('EXPO_PUBLIC_WEB_ORIGIN', 'https://Contest.Example/');
     const config = resolve();
     expect(config.extra).toEqual({ webOrigin: 'https://contest.example' });
@@ -27,6 +35,7 @@ describe('app.config 빌드 설정', () => {
 
   it('Android 자동 백업으로 WebView 세션 쿠키가 기기 밖에 복사되지 않아야 한다', () => {
     vi.stubEnv('APP_VARIANT', '');
+    stubReleaseIds();
     vi.stubEnv('EXPO_PUBLIC_WEB_ORIGIN', 'https://contest.example');
     expect(resolve().android?.allowBackup).toBe(false);
   });

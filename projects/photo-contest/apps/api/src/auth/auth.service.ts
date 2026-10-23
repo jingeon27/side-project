@@ -8,7 +8,7 @@ import { pkceChallenge, randomToken, safeEqual, sha256Hex } from '../common/cryp
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readCookie } from '../common/http/cookie-header';
 import { textValue } from '../common/validation';
-import { developmentLoginEnabled, mobileAppScheme, oauthCredentials, webOrigin } from '../config/env';
+import { developmentLoginEnabled, mobileAuthCallbackUrl, oauthCredentials, webOrigin } from '../config/env';
 import {
   APP_LOGIN_CODE_MAX_LENGTH,
   APP_LOGIN_TICKET_TTL_MS,
@@ -70,9 +70,12 @@ function queryValue(value: unknown) {
   return typeof value === 'string' && value ? value : undefined;
 }
 
-/** 앱 로그인 결과는 앱 scheme으로 돌려보낸다. 코드 원문은 이 URL에만 실린다. */
+/**
+ * 앱 로그인 결과는 검증된 https 콜백(App Link·Universal Link)으로만 돌려보낸다. 코드 원문은 이 URL에만 실린다.
+ * 커스텀 스킴은 다른 앱도 등록할 수 있어, 그 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다.
+ */
 function appCallbackUrl(params: Record<string, string>) {
-  return `${mobileAppScheme()}://auth/callback?${new URLSearchParams(params).toString()}`;
+  return `${mobileAuthCallbackUrl()}?${new URLSearchParams(params).toString()}`;
 }
 
 function parseAppChallenge(value: unknown): string | undefined {
@@ -191,7 +194,7 @@ export class AuthService {
 
   /**
    * provider 콜백을 처리하고 이동할 주소를 돌려준다. 실패해도 던지지 않는다.
-   * 앱에서 시작한 시도로 확인되면 앱 scheme으로, 아니면 웹으로 보낸다.
+   * 앱에서 시작한 시도로 확인되면 앱 로그인 https 콜백으로, 아니면 웹으로 보낸다.
    */
   async completeOAuth(providerName: string, req: Request, res: Response): Promise<string> {
     let attempt: OAuthAttempt | null = null;

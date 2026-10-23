@@ -9,7 +9,7 @@ description: 모바일 앱의 Vitest unit·ui·api 테스트나 Playwright nativ
 
 | 파일 | 프로젝트 | 규칙 |
 | --- | --- | --- |
-| `src/**/*.{spec,test}.ts`, 루트 `*.{spec,test}.ts`(`app.config.test.ts`) | `unit`(node) | 순수 함수·설정만. react-native·expo를 런타임으로 import하면 깨진다 |
+| `src/**/*.{spec,test}.ts`, 루트 `*.{spec,test}.ts`(`app.config.spec.ts`·`app.config.test.ts`) | `unit`(node) | 순수 함수와 `app.config.ts`(운영·개발 빌드 설정)만. react-native·expo를 런타임으로 import하면 깨진다 |
 | `src/**/*.{spec,test}.tsx` | `ui`(jsdom) | 훅·화면. `react-native` → `react-native-web` alias, `__DEV__` true, `EXPO_PUBLIC_WEB_ORIGIN=https://contest.example` 고정(`env.ts`가 import 때 읽는다) |
 | `src/**/*.api.{spec,test}.ts` | `api`(node) | 앱이 직접 부르는 엔드포인트만, 격리 API :4331 |
 
@@ -46,4 +46,4 @@ corepack yarn workspace @photo-contest/mobile exec playwright install chromium w
 
 ## 실기기로만 확인한다
 
-dev client에서: 키보드가 입력창을 가리는지, 사진 선택·카메라 권한과 업로드, 소셜 로그인 뒤 `photocontest://` 복귀, 공유 시트·햅틱, Android 하드웨어 뒤로 가기·iOS 스와이프, 노치 여백, 비행기 모드 → 다시 시도, Android에서 웹이 앱 정보를 받는지(문서 전 주입은 Android에서 보장되지 않는다). 보고할 때 테스트 통과와 실기기 확인을 따로 적는다.
+dev client에서: 키보드가 입력창을 가리는지, 사진 선택·카메라 권한과 업로드, 소셜 로그인 뒤 https 앱 링크 복귀(iOS 17.4+ 세션 콜백, Android App Link 검증 상태 `adb shell pm get-app-links <패키지>`, 앱 미설치·검증 실패 때 웹 안내 페이지), 공유 시트·햅틱, Android 하드웨어 뒤로 가기·iOS 스와이프, 노치 여백, 비행기 모드 → 다시 시도, Android에서 웹이 앱 정보를 받는지(문서 전 주입은 Android에서 보장되지 않는다). 보고할 때 테스트 통과와 실기기 확인을 따로 적는다.

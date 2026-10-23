@@ -1,4 +1,4 @@
-import { E2E_WEB_ORIGIN } from './support/e2e-env';
+import { E2E_AUTH_CALLBACK_URL, E2E_WEB_ORIGIN } from './support/e2e-env';
 import { expect, test } from './support/fixtures';
 import { issueAppLoginTicket } from './support/seed';
 import { webScreens } from './support/web-screens';
@@ -21,7 +21,7 @@ test.describe('앱 소셜 로그인 핸드오프', () => {
     expect(nativeHost.calls).toContainEqual({ type: 'auth.socialLogin', payload: { provider: 'google' } });
     const [session] = nativeHost.platform.authSessions;
     expect(session?.authUrl).toMatch(new RegExp(`^${E2E_WEB_ORIGIN}/backend/auth/google\\?app_challenge=`));
-    expect(session?.redirectUrl).toBe('photocontest://auth/callback');
+    expect(session?.redirectUrl).toBe(E2E_AUTH_CALLBACK_URL);
     // 웹 WebView는 provider 페이지로 직접 이동하지 않는다.
     await expect(page).toHaveURL(`${E2E_WEB_ORIGIN}/`);
   });

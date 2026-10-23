@@ -44,12 +44,20 @@ const config: NextConfig = {
   // 워크스페이스 패키지는 TypeScript 소스를 그대로 내보낸다.
   transpilePackages: ['@photo-contest/bridge', '@side/design-system'],
   async headers() {
-    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
+    // 앱 로그인 콜백 안내 페이지는 Route Handler가 더 엄격한 CSP·no-referrer를 직접 붙인다. Next는 설정 헤더가 이미 있으면
+    // 같은 이름의 응답 헤더를 버리므로(send-response) 이 경로만 공통 헤더에서 뺀다.
+    return [{ source: '/:path((?!app-auth/callback$).*)', headers: SECURITY_HEADERS }];
   },
   async rewrites() {
     return [
       // 브라우저·앱 WebView는 같은 origin의 /backend/*로만 API를 부른다(세션 쿠키가 first-party로 붙는다).
       { source: '/backend/:path*', destination: `${process.env.API_URL || 'http://127.0.0.1:4200'}/:path*` },
+      // 표준 경로는 바꿀 수 없어 app/에 점 폴더를 만들지 않고 kebab-case 라우트로 보낸다(앱 로그인 App Link·Universal Link 검증).
+      {
+        source: '/.well-known/apple-app-site-association',
+        destination: '/app-links/apple-app-site-association',
+      },
+      { source: '/.well-known/assetlinks.json', destination: '/app-links/assetlinks' },
     ];
   },
 };

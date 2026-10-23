@@ -395,7 +395,15 @@ try {
             GOOGLE_CLIENT_SECRET: 'smoke-oauth-secret',
             GF_API_BIND_PORT: '0',
           }
-        : { AWS_ACCESS_KEY_ID: 'pc-smoke-access', AWS_SECRET_ACCESS_KEY: 'pc-private-secret' }),
+        : {
+            AWS_ACCESS_KEY_ID: 'pc-smoke-access',
+            AWS_SECRET_ACCESS_KEY: 'pc-private-secret',
+            // Photo Contest web requires its App Link / Universal Link values (test-only identifiers).
+            MOBILE_APPLE_TEAM_ID: 'PCSMOKE000',
+            MOBILE_IOS_BUNDLE_ID: 'test.smoke.photocontest',
+            MOBILE_ANDROID_PACKAGE: 'test.smoke.photocontest',
+            MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => '5A').join(':'),
+          }),
     };
     saveEnv(join(root, `services/${service}/.env`), environment);
     refs[service] = [reference(service, 'api'), reference(service, 'web')];
@@ -618,6 +626,15 @@ try {
   ).json().data.createGroup;
   const publicPc = new Client(pcDomain, port, publicCa);
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
+  // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
+  const association = await publicPc.http('/.well-known/apple-app-site-association');
+  assert.equal(association.status, 200, association.text());
+  assert.deepEqual(association.json().webcredentials, { apps: ['PCSMOKE000.test.smoke.photocontest'] });
+  assert.equal((await publicPc.http('/.well-known/assetlinks.json')).status, 200);
+  const appCallback = await publicPc.http('/app-auth/callback?code=shared-smoke-login-code-0123');
+  assert.equal(appCallback.status, 200);
+  assert.equal(appCallback.headers['cache-control'], 'no-store');
+  assert.equal(appCallback.text().includes('shared-smoke-login-code'), false);
   // Photo Contest no longer ships sharp; an 8x8 PNG keeps both services' upload checks real.
   const png = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGNwav+KFTEMLQkAZI1vgcNLzfoAAAAASUVORK5CYII=',
