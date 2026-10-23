@@ -204,8 +204,6 @@ export class AuthService {
       }
       throw bannedIdentityError();
     }
-    if (provider === 'google' && user && process.env.GF_ADMIN_GOOGLE_SUB === subject && user.role !== 'ADMIN')
-      await this.db.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } });
     if (attempt.appChallenge) {
       const ticket = await this.appAuth.issueTicket(subject, attempt.appChallenge, provider);
       res.redirect(appCallbackUrl(this.config.appAuthCallbackUrl, { code: ticket }));

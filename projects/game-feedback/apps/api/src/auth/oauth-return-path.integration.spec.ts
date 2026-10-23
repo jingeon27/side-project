@@ -4,8 +4,9 @@ import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { grantOperatorRole } from '../admin/operator-session';
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
 import { createPrismaAdapter } from '../database/prisma-adapter';
@@ -100,6 +101,48 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       expect((await agent.get('/api/session').expect(200)).body.needsOnboarding).toBe(false);
     },
   );
+
+  it('Google subject 설정이 남아 있어도 가입·로그인으로 승격하지 않고 운영자 CLI로만 관리자 권한을 부여해야 한다', async () => {
+    const subject = 'operator-bootstrap-removed';
+    vi.stubEnv('GF_ADMIN_GOOGLE_SUB', subject);
+    try {
+      const agent = supertest.agent(app.getHttpServer());
+      const signIn = async () => {
+        const start = await agent.get('/api/auth/google').expect(302);
+        await agent
+          .get('/api/auth/google/callback')
+          .query({
+            state: new URL(responseLocation(start)).searchParams.get('state'),
+            code: subject,
+          })
+          .expect(302);
+      };
+      await signIn();
+      await agent
+        .post('/api/auth/onboard')
+        .set('Origin', origin)
+        .send({
+          nickname: '운영자 지정 전',
+          acceptedTerms: true,
+          ageConfirmed: true,
+        })
+        .expect(200);
+      const user = await db.user.findUniqueOrThrow({ where: { googleSubject: subject } });
+      expect(user.role).toBe('USER');
+      await signIn();
+      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).role).toBe('USER');
+      await agent.get(`/api/admin/users/${user.id}`).expect(403);
+      await grantOperatorRole(db, user.id);
+      expect(
+        await db.auditLog.findFirst({ where: { targetId: user.id, action: 'GRANT_ADMIN' } }),
+      ).toMatchObject({ actorId: 'operator:cli' });
+      await signIn();
+      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).role).toBe('ADMIN');
+      await agent.get(`/api/admin/users/${user.id}`).expect(200);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 
   it('로그인을 취소하면 선택한 언어의 로그인 화면과 원래 복귀 경로를 보존해야 한다', async () => {
     const agent = supertest.agent(app.getHttpServer());
