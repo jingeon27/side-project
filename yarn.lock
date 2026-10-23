@@ -5842,6 +5842,8 @@ __metadata:
     "@types/graphql-depth-limit": "npm:^1.1.6"
     "@types/node": "npm:^24.0.0"
     "@types/supertest": "npm:^6.0.3"
+    class-transformer: "npm:0.5.1"
+    class-validator: "npm:0.14.2"
     concurrently: "npm:^9.2.0"
     es-toolkit: "npm:^1.52.0"
     express: "npm:^5.1.0"
