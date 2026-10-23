@@ -20,7 +20,7 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     
 
 ## 두 스위치: `APP_VARIANT`와 `__DEV__`
 
-- `APP_VARIANT === 'development'`는 `app.config.ts`(네이티브 설정)만 바꾼다: iOS `infoPlist.NSAppTransportSecurity = { NSAllowsLocalNetworking: true }`, Android `expo-build-properties` `usesCleartextTraffic: true`. 그 밖의 값에서는 둘 다 빈 설정이다.
+- `APP_VARIANT === 'development'`는 `app.config.ts`(네이티브 설정)만 바꾼다: iOS `infoPlist.NSAppTransportSecurity = { NSAllowsLocalNetworking: true }`, Android `expo-build-properties` `usesCleartextTraffic: true`, 개발 식별자 기본값, associated domains `?mode=developer`. 그 밖의 값은 운영 빌드라 https `EXPO_PUBLIC_WEB_ORIGIN`(포트 없음)과 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`가 없으면 `expo config`·`start`·`prebuild`·EAS 빌드가 오류로 멈춘다. `bundle:check`는 변수를 주지 않으면 개발 설정으로 읽는다.
 - JS의 origin 규칙은 `src/shared/config/web-origin.ts` `parseWebOrigin(value, __DEV__)`가 정한다: `^https?://host(:port)?$`만 받고(경로·끝 슬래시·userinfo 거부), `__DEV__`가 아니면 `https://`만 받는다. 통과한 값은 `new URL(value).origin`으로 정규화한다(호스트 소문자, `:443`·`:80` 생략). WebView가 보고하는 URL과 문자열 접두로 비교하기 때문이다(`isSameOrigin`, `NativeHost.receive`). 값이 없으면 dev는 `http://localhost:3300`, release는 throw.
 - 두 스위치는 서로를 대신하지 않는다. release JS는 `APP_VARIANT`와 무관하게 HTTP origin을 거부하고, release 바이너리에 `APP_VARIANT=development`가 섞이면 cleartext·local networking 허용이 들어간다.
 - 검사는 `src/shared/config/env.ts`가 import되는 앱 시작 시점에 실행된다. `bundle:check`(Metro export)는 코드를 실행하지 않으므로 빠지거나 잘못된 origin을 잡지 못한다.
@@ -32,10 +32,19 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     
 
 ## `app.config.ts`가 원본이다
 
-- `name` 'Game Mate', `icon` `./assets/icon.png`(Android adaptive icon `./assets/adaptive-icon.png`, 배경 `#147d64`), `slug` 'game-feedback', `scheme` 'gamefeedback', `ios.bundleIdentifier`·`android.package` `dev.side.gamefeedback`, `orientation` portrait, `userInterfaceStyle` 'light', `backgroundColor` '#ffffff'.
+- `name` 'Game Mate', `icon` `./assets/icon.png`(Android adaptive icon `./assets/adaptive-icon.png`, 배경 `#147d64`), `slug` 'game-feedback', `scheme` 'gamefeedback'(로그인 밖 딥링크), `ios.bundleIdentifier`·`android.package`는 `MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`(개발 기본 `dev.side.gamefeedback`), `ios.appleTeamId`는 `MOBILE_APPLE_TEAM_ID`, `ios.deploymentTarget` '17.4'(Expo SDK 56+ 내장 설정), `orientation` portrait, `userInterfaceStyle` 'light', `backgroundColor` '#ffffff'.
 - iOS `NSPhotoLibraryUsageDescription`·`NSCameraUsageDescription`·`NSMicrophoneUsageDescription`은 WebView 파일 선택·촬영용이다. 웹 첨부 기능을 바꾸면 문구도 확인한다.
 - `android.predictiveBackGestureEnabled: false`는 Android back을 웹에 먼저 묻는 흐름의 전제다(`game-feedback-mobile-webview-shell`).
-- universal/app link(associated domains, intent filter)는 없다. 스킴을 바꾸면 bridge `APP_SCHEME`과 API 콜백 문자열까지 함께 바꾼다(`game-feedback-mobile-bridge`).
+- 앱 링크는 소셜 로그인 콜백 하나다: web origin host로 `ios.associatedDomains`(`applinks:`·`webcredentials:`)와 Android `intentFilters`(https·host·`/app-auth/callback`·`autoVerify`)를 만든다. http 개발 origin에는 두지 않는다(그때 소셜 로그인은 앱으로 돌아오지 않는다).
+
+## 스토어·콘솔 준비 (첫 제출 전, 식별자를 바꿀 때마다)
+
+1. Apple Developer: App ID(`MOBILE_IOS_BUNDLE_ID`)에 Associated Domains capability를 켠다(EAS가 동기화, 수동 서명이면 직접 켜고 프로필 재생성). Team ID를 웹·EAS의 `MOBILE_APPLE_TEAM_ID`에 넣는다.
+2. 최소 iOS 17.4로 17.4 미만 기기는 새 버전을 받지 못하고, 커스텀 스킴 콜백을 기다리는 이전 바이너리는 소셜 로그인을 할 수 없다(운영 사용자가 없어 호환 기간을 두지 않는다). 두 스토어 모두 재배포한다.
+3. AASA: 웹 배포 후 `curl -sI https://<host>/.well-known/apple-app-site-association`이 리다이렉트 없이 200·`application/json`인지 본다. iOS는 Apple CDN(`https://app-site-association.cdn-apple.com/a/v1/<host>`)에서 받으며 캐시가 최대 하루쯤 늦을 수 있다. 내용을 바꾸면 CDN 반영을 확인한 뒤 앱을 다시 설치해 시험한다.
+4. Google Play Console: 앱 무결성 > 앱 서명의 "앱 서명 키 인증서" SHA-256(Play App Signing)을 웹 `MOBILE_ANDROID_SHA256_FINGERPRINTS`에 넣는다. 직접 서명한 빌드를 배포하면 업로드 키 SHA-256도 쉼표로 함께 넣는다. 설치 후 `adb shell pm get-app-links <패키지>`가 `verified`인지 본다(재검증 `adb shell pm verify-app-links --re-verify <패키지>`).
+5. EAS 빌드는 production 환경의 EAS 환경변수로 `EXPO_PUBLIC_WEB_ORIGIN`·`MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`를 넣는다(비밀 아님). 웹 배포 환경의 같은 값과 맞아야 링크가 검증된다.
+6. 개발용 확인: https 터널 origin을 `EXPO_PUBLIC_WEB_ORIGIN`·API `WEB_ORIGIN`에 같이 넣고 `APP_VARIANT=development`로 다시 빌드한다(iOS는 기기 설정 > 개발자 > Associated Domains Development). 웹에는 개발 서명 Team ID·debug keystore SHA-256을 넣는다.
 
 ## 버전
 
@@ -56,6 +65,9 @@ corepack yarn workspace @game-feedback/mobile typecheck      # tsc7 --noEmit
 corepack yarn workspace @game-feedback/mobile lint           # 공유 expo 설정 + FSD 경계
 corepack yarn workspace @game-feedback/mobile test src/shared/config
 corepack yarn workspace @game-feedback/mobile bundle:check
+APP_VARIANT=development corepack yarn workspace @game-feedback/mobile exec expo config --type public --json   # 개발 식별자, 앱 링크 없음
+EXPO_PUBLIC_WEB_ORIGIN=https://game.example MOBILE_APPLE_TEAM_ID=ABCDE12345 MOBILE_IOS_BUNDLE_ID=com.example.game MOBILE_ANDROID_PACKAGE=com.example.game \
+  corepack yarn workspace @game-feedback/mobile exec expo config --type introspect --json   # associated domains·autoVerify intent filter·17.4
 ```
 
 - `bundle:check`(`scripts/bundle-check.mjs`)는 `expo export --platform android`, 이어서 `ios`를 `.expo-export-check/<platform>`에 만들고 첫 실패에서 멈춘 뒤 폴더를 항상 지운다. 프로젝트 `build`도 이것을 실행한다.

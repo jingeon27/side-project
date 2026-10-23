@@ -18,7 +18,7 @@ export function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/*/messages', '/*/notifications', '/*/settings'],
+      disallow: ['/api/', '/app-auth/', '/*/messages', '/*/notifications', '/*/settings'],
     },
     sitemap: `${origin}/sitemap.xml`,
   };

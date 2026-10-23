@@ -134,7 +134,7 @@ describe('banned social identities after account deletion', () => {
       .get('/api/auth/social/x/callback')
       .query({ state: nativeState, code: 'x-banned-subject' })
       .expect(302);
-    expect(callback.headers.location).toBe('gamefeedback://auth/callback?error=login_failed');
+    expect(callback.headers.location).toBe(`${origin}/app-auth/callback?error=login_failed`);
 
     // Subjects are never merged across providers, so the same value elsewhere is a different identity.
     await signUp('discord', 'x-banned-subject', '다른제공자사용자');

@@ -7,7 +7,14 @@ export default defineConfig({
   test: {
     maxWorkers: 2,
     projects: [
-      { extends: true, test: { name: 'unit', environment: 'node', include: ['src/**/*.{spec,test}.ts'] } },
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['src/**/*.{spec,test}.ts', 'app.config.spec.ts'],
+        },
+      },
       {
         extends: true,
         resolve: { alias: [{ find: /^react-native$/, replacement: 'react-native-web' }] },

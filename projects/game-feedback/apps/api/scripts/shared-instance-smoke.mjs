@@ -387,6 +387,11 @@ try {
       DATABASE_MIGRATION_URL: runtimeUrl(database, true),
       ...(service === 'game-feedback'
         ? {
+            // Game Feedback web requires its App Link / Universal Link values (test-only identifiers).
+            MOBILE_APPLE_TEAM_ID: 'GFSMOKE000',
+            MOBILE_IOS_BUNDLE_ID: 'test.smoke.gamefeedback',
+            MOBILE_ANDROID_PACKAGE: 'test.smoke.gamefeedback',
+            MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => '6B').join(':'),
             GF_S3_ACCESS_KEY_ID: 'gf-smoke-access',
             GF_S3_SECRET_ACCESS_KEY: 'gf-private-secret',
             GF_CONTACT_EMAIL: 'operator@example.test',
@@ -478,6 +483,10 @@ try {
   assert.equal((await gfApi.http('/')).status, 404);
   assert.equal((await pcApi.http('/health')).headers['x-robots-tag'], 'noindex, nofollow');
   assert.equal((await gf.http('/health-check/live')).status, 200);
+  // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
+  assert.equal((await gf.http('/.well-known/apple-app-site-association')).status, 200);
+  assert.equal((await gf.http('/.well-known/assetlinks.json')).status, 200);
+  assert.equal((await gf.http('/app-auth/callback?code=shared-smoke-login-code-0123')).status, 200);
   assert.equal((await pc.http('/health-check/live')).status, 200);
   for (const response of [
     await gf.http('/internal/cache/revalidate'),

@@ -24,7 +24,11 @@ export function nativeLogin(origin: string, provider: TLoginProvider = 'google')
           .replaceAll('+', '-')
           .replaceAll('/', '_')
           .replace(/=+$/, ''),
-      openSession: (url, callback) => WebBrowser.openAuthSessionAsync(url, callback),
+      // iOS는 17.4+ ASWebAuthenticationSession의 https 콜백(.https(host:path:), associated domains 필요)으로 받는다.
+      // 옵션이 없으면 이전 callbackURLScheme API로 열려 https 콜백이 돌아오지 않는다.
+      // Android는 Custom Tabs를 열고 검증된 App Link로 앱에 돌아온 URL(Linking 'url')을 받는다.
+      openSession: (url, callback) =>
+        WebBrowser.openAuthSessionAsync(url, callback, { preferUniversalLinks: true }),
     },
     provider,
   );

@@ -28,6 +28,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `lint`는 공유 Next·FSD preset과 앱의 query-key 규칙을 실제 검사한다. `@side/game-feedback check`에도 포함된다. Vitest와 Playwright는 Web이 소유한다.
 
 
+## 앱 링크·로그인 콜백
+
+- 앱 소셜 로그인 콜백은 `/app-auth/callback`(`src/app/app-auth/callback/route.ts` → `_app/app-links/app-auth-callback.ts`)이다. 앱이 없거나 링크가 검증되지 않아 브라우저에서 열릴 때만 보이며, 요청을 읽지 않고 스크립트·분석·Sentry 없이 "앱에서 계속" 안내만 준다(no-store, `Referrer-Policy: no-referrer`, noindex, 주소창의 코드는 해시 허용 인라인 스크립트로 지운다). Next는 설정 헤더가 있으면 Route Handler의 같은 이름 헤더를 버리므로 `next.config.mjs`의 공통 보안 헤더 source에서 이 경로만 뺀다(`next.config.spec.ts`).
+- `/.well-known/apple-app-site-association`·`/.well-known/assetlinks.json`은 `app/`에 점 폴더를 만들지 않고 `next.config.mjs` rewrites로 kebab-case 라우트 `app-links/*`에 연결한다. 값은 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`·`MOBILE_ANDROID_SHA256_FINGERPRINTS`이고 `cacheComponents`가 빌드 때 고정하지 않도록 `connection()` 뒤에 읽는다. 운영에서 빠지면 `instrumentation.ts`가 첫 요청부터 실패시킨다(개발·테스트는 자리표시자). 운영 빌드 서버를 띄우는 Playwright는 `e2e/app-link-env.ts` 값을 넣는다.
+
 ## 공통 디자인 시스템
 
 - Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공식 shadcn/ui Base UI/base-nova 소스와 components.json 설정은 공통 패키지가 소유하며 웹 설정의 ui/utils alias도 그 패키지를 가리킨다. 보이는 폼 컨트롤은 Input/Textarea/NativeSelect/Checkbox를 사용하고 hidden/file 입력과 Quill 전용 DOM만 해당 구현을 유지한다. Checkbox는 RHF Controller로 연결하고 피드 Tabs는 URL을 제어값으로 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.

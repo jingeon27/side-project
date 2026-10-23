@@ -37,6 +37,7 @@ const env = {
   GF_TEST_AUTH_ENABLED: 'false',
   SUPERCELL_API_TOKEN: '',
   GF_ADMIN_GOOGLE_SUB: '',
+  MOBILE_AUTH_CALLBACK_URL: '',
 };
 
 function run(script, args) {

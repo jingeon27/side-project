@@ -41,7 +41,8 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 
 ## 모바일 인계 (`src/auth/app-auth.service.ts`)
 
-- 앱 시도면 콜백은 세션 쿠키를 만들지 않는다. `issueTicket`이 코드 원문을 `gamefeedback://auth/callback?code=`에만 싣고 `AppLoginTicket`에는 `hash(code)`·challenge·subject·provider를 120초 둔다(만료 티켓은 이때 지운다). 제공자 실패는 `?error=login_failed`.
+- 앱 시도면 콜백은 세션 쿠키를 만들지 않는다. `issueTicket`이 만든 코드 원문을 `AppConfig.appAuthCallbackUrl?code=`(검증된 https 앱 링크, 기본 `${webOrigin}/app-auth/callback`)에만 싣고 `AppLoginTicket`에는 `hash(code)`·challenge·subject·provider를 120초 둔다(만료 티켓은 이때 지운다). 제공자 실패는 같은 콜백 `?error=login_failed`.
+- 앱 로그인 코드를 커스텀 스킴으로 보내지 않는다. 같은 스킴을 등록한 앱이 자기 challenge로 흐름을 열면 PKCE로도 막지 못한다(감사 M3). `src/config/app-auth-callback.ts`는 `MOBILE_AUTH_CALLBACK_URL`(또는 `AppOptions.appAuthCallbackUrl`)이 WEB_ORIGIN과 같은 origin의 `/app-auth/callback`이고 쿼리·해시·계정 정보가 없을 때만 따른다. 개발·테스트는 아니면 기본값, 운영은 `resolveAppConfig`와 `validateProductionEnvironment`가 시작을 멈춘다. 경로를 바꾸면 bridge `APP_AUTH_CALLBACK_PATH`, 웹 `/app-auth/callback`·AASA·assetlinks, 앱 `app.config.ts`를 같이 바꾼다.
 - `POST /api/auth/app/exchange`: `sha256(verifier)` base64url이 challenge와 같아야 한다. 불일치·만료·재사용은 모두 400 `APP_LOGIN_INVALID`. 소비는 비교 뒤 `deleteMany(...).count === 1`이라 틀린 verifier는 티켓을 쓰지 않고 동시 교환은 한 건만 성공한다. 세션은 WebView가 부른 이 응답의 쿠키로만 준다.
 
 ## 밴·관리자
@@ -53,9 +54,9 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/security.test.ts`(Origin·DB URL), `src/rate-limit.test.ts`·`src/rate-limit.spec.ts`, `src/common/http/forwarded-client.spec.ts`, `src/common/http/api-access.middleware.test.ts`(대소문자 경로), `src/common/http/banned-access.test.ts`, `src/auth/providers/oauth-identity.provider.test.ts`(`fetch` stub), `src/config/production.config.spec.ts`.
+- unit: `src/security.test.ts`(Origin·DB URL), `src/rate-limit.test.ts`·`src/rate-limit.spec.ts`, `src/common/http/forwarded-client.spec.ts`, `src/common/http/api-access.middleware.test.ts`(대소문자 경로), `src/common/http/banned-access.test.ts`, `src/auth/providers/oauth-identity.provider.test.ts`(`fetch` stub), `src/config/production.config.spec.ts`(앱 로그인 콜백 포함), `src/config/app-auth-callback.test.ts`(커스텀 스킴·다른 origin 거부 회귀).
 - DB를 쓰지 않는 integration: `src/common/http/api-access.middleware.integration.test.ts`(SSR 방문자 버킷·위조 헤더), `src/common/http/configure-http.integration.test.ts`(대소문자 경로 404).
-- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 네 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
+- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 네 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피, 앱 시도는 https 콜백 `?error=login_failed`), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
 
 ## 명령 (side 루트)
 

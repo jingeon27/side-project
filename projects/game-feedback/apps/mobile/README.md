@@ -20,7 +20,7 @@ APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:start
 
 Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로그인 화면은 X·카카오·Discord·Google을 제공하고 테스트 계정은 서버 토큰 API로 발급한다. 실기기는 접근 가능한 Web origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
 
-`.env.example`을 이 앱의 `.env`로 복사해 개발 origin을 지정할 수 있다. release 빌드는 명시적인 HTTPS origin이 필수다. `APP_VARIANT=development`일 때만 Android HTTP를 허용한다. 스킴은 `gamefeedback`, 번들/패키지는 `dev.side.gamefeedback`이다. 운영 서명·스토어 등록·배포는 포함하지 않는다.
+`.env.example`을 이 앱의 `.env`로 복사해 개발 origin을 지정할 수 있다. release 빌드는 명시적인 HTTPS origin과 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`가 필수이며 없으면 `app.config.ts`가 멈춘다. `APP_VARIANT=development`일 때만 Android HTTP를 허용한다. 스킴은 `gamefeedback`(로그인 밖 딥링크), 개발 번들/패키지는 `dev.side.gamefeedback`이다. 최소 iOS는 17.4다. 운영 서명·스토어 등록·배포는 포함하지 않는다.
 
 ## 네이티브 연결
 
@@ -31,12 +31,12 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로
 - SafeAreaView가 위·아래 여백을 관리한다. 웹은 기존 `@side/design-system` 스타일을 렌더링하고 네이티브 로딩·오류 화면은 같은 흰색·검정 팔레트를 따른다.
 - 같은 Web origin만 내부에서 연다. 다른 HTTP(S)·전화·이메일 링크는 OS로 보내고 실행 가능한 URL·로컬 파일 URL은 거부한다. 새 창에도 동일한 정책을 적용한다.
 - Android 뒤로 가기는 웹 모달 → 상세 진입 이력 → 논리적 상위 화면 순서로 처리한다. 홈에서는 앱을 종료한다. 800ms 안에 웹 응답이 없으면 WebView history/종료로 복구하며 응답 대기 중 중복 누름을 막는다. iOS 스와이프는 WebView 기록을 사용하고 웹 모달이 열린 동안 비활성화한다.
-- `gamefeedback://ko/posts/<id>`, `gamefeedback://ko/messages/<conversationId>`, `gamefeedback://ko/users/<id>?cursor=...`처럼 알려진 경로를 받는다. 기존 `messages?conversation=<id>` 링크는 중첩 경로로 변환한다. `en`·`ja`도 같은 화면 경로를 허용한다. HTTPS universal/app link의 OS 등록은 운영 도메인이 정해진 뒤 추가한다.
+- `gamefeedback://ko/posts/<id>`, `gamefeedback://ko/messages/<conversationId>`, `gamefeedback://ko/users/<id>?cursor=...`처럼 알려진 경로를 받는다. 기존 `messages?conversation=<id>` 링크는 중첩 경로로 변환한다. `en`·`ja`도 같은 화면 경로를 허용한다. HTTPS universal/app link는 소셜 로그인 콜백 `<WEB_ORIGIN>/app-auth/callback` 하나만 등록한다(게시글 등 https 링크는 아직 앱으로 열지 않는다).
 - 셸 렌더 오류는 서비스 경계에서 복구 화면을 표시한다. 재시도는 기존 OS listener·host를 정리한 새 WebView로 초기 화면을 열고 HttpOnly 쿠키 저장소를 유지한다. 웹의 기능 오류는 웹 내부 경계에서 처리한다.
 - 메인 문서 연결 실패·5xx는 다시 시도 화면을 연다. 4xx는 웹이 표시한다. 다시 시도·Android renderer 종료는 마지막 주소로 WebView를 재생성하고 iOS content 종료는 reload한다.
 - 웹 준비 메시지 이전에는 딥링크를 문서 주소로, 이후에는 Next router 이동으로 전달한다. background에서 active로 돌아오면 세션을 먼저 확인하고 필요한 캐시를 갱신한다.
 
-X·카카오·Discord·Google 로그인은 선택한 제공자를 시스템 브라우저로 전달하고 앱 복귀에 PKCE를 사용한다. OAuth 완료 후 API가 `gamefeedback://auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google callback은 기존 Web origin의 `/api/auth/google/callback`, 나머지는 `/api/auth/social/{x|kakao|discord}/callback`이다. 실제 자격 증명 검증은 별도다. 테스트 계정은 [서버 토큰 API](../../README.md#서버에서-테스트-토큰-발급하기)로 발급하며 앱 화면에 선택기를 두지 않는다.
+X·카카오·Discord·Google 로그인은 선택한 제공자를 시스템 브라우저로 전달하고 앱 복귀에 PKCE를 사용한다. OAuth 완료 후 API가 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. iOS는 `ASWebAuthenticationSession`의 https 콜백(17.4+), Android는 `autoVerify` App Link로 돌아온다. 앱이 없거나 링크 검증 전이면 브라우저가 코드를 다시 보여 주지 않는 웹 안내 페이지를 연다. 커스텀 스킴으로는 코드를 보내지 않는다(같은 스킴의 다른 앱이 가로챌 수 있다). 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google callback은 기존 Web origin의 `/api/auth/google/callback`, 나머지는 `/api/auth/social/{x|kakao|discord}/callback`이다. 실제 자격 증명 검증은 별도다. 테스트 계정은 [서버 토큰 API](../../README.md#서버에서-테스트-토큰-발급하기)로 발급하며 앱 화면에 선택기를 두지 않는다.
 
 ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초기 링크는 이미 받은 후속 링크를 덮어쓰지 않으며 해제 후 async 응답을 무시한다. lifecycle 훅은 let/ref 플래그 없이 구독하고 useCallback으로 안정화한 콜백별 의존성을 사용한다. WebView props는 satisfies로 검증해 추론을 유지한다.
 

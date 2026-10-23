@@ -9,7 +9,7 @@ description: Game Feedback 모바일 앱의 Vitest unit·ui 테스트나 Playwri
 
 | 파일 | 프로젝트 | 규칙 |
 | --- | --- | --- |
-| `src/**/*.{spec,test}.ts` | `unit`(node) | 순수 함수·class. react-native·expo는 `import type`만 |
+| `src/**/*.{spec,test}.ts`, `app.config.spec.ts` | `unit`(node) | 순수 함수·class와 `app.config.ts`(운영·개발 빌드 설정). react-native·expo는 `import type`만 |
 | `src/**/*.{spec,test}.tsx` | `ui`(jsdom) | `react-native` → `react-native-web` alias, `__DEV__` = true, `EXPO_PUBLIC_WEB_ORIGIN=https://feedback.example`, `vitest.setup.ts` |
 
 - unit에는 `__DEV__` define과 origin env가 없다. `@/shared/config/env`(import 때 `parseWebOrigin` 실행)를 거치는 코드는 ui에서 검사하거나, `parseWebOrigin(value, development)`처럼 값을 인자로 받는 함수로 빼서 unit에서 검사한다.
@@ -62,4 +62,4 @@ corepack yarn workspace @side/game-feedback db:test:stop
 
 ## 실기기로만 확인한다
 
-dev client에서: 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 뒤 `gamefeedback://` 복귀, 비행기 모드 → 다시 시도, 파일 선택과 사진·카메라·마이크 권한. 보고할 때 Playwright·`bundle:check` 통과와 실기기 확인을 따로 적는다.
+dev client에서: 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 뒤 https 앱 링크 복귀(iOS 17.4+ 세션 콜백, Android App Link verified 상태, 앱 미설치·검증 실패 때 웹 안내 페이지), 비행기 모드 → 다시 시도, 파일 선택과 사진·카메라·마이크 권한. 보고할 때 Playwright·`bundle:check` 통과와 실기기 확인을 따로 적는다.
