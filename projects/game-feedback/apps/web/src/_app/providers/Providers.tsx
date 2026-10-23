@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
 
 import { sessionOptions, SessionProvider, useSession } from '@/features/auth';
-import { AnalyticsIdentity } from '@/shared/analytics';
+import { AnalyticsIdentity, InteractionTracker } from '@/shared/analytics';
 import type { Session } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { MotionProvider } from '@/shared/motion';
@@ -50,6 +50,7 @@ function SessionContent({ children }: { children: ReactNode }) {
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <AnalyticsIdentity userId={session.user?.id} needsOnboarding={session.needsOnboarding} />
+      <InteractionTracker />
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
       <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
         <NativeBridge />
