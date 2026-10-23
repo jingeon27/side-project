@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -8,10 +8,6 @@ import { PostCommentThread } from './PostCommentThread';
 
 vi.mock('@/features/auth', () => ({
   useSession: () => ({ session: { user: { id: 'viewer' } }, login: vi.fn() }),
-}));
-vi.mock('@/features/comment', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/features/comment')>()),
-  useCreateCommentMutation: () => useMutation({ mutationFn: vi.fn() }),
 }));
 vi.mock('@/features/user', () => ({
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,

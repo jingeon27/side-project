@@ -1,10 +1,5 @@
 export { postListOptions, postDetailOptions, userPostListOptions } from './model/post.options';
-export {
-  useCreatePostMutation,
-  useUpdatePostMutation,
-  useDeletePostMutation,
-  useReadPostMutation,
-} from './model/post.hook';
+
 export { PostCard } from './ui/PostCard';
 export { PostListSkeleton } from './ui/PostListSkeleton';
 export { useRecordPostView } from './model/use-record-post-view';

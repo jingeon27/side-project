@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,20 +17,12 @@ const state = vi.hoisted(() => ({
 vi.mock('@/features/auth', () => ({
   useSession: () => ({ session: { user: state.user }, login: state.login }),
 }));
-vi.mock('@/features/comment', async (importOriginal) => {
-  const { infiniteQueryOptions } = await import('@tanstack/react-query');
-  return {
-    ...(await importOriginal<typeof import('@/features/comment')>()),
-    useCreateCommentMutation: () => useMutation({ mutationFn: state.create }),
-    olderCommentOptions: (postId: string, cursor: string | null) =>
-      infiniteQueryOptions({
-        queryKey: ['older-comments', postId, cursor],
-        queryFn: ({ pageParam }: { pageParam: string }) => state.older(pageParam),
-        initialPageParam: cursor ?? '',
-        getNextPageParam: (page: { nextCursor: string | null }) => page.nextCursor ?? undefined,
-      }),
-  };
-});
+vi.mock('@/features/comment/api/comment.api', () => ({
+  postComment: state.create,
+  fetchPostComments: ({ cursor }: { cursor: string }) => state.older(cursor),
+  patchComment: vi.fn(),
+  deleteCommentById: vi.fn(),
+}));
 vi.mock('@/features/user', () => ({
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
   UserBadges: () => null,
