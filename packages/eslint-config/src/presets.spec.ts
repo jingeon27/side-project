@@ -7,6 +7,7 @@ import { baseConfig } from './base';
 import { expoConfig } from './expo';
 import { nextConfig } from './next';
 import { reactConfig } from './react';
+import { reactDomConfig } from './react-dom';
 
 // 세 규칙을 모두 어기는 컴포넌트로 preset마다 켜진 side 규칙을 확인한다.
 const code = `export function Overlay() {
@@ -36,5 +37,34 @@ describe('preset별 side 규칙 배선', () => {
     ['expoConfig', expoConfig, ['side/no-component-fetch', 'side/no-else']],
   ])('%s는 분류 범위의 규칙만 켜고 side 플러그인을 다시 등록해도 충돌하지 않는다', (_, config, rules) => {
     expect(enabledSideRules(config)).toEqual(rules);
+  });
+});
+
+// eslint-config-next가 켜지 않는 jsx-a11y recommended 규칙(no-autofocus)으로 preset마다 jsx-a11y가 켜졌는지 확인한다.
+const autoFocusCode = `export function Search() {
+  return <input aria-label="검색" autoFocus />;
+}
+`;
+
+function enabledJsxA11yRules(config: Linter.Config[]) {
+  // Next가 등록한 jsx-a11y 플러그인을 다른 객체로 다시 등록하면 verify가 `Cannot redefine plugin` 오류를 던진다.
+  const messages = new Linter({ configType: 'flat' }).verify(autoFocusCode, config, {
+    filename: path.join(import.meta.dirname, 'Search.tsx'),
+  });
+  const fatal = messages.find((message) => message.fatal);
+  if (fatal) throw new Error(fatal.message);
+  return [
+    ...new Set(messages.map((message) => message.ruleId).filter((id) => id?.startsWith('jsx-a11y/'))),
+  ].sort();
+}
+
+describe('preset별 jsx-a11y 배선', () => {
+  it.each([
+    ['reactConfig', reactConfig, []],
+    ['reactDomConfig', reactDomConfig, ['jsx-a11y/no-autofocus']],
+    ['nextConfig', nextConfig, ['jsx-a11y/no-autofocus']],
+    ['expoConfig', expoConfig, []],
+  ])('%s는 React DOM preset에만 jsx-a11y를 켜고 플러그인 재정의 충돌이 없다', (_, config, rules) => {
+    expect(enabledJsxA11yRules(config)).toEqual(rules);
   });
 });
