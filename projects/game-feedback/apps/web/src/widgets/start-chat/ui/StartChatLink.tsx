@@ -2,13 +2,14 @@
 
 import { useParams, useRouter } from 'next/navigation';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircle, MessageCircle } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { chatError, useCreateConversationMutation } from '@/features/chat';
+import { chatError, createConversationMutationOptions } from '@/features/chat';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import { useI18n } from '@/shared/i18n';
 
@@ -21,11 +22,12 @@ interface IStartChatLinkProps {
 }
 
 export function StartChatLink({ source, userId, nickname, label, appearance = 'text' }: IStartChatLinkProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const { session, login, notify } = useSession();
   const router = useRouter();
   const { locale } = useParams<{ locale: string }>();
-  const mutation = useCreateConversationMutation(session?.user?.id);
+  const mutation = useMutation(createConversationMutationOptions(client, session?.user?.id));
 
   function handleStart() {
     if (!session?.user) {

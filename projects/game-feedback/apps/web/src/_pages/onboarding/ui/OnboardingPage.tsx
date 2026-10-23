@@ -4,16 +4,18 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 
 import { appRoutes } from '@game-feedback/bridge';
 
-import { sessionOptions, useCompleteOnboarding } from '@/features/auth';
+import { completeOnboardingMutationOptions, sessionOptions } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
-import { LoadingState } from '@/shared/ui';
+import { LoadingState, useNotify } from '@/shared/ui';
 import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
+  const client = useQueryClient();
+  const notify = useNotify();
   const { t } = useI18n();
   const router = useRouter();
   const {
@@ -24,7 +26,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
     ...sessionOptions(),
     refetchOnMount: 'always',
   });
-  const onboarding = useCompleteOnboarding();
+  const onboarding = useMutation(completeOnboardingMutationOptions(client, notify));
   useEffect(() => {
     if (isFetching || error || session.needsOnboarding) return;
     router.replace(session.user ? returnTo : appRoutes.login(locale, returnTo));

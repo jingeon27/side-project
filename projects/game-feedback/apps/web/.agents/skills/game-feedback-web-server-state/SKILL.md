@@ -3,7 +3,7 @@ name: game-feedback-web-server-state
 description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가하거나(features/<domain>/api·model 배치, *.options.ts·*.mutation-options.ts, SDK 응답 검증·오류 문구), 서버 초기 데이터를 React Query 캐시에 잇거나, 사용자별 쿼리 키·로그인/로그아웃/계정 전환 캐시 정리·채팅 SSE와 알림 주기 갱신·앱 lint의 queryKey 규칙 오류를 다룰 때 사용한다.
 ---
 
-조회 키·mutation 훅·폼의 일반 규칙은 프로젝트 `game-feedback-code-style`과 앱 `AGENTS.md`, 검증은 `game-feedback-test` 스킬을 따른다. 계약은 서버 Zod → OpenAPI → Orval 순서로 바뀌고(프로젝트 `AGENTS.md`) Web은 생성 SDK만 쓴다. 첫 문서 snapshot 흐름은 `game-feedback-web-page-structure` 스킬이다.
+조회 키·mutation options·폼의 일반 규칙은 프로젝트 `game-feedback-code-style`과 앱 `AGENTS.md`, 검증은 `game-feedback-test` 스킬을 따른다. 계약은 서버 Zod → OpenAPI → Orval 순서로 바뀌고(프로젝트 `AGENTS.md`) Web은 생성 SDK만 쓴다. 첫 문서 snapshot 흐름은 `game-feedback-web-page-structure` 스킬이다.
 
 ## 배치
 
@@ -13,7 +13,7 @@ description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가�
 | `features/<d>/api/<d>.server.ts` | `import 'server-only'`, `serverRequestOptions()`(세션 쿠키 + 서명된 방문자 IP) 또는 `publicServerOptions()`(쿠키 없는 공유 조회, API `internal` 버킷), React `cache()`, 404·400 → `notFound()`. 쿠키 없는 공개 조회는 `'use cache'`로 감싼다(`getPublicCategories`, 익명 `getServerSession`) |
 | `features/<d>/model/<d>.options.ts` | `queryOptions`·`infiniteQueryOptions` |
 | `features/<d>/model/<d>.mutation-options.ts` | `xxxMutationOptions(client, …ids)` |
-| `features/<d>/model/<d>.hook.ts` | `useQueryClient()` + `useMutation(options)` 원본 반환 |
+| 화면·기능 흐름의 호출부 | `useQueryClient()` + `useMutation(xMutationOptions(client, …))` 직접 조립 |
 | `features/<d>/index.ts` / `index.server.ts` | 클라이언트 공개 / 서버 조회 공개 |
 
 - `@game-feedback/sdk` import는 `src/{_app,_pages,widgets,features,shared}/**/*.tsx`에서 lint 오류다(`no-restricted-imports`). `.ts`는 lint가 막지 않지만 같은 이유로 `api/`에만 둔다.
@@ -50,6 +50,8 @@ description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가�
 - 연결이 `live`가 아니면 대화 목록·배지·메시지가 `refetchInterval: 10_000`으로 대신 갱신한다. 알림은 SSE가 없고 `notificationListOptions`·`notificationSummaryOptions`의 30초 주기다.
 
 ## mutation
+
+- 단순히 `useMutation`을 감싸 반환하는 전용 훅은 만들지 않는다. 도메인 정책은 options 팩토리에 두고 호출부가 직접 연결한다. 폼·외부 구독·재전송 같은 기능 흐름을 소유하는 훅도 같은 팩토리를 사용한다.
 
 - `onSuccess`에서 무효화 Promise를 반환해 캐시 갱신이 끝날 때까지 pending을 유지한다. 지운 데이터(대화 기록 삭제)는 `cancelQueries` → `resetQueries` → 목록 무효화 순서다.
 - 채팅 재전송은 직전 실패 `mutation.variables`(같은 본문·첨부)를 다시 보내 `clientMessageId`를 유지하고, 내용이 바뀌면 새 `crypto.randomUUID()`를 만든다(`_pages/messages/model/use-chat-composer.ts`). 읽음은 화면에 보인 마지막 메시지 경계만 보낸다(`use-visible-read.ts`).

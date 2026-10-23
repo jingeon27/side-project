@@ -1,8 +1,9 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ThumbsUp } from 'lucide-react';
 
-import { useHelpfulAnswerMutation } from '@/features/answer';
+import { helpfulAnswerMutationOptions } from '@/features/answer';
 import type { Answer } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { m, useMotionPreference } from '@/shared/motion';
@@ -12,8 +13,9 @@ interface IHelpfulAnswerButtonProps {
   answer: Answer;
 }
 export function HelpfulAnswerButton({ answer }: IHelpfulAnswerButtonProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
-  const mutation = useHelpfulAnswerMutation(),
+  const mutation = useMutation(helpfulAnswerMutationOptions(client)),
     notify = useNotify();
   const reducedMotion = useMotionPreference();
   return (

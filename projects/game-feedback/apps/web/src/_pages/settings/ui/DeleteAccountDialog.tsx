@@ -1,13 +1,14 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
 
 import { Button, Input } from '@side/design-system';
 
-import { useDeleteAccount } from '@/features/auth';
+import { deleteAccountMutationOptions } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
 
 import { deleteAccountSchema } from '../model/settings.schema';
 
@@ -16,10 +17,12 @@ interface IDeleteAccountDialogProps {
   onClose: () => void;
 }
 export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps) {
+  const client = useQueryClient();
+  const notify = useNotify();
   const { t } = useI18n();
   const form = useZodForm(deleteAccountSchema, { defaultValues: { confirmation: '' } });
   const confirmation = useWatch({ control: form.control, name: 'confirmation' });
-  const deletion = useDeleteAccount();
+  const deletion = useMutation(deleteAccountMutationOptions(client, notify));
   return (
     <BottomSheet
       open={open}

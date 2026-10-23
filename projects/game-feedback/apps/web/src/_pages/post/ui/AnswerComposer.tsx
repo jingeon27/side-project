@@ -1,10 +1,11 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight, LoaderCircle, MessageSquare, Send } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
 
-import { useCreateAnswerMutation } from '@/features/answer';
+import { createAnswerMutationOptions } from '@/features/answer';
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
@@ -16,10 +17,11 @@ interface IAnswerComposerProps {
   postId: string;
 }
 export function AnswerComposer({ postId }: IAnswerComposerProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const { session, login } = useSession(),
     notify = useNotify(),
-    mutation = useCreateAnswerMutation(),
+    mutation = useMutation(createAnswerMutationOptions(client)),
     form = useZodForm(answerFormSchema, { defaultValues: { body: '' } });
   return (
     <div className="answer-compose">
