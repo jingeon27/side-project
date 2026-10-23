@@ -7,6 +7,7 @@ import { inject } from 'vitest';
 import { createDatabaseClient } from '@photo-contest/test-kit';
 
 import { createApp } from '../../src/bootstrap';
+import { MOBILE_AUTH_CALLBACK_PATH } from '../../src/config/env';
 import { SchedulerService } from '../../src/maintenance/scheduler.service';
 import { MediaStorage } from '../../src/storage/media-storage.service';
 
@@ -156,6 +157,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
     ENABLE_DEV_LOGIN: 'true',
     TRUST_PROXY_HOPS: '0',
     WEB_ORIGIN: TEST_WEB_ORIGIN,
+    MOBILE_AUTH_CALLBACK_URL: `${new URL(env.WEB_ORIGIN ?? TEST_WEB_ORIGIN).origin}${MOBILE_AUTH_CALLBACK_PATH}`,
     ...env,
   });
   const app = await createApp({ logger: false }).catch((error: unknown) => {

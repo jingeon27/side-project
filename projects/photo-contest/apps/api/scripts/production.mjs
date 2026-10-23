@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
+const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
 const { assertProductionConfig } = require('../dist/config/env.js');
 const { sharedDatabaseUrl } = require('../dist/config/shared-instance.js');
 const { PrismaClient } = require('../generated/prisma/index.js');
@@ -21,7 +22,7 @@ const migration = spawnSync(
   },
 );
 if (migration.status !== 0) process.exit(migration.status ?? 1);
-const db = new PrismaClient({ datasources: { db: { url } } });
+const db = new PrismaClient({ adapter: createPrismaAdapter(url) });
 try {
   await db.$transaction([
     db.$executeRawUnsafe(

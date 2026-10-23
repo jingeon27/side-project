@@ -54,6 +54,8 @@
     "vitest": "^4.1.0"
   },
   "exports": {
+    "./database-adapter": "./src/database/prisma-adapter.ts",
+    "./prisma.config.ts": "./prisma.config.ts",
     "./database-client": "./generated/prisma/index.js",
     "./prisma/schema.prisma": "./prisma/schema.prisma",
     "./package.json": "./package.json"
