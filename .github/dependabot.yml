@@ -15,7 +15,7 @@ updates:
     directories:
       - /projects/photo-contest/apps/api
       - /projects/photo-contest/apps/web
-      - /projects/game-feedback/deploy/lightsail
+      - /projects/game-feedback/deploy/shared-instance
     target-branch: develop
     schedule:
       interval: weekly

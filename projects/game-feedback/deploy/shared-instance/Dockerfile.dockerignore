@@ -27,4 +27,3 @@
 **/.expo*
 **/*.tsbuildinfo
 **/.git
-**/deploy/lightsail/.state

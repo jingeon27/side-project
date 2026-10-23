@@ -1,3 +1,11 @@
+## 2026-10-23 공유 배포 경로와 관리자 권한 부여 정리
+
+구형 단독 배포의 CloudFormation·Compose·Caddy·운영 스크립트와 전용 컨테이너 smoke를 제거했다. 현재 공유 EC2/RDS/S3 빌드에 쓰는 Dockerfile·dockerignore는 `deploy/shared-instance`로 옮기고 Actions·Dependabot·Admin 운영 안내를 연결했다. 공개 도메인·문의 이메일 검증은 공유 이미지 빌드 job으로 옮겨 보존했다. 운영 인프라를 삭제하거나 배포하지 않았다.
+
+Google subject 환경변수에 의한 가입·로그인 자동 관리자 승격을 제거했다. 가입자는 USER이며 관리자 권한은 SSH operator CLI의 grant와 감사 기록으로 부여하고 별도 Admin 앱이 API의 ADMIN 권한 검사를 거쳐 기능을 사용한다. 기존 ADMIN의 권한은 로그인 시 그대로 유지한다. 관련 환경변수 예제·Compose·테스트 실행 설정·스킬 안내도 정리했다.
+
+검증: API 타입 검사와 OAuth/운영자 역할 통합 사양 7개, 공유 배포 Vitest 20개, Actionlint가 통과했다. 역할 검사는 이 세션의 프리뷰가 소유한 55444 테스트 DB에 새 격리 스키마를 만들고 종료 시 정리했으며 프리뷰·개발 서버를 중지하지 않았다. Docker 엔진이 없어 이동한 이미지의 실제 컨테이너 재빌드는 로컬에서 실행하지 않았다. 공통 workflow와 배포 문서 변경은 구형 경로 제거 후 현재 이미지 빌드·운영 명령을 유지하는 데 필요하다.
+
 # 2026-10-22 API·패키지 ESLint와 엄격한 tsconfig 연결
 
 PR #49 병합 후 후속 충돌 해소: develop `899349f7`을 병합했다. 공용 ESLint README에 React DOM 접근성 preset·모바일 FSD 경계와 #50의 API·패키지·migration-check 적용 범위를 모두 남겼다. 자동 병합된 오류 경계와 글쓰기 테스트는 `override`·`on*` 콜백을 함께 유지했다. Node 24에서 immutable 설치, Game Feedback 집계 `check`, photo-contest 전체 타입·루트/Web/Mobile lint, design-system 타입·lint, eslint-config `check`(89개), migration-check `check`(70개), Admin 21개와 photo-contest 글쓰기·오류 경계 테스트가 통과했다. SDK 재생성 추가 diff가 없었다. 이번 후속 병합은 API 구현·계약을 바꾸지 않았으며 DB 통합·브라우저 E2E·운영 빌드는 다시 실행하지 않았다.
@@ -18,11 +26,11 @@ API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/*
 
 # 2026-10-22 헬스·내부 라우트 폴더 이름 정리
 
-URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용·Lightsail Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다(Lightsail의 `route` 순서 수정은 API 요청 제한 보정 기록 참고). 아래 날짜별 기록의 `/_internal`·`/_health`는 당시 경로다.
+URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. 아래 날짜별 기록의 `/_internal`·`/_health`는 당시 경로다.
 
 검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
 
-PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Lightsail의 대소문자 무시·관리자 경로 차단, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 두 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
+PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
 
 # 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
 
@@ -51,7 +59,7 @@ PR #42 충돌 해소: 최신 develop `46e5d0cd`를 병합하면서 클라이언�
 - 만료 행: 새 OAuth 시도·세션 발급 때 만료 행을 지우고 `OAuthAttempt.expiresAt` 인덱스를 더했다.
 - 밴 회피: 밴·밴 사용자 탈퇴 때 `BannedIdentity(provider, sha256(subject))`를 남기고 계정 없는 식별자의 callback·앱 교환·onboard를 거부한다.
 - 관리자 신고 목록: `status`(기본 `OPEN`)·커서 페이지(`{ items, nextCursor }`)와 `(status, createdAt, id)` 인덱스. Admin 신고함에 상태 필터와 더 보기를 더했다.
-- 게임 프로필 조회는 로그인·사용자별 분당 10회·60초 공유 캐시를 쓴다. 밴 사용자의 문의 첨부 `complete`를 허용했다. 탈퇴 시 분리한 남의 답글은 `updatedAt`을 보존한다. Lightsail Caddy가 `/_internal`·데모 인증·`/api/admin`을 대소문자 무시로 차단한다(기존 `respond`는 `handle` 뒤로 정렬돼 적용되지 않았다).
+- 게임 프로필 조회는 로그인·사용자별 분당 10회·60초 공유 캐시를 쓴다. 밴 사용자의 문의 첨부 `complete`를 허용했다. 탈퇴 시 분리한 남의 답글은 `updatedAt`을 보존한다.
 
 추가형 migration `20261022100000_oauth_attempt_expiry_index`, `20261022100100_banned_identities`, `20261022100200_report_status_index`를 운영 `migrate deploy`로 적용한다. DB 통합 테스트는 로컬 DB를 띄우지 않아 CI에서 확인한다.
 
@@ -1017,29 +1025,6 @@ Web typecheck/lint와 변경 파일 Prettier 검사가 통과했습니다. 새 P
 
 프로젝트 check, OpenAPI/SDK 재생성과 변경 파일 Prettier가 통과했습니다. API Vitest+Supertest 109개와 SDK Vitest 43개가 통과했으며 정상 태그·대소문자 정규화와 두 endpoint의 잘못된 길이/문자 거부를 확인했습니다. 관련 Web Playwright 21개 중 20개가 통과했고 이전 5자리 태그가 URL 인코딩된 채 남아 있던 조회 fixture를 수정한 뒤 해당 파일 4개를 다시 실행해 모두 통과했습니다. 21개 전체가 한 번에 통과한 것으로 기록하지 않습니다. 393px의 세 언어 안내/오류/조회/등록, 조회 중 입력 변경, 사용자 태그 유지와 인증 문의 흐름을 확인했습니다. 검증은 격리 PostgreSQL과 가짜 프로바이더를 사용했으며 실제 Supercell API 호출을 성공으로 기록하지 않습니다. 실행 중인 개발 Web의 200 응답과 개발 API의 7자리 태그 거부(400)도 확인했습니다.
 
-## Lightsail 서울 운영 배포 준비 (2026-10-19)
-
-사용자의 운영 환경 준비 요청과 Lightsail 서울 선택에 따라 2GB 단일 호스트의 CloudFormation, Static IP, Docker Compose, Caddy HTTPS와 GitHub Actions CD를 추가했습니다. API/Web 이미지는 Node 24 linux/amd64로 빌드하며 Web은 monorepo standalone 결과를 사용합니다. main의 최신 커밋이 코드·컨테이너 검증을 통과하고 GF_DEPLOY_ENABLED가 true인 경우에만 게시/배포합니다. SSH 호스트 키를 고정하고 서버 env를 덮어쓰지 않으며 배포를 직렬화합니다. 운영 도메인·OAuth·SSH/GitHub 설정과 사용자 실행 순서는 deploy/lightsail/README.md를 따릅니다.
-
-운영은 HTTPS origin, 문의 이메일, 완전한 OAuth 쌍과 DB 암호를 검증합니다. 데모/테스트 인증/Next testing API를 거부하며 Caddy에서도 테스트 로그인 경로를 막습니다. DB 앱 역할은 비관리자이고 공개 포트는 80/443, API 관리 연결은 loopback입니다. 메모리·swap·로그 회전을 구성하고 private 파일의 사진/영상 signature/크기/소유권/공개 범위/Range 정책을 유지합니다. FILESYSTEM volume이 기본이며 선택한 private S3/R2도 지원합니다. DB bytes는 기존 개발 파일 호환용으로 읽고 새 운영 파일은 외부 저장소 메타데이터를 참조합니다.
-
-운영 준비 요청이 이전의 배포 전 SQL 미포함 정책을 대체하므로 schema.prisma에서 최초 migration을 생성했습니다. 새 운영 DB는 migrate deploy와 카테고리 seed를 사용하며 테스트 계정은 만들지 않습니다. 로컬 db:sync는 계속 URL 가드와 데이터 손실 거부 정책을 사용합니다. 이번 로컬 동기화에서 신규 nullable 컬럼의 unique 경고로 db:sync가 중단되어 생성 diff의 테이블/컬럼/인덱스/FK 추가와 NOT NULL 완화만 검토한 후 전용 55442에 단일 트랜잭션으로 적용했습니다. 데이터 손실 강제 옵션이나 reset을 사용하지 않았고 글 18개, 메시지 10개, PostMedia/ChatAttachment 각 1개의 수가 동일했습니다. 기존 3300/4300/3303 개발 서버도 유지했습니다.
-
-배포 전 백업, daily 03:00 KST 백업/정리 timer, 7일 로컬 보관과 선택한 S3/R2 offsite 복사를 추가했습니다. 참조가 끊긴 파일은 14일 더 보관해 백업 복구를 지원합니다. 앱 health 실패는 이전 이미지/설정으로 복귀하며 SQL은 forward-only입니다. restore는 기존 DB volume이 없는 새 스택에만 허용하고 archive 경로/종류를 검증합니다. 기본 로컬 백업만으로 디스크 유실을 복구할 수 없으므로 외부 보관은 운영 설정으로 별도 준비해야 합니다. 비용 이메일을 지정하면 월 $20 Lightsail Budgets 알림을 구성하며 이는 트래픽 제한이나 과금 차단이 아닙니다.
-
-로컬 Admin은 SSH CLI로 실제 계정을 ADMIN으로 지정하고 한 시간짜리 세션을 발급해 터널로 연결합니다. 발급·권한 변경 감사 기록을 남기고 demo/banned/non-admin 발급을 거부합니다. Vite 서버가 Bearer를 주입하며 client bundle에는 boolean 모드만 전달합니다. 이 모드의 테스트 로그인 버튼은 숨기고 token을 browser storage에 넣지 않습니다.
-
-현재 worktree의 검증 결과:
-
-- 프로젝트 check와 OpenAPI/SDK 재생성 diff 없음, 전체 Prettier 검사 통과.
-- API Vitest+Supertest 123개 통과. 최초 migration을 새 테스트 schema에 적용했고 운영 설정 거부, private filesystem 저장/Range, 14일 파일 보관/정리, 실제 관리자 세션·권한·감사 기록을 검증했습니다.
-- Web Vitest 99개, Admin Vitest 2개 통과. Production build/instant() 12개와 관리자 Playwright 3개도 최종 각각 한 번에 통과했습니다.
-- API/Web linux/amd64 Docker 이미지와 operator 모드 Admin build 통과. 테스트 credential 문자열이 Admin 산출물에 없는 것을 확인했습니다.
-- 실제 Docker의 HTTPS local CA, 최초 migration/카테고리만 seed, 비로그인 HTML/SEO, 테스트 인증 차단, 앱 DB role, private 파일/Range, Caddy SSE 전달, API 재시작 보존을 검증했습니다. 의도적으로 실패하는 Web 이미지를 배포해 이전 이미지 복귀를 확인했고, 백업을 새 DB/media volume에 복구하여 글/파일/세션 보존과 기존 volume restore 거부까지 통과했습니다. 개발 컨테이너/DB를 재사용하지 않고 생성한 game-feedback-smoke-* 스택만 정리했습니다.
-- CloudFormation cfn-lint(서울), actionlint, shellcheck와 git diff --check 통과. 루트 workflow는 컨테이너 검증/CD 때문에, yarn.lock은 API S3 저장/streaming backup 의존성 때문에 변경했습니다. 다른 서비스 제품 코드는 변경하지 않았습니다.
-
-유료 AWS 자원 생성, 실제 SSH CD 실행, 공인 DNS/ACME 인증서, 운영 OAuth/Supercell, 실제 S3/R2 송수신과 외부 모니터링 수신은 실행하지 않았습니다. Game Feedback의 Sentry/Amplitude 연동은 현재 없으며 이 변경이 해당 연동을 완성했다고 주장하지 않습니다. 2GB 실서버의 동시 사용자 처리량도 부하 측정 전입니다. 이 절은 구현/로컬 검증 결과이며 실제 공개 배포 완료 기록이 아닙니다.
-
 ## 2026-10-20 웹/API 관측 연결
 
 웹 Sentry 오류 수집과 Amplitude의 타입 이벤트 7개, 자동 페이지뷰 공통 속성, 계정 식별 초기화를 추가했다. API는 예외 필터의 500만 수집하며 실제 URL 대신 라우트 패턴을 태그한다. 빈 키는 비활성화한다. 공통 workflow 변경은 GF 웹 빌드 인자 연결에 필요하다. 실제 국가·보유기간·콘솔 알림 설정은 운영 프로젝트 확인 후 확정한다. 모바일은 이번 변경에 포함하지 않는다.
@@ -1129,11 +1114,11 @@ E2E 서버의 가짜 Google 제공자는 기존 NODE_ENV=test·격리 DB·전용
 
 디자인 시스템 lint·typecheck·Vitest 16개가 통과했다. 웹 E2E에서 실제 마우스와 Chromium 터치 이벤트로 확장·축소·아래로 닫기를 검사했고, 높이를 바꿔도 입력 초안이 보존되는지 확인했다. 게임 계정·신고 시트와 확인 Dialog의 기존 동작도 검증했다. 393px 가입 라이트/다크와 시트 핸들 화면을 직접 확인했다. 초기 캡처가 테마 전환 중간에 찍히지 않도록 입력 글자와 주 버튼의 최종 다크 색상을 기다린다.
 
-문의 메일은 contact@bambyul.com으로 변경했다. 오류 복구·문의 페이지의 기본 주소, 로컬·Lightsail·공통 인스턴스의 환경변수 예제와 회귀 검사를 함께 맞췄다. 공통 deploy/shared-instance/README.md 수정은 GF_CONTACT_EMAIL 예제 한 항목을 갱신하기 위한 것이다. ACME 인증서·예산 알림 주소는 문의 주소와 별도 설정으로 유지한다. 새 의존성이나 루트 manifest·lock 변경은 없다. 변경 파일 Prettier와 diff 검사를 통과했으며 실행 중인 개발 서버·개발 DB는 변경하지 않았다. 검증 후 이번 작업이 소유한 테스트 DB만 중지하고 데이터를 보존했다.
+문의 메일은 contact@bambyul.com으로 변경했다. 오류 복구·문의 페이지의 기본 주소, 로컬·공통 인스턴스의 환경변수 예제와 회귀 검사를 함께 맞췄다. 공통 deploy/shared-instance/README.md 수정은 GF_CONTACT_EMAIL 예제 한 항목을 갱신하기 위한 것이다. ACME 인증서·예산 알림 주소는 문의 주소와 별도 설정으로 유지한다. 새 의존성이나 루트 manifest·lock 변경은 없다. 변경 파일 Prettier와 diff 검사를 통과했으며 실행 중인 개발 서버·개발 DB는 변경하지 않았다. 검증 후 이번 작업이 소유한 테스트 DB만 중지하고 데이터를 보존했다.
 
 ## PR #28의 develop 병합 충돌 해결 (2026-10-22)
 
-최신 develop 4921df3을 기능 브랜치에 merge했다. 공통 배포 안내와 Lightsail 환경 예제는 game.bambyul.com과 contact@bambyul.com을 유지하고, 가입 페이지 전용 레이아웃과 드래그 시트를 보존했다. 삭제한 OnboardingDialog는 되살리지 않고 새 가입 페이지에 Game Mate 이름과 28px 아이콘을 적용했다. develop의 NestJS 캐시 무효화와 다른 서비스 변경은 그대로 반영했다.
+최신 develop 4921df3을 기능 브랜치에 merge했다. 공통 배포 안내와 환경 예제는 game.bambyul.com과 contact@bambyul.com을 유지하고, 가입 페이지 전용 레이아웃과 드래그 시트를 보존했다. 삭제한 OnboardingDialog는 되살리지 않고 새 가입 페이지에 Game Mate 이름과 28px 아이콘을 적용했다. develop의 NestJS 캐시 무효화와 다른 서비스 변경은 그대로 반영했다.
 
 병합 결과에서 Web Vitest 160개, API 단위 105개와 로그인·OAuth·캐시 관련 Supertest 통합 30개, 실제 Next production build/start의 Playwright 12개가 통과했다. Playwright는 모바일·데스크톱 로그인, 가입과 언어·복귀 경로, 마우스·터치 시트와 캐시 갱신·관리자 숨김·인증 없는 무효화 요청 거부를 확인했다. API/Web 타입 검사와 Web lint, OpenAPI/SDK 재생성 diff, 변경 파일 Prettier와 diff 검사도 통과했다. 기존 개발 서버와 개발 DB는 변경하지 않았고 검증 후 소유한 테스트 DB만 중지해 데이터를 보존했다. 실제 외부 OAuth와 물리 기기 검증은 포함하지 않는다.
 

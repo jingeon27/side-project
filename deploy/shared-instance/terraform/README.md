@@ -215,8 +215,6 @@ done
 | 4. 버킷 2개·차단·암호화·Versioning·수명 주기·CORS | `storage.tf`                                            | 없음(origin은 변수)                               |
 | 5. 서비스별 IAM 자격 증명                         | `iam.tf`의 사용자·정책                                  | 액세스 키 발급과 교차 접근 거부 확인              |
 
-`projects/game-feedback/deploy/lightsail`의 이전 단독 구성과는 무관하며 그 리소스를 가져오거나 바꾸지 않는다.
-
 ## 운영 중 변경
 
 - 새 AMI가 게시되거나 `user_data`·`ssh_public_key`가 바뀌어도 EC2를 교체하지 않는다(`ignore_changes`). 호스트를 새로 만들려면 `terraform apply -replace=aws_instance.host`로 명시한다. 탄력적 IP는 네트워크 인터페이스에 붙어 있어 교체 후에도 유지되지만 루트 볼륨(이미지·Caddy 인증서·`/srv/side-project`)과 SSH host key는 새로 만들어지므로 3·6·7·9단계를 다시 한다.

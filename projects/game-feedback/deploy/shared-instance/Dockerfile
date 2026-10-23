@@ -57,8 +57,3 @@ COPY --from=web-build --chown=node:node /app/projects/game-feedback/apps/web/pub
 USER node
 EXPOSE 3300
 CMD ["node", "projects/game-feedback/apps/web/server.js"]
-
-# Isolated production smoke runner; never used by the deployed application.
-FROM docker:29-cli AS smoke-tools
-RUN apk add --no-cache bash python3 nodejs util-linux curl openssl
-ENTRYPOINT ["node"]

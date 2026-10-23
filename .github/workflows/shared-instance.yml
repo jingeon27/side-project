@@ -12,6 +12,23 @@ jobs:
         with: { persist-credentials: false }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: '24' }
+      - name: Validate Game Feedback public build settings
+        env:
+          SITE_URL: ${{ vars.GF_SITE_URL }}
+          CONTACT_EMAIL: ${{ vars.GF_CONTACT_EMAIL }}
+          DEPLOY_ENABLED: ${{ vars.GF_DEPLOY_ENABLED }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs';
+          const site = process.env.SITE_URL || 'https://game.bambyul.com';
+          const url = new URL(site);
+          if (url.origin !== site || url.protocol !== 'https:') throw new Error('GF_SITE_URL must be an HTTPS origin.');
+          if (process.env.DEPLOY_ENABLED === 'true' && (!process.env.SITE_URL || !process.env.CONTACT_EMAIL))
+            throw new Error('Configure GF_SITE_URL and GF_CONTACT_EMAIL before enabling deployment.');
+          const email = process.env.CONTACT_EMAIL || 'contact@bambyul.com';
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid GF_CONTACT_EMAIL.');
+          appendFileSync(process.env.GITHUB_ENV, `GF_BUILD_SITE_URL=${site}\nGF_BUILD_CONTACT_EMAIL=${email}\n`);
+          JS
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         id: buildx
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -32,7 +49,7 @@ jobs:
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: projects/game-feedback/deploy/lightsail/Dockerfile
+          file: projects/game-feedback/deploy/shared-instance/Dockerfile
           target: api
           platforms: linux/amd64
           load: true
@@ -45,7 +62,7 @@ jobs:
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: projects/game-feedback/deploy/lightsail/Dockerfile
+          file: projects/game-feedback/deploy/shared-instance/Dockerfile
           target: web
           platforms: linux/amd64
           load: true
@@ -54,8 +71,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           tags: side-shared-gf-web:${{ github.sha }}
           build-args: |
-            GF_SITE_URL=${{ vars.GF_SITE_URL || 'https://game.bambyul.com' }}
-            GF_CONTACT_EMAIL=${{ vars.GF_CONTACT_EMAIL || 'contact@bambyul.com' }}
+            GF_SITE_URL=${{ env.GF_BUILD_SITE_URL }}
+            GF_CONTACT_EMAIL=${{ env.GF_BUILD_CONTACT_EMAIL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.GF_WEB_SENTRY_DSN }}
             NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.GF_AMPLITUDE_API_KEY }}
           cache-from: type=gha,scope=game-feedback-web
