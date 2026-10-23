@@ -19,7 +19,7 @@
     "@photo-contest/api": "workspace:*",
     "@side/typescript-config": "workspace:*",
     "prisma": "7.10.1",
-    "sharp": "^0.34.0",
+    "sharp": "^0.35.5",
     "tsx": "^4.20.0",
     "typescript": "6.0.2"
   },
