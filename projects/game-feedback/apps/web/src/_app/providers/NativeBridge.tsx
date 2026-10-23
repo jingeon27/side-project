@@ -3,19 +3,21 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { last } from 'es-toolkit';
 import { overlay, useOverlayData } from 'overlay-kit';
 import { match } from 'ts-pattern';
 
-import { useRefreshSession } from '@/features/auth';
+import { refreshSessionMutationOptions } from '@/features/auth';
 import { nativeBridgeChannel } from '@/shared/native';
 import { backNavigation } from '@/shared/navigation';
 
 export function NativeBridge() {
+  const client = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams().toString();
-  const { mutate: refreshSession } = useRefreshSession();
+  const { mutate: refreshSession } = useMutation(refreshSessionMutationOptions(client));
   const overlays = useOverlayData();
   useEffect(() => {
     const open = last(Object.values(overlays).filter((item) => item.isOpen));

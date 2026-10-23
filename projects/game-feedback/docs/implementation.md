@@ -1167,3 +1167,11 @@ Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게
 - Playwright(Web `e2e/app-links.spec.ts`, Mobile `app-shell` 콜백 단언)와 production·공통 인스턴스 smoke의 `/.well-known`·콜백 확인은 작성만 하고 CI에 맡겼다. 서버·시뮬레이터·Docker·`next build`·EAS 빌드는 실행하지 않았다.
 
 실제 제공자 로그인 뒤 iOS 세션 콜백·Android App Link 복귀, Apple CDN의 AASA 반영, Play App Signing 지문 검증은 실기기·콘솔 확인이 필요하다.
+
+## 2026-10-23 mutationOptions 직접 조립
+
+사용자 지시에 따라 Web 26개·Admin 8개, 총 34개의 단순 useMutation 래퍼를 제거하고 12개 *.hook.ts 파일을 삭제했다. 기존 mutationOptions 팩토리를 public export해 화면과 기능 흐름의 호출부 32곳에서 useQueryClient·useNotify와 useMutation으로 직접 조립한다. options 팩토리의 mutationKey·REST IO·캐시 무효화·계정 전환 정책은 변경하지 않았다. 폼·읽음 관찰·재전송처럼 기능 흐름을 소유하는 훅은 같은 팩토리를 직접 사용한다.
+
+Admin ESLint는 호출부의 useMutation을 허용하면서 mutationOptions 정의와 SDK 호출 경계를 유지한다. Web·Admin AGENTS와 앱·프로젝트 스킬, 아키텍처 안내도 전용 mutation 래퍼 없이 직접 조립하는 기준으로 맞췄다. 댓글 UI 테스트는 제거한 훅 대신 API 경계만 대체해 실제 options·QueryClient의 대기/실패/재시도·캐시 처리를 검증한다. 인증 다이얼로그 테스트도 실제 native-login options를 조립하고 보이는 로그인 방식과 폼의 책임을 확인한다.
+
+Node 24에서 Web·Admin의 typecheck·lint, Web 단위/UI 216개와 Admin 단위 21개가 통과했다. Admin production build와 Web E2E용 production build도 통과했다. Chromium 브라우저 E2E는 Web 9개 파일의 28개(로그인·가입·폼 수정/삭제·댓글/답글·알림·도움됨·채팅·차단·3개 언어 게임 계정), Admin 5개(권한·문의 재시도·신고·인증·밴)를 통과했다. 테스트는 이 Worktree의 전용 DB 55444와 각 실행의 새 gf_test_ 스키마를 사용했다. 남은 테스트 스키마가 0개임을 확인하고 소유 테스트 DB를 종료했다. codegen SDK diff는 없고 기존 개발 DB·서버는 변경하지 않았다. 모든 브라우저 레인·실기기·실제 외부 OAuth·배포 검증은 포함하지 않는다.

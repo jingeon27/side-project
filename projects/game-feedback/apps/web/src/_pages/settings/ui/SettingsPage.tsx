@@ -2,17 +2,17 @@
 
 import Link from 'next/link';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight, Gamepad2, LogOut, Plus, ShieldBan, Trash2 } from 'lucide-react';
 
 import { Button } from '@side/design-system';
 
-import { useLogout, useSession } from '@/features/auth';
+import { logoutMutationOptions, useSession } from '@/features/auth';
 import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
-import { blockListOptions, UserBadges, useUnblockUser } from '@/features/user';
+import { blockListOptions, unblockUserMutationOptions, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
-import { Avatar, BottomSheet, ErrorNotice, LoadingState, openOverlay } from '@/shared/ui';
+import { Avatar, BottomSheet, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
 import { ConnectProfile } from '@/widgets/game-profile';
 import { SupportChatButton } from '@/widgets/support';
 
@@ -57,12 +57,14 @@ function openAccountDeletion() {
   ));
 }
 export function SettingsPage({ locale }: ISettingsPageProps) {
+  const client = useQueryClient();
+  const notify = useNotify();
   const { t, locale: textLocale } = useI18n();
   const { session, login, loading } = useSession();
   const accounts = useQuery(gameAccountListOptions(session?.user?.id));
   const blocks = useQuery(blockListOptions(session?.user?.id));
-  const logout = useLogout();
-  const unblock = useUnblockUser();
+  const logout = useMutation(logoutMutationOptions(client, notify));
+  const unblock = useMutation(unblockUserMutationOptions(client, notify));
   if (loading) return <LoadingState />;
   if (!session?.user)
     return (

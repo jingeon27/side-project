@@ -1,15 +1,16 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 
 import { Button } from '@side/design-system';
 
-import { userOptions, useVerifyUserMutation } from '@/features/moderation';
+import { userOptions, verifyMutationOptions } from '@/features/moderation';
 import { ErrorNotice } from '@/shared/ui';
 
 import { UserBanForm } from './UserBanForm';
 
 export function UserPanel({ userId }: { userId: string }) {
+  const client = useQueryClient();
   const { data: user } = useSuspenseQuery(userOptions(userId));
-  const verify = useVerifyUserMutation();
+  const verify = useMutation(verifyMutationOptions(client));
   return (
     <article className="admin-card form-stack" aria-label="사용자 관리" data-user-id={user.id}>
       <h2>{user.nickname}</h2>

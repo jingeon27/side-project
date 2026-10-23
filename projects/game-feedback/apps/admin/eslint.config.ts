@@ -64,8 +64,8 @@ export default defineConfig([
             { name: '@game-feedback/sdk', message: 'REST 호출은 features의 api/*.api.ts에서 수행하세요.' },
             {
               name: '@tanstack/react-query',
-              importNames: ['useMutation', 'mutationOptions'],
-              message: 'mutation은 features의 *.mutation-options.ts와 mutation 훅으로 연결하세요.',
+              importNames: ['mutationOptions'],
+              message: 'mutationOptions는 features의 model에서 정의하고 호출부의 useMutation에 전달하세요.',
             },
           ],
         },

@@ -1,11 +1,12 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
-import { useCreateCommentMutation } from '@/features/comment';
+import { createCommentMutationOptions } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, useNotify } from '@/shared/ui';
@@ -13,9 +14,10 @@ import { ErrorNotice, useNotify } from '@/shared/ui';
 import { commentFormSchema } from '../model/content.schema';
 
 export function PostCommentForm({ postId }: { postId: string }) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const { session, login } = useSession();
-  const mutation = useCreateCommentMutation();
+  const mutation = useMutation(createCommentMutationOptions(client));
   const notify = useNotify();
   const form = useZodForm(commentFormSchema, { defaultValues: { body: '' } });
 

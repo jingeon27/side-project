@@ -1,8 +1,3 @@
-export {
-  useCreateCommentMutation,
-  useUpdateCommentMutation,
-  useDeleteCommentMutation,
-} from './model/comment.hook';
 export { CommentItem } from './ui/CommentItem';
 export { olderCommentOptions } from './model/comment.options';
 export {
