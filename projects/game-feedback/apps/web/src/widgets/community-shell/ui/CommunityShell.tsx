@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
+import { createContext, Suspense, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 import { useQuery } from '@tanstack/react-query';
@@ -10,21 +10,20 @@ import { resolveAppRoute } from '@game-feedback/bridge';
 import { useSession } from '@/features/auth';
 import { conversationBadgeOptions } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
-import { RouteViewport } from '@/shared/navigation';
+import { RouteViewportProvider } from '@/shared/navigation';
 import { ServiceErrorBoundary } from '@/shared/ui';
 import { useChatConnection } from '@/widgets/chat-realtime';
 
 import { CommunityFooter } from './CommunityFooter';
-import { GameBoardNavigation } from './GameBoardNavigation';
-import { LeftSidebar } from './LeftSidebar';
 import { MobileNav } from './MobileNav';
 
 interface ICommunityShellProps {
   children: ReactNode;
   locale: string;
-  topbar: ReactNode;
 }
-export function CommunityShell({ children, locale, topbar }: ICommunityShellProps) {
+export const ChatUnreadContext = createContext(0);
+
+export function CommunityShell({ children, locale }: ICommunityShellProps) {
   const { t } = useI18n();
   const { session } = useSession();
   const connection = useChatConnection();
@@ -40,26 +39,9 @@ export function CommunityShell({ children, locale, topbar }: ICommunityShellProp
       <Suspense fallback={null}>
         <ShellScreen />
       </Suspense>
-      <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>
-        {topbar}
-      </ServiceErrorBoundary>
-      <div className="site-grid">
-        <div className="shell-left-sidebar">
-          <ServiceErrorBoundary title={t('탐색 메뉴')} resetKey={userKey}>
-            <Suspense fallback={<LeftSidebar home={home} path="" chatUnread={chatUnread} />}>
-              <SidebarRoute home={home} chatUnread={chatUnread} />
-            </Suspense>
-          </ServiceErrorBoundary>
-        </div>
-        <RouteViewport>
-          <ServiceErrorBoundary title={t('이 화면')} resetKey={userKey} refreshOnRetry>
-            <Suspense fallback={null}>
-              <BoardNavigationRoute locale={locale} />
-            </Suspense>
-            {children}
-          </ServiceErrorBoundary>
-        </RouteViewport>
-      </div>
+      <ChatUnreadContext value={chatUnread}>
+        <RouteViewportProvider>{children}</RouteViewportProvider>
+      </ChatUnreadContext>
       <ServiceErrorBoundary title={t('서비스 안내')} resetKey={userKey}>
         <CommunityFooter home={home} />
       </ServiceErrorBoundary>
@@ -81,12 +63,6 @@ function ShellScreen() {
   const path = useShellPath();
   return <span className="shell-route" hidden data-screen={resolveAppRoute(path)?.screen} />;
 }
-function SidebarRoute({ home, chatUnread }: { home: string; chatUnread: number }) {
-  return <LeftSidebar home={home} path={useShellPath()} chatUnread={chatUnread} />;
-}
 function MobileNavigationRoute({ home, chatUnread }: { home: string; chatUnread: number }) {
   return <MobileNav home={home} path={useShellPath()} chatUnread={chatUnread} />;
-}
-function BoardNavigationRoute({ locale }: { locale: string }) {
-  return <GameBoardNavigation locale={locale} path={useShellPath()} />;
 }

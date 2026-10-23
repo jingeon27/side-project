@@ -3,7 +3,7 @@
 import { useI18n } from '@/shared/i18n';
 import { SupportChatButton } from '@/widgets/support';
 
-export function ContactPage() {
+export function ContactSupport() {
   const { t } = useI18n();
   return (
     <section className="settings-card form-stack" aria-label={t('관리자 문의')}>

@@ -17,8 +17,8 @@ description: Game Feedback 웹(apps/web)에서 링크·뒤로 가기·탭 이동
 - `_app/providers/NavigationHistory.tsx`가 `installBrowserNavigation()`으로 `history.pushState`/`replaceState`를 감싸 `{ index, previous, feed, parent? }`를 state에 남긴다. 화면에서 history state를 직접 만지지 않는다.
 - 화면의 돌아가기는 `BackLink`(`@/shared/navigation`)다. `backNavigation()`은 상세류(`post`·`compose`·`profile`·`conversation`)에 앱 안 이전 기록이 있으면 `router.back()`, 없으면(콜드 링크) `parent`로 `router.replace`한다. 피드로 돌아갈 때는 `feedDestination`이 마지막 피드 필터를 복원한다.
 - 라우트 정의보다 정확한 상위(글쓰기를 연 게시판·필터)는 `<BackLink logicalParent={parent}>`로 등록한다(`registerLogicalParent`, 언마운트 때 해제). `parentOnly`는 이전 기록이 그 parent일 때만 back한다.
-- 링크를 누른 화면이 상위인 목적지(가이드 → 게시판·글쓰기·문의)는 `ChildLink`로 연다. `registerNextLogicalParent`가 다음 push 기록에 `parent`를 남겨, 상세가 아닌 화면도 뒤로 가기(브라우저·앱)가 그 기록으로 돌아간다(`back`). 같은 경로의 replace(필터)는 `parent`를 유지하고 다른 화면으로 replace하면 버린다. 이후 push한 기록은 물려받지 않는다.
-- 루트 탭(feed·messages·settings·notifications·guide)은 화면 안의 바로가기(가이드 제목 등)에서도 `TabLink`로 연다. 기본 `replace`라 탭 이동이 기록을 쌓지 않고, 피드 탭은 마지막 피드 필터로 돌아간다. 일반 `Link` push로 열면 브라우저·iOS 스와이프는 이전 화면으로, Android 뒤로 가기는 parent로 가서 서로 어긋난다.
+- 링크를 누른 화면이 상위인 목적지(프로필 → 가이드)는 `ChildLink`로 연다. `registerNextLogicalParent`가 다음 push 기록에 `parent`를 남겨, 상세가 아닌 화면도 뒤로 가기(브라우저·앱)가 그 기록으로 돌아간다(`back`). 같은 경로의 replace(필터)는 `parent`를 유지하고 다른 화면으로 replace하면 버린다. 이후 push한 기록은 물려받지 않는다.
+- 루트 탭(feed·messages·settings·notifications)은 화면 안의 바로가기에서도 `TabLink`로 연다. 기본 `replace`라 탭 이동이 기록을 쌓지 않고, 피드 탭은 마지막 피드 필터로 돌아간다. 일반 `Link` push로 열면 브라우저·iOS 스와이프는 이전 화면으로, Android 뒤로 가기는 parent로 가서 서로 어긋난다.
 - 근거 spec은 `src/shared/navigation/browser-navigation.spec.tsx`다. 이동 규칙을 바꾸면 이 spec과 `e2e/navigation.spec.ts`를 함께 고친다.
 
 ## URL 상태

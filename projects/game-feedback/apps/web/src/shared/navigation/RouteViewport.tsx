@@ -1,6 +1,14 @@
 'use client';
 
-import { Suspense, useEffect, useRef, type ReactNode } from 'react';
+import {
+  createContext,
+  Suspense,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { usePathname } from 'next/navigation';
 
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
@@ -8,6 +16,13 @@ import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 import { useAnimate, useMotionPreference } from '@/shared/motion';
 
 import { getNavigationDirection } from './browser-navigation';
+
+const RoutePathContext = createContext<RefObject<string | null> | null>(null);
+
+export function RouteViewportProvider({ children }: { children: ReactNode }) {
+  const previous = useRef<string | null>(null);
+  return <RoutePathContext value={previous}>{children}</RoutePathContext>;
+}
 
 export function RouteViewport({ children }: { children: ReactNode }) {
   const [scope, animate] = useAnimate<HTMLElement>();
@@ -29,7 +44,8 @@ function RouteMotion({
 }) {
   const pathname = usePathname();
   const reducedMotion = useMotionPreference();
-  const previous = useRef<string | null>(null);
+  const localPrevious = useRef<string | null>(null);
+  const previous = useContext(RoutePathContext) ?? localPrevious;
   useEffect(() => {
     const route = resolveAppRoute(pathname);
     const key = route?.tab === 'messages' ? appRoutes.messages(route.locale) : pathname;
@@ -67,6 +83,6 @@ function RouteMotion({
       { duration: 0.18, ease: 'easeOut' },
     );
     return () => controls.complete();
-  }, [pathname, reducedMotion, animate, scope]);
+  }, [pathname, reducedMotion, animate, scope, previous]);
   return null;
 }

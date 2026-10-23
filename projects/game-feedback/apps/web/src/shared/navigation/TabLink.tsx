@@ -11,7 +11,7 @@ import { feedDestination } from './browser-navigation';
 export function TabLink(props: Omit<ComponentProps<typeof Link>, 'onNavigate'>) {
   const router = useRouter();
   const route = typeof props.href === 'string' ? resolveAppRoute(props.href) : null;
-  const root = route && ['feed', 'messages', 'settings', 'notifications', 'guide'].includes(route.screen);
+  const root = route && ['feed', 'messages', 'settings', 'notifications'].includes(route.screen);
   return (
     <Link
       {...props}

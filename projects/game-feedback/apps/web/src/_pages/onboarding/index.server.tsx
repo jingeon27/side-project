@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 import { getServerSession } from '@/features/auth/index.server';
+import { CommunityPage } from '@/widgets/community-shell';
 
 import { OnboardingPage } from './ui/OnboardingPage';
 import { OnboardingTopbar } from './ui/OnboardingTopbar';
@@ -26,9 +27,9 @@ export async function OnboardingRoute(props: IOnboardingRouteProps) {
   if (!session.needsOnboarding) {
     redirect(session.user ? returnTo : appRoutes.login(locale, returnTo));
   }
-  return <OnboardingPage locale={locale} returnTo={returnTo} />;
-}
-
-export async function OnboardingTopbarRoute(props: IOnboardingRouteProps) {
-  return <OnboardingTopbar returnTo={(await readRoute(props)).returnTo} />;
+  return (
+    <CommunityPage locale={locale} topbar={<OnboardingTopbar returnTo={returnTo} />}>
+      <OnboardingPage locale={locale} returnTo={returnTo} />
+    </CommunityPage>
+  );
 }

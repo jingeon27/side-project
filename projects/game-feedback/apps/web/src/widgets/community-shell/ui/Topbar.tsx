@@ -5,6 +5,8 @@ import Image from 'next/image';
 
 import { ArrowLeft } from 'lucide-react';
 
+import { cn } from '@side/design-system';
+
 import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { BackLink, TabLink } from '@/shared/navigation';
 
@@ -13,9 +15,9 @@ import { TopbarActions } from './TopbarActions';
 import { TopbarNotifications } from './TopbarNotifications';
 import { TopbarSearch } from './TopbarSearch';
 
-function TopbarRoot({ children }: { children: ReactNode }) {
+function TopbarRoot({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <header className="topbar">
+    <header className={cn('topbar', className)}>
       <div className="topbar-inner">{children}</div>
     </header>
   );

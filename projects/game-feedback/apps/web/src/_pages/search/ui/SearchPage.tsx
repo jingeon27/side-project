@@ -14,9 +14,11 @@ import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { BackLink, useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
 
 import { searchQuery, type ISearchSnapshot } from '../model/search-query';
 import { usePostSearch } from '../model/use-post-search';
+import { SearchTopbar } from './SearchTopbar';
 
 interface ISearchPageProps {
   locale: string;
@@ -24,7 +26,7 @@ interface ISearchPageProps {
   initialSearch: ISearchSnapshot | Promise<ISearchSnapshot>;
 }
 
-export function SearchPage({ locale, initialPath, initialSearch }: ISearchPageProps) {
+function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps) {
   const { t } = useI18n();
   const search = useBrowserSearch(
     initialPath.includes('?') ? `?${initialPath.split('?')[1]}` : '',
@@ -139,5 +141,13 @@ function SearchResults({
         </Button>
       )}
     </>
+  );
+}
+
+export function SearchPage(props: Parameters<typeof SearchContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<SearchTopbar locale={props.locale} />}>
+      <SearchContent {...props} />
+    </CommunityPage>
   );
 }

@@ -18,11 +18,13 @@ import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
 
 import { boardSnapshotSearch, readBoardFilters, type TBoardFilters } from '../model/board-filters';
 import type { IBoardSnapshot } from '../model/board-snapshot.type';
 import { BattleFilters } from './BattleFilters';
 import { BoardEmptyState } from './BoardEmptyState';
+import { BoardsTopbar } from './BoardsTopbar';
 import { CoachingFilters } from './CoachingFilters';
 import { FeedbackFilters } from './FeedbackFilters';
 
@@ -31,16 +33,16 @@ interface IBoardsPageProps {
   slug: string;
   initialBoard: IBoardSnapshot | Promise<IBoardSnapshot>;
 }
-export function BoardsPage(props: IBoardsPageProps) {
+function BoardsContent(props: IBoardsPageProps) {
   const { locale, slug, initialBoard } = props;
   const { t } = useI18n();
   const board = boardBySlug(slug);
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const router = useRouter();
   if (!board) return null;
   function handleCompose() {
     if (!session.user) {
-      login();
+      requireLogin();
       return;
     }
     const params = new URLSearchParams(window.location.search);
@@ -170,5 +172,13 @@ function BoardPosts({
         </Button>
       )}
     </>
+  );
+}
+
+export function BoardsPage(props: Parameters<typeof BoardsContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<BoardsTopbar locale={props.locale} slug={props.slug} />}>
+      <BoardsContent {...props} />
+    </CommunityPage>
   );
 }
