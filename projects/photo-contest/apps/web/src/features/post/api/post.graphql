@@ -33,6 +33,11 @@ fragment GalleryPostCard on GalleryPost {
     avatar
   }
 }
+query MyGalleryPosts($groupId: ID, $offset: Int!, $limit: Int!) {
+  myGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
+    ...GalleryPostCard
+  }
+}
 query GalleryPosts(
   $groupId: ID
   $contestId: ID

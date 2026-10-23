@@ -1,9 +1,9 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
 import { PostSort, PublicGalleryPostsDocument, type PublicGalleryPostsQuery } from '@/shared/api/generated';
-import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -11,20 +11,20 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { GalleryPostList } from './GalleryPostList';
 
 function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery> }) {
-  const { data } = useReadQuery(queryRef);
-  const { fetchMore } = useQueryRefHandlers(queryRef);
-  const posts = data.publicGalleryPosts;
-  const pagination = useOffsetPagination({
-    count: posts.length,
-    firstId: posts[0]?.id,
-    limit: 24,
-    fetchPage: async (offset) => (await fetchMore({ variables: { offset } })).data.publicGalleryPosts.length,
+  const pagination = useInfiniteQuery(queryRef, {
+    select: (data) => data.publicGalleryPosts,
+    pageSize: 24,
   });
+  const posts = pagination.items;
   return (
     <>
       <GalleryPostList posts={posts} preview />
-      {pagination.hasMore ? (
-        <Button variant="secondary" loading={pagination.pending} onClick={() => pagination.loadMore()}>
+      {pagination.hasNextPage ? (
+        <Button
+          variant="secondary"
+          loading={pagination.isFetchingNextPage}
+          onClick={() => pagination.fetchNextPage()}
+        >
           게시물 더 보기
         </Button>
       ) : null}
