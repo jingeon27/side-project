@@ -3,20 +3,23 @@ import { appRoutes } from '@game-feedback/bridge';
 import { expect, test } from './support/fixtures';
 import { ORIGIN } from './support/native-host';
 
-test('mobile header and four tabs navigate in place and report their paths to the native shell', async ({
+test('mobile header and three tabs navigate in place and report their paths to the native shell', async ({
   page,
   nativeHost,
 }) => {
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
+  await expect(
+    page.getByRole('banner').getByRole('link', { name: 'Game Mate 홈', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('combobox')).toHaveCount(0);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
-  await expect(tabs.getByRole('link')).toHaveText(['홈', '가이드', '채팅', '프로필']);
+  await expect(tabs.getByRole('link')).toHaveText(['홈', '채팅', '프로필']);
   await page.evaluate(() =>
     Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
   );
   const length = await page.evaluate(() => history.length);
   for (const [name, path] of [
-    ['가이드', '/ko/guide'],
     ['채팅', '/ko/messages'],
     ['프로필', '/ko/settings'],
   ]) {
@@ -55,7 +58,7 @@ test('category chips navigate directly and native back restores the saved filter
   await page.setViewportSize({ width: 400, height: 844 });
   await page.goto('/ko?q=%ED%98%B8%EA%B7%B8&tab=unanswered');
   await expect.poll(nativeHost.isReady).toBe(true);
-  const chips = page.locator('.game-board-chips');
+  const chips = page.locator('.game-board-chips:visible');
   await expect(chips.getByRole('link')).toHaveCount(6);
   await expect.poll(nativeHost.hasOverlay).toBe(false);
   const length = await page.evaluate(() => history.length);
@@ -90,39 +93,15 @@ test('category chips navigate directly and native back restores the saved filter
   );
 });
 
-test('guide shortcuts return from child screens with native back and switch root tabs like the menu', async ({
-  page,
-  nativeHost,
-}) => {
-  await page.goto('/ko/guide');
+test('guide opens from profile help and native back returns to the profile', async ({ page, nativeHost }) => {
+  await page.goto('/ko/settings');
   await expect.poll(nativeHost.isReady).toBe(true);
-  const guide = page.getByRole('article');
-  const shortcut = (title: string) =>
-    guide.getByRole('heading', { name: title, exact: true }).getByRole('link');
-  // 게시판·문의는 가이드를 상위로 두고 열려 앱의 뒤로 가기가 가이드로 돌아온다.
-  for (const [title, path] of [
-    ['전투 모집', '/ko/boards/friendly'],
-    ['문의와 신고', '/ko/contact'],
-  ] as const) {
-    await shortcut(title).click();
-    await expect.poll(nativeHost.currentPath).toBe(path);
-    expect(await nativeHost.requestBack()).toBe(true);
-    await expect.poll(nativeHost.currentPath).toBe('/ko/guide');
-  }
-  await guide.getByRole('term').getByRole('link', { name: '자유게시판', exact: true }).click();
-  await expect.poll(nativeHost.currentPath).toBe('/ko/boards/free');
-  expect(await nativeHost.requestBack()).toBe(true);
+  await page.getByRole('main').getByRole('link', { name: '이용 가이드', exact: true }).click();
   await expect.poll(nativeHost.currentPath).toBe('/ko/guide');
+  await expect(page.getByRole('article').getByRole('link')).toHaveCount(0);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
   expect(nativeHost.rootBacks()).toBe(0);
-  // 채팅은 루트 탭이라 하단 메뉴처럼 가이드 기록을 바꾼다. 뒤로 가기는 홈, 홈에서는 앱 종료다.
-  const length = await page.evaluate(() => history.length);
-  await shortcut('채팅과 대화내역').click();
-  await expect.poll(nativeHost.currentPath).toBe('/ko/messages');
-  expect(await page.evaluate(() => history.length)).toBe(length);
-  expect(await nativeHost.requestBack()).toBe(true);
-  await expect.poll(nativeHost.currentPath).toBe('/ko');
-  expect(await nativeHost.requestBack()).toBe(true);
-  expect(nativeHost.rootBacks()).toBe(1);
 });
 
 test('management routes are unavailable in the public web and native route parser', async ({
