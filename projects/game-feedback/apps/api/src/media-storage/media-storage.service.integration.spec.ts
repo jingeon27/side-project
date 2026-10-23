@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { grantOperatorRole, issueOperatorSession } from '../admin/operator-session';
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, hash } from '../security';
 import { seed } from '../seed';
@@ -43,7 +44,7 @@ describe('persistent private media and SSH operator sessions', () => {
     );
     if (migration.status !== 0)
       throw new Error(`Isolated production migration failed: ${migration.stdout}\n${migration.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(state.db, false);
     state.directory = await mkdtemp(join(tmpdir(), 'game-feedback-media-'));
     state.app = await createApp({

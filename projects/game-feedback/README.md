@@ -157,7 +157,7 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
-| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push --skip-generate`                              |
+| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push`                                              |
 
 API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
 

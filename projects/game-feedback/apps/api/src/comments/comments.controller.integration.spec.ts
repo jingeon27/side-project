@@ -16,6 +16,7 @@ import {
 } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
@@ -76,7 +77,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
     );
     if (result.status !== 0)
       throw new Error(`Comment migration deployment failed: ${result.stderr}\n${result.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
     postAuthor = await login('대댓글글작성자');

@@ -1168,6 +1168,16 @@ Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게
 
 실제 제공자 로그인 뒤 iOS 세션 콜백·Android App Link 복귀, Apple CDN의 AASA 반영, Play App Signing 지문 검증은 실기기·콘솔 확인이 필요하다.
 
+## 2026-10-23 Prisma 7 업그레이드
+
+Prisma CLI·Client·PostgreSQL 어댑터를 7.10.1로 맞췄다(2026-10-15 배포, Yarn의 24시간 게이트 유지). 루트 yarn.lock은 두 API와 Photo Contest test-kit이 함께 쓰는 의존성 해석을 기록하기 위해 변경했다. 앱 전용 prisma.config.ts가 CLI URL과 프로젝트 환경변수 로딩을 맡고, 운영 이미지에도 포함한다. 기존 CommonJS 산출물·생성 경로는 prisma-client-js로 유지하며 런타임은 pg 어댑터를 쓴다. DB 모델·migration SQL은 변경하지 않았다.
+
+API·seed·운영 관리 스크립트·통합 하네스와 Web/Admin/Mobile teardown이 같은 어댑터를 사용한다. schema는 ORM과 raw SQL의 search_path에 함께 전달하고 connection_limit은 풀 최대 연결 수로 옮겼다. pg의 단일 connectionTimeoutMillis에는 pool_timeout을 우선하고 connect_timeout을 기본값으로 사용한다. 운영 URL의 sslcert는 서버 CA로 읽어 인증서 검증을 유지한다. Prisma 7에서 제거된 --skip-generate와 migrate diff 플래그도 현재 안내·실행 경로에서 교체했다.
+
+Node 24.18.0에서 API typecheck·build, 단위 164개, 격리 PostgreSQL/Supertest 통합 170개가 통과했다. Admin typecheck·변경 파일 lint·단위 21개, Web/Mobile typecheck·변경 파일 lint도 통과했다. codegen 후 SDK diff는 없다. Web/Admin/Mobile teardown은 실제 전용 DB에서 각각 새 스키마를 생성하고 제거되는지 확인했다. 종료 시 남은 gf_test_ 스키마가 0개임을 확인하고 소유권 가드를 거쳐 이번 Worktree의 테스트 DB를 종료했다. 최초 테스트 DB 초기화는 실행 환경의 locale 때문에 실패했고 LC_ALL=C LANG=C로 같은 실행을 통과했다. 이번 Worktree의 전용 55444 DB와 새 gf_test_ 스키마만 사용했으며 기존 개발 서버·DB는 변경하지 않았다. 브라우저 전체 E2E·컨테이너 빌드·실제 RDS TLS 연결·배포는 실행하지 않았다.
+
+후속 검증: mutationOptions 정리(#59)가 반영된 develop(0d27c9d9)을 병합하고, 같은 위치에 추가된 두 구현 기록을 모두 보존해 문서 충돌을 해결했다. 병합 상태에서 Web·Admin typecheck·lint, Web 단위/UI 216개와 Admin 단위 21개, 변경 문서 Prettier 검사를 다시 통과했다.
+
 ## 2026-10-23 mutationOptions 직접 조립
 
 사용자 지시에 따라 Web 26개·Admin 8개, 총 34개의 단순 useMutation 래퍼를 제거하고 12개 *.hook.ts 파일을 삭제했다. 기존 mutationOptions 팩토리를 public export해 화면과 기능 흐름의 호출부 32곳에서 useQueryClient·useNotify와 useMutation으로 직접 조립한다. options 팩토리의 mutationKey·REST IO·캐시 무효화·계정 전환 정책은 변경하지 않았다. 폼·읽음 관찰·재전송처럼 기능 흐름을 소유하는 훅은 같은 팩토리를 직접 사용한다.

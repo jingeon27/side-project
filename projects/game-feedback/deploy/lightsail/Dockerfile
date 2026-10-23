@@ -41,6 +41,7 @@ COPY --from=api-build /app/projects/game-feedback/apps/api/package.json ./projec
 COPY --from=api-build /app/projects/game-feedback/apps/api/dist ./projects/game-feedback/apps/api/dist
 COPY --from=api-build /app/projects/game-feedback/apps/api/scripts ./projects/game-feedback/apps/api/scripts
 COPY --from=api-build /app/projects/game-feedback/apps/api/prisma ./projects/game-feedback/apps/api/prisma
+COPY --from=api-build /app/projects/game-feedback/apps/api/prisma.config.ts ./projects/game-feedback/apps/api/prisma.config.ts
 RUN mkdir -p /var/lib/game-feedback/media && chown -R node:node /var/lib/game-feedback
 WORKDIR /app/projects/game-feedback/apps/api
 USER node

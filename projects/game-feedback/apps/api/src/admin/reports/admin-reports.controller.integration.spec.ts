@@ -10,6 +10,7 @@ import { AdminReportListSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../../app';
 import { assertDatabaseUrl } from '../../database/database-url';
+import { createPrismaAdapter } from '../../database/prisma-adapter';
 import { PrismaClient } from '../../generated/prisma';
 import { seed } from '../../seed';
 
@@ -46,7 +47,7 @@ describe('administrator report queue by status and cursor', () => {
     );
     if (result.status !== 0)
       throw new Error(`Migration deployment failed: ${result.stderr}\n${result.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, true);
     app = await createApp({
       databaseUrl,

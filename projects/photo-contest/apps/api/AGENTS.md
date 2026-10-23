@@ -1,4 +1,4 @@
-# API (NestJS 12 · schema-first GraphQL · Prisma 6)
+# API (NestJS 12 · schema-first GraphQL · Prisma 7)
 
 도메인 규칙과 인증 흐름은 `../../.agents/skills/contest-api/SKILL.md`, 테스트 레인은 `../../.agents/skills/testing/SKILL.md`를 먼저 읽는다.
 

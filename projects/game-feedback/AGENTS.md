@@ -20,7 +20,7 @@
 - 개발: loopback `55442`, database `game_feedback`, user `game_feedback`.
 - 테스트: loopback `55444`, database `game_feedback_test`, 테스트별 `gf_test_` 스키마.
 - Prisma schema와 Client는 `apps/api` 전용이다. 기존 photo-contest나 다른 프로젝트의 URL을 사용하지 않는다.
-- 운영 배포 준비 요청 이후 `schema.prisma`와 최초 migration을 함께 관리하며 운영은 `migrate deploy`로 적용한다. 로컬은 URL 가드를 거친 `db:sync`의 `prisma db push --skip-generate`를 유지한다. `--accept-data-loss`, `--force-reset`, `migrate reset`, 자동 reset은 사용하지 않는다. 운영 컨테이너 검증은 새 전용 Docker project/volume에서만 실행하고 개발·운영의 기존 volume을 재사용하지 않는다.
+- 운영 배포 준비 요청 이후 `schema.prisma`와 최초 migration을 함께 관리하며 운영은 `migrate deploy`로 적용한다. 로컬은 URL 가드를 거친 `db:sync`의 `prisma db push`를 유지한다. `--accept-data-loss`, `--force-reset`, `migrate reset`, 자동 reset은 사용하지 않는다. 운영 컨테이너 검증은 새 전용 Docker project/volume에서만 실행하고 개발·운영의 기존 volume을 재사용하지 않는다.
 - DB 작업은 프로젝트의 `scripts/db.mjs` URL 검증을 거친다. 테스트 정리는 생성한 `gf_test_` 스키마에만 허용한다.
 - `db:stop`은 이 프로젝트가 토큰으로 소유권을 확인한 로컬 DB만 종료한다. 포트 사용자를 임의로 kill하지 않는다.
 - 외부 OAuth·게임 API는 인터페이스 뒤에 둔다. 테스트는 가짜 제공자를 강제한다. 데모 모드는 명시적 실행에만 허용하고 production에서는 거부한다.

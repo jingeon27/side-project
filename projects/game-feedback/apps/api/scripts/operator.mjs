@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
+const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
 const { PrismaClient } = require('../dist/generated/prisma/index.js');
 const { assertDatabaseUrl } = require('../dist/database/database-url.js');
 const { grantOperatorRole, issueOperatorSession } = require('../dist/admin/operator-session.js');
@@ -31,7 +32,7 @@ const commands = {
   },
 };
 if (!Object.hasOwn(commands, command)) throw new Error(usage);
-const db = new PrismaClient({ datasources: { db: { url: assertDatabaseUrl(process.env.DATABASE_URL) } } });
+const db = new PrismaClient({ adapter: createPrismaAdapter(assertDatabaseUrl(process.env.DATABASE_URL)) });
 try {
   await commands[command](db);
 } finally {

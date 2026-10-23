@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { SessionService } from './auth/session.service';
 import { ChatEvents } from './chat/chat.events';
+import { createPrismaAdapter } from './database/prisma-adapter';
 import { DemoProfileProvider } from './game-profiles/providers/demo-profile.provider';
 import { PrismaClient } from './generated/prisma';
 
@@ -69,7 +70,7 @@ describe('application module composition and shutdown', () => {
   });
 
   it('leaves a caller-owned Prisma connection open when the app closes', async () => {
-    const client = new PrismaClient({ datasources: { db: { url: options.databaseUrl } } });
+    const client = new PrismaClient({ adapter: createPrismaAdapter(options.databaseUrl) });
     const disconnect = vi.spyOn(client, '$disconnect');
     try {
       const app = await createApp({ ...options, prisma: client });

@@ -11,6 +11,7 @@ import { SessionSchema, SocialProviderSchema, type TSocialProvider } from '@game
 import { createApp } from '../app';
 import { hash, token } from '../common/crypto';
 import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
@@ -63,7 +64,7 @@ describe('banned social identities after account deletion', () => {
     );
     if (result.status !== 0)
       throw new Error(`Migration deployment failed: ${result.stderr}\n${result.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, true);
     const identityProviders = Object.fromEntries(
       SocialProviderSchema.options.map((provider) => [

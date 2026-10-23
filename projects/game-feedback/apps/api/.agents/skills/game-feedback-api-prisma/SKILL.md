@@ -30,8 +30,8 @@ git show HEAD:projects/game-feedback/apps/api/prisma/schema.prisma > <스크래�
 M=projects/game-feedback/apps/api/prisma/migrations/$(date -u +%Y%m%d%H%M%S)_<이름>
 mkdir -p "$M"
 corepack yarn workspace @game-feedback/api exec prisma migrate diff \
-  --from-schema-datamodel <스크래치>/schema.before.prisma \
-  --to-schema-datamodel prisma/schema.prisma --script > "$M/migration.sql"
+  --from-schema <스크래치>/schema.before.prisma \
+  --to-schema prisma/schema.prisma --script > "$M/migration.sql"
 corepack yarn workspace @game-feedback/api db:generate
 ```
 
@@ -42,7 +42,7 @@ corepack yarn workspace @game-feedback/api db:generate
 
 ## 적용 경로 — 에이전트는 실행하지 않는다
 
-- 로컬 개발 DB: `corepack yarn workspace @side/game-feedback db:sync` → `../../scripts/db.mjs sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push --skip-generate`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
+- 로컬 개발 DB: `corepack yarn workspace @side/game-feedback db:sync` → `../../scripts/db.mjs sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
 - API `prisma:sync`를 직접 부르지 않는다 — URL 가드가 없다. `prisma migrate dev`·`migrate reset`·`--accept-data-loss`·`--force-reset`도 쓰지 않는다.
 - 운영: `scripts/migrate.mjs`(빌드된 `dist`와 `NODE_ENV=production` 필요)가 `validateProductionEnvironment` → `prisma migrate deploy` → `seed(db, false)`(카테고리) → shared-instance면 권한 GRANT/REVOKE 순서로 돈다. `../../deploy/shared-instance/compose.yaml`의 `migrate` 서비스와 `../../deploy/lightsail/ops.sh`가 부른다. 로컬에서 돌리지 않는다.
 - `db:generate`(API `test` 스크립트와 `codegen`도 실행)는 사용자의 개발 서버가 쓰는 `src/generated/prisma`를 다시 쓴다. 개발 DB에 적용되기 전까지 새 열을 쓰는 요청은 실패한다고 알린다.

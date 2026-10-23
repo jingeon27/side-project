@@ -13,6 +13,7 @@ import { hash, token } from '../common/crypto';
 import { PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { assertDatabaseUrl } from './database-url';
+import { createPrismaAdapter } from './prisma-adapter';
 import { UnitOfWork } from './unit-of-work';
 
 const require = createRequire(import.meta.url);
@@ -60,7 +61,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
       },
     );
     if (migration.status !== 0) throw new Error(`DB 테스트 migration 실패: ${migration.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     url.searchParams.set('connection_limit', '1');
     url.searchParams.set('pool_timeout', '2');
     state.app = await createApp({

@@ -60,6 +60,12 @@ export function assertTestingConfig() {
     throw new Error('ENABLE_TEST_API requires NODE_ENV=test.');
 }
 
+export function databaseUrl() {
+  const value = optional('DATABASE_URL');
+  if (!value) throw new Error('DATABASE_URL is required.');
+  return value;
+}
+
 export function apiPort() {
   return Number(process.env.PORT ?? 4200);
 }

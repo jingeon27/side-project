@@ -253,3 +253,13 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 최신 develop의 테스트 위치 변경을 반영한 최종 검사: 전체 check, API integration 274개, Web API 18개, 신규 홈 E2E 6개, 기존 탐색·공개 SEO·비공개 가입 E2E 6개와 프로덕션 cache/category E2E 7개가 통과했다. Android 뒤로 가기 2개도 통과했다(iOS 하드웨어 뒤로 가기 2개는 설계상 제외). 새 홈에도 검색 폼과 그룹 생성 버튼이 있어 전환 전의 화면을 조작하던 기존 브라우저 검사를 목적 화면이 나타난 뒤 실행하도록 고쳤다. 검색은 JS 준비 전에도 GET /explore?q=로 제출된다. 전체 Prettier 검사와 앱 lint/typecheck를 확인했다.
 
 전체 브라우저 회귀 검사에서 좋아요 수 정규화만으로는 인기 목록 순서가 바뀌지 않는 문제를 확인했다. 활성 MONTHLY_POPULAR 쿼리만 다시 조회하고, NEWEST의 추가 페이지는 유지한다. 기존 사진/동영상/인기/삭제 흐름과 페이지네이션 E2E 4개가 통과했다.
+
+## 2026-10-23 Prisma 7 업그레이드
+
+API와 test-kit의 Prisma를 7.10.1로 맞추고 API에 같은 버전의 @prisma/adapter-pg와 @prisma/driver-adapter-utils를 추가했다. 루트 yarn.lock은 이 의존성 해석을 반영한다. prisma.config.ts가 프로젝트 .env를 명시적으로 읽고 CLI에 URL을 전달하며, test-kit은 작업 디렉터리와 관계없이 API의 config를 지정해 격리 migration을 적용한다. 운영 이미지에도 config를 포함한다. 기존 CommonJS 빌드·생성 경로와의 호환을 위해 prisma-client-js 생성기를 유지하며 런타임은 pg 어댑터를 사용한다.
+
+API·운영 migration/서비스 검사·test-kit이 같은 어댑터를 사용한다. schema는 ORM과 raw SQL search_path 양쪽에 전달하고 connection_limit은 풀 최대 연결 수로 옮긴다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 pool_timeout을 우선하고 없으면 connect_timeout(기본 5초)을 쓴다. 운영 sslcert는 서버 CA로 읽어 엄격한 인증서 검증을 유지한다. DB 모델과 기존 migration SQL은 변경하지 않았다.
+
+통합 검증에서 Prisma 7의 커밋 충돌이 P2034가 아닌 DriverAdapterError(TransactionWriteConflict)로 직접 전달되어 동시 좋아요 요청이 간헐적으로 내부 오류가 되는 문제를 재현했다. 어댑터 충돌도 기존 4회 재시도·CONFLICT 정책으로 처리하며, 다른 어댑터 오류는 그대로 전파한다. 단위 회귀 5개를 추가하고 기존 동시 좋아요 통합 사양에서 내부 오류 보고가 없고 실패 7건 모두 한도 안내인지 확인한다. 운영 모드 통합 하네스에는 WEB_ORIGIN과 일치하는 앱 로그인 콜백 기본값을 더해 최신 운영 설정을 충족시켰다.
+
+Node 24.18.0에서 API·test-kit typecheck, API build, API 단위 127개, test-kit 단위 35개와 변경 파일 ESLint가 통과했다. 사용자 승인 후 이 Worktree에 UTF-8 테스트 DB(55434/photo_contest_test)를 새로 기동해 PostgreSQL/Supertest 통합 55개 파일·346개를 모두 통과했다(skip 없음). 동시 좋아요 사양은 수정 후 8회 연속 통과했다. test-kit check:cleanup으로 남은 테스트 스키마가 0개임을 확인하고 이번 Worktree의 테스트 DB를 종료했다. 기존 개발 DB·서버는 변경하지 않았다. 실제 RDS TLS 연결·컨테이너 빌드·배포는 실행하지 않았다.

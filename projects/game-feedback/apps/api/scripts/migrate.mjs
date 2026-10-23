@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
+const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
 const { validateProductionEnvironment } = require('../dist/config/production.config.js');
 const { assertDatabaseUrl } = require('../dist/database/database-url.js');
 const { sharedDatabaseUrl } = require('../dist/config/shared-instance.config.js');
@@ -20,7 +21,7 @@ const result = spawnSync(
   { stdio: 'inherit', env: { ...process.env, DATABASE_URL: databaseUrl } },
 );
 if (result.status !== 0) process.exit(result.status ?? 1);
-const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+const db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
 try {
   await seed(db, false);
   if (shared)

@@ -7,6 +7,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
@@ -30,14 +31,13 @@ describe.skipIf(!testDatabaseUrl)('웹 서버 전용 제외 작성자 조회', (
     target.searchParams.set('schema', schema);
     const databaseUrl = target.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0)
       throw new Error(`Isolated visibility schema setup failed: ${migration.stderr}\n${migration.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, true);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
     requester = supertest.agent(app.getHttpServer());

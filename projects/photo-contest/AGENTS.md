@@ -6,7 +6,7 @@
 
 | 경로 | 워크스페이스 | 역할 |
 | --- | --- | --- |
-| `apps/api` | `@photo-contest/api` | NestJS 12 schema-first GraphQL + REST(인증·업로드·사진·헬스), Prisma 6 + PostgreSQL |
+| `apps/api` | `@photo-contest/api` | NestJS 12 schema-first GraphQL + REST(인증·업로드·사진·헬스), Prisma 7 + PostgreSQL |
 | `apps/web` | `@photo-contest/web` | Next.js 16 App Router, 모바일 우선 반응형 웹(최대 1440px), Apollo Client 4, Base UI |
 | `apps/mobile` | `@photo-contest/mobile` | Expo SDK 57 WebView 셸. 웹을 감싸고 브리지로 네이티브 기능을 제공 |
 | `packages/bridge` | `@photo-contest/bridge` | 웹 ↔ 앱 메시지 계약(zod). web·mobile만 쓴다 |
