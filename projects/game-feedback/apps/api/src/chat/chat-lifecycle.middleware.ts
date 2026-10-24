@@ -1,8 +1,8 @@
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import type { NextFunction, Response } from 'express';
+
 import type { SessionRequest } from '../auth/session.types';
+import { PrismaClient } from '../generated/prisma';
 import { ChatEvents } from './chat.events';
 
 @Injectable()

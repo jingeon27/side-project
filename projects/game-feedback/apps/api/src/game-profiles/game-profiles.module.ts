@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { GameProfilesController } from './game-profiles.controller';
 import { GameProfilesService } from './game-profiles.service';
 

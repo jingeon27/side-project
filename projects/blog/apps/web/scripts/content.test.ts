@@ -1,8 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { analyzeMdx, readContent, metaSchema } from './content';
+
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { analyzeMdx, findMissingRedirects, metaSchema, readContent } from './content';
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -83,6 +85,46 @@ describe('content registry contract', () => {
     await write('content/redirects.json', [{ locale: 'en', from: 'cache-design', to: 'missing' }]);
     await expect(readContent(root)).rejects.toThrow('Invalid redirect');
   });
+  it('requires a 301 redirect for every previously published path that disappears', async () => {
+    const { root, write, seo } = await fixture();
+    const published = (await readContent(root)).articles;
+    await write('seo/en.json', seo({ cache: post('cache-strategy') }));
+    const renamed = await readContent(root);
+    expect(findMissingRedirects(published, renamed.articles, renamed.redirects)).toEqual([
+      '/en/blog/cache-design',
+    ]);
+
+    await write('content/redirects.json', [{ locale: 'en', from: 'cache-design', to: 'cache-strategy' }]);
+    const redirected = await readContent(root);
+    expect(findMissingRedirects(published, redirected.articles, redirected.redirects)).toEqual([]);
+    expect(findMissingRedirects([], redirected.articles, [])).toEqual([]);
+  });
+  it('allows only registered MDX components with literal or numeric props and checks their src', async () => {
+    const { root } = await fixture();
+    const file = path.join(root, 'content/posts/cache/en.mdx');
+    await mkdir(path.join(root, 'public/images'), { recursive: true });
+    await writeFile(path.join(root, 'public/images/cache.png'), 'png');
+    await writeFile(
+      file,
+      '<Figure src="/images/cache.png" alt="Cache" width={640} caption="Flow" />\n\n<Callout title="Note">Text</Callout>',
+    );
+    await expect(readContent(root)).resolves.toBeTruthy();
+
+    for (const [source, message] of [
+      ["import Chart from './chart'\n\nText", 'import/export is not allowed'],
+      ['export const meta = {}\n\nText', 'import/export is not allowed'],
+      ['Total: {1 + 1}', 'JavaScript expressions are not allowed'],
+      ['<Chart />', 'unsupported JSX <Chart>'],
+      ['<div>raw</div>', 'unsupported JSX <div>'],
+      ['<Callout {...props}>Text</Callout>', 'spread props are not allowed'],
+      ['<Callout title={fetch("/x")}>Text</Callout>', 'only numeric expression props'],
+      ['<Figure src="/images/missing.png" />', 'ENOENT'],
+      ['<Figure src="http://example.com/a.png" />', 'unresolved image'],
+    ]) {
+      await writeFile(file, source!);
+      await expect(readContent(root), source).rejects.toThrow(message);
+    }
+  });
   it('refuses malformed MDX and unresolved internal article links', async () => {
     const { root } = await fixture();
     const file = path.join(root, 'content/posts/cache/en.mdx');
@@ -110,8 +152,21 @@ it('validates category IDs, normalized unique tags, and date chronology', () => 
     { ...meta, category: 'projects' },
     { ...meta, tags: ['nextjs', 'nextjs'] },
     { ...meta, tags: ['React Query'] },
+    { ...meta, tags: ['리펙토링'] },
     { ...meta, updatedAt: '2026-09-01' },
     { ...meta, publishedAt: 'yesterday' },
   ])
     expect(metaSchema.safeParse(invalid).success).toBe(false);
+});
+it('compares date-only and offset datetimes on the Asia/Seoul calendar', () => {
+  const base = { category: 'engineering', tags: ['nextjs'] };
+  // A same-day edit in KST is 23:00 UTC of the previous day; UTC midnight parsing rejected it.
+  expect(
+    metaSchema.safeParse({ ...base, publishedAt: '2026-10-01', updatedAt: '2026-10-01T08:00:00+09:00' })
+      .success,
+  ).toBe(true);
+  expect(
+    metaSchema.safeParse({ ...base, publishedAt: '2026-10-01T10:00:00+09:00', updatedAt: '2026-10-01' })
+      .success,
+  ).toBe(false);
 });

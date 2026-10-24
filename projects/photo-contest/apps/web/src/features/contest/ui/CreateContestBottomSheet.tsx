@@ -1,18 +1,23 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
 import { useState } from 'react';
+
+import { useMutation } from '@apollo/client/react';
 
 import { CreateContestDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useZodForm } from '@/shared/model/form';
 import { useAppRouter } from '@/shared/model/router';
-import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
-import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { TextField } from '@/shared/ui/@core/text-field';
 
+import {
+  hasSubmissionWindow,
+  startNowIfPast,
+  SUBMISSION_END_PASSED_MESSAGE,
+} from '../lib/contest-schedule.helper';
 import { prependGroupContest } from '../model/contest.cache';
 import { buildContestDefaults, createContestSchema } from '../model/contest.schema';
 
@@ -45,8 +50,13 @@ export function CreateContestBottomSheet({
   });
 
   const handleSubmit = form.handleSubmit(async (values) => {
+    const schedule = startNowIfPast(values);
+    if (!hasSubmissionWindow(schedule)) {
+      form.setError('submissionEndsAt', { message: SUBMISSION_END_PASSED_MESSAGE }, { shouldFocus: true });
+      return;
+    }
     try {
-      await createContest({ variables: { groupId, ...values } });
+      await createContest({ variables: { groupId, ...schedule } });
     } catch {
       // 실패는 ErrorLink가 토스트로 알린다.
     }

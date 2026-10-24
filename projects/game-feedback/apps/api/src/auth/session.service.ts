@@ -1,13 +1,14 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
+
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+
 import { hash, token } from '../common/crypto';
-import { COOKIE, setCookie } from '../common/http/cookies';
 import { ApiError } from '../common/http/api-error';
+import { COOKIE, setCookie } from '../common/http/cookies';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
 import { userDto } from '../users/user.presenter';
 import { sessionToken } from './session-token';
 import type { SessionRequest } from './session.types';
@@ -66,6 +67,8 @@ export class SessionService {
         const user = await tx.user.findUnique({ where: { id: userId } });
         if (!user || user.withdrawnAt) throw new ApiError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
       }
+      // Expired rows are never read again (loadSession treats them as signed out); prune them on issuance.
+      await tx.session.deleteMany({ where: { expiresAt: { lte: new Date() } } });
       if (current) await (tx ?? this.db).session.deleteMany({ where: { tokenHash: hash(current) } });
       await (tx ?? this.db).session.create({
         data: {

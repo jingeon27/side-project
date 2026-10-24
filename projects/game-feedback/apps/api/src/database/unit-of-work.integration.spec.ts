@@ -1,9 +1,11 @@
-import type { INestApplication } from '@nestjs/common';
 import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+
+import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app';
 import type { SessionRequest } from '../auth/session.types';
 import { historyWhere } from '../chat/chat-history';
@@ -11,6 +13,7 @@ import { hash, token } from '../common/crypto';
 import { PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { assertDatabaseUrl } from './database-url';
+import { createPrismaAdapter } from './prisma-adapter';
 import { UnitOfWork } from './unit-of-work';
 
 const require = createRequire(import.meta.url);
@@ -58,7 +61,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
       },
     );
     if (migration.status !== 0) throw new Error(`DB 테스트 migration 실패: ${migration.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     url.searchParams.set('connection_limit', '1');
     url.searchParams.set('pool_timeout', '2');
     state.app = await createApp({
@@ -234,6 +237,7 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
         firstClearedAt: at,
         firstClearedId: 'history-b',
       },
+      include: { support: true },
     });
     await state.db.chatMessage.createMany({
       data: ['a', 'b', 'c'].map((id) => ({
@@ -430,12 +434,12 @@ describe('Game Feedback DB와 업무 트랜잭션', () => {
       .set('Authorization', `Bearer ${state.adminToken}`)
       .expect(200);
     expect(
-      reports.body.filter(
+      reports.body.items.filter(
         (report: { targetType: string; targetId: string }) =>
           report.targetType === 'POST' && report.targetId === post.id,
       ),
     ).toHaveLength(2);
-    expect(reports.body).toEqual(
+    expect(reports.body.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           targetType: 'POST',

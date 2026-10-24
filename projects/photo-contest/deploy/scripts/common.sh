@@ -22,21 +22,20 @@ setting() {
 }
 
 validate_settings() {
-  local domain origin password backend
+  local domain origin password endpoint key
   domain=$(setting DOMAIN)
   origin=$(setting WEB_ORIGIN)
   password=$(setting POSTGRES_PASSWORD)
-  backend=$(setting STORAGE_BACKEND)
+  endpoint=$(setting S3_ENDPOINT)
   [[ "$domain" =~ ^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$ ]] || fail 'DOMAIN에 공개 도메인을 지정하세요.'
   [[ "$origin" == "https://$domain" ]] || fail 'WEB_ORIGIN은 https://DOMAIN과 같아야 합니다.'
   [[ "$password" =~ ^[a-f0-9]{64}$ ]] || fail 'POSTGRES_PASSWORD는 openssl rand -hex 32로 생성하세요.'
   [[ -n "$(setting ACME_EMAIL)" ]] || fail 'ACME_EMAIL이 필요합니다.'
-  [[ "$backend" == local || "$backend" == s3 ]] || fail 'STORAGE_BACKEND는 local 또는 s3입니다.'
-  if [[ "$backend" == s3 ]]; then
-    for key in S3_BUCKET S3_ENDPOINT AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
-      [[ -n "$(setting "$key")" ]] || fail "$key 설정이 필요합니다."
-    done
-  fi
+  # 미디어는 비공개 버킷에만 있고 브라우저가 서명 URL로 직접 접속한다.
+  for key in S3_BUCKET AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+    [[ -n "$(setting "$key")" ]] || fail "$key 설정이 필요합니다."
+  done
+  [[ -z "$endpoint" || "$endpoint" == https://* ]] || fail 'S3_ENDPOINT는 비우거나 https:// 주소여야 합니다.'
 }
 
 validate_release() {

@@ -1,7 +1,10 @@
-import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
+
+import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
+
 import { CreateGroupContestDocument, CreateGroupDocument, GroupVisibility } from '@/shared/api/generated';
+
 import {
   getGroupContestsSeoData,
   getPublicGroupContestCount,

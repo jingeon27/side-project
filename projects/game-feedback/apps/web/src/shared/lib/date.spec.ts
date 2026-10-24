@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { dateKey, formatDate, formatTime, isAtOrBefore, timeAgo } from './date';
 
 afterEach(() => {

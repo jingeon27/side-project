@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
 import { instant } from '@next/playwright';
+import { expect, test } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3353';
 
@@ -174,7 +174,7 @@ test('initial documents render public content without JavaScript and inaccessibl
     const page = await context.newPage();
     await page.goto('/ja');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
-    await expect(page.getByRole('banner')).toContainText('Playmate');
+    await expect(page.getByRole('banner')).toContainText('Game Mate');
     await expect(page.locator('.post-card').first()).toBeVisible();
     for (const slug of ['feedback', 'friend-sale', 'friendly', 'coaching', 'free']) {
       const response = await page.goto(`/ko/boards/${slug}`);
@@ -184,7 +184,7 @@ test('initial documents render public content without JavaScript and inaccessibl
     await page.goto('/ko/posts/sample-post-0');
     await expect(page.locator('.detail-card:visible')).toBeVisible();
     await expect(page.locator('.detail-card:visible')).toHaveCSS('background-color', 'rgb(28, 27, 26)');
-    await expect(page).toHaveTitle(/ \| 플레이메이트$/);
+    await expect(page).toHaveTitle(/ \| Game Mate$/);
     const missing = await context.request.get('/ko/posts/missing-post');
     expect(missing.status()).toBe(404);
     await context.request.post('/api/auth/test-login', {

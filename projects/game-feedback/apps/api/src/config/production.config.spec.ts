@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { resolveListenConfig, validateProductionEnvironment } from './production.config';
+
 import { resolveMediaStorageConfig } from '../media-storage/media-storage.config';
+import { resolveListenConfig, validateProductionEnvironment } from './production.config';
 
 const valid = {
+  GF_CACHE_REVALIDATION_SECRET: 'production-cache-secret-'.repeat(3),
+  GF_CACHE_REVALIDATION_URL: 'http://web:3300/internal/cache/revalidate',
   NODE_ENV: 'production',
   WEB_ORIGIN: 'https://play.game-feedback.test',
   GAME_FEEDBACK_SITE_URL: 'https://play.game-feedback.test',
@@ -12,7 +15,7 @@ const valid = {
   DATABASE_URL: `postgresql://game_feedback:${'a'.repeat(64)}@db:5432/game_feedback`,
   GOOGLE_CLIENT_ID: 'production-client',
   GOOGLE_CLIENT_SECRET: 'production-secret',
-  GF_PROXY_SECRET: 'b'.repeat(64),
+  MOBILE_AUTH_CALLBACK_URL: 'https://play.game-feedback.test/app-auth/callback',
 };
 
 describe('production startup configuration', () => {
@@ -28,14 +31,16 @@ describe('production startup configuration', () => {
     { GF_DEMO_MODE: 'true' },
     { GF_TEST_AUTH_ENABLED: 'true' },
     { GF_PREFETCH_TESTING: 'true' },
-    { GF_PROXY_SECRET: '' },
-    { GF_PROXY_SECRET: 'replace-me' },
     { WEB_ORIGIN: 'http://localhost:3300' },
     { GAME_FEEDBACK_SITE_URL: 'https://other.game-feedback.test' },
     { GOOGLE_CLIENT_SECRET: '' },
     { GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '' },
     { X_CLIENT_ID: 'partial-provider' },
     { GOOGLE_REDIRECT_URI: 'https://other.game-feedback.test/callback' },
+    { MOBILE_AUTH_CALLBACK_URL: '' },
+    { MOBILE_AUTH_CALLBACK_URL: 'gamefeedback://auth/callback' },
+    { MOBILE_AUTH_CALLBACK_URL: 'https://other.game-feedback.test/app-auth/callback' },
+    { MOBILE_AUTH_CALLBACK_URL: 'https://play.game-feedback.test/other' },
   ])('refuses unsafe production configuration: %j', (override) => {
     expect(() => validateProductionEnvironment({ ...valid, ...override })).toThrow();
   });

@@ -38,7 +38,7 @@ description: 웹(apps/web)에서 바텀시트·확인 대화상자를 만들거�
 - 오버레이는 `OverlayProvider` 자리(`src/_app/providers/AppProviders.tsx`, Apollo·Bridge·Toast 안쪽)에서 그려진다. Apollo 훅과 `toast`는 쓸 수 있지만 화면 안에서 만든 Context는 닿지 않으니 필요한 값은 props로 넘긴다.
 - `OverlayProvider`는 레이아웃에 있어 화면이 바뀌어도 열린 시트가 남는다. 시트 안에서 이동할 때는 `useAppRouter().push(href)`를 부르고 같은 핸들러에서 `onClose()`한다. 열린 시트의 history 항목을 replace해 뒤로 가기에 빈 항목이 남지 않는다. `<Link>`로 옮기면 시트가 새 화면 위에 남는다.
 - 폼이 든 시트는 `form` 스킬을 따른다.
-- 높이를 조절하는 시트는 `BottomSheet.Root`에 `snapPoints`(예: `[0.75, 1]`)와 충분한 기본 높이(`className="h-dvh"`)를 준다. 첫 스냅으로 열리고 드래그·헤더의 확장/축소 버튼이 같은 상태를 바꾼다. 공통 Root의 스냅 오프셋·하단 패딩이 입력창을 화면 안에 유지하므로 화면에서 드래그 상태나 고정 footer를 따로 구현하지 않는다. 댓글은 75%와 전체 높이를 사용한다.
+- 높이를 조절하는 시트는 `BottomSheet.Root`에 `snapPoints`(예: `[0.75, 1]`)와 충분한 기본 높이(`className="h-dvh"`)를 준다. 첫 스냅으로 열리고 헤더 드래그로 크기를 조절하고 별도의 확대·축소 버튼은 두지 않는다. 공통 Root의 스냅 오프셋·하단 패딩이 입력창을 화면 안에 유지하므로 화면에서 드래그 상태나 고정 footer를 따로 구현하지 않는다. 댓글은 75%와 전체 높이를 사용한다.
 
 ## 확인 대화상자
 

@@ -1,8 +1,12 @@
 'use client';
+
+import { Home, MessageCircle, UserRound } from 'lucide-react';
+
+import { resolveAppRoute } from '@game-feedback/bridge';
+
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { Home, MessageCircle, UserRound, CircleHelp } from 'lucide-react';
-import { resolveAppRoute } from '@game-feedback/bridge';
+
 interface IMobileNavProps {
   home: string;
   path: string;
@@ -21,15 +25,6 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
       >
         <Home size={20} />
         <span>{t('홈')}</span>
-      </Link>
-      <Link
-        href={`${home}/guide`}
-        replace
-        className={tab === 'guide' ? 'active' : ''}
-        aria-current={tab === 'guide' ? 'page' : undefined}
-      >
-        <CircleHelp size={20} />
-        <span>{t('가이드')}</span>
       </Link>
       <Link
         href={`${home}/messages`}

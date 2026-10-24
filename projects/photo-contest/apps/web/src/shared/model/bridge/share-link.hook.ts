@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 
 import { useBridge } from './bridge.hook';
-import { copyText, openExternalLink, shareLink } from './share-link.helper';
-import type { IShareContent } from './share-link.helper';
+import { copyText, openExternalLink, shareLink, type IShareContent } from './share-link.helper';
 
 /**
  * 링크 공유·복사. 앱이면 앱 기능을, 아니면 Web Share API·클립보드를 쓰고, 둘 다 없으면 복사로 대신한다.

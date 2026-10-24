@@ -1,11 +1,15 @@
 'use client';
+
 import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
+
 import { openUserReport } from './open-user-report';
+
 export function ReportUserButton({ userId }: { userId: string }) {
   const { t } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   if (session.user?.id === userId) return null;
   return (
     <Button
@@ -13,7 +17,7 @@ export function ReportUserButton({ userId }: { userId: string }) {
       type="button"
       onClick={() => {
         if (!session.user) {
-          login();
+          requireLogin();
           return;
         }
         openUserReport(userId);

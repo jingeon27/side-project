@@ -1,10 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { minutesFrom, moveContestTo, setSubmittedAt } from '../../test/support/clock';
-import { castVote, createContest, createGroup, hidePhoto, likePhoto } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import {
+  castVote,
+  createContest,
+  createGroup,
+  hidePhoto,
+  likePhoto,
+  type ITestGroup,
+} from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';
 
 const RESULTS = `
@@ -154,12 +159,12 @@ describe('대회 결과', () => {
       ]);
   });
 
-  it('비회원은 결과를 볼 수 없고 없는 대회는 NOT_FOUND여야 한다', async () => {
+  it('비회원은 결과를 볼 수 없고 없는 대회와 같은 NOT_FOUND여야 한다', async () => {
     const { contestId } = await contestWithPhotos('비회원 결과', [ara]);
     await moveContestTo(api, contestId, 'COMPLETED');
     expect(await api.gqlFail(outsider.cookie, RESULTS, { id: contestId })).toEqual({
-      code: 'FORBIDDEN',
-      message: '이 그룹에 접근할 권한이 없습니다.',
+      code: 'NOT_FOUND',
+      message: '대회를 찾을 수 없습니다.',
     });
     expect(await api.gqlFail(ara.cookie, RESULTS, { id: 'missing-contest' })).toEqual({
       code: 'NOT_FOUND',

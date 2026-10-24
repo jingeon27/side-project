@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vitest/config';
 
 // 날짜 포맷 결과가 기기 시간대에 따라 달라지지 않게 서비스 시간대로 고정한다.
@@ -20,7 +21,8 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.{spec,test}.ts', 'test/deployment/*.{spec,test}.ts'],
+          // 루트의 *.test.ts는 next.config 같은 앱 설정 파일 옆에 둔 테스트다.
+          include: ['*.{spec,test}.ts', 'src/**/*.{spec,test}.ts', 'test/deployment/*.{spec,test}.ts'],
           exclude: ['src/**/*.api.{spec,test}.ts'],
         },
       },

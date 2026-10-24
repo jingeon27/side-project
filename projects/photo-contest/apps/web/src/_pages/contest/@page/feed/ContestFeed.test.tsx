@@ -6,8 +6,14 @@ import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { submissionTypePolicies } from '@/features/submission';
-import { ContestDocument, Phase, SubmissionsDocument, SubmissionSort } from '@/shared/api/generated';
-import type { ContestQuery, SubmissionCardFragment } from '@/shared/api/generated';
+import {
+  ContestDocument,
+  Phase,
+  SubmissionsDocument,
+  SubmissionSort,
+  type ContestQuery,
+  type SubmissionCardFragment,
+} from '@/shared/api/generated';
 
 import { ContestFeed } from './ContestFeed';
 

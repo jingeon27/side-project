@@ -1,35 +1,19 @@
-import type { Prisma } from '../../generated/prisma';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
-
 import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
-import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { readUpload } from '../common/graphql/read-upload';
 import { pageRange, textValue } from '../common/validation';
-import {
-  MAX_PENDING_UPLOADS,
-  MAX_UPLOAD_BYTES,
-  PAGE_SIZE_DEFAULT,
-  TEXT_LIMIT,
-  UPLOAD_TICKET_TTL_MS,
-} from '../config/limits';
+import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
-import type { ISubmissionAccess } from '../group/membership.service';
-import { MembershipService } from '../group/membership.service';
-import { createPhotoKey } from '../storage/photo-key';
-import { PhotoStorage } from '../storage/photo-storage.service';
-import { processPhoto } from './photo-processor';
+import { MembershipService, type ISubmissionAccess } from '../group/membership.service';
+import { MediaUploadService } from '../media-upload/media-upload.service';
 import { submissionOrderBy, toSubmissionSort } from './submission-sort';
-import type { ISubmissionView } from './submission.presenter';
-import { presentSubmission, submissionInclude } from './submission.presenter';
+import { presentSubmission, submissionInclude, type ISubmissionView } from './submission.presenter';
 
 export interface ISubmissionListQuery {
   offset?: unknown;
@@ -44,25 +28,11 @@ export interface ICreateSubmissionInput {
   rightsConfirmed: unknown;
 }
 
-/** GraphQL UploadTicket. url은 일회용 토큰 원문을 담는다(DB에는 해시만). */
-export interface IUploadTicket {
-  id: string;
-  url: string;
-  expiresAt: Date;
-}
-
 const MESSAGE = {
-  TOO_MANY_UPLOADS: '업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
   RIGHTS_REQUIRED: '사진 사용 권리와 촬영된 사람의 동의를 확인해 주세요.',
   UPLOAD_INCOMPLETE: '사진 업로드가 완료되지 않았거나 만료되었습니다.',
   UPLOAD_REJECTED: '업로드 요청이 만료되었거나 유효하지 않습니다.',
-  UPLOAD_USED: '이미 사용했거나 만료된 업로드입니다.',
 } as const;
-
-/** 웹 origin의 /backend 프록시 경로 */
-function uploadUrl(token: string) {
-  return `/backend/uploads/${token}`;
-}
 
 @Injectable()
 export class SubmissionService {
@@ -70,7 +40,7 @@ export class SubmissionService {
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
-    private readonly storage: PhotoStorage,
+    private readonly uploads: MediaUploadService,
   ) {}
 
   /** 관리자가 아니면 숨긴 사진을 뺀다. 인자가 null이면 스키마 기본값과 같게 본다. */
@@ -100,67 +70,21 @@ export class SubmissionService {
     return presentSubmission(row, { completed: phase(contest) === PHASE.COMPLETED, admin });
   }
 
-  /** 제출 기간에만, 사용자·대회마다 대기 중인 티켓은 10개까지 */
-  async requestUploadUrl(viewer: IViewer, contestId: string): Promise<IUploadTicket> {
+  async requestUploadUrl(viewer: IViewer, contestId: string, contentType: string, byteSize: number) {
     const { contest } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-    const now = new Date();
-    const pending = await this.db.upload.count({
-      where: { userId: viewer.id, contestId, expiresAt: { gt: now }, submission: null },
+    return this.uploads.requestUpload(viewer, contest.groupId, contentType, byteSize, {
+      kind: 'SUBMISSION',
+      contestId,
     });
-    if (pending >= MAX_PENDING_UPLOADS) fail(MESSAGE.TOO_MANY_UPLOADS, ERROR_CODE.RATE_LIMITED);
-    const token = randomToken();
-    const upload = await this.db.upload.create({
-      data: {
-        userId: viewer.id,
-        contestId,
-        tokenHash: sha256Hex(token),
-        expiresAt: new Date(now.getTime() + UPLOAD_TICKET_TTL_MS),
-      },
-    });
-    return { id: upload.id, url: uploadUrl(token), expiresAt: upload.expiresAt };
   }
 
-  /**
-   * 업로드 티켓 원문으로 받은 사진을 변환해 저장한다. 티켓은 한 번만 쓸 수 있다.
-   * 티켓 주인이 아니거나 이미 썼거나 만료됐으면 FORBIDDEN.
-   */
-  async upload(viewer: IViewer, token: string, body: unknown) {
-    const grant = await this.uploadGrant(viewer, { tokenHash: sha256Hex(token) });
-    await this.saveUpload(grant, body);
-  }
-
-  async uploadFile(viewer: IViewer, uploadId: string, file: Promise<FileUpload>) {
-    const grant = await this.uploadGrant(viewer, { id: uploadId });
-    const content = await readUpload(file, MAX_UPLOAD_BYTES);
-    await this.saveUpload(grant, content.body);
-    return true;
-  }
-
-  private async uploadGrant(viewer: IViewer, where: Prisma.UploadWhereUniqueInput) {
-    const grant = await this.db.upload.findUnique({ where });
-    if (!grant || grant.userId !== viewer.id || grant.imageKey || grant.expiresAt < new Date())
+  async completeUpload(viewer: IViewer, uploadId: string) {
+    const grant = await this.db.upload.findUnique({ where: { id: uploadId } });
+    if (!grant || grant.userId !== viewer.id || !grant.mediaUploadId)
       fail(MESSAGE.UPLOAD_REJECTED, ERROR_CODE.FORBIDDEN);
-    const { contest } = await this.membership.accessibleContest(viewer.id, grant.contestId);
-    if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-    return grant;
-  }
-
-  private async saveUpload(grant: Awaited<ReturnType<SubmissionService['uploadGrant']>>, body: unknown) {
-    const image = await processPhoto(body);
-    const imageKey = createPhotoKey();
-    await this.storage.put(imageKey, image);
-    try {
-      // 같은 티켓으로 동시에 올려도 imageKey를 먼저 기록한 한 요청만 남는다.
-      const updated = await this.db.upload.updateMany({
-        where: { id: grant.id, imageKey: null, expiresAt: { gt: new Date() } },
-        data: { imageKey },
-      });
-      if (updated.count !== 1) fail(MESSAGE.UPLOAD_USED);
-    } catch (error) {
-      await this.storage.delete(imageKey);
-      throw error;
-    }
+    await this.uploads.completeUpload(viewer, grant.mediaUploadId, { submissionId: grant.id });
+    return true;
   }
 
   /** 1인 1장은 (contestId, authorId) unique로 지킨다. 겹치면 CONFLICT */
@@ -212,14 +136,14 @@ export class SubmissionService {
     return presentSubmission(row, { completed: false, admin });
   }
 
-  /** 비공개 사진 파일. 매 요청 멤버십을 확인하고, 숨긴 사진은 관리자에게만 준다. */
-  async photoFile(viewer: IViewer, submissionId: string): Promise<Buffer> {
+  /** 비공개 사진 파일의 저장소 키. 매 요청 멤버십을 확인하고, 숨긴 사진은 관리자에게만 준다. */
+  async photoKey(viewer: IViewer, submissionId: string): Promise<string> {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
     const upload = await this.db.upload.findUnique({
       where: { id: submission.uploadId },
       select: { imageKey: true },
     });
     if (!upload?.imageKey) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
-    return this.storage.get(upload.imageKey);
+    return upload.imageKey;
   }
 }

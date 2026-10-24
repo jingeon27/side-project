@@ -1,14 +1,25 @@
-export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
-import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { z } from 'zod';
-import { RichTextDocumentSchema } from './rich-text';
-import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
+
 import {
   MediaMimeTypeSchema,
   MediaSizeSchema,
   MediaUploadInputSchema,
   MediaUploadPlanSchema,
 } from './media-upload';
+import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
+import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+import { RichTextDocumentSchema } from './rich-text';
+
+export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+
+export {
+  POSTS_CACHE_TAG,
+  DISCOVERY_CACHE_TAG,
+  CacheTagSchema,
+  CacheRevalidationSchema,
+  postCacheTag,
+} from './cache-revalidation';
+
 export { MediaUploadInputSchema, MediaUploadPlanSchema } from './media-upload';
 export type { TMediaUploadInput, TMediaUploadPlan } from './media-upload';
 export {
@@ -168,20 +179,38 @@ export const AnswerSchema = z.object({
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
 });
-export const CommentSchema = z.object({
+const CommentFields = {
   id: ResponseIdSchema,
   postId: ResponseIdSchema,
-  body: z.string().min(1),
-  author: AuthorSchema,
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
-});
+};
+export const CommentSchema = z.discriminatedUnion('isDeleted', [
+  z.object({
+    ...CommentFields,
+    parentId: ResponseIdSchema.nullable(),
+    isDeleted: z.literal(false),
+    body: z.string().min(1),
+    author: AuthorSchema,
+  }),
+  z.object({
+    ...CommentFields,
+    parentId: z.null(),
+    isDeleted: z.literal(true),
+    body: z.literal(''),
+    author: z.null(),
+  }),
+]);
 export const NotificationSchema = z.object({
   id: ResponseIdSchema,
-  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'FOLLOWED_POST']),
+  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
   postId: ResponseIdSchema,
   answerId: ResponseIdSchema.nullable(),
-  message: z.string().min(1),
+  commentId: ResponseIdSchema.nullable().optional(),
+  /** 알림을 만든 사용자의 현재 공개 정보. 탈퇴 등으로 없으면 null이다. 문구는 클라이언트가 번역해 조합한다. */
+  actor: AuthorSchema.nullable(),
+  /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
+  postTitle: z.string().min(1),
   readAt: ResponseTimestampSchema.nullable(),
   createdAt: ResponseTimestampSchema,
 });
@@ -189,13 +218,22 @@ export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),
 });
+/** 최근 원댓글 스레드부터 나눈 댓글 한 페이지. 페이지 안은 오래된 순이고 각 원댓글의 답글을 함께 싣는다. */
+export const CommentPageSchema = z.object({
+  items: z.array(CommentSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
   answers: z.array(AnswerSchema),
   comments: z.array(CommentSchema),
+  /** 상세에 싣지 않은 이전 원댓글 스레드를 `listPostComments`로 받는 커서. 없으면 null. */
+  commentsCursor: z.string().min(1).nullable(),
 });
 export const PostViewInputSchema = z.object({ visitorId: z.uuid() }).strict();
 export const PostViewSchema = z.object({ viewCount: ResponseCountSchema });
+export const ReportStatusSchema = z.enum(['OPEN', 'REVIEWED', 'DISMISSED']);
+export type TReportStatus = z.infer<typeof ReportStatusSchema>;
 export const AdminReportSchema = z.object({
   targetPostId: ResponseIdSchema.nullable().optional(),
   targetPreview: z.string().nullable().optional(),
@@ -208,6 +246,15 @@ export const AdminReportSchema = z.object({
   detail: z.string().nullable(),
   status: z.string(),
   createdAt: ResponseTimestampSchema,
+});
+export const AdminReportListSchema = z.object({
+  items: z.array(AdminReportSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+export const AdminReportListQuerySchema = z.object({
+  status: ReportStatusSchema.default('OPEN'),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
 });
 export const NotificationListSchema = z.object({
   items: z.array(NotificationSchema),
@@ -315,6 +362,10 @@ export const PostPatchSchema = PostInputSchema.omit({ categoryId: true, board: t
   .refine((v) => Object.keys(v).length > 0);
 export const AnswerInputSchema = z.object({ body: z.string().trim().min(10).max(10000) }).strict();
 export const CommentInputSchema = z.object({ body: z.string().trim().min(1).max(2000) }).strict();
+export const CreateCommentInputSchema = CommentInputSchema.extend({
+  parentId: ResponseIdSchema.nullable().optional(),
+});
+export type CreateCommentInput = z.infer<typeof CreateCommentInputSchema>;
 export const HelpfulInputSchema = z.object({ helpful: z.boolean() }).strict();
 export const GameAccountInputSchema = z.object({ playerTag: PlayerTagSchema }).strict();
 export const ReportInputSchema = z
@@ -370,6 +421,7 @@ export type Notification = z.infer<typeof NotificationSchema>;
 export type Session = z.infer<typeof SessionSchema>;
 export type PostList = z.infer<typeof PostListSchema>;
 export type PostDetail = z.infer<typeof PostDetailSchema>;
+export type CommentPage = z.infer<typeof CommentPageSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -422,6 +474,7 @@ export const schemas = {
   ChatMessageInput: ChatMessageInputSchema,
   ChatReadInput: ChatReadInputSchema,
   AdminReport: AdminReportSchema,
+  AdminReportList: AdminReportListSchema,
   Error: ErrorSchema,
   Ok: OkSchema,
   PublicProfile: PublicProfileSchema,
@@ -436,6 +489,7 @@ export const schemas = {
   Notification: NotificationSchema,
   PostList: PostListSchema,
   PostDetail: PostDetailSchema,
+  CommentPage: CommentPageSchema,
   NotificationList: NotificationListSchema,
   Session: SessionSchema,
   OnboardInput: OnboardInputSchema,
@@ -444,6 +498,7 @@ export const schemas = {
   PostPatch: PostPatchSchema,
   AnswerInput: AnswerInputSchema,
   CommentInput: CommentInputSchema,
+  CreateCommentInput: CreateCommentInputSchema,
   HelpfulInput: HelpfulInputSchema,
   GameAccountInput: GameAccountInputSchema,
   ReportInput: ReportInputSchema,
@@ -634,7 +689,13 @@ export const operations: OperationSpec[] = [
     response: OkSchema,
   },
   { method: 'get', path: '/api/health', id: 'getHealth', response: OkSchema },
-  { method: 'get', path: '/api/admin/reports', id: 'listReports', response: z.array(AdminReportSchema) },
+  {
+    method: 'get',
+    path: '/api/admin/reports',
+    id: 'listReports',
+    response: AdminReportListSchema,
+    query: true,
+  },
   { method: 'get', path: '/api/session', id: 'getSession', response: SessionSchema },
   { method: 'post', path: '/api/auth/demo', id: 'demoLogin', body: DemoInputSchema, response: SessionSchema },
   {
@@ -683,10 +744,17 @@ export const operations: OperationSpec[] = [
     response: PostViewSchema,
   },
   {
+    method: 'get',
+    path: '/api/posts/{id}/comments',
+    id: 'listPostComments',
+    response: CommentPageSchema,
+    query: true,
+  },
+  {
     method: 'post',
     path: '/api/posts/{id}/comments',
     id: 'createComment',
-    body: CommentInputSchema,
+    body: CreateCommentInputSchema,
     response: CommentSchema,
   },
   {

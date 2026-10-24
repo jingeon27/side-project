@@ -1,5 +1,7 @@
 'use client';
 
+import { Suspense } from 'react';
+
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { ROUTES } from '@/shared/constants/routes';
 import { LegalLinks } from '@/shared/ui/@core/legal-links';
@@ -7,8 +9,9 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
-import { MyProfile } from './profile/MyProfile';
 import { MyGroupsSection } from './groups/MyGroupsSection';
+import { MyPostsSection } from './posts/MyPostsSection';
+import { MyProfile } from './profile/MyProfile';
 
 export function MePageTemplate() {
   return (
@@ -28,8 +31,11 @@ export function MePageTemplate() {
                   <LegalLinks />
                 </div>
               </div>
-              <div className="order-2">
+              <div className="order-2 flex min-w-0 flex-col gap-10">
                 <MyGroupsSection />
+                <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                  <MyPostsSection />
+                </Suspense>
               </div>
             </div>
           )}

@@ -2,8 +2,7 @@ import { match } from 'ts-pattern';
 import { z } from 'zod';
 
 import { ERROR_CODE, fail } from '../common/errors';
-import { oauthCredentials, webOrigin } from '../config/env';
-import type { TOAuthProviderName } from '../config/env';
+import { oauthCredentials, webOrigin, type TOAuthProviderName } from '../config/env';
 import { TEXT_LIMIT } from '../config/limits';
 
 export const OAUTH_PROVIDER = { GOOGLE: 'google', KAKAO: 'kakao' } as const;

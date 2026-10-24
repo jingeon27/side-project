@@ -1,11 +1,11 @@
-import { installFakeNativeApp } from '@photo-contest/bridge/test';
-import type { IFakeNativeApp } from '@photo-contest/bridge/test';
-import { createWebBridge } from '@photo-contest/bridge/web';
-import type { IWebBridge } from '@photo-contest/bridge/web';
-import { render, renderHook, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
+
+import { render, renderHook, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
+import { createWebBridge, type IWebBridge } from '@photo-contest/bridge/web';
 
 import { BridgeContext, useNativeApp } from './bridge.hook';
 import { useHaptics } from './haptics.hook';
@@ -69,7 +69,7 @@ describe('useShareLink', () => {
     bridge = createWebBridge(window);
     const { result } = renderHook(() => useShareLink(), { wrapper: withBridge(bridge) });
     await expect(result.current.share('http://localhost:3000/contests/c1', { title: '결과' })).resolves.toBe(
-      SHARE_OUTCOME.Shared,
+      SHARE_OUTCOME.SharedInApp,
     );
     expect(fake.calls).toEqual([
       { type: 'share.open', payload: { url: 'http://localhost:3000/contests/c1', title: '결과' } },

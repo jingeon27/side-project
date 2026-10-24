@@ -1,12 +1,17 @@
 'use client';
+
 import type { FormEvent } from 'react';
-import { useMutation } from '@tanstack/react-query';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import type { TSocialProvider } from '@game-feedback/contracts';
-import { savePendingLogin, trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
-import { useNativeLogin } from '@/features/auth';
+
+import { nativeLoginMutationOptions } from '@/features/auth';
+import { ANALYTICS_EVENT, savePendingLogin, trackEvent } from '@/shared/analytics';
 import { useI18n } from '@/shared/i18n';
 import { isNativeApp } from '@/shared/native';
 import { ErrorNotice } from '@/shared/ui';
+
 import { browserLoginMutationOptions } from '../model/browser-login.mutation-options';
 import { SocialLoginButton } from './SocialLoginButton';
 
@@ -17,8 +22,9 @@ interface ISocialLoginFormProps {
 }
 
 export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLoginFormProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
-  const nativeLogin = useNativeLogin();
+  const nativeLogin = useMutation(nativeLoginMutationOptions(client));
   const browserLogin = useMutation(browserLoginMutationOptions());
   const pending = nativeLogin.isPending || browserLogin.isPending;
   const selected = nativeLogin.isPending ? nativeLogin.variables : browserLogin.variables?.provider;

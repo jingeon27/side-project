@@ -1,5 +1,7 @@
-import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+
+import { expect, test } from '@playwright/test';
+
 const origin = 'http://127.0.0.1:3301';
 
 for (const scenario of [
@@ -246,7 +248,7 @@ test('verification opens a private admin chat and an administrator reviews user 
     await dialog.getByLabel('추가 설명 (선택)', { exact: true }).fill(`사용자 신고 ${suffix}`);
     await dialog.getByRole('button', { name: '신고 접수', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    const reports = await (await adminContext.request.get('/api/admin/reports')).json();
+    const { items: reports } = await (await adminContext.request.get('/api/admin/reports?limit=50')).json();
     const report = reports.find((item: { detail: string }) => item.detail === `사용자 신고 ${suffix}`);
     expect(report).toBeTruthy();
     expect(

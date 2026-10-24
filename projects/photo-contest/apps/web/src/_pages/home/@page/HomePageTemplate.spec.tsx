@@ -3,10 +3,12 @@ import { ApolloProvider } from '@apollo/client/react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GroupVisibility } from '@/shared/api/generated';
-import { HomePageTemplate } from './HomePageTemplate';
-import { postTypePolicies } from '@/features/post';
+
 import { groupTypePolicies } from '@/features/group';
+import { postTypePolicies } from '@/features/post';
+import { GroupVisibility } from '@/shared/api/generated';
+
+import { HomePageTemplate } from './HomePageTemplate';
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({
@@ -33,6 +35,8 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
   const state = { hasGroup };
   const group = {
     __typename: 'Group',
+    description: '',
+    avatarUrl: null,
     id: 'public',
     name: '공개 웃음',
     visibility: GroupVisibility.Public,
@@ -56,7 +60,9 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
           let data: Record<string, unknown> = {};
           if (operation.operationName === 'Me')
             data = {
-              me: signedIn ? { __typename: 'User', id: 'new', nickname: '신규', avatar: null } : null,
+              me: signedIn
+                ? { __typename: 'User', id: 'new', nickname: '신규', avatar: null, needsOnboarding: false }
+                : null,
             };
           if (operation.operationName === 'MyGroups')
             data = { myGroups: state.hasGroup ? [{ ...group, role: 'MEMBER' }] : [] };

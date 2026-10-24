@@ -1,68 +1,71 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { publicServerOptions, serverRequestOptions } from './server';
-const { getCookie, getHeaders } = vi.hoisted(() => ({ getCookie: vi.fn(), getHeaders: vi.fn() }));
-vi.mock('next/headers', () => ({ cookies: async () => ({ get: getCookie }), headers: getHeaders }));
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { forwardedClientHeaders, publicServerOptions, serverRequestOptions } from './server';
+
+const { getCookie, getHeader } = vi.hoisted(() => ({ getCookie: vi.fn(), getHeader: vi.fn() }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: getCookie }),
+  headers: async () => ({ get: getHeader }),
+}));
+const secret = 'test-only-forwarded-client-secret-'.repeat(2);
 beforeEach(() => {
-  vi.stubEnv('GF_PROXY_SECRET', '');
-  getHeaders.mockResolvedValue(new Headers());
+  vi.stubEnv('GAME_FEEDBACK_API_URL', 'https://api.feedback.example');
+  vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', secret);
 });
 afterEach(() => {
   vi.unstubAllEnvs();
   getCookie.mockReset();
-  getHeaders.mockReset();
+  getHeader.mockReset();
 });
-it('forwards only the visitor IP authenticated by Caddy and leaves public cache fills request-independent', async () => {
-  const secret = 'a'.repeat(64);
-  vi.stubEnv('GF_PROXY_SECRET', secret);
-  getHeaders.mockResolvedValue(
-    new Headers({
-      'x-game-feedback-proxy-secret': secret,
-      'x-game-feedback-client-ip': '203.0.113.10',
-      'x-forwarded-for': '198.51.100.99',
-      authorization: 'Bearer must-not-be-forwarded',
-    }),
-  );
-  expect((await serverRequestOptions()).headers).toEqual({
-    'x-game-feedback-proxy-secret': secret,
-    'x-game-feedback-client-ip': '203.0.113.10',
+
+describe('server-side API request options', () => {
+  it('forwards only the Game Feedback session cookie and the signed visitor address', async () => {
+    getCookie.mockReturnValue({ value: 'test-only-session' });
+    getHeader.mockReturnValue('203.0.113.7, 10.0.0.2');
+    const options = await serverRequestOptions();
+    expect(options.baseUrl).toBe('https://api.feedback.example');
+    expect(options.headers).toMatchObject({
+      Cookie: 'gamefeedback_session=test-only-session',
+      'x-gf-client-ip': '203.0.113.7',
+      'x-gf-client-timestamp': expect.stringMatching(/^\d+$/),
+      'x-gf-client-signature': expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+    });
+    expect(getCookie).toHaveBeenCalledExactlyOnceWith('gamefeedback_session');
+    expect(getHeader).toHaveBeenCalledExactlyOnceWith('x-forwarded-for');
   });
-  getHeaders.mockClear();
-  expect(publicServerOptions().headers).toEqual({ 'x-game-feedback-proxy-secret': secret });
-  expect(getHeaders).not.toHaveBeenCalled();
-});
-it.each<Record<string, string>>([
-  { 'x-game-feedback-proxy-secret': 'b'.repeat(64), 'x-game-feedback-client-ip': '203.0.113.10' },
-  { 'x-game-feedback-client-ip': '203.0.113.10', 'x-forwarded-for': '203.0.113.10' },
-  {
-    'x-game-feedback-proxy-secret': 'a'.repeat(64),
-    'x-game-feedback-client-ip': '203.0.113.10, 203.0.113.11',
-  },
-])('does not authenticate a forged or malformed visitor identity: %j', async (source) => {
-  vi.stubEnv('GF_PROXY_SECRET', 'a'.repeat(64));
-  getHeaders.mockResolvedValue(new Headers(source));
-  expect((await serverRequestOptions()).headers).toBeUndefined();
-});
-it('uses the configured API origin and forwards only the Game Feedback session cookie', async () => {
-  vi.stubEnv('GAME_FEEDBACK_API_URL', 'https://api.feedback.example');
-  getCookie.mockReturnValue({ value: 'test-only-session' });
-  const options = await serverRequestOptions();
-  expect(options).toMatchObject({
-    baseUrl: 'https://api.feedback.example',
-    headers: { Cookie: 'gamefeedback_session=test-only-session' },
+  it('does not invent authentication or a visitor address', async () => {
+    getCookie.mockReturnValue(undefined);
+    for (const forwardedFor of [null, '', 'unknown', 'not-an-ip, 203.0.113.7']) {
+      getHeader.mockReturnValue(forwardedFor);
+      expect((await serverRequestOptions()).headers).toEqual({});
+    }
   });
-  expect(getCookie).toHaveBeenCalledExactlyOnceWith('gamefeedback_session');
-  expect(publicServerOptions()).not.toHaveProperty('headers');
-});
-it('does not invent authentication or accept an API origin containing credentials or a path', async () => {
-  vi.stubEnv('GAME_FEEDBACK_API_URL', 'https://api.feedback.example');
-  getCookie.mockReturnValue(undefined);
-  expect((await serverRequestOptions()).headers).toBeUndefined();
-  for (const invalid of [
-    'javascript:alert(1)',
-    'https://user:pass@api.feedback.example',
-    'https://api.feedback.example/other',
-  ]) {
-    vi.stubEnv('GAME_FEEDBACK_API_URL', invalid);
-    expect(() => publicServerOptions()).toThrow('origin is invalid');
-  }
+  it('marks cookie-free shared reads as internal so they do not use one visitor budget', () => {
+    expect(publicServerOptions().headers).toMatchObject({ 'x-gf-client-ip': 'internal' });
+    expect(publicServerOptions().headers).not.toHaveProperty('Cookie');
+  });
+  it('signs exactly like the API verifier and stays unsigned without the shared secret', () => {
+    // apps/api/src/common/http/forwarded-client.spec.ts pins the same values.
+    expect(forwardedClientHeaders('203.0.113.7', 1_790_000_000_000)).toEqual({
+      'x-gf-client-ip': '203.0.113.7',
+      'x-gf-client-timestamp': '1790000000',
+      'x-gf-client-signature': 'n9UQhANQ7tvKVif30IeU53YT5kjP3-iFSdYTrWWBkkQ',
+    });
+    expect(forwardedClientHeaders('internal', 1_790_000_000_999)['x-gf-client-signature']).toBe(
+      '3TpEMy8avP8vg8wlqDs9tnRyaZdM0b8tEseX0Jkdf74',
+    );
+    vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', '');
+    expect(forwardedClientHeaders('203.0.113.7')).toEqual({});
+    expect(publicServerOptions().headers).toEqual({});
+  });
+  it('does not accept an API origin containing credentials or a path', () => {
+    for (const invalid of [
+      'javascript:alert(1)',
+      'https://user:pass@api.feedback.example',
+      'https://api.feedback.example/other',
+    ]) {
+      vi.stubEnv('GAME_FEEDBACK_API_URL', invalid);
+      expect(() => publicServerOptions()).toThrow('origin is invalid');
+    }
+  });
 });

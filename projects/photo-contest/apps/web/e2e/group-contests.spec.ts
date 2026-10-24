@@ -1,5 +1,7 @@
 import { mkdir } from 'node:fs/promises';
+
 import { createTestImage, createTestUser, createTestVideo, moveTestContest } from '@photo-contest/test-kit';
+
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest } from './support/photos';
 import { expect, seedGroup, test } from './support/test';
@@ -19,6 +21,7 @@ test(
       .click();
     await page.getByRole('button', { name: '대회 개최하기', exact: true }).click();
     const create = page.getByRole('dialog', { name: '그룹 대회 개최', exact: true });
+    await expect(create.getByLabel('1인당 좋아요 한도')).toHaveValue('1');
     await create.getByLabel('대회 제목').fill(title);
     await expect(create.getByLabel('게시물 접수 마감')).toHaveAttribute('required', '');
     await create.getByRole('button', { name: '대회 개최하기', exact: true }).click();

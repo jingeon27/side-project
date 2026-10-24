@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { ApiError } from './http/api-error';
 import { parse } from './validation';
 
@@ -22,9 +23,9 @@ function fileName(value: string) {
     .slice(0, 100)
     .join('');
 }
-export function validateMediaFile(input: unknown) {
-  const file = parse(uploadSchema, input);
-  const bytes = file.buffer;
+/** 매직 바이트 판별에 필요한 앞부분 길이. webm은 이 범위 안에서 DocType을 찾는다. */
+export const MEDIA_SIGNATURE_BYTES = 4096;
+function detectMediaType(bytes: Buffer) {
   const ascii = (start: number, end: number) => bytes.toString('ascii', start, end);
   const matches = [
     ['image/png', bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))],
@@ -35,18 +36,36 @@ export function validateMediaFile(input: unknown) {
     [
       'video/webm',
       bytes.subarray(0, 4).equals(Buffer.from([26, 69, 223, 163])) &&
-        bytes.subarray(0, 4096).includes(Buffer.from('webm')),
+        bytes.subarray(0, MEDIA_SIGNATURE_BYTES).includes(Buffer.from('webm')),
     ],
   ] as const;
-  const detected = matches.find((entry) => entry[1])?.[0];
-  if (!detected || detected !== file.mimetype || bytes.length !== file.size)
-    throw new ApiError(400, 'INVALID_ATTACHMENT', '지원하는 이미지나 동영상 파일을 선택해주세요.');
+  return matches.find((entry) => entry[1])?.[0];
+}
+function invalidMedia() {
+  return new ApiError(400, 'INVALID_ATTACHMENT', '지원하는 이미지나 동영상 파일을 선택해주세요.');
+}
+export function validateMediaFile(input: unknown) {
+  const file = parse(uploadSchema, input);
+  const bytes = file.buffer;
+  const detected = detectMediaType(bytes);
+  if (!detected || detected !== file.mimetype || bytes.length !== file.size) throw invalidMedia();
   return {
     bytes,
     mimeType: detected,
     size: file.size,
     name: fileName(file.originalname),
   };
+}
+/**
+ * 저장소에 이미 올라간 파일은 앞부분만 읽어 판별한다. 전체 크기는 호출자가 저장소 메타데이터로 확인한다.
+ * `header`는 파일 앞 `min(size, MEDIA_SIGNATURE_BYTES)` 바이트여야 한다.
+ */
+export function validateMediaHeader(input: { name: string; mimeType: string; size: number; header: Buffer }) {
+  const size = uploadSchema.shape.size.safeParse(input.size);
+  if (!size.success || input.header.length !== Math.min(input.size, MEDIA_SIGNATURE_BYTES))
+    throw invalidMedia();
+  if (detectMediaType(input.header) !== input.mimeType) throw invalidMedia();
+  return { mimeType: input.mimeType, size: input.size, name: fileName(input.name) };
 }
 export function mediaRange(header: string | undefined, size: number) {
   if (!header) return { start: 0, end: size - 1, partial: false };

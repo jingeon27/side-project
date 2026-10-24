@@ -1,4 +1,5 @@
-import { Identify, createInstance } from '@amplitude/analytics-browser';
+import { createInstance, Identify } from '@amplitude/analytics-browser';
+
 import type { TNativeAppInfo } from '@photo-contest/bridge';
 
 import type { TAnalyticsEventName, TAnalyticsEventProperties } from './analytics.catalog';
@@ -57,6 +58,11 @@ export function identifyUser(userId: string) {
 /** 로그아웃. 다음 사용자의 이벤트가 이전 사용자에게 붙지 않게 사용자·기기 정보를 새로 만든다. */
 export function resetAnalytics() {
   client?.reset();
+}
+
+/** 세션이 끝나(만료 등) 비로그인으로 확인됐을 때. 식별된 사용자가 남아 있을 때만 지워 익명 방문의 기기 ID는 유지한다. */
+export function forgetAnalyticsUser() {
+  if (client?.getUserId()) client.reset();
 }
 
 const settle = async (pending: Promise<unknown>) => {

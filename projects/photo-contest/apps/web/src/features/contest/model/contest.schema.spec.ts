@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildContestDefaults, createContestSchema } from './contest.schema';
+import { buildContestDefaults, createContestSchema, createGroupContestSchema } from './contest.schema';
 
 const issuesOf = (input: Record<string, string>) => {
   const result = createContestSchema.safeParse(input);
@@ -8,6 +8,13 @@ const issuesOf = (input: Record<string, string>) => {
 };
 
 describe('createContestSchema', () => {
+  it('그룹 대회 좋아요 한도는 기본 1이며 1~100의 정수만 허용해야 한다', () => {
+    const input = { ...buildContestDefaults(new Date()), title: '좋아요 한도 대회' };
+    expect(createGroupContestSchema.parse(input).likeLimit).toBe(1);
+    expect(createGroupContestSchema.parse({ ...input, likeLimit: 3 }).likeLimit).toBe(3);
+    for (const likeLimit of [0, 101, 1.5, Number.NaN])
+      expect(createGroupContestSchema.safeParse({ ...input, likeLimit }).success).toBe(false);
+  });
   it('기본값은 바로 제출할 수 있어야 하고 ISO 시각으로 바뀌어야 한다', () => {
     const defaults = {
       ...buildContestDefaults(new Date('2026-10-14T03:00:00.000Z')),

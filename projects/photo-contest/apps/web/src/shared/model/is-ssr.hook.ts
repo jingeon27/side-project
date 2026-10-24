@@ -1,5 +1,6 @@
-import { noop } from 'es-toolkit';
 import { useSyncExternalStore } from 'react';
+
+import { noop } from 'es-toolkit';
 
 /** 바뀌지 않는 브라우저 값을 useSyncExternalStore로 읽을 때 쓴다. 렌더마다 새로 구독하지 않게 모듈 상수로 둔다. */
 export const subscribeNothing = () => noop;

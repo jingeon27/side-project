@@ -40,8 +40,12 @@ corepack yarn workspace @side/game-feedback db:test:stop
 
 DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 데이터 손실을 강제하지 않고 운영은 scripts/migrate.mjs의 migrate deploy를 사용한다. 운영 파일 저장소/백업과 복구 명령은 [공통 EC2·RDS·S3 가이드](../../../../deploy/shared-instance/README.md)를 따른다. 외부 저장소 자격 증명, 악성 파일 정밀 검사와 실제 기기 권한은 별도 운영 검증 항목이다.
 
-`node apps/api/scripts/production-smoke.mjs`는 프로젝트 루트에서 Linux + Docker Compose로 실행하는 API 소유 운영 통합 검사다. `GF_SMOKE_TAG=<40자 SHA>`, `GF_SMOKE_IMAGE_PREFIX=<이미지 prefix>`에 미리 빌드한 API/Web 이미지를 지정한다. 개발 서버 대신 새 Docker project/volume에서 HTTPS·migration·비공개 파일·SSE·백업 복구를 확인하고 생성한 스택만 정리한다. macOS에서는 deploy/lightsail/Dockerfile의 smoke-tools target을 별도 Docker 엔진의 host network와 socket/repository bind로 실행할 수 있다.
-
 서버 테스트 계정은 명시적 `dev:test` 또는 `GF_TEST_AUTH_ENABLED=true`에서 `POST /api/auth/test-token`으로 발급한다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.
 
 관리자 HTTP 업무는 `src/admin/{categories,users,reports,support}`의 독립 controller/service와 AdminModule이 소유한다. 공개 카테고리 조회와 관리자 생성은 같은 테이블을 쓰되 service를 공유하지 않는다. 요청 DTO의 class-validator decorator와 class-transformer/Nest ValidationPipe를 controller에서 적용하고 Service에는 검증된 입력을 전달한다. Guard가 먼저 권한을 확인하며 Zod 계약의 정규화/중첩 JSON 규칙은 HTTP 파이프에서 보존한다. 응답 Zod 검증과 OpenAPI/Orval 생성 방식은 유지한다.
+
+### Prisma 7
+
+Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `db push`는 Client를 자동 생성하지 않는다.
+
+기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+
 import { CreateGroupButton, DiscoverGroupCard, GroupSearchForm } from '@/features/group';
 import { PublicGalleryBoard } from '@/features/post';
 import { DiscoverGroupsDocument, GroupVisibility, type DiscoverGroupsQuery } from '@/shared/api/generated';
@@ -35,7 +36,7 @@ export function NoGroupHome({ signedIn = false }: { signedIn?: boolean }) {
             더보기
           </ButtonLink>
         </div>
-        <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
+        <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-48 w-full" />}>
           <PublicGroups queryRef={queryRef} />
         </AsyncBoundary>
         {signedIn ? (

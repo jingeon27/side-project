@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ANALYTICS_EVENT } from './analytics.catalog';
 import {
   flushAnalytics,
+  forgetAnalyticsUser,
   identifyUser,
   initAnalytics,
   resetAnalytics,
@@ -137,6 +138,17 @@ describe('analytics', () => {
 
     expect(amplitude.instance.setUserId).toHaveBeenCalledTimes(1);
     expect(amplitude.instance.setUserId).toHaveBeenCalledWith('user-1');
+    expect(amplitude.instance.reset).toHaveBeenCalledTimes(1);
+  });
+
+  it('세션이 끝나면 식별된 사용자가 있을 때만 초기화해 익명 기기 ID를 유지해야 한다', () => {
+    initAnalytics({ apiKey: 'key', app: null });
+    amplitude.instance.getUserId.mockReturnValue(undefined);
+    forgetAnalyticsUser();
+    expect(amplitude.instance.reset).not.toHaveBeenCalled();
+
+    amplitude.instance.getUserId.mockReturnValue('user-1');
+    forgetAnalyticsUser();
     expect(amplitude.instance.reset).toHaveBeenCalledTimes(1);
   });
 

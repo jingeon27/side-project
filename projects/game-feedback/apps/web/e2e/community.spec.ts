@@ -1,9 +1,11 @@
-import { test, expect } from '@playwright/test';
-const origin = 'http://127.0.0.1:3301';
+import { expect, test } from '@playwright/test';
+
 test('community boards publish and edit Quill formatting, stay separate from feedback and render without JavaScript', async ({
   page,
   browser,
+  baseURL,
 }) => {
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   test.setTimeout(90000);
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
@@ -33,7 +35,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(content.locator('strong')).toContainText(body);
     await editor.getByRole('button', { name: '게시글 등록', exact: true }).click();
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-    await expect(page.locator('.left-sidebar .game-submenu a[aria-current="page"]')).toHaveAttribute(
+    await expect(page.locator('.left-sidebar:visible .game-submenu a[aria-current="page"]')).toHaveAttribute(
       'href',
       `/ko/boards/${slug}`,
     );
@@ -62,7 +64,7 @@ test('community boards publish and edit Quill formatting, stay separate from fee
     await expect(page.locator('.prose-body')).toContainText(updated);
     if (slug === 'friend-sale')
       await expect(page.locator('.friend-sale-summary:visible')).toContainText('18,000');
-    const crawler = await browser.newContext({ javaScriptEnabled: false });
+    const crawler = await browser.newContext({ javaScriptEnabled: false, baseURL });
     try {
       const response = await (await crawler.newPage()).goto(url);
       expect(response?.status()).toBe(200);
@@ -91,7 +93,9 @@ test('every game contains five shared boards on desktop and mobile and retired b
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/ko');
     const desktop = width > 760;
-    const navigation = desktop ? page.locator('.left-sidebar') : page.locator('.game-board-navigation');
+    const navigation = desktop
+      ? page.locator('.left-sidebar:visible')
+      : page.locator('.game-board-navigation:visible');
     const boards = navigation.locator(desktop ? '.game-submenu' : '.game-board-chips');
     await expect(boards.getByRole('link')).toHaveText([
       ...(desktop ? [] : ['전체']),
@@ -135,7 +139,9 @@ test('every game contains five shared boards on desktop and mobile and retired b
 });
 test('category chips support direct links, keyboard navigation, short viewports and Quill context', async ({
   page,
+  baseURL,
 }) => {
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   await page.setViewportSize({ width: 320, height: 844 });
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
@@ -143,7 +149,7 @@ test('category chips support direct links, keyboard navigation, short viewports 
   });
   await page.goto('/ja/boards/friendly');
   await expect(page.getByRole('navigation', { name: 'モバイルメニュー' })).toBeVisible();
-  const chips = page.locator('.game-board-chips');
+  const chips = page.locator('.game-board-chips:visible');
   const friendly = chips.locator('a[href="/ja/boards/friendly"]');
   await expect(friendly).toHaveAttribute('aria-current', 'page');
   await expect(friendly).toBeInViewport({ ratio: 1 });
@@ -191,7 +197,9 @@ test('category chips support direct links, keyboard navigation, short viewports 
 
 test('mobile composition can switch categories from a board and persist friend sale prices', async ({
   page,
+  baseURL,
 }) => {
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   await page.setViewportSize({ width: 320, height: 844 });
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },

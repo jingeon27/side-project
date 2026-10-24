@@ -1,21 +1,25 @@
-import { test, expect } from './support/fixtures';
-import { ORIGIN } from './support/native-host';
 import { appRoutes } from '@game-feedback/bridge';
 
-test('mobile header and four tabs navigate in place and report their paths to the native shell', async ({
+import { expect, test } from './support/fixtures';
+import { ORIGIN } from './support/native-host';
+
+test('mobile header and three tabs navigate in place and report their paths to the native shell', async ({
   page,
   nativeHost,
 }) => {
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
+  await expect(
+    page.getByRole('banner').getByRole('link', { name: 'Game Mate 홈', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('combobox')).toHaveCount(0);
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
-  await expect(tabs.getByRole('link')).toHaveText(['홈', '가이드', '채팅', '프로필']);
+  await expect(tabs.getByRole('link')).toHaveText(['홈', '채팅', '프로필']);
   await page.evaluate(() =>
     Object.defineProperty(window, '__routeDocument', { value: 'kept', configurable: true }),
   );
   const length = await page.evaluate(() => history.length);
   for (const [name, path] of [
-    ['가이드', '/ko/guide'],
     ['채팅', '/ko/messages'],
     ['프로필', '/ko/settings'],
   ]) {
@@ -54,7 +58,7 @@ test('category chips navigate directly and native back restores the saved filter
   await page.setViewportSize({ width: 400, height: 844 });
   await page.goto('/ko?q=%ED%98%B8%EA%B7%B8&tab=unanswered');
   await expect.poll(nativeHost.isReady).toBe(true);
-  const chips = page.locator('.game-board-chips');
+  const chips = page.locator('.game-board-chips:visible');
   await expect(chips.getByRole('link')).toHaveCount(6);
   await expect.poll(nativeHost.hasOverlay).toBe(false);
   const length = await page.evaluate(() => history.length);
@@ -87,6 +91,17 @@ test('category chips navigate directly and native back restores the saved filter
     'aria-pressed',
     'true',
   );
+});
+
+test('guide opens from profile help and native back returns to the profile', async ({ page, nativeHost }) => {
+  await page.goto('/ko/settings');
+  await expect.poll(nativeHost.isReady).toBe(true);
+  await page.getByRole('main').getByRole('link', { name: '이용 가이드', exact: true }).click();
+  await expect.poll(nativeHost.currentPath).toBe('/ko/guide');
+  await expect(page.getByRole('article').getByRole('link')).toHaveCount(0);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect.poll(nativeHost.currentPath).toBe('/ko/settings');
+  expect(nativeHost.rootBacks()).toBe(0);
 });
 
 test('management routes are unavailable in the public web and native route parser', async ({

@@ -1,6 +1,9 @@
 import { Component, Suspense, type ReactNode } from 'react';
+
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
+
 interface IRegionBoundaryProps {
   children: ReactNode;
   onReset: () => void;
@@ -9,7 +12,7 @@ interface IRegionBoundaryState {
   failed: boolean;
 }
 class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryState> {
-  state = { failed: false };
+  override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
   }
@@ -17,7 +20,7 @@ class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryStat
     this.props.onReset();
     this.setState({ failed: false });
   };
-  render() {
+  override render() {
     if (this.state.failed)
       return (
         <div role="alert" className="admin-error">
@@ -33,8 +36,8 @@ class RegionBoundary extends Component<IRegionBoundaryProps, IRegionBoundaryStat
 export function AsyncBoundary({ children }: { children: ReactNode }) {
   return (
     <QueryErrorResetBoundary>
-      {({ reset }) => (
-        <RegionBoundary onReset={reset}>
+      {({ reset: onReset }) => (
+        <RegionBoundary onReset={onReset}>
           <Suspense fallback={<p role="status">불러오는 중</p>}>{children}</Suspense>
         </RegionBoundary>
       )}

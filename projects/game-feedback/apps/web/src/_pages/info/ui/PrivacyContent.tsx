@@ -1,4 +1,5 @@
 import { translate, type TLocale } from '@/shared/i18n/index.server';
+
 export function PrivacyContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   return (

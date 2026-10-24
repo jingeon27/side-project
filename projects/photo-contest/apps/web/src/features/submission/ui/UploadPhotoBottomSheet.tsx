@@ -1,26 +1,27 @@
 'use client';
 
+import { useEffect, useId, useRef, useState } from 'react';
+import Image from 'next/image';
+
 import { useMutation } from '@apollo/client/react';
 import { ImagePlus } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, useId, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 
 import {
+  CompleteSubmissionUploadDocument,
   CreateSubmissionDocument,
   RequestUploadDocument,
   SubmissionsDocument,
-  UploadSubmissionPhotoDocument,
 } from '@/shared/api/generated';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
-import { useZodForm } from '@/shared/model/form';
+import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
-import { BottomSheet } from '@/shared/ui/@core/bottom-sheet';
-import type { IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
+import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea } from '@/shared/ui/@core/text-field';
 
-import { ImagePrepareError, browserImageCodec, prepareUploadImage } from '../lib/image.helper';
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '../lib/image.helper';
 import { markContestSubmitted } from '../model/submission.cache';
 import { uploadPhotoSchema } from '../model/submission.schema';
 
@@ -49,8 +50,9 @@ export function UploadPhotoBottomSheet({
   const form = useZodForm(uploadPhotoSchema, {
     defaultValues: { photo: null, caption: '', rightsConfirmed: false },
   });
-  const [uploadPhoto] = useMutation(UploadSubmissionPhotoDocument);
-  const [requestUpload] = useMutation(RequestUploadDocument);
+  const [completeUpload] = useMutation(CompleteSubmissionUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestUploadDocument, { fetchPolicy: 'no-cache' });
   const [createSubmission] = useMutation(CreateSubmissionDocument, {
     update: (cache, { data }) => {
       if (data) markContestSubmitted(cache, contestId, data.createSubmission.id);
@@ -64,6 +66,7 @@ export function UploadPhotoBottomSheet({
       onClose();
     },
   });
+  const beginSubmit = useAbortOnClose(isOpen);
 
   useEffect(
     () => () => {
@@ -89,17 +92,28 @@ export function UploadPhotoBottomSheet({
         <form
           id={FORM_ID}
           onSubmit={form.handleSubmit(async ({ photo, caption, rightsConfirmed }) => {
+            const signal = beginSubmit();
             try {
               const image = await prepareUploadImage(photo, browserImageCodec);
-              const { data } = await requestUpload({ variables: { contestId } });
+              throwIfClosed(signal);
+              const { data } = await requestUpload({
+                variables: { contestId, contentType: image.body.type, byteSize: image.body.size },
+              });
               if (!data) return;
-              await uploadPhoto({ variables: { uploadId: data.requestUploadUrl.id, file: image.body } });
+              await uploadToStorage(data.requestUploadUrl, image.body, { signal });
+              await completeUpload({ variables: { uploadId: data.requestUploadUrl.id } });
+              // 제출은 되돌릴 수 없으므로 닫힌 시트에서는 보내지 않는다.
+              throwIfClosed(signal);
               await createSubmission({
                 variables: { contestId, uploadId: data.requestUploadUrl.id, caption, rightsConfirmed },
               });
             } catch (error) {
+              if (signal.aborted) {
+                notifyClosedSubmit('사진을 제출하지 않았어요');
+                return;
+              }
               // GraphQL 실패는 ErrorLink가 이미 알렸다. 사진 변환·업로드 실패만 여기서 알린다.
-              if (error instanceof ImagePrepareError)
+              if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
                 form.setError('photo', { message: error.message }, { shouldFocus: true });
             }
           })}

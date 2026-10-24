@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  skipToken,
-  useBackgroundQuery,
-  useFragment,
-  useMutation,
-  useQueryRefHandlers,
-  useReadQuery,
-  type QueryRef,
-} from '@apollo/client/react';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { skipToken, useBackgroundQuery, useFragment, useMutation, type QueryRef } from '@apollo/client/react';
 
 import {
   ApproveGroupJoinRequestDocument,
@@ -21,6 +12,7 @@ import {
   RejectGroupJoinRequestDocument,
   type GroupJoinRequestsQuery,
 } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { formatDateTime } from '@/shared/lib/format.helper';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { toast } from '@/shared/model/toast';
@@ -93,17 +85,10 @@ function JoinRequestRow({ id }: { id: string }) {
 }
 
 function RequestList({ queryRef }: { queryRef: QueryRef<GroupJoinRequestsQuery> }) {
-  const { data } = useReadQuery(queryRef);
-  const { fetchMore } = useQueryRefHandlers(queryRef);
-  const [pending, startTransition] = useTransition();
-  const [hasMore, setHasMore] = useState(true);
-  const firstId = data.groupJoinRequests[0]?.id;
-  const previous = useRef({ firstId, count: data.groupJoinRequests.length });
-  useEffect(() => {
-    if (previous.current.firstId !== firstId || data.groupJoinRequests.length < previous.current.count)
-      setHasMore(true);
-    previous.current = { firstId, count: data.groupJoinRequests.length };
-  }, [firstId, data.groupJoinRequests.length]);
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
+    select: (data) => data.groupJoinRequests,
+    pageSize: PAGE_SIZE,
+  });
   return (
     <>
       {data.groupJoinRequests.length ? (
@@ -115,22 +100,8 @@ function RequestList({ queryRef }: { queryRef: QueryRef<GroupJoinRequestsQuery> 
       ) : (
         <p className="py-5 text-body text-muted">대기 중인 가입 신청이 없어요.</p>
       )}
-      {hasMore && data.groupJoinRequests.length >= PAGE_SIZE ? (
-        <Button
-          variant="secondary"
-          size="md"
-          loading={pending}
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                const result = await fetchMore({ variables: { offset: data.groupJoinRequests.length } });
-                setHasMore(result.data.groupJoinRequests.length === PAGE_SIZE);
-              } catch {
-                /* 조회 경계에서 재시도한다. */
-              }
-            })
-          }
-        >
+      {hasNextPage ? (
+        <Button variant="secondary" size="md" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
           가입 신청 더 보기
         </Button>
       ) : null}
@@ -171,7 +142,7 @@ export function GroupJoinRequests({ groupId }: { groupId: string }) {
         </Button>
       </div>
       <p className="mt-1 text-caption text-muted">수락한 멤버만 이 그룹의 게시물을 볼 수 있어요.</p>
-      <AsyncBoundary fallback={fallback} onRetry={refetch}>
+      <AsyncBoundary fallback={fallback} onRetry={() => refetch()}>
         {queryRef ? <RequestList queryRef={queryRef} /> : fallback}
       </AsyncBoundary>
     </section>

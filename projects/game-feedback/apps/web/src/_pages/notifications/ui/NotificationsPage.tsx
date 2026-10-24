@@ -1,20 +1,28 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
+import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { ArrowUpRight, Bell, CheckCheck, LoaderCircle } from 'lucide-react';
+
 import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { Bell, CheckCheck, ArrowUpRight, LoaderCircle } from 'lucide-react';
+
 import { useSession } from '@/features/auth';
 import {
-  notificationListOptions,
   NotificationItem,
-  useReadNotificationMutation,
+  notificationListOptions,
+  notificationPath,
+  readNotificationMutationOptions,
 } from '@/features/notification';
-import { ErrorNotice, LoadingState, AsyncBoundary } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
+import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
+
+import { NotificationsTopbar } from './NotificationsTopbar';
+
 interface INotificationsPageProps {
   locale: string;
 }
-export function NotificationsPage({ locale }: INotificationsPageProps) {
+function NotificationsContent({ locale }: INotificationsPageProps) {
   const { t } = useI18n();
   const { session, login, loading } = useSession();
   if (loading) return <LoadingState />;
@@ -26,7 +34,7 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
         </span>
         <h1>{t('당신의 플레이에 도착한 소식')}</h1>
         <p>{t('로그인하면 새로운 피드백과 댓글을 확인할 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
+        <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
           {t('로그인하고 확인하기')}
           <ArrowUpRight size={16} />
         </Button>
@@ -39,9 +47,10 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
   );
 }
 function NotificationInbox({ userId, locale }: INotificationsPageProps & { userId: string }) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const query = useSuspenseInfiniteQuery(notificationListOptions(userId, { limit: 20 }));
-  const mutation = useReadNotificationMutation();
+  const mutation = useMutation(readNotificationMutationOptions(client));
   if (query.error && !query.isFetching) throw query.error;
   const items = query.data.pages.flatMap((page) => page.items) || [];
   return (
@@ -78,7 +87,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           <NotificationItem
             key={item.id}
             notification={item}
-            href={`/${locale}/posts/${item.postId}`}
+            href={notificationPath(locale, item)}
             onRead={() => mutation.mutate({ id: item.id })}
           />
         ))}
@@ -98,5 +107,13 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
         </Button>
       )}
     </>
+  );
+}
+
+export function NotificationsPage(props: Parameters<typeof NotificationsContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<NotificationsTopbar locale={props.locale} />}>
+      <NotificationsContent {...props} />
+    </CommunityPage>
   );
 }

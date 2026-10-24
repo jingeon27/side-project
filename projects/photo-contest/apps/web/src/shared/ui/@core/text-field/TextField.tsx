@@ -1,9 +1,10 @@
 import {
-  TextField as SharedTextField,
   TextArea as SharedTextArea,
-  type ITextFieldProps,
+  TextField as SharedTextField,
   type ITextAreaProps,
+  type ITextFieldProps,
 } from '@side/design-system';
+
 import { FieldRequirement } from './FieldRequirement';
 
 export type { ITextAreaProps, ITextFieldProps } from '@side/design-system';

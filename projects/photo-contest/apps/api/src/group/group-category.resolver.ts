@@ -1,6 +1,7 @@
 import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
+
 import type { IViewer } from '../auth/session.service';
-import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import { Viewer } from '../auth/viewer.decorator';
 import { GroupCategoryService } from './group-category.service';
 import type { IGroupNode } from './group.service';
 
@@ -8,9 +9,8 @@ import type { IGroupNode } from './group.service';
 export class GroupCategoryResolver {
   constructor(private readonly categoryService: GroupCategoryService) {}
   @ResolveField()
-  categories(@OptionalViewer() viewer: IViewer | null, @Parent() group: IGroupNode) {
-    if (!group.canViewPosts) return [];
-    return this.categoryService.list(viewer, group.id);
+  categories(@Parent() group: IGroupNode) {
+    return group.loadCategories();
   }
   @Mutation()
   createGroupCategory(

@@ -4,9 +4,9 @@ generator client {
 }
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
 }
 model User {
+  withdrawnAt DateTime?
   id String @id @default(cuid())
   googleSubject String? @unique
   demoKey String? @unique
@@ -17,7 +17,6 @@ model User {
   verifiedAt DateTime?
   bannedAt DateTime?
   banReason String?
-  withdrawnAt DateTime?
   supercellTag String?
   role String @default("USER")
   termsVersion String
@@ -42,7 +41,6 @@ model User {
   following UserFollow[] @relation("followFollower")
   followers UserFollow[] @relation("followAuthor")
   socialIdentities SocialIdentity[]
-  retainedIdentityRestrictions RetainedIdentityRestriction[]
 }
 model UserAvatar {
   userId String @id
@@ -62,10 +60,13 @@ model SocialIdentity {
   @@id([provider,subject])
   @@unique([userId,provider])
 }
-model RetainedIdentityRestriction {
-  identityHash String @id
+// Survives account deletion so a banned social login cannot onboard a fresh account.
+model BannedIdentity {
+  provider String
+  subjectHash String
   userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  @@id([provider,subjectHash])
   @@index([userId])
 }
 model UserFollow {
@@ -96,6 +97,7 @@ model OAuthAttempt {
   nonce String
   verifier String
   expiresAt DateTime
+  @@index([expiresAt])
 }
 model AppLoginTicket {
   provider String @default("google")
@@ -153,8 +155,10 @@ model PostView {
   postId String
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   visitorHash String
+  networkHash String?
   lastViewedAt DateTime @default(now())
   @@id([postId,visitorHash])
+  @@index([postId,networkHash,lastViewedAt])
 }
 model Answer {
   id String @id @default(cuid())
@@ -175,6 +179,10 @@ model Comment {
   id String @id @default(cuid())
   postId String
   post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
+  parentId String?
+  parent Comment? @relation("CommentReplies",fields:[parentId,postId],references:[id,postId],onDelete:NoAction,onUpdate:NoAction)
+  replies Comment[] @relation("CommentReplies")
+  notifications Notification[]
   authorId String
   author User @relation(fields:[authorId],references:[id],onDelete:Restrict)
   body String
@@ -183,7 +191,17 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
+  @@unique([id,postId])
+  @@index([parentId,postId])
 }
+model CacheInvalidation {
+  tag String @id
+  revision String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([updatedAt,tag])
+}
+
 model Notification {
   id String @id @default(cuid())
   actorId String?
@@ -192,11 +210,15 @@ model Notification {
   postId String
   post Post @relation(fields:[postId],references:[id],onDelete:Cascade)
   answerId String?
+  commentId String?
+  comment Comment? @relation(fields:[commentId],references:[id],onDelete:Cascade)
   type String
-  message String
+  // 알림 문구는 저장하지 않는다(actor·대상 id·유형만 둔다). 열은 추가형 migration 규칙에 따라 남긴다.
+  message String @default("")
   readAt DateTime?
   createdAt DateTime @default(now())
   @@index([userId,createdAt,id])
+  @@index([commentId])
 }
 model Report {
   id String @id @default(cuid())
@@ -209,6 +231,7 @@ model Report {
   status String @default("OPEN")
   createdAt DateTime @default(now())
   @@unique([reporterId,targetType,targetId])
+  @@index([status,createdAt,id])
 }
 model Block {
   id String @id @default(cuid())
@@ -327,6 +350,8 @@ model SupportConversation {
   conversation ChatConversation @relation(fields:[conversationId],references:[id],onDelete:Cascade)
   topic String
   status String @default("OPEN")
+  historyStartAt DateTime?
+  historyStartId String?
   createdAt DateTime @default(now())
   @@index([adminId,status,createdAt])
 }

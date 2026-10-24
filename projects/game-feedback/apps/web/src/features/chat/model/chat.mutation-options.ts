@@ -1,15 +1,17 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
+
+import { ApiError } from '@/shared/api';
+
 import {
+  clearHistory,
   markConversationRead,
   postChatMessage,
+  removeAttachment,
   startConversation,
   uploadAttachment,
-  removeAttachment,
-  clearHistory,
 } from '../api/chat.api';
 import { chatMessageOptions, conversationScopeOptions } from './chat.options';
 import type { IChatMessageInput } from './chat.types';
-import { ApiError } from '@/shared/api';
 
 export function createConversationMutationOptions(client: QueryClient, userId?: string) {
   return mutationOptions({

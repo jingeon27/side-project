@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../test/support/app';
-import type { ITestApi, ITestUser } from '../test/support/app';
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../test/support/app';
 
 const NO_STORE = 'private, no-store';
 const FORBIDDEN_ORIGIN = { message: '허용되지 않은 요청 출처입니다.' };
@@ -28,6 +27,7 @@ const WRONG_ORIGINS = [
 /** 로그인이 필요한 모든 GraphQL 연산. 인자는 형식만 맞춘 값이다. */
 const PROTECTED_OPERATIONS: Array<[string, string]> = [
   ['myGroups', '{ myGroups { id } }'],
+  ['completeSubmissionUpload', 'mutation{completeSubmissionUpload(uploadId:"upload")}'],
   ['requestGroupMembership', 'mutation { requestGroupMembership(groupId: "group") { id } }'],
   ['approveGroupJoinRequest', 'mutation { approveGroupJoinRequest(requestId: "request") }'],
   ['rejectGroupJoinRequest', 'mutation { rejectGroupJoinRequest(requestId: "request") }'],
@@ -42,7 +42,10 @@ const PROTECTED_OPERATIONS: Array<[string, string]> = [
     'createContest',
     'mutation { createContest(groupId: "group", title: "대회", startsAt: "2030-01-01T00:00:00Z", submissionEndsAt: "2030-01-02T00:00:00Z", endsAt: "2030-01-03T00:00:00Z") { id } }',
   ],
-  ['requestUploadUrl', 'mutation { requestUploadUrl(contestId: "contest") { id } }'],
+  [
+    'requestUploadUrl',
+    'mutation { requestUploadUrl(contestId: "contest", contentType:"image/png", byteSize:1) { id } }',
+  ],
   [
     'createSubmission',
     'mutation { createSubmission(contestId: "contest", uploadId: "upload", caption: "설명", rightsConfirmed: true) { id } }',
@@ -66,6 +69,24 @@ describe('HTTP 계약', () => {
 
   afterAll(async () => {
     await api?.close();
+  });
+
+  it('사용하지 않는 raw 게시물 업로드 경로를 등록하지 않아야 한다', async () => {
+    const response = await api
+      .http()
+      .post('/post-uploads/unused')
+      .set('Origin', TEST_WEB_ORIGIN)
+      .set('Content-Type', 'video/mp4');
+    expect(response.status).toBe(404);
+    expect(
+      (
+        await api
+          .http()
+          .post('/uploads/unused')
+          .set('Origin', TEST_WEB_ORIGIN)
+          .set('Content-Type', 'image/png')
+      ).status,
+    ).toBe(404);
   });
 
   describe('Origin 검사', () => {
@@ -244,25 +265,17 @@ describe('HTTP 계약', () => {
       expect(response.body).toEqual({ message: LOGIN_REQUIRED.message });
     });
 
-    it('비로그인 업로드는 401, 로그인했어도 엉터리 티켓은 403이어야 한다', async () => {
-      const anonymous = await api
-        .http()
-        .post('/uploads/garbage-token')
-        .set('Origin', TEST_WEB_ORIGIN)
-        .set('Content-Type', 'image/png')
-        .send(Buffer.from('photo'));
-      expect(anonymous.status).toBe(401);
-      expect(anonymous.body).toEqual({ message: LOGIN_REQUIRED.message });
-
-      const garbage = await api
-        .http()
-        .post('/uploads/garbage-token')
-        .set('Origin', TEST_WEB_ORIGIN)
-        .set('Cookie', user.cookie)
-        .set('Content-Type', 'image/png')
-        .send(Buffer.from('photo'));
-      expect(garbage.status).toBe(403);
-      expect(garbage.body).toEqual({ message: '업로드 요청이 만료되었거나 유효하지 않습니다.' });
+    it('삭제한 raw 업로드 경로는 로그인 여부와 관계없이 404여야 한다', async () => {
+      for (const cookie of ['', user.cookie]) {
+        const response = await api
+          .http()
+          .post('/uploads/garbage-token')
+          .set('Origin', TEST_WEB_ORIGIN)
+          .set('Cookie', cookie)
+          .set('Content-Type', 'image/png')
+          .send(Buffer.from('photo'));
+        expect(response.status).toBe(404);
+      }
     });
   });
 
@@ -326,7 +339,11 @@ describe('HTTP 계약', () => {
     });
 
     it('운영 모드에서는 introspection을 막고 오류에 stacktrace를 싣지 않아야 한다', async () => {
-      const production = await createTestApp({ NODE_ENV: 'production', WEB_ORIGIN: 'https://web.test' });
+      const production = await createTestApp({
+        NODE_ENV: 'production',
+        WEB_ORIGIN: 'https://web.test',
+        MOBILE_AUTH_CALLBACK_URL: 'https://web.test/app-auth/callback',
+      });
       try {
         const response = await production
           .http()

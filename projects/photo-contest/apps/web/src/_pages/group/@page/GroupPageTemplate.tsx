@@ -1,13 +1,13 @@
 'use client';
 
-import type { TGroupQueryRef } from './model/group-query.type';
+import type { ReactNode } from 'react';
 
 import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { ReactNode } from 'react';
 import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
 import { GroupMembershipButton, GroupNavigation } from '@/features/group';
+import { CreatePostButton } from '@/features/post';
 import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
@@ -16,7 +16,7 @@ import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 
-import { CreatePostButton } from '@/features/post';
+import type { TGroupQueryRef } from './model/group-query.type';
 import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
 import { GroupIdentity } from './ui/GroupIdentity';
 import { GroupSidebar } from './ui/GroupSidebar';
@@ -117,18 +117,18 @@ function GroupQuerySection({ id }: { id: string }) {
     <AsyncBoundary
       resetKey={id}
       fallback={<GroupLoading />}
-      onRetry={refetch}
-      renderError={(error, retry) => (
+      onRetry={() => refetch()}
+      renderError={(error, onRetry) => (
         <GroupFrame>
           {match(getErrorCode(error))
             .with(ERROR_CODE.Unauthenticated, () => <LoginPanel nextPath={ROUTES.GROUP(id)} />)
             .otherwise(() => (
-              <ErrorState message={getErrorMessage(error)} onRetry={retry} />
+              <ErrorState message={getErrorMessage(error)} onRetry={onRetry} />
             ))}
         </GroupFrame>
       )}
     >
-      <GroupContent id={id} groupRef={groupRef} onRefresh={refetch} />
+      <GroupContent id={id} groupRef={groupRef} onRefresh={() => refetch()} />
     </AsyncBoundary>
   );
 }

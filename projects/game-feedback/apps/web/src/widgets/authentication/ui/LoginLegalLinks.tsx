@@ -1,5 +1,7 @@
 'use client';
+
 import Link from 'next/link';
+
 import { useI18n } from '@/shared/i18n';
 
 export function LoginLegalLinks() {

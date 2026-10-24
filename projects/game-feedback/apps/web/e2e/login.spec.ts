@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const destination = '/ko/boards/coaching?coachingRole=STUDENT';
 async function configureProviders(page: Page) {
   await page.route('**/api/session', async (route) => {
@@ -29,11 +29,15 @@ test('mobile login is a dedicated page with branded buttons and returns to the o
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto(destination);
   await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+  const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
+  await expect(required).toBeVisible();
+  await expect(page).toHaveURL(destination);
+  await required.getByRole('button', { name: '로그인하기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   expect(new URL(page.url()).searchParams.get('returnTo')).toBe(destination);
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.locator('.mobile-nav')).toBeHidden();
-  await expect(page.locator('.shell-left-sidebar')).toBeHidden();
+  await expect(page.locator('.mobile-nav:visible')).toHaveCount(0);
+  await expect(page.locator('.shell-left-sidebar:visible')).toHaveCount(0);
   await expect(page.locator('.topbar:visible .header-account:visible')).toHaveCount(0);
   const buttons = page.locator('.social-login-button');
   await expect(buttons).toHaveCount(4);
@@ -83,6 +87,10 @@ test('desktop login stays in a centered dialog with focus recovery', async ({ pa
   await page.goto('/ko');
   const write = page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true });
   await write.click();
+  await page
+    .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
+    .getByRole('button', { name: '로그인하기', exact: true })
+    .click();
   const dialog = page.getByRole('dialog', { name: '로그인', exact: true });
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('.social-login-button')).toHaveCount(4);
@@ -120,6 +128,14 @@ test('login keeps destination through language changes and returns after session
 test('browser OAuth submits a validated login return path and unavailable providers stay disabled', async ({
   page,
 }) => {
+  await page.route('**/api/session', async (route) => {
+    const response = await route.fetch();
+    const session = await response.json();
+    await route.fulfill({
+      response,
+      json: { ...session, googleConfigured: false, socialProviders: [] },
+    });
+  });
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto('/ko/login?returnTo=https%3A%2F%2Foutside.test');
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();

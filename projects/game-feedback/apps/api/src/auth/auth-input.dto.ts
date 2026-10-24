@@ -1,11 +1,13 @@
-import {
-  DemoInputSchema,
-  TestLoginInputSchema,
-  AppExchangeInputSchema,
-  OnboardInputSchema,
-} from '@game-feedback/contracts';
-import { Length, Equals, IsString, Matches } from 'class-validator';
+import { Equals, IsString, Length, Matches } from 'class-validator';
 import type { z } from 'zod';
+
+import {
+  AppExchangeInputSchema,
+  DemoInputSchema,
+  OnboardInputSchema,
+  TestLoginInputSchema,
+} from '@game-feedback/contracts';
+
 import { Trim } from '../common/http/request-validation';
 
 export class DemoLoginDto {

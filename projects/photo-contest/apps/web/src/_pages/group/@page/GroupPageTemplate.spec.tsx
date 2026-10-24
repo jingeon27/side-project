@@ -17,7 +17,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
 }));
 
-const owner = { __typename: 'User' as const, id: 'owner', nickname: '그룹장', avatar: null };
+const owner = {
+  __typename: 'User' as const,
+  id: 'owner',
+  nickname: '그룹장',
+  avatar: null,
+  needsOnboarding: false,
+};
 
 function respond(name: string) {
   if (name === 'GalleryPosts') return { galleryPosts: [] };
@@ -38,6 +44,8 @@ describe('비공개 그룹 화면 SSR·hydration', () => {
         data: {
           group: {
             __typename: 'Group',
+            description: '',
+            avatarUrl: null,
             id: 'group-1',
             name: '비공개 웃음',
             visibility: GroupVisibility.Private,

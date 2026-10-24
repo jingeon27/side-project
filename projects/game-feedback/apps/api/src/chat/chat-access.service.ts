@@ -1,9 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
+
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { ChatEvents } from './chat.events';
 import { conversationInclude, type ConversationRow } from './chat.presenter';
+
 @Injectable()
 export class ChatAccessService {
   constructor(

@@ -1,8 +1,8 @@
+import type { InMemoryCache } from '@apollo/client';
 import { within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { GalleryPostsDocument, GroupRole, MyGroupsDocument, PostSort } from '@/shared/api/generated';
-import type { InMemoryCache } from '@apollo/client';
 
 import {
   createBrowserClient,
@@ -25,6 +25,8 @@ function seedMyGroups(cache: InMemoryCache) {
       myGroups: [
         {
           __typename: 'Group',
+          description: '',
+          avatarUrl: null,
           id: 'group-1',
           name: '우리 웃음',
           role: GroupRole.Member,

@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, type ReactNode } from 'react';
+
 import { Drawer } from '@base-ui/react/drawer';
-import { Maximize2, Minimize2, X } from 'lucide-react';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 
 import { cn } from '../../../lib/cn.helper';
 import { getOverlayContainer } from '../../../lib/overlay-container.helper';
@@ -14,16 +15,9 @@ interface IBottomSheetRootProps extends IOverlayControlProps {
   /** Header(제목 필수) → Content(스크롤) → Footer(고정) 순서로 넣는다. */
   children: ReactNode;
   className?: string;
-  /** 첫 높이로 열리고 드래그하거나 헤더 버튼으로 확장한다. 0~1은 화면 높이의 비율이다. */
+  /** 첫 높이로 열리고 헤더를 드래그해 조절한다. 0~1은 화면 높이의 비율이다. */
   snapPoints?: Drawer.Root.SnapPoint[];
 }
-
-interface IBottomSheetResizeContext {
-  expanded: boolean;
-  onToggle: () => void;
-}
-
-const BottomSheetResizeContext = createContext<IBottomSheetResizeContext | null>(null);
 
 /**
  * 아래에서 올라오는 시트. 열려 있는 동안 history 항목을 하나 차지해 브라우저·안드로이드 뒤로 가기가 시트를 먼저 닫는다.
@@ -33,14 +27,13 @@ function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBo
   useOverlayHistory(isOpen, onClose);
   const [snapPoint, setSnapPoint] = useState<Drawer.Root.SnapPoint | null>(snapPoints?.[0] ?? null);
   const resizable = Boolean(snapPoints && snapPoints.length > 1);
-  const expanded = snapPoint === snapPoints?.at(-1);
   return (
     <Drawer.Root
       open={isOpen}
       snapPoints={snapPoints}
       snapPoint={snapPoint}
       snapToSequentialPoints={resizable}
-      onSnapPointChange={setSnapPoint}
+      onSnapPointChange={(nextSnapPoint) => setSnapPoint(nextSnapPoint)}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -75,19 +68,7 @@ function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBo
               <div aria-hidden className="flex shrink-0 touch-none justify-center pt-2.5 pb-1">
                 <span className="h-1 w-10 rounded-full bg-line-strong" />
               </div>
-              <BottomSheetResizeContext
-                value={
-                  resizable
-                    ? {
-                        expanded,
-                        onToggle: () =>
-                          setSnapPoint(expanded ? (snapPoints?.[0] ?? null) : (snapPoints?.at(-1) ?? null)),
-                      }
-                    : null
-                }
-              >
-                {children}
-              </BottomSheetResizeContext>
+              {children}
             </Drawer.Popup>
           </Drawer.Viewport>
         </Drawer.Portal>
@@ -104,7 +85,6 @@ interface IBottomSheetHeaderProps {
 }
 
 function Header({ title, description, className }: IBottomSheetHeaderProps) {
-  const resize = useContext(BottomSheetResizeContext);
   return (
     <div className={cn('flex shrink-0 touch-none items-start gap-2 pr-2 pb-3 pl-5', className)}>
       <div className="min-w-0 flex-1 pt-2.5">
@@ -113,16 +93,6 @@ function Header({ title, description, className }: IBottomSheetHeaderProps) {
           <Drawer.Description className="mt-1 text-body text-muted">{description}</Drawer.Description>
         ) : null}
       </div>
-      {resize ? (
-        <IconButton
-          label={resize.expanded ? '시트 축소' : '시트 전체 화면으로 확장'}
-          aria-expanded={resize.expanded}
-          data-base-ui-swipe-ignore
-          onClick={() => resize.onToggle()}
-        >
-          {resize.expanded ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
-        </IconButton>
-      ) : null}
       <Drawer.Close render={<IconButton label="닫기" />}>
         <X className="size-5" />
       </Drawer.Close>

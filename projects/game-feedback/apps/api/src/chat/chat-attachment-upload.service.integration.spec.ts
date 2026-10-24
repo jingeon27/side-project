@@ -1,16 +1,20 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { MediaUploadPlanSchema } from '@game-feedback/contracts';
+
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
-import { S3Fixture, S3_FIXTURE_CREDENTIALS } from '../testing/s3-fixture';
-import { MediaStorage } from '../media-storage/media-storage.service';
+import { responseLocation } from '../testing/http-response';
+import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
@@ -39,7 +43,7 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
       { env: { ...process.env, DATABASE_URL: state.databaseUrl }, encoding: 'utf8' },
     );
     if (result.status !== 0) throw new Error(`Isolated migration failed: ${result.stdout}\n${result.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: state.databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(state.databaseUrl) });
     await seed(state.db, false);
     await s3.start();
     state.app = await createApp({
@@ -169,12 +173,12 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
         .expect(200)
     ).body;
     const content = await state.outsider.get(file.url).expect(307);
-    const signed = new URL(content.headers.location);
+    const signed = new URL(responseLocation(content));
     expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(content.headers['cache-control']).toBe('private, no-store');
     expect(Buffer.from(await (await fetch(signed)).arrayBuffer())).toEqual(png);
     const ranged = await state.outsider.get(file.url).set('Range', 'bytes=8-11').expect(307);
-    const bytes = await fetch(ranged.headers.location, { headers: { Range: 'bytes=8-11' } });
+    const bytes = await fetch(responseLocation(ranged), { headers: { Range: 'bytes=8-11' } });
     expect(bytes.status).toBe(206);
     expect(Buffer.from(await bytes.arrayBuffer())).toEqual(png.subarray(8, 12));
     const head = await state.outsider.head(file.url).expect(200);

@@ -1,19 +1,27 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button } from '@side/design-system';
+
 import { use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useBrowserSearch } from '@/shared/navigation';
+
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Plus, MessageSquare, LoaderCircle } from 'lucide-react';
-import { useSession } from '@/features/auth';
-import { postListOptions, PostCard, PostListSkeleton } from '@/features/post';
-import { AuthorLink, UserBadges } from '@/features/user';
-import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { ArrowUpRight, LoaderCircle, MessageSquare, Plus } from 'lucide-react';
+
 import { appRoutes } from '@game-feedback/bridge';
-import { FeedFilters } from './FeedFilters';
+import { Button } from '@side/design-system';
+
+import { useSession } from '@/features/auth';
+import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
+import { AuthorLink, UserBadges } from '@/features/user';
+import { useI18n } from '@/shared/i18n';
+import { useBrowserSearch } from '@/shared/navigation';
+import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
+
 import type { IFeedSnapshot } from '../model/feed-snapshot.type';
-export function FeedPage({
+import { FeedFilters } from './FeedFilters';
+import { FeedTopbar } from './FeedTopbar';
+
+function FeedContent({
   locale,
   initialFeed,
 }: {
@@ -21,11 +29,11 @@ export function FeedPage({
   initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
 }) {
   const { t } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const router = useRouter();
   function handleCompose() {
     if (!session?.user) {
-      login();
+      requireLogin();
       return;
     }
     router.push(appRoutes.compose(locale));
@@ -176,5 +184,13 @@ function FeedResults({
         </div>
       )}
     </>
+  );
+}
+
+export function FeedPage(props: Parameters<typeof FeedContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<FeedTopbar locale={props.locale} />}>
+      <FeedContent {...props} />
+    </CommunityPage>
   );
 }

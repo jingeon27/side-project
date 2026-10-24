@@ -1,14 +1,17 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
 import type { AddressInfo } from 'node:net';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app';
-import { seed } from '../seed';
+import { createPrismaAdapter } from '../database/prisma-adapter';
+import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, COOKIE, hash } from '../security';
+import { seed } from '../seed';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
@@ -121,17 +124,13 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     databaseUrl = target.toString();
     // Validate before applying the schema or creating a Prisma connection.
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      {
-        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
-        encoding: 'utf8',
-      },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0)
       throw new Error(`Isolated chat schema setup failed: ${migration.stderr}\n${migration.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
     await app.listen(0, '127.0.0.1');
@@ -172,6 +171,25 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     expect((await bob.agent.get('/api/conversations')).body.items).toHaveLength(1);
   });
 
+  it('shows an empty conversation only to the user who opened it until the first message', async () => {
+    const starter = await login('빈대화시작자');
+    const recipient = await login('빈대화상대방');
+    const room = (
+      await starter.agent
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: recipient.id })
+        .expect(200)
+    ).body;
+    const ids = (body: { items: Array<{ id: string }> }) => body.items.map(({ id }) => id);
+    expect(ids((await starter.agent.get('/api/conversations').expect(200)).body)).toEqual([room.id]);
+    expect(ids((await recipient.agent.get('/api/conversations').expect(200)).body)).toEqual([]);
+    await send(starter, room.id, '먼저 인사드려요.').expect(200);
+    const inbox = (await recipient.agent.get('/api/conversations').expect(200)).body;
+    expect(ids(inbox)).toEqual([room.id]);
+    expect(inbox.unreadCount).toBe(1);
+  });
+
   it('protects message reads, sends, and read receipts from nonparticipants', async () => {
     await outsider.agent.get(`/api/conversations/${conversationId}/messages`).expect(404);
     await send(outsider, conversationId, '참여자가 아닌 사용자의 메시지').expect(404);
@@ -191,6 +209,11 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
     expect(reloaded.items).toHaveLength(1);
     expect(reloaded.items[0].id).toBe(responses[0].body.id);
     expect(reloaded.conversation.unreadCount).toBe(1);
+    const inbox = (await bob.agent.get('/api/conversations').expect(200)).body;
+    expect(inbox.items.map((item: { id: string }) => item.id)).toEqual([conversationId]);
+    expect(inbox.items[0]).toMatchObject({ unreadCount: 1, lastMessage: { id: responses[0].body.id } });
+    expect(inbox.unreadCount).toBe(1);
+    expect((await alice.agent.get('/api/conversations')).body.items[0]).toMatchObject({ unreadCount: 0 });
     await send(alice, conversationId, '같은 식별자의 본문을 바꿀 수는 없습니다.', clientMessageId).expect(
       409,
     );

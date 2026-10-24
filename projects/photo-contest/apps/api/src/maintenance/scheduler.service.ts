@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 
 import { ContestCompletionService } from '../analytics/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';

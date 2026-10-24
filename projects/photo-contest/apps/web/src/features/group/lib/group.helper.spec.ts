@@ -2,7 +2,27 @@ import { describe, expect, it } from 'vitest';
 
 import { GroupRole, Phase } from '@/shared/api/generated';
 
-import { isGroupAdmin, isGroupOwner, splitContests } from './group.helper';
+import { canLeaveGroup, canRemoveMember, isGroupAdmin, isGroupOwner, splitContests } from './group.helper';
+
+describe('멤버 내보내기·나가기 권한', () => {
+  it('그룹장은 부관리자·멤버를, 부관리자는 일반 멤버만 내보내고 그룹장은 내보낼 수 없어야 한다', () => {
+    expect(canRemoveMember(GroupRole.Owner, GroupRole.Moderator)).toBe(true);
+    expect(canRemoveMember(GroupRole.Owner, GroupRole.Member)).toBe(true);
+    expect(canRemoveMember(GroupRole.Moderator, GroupRole.Member)).toBe(true);
+    expect(canRemoveMember(GroupRole.Moderator, GroupRole.Moderator)).toBe(false);
+    for (const viewer of [GroupRole.Owner, GroupRole.Moderator, GroupRole.Member, null])
+      expect(canRemoveMember(viewer, GroupRole.Owner)).toBe(false);
+    expect(canRemoveMember(GroupRole.Member, GroupRole.Member)).toBe(false);
+    expect(canRemoveMember(null, GroupRole.Member)).toBe(false);
+  });
+
+  it('그룹장이 아닌 멤버만 그룹을 나갈 수 있어야 한다', () => {
+    expect(canLeaveGroup(GroupRole.Member)).toBe(true);
+    expect(canLeaveGroup(GroupRole.Moderator)).toBe(true);
+    expect(canLeaveGroup(GroupRole.Owner)).toBe(false);
+    expect(canLeaveGroup(null)).toBe(false);
+  });
+});
 
 describe('group.helper', () => {
   it('관리자만 그룹 주인으로 봐야 한다', () => {

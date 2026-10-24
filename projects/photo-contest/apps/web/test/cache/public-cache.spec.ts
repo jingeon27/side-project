@@ -1,5 +1,12 @@
-import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 import type { APIRequestContext, Page } from '@playwright/test';
+
+import {
+  createTestImage,
+  createTestUser,
+  graphqlRequest,
+  uploadTestPostMedia,
+} from '@photo-contest/test-kit';
+
 import { expect, test } from '../../e2e/support/test';
 import { CACHE_API_URL, CACHE_WEB_ORIGIN } from './env';
 
@@ -15,21 +22,13 @@ async function product<T>(cookie: string, query: string, variables: Record<strin
 }
 
 async function upload(cookie: string, groupId: string) {
-  const { requestPostUpload: ticket } = await product<{ requestPostUpload: { id: string; url: string } }>(
+  return uploadTestPostMedia(CACHE_API_URL, {
     cookie,
-    'mutation($group:ID!){requestPostUpload(groupId:$group){id url}}',
-    { group: groupId },
-  );
-  expect(
-    (
-      await fetch(CACHE_API_URL + ticket.url.replace('/backend', ''), {
-        method: 'POST',
-        headers: { Cookie: cookie, Origin: CACHE_WEB_ORIGIN, 'Content-Type': 'image/png' },
-        body: new Uint8Array(await createTestImage()),
-      })
-    ).status,
-  ).toBe(201);
-  return ticket.id;
+    origin: CACHE_WEB_ORIGIN,
+    groupId,
+    body: await createTestImage(),
+    contentType: 'image/png',
+  });
 }
 
 const CREATE_POST =
@@ -208,7 +207,7 @@ test('사이트맵 캐시와 쓰기 뒤 갱신을 확인하고 비공개 글을 
   expect(await (await request.get('/sitemaps/groups/0.xml')).text()).not.toContain(secret.id);
 });
 
-test('프록시는 Origin·본문 한도를 지키고 업로드 스트림·인증 쿠키를 전달해야 한다', async ({ request }) => {
+test('프록시는 Origin·본문 한도·인증 쿠키를 지키고 직접 업로드 완료를 전달해야 한다', async ({ request }) => {
   const foreign = await request.post('/backend/graphql', {
     headers: { Origin: 'https://foreign.example' },
     data: { query: 'mutation{createGroup(name:"외부"){id}}' },
@@ -243,34 +242,36 @@ test('프록시는 Origin·본문 한도를 지키고 업로드 스트림·인�
     data: { query: 'mutation{createGroup(name:"스트림 검증"){id}}' },
   });
   const groupId: string = (await created.json()).data.createGroup.id;
+  const image = await createTestImage();
   const ticketResponse = await request.post('/backend/graphql', {
     headers: { Origin: CACHE_WEB_ORIGIN },
     data: {
-      query: 'mutation($group:ID!){requestPostUpload(groupId:$group){id}}',
-      variables: { group: groupId },
+      query:
+        'mutation($group:ID!,$size:Int!){requestPostUpload(groupId:$group,contentType:"image/png",byteSize:$size){id url fields{name value}}}',
+      variables: { group: groupId, size: image.length },
     },
   });
-  const uploadId: string = (await ticketResponse.json()).data.requestPostUpload.id;
+  const ticket: { id: string; url: string; fields: Array<{ name: string; value: string }> } = (
+    await ticketResponse.json()
+  ).data.requestPostUpload;
   const multipart = new FormData();
-  multipart.append(
-    'operations',
-    JSON.stringify({
-      query: 'mutation($id:ID!,$file:Upload!){uploadPostMedia(uploadId:$id,file:$file)}',
-      variables: { id: uploadId, file: null },
-    }),
-  );
-  multipart.append('map', JSON.stringify({ '0': ['variables.file'] }));
-  multipart.append(
-    '0',
-    new Blob([new Uint8Array(await createTestImage())], { type: 'image/png' }),
-    'stream.png',
-  );
-  const media = await request.post('/backend/graphql', {
-    headers: { Origin: CACHE_WEB_ORIGIN, 'Apollo-Require-Preflight': 'true' },
+  for (const field of ticket.fields) multipart.append(field.name, field.value);
+  multipart.append('file', new Blob([new Uint8Array(image)], { type: 'image/png' }), 'stream.png');
+  expect(new URL(ticket.url).origin).not.toBe(CACHE_WEB_ORIGIN);
+  const media = await request.post(ticket.url, {
+    headers: { Origin: CACHE_WEB_ORIGIN },
     multipart,
   });
-  expect(media.status(), await media.text()).toBe(200);
-  expect((await media.json()).data.uploadPostMedia).toBe(true);
+  expect(media.status(), await media.text()).toBe(204);
+  const completed = await request.post('/backend/graphql', {
+    headers: { Origin: CACHE_WEB_ORIGIN },
+    data: {
+      query: 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}',
+      variables: { id: ticket.id },
+    },
+  });
+  expect((await completed.json()).data.completePostUpload.id).toBe(ticket.id);
+  const uploadId = ticket.id;
   const post = await request.post('/backend/graphql', {
     headers: { Origin: CACHE_WEB_ORIGIN },
     data: {
@@ -278,5 +279,13 @@ test('프록시는 Origin·본문 한도를 지키고 업로드 스트림·인�
       variables: { group: groupId, upload: uploadId, title: '프록시 스트림 업로드' },
     },
   });
-  expect((await post.json()).errors).toBeUndefined();
+  const posted = await post.json();
+  expect(posted.errors).toBeUndefined();
+  // 프로덕션 프록시는 307과 캐시 금지를 그대로 넘기고 만료되는 서명 주소를 캐시하지 않는다.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const redirect = await request.get(`/backend/media/${posted.data.createPost.id}`, { maxRedirects: 0 });
+    expect(redirect.status()).toBe(307);
+    expect(redirect.headers()['cache-control']).toBe('private, no-store');
+    expect(new URL(redirect.headers()['location'] ?? '').searchParams.get('X-Amz-Expires')).toBe('60');
+  }
 });

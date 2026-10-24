@@ -1,16 +1,19 @@
-import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
 import { useEffect, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
 import { z } from 'zod';
+
 import {
+  discardChatAttachment,
+  removeChatAttachmentMutationOptions,
   sendChatMessageMutationOptions,
   uploadChatAttachmentMutationOptions,
-  removeChatAttachmentMutationOptions,
-  discardChatAttachment,
 } from '@/features/chat';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import { ApiError } from '@/shared/api';
 import { useZodForm } from '@/shared/model/form';
+
 import { useDesktopKeyboard } from './use-desktop-keyboard';
 
 const messageSchema = z.object({ body: z.string().trim().max(2000) });

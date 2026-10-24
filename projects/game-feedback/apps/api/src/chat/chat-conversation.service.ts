@@ -1,17 +1,18 @@
-import { type Conversation } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
+
+import { type Conversation } from '@game-feedback/contracts';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
-import { decodeCursor, encodeCursor } from '../common/pagination';
+import { decodeCursor, encodeCursor, nextPageAnchor } from '../common/pagination';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
-import { PrismaClient, Prisma } from '../generated/prisma';
+import { Prisma, PrismaClient } from '../generated/prisma';
 import { authorDto } from '../users/user.presenter';
 import { ChatAccessService } from './chat-access.service';
-import { historyWhere } from './chat-history';
 import { type CreateConversationDto } from './chat-input.dto';
-import { unreadWhere } from './chat-read.policy';
+import { unreadMessageSql, visibleMessageSql } from './chat-read.policy';
 import { ChatEvents } from './chat.events';
 import {
   conversationInclude,
@@ -20,6 +21,8 @@ import {
   userSelect,
   type ConversationRow,
 } from './chat.presenter';
+import { conversationPair } from './conversation-pair';
+
 @Injectable()
 export class ChatConversationService {
   constructor(
@@ -29,25 +32,52 @@ export class ChatConversationService {
     @Inject(ChatAccessService) private readonly access: ChatAccessService,
   ) {}
   async present(row: ConversationRow, userId: string): Promise<Conversation> {
-    const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
-    const [last, unreadCount] = await Promise.all([
-      this.db.chatMessage.findFirst({
-        where: { conversationId: row.id, ...historyWhere(row, userId) },
-        include: messageInclude,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      }),
-      this.db.chatMessage.count({ where: unreadWhere(row, userId) }),
-    ]);
-    const peerReadAt = row.firstUserId === userId ? row.secondReadAt : row.firstReadAt;
-    return {
-      id: row.id,
-      supportTopic: row.support?.topic === 'VERIFICATION' ? 'VERIFICATION' : row.support ? 'GENERAL' : null,
-      peer: authorDto(peer),
-      lastMessage: last ? messageDto(last) : null,
-      unreadCount,
-      updatedAt: row.updatedAt.toISOString(),
-      peerLastReadAt: peerReadAt?.toISOString() ?? null,
-    };
+    const [conversation] = await this.presentMany([row], userId);
+    if (!conversation) throw new ApiError(404, 'CONVERSATION_NOT_FOUND', '대화를 찾을 수 없습니다.');
+    return conversation;
+  }
+  /** 대화 수와 관계없이 마지막 메시지·미읽음 집계 쿼리 한 번과 메시지 조회 한 번으로 만든다. */
+  async presentMany(rows: ConversationRow[], userId: string): Promise<Conversation[]> {
+    if (!rows.length) return [];
+    const summaries = await this.db.$queryRaw<
+      Array<{ conversationId: string; lastMessageId: string | null; unreadCount: number }>
+    >`
+      SELECT c."id" AS "conversationId",
+        (
+          SELECT m."id" FROM "ChatMessage" m
+          WHERE m."conversationId" = c."id" AND ${visibleMessageSql(userId)}
+          ORDER BY m."createdAt" DESC, m."id" DESC
+          LIMIT 1
+        ) AS "lastMessageId",
+        (
+          SELECT COUNT(*)::int FROM "ChatMessage" m
+          WHERE m."conversationId" = c."id" AND ${unreadMessageSql(userId)}
+        ) AS "unreadCount"
+      FROM "ChatConversation" c
+      LEFT JOIN "SupportConversation" s ON s."conversationId" = c."id"
+      WHERE c."id" IN (${Prisma.join(rows.map((row) => row.id))})
+    `;
+    const byConversation = new Map(summaries.map((summary) => [summary.conversationId, summary]));
+    const lastIds = summaries.flatMap((summary) => (summary.lastMessageId ? [summary.lastMessageId] : []));
+    const messages = lastIds.length
+      ? await this.db.chatMessage.findMany({ where: { id: { in: lastIds } }, include: messageInclude })
+      : [];
+    const byId = new Map(messages.map((message) => [message.id, message]));
+    return rows.map((row) => {
+      const summary = byConversation.get(row.id);
+      const last = summary?.lastMessageId ? byId.get(summary.lastMessageId) : undefined;
+      const peer = row.firstUserId === userId ? row.secondUser : row.firstUser;
+      const peerReadAt = row.firstUserId === userId ? row.secondReadAt : row.firstReadAt;
+      return {
+        id: row.id,
+        supportTopic: row.support?.topic === 'VERIFICATION' ? 'VERIFICATION' : row.support ? 'GENERAL' : null,
+        peer: authorDto(peer),
+        lastMessage: last ? messageDto(last) : null,
+        unreadCount: summary?.unreadCount ?? 0,
+        updatedAt: row.updatedAt.toISOString(),
+        peerLastReadAt: peerReadAt?.toISOString() ?? null,
+      };
+    });
   }
   async conversation(req: SessionRequest, id: string) {
     const user = requireUser(req);
@@ -70,13 +100,16 @@ export class ChatConversationService {
     ) {
       throw new ApiError(404, 'RECIPIENT_UNAVAILABLE', '이 사용자와 대화를 시작할 수 없습니다.');
     }
-    const [firstUserId, secondUserId] = [user.id, recipientId].sort();
+    const { firstUserId, secondUserId } = conversationPair(user.id, recipientId);
+    const mine = firstUserId === user.id ? 'firstHidden' : 'secondHidden';
+    const peerSide = mine === 'firstHidden' ? 'secondHidden' : 'firstHidden';
     let row: ConversationRow;
     try {
+      // 메시지 없이 연 대화는 상대 목록에 보이지 않는다. 첫 메시지 전송이 양쪽 숨김을 푼다.
       row = await this.db.chatConversation.upsert({
         where: { firstUserId_secondUserId: { firstUserId, secondUserId } },
         update: {},
-        create: { firstUserId, secondUserId },
+        create: { firstUserId, secondUserId, [peerSide]: true },
         include: conversationInclude,
       });
     } catch (error) {
@@ -87,6 +120,16 @@ export class ChatConversationService {
         include: conversationInclude,
       });
     }
+    // 상대가 먼저 연 빈 대화를 나도 열면 내 목록에도 보이게 한다. 지운 기록 때문에 숨긴 대화는 그대로 둔다.
+    if (
+      row[mine] &&
+      !(await this.db.chatMessage.findFirst({ where: { conversationId: row.id }, select: { id: true } }))
+    )
+      row = await this.db.chatConversation.update({
+        where: { id: row.id },
+        data: { [mine]: false },
+        include: conversationInclude,
+      });
     // Recheck after a concurrent block or deletion before returning private metadata.
     await this.access.visible(user.id, row.id);
     void this.events.publish([user.id, recipientId], row.id);
@@ -140,17 +183,46 @@ export class ChatConversationService {
       take: query.limit + 1,
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
-    const items = await Promise.all(rows.slice(0, query.limit).map((row) => this.present(row, user.id)));
-    // The global unread badge includes every visible conversation, not only this page.
-    const all = await this.db.chatConversation.findMany({ where: base, include: conversationInclude });
-    const counts = await Promise.all(
-      all.map((row) => this.db.chatMessage.count({ where: unreadWhere(row, user.id) })),
-    );
-    const last = rows[Math.min(query.limit, rows.length) - 1];
+    const [items, unreadCount] = await Promise.all([
+      this.presentMany(rows.slice(0, query.limit), user.id),
+      this.unreadTotal(user.id, excluded),
+    ]);
+    const last = nextPageAnchor(rows, query.limit);
     return {
       items,
-      unreadCount: counts.reduce((sum, count) => sum + count, 0),
-      nextCursor: rows.length > query.limit ? encodeCursor({ id: last.id, createdAt: last.updatedAt }) : null,
+      unreadCount,
+      nextCursor: last ? encodeCursor({ id: last.id, createdAt: last.updatedAt }) : null,
     };
+  }
+  /**
+   * 전체 미읽음 배지는 이 페이지가 아니라 보이는 모든 대화의 합이다. 목록의 base 조건(숨김·테스트 계정·
+   * 차단·밴, 문의 예외)을 SQL로 옮겨 집계 쿼리 한 번으로 센다.
+   */
+  private async unreadTotal(userId: string, excluded: string[]) {
+    const includeTestAccounts = this.config.demoMode || this.config.testAuthEnabled;
+    const [total] = await this.db.$queryRaw<Array<{ count: number }>>`
+      SELECT COUNT(*)::int AS "count"
+      FROM "ChatConversation" c
+      JOIN "User" fu ON fu."id" = c."firstUserId"
+      JOIN "User" su ON su."id" = c."secondUserId"
+      LEFT JOIN "SupportConversation" s ON s."conversationId" = c."id"
+      JOIN "ChatMessage" m ON m."conversationId" = c."id"
+      WHERE (
+          (c."firstUserId" = ${userId} AND c."firstHidden" = false)
+          OR (c."secondUserId" = ${userId} AND c."secondHidden" = false)
+        )
+        AND ${includeTestAccounts ? Prisma.sql`TRUE` : Prisma.sql`fu."demoKey" IS NULL AND su."demoKey" IS NULL`}
+        AND (
+          s."id" IS NOT NULL
+          OR (
+            NOT (c."firstUserId" = ANY(${excluded}::text[]))
+            AND NOT (c."secondUserId" = ANY(${excluded}::text[]))
+            AND fu."bannedAt" IS NULL
+            AND su."bannedAt" IS NULL
+          )
+        )
+        AND ${unreadMessageSql(userId)}
+    `;
+    return total?.count ?? 0;
   }
 }

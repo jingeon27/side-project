@@ -1,5 +1,6 @@
 import type Quill from 'quill';
-import { RichTextDocumentSchema, type TRichTextDocument, type TPostMedia } from '@game-feedback/contracts';
+
+import { RichTextDocumentSchema, type TPostMedia, type TRichTextDocument } from '@game-feedback/contracts';
 
 export interface IEditorValue {
   body: string;
@@ -68,6 +69,23 @@ class QuillSession {
         },
       },
     });
+    // Quill batches its model while an IME composition is active, so ql-blank
+    // can remain set after the first visible character. Keep placeholder display
+    // independent of that batch without forcing a model update mid-composition.
+    this.editor.root.addEventListener(
+      'compositionstart',
+      () => {
+        this.editor?.root.setAttribute('data-composing', 'true');
+      },
+      { signal: this.lifetime.signal },
+    );
+    this.editor.root.addEventListener(
+      'compositionend',
+      () => {
+        queueMicrotask(() => this.editor?.root.removeAttribute('data-composing'));
+      },
+      { signal: this.lifetime.signal },
+    );
     this.editor.root.setAttribute('role', 'textbox');
     this.editor.root.setAttribute('aria-label', this.options.label);
     this.editor.root.setAttribute('aria-placeholder', this.placeholder);

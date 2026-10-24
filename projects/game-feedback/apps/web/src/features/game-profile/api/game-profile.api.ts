@@ -1,4 +1,5 @@
 import { getGameProfile, listGameAccounts, saveGameAccount } from '@game-feedback/sdk';
+
 import { withApiError, type GameProfile } from '@/shared/api';
 
 export function fetchGameProfile({
@@ -8,8 +9,8 @@ export function fetchGameProfile({
   playerTag: string;
   signal?: AbortSignal;
 }): Promise<GameProfile> {
-  // 생성 SDK의 경로 보간에는 인코딩이 없어 태그의 #이 URL fragment가 되지 않게 한다.
-  return withApiError(getGameProfile(encodeURIComponent(playerTag), { signal }));
+  // SDK는 경로 세그먼트의 #을 거부한다. API 계약(PlayerTagSchema)이 # 없는 태그를 같은 태그로 정규화한다.
+  return withApiError(getGameProfile(playerTag.trim().replace(/^#/, ''), { signal }));
 }
 export function fetchGameAccounts({ signal }: { signal?: AbortSignal } = {}): Promise<GameProfile[]> {
   return withApiError(listGameAccounts({ signal }));

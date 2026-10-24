@@ -1,7 +1,7 @@
-import { reportUnexpectedError } from '../../monitoring/sentry';
-import type { Request } from 'express';
 import { Catch, HttpException, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+
+import { reportUnexpectedError } from '../../monitoring/sentry';
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {

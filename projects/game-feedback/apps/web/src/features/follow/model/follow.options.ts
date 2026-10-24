@@ -1,5 +1,6 @@
 import { queryOptions, skipToken } from '@tanstack/react-query';
 import { compact } from 'es-toolkit';
+
 import { fetchFollowStatus } from '../api/follow.api';
 
 function followScope(viewerId?: string, userId?: string) {

@@ -1,13 +1,14 @@
 'use client';
 
 import type { ComponentProps, ReactNode } from 'react';
+
 import {
-  DialogRoot,
-  DialogPortal,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
+  DialogHeader,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
 } from './DialogParts';
 
 export interface IDialogProps {

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 
 const CREATE =
@@ -185,8 +186,9 @@ describe('그룹 카테고리와 게시물 분류', () => {
     const groupId = await group();
     const cat = await category(groupId);
     const post = await createPost(groupId);
+    // 비공개 그룹의 게시물은 비멤버에게 있는지도 알리지 않는다.
     expect(await api.gqlFail(outsider.cookie, SET, { postId: post.id, categoryId: cat.id })).toMatchObject({
-      code: 'FORBIDDEN',
+      code: 'NOT_FOUND',
     });
     await api.gqlOk(member.cookie, SET, { postId: post.id, categoryId: cat.id });
     expect(await api.gqlOk(moderator.cookie, SET, { postId: post.id, categoryId: null })).toEqual({

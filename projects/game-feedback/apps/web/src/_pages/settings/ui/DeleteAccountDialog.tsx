@@ -1,10 +1,15 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, Input } from '@side/design-system';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
-import { useDeleteAccount } from '@/features/auth';
+
+import { Button, Input } from '@side/design-system';
+
+import { deleteAccountMutationOptions } from '@/features/auth';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { ErrorNotice, Field, BottomSheet } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+
 import { deleteAccountSchema } from '../model/settings.schema';
 
 interface IDeleteAccountDialogProps {
@@ -12,17 +17,19 @@ interface IDeleteAccountDialogProps {
   onClose: () => void;
 }
 export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps) {
+  const client = useQueryClient();
+  const notify = useNotify();
   const { t } = useI18n();
   const form = useZodForm(deleteAccountSchema, { defaultValues: { confirmation: '' } });
   const confirmation = useWatch({ control: form.control, name: 'confirmation' });
-  const deletion = useDeleteAccount();
+  const deletion = useMutation(deleteAccountMutationOptions(client, notify));
   return (
     <BottomSheet
       open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
-      title={t('플레이메이트를 떠나시겠어요?')}
+      title={t('Game Mate를 떠나시겠어요?')}
       description={t('계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.')}
     >
       <form

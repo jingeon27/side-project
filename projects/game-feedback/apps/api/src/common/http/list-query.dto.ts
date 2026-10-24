@@ -1,8 +1,10 @@
-import { ListQuerySchema } from '@game-feedback/contracts';
+import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Length, Max, MaxLength, Min } from 'class-validator';
 import type { z } from 'zod';
+
+import { ListQuerySchema } from '@game-feedback/contracts';
+
 import { Trim } from './request-validation';
-import { Transform } from 'class-transformer';
 
 export class ListQueryDto {
   static readonly contract = ListQuerySchema;

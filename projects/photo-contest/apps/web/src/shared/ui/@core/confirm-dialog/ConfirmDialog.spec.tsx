@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ConfirmDialog } from './ConfirmDialog';
@@ -12,10 +12,10 @@ function renderOpener(onConfirm: () => unknown) {
       <button
         type="button"
         onClick={() =>
-          overlay.open(({ isOpen, close, unmount }) => (
+          overlay.open(({ isOpen, close: onClose, unmount }) => (
             <ConfirmDialog
               isOpen={isOpen}
-              onClose={close}
+              onClose={onClose}
               unmount={unmount}
               title="사진을 삭제할까요?"
               description="투표와 좋아요, 신고 기록도 함께 지워져요."

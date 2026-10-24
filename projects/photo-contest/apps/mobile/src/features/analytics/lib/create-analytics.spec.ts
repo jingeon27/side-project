@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createAnalytics, resolveIdentityChange } from './create-analytics';
-import type { TAnalyticsSdk } from './create-analytics';
+import { createAnalytics, resolveIdentityChange, type TAnalyticsSdk } from './create-analytics';
 
 const API_KEY = 'amplitude-test-key';
 
@@ -46,7 +45,7 @@ describe('createAnalytics', () => {
     expect(sdk.init).toHaveBeenCalledTimes(1);
     expect(sdk.init).toHaveBeenCalledWith(API_KEY, undefined, {
       autocapture: false,
-      trackingOptions: { adid: false, appSetId: false, idfv: false },
+      trackingOptions: { adid: false, appSetId: false, idfv: false, ipAddress: false },
     });
   });
 

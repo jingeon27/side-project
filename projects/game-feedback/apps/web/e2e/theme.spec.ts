@@ -1,6 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 async function background(page: Page) {
   return page.locator('body').evaluate((node) => getComputedStyle(node).backgroundColor);
 }
@@ -16,11 +16,13 @@ for (const width of [400, 1440]) {
     await expect(mode).toHaveText('기기 설정에 맞춤');
     const light = await background(page);
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect.poll(() => background(page)).not.toBe(light);
+    await expect.poll(() => background(page)).toBe('rgb(20, 19, 18)');
     const dark = await background(page);
     await mode.click();
     await page.getByRole('option', { name: '라이트 모드', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await expect(page.locator('[data-sonner-toast]')).toContainText('화면 모드를 변경했어요');
+    await expect(mode).toContainText('라이트 모드');
     await expect.poll(() => background(page)).toBe(light);
     await page.reload();
     await expect(mode).toHaveText('라이트 모드');
@@ -34,6 +36,9 @@ for (const width of [400, 1440]) {
     await expect(page.locator('.topbar').getByRole('combobox', { name: '화면 모드' })).toHaveCount(0);
     const write = page.locator('.feed-heading').getByRole('button', { name: '글쓰기', exact: true });
     await write.click();
+    const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
+    await expect(required).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await required.getByRole('button', { name: '로그인하기', exact: true }).click();
     const login = page.getByRole('dialog');
     if (width <= 760) {
       await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();

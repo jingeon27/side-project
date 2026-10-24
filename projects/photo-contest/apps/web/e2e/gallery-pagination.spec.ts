@@ -12,8 +12,9 @@ test('뒷페이지까지 읽은 뒤 삭제해도 남은 게시물을 계속 불�
   await expect(latest.getByRole('article')).toHaveCount(27);
   await latest
     .getByRole('article', { name: '페이지 0', exact: true })
-    .getByRole('button', { name: '페이지 0 삭제' })
+    .getByRole('button', { name: '페이지 0 더보기' })
     .click();
+  await page.getByRole('menuitem', { name: '삭제', exact: true }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: '게시물 삭제하기' }).click();
   await expect(latest.getByRole('article')).toHaveCount(24);
   await latest.getByRole('button', { name: '게시물 더 보기' }).click();

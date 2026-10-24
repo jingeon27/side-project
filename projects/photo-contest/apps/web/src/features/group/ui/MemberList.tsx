@@ -1,10 +1,10 @@
-import { GroupRole } from '@/shared/api/generated';
-import { MemberRoleActions } from './MemberRoleActions';
-import type { GroupQuery } from '@/shared/api/generated';
+import { GroupRole, type GroupQuery } from '@/shared/api/generated';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Badge } from '@/shared/ui/@core/badge';
 
-import { isGroupOwner } from '../lib/group.helper';
+import { canRemoveMember, isGroupOwner } from '../lib/group.helper';
+import { MemberRoleActions } from './MemberRoleActions';
+import { RemoveMemberButton } from './RemoveMemberButton';
 
 interface IMemberListProps {
   members: GroupQuery['group']['members'];
@@ -35,6 +35,9 @@ export function MemberList({ members, viewerId, groupId, viewerRole }: IMemberLi
               nickname={member.user.nickname}
               role={member.role}
             />
+          ) : null}
+          {groupId && member.user.id !== viewerId && canRemoveMember(viewerRole, member.role) ? (
+            <RemoveMemberButton groupId={groupId} userId={member.user.id} nickname={member.user.nickname} />
           ) : null}
         </li>
       ))}

@@ -3,7 +3,7 @@ import { ApolloProvider, useQuery } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { OverlayProvider, overlay } from 'overlay-kit';
+import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { submissionTypePolicies } from '@/features/submission';
@@ -13,10 +13,11 @@ import {
   HideSubmissionDocument,
   Phase,
   ReportSubmissionDocument,
-  SubmissionSort,
   SubmissionsDocument,
+  SubmissionSort,
+  type ContestQuery,
+  type SubmissionCardFragment,
 } from '@/shared/api/generated';
-import type { ContestQuery, SubmissionCardFragment } from '@/shared/api/generated';
 import { trackEvent } from '@/shared/model/analytics';
 import { toast } from '@/shared/model/toast';
 

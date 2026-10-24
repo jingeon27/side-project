@@ -1,5 +1,7 @@
-import { translate, type TLocale } from '@/shared/i18n/index.server';
 import Link from 'next/link';
+
+import { translate, type TLocale } from '@/shared/i18n/index.server';
+
 export function TermsContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   return (
@@ -12,7 +14,7 @@ export function TermsContent({ locale }: { locale: TLocale }) {
       <h2>{t('1. 서비스의 목적과 범위')}</h2>
       <p>
         {t(
-          '플레이메이트는 게임 플레이에 대한 피드백 요청, 답변, 댓글과 1:1 채팅을 나누는 커뮤니티입니다. 알파 기간에는 기능과 운영 방식이 변경될 수 있습니다. 다른 사용자의 조언은 의견이며 게임 결과를 보장하지 않습니다.',
+          'Game Mate는 게임 플레이에 대한 피드백 요청, 답변, 댓글과 1:1 채팅을 나누는 커뮤니티입니다. 알파 기간에는 기능과 운영 방식이 변경될 수 있습니다. 다른 사용자의 조언은 의견이며 게임 결과를 보장하지 않습니다.',
         )}
       </p>
       <h2>{t('2. 가입과 계정')}</h2>

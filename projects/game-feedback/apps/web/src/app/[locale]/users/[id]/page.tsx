@@ -1,11 +1,16 @@
-import { ProfileRoute, profileMetadata } from '@/_pages/profile/index.server';
+import { locale as rootLocale } from 'next/root-params';
+
 import { DocumentContent } from '@/_app/index.server';
+import { ProfileDocument, profileMetadata, ProfileRoute } from '@/_pages/profile/index.server';
+
 export { profileMetadata as generateMetadata };
-export default function Page(props: Parameters<typeof ProfileRoute>[0]) {
+export default async function Page(props: Parameters<typeof ProfileRoute>[0]) {
   return (
-    <DocumentContent>
-      <ProfileRoute {...props} />
-    </DocumentContent>
+    <ProfileDocument locale={await rootLocale()}>
+      <DocumentContent>
+        <ProfileRoute {...props} />
+      </DocumentContent>
+    </ProfileDocument>
   );
 }
 

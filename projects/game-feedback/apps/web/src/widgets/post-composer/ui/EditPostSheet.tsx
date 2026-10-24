@@ -1,27 +1,35 @@
 'use client';
-import { Button, Input } from '@side/design-system';
-import { LoaderCircle, Check } from 'lucide-react';
+
 import { useRouter } from 'next/navigation';
-import { useUpdatePostMutation } from '@/features/post';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Check, LoaderCircle } from 'lucide-react';
+
+import { Button, Input } from '@side/design-system';
+
 import { boardByKind } from '@/features/board';
+import { updatePostMutationOptions } from '@/features/post';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, Field, ErrorNotice, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+
 import { postComposerSchema } from '../model/post-composer.schema';
 import { postContentInput } from '../model/post-content-input';
 import { usePostMediaUpload } from '../model/use-post-media-upload';
 import { PostContentFields } from './PostContentFields';
+
 interface IEditPostSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   post: Post;
 }
 export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const router = useRouter();
   const notify = useNotify();
-  const update = useUpdatePostMutation();
+  const update = useMutation(updatePostMutationOptions(client));
   const { upload, handleUpload } = usePostMediaUpload();
   const form = useZodForm(postComposerSchema, {
     defaultValues: {

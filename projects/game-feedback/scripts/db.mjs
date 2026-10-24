@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile, unlink, open, access } from 'node:fs/promises';
-import { createServer, createConnection } from 'node:net';
-import { randomBytes } from 'node:crypto';
-import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { access, mkdir, open, readFile, unlink, writeFile } from 'node:fs/promises';
+import { createConnection, createServer } from 'node:net';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertNode, environment, projectDir, yarn } from './env.mjs';
+
 import { guardDatabaseUrl } from './database-guard.mjs';
+import { assertNode, environment, projectDir, yarn } from './env.mjs';
 
 const command = process.argv[2] ?? 'status';
 const isTest = process.argv.includes('--test');
@@ -192,14 +193,10 @@ async function serve() {
       );
       if (role.rows.some((row) => row.rolsuper || row.rolcreatedb || row.rolcreaterole))
         throw new Error('Service role unexpectedly has elevated privileges.');
-      if (!role.rowCount)
-        await client.query(
-          `CREATE ROLE ${client.escapeIdentifier(target.user)} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD ${client.escapeLiteral(target.password)}`,
-        );
-      else
-        await client.query(
-          `ALTER ROLE ${client.escapeIdentifier(target.user)} PASSWORD ${client.escapeLiteral(target.password)}`,
-        );
+      const roleStatement = role.rowCount
+        ? `ALTER ROLE ${client.escapeIdentifier(target.user)} PASSWORD`
+        : `CREATE ROLE ${client.escapeIdentifier(target.user)} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD`;
+      await client.query(`${roleStatement} ${client.escapeLiteral(target.password)}`);
       const database = await client.query(
         'SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1',
         [target.database],
@@ -248,27 +245,35 @@ async function serve() {
   }
 }
 
+async function stop() {
+  if (!(await control('stop'))) {
+    console.log(`No owned Game Feedback ${label} database is running.`);
+    return;
+  }
+  for (let n = 0; n < 80 && (await control('status')); n++) await delay(100);
+  if (await control('status')) throw new Error('Database shutdown is still pending.');
+  console.log(`Game Feedback ${label} database stopped; data retained.`);
+}
+
+async function status() {
+  const state = await control('status');
+  console.log(
+    state?.ready
+      ? `Game Feedback ${label} database is running on ${target.port}.`
+      : `Game Feedback ${label} database is stopped.`,
+  );
+}
+
+async function sync() {
+  await yarn(['workspace', '@game-feedback/api', 'prisma:sync'], { ...env, DATABASE_URL: databaseUrl });
+}
+
+const commands = { start, _serve: serve, stop, status, sync };
+
 try {
   assertNode();
-  if (command === 'start') await start();
-  else if (command === '_serve') await serve();
-  else if (command === 'stop') {
-    if (!(await control('stop'))) console.log(`No owned Game Feedback ${label} database is running.`);
-    else {
-      for (let n = 0; n < 80 && (await control('status')); n++) await delay(100);
-      if (await control('status')) throw new Error('Database shutdown is still pending.');
-      console.log(`Game Feedback ${label} database stopped; data retained.`);
-    }
-  } else if (command === 'status') {
-    const state = await control('status');
-    console.log(
-      state?.ready
-        ? `Game Feedback ${label} database is running on ${target.port}.`
-        : `Game Feedback ${label} database is stopped.`,
-    );
-  } else if (command === 'sync') {
-    await yarn(['workspace', '@game-feedback/api', 'prisma:sync'], { ...env, DATABASE_URL: databaseUrl });
-  } else throw new Error('Usage: db.mjs start|stop|status|sync [--test]');
+  if (!Object.hasOwn(commands, command)) throw new Error('Usage: db.mjs start|stop|status|sync [--test]');
+  await commands[command]();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;

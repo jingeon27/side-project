@@ -1,11 +1,16 @@
 import 'server-only';
+
 import type { MetadataRoute } from 'next';
-import { cacheLife } from 'next/cache';
+import { cacheLife, cacheTag } from 'next/cache';
+
+import { appRoutes } from '@game-feedback/bridge';
+import { DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
+
+import { gameBoards } from '@/features/board';
+import { getPublicCategories } from '@/features/category/index.server';
 import { getPublicPostList } from '@/features/post/index.server';
 import { getSeoConfig, pageUrl } from '@/shared/seo';
-import { getPublicCategories } from '@/features/category/index.server';
-import { appRoutes } from '@game-feedback/bridge';
-import { gameBoards } from '@/features/board';
+
 export function robots(): MetadataRoute.Robots {
   const { indexable, origin } = getSeoConfig();
   if (!indexable) return { rules: { userAgent: '*', disallow: '/' } };
@@ -13,7 +18,7 @@ export function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/*/messages', '/*/notifications', '/*/settings'],
+      disallow: ['/api/', '/app-auth/', '/*/messages', '/*/notifications', '/*/settings'],
     },
     sitemap: `${origin}/sitemap.xml`,
   };
@@ -62,6 +67,7 @@ async function collectPosts(
 }
 export async function dailySitemap(): Promise<MetadataRoute.Sitemap> {
   'use cache';
+  cacheTag(DISCOVERY_CACHE_TAG);
   cacheLife({ stale: 86_400, revalidate: 86_400, expire: 172_800 });
   return sitemap();
 }

@@ -1,14 +1,18 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { Home, MessageCircle } from 'lucide-react';
+
+import { resolveAppRoute } from '@game-feedback/bridge';
 import type { TBoardKind } from '@game-feedback/contracts';
+
+import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
+import { categoryOptions } from '@/features/category';
 import { useI18n } from '@/shared/i18n';
 import { TabLink as Link } from '@/shared/navigation';
-import { CircleHelp, MessageCircle, Home } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { categoryOptions } from '@/features/category';
+
 import { GameIcon } from './GameIcon';
-import { activeGameBoard, boardByKind, gameBoardPath } from '@/features/board';
-import { resolveAppRoute } from '@game-feedback/bridge';
+
 interface ILeftSidebarProps {
   home: string;
   path: string;
@@ -33,15 +37,6 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
         >
           <Home size={19} />
           {t('홈')}
-        </Link>
-        <Link
-          className={`side-link ${tab === 'guide' ? 'selected' : ''}`}
-          href={`${home}/guide`}
-          replace
-          aria-current={tab === 'guide' ? 'page' : undefined}
-        >
-          <CircleHelp size={19} />
-          {t('가이드')}
         </Link>
         <Link
           className={`side-link ${tab === 'messages' ? 'selected' : ''}`}

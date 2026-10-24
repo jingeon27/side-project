@@ -1,9 +1,15 @@
 'use client';
+
 import { useEffect, useRef } from 'react';
-import { useReadPostMutation } from '@/features/post';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { readPostMutationOptions } from '@/features/post';
 import type { PostDetail } from '@/shared/api';
+
 export function usePostRead(detail: PostDetail | undefined, userId?: string) {
-  const mutation = useReadPostMutation(),
+  const client = useQueryClient();
+  const mutation = useMutation(readPostMutationOptions(client)),
     read = useRef('');
   const id = detail?.post.id,
     isOwner = !!userId && detail?.post.author.id === userId;

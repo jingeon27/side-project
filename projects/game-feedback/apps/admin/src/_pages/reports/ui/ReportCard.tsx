@@ -1,13 +1,18 @@
-import { Button } from '@side/design-system';
-import { HideInputSchema } from '@game-feedback/contracts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { match } from 'ts-pattern';
-import { useReviewReportMutation, type TAdminReport } from '@/features/moderation';
+
+import { HideInputSchema } from '@game-feedback/contracts';
+import { Button } from '@side/design-system';
+
+import { reviewMutationOptions, type TAdminReport } from '@/features/moderation';
 import { adminUserPath } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
+
 import { ReportVisibilityActions } from './ReportVisibilityActions';
 
 export function ReportCard({ report }: { report: TAdminReport }) {
-  const review = useReviewReportMutation();
+  const client = useQueryClient();
+  const review = useMutation(reviewMutationOptions(client));
   const targetType = HideInputSchema.shape.targetType.safeParse(report.targetType);
   const status = match(report.status)
     .with('OPEN', () => '검토 대기')

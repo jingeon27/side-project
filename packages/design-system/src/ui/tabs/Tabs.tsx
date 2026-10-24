@@ -3,8 +3,9 @@
 
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { TStyledProps } from '../../lib/styled-props';
+
 import { cn } from '../../lib/cn.helper';
+import type { TStyledProps } from '../../lib/styled-props';
 
 function Tabs({ className, orientation = 'horizontal', ...props }: TStyledProps<TabsPrimitive.Root.Props>) {
   return (
@@ -68,7 +69,8 @@ function TabsContent({ className, ...props }: TStyledProps<TabsPrimitive.Panel.P
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      className={cn('flex-1 text-sm outline-none', className)}
+      // 포커스할 내용이 없으면 패널 자체가 Tab 순서에 들어가므로 키보드 포커스를 보이게 한다.
+      className={cn('flex-1 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50', className)}
       {...props}
     />
   );

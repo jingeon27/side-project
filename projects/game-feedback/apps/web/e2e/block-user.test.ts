@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+
+import { expect, test } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3301';
 const headers = { Origin: origin };

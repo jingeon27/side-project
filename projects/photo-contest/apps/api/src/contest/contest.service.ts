@@ -1,23 +1,24 @@
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
 import { Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'es-toolkit';
 
 import type { Contest } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { GROUP_CONTEST_HISTORY, TEXT_LIMIT } from '../config/limits';
-import type { TGroupRole } from '../group/group-role';
-import { isAdmin, toGroupRole } from '../group/group-role';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
+import { isAdmin, toGroupRole, type TGroupRole } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { SUBMISSION_SORT, submissionOrderBy } from '../submission/submission-sort';
-import type { ISubmissionView } from '../submission/submission.presenter';
-import { presentSubmission, submissionInclude } from '../submission/submission.presenter';
+import {
+  presentSubmission,
+  submissionInclude,
+  type ISubmissionView,
+} from '../submission/submission.presenter';
 import { contestDates, phase, PHASE } from './contest.policy';
 import { rankResults } from './result-ranking';
 

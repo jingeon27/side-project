@@ -6,14 +6,16 @@ x-api: &api
   PORT: '4200'
   TRUST_PROXY_HOPS: '1'
   WEB_ORIGIN: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}
+  # 앱 소셜 로그인 코드는 웹 origin의 검증된 https 앱 링크로만 보낸다.
+  MOBILE_AUTH_CALLBACK_URL: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}/app-auth/callback
   RDS_HOST: ${RDS_HOST:?Set RDS_HOST}
   DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
   ENABLE_DEV_LOGIN: 'false'
   ENABLE_TEST_API: 'false'
-  STORAGE_BACKEND: s3
   S3_BUCKET: ${PHOTO_CONTEST_S3_BUCKET:?Set PHOTO_CONTEST_S3_BUCKET}
   OTHER_SERVICE_S3_BUCKET: ${GAME_FEEDBACK_S3_BUCKET:?Set GAME_FEEDBACK_S3_BUCKET}
   S3_REGION: ap-northeast-2
+  S3_KEY_PREFIX: ${S3_KEY_PREFIX:-}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID}
   AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -70,6 +72,11 @@ services:
       NODE_OPTIONS: --max-old-space-size=384
       API_URL: http://pc-api:4200
       WEB_ORIGIN: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}
+      # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.
+      MOBILE_APPLE_TEAM_ID: ${MOBILE_APPLE_TEAM_ID:?Set MOBILE_APPLE_TEAM_ID}
+      MOBILE_IOS_BUNDLE_ID: ${MOBILE_IOS_BUNDLE_ID:?Set MOBILE_IOS_BUNDLE_ID}
+      MOBILE_ANDROID_PACKAGE: ${MOBILE_ANDROID_PACKAGE:?Set MOBILE_ANDROID_PACKAGE}
+      MOBILE_ANDROID_SHA256_FINGERPRINTS: ${MOBILE_ANDROID_SHA256_FINGERPRINTS:?Set MOBILE_ANDROID_SHA256_FINGERPRINTS}
     networks: { edge: { aliases: [pc-web] } }
     depends_on: { api: { condition: service_healthy } }
     healthcheck:
@@ -78,14 +85,19 @@ services:
           CMD,
           node,
           -e,
-          "fetch('http://127.0.0.1:3200/_health/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:3200/health-check/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 15s
       timeout: 4s
       retries: 8
       start_period: 20s
       start_interval: 1s
-    tmpfs: ['/app/projects/photo-contest/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700']
+    # Next writes only its data/image cache and /tmp at runtime. ISR re-renders it cannot persist under
+    # .next/server stay in the in-memory cache (Next logs "Failed to update prerender cache").
+    read_only: true
+    tmpfs:
+      - '/tmp:size=64m,mode=1777'
+      - '/app/projects/photo-contest/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700'
     mem_limit: 640m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
@@ -101,6 +113,8 @@ services:
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging: *logging
   migrate:
     profiles: [tools]
@@ -115,6 +129,8 @@ services:
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging: *logging
 networks:
   edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-photo-contest-edge' }

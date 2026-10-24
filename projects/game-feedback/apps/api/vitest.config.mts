@@ -10,7 +10,11 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
-          include: ['src/**/*.{spec,test}.ts', '../../scripts/**/*.{spec,test}.ts'],
+          include: [
+            'src/**/*.{spec,test}.ts',
+            'scripts/**/*.{spec,test}.ts',
+            '../../scripts/**/*.{spec,test}.ts',
+          ],
           exclude: integrationFiles,
         },
       },

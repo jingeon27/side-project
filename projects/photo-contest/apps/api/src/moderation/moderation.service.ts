@@ -1,14 +1,15 @@
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-
 import { Injectable } from '@nestjs/common';
 
 import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { textValue } from '../common/validation';
 import { TEXT_LIMIT } from '../config/limits';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
-import { PhotoStorage } from '../storage/photo-storage.service';
+import { reportUnexpectedError } from '../monitoring/sentry';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
+import { MediaStorage } from '../storage/media-storage.service';
 
 @Injectable()
 export class ModerationService {
@@ -16,14 +17,21 @@ export class ModerationService {
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
-    private readonly storage: PhotoStorage,
+    private readonly storage: MediaStorage,
+    private readonly limits: RateLimitService,
   ) {}
 
   /** 그룹 멤버 누구나. 같은 사람의 신고는 처음 한 건만 남는다. 숨긴 사진은 NOT_FOUND */
-  async report(viewer: IViewer, submissionId: string, reason: unknown): Promise<boolean> {
+  async report(
+    viewer: IViewer,
+    submissionId: string,
+    reason: unknown,
+    address: string | null = null,
+  ): Promise<boolean> {
     const { submission } = await this.membership.accessibleSubmission(viewer.id, submissionId);
     if (submission.hidden) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     const validReason = textValue(reason, TEXT_LIMIT.REPORT_REASON, '신고 이유');
+    await this.limits.consume('REPORT', { userId: viewer.id, address });
     await this.db.report.createMany({
       data: [{ submissionId, reporterId: viewer.id, reason: validReason }],
       skipDuplicates: true,
@@ -61,7 +69,13 @@ export class ModerationService {
       });
       return upload?.imageKey ?? null;
     });
-    if (imageKey) await this.storage.delete(imageKey);
+    if (!imageKey) return true;
+    // 삭제는 이미 커밋됐다. 파일 삭제 실패는 만료시킨 업로드 행을 정리 작업이 다시 지운다.
+    try {
+      await this.storage.delete(imageKey);
+    } catch (error) {
+      reportUnexpectedError(error, { operationName: 'deleteSubmission', location: 'media-cleanup' });
+    }
     return true;
   }
 }

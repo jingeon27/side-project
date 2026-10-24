@@ -1,11 +1,14 @@
 'use client';
 
-import { useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { useReadQuery, type QueryRef } from '@apollo/client/react';
+import { overlay } from 'overlay-kit';
 
 import { LogoutButton } from '@/features/auth';
 import type { MeQuery } from '@/shared/api/generated';
 import { Avatar } from '@/shared/ui/@core/avatar';
+import { Button } from '@/shared/ui/@core/button';
+
+import { EditProfileBottomSheet } from './EditProfileBottomSheet';
 
 export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
   const { data } = useReadQuery(viewerRef);
@@ -25,7 +28,18 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
           <h2 className="break-words text-title-lg text-ink">{viewer.nickname}</h2>
           <p className="mt-2 text-body text-muted">우리끼리 모은 순간을 다시 만나보세요.</p>
         </div>
-        <div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              overlay.open(({ isOpen, close, unmount }) => (
+                <EditProfileBottomSheet isOpen={isOpen} onClose={() => close()} unmount={unmount} />
+              ))
+            }
+          >
+            프로필 수정
+          </Button>
           <LogoutButton />
         </div>
       </div>

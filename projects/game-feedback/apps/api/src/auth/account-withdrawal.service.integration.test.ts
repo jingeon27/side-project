@@ -1,16 +1,28 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
+
 import type { INestApplication } from '@nestjs/common';
-import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
+
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
+import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
-import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
 import { SessionService } from './session.service';
+
+class TestGate {
+  resolve: () => void = () => undefined;
+  readonly promise = new Promise<void>((resolve) => {
+    this.resolve = resolve;
+  });
+}
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
@@ -22,10 +34,10 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
   let app: INestApplication;
   let adminToken: string;
 
-  const login = async (agent: TAgent, provider: TSocialProvider, subject: string) => {
+  const login = async (agent: TAgent, provider: TSocialProvider, subject: string, status = 302) => {
     const start = await agent.get(`/api/auth/social/${provider}`).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
-    await agent.get(`/api/auth/social/${provider}/callback`).query({ state, code: subject }).expect(302);
+    const state = new URL(responseLocation(start)).searchParams.get('state');
+    await agent.get(`/api/auth/social/${provider}/callback`).query({ state, code: subject }).expect(status);
   };
   const onboard = (agent: TAgent, nickname = '재가입 사용자') =>
     agent
@@ -61,7 +73,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     );
     if (migration.status !== 0)
       throw new Error(`Withdrawal migration failed: ${migration.stdout}\n${migration.stderr}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({
       databaseUrl,
@@ -157,7 +169,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     });
     expect(await db.socialIdentity.count({ where: { userId: user.id } })).toBe(0);
     expect(await db.session.count({ where: { userId: user.id } })).toBe(0);
-    expect(await db.retainedIdentityRestriction.count({ where: { userId: user.id } })).toBe(0);
+    expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(0);
     expect((await user.agent.get('/api/session').expect(200)).body.user).toBeNull();
     await peer.agent.get(`/api/users/${user.id}`).expect(404);
     await peer.agent.get(`/api/posts/${ownPost.id}`).expect(404);
@@ -178,52 +190,45 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     expect(rejoined.body.user.bannedAt).toBeNull();
   });
 
-  it('밴된 Google 사용자는 반복 탈퇴·재가입 후에도 제한되고 관리자 해제는 새 세션에 적용되어야 한다', async () => {
+  it('제재 중에는 문의할 수 있지만 탈퇴한 소셜 계정으로 새 계정을 만들 수 없어야 한다', async () => {
     const user = await account();
     await ban(user.id, true);
-    for (let attempt = 0; attempt < 2; attempt++) {
-      await withdraw(user.agent);
-      const restrictions = await db.retainedIdentityRestriction.findMany({ where: { userId: user.id } });
-      expect(restrictions).toHaveLength(1);
-      expect(restrictions[0]?.identityHash).toMatch(/^[a-f0-9]{64}$/);
-      expect(JSON.stringify(restrictions)).not.toContain(user.subject);
-      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).googleSubject).toBeNull();
-      await login(user.agent, 'google', user.subject);
-      const rejoined = await onboard(user.agent);
-      expect(rejoined.body.user).toMatchObject({ id: user.id, bannedAt: expect.any(String) });
-      await user.agent.post('/api/posts').set('Origin', origin).send(postInput).expect(403);
-      await user.agent
-        .post('/api/support/conversations')
-        .set('Origin', origin)
-        .send({ topic: 'GENERAL' })
-        .expect(200);
-    }
-    await ban(user.id, false);
-    expect(await db.retainedIdentityRestriction.count({ where: { userId: user.id } })).toBe(0);
-    expect((await user.agent.get('/api/session').expect(200)).body.user.bannedAt).toBeNull();
-    await user.agent.post('/api/posts').set('Origin', origin).send(postInput).expect(200);
+    await user.agent
+      .post('/api/support/conversations')
+      .set('Origin', origin)
+      .send({ topic: 'GENERAL' })
+      .expect(200);
+    await withdraw(user.agent);
+    const restrictions = await db.bannedIdentity.findMany({ where: { userId: user.id } });
+    expect(restrictions).toHaveLength(1);
+    expect(restrictions[0]?.subjectHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(restrictions)).not.toContain(user.subject);
+    await login(user.agent, 'google', user.subject, 403);
+    await user.agent
+      .post('/api/auth/onboard')
+      .set('Origin', origin)
+      .send({ nickname: '재가입', acceptedTerms: true, ageConfirmed: true })
+      .expect(401);
+    expect(await db.socialIdentity.count({ where: { userId: user.id } })).toBe(0);
   });
 
-  it('여러 provider로 연결된 제재는 같은 계정과 관리자 해제 상태를 공유해야 한다', async () => {
+  it('연결된 여러 제공자의 제재를 보존하고 관리자 해제 후 새 계정으로 가입해야 한다', async () => {
     const user = await account('discord');
     const googleSubject = randomBytes(16).toString('hex');
     await db.socialIdentity.create({ data: { provider: 'google', subject: googleSubject, userId: user.id } });
     await db.user.update({ where: { id: user.id }, data: { googleSubject } });
     await ban(user.id, true);
     await withdraw(user.agent);
-    expect(await db.retainedIdentityRestriction.count({ where: { userId: user.id } })).toBe(2);
-    await login(user.agent, 'google', googleSubject);
-    expect((await onboard(user.agent)).body.user).toMatchObject({
-      id: user.id,
-      bannedAt: expect.any(String),
-    });
+    expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(2);
+    await login(user.agent, 'google', googleSubject, 403);
     const discord = supertest.agent(app.getHttpServer());
-    await login(discord, 'discord', user.subject);
-    expect((await onboard(discord)).body.user.id).toBe(user.id);
+    await login(discord, 'discord', user.subject, 403);
     await ban(user.id, false);
-    expect((await discord.get('/api/session').expect(200)).body.user.bannedAt).toBeNull();
-    expect((await user.agent.get('/api/session').expect(200)).body.user.bannedAt).toBeNull();
-    expect(await db.retainedIdentityRestriction.count({ where: { userId: user.id } })).toBe(0);
+    expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(0);
+    await login(discord, 'discord', user.subject);
+    const rejoined = await onboard(discord);
+    expect(rejoined.body.user.id).not.toBe(user.id);
+    expect(rejoined.body.user.bannedAt).toBeNull();
   });
 
   it('탈퇴 중인 계정도 기존 사용자 id로 제재를 해제할 수 있어야 한다', async () => {
@@ -246,7 +251,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ banned: true, reason: '탈퇴와 동시에 요청한 제재' })
       .expect(409);
-    expect(await db.retainedIdentityRestriction.count({ where: { userId: user.id } })).toBe(0);
+    expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(0);
   });
 
   it('레거시 Google 계정도 소셜 identity 행 없이 제재를 유지해야 한다', async () => {
@@ -254,18 +259,15 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     await db.socialIdentity.deleteMany({ where: { userId: user.id } });
     await ban(user.id, true);
     await withdraw(user.agent);
-    await login(user.agent, 'google', user.subject);
-    expect((await onboard(user.agent)).body.user).toMatchObject({
-      id: user.id,
-      bannedAt: expect.any(String),
-    });
+    expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(1);
+    await login(user.agent, 'google', user.subject, 403);
   });
 
   it('탈퇴 요청이 세션을 읽은 뒤 관리자가 밴을 확정해도 최신 제재를 보존해야 한다', async () => {
     const user = await account();
-    const gate = Promise.withResolvers<void>();
-    const locked = Promise.withResolvers<void>();
-    const loaded = Promise.withResolvers<void>();
+    const gate = new TestGate();
+    const locked = new TestGate();
+    const loaded = new TestGate();
     const moderator = db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
       await tx.user.update({
@@ -296,11 +298,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
       await moderator;
       spy.mockRestore();
     }
-    expect(await db.retainedIdentityRestriction.count({ where: { userId: user.id } })).toBe(1);
-    await login(user.agent, 'google', user.subject);
-    expect((await onboard(user.agent)).body.user).toMatchObject({
-      id: user.id,
-      bannedAt: expect.any(String),
-    });
+    expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(1);
+    await login(user.agent, 'google', user.subject, 403);
   });
 });

@@ -3,8 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Response } from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
-import type { ITestApi } from '../../test/support/app';
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../test/support/app';
 import {
   cookieAttributes,
   cookiePair,
@@ -26,7 +25,9 @@ const KAKAO = {
 const STATE_COOKIE = 'contest_oauth_state';
 const SESSION_COOKIE = 'contest_session';
 const WEB_LOGIN_ERROR = `${TEST_WEB_ORIGIN}/?loginError=1`;
-const APP_LOGIN_ERROR = 'photocontest://auth/callback?error=login_failed';
+/** 개발·테스트의 기본 앱 로그인 콜백: WEB_ORIGIN의 검증된 https 링크 경로 */
+const APP_CALLBACK_URL = `${TEST_WEB_ORIGIN}/app-auth/callback`;
+const APP_LOGIN_ERROR = `${APP_CALLBACK_URL}?error=login_failed`;
 const APP_LOGIN_REJECTED = { message: '앱 로그인 요청을 확인할 수 없습니다.' };
 const INVALID_APP_CHALLENGE = { message: '앱 로그인 요청 형식이 올바르지 않습니다.' };
 
@@ -98,14 +99,14 @@ describe('OAuth와 앱 로그인', () => {
     return api.http().post('/auth/app/exchange').set('Origin', TEST_WEB_ORIGIN).send(body);
   }
 
-  /** 앱이 시작한 OAuth를 끝까지 진행해 앱 scheme으로 받은 일회용 코드를 돌려준다. */
+  /** 앱이 시작한 OAuth를 끝까지 진행해 앱 로그인 콜백으로 받은 일회용 코드를 돌려준다. */
   async function appLoginCode(verifier: string, sub: string) {
     const start = await startLogin('google', { app_challenge: pkceChallenge(verifier) });
     stubGoogle({ sub, name: '앱 친구' });
     const response = await callback('google', { state: start.state, code: 'provider-code' }, start.cookie);
     expect(response.status).toBe(302);
     const location = new URL(locationOf(response));
-    expect(`${location.protocol}//${location.host}${location.pathname}`).toBe('photocontest://auth/callback');
+    expect(`${location.origin}${location.pathname}`).toBe(APP_CALLBACK_URL);
     return location.searchParams.get('code') ?? '';
   }
 
@@ -163,7 +164,7 @@ describe('OAuth와 앱 로그인', () => {
 
       const response = await callback('google', { state: start.state, code: 'mock-code' }, start.cookie);
       expect(response.status).toBe(302);
-      expect(response.headers.location).toBe(`${TEST_WEB_ORIGIN}/`);
+      expect(response.headers.location).toBe(`${TEST_WEB_ORIGIN}/onboarding`);
 
       const [tokenCall, profileCall] = calls;
       expect(tokenCall?.url).toBe(GOOGLE.token);
@@ -195,6 +196,42 @@ describe('OAuth와 앱 로그인', () => {
       const reused = await callback('google', { state: start.state, code: 'mock-code' }, start.cookie);
       expect(reused.headers.location).toBe(WEB_LOGIN_ERROR);
       expect(findSetCookie(reused, SESSION_COOKIE)).toBeUndefined();
+    });
+
+    it('처음에는 소셜 이름·사진을 쓰고 가입 후 수정한 프로필은 다시 로그인해도 보존해야 한다', async () => {
+      stubGoogle({
+        sub: 'google-onboarding-profile',
+        name: '소셜 기본 이름',
+        picture: 'https://provider.example/avatar.png',
+      });
+      const start = await startLogin('google');
+      const first = await callback('google', { state: start.state, code: 'first' }, start.cookie);
+      const cookie = cookiePair(findSetCookie(first, SESSION_COOKIE)!);
+      expect(await api.gqlOk(cookie, '{me{nickname avatar needsOnboarding}}')).toEqual({
+        me: {
+          nickname: '소셜 기본 이름',
+          avatar: 'https://provider.example/avatar.png',
+          needsOnboarding: true,
+        },
+      });
+      await api.gqlOk(
+        cookie,
+        'mutation{completeOnboarding(nickname:"내 이름",removeAvatar:true,acceptedTerms:true){id}}',
+      );
+      stubGoogle({
+        sub: 'google-onboarding-profile',
+        name: '제공자가 다시 준 이름',
+        picture: 'https://provider.example/changed.png',
+      });
+      const again = await startLogin('google');
+      const next = await callback('google', { state: again.state, code: 'second' }, again.cookie);
+      expect(next.headers.location).toBe(`${TEST_WEB_ORIGIN}/`);
+      expect(
+        await api.gqlOk(
+          cookiePair(findSetCookie(next, SESSION_COOKIE)!),
+          '{me{nickname avatar needsOnboarding}}',
+        ),
+      ).toEqual({ me: { nickname: '내 이름', avatar: null, needsOnboarding: false } });
     });
 
     it('다른 provider의 같은 이메일 계정을 합치지 않아야 한다', async () => {
@@ -324,7 +361,7 @@ describe('OAuth와 앱 로그인', () => {
       expect(response.body).toEqual({ message: '이 소셜 로그인은 아직 설정되지 않았습니다.' });
     });
 
-    it('콜백이 성공하면 세션 대신 2분짜리 일회용 코드를 앱 scheme으로 넘겨야 한다', async () => {
+    it('콜백이 성공하면 세션 대신 2분짜리 일회용 코드를 앱 로그인 콜백으로 넘겨야 한다', async () => {
       const verifier = newVerifier();
       const start = await startLogin('google', { app_challenge: pkceChallenge(verifier) });
       stubGoogle({ sub: 'google-app-user', name: '앱 사용자' });
@@ -332,7 +369,8 @@ describe('OAuth와 앱 로그인', () => {
       const response = await callback('google', { state: start.state, code: 'provider-code' }, start.cookie);
       expect(response.status).toBe(302);
       const location = new URL(locationOf(response));
-      expect(response.headers.location).toMatch(/^photocontest:\/\/auth\/callback\?code=[A-Za-z0-9_-]{43}$/);
+      expect(locationOf(response).slice(0, APP_CALLBACK_URL.length + 6)).toBe(`${APP_CALLBACK_URL}?code=`);
+      expect(locationOf(response).slice(APP_CALLBACK_URL.length + 6)).toMatch(/^[A-Za-z0-9_-]{43}$/);
       expect(findSetCookie(response, SESSION_COOKIE)).toBeUndefined();
       expect(isClearingCookie(findSetCookie(response, STATE_COOKIE)!)).toBe(true);
 
@@ -348,7 +386,7 @@ describe('OAuth와 앱 로그인', () => {
       expect(await api.db.session.count({ where: { userId: user.id } })).toBe(0);
     });
 
-    it('앱에서 시작한 시도가 실패하면 앱 scheme으로 오류를 보내야 한다', async () => {
+    it('앱에서 시작한 시도가 실패하면 앱 로그인 콜백으로 오류를 보내야 한다', async () => {
       const failing = await startLogin('google', { app_challenge: pkceChallenge(newVerifier()) });
       stubExternalFetch({ [GOOGLE.token]: () => jsonResponse({ error: 'invalid_grant' }, 400) });
       const providerFailure = await callback(
@@ -374,23 +412,6 @@ describe('OAuth와 앱 로그인', () => {
         expired.cookie,
       );
       expect(expiredCallback.headers.location).toBe(APP_LOGIN_ERROR);
-    });
-
-    it('MOBILE_APP_SCHEME을 따르되 웹 scheme이나 틀린 형식이면 기본 scheme을 써야 한다', async () => {
-      const expectations: Array<[string, string]> = [
-        ['contestapp', 'contestapp://auth/callback?code='],
-        ['https', 'photocontest://auth/callback?code='],
-        ['Contest_App', 'photocontest://auth/callback?code='],
-      ];
-      for (const [scheme, prefix] of expectations) {
-        vi.stubEnv('MOBILE_APP_SCHEME', scheme);
-        const start = await startLogin('google', { app_challenge: pkceChallenge(newVerifier()) });
-        stubGoogle({ sub: 'google-scheme-user', name: '스킴 사용자' });
-        const response = await callback('google', { state: start.state, code: 'code' }, start.cookie);
-        const location = locationOf(response);
-        expect(location.slice(0, prefix.length), scheme).toBe(prefix);
-        expect(location.slice(prefix.length), scheme).toMatch(/^[A-Za-z0-9_-]{43}$/);
-      }
     });
 
     it('교환은 verifier가 맞으면 세션 쿠키를 만들고 코드를 한 번만 쓰게 해야 한다', async () => {
@@ -461,13 +482,16 @@ describe('OAuth와 앱 로그인', () => {
       expect(responses.filter((response) => findSetCookie(response, SESSION_COOKIE))).toHaveLength(1);
     });
 
-    it('운영 모드에서 교환한 세션 쿠키는 Secure여야 한다', async () => {
+    it('운영 모드에서 교환한 세션 쿠키는 Secure인 __Host- 쿠키여야 한다', async () => {
       const verifier = newVerifier();
       const code = await appLoginCode(verifier, 'google-secure-exchange');
       vi.stubEnv('NODE_ENV', 'production');
       const response = await exchange({ code, verifier });
       expect(response.status).toBe(200);
-      expect(cookieAttributes(findSetCookie(response, SESSION_COOKIE)!)).toContain('Secure');
+      expect(findSetCookie(response, SESSION_COOKIE)).toBeUndefined();
+      const attributes = cookieAttributes(findSetCookie(response, `__Host-${SESSION_COOKIE}`)!);
+      expect(attributes).toEqual(expect.arrayContaining(['Secure', 'Path=/']));
+      expect(attributes.some((attribute) => attribute.startsWith('Domain='))).toBe(false);
     });
   });
 });

@@ -1,9 +1,10 @@
-import { cva } from 'class-variance-authority';
-import type { VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
+
+import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../../lib/cn.helper';
 
+/** 모든 tone은 라이트·다크 모드에서 글자 대비 4.5:1 이상을 유지한다(Badge.test.tsx). */
 const badgeVariants = cva(
   'inline-flex h-6 shrink-0 items-center gap-1 rounded-badge px-2 text-micro whitespace-nowrap',
   {
@@ -14,9 +15,10 @@ const badgeVariants = cva(
         neutral: 'bg-neutral-soft text-muted',
         danger: 'bg-danger-soft text-danger',
         info: 'bg-info-soft text-info',
-        gold: 'bg-gold text-ink',
-        silver: 'bg-silver text-ink',
-        bronze: 'bg-bronze text-ink',
+        /* 메달 배경은 다크 모드에서도 밝으므로 모드에 따라 바뀌는 ink 대신 고정 글자색을 쓴다. */
+        gold: 'bg-gold text-on-medal',
+        silver: 'bg-silver text-on-medal',
+        bronze: 'bg-bronze text-on-medal',
       },
     },
     defaultVariants: { tone: 'neutral' },

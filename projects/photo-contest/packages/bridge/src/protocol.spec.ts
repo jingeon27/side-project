@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  PROTOCOL_VERSION,
   buildAppUserAgent,
   decodeNativeMessage,
   decodeWebMessage,
   originOf,
   parseAppUserAgent,
   parseNativeAppInfo,
+  PROTOCOL_VERSION,
   readRequestId,
 } from './protocol';
 

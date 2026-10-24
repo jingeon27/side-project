@@ -1,8 +1,14 @@
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
+
+import {
+  articleThumbnails,
+  defaultArticleThumbnail,
+  getArticleThumbnail,
+} from '@/entities/article/lib/article-thumbnails';
 import articles from '@/entities/article/lib/index.json';
-import { getArticleThumbnail } from '@/entities/article/lib/article-thumbnails';
 
 const publicRoot = path.resolve(process.cwd(), 'public');
 
@@ -73,6 +79,9 @@ describe('published article thumbnail assets', () => {
       const thumbnail = getArticleThumbnail({ id });
       expect(['cover', 'contain']).toContain(thumbnail.fit);
       await expectLocalImage(thumbnail.src);
+      // Another article's diagram would describe the wrong post, so the fallback is neutral artwork.
+      expect(thumbnail).toEqual(defaultArticleThumbnail);
+      expect(Object.values(articleThumbnails).map(({ src }) => src)).not.toContain(thumbnail.src);
     },
   );
 });

@@ -1,8 +1,10 @@
 import 'server-only';
+
 import { cacheLife } from 'next/cache';
 import { cookies, headers } from 'next/headers';
+
 import { getServerSession } from '@/features/auth/index.server';
-import { LANGUAGE_COOKIE, languagePreference, detectLocale } from '@/shared/i18n/index.server';
+import { detectLocale, LANGUAGE_COOKIE, languagePreference } from '@/shared/i18n/index.server';
 import { THEME_COOKIE, themePreference } from '@/shared/theme/index.server';
 
 export async function serviceContext() {

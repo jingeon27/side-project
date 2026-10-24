@@ -1,18 +1,23 @@
-import { randomBytes, createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+
 import type { Page } from '@playwright/test';
+
 import {
   buildBootstrapScript,
   buildDispatchScript,
   type TLoginResult,
   type TWebMessage,
 } from '@game-feedback/bridge';
+
 import { NativeHost } from '../../src/features/bridge/lib/native-host';
 import { socialLogin } from '../../src/features/bridge/lib/social-login';
 import { toWebPath } from '../../src/features/navigation/lib/navigation-policy';
+
 export const ORIGIN = 'http://127.0.0.1:3302';
 class NativeHostHarness {
   readonly messages: TWebMessage[] = [];
   readonly authSessions: string[] = [];
+  readonly authCallbacks: string[] = [];
   private ready = false;
   private closed = false;
   private loginResult: TLoginResult | null = null;
@@ -46,8 +51,9 @@ class NativeHostHarness {
               {
                 randomVerifier: () => randomBytes(32).toString('base64url'),
                 challenge: async (verifier) => createHash('sha256').update(verifier).digest('base64url'),
-                openSession: async (url) => {
+                openSession: async (url, callback) => {
                   this.authSessions.push(url);
+                  this.authCallbacks.push(callback);
                   return { type: 'cancel' };
                 },
               },

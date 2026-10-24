@@ -1,9 +1,11 @@
 import 'server-only';
-import { initialDocumentData } from '@/shared/lib/initial-document-data';
+
 import { getServerSession } from '@/features/auth/index.server';
 import { getServerPostList } from '@/features/post/index.server';
-import { FeedPage } from './ui/FeedPage';
+import { initialDocumentData } from '@/shared/lib/initial-document-data';
+
 import type { IFeedSnapshot } from './model/feed-snapshot.type';
+import { FeedPage } from './ui/FeedPage';
 
 interface IFeedRouteProps {
   locale: string;

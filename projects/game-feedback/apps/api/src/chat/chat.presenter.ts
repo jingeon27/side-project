@@ -1,8 +1,14 @@
 import { type ChatMessage } from '@game-feedback/contracts';
+
 import { type Prisma } from '../generated/prisma';
 import { authorDto, authorSelect } from '../users/user.presenter';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
-export const userSelect = { ...authorSelect, bannedAt: true, withdrawnAt: true };
+
+export const userSelect = {
+  withdrawnAt: true,
+  ...authorSelect,
+  bannedAt: true,
+};
 export const conversationInclude = {
   firstUser: { select: userSelect },
   secondUser: { select: userSelect },

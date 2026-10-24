@@ -1,7 +1,4 @@
-import { ValidatedQuery, ValidatedBody } from '../common/http/request-validation';
-import { ListQueryDto } from '../common/http/list-query.dto';
 import {
-  UseGuards,
   Controller,
   Delete,
   Get,
@@ -11,12 +8,16 @@ import {
   Patch,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
-import { UserGuard } from '../common/http/session.guard';
-import { PostViewDto, UpdatePostDto, CreatePostDto } from './post-input.dto';
+
 import type { SessionRequest } from '../auth/session.types';
-import { PostsService } from './posts.service';
+import { ListQueryDto } from '../common/http/list-query.dto';
+import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
+import { UserGuard } from '../common/http/session.guard';
+import { CreatePostDto, PostViewDto, UpdatePostDto } from './post-input.dto';
 import { PostViewsService } from './post-views.service';
+import { PostsService } from './posts.service';
 
 @Controller('api')
 export class PostsController {
@@ -53,11 +54,13 @@ export class PostsController {
     return this.service.updatePost(req, id, body);
   }
   @Delete('posts/:id')
+  @UseGuards(UserGuard)
   deletePost(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.deletePost(req, id);
   }
   @HttpCode(200)
   @Post('posts/:id/read')
+  @UseGuards(UserGuard)
   read(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.service.readPost(req, id);
   }

@@ -1,5 +1,7 @@
 import { infiniteQueryOptions, queryOptions, skipToken } from '@tanstack/react-query';
+
 import { ApiError } from '@/shared/api';
+
 import { fetchChatMessages, fetchConversations } from '../api/chat.api';
 
 export function chatScopeOptions(userId?: string) {

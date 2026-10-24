@@ -2,14 +2,18 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { MaintenanceService } from './maintenance.service';
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
 import { stubExternalFetch } from '../../test/support/external-fetch';
-import { castVote, createContest, createGroup, hidePhoto } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import {
+  castVote,
+  createContest,
+  createGroup,
+  hidePhoto,
+  type ITestGroup,
+} from '../../test/support/fixtures';
 import { requestUpload, storedPhotoExists, submitPhoto, uploadPhoto } from '../../test/support/photos';
+import { MaintenanceService } from './maintenance.service';
 
 const MINUTE_MS = 60 * 1000;
 const REPORT =
@@ -155,7 +159,7 @@ describe('주기 작업', () => {
     expect(await storedPhotoExists(api, abandonedKey)).toBe(false);
     expect(await storedPhotoExists(api, recentKey)).toBe(true);
     expect(await storedPhotoExists(api, submittedUpload.imageKey ?? '')).toBe(true);
-    expect((await api.http().get(`/photos/${submitted}`).set('Cookie', ara.cookie)).status).toBe(200);
+    expect((await api.http().get(`/photos/${submitted}`).set('Cookie', ara.cookie)).status).toBe(307);
   });
 
   it('만료된 세션·OAuth 시도·앱 로그인 티켓만 지워야 한다', async () => {

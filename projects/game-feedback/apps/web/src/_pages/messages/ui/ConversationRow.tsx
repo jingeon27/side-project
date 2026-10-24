@@ -1,11 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import Link from 'next/link';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { UserBadges } from '@/features/user';
 import type { Conversation } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
 import { Avatar } from '@/shared/ui';
-import { appRoutes } from '@game-feedback/bridge';
 
 interface IConversationRowProps {
   conversation: Conversation;

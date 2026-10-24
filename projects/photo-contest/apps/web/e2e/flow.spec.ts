@@ -1,7 +1,8 @@
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 import type { Page } from '@playwright/test';
 
-import { authenticate, expect, test } from './support/test';
+import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
+
+import { authenticate, expect, test, waitForHydrationOnLoad } from './support/test';
 
 async function writePost(page: Page, title: string, video = false) {
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
@@ -53,7 +54,7 @@ test(
     const friendContext = await browser.newContext({ viewport: { width: 393, height: 851 } });
     try {
       await authenticate(friendContext, '통합 회원');
-      const friend = await friendContext.newPage();
+      const friend = waitForHydrationOnLoad(await friendContext.newPage());
       await friend.goto(invite);
       await friend.getByRole('button', { name: '초대 수락하고 가입하기' }).click();
       await expect(friend).toHaveURL(galleryUrl);
@@ -77,15 +78,16 @@ test(
         'aria-pressed',
         'true',
       );
-      await expect(photo.getByRole('button', { name: '첫 번째 합성 삭제' })).toHaveCount(0);
+      await expect(photo.getByRole('button', { name: '첫 번째 합성 더보기' })).toHaveCount(0);
       const popular = friend.getByRole('region', { name: '이달의 인기', exact: true });
       await expect(popular.getByRole('article').first()).toHaveAccessibleName('첫 번째 합성');
       await page.reload();
       const ownerLatest = page.getByRole('region', { name: '최신 게시물', exact: true });
       await ownerLatest
         .getByRole('article', { name: '움직이는 웃음' })
-        .getByRole('button', { name: '움직이는 웃음 삭제' })
+        .getByRole('button', { name: '움직이는 웃음 더보기' })
         .click();
+      await page.getByRole('menuitem', { name: '삭제', exact: true }).click();
       await page.getByRole('alertdialog').getByRole('button', { name: '게시물 삭제하기' }).click();
       await expect(page.getByRole('article', { name: '움직이는 웃음' })).toHaveCount(0);
       await friend.reload();

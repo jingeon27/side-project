@@ -2,8 +2,8 @@ import {
   BRIDGE_EVENT,
   parseNativeMessage,
   type IAppInfo,
-  type TWebMessage,
   type TLoginProvider,
+  type TWebMessage,
 } from '@game-feedback/bridge';
 
 interface INativeWindow extends Window {

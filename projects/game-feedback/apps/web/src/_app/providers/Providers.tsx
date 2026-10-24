@@ -1,18 +1,22 @@
 'use client';
-import { AnalyticsIdentity } from '@/shared/analytics';
-import { useI18n } from '@/shared/i18n';
+
 import { useState, type ReactNode } from 'react';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
-import { SessionProvider, sessionOptions, useSession } from '@/features/auth';
+
+import { sessionOptions, SessionProvider, useSession } from '@/features/auth';
+import { AnalyticsIdentity, InteractionTracker } from '@/shared/analytics';
+import type { Session } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { MotionProvider } from '@/shared/motion';
+import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 import { AuthOnboarding, useLoginNavigation } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
-import type { Session } from '@/shared/api';
+
+import { MobileViewport } from './MobileViewport';
 import { NativeBridge } from './NativeBridge';
 import { NavigationHistory } from './NavigationHistory';
-import { MobileViewport } from './MobileViewport';
-import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
-import { MotionProvider } from '@/shared/motion';
 
 export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
   const { t } = useI18n();
@@ -46,13 +50,14 @@ function SessionContent({ children }: { children: ReactNode }) {
   return (
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <AnalyticsIdentity userId={session.user?.id} needsOnboarding={session.needsOnboarding} />
+      <InteractionTracker />
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
       <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
         <NativeBridge />
       </AsyncBoundary>
-      <ServiceErrorBoundary title={t('회원가입 안내')}>
+      <AsyncBoundary title={t('회원가입 안내')} pendingFallback={null}>
         <AuthOnboarding />
-      </ServiceErrorBoundary>
+      </AsyncBoundary>
     </OverlayProvider>
   );
 }

@@ -1,4 +1,4 @@
-# Game Feedback
+# Game Mate
 
 클래시로얄 플레이어가 플레이 고민을 올리고, 다른 사용자의 피드백을 받아 `도움됨`으로 표시하는 웹 서비스다. 한국어 중심의 비공개 알파를 구현하며 `/ko`, `/ja`, `/en` 경로를 준비한다. Expo WebView 모바일 앱도 같은 화면을 사용하며 공개 베타·추가 게임은 후속 단계다.
 
@@ -25,6 +25,28 @@
 친추판매·전투 모집의 글은 피드백 목록과 분리되고 작성자의 공개 프로필에서는 함께 확인할 수 있다. 상세에서 댓글을 남기거나 **채팅하기**로 대화를 시작한다. 글 작성자만 수정/삭제할 수 있고 기존 신고와 차단 정책도 적용된다.
 
 채팅의 첨부 버튼으로 JPEG/PNG/GIF/WebP 이미지 또는 MP4/WebM 동영상을 보낸다. 파일당 최대 25MB이며 현재 화면은 메시지마다 파일 한 개를 선택한다. 본문 없이 파일만 보낼 수도 있고 실패한 전송의 파일과 초안을 유지한다. 이미지는 대화 안의 확대 창으로 열고 동영상은 재생 컨트롤을 사용한다. 모바일 Enter는 줄바꿈이며 전송 버튼으로 보낸다. 데스크톱 키보드에서만 Enter 전송/Shift+Enter 안내를 표시한다. 파일은 대화 참여자에게만 제공하며 차단/로그아웃/계정 삭제 정책을 적용한다.
+
+## `.env` 변경 반영
+
+로컬 설정은 **현재 실행하는 checkout의 `projects/game-feedback/.env`**에서 읽습니다. 저장소 루트 `.env`나 다른 worktree의 `.env`는 자동으로 공유하지 않습니다. Google client ID/secret과 문의 주소를 바꾼 뒤 실행 중인 개발 명령을 종료하고 저장소 루트에서 다시 실행합니다.
+
+```sh
+nvm use
+corepack yarn workspace @side/game-feedback dev
+```
+
+이 집계 명령이 프로젝트 `.env`를 읽어 API와 웹에 전달합니다. 앱만 직접 실행하는 `@game-feedback/web dev`는 이 로더를 거치지 않습니다. API의 OAuth 제공자는 시작할 때 구성되고, 웹의 공개 설정은 번들에 들어가므로 두 프로세스를 다시 시작한 뒤 화면을 새로고침합니다. 부모 셸에 같은 환경변수를 이미 export했다면 그 값이 `.env`보다 우선하므로 함께 확인합니다.
+
+```dotenv
+GOOGLE_CLIENT_ID=<Google 웹 애플리케이션 client ID>
+GOOGLE_CLIENT_SECRET=<client secret>
+GOOGLE_REDIRECT_URI=http://localhost:3300/api/auth/google/callback
+GAME_FEEDBACK_CONTACT_EMAIL=contact@bambyul.com
+```
+
+Google Cloud의 승인된 리디렉션 URI도 위 `GOOGLE_REDIRECT_URI`와 일치시킵니다. 별도 포트로 띄웠다면 해당 웹 포트를 사용합니다. 운영 callback은 `https://game.bambyul.com/api/auth/google/callback`이며 API 서브도메인으로 바꾸지 않습니다. Google 키를 브라우저용 `NEXT_PUBLIC_*` 변수에 넣지 않습니다.
+
+운영의 로컬 개발 `.env`는 서버에 자동 반영되지 않습니다. 공유 배포의 `/srv/side-project/services/game-feedback/.env`에서 Google 설정을 바꾸고 컨테이너를 재생성해야 하며, 문의 주소 등 웹 번들 값은 GitHub Variable `GF_CONTACT_EMAIL` 변경 후 새 웹 이미지 빌드·배포가 필요합니다. 서비스의 기존 설정·검증된 이미지·DB를 유지하는 절차는 [공유 배포 문서](../../deploy/shared-instance/README.md)를 따릅니다.
 
 ## 계정 등록, 인증과 관리자 문의
 
@@ -59,7 +81,7 @@ corepack yarn workspace @side/game-feedback db:stop
 
 ## Web UI와 shadcn/ui
 
-로그인은 가로 760px 이하의 모바일 웹과 앱 WebView에서 `/:locale/login` 페이지로 이동하고, 데스크톱에서는 중앙 선택창으로 열린다. 두 화면은 같은 Google·카카오·Discord·X 버튼을 공유하며 미설정 제공자는 준비 상태로 표시한다. 뒤로 가기와 로그인 완료 시 원래 화면·필터·언어를 유지하고, OAuth 복귀 주소는 같은 서비스의 언어 경로만 허용한다. 필수 가입 정보 입력은 기존 독립 온보딩 시트가 담당한다.
+로그인은 가로 760px 이하의 모바일 웹과 앱 WebView에서 `/:locale/login` 페이지로 이동하고, 데스크톱에서는 중앙 선택창으로 열린다. 두 화면은 같은 Google·카카오·Discord·X 버튼을 공유하며 미설정 제공자는 준비 상태로 표시한다. 뒤로 가기와 로그인 완료 시 원래 화면·필터·언어를 유지하고, OAuth 복귀 주소는 같은 서비스의 언어 경로만 허용한다. 닉네임과 필수 약관 동의는 별도 `/:locale/onboarding` 페이지에서 받고 완료 후 원래 화면으로 돌아간다.
 
 웹은 공통 `@side/design-system`의 **shadcn/ui Base UI / base-nova** 컴포넌트를 사용한다. 공통 패키지와 Web의 components.json은 같은 base-nova/neutral/lucide 설정을 사용하고 ui/utils alias는 공통 소스를 가리킨다. 설치 원본과 조정 범위는 [공통 shadcn 구성](../../packages/design-system/SHADCN.md)에 정리했다.
 
@@ -117,7 +139,9 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 
 등록일시는 Asia/Seoul 기준의 `<time datetime>`과 JSON-LD `datePublished`로 제공한다. 조회수는 `/api/posts/:id/views`에서 같은 로그인 사용자 또는 브라우저 방문 ID를 24시간에 한 번 집계하고 새로고침/동시 재시도로 중복 증가하지 않는다. 조회수 변경은 글의 수정일을 바꾸지 않는다. 목록과 상세에 저장된 조회수를 표시하고 JSON-LD에도 ViewAction 수를 연결한다.
 
-입력용 팝업은 BottomSheet, 삭제와 차단처럼 버튼만 있는 확인은 중앙 모달을 사용한다. 별도 글쓰기 경로와 검색·채팅의 본문 입력은 각 화면에 유지한다.
+입력용 팝업은 핸들로 높이를 조절하는 공통 BottomSheet, 삭제와 차단처럼 버튼만 있는 확인은 중앙 모달을 사용한다. 별도 글쓰기 경로와 검색·채팅의 본문 입력은 각 화면에 유지한다.
+
+댓글에는 한 단계의 답글을 남길 수 있다. 원댓글 작성자와 게시글 작성자에게 중복·본인 알림을 제외해 답글 알림을 보내며 알림을 누르면 해당 답글 위치로 이동해 읽음 처리한다. 삭제된 원댓글은 공개 답글이 남아 있을 때만 익명 안내로 표시하고 차단·숨김 스레드는 제외한다.
 
 ## 명령
 
@@ -126,14 +150,14 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 | 명령 뒤의 작업                                                                   | 실행 내용                                                                         |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 현재 Prisma 스키마 적용, 카테고리 seed         |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임              |
+| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile/Admin 타입, API·패키지·스크립트와 각 앱 lint 위임  |
 | `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트     |
 | `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 데모/테스트 토큰/프로덕션 프리패칭·Mobile Playwright 테스트 |
 | `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                       |
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
-| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push --skip-generate`                              |
+| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push`                                              |
 
 API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
 
@@ -193,13 +217,15 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
+공개 게시글 상세는 `cacheTag`와 `cacheLife('max')`를 사용하며, NestJS에서 변경을 커밋한 뒤 Next.js의 `POST /internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`로 만료한다. 실패한 콜백은 같은 트랜잭션에 저장한 DB 큐에서 재시도한다. 로컬 `dev` 명령은 Web/API가 공유하는 임시 비밀을 생성한다. 따로 실행한다면 두 프로세스에 같은 `GF_CACHE_REVALIDATION_SECRET`(32자 이상), API에 `GF_CACHE_REVALIDATION_URL=http://localhost:3300/internal/cache/revalidate`를 설정한다. 운영은 `deploy/shared-instance/service.env.example`의 비밀을 `openssl rand -hex 32`로 생성해 서비스 `.env`에 저장한다. Compose가 양쪽에 비밀과 내부 콜백 주소를 전달하며 새 `CacheInvalidation` migration도 적용해야 한다. 자세한 동작과 검증은 [구현 기록](docs/implementation.md)을 참고한다.
+
 `corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
 
 테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=true`인 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
 
 관리자 실행·로그인·검증 절차는 [Admin README](apps/admin/README.md)를 참고한다. 운영 배포 준비 요청 이후 최초 migration을 포함하며 운영은 `migrate deploy`, 로컬은 전용 URL 가드를 거친 `db:sync`를 사용한다. 기존 로컬 DB를 초기화하거나 최초 migration을 중복 적용하지 않는다.
 
-Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS PostgreSQL과 서비스별 S3 버킷을 사용한다. Docker/HTTPS, GitHub Actions CD, DB 권한 분리와 복구 절차는 [공통 운영 가이드](../../deploy/shared-instance/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다. 이전 Lightsail 구성은 단독 컨테이너 회귀 테스트용으로 보존한다.
+Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS PostgreSQL과 서비스별 S3 버킷을 사용한다. Docker/HTTPS, GitHub Actions CD, DB 권한 분리와 복구 절차는 [공통 운영 가이드](../../deploy/shared-instance/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다.
 
 API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
 

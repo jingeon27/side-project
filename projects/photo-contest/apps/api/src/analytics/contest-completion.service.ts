@@ -1,12 +1,11 @@
-import { Database } from '../database/database.service';
-import { UnitOfWork } from '../database/unit-of-work';
-import { recordEvent } from './analytics-event.writer';
-
 import { Injectable } from '@nestjs/common';
 import { uniq } from 'es-toolkit';
 
 import { CLEANUP_BATCH_SIZE } from '../config/limits';
+import { Database } from '../database/database.service';
+import { UnitOfWork } from '../database/unit-of-work';
 import { ANALYTICS_EVENT } from './analytics-event';
+import { recordEvent } from './analytics-event.writer';
 
 // 참여자가 이만큼 이상이면 활발한 대회로 본다.
 const ACTIVE_CONTEST_PARTICIPANTS = 3;

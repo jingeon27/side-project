@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { siteUrl } from '@/shared/config/site';
-
 import { articleMetadata, pageMetadata, type ArticleSeo } from '@/shared/lib/seo/metadata';
 
 const article: ArticleSeo = {
@@ -24,6 +23,7 @@ describe('multilingual SEO', () => {
     expect(meta.alternates?.languages).toEqual({
       ko: `${siteUrl.origin}/ko/about`,
       en: `${siteUrl.origin}/en/about`,
+      'x-default': `${siteUrl.origin}/ko/about`,
     });
     expect(meta.description).toBeTruthy();
     expect(meta.keywords?.length).toBeGreaterThan(0);
@@ -39,6 +39,24 @@ describe('multilingual SEO', () => {
       publishedTime: article.publishedAt,
     });
     expect(meta.twitter).toMatchObject({ card: 'summary_large_image' });
+  });
+
+  it('keeps the RSS alternate and points x-default to the Korean version on article pages', () => {
+    const meta = articleMetadata({ ...article, locale: 'en', slug: 'designing-cache' });
+    expect(meta.alternates?.canonical).toBe(`${siteUrl.origin}/en/blog/designing-cache`);
+    expect(meta.alternates?.types).toEqual({ 'application/rss+xml': `${siteUrl.origin}/rss/en` });
+    expect(meta.alternates?.languages).toMatchObject({
+      'x-default': `${siteUrl.origin}/ko/blog/${encodeURIComponent('캐시-설계')}`,
+    });
+  });
+
+  it('omits x-default when a page has no other language version', () => {
+    expect(articleMetadata({ ...article, translations: { ko: article.slug } }).alternates?.languages).toEqual(
+      { ko: `${siteUrl.origin}/ko/blog/${encodeURIComponent('캐시-설계')}` },
+    );
+    expect(pageMetadata('ko', 'blog', '/blog/tag/nextjs').alternates?.languages).not.toHaveProperty(
+      'x-default',
+    );
   });
 
   it('omits hreflang for an unpublished translation', () => {

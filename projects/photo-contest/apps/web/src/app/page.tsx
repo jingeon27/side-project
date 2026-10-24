@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 import { HomePageTemplate } from '@/_pages/home';
 import { PreloadQuery, query } from '@/shared/api/apollo-client.server';
 import {
@@ -14,7 +16,6 @@ import { getWebOrigin } from '@/shared/api/server-request.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { createPageMetadata, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '@/shared/lib/seo.helper';
 import { JsonLd } from '@/shared/ui/@core/json-ld';
-import type { Metadata } from 'next';
 
 export function generateMetadata(): Metadata {
   return createPageMetadata({
@@ -40,7 +41,7 @@ export default async function Page() {
         variables={{ sort: PostSort.Newest, offset: 0, limit: 24 }}
         context={publicPreloadContext(PublicGalleryPostsDocument)}
       >
-        <HomePageTemplate />
+        <HomePageTemplate initialHasGroups={false} />
       </PreloadQuery>
     </PreloadQuery>
   ) : (
@@ -52,7 +53,7 @@ export default async function Page() {
         query={GalleryPostsDocument}
         variables={{ groupId: null, sort: PostSort.MonthlyPopular, offset: 0, limit: 3 }}
       >
-        <HomePageTemplate memberFeedPreloaded />
+        <HomePageTemplate memberFeedPreloaded initialHasGroups />
       </PreloadQuery>
     </PreloadQuery>
   );

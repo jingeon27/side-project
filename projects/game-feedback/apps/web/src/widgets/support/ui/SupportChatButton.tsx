@@ -1,8 +1,12 @@
 'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { useRouter } from 'next/navigation';
-import { Button } from '@side/design-system';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { appRoutes } from '@game-feedback/bridge';
+import { Button } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { startSupportMutationOptions } from '@/features/support';
 import { useI18n } from '@/shared/i18n';
@@ -16,7 +20,7 @@ export function SupportChatButton({
   label?: string;
 }) {
   const { t, locale } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const client = useQueryClient();
   const router = useRouter();
   const mutation = useMutation(startSupportMutationOptions(client, session.user?.id));
@@ -28,7 +32,7 @@ export function SupportChatButton({
         loading={mutation.isPending}
         onClick={async () => {
           if (!session.user) {
-            login();
+            requireLogin();
             return;
           }
           try {

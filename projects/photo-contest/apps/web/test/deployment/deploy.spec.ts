@@ -4,8 +4,8 @@ import {
   copyFileSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   readlinkSync,
   rmSync,
   statSync,
@@ -15,6 +15,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const projectRoot = fileURLToPath(new URL('../../../../', import.meta.url));
@@ -24,6 +25,7 @@ const newRevision = 'b'.repeat(40);
 const apiImage = `ghcr.io/owner/side-photo-contest-api@sha256:${'c'.repeat(64)}`;
 const webImage = `ghcr.io/owner/side-photo-contest-web@sha256:${'d'.repeat(64)}`;
 let root: string;
+const ENV = `DOMAIN=unit.example\nWEB_ORIGIN=https://unit.example\nACME_EMAIL=unit@example.com\nPOSTGRES_PASSWORD=${'f'.repeat(64)}\nS3_BUCKET=unit-media\nS3_ENDPOINT=https://storage.unit.example\nAWS_ACCESS_KEY_ID=unit-access\nAWS_SECRET_ACCESS_KEY=private_fixture_only\n`;
 
 function run(script: string, args: string[] = [], failure = '') {
   return spawnSync('bash', [join(projectRoot, 'deploy/scripts', script), ...args], {
@@ -48,13 +50,7 @@ function state(): { active: string; migrated: string[] } {
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'photo-contest-deploy-'));
   mkdirSync(`${root}/bin`);
-  mkdirSync(`${root}/media`);
-  writeFileSync(`${root}/media/keep.txt`, '보존할 사진');
-  writeFileSync(
-    `${root}/.env`,
-    `DOMAIN=unit.example\nWEB_ORIGIN=https://unit.example\nACME_EMAIL=unit@example.com\nPOSTGRES_PASSWORD=${'f'.repeat(64)}\nSTORAGE_BACKEND=local\nAWS_SECRET_ACCESS_KEY=private_fixture_only\n`,
-    { mode: 0o600 },
-  );
+  writeFileSync(`${root}/.env`, ENV, { mode: 0o600 });
   writeFileSync(`${root}/state.json`, JSON.stringify({ active: oldRevision, migrated: [] }));
   for (const revision of [oldRevision, newRevision]) {
     const directory = `${root}/releases/${revision}`;
@@ -95,7 +91,6 @@ describe('VM 배포', () => {
     const backup = join(root, 'backups', backupName);
     expect(readFileSync(`${backup}/database.dump`, 'utf8')).toContain('PGDMP');
     expect(statSync(`${backup}/database.dump`).mode & 0o777).toBe(0o600);
-    expect(readFileSync(`${root}/media/keep.txt`, 'utf8')).toBe('보존할 사진');
     expect(readFileSync(`${root}/.env`, 'utf8')).toBe(original);
     expect(`${result.stdout}${result.stderr}`).not.toContain('private_fixture_only');
   });
@@ -105,7 +100,6 @@ describe('VM 배포', () => {
     expect(result.status).not.toBe(0);
     expect(state().active).toBe(oldRevision);
     expect(readlinkSync(`${root}/current`)).toBe(`${root}/releases/${oldRevision}`);
-    expect(readFileSync(`${root}/media/keep.txt`, 'utf8')).toBe('보존할 사진');
   });
 
   it.each(['activate', 'health'])(
@@ -132,27 +126,28 @@ describe('VM 배포', () => {
     expect(result.status, result.stderr).toBe(0);
     expect(readlinkSync(`${root}/current`)).toBe(`${root}/releases/${oldRevision}`);
     expect(state()).toEqual({ active: oldRevision, migrated: [newRevision] });
-    expect(readFileSync(`${root}/media/keep.txt`, 'utf8')).toBe('보존할 사진');
   });
 
-  it.each(['stop', 'media'])('로컬 백업의 %s 실패 뒤에도 API를 다시 실행해야 한다', (phase) => {
-    const result = run('backup.sh', ['--with-media'], phase);
-    expect(result.status).not.toBe(0);
-    expect(state().active).toBe(oldRevision);
-    expect(result.stdout).not.toContain('백업 완료');
-    expect(readFileSync(`${root}/media/keep.txt`, 'utf8')).toBe('보존할 사진');
-  });
-
-  it('로컬 미디어를 함께 백업한 뒤 API를 다시 실행하고 원본을 유지해야 한다', () => {
-    const result = run('backup.sh', ['--with-media']);
+  it('DB만 백업하고 서비스를 멈추지 않으며 비밀 설정을 출력하지 않아야 한다', () => {
+    const result = run('backup.sh');
     expect(result.status, result.stderr).toBe(0);
     expect(state().active).toBe(oldRevision);
     const [name] = readdirSync(`${root}/backups`);
     if (!name) throw new Error('백업이 있어야 한다');
-    expect(readdirSync(`${root}/backups/${name}`)).toEqual(
-      expect.arrayContaining(['database.dump', 'database.sha256', 'media.tar.gz', 'media.sha256']),
-    );
-    expect(readFileSync(`${root}/media/keep.txt`, 'utf8')).toBe('보존할 사진');
+    expect(readdirSync(`${root}/backups/${name}`).sort()).toEqual(['database.dump', 'database.sha256']);
+    expect(`${result.stdout}${result.stderr}`).not.toContain('private_fixture_only');
+    expect(run('backup.sh', ['--with-media']).status).not.toBe(0);
+  });
+
+  it.each([
+    ['S3_BUCKET=unit-media\n', ''],
+    ['AWS_ACCESS_KEY_ID=unit-access\n', ''],
+    ['S3_ENDPOINT=https://storage.unit.example\n', 'S3_ENDPOINT=http://storage.unit.example\n'],
+  ])('미디어 버킷 설정이 빠지거나 평문 endpoint면 배포하지 않아야 한다: %s', (before, after) => {
+    writeFileSync(`${root}/.env`, ENV.replace(before, after), { mode: 0o600 });
+    const result = run('deploy.sh', [newRevision, apiImage, webImage]);
+    expect(result.status).not.toBe(0);
+    expect(state()).toEqual({ active: oldRevision, migrated: [] });
   });
 
   it('다른 작업이 잠금을 잡고 있으면 배포를 시작하지 않아야 한다', async () => {

@@ -1,13 +1,11 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { Users } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { CreateGroupButton, GroupCard } from '@/features/group';
-import { MyGroupsDocument } from '@/shared/api/generated';
-import type { MyGroupsQuery } from '@/shared/api/generated';
+import { MyGroupsDocument, type MyGroupsQuery } from '@/shared/api/generated';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -36,10 +34,10 @@ export function MyGroupsSection() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-title text-ink">내 그룹</h2>
+        <h2 className="text-title text-ink">참여 그룹</h2>
         <CreateGroupButton />
       </div>
-      <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={refetch}>
+      <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={() => refetch()}>
         <MyGroupsContent groupsRef={groupsRef} />
       </AsyncBoundary>
     </section>

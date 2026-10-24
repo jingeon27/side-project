@@ -1,6 +1,8 @@
-import { act, renderHook } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
+
+import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+
 import { installBrowserNavigation } from './browser-navigation';
 import { useBrowserSearch } from './use-browser-search';
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { decodeCursor, encodeCursor } from './pagination';
+
 import { ApiError } from './http/api-error';
+import { decodeCursor, encodeCursor, nextCursor, nextPageAnchor } from './pagination';
 
 const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
 
@@ -33,5 +34,19 @@ describe('Repository 목록 커서', () => {
       expect(error.getStatus()).toBe(400);
       expect(error.getResponse()).toMatchObject({ errorCode: 'INVALID_CURSOR' });
     }
+  });
+});
+describe('limit+1 조회의 다음 페이지 커서', () => {
+  const rows = [0, 1, 2].map((index) => ({
+    id: `row-${index}`,
+    createdAt: new Date(Date.UTC(2026, 9, 19, 0, 0, index)),
+  }));
+  it('한 건이 더 있으면 이 페이지의 마지막 항목으로 커서를 만들어야 한다', () => {
+    expect(nextPageAnchor(rows, 2)).toBe(rows[1]);
+    expect(decodeCursor(nextCursor(rows, 2) ?? undefined)).toEqual(rows[1]);
+  });
+  it.each([3, 4])('다음 페이지가 없으면 커서를 만들지 않아야 한다: limit %i', (limit) => {
+    expect(nextPageAnchor(rows, limit)).toBeUndefined();
+    expect(nextCursor(rows, limit)).toBeNull();
   });
 });

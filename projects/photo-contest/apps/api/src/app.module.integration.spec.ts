@@ -3,8 +3,7 @@ import { createRequire } from 'node:module';
 import { GraphQLSchemaHost } from '@nestjs/graphql';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../test/support/app';
-import type { ITestApi } from '../test/support/app';
+import { createTestApp, type ITestApi } from '../test/support/app';
 
 // Nest가 만드는 CJS GraphQLSchema와 같은 graphql 인스턴스로 검사한다(Vitest의 ESM 사본과 섞지 않는다).
 const { validateSchema } = createRequire(import.meta.url)('graphql') as Pick<

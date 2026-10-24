@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
+
 import ts from 'typescript';
 import { expect, it } from 'vitest';
+
 it('passes a response schema to every generated OpenAPI operation after caller options', () => {
   const spec = JSON.parse(readFileSync(new URL('../../apps/api/openapi.json', import.meta.url), 'utf8')) as {
     paths: Record<string, Record<string, { operationId: string }>>;
@@ -37,4 +39,27 @@ it('passes a response schema to every generated OpenAPI operation after caller o
     );
     expect(schemaIndex, operation).toBeGreaterThan(properties.map(ts.isSpreadAssignment).lastIndexOf(true));
   }
+});
+
+it('encodes every path parameter in the generated URL builders', () => {
+  const source = ts.createSourceFile(
+    'client.ts',
+    readFileSync(new URL('./src/generated/client.ts', import.meta.url), 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const builders = source.statements
+    .filter(ts.isVariableStatement)
+    .flatMap((statement) => [...statement.declarationList.declarations])
+    .filter((item) => ts.isIdentifier(item.name) && /^get\w+Url$/.test(item.name.text));
+  const interpolations: string[] = [];
+  function collect(node: ts.Node) {
+    if (ts.isTemplateExpression(node))
+      for (const span of node.templateSpans) interpolations.push(span.expression.getText(source));
+    ts.forEachChild(node, collect);
+  }
+  builders.forEach(collect);
+  const pathParameters = interpolations.filter((text) => text !== 'stringifiedParams');
+  expect(pathParameters.length).toBeGreaterThan(0);
+  for (const text of pathParameters) expect(text).toMatch(/^encodeURIComponent\(String\(\w+\)\)$/);
 });

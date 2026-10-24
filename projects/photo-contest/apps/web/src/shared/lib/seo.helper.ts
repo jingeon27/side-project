@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-export const SITE_NAME = '웃긴순간';
+export const SITE_NAME = '별사대';
 export const SITE_DESCRIPTION = '사진·동영상·합성으로 웃긴 순간을 함께 나누는 그룹 커뮤니티.';
 export const PUBLIC_ROBOTS = {
   index: true,

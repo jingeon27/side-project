@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { matchesArticleSearch } from '@/features/article-search/lib/matches-article-search';
 
 describe('unified article search', () => {

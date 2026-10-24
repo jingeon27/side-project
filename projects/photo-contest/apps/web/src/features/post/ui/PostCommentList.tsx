@@ -1,16 +1,10 @@
 'use client';
 
-import {
-  useFragment,
-  useQuery,
-  useQueryRefHandlers,
-  useReadQuery,
-  type QueryRef,
-} from '@apollo/client/react';
+import { useFragment, useQuery, type QueryRef } from '@apollo/client/react';
 import { MessageCircle } from 'lucide-react';
-import { useTransition } from 'react';
 
 import { GalleryPostCardFragmentDoc, MeDocument, type PostCommentsQuery } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
 
@@ -23,14 +17,16 @@ export function PostCommentList({
   commentsRef: QueryRef<PostCommentsQuery>;
   postId: string;
 }) {
-  const { data } = useReadQuery(commentsRef);
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(commentsRef, {
+    select: (data) => data.postComments,
+    pageSize: 24,
+    canFetchMore: (data) => data.postComments.length < data.postCommentCount,
+  });
   const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
   });
-  const { fetchMore } = useQueryRefHandlers(commentsRef);
-  const [pending, startTransition] = useTransition();
 
   return (
     <div className="flex flex-col gap-5">
@@ -63,21 +59,13 @@ export function PostCommentList({
           <p className="text-caption text-muted">함께 웃은 포인트, 가벼운 한마디면 충분해요.</p>
         </div>
       )}
-      {complete && data.postComments.length < post.commentCount ? (
+      {hasNextPage ? (
         <Button
           variant="ghost"
           size="md"
-          loading={pending}
+          loading={isFetchingNextPage}
           className="self-center rounded-full px-5 text-muted"
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                await fetchMore({ variables: { offset: data.postComments.length } });
-              } catch {
-                /* 조회 경계에서 재시도한다. */
-              }
-            })
-          }
+          onClick={() => fetchNextPage()}
         >
           댓글 더 보기
         </Button>

@@ -1,10 +1,13 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import type { ReactNode } from 'react';
+
 import type { Comment } from '@/shared/api';
-import { Avatar } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
 import { useIsSSR } from '@/shared/lib/use-is-ssr';
+import { Avatar } from '@/shared/ui';
+
 interface ICommentItemProps {
   comment: Comment;
   authorContent?: ReactNode;
@@ -24,8 +27,14 @@ export function CommentItem({
 }: ICommentItemProps) {
   const isSSR = useIsSSR();
   const { t, locale: textLocale } = useI18n();
+  if (comment.isDeleted || !comment.author)
+    return (
+      <article id={`comment-${comment.id}`} className="comment comment-deleted">
+        <p>{t('삭제된 댓글이에요.')}</p>
+      </article>
+    );
   return (
-    <article className={`comment${mine ? ' mine' : ''}`}>
+    <article id={`comment-${comment.id}`} className={`comment${mine ? ' mine' : ''}`}>
       {!mine && <Avatar src={comment.author.avatarUrl} name={comment.author.nickname} size="small" />}
       <div className="comment-content">
         <div className="comment-heading">

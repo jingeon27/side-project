@@ -1,12 +1,12 @@
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
 import { match } from 'ts-pattern';
+
 import { AnswersService } from '../answers/answers.service';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CommentsService } from '../comments/comments.service';
 import { ApiError } from '../common/http/api-error';
+import { PrismaClient } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import type { CreateReportDto } from './report-input.dto';
 

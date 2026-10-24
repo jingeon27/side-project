@@ -1,22 +1,28 @@
 'use client';
-import { trackEvent, ANALYTICS_EVENT } from '@/shared/analytics';
 
 import type { ChangeEvent } from 'react';
-import { useWatch } from 'react-hook-form';
-import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
-import type { TBoardKind, TBattleMode, TCoachingRole } from '@game-feedback/contracts';
-import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpRight, LoaderCircle } from 'lucide-react';
+import { useWatch } from 'react-hook-form';
+
 import { appRoutes } from '@game-feedback/bridge';
-import { useCreatePostMutation } from '@/features/post';
+import type { TBattleMode, TBoardKind, TCoachingRole } from '@game-feedback/contracts';
+import { Button, Input, NativeSelect, NativeSelectOption } from '@side/design-system';
+
+import { createPostMutationOptions } from '@/features/post';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import type { Category } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { Field, ErrorNotice, useNotify } from '@/shared/ui';
+import { ErrorNotice, Field, useNotify } from '@/shared/ui';
+
 import { postComposerSchema } from '../model/post-composer.schema';
 import { postContentInput } from '../model/post-content-input';
 import { usePostMediaUpload } from '../model/use-post-media-upload';
 import { PostContentFields } from './PostContentFields';
+
 interface ICreatePostFormProps {
   categories: Category[];
   locale: string;
@@ -33,10 +39,11 @@ export function CreatePostForm({
   initialBattleMode,
   initialCoachingRole,
 }: ICreatePostFormProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const router = useRouter();
   const notify = useNotify();
-  const create = useCreatePostMutation();
+  const create = useMutation(createPostMutationOptions(client));
   const { upload, handleUpload } = usePostMediaUpload();
   const form = useZodForm(postComposerSchema, {
     defaultValues: {

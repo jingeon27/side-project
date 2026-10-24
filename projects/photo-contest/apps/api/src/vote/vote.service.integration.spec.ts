@@ -1,10 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo } from '../../test/support/clock';
-import { createContest, createGroup } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import { createContest, createGroup, type ITestGroup } from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';
 
 const CAST_VOTE = `
@@ -125,8 +123,8 @@ describe('투표', () => {
   it('비회원은 투표할 수 없고 없는 대회는 NOT_FOUND여야 한다', async () => {
     const { contestId, ownerPhoto } = await votingContest('비회원 투표');
     expect(await api.gqlFail(outsider.cookie, CAST_VOTE, { contestId, submissionId: ownerPhoto })).toEqual({
-      code: 'FORBIDDEN',
-      message: '이 그룹에 접근할 권한이 없습니다.',
+      code: 'NOT_FOUND',
+      message: '대회를 찾을 수 없습니다.',
     });
     expect(
       await api.gqlFail(voter.cookie, CAST_VOTE, { contestId: 'missing-contest', submissionId: ownerPhoto }),

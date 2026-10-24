@@ -1,5 +1,7 @@
 import { originOf } from '@photo-contest/bridge';
 
+import { AUTH_CALLBACK_PATH } from '@/shared/config/app-links';
+
 export interface ILinkOptions {
   /** 예: https://contest.example */
   webOrigin: string;
@@ -46,9 +48,14 @@ export function isRelativeWebPath(path: string) {
   return path.length <= MAX_LINK_LENGTH && RELATIVE_PATH.test(path);
 }
 
+/** 소셜 로그인 콜백(`/app-auth/callback`)인지. 인증 세션만 이 주소를 받는다. */
+function isAuthCallbackPath(path: string) {
+  return path === AUTH_CALLBACK_PATH || path.startsWith(`${AUTH_CALLBACK_PATH}/`);
+}
+
 /**
  * `photocontest://groups/<id>` 같은 앱 링크나 같은 경로의 웹 origin 링크(유니버설 링크)를 웹 경로로 바꾼다.
- * 모르는 링크와 `photocontest://auth/callback`(소셜 로그인 세션이 직접 받는다)은 null. 쿼리와 해시는 버린다.
+ * 모르는 링크와 소셜 로그인 콜백(`<웹 origin>/app-auth/callback`)은 null. 쿼리와 해시는 버린다.
  */
 export function toWebPath(url: string, { webOrigin, appScheme }: ILinkOptions) {
   if (url.length > MAX_LINK_LENGTH) return null;
@@ -61,6 +68,8 @@ export function toWebPath(url: string, { webOrigin, appScheme }: ILinkOptions) {
   if (!expectedOrigin || originOf(url) !== expectedOrigin) return null;
   const rest = stripQueryAndHash(url.match(HTTP_URL_PARTS)?.[1] ?? '');
   if (rest === '' || rest === '/') return '/';
+  // 인증 세션 밖에서 들어온 콜백(다른 앱이 시작한 흐름, 끝난 세션)은 일반 탐색으로 열지 않는다.
+  if (isAuthCallbackPath(rest)) return null;
   return rest.startsWith('/') ? pathFromSegments(rest.slice(1)) : null;
 }
 

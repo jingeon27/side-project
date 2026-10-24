@@ -1,7 +1,9 @@
-import { UnitOfWork } from './unit-of-work';
 import { Global, Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { PrismaClient } from '../generated/prisma';
+import { createPrismaAdapter } from './prisma-adapter';
+import { UnitOfWork } from './unit-of-work';
 
 class DatabaseLifecycle implements OnApplicationShutdown {
   constructor(
@@ -18,7 +20,7 @@ class DatabaseLifecycle implements OnApplicationShutdown {
 @Module({})
 export class DatabaseModule {
   static register(config: AppConfig, providedClient?: PrismaClient): DynamicModule {
-    const db = providedClient ?? new PrismaClient({ datasources: { db: { url: config.databaseUrl } } });
+    const db = providedClient ?? new PrismaClient({ adapter: createPrismaAdapter(config.databaseUrl) });
     return {
       module: DatabaseModule,
       providers: [

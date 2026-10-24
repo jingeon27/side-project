@@ -1,6 +1,7 @@
+import { useState } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SegmentedControl, SegmentedControlItem } from './SegmentedControl';
@@ -24,7 +25,7 @@ function SortControl({ onChange }: { onChange: (value: string) => void }) {
 
 describe('SegmentedControl', () => {
   it('이름 있는 묶음 안에서 지금 고른 칸만 눌린 상태여야 한다', () => {
-    render(<SortControl onChange={vi.fn()} />);
+    render(<SortControl onChange={() => undefined} />);
     expect(screen.getByRole('group', { name: '사진 정렬' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '최신순' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '좋아요순' })).toHaveAttribute('aria-pressed', 'false');

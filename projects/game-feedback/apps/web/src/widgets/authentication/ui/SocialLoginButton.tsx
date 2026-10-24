@@ -1,8 +1,11 @@
 'use client';
+
 import type { FormEvent } from 'react';
 import Image from 'next/image';
-import { Button } from '@side/design-system';
+
 import type { TSocialProvider } from '@game-feedback/contracts';
+import { Button } from '@side/design-system';
+
 import { useI18n } from '@/shared/i18n';
 
 const labels = {

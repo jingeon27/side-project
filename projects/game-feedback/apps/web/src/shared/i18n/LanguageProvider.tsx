@@ -1,6 +1,24 @@
 'use client';
-import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from 'react';
-import { LANGUAGE_COOKIE, languagePreference, type TLanguagePreference, type TLocale } from './locale';
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+  useTransition,
+  type ReactNode,
+} from 'react';
+import { useRouter } from 'next/navigation';
+
+import { LoaderCircle } from 'lucide-react';
+
+import {
+  LANGUAGE_COOKIE,
+  languagePreference,
+  localePath,
+  type TLanguagePreference,
+  type TLocale,
+} from './locale';
 import { translate } from './messages';
 
 const preferenceEvent = 'game-feedback:language';
@@ -8,11 +26,15 @@ interface ILanguageContext {
   locale: TLocale;
   automaticLocale: TLocale;
   preference: TLanguagePreference;
+  pending: boolean;
+  changePreference: (preference: TLanguagePreference) => void;
 }
 const LanguageContext = createContext<ILanguageContext>({
   locale: 'ko',
   automaticLocale: 'ko',
   preference: 'auto',
+  pending: false,
+  changePreference: () => {},
 });
 function readPreference() {
   const value = document.cookie
@@ -45,13 +67,35 @@ export function LanguageProvider({
   automaticLocale: TLocale;
 }) {
   const locale = initialLocale;
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const preference = useSyncExternalStore(subscribe, readPreference, () => initialPreference);
+  function handlePreferenceChange(next: TLanguagePreference) {
+    if (pending || next === preference) return;
+    setLanguagePreference(next);
+    const target = next === 'auto' ? automaticLocale : next;
+    if (target === locale) return;
+    startTransition(() => {
+      router.replace(
+        localePath(window.location.pathname + window.location.search + window.location.hash, target),
+        { scroll: false },
+      );
+    });
+  }
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
   return (
-    <LanguageContext.Provider value={{ locale, preference, automaticLocale }}>
+    <LanguageContext.Provider
+      value={{ locale, preference, automaticLocale, pending, changePreference: handlePreferenceChange }}
+    >
       {children}
+      {pending && (
+        <div className="preference-progress" role="status">
+          <LoaderCircle size={16} className="spin" aria-hidden />
+          {translate(locale, '언어를 변경하고 있어요')}
+        </div>
+      )}
     </LanguageContext.Provider>
   );
 }

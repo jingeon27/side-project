@@ -1,9 +1,12 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
-import { updateProfile, uploadProfileAvatar, deleteProfileAvatar } from '@game-feedback/sdk';
 import type { z } from 'zod';
+
 import { UpdateProfileInputSchema } from '@game-feedback/contracts';
-import { withApiError, type PublicProfile } from '@/shared/api';
+import { deleteProfileAvatar, updateProfile, uploadProfileAvatar } from '@game-feedback/sdk';
+
 import { sessionOptions } from '@/features/auth';
+import { withApiError, type PublicProfile } from '@/shared/api';
+
 import { profileOptions } from './user.options';
 
 async function saveProfile(client: QueryClient, profile: PublicProfile) {

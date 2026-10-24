@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isHealthProbe, RequestRateLimiter, requestRateBucket } from './rate-limit';
+
+import { isHealthProbe, requestRateBucket, RequestRateLimiter } from './rate-limit';
 
 const request = { ip: '127.0.0.1', path: '/api/conversations', method: 'GET' };
 describe('request rate limits across shared network addresses', () => {

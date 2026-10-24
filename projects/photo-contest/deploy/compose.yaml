@@ -6,17 +6,19 @@ x-api-environment: &api-environment
   PORT: 4200
   TRUST_PROXY_HOPS: 1
   WEB_ORIGIN: ${WEB_ORIGIN:?Set WEB_ORIGIN}
+  # 앱 소셜 로그인 코드는 웹 origin의 검증된 https 앱 링크로만 보낸다.
+  MOBILE_AUTH_CALLBACK_URL: ${WEB_ORIGIN:?Set WEB_ORIGIN}/app-auth/callback
   DATABASE_URL: postgresql://photo_contest:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/photo_contest?schema=public
   ENABLE_DEV_LOGIN: 'false'
   ENABLE_TEST_API: 'false'
-  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
-  STORAGE_DIR: /var/lib/photo-contest/media
-  S3_BUCKET: ${S3_BUCKET:-}
+  # 사진·동영상은 비공개 S3 호환 버킷에만 둔다. 브라우저가 서명 URL로 직접 올리고 읽는다.
+  S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
   S3_ENDPOINT: ${S3_ENDPOINT:-}
   S3_REGION: ${S3_REGION:-auto}
   S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  S3_KEY_PREFIX: ${S3_KEY_PREFIX:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}
 
 services:
   db:
@@ -50,8 +52,6 @@ services:
     restart: unless-stopped
     init: true
     environment: *api-environment
-    volumes:
-      - media:/var/lib/photo-contest/media
     networks: [app, data]
     depends_on:
       db: { condition: service_healthy }
@@ -79,6 +79,11 @@ services:
       PORT: 3200
       API_URL: http://api:4200
       WEB_ORIGIN: ${WEB_ORIGIN:?Set WEB_ORIGIN}
+      # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.
+      MOBILE_APPLE_TEAM_ID: ${MOBILE_APPLE_TEAM_ID:?Set MOBILE_APPLE_TEAM_ID}
+      MOBILE_IOS_BUNDLE_ID: ${MOBILE_IOS_BUNDLE_ID:?Set MOBILE_IOS_BUNDLE_ID}
+      MOBILE_ANDROID_PACKAGE: ${MOBILE_ANDROID_PACKAGE:?Set MOBILE_ANDROID_PACKAGE}
+      MOBILE_ANDROID_SHA256_FINGERPRINTS: ${MOBILE_ANDROID_SHA256_FINGERPRINTS:?Set MOBILE_ANDROID_SHA256_FINGERPRINTS}
     networks: [app]
     depends_on:
       api: { condition: service_healthy }
@@ -126,6 +131,5 @@ networks:
 
 volumes:
   pgdata:
-  media:
   caddy_data:
   caddy_config:

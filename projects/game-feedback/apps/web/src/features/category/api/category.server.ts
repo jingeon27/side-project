@@ -1,5 +1,16 @@
 import 'server-only';
-import { cache } from 'react';
+
+import { cacheLife, cacheTag } from 'next/cache';
+
+import { DISCOVERY_CACHE_TAG } from '@game-feedback/contracts';
 import { listCategories } from '@game-feedback/sdk';
+
 import { publicServerOptions } from '@/shared/api/server';
-export const getPublicCategories = cache(() => listCategories(publicServerOptions()));
+
+// Categories are public and identical for every visitor. Category creation invalidates the discovery tag.
+export async function getPublicCategories() {
+  'use cache';
+  cacheTag(DISCOVERY_CACHE_TAG);
+  cacheLife('minutes');
+  return listCategories(publicServerOptions());
+}

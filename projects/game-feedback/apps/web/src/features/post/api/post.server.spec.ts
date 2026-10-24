@@ -1,5 +1,7 @@
-import { ApiError } from '@game-feedback/sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ApiError } from '@game-feedback/sdk';
+
 import { getServerPost } from './post.server';
 
 const { getCookie, getPost, cacheTag, cacheLife } = vi.hoisted(() => ({
@@ -10,7 +12,7 @@ const { getCookie, getPost, cacheTag, cacheLife } = vi.hoisted(() => ({
 }));
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: getCookie }),
-  headers: async () => new Headers(),
+  headers: async () => ({ get: () => null }),
 }));
 vi.mock('next/cache', () => ({ cacheTag, cacheLife }));
 vi.mock('next/navigation', () => ({
@@ -31,8 +33,8 @@ const detail = {
     { id: 'answer-2', ...author('blocked') },
   ],
   comments: [
-    { id: 'comment-1', ...author('friend') },
-    { id: 'comment-2', ...author('blocked') },
+    { id: 'comment-1', parentId: null, isDeleted: false, ...author('friend') },
+    { id: 'comment-2', parentId: null, isDeleted: false, ...author('blocked') },
   ],
 };
 const fetchMock = vi.fn();
@@ -41,7 +43,6 @@ const signIn = () => getCookie.mockReturnValue({ value: 'test-only-session' });
 
 beforeEach(() => {
   vi.stubEnv('GAME_FEEDBACK_API_URL', 'https://api.feedback.example');
-  vi.stubEnv('GF_PROXY_SECRET', '');
   vi.stubGlobal('fetch', fetchMock);
   getPost.mockResolvedValue(detail);
 });
@@ -57,9 +58,10 @@ describe('게시글 상세 서버 조회', () => {
     await expect(getServerPost('post-1')).resolves.toBe(detail);
     expect(getPost).toHaveBeenCalledExactlyOnceWith(
       'post-1',
-      expect.not.objectContaining({ headers: expect.anything() }),
+      expect.objectContaining({ headers: expect.not.objectContaining({ Cookie: expect.anything() }) }),
     );
-    expect(cacheTag).toHaveBeenCalledExactlyOnceWith('post:post-1');
+    expect(cacheTag).toHaveBeenCalledExactlyOnceWith('posts', 'post:post-1');
+    expect(cacheLife).toHaveBeenCalledExactlyOnceWith('max');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -69,10 +71,10 @@ describe('게시글 상세 서버 조회', () => {
     await expect(getServerPost('post-1')).resolves.toBe(detail);
     expect(getPost).toHaveBeenCalledExactlyOnceWith(
       'post-1',
-      expect.not.objectContaining({ headers: expect.anything() }),
+      expect.objectContaining({ headers: expect.not.objectContaining({ Cookie: expect.anything() }) }),
     );
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
-      'https://api.feedback.example/_internal/visibility/excluded-authors',
+      'https://api.feedback.example/internal/visibility/excluded-authors',
       expect.objectContaining({ headers: { Cookie: 'gamefeedback_session=test-only-session' } }),
     );
   });

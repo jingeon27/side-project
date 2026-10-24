@@ -1,6 +1,8 @@
-import { MediaUploadInputSchema } from '@game-feedback/contracts';
 import { IsIn, IsInt, IsString, Length, Max, Min } from 'class-validator';
 import type { z } from 'zod';
+
+import { MediaUploadInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from './http/request-validation';
 
 export class MediaUploadDto {

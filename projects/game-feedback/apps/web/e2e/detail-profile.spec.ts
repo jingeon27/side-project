@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
-const origin = 'http://127.0.0.1:3301';
+import { expect, test } from '@playwright/test';
+
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
 
 test('post detail uses a compact game breadcrumb and one contact action with unbroken dates at 393px', async ({
@@ -34,7 +35,7 @@ test('post detail uses a compact game breadcrumb and one contact action with unb
   }
   await header.getByRole('link', { name: '돌아가기', exact: true }).click();
   await expect(page).toHaveURL('/ko/boards/friend-sale');
-  await expect(header.locator('.mobile-page-title')).toHaveText('홈');
+  await expect(header.locator('.brand')).toBeVisible();
   const crawler = await browser.newContext({
     baseURL: origin,
     javaScriptEnabled: false,
@@ -134,7 +135,7 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
   const release = Promise.withResolvers<void>();
   await page.route('**/api/game-profiles/**', async (route) => {
     const response = await route.fetch();
-    if (decodeURIComponent(new URL(route.request().url()).pathname).endsWith('#GG829JGY')) {
+    if (new URL(route.request().url()).pathname.endsWith('/GG829JGY')) {
       responseReady.resolve();
       await release.promise;
     }
@@ -148,7 +149,7 @@ test('changing a tag discards an in-flight profile preview and saves only the ne
   await responseReady.promise;
   await sheet.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#P0LYQ829');
   const firstResponse = page.waitForResponse((response) =>
-    decodeURIComponent(response.url()).endsWith('#GG829JGY'),
+    new URL(response.url()).pathname.endsWith('/GG829JGY'),
   );
   release.resolve();
   await firstResponse;

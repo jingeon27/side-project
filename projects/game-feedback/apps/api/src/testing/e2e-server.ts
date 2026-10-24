@@ -1,4 +1,5 @@
 import { createApp } from '../app';
+import { ApiError } from '../common/http/api-error';
 import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 
@@ -19,6 +20,19 @@ async function main() {
     testAuthEnabled: process.env.GF_TEST_AUTH_ENABLED === 'true',
     rateLimit: false,
     profileProvider: new DemoProfileProvider(),
+    identityProvider: {
+      authorizationUrl: ({ state, nonce }) => {
+        const callback = new URL('/api/auth/google/callback', process.env.WEB_ORIGIN);
+        callback.searchParams.set('state', state);
+        callback.searchParams.set('code', `e2e-${nonce}`);
+        return callback.toString();
+      },
+      exchange: async (code) => {
+        if (!/^e2e-[A-Za-z0-9_-]{1,100}$/.test(code))
+          throw new ApiError(400, 'OAUTH_CODE_INVALID', '테스트 로그인 코드를 확인해주세요.');
+        return code;
+      },
+    },
   });
   app.enableShutdownHooks();
   await app.listen(port, '127.0.0.1');

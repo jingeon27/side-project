@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
-import { useLogoutMutation } from '@/features/auth';
+
+import { logoutMutationOptions } from '@/features/auth';
 import type { TAdminTab } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
+
 import { AdminNavigation } from './AdminNavigation';
 
 interface IAdminShellProps {
@@ -12,11 +17,12 @@ interface IAdminShellProps {
 }
 
 export function AdminShell({ nickname, tab, children }: IAdminShellProps) {
-  const logout = useLogoutMutation();
+  const client = useQueryClient();
+  const logout = useMutation(logoutMutationOptions(client));
   return (
     <div className="admin-shell">
       <header className="admin-header">
-        <strong>Game Feedback 운영 관리</strong>
+        <strong>Game Mate 운영 관리</strong>
         <span>{nickname}</span>
         <Button type="button" variant="ghost" disabled={logout.isPending} onClick={() => logout.mutate()}>
           로그아웃

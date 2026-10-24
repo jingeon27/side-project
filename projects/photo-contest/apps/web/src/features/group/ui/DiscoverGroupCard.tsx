@@ -1,14 +1,17 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
-import { ArrowUpRight, Users } from 'lucide-react';
 import Link from 'next/link';
 
-import { GroupVisibilityBadge } from './GroupVisibilityBadge';
-import { GroupMembershipButton } from './GroupMembershipButton';
+import { useFragment } from '@apollo/client/react';
+import { ArrowUpRight, Users } from 'lucide-react';
+
 import { DiscoverGroupFragmentDoc, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatCount } from '@/shared/lib/format.helper';
+import { Avatar } from '@/shared/ui/@core/avatar';
+
+import { GroupMembershipButton } from './GroupMembershipButton';
+import { GroupVisibilityBadge } from './GroupVisibilityBadge';
 
 export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinable?: boolean }) {
   const { data: group, complete } = useFragment({
@@ -21,12 +24,12 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
   return (
     <article className="group flex min-w-0 flex-col gap-5 rounded-card border border-line bg-surface p-5 transition-colors hover:border-line-strong hover:bg-sunken active:bg-neutral-soft">
       <div className="flex items-center justify-between gap-3">
-        <span
-          aria-hidden
-          className="flex size-14 items-center justify-center rounded-control bg-sunken text-title-lg text-ink"
-        >
-          {Array.from(group.name.trim())[0] ?? '?'}
-        </span>
+        <Avatar
+          name={group.name}
+          src={group.avatarUrl}
+          size="lg"
+          className="size-14 rounded-control bg-sunken text-ink"
+        />
         <GroupVisibilityBadge visibility={group.visibility} />
       </div>
       <div className="min-w-0 flex-1">
@@ -35,10 +38,11 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             {group.name}
           </Link>
         </h3>
-        <p className="mt-2 text-caption text-muted">
-          {privateGroup
-            ? '그룹장의 수락 후 함께 나눌 수 있어요.'
-            : '사진·동영상·합성, 누구나 구경할 수 있어요.'}
+        <p className="mt-2 line-clamp-3 text-caption text-muted">
+          {group.description ||
+            (privateGroup
+              ? '그룹장의 수락 후 함께 나눌 수 있어요.'
+              : '사진·동영상·합성, 누구나 구경할 수 있어요.')}
         </p>
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-line pt-4 text-caption">

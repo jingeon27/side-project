@@ -1,17 +1,22 @@
-import { PROTOCOL_VERSION, buildAppUserAgent, originOf } from '@photo-contest/bridge';
-import { buildBootstrapScript } from '@photo-contest/bridge/native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+
 import type { WebViewProps } from 'react-native-webview';
 
-import { applyAnalyticsAuth, trackEvent } from '@/features/analytics/model/analytics';
-import type { TCapabilityOutcome } from '@/features/bridge/lib/create-capabilities';
-import { createNativeCapabilities } from '@/features/bridge/model/native-capabilities';
-import { isRelativeWebPath } from '@/features/navigation/lib/deep-link';
-import { decideNavigation, decideOpenWindow } from '@/features/navigation/lib/navigation-policy';
-import { LINK_OPTIONS, toWebUrl } from '@/features/navigation/model/link-options';
-import { openExternalUrl } from '@/features/navigation/model/open-external';
-import { useDeepLinkEvents } from '@/features/navigation/model/use-deep-link-events';
+import { buildAppUserAgent, originOf, PROTOCOL_VERSION } from '@photo-contest/bridge';
+import { buildBootstrapScript } from '@photo-contest/bridge/native';
+
+import { applyAnalyticsAuth, trackEvent } from '@/features/analytics';
+import { createNativeCapabilities, type TCapabilityOutcome } from '@/features/bridge';
+import {
+  decideNavigation,
+  decideOpenWindow,
+  isRelativeWebPath,
+  LINK_OPTIONS,
+  openExternalUrl,
+  toWebUrl,
+  useDeepLinkEvents,
+} from '@/features/navigation';
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { captureWarning } from '@/shared/lib/monitoring/monitoring';
 import { useLatest } from '@/shared/lib/use-latest';
@@ -23,8 +28,8 @@ import {
   describeProcessTermination,
   toCapabilityEvent,
   toDeepLinkEvent,
+  type IShellFailureReport,
 } from '../lib/shell-events';
-import type { IShellFailureReport } from '../lib/shell-events';
 import { useAndroidBackPress } from './use-android-back-press';
 import { useAppStateEvents } from './use-app-state-events';
 import { useWebShellBridge } from './use-web-shell-bridge';

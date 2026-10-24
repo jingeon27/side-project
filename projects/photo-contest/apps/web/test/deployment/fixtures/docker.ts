@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
-import { gzipSync } from 'node:zlib';
 
 interface IState {
   active: string;
@@ -40,22 +39,11 @@ function main() {
     writeFileSync(stateFile, JSON.stringify(state));
     return;
   }
-  if (args.includes('run') && args.includes('tar')) {
-    if (phase === 'media') process.exit(1);
-    process.stdout.write(gzipSync('isolated media fixture'));
-    return;
-  }
   if (args.includes('up')) {
     if (!args.includes('api')) return;
     state.active = revision;
     writeFileSync(stateFile, JSON.stringify(state));
     if (phase === 'activate' && revision === broken) process.exit(1);
-    return;
-  }
-  if (args.includes('stop')) {
-    state.active = '';
-    writeFileSync(stateFile, JSON.stringify(state));
-    if (phase === 'stop') process.exit(1);
     return;
   }
   throw new Error('지원하지 않는 Docker 경계 명령입니다.');

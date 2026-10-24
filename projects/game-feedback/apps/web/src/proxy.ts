@@ -1,6 +1,7 @@
-import { documentUnavailable } from '@/_app/seo/index.server';
 import { NextResponse, type NextRequest } from 'next/server';
-import { isLocale, preferredLocale, LANGUAGE_COOKIE, LOCALE_HEADER } from '@/shared/i18n/index.server';
+
+import { documentUnavailable } from '@/_app/seo/index.server';
+import { isLocale, LANGUAGE_COOKIE, LOCALE_HEADER, preferredLocale } from '@/shared/i18n/index.server';
 
 export async function proxy(request: NextRequest) {
   const candidate = request.nextUrl.pathname.split('/')[1];
@@ -24,7 +25,6 @@ export async function proxy(request: NextRequest) {
       request.nextUrl.pathname,
       request.cookies.get('gamefeedback_session')?.value,
       request.nextUrl.searchParams.getAll('game'),
-      request.headers,
     ))
   ) {
     const url = new URL(request.url);

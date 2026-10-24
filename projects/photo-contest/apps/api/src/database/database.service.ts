@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import type { OnModuleDestroy } from '@nestjs/common';
+import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
 import { Prisma, PrismaClient } from '../../generated/prisma';
 import { ERROR_CODE, fail } from '../common/errors';
+import { databaseUrl } from '../config/env';
+import { createPrismaAdapter } from './prisma-adapter';
 import { transactionFailure } from './transaction.policy';
 
 /** 트랜잭션 안팎 어디서든 같은 조회 함수를 쓰도록 받는 클라이언트 타입 */
@@ -11,6 +12,10 @@ export type TDatabaseClient = Prisma.TransactionClient;
 
 @Injectable()
 export class Database extends PrismaClient implements OnModuleDestroy {
+  constructor() {
+    super({ adapter: createPrismaAdapter(databaseUrl()) });
+  }
+
   async onModuleDestroy() {
     await this.$disconnect();
   }

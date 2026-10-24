@@ -1,9 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
+
+import { blockUserMutationOptions } from '@/features/moderation';
 import type { Author } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { ErrorNotice, Modal } from '@/shared/ui';
-import { useBlockUserMutation } from '@/features/moderation';
+
 interface IBlockUserDialogProps {
   author: Author;
   open: boolean;
@@ -11,8 +16,9 @@ interface IBlockUserDialogProps {
   onBlocked: () => void;
 }
 export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBlockUserDialogProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
-  const mutation = useBlockUserMutation();
+  const mutation = useMutation(blockUserMutationOptions(client));
   function handleBlock() {
     mutation.mutate(
       { blockedUserId: author.id },

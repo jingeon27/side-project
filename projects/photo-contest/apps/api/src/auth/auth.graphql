@@ -2,6 +2,7 @@ type User {
   id: ID!
   nickname: String!
   avatar: String
+  needsOnboarding: Boolean!
 }
 
 type Query {

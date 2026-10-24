@@ -1,10 +1,12 @@
 'use client';
 
-import { createContext, useContext, useCallback, Suspense, type ReactNode } from 'react';
+import { createContext, Suspense, useCallback, useContext, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { Toaster, toast } from '@side/design-system';
+
 import { resolveAppRoute } from '@game-feedback/bridge';
-import { useI18n, translate } from '@/shared/i18n';
+import { toast, Toaster } from '@side/design-system';
+
+import { translate, useI18n } from '@/shared/i18n';
 import { useThemePreference } from '@/shared/theme';
 
 const toasterId = 'game-feedback';
@@ -16,14 +18,14 @@ export function useNotify() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const { locale } = useI18n();
-  const handleNotify = useCallback(
+  const notify = useCallback(
     (text: string) => {
       toast(translate(locale, text), { id: 'game-feedback-notice', toasterId });
     },
     [locale],
   );
   return (
-    <NotifyContext.Provider value={handleNotify}>
+    <NotifyContext.Provider value={notify}>
       {children}
       <Suspense fallback={null}>
         <ServiceToaster />

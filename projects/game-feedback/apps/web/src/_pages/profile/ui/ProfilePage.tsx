@@ -1,24 +1,29 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { formatDate } from '@/shared/lib/date';
+
 import Link from 'next/link';
+
 import { useQuery } from '@tanstack/react-query';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { useSession } from '@/features/auth';
+import { FollowControls } from '@/features/follow';
+import { PostCard, userPostListOptions } from '@/features/post';
 import {
-  profileOptions,
-  UserBadges,
   AuthorLink,
   ProfileLinksEditor,
+  profileOptions,
   ProfilePhotoEditor,
+  UserBadges,
 } from '@/features/user';
-import { userPostListOptions, PostCard } from '@/features/post';
+import type { PostList, PublicProfile } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { formatDate } from '@/shared/lib/date';
+import { BackLink } from '@/shared/navigation';
+import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
-import { FollowControls } from '@/features/follow';
-import type { PublicProfile, PostList } from '@/shared/api';
-import { Avatar, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
+
 interface IProfilePageProps {
   id: string;
   locale: string;
@@ -49,7 +54,7 @@ function ProfileContent({
   initialViewerId,
 }: IProfilePageProps) {
   const { t, locale: textLocale } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const sameViewer = session?.user?.id === initialViewerId;
   const profile = useQuery({
     ...profileOptions(id),
@@ -118,7 +123,7 @@ function ProfileContent({
         {author.id !== session?.user?.id && (
           <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
         )}
-        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={login} />
+        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => requireLogin()} />
         <ReportUserButton userId={author.id} />
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>

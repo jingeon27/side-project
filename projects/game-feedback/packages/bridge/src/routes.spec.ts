@@ -1,6 +1,44 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
+
 describe('community board navigation', () => {
+  it('가이드는 프로필 안내 아래의 화면이며 별도 탭을 만들지 않아야 한다', () => {
+    for (const locale of ['ko', 'en', 'ja'])
+      expect(resolveAppRoute(appRoutes.guide(locale))).toMatchObject({
+        screen: 'guide',
+        tab: 'settings',
+        parent: appRoutes.settings(locale),
+      });
+  });
+  it.each(['login', 'onboarding'] as const)(
+    '인증 화면 %s는 같은 언어의 안전한 복귀 경로만 보존해야 한다',
+    (screen) => {
+      const parent = appRoutes.boards('ja', 'coaching', '週末', 'another-game', { coachingRole: 'STUDENT' });
+      const path = appRoutes[screen]('ja', parent);
+      expect(resolveAppRoute(path)).toMatchObject({ path, screen, tab: 'settings', parent, locale: 'ja' });
+      expect(resolveAppRoute(appRoutes[screen]('en'))).toMatchObject({ screen, parent: '/en' });
+      for (const legal of ['/ja/terms', '/ja/privacy', '/ja/contact']) {
+        expect(resolveAppRoute(appRoutes[screen]('ja', legal))?.parent).toBe(legal);
+      }
+      for (const unsafe of [
+        'https://outside.test/ja',
+        '//outside.test/ja',
+        '/en/guide',
+        '/ja/login',
+        '/ja/onboarding',
+        '/ja/onboarding/',
+        appRoutes.login('ja', parent),
+        appRoutes.onboarding('ja', parent),
+        appRoutes.login('ja', appRoutes.onboarding('ja', parent)),
+        appRoutes.onboarding('ja', appRoutes.login('ja', parent)),
+        '/ja/onboarding/extra',
+        '/ja%2Fonboarding',
+        '/ja\\onboarding',
+      ])
+        expect(WebPathSchema.safeParse(appRoutes[screen]('ja', unsafe)).success, unsafe).toBe(false);
+    },
+  );
   it('로그인은 원래 화면으로 돌아가며 외부 주소와 로그인 순환을 거부해야 한다', () => {
     const parent = appRoutes.boards('ko', 'coaching', '주말', undefined, { coachingRole: 'STUDENT' });
     const login = appRoutes.login('ko', parent);

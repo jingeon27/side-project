@@ -1,9 +1,10 @@
+import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
-import { assertNode, environment, projectDir, yarn } from '../../../scripts/env.mjs';
+
 import { guardDatabaseUrl } from '../../../scripts/database-guard.mjs';
+import { assertNode, environment, projectDir, yarn } from '../../../scripts/env.mjs';
 
 const require = createRequire(import.meta.url);
 const apiDir = fileURLToPath(new URL('../', import.meta.url));
@@ -18,6 +19,8 @@ const unitOnly = projects.length > 0 && projects.every((project) => project === 
 const env = {
   ...configured,
   NODE_ENV: 'test',
+  GF_CACHE_REVALIDATION_SECRET: '',
+  GF_CACHE_REVALIDATION_URL: '',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',
   NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
@@ -33,7 +36,7 @@ const env = {
   DISCORD_CLIENT_SECRET: '',
   GF_TEST_AUTH_ENABLED: 'false',
   SUPERCELL_API_TOKEN: '',
-  GF_ADMIN_GOOGLE_SUB: '',
+  MOBILE_AUTH_CALLBACK_URL: '',
 };
 
 function run(script, args) {

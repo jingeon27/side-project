@@ -1,11 +1,15 @@
-import { Button } from '@side/design-system';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { match } from 'ts-pattern';
-import { useSupportStatusMutation, type TSupportThread } from '@/features/support';
-import { adminUserPath, adminSupportPath } from '@/shared/lib';
+
+import { Button } from '@side/design-system';
+
+import { statusMutationOptions, type TSupportThread } from '@/features/support';
+import { adminSupportPath, adminUserPath } from '@/shared/lib';
 import { ErrorNotice } from '@/shared/ui';
 
 export function SupportThreadCard({ thread }: { thread: TSupportThread }) {
-  const status = useSupportStatusMutation();
+  const client = useQueryClient();
+  const status = useMutation(statusMutationOptions(client));
   const topic = match(thread.topic)
     .with('VERIFICATION', () => '프로필 인증 문의')
     .with('GENERAL', () => '관리자 문의')

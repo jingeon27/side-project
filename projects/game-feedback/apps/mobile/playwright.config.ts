@@ -1,6 +1,7 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
 
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = process.env.GF_MOBILE_E2E_SCHEMA ?? `gf_test_mobile_${randomUUID().replaceAll('-', '')}`;
@@ -20,7 +21,10 @@ if (
   throw new Error('E2E requires the dedicated local Game Feedback test database.');
 databaseUrl.searchParams.set('schema', schema);
 process.env.GF_MOBILE_E2E_DATABASE_URL = databaseUrl.toString();
+// 쓰기 뒤 공개 상세 캐시는 API의 무효화 콜백만 만료한다. 앱이 여는 3302 웹 서버에도 같은 비밀을 준다.
 const apiEnv = {
+  GF_CACHE_REVALIDATION_SECRET: 'game-feedback-mobile-e2e-cache-secret-'.repeat(2),
+  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3302/internal/cache/revalidate',
   NODE_ENV: 'test',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',
@@ -41,7 +45,6 @@ const apiEnv = {
   DISCORD_CLIENT_SECRET: '',
   GF_TEST_AUTH_ENABLED: 'true',
   SUPERCELL_API_TOKEN: '',
-  GF_ADMIN_GOOGLE_SUB: '',
 };
 
 export default defineConfig({
@@ -76,6 +79,11 @@ export default defineConfig({
         NODE_ENV: 'production',
         GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4302',
         NEXT_DIST_DIR: '.next/e2e-mobile',
+        // 운영 빌드 웹은 앱 링크 값이 없으면 첫 요청부터 실패한다. 실제 앱과 연결되지 않는 테스트 값이다.
+        MOBILE_APPLE_TEAM_ID: 'E2ETEAM000',
+        MOBILE_IOS_BUNDLE_ID: 'test.e2e.gamefeedback',
+        MOBILE_ANDROID_PACKAGE: 'test.e2e.gamefeedback',
+        MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => 'E2').join(':'),
       },
       reuseExistingServer: false,
       timeout: 180_000,

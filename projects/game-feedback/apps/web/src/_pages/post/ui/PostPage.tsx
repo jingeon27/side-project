@@ -1,22 +1,28 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+
 import { useQuery } from '@tanstack/react-query';
-import { postDetailOptions, PostArticle, useRecordPostView } from '@/features/post';
-import type { PostDetail } from '@/shared/api';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { useSession } from '@/features/auth';
+import { boardByKind } from '@/features/board';
+import { PostArticle, postDetailOptions, useRecordPostView } from '@/features/post';
 import { AuthorLink, UserBadges } from '@/features/user';
+import type { PostDetail } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
+import { BackLink } from '@/shared/navigation';
 import { LoadingState, ServiceErrorBoundary } from '@/shared/ui';
+import { StartChatLink } from '@/widgets/start-chat';
+import { VerificationPrompt } from '@/widgets/support';
+
 import { usePostRead } from '../model/use-post-read.hook';
 import { ContentActions } from './ContentActions';
 import { PostAnswersSection } from './PostAnswersSection';
 import { PostCommentsSection } from './PostCommentsSection';
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
-import { boardByKind } from '@/features/board';
-import { VerificationPrompt } from '@/widgets/support';
-import { StartChatLink } from '@/widgets/start-chat';
+
 interface IPostPageProps {
   id: string;
   locale: string;
@@ -42,7 +48,6 @@ export function PostPage(props: IPostPageProps) {
 }
 function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPageProps) {
   const { t } = useI18n();
-  const router = useRouter();
   const params = useSearchParams();
   const { session } = useSession(),
     detail = useQuery({
@@ -63,8 +68,13 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
       (params.get('game') ?? 'clash-royale') === game
     )
       return;
-    router.replace(appRoutes.post(locale, id, boardContext.kind, game), { scroll: false });
-  }, [boardContext, game, id, locale, params, router]);
+    // 주소만 맞춘다. router.replace는 page 세그먼트를 새로 받아 열린 답글 입력과 #comment 위치를 잃는다.
+    window.history.replaceState(
+      null,
+      '',
+      `${appRoutes.post(locale, id, boardContext.kind, game)}${window.location.hash}`,
+    );
+  }, [boardContext, game, id, locale, params]);
   if (!detail.data) return <LoadingState text={t('플레이 이야기를 불러오고 있어요')} />;
   const { post, answers, comments } = detail.data;
   const board = boardByKind(post.board);
@@ -99,7 +109,12 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
         </ServiceErrorBoundary>
       )}
       <ServiceErrorBoundary title={t('댓글')} resetKey={id}>
-        <PostCommentsSection post={post} comments={comments} locale={locale} />
+        <PostCommentsSection
+          post={post}
+          comments={comments}
+          cursor={detail.data.commentsCursor}
+          locale={locale}
+        />
       </ServiceErrorBoundary>
     </>
   );

@@ -1,20 +1,27 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpRight, LoaderCircle, MessageSquare, Send } from 'lucide-react';
+
 import { Button, Textarea } from '@side/design-system';
-import { MessageSquare, Send, ArrowUpRight, LoaderCircle } from 'lucide-react';
+
+import { createAnswerMutationOptions } from '@/features/answer';
 import { useSession } from '@/features/auth';
-import { useCreateAnswerMutation } from '@/features/answer';
-import { Avatar, ErrorNotice, useNotify } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
+import { Avatar, ErrorNotice, useNotify } from '@/shared/ui';
+
 import { answerFormSchema } from '../model/content.schema';
+
 interface IAnswerComposerProps {
   postId: string;
 }
 export function AnswerComposer({ postId }: IAnswerComposerProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
-  const { session, login } = useSession(),
+  const { session, requireLogin } = useSession(),
     notify = useNotify(),
-    mutation = useCreateAnswerMutation(),
+    mutation = useMutation(createAnswerMutationOptions(client)),
     form = useZodForm(answerFormSchema, { defaultValues: { body: '' } });
   return (
     <div className="answer-compose">
@@ -63,7 +70,13 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
       ) : (
         <div className="login-prompt">
           <p>{t('로그인하고 함께 플레이를 이야기해요.')}</p>
-          <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
+          <Button
+            variant="primary"
+            size="md"
+            type="submit"
+            className="button dark"
+            onClick={() => requireLogin()}
+          >
             {t('로그인하고 피드백 남기기')}
             <ArrowUpRight size={16} />
           </Button>

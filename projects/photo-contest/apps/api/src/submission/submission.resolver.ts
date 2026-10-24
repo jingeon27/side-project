@@ -1,11 +1,12 @@
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
-
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
-import { SubmissionService } from './submission.service';
-import type { ICreateSubmissionInput, ISubmissionListQuery } from './submission.service';
+import {
+  SubmissionService,
+  type ICreateSubmissionInput,
+  type ISubmissionListQuery,
+} from './submission.service';
 
 @Resolver('Submission')
 export class SubmissionResolver {
@@ -21,17 +22,18 @@ export class SubmissionResolver {
   }
 
   @Mutation()
-  uploadSubmissionPhoto(
+  requestUploadUrl(
     @Viewer() viewer: IViewer,
-    @Args('uploadId') uploadId: string,
-    @Args('file') file: Promise<FileUpload>,
+    @Args('contestId') contestId: string,
+    @Args('contentType') contentType: string,
+    @Args('byteSize') byteSize: number,
   ) {
-    return this.submissionService.uploadFile(viewer, uploadId, file);
+    return this.submissionService.requestUploadUrl(viewer, contestId, contentType, byteSize);
   }
 
   @Mutation()
-  requestUploadUrl(@Viewer() viewer: IViewer, @Args('contestId') contestId: string) {
-    return this.submissionService.requestUploadUrl(viewer, contestId);
+  completeSubmissionUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
+    return this.submissionService.completeUpload(viewer, uploadId);
   }
 
   @Mutation()

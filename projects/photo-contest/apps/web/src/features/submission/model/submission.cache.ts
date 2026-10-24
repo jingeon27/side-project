@@ -1,6 +1,6 @@
 import type { ApolloCache } from '@apollo/client';
-import { resetPhotoFeed } from '@/features/feed';
 
+import { resetPhotoFeed } from '@/features/feed';
 import { ContestDocument } from '@/shared/api/generated';
 
 /** 사진이 빠지면 offset 위치가 밀리므로 목록을 처음부터 다시 받는다. */

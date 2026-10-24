@@ -1,4 +1,7 @@
 import { z } from 'zod';
+
+import { resolveCacheRevalidationConfig } from '../cache-invalidation/cache-invalidation.config';
+import { APP_AUTH_CALLBACK_PATH, parseAppAuthCallbackUrl } from './app-auth-callback';
 import { validateSharedInstanceEnvironment } from './shared-instance.config';
 
 const publicOrigin = z.url().refine((value) => {
@@ -19,6 +22,7 @@ const secret = z
 export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
   if (env.NODE_ENV !== 'production') return;
   validateSharedInstanceEnvironment(env);
+  resolveCacheRevalidationConfig(env);
   const result = z
     .object({
       WEB_ORIGIN: publicOrigin,
@@ -28,7 +32,6 @@ export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
       GF_TEST_AUTH_ENABLED: z.literal('false'),
       GF_PREFETCH_TESTING: z.enum(['false', '']).optional(),
       DATABASE_URL: secret,
-      GF_PROXY_SECRET: z.string().regex(/^[a-f0-9]{64}$/i),
     })
     .safeParse(env);
   if (!result.success)
@@ -37,6 +40,9 @@ export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
     );
   if (env.GAME_FEEDBACK_SITE_URL !== env.WEB_ORIGIN)
     throw new Error('GAME_FEEDBACK_SITE_URL must match WEB_ORIGIN.');
+  // 앱 로그인 코드는 검증된 https 앱 링크로만 보낸다. 다른 origin·경로·커스텀 스킴이면 코드가 앱 링크 밖으로 샌다.
+  if (!parseAppAuthCallbackUrl(env.MOBILE_AUTH_CALLBACK_URL, env.WEB_ORIGIN ?? ''))
+    throw new Error(`MOBILE_AUTH_CALLBACK_URL must be WEB_ORIGIN${APP_AUTH_CALLBACK_PATH}.`);
   const database = z.url().safeParse(env.DATABASE_URL);
   if (!database.success) throw new Error('DATABASE_URL is invalid.');
   const db = new URL(database.data);

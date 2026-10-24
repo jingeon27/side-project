@@ -1,11 +1,16 @@
-import { PostRoute, postMetadata } from '@/_pages/post/index.server';
-import { DocumentContent } from '@/_app/index.server';
+import { locale as rootLocale } from 'next/root-params';
+
+import { DocumentContent, isClientNavigation } from '@/_app/index.server';
+import { PostDocument, postMetadata, PostRoute } from '@/_pages/post/index.server';
+
 export { postMetadata as generateMetadata };
-export default function Page(props: Parameters<typeof PostRoute>[0]) {
+export default async function Page(props: Parameters<typeof PostRoute>[0]) {
   return (
-    <DocumentContent>
-      <PostRoute {...props} />
-    </DocumentContent>
+    <PostDocument locale={await rootLocale()} params={props.params} streamHeader={await isClientNavigation()}>
+      <DocumentContent>
+        <PostRoute {...props} />
+      </DocumentContent>
+    </PostDocument>
   );
 }
 

@@ -1,13 +1,15 @@
-import { ACTIVE_POST } from '../common/content';
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../generated/prisma';
+import { Inject, Injectable } from '@nestjs/common';
+import { omit } from 'es-toolkit';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
-import { Inject, Injectable } from '@nestjs/common';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { validateMediaFile } from '../common/media-file';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient, type Prisma } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { presentPostMedia } from './post-media.presenter';
@@ -23,7 +25,7 @@ export class PostMediaService {
   async upload(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
     const file = validateMediaFile(input);
-    const { bytes: _bytes, ...metadata } = file;
+    const metadata = omit(file, ['bytes']);
     const stored = await this.storage.save(file.bytes, file.mimeType);
     return presentPostMedia(await this.register(user.id, metadata, stored));
   }

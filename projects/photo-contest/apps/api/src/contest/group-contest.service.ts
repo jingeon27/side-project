@@ -1,24 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { groupBy } from 'es-toolkit';
 import { match } from 'ts-pattern';
-import type { Prisma } from '../../generated/prisma';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from '../database/database.service';
 
-import type { Contest, GroupMember } from '../../generated/prisma';
+import type { Contest, GroupMember, Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
-import { PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import { CONTEST_LIKE_LIMIT_MAX, PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { isAdmin } from '../group/group-role';
 import { MembershipService } from '../group/membership.service';
 import { presentPost } from '../post/post.presenter';
 import { postInclude } from '../post/post.query';
 import { contestDates, phase, PHASE } from './contest.policy';
-
 import type { ICreateContestInput } from './contest.service';
 import { CONTEST_FORMAT, GROUP_CONTEST_FILTER, type TGroupContestFilter } from './group-contest.policy';
 import { rankResults } from './result-ranking';
@@ -26,7 +24,11 @@ import { rankResults } from './result-ranking';
 function contestInclude(viewerId: string | null) {
   return {
     _count: { select: { posts: { where: { hidden: false } } } },
-    postVotes: { where: { voterId: { in: viewerId ? [viewerId] : [] } }, select: { postId: true } },
+    // 숨긴 작품에 던진 표는 결과에서 빠지므로 아직 투표하지 않은 것으로 보여 준다.
+    postVotes: {
+      where: { voterId: { in: viewerId ? [viewerId] : [] }, post: { hidden: false } },
+      select: { postId: true },
+    },
   } satisfies Prisma.ContestInclude;
 }
 type TContestRow = Prisma.ContestGetPayload<{ include: ReturnType<typeof contestInclude> }>;
@@ -88,19 +90,28 @@ export class GroupContestService {
     });
     if (!row || row.format !== CONTEST_FORMAT.POST)
       fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
-    const { member } = await this.membership.readableGroup(viewer?.id ?? null, row.groupId);
+    // 비공개 그룹의 대회는 비멤버에게 있는지도 알리지 않는다.
+    const { member } = await this.membership.readableGroup(
+      viewer?.id ?? null,
+      row.groupId,
+      undefined,
+      ERROR_MESSAGE.CONTEST_NOT_FOUND,
+    );
     const node = this.nodes([row], viewer, member)[0];
     if (!node) fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return node;
   }
 
-  async create(viewer: IViewer, input: ICreateContestInput) {
+  async create(viewer: IViewer, input: ICreateContestInput & { likeLimit?: number | null }) {
+    const likeLimit = input.likeLimit ?? 1;
+    if (!Number.isInteger(likeLimit) || likeLimit < 1 || likeLimit > CONTEST_LIKE_LIMIT_MAX)
+      fail('1인당 좋아요 한도는 1~100개로 정해 주세요.');
     const row = await this.transactions.atomic(async (tx) => {
       await this.membership.requireAdmin(viewer.id, input.groupId, tx);
       const title = textValue(input.title, TEXT_LIMIT.CONTEST_TITLE, '대회 제목');
       const dates = contestDates(input.startsAt, input.submissionEndsAt, input.endsAt);
       const created = await (tx ?? this.db).contest.create({
-        data: { groupId: input.groupId, title, format: CONTEST_FORMAT.POST, ...dates },
+        data: { groupId: input.groupId, title, likeLimit, format: CONTEST_FORMAT.POST, ...dates },
       });
       await recordEvent(tx ?? this.db, {
         id: `contest:${created.id}`,
@@ -118,15 +129,21 @@ export class GroupContestService {
       const contest = await (tx ?? this.db).contest.findUnique({ where: { id: contestId } });
       if (!contest || contest.format !== CONTEST_FORMAT.POST)
         fail(ERROR_MESSAGE.CONTEST_NOT_FOUND, ERROR_CODE.NOT_FOUND);
-      await this.membership.requireMember(viewer.id, contest.groupId, tx);
+      await this.membership.requireMemberOf(viewer.id, contest.groupId, ERROR_MESSAGE.CONTEST_NOT_FOUND, tx);
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간에만 투표할 수 있습니다.');
       const post = await (tx ?? this.db).post.findUnique({ where: { id: postId } });
       if (!post || post.hidden || post.contestId !== contestId || post.groupId !== contest.groupId)
         fail('대회 참여 게시물을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
       if (post.authorId === viewer.id) fail('자신의 게시물에는 투표할 수 없습니다.');
-      await (tx ?? this.db).postContestVote.create({ data: { contestId, postId, voterId: viewer.id } });
+      // 숨긴 작품에 던진 표는 결과에서 빠진다. 그 표에 묶여 다시 투표하지 못하는 일이 없도록 새 표로 바꾼다.
+      await (tx ?? this.db).postContestVote.deleteMany({
+        where: { contestId, voterId: viewer.id, post: { hidden: true } },
+      });
+      const vote = await (tx ?? this.db).postContestVote.create({
+        data: { contestId, postId, voterId: viewer.id },
+      });
       await recordEvent(tx ?? this.db, {
-        id: `post-vote:${contestId}:${viewer.id}`,
+        id: `post-vote:${vote.id}`,
         type: ANALYTICS_EVENT.VOTE_CAST,
         userId: viewer.id,
         properties: { contestId, postId },

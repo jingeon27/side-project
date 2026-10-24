@@ -1,14 +1,17 @@
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { spawnSync } from 'node:child_process';
-import { beforeAll, afterAll, describe, expect, it } from 'vitest';
-import supertest from 'supertest';
+
 import type { INestApplication } from '@nestjs/common';
-import { PrismaClient } from '../generated/prisma';
+import supertest from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app';
-import { seed } from '../seed';
+import { createPrismaAdapter } from '../database/prisma-adapter';
+import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
+import { seed } from '../seed';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
@@ -25,13 +28,12 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed');
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
     author = supertest.agent(app.getHttpServer());
@@ -366,7 +368,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .set('Origin', origin)
       .send({ targetType: 'POST', targetId: created.id, reason: 'SPAM' })
       .expect(200);
-    const reports = (await admin.get('/api/admin/reports').expect(200)).body;
+    const reports = (await admin.get('/api/admin/reports').expect(200)).body.items;
     expect(reports.find((row: { targetId: string }) => row.targetId === created.id)).toMatchObject({
       targetPostId: created.id,
       targetPreview: expect.stringContaining(input.body),

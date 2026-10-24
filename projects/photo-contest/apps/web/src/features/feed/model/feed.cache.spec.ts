@@ -1,8 +1,12 @@
 import { InMemoryCache } from '@apollo/client';
 import { describe, expect, it } from 'vitest';
 
-import { MyPhotoFeedDocument, Phase, SubmissionLikeFragmentDoc } from '@/shared/api/generated';
-import type { MyPhotoFeedQuery } from '@/shared/api/generated';
+import {
+  MyPhotoFeedDocument,
+  Phase,
+  SubmissionLikeFragmentDoc,
+  type MyPhotoFeedQuery,
+} from '@/shared/api/generated';
 
 import { resetPhotoFeed } from './feed.cache';
 import { feedTypePolicies } from './feed.type-policies';

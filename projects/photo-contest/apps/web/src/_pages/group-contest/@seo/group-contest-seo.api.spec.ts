@@ -1,7 +1,15 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { createTestImage, createTestUser, graphqlRequest, moveTestContest } from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
+
+import {
+  createTestImage,
+  createTestUser,
+  graphqlRequest,
+  moveTestContest,
+  uploadTestPostMedia,
+} from '@photo-contest/test-kit';
+
 import {
   CastGroupContestVoteDocument,
   CreateGroupContestDocument,
@@ -15,10 +23,10 @@ import {
   GroupVisibility,
   MeDocument,
   RequestGroupMembershipDocument,
-  RequestPostUploadDocument,
   SetGroupModeratorDocument,
   TransferGroupOwnershipDocument,
 } from '@/shared/api/generated';
+
 import { getGroupContestSeoData } from './group-contest-seo.server';
 
 const origin = 'http://localhost:3321';
@@ -70,23 +78,18 @@ describe('생성 문서로 사용하는 그룹 대회·운영 권한·공개 SEO
     await execute(member, RequestGroupMembershipDocument, { groupId: publicId });
     contestId = (await createContest(publicId, '검색할 수 있는 대회')).id;
     privateContestId = (await createContest(privateId, '검색하면 안 되는 대회')).id;
-    const { requestPostUpload: ticket } = await execute(owner, RequestPostUploadDocument, {
+    const uploadId = await uploadTestPostMedia(url, {
+      cookie: owner,
+      origin,
       groupId: publicId,
+      body: await createTestImage(),
+      contentType: 'image/png',
     });
-    expect(
-      (
-        await fetch(`${url}${ticket.url.replace('/backend', '')}`, {
-          method: 'POST',
-          headers: { Origin: origin, Cookie: owner, 'Content-Type': 'image/png' },
-          body: new Uint8Array(await createTestImage()),
-        })
-      ).status,
-    ).toBe(201);
     postId = (
       await execute(owner, CreatePostDocument, {
         groupId: publicId,
         contestId,
-        uploadId: ticket.id,
+        uploadId,
         title: '검색에 나올 참여작',
         rightsConfirmed: true,
       })

@@ -1,4 +1,5 @@
 'use client';
+
 import { Topbar } from '@/widgets/community-shell';
 
 export function LoginTopbar({ returnTo }: { returnTo: string }) {

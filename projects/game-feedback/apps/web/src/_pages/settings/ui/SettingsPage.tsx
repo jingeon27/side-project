@@ -1,20 +1,29 @@
 'use client';
+
+import Link from 'next/link';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpRight, Gamepad2, LogOut, Plus, ShieldBan, Trash2 } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+import { Button } from '@side/design-system';
+
+import { logoutMutationOptions, useSession } from '@/features/auth';
+import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
+import { blockListOptions, unblockUserMutationOptions, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
-import { Button } from '@side/design-system';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { Gamepad2, Plus, LogOut, Trash2, ShieldBan, ArrowUpRight } from 'lucide-react';
-import { useSession, useLogout } from '@/features/auth';
-import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
-import { blockListOptions, useUnblockUser, UserBadges } from '@/features/user';
-import { SupportChatButton } from '@/widgets/support';
+import { ChildLink } from '@/shared/navigation';
+import { Avatar, BottomSheet, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
 import { ConnectProfile } from '@/widgets/game-profile';
-import { openOverlay, Avatar, ErrorNotice, LoadingState, BottomSheet } from '@/shared/ui';
+import { SupportChatButton } from '@/widgets/support';
+
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { LanguageSettings } from './LanguageSettings';
-import { ThemeSettings } from './ThemeSettings';
 import { MyPosts } from './MyPosts';
+import { SettingsTopbar } from './SettingsTopbar';
+import { ThemeSettings } from './ThemeSettings';
 
 interface ISettingsPageProps {
   locale: string;
@@ -51,13 +60,15 @@ function openAccountDeletion() {
     />
   ));
 }
-export function SettingsPage({ locale }: ISettingsPageProps) {
+function SettingsContent({ locale }: ISettingsPageProps) {
+  const client = useQueryClient();
+  const notify = useNotify();
   const { t, locale: textLocale } = useI18n();
   const { session, login, loading } = useSession();
   const accounts = useQuery(gameAccountListOptions(session?.user?.id));
   const blocks = useQuery(blockListOptions(session?.user?.id));
-  const logout = useLogout();
-  const unblock = useUnblockUser();
+  const logout = useMutation(logoutMutationOptions(client, notify));
+  const unblock = useMutation(unblockUserMutationOptions(client, notify));
   if (loading) return <LoadingState />;
   if (!session?.user)
     return (
@@ -70,7 +81,7 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
           </span>
           <h1>{t('나의 플레이 공간')}</h1>
           <p>{t('로그인하고 게임 프로필과 계정을 관리하세요.')}</p>
-          <Button variant="primary" size="md" type="submit" className="button dark" onClick={login}>
+          <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
             {t('로그인 / 시작하기')}
             <ArrowUpRight size={16} />
           </Button>
@@ -175,12 +186,27 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
           <span>{t('로그아웃')}</span>
           <ArrowUpRight size={16} />
         </button>
-        <button className="settings-action danger-text" onClick={openAccountDeletion}>
+        <button className="settings-action danger-text" onClick={() => openAccountDeletion()}>
           <Trash2 size={18} />
           <span>{t('회원 탈퇴')}</span>
           <ArrowUpRight size={16} />
         </button>
       </section>
     </>
+  );
+}
+
+export function SettingsPage(props: Parameters<typeof SettingsContent>[0]) {
+  const { t } = useI18n();
+  return (
+    <CommunityPage locale={props.locale} topbar={<SettingsTopbar locale={props.locale} />}>
+      <SettingsContent {...props} />
+      <section className="settings-card">
+        <h2>{t('서비스 안내')}</h2>
+        <ChildLink href={appRoutes.guide(props.locale)} className="settings-action">
+          {t('이용 가이드')}
+        </ChildLink>
+      </section>
+    </CommunityPage>
   );
 }

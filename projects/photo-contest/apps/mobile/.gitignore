@@ -5,3 +5,13 @@ android/
 ios/
 playwright-report/
 test-results/
+# 스토어 서명 키·푸시 키·EAS/Firebase 자격 증명
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+*.key
+credentials.json
+google-services.json
+GoogleService-Info.plist

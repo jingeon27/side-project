@@ -1,5 +1,6 @@
-import type { Prisma } from '../generated/prisma';
 import { ChatAttachmentSchema, type TChatAttachment } from '@game-feedback/contracts';
+
+import type { Prisma } from '../generated/prisma';
 
 export const attachmentSelect = {
   id: true,

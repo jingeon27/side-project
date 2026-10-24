@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { AUTH_REGISTER_IP_LIMIT } from './config/limits';
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../test/support/app';
+import { AUTH_REGISTER_IP_LIMIT } from './config/limits';
 
 describe('운영 프록시의 가입 제한', () => {
   let api: ITestApi | undefined;

@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import type { Request } from 'express';
+import { describe, expect, it } from 'vitest';
+
+import { OnboardInputSchema, PostInputSchema } from '@game-feedback/contracts';
+
 import {
   assertDatabaseUrl,
   assertOrigin,
@@ -9,7 +12,6 @@ import {
   GoogleIdentityProvider,
   hash,
 } from './security';
-import { OnboardInputSchema, PostInputSchema } from '@game-feedback/contracts';
 
 const db = 'postgresql://game_feedback:secret@127.0.0.1:55442/game_feedback?schema=public';
 describe('database isolation', () => {

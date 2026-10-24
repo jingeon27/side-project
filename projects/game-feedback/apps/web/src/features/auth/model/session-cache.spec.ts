@@ -1,8 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { Session } from '@/shared/api';
+
 import { sessionOptions } from './auth.options';
-import { clearAuthenticatedSession, replaceSession, refreshSession } from './session-cache';
+import { clearAuthenticatedSession, refreshSession, replaceSession } from './session-cache';
+
 const { loadSession } = vi.hoisted(() => ({ loadSession: vi.fn() }));
 vi.mock('../api/auth.api', () => ({ fetchSession: loadSession, fetchTestAccounts: vi.fn() }));
 afterEach(() => loadSession.mockReset());

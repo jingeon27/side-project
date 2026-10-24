@@ -1,6 +1,8 @@
-import { translate, type TLocale } from '@/shared/i18n/index.server';
 import { ArrowUpRight } from 'lucide-react';
+
 import { getContactEmail } from '@/shared/config';
+import { translate, type TLocale } from '@/shared/i18n/index.server';
+
 export function ContactContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   const contact = getContactEmail();
@@ -9,7 +11,7 @@ export function ContactContent({ locale }: { locale: TLocale }) {
       <p className="info-lead">{t('불편했던 점, 좋은 아이디어, 함께 만들어가고 싶은 이야기를 기다려요.')}</p>
       {contact ? (
         <div className="info-callout">
-          <h2>{t('운영 문의')}</h2>
+          <h2>{t('운영 및 광고 문의')}</h2>
           <a className="contact-link" href={`mailto:${contact}`}>
             {contact}
             <ArrowUpRight size={18} />
@@ -38,7 +40,7 @@ export function ContactContent({ locale }: { locale: TLocale }) {
       </p>
       <h2>{t('서비스 상태')}</h2>
       <p>{t('서비스 오류를 문의할 때는 문제가 발생한 화면과 시각을 함께 알려주세요.')}</p>
-      <p className="muted small">{t('플레이메이트는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.')}</p>
+      <p className="muted small">{t('Game Mate는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.')}</p>
     </>
   );
 }

@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { API_BASE } from '@/shared/config/env';
 
-import { fetchAppConfig } from '../api/app-config.api';
-import type { TFetch } from '../api/app-config.api';
+import { fetchAppConfig, type TFetch } from '../api/app-config.api';
 import { isUpdateRequired } from '../lib/version.helper';
 
 const APP_CONFIG_TIMEOUT_MS = 5_000;

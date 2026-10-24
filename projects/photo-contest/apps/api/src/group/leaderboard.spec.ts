@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLeaderboard } from './leaderboard';
-import type { ILeaderboardSubmission } from './leaderboard';
+import { buildLeaderboard, type ILeaderboardSubmission } from './leaderboard';
 
 interface ITestUser {
   id: string;

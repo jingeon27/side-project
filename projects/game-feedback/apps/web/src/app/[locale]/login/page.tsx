@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
+
 import { LoginRoute } from '@/_pages/login/index.server';
-import { LoadingState } from '@/shared/ui';
 import { staticPageMetadata } from '@/shared/seo';
+import { LoadingState } from '@/shared/ui';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   return staticPageMetadata('login', (await params).locale);

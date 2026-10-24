@@ -1,13 +1,12 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
-import { Trophy } from 'lucide-react';
 import { useId } from 'react';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { Trophy } from 'lucide-react';
 import { match } from 'ts-pattern';
 
-import { GroupLeaderboardDocument } from '@/shared/api/generated';
-import type { GroupLeaderboardQuery } from '@/shared/api/generated';
+import { GroupLeaderboardDocument, type GroupLeaderboardQuery } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -93,7 +92,7 @@ export function GroupLeaderboard({ groupId, viewerId }: { groupId: string; viewe
       <AsyncBoundary
         resetKey={groupId}
         errorTitle="그룹 순위를 불러오지 못했어요"
-        onRetry={refetch}
+        onRetry={() => refetch()}
         fallback={
           <div role="status" aria-label="그룹 순위를 불러오는 중" className="flex flex-col gap-2">
             <Skeleton className="h-14 w-full" />

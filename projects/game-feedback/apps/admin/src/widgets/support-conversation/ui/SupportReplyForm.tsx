@@ -1,11 +1,16 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { Button, Textarea } from '@side/design-system';
-import { useSupportReplyMutation } from '@/features/support';
+
+import { replyMutationOptions } from '@/features/support';
 import { useZodForm } from '@/shared/model';
 import { ErrorNotice } from '@/shared/ui';
+
 import { supportReplySchema } from '../model/support-reply.schema';
 
 export function SupportReplyForm({ conversationId }: { conversationId: string }) {
-  const send = useSupportReplyMutation(conversationId);
+  const client = useQueryClient();
+  const send = useMutation(replyMutationOptions(client, conversationId));
   const form = useZodForm(supportReplySchema, { defaultValues: { body: '' } });
   const handleSend = form.handleSubmit(async ({ body }) => {
     const clientMessageId =

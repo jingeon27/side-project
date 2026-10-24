@@ -1,6 +1,9 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { Check, MessageSquare } from 'lucide-react';
+
+import { useI18n } from '@/shared/i18n';
+
 interface IPostStatusProps {
   answerCount: number;
   helpfulCount: number;

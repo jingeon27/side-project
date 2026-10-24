@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
+import { match } from 'ts-pattern';
+
 import {
-  GroupContestPageTemplate,
   getGroupContestMetadata,
   getGroupContestSeoData,
   groupContestJsonLd,
+  GroupContestPageTemplate,
 } from '@/_pages/group-contest';
 import { PreloadQuery } from '@/shared/api/apollo-client.server';
 import {
@@ -36,32 +39,42 @@ export default async function Page({ params }: IPageProps) {
   const seo = await getGroupContestSeoData(id, contestId);
   if (!seo) notFound();
   const jsonLd = groupContestJsonLd(seo, getWebOrigin());
-  const completed = seo.contest?.phase === Phase.Completed;
-  const content = <GroupContestPageTemplate id={contestId} groupId={id} resultsPreloaded={completed} />;
   return (
     <>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
       <PreloadQuery query={MeDocument}>
         <PreloadQuery query={GalleryDocument} variables={{ id }} errorPolicy="all">
-          {seo.group.visibility === GroupVisibility.Public ? (
-            <PreloadQuery query={GroupContestDocument} variables={{ id: contestId }} errorPolicy="all">
-              {completed ? (
-                <PreloadQuery query={GroupContestResultsDocument} variables={{ contestId }} errorPolicy="all">
-                  {content}
+          {match(seo.group.visibility)
+            .with(GroupVisibility.Public, () => {
+              const contest = seo.contest;
+              if (!contest) notFound();
+              return (
+                <PreloadQuery query={GroupContestDocument} variables={{ id: contestId }} errorPolicy="all">
+                  {match(contest.phase)
+                    .with(Phase.Completed, () => (
+                      <PreloadQuery
+                        query={GroupContestResultsDocument}
+                        variables={{ contestId }}
+                        errorPolicy="all"
+                      >
+                        <GroupContestPageTemplate id={contestId} groupId={id} resultsPreloaded />
+                      </PreloadQuery>
+                    ))
+                    .with(Phase.Upcoming, Phase.Submission, Phase.Voting, () => (
+                      <PreloadQuery
+                        query={GalleryPostsDocument}
+                        variables={{ groupId: id, contestId, sort: PostSort.Newest, offset: 0, limit: 24 }}
+                        errorPolicy="all"
+                      >
+                        <GroupContestPageTemplate id={contestId} groupId={id} />
+                      </PreloadQuery>
+                    ))
+                    .exhaustive()}
                 </PreloadQuery>
-              ) : (
-                <PreloadQuery
-                  query={GalleryPostsDocument}
-                  variables={{ groupId: id, contestId, sort: PostSort.Newest, offset: 0, limit: 24 }}
-                  errorPolicy="all"
-                >
-                  {content}
-                </PreloadQuery>
-              )}
-            </PreloadQuery>
-          ) : (
-            content
-          )}
+              );
+            })
+            .with(GroupVisibility.Private, () => <GroupContestPageTemplate id={contestId} groupId={id} />)
+            .exhaustive()}
         </PreloadQuery>
       </PreloadQuery>
     </>

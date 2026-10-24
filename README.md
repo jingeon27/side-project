@@ -19,6 +19,7 @@ projects/game-feedback/
   packages/sdk/    # Orval API Client · 응답 검증 스키마
   docs/
 packages/design-system/ # 두 웹이 공유하는 Base UI·토큰·스타일·cn, 자체 Vitest
+packages/migration-check/ # Prisma migration의 파괴적 DDL 검사, 자체 Vitest
 packages/typescript-config/
 packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
 ```
@@ -67,6 +68,35 @@ corepack yarn workspace @side/game-feedback dev:demo
 
 ```sh
 corepack yarn workspace @side/design-system check
+corepack yarn storybook
+corepack yarn build:storybook
+```
+
+## 코드 포맷과 import 순서
+
+루트 Prettier와 `@ianvs/prettier-plugin-sort-imports`가 모든 워크스페이스의 포맷과 import 순서를 관리합니다. [`.prettierrc.json`](.prettierrc.json)의 `importOrder`에서 Node.js 내장 모듈 → React·Next.js → 외부 패키지 → 워크스페이스 패키지 → `@/`·`~/` 별칭 → 상대 경로 순서를 설정하며 그룹 사이에는 빈 줄을 둡니다. 새 프로젝트의 패키지 scope를 만들면 워크스페이스 정규식에도 추가하세요. CSS나 `server-only`처럼 값 없이 가져오는 import는 실행 순서를 유지합니다.
+
+```sh
+corepack yarn format:check
+corepack yarn format
+# 수정한 파일만 정리할 때
+corepack yarn prettier --write packages/design-system/src/index.ts
+```
+
+편집기에서는 저장소에 설치된 Prettier와 루트 설정을 사용하세요. NestJS의 legacy decorator와 TypeScript 6.0.2 import 문법도 지원하도록 설정했습니다.
+
+## Git hook
+
+`yarn install`이 루트 `postinstall`([`scripts/install-git-hooks.mjs`](scripts/install-git-hooks.mjs))로 [husky](https://typicode.github.io/husky/) hook을 설치합니다. Yarn 4는 `prepare`를 실행하지 않아 husky 문서의 Yarn 방식을 따릅니다. `HUSKY=0`, CI, `.git`이 없는 Docker 빌드, husky가 없는 production 설치에서는 조용히 건너뜁니다.
+
+- `pre-commit`: lint-staged가 스테이징된 파일만 루트 설정으로 `prettier --write`합니다. `.prettierignore` 대상과 Prettier가 모르는 파일은 건드리지 않습니다. lint는 각 프로젝트의 검사 명령으로 실행합니다.
+- `commit-msg`: 커밋 스킬의 `<type>(<scope>): <내용>` 형식을 검사합니다. type은 `feat`·`fix`·`refactor`·`test`·`docs`·`chore`·`perf`·`ci`·`build`·`style`·`revert`·`merge`이고 scope는 선택입니다. Git이 만드는 merge·revert·fixup·squash 메시지는 통과합니다. 검사 구현과 Vitest는 `@side/commit-message-check`가 소유합니다.
+
+worktree는 `core.hooksPath`(`.husky/_`) 설정을 공유하지만 hook 파일은 각 worktree에 생기므로 새 worktree에서도 `yarn install`을 실행해야 hook이 동작합니다. 버전 관리자로 설치한 Node를 GUI Git 클라이언트가 찾지 못하면 `~/.config/husky/init.sh`에서 PATH를 설정합니다.
+
+```sh
+HUSKY=0 git rebase -i develop   # hook이 필요 없는 명령·자동화에서 끈다
+git commit --no-verify          # 비상시에만 사용한다
 ```
 
 ## 검증
@@ -95,3 +125,17 @@ corepack yarn format:check
 웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/typescript-config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
 
 새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.
+
+## Bambyul · 밤별
+
+‘밤하늘의 별’이라는 의미의 공통 브랜드다. 작성자 김진건의 이름에 담긴 ‘별’과 ‘하늘’에서 가져왔다.
+
+| 제품                    | 프로젝트      | 운영 웹                     | 운영 API                                         |
+| ----------------------- | ------------- | --------------------------- | ------------------------------------------------ |
+| 밤별 블로그             | blog          | https://blog.bambyul.com    | 별도 API 서버 없음 (`api.blog.bambyul.com` 예약) |
+| Game Mate               | game-feedback | https://game.bambyul.com    | https://api.game.bambyul.com/api                 |
+| 별사대 · 별난 사진 대회 | photo-contest | https://contest.bambyul.com | https://api.contest.bambyul.com/graphql          |
+
+서비스 로고는 서로 다른 실루엣과 색을 쓴다. 밤별 블로그는 남색의 책과 별, Game Mate는 초록색 게임패드, 별사대는 코랄색의 카메라와 별 렌즈다. 각 서비스의 favicon·Apple 아이콘·공유 이미지·네이티브 앱 아이콘은 해당 로고를 따른다.
+
+웹·WebView는 각 웹 origin의 `/api` 또는 `/backend` 프록시를 사용한다. API 공개 도메인과 서버 간 내부 upstream 주소를 구분하며, 별사대의 API GraphQL도 Next 프록시를 거쳐 공개 캐시를 무효화한다. DNS·TLS·호스팅 연결은 [공통 배포 안내](deploy/shared-instance/README.md)와 [블로그 배포 안내](projects/blog/docs/deployment.md)를 따른다.

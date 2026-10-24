@@ -13,8 +13,6 @@
   "aliases": {
     "components": "@side/design-system/ui",
     "utils": "@side/design-system/lib/cn.helper",
-    "ui": "@side/design-system/ui",
-    "lib": "@side/design-system/lib",
-    "hooks": "@side/design-system/hooks"
+    "ui": "@side/design-system/ui"
   }
 }

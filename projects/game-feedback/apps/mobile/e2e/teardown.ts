@@ -1,5 +1,7 @@
 import { createRequire } from 'node:module';
 
+import { createPrismaAdapter } from '../../api/src/database/prisma-adapter';
+
 export default async function teardown() {
   const schema = process.env.GF_MOBILE_E2E_SCHEMA;
   if (!schema || !/^gf_test_[a-z0-9_]+$/.test(schema))
@@ -16,7 +18,7 @@ export default async function teardown() {
     target.searchParams.get('schema') !== schema
   )
     throw new Error('Refusing to clean an unexpected database.');
-  const db = new PrismaClient({ datasources: { db: { url: target.toString() } } });
+  const db = new PrismaClient({ adapter: createPrismaAdapter(target.toString()) });
   try {
     await db.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   } finally {

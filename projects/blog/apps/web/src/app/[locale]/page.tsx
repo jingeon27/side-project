@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getArticles } from '@/entities/article/lib/get-articles';
+
+import { getArticles, getPublishedCategories } from '@/entities/article/lib/get-articles';
 import { ArticleCard } from '@/entities/article/ui/article-card';
 import { labels } from '@/shared/config/labels';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
@@ -17,7 +18,8 @@ export default async function HomePage({ params }: Props) {
   if (locale !== 'ko' && locale !== 'en') notFound();
   const t = labels(locale);
   const articles = getArticles(locale);
-  const categories = ['engineering', 'til', 'perspectives', 'misc'] as const;
+  // Empty category pages are not published, so only link categories that have articles.
+  const categories = getPublishedCategories(locale);
   return (
     <main id="main-content" className="page-container home-page">
       <section className="home-hero">

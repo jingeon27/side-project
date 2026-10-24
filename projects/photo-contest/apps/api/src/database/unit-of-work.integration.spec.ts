@@ -1,14 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { recordEvent } from '../analytics/analytics-event.writer';
-import { Database } from './database.service';
 
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 
-import type { ITestApi } from '../../test/support/app';
-import { createTestApp } from '../../test/support/app';
+import { createTestApp, type ITestApi } from '../../test/support/app';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
+import { recordEvent } from '../analytics/analytics-event.writer';
 import { ERROR_MESSAGE } from '../common/errors';
 import { SERIALIZABLE_ATTEMPTS } from '../config/limits';
+import { Database } from './database.service';
 import { UnitOfWork } from './unit-of-work';
 
 const userData = () => {

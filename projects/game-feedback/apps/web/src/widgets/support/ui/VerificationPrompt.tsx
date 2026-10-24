@@ -1,7 +1,9 @@
 'use client';
+
 import { useSession } from '@/features/auth';
-import { SupportChatButton } from './SupportChatButton';
 import { useI18n } from '@/shared/i18n';
+
+import { SupportChatButton } from './SupportChatButton';
 
 export function VerificationPrompt() {
   const { session } = useSession();

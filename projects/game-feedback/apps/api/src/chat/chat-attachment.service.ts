@@ -1,10 +1,11 @@
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient } from '../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+import { omit } from 'es-toolkit';
+
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
+import { UnitOfWork } from '../database/unit-of-work';
+import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
 import { validateChatFile } from './chat-file';
@@ -20,7 +21,7 @@ export class ChatAttachmentService {
   async upload(req: SessionRequest, conversationId: string, input: unknown) {
     const user = requireUser(req);
     const file = validateChatFile(input);
-    const { bytes: _bytes, ...metadata } = file;
+    const metadata = omit(file, ['bytes']);
     const stored = await this.storage.save(file.bytes, file.mimeType);
     return attachmentDto(await this.register(user.id, conversationId, metadata, stored));
   }
@@ -57,6 +58,7 @@ export class ChatAttachmentService {
     const user = requireUser(req);
     const conversation = await this.db.chatConversation.findFirst({
       where: { id: conversationId, OR: [{ firstUserId: user.id }, { secondUserId: user.id }] },
+      include: { support: { select: { historyStartAt: true, historyStartId: true } } },
     });
     if (!conversation) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     const file = await this.db.chatAttachment.findFirst({

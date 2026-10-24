@@ -29,7 +29,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   await postEditor.getByRole('button', { name: '수정 완료', exact: true }).click();
   await expect(postEditor).not.toBeVisible();
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
-  await expect(page).toHaveTitle(`${title} | 플레이메이트`);
+  await expect(page).toHaveTitle(`${title} | Game Mate`);
 
   const commentBody = `방금 수정한 요청에 댓글을 남겨요. ${suffix}`;
   await page.getByRole('textbox', { name: '댓글 내용', exact: true }).fill(commentBody);
@@ -59,11 +59,18 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
   await expect(editedComment).toHaveCount(0);
 
   await page.locator('.detail-card').getByRole('button', { name: '삭제', exact: true }).click();
+  // 삭제한 글을 다시 받으면 404가 오류 경계로 잠깐 보인다.
+  const detailRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname === `/api/posts/${post.id}`)
+      detailRequests.push(request.url());
+  });
   await page
     .getByRole('dialog', { name: '정말 삭제할까요?' })
     .getByRole('button', { name: '삭제하기' })
     .click();
   await expect(page).toHaveURL('/ko');
+  expect(detailRequests).toEqual([]);
   expect((await page.request.get(`/api/posts/${post.id}`)).status()).toBe(404);
 });
 
@@ -133,7 +140,7 @@ test('a session changed outside the screen clears the previous account confirmat
   await page.goto('/ko/settings');
   await expect(page.locator('.settings-profile:visible')).toContainText('새벽의호그');
   await page.getByRole('button', { name: '회원 탈퇴', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '플레이메이트를 떠나시겠어요?' });
+  const dialog = page.getByRole('dialog', { name: 'Game Mate를 떠나시겠어요?' });
   await dialog.getByRole('textbox').fill('탈퇴');
   await expect(dialog.getByRole('button', { name: '계정 영구 삭제하기' })).toBeEnabled();
 

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { uploadMedia } from './post-media.api';
 
 const file = new File(['image-content'], '사진.png', { type: 'image/png' });

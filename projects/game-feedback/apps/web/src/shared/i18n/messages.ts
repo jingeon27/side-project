@@ -1,11 +1,22 @@
+import { infoMessages } from './info-messages';
 import type { TLocale } from './locale';
 import { profileMessages } from './profile-messages';
-import { infoMessages } from './info-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
   ...infoMessages,
+  '화면 모드를 변경했어요': ['Display mode updated', '画面モードを変更しました'],
+  '변경한 화면 모드는 이 기기에 저장돼요.': [
+    'Your display mode is saved on this device.',
+    '変更した画面モードはこの端末に保存されます。',
+  ],
   ...profileMessages,
+  '로그인이 필요해요': ['Sign in required', 'ログインが必要です'],
+  '로그인 후 이 기능을 이용할 수 있어요.': [
+    'Sign in to use this feature.',
+    'この機能を利用するにはログインしてください。',
+  ],
+  로그인하기: ['Sign in', 'ログインする'],
   '소셜 계정으로 로그인하세요.': [
     'Sign in with your social account.',
     'ソーシャルアカウントでログインしてください。',
@@ -552,11 +563,30 @@ const messages: Record<string, readonly [string, string]> = {
   '작성자와 1:1 채팅': ['Chat with the author', '投稿者と1対1チャット'],
   작성자: ['Author', '投稿者'],
   '아직 댓글이 없어요.': ['No comments yet.', 'コメントはまだありません。'],
+  '{count}개 이상': ['{count}+', '{count}件以上'],
+  '이전 댓글 더 보기': ['Show earlier comments', '以前のコメントを表示'],
+  '이전 댓글을 불러오고 있어요': ['Loading earlier comments', '以前のコメントを読み込んでいます'],
+  '이전 댓글을 불러오지 못했어요. 다시 시도해주세요.': [
+    'Could not load earlier comments. Please try again.',
+    '以前のコメントを読み込めませんでした。もう一度お試しください。',
+  ],
   '댓글을 남겨주세요': ['Write a comment', 'コメントを入力'],
   '로그인하고 댓글 남기기': ['Sign in to comment', 'ログインしてコメント'],
   '댓글을 남겼어요.': ['Comment posted.', 'コメントを投稿しました。'],
   '댓글 내용': ['Your comment', 'コメント内容'],
   '댓글 등록': ['Post comment', 'コメントを投稿'],
+  답글: ['Reply', '返信'],
+  취소: ['Cancel', 'キャンセル'],
+  '답글 내용': ['Your reply', '返信内容'],
+  '답글 등록': ['Post reply', '返信を投稿'],
+  '답글을 남겨주세요': ['Write a reply', '返信を入力'],
+  '답글을 남겼어요.': ['Reply posted.', '返信を投稿しました。'],
+  '{name}님에게 답글 남기기': ['Reply to {name}', '{name}さんに返信'],
+  '삭제된 댓글이에요.': ['This comment has been deleted.', '削除されたコメントです。'],
+  '댓글을 삭제해도 다른 사람이 남긴 답글은 유지됩니다.': [
+    'Replies from other people remain after you delete your comment.',
+    'コメントを削除しても、他の人の返信は残ります。',
+  ],
   '플레이 이야기를 불러오고 있어요': ['Loading the post', '投稿を読み込み中'],
   '피드백 요청을 찾을 수 없어요.': ['Feedback request not found.', '依頼が見つかりません。'],
   '피드로 돌아가기': ['Back to the feed', 'フィードに戻る'],
@@ -625,7 +655,7 @@ const messages: Record<string, readonly [string, string]> = {
   '작성글 페이지': ['Post pages', '投稿ページ'],
   처음으로: ['First page', '最初のページ'],
   '이전 요청 보기 →': ['Earlier requests →', '以前の依頼を見る →'],
-  '플레이메이트를 떠나시겠어요?': ['Leave Playmate?', 'Playmateを退会しますか？'],
+  'Game Mate를 떠나시겠어요?': ['Leave Game Mate?', 'Game Mateを退会しますか？'],
   '계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.': [
     'Your account, game profiles and content will be deleted. This cannot be undone.',
     'アカウント、ゲームプロフィール、投稿を削除します。取り消すことはできません。',
@@ -688,7 +718,26 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '새로운 피드백이 도착했어요': ['New feedback received', '新しいフィードバックがあります'],
   '당신의 피드백이 도움이 됐어요': ['Your feedback helped someone', 'あなたのフィードバックが役に立ちました'],
+  '알 수 없는 플레이어': ['Unknown player', '不明なプレイヤー'],
+  '{name}님이 "{title}"에 피드백을 남겼어요.': [
+    '{name} left feedback on "{title}".',
+    '{name}さんが「{title}」にフィードバックを残しました。',
+  ],
+  '{name}님이 "{title}"의 피드백을 도움됨으로 표시했어요.': [
+    '{name} marked your feedback on "{title}" as helpful.',
+    '{name}さんが「{title}」のフィードバックを役に立ったとマークしました。',
+  ],
+  '{name}님이 "{title}"에 댓글을 남겼어요.': [
+    '{name} commented on "{title}".',
+    '{name}さんが「{title}」にコメントしました。',
+  ],
+  '{name}님이 "{title}"에 답글을 남겼어요.': [
+    '{name} replied on "{title}".',
+    '{name}さんが「{title}」に返信しました。',
+  ],
+  '{name}님의 새 글: {title}': ['New post from {name}: {title}', '{name}さんの新着投稿：{title}'],
   '새로운 댓글이 달렸어요': ['New comment received', '新しいコメントがあります'],
+  '새로운 답글이 달렸어요': ['New reply received', 'コメントに返信が届きました'],
   '(수정됨)': ['(edited)', '（編集済み）'],
   피드백: ['Feedback', 'フィードバック'],
   '답변 기다리는 중': ['Awaiting replies', '回答待ち'],
@@ -723,7 +772,7 @@ const messages: Record<string, readonly [string, string]> = {
   '어떤 이름으로 만날까요?': ['What should we call you?', 'どんな名前で参加しますか？'],
   '함께 플레이할 계정을 골라보세요': ['Choose an account to play with', '利用するアカウントを選んでください'],
   '다음 플레이는 함께, 더 좋게': ['Make your next game better, together', '次のプレイを、一緒にもっと良く'],
-  '플레이메이트에 오신 것을 환영해요.': ['Welcome to Playmate.', 'Playmateへようこそ。'],
+  'Game Mate에 오신 것을 환영해요.': ['Welcome to Game Mate.', 'Game Mateへようこそ。'],
   'Google로 시작하기': ['Continue with Google', 'Googleで続ける'],
   'Google의 공개 이름과 사진은 수집하지 않아요.': [
     'We do not collect your Google name or photo.',
@@ -740,6 +789,16 @@ const messages: Record<string, readonly [string, string]> = {
   '에 동의합니다.': ['I agree to the above.', 'に同意します。'],
   '만 14세 이상입니다.': ['I am at least 14 years old.', '14歳以上です。'],
   '가입 완료하기': ['Complete sign-up', '登録を完了'],
+  회원가입: ['Sign up', '新規登録'],
+  '시트 높이 조절': ['Adjust sheet height', 'シートの高さを調整'],
+  '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.': [
+    'Choose a nickname and agree to the required items.',
+    'ニックネームを決めて、必須項目に同意してください。',
+  ],
+  '닉네임에는 문자, 숫자, 공백과 _ . -만 사용할 수 있어요.': [
+    'Use letters, numbers, spaces, or _ . - in your nickname.',
+    'ニックネームには文字、数字、空白と _ . - を使用できます。',
+  ],
   '서로를 존중하는 건강한 피드백 공간': [
     'A respectful place to share feedback',
     '互いを尊重するフィードバックの場',
@@ -818,8 +877,8 @@ const messages: Record<string, readonly [string, string]> = {
     '健全なゲーム文化を一緒につくりましょう。',
   ],
   '지금은 함께 만들어가는 알파 기간': ['Help us shape this alpha', '一緒につくるアルファ版です'],
-  '플레이메이트 홈': ['Playmate home', 'Playmateホーム'],
-  플레이메이트: ['Playmate', 'Playmate'],
+  'Game Mate 홈': ['Game Mate home', 'Game Mateホーム'],
+  'Game Mate': ['Game Mate', 'Game Mate'],
   '주 메뉴': ['Main menu', 'メインメニュー'],
   '이용 가이드': ['How to use', '使い方'],
   로그인: ['Sign in', 'ログイン'],

@@ -8,7 +8,7 @@ description: API(apps/api)에 GraphQL 쿼리·뮤테이션·필드나 REST 엔�
 ## 순서
 
 1. **계약** `src/<name>/<name>.graphql`: 다른 파일처럼 `type Query { … }`·`type Mutation { … }`로 쓴다. `typePaths`(`src/**/*.graphql`)가 자동으로 합치므로 따로 등록하지 않는다. 시각 필드는 `DateTime`이고 서비스는 `Date`를 돌려준다(문자열이면 `DateTimeScalar.serialize`가 내부 오류를 낸다).
-2. **모듈** `src/<name>/<name>.module.ts`: `providers: [<Name>Service, <Name>Resolver]`, REST는 `controllers`. 권한 확인이 필요하면 `imports: [GroupModule]`. `Database`·`PhotoStorage`·`SessionService`는 `@Global` 모듈이 주고 `recordEvent`는 함수라 import할 모듈이 없다. `src/app.module.ts`의 `imports`에 등록한다.
+2. **모듈** `src/<name>/<name>.module.ts`: `providers: [<Name>Service, <Name>Resolver]`, REST는 `controllers`. 권한 확인이 필요하면 `imports: [GroupModule]`. `Database`·`MediaStorage`·`SessionService`는 `@Global` 모듈이 주고 `recordEvent`는 함수라 import할 모듈이 없다. `src/app.module.ts`의 `imports`에 등록한다.
 3. **리졸버**: `@Resolver('<Type>')` + `@Query()`·`@Mutation()`·`@ResolveField()`, 메서드 이름 = 필드 이름(겹치면 `@ResolveField('phase') currentPhase`). 로그인 필수는 `@Viewer() viewer: IViewer`, 공개는 `@OptionalViewer() viewer: IViewer | null`. 규칙·쿼리는 서비스로 넘긴다.
 4. **응답 모양**: schema-first라 TS가 `.graphql`과 맞는지 검사하지 않는다. 서비스의 `I<Type>View`(필드 리졸버가 있으면 `I<Type>Node`) 인터페이스로 모양을 고정하고, 스키마의 모든 필드를 같은 이름 속성이나 `@ResolveField`로 채운다 — 빠진 non-null 필드는 INTERNAL_SERVER_ERROR로 가려진다. User는 `USER_VIEW_SELECT`로 고른다.
 5. **다른 모듈의 타입에 필드**: 의존하는 쪽 모듈에 `@Resolver('<그 타입>')` 필드 리졸버를 둔다(`src/contest/group-contests.resolver.ts`가 `Group.contests`). 모듈 순환 import를 만들지 않는다.
@@ -36,7 +36,7 @@ description: API(apps/api)에 GraphQL 쿼리·뮤테이션·필드나 REST 엔�
 
 - 웹·앱은 같은 origin의 `/backend/<path>` 프록시로 부르므로 응답에 넣는 API 경로는 `/backend/…`다(`photoUrl()`).
 - POST 기본 상태는 201 — 계약이 200이면 `@HttpCode(HttpStatus.OK)`. 쿠키를 쓰면서 JSON을 돌려주면 `@Res({ passthrough: true })`. 고정 경로를 파라미터 경로보다 먼저 선언한다(`@Get('config')` → `@Get(':provider')`).
-- 상태를 바꾸는 요청을 GET으로 만들지 않는다(Origin 검사가 GET을 통과시킨다). JSON 본문은 `MAX_JSON_BODY`(64kb)까지, raw 본문 파서는 `src/bootstrap.ts`가 `/uploads`에만 붙인다. `Cache-Control: private, no-store`를 덮어쓰지 않는다.
+- 상태를 바꾸는 요청을 GET으로 만들지 않는다(Origin 검사가 GET을 통과시킨다). JSON 본문은 `MAX_JSON_BODY`(64kb)까지이며 파일 본문을 받는 경로는 두지 않는다(저장소 서명 POST). `Cache-Control: private, no-store`를 덮어쓰지 않는다.
 
 ## 체크리스트
 

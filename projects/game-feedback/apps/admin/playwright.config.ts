@@ -1,6 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
+
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = `gf_test_admin_${randomUUID().replaceAll('-', '')}`;
 const target = new URL('postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test');
@@ -8,6 +10,8 @@ target.searchParams.set('schema', schema);
 process.env.GF_ADMIN_E2E_SCHEMA = schema;
 process.env.GF_ADMIN_E2E_DATABASE_URL = target.toString();
 const env = {
+  GF_CACHE_REVALIDATION_SECRET: '',
+  GF_CACHE_REVALIDATION_URL: '',
   NODE_ENV: 'test',
   DATABASE_URL: target.toString(),
   TEST_DATABASE_URL: target.toString(),
@@ -25,7 +29,6 @@ const env = {
   DISCORD_CLIENT_ID: '',
   DISCORD_CLIENT_SECRET: '',
   SUPERCELL_API_TOKEN: '',
-  GF_ADMIN_GOOGLE_SUB: '',
 };
 export default defineConfig({
   testDir: './e2e',

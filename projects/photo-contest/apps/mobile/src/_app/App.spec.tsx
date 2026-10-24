@@ -1,9 +1,10 @@
 import { track } from '@amplitude/analytics-react-native';
-import { parseNativeAppInfo } from '@photo-contest/bridge';
 import { render, screen, waitFor } from '@testing-library/react';
 import { getInitialURL } from 'expo-linking';
 import { hideAsync } from 'expo-splash-screen';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { parseNativeAppInfo } from '@photo-contest/bridge';
 
 import { nativeEvent, navigationState } from '@/test/ui/bridge-messages';
 import { currentWebViewProps, fakeWebView } from '@/test/ui/fake-web-view';
@@ -87,6 +88,16 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => expect(fakeWebView.props?.source).toEqual({ uri: `${WEB_ORIGIN}/` }));
+  });
+
+  it('소셜 로그인 콜백 앱 링크로 열렸으면 코드를 웹에 넘기지 않고 홈을 열어야 한다', async () => {
+    vi.mocked(getInitialURL).mockResolvedValue(`${WEB_ORIGIN}/app-auth/callback?code=abcdefghijklmnop`);
+    stubAppConfig(async () => jsonResponse({ minimumVersion: '1.0.0', latestVersion: '1.0.0' }));
+
+    render(<App />);
+
+    await waitFor(() => expect(fakeWebView.props?.source).toEqual({ uri: `${WEB_ORIGIN}/` }));
+    expect(trackedEvents()).toEqual([{ name: 'app_opened', properties: { source: 'launch' } }]);
   });
 
   it('시작 링크를 읽지 못해도 홈을 열고 app_opened(launch)를 보내야 한다', async () => {

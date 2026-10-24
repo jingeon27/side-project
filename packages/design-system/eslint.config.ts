@@ -1,4 +1,4 @@
-import { reactConfig } from '@side/eslint-config/react';
 import { testOverrides, tsconfigRootDir } from '@side/eslint-config/base';
+import { reactDomConfig } from '@side/eslint-config/react-dom';
 
-export default [...reactConfig, ...testOverrides, tsconfigRootDir(import.meta.dirname)];
+export default [...reactDomConfig, ...testOverrides, tsconfigRootDir(import.meta.dirname)];

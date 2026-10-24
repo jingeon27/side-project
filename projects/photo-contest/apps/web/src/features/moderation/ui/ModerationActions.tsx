@@ -4,8 +4,11 @@ import { useMutation } from '@apollo/client/react';
 import { EyeOff, Flag, Trash2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
-import { DeleteSubmissionDocument, HideSubmissionDocument } from '@/shared/api/generated';
-import type { SubmissionCardFragment } from '@/shared/api/generated';
+import {
+  DeleteSubmissionDocument,
+  HideSubmissionDocument,
+  type SubmissionCardFragment,
+} from '@/shared/api/generated';
 import { formatDateTime } from '@/shared/lib/format.helper';
 import { toast } from '@/shared/model/toast';
 import { Badge } from '@/shared/ui/@core/badge';
@@ -57,21 +60,21 @@ export function ModerationActions({
   };
 
   const handleReport = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
+    overlay.open(({ isOpen, close: onClose, unmount }) => (
       <ReportBottomSheet
         contestId={contestId}
         submissionId={submission.id}
         isOpen={isOpen}
-        onClose={close}
+        onClose={onClose}
         unmount={unmount}
       />
     ));
 
   const handleDelete = () =>
-    overlay.open(({ isOpen, close, unmount }) => (
+    overlay.open(({ isOpen, close: onClose, unmount }) => (
       <ConfirmDialog
         isOpen={isOpen}
-        onClose={close}
+        onClose={onClose}
         unmount={unmount}
         tone="danger"
         title="사진을 삭제할까요?"

@@ -1,6 +1,9 @@
-import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+
+import { defineConfig, devices } from '@playwright/test';
+
+import { E2E_APP_LINK_ENV } from './e2e/app-link-env';
 
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
 const schema = process.env.GF_E2E_SCHEMA ?? `gf_test_web_${randomUUID().replaceAll('-', '')}`;
@@ -21,6 +24,8 @@ if (
 databaseUrl.searchParams.set('schema', schema);
 process.env.GF_E2E_DATABASE_URL = databaseUrl.toString();
 const apiEnv = {
+  GF_CACHE_REVALIDATION_SECRET: 'game-feedback-prefetch-cache-secret-'.repeat(2),
+  GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3353/internal/cache/revalidate',
   NODE_ENV: 'test',
   GF_DEMO_MODE: 'true',
   PORT: '4353',
@@ -38,7 +43,6 @@ const apiEnv = {
   DISCORD_CLIENT_SECRET: '',
   GF_TEST_AUTH_ENABLED: 'true',
   SUPERCELL_API_TOKEN: '',
-  GF_ADMIN_GOOGLE_SUB: '',
 };
 
 export default defineConfig({
@@ -74,6 +78,8 @@ export default defineConfig({
         GF_PREFETCH_TESTING: 'true',
         GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
         GAME_FEEDBACK_INDEXING: 'false',
+        // 운영 빌드 웹은 앱 링크 값이 없으면 첫 요청부터 실패한다.
+        ...E2E_APP_LINK_ENV,
       },
       reuseExistingServer: false,
       timeout: 90_000,

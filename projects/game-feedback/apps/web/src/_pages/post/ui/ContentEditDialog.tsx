@@ -1,12 +1,18 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, Textarea } from '@side/design-system';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircle } from 'lucide-react';
-import { useUpdateAnswerMutation } from '@/features/answer';
-import { useUpdateCommentMutation } from '@/features/comment';
-import { ErrorNotice, BottomSheet, useNotify } from '@/shared/ui';
+
+import { Button, Textarea } from '@side/design-system';
+
+import { updateAnswerMutationOptions } from '@/features/answer';
+import { updateCommentMutationOptions } from '@/features/comment';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
+import { BottomSheet, ErrorNotice, useNotify } from '@/shared/ui';
+
 import { answerFormSchema, commentFormSchema } from '../model/content.schema';
+
 interface IContentEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -15,9 +21,10 @@ interface IContentEditDialogProps {
   body: string;
 }
 export function ContentEditDialog({ open, onOpenChange, type, id, body }: IContentEditDialogProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
-  const answer = useUpdateAnswerMutation(),
-    comment = useUpdateCommentMutation(),
+  const answer = useMutation(updateAnswerMutationOptions(client)),
+    comment = useMutation(updateCommentMutationOptions(client)),
     notify = useNotify(),
     form = useZodForm(type === 'ANSWER' ? answerFormSchema : commentFormSchema, { defaultValues: { body } });
   const isPending = answer.isPending || comment.isPending,

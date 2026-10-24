@@ -2,7 +2,6 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 
 import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
-import type { ICreateContestInput } from './contest.service';
 import { GroupContestService, type IGroupContestNode } from './group-contest.service';
 
 @Resolver('GroupContest')
@@ -33,7 +32,7 @@ export class GroupContestResolver {
     return this.contests.publicList(offset, limit);
   }
   @Mutation()
-  createGroupContest(@Viewer() viewer: IViewer, @Args() input: ICreateContestInput) {
+  createGroupContest(@Viewer() viewer: IViewer, @Args() input: Parameters<GroupContestService['create']>[1]) {
     return this.contests.create(viewer, input);
   }
   @Mutation()

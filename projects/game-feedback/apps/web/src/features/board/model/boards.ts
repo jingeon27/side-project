@@ -1,5 +1,5 @@
-import type { TBoardKind } from '@game-feedback/contracts';
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
+import type { TBoardKind } from '@game-feedback/contracts';
 
 export const communityBoards = [
   {

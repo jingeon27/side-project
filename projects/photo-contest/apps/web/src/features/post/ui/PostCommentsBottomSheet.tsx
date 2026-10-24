@@ -20,7 +20,7 @@ export function PostCommentsBottomSheet({
   ...controls
 }: IBottomSheetControlProps & { postId: string }) {
   const [commentsRef, { refetch }] = useBackgroundQuery(PostCommentsDocument, {
-    variables: { postId, offset: 0, limit: PAGE_SIZE },
+    variables: { postId, parentId: null, offset: 0, limit: PAGE_SIZE },
     fetchPolicy: 'network-only',
     refetchWritePolicy: 'overwrite',
   });
@@ -32,7 +32,7 @@ export function PostCommentsBottomSheet({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <BottomSheet.Content className="px-0 pt-3">
             <div className="mx-auto w-full max-w-3xl px-5">
-              <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-32 w-full" />}>
+              <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-32 w-full" />}>
                 <PostCommentList commentsRef={commentsRef} postId={postId} />
               </AsyncBoundary>
             </div>

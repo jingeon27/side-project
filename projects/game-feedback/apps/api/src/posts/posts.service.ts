@@ -1,29 +1,28 @@
-import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
-import type { ListQueryDto } from '../common/http/list-query.dto';
-import { decodeCursor } from '../common/pagination';
-import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, Prisma } from '../generated/prisma';
-import { postInclude } from './post.presenter';
-
-import { richTextToPlainText } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
+
+import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
+
 import { responseAnswer } from '../answers/answer.presenter';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
-import { responseComment } from '../comments/comment.presenter';
+import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
+import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
+import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import { encodeCursor } from '../common/pagination';
+import type { ListQueryDto } from '../common/http/list-query.dto';
+import { decodeCursor, nextCursor } from '../common/pagination';
+import { Prisma, PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import { type CreatePostDto, type UpdatePostDto } from './post-input.dto';
 import { PostMediaService } from './post-media.service';
-import { responsePost } from './post.presenter';
+import { postInclude, responsePost } from './post.presenter';
 
 @Injectable()
 export class PostsService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostMediaService) private readonly media: PostMediaService,
   ) {}
@@ -55,11 +54,9 @@ export class PostsService {
     )
       throw new ApiError(400, 'INVALID_FEEDBACK_FILTER', '피드백의 답변 상태를 확인해주세요.');
     const rows = await this.listVisiblePosts(q, excluded);
-    const more = rows.length > q.limit,
-      items = rows.slice(0, q.limit);
     return {
-      items: items.map(responsePost),
-      nextCursor: more ? encodeCursor(items[items.length - 1]) : null,
+      items: rows.slice(0, q.limit).map(responsePost),
+      nextCursor: nextCursor(rows, q.limit),
     };
   }
   async detail(req: SessionRequest, id: string) {
@@ -71,26 +68,13 @@ export class PostsService {
         include: { author: { select: authorSelect } },
         orderBy: [{ helpful: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
       }),
-      this.db.comment.findMany({
-        where: {
-          postId: id,
-          ...ACTIVE_CONTENT,
-          authorId: {
-            notIn: excluded,
-          },
-        },
-        include: {
-          author: {
-            select: authorSelect,
-          },
-        },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      }),
+      commentThreadPage(this.db, id, excluded, { limit: COMMENT_THREAD_PAGE }),
     ]);
     return {
       post: responsePost({ ...p, answers }),
       answers: answers.map(responseAnswer),
-      comments: comments.map(responseComment),
+      comments: comments.items,
+      commentsCursor: comments.nextCursor,
     };
   }
   async createPost(req: SessionRequest, input: CreatePostDto) {
@@ -107,54 +91,56 @@ export class PostsService {
       where: { id: input.categoryId, active: true },
     });
     if (!category) throw new ApiError(400, 'INVALID_CATEGORY', '카테고리를 확인해주세요.');
-    const p = await this.transactions.run(async (tx) => {
-      const created = await (tx ?? this.db).post.create({
-        data: {
-          authorId: u.id,
-          categoryId: category.id,
-          title: input.title,
-          body: input.body,
-          board: input.board ?? 'FEEDBACK',
-          ...(input.document
-            ? {
-                document: input.document,
-              }
-            : {}),
-          ...(input.coaching ? { coaching: input.coaching } : {}),
-          ...(input.friendSale ? { friendSale: input.friendSale } : {}),
-          ...(input.battle ? { battle: input.battle } : {}),
-        },
-        include: postInclude,
-      });
-      await this.media.sync(tx, u.id, created.id, input.document);
-      // Serialize delivery with notification preference changes and block cleanup.
-      const subscriptions = await tx.$queryRaw<
-        Array<{
-          followerId: string;
-        }>
-      >`SELECT "followerId" FROM "UserFollow" WHERE "followingId" = ${u.id} AND "notifyNewPosts" = true ORDER BY "followerId" FOR UPDATE`;
-      const excluded = await this.visibility.excluded(req, tx);
-      const followers = await (tx ?? this.db).userFollow.findMany({
-        where: {
-          followingId: u.id,
-          notifyNewPosts: true,
-          followerId: { in: subscriptions.map(({ followerId }) => followerId), notIn: excluded },
-          follower: { bannedAt: null },
-        },
-        select: { followerId: true },
-      });
-      if (followers.length)
-        await (tx ?? this.db).notification.createMany({
-          data: followers.map(({ followerId }) => ({
-            userId: followerId,
-            actorId: u.id,
-            postId: created.id,
-            type: 'FOLLOWED_POST',
-            message: `${u.nickname}: ${created.title}`,
-          })),
+    const p = await this.cache.change(
+      async (tx) => {
+        const created = await (tx ?? this.db).post.create({
+          data: {
+            authorId: u.id,
+            categoryId: category.id,
+            title: input.title,
+            body: input.body,
+            board: input.board ?? 'FEEDBACK',
+            ...(input.document
+              ? {
+                  document: input.document,
+                }
+              : {}),
+            ...(input.coaching ? { coaching: input.coaching } : {}),
+            ...(input.friendSale ? { friendSale: input.friendSale } : {}),
+            ...(input.battle ? { battle: input.battle } : {}),
+          },
+          include: postInclude,
         });
-      return created;
-    });
+        await this.media.sync(tx, u.id, created.id, input.document);
+        // Serialize delivery with notification preference changes and block cleanup.
+        const subscriptions = await tx.$queryRaw<
+          Array<{
+            followerId: string;
+          }>
+        >`SELECT "followerId" FROM "UserFollow" WHERE "followingId" = ${u.id} AND "notifyNewPosts" = true ORDER BY "followerId" FOR UPDATE`;
+        const excluded = await this.visibility.excluded(req, tx);
+        const followers = await (tx ?? this.db).userFollow.findMany({
+          where: {
+            followingId: u.id,
+            notifyNewPosts: true,
+            followerId: { in: subscriptions.map(({ followerId }) => followerId), notIn: excluded },
+            follower: { bannedAt: null },
+          },
+          select: { followerId: true },
+        });
+        if (followers.length)
+          await (tx ?? this.db).notification.createMany({
+            data: followers.map(({ followerId }) => ({
+              userId: followerId,
+              actorId: u.id,
+              postId: created.id,
+              type: 'FOLLOWED_POST',
+            })),
+          });
+        return created;
+      },
+      (created) => [postCacheTag(created.id), DISCOVERY_CACHE_TAG],
+    );
     return responsePost(p);
   }
   async updatePost(req: SessionRequest, id: string, input: UpdatePostDto) {
@@ -172,65 +158,101 @@ export class PostsService {
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const excluded = await this.visibility.excluded(req);
     return responsePost(
-      await this.transactions.run(async (tx) => {
-        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
-        if (input.body !== undefined || document !== undefined) await this.media.sync(tx, u.id, id, document);
-        return (tx ?? this.db).post.update({
-          where: { id },
-          data: {
-            ...data,
-            ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
-            ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
-            ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
-            ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
-          },
-          include: {
-            ...postInclude,
-            answers: {
-              where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-              select: { id: true, helpful: true },
+      await this.cache.change(
+        async (tx) => {
+          await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+          // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
+          const current = await tx.post.findFirst({
+            where: { id, ...ACTIVE_POST, authorId: u.id },
+            select: { id: true },
+          });
+          if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
+          if (input.body !== undefined || document !== undefined)
+            await this.media.sync(tx, u.id, id, document);
+          return (tx ?? this.db).post.update({
+            where: { id },
+            data: {
+              ...data,
+              ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
+              ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
+              ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
+              ...(input.body !== undefined || document === null
+                ? { document: document ?? Prisma.DbNull }
+                : {}),
             },
-          },
-        });
-      }),
+            include: {
+              ...postInclude,
+              answers: {
+                where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
+                select: { id: true, helpful: true },
+              },
+            },
+          });
+        },
+        [postCacheTag(id), DISCOVERY_CACHE_TAG],
+      ),
     );
   }
   async deletePost(req: SessionRequest, id: string) {
-    const u = requireUser(req),
-      p = await this.visiblePost(req, id);
-    if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.');
-    await this.transactions.run([
-      this.db.post.update({
-        where: { id },
-        data: {
-          deletedAt: new Date(),
-          title: '\uC0AD\uC81C\uB41C \uC694\uCCAD',
-          body: '',
-          gameProfile: Prisma.DbNull,
-          document: Prisma.DbNull,
-          coaching: Prisma.DbNull,
-          friendSale: Prisma.DbNull,
-        },
-      }),
-      this.db.notification.deleteMany({ where: { postId: id } }),
-      this.db.postMedia.deleteMany({ where: { postId: id } }),
-    ]);
+    const u = requireUser(req);
+    await this.cache.change(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+        // 작성자 삭제는 소유권만 본다. 관리자가 숨긴 자기 글도 지울 수 있어야 한다.
+        const own = await tx.post.findFirst({
+          where: { id, authorId: u.id, deletedAt: null },
+          select: { id: true },
+        });
+        if (!own) throw await this.deletionDenied(req, id, tx);
+        await tx.post.update({
+          where: { id },
+          data: {
+            deletedAt: new Date(),
+            title: '\uC0AD\uC81C\uB41C \uC694\uCCAD',
+            body: '',
+            gameProfile: Prisma.DbNull,
+            document: Prisma.DbNull,
+            coaching: Prisma.DbNull,
+            friendSale: Prisma.DbNull,
+            battle: Prisma.DbNull,
+          },
+        });
+        await tx.notification.deleteMany({ where: { postId: id } });
+        await tx.postMedia.deleteMany({ where: { postId: id } });
+      },
+      () => [postCacheTag(id), DISCOVERY_CACHE_TAG],
+    );
     return { ok: true };
+  }
+  /** 남의 글이면 볼 수 있을 때만 403, 볼 수 없거나 이미 지운 글은 404로 존재를 숨긴다. */
+  private async deletionDenied(req: SessionRequest, id: string, tx: Prisma.TransactionClient) {
+    const excluded = await this.visibility.excluded(req, tx);
+    const visible = await tx.post.findFirst({
+      where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
+      select: { id: true },
+    });
+    return visible
+      ? new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.')
+      : new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
   }
   async readPost(req: SessionRequest, id: string) {
     const u = requireUser(req),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '요청자만 답변을 확인할 수 있습니다.');
-    await this.transactions.run([
-      this.db.answer.updateMany({
-        where: { postId: id, readAt: null, ...ACTIVE_CONTENT },
-        data: { readAt: new Date() },
-      }),
-      this.db.notification.updateMany({
-        where: { userId: u.id, postId: id, readAt: null },
-        data: { readAt: new Date() },
-      }),
-    ]);
+    await this.cache.change(
+      async (tx) => {
+        const changed = await tx.answer.updateMany({
+          where: { postId: id, readAt: null, ...ACTIVE_CONTENT },
+          data: { readAt: new Date() },
+        });
+        await tx.notification.updateMany({
+          where: { userId: u.id, postId: id, readAt: null },
+          data: { readAt: new Date() },
+        });
+        return changed.count;
+      },
+      (count) => (count ? [postCacheTag(id)] : []),
+    );
     return { ok: true };
   }
 

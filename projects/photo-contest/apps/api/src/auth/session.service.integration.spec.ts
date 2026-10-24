@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { SessionService } from './session.service';
-import { createTestApp, TEST_WEB_ORIGIN } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { cookieAttributes, cookieValue, findSetCookie, isClearingCookie } from '../../test/support/cookies';
+import { COOKIE_HEADER_MAX_LENGTH } from '../config/limits';
+import { SessionService } from './session.service';
 
 const SESSION_COOKIE = 'contest_session';
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -215,13 +215,15 @@ describe('개발 로그인과 세션', () => {
       expect(await viewerWith(`${SESSION_COOKIE}=${encoded}`)).toBe(user.id);
     });
 
-    it('4096자를 넘는 Cookie 헤더는 비로그인으로 봐야 한다', async () => {
+    it('상한(8KB)까지의 Cookie 헤더는 읽고 넘으면 비로그인으로 봐야 한다', async () => {
       const header = (length: number) => {
         const session = `${SESSION_COOKIE}=${token}; padding=`;
         return session + 'x'.repeat(length - session.length);
       };
-      expect(await viewerWith(header(4096))).toBe(user.id);
-      expect(await viewerWith(header(4097))).toBeNull();
+      // 다른 쿠키가 많아 4KB를 넘은 로그인 사용자를 비로그인으로 판정하던 회귀를 막는다.
+      expect(await viewerWith(header(6000))).toBe(user.id);
+      expect(await viewerWith(header(COOKIE_HEADER_MAX_LENGTH))).toBe(user.id);
+      expect(await viewerWith(header(COOKIE_HEADER_MAX_LENGTH + 1))).toBeNull();
     });
 
     it('형식이 깨진 세션 값은 비로그인으로 봐야 한다', async () => {

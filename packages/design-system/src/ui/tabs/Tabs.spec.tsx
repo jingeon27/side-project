@@ -1,13 +1,15 @@
+import { useState } from 'react';
+
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { useState } from 'react';
 import { expect, it } from 'vitest';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 
 function FeedTabs({ orientation }: { orientation: 'horizontal' | 'vertical' }) {
   const [value, setValue] = useState<unknown>('latest');
   return (
-    <Tabs orientation={orientation} value={value} onValueChange={setValue}>
+    <Tabs orientation={orientation} value={value} onValueChange={(nextValue) => setValue(nextValue)}>
       <TabsList aria-label="피드 분류">
         <TabsTrigger value="latest">최신 글</TabsTrigger>
         <TabsTrigger value="unanswered">답변 대기</TabsTrigger>

@@ -1,11 +1,15 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 test('mobile titles follow the screen and game classifications stay inside their game', async ({ page }) => {
   await page.setViewportSize({ width: 400, height: 844 });
   await page.goto('/ko');
   const header = page.getByRole('banner');
-  await expect(header.locator('.brand')).toBeHidden();
-  await expect(header.locator('.mobile-page-title')).toHaveText('홈');
+  await expect(header.locator('.brand')).toBeVisible();
+  await expect(header.locator('.brand')).toContainText('Game Mate');
+  await expect(header.locator('.mobile-page-title')).toHaveCount(0);
+  await expect(header.getByRole('combobox')).toHaveCount(0);
   await expect(header.getByRole('link', { name: '검색', exact: true })).toHaveAttribute('href', '/ko/search');
   await expect(header.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByRole('main').getByRole('search')).toHaveCount(0);
@@ -25,46 +29,54 @@ test('mobile titles follow the screen and game classifications stay inside their
     'href',
     '/ko/search?board=friendly',
   );
-  await expect(header.locator('.mobile-page-title')).toHaveText('홈');
+  await expect(header.locator('.brand')).toBeVisible();
   await expect(game.getByRole('link', { name: '전투 모집', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
   );
   const menu = page.locator('.mobile-nav');
-  for (const title of ['가이드', '채팅', '프로필', '홈']) {
+  for (const title of ['채팅', '프로필']) {
     await menu.getByRole('link', { name: title, exact: true }).click();
     await expect(header.locator('.mobile-page-title')).toHaveText(title);
   }
+  await menu.getByRole('link', { name: '홈', exact: true }).click();
+  await expect(header.locator('.brand')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('a slow language change displays a themed fallback and preserves route filters', async ({
+test('a slow language change keeps the screen visible and preserves route filters', async ({
   page,
   context,
 }) => {
-  await page.setViewportSize({ width: 400, height: 844 });
-  await context.addCookies([{ name: 'gf_theme', value: 'dark', url: 'http://127.0.0.1:3301' }]);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await context.addCookies([{ name: 'gf_theme', value: 'dark', url: origin }]);
   await page.goto('/ko/boards/friendly?battleMode=TEAM&q=team');
   const requests: string[] = [];
+  const navigation = Promise.withResolvers<void>();
   await page.route(
     (url) => url.pathname === '/en/boards/friendly',
     async (route) => {
       requests.push(route.request().url());
-      try {
-        const loading = page.getByRole('status').filter({ hasText: '언어를 변경하고 있어요' });
-        await expect(loading).toBeVisible();
-        await expect(loading).toHaveCSS('background-color', 'rgb(28, 27, 26)');
-        const box = await loading.boundingBox();
-        expect(box).toMatchObject({ x: 0, y: 0, width: 400, height: 844 });
-      } finally {
-        await route.continue();
-      }
+      if (route.request().headers().rsc) await navigation.promise;
+      await route.continue();
     },
   );
-  await page.getByRole('banner').getByRole('combobox', { name: '언어 설정', exact: true }).click();
-  await page.getByRole('option', { name: 'English', exact: true }).click();
+  const language = page.getByRole('banner').getByRole('combobox', { name: '언어 설정', exact: true });
+  try {
+    await language.click();
+    await page.getByRole('option', { name: 'English', exact: true }).click();
+    const progress = page.getByRole('status').filter({ hasText: '언어를 변경하고 있어요' });
+    await expect(progress).toBeVisible();
+    await expect(progress).toHaveCSS('background-color', 'rgb(28, 27, 26)');
+    await expect(page.getByRole('heading', { name: '전투 모집', exact: true })).toBeVisible();
+    await expect(page.locator('.page-loading-screen')).toHaveCount(0);
+    await expect(language).toBeDisabled();
+  } finally {
+    navigation.resolve();
+    await page.unrouteAll({ behavior: 'wait' });
+  }
   await expect(page).toHaveURL('/en/boards/friendly?battleMode=TEAM&q=team');
-  await expect(page.locator('.page-loading-screen')).toHaveCount(0);
+  await expect(page.locator('.preference-progress')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Battle recruitment', exact: true })).toBeVisible();
   await expect(page.locator('.battle-filters:visible a[aria-current="page"]')).toHaveText('Team battle');
   expect(requests.length).toBeGreaterThan(0);
@@ -111,9 +123,11 @@ test('the guide describes current classifications, account verification and chat
   const main = page.getByRole('main');
   await expect(main.getByRole('heading', { name: '이용 가이드', exact: true })).toBeVisible();
   await expect(main.getByRole('heading', { name: '코치와 수강생 모집', exact: true })).toBeVisible();
-  await expect(main.getByText('게시글에 별도로 첨부하지 않습니다.', { exact: false })).toBeVisible();
-  await expect(main.getByRole('navigation', { name: '분류별 바로가기' }).getByRole('link')).toHaveText([
-    '전체',
+  await expect(main.getByText('글마다 따로 첨부할 필요가 없어요.', { exact: false })).toBeVisible();
+  await expect(
+    main.getByText('휴대폰 키보드의 줄바꿈은 메시지를 보내지 않고', { exact: false }),
+  ).toBeVisible();
+  await expect(main.getByRole('term')).toHaveText([
     '피드백',
     '친추판매',
     '전투 모집',
@@ -121,9 +135,5 @@ test('the guide describes current classifications, account verification and chat
     '자유게시판',
   ]);
   await expect(main.getByText(/불러온 게임 프로필을.*첨부/)).toHaveCount(0);
-  await main
-    .getByRole('navigation', { name: '분류별 바로가기' })
-    .getByRole('link', { name: '게임코치', exact: true })
-    .click();
-  await expect(page).toHaveURL('/ko/boards/coaching');
+  await expect(main.getByRole('term').getByRole('link')).toHaveCount(0);
 });

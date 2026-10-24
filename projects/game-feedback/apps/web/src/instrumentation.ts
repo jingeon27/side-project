@@ -1,11 +1,16 @@
 import type { Instrumentation } from 'next';
+
+import { assertAppLinksConfig } from '@/_app/app-links/app-links';
 import {
-  SENTRY_DATA_COLLECTION,
   resolveServerSentryDsn,
   scrubSentryEvent,
+  SENTRY_DATA_COLLECTION,
 } from '@/shared/lib/monitoring/sentry.helper';
+
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs' || process.env.NEXT_PHASE === 'phase-production-build') return;
+  // 운영에서 앱 링크 값이 없으면 첫 요청(헬스 체크)부터 실패시켜 배포를 멈춘다.
+  assertAppLinksConfig(process.env);
   const dsn = resolveServerSentryDsn({
     SENTRY_DSN: process.env.SENTRY_DSN,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,

@@ -2,10 +2,12 @@
 'use client';
 
 import type { ComponentProps } from 'react';
+
 import { cn } from '../../lib/cn.helper';
 
 function Label({ className, ...props }: ComponentProps<'label'>) {
   return (
+    // eslint-disable-next-line jsx-a11y/label-has-associated-control -- 범용 프리미티브라 htmlFor와 이름은 props로 받고, 사용하는 곳은 labelComponents 옵션으로 검사한다.
     <label
       data-slot="label"
       className={cn(

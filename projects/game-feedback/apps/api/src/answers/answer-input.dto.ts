@@ -1,6 +1,8 @@
-import { AnswerInputSchema, HelpfulInputSchema } from '@game-feedback/contracts';
-import { Length, IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsString, Length } from 'class-validator';
 import type { z } from 'zod';
+
+import { AnswerInputSchema, HelpfulInputSchema } from '@game-feedback/contracts';
+
 import { Trim } from '../common/http/request-validation';
 
 export class AnswerBodyDto {

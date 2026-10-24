@@ -1,6 +1,7 @@
-import Image from 'next/image';
 import type { ReactNode } from 'react';
-import type { TRichTextDocument, TRichTextAttributes, TRichTextEmbed } from '@game-feedback/contracts';
+import Image from 'next/image';
+
+import type { TRichTextAttributes, TRichTextDocument, TRichTextEmbed } from '@game-feedback/contracts';
 
 interface ISegment {
   text?: string;
@@ -42,6 +43,7 @@ function segmentNode(segment: ISegment, key: number) {
     );
   if (segment.media && 'video' in segment.media)
     return (
+      // eslint-disable-next-line jsx-a11y/media-has-caption -- 게시글 본문에 올린 동영상이라 함께 제공할 자막 파일이 없다.
       <video
         key={key}
         src={segment.media.video}

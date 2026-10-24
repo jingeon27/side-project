@@ -1,25 +1,26 @@
-import { PROTOCOL_VERSION } from '@photo-contest/bridge';
-import type {
-  TNativeAppInfo,
-  TNativeEventPayload,
-  TNativeEventType,
-  TWebEventPayload,
-  TWebEventType,
-  TWebRequestType,
+import type { Page } from '@playwright/test';
+
+import {
+  PROTOCOL_VERSION,
+  type TNativeAppInfo,
+  type TNativeEventPayload,
+  type TNativeEventType,
+  type TWebEventPayload,
+  type TWebEventType,
+  type TWebRequestType,
 } from '@photo-contest/bridge';
 import {
   buildBootstrapScript,
   buildNativeDispatchScript,
   createNativeRouter,
+  type INativeRouter,
+  type TNativeCapabilities,
 } from '@photo-contest/bridge/native';
-import type { INativeRouter, TNativeCapabilities } from '@photo-contest/bridge/native';
-import type { Page } from '@playwright/test';
 
-import { createCapabilities } from '@/features/bridge/lib/create-capabilities';
-import type { ICapabilityDependencies } from '@/features/bridge/lib/create-capabilities';
+import { createCapabilities, type ICapabilityDependencies } from '@/features/bridge/lib/create-capabilities';
 import { toWebPath } from '@/features/navigation/lib/deep-link';
 
-import { E2E_APP_SCHEME, E2E_APP_VERSION, E2E_WEB_ORIGIN } from './e2e-env';
+import { E2E_APP_SCHEME, E2E_APP_VERSION, E2E_AUTH_CALLBACK_URL, E2E_WEB_ORIGIN } from './e2e-env';
 
 type TAuthSessionResult = Awaited<ReturnType<ICapabilityDependencies['openAuthSession']>>;
 type TAuthSessionHandler = (authUrl: string, redirectUrl: string) => Promise<TAuthSessionResult>;
@@ -89,7 +90,7 @@ export async function installNativeHost(
   const capabilities = createCapabilities({
     platform,
     apiBase: `${E2E_WEB_ORIGIN}/backend`,
-    appScheme: E2E_APP_SCHEME,
+    authCallbackUrl: E2E_AUTH_CALLBACK_URL,
     share: async (content) => {
       platformCalls.shares.push(content);
       return { action: shareAction };

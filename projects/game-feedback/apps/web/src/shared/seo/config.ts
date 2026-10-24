@@ -1,5 +1,9 @@
 export function resolveSeoConfig(env: Record<string, string | undefined>) {
-  const url = new URL(env.GAME_FEEDBACK_SITE_URL || env.WEB_ORIGIN || 'http://localhost:3300');
+  const url = new URL(
+    env.GAME_FEEDBACK_SITE_URL ||
+      env.WEB_ORIGIN ||
+      (env.NODE_ENV === 'production' ? 'https://game.bambyul.com' : 'http://localhost:3300'),
+  );
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.username ||
@@ -24,7 +28,7 @@ export function getSeoConfig() {
   return resolveSeoConfig(process.env);
 }
 export function canonicalPath(path: string) {
-  if (/^\/(ko|en|ja)\/(guide|terms|privacy|contact)(?:[/?]|$)/.test(path)) return path;
+  if (/^\/(ko|en|ja)\/(login|onboarding|guide|terms|privacy|contact)(?:[/?]|$)/.test(path)) return path;
   return path.replace(/^\/(ko|en|ja)(?=\/|$)/, '/ko');
 }
 export function pageUrl(path: string) {

@@ -1,7 +1,13 @@
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { createTestImage, createTestUser, graphqlRequest } from '@photo-contest/test-kit';
 import { print } from 'graphql';
 import { afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
+
+import {
+  createTestImage,
+  createTestUser,
+  graphqlRequest,
+  uploadTestPostMedia,
+} from '@photo-contest/test-kit';
 
 import {
   ApproveGroupJoinRequestDocument,
@@ -12,7 +18,6 @@ import {
   GroupVisibility,
   MeDocument,
   RequestGroupMembershipDocument,
-  RequestPostUploadDocument,
 } from '@/shared/api/generated';
 
 import {
@@ -51,16 +56,16 @@ describe('공개 그룹의 SEO·사이트맵 실제 API', () => {
       await execute(owner, CreateGroupDocument, { name: 'SEO 비공개', visibility: GroupVisibility.Private })
     ).createGroup.id;
     for (const groupId of [publicId, privateId]) {
-      const { requestPostUpload: ticket } = await execute(owner, RequestPostUploadDocument, { groupId });
-      const response = await fetch(`${url}${ticket.url.replace('/backend', '')}`, {
-        method: 'POST',
-        headers: { Origin: origin, Cookie: owner, 'Content-Type': 'image/png' },
-        body: new Uint8Array(await createTestImage()),
+      const uploadId = await uploadTestPostMedia(url, {
+        cookie: owner,
+        origin,
+        groupId,
+        body: await createTestImage(),
+        contentType: 'image/png',
       });
-      expect(response.status).toBe(201);
       await execute(owner, CreatePostDocument, {
         groupId,
-        uploadId: ticket.id,
+        uploadId,
         title: groupId === publicId ? '공개 SEO 사진' : '비공개 비밀 사진',
         rightsConfirmed: true,
       });

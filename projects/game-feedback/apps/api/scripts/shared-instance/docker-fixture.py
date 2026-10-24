@@ -7,7 +7,7 @@ import sys
 import datetime
 
 args = sys.argv[1:]
-if args[:1] == ['run'] and 'amazon/aws-cli:2' in args:
+if args[:1] == ['run'] and any(arg.startswith(('amazon/aws-cli:', 'amazon/aws-cli@')) for arg in args):
     point = datetime.datetime.now(datetime.timezone.utc).isoformat()
     if os.environ.get('SIDE_SMOKE_NO_PITR') == '1': point = '2000-01-01T00:00:00+00:00'
     print(json.dumps({'DBInstances': [{

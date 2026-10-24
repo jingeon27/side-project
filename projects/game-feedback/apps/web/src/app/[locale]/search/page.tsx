@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { locale as rootLocale } from 'next/root-params';
+
 import { isClientNavigation } from '@/_app/index.server';
 import { SearchRoute } from '@/_pages/search/index.server';
 import { staticPageMetadata } from '@/shared/seo';

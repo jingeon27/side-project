@@ -8,8 +8,9 @@ import {
   useReadQuery,
   type QueryRef,
 } from '@apollo/client/react';
-import { match } from 'ts-pattern';
 import { Trophy } from 'lucide-react';
+import { match } from 'ts-pattern';
+
 import { GroupContestVoteButton, PhaseBadge } from '@/features/contest';
 import { GroupContentFrame, GroupMembershipButton } from '@/features/group';
 import { CreatePostButton, GalleryBoard, PostCard } from '@/features/post';
@@ -77,7 +78,10 @@ function ContestHeader({ id }: { id: string }) {
       ) : (
         <GroupMembershipButton groupId={contest.groupId} />
       )}
-      <p className="text-caption text-muted">대회당 한 표 · 본인 참여작 투표 불가 · 동점은 공동 우승</p>
+      <p className="text-caption text-muted">
+        좋아요는 1인 {contest.likeLimit}개 작품 · 대회 투표는 별도 한 표 · 본인 참여작 투표 불가 · 동점은 공동
+        우승
+      </p>
       <ContestPhaseSync id={id} phase={contest.phase} />
     </section>
   );
@@ -119,7 +123,7 @@ function ResultQuery({ id, preloaded }: { id: string; preloaded: boolean }) {
   );
   const fallback = <Skeleton className="h-64 w-full" />;
   return (
-    <AsyncBoundary fallback={fallback} onRetry={refetch}>
+    <AsyncBoundary fallback={fallback} onRetry={() => refetch()}>
       {queryRef ? <Results queryRef={queryRef} /> : fallback}
     </AsyncBoundary>
   );
@@ -141,13 +145,14 @@ function ContestContent({
       <ContestHeader id={contest.id} />
       {match(contest.phase)
         .with(Phase.Completed, () => <ResultQuery id={contest.id} preloaded={resultsPreloaded} />)
-        .otherwise(() => (
+        .with(Phase.Upcoming, Phase.Submission, Phase.Voting, () => (
           <GalleryBoard
             groupId={groupId}
             contestId={contest.id}
             postAction={(postId) => <GroupContestVoteButton contestId={contest.id} postId={postId} />}
           />
-        ))}
+        ))
+        .exhaustive()}
     </>
   );
 }
@@ -162,7 +167,7 @@ function ContestQuery({
 }) {
   const [queryRef, { refetch }] = useBackgroundQuery(GroupContestDocument, { variables: { id } });
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
+    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
       <ContestContent queryRef={queryRef} groupId={groupId} resultsPreloaded={resultsPreloaded} />
     </AsyncBoundary>
   );

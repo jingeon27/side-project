@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   createDiscordIdentityProvider,
   createKakaoIdentityProvider,
@@ -55,11 +56,12 @@ describe('social provider adapters without external requests', () => {
         .mockResolvedValueOnce(Response.json(body));
       vi.stubGlobal('fetch', fetcher);
       expect(await provider.exchange('code', 'verifier', 'nonce')).toBe('123');
-      const options = fetcher.mock.calls[0][1];
+      const [tokenCall, profileCall] = fetcher.mock.calls;
+      const options = tokenCall?.[1];
       expect(options.body.get('code')).toBe('code');
       expect(options.body.get('code_verifier')).toBe(pkce ? 'verifier' : null);
       expect(!!options.headers.authorization).toBe(basic);
-      expect(fetcher.mock.calls[1][1].headers.authorization).toBe('Bearer provider-token');
+      expect(profileCall?.[1].headers.authorization).toBe('Bearer provider-token');
       expect(authorize.searchParams.get('scope') ?? '').not.toMatch(/email|offline|write/);
     },
   );

@@ -19,7 +19,7 @@ export function ContestHeader({ contestRef }: { contestRef: TContestQueryRef }) 
   const handleShare = async () => {
     const method = await shareActions.share(
       window.location.origin + ROUTES.CONTEST(contest.id),
-      { title: '웃긴순간 사진 대회', text: buildContestShareText(contest.title) },
+      { title: '별사대 사진 대회', text: buildContestShareText(contest.title) },
       { copied: '대회 링크를 복사했어요' },
     );
     if (method) trackEvent(ANALYTICS_EVENT.ContestShared, { contest_id: contest.id, method });

@@ -1,10 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { createTestApp } from '../../test/support/app';
-import type { ITestApi, ITestUser } from '../../test/support/app';
+import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { moveContestTo, setSubmittedAt } from '../../test/support/clock';
-import { CREATE_CONTEST, contestSchedule, createContest, createGroup } from '../../test/support/fixtures';
-import type { ITestGroup } from '../../test/support/fixtures';
+import {
+  contestSchedule,
+  CREATE_CONTEST,
+  createContest,
+  createGroup,
+  type ITestGroup,
+} from '../../test/support/fixtures';
 import { listPhotos, submitPhoto } from '../../test/support/photos';
 
 const GROUP_FORBIDDEN = { code: 'FORBIDDEN', message: '이 그룹에 접근할 권한이 없습니다.' };
@@ -71,9 +75,11 @@ describe('대회', () => {
     expect(created.createContest.phase).toBe('SUBMISSION');
 
     const query = 'query($id: ID!) { contest(id: $id) { title } }';
-    expect(await api.gqlFail(outsider.cookie, query, { id: created.createContest.id })).toEqual(
-      GROUP_FORBIDDEN,
-    );
+    // 기존 대회는 멤버 전용이라 비회원에게는 없는 대회와 같은 응답을 준다.
+    expect(await api.gqlFail(outsider.cookie, query, { id: created.createContest.id })).toEqual({
+      code: 'NOT_FOUND',
+      message: '대회를 찾을 수 없습니다.',
+    });
     expect(await api.gqlFail(member.cookie, query, { id: 'missing-contest' })).toEqual({
       code: 'NOT_FOUND',
       message: '대회를 찾을 수 없습니다.',

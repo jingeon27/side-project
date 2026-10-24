@@ -1,20 +1,30 @@
 export const infoMessages: Record<string, readonly [string, string]> = {
-  '게시글을 찾고, 모집 글을 올리고, 채팅으로 이야기하는 방법을 안내합니다.': [
-    'Learn how to find posts, publish listings and talk with other players in chat.',
-    '投稿の探し方、募集の出し方、チャットでのやり取りをご案内します。',
+  '게시글부터 채팅까지, 필요한 기능을 빠르게 찾아보세요.': [
+    'Find your way around posts, chat and more.',
+    '投稿からチャットまで、使いたい機能を見つけましょう。',
   ],
-  '전체와 다섯 분류': ['All posts and five categories', 'すべての投稿と5つの分類'],
-  '홈의 전체에서는 모든 분류의 최신 글을 볼 수 있습니다. 게임 이름 아래 칩에서 분류를 선택하고, 헤더의 검색 아이콘으로 검색 페이지를 열 수 있습니다. 공개 게시글과 댓글, 사용자 프로필은 로그인 없이 읽을 수 있습니다.':
+  '게시글 찾기': ['Browse posts', '投稿を探す'],
+  '아래 제목을 누르면 해당 화면으로 이동해요.': [
+    'Tap a heading below to open that screen.',
+    '下の見出しをタップすると、その画面に移動できます。',
+  ],
+  '휴대폰에서 게시글을 찾고, 글을 올리고, 채팅하는 방법을 안내해요. 제목과 화살표를 누르면 해당 화면으로 바로 이동해요.':
     [
-      'All on the home screen shows the latest posts from every category. Choose a category using the chips below the game name, or open search from the header icon. Public posts, comments and profiles can be read without signing in.',
-      'ホームの「すべて」には各分類の新着投稿が表示されます。ゲーム名の下のチップで分類を選び、ヘッダーの検索アイコンから検索できます。公開投稿、コメント、プロフィールはログインせずに閲覧できます。',
+      'Learn how to browse posts, write and chat on your phone. Tap a heading or its arrow to open that screen.',
+      'スマートフォンで投稿を探し、投稿して、チャットする方法をご案内します。見出しや矢印をタップすると、その画面に移動できます。',
+    ],
+  '전체와 다섯 분류': ['All posts and five categories', 'すべての投稿と5つの分類'],
+  '화면 아래 홈을 누르면 모든 게임과 분류의 최신 글을 볼 수 있어요. 게임 이름 아래 분류 버튼을 좌우로 밀어 원하는 게시판을 선택하세요. 화면 위 검색 아이콘으로 글을 찾을 수 있어요. 공개 게시글·댓글·프로필은 로그인 없이 볼 수 있어요.':
+    [
+      'Tap Home at the bottom to see the latest posts across games and categories. Swipe the category buttons below the game name to choose a board, or tap the search icon at the top to find posts. Public posts, comments and profiles are available without signing in.',
+      '画面下のホームをタップすると、すべてのゲーム・分類の新着投稿が見られます。ゲーム名の下の分類ボタンを左右にスワイプして掲示板を選び、画面上の検索アイコンから投稿を探せます。公開投稿・コメント・プロフィールはログインせずに閲覧できます。',
     ],
   전체: ['All', 'すべて'],
   '글쓰기와 사진·동영상': ['Writing posts and adding photos or videos', '投稿と写真・動画'],
-  '로그인 후 글쓰기를 누르고 게임과 분류를 선택하세요. 분류를 바꿔도 입력한 제목과 본문은 유지됩니다. 본문 편집기의 사진·동영상 버튼으로 파일을 넣고, 서식과 링크도 함께 작성할 수 있습니다.':
+  '로그인한 뒤 글쓰기 버튼을 누르고 게임과 분류를 선택하세요. 제목과 본문을 입력하고, 사진·동영상 버튼으로 휴대폰의 파일을 첨부하거나 링크를 넣을 수 있어요. 분류를 바꿔도 입력한 제목과 본문은 유지돼요.':
     [
-      'After signing in, choose Write a post and select a game and category. Changing the category keeps your title and content. Use the photo and video buttons in the editor to add files, formatting and links.',
-      'ログイン後に投稿ボタンを押し、ゲームと分類を選んでください。分類を変更してもタイトルと本文は保持されます。エディターの写真・動画ボタンでファイルを挿入し、書式やリンクも追加できます。',
+      'After signing in, tap Write a post and choose a game and category. Add a title and content, then use the photo and video buttons to attach files from your phone or add a link. Changing the category keeps your title and content.',
+      'ログイン後に投稿ボタンをタップし、ゲームと分類を選んでください。タイトルと本文を入力し、写真・動画ボタンからスマートフォンのファイルやリンクを追加できます。分類を変えてもタイトルと本文は保持されます。',
     ],
   '피드백에는 어려웠던 상황, 시도한 방법과 궁금한 점을 적어주세요. 다른 글에는 모집 조건이나 함께 나누고 싶은 이야기를 적으면 됩니다. 작성한 글은 본인이 수정하거나 삭제할 수 있습니다.':
     [
@@ -49,10 +59,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'コーチング相談から1対1チャットを開始し、レッスン方法、日程、費用を相談してください。サービス内では決済や精算を行いません。',
     ],
   '채팅과 대화내역': ['Chat and conversation history', 'チャットと会話履歴'],
-  '게시글이나 사용자 프로필의 채팅하기에서 대화를 시작합니다. 채팅에서는 사진·동영상과 텍스트를 보낼 수 있습니다. 데스크톱 Enter는 전송, Shift+Enter는 줄바꿈이며 모바일 Enter는 줄바꿈입니다.':
+  '게시글이나 상대 프로필의 채팅하기를 누르면 1:1 대화가 열려요. 화면 아래 채팅 메뉴에서 대화를 다시 찾을 수 있어요. 입력창 옆 첨부 버튼으로 사진·동영상을 고르고, 오른쪽 보내기 버튼을 눌러 전송하세요. 휴대폰 키보드의 줄바꿈은 메시지를 보내지 않고 다음 줄로 내려가요.':
     [
-      'Start a conversation using Chat on a post or profile. You can send text, photos and videos. On desktop, Enter sends and Shift+Enter starts a new line. On mobile, Enter starts a new line.',
-      '投稿やプロフィールのチャットボタンから会話を始められます。テキスト、写真、動画を送信できます。パソコンではEnterで送信、Shift+Enterで改行します。モバイルのEnterは改行です。',
+      'Tap Chat on a post or another player’s profile to start a private conversation. Find it again in Chat at the bottom. Use the attachment button beside the message field to select photos or videos, then tap Send on the right. The return key on your phone adds a new line without sending.',
+      '投稿や相手のプロフィールのチャットボタンで1対1の会話を始められます。画面下のチャットから会話を再開できます。入力欄の横の添付ボタンで写真・動画を選び、右の送信ボタンをタップしてください。スマートフォンの改行キーでは送信されず、次の行に移ります。',
     ],
   '대화내역 삭제는 현재까지의 내 기록에만 적용됩니다. 상대의 기록과 이후 도착하는 메시지는 유지됩니다. 채팅 상단에서 상대를 신고하거나 메뉴에서 차단할 수 있습니다.':
     [
@@ -60,10 +70,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       '履歴削除は確認済みの最新メッセージまでの自分の記録だけに適用されます。相手の履歴と今後のメッセージは保持されます。通報はチャット上部から、ブロックと履歴削除はメニューから行えます。',
     ],
   '게임 계정과 프로필 인증': ['Game accounts and profile verification', 'ゲームアカウントとプロフィール認証'],
-  '프로필의 게임 계정에서 플레이어 태그를 조회하고 내 계정에 등록하세요. 게임 계정은 사용자 계정에 연결하며 게시글에 별도로 첨부하지 않습니다.':
+  '화면 아래 프로필을 누르고 게임 계정의 계정 등록을 선택하세요. 플레이어 태그를 입력해 조회한 뒤 내 계정에 등록할 수 있어요. 등록한 게임 계정은 프로필에 연결되므로 글마다 따로 첨부할 필요가 없어요.':
     [
-      'Look up your player tag under Game accounts in your profile and register it to your account. Game accounts belong to your user account and are not attached separately to posts.',
-      'プロフィールのゲームアカウントでプレイヤータグを検索し、自分のアカウントに登録してください。ゲームアカウントはユーザーに紐づき、投稿に個別添付するものではありません。',
+      'Tap Profile at the bottom, then Register account under Game accounts. Look up your player tag and register the result to your account. Your game account belongs to your profile, so you do not need to attach it to each post.',
+      '画面下のプロフィールから、ゲームアカウントのアカウント登録を選んでください。プレイヤータグを検索し、自分のアカウントに登録できます。ゲームアカウントはプロフィールに紐づくため、投稿ごとに添付する必要はありません。',
     ],
   '프로필 인증 신청은 관리자와의 비공개 1:1 채팅으로 연결됩니다. 관리자 확인 후 인증되며, 인증 전에도 글을 작성할 수 있습니다. 대표 태그를 바꾸면 다시 인증을 받아야 합니다.':
     [
@@ -75,20 +85,20 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'プロフィールでゲームアカウントを登録',
   ],
   '팔로우와 새 소식': ['Following and notifications', 'フォローとお知らせ'],
-  '사용자 프로필에서 팔로우하고 새 글 알림을 설정할 수 있습니다. 새 답변·댓글과 구독한 사용자의 새 글은 헤더의 알림에서 확인하세요. 읽지 않은 채팅은 하단 채팅 메뉴에 개수로 표시됩니다.':
+  '상대 프로필에서 팔로우하고 새 글 알림을 설정할 수 있어요. 화면 위 알림 아이콘을 누르면 새 답변·댓글과 구독한 사용자의 새 글을 확인할 수 있어요. 읽지 않은 메시지 수는 화면 아래 채팅 메뉴에 표시돼요.':
     [
-      'Follow users from their profiles and enable new-post notifications. Replies, comments and subscribed users’ new posts appear in header notifications. The bottom Chat menu shows your unread message count.',
-      'プロフィールからユーザーをフォローし、新着投稿の通知を設定できます。回答、コメント、購読したユーザーの新着投稿はヘッダーの通知で確認できます。下部のチャットメニューには未読件数が表示されます。',
+      'Follow players and enable new-post alerts from their profiles. Tap the notification icon at the top for replies, comments and new posts from subscribed players. Your unread message count appears on Chat at the bottom.',
+      '相手のプロフィールからフォローし、新着投稿の通知を設定できます。画面上の通知アイコンで回答・コメント・購読中のユーザーの新着投稿を確認できます。未読メッセージ数は画面下のチャットに表示されます。',
     ],
   '피드백 요청자는 도움이 된 답변에 도움됨을 표시할 수 있습니다.': [
     'Feedback requesters can mark useful replies as Helpful.',
     'フィードバックの投稿者は役立つ回答に「役に立った」を付けられます。',
   ],
   '문의와 신고': ['Support and reports', 'お問い合わせと通報'],
-  '운영 문의와 프로필 인증은 프로필의 관리자 문의에서 상담할 수 있습니다. 게시글·댓글·프로필·채팅의 신고 기능으로 욕설·괴롭힘, 사칭, 사기·거래 피해 등을 접수할 수 있습니다.':
+  '화면 아래 프로필에서 관리자 문의를 누르면 운영 문의와 프로필 인증을 상담할 수 있어요. 게시글·댓글·상대 프로필·채팅에서 신고를 선택하면 욕설·괴롭힘, 사칭, 사기·거래 피해 등을 접수할 수 있어요.':
     [
-      'For service support or profile verification, open administrator support from your profile. Report abuse or harassment, impersonation, fraud or transaction disputes from posts, comments, profiles or chat.',
-      '運営へのお問い合わせや認証申請はプロフィールの管理者相談から行えます。投稿、コメント、プロフィール、チャットから暴言・嫌がらせ、なりすまし、詐欺・取引被害を通報できます。',
+      'Tap Profile at the bottom and open administrator support for service questions or profile verification. Choose Report on posts, comments, other players’ profiles or chats to report abuse, harassment, impersonation, fraud or transaction disputes.',
+      '画面下のプロフィールから管理者へのお問い合わせを開くと、運営への相談やプロフィール認証を依頼できます。投稿・コメント・相手のプロフィール・チャットの通報から、暴言・嫌がらせ、なりすまし、詐欺・取引被害などを報告できます。',
     ],
   '문의 안내 보기': ['View support information', 'お問い合わせ案内を見る'],
   '홈으로 이동': ['Go to home', 'ホームへ移動'],
@@ -98,10 +108,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'この文書は非公開アルファに適用する利用基準の草案です。公開前に運営者情報と最終規約を確定する必要があります。',
     ],
   '1. 서비스의 목적과 범위': ['1. Purpose and scope', '1. サービスの目的と範囲'],
-  '플레이메이트는 게임 플레이에 대한 피드백 요청, 답변, 댓글과 1:1 채팅을 나누는 커뮤니티입니다. 알파 기간에는 기능과 운영 방식이 변경될 수 있습니다. 다른 사용자의 조언은 의견이며 게임 결과를 보장하지 않습니다.':
+  'Game Mate는 게임 플레이에 대한 피드백 요청, 답변, 댓글과 1:1 채팅을 나누는 커뮤니티입니다. 알파 기간에는 기능과 운영 방식이 변경될 수 있습니다. 다른 사용자의 조언은 의견이며 게임 결과를 보장하지 않습니다.':
     [
-      'Playmate is a community for game feedback, replies, comments and private chats. Features and operation may change during the alpha. Other users’ advice is an opinion and does not guarantee game results.',
-      'Playmateはゲームのフィードバック、回答、コメント、1対1チャットを共有するコミュニティです。アルファ期間中は機能や運営方法が変更される場合があります。他の利用者の助言は意見であり、ゲームの結果を保証しません。',
+      'Game Mate is a community for game feedback, replies, comments and private chats. Features and operation may change during the alpha. Other users’ advice is an opinion and does not guarantee game results.',
+      'Game Mateはゲームのフィードバック、回答、コメント、1対1チャットを共有するコミュニティです。アルファ期間中は機能や運営方法が変更される場合があります。他の利用者の助言は意見であり、ゲームの結果を保証しません。',
     ],
   '2. 가입과 계정': ['2. Registration and accounts', '2. 登録とアカウント'],
   '만 14세 이상만 가입할 수 있습니다. Google, X, 카카오, Discord 계정으로 로그인하며 서비스에서는 사용자가 직접 정한 닉네임을 사용합니다. 게임 태그 등록은 해당 계정의 소유권 인증을 의미하지 않습니다.':
@@ -170,7 +180,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'Tell us about problems, ideas or ways you would like to help improve the service.',
     '困った点やアイデア、サービスを良くするためのご意見をお寄せください。',
   ],
-  '운영 문의': ['Service support', '運営へのお問い合わせ'],
+  '운영 및 광고 문의': ['Support and advertising inquiries', '運営・広告に関するお問い合わせ'],
   '문제 상황과 발생 시간을 함께 알려주시면 확인에 도움이 됩니다. 비밀번호나 다른 사람의 개인정보는 보내지 마세요.':
     [
       'Include what happened and when it happened to help us investigate. Do not send passwords or other people’s personal information.',
@@ -196,9 +206,9 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'When reporting a service error, include the affected screen and the time it occurred.',
     'サービスの不具合については、発生した画面と日時をお知らせください。',
   ],
-  '플레이메이트는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.': [
-    'Playmate is an independent project and is not an official game service.',
-    'Playmateは独立したプロジェクトであり、ゲームの公式サービスではありません。',
+  'Game Mate는 독립 프로젝트이며 게임의 공식 서비스가 아닙니다.': [
+    'Game Mate is an independent project and is not an official game service.',
+    'Game Mateは独立したプロジェクトであり、ゲームの公式サービスではありません。',
   ],
   '이용 가이드': ['User guide', '利用ガイド'],
   '이용약관 (비공개 알파 초안)': ['Terms of service (private-alpha draft)', '利用規約（非公開アルファ草案）'],
@@ -206,27 +216,27 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'Privacy information (private-alpha draft)',
     'プライバシーについて（非公開アルファ草案）',
   ],
-  '플레이메이트에 이야기해주세요': ['Contact Playmate', 'Playmateへのお問い合わせ'],
-  '플레이메이트 이용 가이드': ['Playmate user guide', 'Playmate利用ガイド'],
+  'Game Mate에 이야기해주세요': ['Contact Game Mate', 'Game Mateへのお問い合わせ'],
+  'Game Mate 이용 가이드': ['Game Mate user guide', 'Game Mate利用ガイド'],
   '전체 게시글 검색과 다섯 분류, 전투 모집, 코치·수강생 모집, 채팅, 게임 계정 등록과 프로필 인증 방법을 안내합니다.':
     [
       'Learn about search, the five categories, battle recruitment, coaching, chat, game accounts and profile verification.',
       '検索、5つの分類、対戦・コーチ募集、チャット、ゲームアカウント登録、プロフィール認証をご案内します。',
     ],
   이용약관: ['Terms of service', '利用規約'],
-  '플레이메이트 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.': [
-    'Read the terms and community rules for the Playmate private alpha.',
-    'Playmate非公開アルファの利用条件とコミュニティ運営方針をご確認ください。',
+  'Game Mate 비공개 알파의 서비스 이용 조건과 커뮤니티 운영 원칙을 확인하세요.': [
+    'Read the terms and community rules for the Game Mate private alpha.',
+    'Game Mate非公開アルファの利用条件とコミュニティ運営方針をご確認ください。',
   ],
   '개인정보 처리 안내': ['Privacy information', 'プライバシーについて'],
-  '플레이메이트의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.': [
-    'How Playmate processes, retains and deletes account, post and chat information.',
-    'Playmateのアカウント、投稿、チャット情報の利用・保存・削除についてご案内します。',
+  'Game Mate의 계정, 게시글, 채팅 정보 처리와 보유 및 삭제에 관한 안내입니다.': [
+    'How Game Mate processes, retains and deletes account, post and chat information.',
+    'Game Mateのアカウント、投稿、チャット情報の利用・保存・削除についてご案内します。',
   ],
   '문의 및 신고 안내': ['Support and reporting', 'お問い合わせと通報'],
-  '플레이메이트 서비스 문의, 제안과 커뮤니티 신고 방법을 확인하세요.': [
-    'Learn how to contact Playmate, share suggestions and report community issues.',
-    'Playmateへのお問い合わせ、ご提案、コミュニティの通報方法をご案内します。',
+  'Game Mate 서비스 문의, 제안과 커뮤니티 신고 방법을 확인하세요.': [
+    'Learn how to contact Game Mate, share suggestions and report community issues.',
+    'Game Mateへのお問い合わせ、ご提案、コミュニティの通報方法をご案内します。',
   ],
   '분류별 바로가기': ['Browse categories', '分類へのリンク'],
   '게시글 경로': ['Post location', '投稿の分類'],

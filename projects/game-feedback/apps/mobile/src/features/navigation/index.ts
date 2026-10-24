@@ -1,1 +1,1 @@
-export { decideNavigation, isSameOrigin, toWebPath } from './lib/navigation-policy';
+export { decideNavigation, decideSubframeNavigation, isSameOrigin, toWebPath } from './lib/navigation-policy';

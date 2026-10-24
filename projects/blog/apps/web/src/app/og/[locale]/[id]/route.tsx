@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+
 import { getArticles } from '@/entities/article/lib/get-articles';
 import { isLocale } from '@/i18n/routing';
 import { labels } from '@/shared/config/labels';

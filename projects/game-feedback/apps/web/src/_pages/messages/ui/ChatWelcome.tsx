@@ -1,7 +1,10 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { ButtonLink } from '@side/design-system/next';
+
 import { ArrowUpRight } from 'lucide-react';
+
+import { ButtonLink } from '@side/design-system/next';
+
+import { useI18n } from '@/shared/i18n';
 
 interface IChatWelcomeProps {
   locale: string;

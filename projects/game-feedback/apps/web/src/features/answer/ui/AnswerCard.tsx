@@ -1,10 +1,14 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import type { ReactNode } from 'react';
+
 import { Check, Eye } from 'lucide-react';
+
 import type { Answer } from '@/shared/api';
-import { Avatar } from '@/shared/ui';
+import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
+import { Avatar } from '@/shared/ui';
+
 interface IAnswerCardProps {
   answer: Answer;
   authorContent?: ReactNode;

@@ -1,19 +1,24 @@
 'use client';
+
 import Link from 'next/link';
-import { useI18n } from '@/shared/i18n';
+
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowLeft } from 'lucide-react';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import { chatMessageOptions } from '@/features/chat';
 import { UserBadges } from '@/features/user';
+import { useI18n } from '@/shared/i18n';
+import { BackLink } from '@/shared/navigation';
 import { Avatar } from '@/shared/ui';
 import { useChatConnection } from '@/widgets/chat-realtime';
-import { ConversationActions } from './ConversationActions';
+
 import { useChatScroll } from '../model/use-chat-scroll';
 import { useVisibleRead } from '../model/use-visible-read';
 import { ChatComposer } from './ChatComposer';
 import { ChatHistory } from './ChatHistory';
-import { BackLink } from '@/shared/navigation';
-import { appRoutes } from '@game-feedback/bridge';
+import { ConversationActions } from './ConversationActions';
 
 interface IConversationPaneProps {
   conversationId: string;

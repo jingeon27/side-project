@@ -1,11 +1,16 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
-import { Button, NativeSelect, NativeSelectOption, Textarea } from '@side/design-system';
+
+import { useMutation } from '@tanstack/react-query';
 import { Flag, LoaderCircle } from 'lucide-react';
+
 import { ReportInputSchema, type ReportInput } from '@game-feedback/contracts';
-import { ErrorNotice, Field, BottomSheet, useNotify } from '@/shared/ui';
+import { Button, NativeSelect, NativeSelectOption, Textarea } from '@side/design-system';
+
+import { reportMutationOptions, reportReasons } from '@/features/moderation';
+import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { useReportMutation, reportReasons } from '@/features/moderation';
+import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+
 interface IReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -14,7 +19,7 @@ interface IReportDialogProps {
 }
 export function ReportDialog({ open, onOpenChange, targetType, targetId }: IReportDialogProps) {
   const { t } = useI18n();
-  const mutation = useReportMutation(),
+  const mutation = useMutation(reportMutationOptions()),
     notify = useNotify(),
     form = useZodForm(ReportInputSchema, {
       defaultValues: {

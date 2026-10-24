@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { cache } from 'react';
+
 import {
   GalleryPostsDocument,
   GroupContestResultsDocument,
@@ -10,9 +11,10 @@ import {
   PublicGroupContestSeoDocument,
   PublicGroupSeoDocument,
 } from '@/shared/api/generated';
-import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
 import { PUBLIC_CONTENT_TTL } from '@/shared/api/public-cache.policy';
+import { publicQuery, PublicQueryError } from '@/shared/api/public-query.server';
 import { getWebOrigin } from '@/shared/api/server-request.helper';
+
 import { groupContestMetadata, type IGroupContestSeoData } from './group-contest-seo.helper';
 
 export const getGroupContestSeoData = cache(

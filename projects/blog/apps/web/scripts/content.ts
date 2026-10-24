@@ -1,14 +1,17 @@
-import { readFile, readdir, access } from 'node:fs/promises';
+import { access, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { z } from 'zod';
-import GithubSlugger from 'github-slugger';
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkMdx from 'remark-mdx';
-import remarkGfm from 'remark-gfm';
-import { visit } from 'unist-util-visit';
-import { toString } from 'mdast-util-to-string';
+
 import { compile } from '@mdx-js/mdx';
+import GithubSlugger from 'github-slugger';
+import { toString } from 'mdast-util-to-string';
+import remarkGfm from 'remark-gfm';
+import remarkMdx from 'remark-mdx';
+import remarkParse from 'remark-parse';
+import { unified } from 'unified';
+import { visit } from 'unist-util-visit';
+import { z } from 'zod';
+
+import { parseContentDate } from '../src/shared/lib/date/content-date';
 
 export const locales = ['ko', 'en'] as const;
 export const categories = ['engineering', 'til', 'perspectives', 'misc'] as const;
@@ -20,8 +23,13 @@ const dateSchema = z.union([z.iso.date(), z.iso.datetime({ offset: true })]);
 export const metaSchema = z
   .object({
     category: z.enum(categories),
+    // Tags live in meta.json and are shown as-is in every locale, so they are English slugs.
     tags: z
-      .array(slugSchema.refine((tag) => tag === tag.toLowerCase(), 'Tags must be lowercase'))
+      .array(
+        z
+          .string()
+          .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Tags are shared by all locales: use lowercase ASCII slugs'),
+      )
       .refine((tags) => new Set(tags).size === tags.length, 'Duplicate tags'),
     publishedAt: dateSchema,
     updatedAt: dateSchema.optional(),
@@ -30,7 +38,7 @@ export const metaSchema = z
   })
   .strict()
   .refine(
-    (meta) => !meta.updatedAt || Date.parse(meta.updatedAt) >= Date.parse(meta.publishedAt),
+    (meta) => !meta.updatedAt || parseContentDate(meta.updatedAt) >= parseContentDate(meta.publishedAt),
     'updatedAt precedes publishedAt',
   );
 const seoBase = z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1) });
@@ -77,9 +85,61 @@ export function analyzeMdx(source: string) {
   return { toc, readingMinutes, tree };
 }
 
+// Components registered in src/mdx-components.tsx. Unknown JSX would fail at render time.
+export const mdxComponents = ['Summary', 'Decision', 'Callout', 'Figure', 'CodeBlock'] as const;
+const allowedJsx = new Set<string>(mdxComponents);
+const numericExpression = /^\s*-?\d+(?:\.\d+)?\s*$/;
+
+/**
+ * Keeps MDX to Markdown plus the registered components: ESM, JavaScript expressions, spread
+ * props and unknown JSX are rejected. Numeric props such as `width={640}` stay allowed.
+ * Returns JSX `src` values so they can be checked like Markdown images.
+ */
+export function validateMdxNodes(tree: ReturnType<typeof analyzeMdx>['tree'], label: string): string[] {
+  const sources: string[] = [];
+  visit(tree, (node) => {
+    if (node.type === 'mdxjsEsm') throw new Error(`${label}: import/export is not allowed in MDX`);
+    if (node.type === 'mdxFlowExpression' || node.type === 'mdxTextExpression')
+      throw new Error(`${label}: JavaScript expressions are not allowed in MDX`);
+    if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return;
+    if (!node.name || !allowedJsx.has(node.name))
+      throw new Error(`${label}: unsupported JSX <${node.name ?? ''}>. Use ${mdxComponents.join(', ')}`);
+    for (const attribute of node.attributes) {
+      if (attribute.type === 'mdxJsxExpressionAttribute')
+        throw new Error(`${label}: spread props are not allowed on <${node.name}>`);
+      const { value } = attribute;
+      if (value && typeof value === 'object' && !numericExpression.test(value.value))
+        throw new Error(`${label}: only numeric expression props are allowed on <${node.name}>`);
+      if (attribute.name !== 'src') continue;
+      if (typeof value !== 'string') throw new Error(`${label}: <${node.name} src> must be a string`);
+      sources.push(value);
+    }
+  });
+  return sources;
+}
+
 async function json(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, 'utf8'));
 }
+export const articleUrlPath = (article: Pick<ContentArticle, 'locale' | 'slug'>) =>
+  `/${article.locale}/blog/${article.slug}`;
+
+/**
+ * Returns previously published article paths that are neither live nor a 301 source.
+ * Changing a slug or unpublishing an article must keep its old path in content/redirects.json.
+ */
+export function findMissingRedirects(
+  previous: readonly Pick<ContentArticle, 'locale' | 'slug'>[],
+  next: readonly Pick<ContentArticle, 'locale' | 'slug'>[],
+  redirects: readonly { source: string }[],
+): string[] {
+  const live = new Set(next.map(articleUrlPath));
+  const redirected = new Set(redirects.map((redirect) => redirect.source));
+  return [...new Set(previous.map(articleUrlPath))]
+    .filter((urlPath) => !live.has(urlPath) && !redirected.has(urlPath))
+    .sort();
+}
+
 export async function readContent(root: string) {
   const seo = Object.fromEntries(
     await Promise.all(
@@ -125,7 +185,7 @@ export async function readContent(root: string) {
       if (!source.trim()) throw new Error(`${id}/${locale}: empty content`);
       await compile(source, { remarkPlugins: [remarkGfm] });
       const { toc, readingMinutes, tree } = analyzeMdx(source);
-      const images: string[] = [];
+      const images = validateMdxNodes(tree, `${id}/${locale}`);
       visit(tree, 'image', (node) => {
         images.push(node.url);
       });
@@ -137,9 +197,11 @@ export async function readContent(root: string) {
       imports.push({ id, locale });
     }
   }
-  articles.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.id.localeCompare(b.id));
+  articles.sort(
+    (a, b) => parseContentDate(b.publishedAt) - parseContentDate(a.publishedAt) || a.id.localeCompare(b.id),
+  );
   // Validate internal article references after building the complete index.
-  const validPaths = new Set(articles.map((article) => `/${article.locale}/blog/${article.slug}`));
+  const validPaths = new Set(articles.map(articleUrlPath));
   for (const { id, locale } of imports) {
     const source = await readFile(path.join(postsDir, id, `${locale}.mdx`), 'utf8');
     const { tree } = analyzeMdx(source);

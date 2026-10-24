@@ -1,8 +1,9 @@
 import 'server-only';
 
+import { headers } from 'next/headers';
+
 import { HttpLink } from '@apollo/client';
 import { ApolloClient, InMemoryCache, registerApolloClient } from '@apollo/client-integration-nextjs';
-import { headers } from 'next/headers';
 
 import { PUBLIC_QUERY_HEADER } from './public-cache.policy';
 import { buildServerRequestHeaders, getServerApiUrl, getWebOrigin } from './server-request.helper';
@@ -18,12 +19,16 @@ export const { getClient, query, PreloadQuery } = registerApolloClient(function 
       uri: `${getServerApiUrl()}/graphql`,
       fetch: async (input, init) => {
         const publicRequest = new Headers(init?.headers).get(PUBLIC_QUERY_HEADER) === 'true';
-        const cookie = publicRequest ? null : (await headers()).get('cookie');
+        const incoming = publicRequest ? null : await headers();
         return fetch(input, {
           ...init,
           ...(publicRequest ? {} : { cache: 'no-store' as const }),
           ...(publicRequest ? { credentials: 'omit' as const } : {}),
-          headers: buildServerRequestHeaders(init?.headers, { cookie, webOrigin: getWebOrigin() }),
+          headers: buildServerRequestHeaders(init?.headers, {
+            cookie: incoming?.get('cookie') ?? null,
+            forwardedFor: incoming?.get('x-forwarded-for') ?? null,
+            webOrigin: getWebOrigin(),
+          }),
         });
       },
     }),

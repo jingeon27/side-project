@@ -1,16 +1,30 @@
-import { UnitOfWork } from '../../database/unit-of-work';
-import { PrismaClient } from '../../generated/prisma';
-
 import { Inject, Injectable } from '@nestjs/common';
+
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { ApiError } from '../../common/http/api-error';
+import { UnitOfWork } from '../../database/unit-of-work';
+import { PrismaClient, type Prisma } from '../../generated/prisma';
 import { authorDto, authorSelect } from '../../users/user.presenter';
 import type { SupportStatusDto } from './support-input.dto';
+
 const include = {
   requester: { select: authorSelect },
   conversation: { select: { updatedAt: true } },
 } as const;
+// 기록 경계 같은 내부 열은 응답에 싣지 않는다.
+function supportThread(row: Prisma.SupportConversationGetPayload<{ include: typeof include }>) {
+  return {
+    id: row.id,
+    conversationId: row.conversationId,
+    requester: authorDto(row.requester),
+    adminId: row.adminId,
+    topic: row.topic,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.conversation.updatedAt.toISOString(),
+  };
+}
 @Injectable()
 export class AdminSupportService {
   constructor(
@@ -25,13 +39,7 @@ export class AdminSupportService {
       orderBy: { conversation: { updatedAt: 'desc' } },
       take: 100,
     });
-    return rows.map((row) => ({
-      ...row,
-      requester: authorDto(row.requester),
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.conversation.updatedAt.toISOString(),
-      conversation: undefined,
-    }));
+    return rows.map(supportThread);
   }
   async status(req: SessionRequest, id: string, body: SupportStatusDto) {
     const admin = requireAdmin(req);
@@ -57,12 +65,6 @@ export class AdminSupportService {
       });
       return updated;
     });
-    return {
-      ...row,
-      requester: authorDto(row.requester),
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.conversation.updatedAt.toISOString(),
-      conversation: undefined,
-    };
+    return supportThread(row);
   }
 }

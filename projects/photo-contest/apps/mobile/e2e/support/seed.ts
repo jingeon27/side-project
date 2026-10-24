@@ -1,12 +1,15 @@
 import { randomBytes } from 'node:crypto';
 
+import type { BrowserContext } from '@playwright/test';
+
 import {
   createTestAppLoginTicket,
   createTestImage,
   createTestUser,
   graphqlRequest,
+  uploadTestPostMedia,
+  uploadTestSubmissionMedia,
 } from '@photo-contest/test-kit';
-import type { BrowserContext } from '@playwright/test';
 
 import { E2E_API_URL, E2E_WEB_ORIGIN } from './e2e-env';
 
@@ -42,7 +45,7 @@ export async function signInBrowser(context: BrowserContext, cookie: string) {
   ]);
 }
 
-export async function seedGroup(ownerCookie: string, name = '웃긴순간 모임') {
+export async function seedGroup(ownerCookie: string, name = '별사대 모임') {
   const data = await gql<{ createGroup: { id: string; inviteToken: string } }>(
     ownerCookie,
     'mutation CreateGroup($name: String!) { createGroup(name: $name) { id inviteToken } }',
@@ -78,24 +81,19 @@ export async function seedOpenContest(ownerCookie: string, groupId: string, titl
 
 /** 업로드 티켓으로 실제 이미지를 올리고 제출한다. */
 export async function seedSubmission(cookie: string, contestId: string, caption = '고양이가 놀란 순간') {
-  const { requestUploadUrl: ticket } = await gql<{ requestUploadUrl: { id: string; url: string } }>(
+  const uploadId = await uploadTestSubmissionMedia(E2E_API_URL, {
     cookie,
-    'mutation RequestUpload($contestId: ID!) { requestUploadUrl(contestId: $contestId) { id url } }',
-    { contestId },
-  );
-  // 티켓 주소는 웹 프록시 경로(/backend/uploads/...)라 API를 직접 부를 때는 접두사를 뗀다.
-  const upload = await fetch(`${E2E_API_URL}${ticket.url.replace(/^\/backend/, '')}`, {
-    method: 'POST',
-    headers: { Cookie: cookie, Origin: E2E_WEB_ORIGIN, 'Content-Type': 'image/png' },
-    body: new Uint8Array(await createTestImage()),
+    origin: E2E_WEB_ORIGIN,
+    contestId,
+    body: await createTestImage(),
+    contentType: 'image/png',
   });
-  if (!upload.ok) throw new Error(`사진 업로드 실패 (${upload.status})`);
   const data = await gql<{ createSubmission: { id: string } }>(
     cookie,
     `mutation CreateSubmission($contestId: ID!, $uploadId: ID!, $caption: String!) {
       createSubmission(contestId: $contestId, uploadId: $uploadId, caption: $caption, rightsConfirmed: true) { id }
     }`,
-    { contestId, uploadId: ticket.id, caption },
+    { contestId, uploadId, caption },
   );
   return data.createSubmission;
 }
@@ -117,21 +115,17 @@ export async function seedGalleryWithMemberPost() {
   const memberCookie = await signUp(uniqueNickname('회원'));
   const group = await seedGroup(ownerCookie);
   await joinGroup(memberCookie, group.inviteToken);
-  const { requestPostUpload: ticket } = await gql<{ requestPostUpload: { id: string; url: string } }>(
-    memberCookie,
-    'mutation($groupId:ID!){requestPostUpload(groupId:$groupId){id url}}',
-    { groupId: group.id },
-  );
-  const response = await fetch(E2E_API_URL + ticket.url.replace(/^\/backend/, ''), {
-    method: 'POST',
-    headers: { Cookie: memberCookie, Origin: E2E_WEB_ORIGIN, 'Content-Type': 'image/png' },
-    body: new Uint8Array(await createTestImage()),
+  const uploadId = await uploadTestPostMedia(E2E_API_URL, {
+    cookie: memberCookie,
+    origin: E2E_WEB_ORIGIN,
+    groupId: group.id,
+    body: await createTestImage(),
+    contentType: 'image/png',
   });
-  if (!response.ok) throw new Error('게시물 업로드 실패');
   await gql(
     memberCookie,
     'mutation($groupId:ID!,$uploadId:ID!){createPost(groupId:$groupId,uploadId:$uploadId,title:"고양이가 놀란 순간",rightsConfirmed:true){id}}',
-    { groupId: group.id, uploadId: ticket.id },
+    { groupId: group.id, uploadId },
   );
   return { ownerCookie, memberCookie, group };
 }

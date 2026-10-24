@@ -1,12 +1,15 @@
 'use client';
 
-import { useFragment } from '@apollo/client/react';
-import { Link2, Trophy, Video } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+
+import { useFragment } from '@apollo/client/react';
+import { Link2, Trophy, Video } from 'lucide-react';
+
 import { GroupContestCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatDateTime } from '@/shared/lib/format.helper';
+
 import { PhaseBadge } from './PhaseBadge';
 
 export function GroupContestCard({ id, hallOfFame = false }: { id: string; hallOfFame?: boolean }) {

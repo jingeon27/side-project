@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
@@ -43,8 +44,12 @@ export function WebShellPageTemplate({
           source={{ uri: sourceUrl }}
           originWhitelist={ORIGIN_WHITELIST}
           setSupportMultipleWindows={false}
-          sharedCookiesEnabled
+          // 세션 쿠키(Max-Age)는 WKWebView 기본 영속 저장소에 남는다. 켜면 HttpOnly 세션이 네이티브
+          // NSHTTPCookieStorage로 복사돼 앱의 fetch에도 실리므로 iOS 쿠키 공유를 끈다.
+          sharedCookiesEnabled={false}
           thirdPartyCookiesEnabled
+          // iOS는 기본으로 동영상을 전체 화면으로만 재생한다. 피드의 동영상·유튜브를 제자리에서 재생한다.
+          allowsInlineMediaPlayback
           allowsBackForwardNavigationGestures
           pullToRefreshEnabled
           webviewDebuggingEnabled={__DEV__}

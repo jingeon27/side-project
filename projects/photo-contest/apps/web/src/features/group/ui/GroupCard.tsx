@@ -1,9 +1,11 @@
-import { ChevronRight, Users } from 'lucide-react';
 import Link from 'next/link';
+
+import { ChevronRight, Users } from 'lucide-react';
 
 import type { GroupCardFragment } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatCount } from '@/shared/lib/format.helper';
+import { Avatar } from '@/shared/ui/@core/avatar';
 import { Badge } from '@/shared/ui/@core/badge';
 
 import { isGroupOwner } from '../lib/group.helper';
@@ -19,12 +21,12 @@ export function GroupCard({ group }: IGroupCardProps) {
       href={ROUTES.GROUP(group.id)}
       className="flex items-center gap-4 rounded-control border border-line bg-surface p-5 transition-colors hover:bg-sunken active:bg-neutral-soft"
     >
-      <span
-        aria-hidden
-        className="flex size-14 shrink-0 items-center justify-center rounded-full border border-line bg-sunken text-title text-ink"
-      >
-        {Array.from(group.name.trim())[0] ?? '?'}
-      </span>
+      <Avatar
+        name={group.name}
+        src={group.avatarUrl}
+        size="lg"
+        className="size-14 border border-line bg-sunken text-ink"
+      />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-center gap-2">
           <span className="line-clamp-1 text-subtitle text-ink">{group.name}</span>
@@ -34,7 +36,9 @@ export function GroupCard({ group }: IGroupCardProps) {
           <Users aria-hidden className="size-3.5" />
           {formatCount(group.members.length)}명의 친구
         </span>
-        <span className="text-caption text-muted">사진·동영상으로 나누는 웃긴 순간</span>
+        <span className="line-clamp-2 text-caption text-muted">
+          {group.description || '사진·동영상으로 나누는 웃긴 순간'}
+        </span>
       </span>
       <ChevronRight aria-hidden className="size-5 shrink-0 text-subtle" />
     </Link>

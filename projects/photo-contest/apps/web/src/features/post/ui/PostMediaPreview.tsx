@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 import { Button } from '@/shared/ui/@core/button';
 
@@ -34,6 +34,7 @@ export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: I
             미리보기를 열 수 없어요. 이 기기에서 재생할 수 있는 다른 사진이나 동영상을 선택해 주세요.
           </p>
         ) : file.type.startsWith('video/') ? (
+          // eslint-disable-next-line jsx-a11y/media-has-caption -- 올리기 전에 고른 파일을 확인하는 미리보기라 자막 파일이 없다.
           <video
             ref={videoRef}
             src={src}

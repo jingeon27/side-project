@@ -4,7 +4,7 @@ export function mediaDownloadFilename(title: string, key: string): string {
     .replace(/[\u0000-\u001f\u007f/\\<>:"|?*]/g, '')
     .replace(/^\.+|\.+$/g, '')
     .trim();
-  return `${[...name].slice(0, 80).join('') || '웃긴순간'}.${extension}`;
+  return `${[...name].slice(0, 80).join('') || '별사대'}.${extension}`;
 }
 
 export function mediaDownloadDisposition(filename: string): string {
@@ -13,5 +13,5 @@ export function mediaDownloadDisposition(filename: string): string {
     /['()*]/g,
     (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  return `attachment; filename="funny-moment.${extension}"; filename*=UTF-8''${encoded}`;
+  return `attachment; filename="byeolsadae.${extension}"; filename*=UTF-8''${encoded}`;
 }

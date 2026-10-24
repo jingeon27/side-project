@@ -1,23 +1,27 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
+import { defineConfig, globalIgnores } from 'eslint/config';
+
 const layers = ['shared', 'entities', 'features', 'widgets', 'app'];
-const boundaries = layers.slice(0, -1).map((layer, index) => ({
-  files: [`src/${layer}/**/*.{ts,tsx}`],
-  rules: {
-    'no-restricted-imports': [
-      'error',
-      {
-        patterns: [
-          {
-            group: layers.slice(index + 1).map((upper) => `@/${upper}/**`),
-            message: 'FSD layers may only depend on lower layers.',
-          },
-        ],
-      },
-    ],
-  },
-}));
+const boundaries = layers.slice(0, -1).map((layer, index) => {
+  const uppers = layers.slice(index + 1);
+  const message = 'FSD layers may only depend on lower layers.';
+  return {
+    files: [`src/${layer}/**/*.{ts,tsx}`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: uppers.map((upper) => `@/${upper}/**`), message },
+            // Relative paths that climb out of the slice into a higher layer (`../../features/...`).
+            { regex: `^(?:\\./)?(?:\\.\\./)+(?:src/)?(?:${uppers.join('|')})(?:/|$)`, message },
+          ],
+        },
+      ],
+    },
+  };
+});
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,

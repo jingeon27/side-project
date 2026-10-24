@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { articleJsonLd, serializeJsonLd } from './structured-data';
-
 import type { ArticleSeo } from './metadata';
+import { articleJsonLd, serializeJsonLd } from './structured-data';
 
 const article: ArticleSeo = {
   id: 'cache',

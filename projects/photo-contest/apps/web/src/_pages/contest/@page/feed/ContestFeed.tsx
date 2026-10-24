@@ -1,16 +1,21 @@
 'use client';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
-import type { QueryRef } from '@apollo/client/react';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useTransition } from 'react';
+
+import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { LikeButton } from '@/features/like';
 import { ModerationActions } from '@/features/moderation';
-import { FEED_PAGE_SIZE, PHOTO_SORT, FeedLoadMore, SubmissionCard } from '@/features/submission';
-import type { TPhotoSort } from '@/features/submission';
+import {
+  FEED_PAGE_SIZE,
+  FeedLoadMore,
+  PHOTO_SORT,
+  SubmissionCard,
+  type TPhotoSort,
+} from '@/features/submission';
 import { VoteButton } from '@/features/vote';
-import { Phase, SubmissionsDocument } from '@/shared/api/generated';
-import type { SubmissionsQuery } from '@/shared/api/generated';
+import { Phase, SubmissionsDocument, type SubmissionsQuery } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
@@ -32,10 +37,14 @@ function FeedContent({
   submissionsRef: QueryRef<SubmissionsQuery>;
   viewerId: string;
 }) {
-  const { data } = useReadQuery(submissionsRef);
   const { data: context } = useReadQuery(contestRef);
-  const { fetchMore, refetch } = useQueryRefHandlers(submissionsRef);
-  const [hasNextPage, setHasNextPage] = useState(true);
+  const pagination = useInfiniteQuery(submissionsRef, {
+    select: (data) => data.submissions,
+    pageSize: FEED_PAGE_SIZE,
+    canFetchMore: (data) =>
+      data.submissions.filter((photo) => !photo.hidden).length < (context?.contest.submissionCount ?? 0),
+  });
+  const { data, refetch } = pagination;
   const [pending, startTransition] = useTransition();
   const count = context?.contest.submissionCount;
   const previousCount = useRef(count);
@@ -46,7 +55,6 @@ function FeedContent({
     startTransition(async () => {
       try {
         await refetch();
-        setHasNextPage(true);
       } catch {
         /* 다시 조회 오류는 피드 경계에서 복구한다. */
       }
@@ -55,26 +63,12 @@ function FeedContent({
   if (!context) return null;
   const { contest } = context;
   const photos = data.submissions.filter((submission) => !submission.hidden);
-  // submissionCount는 공개 사진 수다. 요청 offset과 달리 끝 여부는 공개 카드 수로 판단한다.
-  const hasMore =
-    hasNextPage && data.submissions.length >= FEED_PAGE_SIZE && photos.length < contest.submissionCount;
-  const handleLoadMore = () => {
-    if (pending || !hasNextPage) return;
-    startTransition(async () => {
-      try {
-        // 관리자의 응답에는 숨긴 사진도 포함된다. 공개 카드 수를 offset으로 쓰면 사진이 겹친다.
-        const result = await fetchMore({ variables: { offset: data.submissions.length } });
-        setHasNextPage(result.data.submissions.length === FEED_PAGE_SIZE);
-      } catch {
-        /* 추가 조회 오류는 피드 경계에서 복구한다. */
-      }
-    });
-  };
+  const hasMore = pagination.hasNextPage;
+  const handleLoadMore = () => pagination.fetchNextPage();
   const handleRefresh = () =>
     startTransition(async () => {
       try {
         await refetch();
-        setHasNextPage(true);
       } catch {
         /* 피드 경계가 재시도를 제공한다. */
       }
@@ -89,7 +83,7 @@ function FeedContent({
         variant="ghost"
         size="sm"
         className="col-span-full justify-self-start"
-        loading={pending}
+        loading={pending || pagination.isFetchingNextPage}
         onClick={handleRefresh}
       >
         사진 새로고침
@@ -126,7 +120,11 @@ function FeedContent({
         />
       ))}
       <div className="col-span-full">
-        <FeedLoadMore hasMore={hasMore} loading={pending} onLoadMore={handleLoadMore} />
+        <FeedLoadMore
+          hasMore={hasMore}
+          loading={pending || pagination.isFetchingNextPage}
+          onLoadMore={handleLoadMore}
+        />
       </div>
     </div>
   );
@@ -145,7 +143,7 @@ function FeedQuerySection({
     <AsyncBoundary
       resetKey={contestId + ':' + sort}
       fallback={<Skeleton className="aspect-square w-full" />}
-      onRetry={refetch}
+      onRetry={() => refetch()}
     >
       <FeedContent contestRef={contestRef} submissionsRef={submissionsRef} viewerId={viewerId} />
     </AsyncBoundary>

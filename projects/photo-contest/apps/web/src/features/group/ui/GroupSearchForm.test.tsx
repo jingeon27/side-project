@@ -1,7 +1,9 @@
-import { act, fireEvent, waitFor, within } from '@testing-library/react';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
+
+import { act, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
 import { GroupSearchForm } from './GroupSearchForm';
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));

@@ -59,3 +59,15 @@ export function buildContestDefaults(now: Date): TCreateContestInput {
     endsAt: toDateTimeLocalValue(new Date(now.getTime() + 7 * DAY)),
   };
 }
+
+export const createGroupContestSchema = createContestSchema.and(
+  z.object({
+    // 빈 숫자 입력은 valueAsNumber가 NaN으로 넘기므로 형식 오류 문구도 직접 단다.
+    likeLimit: z
+      .number({ error: '좋아요 한도를 입력해 주세요.' })
+      .int('정수를 입력해 주세요.')
+      .min(1, '1개 이상으로 정해 주세요.')
+      .max(100, '100개 이하로 정해 주세요.')
+      .default(1),
+  }),
+);

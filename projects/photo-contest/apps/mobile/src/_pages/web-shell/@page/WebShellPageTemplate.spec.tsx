@@ -1,11 +1,13 @@
+import { AppState, BackHandler, Platform, Share } from 'react-native';
+
 import { getUserId, reset, setUserId, track } from '@amplitude/analytics-react-native';
-import { parseNativeAppInfo } from '@photo-contest/bridge';
 import { captureMessage } from '@sentry/react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { setStringAsync } from 'expo-clipboard';
 import { addEventListener as addLinkingListener, openURL } from 'expo-linking';
-import { AppState, BackHandler, Platform, Share } from 'react-native';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { parseNativeAppInfo } from '@photo-contest/bridge';
 
 import {
   dispatchedMessages,
@@ -76,8 +78,9 @@ describe('WebShellPageTemplate', () => {
     expect(props.originWhitelist).toEqual(['*']);
     expect(props).toMatchObject({
       setSupportMultipleWindows: false,
-      sharedCookiesEnabled: true,
+      sharedCookiesEnabled: false,
       thirdPartyCookiesEnabled: true,
+      allowsInlineMediaPlayback: true,
       allowsBackForwardNavigationGestures: true,
       pullToRefreshEnabled: true,
       webviewDebuggingEnabled: true,
@@ -350,7 +353,7 @@ describe('WebShellPageTemplate', () => {
 
     act(() => {
       handleUrl?.({ url: 'photocontest://invite/token_1' });
-      handleUrl?.({ url: 'photocontest://auth/callback?code=abcdefghijklmnop' });
+      handleUrl?.({ url: `${WEB_ORIGIN}/app-auth/callback?code=abcdefghijklmnop` });
       handleUrl?.({ url: `${WEB_ORIGIN}/groups/2` });
     });
 
@@ -370,7 +373,7 @@ describe('WebShellPageTemplate', () => {
 
     act(() => {
       handleUrl?.({ url: 'photocontest://invite/secret_token' });
-      handleUrl?.({ url: 'photocontest://auth/callback?code=abcdefghijklmnop' });
+      handleUrl?.({ url: `${WEB_ORIGIN}/app-auth/callback?code=abcdefghijklmnop` });
       handleUrl?.({ url: `${WEB_ORIGIN}/contests/cm1contest01` });
     });
 

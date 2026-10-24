@@ -1,7 +1,9 @@
 'use client';
-import { useI18n } from '@/shared/i18n';
+
 import { RefreshCw, WifiOff } from 'lucide-react';
 import { match } from 'ts-pattern';
+
+import { useI18n } from '@/shared/i18n';
 import { useChatConnection } from '@/widgets/chat-realtime';
 
 export function ChatConnectionStatus() {

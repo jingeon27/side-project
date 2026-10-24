@@ -1,9 +1,15 @@
+import { type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import { getServerProfile } from '@/features/user/index.server';
-import { getServerUserPosts } from '@/features/post/index.server';
+
 import { getServerSession } from '@/features/auth/index.server';
-import { createPageMetadata, profileDescription, profileStructuredData, JsonLd } from '@/shared/seo';
+import { getServerUserPosts } from '@/features/post/index.server';
+import { getServerProfile } from '@/features/user/index.server';
+import { createPageMetadata, JsonLd, profileDescription, profileStructuredData } from '@/shared/seo';
+import { CommunityPage } from '@/widgets/community-shell';
+
 import { ProfilePage } from './ui/ProfilePage';
+import { ProfileTopbar } from './ui/ProfileTopbar';
+
 interface IProfileRouteProps {
   params: Promise<{ locale: string; id: string }>;
   searchParams: Promise<{ cursor?: string | string[] }>;
@@ -44,5 +50,13 @@ export async function ProfileRoute({ params, searchParams }: IProfileRouteProps)
         initialViewerId={session.user?.id}
       />
     </>
+  );
+}
+
+export function ProfileDocument({ locale, children }: { locale: string; children: ReactNode }) {
+  return (
+    <CommunityPage locale={locale} topbar={<ProfileTopbar locale={locale} />}>
+      {children}
+    </CommunityPage>
   );
 }

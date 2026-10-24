@@ -1,10 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
 for (const locale of ['en', 'ja'] as const) {
   test(`guide and policy content, metadata and canonical links are localized in ${locale} without JavaScript`, async ({
     browser,
+    baseURL,
   }) => {
     const context = await browser.newContext({
-      baseURL: 'http://127.0.0.1:3301',
+      baseURL,
       javaScriptEnabled: false,
       viewport: { width: 393, height: 852 },
     });
@@ -12,7 +14,7 @@ for (const locale of ['en', 'ja'] as const) {
       const page = await context.newPage();
       for (const kind of ['guide', 'terms', 'privacy', 'contact']) {
         expect((await page.goto(`/${locale}/${kind}`))?.status()).toBe(200);
-        const content = page.locator('.info-card');
+        const content = page.getByRole('article');
         await expect(content).toHaveAttribute('lang', locale);
         expect(await content.innerText()).not.toMatch(/[가-힣]/);
         await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(

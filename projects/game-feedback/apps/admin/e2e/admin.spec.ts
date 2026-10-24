@@ -1,11 +1,16 @@
-import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+
+import { expect, test } from '@playwright/test';
+
 const origin = 'http://127.0.0.1:3304';
 const headers = { Origin: origin };
 test('anonymous and ordinary sessions do not expose administration and foreign origins cannot write', async ({
   page,
 }) => {
-  await page.goto('/');
+  const document = await page.goto('/');
+  // 다른 사이트가 관리자 화면을 frame으로 띄우지 못해야 한다.
+  expect(document?.headers()['x-frame-options']).toBe('DENY');
+  expect(document?.headers()['content-security-policy']).toBe("frame-ancestors 'none'");
   await expect(page.getByRole('heading', { name: '관리자 로그인이 필요합니다.' })).toBeVisible();
   expect(
     (
@@ -74,12 +79,14 @@ test('a failed report page preserves navigation and user deep links restore the 
   await page.goto('/');
   await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
   const menu = page.getByRole('navigation', { name: '관리자 메뉴' });
-  await page.route('**/api/admin/reports', (route) =>
-    route.fulfill({
-      status: 503,
-      contentType: 'application/json',
-      body: JSON.stringify({ message: 'Temporarily unavailable' }),
-    }),
+  await page.route(
+    (url) => url.pathname === '/api/admin/reports',
+    (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Temporarily unavailable' }),
+      }),
   );
   await menu.getByRole('link', { name: '신고함', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: '정보를 불러오지 못했습니다.' })).toBeVisible();
@@ -165,7 +172,13 @@ test('the separate admin answers support chats, resolves inquiries and reviews r
       .getByRole('link', { name: '신고함', exact: true })
       .click();
     const report = page.locator('[data-report-id]').filter({ hasText: detail });
+    await expect(report.locator('p').filter({ hasText: '검토 대기' })).toBeVisible();
     await report.getByRole('button', { name: '검토 완료', exact: true }).click();
+    // Reviewed reports leave the default open queue and appear under their own status filter.
+    await expect(report).toHaveCount(0);
+    const statuses = page.getByRole('navigation', { name: '신고 상태' });
+    await statuses.getByRole('link', { name: '검토 완료', exact: true }).click();
+    await expect(page).toHaveURL(/#reports\?status=REVIEWED$/);
     await expect(report.locator('p').filter({ hasText: '검토 완료' })).toBeVisible();
   } finally {
     await viewer.close();

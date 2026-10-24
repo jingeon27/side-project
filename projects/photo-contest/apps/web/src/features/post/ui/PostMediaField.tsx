@@ -1,14 +1,13 @@
 'use client';
 
-import { ImagePlus } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import { useController, useWatch } from 'react-hook-form';
-import type { Control, UseFormTrigger } from 'react-hook-form';
+
+import { ImagePlus } from 'lucide-react';
+import { useController, useWatch, type Control, type UseFormTrigger } from 'react-hook-form';
 
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
-import { postSchema } from '../model/post.schema';
-import type { TPostInput, TPostValues } from '../model/post.schema';
+import { postSchema, type TPostInput, type TPostValues } from '../model/post.schema';
 import { PostMediaPreview } from './PostMediaPreview';
 
 interface IPostMediaFieldProps {
@@ -99,7 +98,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         </button>
       )}
       <p id={helpId} className="text-caption text-muted">
-        사진은 자동으로 줄여요. 동영상 MP4(H.264)·WebM · 100MB · 5분 이하
+        사진은 자동으로 줄여요. 동영상 MP4·WebM · 100MB · 5분 이하
       </p>
       {error ? (
         <p id={errorId} role="alert" className="text-caption text-danger">

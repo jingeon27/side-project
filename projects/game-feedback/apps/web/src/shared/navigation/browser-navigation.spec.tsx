@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { appRoutes } from '@game-feedback/bridge';
+
 import {
   backNavigation,
   feedDestination,
   getNavigationDirection,
   installBrowserNavigation,
   registerLogicalParent,
+  registerNextLogicalParent,
 } from './browser-navigation';
 
 let stop = () => {};
@@ -14,6 +18,27 @@ function start(path: string) {
   stop = installBrowserNavigation();
 }
 describe('application history', () => {
+  it('가입 안내는 이전 게시판으로 돌아가고 직접 진입하면 복귀 경로를 사용해야 한다', () => {
+    const parent = appRoutes.boards('ko', 'coaching', '주말', undefined, { coachingRole: 'STUDENT' });
+    start(parent);
+    window.history.pushState({}, '', appRoutes.onboarding('ko', parent));
+    expect(backNavigation()).toEqual({ action: 'back' });
+    stop();
+    start(appRoutes.onboarding('ko', parent));
+    expect(backNavigation()).toEqual({ action: 'replace', path: parent });
+  });
+  it('인증 화면 사이의 이전 방문 기록으로 돌아가지 않고 논리적 부모로 이동해야 한다', () => {
+    const parent = '/en/terms';
+    for (const [before, current] of [
+      ['login', 'onboarding'],
+      ['onboarding', 'login'],
+    ] as const) {
+      start(appRoutes[before]('en', parent));
+      window.history.pushState({}, '', appRoutes[current]('en', parent));
+      expect(backNavigation()).toEqual({ action: 'replace', path: parent });
+      stop();
+    }
+  });
   it('returns from a composer to its source and uses the correct parent on a cold link', () => {
     start('/ko?tab=unanswered&q=hog');
     window.history.pushState({}, '', '/ko/write');
@@ -29,6 +54,35 @@ describe('application history', () => {
     expect(backNavigation()).toEqual({ action: 'replace', path: '/ko/boards/friendly' });
     release();
     expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+  });
+  it('returns from a guide child destination to the guide while root tabs still use their parent', () => {
+    start('/ko/guide');
+    registerNextLogicalParent('/ko/boards/friendly');
+    window.history.pushState({ __NA: true, tree: 'board-tree' }, '', '/ko/boards/friendly');
+    expect(window.history.state).toMatchObject({ __NA: true, tree: 'board-tree' });
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.replaceState(window.history.state, '', '/ko/boards/friendly?battleMode=TEAM');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.pushState({}, '', '/ko/posts/post-1');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.pushState({}, '', '/ko/contact');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+    stop();
+    start('/ko/guide');
+    registerNextLogicalParent('/ko/contact');
+    window.history.pushState({}, '', '/ko/contact');
+    expect(backNavigation()).toEqual({ action: 'back' });
+    window.history.replaceState(window.history.state, '', '/ko/messages');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+  });
+  it('ignores a child registration that does not match the pushed destination', () => {
+    start('/ko/guide');
+    registerNextLogicalParent('/ko/contact');
+    window.history.pushState({}, '', '/ko/boards/free');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/ko' });
+    registerNextLogicalParent('/en/contact');
+    window.history.pushState({}, '', '/en/contact');
+    expect(backNavigation()).toEqual({ action: 'replace', path: '/en' });
   });
   it('preserves Next state and the filtered source when details are pushed', () => {
     start('/ko?tab=unanswered&q=%ED%98%B8%EA%B7%B8');

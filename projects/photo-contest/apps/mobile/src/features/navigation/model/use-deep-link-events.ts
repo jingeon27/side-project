@@ -1,5 +1,6 @@
-import { addEventListener } from 'expo-linking';
 import { useEffect } from 'react';
+
+import { addEventListener } from 'expo-linking';
 
 import { useLatest } from '@/shared/lib/use-latest';
 
