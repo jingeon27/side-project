@@ -18,6 +18,7 @@ export { BottomSheet } from './ui/bottom-sheet/BottomSheet';
 export type { IBottomSheetProps } from './ui/bottom-sheet/BottomSheet';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
+export { Mention } from './ui/mention/Mention';
 
 export { Input } from './ui/input/Input';
 export { Textarea } from './ui/textarea/Textarea';
