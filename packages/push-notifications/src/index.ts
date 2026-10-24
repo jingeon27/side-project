@@ -112,3 +112,5 @@ export class ExpoPushTransport {
     return Object.fromEntries(entries);
   }
 }
+export { PushDispatcher } from './dispatcher';
+export type { IPushJob, IPushJobUpdate, IPushStore } from './dispatcher';

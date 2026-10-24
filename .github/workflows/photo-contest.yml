@@ -117,6 +117,7 @@ jobs:
         run: shellcheck -x deploy/shared-instance/scripts/*.sh projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
       - run: yarn format:check
       - run: yarn workspace @side/eslint-config check
+      - run: yarn workspace @side/push-notifications check
       - run: yarn workspace @side/migration-check check
       - run: yarn workspace @side/design-system check
       - run: yarn workspace @side/photo-contest check
