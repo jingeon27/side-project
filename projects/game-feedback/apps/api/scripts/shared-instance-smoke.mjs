@@ -17,6 +17,8 @@ import { dirname, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
+import { assertAnonymousSession } from './shared-instance/session-check.mjs';
+
 // API-owned integration runner. RDS/registry/S3 boundaries are isolated fixtures, not AWS resources.
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../../../..');
@@ -117,6 +119,29 @@ function serviceCompose(service, args, revision = sha) {
     join(root, `services/${service}/releases/${revision}/compose.yaml`),
     ...args,
   ]);
+}
+function uploadForm(service, upload, bytes) {
+  const fields = Array.isArray(upload.fields)
+    ? upload.fields
+    : Object.entries(upload.fields).map(([name, value]) => ({ name, value }));
+  const stored = JSON.parse(
+    serviceCompose(service, [
+      'exec',
+      '-T',
+      'api',
+      'node',
+      '--input-type=module',
+      '-e',
+      `const [url, fields, body] = JSON.parse(process.argv[1]);
+     const form = new FormData();
+     for (const { name, value } of fields) form.append(name, value);
+     form.append('file', new Blob([Buffer.from(body, 'base64')], {type: 'image/png'}), 'shared.png');
+     const response = await fetch(url, {method: 'POST', body: form});
+     console.log(JSON.stringify({status: response.status, body: await response.text()}));`,
+      JSON.stringify([upload.url, fields, bytes.toString('base64')]),
+    ]),
+  );
+  assert.equal(stored.status, 204, stored.body);
 }
 function sql(database, text) {
   return dependency([
@@ -657,24 +682,7 @@ try {
   ).json().data.requestPostUpload;
   assert.equal(new URL(upload.url).hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
   // Browsers POST the signed form straight to the bucket; the host resolves the bucket alias only on the service network.
-  const stored = JSON.parse(
-    serviceCompose('photo-contest', [
-      'exec',
-      '-T',
-      'api',
-      'node',
-      '--input-type=module',
-      '-e',
-      `const [url, fields, body] = JSON.parse(process.argv[1]);
-       const form = new FormData();
-       for (const { name, value } of fields) form.append(name, value);
-       form.append('file', new Blob([Buffer.from(body, 'base64')], { type: 'image/png' }), 'shared.png');
-       const response = await fetch(url, { method: 'POST', body: form });
-       console.log(JSON.stringify({ status: response.status, body: await response.text() }));`,
-      JSON.stringify([upload.url, upload.fields, png.toString('base64')]),
-    ]),
-  );
-  assert.equal(stored.status, 204, stored.body);
+  uploadForm('photo-contest', upload, png);
   const completed = await pc.graphql(
     'mutation($id:ID!) { completePostUpload(uploadId:$id) { id byteSize } }',
     {
@@ -719,7 +727,7 @@ try {
   assert.equal(pcContent.status, 206);
   assert.equal(pcContent.cache, 'private, no-store');
   assert.deepEqual(Buffer.from(pcContent.bytes, 'base64'), png.subarray(0, 8));
-  assert.equal((await gf.http('/api/session', { headers: { Cookie: pc.cookie } })).json().user, null);
+  await assertAnonymousSession(() => gf.http('/api/session', { headers: { Cookie: pc.cookie } }));
   sql(
     'game_feedback',
     `INSERT INTO "User" (id,nickname,"termsVersion","ageConfirmed") VALUES ('shared-operator','운영 확인','v1',true),('shared-peer','대화 상대','v1',true)`,
@@ -727,22 +735,25 @@ try {
   operate('game-feedback', ['operator', 'grant', 'shared-operator']);
   const token = operate('game-feedback', ['operator', 'session', 'shared-operator']).trim();
   assert.match(token, /^[A-Za-z0-9_-]{43}$/);
-  const boundary = randomUUID();
-  const bytes = Buffer.concat([
-    Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="shared.png"\r\nContent-Type: image/png\r\n\r\n`,
-    ),
-    png,
-    Buffer.from(`\r\n--${boundary}--\r\n`),
-  ]);
-  const mediaResponse = await gf.http('/api/post-media', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+  const requestedMedia = await gf.post(
+    '/api/post-media/uploads',
+    {
+      name: 'shared.png',
+      mimeType: 'image/png',
+      size: png.length,
     },
-    body: bytes,
-  });
+    { Authorization: `Bearer ${token}` },
+  );
+  assert.equal(requestedMedia.status, 200, requestedMedia.text());
+  const mediaUpload = requestedMedia.json();
+  assert.equal(mediaUpload.mode, 'DIRECT');
+  assert.equal(new URL(mediaUpload.url).hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  uploadForm('game-feedback', mediaUpload, png);
+  const mediaResponse = await gf.post(
+    `/api/post-media/${mediaUpload.id}/complete`,
+    {},
+    { Authorization: `Bearer ${token}` },
+  );
   assert.equal(mediaResponse.status, 200, mediaResponse.text());
   const media = mediaResponse.json();
   assert.equal((await gf.http(media.url)).status, 404);
