@@ -48,6 +48,8 @@ it('upgrades existing comments to root comments without losing their text', asyn
     deploy();
     const user = await db.user.create({
       data: { nickname: '기존 댓글 작성자', termsVersion: '2026-10', ageConfirmed: true },
+      // 업그레이드 전 DB에는 이후 추가된 User 컬럼이 없으므로 fixture의 키만 읽는다.
+      select: { id: true },
     });
     const category = await db.category.create({ data: { slug: 'legacy-comment-game', name: '기존 게임' } });
     const post = await db.post.create({

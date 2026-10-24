@@ -404,12 +404,13 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
     ]);
   });
 
-  it('allows existing post deletion cascades to remove a whole thread during account withdrawal', async () => {
+  it('preserves other authors’ comments while hiding a withdrawn author’s post', async () => {
     const withdrawing = await login('게시글탈퇴사용자');
     const post = await createPost(withdrawing.agent);
-    const root = await comment(commenter.agent, post.id, '함께 제거되는 원댓글');
-    await comment(replier.agent, post.id, '함께 제거되는 답글', root.id);
+    const root = await comment(commenter.agent, post.id, '보존할 원댓글');
+    await comment(replier.agent, post.id, '보존할 답글', root.id);
     await withdrawing.agent.delete('/api/me').set('Origin', origin).expect(200);
-    expect(await db.comment.count({ where: { postId: post.id } })).toBe(0);
+    expect(await db.comment.count({ where: { postId: post.id, deletedAt: null } })).toBe(2);
+    await commenter.agent.get(`/api/posts/${post.id}`).expect(404);
   });
 });

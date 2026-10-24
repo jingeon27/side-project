@@ -111,7 +111,11 @@ describe('banned social identities after account deletion', () => {
     expect(SessionSchema.parse((await returning.get('/api/session')).body).user?.id).toBe(banned.id);
 
     await banned.agent.delete('/api/me').set('Origin', origin).expect(200);
-    expect(await db.user.findUnique({ where: { id: banned.id } })).toBeNull();
+    expect(await db.user.findUnique({ where: { id: banned.id } })).toMatchObject({
+      withdrawnAt: expect.any(Date),
+      nickname: '탈퇴한 사용자',
+      googleSubject: null,
+    });
     expect(
       await db.bannedIdentity.findUnique({
         where: { provider_subjectHash: { provider: 'x', subjectHash: hash('x-banned-subject') } },

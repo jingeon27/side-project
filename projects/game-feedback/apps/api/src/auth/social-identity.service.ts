@@ -18,8 +18,9 @@ export class SocialIdentityService {
       where: { provider_subject: { provider, subject } },
       include: { user: true },
     });
-    if (identity) return identity.user;
-    if (provider === 'google') return this.db.user.findUnique({ where: { googleSubject: subject } });
+    if (identity && !identity.user.withdrawnAt) return identity.user;
+    if (provider === 'google')
+      return this.db.user.findFirst({ where: { googleSubject: subject, withdrawnAt: null } });
     return null;
   }
 
@@ -30,14 +31,20 @@ export class SocialIdentityService {
         where: { provider_subject: { provider, subject } },
         include: { user: true },
       });
-      if (identity) return identity.user;
+      if (identity) {
+        const user = await this.lockUser(identity.userId, tx);
+        if (user && !user.withdrawnAt) return user;
+      }
       const legacy =
         provider === 'google'
           ? await (tx ?? this.db).user.findUnique({ where: { googleSubject: subject } })
           : null;
       if (legacy) {
-        await (tx ?? this.db).socialIdentity.create({ data: { provider, subject, userId: legacy.id } });
-        return legacy;
+        const user = await this.lockUser(legacy.id, tx);
+        if (user && !user.withdrawnAt) {
+          await tx.socialIdentity.create({ data: { provider, subject, userId: user.id } });
+          return user;
+        }
       }
       await assertIdentityNotBanned(tx, provider, subject);
       return (tx ?? this.db).user.create({
@@ -51,6 +58,11 @@ export class SocialIdentityService {
         },
       });
     });
+  }
+
+  private async lockUser(id: string, client: Prisma.TransactionClient) {
+    await client.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
+    return client.user.findUnique({ where: { id } });
   }
 
   private lockIdentity(provider: string, subject: string, client: Prisma.TransactionClient) {
