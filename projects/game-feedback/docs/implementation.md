@@ -1,8 +1,16 @@
 ## 2026-10-25 PR #69 가입 프로필·멘션과 최신 시트 통합
 
-병합된 #13·#67을 반영했다. 설정의 게임 계정 등록은 반응형 시트와 하단 버튼을 유지하고, 가입 중 선택적인 게임 프로필 조회는 독립 GameProfileLookup으로 분리했다. 조회 대기 중 입력을 잠가 이전 태그 응답으로 새 입력의 선택값이 바뀌지 않게 했다. 프리패치 검사는 페이지 종료 뒤 response.finished promise를 기다리지 않고 requestfinished를 관찰한다.
+병합된 #13·#67을 반영하고 #68의 탈퇴 변경을 함께 통합해 인증 모듈과 구현 기록의 후속 병합 충돌을 해소했다. 설정의 게임 계정 등록은 반응형 시트와 하단 버튼을 유지하고, 가입 중 선택적인 게임 프로필 조회는 독립 GameProfileLookup으로 분리했다. 조회 대기 중 입력을 잠가 이전 태그 응답으로 새 입력의 선택값이 바뀌지 않게 했다. 프리패치 검사는 페이지 종료 뒤 response.finished promise를 기다리지 않고 requestfinished를 관찰한다.
 
-검증(Node 24): 공통 디자인 시스템과 두 서비스 API/Web 타입 검사·lint, 단위/UI 1,183개와 가입·계정·알림·익명 세션·생성 GraphQL 계약 통합 60개 통과. Game Feedback production 브라우저 24개(시트·가입·태그·멘션 12, prefetch 12), Photo Contest Chrome·WebKit·데스크톱 브라우저 29개(알림·익명 참여·댓글·홈·테마·접근/레이아웃)가 통과했다. 새 격리 DB 스키마와 별도 테스트 서버만 사용하고 teardown했다. 현재 계약 재생성 diff는 없으며 migration 호환성 검사를 통과했다. 실제 외부 OAuth·AWS·실기기와 컨테이너 smoke는 이번 실행에 포함하지 않는다.
+검증(Node 24): 공통 디자인 시스템과 두 서비스 API/Web 타입 검사·lint, 단위/UI 1,183개와 가입·탈퇴·제재·계정·알림·익명 세션·생성 GraphQL 계약 통합 140개(Game Feedback 109, Photo Contest API 11·Web 20) 통과. Game Feedback production 브라우저 24개(시트·가입·태그·멘션 12, prefetch 12), Photo Contest Chrome·WebKit·데스크톱 브라우저 29개(알림·익명 참여·댓글·홈·테마·접근/레이아웃)가 통과했다. 새 격리 DB 스키마와 별도 테스트 서버만 사용하고 teardown했다. 현재 계약 재생성 diff는 없으며 migration 호환성 검사를 통과했다. 실제 외부 OAuth·AWS·실기기와 컨테이너 smoke는 이번 실행에 포함하지 않는다.
+
+## 2026-10-25 PR #68 탈퇴와 현재 제재 정책 통합
+
+탈퇴 시 User 행을 익명으로 남기고 본인 글·답변·댓글의 내용을 비운다. 다른 작성자의 답변·댓글은 보존하고 본인의 원댓글에 달린 타인 답글은 독립 댓글로 분리한다. 개인정보·계정 연결·세션·로그인 티켓·대화·첨부와 관계를 정리하며 공개 프로필·팔로우·차단·채팅에서 탈퇴 사용자를 제외한다. 글·탐색 캐시 무효화를 같은 트랜잭션에 기록한다.
+
+현재 BannedIdentity를 재사용하고 제재 후 탈퇴한 식별자의 새 가입은 거부한다. 기존 제재 계정은 탈퇴 전 문의할 수 있으며, 운영자는 익명 행의 기존 ID로 제재를 해제할 수 있다. 탈퇴·제재·세션 발급의 User 잠금으로 경합을 직렬화한다. 겹치던 RetainedIdentityRestriction과 정적 proxy secret·Lightsail 코드는 제거하고 develop의 HMAC 방문자 서명 체계를 유지했다. migration은 새 nullable withdrawnAt 컬럼 하나만 추가한다.
+
+검증(Node 24): 계약 생성, API 타입 검사, 프로젝트 lint와 API unit 167개, 새 격리 스키마에 migration을 적용한 탈퇴·제재·OAuth·댓글·프로필·문의·SSR 제한 통합 107개(탈퇴 회귀 7개 포함)가 통과했다. 사용 중인 전용 테스트 DB 서버를 유지하고 테스트가 만든 스키마만 teardown했다. 실제 OAuth·AWS·운영 DB 변경은 수행하지 않았다.
 
 ## 2026-10-25 PR #67 최신 develop 통합
 

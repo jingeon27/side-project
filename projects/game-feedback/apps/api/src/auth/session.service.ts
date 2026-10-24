@@ -4,6 +4,7 @@ import type { Response } from 'express';
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
 import { hash, token } from '../common/crypto';
+import { ApiError } from '../common/http/api-error';
 import { COOKIE, setCookie } from '../common/http/cookies';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { UnitOfWork } from '../database/unit-of-work';
@@ -30,6 +31,7 @@ export class SessionService {
     if (
       req.gfSession &&
       (req.gfSession.expiresAt.getTime() <= Date.now() ||
+        req.gfSession.user?.withdrawnAt ||
         (!this.config.demoMode && !this.config.testAuthEnabled && req.gfSession.user?.demoKey))
     )
       req.gfSession = null;
@@ -60,6 +62,11 @@ export class SessionService {
     const expiresAt = new Date(Date.now() + maxAge);
     const current = sessionToken(req);
     await this.transactions.run(async (tx) => {
+      if (userId) {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+        const user = await tx.user.findUnique({ where: { id: userId } });
+        if (!user || user.withdrawnAt) throw new ApiError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
+      }
       // Expired rows are never read again (loadSession treats them as signed out); prune them on issuance.
       await tx.session.deleteMany({ where: { expiresAt: { lte: new Date() } } });
       if (current) await (tx ?? this.db).session.deleteMany({ where: { tokenHash: hash(current) } });

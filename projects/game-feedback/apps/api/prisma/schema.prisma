@@ -6,6 +6,7 @@ datasource db {
   provider = "postgresql"
 }
 model User {
+  withdrawnAt DateTime?
   id String @id @default(cuid())
   googleSubject String? @unique
   demoKey String? @unique
