@@ -36,7 +36,7 @@ export const SHARE_METHOD = {
 export type TShareMethod = (typeof SHARE_METHOD)[keyof typeof SHARE_METHOD];
 
 /** dev는 개발 서버의 닉네임 로그인 */
-export type TLoginMethod = 'google' | 'kakao' | 'dev' | 'password';
+export type TLoginMethod = 'google' | 'kakao' | 'password' | 'anonymous';
 
 /** 대회 사진 정렬(URL 값과 같다) */
 export type TPhotoSortValue = 'latest' | 'popular';

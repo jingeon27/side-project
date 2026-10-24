@@ -1,15 +1,15 @@
 'use client';
 
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 
 import { resetPhotoFeed } from '@/features/feed';
 import { prependMyGroup } from '@/features/group';
 import { resetGalleryPosts } from '@/features/post';
-import { GroupVisibility, JoinGroupDocument } from '@/shared/api/generated';
+import { GroupVisibility, JoinGroupDocument, MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useAppRouter } from '@/shared/model/router';
-import { Button } from '@/shared/ui/@core/button';
+import { Button, ButtonLink } from '@/shared/ui/@core/button';
 
 /** 초대 수락. 가입하면 홈 목록에 넣고 그룹 화면으로 바꿔 간다(뒤로 가기가 초대 화면으로 돌아오지 않게). */
 export function JoinGroupButton({
@@ -20,6 +20,7 @@ export function JoinGroupButton({
   visibility?: GroupVisibility;
 }) {
   const router = useAppRouter();
+  const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const [joinGroup, { loading, data }] = useMutation(JoinGroupDocument, {
     variables: { token },
     update: (cache, { data: result }) => {
@@ -34,6 +35,13 @@ export function JoinGroupButton({
       router.replace(ROUTES.GROUP(group.id));
     },
   });
+
+  if (visibility === GroupVisibility.Private && viewer?.me?.isAnonymous)
+    return (
+      <ButtonLink href={`${ROUTES.LOGIN}?${new URLSearchParams({ next: ROUTES.INVITE(token) })}`} fullWidth>
+        로그인하고 가입 신청하기
+      </ButtonLink>
+    );
 
   return (
     // 그룹 화면으로 옮겨 가는 동안 다시 누르지 못하게 가입한 뒤에도 진행 중으로 둔다.

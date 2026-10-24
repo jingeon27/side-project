@@ -1,16 +1,17 @@
 const SERVICE_TIME_ZONE = 'Asia/Seoul';
 
 const dateTimeFormat = new Intl.DateTimeFormat('ko-KR', {
-  month: 'long',
+  month: 'numeric',
   day: 'numeric',
   weekday: 'short',
   hour: 'numeric',
   minute: '2-digit',
   timeZone: SERVICE_TIME_ZONE,
+  hourCycle: 'h12',
 });
 const dateFormat = new Intl.DateTimeFormat('ko-KR', {
   year: 'numeric',
-  month: 'long',
+  month: 'numeric',
   day: 'numeric',
   timeZone: SERVICE_TIME_ZONE,
 });
@@ -22,12 +23,21 @@ const DAY = 24 * HOUR;
 
 /** `10월 14일 (화) 오후 3:00` 형태. 서버 시각(ISO)을 서비스 시간대로 보여 준다. */
 export function formatDateTime(iso: string) {
-  return dateTimeFormat.format(new Date(iso));
+  const parts = dateTimeFormat.formatToParts(new Date(iso));
+  return `${partValue(parts, 'month')}월 ${partValue(parts, 'day')}일 (${partValue(parts, 'weekday')}) ${partValue(parts, 'dayPeriod')} ${partValue(parts, 'hour')}:${partValue(parts, 'minute')}`;
 }
 
 /** `2026년 10월 14일` */
 export function formatDate(iso: string) {
-  return dateFormat.format(new Date(iso));
+  const parts = dateFormat.formatToParts(new Date(iso));
+  return `${partValue(parts, 'year')}년 ${partValue(parts, 'month')}월 ${partValue(parts, 'day')}일`;
+}
+
+/** Node ICU와 WebKit이 다르게 붙이는 공백·문장 부호를 SSR 텍스트에 섞지 않는다. */
+function partValue(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes) {
+  const part = parts.find((value) => value.type === type);
+  if (!part) throw new RangeError(`날짜를 표시할 수 없습니다: ${type}`);
+  return part.value;
 }
 
 /** `1,234` */

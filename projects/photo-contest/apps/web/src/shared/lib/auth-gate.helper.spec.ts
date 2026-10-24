@@ -58,6 +58,7 @@ describe('isMemberOnlyPath', () => {
     expect(isMemberOnlyPath('/explore')).toBe(false);
     expect(isMemberOnlyPath('/contests/c1')).toBe(true);
     expect(isMemberOnlyPath('/me')).toBe(true);
+    expect(isMemberOnlyPath('/notifications')).toBe(true);
     expect(isMemberOnlyPath('/')).toBe(false);
     expect(isMemberOnlyPath('/invite/token')).toBe(false);
     expect(isMemberOnlyPath('/groupsX')).toBe(false);

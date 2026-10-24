@@ -36,7 +36,12 @@ export function hasSessionCookie(cookieHeader: string | null | undefined) {
 
 /** 로그인해야 볼 수 있는 화면인지. proxy.ts의 matcher와 같은 범위다. */
 export function isMemberOnlyPath(pathname: string) {
-  return pathname === ROUTES.ME || pathname === '/contests' || pathname.startsWith('/contests/');
+  return (
+    pathname === ROUTES.ME ||
+    pathname === ROUTES.NOTIFICATIONS ||
+    pathname === '/contests' ||
+    pathname.startsWith('/contests/')
+  );
 }
 
 /** `/?next=<원래 경로+쿼리>` */

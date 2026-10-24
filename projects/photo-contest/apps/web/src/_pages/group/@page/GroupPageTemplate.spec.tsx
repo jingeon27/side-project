@@ -23,6 +23,7 @@ const owner = {
   nickname: '그룹장',
   avatar: null,
   needsOnboarding: false,
+  isAnonymous: false,
 };
 
 function respond(name: string) {

@@ -9,6 +9,8 @@ import {
   GroupJoinRequestRowFragmentDoc,
   GroupJoinRequestsDocument,
   MyGroupsDocument,
+  MyNotificationsDocument,
+  NotificationUnreadCountDocument,
   RejectGroupJoinRequestDocument,
   type GroupJoinRequestsQuery,
 } from '@/shared/api/generated';
@@ -22,7 +24,14 @@ import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
 const PAGE_SIZE = 24;
-const refetchQueries = [GroupJoinRequestsDocument, GalleryDocument, MyGroupsDocument, DiscoverGroupsDocument];
+const refetchQueries = [
+  GroupJoinRequestsDocument,
+  GalleryDocument,
+  MyGroupsDocument,
+  DiscoverGroupsDocument,
+  MyNotificationsDocument,
+  NotificationUnreadCountDocument,
+];
 
 function JoinRequestRow({ id }: { id: string }) {
   const { data: request, complete } = useFragment({
@@ -123,7 +132,11 @@ export function GroupJoinRequests({ groupId }: { groupId: string }) {
   );
   const fallback = <Skeleton className="mt-4 h-24 w-full" />;
   return (
-    <section className="rounded-card border border-line bg-surface p-4" aria-label="가입 신청 관리">
+    <section
+      id="join-requests"
+      className="scroll-mt-20 rounded-card border border-line bg-surface p-4"
+      aria-label="가입 신청 관리"
+    >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-title text-ink">가입 신청 관리</h2>
         <Button

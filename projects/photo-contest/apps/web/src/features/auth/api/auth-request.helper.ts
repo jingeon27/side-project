@@ -26,11 +26,6 @@ export async function fetchAuthConfig(): Promise<TAuthConfig> {
   return authConfigSchema.parse(await response.json());
 }
 
-/** 개발 서버의 닉네임 로그인. 성공하면 API가 세션 쿠키를 심는다. */
-export async function requestDevLogin(nickname: string) {
-  await postJson(BACKEND_ROUTES.AUTH_DEV, { nickname });
-}
-
 /** 앱이 시스템 브라우저 로그인으로 받은 일회용 코드를 WebView 쿠키 세션으로 바꾼다. */
 export async function exchangeAppLogin(payload: { code: string; verifier: string }) {
   await postJson(BACKEND_ROUTES.AUTH_APP_EXCHANGE, payload);

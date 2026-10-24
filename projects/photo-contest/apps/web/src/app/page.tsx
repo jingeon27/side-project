@@ -8,6 +8,7 @@ import {
   GroupVisibility,
   MeDocument,
   MyGroupsDocument,
+  NotificationUnreadCountDocument,
   PostSort,
   PublicGalleryPostsDocument,
 } from '@/shared/api/generated';
@@ -70,7 +71,13 @@ export default async function Page() {
         }}
       />
       <PreloadQuery query={MeDocument}>
-        {viewer?.me ? <PreloadQuery query={MyGroupsDocument}>{home}</PreloadQuery> : home}
+        {viewer?.me ? (
+          <PreloadQuery query={NotificationUnreadCountDocument}>
+            <PreloadQuery query={MyGroupsDocument}>{home}</PreloadQuery>
+          </PreloadQuery>
+        ) : (
+          home
+        )}
       </PreloadQuery>
     </>
   );

@@ -90,7 +90,7 @@ describe('GroupContentFrame', () => {
   it('세션이 만료됐으면 이 화면으로 돌아오는 로그인 패널을 보여 줘야 한다', async () => {
     await renderFrame([failure('UNAUTHENTICATED', '로그인이 필요합니다.')]);
 
-    expect(await screen.findByRole('region', { name: '로그인하고 함께 웃어요.' })).toBeVisible();
+    expect(await screen.findByRole('region', { name: '함께 웃는 순간을 나눠요' })).toBeVisible();
     expect(screen.queryByText('대회 목록')).not.toBeInTheDocument();
   });
 });

@@ -32,7 +32,7 @@ function MyGroupsContent({ groupsRef }: { groupsRef: QueryRef<MyGroupsQuery> }) 
 export function MyGroupsSection() {
   const [groupsRef, { refetch }] = useBackgroundQuery(MyGroupsDocument);
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4" aria-label="참여 그룹">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-title text-ink">참여 그룹</h2>
         <CreateGroupButton />

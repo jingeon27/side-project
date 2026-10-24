@@ -1,9 +1,20 @@
 query Me {
   me {
     needsOnboarding
+    isAnonymous
     id
     nickname
     avatar
+  }
+}
+
+mutation StartAnonymousSession {
+  startAnonymousSession {
+    id
+    nickname
+    avatar
+    isAnonymous
+    needsOnboarding
   }
 }
 

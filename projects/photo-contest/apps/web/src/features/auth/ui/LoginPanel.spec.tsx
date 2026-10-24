@@ -8,6 +8,7 @@ import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/
 import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge/test';
 import { createWebBridge, type IWebBridge, type TBridgeWindow } from '@photo-contest/bridge/web';
 
+import { StartAnonymousSessionDocument } from '@/shared/api/generated';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
 import { trackEvent } from '@/shared/model/analytics';
 import { BridgeContext } from '@/shared/model/bridge';
@@ -68,12 +69,34 @@ function installApp(capabilities: TNativeCapabilities) {
   return createWebBridge(window);
 }
 
-function renderPanel({ bridge = null, nextPath }: { bridge?: IWebBridge | null; nextPath?: string } = {}) {
+function renderPanel({
+  bridge = null,
+  nextPath,
+  allowAnonymous,
+}: { bridge?: IWebBridge | null; nextPath?: string; allowAnonymous?: boolean } = {}) {
   const user = userEvent.setup();
   render(
-    <MockedProvider>
+    <MockedProvider
+      mocks={[
+        {
+          request: { query: StartAnonymousSessionDocument },
+          result: {
+            data: {
+              startAnonymousSession: {
+                __typename: 'User',
+                id: 'anonymous-1',
+                nickname: '익명',
+                avatar: null,
+                isAnonymous: true,
+                needsOnboarding: false,
+              },
+            },
+          },
+        },
+      ]}
+    >
       <BridgeContext value={bridge}>
-        <LoginPanel nextPath={nextPath} />
+        <LoginPanel nextPath={nextPath} allowAnonymous={allowAnonymous} />
       </BridgeContext>
     </MockedProvider>,
   );
@@ -163,32 +186,25 @@ describe('LoginPanel', () => {
     expect(navigateDocument).not.toHaveBeenCalled();
   });
 
-  it('닉네임 없이 시작하면 안내를 보여 주고 요청하지 않아야 한다', async () => {
-    const { user } = renderPanel();
-
-    await user.click(await screen.findByRole('button', { name: '시작하기' }));
-
-    expect(await screen.findByText('닉네임을 입력해 주세요.')).toBeVisible();
-    expect(screen.getByLabelText('체험 닉네임')).toHaveAttribute('aria-invalid', 'true');
+  it('닉네임 입력 없이 익명 세션을 시작하고 화면이 넘긴 경로로 돌아가야 한다', async () => {
+    const { user } = renderPanel({ nextPath: '/invite/token-1' });
+    await user.click(screen.getByRole('button', { name: '익명으로 시작하기' }));
+    await waitFor(() => expect(navigateDocument).toHaveBeenCalledWith('/invite/token-1'));
+    expect(screen.queryByText('로컬 체험용 로그인')).not.toBeInTheDocument();
     expect(fetchCalls.map((call) => call.url)).not.toContain('/backend/auth/dev');
   });
 
-  it('개발 로그인에 성공하면 화면이 넘긴 경로로 돌아가야 한다', async () => {
-    const { user } = renderPanel({ nextPath: '/invite/token-1' });
-
-    await user.type(await screen.findByLabelText('체험 닉네임'), ' 진건 ');
-    await user.click(screen.getByRole('button', { name: '시작하기' }));
-
-    await waitFor(() => expect(navigateDocument).toHaveBeenCalledWith('/invite/token-1'));
-    expect(fetchCalls).toContainEqual({ url: '/backend/auth/dev', body: { nickname: '진건' } });
+  it('비공개 그룹의 로그인 화면은 익명 시작을 제공하지 않아야 한다', async () => {
+    renderPanel({ allowAnonymous: false });
+    expect(await screen.findByRole('button', { name: 'Google로 계속하기' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '익명으로 시작하기' })).not.toBeInTheDocument();
   });
 
   it('다른 origin으로 새는 next는 무시하고 홈으로 돌아가야 한다', async () => {
     navigation.search = '?next=%2F%2Fevil.example%2Fsteal';
     const { user } = renderPanel();
 
-    await user.type(await screen.findByLabelText('체험 닉네임'), '진건');
-    await user.click(screen.getByRole('button', { name: '시작하기' }));
+    await user.click(screen.getByRole('button', { name: '익명으로 시작하기' }));
 
     await waitFor(() => expect(navigateDocument).toHaveBeenCalledWith('/'));
   });
@@ -218,6 +234,6 @@ describe('LoginPanel', () => {
     authConfig = { developmentLogin: true, google: false, kakao: false };
     await user.click(screen.getByRole('button', { name: '다시 시도' }));
 
-    expect(await screen.findByLabelText('체험 닉네임')).toBeVisible();
+    expect(await screen.findByRole('button', { name: '익명으로 시작하기' })).toBeVisible();
   });
 });

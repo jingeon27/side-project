@@ -41,6 +41,6 @@ describe('proxy', () => {
   });
 
   it('멤버 전용 경로만 검사해야 한다', () => {
-    expect(config.matcher).toEqual(['/contests/:path*', '/me']);
+    expect(config.matcher).toEqual(['/contests/:path*', '/me', '/notifications']);
   });
 });

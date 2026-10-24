@@ -60,7 +60,6 @@ describe('TopAppBar', () => {
   it('뒤로 갈 곳이 없으면 뒤로 가기 버튼을 그리지 않아야 한다', () => {
     render(<HomeAppBar />);
     expect(screen.getByRole('heading', { level: 1, name: '홈' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: '알림' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '뒤로 가기' })).not.toBeInTheDocument();
   });
 });
