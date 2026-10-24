@@ -3,7 +3,7 @@ name: game-feedback-admin-session
 description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스트 관리자 로그인, SSH 터널과 `GF_ADMIN_ACCESS_TOKEN` 운영 모드, 로그인·로그아웃 계정 전환, 3303 로컬 실행을 고치거나 실행할 때 사용한다.
 ---
 
-실행·운영 절차의 원문은 `README.md`와 `../../deploy/lightsail/README.md`의 "로컬 Admin"이고, 계정 전환 원칙은 `game-feedback-code-style` 스킬에 있다. 여기서는 코드 위치와 바꿀 때 지킬 불변식만 다룬다.
+실행·운영 절차의 원문은 `README.md`·`.env.example`과 `../../../../deploy/shared-instance/README.md`의 "운영·롤백"이고, 계정 전환 원칙은 `game-feedback-code-style` 스킬에 있다. 여기서는 코드 위치와 바꿀 때 지킬 불변식만 다룬다.
 
 ## 연결 구조 (`vite.config.ts`)
 
@@ -26,7 +26,7 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
 
 - 로컬(`operatorMode` false): `LoginPage`의 "로컬 관리자 로그인" → `loginLocalAdmin`(`src/features/auth/api/auth.api.ts`) → `issueTestToken({ accountId: 'sample-test-admin' })` → `getSession()`. 응답의 accessToken은 버리고 API가 설정한 HttpOnly 쿠키만 쓴다. API 테스트 인증(`GF_TEST_AUTH_ENABLED=true` 또는 데모 모드)이 꺼졌거나 production이면 `TestAuthGuard`가 404를 낸다(`../api/src/config/app.config.ts`).
 - 운영(`operatorMode` true): `LoginPage`가 버튼을 렌더링하지 않고 `loginLocalAdmin`도 먼저 throw한다. 둘 다 유지한다. 운영 API의 테스트 인증을 켜는 방식으로 우회하지 않는다.
-- 운영 세션은 서버에서 SSH로 실행하는 `ops.sh operator session <user-id>`(`../../deploy/lightsail/ops.sh` → `../api/scripts/operator.mjs` → `../api/src/admin/operator-session.ts`의 `issueOperatorSession`)로만 발급된다. 대상은 테스트·밴 계정이 아닌 ADMIN이며, 세션은 1시간이고 `ISSUE_OPERATOR_SESSION` 감사 기록이 남는다. HTTP로 운영 세션을 발급하거나 권한을 올리는 경로를 만들지 않는다.
+- 운영 세션은 서버에서 SSH로 실행하는 `bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback operator session <user-id>`(`../../../../deploy/shared-instance/scripts/service.sh` → `../api/scripts/operator.mjs` → `../api/src/admin/operator-session.ts`의 `issueOperatorSession`)로만 발급된다. 대상은 테스트·밴 계정이 아닌 ADMIN이며, 세션은 1시간이고 `ISSUE_OPERATOR_SESSION` 감사 기록이 남는다. HTTP로 운영 세션을 발급하거나 권한을 올리는 경로를 만들지 않는다.
 - 운영 모드에서 "로그아웃"을 누르면 `POST /api/auth/logout`이 그 Bearer 세션을 서버에서 지운다. 이후에는 `LoginPage`의 만료 안내가 보이며, Vite를 멈추고 새 세션으로 다시 시작해야 한다.
 
 ## 계정 전환 (`src/features/auth/model/auth.mutation-options.ts`)
@@ -41,7 +41,7 @@ description: Admin(apps/admin)의 Vite 프록시·Origin 가드, 로컬 테스�
 2. 별도 터미널에서 `corepack yarn workspace @side/game-feedback admin:dev`를 실행하고 http://127.0.0.1:3303 에서 "로컬 관리자 로그인"을 누른다.
 3. 다른 API에 붙일 때는 `GF_ADMIN_API_ORIGIN`·`GF_ADMIN_WEB_ORIGIN`·`GF_ADMIN_PORT`를 쓴다. 쓰기 요청이 통과하려면 `GF_ADMIN_WEB_ORIGIN`이 그 API의 `WEB_ORIGIN`과 같아야 한다.
 
-- 운영 연결은 `../../deploy/lightsail/README.md`와 `.env.example`의 안내처럼 셸 환경변수로 한 번만 넘긴다. 이 앱의 `.env.local`에 두면 Git에서는 제외되지만, 이후 E2E를 포함한 모든 `dev`가 그 값을 읽는다. E2E는 http Origin이므로 `Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.`으로 시작에 실패한다. 실수로 파일에 넣었다면 운영 작업이 끝난 뒤 토큰을 지운다.
+- 운영 연결은 `../../../../deploy/shared-instance/README.md`와 `.env.example`의 안내처럼 셸 환경변수로 한 번만 넘긴다. 이 앱의 `.env.local`에 두면 Git에서는 제외되지만, 이후 E2E를 포함한 모든 `dev`가 그 값을 읽는다. E2E는 http Origin이므로 `Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.`으로 시작에 실패한다. 실수로 파일에 넣었다면 운영 작업이 끝난 뒤 토큰을 지운다.
 
 ## 확인 (side 루트)
 
