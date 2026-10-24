@@ -20,17 +20,44 @@ export class NotificationsService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(ChatAccessService) private readonly chat: ChatAccessService,
   ) {}
-  async notifications(req: SessionRequest, query: ListQueryDto) {
-    const u = requireUser(req),
-      q = query,
-      cursor = decodeCursor(q.cursor),
-      excluded = await this.visibility.excluded(req);
-    const visible: Prisma.NotificationWhereInput = {
+
+  private postWhere(userId: string, excluded: string[]): Prisma.NotificationWhereInput {
+    return {
+      userId,
+      post: { ...ACTIVE_POST, authorId: { notIn: excluded } },
       AND: [
         { OR: [{ actorId: null }, { actorId: { notIn: excluded } }] },
         { OR: [{ commentId: null }, { comment: { is: activeCommentWhere(excluded) } }] },
       ],
     };
+  }
+
+  async pushStatus(userId: string, eventId: string) {
+    const excluded = await this.chat.excluded(userId);
+    const postWhere = { ...this.postWhere(userId, excluded), readAt: null };
+    const chatWhere = {
+      userId,
+      readAt: null,
+      message: { conversation: await this.chat.listWhere(userId, excluded) },
+    };
+    const [kind, id] = eventId.split(':');
+    const [row, postUnread, chatUnread] = await Promise.all([
+      kind === 'chat'
+        ? this.db.chatNotification.findFirst({ where: { ...chatWhere, id } })
+        : kind === 'post'
+          ? this.db.notification.findFirst({ where: { ...postWhere, id } })
+          : null,
+      this.db.notification.count({ where: postWhere }),
+      this.db.chatNotification.count({ where: chatWhere }),
+    ]);
+    return row ? { badge: postUnread + chatUnread } : null;
+  }
+  async notifications(req: SessionRequest, query: ListQueryDto) {
+    const u = requireUser(req),
+      q = query,
+      cursor = decodeCursor(q.cursor),
+      excluded = await this.visibility.excluded(req);
+    const visible = this.postWhere(u.id, excluded);
     const where: Prisma.NotificationWhereInput = {
       AND: [visible],
       userId: u.id,

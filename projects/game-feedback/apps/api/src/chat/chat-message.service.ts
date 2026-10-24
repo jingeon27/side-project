@@ -7,6 +7,7 @@ import type { ListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { UnitOfWork } from '../database/unit-of-work';
 import { Prisma, PrismaClient } from '../generated/prisma';
+import { enqueuePush } from '../push/push.writer';
 import { ChatAccessService } from './chat-access.service';
 import { ChatConversationService } from './chat-conversation.service';
 import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
@@ -123,7 +124,10 @@ export class ChatMessageService {
         });
         const peerId =
           conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId;
-        await tx.chatNotification.create({ data: { userId: peerId, messageId: message.id, createdAt } });
+        const notification = await tx.chatNotification.create({
+          data: { userId: peerId, messageId: message.id, createdAt },
+        });
+        await enqueuePush(tx, [notification], 'chat');
         await (tx ?? this.db).chatConversation.update({
           where: { id },
           data: { updatedAt: createdAt, firstHidden: false, secondHidden: false },

@@ -35,6 +35,7 @@ export interface AppOptions {
 }
 
 export interface AppConfig {
+  mobilePush: { enabled: boolean; accessToken?: string };
   cacheRevalidation?: ICacheRevalidationConfig;
   forwardedClientKey?: Buffer;
   databaseUrl: string;
@@ -77,6 +78,10 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
   const cacheRevalidation = options.cacheRevalidation ?? resolveCacheRevalidationConfig(process.env);
   const forwardedClientSecret = options.forwardedClientSecret ?? cacheRevalidation?.secret;
   return {
+    mobilePush: {
+      enabled: process.env.NODE_ENV !== 'test' && process.env.PUSH_NOTIFICATIONS_ENABLED === 'true',
+      accessToken: process.env.EXPO_ACCESS_TOKEN,
+    },
     cacheRevalidation,
     forwardedClientKey: forwardedClientSecret ? forwardedClientKey(forwardedClientSecret) : undefined,
     databaseUrl: assertDatabaseUrl(options.databaseUrl ?? process.env.DATABASE_URL),

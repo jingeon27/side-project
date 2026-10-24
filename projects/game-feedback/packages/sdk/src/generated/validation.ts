@@ -2845,6 +2845,35 @@ export const ReadAllNotificationsResponse = zod.object({
 })
 
 
+export const registerPushDeviceBodyInstallationIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$');
+export const registerPushDeviceBodyTokenRegExp = new RegExp('^(?:Expo|Exponent)PushToken\\[[A-Za-z0-9_-]{16,200}\\]$');
+
+
+export const RegisterPushDeviceBody = zod.object({
+  "installationId": zod.uuid().regex(registerPushDeviceBodyInstallationIdRegExp),
+  "token": zod.string().regex(registerPushDeviceBodyTokenRegExp),
+  "platform": zod.enum(['ios', 'android']),
+  "locale": zod.enum(['ko', 'en', 'ja'])
+})
+
+export const RegisterPushDeviceResponse = zod.object({
+  "ok": zod.literal(true),
+  "enabled": zod.boolean()
+})
+
+
+export const unregisterPushDeviceBodyInstallationIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$');
+
+
+export const UnregisterPushDeviceBody = zod.object({
+  "installationId": zod.uuid().regex(unregisterPushDeviceBodyInstallationIdRegExp)
+})
+
+export const UnregisterPushDeviceResponse = zod.object({
+  "ok": zod.literal(true)
+})
+
+
 
 export const createReportBodyDetailMax = 1000;
 

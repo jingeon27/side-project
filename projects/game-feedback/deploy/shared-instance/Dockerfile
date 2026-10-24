@@ -36,6 +36,7 @@ FROM base AS api
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4300
 COPY --from=api-build /app/node_modules ./node_modules
 COPY --from=api-build /app/package.json ./package.json
+COPY --from=api-build /app/packages/push-notifications ./packages/push-notifications
 COPY --from=api-build /app/projects/game-feedback/packages/contracts ./projects/game-feedback/packages/contracts
 COPY --from=api-build /app/projects/game-feedback/apps/api/package.json ./projects/game-feedback/apps/api/package.json
 COPY --from=api-build /app/projects/game-feedback/apps/api/dist ./projects/game-feedback/apps/api/dist

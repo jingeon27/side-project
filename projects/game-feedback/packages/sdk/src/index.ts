@@ -44,6 +44,8 @@ export {
   listNotifications,
   readNotification,
   readAllNotifications,
+  registerPushDevice,
+  unregisterPushDevice,
   createReport,
   listBlocks,
   blockUser,

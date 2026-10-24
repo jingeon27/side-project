@@ -1,6 +1,8 @@
 name: side-game-feedback
 x-api: &api
   NODE_ENV: production
+  PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
+  EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
   DEPLOYMENT_TARGET: shared-instance
   HOST: 0.0.0.0
   PORT: '4300'

@@ -20,6 +20,7 @@ import { MediaStorageModule } from './media-storage/media-storage.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
+import { PushModule } from './push/push.module';
 import { SupportModule } from './support/support.module';
 import { UsersModule } from './users/users.module';
 
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
     CacheInvalidationModule,
     MediaStorageModule,
     AuthModule,
+    PushModule,
     UsersModule,
     PostsModule,
     AnswersModule,

@@ -37,6 +37,17 @@ export {
 } from './post-media';
 export type { TPostMedia, TRichTextEmbed } from './post-media';
 
+export const RegisterPushDeviceSchema = z
+  .object({
+    installationId: z.uuidv4(),
+    token: z.string().regex(/^(?:Expo|Exponent)PushToken\[[A-Za-z0-9_-]{16,200}\]$/),
+    platform: z.enum(['ios', 'android']),
+    locale: z.enum(['ko', 'en', 'ja']),
+  })
+  .strict();
+export const PushDeviceStatusSchema = z.object({ ok: z.literal(true), enabled: z.boolean() });
+export const UnregisterPushDeviceSchema = z.object({ installationId: z.uuidv4() }).strict();
+
 export const BoardKindSchema = z.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']);
 export type TBoardKind = z.infer<typeof BoardKindSchema>;
 export const CoachingPricingTypeSchema = z.enum(['HOURLY', 'MONTHLY', 'GOAL']);
@@ -810,6 +821,20 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/notifications/{id}/read', id: 'readNotification', response: OkSchema },
   { method: 'post', path: '/api/notifications/read-all', id: 'readAllNotifications', response: OkSchema },
+  {
+    method: 'post',
+    path: '/api/push/devices/register',
+    id: 'registerPushDevice',
+    body: RegisterPushDeviceSchema,
+    response: PushDeviceStatusSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/push/devices/unregister',
+    id: 'unregisterPushDevice',
+    body: UnregisterPushDeviceSchema,
+    response: OkSchema,
+  },
   { method: 'post', path: '/api/reports', id: 'createReport', body: ReportInputSchema, response: OkSchema },
   { method: 'get', path: '/api/blocks', id: 'listBlocks', response: z.array(AuthorSchema) },
   { method: 'get', path: '/api/users/{id}/follow', id: 'getUserFollow', response: FollowStatusSchema },

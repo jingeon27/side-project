@@ -9,6 +9,7 @@ import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
+import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import { type AnswerBodyDto, type HelpfulDto } from './answer-input.dto';
@@ -39,15 +40,15 @@ export class AnswersService {
           include: { author: { select: authorSelect } },
         });
         if (p.authorId !== u.id)
-          await (tx ?? this.db).notification.create({
-            data: {
+          await writePostNotifications(tx, [
+            {
               actorId: u.id,
               userId: p.authorId,
               postId,
               answerId: row.id,
               type: 'ANSWER',
             },
-          });
+          ]);
         return row;
       },
       (row) => [postCacheTag(row.postId)],
@@ -160,15 +161,15 @@ export class AnswersService {
         if (changed.count)
           await (tx ?? this.db).notification.deleteMany({ where: { answerId: a.id, type: 'HELPFUL' } });
         if (input.helpful && changed.count)
-          await (tx ?? this.db).notification.create({
-            data: {
+          await writePostNotifications(tx, [
+            {
               actorId: u.id,
               userId: a.authorId,
               postId: a.postId,
               answerId: a.id,
               type: 'HELPFUL',
             },
-          });
+          ]);
         return (tx ?? this.db).answer.findUniqueOrThrow({
           where: { id },
           include: { author: { select: authorSelect } },

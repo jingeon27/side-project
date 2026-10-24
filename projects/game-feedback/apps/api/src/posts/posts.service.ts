@@ -12,6 +12,7 @@ import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
+import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import { type CreatePostDto, type UpdatePostDto } from './post-input.dto';
@@ -129,14 +130,15 @@ export class PostsService {
           select: { followerId: true },
         });
         if (followers.length)
-          await (tx ?? this.db).notification.createMany({
-            data: followers.map(({ followerId }) => ({
+          await writePostNotifications(
+            tx,
+            followers.map(({ followerId }) => ({
               userId: followerId,
               actorId: u.id,
               postId: created.id,
               type: 'FOLLOWED_POST',
             })),
-          });
+          );
         return created;
       },
       (created) => [postCacheTag(created.id), DISCOVERY_CACHE_TAG],
