@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { COLORS } from '@/shared/config/theme';
+import type { TNativeColors } from '@/shared/config/theme';
+import { useAppearance } from '@/shared/model/appearance';
 
 interface IOfflineViewProps {
   onRetry: () => void;
@@ -8,6 +9,8 @@ interface IOfflineViewProps {
 
 /** 웹 문서를 불러오지 못했을 때. WebView 기본 오류 화면 대신 보여 준다. */
 export function OfflineView({ onRetry }: IOfflineViewProps) {
+  const { colors } = useAppearance();
+  const styles = createStyles(colors);
   return (
     <View style={styles.container}>
       <Text style={styles.title} accessibilityRole="header">
@@ -25,42 +28,44 @@ export function OfflineView({ onRetry }: IOfflineViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    backgroundColor: COLORS.background,
-  },
-  title: {
-    marginBottom: 8,
-    color: COLORS.ink,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  description: {
-    marginBottom: 24,
-    color: COLORS.muted,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  button: {
-    minWidth: 160,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.brand,
-  },
-  buttonPressed: {
-    backgroundColor: COLORS.brandPressed,
-  },
-  buttonLabel: {
-    color: COLORS.surface,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function createStyles(colors: TNativeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      backgroundColor: colors.background,
+    },
+    title: {
+      marginBottom: 8,
+      color: colors.ink,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    description: {
+      marginBottom: 24,
+      color: colors.muted,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    button: {
+      minWidth: 160,
+      minHeight: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      backgroundColor: colors.brand,
+    },
+    buttonPressed: {
+      backgroundColor: colors.brandPressed,
+    },
+    buttonLabel: {
+      color: colors.surface,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+}

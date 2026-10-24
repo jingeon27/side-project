@@ -20,6 +20,7 @@ import {
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { captureWarning } from '@/shared/lib/monitoring/monitoring';
 import { useLatest } from '@/shared/lib/use-latest';
+import { setAppearance } from '@/shared/model/appearance';
 
 import { startsNewDocument } from '../lib/document-load';
 import { isOfflineHttpError, isOfflineLoadError } from '../lib/load-error';
@@ -105,6 +106,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       },
       // 세션은 WebView 쿠키가 맡는다. 앱은 분석 사용자 식별만 웹 로그인 상태에 맞춘다.
       onAuthChanged: applyAnalyticsAuth,
+      onAppearanceChanged: ({ preference }) => setAppearance(preference),
     },
   });
 

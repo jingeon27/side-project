@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { StatusBar } from 'expo-status-bar';
-
 import { UpdateRequiredPageTemplate } from '@/_pages/update-required';
 import { toDeepLinkEvent, WebShellPageTemplate } from '@/_pages/web-shell';
 import { ANALYTICS_EVENT, startAnalytics, trackEvent } from '@/features/analytics';
 import { readAppVersion, readStoreUrl, UNKNOWN_APP_VERSION, useVersionGate } from '@/features/app-config';
 import { readInitialLink, type IInitialLink } from '@/features/navigation';
+import { restoreAppearance } from '@/shared/model/appearance';
 
 import { keepSplashScreen, useSplashScreen } from './model/use-splash-screen';
 import { AppProviders } from './providers/AppProviders';
@@ -73,11 +72,13 @@ export function App() {
   useEffect(() => {
     let isActive = true;
     // 둘 다 거부하지 않는다(실패하면 홈 경로, 기기 ID 없음). 그래서 스플래시에 갇히지 않는다.
-    void Promise.all([readInitialLink(), startAnalytics()]).then(([link, analyticsDeviceId]) => {
-      if (!isActive) return;
-      trackLaunch(link);
-      setLaunch({ initialPath: link.path, analyticsDeviceId });
-    });
+    void Promise.all([readInitialLink(), startAnalytics(), restoreAppearance()]).then(
+      ([link, analyticsDeviceId]) => {
+        if (!isActive) return;
+        trackLaunch(link);
+        setLaunch({ initialPath: link.path, analyticsDeviceId });
+      },
+    );
     return () => {
       isActive = false;
     };
@@ -85,7 +86,6 @@ export function App() {
 
   return (
     <AppProviders>
-      <StatusBar style="dark" />
       <AppScreens launch={launch} onReady={handleScreenReady} />
     </AppProviders>
   );
