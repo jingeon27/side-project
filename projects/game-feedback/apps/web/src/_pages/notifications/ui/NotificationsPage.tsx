@@ -13,6 +13,7 @@ import {
   notificationPath,
   readNotificationMutationOptions,
 } from '@/features/notification';
+import { PushNotificationSettings } from '@/features/push-notifications';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
@@ -59,6 +60,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
         <h1>{t('새로운 시선이 도착했어요')}</h1>
         <p>{t('플레이를 함께 고민해 준 사람들의 이야기를 확인하세요.')}</p>
       </div>
+      <PushNotificationSettings />
       <div className="section-title-row">
         <h2>
           {t('내 알림')}

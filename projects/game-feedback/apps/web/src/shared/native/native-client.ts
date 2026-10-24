@@ -3,6 +3,7 @@ import {
   parseNativeMessage,
   type IAppInfo,
   type TLoginProvider,
+  type TPushRegistration,
   type TWebMessage,
 } from '@game-feedback/bridge';
 
@@ -51,5 +52,33 @@ export function requestNativeLogin(
     }
     window.addEventListener(BRIDGE_EVENT, handleMessage);
     postToNative({ type: 'auth-request', id, provider });
+  });
+}
+
+export function supportsNativePush() {
+  return (
+    isNativeApp() && (window as INativeWindow).__GAME_FEEDBACK_APP__?.capabilities?.includes('push') === true
+  );
+}
+export function requestNativePush(requestPermission = false): Promise<TPushRegistration | null> {
+  if (!supportsNativePush()) return Promise.resolve(null);
+  return new Promise((resolve, reject) => {
+    const id = crypto.randomUUID();
+    const cleanup = () => {
+      clearTimeout(timer);
+      window.removeEventListener(BRIDGE_EVENT, receive);
+    };
+    const receive = (event: Event) => {
+      const message = parseNativeMessage((event as CustomEvent<unknown>).detail);
+      if (message?.type !== 'push-result' || message.id !== id) return;
+      cleanup();
+      resolve(message.registration);
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('알림 설정 시간을 초과했어요. 다시 시도해 주세요.'));
+    }, 120_000);
+    window.addEventListener(BRIDGE_EVENT, receive);
+    postToNative({ type: 'push-request', id, requestPermission });
   });
 }
