@@ -89,6 +89,7 @@ export const WEB_EVENT = {
   'navigation.changed': z.object({ path: pathValue }),
   /** userId는 네이티브 분석 도구의 사용자 식별에만 쓴다(세션 토큰이 아니다). */
   'auth.changed': z.object({ signedIn: z.boolean(), userId: z.string().min(1).max(64).optional() }),
+  'appearance.changed': z.object({ preference: z.enum(['system', 'light', 'dark']) }),
 } as const;
 export type TWebEventType = keyof typeof WEB_EVENT;
 export type TWebEventPayload<T extends TWebEventType> = z.input<(typeof WEB_EVENT)[T]>;
@@ -167,6 +168,12 @@ const webRequestSchema = z.discriminatedUnion('type', [
 export type TWebRequestMessage = z.output<typeof webRequestSchema>;
 
 const webEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('event'),
+    type: z.literal('appearance.changed'),
+    payload: WEB_EVENT['appearance.changed'],
+  }),
   z.object({
     v: z.literal(PROTOCOL_VERSION),
     kind: z.literal('event'),
