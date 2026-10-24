@@ -141,7 +141,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
       where: {
         id: job.deviceId,
         enabled: true,
-        user: { bannedAt: null },
+        user: { bannedAt: null, withdrawnAt: null },
         session: { expiresAt: { gt: new Date() } },
       },
       include: { session: { select: { userId: true } } },
@@ -159,7 +159,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
             ? '新しいお知らせが届きました。'
             : '새로운 알림이 도착했어요.',
       data: { path: `/${device.locale}/notifications`, notificationId: job.eventId },
-      badge: status.badge,
+      badge: Math.min(9999, status.badge),
       sound: 'default',
       channelId: 'activity',
     };

@@ -100,6 +100,10 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     android: {
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#147d64' },
       package: settings.androidPackage,
+      ...(process.env.MOBILE_GOOGLE_SERVICES_JSON
+        ? { googleServicesFile: process.env.MOBILE_GOOGLE_SERVICES_JSON }
+        : {}),
+      allowBackup: false,
       predictiveBackGestureEnabled: false,
       // 웹 origin의 assetlinks.json으로 검증된 App Link만 콜백을 이 앱으로 연다(같은 스킴을 등록한 앱이 가로채지 못한다).
       ...(linkHost

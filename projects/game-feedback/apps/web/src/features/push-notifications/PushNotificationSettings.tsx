@@ -40,7 +40,7 @@ export function PushNotificationSettings() {
   }, [supported, locale]);
   if (!supported) return null;
   return (
-    <div className="info-card" aria-label={t('앱 알림')}>
+    <section className="info-card" aria-label={t('앱 알림')}>
       <strong>{t('앱 알림')}</strong>
       <p role="status">
         {status === 'unavailable'
@@ -68,6 +68,6 @@ export function PushNotificationSettings() {
         </Button>
       )}
       {error && <p role="alert">{t('알림 설정에 실패했어요. 다시 시도해 주세요.')}</p>}
-    </div>
+    </section>
   );
 }

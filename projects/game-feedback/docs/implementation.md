@@ -1283,3 +1283,15 @@ Next가 보존한 이전 화면까지 중복 선택하던 community E2E 선택�
 검증: API 단위 167개, Web 단위/UI 220개, 공유 배포 설정 사양 12개, production build/start에서 community·footer·guide 브라우저 사양 11개 통과. Web typecheck와 프로젝트 lint 통과. 한국어 320px·영어 393px 가이드 캡처를 직접 확인했다. Terraform 형식·backend 비활성 init·validate와 mock plan 11개가 통과했고, 현재 host 네트워크 스크립트에 맞게 IMDS hop limit 설명을 수정했다. AWS 계정별 준비 값과 리전의 RDS 엔진/클래스 가용성 조회 명령은 deploy/shared-instance/terraform/README.md에 기록했다.
 
 로컬 Docker 실행 환경이 없어 전체 공유 인스턴스 smoke는 이 환경에서 재실행하지 못했다. 실제 AWS plan/apply 및 배포는 실행하지 않았다. 로컬 미리보기는 기존 사용자 개발 서버와 별도 포트·DB 스키마에서 실행한다.
+
+## 2026-10-25 채팅 알림·RN 푸시 및 develop 통합
+
+채팅은 새 메시지마다 상대방 ChatNotification을 본문 트랜잭션에 한 번 기록하고 게시물 알림과 같은 목록·커서·미읽음 합계로 조회한다. 실제 대화 읽기와 기록 삭제는 해당 경계까지 알림에도 반영한다. 알림함 모두 읽음은 실제 메시지의 읽음 여부를 조작하지 않는다. SSE 수신은 현재 사용자의 대화·알림 조회를 함께 갱신하며 차단·숨김·밴·관리자 문의 규칙을 공통 ChatAccessService로 유지한다.
+
+RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에만 푸시 기능을 광고한다. 기기 등록은 쿠키 세션에 묶고 로그아웃·세션 교체·탈퇴·기기 계정 변경 시 이전 전송을 제거한다. 알림·기기별 큐를 같은 트랜잭션에 쓰고 발송 직전 읽음·세션·권한을 다시 확인한다. 알림함에서만 OS 권한을 요청하고 OS 배지, foreground 무효화, 준비 전 탭 보관, 안전한 알림함 이동을 연결했다. 서버 기능이 꺼져 있으면 설정 완료로 표시하지 않는다. [공통 전송 정책과 실제 기기 설정](../../../packages/push-notifications/README.md)을 따른다. 공통 패키지는 두 API의 Expo 부분 성공·재시도·영수증 처리를 공유하기 위해 추가했으며 서비스별 인증·DB는 분리했다.
+
+최신 develop cf62aaac(#67~#70 포함)을 merge했다. 가입용 GameProfileLookup과 가입 후 등록용 BottomSheet를 보존하고 게임 프로필·닉네임·약관 가입 흐름을 유지했다. 중복으로 들어온 알림·테마 변경을 기존 develop 위에 통합하고, 탈퇴의 Session 삭제가 새 기기·큐에도 cascade되는지 확인했다. 원격 develop을 덮어쓰거나 강제 push하지 않는다.
+
+병합 후 API 실제 DB 통합 189개, Web 단위 223개, Mobile unit/UI 89개, Android Chromium/iOS WebKit 실제 native host E2E 전체 42개가 통과했다. 다른 서비스의 개발 DB·서버는 수정하지 않고 55444의 격리 스키마와 별도 E2E 포트를 사용했다. 공통 전송 패키지 8개와 migration-check 70개, SDK 71개도 통과했다. 기존 앱에서 사라진 헤더 언어 선택기는 설정 화면으로 테스트를 옮기고, 게시판 칩은 보이는 메뉴를 선택해 새 레이아웃과 일치시켰다.
+
+실제 Expo/EAS 프로젝트·FCM/APNs 자격 증명과 실기기 수신 검증은 남아 있다. API의 PUSH_NOTIFICATIONS_ENABLED 기본값은 false이며 운영자 설정 후 켠다. 공개 Supercell 태그 조회는 소유권 인증으로 바꾸지 않는다. 사용자가 지정한 로컬 토큰의 공백은 제거했지만 서명된 본문이 손상되어 실제 #QLLLPR89G 조회는 403 accessDenied였고 실제 계정 연결을 저장하지 않았다. 유효한 원본 키가 있어야 실제 제공자 검증을 진행할 수 있다.
