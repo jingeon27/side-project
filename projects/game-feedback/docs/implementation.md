@@ -54,6 +54,14 @@ URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼�
 
 PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
 
+# 2026-10-22 Admin 빌드 경고와 번들 중복 제거
+
+contracts에 브라우저용 소스 진입점을 더해 Admin이 SDK와 같은 Zod ESM을 사용하게 했다. Node·API의 CommonJS 진입점은 유지한다. 문의·신고·사용자 관리 화면은 named export를 유지하면서 탭별로 지연 로딩한다. 기존 `AsyncBoundary`가 대기와 실패를 처리한다.
+
+Zod 4.6.7의 ESM·CommonJS 설명 주석 네 곳에서 Rollup이 실제 최적화 표시로 읽던 문구만 Yarn patch로 고쳤다. 실행 코드와 실제 pure 지시문은 바꾸지 않았다. 루트 package.json·yarn.lock 변경은 기존 Zod 4.6.7 범위 두 개에 이 patch를 연결하기 위한 것이며 다른 Zod 버전은 유지한다. 경고 임계값이나 로거 필터는 바꾸지 않았다.
+
+별도 worktree에서 처음 재현한 Admin JS는 1,063.29 kB였다(develop 346b3ee8). develop 42370ab5까지 반영한 수정 뒤 최대 JS 청크는 485.94 kB(gzip 140.44 kB)이며 기본 build에서 Zod 주석·500 kB 경고가 모두 사라졌다. 번들 분석에서도 모든 JS 청크가 500 kB 이하이고 Zod CommonJS 모듈이 포함되지 않는 것을 확인했다. `yarn install --immutable`, 집계 `check`(codegen·전 워크스페이스 타입·Web/Mobile/Admin lint), SDK 69개·Admin 21개 단위 테스트, Android·iOS Metro export와 실제 로컬 테스트 API를 사용하는 Admin Playwright 5개가 통과했다. 테스트는 새 `gf_test_admin_*` 스키마에서 실행했고 스키마를 삭제한 뒤 직접 시작한 테스트 DB를 종료했다. SDK 재생성 diff는 없었다. 운영 API·데이터와 실제 배포는 사용하지 않았다.
+
 # 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
 
 develop a8e2aae4 감사의 클라이언트 항목을 고쳤다. 아래 10월 22일 태그 만료 기록 중 "작성자의 Router Cache를 갱신하는 기존 액션에 유지한다"는 더 이상 맞지 않는다.
