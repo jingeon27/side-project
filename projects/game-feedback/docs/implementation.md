@@ -1,6 +1,12 @@
+## 2026-10-25 구형 단독 배포 잔여 정리
+
+최신 develop에서 주요 단독 배포 파일이 제거된 뒤 남아 있던 백업 업로드·설정 검증 CLI와 백업 전용 SDK 의존성을 제거했다. S3를 사용하는 공유 배포 이미지에서 이전 로컬 미디어 디렉터리를 만드는 단계도 제거했다. Admin 세션·Prisma 스킬의 운영 안내는 공통 service.sh와 현재 Compose의 migrate 서비스로 맞췄고, 폐기한 smoke 경로와 단독 배포 기록을 가리키던 문구를 정리했다. 루트 yarn.lock 변경은 사용처가 없어진 백업 의존성과 그 전이 의존성을 정리하기 위한 것이다.
+
+검증: Node 24에서 API unit 167개·typecheck·build와 공유 배포 Vitest 20개가 통과했다. 프로젝트 lint, 관련 workflow의 Actionlint, 변경 문서·manifest·lockfile Prettier와 diff 검사를 통과했다. 추적 파일 전체에서 구형 배포 이름·경로·백업 환경변수 참조가 남지 않았고, 현재 운영 스크립트와 스킬의 문서 경로가 존재함을 확인했다. Docker 엔진이 없어 실제 이미지 재빌드·컨테이너 smoke는 실행하지 않았다. 운영 인프라·DB를 변경하거나 배포하지 않았다.
+
 ## 2026-10-25 PR #69 가입 프로필·멘션과 최신 시트 통합
 
-병합된 #13·#67을 반영하고 #68의 탈퇴 변경을 함께 통합해 인증 모듈과 구현 기록의 후속 병합 충돌을 해소했다. 설정의 게임 계정 등록은 반응형 시트와 하단 버튼을 유지하고, 가입 중 선택적인 게임 프로필 조회는 독립 GameProfileLookup으로 분리했다. 조회 대기 중 입력을 잠가 이전 태그 응답으로 새 입력의 선택값이 바뀌지 않게 했다. 프리패치 검사는 페이지 종료 뒤 response.finished promise를 기다리지 않고 requestfinished를 관찰한다.
+병합된 #13·#67·#70을 반영하고 #68의 탈퇴 변경을 함께 통합해 인증 모듈과 구현 기록의 후속 병합 충돌을 해소했다. 설정의 게임 계정 등록은 반응형 시트와 하단 버튼을 유지하고, 가입 중 선택적인 게임 프로필 조회는 독립 GameProfileLookup으로 분리했다. 조회 대기 중 입력을 잠가 이전 태그 응답으로 새 입력의 선택값이 바뀌지 않게 했다. 프리패치 검사는 페이지 종료 뒤 response.finished promise를 기다리지 않고 requestfinished를 관찰한다.
 
 검증(Node 24): 공통 디자인 시스템과 두 서비스 API/Web 타입 검사·lint, 단위/UI 1,183개와 가입·탈퇴·제재·계정·알림·익명 세션·생성 GraphQL 계약 통합 140개(Game Feedback 109, Photo Contest API 11·Web 20) 통과. Game Feedback production 브라우저 24개(시트·가입·태그·멘션 12, prefetch 12), Photo Contest Chrome·WebKit·데스크톱 브라우저 29개(알림·익명 참여·댓글·홈·테마·접근/레이아웃)가 통과했다. 새 격리 DB 스키마와 별도 테스트 서버만 사용하고 teardown했다. 현재 계약 재생성 diff는 없으며 migration 호환성 검사를 통과했다. 실제 외부 OAuth·AWS·실기기와 컨테이너 smoke는 이번 실행에 포함하지 않는다.
 
@@ -80,7 +86,7 @@ API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/*
 
 URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. 아래 날짜별 기록의 `/_internal`·`/_health`는 당시 경로다.
 
-검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
+검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke는 로컬에서 실행하지 않았다.
 
 PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
 
@@ -187,7 +193,7 @@ Repository 전달 계층을 제거하고 서비스에서 Prisma를 직접 사용
 
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 
-운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
+운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다.
 
 - 두 API의 도메인 Service에서 DB 직접 접근을 Repository로 옮겼다. UnitOfWork가 같은 트랜잭션 client를 전달하며 권한·미디어·이벤트도 같은 연결을 사용한다. DB 스키마와 API 계약은 유지했다.
 - 런타임 DML과 일회성 DDL 자격 증명을 분리하고 RDS hostname·TLS CA·role·pool 한도를 검증한다. 두 DB와 버킷을 분리하고 Caddy만 공유한다. GF 작성 중 가시성 조회가 다른 연결을 기다리던 경로도 수정했다.
