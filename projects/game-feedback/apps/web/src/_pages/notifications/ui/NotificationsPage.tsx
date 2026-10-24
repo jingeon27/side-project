@@ -15,11 +15,14 @@ import {
 } from '@/features/notification';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
+
+import { NotificationsTopbar } from './NotificationsTopbar';
 
 interface INotificationsPageProps {
   locale: string;
 }
-export function NotificationsPage({ locale }: INotificationsPageProps) {
+function NotificationsContent({ locale }: INotificationsPageProps) {
   const { t } = useI18n();
   const { session, login, loading } = useSession();
   if (loading) return <LoadingState />;
@@ -104,5 +107,13 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
         </Button>
       )}
     </>
+  );
+}
+
+export function NotificationsPage(props: Parameters<typeof NotificationsContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<NotificationsTopbar locale={props.locale} />}>
+      <NotificationsContent {...props} />
+    </CommunityPage>
   );
 }

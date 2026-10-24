@@ -29,7 +29,6 @@ const env = {
   DISCORD_CLIENT_ID: '',
   DISCORD_CLIENT_SECRET: '',
   SUPERCELL_API_TOKEN: '',
-  GF_ADMIN_GOOGLE_SUB: '',
 };
 export default defineConfig({
   testDir: './e2e',

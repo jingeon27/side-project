@@ -8,14 +8,14 @@ import { PostCommentsSection } from './PostCommentsSection';
 
 const state = vi.hoisted(() => ({
   user: { id: 'viewer' } as { id: string } | null,
-  login: vi.fn(),
+  requireLogin: vi.fn(),
   create: vi.fn(),
   notify: vi.fn(),
   older: vi.fn(),
 }));
 
 vi.mock('@/features/auth', () => ({
-  useSession: () => ({ session: { user: state.user }, login: state.login }),
+  useSession: () => ({ session: { user: state.user }, requireLogin: state.requireLogin }),
 }));
 vi.mock('@/features/comment/api/comment.api', () => ({
   postComment: state.create,
@@ -83,7 +83,7 @@ function renderComments(comments: Comment[], cursor: string | null = null) {
 
 beforeEach(() => {
   state.user = { id: 'viewer' };
-  state.login.mockReset();
+  state.requireLogin.mockReset();
   state.create.mockReset().mockResolvedValue(comment('new-reply', 'first'));
   state.notify.mockReset();
   state.older.mockReset();
@@ -123,11 +123,11 @@ describe('comment replies', () => {
     expect(screen.getByRole('button', { name: 'first-reply 수정·삭제' })).toBeTruthy();
   });
 
-  it('opens login instead of a reply form for a visitor', () => {
+  it('requests login before opening a reply form for a visitor', () => {
     state.user = null;
     renderComments([comment('first')]);
     fireEvent.click(screen.getByRole('button', { name: '답글' }));
-    expect(state.login).toHaveBeenCalledOnce();
+    expect(state.requireLogin).toHaveBeenCalledOnce();
     expect(screen.queryByRole('textbox', { name: '답글 내용' })).toBeNull();
   });
 

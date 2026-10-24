@@ -50,7 +50,8 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 - 밴 사용자(`User.bannedAt`)의 쓰기는 `bannedUserMayWrite`(`src/common/http/banned-access.ts`)의 허용 목록(`/api/support/conversations`, `/api/auth/logout`, `DELETE /api/me`, 대화의 `messages|read|attachments` 한 단계 하위, `attachments/:id/complete`)만 통과하고 나머지는 403 `USER_BANNED`. 대화는 `ChatAccessService.visible`이 지원 문의 대화만 남긴다. 밴 사용자에게 새 쓰기 경로를 열려면 이 함수와 `banned-access.test.ts`를 고친다.
 - `AdminUsersService.ban`: 대상 행 `FOR UPDATE`, ADMIN 대상은 400 `ADMIN_PROTECTED`, AuditLog `BAN_USER`/`UNBAN_USER`, 커밋 뒤 `ChatEvents.closeUser`.
 - 밴 회피 방지(`src/auth/banned-identity.ts`): 밴하면 사용자의 모든 로그인 식별자를 `BannedIdentity(provider, sha256(subject))`에 남기고 해제하면 지운다. 밴 사용자의 탈퇴도 같은 트랜잭션에서 기록한다. 계정이 없는 식별자는 social callback(웹 403 `USER_BANNED`, 앱 `?error=login_failed`), `/api/auth/app/exchange`, `onboard`에서 거부된다. 계정이 남은 밴 사용자는 문의를 위해 로그인할 수 있다.
-- `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). ADMIN이 되는 길은 Google subject가 `GF_ADMIN_GOOGLE_SUB`와 같을 때, 운영 SSH의 `scripts/operator.mjs grant`(`src/admin/operator-session.ts`, AuditLog `GRANT_ADMIN`), 테스트 픽스처뿐이다. HTTP로 권한을 올리는 경로를 만들지 않는다.
+
+- `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). 일반 가입·소셜 로그인은 관리자 권한을 부여하지 않는다. 운영 SSH의 `scripts/operator.mjs grant`(`src/admin/operator-session.ts`, AuditLog `GRANT_ADMIN`)로 권한을 부여한다. 테스트 ADMIN은 격리 픽스처만 사용하며 HTTP 승격 경로는 만들지 않는다.
 
 ## 건드리면 있어야 하는 테스트
 

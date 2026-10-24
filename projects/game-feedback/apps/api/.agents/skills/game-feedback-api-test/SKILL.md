@@ -14,7 +14,8 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 
 ## 실행기 (`scripts/test.mjs`)
 
-- `NODE_ENV=test`, `DATABASE_URL=TEST_DATABASE_URL`, `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=false`, OAuth 키·`SUPERCELL_API_TOKEN`·Sentry DSN·`GF_ADMIN_GOOGLE_SUB`를 비운 env로 contracts build → `db:generate` → (unit만이 아니면) `../../scripts/db.mjs start --test` → `vitest run <인자>`. 인자는 그대로 Vitest로 간다.
+- `NODE_ENV=test`, `DATABASE_URL=TEST_DATABASE_URL`, 데모·테스트 인증·OAuth·Supercell·관측 키를 비운 env로 contracts build → `db:generate` → (unit만이 아니면) `../../scripts/db.mjs start --test` → `vitest run <인자>`.
+
 - Vitest를 직접 부르지 않는다(위 env가 빠진다). 테스트 DB는 loopback 55444에 남아 다음 실행이 재사용한다. 띄우지 못하면 실패로 보고하고 포트 사용자를 종료하지 않는다.
 
 ## integration 파일 골격

@@ -51,14 +51,14 @@ function ThreadComment({ comment, post, locale }: { comment: Comment; post: Post
 
 export function PostCommentThread({ thread, post, locale }: IPostCommentThreadProps) {
   const { t } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const [replying, setReplying] = useState(false);
   const { comment, replies } = thread;
   const author = comment.author;
 
   function handleReply() {
     if (!session.user) {
-      login();
+      requireLogin();
       return;
     }
     setReplying(true);

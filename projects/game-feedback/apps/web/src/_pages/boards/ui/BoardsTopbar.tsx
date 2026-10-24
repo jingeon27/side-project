@@ -8,7 +8,6 @@ import { appRoutes } from '@game-feedback/bridge';
 import { parseBattleMode } from '@/features/battle';
 import { parseCoachingRole } from '@/features/coaching';
 import { parseFeedbackStatus } from '@/features/post';
-import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 import { Topbar } from '@/widgets/community-shell';
 
@@ -18,16 +17,16 @@ interface IBoardsTopbarProps {
 }
 
 export function BoardsTopbar({ locale, slug }: IBoardsTopbarProps) {
-  const { t } = useI18n();
   return (
-    <Topbar.Root>
+    <Topbar.Root className="feed-topbar">
       <Topbar.Brand home={appRoutes.feed(locale)} />
-      <Topbar.Title>{t('홈')}</Topbar.Title>
       <Topbar.Actions>
         <Suspense fallback={null}>
           <BoardSearchLink locale={locale} slug={slug} />
         </Suspense>
-        <Topbar.Language />
+        <div className="feed-header-language">
+          <Topbar.Language />
+        </div>
         <Topbar.Notifications href={appRoutes.notifications(locale)} />
         <Topbar.Account href={appRoutes.settings(locale)} />
       </Topbar.Actions>

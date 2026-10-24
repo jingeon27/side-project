@@ -2,31 +2,31 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 for (const { width, locale, menu, actions } of [
   {
     width: 320,
     locale: 'ko',
-    menu: ['홈', '가이드', '채팅', '프로필'],
-    actions: ['언어 설정', '알림 0개', '검색'],
+    menu: ['홈', '채팅', '프로필'],
+    actions: ['검색', '알림 0개'],
   },
   {
     width: 390,
     locale: 'en',
-    menu: ['Home', 'Guide', 'Chat', 'Profile'],
-    actions: ['Language settings', 'Notifications: 0', 'Search'],
+    menu: ['Home', 'Chat', 'Profile'],
+    actions: ['Search', 'Notifications: 0'],
   },
   {
     width: 760,
     locale: 'ja',
-    menu: ['ホーム', 'ガイド', 'チャット', 'プロフィール'],
-    actions: ['言語設定', 'お知らせ：0件', '検索'],
+    menu: ['ホーム', 'チャット', 'プロフィール'],
+    actions: ['検索', 'お知らせ：0件'],
   },
 ]) {
-  test(`${width}px mobile shell keeps its four tabs and accessible header actions in ${locale}`, async ({
+  test(`${width}px mobile shell keeps its three tabs and accessible header actions in ${locale}`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto(`/${locale}`);
     const tabs = page.locator('.mobile-nav:visible');
@@ -34,11 +34,13 @@ for (const { width, locale, menu, actions } of [
     await expect(tabs.getByRole('link')).toHaveText(menu);
     await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');
     const header = page.getByRole('banner').locator('.header-actions');
+    expect((await page.getByRole('banner').boundingBox())?.height).toBe(60);
     await expect(header.getByRole('link')).toHaveCount(2);
-    await expect(header.getByRole('combobox')).toHaveCount(1);
+    await expect(page.getByRole('banner').locator('.brand')).toBeVisible();
+    await expect(header.getByRole('combobox')).toHaveCount(0);
     await expect(header.getByRole('button')).toHaveCount(0);
-    for (const [index, name] of actions.entries()) {
-      const link = header.getByRole(index === 0 ? 'combobox' : 'link', { name, exact: true });
+    for (const name of actions) {
+      const link = header.getByRole('link', { name, exact: true });
       await expect(link).toBeVisible();
       const box = await link.boundingBox();
       expect(box?.width).toBeGreaterThanOrEqual(44);
@@ -47,13 +49,25 @@ for (const { width, locale, menu, actions } of [
     await expect(header.locator('.notification-unread-indicator')).toHaveCount(0);
     await expect(tabs.locator('.mobile-chat-count')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath(`brand-header-${locale}-${width}.png`),
+      animations: 'disabled',
+    });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(20, 19, 18)');
+    await page.screenshot({
+      path: testInfo.outputPath(`brand-header-${locale}-${width}-dark.png`),
+      animations: 'disabled',
+    });
     const nextLocale = locale === 'en' ? 'ja' : 'en';
-    await header.getByRole('combobox', { name: actions[0], exact: true }).click();
+    await tabs.getByRole('link').last().click();
+    const language = page.locator('#language-preference:visible');
+    await language.click();
     await page.getByRole('option', { name: nextLocale === 'en' ? 'English' : '日本語', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/${nextLocale}$`));
+    await expect(page).toHaveURL(new RegExp(`/${nextLocale}/settings$`));
     await expect(page.locator('html')).toHaveAttribute('lang', nextLocale);
-    await expect(header.getByRole('combobox')).toContainText(nextLocale === 'en' ? 'English' : '日本語');
-    await expect(tabs.getByRole('link').first()).toHaveAttribute('aria-current', 'page');
+    await expect(language).toContainText(nextLocale === 'en' ? 'English' : '日本語');
+    await expect(tabs.getByRole('link').last()).toHaveAttribute('aria-current', 'page');
   });
 }
 

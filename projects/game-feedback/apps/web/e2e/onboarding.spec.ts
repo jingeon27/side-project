@@ -64,6 +64,10 @@ test('desktop signup is a page, keeps the draft on failure, and preserves destin
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(destination);
   await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
+    .getByRole('button', { name: '로그인하기', exact: true })
+    .click();
   const dialog = page.getByRole('dialog', { name: '로그인', exact: true });
   await dialog.getByRole('button', { name: 'Google로 시작하기', exact: true }).click();
   await expect(page.getByRole('heading', { name: '회원가입', exact: true })).toBeVisible();

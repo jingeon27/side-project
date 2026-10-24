@@ -1,5 +1,7 @@
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
+import { CommunityPage } from '@/widgets/community-shell';
+
 import { LoginPage } from './ui/LoginPage';
 import { LoginTopbar } from './ui/LoginTopbar';
 
@@ -20,8 +22,10 @@ async function readRoute({ params, searchParams }: ILoginRouteProps) {
   };
 }
 export async function LoginRoute(props: ILoginRouteProps) {
-  return <LoginPage {...await readRoute(props)} />;
-}
-export async function LoginTopbarRoute(props: ILoginRouteProps) {
-  return <LoginTopbar returnTo={(await readRoute(props)).returnTo} />;
+  const route = await readRoute(props);
+  return (
+    <CommunityPage locale={route.locale} topbar={<LoginTopbar returnTo={route.returnTo} />}>
+      <LoginPage {...route} />
+    </CommunityPage>
+  );
 }

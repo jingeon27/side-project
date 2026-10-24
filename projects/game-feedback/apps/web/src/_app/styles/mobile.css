@@ -22,14 +22,46 @@
     overflow-wrap: anywhere;
   }
   @media (max-width: 760px) {
+    :root {
+      --mobile-page-inset: 16px;
+      --site-header-height: 60px;
+    }
     .site-grid {
       padding-bottom: 32px;
     }
-    .topbar-inner {
-      padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+    .site-grid,
+    .topbar-inner,
+    .site-footer-inner {
+      padding-inline: max(var(--mobile-page-inset), env(safe-area-inset-left))
+        max(var(--mobile-page-inset), env(safe-area-inset-right));
     }
     .header-actions {
       gap: 2px;
+    }
+    .topbar.feed-topbar .brand {
+      display: inline-flex;
+      flex-shrink: 0;
+      min-height: 44px;
+      font-size: var(--text-title-lg);
+      font-weight: 800;
+      letter-spacing: -0.055em;
+      line-height: 1;
+      color: var(--color-ink);
+    }
+    .feed-topbar .brand-mark,
+    .feed-topbar .feed-header-language {
+      display: none;
+    }
+    .feed-topbar .header-actions {
+      flex-shrink: 0;
+      gap: 6px;
+    }
+    .feed-topbar .header-actions .icon-button {
+      color: var(--color-ink);
+    }
+    .feed-topbar .header-actions .icon-button > svg {
+      width: 22px;
+      height: 22px;
     }
     .header-actions .icon-button {
       width: 44px;
@@ -154,5 +186,51 @@
     bottom: auto;
     height: var(--visual-viewport-height, 100dvh);
     padding: 12px;
+  }
+}
+
+@layer components {
+  .preference-progress {
+    position: fixed;
+    top: calc(var(--site-header-height) + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-index-popover);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    padding: 10px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-caption);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
+  }
+  .preference-progress svg {
+    flex-shrink: 0;
+  }
+  .preference-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .theme-settings .settings-help {
+    margin-top: 12px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    body,
+    .topbar,
+    .settings-card,
+    .info-card,
+    .guide-intro,
+    .guide-section,
+    .mobile-nav {
+      transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease;
+    }
   }
 }

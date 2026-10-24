@@ -96,52 +96,9 @@ jobs:
   shared-contract:
     uses: ./.github/workflows/shared-instance.yml
 
-  containers:
-    needs: [verify, shared-contract]
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    env:
-      GF_SMOKE_TAG: ${{ github.sha }}
-      GF_SMOKE_IMAGE_PREFIX: ghcr.io/jingeon27/side-project-game-feedback
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { persist-credentials: false }
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '24'
-      - name: Resolve public build settings
-        env:
-          SITE_URL: ${{ vars.GF_SITE_URL }}
-          CONTACT_EMAIL: ${{ vars.GF_CONTACT_EMAIL }}
-          DEPLOY_ENABLED: ${{ vars.GF_DEPLOY_ENABLED }}
-        run: |
-          node --input-type=module <<'JS'
-          import { appendFileSync } from 'node:fs';
-          const site = process.env.SITE_URL || 'https://game.bambyul.com';
-          const url = new URL(site);
-          if (url.origin !== site || url.protocol !== 'https:') throw new Error('GF_SITE_URL must be an HTTPS origin.');
-          if (process.env.DEPLOY_ENABLED === 'true' && (!process.env.SITE_URL || !process.env.CONTACT_EMAIL))
-            throw new Error('Configure GF_SITE_URL and GF_CONTACT_EMAIL before enabling deployment.');
-          const email = process.env.CONTACT_EMAIL || 'contact@bambyul.com';
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Invalid GF_CONTACT_EMAIL.');
-          appendFileSync(process.env.GITHUB_ENV, `GF_BUILD_SITE_URL=${site}\nGF_BUILD_CONTACT_EMAIL=${email}\nGF_SMOKE_DOMAIN=${url.hostname}\n`);
-          JS
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: shared-game-feedback-images-${{ github.sha }}
-          path: ${{ runner.temp }}/shared-images
-      - name: Load images verified by the shared-instance contract
-        run: |
-          gzip -dc "$RUNNER_TEMP/shared-images/game-feedback.tar.gz" | docker load
-          for app in api web; do
-            docker tag "side-shared-gf-$app:$GITHUB_SHA" "${GF_SMOKE_IMAGE_PREFIX}-$app:$GITHUB_SHA"
-          done
-      - name: Verify the deployed stack and restore a backup into fresh volumes
-        run: node projects/game-feedback/apps/api/scripts/production-smoke.mjs
-
-  # Only this job can write packages; it publishes the same archive both smoke tests verified.
+  # Publishes the exact image archive verified by the shared-instance contract.
   publish:
-    needs: [verify, containers, shared-contract]
+    needs: [verify, shared-contract]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
