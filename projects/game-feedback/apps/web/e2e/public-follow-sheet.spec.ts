@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
 
 test('following a player delivers new posts, persists notification preferences and counts public visits', async ({
@@ -75,7 +75,7 @@ test('following a player delivers new posts, persists notification preferences a
 });
 
 for (const width of [400, 1440]) {
-  test(`input popups are bottom sheets and confirmation dialogs contain only actions at ${width}px`, async ({
+  test(`input popups use responsive sheets and confirmation dialogs contain only actions at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -92,22 +92,24 @@ for (const width of [400, 1440]) {
     await expect
       .poll(async () => {
         const bounds = await sheet.locator('.ds-sheet-frame').boundingBox();
-        return bounds ? Math.round(bounds.y + bounds.height) : null;
+        if (!bounds) return null;
+        return Math.round(bounds.y + bounds.height / (width < 768 ? 1 : 2));
       })
-      .toBe(900);
+      .toBe(width < 768 ? 900 : 450);
     await sheet.getByLabel('플레이어 태그', { exact: true }).fill('#GG829JGY');
-    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await sheet.getByRole('button', { name: '취소', exact: true }).click();
     await page.goto('/ko/messages/sample-conversation-0-3');
     await expect(page.getByRole('textbox', { name: '메시지 내용' })).toBeVisible();
     await page.getByRole('button', { name: '사용자 신고', exact: true }).click();
     await expect(sheet).toHaveClass(/bottom-sheet-content/);
     await sheet.getByLabel('신고 사유', { exact: true }).selectOption('FRAUD');
-    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await sheet.getByRole('button', { name: '취소', exact: true }).click();
     await page.getByRole('button', { name: '대화 메뉴', exact: true }).click();
     await page.getByRole('menuitem', { name: '대화내역 삭제', exact: true }).click();
-    const confirmation = page.getByRole('dialog');
-    await expect(confirmation).toHaveClass(/dialog-content/);
+    const confirmation = page.getByRole('dialog', { name: '대화내역 삭제', exact: true });
+    await expect(confirmation).toBeVisible();
     await expect(confirmation.getByRole('textbox')).toHaveCount(0);
+    await expect(confirmation.getByRole('button')).toHaveCount(2);
     await expect(confirmation.getByRole('button', { name: '취소', exact: true })).toBeVisible();
     await confirmation.getByRole('button', { name: '취소', exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

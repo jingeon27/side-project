@@ -139,7 +139,7 @@ test('mobile notification indicator and chat count follow persisted unread state
     await expect(indicator).toBeVisible();
     await expect(count).toHaveText('2');
     await expect(tabs.getByRole('link', { name: '채팅 2개', exact: true })).toBeVisible();
-    await header.getByRole('link', { name: '알림 1개', exact: true }).click();
+    await header.getByRole('link', { name: '알림 3개', exact: true }).click();
     await page.getByRole('button', { name: '모두 읽음', exact: true }).click();
     await expect(header.getByRole('link', { name: '알림 0개', exact: true })).toBeVisible();
     await expect(indicator).toHaveCount(0);
@@ -156,7 +156,8 @@ test('mobile notification indicator and chat count follow persisted unread state
       'aria-current',
       'page',
     );
-    await expect(indicator).toHaveCount(0);
+    await expect(header.getByRole('link', { name: '알림 1개', exact: true })).toBeVisible();
+    await expect(indicator).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally {
     await owner.close();
