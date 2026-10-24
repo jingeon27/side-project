@@ -24,6 +24,7 @@ export async function proxy(request: NextRequest) {
       request.nextUrl.pathname,
       request.cookies.get('gamefeedback_session')?.value,
       request.nextUrl.searchParams.getAll('game'),
+      request.headers,
     ))
   ) {
     const url = new URL(request.url);

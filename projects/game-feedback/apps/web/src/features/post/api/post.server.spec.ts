@@ -8,7 +8,10 @@ const { getCookie, getPost, cacheTag, cacheLife } = vi.hoisted(() => ({
   cacheTag: vi.fn(),
   cacheLife: vi.fn(),
 }));
-vi.mock('next/headers', () => ({ cookies: async () => ({ get: getCookie }) }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: getCookie }),
+  headers: async () => new Headers(),
+}));
 vi.mock('next/cache', () => ({ cacheTag, cacheLife }));
 vi.mock('next/navigation', () => ({
   notFound: () => {
@@ -38,6 +41,7 @@ const signIn = () => getCookie.mockReturnValue({ value: 'test-only-session' });
 
 beforeEach(() => {
   vi.stubEnv('GAME_FEEDBACK_API_URL', 'https://api.feedback.example');
+  vi.stubEnv('GF_PROXY_SECRET', '');
   vi.stubGlobal('fetch', fetchMock);
   getPost.mockResolvedValue(detail);
 });
