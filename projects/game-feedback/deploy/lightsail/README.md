@@ -27,14 +27,15 @@ Ubuntu 24.04 LTS의 IPv4 2GB 인스턴스 한 대에서 Caddy, Next.js, NestJS, 
 4. `ssh ubuntu@<IP>`로 접속한 뒤 `cloud-init status --wait`와 `docker compose version`을 확인한다. Docker 그룹 적용을 위해 다시 접속한다. `/srv/game-feedback`은 이 서비스 전용이다.
 5. `production.env.example`을 서버 `/srv/game-feedback/.env`로 복사하고 **서버에서 편집**한다. 권한은 600이다. `source .env`나 `docker compose config`로 비밀을 출력하지 않는다. 최소 설정은 다음과 같다.
 
-   | 변수                                     | 값                                             |
-   | ---------------------------------------- | ---------------------------------------------- |
-   | `GF_DOMAIN`                              | `https://` 없이 실제 도메인                    |
-   | `GF_CONTACT_EMAIL`                       | `jingeon27@gmail.com`                          |
-   | `GF_IMAGE_PREFIX`                        | `ghcr.io/jingeon27/side-project-game-feedback` |
-   | `GF_DB_PASSWORD`, `GF_DB_ADMIN_PASSWORD` | 각각 따로 생성한 `openssl rand -hex 32` 값     |
-   | OAuth client ID/secret                   | 아래 제공자 중 적어도 한 쌍의 실제 운영 키     |
-   | `GF_INDEXING`                            | 최초에는 `false`                               |
+   | 변수                                     | 값                                                      |
+   | ---------------------------------------- | ------------------------------------------------------- |
+   | `GF_DOMAIN`                              | `https://` 없이 실제 도메인                             |
+   | `GF_CONTACT_EMAIL`                       | `jingeon27@gmail.com`                                   |
+   | `GF_IMAGE_PREFIX`                        | `ghcr.io/jingeon27/side-project-game-feedback`          |
+   | `GF_DB_PASSWORD`, `GF_DB_ADMIN_PASSWORD` | 각각 따로 생성한 `openssl rand -hex 32` 값              |
+   | `GF_PROXY_SECRET`                        | Caddy/Web/API가 공유할 별도의 `openssl rand -hex 32` 값 |
+   | OAuth client ID/secret                   | 아래 제공자 중 적어도 한 쌍의 실제 운영 키              |
+   | `GF_INDEXING`                            | 최초에는 `false`                                        |
 
    운영은 HTTPS origin, 강한 DB 암호, 완전한 OAuth 설정을 검사한다. 테스트 계정·데모·Next testing API는 꺼져 있고 설정으로 켜면 시작을 거부한다. Supercell 조회에는 실제 API 토큰과 서버 Static IP 등록이 별도로 필요하다.
 

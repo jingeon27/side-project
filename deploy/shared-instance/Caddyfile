@@ -42,12 +42,16 @@
 		respond @internal "edge-blocked" 404
 		handle /api/* {
 			reverse_proxy gf-api:4300 {
+				header_up X-Game-Feedback-Client-IP {remote_host}
+				header_up X-Game-Feedback-Proxy-Secret {$GF_PROXY_SECRET}
 				flush_interval -1
 				import upstream_retry
 			}
 		}
 		handle {
 			reverse_proxy gf-web:3300 {
+				header_up X-Game-Feedback-Client-IP {remote_host}
+				header_up X-Game-Feedback-Proxy-Secret {$GF_PROXY_SECRET}
 				flush_interval -1
 				import upstream_retry
 			}

@@ -21,6 +21,7 @@ export interface AppOptions {
   logger?: false;
   prisma?: PrismaClient;
   mediaStorage?: TMediaStorageConfig;
+  proxySecret?: string;
 }
 
 export interface AppConfig {
@@ -34,6 +35,7 @@ export interface AppConfig {
   profileProvider?: ProfileProvider;
   rateLimit: boolean;
   mediaStorage: TMediaStorageConfig;
+  proxySecret?: string;
 }
 
 export function resolveAppConfig(options: AppOptions): AppConfig {
@@ -61,6 +63,7 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     testAuthEnabled,
     webOrigin,
     rateLimit: options.rateLimit !== false,
+    proxySecret: options.proxySecret ?? (process.env.GF_PROXY_SECRET || undefined),
     mediaStorage: options.mediaStorage ?? resolveMediaStorageConfig(process.env),
     identityProvider: identityProviders.google,
     identityProviders,

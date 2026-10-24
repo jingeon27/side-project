@@ -28,6 +28,7 @@ export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
       GF_TEST_AUTH_ENABLED: z.literal('false'),
       GF_PREFETCH_TESTING: z.enum(['false', '']).optional(),
       DATABASE_URL: secret,
+      GF_PROXY_SECRET: z.string().regex(/^[a-f0-9]{64}$/i),
     })
     .safeParse(env);
   if (!result.success)

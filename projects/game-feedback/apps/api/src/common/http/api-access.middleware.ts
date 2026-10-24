@@ -6,6 +6,7 @@ import { APP_CONFIG, type AppConfig } from '../../config/app.config';
 import { isHealthProbe, RequestRateLimiter, requestRateBucket } from '../../rate-limit';
 import { ApiError } from './api-error';
 import { assertOrigin } from './origin';
+import { requestIdentity } from './request-identity';
 
 @Injectable()
 export class ApiAccessMiddleware implements NestMiddleware {
@@ -29,8 +30,9 @@ export class ApiAccessMiddleware implements NestMiddleware {
       if (!req.path.startsWith('/api')) return next();
       if (isHealthProbe(req)) return next();
       if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) assertOrigin(req, this.config.webOrigin);
-      const ip = req.ip ?? 'unknown';
-      if (this.config.rateLimit) this.enforceLimit(res, `coarse:ip:${ip}`, 1000);
+      const { ip, publicSsr } = requestIdentity(req, this.config.proxySecret);
+      if (this.config.rateLimit)
+        this.enforceLimit(res, publicSsr ? 'coarse:public-ssr' : `coarse:ip:${ip}`, publicSsr ? 6000 : 1000);
       await this.sessions.loadSession(req);
       if (req.gfSession?.user?.bannedAt && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
         const allowed =
@@ -42,12 +44,14 @@ export class ApiAccessMiddleware implements NestMiddleware {
           throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
       }
       if (this.config.rateLimit) {
-        const bucket = requestRateBucket({
-          ip,
-          userId: req.gfSession?.user?.id,
-          path: req.path,
-          method: req.method,
-        });
+        const bucket = publicSsr
+          ? { key: 'read:public-ssr', limit: 2400 }
+          : requestRateBucket({
+              ip,
+              userId: req.gfSession?.user?.id,
+              path: req.path,
+              method: req.method,
+            });
         this.enforceLimit(res, bucket.key, bucket.limit);
       }
       next();

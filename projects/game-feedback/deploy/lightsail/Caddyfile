@@ -17,11 +17,15 @@
 	respond @localAuth 404
 	handle /api/* {
 		reverse_proxy api:4300 {
+			header_up X-Game-Feedback-Client-IP {remote_host}
+			header_up X-Game-Feedback-Proxy-Secret {$GF_PROXY_SECRET}
 			flush_interval -1
 		}
 	}
 	handle {
 		reverse_proxy web:3300 {
+			header_up X-Game-Feedback-Client-IP {remote_host}
+			header_up X-Game-Feedback-Proxy-Secret {$GF_PROXY_SECRET}
 			flush_interval -1
 		}
 	}

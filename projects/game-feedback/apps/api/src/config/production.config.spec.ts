@@ -12,6 +12,7 @@ const valid = {
   DATABASE_URL: `postgresql://game_feedback:${'a'.repeat(64)}@db:5432/game_feedback`,
   GOOGLE_CLIENT_ID: 'production-client',
   GOOGLE_CLIENT_SECRET: 'production-secret',
+  GF_PROXY_SECRET: 'b'.repeat(64),
 };
 
 describe('production startup configuration', () => {
@@ -27,6 +28,8 @@ describe('production startup configuration', () => {
     { GF_DEMO_MODE: 'true' },
     { GF_TEST_AUTH_ENABLED: 'true' },
     { GF_PREFETCH_TESTING: 'true' },
+    { GF_PROXY_SECRET: '' },
+    { GF_PROXY_SECRET: 'replace-me' },
     { WEB_ORIGIN: 'http://localhost:3300' },
     { GAME_FEEDBACK_SITE_URL: 'https://other.game-feedback.test' },
     { GOOGLE_CLIENT_SECRET: '' },

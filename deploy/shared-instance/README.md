@@ -31,13 +31,15 @@ bash deploy/shared-instance/scripts/prepare.sh
 
 다음 파일을 서버에서 편집한다. Git이나 Actions 로그에 실제 값을 올리지 않는다. Compose가 읽는 파일이므로 `source`하지 않는다.
 
-| 파일                                            | 설정                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------- |
-| `/srv/side-project/.env`                        | 두 도메인, ACME 메일, RDS 실제 endpoint·instance ID, 두 버킷 이름   |
-| `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정 |
-| `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정   |
+| 파일                                            | 설정                                                                               |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `/srv/side-project/.env`                        | 두 도메인, ACME 메일, RDS 실제 endpoint·instance ID, 두 버킷 이름, GF_PROXY_SECRET |
+| `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정                |
+| `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정                  |
 
 `prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 현재 저장소 버전으로 복사하므로 변경 시 검토 후 `proxy.sh reload`를 실행한다.
+
+`GF_PROXY_SECRET`은 `openssl rand -hex 32`로 생성한 서버 전용 값이며 호스트 `.env`에서 GF Caddy/Web/API에만 전달한다. Caddy가 외부 요청의 방문자 IP·인증 헤더를 연결의 실제 IP로 덮어쓰고 Web은 검증된 값만 API에 전달한다. API는 일반 `X-Forwarded-For`를 신뢰하지 않는다. 이 변경을 처음 적용할 때에는 호스트 값 설정과 Caddy 파일 동기화 후 `proxy.sh validate`와 `proxy.sh start`를 API/Web 릴리스와 함께 적용한다. `start`는 변경된 환경변수로 프록시를 재생성하며 `reload`만으로는 새 환경변수를 읽지 않는다. IP 확인은 Caddy 직접 연결 기준이므로 CDN이나 추가 프록시를 앞에 두려면 별도로 신뢰 경계를 구성해야 한다.
 
 새 RDS에만 관리자 계정으로 다음 SQL을 **한 번** 적용한다. 각 `\password` 프롬프트에 서로 다른 32자 이상의 비밀번호를 입력한다. `psql` 클라이언트가 필요하다. DB URL 비밀번호는 URL 인코딩한다.
 

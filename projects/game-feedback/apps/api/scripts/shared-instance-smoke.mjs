@@ -49,6 +49,7 @@ const proxyEnv = {
   GAME_FEEDBACK_DOMAIN: gfDomain,
   PHOTO_CONTEST_DOMAIN: pcDomain,
   ACME_EMAIL: 'operator@example.test',
+  GF_PROXY_SECRET: randomBytes(32).toString('hex'),
   RDS_REGION: 'ap-northeast-2',
   RDS_INSTANCE_ID: 'side-smoke',
   RDS_HOST: host,
