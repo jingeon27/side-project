@@ -1,3 +1,5 @@
+import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
+
 type AnalyticsEventMap = {
   language_changed: { from_locale: string; to_locale: string };
   article_shared: { content_id: string; method: string };
@@ -19,7 +21,8 @@ declare global {
 export const consentKey = 'blog:analytics-consent';
 export const consentChangedEvent = 'blog:analytics-consent-changed';
 export const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
-export const analyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
+const googleAnalyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
+export const analyticsConfigured = googleAnalyticsConfigured || heatmapsConfigured;
 
 export function hasAnalyticsConsent(): boolean {
   try {
@@ -46,6 +49,7 @@ export function setAnalyticsConsent(granted: boolean): void {
     /* Storage can be blocked. */
   }
   (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = !granted;
+  if (!granted) stopHeatmaps();
   try {
     window.gtag?.('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
   } catch {
@@ -74,6 +78,8 @@ export function setAnalyticsConsent(granted: boolean): void {
 
 export function initializeAnalytics(): void {
   if (!analyticsConfigured || !hasAnalyticsConsent()) return;
+  initializeHeatmaps();
+  if (!googleAnalyticsConfigured) return;
   try {
     (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = false;
     if (window.__blogAnalyticsInitialized) return;
@@ -139,6 +145,7 @@ export function trackEvent<K extends keyof AnalyticsEventMap>(
 ): void {
   if (!analyticsConfigured || !hasAnalyticsConsent()) return;
   try {
+    if (heatmapsConfigured) window.clarity?.('event', name);
     if (!window.gtag) return;
     const filtered = Object.fromEntries(
       Object.entries(properties).filter(

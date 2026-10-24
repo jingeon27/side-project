@@ -82,3 +82,14 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 ## 밤별 블로그 도메인
 
 Vercel 프로젝트에 `blog.bambyul.com`을 추가하고 콘솔에서 안내하는 DNS 레코드를 등록한다. 운영 `SITE_URL=https://blog.bambyul.com`으로 canonical·JSON-LD·OG·RSS·사이트맵을 통일한다. 작성자 이름은 김진건, 제품명은 밤별 블로그(Bambyul Blog)다. 별도 API 서버가 없어 `api.blog.bambyul.com`은 현재 연결하지 않는다.
+
+## 클릭·스크롤 히트맵과 글 이탈 분석
+
+행동 분포는 Microsoft Clarity, 참여·이탈 지표는 기존 GA4를 사용한다. Clarity의 Settings → Setup에서 받은 공개 project ID를 Vercel 빌드 환경 `NEXT_PUBLIC_CLARITY_PROJECT_ID`에 넣고 다시 빌드한다. ID를 비우거나 방문자가 동의하지 않으면 스크립트를 로드하지 않는다. 광고 저장 동의는 항상 denied, 분석 저장 동의만 전달한다. 철회하면 consentv2 denied와 stop으로 수집을 종료하고 다른 탭의 동의 변경도 반영한다. 검색 입력은 명시적으로 마스킹하고 검색어·사용자 ID·개인 속성을 커스텀 이벤트로 보내지 않는다. SDK 설치 성공을 실제 대시보드 수신으로 취급하지 않는다.
+
+1. Clarity Heatmaps에서 글 URL별 클릭·스크롤·attention 분포를 모바일/데스크톱으로 나누어 본다. Recordings의 방문·진입·이탈 URL 필터로 중단한 지점을 확인한다.
+2. GA4의 페이지/화면 보고서에서 글별 참여 시간·참여율·이탈률을 추가한다. 이탈률은 참여하지 않은 세션 비율이며, 글을 다 읽고 닫은 정상 방문까지 무조건 실패로 해석하지 않는다.
+3. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교한다. 적은 표본과 동의 방문자만 포함된 측정 범위를 함께 기록한다.
+4. Preview에서 동의 전 네트워크 없음, 동의 후 SDK 한 번 로드, SPA 이동, 철회 후 중단을 검사하고 운영 대시보드에서 실제 세션을 확인한다. 계정·실제 project ID·운영 데이터가 없으므로 외부 수신과 실제 글의 이탈 원인은 아직 검증하지 않았다.
+
+공식 문서: [히트맵](https://learn.microsoft.com/en-us/clarity/heatmaps/heatmaps-overview), [설치](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-setup), [Consent V2](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-consent-api-v2), [수집 모듈 stop](https://github.com/microsoft/clarity/blob/master/packages/clarity-js/src/clarity.ts), [GA4 참여율과 이탈률](https://support.google.com/analytics/answer/12195621).

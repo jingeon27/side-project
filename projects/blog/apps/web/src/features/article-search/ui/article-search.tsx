@@ -128,6 +128,7 @@ export function ArticleSearch({
           {/* cmdk injects aria-controls; the child input makes aria-expanded follow the popover. */}
           {/* eslint-disable jsx-a11y/role-has-required-aria-props */}
           <input
+            data-clarity-mask="true"
             type="search"
             role="combobox"
             aria-label={t.common.search}
