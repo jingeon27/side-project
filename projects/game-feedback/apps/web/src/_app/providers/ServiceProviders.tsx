@@ -24,7 +24,9 @@ export function ServiceProviders({
         automaticLocale={context.automaticLocale}
       >
         <ThemeProvider initialPreference={context.theme}>
-          <Providers initialSession={context.initialSession}>{children}</Providers>
+          <Providers initialSession={context.initialSession} initialCategories={context.initialCategories}>
+            {children}
+          </Providers>
         </ThemeProvider>
       </LanguageProvider>
     </ServiceErrorBoundary>

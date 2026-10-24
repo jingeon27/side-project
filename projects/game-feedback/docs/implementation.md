@@ -1295,3 +1295,9 @@ RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에�
 병합 후 API 실제 DB 통합 189개, Web 단위 223개, Mobile unit/UI 89개, Android Chromium/iOS WebKit 실제 native host E2E 전체 42개가 통과했다. 다른 서비스의 개발 DB·서버는 수정하지 않고 55444의 격리 스키마와 별도 E2E 포트를 사용했다. 공통 전송 패키지 8개와 migration-check 70개, SDK 71개도 통과했다. 기존 앱에서 사라진 헤더 언어 선택기는 설정 화면으로 테스트를 옮기고, 게시판 칩은 보이는 메뉴를 선택해 새 레이아웃과 일치시켰다.
 
 실제 Expo/EAS 프로젝트·FCM/APNs 자격 증명과 실기기 수신 검증은 남아 있다. API의 PUSH_NOTIFICATIONS_ENABLED 기본값은 false이며 운영자 설정 후 켠다. 공개 Supercell 태그 조회는 소유권 인증으로 바꾸지 않는다. 사용자가 지정한 로컬 토큰의 공백은 제거했지만 서명된 본문이 손상되어 실제 #QLLLPR89G 조회는 403 accessDenied였고 실제 계정 연결을 저장하지 않았다. 유효한 원본 키가 있어야 실제 제공자 검증을 진행할 수 있다.
+
+## 2026-10-25 게시판 메뉴 hydration 오류 수정
+
+홈에서 GameBoardNavigation의 서버 HTML은 비어 있지만, 먼저 hydration된 LeftSidebar의 게임 목록 요청이 완료되면 다른 Suspense 경계의 첫 클라이언트 렌더에 메뉴가 추가되는 오류를 로컬에서 재현했다. 쿠키 없는 getPublicCategories 조회를 서버 부트스트랩에 포함하고 Providers의 요청별 QueryClient를 만들 때 세션과 함께 게임 목록을 초기화한다. 서버와 브라우저가 같은 공개 snapshot으로 메뉴를 시작하며 기존 query options와 재조회 정책을 유지한다.
+
+회귀 테스트는 JavaScript 없이 받은 서버 HTML에 홈·다섯 게시판의 메뉴와 선택 링크가 포함되는지 확인하고, 390/1280px에서 한국어·영어·일본어 첫 진입·게시판 이동·새로고침의 hydration 오류를 감시한다. Next가 보내는 Suspense 스트리밍 조각도 서버 HTML 검사에 포함한다. 수정 전 메뉴 누락으로 실패하는 것을 확인했고 수정 후 production build/start의 회귀 테스트 4개와 게시판·피드·가이드 프리패치 8개, Web 단위/UI 223개, typecheck·lint가 통과했다. 브라우저 테스트는 3304/4304와 55444의 실행별 gf_test_ 스키마를 사용했다. 실제 외부 제공자와 공개 배포 검증은 수행하지 않았다.
