@@ -212,3 +212,11 @@ export function assertProductionConfig() {
       `Production requires MOBILE_AUTH_CALLBACK_URL=${webOrigin()}${MOBILE_AUTH_CALLBACK_PATH} (same origin as WEB_ORIGIN).`,
     );
 }
+
+/** 테스트는 실제 Expo 제공자를 호출하지 않는다. */
+export function mobilePushSettings() {
+  return {
+    enabled: !isTest() && process.env.PUSH_NOTIFICATIONS_ENABLED === 'true',
+    accessToken: optional('EXPO_ACCESS_TOKEN'),
+  };
+}

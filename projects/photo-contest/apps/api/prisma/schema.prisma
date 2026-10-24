@@ -20,6 +20,7 @@ model User {
   memberships GroupMember[]
   groupJoinRequests GroupJoinRequest[]
   credential PasswordCredential?
+  pushDevices PushDevice[]
   sessions Session[]
   submissions Submission[]
   votes Vote[]
@@ -44,6 +45,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   @@index([expiresAt])
+  pushDevices PushDevice[]
 }
 model OAuthAttempt {
   stateHash String @id
@@ -386,4 +388,38 @@ model Notification {
   @@index([commentId])
   @@index([contestId])
   @@index([joinRequestId])
+}
+
+model PushDevice {
+  id String @id
+  token String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionKey String
+  session Session @relation(fields: [sessionKey], references: [tokenHash], onDelete: Cascade)
+  platform String
+  locale String @default("ko")
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deliveries PushDelivery[]
+  @@index([userId, enabled])
+  @@index([sessionKey])
+}
+// 두 알림 테이블을 쓰는 서비스도 같은 큐를 쓰므로 eventId는 전송 직전에 도메인에서 다시 검증한다.
+model PushDelivery {
+  id String @id @default(cuid())
+  deviceId String
+  device PushDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  eventId String
+  status String @default("PENDING")
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  leaseUntil DateTime?
+  leaseToken String?
+  ticketId String?
+  createdAt DateTime @default(now())
+  @@unique([deviceId, eventId])
+  @@index([status, nextAttemptAt, leaseUntil])
+  @@index([createdAt])
 }

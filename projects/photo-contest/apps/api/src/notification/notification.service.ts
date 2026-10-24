@@ -54,6 +54,16 @@ export class NotificationService {
     };
   }
 
+  async pushStatus(userId: string, id: string) {
+    const where = await this.visible(userId);
+    const unread = { AND: [where], readAt: null };
+    const [row, badge] = await Promise.all([
+      this.db.notification.findFirst({ where: { ...unread, id } }),
+      this.db.notification.count({ where: unread }),
+    ]);
+    return row ? { badge } : null;
+  }
+
   async list(viewer: IViewer, offset?: number | null, limit?: number | null) {
     const range = pageRange(offset ?? 0, limit ?? 20);
     const where = await this.visible(viewer.id);

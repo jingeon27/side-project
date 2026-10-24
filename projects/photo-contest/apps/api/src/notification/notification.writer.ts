@@ -1,6 +1,7 @@
 import { chunk } from 'es-toolkit';
 
 import type { TDatabaseClient } from '../database/database.service';
+import { enqueuePush } from '../push/push.writer';
 import type { TNotificationType } from './notification-type';
 
 export interface INotificationInput {
@@ -21,6 +22,7 @@ export async function writeNotifications(client: TDatabaseClient, inputs: INotif
     inputs.filter((input) => input.userId !== input.actorId),
     250,
   )) {
-    await client.notification.createMany({ data, skipDuplicates: true });
+    const rows = await client.notification.createManyAndReturn({ data, skipDuplicates: true });
+    await enqueuePush(client, rows);
   }
 }

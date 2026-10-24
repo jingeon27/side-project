@@ -1,6 +1,8 @@
 name: side-photo-contest
 x-api: &api
   NODE_ENV: production
+  PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
+  EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
   DEPLOYMENT_TARGET: shared-instance
   API_HOST: 0.0.0.0
   PORT: '4200'

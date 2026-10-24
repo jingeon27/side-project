@@ -16,6 +16,7 @@ import { ModerationModule } from './moderation/moderation.module';
 import { NotificationModule } from './notification/notification.module';
 import { PostModule } from './post/post.module';
 import { ProfileModule } from './profile/profile.module';
+import { PushModule } from './push/push.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
@@ -30,6 +31,7 @@ import { VoteModule } from './vote/vote.module';
     StorageModule,
     RateLimitModule,
     AuthModule,
+    PushModule,
     ProfileModule,
     GroupModule,
     ContestModule,
