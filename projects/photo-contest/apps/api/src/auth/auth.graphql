@@ -3,6 +3,7 @@ type User {
   nickname: String!
   avatar: String
   needsOnboarding: Boolean!
+  isAnonymous: Boolean!
 }
 
 type Query {
@@ -11,6 +12,7 @@ type Query {
 }
 
 extend type Mutation {
+  startAnonymousSession: User!
   registerWithPassword(loginId: String!, password: String!, nickname: String!): User!
   loginWithPassword(loginId: String!, password: String!): User!
 }

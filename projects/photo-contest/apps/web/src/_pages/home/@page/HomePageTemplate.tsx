@@ -6,6 +6,7 @@ import { ButtonLink } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { HomeAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
+import { NotificationBell } from '@/widgets/notification-bell';
 
 import { NoGroupHome } from './no-group/NoGroupHome';
 import { MemberHome } from './ui/MemberHome';
@@ -19,7 +20,7 @@ export function HomePageTemplate({
 }) {
   return (
     <div className="flex flex-1 flex-col">
-      <HomeAppBar />
+      <HomeAppBar actions={<NotificationBell />} />
       <div className="flex flex-1 flex-col px-4 py-5 tablet:px-8 desktop:py-8">
         <ViewerBoundary
           guest={

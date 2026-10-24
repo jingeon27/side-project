@@ -89,7 +89,7 @@ export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileP
         className="connect-profile"
         onSubmit={form.handleSubmit((values) => preview.mutate(values))}
       >
-        <Field label={t('플레이어 태그')} hint={t('# 뒤에 영문과 숫자 8자리를 입력해주세요.')}>
+        <Field label={t('플레이어 태그')} hint={t('게임 프로필에 표시된 #과 영문·숫자 태그를 입력해주세요.')}>
           <div className="input-button-row">
             <Input
               {...tagField}
@@ -100,7 +100,7 @@ export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileP
                 save.reset();
               }}
               placeholder="#GG829JGY"
-              maxLength={9}
+              maxLength={16}
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}

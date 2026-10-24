@@ -3,12 +3,14 @@
 import { useId, useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+import { useMutation } from '@apollo/client/react';
 import { CircleAlert, MessageCircle, RotateCw } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
 import { BridgeError } from '@photo-contest/bridge/web';
 
+import { StartAnonymousSessionDocument } from '@/shared/api/generated';
 import { NEXT_PATH_PARAM } from '@/shared/constants/auth';
 import { BACKEND_ROUTES } from '@/shared/constants/routes';
 import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
@@ -17,18 +19,15 @@ import { navigateDocument } from '@/shared/lib/document-navigation.helper';
 import { ANALYTICS_EVENT, flushAnalytics, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { getErrorMessage } from '@/shared/model/error';
-import { useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
 import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
-import { TextField } from '@/shared/ui/@core/text-field';
 
-import { exchangeAppLogin, requestDevLogin, type TAuthConfig } from '../api/auth-request.helper';
+import { exchangeAppLogin, type TAuthConfig } from '../api/auth-request.helper';
 import { completeLogin } from '../lib/complete-login.helper';
 import { savePendingLogin } from '../lib/login-marker.helper';
 import { retryAuthConfig, useAuthConfig } from '../model/auth-config.store';
-import { devLoginSchema } from '../model/login.schema';
 import { PasswordAuthForms } from './PasswordAuthForms';
 
 /** OAuth가 실패하면 API가 `/?loginError=1`로 돌려보낸다. */
@@ -38,48 +37,41 @@ interface ILoginPanelProps {
   /** 로그인 뒤 돌아갈 경로. 없으면 주소의 `?next=`(proxy가 붙인 원래 경로), 그것도 없으면 홈 */
   nextPath?: string;
   className?: string;
+  allowAnonymous?: boolean;
 }
 
 type TSocialProvider = 'google' | 'kakao';
 
 const SOCIAL_LOGIN_FAILED = '소셜 로그인에 실패했습니다. 다시 시도해 주세요.';
-const DEV_LOGIN_FAILED = '로그인하지 못했어요. 다시 시도해 주세요.';
 
 const isCancelled = (error: unknown) =>
   error instanceof BridgeError && error.code === BRIDGE_ERROR_CODE.Cancelled;
 
-function DevLoginForm({ nextPath }: { nextPath: string }) {
+function AnonymousStartButton({ nextPath }: { nextPath: string }) {
   const bridge = useBridge();
-  const form = useZodForm(devLoginSchema, { defaultValues: { nickname: '' } });
-
+  const [start, { loading }] = useMutation(StartAnonymousSessionDocument);
   return (
-    <form
-      onSubmit={form.handleSubmit(async ({ nickname }) => {
-        try {
-          await requestDevLogin(nickname);
-        } catch (error) {
-          toast.error(getErrorMessage(error, DEV_LOGIN_FAILED));
-          return;
-        }
-        completeLogin(bridge, 'dev', nextPath);
-      })}
-      noValidate
-      className="flex flex-col gap-3 border-t border-line pt-4"
-    >
-      <p className="text-caption text-muted">로컬 체험용 로그인</p>
-      <TextField
-        required
-        label="체험 닉네임"
-        placeholder="예: 진건"
-        autoComplete="nickname"
-        enterKeyHint="go"
-        error={form.formState.errors.nickname?.message}
-        {...form.register('nickname')}
-      />
-      <Button type="submit" fullWidth loading={form.formState.isSubmitting}>
-        시작하기
+    <div className="flex flex-col gap-2">
+      <Button
+        variant="secondary"
+        fullWidth
+        loading={loading}
+        onClick={async () => {
+          trackEvent(ANALYTICS_EVENT.LoginStarted, { provider: 'anonymous' });
+          try {
+            await start();
+            completeLogin(bridge, 'anonymous', nextPath);
+          } catch {
+            /* ErrorLink가 실패를 안내한다. */
+          }
+        }}
+      >
+        익명으로 시작하기
       </Button>
-    </form>
+      <p className="text-caption text-muted">
+        공개 그룹에 참여할 수 있어요. 비공개 그룹은 로그인이 필요해요.
+      </p>
+    </div>
   );
 }
 
@@ -142,7 +134,6 @@ function LoginMethods({ config, nextPath }: { config: TAuthConfig; nextPath: str
           ) : null}
         </div>
       ) : null}
-      {config.developmentLogin ? <DevLoginForm nextPath={nextPath} /> : null}
     </div>
   );
 }
@@ -151,7 +142,7 @@ function LoginMethods({ config, nextPath }: { config: TAuthConfig; nextPath: str
  * 로그인 패널(홈, 세션이 끝난 멤버 화면, 초대 화면). 앱 안에서는 소셜 로그인을 앱의 시스템 브라우저로 처리한다.
  * 로그인에 성공하면 같은 origin의 상대 경로(next)로만 돌아간다.
  */
-export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
+export function LoginPanel({ nextPath, className, allowAnonymous = true }: ILoginPanelProps) {
   const headingId = useId();
   const searchParams = useSearchParams();
   const next = getSafeNextPath(nextPath ?? searchParams.get(NEXT_PATH_PARAM));
@@ -169,10 +160,11 @@ export function LoginPanel({ nextPath, className }: ILoginPanelProps) {
       <div className="pb-2 text-center">
         <p className="text-caption text-muted">친구들과 나누는 웃긴 순간</p>
         <h2 id={headingId} className="mt-2 text-title-lg text-ink">
-          로그인하고 함께 웃어요.
+          함께 웃는 순간을 나눠요
         </h2>
-        <p className="mt-1 text-body text-muted">로그인하고 그룹에 참여해 사진과 동영상을 나눠보세요.</p>
+        <p className="mt-1 text-body text-muted">그룹에 참여해 사진과 동영상을 나눠보세요.</p>
       </div>
+      {allowAnonymous ? <AnonymousStartButton nextPath={next} /> : null}
       <PasswordAuthForms nextPath={next} />
       {loginFailed ? (
         <p

@@ -21,6 +21,7 @@ const profile = {
       nickname: '복구된 사용자',
       avatar: null,
       needsOnboarding: false,
+      isAnonymous: false,
     },
   },
 };

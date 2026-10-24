@@ -1,7 +1,17 @@
 import { instant } from '@next/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3353';
+
+function trackPrefetches(page: Page) {
+  const completed = new Set<string>();
+  page.on('requestfinished', (request) => {
+    const headers = request.headers();
+    if (!headers['next-router-prefetch'] && !headers['next-router-segment-prefetch']) return;
+    completed.add(new URL(request.url()).pathname);
+  });
+  return async (path: string) => expect.poll(() => completed.has(path)).toBe(true);
+}
 
 for (const [slug, title] of [
   ['feedback', '피드백'],
@@ -42,11 +52,15 @@ for (const width of [400, 1440]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
+    const waitForPrefetch = trackPrefetches(page);
     await page.goto('/ko/guide');
+    const navigation = width === 400 ? page.locator('.mobile-nav') : page.locator('.left-sidebar');
+    const home = navigation.getByRole('link', { name: '홈', exact: true });
+    await home.hover();
+    await waitForPrefetch('/ko');
     try {
       await instant(page, async () => {
-        const navigation = width === 400 ? page.locator('.mobile-nav') : page.locator('.left-sidebar');
-        await navigation.getByRole('link', { name: '홈', exact: true }).click();
+        await home.click();
         await page.waitForURL((url) => url.pathname === '/ko');
         await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
         await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toBeEnabled();
@@ -82,7 +96,7 @@ test('a production navigation shows the prefetched guide with its own page heade
   });
   await page.goto('/ko');
   await expect(page.locator('.feed-heading:visible')).toBeVisible();
-  const guide = page.locator('.left-sidebar').getByRole('link', { name: '가이드', exact: true });
+  const guide = page.locator('.site-footer').getByRole('link', { name: '이용 가이드', exact: true });
   await guide.hover();
   await guidePrefetched;
   await page.evaluate(() =>
@@ -145,11 +159,14 @@ test('the static document applies a saved appearance before hydration and keeps 
 });
 
 test('an uncached post streams beneath the prefetched shell', async ({ page }) => {
+  const waitForPrefetch = trackPrefetches(page);
   await page.goto('/ko');
   const post = page.locator('.post-title-link:visible').first();
   await expect(post).toBeVisible();
   const href = await post.getAttribute('href');
   const target = new URL(href ?? '', origin).pathname;
+  await post.hover();
+  await waitForPrefetch(target);
   await instant(page, async () => {
     await post.click();
     await page.waitForURL((url) => url.pathname === target);

@@ -41,6 +41,12 @@ export function GroupMembershipButton({ groupId }: { groupId: string }) {
     },
   });
   if (!complete || group.role) return null;
+  if (viewer?.me?.isAnonymous && group.visibility === GroupVisibility.Private)
+    return (
+      <ButtonLink href={`${ROUTES.LOGIN}?${new URLSearchParams({ next: ROUTES.GROUP(groupId) })}`} size="md">
+        로그인하고 가입 신청하기
+      </ButtonLink>
+    );
   if (!viewer?.me)
     return (
       <ButtonLink href={buildLoginRedirectPath(ROUTES.GROUP(groupId))} size="md">

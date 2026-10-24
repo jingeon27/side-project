@@ -43,21 +43,29 @@ export class PasswordAuthService {
   async register(input: RegisterWithPasswordDto, req: Request, res: Response) {
     const { loginId, password, nickname } = input;
     const passwordHash = await hashPassword(password);
-    const user = await this.db.user
-      .create({
-        data: {
-          provider: 'password',
-          providerId: loginId,
-          nickname,
-          credential: { create: { loginId, passwordHash } },
-        },
-        select: USER_VIEW_SELECT,
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
-          fail('이미 사용 중인 아이디입니다.', ERROR_CODE.CONFLICT);
-        throw error;
-      });
+    const viewer = await this.sessions.viewer(req);
+    const data = {
+      provider: 'password',
+      providerId: loginId,
+      nickname,
+      credential: { create: { loginId, passwordHash } },
+    };
+    // 익명 상태에서 가입하면 공개 그룹과 작성한 콘텐츠의 소유권을 이어 간다.
+    const registration =
+      viewer?.provider === 'anonymous'
+        ? this.db.user.update({
+            where: { id: viewer.id, provider: 'anonymous' },
+            data,
+            select: USER_VIEW_SELECT,
+          })
+        : this.db.user.create({ data, select: USER_VIEW_SELECT });
+    const user = await registration.catch((error: unknown) => {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
+        fail('이미 사용 중인 아이디입니다.', ERROR_CODE.CONFLICT);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025')
+        fail('계정 상태가 변경됐습니다. 다시 로그인해 주세요.', ERROR_CODE.CONFLICT);
+      throw error;
+    });
     await this.sessions.end(req, res);
     await this.sessions.start(res, user.id);
     return user;
@@ -82,10 +90,10 @@ export class PasswordAuthService {
     return credential.user;
   }
 
-  consumeRequest(kind: 'register' | 'login', req: Request) {
+  consumeRequest(kind: 'register' | 'login' | 'anonymous', req: Request) {
     return this.throttle(
       `${kind}:ip:${clientAddress(req)}`,
-      kind === 'register' ? AUTH_REGISTER_IP_LIMIT : AUTH_LOGIN_IP_LIMIT,
+      kind === 'login' ? AUTH_LOGIN_IP_LIMIT : AUTH_REGISTER_IP_LIMIT,
     );
   }
 

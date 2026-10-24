@@ -4,10 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import RootLayout, { viewport } from './layout';
 
-const request = vi.hoisted(() => ({ userAgent: '' }));
+const request = vi.hoisted(() => ({ userAgent: '', theme: 'system' }));
 
 vi.mock('next/headers', () => ({
   headers: async () => new Headers({ 'user-agent': request.userAgent }),
+  cookies: async () => ({ get: () => ({ value: request.theme }) }),
 }));
 vi.mock('@/_app/providers', () => ({
   AppProviders: ({ children }: { children: unknown }) => children,
@@ -17,7 +18,7 @@ async function renderHtml(userAgent: string) {
   request.userAgent = userAgent;
   const html = await RootLayout({ children: '화면' });
   if (!isValidElement(html)) throw new Error('html 요소가 아니다');
-  return html as ReactElement<{ lang: string; 'data-app'?: string }>;
+  return html as ReactElement<{ lang: string; 'data-app'?: string; 'data-theme': string }>;
 }
 
 describe('RootLayout', () => {
@@ -36,5 +37,12 @@ describe('RootLayout', () => {
     expect(viewport).toMatchObject({ width: 'device-width', initialScale: 1, viewportFit: 'cover' });
     expect(viewport).not.toHaveProperty('maximumScale');
     expect(viewport).not.toHaveProperty('userScalable');
+  });
+
+  it('저장된 화면 모드를 서버 HTML부터 적용해야 한다', async () => {
+    request.theme = 'dark';
+    const html = await renderHtml('browser');
+    expect(html.props['data-theme']).toBe('dark');
+    request.theme = 'system';
   });
 });

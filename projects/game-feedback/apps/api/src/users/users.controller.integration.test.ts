@@ -451,7 +451,7 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await db.user.findUniqueOrThrow({ where: { id: requesterId } })).verifiedAt).toBeNull();
     });
 
-    it.each(['#AB12CD3', '#AB12CD345', '#AB12_CD4', '#AB12 CD4', '#가A12CD34', '##AB12CD34'])(
+    it.each(['#', '#AAAAAAAAAAAAAAAA', '#AB12_CD4', '#AB12 CD4', '#가A12CD34', '##AB12CD34'])(
       'rejects malformed tag %s in lookup and account registration',
       async (playerTag) => {
         await google.get(`/api/game-profiles/${encodeURIComponent(playerTag)}`).expect(400);
@@ -469,6 +469,24 @@ describe.skipIf(!testDatabaseUrl)(
       await anonymous.get('/api/me/game-accounts').expect(401);
       const preview = await google.get(`/api/game-profiles/${encodeURIComponent('#P0LYQ829')}`).expect(200);
       expect(preview.body).toMatchObject({ playerTag: '#P0LYQ829' });
+    });
+
+    it('looks up and persists a nine-character tag without truncating it', async () => {
+      const account = supertest.agent(app.getHttpServer());
+      await choose(account, requesterId).expect(200);
+      const tag = '#P0LYQ829G';
+      const preview = await account.get(`/api/game-profiles/${encodeURIComponent(tag)}`).expect(200);
+      expect(preview.body.playerTag).toBe(tag);
+      const saved = await account
+        .post('/api/me/game-accounts')
+        .set('Origin', origin)
+        .send({ playerTag: ' p0lyq829g ' })
+        .expect(200);
+      expect(saved.body.playerTag).toBe(tag);
+      expect((await account.get('/api/session')).body.user.supercellTag).toBe(tag);
+      expect((await account.get('/api/me/game-accounts')).body).toEqual(
+        expect.arrayContaining([expect.objectContaining({ playerTag: tag })]),
+      );
     });
 
     it('registers the user tag on the account while posts use the current author identity', async () => {

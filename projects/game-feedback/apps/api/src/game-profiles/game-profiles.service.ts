@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
-import { requireUser } from '../auth/session-access';
+import { requireProfileLookupSession, requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
@@ -21,7 +21,7 @@ export class GameProfilesService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
   async preview(req: SessionRequest, playerTag: string) {
-    requireUser(req);
+    requireProfileLookupSession(req);
     return this.lookup(playerTag);
   }
 

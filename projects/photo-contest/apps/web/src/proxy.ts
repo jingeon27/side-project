@@ -22,5 +22,5 @@ export function proxy(request: NextRequest) {
 
 // 초대(/invite/*)·홈·/backend/*·정적 파일은 건드리지 않는다. auth-gate.helper의 isMemberOnlyPath와 같은 범위다.
 export const config = {
-  matcher: ['/contests/:path*', '/me'],
+  matcher: ['/contests/:path*', '/me', '/notifications'],
 };

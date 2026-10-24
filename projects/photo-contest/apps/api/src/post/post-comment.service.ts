@@ -11,6 +11,8 @@ import { COMMENT_BODY_LIMIT, PAGE_SIZE_DEFAULT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
+import { NOTIFICATION_TYPE } from '../notification/notification-type';
+import { writeNotifications } from '../notification/notification.writer';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 
 function commentInclude(viewerId: string | null) {
@@ -90,9 +92,9 @@ export class PostCommentService {
     const body = textValue(input, COMMENT_BODY_LIMIT, '댓글');
     await this.limits.consume('COMMENT_CREATE', { userId: viewer.id, address });
     return this.transactions.atomic(async (tx) => {
-      const { admin } = await this.membership.accessiblePost(viewer.id, postId, tx);
+      const { admin, post } = await this.membership.accessiblePost(viewer.id, postId, tx);
+      const parent = parentId ? await tx.postComment.findUnique({ where: { id: parentId } }) : null;
       if (parentId !== undefined && parentId !== null) {
-        const parent = await tx.postComment.findUnique({ where: { id: parentId } });
         if (!parent || parent.postId !== postId)
           fail('답글을 남길 댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
         if (parent.parentId) fail('원댓글에 답글을 남겨 주세요.');
@@ -101,6 +103,20 @@ export class PostCommentService {
         data: { postId, parentId: parentId ?? null, authorId: viewer.id, body },
         include: commentInclude(viewer.id),
       });
+      const recipients = new Set([post.authorId, ...(parent ? [parent.authorId] : [])]);
+      await writeNotifications(
+        tx,
+        [...recipients].map((userId) => ({
+          userId,
+          actorId: viewer.id,
+          groupId: post.groupId,
+          postId,
+          commentId: row.id,
+          type:
+            parent?.authorId === userId ? NOTIFICATION_TYPE.COMMENT_REPLY : NOTIFICATION_TYPE.POST_COMMENT,
+          eventKey: `comment:${row.id}`,
+        })),
+      );
       await recordEvent(tx ?? this.db, {
         id: `comment-created:${row.id}`,
         type: ANALYTICS_EVENT.COMMENT_CREATED,

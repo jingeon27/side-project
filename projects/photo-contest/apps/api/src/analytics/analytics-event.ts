@@ -11,6 +11,7 @@ export const ANALYTICS_EVENT = {
   COMMENT_CREATED: 'comment_created',
   COMMENT_DELETED: 'comment_deleted',
   COMMENT_LIKED: 'comment_liked',
+  NOTIFICATION_READ: 'notification_read',
   GROUP_CREATED: 'group_created',
   GROUP_PROFILE_UPDATED: 'group_profile_updated',
   GROUP_JOINED: 'group_joined',

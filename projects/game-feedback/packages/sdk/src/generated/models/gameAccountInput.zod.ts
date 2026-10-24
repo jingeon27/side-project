@@ -6,7 +6,7 @@
  */
 import * as zod from 'zod';
 
-export const gameAccountInputPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{8}$');
+export const gameAccountInputPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{1,15}$');
 
 export const GameAccountInput = zod.object({
   "playerTag": zod.string().regex(gameAccountInputPlayerTagRegExp)

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { TSocialProvider } from '@game-feedback/contracts';
+import type { GameProfile, TSocialProvider } from '@game-feedback/contracts';
 
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../generated/prisma';
@@ -24,7 +24,7 @@ export class SocialIdentityService {
     return null;
   }
 
-  async onboard(provider: TSocialProvider, subject: string, nickname: string) {
+  async onboard(provider: TSocialProvider, subject: string, nickname: string, profile?: GameProfile) {
     return this.transactions.run(async (tx) => {
       await this.lockIdentity(provider, subject, tx);
       const identity = await (tx ?? this.db).socialIdentity.findUnique({
@@ -55,6 +55,17 @@ export class SocialIdentityService {
           ...(provider === 'google' ? { googleSubject: subject } : {}),
           role: 'USER',
           socialIdentities: { create: { provider, subject } },
+          ...(profile
+            ? {
+                supercellTag: profile.playerTag,
+                gameAccounts: {
+                  create: {
+                    playerTag: profile.playerTag,
+                    profile: profile as unknown as Prisma.InputJsonValue,
+                  },
+                },
+              }
+            : {}),
         },
       });
     });

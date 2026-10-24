@@ -33,6 +33,8 @@ model User {
   postComments PostComment[]
   postCommentLikes PostCommentLike[]
   postContestVotes PostContestVote[]
+  notifications Notification[] @relation("NotificationRecipient")
+  notificationActions Notification[] @relation("NotificationActor")
   createdAt DateTime @default(now())
   @@unique([provider, providerId])
 }
@@ -67,6 +69,7 @@ model Group {
   contests Contest[]
   posts Post[]
   postUploads PostUpload[]
+  notifications Notification[]
   @@index([createdAt, id])
 }
 model GroupAvatar {
@@ -88,6 +91,7 @@ model GroupJoinRequest {
   createdAt DateTime @default(now())
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications Notification[]
   @@unique([groupId, userId])
   @@index([groupId, createdAt, id])
 }
@@ -104,6 +108,8 @@ model GroupMember {
 model Contest {
   format String @default("LEGACY")
   completionTrackedAt DateTime?
+  startNotifiedAt DateTime?
+  endNotifiedAt DateTime?
   id String @id @default(cuid())
   groupId String
   title String
@@ -118,6 +124,7 @@ model Contest {
   uploads Upload[]
   posts Post[]
   postVotes PostContestVote[]
+  notifications Notification[]
   @@index([groupId, format, endsAt, id])
   @@index([groupId, createdAt])
 }
@@ -254,6 +261,7 @@ model Post {
   likes PostLike[]
   comments PostComment[]
   contestVotes PostContestVote[]
+  notifications Notification[]
   @@unique([id, contestId])
   @@index([contestId, createdAt, id])
   @@index([groupId, createdAt, id])
@@ -270,6 +278,7 @@ model PostComment {
   likes PostCommentLike[]
   parent PostComment? @relation("PostCommentReplies", fields: [parentId, postId], references: [id, postId], onDelete: Cascade)
   replies PostComment[] @relation("PostCommentReplies")
+  notifications Notification[]
   @@unique([id, postId])
   @@index([postId, createdAt, id])
   @@index([postId, parentId, createdAt, id])
@@ -349,4 +358,32 @@ model ProfileUpload {
   policyExpiresAt DateTime
   @@index([userId, expiresAt])
   @@index([expiresAt])
+}
+model Notification {
+  id String @id @default(cuid())
+  userId String
+  actorId String?
+  groupId String
+  postId String?
+  commentId String?
+  contestId String?
+  joinRequestId String?
+  type String
+  eventKey String
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  post Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment PostComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  contest Contest? @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  joinRequest GroupJoinRequest? @relation(fields: [joinRequestId], references: [id], onDelete: Cascade)
+  @@unique([userId, eventKey])
+  @@index([userId, readAt, createdAt, id])
+  @@index([groupId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([contestId])
+  @@index([joinRequestId])
 }

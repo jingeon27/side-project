@@ -122,8 +122,8 @@ describe('generated REST client response validation', () => {
     respond(fixture);
     expect(await getSession()).toEqual(fixture);
   });
-  it.each(['#GG829JGY', '#AB12CD34'])(
-    'preserves an eight-character alphanumeric tag %s in session responses',
+  it.each(['#GG829JGY', '#AB12CD34', '#P0LYQ829G'])(
+    'preserves the full alphanumeric tag %s in session responses',
     async (supercellTag) => {
       const fixture = sessionFixture();
       respond({ ...fixture, user: { ...fixture.user, supercellTag } });

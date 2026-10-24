@@ -18,6 +18,7 @@ export interface IViewer {
   avatar: string | null;
   needsOnboarding?: boolean;
   avatarUploadId?: string | null;
+  provider?: string;
 }
 
 function sessionToken(req: Request) {

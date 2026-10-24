@@ -79,6 +79,7 @@ export function PostCommentReplySection({
             parentId={parentId}
             viewerId={viewerId}
             postAuthorId={postAuthorId}
+            replyToName={comment.author.nickname}
           />
         </div>
       ) : null}

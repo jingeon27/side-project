@@ -7,13 +7,15 @@ const nicknameField = (page: Page) => page.getByRole('textbox', { name: '서비�
 
 test('mobile OAuth opens a signup page, permits reading terms, and completes back to the original board', async ({
   page,
+  baseURL,
 }, testInfo) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   await page.setViewportSize({ width: 393, height: 852 });
   await page.goto('/ko/login?returnTo=' + encodeURIComponent(destination));
   await page.getByRole('button', { name: 'Google로 시작하기', exact: true }).click();
-  await expect(page).toHaveURL('http://127.0.0.1:3301' + signup);
+  await expect(page).toHaveURL(origin + signup);
   await expect(page.getByRole('heading', { name: '회원가입', exact: true })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('.mobile-nav')).toBeHidden();
@@ -25,13 +27,16 @@ test('mobile OAuth opens a signup page, permits reading terms, and completes bac
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('link', { name: '이용약관', exact: true }).click();
   const terms = await popupPromise;
-  await expect(terms).toHaveURL('http://127.0.0.1:3301/ko/terms');
+  await expect(terms).toHaveURL(origin + '/ko/terms');
   await expect(
     terms.getByRole('heading', { name: '이용약관 (비공개 알파 초안)', exact: true }),
   ).toBeVisible();
   await terms.close();
-  await expect(page).toHaveURL('http://127.0.0.1:3301' + signup);
+  await expect(page).toHaveURL(origin + signup);
 
+  await page.getByRole('textbox', { name: '플레이어 태그', exact: true }).fill('#QLLLPR89G');
+  await page.getByRole('button', { name: '조회', exact: true }).click();
+  await expect(page.getByRole('button', { name: '연결하지 않기', exact: true })).toBeVisible();
   const submit = page.getByRole('button', { name: '가입 완료하기', exact: true });
   await nicknameField(page).fill('초보메이트');
   await expect(submit).toBeDisabled();
@@ -47,14 +52,16 @@ test('mobile OAuth opens a signup page, permits reading terms, and completes bac
   await page.setViewportSize({ width: 320, height: 690 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await submit.click();
-  await expect(page).toHaveURL('http://127.0.0.1:3301' + destination);
+  await expect(page).toHaveURL(origin + destination);
   const session = await (await page.request.get('/api/session')).json();
   expect(session.needsOnboarding).toBe(false);
   expect(session.user.nickname).toBe('초보메이트');
+  expect(session.user.supercellTag).toBe('#QLLLPR89G');
+  expect(session.user.isVerified).toBe(false);
 
   // A completed account must not see the signup form again, including a fresh server request.
   await page.goto(signup);
-  await expect(page).toHaveURL('http://127.0.0.1:3301' + destination);
+  await expect(page).toHaveURL(origin + destination);
   expect(pageErrors).toEqual([]);
 });
 
@@ -91,11 +98,12 @@ test('desktop signup is a page, keeps the draft on failure, and preserves destin
   expect(new URL(page.url()).searchParams.get('returnTo')).toBe('/en/boards/coaching?coachingRole=STUDENT');
 });
 
-test('anonymous direct signup routes return to login with a safe destination', async ({ page }) => {
+test('anonymous direct signup routes return to login with a safe destination', async ({ page, baseURL }) => {
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:3301').origin;
   await page.goto(signup);
-  await expect(page).toHaveURL('http://127.0.0.1:3301/ko/login?returnTo=' + encodeURIComponent(destination));
+  await expect(page).toHaveURL(origin + '/ko/login?returnTo=' + encodeURIComponent(destination));
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await expect(nicknameField(page)).toHaveCount(0);
   await page.goto('/ko/onboarding?returnTo=https%3A%2F%2Foutside.test');
-  await expect(page).toHaveURL('http://127.0.0.1:3301/ko/login?returnTo=%2Fko');
+  await expect(page).toHaveURL(origin + '/ko/login?returnTo=%2Fko');
 });

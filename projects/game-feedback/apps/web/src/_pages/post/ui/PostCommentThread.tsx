@@ -22,12 +22,23 @@ interface IPostCommentThreadProps {
   locale: string;
 }
 
-function ThreadComment({ comment, post, locale }: { comment: Comment; post: Post; locale: string }) {
+function ThreadComment({
+  comment,
+  post,
+  locale,
+  replyToName,
+}: {
+  comment: Comment;
+  post: Post;
+  locale: string;
+  replyToName?: string;
+}) {
   const { session } = useSession();
   const author = comment.author;
   return (
     <CommentItem
       comment={comment}
+      replyToName={replyToName}
       mine={author?.id === session.user?.id}
       isPostAuthor={author?.id === post.author.id}
       authorName={author && <AuthorLink author={author} locale={locale} />}
@@ -95,7 +106,7 @@ export function PostCommentThread({ thread, post, locale }: IPostCommentThreadPr
         <ol className="comment-replies" aria-label={t('답글')}>
           {replies.map((reply) => (
             <li key={reply.id}>
-              <ThreadComment comment={reply} post={post} locale={locale} />
+              <ThreadComment comment={reply} post={post} locale={locale} replyToName={author?.nickname} />
             </li>
           ))}
         </ol>

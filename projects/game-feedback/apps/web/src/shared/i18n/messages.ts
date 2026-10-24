@@ -4,6 +4,12 @@ import { profileMessages } from './profile-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '게임 프로필 연결 (선택)': ['Connect a game profile (optional)', 'ゲームプロフィールの連携（任意）'],
+  '태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.': [
+    'Look up your tag to connect the profile when you sign up. You can also add it later.',
+    'タグを検索すると、登録時にゲームプロフィールを連携します。後からの登録も可能です。',
+  ],
+  '연결하지 않기': ['Skip connection', '連携しない'],
   ...infoMessages,
   '화면 모드를 변경했어요': ['Display mode updated', '画面モードを変更しました'],
   '변경한 화면 모드는 이 기기에 저장돼요.': [
@@ -669,13 +675,13 @@ const messages: Record<string, readonly [string, string]> = {
     'Look up your trophies and arena using your player tag.',
     'プレイヤータグからトロフィーとアリーナを確認します。',
   ],
-  '# 뒤에 영문과 숫자 8자리를 입력해주세요.': [
-    'Enter 8 letters or numbers after #.',
-    '# の後に半角英数字8文字を入力してください。',
+  '게임 프로필에 표시된 #과 영문·숫자 태그를 입력해주세요.': [
+    'Enter the # and player tag shown on your game profile.',
+    'ゲームプロフィールに表示されている # と英数字のタグを入力してください。',
   ],
-  '# 뒤에 영문과 숫자로 된 8자리 태그를 입력해주세요.': [
-    'Your tag must contain 8 letters or numbers after #.',
-    'タグは # の後に半角英数字8文字で入力してください。',
+  '# 뒤에 영문과 숫자로 된 플레이어 태그를 입력해주세요.': [
+    'Enter a player tag containing letters or numbers after #.',
+    '# の後に半角英数字のプレイヤータグを入力してください。',
   ],
   '나의 플레이 공간': ['My player space', 'マイプレイヤー'],
   '로그인하고 게임 프로필과 계정을 관리하세요.': [

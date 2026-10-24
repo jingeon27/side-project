@@ -5,6 +5,11 @@ import type { IUserView } from './user-view';
 @Resolver('User')
 export class UserResolver {
   @ResolveField()
+  isAnonymous(@Parent() user: IUserView) {
+    return user.provider === 'anonymous';
+  }
+
+  @ResolveField()
   needsOnboarding(@Parent() user: IUserView) {
     return user.needsOnboarding ?? false;
   }

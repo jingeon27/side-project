@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { appRoutes } from '@game-feedback/bridge';
 
 import { sessionOptions, SessionProvider } from '@/features/auth';
-import type { Session } from '@/shared/api';
+import type { GameProfile, Session } from '@/shared/api';
 import { AuthOnboarding } from '@/widgets/authentication';
 
 import { OnboardingPage } from './OnboardingPage';
@@ -40,6 +40,18 @@ const completedSession: Session = {
   needsOnboarding: false,
 };
 const returnTo = '/ko/notifications';
+const gameProfile: GameProfile = {
+  playerTag: '#QLLLPR89G',
+  name: '게임 연결 회원',
+  trophies: 9000,
+  bestTrophies: 9000,
+  arena: '전설 아레나',
+  clan: null,
+  deck: [],
+  verification: 'UNVERIFIED',
+  source: 'DEMO',
+  fetchedAt: '2026-10-25T00:00:00.000Z',
+};
 const clients: QueryClient[] = [];
 const request = vi.fn<typeof fetch>();
 let respondToOnboarding: () => Promise<Response>;
@@ -81,6 +93,7 @@ beforeEach(() => {
   request.mockImplementation(async (url) => {
     if (url === '/api/session') return respondToSession();
     if (url === '/api/auth/onboard') return respondToOnboarding();
+    if (String(url).startsWith('/api/game-profiles/')) return Response.json(gameProfile);
     throw new Error(`Unexpected request: ${String(url)}`);
   });
   vi.stubGlobal('fetch', request);
@@ -93,6 +106,39 @@ afterEach(() => {
 });
 
 describe('회원가입 페이지', () => {
+  it('가입 전 조회한 게임 프로필의 태그를 가입 요청에 함께 보내야 한다', async () => {
+    await renderReadyPage();
+    const tag = screen.getByRole('textbox', { name: '플레이어 태그' });
+    fireEvent.change(tag, { target: { value: '#QLLLPR89G' } });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await screen.findByRole('button', { name: '연결하지 않기' });
+    fireEvent.change(screen.getByRole('textbox', { name: '서비스 닉네임' }), {
+      target: { value: '새플레이어' },
+    });
+    acceptRequiredItems();
+    fireEvent.click(screen.getByRole('button', { name: '가입 완료하기' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(returnTo));
+    const submitted = request.mock.calls.find(([url]) => url === '/api/auth/onboard');
+    expect(JSON.parse(String(submitted?.[1]?.body))).toMatchObject({ playerTag: '#QLLLPR89G' });
+  });
+
+  it('연결하지 않기를 누르면 확인한 게임 프로필을 가입 요청에서 제외해야 한다', async () => {
+    await renderReadyPage();
+    fireEvent.change(screen.getByRole('textbox', { name: '플레이어 태그' }), {
+      target: { value: '#QLLLPR89G' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    fireEvent.click(await screen.findByRole('button', { name: '연결하지 않기' }));
+    fireEvent.change(screen.getByRole('textbox', { name: '서비스 닉네임' }), {
+      target: { value: '새플레이어' },
+    });
+    acceptRequiredItems();
+    fireEvent.click(screen.getByRole('button', { name: '가입 완료하기' }));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith(returnTo));
+    const submitted = request.mock.calls.find(([url]) => url === '/api/auth/onboard');
+    expect(JSON.parse(String(submitted?.[1]?.body))).not.toHaveProperty('playerTag');
+  });
+
   it('캐시는 익명이어도 현재 쿠키가 가입 대기 상태라면 재조회가 끝날 때까지 로그인 이동을 보류해야 한다', async () => {
     let finishSession: (response: Response) => void = () => undefined;
     const response = new Promise<Response>((resolve) => {
