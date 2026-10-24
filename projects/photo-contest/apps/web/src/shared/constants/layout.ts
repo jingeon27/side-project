@@ -4,3 +4,4 @@ export const APP_MAIN_ID = 'pc-main';
 
 /** 브라우저 주소창·상태 표시줄 색. 상단 앱바 배경(theme.css --color-surface)과 같게 둔다. */
 export const THEME_COLOR = '#ffffff';
+export const DARK_THEME_COLOR = '#1c1b1a';

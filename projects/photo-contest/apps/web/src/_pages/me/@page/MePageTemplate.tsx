@@ -6,6 +6,7 @@ import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { ROUTES } from '@/shared/constants/routes';
 import { LegalLinks } from '@/shared/ui/@core/legal-links';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { ThemeSettings } from '@/shared/ui/@core/theme-settings';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { BottomNav } from '@/widgets/bottom-nav';
 
@@ -26,7 +27,8 @@ export function MePageTemplate() {
             <div className="mx-auto grid w-full max-w-5xl items-start gap-8 desktop:grid-cols-[240px_minmax(0,1fr)]">
               <div className="contents desktop:sticky desktop:top-24 desktop:flex desktop:flex-col desktop:gap-6">
                 <MyProfile viewerRef={viewerRef} />
-                <div className="order-3 border-t border-line pt-4 desktop:border-0 desktop:pt-0">
+                <ThemeSettings />
+                <div className="order-4 border-t border-line pt-4 desktop:border-0 desktop:pt-0">
                   <h2 className="text-label text-ink">서비스 안내</h2>
                   <LegalLinks />
                 </div>
