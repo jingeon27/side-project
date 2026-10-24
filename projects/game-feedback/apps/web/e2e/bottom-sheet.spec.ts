@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 async function openAccountSheet(page: Page) {
   expect(
     (
@@ -92,9 +92,50 @@ test('touch dragging the handle expands the sheet while form controls remain usa
     await expect.poll(async () => (await sheet.boundingBox())?.y).toBeLessThan(20);
     await sheet.getByLabel('플레이어 태그', { exact: true }).fill('#GG829JGY');
     await expect(sheet.getByLabel('플레이어 태그', { exact: true })).toHaveValue('#GG829JGY');
-    await sheet.getByRole('button', { name: '닫기', exact: true }).tap();
+    await sheet.getByRole('button', { name: '취소', exact: true }).tap();
     await expect(sheet).toHaveCount(0);
   } finally {
     await context.close();
   }
+});
+
+test('하단 가로 버튼은 스크롤과 화면 크기 변경에도 유지되고 폼을 제출해야 한다', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  const sheet = await openAccountSheet(page);
+  const input = sheet.getByLabel('플레이어 태그', { exact: true });
+  await input.fill('#GG829JGY');
+  await expect(sheet.locator('.lucide-x')).toHaveCount(0);
+  const footer = sheet.locator('[data-slot="bottom-sheet-footer"]');
+  await footer.getByRole('button', { name: '조회', exact: true }).click();
+  await expect(footer.getByRole('button', { name: '내 계정에 등록', exact: true })).toBeVisible();
+  const before = await footer.boundingBox();
+  await sheet.locator('.ds-sheet-body').evaluate((node) => {
+    node.scrollTop = node.scrollHeight;
+  });
+  expect((await footer.boundingBox())?.y).toBe(before?.y);
+  const cancel = await footer.getByRole('button', { name: '취소', exact: true }).boundingBox();
+  const save = await footer.getByRole('button', { name: '내 계정에 등록', exact: true }).boundingBox();
+  expect(cancel?.y).toBe(save?.y);
+  expect(cancel?.x).toBeLessThan(save?.x ?? 0);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(sheet.getByRole('slider')).toBeHidden();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await expect(input).toHaveValue('#GG829JGY');
+  await expect
+    .poll(async () => {
+      const box = await sheet.boundingBox();
+      return box ? Math.abs(box.y + box.height / 2 - 450) : Infinity;
+    })
+    .toBeLessThan(2);
+  await page.setViewportSize({ width: 393, height: 852 });
+  await expect(input).toHaveValue('#GG829JGY');
+  await expect
+    .poll(async () => {
+      const box = await sheet.locator('.ds-sheet-frame').boundingBox();
+      return box ? Math.round(box.y + box.height) : null;
+    })
+    .toBe(852);
+  await footer.getByRole('button', { name: '취소', exact: true }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '계정 등록', exact: true })).toBeFocused();
 });

@@ -22,7 +22,7 @@ async function configureProviders(page: Page) {
   });
 }
 
-test('mobile login is a dedicated page with branded buttons and returns to the original board', async ({
+test('mobile login opens its page with branded buttons and returns to the original board', async ({
   page,
 }, testInfo) => {
   await configureProviders(page);
@@ -78,6 +78,7 @@ test('mobile login is a dedicated page with branded buttons and returns to the o
   await page.setViewportSize({ width: 320, height: 690 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('link', { name: '돌아가기', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page).toHaveURL(origin + destination);
 });
 

@@ -63,7 +63,7 @@ export function StartChatLink({ source, userId, nickname, label, appearance = 't
       </Button>
     );
   return (
-    <button {...controlProps} className="text-button chat-author-link">
+    <button {...controlProps} className="text-action chat-author-link">
       {content}
     </button>
   );

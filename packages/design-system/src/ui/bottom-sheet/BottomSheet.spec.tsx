@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Button } from '../button/Button';
 import { TextField } from '../text-field/TextField';
@@ -27,7 +27,55 @@ function SheetExample({ dismissible = true }: { dismissible?: boolean }) {
   );
 }
 
+function FooterSheetExample({ onSave }: { onSave: (value: FormDataEntryValue | null) => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <BottomSheet
+      open={open}
+      onOpenChange={(nextOpen) => setOpen(nextOpen)}
+      title="프로필 수정"
+      responsive
+      showCloseButton={false}
+      footer={
+        <>
+          <Button type="button" onClick={() => setOpen(false)}>
+            취소
+          </Button>
+          <Button type="submit" form="profile-form">
+            저장
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="profile-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSave(new FormData(event.currentTarget).get('nickname'));
+          setOpen(false);
+        }}
+      >
+        <TextField label="닉네임" name="nickname" required />
+      </form>
+    </BottomSheet>
+  );
+}
+
 describe('BottomSheet', () => {
+  it('상단 닫기 없이 본문 밖 하단 버튼으로 폼 검증과 제출을 실행해야 한다', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<FooterSheetExample onSave={onSave} />);
+    const sheet = await screen.findByRole('dialog', { name: '프로필 수정' });
+    expect(within(sheet).queryByRole('button', { name: '닫기' })).not.toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: '저장' }));
+    expect(onSave).not.toHaveBeenCalled();
+    await user.type(within(sheet).getByRole('textbox', { name: '닉네임' }), '플레이어');
+    await user.click(within(sheet).getByRole('button', { name: '저장' }));
+    expect(onSave).toHaveBeenCalledWith('플레이어');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
   it('키보드로 높이를 조절해도 입력을 보존하며 닫으면 연 버튼으로 포커스를 복원해야 한다', async () => {
     const user = userEvent.setup();
     render(<SheetExample />);

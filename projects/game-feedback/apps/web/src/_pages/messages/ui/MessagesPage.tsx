@@ -74,7 +74,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
               </section>
             }
             recoveryAction={
-              <Link href={appRoutes.messages(locale)} replace scroll={false} className="text-button">
+              <Link href={appRoutes.messages(locale)} replace scroll={false} className="text-action">
                 {t('대화 목록으로 돌아가기 →')}
               </Link>
             }

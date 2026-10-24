@@ -13,6 +13,7 @@ interface IErrorRecoveryProps {
   pending?: boolean;
   className?: string;
   recoveryAction?: ReactNode;
+  showRetry?: boolean;
 }
 
 export function ErrorRecovery({
@@ -21,6 +22,7 @@ export function ErrorRecovery({
   pending = false,
   className,
   recoveryAction,
+  showRetry = true,
 }: IErrorRecoveryProps) {
   const { t } = useI18n();
   const email = getContactEmail();
@@ -36,9 +38,11 @@ export function ErrorRecovery({
         {t('에 문제가 생겼어요')}
       </h2>
       <p>{t('잠시 후 이 영역을 다시 시도해 주세요.')}</p>
-      <Button variant="secondary" size="md" type="button" disabled={pending} onClick={onRetry}>
-        {pending ? t('다시 불러오는 중…') : t('다시 시도하기')}
-      </Button>
+      {showRetry && (
+        <Button variant="secondary" size="md" type="button" disabled={pending} onClick={onRetry}>
+          {pending ? t('다시 불러오는 중…') : t('다시 시도하기')}
+        </Button>
+      )}
       <p className="error-contact">
         {t('문제가 계속되면 이메일로 문의해주세요.')}
         <br />
