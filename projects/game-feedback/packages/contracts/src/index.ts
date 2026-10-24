@@ -336,7 +336,12 @@ export const NicknameSchema = z
   .max(24)
   .regex(/^[\p{L}\p{N}_ .-]+$/u);
 export const OnboardInputSchema = z
-  .object({ nickname: NicknameSchema, acceptedTerms: z.literal(true), ageConfirmed: z.literal(true) })
+  .object({
+    nickname: NicknameSchema,
+    acceptedTerms: z.literal(true),
+    ageConfirmed: z.literal(true),
+    playerTag: PlayerTagSchema.optional(),
+  })
   .strict();
 export const AppExchangeInputSchema = z
   .object({
