@@ -11,9 +11,11 @@ Game Feedback와 Photo Contest가 같은 Expo HTTP 전송·티켓·영수증 경
 ## 실제 앱에 필요한 설정
 
 1. 각 앱을 서로 다른 Expo/EAS 프로젝트에 연결하고, 해당 UUID를 앱 빌드 환경의 `EXPO_PUBLIC_EAS_PROJECT_ID`에 넣는다. 웹/API에 노출하는 비밀키가 아니다.
-2. Android는 해당 application ID의 Firebase 프로젝트와 FCM v1 서비스 계정 자격 증명을 EAS에 등록한다. iOS는 해당 bundle ID의 APNs push key/권한을 EAS에 연결한다. 자격 증명 JSON·APNs key는 저장소에 넣지 않는다.
+2. Android는 해당 application ID의 Firebase 앱 `google-services.json`을 EAS file 환경변수로 제공하고 그 파일 경로를 `MOBILE_GOOGLE_SERVICES_JSON`으로 받는다. 별도의 FCM v1 서비스 계정 비공개 JSON은 EAS의 push credentials에 등록한다(앱 설정 파일과 다른 자격 증명이다). iOS는 해당 bundle ID의 APNs push key/권한을 EAS에 연결한다. 자격 증명 JSON·APNs key는 저장소에 넣지 않는다.
 3. `expo-notifications` 플러그인이 추가됐으므로 dev client 또는 스토어 바이너리를 새로 빌드한다. Expo Go와 시뮬레이터 검증을 실제 원격 푸시 수신으로 대신하지 않는다.
 4. 각 API에 migration을 적용하고 `PUSH_NOTIFICATIONS_ENABLED=true`를 설정한다. Expo 대시보드에서 enhanced push security를 활성화했다면 해당 서비스의 서버 전용 `EXPO_ACCESS_TOKEN`도 설정한다. 앱 번들·웹 공개 환경변수에 넣지 않는다. 운영 Compose에 두 값이 전달된다.
+   AWS에는 SNS/Pinpoint 권한을 추가하지 않는다. API의 기존 외부 HTTPS 통신으로 Expo에 요청하며 Terraform은 FCM/APNs 자격 증명을 만들지 않는다.
+
 5. 실기기 로그인 → 알림함에서 켜기 → 다른 계정으로 댓글/답글/채팅/가입 신청/대회 이벤트 생성 → foreground 갱신·background 알림·종료 상태 탭 → 읽음 배지 → 로그아웃 후 미수신을 확인한다. 실제 자격 증명과 실기기가 없는 환경에서는 이 검증을 완료로 기록하지 않는다.
 
 Game Feedback는 팔로우 새 글·답변/댓글/대댓글·채팅, Photo Contest는 내 글 댓글·내 댓글 답글·대회 시작/종료·가입 승인/거절·관리자 가입 신청 알림을 보낸다. Photo Contest에 개인 팔로우/1:1 채팅을 추가하지 않는다.
