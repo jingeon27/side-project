@@ -11,11 +11,13 @@ export const onboardInputNicknameMax = 24;
 
 
 export const onboardInputNicknameRegExp = new RegExp('^[\\p{L}\\p{N}_ .-]+$', 'u');
+export const onboardInputPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{1,15}$');
 
 export const OnboardInput = zod.object({
   "nickname": zod.string().min(onboardInputNicknameMin).max(onboardInputNicknameMax).regex(onboardInputNicknameRegExp),
   "acceptedTerms": zod.literal(true),
-  "ageConfirmed": zod.literal(true)
+  "ageConfirmed": zod.literal(true),
+  "playerTag": zod.string().regex(onboardInputPlayerTagRegExp).optional()
 })
 
 export type OnboardInput = zod.input<typeof OnboardInput>;
