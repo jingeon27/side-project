@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import type { Contest, GroupMember, Submission } from '../../generated/prisma';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { Database, type TDatabaseClient } from '../database/database.service';
-import { isAdmin, isOwner } from './group-role';
+import { GROUP_ROLE, isAdmin, isOwner } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility } from './group-visibility';
 
 export interface IContestAccess {
@@ -31,12 +31,23 @@ export class MembershipService {
   constructor(private readonly db: Database) {}
 
   /** 여러 그룹을 합친 조회도 멤버십 범위를 먼저 고정한다. */
-  async memberGroupIds(userId: string): Promise<string[]> {
+  async memberGroupIds(userId: string, adminOnly = false): Promise<string[]> {
     const memberships = await this.db.groupMember.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(adminOnly ? { role: { in: [GROUP_ROLE.OWNER, GROUP_ROLE.MODERATOR] } } : {}),
+      },
       select: { groupId: true },
     });
     return memberships.map(({ groupId }) => groupId);
+  }
+
+  async adminUserIds(groupId: string, client: TDatabaseClient): Promise<string[]> {
+    const members = await client.groupMember.findMany({
+      where: { groupId, role: { in: [GROUP_ROLE.OWNER, GROUP_ROLE.MODERATOR] } },
+      select: { userId: true },
+    });
+    return members.map(({ userId }) => userId);
   }
 
   async requireMember(userId: string, groupId: string, client?: TDatabaseClient): Promise<GroupMember> {

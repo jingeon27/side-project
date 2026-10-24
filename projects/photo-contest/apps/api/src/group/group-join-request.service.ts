@@ -11,6 +11,8 @@ import { pageRange } from '../common/validation';
 import { PAGE_SIZE_DEFAULT } from '../config/limits';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
+import { NOTIFICATION_TYPE } from '../notification/notification-type';
+import { writeNotifications } from '../notification/notification.writer';
 import { MembershipService } from './membership.service';
 
 @Injectable()
@@ -63,6 +65,15 @@ export class GroupJoinRequestService {
         });
       }
       await (tx ?? this.db).groupJoinRequest.delete({ where: { id: requestId } });
+      await writeNotifications(tx, [
+        {
+          userId: request.userId,
+          actorId: viewer.id,
+          groupId: request.groupId,
+          type: approved ? NOTIFICATION_TYPE.JOIN_APPROVED : NOTIFICATION_TYPE.JOIN_REJECTED,
+          eventKey: `join-review:${requestId}`,
+        },
+      ]);
       return true;
     });
   }

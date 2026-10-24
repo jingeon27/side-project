@@ -3,6 +3,7 @@ import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/com
 import { ContestCompletionService } from '../analytics/contest-completion.service';
 import { MAINTENANCE_INTERVAL_MS } from '../config/limits';
 import { reportUnexpectedError } from '../monitoring/sentry';
+import { ContestNotificationService } from '../notification/contest-notification.service';
 import { MaintenanceService } from './maintenance.service';
 
 /** 정리 → 종료 기록을 주기마다 한 번씩, 앞선 실행과 겹치지 않게 돌린다. */
@@ -14,6 +15,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly maintenance: MaintenanceService,
     private readonly completion: ContestCompletionService,
+    private readonly notifications: ContestNotificationService,
   ) {}
 
   onModuleInit() {
@@ -60,7 +62,11 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async runSteps() {
-    const steps = [() => this.maintenance.cleanup(), () => this.completion.recordCompletedContests()];
+    const steps = [
+      () => this.maintenance.cleanup(),
+      () => this.completion.recordCompletedContests(),
+      () => this.notifications.sendDue(),
+    ];
     const failures: unknown[] = [];
     for (const step of steps) {
       try {

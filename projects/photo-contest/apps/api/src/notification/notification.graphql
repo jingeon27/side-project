@@ -1,0 +1,43 @@
+enum NotificationType {
+  POST_COMMENT
+  COMMENT_REPLY
+  CONTEST_STARTED
+  CONTEST_ENDED
+  JOIN_REQUESTED
+  JOIN_APPROVED
+  JOIN_REJECTED
+}
+enum NotificationContestFormat {
+  LEGACY
+  POST
+}
+type ActivityNotification {
+  id: ID!
+  type: NotificationType!
+  groupId: ID!
+  groupName: String!
+  postId: ID
+  postTitle: String
+  commentId: ID
+  parentCommentId: ID
+  contestId: ID
+  contestTitle: String
+  contestFormat: NotificationContestFormat
+  joinRequestId: ID
+  actorNickname: String
+  readAt: DateTime
+  createdAt: DateTime!
+}
+type NotificationPage {
+  items: [ActivityNotification!]!
+  unreadCount: Int!
+  hasMore: Boolean!
+}
+type Query {
+  myNotifications(offset: Int = 0, limit: Int = 20): NotificationPage!
+  notificationUnreadCount: Int!
+}
+type Mutation {
+  markNotificationRead(id: ID!): Boolean!
+  markAllNotificationsRead: Boolean!
+}

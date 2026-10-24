@@ -22,6 +22,8 @@ import {
 import { CONTEST_FORMAT } from '../contest/group-contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
+import { NOTIFICATION_TYPE } from '../notification/notification-type';
+import { writeNotifications } from '../notification/notification.writer';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { GroupCategoryService } from './group-category.service';
 import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
@@ -210,10 +212,26 @@ export class GroupService {
       });
       if (existing) return;
       if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE) {
-        await (tx ?? this.db).groupJoinRequest.createMany({
+        const created = await tx.groupJoinRequest.createMany({
           data: [{ groupId, userId: viewer.id }],
           skipDuplicates: true,
         });
+        if (!created.count) return;
+        const request = await tx.groupJoinRequest.findUniqueOrThrow({
+          where: { groupId_userId: { groupId, userId: viewer.id } },
+        });
+        const admins = await this.membership.adminUserIds(groupId, tx);
+        await writeNotifications(
+          tx,
+          admins.map((userId) => ({
+            userId,
+            actorId: viewer.id,
+            groupId,
+            joinRequestId: request.id,
+            type: NOTIFICATION_TYPE.JOIN_REQUESTED,
+            eventKey: `join-request:${request.id}`,
+          })),
+        );
         return;
       }
       // 같은 사용자의 동시 가입도 PK로 한 행만 남긴다.
