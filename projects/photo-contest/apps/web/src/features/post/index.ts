@@ -9,3 +9,4 @@ export { PostMedia } from './ui/PostMedia';
 export { postAttachmentJsonLd, postImageUrls } from './model/post-seo.helper';
 export { PublicGalleryBoard } from './ui/PublicGalleryBoard';
 export { HiddenPostManager } from './ui/HiddenPostManager';
+export { PostCommentsBottomSheet } from './ui/PostCommentsBottomSheet';
