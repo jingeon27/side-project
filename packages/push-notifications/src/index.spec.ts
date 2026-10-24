@@ -72,13 +72,11 @@ describe('Expo push HTTP transport', () => {
   });
 
   it('준비된 영수증의 기기 오류를 반환하고 아직 없는 영수증은 남겨야 한다', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        response({
-          data: { a: { status: 'ok' }, b: { status: 'error', details: { error: 'DeviceNotRegistered' } } },
-        }),
-      );
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      response({
+        data: { a: { status: 'ok' }, b: { status: 'error', details: { error: 'DeviceNotRegistered' } } },
+      }),
+    );
     expect(await new ExpoPushTransport({ fetch: fetcher }).receipts(['a', 'b', 'c'])).toEqual({
       a: { status: 'ok' },
       b: { status: 'error', code: 'DeviceNotRegistered' },
