@@ -46,7 +46,9 @@ test(
       .getByRole('link', { name: 'MY', exact: true })
       .click();
     const profile = await page.getByRole('heading', { name: '큰 화면 사용자', exact: true }).boundingBox();
-    const groupCard = page.getByRole('link', { name: /데스크톱 친구들/ });
+    const groupCard = page
+      .getByRole('region', { name: '참여 그룹', exact: true })
+      .getByRole('link', { name: /데스크톱 친구들/ });
     await expect(groupCard).toBeVisible();
     const card = await groupCard.boundingBox();
     if (!profile || !card) throw new Error('프로필과 내 그룹이 보여야 한다');

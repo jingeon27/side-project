@@ -37,6 +37,7 @@ const ME: NonNullable<MeQuery['me']> = {
   nickname: '진건',
   avatar: null,
   needsOnboarding: false,
+  isAnonymous: false,
 };
 
 let fake: IFakeNativeApp;

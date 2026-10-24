@@ -27,7 +27,7 @@ test(
     await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
     await expect(page.getByRole('img', { name: '알림', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '내 그룹', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: '참여 그룹', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '그룹 만들기', exact: true })).toHaveCount(0);
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
     await expect(latest.getByRole('article')).toHaveCount(3);
@@ -74,7 +74,7 @@ test(
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-photo-feed.png`, fullPage: true });
     await page.getByRole('link', { name: 'MY', exact: true }).click();
-    await expect(page.getByRole('heading', { name: '내 그룹', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '참여 그룹', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: /동네 친구들/ })).toBeVisible();
     await expect(page.getByRole('link', { name: /회사 친구들/ })).toBeVisible();
     await expect(page.getByRole('button', { name: '그룹 만들기', exact: true })).toBeVisible();

@@ -61,11 +61,19 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
           if (operation.operationName === 'Me')
             data = {
               me: signedIn
-                ? { __typename: 'User', id: 'new', nickname: '신규', avatar: null, needsOnboarding: false }
+                ? {
+                    __typename: 'User',
+                    id: 'new',
+                    nickname: '신규',
+                    avatar: null,
+                    needsOnboarding: false,
+                    isAnonymous: false,
+                  }
                 : null,
             };
           if (operation.operationName === 'MyGroups')
             data = { myGroups: state.hasGroup ? [{ ...group, role: 'MEMBER' }] : [] };
+          if (operation.operationName === 'NotificationUnreadCount') data = { notificationUnreadCount: 0 };
           if (operation.operationName === 'DiscoverGroups')
             data = { discoverGroups: [{ ...group, role: state.hasGroup ? 'MEMBER' : null }] };
           if (operation.operationName === 'PublicGalleryPosts') data = { publicGalleryPosts: [] };

@@ -42,6 +42,10 @@ function DesktopNavigation() {
           <UserRound aria-hidden className="size-6" strokeWidth={pathname === ROUTES.ME ? 2.5 : 1.7} />
           MY
         </NavigationLink>
+        <NavigationLink href={ROUTES.NOTIFICATIONS} active={pathname === ROUTES.NOTIFICATIONS}>
+          <Bell aria-hidden className="size-6" strokeWidth={1.7} />
+          알림
+        </NavigationLink>
         <div className="mt-auto px-3 text-caption text-subtle">
           <p className="text-label text-muted">가볍게 올리고, 같이 웃어요.</p>
           <p className="mt-2">사진 · 동영상 · 합성</p>
@@ -106,18 +110,5 @@ export function TopAppBar({ title, backHref, actions, className }: ITopAppBarPro
 }
 
 export function HomeAppBar({ actions, className }: { actions?: ReactNode; className?: string }) {
-  return (
-    <TopAppBar
-      title="홈"
-      className={className}
-      actions={
-        <>
-          <span role="img" aria-label="알림" className="flex size-touch items-center justify-center text-ink">
-            <Bell aria-hidden className="size-6" strokeWidth={1.7} />
-          </span>
-          {actions}
-        </>
-      }
-    />
-  );
+  return <TopAppBar title="홈" className={className} actions={actions} />;
 }
