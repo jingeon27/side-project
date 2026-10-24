@@ -22,8 +22,8 @@ photo_contest_bucket_name = "your-photo-contest-private-bucket"
 # ssh_allowed_cidrs = ["203.0.113.10/32"]
 # ssh_public_key    = "ssh-ed25519 AAAA... operator@example"
 
-# 배포할 rds-receipt.py가 aws-cli를 bridge 네트워크(--network bridge)로 실행하면 2로 둔다.
-# host 네트워크로 바뀐 버전이면 1로 충분하다(variables.tf 설명 참고).
+# 현재 rds-receipt.py는 --network host를 사용하므로 기본 1로 RDS 복구 지점을 조회할 수 있다.
+# 이전 --network bridge 스크립트를 배포할 때만 2가 필요하다(variables.tf 설명 참고).
 # metadata_hop_limit = 1
 
 # 비용에 영향을 주는 값

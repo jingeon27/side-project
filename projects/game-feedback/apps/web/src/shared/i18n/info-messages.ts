@@ -180,7 +180,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'Tell us about problems, ideas or ways you would like to help improve the service.',
     '困った点やアイデア、サービスを良くするためのご意見をお寄せください。',
   ],
-  '운영 문의': ['Service support', '運営へのお問い合わせ'],
+  '운영 및 광고 문의': ['Support and advertising inquiries', '運営・広告に関するお問い合わせ'],
   '문제 상황과 발생 시간을 함께 알려주시면 확인에 도움이 됩니다. 비밀번호나 다른 사람의 개인정보는 보내지 마세요.':
     [
       'Include what happened and when it happened to help us investigate. Do not send passwords or other people’s personal information.',

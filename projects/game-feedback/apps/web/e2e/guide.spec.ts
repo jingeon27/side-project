@@ -14,6 +14,8 @@ for (const { width, locale } of [
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/${locale}/guide`);
     const guide = page.getByRole('article');
+    await expect(guide).toHaveClass('info-card');
+    await expect(guide.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(guide).toHaveAttribute('lang', locale);
     await expect(guide.getByRole('heading', { level: 2 })).toHaveCount(9);
     await expect(guide.getByRole('term')).toHaveCount(5);

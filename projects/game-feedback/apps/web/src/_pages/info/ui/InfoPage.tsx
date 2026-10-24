@@ -36,8 +36,8 @@ export function InfoPage({ kind, locale }: { kind: TInfoKind; locale: string }) 
           {translate(language, '홈')}
         </BackLink>
       )}
-      <article className={kind === 'guide' ? 'guide-page' : 'info-card'} lang={language}>
-        {kind !== 'guide' && <h1>{translate(language, infoTitles[kind])}</h1>}
+      <article className="info-card" lang={language}>
+        <h1>{translate(language, infoTitles[kind])}</h1>
         {match(kind)
           .with('guide', () => <GuideContent locale={language} />)
           .with('terms', () => <TermsContent locale={language} />)

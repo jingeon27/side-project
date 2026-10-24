@@ -230,11 +230,13 @@
     align-items: center;
     gap: 7px;
   }
-  .info-card > p {
+  .info-card p {
     font-size: var(--text-body);
     color: var(--color-muted);
     line-height: 1.95;
     margin: 14px 0;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
   }
   .info-card .info-lead {
     font-size: var(--text-body);
@@ -280,7 +282,7 @@
     .info-card .info-lead {
       font-size: var(--text-body);
     }
-    .info-card > p {
+    .info-card p {
       font-size: var(--text-caption);
     }
   }
