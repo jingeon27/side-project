@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 
+import { Mention } from '@side/design-system';
+
 import type { Comment } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { timeAgo } from '@/shared/lib/date';
@@ -15,6 +17,7 @@ interface ICommentItemProps {
   actions?: ReactNode;
   isPostAuthor?: boolean;
   mine: boolean;
+  replyToName?: string;
 }
 
 export function CommentItem({
@@ -24,6 +27,7 @@ export function CommentItem({
   actions,
   isPostAuthor,
   mine,
+  replyToName,
 }: ICommentItemProps) {
   const isSSR = useIsSSR();
   const { t, locale: textLocale } = useI18n();
@@ -42,7 +46,14 @@ export function CommentItem({
           {isPostAuthor && <span className="comment-author-label">{t('작성자')}</span>}
           {authorContent}
         </div>
-        <p className="comment-bubble">{comment.body}</p>
+        <p className="comment-bubble">
+          {replyToName && (
+            <>
+              <Mention nickname={replyToName} />{' '}
+            </>
+          )}
+          {comment.body}
+        </p>
         <div className="comment-meta">
           <time dateTime={comment.createdAt}>
             {isSSR
