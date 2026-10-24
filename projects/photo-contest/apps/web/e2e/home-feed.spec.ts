@@ -25,7 +25,7 @@ test(
 
     await page.goto('/');
     await expect(page.getByRole('heading', { name: '홈', exact: true })).toBeVisible();
-    await expect(page.getByRole('img', { name: '알림', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: '알림 0개', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '참여 그룹', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '그룹 만들기', exact: true })).toHaveCount(0);
@@ -75,8 +75,9 @@ test(
     await page.screenshot({ path: `.data/screens/${testInfo.project.name}-photo-feed.png`, fullPage: true });
     await page.getByRole('link', { name: 'MY', exact: true }).click();
     await expect(page.getByRole('heading', { name: '참여 그룹', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: /동네 친구들/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /회사 친구들/ })).toBeVisible();
+    const groups = page.getByRole('region', { name: '참여 그룹', exact: true });
+    await expect(groups.getByRole('link', { name: /동네 친구들/ })).toBeVisible();
+    await expect(groups.getByRole('link', { name: /회사 친구들/ })).toBeVisible();
     await expect(page.getByRole('button', { name: '그룹 만들기', exact: true })).toBeVisible();
     await expect(page.getByText('가입하지 않은 비밀 그룹', { exact: true })).toHaveCount(0);
     if (testInfo.project.name === 'desktop-chrome') {

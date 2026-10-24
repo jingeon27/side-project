@@ -5,12 +5,10 @@ const origin = 'http://127.0.0.1:3353';
 
 function trackPrefetches(page: Page) {
   const completed = new Set<string>();
-  page.on('response', (response) => {
-    const headers = response.request().headers();
+  page.on('requestfinished', (request) => {
+    const headers = request.headers();
     if (!headers['next-router-prefetch'] && !headers['next-router-segment-prefetch']) return;
-    void response.finished().then((error) => {
-      if (!error && response.ok()) completed.add(new URL(response.url()).pathname);
-    });
+    completed.add(new URL(request.url()).pathname);
   });
   return async (path: string) => expect.poll(() => completed.has(path)).toBe(true);
 }

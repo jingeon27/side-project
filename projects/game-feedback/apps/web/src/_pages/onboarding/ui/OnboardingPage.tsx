@@ -12,7 +12,7 @@ import { completeOnboardingMutationOptions, sessionOptions } from '@/features/au
 import { useI18n } from '@/shared/i18n';
 import { LoadingState, useNotify } from '@/shared/ui';
 import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
-import { ConnectProfile } from '@/widgets/game-profile';
+import { GameProfileLookup } from '@/widgets/game-profile';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
   const client = useQueryClient();
@@ -62,7 +62,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
         <section className="info-card" aria-labelledby="onboarding-game-profile-title">
           <h2 id="onboarding-game-profile-title">{t('게임 프로필 연결 (선택)')}</h2>
           <p>{t('태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.')}</p>
-          <ConnectProfile
+          <GameProfileLookup
             disabled={onboarding.isPending || isFetching}
             onSelectionChange={(profile) => setPlayerTag(profile?.playerTag ?? null)}
           />

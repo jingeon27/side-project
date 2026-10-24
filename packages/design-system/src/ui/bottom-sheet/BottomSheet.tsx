@@ -22,7 +22,10 @@ export interface IBottomSheetProps {
   title: string;
   description?: ReactNode;
   children: ReactNode;
+  footer?: ReactNode;
+  responsive?: boolean;
   dismissible?: boolean;
+  showCloseButton?: boolean;
   closeLabel?: string;
   resizeLabel?: string;
   container?: ComponentProps<typeof Drawer.Portal>['container'];
@@ -36,7 +39,10 @@ export function BottomSheet({
   title,
   description,
   children,
+  footer,
+  responsive = false,
   dismissible = true,
+  showCloseButton = true,
   closeLabel = '닫기',
   resizeLabel = '시트 높이 조절',
   container,
@@ -67,8 +73,12 @@ export function BottomSheet({
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal container={container}>
           <Drawer.Backdrop className={dialogStyles.backdrop} />
-          <Drawer.Viewport className="ds-sheet-viewport">
-            <Drawer.Popup className={cn('ds-sheet-popup', className)} data-slot="bottom-sheet-content">
+          <Drawer.Viewport className="ds-sheet-viewport" data-responsive={responsive || undefined}>
+            <Drawer.Popup
+              className={cn('ds-sheet-popup', className)}
+              data-slot="bottom-sheet-content"
+              data-responsive={responsive || undefined}
+            >
               <div className="ds-sheet-frame">
                 <div className="ds-sheet-header">
                   <div
@@ -101,7 +111,9 @@ export function BottomSheet({
                   >
                     <span className="ds-sheet-grip" aria-hidden="true" />
                   </div>
-                  <div className={cn('px-6 pb-5', dismissible && 'pr-16')}>
+                  <div
+                    className={cn('ds-sheet-heading px-6 pb-5', dismissible && showCloseButton && 'pr-16')}
+                  >
                     <Drawer.Title className={dialogStyles.title}>{title}</Drawer.Title>
                     {description ? (
                       <Drawer.Description className={dialogStyles.description}>
@@ -109,7 +121,7 @@ export function BottomSheet({
                       </Drawer.Description>
                     ) : null}
                   </div>
-                  {dismissible && (
+                  {dismissible && showCloseButton && (
                     <Drawer.Close
                       render={<Button variant="ghost" size="icon" className="absolute right-3 top-11" />}
                     >
@@ -119,6 +131,11 @@ export function BottomSheet({
                   )}
                 </div>
                 <Drawer.Content className="ds-sheet-body">{children}</Drawer.Content>
+                {footer ? (
+                  <div className="ds-sheet-footer" data-slot="bottom-sheet-footer">
+                    {footer}
+                  </div>
+                ) : null}
               </div>
             </Drawer.Popup>
           </Drawer.Viewport>

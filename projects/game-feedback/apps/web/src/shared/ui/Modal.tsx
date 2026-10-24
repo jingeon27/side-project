@@ -2,9 +2,9 @@
 
 import type { ReactNode } from 'react';
 
-import { Dialog } from '@side/design-system';
-
 import { useI18n } from '@/shared/i18n';
+
+import { BottomSheet } from './BottomSheet';
 
 interface IModalProps {
   open: boolean;
@@ -12,21 +12,29 @@ interface IModalProps {
   title: string;
   description: string;
   children: ReactNode;
+  footer?: ReactNode;
   dismissible?: boolean;
 }
-export function Modal({ open, onOpenChange, title, description, children, dismissible = true }: IModalProps) {
+export function Modal({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  footer,
+  dismissible = true,
+}: IModalProps) {
   const { t } = useI18n();
   return (
-    <Dialog
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       title={t(title)}
       description={t(description)}
       dismissible={dismissible}
-      closeLabel={t('닫기')}
-      className="dialog-content max-w-md"
+      footer={footer}
     >
       {children}
-    </Dialog>
+    </BottomSheet>
   );
 }
