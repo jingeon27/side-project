@@ -56,6 +56,9 @@ export function readNativeAppInfo(win: TBridgeWindow | undefined): TNativeAppInf
 
 /** 사용자가 시스템 브라우저나 공유 시트에 머무는 시간이 길어 요청마다 기다리는 시간이 다르다. */
 const DEFAULT_TIMEOUT_MS: Record<TWebRequestType, number> = {
+  'notifications.registration': 2 * 60_000,
+  'notifications.badge': 10_000,
+  'notifications.settings': 10_000,
   'share.open': 5 * 60_000,
   'clipboard.copy': 10_000,
   'haptics.impact': 5_000,

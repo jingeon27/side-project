@@ -32,8 +32,31 @@ export function originOf(url: string): string | null {
 const messageId = z.string().min(1).max(64);
 const pathValue = z.string().min(1).max(2048);
 
+export const PushRegistrationSchema = z
+  .object({
+    installationId: z.uuidv4(),
+    platform: z.enum(['ios', 'android']),
+    status: z.enum(['granted', 'denied', 'undetermined', 'unavailable']),
+    token: z
+      .string()
+      .regex(/^(?:Expo|Exponent)PushToken\[[A-Za-z0-9_-]{16,200}\]$/)
+      .nullable(),
+  })
+  .strict()
+  .refine((value) => (value.status === 'granted') === (value.token !== null));
+export type TPushRegistration = z.infer<typeof PushRegistrationSchema>;
+
 /** 웹이 앱에 요청하고 결과를 기다리는 기능 */
 export const WEB_REQUEST = {
+  'notifications.registration': {
+    payload: z.object({ requestPermission: z.boolean() }),
+    result: PushRegistrationSchema,
+  },
+  'notifications.badge': {
+    payload: z.object({ count: z.int().min(0).max(9999) }),
+    result: z.object({ updated: z.boolean() }),
+  },
+  'notifications.settings': { payload: z.object({}), result: z.object({ opened: z.boolean() }) },
   'share.open': {
     payload: z.object({
       url: httpUrl,
@@ -99,6 +122,7 @@ const RELATIVE_PATH = /^\/(?![/\\])[^\s]*$/;
 
 /** 앱 → 웹 알림 (응답 없음) */
 export const NATIVE_EVENT = {
+  'notifications.received': z.object({}),
   'app.state': z.object({ state: z.enum(['active', 'background']) }),
   /** 딥링크·알림을 눌러 앱이 열렸을 때 웹이 그 경로로 이동한다. */
   'navigation.open': z.object({ path: z.string().max(2048).regex(RELATIVE_PATH) }),
@@ -129,6 +153,28 @@ const responseSchema = z.discriminatedUnion('ok', [
 export type TBridgeResponse = z.output<typeof responseSchema>;
 
 const webRequestSchema = z.discriminatedUnion('type', [
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('request'),
+    id: messageId,
+    type: z.literal('notifications.registration'),
+    payload: WEB_REQUEST['notifications.registration'].payload,
+  }),
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('request'),
+    id: messageId,
+    type: z.literal('notifications.badge'),
+    payload: WEB_REQUEST['notifications.badge'].payload,
+  }),
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('request'),
+    id: messageId,
+    type: z.literal('notifications.settings'),
+    payload: WEB_REQUEST['notifications.settings'].payload,
+  }),
+
   z.object({
     v: z.literal(PROTOCOL_VERSION),
     kind: z.literal('request'),
@@ -205,6 +251,12 @@ const nativeRequestSchema = z.object({
 export type TNativeRequestMessage = z.output<typeof nativeRequestSchema>;
 
 const nativeEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    v: z.literal(PROTOCOL_VERSION),
+    kind: z.literal('event'),
+    type: z.literal('notifications.received'),
+    payload: NATIVE_EVENT['notifications.received'],
+  }),
   z.object({
     v: z.literal(PROTOCOL_VERSION),
     kind: z.literal('event'),
