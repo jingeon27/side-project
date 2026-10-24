@@ -49,26 +49,28 @@ export function ClearConversationDialog({
       description={t(
         '현재까지의 대화내역을 내 계정에서 삭제합니다. 상대방의 내역은 유지되며, 새 메시지는 다시 받을 수 있어요.',
       )}
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={mutation.isPending}
+            onClick={() => onOpenChange(false)}
+          >
+            {t('취소')}
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            loading={mutation.isPending}
+            onClick={() => void handleClear()}
+          >
+            {t('대화내역 삭제')}
+          </Button>
+        </>
+      }
     >
-      <div className="form-stack">
-        <ErrorNotice message={mutation.error?.message} />
-        <Button
-          type="button"
-          variant="danger"
-          loading={mutation.isPending}
-          onClick={() => void handleClear()}
-        >
-          {t('대화내역 삭제')}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={mutation.isPending}
-          onClick={() => onOpenChange(false)}
-        >
-          {t('취소')}
-        </Button>
-      </div>
+      <ErrorNotice message={mutation.error?.message} />
     </Modal>
   );
 }

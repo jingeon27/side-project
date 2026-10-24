@@ -44,6 +44,8 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
 - `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·PageUp·PageDown·Home·End·Enter·Space 조작도 지원하며 현재 높이를 `aria-valuetext`(60%·100%)로 알린다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 소비 앱에서 번역한다. 나머지 제어 props는 Dialog와 동일하며, `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 기존 `Dialog placement="bottom"`은 제스처가 없는 하단 배치 API로 유지한다.
 
+`BottomSheet`의 `footer`는 스크롤 본문 밖 하단에 작업 버튼을 가로로 배치한다. 본문 폼에 `id`를 주고 제출 버튼의 `form`에 연결하면 기본 폼 검증·Enter 제출도 유지된다. `responsive`를 켜면 CSS 미디어쿼리로 768px부터 같은 팝업을 중앙 모달로 표시한다. 화면 크기가 바뀌어도 입력과 포커스는 같은 인스턴스에 남는다. `showCloseButton={false}`는 상단 X를 숨기며, Esc·바깥 클릭의 허용 여부는 `dismissible`로 정한다. Game Feedback은 반응형 표시와 하단 작업 버튼을 쓰고 상단 X를 숨긴다.
+
 컴포넌트는 모두 `className`을 지원한다. 클래스 병합은 공통 `cn`을 사용하며 뒤의 같은 종류 값이 우선한다. 공개 props 타입은 `I` 접두사, 배지 tone 타입은 `TBadgeTone`으로 내보낸다. 루트 진입점의 값은 `@side/design-system/ui/<폴더>` 하위 경로에서도 같은 객체로 가져올 수 있으며 모든 `src/ui/*` 폴더는 `index.ts`를 둔다(`package-exports.spec.ts`).
 
 Photo Contest의 `AlertDialog`·바텀시트는 앱에 남는다. 그 앱은 `dialogStyles.backdrop|viewport|popup|title|description`을 재사용하면서 history·portal·비동기 확인 동작을 유지한다. 일반 `Dialog`도 뒤로 가기나 라우트 변경을 직접 관리하지 않는다. 그런 흐름은 앱에서 연결한다.

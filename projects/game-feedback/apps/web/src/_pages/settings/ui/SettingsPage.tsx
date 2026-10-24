@@ -14,7 +14,7 @@ import { blockListOptions, unblockUserMutationOptions, UserBadges } from '@/feat
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
 import { ChildLink } from '@/shared/navigation';
-import { Avatar, BottomSheet, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
+import { Avatar, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 import { ConnectProfile } from '@/widgets/game-profile';
 import { SupportChatButton } from '@/widgets/support';
@@ -28,25 +28,20 @@ import { ThemeSettings } from './ThemeSettings';
 interface ISettingsPageProps {
   locale: string;
 }
-function openProfileConnection(t: (message: string) => string) {
+function openProfileConnection() {
   openOverlay(({ isOpen, close, unmount }) => (
-    <BottomSheet
+    <ConnectProfile
       open={isOpen}
       onOpenChange={(open) => {
         if (open) return;
         close();
         unmount();
       }}
-      title={t('게임 계정 등록')}
-      description={t('플레이어 태그로 트로피와 아레나를 확인해요.')}
-    >
-      <ConnectProfile
-        onSaved={() => {
-          close();
-          unmount();
-        }}
-      />
-    </BottomSheet>
+      onSaved={() => {
+        close();
+        unmount();
+      }}
+    />
   ));
 }
 function openAccountDeletion() {
@@ -105,7 +100,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
                 date: formatDate(session.user.createdAt, textLocale),
               })}
             </p>
-            <Link className="text-button" href={`/${locale}/users/${session.user.id}`}>
+            <Link className="text-action" href={`/${locale}/users/${session.user.id}`}>
               {t('공개 프로필 보기 →')}
             </Link>
           </div>
@@ -121,7 +116,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
             <Gamepad2 size={20} />
             {t('게임 계정')}
           </h2>
-          <button className="text-button" onClick={() => openProfileConnection(t)}>
+          <button className="text-action" onClick={() => openProfileConnection()}>
             <Plus size={16} />
             {t('계정 등록')}
           </button>

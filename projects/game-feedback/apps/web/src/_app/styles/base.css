@@ -43,7 +43,7 @@
   .centered {
     text-align: center;
   }
-  .text-button {
+  .text-action {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -51,7 +51,7 @@
     font-size: var(--text-caption);
     padding: 3px 0;
   }
-  .text-button:hover {
+  .text-action:hover {
     text-decoration: underline;
   }
   .danger-text {
