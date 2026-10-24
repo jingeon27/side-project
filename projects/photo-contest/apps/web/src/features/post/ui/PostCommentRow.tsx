@@ -3,6 +3,8 @@
 import { useFragment, useMutation } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 
+import { Mention } from '@side/design-system';
+
 import {
   DeletePostCommentDocument,
   PostCommentCardFragmentDoc,
@@ -21,10 +23,12 @@ export function PostCommentRow({
   id,
   viewerId,
   postAuthorId,
+  replyToName,
 }: {
   id: string;
   viewerId?: string;
   postAuthorId?: string;
+  replyToName?: string;
 }) {
   const { data: comment, complete } = useFragment({
     fragment: PostCommentCardFragmentDoc,
@@ -37,7 +41,7 @@ export function PostCommentRow({
   if (!complete) return null;
   const isMine = comment.author.id === viewerId;
   return (
-    <div className="flex items-start gap-3">
+    <div id={`comment-${id}`} className="flex scroll-mt-6 items-start gap-3">
       <Avatar name={comment.author.nickname} src={comment.author.avatar} size="sm" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="flex flex-wrap items-center gap-1.5 text-caption font-semibold text-ink">
@@ -53,6 +57,11 @@ export function PostCommentRow({
             isMine ? 'bg-sunken text-ink' : 'bg-surface text-ink',
           )}
         >
+          {replyToName ? (
+            <>
+              <Mention nickname={replyToName} />{' '}
+            </>
+          ) : null}
           {comment.body}
         </p>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
