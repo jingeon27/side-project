@@ -323,11 +323,11 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 export type Conversation = z.infer<typeof ConversationSchema>;
 export type ConversationList = z.infer<typeof ConversationListSchema>;
 export type ChatMessageList = z.infer<typeof ChatMessageListSchema>;
-export const PLAYER_TAG_PATTERN = /^#?[A-Za-z0-9]{8}$/;
+export const PLAYER_TAG_PATTERN = /^#?[A-Za-z0-9]{1,15}$/;
 export const PlayerTagSchema = z
   .string()
   .trim()
-  .regex(PLAYER_TAG_PATTERN, '# 뒤에 영문과 숫자로 된 8자리 태그를 입력해주세요.')
+  .regex(PLAYER_TAG_PATTERN, '# 뒤에 영문과 숫자로 된 플레이어 태그를 입력해주세요.')
   .transform((value) => `#${value.replace(/^#/, '').toUpperCase()}`);
 export const NicknameSchema = z
   .string()

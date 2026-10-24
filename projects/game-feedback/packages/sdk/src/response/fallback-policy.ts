@@ -20,7 +20,7 @@ const policies = {
   supercellTag: {
     schema: z
       .string()
-      .regex(/^#[A-Z0-9]{8}$/)
+      .regex(/^#[A-Z0-9]{1,15}$/)
       .nullable()
       .catch(null),
     fallback: null,

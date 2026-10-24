@@ -2703,7 +2703,7 @@ export const ListGameAccountsResponseItem = zod.object({
 export const ListGameAccountsResponse = zod.array(ListGameAccountsResponseItem)
 
 
-export const saveGameAccountBodyPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{8}$');
+export const saveGameAccountBodyPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{1,15}$');
 
 
 export const SaveGameAccountBody = zod.object({
