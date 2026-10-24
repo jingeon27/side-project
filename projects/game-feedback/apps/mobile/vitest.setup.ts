@@ -27,3 +27,10 @@ afterEach(() => {
   vi.clearAllMocks();
   vi.restoreAllMocks();
 });
+
+vi.mock('expo-device', () => ({ isDevice: false }));
+vi.mock('expo-notifications', () => ({}));
+vi.mock('expo-constants', () => ({ default: {} }));
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => undefined) },
+}));

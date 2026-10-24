@@ -4,12 +4,16 @@ import {
   type TLoginProvider,
   type TLoginResult,
   type TNativeMessage,
+  type TPushRegistration,
 } from '@game-feedback/bridge';
 
 interface INativeHostOptions {
   origin: string;
   send: (message: TNativeMessage) => void;
   login: (provider: TLoginProvider) => Promise<TLoginResult>;
+  getPushRegistration?: (requestPermission: boolean) => Promise<TPushRegistration>;
+  openPushSettings?: () => Promise<unknown>;
+  setPushBadge?: (count: number) => Promise<unknown>;
   onLocation: (path: string) => void;
   onReady?: () => void;
   onOverlayChange?: (open: boolean) => void;
@@ -63,6 +67,18 @@ export class NativeHost {
       }
       this.finishBack(message.handled);
     }
+    if (message.type === 'push-request' && this.options.getPushRegistration) {
+      const started = this.generation;
+      void this.options
+        .getPushRegistration(message.requestPermission)
+        .catch(() => null)
+        .then((registration) => {
+          if (this.generation === started)
+            this.options.send({ type: 'push-result', id: message.id, registration });
+        });
+    }
+    if (message.type === 'push-settings') void this.options.openPushSettings?.().catch(() => undefined);
+    if (message.type === 'push-badge') void this.options.setPushBadge?.(message.count).catch(() => undefined);
     if (message.type === 'auth-request') {
       if (this.authPending) {
         this.options.send({ type: 'auth-result', id: message.id, status: 'cancelled' });
@@ -86,6 +102,10 @@ export class NativeHost {
     if (!this.ready || !parsed.success) return false;
     this.options.send({ type: 'open', path: parsed.data });
     return true;
+  };
+
+  pushReceived = () => {
+    if (this.ready) this.options.send({ type: 'push-received' });
   };
 
   state = (state: 'active' | 'background') => {

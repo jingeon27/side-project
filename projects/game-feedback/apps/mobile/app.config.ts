@@ -62,6 +62,12 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
   const domainMode = isDevelopment ? '?mode=developer' : '';
   return {
     ...config,
+    extra: {
+      ...config.extra,
+      ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+        ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } }
+        : {}),
+    },
     name: 'Game Mate',
     icon: './assets/icon.png',
     slug: 'game-feedback',
@@ -109,6 +115,9 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
           }
         : {}),
     },
-    plugins: [['expo-build-properties', { android: isDevelopment ? { usesCleartextTraffic: true } : {} }]],
+    plugins: [
+      ['expo-notifications', { defaultChannel: 'activity' }],
+      ['expo-build-properties', { android: isDevelopment ? { usesCleartextTraffic: true } : {} }],
+    ],
   };
 }

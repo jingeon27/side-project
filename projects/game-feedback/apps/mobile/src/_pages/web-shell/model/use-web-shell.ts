@@ -8,6 +8,14 @@ import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge
 import { NativeHost, nativeLogin } from '@/features/bridge';
 import { decideNavigation, decideSubframeNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
 import { APP_VERSION, WEB_ORIGIN } from '@/shared/config/env';
+import {
+  getPushRegistration,
+  openPushSettings,
+  PushInbox,
+  setPushBadge,
+  supportsNativePush,
+  usePushEvents,
+} from '@/shared/lib/push';
 
 import { isLoadFailure } from '../lib/load-error';
 import { useShellLifecycle } from './use-shell-lifecycle';
@@ -19,20 +27,26 @@ export function useWebShell() {
     channel.subscribe,
     channel.getSnapshot,
   );
+  const [pushInbox] = useState(() => new PushInbox());
   const [host] = useState(
     () =>
       new NativeHost({
         origin: WEB_ORIGIN,
         send: (message) => channel.inject(buildDispatchScript(message)),
+        ...(supportsNativePush() ? { getPushRegistration, setPushBadge, openPushSettings } : {}),
         login: (provider) => nativeLogin(WEB_ORIGIN, provider),
         onLocation: (path) => {
           channel.rememberUrl(`${WEB_ORIGIN}${path}`);
         },
-        onReady: channel.finishLoading,
+        onReady: () => {
+          channel.finishLoading();
+          pushInbox.flush();
+        },
         onOverlayChange: channel.setOverlayOpen,
         onRootBack: () => BackHandler.exitApp(),
       }),
   );
+  usePushEvents(pushInbox, host.open, host.pushReceived);
   useEffect(() => () => host.reset(), [host]);
   const handleOpenLink = useCallback(
     (url: string) => {
@@ -85,8 +99,11 @@ export function useWebShell() {
     sharedCookiesEnabled: true,
     thirdPartyCookiesEnabled: true,
     applicationNameForUserAgent: `GameFeedbackApp/${APP_VERSION}`,
-    injectedJavaScriptBeforeContentLoaded: buildBootstrapScript(APP_VERSION),
-    injectedJavaScript: buildBootstrapScript(APP_VERSION),
+    injectedJavaScriptBeforeContentLoaded: buildBootstrapScript(
+      APP_VERSION,
+      supportsNativePush() ? ['push'] : [],
+    ),
+    injectedJavaScript: buildBootstrapScript(APP_VERSION, supportsNativePush() ? ['push'] : []),
     contentInsetAdjustmentBehavior: 'never',
     webviewDebuggingEnabled: __DEV__,
     allowsBackForwardNavigationGestures: !overlayOpen,
