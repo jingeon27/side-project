@@ -1,6 +1,6 @@
 import { Inject, Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 
-import { requireAdmin, requireUser } from '../../auth/session-access';
+import { requireAdmin, requireProfileLookupSession, requireUser } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../../config/app.config';
 import { ApiError } from './api-error';
@@ -8,6 +8,12 @@ import { ApiError } from './api-error';
 export class UserGuard implements CanActivate {
   canActivate(context: ExecutionContext) {
     requireUser(context.switchToHttp().getRequest<SessionRequest>());
+    return true;
+  }
+}
+export class ProfileLookupGuard implements CanActivate {
+  canActivate(context: ExecutionContext) {
+    requireProfileLookupSession(context.switchToHttp().getRequest<SessionRequest>());
     return true;
   }
 }

@@ -4,7 +4,7 @@ import { PlayerTagSchema } from '@game-feedback/contracts';
 
 import type { SessionRequest } from '../auth/session.types';
 import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
-import { UserGuard } from '../common/http/session.guard';
+import { ProfileLookupGuard, UserGuard } from '../common/http/session.guard';
 import { GameAccountDto } from './game-account-input.dto';
 import { GameProfilesService } from './game-profiles.service';
 
@@ -13,7 +13,7 @@ export class GameProfilesController {
   constructor(@Inject(GameProfilesService) private readonly profiles: GameProfilesService) {}
 
   @Get('game-profiles/:playerTag')
-  @UseGuards(UserGuard)
+  @UseGuards(ProfileLookupGuard)
   lookup(
     @Req() req: SessionRequest,
     @Param('playerTag', new ContractValuePipe(PlayerTagSchema)) playerTag: string,
