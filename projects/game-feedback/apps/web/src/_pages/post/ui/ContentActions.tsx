@@ -35,7 +35,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
     return (
       <div className="content-actions">
         <button
-          className="text-button"
+          className="text-action"
           onClick={() =>
             openOverlay(({ isOpen, close, unmount }) => {
               const onOpenChange = (next: boolean) => {
@@ -61,7 +61,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
           {t('수정')}
         </button>
         <button
-          className="text-button danger-text"
+          className="text-action danger-text"
           onClick={() =>
             openOverlay(({ isOpen, close, unmount }) => (
               <ContentDeleteDialog
@@ -88,7 +88,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
     <div className="content-actions">
       {type !== 'POST' && <StartChatLink source="comment" userId={author.id} nickname={author.nickname} />}
       <button
-        className="text-button"
+        className="text-action"
         onClick={() => {
           if (!session?.user) {
             login();
@@ -112,7 +112,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         {t('신고')}
       </button>
       <button
-        className="text-button"
+        className="text-action"
         onClick={() => {
           if (!session?.user) {
             login();

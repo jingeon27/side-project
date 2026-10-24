@@ -1,3 +1,13 @@
+# 2026-10-22 반응형 팝업과 하단 작업 버튼·로그인 hover
+
+Game Feedback의 입력·신고·삭제·차단·채팅 기록 삭제·계정 등록·탈퇴 창과 로그인창을 공통 반응형 팝업에 연결했다. CSS 미디어쿼리로 768px 미만은 BottomSheet, 그 이상은 중앙 모달로 표시한다. 하나의 Drawer 인스턴스와 본문을 유지해 화면 크기를 바꿔도 입력·포커스를 보존한다. 앱 WebView의 전용 로그인 페이지와 OAuth 복귀 경로는 유지한다.
+
+작업 버튼은 스크롤 본문 밖 하단 `footer`에 가로로 배치하고 상단 X를 숨겼다. 본문 폼의 `id`와 하단 제출 버튼의 `form` 속성을 연결해 HTML 검증·Enter 제출을 유지한다. 진행 중 닫기 방지도 기존 mutation 상태로 제어한다. 게임 계정 등록은 조회·등록 버튼을 같은 하단 영역에서 전환하며 이미지 보기와 로그인창은 하단 닫기 버튼을 제공한다.
+
+공통 디자인 시스템에 `footer`·`responsive`·`showCloseButton`을 더한 이유는 시트 높이·본문 스크롤·포커스와 하단 영역을 같은 primitive에서 관리하기 위해서다. 새 반응형 동작과 X 숨김은 소비 앱이 선택하며 Game Feedback에서 켰다. 로그인 hover는 제공자 배경을 상태별로 유지하고, 공용 `text-button` 타이포 유틸리티와 겹치던 앱의 링크 스타일 이름을 `text-action`으로 분리해 브랜드 배경이 지워지거나 밑줄이 생기는 문제를 고쳤다.
+
+검증(Node 24, `side-project-local`): Web 타입·lint, 디자인 시스템 타입·lint, Web unit/UI 192개·디자인 시스템 137개가 통과했다. 실제 Next production build/start와 격리 테스트 DB의 Playwright 8개로 네 제공자 hover 색·밑줄, 모바일 시트·데스크톱 모달, 드래그·터치·키보드, 화면 크기 변경 시 입력·단일 창 유지, 하단 가로 배치·스크롤 고정·폼 제출·취소·포커스 복귀와 기존 OAuth 복귀 경로를 확인했다. 테스트 스키마는 teardown으로 정리하고 테스트 DB도 종료했다. 외부 OAuth와 실제 기기 키보드는 이번 검증에 포함하지 않았다.
+
 # 2026-10-22 API·패키지 ESLint와 엄격한 tsconfig 연결
 
 PR #49 병합 후 후속 충돌 해소: develop `899349f7`을 병합했다. 공용 ESLint README에 React DOM 접근성 preset·모바일 FSD 경계와 #50의 API·패키지·migration-check 적용 범위를 모두 남겼다. 자동 병합된 오류 경계와 글쓰기 테스트는 `override`·`on*` 콜백을 함께 유지했다. Node 24에서 immutable 설치, Game Feedback 집계 `check`, photo-contest 전체 타입·루트/Web/Mobile lint, design-system 타입·lint, eslint-config `check`(89개), migration-check `check`(70개), Admin 21개와 photo-contest 글쓰기·오류 경계 테스트가 통과했다. SDK 재생성 추가 diff가 없었다. 이번 후속 병합은 API 구현·계약을 바꾸지 않았으며 DB 통합·브라우저 E2E·운영 빌드는 다시 실행하지 않았다.

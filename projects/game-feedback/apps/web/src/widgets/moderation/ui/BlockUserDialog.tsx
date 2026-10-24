@@ -36,32 +36,23 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
       description={t(
         '서로의 게시글과 대화가 숨겨지며 메시지를 더 이상 주고받을 수 없어요. 설정에서 차단을 해제할 수 있습니다.',
       )}
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            type="button"
+            disabled={mutation.isPending}
+            onClick={() => onOpenChange(false)}
+          >
+            {t('돌아가기')}
+          </Button>
+          <Button variant="danger" type="button" loading={mutation.isPending} onClick={handleBlock}>
+            {t('차단하기')}
+          </Button>
+        </>
+      }
     >
-      <div className="form-stack">
-        <ErrorNotice message={mutation.error?.message} />
-        <Button
-          variant="danger"
-          size="lg"
-          fullWidth
-          type="button"
-          className="button danger full"
-          loading={mutation.isPending}
-          onClick={handleBlock}
-        >
-          {t('차단하기')}
-        </Button>
-        <Button
-          variant="secondary"
-          size="lg"
-          fullWidth
-          className="button outline full"
-          type="button"
-          disabled={mutation.isPending}
-          onClick={() => onOpenChange(false)}
-        >
-          {t('돌아가기')}
-        </Button>
-      </div>
+      <ErrorNotice message={mutation.error?.message} />
     </Modal>
   );
 }

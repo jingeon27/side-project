@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+
 import { LoaderCircle } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
@@ -21,6 +23,7 @@ interface IContentEditDialogProps {
 }
 export function ContentEditDialog({ open, onOpenChange, type, id, body }: IContentEditDialogProps) {
   const { t } = useI18n();
+  const formId = useId();
   const answer = useUpdateAnswerMutation(),
     comment = useUpdateCommentMutation(),
     notify = useNotify(),
@@ -34,8 +37,20 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
       dismissible={!isPending}
       title={type === 'ANSWER' ? t('피드백 수정') : t('댓글 수정')}
       description={t('나누고 싶은 내용을 다듬어주세요.')}
+      footer={
+        <>
+          <Button variant="secondary" type="button" disabled={isPending} onClick={() => onOpenChange(false)}>
+            {t('취소')}
+          </Button>
+          <Button variant="primary" size="lg" type="submit" form={formId} disabled={isPending}>
+            {isPending && <LoaderCircle className="spin" size={16} />}
+            {t('수정 완료')}
+          </Button>
+        </>
+      }
     >
       <form
+        id={formId}
         className="form-stack"
         onSubmit={form.handleSubmit(async (values) => {
           try {
@@ -57,17 +72,6 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
           required
         />
         <ErrorNotice message={error?.message || form.formState.errors.body?.message} />
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          type="submit"
-          className="button primary full"
-          disabled={isPending}
-        >
-          {isPending && <LoaderCircle className="spin" size={16} />}
-          {t('수정 완료')}
-        </Button>
       </form>
     </BottomSheet>
   );

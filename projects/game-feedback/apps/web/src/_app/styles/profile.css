@@ -268,7 +268,7 @@
     .settings-card h2 {
       font-size: var(--text-body);
     }
-    .settings-card .section-title-row .text-button {
+    .settings-card .section-title-row .text-action {
       font-size: var(--text-micro);
     }
     .info-card {

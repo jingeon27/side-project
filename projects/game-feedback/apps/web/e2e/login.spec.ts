@@ -22,7 +22,7 @@ async function configureProviders(page: Page) {
   });
 }
 
-test('mobile login is a dedicated page with branded buttons and returns to the original board', async ({
+test('mobile login opens a bottom sheet with branded buttons and keeps the original board', async ({
   page,
 }, testInfo) => {
   await configureProviders(page);
@@ -30,11 +30,9 @@ test('mobile login is a dedicated page with branded buttons and returns to the o
   await page.goto(destination);
   await page.getByRole('button', { name: '코칭 등록', exact: true }).click();
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
-  expect(new URL(page.url()).searchParams.get('returnTo')).toBe(destination);
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.locator('.mobile-nav')).toBeHidden();
-  await expect(page.locator('.shell-left-sidebar')).toBeHidden();
-  await expect(page.locator('.topbar:visible .header-account:visible')).toHaveCount(0);
+  await expect(page).toHaveURL(origin + destination);
+  await expect(page.getByRole('dialog', { name: '로그인', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('slider', { name: '시트 높이 조절' })).toBeVisible();
   const buttons = page.locator('.social-login-button');
   await expect(buttons).toHaveCount(4);
   await expect
@@ -73,7 +71,8 @@ test('mobile login is a dedicated page with branded buttons and returns to the o
   });
   await page.setViewportSize({ width: 320, height: 690 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole('link', { name: '돌아가기', exact: true }).click();
+  await page.getByRole('button', { name: '닫기', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page).toHaveURL(origin + destination);
 });
 
