@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 
+import { AnonymousAuthService } from './anonymous-auth.service';
 import { DevelopmentLoginGuard, PasswordAttemptGuard } from './auth-attempt.guard';
 import { AuthController } from './auth.controller';
 import { AuthResolver } from './auth.resolver';
@@ -17,6 +18,7 @@ import { UserResolver } from './user.resolver';
     SessionService,
     AuthService,
     PasswordAuthService,
+    AnonymousAuthService,
     AuthResolver,
     UserResolver,
   ],

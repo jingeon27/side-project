@@ -160,6 +160,8 @@ export class GroupService {
     description?: string | null,
     address: string | null = null,
   ): Promise<IGroupNode> {
+    if (visibility === GROUP_VISIBILITY.PRIVATE && viewer.provider === 'anonymous')
+      fail('비공개 그룹은 로그인 후 이용할 수 있어요.', ERROR_CODE.UNAUTHENTICATED);
     const validName = textValue(name, TEXT_LIMIT.GROUP_NAME, '그룹 이름');
     const validDescription = description?.trim() ?? '';
     if (validDescription.length > GROUP_DESCRIPTION_LIMIT) fail('그룹 소개는 500자 이하로 입력해 주세요.');
@@ -212,6 +214,8 @@ export class GroupService {
       });
       if (existing) return;
       if (toGroupVisibility(group.visibility) === GROUP_VISIBILITY.PRIVATE) {
+        if (viewer.provider === 'anonymous')
+          fail('비공개 그룹은 로그인 후 가입 신청할 수 있어요.', ERROR_CODE.UNAUTHENTICATED);
         const created = await tx.groupJoinRequest.createMany({
           data: [{ groupId, userId: viewer.id }],
           skipDuplicates: true,
