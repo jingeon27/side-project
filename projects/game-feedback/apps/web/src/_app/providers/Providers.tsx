@@ -6,8 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OverlayProvider } from 'overlay-kit';
 
 import { sessionOptions, SessionProvider, useSession } from '@/features/auth';
+import { categoryOptions } from '@/features/category';
 import { AnalyticsIdentity, InteractionTracker } from '@/shared/analytics';
-import type { Session } from '@/shared/api';
+import type { Category, Session } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { MotionProvider } from '@/shared/motion';
 import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
@@ -19,7 +20,15 @@ import { NativeBridge } from './NativeBridge';
 import { NativePushSync } from './NativePushSync';
 import { NavigationHistory } from './NavigationHistory';
 
-export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
+export function Providers({
+  children,
+  initialSession,
+  initialCategories,
+}: {
+  children: ReactNode;
+  initialSession?: Session;
+  initialCategories: Category[];
+}) {
   const { t } = useI18n();
   const handleLogin = useLoginNavigation();
   const [client] = useState(() => {
@@ -27,6 +36,8 @@ export function Providers({ children, initialSession }: { children: ReactNode; i
       defaultOptions: { queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: true } },
     });
     if (initialSession) queryClient.setQueryData(sessionOptions().queryKey, initialSession);
+    // Both menus must start with the same public snapshot, even when their Suspense boundaries hydrate apart.
+    queryClient.setQueryData(categoryOptions().queryKey, initialCategories);
     return queryClient;
   });
   return (
