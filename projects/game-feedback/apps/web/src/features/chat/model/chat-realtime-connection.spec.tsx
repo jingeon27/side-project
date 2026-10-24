@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { notificationSummaryOptions } from '@/features/notification';
+
 import { ChatRealtimeConnection } from './chat-realtime-connection';
 import { chatMessageOptions, conversationListOptions } from './chat.options';
 import { useChatRealtime } from './use-chat-realtime';
@@ -59,13 +61,19 @@ describe('chat SSE external store', () => {
     const target = chatMessageOptions('alice', 'room-1').queryKey;
     const other = chatMessageOptions('alice', 'room-2').queryKey;
     const otherViewer = conversationListOptions('bob').queryKey;
+    const notices = notificationSummaryOptions('alice').queryKey;
+    const otherNotices = notificationSummaryOptions('bob').queryKey;
     for (const key of [inbox, target, other, otherViewer])
       client.setQueryData(key, { pages: [], pageParams: [] });
+    for (const key of [notices, otherNotices])
+      client.setQueryData(key, { items: [], unreadCount: 0, nextCursor: null });
     invalidate(stream, JSON.stringify({ conversationId: 'room-1' }));
     expect(client.getQueryState(inbox)?.isInvalidated).toBe(true);
     expect(client.getQueryState(target)?.isInvalidated).toBe(true);
     expect(client.getQueryState(other)?.isInvalidated).toBe(false);
     expect(client.getQueryState(otherViewer)?.isInvalidated).toBe(false);
+    expect(client.getQueryState(notices)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(otherNotices)?.isInvalidated).toBe(false);
     dispose();
     client.clear();
   });

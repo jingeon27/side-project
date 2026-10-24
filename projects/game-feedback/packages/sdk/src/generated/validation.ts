@@ -2760,20 +2760,29 @@ export const ListNotificationsQueryParams = zod.object({
   "limit": zod.int().min(1).max(listNotificationsQueryLimitMax).default(listNotificationsQueryLimitDefault)
 })
 
-export const listNotificationsResponseItemsItemIdMax = 100;
+export const listNotificationsResponseItemsItemOneIdMax = 100;
 
-export const listNotificationsResponseItemsItemPostIdMax = 100;
-
-export const listNotificationsResponseItemsItemAnswerIdOneMax = 100;
-
-export const listNotificationsResponseItemsItemCommentIdOneMax = 100;
-
-export const listNotificationsResponseItemsItemActorOneIdMax = 100;
+export const listNotificationsResponseItemsItemOneActorOneIdMax = 100;
 
 
+export const listNotificationsResponseItemsItemOneReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listNotificationsResponseItemsItemOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listNotificationsResponseItemsItemOnePostIdMax = 100;
 
-export const listNotificationsResponseItemsItemReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const listNotificationsResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listNotificationsResponseItemsItemOneAnswerIdOneMax = 100;
+
+export const listNotificationsResponseItemsItemOneCommentIdOneMax = 100;
+
+
+export const listNotificationsResponseItemsItemTwoIdMax = 100;
+
+export const listNotificationsResponseItemsItemTwoActorOneIdMax = 100;
+
+
+export const listNotificationsResponseItemsItemTwoReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listNotificationsResponseItemsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listNotificationsResponseItemsItemTwoConversationIdMax = 100;
+
 export const listNotificationsResponseUnreadCountMin = 0;
 export const listNotificationsResponseUnreadCountMax = 9007199254740991;
 
@@ -2781,24 +2790,42 @@ export const listNotificationsResponseUnreadCountMax = 9007199254740991;
 
 
 export const ListNotificationsResponse = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string().min(1).max(listNotificationsResponseItemsItemIdMax),
-  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
-  "postId": zod.string().min(1).max(listNotificationsResponseItemsItemPostIdMax),
-  "answerId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemAnswerIdOneMax),zod.null()]),
-  "commentId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemCommentIdOneMax),zod.null()]).optional(),
+  "items": zod.array(zod.union([zod.object({
+  "id": zod.string().min(1).max(listNotificationsResponseItemsItemOneIdMax),
   "actor": zod.union([zod.object({
-  "id": zod.string().min(1).max(listNotificationsResponseItemsItemActorOneIdMax),
+  "id": zod.string().min(1).max(listNotificationsResponseItemsItemOneActorOneIdMax),
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),zod.null()]),
-  "postTitle": zod.string().min(1),
-  "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemReadAtOneRegExp),zod.null()]),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemCreatedAtRegExp)
-})),
+  "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemOneReadAtOneRegExp),zod.null()]),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemOneCreatedAtRegExp),
+  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
+  "postId": zod.string().min(1).max(listNotificationsResponseItemsItemOnePostIdMax),
+  "answerId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemOneAnswerIdOneMax),zod.null()]),
+  "commentId": zod.union([zod.string().min(1).max(listNotificationsResponseItemsItemOneCommentIdOneMax),zod.null()]).optional(),
+  "postTitle": zod.string().min(1)
+}),zod.object({
+  "id": zod.string().min(1).max(listNotificationsResponseItemsItemTwoIdMax),
+  "actor": zod.union([zod.object({
+  "id": zod.string().min(1).max(listNotificationsResponseItemsItemTwoActorOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),zod.null()]),
+  "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemTwoReadAtOneRegExp),zod.null()]),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listNotificationsResponseItemsItemTwoCreatedAtRegExp),
+  "type": zod.literal("CHAT_MESSAGE"),
+  "conversationId": zod.string().min(1).max(listNotificationsResponseItemsItemTwoConversationIdMax),
+  "postId": zod.null(),
+  "postTitle": zod.null(),
+  "answerId": zod.null(),
+  "commentId": zod.null().optional()
+})])),
   "unreadCount": zod.int().min(listNotificationsResponseUnreadCountMin).max(listNotificationsResponseUnreadCountMax),
   "nextCursor": zod.union([zod.string().min(1),zod.null()])
 })

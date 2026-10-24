@@ -49,6 +49,27 @@ function respond(payload: unknown) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('comment thread response validation', () => {
+  it('채팅 알림은 대화 ID를 요구하고 게시글 대상을 섞은 응답을 거부해야 한다', async () => {
+    const notice = {
+      id: 'chat-notification',
+      type: 'CHAT_MESSAGE',
+      conversationId: 'room-1',
+      postId: null,
+      postTitle: null,
+      answerId: null,
+      commentId: null,
+      actor: authorFixture(),
+      readAt: null,
+      createdAt: timestamp,
+    };
+    const payload = { items: [notice], unreadCount: 1, nextCursor: null };
+    respond(payload);
+    await expect(listNotifications()).resolves.toEqual(payload);
+    respond({ ...payload, items: [{ ...notice, conversationId: undefined }] });
+    await expect(listNotifications()).rejects.toBeInstanceOf(ApiResponseValidationError);
+    respond({ ...payload, items: [{ ...notice, postId: 'post-1' }] });
+    await expect(listNotifications()).rejects.toBeInstanceOf(ApiResponseValidationError);
+  });
   it('validates reply notification destinations and keeps older notifications without a comment target', async () => {
     const notification = {
       id: 'reply-notification',

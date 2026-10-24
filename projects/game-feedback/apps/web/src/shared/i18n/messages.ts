@@ -4,6 +4,8 @@ import { profileMessages } from './profile-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '새로운 채팅이 도착했어요': ['New chat message', '新しいチャットメッセージ'],
+  '{name}님이 메시지를 보냈어요.': ['{name} sent you a message.', '{name}さんからメッセージが届きました。'],
   '게임 프로필 연결 (선택)': ['Connect a game profile (optional)', 'ゲームプロフィールの連携（任意）'],
   '태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.': [
     'Look up your tag to connect the profile when you sign up. You can also add it later.',

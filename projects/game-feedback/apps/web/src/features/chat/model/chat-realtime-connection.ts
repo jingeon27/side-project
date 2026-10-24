@@ -6,6 +6,8 @@ import {
 import type { QueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
+import { notificationListOptions } from '@/features/notification';
+
 import { chatMessageOptions, chatMessageScopeOptions, conversationScopeOptions } from './chat.options';
 import type { TChatConnection } from './chat.types';
 
@@ -66,6 +68,7 @@ export class ChatRealtimeConnection {
     const { client, userId } = this.options;
     if (!this.lifetime || !userId) return;
     void client.invalidateQueries(conversationScopeOptions(userId));
+    void client.invalidateQueries(notificationListOptions(userId));
     if (conversationId) {
       void client.invalidateQueries(chatMessageOptions(userId, conversationId));
       return;

@@ -31,6 +31,7 @@ model User {
   answers Answer[]
   comments Comment[]
   notifications Notification[]
+  chatNotifications ChatNotification[]
   reports Report[]
   blocks Block[] @relation("blocker")
   blockedBy Block[] @relation("blocked")
@@ -285,8 +286,19 @@ model ChatMessage {
   body String
   createdAt DateTime @default(now())
   attachments ChatAttachment[]
+  notification ChatNotification?
   @@unique([senderId,clientMessageId])
   @@index([conversationId,createdAt,id])
+}
+model ChatNotification {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId String @unique
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt, id])
 }
 
 model ChatAttachment {

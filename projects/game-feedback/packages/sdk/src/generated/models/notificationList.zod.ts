@@ -6,44 +6,71 @@
  */
 import * as zod from 'zod';
 
-export const notificationListItemsItemIdMax = 100;
+export const notificationListItemsItemOneIdMax = 100;
 
-export const notificationListItemsItemPostIdMax = 100;
-
-export const notificationListItemsItemAnswerIdOneMax = 100;
-
-export const notificationListItemsItemCommentIdOneMax = 100;
-
-export const notificationListItemsItemActorOneIdMax = 100;
+export const notificationListItemsItemOneActorOneIdMax = 100;
 
 
+export const notificationListItemsItemOneReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const notificationListItemsItemOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const notificationListItemsItemOnePostIdMax = 100;
 
-export const notificationListItemsItemReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const notificationListItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const notificationListItemsItemOneAnswerIdOneMax = 100;
+
+export const notificationListItemsItemOneCommentIdOneMax = 100;
+
+
+export const notificationListItemsItemTwoIdMax = 100;
+
+export const notificationListItemsItemTwoActorOneIdMax = 100;
+
+
+export const notificationListItemsItemTwoReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const notificationListItemsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const notificationListItemsItemTwoConversationIdMax = 100;
+
 export const notificationListUnreadCountMin = 0;
 export const notificationListUnreadCountMax = 9007199254740991;
 
 
 
 export const NotificationList = zod.object({
-  "items": zod.array(zod.object({
-  "id": zod.string().min(1).max(notificationListItemsItemIdMax),
-  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
-  "postId": zod.string().min(1).max(notificationListItemsItemPostIdMax),
-  "answerId": zod.union([zod.string().min(1).max(notificationListItemsItemAnswerIdOneMax),zod.null()]),
-  "commentId": zod.union([zod.string().min(1).max(notificationListItemsItemCommentIdOneMax),zod.null()]).optional(),
+  "items": zod.array(zod.union([zod.object({
+  "id": zod.string().min(1).max(notificationListItemsItemOneIdMax),
   "actor": zod.union([zod.object({
-  "id": zod.string().min(1).max(notificationListItemsItemActorOneIdMax),
+  "id": zod.string().min(1).max(notificationListItemsItemOneActorOneIdMax),
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),zod.null()]),
-  "postTitle": zod.string().min(1),
-  "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(notificationListItemsItemReadAtOneRegExp),zod.null()]),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(notificationListItemsItemCreatedAtRegExp)
-})),
+  "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(notificationListItemsItemOneReadAtOneRegExp),zod.null()]),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(notificationListItemsItemOneCreatedAtRegExp),
+  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
+  "postId": zod.string().min(1).max(notificationListItemsItemOnePostIdMax),
+  "answerId": zod.union([zod.string().min(1).max(notificationListItemsItemOneAnswerIdOneMax),zod.null()]),
+  "commentId": zod.union([zod.string().min(1).max(notificationListItemsItemOneCommentIdOneMax),zod.null()]).optional(),
+  "postTitle": zod.string().min(1)
+}),zod.object({
+  "id": zod.string().min(1).max(notificationListItemsItemTwoIdMax),
+  "actor": zod.union([zod.object({
+  "id": zod.string().min(1).max(notificationListItemsItemTwoActorOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),zod.null()]),
+  "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(notificationListItemsItemTwoReadAtOneRegExp),zod.null()]),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(notificationListItemsItemTwoCreatedAtRegExp),
+  "type": zod.literal("CHAT_MESSAGE"),
+  "conversationId": zod.string().min(1).max(notificationListItemsItemTwoConversationIdMax),
+  "postId": zod.null(),
+  "postTitle": zod.null(),
+  "answerId": zod.null(),
+  "commentId": zod.null().optional()
+})])),
   "unreadCount": zod.int().min(notificationListUnreadCountMin).max(notificationListUnreadCountMax),
   "nextCursor": zod.union([zod.string().min(1),zod.null()])
 })

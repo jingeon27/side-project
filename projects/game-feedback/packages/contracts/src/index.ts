@@ -201,19 +201,31 @@ export const CommentSchema = z.discriminatedUnion('isDeleted', [
     author: z.null(),
   }),
 ]);
-export const NotificationSchema = z.object({
+const NotificationBaseSchema = z.object({
   id: ResponseIdSchema,
-  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
-  postId: ResponseIdSchema,
-  answerId: ResponseIdSchema.nullable(),
-  commentId: ResponseIdSchema.nullable().optional(),
   /** 알림을 만든 사용자의 현재 공개 정보. 탈퇴 등으로 없으면 null이다. 문구는 클라이언트가 번역해 조합한다. */
   actor: AuthorSchema.nullable(),
-  /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
-  postTitle: z.string().min(1),
   readAt: ResponseTimestampSchema.nullable(),
   createdAt: ResponseTimestampSchema,
 });
+export const NotificationSchema = z.discriminatedUnion('type', [
+  NotificationBaseSchema.extend({
+    type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
+    postId: ResponseIdSchema,
+    answerId: ResponseIdSchema.nullable(),
+    commentId: ResponseIdSchema.nullable().optional(),
+    /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
+    postTitle: z.string().min(1),
+  }),
+  NotificationBaseSchema.extend({
+    type: z.literal('CHAT_MESSAGE'),
+    conversationId: ResponseIdSchema,
+    postId: z.null(),
+    postTitle: z.null(),
+    answerId: z.null(),
+    commentId: z.null().optional(),
+  }),
+]);
 export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),

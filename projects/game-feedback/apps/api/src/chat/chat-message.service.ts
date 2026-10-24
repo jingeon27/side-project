@@ -121,6 +121,9 @@ export class ChatMessageService {
           },
           include: messageInclude,
         });
+        const peerId =
+          conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId;
+        await tx.chatNotification.create({ data: { userId: peerId, messageId: message.id, createdAt } });
         await (tx ?? this.db).chatConversation.update({
           where: { id },
           data: { updatedAt: createdAt, firstHidden: false, secondHidden: false },
@@ -131,7 +134,7 @@ export class ChatMessageService {
         });
         return {
           message,
-          peerId: conversation.firstUserId === user.id ? conversation.secondUserId : conversation.firstUserId,
+          peerId,
         };
       })
       .catch((error) => {

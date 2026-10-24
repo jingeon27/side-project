@@ -68,6 +68,7 @@ export class SupportService {
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: { id: true, createdAt: true },
       });
+      await tx.chatNotification.deleteMany({ where: { message: { conversationId: conversation.id } } });
       return (tx ?? this.db).supportConversation.create({
         data: {
           requesterId: user.id,
