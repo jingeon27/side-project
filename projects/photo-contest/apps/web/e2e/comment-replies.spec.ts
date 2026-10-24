@@ -31,6 +31,8 @@ test(
     await sheet.getByRole('button', { name: '답글 올리기', exact: true }).click();
     const replies = sheet.getByRole('list', { name: '답글', exact: true });
     await expect(replies.getByText('덕분에 오늘도 한 번 웃고 가요.')).toBeVisible();
+    await expect(replies.locator('[data-slot="mention"]')).toHaveText('@웃음 수집가');
+    await expect(replies.locator('[data-slot="mention"]')).toHaveCSS('border-top-width', '1px');
     await expect(sheet.getByRole('textbox', { name: '답글', exact: true })).toHaveCount(0);
     await replies.getByRole('button', { name: '댓글 좋아요 0개', exact: true }).click();
     await expect(replies.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toHaveAttribute(
