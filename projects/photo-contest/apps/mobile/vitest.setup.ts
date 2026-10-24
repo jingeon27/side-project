@@ -93,3 +93,6 @@ afterEach(() => {
   vi.resetAllMocks();
   vi.restoreAllMocks();
 });
+
+vi.mock('expo-device', () => ({ isDevice: false }));
+vi.mock('expo-notifications', () => ({}));

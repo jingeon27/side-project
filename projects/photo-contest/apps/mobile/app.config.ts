@@ -128,11 +128,18 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
         : {}),
     },
     plugins: [
+      ['expo-notifications', { defaultChannel: 'activity' }],
       ['expo-build-properties', { android: isDevelopment ? { usesCleartextTraffic: true } : {} }],
       ['expo-splash-screen', { backgroundColor: BACKGROUND_COLOR, dark: { backgroundColor: '#141312' } }],
       // 조직·프로젝트·토큰은 넣지 않는다. 소스맵 업로드는 빌드 환경의 SENTRY_ORG·SENTRY_PROJECT·SENTRY_AUTH_TOKEN으로만 한다.
       '@sentry/react-native/expo',
     ],
-    extra: { webOrigin: settings.webOrigin },
+    extra: {
+      ...config.extra,
+      webOrigin: settings.webOrigin,
+      ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+        ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } }
+        : {}),
+    },
   };
 }

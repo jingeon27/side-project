@@ -19,6 +19,7 @@ import {
 } from '@/features/navigation';
 import { WEB_ORIGIN } from '@/shared/config/env';
 import { captureWarning } from '@/shared/lib/monitoring/monitoring';
+import { PushInbox, usePushEvents } from '@/shared/lib/push';
 import { useLatest } from '@/shared/lib/use-latest';
 import { setAppearance } from '@/shared/model/appearance';
 
@@ -71,6 +72,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
   const [webViewKey, setWebViewKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
+  const [pushInbox] = useState(() => new PushInbox());
   const isWebReadyRef = useRef(false);
   const canGoBackRef = useRef(false);
   /** 다시 만들 때 열 주소. 사용자가 보던 웹 화면에 머물게 한다. */
@@ -100,6 +102,7 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
         isWebReadyRef.current = true;
         if (isRelativeWebPath(path)) currentUrlRef.current = toWebUrl(path);
         finishLoading();
+        pushInbox.flush();
       },
       onNavigationChanged: ({ path }) => {
         if (isRelativeWebPath(path)) currentUrlRef.current = toWebUrl(path);
@@ -124,6 +127,18 @@ export function useWebShell({ initialPath, appVersion, analyticsDeviceId, onRead
       setIsLoading(true);
     },
     [router],
+  );
+
+  usePushEvents(
+    pushInbox,
+    (path) => {
+      if (!isWebReadyRef.current) return false;
+      openPath(path);
+      return true;
+    },
+    () => {
+      if (isWebReadyRef.current) router.emit('notifications.received', {});
+    },
   );
 
   const recreateWebView = useCallback(() => {
