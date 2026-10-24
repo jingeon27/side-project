@@ -69,6 +69,21 @@ export class PostService {
     return this.findPosts(viewer, { group: { visibility: 'PUBLIC' } }, query);
   }
 
+  async listMine(viewer: IViewer, query: Pick<IPostQuery, 'groupId' | 'offset' | 'limit'>) {
+    if (query.groupId) await this.membership.readableGroup(viewer.id, query.groupId);
+    return this.findPosts(
+      viewer,
+      {
+        authorId: viewer.id,
+        ...(query.groupId ? { groupId: query.groupId } : {}),
+        group: {
+          OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId: viewer.id } } }],
+        },
+      },
+      query,
+    );
+  }
+
   async find(viewer: IViewer | null, id: string) {
     await this.membership.readablePost(viewer?.id ?? null, id);
     const post = await this.db.post.findUniqueOrThrow({

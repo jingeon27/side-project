@@ -10,7 +10,7 @@
 | `config/` | `env.ts`(호출할 때마다 읽는 getter), `limits.ts`(모든 숫자 한도), `paths.ts`(package.json 기준 API·프로젝트 루트) |
 | `common/` | `errors.ts`(fail·ERROR_CODE·HTTP 매핑), `validation.ts`, `crypto.ts`, `http/`(cookie-header 파서, Origin 검사, no-store, 예외 필터), `graphql/`(DateTime, context, Apollo 옵션) |
 | `database/` · `storage/` | 전역 모듈. `Database.atomic()`(Serializable 재시도), 비공개 S3 미디어 저장소(서명 POST·서명 GET·HEAD·DELETE만, 파일 바이트를 다루지 않는다) |
-| `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·개발 로그인·로그아웃·OAuth·앱 로그인 교환, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `@Viewer()`/`@OptionalViewer()` |
+| `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·개발 로그인·로그아웃·OAuth·앱 로그인 교환, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `profile/`은 개인 사진 S3 업로드·프로필 편집·가입 설정 완료, `@Viewer()`/`@OptionalViewer()` |
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·presigned 대회 업로드 발급·완료·사진 조회(`GET /photos/:id` 307) |
 | `media-upload/` | 게시물·대회·대표 사진의 최종 키 서명 발급, 소유권·만료·용도 확인, HEAD로 크기·형식을 본 뒤 완료 |
 | `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 60초 서명 GET으로 보내는 `/media/:id` 307 |
@@ -25,6 +25,7 @@
 - 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 게시물·그룹 대회·기존 대회·기존 사진처럼 하위 리소스 ID로 묻는 접근은 비멤버(비로그인 포함)에게 없는 ID와 같은 NOT_FOUND를 준다(비공개 그룹의 하위 리소스, 그리고 공개 그룹이어도 멤버 전용인 기존 대회·사진). 그룹 메타데이터는 공개이므로 그룹 ID로 묻는 조회는 UNAUTHENTICATED·FORBIDDEN으로 가입을 안내하고, 공개 그룹 게시물에 대한 비멤버의 쓰기는 FORBIDDEN이다. 새 하위 리소스 접근에는 `requireMemberOf`·`readableGroup(…, concealAs)`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
+- 요청 DTO는 class-transformer/class-validator와 전역 ValidationPipe로 검증한다. 인증 반복 시도는 DTO보다 먼저 guard에서 센다. 도메인 규칙과 권한 검사는 서비스에 둔다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
 - 닫힌 집합 분기는 ts-pattern `exhaustive()`, 일반 유틸은 es-toolkit.
 - GraphQL 검증 규칙은 depth 8, 조각을 펼친 연산당 필드 300개·alias 10개(`query-cost.rule.ts`)를 넘는 요청을 실행 전에 거절한다. 웹 문서를 늘려 상한에 가까워지면 상한과 근거를 함께 고친다.

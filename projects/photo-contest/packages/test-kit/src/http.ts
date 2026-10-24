@@ -19,12 +19,17 @@ export async function devLogin(apiUrl: string, { nickname, origin }: { nickname:
 /** 개발 로그인과 구분해 테스트 전용 API에서 새 사용자·세션을 만든다. */
 export async function createTestUser(
   apiUrl: string,
-  { nickname, origin }: { nickname: string; origin: string },
+  {
+    nickname,
+    origin,
+    needsOnboarding,
+    avatar,
+  }: { nickname: string; origin: string; needsOnboarding?: boolean; avatar?: string },
 ) {
   const response = await fetch(`${apiUrl}/testing/users`, {
     method: 'POST',
     headers: { Origin: origin, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname }),
+    body: JSON.stringify({ nickname, needsOnboarding, avatar }),
   });
   if (!response.ok) throw new Error(`테스트 사용자 생성 실패 (${response.status})`);
   const cookie = response.headers.getSetCookie().find((value) => value.startsWith('contest_session='));

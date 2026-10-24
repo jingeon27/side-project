@@ -1,10 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
-
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
 import { PostCommentsDocument, type PostCommentsQuery } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -20,9 +19,11 @@ function ReplyList({
   viewerId?: string;
   postAuthorId?: string;
 }) {
-  const { data } = useReadQuery(queryRef);
-  const { fetchMore } = useQueryRefHandlers(queryRef);
-  const [pending, startTransition] = useTransition();
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
+    select: (data) => data.postComments,
+    pageSize: 12,
+    canFetchMore: (data) => data.postComments.length < data.postCommentCount,
+  });
   return (
     <>
       <ul aria-label="답글" className="flex flex-col gap-4">
@@ -32,21 +33,13 @@ function ReplyList({
           </li>
         ))}
       </ul>
-      {data.postComments.length < data.postCommentCount ? (
+      {hasNextPage ? (
         <Button
           variant="ghost"
           size="sm"
-          loading={pending}
+          loading={isFetchingNextPage}
           className="mt-2 text-muted"
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                await fetchMore({ variables: { offset: data.postComments.length } });
-              } catch {
-                /* 조회 경계에서 재시도한다. */
-              }
-            })
-          }
+          onClick={() => fetchNextPage()}
         >
           답글 더 보기
         </Button>

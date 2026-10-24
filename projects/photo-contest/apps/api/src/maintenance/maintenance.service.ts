@@ -22,6 +22,16 @@ export class MaintenanceService {
       { policyExpiresAt: { lt: cutoff } },
     ] satisfies Prisma.PostUploadWhereInput[];
     await this.removeAbandonedUploads(now);
+    const profiles = await this.db.profileUpload.findMany({
+      where: { expiresAt: { lt: cutoff }, policyExpiresAt: { lt: cutoff }, currentUsers: { none: {} } },
+      take: CLEANUP_BATCH_SIZE,
+    });
+    for (const profile of profiles) {
+      await this.attempt(async () => {
+        await this.media.delete(profile.storageKey);
+        await this.db.profileUpload.deleteMany({ where: { id: profile.id, currentUsers: { none: {} } } });
+      });
+    }
     const avatars = await this.db.groupAvatar.findMany({
       where: { expiresAt: { lt: cutoff }, currentGroups: { none: {} } },
       take: CLEANUP_BATCH_SIZE,

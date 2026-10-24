@@ -164,7 +164,7 @@ describe('OAuth와 앱 로그인', () => {
 
       const response = await callback('google', { state: start.state, code: 'mock-code' }, start.cookie);
       expect(response.status).toBe(302);
-      expect(response.headers.location).toBe(`${TEST_WEB_ORIGIN}/`);
+      expect(response.headers.location).toBe(`${TEST_WEB_ORIGIN}/onboarding`);
 
       const [tokenCall, profileCall] = calls;
       expect(tokenCall?.url).toBe(GOOGLE.token);
@@ -196,6 +196,42 @@ describe('OAuth와 앱 로그인', () => {
       const reused = await callback('google', { state: start.state, code: 'mock-code' }, start.cookie);
       expect(reused.headers.location).toBe(WEB_LOGIN_ERROR);
       expect(findSetCookie(reused, SESSION_COOKIE)).toBeUndefined();
+    });
+
+    it('처음에는 소셜 이름·사진을 쓰고 가입 후 수정한 프로필은 다시 로그인해도 보존해야 한다', async () => {
+      stubGoogle({
+        sub: 'google-onboarding-profile',
+        name: '소셜 기본 이름',
+        picture: 'https://provider.example/avatar.png',
+      });
+      const start = await startLogin('google');
+      const first = await callback('google', { state: start.state, code: 'first' }, start.cookie);
+      const cookie = cookiePair(findSetCookie(first, SESSION_COOKIE)!);
+      expect(await api.gqlOk(cookie, '{me{nickname avatar needsOnboarding}}')).toEqual({
+        me: {
+          nickname: '소셜 기본 이름',
+          avatar: 'https://provider.example/avatar.png',
+          needsOnboarding: true,
+        },
+      });
+      await api.gqlOk(
+        cookie,
+        'mutation{completeOnboarding(nickname:"내 이름",removeAvatar:true,acceptedTerms:true){id}}',
+      );
+      stubGoogle({
+        sub: 'google-onboarding-profile',
+        name: '제공자가 다시 준 이름',
+        picture: 'https://provider.example/changed.png',
+      });
+      const again = await startLogin('google');
+      const next = await callback('google', { state: again.state, code: 'second' }, again.cookie);
+      expect(next.headers.location).toBe(`${TEST_WEB_ORIGIN}/`);
+      expect(
+        await api.gqlOk(
+          cookiePair(findSetCookie(next, SESSION_COOKIE)!),
+          '{me{nickname avatar needsOnboarding}}',
+        ),
+      ).toEqual({ me: { nickname: '내 이름', avatar: null, needsOnboarding: false } });
     });
 
     it('다른 provider의 같은 이메일 계정을 합치지 않아야 한다', async () => {

@@ -14,6 +14,7 @@ import { LikeModule } from './like/like.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { PostModule } from './post/post.module';
+import { ProfileModule } from './profile/profile.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
@@ -28,6 +29,7 @@ import { VoteModule } from './vote/vote.module';
     StorageModule,
     RateLimitModule,
     AuthModule,
+    ProfileModule,
     GroupModule,
     ContestModule,
     SubmissionModule,

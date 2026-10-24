@@ -62,6 +62,7 @@ extend type Query {
   galleryPost(id: ID!): GalleryPost!
   hiddenGalleryPosts(groupId: ID!, offset: Int = 0, limit: Int = 24): [HiddenGalleryPost!]!
   publicGalleryPosts(sort: PostSort!, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
+  myGalleryPosts(groupId: ID, offset: Int = 0, limit: Int = 24): [GalleryPost!]!
   postDownload(postId: ID!): PostDownload!
   galleryPosts(
     categoryId: ID

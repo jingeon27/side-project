@@ -1,41 +1,30 @@
 'use client';
 
-import {
-  skipToken,
-  useBackgroundQuery,
-  useMutation,
-  useQueryRefHandlers,
-  useReadQuery,
-  type QueryRef,
-} from '@apollo/client/react';
+import { skipToken, useBackgroundQuery, useMutation, type QueryRef } from '@apollo/client/react';
 
 import {
-  GalleryPostsDocument,
   HiddenGalleryPostsDocument,
-  PublicGalleryPostsDocument,
   SetPostHiddenDocument,
   type HiddenGalleryPostsQuery,
 } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
-import { useOffsetPagination } from '@/shared/model/offset-pagination.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
+import { POST_FEED_QUERIES } from '../model/post.cache';
+
 function HiddenPosts({ queryRef }: { queryRef: QueryRef<HiddenGalleryPostsQuery> }) {
-  const { data } = useReadQuery(queryRef);
-  const { fetchMore } = useQueryRefHandlers(queryRef);
   const [restore, { loading }] = useMutation(SetPostHiddenDocument, {
-    refetchQueries: [HiddenGalleryPostsDocument, GalleryPostsDocument, PublicGalleryPostsDocument],
+    refetchQueries: [HiddenGalleryPostsDocument, ...POST_FEED_QUERIES],
     awaitRefetchQueries: true,
   });
-  const posts = data.hiddenGalleryPosts;
-  const pagination = useOffsetPagination({
-    count: posts.length,
-    firstId: posts[0]?.id,
-    limit: 24,
-    fetchPage: async (offset) => (await fetchMore({ variables: { offset } })).data.hiddenGalleryPosts.length,
+  const pagination = useInfiniteQuery(queryRef, {
+    select: (data) => data.hiddenGalleryPosts,
+    pageSize: 24,
   });
+  const posts = pagination.items;
   return (
     <div className="flex flex-col gap-3">
       {!posts.length ? <p className="text-caption text-muted">숨긴 게시물이 없어요.</p> : null}
@@ -58,8 +47,12 @@ function HiddenPosts({ queryRef }: { queryRef: QueryRef<HiddenGalleryPostsQuery>
           </Button>
         </div>
       ))}
-      {pagination.hasMore ? (
-        <Button onClick={() => pagination.loadMore()} loading={pagination.pending} variant="secondary">
+      {pagination.hasNextPage ? (
+        <Button
+          onClick={() => pagination.fetchNextPage()}
+          loading={pagination.isFetchingNextPage}
+          variant="secondary"
+        >
           더 보기
         </Button>
       ) : null}

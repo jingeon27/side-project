@@ -14,7 +14,15 @@ import {
 import { AsyncBoundary } from './AsyncBoundary';
 
 const profile = {
-  data: { me: { __typename: 'User' as const, id: 'viewer', nickname: '복구된 사용자', avatar: null } },
+  data: {
+    me: {
+      __typename: 'User' as const,
+      id: 'viewer',
+      nickname: '복구된 사용자',
+      avatar: null,
+      needsOnboarding: false,
+    },
+  },
 };
 function Profile({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
   const { data } = useReadQuery(queryRef);

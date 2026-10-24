@@ -1,20 +1,19 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-
-import { useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { type QueryRef } from '@apollo/client/react';
 import { Compass } from 'lucide-react';
 
 import { DiscoverGroupCard } from '@/features/group';
 import type { DiscoverGroupsQuery } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 
 export function GroupDiscoveryResults({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> }) {
-  const { data } = useReadQuery(queryRef);
-  const { fetchMore } = useQueryRefHandlers(queryRef);
-  const [hasMore, setHasMore] = useState(true);
-  const [pending, startTransition] = useTransition();
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
+    select: (data) => data.discoverGroups,
+    pageSize: 24,
+  });
   if (!data.discoverGroups.length)
     return (
       <EmptyState
@@ -30,21 +29,8 @@ export function GroupDiscoveryResults({ queryRef }: { queryRef: QueryRef<Discove
           <DiscoverGroupCard key={id} id={id} />
         ))}
       </div>
-      {hasMore && data.discoverGroups.length >= 24 ? (
-        <Button
-          variant="secondary"
-          loading={pending}
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                const result = await fetchMore({ variables: { offset: data.discoverGroups.length } });
-                setHasMore(result.data.discoverGroups.length === 24);
-              } catch {
-                /* 조회 경계에서 재시도한다. */
-              }
-            })
-          }
-        >
+      {hasNextPage ? (
+        <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
           그룹 더 보기
         </Button>
       ) : null}

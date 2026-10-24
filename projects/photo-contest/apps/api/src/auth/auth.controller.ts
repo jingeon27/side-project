@@ -10,10 +10,13 @@ import {
   Redirect,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
 import { ClientAddress } from '../rate-limit/client-address.decorator';
+import { DevelopmentLoginGuard } from './auth-attempt.guard';
+import { AppLoginExchangeDto, DevLoginDto } from './auth.dto';
 import { AuthService, type IAuthConfig } from './auth.service';
 
 const OK = { ok: true } as const;
@@ -29,9 +32,10 @@ export class AuthController {
   }
 
   @Post('dev')
+  @UseGuards(DevelopmentLoginGuard)
   @HttpCode(HttpStatus.OK)
-  async devLogin(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
-    await this.auth.devLogin(body, res);
+  async devLogin(@Body() body: DevLoginDto, @Res({ passthrough: true }) res: Response) {
+    await this.auth.devLogin(body.nickname, res);
     return OK;
   }
 
@@ -44,7 +48,7 @@ export class AuthController {
 
   @Post('app/exchange')
   @HttpCode(HttpStatus.OK)
-  async exchangeAppLogin(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
+  async exchangeAppLogin(@Body() body: AppLoginExchangeDto, @Res({ passthrough: true }) res: Response) {
     await this.auth.exchangeAppLogin(body, res);
     return OK;
   }

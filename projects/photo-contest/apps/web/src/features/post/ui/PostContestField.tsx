@@ -1,12 +1,13 @@
 'use client';
 
-import { useId, useState, useTransition } from 'react';
+import { useId } from 'react';
 import Link from 'next/link';
 
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { ROUTES } from '@/shared/constants/routes';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
@@ -25,10 +26,10 @@ function ContestSelection({
   queryRef: QueryRef<GroupContestsQuery>;
   groupId: string;
 }) {
-  const { fetchMore } = useQueryRefHandlers(queryRef);
-  const { data } = useReadQuery(queryRef);
-  const [hasMore, setHasMore] = useState(true);
-  const [pending, startTransition] = useTransition();
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
+    select: (data) => data.groupContests,
+    pageSize: 48,
+  });
   const id = useId();
   if (!data.groupContests.length)
     return (
@@ -61,22 +62,8 @@ function ContestSelection({
           </option>
         ))}
       </select>
-      {hasMore && data.groupContests.length >= 48 ? (
-        <Button
-          size="sm"
-          variant="ghost"
-          loading={pending}
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                const result = await fetchMore({ variables: { offset: data.groupContests.length } });
-                setHasMore(result.data.groupContests.length === 48);
-              } catch {
-                /* 조회 경계에서 재시도한다. */
-              }
-            })
-          }
-        >
+      {hasNextPage ? (
+        <Button size="sm" variant="ghost" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
           대회 더 불러오기
         </Button>
       ) : null}
