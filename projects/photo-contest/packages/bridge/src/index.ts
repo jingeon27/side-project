@@ -1,4 +1,5 @@
 export {
+  PushRegistrationSchema,
   APP_MARKER_KEY,
   APP_USER_AGENT_PREFIX,
   BRIDGE_ERROR_CODE,
@@ -16,6 +17,7 @@ export {
   parseNativeAppInfo,
 } from './protocol';
 export type {
+  TPushRegistration,
   TBridgeErrorCode,
   TNativeAppInfo,
   TNativeEventPayload,

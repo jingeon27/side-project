@@ -21,6 +21,10 @@ vi.mock('expo-status-bar', async () => {
   return { StatusBar: FakeStatusBar };
 });
 
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => undefined) },
+}));
+
 vi.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: vi.fn(async () => true),
   hideAsync: vi.fn(async () => undefined),
@@ -89,3 +93,6 @@ afterEach(() => {
   vi.resetAllMocks();
   vi.restoreAllMocks();
 });
+
+vi.mock('expo-device', () => ({ isDevice: false }));
+vi.mock('expo-notifications', () => ({}));

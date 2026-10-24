@@ -112,3 +112,43 @@ describe('native bridge boundary', () => {
     expect(buildDispatchScript({ type: 'open', path: '/ko' })).toContain('game-feedback:native');
   });
 });
+
+it('푸시 권한 요청도 출처와 문서 교체를 검사하고 배지는 유효한 개수만 받아야 한다', async () => {
+  const send = vi.fn(),
+    badge = vi.fn(async () => undefined);
+  let finish:
+    ((value: { installationId: string; platform: 'ios'; status: 'denied'; token: null }) => void) | undefined;
+  const getPushRegistration = vi.fn(
+    () =>
+      new Promise<{ installationId: string; platform: 'ios'; status: 'denied'; token: null }>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const host = new NativeHost({
+    origin,
+    send,
+    login: async () => ({ status: 'cancelled' }),
+    onLocation: vi.fn(),
+    getPushRegistration,
+    setPushBadge: badge,
+  });
+  host.receive(
+    JSON.stringify({ type: 'push-request', id: 'fake', requestPermission: true }),
+    'https://evil.example',
+  );
+  expect(getPushRegistration).not.toHaveBeenCalled();
+  host.receive(JSON.stringify({ type: 'push-request', id: 'real', requestPermission: true }), origin);
+  expect(getPushRegistration).toHaveBeenCalledExactlyOnceWith(true);
+  host.reset();
+  finish?.({
+    installationId: '11111111-1111-4111-8111-111111111111',
+    platform: 'ios',
+    status: 'denied',
+    token: null,
+  });
+  await vi.waitFor(() => expect(send).not.toHaveBeenCalled());
+  host.receive(JSON.stringify({ type: 'push-badge', count: -1 }), origin);
+  expect(badge).not.toHaveBeenCalled();
+  host.receive(JSON.stringify({ type: 'push-badge', count: 9 }), origin);
+  expect(badge).toHaveBeenCalledExactlyOnceWith(9);
+});

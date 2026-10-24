@@ -200,7 +200,7 @@ test('coaching and general-board deep links preserve the game and return to its 
   const board = appRoutes.boards('ko', 'coaching', undefined, slug);
   expect(nativeHost.openDeepLink(`gamefeedback:/${board}`)).toBe(true);
   await expect.poll(nativeHost.currentPath).toBe(board);
-  const chips = page.locator('.game-board-chips');
+  const chips = page.locator('.game-board-chips:visible');
   await expect(chips.locator('[aria-current="page"]')).toHaveAttribute('href', board);
   await expect(chips.locator('[aria-current="page"]')).toBeInViewport({ ratio: 1 });
   const general = chips.getByRole('link', { name: '자유게시판', exact: true });

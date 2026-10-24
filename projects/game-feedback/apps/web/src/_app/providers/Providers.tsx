@@ -16,6 +16,7 @@ import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 
 import { MobileViewport } from './MobileViewport';
 import { NativeBridge } from './NativeBridge';
+import { NativePushSync } from './NativePushSync';
 import { NavigationHistory } from './NavigationHistory';
 
 export function Providers({ children, initialSession }: { children: ReactNode; initialSession?: Session }) {
@@ -51,6 +52,7 @@ function SessionContent({ children }: { children: ReactNode }) {
     <OverlayProvider key={session?.user?.id ?? 'anonymous'}>
       <AnalyticsIdentity userId={session.user?.id} needsOnboarding={session.needsOnboarding} />
       <InteractionTracker />
+      <NativePushSync />
       <ChatRealtimeProvider userId={session?.user?.id}>{children}</ChatRealtimeProvider>
       <AsyncBoundary title={t('앱 연결')} pendingFallback={null}>
         <NativeBridge />

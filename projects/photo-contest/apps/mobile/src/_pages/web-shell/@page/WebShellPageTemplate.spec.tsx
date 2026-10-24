@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { parseNativeAppInfo } from '@photo-contest/bridge';
 
+import { setAppearance } from '@/shared/model/appearance';
 import {
   dispatchedMessages,
   nativeEvent,
@@ -65,10 +66,22 @@ function readyWeb(path = '/') {
 }
 
 afterEach(() => {
+  act(() => setAppearance('system'));
   Object.defineProperty(Platform, 'OS', { configurable: true, writable: true, value: 'web' });
 });
 
 describe('WebShellPageTemplate', () => {
+  it('웹에서 선택한 다크 모드를 반영하고 다른 출처의 화면 변경 요청은 거부해야 한다', () => {
+    renderShell();
+    postFromWeb(webEvent('appearance.changed', { preference: 'dark' }));
+    expect(getComputedStyle(screen.getByTestId('loading-overlay')).backgroundColor).toBe('rgb(20, 19, 18)');
+    postFromWeb(webEvent('appearance.changed', { preference: 'light' }), 'https://outside.example/');
+    expect(getComputedStyle(screen.getByTestId('loading-overlay')).backgroundColor).toBe('rgb(20, 19, 18)');
+    postFromWeb(webEvent('appearance.changed', { preference: 'light' }));
+    expect(getComputedStyle(screen.getByTestId('loading-overlay')).backgroundColor).toBe(
+      'rgb(255, 255, 255)',
+    );
+  });
   it('첫 경로를 웹 origin으로 열고 앱 User-Agent와 앱 정보를 넘겨야 한다', () => {
     renderShell('/invite/abc');
 

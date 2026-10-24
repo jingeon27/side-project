@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 import type { Page } from '@playwright/test';
 
@@ -15,6 +15,10 @@ import { toWebPath } from '../../src/features/navigation/lib/navigation-policy';
 
 export const ORIGIN = 'http://127.0.0.1:3302';
 class NativeHostHarness {
+  readonly pushPermissions: boolean[] = [];
+  readonly badges: number[] = [];
+  private pushGranted = false;
+  private readonly installationId = randomUUID();
   readonly messages: TWebMessage[] = [];
   readonly authSessions: string[] = [];
   readonly authCallbacks: string[] = [];
@@ -25,9 +29,29 @@ class NativeHostHarness {
   private rootBackCount = 0;
   private overlayOpen = false;
   private readonly host: NativeHost;
-  constructor(private readonly page: Page) {
+  constructor(
+    private readonly page: Page,
+    private readonly push = false,
+  ) {
     this.host = new NativeHost({
       origin: ORIGIN,
+      ...(push
+        ? {
+            getPushRegistration: async (requestPermission: boolean) => {
+              this.pushPermissions.push(requestPermission);
+              if (requestPermission) this.pushGranted = true;
+              return {
+                installationId: this.installationId,
+                platform: 'ios' as const,
+                status: this.pushGranted ? ('granted' as const) : ('undetermined' as const),
+                token: this.pushGranted ? `ExpoPushToken[${this.installationId.replaceAll('-', '')}]` : null,
+              };
+            },
+            setPushBadge: async (count: number) => {
+              this.badges.push(count);
+            },
+          }
+        : {}),
       send: (message) => {
         if (!this.closed) void this.page.evaluate(buildDispatchScript(message)).catch(() => undefined);
       },
@@ -71,7 +95,7 @@ class NativeHostHarness {
       this.host.receive(data, url);
     });
     await this.page.addInitScript(
-      `${buildBootstrapScript('1.0.0')}window.ReactNativeWebView={postMessage:data=>window.__gfNativePost(data,location.href)};`,
+      `${buildBootstrapScript('1.0.0', this.push ? ['push'] : [])}window.ReactNativeWebView={postMessage:data=>window.__gfNativePost(data,location.href)};`,
     );
     return this;
   }
@@ -80,6 +104,7 @@ class NativeHostHarness {
   rootBacks = () => this.rootBackCount;
   hasOverlay = () => this.overlayOpen;
   requestBack = () => this.host.back();
+  pushReceived = () => this.host.pushReceived();
   state = (state: 'active' | 'background') => this.host.state(state);
   openDeepLink = (url: string) => {
     const path = toWebPath(url, ORIGIN);
@@ -93,6 +118,6 @@ class NativeHostHarness {
     this.host.reset();
   };
 }
-export function installNativeHost(page: Page) {
-  return new NativeHostHarness(page).install();
+export function installNativeHost(page: Page, options: { push?: boolean } = {}) {
+  return new NativeHostHarness(page, options.push).install();
 }

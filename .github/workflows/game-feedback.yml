@@ -66,6 +66,7 @@ jobs:
         run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
       - run: yarn workspace @side/design-system check
       - run: yarn check:game-feedback
+      - run: yarn workspace @side/push-notifications check
       - run: yarn workspace @side/migration-check check
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback

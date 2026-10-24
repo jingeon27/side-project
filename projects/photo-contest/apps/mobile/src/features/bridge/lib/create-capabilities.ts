@@ -1,6 +1,6 @@
 import type { ShareAction, ShareContent, ShareOptions } from 'react-native';
 
-import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
+import { BRIDGE_ERROR_CODE, type TPushRegistration } from '@photo-contest/bridge';
 import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/bridge/native';
 
 import { encodeBase64Url } from '@/shared/lib/base64url';
@@ -26,6 +26,9 @@ export type TCapabilityOutcome =
 
 /** 플랫폼 기능. 앱은 expo 모듈로, 테스트와 E2E는 기록용 가짜로 채운다. */
 export interface ICapabilityDependencies {
+  getPushRegistration?: (requestPermission: boolean) => Promise<TPushRegistration>;
+  setPushBadge?: (count: number) => Promise<{ updated: boolean }>;
+  openPushSettings?: () => Promise<{ opened: boolean }>;
   platform: 'ios' | 'android';
   /** 예: https://contest.example/backend */
   apiBase: string;
@@ -59,7 +62,12 @@ function isCancelled(error: unknown) {
 }
 
 /** 웹 요청(브리지 기능)을 플랫폼 기능으로 처리한다. 판단만 하고 실제 동작은 주입받는다. */
-export function createCapabilities(deps: ICapabilityDependencies): Required<TNativeCapabilities> {
+export function createCapabilities(
+  deps: ICapabilityDependencies,
+): Required<
+  Omit<TNativeCapabilities, 'notifications.registration' | 'notifications.badge' | 'notifications.settings'>
+> &
+  Pick<TNativeCapabilities, 'notifications.registration' | 'notifications.badge' | 'notifications.settings'> {
   let isLoginInProgress = false;
 
   function report(outcome: TCapabilityOutcome) {
@@ -87,7 +95,18 @@ export function createCapabilities(deps: ICapabilityDependencies): Required<TNat
     throw new NativeCapabilityError(BRIDGE_ERROR_CODE.Failed, LOGIN_FAILED_MESSAGE);
   }
 
+  const { getPushRegistration, setPushBadge, openPushSettings } = deps;
   return {
+    ...(getPushRegistration
+      ? {
+          'notifications.registration': async ({ requestPermission }: { requestPermission: boolean }) =>
+            getPushRegistration(requestPermission),
+        }
+      : {}),
+    ...(setPushBadge
+      ? { 'notifications.badge': async ({ count }: { count: number }) => setPushBadge(count) }
+      : {}),
+    ...(openPushSettings ? { 'notifications.settings': () => openPushSettings() } : {}),
     'share.open': async ({ url, title, text }) => {
       // iOS 공유 시트는 url을 링크 미리보기로 쓰고, Android는 message 한 칸만 공유한다.
       const content: ShareContent =

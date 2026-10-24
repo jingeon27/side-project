@@ -11,6 +11,7 @@ import { ApiError } from '../common/http/api-error';
 import type { ListQueryDto } from '../common/http/list-query.dto';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
+import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import type { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
@@ -57,15 +58,16 @@ export class CommentsService {
           (recipient) => recipient !== u.id,
         );
         if (recipients.length)
-          await tx.notification.createMany({
-            data: recipients.map((userId) => ({
+          await writePostNotifications(
+            tx,
+            recipients.map((userId) => ({
               actorId: u.id,
               userId,
               postId,
               commentId: row.id,
               type: parent ? 'COMMENT_REPLY' : 'COMMENT',
             })),
-          });
+          );
         return row;
       },
       // 태그는 게시글을 확인한 뒤 만든다. 형식이 틀린 id는 태그 검증보다 404가 먼저여야 한다.

@@ -21,7 +21,24 @@ const id = z.string().min(1).max(100);
 const ticket = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const LoginProviderSchema = z.enum(['x', 'kakao', 'discord', 'google']);
 export type TLoginProvider = z.infer<typeof LoginProviderSchema>;
+export const PushRegistrationSchema = z
+  .object({
+    installationId: z.uuidv4(),
+    platform: z.enum(['ios', 'android']),
+    status: z.enum(['granted', 'denied', 'undetermined', 'unavailable']),
+    token: z
+      .string()
+      .regex(/^(?:Expo|Exponent)PushToken\[[A-Za-z0-9_-]{16,200}\]$/)
+      .nullable(),
+  })
+  .strict()
+  .refine((value) => (value.status === 'granted') === (value.token !== null));
+export type TPushRegistration = z.infer<typeof PushRegistrationSchema>;
+
 export const WebMessageSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('push-settings') }).strict(),
+  z.object({ type: z.literal('push-request'), id, requestPermission: z.boolean() }).strict(),
+  z.object({ type: z.literal('push-badge'), count: z.int().min(0).max(9999) }).strict(),
   z.object({ type: z.literal('ready') }).strict(),
   z.object({ type: z.literal('location'), path: WebPathSchema }).strict(),
   z
@@ -31,6 +48,8 @@ export const WebMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('auth-request'), id, provider: LoginProviderSchema.optional() }).strict(),
 ]);
 export const NativeMessageSchema = z.union([
+  z.object({ type: z.literal('push-result'), id, registration: PushRegistrationSchema.nullable() }).strict(),
+  z.object({ type: z.literal('push-received') }).strict(),
   z.object({ type: z.literal('open'), path: WebPathSchema }).strict(),
   z.object({ type: z.literal('state'), state: z.enum(['active', 'background']) }).strict(),
   z.object({ type: z.literal('back'), id }).strict(),
@@ -52,6 +71,7 @@ export type TLoginResult =
 export interface IAppInfo {
   version: string;
   protocol: 1;
+  capabilities?: string[];
 }
 export function parseWebMessage(data: string): TWebMessage | null {
   try {
@@ -64,8 +84,8 @@ export function parseNativeMessage(data: unknown): TNativeMessage | null {
   const result = NativeMessageSchema.safeParse(data);
   return result.success ? result.data : null;
 }
-export function buildBootstrapScript(version: string) {
-  return `window.__GAME_FEEDBACK_APP__=${JSON.stringify({ version, protocol: 1 })};window.dispatchEvent(new Event('game-feedback:bootstrap'));true;`;
+export function buildBootstrapScript(version: string, capabilities: string[] = []) {
+  return `window.__GAME_FEEDBACK_APP__=${JSON.stringify({ version, protocol: 1, ...(capabilities.length ? { capabilities } : {}) })};window.dispatchEvent(new Event('game-feedback:bootstrap'));true;`;
 }
 export function buildDispatchScript(message: TNativeMessage) {
   return `window.dispatchEvent(new CustomEvent(${JSON.stringify(BRIDGE_EVENT)},{detail:${JSON.stringify(message)}}));true;`;

@@ -2,6 +2,9 @@
 !package.json
 !yarn.lock
 !.yarnrc.yml
+!.yarn/
+!.yarn/patches/
+!.yarn/patches/**
 !packages/
 !packages/**
 !projects/

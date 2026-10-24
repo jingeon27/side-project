@@ -7,7 +7,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contracts';
+import { NotificationListSchema, SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
@@ -449,7 +449,9 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
         .set('Origin', origin)
         .send({ visitorId: randomUUID() })
         .expect(404);
-      expect((await one.get('/api/notifications').expect(200)).body.items).toHaveLength(0);
+      const alerts = NotificationListSchema.parse((await one.get('/api/notifications').expect(200)).body);
+      expect(alerts.items.filter((item) => item.type !== 'CHAT_MESSAGE')).toHaveLength(0);
+      expect(alerts.items.some((item) => item.actor?.id === 'sample-user-3')).toBe(false);
     } finally {
       await one.delete('/api/blocks/sample-user-3').set('Origin', origin).expect(200);
     }

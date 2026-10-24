@@ -37,6 +37,17 @@ export {
 } from './post-media';
 export type { TPostMedia, TRichTextEmbed } from './post-media';
 
+export const RegisterPushDeviceSchema = z
+  .object({
+    installationId: z.uuidv4(),
+    token: z.string().regex(/^(?:Expo|Exponent)PushToken\[[A-Za-z0-9_-]{16,200}\]$/),
+    platform: z.enum(['ios', 'android']),
+    locale: z.enum(['ko', 'en', 'ja']),
+  })
+  .strict();
+export const PushDeviceStatusSchema = z.object({ ok: z.literal(true), enabled: z.boolean() });
+export const UnregisterPushDeviceSchema = z.object({ installationId: z.uuidv4() }).strict();
+
 export const BoardKindSchema = z.enum(['FEEDBACK', 'FRIEND_SALE', 'FRIENDLY', 'COACHING', 'FREE']);
 export type TBoardKind = z.infer<typeof BoardKindSchema>;
 export const CoachingPricingTypeSchema = z.enum(['HOURLY', 'MONTHLY', 'GOAL']);
@@ -201,19 +212,31 @@ export const CommentSchema = z.discriminatedUnion('isDeleted', [
     author: z.null(),
   }),
 ]);
-export const NotificationSchema = z.object({
+const NotificationBaseSchema = z.object({
   id: ResponseIdSchema,
-  type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
-  postId: ResponseIdSchema,
-  answerId: ResponseIdSchema.nullable(),
-  commentId: ResponseIdSchema.nullable().optional(),
   /** 알림을 만든 사용자의 현재 공개 정보. 탈퇴 등으로 없으면 null이다. 문구는 클라이언트가 번역해 조합한다. */
   actor: AuthorSchema.nullable(),
-  /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
-  postTitle: z.string().min(1),
   readAt: ResponseTimestampSchema.nullable(),
   createdAt: ResponseTimestampSchema,
 });
+export const NotificationSchema = z.discriminatedUnion('type', [
+  NotificationBaseSchema.extend({
+    type: z.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
+    postId: ResponseIdSchema,
+    answerId: ResponseIdSchema.nullable(),
+    commentId: ResponseIdSchema.nullable().optional(),
+    /** 대상 게시글의 현재 제목. 작성 당시 값을 저장하지 않는다. */
+    postTitle: z.string().min(1),
+  }),
+  NotificationBaseSchema.extend({
+    type: z.literal('CHAT_MESSAGE'),
+    conversationId: ResponseIdSchema,
+    postId: z.null(),
+    postTitle: z.null(),
+    answerId: z.null(),
+    commentId: z.null().optional(),
+  }),
+]);
 export const PostListSchema = z.object({
   items: z.array(PostSchema),
   nextCursor: z.string().min(1).nullable(),
@@ -798,6 +821,20 @@ export const operations: OperationSpec[] = [
   },
   { method: 'post', path: '/api/notifications/{id}/read', id: 'readNotification', response: OkSchema },
   { method: 'post', path: '/api/notifications/read-all', id: 'readAllNotifications', response: OkSchema },
+  {
+    method: 'post',
+    path: '/api/push/devices/register',
+    id: 'registerPushDevice',
+    body: RegisterPushDeviceSchema,
+    response: PushDeviceStatusSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/push/devices/unregister',
+    id: 'unregisterPushDevice',
+    body: UnregisterPushDeviceSchema,
+    response: OkSchema,
+  },
   { method: 'post', path: '/api/reports', id: 'createReport', body: ReportInputSchema, response: OkSchema },
   { method: 'get', path: '/api/blocks', id: 'listBlocks', response: z.array(AuthorSchema) },
   { method: 'get', path: '/api/users/{id}/follow', id: 'getUserFollow', response: FollowStatusSchema },

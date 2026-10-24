@@ -184,4 +184,18 @@ describe('선택 필드 호환성', () => {
       })?.analyticsDeviceId,
     ).toBe('device-123');
   });
+
+  it('화면 모드 알림은 알려진 세 가지 선택만 받아들여야 한다', () => {
+    for (const preference of ['system', 'light', 'dark'])
+      expect(
+        decodeWebMessage(
+          encode({ v: 1, kind: 'event', type: 'appearance.changed', payload: { preference } }),
+        ),
+      ).toMatchObject({ type: 'appearance.changed', payload: { preference } });
+    expect(
+      decodeWebMessage(
+        encode({ v: 1, kind: 'event', type: 'appearance.changed', payload: { preference: 'custom' } }),
+      ),
+    ).toBeNull();
+  });
 });

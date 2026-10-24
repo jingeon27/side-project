@@ -30,6 +30,18 @@ export class ChatHistoryService {
       });
       if (!message) throw new ApiError(404, 'MESSAGE_NOT_FOUND', '삭제할 대화내역을 찾을 수 없습니다.');
       if (!advancesBoundary(message, historyBoundary(conversation, user.id))) return;
+      await tx.chatNotification.deleteMany({
+        where: {
+          userId: user.id,
+          message: {
+            conversationId: id,
+            OR: [
+              { createdAt: { lt: message.createdAt } },
+              { createdAt: message.createdAt, id: { lte: message.id } },
+            ],
+          },
+        },
+      });
       const newer = await (tx ?? this.db).chatMessage.count({
         where: {
           conversationId: id,
@@ -65,6 +77,20 @@ export class ChatHistoryService {
       });
       if (!message) throw new ApiError(404, 'MESSAGE_NOT_FOUND', '표시된 메시지를 찾을 수 없습니다.');
       const current = readBoundary(conversation, user.id);
+      await tx.chatNotification.updateMany({
+        where: {
+          userId: user.id,
+          readAt: null,
+          message: {
+            conversationId: id,
+            OR: [
+              { createdAt: { lt: message.createdAt } },
+              { createdAt: message.createdAt, id: { lte: message.id } },
+            ],
+          },
+        },
+        data: { readAt: new Date() },
+      });
       const advances =
         !current.at ||
         message.createdAt > current.at ||

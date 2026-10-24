@@ -48,6 +48,13 @@ export class SessionService {
     return viewer;
   }
 
+  async requireSessionKey(req: Request) {
+    const viewer = await this.requireViewer(req);
+    const token = sessionToken(req);
+    if (!token) fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED);
+    return { userId: viewer.id, key: sha256Hex(token) };
+  }
+
   /** 새 세션을 만들고 쿠키로 내려준다. DB에는 토큰 해시만 저장한다. */
   async start(res: Response, userId: string) {
     const token = randomToken();

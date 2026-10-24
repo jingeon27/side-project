@@ -36,6 +36,7 @@ import {
   PostMedia,
   PublicProfile,
   RecordPostView200,
+  RegisterPushDevice200,
   Session,
   SupportThread,
   TestAccountList,
@@ -70,11 +71,13 @@ import type {
   PostMediaUpload,
   PostPatch,
   RecordPostViewBody,
+  RegisterPushDeviceBody,
   ReportInput,
   ReportReviewInput,
   SupportInput,
   SupportStatusInput,
   TestLoginInput,
+  UnregisterPushDeviceBody,
   UpdateProfileBody,
   UserBanInput,
   VerificationInput
@@ -1787,6 +1790,78 @@ export const readAllNotifications = async ( options?: Parameters<typeof apiFetch
     method: 'POST'
 
     ,
+    schema: Ok
+  }
+);}
+
+
+
+export const getRegisterPushDeviceUrl = () => {
+
+
+
+
+  return `/api/push/devices/register`
+}
+
+export const registerPushDevice = async (registerPushDeviceBody: RegisterPushDeviceBody, options?: Parameters<typeof apiFetch>[1]): Promise<RegisterPushDevice200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<RegisterPushDevice200>(getRegisterPushDeviceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerPushDeviceBody),
+    schema: RegisterPushDevice200
+  }
+);}
+
+
+
+export const getUnregisterPushDeviceUrl = () => {
+
+
+
+
+  return `/api/push/devices/unregister`
+}
+
+export const unregisterPushDevice = async (unregisterPushDeviceBody: UnregisterPushDeviceBody, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<Ok>(getUnregisterPushDeviceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(unregisterPushDeviceBody),
     schema: Ok
   }
 );}

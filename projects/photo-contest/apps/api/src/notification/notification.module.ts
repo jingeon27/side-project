@@ -8,6 +8,6 @@ import { NotificationService } from './notification.service';
 @Module({
   imports: [MembershipModule],
   providers: [NotificationService, NotificationResolver, ContestNotificationService],
-  exports: [ContestNotificationService],
+  exports: [ContestNotificationService, NotificationService],
 })
 export class NotificationModule {}

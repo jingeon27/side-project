@@ -88,7 +88,7 @@
   },
   "analytics": {
     "title": "방문 통계",
-    "message": "동의하면 Google Analytics 쿠키를 사용해 방문과 글 읽기 통계를 수집합니다. 검색어 원문은 전송하지 않습니다.",
+    "message": "방문 통계와 클릭·스크롤 히트맵, 세션 재생으로 글과 사용성을 개선합니다. 동의할 때만 Google Analytics와 Microsoft Clarity를 사용하며 언제든 철회할 수 있습니다.",
     "allow": "동의",
     "deny": "거부",
     "preferences": "통계 설정",

@@ -88,7 +88,7 @@
   },
   "analytics": {
     "title": "Visitor analytics",
-    "message": "With your consent, Google Analytics cookies help measure visits and reading activity. Raw search queries are never sent.",
+    "message": "With your consent, Google Analytics and Microsoft Clarity help improve articles using visit statistics, click and scroll heatmaps, and session replay. You can withdraw consent at any time.",
     "allow": "Allow",
     "deny": "Decline",
     "preferences": "Analytics settings",

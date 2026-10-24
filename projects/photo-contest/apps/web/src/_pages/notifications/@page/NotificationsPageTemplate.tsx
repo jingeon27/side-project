@@ -7,6 +7,7 @@ import { overlay } from 'overlay-kit';
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
 import { NotificationItem } from '@/features/notification';
 import { PostCommentsBottomSheet } from '@/features/post';
+import { PushNotificationSettings } from '@/features/push-notifications';
 import {
   MarkAllNotificationsReadDocument,
   MarkNotificationReadDocument,
@@ -72,6 +73,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
   }
   return (
     <div className="mx-auto flex w-full max-w-feed flex-col gap-4">
+      <PushNotificationSettings />
       <div className="flex items-center justify-between gap-3">
         <p className="text-caption text-muted">읽지 않은 알림 {data.myNotifications.unreadCount}개</p>
         <Button

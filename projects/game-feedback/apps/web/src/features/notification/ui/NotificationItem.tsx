@@ -20,25 +20,29 @@ const notificationTitles: Record<Notification['type'], string> = {
   COMMENT: '새로운 댓글이 달렸어요',
   COMMENT_REPLY: '새로운 답글이 달렸어요',
   FOLLOWED_POST: '팔로우한 사용자의 새 글',
+  CHAT_MESSAGE: '새로운 채팅이 도착했어요',
 };
 export function NotificationItem({ notification, href, onRead }: INotificationItemProps) {
   const { t, locale: textLocale } = useI18n();
   // 서버는 문구를 저장하지 않는다. 현재 닉네임·제목으로 화면 언어의 문구를 만든다.
   const name = notification.actor?.nickname ?? t('알 수 없는 플레이어');
-  const message = match(notification.type)
-    .with('ANSWER', () =>
-      t('{name}님이 "{title}"에 피드백을 남겼어요.', { name, title: notification.postTitle }),
+  const message = match(notification)
+    .with({ type: 'ANSWER' }, (item) =>
+      t('{name}님이 "{title}"에 피드백을 남겼어요.', { name, title: item.postTitle }),
     )
-    .with('HELPFUL', () =>
-      t('{name}님이 "{title}"의 피드백을 도움됨으로 표시했어요.', { name, title: notification.postTitle }),
+    .with({ type: 'HELPFUL' }, (item) =>
+      t('{name}님이 "{title}"의 피드백을 도움됨으로 표시했어요.', { name, title: item.postTitle }),
     )
-    .with('COMMENT', () =>
-      t('{name}님이 "{title}"에 댓글을 남겼어요.', { name, title: notification.postTitle }),
+    .with({ type: 'COMMENT' }, (item) =>
+      t('{name}님이 "{title}"에 댓글을 남겼어요.', { name, title: item.postTitle }),
     )
-    .with('COMMENT_REPLY', () =>
-      t('{name}님이 "{title}"에 답글을 남겼어요.', { name, title: notification.postTitle }),
+    .with({ type: 'COMMENT_REPLY' }, (item) =>
+      t('{name}님이 "{title}"에 답글을 남겼어요.', { name, title: item.postTitle }),
     )
-    .with('FOLLOWED_POST', () => t('{name}님의 새 글: {title}', { name, title: notification.postTitle }))
+    .with({ type: 'FOLLOWED_POST' }, (item) =>
+      t('{name}님의 새 글: {title}', { name, title: item.postTitle }),
+    )
+    .with({ type: 'CHAT_MESSAGE' }, () => t('{name}님이 메시지를 보냈어요.', { name }))
     .exhaustive();
   return (
     <Link

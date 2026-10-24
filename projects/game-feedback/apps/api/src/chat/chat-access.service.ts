@@ -37,6 +37,31 @@ export class ChatAccessService {
       ]),
     ];
   }
+  async listWhere(userId: string, excluded?: string[]): Promise<Prisma.ChatConversationWhereInput> {
+    const hidden = excluded ?? (await this.excluded(userId));
+    return {
+      ...(!this.config.demoMode && !this.config.testAuthEnabled
+        ? { firstUser: { demoKey: null }, secondUser: { demoKey: null } }
+        : {}),
+      OR: [
+        { firstUserId: userId, firstHidden: false },
+        { secondUserId: userId, secondHidden: false },
+      ],
+      AND: [
+        {
+          OR: [
+            { support: { isNot: null } },
+            {
+              firstUserId: { notIn: hidden },
+              secondUserId: { notIn: hidden },
+              firstUser: { bannedAt: null },
+              secondUser: { bannedAt: null },
+            },
+          ],
+        },
+      ],
+    };
+  }
   async blocked(userId: string, peerId: string, db: Prisma.TransactionClient | undefined = undefined) {
     return !!(await (db ?? this.db).block.findFirst({
       where: {

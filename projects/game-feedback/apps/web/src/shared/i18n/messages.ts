@@ -4,6 +4,28 @@ import { profileMessages } from './profile-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '앱 알림을 준비하고 있어요. 잠시 후 다시 확인해 주세요.': [
+    'App notifications are being set up. Please check again later.',
+    'アプリ通知を準備しています。後でもう一度確認してください。',
+  ],
+  '앱 알림': ['App notifications', 'アプリ通知'],
+  '앱 알림이 켜져 있어요.': ['App notifications are enabled.', 'アプリ通知は有効です。'],
+  '기기 설정에서 알림을 허용해 주세요.': [
+    'Allow notifications in device settings.',
+    '端末の設定で通知を許可してください。',
+  ],
+  '새로운 소식을 앱 알림으로 받아보세요.': [
+    'Get new activity notifications in the app.',
+    '新しいお知らせをアプリ通知で受け取れます。',
+  ],
+  '알림 켜기': ['Enable notifications', '通知を有効にする'],
+  '기기 설정 열기': ['Open device settings', '端末の設定を開く'],
+  '알림 설정에 실패했어요. 다시 시도해 주세요.': [
+    'Could not update notifications. Please try again.',
+    '通知を設定できませんでした。もう一度お試しください。',
+  ],
+  '새로운 채팅이 도착했어요': ['New chat message', '新しいチャットメッセージ'],
+  '{name}님이 메시지를 보냈어요.': ['{name} sent you a message.', '{name}さんからメッセージが届きました。'],
   '게임 프로필 연결 (선택)': ['Connect a game profile (optional)', 'ゲームプロフィールの連携（任意）'],
   '태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.': [
     'Look up your tag to connect the profile when you sign up. You can also add it later.',

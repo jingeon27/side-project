@@ -36,6 +36,8 @@ const env = {
   DISCORD_CLIENT_SECRET: '',
   GF_TEST_AUTH_ENABLED: 'false',
   SUPERCELL_API_TOKEN: '',
+  PUSH_NOTIFICATIONS_ENABLED: 'false',
+  EXPO_ACCESS_TOKEN: '',
   MOBILE_AUTH_CALLBACK_URL: '',
 };
 
@@ -48,6 +50,7 @@ function run(script, args) {
 try {
   assertNode();
   if (!unitOnly) guardDatabaseUrl(env.TEST_DATABASE_URL, { test: true });
+  await yarn(['workspace', '@side/push-notifications', 'build'], env);
   await yarn(['workspace', '@game-feedback/contracts', 'build'], env);
   await yarn(['workspace', '@game-feedback/api', 'db:generate'], env);
   if (!unitOnly) run(join(projectDir, 'scripts/db.mjs'), ['start', '--test']);

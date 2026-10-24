@@ -5,10 +5,9 @@ import { CryptoDigestAlgorithm, digest, getRandomValues } from 'expo-crypto';
 import { impactAsync, ImpactFeedbackStyle, notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { openAuthSessionAsync, openBrowserAsync } from 'expo-web-browser';
 
-import type { TNativeCapabilities } from '@photo-contest/bridge/native';
-
 import { API_BASE, AUTH_CALLBACK_URL } from '@/shared/config/env';
 import { COLORS } from '@/shared/config/theme';
+import { getPushRegistration, openPushSettings, setPushBadge, supportsNativePush } from '@/shared/lib/push';
 
 import { createCapabilities, type ICapabilityDependencies } from '../lib/create-capabilities';
 
@@ -27,6 +26,7 @@ const NOTIFICATION_TYPE = {
 /** expo 모듈로 실제 플랫폼 기능을 만든다. 판단 로직은 createCapabilities가 가진다. */
 export function createNativeDependencies(): ICapabilityDependencies {
   return {
+    ...(supportsNativePush() ? { getPushRegistration, setPushBadge, openPushSettings } : {}),
     platform: Platform.OS === 'ios' ? 'ios' : 'android',
     apiBase: API_BASE,
     authCallbackUrl: AUTH_CALLBACK_URL,
@@ -55,6 +55,6 @@ export function createNativeDependencies(): ICapabilityDependencies {
 /** 앱이 웹에 제공하는 브리지 기능 전체. onOutcome으로 공유·소셜 로그인 결과를 받는다. */
 export function createNativeCapabilities(
   onOutcome?: ICapabilityDependencies['onOutcome'],
-): Required<TNativeCapabilities> {
+): ReturnType<typeof createCapabilities> {
   return createCapabilities({ ...createNativeDependencies(), onOutcome });
 }

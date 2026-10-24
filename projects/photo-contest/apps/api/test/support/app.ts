@@ -18,6 +18,8 @@ const CONCURRENT_REQUESTS_MAX = 32;
 
 // 개발자 .env의 실제 키(OAuth·Sentry·S3·AWS)가 테스트 요청으로 새지 않도록 앱을 만들기 전에 지운다.
 const CLEARED_ENV = [
+  'PUSH_NOTIFICATIONS_ENABLED',
+  'EXPO_ACCESS_TOKEN',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
   'KAKAO_CLIENT_ID',

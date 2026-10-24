@@ -1,6 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-const BACKGROUND_COLOR = '#fbfaf7';
+const BACKGROUND_COLOR = '#ffffff';
 const DEVELOPMENT_WEB_ORIGIN = 'http://localhost:3200';
 const HTTPS_ORIGIN = /^(https:\/\/[^\s/?#@]+)(?:[/?#]|$)/i;
 /** 소셜 로그인 콜백 경로. src/shared/config/app-links.ts, 웹 안내 페이지·AASA, API MOBILE_AUTH_CALLBACK_URL과 같다. */
@@ -85,7 +85,7 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     // 로그인 밖의 딥링크용. 소셜 로그인 코드는 아래 https 앱 링크로만 받는다.
     scheme: 'photocontest',
     orientation: 'portrait',
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'automatic',
     backgroundColor: BACKGROUND_COLOR,
     ios: {
       bundleIdentifier: settings.iosBundleId,
@@ -109,6 +109,9 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
     android: {
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#e85d4a' },
       package: settings.androidPackage,
+      ...(process.env.MOBILE_GOOGLE_SERVICES_JSON
+        ? { googleServicesFile: process.env.MOBILE_GOOGLE_SERVICES_JSON }
+        : {}),
       // 자동 백업이 WebView 쿠키 DB(세션)까지 클라우드·다른 기기로 옮기지 않게 한다. 앱이 따로 보관할 데이터는 없다.
       allowBackup: false,
       // 뒤로 가기를 BackHandler로 받아 웹에 먼저 물어봐야 한다.
@@ -128,11 +131,18 @@ export default function appConfig({ config }: ConfigContext): ExpoConfig {
         : {}),
     },
     plugins: [
+      ['expo-notifications', { defaultChannel: 'activity' }],
       ['expo-build-properties', { android: isDevelopment ? { usesCleartextTraffic: true } : {} }],
-      ['expo-splash-screen', { backgroundColor: BACKGROUND_COLOR }],
+      ['expo-splash-screen', { backgroundColor: BACKGROUND_COLOR, dark: { backgroundColor: '#141312' } }],
       // 조직·프로젝트·토큰은 넣지 않는다. 소스맵 업로드는 빌드 환경의 SENTRY_ORG·SENTRY_PROJECT·SENTRY_AUTH_TOKEN으로만 한다.
       '@sentry/react-native/expo',
     ],
-    extra: { webOrigin: settings.webOrigin },
+    extra: {
+      ...config.extra,
+      webOrigin: settings.webOrigin,
+      ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID
+        ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } }
+        : {}),
+    },
   };
 }

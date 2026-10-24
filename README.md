@@ -139,3 +139,5 @@ corepack yarn format:check
 서비스 로고는 서로 다른 실루엣과 색을 쓴다. 밤별 블로그는 남색의 책과 별, Game Mate는 초록색 게임패드, 별사대는 코랄색의 카메라와 별 렌즈다. 각 서비스의 favicon·Apple 아이콘·공유 이미지·네이티브 앱 아이콘은 해당 로고를 따른다.
 
 웹·WebView는 각 웹 origin의 `/api` 또는 `/backend` 프록시를 사용한다. API 공개 도메인과 서버 간 내부 upstream 주소를 구분하며, 별사대의 API GraphQL도 Next 프록시를 거쳐 공개 캐시를 무효화한다. DNS·TLS·호스팅 연결은 [공통 배포 안내](deploy/shared-instance/README.md)와 [블로그 배포 안내](projects/blog/docs/deployment.md)를 따른다.
+
+두 서비스의 RN 푸시는 각 API가 세션·권한·DB 큐를 소유하고, [`@side/push-notifications`](packages/push-notifications/README.md)만 Expo HTTP 전송·재시도·영수증 처리를 공유한다. 같은 제공자의 오류·부분 성공을 두 번 구현하지 않기 위한 공통 패키지이며 사용자 데이터와 인증 설정은 공유하지 않는다.

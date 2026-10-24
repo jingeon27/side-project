@@ -94,3 +94,7 @@ export const GROUP_CATEGORY_LIMIT = 20;
 export const GROUP_CATEGORY_NAME_LIMIT = 20;
 export const GROUP_DESCRIPTION_LIMIT = 500;
 export const CONTEST_LIKE_LIMIT_MAX = 100;
+
+export const PUSH_DEVICE_LIMIT = 10;
+export const PUSH_INTERVAL_MS = 15_000;
+export const PUSH_QUEUE_BATCH_SIZE = 100;

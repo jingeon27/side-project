@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Notification } from '@/shared/api';
 import { LanguageProvider } from '@/shared/i18n';
 
+import { notificationPath } from '../model/notification-path';
 import { NotificationItem } from './NotificationItem';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
@@ -29,12 +30,28 @@ const notification = {
 function renderItem(value: Notification, locale: 'ko' | 'en' = 'ko') {
   return render(
     <LanguageProvider initialLocale={locale} initialPreference={locale} automaticLocale={locale}>
-      <NotificationItem notification={value} href="/ko/posts/post-1" onRead={() => undefined} />
+      <NotificationItem
+        notification={value}
+        href={notificationPath(locale, value)}
+        onRead={() => undefined}
+      />
     </LanguageProvider>,
   );
 }
 
 describe('notification copy', () => {
+  it('채팅 알림은 메시지 원문 없이 상대를 알리고 해당 대화로 연결해야 한다', () => {
+    renderItem({
+      ...notification,
+      type: 'CHAT_MESSAGE',
+      conversationId: 'room-1',
+      postId: null,
+      postTitle: null,
+      commentId: null,
+    });
+    expect(screen.getByText('답글작성자님이 메시지를 보냈어요.')).toBeTruthy();
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/ko/messages/room-1');
+  });
   it('composes the sentence from the current actor and post title in the screen language', () => {
     const korean = renderItem(notification);
     expect(screen.getByText('답글작성자님이 "수정된 게시글 제목"에 답글을 남겼어요.')).toBeTruthy();

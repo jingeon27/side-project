@@ -1,9 +1,10 @@
 import { StyleSheet } from 'react-native';
 
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
-import { COLORS } from '@/shared/config/theme';
+import { useAppearance } from '@/shared/model/appearance';
 
 import { useWebShell } from '../model/use-web-shell';
 import { LoadingOverlay } from '../ui/LoadingOverlay';
@@ -30,11 +31,13 @@ export function WebShellPageTemplate({
   analyticsDeviceId,
   onReady,
 }: IWebShellPageTemplateProps) {
+  const { colors, dark } = useAppearance();
   const { attachWebView, webViewKey, sourceUrl, isLoading, hasLoadError, handleRetry, webViewProps } =
     useWebShell({ initialPath, appVersion, analyticsDeviceId, onReady });
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
+    <SafeAreaView edges={['top', 'bottom']} style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar style={dark ? 'light' : 'dark'} />
       {hasLoadError ? (
         <OfflineView onRetry={handleRetry} />
       ) : (
@@ -54,8 +57,8 @@ export function WebShellPageTemplate({
           pullToRefreshEnabled
           webviewDebuggingEnabled={__DEV__}
           contentInsetAdjustmentBehavior="never"
-          style={styles.webView}
-          containerStyle={styles.webView}
+          style={[styles.webView, { backgroundColor: colors.background }]}
+          containerStyle={[styles.webView, { backgroundColor: colors.background }]}
           {...webViewProps}
         />
       )}
@@ -67,10 +70,8 @@ export function WebShellPageTemplate({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   webView: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
 });

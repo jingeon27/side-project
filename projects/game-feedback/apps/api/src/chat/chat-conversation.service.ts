@@ -140,28 +140,7 @@ export class ChatConversationService {
 
     const cursor = decodeCursor(query.cursor);
     const excluded = await this.access.excluded(user.id);
-    const base: Prisma.ChatConversationWhereInput = {
-      ...(!this.config.demoMode && !this.config.testAuthEnabled
-        ? { firstUser: { demoKey: null }, secondUser: { demoKey: null } }
-        : {}),
-      OR: [
-        { firstUserId: user.id, firstHidden: false },
-        { secondUserId: user.id, secondHidden: false },
-      ],
-      AND: [
-        {
-          OR: [
-            { support: { isNot: null } },
-            {
-              firstUserId: { notIn: excluded },
-              secondUserId: { notIn: excluded },
-              firstUser: { bannedAt: null },
-              secondUser: { bannedAt: null },
-            },
-          ],
-        },
-      ],
-    };
+    const base = await this.access.listWhere(user.id, excluded);
     const where: Prisma.ChatConversationWhereInput = {
       AND: [
         base,

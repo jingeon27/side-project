@@ -59,6 +59,7 @@ export interface INativeHost {
 
 interface IInstallNativeHostOptions {
   platform: 'ios' | 'android';
+  push?: boolean;
 }
 
 /** 앱(use-android-back-press)과 같은 대기 시간 */
@@ -70,7 +71,7 @@ const BACK_REQUEST_TIMEOUT_MS = 800;
  */
 export async function installNativeHost(
   page: Page,
-  { platform }: IInstallNativeHostOptions,
+  { platform, push = false }: IInstallNativeHostOptions,
 ): Promise<INativeHost> {
   const calls: INativeHost['calls'] = [];
   const events: INativeHost['events'] = [];
@@ -87,7 +88,24 @@ export async function installNativeHost(
   let copySucceeds = true;
   let authSession: TAuthSessionHandler = async () => ({ type: 'cancel' });
 
+  const installationId = crypto.randomUUID();
+  let pushGranted = false;
   const capabilities = createCapabilities({
+    ...(push
+      ? {
+          getPushRegistration: async (requestPermission: boolean) => {
+            if (requestPermission) pushGranted = true;
+            return {
+              installationId,
+              platform,
+              status: pushGranted ? ('granted' as const) : ('undetermined' as const),
+              token: pushGranted ? `ExpoPushToken[${installationId.replaceAll('-', '')}]` : null,
+            };
+          },
+          setPushBadge: async () => ({ updated: true }),
+          openPushSettings: async () => ({ opened: true }),
+        }
+      : {}),
     platform,
     apiBase: `${E2E_WEB_ORIGIN}/backend`,
     authCallbackUrl: E2E_AUTH_CALLBACK_URL,
