@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 for (const scenario of [
   {
@@ -78,7 +78,7 @@ for (const scenario of [
         exact: true,
       })
       .fill('');
-    await editor.getByRole('button', { name: '수정 완료', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: '수정 완료', exact: true }).click();
     await expect(editor).toHaveCount(0);
     await expect(page.locator('.detail-card:visible .coaching-summary')).toContainText('시간당 수강료 협의');
     await expect(page.locator('.detail-card:visible .coaching-summary')).not.toContainText('9,000 트로피');
@@ -163,7 +163,7 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   await expect(editor.locator('.ql-editor img')).toBeVisible();
   await expect(editor.locator('.ql-editor video')).toBeVisible();
   await editor.getByLabel('제목', { exact: true }).fill(title + ' 수정');
-  await editor.getByRole('button', { name: '수정 완료', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: '수정 완료', exact: true }).click();
   await expect(editor).toHaveCount(0);
   const crawler = await browser.newContext({ javaScriptEnabled: false });
   try {
