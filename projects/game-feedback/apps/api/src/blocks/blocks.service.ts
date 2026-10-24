@@ -27,7 +27,7 @@ export class BlocksService {
     const u = requireUser(req);
     if (input.blockedUserId === u.id)
       throw new ApiError(400, 'CANNOT_BLOCK_SELF', '자신은 차단할 수 없습니다.');
-    if (!(await this.db.user.findUnique({ where: { id: input.blockedUserId } })))
+    if (!(await this.db.user.findUnique({ where: { id: input.blockedUserId, withdrawnAt: null } })))
       throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
     await this.transactions.run(async (tx) => {
       await this.lockRelationship(u.id, input.blockedUserId, tx);

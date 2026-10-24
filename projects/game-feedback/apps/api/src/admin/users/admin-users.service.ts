@@ -54,6 +54,8 @@ export class AdminUsersService {
       if (!target) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
       if (target.role === 'ADMIN')
         throw new ApiError(400, 'ADMIN_PROTECTED', '관리자 계정은 제재할 수 없습니다.');
+      if (input.banned && target.withdrawnAt)
+        throw new ApiError(409, 'USER_WITHDRAWN', '탈퇴한 계정에는 새로운 제재를 적용할 수 없습니다.');
       const updated = await (tx ?? this.db).user.update({
         where: { id },
         data: {
@@ -61,6 +63,7 @@ export class AdminUsersService {
           banReason: input.banned ? input.reason : null,
         },
       });
+      if (!input.banned) await tx.retainedIdentityRestriction.deleteMany({ where: { userId: id } });
       await (tx ?? this.db).auditLog.create({
         data: {
           actorId: admin.id,

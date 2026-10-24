@@ -1,4 +1,3 @@
-import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 
@@ -20,6 +19,7 @@ import { sessionToken } from './session-token';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
 import { SocialIdentityService } from './social-identity.service';
+import { AccountWithdrawalService } from './account-withdrawal.service';
 import {
   OAUTH_RETURN_COOKIE,
   requestedReturnPath,
@@ -31,7 +31,7 @@ import {
 export class AuthService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
-    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
+    @Inject(AccountWithdrawalService) private readonly withdrawal: AccountWithdrawalService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
@@ -208,13 +208,8 @@ export class AuthService {
 
   async deleteAccount(req: SessionRequest, res: Response) {
     const u = requireUser(req);
-    await this.transactions.run(async (tx) => {
-      await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
-      await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
-      await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
-      await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
-      await (tx ?? this.db).user.delete({ where: { id: u.id } });
-    });
+    await this.withdrawal.withdraw(u.id);
+    req.gfSession = null;
     setCookie(res, COOKIE, '', 0, this.config.production);
     return { ok: true };
   }

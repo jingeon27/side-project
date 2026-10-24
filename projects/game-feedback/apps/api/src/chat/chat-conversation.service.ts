@@ -63,6 +63,7 @@ export class ChatConversationService {
     const peer = await this.db.user.findUnique({ where: { id: recipientId }, select: userSelect });
     if (
       !peer ||
+      peer.withdrawnAt ||
       peer.bannedAt ||
       (!this.config.demoMode && !this.config.testAuthEnabled && peer.demoKey) ||
       (await this.access.blocked(user.id, recipientId))

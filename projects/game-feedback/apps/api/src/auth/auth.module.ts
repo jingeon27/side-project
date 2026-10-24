@@ -4,10 +4,11 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { SocialIdentityService } from './social-identity.service';
+import { AccountWithdrawalService } from './account-withdrawal.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, SessionService, AppAuthService, SocialIdentityService],
+  providers: [AuthService, SessionService, AppAuthService, SocialIdentityService, AccountWithdrawalService],
   exports: [AuthService, SessionService],
 })
 export class AuthModule {}

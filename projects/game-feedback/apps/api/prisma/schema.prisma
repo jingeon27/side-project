@@ -17,6 +17,7 @@ model User {
   verifiedAt DateTime?
   bannedAt DateTime?
   banReason String?
+  withdrawnAt DateTime?
   supercellTag String?
   role String @default("USER")
   termsVersion String
@@ -41,6 +42,7 @@ model User {
   following UserFollow[] @relation("followFollower")
   followers UserFollow[] @relation("followAuthor")
   socialIdentities SocialIdentity[]
+  retainedIdentityRestrictions RetainedIdentityRestriction[]
 }
 model UserAvatar {
   userId String @id
@@ -59,6 +61,12 @@ model SocialIdentity {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([provider,subject])
   @@unique([userId,provider])
+}
+model RetainedIdentityRestriction {
+  identityHash String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@index([userId])
 }
 model UserFollow {
   followerId String

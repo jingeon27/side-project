@@ -6,6 +6,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 import { hash, token } from '../common/crypto';
 import { COOKIE, setCookie } from '../common/http/cookies';
+import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { userDto } from '../users/user.presenter';
 import { sessionToken } from './session-token';
@@ -29,6 +30,7 @@ export class SessionService {
     if (
       req.gfSession &&
       (req.gfSession.expiresAt.getTime() <= Date.now() ||
+        req.gfSession.user?.withdrawnAt ||
         (!this.config.demoMode && !this.config.testAuthEnabled && req.gfSession.user?.demoKey))
     )
       req.gfSession = null;
@@ -59,6 +61,11 @@ export class SessionService {
     const expiresAt = new Date(Date.now() + maxAge);
     const current = sessionToken(req);
     await this.transactions.run(async (tx) => {
+      if (userId) {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
+        const user = await tx.user.findUnique({ where: { id: userId } });
+        if (!user || user.withdrawnAt) throw new ApiError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
+      }
       if (current) await (tx ?? this.db).session.deleteMany({ where: { tokenHash: hash(current) } });
       await (tx ?? this.db).session.create({
         data: {

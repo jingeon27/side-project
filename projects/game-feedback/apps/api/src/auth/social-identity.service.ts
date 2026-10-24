@@ -3,6 +3,7 @@ import { PrismaClient, type Prisma } from '../generated/prisma';
 
 import type { TSocialProvider } from '@game-feedback/contracts';
 import { Inject, Injectable } from '@nestjs/common';
+import { socialIdentityHash } from './social-identity-hash';
 
 @Injectable()
 export class SocialIdentityService {
@@ -16,8 +17,9 @@ export class SocialIdentityService {
       where: { provider_subject: { provider, subject } },
       include: { user: true },
     });
-    if (identity) return identity.user;
-    if (provider === 'google') return this.db.user.findUnique({ where: { googleSubject: subject } });
+    if (identity && !identity.user.withdrawnAt) return identity.user;
+    if (provider === 'google')
+      return this.db.user.findFirst({ where: { googleSubject: subject, withdrawnAt: null } });
     return null;
   }
 
@@ -28,14 +30,45 @@ export class SocialIdentityService {
         where: { provider_subject: { provider, subject } },
         include: { user: true },
       });
-      if (identity) return identity.user;
+      if (identity) {
+        const user = await this.lockUser(identity.userId, tx);
+        if (user && !user.withdrawnAt) return user;
+      }
       const legacy =
         provider === 'google'
           ? await (tx ?? this.db).user.findUnique({ where: { googleSubject: subject } })
           : null;
       if (legacy) {
-        await (tx ?? this.db).socialIdentity.create({ data: { provider, subject, userId: legacy.id } });
-        return legacy;
+        const user = await this.lockUser(legacy.id, tx);
+        if (user && !user.withdrawnAt) {
+          await tx.socialIdentity.create({ data: { provider, subject, userId: user.id } });
+          return user;
+        }
+      }
+      const identityHash = socialIdentityHash(provider, subject);
+      const restriction = await tx.retainedIdentityRestriction.findUnique({ where: { identityHash } });
+      if (restriction) {
+        const user = await this.lockUser(restriction.userId, tx);
+        const current = await tx.retainedIdentityRestriction.findUnique({ where: { identityHash } });
+        if (user?.bannedAt && current?.userId === user.id) {
+          // 동일한 익명 행을 재사용해 여러 소셜 계정과 관리자 해제가 같은 제재를 바라본다.
+          const restored = user.withdrawnAt
+            ? await tx.user.update({
+                where: { id: user.id },
+                data: {
+                  nickname,
+                  withdrawnAt: null,
+                  termsVersion: '2026-10-16',
+                  termsAcceptedAt: new Date(),
+                  ageConfirmed: true,
+                  createdAt: new Date(),
+                  ...(provider === 'google' ? { googleSubject: subject } : {}),
+                },
+              })
+            : user;
+          await tx.socialIdentity.create({ data: { provider, subject, userId: user.id } });
+          return restored;
+        }
       }
       return (tx ?? this.db).user.create({
         data: {
@@ -53,5 +86,10 @@ export class SocialIdentityService {
   private lockIdentity(provider: string, subject: string, client: Prisma.TransactionClient) {
     const key = `${provider}:${subject}`;
     return client.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
+  }
+
+  private async lockUser(id: string, client: Prisma.TransactionClient) {
+    await client.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
+    return client.user.findUnique({ where: { id } });
   }
 }
