@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ interface IEditPostSheetProps {
 export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps) {
   const client = useQueryClient();
   const { t } = useI18n();
+  const formId = useId();
   const router = useRouter();
   const notify = useNotify();
   const update = useMutation(updatePostMutationOptions(client));
@@ -62,8 +64,19 @@ export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps)
       dismissible={!pending}
       title={t(post.board === 'FEEDBACK' ? '피드백 요청 수정' : '게시글 수정')}
       description={t('나누고 싶은 내용을 다듬어주세요.')}
+      footer={
+        <>
+          <Button variant="secondary" type="button" disabled={pending} onClick={() => onOpenChange(false)}>
+            {t('취소')}
+          </Button>
+          <Button variant="accent" size="lg" type="submit" form={formId} disabled={pending}>
+            {pending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+            {t('수정 완료')}
+          </Button>
+        </>
+      }
     >
-      <form className="form-stack" aria-label={t('게시글 수정')} onSubmit={handleSubmit}>
+      <form id={formId} className="form-stack" aria-label={t('게시글 수정')} onSubmit={handleSubmit}>
         <input type="hidden" {...form.register('board')} />
         <input type="hidden" {...form.register('categoryId')} />
         <Field label={t('분류')}>
@@ -74,10 +87,6 @@ export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps)
         </Field>
         <PostContentFields form={form} disabled={pending} onUploadMedia={handleUpload} />
         <ErrorNotice message={update.error?.message ?? upload.error?.message} />
-        <Button variant="accent" size="lg" fullWidth type="submit" disabled={pending}>
-          {pending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
-          {t('수정 완료')}
-        </Button>
       </form>
     </BottomSheet>
   );

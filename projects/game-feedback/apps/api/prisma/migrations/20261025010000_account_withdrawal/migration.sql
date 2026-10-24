@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN "withdrawnAt" TIMESTAMP(3);

@@ -19,7 +19,7 @@ export class FollowsService {
   private async target(req: SessionRequest, id: string) {
     const excluded = await this.visibility.excluded(req);
     const user = await this.db.user.findFirst({
-      where: { id: { equals: id, notIn: excluded }, bannedAt: null },
+      where: { id: { equals: id, notIn: excluded }, bannedAt: null, withdrawnAt: null },
       select: { id: true },
     });
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');

@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+
 import { useMutation } from '@tanstack/react-query';
 import { Flag, LoaderCircle } from 'lucide-react';
 
@@ -19,6 +21,7 @@ interface IReportDialogProps {
 }
 export function ReportDialog({ open, onOpenChange, targetType, targetId }: IReportDialogProps) {
   const { t } = useI18n();
+  const formId = useId();
   const mutation = useMutation(reportMutationOptions()),
     notify = useNotify(),
     form = useZodForm(ReportInputSchema, {
@@ -36,8 +39,25 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
       dismissible={!mutation.isPending}
       title={t('어떤 문제가 있나요?')}
       description={t('신고 내용은 커뮤니티 운영 검토에 사용됩니다.')}
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            type="button"
+            disabled={mutation.isPending}
+            onClick={() => onOpenChange(false)}
+          >
+            {t('취소')}
+          </Button>
+          <Button variant="primary" size="lg" type="submit" form={formId} disabled={mutation.isPending}>
+            {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Flag size={16} />}
+            {t('신고 접수')}
+          </Button>
+        </>
+      }
     >
       <form
+        id={formId}
         className="form-stack"
         onSubmit={form.handleSubmit(async (body) => {
           try {
@@ -62,17 +82,6 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
           <Textarea {...form.register('detail')} rows={4} maxLength={1000} />
         </Field>
         <ErrorNotice message={mutation.error?.message || form.formState.errors.detail?.message} />
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          type="submit"
-          className="button dark full"
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Flag size={16} />}
-          {t('신고 접수')}
-        </Button>
       </form>
     </BottomSheet>
   );

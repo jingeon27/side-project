@@ -3,14 +3,8 @@ import { createHash } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
-import {
-  DISCOVERY_CACHE_TAG,
-  POSTS_CACHE_TAG,
-  SocialProviderSchema,
-  type TSocialProvider,
-} from '@game-feedback/contracts';
+import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
-import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
 import { COOKIE, cookies, setCookie } from '../common/http/cookies';
@@ -20,9 +14,10 @@ import { GameProfilesService } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
+import { AccountWithdrawalService } from './account-withdrawal.service';
 import { AppAuthService } from './app-auth.service';
 import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';
-import { bannedIdentityError, isBannedIdentity, recordBannedIdentities } from './banned-identity';
+import { bannedIdentityError, isBannedIdentity } from './banned-identity';
 import {
   loginRedirect,
   OAUTH_RETURN_COOKIE,
@@ -47,7 +42,7 @@ function appCallbackUrl(callbackUrl: string, params: Record<string, string>) {
 export class AuthService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
-    @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
+    @Inject(AccountWithdrawalService) private readonly withdrawal: AccountWithdrawalService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
@@ -234,24 +229,8 @@ export class AuthService {
 
   async deleteAccount(req: SessionRequest, res: Response) {
     const u = requireUser(req);
-    await this.cache.change(
-      async (tx) => {
-        // Serialize with AdminUsersService.ban so a ban racing the deletion is still recorded.
-        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${u.id} FOR UPDATE`;
-        const current = await tx.user.findUniqueOrThrow({ where: { id: u.id }, select: { bannedAt: true } });
-        if (current.bannedAt) await recordBannedIdentities(tx, u.id);
-        await (tx ?? this.db).post.deleteMany({ where: { authorId: u.id } });
-        await (tx ?? this.db).answer.deleteMany({ where: { authorId: u.id } });
-        await tx.$queryRaw`SELECT "id" FROM "Comment" WHERE "authorId" = ${u.id} ORDER BY "id" FOR UPDATE`;
-        // 타인의 답글은 탈퇴한 원댓글에서 분리해 보존한다. Prisma의 @updatedAt이 답글을 "(수정됨)"으로
-        // 바꾸지 않도록 raw SQL로 parentId만 비운다.
-        await tx.$executeRaw`UPDATE "Comment" SET "parentId" = NULL WHERE "parentId" IN (SELECT "id" FROM "Comment" WHERE "authorId" = ${u.id})`;
-        await (tx ?? this.db).comment.deleteMany({ where: { authorId: u.id } });
-        await (tx ?? this.db).notification.deleteMany({ where: { actorId: u.id } });
-        await (tx ?? this.db).user.delete({ where: { id: u.id } });
-      },
-      [POSTS_CACHE_TAG, DISCOVERY_CACHE_TAG],
-    );
+    await this.withdrawal.withdraw(u.id);
+    req.gfSession = null;
     setCookie(res, COOKIE, '', 0, this.config.production);
     return { ok: true };
   }

@@ -148,24 +148,27 @@
   min-height: var(--spacing-cta);
   padding-inline: 44px;
   font-weight: 600;
+  &[data-provider] {
+    background: var(--social-login-background);
+  }
   &[data-provider='google'] {
-    background: #fff;
+    --social-login-background: #fff;
     color: #1f1f1f;
     border-color: #747775;
   }
   &[data-provider='kakao'] {
-    background: #fee500;
+    --social-login-background: #fee500;
     color: rgb(0 0 0 / 85%);
     border-color: transparent;
     border-radius: 12px;
   }
   &[data-provider='discord'] {
-    background: #5865f2;
+    --social-login-background: #5865f2;
     color: #fff;
     border-color: transparent;
   }
   &[data-provider='x'] {
-    background: #111;
+    --social-login-background: #111;
     color: #fff;
     border-color: #333;
   }
@@ -173,9 +176,18 @@
     filter: invert(1);
   }
   &:not(:disabled, [data-disabled]):hover {
+    background: var(--social-login-background);
     box-shadow: inset 0 0 0 100px rgb(0 0 0 / 5%);
   }
   &[data-disabled]:not([aria-busy]) {
     opacity: 0.6;
+  }
+}
+
+@layer components {
+  @media (min-width: 768px) {
+    .login-dialog {
+      max-width: 420px;
+    }
   }
 }

@@ -37,7 +37,7 @@ export function PostPage(props: IPostPageProps) {
       title={t('게시글')}
       resetKey={`${props.id}:${session.user?.id ?? 'anonymous'}`}
       recoveryAction={
-        <BackLink href={appRoutes.feed(props.locale)} className="text-button">
+        <BackLink href={appRoutes.feed(props.locale)} className="text-action">
           {t('피드로 돌아가기')}
         </BackLink>
       }

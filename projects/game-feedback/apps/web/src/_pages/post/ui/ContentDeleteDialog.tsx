@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -32,6 +33,7 @@ export function ContentDeleteDialog({
 }: IContentDeleteDialogProps) {
   const client = useQueryClient();
   const { t } = useI18n();
+  const formId = useId();
   const post = useMutation(deletePostMutationOptions(client)),
     answer = useMutation(deleteAnswerMutationOptions(client)),
     comment = useMutation(deleteCommentMutationOptions(client)),
@@ -50,8 +52,20 @@ export function ContentDeleteDialog({
           ? '댓글을 삭제해도 다른 사람이 남긴 답글은 유지됩니다.'
           : '삭제한 내용은 복구할 수 없어요. 요청을 삭제하면 연결된 피드백과 댓글도 보이지 않게 됩니다.',
       )}
+      footer={
+        <>
+          <Button variant="secondary" type="button" disabled={isPending} onClick={() => onOpenChange(false)}>
+            {t('돌아가기')}
+          </Button>
+          <Button variant="danger" size="lg" type="submit" form={formId} disabled={isPending}>
+            {isPending && <LoaderCircle className="spin" size={16} />}
+            {t('삭제하기')}
+          </Button>
+        </>
+      }
     >
       <form
+        id={formId}
         className="form-stack"
         onSubmit={async (event) => {
           event.preventDefault();
@@ -69,28 +83,6 @@ export function ContentDeleteDialog({
         }}
       >
         <ErrorNotice message={error?.message} />
-        <Button
-          variant="danger"
-          size="lg"
-          fullWidth
-          type="submit"
-          className="button danger full"
-          disabled={isPending}
-        >
-          {isPending && <LoaderCircle className="spin" size={16} />}
-          {t('삭제하기')}
-        </Button>
-        <Button
-          variant="secondary"
-          size="lg"
-          fullWidth
-          className="button outline full"
-          type="button"
-          disabled={isPending}
-          onClick={() => onOpenChange(false)}
-        >
-          {t('돌아가기')}
-        </Button>
       </form>
     </Modal>
   );

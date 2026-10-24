@@ -60,6 +60,8 @@ export class AdminUsersService {
         await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${id} FOR UPDATE`;
         const target = await (tx ?? this.db).user.findUnique({ where: { id } });
         if (!target) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+        if (target.withdrawnAt && input.banned)
+          throw new ApiError(409, 'USER_WITHDRAWN', '탈퇴한 사용자는 새로 제재할 수 없습니다.');
         if (target.role === 'ADMIN')
           throw new ApiError(400, 'ADMIN_PROTECTED', '관리자 계정은 제재할 수 없습니다.');
         const updated = await (tx ?? this.db).user.update({

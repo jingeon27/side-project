@@ -66,7 +66,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           {t('내 알림')}
           <span>{query.data.pages[0]?.unreadCount || 0}</span>
         </h2>
-        <button className="text-button" disabled={mutation.isPending} onClick={() => mutation.mutate({})}>
+        <button className="text-action" disabled={mutation.isPending} onClick={() => mutation.mutate({})}>
           <CheckCheck size={16} />
           {t('모두 읽음')}
         </button>

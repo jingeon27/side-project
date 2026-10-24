@@ -1,3 +1,39 @@
+## 2026-10-25 구형 단독 배포 잔여 정리
+
+최신 develop에서 주요 단독 배포 파일이 제거된 뒤 남아 있던 백업 업로드·설정 검증 CLI와 백업 전용 SDK 의존성을 제거했다. S3를 사용하는 공유 배포 이미지에서 이전 로컬 미디어 디렉터리를 만드는 단계도 제거했다. Admin 세션·Prisma 스킬의 운영 안내는 공통 service.sh와 현재 Compose의 migrate 서비스로 맞췄고, 폐기한 smoke 경로와 단독 배포 기록을 가리키던 문구를 정리했다. 루트 yarn.lock 변경은 사용처가 없어진 백업 의존성과 그 전이 의존성을 정리하기 위한 것이다.
+
+검증: Node 24에서 API unit 167개·typecheck·build와 공유 배포 Vitest 20개가 통과했다. 프로젝트 lint, 관련 workflow의 Actionlint, 변경 문서·manifest·lockfile Prettier와 diff 검사를 통과했다. 추적 파일 전체에서 구형 배포 이름·경로·백업 환경변수 참조가 남지 않았고, 현재 운영 스크립트와 스킬의 문서 경로가 존재함을 확인했다. Docker 엔진이 없어 실제 이미지 재빌드·컨테이너 smoke는 실행하지 않았다. 운영 인프라·DB를 변경하거나 배포하지 않았다.
+
+## 2026-10-25 PR #69 가입 프로필·멘션과 최신 시트 통합
+
+병합된 #13·#67·#70을 반영하고 #68의 탈퇴 변경을 함께 통합해 인증 모듈과 구현 기록의 후속 병합 충돌을 해소했다. 설정의 게임 계정 등록은 반응형 시트와 하단 버튼을 유지하고, 가입 중 선택적인 게임 프로필 조회는 독립 GameProfileLookup으로 분리했다. 조회 대기 중 입력을 잠가 이전 태그 응답으로 새 입력의 선택값이 바뀌지 않게 했다. 프리패치 검사는 페이지 종료 뒤 response.finished promise를 기다리지 않고 requestfinished를 관찰한다.
+
+검증(Node 24): 공통 디자인 시스템과 두 서비스 API/Web 타입 검사·lint, 단위/UI 1,183개와 가입·탈퇴·제재·계정·알림·익명 세션·생성 GraphQL 계약 통합 140개(Game Feedback 109, Photo Contest API 11·Web 20) 통과. Game Feedback production 브라우저 24개(시트·가입·태그·멘션 12, prefetch 12), Photo Contest Chrome·WebKit·데스크톱 브라우저 29개(알림·익명 참여·댓글·홈·테마·접근/레이아웃)가 통과했다. 새 격리 DB 스키마와 별도 테스트 서버만 사용하고 teardown했다. 현재 계약 재생성 diff는 없으며 migration 호환성 검사를 통과했다. 실제 외부 OAuth·AWS·실기기와 컨테이너 smoke는 이번 실행에 포함하지 않는다.
+
+## 2026-10-25 PR #68 탈퇴와 현재 제재 정책 통합
+
+탈퇴 시 User 행을 익명으로 남기고 본인 글·답변·댓글의 내용을 비운다. 다른 작성자의 답변·댓글은 보존하고 본인의 원댓글에 달린 타인 답글은 독립 댓글로 분리한다. 개인정보·계정 연결·세션·로그인 티켓·대화·첨부와 관계를 정리하며 공개 프로필·팔로우·차단·채팅에서 탈퇴 사용자를 제외한다. 글·탐색 캐시 무효화를 같은 트랜잭션에 기록한다.
+
+현재 BannedIdentity를 재사용하고 제재 후 탈퇴한 식별자의 새 가입은 거부한다. 기존 제재 계정은 탈퇴 전 문의할 수 있으며, 운영자는 익명 행의 기존 ID로 제재를 해제할 수 있다. 탈퇴·제재·세션 발급의 User 잠금으로 경합을 직렬화한다. 겹치던 RetainedIdentityRestriction과 정적 proxy secret·Lightsail 코드는 제거하고 develop의 HMAC 방문자 서명 체계를 유지했다. migration은 새 nullable withdrawnAt 컬럼 하나만 추가한다.
+
+검증(Node 24): 계약 생성, API 타입 검사, 프로젝트 lint와 API unit 167개, 새 격리 스키마에 migration을 적용한 탈퇴·제재·OAuth·댓글·프로필·문의·SSR 제한 통합 107개(탈퇴 회귀 7개 포함)가 통과했다. 사용 중인 전용 테스트 DB 서버를 유지하고 테스트가 만든 스키마만 teardown했다. 실제 OAuth·AWS·운영 DB 변경은 수행하지 않았다.
+
+## 2026-10-25 PR #67 최신 develop 통합
+
+현재 mutation options·가이드·로그인 안내를 유지하면서 반응형 시트와 하단 작업 버튼을 통합했다. 모바일 브라우저·WebView는 전용 로그인 페이지로 이동하고 데스크톱은 모달을 사용한다. 화면 크기 판정은 로그인 시점에 읽어 목적지 쿼리를 보존한다.
+
+검증(Node 24): Web 타입·lint·단위/UI 220개, 공통 디자인 시스템 타입·lint·137개 테스트 통과. 사용 중인 3301/4301을 유지하고 별도 3353/4353 및 새 gf_test_ 스키마에서 production build/start 브라우저 11개가 통과했다. 드래그·터치·리사이즈·폼 제출·취소·hover·로그인 안내·목적지 복귀를 확인하고 테스트 스키마와 서버는 teardown했다. 실제 외부 OAuth와 기기 검증은 포함하지 않는다.
+
+# 2026-10-22 반응형 팝업과 하단 작업 버튼·로그인 hover
+
+Game Feedback의 입력·신고·삭제·차단·채팅 기록 삭제·계정 등록·탈퇴 창과 로그인창을 공통 반응형 팝업에 연결했다. CSS 미디어쿼리로 768px 미만은 BottomSheet, 그 이상은 중앙 모달로 표시한다. 하나의 Drawer 인스턴스와 본문을 유지해 화면 크기를 바꿔도 입력·포커스를 보존한다. 모바일 브라우저·앱 WebView의 전용 로그인 페이지와 OAuth 복귀 경로는 유지하고 데스크톱 로그인은 중앙 모달로 표시한다.
+
+작업 버튼은 스크롤 본문 밖 하단 `footer`에 가로로 배치하고 상단 X를 숨겼다. 본문 폼의 `id`와 하단 제출 버튼의 `form` 속성을 연결해 HTML 검증·Enter 제출을 유지한다. 진행 중 닫기 방지도 기존 mutation 상태로 제어한다. 게임 계정 등록은 조회·등록 버튼을 같은 하단 영역에서 전환하며 이미지 보기와 로그인창은 하단 닫기 버튼을 제공한다.
+
+공통 디자인 시스템에 `footer`·`responsive`·`showCloseButton`을 더한 이유는 시트 높이·본문 스크롤·포커스와 하단 영역을 같은 primitive에서 관리하기 위해서다. 새 반응형 동작과 X 숨김은 소비 앱이 선택하며 Game Feedback에서 켰다. 로그인 hover는 제공자 배경을 상태별로 유지하고, 공용 `text-button` 타이포 유틸리티와 겹치던 앱의 링크 스타일 이름을 `text-action`으로 분리해 브랜드 배경이 지워지거나 밑줄이 생기는 문제를 고쳤다.
+
+검증(Node 24, `side-project-local`): Web 타입·lint, 디자인 시스템 타입·lint, Web unit/UI 192개·디자인 시스템 137개가 통과했다. 실제 Next production build/start와 격리 테스트 DB의 Playwright 8개로 네 제공자 hover 색·밑줄, 모바일 시트·데스크톱 모달, 드래그·터치·키보드, 화면 크기 변경 시 입력·단일 창 유지, 하단 가로 배치·스크롤 고정·폼 제출·취소·포커스 복귀와 기존 OAuth 복귀 경로를 확인했다. 테스트 스키마는 teardown으로 정리하고 테스트 DB도 종료했다. 외부 OAuth와 실제 기기 키보드는 이번 검증에 포함하지 않았다.
+
 ## 2026-10-24 인터랙션 분석과 develop 반영
 
 Amplitude에 클릭·포커스·선택 변경·입력 여부·폼 제출과 25/50/75/100% 스크롤·화면별 활성 체류 이벤트를 추가했다. 화면 종류·locale·브라우저/WebView·화면 크기의 기존 공통 속성과 영역·컨트롤·액션·위치·이동 대상 화면·체크 상태·선택 인덱스를 함께 기록한다. 입력 문장·비밀번호·검색어·사용자 콘텐츠·URL 쿼리를 속성으로 보내지 않고, 입력은 600ms로 모으며 설정 키가 비어 있으면 추적기를 설치하지 않는다. 실제 Amplitude 수신 검증은 포함하지 않는다.
@@ -50,7 +86,7 @@ API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/*
 
 URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. 아래 날짜별 기록의 `/_internal`·`/_health`는 당시 경로다.
 
-검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
+검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke는 로컬에서 실행하지 않았다.
 
 PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
 
@@ -157,7 +193,7 @@ Repository 전달 계층을 제거하고 서비스에서 Prisma를 직접 사용
 
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 
-운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
+운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다.
 
 - 두 API의 도메인 Service에서 DB 직접 접근을 Repository로 옮겼다. UnitOfWork가 같은 트랜잭션 client를 전달하며 권한·미디어·이벤트도 같은 연결을 사용한다. DB 스키마와 API 계약은 유지했다.
 - 런타임 DML과 일회성 DDL 자격 증명을 분리하고 RDS hostname·TLS CA·role·pool 한도를 검증한다. 두 DB와 버킷을 분리하고 Caddy만 공유한다. GF 작성 중 가시성 조회가 다른 연결을 기다리던 경로도 수정했다.

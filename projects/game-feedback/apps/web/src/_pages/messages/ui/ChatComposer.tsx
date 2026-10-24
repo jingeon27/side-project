@@ -56,7 +56,7 @@ export function ChatComposer({
       {readFailed && (
         <div className="chat-read-error">
           <span>{t('읽음 상태를 동기화하지 못했어요.')}</span>
-          <button className="text-button" onClick={onRetryRead}>
+          <button className="text-action" onClick={onRetryRead}>
             {t('다시 시도')}
           </button>
         </div>

@@ -265,7 +265,14 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
       .send({ playerTag: '#GG829JGY' })
       .expect(200);
     await coach.delete('/api/me').set('Origin', origin).expect(200);
-    expect(await db.user.findUnique({ where: { id: coachUser.id } })).toBeNull();
+    expect(await db.user.findUnique({ where: { id: coachUser.id } })).toMatchObject({
+      withdrawnAt: expect.any(Date),
+      nickname: '탈퇴한 사용자',
+      googleSubject: null,
+      demoKey: null,
+      profileLinks: [],
+      supercellTag: null,
+    });
     expect((await coach.get('/api/session')).body.user).toBeNull();
     expect(await db.gameAccount.count({ where: { userId: coachUser.id } })).toBe(0);
   });

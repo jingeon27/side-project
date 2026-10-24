@@ -18,7 +18,7 @@ export function useLoginNavigation() {
     const route = resolveAppRoute(window.location.pathname + window.location.search);
     if (route?.screen === 'login') return;
     trackEvent(ANALYTICS_EVENT.LoginOpened, {});
-    if (isNativeApp() || window.matchMedia('(max-width: 760px)').matches) {
+    if (isNativeApp() || window.matchMedia('(max-width: 767px)').matches) {
       router.push(appRoutes.login(locale, route?.path ?? appRoutes.feed(locale)));
       return;
     }
