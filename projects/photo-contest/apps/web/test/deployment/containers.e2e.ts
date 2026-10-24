@@ -187,7 +187,11 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     .toBeGreaterThan(0);
   await page.goto('/me');
   await expect(page.getByRole('heading', { name: '배포 검증 회원', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: /운영 이미지 그룹/ })).toBeVisible();
+  await expect(
+    page
+      .getByRole('region', { name: '참여 그룹', exact: true })
+      .getByRole('link', { name: /운영 이미지 그룹/ }),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });
 
