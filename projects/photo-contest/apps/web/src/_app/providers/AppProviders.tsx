@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { OverlayProvider } from 'overlay-kit';
 
 import { AuthSessionSync } from '@/features/auth';
-import { ThemeProvider, type TThemePreference } from '@/shared/model/theme';
+import { NativeThemeSync, ThemeProvider, type TThemePreference } from '@/shared/model/theme';
 import { ToastProvider } from '@/shared/ui/@core/toast';
 
 import { AnalyticsTracker } from './analytics/AnalyticsTracker';
@@ -26,6 +26,7 @@ export function AppProviders({
     <ThemeProvider initialPreference={themePreference}>
       <AppApolloProvider>
         <BridgeProvider>
+          <NativeThemeSync />
           <ToastProvider>
             <OverlayProvider>
               <HydrationMarker />
