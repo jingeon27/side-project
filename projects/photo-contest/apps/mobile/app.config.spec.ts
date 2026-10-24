@@ -109,3 +109,12 @@ describe('개발 빌드 설정', () => {
     );
   });
 });
+
+it('알림 프로젝트와 Android Firebase 앱 설정은 앱별 빌드 환경에서 받아야 한다', () => {
+  vi.stubEnv('EXPO_PUBLIC_EAS_PROJECT_ID', '11111111-1111-4111-8111-111111111111');
+  vi.stubEnv('MOBILE_GOOGLE_SERVICES_JSON', '/build/secrets/google-services.json');
+  const config = buildConfig(RELEASE_ENV);
+  expect(config.extra?.eas).toEqual({ projectId: '11111111-1111-4111-8111-111111111111' });
+  expect(config.android?.googleServicesFile).toBe('/build/secrets/google-services.json');
+  expect(config.plugins).toContainEqual(['expo-notifications', { defaultChannel: 'activity' }]);
+});
