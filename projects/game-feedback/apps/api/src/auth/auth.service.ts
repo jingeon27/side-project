@@ -16,6 +16,7 @@ import { ApiError } from '../common/http/api-error';
 import { COOKIE, cookies, setCookie } from '../common/http/cookies';
 import { parse } from '../common/validation';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
+import { GameProfilesService } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
 import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
@@ -51,6 +52,7 @@ export class AuthService {
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AppAuthService) private readonly appAuth: AppAuthService,
     @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
+    @Inject(GameProfilesService) private readonly gameProfiles: GameProfilesService,
   ) {}
   async demo(req: SessionRequest, res: Response, input: DemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
@@ -217,7 +219,8 @@ export class AuthService {
     const subject = req.gfSession?.pendingSubject;
     if (!subject) throw new ApiError(401, 'ONBOARDING_REQUIRED', '소셜 로그인 후 가입을 완료해주세요.');
     const provider = parse(SocialProviderSchema, req.gfSession?.pendingProvider ?? 'google');
-    const user = await this.identities.onboard(provider, subject, input.nickname);
+    const profile = input.playerTag ? await this.gameProfiles.preview(req, input.playerTag) : undefined;
+    const user = await this.identities.onboard(provider, subject, input.nickname, profile);
     await this.sessions.issueSession(req, res, user.id);
     return this.sessions.session(req);
   }

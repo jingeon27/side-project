@@ -4,6 +4,12 @@ import { profileMessages } from './profile-messages';
 
 // Korean source copy is the key; user-generated content is never translated here.
 const messages: Record<string, readonly [string, string]> = {
+  '게임 프로필 연결 (선택)': ['Connect a game profile (optional)', 'ゲームプロフィールの連携（任意）'],
+  '태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.': [
+    'Look up your tag to connect the profile when you sign up. You can also add it later.',
+    'タグを検索すると、登録時にゲームプロフィールを連携します。後からの登録も可能です。',
+  ],
+  '연결하지 않기': ['Skip connection', '連携しない'],
   ...infoMessages,
   '화면 모드를 변경했어요': ['Display mode updated', '画面モードを変更しました'],
   '변경한 화면 모드는 이 기기에 저장돼요.': [

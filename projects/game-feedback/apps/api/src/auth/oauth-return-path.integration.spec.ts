@@ -10,6 +10,7 @@ import { grantOperatorRole } from '../admin/operator-session';
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
 import { createPrismaAdapter } from '../database/prisma-adapter';
+import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import { PrismaClient } from '../generated/prisma';
 import { responseLocation } from '../testing/http-response';
 import { OAUTH_RETURN_COOKIE } from './oauth-return-path';
@@ -41,6 +42,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       webOrigin: origin,
       demoMode: false,
       rateLimit: false,
+      profileProvider: new DemoProfileProvider(),
       identityProvider: {
         authorizationUrl: ({ state }) => `https://identity.example.test/authorize?state=${state}`,
         exchange: async (code) => code,
@@ -54,6 +56,49 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
     if (!/^gf_test_oauth_return_[a-f0-9]{16}$/.test(schema)) throw new Error('Unowned OAuth return schema');
     await db.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
     await db.$disconnect();
+  });
+
+  it('소셜 가입 중 게임 프로필을 조회하고 가입과 함께 선택한 태그만 연결해야 한다', async () => {
+    await supertest(app.getHttpServer()).get('/api/game-profiles/%23QLLLPR89G').expect(401);
+    const agent = supertest.agent(app.getHttpServer());
+    const subject = 'onboarding-game-profile';
+    const start = await agent.get('/api/auth/google').expect(302);
+    await agent
+      .get('/api/auth/google/callback')
+      .query({
+        state: new URL(responseLocation(start)).searchParams.get('state'),
+        code: subject,
+      })
+      .expect(302);
+    const preview = await agent.get('/api/game-profiles/%23qlllpr89g').expect(200);
+    expect(preview.body).toMatchObject({ playerTag: '#QLLLPR89G', verification: 'UNVERIFIED' });
+    await agent
+      .post('/api/me/game-accounts')
+      .set('Origin', origin)
+      .send({ playerTag: '#QLLLPR89G' })
+      .expect(401);
+    const input = { nickname: '게임 연결 회원', acceptedTerms: true, ageConfirmed: true };
+    await agent
+      .post('/api/auth/onboard')
+      .set('Origin', origin)
+      .send({ ...input, playerTag: '#bad tag' })
+      .expect(400);
+    expect((await agent.get('/api/session')).body).toMatchObject({ user: null, needsOnboarding: true });
+    expect(await db.socialIdentity.count({ where: { subject } })).toBe(0);
+    const complete = await agent
+      .post('/api/auth/onboard')
+      .set('Origin', origin)
+      .send({ ...input, playerTag: '#qlllpr89g' })
+      .expect(200);
+    expect(complete.body).toMatchObject({
+      needsOnboarding: false,
+      user: { supercellTag: '#QLLLPR89G', isVerified: false },
+    });
+    expect((await agent.get('/api/me/game-accounts').expect(200)).body).toMatchObject([
+      { playerTag: '#QLLLPR89G', verification: 'UNVERIFIED' },
+    ]);
+    expect(await db.gameAccount.count({ where: { userId: complete.body.user.id } })).toBe(1);
+    await agent.post('/api/auth/onboard').set('Origin', origin).send(input).expect(401);
   });
 
   it.each(['ko', 'en', 'ja'])(

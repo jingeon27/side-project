@@ -1,10 +1,11 @@
-import { Equals, IsString, Length, Matches } from 'class-validator';
+import { Equals, IsOptional, IsString, Length, Matches } from 'class-validator';
 import type { z } from 'zod';
 
 import {
   AppExchangeInputSchema,
   DemoInputSchema,
   OnboardInputSchema,
+  PLAYER_TAG_PATTERN,
   TestLoginInputSchema,
 } from '@game-feedback/contracts';
 
@@ -47,4 +48,9 @@ export class OnboardDto {
   declare acceptedTerms: z.output<typeof OnboardInputSchema>['acceptedTerms'];
   @Equals(true)
   declare ageConfirmed: z.output<typeof OnboardInputSchema>['ageConfirmed'];
+  @IsOptional()
+  @Trim()
+  @IsString()
+  @Matches(PLAYER_TAG_PATTERN)
+  declare playerTag?: z.output<typeof OnboardInputSchema>['playerTag'];
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -12,12 +12,14 @@ import { completeOnboardingMutationOptions, sessionOptions } from '@/features/au
 import { useI18n } from '@/shared/i18n';
 import { LoadingState, useNotify } from '@/shared/ui';
 import { AccountSetupForm, type TAccountSetupValues } from '@/widgets/authentication';
+import { ConnectProfile } from '@/widgets/game-profile';
 
 export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo: string }) {
   const client = useQueryClient();
   const notify = useNotify();
   const { t } = useI18n();
   const router = useRouter();
+  const [playerTag, setPlayerTag] = useState<string | null>(null);
   const {
     data: session,
     isFetching,
@@ -33,7 +35,12 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
   }, [isFetching, error, session.needsOnboarding, session.user, router, locale, returnTo]);
   async function handleSubmit({ nickname }: TAccountSetupValues) {
     try {
-      await onboarding.mutateAsync({ nickname, acceptedTerms: true, ageConfirmed: true });
+      await onboarding.mutateAsync({
+        nickname,
+        acceptedTerms: true,
+        ageConfirmed: true,
+        ...(playerTag ? { playerTag } : {}),
+      });
       router.replace(returnTo);
     } catch {
       // mutation 오류는 폼에 표시하고 닉네임과 동의 초안을 유지한다.
@@ -52,6 +59,14 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
       </div>
       {isFetching && <LoadingState />}
       <div hidden={isFetching || !session.needsOnboarding}>
+        <section className="info-card" aria-labelledby="onboarding-game-profile-title">
+          <h2 id="onboarding-game-profile-title">{t('게임 프로필 연결 (선택)')}</h2>
+          <p>{t('태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.')}</p>
+          <ConnectProfile
+            disabled={onboarding.isPending || isFetching}
+            onSelectionChange={(profile) => setPlayerTag(profile?.playerTag ?? null)}
+          />
+        </section>
         <AccountSetupForm
           submitLabel={t('가입 완료하기')}
           pending={onboarding.isPending || isFetching}

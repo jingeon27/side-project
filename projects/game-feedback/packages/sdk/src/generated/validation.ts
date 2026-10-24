@@ -1316,12 +1316,14 @@ export const onboardBodyNicknameMax = 24;
 
 
 export const onboardBodyNicknameRegExp = new RegExp('^[\\p{L}\\p{N}_ .-]+$', 'u');
+export const onboardBodyPlayerTagRegExp = new RegExp('^#?[A-Za-z0-9]{1,15}$');
 
 
 export const OnboardBody = zod.object({
   "nickname": zod.string().min(onboardBodyNicknameMin).max(onboardBodyNicknameMax).regex(onboardBodyNicknameRegExp),
   "acceptedTerms": zod.literal(true),
-  "ageConfirmed": zod.literal(true)
+  "ageConfirmed": zod.literal(true),
+  "playerTag": zod.string().regex(onboardBodyPlayerTagRegExp).optional()
 })
 
 export const onboardResponseUserOneIdMax = 100;
