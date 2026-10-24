@@ -123,7 +123,7 @@ function ResultQuery({ id, preloaded }: { id: string; preloaded: boolean }) {
   );
   const fallback = <Skeleton className="h-64 w-full" />;
   return (
-    <AsyncBoundary fallback={fallback} onRetry={refetch}>
+    <AsyncBoundary fallback={fallback} onRetry={() => refetch()}>
       {queryRef ? <Results queryRef={queryRef} /> : fallback}
     </AsyncBoundary>
   );
@@ -145,13 +145,14 @@ function ContestContent({
       <ContestHeader id={contest.id} />
       {match(contest.phase)
         .with(Phase.Completed, () => <ResultQuery id={contest.id} preloaded={resultsPreloaded} />)
-        .otherwise(() => (
+        .with(Phase.Upcoming, Phase.Submission, Phase.Voting, () => (
           <GalleryBoard
             groupId={groupId}
             contestId={contest.id}
             postAction={(postId) => <GroupContestVoteButton contestId={contest.id} postId={postId} />}
           />
-        ))}
+        ))
+        .exhaustive()}
     </>
   );
 }
@@ -166,7 +167,7 @@ function ContestQuery({
 }) {
   const [queryRef, { refetch }] = useBackgroundQuery(GroupContestDocument, { variables: { id } });
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
+    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
       <ContestContent queryRef={queryRef} groupId={groupId} resultsPreloaded={resultsPreloaded} />
     </AsyncBoundary>
   );

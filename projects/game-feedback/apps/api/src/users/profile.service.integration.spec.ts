@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
 import { hash, token } from '../common/crypto';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
@@ -40,7 +41,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
       { env: { ...process.env, DATABASE_URL: url }, encoding: 'utf8' },
     );
     if (result.status !== 0) throw new Error(result.stdout + result.stderr);
-    state.db = new PrismaClient({ datasources: { db: { url } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(url) });
     state.directory = await mkdtemp(join(tmpdir(), 'gf-profile-'));
     state.app = await createApp({
       databaseUrl: url,
@@ -62,7 +63,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
     for (const [userId, value] of [
       [user.id, state.accessToken],
       [other.id, state.otherToken],
-    ])
+    ] as const)
       await state.db.session.create({
         data: { userId, tokenHash: hash(value), expiresAt: new Date(Date.now() + 3_600_000) },
       });

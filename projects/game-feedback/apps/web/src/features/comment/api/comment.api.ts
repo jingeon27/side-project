@@ -1,6 +1,14 @@
-import { createComment, deleteComment, updateComment } from '@game-feedback/sdk';
+import { createComment, deleteComment, listPostComments, updateComment } from '@game-feedback/sdk';
 
-export function postComment({ postId, body }: { postId: string; body: { body: string } }) {
+import type { CreateCommentInput } from '@/shared/api';
+
+/** 상세에 싣지 않은 이전 원댓글 스레드. 상세 첫 페이지와 같은 크기로 나눈다. */
+const COMMENT_THREAD_PAGE = 30;
+
+export function fetchPostComments({ postId, cursor }: { postId: string; cursor: string }) {
+  return listPostComments(postId, { cursor, limit: COMMENT_THREAD_PAGE });
+}
+export function postComment({ postId, body }: { postId: string; body: CreateCommentInput }) {
   return createComment(postId, body);
 }
 export function patchComment({ id, body }: { id: string; body: { body: string } }) {

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
@@ -9,10 +9,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MediaUploadPlanSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
 import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
 
 const require = createRequire(import.meta.url);
@@ -42,7 +44,7 @@ describe('게시글 S3 직접 업로드', () => {
       { env: { ...process.env, DATABASE_URL: state.databaseUrl }, encoding: 'utf8' },
     );
     if (result.status !== 0) throw new Error(`Isolated migration failed: ${result.stdout}\n${result.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: state.databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(state.databaseUrl) });
     await seed(state.db, false);
     await s3.start();
     state.app = await createApp({
@@ -176,9 +178,20 @@ describe('게시글 S3 직접 업로드', () => {
     expect(file.uploadedAt).not.toBeNull();
     expect(file.bytes).toBeNull();
     expect(file.object?.key).toMatch(/^objects\//);
+    // 확정은 앞부분 Range 읽기와 서버 쪽 복사로만 한다. 임시 객체 전체를 API로 내려받지 않는다.
+    const staged = `/media-test/${plan.fields.key}`;
+    const reads = s3.requests.filter((request) => request.method === 'GET' && request.path === staged);
+    expect(reads.length).toBeGreaterThan(0);
+    expect(reads.every((request) => request.range === `bytes=0-${png.length - 1}`)).toBe(true);
+    expect(s3.requests).toContainEqual(
+      expect.objectContaining({ method: 'PUT', path: `/media-test/${file.object?.key}` }),
+    );
+    expect(
+      s3.requests.find((request) => request.path === `/media-test/${file.object?.key}`)?.copySource,
+    ).toContain(plan.fields.key);
     expect((await transfer(plan, Buffer.alloc(png.length, 120))).status).toBe(204);
     const redirected = await state.owner.get(`/api/post-media/${plan.id}`).expect(307);
-    const location = new URL(redirected.headers.location);
+    const location = new URL(responseLocation(redirected));
     expect(location.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(location.searchParams.get('X-Amz-Signature')).toMatch(/^[a-f0-9]{64}$/);
     expect(location.searchParams.get('response-cache-control')).toBe('private, no-store');
@@ -187,7 +200,7 @@ describe('게시글 S3 직접 업로드', () => {
     await state.outsider.get(`/api/post-media/${plan.id}`).expect(404);
     await state.owner.get(`/api/post-media/${plan.id}`).set('Range', 'bytes=999-1000').expect(416);
     const ranged = await state.owner.get(`/api/post-media/${plan.id}`).set('Range', 'bytes=8-11').expect(307);
-    const bytes = await fetch(ranged.headers.location, { headers: { Range: 'bytes=8-11' } });
+    const bytes = await fetch(responseLocation(ranged), { headers: { Range: 'bytes=8-11' } });
     expect(bytes.status).toBe(206);
     expect(Buffer.from(await bytes.arrayBuffer())).toEqual(png.subarray(8, 12));
     const head = await state.owner.head(`/api/post-media/${plan.id}`).expect(200);
@@ -218,5 +231,30 @@ describe('게시글 S3 직접 업로드', () => {
     expect(result.failed).toBe(0);
     expect(result.removed).toBe(1);
     expect(s3.objects.has(`/media-test/${invalid.fields.key}`)).toBe(false);
+  });
+
+  it('S3 배포는 multipart 수신을 막고 검증 뒤 바뀐 임시 객체를 확정하지 않아야 한다', async () => {
+    const blocked = await state.owner
+      .post('/api/post-media')
+      .set('Origin', origin)
+      .attach('file', png, { filename: 'image.png', contentType: 'image/png' })
+      .expect(409);
+    expect(blocked.body.errorCode).toBe('DIRECT_UPLOAD_REQUIRED');
+    const plan = await reserve();
+    expect((await transfer(plan)).status).toBe(204);
+    s3.beforeCopy = (source) => {
+      const object = s3.objects.get(source);
+      if (object) s3.objects.set(source, { ...object, bytes: Buffer.alloc(png.length, 120) });
+    };
+    try {
+      const changed = await state.owner
+        .post(`/api/post-media/${plan.id}/complete`)
+        .set('Origin', origin)
+        .expect(409);
+      expect(changed.body.errorCode).toBe('UPLOAD_CHANGED');
+    } finally {
+      s3.beforeCopy = undefined;
+    }
+    expect((await state.db.postMedia.findUniqueOrThrow({ where: { id: plan.id } })).uploadedAt).toBeNull();
   });
 });

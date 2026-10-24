@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs';
 
+import { omit } from 'es-toolkit';
 import { z } from 'zod';
 
 import {
@@ -8,21 +9,19 @@ import {
   CoachingRoleSchema,
   FeedbackStatusSchema,
   operations,
+  ReportStatusSchema,
   schemas,
 } from '@game-feedback/contracts';
 
 export function createOpenApi() {
   const components: Record<string, unknown> = {};
   for (const [name, schema] of Object.entries(schemas)) {
-    const json = z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' });
-    const { $schema, ...rest } = json;
-    components[name] = rest;
+    components[name] = omit(z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' }), ['$schema']);
   }
   const schemaRef = (schema: z.ZodType) => {
     const found = Object.entries(schemas).find(([, value]) => value === schema);
     if (found) return { $ref: `#/components/schemas/${found[0]}` };
-    const { $schema, ...rest } = z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' });
-    return rest;
+    return omit(z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' }), ['$schema']);
   };
   const paths: Record<string, Record<string, unknown>> = {};
   for (const operation of operations) {
@@ -68,10 +67,19 @@ export function createOpenApi() {
                 },
               ]
             : []),
+          ...(operation.id === 'listReports'
+            ? [
+                {
+                  name: 'status',
+                  in: 'query',
+                  schema: { type: 'string', enum: ReportStatusSchema.options, default: 'OPEN' },
+                },
+              ]
+            : []),
         ],
       );
-    paths[operation.path] ??= {};
-    paths[operation.path][operation.method] = {
+    const pathItem = (paths[operation.path] ??= {});
+    pathItem[operation.method] = {
       operationId: operation.id,
       parameters,
       ...(operation.body

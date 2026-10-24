@@ -1,15 +1,15 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl } from './database';
+import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl, type TTestSchemaPrefix } from './database';
 import { loadProjectEnv } from './env';
 import { PROJECT_ROOT, SERVE_TEST_API_BIN } from './paths';
 
 interface IStartIsolatedApiOptions {
   port: number;
   webOrigin: string;
-  /** 격리 스키마 이름 앞부분. 소문자·숫자·_만 쓴다. */
-  prefix: string;
+  /** 격리 스키마 이름 앞부분(TEST_SCHEMA_PREFIXES) */
+  prefix: TTestSchemaPrefix;
   /** API에만 더 넘길 환경변수 (예: 가짜 OAuth client id) */
   env?: Record<string, string>;
 }
@@ -37,7 +37,7 @@ async function waitForHealth(url: string, isAlive: () => boolean, timeoutMs: num
   throw new Error(`격리 API가 ${timeoutMs / 1000}초 안에 준비되지 않았습니다.`);
 }
 
-/** vitest globalSetup에서 쓴다. 격리 스키마로 API를 띄우고 stop()에서 스키마와 사진 폴더까지 지운다. */
+/** vitest globalSetup에서 쓴다. 격리 스키마로 API를 띄우고 stop()에서 스키마와 S3 대역 폴더까지 지운다. */
 export async function startIsolatedApi({
   port,
   webOrigin,
@@ -61,7 +61,7 @@ export async function startIsolatedApi({
       PC_E2E_SCHEMA: schema,
       PORT: String(port),
       WEB_ORIGIN: webOrigin,
-      STORAGE_DIR: resolve(PROJECT_ROOT, '.data', schema),
+      PC_E2E_STORAGE_DIR: resolve(PROJECT_ROOT, '.data', schema),
     },
   });
   const url = `http://127.0.0.1:${port}`;

@@ -5,14 +5,31 @@ import { expect, test } from '@playwright/test';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
-test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({ page, request }) => {
+test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({
+  page,
+  request,
+}) => {
   const origin = new URL(process.env.DEPLOY_SMOKE_ORIGIN ?? 'https://localhost:3382').origin;
+  // 미디어는 서버 volume이 아니라 S3 호환 버킷(검증에서는 test-kit 대역)으로 브라우저가 직접 오간다.
+  const storage = new URL(process.env.DEPLOY_SMOKE_STORAGE ?? 'http://storage.localhost:3383').origin;
   await page.route('**/*', (route) =>
-    new URL(route.request().url()).origin === origin ? route.continue() : route.abort(),
+    [origin, storage].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort(),
   );
+  /** 고정 경로는 권한만 확인하고 캐시 금지 307로 짧은 서명 GET에 보낸다. */
+  const expectStorageRedirect = async (response: { status(): number; headers(): Record<string, string> }) => {
+    expect(response.status()).toBe(307);
+    expect(response.headers()['cache-control']).toBe('private, no-store');
+    const signed = new URL(response.headers()['location'] ?? '');
+    expect(signed.origin).toBe(storage);
+    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+    return signed.toString();
+  };
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
+  const home = await page.goto('/');
+  // 운영 이미지가 프레임워크를 알리지 않고, CSP를 지킨 채 http 저장소 대역으로 업로드·조회까지 이어지는지 본다.
+  expect(home?.headers()['x-powered-by']).toBeUndefined();
+  expect(home?.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
   await expect(page.getByRole('link', { name: /구글|카카오/ })).toHaveCount(0);
   await page.getByRole('tab', { name: '회원가입', exact: true }).click();
   await page.getByLabel('아이디', { exact: true }).fill('container_owner');
@@ -22,7 +39,13 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   await expect(page.getByRole('tab', { name: '회원가입', exact: true })).toHaveCount(0);
   expect(await page.context().cookies()).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ name: 'contest_session', httpOnly: true, secure: true, sameSite: 'Lax' }),
+      expect.objectContaining({
+        name: '__Host-contest_session',
+        path: '/',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax',
+      }),
     ]),
   );
   await page.goto('/me');
@@ -51,18 +74,26 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   await createMediaPost('운영 동영상', true);
   const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
   const photo = latest.getByRole('article', { name: '운영 사진', exact: true });
-  const mediaUrl = await photo.getByRole('img', { name: '운영 사진', exact: true }).getAttribute('src');
+  const photoImage = photo.getByRole('img', { name: '운영 사진', exact: true });
+  const mediaUrl = await photoImage.getAttribute('src');
   if (!mediaUrl) throw new Error('사진 주소가 있어야 한다');
-  expect((await page.request.get(mediaUrl)).status()).toBe(200);
-  expect((await request.get(mediaUrl)).status()).toBe(200);
+  await expectStorageRedirect(await page.request.get(mediaUrl, { maxRedirects: 0 }));
+  await expectStorageRedirect(await request.get(mediaUrl, { maxRedirects: 0 }));
+  await expect
+    .poll(() => photoImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
   const videoUrl = await latest
     .getByRole('article', { name: '운영 동영상', exact: true })
     .locator('video')
     .getAttribute('src');
   if (!videoUrl) throw new Error('영상 주소가 있어야 한다');
-  const range = await page.request.get(videoUrl, { headers: { Range: 'bytes=0-31' } });
-  expect(range.status()).toBe(206);
-  expect((await range.body()).length).toBe(32);
+  const signedVideo = await expectStorageRedirect(await page.request.get(videoUrl, { maxRedirects: 0 }));
+  // 브라우저처럼 서명 GET에 Range를 보내 저장소가 구간을 돌려주는지 확인한다.
+  const range = await page.evaluate(async (url) => {
+    const response = await fetch(url, { headers: { Range: 'bytes=0-31' } });
+    return { status: response.status, length: (await response.arrayBuffer()).byteLength };
+  }, signedVideo);
+  expect(range).toEqual({ status: 206, length: 32 });
   const authConfig = await request.get('/backend/auth/config');
   expect(authConfig.status()).toBe(200);
   expect(await authConfig.json()).toEqual({ developmentLogin: false, google: false, kakao: false });
@@ -102,8 +133,8 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     .getByRole('img', { name: '운영 비공개 사진', exact: true })
     .getAttribute('src');
   if (!privateUrl) throw new Error('비공개 사진 주소가 있어야 한다');
-  expect((await page.request.get(privateUrl)).status()).toBe(200);
-  expect((await request.get(privateUrl)).status()).toBe(401);
+  await expectStorageRedirect(await page.request.get(privateUrl, { maxRedirects: 0 }));
+  expect((await request.get(privateUrl, { maxRedirects: 0 })).status()).toBe(404);
   const privateHtml = await (
     await request.get(privatePath, { headers: { 'User-Agent': 'Twitterbot' } })
   ).text();
@@ -115,14 +146,15 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
   const directory = process.env.SMOKE_COMPOSE_DIR;
   const project = process.env.SMOKE_COMPOSE_PROJECT;
   if (!directory || !project?.startsWith('pc-smoke-')) throw new Error('격리 Compose 정보가 필요합니다.');
+  const files = ['-f', `${directory}/compose.yaml`];
+  if (process.env.SMOKE_COMPOSE_OVERRIDE) files.push('-f', process.env.SMOKE_COMPOSE_OVERRIDE);
   await promisify(execFile)('docker', [
     'compose',
     '--project-name',
     project,
     '--env-file',
     `${directory}/.env`,
-    '-f',
-    `${directory}/compose.yaml`,
+    ...files,
     'restart',
     'api',
     'web',
@@ -133,8 +165,7 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     project,
     '--env-file',
     `${directory}/.env`,
-    '-f',
-    `${directory}/compose.yaml`,
+    ...files,
     'up',
     '-d',
     '--wait',
@@ -150,9 +181,45 @@ test('운영 이미지에서 가입·사진/영상·댓글과 재시작 뒤 데�
     expect(response?.status()).toBe(200);
     await expect(photo.getByRole('button', { name: '운영 사진 댓글 1개', exact: true })).toBeVisible();
   }).toPass({ timeout: 45_000, intervals: [1_000, 2_000, 5_000] });
-  expect((await page.request.get(mediaUrl)).status()).toBe(200);
+  await expectStorageRedirect(await page.request.get(mediaUrl, { maxRedirects: 0 }));
+  await expect
+    .poll(() => photoImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
+    .toBeGreaterThan(0);
   await page.goto('/me');
   await expect(page.getByRole('heading', { name: '배포 검증 회원', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /운영 이미지 그룹/ })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('운영 Caddy가 앱 링크 검증 파일과 앱 로그인 콜백 안내를 막지 않고 그대로 전달해야 한다', async ({
+  request,
+}) => {
+  // containers.sh의 .env 값이다. 실제 앱과 연결되지 않는 검증용 식별자다.
+  const appId = 'SMOKETEAM0.test.smoke.photocontest';
+  const aasa = await request.get('/.well-known/apple-app-site-association', { maxRedirects: 0 });
+  expect(aasa.status()).toBe(200);
+  expect(aasa.headers()['content-type']).toContain('application/json');
+  expect(await aasa.json()).toEqual({
+    applinks: { details: [{ appIDs: [appId], components: [{ '/': '/app-auth/callback' }] }] },
+    webcredentials: { apps: [appId] },
+  });
+  const assetLinks = await request.get('/.well-known/assetlinks.json', { maxRedirects: 0 });
+  expect(assetLinks.status()).toBe(200);
+  expect(await assetLinks.json()).toEqual([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'test.smoke.photocontest',
+        sha256_cert_fingerprints: [Array.from({ length: 32 }, () => '5A').join(':')],
+      },
+    },
+  ]);
+  const callback = await request.get('/app-auth/callback?code=smoke-login-code-0123456789', {
+    maxRedirects: 0,
+  });
+  expect(callback.status()).toBe(200);
+  expect(callback.headers()['cache-control']).toBe('no-store');
+  expect(callback.headers()['referrer-policy']).toContain('no-referrer');
+  expect(await callback.text()).not.toContain('smoke-login-code');
 });

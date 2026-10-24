@@ -34,7 +34,8 @@ describe('작은 표시 요소', () => {
     );
     expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getAllByRole('status')).toHaveLength(1);
-    expect(screen.getByRole('status', { name: '사진 올리는 중' })).toBeInTheDocument();
+    // live region은 aria-label이 아니라 내용을 읽으므로 숨긴 글자로 확인한다.
+    expect(screen.getByRole('status')).toHaveTextContent('사진 올리는 중');
   });
 
   it('하단 CTA는 토스트가 비켜 설 수 있게 표시를 남겨야 한다', () => {

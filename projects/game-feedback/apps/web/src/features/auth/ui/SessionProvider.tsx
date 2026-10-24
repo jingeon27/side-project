@@ -6,14 +6,16 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 
 import type { Session } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
-import { useNotify } from '@/shared/ui';
+import { openOverlay, useNotify } from '@/shared/ui';
 
 import { sessionOptions } from '../model/auth.options';
+import { LoginRequiredDialog } from './LoginRequiredDialog';
 
 interface ISessionContext {
   session: Session;
   loading: boolean;
   login: () => void;
+  requireLogin: () => void;
   notify: (text: string) => void;
 }
 interface ISessionProviderProps {
@@ -35,9 +37,32 @@ export function SessionProvider({ children, onLogin }: ISessionProviderProps) {
     isFetching,
   } = useSuspenseQuery({ ...sessionOptions(), refetchOnMount: 'always' });
   const notify = useNotify();
+  function handleRequireLogin() {
+    openOverlay(
+      ({ isOpen, close, unmount }) => {
+        function handleClose() {
+          close();
+          unmount();
+        }
+        return (
+          <LoginRequiredDialog
+            open={isOpen}
+            onClose={handleClose}
+            onLogin={() => {
+              handleClose();
+              onLogin();
+            }}
+          />
+        );
+      },
+      { overlayId: 'login-required-dialog' },
+    );
+  }
   if (error && !isFetching) throw error;
   return (
-    <SessionContext.Provider value={{ session, loading: false, login: onLogin, notify }}>
+    <SessionContext.Provider
+      value={{ session, loading: false, login: onLogin, requireLogin: handleRequireLogin, notify }}
+    >
       {children}
     </SessionContext.Provider>
   );

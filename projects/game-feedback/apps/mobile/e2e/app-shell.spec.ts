@@ -9,6 +9,10 @@ test('WebView test account persists posts, comments and private chat across relo
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
+    .getByRole('button', { name: '로그인하기', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/ko\/login\?returnTo=/);
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await page.request.post('/api/auth/test-token', {
@@ -72,6 +76,18 @@ test('native back leaves the login page, deep links keep the document, and foreg
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  const required = page.getByRole('dialog', { name: '로그인이 필요해요', exact: true });
+  await expect(required).toBeVisible();
+  await expect.poll(nativeHost.hasOverlay).toBe(true);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(required).toHaveCount(0);
+  await expect.poll(nativeHost.currentPath).toBe('/ko');
+  expect(nativeHost.rootBacks()).toBe(0);
+  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
+    .getByRole('button', { name: '로그인하기', exact: true })
+    .click();
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await expect.poll(nativeHost.hasOverlay).toBe(false);
   expect(await nativeHost.requestBack()).toBe(true);
@@ -79,6 +95,8 @@ test('native back leaves the login page, deep links keep the document, and foreg
   expect(nativeHost.openDeepLink('gamefeedback://ko/guide')).toBe(true);
   await expect(page).toHaveURL(/\/ko\/guide$/);
   expect(nativeHost.openDeepLink('gamefeedback://ko/posts/%2Fetc')).toBe(false);
+  expect(await nativeHost.requestBack()).toBe(true);
+  await expect(page).toHaveURL(/\/ko\/settings$/);
   expect(await nativeHost.requestBack()).toBe(true);
   await expect(page).toHaveURL(/\/ko$/);
   expect(await nativeHost.requestBack()).toBe(true);
@@ -117,9 +135,14 @@ test('native Google login opens the system auth session and cancellation keeps t
   await page.goto('/ko');
   await expect.poll(nativeHost.isReady).toBe(true);
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
+    .getByRole('button', { name: '로그인하기', exact: true })
+    .click();
   await page.getByRole('button', { name: /Google로 시작하기/ }).click();
   await expect.poll(() => nativeHost.authSessions.length).toBe(1);
   expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/social\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
+  expect(nativeHost.authCallbacks[0]).toBe(`${ORIGIN}/app-auth/callback`);
   await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
   await page.request.post('/api/auth/test-token', {
     headers: { Origin: ORIGIN },

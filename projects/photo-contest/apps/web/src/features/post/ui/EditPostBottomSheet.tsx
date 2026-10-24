@@ -12,11 +12,9 @@ import {
 
 import {
   GalleryPostCardFragmentDoc,
-  GalleryPostsDocument,
   GroupContestDocument,
   GroupContestResultsDocument,
   PostCategoryOptionsDocument,
-  PublicGalleryPostsDocument,
   UpdatePostDocument,
   type PostCategoryOptionsQuery,
 } from '@/shared/api/generated';
@@ -29,7 +27,7 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { postEditSchema } from '../model/post-edit.schema';
-import { resetGalleryPosts } from '../model/post.cache';
+import { POST_FEED_QUERIES, resetGalleryPosts } from '../model/post.cache';
 import { PostCategorySelect } from './PostCategorySelect';
 
 function EditPostForm({
@@ -52,12 +50,7 @@ function EditPostForm({
   });
   const [save] = useMutation(UpdatePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [
-      GalleryPostsDocument,
-      PublicGalleryPostsDocument,
-      GroupContestDocument,
-      GroupContestResultsDocument,
-    ],
+    refetchQueries: [...POST_FEED_QUERIES, GroupContestDocument, GroupContestResultsDocument],
     awaitRefetchQueries: true,
   });
   if (!complete) return null;
@@ -133,7 +126,7 @@ export function EditPostBottomSheet({
   return (
     <BottomSheet.Root {...controls} onClose={onClose}>
       <BottomSheet.Header title="게시물 수정" />
-      <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="mx-5 h-64" />}>
+      <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="mx-5 h-64" />}>
         <EditPostForm queryRef={queryRef} postId={postId} onClose={onClose} />
       </AsyncBoundary>
     </BottomSheet.Root>

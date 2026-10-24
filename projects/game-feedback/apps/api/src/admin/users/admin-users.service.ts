@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
+import { clearBannedIdentities, recordBannedIdentities } from '../../auth/banned-identity';
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
@@ -68,6 +69,8 @@ export class AdminUsersService {
             banReason: input.banned ? input.reason : null,
           },
         });
+        if (input.banned) await recordBannedIdentities(tx, id);
+        if (!input.banned) await clearBannedIdentities(tx, id);
         await (tx ?? this.db).auditLog.create({
           data: {
             actorId: admin.id,

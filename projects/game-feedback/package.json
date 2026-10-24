@@ -17,6 +17,7 @@
     "db:test:start": "node scripts/db.mjs start --test",
     "db:test:stop": "node scripts/db.mjs stop --test",
     "check": "node scripts/tasks.mjs check",
+    "lint": "eslint .",
     "typecheck": "node scripts/tasks.mjs check",
     "test": "node scripts/tasks.mjs test",
     "test:e2e": "node scripts/tasks.mjs test:e2e",
@@ -31,6 +32,10 @@
     "db:test:sync": "node scripts/db.mjs sync --test"
   },
   "devDependencies": {
-    "embedded-postgres": "18.4.0-beta.17"
+    "@side/eslint-config": "workspace:*",
+    "embedded-postgres": "18.4.0-beta.17",
+    "eslint": "^9.39.0",
+    "jiti": "^2.6.1",
+    "typescript": "6.0.2"
   }
 }

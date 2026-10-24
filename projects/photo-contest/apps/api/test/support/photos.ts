@@ -1,21 +1,17 @@
-import { access } from 'node:fs/promises';
-import { join } from 'node:path';
-
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from './app';
+import { uploadToStorage, type ITestApi, type ITestUser } from './app';
 
 export interface IUploadTicket {
   id: string;
-  /** API가 돌려준 웹 프록시 경로 (/backend/uploads/<token>) */
+  fields: Array<{ name: string; value: string }>;
+  /** 서명 POST를 받는 저장소 주소 */
   url: string;
   expiresAt: string;
-  /** API에 직접 보낼 경로 (/uploads/<token>) */
-  path: string;
 }
 
 const REQUEST_UPLOAD =
-  'mutation($contestId: ID!) { requestUploadUrl(contestId: $contestId) { id url expiresAt } }';
+  'mutation($contestId: ID!, $size: Int!, $type: String!) { requestUploadUrl(contestId: $contestId,contentType:$type,byteSize:$size) { id url fields{name value} expiresAt } }';
 export const CREATE_SUBMISSION = `
   mutation($contestId: ID!, $uploadId: ID!, $caption: String!, $rightsConfirmed: Boolean! = true) {
     createSubmission(contestId: $contestId, uploadId: $uploadId, caption: $caption, rightsConfirmed: $rightsConfirmed) {
@@ -24,30 +20,27 @@ export const CREATE_SUBMISSION = `
   }
 `;
 
-/** 업로드 티켓을 받는다. 웹은 /backend 프록시를 거치지만 테스트는 API에 바로 보내므로 접두사를 뗀다. */
+/** 업로드 티켓을 받는다. */
 export async function requestUpload(
   api: ITestApi,
   cookie: string,
   contestId: string,
+  body?: Buffer,
+  contentType = 'image/png',
 ): Promise<IUploadTicket> {
-  const { requestUploadUrl: ticket } = await api.gqlOk<{
-    requestUploadUrl: Omit<IUploadTicket, 'path'>;
-  }>(cookie, REQUEST_UPLOAD, { contestId });
-  return { ...ticket, path: ticket.url.replace(/^\/backend/, '') };
+  const { requestUploadUrl: ticket } = await api.gqlOk<{ requestUploadUrl: IUploadTicket }>(
+    cookie,
+    REQUEST_UPLOAD,
+    { contestId, size: (body ?? (await createTestImage())).length, type: contentType },
+  );
+  return ticket;
 }
 
-/** 브라우저처럼 Origin을 붙여 원본 사진을 올린다. */
-export function postPhoto(
-  api: ITestApi,
-  cookie: string | undefined,
-  path: string,
-  body: Buffer | string,
-  contentType = 'image/png',
-) {
-  let pending = api.http().post(path).set('Origin', TEST_WEB_ORIGIN).set('Content-Type', contentType);
-  if (cookie) pending = pending.set('Cookie', cookie);
-  return pending.send(body);
+/** 브라우저처럼 서명 POST로 원본 사진을 저장소에 바로 올린다. */
+export function postPhoto(ticket: IUploadTicket, body: Buffer | string, contentType = 'image/png') {
+  return uploadToStorage(ticket, Buffer.isBuffer(body) ? body : Buffer.from(body), contentType);
 }
+export const COMPLETE_UPLOAD = 'mutation($id: ID!) { completeSubmissionUpload(uploadId:$id) }';
 
 /** 티켓을 받아 사진을 올리고 업로드 ID를 돌려준다. */
 export async function uploadPhoto(
@@ -56,9 +49,12 @@ export async function uploadPhoto(
   contestId: string,
   image?: Buffer,
 ): Promise<string> {
-  const ticket = await requestUpload(api, cookie, contestId);
-  const response = await postPhoto(api, cookie, ticket.path, image ?? (await createTestImage()));
-  if (response.status !== 201) throw new Error(`사진 업로드 실패 (${response.status}): ${response.text}`);
+  const body = image ?? (await createTestImage());
+  const ticket = await requestUpload(api, cookie, contestId, body);
+  const response = await postPhoto(ticket, body);
+  if (response.status !== 204)
+    throw new Error(`사진 업로드 실패 (${response.status}): ${await response.text()}`);
+  await api.gqlOk(cookie, COMPLETE_UPLOAD, { id: ticket.id });
   return ticket.id;
 }
 
@@ -82,7 +78,7 @@ export async function submitPhoto(
 /** 앱의 사진 저장소에 그 파일이 남아 있는지 */
 export async function storedPhotoExists(api: ITestApi, imageKey: string) {
   try {
-    await access(join(api.storageDir, imageKey));
+    await api.storage.head(imageKey);
     return true;
   } catch {
     return false;

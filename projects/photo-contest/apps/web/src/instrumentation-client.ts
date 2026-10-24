@@ -20,6 +20,7 @@ if (dsn) {
     // 성능 추적은 쓰지 않는다(소스맵·트레이스 업로드 토큰이 없다).
     tracesSampleRate: 0,
     beforeSend: scrubSentryEvent,
+    beforeSendTransaction: scrubSentryEvent,
     // 앱이 문서 로드 전에 심은 앱 정보로 앱 WebView와 브라우저 오류를 나눈다.
     initialScope: { tags: buildSentryClientTags(readNativeAppInfo(window)) },
   });

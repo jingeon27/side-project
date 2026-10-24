@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
@@ -8,6 +7,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
@@ -27,13 +27,12 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0) throw new Error('Isolated support schema setup failed');
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
     author = supertest.agent(app.getHttpServer());
@@ -174,7 +173,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
     await peer.post('/api/reports').set('Origin', origin).send(report).expect(200);
     expect(await db.report.count({ where: { targetId: id, targetType: 'USER' } })).toBe(1);
     await author.post('/api/reports').set('Origin', origin).send(report).expect(400);
-    const reports = (await admin.get('/api/admin/reports').expect(200)).body;
+    const reports = (await admin.get('/api/admin/reports').expect(200)).body.items;
     const received = reports.find((row: { targetId: string }) => row.targetId === id);
     expect(received).toMatchObject({ targetUserId: id, reason: report.reason, detail: report.detail });
     await peer
@@ -242,6 +241,26 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       .set('Origin', origin)
       .send({ body: '이용 제한에 대해 문의합니다.', clientMessageId: randomUUID() })
       .expect(200);
+    // A direct upload reserved before completion must still be confirmable while banned.
+    const draft = await db.chatAttachment.create({
+      data: {
+        conversationId: support.id,
+        uploaderId: id,
+        name: 'ban-evidence.png',
+        mimeType: 'image/png',
+        size: 8,
+        bytes: Buffer.from('89504e470d0a1a0a', 'hex'),
+      },
+    });
+    const completed = await author
+      .post(`/api/conversations/${support.id}/attachments/${draft.id}/complete`)
+      .set('Origin', origin)
+      .expect(200);
+    expect(completed.body.id).toBe(draft.id);
+    await author
+      .post(`/api/conversations/${privateRoom.id}/attachments/${draft.id}/complete`)
+      .set('Origin', origin)
+      .expect(403);
     await admin
       .patch(`/api/admin/users/${id}/ban`)
       .set('Origin', origin)
@@ -252,5 +271,64 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       await db.auditLog.count({ where: { targetId: id, action: { in: ['BAN_USER', 'UNBAN_USER'] } } }),
     ).toBe(2);
     expect((await db.report.findUniqueOrThrow({ where: { id: received.id } })).status).toBe('REVIEWED');
+  });
+  it('keeps direct chat history before a support request outside the support ban exemption', async () => {
+    const { randomUUID } = await import('node:crypto');
+    const admin = supertest.agent(app.getHttpServer());
+    const requester = supertest.agent(app.getHttpServer());
+    await admin
+      .post('/api/auth/test-login')
+      .set('Origin', origin)
+      .send({ accountId: 'sample-test-admin' })
+      .expect(200);
+    const requesterId = (
+      await requester
+        .post('/api/auth/demo')
+        .set('Origin', origin)
+        .send({ nickname: '문의경계사용자' })
+        .expect(200)
+    ).body.user.id;
+    const direct = (
+      await requester
+        .post('/api/conversations')
+        .set('Origin', origin)
+        .send({ recipientId: 'sample-test-admin' })
+        .expect(200)
+    ).body;
+    await requester
+      .post(`/api/conversations/${direct.id}/messages`)
+      .set('Origin', origin)
+      .send({ body: '문의 전 일반 대화', clientMessageId: randomUUID() })
+      .expect(200);
+    const support = (
+      await requester
+        .post('/api/support/conversations')
+        .set('Origin', origin)
+        .send({ topic: 'GENERAL' })
+        .expect(200)
+    ).body;
+    expect(support.id).toBe(direct.id);
+    expect(support.lastMessage).toBeNull();
+    const bodies = async (agent: ReturnType<typeof supertest.agent>) =>
+      (await agent.get(`/api/conversations/${support.id}/messages`).expect(200)).body.items.map(
+        (item: { body: string }) => item.body,
+      );
+    expect(await bodies(requester)).toEqual([]);
+    expect(await bodies(admin)).toEqual([]);
+    await requester
+      .post(`/api/conversations/${support.id}/messages`)
+      .set('Origin', origin)
+      .send({ body: '문의 본문입니다.', clientMessageId: randomUUID() })
+      .expect(200);
+    await db.user.update({
+      where: { id: requesterId },
+      data: { bannedAt: new Date(), banReason: '문의 경계 확인' },
+    });
+    try {
+      expect(await bodies(requester)).toEqual(['문의 본문입니다.']);
+      expect(await bodies(admin)).toEqual(['문의 본문입니다.']);
+    } finally {
+      await db.user.update({ where: { id: requesterId }, data: { bannedAt: null, banReason: null } });
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { E2E_WEB_ORIGIN } from './support/e2e-env';
+import { E2E_AUTH_CALLBACK_URL, E2E_WEB_ORIGIN } from './support/e2e-env';
 import { expect, test } from './support/fixtures';
 import { issueAppLoginTicket } from './support/seed';
 import { webScreens } from './support/web-screens';
@@ -21,7 +21,7 @@ test.describe('앱 소셜 로그인 핸드오프', () => {
     expect(nativeHost.calls).toContainEqual({ type: 'auth.socialLogin', payload: { provider: 'google' } });
     const [session] = nativeHost.platform.authSessions;
     expect(session?.authUrl).toMatch(new RegExp(`^${E2E_WEB_ORIGIN}/backend/auth/google\\?app_challenge=`));
-    expect(session?.redirectUrl).toBe('photocontest://auth/callback');
+    expect(session?.redirectUrl).toBe(E2E_AUTH_CALLBACK_URL);
     // 웹 WebView는 provider 페이지로 직접 이동하지 않는다.
     await expect(page).toHaveURL(`${E2E_WEB_ORIGIN}/`);
   });
@@ -62,7 +62,10 @@ test.describe('앱 소셜 로그인 핸드오프', () => {
 
     await webScreens.socialLoginButton(page, 'google').click();
 
-    await expect(nativeHost.waitForEvent('auth.changed')).resolves.toEqual({ signedIn: true });
+    // 비로그인 첫 화면도 signedIn:false를 알리므로 첫 이벤트가 아니라 로그인 알림을 기다린다.
+    await expect
+      .poll(() => nativeHost.events)
+      .toContainEqual({ type: 'auth.changed', payload: { signedIn: true } });
     const cookies = await context.cookies(E2E_WEB_ORIGIN);
     expect(cookies.find((cookie) => cookie.name === 'contest_session')?.httpOnly).toBe(true);
     // 첫 알림은 문서 이동 전이다. 새 문서가 세션을 읽고 사용자 ID를 알린 뒤 메뉴를 누른다.

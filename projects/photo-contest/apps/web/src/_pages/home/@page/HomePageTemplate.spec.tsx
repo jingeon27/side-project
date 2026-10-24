@@ -60,7 +60,9 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
           let data: Record<string, unknown> = {};
           if (operation.operationName === 'Me')
             data = {
-              me: signedIn ? { __typename: 'User', id: 'new', nickname: '신규', avatar: null } : null,
+              me: signedIn
+                ? { __typename: 'User', id: 'new', nickname: '신규', avatar: null, needsOnboarding: false }
+                : null,
             };
           if (operation.operationName === 'MyGroups')
             data = { myGroups: state.hasGroup ? [{ ...group, role: 'MEMBER' }] : [] };

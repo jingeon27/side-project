@@ -2,6 +2,8 @@ import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 const stateKey = '__game_feedback_navigation';
 const logicalParents = new Map<string, { parent: string }>();
+// 링크가 다음 push로 여는 화면의 논리적 상위(링크를 누른 화면). push된 기록 항목에 남긴다.
+let pendingParent: { target: string; parent: string } | null = null;
 const locationListeners = new Set<() => void>();
 export function subscribeBrowserLocation(listener: () => void) {
   locationListeners.add(listener);
@@ -19,6 +21,7 @@ interface INavigationEntry {
   index: number;
   previous: string | null;
   feed?: string;
+  parent?: string;
 }
 export type TNavigationDirection = 'forward' | 'back' | 'replace';
 let direction: TNavigationDirection = 'replace';
@@ -33,10 +36,27 @@ function entry(state: unknown): INavigationEntry | null {
     'feed' in value && typeof value.feed === 'string' && resolveAppRoute(value.feed)?.screen === 'feed'
       ? value.feed
       : undefined;
-  return { index: value.index, previous: value.previous, ...(feed ? { feed } : {}) };
+  const parent =
+    'parent' in value && typeof value.parent === 'string' && resolveAppRoute(value.parent)
+      ? value.parent
+      : undefined;
+  return {
+    index: value.index,
+    previous: value.previous,
+    ...(feed ? { feed } : {}),
+    ...(parent ? { parent } : {}),
+  };
+}
+function withoutParent({ index, previous, feed }: INavigationEntry): INavigationEntry {
+  return { index, previous, ...(feed ? { feed } : {}) };
 }
 function currentPath() {
   return window.location.pathname + window.location.search;
+}
+function routeOf(url: string | URL | null | undefined) {
+  if (url === null || url === undefined) return null;
+  const next = new URL(url, window.location.href);
+  return resolveAppRoute(next.pathname + next.search);
 }
 export function getNavigationDirection() {
   return direction;
@@ -59,19 +79,31 @@ export function installBrowserNavigation() {
   const handlePush: History['pushState'] = function (data, unused, url) {
     if (!active) return push.call(history, data, unused, url);
     const previous = resolveAppRoute(currentPath())?.path ?? null;
-    current = rememberFeed({ ...current, index: current.index + 1, previous });
+    const parent =
+      pendingParent && pendingParent.target === routeOf(url)?.path ? pendingParent.parent : undefined;
+    pendingParent = null;
+    current = rememberFeed({
+      ...withoutParent(current),
+      index: current.index + 1,
+      previous,
+      ...(parent ? { parent } : {}),
+    });
     direction = 'forward';
     push.call(history, stateWithEntry(data, current), unused, url);
     notifyLocation();
   };
   const handleReplace: History['replaceState'] = function (data, unused, url) {
     if (!active) return replace.call(history, data, unused, url);
-    current = rememberFeed(entry(data) ?? current);
+    // 등록한 상위는 그 화면(같은 경로의 필터 변경 포함)에만 둔다. 다른 화면으로 바꾸면 버린다.
+    const samePath = !url || routeOf(url)?.pathname === resolveAppRoute(currentPath())?.pathname;
+    const next = entry(data) ?? current;
+    current = rememberFeed(samePath ? next : withoutParent(next));
     direction = 'replace';
     replace.call(history, stateWithEntry(data, current), unused, url);
     notifyLocation();
   };
   function handlePop(event: PopStateEvent) {
+    pendingParent = null;
     const next = entry(event.state) ?? { index: 0, previous: null };
     direction = next.index < current.index ? 'back' : 'forward';
     current = next;
@@ -91,7 +123,8 @@ export function backNavigation(parentOnly = false) {
   const route = resolveAppRoute(currentPath());
   if (!route) return { action: 'unhandled' } as const;
   if (route.screen === 'feed') return { action: 'root' } as const;
-  const previous = entry(window.history.state)?.previous;
+  const currentEntry = entry(window.history.state);
+  const previous = currentEntry?.previous;
   const authScreen = ['login', 'onboarding'].includes(route.screen);
   const previousRoute = previous ? resolveAppRoute(previous) : null;
   const detail = ['post', 'compose', 'profile', 'conversation', 'login', 'onboarding'].includes(route.screen);
@@ -103,7 +136,13 @@ export function backNavigation(parentOnly = false) {
     (!parentOnly || previousRoute?.pathname === route.parent)
   )
     return { action: 'back' } as const;
-  const parent = logicalParents.get(route.path)?.parent ?? route.parent ?? appRoutes.feed(route.locale);
+  // 링크가 상위로 등록하고 연 화면(가이드 → 게시판·문의)은 그 기록으로 돌아간다.
+  if (currentEntry?.parent && previous === currentEntry.parent) return { action: 'back' } as const;
+  const parent =
+    logicalParents.get(route.path)?.parent ??
+    currentEntry?.parent ??
+    route.parent ??
+    appRoutes.feed(route.locale);
   return {
     action: 'replace',
     path: parent === appRoutes.feed(route.locale) ? feedDestination(parent) : parent,
@@ -118,6 +157,15 @@ export function registerLogicalParent(parent: string) {
   return () => {
     if (logicalParents.get(route.path) === registration) logicalParents.delete(route.path);
   };
+}
+/** 다음 push로 열리는 href 화면의 논리적 상위를 현재 화면으로 등록한다(`ChildLink`). */
+export function registerNextLogicalParent(href: string) {
+  const route = resolveAppRoute(currentPath());
+  const destination = resolveAppRoute(href);
+  pendingParent =
+    route && destination && route.locale === destination.locale
+      ? { target: destination.path, parent: route.path }
+      : null;
 }
 export function feedDestination(href: string) {
   const route = resolveAppRoute(href);

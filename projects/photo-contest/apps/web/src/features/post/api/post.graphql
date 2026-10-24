@@ -33,6 +33,11 @@ fragment GalleryPostCard on GalleryPost {
     avatar
   }
 }
+query MyGalleryPosts($groupId: ID, $offset: Int!, $limit: Int!) {
+  myGalleryPosts(groupId: $groupId, offset: $offset, limit: $limit) {
+    ...GalleryPostCard
+  }
+}
 query GalleryPosts(
   $groupId: ID
   $contestId: ID
@@ -52,10 +57,15 @@ query GalleryPosts(
     ...GalleryPostCard
   }
 }
-mutation RequestPostUpload($groupId: ID!) {
-  requestPostUpload(groupId: $groupId) {
+mutation RequestPostUpload($groupId: ID!, $contentType: String!, $byteSize: Int!) {
+  requestPostUpload(groupId: $groupId, contentType: $contentType, byteSize: $byteSize) {
     id
     url
+    fields {
+      name
+      value
+    }
+    expiresAt
   }
 }
 mutation CreatePost(
@@ -95,8 +105,13 @@ mutation DeletePost($postId: ID!) {
   deletePost(postId: $postId)
 }
 
-mutation UploadPostMedia($uploadId: ID!, $file: Upload!) {
-  uploadPostMedia(uploadId: $uploadId, file: $file)
+mutation CompletePostUpload($uploadId: ID!) {
+  completePostUpload(uploadId: $uploadId) {
+    id
+    kind
+    contentType
+    byteSize
+  }
 }
 
 query PostDownload($postId: ID!) {

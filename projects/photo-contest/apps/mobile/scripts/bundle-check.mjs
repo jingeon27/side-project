@@ -7,6 +7,8 @@ const OUTPUT_DIR = '.expo-export-check';
 const result = spawnSync('expo', ['export', '--platform', 'android', '--output-dir', OUTPUT_DIR, '--clear'], {
   stdio: 'inherit',
   shell: process.platform === 'win32',
+  // 운영 변수(https EXPO_PUBLIC_WEB_ORIGIN) 없이도 번들 해석만 확인하도록 기본은 개발 variant로 둔다.
+  env: { ...process.env, APP_VARIANT: process.env.APP_VARIANT || 'development' },
 });
 rmSync(OUTPUT_DIR, { recursive: true, force: true });
 process.exit(result.status ?? 1);

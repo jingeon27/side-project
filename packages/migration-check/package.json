@@ -4,9 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "yarn lint && yarn test"
   },
   "devDependencies": {
+    "@side/eslint-config": "workspace:*",
+    "eslint": "^9.39.0",
+    "jiti": "^2.6.1",
+    "typescript": "6.0.2",
     "vitest": "^4.1.0"
   }
 }

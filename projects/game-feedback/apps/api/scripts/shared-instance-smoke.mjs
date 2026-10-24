@@ -17,6 +17,8 @@ import { dirname, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
+import { assertAnonymousSession } from './shared-instance/session-check.mjs';
+
 // API-owned integration runner. RDS/registry/S3 boundaries are isolated fixtures, not AWS resources.
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../../../..');
@@ -117,6 +119,29 @@ function serviceCompose(service, args, revision = sha) {
     join(root, `services/${service}/releases/${revision}/compose.yaml`),
     ...args,
   ]);
+}
+function uploadForm(service, upload, bytes) {
+  const fields = Array.isArray(upload.fields)
+    ? upload.fields
+    : Object.entries(upload.fields).map(([name, value]) => ({ name, value }));
+  const stored = JSON.parse(
+    serviceCompose(service, [
+      'exec',
+      '-T',
+      'api',
+      'node',
+      '--input-type=module',
+      '-e',
+      `const [url, fields, body] = JSON.parse(process.argv[1]);
+     const form = new FormData();
+     for (const { name, value } of fields) form.append(name, value);
+     form.append('file', new Blob([Buffer.from(body, 'base64')], {type: 'image/png'}), 'shared.png');
+     const response = await fetch(url, {method: 'POST', body: form});
+     console.log(JSON.stringify({status: response.status, body: await response.text()}));`,
+      JSON.stringify([upload.url, fields, bytes.toString('base64')]),
+    ]),
+  );
+  assert.equal(stored.status, 204, stored.body);
 }
 function sql(database, text) {
   return dependency([
@@ -387,6 +412,11 @@ try {
       DATABASE_MIGRATION_URL: runtimeUrl(database, true),
       ...(service === 'game-feedback'
         ? {
+            // Game Feedback web requires its App Link / Universal Link values (test-only identifiers).
+            MOBILE_APPLE_TEAM_ID: 'GFSMOKE000',
+            MOBILE_IOS_BUNDLE_ID: 'test.smoke.gamefeedback',
+            MOBILE_ANDROID_PACKAGE: 'test.smoke.gamefeedback',
+            MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => '6B').join(':'),
             GF_S3_ACCESS_KEY_ID: 'gf-smoke-access',
             GF_S3_SECRET_ACCESS_KEY: 'gf-private-secret',
             GF_CONTACT_EMAIL: 'operator@example.test',
@@ -395,7 +425,15 @@ try {
             GOOGLE_CLIENT_SECRET: 'smoke-oauth-secret',
             GF_API_BIND_PORT: '0',
           }
-        : { AWS_ACCESS_KEY_ID: 'pc-smoke-access', AWS_SECRET_ACCESS_KEY: 'pc-private-secret' }),
+        : {
+            AWS_ACCESS_KEY_ID: 'pc-smoke-access',
+            AWS_SECRET_ACCESS_KEY: 'pc-private-secret',
+            // Photo Contest web requires its App Link / Universal Link values (test-only identifiers).
+            MOBILE_APPLE_TEAM_ID: 'PCSMOKE000',
+            MOBILE_IOS_BUNDLE_ID: 'test.smoke.photocontest',
+            MOBILE_ANDROID_PACKAGE: 'test.smoke.photocontest',
+            MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => '5A').join(':'),
+          }),
     };
     saveEnv(join(root, `services/${service}/.env`), environment);
     refs[service] = [reference(service, 'api'), reference(service, 'web')];
@@ -469,14 +507,20 @@ try {
   assert.equal((await pcApi.http('/health/ready')).status, 200);
   assert.equal((await gfApi.http('/')).status, 404);
   assert.equal((await pcApi.http('/health')).headers['x-robots-tag'], 'noindex, nofollow');
-  assert.equal((await gf.http('/_health/live')).status, 200);
-  assert.equal((await pc.http('/_health/live')).status, 200);
+  assert.equal((await gf.http('/health-check/live')).status, 200);
+  // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
+  assert.equal((await gf.http('/.well-known/apple-app-site-association')).status, 200);
+  assert.equal((await gf.http('/.well-known/assetlinks.json')).status, 200);
+  assert.equal((await gf.http('/app-auth/callback?code=shared-smoke-login-code-0123')).status, 200);
+  assert.equal((await pc.http('/health-check/live')).status, 200);
   for (const response of [
-    await gf.http('/_internal/cache/revalidate'),
+    await gf.http('/internal/cache/revalidate'),
+    await gf.http('/Internal/cache/revalidate'),
     await gf.http('/api/admin/reports'),
     await pc.post('/backend/testing/users', {}),
     await gf.post('/api/auth/test-token', {}),
-    await gfApi.http('/_internal/cache/revalidate'),
+    await gfApi.http('/internal/cache/revalidate'),
+    await gfApi.http('/internal/visibility/excluded-authors'),
     await gfApi.http('/api/admin/reports'),
     await gfApi.post('/api/auth/test-token', {}),
     await pcApi.post('/testing/users', {}),
@@ -484,6 +528,8 @@ try {
     assert.equal(response.status, 404);
     assert.equal(response.text(), 'edge-blocked');
   }
+  // Only the /internal segment is reserved; similarly named public paths still reach the app.
+  assert.notEqual((await gf.http('/internals-guide')).text(), 'edge-blocked');
   // Keep HTTP polling alive while service.sh performs real same-image replacement.
   const beforeIds = ['game-feedback', 'photo-contest'].map((service) =>
     serviceCompose(service, ['ps', '-q', 'api', 'web']).trim(),
@@ -614,26 +660,36 @@ try {
   ).json().data.createGroup;
   const publicPc = new Client(pcDomain, port, publicCa);
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
-  const upload = (
-    await pc.graphql('mutation($id:ID!) { requestPostUpload(groupId:$id) { id url } }', { id: group.id })
-  ).json().data.requestPostUpload;
+  // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
+  const association = await publicPc.http('/.well-known/apple-app-site-association');
+  assert.equal(association.status, 200, association.text());
+  assert.deepEqual(association.json().webcredentials, { apps: ['PCSMOKE000.test.smoke.photocontest'] });
+  assert.equal((await publicPc.http('/.well-known/assetlinks.json')).status, 200);
+  const appCallback = await publicPc.http('/app-auth/callback?code=shared-smoke-login-code-0123');
+  assert.equal(appCallback.status, 200);
+  assert.equal(appCallback.headers['cache-control'], 'no-store');
+  assert.equal(appCallback.text().includes('shared-smoke-login-code'), false);
+  // Photo Contest no longer ships sharp; an 8x8 PNG keeps both services' upload checks real.
   const png = Buffer.from(
-    serviceCompose('photo-contest', [
-      'exec',
-      '-T',
-      'api',
-      'node',
-      '-e',
-      'require("sharp")({create:{width:8,height:8,channels:3,background:"#4287f5"}}).png().toBuffer().then(b=>process.stdout.write(b.toString("base64")))',
-    ]).trim(),
+    'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGNwav+KFTEMLQkAZI1vgcNLzfoAAAAASUVORK5CYII=',
     'base64',
   );
-  const uploaded = await pc.http(upload.url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'image/png' },
-    body: png,
-  });
-  assert.equal(uploaded.status, 201, uploaded.text());
+  const upload = (
+    await pc.graphql(
+      'mutation($id:ID!,$size:Int!) { requestPostUpload(groupId:$id,contentType:"image/png",byteSize:$size) { id url fields { name value } } }',
+      { id: group.id, size: png.length },
+    )
+  ).json().data.requestPostUpload;
+  assert.equal(new URL(upload.url).hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  // Browsers POST the signed form straight to the bucket; the host resolves the bucket alias only on the service network.
+  uploadForm('photo-contest', upload, png);
+  const completed = await pc.graphql(
+    'mutation($id:ID!) { completePostUpload(uploadId:$id) { id byteSize } }',
+    {
+      id: upload.id,
+    },
+  );
+  assert.deepEqual(completed.json().data.completePostUpload, { id: upload.id, byteSize: png.length });
   pcApi.cookie = pc.cookie;
   const posted = await pcApi.post(
     '/graphql',
@@ -648,11 +704,30 @@ try {
   assert.equal(posted.json().errors, undefined, posted.text());
   const post = posted.json().data.createPost;
   assert.match((await publicPc.http(`/groups/${group.id}`)).text(), /S3 파일 보존/);
-  assert.equal((await pc.http(post.mediaUrl)).status, 200);
-  const partial = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
-  assert.equal(partial.status, 206);
-  assert.equal(partial.body.length, 8);
-  assert.equal((await gf.http('/api/session', { headers: { Cookie: pc.cookie } })).json().user, null);
+  // The stable media path checks access and redirects to a 60-second signed GET; storage serves Range.
+  const redirected = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
+  assert.equal(redirected.status, 307, redirected.text());
+  assert.equal(redirected.headers['cache-control'], 'private, no-store');
+  const pcSigned = new URL(redirected.headers.location);
+  assert.equal(pcSigned.hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(pcSigned.searchParams.get('X-Amz-Expires'), '60');
+  const pcContent = JSON.parse(
+    serviceCompose('photo-contest', [
+      'exec',
+      '-T',
+      'api',
+      'node',
+      '--input-type=module',
+      '-e',
+      `const response = await fetch(process.argv[1], {headers: {Range: 'bytes=0-7'}});
+       console.log(JSON.stringify({status: response.status, cache: response.headers.get('cache-control'), bytes: Buffer.from(await response.arrayBuffer()).toString('base64')}));`,
+      pcSigned.toString(),
+    ]),
+  );
+  assert.equal(pcContent.status, 206);
+  assert.equal(pcContent.cache, 'private, no-store');
+  assert.deepEqual(Buffer.from(pcContent.bytes, 'base64'), png.subarray(0, 8));
+  await assertAnonymousSession(() => gf.http('/api/session', { headers: { Cookie: pc.cookie } }));
   sql(
     'game_feedback',
     `INSERT INTO "User" (id,nickname,"termsVersion","ageConfirmed") VALUES ('shared-operator','운영 확인','v1',true),('shared-peer','대화 상대','v1',true)`,
@@ -660,22 +735,25 @@ try {
   operate('game-feedback', ['operator', 'grant', 'shared-operator']);
   const token = operate('game-feedback', ['operator', 'session', 'shared-operator']).trim();
   assert.match(token, /^[A-Za-z0-9_-]{43}$/);
-  const boundary = randomUUID();
-  const bytes = Buffer.concat([
-    Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="shared.png"\r\nContent-Type: image/png\r\n\r\n`,
-    ),
-    png,
-    Buffer.from(`\r\n--${boundary}--\r\n`),
-  ]);
-  const mediaResponse = await gf.http('/api/post-media', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+  const requestedMedia = await gf.post(
+    '/api/post-media/uploads',
+    {
+      name: 'shared.png',
+      mimeType: 'image/png',
+      size: png.length,
     },
-    body: bytes,
-  });
+    { Authorization: `Bearer ${token}` },
+  );
+  assert.equal(requestedMedia.status, 200, requestedMedia.text());
+  const mediaUpload = requestedMedia.json();
+  assert.equal(mediaUpload.mode, 'DIRECT');
+  assert.equal(new URL(mediaUpload.url).hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  uploadForm('game-feedback', mediaUpload, png);
+  const mediaResponse = await gf.post(
+    `/api/post-media/${mediaUpload.id}/complete`,
+    {},
+    { Authorization: `Bearer ${token}` },
+  );
   assert.equal(mediaResponse.status, 200, mediaResponse.text());
   const media = mediaResponse.json();
   assert.equal((await gf.http(media.url)).status, 404);
@@ -777,7 +855,7 @@ try {
   assert.match(failed.stderr, /Previous application images restored/);
   assert.equal(serviceCompose('photo-contest', ['ps', '-q', 'api']).trim(), pcId);
   assert.equal(compose(`${prefix}-proxy`, proxyFile, ['ps', '-q', 'proxy']).trim(), proxyId);
-  assert.equal((await pc.http(post.mediaUrl)).status, 200);
+  assert.equal((await pc.http(post.mediaUrl)).status, 307);
   // A rolling application restart closes its process-local SSE connections; clients reconnect.
   const reconnected = await gf.open('/api/chat/events', { headers: { Authorization: `Bearer ${token}` } });
   const resumed = new EventReader(reconnected);
@@ -803,17 +881,17 @@ try {
   reconnected.destroy();
   serviceCompose('photo-contest', ['restart', 'api', 'web']);
   serviceCompose('photo-contest', ['up', '-d', '--wait', 'api', 'web']);
-  assert.equal((await pc.http(post.mediaUrl)).status, 200);
+  assert.equal((await pc.http(post.mediaUrl)).status, 307);
   dependency(['stop', 'db']);
   assert.equal((await gf.http('/api/health/live')).status, 200);
   assert.equal((await pc.http('/backend/health/live')).status, 200);
   assert.equal((await gf.http('/api/health/ready')).status, 503);
   assert.equal((await pc.http('/backend/health/ready')).status, 503);
-  assert.equal((await gf.http('/_health/live')).status, 200);
-  assert.equal((await pc.http('/_health/live')).status, 200);
+  assert.equal((await gf.http('/health-check/live')).status, 200);
+  assert.equal((await pc.http('/health-check/live')).status, 200);
   dependency(['up', '-d', '--wait', '--wait-timeout', '120', 'db']);
   console.log(
-    'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, S3/Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
+    'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, presigned POST/S3 Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
   for (const project of projects.toReversed()) {

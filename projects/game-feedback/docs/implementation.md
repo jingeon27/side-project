@@ -1,12 +1,107 @@
+## 2026-10-24 인터랙션 분석과 develop 반영
+
+Amplitude에 클릭·포커스·선택 변경·입력 여부·폼 제출과 25/50/75/100% 스크롤·화면별 활성 체류 이벤트를 추가했다. 화면 종류·locale·브라우저/WebView·화면 크기의 기존 공통 속성과 영역·컨트롤·액션·위치·이동 대상 화면·체크 상태·선택 인덱스를 함께 기록한다. 입력 문장·비밀번호·검색어·사용자 콘텐츠·URL 쿼리를 속성으로 보내지 않고, 입력은 600ms로 모으며 설정 키가 비어 있으면 추적기를 설치하지 않는다. 실제 Amplitude 수신 검증은 포함하지 않는다.
+
+최신 develop `6d858497`의 https 앱 로그인 콜백·Prisma 7.10.1·mutation options를 유지해 병합했다. 이동한 Dockerfile에도 Node 24 고정과 prisma.config.ts 복사를 반영했다. Node 24의 프로젝트 check·Web 220개·API unit 164개·모바일 83개·Bridge 14개, OAuth/관리자 권한 통합 7개와 production Web 로그인 안내·가이드·헤더 E2E 13개가 통과했다. SDK 재생성 diff는 없었다. 테스트는 격리 DB 스키마와 가짜 외부 제공자를 사용했고 3301 프리뷰는 200 응답을 확인했다. RN push와 블로그 분석은 이 변경의 구현 범위에 포함하지 않는다.
+
+## 2026-10-23 모바일 피드 브랜드 헤더
+
+홈·게시판 모바일 상단을 Game Mate 워드마크와 검색·알림 아이콘으로 구성했다. 높이는 60px, 터치 영역은 44px 이상이며 좌우 공통 여백을 유지한다. 모바일 피드의 언어 설정은 프로필의 설정에서 열고 데스크톱 언어 선택은 상단에 남긴다. 페이지별 Topbar 선언은 유지하며 공통 Root는 표현용 className을 받는다. Web 타입·lint와 관련 E2E 22개, Android/iOS WebView 홈·게시판 탐색 4개가 통과했다. 320px 한국어·390px 영어·760px 일본어와 다크 모드를 캡처했으며 3301 프리뷰를 유지했다.
+
+## 2026-10-23 로그인 필요 액션 안내
+
+비회원이 글쓰기·채팅·팔로우·신고·차단·댓글/답글·피드백·관리자 문의를 누르면 공통 로그인 안내 모달을 먼저 연다. 취소·닫기·Escape·앱 뒤로 가기는 현재 화면과 필터를 유지하며, 로그인하기를 확인한 경우에만 기존 로그인 절차를 연다. 모바일/앱은 로그인 페이지, 데스크톱은 로그인 방법 모달을 사용하며 로그인 후 돌아갈 화면의 경로와 쿼리를 보존한다. 명시적인 로그인/시작하기 버튼은 바로 로그인 절차를 연다. 안내 문구는 한국어·영어·일본어를 제공한다.
+
+Node 24에서 Web·Mobile 타입 검사와 lint, Web unit 192개가 통과했다. 3353/4353의 격리 서버에서 로그인 안내·기존 로그인·화면 모드 Web E2E 10개, Android/iOS WebView에서 앱 로그인·뒤로 가기·세션 복귀·인증 취소 E2E 8개가 통과했다. 320px·1440px 안내 모달 캡처를 확인했다. 외부 OAuth는 가짜 제공자와 시스템 인증 대역으로 검증했으며 실제 제공자·실기기 검증은 실행하지 않았다. 3301 로컬 프리뷰와 사용자 개발 서버는 유지했다.
+
+## 2026-10-23 가이드 문서 구성과 모바일 가로 여백
+
+가이드를 모바일 하단 탭과 데스크톱 주 메뉴에서 빼고 프로필의 서비스 안내와 공통 하단 링크에서 열도록 옮겼다. 목차 버튼·제목 링크·화살표·홈 이동 버튼을 제거하고, 아홉 개 항목과 다섯 게시판 설명을 한 열의 제목·문단으로 정리했다. 모바일 본문 h1은 접근성을 유지하면서 시각적으로 숨기며 상단바에는 가이드 제목만 표시한다. 가이드의 기본 상위 화면은 프로필이며, 링크를 통해 열면 브라우저와 앱의 뒤로 가기가 진입 화면으로 돌아간다.
+
+모바일 본문·상단바·하단 안내의 가로 여백을 좌우 16px과 기기 안전 영역 기준으로 통일했다. 320·393·430·760px에서 홈·가이드·프로필의 좌우 정렬과 가로 넘침을 검사했다. 한국어 320px·영어/일본어 393px·데스크톱 1440px의 라이트·다크 캡처를 확인했다. Web E2E 25개, Android/iOS WebView 탐색 E2E 4개, Bridge 12개와 Web 탐색·언어 unit 24개가 통과했다. Web·Mobile·Bridge 타입 검사와 Web lint를 통과했으며, 실행 중인 3301 프리뷰와 사용자의 개발 서버는 유지했다.
+
+## 2026-10-23 공유 배포 경로와 관리자 권한 부여 정리
+
+구형 단독 배포의 CloudFormation·Compose·Caddy·운영 스크립트와 전용 컨테이너 smoke를 제거했다. 현재 공유 EC2/RDS/S3 빌드에 쓰는 Dockerfile·dockerignore는 `deploy/shared-instance`로 옮기고 Actions·Dependabot·Admin 운영 안내를 연결했다. 공개 도메인·문의 이메일 검증은 공유 이미지 빌드 job으로 옮겨 보존했다. 운영 인프라를 삭제하거나 배포하지 않았다.
+
+Google subject 환경변수에 의한 가입·로그인 자동 관리자 승격을 제거했다. 가입자는 USER이며 관리자 권한은 SSH operator CLI의 grant와 감사 기록으로 부여하고 별도 Admin 앱이 API의 ADMIN 권한 검사를 거쳐 기능을 사용한다. 기존 ADMIN의 권한은 로그인 시 그대로 유지한다. 관련 환경변수 예제·Compose·테스트 실행 설정·스킬 안내도 정리했다.
+
+검증: API 타입 검사와 OAuth/운영자 역할 통합 사양 7개, 공유 배포 Vitest 20개, Actionlint가 통과했다. 역할 검사는 이 세션의 프리뷰가 소유한 55444 테스트 DB에 새 격리 스키마를 만들고 종료 시 정리했으며 프리뷰·개발 서버를 중지하지 않았다. Docker 엔진이 없어 이동한 이미지의 실제 컨테이너 재빌드는 로컬에서 실행하지 않았다. 공통 workflow와 배포 문서 변경은 구형 경로 제거 후 현재 이미지 빌드·운영 명령을 유지하는 데 필요하다.
+
+# 2026-10-22 API·패키지 ESLint와 엄격한 tsconfig 연결
+
+PR #49 병합 후 후속 충돌 해소: develop `899349f7`을 병합했다. 공용 ESLint README에 React DOM 접근성 preset·모바일 FSD 경계와 #50의 API·패키지·migration-check 적용 범위를 모두 남겼다. 자동 병합된 오류 경계와 글쓰기 테스트는 `override`·`on*` 콜백을 함께 유지했다. Node 24에서 immutable 설치, Game Feedback 집계 `check`, photo-contest 전체 타입·루트/Web/Mobile lint, design-system 타입·lint, eslint-config `check`(89개), migration-check `check`(70개), Admin 21개와 photo-contest 글쓰기·오류 경계 테스트가 통과했다. SDK 재생성 추가 diff가 없었다. 이번 후속 병합은 API 구현·계약을 바꾸지 않았으며 DB 통합·브라우저 E2E·운영 빌드는 다시 실행하지 않았다.
+
+PR #50 충돌 해소: 작업 도중 반영된 원격 rebase(`c0401942`)를 보존하고 develop `87b48331`을 병합했다. 최신 채팅의 상대 목록 숨김·일괄 조회·SQL 미읽음 집계와 `conversationPair`·`nextPageAnchor`를 함께 유지했다. 신고 목록도 공통 커서 도우미로 바꾸고, 새 통합 테스트의 Location 헤더·문의 이력 관계·댓글 DTO를 엄격한 타입에 맞췄다. 새 코드의 미사용 변수·else를 고쳐 프로젝트 lint와 migration-check lint를 유지했다. 공통 ESLint 안내는 최신 preset·플러그인 설명과 API·패키지 적용 현황을 합쳤다.
+
+검증(Node 24, 이 worktree): 집계 `check`(7개 워크스페이스 타입·API/패키지·Web/Mobile/Admin lint), API unit 155개·격리 PostgreSQL 통합 170개, SDK 69개·Bridge 11개·Web 192개·Mobile 54개·Admin 21개, migration-check `check` 70개, eslint-config `check` 80개가 통과했다. photo-contest 전체 타입, design-system·blog 타입 검사와 API 운영 빌드도 통과했다. SDK 재생성의 추가 diff가 없고, 운영 모듈 로드 및 `dist/testing` 제외를 확인했다. 통합 테스트가 만든 스키마는 테스트가 정리했으며, 이 worktree가 소유한 테스트 DB는 종료했다. 브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다. 아래 검증 수치는 원래 구현 시점의 기록이다.
+
+프로젝트 루트 `eslint.config.ts`가 Web·Admin·Mobile을 제외한 `apps/api`, `packages/{contracts,sdk,bridge}`, 프로젝트·API 스크립트를 공용 `baseConfig`로 검사하고 집계 `check`가 실행한다. 생성 코드(`src/generated`, SDK `generated`)와 `dist`는 산출물 제외로 빠진다. 위반 44건(`side/no-else` 19, `no-unused-vars` 16, `no-explicit-any` 6, `no-require-imports` 3)을 고쳤다. 루트 `migration-check`에도 `baseConfig`와 `check`를 연결해 `side/no-else` 1건을 고쳤고, game-feedback·photo-contest CI가 `test` 대신 `check`를 실행한다.
+
+API·contracts·bridge·sdk tsconfig는 `@side/typescript-config/base`를 상속한다. 서버 API와 React Native 공용 bridge는 `lib`를 ES2022로 명시해 DOM을 뺐고, Web·API 공용 contracts는 `URL` 때문에 DOM만, 브라우저 SDK는 기존 DOM·DOM.Iterable을 유지한다. `noUncheckedIndexedAccess` 오류는 목록 커서(`nextPageAnchor`·`nextCursor`)·대화 쌍(`conversationPair`) 도우미와 명시적 검사로 any·non-null 없이 고쳤다.
+
+API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/**` 제외)과 테스트를 포함한 `tsconfig.json`(Vitest와 같은 `module: Preserve`·Bundler)으로 나눴고 `typecheck`가 둘 다 검사한다. 운영 seed가 쓰는 데모 커뮤니티 글은 `src/seed-community-posts.ts`로 옮겨 dist에는 S3 fixture·E2E 서버가 들어가지 않는다. Dockerfile·운영 스크립트의 `dist/main.js`·`dist/seed.js` 경로는 그대로다. 테스트 타입 오류 40건(실제 오류 2곳, `Location`·`Set-Cookie`·배열 색인)을 고쳤다.
+
+공용 base에 `isolatedModules`·`noImplicitOverride`·`noFallthroughCasesInSwitch`를 켰다. CommonJS 출력과 충돌하는 `verbatimModuleSyntax` 대신 `isolatedModules`를 골랐고, `override` 누락 16건(game-feedback 8, photo-contest 8)을 고쳤다. `tsc7`은 SIGINT·SIGTERM·SIGHUP을 tsc에 넘기고 신호로 끝난 tsc의 신호를 그대로 전달한다.
+
+검증(develop 95188270 기준 rebase 후): 집계 `check`(타입·새 lint·앱 lint), API unit 143개, SDK 68개, Bridge 11개, Web 188개, Mobile 54개, Admin 21개, migration-check `check`(70개), photo-contest `lint`·`typecheck`와 변경 파일 테스트, design-system·eslint-config `check`, blog 타입 검사, 전체 format 검사가 통과했다. API 빌드 산출물에 `testing/`이 없고 `dist/seed.js` 등 운영 스크립트 모듈이 로드되는 것과 OpenAPI·SDK 재생성 diff 0을 확인했다. `tsc7 -w`의 재컴파일·Ctrl+C·단독 SIGTERM 종료와 고아 프로세스 없음, SIGKILL 전달을 확인했다. DB를 띄우지 않아 PostgreSQL 통합 테스트와 E2E, 컨테이너 빌드는 실행하지 않았다.
+
+# 2026-10-22 헬스·내부 라우트 폴더 이름 정리
+
+URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. 아래 날짜별 기록의 `/_internal`·`/_health`는 당시 경로다.
+
+검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
+
+PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
+
+# 2026-10-22 Admin 빌드 경고와 번들 중복 제거
+
+contracts에 브라우저용 소스 진입점을 더해 Admin이 SDK와 같은 Zod ESM을 사용하게 했다. Node·API의 CommonJS 진입점은 유지한다. 문의·신고·사용자 관리 화면은 named export를 유지하면서 탭별로 지연 로딩한다. 기존 `AsyncBoundary`가 대기와 실패를 처리한다.
+
+Zod 4.6.7의 ESM·CommonJS 설명 주석 네 곳에서 Rollup이 실제 최적화 표시로 읽던 문구만 Yarn patch로 고쳤다. 실행 코드와 실제 pure 지시문은 바꾸지 않았다. 루트 package.json·yarn.lock 변경은 기존 Zod 4.6.7 범위 두 개에 이 patch를 연결하기 위한 것이며 다른 Zod 버전은 유지한다. 경고 임계값이나 로거 필터는 바꾸지 않았다.
+
+별도 worktree에서 처음 재현한 Admin JS는 1,063.29 kB였다(develop 346b3ee8). develop 42370ab5까지 반영한 수정 뒤 최대 JS 청크는 485.94 kB(gzip 140.44 kB)이며 기본 build에서 Zod 주석·500 kB 경고가 모두 사라졌다. 번들 분석에서도 모든 JS 청크가 500 kB 이하이고 Zod CommonJS 모듈이 포함되지 않는 것을 확인했다. `yarn install --immutable`, 집계 `check`(codegen·전 워크스페이스 타입·Web/Mobile/Admin lint), SDK 69개·Admin 21개 단위 테스트, Android·iOS Metro export와 실제 로컬 테스트 API를 사용하는 Admin Playwright 5개가 통과했다. 테스트는 새 `gf_test_admin_*` 스키마에서 실행했고 스키마를 삭제한 뒤 직접 시작한 테스트 DB를 종료했다. SDK 재생성 diff는 없었다. 운영 API·데이터와 실제 배포는 사용하지 않았다.
+
+# 2026-10-22 클라이언트 감사 결함 수정 (web·admin·mobile·SDK)
+
+develop a8e2aae4 감사의 클라이언트 항목을 고쳤다. 아래 10월 22일 태그 만료 기록 중 "작성자의 Router Cache를 갱신하는 기존 액션에 유지한다"는 더 이상 맞지 않는다.
+
+- 문서 접근 판정: Next 16.4 proxy는 `'use cache'`를 실행하지 못한다(proxy adapter의 cacheLife 프로필이 "Proxy does not support `use cache`"를 던진다). 그래서 렌더의 태그 캐시를 쓰지 않고, 게시글 상세 판정(`features/post/api/post-access.server.ts`)이 공개 조회 결과(작성자 id 또는 없는 글)만 프로세스 안에 30초·500개까지 기억한다. 로그인 요청은 세션별 전체 상세 대신 렌더와 같은 차단 목록만 받는다. API 장애는 기억하지 않고 404로 바꾸지 않는다. 캐시가 살아 있는 동안 삭제·숨김된 글은 렌더가 태그 캐시로 다시 막으므로 본문은 보이지 않고, 상태 코드만 최대 30초 늦게 404가 된다.
+- 캐시 만료 Server Action `expirePostDetailCache`를 없앴다. API가 커밋 직후 무효화 콜백을 응답 전에 기다리고 실패하면 DB 큐에서 재시도한다. 모바일 e2e 웹 서버(3302)에도 콜백 URL·비밀을 넣었다.
+- 가이드 제목 링크: 홈·채팅·프로필·알림과 "홈으로 이동"은 `TabLink`, 게시판·글쓰기·문의는 `ChildLink`(`registerNextLogicalParent`)로 연다. 뒤로 가기(브라우저·Android)가 게시판·문의에서 가이드로 돌아오고, 탭 이동은 기록을 쌓지 않는다.
+- 글 삭제 성공 뒤 상세 쿼리를 다시 받지 않고 취소·제거하며, 이동은 피드로 replace한다.
+- 웹 응답 헤더: `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`. cacheComponents(PPR) 정적 셸은 nonce를 받을 수 없어 script/style/connect를 제한하는 CSP는 넣지 않았다. Admin Vite dev·preview도 frame 차단 헤더를 보낸다.
+- SDK: Orval `urlEncodeParameters`로 경로 파라미터를 인코딩하고, `apiFetch`가 빈·점 세그먼트와 `/`·`\`·`?`·`#`가 든 세그먼트를 `INVALID_REQUEST_PATH`로 거부한다. 웹의 Player Tag 조회는 `#` 없이 보낸다.
+- 모바일: `EXPO_PUBLIC_WEB_ORIGIN`을 `new URL().origin`으로 정규화한다. iOS 하위 frame 이동은 외부 열기·앱 화면 이동 없이 같은 origin·`about:blank`만 허용한다.
+- 답글 버튼의 렌더되지 않은 폼을 가리키던 `aria-controls`와 고정 `aria-expanded`를 없앴다.
+- 문서: 모바일 build 스킬의 앱 이름, webview-shell 스킬의 쿠키 prop 설명, Admin `.env.example`의 운영 토큰 안내를 실제와 맞췄다. Admin Vite 프록시의 Origin 가드·운영 토큰 주입을 단위 테스트한다.
+
+검증(이 worktree, Node 24): `@side/game-feedback codegen` 뒤 생성 diff 없음. sdk·bridge·web·mobile·admin `typecheck`, web·mobile·admin `lint`, 단위 테스트(SDK 68, bridge 11, Web unit/UI 182, Mobile unit/UI 54, Admin 20), 루트 `format:check`가 통과했다. 운영 토큰 더미값으로 Admin을 build해 `dist/`에 토큰이 없음을 확인했다. Web·Admin·Mobile Playwright와 `next build`는 로컬에서 돌리지 않았고 CI에 맡긴다(가이드·보안 헤더·글 삭제·게임 프로필 e2e를 고치거나 더했다). Android 하드웨어 뒤로 가기와 iOS iframe 동작은 실기기로 확인하지 않았다.
+
+PR #42 충돌 해소: 최신 develop `46e5d0cd`를 병합하면서 클라이언트·API 수정 기록을 모두 보존했다. 공개 게시글 접근 테스트는 새 내부 서명 헤더를 허용하되 세션 쿠키가 없음을 확인하도록 맞췄다. Node 24의 별도 worktree에서 codegen 후 SDK 생성 diff 없음, SDK·Web·Admin typecheck, Web·Admin lint, SDK 68·Web 188·Admin 21개 테스트, 병합 파일의 Prettier 검사가 통과했다. 이번 충돌 해소에서는 DB 통합 테스트·Playwright·프로덕션 build를 실행하지 않았다. 공통 파일과 다른 서비스의 변경은 기존 develop 커밋을 병합해 들어온 내용이며 별도로 수정하지 않았다.
+
+# 2026-10-22 API 요청 제한과 접근 검사 보정
+
+감사(origin/develop a8e2aae4)에서 확인한 API 결함을 고쳤다.
+
+- SSR 요청 제한: 웹 서버가 API를 내부 주소로 부르며 모든 SSR이 웹 컨테이너 IP 하나의 버킷을 썼다. 웹은 `X-Forwarded-For` 첫 값 또는 `internal`을 `GF_CACHE_REVALIDATION_SECRET`에서 HMAC으로 파생한 키로 서명하고(60초 창), API는 유효한 서명일 때만 그 값을 버킷 키로 쓴다. 새 환경변수는 없다. 세션 쿠키가 없으면 SSR이 사용자별 `getSession` 대신 캐시된 익명 세션을 쓰고, 카테고리는 `discovery` 태그로 캐시한다.
+- 대소문자 경로: Express 5가 라우트를 대소문자 무시로 찾아 `/API/posts`가 접근 미들웨어를 건너뛰었다. `case sensitive routing`을 켠 Express 인스턴스로 Nest를 만들고 미들웨어도 접두사를 대소문자 무시로 판정한다.
+- 만료 행: 새 OAuth 시도·세션 발급 때 만료 행을 지우고 `OAuthAttempt.expiresAt` 인덱스를 더했다.
+- 밴 회피: 밴·밴 사용자 탈퇴 때 `BannedIdentity(provider, sha256(subject))`를 남기고 계정 없는 식별자의 callback·앱 교환·onboard를 거부한다.
+- 관리자 신고 목록: `status`(기본 `OPEN`)·커서 페이지(`{ items, nextCursor }`)와 `(status, createdAt, id)` 인덱스. Admin 신고함에 상태 필터와 더 보기를 더했다.
+- 게임 프로필 조회는 로그인·사용자별 분당 10회·60초 공유 캐시를 쓴다. 밴 사용자의 문의 첨부 `complete`를 허용했다. 탈퇴 시 분리한 남의 답글은 `updatedAt`을 보존한다.
+
+추가형 migration `20261022100000_oauth_attempt_expiry_index`, `20261022100100_banned_identities`, `20261022100200_report_status_index`를 운영 `migrate deploy`로 적용한다. DB 통합 테스트는 로컬 DB를 띄우지 않아 CI에서 확인한다.
+
 # 2026-10-22 NestJS 변경에 따른 Next.js 태그 만료
 
-공개 게시글 상세는 `'use cache'` 안에서 `cacheTag('posts', 'post:<id>')`와 `cacheLife('max')`를 사용한다. 60초 간격 재검증 대신 NestJS의 변경 커밋이 태그를 만료한다. `updateTag`는 Server Action에서만 사용할 수 있으므로 작성자의 Router Cache를 갱신하는 기존 액션에 유지한다. API가 호출하는 `POST /_internal/cache/revalidate` Route Handler는 `revalidateTag(tag, { expire: 0 })`를 사용해 첫 후속 조회부터 새 데이터를 기다린다. `'max'` 재검증의 stale 응답을 첫 조회에 반환하지 않는다.
+공개 게시글 상세는 `'use cache'` 안에서 `cacheTag('posts', 'post:<id>')`와 `cacheLife('max')`를 사용한다. 60초 간격 재검증 대신 NestJS의 변경 커밋이 태그를 만료한다. `updateTag`는 Server Action에서만 사용할 수 있으므로 작성자의 Router Cache를 갱신하는 기존 액션에 유지한다. API가 호출하는 `POST /internal/cache/revalidate` Route Handler는 `revalidateTag(tag, { expire: 0 })`를 사용해 첫 후속 조회부터 새 데이터를 기다린다. `'max'` 재검증의 stale 응답을 첫 조회에 반환하지 않는다.
 
 게시글·답변·댓글·도움됨·읽음·조회수, 관리자 숨김/복원과 작성자 인증/밴/게임 태그/프로필 사진·탈퇴 변경을 연결했다. 개별 변경은 `post:<id>`, 작성자 정보 변경은 `posts`를 만료한다. 글 생성/수정/삭제·숨김/복원·탈퇴·카테고리 생성은 `discovery`도 만료해 sitemap에 반영한다. 개인화된 차단 필터는 공유 캐시 밖에 유지한다.
 
 데이터 변경과 태그 기록은 하나의 DB 트랜잭션이다. 커밋 후 최대 1.5초 안에 콜백을 시도하고, 실패해도 쓰기는 성공한다. 미전달 태그는 `CacheInvalidation` 테이블에서 5초 주기로 재시도하며 API 재시작 후에도 남는다. 태그별 revision을 비교해 오래된 콜백의 성공이 그 사이 발생한 새 쓰기를 지우지 않게 했다. 실패는 일반 경고와 설정된 Sentry로 보고하며 요청 헤더·비밀·게시글 내용은 보고하지 않는다.
 
-콜백은 양쪽 서버에만 주입한 `GF_CACHE_REVALIDATION_SECRET`으로 인증한다. 상수 시간 해시 비교, 허용된 태그·최대 64개·본문 크기 검사와 `no-store` 응답을 적용했다. Caddy는 `/_internal`을 외부에서 차단하고 API는 단일 Web 컨테이너의 내부 주소를 호출한다. 운영 `.env`에 `openssl rand -hex 32`로 생성한 비밀을 추가해야 하며 두 Compose 구성과 smoke fixture에 전달을 연결했다. 로컬 통합 dev 명령은 메모리에서만 공유하는 임시 비밀을 생성한다. 독립 실행은 두 프로세스의 비밀을 일치시키고 API에 콜백 URL을 설정한다. 추가형 migration `20261022020000_cache_invalidations`를 운영 `migrate deploy`로 적용한다.
+콜백은 양쪽 서버에만 주입한 `GF_CACHE_REVALIDATION_SECRET`으로 인증한다. 상수 시간 해시 비교, 허용된 태그·최대 64개·본문 크기 검사와 `no-store` 응답을 적용했다. Caddy는 `/internal`과 그 하위 경로를 외부에서 차단하고 API는 단일 Web 컨테이너의 내부 주소를 호출한다. 운영 `.env`에 `openssl rand -hex 32`로 생성한 비밀을 추가해야 하며 두 Compose 구성과 smoke fixture에 전달을 연결했다. 로컬 통합 dev 명령은 메모리에서만 공유하는 임시 비밀을 생성한다. 독립 실행은 두 프로세스의 비밀을 일치시키고 API에 콜백 URL을 설정한다. 추가형 migration `20261022020000_cache_invalidations`를 운영 `migrate deploy`로 적용한다.
 
 검증: API unit 92개와 PostgreSQL 통합 122개, Web unit/UI 144개, SDK 43개, Admin unit 5개가 통과했다. 새 통합 사양은 실제 migration 실행, 커밋 이후 콜백, 롤백 시 이벤트 미생성, 콜백 실패·재시작 후 재전송, 동시 쓰기의 revision 보존을 검증한다. production build/start의 캐시·댓글 Playwright 5개와 PPR/프리패치 12개가 통과했으며 JavaScript 없는 첫 후속 HTML에서 API 직접 수정·댓글 생성/수정/삭제·관리자 숨김/복원이 반영되는지 확인했다. API/Web/Admin/계약/SDK 타입 검사, Web/Admin lint, 변경 파일 Prettier, 추가 migration 호환 검사와 스크립트 구문 검사도 통과했다. SDK 재생성 diff는 0개다. 실제 AWS 설정·운영 배포는 하지 않았고 Docker CLI가 없어 컨테이너 smoke는 실행하지 않았다.
 
@@ -14,7 +109,7 @@
 
 게시글 상세의 서버 조회(본문·메타데이터·상단바)는 모든 사용자가 쿠키 없이 받은 공개 응답을 `'use cache'`로 게시글 id마다 함께 쓴다(`post:<id>` 태그, 60초 재검증, 1시간 만료). 로그인 요청만 API의 `/_internal/visibility/excluded-authors`에서 양방향 차단 관계를 받아, 작성자와 차단 관계면 404로 막고 그런 사람의 답변·댓글을 뺀다. Caddy는 `/api`만 API로 전달하고 `/_internal`을 edge에서 막으므로 이 경로는 웹 서버만 부른다. 사용자가 자신을 차단한 사람을 응답에서 알 수 없다. 화면은 계속 요청마다 렌더하므로 댓글의 상대 시각 처리는 그대로다.
 
-게시글 수정·삭제, 답변 작성·수정·삭제·도움됨·읽음, 댓글 작성·수정·삭제가 성공하면 서버 액션 `updateTag`로 해당 태그를 만료해 쓴 사람이 새로고침해도 바로 반영된다. 만료 실패는 60초 재검증으로 따라잡으므로 쓰기 결과를 실패로 바꾸지 않는다. 관리자 앱의 숨김·삭제와 다른 사용자의 쓰기는 최대 1분 늦게 반영될 수 있다. 공개 상세의 답변 수·상태는 차단한 사람의 답변을 포함한 값이다. 비로그인 세션 조회(`getServerSession`)는 여전히 요청마다 API를 부르며, 설정값만 담기므로 같은 방식으로 캐시할 수 있다.
+게시글 수정·삭제, 답변 작성·수정·삭제·도움됨·읽음, 댓글 작성·수정·삭제가 성공하면 서버 액션 `updateTag`로 해당 태그를 만료해 쓴 사람이 새로고침해도 바로 반영된다. 만료 실패는 60초 재검증으로 따라잡으므로 쓰기 결과를 실패로 바꾸지 않는다. 관리자 앱의 숨김·삭제와 다른 사용자의 쓰기는 최대 1분 늦게 반영될 수 있다. 공개 상세의 답변 수·상태는 차단한 사람의 답변을 포함한 값이다. 비로그인 세션 조회(`getServerSession`)는 세션 쿠키가 없으면 캐시된 익명 세션(`cacheLife('minutes')`)을 쓴다.
 
 검증: 웹 unit/UI 133개(공개 캐시·내부 차단 조회·작성자 404·답변/댓글 제외·조회 실패·404·잘못된 id·만료 액션·만료 실패 무시 사양 포함), API unit/통합 196개(웹 서버 전용 조회의 양방향 차단·세션 없음·`/api` 비노출 사양 포함), 웹·API `tsc7 --noEmit`, 변경 파일 eslint·prettier 통과. 작성자 404와 답변·댓글 제외 코드를 없애면 사양이 실패하는 것을 확인했다. 프로덕션 빌드와 Playwright는 CI에서 확인한다.
 
@@ -143,7 +238,7 @@ SSE는 live 세션을 확인하고 메시지 본문 없이 대화 갱신만 전�
 
 ## 요청 제한
 
-60초 단위로 인증된 조회는 userId별 240회, 쓰기는 userId별 60회다. 같은 사용자는 세션·IP 변경으로 한도를 나누지 않는다. 비로그인 일반 요청은 IP별 한도, 로그인·가입·OAuth 시도는 IP별 30회를 적용한다. 테스트 계정 목록은 조회, 로그아웃은 쓰기다. 세션 조회 전에는 IP별 전체 1,000회 상한을 적용한다.
+60초 단위로 인증된 조회는 userId별 240회, 쓰기는 userId별 60회다. 같은 사용자는 세션·IP 변경으로 한도를 나누지 않는다. 비로그인 일반 요청은 IP별 한도, 로그인·가입·OAuth 시도는 IP별 30회를 적용한다. 테스트 계정 목록은 조회, 로그아웃은 쓰기다. 세션 조회 전에는 IP별 전체 1,000회 상한을 적용한다. SSR 호출은 웹 서버가 서명한 방문자 IP로, 방문자 IP가 없는 공유 조회는 `internal` 버킷(조회 3,000회)으로 센다. 게임 프로필 조회는 사용자별 10회다.
 
 `rate-limit.test.ts`의 단위 테스트 4개는 공유 IP 사용자 분리, 세션·IP 변경 시 사용자 한도 공유, 비로그인·인증 경로, 목록·로그아웃 분류를 다룬다. 제한 상태는 단일 프로세스 메모리에 있으며 초과 응답은 `429 RATE_LIMITED`와 `Retry-After`다.
 
@@ -960,29 +1055,6 @@ Web typecheck/lint와 변경 파일 Prettier 검사가 통과했습니다. 새 P
 
 프로젝트 check, OpenAPI/SDK 재생성과 변경 파일 Prettier가 통과했습니다. API Vitest+Supertest 109개와 SDK Vitest 43개가 통과했으며 정상 태그·대소문자 정규화와 두 endpoint의 잘못된 길이/문자 거부를 확인했습니다. 관련 Web Playwright 21개 중 20개가 통과했고 이전 5자리 태그가 URL 인코딩된 채 남아 있던 조회 fixture를 수정한 뒤 해당 파일 4개를 다시 실행해 모두 통과했습니다. 21개 전체가 한 번에 통과한 것으로 기록하지 않습니다. 393px의 세 언어 안내/오류/조회/등록, 조회 중 입력 변경, 사용자 태그 유지와 인증 문의 흐름을 확인했습니다. 검증은 격리 PostgreSQL과 가짜 프로바이더를 사용했으며 실제 Supercell API 호출을 성공으로 기록하지 않습니다. 실행 중인 개발 Web의 200 응답과 개발 API의 7자리 태그 거부(400)도 확인했습니다.
 
-## Lightsail 서울 운영 배포 준비 (2026-10-19)
-
-사용자의 운영 환경 준비 요청과 Lightsail 서울 선택에 따라 2GB 단일 호스트의 CloudFormation, Static IP, Docker Compose, Caddy HTTPS와 GitHub Actions CD를 추가했습니다. API/Web 이미지는 Node 24 linux/amd64로 빌드하며 Web은 monorepo standalone 결과를 사용합니다. main의 최신 커밋이 코드·컨테이너 검증을 통과하고 GF_DEPLOY_ENABLED가 true인 경우에만 게시/배포합니다. SSH 호스트 키를 고정하고 서버 env를 덮어쓰지 않으며 배포를 직렬화합니다. 운영 도메인·OAuth·SSH/GitHub 설정과 사용자 실행 순서는 deploy/lightsail/README.md를 따릅니다.
-
-운영은 HTTPS origin, 문의 이메일, 완전한 OAuth 쌍과 DB 암호를 검증합니다. 데모/테스트 인증/Next testing API를 거부하며 Caddy에서도 테스트 로그인 경로를 막습니다. DB 앱 역할은 비관리자이고 공개 포트는 80/443, API 관리 연결은 loopback입니다. 메모리·swap·로그 회전을 구성하고 private 파일의 사진/영상 signature/크기/소유권/공개 범위/Range 정책을 유지합니다. FILESYSTEM volume이 기본이며 선택한 private S3/R2도 지원합니다. DB bytes는 기존 개발 파일 호환용으로 읽고 새 운영 파일은 외부 저장소 메타데이터를 참조합니다.
-
-운영 준비 요청이 이전의 배포 전 SQL 미포함 정책을 대체하므로 schema.prisma에서 최초 migration을 생성했습니다. 새 운영 DB는 migrate deploy와 카테고리 seed를 사용하며 테스트 계정은 만들지 않습니다. 로컬 db:sync는 계속 URL 가드와 데이터 손실 거부 정책을 사용합니다. 이번 로컬 동기화에서 신규 nullable 컬럼의 unique 경고로 db:sync가 중단되어 생성 diff의 테이블/컬럼/인덱스/FK 추가와 NOT NULL 완화만 검토한 후 전용 55442에 단일 트랜잭션으로 적용했습니다. 데이터 손실 강제 옵션이나 reset을 사용하지 않았고 글 18개, 메시지 10개, PostMedia/ChatAttachment 각 1개의 수가 동일했습니다. 기존 3300/4300/3303 개발 서버도 유지했습니다.
-
-배포 전 백업, daily 03:00 KST 백업/정리 timer, 7일 로컬 보관과 선택한 S3/R2 offsite 복사를 추가했습니다. 참조가 끊긴 파일은 14일 더 보관해 백업 복구를 지원합니다. 앱 health 실패는 이전 이미지/설정으로 복귀하며 SQL은 forward-only입니다. restore는 기존 DB volume이 없는 새 스택에만 허용하고 archive 경로/종류를 검증합니다. 기본 로컬 백업만으로 디스크 유실을 복구할 수 없으므로 외부 보관은 운영 설정으로 별도 준비해야 합니다. 비용 이메일을 지정하면 월 $20 Lightsail Budgets 알림을 구성하며 이는 트래픽 제한이나 과금 차단이 아닙니다.
-
-로컬 Admin은 SSH CLI로 실제 계정을 ADMIN으로 지정하고 한 시간짜리 세션을 발급해 터널로 연결합니다. 발급·권한 변경 감사 기록을 남기고 demo/banned/non-admin 발급을 거부합니다. Vite 서버가 Bearer를 주입하며 client bundle에는 boolean 모드만 전달합니다. 이 모드의 테스트 로그인 버튼은 숨기고 token을 browser storage에 넣지 않습니다.
-
-현재 worktree의 검증 결과:
-
-- 프로젝트 check와 OpenAPI/SDK 재생성 diff 없음, 전체 Prettier 검사 통과.
-- API Vitest+Supertest 123개 통과. 최초 migration을 새 테스트 schema에 적용했고 운영 설정 거부, private filesystem 저장/Range, 14일 파일 보관/정리, 실제 관리자 세션·권한·감사 기록을 검증했습니다.
-- Web Vitest 99개, Admin Vitest 2개 통과. Production build/instant() 12개와 관리자 Playwright 3개도 최종 각각 한 번에 통과했습니다.
-- API/Web linux/amd64 Docker 이미지와 operator 모드 Admin build 통과. 테스트 credential 문자열이 Admin 산출물에 없는 것을 확인했습니다.
-- 실제 Docker의 HTTPS local CA, 최초 migration/카테고리만 seed, 비로그인 HTML/SEO, 테스트 인증 차단, 앱 DB role, private 파일/Range, Caddy SSE 전달, API 재시작 보존을 검증했습니다. 의도적으로 실패하는 Web 이미지를 배포해 이전 이미지 복귀를 확인했고, 백업을 새 DB/media volume에 복구하여 글/파일/세션 보존과 기존 volume restore 거부까지 통과했습니다. 개발 컨테이너/DB를 재사용하지 않고 생성한 game-feedback-smoke-* 스택만 정리했습니다.
-- CloudFormation cfn-lint(서울), actionlint, shellcheck와 git diff --check 통과. 루트 workflow는 컨테이너 검증/CD 때문에, yarn.lock은 API S3 저장/streaming backup 의존성 때문에 변경했습니다. 다른 서비스 제품 코드는 변경하지 않았습니다.
-
-유료 AWS 자원 생성, 실제 SSH CD 실행, 공인 DNS/ACME 인증서, 운영 OAuth/Supercell, 실제 S3/R2 송수신과 외부 모니터링 수신은 실행하지 않았습니다. Game Feedback의 Sentry/Amplitude 연동은 현재 없으며 이 변경이 해당 연동을 완성했다고 주장하지 않습니다. 2GB 실서버의 동시 사용자 처리량도 부하 측정 전입니다. 이 절은 구현/로컬 검증 결과이며 실제 공개 배포 완료 기록이 아닙니다.
-
 ## 2026-10-20 웹/API 관측 연결
 
 웹 Sentry 오류 수집과 Amplitude의 타입 이벤트 7개, 자동 페이지뷰 공통 속성, 계정 식별 초기화를 추가했다. API는 예외 필터의 500만 수집하며 실제 URL 대신 라우트 패턴을 태그한다. 빈 키는 비활성화한다. 공통 workflow 변경은 GF 웹 빌드 인자 연결에 필요하다. 실제 국가·보유기간·콘솔 알림 설정은 운영 프로젝트 확인 후 확정한다. 모바일은 이번 변경에 포함하지 않는다.
@@ -1043,6 +1115,13 @@ PostMedia/ChatAttachment의 uploadedAt과 추가형 migration으로 기존 첨�
 
 실제 외부 제공자의 계정 로그인은 실행하지 않았다. API는 가짜 제공자, 웹은 OAuth 시작 요청 가로채기, 앱은 시스템 인증 취소 대역을 사용했다. 실행 중인 개발 Web/API와 개발 DB는 변경하지 않았다. 검증 후 소유한 테스트 DB만 중지하고 데이터를 보존했다.
 
+## 2026-10-22 모바일 이용 가이드와 제목 바로가기
+
+- 가이드를 휴대폰의 하단 홈·채팅·프로필, 화면 위 검색·알림, 분류 버튼 좌우 스크롤과 첨부·보내기 조작 기준으로 고쳤다. 데스크톱 Enter·Shift+Enter 안내를 휴대폰 줄바꿈과 보내기 버튼 안내로 바꾸고 영어·일본어도 갱신했다.
+- 아홉 섹션과 다섯 분류의 제목에 화살표와 내부 링크를 붙였다. 친추판매·전투 모집은 별도 섹션에서 해당 게시판으로 이동한다. 제목과 화살표가 같은 링크이며 터치 높이는 44px 이상이다. 별도로 놓였던 중복 바로가기 버튼은 제목으로 합쳤다.
+- Web 타입 검사·lint·기존 Vitest 160개·production build/start의 Playwright 5개를 통과했다. 320px에서 각 제목의 화살표 탭·기능 이동·뒤로 복귀와 키보드 Enter, 영어·일본어 393px의 언어 유지·가로 넘침, 320px·1440px의 기존 푸터를 확인했다. 모바일 크기의 화면 스크린샷도 확인했다.
+- 최신 develop의 별도 worktree에서 작업했다. API·DB·모바일 앱과 별도 진행 중인 가입 페이지는 변경하지 않았다. 전용 55444의 테스트 스키마를 정리해 잔여 0개를 확인하고 이 작업에서 시작한 테스트 DB만 중지했다.
+
 ## 닉네임·필수 동의의 가입 페이지 분리 (2026-10-22)
 
 모바일·데스크톱·앱 WebView의 가입 안내를 `/:locale/onboarding` 페이지로 분리했다. 닉네임 입력, 이용약관·개인정보 처리방침 동의와 만 14세 이상 확인을 페이지에서 받고, 두 필수 항목을 확인해야 가입을 제출한다. 약관·개인정보·문의 페이지는 가입 대기 상태에서도 열 수 있다. 기존 가입 안내 BottomSheet는 제거했으며, 데스크톱의 소셜 로그인 Dialog와 모바일 로그인 페이지는 유지한다.
@@ -1065,10 +1144,106 @@ E2E 서버의 가짜 Google 제공자는 기존 NODE_ENV=test·격리 DB·전용
 
 디자인 시스템 lint·typecheck·Vitest 16개가 통과했다. 웹 E2E에서 실제 마우스와 Chromium 터치 이벤트로 확장·축소·아래로 닫기를 검사했고, 높이를 바꿔도 입력 초안이 보존되는지 확인했다. 게임 계정·신고 시트와 확인 Dialog의 기존 동작도 검증했다. 393px 가입 라이트/다크와 시트 핸들 화면을 직접 확인했다. 초기 캡처가 테마 전환 중간에 찍히지 않도록 입력 글자와 주 버튼의 최종 다크 색상을 기다린다.
 
-문의 메일은 contact@bambyul.com으로 변경했다. 오류 복구·문의 페이지의 기본 주소, 로컬·Lightsail·공통 인스턴스의 환경변수 예제와 회귀 검사를 함께 맞췄다. 공통 deploy/shared-instance/README.md 수정은 GF_CONTACT_EMAIL 예제 한 항목을 갱신하기 위한 것이다. ACME 인증서·예산 알림 주소는 문의 주소와 별도 설정으로 유지한다. 새 의존성이나 루트 manifest·lock 변경은 없다. 변경 파일 Prettier와 diff 검사를 통과했으며 실행 중인 개발 서버·개발 DB는 변경하지 않았다. 검증 후 이번 작업이 소유한 테스트 DB만 중지하고 데이터를 보존했다.
+문의 메일은 contact@bambyul.com으로 변경했다. 오류 복구·문의 페이지의 기본 주소, 로컬·공통 인스턴스의 환경변수 예제와 회귀 검사를 함께 맞췄다. 공통 deploy/shared-instance/README.md 수정은 GF_CONTACT_EMAIL 예제 한 항목을 갱신하기 위한 것이다. ACME 인증서·예산 알림 주소는 문의 주소와 별도 설정으로 유지한다. 새 의존성이나 루트 manifest·lock 변경은 없다. 변경 파일 Prettier와 diff 검사를 통과했으며 실행 중인 개발 서버·개발 DB는 변경하지 않았다. 검증 후 이번 작업이 소유한 테스트 DB만 중지하고 데이터를 보존했다.
 
 ## PR #28의 develop 병합 충돌 해결 (2026-10-22)
 
-최신 develop 4921df3을 기능 브랜치에 merge했다. 공통 배포 안내와 Lightsail 환경 예제는 game.bambyul.com과 contact@bambyul.com을 유지하고, 가입 페이지 전용 레이아웃과 드래그 시트를 보존했다. 삭제한 OnboardingDialog는 되살리지 않고 새 가입 페이지에 Game Mate 이름과 28px 아이콘을 적용했다. develop의 NestJS 캐시 무효화와 다른 서비스 변경은 그대로 반영했다.
+최신 develop 4921df3을 기능 브랜치에 merge했다. 공통 배포 안내와 환경 예제는 game.bambyul.com과 contact@bambyul.com을 유지하고, 가입 페이지 전용 레이아웃과 드래그 시트를 보존했다. 삭제한 OnboardingDialog는 되살리지 않고 새 가입 페이지에 Game Mate 이름과 28px 아이콘을 적용했다. develop의 NestJS 캐시 무효화와 다른 서비스 변경은 그대로 반영했다.
 
 병합 결과에서 Web Vitest 160개, API 단위 105개와 로그인·OAuth·캐시 관련 Supertest 통합 30개, 실제 Next production build/start의 Playwright 12개가 통과했다. Playwright는 모바일·데스크톱 로그인, 가입과 언어·복귀 경로, 마우스·터치 시트와 캐시 갱신·관리자 숨김·인증 없는 무효화 요청 거부를 확인했다. API/Web 타입 검사와 Web lint, OpenAPI/SDK 재생성 diff, 변경 파일 Prettier와 diff 검사도 통과했다. 기존 개발 서버와 개발 DB는 변경하지 않았고 검증 후 소유한 테스트 DB만 중지해 데이터를 보존했다. 실제 외부 OAuth와 물리 기기 검증은 포함하지 않는다.
+
+## 댓글의 1단계 답글 (2026-10-22)
+
+댓글의 답글 버튼으로 원댓글 바로 아래에 답글을 작성한다. 답글은 한 단계만 지원하고 기존 작성자 수정·삭제·신고·차단 기능을 재사용한다. 답글 폼은 일반 댓글 폼과 분리하며 줄바꿈·작성 대상·자동 포커스·취소·전송 중 입력 잠금·실패 초안 보존을 제공한다. 비로그인 상태에서는 기존 로그인 흐름으로 연결한다. 댓글 수는 삭제 자리표시자를 제외한 원댓글과 답글의 합계다. 한국어·영어·일본어 문구와 모바일 라이트/다크 화면을 연결했다.
+
+Comment.parentId와 Notification.commentId의 추가형 migration 및 같은 게시글의 원댓글만 참조하는 복합 FK를 추가했다. 기존 댓글은 parentId=null을 유지한다. 생성 요청만 optional parentId를 받고 수정 요청은 본문만 허용한다. 답글의 답글·다른 게시글 부모·삭제·숨김·차단 원댓글에는 새 답글을 허용하지 않는다. 작성 중 부모와 게시글을 잠그며 원댓글 작성자와 게시글 작성자에게 중복·자기 알림을 제외해 댓글 또는 COMMENT_REPLY 알림을 보낸다. 알림에는 대상 댓글 ID를 저장해 누르면 #comment-<id> 위치로 이동하고 읽음 처리한다. 댓글 저장·알림 저장·공개 캐시 태그 기록은 같은 트랜잭션을 사용한다. 알림 저장 실패 시 답글도 롤백한다. 알림 목록과 미읽음 수에는 숨김·차단된 부모 스레드와 삭제된 답글을 제외한다. 기존 댓글·알림 행은 새 참조가 null인 상태로 보존된다.
+
+원댓글 삭제 후 공개 답글이 남아 있으면 본문과 작성자를 제거한 삭제 안내를 반환한다. 마지막 공개 답글도 없어지면 삭제 안내도 제거한다. 숨김 또는 차단된 활성 원댓글의 스레드는 전부 제외하며, 이미 익명화된 삭제 원댓글은 보이는 답글만 유지한다. 쿠키 없이 캐시한 공개 상세를 사용하는 SSR도 같은 정책으로 필터하고 JSON-LD에서는 삭제 안내를 제외해 개인정보 노출과 null 작성자 오류를 막는다. 다른 사람의 게시글에서 탈퇴자의 원댓글을 하드 삭제할 때는 남은 답글의 부모 참조를 분리해 답글과 FK를 보존한다. 기존 탈퇴 시 본인 게시글 전체가 삭제되는 정책은 이 작업에서 변경하지 않았다.
+
+검증 결과:
+
+- API 전체 Vitest/Supertest 247개가 통과했다. 신규 통합 사양은 실제 migration을 적용한 격리 PostgreSQL에서 관계·권한·알림 중복·다른 게시글 FK·삭제·차단·숨김·삭제 동시성·탈퇴를 확인한다. 이전 migration 상태의 기존 댓글을 새 스키마로 올려 parentId=null과 본문이 보존되는지도 검사했다.
+- Web 전체 Vitest 169개와 SDK 전체 Vitest 57개가 통과했다. SDK 생성 함수의 부모 ID 전달과 부모/삭제 상태 누락, 잘못된 본문·작성자, 삭제 원문 노출을 실제 응답 검증으로 거부한다. 웹 사양은 답글 중첩·로그인·필수 본문·취소·전송 잠금·실패 초안과 SSR 차단 필터·삭제 댓글의 구조화 데이터를 다룬다.
+- Next production build/start의 Playwright 8개가 통과했다. 답글 작성·줄바꿈·실패 후 재시도·수정·원댓글 삭제 후 보존·마지막 답글 삭제, no-JS 공개 문서·JSON-LD, 차단 스레드의 API/SSR 일치와 기존 댓글 동작을 확인했다. 320/393/1440px 가로 넘침을 검사하고 모바일 라이트/다크 스크린샷을 직접 확인했다. 새 답글의 알림 표시·미읽음 수·대상 답글 이동·읽음 처리와 develop의 NestJS 공개 캐시 갱신·관리자 숨김·무효화 요청 인증도 재검증했다.
+- API·contracts·Web·SDK 타입 검사와 Web lint, API build, 신규 migration SQL 호환성 검사와 변경 파일 포맷 검사가 통과했다. 계약 → OpenAPI → SDK를 다시 생성해 생성 결과가 동일함을 확인했다.
+
+테스트는 전용 55444의 격리 gf_test_ 스키마와 별도 Web/API 포트를 사용했다. 실행 중인 개발 서버·개발 DB와 다른 서비스 코드는 변경하지 않았다. 새 의존성은 없으며 운영 migration 적용·공개 배포·실기기 WebView 검증은 수행하지 않았다.
+검증 후 이번 작업에서 시작한 테스트 DB만 중지하고 데이터를 보존했다.
+
+## 앱 소셜 로그인 콜백의 https App Link·Universal Link 전환 (2026-10-22)
+
+감사 M3: 콜백이 검증되지 않는 커스텀 스킴(`gamefeedback://auth/callback`)이라 같은 스킴을 등록한 앱이 자기 `app_challenge`로 흐름을 열면 피해자가 진짜 제공자에서 로그인한 코드를 받아 교환할 수 있었다. PKCE는 흐름을 시작한 쪽에 묶여 막지 못한다. API는 코드와 실패를 `<WEB_ORIGIN>/app-auth/callback`(`MOBILE_AUTH_CALLBACK_URL`, WEB_ORIGIN과 같은 origin의 그 경로만)으로만 보내고 운영은 값이 없거나 틀리면 시작하지 않는다. 웹은 `/.well-known/apple-app-site-association`·`assetlinks.json`(rewrites → `app-links/*`)과 코드를 다시 보여 주지 않는 `/app-auth/callback` 안내 페이지를 제공한다. 앱은 associated domains(applinks·webcredentials)·`autoVerify` intent filter·최소 iOS 17.4·`preferUniversalLinks`로 https 콜백만 엄격히 읽고, 딥링크 처리기는 콜백을 열지 않는다. Apple Team ID·bundle id·Android package·서명 SHA-256은 아직 없어 배포 환경변수·EAS 환경변수로 받고 운영 빌드·서버는 값이 없으면 멈춘다. 운영 사용자가 없어 이전 콜백과의 호환 기간은 두지 않는다.
+
+검증 결과:
+
+- develop(#41~#52 머지 후, 99caadd8) 위로 rebase한 뒤 다시 검증했다. `check:game-feedback`(전체 typecheck, #50의 API·패키지 ESLint, Web·Mobile·Admin lint)와 SDK 재생성 diff 없음, API 단위 Vitest 26개 파일·161개(앱 로그인 콜백 회귀·운영 설정 포함) 통과. 통합 레인(`app-auth.service.integration.test.ts`, #41의 `banned-identity.integration.test.ts` 기대값을 https 콜백으로 수정)은 수정만 하고 CI에 맡겼다.
+- Web Vitest 52개 파일·216개(`next.config.spec.ts`: #42 공통 보안 헤더에서 콜백 경로 제외·`/.well-known` 다시 쓰기), Bridge 13개, Mobile 15개 파일·83개(`app.config.spec.ts`·`native-login.test.tsx` 포함) 통과. Mobile `bundle:check`(Android·iOS Metro)와 변경 파일 Prettier 통과.
+- `expo config`: 운영 값을 주면 entitlements `applinks:`·`webcredentials:`, MainActivity `android:autoVerify="true"` https·host·`/app-auth/callback` intent filter, Podfile `ios.deploymentTarget` 17.4. 값 없이 실행하면 빠진 이름을 담은 오류로 멈춘다.
+- Playwright(Web `e2e/app-links.spec.ts`, Mobile `app-shell` 콜백 단언)와 production·공통 인스턴스 smoke의 `/.well-known`·콜백 확인은 작성만 하고 CI에 맡겼다. 서버·시뮬레이터·Docker·`next build`·EAS 빌드는 실행하지 않았다.
+
+실제 제공자 로그인 뒤 iOS 세션 콜백·Android App Link 복귀, Apple CDN의 AASA 반영, Play App Signing 지문 검증은 실기기·콘솔 확인이 필요하다.
+
+## 2026-10-23 Prisma 7 업그레이드
+
+Prisma CLI·Client·PostgreSQL 어댑터를 7.10.1로 맞췄다(2026-10-15 배포, Yarn의 24시간 게이트 유지). 루트 yarn.lock은 두 API와 Photo Contest test-kit이 함께 쓰는 의존성 해석을 기록하기 위해 변경했다. 앱 전용 prisma.config.ts가 CLI URL과 프로젝트 환경변수 로딩을 맡고, 운영 이미지에도 포함한다. 기존 CommonJS 산출물·생성 경로는 prisma-client-js로 유지하며 런타임은 pg 어댑터를 쓴다. DB 모델·migration SQL은 변경하지 않았다.
+
+API·seed·운영 관리 스크립트·통합 하네스와 Web/Admin/Mobile teardown이 같은 어댑터를 사용한다. schema는 ORM과 raw SQL의 search_path에 함께 전달하고 connection_limit은 풀 최대 연결 수로 옮겼다. pg의 단일 connectionTimeoutMillis에는 pool_timeout을 우선하고 connect_timeout을 기본값으로 사용한다. 운영 URL의 sslcert는 서버 CA로 읽어 인증서 검증을 유지한다. Prisma 7에서 제거된 --skip-generate와 migrate diff 플래그도 현재 안내·실행 경로에서 교체했다.
+
+Node 24.18.0에서 API typecheck·build, 단위 164개, 격리 PostgreSQL/Supertest 통합 170개가 통과했다. Admin typecheck·변경 파일 lint·단위 21개, Web/Mobile typecheck·변경 파일 lint도 통과했다. codegen 후 SDK diff는 없다. Web/Admin/Mobile teardown은 실제 전용 DB에서 각각 새 스키마를 생성하고 제거되는지 확인했다. 종료 시 남은 gf_test_ 스키마가 0개임을 확인하고 소유권 가드를 거쳐 이번 Worktree의 테스트 DB를 종료했다. 최초 테스트 DB 초기화는 실행 환경의 locale 때문에 실패했고 LC_ALL=C LANG=C로 같은 실행을 통과했다. 이번 Worktree의 전용 55444 DB와 새 gf_test_ 스키마만 사용했으며 기존 개발 서버·DB는 변경하지 않았다. 브라우저 전체 E2E·컨테이너 빌드·실제 RDS TLS 연결·배포는 실행하지 않았다.
+
+후속 검증: mutationOptions 정리(#59)가 반영된 develop(0d27c9d9)을 병합하고, 같은 위치에 추가된 두 구현 기록을 모두 보존해 문서 충돌을 해결했다. 병합 상태에서 Web·Admin typecheck·lint, Web 단위/UI 216개와 Admin 단위 21개, 변경 문서 Prettier 검사를 다시 통과했다.
+
+## 2026-10-23 mutationOptions 직접 조립
+
+사용자 지시에 따라 Web 26개·Admin 8개, 총 34개의 단순 useMutation 래퍼를 제거하고 12개 *.hook.ts 파일을 삭제했다. 기존 mutationOptions 팩토리를 public export해 화면과 기능 흐름의 호출부 32곳에서 useQueryClient·useNotify와 useMutation으로 직접 조립한다. options 팩토리의 mutationKey·REST IO·캐시 무효화·계정 전환 정책은 변경하지 않았다. 폼·읽음 관찰·재전송처럼 기능 흐름을 소유하는 훅은 같은 팩토리를 직접 사용한다.
+
+Admin ESLint는 호출부의 useMutation을 허용하면서 mutationOptions 정의와 SDK 호출 경계를 유지한다. Web·Admin AGENTS와 앱·프로젝트 스킬, 아키텍처 안내도 전용 mutation 래퍼 없이 직접 조립하는 기준으로 맞췄다. 댓글 UI 테스트는 제거한 훅 대신 API 경계만 대체해 실제 options·QueryClient의 대기/실패/재시도·캐시 처리를 검증한다. 인증 다이얼로그 테스트도 실제 native-login options를 조립하고 보이는 로그인 방식과 폼의 책임을 확인한다.
+
+Node 24에서 Web·Admin의 typecheck·lint, Web 단위/UI 216개와 Admin 단위 21개가 통과했다. Admin production build와 Web E2E용 production build도 통과했다. Chromium 브라우저 E2E는 Web 9개 파일의 28개(로그인·가입·폼 수정/삭제·댓글/답글·알림·도움됨·채팅·차단·3개 언어 게임 계정), Admin 5개(권한·문의 재시도·신고·인증·밴)를 통과했다. 테스트는 이 Worktree의 전용 DB 55444와 각 실행의 새 gf_test_ 스키마를 사용했다. 남은 테스트 스키마가 0개임을 확인하고 소유 테스트 DB를 종료했다. codegen SDK diff는 없고 기존 개발 DB·서버는 변경하지 않았다. 모든 브라우저 레인·실기기·실제 외부 OAuth·배포 검증은 포함하지 않는다.
+
+## 2026-10-23 신고 목록 options 통합
+
+Admin의 reportScopeOptions를 제거하고 reportOptions 하나가 상태별 조회와 전체 상태 무효화 키를 함께 정의하도록 합쳤다. 상태를 넘기면 기존 ['admin-reports', status]로 무한 목록을 조회하고, 생략하면 ['admin-reports']와 skipToken을 반환한다. 신고 검토·공개 상태 변경의 성공 처리는 reportOptions()로 모든 상태 목록을 무효화한다. 상태를 넘긴 호출은 오버로드로 조회 함수 타입을 좁혀 useSuspenseInfiniteQuery의 타입 추론을 유지한다.
+
+Node 24에서 immutable install, Admin typecheck·lint·단위 21개·production build, Chromium의 관리자 문의·신고 검토 E2E 1개가 통과했다. 실제 신고 검토 뒤 기본 대기 목록에서 사라지고 검토 완료 목록에 표시되는 흐름을 확인했다. codegen SDK diff는 없고, 이번 Worktree의 전용 DB 55444와 새 gf_test_admin_ 스키마만 사용했다. 남은 테스트 스키마 0개와 소유 테스트 DB 종료를 확인했다. 전체 브라우저 레인·외부 OAuth·배포 검증은 실행하지 않았다.
+
+## 페이지 소유 Topbar·가이드와 설정 전환 개선 (2026-10-22)
+
+`@topbar` 병렬 라우트와 헤더 전용 공개 export를 제거했다. 각 `_pages` 화면이 `CommunityPage`에 전용 Topbar와 본문을 함께 선언한다. 문의 본문·운영 문의 버튼·Topbar는 기존 안내 페이지를 소유하는 info slice로 모았다. `CommunityShell`은 채팅 연결·읽지 않은 개수·공통 하단 메뉴를 유지하고, 페이지가 바뀌어도 이전 경로를 유지하는 `RouteViewportProvider`로 스크롤 복귀와 전환 효과를 보존한다. 대화 목록과 상세는 기존 messages layout의 수명을 유지한다.
+
+가이드의 `← 홈` 링크를 제거하고 소개·네 개의 목차 링크·기능별 카드로 구성했다. 좁은 화면은 한 열, 데스크톱은 두 열로 읽을 수 있고 목차는 고정 헤더 아래의 본문으로 이동한다. 기존 기능별 제목 링크, 가이드에서 연 자식 화면의 돌아가기, 루트 탭의 기록 교체와 한국어·영어·일본어 본문을 유지한다. 가이드·약관·개인정보·문의는 첫 문서를 Suspense fallback 없이 완성해 JavaScript가 없어도 읽힌다. 게시글도 첫 문서는 실제 게시판 경로를 완성하고 클라이언트 이동에서만 헤더 placeholder를 사용한다. 동적 id는 비동기 헤더·본문에서 읽어 아직 방문하지 않은 게시글의 프리패치를 막지 않는다.
+
+Quill이 한글 IME 조합 중 문서 갱신을 모아서 처리해 첫 글자가 보여도 `ql-blank`가 남는 문제를 수정했다. 조합 중에는 placeholder만 숨기고, 조합 종료 후 Quill의 microtask 갱신 뒤 표시 제어를 해제한다. 편집기 모델을 조합 중 강제 갱신하지 않는다. 실제 Chromium에서 조합 중 첫 자모, 조합 완료, 전체 삭제, 조합 취소와 분류 전환 후 한 글자 초안을 검증했다.
+
+언어 변경은 페이지를 덮던 로딩 화면 대신 작은 진행 표시를 사용한다. Provider의 진행 상태를 헤더와 설정 선택기가 공유하며 `aria-busy`와 입력 잠금으로 중복 전환을 막는다. 현재 언어와 같은 언어의 저장 방식만 바꾸면 불필요한 라우트 이동을 생략한다. 기존 경로·필터·해시·스크롤 보존을 유지한다. 화면 모드는 선택지 아이콘과 적용 알림을 제공하고 색상을 180ms로 전환한다. 동일 항목을 다시 선택하면 알림을 반복하지 않으며 동작 줄이기 설정에서는 색상 전환을 생략한다.
+
+검증 결과:
+
+- `corepack yarn workspace @game-feedback/web test`: 47개 파일, 192개 단위/UI 테스트 통과.
+- `corepack yarn workspace @game-feedback/web typecheck`, `lint`: 통과. 변경 파일 Prettier와 `git diff --check` 통과.
+- `test:e2e`의 guide·editor-placeholder·compose·language·theme·navigation·error-boundary·seo·motion 30개, login·onboarding 7개가 통과했다. detail-profile·localized-info와 관련 guide·language·navigation 20개도 통과했다. 중복을 제외한 기본 Playwright 검증은 43개다.
+- `corepack yarn workspace @game-feedback/web test:prefetch`: production build/start에서 12개 통과. 피드·다섯 게시판의 제목과 컨트롤, 가이드 프리패치, 미방문 상세의 헤더/본문 streaming과 no-JS 공개 문서를 확인했다. 기본 검증과 합쳐 서로 다른 브라우저 사양 55개가 통과했다.
+- 320px 모바일과 1440px 데스크톱 가이드 스크린샷을 직접 확인했다. 영어·일본어 모바일 및 JavaScript 없는 안내·정책 본문, 메타데이터·canonical도 검증했다.
+- 프로젝트 `codegen`을 실행해 Prisma·계약·OpenAPI·SDK 준비를 완료했고 추적된 계약·SDK 생성 코드와 의존성 변경은 없다.
+
+검증은 55444의 전용 테스트 DB와 실행별 `gf_test_` 스키마, 별도 3301/4301·3353/4353 서버를 사용했다. 실행 중인 개발 서버와 개발 DB는 변경하지 않았다. 물리 기기의 IME/WebView, 실제 외부 OAuth와 공개 배포는 수행하지 않았다.
+
+## 모바일 이용 가이드 레이아웃 보정 (2026-10-22)
+
+모바일에서는 소개 카드의 테두리·장식 아이콘·중복 안쪽 여백을 없애고 안내 문장을 줄였다. 목차는 320px에서도 `게시글 찾기 / 글쓰기 / 채팅 / 프로필`의 2열 버튼으로 표시한다. 스크린 리더에는 기존의 상세한 제목을 유지한다. 본문은 카드 대신 구분선으로 나누고 화면 너비를 활용하며, 제목·문단 간격과 한국어 줄바꿈을 정리했다. 목차 이동은 전역 scroll-padding과 겹치던 scroll-margin을 줄여 고정 헤더 아래에 내용을 표시한다. 기존 본문·기능 이동·44px 제목 링크를 유지하며 소개와 이동 안내는 세 언어로 제공한다.
+
+검증은 사용자가 보고 있는 3301/4301 미리보기와 다른 3353/4353 서버 및 별도 gf_test_ 스키마에서 실행했다. 기존 prefetch 설정을 상속한 임시 `.e2e-build/mobile-guide.config.ts`로 guide·localized-info 사양을 실행해 가이드 6개와 no-JS 현지화 2개가 통과했다. 테스트의 Origin과 새 브라우저 context는 실행 설정의 baseURL을 사용하도록 수정했다. 320/393px 첫 화면에서 첫 본문 제목이 보이고 목차를 누르면 원하는 영역으로 이동하는 것을 검증했으며, 320/393/1440px 라이트·다크 및 영어·일본어 스크린샷을 생성하고 모바일 캡처를 직접 확인했다.
+
+Web typecheck·lint, i18n 단위 테스트 12개, 변경 파일 Prettier와 diff 검사를 통과했다. 연결 가능한 대화형 브라우저가 없어 프로젝트 Playwright가 생성한 캡처로 시각 검증했다. 기존 로컬 미리보기는 유지하고 변경 사항을 즉시 반영했다. 테스트 DB는 해당 미리보기가 사용 중이므로 중지하지 않았다.
+
+## 안내 문서·문의와 공유 배포 검증 보정 (2026-10-25)
+
+이용 가이드는 약관·개인정보 처리방침과 같은 info-card 본문과 제목·문단 스타일로 통일했다. 기존 9개 설명과 게시판 안내, 세 언어, 홈 화살표와 목차가 없는 구성을 유지한다. 푸터와 문의 문서에 운영 및 광고 문의 이메일을 표시하고, 관리자 채팅 문의 컴포넌트의 상하 여백을 각각 24px로 맞췄다. 하단 주 메뉴는 홈·채팅·프로필 세 개이며 가이드는 프로필 안내와 푸터에서 연다.
+
+공유 인스턴스 smoke의 세션 격리 검사는 응답 상태 200을 확인한 뒤 user=null을 검증한다. 오류 응답을 정상 세션처럼 읽어 undefined 비교로 원인을 가리던 동작을 수정했다. 429일 때만 유효한 Retry-After를 한 번 기다리고 재확인하며, 반복 제한과 서버 오류는 응답 본문과 함께 실패한다. 기존 CI 로그는 해당 요청의 HTTP 상태를 남기지 않았으므로 당시 오류가 429였다고 단정하지 않는다. 이미 폐기된 multipart 미디어 업로드 호출은 서명 발급 → S3 직접 업로드 → 완료 API로 교체했다.
+
+Next가 보존한 이전 화면까지 중복 선택하던 community E2E 선택자는 보이는 화면으로 제한하고 인증 요청의 Origin은 실행 중인 baseURL을 사용한다. footer 검사는 가이드 링크와 이메일을 포함하며, 안내 링크·문의 여백·화면 넘침과 하단 메뉴 간섭을 확인한다.
+
+검증: API 단위 167개, Web 단위/UI 220개, 공유 배포 설정 사양 12개, production build/start에서 community·footer·guide 브라우저 사양 11개 통과. Web typecheck와 프로젝트 lint 통과. 한국어 320px·영어 393px 가이드 캡처를 직접 확인했다. Terraform 형식·backend 비활성 init·validate와 mock plan 11개가 통과했고, 현재 host 네트워크 스크립트에 맞게 IMDS hop limit 설명을 수정했다. AWS 계정별 준비 값과 리전의 RDS 엔진/클래스 가용성 조회 명령은 deploy/shared-instance/terraform/README.md에 기록했다.
+
+로컬 Docker 실행 환경이 없어 전체 공유 인스턴스 smoke는 이 환경에서 재실행하지 못했다. 실제 AWS plan/apply 및 배포는 실행하지 않았다. 로컬 미리보기는 기존 사용자 개발 서버와 별도 포트·DB 스키마에서 실행한다.

@@ -26,8 +26,8 @@ git show HEAD:projects/photo-contest/apps/api/prisma/schema.prisma > <스크래�
 M=projects/photo-contest/apps/api/prisma/migrations/$(date -u +%Y%m%d%H%M%S)_<snake_case_이름>
 mkdir -p "$M"
 corepack yarn workspace @photo-contest/api exec prisma migrate diff \
-  --from-schema-datamodel <스크래치 폴더>/schema.before.prisma \
-  --to-schema-datamodel prisma/schema.prisma --script > "$M/migration.sql"
+  --from-schema <스크래치 폴더>/schema.before.prisma \
+  --to-schema prisma/schema.prisma --script > "$M/migration.sql"
 corepack yarn workspace @photo-contest/api db:generate
 ```
 
@@ -42,9 +42,9 @@ corepack yarn workspace @photo-contest/api db:generate
 
 ## `Database.atomic()` (`src/database/database.service.ts`)
 
-- Serializable 트랜잭션이다. 직렬화 실패(P2034)면 콜백 전체를 `SERIALIZABLE_ATTEMPTS`(4)번까지 다시 실행하고, 끝내 겹치면 CONFLICT `ERROR_MESSAGE.REQUEST_CONFLICT`. unique 위반(P2002)은 재시도 없이 CONFLICT `ERROR_MESSAGE.ALREADY_DONE`('이미 제출하거나 투표했습니다.'). 그 밖의 오류는 그대로 던진다.
+- Serializable 트랜잭션이다. 직렬화 실패(P2034 또는 pg 어댑터의 TransactionWriteConflict)면 콜백 전체를 `SERIALIZABLE_ATTEMPTS`(4)번까지 다시 실행하고, 끝내 겹치면 CONFLICT `ERROR_MESSAGE.REQUEST_CONFLICT`. unique 위반(P2002)은 재시도 없이 CONFLICT `ERROR_MESSAGE.ALREADY_DONE`('이미 제출하거나 투표했습니다.'). 그 밖의 오류는 그대로 던진다.
 - 쓰는 곳: 확인(단계·권한·소유)과 쓰기가 한 스냅샷이어야 할 때(`VoteService.castVote`, `SubmissionService.create`), 여러 행을 함께 바꾸며 이벤트를 남길 때(`GroupService.createGroup`). 콜백 안에서는 `tx`만 쓴다 — 권한 확인도 `{ client: tx }`로 넘기고, `this.db`는 트랜잭션 밖이다.
-- 콜백은 다시 실행되므로 파일 저장·삭제(`PhotoStorage`)·fetch를 넣지 않는다. 저장은 먼저 하고 실패하면 지우고(`SubmissionService.upload`), 삭제는 커밋 뒤에 한다(`ModerationService.remove`).
+- 콜백은 다시 실행되므로 저장소 HEAD·삭제(`MediaStorage`)·fetch를 넣지 않는다. 업로드 완료는 트랜잭션 밖에서 HEAD로 확인한 뒤 확정하고(`MediaUploadService.completeUpload`), 삭제는 커밋 뒤에 한다(`ModerationService.remove`).
 - 쓰지 않는 곳: 두 번 보내도 성공해야 하는 생성은 `createMany({ data: [row], skipDuplicates: true })`, 동시 요청이 모두 성공해야 하면 Serializable 없이 `this.db.$transaction`(`LikeService.like`). atomic 안의 P2002는 모두 ALREADY_DONE 문장이 되므로 다른 unique 충돌은 미리 확인하거나 skipDuplicates로 피한다.
 - 확인 직후 지워진 행의 FK 위반(P2003)은 필요한 곳에서 NOT_FOUND로 바꾼다(`LikeService.like`).
 

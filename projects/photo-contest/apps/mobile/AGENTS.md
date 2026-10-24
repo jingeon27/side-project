@@ -1,12 +1,13 @@
 # Mobile (Expo WebView 셸)
 
-웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 쿠키 `contest_session`이 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
+웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 세션 쿠키(운영 `__Host-contest_session`, 개발 http `contest_session`)가 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
 
 ## 실행
 
-- Expo Go로는 열지 않는다. 앱 스킴(`photocontest://`) 콜백과 네이티브 모듈은 dev client·스토어 빌드에서만 동작한다.
-  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android가 http(평문)를 허용한다.
-- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 없으면 `http://localhost:3200`. origin 형식이 아니면 시작할 때 오류를 낸다. 운영은 https만 쓴다.
+- Expo Go로는 열지 않는다. 앱 링크 콜백과 네이티브 모듈은 dev client·스토어 빌드에서만 동작한다.
+  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android 평문 http와 iOS 로컬 네트워크 ATS 예외(`NSAllowsLocalNetworking`)를 넣는다. `start`·`bundle:check`는 `APP_VARIANT`가 없으면 development로 실행한다.
+  - `APP_VARIANT=development`가 아니면 운영 빌드다. https `EXPO_PUBLIC_WEB_ORIGIN`(포트 없음)과 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`가 없으면 `app.config.ts`가 오류로 멈춘다(`expo config`·`prebuild`·EAS 빌드). 개발 빌드의 기본 식별자는 `dev.side.photocontest`다.
+- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 개발 빌드만 없으면 `http://localhost:3200`을 쓰고 http를 허용한다. 그 밖의 빌드는 https origin이 아니면 `app.config.ts`가 설정 단계(prebuild·번들링)에서 멈추고, 번들(`__DEV__` false)도 시작할 때 오류를 낸다.
 - Android 에뮬레이터는 `adb reverse tcp:3200 tcp:3200`으로 같은 `localhost` 주소를 쓴다. `10.0.2.2`로 열면 API의 Origin 검사(WEB_ORIGIN)가 POST를 막는다.
 - 앱은 웹 origin의 `/backend/*` 프록시만 부른다(`API_BASE`). API 주소를 따로 두지 않는다.
 - 업데이트 화면의 스토어 링크는 `EXPO_PUBLIC_STORE_URL`. 없으면 Android만 `market://details?id=<패키지>`, iOS는 버튼을 숨긴다.
@@ -22,13 +23,14 @@
 - `features/navigation`: `navigation-policy`(onShouldStartLoadWithRequest), `deep-link`(URL → 웹 경로, path_template), `back-press`, `read-initial-link`.
 - `features/app-config`: `/app/config`·`/health` 호출과 zod 스키마, 버전 비교.
 - `features/analytics`: `config/events.ts`(이벤트 카탈로그), `lib/create-analytics.ts`(순수, SDK 주입), `model/analytics.ts`(Amplitude 연결).
-- `shared`: `config/env.ts`, `config/theme.ts`(웹 토큰 색), `lib`(`monitoring/`은 Sentry 연결).
-- 기능(feature)끼리는 서로 import하지 않는다. 분석 연결은 화면(`_pages`)·앱(`_app`)이 한다.
+- `shared`: `config/env.ts`, `config/app-links.ts`(소셜 로그인 콜백 경로), `config/theme.ts`(웹 토큰 색), `lib`(`monitoring/`은 Sentry 연결).
+- 기능(feature)끼리는 서로 import하지 않는다. 분석 연결은 화면(`_pages`)·앱(`_app`)이 한다. 공용 FSD lint가 같은 레이어 import는 막지 않으므로 리뷰로 지킨다.
+- slice 간 import는 각 slice의 named export `index.ts`를 통한다(`fsdBoundaries`). 배럴은 네이티브 모듈을 함께 불러오므로 unit 레인(node)이 읽는 `shell-events.ts`만 이유를 적고 순수 모듈을 직접 가져온다.
 
 ## 동작 규칙
 
 - 모든 URL은 `navigation-policy`가 판단한다(`originWhitelist={['*']}`). 웹 origin·`about:blank`만 WebView에서 열고, 앱 스킴은 웹 이동으로 바꾸며, 그 밖(다른 사이트·intent·카카오톡·전화)은 `Linking.openURL`로 밖에서 연다. `javascript:`·`data:`·`file:` 등은 막는다.
-- 앱 스킴·유니버설 링크는 `/invite/<토큰>`, `/groups/<id>`, `/contests/<id>`만 받는다. 토큰·ID는 `[A-Za-z0-9_-]`만. `photocontest://auth/callback`은 인증 세션이 직접 받으므로 무시한다.
+- 앱 스킴·유니버설 링크는 `/invite/<토큰>`, `/groups/<id>`, `/contests/<id>`만 받는다. 토큰·ID는 `[A-Za-z0-9_-]`만. 소셜 로그인 콜백 `<WEB_ORIGIN>/app-auth/callback`은 인증 세션만 받으므로 딥링크 처리기는 무시한다(첫 링크면 홈). 앱이 받는 https 링크(AASA `applinks`·Android intent filter)는 이 콜백 경로뿐이다.
 - 웹이 `app.ready`를 알리기 전에는 딥링크를 문서 이동(첫 URL 교체)으로, 알린 뒤에는 `navigation.open`으로 보낸다. iOS의 새 문서 로드만 준비 상태를 지운다(Android는 pushState에도 onLoadStart를 보낸다).
 - 메인 문서 연결 오류와 5xx는 오프라인 화면(다시 시도 = 보던 주소로 WebView 재생성). 4xx는 웹이 그린 화면을 그대로 둔다. Android 렌더러가 죽으면 재생성, iOS 콘텐츠 프로세스가 끝나면 reload.
 - 버전 검사(`/app/config`, 5초)는 웹 로딩과 함께 돌고, 실패하면 막지 않는다.
@@ -72,21 +74,21 @@
 
 1. 웹이 `auth.socialLogin { provider }`를 요청한다.
 2. 앱이 32바이트 난수(expo-crypto)로 verifier(base64url 43자)를 만들고 challenge = base64url(SHA-256(verifier)).
-3. `openAuthSessionAsync(`${API_BASE}/auth/<provider>?app_challenge=<challenge>`, 'photocontest://auth/callback')`.
-4. API가 provider OAuth를 마치면 세션 쿠키 대신 2분짜리 티켓을 만들고 `photocontest://auth/callback?code=<code>`로 보낸다. 실패는 `?error=login_failed`.
-5. 앱은 콜백 URL을 정규식으로 읽어(React Native URL 구현을 믿지 않는다) `{ code, verifier }`를 웹에 돌려준다. cancel/dismiss는 `CANCELLED`(웹은 조용히), error·형식 오류는 `FAILED`(웹은 토스트).
+3. `openAuthSessionAsync(`${API_BASE}/auth/<provider>?app_challenge=<challenge>`, `${WEB_ORIGIN}/app-auth/callback`, { preferUniversalLinks: true })`. iOS는 17.4+ `ASWebAuthenticationSession`의 https 콜백(`.https(host:path:)`, associated domains 필요), Android는 Custom Tabs + 검증된 App Link로 돌아온 URL(Linking `url`)을 받는다.
+4. API가 provider OAuth를 마치면 세션 쿠키 대신 2분짜리 티켓을 만들고 `<WEB_ORIGIN>/app-auth/callback?code=<code>`로 보낸다. 실패는 `?error=login_failed`. 커스텀 스킴으로는 보내지 않는다. 앱이 없거나 링크 검증 전이면 브라우저가 웹 안내 페이지(코드를 다시 보여 주지 않음)를 연다.
+5. 앱은 콜백 URL을 엄격한 정규식으로 읽어(React Native URL 구현을 믿지 않는다. origin은 대소문자 무시, 경로는 정확히, 쿼리는 `code` 하나나 `error` 하나) `{ code, verifier }`를 웹에 돌려준다. cancel/dismiss는 `CANCELLED`(웹은 조용히), error·형식 오류는 `FAILED`(웹은 토스트).
 6. 웹이 WebView 안에서 `POST /backend/auth/app/exchange { code, verifier }`(Origin = WEB_ORIGIN)로 교환해 WebView 쿠키에 세션을 받는다.
 
 ## 테스트 (`apps/mobile`이 소유)
 
 | 스크립트 | 내용 | 서버 |
 | --- | --- | --- |
-| `test` | vitest `unit`(node, `src/**/*.{spec,test}.ts`) + `ui`(jsdom, `src/**/*.{spec,test}.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
+| `test` | vitest `unit`(node, `src/**/*.{spec,test}.ts`·`app.config.spec.ts`) + `ui`(jsdom, `src/**/*.{spec,test}.tsx`, `react-native` → `react-native-web` alias, 네이티브 모듈과 Sentry·Amplitude SDK는 `vitest.setup.ts`의 대역, 가짜 DSN·키로 켠 상태) | 없음 |
 | `test:api` | vitest `api`(`src/**/*.api.{spec,test}.ts`). `vitest.api-setup.ts`가 test-kit 격리 API를 띄운다 | API :4331, webOrigin `http://localhost:3331`, 스키마 `mobile_api_*` |
 | `test:e2e` | Playwright `android-webview`·`ios-webview`. `e2e/support/native-host.ts`가 앱과 같은 라우터·기능 로직을 페이지에 붙인다 | API :4330 + 웹 dev :3330(`NEXT_DIST_DIR=.next/e2e-mobile`) |
 | `bundle:check` | `expo export --platform android`로 Metro 번들이 만들어지는지 확인하고 결과 폴더를 지운다 | 없음 |
 
-- 개발 서버 포트(3200/4200/55433)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
+- 개발 서버 포트(3200/4200/55432)는 테스트에 쓰지 않는다. DB는 test-kit 격리 스키마만 쓴다.
 - 웹 화면의 선택자는 `e2e/support/web-screens.ts`에만 둔다.
 - 네이티브 빌드·실기기 확인(키보드가 입력창을 가리는지, 소셜 로그인 복귀, 파일 업로드)은 이 테스트들이 대신하지 못한다.
 

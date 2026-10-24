@@ -34,10 +34,10 @@ export function MyGroupsSection() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-title text-ink">내 그룹</h2>
+        <h2 className="text-title text-ink">참여 그룹</h2>
         <CreateGroupButton />
       </div>
-      <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={refetch}>
+      <AsyncBoundary fallback={<Skeleton className="h-32 w-full" />} onRetry={() => refetch()}>
         <MyGroupsContent groupsRef={groupsRef} />
       </AsyncBoundary>
     </section>

@@ -11,6 +11,9 @@ import { dialogStyles } from '../dialog/dialog.styles';
 
 const compactSnapPoint = 0.6;
 const snapPoints = [compactSnapPoint, 1];
+// ARIA slider 관례: 위·오른쪽·PageUp은 키우고 아래·왼쪽·PageDown은 줄인다. Home·End는 최소·최대다.
+const expandKeys = ['ArrowUp', 'ArrowRight', 'PageUp', 'End'];
+const compactKeys = ['ArrowDown', 'ArrowLeft', 'PageDown', 'Home'];
 
 export interface IBottomSheetProps {
   open: boolean;
@@ -40,12 +43,13 @@ export function BottomSheet({
   className,
 }: IBottomSheetProps) {
   const [snapPoint, setSnapPoint] = useState<Drawer.Root.SnapPoint | null>(compactSnapPoint);
+  const heightPercent = snapPoint === 1 ? 100 : 60;
   return (
     <Drawer.Root
       open={open}
       snapPoints={snapPoints}
       snapPoint={snapPoint}
-      onSnapPointChange={setSnapPoint}
+      onSnapPointChange={(nextSnapPoint) => setSnapPoint(nextSnapPoint)}
       snapToSequentialPoints
       disablePointerDismissal={!dismissible}
       onOpenChange={(nextOpen, details) => {
@@ -75,7 +79,9 @@ export function BottomSheet({
                     aria-orientation="vertical"
                     aria-valuemin={60}
                     aria-valuemax={100}
-                    aria-valuenow={snapPoint === 1 ? 100 : 60}
+                    aria-valuenow={heightPercent}
+                    // 범위가 60~100이라 값만 주면 스크린 리더가 60을 0%로 읽는다.
+                    aria-valuetext={`${heightPercent}%`}
                     onClick={() => setSnapPoint(snapPoint === 1 ? compactSnapPoint : 1)}
                     onKeyDown={(event) => {
                       if ([' ', 'Enter'].includes(event.key)) {
@@ -83,9 +89,14 @@ export function BottomSheet({
                         setSnapPoint(snapPoint === 1 ? compactSnapPoint : 1);
                         return;
                       }
-                      if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+                      if (expandKeys.includes(event.key)) {
+                        event.preventDefault();
+                        setSnapPoint(1);
+                        return;
+                      }
+                      if (!compactKeys.includes(event.key)) return;
                       event.preventDefault();
-                      setSnapPoint(['ArrowUp', 'End'].includes(event.key) ? 1 : compactSnapPoint);
+                      setSnapPoint(compactSnapPoint);
                     }}
                   >
                     <span className="ds-sheet-grip" aria-hidden="true" />

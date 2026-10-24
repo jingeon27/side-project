@@ -1,6 +1,8 @@
 # 게시글·채팅 첨부와 S3 직접 업로드
 
-S3 저장소를 설정하면 게시글과 채팅의 사진·동영상은 브라우저에서 private S3 버킷으로 직접 전송한다. `DATABASE`와 `FILESYSTEM`에서는 기존 API multipart 업로드를 사용한다. 프로필 사진은 기존 서버 변환 업로드를 사용한다.
+S3 저장소를 설정하면 게시글과 채팅의 사진·동영상은 브라우저에서 private S3 버킷으로 직접 전송한다. `DATABASE`와 `FILESYSTEM`에서는 기존 API multipart 업로드를 사용한다. S3에서는 API multipart 경로가 본문을 읽기 전에 409 `DIRECT_UPLOAD_REQUIRED`로 거절된다. 프로필 사진은 기존 서버 변환 업로드를 사용한다.
+
+업로드 완료는 HEAD로 크기·형식과 ETag를 확인하고 앞 4KB만 Range로 읽어 매직 바이트를 검사한 뒤, 같은 ETag 조건의 CopyObject로 `objects/` 키에 확정한다. API가 파일 본문을 내려받지 않으며 검사 뒤 임시 객체가 바뀌면 409 `UPLOAD_CHANGED`다. multipart 수신과 프로필 사진 변환은 프로세스당 동시 3개, 대기 12개로 제한하고 넘치면 503 `MEDIA_BUSY`다.
 
 ## 로컬 설정
 

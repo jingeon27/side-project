@@ -14,7 +14,15 @@ import {
 import { AsyncBoundary } from './AsyncBoundary';
 
 const profile = {
-  data: { me: { __typename: 'User' as const, id: 'viewer', nickname: '복구된 사용자', avatar: null } },
+  data: {
+    me: {
+      __typename: 'User' as const,
+      id: 'viewer',
+      nickname: '복구된 사용자',
+      avatar: null,
+      needsOnboarding: false,
+    },
+  },
 };
 function Profile({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
   const { data } = useReadQuery(queryRef);
@@ -23,7 +31,7 @@ function Profile({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
 function ProfileScope() {
   const [queryRef, { refetch }] = useBackgroundQuery(MeDocument);
   return (
-    <AsyncBoundary fallback={<p role="status">프로필 로딩</p>} onRetry={refetch}>
+    <AsyncBoundary fallback={<p role="status">프로필 로딩</p>} onRetry={() => refetch()}>
       <Profile queryRef={queryRef} />
     </AsyncBoundary>
   );
@@ -35,7 +43,7 @@ function Preview({ queryRef }: { queryRef: QueryRef<InvitePreviewQuery> }) {
 function PreviewScope({ token = 'first' }: { token?: string }) {
   const [queryRef, { refetch }] = useBackgroundQuery(InvitePreviewDocument, { variables: { token } });
   return (
-    <AsyncBoundary resetKey={token} fallback={<p role="status">초대 로딩</p>} onRetry={refetch}>
+    <AsyncBoundary resetKey={token} fallback={<p role="status">초대 로딩</p>} onRetry={() => refetch()}>
       <Preview queryRef={queryRef} />
     </AsyncBoundary>
   );

@@ -97,6 +97,27 @@ describe('mobile WebView shell', () => {
     );
     expect(currentWebViewProps().source).toEqual({ uri: 'https://feedback.example/ko/guide' });
   });
+  it('does not open external apps or app screens from an iOS subframe navigation', () => {
+    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    render(<WebShellPage />);
+    act(() => currentWebViewProps().onMessage?.(event({ data: JSON.stringify({ type: 'ready' }) })));
+    fakeWebView.handle.injectJavaScript.mockClear();
+    const frame = (target: string) =>
+      currentWebViewProps().onShouldStartLoadWithRequest?.({
+        ...event().nativeEvent,
+        navigationType: 'other',
+        isTopFrame: false,
+        url: target,
+      });
+    expect(frame('https://example.com/ad')).toBe(false);
+    expect(frame('mailto:help@example.com')).toBe(false);
+    expect(frame('gamefeedback://ko/settings')).toBe(false);
+    expect(frame('https://feedback.example/ko/guide')).toBe(true);
+    expect(frame('about:blank')).toBe(true);
+    expect(open).not.toHaveBeenCalled();
+    expect(fakeWebView.handle.injectJavaScript).not.toHaveBeenCalled();
+    expect(currentWebViewProps().source).toEqual({ uri: 'https://feedback.example/' });
+  });
   it('renders connection failures and recreates the last document on retry', () => {
     render(<WebShellPage />);
     act(() =>

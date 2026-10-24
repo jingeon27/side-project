@@ -18,10 +18,12 @@ function ViewerContent({
   viewerRef,
   children,
   guest,
-}: Omit<IViewerBoundaryProps, 'fallback'> & { viewerRef: QueryRef<MeQuery> }) {
+  fallback,
+}: IViewerBoundaryProps & { viewerRef: QueryRef<MeQuery> }) {
   const { data } = useReadQuery(viewerRef);
   return match(data.me)
     .with(null, () => guest)
+    .with({ needsOnboarding: true }, () => fallback)
     .with(P.nonNullable, (viewer) => children(viewer.id, viewerRef))
     .exhaustive();
 }
@@ -29,8 +31,8 @@ function ViewerContent({
 export function ViewerBoundary({ children, guest, fallback }: IViewerBoundaryProps) {
   const [viewerRef, { refetch }] = useBackgroundQuery(MeDocument);
   return (
-    <AsyncBoundary fallback={fallback} onRetry={refetch}>
-      <ViewerContent viewerRef={viewerRef} guest={guest}>
+    <AsyncBoundary fallback={fallback} onRetry={() => refetch()}>
+      <ViewerContent viewerRef={viewerRef} guest={guest} fallback={fallback}>
         {children}
       </ViewerContent>
     </AsyncBoundary>

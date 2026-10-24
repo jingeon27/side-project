@@ -39,8 +39,8 @@ function Opener({ resizable }: { resizable?: boolean }) {
     <button
       type="button"
       onClick={() =>
-        overlay.open(({ isOpen, close, unmount }) => (
-          <CreateGroupBottomSheet isOpen={isOpen} onClose={close} unmount={unmount} resizable={resizable} />
+        overlay.open(({ isOpen, close: onClose, unmount }) => (
+          <CreateGroupBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} resizable={resizable} />
         ))
       }
     >

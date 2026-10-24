@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-
-import { useBackgroundQuery, useQueryRefHandlers, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 
 import { CreateGroupContestButton, GroupContestCard } from '@/features/contest';
 import { GroupContentFrame } from '@/features/group';
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
+import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
@@ -19,10 +18,10 @@ function ContestList({
   queryRef: QueryRef<GroupContestsQuery>;
   hallOfFame: boolean;
 }) {
-  const { fetchMore } = useQueryRefHandlers(queryRef);
-  const { data } = useReadQuery(queryRef);
-  const [hasMore, setHasMore] = useState(true);
-  const [pending, startTransition] = useTransition();
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
+    select: (data) => data.groupContests,
+    pageSize: 24,
+  });
   if (!data.groupContests.length)
     return (
       <EmptyState
@@ -41,21 +40,8 @@ function ContestList({
           <GroupContestCard key={id} id={id} hallOfFame={hallOfFame} />
         ))}
       </div>
-      {hasMore && data.groupContests.length >= 24 ? (
-        <Button
-          variant="secondary"
-          loading={pending}
-          onClick={() =>
-            startTransition(async () => {
-              try {
-                const result = await fetchMore({ variables: { offset: data.groupContests.length } });
-                setHasMore(result.data.groupContests.length === 24);
-              } catch {
-                /* 조회 경계에서 재시도한다. */
-              }
-            })
-          }
-        >
+      {hasNextPage ? (
+        <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
           대회 더 보기
         </Button>
       ) : null}
@@ -73,7 +59,7 @@ function ContestQuery({ groupId, hallOfFame }: { groupId: string; hallOfFame: bo
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={refetch}>
+    <AsyncBoundary fallback={<Skeleton className="h-64 w-full" />} onRetry={() => refetch()}>
       <ContestList queryRef={queryRef} hallOfFame={hallOfFame} />
     </AsyncBoundary>
   );

@@ -8,7 +8,7 @@ export const GameSlugSchema = z
   .string()
   .regex(/^[a-z0-9-]+$/)
   .max(40);
-export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings' | 'guide';
+export type TAppTab = 'feed' | 'boards' | 'messages' | 'notifications' | 'settings';
 export type TAppScreen =
   | TAppTab
   | 'search'
@@ -16,6 +16,7 @@ export type TAppScreen =
   | 'compose'
   | 'profile'
   | 'conversation'
+  | 'guide'
   | 'terms'
   | 'privacy'
   | 'contact'
@@ -323,7 +324,7 @@ function resolveProfileRoute({ pathname, locale, home, query, id }: IRouteContex
   };
 }
 
-function resolveMessagesRoute({ pathname, locale, home, query, id }: IRouteContext): IAppRoute | null {
+function resolveMessagesRoute({ locale, home, query, id }: IRouteContext): IAppRoute | null {
   const conversation = id ?? query.conversation;
   if (conversation && !RouteIdSchema.safeParse(conversation).success) return null;
   const href = conversation ? appRoutes.conversation(locale, conversation) : appRoutes.messages(locale);
@@ -343,10 +344,16 @@ function resolveStaticRoute({ pathname, locale, home }: IRouteContext, kind: str
     .otherwise(() => null);
   if (!screen) return null;
   const tab = match(screen)
-    .with('contact', 'settings', () => 'settings' as const)
     .with('notifications', () => 'notifications' as const)
-    .otherwise(() => 'guide' as const);
-  return { path: pathname, pathname, locale, screen, tab, parent: home };
+    .otherwise(() => 'settings' as const);
+  return {
+    path: pathname,
+    pathname,
+    locale,
+    screen,
+    tab,
+    parent: screen === 'guide' ? appRoutes.settings(locale) : home,
+  };
 }
 
 function resolveFeedRoute({ pathname, locale, query }: IRouteContext): IAppRoute | null {

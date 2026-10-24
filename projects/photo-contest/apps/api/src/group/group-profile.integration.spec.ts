@@ -1,16 +1,17 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
-import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestImage } from '@photo-contest/test-kit';
 
-import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
+import {
+  createTestApp,
+  openStorageRedirect,
+  uploadToStorage,
+  type ITestApi,
+  type ITestUser,
+} from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { SET_MODERATOR } from '../../test/support/group-contest';
 import { MaintenanceService } from '../maintenance/maintenance.service';
-import { MediaStorage } from '../storage/media-storage.service';
 
 const FIELDS = 'id name description avatarUrl role canViewPosts members{user{id}}';
 const READ = `query($id:ID!){group(id:$id){${FIELDS}}}`;
@@ -45,23 +46,28 @@ describe('그룹 사진과 소개', () => {
     removeAvatar: false,
     ...extra,
   });
+  const REQUEST =
+    'mutation($groupId:ID!,$type:String!,$size:Int!){requestGroupAvatarUpload(groupId:$groupId,contentType:$type,byteSize:$size){id url fields{name value}}}';
+  const COMPLETE = 'mutation($id:ID!){completeGroupAvatarUpload(uploadId:$id){id}}';
+  interface ITicket {
+    id: string;
+    url: string;
+    fields: Array<{ name: string; value: string }>;
+  }
+  const reserve = (cookie: string | undefined, body: Buffer, id = groupId, type = 'image/png') =>
+    api.gql<{ requestGroupAvatarUpload: ITicket }>(cookie, REQUEST, { groupId: id, type, size: body.length });
+  const store = async (ticket: ITicket, body: Buffer) => {
+    expect((await uploadToStorage(ticket, body, 'image/png')).status).toBe(204);
+  };
   const upload = async (cookie: string | undefined, id = groupId, bytes?: Buffer) => {
-    const req = api
-      .http()
-      .post('/graphql')
-      .set('Origin', TEST_WEB_ORIGIN)
-      .set('Apollo-Require-Preflight', 'true');
-    if (cookie) req.set('Cookie', cookie);
-    return req
-      .field(
-        'operations',
-        JSON.stringify({
-          query: 'mutation($id:ID!,$file:Upload!){uploadGroupAvatar(groupId:$id,file:$file){id}}',
-          variables: { id, file: null },
-        }),
-      )
-      .field('map', JSON.stringify({ '0': ['variables.file'] }))
-      .attach('0', bytes ?? (await createTestImage()), { filename: 'avatar.png', contentType: 'image/png' });
+    const image = bytes ?? (await createTestImage());
+    const requested = await reserve(cookie, image, id);
+    if (!requested.data) return { body: { errors: requested.errors, data: null } };
+    const ticket = requested.data.requestGroupAvatarUpload;
+    await store(ticket, image);
+    return {
+      body: await api.gql<{ completeGroupAvatarUpload: { id: string } }>(cookie, COMPLETE, { id: ticket.id }),
+    };
   };
 
   it('관리자·부관리자만 수정하며 공백·글자 수를 검증하고 소개는 생성 때도 지정해야 한다', async () => {
@@ -91,26 +97,24 @@ describe('그룹 사진과 소개', () => {
     expect(created.createGroup.description).toBe('첫 소개');
   });
 
-  it('인증·관리 권한·실제 파일 내용을 확인한 뒤 사진을 준비해야 한다', async () => {
-    expect((await upload(undefined)).body.errors[0].extensions.code).toBe('UNAUTHENTICATED');
-    expect((await upload(member.cookie)).body.errors[0].extensions.code).toBe('FORBIDDEN');
-    expect(
-      (await upload(owner.cookie, groupId, Buffer.from('fake png'))).body.errors[0].extensions.code,
-    ).toBe('BAD_USER_INPUT');
+  it('인증·관리 권한과 사진 형식·크기를 발급 전에 확인해야 한다', async () => {
+    expect((await upload(undefined)).body.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+    expect((await upload(member.cookie)).body.errors?.[0]?.extensions?.code).toBe('FORBIDDEN');
+    for (const type of ['video/mp4', 'image/gif'])
+      expect(
+        (await reserve(owner.cookie, Buffer.from('avatar'), groupId, type)).errors?.[0]?.extensions?.code,
+      ).toBe('BAD_USER_INPUT');
     const large = Buffer.alloc(10 * 1024 * 1024 + 1);
-    expect((await upload(owner.cookie, groupId, large)).body.errors[0].extensions.code).toBe(
+    expect((await upload(owner.cookie, groupId, large)).body.errors?.[0]?.extensions?.code).toBe(
       'BAD_USER_INPUT',
     );
   });
 
-  it('실제 이미지를 512px WebP로 정리하고 저장 전에는 공개하지 않으며 다른 그룹의 사진을 거절해야 한다', async () => {
-    const image = await sharp({ create: { width: 1024, height: 768, channels: 3, background: '#e85d4a' } })
-      .withExif({ IFD0: { Artist: '비공개 EXIF' } })
-      .png()
-      .toBuffer();
+  it('올린 사진을 그대로 쓰되 저장 전에는 공개하지 않고 다른 그룹의 사진을 거절해야 한다', async () => {
+    const image = await createTestImage({ width: 1024, height: 768 });
     const response = await upload(moderator.cookie, groupId, image);
     expect(response.body.errors).toBeUndefined();
-    const avatarId = response.body.data.uploadGroupAvatar.id as string;
+    const avatarId = response.body.data!.completeGroupAvatarUpload.id as string;
     expect(
       (await api.gqlOk<{ group: IProfile }>(undefined, READ, { id: groupId })).group.avatarUrl,
     ).toBeNull();
@@ -130,14 +134,10 @@ describe('그룹 사진과 소개', () => {
       canViewPosts: false,
       members: [],
     });
-    const file = await api.http().get(saved.avatarUrl!.replace('/backend', ''));
+    const file = await openStorageRedirect(await api.http().get(saved.avatarUrl!.replace('/backend', '')));
     expect(file.status).toBe(200);
-    expect(file.headers['content-type']).toContain('image/webp');
-    expect(file.headers['cache-control']).toContain('no-store');
-    expect(file.headers['x-content-type-options']).toBe('nosniff');
-    const metadata = await sharp(file.body as Buffer).metadata();
-    expect(metadata).toMatchObject({ format: 'webp', width: 512, height: 384 });
-    expect(metadata.exif).toBeUndefined();
+    expect(file.headers.get('content-type')).toBe('image/png');
+    expect(Buffer.from(await file.arrayBuffer())).toEqual(image);
     expect((await api.http().get(`/groups/${another.id}/avatar/${avatarId}`)).status).toBe(404);
     expect((await api.gqlFail(owner.cookie, UPDATE, values({ avatarId, removeAvatar: true }))).code).toBe(
       'BAD_USER_INPUT',
@@ -147,8 +147,8 @@ describe('그룹 사진과 소개', () => {
   });
 
   it('만료 사진을 거절하고 사용 중인 사진은 보존하며 버린 사진은 저장소 실패 후 재시도해야 한다', async () => {
-    const active = (await upload(owner.cookie)).body.data.uploadGroupAvatar.id as string;
-    const orphan = (await upload(owner.cookie)).body.data.uploadGroupAvatar.id as string;
+    const active = (await upload(owner.cookie)).body.data!.completeGroupAvatarUpload.id as string;
+    const orphan = (await upload(owner.cookie)).body.data!.completeGroupAvatarUpload.id as string;
     const orphanRow = await api.db.groupAvatar.findUniqueOrThrow({ where: { id: orphan } });
     await api.gqlOk(owner.cookie, UPDATE, values({ avatarId: active }));
     await api.db.groupAvatar.updateMany({
@@ -158,16 +158,73 @@ describe('그룹 사진과 소개', () => {
     expect((await api.gqlFail(owner.cookie, UPDATE, values({ avatarId: orphan }))).code).toBe(
       'BAD_USER_INPUT',
     );
-    const storage = api.app.get(MediaStorage);
-    const failure = vi.spyOn(storage, 'delete').mockRejectedValueOnce(new Error('일시 저장소 오류'));
-    await expect(api.app.get(MaintenanceService).cleanup()).rejects.toThrow('일시 저장소 오류');
+    const failure = vi.spyOn(api.storage, 'delete').mockRejectedValueOnce(new Error('일시 저장소 오류'));
+    await api.app.get(MaintenanceService).cleanup();
     expect(await api.db.groupAvatar.findUnique({ where: { id: orphan } })).not.toBeNull();
     failure.mockRestore();
     await api.app.get(MaintenanceService).cleanup();
     expect(await api.db.groupAvatar.findUnique({ where: { id: orphan } })).toBeNull();
-    await expect(readFile(join(api.storageDir, orphanRow.storageKey))).rejects.toThrow();
+    await expect(api.storage.head(orphanRow.storageKey)).rejects.toThrow();
     expect(await api.db.groupAvatar.findUnique({ where: { id: active } })).not.toBeNull();
     const group = (await api.gqlOk<{ group: IProfile }>(undefined, READ, { id: groupId })).group;
-    expect((await api.http().get(group.avatarUrl!.replace('/backend', ''))).status).toBe(200);
+    expect((await api.http().get(group.avatarUrl!.replace('/backend', ''))).status).toBe(307);
+  });
+  it('완료 전 자산·다른 소유자·게시물 티켓으로의 재사용을 거절하고 완료는 재시도해도 같은 사진이어야 한다', async () => {
+    const image = await createTestImage();
+    const requested = await reserve(owner.cookie, image);
+    const ticket = requested.data!.requestGroupAvatarUpload;
+    expect((await api.gqlFail(owner.cookie, UPDATE, values({ avatarId: ticket.id }))).code).toBe(
+      'BAD_USER_INPUT',
+    );
+    await store(ticket, image);
+    expect((await api.gqlFail(moderator.cookie, COMPLETE, { id: ticket.id })).code).toBe('FORBIDDEN');
+    const row = await api.db.groupAvatar.findUniqueOrThrow({ where: { id: ticket.id } });
+    expect(
+      (
+        await api.gqlFail(owner.cookie, 'mutation($id:ID!){completePostUpload(uploadId:$id){id}}', {
+          id: row.mediaUploadId,
+        })
+      ).code,
+    ).toBe('FORBIDDEN');
+    const first = await api.gqlOk(owner.cookie, COMPLETE, { id: ticket.id });
+    expect(await api.gqlOk(owner.cookie, COMPLETE, { id: ticket.id })).toEqual(first);
+    expect(
+      (
+        await api.gqlFail(
+          owner.cookie,
+          'mutation($group:ID!,$id:ID!){createPost(groupId:$group,uploadId:$id,title:"대표 사진 재사용",rightsConfirmed:true){id}}',
+          { group: groupId, id: row.mediaUploadId },
+        )
+      ).code,
+    ).toBe('BAD_USER_INPUT');
+  });
+
+  it('파일 확인 도중 관리자 권한을 잃으면 사진을 확정하지 않아야 한다', async () => {
+    const image = await createTestImage();
+    const ticket = (await reserve(moderator.cookie, image)).data!.requestGroupAvatarUpload;
+    await store(ticket, image);
+    const head = api.storage.head.bind(api.storage);
+    const processing = vi.spyOn(api.storage, 'head').mockImplementation(async (key) => {
+      const result = await head(key);
+      await api.db.groupMember.update({
+        where: { groupId_userId: { groupId, userId: moderator.id } },
+        data: { role: 'MEMBER' },
+      });
+      return result;
+    });
+    try {
+      expect((await api.gqlFail(moderator.cookie, COMPLETE, { id: ticket.id })).code).toBe('FORBIDDEN');
+      const asset = await api.db.groupAvatar.findUniqueOrThrow({
+        where: { id: ticket.id },
+        include: { mediaUpload: true },
+      });
+      expect(asset.mediaUpload?.storageKey).toBeNull();
+    } finally {
+      processing.mockRestore();
+      await api.db.groupMember.update({
+        where: { groupId_userId: { groupId, userId: moderator.id } },
+        data: { role: 'MODERATOR' },
+      });
+    }
   });
 });

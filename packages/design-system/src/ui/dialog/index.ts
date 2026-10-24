@@ -1,4 +1,5 @@
 export { Dialog } from './Dialog';
+export type { IDialogProps } from './Dialog';
 export {
   DialogRoot,
   DialogTrigger,
@@ -11,3 +12,4 @@ export {
   DialogTitle,
   DialogDescription,
 } from './DialogParts';
+export { dialogStyles } from './dialog.styles';

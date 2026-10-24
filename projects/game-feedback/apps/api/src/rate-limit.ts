@@ -1,4 +1,13 @@
-export type RequestIdentity = { ip: string; userId?: string | null; path: string; method: string };
+export type RequestIdentity = {
+  ip: string;
+  /** A signed web-server call without a visitor address (cookie-free cached reads, sitemap). */
+  internal?: boolean;
+  userId?: string | null;
+  path: string;
+  method: string;
+};
+// Internal reads are shared by every visitor's cache misses, so they get a larger budget than one address.
+export const INTERNAL_READ_LIMIT = 3000;
 const authAttempts = new Set([
   '/api/auth/demo',
   '/api/auth/test-login',
@@ -14,12 +23,21 @@ export function isHealthProbe(request: Pick<RequestIdentity, 'method' | 'path'>)
   return ['GET', 'HEAD'].includes(request.method) && healthPaths.has(request.path.replace(/\/+$/, ''));
 }
 
+function network(request: Pick<RequestIdentity, 'ip' | 'internal'>) {
+  return request.internal ? 'internal' : `ip:${request.ip}`;
+}
+
+/** Applied before the session is loaded, so it is keyed only by the network identity. */
+export function coarseRateBucket(request: Pick<RequestIdentity, 'ip' | 'internal'>) {
+  return { key: `coarse:${network(request)}`, limit: request.internal ? INTERNAL_READ_LIMIT * 2 : 1000 };
+}
+
 export function requestRateBucket(request: RequestIdentity): { key: string; limit: number } {
   const path = request.path.replace(/\/+$/, '');
   if (authAttempts.has(path) || path.startsWith('/api/auth/social/'))
-    return { key: `auth:ip:${request.ip}`, limit: 30 };
+    return { key: `auth:${network(request)}`, limit: 30 };
   const action = ['GET', 'HEAD', 'OPTIONS'].includes(request.method) ? 'read' : 'write';
-  const identity = request.userId ? `user:${request.userId}` : `ip:${request.ip}`;
+  const identity = request.userId ? `user:${request.userId}` : network(request);
   if (
     request.method === 'POST' &&
     (path === '/api/post-media' ||
@@ -27,13 +45,17 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
       /^\/api\/conversations\/[^/]+\/attachments(?:\/uploads)?$/.test(path))
   )
     return { key: `upload:${identity}`, limit: 20 };
+  // Each preview may call the Supercell API with the server token.
+  if (request.method === 'GET' && /^\/api\/game-profiles\/[^/]+$/.test(path))
+    return { key: `game-profile:${identity}`, limit: 10 };
   if (
     request.method === 'POST' &&
     (/^\/api\/post-media\/[^/]+\/complete$/.test(path) ||
       /^\/api\/conversations\/[^/]+\/attachments\/[^/]+\/complete$/.test(path))
   )
     return { key: `upload-complete:${identity}`, limit: 20 };
-  return { key: `${action}:${identity}`, limit: action === 'read' ? 240 : 60 };
+  if (action === 'write') return { key: `write:${identity}`, limit: 60 };
+  return { key: `read:${identity}`, limit: identity === 'internal' ? INTERNAL_READ_LIMIT : 240 };
 }
 
 export class RequestRateLimiter {

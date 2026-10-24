@@ -67,10 +67,10 @@ export function PostCommentRow({
               className="px-2 text-micro text-muted"
               aria-label={`${comment.author.nickname} 댓글 삭제`}
               onClick={() =>
-                overlay.open(({ isOpen, close, unmount }) => (
+                overlay.open(({ isOpen, close: onClose, unmount }) => (
                   <ConfirmDialog
                     isOpen={isOpen}
-                    onClose={close}
+                    onClose={onClose}
                     unmount={unmount}
                     title="댓글을 삭제할까요?"
                     description={

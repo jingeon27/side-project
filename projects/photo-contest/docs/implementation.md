@@ -1,3 +1,53 @@
+## 2026-10-24 MY 게시물과 공통 추가 조회
+
+MY에 참여 그룹과 내가 올린 게시물을 표시하고 전체·참여 그룹 필터를 URL로 관리한다. 인증된 myGalleryPosts 조회는 세션의 작성자만 선택하며 숨김·탈퇴한 비공개 그룹·다른 사용자 게시물을 제외한다. 기존 게시물 카드를 재사용해 댓글·수정·삭제를 제공하고 생성·수정·삭제·숨김·복원 뒤 MY를 포함한 목록을 갱신한다. 그룹 필터 URL로 새로고침할 때 라우트에서 사전 조회한 전체 목록과 다른 쿼리가 SSR의 직접 요청 금지 경계를 넘지 않도록 기존 useIsSSR/skipToken 방식으로 조회를 지연한다.
+
+공통 useInfiniteQuery는 Apollo의 QueryRef와 정규화 캐시를 그대로 사용하며 추가 조회·목록 끝·동시 요청을 관리한다. 게시물·그룹 탐색·가입 신청·댓글·답글·대회 목록의 중복 페이지 처리와 기존 offset 전용 훅을 교체했다. 도메인별 카운트와 숨김 사진 규칙은 호출부가 전달한다.
+
+최신 develop 6d858497의 https 앱 링크·Prisma 7.10.1·보안 의존성을 반영했다. 전체 타입 검사와 lint, API 단위 131개·통합 351개, Web 444개·Mobile 156개·Bridge 36개가 통과했다. MY 권한·그룹·숨김·페이지 경계·탈퇴 검증 3개와 변경된 페이지네이션/게시물 단위 28개도 통과했다. production build/start에서 소셜 가입·S3 프로필 Chrome/WebKit/데스크톱 6개, MY 필터·새로고침·수정·삭제와 기존 더보기 4개가 통과했다. 실제 외부 OAuth·AWS·운영 배포는 실행하지 않았으며 알림 도메인·RN push는 이 변경에 포함하지 않는다. 테스트는 전용 55434의 격리 스키마와 S3 대역을 사용했다.
+
+## 2026-10-23 소셜 가입 프로필 확인과 S3 개인 프로필
+
+신규 소셜 계정은 제공자의 이름·사진을 기본값으로 두고 `/onboarding`에서 닉네임 수정, 사진 제거·직접 선택, 약관 동의를 마친다. 동의 전에는 인증이 필요한 커뮤니티 쓰기를 막고 원래 목적지로 돌아가는 경로를 보존한다. 직접 선택한 사진은 5분 presigned POST로 비공개 S3에 전송하고 API는 HEAD로 형식·크기·소유권·만료만 확인한다. 선택한 파일은 고정 프로필 경로가 현재 참조를 확인한 뒤 60초 서명 GET으로 이동시킨다. 만료된 미사용 파일은 정리하고 현재 사진은 보존한다. MY에서 사진·닉네임을 다시 변경하거나 사진을 제거할 수 있다. 재로그인 시 소셜 제공자의 값으로 사용자 선택을 덮어쓰지 않는다.
+
+인증·프로필·테스트 fixture 입력은 class-transformer/class-validator DTO와 전역 ValidationPipe로 변환·검증한다. 비밀번호 원문 공백은 보존하고 기존 로그인 오류 코드·Origin 검사·DB 반복 시도 제한을 유지한다. 가입·로그인 횟수는 DTO 검증 전에 guard에서 센다. 20261023040000_profile_uploads_and_onboarding migration은 새 테이블과 nullable 열·기본 false 플래그를 추가하며 기존 계정을 재가입 상태로 바꾸지 않는다. Prisma client와 GraphQL 문서는 정식 생성 명령으로 갱신했다.
+
+검증: API unit 120개, 격리 PostgreSQL/S3 대역의 API integration 350개, Web unit/UI 421개와 실제 API 문서 20개가 통과했다. production build/start의 Chrome·WebKit·데스크톱 E2E 9개가 최종 한 번에 통과했다(아이디 가입·로그인 회귀, 소셜 기본값·동의·닉네임 변경·사진 제거, S3 업로드·재조회·삭제). 프로젝트 전체 타입 검사·lint도 통과했다. 제공자 응답과 S3 경계는 테스트 대역이며 실제 OAuth·AWS 송수신·운영 배포 성공을 주장하지 않는다. 개발 DB/서버는 변경하지 않았다. 적용할 개발 환경에서는 프로젝트 환경변수를 준비한 뒤 `corepack yarn workspace @side/photo-contest db:migrate`가 필요하다.
+
+## 2026-10-22 서버 파일 처리 제거와 test-kit S3 대역
+
+사용자 결정으로 게시물·기존 대회 사진·그룹 대표 사진의 업로드와 조회를 모두 S3 presigned URL로만 처리한다. 발급은 권한·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 content-length-range를 고정한 POST 정책을 서명한다. 완료는 HEAD로 크기·형식만 확인하며 staging→최종 복사, 완료 lease·후보 추적은 없앴다. 서버가 내용을 검사하지 않으므로 복사본으로 고정할 불변식이 없고, 정책이 끝나기 전(최대 15분)에는 업로더가 같은 크기·형식으로 다시 올릴 수 있다.
+
+`/media/:id`·다운로드·`/photos/:id`·대표 사진 경로는 권한 확인 뒤 `private, no-store` 307로 60초 서명 GET에 보낸다. Range와 다운로드 이름·응답 형식은 저장소가 처리하고 postDownload도 같은 서명 URL을 준다. MediaProcessor(image-size·mediainfo.js)·MediaReader·readRange, 대회 1600px·대표 사진 512px sharp WebP 변환, PNG·움직이는 WebP·코덱·길이 검사와 관련 한도·테스트, 로컬 디스크 저장소·로컬 업로드 서명·STORAGE_BACKEND/STORAGE_DIR을 지웠다. 위치·EXIF 메타데이터는 일부러 유지한다. 동영상 5분 제한은 브라우저가 메타데이터로 읽은 길이로만 확인하고, 대표 사진은 원본 그대로 올린다. 쓰지 않는 `PostUpload.completionKey`·`completionStartedAt`·`PostUploadAttempt`는 파괴적 migration을 피하려고 남겼다.
+
+로컬 개발·테스트는 Docker 없이 `@photo-contest/test-kit`의 S3 호환 대역을 쓴다. 서명 POST 정책, SigV4 헤더·query 서명, 서명 GET의 Range·응답 헤더 덮어쓰기, HEAD·PUT·DELETE, 웹 origin CORS를 디스크 폴더로 처리한다. API 통합·웹/모바일 test:api·test:e2e·test:cache는 빈 포트에 대역을 자동으로 띄우고 dev는 `S3_ENDPOINT`가 로컬이면 4210으로 함께 띄운다. 단독 Compose는 S3 설정을 필수로 받고 미디어 volume·`backup.sh --with-media`를 없앴으며 컨테이너 검증은 대역을 붙여 실행한다. 공통 배포 스모크도 서명 POST → 완료 → 307 서명 GET 흐름으로 바꿨다.
+
+CI의 데스크톱 test:cache 카테고리 사양 실패는 이 전환과 무관한 타이밍 경합이었다. 같은 커밋의 다른 실행은 통과했고, 실패 trace에서는 이달의 인기 경계가 아직 스트리밍 중이고 사이드바가 hydration되기 전에 서버 HTML의 details를 눌러 닫힌 채 남았다. 사양은 브라우저에서만 그리는 카테고리 폼이 붙은 뒤 연다. 같은 사양에서 드러난 카테고리 생성 폼의 경합(다른 목록 재조회가 끝난 뒤 폼을 비워 이어 입력한 이름이 지워짐)은 생성 결과로 바로 비우도록 고쳤다.
+
+## 2026-10-22 전체 파일 업로드 presigned 전환
+
+게시물 사진·동영상과 이전 대회 사진 제출, 그룹 대표 사진을 모두 서명 발급 → 저장소 FormData POST → 완료 검증 → 게시/제출 흐름으로 통일했다. GraphQL에는 JSON 메타데이터만 보내며 uploadSubmissionPhoto·uploadGroupAvatar·Upload scalar·/uploads raw 경로와 graphql-upload·apollo-upload-client를 제거했다. 브라우저 전송 helper는 shared/api에 두고 Apollo는 HttpLink를 사용한다. 앱 WebView와 테스트 seed도 같은 계약을 따른다.
+
+공통 MediaUploadService가 소유권·그룹/대회 권한·만료·정확한 크기/타입·완료 lease·동시성 제한·후보 파일 추적과 커밋 응답 유실 복구를 맡는다. 대회 사진은 5분 서명과 10MB 상한을 유지하고, 이후 서버 디코딩·변환을 없애 HEAD로 크기·형식만 확인하며 EXIF·위치 메타데이터는 일부러 그대로 둔다. 파일 확인 중 대회가 마감돼도 확정하지 않으며 대회용 업로드를 일반 게시물에 쓰지 못하게 검사한다. 제출된 대회 파일은 게시물 임시 파일 정리에서 제외한다. 기존 Upload 행은 nullable mediaUploadId 관계와 추가형 20261022030000_presigned_submission_uploads migration으로 보존한다.
+
+S3_KEY_PREFIX를 선택적으로 지원한다. S3_BUCKET=jingeon-side-project, S3_KEY_PREFIX=game-feedback/photo-contest이면 새 임시·최종 객체가 기존 game-feedback/* IAM 범위에 들어간다. DB에 전체 키를 기록해 기존 루트 경로의 파일도 계속 읽고 로컬 파일 경로는 유지한다. Compose와 .env 예시에 전달을 연결했으며 실제 AWS 설정은 변경하지 않았다.
+
+최신 develop(#31)을 반영한 뒤 그룹 대표 사진도 requestGroupAvatarUpload → 저장소 POST → completeGroupAvatarUpload → updateGroupProfile로 전환했다. 완료 전 지정·다른 소유자·다른 업로드 목적을 거절하고 처리 중 관리 권한 회수를 트랜잭션에서 재확인한다. 현재 대표 사진은 보존하며, 이후 서버 512px 변환을 없애 원본(메타데이터 포함)을 그대로 저장한다. nullable GroupAvatar.mediaUploadId와 20261022152000_presigned_group_avatars migration을 추가했다. MembershipModule을 분리해 공통 업로드 서비스와 GroupModule의 순환을 피했다.
+
+검증: API unit 130개·실제 PostgreSQL 통합 325개, Web unit/UI 349개·실제 API 문서 20개, production build/start의 Chrome·WebKit·데스크톱 E2E 21개와 Android/iOS WebView seed 회귀 2개가 통과했다. 이전 대회 제출의 전송 실패 후 초안 보존·재시도, GraphQL JSON 전송, 새로고침 후 사진 표시와 기존 게시물 사진/동영상 업로드·다운로드를 확인했다. API/Web/Mobile/test-kit 타입 검사와 프로젝트 lint도 통과했다. 최신 develop 반영 전 첫 브라우저 실행에서 업로드 전 페이지 진입이 한 번 시간 초과됐고 전체 18개 재실행은 모두 통과했다. 최신 develop 반영 후 21개 검증은 첫 실행에서 모두 통과했고 대표 사진 전송 실패 후 미리보기·입력 유지와 재시도까지 확인했다. 실제 S3/IAM/CORS 송수신과 운영 배포는 미실행이며 개발 DB·개발 서버를 변경하지 않았다.
+
+## 2026-10-21 게시물 직접 업로드와 완료 복구
+
+게시물 파일은 발급한 presigned POST로 저장소에 직접 보낸 뒤 completePostUpload에서 최종 복사본의 크기·타입·사진 해상도·동영상 코덱과 길이를 검사한다. API의 /post-uploads raw 경로와 uploadPostMedia를 제거했다. 로컬은 본문 전에 URL HMAC을 확인하고 파일을 디스크로 스트리밍한다. 등록 버튼을 누를 때 전송하며 기존 대회 업로드는 유지한다. 사진·영상의 원본 메타데이터가 남을 수 있음을 개인정보와 첨부 문서에 반영했다.
+
+분석 캐시는 최대 4개 블록이며 사진 블록은 128KB, 영상은 1MB다. 동시 완료는 4개로 제한하고 실제 읽기 시작부터 30초·누적 32MB·128회 읽기 상한을 적용한다. 복사 후보를 DB에 먼저 기록하고 완료 경합은 lease와 조건부 갱신으로 확정한다. DB 커밋 응답을 잃으면 게시됐을 수 있는 파일을 삭제하지 않는다. 정리 실패는 항목별로 재시도하고 DB 참조 없는 로컬 staging·임시 파일도 1일 후 배치 정리한다.
+
+검증: Node 24에서 API unit 125개, 전체 integration 292개와 추가 장애 복구 사양 2개를 통과했다. 실제 PostgreSQL 55435의 격리 스키마에서 새 migration을 실행했다. 단위 검사는 실제 AWS SDK의 POST 정책·HEAD/CopyObject/Range 요청과 범위를 무시한 응답 거절, 실제 MediaInfo의 HEVC·338초 영상 거절을 포함한다. 통합 검사는 서명 없는 100MB 요청의 본문 전 거절, 다른 소유자·만료·형식·크기·픽셀 폭탄, 동시 완료·staging 재전송, 커밋 응답 유실·정리 재시도를 확인한다.
+
+웹 unit/UI 346개, 실제 API 문서 18개, Chrome·WebKit·데스크톱 첨부/개인정보 E2E 15개와 Android/iOS WebView seed 시나리오 2개를 통과했다. API/Web/Mobile/test-kit 타입 검사, 프로젝트 lint, 변경 파일 포맷·diff 검사와 웹 production build도 통과했다. test-kit check:cleanup에서 남은 스키마 0개를 확인했다. 개발 DB와 개발 서버는 변경하지 않았다.
+
+실제 S3 버킷/IAM/CORS 적용과 운영 배포는 실행하지 않았다. Photo Contest 전용 CORS·수명 주기 설정과 JPG/PNG 읽기 호환 버전의 선배포, NOT NULL tokenHash 유지, expand migration·API·Web 배포 순서는 [배포 문서](deployment.md)를 따른다. 의존성 추가에 따라 API package.json과 루트 yarn.lock을 함께 변경했다.
+
 ## 2026-10-21 사전 조회하지 않은 조회의 브라우저 시작
 
 가입 신청·카테고리·숨긴 게시물 관리, 대회 결과, 홈의 첫 개인 피드와 비공개 그룹 피드를 ClientOnly로 통째로 감싸지 않는다. 조회 부모가 `useIsSSR`이면 `skipToken`을 넘기고, QueryRef가 없는 동안 경계와 같은 fallback을 그린다. 제목·접힌 관리 메뉴·피드 틀·사이드바는 서버 HTML에 남는다. 재시도는 부모의 refetch가 소유한다. 자식의 `useSuspenseQuery`는 실패한 참조가 suspense 캐시에 남아 경계 리셋만으로 다시 요청하지 않으므로 쓰지 않는다. ClientOnly는 GroupContentFrame의 비공개 본문에만 남긴다. Promise `.catch`는 try/catch로 바꿨다.
@@ -117,13 +167,13 @@ OWNER·MODERATOR가 대회를 개최하고 게시물/댓글 삭제·비공개 �
 
 홈은 가입한 모든 그룹의 사진·동영상을 최신순으로 모으고 이달의 인기를 따로 조회한다. MY에서 내 그룹을 보고 새로 만든다. 그룹은 종료일 없이 유지되며 한 사람이 제목·내용과 파일을 여러 번 올릴 수 있다. 직접 찍은 사진·동영상·합성을 모두 환영한다.
 
-작성자와 그룹 관리자는 게시물을 삭제할 수 있다. 초대 링크 공유는 모든 멤버, 재발급은 관리자만 허용한다. 초대·멤버 정보는 그룹에서 펼쳐 볼 수 있다.
+작성자와 그룹 관리자(그룹장·부관리자)는 게시물을 삭제할 수 있다. 초대 링크 공유는 모든 멤버, 재발급은 그룹장만 허용한다. 초대·멤버 정보는 그룹에서 펼쳐 볼 수 있다.
 
 Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이터와 이전 URL 호환을 위해 유지한다. 새 작성 흐름에는 대회·마감일·1인 1장 제약이 없다. 마이그레이션은 기존 사진·숨김 상태·작성 시각·파일 키·좋아요를 새 모델에 보존하며, 실제 이전 스키마에 데이터를 넣은 뒤 SQL을 적용해 검증했다.
 
 ## 공개 탐색·가입 승인·SEO
 
-`/explore`에서 로그인 없이 그룹 이름을 검색한다. 그룹 생성은 로그인 후 공개·비공개를 선택하며 기본값은 공개다. 기존 그룹은 새 마이그레이션의 PRIVATE default로 비공개를 유지한다. 공개 그룹의 게시물·미디어·댓글은 익명으로 읽고 로그인 후 바로 가입한다. 비공개 그룹은 GroupJoinRequest를 만들고 OWNER가 수락·거절한다. 초대 토큰도 같은 정책을 적용하므로 비공개 승인을 우회하지 않는다. 이름·공개 여부·멤버 수는 탐색에 표시하지만 비멤버의 inviteToken·role은 null, members는 빈 배열이다.
+`/explore`에서 로그인 없이 그룹 이름을 검색한다. 그룹 생성은 로그인 후 공개·비공개를 선택하며 기본값은 공개다. 기존 그룹은 새 마이그레이션의 PRIVATE default로 비공개를 유지한다. 공개 그룹의 게시물·미디어·댓글은 익명으로 읽고 로그인 후 바로 가입한다. 비공개 그룹은 GroupJoinRequest를 만들고 OWNER·MODERATOR가 수락·거절한다. 초대 토큰도 같은 정책을 적용하므로 비공개 승인을 우회하지 않는다. 이름·공개 여부·멤버 수는 탐색에 표시하지만 비멤버의 inviteToken·role은 null, members는 빈 배열이다.
 
 가입·신청은 복합 unique와 Serializable 트랜잭션으로 중복을 막고 역할을 유지한다. 수락은 멤버 생성·가입 이벤트·신청 삭제를 함께 처리한다. 읽기 권한은 readableGroup/readablePost, 활동과 기존 대회는 기존 멤버 전용 권한으로 나눈다. 대기 중인 그룹은 MY에 넣지 않는다. 승인 상태 조회는 부모의 useBackgroundQuery refetch가 소유하여 Suspense QueryRef를 갱신하고, 승인 뒤 처음 등장하는 비공개 피드와 관리자 신청 목록은 ClientOnly로 조회한다.
 
@@ -135,11 +185,11 @@ Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이
 
 `galleryPosts`는 groupId를 지정하면 해당 그룹, 생략하면 가입한 그룹 전체를 조회한다. 최신순은 createdAt·id desc이고, 인기순은 KST 이번 달에 작성한 게시물의 좋아요 desc·createdAt/id desc다. 숨긴 사진은 홈·그룹 목록에서 제외하며 이관된 게시물은 기존 사진의 숨김도 확인한다.
 
-사진은 sharp 실제 디코딩·크기 검사 후 최대 1600px WebP로 저장한다. 동영상은 mediainfo.js WASM으로 실제 컨테이너·영상/음성 코덱·길이를 검사한다. MP4(H.264/AAC), WebM(VP8·VP9/Opus·Vorbis), 100MB·5분 이하를 지원한다. 영상은 변환하지 않고 비공개로 저장한다.
+서버는 사진·동영상을 열거나 변환하지 않는다. 발급할 때 JPEG·PNG·WebP 10MB, MP4·WebM 100MB만 허용하고 완료할 때 HEAD로 크기·형식만 확인한다. 브라우저는 읽을 수 있는 사진을 줄여 JPEG로 보내며 변환할 수 없으면 지원 형식 원본을 보낸다. 동영상은 브라우저가 읽은 길이로 5분 이하만 올린다. 서버는 위치정보 등 메타데이터를 제거하지 않는다. 파일은 비공개 버킷에 저장한다.
 
-`/media/:id`는 요청마다 그룹의 공개 범위와 멤버십을 검사하고 no-store·nosniff와 byte Range 206/416을 지원한다. 로컬·S3 저장소에서 스트리밍해 탐색할 때 파일 전체를 메모리에 올리지 않는다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
+`/media/:id`는 요청마다 그룹의 공개 범위와 멤버십을 검사하고 `private, no-store` 307로 60초 서명 GET에 보낸다. Range는 저장소가 처리한다. 파일 삭제가 일시 실패하면 만료 PostUpload를 남겨 maintenance가 다시 시도한다. 미사용 업로드도 정리한다.
 
-웹의 파일 전송은 requestPostUpload → uploadPostMedia → createPost mutation이다. Apollo UploadHttpLink가 Blob/File을 multipart로 전송한다. 이전 사진 제출도 uploadSubmissionPhoto mutation을 사용한다. API는 Origin·세션·티켓 소유/만료·멤버십을 확인하고 크기가 제한된 스트림을 실제 사진/동영상 검사로 넘긴다. REST 업로드는 호환용으로 같은 저장 로직을 쓴다.
+웹의 게시물 전송은 등록 클릭 후 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost다. API는 파일 바이트를 받지 않고 소유자·만료·멤버십과 HEAD의 크기·형식만 확인한다. 저장소 전송 실패는 RHF 미디어 필드에 표시하며 입력을 유지한다. 로컬과 테스트는 test-kit S3 대역으로 같은 계약을 쓴다. [상세 계약](post-attachments.md)을 따른다.
 
 글쓰기에서 파일을 선택하면 선택 버튼 영역을 미리보기로 대체한다. 사진은 비율을 유지해 표시하고 동영상은 시트 안에서 재생한다. 파일 이름 옆의 바꾸기·제거로 선택을 관리하며 제거하면 원래 선택 영역으로 돌아온다. 파일 선택 취소는 기존 선택을 유지하며 같은 파일 재선택·다른 파일로 교체를 지원한다. 제출 중에는 선택·교체·제거를 막는다. 형식·크기 오류는 선택 즉시 알리고 디코드 실패는 미리보기 안에서 안내한다. 임시 Blob URL은 교체·제거·시트 해제 때 정리하고 재생 중인 영상도 멈춘다. HEIC의 MIME이 비어 있으면 확장자로 사진 여부를 판별한다.
 
@@ -175,7 +225,7 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 공용 린트와 오버레이
 
-저장소 packages/eslint-config의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 바로 옆 <규칙>.spec.ts에서 실제 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/lib가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
+저장소 packages/eslint-config의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<분류>/<규칙>/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 같은 폴더의 <규칙>.spec.ts가 그 규칙의 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/rules/fsd/fsd.helper.ts가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
 
 시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
 
@@ -219,3 +269,21 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 최신 develop의 테스트 위치 변경을 반영한 최종 검사: 전체 check, API integration 274개, Web API 18개, 신규 홈 E2E 6개, 기존 탐색·공개 SEO·비공개 가입 E2E 6개와 프로덕션 cache/category E2E 7개가 통과했다. Android 뒤로 가기 2개도 통과했다(iOS 하드웨어 뒤로 가기 2개는 설계상 제외). 새 홈에도 검색 폼과 그룹 생성 버튼이 있어 전환 전의 화면을 조작하던 기존 브라우저 검사를 목적 화면이 나타난 뒤 실행하도록 고쳤다. 검색은 JS 준비 전에도 GET /explore?q=로 제출된다. 전체 Prettier 검사와 앱 lint/typecheck를 확인했다.
 
 전체 브라우저 회귀 검사에서 좋아요 수 정규화만으로는 인기 목록 순서가 바뀌지 않는 문제를 확인했다. 활성 MONTHLY_POPULAR 쿼리만 다시 조회하고, NEWEST의 추가 페이지는 유지한다. 기존 사진/동영상/인기/삭제 흐름과 페이지네이션 E2E 4개가 통과했다.
+
+## 2026-10-23 Prisma 7 업그레이드
+
+API와 test-kit의 Prisma를 7.10.1로 맞추고 API에 같은 버전의 @prisma/adapter-pg와 @prisma/driver-adapter-utils를 추가했다. 루트 yarn.lock은 이 의존성 해석을 반영한다. prisma.config.ts가 프로젝트 .env를 명시적으로 읽고 CLI에 URL을 전달하며, test-kit은 작업 디렉터리와 관계없이 API의 config를 지정해 격리 migration을 적용한다. 운영 이미지에도 config를 포함한다. 기존 CommonJS 빌드·생성 경로와의 호환을 위해 prisma-client-js 생성기를 유지하며 런타임은 pg 어댑터를 사용한다.
+
+API·운영 migration/서비스 검사·test-kit이 같은 어댑터를 사용한다. schema는 ORM과 raw SQL search_path 양쪽에 전달하고 connection_limit은 풀 최대 연결 수로 옮긴다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 pool_timeout을 우선하고 없으면 connect_timeout(기본 5초)을 쓴다. 운영 sslcert는 서버 CA로 읽어 엄격한 인증서 검증을 유지한다. DB 모델과 기존 migration SQL은 변경하지 않았다.
+
+통합 검증에서 Prisma 7의 커밋 충돌이 P2034가 아닌 DriverAdapterError(TransactionWriteConflict)로 직접 전달되어 동시 좋아요 요청이 간헐적으로 내부 오류가 되는 문제를 재현했다. 어댑터 충돌도 기존 4회 재시도·CONFLICT 정책으로 처리하며, 다른 어댑터 오류는 그대로 전파한다. 단위 회귀 5개를 추가하고 기존 동시 좋아요 통합 사양에서 내부 오류 보고가 없고 실패 7건 모두 한도 안내인지 확인한다. 운영 모드 통합 하네스에는 WEB_ORIGIN과 일치하는 앱 로그인 콜백 기본값을 더해 최신 운영 설정을 충족시켰다.
+
+Node 24.18.0에서 API·test-kit typecheck, API build, API 단위 127개, test-kit 단위 35개와 변경 파일 ESLint가 통과했다. 사용자 승인 후 이 Worktree에 UTF-8 테스트 DB(55434/photo_contest_test)를 새로 기동해 PostgreSQL/Supertest 통합 55개 파일·346개를 모두 통과했다(skip 없음). 동시 좋아요 사양은 수정 후 8회 연속 통과했다. test-kit check:cleanup으로 남은 테스트 스키마가 0개임을 확인하고 이번 Worktree의 테스트 DB를 종료했다. 기존 개발 DB·서버는 변경하지 않았다. 실제 RDS TLS 연결·컨테이너 빌드·배포는 실행하지 않았다.
+
+## 2026-10-23 sharp·GraphQL Tools 보안 업데이트
+
+테스트킷의 sharp를 ^0.35.5로 올려 0.34.5와 해당 네이티브 바이너리를 lockfile에서 제거했다. 웹은 GraphQL Codegen CLI 7.4.6·typescript-operations 6.1.10·typed-document-node 7.2.0으로 올려 GraphQL Tools utils 11.2.2를 제거했다. 공식 v6 생성 파이프라인에 맞춰 중복 typescript 플러그인을 빼고 enumType: const·문자열 ID·기존 Apollo __typename 정책으로 재생성했다. 생성 JavaScript를 이전 버전과 비교해 모든 GraphQL 문서·enum 값이 동일함을 확인했고 재생성 결과도 동일하다.
+
+추가 audit에서 NestJS GraphQL 14.0.3이 정확히 고정한 utils 12.0.1에도 GHSA-c4qx-w738-7hr3이 적용됨을 확인했다. 상위 패키지의 수정 릴리스가 없어 루트 package.json의 해당 버전 descriptor에만 12.0.3 resolution을 적용했다. 이 보안 패치를 모든 설치·CI에서 일치시키기 위해 루트 manifest와 yarn.lock을 함께 변경했다. 최종 utils는 12.0.3·12.1.0만 남는다. Yarn의 24시간 게이트(1440분)는 유지했다.
+
+Node 24.18.0에서 immutable install, Web·API·test-kit typecheck, Web·API·test-kit lint, API의 별도 .data 출력 경로 빌드가 통과했다. Web unit/UI 440개·API unit 127개·test-kit 35개·실제 생성 문서 API 계약 20개, 총 622개가 통과했다. 계약 테스트는 새 web_api 스키마·전용 55434 DB와 S3 대역에서 실제 sharp 이미지의 업로드·조회도 확인했다. 최초 계약 실행은 TEST_DATABASE_URL 누락으로 시작하지 못했고, 전용 URL을 명시한 뒤 통과했다. 최종 Yarn audit에서 sharp·utils 항목은 0개이며 다른 의존성의 기존 항목 때문에 전체 audit 종료 코드는 1이다. 남은 테스트 스키마 0개와 이번 Worktree의 테스트 DB 종료를 확인했다. 개발 DB·서버는 변경하지 않았다. 전체 브라우저 E2E·Web production build·컨테이너·배포 검증은 실행하지 않았다.

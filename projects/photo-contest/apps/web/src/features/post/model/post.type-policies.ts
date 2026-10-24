@@ -6,6 +6,7 @@ export const postTypePolicies: TypePolicies = {
     fields: {
       galleryPosts: offsetLimitPagination(['groupId', 'contestId', 'categoryId', 'sort']),
       publicGalleryPosts: offsetLimitPagination(['sort']),
+      myGalleryPosts: offsetLimitPagination(['groupId']),
       hiddenGalleryPosts: offsetLimitPagination(['groupId']),
       postComments: offsetLimitPagination(['postId', 'parentId']),
     },

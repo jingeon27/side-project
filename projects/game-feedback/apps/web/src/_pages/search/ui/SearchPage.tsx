@@ -14,9 +14,11 @@ import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { BackLink, useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
 
 import { searchQuery, type ISearchSnapshot } from '../model/search-query';
 import { usePostSearch } from '../model/use-post-search';
+import { SearchTopbar } from './SearchTopbar';
 
 interface ISearchPageProps {
   locale: string;
@@ -24,7 +26,7 @@ interface ISearchPageProps {
   initialSearch: ISearchSnapshot | Promise<ISearchSnapshot>;
 }
 
-export function SearchPage({ locale, initialPath, initialSearch }: ISearchPageProps) {
+function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps) {
   const { t } = useI18n();
   const search = useBrowserSearch(
     initialPath.includes('?') ? `?${initialPath.split('?')[1]}` : '',
@@ -51,6 +53,7 @@ export function SearchPage({ locale, initialPath, initialSearch }: ISearchPagePr
           {...form.register('q')}
           maxLength={100}
           autoComplete="off"
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- 검색 전용 화면이라 진입 목적이 입력이고 앞에는 뒤로 가기와 제목만 있다.
           autoFocus
           aria-label={t(board ? '게시판 검색' : '게시글 검색')}
           placeholder={t('제목이나 내용으로 검색')}
@@ -138,5 +141,13 @@ function SearchResults({
         </Button>
       )}
     </>
+  );
+}
+
+export function SearchPage(props: Parameters<typeof SearchContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<SearchTopbar locale={props.locale} />}>
+      <SearchContent {...props} />
+    </CommunityPage>
   );
 }

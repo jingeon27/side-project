@@ -9,12 +9,12 @@ description: 모바일 앱의 Vitest unit·ui·api 테스트나 Playwright nativ
 
 | 파일 | 프로젝트 | 규칙 |
 | --- | --- | --- |
-| `src/**/*.spec.ts` | `unit`(node) | 순수 함수만. react-native·expo를 런타임으로 import하면 깨진다 |
-| `src/**/*.spec.tsx` | `ui`(jsdom) | 훅·화면. `react-native` → `react-native-web` alias, `__DEV__` true, `EXPO_PUBLIC_WEB_ORIGIN=https://contest.example` 고정(`env.ts`가 import 때 읽는다) |
-| `src/**/*.api.spec.ts` | `api`(node) | 앱이 직접 부르는 엔드포인트만, 격리 API :4331 |
+| `src/**/*.{spec,test}.ts`, 루트 `*.{spec,test}.ts`(`app.config.spec.ts`·`app.config.test.ts`) | `unit`(node) | 순수 함수와 `app.config.ts`(운영·개발 빌드 설정)만. react-native·expo를 런타임으로 import하면 깨진다 |
+| `src/**/*.{spec,test}.tsx` | `ui`(jsdom) | 훅·화면. `react-native` → `react-native-web` alias, `__DEV__` true, `EXPO_PUBLIC_WEB_ORIGIN=https://contest.example` 고정(`env.ts`가 import 때 읽는다) |
+| `src/**/*.api.{spec,test}.ts` | `api`(node) | 앱이 직접 부르는 엔드포인트만, 격리 API :4331 |
 
-- RN·expo를 간접으로라도 import하는 테스트는 JSX가 없어도 `.spec.tsx`로 만든다.
-- include가 `*.spec.*`뿐이라 회귀 테스트 `*.test.ts(x)`는 지금 어느 프로젝트에도 잡히지 않는다. 첫 회귀 테스트를 넣을 때 unit·ui include에 `src/**/*.test.ts`·`src/**/*.test.tsx`를 더하고 실제로 도는지 본다.
+- RN·expo를 간접으로라도 import하는 테스트는 JSX가 없어도 `.tsx`로 만든다. `env.ts`처럼 `__DEV__`를 읽는 모듈도 ui 레인에서만 import한다(판단은 `web-origin.ts` 같은 순수 함수로 떼어 unit에서 본다).
+- 새 동작은 `*.spec.*`, 확인한 버그의 회귀는 `*.test.*`다. 두 접미사 모두 unit·ui·api 레인이 수집한다.
 
 ## ui 대역 (`vitest.setup.ts`, `src/test/ui`)
 
@@ -46,4 +46,4 @@ corepack yarn workspace @photo-contest/mobile exec playwright install chromium w
 
 ## 실기기로만 확인한다
 
-dev client에서: 키보드가 입력창을 가리는지, 사진 선택·카메라 권한과 업로드, 소셜 로그인 뒤 `photocontest://` 복귀, 공유 시트·햅틱, Android 하드웨어 뒤로 가기·iOS 스와이프, 노치 여백, 비행기 모드 → 다시 시도, Android에서 웹이 앱 정보를 받는지(문서 전 주입은 Android에서 보장되지 않는다). 보고할 때 테스트 통과와 실기기 확인을 따로 적는다.
+dev client에서: 키보드가 입력창을 가리는지, 사진 선택·카메라 권한과 업로드, 소셜 로그인 뒤 https 앱 링크 복귀(iOS 17.4+ 세션 콜백, Android App Link 검증 상태 `adb shell pm get-app-links <패키지>`, 앱 미설치·검증 실패 때 웹 안내 페이지), 공유 시트·햅틱, Android 하드웨어 뒤로 가기·iOS 스와이프, 노치 여백, 비행기 모드 → 다시 시도, Android에서 웹이 앱 정보를 받는지(문서 전 주입은 Android에서 보장되지 않는다). 보고할 때 테스트 통과와 실기기 확인을 따로 적는다.

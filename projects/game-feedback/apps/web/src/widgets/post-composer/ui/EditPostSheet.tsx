@@ -2,12 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, LoaderCircle } from 'lucide-react';
 
 import { Button, Input } from '@side/design-system';
 
 import { boardByKind } from '@/features/board';
-import { useUpdatePostMutation } from '@/features/post';
+import { updatePostMutationOptions } from '@/features/post';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
@@ -24,10 +25,11 @@ interface IEditPostSheetProps {
   post: Post;
 }
 export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const router = useRouter();
   const notify = useNotify();
-  const update = useUpdatePostMutation();
+  const update = useMutation(updatePostMutationOptions(client));
   const { upload, handleUpload } = usePostMediaUpload();
   const form = useZodForm(postComposerSchema, {
     defaultValues: {

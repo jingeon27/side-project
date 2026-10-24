@@ -6,21 +6,22 @@ import { useMutation } from '@apollo/client/react';
 
 import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
+  CompletePostUploadDocument,
   CreatePostDocument,
-  GalleryPostsDocument,
   GroupContestDocument,
   GroupContestsDocument,
   RequestPostUploadDocument,
-  UploadPostMediaDocument,
 } from '@/shared/api/generated';
+import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
-import { useZodForm } from '@/shared/model/form';
+import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
-import { resetGalleryPosts } from '../model/post.cache';
+import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
+import { POST_FEED_QUERIES, resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
 import { PostCategoryField } from './PostCategoryField';
 import { PostContestField } from './PostContestField';
@@ -48,13 +49,15 @@ export function CreatePostBottomSheet({
       rightsConfirmed: false,
     },
   });
-  const [uploadMedia] = useMutation(UploadPostMediaDocument);
-  const [requestUpload] = useMutation(RequestPostUploadDocument);
+  const [completeUpload] = useMutation(CompletePostUploadDocument);
+  // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
+  const [requestUpload] = useMutation(RequestPostUploadDocument, { fetchPolicy: 'no-cache' });
   const [createPost, { data: created }] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [GalleryPostsDocument, GroupContestDocument, GroupContestsDocument],
+    refetchQueries: [...POST_FEED_QUERIES, GroupContestDocument, GroupContestsDocument],
     awaitRefetchQueries: true,
   });
+  const beginSubmit = useAbortOnClose(isOpen);
 
   const { errors, isSubmitting } = form.formState;
   return (
@@ -90,19 +93,35 @@ export function CreatePostBottomSheet({
               contestId,
               categoryId,
             }) => {
+              const signal = beginSubmit();
               try {
                 let uploadId: string | undefined;
                 if (file) {
+                  if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
+                    form.setError(
+                      'media',
+                      { message: '5분 이하의 동영상을 선택해 주세요.' },
+                      { shouldFocus: true },
+                    );
+                    return;
+                  }
                   const content = file.type.startsWith('video/')
                     ? { body: file, contentType: file.type }
                     : await prepareUploadImage(file, browserImageCodec);
-                  const { data } = await requestUpload({ variables: { groupId } });
-                  if (!data) return;
-                  await uploadMedia({
-                    variables: { uploadId: data.requestPostUpload.id, file: content.body },
+                  throwIfClosed(signal);
+                  const { data } = await requestUpload({
+                    variables: { groupId, contentType: content.contentType, byteSize: content.body.size },
                   });
+                  if (!data) return;
+                  await uploadToStorage(data.requestPostUpload, content.body, { signal });
+                  const { data: completed } = await completeUpload({
+                    variables: { uploadId: data.requestPostUpload.id },
+                  });
+                  if (!completed) return;
                   uploadId = data.requestPostUpload.id;
                 }
+                // 게시는 되돌릴 수 없으므로 닫힌 시트에서는 보내지 않는다. 보낸 뒤에는 결과를 토스트로 알린다.
+                throwIfClosed(signal);
                 const { data: posted } = await createPost({
                   variables: {
                     groupId,
@@ -124,7 +143,11 @@ export function CreatePostBottomSheet({
                 toast.success('게시물을 올렸어요');
                 onClose();
               } catch (error) {
-                if (error instanceof ImagePrepareError)
+                if (signal.aborted) {
+                  notifyClosedSubmit('게시물을 올리지 않았어요');
+                  return;
+                }
+                if (error instanceof ImagePrepareError || error instanceof StorageUploadError)
                   form.setError('media', { message: error.message }, { shouldFocus: true });
               }
             },

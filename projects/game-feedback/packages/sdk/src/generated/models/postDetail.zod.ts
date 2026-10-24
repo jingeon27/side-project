@@ -82,16 +82,25 @@ export const postDetailAnswersItemAuthorIdMax = 100;
 export const postDetailAnswersItemReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const postDetailAnswersItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const postDetailAnswersItemUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const postDetailCommentsItemIdMax = 100;
+export const postDetailCommentsItemOneIdMax = 100;
 
-export const postDetailCommentsItemPostIdMax = 100;
+export const postDetailCommentsItemOnePostIdMax = 100;
+
+export const postDetailCommentsItemOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const postDetailCommentsItemOneUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const postDetailCommentsItemOneParentIdOneMax = 100;
 
 
-export const postDetailCommentsItemAuthorIdMax = 100;
+export const postDetailCommentsItemOneAuthorIdMax = 100;
 
 
-export const postDetailCommentsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const postDetailCommentsItemUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const postDetailCommentsItemTwoIdMax = 100;
+
+export const postDetailCommentsItemTwoPostIdMax = 100;
+
+export const postDetailCommentsItemTwoCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const postDetailCommentsItemTwoUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
 
 export const PostDetail = zod.object({
   "post": zod.object({
@@ -193,21 +202,33 @@ export const PostDetail = zod.object({
   "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailAnswersItemCreatedAtRegExp),
   "updatedAt": zod.iso.datetime({"offset":true}).regex(postDetailAnswersItemUpdatedAtRegExp)
 })),
-  "comments": zod.array(zod.object({
-  "id": zod.string().min(1).max(postDetailCommentsItemIdMax),
-  "postId": zod.string().min(1).max(postDetailCommentsItemPostIdMax),
+  "comments": zod.array(zod.union([zod.object({
+  "id": zod.string().min(1).max(postDetailCommentsItemOneIdMax),
+  "postId": zod.string().min(1).max(postDetailCommentsItemOnePostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemOneCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemOneUpdatedAtRegExp),
+  "parentId": zod.union([zod.string().min(1).max(postDetailCommentsItemOneParentIdOneMax),zod.null()]),
+  "isDeleted": zod.literal(false),
   "body": zod.string().min(1),
   "author": zod.object({
-  "id": zod.string().min(1).max(postDetailCommentsItemAuthorIdMax),
+  "id": zod.string().min(1).max(postDetailCommentsItemOneAuthorIdMax),
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
-}),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemCreatedAtRegExp),
-  "updatedAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemUpdatedAtRegExp)
-}))
+})
+}),zod.object({
+  "id": zod.string().min(1).max(postDetailCommentsItemTwoIdMax),
+  "postId": zod.string().min(1).max(postDetailCommentsItemTwoPostIdMax),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemTwoCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(postDetailCommentsItemTwoUpdatedAtRegExp),
+  "parentId": zod.null(),
+  "isDeleted": zod.literal(true),
+  "body": zod.literal(""),
+  "author": zod.null()
+})])),
+  "commentsCursor": zod.union([zod.string().min(1),zod.null()])
 })
 
 export type PostDetail = zod.input<typeof PostDetail>;

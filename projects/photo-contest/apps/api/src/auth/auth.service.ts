@@ -1,27 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { GraphQLError } from 'graphql';
-import { z } from 'zod';
 
 import type { OAuthAttempt } from '../../generated/prisma';
 import { pkceChallenge, randomToken, safeEqual, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { readCookie } from '../common/http/cookie-header';
-import { textValue } from '../common/validation';
-import { developmentLoginEnabled, mobileAppScheme, oauthCredentials, webOrigin } from '../config/env';
+import { developmentLoginEnabled, mobileAuthCallbackUrl, oauthCredentials, webOrigin } from '../config/env';
 import {
-  APP_LOGIN_CODE_MAX_LENGTH,
   APP_LOGIN_TICKET_TTL_MS,
   OAUTH_ATTEMPT_TTL_MS,
   OAUTH_PROVIDER_TIMEOUT_MS,
   PKCE_CHALLENGE_LENGTH,
-  PKCE_VERIFIER_MAX_LENGTH,
-  PKCE_VERIFIER_MIN_LENGTH,
-  TEXT_LIMIT,
 } from '../config/limits';
 import { Database } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
-import { AUTH_COOKIE, authCookieOptions } from './auth-cookie';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
+import { authCookieOptions, oauthStateCookieName } from './auth-cookie';
+import type { AppLoginExchangeDto } from './auth.dto';
 import {
   accessTokenOf,
   identityOf,
@@ -48,17 +44,6 @@ const OAUTH_CALLBACK_ROUTE = 'GET /auth/:provider/callback';
 
 // 앱이 만든 S256 challenge: base64url(SHA-256(verifier))
 const APP_CHALLENGE = new RegExp(`^[A-Za-z0-9_-]{${PKCE_CHALLENGE_LENGTH}}$`);
-// RFC 7636 unreserved 문자
-const PKCE_VERIFIER = new RegExp(
-  `^[A-Za-z0-9._~-]{${PKCE_VERIFIER_MIN_LENGTH},${PKCE_VERIFIER_MAX_LENGTH}}$`,
-);
-
-const devLoginSchema = z.object({ nickname: z.unknown() });
-const appExchangeSchema = z.object({
-  code: z.string().min(1).max(APP_LOGIN_CODE_MAX_LENGTH),
-  verifier: z.string().regex(PKCE_VERIFIER),
-});
-
 export interface IAuthConfig {
   developmentLogin: boolean;
   google: boolean;
@@ -69,9 +54,12 @@ function queryValue(value: unknown) {
   return typeof value === 'string' && value ? value : undefined;
 }
 
-/** 앱 로그인 결과는 앱 scheme으로 돌려보낸다. 코드 원문은 이 URL에만 실린다. */
+/**
+ * 앱 로그인 결과는 검증된 https 콜백(App Link·Universal Link)으로만 돌려보낸다. 코드 원문은 이 URL에만 실린다.
+ * 커스텀 스킴은 다른 앱도 등록할 수 있어, 그 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다.
+ */
 function appCallbackUrl(params: Record<string, string>) {
-  return `${mobileAppScheme()}://auth/callback?${new URLSearchParams(params).toString()}`;
+  return `${mobileAuthCallbackUrl()}?${new URLSearchParams(params).toString()}`;
 }
 
 function parseAppChallenge(value: unknown): string | undefined {
@@ -88,11 +76,42 @@ async function readJson(response: globalThis.Response): Promise<unknown> {
   }
 }
 
+const OAUTH_ERROR_CODE = /^[a-z_]{1,64}$/;
+
+/** provider가 보낸 표준 오류 코드(invalid_client 등)만 남긴다. 설명·토큰 같은 다른 값은 싣지 않는다. */
+function oauthErrorCode(body: unknown) {
+  if (typeof body !== 'object' || body === null || !('error' in body)) return 'unknown';
+  return typeof body.error === 'string' && OAUTH_ERROR_CODE.test(body.error) ? body.error : 'unknown';
+}
+
+/**
+ * provider가 토큰·프로필 요청을 거절하면 사용자에게는 로그인 실패로 돌려보내지만, 잘못된 client secret·redirect URI 같은
+ * 설정 오류는 운영자가 알아야 하므로 상태·표준 오류 코드만 태그로 보고한다.
+ */
+async function reportProviderRejection(
+  provider: IOAuthProvider,
+  stage: 'token' | 'profile',
+  response: globalThis.Response,
+) {
+  const rejection = Object.assign(new Error('OAuth provider rejected the request'), {
+    name: 'OAuthProviderRejected',
+    code: String(response.status),
+  });
+  reportUnexpectedError(rejection, {
+    route: OAUTH_CALLBACK_ROUTE,
+    provider: provider.name,
+    stage,
+    status: String(response.status),
+    oauthError: oauthErrorCode(await readJson(response)),
+  });
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly db: Database,
     private readonly sessions: SessionService,
+    private readonly limits: RateLimitService,
   ) {}
 
   config(): IAuthConfig {
@@ -104,9 +123,8 @@ export class AuthService {
   }
 
   /** NODE_ENV=development와 ENABLE_DEV_LOGIN=true가 모두 있을 때만 연다. */
-  async devLogin(body: unknown, res: Response) {
+  async devLogin(nickname: string, res: Response) {
     if (!developmentLoginEnabled()) fail(MESSAGE.DEV_LOGIN_DISABLED, ERROR_CODE.FORBIDDEN);
-    const nickname = textValue(devLoginSchema.safeParse(body).data?.nickname, TEXT_LIMIT.NICKNAME, '닉네임');
     const user = await this.db.user.upsert({
       where: { provider_providerId: { provider: 'dev', providerId: nickname } },
       create: { provider: 'dev', providerId: nickname, nickname },
@@ -123,9 +141,15 @@ export class AuthService {
    * state·PKCE를 만들고 provider 인가 URL을 돌려준다.
    * app_challenge가 있으면 콜백에서 세션 대신 앱 로그인 티켓을 만든다.
    */
-  async startOAuth(providerName: string, appChallenge: unknown, res: Response): Promise<string> {
+  async startOAuth(
+    providerName: string,
+    appChallenge: unknown,
+    res: Response,
+    address: string | null = null,
+  ): Promise<string> {
     const provider = oauthProvider(providerName);
     const challenge = parseAppChallenge(appChallenge);
+    await this.limits.consume('OAUTH_START', { userId: null, address });
     const state = randomToken();
     const verifier = randomToken();
     await this.db.oAuthAttempt.create({
@@ -137,7 +161,7 @@ export class AuthService {
         expiresAt: new Date(Date.now() + OAUTH_ATTEMPT_TTL_MS),
       },
     });
-    res.cookie(AUTH_COOKIE.OAUTH_STATE, state, authCookieOptions(OAUTH_ATTEMPT_TTL_MS));
+    res.cookie(oauthStateCookieName(), state, authCookieOptions(OAUTH_ATTEMPT_TTL_MS));
     const url = new URL(provider.authorizeUrl);
     url.search = new URLSearchParams({
       client_id: provider.clientId,
@@ -153,29 +177,29 @@ export class AuthService {
 
   /**
    * provider 콜백을 처리하고 이동할 주소를 돌려준다. 실패해도 던지지 않는다.
-   * 앱에서 시작한 시도로 확인되면 앱 scheme으로, 아니면 웹으로 보낸다.
+   * 앱에서 시작한 시도로 확인되면 앱 로그인 https 콜백으로, 아니면 웹으로 보낸다.
    */
   async completeOAuth(providerName: string, req: Request, res: Response): Promise<string> {
     let attempt: OAuthAttempt | null = null;
-    res.clearCookie(AUTH_COOKIE.OAUTH_STATE, authCookieOptions());
+    res.clearCookie(oauthStateCookieName(), authCookieOptions());
     try {
       const provider = oauthProvider(providerName);
       const state = queryValue(req.query.state);
       const code = queryValue(req.query.code);
       if (state) attempt = await this.db.oAuthAttempt.findUnique({ where: { stateHash: sha256Hex(state) } });
-      const cookieState = readCookie(req.headers.cookie, AUTH_COOKIE.OAUTH_STATE);
+      const cookieState = readCookie(req.headers.cookie, oauthStateCookieName());
       if (!state || !code || !cookieState || !safeEqual(cookieState, state))
         fail(MESSAGE.CALLBACK_REJECTED, ERROR_CODE.FORBIDDEN);
       const verified = await this.consumeAttempt(attempt, provider);
       const identity = await this.fetchIdentity(provider, code, verified.verifier);
       const user = await this.db.user.upsert({
         where: { provider_providerId: { provider: provider.name, providerId: identity.providerId } },
-        create: { provider: provider.name, ...identity },
-        update: { nickname: identity.nickname, avatar: identity.avatar },
+        create: { provider: provider.name, ...identity, needsOnboarding: true },
+        update: {},
       });
       if (verified.appChallenge) return await this.issueAppTicket(user.id, verified.appChallenge);
       await this.sessions.start(res, user.id);
-      return `${webOrigin()}/`;
+      return `${webOrigin()}${user.needsOnboarding ? '/onboarding' : '/'}`;
     } catch (error) {
       // 콜백은 4xx 대신 리다이렉트하므로 예상하지 못한 오류(provider 통신·DB)만 따로 보고한다.
       if (!(error instanceof GraphQLError)) reportUnexpectedError(error, { route: OAUTH_CALLBACK_ROUTE });
@@ -189,17 +213,11 @@ export class AuthService {
    * 앱이 받은 일회용 코드와 PKCE verifier를 확인하고 WebView 쿠키 저장소에 세션을 만든다.
    * 형식 오류·만료·불일치·재사용은 모두 같은 403으로 답한다.
    */
-  async exchangeAppLogin(body: unknown, res: Response) {
-    const parsed = appExchangeSchema.safeParse(body);
-    if (!parsed.success) fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
-    const codeHash = sha256Hex(parsed.data.code);
+  async exchangeAppLogin(body: AppLoginExchangeDto, res: Response) {
+    const codeHash = sha256Hex(body.code);
     const now = new Date();
     const ticket = await this.db.appLoginTicket.findUnique({ where: { codeHash } });
-    if (
-      !ticket ||
-      ticket.expiresAt <= now ||
-      !safeEqual(pkceChallenge(parsed.data.verifier), ticket.challenge)
-    )
+    if (!ticket || ticket.expiresAt <= now || !safeEqual(pkceChallenge(body.verifier), ticket.challenge))
       fail(ERROR_MESSAGE.APP_LOGIN_REJECTED, ERROR_CODE.FORBIDDEN);
     // 같은 코드로 동시에 교환해도 삭제에 성공한 한 요청만 세션을 받는다.
     const consumed = await this.db.appLoginTicket.deleteMany({
@@ -237,13 +255,20 @@ export class AuthService {
       }),
       signal: AbortSignal.timeout(OAUTH_PROVIDER_TIMEOUT_MS),
     });
-    const accessToken = tokenResponse.ok ? accessTokenOf(await readJson(tokenResponse)) : undefined;
+    if (!tokenResponse.ok) {
+      await reportProviderRejection(provider, 'token', tokenResponse);
+      fail(MESSAGE.PROVIDER_AUTH_FAILED, ERROR_CODE.UNAUTHENTICATED);
+    }
+    const accessToken = accessTokenOf(await readJson(tokenResponse));
     if (!accessToken) fail(MESSAGE.PROVIDER_AUTH_FAILED, ERROR_CODE.UNAUTHENTICATED);
     const profileResponse = await fetch(provider.profileUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
       signal: AbortSignal.timeout(OAUTH_PROVIDER_TIMEOUT_MS),
     });
-    if (!profileResponse.ok) fail(MESSAGE.PROFILE_UNAVAILABLE, ERROR_CODE.UNAUTHENTICATED);
+    if (!profileResponse.ok) {
+      await reportProviderRejection(provider, 'profile', profileResponse);
+      fail(MESSAGE.PROFILE_UNAVAILABLE, ERROR_CODE.UNAUTHENTICATED);
+    }
     const identity = identityOf(provider.name, await readJson(profileResponse));
     if (!identity) fail(MESSAGE.IDENTITY_UNAVAILABLE, ERROR_CODE.UNAUTHENTICATED);
     return identity;

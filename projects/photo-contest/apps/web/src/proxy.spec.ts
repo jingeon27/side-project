@@ -22,6 +22,24 @@ describe('proxy', () => {
     expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
+  it('운영의 __Host- 세션 쿠키로도 멤버 전용 화면을 열어야 한다', () => {
+    const response = proxy(request('/me', 'theme=light; __Host-contest_session=abc'));
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  it('앱 로그인 콜백과 앱 링크 검증 파일은 로그인 게이트 없이 열려야 한다', () => {
+    for (const path of [
+      '/app-auth/callback?code=abcdefghijklmnop',
+      '/.well-known/apple-app-site-association',
+      '/.well-known/assetlinks.json',
+    ]) {
+      const response = proxy(request(path));
+      expect(response.headers.get('location'), path).toBeNull();
+      expect(response.headers.get('x-middleware-next'), path).toBe('1');
+    }
+  });
+
   it('멤버 전용 경로만 검사해야 한다', () => {
     expect(config.matcher).toEqual(['/contests/:path*', '/me']);
   });

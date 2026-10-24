@@ -4,11 +4,14 @@ import { createRequire } from 'node:module';
 
 import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { grantOperatorRole } from '../admin/operator-session';
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
+import { responseLocation } from '../testing/http-response';
 import { OAUTH_RETURN_COOKIE } from './oauth-return-path';
 
 const target = process.env.TEST_DATABASE_URL;
@@ -31,7 +34,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
     );
     if (migration.status !== 0)
       throw new Error(`OAuth return schema setup failed: ${migration.stdout}\n${migration.stderr}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     app = await createApp({
       databaseUrl,
       prisma: db,
@@ -64,11 +67,11 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       const callback = await agent
         .get('/api/auth/google/callback')
         .query({
-          state: new URL(start.headers.location).searchParams.get('state'),
+          state: new URL(responseLocation(start)).searchParams.get('state'),
           code: subject,
         })
         .expect(302);
-      const onboarding = new URL(callback.headers.location);
+      const onboarding = new URL(responseLocation(callback));
       expect(onboarding.origin).toBe(origin);
       expect(onboarding.pathname).toBe(`/${locale}/onboarding`);
       expect(onboarding.searchParams.get('returnTo')).toBe(original);
@@ -90,7 +93,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       const existing = await agent
         .get('/api/auth/google/callback')
         .query({
-          state: new URL(again.headers.location).searchParams.get('state'),
+          state: new URL(responseLocation(again)).searchParams.get('state'),
           code: subject,
         })
         .expect(302);
@@ -99,6 +102,48 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
     },
   );
 
+  it('Google subject 설정이 남아 있어도 가입·로그인으로 승격하지 않고 운영자 CLI로만 관리자 권한을 부여해야 한다', async () => {
+    const subject = 'operator-bootstrap-removed';
+    vi.stubEnv('GF_ADMIN_GOOGLE_SUB', subject);
+    try {
+      const agent = supertest.agent(app.getHttpServer());
+      const signIn = async () => {
+        const start = await agent.get('/api/auth/google').expect(302);
+        await agent
+          .get('/api/auth/google/callback')
+          .query({
+            state: new URL(responseLocation(start)).searchParams.get('state'),
+            code: subject,
+          })
+          .expect(302);
+      };
+      await signIn();
+      await agent
+        .post('/api/auth/onboard')
+        .set('Origin', origin)
+        .send({
+          nickname: '운영자 지정 전',
+          acceptedTerms: true,
+          ageConfirmed: true,
+        })
+        .expect(200);
+      const user = await db.user.findUniqueOrThrow({ where: { googleSubject: subject } });
+      expect(user.role).toBe('USER');
+      await signIn();
+      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).role).toBe('USER');
+      await agent.get(`/api/admin/users/${user.id}`).expect(403);
+      await grantOperatorRole(db, user.id);
+      expect(
+        await db.auditLog.findFirst({ where: { targetId: user.id, action: 'GRANT_ADMIN' } }),
+      ).toMatchObject({ actorId: 'operator:cli' });
+      await signIn();
+      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).role).toBe('ADMIN');
+      await agent.get(`/api/admin/users/${user.id}`).expect(200);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('로그인을 취소하면 선택한 언어의 로그인 화면과 원래 복귀 경로를 보존해야 한다', async () => {
     const agent = supertest.agent(app.getHttpServer());
     const returnTo = '/en/login?returnTo=%2Fen%2Fsettings';
@@ -106,10 +151,10 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
     const callback = await agent
       .get('/api/auth/google/callback')
       .query({
-        state: new URL(start.headers.location).searchParams.get('state'),
+        state: new URL(responseLocation(start)).searchParams.get('state'),
       })
       .expect(302);
-    const cancelled = new URL(callback.headers.location);
+    const cancelled = new URL(responseLocation(callback));
     expect(cancelled.origin).toBe(origin);
     expect(cancelled.pathname).toBe('/en/login');
     expect(cancelled.searchParams.get('returnTo')).toBe('/en/settings');
@@ -133,7 +178,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
 
   it('변조한 복귀 쿠키는 외부로 보내지 않고 한국어 가입 화면의 홈 목적지로 대체해야 한다', async () => {
     const start = await supertest(app.getHttpServer()).get('/api/auth/google').expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const unsafe = '/ja/login?returnTo=https%3A%2F%2Foutside.test';
     const callback = await supertest(app.getHttpServer())
       .get('/api/auth/google/callback')
@@ -143,7 +188,7 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
       ])
       .query({ state, code: 'tampered-return-cookie' })
       .expect(302);
-    const destination = new URL(callback.headers.location);
+    const destination = new URL(responseLocation(callback));
     expect(destination.origin).toBe(origin);
     expect(destination.pathname).toBe('/ko/onboarding');
     expect(destination.searchParams.get('returnTo')).toBe('/ko');

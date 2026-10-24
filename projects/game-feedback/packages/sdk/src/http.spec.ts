@@ -199,9 +199,12 @@ describe('generated REST client response validation', () => {
   });
   it('fills only explicitly allowed missing display fields', async () => {
     const fixture = postFixture();
-    const { nickname: _nickname, ...author } = fixture.post.author;
-    const { answerCount: _answerCount, ...post } = fixture.post;
-    respond({ ...fixture, post: { ...post, author } });
+    const without = (value: object, omitted: string) =>
+      Object.fromEntries(Object.entries(value).filter(([key]) => key !== omitted));
+    respond({
+      ...fixture,
+      post: { ...without(fixture.post, 'answerCount'), author: without(fixture.post.author, 'nickname') },
+    });
     const result = await getPost('post-1');
     expect(result.post.answerCount).toBe(0);
     expect(result.post.author.nickname).toBe('알 수 없는 플레이어');
@@ -243,10 +246,10 @@ describe('generated REST client response validation', () => {
   it('preserves valid game data but rejects false source or ownership claims', async () => {
     const profile = profileFixture();
     respond(profile);
-    expect(await getGameProfile('#GG829JGY')).toEqual(profile);
+    expect(await getGameProfile('GG829JGY')).toEqual(profile);
     for (const patch of [{ source: 'UNKNOWN' }, { verification: 'VERIFIED' }, { trophies: '7000' }]) {
       respond({ ...profile, ...patch });
-      await expect(getGameProfile('#GG829JGY')).rejects.toBeInstanceOf(ApiResponseValidationError);
+      await expect(getGameProfile('GG829JGY')).rejects.toBeInstanceOf(ApiResponseValidationError);
     }
   });
   it('does not turn a failed or empty mutation response into success', async () => {

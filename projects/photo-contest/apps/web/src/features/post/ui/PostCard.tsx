@@ -126,8 +126,13 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
                 className="gap-2 px-3 text-muted"
                 aria-label={`${post.title} 댓글 ${formatCount(post.commentCount)}개`}
                 onClick={() =>
-                  overlay.open(({ isOpen, close, unmount }) => (
-                    <PostCommentsBottomSheet postId={id} isOpen={isOpen} onClose={close} unmount={unmount} />
+                  overlay.open(({ isOpen, close: onClose, unmount }) => (
+                    <PostCommentsBottomSheet
+                      postId={id}
+                      isOpen={isOpen}
+                      onClose={onClose}
+                      unmount={unmount}
+                    />
                   ))
                 }
               >
@@ -136,7 +141,9 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
               </Button>
             </>
           )}
-          {post.mediaUrl ? <PostDownloadButton postId={id} title={post.title} /> : null}
+          {post.mediaUrl ? (
+            <PostDownloadButton postId={id} title={post.title} mediaUrl={post.mediaUrl} />
+          ) : null}
         </div>
         <p className="text-caption text-muted">
           <time dateTime={post.createdAt}>{formatDateTime(post.createdAt)}</time>

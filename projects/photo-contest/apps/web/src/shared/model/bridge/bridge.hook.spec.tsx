@@ -69,7 +69,7 @@ describe('useShareLink', () => {
     bridge = createWebBridge(window);
     const { result } = renderHook(() => useShareLink(), { wrapper: withBridge(bridge) });
     await expect(result.current.share('http://localhost:3000/contests/c1', { title: '결과' })).resolves.toBe(
-      SHARE_OUTCOME.Shared,
+      SHARE_OUTCOME.SharedInApp,
     );
     expect(fake.calls).toEqual([
       { type: 'share.open', payload: { url: 'http://localhost:3000/contests/c1', title: '결과' } },

@@ -6,6 +6,7 @@
  */
 
 export * from './adminReport.zod';
+export * from './adminReportList.zod';
 export * from './answer.zod';
 export * from './answerInput.zod';
 export * from './appExchangeInput.zod';
@@ -27,12 +28,14 @@ export * from './coachingPricing.zod';
 export * from './coachingPricingType.zod';
 export * from './comment.zod';
 export * from './commentInput.zod';
+export * from './commentPage.zod';
 export * from './conversation.zod';
 export * from './conversationInput.zod';
 export * from './conversationList.zod';
 export * from './createAnswerBody.zod';
 export * from './createCategoryBody.zod';
 export * from './createCommentBody.zod';
+export * from './createCommentInput.zod';
 export * from './createConversationBody.zod';
 export * from './createPostBody.zod';
 export * from './createReportBody.zod';
@@ -57,8 +60,9 @@ export * from './listChatMessagesParams.zod';
 export * from './listConversationsParams.zod';
 export * from './listGameAccounts200Item.zod';
 export * from './listNotificationsParams.zod';
+export * from './listPostCommentsParams.zod';
 export * from './listPostsParams.zod';
-export * from './listReports200Item.zod';
+export * from './listReportsParams.zod';
 export * from './listSupportThreads200Item.zod';
 export * from './markHelpfulBody.zod';
 export * from './mediaUploadInput.zod';

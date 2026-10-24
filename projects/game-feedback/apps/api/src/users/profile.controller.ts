@@ -22,6 +22,7 @@ import type { Response } from 'express';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
+import { MediaWorkInterceptor } from '../media-storage/media-work';
 import { AVATAR_LIMIT, ProfileService } from './profile.service';
 
 @Injectable()
@@ -41,7 +42,10 @@ export class ProfileController {
   @Post('profile/avatar')
   @HttpCode(200)
   @UseGuards(ProfileUploadGuard)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: AVATAR_LIMIT, files: 1, fields: 0 } }))
+  @UseInterceptors(
+    MediaWorkInterceptor,
+    FileInterceptor('file', { limits: { fileSize: AVATAR_LIMIT, files: 1, fields: 0 } }),
+  )
   upload(@Req() req: SessionRequest, @UploadedFile() file: unknown) {
     return this.profile.upload(req, file);
   }

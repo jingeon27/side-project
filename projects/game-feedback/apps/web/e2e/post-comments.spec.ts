@@ -10,7 +10,7 @@ test('public comments identify the post author and remain readable on mobile and
   browser,
 }) => {
   const detail = (await (await page.request.get('/api/posts/sample-post-0')).json()) as PostDetail;
-  const ownComment = detail.comments.find((comment) => comment.author.id === detail.post.author.id);
+  const ownComment = detail.comments.find((comment) => comment.author?.id === detail.post.author.id);
   if (!ownComment) throw new Error('The public fixture must include a comment from the post author.');
   await page.goto('/ko/posts/sample-post-0');
   const comments = page.getByRole('region', { name: /^댓글/ });

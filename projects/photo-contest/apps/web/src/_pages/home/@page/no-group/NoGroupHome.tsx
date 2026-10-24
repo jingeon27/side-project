@@ -36,7 +36,7 @@ export function NoGroupHome({ signedIn = false }: { signedIn?: boolean }) {
             더보기
           </ButtonLink>
         </div>
-        <AsyncBoundary onRetry={refetch} fallback={<Skeleton className="h-48 w-full" />}>
+        <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-48 w-full" />}>
           <PublicGroups queryRef={queryRef} />
         </AsyncBoundary>
         {signedIn ? (

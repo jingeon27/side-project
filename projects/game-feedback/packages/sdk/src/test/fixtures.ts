@@ -62,6 +62,7 @@ export function postFixture(): PostDetail {
       },
     ],
     comments: [],
+    commentsCursor: null,
   };
 }
 export function messagesFixture(): ChatMessageList {

@@ -141,6 +141,8 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 
 입력용 팝업은 핸들로 높이를 조절하는 공통 BottomSheet, 삭제와 차단처럼 버튼만 있는 확인은 중앙 모달을 사용한다. 별도 글쓰기 경로와 검색·채팅의 본문 입력은 각 화면에 유지한다.
 
+댓글에는 한 단계의 답글을 남길 수 있다. 원댓글 작성자와 게시글 작성자에게 중복·본인 알림을 제외해 답글 알림을 보내며 알림을 누르면 해당 답글 위치로 이동해 읽음 처리한다. 삭제된 원댓글은 공개 답글이 남아 있을 때만 익명 안내로 표시하고 차단·숨김 스레드는 제외한다.
+
 ## 명령
 
 모든 명령은 저장소 루트에서 실행한다.
@@ -148,14 +150,14 @@ X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider
 | 명령 뒤의 작업                                                                   | 실행 내용                                                                         |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 현재 Prisma 스키마 적용, 카테고리 seed         |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile 타입 및 Web·Mobile FSD lint 검사 위임              |
+| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile/Admin 타입, API·패키지·스크립트와 각 앱 lint 위임  |
 | `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트     |
 | `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 데모/테스트 토큰/프로덕션 프리패칭·Mobile Playwright 테스트 |
 | `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                       |
 | `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
 | `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
 | `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
-| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push --skip-generate`                              |
+| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push`                                              |
 
 API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
 
@@ -215,7 +217,7 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
-공개 게시글 상세는 `cacheTag`와 `cacheLife('max')`를 사용하며, NestJS에서 변경을 커밋한 뒤 Next.js의 `POST /_internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`로 만료한다. 실패한 콜백은 같은 트랜잭션에 저장한 DB 큐에서 재시도한다. 로컬 `dev` 명령은 Web/API가 공유하는 임시 비밀을 생성한다. 따로 실행한다면 두 프로세스에 같은 `GF_CACHE_REVALIDATION_SECRET`(32자 이상), API에 `GF_CACHE_REVALIDATION_URL=http://localhost:3300/_internal/cache/revalidate`를 설정한다. 운영은 `deploy/shared-instance/service.env.example`의 비밀을 `openssl rand -hex 32`로 생성해 서비스 `.env`에 저장한다. Compose가 양쪽에 비밀과 내부 콜백 주소를 전달하며 새 `CacheInvalidation` migration도 적용해야 한다. 자세한 동작과 검증은 [구현 기록](docs/implementation.md)을 참고한다.
+공개 게시글 상세는 `cacheTag`와 `cacheLife('max')`를 사용하며, NestJS에서 변경을 커밋한 뒤 Next.js의 `POST /internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`로 만료한다. 실패한 콜백은 같은 트랜잭션에 저장한 DB 큐에서 재시도한다. 로컬 `dev` 명령은 Web/API가 공유하는 임시 비밀을 생성한다. 따로 실행한다면 두 프로세스에 같은 `GF_CACHE_REVALIDATION_SECRET`(32자 이상), API에 `GF_CACHE_REVALIDATION_URL=http://localhost:3300/internal/cache/revalidate`를 설정한다. 운영은 `deploy/shared-instance/service.env.example`의 비밀을 `openssl rand -hex 32`로 생성해 서비스 `.env`에 저장한다. Compose가 양쪽에 비밀과 내부 콜백 주소를 전달하며 새 `CacheInvalidation` migration도 적용해야 한다. 자세한 동작과 검증은 [구현 기록](docs/implementation.md)을 참고한다.
 
 `corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
 
@@ -223,7 +225,7 @@ Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial
 
 관리자 실행·로그인·검증 절차는 [Admin README](apps/admin/README.md)를 참고한다. 운영 배포 준비 요청 이후 최초 migration을 포함하며 운영은 `migrate deploy`, 로컬은 전용 URL 가드를 거친 `db:sync`를 사용한다. 기존 로컬 DB를 초기화하거나 최초 migration을 중복 적용하지 않는다.
 
-Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS PostgreSQL과 서비스별 S3 버킷을 사용한다. Docker/HTTPS, GitHub Actions CD, DB 권한 분리와 복구 절차는 [공통 운영 가이드](../../deploy/shared-instance/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다. 이전 Lightsail 구성은 단독 컨테이너 회귀 테스트용으로 보존한다.
+Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS PostgreSQL과 서비스별 S3 버킷을 사용한다. Docker/HTTPS, GitHub Actions CD, DB 권한 분리와 복구 절차는 [공통 운영 가이드](../../deploy/shared-instance/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다.
 
 API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
 

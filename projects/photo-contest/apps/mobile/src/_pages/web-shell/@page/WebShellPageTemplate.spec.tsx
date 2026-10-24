@@ -78,8 +78,9 @@ describe('WebShellPageTemplate', () => {
     expect(props.originWhitelist).toEqual(['*']);
     expect(props).toMatchObject({
       setSupportMultipleWindows: false,
-      sharedCookiesEnabled: true,
+      sharedCookiesEnabled: false,
       thirdPartyCookiesEnabled: true,
+      allowsInlineMediaPlayback: true,
       allowsBackForwardNavigationGestures: true,
       pullToRefreshEnabled: true,
       webviewDebuggingEnabled: true,
@@ -352,7 +353,7 @@ describe('WebShellPageTemplate', () => {
 
     act(() => {
       handleUrl?.({ url: 'photocontest://invite/token_1' });
-      handleUrl?.({ url: 'photocontest://auth/callback?code=abcdefghijklmnop' });
+      handleUrl?.({ url: `${WEB_ORIGIN}/app-auth/callback?code=abcdefghijklmnop` });
       handleUrl?.({ url: `${WEB_ORIGIN}/groups/2` });
     });
 
@@ -372,7 +373,7 @@ describe('WebShellPageTemplate', () => {
 
     act(() => {
       handleUrl?.({ url: 'photocontest://invite/secret_token' });
-      handleUrl?.({ url: 'photocontest://auth/callback?code=abcdefghijklmnop' });
+      handleUrl?.({ url: `${WEB_ORIGIN}/app-auth/callback?code=abcdefghijklmnop` });
       handleUrl?.({ url: `${WEB_ORIGIN}/contests/cm1contest01` });
     });
 

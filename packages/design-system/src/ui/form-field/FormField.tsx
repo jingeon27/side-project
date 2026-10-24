@@ -1,13 +1,19 @@
 'use client';
 
-import { Children, cloneElement, isValidElement, useId, type AriaAttributes, type ReactNode } from 'react';
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useId,
+  useMemo,
+  type AriaAttributes,
+  type ReactNode,
+} from 'react';
 
 import { cn } from '../../lib/cn.helper';
-import { Input } from '../input/Input';
-import { NativeSelect } from '../native-select/NativeSelect';
-import { Textarea } from '../textarea/Textarea';
+import { FormFieldContext, getFieldAria, type IFormFieldContext } from './form-field-context';
 
-const fieldControls = new Set<unknown>(['input', 'textarea', 'select', Input, Textarea, NativeSelect]);
+const nativeControls = new Set<unknown>(['input', 'textarea', 'select']);
 
 export interface IFormFieldProps {
   label: string;
@@ -17,39 +23,45 @@ export interface IFormFieldProps {
   className?: string;
 }
 
-/** 기존 native label 폼을 유지하면서 입력·도움말·오류를 연결한다. */
+/**
+ * 기존 native label 폼을 유지하면서 입력·도움말·오류를 연결한다.
+ * Input·Textarea·NativeSelect는 위치와 관계없이 context로 연결하고, context를 읽지 못하는 native 요소는 직접 자식일 때 연결한다.
+ */
 export function FormField({ label, children, hint, error, className }: IFormFieldProps) {
   const id = useId();
-  const labelId = `${id}-label`;
-  const hintId = `${id}-hint`;
-  const errorId = `${id}-error`;
+  const hasHint = Boolean(hint);
+  const invalid = Boolean(error);
+  const field = useMemo<IFormFieldContext>(
+    () => ({
+      labelId: `${id}-label`,
+      hintId: hasHint ? `${id}-hint` : undefined,
+      errorId: invalid ? `${id}-error` : undefined,
+      invalid,
+    }),
+    [id, hasHint, invalid],
+  );
   const controls = Children.map(children, (child) => {
-    if (!isValidElement<AriaAttributes>(child)) return child;
-    if (!fieldControls.has(child.type)) return child;
-    const describedBy = [child.props['aria-describedby'], hint && hintId, error && errorId]
-      .filter(Boolean)
-      .join(' ');
-    return cloneElement(child, {
-      'aria-labelledby': child.props['aria-label'] ? child.props['aria-labelledby'] : labelId,
-      'aria-describedby': describedBy || undefined,
-      'aria-invalid': error ? true : child.props['aria-invalid'],
-    });
+    if (!isValidElement<AriaAttributes & { type?: string }>(child)) return child;
+    if (!nativeControls.has(child.type) || child.props.type === 'hidden') return child;
+    return cloneElement(child, getFieldAria(field, child.props));
   });
 
   return (
-    <label className={cn('ds-form-field flex flex-col gap-1.5 text-label text-ink', className)}>
-      <span id={labelId}>{label}</span>
-      {controls}
-      {hint ? (
-        <small id={hintId} className="text-caption text-muted">
-          {hint}
-        </small>
-      ) : null}
-      {error ? (
-        <small id={errorId} role="alert" className="text-caption text-danger">
-          {error}
-        </small>
-      ) : null}
-    </label>
+    <FormFieldContext.Provider value={field}>
+      <label className={cn('ds-form-field flex flex-col gap-1.5 text-label text-ink', className)}>
+        <span id={field.labelId}>{label}</span>
+        {controls}
+        {hint ? (
+          <small id={field.hintId} className="text-caption text-muted">
+            {hint}
+          </small>
+        ) : null}
+        {error ? (
+          <small id={field.errorId} role="alert" className="text-caption text-danger">
+            {error}
+          </small>
+        ) : null}
+      </label>
+    </FormFieldContext.Provider>
   );
 }

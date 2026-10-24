@@ -1,8 +1,8 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import type { FileUpload } from 'graphql-upload/processRequest.mjs';
 
 import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
 import { PostModerationService } from './post-moderation.service';
 import { PostService } from './post.service';
 
@@ -41,25 +41,33 @@ export class PostResolver {
     return this.posts.listPublic(viewer, query);
   }
   @Query()
+  myGalleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
+    return this.posts.listMine(viewer, query);
+  }
+  @Query()
   galleryPosts(@OptionalViewer() viewer: IViewer | null, @Args() query: Parameters<PostService['list']>[1]) {
     return this.posts.list(viewer, query);
   }
   @Mutation()
-  uploadPostMedia(
+  requestPostUpload(
     @Viewer() viewer: IViewer,
-    @Args('uploadId') uploadId: string,
-    @Args('file') file: Promise<FileUpload>,
+    @Args('groupId') groupId: string,
+    @Args('contentType') contentType: string,
+    @Args('byteSize') byteSize: number,
   ) {
-    return this.posts.uploadFile(viewer, uploadId, file);
-  }
-
-  @Mutation()
-  requestPostUpload(@Viewer() viewer: IViewer, @Args('groupId') groupId: string) {
-    return this.posts.requestUpload(viewer, groupId);
+    return this.posts.requestUpload(viewer, groupId, contentType, byteSize);
   }
   @Mutation()
-  createPost(@Viewer() viewer: IViewer, @Args() input: Parameters<PostService['create']>[1]) {
-    return this.posts.create(viewer, input);
+  completePostUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {
+    return this.posts.completeUpload(viewer, uploadId);
+  }
+  @Mutation()
+  createPost(
+    @Viewer() viewer: IViewer,
+    @Args() input: Parameters<PostService['create']>[1],
+    @ClientAddress() address: string | null,
+  ) {
+    return this.posts.create(viewer, input, address);
   }
   @Mutation()
   likePost(@Viewer() viewer: IViewer, @Args('postId') id: string) {

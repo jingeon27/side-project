@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 
 import { WEB_ORIGIN } from './support/env';
 import { productRequest, seedPost } from './support/photos';
-import { authenticate, expect, seedGroup, test } from './support/test';
+import { authenticate, expect, seedGroup, test, waitForHydrationOnLoad } from './support/test';
 
 test(
   '공개 그룹은 링크 없이 탐색하고 로그인 없이 사진·댓글·SEO를 읽을 수 있어야 한다',
@@ -144,6 +144,8 @@ test(
     const robots = await request.get('/robots.txt');
     expect(await robots.text()).toContain(`Sitemap: ${WEB_ORIGIN}/sitemap.xml`);
     expect((await request.get('/sitemaps/groups/invalid.xml')).status()).toBe(404);
+    // 색인에 없는 번호는 실제 페이지 수를 넘으므로 조회하지 않고 404다.
+    expect((await request.get(`/sitemaps/groups/${index.length + 1000}.xml`)).status()).toBe(404);
     const missing = await request.get('/groups/missing-seo-group', {
       headers: { 'User-Agent': 'Twitterbot' },
     });
@@ -176,7 +178,7 @@ test(
     const errors: string[] = [];
     try {
       const applicant = await authenticate(applicantContext, nickname);
-      const applicantPage = await applicantContext.newPage();
+      const applicantPage = waitForHydrationOnLoad(await applicantContext.newPage());
       applicantPage.on('pageerror', (error) => errors.push(error.message));
       await applicantPage.goto(groupPath);
       await expect(applicantPage.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
@@ -184,7 +186,8 @@ test(
       await expect(
         applicantPage.getByRole('button', { name: '가입 승인 대기 중', exact: true }),
       ).toBeDisabled();
-      expect((await applicantPage.request.get(`/backend/media/${postId}`)).status()).toBe(403);
+      // 승인 전에는 비공개 그룹의 게시물 파일이 있는지도 알리지 않는다.
+      expect((await applicantPage.request.get(`/backend/media/${postId}`)).status()).toBe(404);
       const before = await productRequest<{ myGroups: Array<{ id: string }> }>(applicant, '{myGroups{id}}');
       expect(before.myGroups.map((group) => group.id)).not.toContain(groupId);
       const requests = page.getByRole('region', { name: '가입 신청 관리' });

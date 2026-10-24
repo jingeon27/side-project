@@ -31,7 +31,13 @@ beforeEach(() => {
     join(state.root, '.env'),
     'RDS_REGION=ap-northeast-2\nRDS_INSTANCE_ID=shared\nRDS_HOST=shared.abcdef.ap-northeast-2.rds.amazonaws.com\n',
   );
-  writeFileSync(join(state.root, 'bin/docker'), '#!/bin/sh\ncat "$PITR_FIXTURE"\n', { mode: 0o700 });
+  writeFileSync(
+    join(state.root, 'bin/docker'),
+    '#!/bin/sh\nprintf "%s\\n" "$@" >"$PITR_FIXTURE.args"\ncat "$PITR_FIXTURE"\n',
+    {
+      mode: 0o700,
+    },
+  );
 });
 afterEach(() => rmSync(state.root, { recursive: true, force: true }));
 const execute = (response: ReturnType<typeof valid>) => {
@@ -55,6 +61,21 @@ describe('RDS 공급자 복구 지점 검증', () => {
       instanceArn: response.DBInstances[0]?.DBInstanceArn,
     });
     expect(result.stdout).toContain('not a database restore drill');
+  });
+  it('aws-cli는 digest로 고정한 이미지를 host 네트워크에서 권한 없이 실행해야 한다', () => {
+    expect(execute(valid()).status).toBe(0);
+    const args = readFileSync(join(state.root, 'response.json.args'), 'utf8').trim().split('\n');
+    expect(args.slice(0, 8)).toEqual([
+      'run',
+      '--rm',
+      '--network',
+      'host',
+      '--cap-drop',
+      'ALL',
+      '--security-opt',
+      'no-new-privileges:true',
+    ]);
+    expect(args[8]).toMatch(/^amazon\/aws-cli:\d+\.\d+\.\d+@sha256:[0-9a-f]{64}$/);
   });
   it.each([
     { BackupRetentionPeriod: 1 },

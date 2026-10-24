@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useReadConversationMutation } from '@/features/chat';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { readConversationMutationOptions } from '@/features/chat';
 
 interface IVisibleReadOptions {
   userId: string;
@@ -15,8 +17,9 @@ export function useVisibleRead({
   visibleBoundary,
   unavailable,
 }: IVisibleReadOptions) {
+  const client = useQueryClient();
   const [active, setActive] = useState(true);
-  const mutation = useReadConversationMutation(userId, conversationId);
+  const mutation = useMutation(readConversationMutationOptions(client, userId, conversationId));
   const { mutate, variables } = mutation;
 
   useEffect(() => {

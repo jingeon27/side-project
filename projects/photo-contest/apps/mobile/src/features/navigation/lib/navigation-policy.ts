@@ -86,15 +86,17 @@ export function decideNavigation(
   if (BLANK_DOCUMENT.test(url)) return ALLOW;
   const scheme = url.match(SCHEME)?.[1]?.toLowerCase();
   if (!scheme) return BLOCK;
-  if (scheme === options.appScheme.toLowerCase()) {
-    const path = toWebPath(url, options);
-    return path ? { action: 'open-in-web', path } : BLOCK;
-  }
   if (scheme === 'http' || scheme === 'https') {
     if (originOf(url) === originOf(options.webOrigin)) return ALLOW;
     // 다른 origin iframe은 앱 문서를 바꾸지 않고, 브리지는 메시지를 보낸 프레임의 origin을 따로 검사한다.
     if (isTopFrame === false) return ALLOW;
     return { action: 'open-external', url, fallbackUrl: null };
+  }
+  // 하위 프레임(외부 임베드)은 사용자 동작 없이도 이동할 수 있으므로 앱 이동·외부 앱 열기를 맡기지 않는다.
+  if (isTopFrame === false) return BLOCK;
+  if (scheme === options.appScheme.toLowerCase()) {
+    const path = toWebPath(url, options);
+    return path ? { action: 'open-in-web', path } : BLOCK;
   }
   if (BLOCKED_SCHEMES.has(scheme)) return BLOCK;
   if (scheme === 'intent') return decideIntent(url, options);

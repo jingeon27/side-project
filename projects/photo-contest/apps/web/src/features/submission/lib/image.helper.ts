@@ -1,4 +1,4 @@
-/** 업로드 전에 줄일 긴 변. 서버는 다시 1600px WebP로 바꾸므로 이보다 크게 보낼 필요가 없다. */
+/** 브라우저에서 전송량을 줄일 긴 변. 게시물 서버는 사진을 다시 인코딩하지 않는다. */
 export const UPLOAD_MAX_SIDE = 2048;
 export const UPLOAD_JPEG_QUALITY = 0.9;
 /** 서버가 받는 원본 크기 상한. 브라우저가 줄이지 못한 원본에만 적용한다. */
@@ -69,7 +69,7 @@ function keepOriginal(file: File): IPreparedImage {
 
 /**
  * 올리기 전에 긴 변 2048px 이하 JPEG로 다시 그린다(방향을 바로잡고 위치 정보 같은 메타데이터를 버린다).
- * 브라우저가 디코드하지 못하면 서버가 받는 형식(JPEG/PNG/WebP)의 원본만 그대로 보낸다. 최종 검증·변환은 서버가 한다.
+ * 브라우저가 디코드하지 못하면 지원 형식(JPEG/PNG/WebP)의 원본을 보낸다. 이 경우 메타데이터도 남는다.
  */
 export async function prepareUploadImage<TImage extends IDecodedImage>(
   file: File,

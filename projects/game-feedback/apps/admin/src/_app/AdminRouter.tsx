@@ -1,14 +1,17 @@
+import { lazy } from 'react';
+
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { match } from 'ts-pattern';
 
 import { LoginPage } from '@/_pages/login';
-import { ReportsPage } from '@/_pages/reports';
-import { SupportPage } from '@/_pages/support';
-import { UsersPage } from '@/_pages/users';
 import { sessionOptions } from '@/features/auth';
 import { useAdminRoute } from '@/shared/lib';
 import { AsyncBoundary } from '@/shared/ui';
 import { AdminShell } from '@/widgets/admin-shell';
+
+const ReportsPage = lazy(() => import('@/_pages/reports').then((page) => ({ default: page.ReportsPage })));
+const SupportPage = lazy(() => import('@/_pages/support').then((page) => ({ default: page.SupportPage })));
+const UsersPage = lazy(() => import('@/_pages/users').then((page) => ({ default: page.UsersPage })));
 
 export function AdminRouter() {
   const { data: session } = useSuspenseQuery(sessionOptions());
@@ -19,7 +22,7 @@ export function AdminRouter() {
       <AsyncBoundary key={route.tab}>
         {match(route.tab)
           .with('support', () => <SupportPage threadId={route.threadId} />)
-          .with('reports', () => <ReportsPage />)
+          .with('reports', () => <ReportsPage status={route.reportStatus} />)
           .with('users', () => <UsersPage userId={route.userId} />)
           .exhaustive()}
       </AsyncBoundary>

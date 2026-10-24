@@ -92,7 +92,7 @@ export function GroupLeaderboard({ groupId, viewerId }: { groupId: string; viewe
       <AsyncBoundary
         resetKey={groupId}
         errorTitle="그룹 순위를 불러오지 못했어요"
-        onRetry={refetch}
+        onRetry={() => refetch()}
         fallback={
           <div role="status" aria-label="그룹 순위를 불러오는 중" className="flex flex-col gap-2">
             <Skeleton className="h-14 w-full" />

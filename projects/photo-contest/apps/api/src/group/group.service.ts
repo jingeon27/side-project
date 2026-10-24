@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
-import { groupBy, mapValues } from 'es-toolkit';
+import { groupBy, keyBy, mapValues, uniq } from 'es-toolkit';
 
-import type { Group, Prisma } from '../../generated/prisma';
+import type { Group, GroupCategory, Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
@@ -12,9 +12,18 @@ import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
-import { GROUP_DESCRIPTION_LIMIT, PAGE_SIZE_DEFAULT, TEXT_LIMIT } from '../config/limits';
+import {
+  GROUP_CONTEST_HISTORY,
+  GROUP_DESCRIPTION_LIMIT,
+  LEADERBOARD_LIMIT,
+  PAGE_SIZE_DEFAULT,
+  TEXT_LIMIT,
+} from '../config/limits';
+import { CONTEST_FORMAT } from '../contest/group-contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
+import { GroupCategoryService } from './group-category.service';
 import { GROUP_ROLE, toGroupRole, type TGroupRole } from './group-role';
 import { GROUP_VISIBILITY, toGroupVisibility, type TGroupVisibility } from './group-visibility';
 import { buildLeaderboard, type ILeaderboardEntry } from './leaderboard';
@@ -51,6 +60,8 @@ export interface IGroupNode {
   inviteToken: string | null;
   /** 같은 목록(myGroups)의 그룹들과 한 번에 불러온다. */
   loadMembers: () => Promise<IMemberView[]>;
+  /** 게시물을 볼 수 있는 그룹만, 같은 목록의 그룹들과 한 번에 불러온다. */
+  loadCategories: () => Promise<GroupCategory[]>;
 }
 
 export interface IInvitePreview {
@@ -68,12 +79,19 @@ interface IGroupWithRole {
   joinRequestPending?: boolean;
 }
 
+/** 공개 그룹이거나 승인된 멤버면 게시물·카테고리를 볼 수 있다. */
+function canViewPosts({ group, role }: IGroupWithRole) {
+  return group.visibility === GROUP_VISIBILITY.PUBLIC || Boolean(role);
+}
+
 @Injectable()
 export class GroupService {
   constructor(
     private readonly db: Database,
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
+    private readonly categories: GroupCategoryService,
+    private readonly limits: RateLimitService,
   ) {}
 
   async myGroups(viewer: IViewer): Promise<IGroupNode[]> {
@@ -138,10 +156,12 @@ export class GroupService {
     name: unknown,
     visibility: TGroupVisibility = GROUP_VISIBILITY.PUBLIC,
     description?: string | null,
+    address: string | null = null,
   ): Promise<IGroupNode> {
     const validName = textValue(name, TEXT_LIMIT.GROUP_NAME, '그룹 이름');
     const validDescription = description?.trim() ?? '';
     if (validDescription.length > GROUP_DESCRIPTION_LIMIT) fail('그룹 소개는 500자 이하로 입력해 주세요.');
+    await this.limits.consume('GROUP_CREATE', { userId: viewer.id, address });
     const inviteToken = randomToken();
     const group = await this.transactions.atomic(async (tx) => {
       const created = await (tx ?? this.db).group.create({
@@ -171,12 +191,17 @@ export class GroupService {
   }
 
   /** 이미 멤버면 역할을 바꾸지 않고 그대로 돌려준다. */
-  async joinGroup(viewer: IViewer, token: unknown): Promise<IGroupNode> {
+  async joinGroup(viewer: IViewer, token: unknown, address: string | null = null): Promise<IGroupNode> {
     const group = await this.groupByInvite(token);
-    return this.requestMembership(viewer, group.id);
+    return this.requestMembership(viewer, group.id, address);
   }
 
-  async requestMembership(viewer: IViewer, groupId: string): Promise<IGroupNode> {
+  async requestMembership(
+    viewer: IViewer,
+    groupId: string,
+    address: string | null = null,
+  ): Promise<IGroupNode> {
+    await this.limits.consume('JOIN_REQUEST', { userId: viewer.id, address });
     await this.transactions.atomic(async (tx) => {
       const group = await (tx ?? this.db).group.findUnique({ where: { id: groupId } });
       if (!group) fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
@@ -192,12 +217,14 @@ export class GroupService {
         return;
       }
       // 같은 사용자의 동시 가입도 PK로 한 행만 남긴다.
-      await (tx ?? this.db).groupMember.createMany({
+      const joined = await (tx ?? this.db).groupMember.createMany({
         data: [{ groupId: group.id, userId: viewer.id }],
         skipDuplicates: true,
       });
+      if (joined.count !== 1) return;
+      // 나갔다가 다시 가입할 수 있으므로 가입마다 새 id로 기록한다.
       await recordEvent(tx ?? this.db, {
-        id: `joined:${group.id}:${viewer.id}`,
+        id: `joined:${group.id}:${viewer.id}:${randomUUID()}`,
         type: ANALYTICS_EVENT.GROUP_JOINED,
         userId: viewer.id,
         properties: { groupId: group.id },
@@ -207,7 +234,7 @@ export class GroupService {
     return this.group(viewer, groupId);
   }
 
-  /** 관리자만. 이전 토큰은 가입·미리보기 모두 NOT_FOUND가 된다. */
+  /** 그룹장(OWNER)만. 이전 토큰은 가입·미리보기 모두 NOT_FOUND가 된다. */
   async regenerateInviteLink(viewer: IViewer, groupId: string): Promise<IGroupNode> {
     const member = await this.membership.requireOwner(viewer.id, groupId);
     const inviteToken = randomToken();
@@ -250,24 +277,37 @@ export class GroupService {
     };
   }
 
-  /** 종료된 대회(endsAt <= now)의 숨기지 않은 사진만 집계한다. */
+  /**
+   * 최근 종료된(endsAt <= now) 기존 대회 50개의 숨기지 않은 사진만 집계해 상위 100명을 돌려준다.
+   * 표·좋아요 수는 DB가 사진마다 세고, 작성자 공개 정보는 한 번에 따로 읽는다.
+   */
   async leaderboard(groupId: string, now = new Date()): Promise<ILeaderboardEntry<IUserView>[]> {
-    const rows = await this.db.submission.findMany({
-      where: { hidden: false, contest: { groupId, endsAt: { lte: now } } },
-      select: {
-        contestId: true,
-        author: { select: USER_VIEW_SELECT },
-        _count: { select: { votes: true, likes: true } },
-      },
+    const contests = await this.db.contest.findMany({
+      where: { groupId, format: CONTEST_FORMAT.LEGACY, endsAt: { lte: now } },
+      select: { id: true },
+      orderBy: [{ endsAt: 'desc' }, { id: 'desc' }],
+      take: GROUP_CONTEST_HISTORY,
     });
-    return buildLeaderboard(
-      rows.map((row) => ({
-        contestId: row.contestId,
-        user: row.author,
-        voteCount: row._count.votes,
-        likeCount: row._count.likes,
-      })),
+    if (!contests.length) return [];
+    const rows = await this.db.submission.findMany({
+      where: { hidden: false, contestId: { in: contests.map(({ id }) => id) } },
+      select: { contestId: true, authorId: true, _count: { select: { votes: true, likes: true } } },
+    });
+    const users = keyBy(
+      await this.db.user.findMany({
+        where: { id: { in: uniq(rows.map((row) => row.authorId)) } },
+        select: USER_VIEW_SELECT,
+      }),
+      (user) => user.id,
     );
+    const entries = buildLeaderboard(
+      rows.flatMap((row) => {
+        const user = users[row.authorId];
+        if (!user) return [];
+        return [{ contestId: row.contestId, user, voteCount: row._count.votes, likeCount: row._count.likes }];
+      }),
+    );
+    return entries.slice(0, LEADERBOARD_LIMIT);
   }
 
   private async groupByInvite(token: unknown) {
@@ -291,12 +331,12 @@ export class GroupService {
   }
 
   private toNode(row: IGroupWithRole): IGroupNode {
-    return this.node(row, this.membersLoader([row]));
+    return this.toNodes([row])[0] ?? fail('그룹을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
   }
 
   private toNodes(rows: readonly IGroupWithRole[]): IGroupNode[] {
-    const loadMembers = this.membersLoader(rows);
-    return rows.map((row) => this.node(row, loadMembers));
+    const loaders = { members: this.membersLoader(rows), categories: this.categoriesLoader(rows) };
+    return rows.map((row) => this.node(row, loaders));
   }
 
   private membersLoader(rows: readonly IGroupWithRole[]) {
@@ -307,10 +347,24 @@ export class GroupService {
     );
   }
 
+  // 익명 discoverGroups(limit 48)에서도 그룹마다 카테고리를 따로 조회하지 않도록 목록 단위로 묶는다.
+  private categoriesLoader(rows: readonly IGroupWithRole[]) {
+    return siblingLoader(
+      rows.filter(canViewPosts).map((row) => row.group.id),
+      (ids) => this.categories.activeOf(ids),
+      [],
+    );
+  }
+
   private node(
-    { group, role, joinRequestPending = false }: IGroupWithRole,
-    loadMembers: (groupId: string) => Promise<IMemberView[]>,
+    row: IGroupWithRole,
+    loaders: {
+      members: (groupId: string) => Promise<IMemberView[]>;
+      categories: (groupId: string) => Promise<GroupCategory[]>;
+    },
   ): IGroupNode {
+    const { group, role, joinRequestPending = false } = row;
+    const viewable = canViewPosts(row);
     return {
       id: group.id,
       name: group.name,
@@ -319,10 +373,11 @@ export class GroupService {
       role: role ? toGroupRole(role) : null,
       visibility: toGroupVisibility(group.visibility),
       memberCount: group._count.members,
-      canViewPosts: group.visibility === GROUP_VISIBILITY.PUBLIC || Boolean(role),
+      canViewPosts: viewable,
       joinRequestPending,
       inviteToken: role ? group.inviteToken : null,
-      loadMembers: () => (role ? loadMembers(group.id) : Promise.resolve([])),
+      loadMembers: () => (role ? loaders.members(group.id) : Promise.resolve([])),
+      loadCategories: () => (viewable ? loaders.categories(group.id) : Promise.resolve([])),
     };
   }
 }

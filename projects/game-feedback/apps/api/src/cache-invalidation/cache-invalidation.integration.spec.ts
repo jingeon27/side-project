@@ -17,6 +17,7 @@ import {
 
 import { createApp, type AppOptions } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 import { CacheInvalidationService } from './cache-invalidation.service';
@@ -80,7 +81,7 @@ describe.skipIf(!target)('transactional cache invalidation with deployed migrati
       },
     );
     if (migration.status !== 0) throw new Error('Cache invalidation migration setup failed.');
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, true);
     server = createServer(async (req, res) => {
       let body = '';
@@ -112,7 +113,7 @@ describe.skipIf(!target)('transactional cache invalidation with deployed migrati
       webOrigin: origin,
       demoMode: true,
       rateLimit: false,
-      cacheRevalidation: { url: `http://127.0.0.1:${address.port}/_internal/cache/revalidate`, secret },
+      cacheRevalidation: { url: `http://127.0.0.1:${address.port}/internal/cache/revalidate`, secret },
     };
     app = await createApp(options);
     cache = app.get(CacheInvalidationService);

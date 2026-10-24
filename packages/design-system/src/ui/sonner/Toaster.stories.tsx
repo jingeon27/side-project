@@ -9,7 +9,7 @@ import { Toaster } from './Toaster';
 function ToasterExample(args: ComponentProps<typeof Toaster>) {
   const toasterId = useId();
 
-  function showProgress() {
+  function handleShowProgress() {
     const request = new Promise<void>((resolve) => {
       window.setTimeout(resolve, 1200);
     });
@@ -46,7 +46,7 @@ function ToasterExample(args: ComponentProps<typeof Toaster>) {
         >
           오류
         </Button>
-        <Button variant="secondary" onClick={showProgress}>
+        <Button variant="secondary" onClick={handleShowProgress}>
           저장 진행 상태
         </Button>
         <Button

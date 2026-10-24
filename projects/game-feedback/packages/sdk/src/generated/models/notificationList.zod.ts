@@ -12,6 +12,11 @@ export const notificationListItemsItemPostIdMax = 100;
 
 export const notificationListItemsItemAnswerIdOneMax = 100;
 
+export const notificationListItemsItemCommentIdOneMax = 100;
+
+export const notificationListItemsItemActorOneIdMax = 100;
+
+
 
 export const notificationListItemsItemReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 export const notificationListItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
@@ -23,10 +28,19 @@ export const notificationListUnreadCountMax = 9007199254740991;
 export const NotificationList = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string().min(1).max(notificationListItemsItemIdMax),
-  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'FOLLOWED_POST']),
+  "type": zod.enum(['ANSWER', 'HELPFUL', 'COMMENT', 'COMMENT_REPLY', 'FOLLOWED_POST']),
   "postId": zod.string().min(1).max(notificationListItemsItemPostIdMax),
   "answerId": zod.union([zod.string().min(1).max(notificationListItemsItemAnswerIdOneMax),zod.null()]),
-  "message": zod.string().min(1),
+  "commentId": zod.union([zod.string().min(1).max(notificationListItemsItemCommentIdOneMax),zod.null()]).optional(),
+  "actor": zod.union([zod.object({
+  "id": zod.string().min(1).max(notificationListItemsItemActorOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),zod.null()]),
+  "postTitle": zod.string().min(1),
   "readAt": zod.union([zod.iso.datetime({"offset":true}).regex(notificationListItemsItemReadAtOneRegExp),zod.null()]),
   "createdAt": zod.iso.datetime({"offset":true}).regex(notificationListItemsItemCreatedAtRegExp)
 })),

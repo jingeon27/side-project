@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { contestSchedule, createGroup } from '../../test/support/fixtures';
 import { CAST_POST_VOTE, createEntry, moveGroupContest } from '../../test/support/group-contest';
+import * as monitoring from '../monitoring/sentry';
 
 const CREATE =
   'mutation($groupId:ID!,$startsAt:DateTime!,$submissionEndsAt:DateTime!,$endsAt:DateTime!,$likeLimit:Int){createGroupContest(groupId:$groupId,title:"좋아요 한도 대회",startsAt:$startsAt,submissionEndsAt:$submissionEndsAt,endsAt:$endsAt,likeLimit:$likeLimit){id likeLimit}}';
@@ -66,9 +67,9 @@ describe('대회별 1인당 게시물 좋아요 한도', () => {
 
   it('사용자·대회별로 독립 집계하고 일반 게시물은 제한하지 않아야 한다', async () => {
     const event = await contest(2);
-    const entries = await Promise.all(
-      Array.from({ length: 3 }, () => createEntry(api, owner, groupId, event.id)),
-    );
+    // 같은 사용자의 동시 게시는 직렬화 충돌로 거절될 수 있어, 집계만 보는 이 사양은 차례로 만든다.
+    const entries = [];
+    for (let i = 0; i < 3; i++) entries.push(await createEntry(api, owner, groupId, event.id));
     for (const entry of entries.slice(0, 2)) await api.gqlOk(member.cookie, LIKE, { id: entry.id });
     expect((await api.gqlFail(member.cookie, LIKE, { id: entries[2]!.id })).message).toContain(
       '2개 작품까지만',
@@ -92,13 +93,17 @@ describe('대회별 1인당 게시물 좋아요 한도', () => {
     const event = await contest();
     const entries = [];
     for (let i = 0; i < 8; i++) entries.push(await createEntry(api, owner, groupId, event.id));
-    const results = await Promise.all(entries.map(({ id }) => api.gql(member.cookie, LIKE, { id })));
-    expect(results.filter(({ errors }) => !errors?.length)).toHaveLength(1);
-    expect(
-      results
-        .filter(({ errors }) => errors?.length)
-        .every(({ errors }) => errors?.[0]?.message.includes('1개 작품까지만')),
-    ).toBe(true);
+    const reported = vi.spyOn(monitoring, 'reportUnexpectedError');
+    try {
+      const results = await Promise.all(entries.map(({ id }) => api.gql(member.cookie, LIKE, { id })));
+      expect(reported).not.toHaveBeenCalled();
+      expect(results.filter(({ errors }) => !errors?.length)).toHaveLength(1);
+      const failures = results.flatMap(({ errors }) => errors ?? []);
+      expect(failures).toHaveLength(7);
+      for (const failure of failures) expect(failure.message).toContain('1개 작품까지만');
+    } finally {
+      reported.mockRestore();
+    }
     expect(await api.db.postLike.count({ where: { userId: member.id, post: { contestId: event.id } } })).toBe(
       1,
     );

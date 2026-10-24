@@ -33,7 +33,7 @@ function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBo
       snapPoints={snapPoints}
       snapPoint={snapPoint}
       snapToSequentialPoints={resizable}
-      onSnapPointChange={setSnapPoint}
+      onSnapPointChange={(nextSnapPoint) => setSnapPoint(nextSnapPoint)}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

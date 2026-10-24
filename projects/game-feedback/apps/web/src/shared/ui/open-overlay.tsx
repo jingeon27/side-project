@@ -15,7 +15,7 @@ interface IOverlayErrorProps {
 
 const OverlayErrorBoundary = catchError(function OverlayErrorFallback(
   { open, onClose }: IOverlayErrorProps,
-  { reset },
+  { reset: onReset },
 ) {
   return (
     <Dialog
@@ -26,7 +26,7 @@ const OverlayErrorBoundary = catchError(function OverlayErrorFallback(
       title="창을 불러오지 못했어요"
       description="다시 시도하거나 창을 닫고 다른 기능을 이용할 수 있어요."
     >
-      <ErrorRecovery title="이 창" onRetry={reset} />
+      <ErrorRecovery title="이 창" onRetry={onReset} />
     </Dialog>
   );
 });

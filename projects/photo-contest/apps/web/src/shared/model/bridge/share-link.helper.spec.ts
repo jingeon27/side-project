@@ -6,6 +6,7 @@ import { installFakeNativeApp, type IFakeNativeApp } from '@photo-contest/bridge
 import { createWebBridge, type IWebBridge } from '@photo-contest/bridge/web';
 
 import {
+  COPY_METHOD,
   copyText,
   openExternalLink,
   SHARE_OUTCOME,
@@ -44,7 +45,7 @@ describe('shareLink', () => {
     const share = vi.fn();
     await expect(
       shareLink(URL_TO_SHARE, { title: '초대' }, { bridge: app.bridge, navigator: { share } }),
-    ).resolves.toBe(SHARE_OUTCOME.Shared);
+    ).resolves.toBe(SHARE_OUTCOME.SharedInApp);
     expect(app.fake.calls).toEqual([{ type: 'share.open', payload: { url: URL_TO_SHARE, title: '초대' } }]);
     expect(share).not.toHaveBeenCalled();
   });
@@ -67,7 +68,7 @@ describe('shareLink', () => {
     const share = vi.fn(async () => undefined);
     await expect(
       shareLink(URL_TO_SHARE, { text: '같이 해요' }, { bridge: app.bridge, navigator: { share } }),
-    ).resolves.toBe(SHARE_OUTCOME.Shared);
+    ).resolves.toBe(SHARE_OUTCOME.SharedOnWeb);
     expect(share).toHaveBeenCalledWith({ url: URL_TO_SHARE, text: '같이 해요' });
     expect(app.fake.calls).toEqual([]);
   });
@@ -115,7 +116,7 @@ describe('copyText', () => {
 
     await expect(
       copyText('링크', { bridge: app.bridge, navigator: { clipboard: { writeText } as never }, document }),
-    ).resolves.toBe(true);
+    ).resolves.toBe(COPY_METHOD.Web);
     expect(app.fake.calls).toEqual([{ type: 'clipboard.copy', payload: { text: '링크' } }]);
     expect(writeText).toHaveBeenCalledWith('링크');
     expect(execCommand).toHaveBeenCalledWith('copy');
@@ -130,13 +131,13 @@ describe('copyText', () => {
     const writeText = vi.fn();
     await expect(
       copyText('링크', { bridge: app.bridge, navigator: { clipboard: { writeText } as never } }),
-    ).resolves.toBe(true);
+    ).resolves.toBe(COPY_METHOD.App);
     expect(writeText).not.toHaveBeenCalled();
   });
 
-  it('모든 방법이 실패하면 false여야 한다', async () => {
+  it('모든 방법이 실패하면 null이어야 한다', async () => {
     stubExecCommand(false);
-    await expect(copyText('링크', { bridge: null, navigator: {}, document })).resolves.toBe(false);
+    await expect(copyText('링크', { bridge: null, navigator: {}, document })).resolves.toBeNull();
   });
 });
 

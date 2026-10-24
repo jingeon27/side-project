@@ -23,6 +23,7 @@ import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { MEDIA_FILE_LIMIT, mediaRange } from '../common/media-file';
 import { MediaUploadDto } from '../common/media-upload.dto';
+import { MediaWorkInterceptor, ProxyUploadGuard } from '../media-storage/media-work';
 import { PostMediaUploadService } from './post-media-upload.service';
 import { PostMediaService } from './post-media.service';
 
@@ -54,8 +55,11 @@ export class PostMediaController {
   }
   @Post()
   @HttpCode(200)
-  @UseGuards(PostMediaUploadGuard)
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MEDIA_FILE_LIMIT, files: 1, fields: 0 } }))
+  @UseGuards(PostMediaUploadGuard, ProxyUploadGuard)
+  @UseInterceptors(
+    MediaWorkInterceptor,
+    FileInterceptor('file', { limits: { fileSize: MEDIA_FILE_LIMIT, files: 1, fields: 0 } }),
+  )
   upload(@Req() req: SessionRequest, @UploadedFile() file: unknown) {
     return this.media.upload(req, file);
   }

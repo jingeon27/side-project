@@ -12,12 +12,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Web FSD와 코드 규칙
 
 - `src/app`은 Next 라우트 어댑터만 둔다. 화면은 `_pages`, 앱 조합·Provider·전역 스타일은 `_app`, 여러 화면의 조합 UI는 `widgets`, 서버 도메인은 `features`, 도메인 비의존 코드는 `shared`가 소유한다. `entities` 레이어를 별도로 만들지 않는다.
-- features의 `api`는 REST SDK와 요청·응답 IO, `model`은 query options와 mutation 훅을 소유한다. 페이지의 폼·흐름·URL 상태를 features의 서버 상태와 분리한다. GraphQL을 추가하지 않는다.
+- features의 `api`는 REST SDK와 요청·응답 IO, `model`은 query options와 mutation options를 소유한다. 페이지의 폼·흐름·URL 상태를 features의 서버 상태와 분리한다. GraphQL을 추가하지 않는다.
 - 다른 slice는 명시적인 named export `index.ts`를 통한다. server-only REST·메타데이터 진입점은 공통 FSD lint가 허용하는 `index.server.ts`/`index.server.tsx`에서 공개하며 client barrel에 재수출하지 않는다. 상위 레이어 import·자기 barrel import·페이지 간 직접 import는 금지한다.
 - `*.options.ts`의 `queryOptions`/`infiniteQueryOptions`가 쿼리 키의 단일 출처다. 조회·무효화·캐시 쓰기는 같은 factory를 재사용한다. 인자가 없으면 prefix, 조회에 필요한 인자가 없으면 `skipToken`을 사용한다. 서버 조회를 감싼 전용 useQuery 훅은 만들지 않는다.
-- mutation은 도메인의 `*.mutation-options.ts`에서 `mutationOptions`로 key·IO·캐시 무효화를 정의하고 named public export로 공개한다. mutation 훅은 이 팩토리를 연결해 원본 useMutation 결과를 반환한다. 대기·오류·재시도 변수는 mutation 상태, 폼은 RHF+Zod `useZodForm`, 모달은 overlay-kit으로 관리한다. 서버 데이터를 전역 UI store나 useState로 복제하지 않는다.
+- mutation은 도메인의 `*.mutation-options.ts`에서 `mutationOptions`로 key·IO·캐시 무효화를 정의하고 named public export로 공개한다. 호출부에서 `useMutation(xMutationOptions(client, …))`로 직접 조립하며 단순히 감싸 반환하는 전용 훅은 만들지 않는다. 대기·오류·재시도 변수는 mutation 상태, 폼은 RHF+Zod `useZodForm`, 모달은 overlay-kit으로 관리한다. 서버 데이터를 전역 UI store나 useState로 복제하지 않는다.
 - 조회 대기·실패는 `useSuspenseQuery`/`useSuspenseInfiniteQuery`와 영역별 `AsyncBoundary`(Suspense + ServiceErrorBoundary)로 처리한다. 브라우저 쿠키에 의존하며 서버 초기 데이터가 없는 조회만 clientOnly로 지연한다. 이미 서버 초기 데이터가 있는 공개 상세/프로필은 useQuery + throwOnError와 오류 경계를 사용해 Suspense streaming이 JavaScript 없는 본문을 가리지 않도록 한다. mutation 실패는 초안을 보존하는 폼 안에서 처리한다.
-- 게시글 상세의 서버 조회는 모든 사용자가 쿠키 없이 받은 공개 응답을 `'use cache'`(`posts`·`post:<id>` 태그, `cacheLife('max')`)로 함께 쓴다. NestJS 쓰기는 데이터 변경과 무효화 태그를 같은 트랜잭션에 기록하고, 커밋 후 인증된 Next Route Handler의 `revalidateTag(tag, { expire: 0 })`를 호출한다. 실패한 요청은 DB 큐에서 재시도한다. `updateTag`는 작성자의 Router Cache를 갱신하는 Server Action에만 사용한다. 로그인 요청은 API의 `/_internal/visibility/excluded-authors`(브라우저가 닿지 않는 경로)로 양방향 차단 관계를 받아 작성자면 404, 답변·댓글이면 제외한다. 차단 목록을 브라우저 응답에 싣지 않는다. 캐시 함수 안에서 cookies·세션을 읽거나 사용자별 값을 인자로 받지 않는다.
+- 게시글 상세의 서버 조회는 모든 사용자가 쿠키 없이 받은 공개 응답을 `'use cache'`(`posts`·`post:<id>` 태그, `cacheLife('max')`)로 함께 쓴다. NestJS 쓰기는 데이터 변경과 무효화 태그를 같은 트랜잭션에 기록하고, 커밋 후 인증된 Next Route Handler의 `revalidateTag(tag, { expire: 0 })`를 호출한다. 실패한 요청은 DB 큐에서 재시도한다. API는 이 콜백을 응답 전에 기다리므로 쓴 사람의 다음 요청도 새 데이터를 받는다. 브라우저가 부를 수 있는 캐시 만료 Server Action(`updateTag`)은 두지 않는다. 작성자 화면은 React Query 무효화로 갱신하고, 서버 컴포넌트가 그린 값(제목·메타데이터)이 바뀌는 쓰기 뒤에는 `router.refresh()`로 현재 라우트의 Client Cache를 비운다(`EditPostSheet`). 로그인 요청은 API의 `/internal/visibility/excluded-authors`(브라우저가 닿지 않는 경로)로 양방향 차단 관계를 받아 작성자면 404, 답변·댓글이면 제외한다. 차단 목록을 브라우저 응답에 싣지 않는다. 캐시 함수 안에서 cookies·세션을 읽거나 사용자별 값을 인자로 받지 않는다.
 - `useRef`는 이전 경로나 외부 동기화의 식별자가 꼭 필요한 곳에 제한한다. DOM 연결은 정리 가능한 callback ref와 useCallback을 우선하고, 표시 상태·mutation 변수를 ref로 복제하지 않는다. 날짜 계산/비교/날짜 구분은 `shared/lib/date`의 dayjs helper를 사용하며 표시 시간대는 Asia/Seoul로 일치시킨다. 사용자별 locale을 전역 dayjs.locale로 변경하지 않는다.
 - SSE·DOM observer 등 외부 동기화에만 effect를 사용한다. 필터·선택 대화는 URL을 단일 출처로 사용한다.
 - 홈은 모든 게시판/게임의 피드이고 종류별 메뉴는 모든 게임이 같은 5개 설정을 사용한다. 게임을 UI에 하드코딩하지 않고 활성 카테고리와 game 경로 문맥을 전달한다. 코칭 모집 역할/시간당·월 단위·목표 달성 총수강료는 계약의 coaching, 친추판매 금액은 friendSale 메타데이터로 저장하며 본문에서 추측하지 않는다. 기존 가격 미등록과 명시적 가격 협의를 구분한다.
@@ -28,6 +28,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `lint`는 공유 Next·FSD preset과 앱의 query-key 규칙을 실제 검사한다. `@side/game-feedback check`에도 포함된다. Vitest와 Playwright는 Web이 소유한다.
 
 
+## 앱 링크·로그인 콜백
+
+- 앱 소셜 로그인 콜백은 `/app-auth/callback`(`src/app/app-auth/callback/route.ts` → `_app/app-links/app-auth-callback.ts`)이다. 앱이 없거나 링크가 검증되지 않아 브라우저에서 열릴 때만 보이며, 요청을 읽지 않고 스크립트·분석·Sentry 없이 "앱에서 계속" 안내만 준다(no-store, `Referrer-Policy: no-referrer`, noindex, 주소창의 코드는 해시 허용 인라인 스크립트로 지운다). Next는 설정 헤더가 있으면 Route Handler의 같은 이름 헤더를 버리므로 `next.config.mjs`의 공통 보안 헤더 source에서 이 경로만 뺀다(`next.config.spec.ts`).
+- `/.well-known/apple-app-site-association`·`/.well-known/assetlinks.json`은 `app/`에 점 폴더를 만들지 않고 `next.config.mjs` rewrites로 kebab-case 라우트 `app-links/*`에 연결한다. 값은 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`·`MOBILE_ANDROID_SHA256_FINGERPRINTS`이고 `cacheComponents`가 빌드 때 고정하지 않도록 `connection()` 뒤에 읽는다. 운영에서 빠지면 `instrumentation.ts`가 첫 요청부터 실패시킨다(개발·테스트는 자리표시자). 운영 빌드 서버를 띄우는 Playwright는 `e2e/app-link-env.ts` 값을 넣는다.
+
 ## 공통 디자인 시스템
 
 - Photo Contest 웹과 `packages/design-system`의 `@side/design-system`을 사용한다. 공식 shadcn/ui Base UI/base-nova 소스와 components.json 설정은 공통 패키지가 소유하며 웹 설정의 ui/utils alias도 그 패키지를 가리킨다. 보이는 폼 컨트롤은 Input/Textarea/NativeSelect/Checkbox를 사용하고 hidden/file 입력과 Quill 전용 DOM만 해당 구현을 유지한다. Checkbox는 RHF Controller로 연결하고 피드 Tabs는 URL을 제어값으로 사용한다. 공통 색·타이포·모서리·컨트롤·Dialog·cn은 패키지가 소유한다.
@@ -36,3 +41,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 실제 데이터에 근거하지 않는 LIVE/ACTIVE 상태, 장식용 점과 가운데 점, 불필요한 영문 대문자 라벨과 별/궤도/떠 있는 카드 장식을 추가하지 않는다. 읽지 않은 항목은 숫자나 문구로 표시하고 실제 SSE 상태는 텍스트로 전달한다. 사용자 콘텐츠 원문은 바꾸지 않는다.
 
 - 게임 프로필은 사용자 계정 설정에서 등록하며 글쓰기에 첨부하지 않는다. 인증 문의는 기존 관리자 1:1 대화로 연결하고 인증은 관리자가 수동 승인한다. 대표 태그 변경은 인증을 해제한다. /:locale/admin은 문의함, 신고 검토, 인증과 밴/해제를 제공하며 API에서도 관리자 권한을 검증한다. 밴 중에도 관리자 문의는 유지한다.
+
+## 앱 스킬
+
+| 작업 | 스킬 |
+| --- | --- |
+| 화면·라우트·페이지 Topbar·첫 문서 데이터·SEO·오류 경계 | `.agents/skills/game-feedback-web-page-structure/SKILL.md` |
+| 링크·뒤로 가기·게시판 문맥·URL 상태·locale·앱 WebView 연동 | `.agents/skills/game-feedback-web-navigation/SKILL.md` |
+| REST 조회·mutation·쿼리 키·계정 전환·채팅 SSE | `.agents/skills/game-feedback-web-server-state/SKILL.md` |
+| 글쓰기·Quill 본문·사진/동영상·채팅 첨부 업로드 | `.agents/skills/game-feedback-web-compose-media/SKILL.md` |
+| Playwright 설정·격리 서버·로그인·한 spec 실행 | `.agents/skills/game-feedback-web-e2e/SKILL.md` |

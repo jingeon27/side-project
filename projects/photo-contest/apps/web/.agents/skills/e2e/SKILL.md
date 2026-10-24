@@ -41,5 +41,5 @@ corepack yarn workspace @photo-contest/web test:e2e --project=mobile-chrome -g "
 corepack yarn workspace @photo-contest/web exec playwright show-report
 ```
 
-- test-kit이 `TEST_DATABASE_URL`(없으면 로컬 `DATABASE_URL`)에 실행마다 격리 스키마를 만들고 끝나면 지운다. API 코드를 바꾸지 않았고 이전 `apps/api/.e2e-build`가 있으면 명령 앞에 `PC_E2E_SKIP_API_BUILD=true`를 붙여 API 빌드를 건너뛴다.
+- test-kit이 `TEST_DATABASE_URL`(loopback 전용 테스트 DB, 기본 55434)에 실행마다 격리 스키마를 만들고 끝나면 지운다. API 코드를 바꾸지 않았고 이전 `apps/api/.e2e-build`가 있으면 명령 앞에 `PC_E2E_SKIP_API_BUILD=true`를 붙여 API 빌드를 건너뛴다.
 - 실패한 테스트의 trace는 `test-results/`에 남는다(`playwright show-trace <trace.zip>`).

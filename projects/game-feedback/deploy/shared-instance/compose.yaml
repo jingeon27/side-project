@@ -5,6 +5,8 @@ x-api: &api
   HOST: 0.0.0.0
   PORT: '4300'
   WEB_ORIGIN: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
+  # 앱 소셜 로그인 코드는 웹 origin의 검증된 https 앱 링크로만 보낸다.
+  MOBILE_AUTH_CALLBACK_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}/app-auth/callback
   GAME_FEEDBACK_SITE_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
   GAME_FEEDBACK_CONTACT_EMAIL: ${GF_CONTACT_EMAIL:?Set GF_CONTACT_EMAIL}
   DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
@@ -13,7 +15,7 @@ x-api: &api
   GF_TEST_AUTH_ENABLED: 'false'
   GF_PREFETCH_TESTING: 'false'
   GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
-  GF_CACHE_REVALIDATION_URL: http://gf-web:3300/_internal/cache/revalidate
+  GF_CACHE_REVALIDATION_URL: http://gf-web:3300/internal/cache/revalidate
   GF_MEDIA_STORAGE: S3
   GF_S3_BUCKET: ${GAME_FEEDBACK_S3_BUCKET:?Set GAME_FEEDBACK_S3_BUCKET}
   OTHER_SERVICE_S3_BUCKET: ${PHOTO_CONTEST_S3_BUCKET:?Set PHOTO_CONTEST_S3_BUCKET}
@@ -29,7 +31,6 @@ x-api: &api
   DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
   DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
   SUPERCELL_API_TOKEN: ${SUPERCELL_API_TOKEN:-}
-  GF_ADMIN_GOOGLE_SUB: ${GF_ADMIN_GOOGLE_SUB:-}
   SENTRY_DSN: ${SENTRY_DSN:-}
   SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
   SENTRY_RELEASE: ${RELEASE_SHA:-}
@@ -86,6 +87,11 @@ services:
       GAME_FEEDBACK_INDEXING: ${GF_INDEXING:-false}
       GF_DEMO_MODE: 'false'
       GF_TEST_AUTH_ENABLED: 'false'
+      # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.
+      MOBILE_APPLE_TEAM_ID: ${MOBILE_APPLE_TEAM_ID:?Set MOBILE_APPLE_TEAM_ID}
+      MOBILE_IOS_BUNDLE_ID: ${MOBILE_IOS_BUNDLE_ID:?Set MOBILE_IOS_BUNDLE_ID}
+      MOBILE_ANDROID_PACKAGE: ${MOBILE_ANDROID_PACKAGE:?Set MOBILE_ANDROID_PACKAGE}
+      MOBILE_ANDROID_SHA256_FINGERPRINTS: ${MOBILE_ANDROID_SHA256_FINGERPRINTS:?Set MOBILE_ANDROID_SHA256_FINGERPRINTS}
     networks: { edge: { aliases: [gf-web] } }
     depends_on: { api: { condition: service_healthy } }
     healthcheck:
@@ -94,14 +100,19 @@ services:
           CMD,
           node,
           -e,
-          "fetch('http://127.0.0.1:3300/_health/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:3300/health-check/live',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 15s
       timeout: 4s
       retries: 8
       start_period: 20s
       start_interval: 1s
-    tmpfs: ['/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700']
+    # Next writes only its data/image cache and /tmp at runtime. ISR re-renders it cannot persist under
+    # .next/server stay in the in-memory cache (Next logs "Failed to update prerender cache").
+    read_only: true
+    tmpfs:
+      - '/tmp:size=64m,mode=1777'
+      - '/app/projects/game-feedback/apps/web/.next/cache:size=64m,uid=1000,gid=1000,mode=0700'
     mem_limit: 640m
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
@@ -117,6 +128,8 @@ services:
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging: *logging
   migrate:
     profiles: [tools]
@@ -131,6 +144,8 @@ services:
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     logging: *logging
 networks:
   edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-edge' }

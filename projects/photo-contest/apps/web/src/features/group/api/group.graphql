@@ -167,6 +167,17 @@ mutation TransferGroupOwnership($groupId: ID!, $userId: ID!) {
     ...GroupAdministration
   }
 }
+mutation RemoveGroupMember($groupId: ID!, $userId: ID!) {
+  removeGroupMember(groupId: $groupId, userId: $userId) {
+    ...GroupAdministration
+  }
+}
+mutation LeaveGroup($groupId: ID!) {
+  leaveGroup(groupId: $groupId) {
+    ...GroupAdministration
+    inviteToken
+  }
+}
 
 fragment GroupCategoryRow on GroupCategory {
   id
@@ -238,8 +249,19 @@ mutation UpdateGroupProfile(
   }
 }
 
-mutation UploadGroupAvatar($groupId: ID!, $file: Upload!) {
-  uploadGroupAvatar(groupId: $groupId, file: $file) {
+mutation RequestGroupAvatarUpload($groupId: ID!, $contentType: String!, $byteSize: Int!) {
+  requestGroupAvatarUpload(groupId: $groupId, contentType: $contentType, byteSize: $byteSize) {
+    id
+    url
+    expiresAt
+    fields {
+      name
+      value
+    }
+  }
+}
+mutation CompleteGroupAvatarUpload($uploadId: ID!) {
+  completeGroupAvatarUpload(uploadId: $uploadId) {
     id
   }
 }

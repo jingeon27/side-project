@@ -1,9 +1,10 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { z } from 'zod';
 
 import type { HideInputSchema } from '@game-feedback/contracts';
 import { Button } from '@side/design-system';
 
-import { useContentVisibilityMutation, type TAdminReport } from '@/features/moderation';
+import { visibilityMutationOptions, type TAdminReport } from '@/features/moderation';
 import { ErrorNotice } from '@/shared/ui';
 
 interface IReportVisibilityActionsProps {
@@ -12,7 +13,8 @@ interface IReportVisibilityActionsProps {
 }
 
 export function ReportVisibilityActions({ targetType, report }: IReportVisibilityActionsProps) {
-  const visibility = useContentVisibilityMutation();
+  const client = useQueryClient();
+  const visibility = useMutation(visibilityMutationOptions(client));
   function handleVisibility(hidden: boolean) {
     visibility.mutate({
       targetType,

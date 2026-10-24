@@ -54,7 +54,7 @@ function ProfileContent({
   initialViewerId,
 }: IProfilePageProps) {
   const { t, locale: textLocale } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const sameViewer = session?.user?.id === initialViewerId;
   const profile = useQuery({
     ...profileOptions(id),
@@ -123,7 +123,7 @@ function ProfileContent({
         {author.id !== session?.user?.id && (
           <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
         )}
-        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={login} />
+        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => requireLogin()} />
         <ReportUserButton userId={author.id} />
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>

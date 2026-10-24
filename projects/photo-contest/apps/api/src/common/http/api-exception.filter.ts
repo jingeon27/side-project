@@ -24,7 +24,7 @@ function routeOf(request: Request) {
  */
 @Catch()
 export class ApiExceptionFilter extends BaseExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
+  override catch(exception: unknown, host: ArgumentsHost) {
     // GraphQL은 Apollo가 code별로 응답하고 내부 오류 보고도 Apollo 플러그인이 한다.
     // 업무 오류만 그대로 돌려주고, 나머지는 Nest 기본 처리(로그 후 다시 던짐)에 맡긴다.
     if (host.getType<string>() === 'graphql')

@@ -22,6 +22,20 @@ describe('buildServerRequestHeaders', () => {
     );
     expect(headers.has('cookie')).toBe(false);
   });
+
+  it('들어온 X-Forwarded-For를 그대로 넘기고 없으면 지워야 한다', () => {
+    const forwarded = buildServerRequestHeaders(undefined, {
+      cookie: null,
+      webOrigin: 'http://a.test',
+      forwardedFor: '203.0.113.7',
+    });
+    expect(forwarded.get('x-forwarded-for')).toBe('203.0.113.7');
+    const internal = buildServerRequestHeaders(
+      { 'x-forwarded-for': '198.51.100.1' },
+      { cookie: null, webOrigin: 'http://a.test' },
+    );
+    expect(internal.has('x-forwarded-for')).toBe(false);
+  });
 });
 
 describe('server env', () => {

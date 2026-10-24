@@ -1,31 +1,23 @@
-import { resolve } from 'node:path';
-
-import { PROJECT_ROOT } from './paths';
 import { assertSharedInstanceConfig } from './shared-instance';
 
 // 테스트가 실행 중에 NODE_ENV 같은 값을 바꾸므로 모든 값은 호출할 때마다 읽는다.
 
 const DEFAULT_WEB_ORIGIN = 'http://localhost:3200';
-const DEFAULT_STORAGE_DIR = '.data/photos';
-const DEFAULT_APP_SCHEME = 'photocontest';
 const DEFAULT_APP_VERSION = '1.0.0';
 const APP_VERSION_PATTERN = /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})$/;
-const APP_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*$/;
-// 웹 scheme으로 설정하면 일회용 코드가 웹으로 새므로 허용하지 않는다.
-const RESERVED_SCHEMES = new Set([
-  'http',
-  'https',
-  'javascript',
-  'data',
-  'file',
-  'about',
-  'blob',
-  'ftp',
-  'ws',
-  'wss',
-]);
+/**
+ * 앱 로그인 일회용 코드를 받는 웹 경로. 웹 안내 페이지, AASA·assetlinks, 앱의 associated domains·intent filter와 같은 값이다.
+ * 검증된 App Link·Universal Link만 이 경로를 앱으로 넘기므로 같은 스킴을 등록한 다른 앱이 코드를 가로채지 못한다.
+ */
+export const MOBILE_AUTH_CALLBACK_PATH = '/app-auth/callback';
 
-export type TStorageBackend = 'local' | 's3';
+/** 새 S3 객체에만 붙이며 DB에 전체 키를 저장해 기존 객체도 계속 읽는다. */
+export function s3KeyPrefix() {
+  const prefix = (process.env.S3_KEY_PREFIX ?? '').trim().replace(/\/$/, '');
+  if (prefix.length > 128 || (prefix && !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(prefix)))
+    throw new Error('S3_KEY_PREFIX must contain relative path segments.');
+  return prefix ? `${prefix}/` : '';
+}
 export type TOAuthProviderName = 'google' | 'kakao';
 
 export interface IAppVersions {
@@ -68,6 +60,12 @@ export function assertTestingConfig() {
     throw new Error('ENABLE_TEST_API requires NODE_ENV=test.');
 }
 
+export function databaseUrl() {
+  const value = optional('DATABASE_URL');
+  if (!value) throw new Error('DATABASE_URL is required.');
+  return value;
+}
+
 export function apiPort() {
   return Number(process.env.PORT ?? 4200);
 }
@@ -91,11 +89,31 @@ export function developmentLoginEnabled() {
   return process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_LOGIN === 'true';
 }
 
-/** 형식이 틀리거나 웹 scheme이면 기본값을 쓴다. */
-export function mobileAppScheme() {
-  const value = process.env.MOBILE_APP_SCHEME;
-  if (!value || !APP_SCHEME_PATTERN.test(value) || RESERVED_SCHEMES.has(value)) return DEFAULT_APP_SCHEME;
-  return value;
+/** WEB_ORIGIN의 앱 로그인 콜백 경로와 정확히 같은 URL만 받는다(쿼리·해시·계정 정보 없음). */
+function configuredMobileAuthCallbackUrl() {
+  const value = optional('MOBILE_AUTH_CALLBACK_URL');
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    const exact =
+      url.origin === webOrigin() &&
+      url.pathname === MOBILE_AUTH_CALLBACK_PATH &&
+      !url.search &&
+      !url.hash &&
+      !url.username &&
+      !url.password;
+    return exact ? `${url.origin}${url.pathname}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 앱 로그인 코드를 보낼 콜백 URL. 커스텀 스킴으로는 보내지 않는다.
+ * 개발·테스트는 설정이 없거나 틀리면 WEB_ORIGIN의 같은 경로를 쓰고, 운영은 assertProductionConfig가 시작 전에 막는다.
+ */
+export function mobileAuthCallbackUrl() {
+  return configuredMobileAuthCallbackUrl() ?? `${webOrigin()}${MOBILE_AUTH_CALLBACK_PATH}`;
 }
 
 function appVersion(value: string | undefined) {
@@ -121,18 +139,10 @@ export function appVersions(): IAppVersions {
   return { minimumVersion, latestVersion };
 }
 
-export function storageBackend(): TStorageBackend {
-  return process.env.STORAGE_BACKEND === 's3' ? 's3' : 'local';
-}
-
-/** 상대 경로는 실행 위치와 상관없이 projects/photo-contest 기준으로 해석한다. */
-export function storageDir() {
-  return resolve(PROJECT_ROOT, optional('STORAGE_DIR') ?? DEFAULT_STORAGE_DIR);
-}
-
+/** 미디어는 항상 비공개 S3 호환 버킷에 둔다. 로컬 개발·테스트는 test-kit의 S3 대역을 가리킨다. */
 export function s3Settings(): IS3Settings {
   const bucket = optional('S3_BUCKET');
-  if (!bucket) throw new Error('S3_BUCKET is required for S3 storage.');
+  if (!bucket) throw new Error('S3_BUCKET is required for media storage.');
   return {
     bucket,
     region: optional('S3_REGION') ?? 'auto',
@@ -164,12 +174,41 @@ export function sentryTracesSampleRate() {
   return Number.isFinite(rate) && rate >= 0 && rate <= 1 ? rate : 0;
 }
 
-/** 운영에서 설정이 빠지면 조용히 기본값으로 뜨지 않고 시작을 멈춘다. */
+// Google 웹 클라이언트는 토큰 교환에 secret이 필요하다. 카카오는 콘솔에서 client secret을 켤 때만 쓴다.
+const OAUTH_SECRET_REQUIRED: Record<TOAuthProviderName, boolean> = { google: true, kakao: false };
+
+/** 짝이 맞지 않는 OAuth 키는 첫 로그인의 provider 오류가 아니라 시작할 때 드러낸다. */
+function assertOAuthCredentials() {
+  for (const provider of Object.keys(OAUTH_SECRET_REQUIRED) as TOAuthProviderName[]) {
+    const prefix = provider.toUpperCase();
+    const { clientId, clientSecret } = oauthCredentials(provider);
+    if (clientSecret && !clientId)
+      throw new Error(`${prefix}_CLIENT_SECRET is set without ${prefix}_CLIENT_ID.`);
+    if (clientId && !clientSecret && OAUTH_SECRET_REQUIRED[provider])
+      throw new Error(`${prefix}_CLIENT_ID requires ${prefix}_CLIENT_SECRET.`);
+  }
+}
+
+function assertS3Settings() {
+  const { endpoint } = s3Settings();
+  s3KeyPrefix();
+  if (!endpoint) return;
+  const url = URL.parse(endpoint);
+  if (!url || !['http:', 'https:'].includes(url.protocol))
+    throw new Error('S3_ENDPOINT must be an http(s) URL.');
+}
+
+/** 운영에서 설정이 빠지거나 틀리면 조용히 기본값으로 뜨거나 첫 요청에서 실패하지 않고 시작을 멈춘다. */
 export function assertProductionConfig() {
   if (!isProduction()) return;
   assertSharedInstanceConfig(process.env);
-  const storageReady =
-    storageBackend() === 's3' ? Boolean(optional('S3_BUCKET')) : Boolean(optional('STORAGE_DIR'));
-  if (!process.env.WEB_ORIGIN?.startsWith('https://') || !optional('DATABASE_URL') || !storageReady)
-    throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and persistent STORAGE_DIR.');
+  if (!process.env.WEB_ORIGIN?.startsWith('https://') || !optional('DATABASE_URL') || !optional('S3_BUCKET'))
+    throw new Error('Production requires HTTPS WEB_ORIGIN, DATABASE_URL and S3_BUCKET.');
+  assertS3Settings();
+  assertOAuthCredentials();
+  // 앱 로그인 코드는 검증된 https 콜백으로만 보낸다. 다른 origin·경로로 잘못 설정하면 코드가 앱 링크 밖으로 샌다.
+  if (!configuredMobileAuthCallbackUrl())
+    throw new Error(
+      `Production requires MOBILE_AUTH_CALLBACK_URL=${webOrigin()}${MOBILE_AUTH_CALLBACK_PATH} (same origin as WEB_ORIGIN).`,
+    );
 }

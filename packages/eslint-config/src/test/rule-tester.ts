@@ -10,11 +10,14 @@ export const languageOptions = {
   parserOptions: { ecmaFeatures: { jsx: true } },
 } as const;
 
-export function fixtureRoot(...parts: string[]) {
-  return path.resolve(import.meta.dirname, '../rules/__fixtures__', ...parts);
-}
-
-export function readFixture(file: string) {
-  const filename = fixtureRoot(file);
-  return { filename, code: readFileSync(filename, 'utf8') };
+// spec과 같은 폴더의 __fixtures__를 읽는다. spec에서 import.meta.dirname을 넘긴다.
+export function createFixtures(specDir: string) {
+  const root = path.join(specDir, '__fixtures__');
+  return {
+    root,
+    read(file: string) {
+      const filename = path.join(root, file);
+      return { filename, code: readFileSync(filename, 'utf8') };
+    },
+  };
 }

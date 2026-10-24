@@ -1,9 +1,7 @@
-import { Suspense } from 'react';
 import { locale as rootLocale } from 'next/root-params';
 
 import { InfoPage } from '@/_pages/info';
 import { PublicPageJsonLd, staticPageMetadata } from '@/shared/seo';
-import { LoadingState } from '@/shared/ui';
 
 async function RouteContent(_props: { params: Promise<{ locale: string }> }) {
   const locale = await rootLocale();
@@ -20,9 +18,8 @@ export async function generateMetadata(_props: { params: Promise<{ locale: strin
 }
 
 export default function Page(props: Parameters<typeof RouteContent>[0]) {
-  return (
-    <Suspense fallback={<LoadingState />}>
-      <RouteContent {...props} />
-    </Suspense>
-  );
+  return <RouteContent {...props} />;
 }
+
+// Public information stays readable in the first document without JavaScript.
+export const instant = false;

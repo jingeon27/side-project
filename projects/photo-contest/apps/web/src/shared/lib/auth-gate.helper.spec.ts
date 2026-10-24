@@ -25,9 +25,9 @@ describe('readCookie', () => {
     expect(readCookie('a="quoted"', 'a')).toBe('quoted');
   });
 
-  it('깨진 인코딩·4KB를 넘는 헤더·빈 헤더는 없는 것으로 봐야 한다', () => {
+  it('깨진 인코딩·8KB를 넘는 헤더·빈 헤더는 없는 것으로 봐야 한다', () => {
     expect(readCookie('contest_session=%E0%A4%A', 'contest_session')).toBeNull();
-    expect(readCookie(`pad=${'x'.repeat(4100)}; contest_session=abc`, 'contest_session')).toBeNull();
+    expect(readCookie(`pad=${'x'.repeat(8200)}; contest_session=abc`, 'contest_session')).toBeNull();
     expect(readCookie(null, 'contest_session')).toBeNull();
     expect(readCookie('', 'contest_session')).toBeNull();
   });
@@ -36,9 +36,19 @@ describe('readCookie', () => {
 describe('hasSessionCookie', () => {
   it('값이 있는 세션 쿠키가 있을 때만 true여야 한다', () => {
     expect(hasSessionCookie('contest_session=abc')).toBe(true);
+    expect(hasSessionCookie('__Host-contest_session=abc')).toBe(true);
     expect(hasSessionCookie('contest_session=')).toBe(false);
     expect(hasSessionCookie('contest_oauth_state=abc')).toBe(false);
+    expect(hasSessionCookie('__Host-contest_oauth_state=abc')).toBe(false);
     expect(hasSessionCookie(undefined)).toBe(false);
+  });
+
+  it('다른 쿠키가 많아 4KB를 넘어도 세션 쿠키를 찾아야 한다', () => {
+    // API보다 낮은 4KB 상한 때문에 로그인 사용자가 멤버 전용 화면에서 로그인 화면으로 밀려났다.
+    const crowded = `${Array.from({ length: 60 }, (_, index) => `analytics_${index}=${'v'.repeat(80)}`).join('; ')}; __Host-contest_session=abc`;
+    expect(crowded.length).toBeGreaterThan(4096);
+    expect(crowded.length).toBeLessThanOrEqual(8 * 1024);
+    expect(hasSessionCookie(crowded)).toBe(true);
   });
 });
 

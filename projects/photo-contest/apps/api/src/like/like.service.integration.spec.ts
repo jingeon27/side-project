@@ -99,11 +99,10 @@ describe('좋아요', () => {
     expect(await api.db.like.count({ where: { submissionId: photoId } })).toBe(0);
   });
 
-  it('비회원은 FORBIDDEN, 없는 사진은 NOT_FOUND여야 한다', async () => {
+  it('비회원과 없는 사진은 같은 NOT_FOUND여야 한다', async () => {
     const { photoId } = await photoOfAuthor('비회원 좋아요');
-    const forbidden = { code: 'FORBIDDEN', message: '이 그룹에 접근할 권한이 없습니다.' };
-    expect(await api.gqlFail(outsider.cookie, LIKE, { id: photoId })).toEqual(forbidden);
-    expect(await api.gqlFail(outsider.cookie, UNLIKE, { id: photoId })).toEqual(forbidden);
+    expect(await api.gqlFail(outsider.cookie, LIKE, { id: photoId })).toEqual(PHOTO_NOT_FOUND);
+    expect(await api.gqlFail(outsider.cookie, UNLIKE, { id: photoId })).toEqual(PHOTO_NOT_FOUND);
     expect(await api.gqlFail(fan.cookie, LIKE, { id: 'missing-photo' })).toEqual(PHOTO_NOT_FOUND);
   });
 

@@ -8,12 +8,10 @@ import { overlay } from 'overlay-kit';
 import {
   DeletePostDocument,
   GalleryPostCardFragmentDoc,
-  GalleryPostsDocument,
   GroupContestDocument,
   GroupContestResultsDocument,
   GroupContestsDocument,
   HiddenGalleryPostsDocument,
-  PublicGalleryPostsDocument,
   SetPostHiddenDocument,
 } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
@@ -22,7 +20,7 @@ import { toast } from '@/shared/model/toast';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { IconButton } from '@/shared/ui/@core/icon-button';
 
-import { resetGalleryPosts } from '../model/post.cache';
+import { POST_FEED_QUERIES, resetGalleryPosts } from '../model/post.cache';
 import { EditPostBottomSheet } from './EditPostBottomSheet';
 
 const ITEM_CLASS =
@@ -34,14 +32,13 @@ export function PostActionsMenu({ postId }: { postId: string }) {
     from: { __typename: 'GalleryPost', id: postId },
   });
   const [hide, hideState] = useMutation(SetPostHiddenDocument, {
-    refetchQueries: [GalleryPostsDocument, PublicGalleryPostsDocument, HiddenGalleryPostsDocument],
+    refetchQueries: [...POST_FEED_QUERIES, HiddenGalleryPostsDocument],
     awaitRefetchQueries: true,
   });
   const [remove, removeState] = useMutation(DeletePostDocument, {
     update: resetGalleryPosts,
     refetchQueries: [
-      GalleryPostsDocument,
-      PublicGalleryPostsDocument,
+      ...POST_FEED_QUERIES,
       GroupContestDocument,
       GroupContestsDocument,
       GroupContestResultsDocument,
@@ -65,12 +62,12 @@ export function PostActionsMenu({ postId }: { postId: string }) {
             <Menu.Item
               className={ITEM_CLASS}
               onClick={() =>
-                overlay.open(({ isOpen, close, unmount }) => (
+                overlay.open(({ isOpen, close: onClose, unmount }) => (
                   <EditPostBottomSheet
                     postId={postId}
                     groupId={post.groupId}
                     isOpen={isOpen}
-                    onClose={close}
+                    onClose={onClose}
                     unmount={unmount}
                   />
                 ))
@@ -82,10 +79,10 @@ export function PostActionsMenu({ postId }: { postId: string }) {
               <Menu.Item
                 className={ITEM_CLASS}
                 onClick={() =>
-                  overlay.open(({ isOpen, close, unmount }) => (
+                  overlay.open(({ isOpen, close: onClose, unmount }) => (
                     <ConfirmDialog
                       isOpen={isOpen}
-                      onClose={close}
+                      onClose={onClose}
                       unmount={unmount}
                       title="게시물을 숨길까요?"
                       description="공개 피드와 그룹에서 보이지 않게 됩니다. 숨긴 게시물 관리에서 다시 공개할 수 있어요."
@@ -104,10 +101,10 @@ export function PostActionsMenu({ postId }: { postId: string }) {
             <Menu.Item
               className={cn(ITEM_CLASS, 'text-danger data-highlighted:bg-danger-soft')}
               onClick={() =>
-                overlay.open(({ isOpen, close, unmount }) => (
+                overlay.open(({ isOpen, close: onClose, unmount }) => (
                   <ConfirmDialog
                     isOpen={isOpen}
-                    onClose={close}
+                    onClose={onClose}
                     unmount={unmount}
                     title="게시물을 삭제할까요?"
                     description="첨부 파일·댓글·답글과 좋아요가 함께 삭제됩니다."

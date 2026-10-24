@@ -5,15 +5,18 @@ import { createRequire } from 'node:module';
 import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
-import { SocialProviderSchema } from '@game-feedback/contracts';
+import { SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
 import { resolveAppConfig } from '../config/app.config';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from '../security';
 import { seed } from '../seed';
+import { responseCookies, responseLocation } from '../testing/http-response';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
@@ -35,13 +38,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     state.schema = `gf_test_access_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', state.schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed.');
-    const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    const db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     state.db = db;
     await seed(db, true);
     const identityProviders = Object.fromEntries(
@@ -124,6 +126,33 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .get('/api/notifications')
       .set('Authorization', `Bearer ${expired.body.accessToken}`)
       .expect(401);
+  });
+
+  it('prunes expired OAuth attempts and sessions when new ones are issued', async () => {
+    const { request, db } = fixture();
+    const past = new Date(Date.now() - 1000);
+    const attempt = (stateHash: string, expiresAt: Date) =>
+      db.oAuthAttempt.create({
+        data: { provider: 'google', stateHash, nonce: 'n', verifier: 'v', expiresAt },
+      });
+    await attempt(hash('expired-oauth-state'), past);
+    await attempt(hash('live-oauth-state'), new Date(Date.now() + 60_000));
+    await request.get('/api/auth/social/google').expect(302);
+    expect(
+      await db.oAuthAttempt.findUnique({ where: { stateHash: hash('expired-oauth-state') } }),
+    ).toBeNull();
+    expect(
+      await db.oAuthAttempt.findUnique({ where: { stateHash: hash('live-oauth-state') } }),
+    ).not.toBeNull();
+    const stale = await db.session.create({
+      data: { tokenHash: hash('expired-session-token'), userId: 'sample-user-0', expiresAt: past },
+    });
+    await request
+      .post('/api/auth/test-token')
+      .set('Origin', origin)
+      .send({ accountId: 'sample-user-3' })
+      .expect(200);
+    expect(await db.session.findUnique({ where: { id: stale.id } })).toBeNull();
   });
 
   it('limits token issuance to explicitly enabled testing and predefined accounts', async () => {
@@ -257,8 +286,15 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect((await requester.get('/api/conversations').expect(200)).body.items).toContainEqual(
       expect.objectContaining({ id: general.id }),
     );
-    expect((await admin.get('/api/admin/support').expect(200)).body).toContainEqual(
-      expect.objectContaining({ conversationId: general.id, requesterId: 'sample-user-0' }),
+    // 관리자 문의 목록은 계약(SupportThreadSchema)의 requester로 요청자를 알린다.
+    const threads = z
+      .array(SupportThreadSchema)
+      .parse((await admin.get('/api/admin/support').expect(200)).body);
+    expect(threads).toContainEqual(
+      expect.objectContaining({
+        conversationId: general.id,
+        requester: expect.objectContaining({ id: 'sample-user-0' }),
+      }),
     );
     await outsider.get(`/api/conversations/${general.id}/messages`).expect(404);
   });
@@ -425,7 +461,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     for (const provider of SocialProviderSchema.options) {
       const agent = supertest.agent(app.getHttpServer());
       const start = await agent.get(`/api/auth/social/${provider}`).expect(302);
-      const oauthState = new URL(start.headers.location).searchParams.get('state');
+      const oauthState = new URL(responseLocation(start)).searchParams.get('state');
       await agent
         .get(`/api/auth/social/${provider}/callback`)
         .query({ state: oauthState, code: 'fake-code' })
@@ -443,7 +479,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       await agent
         .get(`/api/auth/social/${provider}/callback`)
         .query({
-          state: new URL(again.headers.location).searchParams.get('state'),
+          state: new URL(responseLocation(again)).searchParams.get('state'),
           code: 'another-fake-code',
         })
         .expect(302);
@@ -457,13 +493,13 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const start = await agent.get('/api/auth/social/x').query({ app_challenge: challenge }).expect(302);
-    const oauthState = new URL(start.headers.location).searchParams.get('state');
+    const oauthState = new URL(responseLocation(start)).searchParams.get('state');
     await agent.get('/api/auth/social/kakao/callback').query({ state: oauthState, code: 'fake' }).expect(400);
     const callback = await agent
       .get('/api/auth/social/x/callback')
       .query({ state: oauthState, code: 'fake' })
       .expect(302);
-    const code = new URL(callback.headers.location).searchParams.get('code');
+    const code = new URL(responseLocation(callback)).searchParams.get('code');
     const exchange = await agent
       .post('/api/auth/app/exchange')
       .set('Origin', origin)
@@ -477,28 +513,28 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     const agent = supertest.agent(fixture().app.getHttpServer());
     const returnTo = '/ja/login?returnTo=' + encodeURIComponent('/ja/boards/coaching?coachingRole=STUDENT');
     const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const callback = await agent
       .get('/api/auth/social/google/callback')
       .query({ state, code: 'fake-code' })
       .expect(302);
-    const destination = new URL(callback.headers.location);
+    const destination = new URL(responseLocation(callback));
     expect(destination.origin).toBe(origin);
     expect(destination.pathname).toBe('/ja/boards/coaching');
     expect(destination.searchParams.get('coachingRole')).toBe('STUDENT');
     expect(destination.searchParams.has('returnTo')).toBe(false);
-    expect(
-      callback.headers['set-cookie'].some((value: string) => value.startsWith('gamefeedback_oauth_return=;')),
-    ).toBe(true);
+    expect(responseCookies(callback).some((value) => value.startsWith('gamefeedback_oauth_return=;'))).toBe(
+      true,
+    );
   });
   it('OAuth cancellation returns to the selected locale and external return destinations are rejected', async () => {
     const agent = supertest.agent(fixture().app.getHttpServer());
     await agent.get('/api/auth/social/google').query({ returnTo: 'https://outside.test' }).expect(400);
     const returnTo = '/en/login?returnTo=%2Fen%2Fsettings';
     const start = await agent.get('/api/auth/social/google').query({ returnTo }).expect(302);
-    const state = new URL(start.headers.location).searchParams.get('state');
+    const state = new URL(responseLocation(start)).searchParams.get('state');
     const cancelled = await agent.get('/api/auth/social/google/callback').query({ state }).expect(302);
-    const destination = new URL(cancelled.headers.location);
+    const destination = new URL(responseLocation(cancelled));
     expect(destination.pathname).toBe('/en/login');
     expect(destination.searchParams.get('returnTo')).toBe('/en/settings');
     expect(destination.searchParams.get('login')).toBe('cancelled');

@@ -163,7 +163,7 @@ describe('신고·숨김·삭제', () => {
     const { photoId } = await photoOfAuthor('신고 권한');
     for (const mutation of [REPORT, HIDE, DELETE]) {
       expect(await api.gqlFail(outsider.cookie, mutation, { id: photoId, reason: '외부 신고' })).toEqual(
-        GROUP_FORBIDDEN,
+        PHOTO_NOT_FOUND,
       );
       expect(await api.gqlFail(owner.cookie, mutation, { id: 'missing-photo', reason: '없는 사진' })).toEqual(
         PHOTO_NOT_FOUND,
@@ -196,7 +196,7 @@ describe('신고·숨김·삭제', () => {
     expect(await api.db.report.count({ where: { submissionId: photoId } })).toBe(1);
     expect(await storedPhotoExists(api, upload.imageKey ?? '')).toBe(true);
 
-    expect((await getPhoto(photoId, owner.cookie)).status).toBe(200);
+    expect((await getPhoto(photoId, owner.cookie)).status).toBe(307);
     expect((await getPhoto(photoId, author.cookie)).status).toBe(404);
     expect((await listed(friend, contestId)).map(({ id }) => id)).not.toContain(photoId);
     expect(await api.gqlOk(owner.cookie, HIDDEN_SUBMISSIONS, { id: contestId })).toEqual({

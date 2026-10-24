@@ -19,6 +19,20 @@ export class GroupAdministrationResolver {
   }
 
   @Mutation()
+  removeGroupMember(
+    @Viewer() viewer: IViewer,
+    @Args('groupId') groupId: string,
+    @Args('userId') userId: string,
+  ) {
+    return this.administration.removeMember(viewer, groupId, userId);
+  }
+
+  @Mutation()
+  leaveGroup(@Viewer() viewer: IViewer, @Args('groupId') groupId: string) {
+    return this.administration.leave(viewer, groupId);
+  }
+
+  @Mutation()
   transferGroupOwnership(
     @Viewer() viewer: IViewer,
     @Args('groupId') groupId: string,
