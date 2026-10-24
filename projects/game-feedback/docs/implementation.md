@@ -1,3 +1,9 @@
+## 2026-10-25 구형 단독 배포 잔여 정리
+
+최신 develop에서 주요 단독 배포 파일이 제거된 뒤 남아 있던 백업 업로드·설정 검증 CLI와 백업 전용 SDK 의존성을 제거했다. S3를 사용하는 공유 배포 이미지에서 이전 로컬 미디어 디렉터리를 만드는 단계도 제거했다. Admin 세션·Prisma 스킬의 운영 안내는 공통 service.sh와 현재 Compose의 migrate 서비스로 맞췄고, 폐기한 smoke 경로와 단독 배포 기록을 가리키던 문구를 정리했다. 루트 yarn.lock 변경은 사용처가 없어진 백업 의존성과 그 전이 의존성을 정리하기 위한 것이다.
+
+검증: Node 24에서 API unit 167개·typecheck·build와 공유 배포 Vitest 20개가 통과했다. 프로젝트 lint, 관련 workflow의 Actionlint, 변경 문서·manifest·lockfile Prettier와 diff 검사를 통과했다. 추적 파일 전체에서 구형 배포 이름·경로·백업 환경변수 참조가 남지 않았고, 현재 운영 스크립트와 스킬의 문서 경로가 존재함을 확인했다. Docker 엔진이 없어 실제 이미지 재빌드·컨테이너 smoke는 실행하지 않았다. 운영 인프라·DB를 변경하거나 배포하지 않았다.
+
 ## 2026-10-25 PR #68 탈퇴와 현재 제재 정책 통합
 
 탈퇴 시 User 행을 익명으로 남기고 본인 글·답변·댓글의 내용을 비운다. 다른 작성자의 답변·댓글은 보존하고 본인의 원댓글에 달린 타인 답글은 독립 댓글로 분리한다. 개인정보·계정 연결·세션·로그인 티켓·대화·첨부와 관계를 정리하며 공개 프로필·팔로우·차단·채팅에서 탈퇴 사용자를 제외한다. 글·탐색 캐시 무효화를 같은 트랜잭션에 기록한다.
@@ -74,7 +80,7 @@ API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/*
 
 URL 인코딩 폴더(`%5Fhealth`, `%5Finternal`)를 kebab-case 정적 세그먼트로 바꿨다. 웹 생존 확인은 `/health-check/live`, 캐시 재검증 콜백은 `POST /internal/cache/revalidate`, API의 제외 작성자 조회는 `/internal/visibility/excluded-authors`다. 운영 배포 전이라 이전 URL을 남기지 않는다. API는 `GF_CACHE_REVALIDATION_URL`이 새 경로가 아니면 시작을 거부하므로 기존 로컬 `.env`의 값을 고쳐야 한다. 정적 세그먼트는 `[locale]`보다 먼저 매칭되고 proxy matcher(`/`, `/ko|en|ja/:path*`)에 포함되지 않는다. 공용 Caddy는 `/internal`과 그 하위 경로만 대소문자 구분 없이 막는다. 아래 날짜별 기록의 `/_internal`·`/_health`는 당시 경로다.
 
-검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke(`shared-instance-smoke.mjs`, `production-smoke.mjs`)는 로컬에서 실행하지 않았다.
+검증: `check:game-feedback`, Web unit/UI 169개, API unit 106개, 세 Caddyfile의 `caddy validate`(2.7.6)와 차단 정규식 경계 확인이 통과했다. DB가 필요한 API 통합 사양(캐시 무효화·제외 작성자 조회), Playwright e2e, 컨테이너 smoke는 로컬에서 실행하지 않았다.
 
 PR #47 충돌 해소: develop `697d5243`을 병합한 뒤 작업 중 추가된 `42370ab5`도 반영했다. 공통 차단 목록 함수·관련 테스트와 모바일 E2E 콜백 URL을 새 `/internal` 경로로 맞췄다. 최신 캐시 정책, Terraform 안내와 #51 이미지·#52 액션 업데이트를 함께 보존했다. 별도 worktree의 Node 24에서 집계 `check`, Web 192개·API unit 150개·배포 스크립트 50개 테스트, ShellCheck와 Caddyfile의 adapt·validate·경로 경계 검사가 통과했다(Caddy 로그·저장 경로는 임시 디렉터리로 격리). SDK 재생성 diff는 없었다. DB 통합·브라우저 E2E·컨테이너 smoke는 이번 충돌 해소에서 실행하지 않았다.
 
@@ -181,7 +187,7 @@ Repository 전달 계층을 제거하고 서비스에서 Prisma를 직접 사용
 
 ## 2026-10-19 공통 EC2·RDS·S3와 Repository
 
-운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다. 아래 과거 단독 배포 기록과 구분한다.
+운영 대상은 두 서비스를 묶은 서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이다.
 
 - 두 API의 도메인 Service에서 DB 직접 접근을 Repository로 옮겼다. UnitOfWork가 같은 트랜잭션 client를 전달하며 권한·미디어·이벤트도 같은 연결을 사용한다. DB 스키마와 API 계약은 유지했다.
 - 런타임 DML과 일회성 DDL 자격 증명을 분리하고 RDS hostname·TLS CA·role·pool 한도를 검증한다. 두 DB와 버킷을 분리하고 Caddy만 공유한다. GF 작성 중 가시성 조회가 다른 연결을 기다리던 경로도 수정했다.
