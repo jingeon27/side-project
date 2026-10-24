@@ -27,6 +27,15 @@ test(
     await page.getByRole('button', { name: '프로필 수정', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: '프로필 수정', exact: true });
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('textbox', { name: '닉네임', exact: true })).toBeVisible();
+    const save = dialog.getByRole('button', { name: '프로필 저장하기', exact: true });
+    await expect(save).toBeVisible();
+    await expect
+      .poll(async () => {
+        const box = await save.boundingBox();
+        return Boolean(box && box.y >= 0 && box.y + box.height <= (page.viewportSize()?.height ?? 0) + 1);
+      })
+      .toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('theme-dark-profile.png') });
     await page.keyboard.press('Escape');
