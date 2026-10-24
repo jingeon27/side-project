@@ -14,7 +14,8 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 
 ## 실행기 (`scripts/test.mjs`)
 
-- `NODE_ENV=test`, `DATABASE_URL=TEST_DATABASE_URL`, `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=false`, OAuth 키·`SUPERCELL_API_TOKEN`·Sentry DSN·`GF_ADMIN_GOOGLE_SUB`를 비운 env로 contracts build → `db:generate` → (unit만이 아니면) `../../scripts/db.mjs start --test` → `vitest run <인자>`. 인자는 그대로 Vitest로 간다.
+- `NODE_ENV=test`, `DATABASE_URL=TEST_DATABASE_URL`, 데모·테스트 인증·OAuth·Supercell·관측 키를 비운 env로 contracts build → `db:generate` → (unit만이 아니면) `../../scripts/db.mjs start --test` → `vitest run <인자>`.
+
 - Vitest를 직접 부르지 않는다(위 env가 빠진다). 테스트 DB는 loopback 55444에 남아 다음 실행이 재사용한다. 띄우지 못하면 실패로 보고하고 포트 사용자를 종료하지 않는다.
 
 ## integration 파일 골격
@@ -22,8 +23,8 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 기존 파일을 복사해 시작한다. 최근 형식은 `src/posts/post-media-upload.service.integration.spec.ts`, `src/database/unit-of-work.integration.spec.ts`.
 
 1. 스키마 이름 `gf_test_<영역>_${randomBytes(8).toString('hex')}`를 `TEST_DATABASE_URL`의 `schema`에 넣고 `assertDatabaseUrl(url, 'test')`(`src/database/database-url.ts`: 55444·`game_feedback_test`·`gf_test_*`·`game_feedback` 역할·`options` 금지). 영역 접두사는 파일마다 다르게 한다.
-2. 구조: `spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: { ...process.env, DATABASE_URL } })`. 옛 파일의 `'db', 'push', '--skip-generate'`는 migration 전용 CHECK 제약을 만들지 않는다.
-3. `db = new PrismaClient({ datasources: { db: { url } } })`, `seed(db, false)`(카테고리 `clash-royale`) 또는 `seed(db, true)`(테스트 계정·예시 글).
+2. 구조: `spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', 'deploy'], { env: { ...process.env, DATABASE_URL } })`. 옛 파일의 `'db', 'push'`는 migration 전용 CHECK 제약을 만들지 않는다.
+3. `db = new PrismaClient({ adapter: createPrismaAdapter(url) })`, `seed(db, false)`(카테고리 `clash-royale`) 또는 `seed(db, true)`(테스트 계정·예시 글).
 4. `app = await createApp({ databaseUrl, webOrigin: origin, demoMode, testAuthEnabled, rateLimit: false, prisma: db, … })` — `listen()`하지 않고 `supertest(app.getHttpServer())`. `prisma`를 넘기면 `app.close()`가 그 연결을 끊지 않는다. `beforeAll` 타임아웃은 30000.
 5. `afterAll`: `app.close()` → 스키마 이름을 파일의 정규식(`/^gf_test_<영역>_[a-f0-9]{16}$/`)으로 다시 확인 → `DROP SCHEMA "<schema>" CASCADE` → `$disconnect()`. 만들지 않은 스키마는 지우지 않는다.
 

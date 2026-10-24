@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { GameProfile } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import {
   ApiError,
@@ -65,7 +66,7 @@ describe.skipIf(!testDatabaseUrl)(
       assertDatabaseUrl(databaseUrl, 'test');
       const migration = spawnSync(
         process.execPath,
-        [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
+        [require.resolve('prisma/build/index.js'), 'db', 'push'],
         {
           env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
           encoding: 'utf8',
@@ -73,7 +74,7 @@ describe.skipIf(!testDatabaseUrl)(
       );
       if (migration.status !== 0)
         throw new Error(`Isolated account schema setup failed: ${migration.stderr}\n${migration.stdout}`);
-      db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+      db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
       await seed(db, true);
       app = await createApp({
         databaseUrl,

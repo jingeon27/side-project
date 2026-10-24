@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MediaUploadPlanSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
@@ -43,7 +44,7 @@ describe('게시글 S3 직접 업로드', () => {
       { env: { ...process.env, DATABASE_URL: state.databaseUrl }, encoding: 'utf8' },
     );
     if (result.status !== 0) throw new Error(`Isolated migration failed: ${result.stdout}\n${result.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: state.databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(state.databaseUrl) });
     await seed(state.db, false);
     await s3.start();
     state.app = await createApp({

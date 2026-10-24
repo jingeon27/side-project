@@ -1,10 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Notification } from '@/shared/api';
 import { LanguageProvider } from '@/shared/i18n';
 
 import { NotificationItem } from './NotificationItem';
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 const notification = {
   id: 'notification-1',

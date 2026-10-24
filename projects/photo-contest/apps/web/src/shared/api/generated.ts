@@ -1,22 +1,8 @@
-import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
-export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+/** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
-/** All built-in and custom scalars, mapped to their actual values */
-export type Scalars = {
-  ID: { input: string; output: string; }
-  String: { input: string; output: string; }
-  Boolean: { input: boolean; output: boolean; }
-  Int: { input: number; output: number; }
-  Float: { input: number; output: number; }
-  /** ISO 8601 시각 문자열 */
-  DateTime: { input: string; output: string; }
-};
-
+import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export const GroupContestFilter = {
   Active: 'ACTIVE',
   Completed: 'COMPLETED',
@@ -71,20 +57,20 @@ export type SubmissionSort = typeof SubmissionSort[keyof typeof SubmissionSort];
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { me: { __typename: 'User', id: string, nickname: string, avatar: string | null } | null };
+export type MeQuery = { me: { __typename: 'User', needsOnboarding: boolean, id: string, nickname: string, avatar: string | null } | null };
 
 export type RegisterWithPasswordMutationVariables = Exact<{
-  loginId: Scalars['String']['input'];
-  password: Scalars['String']['input'];
-  nickname: Scalars['String']['input'];
+  loginId: string;
+  password: string;
+  nickname: string;
 }>;
 
 
 export type RegisterWithPasswordMutation = { registerWithPassword: { __typename: 'User', id: string, nickname: string, avatar: string | null } };
 
 export type LoginWithPasswordMutationVariables = Exact<{
-  loginId: Scalars['String']['input'];
-  password: Scalars['String']['input'];
+  loginId: string;
+  password: string;
 }>;
 
 
@@ -93,18 +79,18 @@ export type LoginWithPasswordMutation = { loginWithPassword: { __typename: 'User
 export type ContestListItemFragment = { __typename: 'Contest', id: string, groupId: string, title: string, phase: Phase, startsAt: string, submissionEndsAt: string, endsAt: string };
 
 export type ContestQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type ContestQuery = { contest: { __typename: 'Contest', isAdmin: boolean, mySubmissionId: string | null, votedSubmissionId: string | null, submissionCount: number, id: string, groupId: string, title: string, phase: Phase, startsAt: string, submissionEndsAt: string, endsAt: string, hiddenSubmissions: Array<{ __typename: 'Submission', id: string, contestId: string, caption: string, imageUrl: string, hidden: boolean, createdAt: string, voteCount: number | null, likeCount: number, likedByMe: boolean, reportCount: number | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null }, reports: Array<{ __typename: 'Report', id: string, reason: string, createdAt: string }> | null }> } };
 
 export type CreateContestMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  title: Scalars['String']['input'];
-  startsAt: Scalars['DateTime']['input'];
-  submissionEndsAt: Scalars['DateTime']['input'];
-  endsAt: Scalars['DateTime']['input'];
+  groupId: string;
+  title: string;
+  startsAt: string;
+  submissionEndsAt: string;
+  endsAt: string;
 }>;
 
 
@@ -117,59 +103,59 @@ export type GroupContestAwardFragment = { __typename: 'GroupContestResult', rank
 export type GroupContestCardFragment = { __typename: 'GroupContest', likeLimit: number, id: string, groupId: string, title: string, startsAt: string, submissionEndsAt: string, endsAt: string, phase: Phase, isAdmin: boolean, canParticipate: boolean, canVote: boolean, votedPostId: string | null, entryCount: number, winners: Array<{ __typename: 'GroupContestResult', rank: number, voteCount: number, winner: boolean, post: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } }> };
 
 export type GroupContestsQueryVariables = Exact<{
-  groupId: Scalars['ID']['input'];
+  groupId: string;
   filter: GroupContestFilter;
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
 export type GroupContestsQuery = { groupContests: Array<{ __typename: 'GroupContest', likeLimit: number, id: string, groupId: string, title: string, startsAt: string, submissionEndsAt: string, endsAt: string, phase: Phase, isAdmin: boolean, canParticipate: boolean, canVote: boolean, votedPostId: string | null, entryCount: number, winners: Array<{ __typename: 'GroupContestResult', rank: number, voteCount: number, winner: boolean, post: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } }> }> };
 
 export type GroupContestQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type GroupContestQuery = { groupContest: { __typename: 'GroupContest', likeLimit: number, id: string, groupId: string, title: string, startsAt: string, submissionEndsAt: string, endsAt: string, phase: Phase, isAdmin: boolean, canParticipate: boolean, canVote: boolean, votedPostId: string | null, entryCount: number } };
 
 export type GroupContestResultsQueryVariables = Exact<{
-  contestId: Scalars['ID']['input'];
+  contestId: string;
 }>;
 
 
 export type GroupContestResultsQuery = { groupContestResults: Array<{ __typename: 'GroupContestResult', rank: number, voteCount: number, winner: boolean, post: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } }> };
 
 export type CreateGroupContestMutationVariables = Exact<{
-  likeLimit?: InputMaybe<Scalars['Int']['input']>;
-  groupId: Scalars['ID']['input'];
-  title: Scalars['String']['input'];
-  startsAt: Scalars['DateTime']['input'];
-  submissionEndsAt: Scalars['DateTime']['input'];
-  endsAt: Scalars['DateTime']['input'];
+  likeLimit?: number | null | undefined;
+  groupId: string;
+  title: string;
+  startsAt: string;
+  submissionEndsAt: string;
+  endsAt: string;
 }>;
 
 
 export type CreateGroupContestMutation = { createGroupContest: { __typename: 'GroupContest', likeLimit: number, id: string, groupId: string, title: string, startsAt: string, submissionEndsAt: string, endsAt: string, phase: Phase, isAdmin: boolean, canParticipate: boolean, canVote: boolean, votedPostId: string | null, entryCount: number } };
 
 export type CastGroupContestVoteMutationVariables = Exact<{
-  contestId: Scalars['ID']['input'];
-  postId: Scalars['ID']['input'];
+  contestId: string;
+  postId: string;
 }>;
 
 
 export type CastGroupContestVoteMutation = { castGroupContestVote: { __typename: 'GroupContest', likeLimit: number, id: string, groupId: string, title: string, startsAt: string, submissionEndsAt: string, endsAt: string, phase: Phase, isAdmin: boolean, canParticipate: boolean, canVote: boolean, votedPostId: string | null, entryCount: number } };
 
 export type PublicGroupContestSeoQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type PublicGroupContestSeoQuery = { groupContest: { __typename: 'GroupContest', id: string, groupId: string, title: string, startsAt: string, submissionEndsAt: string, endsAt: string, phase: Phase, entryCount: number } };
 
 export type PublicGroupContestSitemapQueryVariables = Exact<{
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
@@ -181,8 +167,8 @@ export type PublicGroupContestCountQueryVariables = Exact<{ [key: string]: never
 export type PublicGroupContestCountQuery = { publicGroupContestCount: number };
 
 export type MyPhotoFeedQueryVariables = Exact<{
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
@@ -196,23 +182,23 @@ export type MyGroupsQueryVariables = Exact<{ [key: string]: never; }>;
 export type MyGroupsQuery = { myGroups: Array<{ __typename: 'Group', description: string, avatarUrl: string | null, id: string, name: string, role: GroupRole | null, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string } }> }> };
 
 export type GroupQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type GroupQuery = { group: { __typename: 'Group', description: string, avatarUrl: string | null, id: string, name: string, role: GroupRole | null, inviteToken: string | null, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } }>, contests: Array<{ __typename: 'Contest', id: string, groupId: string, title: string, phase: Phase, startsAt: string, submissionEndsAt: string, endsAt: string }> } };
 
 export type CreateGroupMutationVariables = Exact<{
-  name: Scalars['String']['input'];
+  name: string;
   visibility?: GroupVisibility;
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: string | null | undefined;
 }>;
 
 
 export type CreateGroupMutation = { createGroup: { __typename: 'Group', description: string, avatarUrl: string | null, id: string, name: string, role: GroupRole | null, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string } }> } };
 
 export type GalleryQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
@@ -223,17 +209,17 @@ export type GroupAccessFragment = { __typename: 'Group', id: string, visibility:
 export type DiscoverGroupFragment = { __typename: 'Group', description: string, avatarUrl: string | null, id: string, name: string, visibility: GroupVisibility, role: GroupRole | null, memberCount: number, canViewPosts: boolean, joinRequestPending: boolean };
 
 export type DiscoverGroupsQueryVariables = Exact<{
-  search?: InputMaybe<Scalars['String']['input']>;
-  visibility?: InputMaybe<GroupVisibility>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: string | null | undefined;
+  visibility?: GroupVisibility | null | undefined;
+  offset?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 
 export type DiscoverGroupsQuery = { discoverGroups: Array<{ __typename: 'Group', description: string, avatarUrl: string | null, id: string, name: string, visibility: GroupVisibility, role: GroupRole | null, memberCount: number, canViewPosts: boolean, joinRequestPending: boolean }> };
 
 export type RequestGroupMembershipMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
+  groupId: string;
 }>;
 
 
@@ -242,30 +228,30 @@ export type RequestGroupMembershipMutation = { requestGroupMembership: { __typen
 export type GroupJoinRequestRowFragment = { __typename: 'GroupJoinRequest', id: string, groupId: string, createdAt: string, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } };
 
 export type GroupJoinRequestsQueryVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  groupId: string;
+  offset?: number | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 
 export type GroupJoinRequestsQuery = { groupJoinRequests: Array<{ __typename: 'GroupJoinRequest', id: string, groupId: string, createdAt: string, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> };
 
 export type ApproveGroupJoinRequestMutationVariables = Exact<{
-  requestId: Scalars['ID']['input'];
+  requestId: string;
 }>;
 
 
 export type ApproveGroupJoinRequestMutation = { approveGroupJoinRequest: boolean };
 
 export type RejectGroupJoinRequestMutationVariables = Exact<{
-  requestId: Scalars['ID']['input'];
+  requestId: string;
 }>;
 
 
 export type RejectGroupJoinRequestMutation = { rejectGroupJoinRequest: boolean };
 
 export type PublicGroupSeoQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
@@ -277,8 +263,8 @@ export type PublicGroupCountQueryVariables = Exact<{ [key: string]: never; }>;
 export type PublicGroupCountQuery = { publicGroupCount: number };
 
 export type PublicGroupSitemapQueryVariables = Exact<{
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
@@ -287,32 +273,32 @@ export type PublicGroupSitemapQuery = { discoverGroups: Array<{ __typename: 'Gro
 export type GroupAdministrationFragment = { __typename: 'Group', name: string, id: string, visibility: GroupVisibility, role: GroupRole | null, memberCount: number, canViewPosts: boolean, joinRequestPending: boolean, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> };
 
 export type SetGroupModeratorMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  userId: Scalars['ID']['input'];
-  enabled: Scalars['Boolean']['input'];
+  groupId: string;
+  userId: string;
+  enabled: boolean;
 }>;
 
 
 export type SetGroupModeratorMutation = { setGroupModerator: { __typename: 'Group', name: string, id: string, visibility: GroupVisibility, role: GroupRole | null, memberCount: number, canViewPosts: boolean, joinRequestPending: boolean, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> } };
 
 export type TransferGroupOwnershipMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  userId: Scalars['ID']['input'];
+  groupId: string;
+  userId: string;
 }>;
 
 
 export type TransferGroupOwnershipMutation = { transferGroupOwnership: { __typename: 'Group', name: string, id: string, visibility: GroupVisibility, role: GroupRole | null, memberCount: number, canViewPosts: boolean, joinRequestPending: boolean, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> } };
 
 export type RemoveGroupMemberMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  userId: Scalars['ID']['input'];
+  groupId: string;
+  userId: string;
 }>;
 
 
 export type RemoveGroupMemberMutation = { removeGroupMember: { __typename: 'Group', name: string, id: string, visibility: GroupVisibility, role: GroupRole | null, memberCount: number, canViewPosts: boolean, joinRequestPending: boolean, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> } };
 
 export type LeaveGroupMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
+  groupId: string;
 }>;
 
 
@@ -323,93 +309,93 @@ export type GroupCategoryRowFragment = { __typename: 'GroupCategory', id: string
 export type GroupCategoriesFragment = { __typename: 'Group', id: string, categories: Array<{ __typename: 'GroupCategory', id: string, name: string, position: number, archivedAt: string | null }> };
 
 export type GroupCategoriesQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type GroupCategoriesQuery = { group: { __typename: 'Group', role: GroupRole | null, id: string, categories: Array<{ __typename: 'GroupCategory', id: string, name: string, position: number, archivedAt: string | null }> } };
 
 export type CreateGroupCategoryMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  name: Scalars['String']['input'];
+  groupId: string;
+  name: string;
 }>;
 
 
 export type CreateGroupCategoryMutation = { createGroupCategory: { __typename: 'GroupCategory', id: string, name: string, position: number, archivedAt: string | null } };
 
 export type RenameGroupCategoryMutationVariables = Exact<{
-  categoryId: Scalars['ID']['input'];
-  name: Scalars['String']['input'];
+  categoryId: string;
+  name: string;
 }>;
 
 
 export type RenameGroupCategoryMutation = { renameGroupCategory: { __typename: 'GroupCategory', id: string, name: string, position: number, archivedAt: string | null } };
 
 export type ReorderGroupCategoriesMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  categoryIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  groupId: string;
+  categoryIds: Array<string> | string;
 }>;
 
 
 export type ReorderGroupCategoriesMutation = { reorderGroupCategories: Array<{ __typename: 'GroupCategory', id: string, name: string, position: number, archivedAt: string | null }> };
 
 export type ArchiveGroupCategoryMutationVariables = Exact<{
-  categoryId: Scalars['ID']['input'];
+  categoryId: string;
 }>;
 
 
 export type ArchiveGroupCategoryMutation = { archiveGroupCategory: { __typename: 'GroupCategory', id: string, name: string, position: number, archivedAt: string | null } };
 
 export type GroupProfileQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type GroupProfileQuery = { group: { __typename: 'Group', id: string, name: string, description: string, avatarUrl: string | null, role: GroupRole | null } };
 
 export type UpdateGroupProfileMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  name: Scalars['String']['input'];
-  description: Scalars['String']['input'];
-  avatarId?: InputMaybe<Scalars['ID']['input']>;
-  removeAvatar?: Scalars['Boolean']['input'];
+  groupId: string;
+  name: string;
+  description: string;
+  avatarId?: string | null | undefined;
+  removeAvatar?: boolean;
 }>;
 
 
 export type UpdateGroupProfileMutation = { updateGroupProfile: { __typename: 'Group', id: string, name: string, description: string, avatarUrl: string | null, role: GroupRole | null } };
 
 export type RequestGroupAvatarUploadMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  contentType: Scalars['String']['input'];
-  byteSize: Scalars['Int']['input'];
+  groupId: string;
+  contentType: string;
+  byteSize: number;
 }>;
 
 
 export type RequestGroupAvatarUploadMutation = { requestGroupAvatarUpload: { __typename: 'UploadTicket', id: string, url: string, expiresAt: string, fields: Array<{ __typename: 'UploadFormField', name: string, value: string }> } };
 
 export type CompleteGroupAvatarUploadMutationVariables = Exact<{
-  uploadId: Scalars['ID']['input'];
+  uploadId: string;
 }>;
 
 
 export type CompleteGroupAvatarUploadMutation = { completeGroupAvatarUpload: { __typename: 'GroupAvatarTicket', id: string } };
 
 export type InvitePreviewQueryVariables = Exact<{
-  token: Scalars['String']['input'];
+  token: string;
 }>;
 
 
 export type InvitePreviewQuery = { invitePreview: { __typename: 'InvitePreview', groupName: string, memberCount: number, ownerNickname: string, joinedGroupId: string | null, visibility: GroupVisibility, joinRequestPending: boolean } };
 
 export type JoinGroupMutationVariables = Exact<{
-  token: Scalars['String']['input'];
+  token: string;
 }>;
 
 
 export type JoinGroupMutation = { joinGroup: { __typename: 'Group', description: string, avatarUrl: string | null, id: string, name: string, role: GroupRole | null, members: Array<{ __typename: 'Member', role: GroupRole, user: { __typename: 'User', id: string } }> } };
 
 export type RegenerateInviteLinkMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
+  groupId: string;
 }>;
 
 
@@ -418,14 +404,14 @@ export type RegenerateInviteLinkMutation = { regenerateInviteLink: { __typename:
 export type SubmissionLikeFragment = { __typename: 'Submission', id: string, likeCount: number, likedByMe: boolean };
 
 export type LikeSubmissionMutationVariables = Exact<{
-  submissionId: Scalars['ID']['input'];
+  submissionId: string;
 }>;
 
 
 export type LikeSubmissionMutation = { likeSubmission: { __typename: 'Submission', id: string, likeCount: number, likedByMe: boolean } };
 
 export type UnlikeSubmissionMutationVariables = Exact<{
-  submissionId: Scalars['ID']['input'];
+  submissionId: string;
 }>;
 
 
@@ -434,22 +420,22 @@ export type UnlikeSubmissionMutation = { unlikeSubmission: { __typename: 'Submis
 export type SubmissionVisibilityFragment = { __typename: 'Submission', id: string, hidden: boolean };
 
 export type ReportSubmissionMutationVariables = Exact<{
-  submissionId: Scalars['ID']['input'];
-  reason: Scalars['String']['input'];
+  submissionId: string;
+  reason: string;
 }>;
 
 
 export type ReportSubmissionMutation = { reportSubmission: boolean };
 
 export type HideSubmissionMutationVariables = Exact<{
-  submissionId: Scalars['ID']['input'];
+  submissionId: string;
 }>;
 
 
 export type HideSubmissionMutation = { hideSubmission: boolean };
 
 export type DeleteSubmissionMutationVariables = Exact<{
-  submissionId: Scalars['ID']['input'];
+  submissionId: string;
 }>;
 
 
@@ -457,71 +443,80 @@ export type DeleteSubmissionMutation = { deleteSubmission: boolean };
 
 export type GalleryPostCardFragment = { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } };
 
+export type MyGalleryPostsQueryVariables = Exact<{
+  groupId?: string | null | undefined;
+  offset: number;
+  limit: number;
+}>;
+
+
+export type MyGalleryPostsQuery = { myGalleryPosts: Array<{ __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> };
+
 export type GalleryPostsQueryVariables = Exact<{
-  groupId?: InputMaybe<Scalars['ID']['input']>;
-  contestId?: InputMaybe<Scalars['ID']['input']>;
-  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  groupId?: string | null | undefined;
+  contestId?: string | null | undefined;
+  categoryId?: string | null | undefined;
   sort: PostSort;
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
 export type GalleryPostsQuery = { galleryPosts: Array<{ __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> };
 
 export type RequestPostUploadMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  contentType: Scalars['String']['input'];
-  byteSize: Scalars['Int']['input'];
+  groupId: string;
+  contentType: string;
+  byteSize: number;
 }>;
 
 
 export type RequestPostUploadMutation = { requestPostUpload: { __typename: 'PostUploadTicket', id: string, url: string, expiresAt: string, fields: Array<{ __typename: 'UploadFormField', name: string, value: string }> } };
 
 export type CreatePostMutationVariables = Exact<{
-  categoryId?: InputMaybe<Scalars['ID']['input']>;
-  contestId?: InputMaybe<Scalars['ID']['input']>;
-  groupId: Scalars['ID']['input'];
-  uploadId?: InputMaybe<Scalars['ID']['input']>;
-  linkUrl?: InputMaybe<Scalars['String']['input']>;
-  title: Scalars['String']['input'];
-  body?: InputMaybe<Scalars['String']['input']>;
-  rightsConfirmed: Scalars['Boolean']['input'];
+  categoryId?: string | null | undefined;
+  contestId?: string | null | undefined;
+  groupId: string;
+  uploadId?: string | null | undefined;
+  linkUrl?: string | null | undefined;
+  title: string;
+  body?: string | null | undefined;
+  rightsConfirmed: boolean;
 }>;
 
 
 export type CreatePostMutation = { createPost: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
 export type LikePostMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
+  postId: string;
 }>;
 
 
 export type LikePostMutation = { likePost: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
 export type UnlikePostMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
+  postId: string;
 }>;
 
 
 export type UnlikePostMutation = { unlikePost: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
 export type DeletePostMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
+  postId: string;
 }>;
 
 
 export type DeletePostMutation = { deletePost: boolean };
 
 export type CompletePostUploadMutationVariables = Exact<{
-  uploadId: Scalars['ID']['input'];
+  uploadId: string;
 }>;
 
 
 export type CompletePostUploadMutation = { completePostUpload: { __typename: 'PostUploadResult', id: string, kind: PostKind, contentType: string, byteSize: number } };
 
 export type PostDownloadQueryVariables = Exact<{
-  postId: Scalars['ID']['input'];
+  postId: string;
 }>;
 
 
@@ -530,26 +525,26 @@ export type PostDownloadQuery = { postDownload: { __typename: 'PostDownload', ur
 export type PostCommentCardFragment = { __typename: 'PostComment', parentId: string | null, replyCount: number, likeCount: number, likedByMe: boolean, canInteract: boolean, id: string, postId: string, body: string, createdAt: string, canDelete: boolean, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } };
 
 export type PostCommentsQueryVariables = Exact<{
-  postId: Scalars['ID']['input'];
-  parentId?: InputMaybe<Scalars['ID']['input']>;
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  postId: string;
+  parentId?: string | null | undefined;
+  offset: number;
+  limit: number;
 }>;
 
 
 export type PostCommentsQuery = { postCommentCount: number, postComments: Array<{ __typename: 'PostComment', parentId: string | null, replyCount: number, likeCount: number, likedByMe: boolean, canInteract: boolean, id: string, postId: string, body: string, createdAt: string, canDelete: boolean, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> };
 
 export type CreatePostCommentMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
-  body: Scalars['String']['input'];
-  parentId?: InputMaybe<Scalars['ID']['input']>;
+  postId: string;
+  body: string;
+  parentId?: string | null | undefined;
 }>;
 
 
 export type CreatePostCommentMutation = { createPostComment: { __typename: 'PostComment', parentId: string | null, replyCount: number, likeCount: number, likedByMe: boolean, canInteract: boolean, id: string, postId: string, body: string, createdAt: string, canDelete: boolean, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
 export type DeletePostCommentMutationVariables = Exact<{
-  commentId: Scalars['ID']['input'];
+  commentId: string;
 }>;
 
 
@@ -557,32 +552,32 @@ export type DeletePostCommentMutation = { deletePostComment: boolean };
 
 export type PublicGalleryPostsQueryVariables = Exact<{
   sort: PostSort;
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
 export type PublicGalleryPostsQuery = { publicGalleryPosts: Array<{ __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } }> };
 
 export type RefreshPostQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type RefreshPostQuery = { galleryPost: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
 export type HiddenGalleryPostsQueryVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  groupId: string;
+  offset: number;
+  limit: number;
 }>;
 
 
 export type HiddenGalleryPostsQuery = { hiddenGalleryPosts: Array<{ __typename: 'HiddenGalleryPost', id: string, title: string, createdAt: string }> };
 
 export type SetPostHiddenMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
-  hidden: Scalars['Boolean']['input'];
+  postId: string;
+  hidden: boolean;
 }>;
 
 
@@ -591,53 +586,87 @@ export type SetPostHiddenMutation = { setPostHidden: boolean };
 export type PostCategoryOptionsFragment = { __typename: 'Group', id: string, categories: Array<{ __typename: 'GroupCategory', id: string, name: string }> };
 
 export type PostCategoryOptionsQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: string;
 }>;
 
 
 export type PostCategoryOptionsQuery = { group: { __typename: 'Group', id: string, categories: Array<{ __typename: 'GroupCategory', id: string, name: string }> } };
 
 export type SetPostCategoryMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
-  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  postId: string;
+  categoryId?: string | null | undefined;
 }>;
 
 
 export type SetPostCategoryMutation = { setPostCategory: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
 export type LikePostCommentMutationVariables = Exact<{
-  commentId: Scalars['ID']['input'];
+  commentId: string;
 }>;
 
 
 export type LikePostCommentMutation = { likePostComment: { __typename: 'PostComment', id: string, likeCount: number, likedByMe: boolean } };
 
 export type UnlikePostCommentMutationVariables = Exact<{
-  commentId: Scalars['ID']['input'];
+  commentId: string;
 }>;
 
 
 export type UnlikePostCommentMutation = { unlikePostComment: { __typename: 'PostComment', id: string, likeCount: number, likedByMe: boolean } };
 
 export type UpdatePostMutationVariables = Exact<{
-  postId: Scalars['ID']['input'];
-  title: Scalars['String']['input'];
-  body?: InputMaybe<Scalars['String']['input']>;
-  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  postId: string;
+  title: string;
+  body?: string | null | undefined;
+  categoryId?: string | null | undefined;
 }>;
 
 
 export type UpdatePostMutation = { updatePost: { __typename: 'GalleryPost', id: string, contestId: string | null, groupId: string, groupName: string, title: string, body: string, kind: PostKind, mediaUrl: string | null, linkUrl: string | null, createdAt: string, likeCount: number, commentCount: number, likedByMe: boolean, canDelete: boolean, canModerate: boolean, canInteract: boolean, category: { __typename: 'GroupCategory', id: string, name: string, archivedAt: string | null } | null, contest: { __typename: 'PostContest', likeLimit: number, id: string, groupId: string, title: string, phase: Phase } | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null } } };
 
+export type CompleteOnboardingMutationVariables = Exact<{
+  nickname: string;
+  avatarId?: string | null | undefined;
+  removeAvatar?: boolean | null | undefined;
+  acceptedTerms: boolean;
+}>;
+
+
+export type CompleteOnboardingMutation = { completeOnboarding: { __typename: 'User', id: string, nickname: string, avatar: string | null, needsOnboarding: boolean } };
+
+export type RequestProfileAvatarUploadMutationVariables = Exact<{
+  contentType: string;
+  byteSize: number;
+}>;
+
+
+export type RequestProfileAvatarUploadMutation = { requestProfileAvatarUpload: { __typename: 'UploadTicket', id: string, expiresAt: string, url: string, fields: Array<{ __typename: 'UploadFormField', name: string, value: string }> } };
+
+export type CompleteProfileAvatarUploadMutationVariables = Exact<{
+  uploadId: string;
+}>;
+
+
+export type CompleteProfileAvatarUploadMutation = { completeProfileAvatarUpload: { __typename: 'ProfileAvatarUpload', id: string } };
+
+export type UpdateMyProfileMutationVariables = Exact<{
+  nickname: string;
+  avatarId?: string | null | undefined;
+  removeAvatar?: boolean | null | undefined;
+}>;
+
+
+export type UpdateMyProfileMutation = { updateMyProfile: { __typename: 'User', id: string, nickname: string, avatar: string | null } };
+
 export type ContestResultsQueryVariables = Exact<{
-  contestId: Scalars['ID']['input'];
+  contestId: string;
 }>;
 
 
 export type ContestResultsQuery = { contestResults: Array<{ __typename: 'Result', rank: number, voteCount: number, winner: boolean, submission: { __typename: 'Submission', id: string, contestId: string, caption: string, imageUrl: string, hidden: boolean, createdAt: string, voteCount: number | null, likeCount: number, likedByMe: boolean, reportCount: number | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null }, reports: Array<{ __typename: 'Report', id: string, reason: string, createdAt: string }> | null } }> };
 
 export type GroupLeaderboardQueryVariables = Exact<{
-  groupId: Scalars['ID']['input'];
+  groupId: string;
 }>;
 
 
@@ -646,36 +675,36 @@ export type GroupLeaderboardQuery = { group: { __typename: 'Group', id: string, 
 export type SubmissionCardFragment = { __typename: 'Submission', id: string, contestId: string, caption: string, imageUrl: string, hidden: boolean, createdAt: string, voteCount: number | null, likeCount: number, likedByMe: boolean, reportCount: number | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null }, reports: Array<{ __typename: 'Report', id: string, reason: string, createdAt: string }> | null };
 
 export type SubmissionsQueryVariables = Exact<{
-  contestId: Scalars['ID']['input'];
+  contestId: string;
   sort: SubmissionSort;
-  offset: Scalars['Int']['input'];
-  limit: Scalars['Int']['input'];
+  offset: number;
+  limit: number;
 }>;
 
 
 export type SubmissionsQuery = { submissions: Array<{ __typename: 'Submission', id: string, contestId: string, caption: string, imageUrl: string, hidden: boolean, createdAt: string, voteCount: number | null, likeCount: number, likedByMe: boolean, reportCount: number | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null }, reports: Array<{ __typename: 'Report', id: string, reason: string, createdAt: string }> | null }> };
 
 export type RequestUploadMutationVariables = Exact<{
-  contestId: Scalars['ID']['input'];
-  contentType: Scalars['String']['input'];
-  byteSize: Scalars['Int']['input'];
+  contestId: string;
+  contentType: string;
+  byteSize: number;
 }>;
 
 
 export type RequestUploadMutation = { requestUploadUrl: { __typename: 'UploadTicket', id: string, url: string, expiresAt: string, fields: Array<{ __typename: 'UploadFormField', name: string, value: string }> } };
 
 export type CreateSubmissionMutationVariables = Exact<{
-  contestId: Scalars['ID']['input'];
-  uploadId: Scalars['ID']['input'];
-  caption: Scalars['String']['input'];
-  rightsConfirmed: Scalars['Boolean']['input'];
+  contestId: string;
+  uploadId: string;
+  caption: string;
+  rightsConfirmed: boolean;
 }>;
 
 
 export type CreateSubmissionMutation = { createSubmission: { __typename: 'Submission', id: string, contestId: string, caption: string, imageUrl: string, hidden: boolean, createdAt: string, voteCount: number | null, likeCount: number, likedByMe: boolean, reportCount: number | null, author: { __typename: 'User', id: string, nickname: string, avatar: string | null }, reports: Array<{ __typename: 'Report', id: string, reason: string, createdAt: string }> | null } };
 
 export type CompleteSubmissionUploadMutationVariables = Exact<{
-  uploadId: Scalars['ID']['input'];
+  uploadId: string;
 }>;
 
 
@@ -684,8 +713,8 @@ export type CompleteSubmissionUploadMutation = { completeSubmissionUpload: boole
 export type ContestVoteFragment = { __typename: 'Contest', id: string, votedSubmissionId: string | null };
 
 export type CastVoteMutationVariables = Exact<{
-  contestId: Scalars['ID']['input'];
-  submissionId: Scalars['ID']['input'];
+  contestId: string;
+  submissionId: string;
 }>;
 
 
@@ -709,7 +738,7 @@ export const PostCommentCardFragmentDoc = {"kind":"Document","definitions":[{"ki
 export const PostCategoryOptionsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PostCategoryOptions"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Group"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"categories"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<PostCategoryOptionsFragment, unknown>;
 export const SubmissionCardFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SubmissionCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Submission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"caption"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"hidden"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"reports"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<SubmissionCardFragment, unknown>;
 export const ContestVoteFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ContestVote"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Contest"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"votedSubmissionId"}}]}}]} as unknown as DocumentNode<ContestVoteFragment, unknown>;
-export const MeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<MeQuery, MeQueryVariables>;
+export const MeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"needsOnboarding"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<MeQuery, MeQueryVariables>;
 export const RegisterWithPasswordDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RegisterWithPassword"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"loginId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"password"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"nickname"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registerWithPassword"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"loginId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"loginId"}}},{"kind":"Argument","name":{"kind":"Name","value":"password"},"value":{"kind":"Variable","name":{"kind":"Name","value":"password"}}},{"kind":"Argument","name":{"kind":"Name","value":"nickname"},"value":{"kind":"Variable","name":{"kind":"Name","value":"nickname"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<RegisterWithPasswordMutation, RegisterWithPasswordMutationVariables>;
 export const LoginWithPasswordDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LoginWithPassword"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"loginId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"password"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"loginWithPassword"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"loginId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"loginId"}}},{"kind":"Argument","name":{"kind":"Name","value":"password"},"value":{"kind":"Variable","name":{"kind":"Name","value":"password"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<LoginWithPasswordMutation, LoginWithPasswordMutationVariables>;
 export const ContestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Contest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contest"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ContestListItem"}},{"kind":"Field","name":{"kind":"Name","value":"isAdmin"}},{"kind":"Field","name":{"kind":"Name","value":"mySubmissionId"}},{"kind":"Field","name":{"kind":"Name","value":"votedSubmissionId"}},{"kind":"Field","name":{"kind":"Name","value":"submissionCount"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenSubmissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SubmissionCard"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ContestListItem"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Contest"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"phase"}},{"kind":"Field","name":{"kind":"Name","value":"startsAt"}},{"kind":"Field","name":{"kind":"Name","value":"submissionEndsAt"}},{"kind":"Field","name":{"kind":"Name","value":"endsAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SubmissionCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Submission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"caption"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"hidden"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"reports"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ContestQuery, ContestQueryVariables>;
@@ -756,6 +785,7 @@ export const UnlikeSubmissionDocument = {"kind":"Document","definitions":[{"kind
 export const ReportSubmissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReportSubmission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"submissionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"reason"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reportSubmission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"submissionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"submissionId"}}},{"kind":"Argument","name":{"kind":"Name","value":"reason"},"value":{"kind":"Variable","name":{"kind":"Name","value":"reason"}}}]}]}}]} as unknown as DocumentNode<ReportSubmissionMutation, ReportSubmissionMutationVariables>;
 export const HideSubmissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"HideSubmission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"submissionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"hideSubmission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"submissionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"submissionId"}}}]}]}}]} as unknown as DocumentNode<HideSubmissionMutation, HideSubmissionMutationVariables>;
 export const DeleteSubmissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSubmission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"submissionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteSubmission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"submissionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"submissionId"}}}]}]}}]} as unknown as DocumentNode<DeleteSubmissionMutation, DeleteSubmissionMutationVariables>;
+export const MyGalleryPostsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyGalleryPosts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myGalleryPosts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"groupId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GalleryPostCard"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GalleryPostCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GalleryPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"archivedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"contest"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likeLimit"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"phase"}}]}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"groupName"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"mediaUrl"}},{"kind":"Field","name":{"kind":"Name","value":"linkUrl"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"canDelete"}},{"kind":"Field","name":{"kind":"Name","value":"canModerate"}},{"kind":"Field","name":{"kind":"Name","value":"canInteract"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<MyGalleryPostsQuery, MyGalleryPostsQueryVariables>;
 export const GalleryPostsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GalleryPosts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"categoryId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PostSort"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"galleryPosts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"groupId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}}},{"kind":"Argument","name":{"kind":"Name","value":"contestId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}}},{"kind":"Argument","name":{"kind":"Name","value":"categoryId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"categoryId"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GalleryPostCard"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GalleryPostCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GalleryPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"archivedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"contest"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likeLimit"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"phase"}}]}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"groupName"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"mediaUrl"}},{"kind":"Field","name":{"kind":"Name","value":"linkUrl"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"canDelete"}},{"kind":"Field","name":{"kind":"Name","value":"canModerate"}},{"kind":"Field","name":{"kind":"Name","value":"canInteract"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<GalleryPostsQuery, GalleryPostsQueryVariables>;
 export const RequestPostUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RequestPostUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contentType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"byteSize"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"requestPostUpload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"groupId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}}},{"kind":"Argument","name":{"kind":"Name","value":"contentType"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contentType"}}},{"kind":"Argument","name":{"kind":"Name","value":"byteSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"byteSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}}]}}]}}]} as unknown as DocumentNode<RequestPostUploadMutation, RequestPostUploadMutationVariables>;
 export const CreatePostDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreatePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"categoryId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"uploadId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"linkUrl"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"body"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"rightsConfirmed"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createPost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"categoryId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"categoryId"}}},{"kind":"Argument","name":{"kind":"Name","value":"contestId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}}},{"kind":"Argument","name":{"kind":"Name","value":"groupId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}}},{"kind":"Argument","name":{"kind":"Name","value":"uploadId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"uploadId"}}},{"kind":"Argument","name":{"kind":"Name","value":"linkUrl"},"value":{"kind":"Variable","name":{"kind":"Name","value":"linkUrl"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"body"},"value":{"kind":"Variable","name":{"kind":"Name","value":"body"}}},{"kind":"Argument","name":{"kind":"Name","value":"rightsConfirmed"},"value":{"kind":"Variable","name":{"kind":"Name","value":"rightsConfirmed"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GalleryPostCard"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GalleryPostCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GalleryPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"archivedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"contest"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likeLimit"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"phase"}}]}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"groupName"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"mediaUrl"}},{"kind":"Field","name":{"kind":"Name","value":"linkUrl"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"canDelete"}},{"kind":"Field","name":{"kind":"Name","value":"canModerate"}},{"kind":"Field","name":{"kind":"Name","value":"canInteract"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<CreatePostMutation, CreatePostMutationVariables>;
@@ -776,6 +806,10 @@ export const SetPostCategoryDocument = {"kind":"Document","definitions":[{"kind"
 export const LikePostCommentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"LikePostComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"commentId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likePostComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"commentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"commentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}}]}}]}}]} as unknown as DocumentNode<LikePostCommentMutation, LikePostCommentMutationVariables>;
 export const UnlikePostCommentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnlikePostComment"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"commentId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unlikePostComment"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"commentId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"commentId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}}]}}]}}]} as unknown as DocumentNode<UnlikePostCommentMutation, UnlikePostCommentMutationVariables>;
 export const UpdatePostDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdatePost"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"postId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"body"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"categoryId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updatePost"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"postId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"postId"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"body"},"value":{"kind":"Variable","name":{"kind":"Name","value":"body"}}},{"kind":"Argument","name":{"kind":"Name","value":"categoryId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"categoryId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GalleryPostCard"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GalleryPostCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GalleryPost"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"archivedAt"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"contest"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"likeLimit"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"phase"}}]}},{"kind":"Field","name":{"kind":"Name","value":"groupId"}},{"kind":"Field","name":{"kind":"Name","value":"groupName"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"mediaUrl"}},{"kind":"Field","name":{"kind":"Name","value":"linkUrl"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"commentCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"canDelete"}},{"kind":"Field","name":{"kind":"Name","value":"canModerate"}},{"kind":"Field","name":{"kind":"Name","value":"canInteract"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<UpdatePostMutation, UpdatePostMutationVariables>;
+export const CompleteOnboardingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CompleteOnboarding"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"nickname"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"avatarId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"removeAvatar"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"acceptedTerms"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"completeOnboarding"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"nickname"},"value":{"kind":"Variable","name":{"kind":"Name","value":"nickname"}}},{"kind":"Argument","name":{"kind":"Name","value":"avatarId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"avatarId"}}},{"kind":"Argument","name":{"kind":"Name","value":"removeAvatar"},"value":{"kind":"Variable","name":{"kind":"Name","value":"removeAvatar"}}},{"kind":"Argument","name":{"kind":"Name","value":"acceptedTerms"},"value":{"kind":"Variable","name":{"kind":"Name","value":"acceptedTerms"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}},{"kind":"Field","name":{"kind":"Name","value":"needsOnboarding"}}]}}]}}]} as unknown as DocumentNode<CompleteOnboardingMutation, CompleteOnboardingMutationVariables>;
+export const RequestProfileAvatarUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RequestProfileAvatarUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contentType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"byteSize"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"requestProfileAvatarUpload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"contentType"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contentType"}}},{"kind":"Argument","name":{"kind":"Name","value":"byteSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"byteSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}}]} as unknown as DocumentNode<RequestProfileAvatarUploadMutation, RequestProfileAvatarUploadMutationVariables>;
+export const CompleteProfileAvatarUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CompleteProfileAvatarUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"uploadId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"completeProfileAvatarUpload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"uploadId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"uploadId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CompleteProfileAvatarUploadMutation, CompleteProfileAvatarUploadMutationVariables>;
+export const UpdateMyProfileDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateMyProfile"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"nickname"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"avatarId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"removeAvatar"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateMyProfile"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"nickname"},"value":{"kind":"Variable","name":{"kind":"Name","value":"nickname"}}},{"kind":"Argument","name":{"kind":"Name","value":"avatarId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"avatarId"}}},{"kind":"Argument","name":{"kind":"Name","value":"removeAvatar"},"value":{"kind":"Variable","name":{"kind":"Name","value":"removeAvatar"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]} as unknown as DocumentNode<UpdateMyProfileMutation, UpdateMyProfileMutationVariables>;
 export const ContestResultsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ContestResults"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"contestResults"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"contestId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rank"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}},{"kind":"Field","name":{"kind":"Name","value":"winner"}},{"kind":"Field","name":{"kind":"Name","value":"submission"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SubmissionCard"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SubmissionCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Submission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"caption"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"hidden"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"reports"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ContestResultsQuery, ContestResultsQueryVariables>;
 export const GroupLeaderboardDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GroupLeaderboard"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"group"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"groupId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"leaderboard"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rank"}},{"kind":"Field","name":{"kind":"Name","value":"wins"}},{"kind":"Field","name":{"kind":"Name","value":"votesReceived"}},{"kind":"Field","name":{"kind":"Name","value":"likesReceived"}},{"kind":"Field","name":{"kind":"Name","value":"submissions"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GroupLeaderboardQuery, GroupLeaderboardQueryVariables>;
 export const SubmissionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Submissions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SubmissionSort"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"submissions"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"contestId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"contestId"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SubmissionCard"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SubmissionCard"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Submission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"contestId"}},{"kind":"Field","name":{"kind":"Name","value":"caption"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"hidden"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"voteCount"}},{"kind":"Field","name":{"kind":"Name","value":"likeCount"}},{"kind":"Field","name":{"kind":"Name","value":"likedByMe"}},{"kind":"Field","name":{"kind":"Name","value":"reportCount"}},{"kind":"Field","name":{"kind":"Name","value":"author"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"nickname"}},{"kind":"Field","name":{"kind":"Name","value":"avatar"}}]}},{"kind":"Field","name":{"kind":"Name","value":"reports"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<SubmissionsQuery, SubmissionsQueryVariables>;

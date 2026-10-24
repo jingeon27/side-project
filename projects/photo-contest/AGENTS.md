@@ -6,7 +6,7 @@
 
 | 경로 | 워크스페이스 | 역할 |
 | --- | --- | --- |
-| `apps/api` | `@photo-contest/api` | NestJS 12 schema-first GraphQL + REST(인증·업로드·사진·헬스), Prisma 6 + PostgreSQL |
+| `apps/api` | `@photo-contest/api` | NestJS 12 schema-first GraphQL + REST(인증·업로드·사진·헬스), Prisma 7 + PostgreSQL |
 | `apps/web` | `@photo-contest/web` | Next.js 16 App Router, 모바일 우선 반응형 웹(최대 1440px), Apollo Client 4, Base UI |
 | `apps/mobile` | `@photo-contest/mobile` | Expo SDK 57 WebView 셸. 웹을 감싸고 브리지로 네이티브 기능을 제공 |
 | `packages/bridge` | `@photo-contest/bridge` | 웹 ↔ 앱 메시지 계약(zod). web·mobile만 쓴다 |
@@ -28,12 +28,13 @@
 
 ## 제품 방향
 
-상시 그룹 커뮤니티다. 제품 표기는 그룹이며 Group 모델·/groups URL을 쓴다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 그룹 전체의 최신 게시물과 이달의 인기(KST)를, MY는 내 그룹 목록·생성을 제공한다. `/explore`는 로그인 없이 공개·비공개 그룹의 이름·멤버 수를 탐색한다. 공개 그룹의 게시물·댓글·미디어는 익명 조회하며 가입은 로그인 후 즉시 처리한다. 비공개 그룹의 내용은 승인된 멤버만 보고 OWNER·MODERATOR가 신청을 수락·거절한다. 초대 링크도 같은 승인 규칙을 적용한다. 기존 그룹은 PRIVATE를 유지한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest는 format=POST인 그룹 대회와 format=LEGACY인 이전 대회를 구분하며 Submission은 이전 링크·데이터 호환용이다. 새 그룹 대회는 Post.contestId로 참여하며 사진·동영상·여러 게시물을 허용한다.
+상시 그룹 커뮤니티다. 제품 표기는 그룹이며 Group 모델·/groups URL을 쓴다. 종료일·1인 1장 제약 없이 제목·내용과 사진/동영상을 등록한다. 홈은 가입한 그룹 전체의 최신 게시물과 이달의 인기(KST)를, MY는 프로필 편집·참여 그룹 목록·그룹 생성과 내가 올린 게시물의 그룹별 필터를 제공한다. `/explore`는 로그인 없이 공개·비공개 그룹의 이름·멤버 수를 탐색한다. 공개 그룹의 게시물·댓글·미디어는 익명 조회하며 가입은 로그인 후 즉시 처리한다. 비공개 그룹의 내용은 승인된 멤버만 보고 OWNER·MODERATOR가 신청을 수락·거절한다. 초대 링크도 같은 승인 규칙을 적용한다. 기존 그룹은 PRIVATE를 유지한다. Post·PostUpload·PostLike가 현재 게시물 도메인이고 Contest는 format=POST인 그룹 대회와 format=LEGACY인 이전 대회를 구분하며 Submission은 이전 링크·데이터 호환용이다. 새 그룹 대회는 Post.contestId로 참여하며 사진·동영상·여러 게시물을 허용한다.
 
 ## 정해진 결정
 
 - 인증: HttpOnly 세션 쿠키 하나. 운영(https)은 `__Host-contest_session`(Secure·Path=/·Domain 없음), 개발·테스트(http)는 `contest_session`이다. API는 cookie-parser 없이 요청 `Cookie` 헤더를 직접 파싱하고 요청당 한 번만 조회한다. 웹 `proxy.ts`는 요청 쿠키로 멤버 전용 화면을 막고, SSR은 요청의 Cookie 헤더를 API로만 넘긴다. 앱 WebView도 같은 쿠키를 쓰고 토큰을 네이티브로 넘기지 않는다.
-- 앱 소셜 로그인: Google이 WebView 로그인을 막으므로 시스템 브라우저 + PKCE + 일회용 코드 교환(`/auth/app/exchange`).
+- 신규 소셜 가입은 제공자의 이름·사진을 기본값으로 `/onboarding`에서 편집·제거하고 약관 동의 후 완료한다. 이후 로그인은 사용자가 선택한 프로필을 덮어쓰지 않는다. 개인 사진 업로드도 S3 presigned POST·HEAD 확인·고정 경로의 짧은 서명 GET을 쓴다.
+- 앱 소셜 로그인: Google이 WebView 로그인을 막으므로 시스템 브라우저 + PKCE + 일회용 코드 교환(`/auth/app/exchange`). 코드는 검증된 https App Link·Universal Link(`<WEB_ORIGIN>/app-auth/callback`)로만 받는다. 커스텀 스킴은 로그인 밖의 딥링크에만 쓴다(같은 스킴을 등록한 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다). 웹이 `/.well-known/apple-app-site-association`·`assetlinks.json`을 배포 환경변수로 제공하고, iOS 최소 버전은 17.4다.
 - 모니터링: API는 Sentry만(도메인 이벤트는 DB에만 기록), 웹·모바일은 Sentry + Amplitude. 키가 없으면 아무것도 보내지 않는다.
 - 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 OWNER만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인·멤버 내보내기(MODERATOR는 MEMBER만)를 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. OWNER는 내보낼 수 없고 양도한 뒤에만 그룹을 나간다. 양도한 OWNER는 MEMBER가 된다.
 - 서버 상태는 Apollo(정규화 캐시가 단일 출처). TanStack Query로 바꾸지 않는다.

@@ -36,7 +36,7 @@ corepack yarn dev:photo-contest
 
 | 앱·패키지           | 역할                                                                                             |
 | ------------------- | ------------------------------------------------------------------------------------------------ |
-| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 6·PostgreSQL                             |
+| `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 7·PostgreSQL                             |
 | `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 통합 게시물 피드·MY 그룹 관리·반응형 웹 |
 | `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                         |
 | `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                                 |
@@ -157,3 +157,9 @@ corepack yarn format:check
 댓글에는 한 단계 답글을 달 수 있습니다. 원댓글은 최신순, 펼친 답글은 오래된 순으로 각각 페이지를 나누며 답글에도 좋아요·취소와 작성자·관리자 삭제를 제공합니다. 원댓글을 지우면 답글과 연결된 좋아요도 함께 삭제되므로 확인창에서 안내합니다. `postCommentCount(postId, parentId)`는 해당 목록의 개수, 게시물의 `commentCount`는 답글을 포함한 전체 개수입니다. Apollo는 `postId`와 `parentId`별로 목록을 분리합니다.
 
 `20261022130000_post_comment_replies`는 nullable parentId와 같은 게시물 안의 댓글을 참조하는 복합 FK를 추가합니다. 기존 댓글은 원댓글로 유지합니다. 개발 DB는 앞서 안내한 `db:migrate`로 적용하며 테스트는 격리 스키마에서 확인합니다.
+
+### Prisma 7
+
+Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `db push`는 Client를 자동 생성하지 않는다.
+
+기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다. Serializable 커밋에서 어댑터가 직접 던지는 `TransactionWriteConflict`도 `P2034`와 같은 재시도 한도로 처리한다.

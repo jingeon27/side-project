@@ -1,0 +1,23 @@
+mutation RequestProfileAvatarUpload($contentType: String!, $byteSize: Int!) {
+  requestProfileAvatarUpload(contentType: $contentType, byteSize: $byteSize) {
+    id
+    expiresAt
+    url
+    fields {
+      name
+      value
+    }
+  }
+}
+mutation CompleteProfileAvatarUpload($uploadId: ID!) {
+  completeProfileAvatarUpload(uploadId: $uploadId) {
+    id
+  }
+}
+mutation UpdateMyProfile($nickname: String!, $avatarId: ID, $removeAvatar: Boolean) {
+  updateMyProfile(nickname: $nickname, avatarId: $avatarId, removeAvatar: $removeAvatar) {
+    id
+    nickname
+    avatar
+  }
+}

@@ -25,9 +25,15 @@ describe('toWebPath', () => {
     expect(toWebPath('https://contest.example', OPTIONS)).toBe('/');
   });
 
-  it('소셜 로그인 콜백은 세션이 직접 받으므로 무시해야 한다', () => {
+  it('소셜 로그인 콜백(앱 링크)은 인증 세션만 받으므로 일반 탐색으로 열지 않아야 한다', () => {
+    expect(toWebPath('https://contest.example/app-auth/callback?code=abcdefghijklmnop', OPTIONS)).toBeNull();
+    expect(toWebPath('https://contest.example/app-auth/callback?error=login_failed', OPTIONS)).toBeNull();
+    expect(toWebPath('https://CONTEST.example/app-auth/callback', OPTIONS)).toBeNull();
+    expect(toWebPath('https://contest.example/app-auth/callback/', OPTIONS)).toBeNull();
+    expect(toWebPath('https://contest.example/app-auth/callback#code=x', OPTIONS)).toBeNull();
+    // 이전 커스텀 스킴 콜백도 모르는 링크로 무시한다.
     expect(toWebPath('photocontest://auth/callback?code=abc', OPTIONS)).toBeNull();
-    expect(toWebPath('photocontest://auth/callback?error=login_failed', OPTIONS)).toBeNull();
+    expect(toWebPath('photocontest://app-auth/callback?code=abc', OPTIONS)).toBeNull();
   });
 
   it('모르는 경로와 경로가 없는 링크는 무시해야 한다', () => {

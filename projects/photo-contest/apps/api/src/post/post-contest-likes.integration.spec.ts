@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { contestSchedule, createGroup } from '../../test/support/fixtures';
 import { CAST_POST_VOTE, createEntry, moveGroupContest } from '../../test/support/group-contest';
+import * as monitoring from '../monitoring/sentry';
 
 const CREATE =
   'mutation($groupId:ID!,$startsAt:DateTime!,$submissionEndsAt:DateTime!,$endsAt:DateTime!,$likeLimit:Int){createGroupContest(groupId:$groupId,title:"좋아요 한도 대회",startsAt:$startsAt,submissionEndsAt:$submissionEndsAt,endsAt:$endsAt,likeLimit:$likeLimit){id likeLimit}}';
@@ -92,13 +93,17 @@ describe('대회별 1인당 게시물 좋아요 한도', () => {
     const event = await contest();
     const entries = [];
     for (let i = 0; i < 8; i++) entries.push(await createEntry(api, owner, groupId, event.id));
-    const results = await Promise.all(entries.map(({ id }) => api.gql(member.cookie, LIKE, { id })));
-    expect(results.filter(({ errors }) => !errors?.length)).toHaveLength(1);
-    expect(
-      results
-        .filter(({ errors }) => errors?.length)
-        .every(({ errors }) => errors?.[0]?.message.includes('1개 작품까지만')),
-    ).toBe(true);
+    const reported = vi.spyOn(monitoring, 'reportUnexpectedError');
+    try {
+      const results = await Promise.all(entries.map(({ id }) => api.gql(member.cookie, LIKE, { id })));
+      expect(reported).not.toHaveBeenCalled();
+      expect(results.filter(({ errors }) => !errors?.length)).toHaveLength(1);
+      const failures = results.flatMap(({ errors }) => errors ?? []);
+      expect(failures).toHaveLength(7);
+      for (const failure of failures) expect(failure.message).toContain('1개 작품까지만');
+    } finally {
+      reported.mockRestore();
+    }
     expect(await api.db.postLike.count({ where: { userId: member.id, post: { contestId: event.id } } })).toBe(
       1,
     );

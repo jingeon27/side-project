@@ -104,6 +104,18 @@ describe('WebView navigation and deep links', () => {
     ])
       expect(toWebPath(url, origin)).toBeNull();
   });
+  it('never opens the social login app link callback as ordinary navigation', () => {
+    for (const url of [
+      `${origin}/app-auth/callback?code=${'c'.repeat(43)}`,
+      `${origin}/app-auth/callback?error=login_failed`,
+      `${origin}/app-auth/callback`,
+      `${origin}/app-auth/callback/`,
+      `${origin}/app-auth/callback#code=x`,
+      'gamefeedback://app-auth/callback?code=x',
+      'gamefeedback://auth/callback?code=x',
+    ])
+      expect(toWebPath(url, origin), url).toBeNull();
+  });
   it('blocks executable and local URLs while opening external links outside', () => {
     for (const url of [
       'javascript:alert(1)',

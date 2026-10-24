@@ -54,6 +54,9 @@
     color: var(--color-muted);
     font-style: normal;
   }
+  .rich-text-editor .ql-editor[data-composing='true']::before {
+    content: none;
+  }
   .rich-text-editor:focus-within .ql-container {
     border-color: var(--color-ink);
   }

@@ -1,3 +1,19 @@
+## 2026-10-24 MY 게시물과 공통 추가 조회
+
+MY에 참여 그룹과 내가 올린 게시물을 표시하고 전체·참여 그룹 필터를 URL로 관리한다. 인증된 myGalleryPosts 조회는 세션의 작성자만 선택하며 숨김·탈퇴한 비공개 그룹·다른 사용자 게시물을 제외한다. 기존 게시물 카드를 재사용해 댓글·수정·삭제를 제공하고 생성·수정·삭제·숨김·복원 뒤 MY를 포함한 목록을 갱신한다. 그룹 필터 URL로 새로고침할 때 라우트에서 사전 조회한 전체 목록과 다른 쿼리가 SSR의 직접 요청 금지 경계를 넘지 않도록 기존 useIsSSR/skipToken 방식으로 조회를 지연한다.
+
+공통 useInfiniteQuery는 Apollo의 QueryRef와 정규화 캐시를 그대로 사용하며 추가 조회·목록 끝·동시 요청을 관리한다. 게시물·그룹 탐색·가입 신청·댓글·답글·대회 목록의 중복 페이지 처리와 기존 offset 전용 훅을 교체했다. 도메인별 카운트와 숨김 사진 규칙은 호출부가 전달한다.
+
+최신 develop 6d858497의 https 앱 링크·Prisma 7.10.1·보안 의존성을 반영했다. 전체 타입 검사와 lint, API 단위 131개·통합 351개, Web 444개·Mobile 156개·Bridge 36개가 통과했다. MY 권한·그룹·숨김·페이지 경계·탈퇴 검증 3개와 변경된 페이지네이션/게시물 단위 28개도 통과했다. production build/start에서 소셜 가입·S3 프로필 Chrome/WebKit/데스크톱 6개, MY 필터·새로고침·수정·삭제와 기존 더보기 4개가 통과했다. 실제 외부 OAuth·AWS·운영 배포는 실행하지 않았으며 알림 도메인·RN push는 이 변경에 포함하지 않는다. 테스트는 전용 55434의 격리 스키마와 S3 대역을 사용했다.
+
+## 2026-10-23 소셜 가입 프로필 확인과 S3 개인 프로필
+
+신규 소셜 계정은 제공자의 이름·사진을 기본값으로 두고 `/onboarding`에서 닉네임 수정, 사진 제거·직접 선택, 약관 동의를 마친다. 동의 전에는 인증이 필요한 커뮤니티 쓰기를 막고 원래 목적지로 돌아가는 경로를 보존한다. 직접 선택한 사진은 5분 presigned POST로 비공개 S3에 전송하고 API는 HEAD로 형식·크기·소유권·만료만 확인한다. 선택한 파일은 고정 프로필 경로가 현재 참조를 확인한 뒤 60초 서명 GET으로 이동시킨다. 만료된 미사용 파일은 정리하고 현재 사진은 보존한다. MY에서 사진·닉네임을 다시 변경하거나 사진을 제거할 수 있다. 재로그인 시 소셜 제공자의 값으로 사용자 선택을 덮어쓰지 않는다.
+
+인증·프로필·테스트 fixture 입력은 class-transformer/class-validator DTO와 전역 ValidationPipe로 변환·검증한다. 비밀번호 원문 공백은 보존하고 기존 로그인 오류 코드·Origin 검사·DB 반복 시도 제한을 유지한다. 가입·로그인 횟수는 DTO 검증 전에 guard에서 센다. 20261023040000_profile_uploads_and_onboarding migration은 새 테이블과 nullable 열·기본 false 플래그를 추가하며 기존 계정을 재가입 상태로 바꾸지 않는다. Prisma client와 GraphQL 문서는 정식 생성 명령으로 갱신했다.
+
+검증: API unit 120개, 격리 PostgreSQL/S3 대역의 API integration 350개, Web unit/UI 421개와 실제 API 문서 20개가 통과했다. production build/start의 Chrome·WebKit·데스크톱 E2E 9개가 최종 한 번에 통과했다(아이디 가입·로그인 회귀, 소셜 기본값·동의·닉네임 변경·사진 제거, S3 업로드·재조회·삭제). 프로젝트 전체 타입 검사·lint도 통과했다. 제공자 응답과 S3 경계는 테스트 대역이며 실제 OAuth·AWS 송수신·운영 배포 성공을 주장하지 않는다. 개발 DB/서버는 변경하지 않았다. 적용할 개발 환경에서는 프로젝트 환경변수를 준비한 뒤 `corepack yarn workspace @side/photo-contest db:migrate`가 필요하다.
+
 ## 2026-10-22 서버 파일 처리 제거와 test-kit S3 대역
 
 사용자 결정으로 게시물·기존 대회 사진·그룹 대표 사진의 업로드와 조회를 모두 S3 presigned URL로만 처리한다. 발급은 권한·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 content-length-range를 고정한 POST 정책을 서명한다. 완료는 HEAD로 크기·형식만 확인하며 staging→최종 복사, 완료 lease·후보 추적은 없앴다. 서버가 내용을 검사하지 않으므로 복사본으로 고정할 불변식이 없고, 정책이 끝나기 전(최대 15분)에는 업로더가 같은 크기·형식으로 다시 올릴 수 있다.
@@ -253,3 +269,21 @@ CI에서 ARM64 운영 이미지 두 개를 빌드하고 격리한 HTTPS 컨테�
 최신 develop의 테스트 위치 변경을 반영한 최종 검사: 전체 check, API integration 274개, Web API 18개, 신규 홈 E2E 6개, 기존 탐색·공개 SEO·비공개 가입 E2E 6개와 프로덕션 cache/category E2E 7개가 통과했다. Android 뒤로 가기 2개도 통과했다(iOS 하드웨어 뒤로 가기 2개는 설계상 제외). 새 홈에도 검색 폼과 그룹 생성 버튼이 있어 전환 전의 화면을 조작하던 기존 브라우저 검사를 목적 화면이 나타난 뒤 실행하도록 고쳤다. 검색은 JS 준비 전에도 GET /explore?q=로 제출된다. 전체 Prettier 검사와 앱 lint/typecheck를 확인했다.
 
 전체 브라우저 회귀 검사에서 좋아요 수 정규화만으로는 인기 목록 순서가 바뀌지 않는 문제를 확인했다. 활성 MONTHLY_POPULAR 쿼리만 다시 조회하고, NEWEST의 추가 페이지는 유지한다. 기존 사진/동영상/인기/삭제 흐름과 페이지네이션 E2E 4개가 통과했다.
+
+## 2026-10-23 Prisma 7 업그레이드
+
+API와 test-kit의 Prisma를 7.10.1로 맞추고 API에 같은 버전의 @prisma/adapter-pg와 @prisma/driver-adapter-utils를 추가했다. 루트 yarn.lock은 이 의존성 해석을 반영한다. prisma.config.ts가 프로젝트 .env를 명시적으로 읽고 CLI에 URL을 전달하며, test-kit은 작업 디렉터리와 관계없이 API의 config를 지정해 격리 migration을 적용한다. 운영 이미지에도 config를 포함한다. 기존 CommonJS 빌드·생성 경로와의 호환을 위해 prisma-client-js 생성기를 유지하며 런타임은 pg 어댑터를 사용한다.
+
+API·운영 migration/서비스 검사·test-kit이 같은 어댑터를 사용한다. schema는 ORM과 raw SQL search_path 양쪽에 전달하고 connection_limit은 풀 최대 연결 수로 옮긴다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 pool_timeout을 우선하고 없으면 connect_timeout(기본 5초)을 쓴다. 운영 sslcert는 서버 CA로 읽어 엄격한 인증서 검증을 유지한다. DB 모델과 기존 migration SQL은 변경하지 않았다.
+
+통합 검증에서 Prisma 7의 커밋 충돌이 P2034가 아닌 DriverAdapterError(TransactionWriteConflict)로 직접 전달되어 동시 좋아요 요청이 간헐적으로 내부 오류가 되는 문제를 재현했다. 어댑터 충돌도 기존 4회 재시도·CONFLICT 정책으로 처리하며, 다른 어댑터 오류는 그대로 전파한다. 단위 회귀 5개를 추가하고 기존 동시 좋아요 통합 사양에서 내부 오류 보고가 없고 실패 7건 모두 한도 안내인지 확인한다. 운영 모드 통합 하네스에는 WEB_ORIGIN과 일치하는 앱 로그인 콜백 기본값을 더해 최신 운영 설정을 충족시켰다.
+
+Node 24.18.0에서 API·test-kit typecheck, API build, API 단위 127개, test-kit 단위 35개와 변경 파일 ESLint가 통과했다. 사용자 승인 후 이 Worktree에 UTF-8 테스트 DB(55434/photo_contest_test)를 새로 기동해 PostgreSQL/Supertest 통합 55개 파일·346개를 모두 통과했다(skip 없음). 동시 좋아요 사양은 수정 후 8회 연속 통과했다. test-kit check:cleanup으로 남은 테스트 스키마가 0개임을 확인하고 이번 Worktree의 테스트 DB를 종료했다. 기존 개발 DB·서버는 변경하지 않았다. 실제 RDS TLS 연결·컨테이너 빌드·배포는 실행하지 않았다.
+
+## 2026-10-23 sharp·GraphQL Tools 보안 업데이트
+
+테스트킷의 sharp를 ^0.35.5로 올려 0.34.5와 해당 네이티브 바이너리를 lockfile에서 제거했다. 웹은 GraphQL Codegen CLI 7.4.6·typescript-operations 6.1.10·typed-document-node 7.2.0으로 올려 GraphQL Tools utils 11.2.2를 제거했다. 공식 v6 생성 파이프라인에 맞춰 중복 typescript 플러그인을 빼고 enumType: const·문자열 ID·기존 Apollo __typename 정책으로 재생성했다. 생성 JavaScript를 이전 버전과 비교해 모든 GraphQL 문서·enum 값이 동일함을 확인했고 재생성 결과도 동일하다.
+
+추가 audit에서 NestJS GraphQL 14.0.3이 정확히 고정한 utils 12.0.1에도 GHSA-c4qx-w738-7hr3이 적용됨을 확인했다. 상위 패키지의 수정 릴리스가 없어 루트 package.json의 해당 버전 descriptor에만 12.0.3 resolution을 적용했다. 이 보안 패치를 모든 설치·CI에서 일치시키기 위해 루트 manifest와 yarn.lock을 함께 변경했다. 최종 utils는 12.0.3·12.1.0만 남는다. Yarn의 24시간 게이트(1440분)는 유지했다.
+
+Node 24.18.0에서 immutable install, Web·API·test-kit typecheck, Web·API·test-kit lint, API의 별도 .data 출력 경로 빌드가 통과했다. Web unit/UI 440개·API unit 127개·test-kit 35개·실제 생성 문서 API 계약 20개, 총 622개가 통과했다. 계약 테스트는 새 web_api 스키마·전용 55434 DB와 S3 대역에서 실제 sharp 이미지의 업로드·조회도 확인했다. 최초 계약 실행은 TEST_DATABASE_URL 누락으로 시작하지 못했고, 전용 URL을 명시한 뒤 통과했다. 최종 Yarn audit에서 sharp·utils 항목은 0개이며 다른 의존성의 기존 항목 때문에 전체 audit 종료 코드는 1이다. 남은 테스트 스키마 0개와 이번 Worktree의 테스트 DB 종료를 확인했다. 개발 DB·서버는 변경하지 않았다. 전체 브라우저 E2E·Web production build·컨테이너·배포 검증은 실행하지 않았다.

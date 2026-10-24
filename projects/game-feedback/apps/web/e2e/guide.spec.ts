@@ -1,84 +1,65 @@
 import { expect, test } from '@playwright/test';
 
-test('320px 모바일 가이드 제목과 화살표로 각 기능에 이동하고 탭이 아닌 화면에서는 돌아올 수 있어야 한다', async ({
-  page,
-}, testInfo) => {
-  await page.setViewportSize({ width: 320, height: 844 });
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  const login = await page.request.post('/api/auth/test-token', {
-    headers: { Origin: 'http://127.0.0.1:3301' },
-    data: { accountId: 'sample-user-0' },
-  });
-  expect(login.ok()).toBe(true);
-  await page.goto('/ko/guide');
-  const guide = page.getByRole('article');
-  await expect(guide.getByText(/화면 아래 홈/)).toBeVisible();
-  await expect(guide.getByText(/휴대폰 키보드의 줄바꿈/)).toHaveCount(1);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath('guide-mobile-320.png'), animations: 'disabled' });
-  for (const [title, path, kind] of [
-    ['전체와 다섯 분류', '/ko', 'tab'],
-    ['글쓰기와 사진·동영상', '/ko/write', 'child'],
-    ['친추판매', '/ko/boards/friend-sale', 'child'],
-    ['전투 모집', '/ko/boards/friendly', 'child'],
-    ['코치와 수강생 모집', '/ko/boards/coaching', 'child'],
-    ['채팅과 대화내역', '/ko/messages', 'tab'],
-    ['게임 계정과 프로필 인증', '/ko/settings', 'tab'],
-    ['팔로우와 새 소식', '/ko/notifications', 'tab'],
-    ['문의와 신고', '/ko/contact', 'child'],
-  ] as const) {
-    const link = guide.getByRole('heading', { name: title, exact: true }).getByRole('link');
-    await expect(link).toHaveAttribute('href', path);
-    await link.scrollIntoViewIfNeeded();
-    const box = await link.boundingBox();
-    expect(box?.height).toBeGreaterThanOrEqual(44);
-    const length = await page.evaluate(() => history.length);
-    await link.locator('svg').click();
-    await expect(page).toHaveURL(path);
-    // 루트 탭은 하단 메뉴처럼 가이드 기록을 바꿔 앱의 뒤로 가기와 같은 기록을 남긴다.
-    if (kind === 'tab') {
-      expect(await page.evaluate(() => history.length)).toBe(length);
-      await page.goto('/ko/guide');
-    }
-    // 게시판·글쓰기·문의는 가이드를 상위로 두고 열어 뒤로 가기가 가이드로 돌아온다.
-    if (kind === 'child') await page.goBack();
-    await expect(page).toHaveURL('/ko/guide');
-  }
-  const free = guide.getByRole('link', { name: '자유게시판', exact: true });
-  await free.focus();
-  await expect(free).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/ko/boards/free');
-  expect(errors).toEqual([]);
-});
-
-for (const locale of ['en', 'ja'] as const) {
-  test(`${locale} 모바일 가이드의 제목 링크가 언어를 유지하고 좁은 화면에 들어가야 한다`, async ({
+for (const { width, locale } of [
+  { width: 320, locale: 'ko' },
+  { width: 393, locale: 'en' },
+  { width: 393, locale: 'ja' },
+  { width: 1440, locale: 'ko' },
+]) {
+  test(`${locale} ${width}px 가이드는 화살표나 바로가기 없이 문단으로 읽을 수 있어야 한다`, async ({
     page,
   }, testInfo) => {
-    await page.setViewportSize({ width: 393, height: 852 });
+    await page.setViewportSize({ width, height: 844 });
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/${locale}/guide`);
     const guide = page.getByRole('article');
-    for (const heading of await guide.getByRole('heading', { level: 2 }).all()) {
-      const link = heading.getByRole('link');
-      await expect(link).toHaveAttribute('href', new RegExp(`^/${locale}(?:/|$)`));
-      await expect(link.locator('svg')).toHaveAttribute('aria-hidden', 'true');
-      expect(await link.textContent()).not.toMatch(/[가-힣]/);
-    }
+    await expect(guide).toHaveClass('info-card');
+    await expect(guide.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(guide).toHaveAttribute('lang', locale);
+    await expect(guide.getByRole('heading', { level: 2 })).toHaveCount(9);
+    await expect(guide.getByRole('term')).toHaveCount(5);
+    await expect(guide.getByRole('link')).toHaveCount(0);
+    await expect(guide.locator('svg')).toHaveCount(0);
+    if (locale !== 'ko') expect(await guide.innerText()).not.toMatch(/[가-힣]/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({
-      path: testInfo.outputPath(`guide-mobile-${locale}.png`),
+      path: testInfo.outputPath(`guide-${locale}-${width}.png`),
+      fullPage: true,
       animations: 'disabled',
     });
-    // 제목 자체를 탭했을 때도 이동하고 브라우저 뒤로 가기로 가이드에 복귀한다.
-    const link = guide.getByRole('link', {
-      name: locale === 'en' ? 'Support and reports' : 'お問い合わせと通報',
-      exact: true,
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(20, 19, 18)');
+    await page.screenshot({
+      path: testInfo.outputPath(`guide-${locale}-${width}-dark.png`),
+      fullPage: true,
+      animations: 'disabled',
     });
-    await link.click();
-    await expect(page).toHaveURL(`/${locale}/contact`);
-    await page.goBack();
-    await expect(page).toHaveURL(`/${locale}/guide`);
+    expect(errors).toEqual([]);
   });
 }
+
+test('가이드는 주 탭에서 빠지고 프로필 안내에서 열었다가 이전 화면으로 돌아갈 수 있어야 한다', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.goto('/ko/settings');
+  const tabs = page.getByRole('navigation', { name: '모바일 메뉴', exact: true });
+  await expect(tabs.getByRole('link')).toHaveText(['홈', '채팅', '프로필']);
+  const length = await page.evaluate(() => history.length);
+  await page.getByRole('main').getByRole('link', { name: '이용 가이드', exact: true }).click();
+  await expect(page).toHaveURL('/ko/guide');
+  expect(await page.evaluate(() => history.length)).toBe(length + 1);
+  await expect(tabs.getByRole('link', { name: '프로필', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(page.getByRole('banner').getByRole('link', { name: '돌아가기', exact: true })).toHaveCount(0);
+  await page.goBack();
+  await expect(page).toHaveURL('/ko/settings');
+  await page
+    .getByRole('navigation', { name: '서비스 안내', exact: true })
+    .getByRole('link', { name: '이용 가이드', exact: true })
+    .click();
+  await expect(page).toHaveURL('/ko/guide');
+});

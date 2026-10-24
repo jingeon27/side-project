@@ -8,7 +8,6 @@ import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/feat
 import {
   CompletePostUploadDocument,
   CreatePostDocument,
-  GalleryPostsDocument,
   GroupContestDocument,
   GroupContestsDocument,
   RequestPostUploadDocument,
@@ -22,7 +21,7 @@ import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { isTooLongVideo, readVideoDuration } from '../lib/video-duration.helper';
-import { resetGalleryPosts } from '../model/post.cache';
+import { POST_FEED_QUERIES, resetGalleryPosts } from '../model/post.cache';
 import { postSchema } from '../model/post.schema';
 import { PostCategoryField } from './PostCategoryField';
 import { PostContestField } from './PostContestField';
@@ -55,7 +54,7 @@ export function CreatePostBottomSheet({
   const [requestUpload] = useMutation(RequestPostUploadDocument, { fetchPolicy: 'no-cache' });
   const [createPost, { data: created }] = useMutation(CreatePostDocument, {
     update: resetGalleryPosts,
-    refetchQueries: [GalleryPostsDocument, GroupContestDocument, GroupContestsDocument],
+    refetchQueries: [...POST_FEED_QUERIES, GroupContestDocument, GroupContestsDocument],
     awaitRefetchQueries: true,
   });
   const beginSubmit = useAbortOnClose(isOpen);

@@ -41,6 +41,10 @@ export class PostResolver {
     return this.posts.listPublic(viewer, query);
   }
   @Query()
+  myGalleryPosts(@Viewer() viewer: IViewer, @Args() query: Parameters<PostService['listMine']>[1]) {
+    return this.posts.listMine(viewer, query);
+  }
+  @Query()
   galleryPosts(@OptionalViewer() viewer: IViewer | null, @Args() query: Parameters<PostService['list']>[1]) {
     return this.posts.list(viewer, query);
   }

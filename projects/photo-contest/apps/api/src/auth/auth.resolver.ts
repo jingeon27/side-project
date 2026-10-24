@@ -1,6 +1,9 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import type { IGraphqlContext } from '../common/graphql/graphql-context';
+import { PasswordAttemptGuard } from './auth-attempt.guard';
+import { LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
 import { PasswordAuthService } from './password-auth.service';
 import type { IViewer } from './session.service';
 import { OptionalViewer } from './viewer.decorator';
@@ -10,18 +13,14 @@ export class AuthResolver {
   constructor(private readonly passwords: PasswordAuthService) {}
 
   @Mutation()
-  registerWithPassword(
-    @Args() input: { loginId: string; password: string; nickname: string },
-    @Context() { req, res }: IGraphqlContext,
-  ) {
+  @UseGuards(PasswordAttemptGuard)
+  registerWithPassword(@Args() input: RegisterWithPasswordDto, @Context() { req, res }: IGraphqlContext) {
     return this.passwords.register(input, req, res);
   }
 
   @Mutation()
-  loginWithPassword(
-    @Args() input: { loginId: string; password: string },
-    @Context() { req, res }: IGraphqlContext,
-  ) {
+  @UseGuards(PasswordAttemptGuard)
+  loginWithPassword(@Args() input: LoginWithPasswordDto, @Context() { req, res }: IGraphqlContext) {
     return this.passwords.login(input, req, res);
   }
 

@@ -40,6 +40,13 @@ export function AuthSessionSync() {
       bridge?.notify('auth.changed', { signedIn: true, userId: me.id });
       saveNotifiedUserId(me.id);
     }
+    if (me.needsOnboarding && window.location.pathname !== ROUTES.ONBOARDING) {
+      const destination = getSafeNextPath(
+        pending?.next ?? new URLSearchParams(window.location.search).get('next'),
+      );
+      router.replace(`${ROUTES.ONBOARDING}?next=${encodeURIComponent(destination)}`);
+      return;
+    }
     if (!pending) return;
     trackEvent(ANALYTICS_EVENT.LoginSucceeded, { provider: pending.method });
     const next = getSafeNextPath(pending.next);

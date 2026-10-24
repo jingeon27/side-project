@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
 
 test('post detail uses a compact game breadcrumb and one contact action with unbroken dates at 393px', async ({
@@ -35,7 +35,7 @@ test('post detail uses a compact game breadcrumb and one contact action with unb
   }
   await header.getByRole('link', { name: '돌아가기', exact: true }).click();
   await expect(page).toHaveURL('/ko/boards/friend-sale');
-  await expect(header.locator('.mobile-page-title')).toHaveText('홈');
+  await expect(header.locator('.brand')).toBeVisible();
   const crawler = await browser.newContext({
     baseURL: origin,
     javaScriptEnabled: false,

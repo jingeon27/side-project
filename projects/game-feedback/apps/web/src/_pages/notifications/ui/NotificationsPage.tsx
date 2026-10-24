@@ -1,6 +1,6 @@
 'use client';
 
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Bell, CheckCheck, LoaderCircle } from 'lucide-react';
 
 import { Button } from '@side/design-system';
@@ -11,15 +11,18 @@ import {
   NotificationItem,
   notificationListOptions,
   notificationPath,
-  useReadNotificationMutation,
+  readNotificationMutationOptions,
 } from '@/features/notification';
 import { useI18n } from '@/shared/i18n';
 import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
+
+import { NotificationsTopbar } from './NotificationsTopbar';
 
 interface INotificationsPageProps {
   locale: string;
 }
-export function NotificationsPage({ locale }: INotificationsPageProps) {
+function NotificationsContent({ locale }: INotificationsPageProps) {
   const { t } = useI18n();
   const { session, login, loading } = useSession();
   if (loading) return <LoadingState />;
@@ -44,9 +47,10 @@ export function NotificationsPage({ locale }: INotificationsPageProps) {
   );
 }
 function NotificationInbox({ userId, locale }: INotificationsPageProps & { userId: string }) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const query = useSuspenseInfiniteQuery(notificationListOptions(userId, { limit: 20 }));
-  const mutation = useReadNotificationMutation();
+  const mutation = useMutation(readNotificationMutationOptions(client));
   if (query.error && !query.isFetching) throw query.error;
   const items = query.data.pages.flatMap((page) => page.items) || [];
   return (
@@ -103,5 +107,13 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
         </Button>
       )}
     </>
+  );
+}
+
+export function NotificationsPage(props: Parameters<typeof NotificationsContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<NotificationsTopbar locale={props.locale} />}>
+      <NotificationsContent {...props} />
+    </CommunityPage>
   );
 }

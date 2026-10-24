@@ -1,85 +1,26 @@
 @layer components {
-  .guide-section {
-    margin-block: 28px;
-    scroll-margin-top: calc(var(--site-header-height) + 16px);
-  }
-  .guide-section p {
-    color: var(--color-muted);
-    line-height: 1.9;
-  }
-  .guide-title-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: 44px;
-    color: var(--color-ink);
-    border-radius: var(--radius-control);
-  }
-  .guide-title-link > span {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .guide-title-link > svg {
-    flex-shrink: 0;
-  }
-  .guide-title-link:hover > span {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .guide-title-link:focus-visible {
-    outline: 2px solid var(--color-ink);
-    outline-offset: 4px;
-  }
   .guide-board-list {
     display: grid;
-    gap: 12px;
-    margin-block: 20px;
+    gap: 16px;
+    margin-top: 20px;
   }
   .guide-board-list dt {
+    margin-bottom: 4px;
     font-weight: 600;
+    font-size: var(--text-body);
   }
   .guide-board-list dd {
-    margin-top: 4px;
     color: var(--color-muted);
-    line-height: 1.8;
-  }
-  .guide-step {
-    display: flex;
-    gap: 17px;
-    margin: 29px 0;
-  }
-  .guide-step > span {
-    border: 1px solid var(--color-line);
-    width: 31px;
-    height: 31px;
-    border-radius: var(--radius-control);
-    display: grid;
-    place-items: center;
-    font-size: var(--text-caption);
-    color: var(--color-muted);
-    flex-shrink: 0;
-    margin-top: 3px;
-  }
-  .guide-step h2 {
-    margin: 4px 0 12px;
-  }
-  .guide-step p {
     font-size: var(--text-body);
-    line-height: 1.9;
-    color: var(--color-muted);
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+  }
+  .contact-support {
+    margin-block: 24px;
   }
   .info-callout p {
     font-size: var(--text-body);
-    line-height: 1.9;
-    color: var(--color-muted);
-  }
-  .guide-step blockquote {
-    margin: 17px 0 0;
-    padding: 14px;
-    border-left: 2px solid var(--color-line);
-    background: var(--color-surface);
-    font-size: var(--text-caption);
     line-height: 1.9;
     color: var(--color-muted);
   }
@@ -106,21 +47,6 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-  }
-  @media (max-width: 760px) {
-    .guide-step {
-      gap: 12px;
-    }
-    .guide-step h2 {
-      font-size: var(--text-body);
-    }
-    .guide-step p {
-      font-size: var(--text-caption);
-    }
-    .guide-step > span {
-      font-size: var(--text-caption);
-      width: 27px;
-      height: 27px;
-    }
+    overflow-wrap: anywhere;
   }
 }

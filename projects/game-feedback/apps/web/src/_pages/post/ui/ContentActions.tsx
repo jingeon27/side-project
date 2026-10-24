@@ -27,7 +27,7 @@ interface IContentActionsProps {
 }
 export function ContentActions({ type, id, author, body = '', post, locale }: IContentActionsProps) {
   const { t } = useI18n();
-  const { session, login } = useSession(),
+  const { session, requireLogin } = useSession(),
     notify = useNotify(),
     router = useRouter(),
     owner = author.id === session?.user?.id;
@@ -91,7 +91,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         className="text-action"
         onClick={() => {
           if (!session?.user) {
-            login();
+            requireLogin();
             return;
           }
           openOverlay(({ isOpen, close, unmount }) => (
@@ -115,7 +115,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         className="text-action"
         onClick={() => {
           if (!session?.user) {
-            login();
+            requireLogin();
             return;
           }
           openOverlay(({ isOpen, close, unmount }) => (

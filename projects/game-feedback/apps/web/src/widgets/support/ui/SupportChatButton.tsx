@@ -20,7 +20,7 @@ export function SupportChatButton({
   label?: string;
 }) {
   const { t, locale } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const client = useQueryClient();
   const router = useRouter();
   const mutation = useMutation(startSupportMutationOptions(client, session.user?.id));
@@ -32,7 +32,7 @@ export function SupportChatButton({
         loading={mutation.isPending}
         onClick={async () => {
           if (!session.user) {
-            login();
+            requireLogin();
             return;
           }
           try {

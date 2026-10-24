@@ -8,12 +8,10 @@ import { overlay } from 'overlay-kit';
 import {
   DeletePostDocument,
   GalleryPostCardFragmentDoc,
-  GalleryPostsDocument,
   GroupContestDocument,
   GroupContestResultsDocument,
   GroupContestsDocument,
   HiddenGalleryPostsDocument,
-  PublicGalleryPostsDocument,
   SetPostHiddenDocument,
 } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
@@ -22,7 +20,7 @@ import { toast } from '@/shared/model/toast';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { IconButton } from '@/shared/ui/@core/icon-button';
 
-import { resetGalleryPosts } from '../model/post.cache';
+import { POST_FEED_QUERIES, resetGalleryPosts } from '../model/post.cache';
 import { EditPostBottomSheet } from './EditPostBottomSheet';
 
 const ITEM_CLASS =
@@ -34,14 +32,13 @@ export function PostActionsMenu({ postId }: { postId: string }) {
     from: { __typename: 'GalleryPost', id: postId },
   });
   const [hide, hideState] = useMutation(SetPostHiddenDocument, {
-    refetchQueries: [GalleryPostsDocument, PublicGalleryPostsDocument, HiddenGalleryPostsDocument],
+    refetchQueries: [...POST_FEED_QUERIES, HiddenGalleryPostsDocument],
     awaitRefetchQueries: true,
   });
   const [remove, removeState] = useMutation(DeletePostDocument, {
     update: resetGalleryPosts,
     refetchQueries: [
-      GalleryPostsDocument,
-      PublicGalleryPostsDocument,
+      ...POST_FEED_QUERIES,
       GroupContestDocument,
       GroupContestsDocument,
       GroupContestResultsDocument,

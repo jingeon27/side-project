@@ -27,10 +27,11 @@ description: 모바일 앱이 웹 요청을 받아 실행하는 네이티브 기
 ## 소셜 로그인 핸드오프 (`lib/social-login.ts`)
 
 - 요청마다 verifier = `encodeBase64Url(deps.randomBytes(PKCE_VERIFIER_BYTES))`(32바이트 → 43자, `src/shared/lib/base64url.ts` — RN에는 Buffer·btoa가 늘 있지 않다), challenge = base64url(SHA-256(verifier)).
-- 시작 주소는 `buildSocialLoginUrl(API_BASE, provider, challenge)`(`${WEB_ORIGIN}/backend/auth/<provider>?app_challenge=`), 콜백은 `buildAuthCallbackUrl(APP_SCHEME)`(`photocontest://auth/callback`). API 주소를 따로 쓰지 않는다.
-- `readAuthCallback`은 정규식으로만 읽는다: 콜백 주소로 시작(대소문자 무시), 쿼리만(해시 무시), `error`가 `code`보다 먼저, `code`는 `^[A-Za-z0-9._~-]{16,256}$`.
+- 시작 주소는 `buildSocialLoginUrl(API_BASE, provider, challenge)`(`${WEB_ORIGIN}/backend/auth/<provider>?app_challenge=`), 콜백은 `AUTH_CALLBACK_URL`(`src/shared/config/env.ts`, `${WEB_ORIGIN}/app-auth/callback`)이며 `deps.authCallbackUrl`로 받는다. API 주소를 따로 쓰지 않는다. 커스텀 스킴 콜백을 다시 쓰지 않는다(같은 스킴의 다른 앱이 코드를 가로챌 수 있다, 감사 M3).
+- `openAuthSessionAsync(url, callback, { preferUniversalLinks: true })`: 옵션이 없으면 iOS가 이전 `callbackURLScheme` API로 열어 https 콜백이 돌아오지 않는다(설치된 expo-web-browser `ios/WebAuthSession.swift`). Android 폴리필은 Custom Tabs를 열고 `Linking` `url` 이벤트가 콜백으로 시작하면 성공으로 본다.
+- `readAuthCallback`은 정규식으로만 읽는다: 콜백의 scheme·host·port는 대소문자 무시로 같고 경로는 정확히 같아야 한다. 쿼리는 `code=^[A-Za-z0-9._~-]{16,256}$` 하나나 `error=^[a-z_]{1,64}$` 하나만(다른 매개변수·중복·퍼센트 인코딩 거부), 해시는 무시한다.
 - 인증 세션 결과 `cancel`·`dismiss` → `CANCELLED`('로그인을 취소했습니다.'). 세션 예외·`locked`·`error=`·형식 오류 → `FAILED`('소셜 로그인에 실패했습니다.'). 성공하면 `{ code, verifier }`만 웹에 준다. 교환(`POST /backend/auth/app/exchange`)은 웹이 WebView 안에서 해야 쿠키가 WebView에 남는다 — 앱은 code·verifier를 저장하거나 직접 교환하지 않는다.
-- 스킴을 바꾸면 `app.config.ts` `scheme`, `src/shared/config/env.ts` `APP_SCHEME`, API `MOBILE_APP_SCHEME`, `e2e/support/e2e-env.ts` `E2E_APP_SCHEME`를 같이 바꾸고 네이티브를 다시 빌드한다.
+- 콜백 경로를 바꾸면 `src/shared/config/app-links.ts`, `app.config.ts`(`AUTH_CALLBACK_PATH`), 웹 `src/shared/lib/app-links.helper.ts`·`src/app/app-auth/callback`, API `MOBILE_AUTH_CALLBACK_PATH`를 같이 바꾸고 네이티브를 다시 빌드한다. 딥링크 스킴은 `app.config.ts` `scheme`, `env.ts` `APP_SCHEME`, `e2e/support/e2e-env.ts` `E2E_APP_SCHEME`를 같이 바꾼다.
 
 ## 체크리스트
 

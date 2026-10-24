@@ -31,7 +31,13 @@ vi.mock('@/shared/model/analytics', async (importOriginal) => ({
   identifyUser: vi.fn(),
 }));
 
-const ME: NonNullable<MeQuery['me']> = { __typename: 'User', id: 'user-1', nickname: '진건', avatar: null };
+const ME: NonNullable<MeQuery['me']> = {
+  __typename: 'User',
+  id: 'user-1',
+  nickname: '진건',
+  avatar: null,
+  needsOnboarding: false,
+};
 
 let fake: IFakeNativeApp;
 let bridge: IWebBridge;
@@ -83,6 +89,15 @@ describe('AuthSessionSync', () => {
       expect.objectContaining({ payload: { signedIn: true, userId: 'user-1' } }),
     ]);
     expect(window.sessionStorage.getItem('photo-contest:pending-login')).toBeNull();
+  });
+
+  it('소셜 가입 설정을 끝내기 전에는 원래 경로를 보존해 가입 설정으로 이동해야 한다', async () => {
+    savePendingLogin({ method: 'google', next: '/groups/group-1' });
+    renderSync({ ...ME, needsOnboarding: true });
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith('/onboarding?next=%2Fgroups%2Fgroup-1', undefined),
+    );
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it('이미 알린 사용자면 앱에 다시 알리지 않아야 한다', async () => {

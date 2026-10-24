@@ -358,8 +358,8 @@ variable "root_volume_size_gib" {
 variable "metadata_hop_limit" {
   description = <<-EOT
     IMDSv2 PUT 응답 hop limit. 기본 1이면 호스트 네트워크의 프로세스만 인스턴스 역할 자격 증명을 읽고 bridge 네트워크의 컨테이너는 읽지 못한다.
-    공용 스크립트가 aws-cli 컨테이너를 host 네트워크로 실행하도록 바뀌는 중이며, 그 변경이 배포된 뒤에는 1로 충분하다.
-    현재처럼 rds-receipt.py가 aws-cli를 bridge 네트워크(--network bridge)로 실행하는 버전을 배포하면 2로 둬야 RDS 복구 지점 조회가 동작한다.
+    현재 rds-receipt.py는 aws-cli 컨테이너를 host 네트워크(--network host)로 실행하므로 기본 1에서 RDS 복구 지점 조회가 동작한다.
+    이전 bridge 네트워크 버전의 스크립트를 배포할 때만 2가 필요하다.
     2로 올리면 같은 호스트의 모든 bridge 컨테이너가 인스턴스 역할(RDS 조회·SSM)을 쓸 수 있다는 점을 감안한다.
   EOT
   type        = number

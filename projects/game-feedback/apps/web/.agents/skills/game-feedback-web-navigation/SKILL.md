@@ -17,8 +17,8 @@ description: Game Feedback 웹(apps/web)에서 링크·뒤로 가기·탭 이동
 - `_app/providers/NavigationHistory.tsx`가 `installBrowserNavigation()`으로 `history.pushState`/`replaceState`를 감싸 `{ index, previous, feed, parent? }`를 state에 남긴다. 화면에서 history state를 직접 만지지 않는다.
 - 화면의 돌아가기는 `BackLink`(`@/shared/navigation`)다. `backNavigation()`은 상세류(`post`·`compose`·`profile`·`conversation`)에 앱 안 이전 기록이 있으면 `router.back()`, 없으면(콜드 링크) `parent`로 `router.replace`한다. 피드로 돌아갈 때는 `feedDestination`이 마지막 피드 필터를 복원한다.
 - 라우트 정의보다 정확한 상위(글쓰기를 연 게시판·필터)는 `<BackLink logicalParent={parent}>`로 등록한다(`registerLogicalParent`, 언마운트 때 해제). `parentOnly`는 이전 기록이 그 parent일 때만 back한다.
-- 링크를 누른 화면이 상위인 목적지(가이드 → 게시판·글쓰기·문의)는 `ChildLink`로 연다. `registerNextLogicalParent`가 다음 push 기록에 `parent`를 남겨, 상세가 아닌 화면도 뒤로 가기(브라우저·앱)가 그 기록으로 돌아간다(`back`). 같은 경로의 replace(필터)는 `parent`를 유지하고 다른 화면으로 replace하면 버린다. 이후 push한 기록은 물려받지 않는다.
-- 루트 탭(feed·messages·settings·notifications·guide)은 화면 안의 바로가기(가이드 제목 등)에서도 `TabLink`로 연다. 기본 `replace`라 탭 이동이 기록을 쌓지 않고, 피드 탭은 마지막 피드 필터로 돌아간다. 일반 `Link` push로 열면 브라우저·iOS 스와이프는 이전 화면으로, Android 뒤로 가기는 parent로 가서 서로 어긋난다.
+- 링크를 누른 화면이 상위인 목적지(프로필 → 가이드)는 `ChildLink`로 연다. `registerNextLogicalParent`가 다음 push 기록에 `parent`를 남겨, 상세가 아닌 화면도 뒤로 가기(브라우저·앱)가 그 기록으로 돌아간다(`back`). 같은 경로의 replace(필터)는 `parent`를 유지하고 다른 화면으로 replace하면 버린다. 이후 push한 기록은 물려받지 않는다.
+- 루트 탭(feed·messages·settings·notifications)은 화면 안의 바로가기에서도 `TabLink`로 연다. 기본 `replace`라 탭 이동이 기록을 쌓지 않고, 피드 탭은 마지막 피드 필터로 돌아간다. 일반 `Link` push로 열면 브라우저·iOS 스와이프는 이전 화면으로, Android 뒤로 가기는 parent로 가서 서로 어긋난다.
 - 근거 spec은 `src/shared/navigation/browser-navigation.spec.tsx`다. 이동 규칙을 바꾸면 이 spec과 `e2e/navigation.spec.ts`를 함께 고친다.
 
 ## URL 상태
@@ -39,7 +39,7 @@ description: Game Feedback 웹(apps/web)에서 링크·뒤로 가기·탭 이동
 - `src/instrumentation-client.ts`가 `nativeBridgeChannel.start()`를 문서 시작 때 부르고 `_app/providers/NativeBridge.tsx`가 경로·overlay 상태와 핸들러를 `bind()`한다. bind 전에 온 `open`·`active`는 보관했다가 처리한다.
 - `isNativeApp()`은 `window.__GAME_FEEDBACK_APP__.protocol === 1`과 `ReactNativeWebView`가 모두 있을 때만 true다. 메시지는 bridge의 `WebMessageSchema`·`NativeMessageSchema`로만 주고받는다.
 - 네이티브 back 처리 순서: 열린 Select·DropdownMenu 팝업에 Escape → 열린 overlay 닫기(`needsOnboarding`이면 닫지 않음) → `backNavigation()` 결과(back/replace/root/unhandled). 새 팝업 종류를 만들면 `shared/native/native-bridge-channel.ts`의 `data-slot` 선택자에 걸리는지 확인한다.
-- 앱 복귀(`state: active`)는 `useRefreshSession`으로 세션을 다시 읽고 계정이 바뀌었으면 캐시를 교체한다. 앱 소셜 로그인은 `requestNativeLogin`(auth-request → auth-result, 180초 제한) → `postAppExchange`다.
+- 앱 복귀(`state: active`)는 `useRefreshSession`으로 세션을 다시 읽고 계정이 바뀌었으면 캐시를 교체한다. 앱 소셜 로그인은 `requestNativeLogin`(auth-request → auth-result, 180초 제한) → `postAppExchange`다. 앱은 코드를 검증된 https 앱 링크 `/app-auth/callback`으로 받는다. 이 경로는 화면 경로(`appRoutes`)가 아니며 웹에서 링크하지 않는다.
 - 데스크톱 키보드 판정(`useDesktopKeyboard`)은 앱 안에서 항상 false다. 앱 Enter는 줄바꿈이다.
 - 단위 테스트는 `src/shared/native/native-bridge-channel.spec.tsx`, 실제 WebView 흐름은 `apps/mobile` e2e(Web 3302)가 검증한다.
 

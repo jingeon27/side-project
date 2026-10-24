@@ -78,8 +78,8 @@ cp terraform.tfvars.example terraform.tfvars  # 버킷 이름 두 개와 필요�
 결정할 것:
 
 - **버킷 이름**: 전역 고유, 점(.) 없이. 만든 뒤 바꾸면 버킷이 교체된다.
-- **`metadata_hop_limit`**: 배포할 `scripts/rds-receipt.py`가 aws-cli를 `--network bridge`로 실행하면 `2`, host 네트워크로 실행하면 `1`(기본). 첫 배포 시점의 스크립트를 확인한다.
-- **SSH와 배포 runner**: Actions CD(`ci-upload.sh`)는 SSH로 접속한다. 기본값(`ssh_allowed_cidrs = []`)은 22번을 열지 않으므로 GitHub-hosted runner로 배포하려면 runner가 닿는 범위를 연다. runner IP는 넓고 바뀌므로 `["0.0.0.0/0"]`과 키 전용 인증(Ubuntu 클라우드 이미지 기본값)을 쓰거나 self-hosted·고정 IP runner를 둔다. 운영자 셸은 SSM으로도 충분하다.
+- **`metadata_hop_limit`**: 현재 `scripts/rds-receipt.py`는 aws-cli를 `--network host`로 실행하므로 기본 `1`로 RDS 복구 지점을 조회한다. 이전 `--network bridge` 스크립트를 배포할 때만 `2`가 필요하다.
+- **SSH와 배포 runner**: Actions CD(`ci-upload.sh`)는 SSH로 접속한다. 기본값(`ssh_allowed_cidrs = []`)은 22번을 열지 않으므로 배포 runner의 접속 경로를 별도로 준비해야 한다. self-hosted·고정 IP runner의 출구 IP를 CIDR로 허용하거나 사설 네트워크 접속 경로를 구성한다. 일반 GitHub-hosted runner는 IP가 바뀌므로 운영자의 로컬 IP만 허용해서는 배포할 수 없다. 운영자 셸은 SSM으로도 접속할 수 있다.
 - **DNS**: Route 53 호스팅 영역이 있으면 `route53_zone_id`를 넣는다. 같은 이름의 레코드가 이미 있으면 덮어쓰지 않고 실패한다.
 - **계정 고정**: `allowed_account_ids`에 운영 계정 ID를 넣어 다른 계정에 만드는 사고를 막는다.
 
@@ -215,8 +215,6 @@ done
 | 4. 버킷 2개·차단·암호화·Versioning·수명 주기·CORS | `storage.tf`                                            | 없음(origin은 변수)                               |
 | 5. 서비스별 IAM 자격 증명                         | `iam.tf`의 사용자·정책                                  | 액세스 키 발급과 교차 접근 거부 확인              |
 
-`projects/game-feedback/deploy/lightsail`의 이전 단독 구성과는 무관하며 그 리소스를 가져오거나 바꾸지 않는다.
-
 ## 운영 중 변경
 
 - 새 AMI가 게시되거나 `user_data`·`ssh_public_key`가 바뀌어도 EC2를 교체하지 않는다(`ignore_changes`). 호스트를 새로 만들려면 `terraform apply -replace=aws_instance.host`로 명시한다. 탄력적 IP는 네트워크 인터페이스에 붙어 있어 교체 후에도 유지되지만 루트 볼륨(이미지·Caddy 인증서·`/srv/side-project`)과 SSH host key는 새로 만들어지므로 3·6·7·9단계를 다시 한다.
@@ -234,3 +232,37 @@ done
 4. 서비스 IAM 사용자에 콘솔·CLI로 발급한 액세스 키가 있으면 삭제가 실패한다. 키를 먼저 비활성화·삭제한다.
 5. 탄력적 IP가 해제되면 같은 주소를 다시 받을 수 없다. DNS와 `SIDE_DEPLOY_HOST`·known_hosts를 갱신한다.
 6. state 버킷은 이 구성 밖이므로 남는다.
+
+## 2026-10-25 재검토와 로컬 실행 구분
+
+Terraform 1.16.6에서 fmt 검사, backend 비활성 init, validate와 mock provider plan 사양 11개가 통과했다. 실제 AWS 계정의 plan/apply는 실행하지 않았다. 기본 VPC·EC2·비공개 RDS·분리 S3 구성에서 정적 검증 오류는 발견하지 않았다. 이 모듈은 Game Feedback·Photo Contest의 공용 호스트를 만들며 블로그 서비스는 구성하지 않는다.
+
+새 배포 전 운영자가 준비할 값은 다음과 같다. 리소스 생성 후 얻는 값과 직접 정해야 할 값을 구분한다.
+
+| 준비할 것                         | 입력 또는 출력                                                                                                                                                                                                      | 용도                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 단기 AWS 자격 증명·12자리 계정 ID | AWS profile, allowed_account_ids                                                                                                                                                                                    | 운영 계정 고정·Terraform 실행                                             |
+| 별도 state 버킷                   | backend.hcl의 bucket                                                                                                                                                                                                | 암호화·버전 관리·use_lockfile; 서비스 미디어 버킷과 별개                  |
+| 고유한 서비스 버킷 이름 두 개     | game_feedback_bucket_name, photo_contest_bucket_name                                                                                                                                                                | Terraform이 private S3와 CORS·IAM 사용자를 생성                           |
+| 웹 도메인·DNS 권한                | game_feedback_domain, photo_contest_domain, 선택 route53_zone_id                                                                                                                                                    | 웹·API 네 A 레코드를 public_ip로 연결                                     |
+| 운영자·배포 키와 접속 경로        | ssh_public_key, ssh_allowed_cidrs, SSM                                                                                                                                                                              | 기본 ssh_allowed_cidrs=[]이면 현재 SSH 기반 Actions CD는 접속할 수 없음   |
+| DB 초기화·서비스 비밀번호         | rds_endpoint, rds_master_user_secret_arn; rds-bootstrap.sql                                                                                                                                                         | 관리자와 서비스별 runtime/migrator 자격 증명 분리                         |
+| 서비스별 S3 키·캐시 비밀          | s3_iam_user_names, 별도 create-access-key, GF_CACHE_REVALIDATION_SECRET                                                                                                                                             | 앱의 서버 환경 파일에 저장; Terraform은 액세스 키를 만들지 않음           |
+| 앱 링크 식별값                    | MOBILE_APPLE_TEAM_ID, MOBILE_IOS_BUNDLE_ID, MOBILE_ANDROID_PACKAGE, MOBILE_ANDROID_SHA256_FINGERPRINTS                                                                                                              | 현재 production 웹은 이 값이 없으면 시작 검증에서 실패                    |
+| 외부 서비스 설정                  | OAuth 제공자 키·callback, 선택 Supercell·Amplitude·Sentry                                                                                                                                                           | 해당 기능을 사용할 때만 설정; Supercell 허용 IP에는 서버의 public_ip 사용 |
+| GitHub 배포 설정                  | Environment의 `SIDE_DEPLOY_HOST`, `SIDE_DEPLOY_SSH_*`; repository의 `GF_SITE_URL`, `GF_CONTACT_EMAIL`, `PHOTO_CONTEST_SITE_URL`, `PHOTO_CONTEST_DEPLOY_BRANCH`, `GF_DEPLOY_ENABLED`, `PHOTO_CONTEST_DEPLOY_ENABLED` | 위 단계와 복구 검증 후 활성화                                             |
+
+로컬 개발은 AWS 자격 증명 없이 실행할 수 있다. Photo Contest는 .env.example의 로컬 S3 대역과 개발 DB를 사용하고 새 migration을 적용한다. Game Feedback의 dev:test는 테스트 계정으로 확인하며 일반 개발에서는 실제 로그인 제공자 설정이 선택이다. 모바일 앱 링크 식별값과 분석 키는 development에서 비워 둘 수 있다. 실제 AWS 계정 권한·리소스 가용성과 애플리케이션 환경 파일은 mock test가 검증하지 않는다.
+
+적용 전 서울 리전에서 PostgreSQL 18과 선택한 클래스의 실제 제공 여부도 확인한다. 아래 마지막 명령의 결과가 비어 있으면 `db.t4g.micro`와 18 조합으로 배포할 수 없으므로 지원되는 클래스를 선택한 뒤 plan을 검토한다. mock provider는 이 가용성을 확인하지 않는다.
+
+```sh
+aws sts get-caller-identity
+aws rds describe-db-engine-versions --engine postgres --region ap-northeast-2 \
+  --query "DBEngineVersions[?starts_with(EngineVersion, '18.')].[EngineVersion,Status]" --output table
+aws rds describe-orderable-db-instance-options --engine postgres --db-instance-class db.t4g.micro \
+  --region ap-northeast-2 \
+  --query "OrderableDBInstanceOptions[?starts_with(EngineVersion, '18.')].[EngineVersion,AvailabilityZones[].Name]" --output json
+```
+
+관련 공식 문서: [RDS의 비공개 VPC 구성](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html), [S3 CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html), [Terraform S3 backend 잠금](https://developer.hashicorp.com/terraform/language/backend/s3), [EC2 Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html), [RDS 클래스와 엔진 지원](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.Support.html).

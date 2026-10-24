@@ -40,12 +40,12 @@ provider가 토큰·프로필 요청을 거절(HTTP 4xx·5xx)하면 사용자는
 ## 앱 핸드오프 불변식 (`src/auth/auth.service.ts`)
 
 - `startOAuth`: `app_challenge`는 정확히 43자 `[A-Za-z0-9_-]`, 아니면 400. `OAuthAttempt.appChallenge`에 저장한다.
-- `completeOAuth`는 던지지 않고 항상 이동할 URL을 돌려준다(`@Redirect()` 302). 앱 시도면 세션 쿠키를 만들지 않는다(시스템 브라우저의 쿠키는 WebView에 닿지 않는다). `issueAppTicket`은 코드 원문을 `${mobileAppScheme()}://auth/callback?code=`에만 싣고, `AppLoginTicket`에는 코드 대신 `sha256Hex(code)`를 `APP_LOGIN_TICKET_TTL_MS` 만료로 저장한다. 실패는 앱 시도면 앱 scheme `?error=login_failed`, 아니면 `${WEB_ORIGIN}/?loginError=1`.
+- `completeOAuth`는 던지지 않고 항상 이동할 URL을 돌려준다(`@Redirect()` 302). 앱 시도면 세션 쿠키를 만들지 않는다(시스템 브라우저의 쿠키는 WebView에 닿지 않는다). `issueAppTicket`은 코드 원문을 `${mobileAuthCallbackUrl()}?code=`(검증된 https 앱 링크, 기본 `${WEB_ORIGIN}/app-auth/callback`)에만 싣고, `AppLoginTicket`에는 코드 대신 `sha256Hex(code)`를 `APP_LOGIN_TICKET_TTL_MS` 만료로 저장한다. 실패는 앱 시도면 같은 콜백 `?error=login_failed`, 아니면 `${WEB_ORIGIN}/?loginError=1`.
 - `exchangeAppLogin`: 형식·만료·불일치·재사용 모두 같은 403 `ERROR_MESSAGE.APP_LOGIN_REJECTED` — 어느 단계에서 틀렸는지 드러내지 않는다. 비교는 `safeEqual(pkceChallenge(verifier), ticket.challenge)`, 소비는 비교가 끝난 뒤 `deleteMany({ where: { codeHash, expiresAt: { gt: now } } })`의 `count === 1`로 한다 — 틀린 verifier는 티켓을 쓰지 않고, 동시 교환은 한 건만 세션을 받는다. 세션은 WebView 안에서 부르는 이 POST의 응답 쿠키로만 준다.
-- `mobileAppScheme()`의 웹 scheme 거부(`RESERVED_SCHEMES`)를 없애지 않는다(코드가 웹으로 샌다). 코드·verifier·세션 토큰을 로그·Sentry·이벤트에 넣지 않는다.
+- 앱 로그인 코드를 커스텀 스킴으로 보내지 않는다. 같은 스킴을 등록한 앱이 자기 challenge로 흐름을 열면 PKCE로도 막지 못한다(감사 M3). `mobileAuthCallbackUrl()`은 `MOBILE_AUTH_CALLBACK_URL`이 WEB_ORIGIN과 같은 origin의 `MOBILE_AUTH_CALLBACK_PATH`(`/app-auth/callback`)이고 쿼리·해시·계정 정보가 없을 때만 따르고 아니면 기본값을 쓴다. 운영은 `assertProductionConfig()`가 이 값이 없거나 틀리면 시작을 멈춘다. 경로를 바꾸면 웹 안내 페이지·AASA·assetlinks와 앱 `app.config.ts`·`src/shared/config/app-links.ts`를 같이 바꾼다. 코드·verifier·세션 토큰을 로그·Sentry·이벤트에 넣지 않는다.
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/common/http/cookie-header.spec.ts`(섞인 쿠키, 같은 이름 중복, 따옴표·퍼센트, 8KB 초과, 깨진 형식), `src/auth/auth-cookie.spec.ts`(운영 `__Host-` 이름), `src/common/crypto.spec.ts`(RFC 7636 벡터), `src/config/env.spec.ts`(개발 로그인 조건, 앱 scheme).
+- unit: `src/common/http/cookie-header.spec.ts`(섞인 쿠키, 같은 이름 중복, 따옴표·퍼센트, 8KB 초과, 깨진 형식), `src/auth/auth-cookie.spec.ts`(운영 `__Host-` 이름), `src/common/crypto.spec.ts`(RFC 7636 벡터), `src/config/env.spec.ts`(개발 로그인 조건, 앱 로그인 콜백 URL, 운영 설정 검증).
 - integration 레인(`api-test` 스킬): 모든 변경 엔드포인트의 Origin 없음·다른 Origin 403(비로그인이어도), 세션 쿠키 HttpOnly·SameSite=Lax·Path=/, DB에 토큰 원문 없음, 깨진 Cookie 헤더는 비로그인, 로그아웃 뒤 같은 쿠키 거부, 앱을 만든 뒤 `vi.stubEnv('NODE_ENV', 'production')`이면 개발 로그인 403.
-- OAuth(provider fetch stub): `/auth/unknown` 400, client id 없음 503, state 불일치·만료·재사용은 `/?loginError=1`로 302, token 요청의 `code_verifier`가 authorize의 `code_challenge`와 맞음, 같은 provider ID로 다시 로그인하면 같은 사용자. 앱 핸드오프: 잘못된 challenge 400, 콜백은 세션 쿠키 없이 앱 scheme으로, 교환 성공·재사용 403·틀린 verifier 뒤 올바른 verifier 성공·만료 403·동시 교환 정확히 1건.
+- OAuth(provider fetch stub): `/auth/unknown` 400, client id 없음 503, state 불일치·만료·재사용은 `/?loginError=1`로 302, token 요청의 `code_verifier`가 authorize의 `code_challenge`와 맞음, 같은 provider ID로 다시 로그인하면 같은 사용자. 앱 핸드오프: 잘못된 challenge 400, 콜백은 세션 쿠키 없이 https 앱 로그인 콜백으로, 교환 성공·재사용 403·틀린 verifier 뒤 올바른 verifier 성공·만료 403·동시 교환 정확히 1건. 커스텀 스킴·다른 origin 설정이 무시되는 회귀는 `src/auth/auth.service.integration.test.ts`.

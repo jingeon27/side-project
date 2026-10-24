@@ -2,23 +2,27 @@
 
 import Link from 'next/link';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight, Gamepad2, LogOut, Plus, ShieldBan, Trash2 } from 'lucide-react';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
-import { useLogout, useSession } from '@/features/auth';
+import { logoutMutationOptions, useSession } from '@/features/auth';
 import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
-import { blockListOptions, UserBadges, useUnblockUser } from '@/features/user';
+import { blockListOptions, unblockUserMutationOptions, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
-import { Avatar, ErrorNotice, LoadingState, openOverlay } from '@/shared/ui';
+import { ChildLink } from '@/shared/navigation';
+import { Avatar, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
 import { ConnectProfile } from '@/widgets/game-profile';
 import { SupportChatButton } from '@/widgets/support';
 
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { LanguageSettings } from './LanguageSettings';
 import { MyPosts } from './MyPosts';
+import { SettingsTopbar } from './SettingsTopbar';
 import { ThemeSettings } from './ThemeSettings';
 
 interface ISettingsPageProps {
@@ -51,13 +55,15 @@ function openAccountDeletion() {
     />
   ));
 }
-export function SettingsPage({ locale }: ISettingsPageProps) {
+function SettingsContent({ locale }: ISettingsPageProps) {
+  const client = useQueryClient();
+  const notify = useNotify();
   const { t, locale: textLocale } = useI18n();
   const { session, login, loading } = useSession();
   const accounts = useQuery(gameAccountListOptions(session?.user?.id));
   const blocks = useQuery(blockListOptions(session?.user?.id));
-  const logout = useLogout();
-  const unblock = useUnblockUser();
+  const logout = useMutation(logoutMutationOptions(client, notify));
+  const unblock = useMutation(unblockUserMutationOptions(client, notify));
   if (loading) return <LoadingState />;
   if (!session?.user)
     return (
@@ -182,5 +188,20 @@ export function SettingsPage({ locale }: ISettingsPageProps) {
         </button>
       </section>
     </>
+  );
+}
+
+export function SettingsPage(props: Parameters<typeof SettingsContent>[0]) {
+  const { t } = useI18n();
+  return (
+    <CommunityPage locale={props.locale} topbar={<SettingsTopbar locale={props.locale} />}>
+      <SettingsContent {...props} />
+      <section className="settings-card">
+        <h2>{t('서비스 안내')}</h2>
+        <ChildLink href={appRoutes.guide(props.locale)} className="settings-action">
+          {t('이용 가이드')}
+        </ChildLink>
+      </section>
+    </CommunityPage>
   );
 }

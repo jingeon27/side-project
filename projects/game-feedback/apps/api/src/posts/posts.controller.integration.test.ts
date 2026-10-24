@@ -8,6 +8,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
@@ -27,13 +28,12 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();
     assertDatabaseUrl(databaseUrl, 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed');
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, false);
     app = await createApp({ databaseUrl, webOrigin: origin, demoMode: true, rateLimit: false, prisma: db });
     author = supertest.agent(app.getHttpServer());

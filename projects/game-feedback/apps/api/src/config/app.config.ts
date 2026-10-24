@@ -10,6 +10,7 @@ import type { ProfileProvider } from '../game-profiles/providers/profile-provide
 import { SupercellProfileProvider } from '../game-profiles/providers/supercell-profile.provider';
 import type { PrismaClient } from '../generated/prisma';
 import { resolveMediaStorageConfig, type TMediaStorageConfig } from '../media-storage/media-storage.config';
+import { resolveAppAuthCallbackUrl } from './app-auth-callback';
 import { resolveIdentityProviders } from './identity-providers';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -20,6 +21,8 @@ export interface AppOptions {
   forwardedClientSecret?: string;
   databaseUrl?: string;
   webOrigin?: string;
+  /** 앱 로그인 https 콜백. 없으면 MOBILE_AUTH_CALLBACK_URL, 개발·테스트는 WEB_ORIGIN/app-auth/callback */
+  appAuthCallbackUrl?: string;
   demoMode?: boolean;
   testAuthEnabled?: boolean;
   identityProvider?: IdentityProvider;
@@ -39,6 +42,8 @@ export interface AppConfig {
   demoMode: boolean;
   testAuthEnabled: boolean;
   webOrigin: string;
+  /** 앱 로그인 일회용 코드를 보내는 검증된 https 콜백(App Link·Universal Link) */
+  appAuthCallbackUrl: string;
   identityProvider?: IdentityProvider;
   identityProviders: TIdentityProviders;
   profileProvider?: ProfileProvider;
@@ -58,6 +63,11 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     throw new Error('WEB_ORIGIN must be an origin without a path.');
   if (production && !webOrigin.startsWith('https://'))
     throw new Error('Production WEB_ORIGIN must use HTTPS.');
+  const appAuthCallbackUrl = resolveAppAuthCallbackUrl(
+    options.appAuthCallbackUrl ?? process.env.MOBILE_AUTH_CALLBACK_URL,
+    webOrigin,
+    production,
+  );
 
   const identityProviders = resolveIdentityProviders(
     webOrigin,
@@ -74,6 +84,7 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     demoMode,
     testAuthEnabled,
     webOrigin,
+    appAuthCallbackUrl,
     rateLimit: options.rateLimit !== false,
     mediaStorage: options.mediaStorage ?? resolveMediaStorageConfig(process.env),
     identityProvider: identityProviders.google,

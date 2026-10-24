@@ -2,12 +2,13 @@
 
 import { useId } from 'react';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircle } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
 
-import { useUpdateAnswerMutation } from '@/features/answer';
-import { useUpdateCommentMutation } from '@/features/comment';
+import { updateAnswerMutationOptions } from '@/features/answer';
+import { updateCommentMutationOptions } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { BottomSheet, ErrorNotice, useNotify } from '@/shared/ui';
@@ -22,10 +23,11 @@ interface IContentEditDialogProps {
   body: string;
 }
 export function ContentEditDialog({ open, onOpenChange, type, id, body }: IContentEditDialogProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const formId = useId();
-  const answer = useUpdateAnswerMutation(),
-    comment = useUpdateCommentMutation(),
+  const answer = useMutation(updateAnswerMutationOptions(client)),
+    comment = useMutation(updateCommentMutationOptions(client)),
     notify = useNotify(),
     form = useZodForm(type === 'ANSWER' ? answerFormSchema : commentFormSchema, { defaultValues: { body } });
   const isPending = answer.isPending || comment.isPending,

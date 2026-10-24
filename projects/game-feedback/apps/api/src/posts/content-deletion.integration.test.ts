@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AnswerSchema, CommentSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
@@ -52,7 +53,7 @@ describe('author deletion of moderated content', () => {
       { env: { ...process.env, DATABASE_URL: databaseUrl }, encoding: 'utf8' },
     );
     if (result.status !== 0) throw new Error(`Isolated migration failed: ${result.stdout}\n${result.stderr}`);
-    state.db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    state.db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(state.db, false);
     state.app = await createApp({
       databaseUrl,

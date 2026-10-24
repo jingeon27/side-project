@@ -1,11 +1,14 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { Button } from '@side/design-system';
 
-import { useLoginMutation } from '@/features/auth';
+import { loginMutationOptions } from '@/features/auth';
 import { operatorMode } from '@/shared/config';
 import { ErrorNotice } from '@/shared/ui';
 
 export function LoginPage() {
-  const login = useLoginMutation();
+  const client = useQueryClient();
+  const login = useMutation(loginMutationOptions(client));
   return (
     <main className="admin-login admin-card form-stack">
       <h1>관리자 로그인이 필요합니다.</h1>

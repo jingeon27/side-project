@@ -7,6 +7,7 @@ import { BattleModeSchema, CoachingRoleSchema } from '@game-feedback/contracts';
 
 import { boardBySlug } from '@/features/board';
 import { getPublicCategories } from '@/features/category/index.server';
+import { CommunityPage } from '@/widgets/community-shell';
 
 import { PostComposePage } from './PostComposePage';
 
@@ -34,21 +35,23 @@ export async function ComposeRoute({
   const category = categories.find((item) => item.slug === parsedGame.data);
   if (!category) notFound();
   return (
-    <PostComposePage
-      locale={locale}
-      categories={categories}
-      board={selected?.kind ?? 'FEEDBACK'}
-      categoryId={selected || game ? category.id : undefined}
-      battleMode={battle.data}
-      coachingRole={coaching.data}
-      parent={
-        selected
-          ? appRoutes.boards(locale, selected.slug, undefined, category.slug, {
-              battleMode: battle.data,
-              coachingRole: coaching.data,
-            })
-          : appRoutes.feed(locale)
-      }
-    />
+    <CommunityPage locale={locale} topbar={null}>
+      <PostComposePage
+        locale={locale}
+        categories={categories}
+        board={selected?.kind ?? 'FEEDBACK'}
+        categoryId={selected || game ? category.id : undefined}
+        battleMode={battle.data}
+        coachingRole={coaching.data}
+        parent={
+          selected
+            ? appRoutes.boards(locale, selected.slug, undefined, category.slug, {
+                battleMode: battle.data,
+                coachingRole: coaching.data,
+              })
+            : appRoutes.feed(locale)
+        }
+      />
+    </CommunityPage>
   );
 }

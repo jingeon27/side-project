@@ -1,4 +1,13 @@
 export const infoMessages: Record<string, readonly [string, string]> = {
+  '게시글부터 채팅까지, 필요한 기능을 빠르게 찾아보세요.': [
+    'Find your way around posts, chat and more.',
+    '投稿からチャットまで、使いたい機能を見つけましょう。',
+  ],
+  '게시글 찾기': ['Browse posts', '投稿を探す'],
+  '아래 제목을 누르면 해당 화면으로 이동해요.': [
+    'Tap a heading below to open that screen.',
+    '下の見出しをタップすると、その画面に移動できます。',
+  ],
   '휴대폰에서 게시글을 찾고, 글을 올리고, 채팅하는 방법을 안내해요. 제목과 화살표를 누르면 해당 화면으로 바로 이동해요.':
     [
       'Learn how to browse posts, write and chat on your phone. Tap a heading or its arrow to open that screen.',
@@ -171,7 +180,7 @@ export const infoMessages: Record<string, readonly [string, string]> = {
     'Tell us about problems, ideas or ways you would like to help improve the service.',
     '困った点やアイデア、サービスを良くするためのご意見をお寄せください。',
   ],
-  '운영 문의': ['Service support', '運営へのお問い合わせ'],
+  '운영 및 광고 문의': ['Support and advertising inquiries', '運営・広告に関するお問い合わせ'],
   '문제 상황과 발생 시간을 함께 알려주시면 확인에 도움이 됩니다. 비밀번호나 다른 사람의 개인정보는 보내지 마세요.':
     [
       'Include what happened and when it happened to help us investigate. Do not send passwords or other people’s personal information.',

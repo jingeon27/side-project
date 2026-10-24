@@ -15,11 +15,13 @@ import { AuthorLink, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
+import { CommunityPage } from '@/widgets/community-shell';
 
 import type { IFeedSnapshot } from '../model/feed-snapshot.type';
 import { FeedFilters } from './FeedFilters';
+import { FeedTopbar } from './FeedTopbar';
 
-export function FeedPage({
+function FeedContent({
   locale,
   initialFeed,
 }: {
@@ -27,11 +29,11 @@ export function FeedPage({
   initialFeed: IFeedSnapshot | Promise<IFeedSnapshot>;
 }) {
   const { t } = useI18n();
-  const { session, login } = useSession();
+  const { session, requireLogin } = useSession();
   const router = useRouter();
   function handleCompose() {
     if (!session?.user) {
-      login();
+      requireLogin();
       return;
     }
     router.push(appRoutes.compose(locale));
@@ -182,5 +184,13 @@ function FeedResults({
         </div>
       )}
     </>
+  );
+}
+
+export function FeedPage(props: Parameters<typeof FeedContent>[0]) {
+  return (
+    <CommunityPage locale={props.locale} topbar={<FeedTopbar locale={props.locale} />}>
+      <FeedContent {...props} />
+    </CommunityPage>
   );
 }

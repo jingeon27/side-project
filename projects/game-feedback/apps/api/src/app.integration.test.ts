@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
 import { hash, token } from './common/crypto';
+import { createPrismaAdapter } from './database/prisma-adapter';
 import { PrismaClient } from './generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider, type IdentityProvider } from './security';
 import { seed } from './seed';
@@ -31,14 +32,13 @@ describe.skipIf(!baseUrl)('persistent API core with isolated PostgreSQL', () => 
     parsed.searchParams.set('schema', schema);
     url = parsed.toString();
     assertDatabaseUrl(url, 'test');
-    const result = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url }, encoding: 'utf8' },
-    );
+    const result = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url },
+      encoding: 'utf8',
+    });
     if (result.status !== 0)
       throw new Error(`Isolated test schema setup failed: ${result.stderr}\n${result.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(url) });
     await seed(db, false);
     app = await createApp({
       databaseUrl: url,

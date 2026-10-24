@@ -29,7 +29,7 @@
 | `src/features` | auth·user·game-profile·post·answer·comment·category·notification·moderation·chat 서버 도메인 |
 | `src/shared`   | REST transport·오류 문구, RHF/Zod 연결, 날짜, Dialog 등 도메인 비의존 UI                     |
 
-`features/<domain>/api`에서 REST IO를 수행하고 `model/*.options.ts`에서 query options와 키를 정의한다. UI는 options factory를 `useQuery`/`useInfiniteQuery`에 직접 전달하며 같은 factory로 cache를 무효화한다. mutation 훅은 원본 TanStack 결과를 반환하고, 화면이 성공 후 이동·닫기를 담당한다. 사용자별 조회는 사용자 ID로 scope를 나누고 불완전한 인자의 조회에는 skipToken을 사용한다.
+`features/<domain>/api`에서 REST IO를 수행하고 `model/*.options.ts`에서 query options와 키를 정의한다. UI는 options factory를 `useQuery`/`useInfiniteQuery`에 직접 전달하며 같은 factory로 cache를 무효화한다. mutation 정책은 도메인의 mutationOptions 팩토리가 정의하고 호출부에서 useMutation으로 직접 조립한다. 화면이 성공 후 이동·닫기를 담당한다. 사용자별 조회는 사용자 ID로 scope를 나누고 불완전한 인자의 조회에는 skipToken을 사용한다.
 
 서버·세션 상태는 TanStack Query, 폼은 RHF와 Zod, 모달은 overlay-kit을 사용한다. 공통 Base UI Dialog로 접근성·스타일을 조합하며 열림 boolean과 별도 mutation pending/error 상태를 복제하지 않는다. es-toolkit은 query prefix 구성, ts-pattern은 명시적인 화면 분기에 사용한다. 서버 데이터를 Zustand 등 별도 store에 복사하지 않는다. 사용자 ID별 OverlayProvider가 모달 상태를 소유해 다른 탭의 계정 전환·로그아웃 후 이전 계정의 초안·탈퇴 확인 입력을 폐기하고 SSE도 같은 수명으로 종료한다. 브라우저의 REST·HttpOnly 쿠키·SSE 계약과 Orval 생성 경로는 유지한다.
 
@@ -131,7 +131,7 @@ DatabaseModule은 실행별 AppConfig와 PrismaClient를 컨테이너에 제공�
 
 로컬 DB 관리자는 `.data/postgres-dev`와 `.data/postgres-test`만 관리한다. TCP loopback과 고정 전용 포트를 사용한다. 임의 포트 프로세스를 종료하지 않는다. 시작한 DB 소유 프로세스는 랜덤 토큰으로만 제어하며 관리자 비밀과 제어 메타데이터는 Git에서 제외한다.
 
-스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. 배포 전에는 `schema.prisma`만 관리하며 URL 검증 뒤 `prisma db push --skip-generate`로 적용한다. 데이터 손실 경고가 발생하면 강제하지 않고 실패한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
+스키마 동기화 전 URL의 protocol, hostname, port, database, role, schema와 option을 검증한다. 배포 전에는 `schema.prisma`만 관리하며 URL 검증 뒤 `prisma db push`로 적용한다. 데이터 손실 경고가 발생하면 강제하지 않고 실패한다. 원격 운영 Migration은 이 로컬 실행기를 우회해서 임의 실행하지 않고 별도의 운영 절차를 설계한다.
 
 ## API 계약과 갱신
 

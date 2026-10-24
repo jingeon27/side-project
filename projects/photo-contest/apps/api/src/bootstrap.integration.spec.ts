@@ -339,7 +339,11 @@ describe('HTTP 계약', () => {
     });
 
     it('운영 모드에서는 introspection을 막고 오류에 stacktrace를 싣지 않아야 한다', async () => {
-      const production = await createTestApp({ NODE_ENV: 'production', WEB_ORIGIN: 'https://web.test' });
+      const production = await createTestApp({
+        NODE_ENV: 'production',
+        WEB_ORIGIN: 'https://web.test',
+        MOBILE_AUTH_CALLBACK_URL: 'https://web.test/app-auth/callback',
+      });
       try {
         const response = await production
           .http()

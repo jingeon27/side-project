@@ -3,14 +3,15 @@
 import { useId } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircle } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
-import { useDeleteAnswerMutation } from '@/features/answer';
-import { useDeleteCommentMutation } from '@/features/comment';
-import { useDeletePostMutation } from '@/features/post';
+import { deleteAnswerMutationOptions } from '@/features/answer';
+import { deleteCommentMutationOptions } from '@/features/comment';
+import { deletePostMutationOptions } from '@/features/post';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice, Modal, useNotify } from '@/shared/ui';
 
@@ -30,11 +31,12 @@ export function ContentDeleteDialog({
   postId,
   locale,
 }: IContentDeleteDialogProps) {
+  const client = useQueryClient();
   const { t } = useI18n();
   const formId = useId();
-  const post = useDeletePostMutation(),
-    answer = useDeleteAnswerMutation(),
-    comment = useDeleteCommentMutation(),
+  const post = useMutation(deletePostMutationOptions(client)),
+    answer = useMutation(deleteAnswerMutationOptions(client)),
+    comment = useMutation(deleteCommentMutationOptions(client)),
     notify = useNotify(),
     router = useRouter();
   const isPending = post.isPending || answer.isPending || comment.isPending,

@@ -13,7 +13,12 @@ for (const width of [320, 1440]) {
       await page.goto(`/${locale}/guide`);
       const footer = page.getByRole('contentinfo');
       await expect(footer).toHaveCount(1);
-      await expect(footer.getByRole('link')).toHaveCount(3);
+      await expect(footer.locator('nav').getByRole('link')).toHaveCount(4);
+      await expect(footer.getByRole('link', { name: 'contact@bambyul.com', exact: true })).toHaveAttribute(
+        'href',
+        'mailto:contact@bambyul.com',
+      );
+      await expect(footer.locator('a[href="/' + locale + '/guide"]')).toHaveCount(1);
       await expect(footer.getByRole('link', { name: termsLabel, exact: true })).toHaveAttribute(
         'href',
         `/${locale}/terms`,
@@ -25,8 +30,8 @@ for (const width of [320, 1440]) {
       await footer.scrollIntoViewIfNeeded();
       if (width <= 760) {
         const navigation = await page.locator('.mobile-nav:visible').boundingBox();
-        const links = await footer.locator('nav').boundingBox();
-        expect((links?.y ?? 0) + (links?.height ?? 0)).toBeLessThanOrEqual(navigation?.y ?? 0);
+        const details = await footer.locator('.site-footer-details').boundingBox();
+        expect((details?.y ?? 0) + (details?.height ?? 0)).toBeLessThanOrEqual(navigation?.y ?? 0);
       }
       await footer.getByRole('link', { name: termsLabel, exact: true }).click();
       await expect(page).toHaveURL(`/${locale}/terms`);
@@ -46,6 +51,17 @@ for (const width of [320, 1440]) {
         'href',
         `https://feedback.example/${locale}/privacy`,
       );
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await footer.locator(`a[href="/${locale}/contact"]`).click();
+      await expect(page).toHaveURL(`/${locale}/contact`);
+      const article = page.getByRole('article');
+      await expect(article.getByRole('link', { name: 'contact@bambyul.com', exact: true })).toHaveAttribute(
+        'href',
+        'mailto:contact@bambyul.com',
+      );
+      const support = page.locator('.contact-support:visible');
+      await expect(support).toHaveCSS('margin-top', '24px');
+      await expect(support).toHaveCSS('margin-bottom', '24px');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   });

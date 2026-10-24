@@ -9,7 +9,7 @@ description: Game Feedback 모바일 앱의 Vitest unit·ui 테스트나 Playwri
 
 | 파일 | 프로젝트 | 규칙 |
 | --- | --- | --- |
-| `src/**/*.{spec,test}.ts` | `unit`(node) | 순수 함수·class. react-native·expo는 `import type`만 |
+| `src/**/*.{spec,test}.ts`, `app.config.spec.ts` | `unit`(node) | 순수 함수·class와 `app.config.ts`(운영·개발 빌드 설정). react-native·expo는 `import type`만 |
 | `src/**/*.{spec,test}.tsx` | `ui`(jsdom) | `react-native` → `react-native-web` alias, `__DEV__` = true, `EXPO_PUBLIC_WEB_ORIGIN=https://feedback.example`, `vitest.setup.ts` |
 
 - unit에는 `__DEV__` define과 origin env가 없다. `@/shared/config/env`(import 때 `parseWebOrigin` 실행)를 거치는 코드는 ui에서 검사하거나, `parseWebOrigin(value, development)`처럼 값을 인자로 받는 함수로 빼서 unit에서 검사한다.
@@ -27,7 +27,7 @@ description: Game Feedback 모바일 앱의 Vitest unit·ui 테스트나 Playwri
 ## Playwright (`playwright.config.ts`)
 
 - 프로젝트 `android-webview`(Pixel 7, chromium)·`ios-webview`(iPhone 13, webkit), `workers: 1`, 직렬, 테스트당 45초, `trace: 'retain-on-failure'`.
-- `webServer` 두 개를 항상 새로 띄운다(`reuseExistingServer: false`). API 4302: `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `test:server`(`GF_DEMO_MODE`·`GF_TEST_AUTH_ENABLED` true, OAuth·Supercell 키 빈 값, 공개 상세 캐시 무효화 콜백은 `http://127.0.0.1:3302/_internal/cache/revalidate`). Web 3302: web `build` 뒤 `next start`(`NEXT_DIST_DIR=.next/e2e-mobile`, `GAME_FEEDBACK_API_URL=http://127.0.0.1:4302`). 3302·4302가 비어 있어야 한다.
+- `webServer` 두 개를 항상 새로 띄운다(`reuseExistingServer: false`). API 4302: `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `test:server`(`GF_DEMO_MODE`·`GF_TEST_AUTH_ENABLED` true, OAuth·Supercell 키 빈 값, 공개 상세 캐시 무효화 콜백은 `http://127.0.0.1:3302/internal/cache/revalidate`). Web 3302: web `build` 뒤 `next start`(`NEXT_DIST_DIR=.next/e2e-mobile`, `GAME_FEEDBACK_API_URL=http://127.0.0.1:4302`). 3302·4302가 비어 있어야 한다.
 - DB: `TEST_DATABASE_URL`(기본 `127.0.0.1:55444/game_feedback_test`, user `game_feedback`)이 아니면 설정 로드에서 throw. 스키마는 `GF_MOBILE_E2E_SCHEMA` 또는 `gf_test_mobile_<uuid>`이고 `^gf_test_[a-z0-9_]+$`만 허용한다. `e2e/teardown.ts`가 URL·스키마를 다시 검사하고 그 스키마만 DROP한다.
 - 하네스: spec은 `./support/fixtures`의 `test`·`expect`와 `nativeHost`를 쓴다. `e2e/support/native-host.ts`가 앱의 실제 `NativeHost`·`socialLogin`·`toWebPath`를 Node에서 돌리고, `addInitScript`로 bootstrap과 `ReactNativeWebView.postMessage` → `exposeBinding('__gfNativePost', data, location.href)`를 심는다. 출처 검사도 실제로 탄다.
   - 읽기: `isReady`, `currentPath`, `hasOverlay`, `rootBacks`, `messages`, `authSessions`. 조작: `requestBack()`(실제 800ms), `state('background' | 'active')`, `openDeepLink(url)`(준비된 문서로만, 아니면 `false`), `setLoginResult(result)`.
@@ -62,4 +62,4 @@ corepack yarn workspace @side/game-feedback db:test:stop
 
 ## 실기기로만 확인한다
 
-dev client에서: 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 뒤 `gamefeedback://` 복귀, 비행기 모드 → 다시 시도, 파일 선택과 사진·카메라·마이크 권한. 보고할 때 Playwright·`bundle:check` 통과와 실기기 확인을 따로 적는다.
+dev client에서: 키보드와 입력창, 노치·하단 여백, Android 하드웨어 뒤로 가기, iOS 스와이프, 각 소셜 제공자의 시스템 인증 뒤 https 앱 링크 복귀(iOS 17.4+ 세션 콜백, Android App Link verified 상태, 앱 미설치·검증 실패 때 웹 안내 페이지), 비행기 모드 → 다시 시도, 파일 선택과 사진·카메라·마이크 권한. 보고할 때 Playwright·`bundle:check` 통과와 실기기 확인을 따로 적는다.

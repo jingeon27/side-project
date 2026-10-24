@@ -34,6 +34,10 @@ HTTP_PORT=3381
 HTTPS_PORT=3382
 API_IMAGE=photo-contest-api:$revision
 WEB_IMAGE=photo-contest-web:$revision
+MOBILE_APPLE_TEAM_ID=SMOKETEAM0
+MOBILE_IOS_BUNDLE_ID=test.smoke.photocontest
+MOBILE_ANDROID_PACKAGE=test.smoke.photocontest
+MOBILE_ANDROID_SHA256_FINGERPRINTS=$(printf '5A:%.0s' {1..31})5A
 EOF
 cat >"$directory/storage.yaml" <<EOF
 services:

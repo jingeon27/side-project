@@ -17,7 +17,13 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
 }));
 
-const owner = { __typename: 'User' as const, id: 'owner', nickname: '그룹장', avatar: null };
+const owner = {
+  __typename: 'User' as const,
+  id: 'owner',
+  nickname: '그룹장',
+  avatar: null,
+  needsOnboarding: false,
+};
 
 function respond(name: string) {
   if (name === 'GalleryPosts') return { galleryPosts: [] };

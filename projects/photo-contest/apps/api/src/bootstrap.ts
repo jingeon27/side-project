@@ -11,6 +11,7 @@ import { bodyParserErrorHandler } from './common/http/body-parser-error.middlewa
 import { graphqlRateLimit } from './common/http/graphql-rate-limit.middleware';
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
+import { createInputValidationPipe } from './common/input-validation';
 import { assertProductionConfig, assertTestingConfig, isTest, trustedProxyHops } from './config/env';
 import { MAX_JSON_BODY } from './config/limits';
 
@@ -40,6 +41,7 @@ export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INe
   app.use('/graphql', graphqlRateLimit());
   app.use(json({ limit: MAX_JSON_BODY }));
   app.use(bodyParserErrorHandler);
+  app.useGlobalPipes(createInputValidationPipe());
   app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));
   app.enableShutdownHooks();
   await app.init();

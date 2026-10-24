@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
 
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+
 test('desktop navigation has one entry per destination and keeps boards in the sidebar', async ({ page }) => {
   const login = await page.request.post('/api/auth/test-login', {
-    headers: { Origin: 'http://127.0.0.1:3301' },
+    headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
   });
   expect(login.ok()).toBe(true);
@@ -14,18 +16,12 @@ test('desktop navigation has one entry per destination and keeps boards in the s
     await expect(header.getByRole('link', { name: '프로필', exact: true })).toBeVisible();
     await expect(header.locator('.header-actions').getByRole('link')).toHaveCount(3);
     await expect(header.getByRole('combobox', { name: '언어 설정', exact: true })).toBeVisible();
-    await expect(primary.getByRole('link')).toHaveCount(3);
+    await expect(primary.getByRole('link')).toHaveCount(2);
     await expect(page.getByRole('link', { name: '홈', exact: true })).toHaveCount(1);
-    await expect(page.getByRole('link', { name: '가이드', exact: true })).toHaveCount(1);
+    await expect(primary.getByRole('link', { name: '가이드', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /^채팅(?: \d+개)?$/ })).toHaveCount(1);
     const boards = page.getByRole('navigation', { name: '클래시로얄 게시판', exact: true });
     await expect(boards).toHaveCount(1);
-    await primary.getByRole('link', { name: '가이드', exact: true }).click();
-    await expect(page).toHaveURL(/\/ko\/guide$/);
-    await expect(primary.getByRole('link', { name: '가이드', exact: true })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
     await header.getByRole('link', { name: '프로필', exact: true }).click();
     await expect(page).toHaveURL(/\/ko\/settings$/);
     await boards.getByRole('link', { name: '전투 모집', exact: true }).click();
@@ -60,8 +56,6 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   const tabs = page.getByRole('navigation', { name: '모바일 메뉴' });
   await tabs.getByRole('link', { name: '프로필', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/settings$/);
-  await tabs.getByRole('link', { name: '가이드', exact: true }).click();
-  await expect(page).toHaveURL(/\/ko\/guide$/);
   await page.getByRole('banner').getByRole('link', { name: '알림 0개', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\/notifications$/);
   await tabs.getByRole('link', { name: '홈' }).focus();
@@ -74,12 +68,12 @@ test('nested conversations preserve the inbox layout and replace sibling rooms; 
   page,
 }) => {
   const login = await page.request.post('/api/auth/test-login', {
-    headers: { Origin: 'http://127.0.0.1:3301' },
+    headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
   });
   expect(login.ok()).toBe(true);
   const response = await page.request.post('/api/conversations', {
-    headers: { Origin: 'http://127.0.0.1:3301' },
+    headers: { Origin: origin },
     data: { recipientId: 'sample-test-admin' },
   });
   expect(response.ok()).toBe(true);
@@ -111,7 +105,7 @@ for (const width of [400, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.request.post('/api/auth/test-login', {
-      headers: { Origin: 'http://127.0.0.1:3301' },
+      headers: { Origin: origin },
       data: { accountId: 'sample-user-0' },
     });
     await page.goto('/ko/guide');

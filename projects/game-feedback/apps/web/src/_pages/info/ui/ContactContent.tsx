@@ -11,7 +11,7 @@ export function ContactContent({ locale }: { locale: TLocale }) {
       <p className="info-lead">{t('불편했던 점, 좋은 아이디어, 함께 만들어가고 싶은 이야기를 기다려요.')}</p>
       {contact ? (
         <div className="info-callout">
-          <h2>{t('운영 문의')}</h2>
+          <h2>{t('운영 및 광고 문의')}</h2>
           <a className="contact-link" href={`mailto:${contact}`}>
             {contact}
             <ArrowUpRight size={18} />

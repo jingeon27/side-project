@@ -12,6 +12,7 @@ import { SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contra
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
 import { resolveAppConfig } from '../config/app.config';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, DemoProfileProvider } from '../security';
 import { seed } from '../seed';
@@ -37,13 +38,12 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     state.schema = `gf_test_access_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', state.schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
-    const migration = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl }, encoding: 'utf8' },
-    );
+    const migration = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    });
     if (migration.status !== 0) throw new Error('Isolated community schema setup failed.');
-    const db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    const db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     state.db = db;
     await seed(db, true);
     const identityProviders = Object.fromEntries(

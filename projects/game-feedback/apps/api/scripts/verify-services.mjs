@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
 
 const require = createRequire(import.meta.url);
+const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
 const { PrismaClient } = require('../dist/generated/prisma/index.js');
 if (process.env.NODE_ENV !== 'production' || process.env.DEPLOYMENT_TARGET !== 'shared-instance')
   throw new Error('Shared-instance production configuration is required.');
@@ -10,7 +11,7 @@ const { validateProductionEnvironment } = require('../dist/config/production.con
 const { resolveMediaStorageConfig } = require('../dist/media-storage/media-storage.config.js');
 validateProductionEnvironment(process.env);
 resolveMediaStorageConfig(process.env);
-const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+const db = new PrismaClient({ adapter: createPrismaAdapter(process.env.DATABASE_URL) });
 const storage = new S3Client({
   region: 'ap-northeast-2',
   credentials: {

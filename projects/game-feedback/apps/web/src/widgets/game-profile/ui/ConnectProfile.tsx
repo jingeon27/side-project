@@ -12,12 +12,12 @@ import { Button, Input } from '@side/design-system';
 import {
   lookupGameProfileMutationOptions,
   ProfileSnapshot,
-  useSaveGameAccount,
+  saveGameAccountMutationOptions,
 } from '@/features/game-profile';
 import type { GameProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
 
 interface IConnectProfileProps {
   open: boolean;
@@ -27,12 +27,13 @@ interface IConnectProfileProps {
 const profileTagSchema = z.object({ playerTag: PlayerTagSchema });
 
 export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileProps) {
+  const notify = useNotify();
   const { t } = useI18n();
   const formId = useId();
   const form = useZodForm(profileTagSchema, { defaultValues: { playerTag: '' } });
   const client = useQueryClient();
   const preview = useMutation(lookupGameProfileMutationOptions(client));
-  const save = useSaveGameAccount();
+  const save = useMutation(saveGameAccountMutationOptions(client, notify));
   const tagField = form.register('playerTag');
   return (
     <BottomSheet

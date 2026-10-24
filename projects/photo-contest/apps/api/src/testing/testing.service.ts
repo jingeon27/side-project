@@ -15,9 +15,15 @@ const STEP_MS = 60 * 60 * 1000;
 export class TestingService {
   constructor(private readonly db: Database) {}
 
-  createUser(nickname: string) {
+  createUser(nickname: string, options: { needsOnboarding?: boolean; avatar?: string } = {}) {
     return this.db.user.create({
-      data: { nickname, provider: 'testing', providerId: randomUUID() },
+      data: {
+        nickname,
+        provider: 'testing',
+        providerId: randomUUID(),
+        needsOnboarding: options.needsOnboarding ?? false,
+        avatar: options.avatar ?? null,
+      },
       select: { id: true, nickname: true, avatar: true },
     });
   }

@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 import { apiWebServer, prepareE2eDatabase } from '@photo-contest/test-kit';
 
+import { E2E_APP_LINK_ENV } from './e2e/support/env';
 import { CACHE_API_PORT, CACHE_API_URL, CACHE_WEB_ORIGIN, CACHE_WEB_PORT } from './test/cache/env';
 
 const database = prepareE2eDatabase('web_cache');
@@ -41,6 +42,8 @@ export default defineConfig({
         NEXT_PUBLIC_SENTRY_DSN: '',
         SENTRY_DSN: '',
         NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
+        // 운영 빌드 서버는 앱 링크 값이 없으면 첫 요청부터 실패한다.
+        ...E2E_APP_LINK_ENV,
       },
     },
   ],

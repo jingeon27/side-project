@@ -7,12 +7,14 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../app';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, hash } from '../security';
 import { responseCookies, responseLocation } from '../testing/http-response';
 
 const baseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
+const appCallback = `${origin}/app-auth/callback`;
 const require = createRequire(import.meta.url);
 describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () => {
   let app: INestApplication;
@@ -25,7 +27,9 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     const start = await browser.get(`/api/auth/google?app_challenge=${challenge}`).expect(302);
     const state = new URL(responseLocation(start)).searchParams.get('state');
     const result = await browser.get('/api/auth/google/callback').query({ state, code: subject }).expect(302);
-    expect(result.headers.location).toMatch(/^gamefeedback:\/\/auth\/callback\?code=[A-Za-z0-9_-]{43}$/);
+    const location = responseLocation(result);
+    expect(location.slice(0, appCallback.length + 6)).toBe(`${appCallback}?code=`);
+    expect(location.slice(appCallback.length + 6)).toMatch(/^[A-Za-z0-9_-]{43}$/);
     const rawCookies = result.headers['set-cookie'] as unknown as string[];
     expect(rawCookies.some((cookie) => cookie.startsWith('gamefeedback_session='))).toBe(false);
     const code = new URL(responseLocation(result)).searchParams.get('code');
@@ -40,13 +44,12 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
     schema = `gf_test_mobile_auth_${randomBytes(8).toString('hex')}`;
     target.searchParams.set('schema', schema);
     const url = assertDatabaseUrl(target.toString(), 'test');
-    const migrated = spawnSync(
-      process.execPath,
-      [require.resolve('prisma/build/index.js'), 'db', 'push', '--skip-generate'],
-      { env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url }, encoding: 'utf8' },
-    );
+    const migrated = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'db', 'push'], {
+      env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: url },
+      encoding: 'utf8',
+    });
     if (migrated.status !== 0) throw new Error(migrated.stderr + migrated.stdout);
-    db = new PrismaClient({ datasources: { db: { url } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(url) });
     await db.user.create({
       data: {
         googleSubject: 'mobile-existing',
@@ -138,7 +141,7 @@ describe.skipIf(!baseUrl)('mobile OAuth handoff with isolated PostgreSQL', () =>
       .get('/api/auth/google/callback')
       .query({ state, code: 'failure' })
       .expect(302);
-    expect(failed.headers.location).toBe('gamefeedback://auth/callback?error=login_failed');
+    expect(failed.headers.location).toBe(`${appCallback}?error=login_failed`);
     await browser.get('/api/auth/google/callback').query({ state, code: 'failure' }).expect(400);
   });
 });

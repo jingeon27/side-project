@@ -190,3 +190,36 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   await expect(page.getByRole('link', { name: /운영 이미지 그룹/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('운영 Caddy가 앱 링크 검증 파일과 앱 로그인 콜백 안내를 막지 않고 그대로 전달해야 한다', async ({
+  request,
+}) => {
+  // containers.sh의 .env 값이다. 실제 앱과 연결되지 않는 검증용 식별자다.
+  const appId = 'SMOKETEAM0.test.smoke.photocontest';
+  const aasa = await request.get('/.well-known/apple-app-site-association', { maxRedirects: 0 });
+  expect(aasa.status()).toBe(200);
+  expect(aasa.headers()['content-type']).toContain('application/json');
+  expect(await aasa.json()).toEqual({
+    applinks: { details: [{ appIDs: [appId], components: [{ '/': '/app-auth/callback' }] }] },
+    webcredentials: { apps: [appId] },
+  });
+  const assetLinks = await request.get('/.well-known/assetlinks.json', { maxRedirects: 0 });
+  expect(assetLinks.status()).toBe(200);
+  expect(await assetLinks.json()).toEqual([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'test.smoke.photocontest',
+        sha256_cert_fingerprints: [Array.from({ length: 32 }, () => '5A').join(':')],
+      },
+    },
+  ]);
+  const callback = await request.get('/app-auth/callback?code=smoke-login-code-0123456789', {
+    maxRedirects: 0,
+  });
+  expect(callback.status()).toBe(200);
+  expect(callback.headers()['cache-control']).toBe('no-store');
+  expect(callback.headers()['referrer-policy']).toContain('no-referrer');
+  expect(await callback.text()).not.toContain('smoke-login-code');
+});

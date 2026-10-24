@@ -11,6 +11,7 @@ import { SessionSchema, SocialProviderSchema, type TSocialProvider } from '@game
 import { createApp } from '../app';
 import { hash, token } from '../common/crypto';
 import { assertDatabaseUrl } from '../database/database-url';
+import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
@@ -63,7 +64,7 @@ describe('banned social identities after account deletion', () => {
     );
     if (result.status !== 0)
       throw new Error(`Migration deployment failed: ${result.stderr}\n${result.stdout}`);
-    db = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(db, true);
     const identityProviders = Object.fromEntries(
       SocialProviderSchema.options.map((provider) => [
@@ -134,7 +135,7 @@ describe('banned social identities after account deletion', () => {
       .get('/api/auth/social/x/callback')
       .query({ state: nativeState, code: 'x-banned-subject' })
       .expect(302);
-    expect(callback.headers.location).toBe('gamefeedback://auth/callback?error=login_failed');
+    expect(callback.headers.location).toBe(`${origin}/app-auth/callback?error=login_failed`);
 
     // Subjects are never merged across providers, so the same value elsewhere is a different identity.
     await signUp('discord', 'x-banned-subject', '다른제공자사용자');

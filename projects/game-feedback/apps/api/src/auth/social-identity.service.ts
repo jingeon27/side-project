@@ -46,7 +46,7 @@ export class SocialIdentityService {
           termsVersion: '2026-10-16',
           ageConfirmed: true,
           ...(provider === 'google' ? { googleSubject: subject } : {}),
-          role: provider === 'google' && process.env.GF_ADMIN_GOOGLE_SUB === subject ? 'ADMIN' : 'USER',
+          role: 'USER',
           socialIdentities: { create: { provider, subject } },
         },
       });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CircleHelp, Home, MessageCircle } from 'lucide-react';
+import { Home, MessageCircle } from 'lucide-react';
 
 import { resolveAppRoute } from '@game-feedback/bridge';
 import type { TBoardKind } from '@game-feedback/contracts';
@@ -37,15 +37,6 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
         >
           <Home size={19} />
           {t('홈')}
-        </Link>
-        <Link
-          className={`side-link ${tab === 'guide' ? 'selected' : ''}`}
-          href={`${home}/guide`}
-          replace
-          aria-current={tab === 'guide' ? 'page' : undefined}
-        >
-          <CircleHelp size={19} />
-          {t('가이드')}
         </Link>
         <Link
           className={`side-link ${tab === 'messages' ? 'selected' : ''}`}

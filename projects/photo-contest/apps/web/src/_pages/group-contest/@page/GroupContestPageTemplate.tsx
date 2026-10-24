@@ -145,13 +145,14 @@ function ContestContent({
       <ContestHeader id={contest.id} />
       {match(contest.phase)
         .with(Phase.Completed, () => <ResultQuery id={contest.id} preloaded={resultsPreloaded} />)
-        .otherwise(() => (
+        .with(Phase.Upcoming, Phase.Submission, Phase.Voting, () => (
           <GalleryBoard
             groupId={groupId}
             contestId={contest.id}
             postAction={(postId) => <GroupContestVoteButton contestId={contest.id} postId={postId} />}
           />
-        ))}
+        ))
+        .exhaustive()}
     </>
   );
 }
