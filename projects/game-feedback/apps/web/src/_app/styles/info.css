@@ -1,43 +1,4 @@
 @layer components {
-  .guide-page {
-    min-width: 0;
-    width: 100%;
-    max-width: 720px;
-    margin-inline: auto;
-  }
-  .guide-intro {
-    margin-bottom: 32px;
-  }
-  .guide-intro h1 {
-    margin-bottom: 12px;
-    font-size: var(--text-title-lg);
-    font-weight: 700;
-    letter-spacing: -0.04em;
-  }
-  .guide-intro .info-lead {
-    color: var(--color-muted);
-    font-size: var(--text-body);
-    line-height: 1.8;
-  }
-  .guide-section + .guide-section {
-    margin-top: 32px;
-  }
-  .guide-section h2 {
-    margin-bottom: 10px;
-    font-size: var(--text-subtitle);
-    font-weight: 700;
-    line-height: 1.6;
-  }
-  .guide-section p {
-    color: var(--color-ink);
-    font-size: var(--text-body);
-    line-height: 1.85;
-    overflow-wrap: anywhere;
-    word-break: keep-all;
-  }
-  .guide-section p + p {
-    margin-top: 12px;
-  }
   .guide-board-list {
     display: grid;
     gap: 16px;
@@ -55,22 +16,8 @@
     overflow-wrap: anywhere;
     word-break: keep-all;
   }
-  @media (max-width: 760px) {
-    .guide-intro {
-      margin-bottom: 28px;
-    }
-    .guide-intro h1 {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-    .guide-section + .guide-section {
-      margin-top: 28px;
-    }
+  .contact-support {
+    margin-block: 24px;
   }
   .info-callout p {
     font-size: var(--text-body);
@@ -100,5 +47,6 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    overflow-wrap: anywhere;
   }
 }

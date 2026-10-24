@@ -7,10 +7,7 @@ export function GuideContent({ locale }: { locale: TLocale }) {
   const t = (message: string) => translate(locale, message);
   return (
     <>
-      <header className="guide-intro">
-        <h1>{t('이용 가이드')}</h1>
-        <p className="info-lead">{t('게시글부터 채팅까지, 필요한 기능을 빠르게 찾아보세요.')}</p>
-      </header>
+      <p className="info-lead">{t('게시글부터 채팅까지, 필요한 기능을 빠르게 찾아보세요.')}</p>
       <div className="guide-sections">
         <section className="guide-section" id="browse">
           <h2>{t('전체와 다섯 분류')}</h2>
