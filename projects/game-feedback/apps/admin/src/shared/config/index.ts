@@ -1,1 +1,1 @@
-export const operatorMode = import.meta.env.VITE_GF_ADMIN_OPERATOR === 'true';
+export const isLocalDevelopment = import.meta.env.ENVIRONMENT !== 'production';
