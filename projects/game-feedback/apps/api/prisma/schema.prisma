@@ -11,6 +11,7 @@ model User {
   googleSubject String? @unique
   demoKey String? @unique
   nickname String
+  bio String @default("")
   profileLinks Json @default("[]")
   avatar UserAvatar?
   isVerified Boolean @default(false)

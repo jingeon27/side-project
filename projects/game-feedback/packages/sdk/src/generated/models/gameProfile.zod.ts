@@ -14,6 +14,12 @@ export const gameProfileTrophiesMax = 9007199254740991;
 export const gameProfileBestTrophiesMin = 0;
 export const gameProfileBestTrophiesMax = 9007199254740991;
 
+export const gameProfileCurrentGlobalRankOneExclusiveMin = 0;
+export const gameProfileCurrentGlobalRankOneMax = 9007199254740991;
+
+export const gameProfileBestGlobalRankOneExclusiveMin = 0;
+export const gameProfileBestGlobalRankOneMax = 9007199254740991;
+
 
 export const gameProfileDeckItemIdExclusiveMin = 0;
 export const gameProfileDeckItemIdMax = 9007199254740991;
@@ -29,6 +35,8 @@ export const GameProfile = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(gameProfileTrophiesMin).max(gameProfileTrophiesMax),
   "bestTrophies": zod.int().min(gameProfileBestTrophiesMin).max(gameProfileBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(gameProfileCurrentGlobalRankOneExclusiveMin).max(gameProfileCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(gameProfileBestGlobalRankOneExclusiveMin).max(gameProfileBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({

@@ -70,10 +70,13 @@ jobs:
       - run: yarn workspace @side/migration-check check
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
-      - run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
+      - name: Install browsers for end-to-end and telemetry checks
+        id: browsers
+        if: always() && !cancelled() && steps.install.outcome == 'success'
+        run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
       - run: yarn workspace @side/game-feedback test:e2e
       - name: Verify telemetry with intercepted SDK requests
-        if: always() && !cancelled() && steps.install.outcome == 'success'
+        if: always() && !cancelled() && steps.browsers.outcome == 'success'
         env:
           GF_OBSERVABILITY_PRODUCTION: 'true'
         run: yarn workspace @game-feedback/web test:observability

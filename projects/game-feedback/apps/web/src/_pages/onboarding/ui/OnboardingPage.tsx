@@ -49,30 +49,31 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
   if (error && !isFetching) throw error;
   return (
     <section className="onboarding-page" lang={locale} aria-labelledby="onboarding-title">
-      <div className="login-page-heading">
-        <p className="login-service-name">
-          <Image src="/icon.svg" alt="" aria-hidden width={28} height={28} unoptimized />
-          {t('Game Mate')}
-        </p>
-        <h1 id="onboarding-title">{t('회원가입')}</h1>
-        <p>{t('사용할 닉네임을 정하고 필수 항목에 동의해 주세요.')}</p>
-      </div>
       {isFetching && <LoadingState />}
-      <div hidden={isFetching || !session.needsOnboarding}>
-        <section className="info-card" aria-labelledby="onboarding-game-profile-title">
-          <h2 id="onboarding-game-profile-title">{t('게임 프로필 연결 (선택)')}</h2>
-          <p>{t('태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.')}</p>
-          <GameProfileLookup
-            disabled={onboarding.isPending || isFetching}
-            onSelectionChange={(profile) => setPlayerTag(profile?.playerTag ?? null)}
-          />
-        </section>
+      <div className="onboarding-body" hidden={isFetching || !session.needsOnboarding}>
         <AccountSetupForm
           submitLabel={t('가입 완료하기')}
           pending={onboarding.isPending || isFetching}
           error={onboarding.error?.message}
           onSubmit={handleSubmit}
-        />
+        >
+          <div className="login-page-heading">
+            <p className="login-service-name">
+              <Image src="/icon.svg" alt="" aria-hidden width={28} height={28} unoptimized />
+              {t('Game Mate')}
+            </p>
+            <h1 id="onboarding-title">{t('회원가입')}</h1>
+            <p>{t('사용할 닉네임을 정하고 필수 항목에 동의해 주세요.')}</p>
+          </div>
+          <section className="info-card" aria-labelledby="onboarding-game-profile-title">
+            <h2 id="onboarding-game-profile-title">{t('게임 프로필 연결 (선택)')}</h2>
+            <p>{t('태그를 조회하면 가입할 때 게임 프로필을 함께 연결해요. 나중에 등록해도 괜찮아요.')}</p>
+            <GameProfileLookup
+              disabled={onboarding.isPending || isFetching}
+              onSelectionChange={(profile) => setPlayerTag(profile?.playerTag ?? null)}
+            />
+          </section>
+        </AccountSetupForm>
       </div>
     </section>
   );

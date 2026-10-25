@@ -9,14 +9,14 @@ import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
 import { logoutMutationOptions, useSession } from '@/features/auth';
-import { gameAccountListOptions, ProfileSnapshot } from '@/features/game-profile';
+import { gameAccountListOptions } from '@/features/game-profile';
 import { blockListOptions, unblockUserMutationOptions, UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
 import { ChildLink } from '@/shared/navigation';
 import { Avatar, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
-import { ConnectProfile } from '@/widgets/game-profile';
+import { ConnectProfile, GameAccountCard } from '@/widgets/game-profile';
 import { SupportChatButton } from '@/widgets/support';
 
 import { DeleteAccountDialog } from './DeleteAccountDialog';
@@ -110,25 +110,27 @@ function SettingsContent({ locale }: ISettingsPageProps) {
         </div>
       </section>
       <MyPosts locale={locale} userId={session.user.id} />
-      <section className="settings-card">
-        <div className="section-title-row">
-          <h2>
-            <Gamepad2 size={20} />
+      <section className="settings-card game-accounts" aria-labelledby="game-accounts-title">
+        <div className="section-title-row game-accounts-heading">
+          <h2 id="game-accounts-title">
+            <Gamepad2 size={20} aria-hidden />
             {t('게임 계정')}
           </h2>
-          <button className="text-action" onClick={() => openProfileConnection()}>
-            <Plus size={16} />
+          <Button type="button" variant="secondary" size="sm" onClick={() => openProfileConnection()}>
+            <Plus size={16} aria-hidden />
             {t('계정 등록')}
-          </button>
+          </Button>
         </div>
         <p className="muted small">
           {t('게임 계정은 내 사용자 계정에 등록됩니다. 프로필 인증은 관리자에게 문의해주세요.')}
         </p>
         {accounts.isPending && <LoadingState />}
         <ErrorNotice message={accounts.error?.message} />
-        {accounts.data?.map((profile) => (
-          <ProfileSnapshot key={profile.playerTag} profile={profile} />
-        ))}
+        <div className="game-account-list">
+          {accounts.data?.map((profile) => (
+            <GameAccountCard key={profile.playerTag} profile={profile} />
+          ))}
+        </div>
       </section>
       <section className="settings-card">
         <div className="section-title-row">

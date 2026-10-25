@@ -9,6 +9,8 @@ export class DemoProfileProvider implements ProfileProvider {
       name: playerTag === '#9QY82JGY' ? '덱연구소' : '새벽의호그',
       trophies: 6850,
       bestTrophies: 7023,
+      currentGlobalRank: 1234,
+      bestGlobalRank: 358,
       arena: '고요의 성역',
       clan: '로얄메이트',
       deck: [

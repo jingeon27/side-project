@@ -121,6 +121,7 @@ describe.skipIf(!testDatabaseUrl)(
       expect(Object.keys(profile).sort()).toEqual([
         'answerCount',
         'author',
+        'bio',
         'helpfulCount',
         'joinedAt',
         'links',
@@ -135,6 +136,7 @@ describe.skipIf(!testDatabaseUrl)(
         'supercellTag',
       ]);
       expect(profile.joinedAt).toBeTypeOf('string');
+      expect(profile.bio).toBe('');
       await supertest(normalApp.getHttpServer()).get(`/api/users/${coachId}`).expect(404);
       await supertest(app.getHttpServer()).get('/api/users/missing-user').expect(404);
     });

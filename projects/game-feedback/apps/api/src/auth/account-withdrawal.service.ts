@@ -84,6 +84,7 @@ export class AccountWithdrawalService {
           data: {
             withdrawnAt,
             nickname: '탈퇴한 사용자',
+            bio: '',
             googleSubject: null,
             demoKey: null,
             profileLinks: [],

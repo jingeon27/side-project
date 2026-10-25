@@ -3,6 +3,11 @@ import type { GameProfile } from '@game-feedback/contracts';
 import { ApiError } from '../../common/http/api-error';
 import type { ProfileProvider } from './profile-provider';
 
+function globalRank(result?: { rank?: number | null } | null) {
+  const rank = result?.rank;
+  return typeof rank === 'number' && Number.isSafeInteger(rank) && rank > 0 ? rank : null;
+}
+
 export class SupercellProfileProvider implements ProfileProvider {
   constructor(private readonly apiToken: string) {}
   async lookup(playerTag: string): Promise<GameProfile> {
@@ -22,6 +27,8 @@ export class SupercellProfileProvider implements ProfileProvider {
         name: string;
         trophies: number;
         bestTrophies: number;
+        currentPathOfLegendSeasonResult?: { rank?: number | null } | null;
+        bestPathOfLegendSeasonResult?: { rank?: number | null } | null;
         arena?: { name: string };
         clan?: { name: string };
         currentDeck?: { id: number; name: string; level: number; iconUrls?: { medium?: string } }[];
@@ -31,6 +38,8 @@ export class SupercellProfileProvider implements ProfileProvider {
         name: p.name,
         trophies: p.trophies,
         bestTrophies: p.bestTrophies,
+        currentGlobalRank: globalRank(p.currentPathOfLegendSeasonResult),
+        bestGlobalRank: globalRank(p.bestPathOfLegendSeasonResult),
         arena: p.arena?.name ?? '',
         clan: p.clan?.name ?? null,
         deck: (p.currentDeck ?? []).map((c) => ({

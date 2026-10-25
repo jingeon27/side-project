@@ -609,6 +609,7 @@ export const GetPublicProfileResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),
+  "bio": zod.string().optional(),
   "links": zod.array(zod.object({
   "label": zod.string().min(1).max(getPublicProfileResponseLinksItemLabelMax),
   "url": zod.string().max(getPublicProfileResponseLinksItemUrlMax).regex(getPublicProfileResponseLinksItemUrlRegExp)
@@ -619,6 +620,13 @@ export const GetPublicProfileResponse = zod.object({
   "helpfulCount": zod.int().min(getPublicProfileResponseHelpfulCountMin).max(getPublicProfileResponseHelpfulCountMax)
 })
 
+
+export const updateProfileBodyNicknameMin = 2;
+export const updateProfileBodyNicknameMax = 24;
+
+
+export const updateProfileBodyNicknameRegExp = new RegExp('^[\\p{L}\\p{N}_ .-]+$', 'u');
+export const updateProfileBodyBioMax = 500;
 
 export const updateProfileBodyLinksItemLabelMax = 40;
 
@@ -631,10 +639,12 @@ export const updateProfileBodyLinksMax = 5;
 
 
 export const UpdateProfileBody = zod.object({
+  "nickname": zod.string().min(updateProfileBodyNicknameMin).max(updateProfileBodyNicknameMax).regex(updateProfileBodyNicknameRegExp).optional(),
+  "bio": zod.string().max(updateProfileBodyBioMax).optional(),
   "links": zod.array(zod.object({
   "label": zod.string().min(1).max(updateProfileBodyLinksItemLabelMax),
   "url": zod.string().max(updateProfileBodyLinksItemUrlMax).regex(updateProfileBodyLinksItemUrlRegExp)
-})).max(updateProfileBodyLinksMax)
+})).max(updateProfileBodyLinksMax).optional()
 })
 
 export const updateProfileResponseAuthorIdMax = 100;
@@ -669,6 +679,7 @@ export const UpdateProfileResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),
+  "bio": zod.string().optional(),
   "links": zod.array(zod.object({
   "label": zod.string().min(1).max(updateProfileResponseLinksItemLabelMax),
   "url": zod.string().max(updateProfileResponseLinksItemUrlMax).regex(updateProfileResponseLinksItemUrlRegExp)
@@ -751,6 +762,7 @@ export const CompleteProfileAvatarUploadResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),
+  "bio": zod.string().optional(),
   "links": zod.array(zod.object({
   "label": zod.string().min(1).max(completeProfileAvatarUploadResponseLinksItemLabelMax),
   "url": zod.string().max(completeProfileAvatarUploadResponseLinksItemUrlMax).regex(completeProfileAvatarUploadResponseLinksItemUrlRegExp)
@@ -794,6 +806,7 @@ export const DeleteProfileAvatarResponse = zod.object({
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),
+  "bio": zod.string().optional(),
   "links": zod.array(zod.object({
   "label": zod.string().min(1).max(deleteProfileAvatarResponseLinksItemLabelMax),
   "url": zod.string().max(deleteProfileAvatarResponseLinksItemUrlMax).regex(deleteProfileAvatarResponseLinksItemUrlRegExp)
@@ -1707,6 +1720,12 @@ export const listPostsResponseItemsItemGameProfileOneTrophiesMax = 9007199254740
 export const listPostsResponseItemsItemGameProfileOneBestTrophiesMin = 0;
 export const listPostsResponseItemsItemGameProfileOneBestTrophiesMax = 9007199254740991;
 
+export const listPostsResponseItemsItemGameProfileOneCurrentGlobalRankOneExclusiveMin = 0;
+export const listPostsResponseItemsItemGameProfileOneCurrentGlobalRankOneMax = 9007199254740991;
+
+export const listPostsResponseItemsItemGameProfileOneBestGlobalRankOneExclusiveMin = 0;
+export const listPostsResponseItemsItemGameProfileOneBestGlobalRankOneMax = 9007199254740991;
+
 
 export const listPostsResponseItemsItemGameProfileOneDeckItemIdExclusiveMin = 0;
 export const listPostsResponseItemsItemGameProfileOneDeckItemIdMax = 9007199254740991;
@@ -1795,6 +1814,8 @@ export const ListPostsResponse = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(listPostsResponseItemsItemGameProfileOneTrophiesMin).max(listPostsResponseItemsItemGameProfileOneTrophiesMax),
   "bestTrophies": zod.int().min(listPostsResponseItemsItemGameProfileOneBestTrophiesMin).max(listPostsResponseItemsItemGameProfileOneBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(listPostsResponseItemsItemGameProfileOneCurrentGlobalRankOneExclusiveMin).max(listPostsResponseItemsItemGameProfileOneCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(listPostsResponseItemsItemGameProfileOneBestGlobalRankOneExclusiveMin).max(listPostsResponseItemsItemGameProfileOneBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({
@@ -1940,6 +1961,12 @@ export const createPostResponseGameProfileOneTrophiesMax = 9007199254740991;
 export const createPostResponseGameProfileOneBestTrophiesMin = 0;
 export const createPostResponseGameProfileOneBestTrophiesMax = 9007199254740991;
 
+export const createPostResponseGameProfileOneCurrentGlobalRankOneExclusiveMin = 0;
+export const createPostResponseGameProfileOneCurrentGlobalRankOneMax = 9007199254740991;
+
+export const createPostResponseGameProfileOneBestGlobalRankOneExclusiveMin = 0;
+export const createPostResponseGameProfileOneBestGlobalRankOneMax = 9007199254740991;
+
 
 export const createPostResponseGameProfileOneDeckItemIdExclusiveMin = 0;
 export const createPostResponseGameProfileOneDeckItemIdMax = 9007199254740991;
@@ -2026,6 +2053,8 @@ export const CreatePostResponse = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(createPostResponseGameProfileOneTrophiesMin).max(createPostResponseGameProfileOneTrophiesMax),
   "bestTrophies": zod.int().min(createPostResponseGameProfileOneBestTrophiesMin).max(createPostResponseGameProfileOneBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(createPostResponseGameProfileOneCurrentGlobalRankOneExclusiveMin).max(createPostResponseGameProfileOneCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(createPostResponseGameProfileOneBestGlobalRankOneExclusiveMin).max(createPostResponseGameProfileOneBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({
@@ -2094,6 +2123,12 @@ export const getPostResponsePostGameProfileOneTrophiesMax = 9007199254740991;
 
 export const getPostResponsePostGameProfileOneBestTrophiesMin = 0;
 export const getPostResponsePostGameProfileOneBestTrophiesMax = 9007199254740991;
+
+export const getPostResponsePostGameProfileOneCurrentGlobalRankOneExclusiveMin = 0;
+export const getPostResponsePostGameProfileOneCurrentGlobalRankOneMax = 9007199254740991;
+
+export const getPostResponsePostGameProfileOneBestGlobalRankOneExclusiveMin = 0;
+export const getPostResponsePostGameProfileOneBestGlobalRankOneMax = 9007199254740991;
 
 
 export const getPostResponsePostGameProfileOneDeckItemIdExclusiveMin = 0;
@@ -2212,6 +2247,8 @@ export const GetPostResponse = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(getPostResponsePostGameProfileOneTrophiesMin).max(getPostResponsePostGameProfileOneTrophiesMax),
   "bestTrophies": zod.int().min(getPostResponsePostGameProfileOneBestTrophiesMin).max(getPostResponsePostGameProfileOneBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(getPostResponsePostGameProfileOneCurrentGlobalRankOneExclusiveMin).max(getPostResponsePostGameProfileOneCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(getPostResponsePostGameProfileOneBestGlobalRankOneExclusiveMin).max(getPostResponsePostGameProfileOneBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({
@@ -2401,6 +2438,12 @@ export const updatePostResponseGameProfileOneTrophiesMax = 9007199254740991;
 export const updatePostResponseGameProfileOneBestTrophiesMin = 0;
 export const updatePostResponseGameProfileOneBestTrophiesMax = 9007199254740991;
 
+export const updatePostResponseGameProfileOneCurrentGlobalRankOneExclusiveMin = 0;
+export const updatePostResponseGameProfileOneCurrentGlobalRankOneMax = 9007199254740991;
+
+export const updatePostResponseGameProfileOneBestGlobalRankOneExclusiveMin = 0;
+export const updatePostResponseGameProfileOneBestGlobalRankOneMax = 9007199254740991;
+
 
 export const updatePostResponseGameProfileOneDeckItemIdExclusiveMin = 0;
 export const updatePostResponseGameProfileOneDeckItemIdMax = 9007199254740991;
@@ -2487,6 +2530,8 @@ export const UpdatePostResponse = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(updatePostResponseGameProfileOneTrophiesMin).max(updatePostResponseGameProfileOneTrophiesMax),
   "bestTrophies": zod.int().min(updatePostResponseGameProfileOneBestTrophiesMin).max(updatePostResponseGameProfileOneBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(updatePostResponseGameProfileOneCurrentGlobalRankOneExclusiveMin).max(updatePostResponseGameProfileOneCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(updatePostResponseGameProfileOneBestGlobalRankOneExclusiveMin).max(updatePostResponseGameProfileOneBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({
@@ -2895,6 +2940,12 @@ export const getGameProfileResponseTrophiesMax = 9007199254740991;
 export const getGameProfileResponseBestTrophiesMin = 0;
 export const getGameProfileResponseBestTrophiesMax = 9007199254740991;
 
+export const getGameProfileResponseCurrentGlobalRankOneExclusiveMin = 0;
+export const getGameProfileResponseCurrentGlobalRankOneMax = 9007199254740991;
+
+export const getGameProfileResponseBestGlobalRankOneExclusiveMin = 0;
+export const getGameProfileResponseBestGlobalRankOneMax = 9007199254740991;
+
 
 export const getGameProfileResponseDeckItemIdExclusiveMin = 0;
 export const getGameProfileResponseDeckItemIdMax = 9007199254740991;
@@ -2911,6 +2962,8 @@ export const GetGameProfileResponse = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(getGameProfileResponseTrophiesMin).max(getGameProfileResponseTrophiesMax),
   "bestTrophies": zod.int().min(getGameProfileResponseBestTrophiesMin).max(getGameProfileResponseBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(getGameProfileResponseCurrentGlobalRankOneExclusiveMin).max(getGameProfileResponseCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(getGameProfileResponseBestGlobalRankOneExclusiveMin).max(getGameProfileResponseBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({
@@ -2933,6 +2986,12 @@ export const listGameAccountsResponseTrophiesMax = 9007199254740991;
 export const listGameAccountsResponseBestTrophiesMin = 0;
 export const listGameAccountsResponseBestTrophiesMax = 9007199254740991;
 
+export const listGameAccountsResponseCurrentGlobalRankOneExclusiveMin = 0;
+export const listGameAccountsResponseCurrentGlobalRankOneMax = 9007199254740991;
+
+export const listGameAccountsResponseBestGlobalRankOneExclusiveMin = 0;
+export const listGameAccountsResponseBestGlobalRankOneMax = 9007199254740991;
+
 
 export const listGameAccountsResponseDeckItemIdExclusiveMin = 0;
 export const listGameAccountsResponseDeckItemIdMax = 9007199254740991;
@@ -2949,6 +3008,8 @@ export const ListGameAccountsResponseItem = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(listGameAccountsResponseTrophiesMin).max(listGameAccountsResponseTrophiesMax),
   "bestTrophies": zod.int().min(listGameAccountsResponseBestTrophiesMin).max(listGameAccountsResponseBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(listGameAccountsResponseCurrentGlobalRankOneExclusiveMin).max(listGameAccountsResponseCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(listGameAccountsResponseBestGlobalRankOneExclusiveMin).max(listGameAccountsResponseBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({
@@ -2979,6 +3040,12 @@ export const saveGameAccountResponseTrophiesMax = 9007199254740991;
 export const saveGameAccountResponseBestTrophiesMin = 0;
 export const saveGameAccountResponseBestTrophiesMax = 9007199254740991;
 
+export const saveGameAccountResponseCurrentGlobalRankOneExclusiveMin = 0;
+export const saveGameAccountResponseCurrentGlobalRankOneMax = 9007199254740991;
+
+export const saveGameAccountResponseBestGlobalRankOneExclusiveMin = 0;
+export const saveGameAccountResponseBestGlobalRankOneMax = 9007199254740991;
+
 
 export const saveGameAccountResponseDeckItemIdExclusiveMin = 0;
 export const saveGameAccountResponseDeckItemIdMax = 9007199254740991;
@@ -2995,6 +3062,8 @@ export const SaveGameAccountResponse = zod.object({
   "name": zod.string().min(1),
   "trophies": zod.int().min(saveGameAccountResponseTrophiesMin).max(saveGameAccountResponseTrophiesMax),
   "bestTrophies": zod.int().min(saveGameAccountResponseBestTrophiesMin).max(saveGameAccountResponseBestTrophiesMax),
+  "currentGlobalRank": zod.union([zod.int().gt(saveGameAccountResponseCurrentGlobalRankOneExclusiveMin).max(saveGameAccountResponseCurrentGlobalRankOneMax),zod.null()]).optional(),
+  "bestGlobalRank": zod.union([zod.int().gt(saveGameAccountResponseBestGlobalRankOneExclusiveMin).max(saveGameAccountResponseBestGlobalRankOneMax),zod.null()]).optional(),
   "arena": zod.string().min(1),
   "clan": zod.string().nullable(),
   "deck": zod.array(zod.object({

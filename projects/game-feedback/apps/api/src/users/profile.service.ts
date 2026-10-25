@@ -29,8 +29,19 @@ export class ProfileService {
   ) {}
   async update(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
-    const { links } = parse(UpdateProfileInputSchema, input);
-    await this.db.user.update({ where: { id: user.id }, data: { profileLinks: links } });
+    const { links, nickname, bio } = parse(UpdateProfileInputSchema, input);
+    await this.cache.change(
+      (tx) =>
+        tx.user.update({
+          where: { id: user.id },
+          data: {
+            ...(links !== undefined ? { profileLinks: links } : {}),
+            ...(nickname !== undefined ? { nickname } : {}),
+            ...(bio !== undefined ? { bio } : {}),
+          },
+        }),
+      [POSTS_CACHE_TAG],
+    );
     return this.users.profile(req, user.id);
   }
   async requestUpload(req: SessionRequest, input: unknown) {
