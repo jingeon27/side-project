@@ -35,7 +35,6 @@ describe('production startup configuration', () => {
     { GAME_FEEDBACK_SITE_URL: 'https://other.game-feedback.test' },
     { GOOGLE_CLIENT_SECRET: '' },
     { GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '' },
-    { X_CLIENT_ID: 'partial-provider' },
     { GOOGLE_REDIRECT_URI: 'https://other.game-feedback.test/callback' },
     { MOBILE_AUTH_CALLBACK_URL: '' },
     { MOBILE_AUTH_CALLBACK_URL: 'gamefeedback://auth/callback' },

@@ -457,7 +457,24 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     }
   });
 
-  it('separates the same external subject across all four social providers and preserves repeat logins', async () => {
+  it('rejects removed X login routes and excludes X from the advertised providers', async () => {
+    const { request, db } = fixture();
+    const attempts = await db.oAuthAttempt.count();
+    await request.get('/api/auth/social/x').expect(400);
+    await request
+      .get('/api/auth/social/x/callback')
+      .query({ state: 'old-state', code: 'old-code' })
+      .expect(400);
+    const session = await request.get('/api/session').expect(200);
+    expect(session.body.socialProviders.map((item: { provider: string }) => item.provider).sort()).toEqual([
+      'discord',
+      'google',
+      'kakao',
+    ]);
+    expect(await db.oAuthAttempt.count()).toBe(attempts);
+  });
+
+  it('separates the same external subject across all three social providers and preserves repeat logins', async () => {
     const { app } = fixture();
     const ids = new Set<string>();
     for (const provider of SocialProviderSchema.options) {
@@ -487,18 +504,18 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
         .expect(302);
       expect((await agent.get('/api/session')).body.user.id).toBe(user.id);
     }
-    expect(ids.size).toBe(4);
+    expect(ids.size).toBe(3);
   });
 
   it('binds OAuth state to its provider and preserves the selected provider through a native ticket', async () => {
     const agent = supertest.agent(fixture().app.getHttpServer());
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
-    const start = await agent.get('/api/auth/social/x').query({ app_challenge: challenge }).expect(302);
+    const start = await agent.get('/api/auth/social/discord').query({ app_challenge: challenge }).expect(302);
     const oauthState = new URL(responseLocation(start)).searchParams.get('state');
     await agent.get('/api/auth/social/kakao/callback').query({ state: oauthState, code: 'fake' }).expect(400);
     const callback = await agent
-      .get('/api/auth/social/x/callback')
+      .get('/api/auth/social/discord/callback')
       .query({ state: oauthState, code: 'fake' })
       .expect(302);
     const code = new URL(responseLocation(callback)).searchParams.get('code');
@@ -507,7 +524,7 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .set('Origin', origin)
       .send({ code, verifier })
       .expect(200);
-    expect(exchange.body.user.nickname).toBe('x플레이어');
+    expect(exchange.body.user.nickname).toBe('discord플레이어');
     await agent.post('/api/auth/app/exchange').set('Origin', origin).send({ code, verifier }).expect(400);
   });
 

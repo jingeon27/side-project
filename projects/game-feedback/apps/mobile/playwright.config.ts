@@ -37,8 +37,6 @@ const apiEnv = {
   TEST_DATABASE_URL: databaseUrl.toString(),
   GOOGLE_CLIENT_ID: '',
   GOOGLE_CLIENT_SECRET: '',
-  X_CLIENT_ID: '',
-  X_CLIENT_SECRET: '',
   KAKAO_CLIENT_ID: '',
   KAKAO_CLIENT_SECRET: '',
   DISCORD_CLIENT_ID: '',

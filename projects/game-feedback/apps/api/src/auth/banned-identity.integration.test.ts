@@ -101,13 +101,16 @@ describe('banned social identities after account deletion', () => {
   });
 
   it('refuses a new signup with the same social login after a banned user deletes the account', async () => {
-    const banned = await signUp('x', 'x-banned-subject', '탈퇴밴사용자');
+    const banned = await signUp('kakao', 'withdrawn-kakao-banned-subject', '탈퇴밴사용자');
     await ban(banned.id, true);
     expect(await db.bannedIdentity.count({ where: { userId: banned.id } })).toBe(1);
     // The banned account itself can still sign in to reach support.
     const returning = supertest.agent(app.getHttpServer());
-    const state = await startSocial(returning, 'x');
-    await returning.get('/api/auth/social/x/callback').query({ state, code: 'x-banned-subject' }).expect(302);
+    const state = await startSocial(returning, 'kakao');
+    await returning
+      .get('/api/auth/social/kakao/callback')
+      .query({ state, code: 'withdrawn-kakao-banned-subject' })
+      .expect(302);
     expect(SessionSchema.parse((await returning.get('/api/session')).body).user?.id).toBe(banned.id);
 
     await banned.agent.delete('/api/me').set('Origin', origin).expect(200);
@@ -118,15 +121,17 @@ describe('banned social identities after account deletion', () => {
     });
     expect(
       await db.bannedIdentity.findUnique({
-        where: { provider_subjectHash: { provider: 'x', subjectHash: hash('x-banned-subject') } },
+        where: {
+          provider_subjectHash: { provider: 'kakao', subjectHash: hash('withdrawn-kakao-banned-subject') },
+        },
       }),
     ).not.toBeNull();
 
     const web = supertest.agent(app.getHttpServer());
-    const webState = await startSocial(web, 'x');
+    const webState = await startSocial(web, 'kakao');
     const rejected = await web
-      .get('/api/auth/social/x/callback')
-      .query({ state: webState, code: 'x-banned-subject' })
+      .get('/api/auth/social/kakao/callback')
+      .query({ state: webState, code: 'withdrawn-kakao-banned-subject' })
       .expect(403);
     expect(rejected.body.errorCode).toBe('USER_BANNED');
     expect(SessionSchema.parse((await web.get('/api/session')).body).needsOnboarding).toBe(false);
@@ -134,15 +139,15 @@ describe('banned social identities after account deletion', () => {
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const native = supertest.agent(app.getHttpServer());
-    const nativeState = await startSocial(native, 'x', { app_challenge: challenge });
+    const nativeState = await startSocial(native, 'kakao', { app_challenge: challenge });
     const callback = await native
-      .get('/api/auth/social/x/callback')
-      .query({ state: nativeState, code: 'x-banned-subject' })
+      .get('/api/auth/social/kakao/callback')
+      .query({ state: nativeState, code: 'withdrawn-kakao-banned-subject' })
       .expect(302);
     expect(callback.headers.location).toBe(`${origin}/app-auth/callback?error=login_failed`);
 
     // Subjects are never merged across providers, so the same value elsewhere is a different identity.
-    await signUp('discord', 'x-banned-subject', '다른제공자사용자');
+    await signUp('discord', 'withdrawn-kakao-banned-subject', '다른제공자사용자');
   });
 
   it('checks the native code exchange and onboarding as well as the callback', async () => {

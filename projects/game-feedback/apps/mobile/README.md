@@ -18,7 +18,7 @@ APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
 APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:start
 ```
 
-Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로그인 화면은 X·카카오·Discord·Google을 제공하고 테스트 계정은 서버 토큰 API로 발급한다. 실기기는 접근 가능한 Web origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
+Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로그인 화면은 카카오·Discord·Google을 제공하고 테스트 계정은 서버 토큰 API로 발급한다. 실기기는 접근 가능한 Web origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
 
 `.env.example`을 이 앱의 `.env`로 복사해 개발 origin을 지정할 수 있다. release 빌드는 명시적인 HTTPS origin과 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`가 필수이며 없으면 `app.config.ts`가 멈춘다. `APP_VARIANT=development`일 때만 Android HTTP를 허용한다. 스킴은 `gamefeedback`(로그인 밖 딥링크), 개발 번들/패키지는 `dev.side.gamefeedback`이다. 최소 iOS는 17.4다. 운영 서명·스토어 등록·배포는 포함하지 않는다.
 
@@ -36,7 +36,7 @@ Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로
 - 메인 문서 연결 실패·5xx는 다시 시도 화면을 연다. 4xx는 웹이 표시한다. 다시 시도·Android renderer 종료는 마지막 주소로 WebView를 재생성하고 iOS content 종료는 reload한다.
 - 웹 준비 메시지 이전에는 딥링크를 문서 주소로, 이후에는 Next router 이동으로 전달한다. background에서 active로 돌아오면 세션을 먼저 확인하고 필요한 캐시를 갱신한다.
 
-X·카카오·Discord·Google 로그인은 선택한 제공자를 시스템 브라우저로 전달하고 앱 복귀에 PKCE를 사용한다. OAuth 완료 후 API가 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. iOS는 `ASWebAuthenticationSession`의 https 콜백(17.4+), Android는 `autoVerify` App Link로 돌아온다. 앱이 없거나 링크 검증 전이면 브라우저가 코드를 다시 보여 주지 않는 웹 안내 페이지를 연다. 커스텀 스킴으로는 코드를 보내지 않는다(같은 스킴의 다른 앱이 가로챌 수 있다). 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google callback은 기존 Web origin의 `/api/auth/google/callback`, 나머지는 `/api/auth/social/{x|kakao|discord}/callback`이다. 실제 자격 증명 검증은 별도다. 테스트 계정은 [서버 토큰 API](../../README.md#서버에서-테스트-토큰-발급하기)로 발급하며 앱 화면에 선택기를 두지 않는다.
+카카오·Discord·Google 로그인은 선택한 제공자를 시스템 브라우저로 전달하고 앱 복귀에 PKCE를 사용한다. OAuth 완료 후 API가 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback?code=...`로 2분짜리 일회용 코드를 보내면 WebView가 `POST /api/auth/app/exchange`로 교환해 HttpOnly 쿠키를 받는다. iOS는 `ASWebAuthenticationSession`의 https 콜백(17.4+), Android는 `autoVerify` App Link로 돌아온다. 앱이 없거나 링크 검증 전이면 브라우저가 코드를 다시 보여 주지 않는 웹 안내 페이지를 연다. 커스텀 스킴으로는 코드를 보내지 않는다(같은 스킴의 다른 앱이 가로챌 수 있다). 실제 세션 토큰은 브리지로 전달하지 않는다. 새 사용자는 웹과 동일한 닉네임·약관·연령 확인을 거친다. Google callback은 기존 Web origin의 `/api/auth/google/callback`, 나머지는 `/api/auth/social/{kakao|discord}/callback`이다. 실제 자격 증명 검증은 별도다. 테스트 계정은 [서버 토큰 API](../../README.md#서버에서-테스트-토큰-발급하기)로 발급하며 앱 화면에 선택기를 두지 않는다.
 
 ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초기 링크는 이미 받은 후속 링크를 덮어쓰지 않으며 해제 후 async 응답을 무시한다. lifecycle 훅은 let/ref 플래그 없이 구독하고 useCallback으로 안정화한 콜백별 의존성을 사용한다. WebView props는 satisfies로 검증해 추론을 유지한다.
 

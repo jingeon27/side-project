@@ -81,7 +81,7 @@ corepack yarn workspace @side/game-feedback db:stop
 
 ## Web UI와 shadcn/ui
 
-브라우저 로그인창은 CSS 미디어쿼리로 768px 미만에서 하단 시트, 그 이상에서 중앙 모달로 표시한다. 같은 내용과 포커스를 유지하므로 열린 채로 화면 크기를 바꿔도 창을 다시 만들지 않는다. 앱 WebView에서는 기존 `/:locale/login` 페이지를 사용한다. 같은 Google·카카오·Discord·X 버튼을 공유하며 미설정 제공자는 준비 상태로 표시한다. 뒤로 가기와 로그인 완료 시 원래 화면·필터·언어를 유지하고, OAuth 복귀 주소는 같은 서비스의 언어 경로만 허용한다. 닉네임과 필수 약관 동의는 별도 `/:locale/onboarding` 페이지에서 받고 완료 후 원래 화면으로 돌아간다.
+브라우저 로그인창은 CSS 미디어쿼리로 768px 미만에서 하단 시트, 그 이상에서 중앙 모달로 표시한다. 같은 내용과 포커스를 유지하므로 열린 채로 화면 크기를 바꿔도 창을 다시 만들지 않는다. 앱 WebView에서는 기존 `/:locale/login` 페이지를 사용한다. 같은 Google·카카오·Discord 버튼을 공유하며 미설정 제공자는 준비 상태로 표시한다. 뒤로 가기와 로그인 완료 시 원래 화면·필터·언어를 유지하고, OAuth 복귀 주소는 같은 서비스의 언어 경로만 허용한다. 닉네임과 필수 약관 동의는 별도 `/:locale/onboarding` 페이지에서 받고 완료 후 원래 화면으로 돌아간다.
 
 웹은 공통 `@side/design-system`의 **shadcn/ui Base UI / base-nova** 컴포넌트를 사용한다. 공통 패키지와 Web의 components.json은 같은 base-nova/neutral/lucide 설정을 사용하고 ui/utils alias는 공통 소스를 가리킨다. 설치 원본과 조정 범위는 [공통 shadcn 구성](../../packages/design-system/SHADCN.md)에 정리했다.
 
@@ -97,7 +97,7 @@ corepack yarn workspace @side/game-feedback db:stop
 
 ## 서버에서 테스트 토큰 발급하기
 
-`dev:test`는 `GF_TEST_AUTH_ENABLED=true`, `GF_DEMO_MODE=false`로 시작한다. 로그인 화면은 X, 카카오, Discord, Google만 제공한다. 외부 소셜 인증을 거치지 않고 API 테스트를 하려면 다음 요청을 사용한다.
+`dev:test`는 `GF_TEST_AUTH_ENABLED=true`, `GF_DEMO_MODE=false`로 시작한다. 로그인 화면은 카카오, Discord, Google만 제공한다. 외부 소셜 인증을 거치지 않고 API 테스트를 하려면 다음 요청을 사용한다.
 
 ```sh
 curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
@@ -120,18 +120,17 @@ curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
 
 ## 소셜 로그인 설정
 
-X, 카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider>`, 콜백은 `/api/auth/social/<provider>/callback`이다. Google의 기존 `/api/auth/google`과 `/api/auth/google/callback`도 지원하며 기본 Google redirect URI는 기존 콜백이다. 환경변수의 redirect URI와 각 개발자 콘솔에 등록한 URL을 일치시킨다.
+카카오, Discord, Google의 로그인 시작은 `/api/auth/social/<provider>`, 콜백은 `/api/auth/social/<provider>/callback`이다. Google의 기존 `/api/auth/google`과 `/api/auth/google/callback`도 지원하며 기본 Google redirect URI는 기존 콜백이다. 환경변수의 redirect URI와 각 개발자 콘솔에 등록한 URL을 일치시킨다.
 
-| 제공자  | 환경변수                                              | 기본 콜백                           | 요청 범위                          |
-| ------- | ----------------------------------------------------- | ----------------------------------- | ---------------------------------- |
-| X       | `X_CLIENT_ID`, `X_CLIENT_SECRET`                      | `/api/auth/social/x/callback`       | `tweet.read users.read`, PKCE S256 |
-| 카카오  | `KAKAO_CLIENT_ID`(REST API 키), `KAKAO_CLIENT_SECRET` | `/api/auth/social/kakao/callback`   | 사용자 식별 ID                     |
-| Discord | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`          | `/api/auth/social/discord/callback` | `identify`                         |
-| Google  | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`            | `/api/auth/google/callback`         | `openid`, PKCE S256                |
+| 제공자  | 환경변수                                              | 기본 콜백                           | 요청 범위           |
+| ------- | ----------------------------------------------------- | ----------------------------------- | ------------------- |
+| 카카오  | `KAKAO_CLIENT_ID`(REST API 키), `KAKAO_CLIENT_SECRET` | `/api/auth/social/kakao/callback`   | 사용자 식별 ID      |
+| Discord | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`          | `/api/auth/social/discord/callback` | `identify`          |
+| Google  | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`            | `/api/auth/google/callback`         | `openid`, PKCE S256 |
 
 제공자별 `*_REDIRECT_URI`로 콜백을 지정할 수 있다. 세션 API의 `socialProviders`가 서버 설정 상태를 전달하고 설정된 로그인 버튼만 동작한다. 제공자와 외부 사용자 ID를 묶어 계정을 식별하며 서비스 닉네임은 가입 단계에서 직접 입력한다. 네이티브 WebView도 선택한 제공자를 시스템 브라우저로 전달하고 기존 일회용 앱 티켓/PKCE 교환으로 복귀한다.
 
-구현 기준은 [X OAuth 2.0](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code), [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [Discord OAuth2](https://docs.discord.com/developers/topics/oauth2)다. 로컬 검증은 가짜 제공자를 사용하며 실제 콘솔 키와 외부 계정 로그인은 별도로 확인해야 한다.
+구현 기준은 [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [Discord OAuth2](https://docs.discord.com/developers/topics/oauth2)다. 로컬 검증은 가짜 제공자를 사용하며 실제 콘솔 키와 외부 계정 로그인은 별도로 확인해야 한다.
 
 ## 팔로우, 공개 열람과 조회수
 

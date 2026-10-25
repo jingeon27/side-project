@@ -99,7 +99,7 @@ Service는 명시적인 `@Inject` 토큰으로 PrismaClient·AppConfig·필요�
 
 ## 인증과 도메인
 
-Google 제공자는 OAuth code를 검증해 `sub`를 서비스 계정과 연결한다. Google scope는 `openid`만 사용하고, X·Discord·카카오도 사용자 ID 조회에 필요한 최소 scope(`tweet.read users.read`, `identify`, 없음)만 요청한다. 공개 이름·사진·이메일은 자동 수집하지 않는다. 닉네임은 서비스 가입 입력으로 정하고 재로그인에도 유지한다. 세션은 HttpOnly 쿠키 `gamefeedback_session`으로 전달한다. production 쿠키는 HTTPS/Secure 설정을 전제로 한다.
+Google 제공자는 OAuth code를 검증해 `sub`를 서비스 계정과 연결한다. Google scope는 `openid`만 사용하고, Discord·카카오는 사용자 ID 조회에 필요한 최소 scope(`identify`, 없음)만 요청한다. 공개 이름·사진·이메일은 자동 수집하지 않는다. 닉네임은 서비스 가입 입력으로 정하고 재로그인에도 유지한다. 세션은 HttpOnly 쿠키 `gamefeedback_session`으로 전달한다. production 쿠키는 HTTPS/Secure 설정을 전제로 한다.
 
 Category는 DB에서 관리하고 카테고리 생성은 관리자만 수행한다. 공유 계약인 GameProfile은 정규화한 Player Tag와 게임 데이터를 표현하며 Prisma의 GameAccount는 사용자의 연결 프로필을 저장한다. 초기 소유권은 UNVERIFIED다. 피드백 요청에는 조회 시점 프로필·덱의 스냅샷을 보존해 이후 변경과 분리한다.
 

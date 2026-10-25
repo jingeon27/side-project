@@ -114,10 +114,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'Game Mateはゲームのフィードバック、回答、コメント、1対1チャットを共有するコミュニティです。アルファ期間中は機能や運営方法が変更される場合があります。他の利用者の助言は意見であり、ゲームの結果を保証しません。',
     ],
   '2. 가입과 계정': ['2. Registration and accounts', '2. 登録とアカウント'],
-  '만 14세 이상만 가입할 수 있습니다. Google, X, 카카오, Discord 계정으로 로그인하며 서비스에서는 사용자가 직접 정한 닉네임을 사용합니다. 게임 태그 등록은 해당 계정의 소유권 인증을 의미하지 않습니다.':
+  '만 14세 이상만 가입할 수 있습니다. Google, 카카오, Discord 계정으로 로그인하며 서비스에서는 사용자가 직접 정한 닉네임을 사용합니다. 게임 태그 등록은 해당 계정의 소유권 인증을 의미하지 않습니다.':
     [
-      'You must be at least 14 to register. Sign in with Google, X, Kakao or Discord and choose your own service nickname. Registering a game tag does not verify ownership of that game account.',
-      '登録できるのは14歳以上です。Google、X、カカオ、Discordでログインし、サービス内では自分で決めたニックネームを使用します。ゲームタグの登録はそのアカウントの所有権認証を意味しません。',
+      'You must be at least 14 to register. Sign in with Google, Kakao or Discord and choose your own service nickname. Registering a game tag does not verify ownership of that game account.',
+      '登録できるのは14歳以上です。Google、カカオ、Discordでログインし、サービス内では自分で決めたニックネームを使用します。ゲームタグの登録はそのアカウントの所有権認証を意味しません。',
     ],
   '3. 커뮤니티 이용 기준': ['3. Community rules', '3. コミュニティの利用基準'],
   '다른 사람을 존중해주세요. 스팸, 괴롭힘, 개인정보 노출, 사칭 및 권리를 침해하는 콘텐츠를 게시하지 마세요. 운영자는 신고된 콘텐츠를 검토하고 필요한 경우 숨길 수 있습니다. 서비스에서 타인과 공유할 권한이 있는 내용만 게시해주세요.':

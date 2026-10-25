@@ -638,7 +638,6 @@ const messages: Record<string, readonly [string, string]> = {
   사칭: ['Impersonation', 'なりすまし'],
   팔로우: ['Follow', 'フォロー'],
   '사용할 로그인 방법을 선택하세요.': ['Choose a sign-in method.', 'ログイン方法を選択してください。'],
-  'X로 시작하기': ['Continue with X', 'Xで続ける'],
   '카카오로 시작하기': ['Continue with Kakao', 'カカオで続ける'],
   'Discord로 시작하기': ['Continue with Discord', 'Discordで続ける'],
   '로그인 방법을 준비하고 있어요.': ['Sign-in methods are being set up.', 'ログイン方法を準備中です。'],

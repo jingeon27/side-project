@@ -29,13 +29,14 @@ describe('authentication dialog responsibilities', () => {
     expect(screen.queryByLabelText('서비스 닉네임')).toBeNull();
   });
 
-  it('shows four social methods and keeps testing login outside the product UI', () => {
+  it('shows three social methods and keeps testing login outside the product UI', () => {
     auth.session.demoMode = true;
     render(<LoginDialog open onOpenChange={() => undefined} onSuccess={() => undefined} />);
-    for (const label of ['X로 시작하기', '카카오 로그인', 'Discord로 시작하기', 'Google로 시작하기']) {
+    for (const label of ['카카오 로그인', 'Discord로 시작하기', 'Google로 시작하기']) {
       expect(screen.getByRole('button', { name: label })).toBeTruthy();
     }
     expect(screen.queryByLabelText('서비스 닉네임')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'X로 시작하기' })).toBeNull();
     expect(screen.queryByText('테스트 계정 선택')).toBeNull();
   });
 });

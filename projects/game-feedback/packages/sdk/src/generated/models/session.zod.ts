@@ -15,7 +15,7 @@ export const sessionUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][0
 
 export const Session = zod.object({
   "socialProviders": zod.array(zod.object({
-  "provider": zod.enum(['x', 'kakao', 'discord', 'google']),
+  "provider": zod.enum(['kakao', 'discord', 'google']),
   "configured": zod.boolean()
 })).optional(),
   "user": zod.union([zod.object({

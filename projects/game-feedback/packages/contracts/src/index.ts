@@ -113,7 +113,7 @@ export const TestAccountSchema = AuthorSchema.extend({
 });
 export const TestAccountListSchema = z.object({ items: z.array(TestAccountSchema) });
 export const TestLoginInputSchema = z.object({ accountId: z.string().min(1).max(100) }).strict();
-export const SocialProviderSchema = z.enum(['x', 'kakao', 'discord', 'google']);
+export const SocialProviderSchema = z.enum(['kakao', 'discord', 'google']);
 export type TSocialProvider = z.infer<typeof SocialProviderSchema>;
 export const TestTokenSchema = z.object({
   accessToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/),

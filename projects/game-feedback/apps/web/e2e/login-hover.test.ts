@@ -8,7 +8,7 @@ test('소셜 로그인 버튼은 hover에도 제공자 배경과 읽을 수 있�
       response,
       json: {
         ...session,
-        socialProviders: ['google', 'kakao', 'discord', 'x'].map((provider) => ({
+        socialProviders: ['google', 'kakao', 'discord'].map((provider) => ({
           provider,
           configured: true,
         })),
@@ -24,7 +24,6 @@ test('소셜 로그인 버튼은 hover에도 제공자 배경과 읽을 수 있�
     ['Google로 시작하기', 'rgb(255, 255, 255)'],
     ['카카오 로그인', 'rgb(254, 229, 0)'],
     ['Discord로 시작하기', 'rgb(88, 101, 242)'],
-    ['X로 시작하기', 'rgb(17, 17, 17)'],
   ] as const) {
     const button = dialog.getByRole('button', { name, exact: true });
     await expect(button).toBeEnabled();

@@ -3,7 +3,6 @@ import type { IdentityProvider, TIdentityProviders } from '../auth/providers/ide
 import {
   createDiscordIdentityProvider,
   createKakaoIdentityProvider,
-  createXIdentityProvider,
 } from '../auth/providers/oauth-identity.provider';
 
 export function resolveIdentityProviders(
@@ -22,7 +21,6 @@ export function resolveIdentityProviders(
     };
   };
   const googleClient = configured('GOOGLE', '/api/auth/google/callback');
-  const x = configured('X', '/api/auth/social/x/callback');
   const kakao = configured('KAKAO', '/api/auth/social/kakao/callback');
   const discord = configured('DISCORD', '/api/auth/social/discord/callback');
   return {
@@ -35,7 +33,6 @@ export function resolveIdentityProviders(
             googleClient.redirectUri,
           )
         : undefined),
-    x: x ? createXIdentityProvider(x) : undefined,
     kakao: kakao ? createKakaoIdentityProvider(kakao) : undefined,
     discord: discord ? createDiscordIdentityProvider(discord) : undefined,
     ...overrides,

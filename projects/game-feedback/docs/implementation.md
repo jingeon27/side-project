@@ -1301,3 +1301,13 @@ RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에�
 홈에서 GameBoardNavigation의 서버 HTML은 비어 있지만, 먼저 hydration된 LeftSidebar의 게임 목록 요청이 완료되면 다른 Suspense 경계의 첫 클라이언트 렌더에 메뉴가 추가되는 오류를 로컬에서 재현했다. 쿠키 없는 getPublicCategories 조회를 서버 부트스트랩에 포함하고 Providers의 요청별 QueryClient를 만들 때 세션과 함께 게임 목록을 초기화한다. 서버와 브라우저가 같은 공개 snapshot으로 메뉴를 시작하며 기존 query options와 재조회 정책을 유지한다.
 
 회귀 테스트는 JavaScript 없이 받은 서버 HTML에 홈·다섯 게시판의 메뉴와 선택 링크가 포함되는지 확인하고, 390/1280px에서 한국어·영어·일본어 첫 진입·게시판 이동·새로고침의 hydration 오류를 감시한다. Next가 보내는 Suspense 스트리밍 조각도 서버 HTML 검사에 포함한다. 수정 전 메뉴 누락으로 실패하는 것을 확인했고 수정 후 production build/start의 회귀 테스트 4개와 게시판·피드·가이드 프리패치 8개, Web 단위/UI 223개, typecheck·lint가 통과했다. 브라우저 테스트는 3304/4304와 55444의 실행별 gf_test_ 스키마를 사용했다. 실제 외부 제공자와 공개 배포 검증은 수행하지 않았다.
+
+## 2026-10-25 X OAuth 제거
+
+로그인 제공자를 Google·카카오·Discord로 제한했다. X 제공자 어댑터와 설정·환경변수·배포 Compose 항목을 제거하고, API의 SocialProviderSchema와 앱의 LoginProviderSchema에서 X를 제외했다. `/api/auth/social/x`와 해당 콜백은 제공자 검증 단계에서 400으로 거부하며 OAuth 시도를 생성하지 않는다. 세션의 제공자 목록과 재생성한 OpenAPI/SDK에도 세 제공자만 포함한다. 웹·앱 공통 로그인 폼의 X 버튼, 로고, 색상, 번역과 약관의 로그인 방법 설명도 정리했다. 기존 계정·세션 데이터를 삭제하거나 DB 스키마를 변경하지 않았다.
+
+검증: Node 24에서 API 단위 174개와 인증 통합 39개, Web 단위/UI 223개, Mobile 단위/UI 88개, Bridge 15개, SDK 71개, Admin 단위 21개가 통과했다. API·Web·Mobile·Bridge·Admin 타입 검사와 프로젝트/API·Web·Mobile·Admin lint가 통과했다. 계약은 codegen으로 생성했고 생성 코드를 직접 수정하지 않았다. 제거한 X 경로의 거부, 세 제공자 세션 응답, 앱의 X 인증 메시지 거부와 기존 제공자 로그인을 검증했다.
+
+웹 E2E 스킬에 따라 별도 3353/4353과 `.next/remove-x-e2e`의 production build/start에서 로그인·hover 브라우저 사양 5개가 통과했다. 모바일·데스크톱의 세 로그인 버튼, 로고·색상, 언어 전환·원래 목적지 복귀·사용 불가능한 제공자 처리를 확인하고 393px 로그인 캡처를 직접 검토했다. 기존 3301/4301 서버는 변경하지 않았다.
+
+DB는 같은 Game Feedback의 55444 테스트 DB와 실행별 gf_test_ 스키마만 사용했다. API 통합 테스트는 다른 worktree가 소유한 DB의 자동 기동만 생략한 임시 실행기로 가짜 제공자 환경과 URL 가드를 유지했다. 테스트가 만든 스키마만 정리했고 기존 DB 프로세스는 유지했다. 실제 외부 제공자 인증·실기기·배포는 수행하지 않았다.

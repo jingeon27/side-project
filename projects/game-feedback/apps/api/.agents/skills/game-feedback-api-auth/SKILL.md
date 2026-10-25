@@ -1,6 +1,6 @@
 ---
 name: game-feedback-api-auth
-description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin 검사와 요청 제한, OAuth 제공자(Google·X·카카오·Discord) 추가·변경과 온보딩, 테스트 토큰·데모 로그인(GF_TEST_AUTH_ENABLED·GF_DEMO_MODE), 모바일 로그인 인계(app_challenge·AppLoginTicket·/api/auth/app/exchange), 밴 적용, 관리자 권한을 고치거나 검토할 때 사용한다.
+description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin 검사와 요청 제한, OAuth 제공자(Google·카카오·Discord) 추가·변경과 온보딩, 테스트 토큰·데모 로그인(GF_TEST_AUTH_ENABLED·GF_DEMO_MODE), 모바일 로그인 인계(app_challenge·AppLoginTicket·/api/auth/app/exchange), 밴 적용, 관리자 권한을 고치거나 검토할 때 사용한다.
 ---
 
 엔드포인트 배치는 `game-feedback-api-endpoint`, 테스트 하네스는 `game-feedback-api-test` 스킬, OAuth scope·로그 원칙은 프로젝트 `AGENTS.md`를 따른다. 경로는 apps/api 기준이다.
@@ -28,8 +28,8 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 
 ## OAuth 제공자
 
-- 계약 `SocialProviderSchema`(`x`·`kakao`·`discord`·`google`, `../../packages/contracts/src/index.ts`)와 인터페이스 `IdentityProvider { authorizationUrl({ state, nonce, challenge }), exchange(code, verifier, nonce) → subject }`(`src/auth/providers/identity-provider.ts`).
-- 구현: Google은 `GoogleIdentityProvider`(scope `openid`, PKCE, id_token 검증). X는 `tweet.read users.read`, Discord는 `identify`, 카카오는 scope 없이 ID만 조회한다. 나머지는 `src/auth/providers/oauth-identity.provider.ts`의 `createXIdentityProvider`·`createKakaoIdentityProvider`·`createDiscordIdentityProvider`이며 `subject`를 Zod로 좁히고 실패는 502 `OAUTH_FAILED`.
+- 계약 `SocialProviderSchema`(`kakao`·`discord`·`google`, `../../packages/contracts/src/index.ts`)와 인터페이스 `IdentityProvider { authorizationUrl({ state, nonce, challenge }), exchange(code, verifier, nonce) → subject }`(`src/auth/providers/identity-provider.ts`).
+- 구현: Google은 `GoogleIdentityProvider`(scope `openid`, PKCE, id_token 검증). Discord는 `identify`, 카카오는 scope 없이 ID만 조회한다. 나머지는 `src/auth/providers/oauth-identity.provider.ts`의 `createKakaoIdentityProvider`·`createDiscordIdentityProvider`이며 `subject`를 Zod로 좁히고 실패는 502 `OAUTH_FAILED`.
 - 연결: `resolveIdentityProviders`(`src/config/identity-providers.ts`)가 `<PREFIX>_CLIENT_ID`·`_CLIENT_SECRET`·`_REDIRECT_URI`를 읽는다. 기본 redirect는 `${webOrigin}/api/auth/social/<p>/callback`(Google은 `/api/auth/google/callback`) — Web origin의 `/api` rewrite를 거쳐야 state 쿠키가 돌아온다.
 - 제공자 추가 순서: `SocialProviderSchema` → 어댑터 팩토리 → `identity-providers.ts` → `production.config.ts`의 `providers` → 프로젝트 `.env.example` → `scripts/test.mjs`에서 키 비우기 → `oauth-identity.provider.test.ts` 케이스 → `codegen`. `GET /api/session`의 `socialProviders`는 enum에서 자동으로 만들어진다.
 
@@ -57,7 +57,7 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 
 - unit: `src/security.test.ts`(Origin·DB URL), `src/rate-limit.test.ts`·`src/rate-limit.spec.ts`, `src/common/http/forwarded-client.spec.ts`, `src/common/http/api-access.middleware.test.ts`(대소문자 경로), `src/common/http/banned-access.test.ts`, `src/auth/providers/oauth-identity.provider.test.ts`(`fetch` stub), `src/config/production.config.spec.ts`(앱 로그인 콜백 포함), `src/config/app-auth-callback.test.ts`(커스텀 스킴·다른 origin 거부 회귀).
 - DB를 쓰지 않는 integration: `src/common/http/api-access.middleware.integration.test.ts`(SSR 방문자 버킷·위조 헤더), `src/common/http/configure-http.integration.test.ts`(대소문자 경로 404).
-- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 네 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피, 앱 시도는 https 콜백 `?error=login_failed`), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
+- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 세 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피, 앱 시도는 https 콜백 `?error=login_failed`), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
 
 ## 명령 (side 루트)
 
