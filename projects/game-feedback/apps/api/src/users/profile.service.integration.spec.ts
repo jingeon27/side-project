@@ -76,6 +76,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
   afterAll(async () => {
     await state.app?.close();
     if (state.db) {
+      if (!/^gf_test_profile_[a-f0-9]{16}$/.test(schema)) throw new Error('Unowned profile schema');
       await state.db.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
       await state.db.$disconnect();
     }
@@ -137,6 +138,44 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
     await authenticated()
       .send({ links: [{ label: 'x'.repeat(41), url: 'https://site.test' }] })
       .expect(400);
+  });
+  it('닉네임과 자기소개를 수정하고 기존 링크와 다른 사용자의 프로필을 보존한다', async () => {
+    const links = [{ label: '방송', url: 'https://video.example/player' }];
+    await authenticated().send({ links }).expect(200);
+    const updated = await authenticated()
+      .send({ nickname: '  새 닉네임  ', bio: '  소개\nhttps://royaleapi.com/player/QLLLPR89G  ' })
+      .expect(200);
+    expect(updated.body).toMatchObject({
+      author: { nickname: '새 닉네임' },
+      bio: '소개\nhttps://royaleapi.com/player/QLLLPR89G',
+      links,
+    });
+    const session = await http()
+      .get('/api/session')
+      .set('Authorization', `Bearer ${state.accessToken}`)
+      .expect(200);
+    expect(session.body.user.nickname).toBe('새 닉네임');
+    const other = await state.db.user.findUniqueOrThrow({ where: { id: state.otherId } });
+    expect(other.nickname).toBe('프로필 방문자');
+    expect(other.bio).toBe('');
+    const cleared = await authenticated().send({ bio: '' }).expect(200);
+    expect(cleared.body).toMatchObject({ author: { nickname: '새 닉네임' }, bio: '', links });
+  });
+  it('닉네임 형식과 소개 길이를 검사하고 권한·다른 사용자 필드는 변경하지 못한다', async () => {
+    for (const input of [
+      { nickname: 'a' },
+      { nickname: 'x'.repeat(25) },
+      { nickname: '금지💥' },
+      { bio: 'x'.repeat(501) },
+      { bio: '소개', role: 'ADMIN' },
+      { nickname: '침입', userId: state.otherId },
+      {},
+    ]) {
+      await authenticated().send(input).expect(400);
+    }
+    const stored = await state.db.user.findUniqueOrThrow({ where: { id: state.userId } });
+    expect(stored.role).toBe('USER');
+    expect(stored.nickname).toBe('새 닉네임');
   });
   it('S3 사진의 버전 URL을 공개하고 DB에는 바이트를 저장하지 않는다', async () => {
     const result = await upload();

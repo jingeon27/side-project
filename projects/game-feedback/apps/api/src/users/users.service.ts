@@ -19,7 +19,7 @@ export class UsersService {
     const excluded = await this.visibility.excluded(req);
     const user = await this.db.user.findFirst({
       where: { id, withdrawnAt: null, adminAccount: { is: null }, NOT: { id: { in: excluded } } },
-      select: { ...authorSelect, createdAt: true, profileLinks: true },
+      select: { ...authorSelect, createdAt: true, profileLinks: true, bio: true },
     });
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
     const postVisibility = { ...ACTIVE_POST, authorId: { notIn: excluded } };
@@ -31,6 +31,7 @@ export class UsersService {
     ]);
     return {
       author: authorDto(user),
+      bio: user.bio,
       links: ProfileLinksSchema.parse(user.profileLinks),
       joinedAt: user.createdAt.toISOString(),
       postCount,

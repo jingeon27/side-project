@@ -128,7 +128,11 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     });
     await db.user.update({
       where: { id: user.id },
-      data: { profileLinks: [{ url: 'https://example.test/private' }], supercellTag: '#PERSONAL' },
+      data: {
+        profileLinks: [{ url: 'https://example.test/private' }],
+        supercellTag: '#PERSONAL',
+        bio: '삭제할 자기소개',
+      },
     });
     await peer.agent
       .put(`/api/users/${user.id}/follow`)
@@ -139,6 +143,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     expect(await db.user.findUniqueOrThrow({ where: { id: user.id } })).toMatchObject({
       withdrawnAt: expect.any(Date),
       nickname: '탈퇴한 사용자',
+      bio: '',
       googleSubject: null,
       profileLinks: [],
       supercellTag: null,

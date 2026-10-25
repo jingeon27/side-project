@@ -8,10 +8,18 @@ import {
   MediaUploadPlanSchema,
 } from './media-upload';
 import { PostMediaSchema } from './post-media';
-import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+import { NicknameSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { RichTextDocumentSchema } from './rich-text';
 
-export { ProfileLinkSchema, ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
+export {
+  NicknameSchema,
+  PROFILE_BIO_MAX_LENGTH,
+  ProfileBioSchema,
+  ProfileDetailsInputSchema,
+  ProfileLinkSchema,
+  ProfileLinksSchema,
+  UpdateProfileInputSchema,
+} from './profile';
 
 export {
   POSTS_CACHE_TAG,
@@ -126,6 +134,7 @@ export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
 export const PublicProfileSchema = z.object({
   author: AuthorSchema,
+  bio: z.string().optional(),
   links: ProfileLinksSchema.optional(),
   joinedAt: ResponseTimestampSchema,
   postCount: ResponseCountSchema,
@@ -150,6 +159,8 @@ export const GameProfileSchema = z.object({
   name: z.string().min(1),
   trophies: ResponseCountSchema,
   bestTrophies: ResponseCountSchema,
+  currentGlobalRank: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).nullable().optional(),
+  bestGlobalRank: z.number().int().positive().max(Number.MAX_SAFE_INTEGER).nullable().optional(),
   arena: z.string().min(1),
   clan: z.string().nullable(),
   deck: z.array(CardSchema),
@@ -357,12 +368,6 @@ export const PlayerTagSchema = z
   .trim()
   .regex(PLAYER_TAG_PATTERN, '# 뒤에 영문과 숫자로 된 플레이어 태그를 입력해주세요.')
   .transform((value) => `#${value.replace(/^#/, '').toUpperCase()}`);
-export const NicknameSchema = z
-  .string()
-  .trim()
-  .min(2)
-  .max(24)
-  .regex(/^[\p{L}\p{N}_ .-]+$/u);
 export const OnboardInputSchema = z
   .object({
     nickname: NicknameSchema,

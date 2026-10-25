@@ -37,6 +37,7 @@ export const PublicProfile = zod.object({
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),
+  "bio": zod.string().optional(),
   "links": zod.array(zod.object({
   "label": zod.string().min(1).max(publicProfileLinksItemLabelMax),
   "url": zod.string().max(publicProfileLinksItemUrlMax).regex(publicProfileLinksItemUrlRegExp)
