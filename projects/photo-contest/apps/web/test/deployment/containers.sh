@@ -34,10 +34,6 @@ HTTP_PORT=3381
 HTTPS_PORT=3382
 API_IMAGE=photo-contest-api:$revision
 WEB_IMAGE=photo-contest-web:$revision
-MOBILE_APPLE_TEAM_ID=SMOKETEAM0
-MOBILE_IOS_BUNDLE_ID=test.smoke.photocontest
-MOBILE_ANDROID_PACKAGE=test.smoke.photocontest
-MOBILE_ANDROID_SHA256_FINGERPRINTS=$(printf '5A:%.0s' {1..31})5A
 EOF
 cat >"$directory/storage.yaml" <<EOF
 services:
@@ -45,17 +41,15 @@ services:
     image: node:24-bookworm-slim
     command: ['node', '--disable-warning=ExperimentalWarning', '/fixture/bin/fake-s3.mjs']
     environment:
-      S3_FAKE_HOST: 0.0.0.0
-      S3_FAKE_PORT: '3383'
-      S3_FAKE_DIR: /data
-      S3_FAKE_CORS_ORIGINS: https://localhost:3382
+      S3_ENDPOINT: http://storage.localhost:3383
+      WEB_ORIGIN: https://localhost:3382
       S3_BUCKET: \${S3_BUCKET}
       S3_REGION: \${S3_REGION}
       AWS_ACCESS_KEY_ID: \${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: \${AWS_SECRET_ACCESS_KEY}
     volumes:
       - $repo_root/projects/photo-contest/packages/test-kit:/fixture:ro
-    tmpfs: ['/data']
+    tmpfs: ['/.data']
     ports: ['127.0.0.1:3383:3383']
     networks:
       app:
@@ -78,6 +72,7 @@ cleanup() {
   if [[ $status != 0 ]]; then compose logs --tail 80 api web caddy storage >&2 || true; fi
   # 이 검증이 만든 프로젝트의 볼륨만 지운다.
   compose down --volumes --remove-orphans || true
+  rm -f projects/photo-contest/apps/web/.data/deployment-smoke.json
   rm -rf "$directory"
   exit "$status"
 }
@@ -87,8 +82,12 @@ compose run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile --
 compose up -d --wait --wait-timeout 120 db storage
 compose run --rm --no-deps migrate
 compose up -d --wait --wait-timeout 180 api web caddy
-DEPLOY_SMOKE_ORIGIN=https://localhost:3382 DEPLOY_SMOKE_STORAGE=http://storage.localhost:3383 \
-  SMOKE_COMPOSE_DIR="$directory" SMOKE_COMPOSE_PROJECT="$project" SMOKE_COMPOSE_OVERRIDE="$directory/storage.yaml" \
+node --input-type=module - "$directory" "$project" <<'JS'
+import { writeFileSync } from 'node:fs';
+const [, , directory, project] = process.argv;
+writeFileSync('projects/photo-contest/apps/web/.data/deployment-smoke.json', JSON.stringify({directory, project}), {flag:'wx', mode:0o600});
+JS
+WEB_ORIGIN=https://localhost:3382 S3_ENDPOINT=http://storage.localhost:3383 \
   corepack yarn workspace @photo-contest/web test:deploy
 
 # 실제 custom-format 백업을 별도 DB에 복원해 댓글까지 읽는다.

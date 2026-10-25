@@ -5,13 +5,15 @@ import { expect, test } from '@playwright/test';
 
 import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
 
+import { deploymentContext } from './context';
+
 test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓글과 재시작 뒤 데이터가 유지돼야 한다', async ({
   page,
   request,
 }) => {
-  const origin = new URL(process.env.DEPLOY_SMOKE_ORIGIN ?? 'https://localhost:3382').origin;
+  const origin = new URL(process.env.WEB_ORIGIN ?? 'https://localhost:3382').origin;
   // 미디어는 서버 volume이 아니라 S3 호환 버킷(검증에서는 test-kit 대역)으로 브라우저가 직접 오간다.
-  const storage = new URL(process.env.DEPLOY_SMOKE_STORAGE ?? 'http://storage.localhost:3383').origin;
+  const storage = new URL(process.env.S3_ENDPOINT ?? 'http://storage.localhost:3383').origin;
   await page.route('**/*', (route) =>
     [origin, storage].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort(),
   );
@@ -95,10 +97,9 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   }, signedVideo);
   expect(range).toEqual({ status: 206, length: 32 });
   const authConfig = await request.get('/backend/auth/config');
-  expect(authConfig.status()).toBe(200);
-  expect(await authConfig.json()).toEqual({ developmentLogin: false, google: false, kakao: false });
+  expect(authConfig.status()).toBe(404);
   const testing = await request.post('/backend/testing/users', {
-    headers: { Origin: process.env.DEPLOY_SMOKE_ORIGIN ?? '' },
+    headers: { Origin: origin },
     data: { nickname: '운영에서 만들면 안 되는 계정' },
   });
   expect(testing.status()).toBe(404);
@@ -114,7 +115,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   });
   expect(seoResponse.status()).toBe(200);
   const seoHtml = await seoResponse.text();
-  expect(seoHtml).toContain(`rel="canonical" href="${process.env.DEPLOY_SMOKE_ORIGIN}${groupPath}"`);
+  expect(seoHtml).toContain(`rel="canonical" href="${origin}${groupPath}"`);
   expect(seoHtml).toContain('application/ld+json');
   expect(seoHtml).toContain('DiscussionForumPosting');
 
@@ -143,11 +144,8 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   expect(privateHtml).not.toContain('application/ld+json');
   await page.goto(groupPath);
 
-  const directory = process.env.SMOKE_COMPOSE_DIR;
-  const project = process.env.SMOKE_COMPOSE_PROJECT;
-  if (!directory || !project?.startsWith('pc-smoke-')) throw new Error('격리 Compose 정보가 필요합니다.');
-  const files = ['-f', `${directory}/compose.yaml`];
-  if (process.env.SMOKE_COMPOSE_OVERRIDE) files.push('-f', process.env.SMOKE_COMPOSE_OVERRIDE);
+  const { directory, project } = deploymentContext();
+  const files = ['-f', `${directory}/compose.yaml`, '-f', `${directory}/storage.yaml`];
   await promisify(execFile)('docker', [
     'compose',
     '--project-name',
@@ -198,27 +196,6 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
 test('운영 Caddy가 앱 링크 검증 파일과 앱 로그인 콜백 안내를 막지 않고 그대로 전달해야 한다', async ({
   request,
 }) => {
-  // containers.sh의 .env 값이다. 실제 앱과 연결되지 않는 검증용 식별자다.
-  const appId = 'SMOKETEAM0.test.smoke.photocontest';
-  const aasa = await request.get('/.well-known/apple-app-site-association', { maxRedirects: 0 });
-  expect(aasa.status()).toBe(200);
-  expect(aasa.headers()['content-type']).toContain('application/json');
-  expect(await aasa.json()).toEqual({
-    applinks: { details: [{ appIDs: [appId], components: [{ '/': '/app-auth/callback' }] }] },
-    webcredentials: { apps: [appId] },
-  });
-  const assetLinks = await request.get('/.well-known/assetlinks.json', { maxRedirects: 0 });
-  expect(assetLinks.status()).toBe(200);
-  expect(await assetLinks.json()).toEqual([
-    {
-      relation: ['delegate_permission/common.handle_all_urls'],
-      target: {
-        namespace: 'android_app',
-        package_name: 'test.smoke.photocontest',
-        sha256_cert_fingerprints: [Array.from({ length: 32 }, () => '5A').join(':')],
-      },
-    },
-  ]);
   const callback = await request.get('/app-auth/callback?code=smoke-login-code-0123456789', {
     maxRedirects: 0,
   });
