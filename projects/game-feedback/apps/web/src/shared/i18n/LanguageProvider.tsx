@@ -71,7 +71,7 @@ export function LanguageProvider({
   const [pending, startTransition] = useTransition();
   const preference = useSyncExternalStore(subscribe, readPreference, () => initialPreference);
   function handlePreferenceChange(next: TLanguagePreference) {
-    if (pending || next === preference) return;
+    if (pending) return;
     setLanguagePreference(next);
     const target = next === 'auto' ? automaticLocale : next;
     if (target === locale) return;
