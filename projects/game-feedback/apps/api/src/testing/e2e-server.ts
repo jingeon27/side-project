@@ -10,7 +10,7 @@ async function main() {
   const databaseUrl = assertDatabaseUrl(process.env.DATABASE_URL, 'test');
   const port = Number(new URL(process.env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:4301').port);
   if (
-    ![4301, 4302, 4304, 4353].includes(port) ||
+    ![4301, 4302, 4304, 4353, 4354].includes(port) ||
     process.env.WEB_ORIGIN !== `http://127.0.0.1:${port - 1000}`
   )
     throw new Error('E2E server requires the owned browser-test ports.');

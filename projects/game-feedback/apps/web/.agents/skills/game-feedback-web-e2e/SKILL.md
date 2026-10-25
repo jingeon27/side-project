@@ -15,7 +15,7 @@ description: Game Feedback 웹(apps/web)의 Playwright e2e를 작성·실행할 
 | `test:observability` | `playwright.observability.config.ts` | `e2e/observability.spec.ts` | 3301/4301 | `next dev --webpack`(`.next/observability`), `GF_OBSERVABILITY_PRODUCTION=true`면 production |
 
 - 공통: chromium(Desktop Chrome) 프로젝트 하나, workers 1, timeout 45초, `trace: 'retain-on-failure'`, `reuseExistingServer: false`. 결과는 `test-results/`(기본) 또는 `.e2e-build/<이름>-results/`다.
-- API 서버 명령은 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `@game-feedback/api test:server`다. `test:server`는 PORT 4301·4302·4304·4353과 `WEB_ORIGIN=http://127.0.0.1:<PORT-1000>`만 받고, Google·Supercell 키가 있으면 시작하지 않는다. 새 설정은 이 포트 중 하나를 쓴다(3302/4302는 mobile, 3304/4304는 admin e2e).
+- API 서버 명령은 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `@game-feedback/api test:server`다. `test:server`는 PORT 4301·4302·4304·4353·4354와 `WEB_ORIGIN=http://127.0.0.1:<PORT-1000>`만 받고, Google·Supercell 키가 있으면 시작하지 않는다. 새 설정은 이 포트 중 하나를 쓴다(3302/4302는 mobile, 3304/4304는 admin e2e).
 - DB URL은 `TEST_DATABASE_URL`(기본 `postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test`)만 허용하며 실행마다 `gf_test_web_<uuid>` 스키마를 만든다(`GF_E2E_SCHEMA`로 지정 가능, `gf_test_` 접두 필수). `e2e/teardown.ts`가 그 스키마만 DROP한다.
 - 기본 설정은 Sentry·Amplitude 키를 빈 값으로 덮는다(`telemetry-disabled.spec.ts`). observability 설정만 가짜 키(`observability-test-key`, `https://test@sentry.invalid/1`)를 넣고 `context.route`로 가로챈다. `GAME_FEEDBACK_SITE_URL=https://feedback.example`, `ENVIRONMENT=test`.
 - `GF_PREFETCH_TESTING=true`는 `next.config.mjs`의 `exposeTestingApiInProductionBuild`를 켠다. 일반 build에 넣지 않는다.
@@ -55,3 +55,7 @@ corepack yarn workspace @side/game-feedback db:test:stop
 ```
 
 - 실패한 테스트의 trace는 `test-results/` 또는 `.e2e-build/*-results/`에 남는다(`corepack yarn workspace @game-feedback/web exec playwright show-trace <trace.zip>`).
+
+## 실제 모니터링 전송 검사
+
+`monitoring:check`는 playwright.monitoring.config.ts와 test/monitoring을 사용한다. 3354/4354, 전용 gf_test_web 스키마, 운영 빌드와 실제 브라우저 수집 키를 사용한다. 일반 테스트에 포함하지 않는다. 키·쿠키를 보고서에 쓰지 않고 trace·캡처·영상도 끈다. 수집 성공과 MCP 재조회는 각각 확인한다. 설정과 재실행은 프로젝트 docs/observability.md를 따른다.

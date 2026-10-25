@@ -51,11 +51,22 @@ export function scrubSentryEvent<TEvent extends Event>(event: TEvent): TEvent {
   delete event.request;
   delete event.user;
   delete event.breadcrumbs;
+  delete event.message;
+  delete event.extra;
   if (event.transaction) event.transaction = toSentryTransaction(event.transaction);
-  if (event.contexts) {
-    // 서버 SDK가 붙이는 요청·쿠키 문맥
-    delete event.contexts.request;
-    delete event.contexts.cookies;
+  // Next SDK는 원본 경로를 contexts.nextjs.request_path에도 붙인다.
+  delete event.contexts;
+  for (const exception of event.exception?.values ?? []) {
+    const react = exception.value?.match(/Minified React error #(\d+)/);
+    exception.value = react ? `React error #${react[1]}` : `Unexpected ${exception.type ?? 'Error'}`;
+    for (const frame of exception.stacktrace?.frames ?? []) {
+      if (frame.filename) frame.filename = frame.filename.split(/[?#]/)[0];
+      if (frame.abs_path) frame.abs_path = frame.abs_path.split(/[?#]/)[0];
+      delete frame.vars;
+      delete frame.pre_context;
+      delete frame.post_context;
+      delete frame.context_line;
+    }
   }
   return event;
 }

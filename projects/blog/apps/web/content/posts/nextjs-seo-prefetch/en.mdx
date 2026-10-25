@@ -1,3 +1,9 @@
+<Summary>
+
+Data appeared in the browser but was missing from the initial HTML. I separated queries the server must await from those it can stream while pending.
+
+</Summary>
+
 The hospital information appeared when I opened a reservation detail page in the browser, but it was absent from the server's initial HTML. I followed the server component's `prefetchQuery` call and the timing of `dehydrate`.
 
 ```tsx
@@ -41,7 +47,7 @@ export default async function ReservationPage({ searchParams }: Props) {
 }
 ```
 
-Calling `dehydrate` after `await` includes the successful query in the hydration state. This is a straightforward choice for essential page content, data needed to generate metadata, and queries whose errors must be handled on the server.
+When the query succeeds, calling `dehydrate` after `await` includes its result. In TanStack Query v5, however, `prefetchQuery` does not throw failures to its caller. Use `fetchQuery` when the server must decide not-found or handle an error itself. `generateMetadata` also does not automatically share the page's QueryClient; sharing those reads needs a separate arrangement.
 
 ## When void prefetchQuery is intentional
 
@@ -78,7 +84,7 @@ The presence of `void` alone does not determine whether the implementation is co
 | Situation | Choice |
 | --- | --- |
 | Essential data that must be in the initial HTML | await prefetchQuery |
-| Data used to decide not-found or an error on the server | await prefetchQuery |
+| Data used to decide not-found or an error on the server | Handle fetchQuery results and failures on the server |
 | Data that can appear later within Suspense | pending dehydration + streaming |
 | Data needed only after an interaction | client query |
 
@@ -91,3 +97,5 @@ Multiple HydrationBoundaries are not necessarily duplicates either. Different Se
 For queries that matter to SEO, I first decide how much the server must finish. Then I choose between waiting for completion and streaming the pending state.
 
 References: [TanStack Query Advanced SSR](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr), [Next.js searchParams](https://nextjs.org/docs/app/api-reference/file-conventions/page#searchparams-optional)
+
+- [TanStack Query v5 QueryClient implementation](https://github.com/TanStack/query/blob/v5.66.0/packages/query-core/src/queryClient.ts): prefetchQuery failure handling

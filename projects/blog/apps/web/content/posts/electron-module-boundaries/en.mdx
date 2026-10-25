@@ -1,3 +1,9 @@
+<Summary>
+
+I separated the shared workflow from platform-specific code in an Electron data-collection app. I also describe why I removed NestJS after feedback from the CTO.
+
+</Summary>
+
 When I joined, our Electron collection app retrieved applicant information from several recruiting platforms. This was applicant data the company was authorized to access through its corporate accounts. Login methods and DOM structures differed, but the overall sequence was the same: log in, check duplicates, save applicants, and upload resumes. Each platform file owned the entire sequence, so changing a shared behavior meant editing several files.
 
 ## Every platform file repeated the same workflow
@@ -14,7 +20,7 @@ One platform-specific function performed all of the following work.
 
 Adding a platform meant copying an existing file and changing selectors and exception handling. That made it increasingly difficult to distinguish shared logic from platform-specific logic.
 
-A month after joining, I was about to copy another platform file myself. Adding the fourth platform that way would also create a fourth copy of the common flow after login.
+I first considered copying an existing platform file. That would have created a fourth copy of the shared post-login workflow.
 
 ## Decide which change belongs in which file
 
@@ -144,4 +150,4 @@ A structure that permits tests is different from one that actually has them. Pup
 - [NestJS: Modules](https://docs.nestjs.com/modules)
 - [Electron: Inter-Process Communication](https://www.electronjs.org/docs/latest/tutorial/ipc) — receiving requests with ipcMain.handle
 - [TypeScript Handbook: abstract Classes and Members](https://www.typescriptlang.org/docs/handbook/2/classes.html#abstract-classes-and-members)
-- Related: [Waiting for Puppeteer requests and responses](/en/blog/puppeteer-event-lifecycle) — a problem downloading password-protected files in the same collection app
+- Related: [Waiting for Puppeteer requests and responses without leaking listeners](/en/blog/puppeteer-event-lifecycle) — a problem downloading password-protected files in the same collection app

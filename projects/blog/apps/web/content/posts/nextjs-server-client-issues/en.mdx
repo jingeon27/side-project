@@ -1,3 +1,9 @@
+<Summary>
+
+I traced searches that did not update the URL and chunk errors after an upgrade, then distinguished server navigation from URL-only state changes.
+
+</Summary>
+
 ![URL changes, cookie handling, and form initialization follow separate paths suited to their behavior.](/images/covers/nextjs-server-client-issues.png)
 
 *URL changes, cookie handling, and form initialization follow separate paths suited to their behavior.*
@@ -21,9 +27,9 @@ I initially thought a detail Drawer failed to close because it waited on a serve
 - Opening details from a list had a recently cached parameter-free address and appeared normal.
 - Entering details directly left only prefetched ?id=… row addresses, which returned after removing the parameter.
 
-Finding a useful check took time. New tests passed and looked reasonable on inspection. Neither jsdom nor the development server reproduced this production Router Cache behavior.
+Finding the right environment took time. Searching worked when I ran the app with dev on localhost, so I could not observe the reported behavior there.
 
-I switched to `pnpm build && pnpm start`. On August 13, 2026, six of seven checked Back-Office lists left the address unchanged after search. Upstream reports also identified production-only reproduction.
+I built the same code and ran it with start. Six of seven checked Back-Office lists then left the address unchanged after search. Upstream reports also described reproduction only after a build.
 
 The fix used native history. I added two functions to a shared hook and moved search, reset, and detail close to them.
 
@@ -128,11 +134,11 @@ The missing-token refresh fallback is a migration measure. It should be removed 
 
 ### Additional exposure from client-readable tokens
 
-Any script with access to page cookies can read sessionToken, including third-party tags, bundled dependencies, and extensions with relevant access. Exposure is broader than a successful XSS. Observability tooling collecting cookies or request headers can also send a token to a third party without a separate vulnerability.
+Third-party tags and dependencies running with the page's privileges can also read a JavaScript-accessible sessionToken. Besides XSS, I need to check whether client tooling collects cookies or request headers.
 
-Shorter token expiry only reduces the window. If page code can invoke refresh, an attacker with that access can too, making practical exposure closer to renewalToken lifetime.
+A shorter access-token lifetime limits how long one stolen token can be reused. Persistent malicious code that can read refresh responses may obtain new tokens as well. Short expiry alone does not stop the effects of active XSS.
 
-An httpOnly renewalToken does not make refresh immune. Page code can invoke a route that the browser authenticates with the cookie. Checking whether any server endpoint returns that cookie's value is also necessary before assuming it never reaches JavaScript.
+HttpOnly prevents JavaScript from directly reading renewalToken, but not from making requests for which the browser sends it. I also need to examine access to refresh responses and any endpoint that returns the cookie's value.
 
 No further mitigations have been added yet: neither shorter expiry nor refresh restrictions. We obtained build-independent paths for notice and token access, but accepted this unfinished work.
 
@@ -232,6 +238,6 @@ CORS and form initialization both failed where otherwise reasonable decisions me
 - [Next.js: version skew and deploymentId](https://nextjs.org/docs/app/guides/self-hosting#version-skew)
 - [Next.js: preserving UI state](https://nextjs.org/docs/app/guides/preserving-ui-state)
 - [Next.js: bfcacheId](https://nextjs.org/docs/app/api-reference/functions/use-router#bfcacheid)
-- Related: [Moving reservation drafts to React Hook Form](/en/blog/reservation-form-state) — a caller of the shared form hook
-- Related: [Public and authenticated sitemap API boundaries](/en/blog/sitemap-api-boundaries) — why Cache Components was enabled
-- Related: [Error boundaries that preserve more of the screen](/en/blog/error-boundary-recovery) — URL-opened Drawers and recovery
+- Related: [Moving reservation form state from Zustand to React Hook Form](/en/blog/reservation-form-state) — a caller of the shared form hook
+- Related: [Separating public and authenticated reads in a sitemap](/en/blog/sitemap-api-boundaries) — why Cache Components was enabled
+- Related: [Letting failed sections recover with Error Boundaries](/en/blog/error-boundary-recovery) — URL-opened Drawers and recovery
