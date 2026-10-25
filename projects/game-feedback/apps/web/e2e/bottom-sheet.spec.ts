@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 async function openAccountSheet(page: Page) {
   expect(
     (

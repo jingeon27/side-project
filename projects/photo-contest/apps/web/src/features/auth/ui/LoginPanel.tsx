@@ -1,37 +1,23 @@
 'use client';
 
-import { useId, useTransition } from 'react';
+import { useId } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useMutation } from '@apollo/client/react';
-import { CircleAlert, MessageCircle, RotateCw } from 'lucide-react';
-import { match } from 'ts-pattern';
-
-import { BRIDGE_ERROR_CODE } from '@photo-contest/bridge';
-import { BridgeError } from '@photo-contest/bridge/web';
 
 import { StartAnonymousSessionDocument } from '@/shared/api/generated';
 import { NEXT_PATH_PARAM } from '@/shared/constants/auth';
-import { BACKEND_ROUTES, ROUTES } from '@/shared/constants/routes';
+import { ROUTES } from '@/shared/constants/routes';
 import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
 import { cn } from '@/shared/lib/cn.helper';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
-import { ANALYTICS_EVENT, flushAnalytics, trackEvent } from '@/shared/model/analytics';
+import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
-import { getErrorMessage } from '@/shared/model/error';
-import { toast } from '@/shared/model/toast';
 import { Button } from '@/shared/ui/@core/button';
 import { LegalLinks } from '@/shared/ui/@core/legal-links';
-import { Skeleton } from '@/shared/ui/@core/skeleton';
 
-import { exchangeAppLogin, type TAuthConfig } from '../api/auth-request.helper';
 import { completeLogin } from '../lib/complete-login.helper';
-import { savePendingLogin } from '../lib/login-marker.helper';
-import { retryAuthConfig, useAuthConfig } from '../model/auth-config.store';
 import { PasswordAuthForms } from './PasswordAuthForms';
-
-/** OAuth가 실패하면 API가 `/?loginError=1`로 돌려보낸다. */
-const LOGIN_ERROR_PARAM = 'loginError';
 
 interface ILoginPanelProps {
   /** 로그인 뒤 돌아갈 경로. 없으면 주소의 `?next=`(proxy가 붙인 원래 경로), 그것도 없으면 홈 */
@@ -40,13 +26,6 @@ interface ILoginPanelProps {
   allowAnonymous?: boolean;
   continuingAnonymously?: boolean;
 }
-
-type TSocialProvider = 'google' | 'kakao';
-
-const SOCIAL_LOGIN_FAILED = '소셜 로그인에 실패했습니다. 다시 시도해 주세요.';
-
-const isCancelled = (error: unknown) =>
-  error instanceof BridgeError && error.code === BRIDGE_ERROR_CODE.Cancelled;
 
 function AnonymousStartButton({ nextPath, continuing = false }: { nextPath: string; continuing?: boolean }) {
   const bridge = useBridge();
@@ -80,73 +59,6 @@ function AnonymousStartButton({ nextPath, continuing = false }: { nextPath: stri
   );
 }
 
-/**
- * Google·카카오 로그인. 앱 안이면 시스템 브라우저 로그인(auth.socialLogin)으로 받은 코드를 WebView 쿠키로 바꾸고,
- * 브라우저면 API의 OAuth 시작 주소로 문서를 옮긴다. 사용자가 앱 로그인 창을 닫으면 조용히 머문다.
- */
-function LoginMethods({ config, nextPath }: { config: TAuthConfig; nextPath: string }) {
-  const bridge = useBridge();
-  const [isPending, startTransition] = useTransition();
-
-  const handleSocialLogin = (provider: TSocialProvider) =>
-    startTransition(async () => {
-      trackEvent(ANALYTICS_EVENT.LoginStarted, { provider });
-      if (bridge?.supports('auth.socialLogin')) {
-        try {
-          await exchangeAppLogin(await bridge.request('auth.socialLogin', { provider }));
-        } catch (error) {
-          if (!isCancelled(error)) toast.error(getErrorMessage(error, SOCIAL_LOGIN_FAILED));
-          return;
-        }
-        completeLogin(bridge, provider, nextPath);
-        return;
-      }
-      // OAuth가 끝나면 API가 홈으로 돌려보낸다. 다음 문서가 표시를 보고 nextPath로 옮긴다.
-      savePendingLogin({ method: provider, next: nextPath });
-      await flushAnalytics();
-      navigateDocument(BACKEND_ROUTES.AUTH_PROVIDER(provider));
-    });
-
-  return (
-    <div className="flex flex-col gap-4">
-      {config.google || config.kakao ? (
-        <div className="flex flex-col gap-2">
-          {config.kakao ? (
-            <Button
-              variant="accent"
-              fullWidth
-              className="bg-kakao"
-              disabled={isPending}
-              onClick={() => handleSocialLogin('kakao')}
-            >
-              <MessageCircle aria-hidden className="size-5 fill-current" />
-              카카오로 계속하기
-            </Button>
-          ) : null}
-          {config.google ? (
-            <Button
-              variant="secondary"
-              size="lg"
-              fullWidth
-              disabled={isPending}
-              onClick={() => handleSocialLogin('google')}
-            >
-              <span aria-hidden className="text-title text-brand">
-                G
-              </span>
-              Google로 계속하기
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * 로그인 패널(홈, 세션이 끝난 멤버 화면, 초대 화면). 앱 안에서는 소셜 로그인을 앱의 시스템 브라우저로 처리한다.
- * 로그인에 성공하면 같은 origin의 상대 경로(next)로만 돌아간다.
- */
 export function LoginPanel({
   nextPath,
   className,
@@ -156,8 +68,6 @@ export function LoginPanel({
   const headingId = useId();
   const searchParams = useSearchParams();
   const next = getSafeNextPath(nextPath ?? searchParams.get(NEXT_PATH_PARAM));
-  const loginFailed = searchParams.has(LOGIN_ERROR_PARAM);
-  const authConfig = useAuthConfig();
 
   return (
     <section
@@ -176,33 +86,6 @@ export function LoginPanel({
       </div>
       {allowAnonymous ? <AnonymousStartButton nextPath={next} continuing={continuingAnonymously} /> : null}
       <PasswordAuthForms nextPath={next} />
-      {loginFailed ? (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-control bg-danger-soft p-3 text-label text-danger"
-        >
-          <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
-          소셜 로그인에 실패했습니다. 다시 시도해 주세요.
-        </p>
-      ) : null}
-      {match(authConfig)
-        .with({ status: 'loading' }, () => (
-          <div role="status" aria-label="로그인 방법을 불러오는 중" className="flex flex-col gap-2">
-            <Skeleton className="h-cta w-full" />
-            <Skeleton className="h-cta w-full" />
-          </div>
-        ))
-        .with({ status: 'failed' }, () => (
-          <div role="alert" className="flex flex-col items-start gap-2 rounded-control bg-sunken p-3">
-            <p className="text-body text-ink">로그인 방법을 불러오지 못했어요.</p>
-            <Button variant="secondary" size="sm" onClick={() => retryAuthConfig()}>
-              <RotateCw aria-hidden className="size-4" />
-              다시 시도
-            </Button>
-          </div>
-        ))
-        .with({ status: 'ready' }, ({ config }) => <LoginMethods config={config} nextPath={next} />)
-        .exhaustive()}
       <div className="border-t border-line pt-3">
         <p className="text-caption text-muted">서비스 이용에 관한 안내를 확인해 주세요.</p>
         <LegalLinks />

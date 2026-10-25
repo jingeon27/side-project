@@ -9,8 +9,8 @@ export default defineConfig({
   testMatch: '**/test-token-chat.spec.ts',
   testIgnore: [],
   outputDir: '.e2e-build/test-auth-results',
-  webServer: baseConfig.webServer.map((server) => ({
+  webServer: baseConfig.webServer.map((server, index) => ({
     ...server,
-    env: { ...server.env, GF_DEMO_MODE: 'false', GF_TEST_AUTH_ENABLED: 'true' },
+    ...(index === 0 ? { command: `${server.command} --no-demo` } : {}),
   })),
 });

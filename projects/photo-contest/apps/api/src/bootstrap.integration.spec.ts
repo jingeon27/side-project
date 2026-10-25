@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../test/support/app';
 
@@ -10,7 +10,7 @@ const UNREADABLE_BODY = { message: '요청 본문을 읽을 수 없습니다.' }
 /** 상태를 바꾸는 모든 엔드포인트. 본문은 Origin이 맞았다면 처리됐을 값이다. */
 const MUTATING_ENDPOINTS: Array<{ path: string; body?: Record<string, unknown> }> = [
   { path: '/graphql', body: { query: 'mutation { createGroup(name: "출처 검사 그룹") { id } }' } },
-  { path: '/auth/dev', body: { nickname: '출처-외부인' } },
+  { path: '/testing/users', body: { nickname: '출처-외부인' } },
   { path: '/auth/logout' },
   { path: '/auth/app/exchange', body: { code: 'code', verifier: 'v'.repeat(43) } },
   { path: '/uploads/some-upload-token' },
@@ -113,12 +113,12 @@ describe('HTTP 계약', () => {
     );
 
     it('거절한 요청은 로그인·그룹 생성·로그아웃 어느 것도 처리하지 않아야 한다', async () => {
-      const devLogin = await api
+      const createTestUser = await api
         .http()
-        .post('/auth/dev')
+        .post('/testing/users')
         .set('Origin', 'https://evil.example')
         .send({ nickname: '출처-외부인' });
-      expect(devLogin.headers['set-cookie']).toBeUndefined();
+      expect(createTestUser.headers['set-cookie']).toBeUndefined();
       await api
         .http()
         .post('/graphql')
@@ -206,14 +206,12 @@ describe('HTTP 계약', () => {
 
   describe('Cache-Control', () => {
     it('성공·오류·리다이렉트 모든 응답에 private, no-store를 붙여야 한다', async () => {
-      vi.stubEnv('GOOGLE_CLIENT_ID', 'contract-google-client');
       const responses = {
         health: await api.http().get('/health'),
         appConfig: await api.http().get('/app/config'),
-        authConfig: await api.http().get('/auth/config'),
-        devLogin: await api
+        createTestUser: await api
           .http()
-          .post('/auth/dev')
+          .post('/testing/users')
           .set('Origin', TEST_WEB_ORIGIN)
           .send({ nickname: '계약-캐시' }),
         graphql: await api
@@ -232,15 +230,12 @@ describe('HTTP 계약', () => {
           .post('/graphql')
           .set('Origin', TEST_WEB_ORIGIN)
           .send({ query: '{ unknownField }' }),
-        oauthRedirect: await api.http().get('/auth/google'),
-        oauthCallback: await api.http().get('/auth/google/callback'),
         unsupportedProvider: await api.http().get('/auth/unknown'),
-        forbiddenOrigin: await api.http().post('/auth/dev').send({ nickname: '계약-캐시' }),
+        forbiddenOrigin: await api.http().post('/testing/users').send({ nickname: '계약-캐시' }),
         photoLoggedOut: await api.http().get('/photos/unknown'),
         photoMissing: await api.http().get('/photos/unknown').set('Cookie', user.cookie),
         routeMissing: await api.http().get('/missing-route'),
       };
-      expect(responses.oauthRedirect.status).toBe(302);
       for (const [name, response] of Object.entries(responses))
         expect(response.headers['cache-control'], name).toBe(NO_STORE);
     });
@@ -280,34 +275,6 @@ describe('HTTP 계약', () => {
   });
 
   describe('REST 오류 응답', () => {
-    it('지원하지 않는 provider는 400이어야 한다', async () => {
-      const response = await api.http().get('/auth/unknown');
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: '지원하지 않는 로그인입니다.' });
-    });
-
-    it('client id가 없는 provider는 503이어야 한다', async () => {
-      for (const provider of ['google', 'kakao']) {
-        const response = await api.http().get(`/auth/${provider}`);
-        expect(response.status, provider).toBe(503);
-        expect(response.body, provider).toEqual({ message: '이 소셜 로그인은 아직 설정되지 않았습니다.' });
-      }
-    });
-
-    it('엉터리 앱 로그인 교환은 모두 같은 403이어야 한다', async () => {
-      const bodies = [{}, { code: 'unknown-code', verifier: 'v'.repeat(43) }, { code: 1, verifier: [] }];
-      for (const body of bodies) {
-        const response = await api
-          .http()
-          .post('/auth/app/exchange')
-          .set('Origin', TEST_WEB_ORIGIN)
-          .send(body);
-        expect(response.status, JSON.stringify(body)).toBe(403);
-        expect(response.body).toEqual({ message: '앱 로그인 요청을 확인할 수 없습니다.' });
-        expect(response.headers['set-cookie']).toBeUndefined();
-      }
-    });
-
     it('깨진 JSON은 400, 64KB를 넘는 JSON은 413으로 같은 형식의 오류를 돌려줘야 한다', async () => {
       const broken = await api
         .http()
@@ -342,7 +309,6 @@ describe('HTTP 계약', () => {
       const production = await createTestApp({
         NODE_ENV: 'production',
         WEB_ORIGIN: 'https://web.test',
-        MOBILE_AUTH_CALLBACK_URL: 'https://web.test/app-auth/callback',
       });
       try {
         const response = await production

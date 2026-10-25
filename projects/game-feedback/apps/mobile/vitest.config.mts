@@ -24,7 +24,7 @@ export default defineConfig({
           environment: 'jsdom',
           include: ['src/**/*.{spec,test}.tsx'],
           setupFiles: ['./vitest.setup.ts'],
-          env: { EXPO_PUBLIC_WEB_ORIGIN: 'https://feedback.example' },
+          env: { WEB_ORIGIN: 'https://feedback.example' },
         },
       },
     ],

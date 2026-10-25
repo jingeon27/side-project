@@ -6,9 +6,9 @@ const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
 const { assertProductionConfig } = require('../dist/config/env.js');
 const { sharedDatabaseUrl } = require('../dist/config/shared-instance.js');
 const { PrismaClient } = require('../generated/prisma/index.js');
-if (process.env.NODE_ENV !== 'production' || process.env.DEPLOYMENT_TARGET !== 'shared-instance')
+if (process.env.NODE_ENV !== 'production')
   throw new Error('Shared-instance production configuration is required.');
-assertProductionConfig();
+assertProductionConfig(process.argv[2] === 'migrate');
 const [action] = process.argv.slice(2);
 if (action === 'validate') process.exit(0);
 if (action !== 'migrate') throw new Error('Use validate or migrate.');

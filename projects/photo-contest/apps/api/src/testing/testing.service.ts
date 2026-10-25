@@ -3,9 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
-import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { APP_LOGIN_TICKET_TTL_MS } from '../config/limits';
 import { PHASE, type TPhase } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
 
@@ -49,17 +47,4 @@ export class TestingService {
   }
 
   /** 외부 provider의 성공 콜백만 대체한다. 웹의 PKCE 교환·세션 발급은 실제 인증 API가 처리한다. */
-  async issueAppLoginTicket(nickname: string, challenge: string) {
-    const user = await this.createUser(nickname);
-    const code = randomToken();
-    await this.db.appLoginTicket.create({
-      data: {
-        codeHash: sha256Hex(code),
-        userId: user.id,
-        challenge,
-        expiresAt: new Date(Date.now() + APP_LOGIN_TICKET_TTL_MS),
-      },
-    });
-    return { code, nickname: user.nickname };
-  }
 }

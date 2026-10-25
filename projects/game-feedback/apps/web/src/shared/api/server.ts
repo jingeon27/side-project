@@ -5,11 +5,13 @@ import { isIP } from 'node:net';
 
 import { cookies, headers } from 'next/headers';
 
+import { readRuntimeSecret } from '../config/runtime-secret.server';
+
 const SESSION_COOKIE = 'gamefeedback_session';
 const INTERNAL_CLIENT = 'internal';
 
 function apiOptions() {
-  const url = new URL(process.env.GAME_FEEDBACK_API_URL || process.env.API_ORIGIN || 'http://127.0.0.1:4300');
+  const url = new URL(process.env.GAME_FEEDBACK_API_URL || 'http://127.0.0.1:4300');
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.username ||
@@ -36,7 +38,7 @@ function epochMilliseconds() {
  * `apps/api/src/common/http/forwarded-client.ts` verifies the same derivation within a 60-second window.
  */
 export function forwardedClientHeaders(client: string, now = epochMilliseconds()): Record<string, string> {
-  const secret = process.env.GF_CACHE_REVALIDATION_SECRET;
+  const secret = readRuntimeSecret();
   if (!secret || secret.length < 32) return {};
   const key = createHmac('sha256', secret).update('game-feedback:forwarded-client:v1').digest();
   const timestamp = String(Math.floor(now / 1000));

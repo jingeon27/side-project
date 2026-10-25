@@ -1,13 +1,11 @@
-import { createHash, randomBytes } from 'node:crypto';
-
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi } from '../../test/support/app';
 
 describe('테스트 fixture API', () => {
   let api: ITestApi;
   beforeAll(async () => {
-    api = await createTestApp({ NODE_ENV: 'test', ENABLE_TEST_API: 'true' });
+    api = await createTestApp({ NODE_ENV: 'test' });
   });
   afterAll(async () => {
     await api?.close();
@@ -15,19 +13,24 @@ describe('테스트 fixture API', () => {
   const post = (path: string, body: Record<string, unknown>) =>
     api.http().post(path).set('Origin', TEST_WEB_ORIGIN).send(body);
 
-  it('테스트 설정이 없거나 개발·운영 모드면 fixture 요청을 404로 거절해야 한다', async () => {
-    for (const env of ['development', 'production', 'test']) {
-      vi.stubEnv('NODE_ENV', env);
-      vi.stubEnv('ENABLE_TEST_API', env === 'test' ? 'false' : 'true');
-      expect((await post('/testing/users', { nickname: '열리지 않아야 함' })).status).toBe(404);
+  it('테스트 모드여도 명시적으로 등록하지 않은 fixture 경로는 열리지 않는다', async () => {
+    const normal = await createTestApp({}, { testFixtures: false });
+    try {
+      const before = await normal.db.user.count();
+      expect(
+        (await normal.http().post('/testing/users').set('Origin', TEST_WEB_ORIGIN).send({ nickname: '차단' }))
+          .status,
+      ).toBe(404);
+      expect(await normal.db.user.count()).toBe(before);
+    } finally {
+      await normal.close();
     }
   });
 
-  it('운영·개발에서 ENABLE_TEST_API=true면 서버가 시작되지 않아야 한다', async () => {
-    for (const NODE_ENV of ['production', 'development'])
-      await expect(createTestApp({ NODE_ENV, ENABLE_TEST_API: 'true' })).rejects.toThrow(
-        'ENABLE_TEST_API requires NODE_ENV=test',
-      );
+  it('테스트 모드 밖에서는 fixture를 명시적으로 요청해도 시작하지 않는다', async () => {
+    await expect(createTestApp({ NODE_ENV: 'development' }, { testFixtures: true })).rejects.toThrow(
+      'Test fixtures require NODE_ENV=test.',
+    );
   });
 
   it('다른 출처의 요청과 잘못된 입력을 거절해야 한다', async () => {
@@ -78,25 +81,5 @@ describe('테스트 fixture API', () => {
       );
       expect(data.contest.phase).toBe(phase);
     }
-  });
-
-  it('외부 성공 콜백의 티켓을 만들되 PKCE·재사용 방지는 실제 인증 API로 확인해야 한다', async () => {
-    const verifier = randomBytes(32).toString('base64url');
-    const challenge = createHash('sha256').update(verifier).digest('base64url');
-    const ticket = await post('/testing/app-login-tickets', { nickname: 'fixture-소셜', challenge });
-    expect(ticket.status).toBe(201);
-    expect(ticket.headers['set-cookie']).toBeUndefined();
-    expect(
-      (
-        await post('/auth/app/exchange', {
-          code: ticket.body.code,
-          verifier: randomBytes(32).toString('base64url'),
-        })
-      ).status,
-    ).toBe(403);
-    const accepted = await post('/auth/app/exchange', { code: ticket.body.code, verifier });
-    expect(accepted.status).toBe(200);
-    expect(accepted.headers['set-cookie']?.[0]).toContain('HttpOnly');
-    expect((await post('/auth/app/exchange', { code: ticket.body.code, verifier })).status).toBe(403);
   });
 });

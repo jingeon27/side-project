@@ -8,7 +8,7 @@ const { grantOperatorRole, issueOperatorSession } = require('../dist/admin/opera
 
 const [command, userId] = process.argv.slice(2);
 const usage = 'Usage: operator.mjs users | grant <user-id> | session <user-id>';
-if (process.env.NODE_ENV !== 'production') throw new Error('Operator CLI requires NODE_ENV=production.');
+if (process.env.ENVIRONMENT !== 'production') throw new Error('Operator CLI requires NODE_ENV=production.');
 const commands = {
   async users(db) {
     const users = await db.user.findMany({

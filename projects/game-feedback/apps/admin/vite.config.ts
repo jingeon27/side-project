@@ -30,52 +30,44 @@ export function localAdminGuard(port: number) {
     next();
   };
 }
-function localAdmin(port: number): Plugin {
-  const guard = localAdminGuard(port);
+function localAdmin(): Plugin {
   return {
     name: 'local-admin-origin',
     configureServer: (server) => {
-      server.middlewares.use(guard);
+      server.middlewares.use(localAdminGuard(server.config.server.port ?? 3303));
     },
     configurePreviewServer: (server) => {
-      server.middlewares.use(guard);
+      server.middlewares.use(localAdminGuard(server.config.preview.port ?? 3303));
     },
   };
 }
-/** 운영 토큰은 프록시 헤더에만 쓰고 브라우저에는 운영 모드 여부만 넘긴다. */
 export function adminServerSettings(env: TAdminEnv) {
-  const port = Number(env.GF_ADMIN_PORT ?? 3303);
-  const operatorToken = env.GF_ADMIN_ACCESS_TOKEN;
-  if (operatorToken && !/^[A-Za-z0-9_-]{43}$/.test(operatorToken))
-    throw new Error('GF_ADMIN_ACCESS_TOKEN is invalid.');
-  if (operatorToken && !env.GF_ADMIN_WEB_ORIGIN?.startsWith('https://'))
-    throw new Error('Operator mode requires an HTTPS GF_ADMIN_WEB_ORIGIN.');
-  const target = new URL(env.GF_ADMIN_API_ORIGIN ?? 'http://localhost:4300');
+  const target = new URL(env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:4300');
   if (
     !['localhost', '127.0.0.1'].includes(target.hostname) ||
     target.protocol !== 'http:' ||
     target.pathname !== '/' ||
     target.username ||
-    target.password
+    target.password ||
+    target.search ||
+    target.hash
   )
     throw new Error('Admin requires the local Game Feedback API.');
   const proxy: Record<string, ProxyOptions> = {
     '/api': {
       target: target.origin,
       changeOrigin: true,
-      headers: {
-        Origin: env.GF_ADMIN_WEB_ORIGIN ?? 'http://localhost:3300',
-        ...(operatorToken ? { Authorization: `Bearer ${operatorToken}` } : {}),
-      },
+      headers: { Origin: env.WEB_ORIGIN ?? 'http://localhost:3300' },
     },
   };
-  return { port, operator: Boolean(operatorToken), proxy };
+  return { port: 3303, proxy };
 }
 export default defineConfig(({ mode }) => {
-  const { port, operator, proxy } = adminServerSettings({
-    ...loadEnv(mode, process.cwd(), ''),
+  const env = {
+    ...loadEnv(mode, fileURLToPath(new URL('../../', import.meta.url)), ''),
     ...process.env,
-  });
+  };
+  const { port, proxy } = adminServerSettings(env);
   const server = {
     host: '127.0.0.1',
     port,
@@ -85,9 +77,9 @@ export default defineConfig(({ mode }) => {
     proxy,
   };
   return {
-    // Only the mode flag reaches the browser; the credential stays in this local proxy.
-    define: { 'import.meta.env.VITE_GF_ADMIN_OPERATOR': JSON.stringify(operator ? 'true' : 'false') },
-    plugins: [react(), localAdmin(port)],
+    // 브라우저에는 실행 환경만 전달한다.
+    define: { 'import.meta.env.ENVIRONMENT': JSON.stringify(env.ENVIRONMENT ?? 'development') },
+    plugins: [react(), localAdmin()],
     optimizeDeps: { include: ['@game-feedback/contracts'] },
     build: { commonjsOptions: { include: [/node_modules/, /packages\/contracts\/dist/] } },
     resolve: {

@@ -22,17 +22,19 @@ const endpointPort = () => {
 
 const { startFakeS3 } = await import('../src/fake-s3.ts');
 const s3 = await startFakeS3({
-  directory: process.env.S3_FAKE_DIR ?? `${projectRoot}.data/s3`,
+  directory: `${projectRoot}.data/s3`,
   bucket: required('S3_BUCKET'),
   region: process.env.S3_REGION || 'us-east-1',
   accessKeyId: required('AWS_ACCESS_KEY_ID'),
   secretAccessKey: required('AWS_SECRET_ACCESS_KEY'),
-  corsOrigins: (process.env.S3_FAKE_CORS_ORIGINS ?? process.env.WEB_ORIGIN ?? 'http://localhost:3200')
+  corsOrigins: (process.env.WEB_ORIGIN ?? 'http://localhost:3200')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
-  port: Number(process.env.S3_FAKE_PORT) || endpointPort() || 4210,
-  host: process.env.S3_FAKE_HOST || '127.0.0.1',
+  port: endpointPort() || 4210,
+  host: ['localhost', '127.0.0.1'].includes(URL.parse(process.env.S3_ENDPOINT ?? '')?.hostname ?? 'localhost')
+    ? '127.0.0.1'
+    : '0.0.0.0',
 });
 console.log(`S3 대역 ${s3.bucket} ready on ${s3.endpoint}. Stop with Ctrl+C.`);
 const stop = () => s3.stop().then(() => process.exit(0));

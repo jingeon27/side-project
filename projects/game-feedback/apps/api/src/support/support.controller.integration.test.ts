@@ -12,7 +12,7 @@ import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 
-const target = process.env.TEST_DATABASE_URL;
+const target = process.env.DATABASE_URL;
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 describe.skipIf(!target)('admin support, user reports and bans with isolated PostgreSQL', () => {

@@ -35,13 +35,13 @@ eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저�
 
 인기 목록은 모든 기기에서 순위·64px 사진·내용 순서로 한 줄씩 표시한다. 기존 대회 순위는 사진 아래에 둔다. `/terms`·`/privacy`는 로그인 없이 서버 HTML로 읽을 수 있어야 한다. 운영자·문의처·작성일은 `_pages/legal/@page/model/policy.ts`에서 관리하며, 확인되지 않은 보관·위탁·국외 이전 현황을 확정된 사실로 쓰지 않는다. favicon은 `app/icon.svg` 파일 규약으로 제공한다.
 
-앱 소셜 로그인 콜백은 `/app-auth/callback`(`src/app/app-auth/callback/route.ts`)이다. 앱이 없거나 링크가 검증되지 않아 브라우저에서 열릴 때만 보이며, 요청을 읽지 않고 스크립트·분석·Sentry 없이 "앱에서 계속" 안내만 준다(no-store, `Referrer-Policy: no-referrer`, noindex, 주소창의 코드는 해시 허용 인라인 스크립트로 지운다). Next는 설정 헤더가 있으면 Route Handler의 같은 이름 헤더를 버리므로 `next.config.ts`의 공통 보안 헤더 source에서 이 경로만 뺀다(`next.config.spec.ts`). `/.well-known/apple-app-site-association`·`/.well-known/assetlinks.json`은 `app/`에 점 폴더를 만들지 않고 `next.config.ts` rewrites로 kebab-case 라우트 `app-links/*`에 연결한다. 값은 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`·`MOBILE_ANDROID_SHA256_FINGERPRINTS`(`src/shared/lib/app-links.helper.ts`)이고 운영에서 빠지면 `instrumentation.ts`가 첫 요청부터 실패시킨다(개발·테스트는 자리표시자). AASA `applinks`는 콜백 경로만 앱으로 연다. 운영 빌드 서버를 띄우는 e2e·캐시 검증은 `e2e/support/env.ts`의 `E2E_APP_LINK_ENV`를 넣는다.
+앱 링크 검증 파일과 별도 인증서 설정은 제거했다. 기존 `/app-auth/callback`은 코드가 노출되지 않는 안내 응답만 유지한다.
 
 ## 검사
 
 - `codegen` → `typecheck` → `lint` → `test`(unit/UI) → `test:api`(생성 문서와 실제 API) → `test:e2e`(Playwright).
 - API 레인은 4321, 웹 e2e는 3320/4320이다. 각 테스트 API는 빈 포트의 test-kit S3 대역을 함께 띄운다(브라우저 업로드 실패는 `e2e/support/photos.ts`의 `isStorageUpload`로 가로챈다). 테스트용 사용자·단계·티켓은 /testing API로 준비하고 DB를 직접 수정하지 않는다.
-- `build`는 실제 프로덕션 빌드를 확인한다. 개발 서버와 함께 검사하면 NEXT_DIST_DIR을 따로 지정한다.
+- 테스트 빌드는 루트 설정으로 격리한 출력 경로를 사용하며 사용자 개발 서버와 공유하지 않는다.
 - 공통 primitive 변경은 `@side/design-system`의 검사와 이 앱의 기존 UI 테스트를 함께 확인한다. 테스트 러너·의존성은 해당 패키지와 앱이 각각 소유한다.
 - 운영은 monorepo root를 tracing root로 둔 standalone 서버와 static/public 파일을 사용한다. Docker 검증은 playwright.deploy.config.ts의 test:deploy이며 격리한 HTTPS localhost에서만 실행한다. 배포 스크립트의 외부 CLI 경계·복구·잠금은 test/deployment의 Vitest로 검증한다.
 - Playwright는 Pixel 7·iPhone 15(WebKit)·데스크톱·가짜 앱 프로젝트를 가진다. 외부 OS/OAuth만 대체하고 pageerror를 검사한다.

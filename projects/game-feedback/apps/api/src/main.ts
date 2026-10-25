@@ -6,7 +6,11 @@ async function main() {
   initSentry();
   validateProductionEnvironment(process.env);
   const { HOST, PORT } = resolveListenConfig(process.env);
-  const app = await createApp();
+  const demoMode = process.argv.includes('--demo');
+  const app = await createApp({
+    demoMode,
+    testAuthEnabled: demoMode || process.argv.includes('--test-auth'),
+  });
   app.enableShutdownHooks();
   await app.listen(PORT, HOST);
   console.log(`Game Feedback API listening on port ${PORT}.`);

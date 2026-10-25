@@ -39,7 +39,7 @@ describe('account deletion keeps other users’ replies unchanged', () => {
   }
 
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const url = new URL(process.env.DATABASE_URL ?? '');
     schema = `gf_test_account_deletion_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');

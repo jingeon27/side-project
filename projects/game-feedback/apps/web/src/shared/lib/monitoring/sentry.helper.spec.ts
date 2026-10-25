@@ -11,11 +11,8 @@ import {
 
 describe('웹 Sentry 수집 범위', () => {
   it('uses the runtime release or the release embedded in the browser build', () => {
-    expect(resolveSentryRelease({ SENTRY_RELEASE: ' server ', NEXT_PUBLIC_SENTRY_RELEASE: 'build' })).toBe(
-      'server',
-    );
-    expect(resolveSentryRelease({ SENTRY_RELEASE: '', NEXT_PUBLIC_SENTRY_RELEASE: ' build ' })).toBe('build');
-    expect(resolveSentryRelease({ SENTRY_RELEASE: ' ' })).toBeUndefined();
+    expect(resolveSentryRelease({ SENTRY_RELEASE: ' server ' })).toBe('server');
+    expect(resolveSentryRelease({ SENTRY_RELEASE: '' })).toBeUndefined();
   });
   it('브라우저에는 공개 DSN만 사용하고 서버 DSN을 우선해야 한다', () => {
     expect(resolveClientSentryDsn({ SENTRY_DSN: 'private' })).toBeNull();

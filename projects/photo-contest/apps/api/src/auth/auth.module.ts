@@ -1,10 +1,9 @@
 import { Global, Module } from '@nestjs/common';
 
 import { AnonymousAuthService } from './anonymous-auth.service';
-import { DevelopmentLoginGuard, PasswordAttemptGuard } from './auth-attempt.guard';
+import { PasswordAttemptGuard } from './auth-attempt.guard';
 import { AuthController } from './auth.controller';
 import { AuthResolver } from './auth.resolver';
-import { AuthService } from './auth.service';
 import { PasswordAuthService } from './password-auth.service';
 import { SessionService } from './session.service';
 import { UserResolver } from './user.resolver';
@@ -14,9 +13,7 @@ import { UserResolver } from './user.resolver';
 @Module({
   providers: [
     PasswordAttemptGuard,
-    DevelopmentLoginGuard,
     SessionService,
-    AuthService,
     PasswordAuthService,
     AnonymousAuthService,
     AuthResolver,

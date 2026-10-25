@@ -12,8 +12,8 @@ const { validateProductionEnvironment } = require('../dist/config/production.con
 const args = process.argv.slice(2);
 if (args.some((arg) => arg !== '--apply' && !arg.startsWith('--source-directory=')))
   throw new Error('Usage: migrate-media.mjs [--apply] [--source-directory=/absolute/path]');
-if (process.env.NODE_ENV === 'production') validateProductionEnvironment(process.env);
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.ENVIRONMENT === 'production') validateProductionEnvironment(process.env);
+if (process.env.ENVIRONMENT !== 'production') {
   const { environment } = await import('../../../scripts/env.mjs');
   Object.assign(process.env, environment());
   guardDatabaseUrl(process.env.DATABASE_URL);

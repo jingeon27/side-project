@@ -5,7 +5,7 @@ import type { WebViewProps } from 'react-native-webview';
 
 import { buildBootstrapScript, buildDispatchScript } from '@game-feedback/bridge';
 
-import { NativeHost, nativeLogin } from '@/features/bridge';
+import { NativeHost } from '@/features/bridge';
 import { decideNavigation, decideSubframeNavigation, isSameOrigin, toWebPath } from '@/features/navigation';
 import { APP_VERSION, WEB_ORIGIN } from '@/shared/config/env';
 import {
@@ -34,7 +34,6 @@ export function useWebShell() {
         origin: WEB_ORIGIN,
         send: (message) => channel.inject(buildDispatchScript(message)),
         ...(supportsNativePush() ? { getPushRegistration, setPushBadge, openPushSettings } : {}),
-        login: (provider) => nativeLogin(WEB_ORIGIN, provider),
         onLocation: (path) => {
           channel.rememberUrl(`${WEB_ORIGIN}${path}`);
         },

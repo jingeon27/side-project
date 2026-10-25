@@ -2,7 +2,7 @@ import { unstable_getResponseFromNextConfig } from 'next/experimental/testing/se
 
 import { describe, expect, it } from 'vitest';
 
-import nextConfig from './next.config.mjs';
+import nextConfig from './next.config';
 
 const respond = (url: string) => unstable_getResponseFromNextConfig({ url, nextConfig });
 
@@ -29,14 +29,5 @@ describe('next.config app links', () => {
       expect(headers.get('content-security-policy'), url).toBeNull();
       expect(headers.get('referrer-policy'), url).toBeNull();
     }
-  });
-
-  it('rewrites the standard /.well-known paths to the kebab-case App Link routes', async () => {
-    const association = await respond('https://game.example/.well-known/apple-app-site-association');
-    expect(association.headers.get('x-middleware-rewrite') ?? '').toContain(
-      '/app-links/apple-app-site-association',
-    );
-    const assetLinks = await respond('https://game.example/.well-known/assetlinks.json');
-    expect(assetLinks.headers.get('x-middleware-rewrite') ?? '').toContain('/app-links/assetlinks');
   });
 });

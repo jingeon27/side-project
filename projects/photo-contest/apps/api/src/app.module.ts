@@ -20,7 +20,6 @@ import { PushModule } from './push/push.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { StorageModule } from './storage/storage.module';
 import { SubmissionModule } from './submission/submission.module';
-import { TestingModule } from './testing/testing.module';
 import { VoteModule } from './vote/vote.module';
 
 @Module({
@@ -44,7 +43,6 @@ import { VoteModule } from './vote/vote.module';
     ModerationModule,
     MaintenanceModule,
     HealthModule,
-    TestingModule,
   ],
   providers: [DateTimeScalar],
 })

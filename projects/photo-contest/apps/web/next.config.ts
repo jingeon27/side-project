@@ -31,16 +31,22 @@ const SECURITY_HEADERS = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
 ];
 
+const webUrl = new URL(process.env.WEB_ORIGIN || 'http://localhost:3200');
+const isolatedWebPort =
+  ['localhost', '127.0.0.1'].includes(webUrl.hostname) &&
+  Number(webUrl.port) >= 3300 &&
+  Number(webUrl.port) <= 3399
+    ? webUrl.port
+    : undefined;
+
 const config: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: resolve(import.meta.dirname, '../../../..'),
   poweredByHeader: false,
   // Next 16 dev 서버는 distDir마다 잠금을 건다. e2e는 다른 distDir(.next/e2e)로 띄워 사용자의 dev 서버와 겹치지 않게 한다.
-  distDir: process.env.NEXT_DIST_DIR || '.next',
+  distDir: isolatedWebPort ? `.next/test-${isolatedWebPort}` : '.next',
   // 격리 API로 다시 실행하는 e2e는 이전 컴파일 상태를 이어받지 않는다.
-  ...(process.env.NEXT_DIST_DIR?.startsWith('.next/e2e')
-    ? { experimental: { turbopackFileSystemCacheForDev: false } }
-    : {}),
+  ...(process.env.NODE_ENV === 'test' ? { experimental: { turbopackFileSystemCacheForDev: false } } : {}),
   // 워크스페이스 패키지는 TypeScript 소스를 그대로 내보낸다.
   transpilePackages: ['@photo-contest/bridge', '@side/design-system'],
   async headers() {
@@ -52,12 +58,6 @@ const config: NextConfig = {
     return [
       // 브라우저·앱 WebView는 같은 origin의 /backend/*로만 API를 부른다(세션 쿠키가 first-party로 붙는다).
       { source: '/backend/:path*', destination: `${process.env.API_URL || 'http://127.0.0.1:4200'}/:path*` },
-      // 표준 경로는 바꿀 수 없어 app/에 점 폴더를 만들지 않고 kebab-case 라우트로 보낸다(앱 로그인 App Link·Universal Link 검증).
-      {
-        source: '/.well-known/apple-app-site-association',
-        destination: '/app-links/apple-app-site-association',
-      },
-      { source: '/.well-known/assetlinks.json', destination: '/app-links/assetlinks' },
     ];
   },
 };

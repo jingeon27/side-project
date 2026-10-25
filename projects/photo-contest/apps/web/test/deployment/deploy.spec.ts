@@ -28,23 +28,27 @@ let root: string;
 const ENV = `DOMAIN=unit.example\nWEB_ORIGIN=https://unit.example\nACME_EMAIL=unit@example.com\nPOSTGRES_PASSWORD=${'f'.repeat(64)}\nS3_BUCKET=unit-media\nS3_ENDPOINT=https://storage.unit.example\nAWS_ACCESS_KEY_ID=unit-access\nAWS_SECRET_ACCESS_KEY=private_fixture_only\n`;
 
 function run(script: string, args: string[] = [], failure = '') {
+  writeFileSync(
+    `${root}/state.json`,
+    JSON.stringify({
+      ...JSON.parse(readFileSync(`${root}/state.json`, 'utf8')),
+      broken: newRevision,
+      failure,
+    }),
+  );
   return spawnSync('bash', [join(projectRoot, 'deploy/scripts', script), ...args], {
     encoding: 'utf8',
     env: {
       ...process.env,
       PATH: `${root}/bin:${process.env.PATH}`,
-      NODE_BIN: process.execPath,
-      DOCKER_FIXTURE: fixture,
       PHOTO_CONTEST_DEPLOY_ROOT: root,
-      DEPLOY_FAKE_STATE: `${root}/state.json`,
-      DEPLOY_FAKE_BROKEN: newRevision,
-      DEPLOY_FAKE_FAILURE: failure,
     },
   });
 }
 
 function state(): { active: string; migrated: string[] } {
-  return JSON.parse(readFileSync(`${root}/state.json`, 'utf8'));
+  const { active, migrated } = JSON.parse(readFileSync(`${root}/state.json`, 'utf8'));
+  return { active, migrated };
 }
 
 beforeEach(() => {
@@ -65,7 +69,7 @@ beforeEach(() => {
   for (const tool of ['docker', 'curl', 'sleep'])
     writeFileSync(
       `${root}/bin/${tool}`,
-      `#!/bin/sh\nexport DEPLOY_FAKE_TOOL=${tool}\nexec "$NODE_BIN" "$DOCKER_FIXTURE" "$@"\n`,
+      `#!/bin/sh\nexec ${[process.execPath, fixture, `${root}/state.json`, tool].map((part) => `'${part.replaceAll("'", "'\\''")}'`).join(' ')} "$@"\n`,
       { mode: 0o700 },
     );
   // macOS에도 VM의 flock과 같은 커널 파일 잠금을 제공한다.

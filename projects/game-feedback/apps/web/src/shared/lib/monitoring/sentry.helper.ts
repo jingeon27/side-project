@@ -27,7 +27,7 @@ export function resolveServerSentryDsn(env: TEnv) {
 }
 
 export function resolveSentryRelease(env: TEnv) {
-  return env.SENTRY_RELEASE?.trim() || env.NEXT_PUBLIC_SENTRY_RELEASE?.trim() || undefined;
+  return env.SENTRY_RELEASE?.trim() || undefined;
 }
 
 /** 오류를 앱 WebView와 브라우저로 나눠 보려는 태그. 앱 버전은 앱 안일 때만 붙인다. */

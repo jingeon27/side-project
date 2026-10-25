@@ -37,7 +37,7 @@ export function clientAddressKey(address: string | undefined): string {
 }
 
 /**
- * 사용자 요청 제한에 쓸 주소. 프록시를 신뢰하는데(TRUST_PROXY_HOPS>0) 전달 헤더가 없으면 null이다.
+ * 사용자 요청 제한에 쓸 주소. 운영 프록시를 신뢰하는데 전달 헤더가 없으면 null이다.
  * Caddy는 늘 X-Forwarded-For를 붙이고 웹의 /backend/graphql 프록시와 SSR도 그 값을 넘기므로,
  * 헤더 없는 요청은 같은 내부망의 웹 서버가 보낸 공개 캐시 조회·헬스 체크다. 이를 웹 컨테이너 주소 하나로 묶어
  * 제한하면 사용자 한 명이 사이트 전체의 SSR을 막을 수 있다.

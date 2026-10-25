@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = process.env.GF_E2E_ORIGIN ?? 'http://127.0.0.1:3301';
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 // 브라우저가 실제 디코딩하므로 청크 CRC까지 올바른 1×1 PNG여야 한다.
 const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=',

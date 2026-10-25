@@ -11,7 +11,7 @@ export const testDatabaseUrl =
   'postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test?schema=public';
 
 export function resolveEnvironment(...sources) {
-  const value = sources.map((source) => source.ENVIRONMENT || source.NODE_ENV).find(Boolean) || 'development';
+  const value = sources.map((source) => source.ENVIRONMENT).find(Boolean) || 'development';
   if (!['development', 'test', 'production'].includes(value))
     throw new Error('ENVIRONMENT must be development, test or production.');
   return { ENVIRONMENT: value, NODE_ENV: value };
@@ -26,13 +26,9 @@ export function environment(overrides = {}) {
     Object.assign(fileEnv, parseEnv(readFileSync(envFile, 'utf8')));
   }
   const merged = {
-    PORT: '4300',
     WEB_ORIGIN: 'http://localhost:3300',
-    API_ORIGIN: 'http://localhost:4300',
     GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4300',
     DATABASE_URL: developmentDatabaseUrl,
-    TEST_DATABASE_URL: testDatabaseUrl,
-    GF_DEMO_MODE: 'false',
     ...fileEnv,
     ...process.env,
     ...overrides,

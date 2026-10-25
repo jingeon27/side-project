@@ -11,7 +11,7 @@ describe('운영 프록시의 가입 제한', () => {
   });
 
   it('프록시를 신뢰하지 않으면 전달 헤더를 바꿔도 같은 요청 주소의 제한을 유지해야 한다', async () => {
-    api = await createTestApp({ TRUST_PROXY_HOPS: '0' });
+    api = await createTestApp();
     await api.db.authAttempt.deleteMany();
     for (let index = 0; index <= AUTH_REGISTER_IP_LIMIT; index++) {
       const response = await api
@@ -30,7 +30,7 @@ describe('운영 프록시의 가입 제한', () => {
   });
 
   it('Caddy 한 단계를 신뢰하면 멤버마다 제한을 분리하고 더 먼 전달 주소는 무시해야 한다', async () => {
-    api = await createTestApp({ TRUST_PROXY_HOPS: '1' });
+    api = await createTestApp({}, { trustProxy: 1 });
     await api.db.authAttempt.deleteMany();
     for (let index = 0; index <= AUTH_REGISTER_IP_LIMIT; index++) {
       const response = await api

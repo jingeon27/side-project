@@ -12,7 +12,7 @@ import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+const testDatabaseUrl = process.env.DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
 const requesterId = 'sample-user-0';

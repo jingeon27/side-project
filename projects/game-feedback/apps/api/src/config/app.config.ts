@@ -21,7 +21,7 @@ export interface AppOptions {
   forwardedClientSecret?: string;
   databaseUrl?: string;
   webOrigin?: string;
-  /** 앱 로그인 https 콜백. 없으면 MOBILE_AUTH_CALLBACK_URL, 개발·테스트는 WEB_ORIGIN/app-auth/callback */
+  /** 테스트에서 검증할 앱 로그인 콜백. 기본은 WEB_ORIGIN/app-auth/callback이다. */
   appAuthCallbackUrl?: string;
   demoMode?: boolean;
   testAuthEnabled?: boolean;
@@ -53,22 +53,17 @@ export interface AppConfig {
 }
 
 export function resolveAppConfig(options: AppOptions): AppConfig {
-  const production = process.env.NODE_ENV === 'production';
-  const demoMode = options.demoMode ?? process.env.GF_DEMO_MODE === 'true';
-  const testAuthEnabled =
-    options.testAuthEnabled ?? (demoMode || process.env.GF_TEST_AUTH_ENABLED === 'true');
-  if (production && demoMode) throw new Error('GF_DEMO_MODE is forbidden in production.');
-  if (production && testAuthEnabled) throw new Error('GF_TEST_AUTH_ENABLED is forbidden in production.');
+  const production = process.env.ENVIRONMENT === 'production';
+  const demoMode = options.demoMode ?? false;
+  const testAuthEnabled = options.testAuthEnabled ?? demoMode;
+  if (production && demoMode) throw new Error('Demo authentication is forbidden in production.');
+  if (production && testAuthEnabled) throw new Error('Test authentication is forbidden in production.');
   const webOrigin = options.webOrigin ?? process.env.WEB_ORIGIN ?? 'http://localhost:3300';
   if (new URL(webOrigin).origin !== webOrigin)
     throw new Error('WEB_ORIGIN must be an origin without a path.');
   if (production && !webOrigin.startsWith('https://'))
     throw new Error('Production WEB_ORIGIN must use HTTPS.');
-  const appAuthCallbackUrl = resolveAppAuthCallbackUrl(
-    options.appAuthCallbackUrl ?? process.env.MOBILE_AUTH_CALLBACK_URL,
-    webOrigin,
-    production,
-  );
+  const appAuthCallbackUrl = resolveAppAuthCallbackUrl(options.appAuthCallbackUrl, webOrigin, production);
 
   const identityProviders = resolveIdentityProviders(
     webOrigin,
@@ -79,7 +74,7 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
   const forwardedClientSecret = options.forwardedClientSecret ?? cacheRevalidation?.secret;
   return {
     mobilePush: {
-      enabled: process.env.NODE_ENV !== 'test' && process.env.PUSH_NOTIFICATIONS_ENABLED === 'true',
+      enabled: process.env.ENVIRONMENT !== 'test' && process.env.PUSH_NOTIFICATIONS_ENABLED === 'true',
       accessToken: process.env.EXPO_ACCESS_TOKEN,
     },
     cacheRevalidation,

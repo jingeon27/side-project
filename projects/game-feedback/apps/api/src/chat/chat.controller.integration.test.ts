@@ -15,7 +15,7 @@ import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
 import { presignedUpload } from '../testing/media-upload';
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+const testDatabaseUrl = process.env.DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
 type Actor = { id: string; agent: ReturnType<typeof supertest.agent>; cookie: string };

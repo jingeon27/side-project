@@ -8,12 +8,12 @@ try {
   for (const platform of ['android', 'ios']) {
     const result = spawnSync(
       'expo',
-      ['export', '--platform', platform, '--output-dir', `${OUTPUT_DIR}/${platform}`],
+      ['export', '--dev', '--platform', platform, '--output-dir', `${OUTPUT_DIR}/${platform}`],
       {
         stdio: 'inherit',
         shell: process.platform === 'win32',
         // 번들 내용은 빌드 변형과 무관하다. 운영 앱 링크 값 없이도 확인하도록 따로 주지 않으면 개발 설정으로 읽는다.
-        env: { ...process.env, APP_VARIANT: process.env.APP_VARIANT || 'development' },
+        env: { ...process.env, ENVIRONMENT: 'development' },
       },
     );
     if (result.status !== 0) {

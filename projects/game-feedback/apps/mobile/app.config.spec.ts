@@ -1,99 +1,39 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { APP_AUTH_CALLBACK_PATH } from '@game-feedback/bridge';
-
 import appConfig, { readBuildSettings } from './app.config';
 
-const RELEASE_ENV = {
-  EXPO_PUBLIC_WEB_ORIGIN: 'https://game.example',
-  MOBILE_APPLE_TEAM_ID: 'ABCDE12345',
-  MOBILE_IOS_BUNDLE_ID: 'com.example.game',
-  MOBILE_ANDROID_PACKAGE: 'com.example.game',
-};
-
-function buildConfig(env: Record<string, string>) {
-  for (const name of ['APP_VARIANT', ...Object.keys(RELEASE_ENV)]) vi.stubEnv(name, env[name] ?? '');
-  return appConfig({ projectRoot: '.', staticConfigPath: null, packageJsonPath: null, config: {} });
-}
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
-describe('release build settings', () => {
-  it('receives only the app login callback through a verified HTTPS app link and targets iOS 17.4', () => {
-    const config = buildConfig(RELEASE_ENV);
-
-    expect(config.ios).toMatchObject({
-      bundleIdentifier: 'com.example.game',
-      appleTeamId: 'ABCDE12345',
-      deploymentTarget: '17.4',
-      associatedDomains: ['applinks:game.example', 'webcredentials:game.example'],
-      infoPlist: { NSAppTransportSecurity: {} },
+afterEach(() => vi.unstubAllEnvs());
+describe('root project build settings', () => {
+  it('uses the root web origin and limits cleartext to development', () => {
+    expect(readBuildSettings({ ENVIRONMENT: 'development', WEB_ORIGIN: 'http://localhost:3300' })).toEqual({
+      isDevelopment: true,
+      webOrigin: 'http://localhost:3300',
     });
-    expect(config.android?.package).toBe('com.example.game');
-    expect(config.android?.intentFilters).toEqual([
-      {
-        action: 'VIEW',
-        autoVerify: true,
-        category: ['BROWSABLE', 'DEFAULT'],
-        data: [{ scheme: 'https', host: 'game.example', path: APP_AUTH_CALLBACK_PATH }],
-      },
-    ]);
+    for (const WEB_ORIGIN of [
+      '',
+      'http://site.example',
+      'https://user:pass@site.example',
+      'https://site.example/path',
+    ])
+      expect(() => readBuildSettings({ ENVIRONMENT: 'production', WEB_ORIGIN })).toThrow('WEB_ORIGIN');
+  });
+  it('includes only public telemetry settings in the native bundle', () => {
+    vi.stubEnv('ENVIRONMENT', 'production');
+    vi.stubEnv('WEB_ORIGIN', 'https://site.example');
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://public@sentry.example/1');
+    vi.stubEnv('NEXT_PUBLIC_AMPLITUDE_API_KEY', 'public-amplitude-key');
+    vi.stubEnv('GF_S3_SECRET_ACCESS_KEY', 'server-only-credential-marker');
+    const config = appConfig({ projectRoot: '.', staticConfigPath: null, packageJsonPath: null, config: {} });
+    expect(config.extra).toMatchObject({
+      webOrigin: 'https://site.example',
+      sentryDsn: 'https://public@sentry.example/1',
+      amplitudeApiKey: 'public-amplitude-key',
+    });
+    expect(JSON.stringify(config)).not.toContain('server-only-credential-marker');
+    expect(config.ios?.associatedDomains).toBeUndefined();
+    expect(config.android?.intentFilters).toBeUndefined();
+    expect(config.android?.allowBackup).toBe(false);
+    expect(config.ios?.infoPlist).not.toHaveProperty('NSAppTransportSecurity');
     expect(JSON.stringify(config.plugins)).not.toContain('usesCleartextTraffic');
   });
-
-  it.each<[Record<string, string>, RegExp]>([
-    [{}, /EXPO_PUBLIC_WEB_ORIGIN.*MOBILE_IOS_BUNDLE_ID.*MOBILE_ANDROID_PACKAGE.*MOBILE_APPLE_TEAM_ID/],
-    [{ ...RELEASE_ENV, EXPO_PUBLIC_WEB_ORIGIN: 'http://game.example' }, /EXPO_PUBLIC_WEB_ORIGIN/],
-    [{ ...RELEASE_ENV, EXPO_PUBLIC_WEB_ORIGIN: 'https://game.example:8443' }, /EXPO_PUBLIC_WEB_ORIGIN/],
-    [{ ...RELEASE_ENV, EXPO_PUBLIC_WEB_ORIGIN: 'https://game.example/app' }, /EXPO_PUBLIC_WEB_ORIGIN/],
-    [{ ...RELEASE_ENV, MOBILE_APPLE_TEAM_ID: '' }, /MOBILE_APPLE_TEAM_ID/],
-    [{ ...RELEASE_ENV, MOBILE_IOS_BUNDLE_ID: 'game' }, /MOBILE_IOS_BUNDLE_ID/],
-    [{ ...RELEASE_ENV, MOBILE_ANDROID_PACKAGE: 'com.example-game' }, /MOBILE_ANDROID_PACKAGE/],
-  ])('stops a release build with missing or malformed settings: %j', (env, message) => {
-    expect(() => buildConfig(env)).toThrow(message);
-    expect(() => buildConfig(env)).toThrow(/운영 빌드 설정/);
-  });
-});
-
-describe('development build settings', () => {
-  it('uses development identifiers and adds no app link for the HTTP localhost web', () => {
-    const config = buildConfig({ APP_VARIANT: 'development' });
-
-    expect(config.ios?.bundleIdentifier).toBe('dev.side.gamefeedback');
-    expect(config.ios?.deploymentTarget).toBe('17.4');
-    expect(config.ios?.associatedDomains).toBeUndefined();
-    expect(config.ios?.infoPlist?.NSAppTransportSecurity).toEqual({ NSAllowsLocalNetworking: true });
-    expect(config.android?.package).toBe('dev.side.gamefeedback');
-    expect(config.android?.intentFilters).toBeUndefined();
-    expect(JSON.stringify(config.plugins)).toContain('usesCleartextTraffic');
-  });
-
-  it('uses developer-mode associated domains and an App Link for an HTTPS tunnel origin', () => {
-    const config = buildConfig({ APP_VARIANT: 'development', EXPO_PUBLIC_WEB_ORIGIN: 'https://Dev.Example' });
-
-    expect(config.ios?.associatedDomains).toEqual([
-      'applinks:dev.example?mode=developer',
-      'webcredentials:dev.example?mode=developer',
-    ]);
-    expect(config.android?.intentFilters?.[0]?.data).toEqual([
-      { scheme: 'https', host: 'dev.example', path: '/app-auth/callback' },
-    ]);
-  });
-
-  it('rejects explicitly provided malformed values even in development', () => {
-    expect(() => readBuildSettings({ APP_VARIANT: 'development', MOBILE_APPLE_TEAM_ID: 'short' })).toThrow(
-      /개발 빌드 설정.*MOBILE_APPLE_TEAM_ID/,
-    );
-  });
-});
-
-it('알림 프로젝트와 Android Firebase 앱 설정은 앱별 빌드 환경에서 받아야 한다', () => {
-  vi.stubEnv('EXPO_PUBLIC_EAS_PROJECT_ID', '11111111-1111-4111-8111-111111111111');
-  vi.stubEnv('MOBILE_GOOGLE_SERVICES_JSON', '/build/secrets/google-services.json');
-  const config = buildConfig(RELEASE_ENV);
-  expect(config.extra?.eas).toEqual({ projectId: '11111111-1111-4111-8111-111111111111' });
-  expect(config.android?.googleServicesFile).toBe('/build/secrets/google-services.json');
-  expect(config.plugins).toContainEqual(['expo-notifications', { defaultChannel: 'activity' }]);
 });

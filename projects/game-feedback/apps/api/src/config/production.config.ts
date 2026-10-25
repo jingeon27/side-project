@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { resolveCacheRevalidationConfig } from '../cache-invalidation/cache-invalidation.config';
-import { APP_AUTH_CALLBACK_PATH, parseAppAuthCallbackUrl } from './app-auth-callback';
 import { validateSharedInstanceEnvironment } from './shared-instance.config';
 
 const publicOrigin = z.url().refine((value) => {
@@ -19,18 +17,13 @@ const secret = z
   .refine((value) => !/^(change[-_]?me|replace[-_]?me|example)$/i.test(value));
 
 /** Report variable names only: validation errors must never print credentials. */
-export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
-  if (env.NODE_ENV !== 'production') return;
-  validateSharedInstanceEnvironment(env);
-  resolveCacheRevalidationConfig(env);
+export function validateProductionEnvironment(env: NodeJS.ProcessEnv, migration = false) {
+  if (env.ENVIRONMENT !== 'production') return;
+  validateSharedInstanceEnvironment(env, migration);
   const result = z
     .object({
       WEB_ORIGIN: publicOrigin,
-      GAME_FEEDBACK_SITE_URL: publicOrigin,
       GAME_FEEDBACK_CONTACT_EMAIL: z.email(),
-      GF_DEMO_MODE: z.literal('false'),
-      GF_TEST_AUTH_ENABLED: z.literal('false'),
-      GF_PREFETCH_TESTING: z.enum(['false', '']).optional(),
       DATABASE_URL: secret,
     })
     .safeParse(env);
@@ -38,11 +31,6 @@ export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
     throw new Error(
       `Invalid production settings: ${[...new Set(result.error.issues.map((issue) => issue.path[0]))].join(', ')}.`,
     );
-  if (env.GAME_FEEDBACK_SITE_URL !== env.WEB_ORIGIN)
-    throw new Error('GAME_FEEDBACK_SITE_URL must match WEB_ORIGIN.');
-  // 앱 로그인 코드는 검증된 https 앱 링크로만 보낸다. 다른 origin·경로·커스텀 스킴이면 코드가 앱 링크 밖으로 샌다.
-  if (!parseAppAuthCallbackUrl(env.MOBILE_AUTH_CALLBACK_URL, env.WEB_ORIGIN ?? ''))
-    throw new Error(`MOBILE_AUTH_CALLBACK_URL must be WEB_ORIGIN${APP_AUTH_CALLBACK_PATH}.`);
   const database = z.url().safeParse(env.DATABASE_URL);
   if (!database.success) throw new Error('DATABASE_URL is invalid.');
   const db = new URL(database.data);
@@ -55,24 +43,25 @@ export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
     if (!clientId && !clientSecret) return false;
     if (!secret.safeParse(clientId).success || !secret.safeParse(clientSecret).success)
       throw new Error(`${prefix}_CLIENT_ID and ${prefix}_CLIENT_SECRET must both be configured.`);
-    const redirect = env[`${prefix}_REDIRECT_URI`];
-    if (redirect) {
-      const url = z.url().safeParse(redirect);
-      if (!url.success || new URL(url.data).origin !== env.WEB_ORIGIN)
-        throw new Error(`${prefix}_REDIRECT_URI must use WEB_ORIGIN.`);
-    }
     return true;
   });
   if (!configured.some(Boolean)) throw new Error('Configure at least one production OAuth provider.');
 }
 
 export function resolveListenConfig(env: NodeJS.ProcessEnv) {
-  const result = z
-    .object({
-      HOST: z.enum(['127.0.0.1', '0.0.0.0', '::1', '::']).default('127.0.0.1'),
-      PORT: z.coerce.number().int().min(1).max(65535).default(4300),
-    })
-    .safeParse(env);
-  if (!result.success) throw new Error('HOST or PORT is invalid.');
-  return result.data;
+  const url = URL.parse(env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:4300');
+  if (
+    !url ||
+    !['http:', 'https:'].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash
+  )
+    throw new Error('GAME_FEEDBACK_API_URL must be an HTTP(S) origin.');
+  return {
+    HOST: env.ENVIRONMENT === 'production' ? '0.0.0.0' : '127.0.0.1',
+    PORT: Number(url.port || (url.protocol === 'https:' ? 443 : 80)),
+  };
 }

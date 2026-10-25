@@ -28,7 +28,11 @@ export function resolveMediaStorageConfig(env: NodeJS.ProcessEnv): TMediaStorage
     secretAccessKey: env.GF_S3_SECRET_ACCESS_KEY || undefined,
   });
   if (!result.success) throw new Error('S3 media storage requires a bucket and valid S3 settings.');
-  if (env.NODE_ENV === 'production' && result.data.endpoint && !result.data.endpoint.startsWith('https://'))
+  if (
+    env.ENVIRONMENT === 'production' &&
+    result.data.endpoint &&
+    !result.data.endpoint.startsWith('https://')
+  )
     throw new Error('Production S3 endpoint must use HTTPS.');
   return result.data;
 }

@@ -22,7 +22,7 @@ import { PrismaClient } from '../generated/prisma';
 import { seed } from '../seed';
 import { CacheInvalidationService } from './cache-invalidation.service';
 
-const target = process.env.TEST_DATABASE_URL;
+const target = process.env.DATABASE_URL;
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 const secret = 'isolated-cache-callback-secret-'.repeat(2);

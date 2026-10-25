@@ -17,7 +17,7 @@ export function startAnalytics() {
   return analytics.start();
 }
 
-/** EXPO_PUBLIC_AMPLITUDE_API_KEY가 없으면 아무것도 보내지 않는다. */
+/** NEXT_PUBLIC_AMPLITUDE_API_KEY가 없으면 아무것도 보내지 않는다. */
 export function trackEvent(event: TAnalyticsEvent) {
   analytics.track(event);
 }

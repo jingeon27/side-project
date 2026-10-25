@@ -11,7 +11,7 @@ const monitoring = createMonitoring({
   sdk: { init, wrap, captureMessage, captureException },
 });
 
-/** 루트를 등록하기 전에 한 번 부른다. EXPO_PUBLIC_SENTRY_DSN이 없으면 아무것도 하지 않는다. */
+/** 루트를 등록하기 전에 한 번 부른다. NEXT_PUBLIC_SENTRY_DSN이 없으면 아무것도 하지 않는다. */
 export function initMonitoring() {
   monitoring.init();
 }

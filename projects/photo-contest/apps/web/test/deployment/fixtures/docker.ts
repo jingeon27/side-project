@@ -4,17 +4,19 @@ import { basename, dirname } from 'node:path';
 interface IState {
   active: string;
   migrated: string[];
+  broken: string;
+  failure: string;
 }
-const stateFile = process.env.DEPLOY_FAKE_STATE ?? '';
+const stateFile = process.argv[2] ?? '';
+const [tool, ...args] = process.argv.slice(3);
 if (!stateFile) throw new Error('격리한 CLI 상태 파일이 필요합니다.');
 const state: IState = JSON.parse(readFileSync(stateFile, 'utf8'));
-const args = process.argv.slice(2);
-const phase = process.env.DEPLOY_FAKE_FAILURE;
-const broken = process.env.DEPLOY_FAKE_BROKEN;
+const phase = state.failure;
+const broken = state.broken;
 
 function main() {
-  if (process.env.DEPLOY_FAKE_TOOL === 'sleep') return;
-  if (process.env.DEPLOY_FAKE_TOOL === 'curl') {
+  if (tool === 'sleep') return;
+  if (tool === 'curl') {
     if (phase === 'health' && state.active === broken) process.exit(1);
     process.stdout.write('{"status":"ok"}');
     return;
