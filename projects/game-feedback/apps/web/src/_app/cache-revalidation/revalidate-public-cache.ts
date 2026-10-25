@@ -6,10 +6,12 @@ import { revalidateTag } from 'next/cache';
 
 import { CacheRevalidationSchema } from '@game-feedback/contracts';
 
+import { readRuntimeSecret } from '@/shared/config/runtime-secret.server';
+
 const noStore = { 'Cache-Control': 'no-store' };
 
 export async function revalidatePublicCache(request: Request) {
-  const secret = process.env.GF_CACHE_REVALIDATION_SECRET;
+  const secret = readRuntimeSecret();
   if (!secret || secret.length < 32) return Response.json({ ok: false }, { status: 503, headers: noStore });
   const digest = (value: string) => createHash('sha256').update(value).digest();
   if (!timingSafeEqual(digest(request.headers.get('authorization') ?? ''), digest(`Bearer ${secret}`)))

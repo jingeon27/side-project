@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 test('desktop navigation has one entry per destination and keeps boards in the sidebar', async ({ page }) => {
   const login = await page.request.post('/api/auth/test-login', {

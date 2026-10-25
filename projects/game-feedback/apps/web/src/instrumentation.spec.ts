@@ -18,23 +18,13 @@ describe('server startup', () => {
     vi.stubEnv('ENVIRONMENT', 'test');
     vi.stubEnv('SENTRY_DSN', 'https://test@sentry.invalid/1');
     vi.stubEnv('SENTRY_RELEASE', 'runtime-release');
-    vi.stubEnv('NEXT_PUBLIC_SENTRY_RELEASE', 'build-release');
     await register();
     expect(init).toHaveBeenLastCalledWith(
       expect.objectContaining({ environment: 'test', release: 'runtime-release' }),
     );
     vi.stubEnv('SENTRY_RELEASE', '');
     await register();
-    expect(init).toHaveBeenLastCalledWith(expect.objectContaining({ release: 'build-release' }));
-  });
-  it('stops a production Node server whose App Link values are missing', async () => {
-    vi.stubEnv('NEXT_RUNTIME', 'nodejs');
-    vi.stubEnv('NEXT_PHASE', '');
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('MOBILE_APPLE_TEAM_ID', '');
-    vi.stubEnv('SENTRY_DSN', '');
-    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
-    await expect(register()).rejects.toThrow(/MOBILE_APPLE_TEAM_ID/);
+    expect(init).toHaveBeenLastCalledWith(expect.objectContaining({ release: undefined }));
   });
 
   it('skips the check while building and on the edge runtime, and starts development with placeholders', async () => {

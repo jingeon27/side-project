@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
 
 test('post detail uses a compact game breadcrumb and one contact action with unbroken dates at 393px', async ({
