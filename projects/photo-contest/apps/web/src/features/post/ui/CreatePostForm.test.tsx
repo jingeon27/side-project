@@ -27,8 +27,7 @@ const photo = (name = 'moment.png') => new File(['photo'], name, { type: 'image/
 const video = () => new File(['video'], 'clip.mp4', { type: 'video/mp4' });
 
 beforeEach(() => {
-  let sequence = 0;
-  createUrl.mockReset().mockImplementation(() => `blob:preview-${++sequence}`);
+  createUrl.mockReset().mockImplementation(() => `blob:preview-${createUrl.mock.calls.length}`);
   revokeUrl.mockReset();
   pause.mockReset();
   vi.stubGlobal(

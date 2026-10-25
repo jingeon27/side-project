@@ -61,6 +61,27 @@ export function CreatePostForm({
   });
   const beginSubmit = useAbortOnClose(true);
 
+  const uploadMedia = async (file: File, signal: AbortSignal) => {
+    if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
+      form.setError('media', { message: '5분 이하의 동영상을 선택해 주세요.' }, { shouldFocus: true });
+      return;
+    }
+    const content = file.type.startsWith('video/')
+      ? { body: file, contentType: file.type }
+      : await prepareUploadImage(file, browserImageCodec);
+    throwIfClosed(signal);
+    const { data } = await requestUpload({
+      variables: { groupId, contentType: content.contentType, byteSize: content.body.size },
+    });
+    if (!data) return;
+    await uploadToStorage(data.requestPostUpload, content.body, { signal });
+    const { data: completed } = await completeUpload({
+      variables: { uploadId: data.requestPostUpload.id },
+    });
+    if (!completed) return;
+    return data.requestPostUpload.id;
+  };
+
   const { errors, isSubmitting } = form.formState;
   return (
     <form
@@ -80,31 +101,8 @@ export function CreatePostForm({
         }) => {
           const signal = beginSubmit();
           try {
-            let uploadId: string | undefined;
-            if (file) {
-              if (file.type.startsWith('video/') && isTooLongVideo(await readVideoDuration(file))) {
-                form.setError(
-                  'media',
-                  { message: '5분 이하의 동영상을 선택해 주세요.' },
-                  { shouldFocus: true },
-                );
-                return;
-              }
-              const content = file.type.startsWith('video/')
-                ? { body: file, contentType: file.type }
-                : await prepareUploadImage(file, browserImageCodec);
-              throwIfClosed(signal);
-              const { data } = await requestUpload({
-                variables: { groupId, contentType: content.contentType, byteSize: content.body.size },
-              });
-              if (!data) return;
-              await uploadToStorage(data.requestPostUpload, content.body, { signal });
-              const { data: completed } = await completeUpload({
-                variables: { uploadId: data.requestPostUpload.id },
-              });
-              if (!completed) return;
-              uploadId = data.requestPostUpload.id;
-            }
+            const uploadId = file ? await uploadMedia(file, signal) : undefined;
+            if (file && !uploadId) return;
             // 페이지를 떠났으면 업로드 후 게시 요청을 보내지 않는다.
             throwIfClosed(signal);
             const { data: posted } = await createPost({

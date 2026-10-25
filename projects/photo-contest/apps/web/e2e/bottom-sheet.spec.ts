@@ -8,7 +8,7 @@ test(
     await page.goto('/me');
     const opener = page.getByRole('button', { name: '그룹 만들기', exact: true });
     await opener.click();
-    let sheet = page.getByRole('dialog', { name: '그룹 만들기' });
+    const sheet = page.getByRole('dialog', { name: '그룹 만들기' });
     await expect(sheet).toBeVisible();
     const viewport = page.viewportSize();
     if (!viewport) throw new Error('viewport missing');
@@ -36,7 +36,6 @@ test(
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(opener).toBeFocused();
     await opener.click();
-    sheet = page.getByRole('dialog', { name: '그룹 만들기' });
     await expect(sheet.getByLabel('그룹 이름', { exact: true })).toHaveValue('');
     await sheet.getByRole('button', { name: '닫기', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
