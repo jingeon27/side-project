@@ -1,12 +1,11 @@
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { overlay, OverlayProvider } from 'overlay-kit';
 import { EMPTY } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CreatePostBottomSheet } from './CreatePostBottomSheet';
+import { CreatePostForm } from './CreatePostForm';
 
 const operations: string[] = [];
 
@@ -28,12 +27,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  act(() => overlay.unmountAll());
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-describe('CreatePostBottomSheet', () => {
+describe('CreatePostForm', () => {
   it('5분이 넘는 동영상은 업로드를 요청하지 않고 파일 칸에 알려야 한다', async () => {
     const user = userEvent.setup({ applyAccept: false });
     const client = new ApolloClient({
@@ -45,26 +43,10 @@ describe('CreatePostBottomSheet', () => {
     });
     render(
       <ApolloProvider client={client}>
-        <OverlayProvider>
-          <button
-            onClick={() =>
-              overlay.open(({ isOpen, close: onClose, unmount }) => (
-                <CreatePostBottomSheet
-                  groupId="gallery"
-                  isOpen={isOpen}
-                  onClose={onClose}
-                  unmount={unmount}
-                />
-              ))
-            }
-          >
-            글쓰기
-          </button>
-        </OverlayProvider>
+        <CreatePostForm groupId="gallery" onCreated={() => {}} />
       </ApolloProvider>,
     );
-    await user.click(screen.getByRole('button', { name: '글쓰기' }));
-    const dialog = await screen.findByRole('dialog', { name: '그룹에 글쓰기' });
+    const dialog = await screen.findByRole('form', { name: '그룹에 글쓰기' });
     await user.upload(
       screen.getByLabelText('사진·동영상 선택'),
       new File(['video'], 'long.mp4', { type: 'video/mp4' }),

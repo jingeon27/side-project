@@ -111,7 +111,7 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
         required
         label="비밀번호"
         type="password"
-        description="15~128자. 문장처럼 길게 만들어도 좋아요."
+        description="8~128자. 문장처럼 길게 만들어도 좋아요."
         autoComplete="new-password"
         maxLength={128}
         error={form.formState.errors.password?.message}

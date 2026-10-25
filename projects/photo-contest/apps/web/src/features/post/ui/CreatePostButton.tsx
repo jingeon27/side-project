@@ -1,29 +1,15 @@
 'use client';
 
 import { Plus } from 'lucide-react';
-import { overlay } from 'overlay-kit';
 
-import { Button } from '@/shared/ui/@core/button';
-
-import { CreatePostBottomSheet } from './CreatePostBottomSheet';
+import { ROUTES } from '@/shared/constants/routes';
+import { ButtonLink } from '@/shared/ui/@core/button';
 
 export function CreatePostButton({ groupId, contestId }: { groupId: string; contestId?: string }) {
   return (
-    <Button
-      onClick={() =>
-        overlay.open(({ isOpen, close: onClose, unmount }) => (
-          <CreatePostBottomSheet
-            groupId={groupId}
-            defaultContestId={contestId}
-            isOpen={isOpen}
-            onClose={onClose}
-            unmount={unmount}
-          />
-        ))
-      }
-    >
+    <ButtonLink href={ROUTES.GROUP_WRITE(groupId, contestId)}>
       <Plus aria-hidden className="size-4" />
       글쓰기
-    </Button>
+    </ButtonLink>
   );
 }

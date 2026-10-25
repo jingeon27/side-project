@@ -56,7 +56,7 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
   const container = document.createElement('div');
   container.innerHTML = renderToString(serverTree);
   document.body.append(container);
-  expect(within(container).getByRole('region', { name: '추천 공개 그룹' })).toBeInTheDocument();
+  expect(within(container).getByRole('region', { name: '공개 그룹 목록' })).toBeInTheDocument();
   const browserCache = new InMemoryCache().restore(cache.extract());
   browserCache.writeQuery({
     query: MyGroupsDocument,
@@ -87,7 +87,7 @@ it('서버 화면을 연결하는 동안 가입 캐시가 바뀌어도 hydration
       root = hydrateRoot(container, tree, { onRecoverableError });
     });
     expect(within(container).getByRole('region', { name: /^최신 게시물$/ })).toBeInTheDocument();
-    expect(within(container).queryByRole('region', { name: '추천 공개 그룹' })).not.toBeInTheDocument();
+    expect(within(container).queryByRole('region', { name: '공개 그룹 목록' })).not.toBeInTheDocument();
     expect(onRecoverableError).not.toHaveBeenCalled();
   } finally {
     await act(async () => root?.unmount());

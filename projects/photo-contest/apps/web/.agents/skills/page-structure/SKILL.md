@@ -31,8 +31,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
 ## 멤버 전용 화면
 
-- 세 곳을 함께 바꾼다: `src/proxy.ts`의 `config.matcher`(빌드 때 정적으로 읽으므로 상수 import 없이 문자열 그대로), `src/shared/lib/auth-gate.helper.ts`의 `isMemberOnlyPath`, `src/shared/constants/routes.ts`의 `MEMBER_ONLY_PATH_PREFIXES`·`MEMBER_ONLY_PATHS`. 그리고 `src/proxy.spec.ts`(matcher 목록 단언)와 `src/shared/lib/auth-gate.helper.spec.ts`를 고친다.
-- proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다(`frontend` 스킬 "인증·이동"). `/`·`/explore`·`/groups/*`·`/invite/*`는 공개 진입으로 둔다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
+- 세 곳을 함께 바꾼다: `src/proxy.ts`의 `config.matcher`(빌드 때 정적으로 읽으므로 상수 import 없이 문자열 그대로), `src/shared/lib/auth-gate.helper.ts`의 `isSessionRequiredPath`, `src/shared/constants/routes.ts`의 `SESSION_PATH_PREFIXES`·`SESSION_PATHS`. 그리고 `src/proxy.spec.ts`(matcher 목록 단언)와 `src/shared/lib/auth-gate.helper.spec.ts`를 고친다.
+- proxy는 쿠키가 있는지만 본다. 만료 세션은 화면이 처리한다(`frontend` 스킬 "인증·이동"). 홈·탐색·그룹·초대도 익명 또는 회원 세션이 필요하다. 세션이 없으면 `/sign?next=…`로 보내고 인증·정책·콜백·API·정적 파일은 제외한다. 그룹의 내용 접근은 API 공개 범위·멤버십과 화면의 GroupAccess로 결정한다.
 
 ## 뒤로 가기·이동·하단 탭
 

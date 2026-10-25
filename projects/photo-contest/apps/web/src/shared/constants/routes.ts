@@ -1,7 +1,7 @@
 /** 화면 경로. 내부 링크·이동은 이 값으로만 만든다. */
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/login',
+  SIGN: '/sign',
   ME: '/me',
   NOTIFICATIONS: '/notifications',
   ONBOARDING: '/onboarding',
@@ -9,6 +9,8 @@ export const ROUTES = {
   TERMS: '/terms',
   PRIVACY: '/privacy',
   GROUP: (id: string) => `/groups/${encodeURIComponent(id)}`,
+  GROUP_WRITE: (id: string, contestId?: string) =>
+    `/groups/${encodeURIComponent(id)}/write${contestId ? `?${new URLSearchParams({ contestId })}` : ''}`,
   GROUP_CONTESTS: (id: string) => `/groups/${encodeURIComponent(id)}/contests`,
   GROUP_HALL_OF_FAME: (id: string) => `/groups/${encodeURIComponent(id)}/hall-of-fame`,
   GROUP_CONTEST: (groupId: string, id: string) =>
@@ -26,6 +28,15 @@ export const BACKEND_ROUTES = {
   AUTH_PROVIDER: (provider: 'google' | 'kakao') => `/backend/auth/${provider}`,
 } as const;
 
-/** 로그인해야 볼 수 있는 화면. proxy.ts matcher와 같은 목록이다. */
-export const MEMBER_ONLY_PATH_PREFIXES = ['/contests/'] as const;
-export const MEMBER_ONLY_PATHS = ['/me', '/notifications'] as const;
+/** 익명 또는 회원 세션이 필요한 화면. proxy.ts matcher와 같은 목록이다. */
+export const SESSION_PATH_PREFIXES = ['/groups/', '/invite/', '/contests/'] as const;
+export const SESSION_PATHS = [
+  '/',
+  '/explore',
+  '/groups',
+  '/invite',
+  '/contests',
+  '/me',
+  '/notifications',
+  '/onboarding',
+] as const;

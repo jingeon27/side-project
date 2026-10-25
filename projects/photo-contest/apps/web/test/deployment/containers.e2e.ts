@@ -58,8 +58,8 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
 
   const groupPath = new URL(page.url()).pathname;
   const createMediaPost = async (title: string, video = false) => {
-    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-    const form = page.getByRole('dialog', { name: '그룹에 글쓰기', exact: true });
+    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await form.getByLabel('제목', { exact: true }).fill(title);
     await form.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
       name: video ? 'smoke.mp4' : 'smoke.png',
@@ -109,7 +109,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   await expect(comments.getByText('재시작해도 남는 댓글', { exact: true })).toBeVisible();
   await comments.getByRole('button', { name: '닫기', exact: true }).click();
 
-  const seoResponse = await request.get(`${groupPath}?utm_source=container`, {
+  const seoResponse = await page.request.get(`${groupPath}?utm_source=container`, {
     headers: { 'User-Agent': 'Twitterbot' },
   });
   expect(seoResponse.status()).toBe(200);

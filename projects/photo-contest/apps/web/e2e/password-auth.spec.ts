@@ -5,15 +5,15 @@ test(
   { tag: ['@ios', '@desktop'] },
   async ({ page }, testInfo) => {
     const loginId = `user_${testInfo.project.name.replaceAll('-', '_')}`;
-    const password = '기억하기 쉬운 나만의 비밀번호 2026!';
-    await page.goto('/?next=%2Fme');
+    const password = 'star2026';
+    await page.goto('/sign?next=%2Fme');
     await page.getByRole('tab', { name: '회원가입', exact: true }).click();
     const registration = page.getByRole('tabpanel', { name: '회원가입', exact: true });
     await registration.getByLabel('아이디', { exact: true }).fill(loginId);
     await registration.getByLabel('닉네임', { exact: true }).fill('직접 가입 회원');
-    await registration.getByLabel('비밀번호', { exact: true }).fill('short');
+    await registration.getByLabel('비밀번호', { exact: true }).fill('short12');
     await registration.getByRole('button', { name: '가입하고 시작하기' }).click();
-    await expect(registration.getByText('비밀번호는 15자 이상 입력해 주세요.')).toBeVisible();
+    await expect(registration.getByText('비밀번호는 8자 이상 입력해 주세요.')).toBeVisible();
     await registration.getByLabel('비밀번호', { exact: true }).fill(password);
     await page.getByRole('button', { name: '가입하고 시작하기' }).click();
     await expect(page).toHaveURL(/\/me$/);

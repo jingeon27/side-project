@@ -4,13 +4,12 @@ import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { overlay, OverlayProvider } from 'overlay-kit';
 import { EMPTY, of, Subject, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { toast } from '@/shared/model/toast';
 
-import { CreatePostBottomSheet } from './CreatePostBottomSheet';
+import { CreatePostForm } from './CreatePostForm';
 import { PostMediaPreview } from './PostMediaPreview';
 
 const TICKET = {
@@ -43,44 +42,27 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  act(() => overlay.unmountAll());
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-async function openSheet() {
+async function openForm() {
   const user = userEvent.setup({ applyAccept: false });
   const client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
-  render(
+  const view = render(
     <StrictMode>
       <ApolloProvider client={client}>
-        <OverlayProvider>
-          <button
-            onClick={() =>
-              overlay.open(({ isOpen, close: onClose, unmount }) => (
-                <CreatePostBottomSheet
-                  groupId="gallery"
-                  isOpen={isOpen}
-                  onClose={onClose}
-                  unmount={unmount}
-                />
-              ))
-            }
-          >
-            글쓰기
-          </button>
-        </OverlayProvider>
+        <CreatePostForm groupId="gallery" onCreated={() => {}} />
       </ApolloProvider>
     </StrictMode>,
   );
-  await user.click(screen.getByRole('button', { name: '글쓰기' }));
-  await screen.findByRole('dialog', { name: '그룹에 글쓰기' });
-  return { user, input: screen.getByLabelText('사진·동영상 선택') };
+  await screen.findByRole('form', { name: '그룹에 글쓰기' });
+  return { user, ...view, input: screen.getByLabelText('사진·동영상 선택') };
 }
 
 describe('선택한 게시물 파일 미리보기', () => {
   it('사진·동영상으로 바꾸고 제거하면 미리보기와 폼 값이 함께 바뀌어야 한다', async () => {
-    const { user, input } = await openSheet();
+    const { user, input } = await openForm();
     const first = photo();
     await user.upload(input, first);
     expect(await screen.findByRole('img', { name: '선택한 사진 미리보기' })).toHaveAttribute(
@@ -107,7 +89,7 @@ describe('선택한 게시물 파일 미리보기', () => {
   });
 
   it('선택 취소는 기존 파일을 유지하고 같은 파일도 다시 선택하며 닫으면 정리해야 한다', async () => {
-    const { user, input } = await openSheet();
+    const { user, input, unmount } = await openForm();
     const file = photo();
     await user.upload(input, file);
     const image = await screen.findByRole('img', { name: '선택한 사진 미리보기' });
@@ -122,16 +104,17 @@ describe('선택한 게시물 파일 미리보기', () => {
       ),
     );
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-1');
-    await user.click(screen.getByRole('button', { name: '닫기' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    unmount();
+    await waitFor(() =>
+      expect(screen.queryByRole('form', { name: '그룹에 글쓰기' })).not.toBeInTheDocument(),
+    );
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-2');
-    await user.click(screen.getByRole('button', { name: '글쓰기' }));
-    await screen.findByRole('dialog', { name: '그룹에 글쓰기' });
+    await openForm();
     expect(screen.queryByRole('figure', { name: '선택한 파일 미리보기' })).not.toBeInTheDocument();
   });
 
   it('지원하지 않는 형식과 큰 파일은 선택 즉시 알리고 미리보기를 만들지 않아야 한다', async () => {
-    const { user, input } = await openSheet();
+    const { user, input } = await openForm();
     await user.upload(input, new File(['text'], 'note.txt', { type: 'text/plain' }));
     expect(await screen.findByText('사진 또는 MP4·WebM 동영상을 선택해 주세요.')).toBeVisible();
     expect(createUrl).not.toHaveBeenCalled();
@@ -169,7 +152,7 @@ describe('선택한 게시물 파일 미리보기', () => {
   });
 
   it('StrictMode에서 빠르게 파일을 바꿔도 표시 중인 주소를 유지하고 모두 정리해야 한다', async () => {
-    const { user, input } = await openSheet();
+    const { input, unmount } = await openForm();
     act(() => {
       fireEvent.change(input, { target: { files: [photo('first.png')] } });
       fireEvent.change(input, { target: { files: [photo('second.png')] } });
@@ -178,17 +161,19 @@ describe('선택한 게시물 파일 미리보기', () => {
     const activeUrl = image.getAttribute('src');
     expect(activeUrl).toMatch(/^blob:/);
     expect(revokeUrl).not.toHaveBeenCalledWith(activeUrl);
-    await user.click(screen.getByRole('button', { name: '닫기' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    unmount();
+    await waitFor(() =>
+      expect(screen.queryByRole('form', { name: '그룹에 글쓰기' })).not.toBeInTheDocument(),
+    );
     for (const result of createUrl.mock.results) expect(revokeUrl).toHaveBeenCalledWith(result.value);
   });
 });
 
 /**
- * 게시 단계까지 채운 시트. 업로드 요청은 티켓을, 업로드 완료는 completeUpload를 응답으로 주고
+ * 게시 단계까지 채운 폼. 업로드 요청은 티켓을, 업로드 완료는 completeUpload를 응답으로 주고
  * 모든 연산 이름을 operationNames에 기록한다.
  */
-async function fillUploadSheet({
+async function fillUploadForm({
   completeUpload = EMPTY,
 }: { completeUpload?: Observable<ApolloLink.Result> } = {}) {
   const user = userEvent.setup({ applyAccept: false });
@@ -202,27 +187,16 @@ async function fillUploadSheet({
       return EMPTY;
     }),
   });
-  render(
+  const view = render(
     <ApolloProvider client={client}>
-      <OverlayProvider>
-        <button
-          onClick={() =>
-            overlay.open(({ isOpen, close: onClose, unmount }) => (
-              <CreatePostBottomSheet groupId="gallery" isOpen={isOpen} onClose={onClose} unmount={unmount} />
-            ))
-          }
-        >
-          글쓰기
-        </button>
-      </OverlayProvider>
+      <CreatePostForm groupId="gallery" onCreated={() => {}} />
     </ApolloProvider>,
   );
-  await user.click(screen.getByRole('button', { name: '글쓰기' }));
-  await screen.findByRole('dialog', { name: '그룹에 글쓰기' });
+  await screen.findByRole('form', { name: '그룹에 글쓰기' });
   await user.upload(screen.getByLabelText('사진·동영상 선택'), photo());
   await user.type(screen.getByLabelText('제목', { exact: false }), '웃긴 순간');
   await user.click(screen.getByRole('checkbox', { name: /공유할 권리/ }));
-  return { user, client, operationNames };
+  return { user, client, operationNames, ...view };
 }
 
 describe('게시물 업로드 티켓', () => {
@@ -231,7 +205,7 @@ describe('게시물 업로드 티켓', () => {
       'fetch',
       vi.fn(async () => new Response(null, { status: 403 })),
     );
-    const { user, client } = await fillUploadSheet();
+    const { user, client } = await fillUploadForm();
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
     expect(
       await screen.findByText('파일을 올리지 못했어요. 연결을 확인하고 다시 시도해 주세요.'),
@@ -242,7 +216,7 @@ describe('게시물 업로드 티켓', () => {
   });
 });
 
-describe('업로드 중 시트 닫기', () => {
+describe('업로드 중 글쓰기 페이지 떠나기', () => {
   it('저장소로 올리는 중에 닫으면 전송을 끊고 게시하지 않은 사실을 알려야 한다', async () => {
     const info = vi.spyOn(toast, 'info');
     const send = vi.fn(
@@ -252,13 +226,15 @@ describe('업로드 중 시트 닫기', () => {
         }),
     );
     vi.stubGlobal('fetch', send);
-    const { user, operationNames } = await fillUploadSheet();
+    const { user, operationNames, unmount } = await fillUploadForm();
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
 
-    await user.click(screen.getByRole('button', { name: '닫기' }));
+    unmount();
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole('form', { name: '그룹에 글쓰기' })).not.toBeInTheDocument(),
+    );
     await waitFor(() => expect(info).toHaveBeenCalledWith('게시물을 올리지 않았어요', expect.anything()));
     expect(send.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
     expect(operationNames).not.toContain('CompletePostUpload');
@@ -272,12 +248,14 @@ describe('업로드 중 시트 닫기', () => {
       vi.fn(async () => new Response(null, { status: 204 })),
     );
     const completeUpload = new Subject<ApolloLink.Result>();
-    const { user, operationNames } = await fillUploadSheet({ completeUpload });
+    const { user, operationNames, unmount } = await fillUploadForm({ completeUpload });
     await user.click(screen.getByRole('button', { name: '게시물 올리기' }));
     await waitFor(() => expect(operationNames).toContain('CompletePostUpload'));
 
-    await user.click(screen.getByRole('button', { name: '닫기' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    unmount();
+    await waitFor(() =>
+      expect(screen.queryByRole('form', { name: '그룹에 글쓰기' })).not.toBeInTheDocument(),
+    );
     act(() => {
       completeUpload.next({
         data: {

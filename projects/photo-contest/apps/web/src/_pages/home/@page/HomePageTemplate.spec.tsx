@@ -100,33 +100,31 @@ async function openHome({ signedIn = true, hasGroup = false } = {}) {
 }
 
 describe('홈의 가입 그룹 분기', () => {
-  it('비로그인 사용자에게 로그인과 공개 탐색을 함께 보여 줘야 한다', async () => {
+  it('세션이 없으면 공개 목록과 로그인 폼을 홈에 표시하지 않아야 한다', async () => {
     const { operations } = await openHome({ signedIn: false });
-    expect(await screen.findByRole('link', { name: '로그인 없이 그룹 둘러보기' })).toHaveAttribute(
-      'href',
-      '/explore',
-    );
-    expect(await screen.findByRole('region', { name: '공개 그룹의 최신 사진' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '공개 그룹의 최신 사진' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '익명으로 시작하기' })).not.toBeInTheDocument();
+    expect(operations).not.toContain('DiscoverGroups');
     expect(operations).not.toContain('MyGroups');
   });
-  it('가입 그룹이 없으면 공개 그룹을 추천하고 인기를 보여 주지 않아야 한다', async () => {
+  it('가입 그룹이 없으면 공개 그룹 목록을 보여 주고 인기를 보여 주지 않아야 한다', async () => {
     await openHome();
-    expect(await screen.findByRole('region', { name: '추천 공개 그룹' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: '공개 그룹 목록' })).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: '그룹 가입하기' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: '이달의 인기' })).not.toBeInTheDocument();
   });
   it('그룹은 있지만 게시물이 없으면 내 피드와 글쓰기 동작을 보여 줘야 한다', async () => {
     await openHome({ hasGroup: true });
     expect(await screen.findByRole('region', { name: '최신 게시물' })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: '글쓰기' })).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: '추천 공개 그룹' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: '글쓰기' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: '공개 그룹 목록' })).not.toBeInTheDocument();
   });
-  it('공개 그룹 가입 성공 후 추천 홈에서 내 그룹 피드로 즉시 바뀌어야 한다', async () => {
+  it('공개 그룹 가입 성공 후 그룹 목록에서 내 그룹 피드로 즉시 바뀌어야 한다', async () => {
     await openHome();
     await userEvent.click(await screen.findByRole('button', { name: '그룹 가입하기' }));
     expect(await screen.findByRole('region', { name: '최신 게시물' })).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.queryByRole('region', { name: '추천 공개 그룹' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('region', { name: '공개 그룹 목록' })).not.toBeInTheDocument(),
     );
   });
   it('검색어를 입력하면 탐색 URL로 이동해야 한다', async () => {

@@ -9,12 +9,12 @@ import { expect, seedGroup, test } from './support/test';
 test(
   '그룹 사진 선택·미리보기·프로필 수정·삭제가 탐색과 MY 및 SEO에 반영되어야 한다',
   { tag: ['@ios', '@desktop'] },
-  async ({ page, request, signIn }, testInfo) => {
+  async ({ page, signIn }, testInfo) => {
     const owner = await signIn('그룹 프로필 편집자');
     const group = await seedGroup(owner, `사진 그룹-${testInfo.project.name}`);
     const path = `/groups/${group.id}`;
     // 변경 전 공개 캐시도 채워 새 프로필이 JSON mutation 뒤 바로 갱신되는지 확인한다.
-    await request.get(path, { headers: { 'User-Agent': 'Twitterbot' } });
+    await page.request.get(path, { headers: { 'User-Agent': 'Twitterbot' } });
     await page.goto(path);
     await page.getByRole('button', { name: '그룹 프로필 수정' }).click();
     const editor = page.getByRole('dialog', { name: '그룹 프로필 수정', exact: true });
@@ -63,7 +63,7 @@ test(
       { id: group.id },
     );
     await expect(page.locator(`img[src="${profile.avatarUrl}"]`)).toBeVisible();
-    const html = await (await request.get(path, { headers: { 'User-Agent': 'Twitterbot' } })).text();
+    const html = await (await page.request.get(path, { headers: { 'User-Agent': 'Twitterbot' } })).text();
     expect(html).toContain(description);
     expect(html).toContain(WEB_ORIGIN + profile.avatarUrl);
     await page.goto(`/explore?q=${encodeURIComponent(name)}`);

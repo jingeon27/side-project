@@ -12,7 +12,7 @@ import { BridgeError } from '@photo-contest/bridge/web';
 
 import { StartAnonymousSessionDocument } from '@/shared/api/generated';
 import { NEXT_PATH_PARAM } from '@/shared/constants/auth';
-import { BACKEND_ROUTES } from '@/shared/constants/routes';
+import { BACKEND_ROUTES, ROUTES } from '@/shared/constants/routes';
 import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
 import { cn } from '@/shared/lib/cn.helper';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
@@ -38,6 +38,7 @@ interface ILoginPanelProps {
   nextPath?: string;
   className?: string;
   allowAnonymous?: boolean;
+  continuingAnonymously?: boolean;
 }
 
 type TSocialProvider = 'google' | 'kakao';
@@ -47,7 +48,7 @@ const SOCIAL_LOGIN_FAILED = '소셜 로그인에 실패했습니다. 다시 시�
 const isCancelled = (error: unknown) =>
   error instanceof BridgeError && error.code === BRIDGE_ERROR_CODE.Cancelled;
 
-function AnonymousStartButton({ nextPath }: { nextPath: string }) {
+function AnonymousStartButton({ nextPath, continuing = false }: { nextPath: string; continuing?: boolean }) {
   const bridge = useBridge();
   const [start, { loading }] = useMutation(StartAnonymousSessionDocument);
   return (
@@ -57,6 +58,10 @@ function AnonymousStartButton({ nextPath }: { nextPath: string }) {
         fullWidth
         loading={loading}
         onClick={async () => {
+          if (continuing) {
+            navigateDocument(ROUTES.HOME);
+            return;
+          }
           trackEvent(ANALYTICS_EVENT.LoginStarted, { provider: 'anonymous' });
           try {
             await start();
@@ -66,7 +71,7 @@ function AnonymousStartButton({ nextPath }: { nextPath: string }) {
           }
         }}
       >
-        익명으로 시작하기
+        {continuing ? '익명으로 계속하기' : '익명으로 시작하기'}
       </Button>
       <p className="text-caption text-muted">
         공개 그룹에 참여할 수 있어요. 비공개 그룹은 로그인이 필요해요.
@@ -142,7 +147,12 @@ function LoginMethods({ config, nextPath }: { config: TAuthConfig; nextPath: str
  * 로그인 패널(홈, 세션이 끝난 멤버 화면, 초대 화면). 앱 안에서는 소셜 로그인을 앱의 시스템 브라우저로 처리한다.
  * 로그인에 성공하면 같은 origin의 상대 경로(next)로만 돌아간다.
  */
-export function LoginPanel({ nextPath, className, allowAnonymous = true }: ILoginPanelProps) {
+export function LoginPanel({
+  nextPath,
+  className,
+  allowAnonymous = true,
+  continuingAnonymously = false,
+}: ILoginPanelProps) {
   const headingId = useId();
   const searchParams = useSearchParams();
   const next = getSafeNextPath(nextPath ?? searchParams.get(NEXT_PATH_PARAM));
@@ -164,7 +174,7 @@ export function LoginPanel({ nextPath, className, allowAnonymous = true }: ILogi
         </h2>
         <p className="mt-1 text-body text-muted">그룹에 참여해 사진과 동영상을 나눠보세요.</p>
       </div>
-      {allowAnonymous ? <AnonymousStartButton nextPath={next} /> : null}
+      {allowAnonymous ? <AnonymousStartButton nextPath={next} continuing={continuingAnonymously} /> : null}
       <PasswordAuthForms nextPath={next} />
       {loginFailed ? (
         <p

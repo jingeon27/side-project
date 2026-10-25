@@ -55,7 +55,12 @@ export default defineConfig({
       port: API_PORT,
       webOrigin: WEB_ORIGIN,
       database,
-      env: { GOOGLE_CLIENT_ID: 'web-e2e-client', GOOGLE_CLIENT_SECRET: 'web-e2e-secret', SENTRY_DSN: '' },
+      env: {
+        TRUST_PROXY_HOPS: '1',
+        GOOGLE_CLIENT_ID: 'web-e2e-client',
+        GOOGLE_CLIENT_SECRET: 'web-e2e-secret',
+        SENTRY_DSN: '',
+      },
     }),
     {
       command:

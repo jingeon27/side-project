@@ -82,9 +82,11 @@ test(
     const group = await seedGroup(cookie, '비공개 모임', 'PRIVATE');
     await context.clearCookies();
     await page.goto(`/groups/${group.id}`);
+    await expect(page).toHaveURL(new RegExp('/sign\\?next='));
+    await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
     await expect(page).toHaveURL(`/groups/${group.id}`);
     await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
-    await expect(page.getByRole('link', { name: '로그인하고 가입하기' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '로그인하고 가입 신청하기' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toHaveCount(0);
     await page.goto(`/invite/${group.inviteToken}`);
     await expect(page.getByRole('heading', { name: '비공개 모임' })).toBeVisible();
@@ -107,9 +109,9 @@ test('만료된 쿠키와 다른 그룹의 회원도 사적인 화면을 볼 수
     { name: 'contest_session', value: 'a'.repeat(43), url: WEB_ORIGIN, httpOnly: true },
   ]);
   await page.goto(`/groups/${group.id}`);
-  await expect(page.getByRole('link', { name: '로그인하고 가입하기' })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp('/sign\\?next='));
   await signIn('권한-외부인');
-  await page.reload();
+  await page.goto(`/groups/${group.id}`);
   await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
   await expect(page.getByRole('button', { name: '가입 신청하기', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '최신 게시물' })).toHaveCount(0);
@@ -140,7 +142,7 @@ test(
     await expect(page.getByRole('heading', { name: '레이아웃-사용자' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '참여 그룹' })).toBeVisible();
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
-    await expect(page).toHaveURL(WEB_ORIGIN + '/');
+    await expect(page).toHaveURL(WEB_ORIGIN + '/sign');
     await expect(page.getByRole('button', { name: /구글|Google/ })).toBeVisible();
     expect((await page.request.get(`${API_URL}/health`)).status()).toBe(200);
   },

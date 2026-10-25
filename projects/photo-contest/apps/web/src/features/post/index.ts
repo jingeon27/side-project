@@ -2,6 +2,7 @@ export { GalleryBoard } from './ui/GalleryBoard';
 export { GalleryFeed } from './ui/GalleryFeed';
 export { GalleryPostList } from './ui/GalleryPostList';
 export { CreatePostButton } from './ui/CreatePostButton';
+export { CreatePostForm } from './ui/CreatePostForm';
 export { postTypePolicies } from './model/post.type-policies';
 export { resetGalleryPosts } from './model/post.cache';
 export { PostCard } from './ui/PostCard';

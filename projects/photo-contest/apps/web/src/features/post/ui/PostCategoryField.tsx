@@ -1,9 +1,10 @@
 'use client';
 
-import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
+import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import type { UseFormReturn } from 'react-hook-form';
 
 import { PostCategoryOptionsDocument, type PostCategoryOptionsQuery } from '@/shared/api/generated';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
@@ -29,10 +30,17 @@ function CategoryFieldContent({
   );
 }
 export function PostCategoryField({ groupId, form }: { groupId: string; form: TPostForm }) {
-  const [queryRef, { refetch }] = useBackgroundQuery(PostCategoryOptionsDocument, {
-    variables: { id: groupId },
-    fetchPolicy: 'network-only',
-  });
+  const isSSR = useIsSSR();
+  const [queryRef, { refetch }] = useBackgroundQuery(
+    PostCategoryOptionsDocument,
+    isSSR
+      ? skipToken
+      : {
+          variables: { id: groupId },
+          fetchPolicy: 'network-only',
+        },
+  );
+  if (!queryRef) return <Skeleton className="h-14 w-full" />;
   return (
     <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-14 w-full" />}>
       <CategoryFieldContent queryRef={queryRef} form={form} />
