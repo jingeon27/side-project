@@ -1,7 +1,7 @@
 'use client';
 
 import { useBackgroundQuery, useMutation, type QueryRef } from '@apollo/client/react';
-import { Bell } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
@@ -102,7 +102,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
         </ul>
       ) : (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Bell aria-hidden className="size-8 text-subtle" />
+          <Heart aria-hidden className="size-8 text-subtle" />
           <h2 className="text-subtitle text-ink">아직 새 알림이 없어요</h2>
           <p className="text-body text-muted">댓글과 답글, 대회 소식과 그룹 가입 신청을 알려드릴게요.</p>
         </div>

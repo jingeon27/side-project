@@ -36,7 +36,7 @@ export class RegisterWithPasswordDto {
   loginId = '';
 
   @IsString({ message: '비밀번호를 입력해 주세요.' })
-  @MinLength(PASSWORD_MIN_LENGTH, { message: '비밀번호는 15자 이상 입력해 주세요.' })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: '비밀번호는 8자 이상 입력해 주세요.' })
   @MaxLength(PASSWORD_MAX_LENGTH, { message: '비밀번호는 128자 이내로 입력해 주세요.' })
   password = '';
 

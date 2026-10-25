@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { Bell } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 import { ROUTES } from '@/shared/constants/routes';
 
@@ -13,7 +13,7 @@ export function NotificationLink({ count = 0 }: { count?: number }) {
       aria-label={`알림 ${count}개`}
       className="relative flex size-touch items-center justify-center rounded-control text-ink active:bg-sunken"
     >
-      <Bell aria-hidden className="size-6" strokeWidth={1.7} />
+      <Heart aria-hidden className="size-6" strokeWidth={1.7} />
       {count > 0 ? (
         <span
           aria-hidden

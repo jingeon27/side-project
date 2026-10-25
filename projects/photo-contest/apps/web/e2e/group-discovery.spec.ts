@@ -5,9 +5,9 @@ import { productRequest, seedPost } from './support/photos';
 import { authenticate, expect, seedGroup, test, waitForHydrationOnLoad } from './support/test';
 
 test(
-  '공개 그룹은 링크 없이 탐색하고 로그인 없이 사진·댓글·SEO를 읽을 수 있어야 한다',
+  '공개 그룹은 링크 없이 탐색하고 익명 세션으로 사진·댓글·서버 HTML을 읽을 수 있어야 한다',
   { tag: ['@ios', '@desktop'] },
-  async ({ page, context, request, signIn }, testInfo) => {
+  async ({ page, context, signIn }, testInfo) => {
     const owner = await signIn(`탐색-${testInfo.project.name}`);
     const name = `공개-${testInfo.project.name}-${Date.now()}`;
     await page.goto('/explore');
@@ -33,7 +33,10 @@ test(
 
     await context.clearCookies();
     await page.goto('/');
-    await page.getByRole('link', { name: '로그인 없이 그룹 둘러보기' }).click();
+    await expect(page).toHaveURL(/\/sign\?/);
+    await page.getByRole('button', { name: '익명으로 시작하기', exact: true }).click();
+    await expect(page).toHaveURL('/');
+    await page.getByRole('link', { name: '탐색', exact: true }).click();
     await expect(page).toHaveURL('/explore');
     await expect(page.getByRole('heading', { name: '그룹 탐색', exact: true })).toBeVisible();
     await page.getByRole('search').getByRole('textbox', { name: '그룹 검색', exact: true }).fill(name);
@@ -51,7 +54,7 @@ test(
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
     const article = latest.getByRole('article', { name: title, exact: true });
     await expect(article.getByRole('img')).toBeVisible();
-    expect((await request.get(`/backend/media/${postId}`)).status()).toBe(200);
+    expect((await page.request.get(`/backend/media/${postId}`)).status()).toBe(200);
     await article.getByRole('button', { name: `${title} 댓글 1개`, exact: true }).click();
     const comments = page.getByRole('dialog', { name: '댓글', exact: true });
     await expect(comments.getByText('공개 사진 이야기', { exact: true })).toBeVisible();
@@ -60,7 +63,7 @@ test(
     await comments.getByRole('button', { name: '닫기', exact: true }).click();
     expect(await page.evaluate(() => '__seoXss' in window)).toBe(false);
 
-    const response = await request.get(`${groupPath}?utm_source=duplicate`, {
+    const response = await page.request.get(`${groupPath}?utm_source=duplicate`, {
       headers: { 'User-Agent': 'Twitterbot' },
     });
     expect(response.status()).toBe(200);
@@ -96,10 +99,10 @@ test(
       ]),
     });
 
-    const privateResponse = await request.get(`/groups/${secret.id}`);
+    const privateResponse = await page.request.get(`/groups/${secret.id}`);
     expect(privateResponse.status()).toBe(200);
     expect(await privateResponse.text()).not.toContain(secretTitle);
-    const ownerPrivateResponse = await request.get(`/groups/${secret.id}`, {
+    const ownerPrivateResponse = await page.request.get(`/groups/${secret.id}`, {
       headers: { Cookie: owner, 'User-Agent': 'Twitterbot' },
     });
     const privateSeo = await page.evaluate(
@@ -115,7 +118,7 @@ test(
     expect(privateSeo.robots).toContain('noindex');
     expect(privateSeo.ldCount).toBe(0);
 
-    const indexResponse = await request.get('/sitemap.xml');
+    const indexResponse = await page.request.get('/sitemap.xml');
     expect(indexResponse.status()).toBe(200);
     const index = await page.evaluate(
       (xml) =>
@@ -126,7 +129,7 @@ test(
     );
     const urls: string[] = [];
     for (const sitemap of index) {
-      const document = await request.get(sitemap);
+      const document = await page.request.get(sitemap);
       expect(document.status()).toBe(200);
       urls.push(
         ...(await page.evaluate(
@@ -141,12 +144,12 @@ test(
     expect(urls).toContain(WEB_ORIGIN + groupPath);
     expect(urls).not.toContain(`${WEB_ORIGIN}/groups/${secret.id}`);
     expect(urls).not.toContain(`${WEB_ORIGIN}/me`);
-    const robots = await request.get('/robots.txt');
+    const robots = await page.request.get('/robots.txt');
     expect(await robots.text()).toContain(`Sitemap: ${WEB_ORIGIN}/sitemap.xml`);
-    expect((await request.get('/sitemaps/groups/invalid.xml')).status()).toBe(404);
+    expect((await page.request.get('/sitemaps/groups/invalid.xml')).status()).toBe(404);
     // 색인에 없는 번호는 실제 페이지 수를 넘으므로 조회하지 않고 404다.
-    expect((await request.get(`/sitemaps/groups/${index.length + 1000}.xml`)).status()).toBe(404);
-    const missing = await request.get('/groups/missing-seo-group', {
+    expect((await page.request.get(`/sitemaps/groups/${index.length + 1000}.xml`)).status()).toBe(404);
+    const missing = await page.request.get('/groups/missing-seo-group', {
       headers: { 'User-Agent': 'Twitterbot' },
     });
     expect([200, 404]).toContain(missing.status());
@@ -208,7 +211,7 @@ test(
           .getByRole('region', { name: '최신 게시물', exact: true })
           .getByRole('article', { name: '승인한 멤버에게만 보이는 순간', exact: true }),
       ).toBeVisible();
-      await expect(applicantPage.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
+      await expect(applicantPage.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
       expect((await applicantPage.request.get(`/backend/media/${postId}`)).status()).toBe(200);
       await applicantPage.goto('/me');
       await expect(

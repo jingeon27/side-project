@@ -39,6 +39,24 @@ describe('아이디·비밀번호 계정', () => {
       ?.split(';')[0];
   };
 
+  it('8자 비밀번호로 가입하고 다시 로그인할 수 있어야 한다', async () => {
+    const registered = await call(REGISTER, {
+      loginId: 'eight_char',
+      password: 'pass1234',
+      nickname: '여덟자 회원',
+    });
+    expect(registered.body.errors).toBeUndefined();
+    const login = await call(LOGIN, { loginId: 'eight_char', password: 'pass1234' });
+    expect(login.body.errors).toBeUndefined();
+    expect(login.body.data.loginWithPassword.id).toBe(registered.body.data.registerWithPassword.id);
+    const rejected = await call(REGISTER, {
+      loginId: 'seven_char',
+      password: 'pass123',
+      nickname: '일곱자 회원',
+    });
+    expect(rejected.body.errors[0].message).toBe('비밀번호는 8자 이상 입력해 주세요.');
+  });
+
   it('가입하면 해시만 저장하고 HttpOnly 세션으로 로그인돼야 한다', async () => {
     const res = await register('  My_First_ID  ');
     expect(res.body.errors).toBeUndefined();

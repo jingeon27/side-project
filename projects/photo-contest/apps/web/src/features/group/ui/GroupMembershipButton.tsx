@@ -2,6 +2,7 @@
 
 import { useFragment, useMutation, useQuery } from '@apollo/client/react';
 
+import { useLoginPrompt } from '@/features/auth';
 import { resetGalleryPosts } from '@/features/post';
 import {
   DiscoverGroupsDocument,
@@ -21,6 +22,7 @@ import { Button, ButtonLink } from '@/shared/ui/@core/button';
 import { prependMyGroup } from '../model/group.cache';
 
 export function GroupMembershipButton({ groupId }: { groupId: string }) {
+  const promptLogin = useLoginPrompt();
   const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const { data: group, complete } = useFragment({
     fragment: GroupAccessFragmentDoc,
@@ -43,9 +45,9 @@ export function GroupMembershipButton({ groupId }: { groupId: string }) {
   if (!complete || group.role) return null;
   if (viewer?.me?.isAnonymous && group.visibility === GroupVisibility.Private)
     return (
-      <ButtonLink href={`${ROUTES.LOGIN}?${new URLSearchParams({ next: ROUTES.GROUP(groupId) })}`} size="md">
+      <Button onClick={() => promptLogin(ROUTES.GROUP(groupId))} size="md">
         로그인하고 가입 신청하기
-      </ButtonLink>
+      </Button>
     );
   if (!viewer?.me)
     return (

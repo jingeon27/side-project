@@ -15,6 +15,7 @@ import { BridgeContext } from '@/shared/model/bridge';
 import { saveNotifiedUserId, savePendingLogin } from '../lib/login-marker.helper';
 import { AuthSessionSync } from './AuthSessionSync';
 
+const navigation = vi.hoisted(() => ({ pathname: '/' }));
 const router = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
@@ -24,7 +25,7 @@ const router = vi.hoisted(() => ({
   forward: vi.fn(),
 }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => router }));
+vi.mock('next/navigation', () => ({ useRouter: () => router, usePathname: () => navigation.pathname }));
 vi.mock('@/shared/model/analytics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/shared/model/analytics')>()),
   trackEvent: vi.fn(),
@@ -66,6 +67,7 @@ const authEvents = () =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  navigation.pathname = '/';
   posted = [];
   fake = installFakeNativeApp(window, { capabilities: {} });
   const win: TBridgeWindow = window;
@@ -117,8 +119,15 @@ describe('AuthSessionSync', () => {
     await waitFor(() => expect(window.sessionStorage.getItem('photo-contest:pending-login')).toBeNull());
     expect(trackEvent).not.toHaveBeenCalled();
     expect(identifyUser).not.toHaveBeenCalled();
-    expect(router.replace).not.toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledWith('/sign?next=%2F', undefined);
     // 앱은 식별된 사용자가 없으면 이 알림을 무시한다.
     expect(authEvents()).toEqual([expect.objectContaining({ payload: { signedIn: false } })]);
   });
+});
+
+it('인증·약관 화면은 세션이 없어도 리디렉션하지 않아야 한다', async () => {
+  navigation.pathname = '/sign';
+  renderSync(null);
+  await waitFor(() => expect(authEvents()).toHaveLength(1));
+  expect(router.replace).not.toHaveBeenCalled();
 });

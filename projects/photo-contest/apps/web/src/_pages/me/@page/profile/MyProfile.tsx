@@ -47,7 +47,7 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
           <LogoutButton />
           {viewer.isAnonymous ? (
             <ButtonLink
-              href={`${ROUTES.LOGIN}?${new URLSearchParams({ next: ROUTES.ME })}`}
+              href={`${ROUTES.SIGN}?${new URLSearchParams({ next: ROUTES.ME })}`}
               variant="secondary"
               size="sm"
             >

@@ -23,7 +23,7 @@ test.describe('앱 소셜 로그인 핸드오프', () => {
     expect(session?.authUrl).toMatch(new RegExp(`^${E2E_WEB_ORIGIN}/backend/auth/google\\?app_challenge=`));
     expect(session?.redirectUrl).toBe(E2E_AUTH_CALLBACK_URL);
     // 웹 WebView는 provider 페이지로 직접 이동하지 않는다.
-    await expect(page).toHaveURL(`${E2E_WEB_ORIGIN}/`);
+    await expect(page).toHaveURL(`${E2E_WEB_ORIGIN}/sign?next=%2F`);
   });
 
   test('사용자가 인증을 취소하면 조용히 로그인 화면에 머물러야 한다', async ({ page, nativeHost }) => {

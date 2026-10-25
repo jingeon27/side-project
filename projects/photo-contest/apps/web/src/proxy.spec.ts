@@ -8,11 +8,11 @@ const request = (path: string, cookie?: string) =>
   new NextRequest(new URL(path, 'http://localhost:3200'), { headers: cookie ? { cookie } : {} });
 
 describe('proxy', () => {
-  it('세션 쿠키 없이 멤버 전용 화면에 오면 원래 경로를 next에 담아 홈으로 보내야 한다', () => {
+  it('세션 쿠키 없이 멤버 전용 화면에 오면 원래 경로를 next에 담아 인증 화면으로 보내야 한다', () => {
     const response = proxy(request('/contests/c1?sort=popular'));
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost:3200/?next=%2Fcontests%2Fc1%3Fsort%3Dpopular',
+      'http://localhost:3200/sign?next=%2Fcontests%2Fc1%3Fsort%3Dpopular',
     );
   });
 
@@ -41,6 +41,15 @@ describe('proxy', () => {
   });
 
   it('멤버 전용 경로만 검사해야 한다', () => {
-    expect(config.matcher).toEqual(['/contests/:path*', '/me', '/notifications']);
+    expect(config.matcher).toEqual([
+      '/',
+      '/explore',
+      '/groups/:path*',
+      '/invite/:path*',
+      '/contests/:path*',
+      '/me',
+      '/notifications',
+      '/onboarding',
+    ]);
   });
 });

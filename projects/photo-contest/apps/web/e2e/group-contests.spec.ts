@@ -4,12 +4,12 @@ import { createTestImage, createTestUser, createTestVideo, moveTestContest } fro
 
 import { API_URL, WEB_ORIGIN } from './support/env';
 import { productRequest } from './support/photos';
-import { expect, seedGroup, test } from './support/test';
+import { expect, seedGroup, startAnonymousSession, test } from './support/test';
 
 test(
   '그룹 대회 개최·참여 선택·투표·명예의 전당과 공개 SEO가 이어져야 한다',
   { tag: ['@ios', '@desktop'] },
-  async ({ page, context, request, signIn }, testInfo) => {
+  async ({ page, context, signIn }, testInfo) => {
     const owner = await signIn(`대회장-${testInfo.project.name}`);
     const group = await seedGroup(owner, `대회 그룹-${testInfo.project.name}`);
     const groupPath = `/groups/${group.id}`;
@@ -30,8 +30,8 @@ test(
     const contestId = contestPath.split('/').at(-1);
     if (!contestId) throw new Error('대회 ID가 있어야 한다');
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
-    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-    const sheet = page.getByRole('dialog', { name: '그룹에 글쓰기', exact: true });
+    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
+    const sheet = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).toBeChecked();
     await expect(sheet.getByLabel('참여할 대회')).toHaveValue(contestId);
     await sheet
@@ -44,7 +44,7 @@ test(
     await expect(page.getByRole('article', { name: '우승할 웃긴 순간', exact: true })).toBeVisible();
 
     await page.goto(groupPath);
-    await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+    await page.getByRole('link', { name: '글쓰기', exact: true }).click();
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).not.toBeChecked();
     await sheet.getByRole('checkbox', { name: /대회에 참여하기/ }).check();
     await sheet.getByLabel('참여할 대회').selectOption(contestId);
@@ -62,7 +62,7 @@ test(
     );
     expect(entries.galleryPosts).toHaveLength(2);
 
-    const seoResponse = await request.get(`${contestPath}?utm_source=duplicate`, {
+    const seoResponse = await page.request.get(`${contestPath}?utm_source=duplicate`, {
       headers: { 'User-Agent': 'Twitterbot' },
     });
     const html = await seoResponse.text();
@@ -112,6 +112,7 @@ test(
     ).toBeDisabled();
     await moveTestContest(API_URL, { origin: WEB_ORIGIN, contestId, phase: 'COMPLETED' });
     await context.clearCookies();
+    await startAnonymousSession(context);
     await page.goto(`${groupPath}/hall-of-fame`);
     const hall = page.getByRole('article', { name: title, exact: true });
     await expect(hall.getByRole('img', { name: '우승할 웃긴 순간' })).toBeVisible();
@@ -125,14 +126,14 @@ test(
     await hall.getByRole('link', { name: '대회 결과 보기', exact: true }).click();
     await expect(page.getByRole('region', { name: '대회 최종 결과' })).toBeVisible();
     const hallHtml = await (
-      await request.get(`${groupPath}/hall-of-fame`, { headers: { 'User-Agent': 'Twitterbot' } })
+      await page.request.get(`${groupPath}/hall-of-fame`, { headers: { 'User-Agent': 'Twitterbot' } })
     ).text();
     expect(hallHtml).toContain('우승할 웃긴 순간');
     expect(hallHtml).toContain('application/ld+json');
     expect(hallHtml).not.toContain('data-dgst=');
-    const sitemap = await (await request.get('/sitemaps/contests/0.xml')).text();
+    const sitemap = await (await page.request.get('/sitemaps/contests/0.xml')).text();
     expect(sitemap).toContain(WEB_ORIGIN + contestPath);
-    expect((await request.get('/sitemaps/contests/9999999999999.xml')).status()).toBe(404);
+    expect((await page.request.get('/sitemaps/contests/9999999999999.xml')).status()).toBe(404);
   },
 );
 
@@ -183,7 +184,7 @@ test(
 test(
   '비공개 대회·명예의 전당은 익명 SEO·사이트맵에 내용을 공개하지 않아야 한다',
   { tag: ['@ios', '@desktop'] },
-  async ({ page, context, request, signIn }) => {
+  async ({ page, context, signIn }) => {
     const owner = await signIn('비공개 대회장');
     const group = await seedGroup(owner, '숨긴 대회 그룹', 'PRIVATE');
     const now = Date.now();
@@ -204,7 +205,7 @@ test(
     ];
     for (const path of paths) {
       const html = await (
-        await request.get(path, { headers: { Cookie: owner, 'User-Agent': 'Twitterbot' } })
+        await page.request.get(path, { headers: { Cookie: owner, 'User-Agent': 'Twitterbot' } })
       ).text();
       const seo = await page.evaluate((html) => {
         const d = new DOMParser().parseFromString(html, 'text/html');
@@ -219,12 +220,13 @@ test(
       expect(seo.title).not.toContain('유출 금지');
     }
     await context.clearCookies();
+    await startAnonymousSession(context);
     for (const path of paths) {
       await page.goto(path);
       await expect(page.getByRole('region', { name: '비공개 그룹 안내' })).toBeVisible();
       await expect(page.getByText('비공개 대회 제목 유출 금지', { exact: true })).toHaveCount(0);
     }
-    const sitemap = await (await request.get('/sitemaps/contests/0.xml')).text();
+    const sitemap = await (await page.request.get('/sitemaps/contests/0.xml')).text();
     expect(sitemap).not.toContain(contest.id);
   },
 );

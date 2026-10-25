@@ -64,7 +64,7 @@ export const COMPLETED_POST_UPLOAD_TTL_MS = 60 * MINUTE_MS;
 export const MEDIA_IO_TIMEOUT_MS = 10 * SECOND_MS;
 export const COMMENT_BODY_LIMIT = 1000;
 
-export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 export const PASSWORD_SCRYPT = { N: 32768, r: 8, p: 3, maxmem: 64 * 1024 * 1024 } as const;
 export const PASSWORD_KEY_BYTES = 64;

@@ -3,12 +3,13 @@
 import { useId } from 'react';
 import Link from 'next/link';
 
-import { useBackgroundQuery, type QueryRef } from '@apollo/client/react';
+import { skipToken, useBackgroundQuery, type QueryRef } from '@apollo/client/react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { ROUTES } from '@/shared/constants/routes';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
@@ -76,10 +77,17 @@ function ContestSelection({
   );
 }
 function OpenContests({ form, groupId }: { form: TPostForm; groupId: string }) {
-  const [queryRef, { refetch }] = useBackgroundQuery(GroupContestsDocument, {
-    variables: { groupId, filter: GroupContestFilter.Open, offset: 0, limit: 48 },
-    fetchPolicy: 'network-only',
-  });
+  const isSSR = useIsSSR();
+  const [queryRef, { refetch }] = useBackgroundQuery(
+    GroupContestsDocument,
+    isSSR
+      ? skipToken
+      : {
+          variables: { groupId, filter: GroupContestFilter.Open, offset: 0, limit: 48 },
+          fetchPolicy: 'network-only',
+        },
+  );
+  if (!queryRef) return <Skeleton className="h-14 w-full" />;
   return (
     <AsyncBoundary fallback={<Skeleton className="h-14 w-full" />} onRetry={() => refetch()}>
       <ContestSelection form={form} groupId={groupId} queryRef={queryRef} />

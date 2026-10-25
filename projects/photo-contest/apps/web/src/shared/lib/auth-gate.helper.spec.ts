@@ -5,7 +5,7 @@ import {
   decideAuthGate,
   getSafeNextPath,
   hasSessionCookie,
-  isMemberOnlyPath,
+  isSessionRequiredPath,
   readCookie,
 } from './auth-gate.helper';
 
@@ -52,38 +52,38 @@ describe('hasSessionCookie', () => {
   });
 });
 
-describe('isMemberOnlyPath', () => {
-  it('대회·MY만 로그인하고 그룹·탐색은 로그인 없이 볼 수 있어야 한다', () => {
-    expect(isMemberOnlyPath('/groups/g1')).toBe(false);
-    expect(isMemberOnlyPath('/explore')).toBe(false);
-    expect(isMemberOnlyPath('/contests/c1')).toBe(true);
-    expect(isMemberOnlyPath('/me')).toBe(true);
-    expect(isMemberOnlyPath('/notifications')).toBe(true);
-    expect(isMemberOnlyPath('/')).toBe(false);
-    expect(isMemberOnlyPath('/invite/token')).toBe(false);
-    expect(isMemberOnlyPath('/groupsX')).toBe(false);
-    expect(isMemberOnlyPath('/member')).toBe(false);
+describe('isSessionRequiredPath', () => {
+  it('콘텐츠 화면에는 세션이 필요하고 인증·정책·정적 경로는 제외해야 한다', () => {
+    expect(isSessionRequiredPath('/groups/g1')).toBe(true);
+    expect(isSessionRequiredPath('/explore')).toBe(true);
+    expect(isSessionRequiredPath('/contests/c1')).toBe(true);
+    expect(isSessionRequiredPath('/me')).toBe(true);
+    expect(isSessionRequiredPath('/notifications')).toBe(true);
+    expect(isSessionRequiredPath('/')).toBe(true);
+    expect(isSessionRequiredPath('/invite/token')).toBe(true);
+    expect(isSessionRequiredPath('/groupsX')).toBe(false);
+    expect(isSessionRequiredPath('/member')).toBe(false);
   });
 });
 
 describe('decideAuthGate', () => {
-  it('세션 쿠키 없이 멤버 전용 화면에 오면 원래 경로와 쿼리를 next에 담아 홈으로 보내야 한다', () => {
+  it('세션 쿠키 없이 멤버 전용 화면에 오면 원래 경로와 쿼리를 next에 담아 인증 화면으로 보내야 한다', () => {
     expect(decideAuthGate({ pathname: '/contests/c1', search: '?sort=popular', cookieHeader: null })).toEqual(
       {
         type: 'redirect',
-        location: '/?next=%2Fcontests%2Fc1%3Fsort%3Dpopular',
+        location: '/sign?next=%2Fcontests%2Fc1%3Fsort%3Dpopular',
       },
     );
   });
 
   it('세션 쿠키가 있거나 공개 화면이면 통과시켜야 한다', () => {
-    expect(decideAuthGate({ pathname: '/groups/g1', search: '', cookieHeader: null })).toEqual({
+    expect(decideAuthGate({ pathname: '/sign', search: '', cookieHeader: null })).toEqual({
       type: 'allow',
     });
     expect(
       decideAuthGate({ pathname: '/groups/g1', search: '', cookieHeader: 'contest_session=abc' }),
     ).toEqual({ type: 'allow' });
-    expect(decideAuthGate({ pathname: '/invite/t1', search: '', cookieHeader: null })).toEqual({
+    expect(decideAuthGate({ pathname: '/privacy', search: '', cookieHeader: null })).toEqual({
       type: 'allow',
     });
   });
@@ -92,13 +92,15 @@ describe('decideAuthGate', () => {
 describe('getSafeNextPath', () => {
   it('같은 origin의 상대 경로만 그대로 돌려줘야 한다', () => {
     expect(getSafeNextPath('/contests/c1?sort=popular')).toBe('/contests/c1?sort=popular');
-    expect(getSafeNextPath(buildLoginRedirectPath('/me'))).toBe('/?next=%2Fme');
+    expect(buildLoginRedirectPath('/me')).toBe('/sign?next=%2Fme');
   });
 
   it('다른 origin으로 새거나 형식이 이상한 값은 홈으로 바꿔야 한다', () => {
     for (const value of [
       null,
       '',
+      '/sign?next=%2Fme',
+      '/login',
       'https://evil.example',
       '//evil.example',
       '/\\evil.example',

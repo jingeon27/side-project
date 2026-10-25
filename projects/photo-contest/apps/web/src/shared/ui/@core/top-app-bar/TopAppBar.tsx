@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { Bell, ChevronLeft, Compass, House, UserRound } from 'lucide-react';
+import { ChevronLeft, Compass, Heart, House, UserRound } from 'lucide-react';
 
 import { ROUTES } from '../../../constants/routes';
 import { cn } from '../../../lib/cn.helper';
@@ -18,7 +18,10 @@ const APP_BAR_CLASS_NAME = 'sticky top-0 z-app-bar shrink-0 border-b border-line
 function DesktopNavigation() {
   const pathname = usePathname();
   return (
-    <aside className="absolute inset-y-0 left-0 z-app-bar hidden w-48 border-r border-line bg-surface desktop:block wide:w-56">
+    <aside
+      data-desktop-nav
+      className="absolute inset-y-0 left-0 z-app-bar hidden w-48 border-r border-line bg-surface desktop:block wide:w-56"
+    >
       <nav
         aria-label="주요 메뉴"
         className="sticky top-0 flex h-dvh flex-col gap-2 overflow-y-auto px-4 py-6 wide:px-5"
@@ -43,7 +46,7 @@ function DesktopNavigation() {
           MY
         </NavigationLink>
         <NavigationLink href={ROUTES.NOTIFICATIONS} active={pathname === ROUTES.NOTIFICATIONS}>
-          <Bell aria-hidden className="size-6" strokeWidth={1.7} />
+          <Heart aria-hidden className="size-6" strokeWidth={1.7} />
           알림
         </NavigationLink>
         <div className="mt-auto px-3 text-caption text-subtle">

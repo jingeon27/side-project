@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { useQuery } from '@apollo/client/react';
 
 import { MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
-import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
+import {
+  buildLoginRedirectPath,
+  getSafeNextPath,
+  isSessionRequiredPath,
+} from '@/shared/lib/auth-gate.helper';
 import { ANALYTICS_EVENT, forgetAnalyticsUser, identifyUser, trackEvent } from '@/shared/model/analytics';
 import { useBridge } from '@/shared/model/bridge';
 import { useAppRouter } from '@/shared/model/router';
@@ -23,6 +28,7 @@ import { readNotifiedUserId, saveNotifiedUserId, takePendingLogin } from '../lib
 export function AuthSessionSync() {
   const bridge = useBridge();
   const router = useAppRouter();
+  const pathname = usePathname();
   const { data } = useQuery(MeDocument);
   const me = data?.me;
 
@@ -33,6 +39,8 @@ export function AuthSessionSync() {
       forgetAnalyticsUser();
       saveNotifiedUserId(null);
       bridge?.notify('auth.changed', { signedIn: false });
+      if (isSessionRequiredPath(pathname))
+        router.replace(buildLoginRedirectPath(`${pathname}${window.location.search}`));
       return;
     }
     identifyUser(me.id);
@@ -51,7 +59,7 @@ export function AuthSessionSync() {
     trackEvent(ANALYTICS_EVENT.LoginSucceeded, { provider: pending.method });
     const next = getSafeNextPath(pending.next);
     if (window.location.pathname === ROUTES.HOME && next !== ROUTES.HOME) router.replace(next);
-  }, [me, bridge, router]);
+  }, [me, bridge, router, pathname]);
 
   return null;
 }

@@ -56,8 +56,14 @@ test('공개 홈은 익명 캐시를 재사용하고 숨김 직후 갱신하며 
     upload: await upload(cookie, group.id),
     title: '홈 캐시 첫 사진',
   });
+  const reader = await createTestUser(CACHE_API_URL, {
+    origin: CACHE_WEB_ORIGIN,
+    nickname: '공개 캐시 조회 회원',
+  });
   const home = () =>
-    request.get('/', { headers: { 'User-Agent': 'Twitterbot' } }).then((response) => response.text());
+    request
+      .get('/', { headers: { Cookie: reader, 'User-Agent': 'Twitterbot' } })
+      .then((response) => response.text());
   expect(await home()).toContain('홈 캐시 첫 사진');
   expect(await home()).not.toContain('홈에 공유하면 안 되는 사진');
   await product(cookie, CREATE_POST, {
@@ -82,8 +88,10 @@ test('공개 홈은 익명 캐시를 재사용하고 숨김 직후 갱신하며 
   expect(await home()).not.toContain('홈에 공유하면 안 되는 사진');
 });
 
-async function seoTitles(request: APIRequestContext, page: Page, groupId: string) {
-  const response = await request.get(`/groups/${groupId}`, { headers: { 'User-Agent': 'Twitterbot' } });
+async function seoTitles(request: APIRequestContext, page: Page, groupId: string, cookie: string) {
+  const response = await request.get(`/groups/${groupId}`, {
+    headers: { Cookie: cookie, 'User-Agent': 'Twitterbot' },
+  });
   expect(response.status()).toBe(200);
   return page.evaluate(
     (html) => {
@@ -114,7 +122,7 @@ test('프로덕션의 공개 캐시를 재사용하고 정상·부분 성공 mut
     upload: await upload(cookie, group.id),
     title: '캐시에 저장한 첫 사진',
   });
-  expect(await seoTitles(request, page, group.id)).toEqual(['캐시에 저장한 첫 사진']);
+  expect(await seoTitles(request, page, group.id, cookie)).toEqual(['캐시에 저장한 첫 사진']);
 
   const second = await product<{ createPost: { id: string } }>(cookie, CREATE_POST, {
     group: group.id,
@@ -122,20 +130,20 @@ test('프로덕션의 공개 캐시를 재사용하고 정상·부분 성공 mut
     title: '캐시 밖에서 추가한 사진',
   });
   // API에만 추가한 글은 기존 Next 캐시에 없으므로 요청 간 재사용을 확인할 수 있다.
-  expect(await seoTitles(request, page, group.id)).toEqual(['캐시에 저장한 첫 사진']);
+  expect(await seoTitles(request, page, group.id, cookie)).toEqual(['캐시에 저장한 첫 사진']);
   const unauthorized = await request.post('/backend/graphql', {
     headers: { Origin: CACHE_WEB_ORIGIN },
     data: { query: 'mutation($id:ID!){deletePost(postId:$id)}', variables: { id: first.createPost.id } },
   });
   expect((await unauthorized.json()).errors[0].extensions.code).toBe('UNAUTHENTICATED');
-  expect(await seoTitles(request, page, group.id)).toEqual(['캐시에 저장한 첫 사진']);
+  expect(await seoTitles(request, page, group.id, cookie)).toEqual(['캐시에 저장한 첫 사진']);
 
   const mutation = await request.post('/backend/graphql', {
     headers: { Cookie: cookie, Origin: CACHE_WEB_ORIGIN },
     data: { query: 'mutation($id:ID!){likePost(postId:$id){id}}', variables: { id: second.createPost.id } },
   });
   expect((await mutation.json()).errors).toBeUndefined();
-  expect(await seoTitles(request, page, group.id)).toEqual([
+  expect(await seoTitles(request, page, group.id, cookie)).toEqual([
     '캐시 밖에서 추가한 사진',
     '캐시에 저장한 첫 사진',
   ]);
@@ -150,7 +158,7 @@ test('프로덕션의 공개 캐시를 재사용하고 정상·부분 성공 mut
   const result = await partial.json();
   expect(result.data).toBeNull();
   expect(result.errors[0].path).toEqual(['failed']);
-  expect(await seoTitles(request, page, group.id)).toEqual(['캐시 밖에서 추가한 사진']);
+  expect(await seoTitles(request, page, group.id, cookie)).toEqual(['캐시 밖에서 추가한 사진']);
 });
 
 test('사이트맵 캐시와 쓰기 뒤 갱신을 확인하고 비공개 글을 공유 캐시에 넣지 않아야 한다', async ({

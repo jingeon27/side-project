@@ -33,7 +33,7 @@ export function LogoutButton() {
       resetAnalytics();
       saveNotifiedUserId(null);
       bridge?.notify('auth.changed', { signedIn: false });
-      navigateDocument(ROUTES.HOME);
+      navigateDocument(ROUTES.SIGN);
     });
 
   return (

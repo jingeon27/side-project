@@ -13,5 +13,5 @@ export const passwordLoginSchema = z.object({
 });
 export const passwordRegisterSchema = passwordLoginSchema.extend({
   nickname,
-  password: z.string().min(15, '비밀번호는 15자 이상 입력해 주세요.').max(128, '128자 이내로 입력해 주세요.'),
+  password: z.string().min(8, '비밀번호는 8자 이상 입력해 주세요.').max(128, '128자 이내로 입력해 주세요.'),
 });

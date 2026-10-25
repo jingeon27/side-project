@@ -10,7 +10,7 @@ test.describe('앱 셸', () => {
     await page.goto('/');
 
     await expect(webScreens.appMarker(page)).toHaveCount(1);
-    await expect(nativeHost.waitForEvent('app.ready')).resolves.toEqual({ path: '/' });
+    await expect(nativeHost.waitForEvent('app.ready')).resolves.toEqual({ path: '/sign?next=%2F' });
   });
 
   test('딥링크(navigation.open)를 받으면 그 화면으로 이동해야 한다', async ({

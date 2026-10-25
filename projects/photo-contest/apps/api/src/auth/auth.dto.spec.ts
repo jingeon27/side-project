@@ -18,6 +18,22 @@ describe('인증 DTO', () => {
     expect(result).toMatchObject({ loginId: 'my_id', password, nickname: '친구' });
   });
 
+  it('가입 비밀번호는 8자를 허용하고 7자는 거절해야 한다', async () => {
+    const input = { loginId: 'eight_id', nickname: '경계 확인', password: 'pass1234' };
+    await expect(
+      pipe.transform(input, { type: 'custom', metatype: RegisterWithPasswordDto }),
+    ).resolves.toMatchObject(input);
+    await expect(
+      pipe.transform(
+        { ...input, password: 'pass123' },
+        { type: 'custom', metatype: RegisterWithPasswordDto },
+      ),
+    ).rejects.toMatchObject({
+      message: '비밀번호는 8자 이상 입력해 주세요.',
+      extensions: { code: 'BAD_USER_INPUT' },
+    });
+  });
+
   it('잘못된 로그인 입력은 같은 인증 실패로 거절하고 입력값을 응답에 넣지 않아야 한다', async () => {
     for (const value of [
       { loginId: 'x', password: 'secret' },

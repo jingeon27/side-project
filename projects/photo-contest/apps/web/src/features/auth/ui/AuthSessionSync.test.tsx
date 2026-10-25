@@ -16,6 +16,7 @@ import { readNotifiedUserId, saveNotifiedUserId } from '../lib/login-marker.help
 import { AuthSessionSync } from './AuthSessionSync';
 
 vi.mock('next/navigation', () => ({
+  usePathname: () => '/',
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),

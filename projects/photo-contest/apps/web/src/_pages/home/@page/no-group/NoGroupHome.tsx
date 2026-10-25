@@ -15,7 +15,7 @@ function PublicGroups({ queryRef }: { queryRef: QueryRef<DiscoverGroupsQuery> })
   if (!data.discoverGroups.length)
     return <p className="py-6 text-body text-muted">첫 공개 그룹을 만들어 웃긴 순간을 나눠보세요.</p>;
   return (
-    <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2 desktop:grid-cols-3">
+    <div className="grid min-w-0 grid-cols-1 gap-3 tablet:grid-cols-2 wide:grid-cols-3">
       {data.discoverGroups.map(({ id }) => (
         <DiscoverGroupCard key={id} id={id} joinable />
       ))}
@@ -29,7 +29,7 @@ export function NoGroupHome({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <GroupSearchForm />
-      <section aria-label="추천 공개 그룹" className="flex flex-col gap-4">
+      <section aria-label="공개 그룹 목록" className="flex min-w-0 flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-subtitle text-ink">공개 그룹</h2>
           <ButtonLink href={ROUTES.EXPLORE} variant="ghost" size="md">

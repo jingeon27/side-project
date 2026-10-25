@@ -67,10 +67,10 @@ test(
     await page.screenshot({ path: '.data/screens/desktop-group-wide.png' });
 
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const write = page.getByRole('button', { name: '글쓰기', exact: true });
+    const write = page.getByRole('link', { name: '글쓰기', exact: true });
     await expect(write).toBeInViewport();
     await write.click();
-    const composer = page.getByRole('dialog', { name: '그룹에 글쓰기', exact: true });
+    const composer = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     const title = composer.getByLabel('제목', { exact: true });
     const picker = await composer.getByRole('button', { name: '파일 선택', exact: true }).boundingBox();
     const titleBox = await title.boundingBox();

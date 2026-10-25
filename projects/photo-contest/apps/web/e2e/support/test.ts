@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { test as base, expect, type BrowserContext } from '@playwright/test';
 
 import { createTestUser, graphqlRequest } from '@photo-contest/test-kit';
@@ -36,7 +38,10 @@ export async function seedGroup(cookie: string, name: string, visibility: 'PUBLI
 }
 
 export const test = base.extend<{ signIn: (nickname: string) => Promise<string> }>({
-  page: async ({ page }, provide) => {
+  page: async ({ page, context }, provide, testInfo) => {
+    // 각 브라우저 시나리오는 별도 사용자 주소를 써서 제품의 인증 제한 버킷을 공유하지 않는다.
+    const address = createHash('sha256').update(testInfo.testId).digest();
+    await context.setExtraHTTPHeaders({ 'X-Forwarded-For': `198.18.${address[0]}.${address[1]}` });
     const errors = await observeRuntimeErrors(page);
     await page.addInitScript(() =>
       document.addEventListener('DOMContentLoaded', () => {
@@ -55,3 +60,12 @@ export const test = base.extend<{ signIn: (nickname: string) => Promise<string> 
 
 export { expect };
 export { waitForHydrationOnLoad } from './hydration';
+
+/** 익명 조회 시나리오도 제품 mutation으로 HttpOnly 세션을 먼저 만든다. */
+export async function startAnonymousSession(context: BrowserContext) {
+  const response = await context.request.post(`${WEB_ORIGIN}/backend/graphql`, {
+    headers: { Origin: WEB_ORIGIN },
+    data: { query: 'mutation { startAnonymousSession { id } }' },
+  });
+  expect((await response.json()).errors).toBeUndefined();
+}
