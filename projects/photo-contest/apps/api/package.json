@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "sentry:check": "node --env-file-if-exists=../../.env --import tsx scripts/check-sentry.mjs",
     "dev": "yarn build && concurrently -k 'tsc7 -w -p tsconfig.build.json' 'node --watch --env-file-if-exists=../../.env dist/main.js'",
     "build": "yarn workspace @side/push-notifications build && tsc7 -p tsconfig.build.json",
     "start": "node --env-file-if-exists=../../.env dist/main.js",

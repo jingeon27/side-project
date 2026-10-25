@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sentry:check": "yarn workspace @photo-contest/api sentry:check",
     "dev": "node --env-file-if-exists=.env scripts/dev.mjs",
     "db:local": "node --env-file-if-exists=.env --import tsx scripts/local-postgres.ts",
     "db:test:local": "node --env-file-if-exists=.env --import tsx scripts/local-postgres.ts --test",
