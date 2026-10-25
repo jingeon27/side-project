@@ -2,7 +2,9 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 
 import { AnswerSchema, CommentSchema, PostSchema } from '@game-feedback/contracts';
 
-const origin = 'http://127.0.0.1:3301';
+import { adminApi } from './admin-api';
+
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };
 async function account(request: APIRequestContext, accountId: string) {
   expect((await request.post('/api/auth/test-token', { headers, data: { accountId } })).ok()).toBe(true);
@@ -98,7 +100,7 @@ test('administrator answer visibility changes invalidate an already cached publi
     for (const hidden of [true, false]) {
       expect(
         (
-          await page.request.post('/api/admin/hide', {
+          await page.request.post(adminApi('/api/admin/hide'), {
             headers,
             data: { targetType: 'ANSWER', targetId: answer.id, hidden, reason: '실제 캐시 무효화 검증' },
           })

@@ -2,7 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { appRoutes } from '@game-feedback/bridge';
 
-const origin = 'http://127.0.0.1:3301';
+import { adminApi } from './admin-api';
+
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 async function createFeedback(page: Page) {
   const q = `feedback-${Date.now().toString(36)}`;
@@ -13,7 +15,7 @@ async function createFeedback(page: Page) {
       data: { accountId },
     });
   expect((await login('sample-test-admin')).ok()).toBe(true);
-  const categoryResponse = await page.request.post('/api/admin/categories', {
+  const categoryResponse = await page.request.post(adminApi('/api/admin/categories'), {
     headers: { Origin: origin },
     data: { slug: game, name: '피드백 테스트 게임' },
   });
