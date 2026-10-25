@@ -3,7 +3,6 @@ import { randomBytes } from 'node:crypto';
 import type { BrowserContext } from '@playwright/test';
 
 import {
-  createTestAppLoginTicket,
   createTestImage,
   createTestUser,
   graphqlRequest,
@@ -128,12 +127,4 @@ export async function seedGalleryWithMemberPost() {
     { groupId: group.id, uploadId },
   );
   return { ownerCookie, memberCookie, group };
-}
-
-/**
- * 테스트 API로 외부 로그인 성공 콜백의 티켓을 만든다. 실제 provider 없이 앱 → 웹 교환(/auth/app/exchange)을 검증한다.
- * challenge는 앱이 인증 세션 주소(app_challenge)에 실은 값이다.
- */
-export async function issueAppLoginTicket(challenge: string, nickname = uniqueNickname('구글')) {
-  return createTestAppLoginTicket(E2E_API_URL, { nickname, challenge, origin: E2E_WEB_ORIGIN });
 }

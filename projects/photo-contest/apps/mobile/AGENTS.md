@@ -1,16 +1,14 @@
 # Mobile (Expo WebView 셸)
 
+사용자가 루트 `.env`만 사용하도록 지정했다. 모바일은 루트 WEB_ORIGIN·공개 관측 키를 읽고 NODE_ENV=production이면 HTTPS를 요구한다. 별도 모바일 env 템플릿·App Link/Universal Link 배포 설정·시스템 브라우저 소셜 로그인은 제거했다. 관련 스킬의 이전 모바일 환경변수·인증서 설정 지침은 적용하지 않는다. 서버 자격 증명은 Expo extra에 넣지 않는다.
+
 웹(`apps/web`)을 WebView 하나로 감싼다. 세션은 WebView의 HttpOnly 세션 쿠키(운영 `__Host-contest_session`, 개발 http `contest_session`)가 맡고 토큰을 네이티브로 넘기지 않는다. 화면 기록은 웹이 가지며, 네이티브는 Android 뒤로 가기만 웹에 묻는다.
 
 ## 실행
 
 - Expo Go로는 열지 않는다. 앱 링크 콜백과 네이티브 모듈은 dev client·스토어 빌드에서만 동작한다.
-  - `APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android` (또는 `ios`)로 dev client를 만든 뒤 `start`로 Metro를 띄운다. `APP_VARIANT=development`일 때만 Android 평문 http와 iOS 로컬 네트워크 ATS 예외(`NSAllowsLocalNetworking`)를 넣는다. `start`·`bundle:check`는 `APP_VARIANT`가 없으면 development로 실행한다.
-  - `APP_VARIANT=development`가 아니면 운영 빌드다. https `EXPO_PUBLIC_WEB_ORIGIN`(포트 없음)과 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`가 없으면 `app.config.ts`가 오류로 멈춘다(`expo config`·`prebuild`·EAS 빌드). 개발 빌드의 기본 식별자는 `dev.side.photocontest`다.
-- 웹 주소는 `EXPO_PUBLIC_WEB_ORIGIN`(빌드 때 고정). 개발 빌드만 없으면 `http://localhost:3200`을 쓰고 http를 허용한다. 그 밖의 빌드는 https origin이 아니면 `app.config.ts`가 설정 단계(prebuild·번들링)에서 멈추고, 번들(`__DEV__` false)도 시작할 때 오류를 낸다.
 - Android 에뮬레이터는 `adb reverse tcp:3200 tcp:3200`으로 같은 `localhost` 주소를 쓴다. `10.0.2.2`로 열면 API의 Origin 검사(WEB_ORIGIN)가 POST를 막는다.
 - 앱은 웹 origin의 `/backend/*` 프록시만 부른다(`API_BASE`). API 주소를 따로 두지 않는다.
-- 업데이트 화면의 스토어 링크는 `EXPO_PUBLIC_STORE_URL`. 없으면 Android만 `market://details?id=<패키지>`, iOS는 버튼을 숨긴다.
 - `metro.config.js`는 두지 않는다. Expo 기본 설정이 워크스페이스(브리지·zod)를 찾는다(`bundle:check`로 확인).
 - `package.json`의 `"type": "module"`은 Playwright가 test-kit(ESM, `import.meta`)을 읽기 위해 필요하다.
 
@@ -52,9 +50,9 @@
 
 ## 모니터링·분석
 
-- Sentry: `EXPO_PUBLIC_SENTRY_DSN`이 없으면 초기화하지 않고 루트도 감싸지 않는다. `sendDefaultPii: false`, 보내기 전에 user·request를 지우고 브레드크럼은 `data`를 뺀다(만들 때도). 오류 경계가 잡은 렌더 오류는 `captureException`, WebView 문제는 warning 메시지(아래 표의 이름 + 태그).
+- Sentry: `NEXT_PUBLIC_SENTRY_DSN`이 없으면 초기화하지 않고 루트도 감싸지 않는다. `sendDefaultPii: false`, 보내기 전에 user·request를 지우고 브레드크럼은 `data`를 뺀다(만들 때도). 오류 경계가 잡은 렌더 오류는 `captureException`, WebView 문제는 warning 메시지(아래 표의 이름 + 태그).
 - 소스맵: `@sentry/react-native/expo` 플러그인에 조직·프로젝트를 넣지 않는다. 릴리스 빌드에서 올리려면 빌드 환경에 `SENTRY_AUTH_TOKEN`·`SENTRY_ORG`·`SENTRY_PROJECT`를 둔다. 토큰 없이 릴리스 빌드하면 `SENTRY_DISABLE_AUTO_UPLOAD=true`를 함께 준다(없으면 Xcode·Gradle 업로드 단계가 실패한다). Debug 빌드는 올리지 않는다.
-- Amplitude: `EXPO_PUBLIC_AMPLITUDE_API_KEY`가 없으면 아무것도 보내지 않는다. 자동 수집(세션·화면·수명 주기)과 광고 식별자(adid·appSetId·idfv)는 끈다.
+- Amplitude: `NEXT_PUBLIC_AMPLITUDE_API_KEY`가 없으면 아무것도 보내지 않는다. 자동 수집(세션·화면·수명 주기)과 광고 식별자(adid·appSetId·idfv)는 끈다.
 - 기기 ID: 시작할 때 초기화를 최대 1.5초 기다려 기기 ID를 브리지 앱 정보 `analyticsDeviceId`로 웹에 넘긴다. 늦거나 실패하면 빼고 연다(웹은 자기 ID를 쓴다).
 - 사용자: 웹 `auth.changed`의 `userId`로 `setUserId`, 식별된 사용자가 있을 때 `signedIn: false`면 `reset`(기기 ID가 바뀌고 웹은 다음 실행 때 새 ID를 받는다). 비로그인 상태를 다시 알리는 것만으로는 reset하지 않는다.
 - 속성에 닉네임·캡션·초대 토큰·이메일·URL을 넣지 않는다. 경로는 `/`, `/invite/:token`, `/groups/:id`, `/contests/:id`만 보낸다.

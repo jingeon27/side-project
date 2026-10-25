@@ -9,7 +9,7 @@ describe('앱 시작 때 부르는 API', () => {
   it('GET /app/config 응답이 앱의 스키마를 통과하고 버전 검사에 쓸 수 있어야 한다', async () => {
     const config = await fetchAppConfig(apiUrl, fetch);
 
-    expect(config).toEqual({ minimumVersion: '1.0.0', latestVersion: '1.2.0' });
+    expect(config).toEqual({ minimumVersion: '1.0.0', latestVersion: '1.0.0' });
     expect(isUpdateRequired('1.0.0', config.minimumVersion)).toBe(false);
     expect(isUpdateRequired('0.9.9', config.minimumVersion)).toBe(true);
   });

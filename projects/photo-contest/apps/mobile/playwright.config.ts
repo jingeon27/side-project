@@ -44,8 +44,6 @@ export default defineConfig({
       port: E2E_API_PORT,
       webOrigin: E2E_WEB_ORIGIN,
       database,
-      // 웹이 소셜 로그인 버튼을 그리도록 가짜 client id를 준다. 실제 provider로는 나가지 않는다.
-      env: { GOOGLE_CLIENT_ID: 'mobile-e2e-client', GOOGLE_CLIENT_SECRET: 'mobile-e2e-secret' },
     }),
     {
       // 웹 워크스페이스의 next로 실행한다. yarn 스크립트 안에서는 PATH에 yarn이 있다.
@@ -57,8 +55,6 @@ export default defineConfig({
       stderr: 'pipe',
       gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
       env: {
-        // 웹 e2e(.next/e2e)·개발 서버(.next)와 빌드 폴더가 겹치지 않게 한다.
-        NEXT_DIST_DIR: '.next/e2e-mobile',
         API_URL: `http://127.0.0.1:${E2E_API_PORT}`,
         WEB_ORIGIN: E2E_WEB_ORIGIN,
         SENTRY_DSN: '',

@@ -10,7 +10,7 @@ describe('resolveWebOrigin', () => {
   });
 
   it('운영 번들은 값이 없거나 https가 아니면 시작하지 않아야 한다', () => {
-    expect(() => resolveWebOrigin(undefined, false)).toThrow('EXPO_PUBLIC_WEB_ORIGIN');
+    expect(() => resolveWebOrigin(undefined, false)).toThrow('WEB_ORIGIN');
     expect(() => resolveWebOrigin('http://contest.example', false)).toThrow('https');
     expect(() => resolveWebOrigin('contest.example', false)).toThrow('origin');
   });

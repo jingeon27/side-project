@@ -10,11 +10,10 @@ const DEVELOPMENT_WEB_ORIGIN = 'http://localhost:3200';
 export function resolveWebOrigin(configured: string | undefined, isDevelopment: boolean) {
   const value = configured?.trim();
   if (!value && isDevelopment) return DEVELOPMENT_WEB_ORIGIN;
-  if (!value) throw new Error('운영 빌드에는 EXPO_PUBLIC_WEB_ORIGIN(https origin)이 필요합니다.');
+  if (!value) throw new Error('운영 빌드에는 WEB_ORIGIN(https origin)이 필요합니다.');
   const origin = originOf(value);
-  if (!origin)
-    throw new Error('EXPO_PUBLIC_WEB_ORIGIN은 https://contest.example 같은 http(s) origin이어야 합니다.');
+  if (!origin) throw new Error('WEB_ORIGIN은 https://contest.example 같은 http(s) origin이어야 합니다.');
   if (!isDevelopment && !origin.startsWith('https://'))
-    throw new Error('운영 빌드의 EXPO_PUBLIC_WEB_ORIGIN은 https여야 합니다.');
+    throw new Error('운영 빌드의 WEB_ORIGIN은 https여야 합니다.');
   return origin;
 }
