@@ -5,6 +5,8 @@ import { UpdateProfileInputSchema } from '@game-feedback/contracts';
 import { deleteProfileAvatar, updateProfile } from '@game-feedback/sdk';
 
 import { sessionOptions } from '@/features/auth';
+import { chatScopeOptions } from '@/features/chat';
+import { postDetailOptions, postListOptions } from '@/features/post';
 import { withApiError, type PublicProfile } from '@/shared/api';
 
 import { uploadAvatar } from '../api/avatar.api';
@@ -12,7 +14,12 @@ import { profileOptions } from './user.options';
 
 async function saveProfile(client: QueryClient, profile: PublicProfile) {
   client.setQueryData(profileOptions(profile.author.id).queryKey, profile);
-  await client.invalidateQueries(sessionOptions());
+  await Promise.all([
+    client.invalidateQueries(sessionOptions()),
+    client.invalidateQueries(postListOptions()),
+    client.invalidateQueries(postDetailOptions()),
+    client.invalidateQueries(chatScopeOptions()),
+  ]);
 }
 export function updateProfileMutationOptions(client: QueryClient) {
   return mutationOptions({

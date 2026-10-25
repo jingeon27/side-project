@@ -1,4 +1,40 @@
 export const profileMessages: Record<string, readonly [string, string]> = {
+  '프로필 수정': ['Edit profile', 'プロフィールを編集'],
+  '프로필 저장': ['Save profile', 'プロフィールを保存'],
+  '프로필을 수정했어요.': ['Profile updated.', 'プロフィールを更新しました。'],
+  '프로필 사진': ['Profile photo', 'プロフィール写真'],
+  자기소개: ['Bio', '自己紹介'],
+  '2~24자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.': [
+    'Use 2–24 letters, numbers, spaces or _ . -.',
+    '2〜24文字の文字・数字・スペース・_ . -が使えます。',
+  ],
+  '닉네임은 2~24자의 문자, 숫자, 공백과 _ . -로 입력해주세요.': [
+    'Enter a nickname with 2–24 letters, numbers, spaces or _ . -.',
+    'ニックネームは2〜24文字の文字・数字・スペース・_ . -で入力してください。',
+  ],
+  '웹 주소를 입력하면 프로필에서 클릭 가능한 링크로 표시돼요.': [
+    'Web addresses become clickable links on your profile.',
+    '入力したウェブアドレスはプロフィールでクリックできるリンクになります。',
+  ],
+  '자기소개는 500자 이하로 입력해주세요.': [
+    'Keep your bio within 500 characters.',
+    '自己紹介は500文字以内で入力してください。',
+  ],
+  '최고 트로피': ['Best trophies', '最高トロフィー'],
+  '현재 세계 순위': ['Current global rank', '現在の世界順位'],
+  '최고 시즌 순위': ['Best season rank', 'ベストシーズン順位'],
+  '{rank}위': ['#{rank}', '{rank}位'],
+  '정보 없음': ['Not available', '情報なし'],
+  '{name}의 RoyaleAPI 프로필 (새 탭)': [
+    "{name}'s RoyaleAPI profile (new tab)",
+    '{name}のRoyaleAPIプロフィール（新しいタブ）',
+  ],
+  '조회 시점의 게임 정보이며, 계정 소유권 인증과는 별개입니다.': [
+    'Game data reflects the lookup time and does not verify account ownership.',
+    '照会時点のゲーム情報です。アカウントの所有権認証とは別です。',
+  ],
+  '{name} 게임 정보 새로고침': ["Refresh {name}'s game data", '{name}のゲーム情報を更新'],
+  새로고침: ['Refresh', '更新'],
   '프로필 편집': ['Edit profile', 'プロフィールを編集'],
   '프로필 링크': ['Profile links', 'プロフィールリンク'],
   '프로필 링크 편집': ['Edit profile links', 'プロフィールリンクを編集'],

@@ -7,6 +7,7 @@
     margin-block: 24px;
   }
   .snapshot {
+    container-type: inline-size;
     border: 1px solid var(--color-line);
     background: var(--color-surface);
     border-radius: var(--radius-control);
@@ -20,8 +21,159 @@
     border-radius: var(--radius-control);
   }
   .snapshot-icon {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
+  }
+  .snapshot-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .snapshot-identity {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    overflow-wrap: anywhere;
+  }
+  .snapshot-identity strong {
+    font-size: var(--text-body);
+    color: var(--color-ink);
+  }
+  .snapshot-identity > span,
+  .snapshot-arena {
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+  }
+  .snapshot-arena {
+    margin: 14px 0 0;
+    overflow-wrap: anywhere;
+  }
+  .snapshot-external-link {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    font-size: var(--text-micro);
+    color: var(--color-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .snapshot-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-block: 20px;
+  }
+  .snapshot-stats > div {
+    min-width: 0;
+  }
+  .snapshot-stats dt {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-muted);
+    font-size: var(--text-micro);
+  }
+  .snapshot-stats dd {
+    margin: 6px 0 0;
+    font-size: var(--text-title);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .snapshot-stats .snapshot-rank-unavailable {
+    font-size: var(--text-caption);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+  .snapshot-foot {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: var(--text-micro);
+    line-height: 1.7;
+  }
+  .snapshot-foot > svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .snapshot-foot p {
+    margin: 0;
+  }
+  .game-accounts-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .game-account-list {
+    display: grid;
+    gap: 16px;
+  }
+  .game-account-card {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+  }
+  .game-account-card .snapshot {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .game-account-refresh {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .public-profile .settings-profile {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .profile-edit-trigger {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+  .profile-bio {
+    margin-block: 20px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.8;
+  }
+  .profile-bio a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .profile-edit-section {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-line);
+  }
+  .profile-edit-section > form {
+    display: grid;
+    gap: 16px;
+  }
+  .profile-bio-count {
+    margin: 0;
+    text-align: end;
+  }
+  @container (min-width: 520px) {
+    .snapshot-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 761px) {
+    .public-profile .settings-profile {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .profile-edit-trigger {
+      grid-column: auto;
+    }
   }
   .settings-card {
     padding: 23px;
@@ -290,10 +442,6 @@
     .snapshot {
       padding: 10px;
     }
-    .snapshot-icon {
-      width: 29px;
-      height: 29px;
-    }
     .info-card {
       padding: 20px;
     }
@@ -302,10 +450,6 @@
     }
     .settings-card {
       padding: 18px;
-    }
-    .settings-card .snapshot {
-      margin-left: -4px;
-      margin-right: -4px;
     }
     .settings-profile h2 {
       font-size: var(--text-body);

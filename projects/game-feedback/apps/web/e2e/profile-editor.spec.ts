@@ -7,22 +7,50 @@ const png = Buffer.from(
   'base64',
 );
 for (const width of [390, 1440]) {
-  test(`프로필 링크와 사진을 미리 보고 저장·교체·삭제한다 (${width}px)`, async ({ page }) => {
+  test(`프로필 수정 창에서 닉네임·소개·링크·사진을 관리한다 (${width}px)`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
-    const login = await page.request.post('/api/auth/test-login', {
+    const login = await page.request.post('/api/auth/demo', {
       headers: { Origin: origin },
-      data: { accountId: 'sample-user-0' },
+      data: { nickname: `프로필_${width}_${Date.now().toString(36)}` },
     });
     expect(login.ok()).toBe(true);
     const userId = (await login.json()).user.id as string;
     await page.goto(`/ko/users/${userId}`);
-    await page.getByText('프로필 편집', { exact: true }).click();
+    await page.getByRole('button', { name: '프로필 수정', exact: true }).click();
+    const details = page.getByRole('form', { name: '프로필 수정', exact: true });
+    const nickname = `새프로필_${width}`;
+    await details.getByRole('textbox', { name: '서비스 닉네임', exact: true }).fill(nickname);
+    await details
+      .getByRole('textbox', { name: '자기소개', exact: true })
+      .fill('함께 플레이해요.\nhttps://example.com/player');
+    await page.route('**/api/profile', (route) =>
+      route.fulfill({
+        status: 503,
+        json: { errorCode: 'PROFILE_UNAVAILABLE', message: '프로필 저장 재시도' },
+      }),
+    );
+    await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
+    await expect(details.getByRole('alert')).toHaveText('프로필 저장 재시도');
+    await expect(details.getByRole('textbox', { name: '서비스 닉네임', exact: true })).toHaveValue(nickname);
+    await page.unroute('**/api/profile');
+    await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: '프로필 수정', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: nickname, exact: true })).toBeVisible();
+    const bioLink = page.getByRole('link', { name: 'https://example.com/player', exact: true });
+    await expect(bioLink).toHaveAttribute('href', 'https://example.com/player');
+    await expect(bioLink).toHaveAttribute('target', '_blank');
+    await expect(page).toHaveTitle(new RegExp(nickname));
+    await page.screenshot({ path: testInfo.outputPath('profile-bio.png'), fullPage: true });
+    await page.getByRole('button', { name: '프로필 수정', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: '프로필 수정', exact: true })).toBeVisible();
+    await details.getByRole('textbox', { name: '서비스 닉네임', exact: true }).click();
+    await page.screenshot({ path: testInfo.outputPath('profile-edit-sheet.png'), fullPage: true });
     const links = page.getByRole('form', { name: '프로필 링크 편집' });
     await links.getByRole('button', { name: '링크 추가' }).click();
     await links.getByRole('textbox', { name: /이름/ }).fill('나의 방송');
     await links.getByRole('textbox', { name: /주소/ }).fill('https://video.example/@player');
     await links.getByRole('button', { name: '링크 저장' }).click();
-    await expect(page.getByRole('link', { name: '나의 방송', exact: true })).toHaveAttribute(
+    await expect(page.locator('.profile-links a').filter({ hasText: '나의 방송' })).toHaveAttribute(
       'href',
       'https://video.example/@player',
     );
@@ -45,12 +73,12 @@ for (const width of [390, 1440]) {
     await expect(page.locator('.settings-profile img')).toHaveCount(1);
     await page.reload();
     await expect(page.getByRole('link', { name: '나의 방송', exact: true })).toBeVisible();
-    await page.getByText('프로필 편집', { exact: true }).click();
+    await page.getByRole('button', { name: '프로필 수정', exact: true }).click();
     await photo.getByRole('button', { name: '프로필 사진 삭제' }).click();
     await expect(page.locator('.settings-profile img')).toHaveCount(0);
     await links.getByRole('button', { name: '링크 삭제' }).click();
     await links.getByRole('button', { name: '링크 저장' }).click();
-    await expect(page.getByRole('link', { name: '나의 방송', exact: true })).toHaveCount(0);
+    await expect(page.locator('.profile-links a').filter({ hasText: '나의 방송' })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const other = await page.request.post('/api/auth/test-login', {
       headers: { Origin: origin },
@@ -58,6 +86,48 @@ for (const width of [390, 1440]) {
     });
     expect(other.ok()).toBe(true);
     await page.goto(`/ko/users/${userId}`);
-    await expect(page.getByText('프로필 편집', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '프로필 수정', exact: true })).toHaveCount(0);
   });
 }
+
+test('게임 계정의 이전 스냅샷도 최신 순위와 RoyaleAPI 링크를 보여주며 갱신은 대표 계정을 바꾸지 않는다', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.request.post('/api/auth/demo', {
+    headers: { Origin: origin },
+    data: { nickname: `게임카드_${Date.now().toString(36)}` },
+  });
+  for (const playerTag of ['#P0LYQ829', '#9QY82JGY']) {
+    expect(
+      (
+        await page.request.post('/api/me/game-accounts', { headers: { Origin: origin }, data: { playerTag } })
+      ).ok(),
+    ).toBe(true);
+  }
+  await page.route('**/api/me/game-accounts', async (route) => {
+    const response = await route.fetch();
+    const records = await response.json();
+    await route.fulfill({
+      response,
+      json: records.map(
+        ({ currentGlobalRank: _current, bestGlobalRank: _best, ...profile }: Record<string, unknown>) =>
+          profile,
+      ),
+    });
+  });
+  await page.goto('/ko/settings');
+  const accounts = page.getByRole('region', { name: '게임 계정', exact: true });
+  await expect(accounts.getByText('1,234위')).toHaveCount(2);
+  await expect(accounts.getByText('358위')).toHaveCount(2);
+  const link = accounts.getByRole('link', { name: '새벽의호그의 RoyaleAPI 프로필 (새 탭)', exact: true });
+  await expect(link).toHaveAttribute('href', 'https://royaleapi.com/player/P0LYQ829');
+  await accounts.getByRole('button', { name: '새벽의호그 게임 정보 새로고침', exact: true }).click();
+  const session = await (await page.request.get('/api/session')).json();
+  expect(session.user.supercellTag).toBe('#9QY82JGY');
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await accounts.screenshot({ path: testInfo.outputPath(`game-accounts-${width}.png`) });
+  }
+});
