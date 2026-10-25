@@ -5,6 +5,8 @@
 !.yarn/
 !.yarn/patches/
 !.yarn/patches/**
+!scripts/
+!scripts/run-next.ts
 !packages/
 !packages/**
 !projects/

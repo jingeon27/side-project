@@ -51,7 +51,7 @@ test(
     await page.getByRole('button', { name: '새로 온 친구 가입 수락', exact: true }).click();
     await expect(page.getByText('대기 중인 가입 신청이 없어요.')).toBeVisible();
     await page.goto('/notifications');
-    await expect(page.getByText('아직 새 알림이 없어요')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '아직 새 알림이 없어요', exact: true })).toBeVisible();
     const result = await productRequest<{ myNotifications: { items: { type: string }[] } }>(
       applicant,
       'query {myNotifications {items {id type}}}',

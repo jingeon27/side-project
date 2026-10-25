@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { Prisma } from '../../generated/prisma';
+import { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
@@ -128,30 +128,38 @@ export class PostCommentService {
   }
 
   async like(viewer: IViewer, commentId: string, liked: boolean) {
-    return this.transactions.atomic(async (tx) => {
-      const row = await tx.postComment.findUnique({ where: { id: commentId } });
-      if (!row) fail('댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-      const { admin } = await this.membership.accessiblePost(viewer.id, row.postId, tx);
-      if (liked) {
-        const { count } = await tx.postCommentLike.createMany({
-          data: [{ commentId, userId: viewer.id }],
-          skipDuplicates: true,
-        });
-        if (count > 0)
-          await recordEvent(tx, {
-            id: `comment-like:${commentId}:${viewer.id}`,
-            type: ANALYTICS_EVENT.COMMENT_LIKED,
-            userId: viewer.id,
-            properties: { commentId, postId: row.postId },
+    // 반응은 unique와 skipDuplicates로 멱등성을 지켜 서로 다른 회원의 요청도 모두 성공시킨다.
+    return this.transactions
+      .run(async (tx) => {
+        const row = await tx.postComment.findUnique({ where: { id: commentId } });
+        if (!row) fail('댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+        const { admin } = await this.membership.accessiblePost(viewer.id, row.postId, tx);
+        if (liked) {
+          const { count } = await tx.postCommentLike.createMany({
+            data: [{ commentId, userId: viewer.id }],
+            skipDuplicates: true,
           });
-      }
-      if (!liked) await tx.postCommentLike.deleteMany({ where: { commentId, userId: viewer.id } });
-      const updated = await tx.postComment.findUniqueOrThrow({
-        where: { id: commentId },
-        include: commentInclude(viewer.id),
+          if (count > 0)
+            await recordEvent(tx, {
+              id: `comment-like:${commentId}:${viewer.id}`,
+              type: ANALYTICS_EVENT.COMMENT_LIKED,
+              userId: viewer.id,
+              properties: { commentId, postId: row.postId },
+            });
+        }
+        if (!liked) await tx.postCommentLike.deleteMany({ where: { commentId, userId: viewer.id } });
+        const updated = await tx.postComment.findUniqueOrThrow({
+          where: { id: commentId },
+          include: commentInclude(viewer.id),
+        });
+        return present(updated, viewer.id, admin, true);
+      })
+      .catch((error: unknown) => {
+        // 권한 확인 직후 댓글·게시물·사용자가 삭제될 수 있다.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && ['P2003', 'P2025'].includes(error.code))
+          fail('댓글을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+        throw error;
       });
-      return present(updated, viewer.id, admin, true);
-    });
   }
 
   async delete(viewer: IViewer, commentId: string) {
