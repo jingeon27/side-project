@@ -29,15 +29,21 @@ compose() {
 }
 activate() {
   local directory=$1
-  local web_id drain_started
+  local web_id web_state drain_started
   web_id=$(compose "$directory" ps -q web) || return 1
   drain_started=$SECONDS
   if [[ -n "$web_id" ]]; then
     # Stop assigning new requests before SIGTERM; keep the API alive for the remaining SSR reads.
-    compose "$directory" exec -T web node -e \
-      "require('node:fs').writeFileSync('/tmp/side-web-draining', 'draining', {mode:0o600})" || return 1
-    # The proxy probes every second with a one-second timeout. Let the failed probe take effect.
-    sleep 3
+    if compose "$directory" exec -T web node -e \
+      "require('node:fs').writeFileSync('/tmp/side-web-draining', 'draining', {mode:0o600})"; then
+      # The proxy probes every second with a one-second timeout. Let the failed probe take effect.
+      sleep 3
+    else
+      # A failed replacement may already be restarting; it must not block restoring the old images.
+      web_state=$(docker inspect --format '{{.State.Status}}' "$web_id") || return 1
+      [[ "$web_state" == restarting || "$web_state" == exited || "$web_state" == dead || "$web_state" == created ]] || return 1
+      printf 'Skipping drain for non-running web container: %s\n' "$web_state"
+    fi
   fi
   # Drain SSR while the old API still serves its in-flight reads.
   compose "$directory" stop web || return 1

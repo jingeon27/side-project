@@ -32,7 +32,9 @@ if [[ -n "\${FAKE_DOCKER_FAIL:-}" && "$*" == *"$FAKE_DOCKER_FAIL"* ]]; then echo
 case "$1" in
   version) echo 27.3.1 ;;
   login) cat >/dev/null; echo 'Login Succeeded' ;;
-  inspect) echo 'Web shutdown: exit=0 oom=false' ;;
+  inspect)
+    if [[ "$*" == *'.State.Status'* ]]; then echo "\${FAKE_WEB_STATE:-running}"; exit 0; fi
+    echo 'Web shutdown: exit=0 oom=false' ;;
   network) if [[ "$*" == *--format* ]]; then echo "$SIDE_DEPLOY_ROOT"; fi ;;
   run)
     printf '{"DBInstances":[{"Engine":"postgres","Endpoint":{"Address":"shared.abcdef.ap-northeast-2.rds.amazonaws.com"},"BackupRetentionPeriod":7,"StorageEncrypted":true,"PubliclyAccessible":false,"DeletionProtection":true,"LatestRestorableTime":"%s","DBInstanceArn":"arn:aws:rds:ap-northeast-2:123456789012:db:shared"}]}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
@@ -186,6 +188,22 @@ describe('공유 호스트 원격 배포', () => {
     expect(result.stderr).toContain('failed');
     expect(existsSync(join(state.root, 'services/photo-contest/current'))).toBe(false);
   }, 60_000);
+
+  it.each([
+    ['restarting', true],
+    ['exited', true],
+    ['running', false],
+  ])(
+    '종료 대기 표시를 쓸 수 없는 %s 웹은 실행 상태에 따라 교체 여부를 결정해야 한다',
+    (status, replace) => {
+      const result = upload({ FAKE_DOCKER_FAIL: 'side-web-draining', FAKE_WEB_STATE: status });
+      expect(result.status === 0, result.stderr).toBe(replace);
+      expect(dockerCalls().some((call) => call.includes(' stop web'))).toBe(replace);
+      expect(existsSync(join(state.root, 'services/photo-contest/current'))).toBe(replace);
+      if (replace) expect(result.stdout).toContain(`Skipping drain for non-running web container: ${status}`);
+    },
+    60_000,
+  );
 
   it('호스트 Caddyfile이 릴리스와 다르면 검사·마이그레이션 전에 배포를 거부해야 한다', () => {
     writeFileSync(join(state.root, 'proxy/Caddyfile'), '# drifted\n');
