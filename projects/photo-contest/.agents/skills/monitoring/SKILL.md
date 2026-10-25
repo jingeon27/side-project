@@ -11,7 +11,7 @@ description: 웃긴순간의 Sentry 오류 수집(API·웹·앱)과 Amplitude �
 | web | `@sentry/nextjs` — `src/instrumentation.ts`(서버, `onRequestError`)와 `src/instrumentation-client.ts`(클라이언트) | `@amplitude/analytics-browser` |
 | mobile | `@sentry/react-native`(Expo 플러그인) | `@amplitude/analytics-react-native` |
 
-- 키·DSN이 없으면 init하지 않고 아무것도 보내지 않는다(로컬·테스트 기본값). 키는 환경변수로만: API `SENTRY_DSN`, 웹 `NEXT_PUBLIC_SENTRY_DSN`·`NEXT_PUBLIC_AMPLITUDE_API_KEY`, 앱 `EXPO_PUBLIC_SENTRY_DSN`·`EXPO_PUBLIC_AMPLITUDE_API_KEY`.
+- 키·DSN이 없으면 init하지 않고 아무것도 보내지 않는다(로컬·테스트 기본값). 키는 환경변수로만: API `SENTRY_DSN`, 웹 `NEXT_PUBLIC_SENTRY_DSN`·`NEXT_PUBLIC_AMPLITUDE_API_KEY`, 앱도 프로젝트 루트의 공개 키를 Expo extra로 읽는다. 별도 모바일 env 키는 만들지 않는다.
 - `sendDefaultPii: false`, `beforeSend`에서 request·cookies·user·breadcrumbs를 지운다. 쿠키·세션·요청 본문은 어디에도 보내지 않는다.
 - API는 4xx 업무 오류를 보내지 않는다. GraphQL 내부 오류(operationName 태그)와 REST 5xx(라우트 태그)만.
 - 웹 Sentry 태그: `client=app|web`, 앱 WebView면 `app_version`(`buildSentryClientTags`). 트랜잭션 이름(`event.transaction`)은 보내기 전에 `path_template`(`/invite/:token`)로 바꾼다(오류·트랜잭션 이벤트 모두 `scrubSentryEvent`).
@@ -35,3 +35,9 @@ description: 웃긴순간의 Sentry 오류 수집(API·웹·앱)과 Amplitude �
 1. 카탈로그에 이름과 속성 타입을 더한다.
 2. 성공 지점에서 보낸다.
 3. 테스트: 키가 없으면 아무것도 보내지 않는지, 해당 동작에서 이벤트가 한 번 나가는지(SDK 모듈을 vi.mock), 속성에 개인정보가 없는지.
+
+## 실제 서비스 확인
+
+- `@photo-contest/web monitoring:check`는 일반 테스트와 분리한 실제 전송 검사다. 3336/4336·web_e2e 격리 스키마·S3 대역·운영 빌드를 사용하며 수집 응답과 개인정보 제거를 단언한다. 확인 오류 종류는 MonitoringVerificationError다. 실제 수신은 MCP에서 eventId·페이지뷰 집계를 재조회한다.
+- 자동 페이지뷰와 별개인 pageUrlEnrichment/customEnrichment도 꺼서 검색어가 보강되지 않게 한다. StrictMode에서 중복 방문을 집계하지 않는다.
+- Sentry는 contexts.nextjs에도 원본 경로가 들어가므로 request만 지우지 않는다. service/layer로 API·Next 서버·브라우저를 구분한다.
