@@ -143,7 +143,13 @@ test(
     await expect(page.getByRole('heading', { name: '참여 그룹' })).toBeVisible();
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await expect(page).toHaveURL(WEB_ORIGIN + '/sign');
-    await expect(page.getByRole('button', { name: /구글|Google/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: '익명으로 시작하기', exact: true })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '로그인', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByRole('tab', { name: '회원가입', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '아이디로 로그인', exact: true })).toBeVisible();
     expect((await page.request.get(`${API_URL}/health`)).status()).toBe(200);
   },
 );

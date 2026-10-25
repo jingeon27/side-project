@@ -16,7 +16,7 @@ test('a suspended search keeps its filters and shell usable until data arrives',
     await page.getByRole('button', { name: '검색', exact: true }).click();
     await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: '게시글 검색' })).toBeVisible();
-    await expect(page.locator('.topbar')).toBeVisible();
+    await expect(page.getByRole('banner')).toBeVisible();
     pending.resolve();
     await expect(page.locator('.post-card').first()).toBeVisible();
     await expect(page.getByRole('status', { name: '게시글 불러오는 중' })).not.toBeVisible();
