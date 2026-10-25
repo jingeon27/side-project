@@ -1,22 +1,29 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { uniqBy } from 'es-toolkit';
 
 import { Button } from '@side/design-system';
 
-import { messageOptions, type TSupportThread } from '@/features/support';
+import { UserVerificationControls } from '@/features/moderation';
+import { messageOptions, threadOptions, type TSupportThread } from '@/features/support';
 import { formatDateTime } from '@/shared/lib';
 
 import { SupportReplyForm } from './SupportReplyForm';
 
 export function SupportConversation({ thread }: { thread: TSupportThread }) {
+  const client = useQueryClient();
   const query = useSuspenseInfiniteQuery(messageOptions(thread.conversationId));
   const messages = uniqBy(
     query.data.pages.flatMap((page) => page.items),
     (message) => message.id,
   ).reverse();
+  function handleVerified() {
+    return client.invalidateQueries(threadOptions());
+  }
   return (
     <section className="admin-card form-stack" aria-label="문의 대화">
       <h2>{thread.requester.nickname} 문의</h2>
+      <p className="muted">게임 태그: {thread.requester.supercellTag ?? '미등록'}</p>
+      <UserVerificationControls user={thread.requester} onVerified={handleVerified} />
       {query.hasNextPage && (
         <Button
           type="button"
