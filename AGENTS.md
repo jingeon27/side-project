@@ -4,6 +4,8 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 공유할 필요가 입증된 코드·설정만 올린다: 여러 프로젝트가 쓰면 `packages/*`, 한 프로젝트 안의 여러 앱이 쓰면 `projects/<name>/packages/*`.
 
 - 각 프로젝트의 `AGENTS.md`와 `.agents/skills`를 따른다.
+- 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수 반환값으로 전달한다.
+- 새 worktree는 `yarn worktree:add <경로> -b <브랜치> origin/develop`로 만든다. 기본 worktree의 로컬 `.env*`가 복사되며 기존 대상 파일과 `.env*.example`은 보존한다. 직접 `git worktree add`를 썼다면 새 worktree에서 `yarn install --immutable`로 설정 복사와 hook 설치를 완료한다. 환경변수 값은 로그·커밋에 남기지 않고, 복사된 DB·포트로 다른 개발 서버를 동시에 실행하지 않는다.
 - 워크스페이스 이름: 프로젝트 집계는 `@side/<project>`, 앱과 프로젝트 패키지는 `@<project>/<name>`.
 - 테스트 러너는 앱(또는 패키지)이 소유한다. Vitest·Playwright 설정, 러너 의존성, 테스트 파일은 그 앱 안에 둔다. 프로젝트 스크립트의 단위 테스트는 대상 스크립트 옆에 두고 관련 앱의 러너가 수집한다. 루트와 프로젝트 루트에는 테스트 파일·러너 설정·러너 의존성을 두지 않고, test/check 스크립트는 위임만 한다. 프로젝트 전체를 도는 공용 e2e 워크스페이스를 만들지 않는다.
 - Playwright는 화면이 있는 앱만 쓴다. API는 Vitest(+ supertest)로 검증한다.

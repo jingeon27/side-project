@@ -92,6 +92,16 @@ corepack yarn prettier --write packages/design-system/src/index.ts
 - `pre-commit`: lint-staged가 스테이징된 파일만 루트 설정으로 `prettier --write`합니다. `.prettierignore` 대상과 Prettier가 모르는 파일은 건드리지 않습니다. lint는 각 프로젝트의 검사 명령으로 실행합니다.
 - `commit-msg`: 커밋 스킬의 `<type>(<scope>): <내용>` 형식을 검사합니다. type은 `feat`·`fix`·`refactor`·`test`·`docs`·`chore`·`perf`·`ci`·`build`·`style`·`revert`·`merge`이고 scope는 선택입니다. Git이 만드는 merge·revert·fixup·squash 메시지는 통과합니다. 검사 구현과 Vitest는 `@side/commit-message-check`가 소유합니다.
 
+새 worktree는 다음 명령으로 만들면 기본 worktree의 로컬 `.env*`도 함께 복사합니다. 루트와 환경변수 예제가 있는 프로젝트·앱 디렉터리만 대상으로 하며, 기존 대상 파일과 예제 파일은 보존합니다. 복사본 권한은 `600`이며 값은 출력하지 않습니다.
+
+```sh
+corepack yarn worktree:add ../side-project-feature -b feat/feature origin/develop
+cd ../side-project-feature
+corepack yarn install --immutable
+```
+
+직접 `git worktree add`를 사용해도 새 worktree의 `yarn install`이 빠진 로컬 설정을 복사합니다. CI·Docker 설치에서는 복사하지 않습니다. `.env`는 Git에 포함되지 않으므로 다른 컴퓨터나 운영 서버에는 별도로 설정합니다. 복사한 설정에는 기존 DB·포트도 들어 있으므로 동시에 서버를 띄울 때는 프로젝트의 격리 규칙에 맞게 바꿉니다.
+
 worktree는 `core.hooksPath`(`.husky/_`) 설정을 공유하지만 hook 파일은 각 worktree에 생기므로 새 worktree에서도 `yarn install`을 실행해야 hook이 동작합니다. 버전 관리자로 설치한 Node를 GUI Git 클라이언트가 찾지 못하면 `~/.config/husky/init.sh`에서 PATH를 설정합니다.
 
 ```sh
