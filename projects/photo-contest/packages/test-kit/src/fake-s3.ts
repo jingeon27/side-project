@@ -588,7 +588,6 @@ export async function startFakeS3(options: IFakeS3Options): Promise<IFakeS3> {
       S3_KEY_PREFIX: '',
       AWS_ACCESS_KEY_ID: options.accessKeyId,
       AWS_SECRET_ACCESS_KEY: options.secretAccessKey,
-      AWS_SESSION_TOKEN: '',
     },
     stop: () =>
       new Promise<void>((done) => {

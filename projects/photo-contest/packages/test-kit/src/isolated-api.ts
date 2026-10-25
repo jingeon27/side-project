@@ -1,9 +1,8 @@
 import { spawn } from 'node:child_process';
-import { resolve } from 'node:path';
 
 import { isolatedSchemaName, resolveTestDatabaseUrl, schemaUrl, type TTestSchemaPrefix } from './database';
 import { loadProjectEnv } from './env';
-import { PROJECT_ROOT, SERVE_TEST_API_BIN } from './paths';
+import { SERVE_TEST_API_BIN } from './paths';
 
 interface IStartIsolatedApiOptions {
   port: number;
@@ -51,17 +50,11 @@ export async function startIsolatedApi({
     stdio: 'inherit',
     env: {
       ...process.env,
-      GOOGLE_CLIENT_ID: '',
-      GOOGLE_CLIENT_SECRET: '',
-      KAKAO_CLIENT_ID: '',
-      KAKAO_CLIENT_SECRET: '',
       SENTRY_DSN: '',
       ...env,
-      DATABASE_URL: baseUrl,
-      PC_E2E_SCHEMA: schema,
-      PORT: String(port),
+      TEST_DATABASE_URL: schemaUrl(baseUrl, schema),
+      API_URL: `http://127.0.0.1:${port}`,
       WEB_ORIGIN: webOrigin,
-      PC_E2E_STORAGE_DIR: resolve(PROJECT_ROOT, '.data', schema),
     },
   });
   const url = `http://127.0.0.1:${port}`;
