@@ -41,9 +41,9 @@ export default defineConfig({
           // 오류 수집·분석도 켜 두고, 실제 전송 대신 vitest.setup.ts의 SDK 대역이 호출을 기록한다.
           env: {
             TZ: 'Asia/Seoul',
-            EXPO_PUBLIC_WEB_ORIGIN: 'https://contest.example',
-            EXPO_PUBLIC_SENTRY_DSN: 'https://public@sentry.example/1',
-            EXPO_PUBLIC_AMPLITUDE_API_KEY: 'amplitude-test-key',
+            WEB_ORIGIN: 'https://contest.example',
+            NEXT_PUBLIC_SENTRY_DSN: 'https://public@sentry.example/1',
+            NEXT_PUBLIC_AMPLITUDE_API_KEY: 'amplitude-test-key',
           },
         },
       },

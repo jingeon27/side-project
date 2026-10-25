@@ -1,10 +1,7 @@
 export function resolveSeoConfig(env: Record<string, string | undefined>) {
   const url = new URL(
-    env.GAME_FEEDBACK_SITE_URL ||
-      env.WEB_ORIGIN ||
-      ((env.ENVIRONMENT || env.NODE_ENV) === 'production'
-        ? 'https://game.bambyul.com'
-        : 'http://localhost:3300'),
+    env.WEB_ORIGIN ||
+      (env.ENVIRONMENT === 'production' ? 'https://game.bambyul.com' : 'http://localhost:3300'),
   );
   if (
     !['http:', 'https:'].includes(url.protocol) ||
@@ -14,15 +11,11 @@ export function resolveSeoConfig(env: Record<string, string | undefined>) {
     url.search ||
     url.hash
   )
-    throw new Error('GAME_FEEDBACK_SITE_URL must be an HTTP(S) origin.');
+    throw new Error('WEB_ORIGIN must be an HTTP(S) origin.');
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   return {
     origin: url.origin,
-    indexable:
-      (env.ENVIRONMENT || env.NODE_ENV) === 'production' &&
-      env.GF_DEMO_MODE !== 'true' &&
-      url.protocol === 'https:' &&
-      !local,
+    indexable: env.ENVIRONMENT === 'production' && url.protocol === 'https:' && !local,
   };
 }
 export function getSeoConfig() {

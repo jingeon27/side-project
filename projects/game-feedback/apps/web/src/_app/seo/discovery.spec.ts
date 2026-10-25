@@ -17,8 +17,7 @@ afterEach(() => {
 });
 function enable() {
   vi.stubEnv('ENVIRONMENT', 'production');
-  vi.stubEnv('GAME_FEEDBACK_SITE_URL', 'https://feedback.example');
-  vi.stubEnv('GF_DEMO_MODE', 'false');
+  vi.stubEnv('WEB_ORIGIN', 'https://feedback.example');
 }
 const post = (id: string, user = 'author-1') => ({
   id,

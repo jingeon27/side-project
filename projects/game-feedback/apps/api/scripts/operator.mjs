@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const prefix = process.env.NODE_ENV === 'production' ? '../dist' : '../src';
-const extension = process.env.NODE_ENV === 'production' ? 'js' : 'ts';
+const prefix = process.env.ENVIRONMENT === 'production' ? '../dist' : '../src';
+const extension = process.env.ENVIRONMENT === 'production' ? 'js' : 'ts';
 const { createPrismaAdapter } = require(`${prefix}/database/prisma-adapter.${extension}`);
 const { PrismaClient } = require(`${prefix}/generated/prisma/index.js`);
 const { assertDatabaseUrl } = require(`${prefix}/database/database-url.${extension}`);

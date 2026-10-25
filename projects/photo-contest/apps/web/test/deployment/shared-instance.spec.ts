@@ -33,7 +33,7 @@ beforeEach(() => {
   );
   writeFileSync(
     join(state.root, 'bin/docker'),
-    '#!/bin/sh\nprintf "%s\\n" "$@" >"$PITR_FIXTURE.args"\ncat "$PITR_FIXTURE"\n',
+    `#!/bin/sh\nprintf "%s\\n" "$@" >'${state.root}/response.json.args'\ncat '${state.root}/response.json'\n`,
     {
       mode: 0o700,
     },
@@ -47,7 +47,6 @@ const execute = (response: ReturnType<typeof valid>) => {
     env: {
       ...process.env,
       PATH: `${state.root}/bin:${process.env.PATH}`,
-      PITR_FIXTURE: join(state.root, 'response.json'),
     },
   });
 };

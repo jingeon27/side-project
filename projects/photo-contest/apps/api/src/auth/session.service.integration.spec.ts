@@ -25,8 +25,20 @@ describe('개발 로그인과 세션', () => {
     await api?.close();
   });
 
-  function devLogin(nickname: unknown, origin = TEST_WEB_ORIGIN) {
-    return api.http().post('/auth/dev').set('Origin', origin).send({ nickname });
+  function passwordRegistration(nickname: string, origin = TEST_WEB_ORIGIN) {
+    return api
+      .http()
+      .post('/graphql')
+      .set('Origin', origin)
+      .send({
+        query:
+          'mutation($id:String!,$password:String!,$name:String!){registerWithPassword(loginId:$id,password:$password,nickname:$name){id}}',
+        variables: {
+          id: `session_${sha256Hex(nickname).slice(0, 12)}`,
+          password: 'Session-test-password-2026!',
+          name: nickname,
+        },
+      });
   }
 
   /** 주어진 Cookie 헤더 원문으로 me를 조회한다. */
@@ -36,9 +48,9 @@ describe('개발 로그인과 세션', () => {
   }
 
   it('개발 로그인은 HttpOnly·SameSite=Lax·Path=/ 세션 쿠키를 30일짜리로 내려줘야 한다', async () => {
-    const response = await devLogin('세션-쿠키');
+    const response = await passwordRegistration('세션-쿠키');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ ok: true });
+    expect(response.body.errors).toBeUndefined();
     const cookie = findSetCookie(response, SESSION_COOKIE);
     expect(cookie).toBeDefined();
     const attributes = cookieAttributes(cookie!);
@@ -50,22 +62,11 @@ describe('개발 로그인과 세션', () => {
   });
 
   it('세션 원문은 DB에 남기지 않고 SHA-256 해시만 저장해야 한다', async () => {
-    const response = await devLogin('세션-해시');
+    const response = await passwordRegistration('세션-해시');
     const token = cookieValue(findSetCookie(response, SESSION_COOKIE)!);
     expect(await api.db.session.findUnique({ where: { tokenHash: token } })).toBeNull();
     const stored = await api.db.session.findUnique({ where: { tokenHash: sha256Hex(token) } });
     expect(stored?.expiresAt.getTime()).toBeGreaterThan(Date.now() + (SESSION_MAX_AGE_SECONDS - 60) * 1000);
-  });
-
-  it('닉네임은 앞뒤 공백을 지우고 1~24자만 받아야 한다', async () => {
-    for (const nickname of ['', '   ', '가'.repeat(25), 42, null]) {
-      const response = await devLogin(nickname);
-      expect(response.status, String(nickname)).toBe(400);
-      expect(response.body).toEqual({ message: '닉네임은(는) 1~24자여야 합니다.' });
-      expect(response.headers['set-cookie']).toBeUndefined();
-    }
-    const cookie = await api.login('  세션 공백  ');
-    expect(await api.gqlOk(cookie, '{ me { nickname } }')).toEqual({ me: { nickname: '세션 공백' } });
   });
 
   it('같은 닉네임으로 다시 로그인하면 같은 사용자의 새 세션이어야 한다', async () => {
@@ -74,41 +75,6 @@ describe('개발 로그인과 세션', () => {
     expect(second.id).toBe(first.id);
     expect(second.cookie).not.toBe(first.cookie);
     expect(await api.db.session.count({ where: { userId: first.id } })).toBe(2);
-  });
-
-  it('다른 출처의 요청과 운영 모드 개발 로그인을 거부해야 한다', async () => {
-    const csrf = await devLogin('세션-외부', 'https://evil.example');
-    expect(csrf.status).toBe(403);
-
-    vi.stubEnv('NODE_ENV', 'production');
-    const production = await devLogin('세션-운영');
-    expect(production.status).toBe(403);
-    expect(production.body).toEqual({ message: '개발 로그인이 비활성화되어 있습니다.' });
-    expect(production.headers['set-cookie']).toBeUndefined();
-    expect(await api.db.user.count({ where: { nickname: { in: ['세션-외부', '세션-운영'] } } })).toBe(0);
-  });
-
-  it('ENABLE_DEV_LOGIN이 true가 아니면 개발 모드에서도 개발 로그인을 거부해야 한다', async () => {
-    vi.stubEnv('ENABLE_DEV_LOGIN', 'false');
-    const response = await devLogin('세션-꺼짐');
-    expect(response.status).toBe(403);
-    expect(response.body).toEqual({ message: '개발 로그인이 비활성화되어 있습니다.' });
-  });
-
-  it('/auth/config는 지금 켜진 로그인 방식을 알려줘야 한다', async () => {
-    expect((await api.http().get('/auth/config').expect(200)).body).toEqual({
-      developmentLogin: true,
-      google: false,
-      kakao: false,
-    });
-    vi.stubEnv('GOOGLE_CLIENT_ID', 'config-google');
-    vi.stubEnv('KAKAO_CLIENT_ID', 'config-kakao');
-    vi.stubEnv('NODE_ENV', 'production');
-    expect((await api.http().get('/auth/config').expect(200)).body).toEqual({
-      developmentLogin: false,
-      google: true,
-      kakao: true,
-    });
   });
 
   it('로그아웃 이후 기존 세션은 사용할 수 없어야 한다', async () => {

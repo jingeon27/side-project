@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { Page } from '@playwright/test';
 
@@ -10,7 +10,6 @@ import {
 } from '@game-feedback/bridge';
 
 import { NativeHost } from '../../src/features/bridge/lib/native-host';
-import { socialLogin } from '../../src/features/bridge/lib/social-login';
 import { toWebPath } from '../../src/features/navigation/lib/navigation-policy';
 
 export const ORIGIN = 'http://127.0.0.1:3302';
@@ -67,22 +66,6 @@ class NativeHostHarness {
       onOverlayChange: (open) => {
         this.overlayOpen = open;
       },
-      login: (provider) =>
-        this.loginResult
-          ? Promise.resolve(this.loginResult)
-          : socialLogin(
-              ORIGIN,
-              {
-                randomVerifier: () => randomBytes(32).toString('base64url'),
-                challenge: async (verifier) => createHash('sha256').update(verifier).digest('base64url'),
-                openSession: async (url, callback) => {
-                  this.authSessions.push(url);
-                  this.authCallbacks.push(callback);
-                  return { type: 'cancel' };
-                },
-              },
-              provider,
-            ),
     });
   }
   async install() {

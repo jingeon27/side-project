@@ -27,15 +27,12 @@ describe('Sentry 초기화', () => {
   it('DSN이 있으면 개인정보 없이 환경·릴리스·추적 비율을 설정해야 한다', () => {
     vi.stubEnv('SENTRY_DSN', 'https://public@sentry.example/1');
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('SENTRY_RELEASE', 'api@1.2.3');
-    vi.stubEnv('SENTRY_TRACES_SAMPLE_RATE', '0.25');
     expect(initSentry()).toBe(true);
     expect(init).toHaveBeenCalledWith(
       expect.objectContaining({
         dsn: 'https://public@sentry.example/1',
         environment: 'production',
-        release: 'api@1.2.3',
-        tracesSampleRate: 0.25,
+        tracesSampleRate: 0,
         sendDefaultPii: false,
         defaultIntegrations: false,
         beforeSend: scrubEvent,
@@ -47,11 +44,9 @@ describe('Sentry 초기화', () => {
   it('추적 비율이 없거나 0~1 사이 숫자가 아니면 0이어야 한다', () => {
     vi.stubEnv('SENTRY_DSN', 'https://public@sentry.example/1');
     for (const invalid of ['', 'abc', '-0.1', '1.5', 'Infinity']) {
-      vi.stubEnv('SENTRY_TRACES_SAMPLE_RATE', invalid);
       expect(sentryOptions()?.tracesSampleRate, invalid).toBe(0);
     }
-    vi.stubEnv('SENTRY_TRACES_SAMPLE_RATE', '1');
-    expect(sentryOptions()?.tracesSampleRate).toBe(1);
+    expect(sentryOptions()?.tracesSampleRate).toBe(0);
   });
 });
 

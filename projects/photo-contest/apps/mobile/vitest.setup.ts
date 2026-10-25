@@ -67,7 +67,16 @@ vi.mock('expo-application', () => ({
 }));
 
 vi.mock('expo-constants', () => ({
-  default: { expoConfig: { version: '1.0.0' } },
+  default: {
+    expoConfig: {
+      version: '1.0.0',
+      extra: {
+        webOrigin: 'https://contest.example',
+        sentryDsn: 'https://public@sentry.example/1',
+        amplitudeApiKey: 'amplitude-test-key',
+      },
+    },
+  },
 }));
 
 // ui 프로젝트는 DSN·분석 키를 넣고 돈다. 네이티브 SDK 대신 호출을 기록해 화면이 무엇을 남기는지 검증한다.

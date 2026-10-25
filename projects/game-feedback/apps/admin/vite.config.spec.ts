@@ -59,8 +59,8 @@ describe('관리자 전용 프록시', () => {
   });
   it('격리된 API와 Origin을 명시할 수 있다', () => {
     const settings = adminServerSettings({
-      GF_ADMIN_API_ORIGIN: 'http://127.0.0.1:4304',
-      GF_ADMIN_WEB_ORIGIN: 'http://127.0.0.1:3304',
+      GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4304',
+      WEB_ORIGIN: 'http://127.0.0.1:3304',
     });
     expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'http://127.0.0.1:3304' });
   });
@@ -70,7 +70,7 @@ describe('관리자 전용 프록시', () => {
     'http://127.0.0.1:4300/api',
     'http://user:secret@127.0.0.1:4300',
   ])('loopback HTTP origin 외에는 연결하지 않는다: %s', (target) => {
-    expect(() => adminServerSettings({ GF_ADMIN_API_ORIGIN: target })).toThrow('local Game Feedback API');
+    expect(() => adminServerSettings({ GAME_FEEDBACK_API_URL: target })).toThrow('local Game Feedback API');
   });
   it('브라우저에 자격 증명을 주입하지 않고 framing 방지를 유지한다', () => {
     const resolved = config({ command: 'build', mode: 'production' });

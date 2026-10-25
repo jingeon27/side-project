@@ -1,6 +1,10 @@
 import { afterEach, expect, it, vi } from 'vitest';
 
+import { readRuntimeSecret } from '@/shared/config/runtime-secret.server';
+
 import { forwardedClientHeaders, publicServerOptions } from './server';
+
+vi.mock('@/shared/config/runtime-secret.server', () => ({ readRuntimeSecret: vi.fn() }));
 
 vi.mock('next/headers', () => ({ cookies: vi.fn(), headers: vi.fn() }));
 afterEach(() => {
@@ -10,7 +14,7 @@ afterEach(() => {
 
 // Next aborts a partially prefetched route when Date.now() runs during its runtime stage (PR #41 e2e failure).
 it('signs with the current time without calling Date.now()', () => {
-  vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', 'test-only-forwarded-client-secret-'.repeat(2));
+  vi.mocked(readRuntimeSecret).mockReturnValue('test-only-forwarded-client-secret-'.repeat(2));
   const dateNow = vi.spyOn(Date, 'now');
   const signed = forwardedClientHeaders('203.0.113.7');
   const shared = publicServerOptions().headers;

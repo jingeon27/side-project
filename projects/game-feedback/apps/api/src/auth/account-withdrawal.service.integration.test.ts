@@ -63,7 +63,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
   const postInput = { categoryId: 'clash-royale', board: 'FREE', title: '남길 글', body: '본문' };
 
   beforeAll(async () => {
-    const target = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const target = new URL(process.env.DATABASE_URL ?? '');
     target.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(target.toString(), 'test');
     const migration = spawnSync(

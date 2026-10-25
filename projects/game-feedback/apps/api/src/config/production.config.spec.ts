@@ -4,26 +4,22 @@ import { resolveMediaStorageConfig } from '../media-storage/media-storage.config
 import { resolveListenConfig, validateProductionEnvironment } from './production.config';
 
 const valid = {
-  GF_CACHE_REVALIDATION_SECRET: 'production-cache-secret-'.repeat(3),
-  GF_CACHE_REVALIDATION_URL: 'http://web:3300/internal/cache/revalidate',
-  NODE_ENV: 'production',
+  ENVIRONMENT: 'production',
   GF_S3_BUCKET: 'private-bucket',
   GF_S3_REGION: 'ap-northeast-2',
   WEB_ORIGIN: 'https://play.game-feedback.test',
-  GAME_FEEDBACK_SITE_URL: 'https://play.game-feedback.test',
   GAME_FEEDBACK_CONTACT_EMAIL: 'operator@game-feedback.test',
-  GF_DEMO_MODE: 'false',
-  GF_TEST_AUTH_ENABLED: 'false',
   DATABASE_URL: `postgresql://game_feedback:${'a'.repeat(64)}@db:5432/game_feedback`,
   GOOGLE_CLIENT_ID: 'production-client',
   GOOGLE_CLIENT_SECRET: 'production-secret',
-  MOBILE_AUTH_CALLBACK_URL: 'https://play.game-feedback.test/app-auth/callback',
 };
 
 describe('production startup configuration', () => {
   it('accepts private container binding and a configured HTTPS OAuth application', () => {
     expect(() => validateProductionEnvironment(valid)).not.toThrow();
-    expect(resolveListenConfig({ HOST: '0.0.0.0', PORT: '4300' })).toEqual({ HOST: '0.0.0.0', PORT: 4300 });
+    expect(
+      resolveListenConfig({ ENVIRONMENT: 'production', GAME_FEEDBACK_API_URL: 'http://api:4300' }),
+    ).toEqual({ HOST: '0.0.0.0', PORT: 4300 });
     expect(resolveMediaStorageConfig(valid)).toEqual({
       bucket: 'private-bucket',
       region: 'ap-northeast-2',
@@ -32,18 +28,9 @@ describe('production startup configuration', () => {
     });
   });
   it.each([
-    { GF_DEMO_MODE: 'true' },
-    { GF_TEST_AUTH_ENABLED: 'true' },
-    { GF_PREFETCH_TESTING: 'true' },
     { WEB_ORIGIN: 'http://localhost:3300' },
-    { GAME_FEEDBACK_SITE_URL: 'https://other.game-feedback.test' },
     { GOOGLE_CLIENT_SECRET: '' },
     { GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '' },
-    { GOOGLE_REDIRECT_URI: 'https://other.game-feedback.test/callback' },
-    { MOBILE_AUTH_CALLBACK_URL: '' },
-    { MOBILE_AUTH_CALLBACK_URL: 'gamefeedback://auth/callback' },
-    { MOBILE_AUTH_CALLBACK_URL: 'https://other.game-feedback.test/app-auth/callback' },
-    { MOBILE_AUTH_CALLBACK_URL: 'https://play.game-feedback.test/other' },
   ])('refuses unsafe production configuration: %j', (override) => {
     expect(() => validateProductionEnvironment({ ...valid, ...override })).toThrow();
   });
@@ -71,6 +58,6 @@ describe('production startup configuration', () => {
         GF_S3_ENDPOINT: 'http://storage.test',
       }),
     ).toThrow();
-    expect(() => resolveListenConfig({ PORT: '65536' })).toThrow();
+    expect(() => resolveListenConfig({ GAME_FEEDBACK_API_URL: 'http://127.0.0.1:65536' })).toThrow();
   });
 });

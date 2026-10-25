@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite';
+import { defineConfig, type Plugin, type ProxyOptions } from 'vite';
 
 type TAdminEnv = Record<string, string | undefined>;
 
@@ -30,46 +30,42 @@ export function localAdminGuard(port: number) {
     next();
   };
 }
-function localAdmin(port: number): Plugin {
-  const guard = localAdminGuard(port);
+function localAdmin(): Plugin {
   return {
     name: 'local-admin-origin',
     configureServer: (server) => {
-      server.middlewares.use(guard);
+      server.middlewares.use(localAdminGuard(server.config.server.port ?? 3303));
     },
     configurePreviewServer: (server) => {
-      server.middlewares.use(guard);
+      server.middlewares.use(localAdminGuard(server.config.preview.port ?? 3303));
     },
   };
 }
-/** Admin always uses the production SSH tunnel by default; tests may select an isolated loopback API. */
 export function adminServerSettings(env: TAdminEnv) {
-  const port = Number(env.GF_ADMIN_PORT ?? 3303);
-  const target = new URL(env.GF_ADMIN_API_ORIGIN ?? 'http://127.0.0.1:14300');
+  const target = new URL(env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:14300');
   if (
     !['localhost', '127.0.0.1'].includes(target.hostname) ||
     target.protocol !== 'http:' ||
     target.pathname !== '/' ||
     target.username ||
-    target.password
+    target.password ||
+    target.search ||
+    target.hash
   )
     throw new Error('Admin requires the local Game Feedback API.');
   const proxy: Record<string, ProxyOptions> = {
     '/api': {
       target: target.origin,
       changeOrigin: true,
-      headers: {
-        Origin: env.GF_ADMIN_WEB_ORIGIN ?? 'https://game.bambyul.com',
-      },
+      headers: { Origin: env.WEB_ORIGIN ?? 'https://game.bambyul.com' },
     },
   };
-  return { port, proxy };
+  return { port: 3303, proxy };
 }
-export default defineConfig(({ mode }) => {
-  const { port, proxy } = adminServerSettings({
-    ...loadEnv(mode, process.cwd(), ''),
-    ...process.env,
-  });
+// The Admin service always defaults to the production tunnel. Explicit shell overrides use
+// the same two project keys for isolated API tests; the web application's dev .env is not loaded here.
+export default defineConfig(() => {
+  const { port, proxy } = adminServerSettings(process.env);
   const server = {
     host: '127.0.0.1',
     port,
@@ -79,7 +75,7 @@ export default defineConfig(({ mode }) => {
     proxy,
   };
   return {
-    plugins: [react(), localAdmin(port)],
+    plugins: [react(), localAdmin()],
     optimizeDeps: { include: ['@game-feedback/contracts'] },
     build: { commonjsOptions: { include: [/node_modules/, /packages\/contracts\/dist/] } },
     resolve: {

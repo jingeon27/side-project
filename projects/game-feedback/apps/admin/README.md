@@ -14,7 +14,7 @@ ssh -N -L 14300:127.0.0.1:4300 ubuntu@<IP>
 corepack yarn workspace @side/game-feedback admin:dev
 ```
 
-http://127.0.0.1:3303 에서 관리자 전용 ID와 비밀번호로 로그인한다. 기본 연결은 운영 SSH 터널 `127.0.0.1:14300`, 서비스 Origin `https://game.bambyul.com`이다. 테스트 로그인 버튼이나 로컬/운영 모드 구분은 없다. 다른 격리된 API를 확인할 때만 `GF_ADMIN_API_ORIGIN`, `GF_ADMIN_WEB_ORIGIN`을 명시한다.
+http://127.0.0.1:3303 에서 관리자 전용 ID와 비밀번호로 로그인한다. 기본 연결은 운영 SSH 터널 `127.0.0.1:14300`, 서비스 Origin `https://game.bambyul.com`이다. 테스트 로그인 버튼이나 로컬/운영 모드 구분은 없다. 다른 격리된 API를 확인할 때만 `GAME_FEEDBACK_API_URL`, `WEB_ORIGIN`을 셸에 명시한다. Admin은 공개 Web의 개발용 `.env` 주소를 자동으로 읽지 않는다.
 
 관리자는 `AdminAccount`로 관리하며 일반 이용자를 승격하지 않는다. 연결된 내부 User는 문의 대화·감사 기록의 발신자 용도다. 관리자 비밀번호는 salt를 포함한 scrypt 해시로 저장하며 가입 API는 제공하지 않는다. `/api/admin/auth/*`와 문의 답변 API 모두 공개 Caddy에서 차단하고 SSH 터널로만 접근한다. 로그인 쿠키 `gamefeedback_admin_session`은 HttpOnly·SameSite=Strict·Path=/api/admin이며 유효기간은 1시간이다. 로컬 HTTP 프록시를 통해 사용하므로 Secure 속성을 붙이지 않는다. 공개 사용자 쿠키·Bearer 세션과 분리하며 브라우저 storage에 토큰을 저장하지 않는다.
 

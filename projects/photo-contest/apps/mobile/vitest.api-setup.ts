@@ -22,12 +22,6 @@ export async function setup(project: TestProject) {
     port: API_PORT,
     webOrigin: MOBILE_API_WEB_ORIGIN,
     prefix: 'mobile_api',
-    env: {
-      GOOGLE_CLIENT_ID: 'mobile-test-client',
-      GOOGLE_CLIENT_SECRET: 'mobile-test-secret',
-      MOBILE_MINIMUM_VERSION: '1.0.0',
-      MOBILE_LATEST_VERSION: '1.2.0',
-    },
   });
   project.provide('apiUrl', api.url);
   project.provide('webOrigin', MOBILE_API_WEB_ORIGIN);

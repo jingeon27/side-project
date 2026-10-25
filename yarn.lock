@@ -1675,6 +1675,7 @@ __metadata:
     eslint-config-next: "npm:16.4.2"
     github-slugger: "npm:^2.0.0"
     image-size: "npm:^2.0.2"
+    jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
     mdast-util-to-string: "npm:^4.0.0"
     next: "npm:16.4.2"

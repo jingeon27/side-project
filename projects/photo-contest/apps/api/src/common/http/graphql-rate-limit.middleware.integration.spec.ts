@@ -23,7 +23,7 @@ describe('graphqlRateLimit', () => {
   };
 
   it('운영에서 Caddy가 전달한 주소마다 분당 요청 수를 제한해야 한다', async () => {
-    api = await createTestApp({ NODE_ENV: 'production', WEB_ORIGIN: ORIGIN, TRUST_PROXY_HOPS: '1' });
+    api = await createTestApp({ NODE_ENV: 'production', WEB_ORIGIN: ORIGIN });
     for (let index = 0; index < GRAPHQL_RATE_LIMIT_PER_WINDOW; index++) {
       const response = await send('203.0.113.10');
       if (response.status !== 200) throw new Error(`${index + 1}번째 요청이 ${response.status}로 거절됐다`);
@@ -43,7 +43,7 @@ describe('graphqlRateLimit', () => {
   });
 
   it('개발·테스트 모드에서는 제한하지 않아야 한다', async () => {
-    api = await createTestApp({ TRUST_PROXY_HOPS: '1' });
+    api = await createTestApp({}, { trustProxy: 1 });
     for (let index = 0; index <= GRAPHQL_RATE_LIMIT_PER_WINDOW; index++) {
       const response = await api
         .http()

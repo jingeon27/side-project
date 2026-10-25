@@ -45,7 +45,7 @@ export class SessionService {
               pendingProvider: null,
             }
           : null;
-      if (raw || process.env.NODE_ENV !== 'test') return;
+      if (raw || process.env.ENVIRONMENT !== 'test') return;
       // Legacy role fixtures are confined to the test runner; running services require the dedicated admin cookie.
     }
     const raw = sessionToken(req);

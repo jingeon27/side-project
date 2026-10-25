@@ -1,25 +1,18 @@
-import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig, devices } from '@playwright/test';
 
+import { prepareBrowserDatabase } from '../api/src/testing/browser-database';
+
 const rootDir = fileURLToPath(new URL('../../../../', import.meta.url));
-const schema = `gf_test_admin_${randomUUID().replaceAll('-', '')}`;
-const target = new URL('postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test');
-target.searchParams.set('schema', schema);
-process.env.GF_ADMIN_E2E_SCHEMA = schema;
-process.env.GF_ADMIN_E2E_DATABASE_URL = target.toString();
+const { databaseUrl: target } = prepareBrowserDatabase('admin');
+process.env.WEB_ORIGIN = 'http://127.0.0.1:3304';
 const env = {
-  GF_CACHE_REVALIDATION_SECRET: '',
-  GF_CACHE_REVALIDATION_URL: '',
   NODE_ENV: 'test',
+  ENVIRONMENT: 'test',
+  GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4304',
   DATABASE_URL: target.toString(),
-  TEST_DATABASE_URL: target.toString(),
-  GF_DEMO_MODE: 'true',
-  GF_TEST_AUTH_ENABLED: 'true',
-  PORT: '4304',
   WEB_ORIGIN: 'http://127.0.0.1:3304',
-  API_ORIGIN: 'http://127.0.0.1:4304',
   GOOGLE_CLIENT_ID: '',
   GOOGLE_CLIENT_SECRET: '',
   KAKAO_CLIENT_ID: '',
@@ -39,7 +32,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'corepack yarn workspace @side/game-feedback db:test:sync && corepack yarn workspace @game-feedback/api db:seed && node --require tsx/cjs projects/game-feedback/apps/admin/e2e/seed-admin.mjs && corepack yarn workspace @game-feedback/api test:server',
+        'corepack yarn workspace @side/game-feedback db:test:sync && corepack yarn workspace @game-feedback/api db:seed --fixtures && node --require tsx/cjs projects/game-feedback/apps/admin/e2e/seed-admin.mjs && corepack yarn workspace @game-feedback/api test:server',
       cwd: rootDir,
       url: 'http://127.0.0.1:4304/api/session',
       env,
@@ -47,13 +40,13 @@ export default defineConfig({
       timeout: 90_000,
     },
     {
-      command: 'corepack yarn workspace @game-feedback/admin dev',
+      command: 'corepack yarn workspace @game-feedback/admin dev --port 3304',
       cwd: rootDir,
       url: 'http://127.0.0.1:3304',
       env: {
-        GF_ADMIN_PORT: '3304',
-        GF_ADMIN_API_ORIGIN: 'http://127.0.0.1:4304',
-        GF_ADMIN_WEB_ORIGIN: 'http://127.0.0.1:3304',
+        ENVIRONMENT: 'test',
+        GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4304',
+        WEB_ORIGIN: 'http://127.0.0.1:3304',
       },
       reuseExistingServer: false,
       timeout: 90_000,

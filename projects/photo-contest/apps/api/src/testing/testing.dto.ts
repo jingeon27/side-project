@@ -1,10 +1,16 @@
-import { IsBoolean, IsIn, IsOptional, IsString, IsUrl, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsIn, IsOptional, IsString, IsUrl, Length } from 'class-validator';
 
-import { DevLoginDto } from '../auth/auth.dto';
-import { PKCE_CHALLENGE_LENGTH } from '../config/limits';
+import { trimValue } from '../common/input-validation';
+import { TEXT_LIMIT } from '../config/limits';
 import { PHASE, type TPhase } from '../contest/contest.policy';
 
-export class CreateTestUserDto extends DevLoginDto {
+export class CreateTestUserDto {
+  @Transform(trimValue)
+  @IsString()
+  @Length(1, TEXT_LIMIT.NICKNAME)
+  nickname = '';
+
   @IsOptional()
   @IsBoolean()
   needsOnboarding?: boolean;
@@ -17,10 +23,4 @@ export class CreateTestUserDto extends DevLoginDto {
 export class MoveTestContestDto {
   @IsIn(Object.values(PHASE), { message: '테스트 입력을 확인해 주세요.' })
   declare phase: TPhase;
-}
-
-export class CreateTestAppLoginTicketDto extends DevLoginDto {
-  @IsString()
-  @Matches(new RegExp(`^[A-Za-z0-9_-]{${PKCE_CHALLENGE_LENGTH}}$`))
-  challenge = '';
 }

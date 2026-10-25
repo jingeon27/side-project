@@ -40,11 +40,10 @@ corepack yarn workspace @side/game-feedback dev
 ```dotenv
 GOOGLE_CLIENT_ID=<Google 웹 애플리케이션 client ID>
 GOOGLE_CLIENT_SECRET=<client secret>
-GOOGLE_REDIRECT_URI=http://localhost:3300/api/auth/google/callback
 GAME_FEEDBACK_CONTACT_EMAIL=contact@bambyul.com
 ```
 
-Google Cloud의 승인된 리디렉션 URI도 위 `GOOGLE_REDIRECT_URI`와 일치시킵니다. 별도 포트로 띄웠다면 해당 웹 포트를 사용합니다. 운영 callback은 `https://game.bambyul.com/api/auth/google/callback`이며 API 서브도메인으로 바꾸지 않습니다. Google 키를 브라우저용 `NEXT_PUBLIC_*` 변수에 넣지 않습니다.
+Google callback은 `WEB_ORIGIN`에서 자동으로 정합니다. Google Cloud의 승인된 리디렉션 URI에 로컬은 `http://localhost:3300/api/auth/google/callback`, 운영은 `https://game.bambyul.com/api/auth/google/callback`을 등록합니다. 별도 포트로 띄웠다면 해당 웹 포트를 사용합니다. API 서브도메인으로 바꾸지 않으며, Google 키를 브라우저용 `NEXT_PUBLIC_*` 변수에 넣지 않습니다.
 
 운영의 로컬 개발 `.env`는 서버에 자동 반영되지 않습니다. 공유 배포의 `/srv/side-project/services/game-feedback/.env`에서 Google 설정을 바꾸고 컨테이너를 재생성해야 하며, 문의 주소 등 웹 번들 값은 GitHub Variable `GF_CONTACT_EMAIL` 변경 후 새 웹 이미지 빌드·배포가 필요합니다. 서비스의 기존 설정·검증된 이미지·DB를 유지하는 절차는 [공유 배포 문서](../../deploy/shared-instance/README.md)를 따릅니다.
 
@@ -97,7 +96,7 @@ corepack yarn workspace @side/game-feedback db:stop
 
 ## 서버에서 테스트 토큰 발급하기
 
-`dev:test`는 `GF_TEST_AUTH_ENABLED=true`, `GF_DEMO_MODE=false`로 시작한다. 로그인 화면은 카카오, Discord, Google만 제공한다. 외부 소셜 인증을 거치지 않고 API 테스트를 하려면 다음 요청을 사용한다.
+`dev:test`는 API 실행 인수 `--test-auth`로 테스트 인증을 켜고 데모 인증은 끈다. 로그인 화면은 카카오, Discord, Google만 제공한다. 외부 소셜 인증을 거치지 않고 API 테스트를 하려면 다음 요청을 사용한다.
 
 ```sh
 curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
@@ -128,7 +127,7 @@ curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
 | Discord | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`          | `/api/auth/social/discord/callback` | `identify`          |
 | Google  | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`            | `/api/auth/google/callback`         | `openid`, PKCE S256 |
 
-제공자별 `*_REDIRECT_URI`로 콜백을 지정할 수 있다. 세션 API의 `socialProviders`가 서버 설정 상태를 전달하고 설정된 로그인 버튼만 동작한다. 제공자와 외부 사용자 ID를 묶어 계정을 식별하며 서비스 닉네임은 가입 단계에서 직접 입력한다. 네이티브 WebView도 선택한 제공자를 시스템 브라우저로 전달하고 기존 일회용 앱 티켓/PKCE 교환으로 복귀한다.
+제공자별 콜백은 `WEB_ORIGIN`과 위 경로에서 자동으로 정한다. 세션 API의 `socialProviders`가 서버 설정 상태를 전달하고 설정된 로그인 버튼만 동작한다. 제공자와 외부 사용자 ID를 묶어 계정을 식별하며 서비스 닉네임은 가입 단계에서 직접 입력한다. 네이티브 WebView도 선택한 제공자를 시스템 브라우저로 전달하고 기존 일회용 앱 티켓/PKCE 교환으로 복귀한다.
 
 구현 기준은 [카카오 로그인 REST API](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [Discord OAuth2](https://docs.discord.com/developers/topics/oauth2)다. 로컬 검증은 가짜 제공자를 사용하며 실제 콘솔 키와 외부 계정 로그인은 별도로 확인해야 한다.
 
@@ -177,9 +176,9 @@ OpenAPI JSON과 Swagger UI를 제공하는 HTTP 엔드포인트는 등록하지 
 ```sh
 # 웹 실행 후 별도 터미널에서
 adb reverse tcp:3300 tcp:3300
-APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:android
+corepack yarn workspace @side/game-feedback mobile:android
 # iOS
-APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
+corepack yarn workspace @side/game-feedback mobile:ios
 ```
 
 [모바일 실행·테스트 가이드](apps/mobile/README.md)에 origin 설정, 시스템 브라우저 Google 로그인, 뒤로 가기·딥링크·연결 복구와 실기기 확인 범위를 정리했다.
@@ -190,7 +189,7 @@ APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
 
 피드·가이드·약관·개인정보·문의·채팅·알림·설정에는 각각 title·description·keywords·canonical·Open Graph·Twitter 메타데이터를 둔다. 게시글은 실제 제목·요약·작성/수정 시각과 `DiscussionForumPosting`, 프로필은 닉네임·활동 수와 `ProfilePage`/`Person` 구조화 데이터를 생성한다. 공통 공유 이미지는 `/og`의 1200×630 PNG다. 없는/숨긴/삭제한 콘텐츠와 차단 상대는 메타데이터 조회에서도 404로 처리한다.
 
-`GAME_FEEDBACK_SITE_URL`에는 서비스의 실제 공개 origin을 설정한다. 호스트 요청 헤더를 대표 도메인으로 사용하지 않는다. `ENVIRONMENT=production`, HTTPS, 데모 비활성 조건이 모두 충족될 때 공개 페이지의 색인·robots·sitemap을 연다. 개발·데모·테스트는 noindex이며 채팅·알림·설정과 테스트 계정 상세는 항상 noindex다. 실제 검색 공개·Search Console 등록은 배포와 별도다.
+`WEB_ORIGIN`에는 서비스의 실제 공개 origin을 설정한다. 호스트 요청 헤더를 대표 도메인으로 사용하지 않는다. `ENVIRONMENT=production`, HTTPS, 데모 비활성 조건이 모두 충족될 때 공개 페이지의 색인·robots·sitemap을 연다. 개발·데모·테스트는 noindex이며 채팅·알림·설정과 테스트 계정 상세는 항상 noindex다. 실제 검색 공개·Search Console 등록은 배포와 별도다.
 
 번역이 준비되지 않은 `/en`·`/ja`는 같은 내용의 `/ko`를 canonical로 지정하고 번역된 페이지처럼 hreflang을 광고하지 않는다. 검색·탭 URL은 피드의 대표 주소를 사용하고, 내용이 달라지는 프로필 cursor 페이지는 해당 URL을 canonical로 유지한다. sitemap은 공개 요청과 해당 작성자의 프로필을 중복 없이 싣고 개인 경로·테스트 계정은 제외한다. 대규모 목록에는 분할 sitemap이 필요하며 현재 범위를 넘거나 cursor가 반복되면 불완전한 XML을 성공으로 반환하지 않는다.
 
@@ -218,11 +217,11 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
-공개 게시글 상세는 `cacheTag`와 `cacheLife('max')`를 사용하며, NestJS에서 변경을 커밋한 뒤 Next.js의 `POST /internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`로 만료한다. 실패한 콜백은 같은 트랜잭션에 저장한 DB 큐에서 재시도한다. 로컬 `dev` 명령은 Web/API가 공유하는 임시 비밀을 생성한다. 따로 실행한다면 두 프로세스에 같은 `GF_CACHE_REVALIDATION_SECRET`(32자 이상), API에 `GF_CACHE_REVALIDATION_URL=http://localhost:3300/internal/cache/revalidate`를 설정한다. 운영은 `deploy/shared-instance/service.env.example`의 비밀을 `openssl rand -hex 32`로 생성해 서비스 `.env`에 저장한다. Compose가 양쪽에 비밀과 내부 콜백 주소를 전달하며 새 `CacheInvalidation` migration도 적용해야 한다. 자세한 동작과 검증은 [구현 기록](docs/implementation.md)을 참고한다.
+공개 게시글 상세는 `cacheTag`와 `cacheLife`를 사용한다. NestJS가 변경을 커밋하면 Next의 `POST /internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`를 호출하고, 실패는 DB 큐에서 재시도한다. API가 `.data/cache-revalidation.key`를 권한 600으로 원자적으로 생성하고 Next가 같은 파일을 읽는다. 운영 Compose는 API 쓰기·Web 읽기 전용 볼륨을 공유한다. 콜백 주소는 WEB_ORIGIN(운영은 내부 gf-web 주소)에서 정하며 별도 환경변수를 요구하지 않는다.
 
-`corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `GF_PREFETCH_TESTING=true`로 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
+`corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `ENVIRONMENT=test`에서 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
 
-테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. `GF_DEMO_MODE=false`, `GF_TEST_AUTH_ENABLED=true`인 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
+테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. 테스트 실행기가 createApp 옵션으로 인증을 켠 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
 
 관리자 실행·로그인·검증 절차는 [Admin README](apps/admin/README.md)를 참고한다. 운영 배포 준비 요청 이후 최초 migration을 포함하며 운영은 `migrate deploy`, 로컬은 전용 URL 가드를 거친 `db:sync`를 사용한다. 기존 로컬 DB를 초기화하거나 최초 migration을 중복 적용하지 않는다.
 
@@ -230,6 +229,6 @@ Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS Postgr
 
 API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
 
-일반 Web Playwright·테스트 토큰·모바일 WebView 검사는 격리 API와 실제 production build/start를 사용한다. 프리패칭은 별도 test:prefetch에서 검증한다. 관측 검사는 기본 개발 모드와 `GF_OBSERVABILITY_PRODUCTION=true`인 production 모드를 지원하며 CI는 production 모드를 사용한다. 일반 dev 명령은 유지한다.
+일반 Web Playwright·테스트 토큰·모바일 WebView 검사는 격리 API와 실제 production build/start를 사용한다. 프리패칭은 별도 test:prefetch에서 검증한다. 관측 검사는 production build/start로 실행한다. 일반 dev 명령은 유지한다.
 
 GET/HEAD 헬스체크는 세션 조회와 일반 요청 제한에서 분리한다. 업무 API의 읽기·쓰기·인증·업로드 제한은 유지한다.

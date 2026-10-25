@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { readRuntimeSecret } from '@/shared/config/runtime-secret.server';
+
 import { forwardedClientHeaders, publicServerOptions, serverRequestOptions } from './server';
+
+vi.mock('@/shared/config/runtime-secret.server', () => ({ readRuntimeSecret: vi.fn() }));
 
 const { getCookie, getHeader } = vi.hoisted(() => ({ getCookie: vi.fn(), getHeader: vi.fn() }));
 vi.mock('next/headers', () => ({
@@ -10,7 +14,7 @@ vi.mock('next/headers', () => ({
 const secret = 'test-only-forwarded-client-secret-'.repeat(2);
 beforeEach(() => {
   vi.stubEnv('GAME_FEEDBACK_API_URL', 'https://api.feedback.example');
-  vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', secret);
+  vi.mocked(readRuntimeSecret).mockReturnValue(secret);
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -54,7 +58,7 @@ describe('server-side API request options', () => {
     expect(forwardedClientHeaders('internal', 1_790_000_000_999)['x-gf-client-signature']).toBe(
       '3TpEMy8avP8vg8wlqDs9tnRyaZdM0b8tEseX0Jkdf74',
     );
-    vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', '');
+    vi.mocked(readRuntimeSecret).mockReturnValue(undefined);
     expect(forwardedClientHeaders('203.0.113.7')).toEqual({});
     expect(publicServerOptions().headers).toEqual({});
   });

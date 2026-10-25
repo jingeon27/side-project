@@ -1,9 +1,10 @@
+import type { Linter } from 'eslint';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 const layers = ['shared', 'entities', 'features', 'widgets', 'app'];
-const boundaries = layers.slice(0, -1).map((layer, index) => {
+const boundaries = layers.slice(0, -1).map((layer, index): Linter.Config => {
   const uppers = layers.slice(index + 1);
   const message = 'FSD layers may only depend on lower layers.';
   return {

@@ -20,10 +20,8 @@ import {
 import { createCapabilities, type ICapabilityDependencies } from '@/features/bridge/lib/create-capabilities';
 import { toWebPath } from '@/features/navigation/lib/deep-link';
 
-import { E2E_APP_SCHEME, E2E_APP_VERSION, E2E_AUTH_CALLBACK_URL, E2E_WEB_ORIGIN } from './e2e-env';
+import { E2E_APP_SCHEME, E2E_APP_VERSION, E2E_WEB_ORIGIN } from './e2e-env';
 
-type TAuthSessionResult = Awaited<ReturnType<ICapabilityDependencies['openAuthSession']>>;
-type TAuthSessionHandler = (authUrl: string, redirectUrl: string) => Promise<TAuthSessionResult>;
 type TShareAction = Awaited<ReturnType<ICapabilityDependencies['share']>>['action'];
 
 /** 앱 기능(capabilities)이 플랫폼에 시킨 일. 실제 앱이라면 공유 시트·클립보드·진동·브라우저가 된다. */
@@ -33,7 +31,6 @@ export interface IPlatformCalls {
   impacts: string[];
   notifications: string[];
   openedLinks: string[];
-  authSessions: { authUrl: string; redirectUrl: string }[];
 }
 
 export interface INativeHost {
@@ -53,7 +50,6 @@ export interface INativeHost {
   setShareAction: (action: TShareAction) => void;
   setCopySucceeds: (succeeds: boolean) => void;
   /** 소셜 로그인 인증 세션 결과를 정한다. 기본은 사용자가 닫은 것(cancel)이다. */
-  setAuthSession: (handler: TAuthSessionHandler) => void;
   dispose: () => void;
 }
 
@@ -81,12 +77,10 @@ export async function installNativeHost(
     impacts: [],
     notifications: [],
     openedLinks: [],
-    authSessions: [],
   };
   const eventWaiters: { type: TWebEventType; resolve: (payload: unknown) => void }[] = [];
   let shareAction: TShareAction = 'sharedAction';
   let copySucceeds = true;
-  let authSession: TAuthSessionHandler = async () => ({ type: 'cancel' });
 
   const installationId = crypto.randomUUID();
   let pushGranted = false;
@@ -107,8 +101,7 @@ export async function installNativeHost(
         }
       : {}),
     platform,
-    apiBase: `${E2E_WEB_ORIGIN}/backend`,
-    authCallbackUrl: E2E_AUTH_CALLBACK_URL,
+
     share: async (content) => {
       platformCalls.shares.push(content);
       return { action: shareAction };
@@ -127,13 +120,6 @@ export async function installNativeHost(
       platformCalls.openedLinks.push(url);
       return { type: platform === 'ios' ? 'cancel' : 'opened' };
     },
-    openAuthSession: async (authUrl, redirectUrl) => {
-      platformCalls.authSessions.push({ authUrl, redirectUrl });
-      return authSession(authUrl, redirectUrl);
-    },
-    randomBytes: (count) => crypto.getRandomValues(new Uint8Array(count)),
-    sha256: async (text) =>
-      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
   });
 
   const recorded: TNativeCapabilities = {};
@@ -215,9 +201,6 @@ export async function installNativeHost(
     },
     setCopySucceeds: (succeeds) => {
       copySucceeds = succeeds;
-    },
-    setAuthSession: (handler) => {
-      authSession = handler;
     },
     dispose: () => router.dispose(),
   };

@@ -23,19 +23,18 @@ ARG NEXT_PUBLIC_AMPLITUDE_API_KEY=
 ARG SENTRY_RELEASE=
 ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} NEXT_PUBLIC_AMPLITUDE_API_KEY=${NEXT_PUBLIC_AMPLITUDE_API_KEY}
 ENV SENTRY_RELEASE=${SENTRY_RELEASE}
-ARG GF_SITE_URL=https://preview.invalid
-ARG GF_CONTACT_EMAIL=operator@example.invalid
-ENV NODE_ENV=production ENVIRONMENT=production NEXT_TELEMETRY_DISABLED=1 GF_STANDALONE=true \
+ARG WEB_ORIGIN=https://preview.invalid
+ARG GAME_FEEDBACK_CONTACT_EMAIL=operator@example.invalid
+ENV NODE_ENV=production ENVIRONMENT=production NEXT_TELEMETRY_DISABLED=1 \
     GAME_FEEDBACK_API_URL=http://api:4300 \
-    GAME_FEEDBACK_SITE_URL=${GF_SITE_URL} WEB_ORIGIN=${GF_SITE_URL} \
-    GAME_FEEDBACK_CONTACT_EMAIL=${GF_CONTACT_EMAIL} \
-    GF_DEMO_MODE=false GF_TEST_AUTH_ENABLED=false GF_PREFETCH_TESTING=false
+    WEB_ORIGIN=${WEB_ORIGIN} \
+    GAME_FEEDBACK_CONTACT_EMAIL=${GAME_FEEDBACK_CONTACT_EMAIL}
 RUN --mount=type=cache,id=gf-next-cache,target=/app/projects/game-feedback/apps/web/.next/cache \
     mkdir -p projects/game-feedback/apps/web/public \
     && corepack yarn workspace @game-feedback/web build
 
 FROM base AS api
-ENV NODE_ENV=production ENVIRONMENT=production HOST=0.0.0.0 PORT=4300
+ENV NODE_ENV=production ENVIRONMENT=production
 COPY --from=api-build /app/node_modules ./node_modules
 COPY --from=api-build /app/package.json ./package.json
 COPY --from=api-build /app/packages/push-notifications ./packages/push-notifications
@@ -46,6 +45,7 @@ COPY --from=api-build /app/projects/game-feedback/apps/api/scripts ./projects/ga
 COPY --from=api-build /app/projects/game-feedback/apps/api/prisma ./projects/game-feedback/apps/api/prisma
 COPY --from=api-build /app/projects/game-feedback/apps/api/prisma.config.ts ./projects/game-feedback/apps/api/prisma.config.ts
 WORKDIR /app/projects/game-feedback/apps/api
+RUN mkdir -p /app/projects/game-feedback/.data && chown node:node /app/projects/game-feedback/.data
 USER node
 EXPOSE 4300
 CMD ["node", "dist/main.js"]
@@ -56,6 +56,7 @@ WORKDIR /app
 COPY --from=web-build --chown=node:node /app/projects/game-feedback/apps/web/.next/standalone ./
 COPY --from=web-build --chown=node:node /app/projects/game-feedback/apps/web/.next/static ./projects/game-feedback/apps/web/.next/static
 COPY --from=web-build --chown=node:node /app/projects/game-feedback/apps/web/public ./projects/game-feedback/apps/web/public
+RUN mkdir -p /app/projects/game-feedback/.data && chown node:node /app/projects/game-feedback/.data
 USER node
 EXPOSE 3300
 CMD ["node", "projects/game-feedback/apps/web/server.js"]

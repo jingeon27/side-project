@@ -53,7 +53,7 @@ describe('banned social identities after account deletion', () => {
   }
 
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const url = new URL(process.env.DATABASE_URL ?? '');
     schema = `gf_test_banned_identity_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');

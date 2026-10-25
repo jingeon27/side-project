@@ -3,30 +3,15 @@ x-api: &api
   NODE_ENV: production
   PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
   EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
-  DEPLOYMENT_TARGET: shared-instance
-  API_HOST: 0.0.0.0
-  PORT: '4200'
-  TRUST_PROXY_HOPS: '1'
+  API_URL: http://pc-api:4200
   WEB_ORIGIN: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}
-  # 앱 소셜 로그인 코드는 웹 origin의 검증된 https 앱 링크로만 보낸다.
-  MOBILE_AUTH_CALLBACK_URL: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}/app-auth/callback
-  RDS_HOST: ${RDS_HOST:?Set RDS_HOST}
   DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
-  ENABLE_DEV_LOGIN: 'false'
-  ENABLE_TEST_API: 'false'
-  S3_BUCKET: ${PHOTO_CONTEST_S3_BUCKET:?Set PHOTO_CONTEST_S3_BUCKET}
-  OTHER_SERVICE_S3_BUCKET: ${GAME_FEEDBACK_S3_BUCKET:?Set GAME_FEEDBACK_S3_BUCKET}
+  S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
   S3_REGION: ap-northeast-2
   S3_KEY_PREFIX: ${S3_KEY_PREFIX:-}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID}
   AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}
-  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-  KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
-  KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
   SENTRY_DSN: ${SENTRY_DSN:-}
-  SENTRY_RELEASE: ${RELEASE_SHA:?Set RELEASE_SHA}
-  SENTRY_TRACES_SAMPLE_RATE: ${SENTRY_TRACES_SAMPLE_RATE:-0}
   NODE_OPTIONS: --max-old-space-size=384
 x-ca: &ca
   - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro
@@ -70,16 +55,10 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: '3200'
-      WEB_DRAIN_FILE: /tmp/side-web-draining
       NEXT_TELEMETRY_DISABLED: '1'
       NODE_OPTIONS: --max-old-space-size=384
       API_URL: http://pc-api:4200
       WEB_ORIGIN: https://${PHOTO_CONTEST_DOMAIN:?Set PHOTO_CONTEST_DOMAIN}
-      # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.
-      MOBILE_APPLE_TEAM_ID: ${MOBILE_APPLE_TEAM_ID:?Set MOBILE_APPLE_TEAM_ID}
-      MOBILE_IOS_BUNDLE_ID: ${MOBILE_IOS_BUNDLE_ID:?Set MOBILE_IOS_BUNDLE_ID}
-      MOBILE_ANDROID_PACKAGE: ${MOBILE_ANDROID_PACKAGE:?Set MOBILE_ANDROID_PACKAGE}
-      MOBILE_ANDROID_SHA256_FINGERPRINTS: ${MOBILE_ANDROID_SHA256_FINGERPRINTS:?Set MOBILE_ANDROID_SHA256_FINGERPRINTS}
     networks: { edge: { aliases: [pc-web] } }
     depends_on: { api: { condition: service_healthy } }
     healthcheck:
@@ -126,7 +105,7 @@ services:
     command: [node, scripts/production.mjs, migrate]
     environment:
       <<: *api
-      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
+      DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
     volumes: *ca
     networks: [edge]
     read_only: true

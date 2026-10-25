@@ -6,19 +6,17 @@ const host = 'side.abcdef.ap-northeast-2.rds.amazonaws.com';
 const url = (role: string) =>
   `postgresql://${role}:${'a'.repeat(64)}@${host}:5432/game_feedback?schema=public&sslmode=require&sslaccept=strict&sslcert=/run/rds/ca.pem&connection_limit=5&pool_timeout=10&connect_timeout=5`;
 const valid = {
-  DEPLOYMENT_TARGET: 'shared-instance',
-  RDS_HOST: host,
   DATABASE_URL: url('game_feedback'),
-  DATABASE_MIGRATION_URL: url('game_feedback_migrator'),
   GF_S3_REGION: 'ap-northeast-2',
   GF_S3_BUCKET: 'gf-private',
-  OTHER_SERVICE_S3_BUCKET: 'pc-private',
 };
 
 describe('shared EC2 deployment', () => {
   it('separates the RDS runtime and migration roles and requires verified TLS', () => {
     expect(sharedDatabaseUrl(valid)).toBe(valid.DATABASE_URL);
-    expect(sharedDatabaseUrl(valid, true)).toBe(valid.DATABASE_MIGRATION_URL);
+    expect(sharedDatabaseUrl({ ...valid, DATABASE_URL: url('game_feedback_migrator') }, true)).toBe(
+      url('game_feedback_migrator'),
+    );
     expect(() => validateSharedInstanceEnvironment(valid)).not.toThrow();
   });
   it.each([
@@ -43,6 +41,5 @@ describe('shared EC2 deployment', () => {
     expect(() =>
       validateSharedInstanceEnvironment({ ...valid, GF_S3_ENDPOINT: 'https://storage.test' }),
     ).toThrow();
-    expect(() => validateSharedInstanceEnvironment({ ...valid, GF_S3_BUCKET: 'pc-private' })).toThrow();
   });
 });

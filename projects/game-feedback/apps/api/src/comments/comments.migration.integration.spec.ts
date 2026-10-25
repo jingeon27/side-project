@@ -16,7 +16,7 @@ const require = createRequire(import.meta.url);
 const migrationName = '20261022030000_comment_replies';
 
 it('upgrades existing comments to root comments without losing their text', async () => {
-  const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+  const url = new URL(process.env.DATABASE_URL ?? '');
   const schema = `gf_test_reply_migration_${randomBytes(8).toString('hex')}`;
   url.searchParams.set('schema', schema);
   const databaseUrl = url.toString();

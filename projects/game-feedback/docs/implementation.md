@@ -1,5 +1,23 @@
 ## 2026-10-25 환경 설정 통일과 Sentry release·MCP 검증
 
+## 2026-10-25 루트 .env만 사용하는 설정 계약
+
+설정 파일은 도구가 지원하면 TypeScript를 우선한다. Game Feedback의 Next 설정과 Vite Admin의 PostCSS, 블로그의 ESLint 설정을 `.ts`로 바꿨다. 블로그는 독립 설치에서도 TypeScript ESLint 설정을 읽도록 기존 저장소에서 사용 중인 jiti를 개발 의존성에 선언했다. 설치된 Next의 PostCSS 설정 탐색은 `.ts`를 지원하지 않으므로 Next 웹들의 `postcss.config.mjs`는 유지한다. 설정 값은 바꾸지 않았다.
+
+설정 변환 검증: Web·Admin·Blog 타입/린트, Web 205개·Admin 19개 기존 테스트, Admin production 빌드와 Next production 설정 로더를 통과했다.
+
+사용자 지정에 따라 프로젝트 루트 `.env`에 정의된 키만 앱 설정으로 유지했다. Web·API·Admin·Mobile·테스트 실행기의 별도 환경변수와 모바일 env 템플릿을 제거했다. OS·Node·Next·CI가 제공하는 실행 변수와 저장소 공용 배포 도구의 이미지·네트워크·DDL 계정 입력은 앱 설정과 구분한다. 마이그레이션 컨테이너는 전용 계정 URL을 DATABASE_URL로 받으며 런타임 앱에는 DDL 계정을 주지 않는다. RDS 호스트는 DATABASE_URL에서 확인하고 기존 TLS·역할 검증을 유지한다.
+
+데모·테스트 인증은 명시적 실행 인수·createApp 옵션으로만 활성화하고 운영에서는 거부한다. 테스트 DB는 전용 55444 포트와 실행별 gf_test_ 스키마를 쓰며 브라우저 실행기는 다른 레인의 스키마를 재사용하지 않는다. 캐시 콜백 URL은 WEB_ORIGIN에서 정하고 운영에서는 내부 gf-web 주소를 사용한다. API가 권한 600의 .data/cache-revalidation.key를 원자적으로 생성하고 Web은 읽기 전용 볼륨으로 공유한다. SSR 방문자 주소 서명에도 같은 비공개 자격 증명을 사용한다. Sentry 환경·release는 ENVIRONMENT·SENTRY_RELEASE로 통일한다.
+
+별도 App Link·인증서 설정과 시스템 브라우저 인증 연결을 제거했다. 웹 소셜 로그인은 유지하고 모바일 로그인 화면은 웹 브라우저 이용을 안내한다. 별도 운영 관리자 토큰 프록시 설정도 제거하여 관리자 앱은 로컬 격리 테스트 로그인만 제공한다.
+
+검증: API unit 167개·통합 192개, Web 205개, Mobile 57개, Admin 19개를 통과했다. 실제 AWS에서 게시물 PNG·MP4, 프로필 JPEG, 채팅 PNG·MP4의 presigned 업로드·완료·권한·HEAD·GET·Range·CORS를 재검증했다. 생성한 10개 객체는 DELETE 204로 정리했다.
+
+production build/start에서 PPR 프리패치 브라우저 검사를 통과했고 Android·iOS 개발 번들을 생성했다.
+
+두 앱의 확인용 PNG는 upload-verification 경로에 따로 남겼다. 개발 서버를 직접 종료·재시작하거나 개발 DB·Terraform·운영 배포를 변경하지 않았다. Docker 실행기가 없어 컨테이너 재시작·배포 smoke는 실행하지 않았다. 아래의 이전 날짜별 기록은 당시 설정을 설명하며 현재 환경변수 계약은 루트 .env.example을 따른다.
+
 사용자 설정을 ENVIRONMENT(development/test/production) 하나로 통일했다. 실행기가 프레임워크용 NODE_ENV를 파생하고 Sentry도 같은 환경 값을 사용한다. SENTRY_ENVIRONMENT와 GAME_FEEDBACK_INDEXING/GF_INDEXING 설정을 제거했으며 검색 공개는 운영 환경·HTTPS·비로컬 origin·데모 비활성 조건으로 판단한다. 개인 화면과 테스트 계정은 계속 검색에서 제외한다. 기본 저장소와 실행 worktree의 로컬 환경 파일도 필요한 항목만 이행했다.
 
 Next 서버와 브라우저 초기화에 release를 연결했다. SENTRY_RELEASE 하나를 브라우저 빌드에도 주입하므로 공개 release 환경변수를 따로 설정하지 않는다. 공유 workflow/Dockerfile은 GitHub commit SHA를 웹 빌드에 전달하고 Compose는 같은 SHA를 API와 Next 런타임에 전달한다. 이 연결과 기존 색인 플래그 제거를 위해 공통 workflow와 배포 문서를 함께 수정했다.
@@ -1359,3 +1377,15 @@ DB는 같은 Game Feedback의 55444 테스트 DB와 실행별 gf_test_ 스키마
 CI에서 제거된 mediaUpload.mode를 기대하던 shared smoke를 S3 양식 계약에 맞추고, 공개 미디어/채팅 검증은 일반 사용자 세션으로 수행한다. 공유 배포는 Web의 drain 파일 → Caddy 활성 health 제외 → SIGTERM → API/Web 교체 순서로 바꿨다. 두 서비스가 같은 호스트 프록시/배포 스크립트를 사용하므로 공용 deploy 파일과 안내를 함께 수정했다. Photo Contest의 WebKit 캡처는 viewport를 CSS 해상도로 저장하며 기존 overflow 검사를 유지한다. Playwright production build의 NODE_ENV도 명시한다.
 
 검증: API unit 174개, 새 관리자 통합 4개(전용 migration·로그인·쿠키 분리·문의/첨부·인증·폐기), 관련 탈퇴 통합 7개, SDK 72개, Admin unit 19개와 실제 ID·비밀번호를 쓰는 브라우저 E2E 5개가 통과했다. 전체 API integration은 197개 중 기존 관리자 fixture 하나가 실패해 새 계정 fixture로 고친 뒤 해당 파일을 재검증했다. Admin production build 최대 JS 청크는 488.45 kB이며 타입·lint를 확인했다. 실제 Caddy/GF production build 교체 중 28개 요청 오류 0건, 배포 스크립트 unit 8개, PC responsive Chromium/WebKit/desktop 3개가 통과했다. GF 모바일은 320·393·430·760px 홈/가이드/설정에서 Chromium/WebKit 8개 검사를 통과해 좌우 대칭과 가로 넘침이 없음을 확인했다. 테스트는 55444/55434의 격리 스키마를 사용했다. Docker 공유 배포 전체 검사는 GitHub CI에서 확인하며 실제 운영 배포는 실행하지 않았다.
+
+## 2026-10-25 로컬 환경변수 정리와 실제 S3 재검증
+
+로컬 `.env.example`에서 실행기가 정하는 포트·테스트 DB·캐시 자격 증명, 기본값과 같은 OAuth callback·대표 origin, 비어 있는 운영 앱 링크 항목을 제거했다. 실제 `.env`도 키 목록을 맞췄으며 기존 자격 증명과 설정값을 보존하고 변경 전 파일을 Git 제외 경로에 백업했다. API_ORIGIN·제공자별 REDIRECT_URI 별칭 참조를 제거해 API 주소는 GAME_FEEDBACK_API_URL, OAuth callback은 WEB_ORIGIN에서만 정한다. SEO와 운영 시작 검증도 WEB_ORIGIN을 사용하며 별도 GAME_FEEDBACK_SITE_URL을 없앴다.
+
+Dockerfile과 Compose에서 기본 false인 데모·테스트 인증 플래그의 주입을 제거했다. 운영 검증은 누락을 false로 처리하되 true를 계속 거부한다. Dockerfile의 GF_TEST_AUTH_ENABLED ENV 선언을 없애 해당 이름의 SecretsUsedInArgOrEnv 경고 원인을 제거했다. Docker 실행기가 없는 환경이라 BuildKit 검사는 실행하지 않았다.
+
+실제 AWS jingeon-side-project/game-feedback/local 아래 실행별 smoke 경로에서 게시물 PNG·MP4, 프로필 JPEG, 채팅 PNG·MP4의 발급 → presigned POST 204 → HEAD·Range 서명 검사·조건부 복사 완료 200 → 게시/전송 → 서명 GET 200을 확인했다. 원본 바이트 일치·Range 206·동일 완료 재시도·정확한 크기 정책·Origin·소유권 검사도 통과했다. localhost:3300의 CORS preflight와 실제 POST·GET 응답 허용 헤더를 확인했다. 새 gf_test_s3_smoke_ 스키마에 migration을 실행했고, 마지막 실행의 S3 객체 10개는 DELETE 204로, DB 스키마는 DROP으로 정리했다. 브라우저 연결이 없어 이번 확인은 HTTP/API 기준이며 화면 조작 검증으로 기록하지 않는다.
+
+사용자가 콘솔에서 확인할 수 있도록 upload-verification/2026-10-25T11-41-50-004Z.png 한 개(525바이트)는 별도로 남겼다. presigned POST 204·HEAD 200·서명 GET 200과 원본 일치를 다시 확인했다. 키·쿠키·서명 URL은 출력하거나 커밋하지 않았다. 개발 서버·개발 DB·IAM·Terraform·버킷 설정은 변경하지 않았다.
+
+검증: API unit 173개, Web API 주소·Next rewrite·SEO 단위 25개가 통과했다. API 타입 검사와 검증용 빌드도 통과했다. 그 밖의 미정의 변수 제거 범위는 운영·모바일 예제와 실행기 주입 변수를 포함할지 사용자에게 확인 중이다.

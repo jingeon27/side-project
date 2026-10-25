@@ -5,12 +5,14 @@ import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
 const require = createRequire(import.meta.url);
 const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
 const { PrismaClient } = require('../dist/generated/prisma/index.js');
-if (process.env.NODE_ENV !== 'production' || process.env.DEPLOYMENT_TARGET !== 'shared-instance')
+if (process.env.ENVIRONMENT !== 'production')
   throw new Error('Shared-instance production configuration is required.');
 const { validateProductionEnvironment } = require('../dist/config/production.config.js');
 const { resolveMediaStorageConfig } = require('../dist/media-storage/media-storage.config.js');
 validateProductionEnvironment(process.env);
 resolveMediaStorageConfig(process.env);
+const { sharedDatabaseUrl } = require('../dist/config/shared-instance.config.js');
+sharedDatabaseUrl(process.env);
 const db = new PrismaClient({ adapter: createPrismaAdapter(process.env.DATABASE_URL) });
 const storage = new S3Client({
   region: 'ap-northeast-2',

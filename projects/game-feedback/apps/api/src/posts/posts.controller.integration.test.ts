@@ -15,7 +15,7 @@ import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
 import { presignedUpload } from '../testing/media-upload';
 
-const target = process.env.TEST_DATABASE_URL;
+const target = process.env.DATABASE_URL;
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 describe.skipIf(!target)('community boards and rich text with isolated PostgreSQL', () => {

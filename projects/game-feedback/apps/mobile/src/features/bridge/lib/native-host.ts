@@ -10,7 +10,7 @@ import {
 interface INativeHostOptions {
   origin: string;
   send: (message: TNativeMessage) => void;
-  login: (provider: TLoginProvider) => Promise<TLoginResult>;
+  login?: (provider: TLoginProvider) => Promise<TLoginResult>;
   getPushRegistration?: (requestPermission: boolean) => Promise<TPushRegistration>;
   openPushSettings?: () => Promise<unknown>;
   setPushBadge?: (count: number) => Promise<unknown>;
@@ -80,6 +80,10 @@ export class NativeHost {
     if (message.type === 'push-settings') void this.options.openPushSettings?.().catch(() => undefined);
     if (message.type === 'push-badge') void this.options.setPushBadge?.(message.count).catch(() => undefined);
     if (message.type === 'auth-request') {
+      if (!this.options.login) {
+        this.options.send({ type: 'auth-result', id: message.id, status: 'failed' });
+        return;
+      }
       if (this.authPending) {
         this.options.send({ type: 'auth-result', id: message.id, status: 'cancelled' });
         return;

@@ -23,13 +23,4 @@ describe('next.config 앱 링크', () => {
     ])
       expect((await respond(url)).headers.get('x-frame-options'), url).toBe('SAMEORIGIN');
   });
-
-  it('표준 /.well-known 경로를 kebab-case 앱 링크 라우트로 다시 써야 한다', async () => {
-    const association = await respond('https://contest.example/.well-known/apple-app-site-association');
-    expect(association.headers.get('x-middleware-rewrite') ?? '').toContain(
-      '/app-links/apple-app-site-association',
-    );
-    const assetLinks = await respond('https://contest.example/.well-known/assetlinks.json');
-    expect(assetLinks.headers.get('x-middleware-rewrite') ?? '').toContain('/app-links/assetlinks');
-  });
 });

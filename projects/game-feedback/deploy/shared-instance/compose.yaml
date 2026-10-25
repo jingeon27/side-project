@@ -4,24 +4,13 @@ x-api: &api
   ENVIRONMENT: production
   PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
   EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
-  DEPLOYMENT_TARGET: shared-instance
-  HOST: 0.0.0.0
-  PORT: '4300'
+  GAME_FEEDBACK_API_URL: http://gf-api:4300
   WEB_ORIGIN: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
-  # 앱 소셜 로그인 코드는 웹 origin의 검증된 https 앱 링크로만 보낸다.
-  MOBILE_AUTH_CALLBACK_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}/app-auth/callback
-  GAME_FEEDBACK_SITE_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
-  GAME_FEEDBACK_CONTACT_EMAIL: ${GF_CONTACT_EMAIL:?Set GF_CONTACT_EMAIL}
+  GAME_FEEDBACK_CONTACT_EMAIL: ${GAME_FEEDBACK_CONTACT_EMAIL:?Set GAME_FEEDBACK_CONTACT_EMAIL}
   DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL}
-  RDS_HOST: ${RDS_HOST:?Set RDS_HOST}
-  GF_DEMO_MODE: 'false'
-  GF_TEST_AUTH_ENABLED: 'false'
-  GF_PREFETCH_TESTING: 'false'
-  GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
-  GF_CACHE_REVALIDATION_URL: http://gf-web:3300/internal/cache/revalidate
-  GF_S3_BUCKET: ${GAME_FEEDBACK_S3_BUCKET:?Set GAME_FEEDBACK_S3_BUCKET}
-  OTHER_SERVICE_S3_BUCKET: ${PHOTO_CONTEST_S3_BUCKET:?Set PHOTO_CONTEST_S3_BUCKET}
-  GF_S3_REGION: ap-northeast-2
+  GF_S3_BUCKET: ${GF_S3_BUCKET:?Set GF_S3_BUCKET}
+  GF_S3_REGION: ${GF_S3_REGION:-ap-northeast-2}
+  GF_S3_KEY_PREFIX: ${GF_S3_KEY_PREFIX:-game-feedback}
   GF_S3_ACCESS_KEY_ID: ${GF_S3_ACCESS_KEY_ID:?Set GF_S3_ACCESS_KEY_ID}
   GF_S3_SECRET_ACCESS_KEY: ${GF_S3_SECRET_ACCESS_KEY:?Set GF_S3_SECRET_ACCESS_KEY}
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -46,7 +35,9 @@ services:
     restart: unless-stopped
     init: true
     environment: *api
-    volumes: *ca
+    volumes:
+      - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro
+      - runtime:/app/projects/game-feedback/.data
     ports: ['127.0.0.1:${GF_API_BIND_PORT:-4300}:4300']
     networks: { edge: { aliases: [gf-api] } }
     read_only: true
@@ -78,22 +69,14 @@ services:
       ENVIRONMENT: production
       SENTRY_RELEASE: ${RELEASE_SHA:-}
       PORT: '3300'
-      WEB_DRAIN_FILE: /tmp/side-web-draining
       HOSTNAME: 0.0.0.0
       NEXT_TELEMETRY_DISABLED: '1'
       NODE_OPTIONS: --max-old-space-size=384
       GAME_FEEDBACK_API_URL: http://gf-api:4300
-      GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
-      GAME_FEEDBACK_SITE_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
-      GAME_FEEDBACK_CONTACT_EMAIL: ${GF_CONTACT_EMAIL:?Set GF_CONTACT_EMAIL}
-      GF_DEMO_MODE: 'false'
-      GF_TEST_AUTH_ENABLED: 'false'
-      # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.
-      MOBILE_APPLE_TEAM_ID: ${MOBILE_APPLE_TEAM_ID:?Set MOBILE_APPLE_TEAM_ID}
-      MOBILE_IOS_BUNDLE_ID: ${MOBILE_IOS_BUNDLE_ID:?Set MOBILE_IOS_BUNDLE_ID}
-      MOBILE_ANDROID_PACKAGE: ${MOBILE_ANDROID_PACKAGE:?Set MOBILE_ANDROID_PACKAGE}
-      MOBILE_ANDROID_SHA256_FINGERPRINTS: ${MOBILE_ANDROID_SHA256_FINGERPRINTS:?Set MOBILE_ANDROID_SHA256_FINGERPRINTS}
+      WEB_ORIGIN: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
+      GAME_FEEDBACK_CONTACT_EMAIL: ${GAME_FEEDBACK_CONTACT_EMAIL:?Set GAME_FEEDBACK_CONTACT_EMAIL}
     networks: { edge: { aliases: [gf-web] } }
+    volumes: [runtime:/app/projects/game-feedback/.data:ro]
     depends_on: { api: { condition: service_healthy } }
     healthcheck:
       test:
@@ -139,7 +122,7 @@ services:
     command: [node, scripts/migrate.mjs]
     environment:
       <<: *api
-      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
+      DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
     volumes: *ca
     networks: [edge]
     read_only: true
@@ -150,3 +133,6 @@ services:
     logging: *logging
 networks:
   edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-edge' }
+volumes:
+  runtime:
+    name: ${SIDE_NETWORK_PREFIX:-side}-game-feedback-runtime

@@ -19,7 +19,7 @@ export function configureHttp(app: INestApplication) {
   // Production API traffic enters through the single private reverse-proxy hop.
   // The container port is published only to host loopback for operator SSH tunnels.
   const server = app.getHttpAdapter().getInstance() as Express;
-  const production = process.env.NODE_ENV === 'production';
+  const production = process.env.ENVIRONMENT === 'production';
   server.set('trust proxy', production ? 1 : false);
   server.disable('x-powered-by');
   app.use((_req: Request, res: Response, next: NextFunction) => {

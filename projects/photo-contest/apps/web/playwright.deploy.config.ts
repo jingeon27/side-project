@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const origin = process.env.DEPLOY_SMOKE_ORIGIN;
+const origin = process.env.WEB_ORIGIN;
 if (!origin || !/^https:\/\/localhost:\d+$/.test(origin))
   throw new Error('배포 검증은 격리한 HTTPS localhost 컨테이너에서만 실행합니다.');
 

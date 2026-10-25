@@ -8,7 +8,9 @@ export function setCookies(response: Response): string[] {
 
 /** name 쿠키를 설정하거나 지우는 Set-Cookie 한 줄 */
 export function findSetCookie(response: Response, name: string): string | undefined {
-  return setCookies(response).find((cookie) => cookie.startsWith(`${name}=`));
+  return setCookies(response)
+    .filter((cookie) => cookie.startsWith(`${name}=`))
+    .at(-1);
 }
 
 /** Set-Cookie에서 요청 Cookie 헤더에 넣을 `name=value`만 뗀다. */

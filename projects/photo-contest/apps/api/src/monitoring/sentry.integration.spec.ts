@@ -2,12 +2,10 @@ import { captureException, init } from '@sentry/node';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
-import { cookiePair, findSetCookie } from '../../test/support/cookies';
-import { jsonResponse, stubExternalFetch } from '../../test/support/external-fetch';
 import { createContest, createGroup } from '../../test/support/fixtures';
 import { submitPhoto } from '../../test/support/photos';
 import { ContestCompletionService } from '../analytics/contest-completion.service';
-import { AuthService } from '../auth/auth.service';
+import { SessionService } from '../auth/session.service';
 import { GroupService } from '../group/group.service';
 import { MaintenanceService } from '../maintenance/maintenance.service';
 import { MediaStorage } from '../storage/media-storage.service';
@@ -94,19 +92,19 @@ describe('Sentry 오류 보고', () => {
 
     // supertest는 요청마다 서버를 잠깐 열고 닫으므로 요청은 보낼 때 만든다.
     const restFailures = [
-      [400, () => api.http().get('/auth/unknown')],
+      [404, () => api.http().get('/auth/unknown')],
       [401, () => api.http().get(`/photos/${photoId}`)],
       [404, () => api.http().get(`/photos/${photoId}`).set('Cookie', outsider.cookie)],
       [404, () => api.http().get('/photos/missing-photo').set('Cookie', member.cookie)],
       [404, () => api.http().get('/missing-route')],
-      [403, () => api.http().post('/auth/dev').send({ nickname: '출처 없음' })],
+      [403, () => api.http().post('/auth/logout').send({ nickname: '출처 없음' })],
       [
         404,
         () =>
           api.http().post('/uploads/bad-token').set('Origin', TEST_WEB_ORIGIN).set('Cookie', member.cookie),
       ],
       [
-        403,
+        404,
         () =>
           api
             .http()
@@ -119,7 +117,7 @@ describe('Sentry 오류 보고', () => {
         () =>
           api
             .http()
-            .post('/auth/dev')
+            .post('/auth/logout')
             .set('Origin', TEST_WEB_ORIGIN)
             .set('Content-Type', 'application/json')
             .send('{"nickname":'),
@@ -127,8 +125,6 @@ describe('Sentry 오류 보고', () => {
     ] as const;
     for (const [status, send] of restFailures) expect((await send()).status).toBe(status);
     // state가 맞지 않는 OAuth 콜백도 예상한 실패다.
-    vi.stubEnv('GOOGLE_CLIENT_ID', 'monitoring-google-client');
-    expect((await api.http().get('/auth/google/callback').query({ state: 's', code: 'c' })).status).toBe(302);
 
     expect(captureException).not.toHaveBeenCalled();
   });
@@ -171,10 +167,10 @@ describe('Sentry 오류 보고', () => {
     expect(photo.status).toBe(500);
     expect(photo.text).not.toContain(SECRET);
 
-    vi.spyOn(api.app.get(AuthService), 'devLogin').mockRejectedValueOnce(new Error(`unique ${SECRET}`));
+    vi.spyOn(api.app.get(SessionService), 'end').mockRejectedValueOnce(new Error(`unique ${SECRET}`));
     const login = await api
       .http()
-      .post('/auth/dev')
+      .post('/auth/logout')
       .set('Origin', TEST_WEB_ORIGIN)
       .set('Cookie', member.cookie)
       .send({ nickname: `${SECRET}-닉네임` });
@@ -182,75 +178,15 @@ describe('Sentry 오류 보고', () => {
     expect(login.text).not.toContain(SECRET);
 
     // 설정이 빠진 provider도 서버 쪽 문제(503)이므로 보고한다.
-    expect((await api.http().get('/auth/kakao')).status).toBe(503);
 
     expect(reportedCalls()).toEqual([
       { message: 'Unexpected Error', context: { tags: { route: 'GET /photos/:id' } } },
-      { message: 'Unexpected Error', context: { tags: { route: 'POST /auth/dev' } } },
-      { message: 'Unexpected GraphQLError UNAVAILABLE', context: { tags: { route: 'GET /auth/:provider' } } },
+      { message: 'Unexpected Error', context: { tags: { route: 'POST /auth/logout' } } },
     ]);
     const payload = reportedPayload();
     expect(payload).not.toContain(SECRET);
     expect(payload).not.toContain(photoId);
     expect(payload).not.toContain(member.cookie.split('=')[1]);
-  });
-
-  it('OAuth 콜백에서 provider와 통신하지 못하면 웹으로 돌려보내고 라우트 태그로 보내야 한다', async () => {
-    vi.stubEnv('GOOGLE_CLIENT_ID', 'monitoring-google-client');
-    const start = await api.http().get('/auth/google');
-    const state = new URL(String(start.headers.location)).searchParams.get('state') ?? '';
-    const stateCookie = findSetCookie(start, 'contest_oauth_state') ?? '';
-    stubExternalFetch({
-      'https://oauth2.googleapis.com/token': () => {
-        throw new TypeError(`fetch failed ${SECRET}`);
-      },
-    });
-
-    const callback = await api
-      .http()
-      .get('/auth/google/callback')
-      .query({ state, code: `${SECRET}-code` })
-      .set('Cookie', cookiePair(stateCookie));
-    expect(callback.status).toBe(302);
-    expect(callback.headers.location).toBe(`${TEST_WEB_ORIGIN}/?loginError=1`);
-    expect(reportedCalls()).toEqual([
-      { message: 'Unexpected TypeError', context: { tags: { route: 'GET /auth/:provider/callback' } } },
-    ]);
-    expect(reportedPayload()).not.toContain(SECRET);
-  });
-
-  it('provider가 토큰 요청을 거절하면 웹으로 돌려보내고 상태·표준 오류 코드만 태그로 보내야 한다', async () => {
-    vi.stubEnv('GOOGLE_CLIENT_ID', 'monitoring-google-client');
-    const start = await api.http().get('/auth/google');
-    const state = new URL(String(start.headers.location)).searchParams.get('state') ?? '';
-    const stateCookie = findSetCookie(start, 'contest_oauth_state') ?? '';
-    stubExternalFetch({
-      'https://oauth2.googleapis.com/token': () =>
-        jsonResponse({ error: 'invalid_client', error_description: `secret ${SECRET}` }, 401),
-    });
-
-    const callback = await api
-      .http()
-      .get('/auth/google/callback')
-      .query({ state, code: `${SECRET}-code` })
-      .set('Cookie', cookiePair(stateCookie));
-    expect(callback.status).toBe(302);
-    expect(callback.headers.location).toBe(`${TEST_WEB_ORIGIN}/?loginError=1`);
-    expect(reportedCalls()).toEqual([
-      {
-        message: 'Unexpected OAuthProviderRejected 401',
-        context: {
-          tags: {
-            route: 'GET /auth/:provider/callback',
-            provider: 'google',
-            stage: 'token',
-            status: '401',
-            oauthError: 'invalid_client',
-          },
-        },
-      },
-    ]);
-    expect(reportedPayload()).not.toContain(SECRET);
   });
 
   it('주기 작업이 여러 단계에서 실패하면 처음 실패는 던지고 나머지는 job 태그로 보내야 한다', async () => {

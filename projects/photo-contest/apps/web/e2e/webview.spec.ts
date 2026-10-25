@@ -1,17 +1,14 @@
-import { createHash, randomBytes } from 'node:crypto';
-
 import { PROTOCOL_VERSION } from '@photo-contest/bridge';
 import {
   buildBootstrapScript,
   buildNativeDispatchScript,
   createNativeRouter,
 } from '@photo-contest/bridge/native';
-import { createTestAppLoginTicket } from '@photo-contest/test-kit';
 
-import { API_URL, WEB_ORIGIN } from './support/env';
+import { WEB_ORIGIN } from './support/env';
 import { expect, test } from './support/test';
 
-test('가짜 앱 WebView에서도 로그인 교환·초대 공유·뒤로 가기가 실제 웹과 연결돼야 한다', async ({
+test('가짜 앱 WebView에서도 비밀번호 가입·초대 공유·뒤로 가기가 실제 웹과 연결돼야 한다', async ({
   page,
   context,
 }) => {
@@ -31,17 +28,6 @@ test('가짜 앱 WebView에서도 로그인 교환·초대 공유·뒤로 가기
       },
     },
     capabilities: {
-      'auth.socialLogin': async () => {
-        calls.push('auth.socialLogin');
-        const verifier = randomBytes(32).toString('base64url');
-        const challenge = createHash('sha256').update(verifier).digest('base64url');
-        const ticket = await createTestAppLoginTicket(API_URL, {
-          nickname: '웹뷰-사용자',
-          challenge,
-          origin: WEB_ORIGIN,
-        });
-        return { code: ticket.code, verifier };
-      },
       'share.open': async () => {
         calls.push('share.open');
         return { shared: true };
@@ -63,12 +49,17 @@ test('가짜 앱 WebView에서도 로그인 교환·초대 공유·뒤로 가기
           platform: 'android',
           appVersion: '1.0.0',
           protocolVersion: PROTOCOL_VERSION,
-          capabilities: ['auth.socialLogin', 'share.open', 'clipboard.copy'],
+          capabilities: ['share.open', 'clipboard.copy'],
         }),
     });
     await page.goto('/');
     await expect.poll(() => events).toContain('app.ready');
-    await page.getByRole('button', { name: /구글|Google/ }).click();
+    await page.getByRole('tab', { name: '회원가입', exact: true }).click();
+    const registration = page.getByRole('tabpanel', { name: '회원가입', exact: true });
+    await registration.getByLabel('아이디', { exact: true }).fill('webview_user');
+    await registration.getByLabel('닉네임', { exact: true }).fill('웹뷰-사용자');
+    await registration.getByLabel('비밀번호', { exact: true }).fill('webview password 2026');
+    await page.getByRole('button', { name: '가입하고 시작하기', exact: true }).click();
     await expect(page.getByRole('button', { name: /구글|Google/ })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: '공개 그룹의 최신 사진' })).toBeVisible();
     expect((await context.cookies()).find(({ name }) => name === 'contest_session')?.httpOnly).toBe(true);
@@ -88,7 +79,7 @@ test('가짜 앱 WebView에서도 로그인 교환·초대 공유·뒤로 가기
     await page.getByText('초대와 그룹 멤버', { exact: true }).click();
     await page.getByRole('button', { name: '친구 초대하기' }).click();
     await page.getByRole('button', { name: '링크 복사', exact: true }).click();
-    expect(calls).toEqual(['auth.socialLogin', 'share.open', 'clipboard.copy']);
+    expect(calls).toEqual(['share.open', 'clipboard.copy']);
     expect(events).toContain('auth.changed');
   } finally {
     router.dispose();

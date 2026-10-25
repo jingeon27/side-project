@@ -34,7 +34,7 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
     photo: Buffer;
   };
   beforeAll(async () => {
-    const target = new URL(process.env.TEST_DATABASE_URL ?? 'http://unused');
+    const target = new URL(process.env.DATABASE_URL ?? 'http://unused');
     target.searchParams.set('schema', schema);
     const url = assertDatabaseUrl(target.toString(), 'test');
     const result = spawnSync(

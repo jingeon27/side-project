@@ -35,7 +35,7 @@ describe('게시글 S3 직접 업로드', () => {
   const state = {} as IState;
   const s3 = new S3Fixture();
   beforeAll(async () => {
-    const target = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const target = new URL(process.env.DATABASE_URL ?? '');
     target.searchParams.set('schema', schema);
     state.databaseUrl = assertDatabaseUrl(target.toString(), 'test');
     const result = spawnSync(

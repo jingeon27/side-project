@@ -104,7 +104,7 @@ describe('WebShellPageTemplate', () => {
       platform: 'android',
       appVersion: '1.2.3',
       protocolVersion: 1,
-      capabilities: ['share.open', 'clipboard.copy', 'haptics.impact', 'link.open', 'auth.socialLogin'],
+      capabilities: ['share.open', 'clipboard.copy', 'haptics.impact', 'link.open'],
     });
   });
 
@@ -133,18 +133,13 @@ describe('WebShellPageTemplate', () => {
     renderShell();
 
     postFromWeb(webRequest('share-1', 'share.open', { url: `${WEB_ORIGIN}/invite/abc` }));
-    postFromWeb(webRequest('login-1', 'auth.socialLogin', { provider: 'kakao' }));
 
     await waitFor(() =>
       expect(trackedEvents()).toEqual(
-        expect.arrayContaining([
-          { name: 'native_share_dismissed', properties: undefined },
-          { name: 'social_login_started', properties: { provider: 'kakao' } },
-          { name: 'social_login_cancelled', properties: { provider: 'kakao' } },
-        ]),
+        expect.arrayContaining([{ name: 'native_share_dismissed', properties: undefined }]),
       ),
     );
-    expect(trackedEvents()).toHaveLength(3);
+    expect(trackedEvents()).toHaveLength(1);
   });
 
   it('웹 origin만 WebView에서 열고 다른 링크는 밖에서 열거나 막아야 한다', () => {

@@ -1,10 +1,2 @@
-/**
- * 소셜 로그인 콜백 경로. app.config.ts의 associated domains·intent filter, 웹 안내 페이지와 AASA·assetlinks,
- * API의 MOBILE_AUTH_CALLBACK_URL과 같은 값이다. 검증된 App Link·Universal Link만 이 주소를 이 앱으로 넘긴다.
- */
+/** 기존 인증 콜백 주소를 앱 탐색 대상으로 열지 않기 위한 예약 경로. */
 export const AUTH_CALLBACK_PATH = '/app-auth/callback';
-
-/** 예: https://contest.example → https://contest.example/app-auth/callback */
-export function buildAuthCallbackUrl(webOrigin: string) {
-  return `${webOrigin}${AUTH_CALLBACK_PATH}`;
-}

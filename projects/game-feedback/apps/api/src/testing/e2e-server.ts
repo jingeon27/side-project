@@ -1,13 +1,14 @@
 import { createApp } from '../app';
 import { ApiError } from '../common/http/api-error';
+import { ensureRuntimeSecret } from '../config/runtime-secret';
 import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
 import { S3Fixture } from './s3-fixture';
 
 async function main() {
-  if (process.env.NODE_ENV !== 'test') throw new Error('E2E server requires NODE_ENV=test.');
+  if (process.env.ENVIRONMENT !== 'test') throw new Error('E2E server requires NODE_ENV=test.');
   const databaseUrl = assertDatabaseUrl(process.env.DATABASE_URL, 'test');
-  const port = Number(process.env.PORT);
+  const port = Number(new URL(process.env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:4301').port);
   if (
     ![4301, 4302, 4304, 4353].includes(port) ||
     process.env.WEB_ORIGIN !== `http://127.0.0.1:${port - 1000}`
@@ -18,9 +19,13 @@ async function main() {
   const s3 = await new S3Fixture({ corsOrigin: process.env.WEB_ORIGIN }).start();
   const app = await createApp({
     mediaStorage: s3.config,
+    cacheRevalidation: {
+      secret: ensureRuntimeSecret(),
+      url: `${process.env.WEB_ORIGIN}/internal/cache/revalidate`,
+    },
     databaseUrl,
-    demoMode: process.env.GF_DEMO_MODE === 'true',
-    testAuthEnabled: process.env.GF_TEST_AUTH_ENABLED === 'true',
+    demoMode: !process.argv.includes('--no-demo'),
+    testAuthEnabled: true,
     rateLimit: false,
     profileProvider: new DemoProfileProvider(),
     identityProvider: {

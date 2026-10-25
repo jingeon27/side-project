@@ -8,25 +8,21 @@ afterEach(() => vi.unstubAllEnvs());
 describe('SEO metadata and visibility', () => {
   const production = {
     ENVIRONMENT: 'production',
-    GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
-    GF_DEMO_MODE: 'false',
+    WEB_ORIGIN: 'https://feedback.example',
   };
   it('indexes only explicit production HTTPS sites and excludes demo, previews and local origins', () => {
     expect(resolveSeoConfig(production).indexable).toBe(true);
     for (const overrides of [
       { ENVIRONMENT: 'development', NODE_ENV: 'production' },
       { ENVIRONMENT: 'test', NODE_ENV: 'production' },
-      { GF_DEMO_MODE: 'true' },
-      { GAME_FEEDBACK_SITE_URL: 'http://feedback.example' },
-      { GAME_FEEDBACK_SITE_URL: 'https://localhost' },
+      { WEB_ORIGIN: 'http://feedback.example' },
+      { WEB_ORIGIN: 'https://localhost' },
     ])
       expect(resolveSeoConfig({ ...production, ...overrides }).indexable).toBe(false);
-    expect(() =>
-      resolveSeoConfig({ GAME_FEEDBACK_SITE_URL: 'https://user:password@feedback.example/' }),
-    ).toThrow();
+    expect(() => resolveSeoConfig({ WEB_ORIGIN: 'https://user:password@feedback.example/' })).toThrow();
   });
   it('gives every screen its own title, description, keywords and canonical URL', () => {
-    vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
+    vi.stubEnv('WEB_ORIGIN', production.WEB_ORIGIN);
     const titles = new Set<string>();
     for (const kind of Object.keys(pageContent) as (keyof typeof pageContent)[]) {
       const metadata = staticPageMetadata(kind, 'ko');
@@ -68,7 +64,7 @@ describe('SEO metadata and visibility', () => {
     expect(staticPageMetadata('onboarding', 'ja').openGraph).toMatchObject({ locale: 'ja_JP' });
   });
   it('canonicalizes unfinished translations and preserves meaningful profile pagination', () => {
-    vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
+    vi.stubEnv('WEB_ORIGIN', production.WEB_ORIGIN);
     expect(canonicalPath('/ja/posts/post-1')).toBe('/ko/posts/post-1');
     expect(
       createPageMetadata({ title: '프로필', description: '프로필', path: '/en/users/user-1?cursor=abc' })
@@ -76,7 +72,7 @@ describe('SEO metadata and visibility', () => {
     ).toBe('https://feedback.example/ko/users/user-1?cursor=abc');
   });
   it('connects public pages to one site and uses the metadata canonical across untranslated routes', () => {
-    vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
+    vi.stubEnv('WEB_ORIGIN', production.WEB_ORIGIN);
     for (const locale of ['ko', 'en', 'ja']) {
       for (const kind of ['feed', 'guide', 'terms', 'privacy', 'contact'] as const) {
         const data = publicPageStructuredData(kind, locale);
@@ -97,7 +93,7 @@ describe('SEO metadata and visibility', () => {
     }
   });
   it('keeps the person identity stable while profile pages preserve their canonical cursor', () => {
-    vi.stubEnv('GAME_FEEDBACK_SITE_URL', production.GAME_FEEDBACK_SITE_URL);
+    vi.stubEnv('WEB_ORIGIN', production.WEB_ORIGIN);
     const profile = {
       author: {
         id: 'user-1',

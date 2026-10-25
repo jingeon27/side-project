@@ -6,12 +6,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { guardDatabaseUrl } from './database-guard.mjs';
-import { assertNode, environment, projectDir, yarn } from './env.mjs';
+import { assertNode, environment, projectDir, testDatabaseUrl, yarn } from './env.mjs';
 
 const command = process.argv[2] ?? 'status';
 const isTest = process.argv.includes('--test');
 const env = environment();
-const databaseUrl = isTest ? env.TEST_DATABASE_URL : env.DATABASE_URL;
+const configuredTest = URL.parse(env.DATABASE_URL ?? '');
+const databaseUrl = isTest
+  ? configuredTest?.pathname === '/game_feedback_test'
+    ? env.DATABASE_URL
+    : testDatabaseUrl
+  : env.DATABASE_URL;
 const target = guardDatabaseUrl(databaseUrl, { test: isTest, allowTestSchema: command === 'sync' });
 const label = isTest ? 'test' : 'dev';
 const dataRoot = path.join(projectDir, '.data');

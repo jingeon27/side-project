@@ -42,7 +42,7 @@ function adminCookie(response: { headers: Record<string, unknown> }) {
 }
 describe('dedicated administrator credentials and private sessions', () => {
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const url = new URL(process.env.DATABASE_URL ?? '');
     url.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
     const migrated = spawnSync(

@@ -1,7 +1,6 @@
 import { resolve } from 'node:path';
 
 import {
-  assertTestDatabaseUrl,
   assertTestSchemaName,
   isolatedSchemaName,
   resolveTestDatabaseUrl,
@@ -26,12 +25,15 @@ export interface IE2eDatabase {
  */
 export function prepareE2eDatabase(prefix: TTestSchemaPrefix): IE2eDatabase {
   loadProjectEnv();
-  const baseUrl = assertTestDatabaseUrl(process.env.PC_E2E_BASE_DATABASE_URL ?? resolveTestDatabaseUrl());
-  process.env.PC_E2E_BASE_DATABASE_URL = baseUrl;
-  process.env.PC_E2E_SCHEMA ??= isolatedSchemaName(prefix);
-  const schema = assertTestSchemaName(process.env.PC_E2E_SCHEMA, prefix);
+  const baseUrl = resolveTestDatabaseUrl();
+  const configured = new URL(baseUrl).searchParams.get('schema');
+  const schema =
+    configured && configured !== 'public'
+      ? assertTestSchemaName(configured, prefix)
+      : isolatedSchemaName(prefix);
   const url = schemaUrl(baseUrl, schema);
-  process.env.PC_E2E_DATABASE_URL = url;
+  process.env.TEST_DATABASE_URL = url;
+
   return { schema, url, baseUrl, storageDir: resolve(PROJECT_ROOT, '.data', schema) };
 }
 
@@ -39,7 +41,7 @@ interface IApiWebServerOptions {
   port: number;
   webOrigin: string;
   database: IE2eDatabase;
-  /** API에만 더 넘길 환경변수 (예: 가짜 OAuth client id) */
+  /** API에만 더 넘길 루트 환경변수 (예: 비어 있는 관측 키) */
   env?: Record<string, string>;
 }
 
@@ -54,17 +56,11 @@ export function apiWebServer({ port, webOrigin, database, env = {} }: IApiWebSer
     stdout: 'pipe' as const,
     stderr: 'pipe' as const,
     env: {
-      GOOGLE_CLIENT_ID: '',
-      GOOGLE_CLIENT_SECRET: '',
-      KAKAO_CLIENT_ID: '',
-      KAKAO_CLIENT_SECRET: '',
       SENTRY_DSN: '',
       ...env,
-      DATABASE_URL: database.baseUrl,
-      PC_E2E_SCHEMA: database.schema,
-      PORT: String(port),
+      TEST_DATABASE_URL: database.url,
+      API_URL: `http://127.0.0.1:${port}`,
       WEB_ORIGIN: webOrigin,
-      PC_E2E_STORAGE_DIR: database.storageDir,
     },
   };
 }

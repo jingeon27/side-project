@@ -2,7 +2,11 @@ import { revalidateTag } from 'next/cache';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { readRuntimeSecret } from '@/shared/config/runtime-secret.server';
+
 import { revalidatePublicCache } from './revalidate-public-cache';
+
+vi.mock('@/shared/config/runtime-secret.server', () => ({ readRuntimeSecret: vi.fn() }));
 
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 const secret = 'test-only-cache-secret-'.repeat(3);
@@ -14,7 +18,7 @@ function request(body: unknown, token = secret) {
   });
 }
 beforeEach(() => {
-  vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', secret);
+  vi.mocked(readRuntimeSecret).mockReturnValue(secret);
   vi.mocked(revalidateTag).mockReset();
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -39,7 +43,7 @@ describe('authenticated cache revalidation callback', () => {
     expect(revalidateTag).not.toHaveBeenCalled();
   });
   it('fails closed if no server credential is configured', async () => {
-    vi.stubEnv('GF_CACHE_REVALIDATION_SECRET', '');
+    vi.mocked(readRuntimeSecret).mockReturnValue(undefined);
     expect((await revalidatePublicCache(request({ tags: ['posts'] }))).status).toBe(503);
     expect(revalidateTag).not.toHaveBeenCalled();
   });

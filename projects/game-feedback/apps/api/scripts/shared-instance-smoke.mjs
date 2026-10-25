@@ -23,7 +23,7 @@ import { assertAnonymousSession } from './shared-instance/session-check.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../../../..');
 const source = join(repo, 'deploy/shared-instance');
-const sha = process.env.SIDE_SMOKE_TAG;
+const [, , sha] = process.argv;
 assert.match(sha ?? '', /^[a-f0-9]{40}$/);
 const id = randomBytes(5).toString('hex');
 const prefix = `side-shared-smoke-${id}`;
@@ -31,8 +31,8 @@ const scratch = join(repo, 'projects/game-feedback/.data');
 mkdirSync(scratch, { recursive: true });
 const root = mkdtempSync(join(scratch, 'shared-instance-'));
 const host = 'side.abcdef.ap-northeast-2.rds.amazonaws.com';
-const gfDomain = new URL(process.env.SIDE_GF_SITE_URL ?? 'https://game.bambyul.com').hostname;
-const pcDomain = new URL(process.env.SIDE_PC_SITE_URL ?? 'https://contest.bambyul.com').hostname;
+const gfDomain = 'game.bambyul.com';
+const pcDomain = 'contest.bambyul.com';
 const gfApiDomain = `api.${gfDomain}`;
 const pcApiDomain = `api.${pcDomain}`;
 const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf8' }).stdout.trim();
@@ -412,27 +412,18 @@ try {
       DATABASE_MIGRATION_URL: runtimeUrl(database, true),
       ...(service === 'game-feedback'
         ? {
-            // Game Feedback web requires its App Link / Universal Link values (test-only identifiers).
-            MOBILE_APPLE_TEAM_ID: 'GFSMOKE000',
-            MOBILE_IOS_BUNDLE_ID: 'test.smoke.gamefeedback',
-            MOBILE_ANDROID_PACKAGE: 'test.smoke.gamefeedback',
-            MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => '6B').join(':'),
             GF_S3_ACCESS_KEY_ID: 'gf-smoke-access',
             GF_S3_SECRET_ACCESS_KEY: 'gf-private-secret',
-            GF_CONTACT_EMAIL: 'operator@example.test',
-            GF_CACHE_REVALIDATION_SECRET: randomBytes(32).toString('hex'),
+            GAME_FEEDBACK_CONTACT_EMAIL: 'operator@example.test',
+            GF_S3_BUCKET: 'gf-smoke-private',
             GOOGLE_CLIENT_ID: 'smoke-oauth-client',
             GOOGLE_CLIENT_SECRET: 'smoke-oauth-secret',
             GF_API_BIND_PORT: '0',
           }
         : {
+            S3_BUCKET: 'pc-smoke-private',
             AWS_ACCESS_KEY_ID: 'pc-smoke-access',
             AWS_SECRET_ACCESS_KEY: 'pc-private-secret',
-            // Photo Contest web requires its App Link / Universal Link values (test-only identifiers).
-            MOBILE_APPLE_TEAM_ID: 'PCSMOKE000',
-            MOBILE_IOS_BUNDLE_ID: 'test.smoke.photocontest',
-            MOBILE_ANDROID_PACKAGE: 'test.smoke.photocontest',
-            MOBILE_ANDROID_SHA256_FINGERPRINTS: Array.from({ length: 32 }, () => '5A').join(':'),
           }),
     };
     saveEnv(join(root, `services/${service}/.env`), environment);
@@ -928,5 +919,5 @@ try {
     spawnSync(realDocker, ['network', 'rm', `${prefix}-${service}-edge`], { env: baseEnv, stdio: 'ignore' });
   for (const image of createdImages)
     spawnSync(realDocker, ['image', 'rm', image], { env: baseEnv, stdio: 'ignore' });
-  if (process.env.SIDE_SMOKE_KEEP !== '1' && !cleanupState.failed) rmSync(root, { recursive: true });
+  if (!cleanupState.failed) rmSync(root, { recursive: true });
 }

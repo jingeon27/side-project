@@ -18,7 +18,7 @@ import { assertDatabaseUrl, DemoProfileProvider } from '../security';
 import { seed } from '../seed';
 import { responseCookies, responseLocation } from '../testing/http-response';
 
-const target = process.env.TEST_DATABASE_URL;
+const target = process.env.DATABASE_URL;
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 const state: { app?: INestApplication; normal?: INestApplication; db?: PrismaClient; schema?: string } = {};
@@ -178,14 +178,14 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
       .set('Origin', 'https://evil.example')
       .send({ accountId: 'sample-user-0' })
       .expect(403);
-    const before = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    const before = process.env.ENVIRONMENT;
+    process.env.ENVIRONMENT = 'production';
     try {
       expect(() => resolveAppConfig({ demoMode: false, testAuthEnabled: true })).toThrow(
-        'GF_TEST_AUTH_ENABLED',
+        'Test authentication',
       );
     } finally {
-      process.env.NODE_ENV = before;
+      process.env.ENVIRONMENT = before;
     }
   });
 
