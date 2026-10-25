@@ -18,7 +18,7 @@ export function environment(overrides = {}) {
     const { parseEnv } = process.getBuiltinModule('node:util');
     Object.assign(fileEnv, parseEnv(readFileSync(envFile, 'utf8')));
   }
-  return {
+  const merged = {
     NODE_ENV: 'development',
     PORT: '4300',
     WEB_ORIGIN: 'http://localhost:3300',
@@ -31,6 +31,16 @@ export function environment(overrides = {}) {
     ...process.env,
     ...overrides,
   };
+  if (!merged.GF_S3_BUCKET)
+    Object.assign(merged, {
+      GF_S3_BUCKET: 'game-feedback-dev',
+      GF_S3_REGION: 'us-east-1',
+      GF_S3_ENDPOINT: 'http://127.0.0.1:4310',
+      GF_S3_FORCE_PATH_STYLE: 'true',
+      GF_S3_ACCESS_KEY_ID: 'local-test-access-key',
+      GF_S3_SECRET_ACCESS_KEY: 'local-test-secret-key',
+    });
+  return merged;
 }
 
 export function assertNode() {

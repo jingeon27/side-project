@@ -22,7 +22,7 @@ corepack yarn workspace @game-feedback/sdk test
 
 게시글은 기존 `body` 평문과 선택적인 Quill `document`, 게시판 `board`를 전달한다. 서버는 서식 문서에서 추출한 평문과 body의 일치를 확인하며 검색/SEO는 평문을 사용한다. 링크는 HTTP(S)만 허용하고 객체 embed나 임의 HTML 속성을 문서에 저장하지 않는다.
 
-`uploadChatAttachment`는 FormData와 세션 쿠키를 사용하고 JSON 첨부 메타데이터를 Zod로 검증한다. Content-Type boundary는 fetch가 지정한다. 파일 URL, MIME, 종류, 크기와 ID는 엄격하게 검증하며 외부 파일 URL로 fallback하지 않는다. `deleteChatAttachment`는 미전송 파일 제거용이다. 메타데이터의 파일 URL은 세션이 필요한 바이너리 GET이며 동영상 Range 요청을 지원한다. 바이너리 다운로드와 SSE는 JSON transport 대상이 아니다.
+`requestChatAttachmentUpload`는 메타데이터로 S3 전송 계획을 발급하고, 파일은 브라우저가 직접 S3로 보낸다. `completeChatAttachmentUpload`가 검증된 첨부를 확정한다. `deleteChatAttachment`는 미전송 파일 제거용이다. 파일 URL·종류·크기·ID는 Zod로 검증하며 외부 URL로 fallback하지 않는다. 바이너리 GET은 접근 검사 후 presigned GET으로 이동하며 Range를 지원한다. 바이너리 다운로드와 SSE는 JSON transport 대상이 아니다.
 
 서버 계약은 엄격하게 유지한다. SDK의 `src/response/fallback-policy.ts`가 스키마에 선언된 표시 필드에만 Zod `.catch(...)` 정책을 적용한 뒤 원래 응답 스키마로 전체를 다시 검증한다. 필드 이름이 같아도 fallback이 그 필드의 계약을 만족하지 않으면 적용하지 않는다. 원본 입력은 수정하지 않는다.
 
@@ -49,6 +49,6 @@ SDK가 소유한 Vitest는 생성 클라이언트의 실제 호출·fallback·�
 
 `FRIEND_SALE` 생성에는 `friendSale: { price: number | null }`가 필요하다. 금액은 원화 1~10,000,000원의 정수이며 null은 가격 협의다. 기존 글의 메타데이터 누락/null은 미등록으로 구분한다. 다른 게시판에 가격 메타데이터를 넣거나 친추판매 글에서 메타데이터를 제거하는 요청을 거부한다. PATCH에서 생략하면 기존 금액을 보존한다. 금액의 문자열·범위 오류에 응답 fallback을 적용하지 않는다.
 
-본문 미디어는 uploadPostMedia의 multipart 파일 업로드 후 반환된 `/api/post-media/:id`만 Quill Delta의 `{ image: url }` 또는 `{ video: url }`에 사용한다. 공개 전 업로더 소유권과 글 등록 시 원자적 연결을 검증하며 외부 URL을 허용하지 않는다. GET 파일/Range는 바이너리 경로이고 JSON 계약에는 업로드/삭제 작업을 정의한다.
+본문 미디어는 requestPostMediaUpload → S3 전송 → completePostMediaUpload 후 반환된 `/api/post-media/:id`만 Quill Delta의 `{ image: url }` 또는 `{ video: url }`에 사용한다. 공개 전 업로더 소유권과 글 등록 시 원자적 연결을 검증하며 외부 URL을 허용하지 않는다. GET 파일/Range는 바이너리 경로이고 JSON 계약에는 업로드/삭제 작업을 정의한다.
 
 startSupportConversation은 GENERAL/VERIFICATION 문의를 담당 관리자와의 기존 1:1 Conversation으로 반환한다. listSupportThreads/setSupportStatus, listReports/reviewReport/getAdminUser/setUserBan과 기존 setUserVerification은 관리자 API다. 밴 여부와 사유는 본인 세션/관리자 사용자 조회에만 포함하며 공개 작성자에는 노출하지 않는다.

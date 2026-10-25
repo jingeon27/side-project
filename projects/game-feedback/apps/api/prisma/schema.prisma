@@ -38,6 +38,7 @@ model User {
   blocks Block[] @relation("blocker")
   blockedBy Block[] @relation("blocked")
   postMedia PostMedia[]
+  avatarUploads AvatarUpload[]
   supportRequests SupportConversation[] @relation("supportRequester")
   assignedSupport SupportConversation[] @relation("supportAdmin")
   following UserFollow[] @relation("followFollower")
@@ -53,6 +54,20 @@ model UserAvatar {
   object MediaObject? @relation(fields: [objectId], references: [id], onDelete: Restrict)
   mimeType String
   size Int
+}
+model AvatarUpload {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  objectId String @unique
+  object MediaObject @relation(fields: [objectId], references: [id], onDelete: Restrict)
+  mimeType String
+  size Int
+  name String
+  expiresAt DateTime
+  completedAt DateTime?
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
 }
 model SocialIdentity {
   provider String
@@ -348,6 +363,7 @@ model MediaObject {
   createdAt DateTime @default(now())
   retiredAt DateTime?
   avatar UserAvatar?
+  avatarUpload AvatarUpload?
   postMedia PostMedia?
   chatAttachment ChatAttachment?
   @@index([createdAt])

@@ -7,7 +7,7 @@
 import * as zod from 'zod';
 
 export const updatePostBodyTitleMin = 4;
-export const updatePostBodyTitleMax = 120;
+export const updatePostBodyTitleMax = 60;
 
 export const updatePostBodyBodyMax = 10000;
 

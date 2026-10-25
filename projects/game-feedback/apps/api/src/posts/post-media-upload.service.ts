@@ -21,10 +21,8 @@ export class PostMediaUploadService {
   async request(req: SessionRequest, input: MediaUploadDto) {
     const user = requireUser(req);
     const upload = await this.storage.reserveUpload(input.mimeType, input.size);
-    if (!upload) return { mode: 'PROXY' as const };
-    const row = await this.media.register(user.id, input, { bytes: null, objectId: upload.objectId }, false);
+    const row = await this.media.register(user.id, input, { bytes: null, objectId: upload.objectId });
     return {
-      mode: 'DIRECT' as const,
       id: row.id,
       ...upload.form,
       expiresAt: upload.expiresAt,

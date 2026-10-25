@@ -9,24 +9,20 @@ import {
   Post,
   Req,
   Res,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
   type CanActivate,
   type ExecutionContext,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { MediaUploadDto } from '../common/media-upload.dto';
-import { MediaWorkInterceptor, ProxyUploadGuard } from '../media-storage/media-work';
 import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
 import { ChatAttachmentService } from './chat-attachment.service';
-import { CHAT_FILE_LIMIT, mediaRange } from './chat-file';
+import { mediaRange } from './chat-file';
 
 @Injectable()
 export class ChatAttachmentGuard implements CanActivate {
@@ -57,16 +53,6 @@ export class ChatAttachmentController {
   @HttpCode(200)
   complete(@Req() req: SessionRequest, @Param('id') id: string, @Param('attachmentId') attachmentId: string) {
     return this.uploads.complete(req, id, attachmentId);
-  }
-  @Post()
-  @HttpCode(200)
-  @UseGuards(ProxyUploadGuard)
-  @UseInterceptors(
-    MediaWorkInterceptor,
-    FileInterceptor('file', { limits: { fileSize: CHAT_FILE_LIMIT, files: 1, fields: 0 } }),
-  )
-  upload(@Req() req: SessionRequest, @Param('id') id: string, @UploadedFile() file: unknown) {
-    return this.attachments.upload(req, id, file);
   }
   @Delete(':attachmentId')
   remove(@Req() req: SessionRequest, @Param('id') id: string, @Param('attachmentId') attachmentId: string) {
@@ -101,17 +87,7 @@ export class ChatAttachmentController {
       file.mimeType,
       `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
     );
-    if (location) {
-      res.setHeader('Referrer-Policy', 'no-referrer');
-      res.redirect(307, location);
-      return;
-    }
-    const bytes = await this.attachments.content(file, range);
-    if (range.partial) {
-      res.status(206);
-      res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.size}`);
-    }
-    res.setHeader('Content-Length', range.end - range.start + 1);
-    res.send(bytes);
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.redirect(307, location);
   }
 }

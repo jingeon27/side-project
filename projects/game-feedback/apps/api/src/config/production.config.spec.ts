@@ -7,6 +7,8 @@ const valid = {
   GF_CACHE_REVALIDATION_SECRET: 'production-cache-secret-'.repeat(3),
   GF_CACHE_REVALIDATION_URL: 'http://web:3300/internal/cache/revalidate',
   NODE_ENV: 'production',
+  GF_S3_BUCKET: 'private-bucket',
+  GF_S3_REGION: 'ap-northeast-2',
   WEB_ORIGIN: 'https://play.game-feedback.test',
   GAME_FEEDBACK_SITE_URL: 'https://play.game-feedback.test',
   GAME_FEEDBACK_CONTACT_EMAIL: 'operator@game-feedback.test',
@@ -23,8 +25,10 @@ describe('production startup configuration', () => {
     expect(() => validateProductionEnvironment(valid)).not.toThrow();
     expect(resolveListenConfig({ HOST: '0.0.0.0', PORT: '4300' })).toEqual({ HOST: '0.0.0.0', PORT: 4300 });
     expect(resolveMediaStorageConfig(valid)).toEqual({
-      driver: 'FILESYSTEM',
-      directory: '/var/lib/game-feedback/media',
+      bucket: 'private-bucket',
+      region: 'ap-northeast-2',
+      forcePathStyle: false,
+      keyPrefix: '',
     });
   });
   it.each([
@@ -56,12 +60,11 @@ describe('production startup configuration', () => {
       expect(String(error)).toContain('DATABASE_URL');
     }
   });
-  it('rejects database uploads and insecure object storage in production', () => {
-    expect(() => resolveMediaStorageConfig({ ...valid, GF_MEDIA_STORAGE: 'DATABASE' })).toThrow();
+  it('requires a bucket and rejects insecure object storage in production', () => {
+    expect(() => resolveMediaStorageConfig({ ...valid, GF_S3_BUCKET: '' })).toThrow();
     expect(() =>
       resolveMediaStorageConfig({
         ...valid,
-        GF_MEDIA_STORAGE: 'S3',
         GF_S3_BUCKET: 'private-bucket',
         GF_S3_ACCESS_KEY_ID: 'id',
         GF_S3_SECRET_ACCESS_KEY: 'private-secret',

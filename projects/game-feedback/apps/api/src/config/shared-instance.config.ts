@@ -44,7 +44,7 @@ export function sharedDatabaseUrl(env: NodeJS.ProcessEnv, migration = false) {
 export function validateSharedInstanceEnvironment(env: NodeJS.ProcessEnv) {
   if (env.DEPLOYMENT_TARGET !== 'shared-instance') return;
   sharedDatabaseUrl(env);
-  if (env.GF_MEDIA_STORAGE !== 'S3' || env.GF_S3_REGION !== 'ap-northeast-2' || env.GF_S3_ENDPOINT)
+  if (!env.GF_S3_BUCKET || env.GF_S3_REGION !== 'ap-northeast-2' || env.GF_S3_ENDPOINT)
     throw new Error('Shared-instance production requires AWS S3 in ap-northeast-2.');
   if (env.GF_S3_BUCKET === env.OTHER_SERVICE_S3_BUCKET)
     throw new Error('Services must use separate S3 buckets.');

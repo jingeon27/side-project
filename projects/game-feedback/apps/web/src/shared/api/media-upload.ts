@@ -8,7 +8,6 @@ import { ApiError, withApiError } from './request';
 
 interface IMediaUploadActions<TMedia> {
   reserve: (input: TMediaUploadInput) => Promise<TMediaUploadPlan>;
-  proxy: () => Promise<TMedia>;
   complete: (id: string) => Promise<TMedia>;
   remove: (id: string) => Promise<unknown>;
 }
@@ -17,12 +16,11 @@ export async function uploadMediaFile<TMedia>(file: File, actions: IMediaUploadA
   const input = MediaUploadInputSchema.safeParse({ name: file.name, mimeType: file.type, size: file.size });
   if (!input.success) throw new ApiError(400, 'INVALID_MEDIA', '사진이나 동영상을 25MB 이하로 선택해주세요.');
   const plan = await withApiError(actions.reserve(input.data));
-  if (plan.mode === 'PROXY') return withApiError(actions.proxy());
   return withApiError(uploadDirect(plan, file, actions));
 }
 
 async function uploadDirect<TMedia>(
-  plan: Extract<TMediaUploadPlan, { mode: 'DIRECT' }>,
+  plan: TMediaUploadPlan,
   file: File,
   actions: IMediaUploadActions<TMedia>,
 ) {

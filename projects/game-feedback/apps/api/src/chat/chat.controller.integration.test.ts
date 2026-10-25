@@ -12,6 +12,8 @@ import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl, COOKIE, hash } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
+import { presignedUpload } from '../testing/media-upload';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const origin = 'http://localhost:3300';
@@ -290,37 +292,23 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
       'base64',
     );
     await supertest(app.getHttpServer())
-      .post(path)
+      .post(`${path}/uploads`)
       .set('Origin', origin)
-      .attach('file', png, { filename: 'test.png', contentType: 'image/png' })
+      .send({ name: 'test.png', mimeType: 'image/png', size: png.length })
       .expect(401);
     await outsider.agent
-      .post(path)
+      .post(`${path}/uploads`)
       .set('Origin', origin)
-      .attach('file', png, { filename: 'test.png', contentType: 'image/png' })
+      .send({ name: 'test.png', mimeType: 'image/png', size: png.length })
       .expect(404);
-    const image = (
-      await alice.agent
-        .post(path)
-        .set('Origin', origin)
-        .attach('file', png, { filename: 'test.png', contentType: 'image/png' })
-        .expect(200)
-    ).body;
+    const image = (await presignedUpload(alice.agent, path, png, 'image/png', 'test.png')).body;
     expect(image).toMatchObject({ kind: 'IMAGE', mimeType: 'image/png', size: png.length });
     expect(image).not.toHaveProperty('bytes');
     await bob.agent.get(image.url).expect(404);
-    await alice.agent
-      .get(image.url)
-      .expect(200)
-      .expect('Content-Type', /image\/png/);
+    const imageRedirect = await alice.agent.get(image.url).expect(307);
+    expect((await fetch(responseLocation(imageRedirect))).headers.get('content-type')).toBe('image/png');
     const videoBytes = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom00000000')]);
-    const video = (
-      await alice.agent
-        .post(path)
-        .set('Origin', origin)
-        .attach('file', videoBytes, { filename: 'practice.mp4', contentType: 'video/mp4' })
-        .expect(200)
-    ).body;
+    const video = (await presignedUpload(alice.agent, path, videoBytes, 'video/mp4', 'practice.mp4')).body;
     expect(video.kind).toBe('VIDEO');
     await bob.agent
       .post(`/api/conversations/${conversationId}/messages`)
@@ -344,15 +332,14 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
         .expect(200)
     ).body;
     expect(retried.id).toBe(sent.id);
-    await bob.agent.get(image.url).expect(200);
+    await bob.agent.get(image.url).expect(307);
     await outsider.agent.get(image.url).expect(404);
     await supertest(app.getHttpServer()).get(video.url).expect(401);
-    await bob.agent
-      .get(video.url)
-      .set('Range', 'bytes=0-7')
-      .expect(206)
-      .expect('Content-Length', '8')
-      .expect('Content-Range', `bytes 0-7/${videoBytes.length}`);
+    const redirect = await bob.agent.get(video.url).set('Range', 'bytes=0-7').expect(307);
+    const partial = await fetch(responseLocation(redirect), { headers: { Range: 'bytes=0-7' } });
+    expect(partial.status).toBe(206);
+    expect(partial.headers.get('content-length')).toBe('8');
+    expect(partial.headers.get('content-range')).toBe(`bytes 0-7/${videoBytes.length}`);
     await bob.agent.get(video.url).set('Range', 'bytes=999999-').expect(416);
     await alice.agent.delete(image.url).set('Origin', origin).expect(404);
     await alice.agent
@@ -363,30 +350,24 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
   });
   it('rejects spoofed and oversized uploads and lets the uploader remove unsent files', async () => {
     const path = `/api/conversations/${conversationId}/attachments`;
+    await presignedUpload(
+      alice.agent,
+      path,
+      Buffer.from('<svg onload="alert(1)"/>'),
+      'image/png',
+      'image.png',
+      400,
+    );
     await alice.agent
-      .post(path)
+      .post(`${path}/uploads`)
       .set('Origin', origin)
-      .attach('file', Buffer.from('<svg onload="alert(1)"/>'), {
-        filename: 'image.png',
-        contentType: 'image/png',
-      })
+      .send({ name: 'large.mp4', mimeType: 'video/mp4', size: 25 * 1024 * 1024 + 1 })
       .expect(400);
-    await alice.agent
-      .post(path)
-      .set('Origin', origin)
-      .attach('file', Buffer.alloc(25 * 1024 * 1024 + 1), { filename: 'large.mp4', contentType: 'video/mp4' })
-      .expect(413);
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a53sAAAAASUVORK5CYII=',
       'base64',
     );
-    const file = (
-      await alice.agent
-        .post(path)
-        .set('Origin', origin)
-        .attach('file', png, { filename: 'remove.png', contentType: 'image/png' })
-        .expect(200)
-    ).body;
+    const file = (await presignedUpload(alice.agent, path, png, 'image/png', 'remove.png')).body;
     await bob.agent.delete(file.url).set('Origin', origin).expect(404);
     await alice.agent.delete(file.url).set('Origin', origin).expect(200);
     await alice.agent.get(file.url).expect(404);
@@ -517,11 +498,14 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
       'base64',
     );
     const upload = () =>
-      owner.agent
-        .post(`/api/conversations/${room.id}/attachments`)
-        .set('Origin', origin)
-        .attach('file', png, { filename: 'clear.png', contentType: 'image/png' });
-    const file = (await upload().expect(200)).body;
+      presignedUpload(
+        owner.agent,
+        `/api/conversations/${room.id}/attachments`,
+        png,
+        'image/png',
+        'clear.png',
+      );
+    const file = (await upload()).body;
     const message = (
       await owner.agent
         .post(`/api/conversations/${room.id}/messages`)
@@ -535,9 +519,9 @@ describe.skipIf(!testDatabaseUrl)('private persistent 1:1 chat with isolated Pos
       .send({ throughMessageId: message.id })
       .expect(200);
     await owner.agent.get(file.url).expect(404);
-    await peer.agent.get(file.url).expect(200);
-    const draft = (await upload().expect(200)).body;
-    await owner.agent.get(draft.url).expect(200);
+    await peer.agent.get(file.url).expect(307);
+    const draft = (await upload()).body;
+    await owner.agent.get(draft.url).expect(307);
     await peer.agent.get(draft.url).expect(404);
     await owner.agent.post('/api/blocks').set('Origin', origin).send({ blockedUserId: peer.id }).expect(200);
     await owner.agent

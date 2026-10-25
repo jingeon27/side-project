@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:net';
 
 import { assertNode, environment, rootDir } from './env.mjs';
+import { startLocalS3 } from './local-s3.mjs';
 
 const demo = process.argv.includes('--demo');
 const testAuth = process.argv.includes('--test-auth');
@@ -15,6 +16,7 @@ env.GF_CACHE_REVALIDATION_SECRET ||= randomBytes(32).toString('hex');
 env.GF_CACHE_REVALIDATION_URL ||= 'http://localhost:3300/internal/cache/revalidate';
 const children = new Set();
 let stopping = false;
+let localS3;
 
 async function assertPortFree(port) {
   await new Promise((resolve, reject) => {
@@ -39,6 +41,7 @@ function stop(code = 0) {
       process.kill(-child.pid, 'SIGTERM');
     } catch {}
   }
+  void localS3?.close();
   process.exitCode = code;
 }
 
@@ -71,6 +74,7 @@ try {
   process.env.GF_DEMO_MODE = env.GF_DEMO_MODE;
   process.env.GF_TEST_AUTH_ENABLED = env.GF_TEST_AUTH_ENABLED;
   const { setup } = await import('./tasks.mjs');
+  localS3 = await startLocalS3(env);
   await setup();
   if (!stopping) {
     console.log(`Game Feedback ${demo ? 'explicit local demo' : 'development'}: http://localhost:3300/ko`);

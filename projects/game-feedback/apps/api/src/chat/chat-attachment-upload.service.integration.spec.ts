@@ -20,7 +20,7 @@ const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 const schema = `gf_test_chat_media_${randomBytes(8).toString('hex')}`;
 const png = Buffer.from('89504e470d0a1a0a0001020304050607', 'hex');
-type TDirectPlan = Extract<ReturnType<typeof MediaUploadPlanSchema.parse>, { mode: 'DIRECT' }>;
+type TDirectPlan = ReturnType<typeof MediaUploadPlanSchema.parse>;
 interface IState {
   app: INestApplication;
   db: PrismaClient;
@@ -53,7 +53,6 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
       demoMode: true,
       rateLimit: false,
       mediaStorage: {
-        driver: 'S3',
         bucket: 'media-test',
         region: 'ap-northeast-2',
         endpoint: s3.endpoint,
@@ -101,7 +100,6 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
       .send({ name: '채팅.png', mimeType: 'image/png', size: png.length })
       .expect(200);
     const plan = MediaUploadPlanSchema.parse(response.body);
-    if (plan.mode !== 'DIRECT') throw new Error('Expected direct upload');
     return plan;
   }
   async function transfer(plan: TDirectPlan, bytes: Buffer = png) {

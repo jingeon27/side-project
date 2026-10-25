@@ -946,9 +946,9 @@ const messages: Record<string, readonly [string, string]> = {
     'Example: How should I play Hog 2.6 against P.E.K.K.A.?',
     '例：ホグ2.6でペッカにどう対処すればいいですか？',
   ],
-  '제목을 4~120자로 입력해 주세요.': [
-    'Enter a title of 4–120 characters.',
-    'タイトルは4〜120文字で入力してください。',
+  '제목을 4~60자로 입력해 주세요.': [
+    'Enter a title of 4–60 characters.',
+    'タイトルは4〜60文字で入力してください。',
   ],
   '플레이와 고민': ['Your game and question', 'プレイと悩み'],
   '사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.': [

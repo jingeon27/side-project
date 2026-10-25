@@ -19,20 +19,17 @@ export const RequestPostMediaUploadBody = zod.object({
   "size": zod.int().gt(requestPostMediaUploadBodySizeExclusiveMin).max(requestPostMediaUploadBodySizeMax)
 })
 
-export const requestPostMediaUploadResponseTwoIdMax = 100;
+export const requestPostMediaUploadResponseIdMax = 100;
 
-export const requestPostMediaUploadResponseTwoExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const requestPostMediaUploadResponseExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
-export const RequestPostMediaUploadResponse = zod.union([zod.object({
-  "mode": zod.literal("PROXY")
-}),zod.object({
-  "mode": zod.literal("DIRECT"),
-  "id": zod.string().min(1).max(requestPostMediaUploadResponseTwoIdMax),
+export const RequestPostMediaUploadResponse = zod.object({
+  "id": zod.string().min(1).max(requestPostMediaUploadResponseIdMax),
   "url": zod.url(),
   "fields": zod.record(zod.string(), zod.string()),
-  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestPostMediaUploadResponseTwoExpiresAtRegExp)
-})])
+  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestPostMediaUploadResponseExpiresAtRegExp)
+})
 
 
 export const CompletePostMediaUploadParams = zod.object({
@@ -83,30 +80,6 @@ export const GetAdminUserResponse = zod.object({
   "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminUserResponseVerifiedAtOneRegExp),zod.null()]),
   "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminUserResponseBannedAtOneRegExp),zod.null()]).optional(),
   "banReason": zod.string().nullish()
-})
-
-
-export const UploadPostMediaBody = zod.object({
-  "file": zod.instanceof(Blob)
-})
-
-export const uploadPostMediaResponseIdMax = 100;
-
-export const uploadPostMediaResponseNameMax = 200;
-
-export const uploadPostMediaResponseSizeExclusiveMin = 0;
-export const uploadPostMediaResponseSizeMax = 26214400;
-
-export const uploadPostMediaResponseUrlRegExp = new RegExp('^\\/api\\/post-media\\/[A-Za-z0-9_-]{1,100}$');
-
-
-export const UploadPostMediaResponse = zod.object({
-  "id": zod.string().min(1).max(uploadPostMediaResponseIdMax),
-  "name": zod.string().min(1).max(uploadPostMediaResponseNameMax),
-  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
-  "size": zod.int().gt(uploadPostMediaResponseSizeExclusiveMin).max(uploadPostMediaResponseSizeMax),
-  "kind": zod.enum(['IMAGE', 'VIDEO']),
-  "url": zod.string().regex(uploadPostMediaResponseUrlRegExp)
 })
 
 
@@ -425,36 +398,71 @@ export const UpdateProfileResponse = zod.object({
 })
 
 
-export const UploadProfileAvatarBody = zod.object({
-  "file": zod.instanceof(Blob)
+export const requestProfileAvatarUploadBodyNameMax = 1000;
+
+export const requestProfileAvatarUploadBodySizeExclusiveMin = 0;
+export const requestProfileAvatarUploadBodySizeMax = 5242880;
+
+
+
+export const RequestProfileAvatarUploadBody = zod.object({
+  "name": zod.string().min(1).max(requestProfileAvatarUploadBodyNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.int().gt(requestProfileAvatarUploadBodySizeExclusiveMin).max(requestProfileAvatarUploadBodySizeMax)
 })
 
-export const uploadProfileAvatarResponseAuthorIdMax = 100;
+export const requestProfileAvatarUploadResponseIdMax = 100;
+
+export const requestProfileAvatarUploadResponseExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
-export const uploadProfileAvatarResponseLinksItemLabelMax = 40;
-
-export const uploadProfileAvatarResponseLinksItemUrlMax = 2048;
-
-
-export const uploadProfileAvatarResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
-export const uploadProfileAvatarResponseLinksMax = 5;
-
-export const uploadProfileAvatarResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const uploadProfileAvatarResponsePostCountMin = 0;
-export const uploadProfileAvatarResponsePostCountMax = 9007199254740991;
-
-export const uploadProfileAvatarResponseAnswerCountMin = 0;
-export const uploadProfileAvatarResponseAnswerCountMax = 9007199254740991;
-
-export const uploadProfileAvatarResponseHelpfulCountMin = 0;
-export const uploadProfileAvatarResponseHelpfulCountMax = 9007199254740991;
+export const RequestProfileAvatarUploadResponse = zod.object({
+  "id": zod.string().min(1).max(requestProfileAvatarUploadResponseIdMax),
+  "url": zod.url(),
+  "fields": zod.record(zod.string(), zod.string()),
+  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestProfileAvatarUploadResponseExpiresAtRegExp)
+})
 
 
+export const DeleteProfileAvatarUploadParams = zod.object({
+  "id": zod.string()
+})
 
-export const UploadProfileAvatarResponse = zod.object({
+export const DeleteProfileAvatarUploadResponse = zod.object({
+  "ok": zod.literal(true)
+})
+
+
+export const CompleteProfileAvatarUploadParams = zod.object({
+  "id": zod.string()
+})
+
+export const completeProfileAvatarUploadResponseAuthorIdMax = 100;
+
+
+export const completeProfileAvatarUploadResponseLinksItemLabelMax = 40;
+
+export const completeProfileAvatarUploadResponseLinksItemUrlMax = 2048;
+
+
+export const completeProfileAvatarUploadResponseLinksItemUrlRegExp = new RegExp('^https?:\\/\\/\\S+$');
+export const completeProfileAvatarUploadResponseLinksMax = 5;
+
+export const completeProfileAvatarUploadResponseJoinedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const completeProfileAvatarUploadResponsePostCountMin = 0;
+export const completeProfileAvatarUploadResponsePostCountMax = 9007199254740991;
+
+export const completeProfileAvatarUploadResponseAnswerCountMin = 0;
+export const completeProfileAvatarUploadResponseAnswerCountMax = 9007199254740991;
+
+export const completeProfileAvatarUploadResponseHelpfulCountMin = 0;
+export const completeProfileAvatarUploadResponseHelpfulCountMax = 9007199254740991;
+
+
+
+export const CompleteProfileAvatarUploadResponse = zod.object({
   "author": zod.object({
-  "id": zod.string().min(1).max(uploadProfileAvatarResponseAuthorIdMax),
+  "id": zod.string().min(1).max(completeProfileAvatarUploadResponseAuthorIdMax),
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
@@ -462,13 +470,13 @@ export const UploadProfileAvatarResponse = zod.object({
   "avatarUrl": zod.string().nullish()
 }),
   "links": zod.array(zod.object({
-  "label": zod.string().min(1).max(uploadProfileAvatarResponseLinksItemLabelMax),
-  "url": zod.string().max(uploadProfileAvatarResponseLinksItemUrlMax).regex(uploadProfileAvatarResponseLinksItemUrlRegExp)
-})).max(uploadProfileAvatarResponseLinksMax).optional(),
-  "joinedAt": zod.iso.datetime({"offset":true}).regex(uploadProfileAvatarResponseJoinedAtRegExp),
-  "postCount": zod.int().min(uploadProfileAvatarResponsePostCountMin).max(uploadProfileAvatarResponsePostCountMax),
-  "answerCount": zod.int().min(uploadProfileAvatarResponseAnswerCountMin).max(uploadProfileAvatarResponseAnswerCountMax),
-  "helpfulCount": zod.int().min(uploadProfileAvatarResponseHelpfulCountMin).max(uploadProfileAvatarResponseHelpfulCountMax)
+  "label": zod.string().min(1).max(completeProfileAvatarUploadResponseLinksItemLabelMax),
+  "url": zod.string().max(completeProfileAvatarUploadResponseLinksItemUrlMax).regex(completeProfileAvatarUploadResponseLinksItemUrlRegExp)
+})).max(completeProfileAvatarUploadResponseLinksMax).optional(),
+  "joinedAt": zod.iso.datetime({"offset":true}).regex(completeProfileAvatarUploadResponseJoinedAtRegExp),
+  "postCount": zod.int().min(completeProfileAvatarUploadResponsePostCountMin).max(completeProfileAvatarUploadResponsePostCountMax),
+  "answerCount": zod.int().min(completeProfileAvatarUploadResponseAnswerCountMin).max(completeProfileAvatarUploadResponseAnswerCountMax),
+  "helpfulCount": zod.int().min(completeProfileAvatarUploadResponseHelpfulCountMin).max(completeProfileAvatarUploadResponseHelpfulCountMax)
 })
 
 
@@ -1075,34 +1083,6 @@ export const SendChatMessageResponse = zod.object({
 })
 
 
-export const UploadChatAttachmentParams = zod.object({
-  "id": zod.string()
-})
-
-export const UploadChatAttachmentBody = zod.object({
-  "file": zod.instanceof(Blob)
-})
-
-export const uploadChatAttachmentResponseIdMax = 100;
-
-export const uploadChatAttachmentResponseNameMax = 200;
-
-export const uploadChatAttachmentResponseSizeExclusiveMin = 0;
-export const uploadChatAttachmentResponseSizeMax = 26214400;
-
-export const uploadChatAttachmentResponseUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
-
-
-export const UploadChatAttachmentResponse = zod.object({
-  "id": zod.string().min(1).max(uploadChatAttachmentResponseIdMax),
-  "name": zod.string().min(1).max(uploadChatAttachmentResponseNameMax),
-  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
-  "size": zod.int().gt(uploadChatAttachmentResponseSizeExclusiveMin).max(uploadChatAttachmentResponseSizeMax),
-  "kind": zod.enum(['IMAGE', 'VIDEO']),
-  "url": zod.string().regex(uploadChatAttachmentResponseUrlRegExp)
-})
-
-
 export const RequestChatAttachmentUploadParams = zod.object({
   "id": zod.string()
 })
@@ -1120,20 +1100,17 @@ export const RequestChatAttachmentUploadBody = zod.object({
   "size": zod.int().gt(requestChatAttachmentUploadBodySizeExclusiveMin).max(requestChatAttachmentUploadBodySizeMax)
 })
 
-export const requestChatAttachmentUploadResponseTwoIdMax = 100;
+export const requestChatAttachmentUploadResponseIdMax = 100;
 
-export const requestChatAttachmentUploadResponseTwoExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const requestChatAttachmentUploadResponseExpiresAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
 
 
-export const RequestChatAttachmentUploadResponse = zod.union([zod.object({
-  "mode": zod.literal("PROXY")
-}),zod.object({
-  "mode": zod.literal("DIRECT"),
-  "id": zod.string().min(1).max(requestChatAttachmentUploadResponseTwoIdMax),
+export const RequestChatAttachmentUploadResponse = zod.object({
+  "id": zod.string().min(1).max(requestChatAttachmentUploadResponseIdMax),
   "url": zod.url(),
   "fields": zod.record(zod.string(), zod.string()),
-  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestChatAttachmentUploadResponseTwoExpiresAtRegExp)
-})])
+  "expiresAt": zod.iso.datetime({"offset":true}).regex(requestChatAttachmentUploadResponseExpiresAtRegExp)
+})
 
 
 export const CompleteChatAttachmentUploadParams = zod.object({
@@ -1559,7 +1536,7 @@ export const ListPostsResponse = zod.object({
 
 
 export const createPostBodyTitleMin = 4;
-export const createPostBodyTitleMax = 120;
+export const createPostBodyTitleMax = 60;
 
 export const createPostBodyBodyMax = 10000;
 
@@ -2023,7 +2000,7 @@ export const UpdatePostParams = zod.object({
 })
 
 export const updatePostBodyTitleMin = 4;
-export const updatePostBodyTitleMax = 120;
+export const updatePostBodyTitleMax = 60;
 
 export const updatePostBodyBodyMax = 10000;
 

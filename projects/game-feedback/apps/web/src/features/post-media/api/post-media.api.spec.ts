@@ -12,7 +12,6 @@ const media = {
   url: '/api/post-media/media-1',
 };
 const plan = {
-  mode: 'DIRECT',
   id: media.id,
   url: 'https://uploads.example.test/bucket',
   fields: { key: 'staging/object', policy: 'signed-policy' },
@@ -47,21 +46,6 @@ describe('게시글 첨부 전송', () => {
     if (!(body instanceof FormData)) throw new Error('Expected multipart S3 upload');
     expect([...body.keys()]).toEqual(['key', 'policy', 'file']);
     expect(body.get('file')).toBeInstanceOf(File);
-  });
-
-  it('로컬 저장소는 기존 multipart 업로드로 처리해야 한다', async () => {
-    const urls: string[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string) => {
-        urls.push(url);
-        if (url === '/api/post-media/uploads') return Response.json({ mode: 'PROXY' });
-        if (url === '/api/post-media') return Response.json(media);
-        throw new Error('Unexpected request');
-      }),
-    );
-    expect(await uploadMedia(file)).toEqual(media);
-    expect(urls).toEqual(['/api/post-media/uploads', '/api/post-media']);
   });
 
   it('S3 전송이 실패하면 확정하지 않고 예약을 정리해야 한다', async () => {

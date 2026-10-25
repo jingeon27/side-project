@@ -8,7 +8,6 @@ import {
   readConversation,
   requestChatAttachmentUpload,
   sendChatMessage,
-  uploadChatAttachment,
 } from '@game-feedback/sdk';
 
 import { uploadMediaFile } from '@/shared/api';
@@ -37,7 +36,6 @@ export function markConversationRead(conversationId: string, messageId: string) 
 export function uploadAttachment(conversationId: string, file: File) {
   return uploadMediaFile(file, {
     reserve: (input) => requestChatAttachmentUpload(conversationId, input),
-    proxy: () => uploadChatAttachment(conversationId, { file }),
     complete: (id) => completeChatAttachmentUpload(conversationId, id),
     remove: (id) => deleteChatAttachment(conversationId, id),
   });

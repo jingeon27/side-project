@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { omit } from 'es-toolkit';
 
 import { richTextMediaReferences, type TRichTextDocument } from '@game-feedback/contracts';
 
@@ -7,12 +6,10 @@ import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import { validateMediaFile } from '../common/media-file';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { UserVisibilityService } from '../users/user-visibility.service';
-import { presentPostMedia } from './post-media.presenter';
 
 @Injectable()
 export class PostMediaService {
@@ -22,18 +19,10 @@ export class PostMediaService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(MediaStorage) private readonly storage: MediaStorage,
   ) {}
-  async upload(req: SessionRequest, input: unknown) {
-    const user = requireUser(req);
-    const file = validateMediaFile(input);
-    const metadata = omit(file, ['bytes']);
-    const stored = await this.storage.save(file.bytes, file.mimeType);
-    return presentPostMedia(await this.register(user.id, metadata, stored));
-  }
   async register(
     uploaderId: string,
     metadata: { name: string; mimeType: string; size: number },
-    stored: Awaited<ReturnType<MediaStorage['save']>>,
-    ready = true,
+    stored: { bytes: null; objectId: string },
   ) {
     return this.transactions.run(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${uploaderId} FOR UPDATE`;
@@ -47,7 +36,7 @@ export class PostMediaService {
           '작성 대기 중인 파일이 많습니다. 기존 초안을 먼저 등록해주세요.',
         );
       return (tx ?? this.db).postMedia.create({
-        data: { ...metadata, ...stored, uploaderId, uploadedAt: ready ? new Date() : null },
+        data: { ...metadata, ...stored, uploaderId, uploadedAt: null },
         select: { id: true, name: true, mimeType: true, size: true },
       });
     });
@@ -74,9 +63,6 @@ export class PostMediaService {
     });
     if (!file) throw new ApiError(404, 'MEDIA_NOT_FOUND', '미디어를 찾을 수 없습니다.');
     return file;
-  }
-  content(...args: Parameters<MediaStorage['read']>) {
-    return this.storage.read(...args);
   }
   location(...args: Parameters<MediaStorage['presignRead']>) {
     return this.storage.presignRead(...args);

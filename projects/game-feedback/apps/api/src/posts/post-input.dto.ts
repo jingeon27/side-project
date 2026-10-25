@@ -1,7 +1,12 @@
 import { IsIn, IsObject, IsOptional, IsString, IsUUID, Length, MinLength } from 'class-validator';
 import type { z } from 'zod';
 
-import { PostInputSchema, PostPatchSchema, PostViewInputSchema } from '@game-feedback/contracts';
+import {
+  POST_TITLE_MAX_LENGTH,
+  PostInputSchema,
+  PostPatchSchema,
+  PostViewInputSchema,
+} from '@game-feedback/contracts';
 
 import { Trim } from '../common/http/request-validation';
 
@@ -9,7 +14,7 @@ export class CreatePostDto {
   static readonly contract = PostInputSchema;
   @Trim()
   @IsString()
-  @Length(4, 120)
+  @Length(4, POST_TITLE_MAX_LENGTH)
   declare title: z.output<typeof PostInputSchema>['title'];
   @Trim()
   @IsString()
@@ -40,7 +45,7 @@ export class UpdatePostDto {
   @IsOptional()
   @Trim()
   @IsString()
-  @Length(4, 120)
+  @Length(4, POST_TITLE_MAX_LENGTH)
   declare title?: z.output<typeof PostPatchSchema>['title'];
   @IsOptional()
   @Trim()

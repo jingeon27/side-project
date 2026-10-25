@@ -12,6 +12,8 @@ import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
+import { responseLocation } from '../testing/http-response';
+import { presignedUpload } from '../testing/media-upload';
 
 const target = process.env.TEST_DATABASE_URL;
 const require = createRequire(import.meta.url);
@@ -299,23 +301,13 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       .send({ accountId: 'sample-test-admin' })
       .expect(200);
     await supertest(app.getHttpServer())
-      .post('/api/post-media')
+      .post('/api/post-media/uploads')
       .set('Origin', origin)
-      .attach('file', image, { filename: 'test.jpg', contentType: 'image/jpeg' })
+      .send({ name: 'test.jpg', mimeType: 'image/jpeg', size: image.length })
       .expect(401);
-    await author
-      .post('/api/post-media')
-      .set('Origin', origin)
-      .attach('file', image, { filename: 'wrong.png', contentType: 'image/png' })
-      .expect(400);
-    const media = (
-      await author
-        .post('/api/post-media')
-        .set('Origin', origin)
-        .attach('file', image, { filename: 'test.jpg', contentType: 'image/jpeg' })
-        .expect(200)
-    ).body;
-    await author.get(media.url).expect(200);
+    await presignedUpload(author, '/api/post-media', image, 'image/png', 'wrong.png', 400);
+    const media = (await presignedUpload(author, '/api/post-media', image, 'image/jpeg', 'test.jpg')).body;
+    await author.get(media.url).expect(307);
     await peer.get(media.url).expect(404);
     await supertest(app.getHttpServer()).get(media.url).expect(404);
     const input = {
@@ -362,7 +354,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
         .send({ ...input, document })
         .expect(200)
     ).body;
-    await supertest(app.getHttpServer()).get(media.url).expect(200);
+    await supertest(app.getHttpServer()).get(media.url).expect(307);
     await peer
       .post('/api/reports')
       .set('Origin', origin)
@@ -373,8 +365,10 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
       targetPostId: created.id,
       targetPreview: expect.stringContaining(input.body),
     });
-    const partial = await peer.get(media.url).set('Range', 'bytes=0-7').expect(206);
-    expect(partial.headers['content-range']).toBe(`bytes 0-7/${image.length}`);
+    const redirect = await peer.get(media.url).set('Range', 'bytes=0-7').expect(307);
+    const partial = await fetch(responseLocation(redirect), { headers: { Range: 'bytes=0-7' } });
+    expect(partial.status).toBe(206);
+    expect(partial.headers.get('content-range')).toBe(`bytes 0-7/${image.length}`);
     await peer.get(media.url).set('Range', `bytes=${image.length}-`).expect(416);
     await author.delete(media.url).set('Origin', origin).expect(404);
     const userId = created.author.id;
@@ -400,13 +394,7 @@ describe.skipIf(!target)('community boards and rich text with isolated PostgreSQ
     await author.get(media.url).expect(404);
     expect(await db.postMedia.count({ where: { postId: created.id } })).toBe(0);
     const video = Buffer.from([0, 0, 0, 24, 102, 116, 121, 112, 105, 115, 111, 109]);
-    const uploaded = (
-      await author
-        .post('/api/post-media')
-        .set('Origin', origin)
-        .attach('file', video, { filename: 'clip.mp4', contentType: 'video/mp4' })
-        .expect(200)
-    ).body;
+    const uploaded = (await presignedUpload(author, '/api/post-media', video, 'video/mp4', 'clip.mp4')).body;
     expect(uploaded.kind).toBe('VIDEO');
     await author
       .patch(`/api/posts/${created.id}`)

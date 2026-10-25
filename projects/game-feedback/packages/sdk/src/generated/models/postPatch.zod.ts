@@ -7,7 +7,7 @@
 import * as zod from 'zod';
 
 export const postPatchTitleMin = 4;
-export const postPatchTitleMax = 120;
+export const postPatchTitleMax = 60;
 
 export const postPatchBodyMax = 10000;
 

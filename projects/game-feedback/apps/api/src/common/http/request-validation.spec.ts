@@ -49,6 +49,22 @@ describe('decorated HTTP requests and generated contract compatibility', () => {
       response: { errorCode: 'VALIDATION_ERROR' },
     });
   });
+  it('accepts 60-character titles and rejects 61 for both creation and edits', async () => {
+    const input = { title: '제'.repeat(60), body: '본문', categoryId: 'game', board: 'FREE' };
+    await expect(new RequestValidationPipe(CreatePostDto).transform(input, metadata)).resolves.toMatchObject({
+      title: input.title,
+    });
+    await expect(
+      new RequestValidationPipe(UpdatePostDto).transform({ title: input.title }, metadata),
+    ).resolves.toEqual({ title: input.title });
+    for (const [dto, value] of [
+      [CreatePostDto, { ...input, title: '제'.repeat(61) }],
+      [UpdatePostDto, { title: '제'.repeat(61) }],
+    ] as const)
+      await expect(new RequestValidationPipe(dto).transform(value, metadata)).rejects.toMatchObject({
+        response: { errorCode: 'VALIDATION_ERROR' },
+      });
+  });
   it('preserves tag normalization, nullable negotiation, attachment rules and query defaults', async () => {
     await expect(
       new RequestValidationPipe(GameAccountDto).transform({ playerTag: ' p0lyq829 ' }, metadata),

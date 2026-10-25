@@ -1,32 +1,22 @@
 import { randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
-import sharp from 'sharp';
 
-import { POSTS_CACHE_TAG, UpdateProfileInputSchema } from '@game-feedback/contracts';
+import { AvatarUploadInputSchema, POSTS_CACHE_TAG, UpdateProfileInputSchema } from '@game-feedback/contracts';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
+import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
+import { MEDIA_UPLOAD_TTL_SECONDS } from '../media-storage/media-storage.policy';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { UserVisibilityService } from './user-visibility.service';
 import { UsersService } from './users.service';
 
 export const AVATAR_LIMIT = 5 * 1024 * 1024;
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-// libvips는 선언된 MIME이 아니라 바이트 서명으로 디코더를 고른다. sharp에 넘기기 전에 JPEG·PNG·WebP 서명만
-// 통과시켜 SVG(librsvg)·HEIF(libheif)·TIFF 같은 다른 디코더가 사용자 바이트를 파싱하지 않게 한다.
-function isAvatarImage(bytes: Buffer) {
-  const ascii = (start: number, end: number) => bytes.toString('ascii', start, end);
-  return (
-    bytes.subarray(0, 8).equals(PNG_SIGNATURE) ||
-    (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) ||
-    (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP')
-  );
-}
 @Injectable()
 export class ProfileService {
   constructor(
@@ -34,6 +24,7 @@ export class ProfileService {
     @Inject(UsersService) private readonly users: UsersService,
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(MediaStorage) private readonly storage: MediaStorage,
+    @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
   async update(req: SessionRequest, input: unknown) {
@@ -42,44 +33,76 @@ export class ProfileService {
     await this.db.user.update({ where: { id: user.id }, data: { profileLinks: links } });
     return this.users.profile(req, user.id);
   }
-  async upload(req: SessionRequest, input: unknown) {
+  async requestUpload(req: SessionRequest, input: unknown) {
     const user = requireUser(req);
-    const file = input as { buffer?: unknown; mimetype?: unknown } | undefined;
-    if (
-      !Buffer.isBuffer(file?.buffer) ||
-      !file.buffer.length ||
-      file.buffer.length > AVATAR_LIMIT ||
-      !['image/jpeg', 'image/png', 'image/webp'].includes(String(file.mimetype)) ||
-      !isAvatarImage(file.buffer)
-    )
-      throw new ApiError(400, 'INVALID_AVATAR', '5MB 이하의 JPEG, PNG, WebP 사진을 선택해주세요.');
-    const bytes = await this.normalize(file.buffer);
-    const stored = await this.storage.save(bytes, 'image/webp');
-    const data = { ...stored, id: randomUUID(), size: bytes.length, mimeType: 'image/webp' };
+    const data = parse(AvatarUploadInputSchema, input);
+    const upload = await this.storage.reserveUpload(data.mimeType, data.size);
+    const ticket = await this.transactions.run(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;
+      if (
+        (await tx.avatarUpload.count({
+          where: { userId: user.id, completedAt: null, expiresAt: { gt: new Date() } },
+        })) >= 10
+      )
+        throw new ApiError(
+          429,
+          'UPLOAD_LIMIT',
+          '프로필 사진 업로드 요청이 많습니다. 잠시 후 다시 시도해주세요.',
+        );
+      return tx.avatarUpload.create({
+        data: {
+          ...data,
+          userId: user.id,
+          objectId: upload.objectId,
+          expiresAt: new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000),
+        },
+      });
+    });
+    return { id: ticket.id, ...upload.form, expiresAt: ticket.expiresAt.toISOString() };
+  }
+  async completeUpload(req: SessionRequest, id: string) {
+    const user = requireUser(req);
+    const ticket = await this.db.avatarUpload.findFirst({
+      where: { id, userId: user.id },
+      include: { object: true },
+    });
+    if (!ticket) throw new ApiError(404, 'UPLOAD_NOT_FOUND', '프로필 사진 업로드 요청을 찾을 수 없습니다.');
+    if (ticket.completedAt) return this.users.profile(req, user.id);
+    if (ticket.expiresAt <= new Date())
+      throw new ApiError(409, 'UPLOAD_EXPIRED', '프로필 사진 업로드가 만료되었습니다.');
+    const stored = await this.storage.completeUpload(ticket);
     await this.cache.change(
-      (tx) =>
-        tx.userAvatar.upsert({
+      async (tx) => {
+        const changed = await tx.avatarUpload.updateMany({
+          where: { id, userId: user.id, completedAt: null, expiresAt: { gt: new Date() } },
+          data: { completedAt: new Date(), objectId: stored.objectId },
+        });
+        if (!changed.count) {
+          const current = await tx.avatarUpload.findUnique({ where: { id } });
+          if (current?.completedAt) return;
+          throw new ApiError(409, 'UPLOAD_EXPIRED', '프로필 사진 업로드가 만료되었습니다.');
+        }
+        const data = {
+          bytes: null,
+          objectId: stored.objectId,
+          id: randomUUID(),
+          size: ticket.size,
+          mimeType: ticket.mimeType,
+        };
+        await tx.userAvatar.upsert({
           where: { userId: user.id },
           create: { ...data, userId: user.id },
           update: data,
-        }),
+        });
+      },
       [POSTS_CACHE_TAG],
     );
     return this.users.profile(req, user.id);
   }
-  private async normalize(input: Buffer) {
-    try {
-      const image = sharp(input, { limitInputPixels: 40_000_000, animated: false });
-      const metadata = await image.metadata();
-      if (!['jpeg', 'png', 'webp'].includes(metadata.format ?? '')) throw new Error('Unsupported format');
-      return await image
-        .rotate()
-        .resize(512, 512, { fit: 'cover', withoutEnlargement: true })
-        .webp({ quality: 85 })
-        .toBuffer();
-    } catch {
-      throw new ApiError(400, 'INVALID_AVATAR', '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.');
-    }
+  async removeUpload(req: SessionRequest, id: string) {
+    const user = requireUser(req);
+    await this.db.avatarUpload.deleteMany({ where: { id, userId: user.id, completedAt: null } });
+    return { ok: true };
   }
   async remove(req: SessionRequest) {
     const user = requireUser(req);
@@ -97,8 +120,9 @@ export class ProfileService {
     });
     if (!file) throw new ApiError(404, 'AVATAR_NOT_FOUND', '프로필 사진을 찾을 수 없습니다.');
     return {
-      bytes: await this.storage.read(file, { start: 0, end: file.size - 1 }),
       mimeType: file.mimeType,
+      size: file.size,
+      location: await this.storage.presignRead(file, file.mimeType, 'inline'),
     };
   }
 }

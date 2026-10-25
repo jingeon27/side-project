@@ -101,6 +101,7 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   await page.goto('/ko/boards/free');
   await page.getByRole('button', { name: '글쓰기', exact: true }).click();
   const editor = page.getByRole('form', { name: /글쓰기|게시글 수정/ });
+  await expect(editor.getByLabel('제목', { exact: true })).toHaveAttribute('maxlength', '60');
   const title = `본문 미디어 삽입 ${Date.now().toString(36)}`;
   await editor.getByLabel('제목', { exact: true }).fill(title);
   await editor
@@ -109,7 +110,7 @@ test('editor inserts uploaded photos and playable video and preserves media thro
   const image = readFileSync(
     new URL('../src/features/game-profile/assets/clash-royale-icon.jpg', import.meta.url),
   );
-  await page.route('**/api/post-media', (route) =>
+  await page.route('**/api/post-media/uploads', (route) =>
     route.fulfill({
       status: 503,
       contentType: 'application/json',

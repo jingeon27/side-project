@@ -5,6 +5,7 @@ import { apiFetch } from './http';
 import {
   ApiError,
   ApiResponseValidationError,
+  completeChatAttachmentUpload,
   getGameProfile,
   getHealth,
   getPost,
@@ -13,7 +14,6 @@ import {
   listCategories,
   listChatMessages,
   logout,
-  uploadChatAttachment,
 } from './index';
 import { messagesFixture, postFixture, profileFixture, sessionFixture } from './test/fixtures';
 
@@ -36,7 +36,7 @@ describe('generated REST client response validation', () => {
       await expect(getPost('post-1')).rejects.toBeInstanceOf(ApiResponseValidationError);
     },
   );
-  it('uploads multipart data with session credentials and validates media metadata', async () => {
+  it('validates completed S3 metadata and keeps session credentials on API calls', async () => {
     const attachment = {
       id: 'attachment-1',
       name: 'test.png',
@@ -46,14 +46,21 @@ describe('generated REST client response validation', () => {
       url: '/api/conversations/room-1/attachments/attachment-1',
     };
     const fetcher = respond(attachment);
-    const file = new Blob(['image-data'], { type: 'image/png' });
-    expect(await uploadChatAttachment('room-1', { file })).toEqual(attachment);
+    expect(await completeChatAttachmentUpload('room-1', 'attachment-1')).toEqual(attachment);
     const request = fetcher.mock.calls[0]?.[1];
-    expect(request?.body).toBeInstanceOf(FormData);
+    expect(request?.body).toBeUndefined();
     expect(new Headers(request?.headers).has('Content-Type')).toBe(false);
     expect(request?.credentials).toBe('include');
     respond({ ...attachment, url: 'https://untrusted.example/private' });
-    await expect(uploadChatAttachment('room-1', { file })).rejects.toBeInstanceOf(ApiResponseValidationError);
+    await expect(completeChatAttachmentUpload('room-1', 'attachment-1')).rejects.toBeInstanceOf(
+      ApiResponseValidationError,
+    );
+  });
+  it('keeps existing titles longer than the new write limit readable', async () => {
+    const fixture = postFixture();
+    const title = '제'.repeat(120);
+    respond({ ...fixture, post: { ...fixture.post, title } });
+    expect((await getPost('post-1')).post.title).toBe(title);
   });
   it('validates public profiles and strips undeclared private fields', async () => {
     const profile = {

@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 
 import { useWatch } from 'react-hook-form';
 
-import type { TRichTextDocument } from '@game-feedback/contracts';
+import { POST_TITLE_MAX_LENGTH, type TRichTextDocument } from '@game-feedback/contracts';
 import { Input } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
@@ -40,9 +40,9 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
   return (
     <>
       <Field label={t('제목')}>
-        <Input {...form.register('title')} maxLength={120} placeholder={t(copy.title)} />
+        <Input {...form.register('title')} maxLength={POST_TITLE_MAX_LENGTH} placeholder={t(copy.title)} />
         <span className="field-error">
-          {form.formState.errors.title && t('제목을 4~120자로 입력해 주세요.')}
+          {form.formState.errors.title && t('제목을 4~60자로 입력해 주세요.')}
         </span>
       </Field>
       {board === 'FRIEND_SALE' && (

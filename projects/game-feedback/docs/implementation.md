@@ -1,3 +1,29 @@
+## 2026-10-25 develop 기준 갱신과 로컬 Discord 설정 반영
+
+기본 저장소의 develop과 S3 작업 브랜치를 origin/develop의 b417b10c까지 fast-forward했다. 미커밋 변경 82개 파일은 별도 보관 후 다시 적용했으며, 테스트 주소 환경변수 충돌은 최신 GF_E2E_WEB_ORIGIN으로 정리했다. S3 업로드 변경은 유지하고 기본 저장소 .env의 Discord 설정 세 항목만 실행 worktree에 복사해 3300/4300을 재시작했다. 키와 OAuth state·쿠키는 출력하지 않았다.
+
+전체 프로젝트 check와 API 인증·설정 테스트 33개, 로그인 UI 2개, SDK 72개가 통과했다. 실행 중인 웹의 세션 응답에서 Discord configured=true, 로그인 시작의 Discord authorize 302, 설정한 client ID·localhost 콜백 주소·identify scope·HttpOnly state 쿠키 일치를 확인했다. 실제 제공자의 동의·토큰 교환·로그인 완료는 수행하지 않았다. Blog 3100·Photo Contest 3200·Admin 3303의 응답도 확인했으며 기존 DB 프로세스와 데이터를 유지했다.
+
+## 2026-10-25 실제 AWS S3 연결 확인
+
+사용자가 기본 저장소 .env에 입력한 GF_S3 설정만 실행 중인 별도 worktree에 반영하고 Game Feedback 웹/API를 재시작했다. 키·쿠키·서명 URL은 출력하지 않았다. 실행 DB는 그대로 유지하고 loopback 55444의 독립 gf_test_aws_s3_ 스키마에 migration·가짜 인증/게임 제공자를 준비해 실제 AWS 경계만 검증했다.
+
+jingeon-side-project/game-feedback/local에서 게시글 사진·채팅 사진·프로필 사진·직접 녹화한 WebM 업로드 모두 브라우저 presigned POST 204, API의 HEAD/서명 검사/조건부 CopyObject 완료 200을 확인했다. 서버에서 presigned GET으로 받은 네 파일의 바이트가 원본과 같고, 이미지 표시(1×1)·영상 메타데이터 표시(160×90), API HEAD, 서버 Range 206도 통과했다. 서명 없는 객체 조회는 모두 403이었다. 각 실행에서 만든 S3 객체(최종 실행 8개)와 격리 DB 스키마는 정리했다.
+
+최초 요청에서는 브라우저 JavaScript fetch GET과 Range가 CORS에서 차단됐고, 서버 GET에도 Access-Control-Allow-Origin이 없었다. 이후 사용자가 제시한 POST·GET·HEAD 및 ETag·Content-Length·Content-Range 노출 설정을 기준으로 새 객체·서명 URL과 새 브라우저에서 재검증했다. 네 업로드 흐름 모두 브라우저 GET 200, Range 206과 Content-Range 읽기·원본 바이트 비교가 통과했고, 최종 테스트 객체 8개와 격리 스키마를 정리했다. 현재 기능 검증은 전체 성공이다. 최초 응답과 달라진 이유는 단정하지 않는다.
+
+localhost:3300의 POST·GET·HEAD OPTIONS는 모두 200과 해당 Origin 허용 헤더를 반환했다. 127.0.0.1:3300은 제공된 AllowedOrigins에 없으며 OPTIONS 403을 확인했다. localhost로 접속하거나 IP 주소로 사용할 경우 해당 Origin을 별도로 추가한다. 테스트 키의 GetBucketCors는 계속 AccessDenied 403이지만 앱 업로드·조회 동작에는 필요하지 않다. Terraform·IAM·버킷 CORS·다른 앱 설정은 변경하지 않았다.
+
+## 2026-10-25 모든 파일 S3 직접 업로드와 제목 상한 정리
+
+게시글·채팅·프로필 사진의 저장 경로를 S3 presigned POST로 통일했다. DATABASE·FILESYSTEM 런타임 드라이버, multipart API와 PROXY/DIRECT 계약 분기를 제거했다. 프로필은 사용자별 AvatarUpload 예약·완료·취소를 추가하고 웹에서 방향·중앙 자르기·512px JPEG 변환 후 전송한다. API는 메타데이터·파일 앞 4KB 서명만 확인하고 동일 ETag 조건의 복사로 최종 파일을 고정한다. 조회 권한·차단·기록 경계, HEAD·Range와 기존 파일 URL은 유지한다. 제목 작성·수정 상한은 120자에서 60자로 줄이고 이전 긴 제목 조회는 유지했다.
+
+로컬 개발은 loopback 4310의 영속 S3 대역을 사용하며 실제 AWS 테스트는 AWS_PROFILE과 서비스별 key prefix를 설정한다. IAM 키 발급·CORS·Terraform 관리 범위와 별도 버킷 구성은 media-upload.md에 기록했다. 기존 bytes/FILESYSTEM 자료는 별도 오프라인 도구가 한 파일씩 전송·HEAD·SHA-256 검증 후 조건부로 참조를 교체한다. 기본은 dry-run이며 실패한 파일의 원래 참조와 파일 원본은 유지한다. 새 AvatarUpload migration은 확장만 수행한다. 공유 Compose에서 더 이상 읽지 않는 GF_MEDIA_STORAGE만 제거했고 Terraform 리소스·state는 바꾸지 않았다.
+
+검증(Node 24, feat/game-feedback-s3-only): 프로젝트 전체 check(모든 앱/패키지 타입·lint), API build, API unit 174개·격리 DB integration 191개, Web unit/UI 221개, SDK 72개와 새 SQL의 migration 호환성 검사를 통과했다. 사용 중인 3301/4301을 유지하고 별도 3353/4353 및 새 gf_test_ 스키마에서 production build/start 브라우저 8개로 프로필 사진·채팅 사진/동영상·게시글 미디어·실패 초안·수정·문의 흐름을 검증했다. 예전 multipart 경로를 가로채던 테스트와 시트 본문 밖 하단 버튼을 찾던 선택자를 현재 흐름으로 맞춰 해당 3개를 재검증했다. 테스트 서버와 생성 스키마는 teardown했다.
+
+요청된 로컬 환경에서는 기존 DB 스냅샷을 보관하고 가드된 db:sync로 추가 테이블을 준비했다. 기존 파일 2개를 로컬 S3에 검증해 이행한 뒤 3300/4300을 이 브랜치의 앱으로 전환했다. Admin 3303은 테스트 인증으로 일반·프로필 인증 문의와 관리자 답변을 확인했으며, 게시글·채팅 S3 전송/조회와 61자 제목 거부를 다시 확인했다. Blog 3100과 Photo Contest 3200 및 기존 DB 소유 프로세스는 유지했다. 실제 AWS 키·버킷 업로드, Terraform apply와 운영 배포는 이 검증에 포함하지 않았다.
+
 ## 2026-10-25 구형 단독 배포 잔여 정리
 
 최신 develop에서 주요 단독 배포 파일이 제거된 뒤 남아 있던 백업 업로드·설정 검증 CLI와 백업 전용 SDK 의존성을 제거했다. S3를 사용하는 공유 배포 이미지에서 이전 로컬 미디어 디렉터리를 만드는 단계도 제거했다. Admin 세션·Prisma 스킬의 운영 안내는 공통 service.sh와 현재 Compose의 migrate 서비스로 맞췄고, 폐기한 smoke 경로와 단독 배포 기록을 가리키던 문구를 정리했다. 루트 yarn.lock 변경은 사용처가 없어진 백업 의존성과 그 전이 의존성을 정리하기 위한 것이다.

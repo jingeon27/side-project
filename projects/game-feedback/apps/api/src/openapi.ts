@@ -87,7 +87,7 @@ export function createOpenApi() {
             requestBody: {
               required: true,
               content: {
-                [operation.contentType ?? 'application/json']: { schema: schemaRef(operation.body) },
+                'application/json': { schema: schemaRef(operation.body) },
               },
             },
           }

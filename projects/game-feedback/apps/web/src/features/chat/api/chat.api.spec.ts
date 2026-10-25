@@ -13,7 +13,6 @@ const media = {
 };
 const path = '/api/conversations/room-1/attachments';
 const plan = {
-  mode: 'DIRECT',
   id: media.id,
   url: 'https://uploads.example.test/bucket',
   fields: { key: 'staging/chat', Policy: 'signed-policy' },
@@ -58,19 +57,4 @@ it('직접 전송이 실패하면 같은 대화의 미전송 첨부 예약을 �
   await expect(uploadAttachment('room-1', file)).rejects.toMatchObject({ errorCode: 'UPLOAD_FAILED' });
   expect(requests.at(-1)).toEqual({ url: `${path}/${media.id}`, method: 'DELETE' });
   expect(requests.map((request) => request.url)).not.toContain(`${path}/${media.id}/complete`);
-});
-
-it('로컬 채팅 첨부는 기존 multipart 경로를 사용해야 한다', async () => {
-  const urls: string[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string) => {
-      urls.push(url);
-      if (url === `${path}/uploads`) return Response.json({ mode: 'PROXY' });
-      if (url === path) return Response.json(media);
-      throw new Error('Unexpected request');
-    }),
-  );
-  expect(await uploadAttachment('room-1', file)).toEqual(media);
-  expect(urls).toEqual([`${path}/uploads`, path]);
 });

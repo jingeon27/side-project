@@ -10,7 +10,6 @@ const valid = {
   RDS_HOST: host,
   DATABASE_URL: url('game_feedback'),
   DATABASE_MIGRATION_URL: url('game_feedback_migrator'),
-  GF_MEDIA_STORAGE: 'S3',
   GF_S3_REGION: 'ap-northeast-2',
   GF_S3_BUCKET: 'gf-private',
   OTHER_SERVICE_S3_BUCKET: 'pc-private',
@@ -39,8 +38,8 @@ describe('shared EC2 deployment', () => {
       expect(String(error)).not.toContain('a'.repeat(64));
     }
   });
-  it('refuses local storage, R2 endpoints, and shared buckets in the production template', () => {
-    expect(() => validateSharedInstanceEnvironment({ ...valid, GF_MEDIA_STORAGE: 'FILESYSTEM' })).toThrow();
+  it('refuses missing buckets, custom endpoints, and shared buckets in the production template', () => {
+    expect(() => validateSharedInstanceEnvironment({ ...valid, GF_S3_BUCKET: '' })).toThrow();
     expect(() =>
       validateSharedInstanceEnvironment({ ...valid, GF_S3_ENDPOINT: 'https://storage.test' }),
     ).toThrow();

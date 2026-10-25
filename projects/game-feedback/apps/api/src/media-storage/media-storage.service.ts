@@ -1,13 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, open, unlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
 import {
   CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
-  PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
@@ -21,39 +18,36 @@ import { PrismaClient, type MediaObject } from '../generated/prisma';
 import { MEDIA_READ_TTL_SECONDS, MEDIA_UPLOAD_TTL_SECONDS } from './media-storage.policy';
 
 interface IMediaReference {
-  bytes: Uint8Array | null;
   object: Pick<MediaObject, 'backend' | 'key'> | null;
-}
-interface IMediaRange {
-  start: number;
-  end: number;
 }
 
 @Injectable()
 export class MediaStorage implements OnModuleDestroy {
-  private readonly s3: S3Client | undefined;
+  private readonly s3: S3Client;
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {
     const storage = config.mediaStorage;
-    this.s3 =
-      storage.driver === 'S3'
-        ? new S3Client({
-            region: storage.region,
-            endpoint: storage.endpoint,
-            forcePathStyle: storage.forcePathStyle,
-            credentials: { accessKeyId: storage.accessKeyId, secretAccessKey: storage.secretAccessKey },
-            maxAttempts: 3,
-          })
-        : undefined;
+    this.s3 = new S3Client({
+      region: storage.region,
+      endpoint: storage.endpoint,
+      forcePathStyle: storage.forcePathStyle,
+      ...(storage.accessKeyId && storage.secretAccessKey
+        ? { credentials: { accessKeyId: storage.accessKeyId, secretAccessKey: storage.secretAccessKey } }
+        : {}),
+      maxAttempts: 3,
+    });
+  }
+  private key(path: string) {
+    const prefix = this.config.mediaStorage.keyPrefix;
+    return prefix ? `${prefix}/${path}` : path;
   }
 
   async reserveUpload(mimeType: string, size: number) {
     const storage = this.config.mediaStorage;
-    if (storage.driver !== 'S3' || !this.s3) return null;
     const object = await this.db.mediaObject.create({
-      data: { backend: 'S3', key: `staging/${randomUUID()}` },
+      data: { backend: 'S3', key: this.key(`staging/${randomUUID()}`) },
     });
     const expiresAt = new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000).toISOString();
     try {
@@ -77,12 +71,6 @@ export class MediaStorage implements OnModuleDestroy {
     }
   }
 
-  /** 직접 업로드가 있는 S3에서는 API 프로세스가 파일 본문을 받는 multipart 경로를 쓰지 않는다. */
-  assertProxyUpload() {
-    if (this.config.mediaStorage.driver === 'S3')
-      throw new ApiError(409, 'DIRECT_UPLOAD_REQUIRED', '업로드 주소를 다시 받아 파일을 올려주세요.');
-  }
-
   /**
    * 임시 객체의 크기·형식을 HEAD로, 매직 바이트를 앞부분 Range로만 확인한 뒤 서버 쪽 CopyObject로 확정한다.
    * 본문 전체를 API 메모리로 읽지 않는다. 같은 ETag 조건으로 읽고 복사해 검증 뒤 바꿔치기한 파일은 확정되지 않는다.
@@ -90,10 +78,9 @@ export class MediaStorage implements OnModuleDestroy {
   async completeUpload(file: IMediaReference & { name: string; size: number; mimeType: string }) {
     const storage = this.config.mediaStorage;
     if (
-      storage.driver !== 'S3' ||
-      !this.s3 ||
       file.object?.backend !== 'S3' ||
-      !/^staging\/[a-f0-9-]{36}$/.test(file.object.key)
+      !file.object.key.startsWith(this.key('staging/')) ||
+      !/^[a-f0-9-]{36}$/.test(file.object.key.slice(this.key('staging/').length))
     )
       throw new ApiError(400, 'INVALID_MEDIA', '업로드 요청을 다시 시작해주세요.');
     const source = file.object.key;
@@ -114,7 +101,7 @@ export class MediaStorage implements OnModuleDestroy {
       header: await this.stagedHeader(source, etag, Math.min(file.size, MEDIA_SIGNATURE_BYTES)),
     });
     // 업로드 주소가 재사용되어도 확정 파일을 덮어쓸 수 없도록 별도 객체로 복사한다.
-    const object = await this.register(storage.driver);
+    const object = await this.register();
     try {
       await this.s3.send(
         new CopyObjectCommand({
@@ -134,8 +121,6 @@ export class MediaStorage implements OnModuleDestroy {
 
   private async stagedHeader(key: string, etag: string, length: number) {
     const storage = this.config.mediaStorage;
-    if (storage.driver !== 'S3' || !this.s3)
-      throw new ApiError(503, 'STORAGE_UNAVAILABLE', '파일 저장소를 사용할 수 없습니다.');
     try {
       const result = await this.s3.send(
         new GetObjectCommand({
@@ -167,8 +152,7 @@ export class MediaStorage implements OnModuleDestroy {
 
   async presignRead(file: IMediaReference, mimeType: string, disposition: string) {
     const storage = this.config.mediaStorage;
-    if (file.bytes !== null || storage.driver !== 'S3') return null;
-    if (!this.s3 || file.object?.backend !== 'S3')
+    if (file.object?.backend !== 'S3')
       throw new ApiError(503, 'STORAGE_UNAVAILABLE', '파일 저장소를 사용할 수 없습니다.');
     try {
       return await getSignedUrl(
@@ -192,83 +176,8 @@ export class MediaStorage implements OnModuleDestroy {
   }
 
   /** Register before external IO so failed uploads remain eligible for orphan cleanup. */
-  private register(backend: 'FILESYSTEM' | 'S3') {
-    return this.db.mediaObject.create({ data: { backend, key: `objects/${randomUUID()}` } });
-  }
-
-  private path(key: string) {
-    if (!/^objects\/[a-f0-9-]{36}$/.test(key) || this.config.mediaStorage.driver !== 'FILESYSTEM')
-      throw new ApiError(503, 'STORAGE_UNAVAILABLE', '파일 저장소를 사용할 수 없습니다.');
-    return join(this.config.mediaStorage.directory, key);
-  }
-
-  async save(bytes: Buffer, mimeType: string) {
-    const storage = this.config.mediaStorage;
-    if (storage.driver === 'DATABASE') return { bytes: Uint8Array.from(bytes), objectId: null };
-    const object = await this.register(storage.driver);
-    try {
-      if (storage.driver === 'FILESYSTEM') {
-        await mkdir(join(storage.directory, 'objects'), { recursive: true, mode: 0o700 });
-        await writeFile(this.path(object.key), bytes, { flag: 'wx', mode: 0o600 });
-      }
-      if (storage.driver === 'S3' && this.s3)
-        await this.s3.send(
-          new PutObjectCommand({
-            Bucket: storage.bucket,
-            Key: object.key,
-            Body: bytes,
-            ContentType: mimeType,
-            IfNoneMatch: '*',
-          }),
-        );
-      return { bytes: null, objectId: object.id };
-    } catch {
-      throw new ApiError(
-        503,
-        'STORAGE_UNAVAILABLE',
-        '파일을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.',
-      );
-    }
-  }
-
-  async read(file: IMediaReference, range: IMediaRange) {
-    if (file.bytes !== null) return Buffer.from(file.bytes).subarray(range.start, range.end + 1);
-    const object = file.object;
-    const storage = this.config.mediaStorage;
-    if (!object || object.backend !== storage.driver)
-      throw new ApiError(503, 'STORAGE_UNAVAILABLE', '파일 저장소를 사용할 수 없습니다.');
-    try {
-      if (storage.driver === 'FILESYSTEM') {
-        const handle = await open(this.path(object.key), 'r');
-        try {
-          const buffer = Buffer.alloc(range.end - range.start + 1);
-          const result = await handle.read(buffer, 0, buffer.length, range.start);
-          if (result.bytesRead !== buffer.length) throw new Error('Incomplete file');
-          return buffer;
-        } finally {
-          await handle.close();
-        }
-      }
-      if (storage.driver === 'S3' && this.s3) {
-        const result = await this.s3.send(
-          new GetObjectCommand({
-            Bucket: storage.bucket,
-            Key: object.key,
-            Range: `bytes=${range.start}-${range.end}`,
-          }),
-        );
-        const bytes = await result.Body?.transformToByteArray();
-        if (!bytes || bytes.byteLength !== range.end - range.start + 1) throw new Error('Incomplete file');
-        return Buffer.from(bytes);
-      }
-    } catch {
-      throw new ApiError(
-        503,
-        'STORAGE_UNAVAILABLE',
-        '파일을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
-      );
-    }
-    throw new ApiError(503, 'STORAGE_UNAVAILABLE', '파일 저장소를 사용할 수 없습니다.');
+  private register() {
+    return this.db.mediaObject.create({ data: { backend: 'S3', key: this.key(`objects/${randomUUID()}`) } });
   }
 
   /** Run under the operator lock, after the daily backup. Never delete a referenced object. */
@@ -276,6 +185,7 @@ export class MediaStorage implements OnModuleDestroy {
     const before = new Date(Date.now() - 86400000);
     await this.db.postMedia.deleteMany({ where: { postId: null, createdAt: { lt: before } } });
     await this.db.chatAttachment.deleteMany({ where: { messageId: null, createdAt: { lt: before } } });
+    await this.db.avatarUpload.deleteMany({ where: { expiresAt: { lt: before } } });
     const storage = this.config.mediaStorage;
     await this.db.mediaObject.updateMany({
       where: {
@@ -284,31 +194,28 @@ export class MediaStorage implements OnModuleDestroy {
         postMedia: null,
         chatAttachment: null,
         avatar: null,
+        avatarUpload: null,
       },
       data: { retiredAt: new Date() },
     });
     const objects = await this.db.mediaObject.findMany({
       where: {
-        backend: storage.driver,
+        backend: 'S3',
         OR: [
           { retiredAt: { lt: new Date(Date.now() - 14 * 86400000) } },
-          { key: { startsWith: 'staging/' }, createdAt: { lt: before } },
+          { key: { startsWith: this.key('staging/') }, createdAt: { lt: before } },
         ],
         postMedia: null,
         chatAttachment: null,
         avatar: null,
+        avatarUpload: null,
       },
       take: 100,
       orderBy: { createdAt: 'asc' },
     });
     const results = await Promise.allSettled(
       objects.map(async (object) => {
-        if (storage.driver === 'FILESYSTEM')
-          await unlink(this.path(object.key)).catch((error: NodeJS.ErrnoException) => {
-            if (error.code !== 'ENOENT') throw error;
-          });
-        if (storage.driver === 'S3' && this.s3)
-          await this.s3.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: object.key }));
+        await this.s3.send(new DeleteObjectCommand({ Bucket: storage.bucket, Key: object.key }));
         await this.db.mediaObject.delete({ where: { id: object.id } });
       }),
     );
@@ -319,6 +226,6 @@ export class MediaStorage implements OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    this.s3?.destroy();
+    this.s3.destroy();
   }
 }

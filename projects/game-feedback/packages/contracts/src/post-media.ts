@@ -17,4 +17,3 @@ export const PostMediaSchema = z.object({
   url: PostMediaUrlSchema,
 });
 export type TPostMedia = z.infer<typeof PostMediaSchema>;
-export const PostMediaUploadSchema = z.object({ file: z.string().meta({ format: 'binary' }) });

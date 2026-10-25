@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.GF_E2E_ORIGIN ?? 'http://127.0.0.1:3301';
 const room = 'sample-conversation-0-3';
 const path = `/ko/messages/${room}`;
 const imageFixture = readFileSync(

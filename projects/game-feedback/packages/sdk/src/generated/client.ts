@@ -45,9 +45,9 @@ import {
 import type {
   AnswerInput,
   AppExchangeInput,
+  AvatarUploadInput,
   BlockInput,
   CategoryInput,
-  ChatAttachmentUpload,
   ChatMessageInput,
   ChatReadInput,
   ClearChatHistoryBody,
@@ -68,7 +68,6 @@ import type {
   MediaUploadInput,
   OnboardInput,
   PostInput,
-  PostMediaUpload,
   PostPatch,
   RecordPostViewBody,
   RegisterPushDeviceBody,
@@ -159,30 +158,6 @@ export const getAdminUser = async (id: string, options?: Parameters<typeof apiFe
 
     ,
     schema: User
-  }
-);}
-
-
-
-export const getUploadPostMediaUrl = () => {
-
-
-
-
-  return `/api/post-media`
-}
-
-export const uploadPostMedia = async (postMediaUpload: PostMediaUpload, options?: Parameters<typeof apiFetch>[1]): Promise<PostMedia> => {
-    const formData = new FormData();
-formData.append(`file`, postMediaUpload.file);
-
-  return apiFetch<PostMedia>(getUploadPostMediaUrl(),
-  {
-    ...options,
-    method: 'POST'
-    ,
-    body: formData,
-    schema: PostMedia
   }
 );}
 
@@ -437,24 +412,80 @@ return apiFetch<PublicProfile>(getUpdateProfileUrl(),
 
 
 
-export const getUploadProfileAvatarUrl = () => {
+export const getRequestProfileAvatarUploadUrl = () => {
 
 
 
 
-  return `/api/profile/avatar`
+  return `/api/profile/avatar/uploads`
 }
 
-export const uploadProfileAvatar = async (postMediaUpload: PostMediaUpload, options?: Parameters<typeof apiFetch>[1]): Promise<PublicProfile> => {
-    const formData = new FormData();
-formData.append(`file`, postMediaUpload.file);
+export const requestProfileAvatarUpload = async (avatarUploadInput: AvatarUploadInput, options?: Parameters<typeof apiFetch>[1]): Promise<MediaUploadPlan> => {
 
-  return apiFetch<PublicProfile>(getUploadProfileAvatarUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<MediaUploadPlan>(getRequestProfileAvatarUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(avatarUploadInput),
+    schema: MediaUploadPlan
+  }
+);}
+
+
+
+export const getDeleteProfileAvatarUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/profile/avatar/uploads/${encodeURIComponent(String(id))}`
+}
+
+export const deleteProfileAvatarUpload = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+  return apiFetch<Ok>(getDeleteProfileAvatarUploadUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+    ,
+    schema: Ok
+  }
+);}
+
+
+
+export const getCompleteProfileAvatarUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/profile/avatar/uploads/${encodeURIComponent(String(id))}/complete`
+}
+
+export const completeProfileAvatarUpload = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<PublicProfile> => {
+
+  return apiFetch<PublicProfile>(getCompleteProfileAvatarUploadUrl(id),
   {
     ...options,
     method: 'POST'
+
     ,
-    body: formData,
     schema: PublicProfile
   }
 );}
@@ -815,31 +846,6 @@ return apiFetch<ChatMessage>(getSendChatMessageUrl(id),
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(chatMessageInput),
     schema: ChatMessage
-  }
-);}
-
-
-
-export const getUploadChatAttachmentUrl = (id: string,) => {
-
-
-
-
-  return `/api/conversations/${encodeURIComponent(String(id))}/attachments`
-}
-
-export const uploadChatAttachment = async (id: string,
-    chatAttachmentUpload: ChatAttachmentUpload, options?: Parameters<typeof apiFetch>[1]): Promise<ChatAttachment> => {
-    const formData = new FormData();
-formData.append(`file`, chatAttachmentUpload.file);
-
-  return apiFetch<ChatAttachment>(getUploadChatAttachmentUrl(id),
-  {
-    ...options,
-    method: 'POST'
-    ,
-    body: formData,
-    schema: ChatAttachment
   }
 );}
 

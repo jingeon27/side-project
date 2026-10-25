@@ -32,7 +32,7 @@ corepack yarn workspace @side/game-feedback db:test:stop
 
 ## 본문 미디어와 운영 API
 
-- POST /api/post-media는 인증된 multipart 파일을 검증하고 /api/post-media/:id 주소를 돌려준다. GET은 본문 등록 전 업로더에게만 허용하고 등록 후 글의 공개/차단/숨김/삭제 정책을 적용한다. DELETE는 아직 글에 연결하지 않은 본인 파일만 삭제한다. 저장/수정과 파일 연결은 같은 DB 트랜잭션이다.
+- POST /api/post-media/uploads는 인증된 메타데이터로 S3 presigned POST를 발급하고, 브라우저 직접 전송 후 POST /api/post-media/:id/complete가 검증·확정한다. 파일 주소는 /api/post-media/:id다. GET은 본문 등록 전 업로더에게만 허용하고 등록 후 글의 공개/차단/숨김/삭제 정책을 적용한다. DELETE는 아직 글에 연결하지 않은 본인 파일만 삭제한다. 저장/수정과 파일 연결은 같은 DB 트랜잭션이다.
 - 코칭 pricing은 HOURLY/MONTHLY/GOAL과 amount로 저장한다. GOAL에는 targetScore가 필요하다. 배포 전에는 기존 hourlyRate 형식의 운영 데이터 변환을 제공하지 않으며 현재 pricing 계약을 사용한다.
 - POST /api/me/game-accounts는 사용자에게 계정을 등록한다. 글쓰기/PATCH에는 playerTag를 받지 않는다. 대표 태그가 바뀌면 사용자 인증을 해제한다.
 - POST /api/support/conversations는 GENERAL/VERIFICATION 문의를 실제 관리자와 기존 1:1 대화로 시작/재사용한다. 담당자가 없는 환경은 503이다. GET /api/admin/support와 PATCH /api/admin/support/:id는 담당 관리자 자신의 문의만 관리한다.
@@ -49,3 +49,5 @@ DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 �
 Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.config.ts`가 프로젝트 `.env`를 명시적으로 읽고 CLI 연결 URL을 전달한다. `db:generate`는 DB URL 없이 실행할 수 있으며 `db push`는 Client를 자동 생성하지 않는다.
 
 기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다.
+
+게시글·채팅·프로필 파일은 모두 S3 직접 업로드를 사용한다. 로컬 S3 대역, 실제 AWS 자격 증명, 기존 파일 이행은 [파일 업로드 가이드](../../docs/media-upload.md)를 따른다. 이미 다른 worktree가 테스트 DB를 실행 중이면 `test:integration --use-running-database`로 DB를 시작/종료하지 않고 격리 스키마만 사용한다.

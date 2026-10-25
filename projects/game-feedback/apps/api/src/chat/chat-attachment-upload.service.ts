@@ -21,15 +21,11 @@ export class ChatAttachmentUploadService {
   async request(req: SessionRequest, conversationId: string, input: MediaUploadDto) {
     const user = requireUser(req);
     const upload = await this.storage.reserveUpload(input.mimeType, input.size);
-    if (!upload) return { mode: 'PROXY' as const };
-    const row = await this.attachments.register(
-      user.id,
-      conversationId,
-      input,
-      { bytes: null, objectId: upload.objectId },
-      false,
-    );
-    return { mode: 'DIRECT' as const, id: row.id, ...upload.form, expiresAt: upload.expiresAt };
+    const row = await this.attachments.register(user.id, conversationId, input, {
+      bytes: null,
+      objectId: upload.objectId,
+    });
+    return { id: row.id, ...upload.form, expiresAt: upload.expiresAt };
   }
 
   async complete(req: SessionRequest, conversationId: string, id: string) {

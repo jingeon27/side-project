@@ -1,41 +1,86 @@
-# 게시글·채팅 첨부와 S3 직접 업로드
+# 파일 업로드와 S3
 
-S3 저장소를 설정하면 게시글과 채팅의 사진·동영상은 브라우저에서 private S3 버킷으로 직접 전송한다. `DATABASE`와 `FILESYSTEM`에서는 기존 API multipart 업로드를 사용한다. S3에서는 API multipart 경로가 본문을 읽기 전에 409 `DIRECT_UPLOAD_REQUIRED`로 거절된다. 프로필 사진은 기존 서버 변환 업로드를 사용한다.
+게시글·채팅 첨부와 프로필 사진은 모두 서명 발급 → 브라우저 S3 POST → 완료 확인으로 처리한다. API는 JSON 메타데이터만 받는다. 저장소를 선택하는 DATABASE·FILESYSTEM 모드와 프록시 multipart 업로드는 제거한다. 조회는 사용자·공개 범위·차단·대화 접근을 확인한 뒤 60초 presigned GET으로 307 이동한다.
 
-업로드 완료는 HEAD로 크기·형식과 ETag를 확인하고 앞 4KB만 Range로 읽어 매직 바이트를 검사한 뒤, 같은 ETag 조건의 CopyObject로 `objects/` 키에 확정한다. API가 파일 본문을 내려받지 않으며 검사 뒤 임시 객체가 바뀌면 409 `UPLOAD_CHANGED`다. multipart 수신과 프로필 사진 변환은 프로세스당 동시 3개, 대기 12개로 제한하고 넘치면 503 `MEDIA_BUSY`다.
+완료는 HEAD의 크기·타입·ETag와 앞 4KB의 파일 서명을 확인하고 같은 ETag를 조건으로 별도 최종 키에 CopyObject한다. 발급한 주소를 다시 써도 게시된 파일은 덮어쓰지 못한다. 프로필 사진은 웹에서 방향·중앙 자르기·최대 512px JPEG 변환으로 촬영 메타데이터를 제거한다. 서버의 파일 헤더 검사는 이미지 전체 디코딩이나 제3자 클라이언트의 메타데이터 제거를 보장하지 않는다.
 
-## 로컬 설정
+## 기본 로컬 실행
 
-`projects/game-feedback/.env`에 서버 전용 설정을 넣고 프로젝트 집계 실행을 다시 시작한다.
+`yarn workspace @side/game-feedback dev:test`와 `yarn workspace @side/game-feedback admin:dev`를 사용한다. S3 버킷을 지정하지 않으면 개발 실행기가 loopback 4310의 S3 대역을 시작하고 파일을 프로젝트 `.data/s3`에 보관한다. 이 대역은 로컬 전용 가짜 자격 증명을 사용하고 실제 AWS로 전송하지 않는다. 테스트도 실제 AWS SDK와 서명 POST 정책을 사용하는 S3 대역에서 수행한다.
 
-```dotenv
-GF_MEDIA_STORAGE=S3
-GF_S3_BUCKET=<Game Feedback private 버킷>
-GF_S3_REGION=ap-northeast-2
-GF_S3_ACCESS_KEY_ID=<서버용 access key>
-GF_S3_SECRET_ACCESS_KEY=<서버용 secret key>
+관리자 화면은 http://127.0.0.1:3303 이며 로컬 관리자 로그인을 사용한다. 개발 API의 테스트 인증이 켜져 있어야 테스트 관리자가 문의 담당자가 된다. 일반 개발 모드에서 실제 ADMIN 계정이 없으면 관리자·프로필 인증 문의 모두 SUPPORT_UNAVAILABLE을 반환한다.
+
+## 실제 AWS에서 로컬 테스트하기
+
+기존 버킷 `jingeon-side-project`의 `game-feedback/local/` 경로를 예로 든다. 운영 파일과 분리된 경로에만 권한을 준다.
+
+1. AWS 콘솔에서 **IAM → 사용자 → 사용자 생성**으로 이동한다. 이름은 `game-feedback-local-s3`처럼 정하고 콘솔 로그인 권한은 추가하지 않는다. 기존 `s3-allow` 역할과는 다른 IAM 사용자다. 역할은 EC2 또는 임시 자격 증명에 사용하며 이 사용자는 로컬 개발용 키를 발급받는 대상이다.
+2. **권한 직접 연결 → 정책 생성 → JSON**에 아래 정책을 넣고 `game-feedback-local-s3`라는 이름으로 저장한다. 사용자 생성 화면을 새로고침해 정책을 선택하거나, 생성된 사용자의 **권한 → 권한 추가**에서 연결한다. 정책은 IAM 사용자에 연결하며 버킷의 공개 정책이나 ACL에 붙이는 내용이 아니다.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::jingeon-side-project/game-feedback/local/*"
+    }
+  ]
+}
 ```
 
-AWS S3는 `GF_S3_ENDPOINT`를 비워 두고 `GF_S3_FORCE_PATH_STYLE=false`를 사용한다. 로컬 S3 호환 서버는 브라우저와 API 양쪽에서 접근할 수 있는 endpoint와 필요한 path-style 옵션을 지정한다. 서명 주소를 발급한 뒤 hostname을 바꾸면 서명이 깨진다. AWS 비밀 키를 `NEXT_PUBLIC_*`에 넣지 않는다.
+3. 사용자의 **보안 자격 증명 → 액세스 키 → 액세스 키 생성**에서 **Command Line Interface(CLI)**를 선택한다. 설명을 붙이고 발급한다. Access key ID와 Secret access key를 로컬에 보관한다. Secret은 생성 화면을 닫은 뒤 다시 볼 수 없다. 채팅·Git·프런트 환경변수에는 넣지 않는다.
+4. AWS CLI에서 다음 명령을 실행하고 발급한 키를 대화형 입력으로 넣는다. 키를 명령 자체에 쓰지 않는다.
 
-버킷의 Block Public Access를 유지한다. 앱 역할의 `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` 권한은 해당 버킷의 `staging/*`, `objects/*`에 필요하다. 기존 [공통 IAM 정책](../../../deploy/shared-instance/s3-app-policy.json)은 버킷 내부 객체 권한을 포함한다. 브라우저에 AWS 자격 증명을 전달하지 않는다.
+```sh
+aws configure --profile game-feedback-local
+# Access key ID: 발급한 값
+# Secret access key: 발급한 값
+# Region: ap-northeast-2
+# Output: json
+aws sts get-caller-identity --profile game-feedback-local
+```
 
-AWS 콘솔 → S3 → 해당 버킷 → Permissions → Cross-origin resource sharing (CORS)에 [CORS 예시](../deploy/shared-instance/s3-cors.json)를 적용한다. `AllowedOrigins`는 로컬에서 사용하는 정확한 origin과 실제 서비스 HTTPS origin으로 바꾼다. 예시 도메인을 그대로 공개하지 않는다. S3 POST는 브라우저가 multipart boundary를 정하므로 fetch에서 Content-Type 헤더를 직접 지정하지 않는다. 버킷의 기본 암호화는 유지한다.
+5. Git에서 제외된 `projects/game-feedback/.env`에 아래를 지정한다. 기존 로컬 S3 대역의 키를 넣었다면 GF_S3_ACCESS_KEY_ID·GF_S3_SECRET_ACCESS_KEY는 비운다. 두 값이 비어 있으면 AWS SDK가 AWS_PROFILE 또는 EC2 역할의 자격 증명을 사용한다. 직접 키를 쓰는 경우에도 두 값은 서버 전용이다.
 
-## 요청과 검증
+```dotenv
+AWS_PROFILE=game-feedback-local
+GF_S3_BUCKET=jingeon-side-project
+GF_S3_REGION=ap-northeast-2
+GF_S3_KEY_PREFIX=game-feedback/local
+GF_S3_ENDPOINT=
+GF_S3_FORCE_PATH_STYLE=false
+GF_S3_ACCESS_KEY_ID=
+GF_S3_SECRET_ACCESS_KEY=
+```
 
-1. 게시글의 `POST /api/post-media/uploads`와 채팅의 `POST /api/conversations/{id}/attachments/uploads`가 인증·파일명·허용 MIME·크기(최대 25MB)를 검증하고 5분짜리 presigned POST 폼을 발급한다. 채팅은 대화 참여자 권한도 확인한다. 정책은 예약한 크기와 Content-Type 및 staging key를 제한한다.
-2. 브라우저는 서명 필드와 파일을 S3로 전송한다. 서비스 쿠키와 Bearer 토큰은 S3에 보내지 않는다.
-3. 게시글의 `POST /api/post-media/{id}/complete`와 채팅의 `POST /api/conversations/{id}/attachments/{attachmentId}/complete`가 소유자·만료·실제 객체 크기와 타입을 확인하고 파일 내용을 읽어 기존 signature 검증을 수행한다. 검증된 바이트는 별도 최종 객체에 저장한다. staging 주소가 재사용되어도 확정 파일을 덮어쓸 수 없다. 검증 때문에 서버에서 파일을 한 번 읽고 최종 객체를 저장하는 전송은 남는다.
-4. 확정 전 파일은 조회하거나 게시글·메시지에 연결할 수 없다. 본문과 메시지에는 같은 origin의 안정적인 첨부 경로만 저장한다.
-5. 조회 API가 게시글 공개 범위 또는 채팅 참여자·대화 삭제 경계와 차단·숨김 등을 확인한 후 60초짜리 S3 GET 주소로 307 이동한다. 파일과 이동 응답은 `private, no-store`다. 동영상 Range와 HEAD도 지원한다.
+6. 버킷 CORS에 `http://localhost:3300`을 허용한다. [CORS 예시](../deploy/shared-instance/s3-cors.json)의 POST·GET·HEAD, Content-Type·Range와 응답 노출 헤더를 참고한다. API와 웹 개발 서버를 다시 시작한 뒤 글·채팅·프로필에서 업로드한다. 개발자 도구 Network에서 파일 POST가 S3로 가고 API에는 JSON만 가는지 확인한다. 공개 접근 차단과 BucketOwnerEnforced를 유지한다.
 
-이미 발급된 S3 주소는 유효 시간 동안 사용할 수 있다. 글 숨김·삭제나 채팅 차단·대화 내역 삭제로 접근 권한이 없어지면 새 주소 발급은 중단되며 이전 주소는 최대 60초 후 만료된다. URL 자체가 임시 접근 권한이므로 로그나 분석 이벤트에 기록하지 않는다.
+AWS 공식 자료: [IAM 사용자 키 발급과 CLI 설정](https://docs.aws.amazon.com/cli/latest/userguide/cli-authentication-user.html), [S3 경로별 IAM 정책](https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-policies-s3.html). 장기 키 대신 임시 자격 증명을 사용할 수 있는 계정은 [로컬 개발용 AWS 로그인](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sign-in.html)도 사용할 수 있다.
 
-실패하면 브라우저는 예약 삭제를 시도하고 초안을 유지한다. 첨부되지 않은 업로드 예약과 staging 객체는 하루 후 정리 대상이다. 최종 객체는 백업 복구를 위한 기존 14일 보관 유예를 유지한다. 정리는 기존 운영자 `prune` 작업에서 수행하며 S3 Lifecycle을 설정한다면 staging 객체에만 별도 정책을 적용한다.
+## Terraform과의 관계
 
-기존 개발 DB에는 프로젝트 `dev`/`dev:test` 준비 과정의 URL 가드가 있는 스키마 동기화를 사용한다. 새 운영 버전은 포함된 migration을 `migrate deploy`로 적용한다. 기존 첨부는 완료 상태로 보존하며 DB CHECK 제약은 미완료 첨부를 게시글·메시지에 연결하는 것을 거부한다.
+앱의 S3 전환은 버킷·IAM 리소스나 Terraform state를 바꾸지 않는다. 현재 Terraform은 서비스별 별도 버킷과 전용 IAM 사용자를 생성하고 액세스 키는 관리하지 않는다. 이미 적용한 구성은 `terraform output -json s3_bucket_names`와 `terraform output -json s3_iam_user_names`의 해당 서비스 값을 사용한다. 기본 사용자 이름은 `side-shared-game-feedback-s3`이며 발급 절차는 위와 같다.
 
-## 확인 범위
+기존 `jingeon-side-project` 공유 버킷은 로컬 테스트 예시이며 Terraform의 두 버킷 구성과 별개다. 기존 버킷 이름을 신규 생성 변수에 넣고 apply하지 않는다. 기존 리소스를 Terraform으로 관리하려면 별도로 import·plan을 검토해야 한다. 운영 버킷 이름이나 name_prefix를 바꾸면 리소스 교체가 계획될 수 있다.
 
-격리 PostgreSQL·실제 AWS SDK와 로컬 S3 HTTP fixture로 POST 정책 서명/크기/타입, 완료 전 접근 거부, 완료 시 파일 검사, 주소 재사용, 중복 완료, 공개/비공개 조회, 채팅 참여자·삭제·차단, Range와 정리를 검사한다. 실제 AWS 버킷의 권한·CORS·브라우저 업로드는 사용자가 위 설정을 넣은 뒤 글쓰기와 채팅의 사진/동영상 전송으로 확인해야 한다. 로컬 fixture 성공을 실제 AWS 수신으로 기록하지 않는다.
+Terraform이 관리하는 버킷의 로컬 CORS는 `game_feedback_cors_origins`에 운영 도메인과 `http://localhost:3300`을 함께 설정한다. 콘솔에서만 바꾸면 다음 apply가 코드의 값으로 되돌릴 수 있다. 앱 키는 Terraform apply 권한이나 state 버킷 권한을 받을 필요가 없다.
+
+## 기존 파일 이행과 배포
+
+기존 DB의 bytes와 FILESYSTEM 객체는 자동 삭제하지 않는다. 별도 이행 도구로 참조 파일을 S3에 복사하고 크기·내용을 확인한 뒤 DB 참조를 바꾼다. 이미 S3에 있는 참조와 고정 조회 URL은 유지한다. 이전 컬럼은 이행·롤백이 끝날 때까지 남긴다. 개발 데이터와 운영 데이터는 각각 해당 저장소에 이행한다.
+
+새 AvatarUpload 테이블을 추가하는 migration을 먼저 적용하고 새 API·웹을 함께 교체한다. 예전 업로드 탭은 새로고침한다. 실제 AWS 키·CORS·업로드 검증과 Terraform apply는 로컬 대역의 테스트 통과와 별도로 확인한다.
+
+이행 도구는 API 빌드 후 실행한다. 로컬에서는 프로젝트 `.env`를 읽고 개발 DB URL 가드를 적용한다. 운영은 배포 환경변수와 NODE_ENV=production을 제공해야 한다. 먼저 백업하고 업로드 쓰기를 잠시 중단한 상태에서 전환한다. 기본 명령은 건수 확인만 한다.
+
+```sh
+yarn workspace @game-feedback/api build
+yarn workspace @game-feedback/api exec node scripts/migrate-media.mjs
+# 대상과 백업을 확인한 뒤 실행
+yarn workspace @game-feedback/api exec node scripts/migrate-media.mjs --apply
+# 기존 파일 저장소가 있는 경우 --source-directory=/absolute/media/path 추가
+```
+
+한 파일씩 최대 25MB만 읽고 S3의 크기·타입·SHA-256을 재검증한다. 실패하면 해당 파일의 DB 참조는 유지된다. 재실행 시 이미 S3로 옮긴 파일은 건너뛴다. 이전 파일 원본은 유지하며 DB bytes를 비우기 전의 백업을 보관한다. 기존 S3 객체를 다른 버킷으로 옮기는 도구는 아니므로 운영 버킷 이름을 동시에 변경하지 않는다.

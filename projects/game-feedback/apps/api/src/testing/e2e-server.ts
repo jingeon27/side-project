@@ -2,6 +2,7 @@ import { createApp } from '../app';
 import { ApiError } from '../common/http/api-error';
 import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
+import { S3Fixture } from './s3-fixture';
 
 async function main() {
   if (process.env.NODE_ENV !== 'test') throw new Error('E2E server requires NODE_ENV=test.');
@@ -14,7 +15,9 @@ async function main() {
     throw new Error('E2E server requires the owned browser-test ports.');
   if (process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_SECRET || process.env.SUPERCELL_API_TOKEN)
     throw new Error('E2E server must not use external provider credentials.');
+  const s3 = await new S3Fixture({ corsOrigin: process.env.WEB_ORIGIN }).start();
   const app = await createApp({
+    mediaStorage: s3.config,
     databaseUrl,
     demoMode: process.env.GF_DEMO_MODE === 'true',
     testAuthEnabled: process.env.GF_TEST_AUTH_ENABLED === 'true',
@@ -33,6 +36,9 @@ async function main() {
         return code;
       },
     },
+  });
+  app.getHttpServer().once('close', () => {
+    void s3.close();
   });
   app.enableShutdownHooks();
   await app.listen(port, '127.0.0.1');

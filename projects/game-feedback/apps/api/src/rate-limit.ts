@@ -40,9 +40,9 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
   const identity = request.userId ? `user:${request.userId}` : network(request);
   if (
     request.method === 'POST' &&
-    (path === '/api/post-media' ||
-      path === '/api/post-media/uploads' ||
-      /^\/api\/conversations\/[^/]+\/attachments(?:\/uploads)?$/.test(path))
+    (path === '/api/post-media/uploads' ||
+      path === '/api/profile/avatar/uploads' ||
+      /^\/api\/conversations\/[^/]+\/attachments\/uploads$/.test(path))
   )
     return { key: `upload:${identity}`, limit: 20 };
   // Each preview may call the Supercell API with the server token.
@@ -50,7 +50,8 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
     return { key: `game-profile:${identity}`, limit: 10 };
   if (
     request.method === 'POST' &&
-    (/^\/api\/post-media\/[^/]+\/complete$/.test(path) ||
+    (/^\/api\/profile\/avatar\/uploads\/[^/]+\/complete$/.test(path) ||
+      /^\/api\/post-media\/[^/]+\/complete$/.test(path) ||
       /^\/api\/conversations\/[^/]+\/attachments\/[^/]+\/complete$/.test(path))
   )
     return { key: `upload-complete:${identity}`, limit: 20 };

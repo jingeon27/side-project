@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { omit } from 'es-toolkit';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
@@ -7,8 +6,7 @@ import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
-import { attachmentDto, attachmentSelect } from './chat-attachment.presenter';
-import { validateChatFile } from './chat-file';
+import { attachmentSelect } from './chat-attachment.presenter';
 import { historyWhere } from './chat-history';
 
 @Injectable()
@@ -18,19 +16,11 @@ export class ChatAttachmentService {
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(MediaStorage) private readonly storage: MediaStorage,
   ) {}
-  async upload(req: SessionRequest, conversationId: string, input: unknown) {
-    const user = requireUser(req);
-    const file = validateChatFile(input);
-    const metadata = omit(file, ['bytes']);
-    const stored = await this.storage.save(file.bytes, file.mimeType);
-    return attachmentDto(await this.register(user.id, conversationId, metadata, stored));
-  }
   async register(
     userId: string,
     conversationId: string,
     metadata: { name: string; mimeType: string; size: number },
-    stored: Awaited<ReturnType<MediaStorage['save']>>,
-    ready = true,
+    stored: { bytes: null; objectId: string },
   ) {
     return this.transactions.run(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
@@ -48,7 +38,7 @@ export class ChatAttachmentService {
           uploaderId: userId,
           ...metadata,
           ...stored,
-          uploadedAt: ready ? new Date() : null,
+          uploadedAt: null,
         },
         select: attachmentSelect,
       });
@@ -77,9 +67,6 @@ export class ChatAttachmentService {
     });
     if (!file) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     return file;
-  }
-  content(...args: Parameters<MediaStorage['read']>) {
-    return this.storage.read(...args);
   }
   location(...args: Parameters<MediaStorage['presignRead']>) {
     return this.storage.presignRead(...args);

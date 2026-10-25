@@ -9,21 +9,17 @@ import {
   Post,
   Req,
   Res,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
   type CanActivate,
   type ExecutionContext,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
-import { MEDIA_FILE_LIMIT, mediaRange } from '../common/media-file';
+import { mediaRange } from '../common/media-file';
 import { MediaUploadDto } from '../common/media-upload.dto';
-import { MediaWorkInterceptor, ProxyUploadGuard } from '../media-storage/media-work';
 import { PostMediaUploadService } from './post-media-upload.service';
 import { PostMediaService } from './post-media.service';
 
@@ -53,16 +49,6 @@ export class PostMediaController {
   complete(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.uploads.complete(req, id);
   }
-  @Post()
-  @HttpCode(200)
-  @UseGuards(PostMediaUploadGuard, ProxyUploadGuard)
-  @UseInterceptors(
-    MediaWorkInterceptor,
-    FileInterceptor('file', { limits: { fileSize: MEDIA_FILE_LIMIT, files: 1, fields: 0 } }),
-  )
-  upload(@Req() req: SessionRequest, @UploadedFile() file: unknown) {
-    return this.media.upload(req, file);
-  }
   @Delete(':id')
   remove(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.media.remove(req, id);
@@ -91,17 +77,7 @@ export class PostMediaController {
       file.mimeType,
       `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
     );
-    if (location) {
-      res.setHeader('Referrer-Policy', 'no-referrer');
-      res.redirect(307, location);
-      return;
-    }
-    const bytes = await this.media.content(file, range);
-    if (range.partial) {
-      res.status(206);
-      res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.size}`);
-    }
-    res.setHeader('Content-Length', range.end - range.start + 1);
-    res.send(bytes);
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.redirect(307, location);
   }
 }

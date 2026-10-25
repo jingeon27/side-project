@@ -21,7 +21,7 @@ const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 const schema = `gf_test_presigned_${randomBytes(8).toString('hex')}`;
 const png = Buffer.from('89504e470d0a1a0a0001020304050607', 'hex');
-type TDirectPlan = Extract<ReturnType<typeof MediaUploadPlanSchema.parse>, { mode: 'DIRECT' }>;
+type TDirectPlan = ReturnType<typeof MediaUploadPlanSchema.parse>;
 interface IState {
   app: INestApplication;
   db: PrismaClient;
@@ -54,7 +54,6 @@ describe('게시글 S3 직접 업로드', () => {
       demoMode: true,
       rateLimit: false,
       mediaStorage: {
-        driver: 'S3',
         bucket: 'media-test',
         region: 'ap-northeast-2',
         endpoint: s3.endpoint,
@@ -92,7 +91,6 @@ describe('게시글 S3 직접 업로드', () => {
       .send({ name: '리플레이.png', mimeType: 'image/png', size: png.length })
       .expect(200);
     const plan = MediaUploadPlanSchema.parse(response.body);
-    if (plan.mode !== 'DIRECT') throw new Error('Expected direct upload');
     return plan;
   }
   async function transfer(plan: TDirectPlan, bytes: Buffer = png) {
@@ -234,12 +232,11 @@ describe('게시글 S3 직접 업로드', () => {
   });
 
   it('S3 배포는 multipart 수신을 막고 검증 뒤 바뀐 임시 객체를 확정하지 않아야 한다', async () => {
-    const blocked = await state.owner
+    await state.owner
       .post('/api/post-media')
       .set('Origin', origin)
       .attach('file', png, { filename: 'image.png', contentType: 'image/png' })
-      .expect(409);
-    expect(blocked.body.errorCode).toBe('DIRECT_UPLOAD_REQUIRED');
+      .expect(404);
     const plan = await reserve();
     expect((await transfer(plan)).status).toBe(204);
     s3.beforeCopy = (source) => {

@@ -1,5 +1,7 @@
-import { createHash, createHmac } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { join } from 'node:path';
 import { buffer } from 'node:stream/consumers';
 
 const secret = 'local-test-secret-key';
@@ -38,10 +40,48 @@ export class S3Fixture {
     void this.handle(req, res).catch(() => res.writeHead(500).end());
   });
 
-  async start() {
+  private readonly options: { bucket?: string; directory?: string; corsOrigin?: string };
+  constructor(options: { bucket?: string; directory?: string; corsOrigin?: string } = {}) {
+    this.options = options;
+  }
+  get config() {
+    return {
+      bucket: this.options.bucket ?? 'media-test',
+      region: 'us-east-1',
+      endpoint: this.endpoint,
+      forcePathStyle: true,
+      ...S3_FIXTURE_CREDENTIALS,
+    };
+  }
+  private async persist(path: string) {
+    if (!this.options.directory) return;
+    await mkdir(this.options.directory, { recursive: true, mode: 0o700 });
+    const file = join(this.options.directory, createHash('sha256').update(path).digest('hex') + '.json');
+    const object = this.objects.get(path);
+    if (!object) {
+      await unlink(file).catch(() => undefined);
+      return;
+    }
+    const temporary = `${file}.${randomUUID()}.tmp`;
+    await writeFile(
+      temporary,
+      JSON.stringify({ path, mimeType: object.mimeType, data: object.bytes.toString('base64') }),
+      { mode: 0o600 },
+    );
+    await rename(temporary, file);
+  }
+  async start(port = 0) {
+    if (this.options.directory) {
+      await mkdir(this.options.directory, { recursive: true, mode: 0o700 });
+      for (const name of await readdir(this.options.directory)) {
+        if (!/^[a-f0-9]{64}\.json$/.test(name)) continue;
+        const value = JSON.parse(await readFile(join(this.options.directory, name), 'utf8'));
+        this.objects.set(value.path, { bytes: Buffer.from(value.data, 'base64'), mimeType: value.mimeType });
+      }
+    }
     await new Promise<void>((resolve, reject) => {
       this.server.once('error', reject);
-      this.server.listen(0, '127.0.0.1', resolve);
+      this.server.listen(port, '127.0.0.1', resolve);
     });
     return this;
   }
@@ -95,14 +135,16 @@ export class S3Fixture {
       res.writeHead(403).end();
       return;
     }
-    this.objects.set(`/media-test/${key}`, {
+    const path = `/${this.config.bucket}/${key}`;
+    this.objects.set(path, {
       bytes: Buffer.from(await file.arrayBuffer()),
       mimeType: fields.get('content-type') ?? '',
     });
+    await this.persist(path);
     res.writeHead(204).end();
   }
 
-  private copy(req: IncomingMessage, res: ServerResponse, target: string, header: string) {
+  private async copy(req: IncomingMessage, res: ServerResponse, target: string, header: string) {
     const source = `/${decodeURIComponent(header).replace(/^\//, '')}`;
     this.beforeCopy?.(source);
     const object = this.objects.get(source);
@@ -120,6 +162,7 @@ export class S3Fixture {
         ? String(req.headers['content-type'] ?? '')
         : object.mimeType;
     this.objects.set(target, { bytes: Buffer.from(object.bytes), mimeType });
+    await this.persist(target);
     res
       .writeHead(200, { 'Content-Type': 'application/xml' })
       .end(
@@ -129,6 +172,16 @@ export class S3Fixture {
 
   private async handle(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? '/', this.endpoint);
+    if (req.headers.origin && (!this.options.corsOrigin || req.headers.origin === this.options.corsOrigin)) {
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+      res.setHeader('Access-Control-Allow-Methods', 'POST, GET, HEAD');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+      res.setHeader('Access-Control-Expose-Headers', 'ETag, Content-Length, Content-Range');
+    }
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204).end();
+      return;
+    }
     const copySource = req.headers['x-amz-copy-source'];
     this.requests.push({
       method: req.method ?? '',
@@ -142,11 +195,13 @@ export class S3Fixture {
     if (req.method === 'PUT') {
       const bytes = await buffer(req);
       this.objects.set(url.pathname, { bytes, mimeType: String(req.headers['content-type'] ?? '') });
+      await this.persist(url.pathname);
       res.writeHead(200, { ETag: etag(bytes) }).end();
       return;
     }
     if (req.method === 'DELETE') {
       this.objects.delete(url.pathname);
+      await this.persist(url.pathname);
       res.writeHead(204).end();
       return;
     }

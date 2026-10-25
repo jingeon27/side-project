@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
 import {
+  AvatarUploadInputSchema,
   MediaMimeTypeSchema,
   MediaSizeSchema,
   MediaUploadInputSchema,
   MediaUploadPlanSchema,
 } from './media-upload';
-import { PostMediaSchema, PostMediaUploadSchema } from './post-media';
+import { PostMediaSchema } from './post-media';
 import { ProfileLinksSchema, UpdateProfileInputSchema } from './profile';
 import { RichTextDocumentSchema } from './rich-text';
 
@@ -20,7 +21,7 @@ export {
   postCacheTag,
 } from './cache-revalidation';
 
-export { MediaUploadInputSchema, MediaUploadPlanSchema } from './media-upload';
+export { AvatarUploadInputSchema, MediaUploadInputSchema, MediaUploadPlanSchema } from './media-upload';
 export type { TMediaUploadInput, TMediaUploadPlan } from './media-upload';
 export {
   RichTextDocumentSchema,
@@ -29,12 +30,7 @@ export {
   richTextMediaReferences,
 } from './rich-text';
 export type { TRichTextDocument, TRichTextAttributes } from './rich-text';
-export {
-  PostMediaSchema,
-  PostMediaUploadSchema,
-  PostMediaUrlSchema,
-  RichTextEmbedSchema,
-} from './post-media';
+export { PostMediaSchema, PostMediaUrlSchema, RichTextEmbedSchema } from './post-media';
 export type { TPostMedia, TRichTextEmbed } from './post-media';
 
 export const RegisterPushDeviceSchema = z
@@ -300,7 +296,6 @@ export const ChatAttachmentSchema = z.object({
   url: z.string().regex(/^\/api\/conversations\/[A-Za-z0-9_-]{1,100}\/attachments\/[A-Za-z0-9_-]{1,100}$/),
 });
 export type TChatAttachment = z.infer<typeof ChatAttachmentSchema>;
-export const ChatAttachmentUploadSchema = z.object({ file: z.string().meta({ format: 'binary' }) });
 export const ChatMessageSchema = z.object({
   id: ResponseIdSchema,
   conversationId: ResponseIdSchema,
@@ -373,9 +368,10 @@ export const AppExchangeInputSchema = z
   })
   .strict();
 export const DemoInputSchema = z.object({ nickname: NicknameSchema }).strict();
+export const POST_TITLE_MAX_LENGTH = 60;
 export const PostInputSchema = z
   .object({
-    title: z.string().trim().min(4).max(120),
+    title: z.string().trim().min(4).max(POST_TITLE_MAX_LENGTH),
     body: z.string().trim().min(1).max(10000),
     board: BoardKindSchema.optional(),
     document: RichTextDocumentSchema.nullable().optional(),
@@ -479,8 +475,8 @@ export const schemas = {
   SupportStatusInput: SupportStatusInputSchema,
   SupportThread: SupportThreadSchema,
   PostMedia: PostMediaSchema,
-  PostMediaUpload: PostMediaUploadSchema,
   MediaUploadInput: MediaUploadInputSchema,
+  AvatarUploadInput: AvatarUploadInputSchema,
   MediaUploadPlan: MediaUploadPlanSchema,
   CoachingPricing: CoachingPricingSchema,
   CoachingPricingType: CoachingPricingTypeSchema,
@@ -488,7 +484,6 @@ export const schemas = {
   FriendSaleDetails: FriendSaleDetailsSchema,
   RichTextDocument: RichTextDocumentSchema,
   ChatAttachment: ChatAttachmentSchema,
-  ChatAttachmentUpload: ChatAttachmentUploadSchema,
   AppExchangeInput: AppExchangeInputSchema,
   TestAccount: TestAccountSchema,
   TestAccountList: TestAccountListSchema,
@@ -540,7 +535,6 @@ export type OperationSpec = {
   id: string;
   response: z.ZodType;
   body?: z.ZodType;
-  contentType?: 'multipart/form-data';
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
@@ -558,14 +552,6 @@ export const operations: OperationSpec[] = [
     response: PostMediaSchema,
   },
   { method: 'get', path: '/api/admin/users/{id}', id: 'getAdminUser', response: UserSchema },
-  {
-    method: 'post',
-    path: '/api/post-media',
-    id: 'uploadPostMedia',
-    body: PostMediaUploadSchema,
-    contentType: 'multipart/form-data',
-    response: PostMediaSchema,
-  },
   { method: 'delete', path: '/api/post-media/{id}', id: 'deletePostMedia', response: OkSchema },
   {
     method: 'patch',
@@ -611,10 +597,21 @@ export const operations: OperationSpec[] = [
   },
   {
     method: 'post',
-    path: '/api/profile/avatar',
-    id: 'uploadProfileAvatar',
-    body: PostMediaUploadSchema,
-    contentType: 'multipart/form-data',
+    path: '/api/profile/avatar/uploads',
+    id: 'requestProfileAvatarUpload',
+    body: AvatarUploadInputSchema,
+    response: MediaUploadPlanSchema,
+  },
+  {
+    method: 'delete',
+    path: '/api/profile/avatar/uploads/{id}',
+    id: 'deleteProfileAvatarUpload',
+    response: OkSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/profile/avatar/uploads/{id}/complete',
+    id: 'completeProfileAvatarUpload',
     response: PublicProfileSchema,
   },
   { method: 'delete', path: '/api/profile/avatar', id: 'deleteProfileAvatar', response: PublicProfileSchema },
@@ -681,14 +678,6 @@ export const operations: OperationSpec[] = [
     id: 'sendChatMessage',
     body: ChatMessageInputSchema,
     response: ChatMessageSchema,
-  },
-  {
-    method: 'post',
-    path: '/api/conversations/{id}/attachments',
-    id: 'uploadChatAttachment',
-    body: ChatAttachmentUploadSchema,
-    contentType: 'multipart/form-data',
-    response: ChatAttachmentSchema,
   },
   {
     method: 'post',

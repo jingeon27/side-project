@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
-// API가 sharp(libpng)로 실제 디코딩하므로 청크 CRC까지 올바른 1×1 PNG여야 한다.
+const origin = process.env.GF_E2E_ORIGIN ?? 'http://127.0.0.1:3301';
+// 브라우저가 실제 디코딩하므로 청크 CRC까지 올바른 1×1 PNG여야 한다.
 const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=',
   'base64',
@@ -35,7 +35,12 @@ for (const width of [390, 1440]) {
     await expect
       .poll(() => preview.evaluate((image) => (image as HTMLImageElement).naturalWidth))
       .toBeGreaterThan(0);
+    const uploadResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/profile/avatar/uploads/') && response.url().endsWith('/complete'),
+    );
     await photo.getByRole('button', { name: '사진 저장', exact: true }).click();
+    expect((await uploadResponse).ok()).toBe(true);
     await expect(preview).toBeHidden();
     await expect(page.locator('.settings-profile img')).toHaveCount(1);
     await page.reload();

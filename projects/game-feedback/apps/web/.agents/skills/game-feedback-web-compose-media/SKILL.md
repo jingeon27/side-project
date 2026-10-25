@@ -1,6 +1,6 @@
 ---
 name: game-feedback-web-compose-media
-description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/post-composer), Quill Delta 본문 편집기와 허용 서식, 공개 본문 렌더(RichTextBody), 게시글 사진·동영상 삽입과 채팅 첨부 업로드(S3 직접 전송·PROXY), 실패 시 초안·첨부·재전송 보존, 채팅 입력 키 동작을 만들거나 고칠 때 사용한다.
+description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/post-composer), Quill Delta 본문 편집기와 허용 서식, 공개 본문 렌더(RichTextBody), 게시글 사진·동영상 삽입과 채팅 첨부 업로드(S3 직접 전송), 실패 시 초안·첨부·재전송 보존, 채팅 입력 키 동작을 만들거나 고칠 때 사용한다.
 ---
 
 폼(RHF+Zod `useZodForm`)·mutation 일반 규칙은 프로젝트 `game-feedback-code-style`, 검증은 `game-feedback-test` 스킬을 따른다. 캐시·재전송 키는 `game-feedback-web-server-state` 스킬이다. 저장소 설정·S3 CORS는 `projects/game-feedback/docs/media-upload.md`.
@@ -22,12 +22,13 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 
 ## 업로드 흐름
 
-`uploadMediaFile(file, { reserve, proxy, complete, remove })`(`shared/api/media-upload.ts`)가 게시글·채팅 공용이다.
+`uploadMediaFile(file, { reserve, complete, remove })`(`shared/api/media-upload.ts`)가 게시글·채팅 공용이다.
 
 1. `MediaUploadInputSchema`로 형식(JPEG/PNG/GIF/WebP/MP4/WebM)·25MB를 먼저 검사한다(`INVALID_MEDIA`).
-2. `reserve` → plan. `mode: 'PROXY'`(DATABASE·FILESYSTEM 저장소)면 기존 multipart `proxy()`로 끝난다.
-3. `mode: 'DIRECT'`(S3)면 `plan.fields`를 FormData에 넣고 `file`을 마지막에 추가해 `plan.url`로 POST한다. `credentials: 'omit'`, `redirect: 'error'`, `referrerPolicy: 'no-referrer'`이며 Content-Type 헤더를 직접 넣지 않는다.
+2. `reserve` → `{ id, url, fields, expiresAt }` 계획을 받는다. 로컬 개발·테스트도 S3 대역을 사용하고 저장소 모드 분기는 없다.
+3. `plan.fields`를 FormData에 넣고 `file`을 마지막에 추가해 `plan.url`로 POST한다. `credentials: 'omit'`, `redirect: 'error'`, `referrerPolicy: 'no-referrer'`이며 Content-Type 헤더를 직접 넣지 않는다.
 4. 성공하면 `complete(id)`로 확정한다. S3 전송 실패·확정 실패는 모두 `remove(id)`로 예약을 정리하고 원래 오류를 던진다.
+5. 프로필은 `features/user/api/avatar.api.ts`에서 `prepareAvatar`로 방향·중앙 자르기·512px JPEG 변환 후 같은 전송 함수를 사용한다. 5MB JPEG/PNG/WebP만 받으며 변환 오류는 초안을 보존한다.
 
 - 게시글: `features/post-media/api/post-media.api.ts`의 `uploadMedia` → `uploadPostMediaMutationOptions(userId)` → `widgets/post-composer/model/use-post-media-upload.ts`의 `handleUpload`(`mutateAsync`). Quill 툴바가 숨은 file input을 만들고 받은 `media.url`을 선택 위치에 embed한다. 실패하면 편집기는 아무것도 넣지 않고 mutation 오류만 남는다.
 - 채팅: `features/chat/api/chat.api.ts`의 `uploadAttachment(conversationId, file)` → `uploadChatAttachmentMutationOptions`. 메시지당 파일 하나이며 `upload.data.id`를 `attachmentIds`로 보낸다. 다른 파일로 바꿀 때는 기존 첨부를 `removeChatAttachmentMutationOptions`로 먼저 지운다(`ATTACHMENT_NOT_FOUND`는 성공으로 본다). 첨부가 바뀌거나 대화를 떠나면 effect cleanup이 이전 미전송 첨부를 `discardChatAttachment`(keepalive)로 정리 요청한다.
@@ -42,7 +43,7 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 ## 테스트
 
 - 단위: `src/shared/ui/rich-text/rich-text.spec.tsx`(허용·거부 embed, 붙여넣은 HTML, 실행 가능한 URL), `src/features/post-media/api/post-media.api.spec.ts`·`src/features/chat/api/chat.api.spec.ts`(S3 전송·예약 정리, `fetch` mock).
-- e2e: `e2e/compose.spec.ts`(분류 전환 중 초안 유지), `e2e/community-enhancements.spec.ts`(사진·동영상 삽입, 실패 후 재시도, `page.waitForEvent('filechooser')`), `e2e/chat-media.spec.ts`(`getByLabel('이미지 또는 동영상 첨부').setInputFiles`). e2e API는 S3를 설정하지 않으므로 PROXY 경로를 탄다. 실제 AWS 권한·CORS 수신은 로컬 성공으로 기록하지 않는다.
+- e2e: `e2e/compose.spec.ts`(분류 전환 중 초안 유지), `e2e/community-enhancements.spec.ts`(사진·동영상 삽입, 실패 후 재시도, `page.waitForEvent('filechooser')`), `e2e/chat-media.spec.ts`(`getByLabel('이미지 또는 동영상 첨부').setInputFiles`). e2e API는 loopback S3 대역을 사용하며 브라우저도 직접 전송한다. 실제 AWS 권한·CORS 수신은 로컬 성공으로 기록하지 않는다.
 
 ```sh
 corepack yarn workspace @game-feedback/web test src/shared/ui/rich-text src/features/post-media src/features/chat/api

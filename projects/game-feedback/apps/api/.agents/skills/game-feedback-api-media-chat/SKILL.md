@@ -1,33 +1,20 @@
 ---
 name: game-feedback-api-media-chat
-description: Game Feedback API의 게시글 본문 미디어·채팅 첨부·프로필 사진 저장(DATABASE·FILESYSTEM·S3 드라이버, S3 presigned 직접 업로드 예약·완료, prune 정리)이나 1:1 채팅의 멱등 전송·읽음·기록 삭제 경계, /api/chat/events SSE 무효화 이벤트를 추가·변경·검토할 때 사용한다.
+description: Game Feedback API의 게시글 본문 미디어·채팅 첨부·프로필 사진 저장(S3 presigned 직접 업로드 예약·완료, prune 정리)이나 1:1 채팅의 멱등 전송·읽음·기록 삭제 경계, /api/chat/events SSE 무효화 이벤트를 추가·변경·검토할 때 사용한다.
 ---
 
 S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-upload.md`, 엔드포인트 배치는 `game-feedback-api-endpoint`, 하네스(`S3Fixture`, SSE 읽기)는 `game-feedback-api-test` 스킬을 따른다. 경로는 apps/api 기준이다.
 
 ## 저장소 (`src/media-storage/`)
 
-- 드라이버는 `GF_MEDIA_STORAGE`(`media-storage.config.ts`): `DATABASE`(개발 기본, 행의 `bytes`), `FILESYSTEM`(운영 기본, `GF_MEDIA_DIRECTORY`), `S3`(`GF_S3_*`). 운영은 `DATABASE`와 https가 아닌 S3 endpoint를 거부한다. 파일 행은 `bytes`와 `objectId` 중 하나만 갖는다.
-- `MediaStorage`(`media-storage.service.ts`, `@Global`):
-  - `save`: `MediaObject`(`objects/<uuid>`) 행을 **외부 IO 전에** 만들고 덮어쓰기 없이 쓴다(`wx`, S3 `IfNoneMatch: '*'`). 실패한 업로드도 정리 대상에 남기려는 순서다.
-  - `reserveUpload`: S3일 때만 `staging/<uuid>`에 presigned POST(정확한 `content-length-range`·`Content-Type`, `MEDIA_UPLOAD_TTL_SECONDS` 300초). 아니면 null.
-  - `completeUpload`: HEAD로 크기·타입·ETag 확인 → 같은 ETag로 앞 `MEDIA_SIGNATURE_BYTES`(4KB)만 Range로 읽어 `validateMediaHeader` → **같은 ETag 조건의 CopyObject로 새 `objects/` 키에 확정**(본문을 API로 내려받지 않는다). staging 주소를 재사용해도 확정 파일은 바뀌지 않고, 검사 뒤 바뀌면 412 → 409 `UPLOAD_CHANGED`.
-  - `assertProxyUpload`: S3면 multipart 경로를 409 `DIRECT_UPLOAD_REQUIRED`로 막는다. 컨트롤러는 `ProxyUploadGuard`(`media-work.ts`)로 multer보다 먼저 부른다.
-  - `presignRead`: S3만 `MEDIA_READ_TTL_SECONDS`(60초) GET 주소를 만들고 컨트롤러가 307 + `Referrer-Policy: no-referrer`로 보낸다.
-  - `prune`: 연결 안 된 초안을 24시간 뒤 삭제 → 참조 없는 객체 retire → retire 14일·staging 24시간 지난 객체를 100개씩 삭제. 운영자 `scripts/maintenance.mjs`만 부른다(HTTP 경로 없음).
-- 파일 검증 `src/common/media-file.ts`: 25MB(`MEDIA_FILE_LIMIT`), 매직 바이트로 png·jpeg·gif·webp·mp4·webm을 판별하고 선언 MIME·크기와 같아야 한다(아니면 400 `INVALID_ATTACHMENT`). 채팅은 `src/chat/chat-file.ts`가 같은 함수를 다시 내보낸다.
-- 프로필 사진은 다르다: `ProfileService`(`src/users/profile.service.ts`)가 5MB JPEG·PNG·WebP를 sharp로 512px webp로 다시 인코딩하고, 직접 업로드 경로가 없다.
-
-## 직접 업로드 흐름 (게시글 `src/posts/post-media*`, 채팅 `src/chat/chat-attachment*`)
-
-- 예약 `POST …/uploads`: S3가 아니면 `{ mode: 'PROXY' }` → 클라이언트가 multipart(`POST /api/post-media`, `POST /api/conversations/:id/attachments`)로 보낸다. S3면 `register(…, false)`로 `uploadedAt: null` 행을 만든다.
-- `register`: 사용자 행 `FOR UPDATE` → 24시간 지난 초안 삭제 → 대기 개수 제한(게시글 20개 409 `MEDIA_LIMIT`, 채팅 4개 409 `ATTACHMENT_LIMIT`) → 생성. multipart와 예약이 같은 제한을 쓴다.
-- 완료 `POST …/:id/complete`: 본인·미연결 행만, 이미 `uploadedAt`이 있으면 그대로 반환(멱등), 300초가 지나면 409 `UPLOAD_EXPIRED`. 갱신은 `updateMany({ …, uploadedAt: null, objectId })` 조건이라 동시 완료가 한 번만 반영된다.
-- 연결: `uploadedAt`이 있는 행만 글·메시지에 붙는다. 서비스 필터(`PostMediaService.sync`, `ChatMessageService.send`의 본인·미연결·24시간 조건)와 DB CHECK(`PostMedia_published_upload_ready`, `ChatAttachment_sent_upload_ready`)가 함께 막는다.
-- 본문 참조는 계약 `richTextMediaReferences(document)`가 찾는 `/api/post-media/<id>`뿐이다. `sync`는 글 트랜잭션 안에서 참조를 연결하고(`image/`·`video/` 종류 일치, 개수가 다르면 400 `INVALID_MEDIA`) 그 글에서 참조가 사라진 미디어를 지운다. 글 삭제도 `postMedia`를 지운다.
-- 조회 GET: 게시글 미디어는 미연결이면 업로더만, 연결되면 `ACTIVE_POST` + 제외 작성자 필터. 채팅 첨부는 참여자(`ChatAttachmentGuard`) + 내 기록 경계 안의 메시지 또는 내 미전송 초안. 응답은 `private, no-store`, `Content-Security-Policy: default-src 'none'; sandbox`, Range 206/416, HEAD. 서명 URL을 로그·이벤트에 남기지 않는다.
-- 요청 제한(`src/rate-limit.ts`): multipart와 예약이 `upload:` 분당 20, 완료가 `upload-complete:` 분당 20. 경로를 바꾸면 `src/rate-limit.spec.ts`도 바꾼다.
-- 메모리 상한(`src/media-storage/media-work.ts`): multipart 수신과 프로필 사진 변환은 `@UseInterceptors(MediaWorkInterceptor, FileInterceptor(…))` 순서로 두어 multer가 본문을 읽기 전에 프로세스 슬롯(동시 3, 대기 12, 넘치면 503 `MEDIA_BUSY`)을 잡는다. 새 업로드 경로도 같은 순서를 쓴다.
+- 모든 파일은 `GF_S3_*`로 설정한 비공개 S3에 저장한다. `GF_S3_KEY_PREFIX`는 공유 테스트 버킷의 서비스/개발 경로를 제한한다. 자격 증명 쌍이 없으면 SDK의 기본 체인(AWS_PROFILE·EC2 역할)을 사용한다. DATABASE·FILESYSTEM 드라이버와 API multipart 수신 경로는 없다.
+- `MediaStorage.reserveUpload`는 서버가 생성한 staging 키에 크기·타입을 고정한 5분 presigned POST를 발급한다. `completeUpload`는 HEAD → 동일 ETag로 앞 4KB Range 서명 검사 → 동일 ETag 조건 CopyObject로 새 최종 키에 복사한다. 검증 뒤 변경은 409 `UPLOAD_CHANGED`다. API가 전체 파일을 읽지 않는다.
+- 게시글·채팅 예약은 사용자 행 `FOR UPDATE` 아래 초안 개수 제한을 적용하고 `uploadedAt:null`로 만든다. 완료는 소유권·만료를 확인하고 조건부 갱신해 멱등성을 지킨다. 미완료 파일의 글/메시지 연결은 서비스와 DB CHECK가 함께 막는다.
+- 프로필은 `AvatarUpload` 예약 테이블과 `/api/profile/avatar/uploads`, `/:id/complete`, DELETE `/:id`를 사용한다. 5MB JPEG·PNG·WebP만 허용하며 웹에서 512px JPEG로 변환한다. 서버는 헤더를 검사하고 전체 이미지 디코딩·메타데이터 제거를 보장하지 않는다. 교체와 캐시 무효화는 같은 트랜잭션이다.
+- 조회는 공개 범위·소유권·차단·대화 참여/기록 경계를 확인한 뒤 private/no-store, no-referrer 307로 60초 S3 GET 주소를 발급한다. 유효한 Range는 S3가 처리하며 범위 초과는 API 416이다. HEAD는 DB 메타데이터만 반환한다.
+- `prune`는 24시간 지난 초안/예약 → 참조 없는 객체 retire → 14일 뒤 객체 삭제 순서다. 모든 파일 및 AvatarUpload 참조를 확인한다. 운영자 유지보수만 호출하며 HTTP 경로를 만들지 않는다.
+- 기존 bytes·FILESYSTEM 참조는 오프라인 `migrate-legacy-media.ts`/`scripts/migrate-media.mjs`에서만 읽는다. 기본은 dry-run, `--apply`는 한 파일씩 S3 전송·HEAD·SHA-256 재확인 후 조건부 DB 참조 교체다. 이행 전에 백업하며 원본 파일은 지우지 않는다.
+- rate-limit: 게시글·채팅·프로필 예약은 `upload:` 분당 20, 완료는 `upload-complete:` 분당 20을 공유한다.
 
 ## 채팅 (`src/chat/`)
 
@@ -44,7 +31,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 ## 건드리면 있어야 하는 테스트
 
 - unit: `src/chat/chat-history.spec.ts`, `src/chat/chat-file.test.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
-- integration: `src/posts/post-media-upload.service.integration.spec.ts`·`src/chat/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(FILESYSTEM 저장·초안 소유·Range), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile.service.integration.spec.ts`(사진 정규화·정리).
+- integration: `src/posts/post-media-upload.service.integration.spec.ts`·`src/chat/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
 - 로컬 fixture 성공을 실제 AWS 버킷·CORS·브라우저 업로드 확인으로 기록하지 않는다.
 
 ## 명령 (side 루트)
