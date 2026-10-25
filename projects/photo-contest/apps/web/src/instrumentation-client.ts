@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs';
 
 import { readNativeAppInfo } from '@photo-contest/bridge/web';
 
+import { scrubSentryPerformanceSpan, sentryPerformancePath } from '@/shared/lib/sentry-performance.helper';
 import {
   buildSentryClientTags,
   resolveClientSentryDsn,
@@ -17,11 +18,27 @@ if (dsn) {
     dsn,
     environment: process.env.NODE_ENV,
     dataCollection: SENTRY_DATA_COLLECTION,
-    // 성능 추적은 쓰지 않는다(소스맵·트레이스 업로드 토큰이 없다).
-    tracesSampleRate: 0,
-    traceLifecycle: 'static',
+    tracesSampleRate: 1,
+    integrations: [
+      Sentry.browserTracingIntegration({
+        traceFetch: false,
+        traceXHR: false,
+        enableLongTask: false,
+        enableLongAnimationFrame: false,
+        beforeStartSpan: (options) => ({ ...options, name: sentryPerformancePath(options.name) }),
+      }),
+    ],
+    beforeSendSpan: (span) =>
+      scrubSentryPerformanceSpan({
+        ...span,
+        attributes: {
+          ...span.attributes,
+          service: 'photo-contest',
+          layer: 'browser',
+          ...buildSentryClientTags(readNativeAppInfo(window)),
+        },
+      }),
     beforeSend: scrubSentryEvent,
-    beforeSendTransaction: scrubSentryEvent,
     // 앱이 문서 로드 전에 심은 앱 정보로 앱 WebView와 브라우저 오류를 나눈다.
     initialScope: {
       tags: {
