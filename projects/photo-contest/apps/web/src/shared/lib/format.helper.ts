@@ -7,7 +7,7 @@ const dateTimeFormat = new Intl.DateTimeFormat('ko-KR', {
   hour: 'numeric',
   minute: '2-digit',
   timeZone: SERVICE_TIME_ZONE,
-  hourCycle: 'h12',
+  hourCycle: 'h23',
 });
 const dateFormat = new Intl.DateTimeFormat('ko-KR', {
   year: 'numeric',
@@ -24,7 +24,10 @@ const DAY = 24 * HOUR;
 /** `10월 14일 (화) 오후 3:00` 형태. 서버 시각(ISO)을 서비스 시간대로 보여 준다. */
 export function formatDateTime(iso: string) {
   const parts = dateTimeFormat.formatToParts(new Date(iso));
-  return `${partValue(parts, 'month')}월 ${partValue(parts, 'day')}일 (${partValue(parts, 'weekday')}) ${partValue(parts, 'dayPeriod')} ${partValue(parts, 'hour')}:${partValue(parts, 'minute')}`;
+  const hour = Number(partValue(parts, 'hour')) % 24;
+  // Linux WebKit의 ko-KR dayPeriod는 AM/PM이므로 숫자 시각으로 직접 정한다.
+  const period = hour < 12 ? '오전' : '오후';
+  return `${partValue(parts, 'month')}월 ${partValue(parts, 'day')}일 (${partValue(parts, 'weekday')}) ${period} ${hour % 12 || 12}:${partValue(parts, 'minute')}`;
 }
 
 /** `2026년 10월 14일` */

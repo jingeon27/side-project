@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+const origin = process.env.GF_E2E_WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+
 test('shared controls keep their theme, readable inputs, and usable size on mobile and desktop', async ({
   page,
 }) => {
@@ -24,7 +26,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
     expect(appearance.height).toBeGreaterThanOrEqual(44);
     expect(appearance.background).toBe(appearance.brand);
     await page.request.post('/api/auth/test-token', {
-      headers: { Origin: 'http://127.0.0.1:3301' },
+      headers: { Origin: origin },
       data: { accountId: 'sample-user-0' },
     });
     await page.goto('/ko/settings');
@@ -54,7 +56,7 @@ test('shared controls keep their theme, readable inputs, and usable size on mobi
       fullPage: true,
       animations: 'disabled',
     });
-    await dialog.getByRole('button', { name: '닫기', exact: true }).click();
+    await dialog.getByRole('button', { name: '취소', exact: true }).click();
     await expect(dialog).not.toBeVisible();
     await page.goto('/ko');
     const unanswered = page.getByRole('button', { name: '답변 대기', exact: true });

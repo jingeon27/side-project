@@ -1,5 +1,4 @@
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 
@@ -11,7 +10,7 @@ import {
 } from './database';
 import { loadProjectEnv } from './env';
 import { FAKE_S3_DEFAULTS, startFakeS3 } from './fake-s3';
-import { API_ROOT, PROJECT_ROOT, TSC } from './paths';
+import { API_ROOT, PROJECT_ROOT } from './paths';
 
 /**
  * 격리 스키마와 S3 대역을 만들고 API를 띄운다. SIGTERM/SIGINT를 받으면 API를 멈추고 스키마와 객체 폴더를 지운다.
@@ -31,11 +30,10 @@ async function main() {
   if (!fromData || fromData.startsWith('..') || isAbsolute(fromData))
     throw new Error('PC_E2E_STORAGE_DIR는 projects/photo-contest/.data 아래여야 합니다.');
   const outDir = resolve(API_ROOT, '.e2e-build');
-  const buildConfig = existsSync(resolve(API_ROOT, 'tsconfig.build.json'))
-    ? 'tsconfig.build.json'
-    : 'tsconfig.json';
+  // API의 빌드 스크립트가 공통 런타임 패키지도 준비하도록 맡긴다.
   if (process.env.PC_E2E_SKIP_API_BUILD !== 'true')
-    execFileSync(process.execPath, [TSC, '-p', resolve(API_ROOT, buildConfig), '--outDir', outDir], {
+    execFileSync('corepack', ['yarn', 'workspace', '@photo-contest/api', 'build', '--outDir', outDir], {
+      cwd: PROJECT_ROOT,
       stdio: 'inherit',
     });
   const url = await createIsolatedDatabase(baseUrl, schema);
