@@ -103,7 +103,7 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 | 웹     | `NEXT_PUBLIC_SENTRY_DSN`, 서버는 `SENTRY_DSN` 우선      | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
 | 모바일 | `NEXT_PUBLIC_SENTRY_DSN`                                | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
 
-API Sentry의 실제 수집 확인은 `corepack yarn workspace @side/photo-contest sentry:check`로 한다. 설정한 DSN으로 확인용 이벤트 1건을 보내고 2xx 응답과 eventId를 출력한다. Sentry에서 `verification:configuration-check`, `service:photo-contest` 태그로 찾는다. 브라우저 키는 개발 서버 재시작 또는 운영 웹 재빌드가 필요하다. [부하테스트 예제와 지표](docs/load-testing.md)도 참고한다.
+API Sentry의 실제 수집 확인은 `corepack yarn workspace @side/photo-contest sentry:check`로 한다. 설정한 DSN으로 확인용 이벤트 1건을 보내고 2xx 응답과 eventId를 출력한다. Sentry에서 `verification:configuration-check`, `service:photo-contest` 태그로 찾는다. 브라우저 키는 개발 서버 재시작 또는 운영 웹 재빌드가 필요하다. 웹의 실제 전송·개인정보 제거 검사는 `corepack yarn workspace @photo-contest/web monitoring:check`로 실행한다([모니터링 안내](docs/observability.md)). [부하테스트 예제와 지표](docs/load-testing.md)도 참고한다.
 
 GraphQL IDE는 제공하지 않고 운영에서는 introspection과 오류 stacktrace도 차단한다. 개발에서만 스키마 조회를 허용하며 API의 운영 모드 HTTP 통합 테스트로 확인한다.
 

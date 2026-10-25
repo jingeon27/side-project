@@ -18,6 +18,7 @@ export async function register() {
   // 오류만 수집한다. Next 캐시/사전 렌더링의 span을 자동 계측하지 않는다.
   Sentry.init({
     dsn,
+    initialScope: { tags: { service: 'game-feedback', layer: 'next-server' } },
     defaultIntegrations: false,
     enableOpenTelemetrySetup: false,
     environment: process.env.ENVIRONMENT,

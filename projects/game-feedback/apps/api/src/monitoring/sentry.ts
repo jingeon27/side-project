@@ -1,7 +1,7 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
 const sentryDsn = () => process.env.SENTRY_DSN?.trim();
-const sentryEnvironment = () => process.env.ENVIRONMENT || process.env.ENVIRONMENT;
+const sentryEnvironment = () => process.env.ENVIRONMENT || 'development';
 const sentryRelease = () => process.env.SENTRY_RELEASE;
 const sentryTracesSampleRate = () => 0;
 
@@ -59,6 +59,7 @@ export function sentryOptions(): NodeOptions | undefined {
   if (!dsn) return undefined;
   return {
     dsn,
+    initialScope: { tags: { service: 'game-feedback', layer: 'api' } },
     environment: sentryEnvironment(),
     release: sentryRelease(),
     tracesSampleRate: sentryTracesSampleRate(),

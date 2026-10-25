@@ -43,7 +43,7 @@ describe('sentry.helper', () => {
     expect(scrubbed).not.toHaveProperty('request');
     expect(scrubbed).not.toHaveProperty('user');
     expect(scrubbed).not.toHaveProperty('breadcrumbs');
-    expect(scrubbed.contexts).toEqual({ os: { name: 'iOS' } });
+    expect(scrubbed).not.toHaveProperty('contexts');
     expect(JSON.stringify(scrubbed)).not.toContain('secret');
     expect(scrubbed.tags).toEqual({ client: 'web' });
   });

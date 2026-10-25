@@ -15,6 +15,7 @@ const dsn = resolveClientSentryDsn({ NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PU
 if (dsn)
   Sentry.init({
     dsn,
+    initialScope: { tags: { service: 'game-feedback', layer: 'browser' } },
     environment: process.env.ENVIRONMENT,
     release: resolveSentryRelease({ SENTRY_RELEASE: process.env.SENTRY_RELEASE }),
     dataCollection: SENTRY_DATA_COLLECTION,

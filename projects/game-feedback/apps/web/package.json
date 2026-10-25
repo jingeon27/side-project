@@ -3,16 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3300 --hostname 0.0.0.0",
-    "build": "next build",
-    "start": "next start --port 3300 --hostname 0.0.0.0",
+    "dev": "node ../../../../scripts/run-next.ts dev --port 3300 --hostname 0.0.0.0",
+    "build": "node ../../../../scripts/run-next.ts build",
+    "start": "node ../../../../scripts/run-next.ts start --port 3300 --hostname 0.0.0.0",
     "typecheck": "next typegen && tsc7 --noEmit",
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "test": "node scripts/test.mjs",
     "test:prefetch": "playwright test --config playwright.prefetch.config.ts",
     "test:test-auth": "playwright test --config playwright.test-auth.config.ts",
-    "test:observability": "playwright test --config playwright.observability.config.ts"
+    "test:observability": "playwright test --config playwright.observability.config.ts",
+    "monitoring:check": "playwright test --config playwright.monitoring.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.47.4",
