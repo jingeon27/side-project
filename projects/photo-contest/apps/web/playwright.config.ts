@@ -72,6 +72,7 @@ export default defineConfig({
       stdout: 'pipe',
       stderr: 'pipe',
       env: {
+        NODE_ENV: 'production',
         NEXT_DIST_DIR: '.next/e2e',
         API_URL: `http://127.0.0.1:${API_PORT}`,
         WEB_ORIGIN,

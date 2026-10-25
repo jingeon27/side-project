@@ -32,7 +32,8 @@ test(
           await mkdir('.data/screens', { recursive: true });
           await page.screenshot({
             path: `.data/screens/${testInfo.project.name}-${path === '/' ? 'home' : 'explore'}-${width}.png`,
-            fullPage: true,
+            fullPage: false,
+            scale: 'css',
           });
         }
       }
