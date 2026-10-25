@@ -34,7 +34,8 @@ const apiEnv = {
 };
 
 export default defineConfig({
-  testDir: './test/monitoring',
+  testDir: '.',
+  testMatch: ['test/monitoring/**/*.spec.ts', 'e2e/sentry-web-vitals.spec.ts'],
   workers: 1,
   retries: 0,
   timeout: 90_000,
