@@ -1,3 +1,9 @@
+<Summary>
+
+I needed to wait for both a request and its response in Puppeteer. This is how I handled event ordering, listener cleanup, and timeouts.
+
+</Summary>
+
 In an Electron data collection app, I needed to wait for both Puppeteer's request and response events. The request supplied headers for the next API call; the response supplied a value needed to open a downloaded file. The next task could start only after both were ready.
 
 My first implementation stored the result in an outer variable and checked it once a second.

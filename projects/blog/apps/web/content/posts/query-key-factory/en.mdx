@@ -1,3 +1,9 @@
+<Summary>
+
+I kept query keys and query functions together so callers could choose whether to invalidate a list, a detail query, or a wider cache.
+
+</Summary>
+
 After editing an applicant's memo, I searched the entire repository for strings to find the queries that needed updating. Only the first element of each query key came from an enum. Each call site appended its own detail ID and memo hierarchy. I moved these definitions together so the query function and invalidation scope could be found in the same place.
 
 ```text
@@ -8,7 +14,7 @@ enum CandidateQueryKey {
 useQuery([CandidateQueryKey.Detail, 'detail', candidateId, 'memos'], fetchMemos);
 ```
 
-There were four recurring problems.
+Looking through the call sites, I found several places that had to keep the same decisions in sync.
 
 - String order could differ between call sites.
 - Finding a mutation's invalidation scope required searching the code.
@@ -198,5 +204,5 @@ The built-in helper may suffice for sharing definitions. If several apps need th
 - [TanStack Query: Query Invalidation](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation) — prefix matching by default
 - [TanStack Query: Query Options](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) — sharing keys, functions, and options in v5
 - [TanStack Query: Migrating to TanStack Query v5](https://tanstack.com/query/latest/docs/framework/react/guides/migrating-to-v5) — removing positional overloads
-- Related: [Splitting an Electron collection app at the same company](/en/blog/electron-module-boundaries)
-- Related: [Separating server and browser QueryClients in App Router](/en/blog/nextjs-tanstack-query-ssr) — using v5 queryOptions at my next company
+- Related: [Separating responsibilities in an Electron data-collection app](/en/blog/electron-module-boundaries)
+- Related: [Using TanStack Query with the Next.js App Router](/en/blog/nextjs-tanstack-query-ssr) — using v5 queryOptions at my next company

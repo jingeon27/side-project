@@ -1,3 +1,9 @@
+<Summary>
+
+I connected browser and server errors to Sentry, set reporting policies and severity levels, and verified Web Vitals, MCP access, and release artifacts.
+
+</Summary>
+
 ![Sanitize sensitive data before sending client, server, and edge events.](/images/covers/sentry-observability.png)
 
 *Sanitize sensitive data before sending client, server, and edge events.*
@@ -12,7 +18,7 @@ I introduced Sentry to observe frontend errors and Web Vitals in the benefits po
 - Define levels and grouping by user impact.
 - Gate transmission and sample noise to reduce unnecessary traffic.
 
-Sensitive data took the most work. I initially expected `sendDefaultPii: false` to handle it. The option's apparent meaning differed from what the SDK actually blocked. I followed SDK source and inspected each payload path, revising collection policy repeatedly.
+After adding configuration, I checked what was actually sent: Web Vitals in envelopes, source maps matching deployed files, and sensitive fields in payloads. When an option did not explain the behavior, I followed the SDK source.
 
 This article uses Next.js 16 and @sentry/nextjs 10.70.
 
@@ -54,9 +60,9 @@ Next.js onRequestError receives failures from server component rendering, Route 
 
 Otherwise, one object could become three issues while passing through interceptor, boundary, and onRequestError. captureError adds a non-enumerable symbol; later collection points skip marked objects. Noise deliberately filtered out receives the mark too, preventing it from reappearing as fatal at a boundary.
 
-## sendDefaultPii: false did not exclude token cookies
+## Check the scope of automatic request collection
 
-Despite that setting, the SDK source showed complete request headers and parsed cookies entering event.request, including token cookies renamed sessionToken and renewalToken here.
+In the SDK version examined here, sendDefaultPii: false alone did not block all headers and cookies in event.request. The token cookies renamed sessionToken and renewalToken here could also be included.
 
 The option transformed header/cookie collection into a deny-list object rather than false. requestDataIntegration checked only for false; an object enabled collection without applying the deny list. The filtering existed on the span path only.
 
@@ -145,7 +151,7 @@ Application-supplied context is outside automatic collection restrictions too.
 
 ## Block reading and sanitize before sending
 
-Review found additional leaks because I had verified sendDefaultPii in source, then trusted replacement dataCollection key names without equivalent checks.
+Agent review and SDK-source inspection helped identify more URL and body paths. An option's scope depended on the field and integration handling the request information.
 
 - `urlQueryParams: false` disabled event.request.query_string only. The URL itself still carried its query.
 - The browser lacked the integration applying that option. Defaults attached full location.href and Referer to events and pageload transactions.
@@ -333,7 +339,7 @@ HTTP status alone was insufficient: the same 500 has different effects depending
 | GET supplying screen data | fatal | error |
 | Other calls users can retry | error | warning |
 
-A GET failure can leave a list or detail unusable. A POST or PATCH failure can leave the screen and permit retry. I defined:
+This app uses the table as a default distinction between failed screen-loading queries and actions that can be retried with the screen intact. The method alone does not describe every impact; I also check whether a core action is blocked or an alternative exists.
 
 - fatal: the screen or essential queried content is unavailable
 - error: the screen remains, but the intended action is blocked
@@ -388,7 +394,7 @@ A Sentry waterfall also showed main-banner links prefetching several routes mere
 
 ## Checks for the next configuration change
 
-Leaks appeared where I trusted option names. SDK upgrades or newly enabled features need inspection of real event, breadcrumb, transaction, and span payloads, retaining both read-time restrictions and final sanitization.
+For SDK upgrades and newly enabled features, I inspect the actual event, breadcrumb, transaction, and span payloads. I retain both automatic-collection restrictions and final sanitization.
 
 I verified Web Vitals through envelopes, MCP through actual API calls, and releases through artifact bundles. Configuration and successful transmission remain different checks. User-impact levels and noise policy then make the collected list actionable.
 
@@ -399,5 +405,5 @@ I verified Web Vitals through envelopes, MCP through actual API calls, and relea
 - [Next.js: instrumentation-client.js](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client) — browser initialization and onRouterTransitionStart
 - [getsentry/sentry-javascript](https://github.com/getsentry/sentry-javascript) — requestDataIntegration, sendDefaultPii defaults, and fetch/XHR attributes
 - [getsentry/sentry-mcp](https://github.com/getsentry/sentry-mcp) — the MCP server host option
-- Related: [Following a Bottom Sheet drag crash into the library](/en/blog/bottom-sheet-drag-crash)
-- Related: [Error boundaries that preserve more UI](/en/blog/error-boundary-recovery)
+- Related: [Tracing a Bottom Sheet drag crash with Sentry](/en/blog/bottom-sheet-drag-crash)
+- Related: [Letting failed sections recover with Error Boundaries](/en/blog/error-boundary-recovery)

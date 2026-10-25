@@ -3,5 +3,7 @@
   "/images/posts/plan-gated-ai-workflow/01.jpg": "/images/covers/plan-gated-ai-workflow.png",
   "/images/posts/sentry-observability/01.jpg": "/images/covers/sentry-observability.png",
   "/images/posts/nextjs-server-client-issues/01.jpg": "/images/covers/nextjs-server-client-issues.png",
-  "/images/posts/testing-standards/01.jpg": "/images/covers/testing-standards.png"
+  "/images/posts/testing-standards/01.jpg": "/images/covers/testing-standards.png",
+  "/images/posts/plan-gated-ai-workflow/06.png": "/images/covers/ai-workflow-parallel.png",
+  "/images/posts/plan-gated-ai-workflow/07.png": "/images/covers/ai-workflow-push-gate.png"
 }

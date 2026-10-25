@@ -1,3 +1,9 @@
+<Summary>
+
+I gave server requests and the browser different QueryClient lifetimes, then connected server-prefetched data to client queries.
+
+</Summary>
+
 > This article uses Next.js 15 App Router and TanStack Query v5.
 
 When server prefetching and browser queries share QueryClient creation code, the first question is when to create and reuse an instance. I separated their lifetimes to prevent caches from leaking across requests or disappearing on every render.
@@ -128,7 +134,7 @@ The dehydrated server cache and the client use the same query key, so the first 
 
 ## Choosing how to prefetch
 
-- Use `await prefetchQuery` when data must be in the initial HTML or an error must be handled on the server.
+- Await `prefetchQuery` for data needed in the initial HTML. In v5 it does not throw failures to the caller, so use `fetchQuery` when the server must handle an error directly.
 - To stream pending queries, enable pending dehydration and subscribe with `useSuspenseQuery` inside a Suspense boundary.
 - In either case, create a server QueryClient per request and reuse one QueryClient in the browser.
 

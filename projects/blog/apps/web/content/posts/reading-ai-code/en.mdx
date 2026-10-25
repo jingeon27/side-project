@@ -1,10 +1,16 @@
+<Summary>
+
+After a sprint with many hotfixes, I returned to reading finished changes and tests as well as checking interactions in the running UI.
+
+</Summary>
+
 ![A diagram of reviewing state, request conditions, and tests in changed code.](/images/covers/reading-ai-code.png)
 
 *A diagram of reviewing state, request conditions, and tests in changed code.*
 
 Two sprints ago, I tried focusing on screen behavior without reading the code an agent produced. I thought working behavior would be enough, but many hotfixes followed. Since then, I have been reading diffs again for features and refactoring.
 
-Agents can still produce small features or refactorings that meet my expectations without any edits from me. Accepting code without changing it and accepting it without reading it have turned out to be different decisions.
+Small features and refactorings can already meet my expectations without edits from me. I read and verify those results, then use them as they are. **Not changing code and not reading code are different decisions.**
 
 ## I do not reread every mechanical change line by line
 
@@ -90,7 +96,7 @@ Reading a large diff takes time, but I can use the time while an agent implement
 
 While an agent handles another task or revisions, I read an already submitted diff or follow existing code relevant to the next change. That time helps me understand both code and business context.
 
-In my current work, reading code does not feel as though it stops everything else. Implementation and review can overlap. My review could still become a bottleneck if tasks grow larger or cover unfamiliar areas.
+I can overlap review with another task's implementation, so reading code does not currently feel as though it stops the whole workflow. Larger tasks or unfamiliar areas may require a different review workload.
 
 I also need to understand and explain the change. Fast implementation is not finished work for me if I do not know what changed.
 
@@ -100,7 +106,7 @@ AI has also reduced the effort of reorganizing folders or changing shared compon
 
 I now define the criteria, delegate the implementation, and check whether the submitted result follows them. Applying the same pattern across many files is less burdensome, making larger structural changes more practical.
 
-That makes it easier to keep the repository close to the structure I want: one fitting current product needs, with clear state and data responsibilities and changes that are easy to read and verify. I choose the direction and reread the agent's migration result.
+It has become easier to keep adjusting the repository to product needs, with clear ownership of state and data and changes that are easy to verify. After delegating a migration, I check that its callers follow the intended pattern.
 
 ## Why I maintain readable structure
 
@@ -121,6 +127,6 @@ AI helps me implement quickly and maintain the structure I want. I still decide 
 ## References
 
 - [Every: Compound Engineering](https://every.to/guides/compound-engineering)
-- Related: [Better AI code has not made me less busy](/en/blog/plan-gated-ai-workflow)
-- Related: [The testing criteria I rebuilt](/en/blog/testing-standards)
-- Related: [What I missed while fixing a Bottom Sheet drag crash](/en/blog/bottom-sheet-drag-crash)
+- Related: [The development workflow I refined with coding agents](/en/blog/plan-gated-ai-workflow)
+- Related: [The standards I developed while introducing tests](/en/blog/testing-standards)
+- Related: [Tracing a Bottom Sheet drag crash with Sentry](/en/blog/bottom-sheet-drag-crash)

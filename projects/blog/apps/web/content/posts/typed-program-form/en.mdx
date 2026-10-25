@@ -1,3 +1,9 @@
+<Summary>
+
+Two admin apps shared program inputs but had different submission flows. I separated field types and API transformations while deciding what to share.
+
+</Summary>
+
 Hospital administrators register programs and request review. Back-Office staff inspect those requests and approve or reject them. They work on the same programs, so many inputs overlap, but submission does different things.
 
 Initially, the two apps had separate FormItems. Inputs such as recommended patients, treatment equipment, and precautions also appeared in the sub-treatment template editor. Changing a shared input meant checking whether every screen had been updated.

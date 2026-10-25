@@ -1,4 +1,12 @@
 {
+  "/images/covers/ai-workflow-parallel.png": {
+    "width": 1520,
+    "height": 1312
+  },
+  "/images/covers/ai-workflow-push-gate.png": {
+    "width": 1520,
+    "height": 1982
+  },
   "/images/covers/nextjs-server-client-issues.png": {
     "width": 1280,
     "height": 720

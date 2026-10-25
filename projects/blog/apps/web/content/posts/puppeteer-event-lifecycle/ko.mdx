@@ -1,3 +1,9 @@
+<Summary>
+
+Puppeteer에서 요청과 응답을 함께 기다리며 리스너 정리, 타임아웃과 이벤트 순서를 맞춘 과정을 정리했어요.
+
+</Summary>
+
 Electron 수집 앱에서 Puppeteer의 request와 response 이벤트를 함께 기다려야 했다. request에서는 다음 API 호출에 쓸 header를, response에서는 내려받은 파일을 여는 데 필요한 값을 얻었다. 두 이벤트가 모두 끝나야 다음 작업을 시작할 수 있었다.
 
 처음에는 외부 변수에 값을 넣고 1초마다 확인했다.
@@ -24,7 +30,7 @@ while (result === undefined) {
 - request와 response callback이 같은 변수를 덮어쓸 수 있었다.
 - listener를 등록하기 전에 reload하면 빠른 이벤트를 놓칠 수 있었다.
 
-이벤트를 기다리는 작업을 Promise로 묶고, 성공·실패·시간 초과 어느 경로로 끝나든 listener를 해제하도록 바꿨다.
+이벤트를 기다리는 작업을 Promise로 묶고, 성공, 실패, 시간 초과 어느 경로로 끝나든 listener를 해제하도록 바꿨다.
 
 ## 이벤트를 기다리는 공통 함수
 

@@ -1,3 +1,9 @@
+<Summary>
+
+I split error boundaries so a failed query would not replace the whole screen, alongside response validation, error reporting, and retry behavior.
+
+</Summary>
+
 When one list API failed in hospital admin, the side menu and header disappeared too. A single app-root Error Boundary caught every query error. Users could neither navigate to working menus nor retry only the failed query.
 
 During maintenance, I also encountered three mismatches between response types and actual values. A new enum member or null passed TypeScript assumptions and failed during rendering. Logs contained only message and stack, making the responsible app and screen difficult to locate.
@@ -73,7 +79,7 @@ Reducing an error boundary's scope means reducing what one failure takes away fr
 
 I defined composition rules before applying boundaries.
 
-**Pages do not query.** Routes render breadcrumbs, tabs, filters, and detail declarations. Self-fetching XxxListViews own data and sit inside section boundaries.
+**Move client queries inside the region that should recover.** Routes in src/app compose the screen, while self-fetching XxxListViews sit below section boundaries. This does not prohibit server-component prefetching or queries in the FSD pages layer.
 
 **URL-opened details belong in routes.** If a detail is inside a list, a list failure removes it too. antd Tabs with destroyOnHidden can likewise unmount it. I moved 20 URL-opened details into routes because they have a different recovery lifetime.
 
@@ -343,7 +349,7 @@ Machine-decidable checks moved to ESLint. The first branch plugin was not merged
 | query/no-passthrough-hook | Hooks that only return useQuery without adding behavior | error |
 | no-restricted-imports | Direct overlay-kit overlay imports bypassing boundaries | error |
 
-The first encodes “pages do not query.” Route-level querying prevents a table-only section fallback because the failure occurs above it.
+The first rule governs route composition: a client query hook called in src/app fails above the section boundary. To replace only the table, the querying component needs to be inside that boundary.
 
 Enforcement also took revisions. A shared only-warn plugin lowered all errors, so adding rules initially could not fail CI. I removed it the next day and explicitly assigned severity. app/no-query was set to warning. The passthrough-hook rule became an error only after violations reached zero. The central no-query rule still does not block CI.
 
@@ -361,5 +367,5 @@ Errors have not disappeared. Their impact has narrowed from an app to a route bo
 - [Zod: safeParse and errors](https://zod.dev/basics?id=handling-errors)
 - [Zod: .catch()](https://zod.dev/api?id=catch)
 - [Next.js: productionBrowserSourceMaps](https://nextjs.org/docs/app/api-reference/config/next-config-js/productionBrowserSourceMaps)
-- Related: [Declarative code](/en/blog/declarative-code) — compound search filters
-- Related: [Different Zod policies at different boundaries](/en/blog/zod-assertion-boundaries) — response observation and validation by source
+- Related: [How I write declarative code](/en/blog/declarative-code) — compound search filters
+- Related: [Runtime validation beyond type assertions](/en/blog/zod-assertion-boundaries) — response observation and validation by source
