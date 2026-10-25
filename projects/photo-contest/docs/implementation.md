@@ -173,7 +173,7 @@ Post·PostUpload·PostLike를 추가했다. 기존 Contest·Submission은 데이
 
 ## 공개 탐색·가입 승인·SEO
 
-`/explore`에서 로그인 없이 그룹 이름을 검색한다. 그룹 생성은 로그인 후 공개·비공개를 선택하며 기본값은 공개다. 기존 그룹은 새 마이그레이션의 PRIVATE default로 비공개를 유지한다. 공개 그룹의 게시물·미디어·댓글은 익명으로 읽고 로그인 후 바로 가입한다. 비공개 그룹은 GroupJoinRequest를 만들고 OWNER·MODERATOR가 수락·거절한다. 초대 토큰도 같은 정책을 적용하므로 비공개 승인을 우회하지 않는다. 이름·공개 여부·멤버 수는 탐색에 표시하지만 비멤버의 inviteToken·role은 null, members는 빈 배열이다.
+`/sign`에서 익명 또는 회원 세션을 만든 뒤 `/explore`에서 그룹 이름을 검색한다. 세션 없는 콘텐츠 화면은 인증 화면으로 보낸다. 그룹 생성은 로그인 후 공개·비공개를 선택하며 기본값은 공개다. 기존 그룹은 새 마이그레이션의 PRIVATE default로 비공개를 유지한다. 익명 세션도 공개 그룹의 게시물·미디어·댓글을 읽고 바로 가입한다. 비공개 그룹은 익명 이용 불가 모달을 확인한 뒤 로그인한다. 비공개 그룹은 GroupJoinRequest를 만들고 OWNER·MODERATOR가 수락·거절한다. 초대 토큰도 같은 정책을 적용하므로 비공개 승인을 우회하지 않는다. 이름·공개 여부·멤버 수는 탐색에 표시하지만 비멤버의 inviteToken·role은 null, members는 빈 배열이다.
 
 가입·신청은 복합 unique와 Serializable 트랜잭션으로 중복을 막고 역할을 유지한다. 수락은 멤버 생성·가입 이벤트·신청 삭제를 함께 처리한다. 읽기 권한은 readableGroup/readablePost, 활동과 기존 대회는 기존 멤버 전용 권한으로 나눈다. 대기 중인 그룹은 MY에 넣지 않는다. 승인 상태 조회는 부모의 useBackgroundQuery refetch가 소유하여 Suspense QueryRef를 갱신하고, 승인 뒤 처음 등장하는 비공개 피드와 관리자 신청 목록은 ClientOnly로 조회한다.
 
