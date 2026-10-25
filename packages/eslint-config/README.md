@@ -34,7 +34,7 @@ ESLint flat config는 같은 이름의 플러그인을 다른 객체로 다시 �
 
 spec은 `createFixtures(import.meta.dirname)`로 자기 폴더의 `__fixtures__`만 읽습니다. FSD 규칙은 `__fixtures__`를 앱의 `src`로 보고 `srcDir`에 넘깁니다. 둘 이상의 규칙이 같은 fixture를 읽게 되면 그 분류 폴더(예: `rules/fsd/__fixtures__`)로 올립니다.
 
-Next 웹은 `nextConfig`와 `fsdBoundaries(srcDir)`, Expo 모바일은 `expoConfig`와 `fsdBoundaries`, Vite 관리자(GF admin)는 `reactDomConfig`와 `fsdBoundaries`, design-system은 `reactDomConfig`, photo-contest와 game-feedback의 API·공용 패키지·프로젝트 스크립트는 각 프로젝트 루트 설정의 `baseConfig`, migration-check는 자기 설정의 `baseConfig`를 사용합니다. blog 웹은 아직 자체 `eslint.config.mjs`를 쓰고, `typescript-config`에는 lint할 소스가 없습니다. 프레임워크별 심각도와 테스트 예외(`testOverrides`)는 해당 preset이나 앱 설정에서 관리합니다.
+Next 웹은 `nextConfig`와 `fsdBoundaries(srcDir)`, Expo 모바일은 `expoConfig`와 `fsdBoundaries`, Vite 관리자(GF admin)는 `reactDomConfig`와 `fsdBoundaries`, design-system은 `reactDomConfig`, photo-contest와 game-feedback의 API·공용 패키지·프로젝트 스크립트는 각 프로젝트 루트 설정의 `baseConfig`, migration-check는 자기 설정의 `baseConfig`를 사용합니다. blog 웹은 아직 자체 `eslint.config.ts`를 쓰고, `typescript-config`에는 lint할 소스가 없습니다. 프레임워크별 심각도와 테스트 예외(`testOverrides`)는 해당 preset이나 앱 설정에서 관리합니다.
 
 FSD 규칙이 막는 것은 위 레이어 import(`fsd/layer-imports`), 다른 slice의 내부 파일·자기 배럴 import(`fsd/slice-public-api`), 화면 slice끼리의 import(`fsd/no-cross-page`)입니다. 같은 레이어의 다른 slice(`features` → `features`, `widgets` → `widgets`)를 배럴로 가져오는 것은 막지 않습니다. photo-contest mobile의 "기능끼리 import하지 않는다" 같은 앱 규칙은 리뷰로 지킵니다.
 
