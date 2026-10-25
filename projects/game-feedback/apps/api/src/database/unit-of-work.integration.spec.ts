@@ -49,7 +49,7 @@ const postData = (authorId: string, id: string = randomUUID()) => ({
 
 describe('Game Feedback DB와 업무 트랜잭션', () => {
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL!);
+    const url = new URL(process.env.DATABASE_URL!);
     url.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
     const migration = spawnSync(

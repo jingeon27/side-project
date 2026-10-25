@@ -17,7 +17,7 @@ export function resolveIdentityProviders(
     return {
       clientId,
       clientSecret,
-      redirectUri: process.env[`${prefix}_REDIRECT_URI`] ?? `${webOrigin}${callback}`,
+      redirectUri: `${webOrigin}${callback}`,
     };
   };
   const googleClient = configured('GOOGLE', '/api/auth/google/callback');

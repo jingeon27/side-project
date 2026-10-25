@@ -24,16 +24,12 @@ describe('app login callback target', () => {
       expect(resolveAppAuthCallbackUrl(configured, ORIGIN, false), configured).toBe(CALLBACK);
   });
 
-  it('refuses to start production without the exact callback instead of falling back', () => {
+  it('derives the production callback and rejects an explicitly unsafe target', () => {
     expect(resolveAppAuthCallbackUrl(CALLBACK, ORIGIN, true)).toBe(CALLBACK);
-    for (const configured of [
-      undefined,
-      '',
-      'gamefeedback://auth/callback',
-      'https://other.test/app-auth/callback',
-    ])
+    expect(resolveAppAuthCallbackUrl(undefined, ORIGIN, true)).toBe(CALLBACK);
+    for (const configured of ['', 'gamefeedback://auth/callback', 'https://other.test/app-auth/callback'])
       expect(() => resolveAppAuthCallbackUrl(configured, ORIGIN, true), String(configured)).toThrow(
-        `Production requires MOBILE_AUTH_CALLBACK_URL=${CALLBACK}`,
+        `App login callback must be ${CALLBACK}`,
       );
   });
 });

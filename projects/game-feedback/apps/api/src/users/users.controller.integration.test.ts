@@ -21,7 +21,7 @@ import {
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+const testDatabaseUrl = process.env.DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
 const requesterId = 'sample-user-0';
@@ -368,14 +368,14 @@ describe.skipIf(!testDatabaseUrl)(
         .set('Origin', origin)
         .send({ accountId: adminId })
         .expect(404);
-      const previous = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      const previous = process.env.ENVIRONMENT;
+      process.env.ENVIRONMENT = 'production';
       try {
         await expect(createApp({ databaseUrl, demoMode: true, prisma: db })).rejects.toThrow(
           /forbidden in production/i,
         );
       } finally {
-        process.env.NODE_ENV = previous;
+        process.env.ENVIRONMENT = previous;
       }
     });
 

@@ -24,7 +24,7 @@ import { migrateLegacyMedia } from './migrate-legacy-media';
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
 const schema = `gf_test_production_${randomBytes(8).toString('hex')}`;
-const target = new URL(process.env.TEST_DATABASE_URL ?? 'http://unused');
+const target = new URL(process.env.DATABASE_URL ?? 'http://unused');
 target.searchParams.set('schema', schema);
 
 describe('persistent private media and SSH operator sessions', () => {

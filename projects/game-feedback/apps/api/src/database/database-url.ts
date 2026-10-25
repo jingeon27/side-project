@@ -1,4 +1,4 @@
-export function assertDatabaseUrl(value: string | undefined, env = process.env.NODE_ENV) {
+export function assertDatabaseUrl(value: string | undefined, env = process.env.ENVIRONMENT) {
   if (!value) throw new Error('DATABASE_URL is required.');
   const parsed = new URL(value);
   if (!['postgresql:', 'postgres:'].includes(parsed.protocol))

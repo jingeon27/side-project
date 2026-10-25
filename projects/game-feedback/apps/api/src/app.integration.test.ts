@@ -14,7 +14,7 @@ import { assertDatabaseUrl, DemoProfileProvider, type IdentityProvider } from '.
 import { seed } from './seed';
 import { responseLocation } from './testing/http-response';
 
-const baseUrl = process.env.TEST_DATABASE_URL;
+const baseUrl = process.env.DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
 type TRecord = { id: string };

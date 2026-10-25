@@ -1,7 +1,7 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
 const sentryDsn = () => process.env.SENTRY_DSN?.trim();
-const sentryEnvironment = () => process.env.ENVIRONMENT || process.env.NODE_ENV;
+const sentryEnvironment = () => process.env.ENVIRONMENT || process.env.ENVIRONMENT;
 const sentryRelease = () => process.env.SENTRY_RELEASE;
 const sentryTracesSampleRate = () => 0;
 

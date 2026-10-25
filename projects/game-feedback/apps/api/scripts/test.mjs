@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { guardDatabaseUrl } from '../../../scripts/database-guard.mjs';
-import { assertNode, environment, projectDir, yarn } from '../../../scripts/env.mjs';
+import { assertNode, environment, projectDir, testDatabaseUrl, yarn } from '../../../scripts/env.mjs';
 import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../src/testing/s3-fixture.ts';
 
 const require = createRequire(import.meta.url);
@@ -22,24 +22,19 @@ const env = {
   ...configured,
   NODE_ENV: 'test',
   ENVIRONMENT: 'test',
-  GF_CACHE_REVALIDATION_SECRET: '',
-  GF_CACHE_REVALIDATION_URL: '',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',
   NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
-  DATABASE_URL: configured.TEST_DATABASE_URL,
-  GF_DEMO_MODE: 'false',
+  DATABASE_URL: testDatabaseUrl,
   GOOGLE_CLIENT_ID: '',
   GOOGLE_CLIENT_SECRET: '',
   KAKAO_CLIENT_ID: '',
   KAKAO_CLIENT_SECRET: '',
   DISCORD_CLIENT_ID: '',
   DISCORD_CLIENT_SECRET: '',
-  GF_TEST_AUTH_ENABLED: 'false',
   SUPERCELL_API_TOKEN: '',
   PUSH_NOTIFICATIONS_ENABLED: 'false',
   EXPO_ACCESS_TOKEN: '',
-  MOBILE_AUTH_CALLBACK_URL: '',
 };
 
 async function run(script, args) {
@@ -65,7 +60,7 @@ try {
     GF_S3_SECRET_ACCESS_KEY: S3_FIXTURE_CREDENTIALS.secretAccessKey,
     GF_S3_KEY_PREFIX: '',
   });
-  if (!unitOnly) guardDatabaseUrl(env.TEST_DATABASE_URL, { test: true });
+  if (!unitOnly) guardDatabaseUrl(env.DATABASE_URL, { test: true });
   await yarn(['workspace', '@side/push-notifications', 'build'], env);
   await yarn(['workspace', '@game-feedback/contracts', 'build'], env);
   await yarn(['workspace', '@game-feedback/api', 'db:generate'], env);

@@ -25,7 +25,7 @@ describe('세션에 연결한 앱 푸시', () => {
   let db: PrismaClient;
   const schema = `gf_test_push_${randomBytes(8).toString('hex')}`;
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const url = new URL(process.env.DATABASE_URL ?? '');
     url.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
     const result = spawnSync(

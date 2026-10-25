@@ -8,10 +8,10 @@ const { assertDatabaseUrl } = require('../dist/database/database-url.js');
 const { sharedDatabaseUrl } = require('../dist/config/shared-instance.config.js');
 const { PrismaClient } = require('../dist/generated/prisma/index.js');
 const { seed } = require('../dist/seed.js');
-if (process.env.NODE_ENV !== 'production')
+if (process.env.ENVIRONMENT !== 'production')
   throw new Error('Production migration requires NODE_ENV=production.');
-validateProductionEnvironment(process.env);
-const shared = process.env.DEPLOYMENT_TARGET === 'shared-instance';
+validateProductionEnvironment(process.env, true);
+const shared = Boolean(URL.parse(process.env.DATABASE_URL ?? '')?.hostname.endsWith('.rds.amazonaws.com'));
 const databaseUrl = shared
   ? sharedDatabaseUrl(process.env, true)
   : assertDatabaseUrl(process.env.DATABASE_URL);

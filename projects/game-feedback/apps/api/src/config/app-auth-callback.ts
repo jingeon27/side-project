@@ -25,14 +25,15 @@ export function parseAppAuthCallbackUrl(value: string | undefined, webOrigin: st
 
 /**
  * 앱 로그인 코드를 보낼 콜백 URL. 커스텀 스킴으로는 보내지 않는다.
- * 운영은 `MOBILE_AUTH_CALLBACK_URL`이 WEB_ORIGIN의 콜백 경로가 아니면 시작을 멈추고, 개발·테스트는 기본값을 쓴다.
+ * 기본값은 WEB_ORIGIN에서 파생한다. 테스트의 명시적 대상도 같은 origin·경로만 허용한다.
  */
 export function resolveAppAuthCallbackUrl(value: string | undefined, webOrigin: string, production: boolean) {
+  if (value === undefined) return `${webOrigin}${APP_AUTH_CALLBACK_PATH}`;
   const configured = parseAppAuthCallbackUrl(value, webOrigin);
   if (configured) return configured;
   if (production)
     throw new Error(
-      `Production requires MOBILE_AUTH_CALLBACK_URL=${webOrigin}${APP_AUTH_CALLBACK_PATH} (same origin as WEB_ORIGIN).`,
+      `App login callback must be ${webOrigin}${APP_AUTH_CALLBACK_PATH} (same origin as WEB_ORIGIN).`,
     );
   return `${webOrigin}${APP_AUTH_CALLBACK_PATH}`;
 }

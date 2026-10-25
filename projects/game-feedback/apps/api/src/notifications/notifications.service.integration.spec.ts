@@ -29,7 +29,7 @@ describe('게시물과 채팅의 통합 알림', () => {
   let db: PrismaClient;
   const schema = `gf_test_chat_notifications_${randomBytes(8).toString('hex')}`;
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const url = new URL(process.env.DATABASE_URL ?? '');
     url.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(url.toString(), 'test');
     const result = spawnSync(

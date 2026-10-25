@@ -44,7 +44,7 @@ describe('author deletion of moderated content', () => {
   }
 
   beforeAll(async () => {
-    const target = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const target = new URL(process.env.DATABASE_URL ?? '');
     target.searchParams.set('schema', schema);
     const databaseUrl = assertDatabaseUrl(target.toString(), 'test');
     const result = spawnSync(

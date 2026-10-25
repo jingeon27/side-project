@@ -62,7 +62,7 @@ describe('comment threads with deployed PostgreSQL migrations', () => {
   }
 
   beforeAll(async () => {
-    const url = new URL(process.env.TEST_DATABASE_URL ?? '');
+    const url = new URL(process.env.DATABASE_URL ?? '');
     schema = `gf_test_comment_replies_${randomBytes(8).toString('hex')}`;
     url.searchParams.set('schema', schema);
     const databaseUrl = url.toString();

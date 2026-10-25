@@ -1,35 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { resolveCacheRevalidationConfig } from './cache-invalidation.config';
 
-const configured = {
-  GF_CACHE_REVALIDATION_SECRET: 'cache-test-secret-'.repeat(3),
-  GF_CACHE_REVALIDATION_URL: 'http://web:3300/internal/cache/revalidate',
-};
+vi.mock('../config/runtime-secret', () => ({ ensureRuntimeSecret: () => 'a'.repeat(64) }));
+
 describe('cache callback configuration', () => {
-  it('permits an unconfigured isolated test API and a configured private container callback', () => {
-    expect(resolveCacheRevalidationConfig({ NODE_ENV: 'test' })).toBeUndefined();
-    expect(resolveCacheRevalidationConfig(configured)).toEqual({
-      url: configured.GF_CACHE_REVALIDATION_URL,
-      secret: configured.GF_CACHE_REVALIDATION_SECRET,
+  it('isolates tests and derives the local callback from WEB_ORIGIN', () => {
+    expect(resolveCacheRevalidationConfig({ ENVIRONMENT: 'test' })).toBeUndefined();
+    expect(resolveCacheRevalidationConfig({ WEB_ORIGIN: 'http://localhost:3300' })).toEqual({
+      url: 'http://localhost:3300/internal/cache/revalidate',
+      secret: 'a'.repeat(64),
     });
   });
-  it.each([
-    { NODE_ENV: 'production' },
-    { ...configured, GF_CACHE_REVALIDATION_SECRET: 'short' },
-    { ...configured, GF_CACHE_REVALIDATION_URL: 'file:///etc/passwd' },
-    { ...configured, GF_CACHE_REVALIDATION_URL: 'http://user:password@web/internal/cache/revalidate' },
-    { ...configured, GF_CACHE_REVALIDATION_URL: 'http://web/internal/cache/revalidate?secret=leak' },
-    { ...configured, GF_CACHE_REVALIDATION_URL: 'http://web/api/posts' },
-    // 경로를 옮기기 전 설정이 남아 있으면 콜백이 404로 계속 재시도되지 않게 시작할 때 막는다.
-    { ...configured, GF_CACHE_REVALIDATION_URL: 'http://web:3300/_internal/cache/revalidate' },
-  ])('rejects incomplete or unsafe callback configuration without printing credentials', (env) => {
-    expect(() => resolveCacheRevalidationConfig(env)).toThrow();
-    try {
-      resolveCacheRevalidationConfig(env);
-    } catch (error) {
-      expect(String(error)).not.toContain(configured.GF_CACHE_REVALIDATION_SECRET);
-      expect(String(error)).not.toContain('user:password');
-    }
+  it('keeps production callbacks on the private service network', () => {
+    expect(
+      resolveCacheRevalidationConfig({ ENVIRONMENT: 'production', WEB_ORIGIN: 'https://game.example' }),
+    ).toMatchObject({ url: 'http://gf-web:3300/internal/cache/revalidate' });
   });
+  it.each(['file:///etc/passwd', 'https://user:password@web', 'https://web/?secret=leak'])(
+    'rejects unsafe origins without printing their contents',
+    (WEB_ORIGIN) => expect(() => resolveCacheRevalidationConfig({ WEB_ORIGIN })).toThrow('WEB_ORIGIN'),
+  );
 });

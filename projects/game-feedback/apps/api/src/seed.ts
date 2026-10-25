@@ -41,7 +41,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
     create: { id: 'clash-royale', slug: 'clash-royale', name: '클래시로얄' },
   });
   if (!demoMode) return;
-  if (process.env.NODE_ENV === 'production') throw new Error('Sample data is forbidden in production.');
+  if (process.env.ENVIRONMENT === 'production') throw new Error('Sample data is forbidden in production.');
   const category = await db.category.findUniqueOrThrow({ where: { slug: 'clash-royale' } });
   const names = ['새벽의호그', '아레나산책', '메가나이트', '덱연구소', '로얄메이트', '느긋한라바'];
   const authors = [];
@@ -223,7 +223,7 @@ export async function seed(db: PrismaClient, demoMode = false) {
 }
 if (require.main === module) {
   const db = new PrismaClient({ adapter: createPrismaAdapter(assertDatabaseUrl(process.env.DATABASE_URL)) });
-  seed(db, process.env.GF_DEMO_MODE === 'true' || process.env.GF_TEST_AUTH_ENABLED === 'true')
+  seed(db, process.argv.includes('--fixtures'))
     .then(() => console.log('Game Feedback seed complete (existing content preserved).'))
     .finally(() => db.$disconnect())
     .catch((error) => {

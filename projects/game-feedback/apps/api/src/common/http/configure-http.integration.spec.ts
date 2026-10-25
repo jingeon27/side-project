@@ -12,7 +12,7 @@ class HttpFixtureModule {}
 afterEach(() => vi.unstubAllEnvs());
 
 const createFixture = async (environment: string) => {
-  vi.stubEnv('NODE_ENV', environment);
+  vi.stubEnv('ENVIRONMENT', environment);
   const app = await NestFactory.create(HttpFixtureModule, createHttpAdapter(), { logger: false });
   configureHttp(app);
   // 이후에 문서 제공자가 등록되어도 운영 HTTP 설정이 먼저 요청을 막아야 한다.

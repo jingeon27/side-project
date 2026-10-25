@@ -15,7 +15,7 @@ import { PrismaClient } from '../generated/prisma';
 import { responseLocation } from '../testing/http-response';
 import { OAUTH_RETURN_COOKIE } from './oauth-return-path';
 
-const target = process.env.TEST_DATABASE_URL;
+const target = process.env.DATABASE_URL;
 const origin = 'http://localhost:3300';
 const require = createRequire(import.meta.url);
 
@@ -149,7 +149,6 @@ describe.skipIf(!target)('OAuth 가입 화면과 원래 목적지 복귀', () =>
 
   it('Google subject 설정이 남아 있어도 가입·로그인으로 승격하지 않고 운영자 CLI로만 관리자 권한을 부여해야 한다', async () => {
     const subject = 'operator-bootstrap-removed';
-    vi.stubEnv('GF_ADMIN_GOOGLE_SUB', subject);
     try {
       const agent = supertest.agent(app.getHttpServer());
       const signIn = async () => {
