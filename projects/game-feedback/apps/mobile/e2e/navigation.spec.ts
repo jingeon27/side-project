@@ -170,7 +170,9 @@ test('coaching and general-board deep links preserve the game and return to its 
     headers: { Origin: ORIGIN },
     data: { accountId: 'sample-test-admin' },
   });
-  const categoryResponse = await page.request.post('/api/admin/categories', {
+  const adminApi = new URL('/api/admin/categories', ORIGIN);
+  adminApi.port = String(Number(adminApi.port) + 1000);
+  const categoryResponse = await page.request.post(adminApi.toString(), {
     headers: { Origin: ORIGIN },
     data: { slug, name: '네이티브 테스트 게임' },
   });
