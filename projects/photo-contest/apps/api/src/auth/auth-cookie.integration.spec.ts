@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
 import {
@@ -76,16 +76,5 @@ describe('운영 인증 쿠키', () => {
     expect(logout.status).toBe(200);
     expect(isClearingCookie(findSetCookie(logout, '__Host-contest_session') ?? '')).toBe(true);
     expect(await me(cookiePair(issued))).toBeNull();
-  });
-
-  it('OAuth state 쿠키도 __Host- 이름의 Secure 쿠키여야 한다', async () => {
-    vi.stubEnv('GOOGLE_CLIENT_ID', 'host-cookie-google');
-    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'host-cookie-secret');
-    const start = await api.http().get('/auth/google');
-    expect(start.status).toBe(302);
-    expect(findSetCookie(start, 'contest_oauth_state')).toBeUndefined();
-    expect(cookieAttributes(findSetCookie(start, '__Host-contest_oauth_state') ?? '')).toEqual(
-      expect.arrayContaining(['Path=/', 'HttpOnly', 'Secure']),
-    );
   });
 });

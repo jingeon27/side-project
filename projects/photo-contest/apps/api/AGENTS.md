@@ -10,13 +10,13 @@
 | `config/` | `env.ts`(호출할 때마다 읽는 getter), `limits.ts`(모든 숫자 한도), `paths.ts`(package.json 기준 API·프로젝트 루트) |
 | `common/` | `errors.ts`(fail·ERROR_CODE·HTTP 매핑), `validation.ts`, `crypto.ts`, `http/`(cookie-header 파서, Origin 검사, no-store, 예외 필터), `graphql/`(DateTime, context, Apollo 옵션) |
 | `database/` · `storage/` | 전역 모듈. `Database.atomic()`(Serializable 재시도), 비공개 S3 미디어 저장소(서명 POST·서명 GET·HEAD·DELETE만, 파일 바이트를 다루지 않는다) |
-| `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·개발 로그인·로그아웃·OAuth·앱 로그인 교환, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `profile/`은 개인 사진 S3 업로드·프로필 편집·가입 설정 완료, `@Viewer()`/`@OptionalViewer()` |
+| `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·익명 세션·로그아웃, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `profile/`은 개인 사진 S3 업로드·프로필 편집·가입 설정 완료, `@Viewer()`/`@OptionalViewer()` |
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·presigned 대회 업로드 발급·완료·사진 조회(`GET /photos/:id` 307) |
 | `media-upload/` | 게시물·대회·대표 사진의 최종 키 서명 발급, 소유권·만료·용도 확인, HEAD로 크기·형식을 본 뒤 완료 |
 | `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 60초 서명 GET으로 보내는 `/media/:id` 307 |
 | `feed/` | `myPhotoFeed`: 가입한 모든 그룹의 공개 사진을 전체 최신순(createdAt·id desc)으로 offset 조회. 홈에는 관리자도 숨긴 사진·신고 정보를 받지 않는다 |
 | `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·OAuth 시도·앱 로그인 티켓) — 테스트는 `SchedulerService.runOnce()` |
-| `testing/` | NODE_ENV=test와 ENABLE_TEST_API=true에서만 사용자·세션·단계·외부 콜백 티켓 fixture를 만든다 |
+| `testing/` | NODE_ENV=test에서 createApp({ testFixtures: true })로 등록한 경우에만 사용자·세션·단계 fixture를 만든다 |
 | `health/` | `GET /health`(DB), `GET /app/config`(모바일 최소·최신 버전) |
 | `monitoring/` | Sentry 옵션(DSN 없으면 init 안 함, PII 제거 `beforeSend`)과 `reportUnexpectedError()`(원문 대신 오류 종류·code·호출 위치 + 태그) |
 

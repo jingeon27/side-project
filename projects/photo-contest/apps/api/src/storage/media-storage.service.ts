@@ -95,7 +95,14 @@ export class MediaStorage {
 
   private connection() {
     const settings = s3Settings();
-    const signature = JSON.stringify(settings);
+    const credentials =
+      process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+        ? {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+          }
+        : undefined;
+    const signature = JSON.stringify({ settings, credentials });
     // 같은 설정이면 연결을 재사용한다. 테스트가 실행 중에 설정을 바꾸면 새로 만든다.
     if (this.s3?.signature !== signature)
       this.s3 = {
@@ -105,6 +112,7 @@ export class MediaStorage {
           region: settings.region,
           endpoint: settings.endpoint,
           forcePathStyle: settings.forcePathStyle,
+          credentials,
         }),
       };
     return this.s3;

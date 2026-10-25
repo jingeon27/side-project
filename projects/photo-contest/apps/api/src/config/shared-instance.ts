@@ -1,14 +1,12 @@
 /** 공통 VM은 앱/DDL 계정을 나누고 RDS 인증서를 검증한다. */
 export function sharedDatabaseUrl(env: NodeJS.ProcessEnv, migration = false) {
-  const key = migration ? 'DATABASE_MIGRATION_URL' : 'DATABASE_URL';
+  const key = 'DATABASE_URL';
   const invalid = () => new Error(`${key} requires the dedicated RDS database, role and verified TLS.`);
-  if (!env.RDS_HOST || !/^[a-z0-9.-]+\.rds\.amazonaws\.com$/.test(env.RDS_HOST))
-    throw new Error('RDS_HOST must be the RDS endpoint.');
   try {
     const url = new URL(env[key] ?? '');
     if (
       !['postgres:', 'postgresql:'].includes(url.protocol) ||
-      url.hostname !== env.RDS_HOST ||
+      !/^[a-z0-9.-]+\.rds\.amazonaws\.com$/.test(url.hostname) ||
       url.port !== '5432' ||
       url.pathname !== '/photo_contest' ||
       decodeURIComponent(url.username) !== (migration ? 'photo_contest_migrator' : 'photo_contest') ||
@@ -36,11 +34,9 @@ export function sharedDatabaseUrl(env: NodeJS.ProcessEnv, migration = false) {
   }
 }
 
-export function assertSharedInstanceConfig(env: NodeJS.ProcessEnv) {
-  if (env.DEPLOYMENT_TARGET !== 'shared-instance') return;
-  sharedDatabaseUrl(env);
+export function assertSharedInstanceConfig(env: NodeJS.ProcessEnv, migration = false) {
+  if (!URL.parse(env.DATABASE_URL ?? '')?.hostname.endsWith('.rds.amazonaws.com')) return;
+  sharedDatabaseUrl(env, migration);
   if (!env.S3_BUCKET || env.S3_REGION !== 'ap-northeast-2' || env.S3_ENDPOINT)
     throw new Error('Shared-instance production requires AWS S3 in ap-northeast-2.');
-  if (env.S3_BUCKET === env.OTHER_SERVICE_S3_BUCKET)
-    throw new Error('Services must use separate S3 buckets.');
 }

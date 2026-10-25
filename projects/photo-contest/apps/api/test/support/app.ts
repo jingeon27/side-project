@@ -1,13 +1,16 @@
 import type { Server } from 'node:http';
 
 import type { INestApplication } from '@nestjs/common';
+import type { Express } from 'express';
 import request from 'supertest';
 import { inject } from 'vitest';
 
 import { createDatabaseClient } from '@photo-contest/test-kit';
 
+import { sessionCookieName } from '../../src/auth/auth-cookie';
 import { createApp } from '../../src/bootstrap';
-import { MOBILE_AUTH_CALLBACK_PATH } from '../../src/config/env';
+import { randomToken, sha256Hex } from '../../src/common/crypto';
+import { SESSION_TTL_MS } from '../../src/config/limits';
 import { SchedulerService } from '../../src/maintenance/scheduler.service';
 import { MediaStorage } from '../../src/storage/media-storage.service';
 
@@ -20,13 +23,6 @@ const CONCURRENT_REQUESTS_MAX = 32;
 const CLEARED_ENV = [
   'PUSH_NOTIFICATIONS_ENABLED',
   'EXPO_ACCESS_TOKEN',
-  'GOOGLE_CLIENT_ID',
-  'GOOGLE_CLIENT_SECRET',
-  'KAKAO_CLIENT_ID',
-  'KAKAO_CLIENT_SECRET',
-  'MOBILE_AUTH_CALLBACK_URL',
-  'MOBILE_MINIMUM_VERSION',
-  'MOBILE_LATEST_VERSION',
   'SENTRY_DSN',
   'S3_BUCKET',
   'S3_KEY_PREFIX',
@@ -35,8 +31,6 @@ const CLEARED_ENV = [
   'S3_FORCE_PATH_STYLE',
   'AWS_ACCESS_KEY_ID',
   'AWS_SECRET_ACCESS_KEY',
-  'AWS_SESSION_TOKEN',
-  'AWS_PROFILE',
 ] as const;
 
 export type TTestDatabase = ReturnType<typeof createDatabaseClient>;
@@ -151,22 +145,29 @@ export async function openStorageRedirect(response: IRedirectResponse, headers: 
  * 설정은 요청마다 다시 읽히므로 테스트 안에서 바꾸는 값은 vi.stubEnv로 바꾼다(테스트가 끝나면 setup.ts가 되돌린다).
  * env로 넘긴 값은 close()가 되돌린다.
  */
-export async function createTestApp(env: Record<string, string> = {}): Promise<ITestApi> {
+export async function createTestApp(
+  env: Record<string, string> = {},
+  options: { testFixtures?: boolean; trustProxy?: number } = {},
+): Promise<ITestApi> {
   const restoreEnv = applyEnv({
     ...inject('s3Env'),
     DATABASE_URL: inject('databaseUrl'),
-    NODE_ENV: 'development',
-    ENABLE_DEV_LOGIN: 'true',
-    TRUST_PROXY_HOPS: '0',
+    NODE_ENV: 'test',
     WEB_ORIGIN: TEST_WEB_ORIGIN,
-    MOBILE_AUTH_CALLBACK_URL: `${new URL(env.WEB_ORIGIN ?? TEST_WEB_ORIGIN).origin}${MOBILE_AUTH_CALLBACK_PATH}`,
     ...env,
   });
-  const app = await createApp({ logger: false }).catch((error: unknown) => {
+  const app = await createApp({
+    logger: false,
+    testFixtures: options.testFixtures ?? process.env.NODE_ENV === 'test',
+  }).catch((error: unknown) => {
     restoreEnv();
     throw error;
   });
   app.get(SchedulerService).stop();
+  if (options.trustProxy !== undefined) {
+    const server: Express = app.getHttpAdapter().getInstance();
+    server.set('trust proxy', options.trustProxy);
+  }
   const db = createDatabaseClient(inject('databaseUrl'));
 
   const server: Server = app.getHttpServer();
@@ -175,12 +176,16 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<I
   const http = () => request(server);
 
   async function login(nickname: string) {
-    const response = await http().post('/auth/dev').set('Origin', TEST_WEB_ORIGIN).send({ nickname });
-    if (response.status !== 200) throw new Error(`개발 로그인 실패 (${response.status}): ${response.text}`);
-    const cookies: string[] = [response.headers['set-cookie'] ?? []].flat();
-    const session = cookies.find((cookie) => cookie.startsWith('contest_session='));
-    if (!session) throw new Error('세션 Cookie가 없습니다.');
-    return session.split(';')[0] ?? '';
+    const user = await db.user.upsert({
+      where: { provider_providerId: { provider: 'testing', providerId: nickname } },
+      create: { provider: 'testing', providerId: nickname, nickname },
+      update: {},
+    });
+    const raw = randomToken();
+    await db.session.create({
+      data: { userId: user.id, tokenHash: sha256Hex(raw), expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
+    });
+    return `${sessionCookieName()}=${raw}`;
   }
 
   async function gql<TData>(

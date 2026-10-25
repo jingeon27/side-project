@@ -12,12 +12,14 @@ import { graphqlRateLimit } from './common/http/graphql-rate-limit.middleware';
 import { noStore } from './common/http/no-store.middleware';
 import { originGuard } from './common/http/origin-guard.middleware';
 import { createInputValidationPipe } from './common/input-validation';
-import { assertProductionConfig, assertTestingConfig, isTest, trustedProxyHops } from './config/env';
+import { assertProductionConfig, isTest, trustedProxyHops } from './config/env';
 import { MAX_JSON_BODY } from './config/limits';
+import { TestingModule } from './testing/testing.module';
 
 const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log'];
 
 export interface ICreateAppOptions {
+  testFixtures?: boolean;
   /** 지정하지 않으면 NODE_ENV=test에서만 로그를 끈다. */
   logger?: false | LogLevel[];
 }
@@ -27,10 +29,14 @@ export interface ICreateAppOptions {
  * 순서: no-store → Origin 검사(본문을 읽기 전에 거절) → 운영 GraphQL 주소별 요청 제한 → JSON 본문 파서 → 파서 오류 응답.
  * 파일은 저장소로 직접 보낸다.
  */
-export async function createApp({ logger }: ICreateAppOptions = {}): Promise<INestApplication> {
-  assertTestingConfig();
+export async function createApp({
+  logger,
+  testFixtures = false,
+}: ICreateAppOptions = {}): Promise<INestApplication> {
   assertProductionConfig();
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+  if (testFixtures && !isTest()) throw new Error('Test fixtures require NODE_ENV=test.');
+  const module = testFixtures ? { module: AppModule, imports: [TestingModule] } : AppModule;
+  const app = await NestFactory.create<NestExpressApplication>(module, {
     bodyParser: false,
     logger: logger ?? (isTest() ? false : LOG_LEVELS),
   });

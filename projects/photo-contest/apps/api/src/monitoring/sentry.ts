@@ -1,6 +1,6 @@
 import { captureException, init, type Event, type NodeOptions } from '@sentry/node';
 
-import { sentryDsn, sentryEnvironment, sentryRelease, sentryTracesSampleRate } from '../config/env';
+import { sentryDsn, sentryEnvironment } from '../config/env';
 
 const STACK_FRAME = /^\s+at /;
 
@@ -57,8 +57,7 @@ export function sentryOptions(): NodeOptions | undefined {
   return {
     dsn,
     environment: sentryEnvironment(),
-    release: sentryRelease(),
-    tracesSampleRate: sentryTracesSampleRate(),
+    tracesSampleRate: 0,
     sendDefaultPii: false,
     // 자동 계측은 요청 URL(업로드·OAuth 토큰)과 헤더를 모으므로 끄고, 예상하지 못한 오류만 직접 보낸다.
     defaultIntegrations: false,

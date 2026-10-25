@@ -20,7 +20,7 @@ import { USER_VIEW_SELECT } from './user-view';
 const LOGIN_FAILED = '아이디 또는 비밀번호를 확인해 주세요.';
 const THROTTLED = '로그인 요청이 너무 많습니다. 15분 뒤 다시 시도해 주세요.';
 
-/** Express가 TRUST_PROXY_HOPS로 확인한 요청 주소. IPv6는 /64로 묶는다. */
+/** Express가 고정 프록시 정책으로 확인한 요청 주소. IPv6는 /64로 묶는다. */
 function clientAddress(req: Request) {
   return clientAddressKey(req.ip ?? req.socket.remoteAddress);
 }

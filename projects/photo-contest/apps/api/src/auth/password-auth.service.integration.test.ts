@@ -14,7 +14,7 @@ describe('PasswordAuthService 제한 회귀', () => {
 
   beforeAll(async () => {
     // Caddy 한 단계를 신뢰해 전달된 주소별로 제한을 나누는 운영 설정
-    api = await createTestApp({ TRUST_PROXY_HOPS: '1' });
+    api = await createTestApp({}, { trustProxy: 1 });
   });
 
   beforeEach(async () => {

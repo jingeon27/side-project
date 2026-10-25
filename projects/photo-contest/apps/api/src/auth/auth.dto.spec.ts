@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createInputValidationPipe } from '../common/input-validation';
-import { AppLoginExchangeDto, DevLoginDto, LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
+import { LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
 
 const pipe = createInputValidationPipe();
 
@@ -50,18 +50,11 @@ describe('인증 DTO', () => {
 
   it('REST 본문의 미등록 필드·배열·숫자는 DTO에 들어오지 않아야 한다', async () => {
     for (const value of [{ nickname: '친구', role: 'ADMIN' }, { nickname: 123 }, [], null]) {
-      await expect(pipe.transform(value, { type: 'body', metatype: DevLoginDto })).rejects.toMatchObject({
+      await expect(
+        pipe.transform(value, { type: 'body', metatype: RegisterWithPasswordDto }),
+      ).rejects.toMatchObject({
         extensions: { code: 'BAD_USER_INPUT' },
       });
     }
-  });
-
-  it('앱 교환 입력의 형식 오류는 같은 403 계약을 유지해야 한다', async () => {
-    await expect(
-      pipe.transform({ code: 1, verifier: [] }, { type: 'body', metatype: AppLoginExchangeDto }),
-    ).rejects.toMatchObject({
-      message: '앱 로그인 요청을 확인할 수 없습니다.',
-      extensions: { code: 'FORBIDDEN' },
-    });
   });
 });

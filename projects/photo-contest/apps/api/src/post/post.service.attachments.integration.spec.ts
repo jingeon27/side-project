@@ -158,8 +158,6 @@ describe('링크 게시물과 미디어 저장', () => {
     vi.stubEnv('S3_FORCE_PATH_STYLE', 'true');
     vi.stubEnv('AWS_ACCESS_KEY_ID', 'test-access-key');
     vi.stubEnv('AWS_SECRET_ACCESS_KEY', 'test-secret-key');
-    const sessionToken = 'test-session-token-' + 'a'.repeat(3000);
-    vi.stubEnv('AWS_SESSION_TOKEN', sessionToken);
     const { postDownload } = await api.gqlOk<{ postDownload: IDownload }>(owner.cookie, DOWNLOAD, {
       id: post.id,
     });
@@ -167,8 +165,6 @@ describe('링크 게시물과 미디어 저장', () => {
     expect(url.origin).toBe('https://s3.example.test');
     expect(url.pathname).toMatch(/^\/attachments\/[a-f0-9-]{36}\.png$/);
     expect(url.searchParams.get('X-Amz-Expires')).toBe('60');
-    expect(url.searchParams.get('X-Amz-Security-Token')).toBe(sessionToken);
-    expect(postDownload.url.length).toBeGreaterThan(2048);
     expect(url.searchParams.get('X-Amz-Signature')).toMatch(/^[a-f0-9]{64}$/);
     expect(url.searchParams.get('response-content-disposition')).toContain('attachment;');
     expect(url.searchParams.get('response-cache-control')).toBe('private, no-store');

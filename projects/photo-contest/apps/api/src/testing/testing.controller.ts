@@ -2,7 +2,7 @@ import { Body, Controller, Param, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { SessionService } from '../auth/session.service';
-import { CreateTestAppLoginTicketDto, CreateTestUserDto, MoveTestContestDto } from './testing.dto';
+import { CreateTestUserDto, MoveTestContestDto } from './testing.dto';
 import { TestingGuard } from './testing.guard';
 import { TestingService } from './testing.service';
 
@@ -24,11 +24,5 @@ export class TestingController {
   @Post('contests/:id/phase')
   moveContest(@Param('id') id: string, @Body() body: MoveTestContestDto) {
     return this.testing.moveContest(id, body.phase);
-  }
-
-  @Post('app-login-tickets')
-  issueAppLoginTicket(@Body() body: CreateTestAppLoginTicketDto) {
-    const { nickname, challenge } = body;
-    return this.testing.issueAppLoginTicket(nickname, challenge);
   }
 }

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi } from '../../test/support/app';
 
@@ -42,33 +42,5 @@ describe('상태 확인과 앱 설정', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ minimumVersion: '1.0.0', latestVersion: '1.0.0' });
     expect(response.headers['cache-control']).toBe(NO_STORE);
-  });
-
-  it('GET /app/config는 설정한 버전을 요청마다 읽고 최신 버전이 없으면 최소 버전을 써야 한다', async () => {
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', '1.2.0');
-    expect((await api.http().get('/app/config')).body).toEqual({
-      minimumVersion: '1.2.0',
-      latestVersion: '1.2.0',
-    });
-    vi.stubEnv('MOBILE_LATEST_VERSION', '1.4.2');
-    expect((await api.http().get('/app/config')).body).toEqual({
-      minimumVersion: '1.2.0',
-      latestVersion: '1.4.2',
-    });
-  });
-
-  it('GET /app/config는 x.y.z가 아닌 값을 기본값으로, 최소보다 낮은 최신 버전을 최소 버전으로 바꿔야 한다', async () => {
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', 'v2');
-    vi.stubEnv('MOBILE_LATEST_VERSION', '1.0.0-beta');
-    expect((await api.http().get('/app/config')).body).toEqual({
-      minimumVersion: '1.0.0',
-      latestVersion: '1.0.0',
-    });
-    vi.stubEnv('MOBILE_MINIMUM_VERSION', '2.0.0');
-    vi.stubEnv('MOBILE_LATEST_VERSION', '1.9.9');
-    expect((await api.http().get('/app/config')).body).toEqual({
-      minimumVersion: '2.0.0',
-      latestVersion: '2.0.0',
-    });
   });
 });
