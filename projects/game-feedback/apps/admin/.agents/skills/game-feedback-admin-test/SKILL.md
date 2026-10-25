@@ -33,7 +33,7 @@ description: Admin(apps/admin)의 Vitest 단위 테스트(`scripts/test.mjs`)나
 ## spec 작성 (`e2e/admin.spec.ts`)
 
 - 한 실행의 테스트는 같은 스키마와 seed를 공유한다. 본문·닉네임은 `randomUUID()`로 고유하게 만든다. seed 계정(`sample-user-0` 새벽의호그, `sample-user-3`, `sample-test-admin`)의 상태를 바꿨다면 같은 테스트에서 되돌린다(인증 승인→해제, 밴→해제).
-- 관리자 로그인은 화면의 "로컬 관리자 로그인" 버튼으로 한다. 다른 사용자의 데이터는 `browser.newContext({ baseURL: origin })`의 `request`로 제품 API(`/api/auth/test-login`, `/api/auth/demo`, `/api/support/conversations`, `/api/conversations/:id/messages`, `/api/reports`)를 호출해 준비한다. 이 요청도 3304 프록시를 지나므로 쓰기 요청에는 `headers: { Origin: 'http://127.0.0.1:3304' }`가 필요하다. DB를 직접 수정하지 않는다.
+- 관리자 로그인은 e2e/seed-admin.mjs가 격리 스키마에 만든 전용 계정의 ID·비밀번호로 한다. 다른 사용자의 데이터는 `browser.newContext({ baseURL: origin })`의 `request`로 제품 API(`/api/auth/test-login`, `/api/auth/demo`, `/api/support/conversations`, `/api/conversations/:id/messages`, `/api/reports`)를 호출해 준비한다. 이 요청도 3304 프록시를 지나므로 쓰기 요청에는 `headers: { Origin: 'http://127.0.0.1:3304' }`가 필요하다. DB를 직접 수정하지 않는다.
 - 실패와 재시도는 `page.route`로 만든다. 일시 실패는 첫 요청만 `route.abort('failed')`하고 이후 `route.continue()`, 조회 실패는 `route.fulfill({ status: 503, … })`로 만든 뒤 메뉴가 남는지 단언한다.
 - 선택자는 `getByRole(…, { name, exact: true })`를 쓰고 영역으로 범위를 좁힌다: `navigation '관리자 메뉴'`, `region '문의 대화'`, `article '사용자 관리'`, `log`, 오류 `alert`, 밴 상태 `status`. 같은 모양의 카드는 `locator('[data-thread-id]')`·`locator('[data-report-id]')`에 `.filter({ hasText })`를 붙인다. class로 찾지 않고 `waitForTimeout` 대신 기다리는 단언을 쓴다.
 - 버튼·라벨·`aria-label` 문구를 바꾸면 이 spec의 이름 선택자를 함께 고친다. `e2e/`와 설정 파일도 Admin `typecheck`·`lint` 대상이다.
@@ -51,4 +51,4 @@ corepack yarn workspace @side/game-feedback db:test:stop   # 필요할 때만. �
 ```
 
 - 실패한 테스트의 trace는 `test-results/`(Git 제외)에 남는다.
-- 이 앱의 `.env.local`에 운영 토큰이 남아 있으면 Admin webServer가 시작하지 못한다(`game-feedback-admin-session`).
+- 운영 토큰 환경변수와 테스트 로그인 버튼은 사용하지 않는다.

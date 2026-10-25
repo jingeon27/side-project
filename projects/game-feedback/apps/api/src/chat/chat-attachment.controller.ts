@@ -22,7 +22,6 @@ import { MediaUploadDto } from '../common/media-upload.dto';
 import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
 import { ChatAttachmentService } from './chat-attachment.service';
-import { mediaRange } from './chat-file';
 
 @Injectable()
 export class ChatAttachmentGuard implements CanActivate {
@@ -65,29 +64,6 @@ export class ChatAttachmentController {
     @Param('attachmentId') attachmentId: string,
     @Res() res: Response,
   ) {
-    const file = await this.attachments.file(req, id, attachmentId);
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Content-Type', file.mimeType);
-    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`);
-    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-    const range = mediaRange(req.headers.range, file.size);
-    if (!range) {
-      res.setHeader('Content-Range', `bytes */${file.size}`);
-      res.status(416).end();
-      return;
-    }
-    if (req.method === 'HEAD') {
-      res.setHeader('Content-Length', file.size);
-      res.end();
-      return;
-    }
-    const location = await this.attachments.location(
-      file,
-      file.mimeType,
-      `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
-    );
-    res.setHeader('Referrer-Policy', 'no-referrer');
-    res.redirect(307, location);
+    return this.attachments.download(req, id, attachmentId, res);
   }
 }

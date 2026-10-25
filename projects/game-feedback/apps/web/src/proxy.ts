@@ -4,6 +4,8 @@ import { documentUnavailable } from '@/_app/seo/index.server';
 import { isLocale, LANGUAGE_COOKIE, LOCALE_HEADER, preferredLocale } from '@/shared/i18n/index.server';
 
 export async function proxy(request: NextRequest) {
+  if (/^\/api\/admin(?:\/|$)/i.test(request.nextUrl.pathname))
+    return new NextResponse('Not Found', { status: 404 });
   const candidate = request.nextUrl.pathname.split('/')[1];
   const locale = isLocale(candidate)
     ? candidate
@@ -41,4 +43,4 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set('x-game-feedback-navigation', request.headers.get('rsc') === '1' ? '1' : '0');
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
-export const config = { matcher: ['/', '/ko/:path*', '/en/:path*', '/ja/:path*'] };
+export const config = { matcher: ['/api/admin/:path*', '/', '/ko/:path*', '/en/:path*', '/ja/:path*'] };

@@ -3,11 +3,11 @@ import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 import { updateBan, updateReport, updateVerification, updateVisibility } from '../api/moderation.api';
 import { reportOptions, userOptions } from './moderation.options';
 
-export function verifyMutationOptions(client: QueryClient) {
+export function verifyMutationOptions(client: QueryClient, onVerified?: () => Promise<void>) {
   return mutationOptions({
     mutationKey: ['admin-verify'],
     mutationFn: updateVerification,
-    onSuccess: (user) => client.invalidateQueries(userOptions(user.id)),
+    onSuccess: (user) => Promise.all([client.invalidateQueries(userOptions(user.id)), onVerified?.()]),
   });
 }
 

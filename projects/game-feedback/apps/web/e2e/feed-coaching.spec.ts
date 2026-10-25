@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+import { adminApi } from './admin-api';
+
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 test('the feed combines general posts and paid coaching and connects a student to the coach', async ({
   page,
@@ -73,7 +75,7 @@ test('students can recruit a paid coach and a new game receives the same five bo
   const gameName = `새 게임 ${suffix}`;
   expect(
     (
-      await page.request.post('/api/admin/categories', {
+      await page.request.post(adminApi('/api/admin/categories'), {
         headers: { Origin: origin },
         data: { slug, name: gameName },
       })

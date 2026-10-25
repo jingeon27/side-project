@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
+import { adminApi } from './admin-api';
+
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 for (const scenario of [
@@ -214,7 +216,7 @@ test('verification opens a private admin chat and an administrator reviews user 
       headers: { Origin: origin },
       data: { accountId: 'sample-test-admin' },
     });
-    const threads = await (await adminContext.request.get('/api/admin/support')).json();
+    const threads = await (await adminContext.request.get(adminApi('/api/admin/support'))).json();
     const thread = threads.find((item: { requester: { id: string } }) => item.requester.id === userId);
     expect(thread).toBeTruthy();
     const reply = `인증 확인 완료 ${suffix}`;
@@ -228,7 +230,7 @@ test('verification opens a private admin chat and an administrator reviews user 
     ).toBe(true);
     expect(
       (
-        await adminContext.request.patch(`/api/admin/users/${userId}/verification`, {
+        await adminContext.request.patch(adminApi(`/api/admin/users/${userId}/verification`), {
           headers: { Origin: origin },
           data: { isVerified: true },
         })
@@ -249,12 +251,14 @@ test('verification opens a private admin chat and an administrator reviews user 
     await dialog.getByLabel('추가 설명 (선택)', { exact: true }).fill(`사용자 신고 ${suffix}`);
     await dialog.getByRole('button', { name: '신고 접수', exact: true }).click();
     await expect(dialog).toHaveCount(0);
-    const { items: reports } = await (await adminContext.request.get('/api/admin/reports?limit=50')).json();
+    const { items: reports } = await (
+      await adminContext.request.get(adminApi('/api/admin/reports?limit=50'))
+    ).json();
     const report = reports.find((item: { detail: string }) => item.detail === `사용자 신고 ${suffix}`);
     expect(report).toBeTruthy();
     expect(
       (
-        await adminContext.request.patch(`/api/admin/reports/${report.id}`, {
+        await adminContext.request.patch(adminApi(`/api/admin/reports/${report.id}`), {
           headers: { Origin: origin },
           data: { status: 'REVIEWED' },
         })
@@ -262,7 +266,7 @@ test('verification opens a private admin chat and an administrator reviews user 
     ).toBe(true);
     expect(
       (
-        await adminContext.request.patch(`/api/admin/users/${userId}/ban`, {
+        await adminContext.request.patch(adminApi(`/api/admin/users/${userId}/ban`), {
           headers: { Origin: origin },
           data: { banned: true, reason: '테스트 신고 검토 후 제재' },
         })
@@ -285,7 +289,7 @@ test('verification opens a private admin chat and an administrator reviews user 
     ).toBeVisible();
     expect(
       (
-        await adminContext.request.patch(`/api/admin/users/${userId}/ban`, {
+        await adminContext.request.patch(adminApi(`/api/admin/users/${userId}/ban`), {
           headers: { Origin: origin },
           data: { banned: false, reason: '문의 확인 후 제재 해제' },
         })
@@ -295,7 +299,15 @@ test('verification opens a private admin chat and an administrator reviews user 
       true,
     );
     expect((await page.request.get('/ko/admin')).status()).toBe(404);
-    expect((await page.request.get('/api/admin/support')).status()).toBe(403);
+    expect((await page.request.get('/api/admin/auth/session')).status()).toBe(404);
+    expect(
+      (
+        await page.request.post('/api/admin/auth/login', {
+          data: { username: 'admin', password: 'not-a-real-password' },
+        })
+      ).status(),
+    ).toBe(404);
+    expect((await page.request.get('/api/admin/support')).status()).toBe(404);
   } finally {
     await adminContext.close();
     await reporterContext.close();

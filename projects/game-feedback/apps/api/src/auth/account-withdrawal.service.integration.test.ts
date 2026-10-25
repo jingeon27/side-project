@@ -8,8 +8,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
+import { createAdminAccount } from '../admin/auth/admin-account';
 import { createApp } from '../app';
-import { hash } from '../common/crypto';
 import { assertDatabaseUrl } from '../database/database-url';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
@@ -32,7 +32,7 @@ type TAgent = ReturnType<typeof supertest.agent>;
 describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
   let db: PrismaClient;
   let app: INestApplication;
-  let adminToken: string;
+  const administrator = { cookie: '' };
 
   const login = async (agent: TAgent, provider: TSocialProvider, subject: string, status = 302) => {
     const start = await agent.get(`/api/auth/social/${provider}`).expect(302);
@@ -56,7 +56,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     supertest(app.getHttpServer())
       .patch(`/api/admin/users/${id}/ban`)
       .set('Origin', origin)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Cookie', administrator.cookie)
       .send({ banned, reason: banned ? '반복적인 서비스 악용' : '관리자 확인 후 제재 해제' })
       .expect(200);
   const withdraw = (agent: TAgent) => agent.delete('/api/me').set('Origin', origin).expect(200);
@@ -92,13 +92,13 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
         ]),
       ),
     });
-    const admin = await db.user.create({
-      data: { nickname: '탈퇴검증 관리자', role: 'ADMIN', termsVersion: 'test', ageConfirmed: true },
-    });
-    adminToken = randomBytes(32).toString('base64url');
-    await db.session.create({
-      data: { tokenHash: hash(adminToken), userId: admin.id, expiresAt: new Date(Date.now() + 60000) },
-    });
+    await createAdminAccount(db, 'withdrawal-admin', 'isolated-admin-password');
+    const signedIn = await supertest(app.getHttpServer())
+      .post('/api/admin/auth/login')
+      .set('Origin', origin)
+      .send({ username: 'withdrawal-admin', password: 'isolated-admin-password' })
+      .expect(200);
+    administrator.cookie = String(signedIn.headers['set-cookie']).split(';')[0] ?? '';
   }, 30000);
 
   afterAll(async () => {
@@ -248,7 +248,7 @@ describe('계정 탈퇴와 소셜 계정 제재 보존', () => {
     await supertest(app.getHttpServer())
       .patch(`/api/admin/users/${user.id}/ban`)
       .set('Origin', origin)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Cookie', administrator.cookie)
       .send({ banned: true, reason: '탈퇴와 동시에 요청한 제재' })
       .expect(409);
     expect(await db.bannedIdentity.count({ where: { userId: user.id } })).toBe(0);

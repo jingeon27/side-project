@@ -1,9 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:3304';
 const headers = { Origin: origin };
+async function login(page: Page) {
+  await page.getByRole('textbox', { name: '아이디', exact: true }).fill('e2e-admin');
+  await page.getByLabel('비밀번호', { exact: true }).fill('isolated-e2e-password');
+  await page.getByRole('button', { name: '관리자 로그인', exact: true }).click();
+}
+
 test('anonymous and ordinary sessions do not expose administration and foreign origins cannot write', async ({
   page,
 }) => {
@@ -44,14 +50,14 @@ test('a failed support reply keeps its draft and retries with the same message I
     expect(created.ok()).toBe(true);
     const room = await created.json();
     const requests: string[] = [];
-    await page.route(`**/api/conversations/${room.id}/messages`, async (route) => {
+    await page.route(`**/api/admin/support/${room.id}/messages`, async (route) => {
       if (route.request().method() !== 'POST') return route.continue();
       requests.push(route.request().postDataJSON().clientMessageId);
       if (requests.length === 1) return route.abort('failed');
       return route.continue();
     });
     await page.goto('/');
-    await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
+    await login(page);
     const thread = page.locator('[data-thread-id]').filter({ hasText: nickname });
     await thread.getByRole('link', { name: '문의 채팅 열기', exact: true }).click();
     const conversation = page.getByRole('region', { name: '문의 대화', exact: true });
@@ -77,7 +83,7 @@ test('a failed report page preserves navigation and user deep links restore the 
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
+  await login(page);
   const menu = page.getByRole('navigation', { name: '관리자 메뉴' });
   await page.route(
     (url) => url.pathname === '/api/admin/reports',
@@ -104,7 +110,7 @@ test('a failed report page preserves navigation and user deep links restore the 
 });
 test('a local administrator verifies users and applies and reverses a reasoned ban', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
+  await login(page);
   await expect(page.getByRole('navigation', { name: '관리자 메뉴' })).toBeVisible();
   await page.getByRole('link', { name: '사용자 관리', exact: true }).click();
   await page.getByRole('textbox', { name: '사용자 ID', exact: true }).fill('sample-user-0');
@@ -117,10 +123,10 @@ test('a local administrator verifies users and applies and reverses a reasoned b
   await expect(user).toContainText('미인증 사용자');
   await user.getByRole('textbox', { name: '제재 사유', exact: true }).fill('관리자 화면 제재 검증');
   await user.getByRole('button', { name: '사용자 밴', exact: true }).click();
-  await expect(user.getByRole('status')).toContainText('이용 제한 중');
+  await expect(user.getByRole('status', { name: '이용 제한', exact: true })).toContainText('이용 제한 중');
   await user.getByRole('textbox', { name: '제재 사유', exact: true }).fill('관리자 화면 제재 해제 검증');
   await user.getByRole('button', { name: '밴 해제', exact: true }).click();
-  await expect(user.getByRole('status')).toHaveCount(0);
+  await expect(user.getByRole('status', { name: '이용 제한', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await expect(page.getByRole('heading', { name: '관리자 로그인이 필요합니다.' })).toBeVisible();
 });
@@ -148,7 +154,7 @@ test('the separate admin answers support chats, resolves inquiries and reviews r
       data: { targetType: 'USER', targetId: 'sample-user-3', reason: 'FRAUD', detail },
     });
     await page.goto('/');
-    await page.getByRole('button', { name: '로컬 관리자 로그인', exact: true }).click();
+    await login(page);
     const thread = page
       .locator('[data-thread-id]')
       .filter({ hasText: '새벽의호그' })
@@ -156,6 +162,26 @@ test('the separate admin answers support chats, resolves inquiries and reviews r
     await thread.getByRole('link', { name: '문의 채팅 열기', exact: true }).click();
     const conversation = page.getByRole('region', { name: '문의 대화', exact: true });
     await expect(conversation.getByRole('log')).toContainText(question);
+    const verification = conversation.getByRole('group', { name: '프로필 인증', exact: true });
+    await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
+    const attempts: string[] = [];
+    await page.route('**/api/admin/users/sample-user-0/verification', async (route) => {
+      attempts.push(route.request().method());
+      if (attempts.length === 1) return route.abort('failed');
+      return route.continue();
+    });
+    await verification.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+    await expect(verification.getByRole('alert')).toBeVisible();
+    await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
+    await verification.getByRole('button', { name: '프로필 인증 승인', exact: true }).click();
+    await expect(verification.getByRole('status')).toHaveText('인증된 사용자');
+    await expect(thread.getByText('프로필 인증', { exact: true })).toBeVisible();
+    expect((await (await viewer.request.get('/api/session')).json()).user.isVerified).toBe(true);
+    await verification.getByRole('button', { name: '인증 해제', exact: true }).click();
+    await expect(verification.getByRole('status')).toHaveText('미인증 사용자');
+    await expect(thread.getByText('프로필 미인증', { exact: true })).toBeVisible();
+    expect((await (await viewer.request.get('/api/session')).json()).user.isVerified).toBe(false);
+
     const answer = '게임 태그를 확인하고 인증 절차를 안내드릴게요.';
     for (const count of [1, 2]) {
       await conversation.getByRole('textbox', { name: '답변 내용', exact: true }).fill(answer);

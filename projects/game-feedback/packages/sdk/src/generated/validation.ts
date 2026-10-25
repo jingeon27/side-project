@@ -6,6 +6,288 @@
  */
 import * as zod from 'zod';
 
+export const getAdminSessionResponseUserOneIdMax = 100;
+
+
+export const getAdminSessionResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getAdminSessionResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getAdminSessionResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const GetAdminSessionResponse = zod.object({
+  "socialProviders": zod.array(zod.object({
+  "provider": zod.enum(['kakao', 'discord', 'google']),
+  "configured": zod.boolean()
+})).optional(),
+  "user": zod.union([zod.object({
+  "id": zod.string().min(1).max(getAdminSessionResponseUserOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(getAdminSessionResponseUserOneCreatedAtRegExp),
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminSessionResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(getAdminSessionResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
+}),zod.null()]),
+  "demoMode": zod.boolean(),
+  "googleConfigured": zod.boolean(),
+  "needsOnboarding": zod.boolean()
+})
+
+
+export const adminLoginBodyUsernameRegExp = new RegExp('^[a-zA-Z0-9._-]{3,64}$');
+export const adminLoginBodyPasswordMin = 8;
+export const adminLoginBodyPasswordMax = 128;
+
+
+
+export const AdminLoginBody = zod.object({
+  "username": zod.string().regex(adminLoginBodyUsernameRegExp),
+  "password": zod.string().min(adminLoginBodyPasswordMin).max(adminLoginBodyPasswordMax)
+})
+
+export const adminLoginResponseUserOneIdMax = 100;
+
+
+export const adminLoginResponseUserOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const adminLoginResponseUserOneVerifiedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const adminLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const AdminLoginResponse = zod.object({
+  "socialProviders": zod.array(zod.object({
+  "provider": zod.enum(['kakao', 'discord', 'google']),
+  "configured": zod.boolean()
+})).optional(),
+  "user": zod.union([zod.object({
+  "id": zod.string().min(1).max(adminLoginResponseUserOneIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(adminLoginResponseUserOneCreatedAtRegExp),
+  "verifiedAt": zod.union([zod.iso.datetime({"offset":true}).regex(adminLoginResponseUserOneVerifiedAtOneRegExp),zod.null()]),
+  "bannedAt": zod.union([zod.iso.datetime({"offset":true}).regex(adminLoginResponseUserOneBannedAtOneRegExp),zod.null()]).optional(),
+  "banReason": zod.string().nullish()
+}),zod.null()]),
+  "demoMode": zod.boolean(),
+  "googleConfigured": zod.boolean(),
+  "needsOnboarding": zod.boolean()
+})
+
+
+export const AdminLogoutResponse = zod.object({
+  "ok": zod.literal(true)
+})
+
+
+export const ListAdminSupportMessagesParams = zod.object({
+  "id": zod.string()
+})
+
+export const listAdminSupportMessagesQueryLimitDefault = 12;
+export const listAdminSupportMessagesQueryLimitMax = 50;
+
+
+
+export const ListAdminSupportMessagesQueryParams = zod.object({
+  "cursor": zod.string().optional(),
+  "limit": zod.int().min(1).max(listAdminSupportMessagesQueryLimitMax).default(listAdminSupportMessagesQueryLimitDefault)
+})
+
+export const listAdminSupportMessagesResponseConversationIdMax = 100;
+
+export const listAdminSupportMessagesResponseConversationPeerIdMax = 100;
+
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneIdMax = 100;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneConversationIdMax = 100;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneSenderIdMax = 100;
+
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneBodyMax = 2000;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemIdMax = 100;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemNameMax = 200;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemSizeExclusiveMin = 0;
+export const listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemSizeMax = 26214400;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsMax = 4;
+
+export const listAdminSupportMessagesResponseConversationLastMessageOneCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listAdminSupportMessagesResponseConversationLastMessageOneClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+export const listAdminSupportMessagesResponseConversationUnreadCountMin = 0;
+export const listAdminSupportMessagesResponseConversationUnreadCountMax = 9007199254740991;
+
+export const listAdminSupportMessagesResponseConversationUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listAdminSupportMessagesResponseConversationPeerLastReadAtOneRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listAdminSupportMessagesResponseItemsItemIdMax = 100;
+
+export const listAdminSupportMessagesResponseItemsItemConversationIdMax = 100;
+
+export const listAdminSupportMessagesResponseItemsItemSenderIdMax = 100;
+
+
+export const listAdminSupportMessagesResponseItemsItemBodyMax = 2000;
+
+export const listAdminSupportMessagesResponseItemsItemAttachmentsItemIdMax = 100;
+
+export const listAdminSupportMessagesResponseItemsItemAttachmentsItemNameMax = 200;
+
+export const listAdminSupportMessagesResponseItemsItemAttachmentsItemSizeExclusiveMin = 0;
+export const listAdminSupportMessagesResponseItemsItemAttachmentsItemSizeMax = 26214400;
+
+export const listAdminSupportMessagesResponseItemsItemAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const listAdminSupportMessagesResponseItemsItemAttachmentsMax = 4;
+
+export const listAdminSupportMessagesResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listAdminSupportMessagesResponseItemsItemClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+
+
+
+export const ListAdminSupportMessagesResponse = zod.object({
+  "conversation": zod.object({
+  "supportTopic": zod.union([zod.enum(['GENERAL', 'VERIFICATION']),zod.null()]).optional(),
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseConversationIdMax),
+  "peer": zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseConversationPeerIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseConversationLastMessageOneIdMax),
+  "conversationId": zod.string().min(1).max(listAdminSupportMessagesResponseConversationLastMessageOneConversationIdMax),
+  "sender": zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseConversationLastMessageOneSenderIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "body": zod.string().max(listAdminSupportMessagesResponseConversationLastMessageOneBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemSizeExclusiveMin).max(listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsItemUrlRegExp)
+})).max(listAdminSupportMessagesResponseConversationLastMessageOneAttachmentsMax).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listAdminSupportMessagesResponseConversationLastMessageOneCreatedAtRegExp),
+  "clientMessageId": zod.uuid().regex(listAdminSupportMessagesResponseConversationLastMessageOneClientMessageIdRegExp)
+}),zod.null()]),
+  "unreadCount": zod.int().min(listAdminSupportMessagesResponseConversationUnreadCountMin).max(listAdminSupportMessagesResponseConversationUnreadCountMax),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listAdminSupportMessagesResponseConversationUpdatedAtRegExp),
+  "peerLastReadAt": zod.union([zod.iso.datetime({"offset":true}).regex(listAdminSupportMessagesResponseConversationPeerLastReadAtOneRegExp),zod.null()])
+}),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseItemsItemIdMax),
+  "conversationId": zod.string().min(1).max(listAdminSupportMessagesResponseItemsItemConversationIdMax),
+  "sender": zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseItemsItemSenderIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "body": zod.string().max(listAdminSupportMessagesResponseItemsItemBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(listAdminSupportMessagesResponseItemsItemAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(listAdminSupportMessagesResponseItemsItemAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(listAdminSupportMessagesResponseItemsItemAttachmentsItemSizeExclusiveMin).max(listAdminSupportMessagesResponseItemsItemAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(listAdminSupportMessagesResponseItemsItemAttachmentsItemUrlRegExp)
+})).max(listAdminSupportMessagesResponseItemsItemAttachmentsMax).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listAdminSupportMessagesResponseItemsItemCreatedAtRegExp),
+  "clientMessageId": zod.uuid().regex(listAdminSupportMessagesResponseItemsItemClientMessageIdRegExp)
+})),
+  "nextCursor": zod.union([zod.string().min(1),zod.null()])
+})
+
+
+export const SendAdminSupportMessageParams = zod.object({
+  "id": zod.string()
+})
+
+export const sendAdminSupportMessageBodyBodyMax = 2000;
+
+export const sendAdminSupportMessageBodyClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+export const sendAdminSupportMessageBodyAttachmentIdsItemMax = 100;
+
+export const sendAdminSupportMessageBodyAttachmentIdsMax = 4;
+
+
+
+export const SendAdminSupportMessageBody = zod.object({
+  "body": zod.string().max(sendAdminSupportMessageBodyBodyMax),
+  "clientMessageId": zod.uuid().regex(sendAdminSupportMessageBodyClientMessageIdRegExp),
+  "attachmentIds": zod.array(zod.string().min(1).max(sendAdminSupportMessageBodyAttachmentIdsItemMax)).max(sendAdminSupportMessageBodyAttachmentIdsMax).optional()
+})
+
+export const sendAdminSupportMessageResponseIdMax = 100;
+
+export const sendAdminSupportMessageResponseConversationIdMax = 100;
+
+export const sendAdminSupportMessageResponseSenderIdMax = 100;
+
+
+export const sendAdminSupportMessageResponseBodyMax = 2000;
+
+export const sendAdminSupportMessageResponseAttachmentsItemIdMax = 100;
+
+export const sendAdminSupportMessageResponseAttachmentsItemNameMax = 200;
+
+export const sendAdminSupportMessageResponseAttachmentsItemSizeExclusiveMin = 0;
+export const sendAdminSupportMessageResponseAttachmentsItemSizeMax = 26214400;
+
+export const sendAdminSupportMessageResponseAttachmentsItemUrlRegExp = new RegExp('^\\/api\\/conversations\\/[A-Za-z0-9_-]{1,100}\\/attachments\\/[A-Za-z0-9_-]{1,100}$');
+export const sendAdminSupportMessageResponseAttachmentsMax = 4;
+
+export const sendAdminSupportMessageResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const sendAdminSupportMessageResponseClientMessageIdRegExp = new RegExp('^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$');
+
+
+export const SendAdminSupportMessageResponse = zod.object({
+  "id": zod.string().min(1).max(sendAdminSupportMessageResponseIdMax),
+  "conversationId": zod.string().min(1).max(sendAdminSupportMessageResponseConversationIdMax),
+  "sender": zod.object({
+  "id": zod.string().min(1).max(sendAdminSupportMessageResponseSenderIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "body": zod.string().max(sendAdminSupportMessageResponseBodyMax),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().min(1).max(sendAdminSupportMessageResponseAttachmentsItemIdMax),
+  "name": zod.string().min(1).max(sendAdminSupportMessageResponseAttachmentsItemNameMax),
+  "mimeType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/webm']),
+  "size": zod.int().gt(sendAdminSupportMessageResponseAttachmentsItemSizeExclusiveMin).max(sendAdminSupportMessageResponseAttachmentsItemSizeMax),
+  "kind": zod.enum(['IMAGE', 'VIDEO']),
+  "url": zod.string().regex(sendAdminSupportMessageResponseAttachmentsItemUrlRegExp)
+})).max(sendAdminSupportMessageResponseAttachmentsMax).optional(),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(sendAdminSupportMessageResponseCreatedAtRegExp),
+  "clientMessageId": zod.uuid().regex(sendAdminSupportMessageResponseClientMessageIdRegExp)
+})
+
+
 export const requestPostMediaUploadBodyNameMax = 1000;
 
 export const requestPostMediaUploadBodySizeExclusiveMin = 0;

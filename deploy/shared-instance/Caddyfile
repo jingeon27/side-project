@@ -45,6 +45,12 @@
 	lb_try_interval 250ms
 }
 
+(web_health) {
+	health_uri /health-check/live
+	health_interval 1s
+	health_timeout 1s
+}
+
 {$GAME_FEEDBACK_DOMAIN} {
 	import private_logs
 	import gf_request_body
@@ -59,6 +65,7 @@
 		}
 		handle {
 			reverse_proxy gf-web:3300 {
+				import web_health
 				flush_interval -1
 				import upstream_retry
 			}
@@ -78,6 +85,7 @@
 		handle @graphql {
 			rewrite * /backend/graphql
 			reverse_proxy pc-web:3200 {
+				import web_health
 				import upstream_retry
 			}
 		}
@@ -89,6 +97,7 @@
 		}
 		handle {
 			reverse_proxy pc-web:3200 {
+				import web_health
 				flush_interval -1
 				import upstream_retry
 			}
@@ -128,6 +137,7 @@
 		handle @graphql {
 			rewrite * /backend/graphql
 			reverse_proxy pc-web:3200 {
+				import web_health
 				import upstream_retry
 			}
 		}

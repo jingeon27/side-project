@@ -1,6 +1,11 @@
 export { ApiError } from './api-error';
 export { ApiResponseValidationError, type IResponseIssue } from './response/validation-error';
 export {
+  getAdminSession,
+  adminLogin,
+  adminLogout,
+  listAdminSupportMessages,
+  sendAdminSupportMessage,
   requestPostMediaUpload,
   completePostMediaUpload,
   deletePostMedia,

@@ -8,7 +8,7 @@ import { sessionOptions } from './auth.options';
 
 const auth = vi.hoisted(() => ({ login: vi.fn(), logout: vi.fn(), session: vi.fn() }));
 vi.mock('../api/auth.api', () => ({
-  loginLocalAdmin: auth.login,
+  loginAdmin: auth.login,
   endSession: auth.logout,
   fetchSession: auth.session,
 }));
@@ -57,7 +57,10 @@ describe('admin session transitions', () => {
     });
     auth.login.mockResolvedValue(session);
 
-    await new MutationObserver(client, loginMutationOptions(client)).mutate();
+    await new MutationObserver(client, loginMutationOptions(client)).mutate({
+      username: 'admin',
+      password: 'test-password',
+    });
     await previousRequest;
 
     expect(cancelled).toHaveBeenCalledOnce();
@@ -101,9 +104,12 @@ describe('admin session transitions', () => {
     client.setQueryData(['existing-data'], 'keep');
     auth.login.mockRejectedValue(new Error('Session request failed'));
 
-    await expect(new MutationObserver(client, loginMutationOptions(client)).mutate()).rejects.toThrow(
-      'Session request failed',
-    );
+    await expect(
+      new MutationObserver(client, loginMutationOptions(client)).mutate({
+        username: 'admin',
+        password: 'test-password',
+      }),
+    ).rejects.toThrow('Session request failed');
 
     expect(client.getQueryData(sessionOptions().queryKey)).toEqual(session);
     expect(client.getQueryData(['existing-data'])).toBe('keep');

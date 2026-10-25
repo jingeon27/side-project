@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite';
+import { defineConfig, type Plugin, type ProxyOptions } from 'vite';
 
 type TAdminEnv = Record<string, string | undefined>;
 
@@ -42,7 +42,7 @@ function localAdmin(): Plugin {
   };
 }
 export function adminServerSettings(env: TAdminEnv) {
-  const target = new URL(env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:4300');
+  const target = new URL(env.GAME_FEEDBACK_API_URL ?? 'http://127.0.0.1:14300');
   if (
     !['localhost', '127.0.0.1'].includes(target.hostname) ||
     target.protocol !== 'http:' ||
@@ -57,17 +57,15 @@ export function adminServerSettings(env: TAdminEnv) {
     '/api': {
       target: target.origin,
       changeOrigin: true,
-      headers: { Origin: env.WEB_ORIGIN ?? 'http://localhost:3300' },
+      headers: { Origin: env.WEB_ORIGIN ?? 'https://game.bambyul.com' },
     },
   };
   return { port: 3303, proxy };
 }
-export default defineConfig(({ mode }) => {
-  const env = {
-    ...loadEnv(mode, fileURLToPath(new URL('../../', import.meta.url)), ''),
-    ...process.env,
-  };
-  const { port, proxy } = adminServerSettings(env);
+// The Admin service always defaults to the production tunnel. Explicit shell overrides use
+// the same two project keys for isolated API tests; the web application's dev .env is not loaded here.
+export default defineConfig(() => {
+  const { port, proxy } = adminServerSettings(process.env);
   const server = {
     host: '127.0.0.1',
     port,
@@ -77,8 +75,6 @@ export default defineConfig(({ mode }) => {
     proxy,
   };
   return {
-    // 브라우저에는 실행 환경만 전달한다.
-    define: { 'import.meta.env.ENVIRONMENT': JSON.stringify(env.ENVIRONMENT ?? 'development') },
     plugins: [react(), localAdmin()],
     optimizeDeps: { include: ['@game-feedback/contracts'] },
     build: { commonjsOptions: { include: [/node_modules/, /packages\/contracts\/dist/] } },

@@ -26,6 +26,7 @@ export function SupportThreadCard({ thread }: { thread: TSupportThread }) {
   return (
     <article className="admin-card form-stack" data-thread-id={thread.id}>
       <h2>{thread.requester.nickname}</h2>
+      <p className="muted">{thread.requester.isVerified ? '프로필 인증' : '프로필 미인증'}</p>
       <p>
         {topic} / {thread.status === 'OPEN' ? '상담 중' : '처리 완료'}
       </p>

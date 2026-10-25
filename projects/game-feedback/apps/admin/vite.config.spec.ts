@@ -51,39 +51,30 @@ describe('로컬 Admin 프록시 Origin 가드', () => {
   });
 });
 
-describe('프로젝트 루트 설정', () => {
-  it('로컬 모드는 API가 허용하는 Origin만 바꾸고 Authorization을 붙이지 않는다', () => {
-    const settings = adminServerSettings({ GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4304' });
-    expect(settings.proxy['/api']).toMatchObject({ target: 'http://127.0.0.1:4304', changeOrigin: true });
-    expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'http://localhost:3300' });
+describe('관리자 전용 프록시', () => {
+  it('기본 설정은 운영 SSH 터널이고 브라우저 쿠키를 그대로 사용한다', () => {
+    const settings = adminServerSettings({});
+    expect(settings.proxy['/api']).toMatchObject({ target: 'http://127.0.0.1:14300', changeOrigin: true });
+    expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'https://game.bambyul.com' });
   });
-
-  it('웹 Origin을 재사용하고 인증 정보는 주입하지 않는다', () => {
+  it('격리된 API와 Origin을 명시할 수 있다', () => {
     const settings = adminServerSettings({
-      WEB_ORIGIN: 'https://feedback.example',
-      GAME_FEEDBACK_API_URL: 'http://127.0.0.1:14300',
+      GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4304',
+      WEB_ORIGIN: 'http://127.0.0.1:3304',
     });
-    expect(settings.proxy['/api']?.headers).toEqual({
-      Origin: 'https://feedback.example',
-    });
+    expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'http://127.0.0.1:3304' });
   });
-
   it.each([
-    [{ GAME_FEEDBACK_API_URL: 'http://10.0.0.5:4300' }, 'local Game Feedback API'],
-    [{ GAME_FEEDBACK_API_URL: 'https://127.0.0.1:4300' }, 'local Game Feedback API'],
-    [{ GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4300/api' }, 'local Game Feedback API'],
-    [{ GAME_FEEDBACK_API_URL: 'http://user:secret@127.0.0.1:4300' }, 'local Game Feedback API'],
-  ])('잘못된 운영 설정으로 시작하지 않는다: %j', (env, message) => {
-    expect(() => adminServerSettings(env)).toThrow(message);
+    'http://10.0.0.5:4300',
+    'https://127.0.0.1:4300',
+    'http://127.0.0.1:4300/api',
+    'http://user:secret@127.0.0.1:4300',
+  ])('loopback HTTP origin 외에는 연결하지 않는다: %s', (target) => {
+    expect(() => adminServerSettings({ GAME_FEEDBACK_API_URL: target })).toThrow('local Game Feedback API');
   });
-
-  it('브라우저 번들에는 운영 모드 표시만 넘기고 토큰은 넘기지 않는다', () => {
-    vi.stubEnv('ENVIRONMENT', 'production');
-    vi.stubEnv('GAME_FEEDBACK_API_URL', 'http://127.0.0.1:14300');
-    vi.stubEnv('GF_S3_SECRET_ACCESS_KEY', 'private-fixture');
+  it('브라우저에 자격 증명을 주입하지 않고 framing 방지를 유지한다', () => {
     const resolved = config({ command: 'build', mode: 'production' });
-    expect(resolved.define).toEqual({ 'import.meta.env.ENVIRONMENT': '"production"' });
-    expect(JSON.stringify(resolved.define)).not.toContain('private-fixture');
+    expect(resolved.define).toBeUndefined();
     expect(resolved.server?.headers).toMatchObject({ 'X-Frame-Options': 'DENY' });
     expect(resolved.preview?.proxy).toBe(resolved.server?.proxy);
   });

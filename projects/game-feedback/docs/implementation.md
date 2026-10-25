@@ -1368,6 +1368,16 @@ RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에�
 
 DB는 같은 Game Feedback의 55444 테스트 DB와 실행별 gf_test_ 스키마만 사용했다. API 통합 테스트는 다른 worktree가 소유한 DB의 자동 기동만 생략한 임시 실행기로 가짜 제공자 환경과 URL 가드를 유지했다. 테스트가 만든 스키마만 정리했고 기존 DB 프로세스는 유지했다. 실제 외부 제공자 인증·실기기·배포는 수행하지 않았다.
 
+# 2026-10-25 관리자 전용 ID·비밀번호와 CI 재배포 검사 수정
+
+관리자는 일반 이용자를 승격하지 않고 AdminAccount와 문의용 내부 User를 CLI로 함께 생성한다. 비밀번호는 salt를 포함한 scrypt 해시, 세션은 AdminSession의 토큰 해시로 저장한다. Admin은 ID·비밀번호 로그인으로 통일하고 기본 연결을 운영 SSH 터널 14300으로 맞췄다. 테스트 로그인 버튼과 Vite Bearer 토큰 모드를 제거했다. 생성·비밀번호 변경은 stdin으로만 입력받는 신뢰된 CLI이며 변경 시 모든 관리자 세션을 폐기한다. 로그인 중 비밀번호 변경 경쟁도 행 잠금과 해시 재확인으로 막는다.
+
+관리자 쿠키는 HttpOnly·SameSite=Strict·Path=/api/admin·1시간이며 공개 사용자 세션을 바꾸지 않는다. 공개 API는 관리자 쿠키/전용 계정의 일반 Session을 인증에 사용하지 않는다. 공개 Caddy와 Web 프록시는 관리자 API를 404로 막고 Admin의 loopback 프록시만 사용한다. 문의 메시지·첨부 자료는 담당 관리자 확인을 거치는 비공개 API로 처리한다. 별도 계정을 만들면 VERIFICATION 신청을 담당 관리자 문의함으로 보낸다. 일반 프로필/새 일반 대화에서는 관리자 내부 계정을 노출하지 않는다. 새 migration은 전용 테이블만 추가한다.
+
+CI에서 제거된 mediaUpload.mode를 기대하던 shared smoke를 S3 양식 계약에 맞추고, 공개 미디어/채팅 검증은 일반 사용자 세션으로 수행한다. 공유 배포는 Web의 drain 파일 → Caddy 활성 health 제외 → SIGTERM → API/Web 교체 순서로 바꿨다. 두 서비스가 같은 호스트 프록시/배포 스크립트를 사용하므로 공용 deploy 파일과 안내를 함께 수정했다. Photo Contest의 WebKit 캡처는 viewport를 CSS 해상도로 저장하며 기존 overflow 검사를 유지한다. Playwright production build의 NODE_ENV도 명시한다.
+
+검증: API unit 174개, 새 관리자 통합 4개(전용 migration·로그인·쿠키 분리·문의/첨부·인증·폐기), 관련 탈퇴 통합 7개, SDK 72개, Admin unit 19개와 실제 ID·비밀번호를 쓰는 브라우저 E2E 5개가 통과했다. 최신 develop 병합 후 API unit 167개와 전체 integration 197개, Admin 브라우저 5개·production build, PC 반응형 3개를 재검증해 모두 통과했다. Admin production build 최대 JS 청크는 488.45 kB이며 타입·lint를 확인했다. 실제 Caddy/GF production build 교체 중 28개 요청 오류 0건, 배포 스크립트 unit 8개, PC responsive Chromium/WebKit/desktop 3개가 통과했다. GF 모바일은 320·393·430·760px 홈/가이드/설정에서 Chromium/WebKit 8개 검사를 통과해 좌우 대칭과 가로 넘침이 없음을 확인했다. 테스트는 55444/55434의 격리 스키마를 사용했다. Docker 공유 배포 전체 검사는 GitHub CI에서 확인하며 실제 운영 배포는 실행하지 않았다.
+
 ## 2026-10-25 로컬 환경변수 정리와 실제 S3 재검증
 
 로컬 `.env.example`에서 실행기가 정하는 포트·테스트 DB·캐시 자격 증명, 기본값과 같은 OAuth callback·대표 origin, 비어 있는 운영 앱 링크 항목을 제거했다. 실제 `.env`도 키 목록을 맞췄으며 기존 자격 증명과 설정값을 보존하고 변경 전 파일을 Git 제외 경로에 백업했다. API_ORIGIN·제공자별 REDIRECT_URI 별칭 참조를 제거해 API 주소는 GAME_FEEDBACK_API_URL, OAuth callback은 WEB_ORIGIN에서만 정한다. SEO와 운영 시작 검증도 WEB_ORIGIN을 사용하며 별도 GAME_FEEDBACK_SITE_URL을 없앴다.
@@ -1379,3 +1389,9 @@ Dockerfile과 Compose에서 기본 false인 데모·테스트 인증 플래그�
 사용자가 콘솔에서 확인할 수 있도록 upload-verification/2026-10-25T11-41-50-004Z.png 한 개(525바이트)는 별도로 남겼다. presigned POST 204·HEAD 200·서명 GET 200과 원본 일치를 다시 확인했다. 키·쿠키·서명 URL은 출력하거나 커밋하지 않았다. 개발 서버·개발 DB·IAM·Terraform·버킷 설정은 변경하지 않았다.
 
 검증: API unit 173개, Web API 주소·Next rewrite·SEO 단위 25개가 통과했다. API 타입 검사와 검증용 빌드도 통과했다. 그 밖의 미정의 변수 제거 범위는 운영·모바일 예제와 실행기 주입 변수를 포함할지 사용자에게 확인 중이다.
+
+## 2026-10-25 문의 채팅에서 프로필 인증 처리
+
+문의 대화 상단에 게임 태그와 인증 상태, 인증·미인증 선택을 추가했다. 사용자 관리와 같은 인증 컨트롤과 mutation 정책을 재사용하며, 담당 관리자 권한/감사 기록/공개 캐시 무효화는 기존 API가 처리한다. 성공하면 사용자 정보와 문의 목록을 갱신하고 실패하면 기존 상태를 유지한다. Admin E2E에서 실패→재시도→인증→미인증과 일반 사용자 세션/문의 목록의 즉시 반영을 확인했다. Admin unit 19개·E2E 5개·타입·lint·production build가 통과했다.
+
+공개 Web의 관리자 API 차단에 맞춰 기존 웹 E2E의 관리자 데이터 준비·조치를 격리 API에 직접 연결했다. 네 사양이 공유하는 URL helper를 두고 공개 관리자 경로 404 검사는 유지했다. 테스트 전용 일반 관리자 role fixture는 test 실행기에서만 허용하며 실제 Admin은 전용 ID·비밀번호 세션으로 검증한다. 별도 3302/4302와 격리 DB에서 캐시 무효화·프로필 인증/신고/제재·게임 생성·게시판 필터 브라우저 사양 5개가 통과했다.

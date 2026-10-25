@@ -70,6 +70,7 @@ export default defineConfig({
       stderr: 'pipe',
       env: {
         NODE_ENV: 'production',
+
         API_URL: `http://127.0.0.1:${API_PORT}`,
         WEB_ORIGIN,
         PORT: String(WEB_PORT),

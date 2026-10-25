@@ -23,7 +23,10 @@ export class SupportService {
     const { topic } = body;
     const availableAdmin = {
       bannedAt: null,
-      ...(!this.config.demoMode && !this.config.testAuthEnabled ? { demoKey: null } : {}),
+      withdrawnAt: null,
+      ...(!this.config.demoMode && !this.config.testAuthEnabled
+        ? { demoKey: null, adminAccount: { is: { disabledAt: null } } }
+        : {}),
     };
     const thread = await this.transactions.run(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;

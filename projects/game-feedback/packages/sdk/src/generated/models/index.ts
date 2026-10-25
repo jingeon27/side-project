@@ -5,6 +5,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminLoginBody.zod';
+export * from './adminLoginInput.zod';
 export * from './adminReport.zod';
 export * from './adminReportList.zod';
 export * from './answer.zod';
@@ -54,6 +56,7 @@ export * from './hideContentBody.zod';
 export * from './hideInput.zod';
 export * from './issueTestToken200.zod';
 export * from './issueTestTokenBody.zod';
+export * from './listAdminSupportMessagesParams.zod';
 export * from './listBlocks200Item.zod';
 export * from './listCategories200Item.zod';
 export * from './listChatMessagesParams.zod';
@@ -92,6 +95,7 @@ export * from './requestProfileAvatarUploadBody.zod';
 export * from './reviewReportBody.zod';
 export * from './richTextDocument.zod';
 export * from './saveGameAccountBody.zod';
+export * from './sendAdminSupportMessageBody.zod';
 export * from './sendChatMessageBody.zod';
 export * from './session.zod';
 export * from './setSupportStatusBody.zod';
