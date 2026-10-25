@@ -3,8 +3,15 @@
 // and installs that skip root devDependencies (`yarn workspaces focus … --production`).
 import { existsSync } from 'node:fs';
 
+import { copyWorktreeEnv } from './copy-worktree-env.mjs';
+
 const { CI, HUSKY } = process.env;
 const ci = Boolean(CI) && CI !== '0' && CI !== 'false';
+
+if (!ci && existsSync('.git')) {
+  const copied = copyWorktreeEnv(process.cwd());
+  if (copied.length) console.log(`worktree: 로컬 환경 파일 ${copied.length}개 복사 (기존 파일 보존)`);
+}
 
 if (HUSKY !== '0' && !ci && existsSync('.git')) {
   const husky = await import('husky').then(

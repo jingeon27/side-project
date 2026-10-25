@@ -7,6 +7,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "sentry:check": "yarn workspace @game-feedback/api sentry:check",
     "dev": "node scripts/dev.mjs",
     "dev:demo": "node scripts/dev.mjs --demo",
     "dev:test": "node scripts/dev.mjs --test-auth",

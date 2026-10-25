@@ -168,6 +168,8 @@ API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실�
 
 `openapi.json`은 중간 생성 파일이므로 프로젝트 `.gitignore`에서 제외하고 Git에 올리지 않는다. 초기 체크아웃에서도 위 준비 단계가 원본 Zod 스키마와 API 경로 정의로 새로 생성한다. SDK 생성 코드는 API 변경 리뷰와 누락 검사를 위해 Git에 포함한다. CI는 규격과 SDK를 생성한 뒤 SDK diff와 SDK 소유 응답 검증 테스트를 검사한다. 생성 과정은 DB 접속이나 외부 API 호출이 필요 없다.
 
+OpenAPI JSON과 Swagger UI를 제공하는 HTTP 엔드포인트는 등록하지 않는다. 운영(`NODE_ENV=production`) HTTP 설정은 `/openapi.json`, `/api/openapi.json`, `/docs`, `/api/docs`, `/swagger`, `/api-json` 등 문서·원본 경로와 하위 자산을 404로 차단한다. SDK 생성에는 영향이 없다. [Sentry 수집 확인](docs/observability.md)과 [부하테스트 예제](docs/load-testing.md)를 참고한다.
+
 ## 모바일 WebView 앱
 
 `apps/mobile`은 Expo dev client로 실행하며 웹의 테스트 계정·게시글·댓글·채팅·공통 디자인을 그대로 사용한다. Metro는 8082, Android/iOS E2E는 Web 3302·API 4302와 별도 `gf_test_mobile_*` 스키마를 사용한다. API는 Vitest+Supertest, Web은 Vitest+Playwright, Mobile은 Vitest 단위·UI와 Playwright native host 검증을 소유한다.

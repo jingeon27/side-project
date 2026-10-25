@@ -2,6 +2,8 @@ import type { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
+import { productionApiDocs } from './production-api-docs.middleware';
+
 /**
  * Express 5 matches routes case-insensitively, so `/API/posts` would reach a controller while the
  * path-based access middleware and rate buckets treat it as another path. The router reads this flag
@@ -17,7 +19,8 @@ export function configureHttp(app: INestApplication) {
   // Production API traffic enters through the single private reverse-proxy hop.
   // The container port is published only to host loopback for operator SSH tunnels.
   const server = app.getHttpAdapter().getInstance() as Express;
-  server.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
+  const production = process.env.NODE_ENV === 'production';
+  server.set('trust proxy', production ? 1 : false);
   server.disable('x-powered-by');
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -25,6 +28,7 @@ export function configureHttp(app: INestApplication) {
     res.setHeader('Referrer-Policy', 'same-origin');
     next();
   });
+  if (production) app.use(productionApiDocs);
   app.use(express.json({ limit: '256kb' }));
   app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
     if (error && typeof error === 'object' && 'type' in error) {

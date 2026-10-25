@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "sentry:check": "node --env-file-if-exists=../../.env --import tsx scripts/check-sentry.mjs",
     "dev": "yarn workspace @side/push-notifications build && node --watch --require tsx/cjs src/main.ts",
     "build": "yarn workspace @side/push-notifications build && node scripts/build.mjs",
     "start": "node dist/main.js",
