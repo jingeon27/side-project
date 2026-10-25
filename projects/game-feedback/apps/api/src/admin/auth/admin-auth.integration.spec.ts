@@ -13,7 +13,6 @@ import { createPrismaAdapter } from '../../database/prisma-adapter';
 import { PrismaClient } from '../../generated/prisma';
 import { presignedUpload } from '../../testing/media-upload';
 import { createAdminAccount, resetAdminPassword } from './admin-account';
-import { ADMIN_COOKIE } from './admin-session';
 
 const require = createRequire(import.meta.url);
 const schema = `gf_test_admin_auth_${randomUUID().replaceAll('-', '')}`;
