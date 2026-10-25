@@ -1,8 +1,14 @@
-필드 이름이 맞아도 값 타입이 틀리거나, 함께 쓸 수 없는 props가 동시에 들어오는 코드를 종종 본다. 이런 조합을 타입 검사에서 걸러내려고 실무에서 반복해서 쓴 패턴 네 가지를 모았다.
+<Summary>
+
+값의 추론을 유지하는 satisfies, optional property, 제네릭과 배타적인 props를 실무에서 어떻게 쓰는지 정리했어요.
+
+</Summary>
+
+필드 이름은 맞지만 값 타입이 틀리거나, 함께 쓸 수 없는 props가 동시에 들어오는 코드를 종종 봤어요. 이런 실수를 호출부에서 확인하려고 실무에서 쓰는 패턴을 정리했어요.
 
 ## satisfies로 검사하면서 추론을 유지하기
 
-satisfies는 값의 타입을 새로 만들어주는 문법이 아니다. **값이 지정한 타입을 만족하는지 검사하면서, 값 자체의 구체적인 추론을 유지한다.**
+satisfies는 값이 지정한 타입을 만족하는지 검사해요. 위 예제에서는 as const가 경로의 리터럴 타입을 유지하고, satisfies는 필요한 키와 경로 형식이 맞는지 확인해요.
 
 ```typescript
 type RouteName = 'home' | 'profile' | 'settings';
@@ -17,7 +23,7 @@ ROUTES.profile;
 // '/profile'로 추론된다.
 ```
 
-Record&lt;RouteName, string>으로 변수 타입을 직접 지정하면 값이 string으로 넓어질 수 있다. satisfies를 사용하면 key 누락과 잘못된 value를 검사하면서 literal 정보를 보존할 수 있다.
+변수에 Record&lt;RouteName, string>을 직접 지정하면 읽는 값이 string으로 넓어질 수 있어요. 예제처럼 두 문법을 함께 쓰면 구체적인 경로를 유지하면서 누락한 키와 잘못된 값도 검사할 수 있어요.
 
 ```typescript
 const LABELS = {
@@ -27,7 +33,7 @@ const LABELS = {
 } as const satisfies Record<'normal' | 'coupon' | 'cancel', string>;
 ```
 
-## T | undefined와 optional property는 다르다
+## 값이 undefined인 것과 키가 없는 것을 구분해요
 
 ```typescript
 interface Example {
@@ -40,12 +46,12 @@ const a: Example = {
 };
 ```
 
-두 값 모두 읽을 때는 number | undefined가 될 수 있지만 객체를 만들 때 의미가 다르다.
+두 프로퍼티 모두 읽으면 number | undefined가 될 수 있어요. 다만 객체를 만들 때의 조건은 달라요.
 
-- requiredKey는 key가 반드시 있어야 하며 값으로 undefined를 허용한다.
-- optionalKey는 key 자체를 생략할 수 있다.
+- requiredKey는 키가 있어야 하고, 값으로 undefined를 허용해요.
+- optionalKey는 키 자체를 생략할 수 있어요.
 
-exactOptionalPropertyTypes를 켜면 이 차이가 더 엄격해진다. optionalKey?: number에 undefined를 직접 대입하려면 number | undefined를 명시해야 한다.
+exactOptionalPropertyTypes를 켜면 optionalKey?: number에 undefined를 직접 대입할 수 없어요. 그것도 허용하려면 값 타입에 undefined를 명시해야 해요. 한편 객체를 JSON.stringify로 보낼 때는 undefined인 프로퍼티가 생략되므로, 자바스크립트 객체에 키가 있다는 것과 요청 본문에 실린다는 것도 구분해야 해요.
 
 ## 제네릭으로 value와 callback의 타입을 연결하기
 
@@ -60,7 +66,7 @@ function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
 }
 ```
 
-사용하는 쪽에서 value가 구체적인 union이면 callback 인자도 같은 union으로 추론된다.
+다음 호출부에서는 PaymentMethod를 제네릭 인자로 지정해 value와 콜백이 같은 유니언을 사용하게 했어요.
 
 ```tsx
 type PaymentMethod = 'normal' | 'coupon';
@@ -73,11 +79,11 @@ type PaymentMethod = 'normal' | 'coupon';
 />;
 ```
 
-두 prop이 같은 타입이라는 관계를 각자 string으로 선언하지 않고 제네릭 하나로 표현한 것이다.
+두 prop을 각각 string으로 열어 두는 대신, 같은 타입을 써야 한다는 관계를 제네릭으로 표현했어요.
 
 ## 서로 배타적인 props를 union으로 표현하기
 
-컴포넌트가 두 사용 방식 중 정확히 하나만 허용해야 한다면 never를 이용한 union이 명확하다.
+컴포넌트가 두 사용 방식 중 하나만 허용해야 한다면 never를 이용한 유니언으로 표현해요.
 
 ```tsx
 type ControlledProps<T extends string> = {
@@ -106,8 +112,12 @@ function Field<T extends string>(props: Props<T>) {
 <Field label="잘못된 조합" value="active" />;      // 컴파일 오류
 ```
 
-함수 overload는 호출 시그니처를 설명할 때 유용하지만, React props의 가능한 상태를 모델링할 때는 discriminated union이나 never 기반 XOR가 구현부까지 안전하게 좁혀진다.
+함수 오버로드로 호출 방식을 나눌 수도 있어요. 이 컴포넌트에서는 props 유니언을 쓰면 구현부에서도 어떤 속성을 사용할 수 있는지 확인하기 편했어요.
 
-값의 구체적인 타입을 유지할 때는 satisfies를, prop 사이의 관계를 표현할 때는 제네릭이나 union을 사용한다. optional property를 정할 때는 값이 undefined일 수 있는지와 key를 생략할 수 있는지를 따로 확인한다.
+이름이 맞는지만 검사할 때와 값 사이의 관계를 표현할 때는 필요한 타입이 달라요. 호출부에서 허용할 조합을 먼저 정한 뒤 satisfies와 제네릭, 유니언을 골라 쓰고 있어요.
 
-참고: [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html), [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)
+## 참고
+
+- [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html)
+- [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)
+- [MDN: JSON.stringify의 undefined 처리](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)

@@ -1,8 +1,14 @@
+<Summary>
+
+After introducing tests, I refined them against real submission paths and server constraints. I review what a test verifies as well as whether it passes.
+
+</Summary>
+
 ![Check function inputs and outputs, submitted form requests, and browser navigation results separately.](/images/covers/testing-standards.png)
 
 *Check function inputs and outputs, submitted form requests, and browser navigation results separately.*
 
-In July 2026, I began adding tests to the services I maintain. I needed repeatable checks that existing behavior survived features and structural changes.
+I introduced tests to the services I maintain so that features and structural changes could be checked against existing behavior.
 
 The criteria developed through mistakes. Integration tests bypassed real submission code, and mocks accepted requests the server rejected. I wanted to read a passing test and understand what behavior it had actually checked.
 
@@ -38,7 +44,7 @@ function CreateHarness({ onCreated }: { onCreated: (id: number) => void }) {
 
 That duplicated production submission logic. The real creation Drawer could break while the Harness kept passing. I changed the test to render that Drawer and exercise product code from input through submission.
 
-A test making product decisions is more dangerous than repeated test setup. Providers and routers can be shared preparation, but product code alone should decide what is sent and when.
+I shared setup such as providers and routers, but left submission decisions in the actual product code. If the test duplicates that logic, one implementation can change while the other still passes.
 
 ## A permissive mock was mistaken for the server contract
 
@@ -148,7 +154,7 @@ Checking both destination and visible screen makes broken guards or rendering fa
 
 Cross-app flows get cross-app E2E. Program registration/review requests in hospital admin and Back-Office review initially had no tests. After introducing the framework, I added registration through under-review status, rejection, and approval, running both apps against dev APIs. [The AI workflow article describes this work.](/en/blog/plan-gated-ai-workflow)
 
-Environments vary too. Portal E2E defaults to the Next development server. A production-build path is much faster without on-demand compilation, but cookie-reading statically generated routes still return 500 under concurrent requests, preventing it from becoming the default. Production-only Router Cache regressions in Back-Office need a separate local production build, as [described here](/en/blog/nextjs-server-client-issues).
+I choose the environment around the problem. Storefront E2E defaults to the Next development server. A build-then-start path also exists, but concurrent requests to cookie-reading statically generated routes kept it from becoming the default. The Back-Office search error did not appear under dev and needed build followed by start to reproduce, as [described here](/en/blog/nextjs-server-client-issues).
 
 ## Leave repetition when it exposes the important behavior
 
@@ -198,6 +204,6 @@ The criteria continue to change. New features add conditions, missed bugs add re
 
 - [MSW: server.listen() and onUnhandledRequest](https://mswjs.io/docs/api/setup-server/listen)
 - [Playwright: Page assertions and toHaveURL](https://playwright.dev/docs/api/class-pageassertions)
-- Related: [Costs of moving Next.js behavior to the client](/en/blog/nextjs-server-client-issues)
-- Related: [Judgment and verification in AI work](/en/blog/plan-gated-ai-workflow)
-- Related: [Failure policies while removing type assertions](/en/blog/zod-assertion-boundaries)
+- Related: [Tracing Next.js routing and cache problems](/en/blog/nextjs-server-client-issues)
+- Related: [The development workflow I refined with coding agents](/en/blog/plan-gated-ai-workflow)
+- Related: [Runtime validation beyond type assertions](/en/blog/zod-assertion-boundaries)

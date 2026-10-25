@@ -1,8 +1,14 @@
+<Summary>
+
+These are the TypeScript patterns I use to preserve inference and express relationships between values: satisfies, optional properties, generics, and mutually exclusive props.
+
+</Summary>
+
 I often see code where a field name is correct but its value has the wrong type, or where incompatible props are passed together. These are four patterns I use at work to catch those combinations during type checking.
 
 ## Checking compatibility with satisfies while preserving inference
 
-`satisfies` does not create a new type for a value. It checks that the value meets a type while retaining the value's more specific inferred type.
+In this example, `as const` preserves the path literals, while `satisfies` checks the required keys and path format without replacing that inferred type.
 
 ```typescript
 type RouteName = 'home' | 'profile' | 'settings';
@@ -45,7 +51,7 @@ Both properties can read as `number | undefined`, but constructing the object ca
 - `requiredKey` must exist, and its value may be `undefined`.
 - `optionalKey` may be omitted entirely.
 
-With `exactOptionalPropertyTypes` enabled, that distinction is stricter. To explicitly assign `undefined` to `optionalKey?: number`, its type must include `number | undefined`.
+With `exactOptionalPropertyTypes` enabled, assigning `undefined` to `optionalKey?: number` requires explicitly including it in the value type. Also, `JSON.stringify` omits object properties whose values are `undefined`: a key existing in JavaScript does not mean it appears in a JSON request body.
 
 ## Connecting a value and its callback with a generic
 
@@ -60,7 +66,7 @@ function Select<T extends string>({ value, onValueChange }: SelectProps<T>) {
 }
 ```
 
-If the caller supplies a specific union for `value`, the callback argument is inferred as the same union.
+The next call explicitly supplies `PaymentMethod` as its generic argument, so the value and callback use the same union.
 
 ```tsx
 type PaymentMethod = 'normal' | 'coupon';
@@ -110,4 +116,8 @@ Function overloads are useful for describing call signatures. For modeling valid
 
 I use `satisfies` to retain a value's specific type, and generics or unions to express relationships between props. For optional properties, I check separately whether the value may be `undefined` and whether the key itself may be omitted.
 
-References: [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html), [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)
+## References
+
+- [TypeScript 4.9 satisfies](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html)
+- [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)
+- [MDN: undefined values in JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)

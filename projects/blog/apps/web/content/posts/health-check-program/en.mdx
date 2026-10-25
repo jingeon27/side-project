@@ -1,3 +1,9 @@
+<Summary>
+
+I brought health-check reservations from an external site and phone calls into the member storefront and two admin apps, connecting program management, test selection, applications, and payment.
+
+</Summary>
+
 Health checks originally sat outside Safedoc's program flow. Users viewed information on an external website and called to inquire. A partner asked to accept health-check reservations inside Safedoc, bringing them into the product.
 
 I wrote this after the reservation feature officially launched. Users can now browse, apply, and pay through the benefits portal, while hospitals and operations manage programs and reservations in the admin services.
@@ -130,7 +136,7 @@ I also blocked duplicates. After checkout finished, waiting up to ten seconds fo
 ## Test selection, saving, and payment
 
 - Portal: Vitest covers group locking, the form schema requiring all three mandatory agreements, and storage/restoration/deletion of payment handoff values. E2E against the dev API checks the Toss test widget, restored input after payment failure, reservation-list navigation after approval-request failure, and corporate examination codes.
-- Admin: specification tests include mixed-department partners so a partner-level restriction would fail. Actual form interactions test empty configuration when switching departments. Health-check partner flows use dev-API E2E and contract tests. CI splits dev-API tests into general and health-check partner paths.
+- Admin: specification tests check that a hospital offering both health checks and other departments can still register non-covered programs. Form tests exercise clearing the health-check configuration when switching departments. Dev-API E2E and contract tests verify that registration and reads connect to the server.
 - Beyond tests, I manually ran non-covered program registration → review request → approval, treatment reservation, health-check registration, and health-check application → payment. This checked that existing flows remained usable alongside the new ones.
 
 ## References
@@ -138,6 +144,6 @@ I also blocked duplicates. After checkout finished, waiting up to ten seconds fo
 - [Toss Payments: payment-widget integration](https://docs.tosspayments.com/guides/v2/payment-widget/integration)
 - [Next.js: Intercepting Routes](https://nextjs.org/docs/app/building-your-application/routing/intercepting-routes)
 - [Ant Design: Form.List](https://ant.design/components/form)
-- Related: [Types and conversions in a program form with 34 fields](/en/blog/typed-program-form)
+- Related: [Sharing a program form across two admin apps](/en/blog/typed-program-form)
 - Related: [How I write declarative code](/en/blog/declarative-code)
-- Related: [Moving reservation drafts from Zustand to React Hook Form](/en/blog/reservation-form-state)
+- Related: [Moving reservation form state from Zustand to React Hook Form](/en/blog/reservation-form-state)

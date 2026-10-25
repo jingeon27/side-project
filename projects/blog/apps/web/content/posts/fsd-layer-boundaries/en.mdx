@@ -1,3 +1,9 @@
+<Summary>
+
+The boundary between entities and features was too vague to explain where files belonged. I used actual dependencies to redraw layers and import rules.
+
+</Summary>
+
 We repeatedly disagreed on whether a new file belonged in entity or feature. The benefits portal had entities, features, widgets, and pages. The admin monorepo followed the same layer documentation without pages. The folders and explanations existed, but they did not sufficiently determine where real code belonged.
 
 This describes the state on September 8, 2026. The admin monorepo changes were merged into develop; the benefits portal changes were still waiting on a separate branch.
@@ -89,7 +95,7 @@ On September 3, widget cleanup produced four similar errors across 28 reopened r
 
 The fourth affected the admin monorepo: production builds failed in all three apps after typecheck, lint, and 1,319 Vitest tests passed. The combined shared barrel pulled the entire client UI graph into route handlers importing any shared export. Twenty-two modules lacked `use client`. I added a rule to run `pnpm build` after adding barrel exports or combining packages. I manually opened portal dev routes at each commit, but had not documented that as a completion criterion.
 
-That week I also built an E2E flow running both dev servers from a hospital admin review request through Back-Office rejection. It came from fixing a rejection-flow bug, not this migration, and I have no record of rerunning it on the migrated tree. [Another article covers that E2E.](/en/blog/health-check-program)
+That week I also built an E2E flow running both dev servers from a hospital admin review request through Back-Office rejection. It came from fixing a rejection-flow bug, not this migration, and I have no record of rerunning it on the migrated tree. [Another article covers that E2E.](/en/blog/plan-gated-ai-workflow)
 
 ## Distinguish a screen's internals from shared child-screen code
 
@@ -125,4 +131,4 @@ I now look for server-domain APIs, models, and UI in features and screen composi
 - [FSD Layers](https://feature-sliced.design/docs/reference/layers)
 - [Excessive Entities](https://feature-sliced.design/docs/guides/issues/excessive-entities)
 - [Public API](https://feature-sliced.design/docs/reference/public-api)
-- Related: [Adding health checks to existing program flows](/en/blog/health-check-program)
+- Related: [The development workflow I refined with coding agents](/en/blog/plan-gated-ai-workflow)

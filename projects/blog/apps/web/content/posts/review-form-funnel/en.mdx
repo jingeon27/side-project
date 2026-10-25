@@ -1,3 +1,9 @@
+<Summary>
+
+I separated input values, validation, and navigation in a review flow, including how multi-selection connected to the form and the constraints that remained.
+
+</Summary>
+
 Adding one field to review writing required changing values, error messages, and next-step conditions in several files. The screen has three steps.
 
 1. Upload a receipt as proof of a visit.
@@ -160,7 +166,7 @@ Using it on mobile meant tapping and searching again for every treatment. I reco
 
 This judgment came from trying the screen myself, not user data. Planning and design included it in the second refactoring: retain a dropdown, allow several choices inside it, mark selections with checks and chips, and scroll the input just below the header on focus. I implemented it using Radix Popover and cmdk and released it. Form values still changed immediately through `useFieldArray.append` and `remove`.
 
-Later that month, design-system mockups changed selection to a Bottom Sheet. Applying the design system was separate from the second refactoring. A colleague built the shared sheet, and I integrated it into review writing. It reached production the following month.
+Later, the design-system mockups changed selection to a Bottom Sheet. This was separate from the earlier refactoring. A colleague built the shared sheet, and I connected it to review writing.
 
 ## Let the sheet own unconfirmed choices
 

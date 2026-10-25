@@ -1,3 +1,9 @@
+<Summary>
+
+A review like appears in both list and detail caches. I updated them together and restored saved snapshots when the request failed.
+
+</Summary>
+
 > This article uses TanStack Query v5, the version used in the project.
 
 The same hospital review appeared in lists and on its detail screen, but each ReviewItem held its own like state. It copied `isLiked` and `likeCount` from the server response into local state, then changed only the component whose button was pressed.
