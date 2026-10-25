@@ -13,7 +13,7 @@ test('mobile titles follow the screen and game classifications stay inside their
   await expect(header.getByRole('link', { name: '검색', exact: true })).toHaveAttribute('href', '/ko/search');
   await expect(header.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByRole('main').getByRole('search')).toHaveCount(0);
-  const game = page.locator('.game-category-group');
+  const game = page.getByRole('navigation', { name: '클래시로얄 게시판', exact: true });
   await expect(game.locator('.game-board-title')).toContainText('클래시로얄');
   await expect(game.locator('.game-board-chips').getByRole('link')).toHaveText([
     '전체',
