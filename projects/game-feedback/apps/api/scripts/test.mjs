@@ -28,8 +28,6 @@ const env = {
   GF_DEMO_MODE: 'false',
   GOOGLE_CLIENT_ID: '',
   GOOGLE_CLIENT_SECRET: '',
-  X_CLIENT_ID: '',
-  X_CLIENT_SECRET: '',
   KAKAO_CLIENT_ID: '',
   KAKAO_CLIENT_SECRET: '',
   DISCORD_CLIENT_ID: '',

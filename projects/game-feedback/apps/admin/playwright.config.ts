@@ -22,8 +22,6 @@ const env = {
   API_ORIGIN: 'http://127.0.0.1:4304',
   GOOGLE_CLIENT_ID: '',
   GOOGLE_CLIENT_SECRET: '',
-  X_CLIENT_ID: '',
-  X_CLIENT_SECRET: '',
   KAKAO_CLIENT_ID: '',
   KAKAO_CLIENT_SECRET: '',
   DISCORD_CLIENT_ID: '',

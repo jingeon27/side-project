@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  createDiscordIdentityProvider,
-  createKakaoIdentityProvider,
-  createXIdentityProvider,
-} from './oauth-identity.provider';
+import { createDiscordIdentityProvider, createKakaoIdentityProvider } from './oauth-identity.provider';
 
 afterEach(() => vi.unstubAllGlobals());
 const client = {
@@ -15,14 +11,6 @@ const client = {
 
 describe('social provider adapters without external requests', () => {
   it.each([
-    {
-      create: createXIdentityProvider,
-      host: 'x.com',
-      scope: 'tweet.read users.read',
-      body: { data: { id: '123' } },
-      basic: true,
-      pkce: true,
-    },
     {
       create: createKakaoIdentityProvider,
       host: 'kauth.kakao.com',
@@ -74,8 +62,8 @@ describe('social provider adapters without external requests', () => {
         .mockResolvedValueOnce(Response.json({ access_token: 'secret' }))
         .mockResolvedValueOnce(Response.json({ data: { id: null, email: 'private@example.com' } })),
     );
-    await expect(createXIdentityProvider(client).exchange('code', 'verifier', 'nonce')).rejects.toMatchObject(
-      { message: 'X 로그인에 실패했습니다. 다시 시도해주세요.' },
-    );
+    await expect(
+      createDiscordIdentityProvider(client).exchange('code', 'verifier', 'nonce'),
+    ).rejects.toMatchObject({ message: 'Discord 로그인에 실패했습니다. 다시 시도해주세요.' });
   });
 });

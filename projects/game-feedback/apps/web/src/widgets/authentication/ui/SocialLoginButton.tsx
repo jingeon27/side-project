@@ -12,7 +12,6 @@ const labels = {
   google: 'Google로 시작하기',
   kakao: '카카오 로그인',
   discord: 'Discord로 시작하기',
-  x: 'X로 시작하기',
 } satisfies Record<TSocialProvider, string>;
 
 interface ISocialLoginButtonProps {

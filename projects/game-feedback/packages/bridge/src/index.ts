@@ -19,7 +19,7 @@ export function buildAppAuthCallbackUrl(origin: string) {
 }
 const id = z.string().min(1).max(100);
 const ticket = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
-export const LoginProviderSchema = z.enum(['x', 'kakao', 'discord', 'google']);
+export const LoginProviderSchema = z.enum(['kakao', 'discord', 'google']);
 export type TLoginProvider = z.infer<typeof LoginProviderSchema>;
 export const PushRegistrationSchema = z
   .object({

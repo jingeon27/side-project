@@ -534,7 +534,7 @@ export const exchangeAppLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:
 
 export const ExchangeAppLoginResponse = zod.object({
   "socialProviders": zod.array(zod.object({
-  "provider": zod.enum(['x', 'kakao', 'discord', 'google']),
+  "provider": zod.enum(['kakao', 'discord', 'google']),
   "configured": zod.boolean()
 })).optional(),
   "user": zod.union([zod.object({
@@ -631,7 +631,7 @@ export const testAccountLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:
 
 export const TestAccountLoginResponse = zod.object({
   "socialProviders": zod.array(zod.object({
-  "provider": zod.enum(['x', 'kakao', 'discord', 'google']),
+  "provider": zod.enum(['kakao', 'discord', 'google']),
   "configured": zod.boolean()
 })).optional(),
   "user": zod.union([zod.object({
@@ -1246,7 +1246,7 @@ export const getSessionResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d
 
 export const GetSessionResponse = zod.object({
   "socialProviders": zod.array(zod.object({
-  "provider": zod.enum(['x', 'kakao', 'discord', 'google']),
+  "provider": zod.enum(['kakao', 'discord', 'google']),
   "configured": zod.boolean()
 })).optional(),
   "user": zod.union([zod.object({
@@ -1289,7 +1289,7 @@ export const demoLoginResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\
 
 export const DemoLoginResponse = zod.object({
   "socialProviders": zod.array(zod.object({
-  "provider": zod.enum(['x', 'kakao', 'discord', 'google']),
+  "provider": zod.enum(['kakao', 'discord', 'google']),
   "configured": zod.boolean()
 })).optional(),
   "user": zod.union([zod.object({
@@ -1336,7 +1336,7 @@ export const onboardResponseUserOneBannedAtOneRegExp = new RegExp('^(?:(?:\\d\\d
 
 export const OnboardResponse = zod.object({
   "socialProviders": zod.array(zod.object({
-  "provider": zod.enum(['x', 'kakao', 'discord', 'google']),
+  "provider": zod.enum(['kakao', 'discord', 'google']),
   "configured": zod.boolean()
 })).optional(),
   "user": zod.union([zod.object({

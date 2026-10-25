@@ -25,7 +25,7 @@
 - `db:stop`은 이 프로젝트가 토큰으로 소유권을 확인한 로컬 DB만 종료한다. 포트 사용자를 임의로 kill하지 않는다.
 - 외부 OAuth·게임 API는 인터페이스 뒤에 둔다. 테스트는 가짜 제공자를 강제한다. 데모 모드는 명시적 실행에만 허용하고 production에서는 거부한다.
 - 앱 소셜 로그인은 시스템 브라우저 + PKCE + 일회용 코드 교환이고, 코드는 검증된 https App Link·Universal Link(`<WEB_ORIGIN>/app-auth/callback`)로만 받는다. 커스텀 스킴 `gamefeedback://`는 로그인 밖의 딥링크에만 쓴다(같은 스킴을 등록한 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다). 웹이 `/.well-known/apple-app-site-association`·`assetlinks.json`을 배포 환경변수로 제공하고, iOS 최소 버전은 17.4다.
-- 인증 정보, 세션 쿠키, Player Tag 원본을 로그에 무분별하게 기록하지 않는다. OAuth는 제공자 식별자 확인에 필요한 최소 scope만 요청한다(Google `openid`, X `tweet.read users.read`, Discord `identify`, 카카오는 scope 없이 `property_keys=[]` 조회). 제공자 subject만 저장하고 이름·사진·이메일을 자동 수집하지 않는다.
+- 인증 정보, 세션 쿠키, Player Tag 원본을 로그에 무분별하게 기록하지 않는다. OAuth는 제공자 식별자 확인에 필요한 최소 scope만 요청한다(Google `openid`, Discord `identify`, 카카오는 scope 없이 `property_keys=[]` 조회). 제공자 subject만 저장하고 이름·사진·이메일을 자동 수집하지 않는다.
 
 ## 검증 및 완료 기록
 

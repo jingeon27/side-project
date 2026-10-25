@@ -15,7 +15,6 @@ async function configureProviders(page: Page) {
           { provider: 'google', configured: true },
           { provider: 'kakao', configured: true },
           { provider: 'discord', configured: true },
-          { provider: 'x', configured: true },
         ],
       },
     });
@@ -40,7 +39,8 @@ test('mobile login opens its page with branded buttons and returns to the origin
   await expect(page.locator('.shell-left-sidebar:visible')).toHaveCount(0);
   await expect(page.locator('.topbar:visible .header-account:visible')).toHaveCount(0);
   const buttons = page.locator('.social-login-button');
-  await expect(buttons).toHaveCount(4);
+  await expect(buttons).toHaveCount(3);
+  await expect(page.getByRole('button', { name: 'X로 시작하기', exact: true })).toHaveCount(0);
   await expect
     .poll(() =>
       buttons
@@ -94,7 +94,7 @@ test('desktop login stays in a centered dialog with focus recovery', async ({ pa
     .click();
   const dialog = page.getByRole('dialog', { name: '로그인', exact: true });
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator('.social-login-button')).toHaveCount(4);
+  await expect(dialog.locator('.social-login-button')).toHaveCount(3);
   const box = await dialog.boundingBox();
   expect(box?.width).toBeLessThanOrEqual(420);
   expect(box?.y).toBeGreaterThan(50);

@@ -51,7 +51,6 @@ export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLogin
       <SocialLoginButton {...common} provider="google" configured={configured('google')} />
       <SocialLoginButton {...common} provider="kakao" configured={configured('kakao')} />
       <SocialLoginButton {...common} provider="discord" configured={configured('discord')} />
-      <SocialLoginButton {...common} provider="x" configured={configured('x')} />
       <ErrorNotice message={nativeLogin.error?.message ?? browserLogin.error?.message} />
       {!providers.some((item) => item.configured) && (
         <p className="login-unavailable">{t('로그인 방법을 준비하고 있어요.')}</p>

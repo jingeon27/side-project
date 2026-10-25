@@ -37,7 +37,7 @@ description: Game Feedback 앱과 웹 사이의 `@game-feedback/bridge` 메시�
 ## 저장·로그 금지
 
 - code·verifier·세션 쿠키·토큰을 저장소·`console`·오류 문구·분석 이벤트에 남기지 않는다. 지금 `src`에는 저장소·로그 호출이 없다. 세션 토큰 필드를 브리지 스키마에 더하지 않는다.
-- 제공자 추가: bridge `LoginProviderSchema`와 `packages/contracts` `SocialProviderSchema`(둘 다 x·kakao·discord·google)를 함께 바꾸고 API identity provider를 더한다.
+- 제공자 추가: bridge `LoginProviderSchema`와 `packages/contracts` `SocialProviderSchema`(둘 다 kakao·discord·google)를 함께 바꾸고 API identity provider를 더한다.
 - 콜백 경로 변경: bridge `APP_AUTH_CALLBACK_PATH`, `app.config.ts` `AUTH_CALLBACK_PATH`, 웹 `src/app/app-auth/callback`·`_app/app-links`(AASA), API `src/config/app-auth-callback.ts`를 함께 바꾸고 dev client를 다시 빌드한다. 딥링크 스킴 변경은 `app.config.ts` `scheme`과 bridge `APP_SCHEME`.
 
 ## 확인

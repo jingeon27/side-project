@@ -48,7 +48,7 @@ export function validateProductionEnvironment(env: NodeJS.ProcessEnv) {
   const db = new URL(database.data);
   if (!['postgresql:', 'postgres:'].includes(db.protocol) || decodeURIComponent(db.password).length < 32)
     throw new Error('Production DATABASE_URL requires PostgreSQL and a password of at least 32 characters.');
-  const providers = ['GOOGLE', 'X', 'KAKAO', 'DISCORD'] as const;
+  const providers = ['GOOGLE', 'KAKAO', 'DISCORD'] as const;
   const configured = providers.map((prefix) => {
     const clientId = env[`${prefix}_CLIENT_ID`];
     const clientSecret = env[`${prefix}_CLIENT_SECRET`];

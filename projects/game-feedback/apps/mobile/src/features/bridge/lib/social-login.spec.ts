@@ -8,7 +8,7 @@ const verifier = 'a'.repeat(43);
 const code = 'b'.repeat(43);
 const callback = 'https://feedback.example/app-auth/callback';
 describe('system-browser OAuth', () => {
-  it.each(['google', 'x', 'kakao', 'discord'] as const)(
+  it.each(['google', 'kakao', 'discord'] as const)(
     'uses PKCE and the verified HTTPS app link callback for %s without exposing a session token',
     async (provider) => {
       const openSession = vi.fn(async (_url: string, _callback: string) => ({
