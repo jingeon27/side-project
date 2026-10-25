@@ -499,9 +499,9 @@ try {
   assert.equal((await gfApi.http('/')).status, 404);
   assert.equal((await pcApi.http('/health')).headers['x-robots-tag'], 'noindex, nofollow');
   assert.equal((await gf.http('/health-check/live')).status, 200);
-  // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
-  assert.equal((await gf.http('/.well-known/apple-app-site-association')).status, 200);
-  assert.equal((await gf.http('/.well-known/assetlinks.json')).status, 200);
+  // Association files were removed from the root environment contract; the callback remains public.
+  assert.equal((await gf.http('/.well-known/apple-app-site-association')).status, 404);
+  assert.equal((await gf.http('/.well-known/assetlinks.json')).status, 404);
   assert.equal((await gf.http('/app-auth/callback?code=shared-smoke-login-code-0123')).status, 200);
   assert.equal((await pc.http('/health-check/live')).status, 200);
   for (const response of [
@@ -661,11 +661,9 @@ try {
     ?.split(';')[0];
   assert.ok(publicPc.cookie, 'Anonymous browsing requires an HttpOnly session.');
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
-  // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
-  const association = await publicPc.http('/.well-known/apple-app-site-association');
-  assert.equal(association.status, 200, association.text());
-  assert.deepEqual(association.json().webcredentials, { apps: ['PCSMOKE000.test.smoke.photocontest'] });
-  assert.equal((await publicPc.http('/.well-known/assetlinks.json')).status, 200);
+  // Both services currently omit native association files while preserving the login callback.
+  assert.equal((await publicPc.http('/.well-known/apple-app-site-association')).status, 404);
+  assert.equal((await publicPc.http('/.well-known/assetlinks.json')).status, 404);
   const appCallback = await publicPc.http('/app-auth/callback?code=shared-smoke-login-code-0123');
   assert.equal(appCallback.status, 200);
   assert.equal(appCallback.headers['cache-control'], 'no-store');
