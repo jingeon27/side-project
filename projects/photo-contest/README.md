@@ -30,7 +30,7 @@ corepack yarn dev:photo-contest
 - 기본 로컬 DB: 55432. `LOCAL_POSTGRES_PORT`와 `DATABASE_URL`을 함께 바꿔 프로젝트별로 분리
 - DB·사진: 프로젝트 `.data/postgres`·`.data/photos`
 
-`NODE_ENV=development`와 `ENABLE_DEV_LOGIN=true`가 모두 있어야 닉네임 로그인이 열립니다. 같은 닉네임은 같은 개발 계정입니다. 다른 브라우저 프로필에서 친구 계정으로 초대 링크를 열어보세요.
+아이디·비밀번호로 가입하거나 익명으로 시작합니다. 소셜·개발 닉네임 로그인은 제공하지 않습니다. 다른 브라우저 프로필에서 친구 계정으로 초대 링크를 열어보세요.
 
 ## 구성과 기능
 
@@ -77,19 +77,19 @@ corepack yarn dev:photo-contest
 Expo Go 대신 dev client 또는 스토어 빌드를 사용합니다.
 
 ```sh
-APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android
-APP_VARIANT=development corepack yarn workspace @photo-contest/mobile ios
+corepack yarn workspace @photo-contest/mobile android
+corepack yarn workspace @photo-contest/mobile ios
 corepack yarn workspace @photo-contest/mobile start
 corepack yarn workspace @photo-contest/mobile bundle:check
 ```
 
-`EXPO_PUBLIC_WEB_ORIGIN`을 웹 주소로 설정하고 Android 에뮬레이터에서는 `adb reverse tcp:3200 tcp:3200`을 사용합니다. 쿠키는 WebView가 보관합니다. Google 로그인을 WebView에서 열지 않고 시스템 브라우저·PKCE·일회용 코드 교환으로 처리합니다. 최소 버전 확인 실패는 시작을 막지 않습니다.
+`WEB_ORIGIN`을 웹 주소로 설정하고 Android 에뮬레이터에서는 `adb reverse tcp:3200 tcp:3200`을 사용합니다. 쿠키는 WebView가 보관합니다. 최소 버전 확인 실패는 시작을 막지 않습니다. 모바일도 프로젝트 루트 `.env`의 공개 Sentry·Amplitude 키를 사용합니다.
 
 ## 인증·저장소·모니터링
 
 로그인 화면에서 직접 정한 아이디·비밀번호로 회원가입하거나 로그인할 수 있습니다. 아이디는 영문·숫자·밑줄 3~24자로 대소문자를 구분하지 않으며, 가입 비밀번호는 8~128자입니다. 서버는 임의 salt를 쓴 scrypt 해시만 저장하고 기존 HttpOnly 세션 쿠키를 발급합니다. 반복 시도는 DB에서 제한합니다.
 
-소셜 로그인은 `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`을 `.env`에 설정하면 사용할 수 있습니다. 미설정 수단은 화면에서 숨깁니다. Google·카카오 앱의 callback은 `https://<웹 도메인>/backend/auth/<provider>/callback`입니다. 실제 OAuth 앱과 계정으로 하는 인증은 별도 설정 후 확인해야 합니다. `.env` 변경 후 `corepack yarn workspace @side/photo-contest dev`를 종료·재실행해야 API와 웹이 새 값을 읽습니다. 개발 callback은 `http://localhost:3200/backend/auth/google/callback`, 운영은 `https://contest.bambyul.com/backend/auth/google/callback`입니다. 포트가 다르면 실제 웹 포트를 등록합니다.
+현재 제품은 아이디·비밀번호와 익명 세션으로 이용하며 소셜 로그인 설정은 필요하지 않습니다. 로컬·운영 환경변수 예제와 배포 컨테이너에서도 소셜 제공자 키를 요구하지 않습니다. `.env` 변경은 다음 개발 서버 시작 때 반영됩니다.
 
 운영은 `NODE_ENV=production`, HTTPS `WEB_ORIGIN`, `DATABASE_URL`, private S3 호환 버킷(`S3_BUCKET`과 자격 증명)이 필요합니다. 버킷 CORS에 웹 origin의 POST를 허용합니다. 별도 컨테이너에서 API를 실행하면 `API_HOST`를 명시하고 웹 프록시를 통해 접근하게 구성합니다.
 
@@ -101,7 +101,7 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 | ------ | ------------------------------------------------------- | ------------------------------- |
 | API    | `SENTRY_DSN`, 내부 GraphQL 오류·REST 5xx·주기 작업 실패 | 도메인 이벤트를 DB에만 기록     |
 | 웹     | `NEXT_PUBLIC_SENTRY_DSN`, 서버는 `SENTRY_DSN` 우선      | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
-| 모바일 | `EXPO_PUBLIC_SENTRY_DSN`                                | `EXPO_PUBLIC_AMPLITUDE_API_KEY` |
+| 모바일 | `NEXT_PUBLIC_SENTRY_DSN`                                | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
 
 API Sentry의 실제 수집 확인은 `corepack yarn workspace @side/photo-contest sentry:check`로 한다. 설정한 DSN으로 확인용 이벤트 1건을 보내고 2xx 응답과 eventId를 출력한다. Sentry에서 `verification:configuration-check`, `service:photo-contest` 태그로 찾는다. 브라우저 키는 개발 서버 재시작 또는 운영 웹 재빌드가 필요하다. [부하테스트 예제와 지표](docs/load-testing.md)도 참고한다.
 
@@ -142,7 +142,7 @@ corepack yarn format:check
 
 모든 DB 레인은 `TEST_DATABASE_URL`만 사용합니다. loopback·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`가 아니면 거부하고 개발 DB로 대신하지 않습니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마·사진 폴더를 제거합니다. 웹 브라우저 E2E는 실제 production build/standalone 서버를 실행합니다. 검증용 API는 `.e2e-build`, Next는 `.next/e2e`·`.next/e2e-mobile`을 써 개발 서버와 겹치지 않습니다.
 
-`/testing/users`(사용자+세션), `/testing/contests/:id/phase`(단계 이동), `/testing/app-login-tickets`(외부 성공 콜백 대체)은 `NODE_ENV=test`와 `ENABLE_TEST_API=true`에서만 열립니다. 개발·운영에서 활성화하면 서버가 시작을 거부합니다. 테스트 하네스가 설정하므로 개발 `.env`에서 켤 필요가 없습니다. 웹·모바일의 테스트 데이터는 이 API와 제품 API로 준비합니다.
+/testing/users와 /testing/contests/:id/phase는 격리 실행기가 createApp({ testFixtures: true })로 등록할 때만 열립니다. NODE_ENV=test만 설정한 일반 서버에는 없습니다. 테스트 밖에서 등록하면 시작을 거부합니다.
 
 보고서·trace는 각 앱의 `playwright-report`·`test-results`, 화면 캡처는 웹 앱의 `.data/screens`에 남습니다. CI는 앱별 레인과 WebKit 설치·테스트 DB·종료 후 정리 검사를 실행합니다.
 
