@@ -30,7 +30,9 @@ afterEach(() => {
 
 vi.mock('expo-device', () => ({ isDevice: false }));
 vi.mock('expo-notifications', () => ({}));
-vi.mock('expo-constants', () => ({ default: {} }));
+vi.mock('expo-constants', () => ({
+  default: { expoConfig: { extra: { webOrigin: 'https://feedback.example' } } },
+}));
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => undefined) },
 }));

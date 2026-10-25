@@ -116,44 +116,6 @@ test('native back leaves the login page, deep links keep the document, and foreg
   await expect(page.locator('.settings-profile:visible')).toContainText('인증 유저');
 });
 
-test('native Google login opens the system auth session and cancellation keeps the login page usable', async ({
-  page,
-  nativeHost,
-}) => {
-  await page.route('**/api/session', async (route) => {
-    const response = await route.fetch();
-    const session = await response.json();
-    await route.fulfill({
-      response,
-      json: {
-        ...session,
-        googleConfigured: true,
-        socialProviders: [{ provider: 'google', configured: true }],
-      },
-    });
-  });
-  await page.goto('/ko');
-  await expect.poll(nativeHost.isReady).toBe(true);
-  await page.getByRole('button', { name: '글쓰기', exact: true }).click();
-  await page
-    .getByRole('dialog', { name: '로그인이 필요해요', exact: true })
-    .getByRole('button', { name: '로그인하기', exact: true })
-    .click();
-  await page.getByRole('button', { name: /Google로 시작하기/ }).click();
-  await expect.poll(() => nativeHost.authSessions.length).toBe(1);
-  expect(nativeHost.authSessions[0]).toMatch(/\/api\/auth\/social\/google\?app_challenge=[A-Za-z0-9_-]{43}$/);
-  expect(nativeHost.authCallbacks[0]).toBe(`${ORIGIN}/app-auth/callback`);
-  await expect(page.getByRole('heading', { name: '로그인', exact: true })).toBeVisible();
-  await page.request.post('/api/auth/test-token', {
-    headers: { Origin: ORIGIN },
-    data: { accountId: 'sample-user-0' },
-  });
-  nativeHost.state('background');
-  nativeHost.state('active');
-  await expect(page.getByRole('dialog')).not.toBeVisible();
-  await expect(page).toHaveURL(/\/ko$/);
-});
-
 test('native back dismisses the conversation menu and report dialog before leaving the chat', async ({
   page,
   nativeHost,

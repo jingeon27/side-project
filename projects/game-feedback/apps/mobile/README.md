@@ -11,16 +11,16 @@ corepack yarn install --immutable
 corepack yarn workspace @side/game-feedback dev:test
 # 다른 터미널: Android 에뮬레이터가 같은 localhost 웹 origin을 사용하도록 연결
 adb reverse tcp:3300 tcp:3300
-APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:android
+corepack yarn workspace @side/game-feedback mobile:android
 # 또는 iOS 시뮬레이터
-APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:ios
+corepack yarn workspace @side/game-feedback mobile:ios
 # 이미 설치된 dev client에서 Metro만 실행
-APP_VARIANT=development corepack yarn workspace @side/game-feedback mobile:start
+corepack yarn workspace @side/game-feedback mobile:start
 ```
 
-Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 로그인 화면은 카카오·Discord·Google을 제공하고 테스트 계정은 서버 토큰 API로 발급한다. 실기기는 접근 가능한 Web origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
+Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 웹 브라우저에서는 카카오·Discord·Google 로그인을 제공하고 테스트 계정은 격리 API로 발급한다. 실기기는 접근 가능한 Web origin을 `WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
 
-`.env.example`을 이 앱의 `.env`로 복사해 개발 origin을 지정할 수 있다. release 빌드는 명시적인 HTTPS origin과 `MOBILE_APPLE_TEAM_ID`·`MOBILE_IOS_BUNDLE_ID`·`MOBILE_ANDROID_PACKAGE`가 필수이며 없으면 `app.config.ts`가 멈춘다. `APP_VARIANT=development`일 때만 Android HTTP를 허용한다. 스킴은 `gamefeedback`(로그인 밖 딥링크), 개발 번들/패키지는 `dev.side.gamefeedback`이다. 최소 iOS는 17.4다. 운영 서명·스토어 등록·배포는 포함하지 않는다.
+앱은 프로젝트 루트 `.env`를 읽는다. ENVIRONMENT=development/test에서는 로컬 HTTP, production에서는 HTTPS WEB_ORIGIN만 허용한다. 공개 관측 키도 루트의 NEXT_PUBLIC_* 두 값을 사용한다. 식별자는 dev.side.gamefeedback, 최소 iOS는 17.4다. 별도 App Link·서명 설정과 시스템 브라우저 로그인은 제거했다. 앱 로그인 화면은 웹 브라우저 이용을 안내한다. 운영 스토어 배포는 포함하지 않는다.
 
 ## 네이티브 연결
 

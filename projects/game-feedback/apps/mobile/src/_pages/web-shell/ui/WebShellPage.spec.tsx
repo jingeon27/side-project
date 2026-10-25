@@ -149,7 +149,7 @@ describe('mobile WebView shell', () => {
     act(() => currentWebViewProps().onContentProcessDidTerminate?.(event()));
     expect(fakeWebView.handle.reload).toHaveBeenCalledOnce();
   });
-  it('rejects native messages from foreign frames and runs system auth for trusted requests', async () => {
+  it('rejects foreign frames and reports unavailable native authentication without opening a browser', async () => {
     render(<WebShellPage />);
     act(() =>
       currentWebViewProps().onMessage?.(
@@ -162,9 +162,9 @@ describe('mobile WebView shell', () => {
         event({ data: JSON.stringify({ type: 'auth-request', id: 'auth-1' }) }),
       ),
     );
-    await waitFor(() => expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledOnce());
+    expect(WebBrowser.openAuthSessionAsync).not.toHaveBeenCalled();
     await waitFor(() =>
-      expect(fakeWebView.handle.injectJavaScript).toHaveBeenCalledWith(expect.stringContaining('cancelled')),
+      expect(fakeWebView.handle.injectJavaScript).toHaveBeenCalledWith(expect.stringContaining('failed')),
     );
   });
   it('opens cold deep links as the initial source and warm links through the bridge', async () => {
