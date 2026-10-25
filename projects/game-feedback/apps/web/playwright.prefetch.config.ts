@@ -27,6 +27,7 @@ const apiEnv = {
   GF_CACHE_REVALIDATION_SECRET: 'game-feedback-prefetch-cache-secret-'.repeat(2),
   GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3353/internal/cache/revalidate',
   NODE_ENV: 'test',
+  ENVIRONMENT: 'test',
   GF_DEMO_MODE: 'true',
   PORT: '4353',
   WEB_ORIGIN: 'http://127.0.0.1:3353',
@@ -75,7 +76,6 @@ export default defineConfig({
         NEXT_DIST_DIR: '.next/prefetch-e2e',
         GF_PREFETCH_TESTING: 'true',
         GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
-        GAME_FEEDBACK_INDEXING: 'false',
         // 운영 빌드 웹은 앱 링크 값이 없으면 첫 요청부터 실패한다.
         ...E2E_APP_LINK_ENV,
       },

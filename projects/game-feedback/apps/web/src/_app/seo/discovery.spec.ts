@@ -16,9 +16,8 @@ afterEach(() => {
   list.mockReset();
 });
 function enable() {
-  vi.stubEnv('NODE_ENV', 'production');
+  vi.stubEnv('ENVIRONMENT', 'production');
   vi.stubEnv('GAME_FEEDBACK_SITE_URL', 'https://feedback.example');
-  vi.stubEnv('GAME_FEEDBACK_INDEXING', 'true');
   vi.stubEnv('GF_DEMO_MODE', 'false');
 }
 const post = (id: string, user = 'author-1') => ({
@@ -28,7 +27,7 @@ const post = (id: string, user = 'author-1') => ({
 });
 describe('search discovery', () => {
   it('blocks crawling and avoids data access for alpha and demo environments', async () => {
-    vi.stubEnv('GAME_FEEDBACK_INDEXING', 'false');
+    vi.stubEnv('ENVIRONMENT', 'development');
     expect(robots().rules).toEqual({ userAgent: '*', disallow: '/' });
     expect(await sitemap()).toEqual([]);
     expect(list).not.toHaveBeenCalled();

@@ -1,12 +1,16 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
-import { assertNode, environment, projectDir, yarn } from './env.mjs';
+import { assertNode, environment, projectDir, resolveEnvironment, yarn } from './env.mjs';
 
 const env = environment();
 const action = process.argv[2];
 const workspace = (name, script, overrides = {}) =>
-  yarn(['workspace', `@game-feedback/${name}`, script], { ...env, ...overrides });
+  yarn(['workspace', `@game-feedback/${name}`, script], {
+    ...env,
+    ...overrides,
+    ...resolveEnvironment(overrides, env),
+  });
 function local(script, args = []) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(projectDir, 'scripts', script), ...args], {

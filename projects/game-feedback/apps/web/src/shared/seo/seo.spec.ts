@@ -7,17 +7,16 @@ import { profileStructuredData, publicPageStructuredData, serializeJsonLd } from
 afterEach(() => vi.unstubAllEnvs());
 describe('SEO metadata and visibility', () => {
   const production = {
-    NODE_ENV: 'production',
+    ENVIRONMENT: 'production',
     GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
-    GAME_FEEDBACK_INDEXING: 'true',
     GF_DEMO_MODE: 'false',
   };
   it('indexes only explicit production HTTPS sites and excludes demo, previews and local origins', () => {
     expect(resolveSeoConfig(production).indexable).toBe(true);
     for (const overrides of [
-      { NODE_ENV: 'development' },
+      { ENVIRONMENT: 'development', NODE_ENV: 'production' },
+      { ENVIRONMENT: 'test', NODE_ENV: 'production' },
       { GF_DEMO_MODE: 'true' },
-      { GAME_FEEDBACK_INDEXING: 'false' },
       { GAME_FEEDBACK_SITE_URL: 'http://feedback.example' },
       { GAME_FEEDBACK_SITE_URL: 'https://localhost' },
     ])

@@ -20,20 +20,22 @@ RUN corepack yarn workspace @game-feedback/api build \
 FROM build AS web-build
 ARG NEXT_PUBLIC_SENTRY_DSN=
 ARG NEXT_PUBLIC_AMPLITUDE_API_KEY=
+ARG SENTRY_RELEASE=
 ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN} NEXT_PUBLIC_AMPLITUDE_API_KEY=${NEXT_PUBLIC_AMPLITUDE_API_KEY}
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 ARG GF_SITE_URL=https://preview.invalid
 ARG GF_CONTACT_EMAIL=operator@example.invalid
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 GF_STANDALONE=true \
+ENV NODE_ENV=production ENVIRONMENT=production NEXT_TELEMETRY_DISABLED=1 GF_STANDALONE=true \
     GAME_FEEDBACK_API_URL=http://api:4300 \
     GAME_FEEDBACK_SITE_URL=${GF_SITE_URL} WEB_ORIGIN=${GF_SITE_URL} \
     GAME_FEEDBACK_CONTACT_EMAIL=${GF_CONTACT_EMAIL} \
-    GF_DEMO_MODE=false GF_TEST_AUTH_ENABLED=false GF_PREFETCH_TESTING=false GAME_FEEDBACK_INDEXING=false
+    GF_DEMO_MODE=false GF_TEST_AUTH_ENABLED=false GF_PREFETCH_TESTING=false
 RUN --mount=type=cache,id=gf-next-cache,target=/app/projects/game-feedback/apps/web/.next/cache \
     mkdir -p projects/game-feedback/apps/web/public \
     && corepack yarn workspace @game-feedback/web build
 
 FROM base AS api
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=4300
+ENV NODE_ENV=production ENVIRONMENT=production HOST=0.0.0.0 PORT=4300
 COPY --from=api-build /app/node_modules ./node_modules
 COPY --from=api-build /app/package.json ./package.json
 COPY --from=api-build /app/packages/push-notifications ./packages/push-notifications
@@ -49,7 +51,7 @@ EXPOSE 4300
 CMD ["node", "dist/main.js"]
 
 FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS web
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3300
+ENV NODE_ENV=production ENVIRONMENT=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3300
 WORKDIR /app
 COPY --from=web-build --chown=node:node /app/projects/game-feedback/apps/web/.next/standalone ./
 COPY --from=web-build --chown=node:node /app/projects/game-feedback/apps/web/.next/static ./projects/game-feedback/apps/web/.next/static

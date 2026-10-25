@@ -2,7 +2,9 @@ export function resolveSeoConfig(env: Record<string, string | undefined>) {
   const url = new URL(
     env.GAME_FEEDBACK_SITE_URL ||
       env.WEB_ORIGIN ||
-      (env.NODE_ENV === 'production' ? 'https://game.bambyul.com' : 'http://localhost:3300'),
+      ((env.ENVIRONMENT || env.NODE_ENV) === 'production'
+        ? 'https://game.bambyul.com'
+        : 'http://localhost:3300'),
   );
   if (
     !['http:', 'https:'].includes(url.protocol) ||
@@ -17,8 +19,7 @@ export function resolveSeoConfig(env: Record<string, string | undefined>) {
   return {
     origin: url.origin,
     indexable:
-      env.NODE_ENV === 'production' &&
-      env.GAME_FEEDBACK_INDEXING === 'true' &&
+      (env.ENVIRONMENT || env.NODE_ENV) === 'production' &&
       env.GF_DEMO_MODE !== 'true' &&
       url.protocol === 'https:' &&
       !local,

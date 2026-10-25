@@ -4,11 +4,19 @@ import {
   buildSentryClientTags,
   filterSentryEvent,
   resolveClientSentryDsn,
+  resolveSentryRelease,
   resolveServerSentryDsn,
   scrubSentryEvent,
 } from './sentry.helper';
 
 describe('웹 Sentry 수집 범위', () => {
+  it('uses the runtime release or the release embedded in the browser build', () => {
+    expect(resolveSentryRelease({ SENTRY_RELEASE: ' server ', NEXT_PUBLIC_SENTRY_RELEASE: 'build' })).toBe(
+      'server',
+    );
+    expect(resolveSentryRelease({ SENTRY_RELEASE: '', NEXT_PUBLIC_SENTRY_RELEASE: ' build ' })).toBe('build');
+    expect(resolveSentryRelease({ SENTRY_RELEASE: ' ' })).toBeUndefined();
+  });
   it('브라우저에는 공개 DSN만 사용하고 서버 DSN을 우선해야 한다', () => {
     expect(resolveClientSentryDsn({ SENTRY_DSN: 'private' })).toBeNull();
     expect(resolveServerSentryDsn({ SENTRY_DSN: 'server', NEXT_PUBLIC_SENTRY_DSN: 'public' })).toBe('server');

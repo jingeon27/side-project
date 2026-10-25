@@ -32,6 +32,8 @@ describe('API Sentry', () => {
   });
   it('실제 SDK의 격리 전송에서도 비공개 메시지 없이 오류와 라우트 패턴만 보내야 한다', async () => {
     vi.stubEnv('SENTRY_DSN', 'https://test@example.invalid/1');
+    vi.stubEnv('ENVIRONMENT', 'test');
+    vi.stubEnv('SENTRY_RELEASE', 'test-release');
     const captured: string[] = [];
     Sentry.init({
       ...sentryOptions(),
@@ -51,5 +53,7 @@ describe('API Sentry', () => {
     expect(captured).toHaveLength(1);
     expect(captured[0]).not.toContain('private-query-and-cookie');
     expect(captured[0]).toContain('/api/conversations/:id/messages');
+    expect(captured[0]).toContain('"environment":"test"');
+    expect(captured[0]).toContain('"release":"test-release"');
   });
 });

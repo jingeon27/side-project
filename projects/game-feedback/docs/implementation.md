@@ -1,3 +1,15 @@
+## 2026-10-25 환경 설정 통일과 Sentry release·MCP 검증
+
+사용자 설정을 ENVIRONMENT(development/test/production) 하나로 통일했다. 실행기가 프레임워크용 NODE_ENV를 파생하고 Sentry도 같은 환경 값을 사용한다. SENTRY_ENVIRONMENT와 GAME_FEEDBACK_INDEXING/GF_INDEXING 설정을 제거했으며 검색 공개는 운영 환경·HTTPS·비로컬 origin·데모 비활성 조건으로 판단한다. 개인 화면과 테스트 계정은 계속 검색에서 제외한다. 기본 저장소와 실행 worktree의 로컬 환경 파일도 필요한 항목만 이행했다.
+
+Next 서버와 브라우저 초기화에 release를 연결했다. SENTRY_RELEASE 하나를 브라우저 빌드에도 주입하므로 공개 release 환경변수를 따로 설정하지 않는다. 공유 workflow/Dockerfile은 GitHub commit SHA를 웹 빌드에 전달하고 Compose는 같은 SHA를 API와 Next 런타임에 전달한다. 이 연결과 기존 색인 플래그 제거를 위해 공통 workflow와 배포 문서를 함께 수정했다.
+
+실제 서버 전송 검사에서 Next SDK 11.7이 Node SDK 10을 참조해 초기화와 오류 수집이 다른 core를 쓰는 의존성 배치를 확인했다. 재설치만으로 해결되지 않아 이 프로젝트 API의 Node SDK도 11.7.0으로 맞추고 개인정보 수집 설정을 해당 버전의 dataCollection으로 이행했다. 루트 lockfile의 API 의존성 한 항목만 변경했다. 실제 Next 요청 오류가 가짜 transport까지 도달하고 환경·release를 포함하며 비공개 요청/메시지는 제거하는 회귀 테스트를 추가했다.
+
+최종 검증: 전체 프로젝트 check, API unit 174개, Web unit/UI 224개, 독립 3353/4353의 production build/start 관측 E2E 3개가 통과했다. 테스트는 독립 gf_test_ 스키마와 가짜 인증·게임 제공자 및 관측 키를 사용했고 실행 뒤 스키마를 정리했다. Actionlint와 변경 파일 형식 검사도 통과했다.
+
+사용자 요청에 따라 공식 Sentry MCP를 등록하고 사용자가 OAuth 승인을 완료했다. MCP로 조직·프로젝트를 조회한 뒤 실제 브라우저·API·Next 서버 테스트 이벤트의 수신과 development 환경 및 동일 release를 확인했다. 이 외부 수신 검증은 위 가짜 키 E2E와 별도다. 인증 토큰·DSN·쿠키는 저장소에 포함하지 않았다. 소스맵 업로드나 운영 배포는 수행하지 않았다.
+
 ## 2026-10-25 develop 기준 갱신과 로컬 Discord 설정 반영
 
 기본 저장소의 develop과 S3 작업 브랜치를 origin/develop의 b417b10c까지 fast-forward했다. 미커밋 변경 82개 파일은 별도 보관 후 다시 적용했으며, 테스트 주소 환경변수 충돌은 최신 GF_E2E_WEB_ORIGIN으로 정리했다. S3 업로드 변경은 유지하고 기본 저장소 .env의 Discord 설정 세 항목만 실행 worktree에 복사해 3300/4300을 재시작했다. 키와 OAuth state·쿠키는 출력하지 않았다.

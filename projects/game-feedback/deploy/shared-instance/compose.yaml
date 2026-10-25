@@ -1,6 +1,7 @@
 name: side-game-feedback
 x-api: &api
   NODE_ENV: production
+  ENVIRONMENT: production
   PUSH_NOTIFICATIONS_ENABLED: ${PUSH_NOTIFICATIONS_ENABLED:-false}
   EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
   DEPLOYMENT_TARGET: shared-instance
@@ -31,7 +32,6 @@ x-api: &api
   DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
   SUPERCELL_API_TOKEN: ${SUPERCELL_API_TOKEN:-}
   SENTRY_DSN: ${SENTRY_DSN:-}
-  SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
   SENTRY_RELEASE: ${RELEASE_SHA:-}
   NODE_OPTIONS: --max-old-space-size=256
 x-ca: &ca
@@ -75,6 +75,8 @@ services:
     init: true
     environment:
       NODE_ENV: production
+      ENVIRONMENT: production
+      SENTRY_RELEASE: ${RELEASE_SHA:-}
       PORT: '3300'
       HOSTNAME: 0.0.0.0
       NEXT_TELEMETRY_DISABLED: '1'
@@ -83,7 +85,6 @@ services:
       GF_CACHE_REVALIDATION_SECRET: ${GF_CACHE_REVALIDATION_SECRET:?Set GF_CACHE_REVALIDATION_SECRET}
       GAME_FEEDBACK_SITE_URL: https://${GAME_FEEDBACK_DOMAIN:?Set GAME_FEEDBACK_DOMAIN}
       GAME_FEEDBACK_CONTACT_EMAIL: ${GF_CONTACT_EMAIL:?Set GF_CONTACT_EMAIL}
-      GAME_FEEDBACK_INDEXING: ${GF_INDEXING:-false}
       GF_DEMO_MODE: 'false'
       GF_TEST_AUTH_ENABLED: 'false'
       # /.well-known/apple-app-site-association·assetlinks.json. 없으면 웹이 첫 요청부터 실패한다.

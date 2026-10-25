@@ -27,6 +27,7 @@ const apiEnv = {
   GF_CACHE_REVALIDATION_SECRET: 'game-feedback-e2e-cache-secret-'.repeat(2),
   GF_CACHE_REVALIDATION_URL: 'http://127.0.0.1:3301/internal/cache/revalidate',
   NODE_ENV: 'test',
+  ENVIRONMENT: 'test',
   SENTRY_DSN: '',
   NEXT_PUBLIC_SENTRY_DSN: '',
   NEXT_PUBLIC_AMPLITUDE_API_KEY: '',
@@ -77,7 +78,6 @@ export default defineConfig({
         GAME_FEEDBACK_API_URL: 'http://127.0.0.1:4301',
         NEXT_DIST_DIR: '.next/e2e',
         GAME_FEEDBACK_SITE_URL: 'https://feedback.example',
-        GAME_FEEDBACK_INDEXING: 'false',
         // 운영 빌드 웹은 앱 링크 값이 없으면 첫 요청부터 실패한다.
         ...E2E_APP_LINK_ENV,
       },

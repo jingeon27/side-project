@@ -2,6 +2,7 @@ import type { Instrumentation } from 'next';
 
 import { assertAppLinksConfig } from '@/_app/app-links/app-links';
 import {
+  resolveSentryRelease,
   resolveServerSentryDsn,
   scrubSentryEvent,
   SENTRY_DATA_COLLECTION,
@@ -22,7 +23,11 @@ export async function register() {
     dsn,
     defaultIntegrations: false,
     enableOpenTelemetrySetup: false,
-    environment: process.env.NODE_ENV,
+    environment: process.env.ENVIRONMENT || process.env.NODE_ENV,
+    release: resolveSentryRelease({
+      SENTRY_RELEASE: process.env.SENTRY_RELEASE,
+      NEXT_PUBLIC_SENTRY_RELEASE: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
+    }),
     dataCollection: SENTRY_DATA_COLLECTION,
     beforeSend: scrubSentryEvent,
   });

@@ -10,6 +10,13 @@ export const developmentDatabaseUrl =
 export const testDatabaseUrl =
   'postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test?schema=public';
 
+export function resolveEnvironment(...sources) {
+  const value = sources.map((source) => source.ENVIRONMENT || source.NODE_ENV).find(Boolean) || 'development';
+  if (!['development', 'test', 'production'].includes(value))
+    throw new Error('ENVIRONMENT must be development, test or production.');
+  return { ENVIRONMENT: value, NODE_ENV: value };
+}
+
 export function environment(overrides = {}) {
   const envFile = path.join(projectDir, '.env');
   const fileEnv = {};
@@ -19,7 +26,6 @@ export function environment(overrides = {}) {
     Object.assign(fileEnv, parseEnv(readFileSync(envFile, 'utf8')));
   }
   const merged = {
-    NODE_ENV: 'development',
     PORT: '4300',
     WEB_ORIGIN: 'http://localhost:3300',
     API_ORIGIN: 'http://localhost:4300',
@@ -30,6 +36,7 @@ export function environment(overrides = {}) {
     ...fileEnv,
     ...process.env,
     ...overrides,
+    ...resolveEnvironment(overrides, process.env, fileEnv),
   };
   if (!merged.GF_S3_BUCKET)
     Object.assign(merged, {

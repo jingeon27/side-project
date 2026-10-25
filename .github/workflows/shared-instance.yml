@@ -74,6 +74,7 @@ jobs:
             GF_SITE_URL=${{ env.GF_BUILD_SITE_URL }}
             GF_CONTACT_EMAIL=${{ env.GF_BUILD_CONTACT_EMAIL }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.GF_WEB_SENTRY_DSN }}
+            SENTRY_RELEASE=${{ github.sha }}
             NEXT_PUBLIC_AMPLITUDE_API_KEY=${{ vars.GF_AMPLITUDE_API_KEY }}
           cache-from: type=gha,scope=game-feedback-web
           cache-to: type=gha,mode=max,scope=game-feedback-web

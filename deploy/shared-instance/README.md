@@ -91,7 +91,7 @@ bash deploy/shared-instance/scripts/prepare.sh
 | `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정    |
 | `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정      |
 
-원본 예시는 [호스트 환경 파일](host.env.example), [GF 환경 파일](../../projects/game-feedback/deploy/shared-instance/service.env.example), [PC 환경 파일](../../projects/photo-contest/deploy/shared-instance/service.env.example)이다. `GAME_FEEDBACK_DOMAIN`, `GAME_FEEDBACK_API_DOMAIN`, `PHOTO_CONTEST_DOMAIN`, `PHOTO_CONTEST_API_DOMAIN`에는 `https://`나 경로를 붙이지 않는다. GitHub의 `*_SITE_URL`에는 `https://`를 포함하고 마지막 `/`는 붙이지 않는다. 호스트의 버킷 이름과 각 서비스 자격 증명의 권한 대상이 일치해야 한다. 공개 출시 때 GF 환경 파일의 `GF_INDEXING=true`로 검색 수집을 허용한다.
+원본 예시는 [호스트 환경 파일](host.env.example), [GF 환경 파일](../../projects/game-feedback/deploy/shared-instance/service.env.example), [PC 환경 파일](../../projects/photo-contest/deploy/shared-instance/service.env.example)이다. `GAME_FEEDBACK_DOMAIN`, `GAME_FEEDBACK_API_DOMAIN`, `PHOTO_CONTEST_DOMAIN`, `PHOTO_CONTEST_API_DOMAIN`에는 `https://`나 경로를 붙이지 않는다. GitHub의 `*_SITE_URL`에는 `https://`를 포함하고 마지막 `/`는 붙이지 않는다. 호스트의 버킷 이름과 각 서비스 자격 증명의 권한 대상이 일치해야 한다. GF는 ENVIRONMENT=production인 HTTPS 운영 환경에서 검색 수집을 허용한다.
 
 `prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 처음 한 번 현재 저장소 버전으로 복사한다. 이후 변경은 아래 [공용 Caddyfile 동기화](#공용-caddyfile-동기화)를 따른다.
 
@@ -289,7 +289,7 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 | GF     | `https://game.bambyul.com/api/health/ready`        | `https://game.bambyul.com/_health/live`    |
 | PC     | `https://contest.bambyul.com/backend/health/ready` | `https://contest.bambyul.com/_health/live` |
 
-[Google Search Console](https://search.google.com/search-console/)에서 소유권을 확인하고 실제 서비스의 `/sitemap.xml`을 제출한다. GF는 `GF_INDEXING=true`를 적용한 뒤 `/robots.txt`, canonical, 사이트맵 URL이 운영 도메인을 사용하는지 먼저 확인한다.
+[Google Search Console](https://search.google.com/search-console/)에서 소유권을 확인하고 실제 서비스의 `/sitemap.xml`을 제출한다. GF는 운영 배포 후 `/robots.txt`, canonical, 사이트맵 URL이 운영 도메인을 사용하는지 먼저 확인한다.
 
 ## 백업·복구 연습
 

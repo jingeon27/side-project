@@ -47,7 +47,11 @@ test('자동 페이지뷰는 이동마다 한 번만 기록하고 공통 속성�
   expect(JSON.stringify(events)).not.toContain('private-search');
 });
 
-test('실제 오류 전송은 쿠키·검색어·사용자와 브레드크럼을 포함하지 않아야 한다', async ({ page, context }) => {
+test('실제 오류 전송은 쿠키·검색어·사용자와 브레드크럼을 포함하지 않아야 한다', async ({
+  page,
+  context,
+  baseURL,
+}) => {
   const envelopes: string[] = [];
   await context.route(/https:\/\/[^/]*amplitude\.com\//, (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: '{"code":200}' }),
@@ -57,7 +61,7 @@ test('실제 오류 전송은 쿠키·검색어·사용자와 브레드크럼을
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
   await context.addCookies([
-    { name: 'private-cookie', value: 'private-cookie-value', url: 'http://127.0.0.1:3301' },
+    { name: 'private-cookie', value: 'private-cookie-value', url: baseURL ?? 'http://127.0.0.1:3301' },
   ]);
   await page.goto('/ko?q=private-query-value');
   await page.evaluate(() =>
@@ -70,9 +74,15 @@ test('실제 오류 전송은 쿠키·검색어·사용자와 브레드크럼을
   expect(data).not.toContain('private-cookie-value');
   expect(data).not.toContain('private-query-value');
   expect(data).not.toContain('private-error-message');
+  expect(data).toContain('"environment":"test"');
+  expect(data).toContain('"release":"observability-test-release"');
 });
 
-test('실패한 등록은 집계하지 않고 글·채팅·메시지 성공만 집계해야 한다', async ({ page, context }) => {
+test('실패한 등록은 집계하지 않고 글·채팅·메시지 성공만 집계해야 한다', async ({
+  page,
+  context,
+  baseURL,
+}) => {
   const events: IEvent[] = [];
   await context.route(/https:\/\/[^/]*amplitude\.com\//, async (route) => {
     const raw = route.request().postDataBuffer();
@@ -82,7 +92,7 @@ test('실패한 등록은 집계하지 않고 글·채팅·메시지 성공만 �
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{"code":200}' });
   });
   await context.route('https://sentry.invalid/**', (route) => route.fulfill({ status: 200, body: '{}' }));
-  const origin = 'http://127.0.0.1:3301';
+  const origin = baseURL ?? 'http://127.0.0.1:3301';
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },

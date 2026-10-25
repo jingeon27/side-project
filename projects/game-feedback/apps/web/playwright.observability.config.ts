@@ -24,6 +24,8 @@ export default defineConfig({
       ...(index === 1
         ? {
             NODE_ENV: production ? 'production' : 'development',
+            ENVIRONMENT: 'test',
+            SENTRY_RELEASE: 'observability-test-release',
             NEXT_DIST_DIR: production ? '.next/observability-production' : '.next/observability',
             NEXT_PUBLIC_AMPLITUDE_API_KEY: 'observability-test-key',
             NEXT_PUBLIC_SENTRY_DSN: 'https://test@sentry.invalid/1',

@@ -4,10 +4,10 @@
 
 ## 운영자가 설정할 값
 
-- Sentry 조직 `game-feedback` 아래 Web/API 프로젝트를 만든다. Spike Protection, DSN rate limit, Inbound Filters와 알림 주소를 설정한다.
+- 사용 중인 Sentry 조직 아래 Web/API 프로젝트를 만든다. Spike Protection, DSN rate limit, Inbound Filters와 알림 주소를 설정한다.
 - Amplitude production/dev 프로젝트를 분리한다. 현재 웹은 US endpoint를 사용한다. 실제 프로젝트 저장 국가와 보유 기간을 확인하고 개인정보 안내 ko/en/ja를 확정한 뒤 공개 환경에서 키를 켠다. 해당 콘솔 값은 코드 검사로 확인할 수 없다.
 - GitHub Variables `GF_WEB_SENTRY_DSN`, `GF_AMPLITUDE_API_KEY`는 shared-instance 워크플로의 웹 빌드 인자다. 변경하면 웹 이미지를 다시 빌드한다.
-- 서버 서비스 `.env`의 `SENTRY_DSN`은 API용이다. 선택 값은 `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`다. DSN과 공개 API key는 인증 토큰과 다르며 Sentry Auth Token은 사용하지 않는다.
+- 서버 서비스 `.env`의 `SENTRY_DSN`은 API용이다. 환경 구분은 공통 `ENVIRONMENT` 하나를 사용하고 release는 `SENTRY_RELEASE`로 지정한다. DSN과 공개 API key는 인증 토큰과 다르며 Sentry Auth Token은 사용하지 않는다.
 
 ## 로컬에서 먼저 확인하기
 
@@ -17,7 +17,8 @@
 NEXT_PUBLIC_AMPLITUDE_API_KEY=<Amplitude development 프로젝트 API key>
 NEXT_PUBLIC_SENTRY_DSN=<Sentry 브라우저 DSN>
 SENTRY_DSN=<Sentry 서버 DSN>
-SENTRY_ENVIRONMENT=development
+ENVIRONMENT=development
+SENTRY_RELEASE=local-development
 ```
 
 Sentry 프로젝트의 Settings → Client Keys (DSN), Amplitude 프로젝트의 Settings → Projects → API Keys에서 값을 확인한다. Amplitude는 현재 US endpoint를 사용하므로 US 개발 프로젝트를 사용한다. Sentry는 로컬 확인용 프로젝트 하나의 DSN을 두 변수에 넣어도 된다. 집계 실행은 `SENTRY_DSN`을 API와 Next 서버에 함께 전달한다. Next 서버는 이 값이 없으면 `NEXT_PUBLIC_SENTRY_DSN`을 사용한다. API와 Next 서버를 별도 Sentry 프로젝트로 나누려면 프로세스별 환경변수를 따로 전달해야 한다.
@@ -26,6 +27,8 @@ Sentry 프로젝트의 Settings → Client Keys (DSN), Amplitude 프로젝트의
 nvm use
 corepack yarn workspace @side/game-feedback dev:test
 ```
+
+`ENVIRONMENT`는 development/test/production 중 하나다. 집계 실행기가 Node·Next 프레임워크용 `NODE_ENV`를 같은 값으로 맞추므로 .env에 별도로 넣지 않는다. Sentry 전용 환경 설정도 없다. Next 빌드는 `ENVIRONMENT`와 `SENTRY_RELEASE`를 공개 번들에 정적으로 전달한다. `NEXT_PUBLIC_ENVIRONMENT`·`NEXT_PUBLIC_SENTRY_RELEASE`를 따로 설정할 필요는 없다. 운영 이미지의 release는 GitHub commit SHA이며 API·Next 서버·브라우저에 같은 값을 사용한다.
 
 변경 전에 실행 중이던 Web/API는 종료 후 다시 시작한다. `NEXT_PUBLIC_*`는 브라우저 번들에 반영되므로 화면도 새로고침한다. `@game-feedback/web dev`처럼 앱만 직접 시작하면 프로젝트 루트 `.env`를 읽는 집계 로더를 거치지 않는다. 이 경우 Next의 `apps/web/.env.local`과 API 프로세스 환경을 별도로 관리해야 한다.
 
@@ -52,3 +55,7 @@ API와 웹 단위 테스트는 SDK 경계에서 이벤트와 개인정보 제거
 프로덕션 조건은 `GF_OBSERVABILITY_PRODUCTION=true yarn workspace @game-feedback/web test:observability`로 별도 빌드/start와 가짜 키를 사용해 검증한다. 오류만 수집하는 설정에서 서버 시작과 SDK 전송 검사가 3개 모두 통과했다.
 
 서버 DSN fallback은 NEXT_PUBLIC 값을 정적 속성으로 읽어 이미지 빌드 시 포함한다. production 관측 검사는 시작 프로세스에서 공개 키 환경변수를 비워도 빌드에 들어간 키로 동작하는지 확인한다.
+
+## Sentry MCP 연결
+
+Codex에서는 `codex mcp add sentry --url https://mcp.sentry.dev/mcp`로 등록하고 브라우저의 OAuth 인증을 완료한다. 이미 등록했으면 `codex mcp login sentry`로 인증한다. `codex mcp list`에서 연결을 확인한 뒤 조직·프로젝트와 실제 이벤트의 environment/release를 조회한다. MCP 계정 인증은 DSN을 넣는 오류 수집 설정과 별개이며 인증 토큰을 저장소에 기록하지 않는다.

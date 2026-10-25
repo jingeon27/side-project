@@ -27,6 +27,8 @@ const config = {
   experimental: { exposeTestingApiInProductionBuild: process.env.GF_PREFETCH_TESTING === 'true' },
   env: {
     NEXT_PUBLIC_GAME_FEEDBACK_CONTACT_EMAIL: process.env.GAME_FEEDBACK_CONTACT_EMAIL ?? '',
+    NEXT_PUBLIC_ENVIRONMENT: process.env.ENVIRONMENT || process.env.NODE_ENV || 'development',
+    NEXT_PUBLIC_SENTRY_RELEASE: process.env.SENTRY_RELEASE?.trim() || '',
   },
   transpilePackages: ['@game-feedback/contracts', '@game-feedback/sdk', '@side/design-system'],
   async headers() {

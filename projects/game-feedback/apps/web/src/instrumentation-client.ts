@@ -5,6 +5,7 @@ import {
   buildSentryClientTags,
   filterSentryEvent,
   resolveClientSentryDsn,
+  resolveSentryRelease,
   SENTRY_DATA_COLLECTION,
 } from '@/shared/lib/monitoring/sentry.helper';
 import { isNativeApp, nativeBridgeChannel } from '@/shared/native';
@@ -14,7 +15,8 @@ const dsn = resolveClientSentryDsn({ NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PU
 if (dsn)
   Sentry.init({
     dsn,
-    environment: process.env.NODE_ENV,
+    environment: process.env.NEXT_PUBLIC_ENVIRONMENT,
+    release: resolveSentryRelease({ NEXT_PUBLIC_SENTRY_RELEASE: process.env.NEXT_PUBLIC_SENTRY_RELEASE }),
     dataCollection: SENTRY_DATA_COLLECTION,
     tracesSampleRate: 0,
     beforeSend: (event: Sentry.ErrorEvent, hint: Sentry.EventHint) => {
