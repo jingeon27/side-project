@@ -37,7 +37,7 @@ case "$1" in
   run)
     printf '{"DBInstances":[{"Engine":"postgres","Endpoint":{"Address":"shared.abcdef.ap-northeast-2.rds.amazonaws.com"},"BackupRetentionPeriod":7,"StorageEncrypted":true,"PubliclyAccessible":false,"DeletionProtection":true,"LatestRestorableTime":"%s","DBInstanceArn":"arn:aws:rds:ap-northeast-2:123456789012:db:shared"}]}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
   compose)
-    if [[ "$*" == *" ps -aq web" ]]; then echo old-web; fi
+    if [[ "$*" == *" ps -q web" ]]; then echo old-web; fi
     if [[ "$*" == *" -T migrate" && -n "\${FAKE_MIGRATE_SECONDS:-}" ]]; then sleep "$FAKE_MIGRATE_SECONDS"; fi ;;
 esac
 `;
@@ -168,6 +168,8 @@ describe('공유 호스트 원격 배포', () => {
     expect(index('login ghcr.io')).toBeGreaterThanOrEqual(0);
     expect(index(`pull --quiet ${apiImage}`)).toBeGreaterThan(index('login ghcr.io'));
     expect(index('-T migrate')).toBeGreaterThan(index(`pull --quiet ${webImage}`));
+    expect(index('side-web-draining')).toBeGreaterThan(index('-T migrate'));
+    expect(index(' stop web')).toBeGreaterThan(index('side-web-draining'));
     // 분리된 작업은 레지스트리를 다시 부르지 않고 미리 받은 digest만 쓴다.
     expect(calls.filter((call) => call.startsWith('compose') && call.includes(' pull '))).toEqual([]);
     const job = readFileSync(join(state.root, 'services/photo-contest/.deploy-request'), 'utf8').trim();

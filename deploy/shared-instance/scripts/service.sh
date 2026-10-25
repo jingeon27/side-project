@@ -30,8 +30,15 @@ compose() {
 activate() {
   local directory=$1
   local web_id drain_started
-  web_id=$(compose "$directory" ps -aq web) || return 1
+  web_id=$(compose "$directory" ps -q web) || return 1
   drain_started=$SECONDS
+  if [[ -n "$web_id" ]]; then
+    # Stop assigning new requests before SIGTERM; keep the API alive for the remaining SSR reads.
+    compose "$directory" exec -T web node -e \
+      "require('node:fs').writeFileSync('/tmp/side-web-draining', 'draining', {mode:0o600})" || return 1
+    # The proxy probes every second with a one-second timeout. Let the failed probe take effect.
+    sleep 3
+  fi
   # Drain SSR while the old API still serves its in-flight reads.
   compose "$directory" stop web || return 1
   printf 'Web drain completed in %ss\n' "$((SECONDS - drain_started))"

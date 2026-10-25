@@ -78,6 +78,7 @@ services:
       ENVIRONMENT: production
       SENTRY_RELEASE: ${RELEASE_SHA:-}
       PORT: '3300'
+      WEB_DRAIN_FILE: /tmp/side-web-draining
       HOSTNAME: 0.0.0.0
       NEXT_TELEMETRY_DISABLED: '1'
       NODE_OPTIONS: --max-old-space-size=384
