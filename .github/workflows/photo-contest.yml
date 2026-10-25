@@ -158,6 +158,9 @@ jobs:
       - run: yarn workspace @side/photo-contest codegen
       - run: yarn workspace @photo-contest/${{ matrix.app }} exec playwright install --with-deps chromium webkit
       - run: yarn workspace @photo-contest/${{ matrix.app }} test:e2e
+      - name: Verify Web Vitals with intercepted SDK requests
+        if: matrix.app == 'web'
+        run: yarn workspace @photo-contest/web test:observability
       - name: Verify production public cache
         if: always() && !cancelled() && matrix.app == 'web'
         run: yarn workspace @photo-contest/web test:cache

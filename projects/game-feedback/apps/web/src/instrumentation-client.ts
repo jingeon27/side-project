@@ -2,6 +2,10 @@ import * as Sentry from '@sentry/nextjs';
 
 import { initAnalytics } from '@/shared/analytics';
 import {
+  scrubSentryPerformanceSpan,
+  sentryPerformancePath,
+} from '@/shared/lib/monitoring/sentry-performance.helper';
+import {
   buildSentryClientTags,
   filterSentryEvent,
   resolveClientSentryDsn,
@@ -19,7 +23,26 @@ if (dsn)
     environment: process.env.ENVIRONMENT,
     release: resolveSentryRelease({ SENTRY_RELEASE: process.env.SENTRY_RELEASE }),
     dataCollection: SENTRY_DATA_COLLECTION,
-    tracesSampleRate: 0,
+    tracesSampleRate: 1,
+    integrations: [
+      Sentry.browserTracingIntegration({
+        traceFetch: false,
+        traceXHR: false,
+        enableLongTask: false,
+        enableLongAnimationFrame: false,
+        beforeStartSpan: (options) => ({ ...options, name: sentryPerformancePath(options.name) }),
+      }),
+    ],
+    beforeSendSpan: (span) =>
+      scrubSentryPerformanceSpan({
+        ...span,
+        attributes: {
+          ...span.attributes,
+          service: 'game-feedback',
+          layer: 'browser',
+          ...buildSentryClientTags(isNativeApp()),
+        },
+      }),
     beforeSend: (event: Sentry.ErrorEvent, hint: Sentry.EventHint) => {
       const clean = filterSentryEvent(event, hint.originalException);
       if (!clean) return null;

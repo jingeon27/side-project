@@ -1,6 +1,6 @@
 # 오류와 이용 흐름 관측
 
-API는 예상하지 못한 오류만 Sentry로 보낸다. Next 서버와 브라우저도 같은 오류 정리 정책을 적용한다. Amplitude는 웹의 제품 이벤트를 수집한다. 트레이스·Replay·소스맵 업로드는 켜지 않는다. SDK 키가 비어 있으면 전송하지 않는다.
+API는 예상하지 못한 오류만 Sentry로 보낸다. Next 서버와 브라우저도 같은 오류 정리 정책을 적용한다. 브라우저는 Web Vitals도 수집하고, Amplitude는 웹의 제품 이벤트를 수집한다. SDK 키가 비어 있으면 전송하지 않는다.
 
 ## 설정과 실행
 
@@ -9,6 +9,16 @@ API는 예상하지 못한 오류만 Sentry로 보낸다. Next 서버와 브라�
 `@side/game-feedback dev`와 `@game-feedback/web dev` 모두 루트 설정을 읽는다. 웹의 build/start도 같은 실행기를 거친다. 프로세스에서 명시한 값(빈 키 포함)이 파일보다 우선하고 build/start의 프레임워크 `NODE_ENV`는 production이다. 공개 키·환경·release는 빌드에 고정되므로 운영 값을 바꾸면 다시 빌드한다. 로컬에서 이미 실행 중인 서버에는 이후 수정한 값이 자동 반영되지 않는다.
 
 Sentry에서 `service:game-feedback`과 `layer:api`, `layer:next-server`, `layer:browser`로 발생 위치를 구분한다. API와 Next 서버가 같은 DSN을 사용해도 이 태그로 나눌 수 있다. 브라우저·WebView는 기존 `client` 태그로 구분한다. Amplitude는 US 데이터 센터와 개발/운영 별도 프로젝트를 사용한다.
+
+## Web Vitals
+
+공개 DSN이 있으면 Sentry의 BrowserTracing으로 LCP·CLS·INP와 FCP·TTFB를 수집한다. 브라우저 성능 span 수집률은 100%이며 fetch·XHR·긴 작업의 추가 계측은 끈다. Sentry 11의 기본 span streaming과 `beforeSendSpan`을 사용한다. 화면 이름과 segment 이름의 ID·검색어는 제거하며, 원본 URL·DOM 선택자·사용자 정보·쿠키를 span 속성에 남기지 않는다. 지표 숫자, 추적 ID, 환경·release와 성능 점수 계산에 필요한 브라우저 User-Agent는 유지한다.
+
+Sentry의 Insights → Frontend → Web Vitals에서 프로젝트 `game-feedback`을 선택한다. 성능 span의 `service=game-feedback`, `layer=browser`, `client=browser|webview`로 구분할 수 있다. 지표는 브라우저 지원 여부에 따라 달라지며, INP는 실제 상호작용 뒤, LCP·CLS는 화면을 떠나거나 숨길 때 최종 보고될 수 있다.
+
+`test:observability`는 실제 Chromium의 측정값 5종과 개인정보 제거를 검사한다. 실제 수신만 다시 확인할 때는 `monitoring:check --grep LCP`를 사용한다. 측정값·응답 상태·trace ID만 담은 `web-vitals-receipt` 첨부가 테스트 결과에 남으며 MCP에서 해당 trace를 조회할 수 있다.
+
+2026-10-26 격리한 로컬 운영 빌드에서 실제 수집 응답 200과 [LCP·CLS·INP span 수신](https://jingeons-side-project.sentry.io/explore/traces/trace/1fa4ad3550e2498d8b2a39e2cbed439c)을 MCP로 확인했다. 테스트용 클릭을 사용한 수집 검증이며 운영 배포는 별도다.
 
 ## 자동 검사와 실제 전송 검사
 

@@ -21,6 +21,16 @@ corepack yarn workspace @photo-contest/web monitoring:check
 
 확인용 오류 종류는 MonitoringVerificationError다. trace·캡처·영상은 남기지 않는다. 프로젝트 `.data/monitoring-web-verification.json`에는 상태·eventId·이벤트 이름만 저장하고 키·쿠키는 넣지 않는다. 종료 시 이번 DB 스키마와 S3 대역을 정리한다. 포트가 사용 중이면 검사만 실패한다.
 
+## Web Vitals
+
+웹 공개 DSN이 있으면 Sentry BrowserTracing으로 LCP·CLS·INP와 FCP·TTFB를 수집한다. 브라우저 성능 span 수집률은 100%이며 fetch·XHR·긴 작업의 추가 계측은 끈다. Sentry 11의 기본 span streaming과 `beforeSendSpan`으로 숫자·추적 ID·환경 및 성능 점수 계산에 필요한 User-Agent를 남긴다. 초대 토큰·그룹 ID는 경로 템플릿으로 바꾸고 원본 URL·DOM 선택자·사용자·쿠키 속성은 제거한다.
+
+Sentry의 Insights → Frontend → Web Vitals에서 `photo-contest-web` 프로젝트를 선택한다. 성능 span은 `service=photo-contest`, `layer=browser`, `client=web|app`으로 구분한다. 지표는 브라우저 지원에 따라 달라지며 INP에는 실제 상호작용이 필요하고 LCP·CLS는 화면을 떠나거나 숨길 때 최종 보고될 수 있다.
+
+`corepack yarn workspace @photo-contest/web test:observability`는 3337 포트의 운영 빌드에서 실제 Chromium 측정값 5종을 수집 경계에서 가로챈다. 공개 약관 화면만 사용해 DB·실제 API가 필요하지 않다. 웹 CI에도 같은 검사가 포함된다. 실제 수신은 `monitoring:check --grep LCP`로 확인한다. `web-vitals-receipt` 첨부에는 측정값·응답 상태·trace ID만 저장하며 MCP로 재조회할 수 있다.
+
+2026-10-26 격리한 로컬 운영 빌드에서 실제 수집 응답 200과 [LCP·CLS·INP span 수신](https://photo-content.sentry.io/explore/traces/trace/a0661ed8327b4d2b9e65d9fc97ca4d11)을 MCP로 확인했다. 테스트용 클릭을 사용한 수집 검증이며 운영 배포는 별도다.
+
 ## 데이터와 구분
 
 Sentry는 API·Next 서버·브라우저에 각각 layer=api/next-server/browser와 service=photo-contest를 붙인다. 브라우저는 기존 client=web/app도 유지한다. 웹 오류의 메시지·extra·request·user·breadcrumbs·문맥과 스택 쿼리·지역 변수·소스 문맥은 제거한다. Next SDK의 contexts.nextjs.request_path도 제거 대상이다. 오류 종류, React 오류 번호와 호출 위치는 유지한다. 수집 서비스 자체의 IP/지역 보관 설정은 별도로 관리한다.

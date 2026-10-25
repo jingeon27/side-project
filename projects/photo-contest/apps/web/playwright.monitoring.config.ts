@@ -14,7 +14,8 @@ const webOrigin = 'http://127.0.0.1:3336';
 
 // 실제 전송은 이 명령에서만 켠다. 기본 e2e와 다른 포트·별도 DB 스키마를 쓴다.
 export default defineConfig({
-  testDir: './test/monitoring',
+  testDir: '.',
+  testMatch: ['test/monitoring/**/*.spec.ts', 'test/observability/web-vitals.spec.ts'],
   workers: 1,
   retries: 0,
   timeout: 90_000,

@@ -27,7 +27,7 @@ const apiEnv = {
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: ['**/test-token-chat.spec.ts', '**/observability.spec.ts'],
+  testIgnore: ['**/test-token-chat.spec.ts', '**/observability.spec.ts', '**/sentry-web-vitals.spec.ts'],
   fullyParallel: false,
   workers: 1,
   timeout: 45_000,
