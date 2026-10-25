@@ -5,8 +5,8 @@ import { assertNode, environment, projectDir, resolveEnvironment, yarn } from '.
 
 const env = environment();
 const action = process.argv[2];
-const workspace = (name, script, overrides = {}) =>
-  yarn(['workspace', `@game-feedback/${name}`, script], {
+const workspace = (name, script, overrides = {}, args = []) =>
+  yarn(['workspace', `@game-feedback/${name}`, script, ...args], {
     ...env,
     ...overrides,
     ...resolveEnvironment(overrides, env),
@@ -30,11 +30,11 @@ export async function prerequisites() {
   await workspace('sdk', 'codegen');
 }
 
-export async function setup() {
+export async function setup({ fixtures = false } = {}) {
   await prerequisites();
   await local('db.mjs', ['start']);
   await local('db.mjs', ['sync']);
-  await workspace('api', 'db:seed');
+  await workspace('api', 'db:seed', {}, fixtures ? ['--fixtures'] : []);
 }
 
 async function check() {
@@ -50,7 +50,7 @@ async function check() {
 
 async function test() {
   await prerequisites();
-  await workspace('api', 'test', { NODE_ENV: 'test' });
+  await workspace('api', 'test', { ENVIRONMENT: 'test' });
   await workspace('sdk', 'test');
   await workspace('bridge', 'test');
   await workspace('web', 'test');
@@ -76,8 +76,8 @@ async function endToEnd() {
 
 async function build() {
   await prerequisites();
-  await workspace('api', 'build', { NODE_ENV: 'production' });
-  await workspace('web', 'build', { NODE_ENV: 'production' });
+  await workspace('api', 'build', { ENVIRONMENT: 'production' });
+  await workspace('web', 'build', { ENVIRONMENT: 'production' });
   await workspace('mobile', 'bundle:check');
   await workspace('admin', 'build');
 }

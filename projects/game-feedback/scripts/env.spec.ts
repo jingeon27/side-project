@@ -14,7 +14,7 @@ describe('runtime environment', () => {
   });
 
   it('lets an internal test or build override the configured local mode', () => {
-    expect(resolveEnvironment({ NODE_ENV: 'test' }, { ENVIRONMENT: 'development' })).toEqual({
+    expect(resolveEnvironment({ ENVIRONMENT: 'test' }, { ENVIRONMENT: 'development' })).toEqual({
       ENVIRONMENT: 'test',
       NODE_ENV: 'test',
     });
