@@ -540,7 +540,7 @@ try {
     [gf, '/api/health/live'],
     [gf, '/ko'],
     [pc, '/backend/health/live'],
-    [pc, '/'],
+    [pc, '/sign'],
   ].map(async ([client, path]) => {
     while (availability.running) {
       const started = performance.now();
@@ -659,6 +659,16 @@ try {
     await pc.graphql('mutation { createGroup(name:"공통 배포 그룹",visibility:PUBLIC) { id } }')
   ).json().data.createGroup;
   const publicPc = new Client(pcDomain, port, publicCa);
+  const gatedGroup = await publicPc.http(`/groups/${group.id}`);
+  assert.equal(gatedGroup.status, 307, gatedGroup.text());
+  const signLocation = new URL(gatedGroup.headers.location, `https://${pcDomain}`);
+  assert.equal(signLocation.pathname, '/sign');
+  assert.equal(signLocation.searchParams.get('next'), `/groups/${group.id}`);
+  const anonymousSession = await publicPc.graphql('mutation { startAnonymousSession { id } }');
+  publicPc.cookie = anonymousSession.headers['set-cookie']
+    ?.find((value) => value.startsWith('__Host-contest_session='))
+    ?.split(';')[0];
+  assert.ok(publicPc.cookie, 'Anonymous browsing requires an HttpOnly session.');
   assert.equal((await publicPc.http(`/groups/${group.id}`)).status, 200);
   // The shared proxy must pass the standard App Link files and the app login callback page through to the web.
   const association = await publicPc.http('/.well-known/apple-app-site-association');
