@@ -56,6 +56,7 @@ export function sentryOptions(): NodeOptions | undefined {
   if (!dsn) return undefined;
   return {
     dsn,
+    initialScope: { tags: { service: 'photo-contest', layer: 'api' } },
     environment: sentryEnvironment(),
     tracesSampleRate: 0,
     sendDefaultPii: false,
