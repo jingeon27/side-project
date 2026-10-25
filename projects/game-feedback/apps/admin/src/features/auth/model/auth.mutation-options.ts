@@ -1,9 +1,9 @@
 import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 
-import { endSession, loginLocalAdmin } from '../api/auth.api';
+import { endSession, loginAdmin } from '../api/auth.api';
 import { sessionOptions } from './auth.options';
 
-async function replaceSession(client: QueryClient, session: Awaited<ReturnType<typeof loginLocalAdmin>>) {
+async function replaceSession(client: QueryClient, session: Awaited<ReturnType<typeof loginAdmin>>) {
   await client.cancelQueries();
   const options = sessionOptions();
   const sessionQuery = client.getQueryCache().find({ queryKey: options.queryKey, exact: true });
@@ -16,7 +16,7 @@ async function replaceSession(client: QueryClient, session: Awaited<ReturnType<t
 export function loginMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['admin-login'],
-    mutationFn: loginLocalAdmin,
+    mutationFn: loginAdmin,
     onSuccess: (session) => replaceSession(client, session),
   });
 }

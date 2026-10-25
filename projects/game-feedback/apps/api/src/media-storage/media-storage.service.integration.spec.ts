@@ -9,11 +9,10 @@ import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { grantOperatorRole, issueOperatorSession } from '../admin/operator-session';
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
-import { assertDatabaseUrl, hash } from '../security';
+import { assertDatabaseUrl, hash, token } from '../security';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
 import { presignedUpload } from '../testing/media-upload';
@@ -27,7 +26,7 @@ const schema = `gf_test_production_${randomBytes(8).toString('hex')}`;
 const target = new URL(process.env.TEST_DATABASE_URL ?? 'http://unused');
 target.searchParams.set('schema', schema);
 
-describe('persistent private media and SSH operator sessions', () => {
+describe('persistent private media with a regular user session', () => {
   const s3 = new S3Fixture();
   const state = {} as {
     db: PrismaClient;
@@ -61,8 +60,10 @@ describe('persistent private media and SSH operator sessions', () => {
     state.userId = (
       await state.db.user.create({ data: { nickname: '실제운영자', termsVersion: 'v1', ageConfirmed: true } })
     ).id;
-    await grantOperatorRole(state.db, state.userId);
-    state.token = (await issueOperatorSession(state.db, state.userId)).accessToken;
+    state.token = token();
+    await state.db.session.create({
+      data: { userId: state.userId, tokenHash: hash(state.token), expiresAt: new Date(Date.now() + 3600000) },
+    });
   }, 30000);
   afterAll(async () => {
     await state.app?.close();
@@ -72,25 +73,6 @@ describe('persistent private media and SSH operator sessions', () => {
       await state.db.$disconnect();
     }
     await s3.close();
-  });
-  it('issues a hashed, expiring operator session and rejects ordinary, test and banned accounts', async () => {
-    const session = await state.db.session.findUniqueOrThrow({ where: { tokenHash: hash(state.token) } });
-    expect(session.expiresAt.getTime() - Date.now()).toBeGreaterThan(3500000);
-    expect(session.tokenHash).not.toBe(state.token);
-    expect(
-      await state.db.auditLog.count({ where: { action: 'ISSUE_OPERATOR_SESSION', actorId: state.userId } }),
-    ).toBe(1);
-    const request = supertest(state.app.getHttpServer());
-    await request.get('/api/admin/reports').set('Authorization', `Bearer ${state.token}`).expect(200);
-    const user = await state.db.user.create({
-      data: { nickname: '일반사용자', ageConfirmed: true, termsVersion: 'v1' },
-    });
-    await expect(issueOperatorSession(state.db, user.id)).rejects.toThrow();
-    await state.db.user.update({ where: { id: user.id }, data: { demoKey: 'test-operator', role: 'ADMIN' } });
-    await expect(grantOperatorRole(state.db, user.id)).rejects.toThrow();
-    await expect(issueOperatorSession(state.db, user.id)).rejects.toThrow();
-    await state.db.user.update({ where: { id: user.id }, data: { demoKey: null, bannedAt: new Date() } });
-    await expect(issueOperatorSession(state.db, user.id)).rejects.toThrow();
   });
   it('keeps uploaded bytes outside PostgreSQL, enforces draft ownership, and serves byte ranges', async () => {
     const request = supertest(state.app.getHttpServer());

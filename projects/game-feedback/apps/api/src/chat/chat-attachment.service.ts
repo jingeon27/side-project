@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
@@ -7,6 +8,7 @@ import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { attachmentSelect } from './chat-attachment.presenter';
+import { mediaRange } from './chat-file';
 import { historyWhere } from './chat-history';
 
 @Injectable()
@@ -67,6 +69,32 @@ export class ChatAttachmentService {
     });
     if (!file) throw new ApiError(404, 'ATTACHMENT_NOT_FOUND', '첨부파일을 찾을 수 없습니다.');
     return file;
+  }
+  async download(req: SessionRequest, id: string, attachmentId: string, res: Response) {
+    const file = await this.file(req, id, attachmentId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`);
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    const range = mediaRange(req.headers.range, file.size);
+    if (!range) {
+      res.setHeader('Content-Range', `bytes */${file.size}`);
+      res.status(416).end();
+      return;
+    }
+    if (req.method === 'HEAD') {
+      res.setHeader('Content-Length', file.size);
+      res.end();
+      return;
+    }
+    const location = await this.location(
+      file,
+      file.mimeType,
+      `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+    );
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.redirect(307, location);
   }
   location(...args: Parameters<MediaStorage['presignRead']>) {
     return this.storage.presignRead(...args);

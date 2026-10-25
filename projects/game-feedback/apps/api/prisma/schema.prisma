@@ -27,6 +27,7 @@ model User {
   chatAsSecond ChatConversation[] @relation("chatSecond")
   chatMessages ChatMessage[]
   pushDevices PushDevice[]
+  adminAccount AdminAccount?
   sessions Session[]
   gameAccounts GameAccount[]
   posts Post[]
@@ -418,4 +419,25 @@ model PushDelivery {
   @@unique([deviceId, eventId])
   @@index([status, nextAttemptAt, leaseUntil])
   @@index([createdAt])
+}
+
+// The User relation supplies the support-chat identity; public authentication never issues it a session.
+model AdminAccount {
+  id String @id @default(cuid())
+  username String @unique
+  passwordHash String
+  userId String @unique
+  user User @relation(fields:[userId],references:[id],onDelete:Restrict)
+  disabledAt DateTime?
+  createdAt DateTime @default(now())
+  sessions AdminSession[]
+}
+model AdminSession {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  accountId String
+  account AdminAccount @relation(fields:[accountId],references:[id],onDelete:Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
 }

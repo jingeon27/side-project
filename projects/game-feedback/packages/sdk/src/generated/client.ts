@@ -43,6 +43,7 @@ import {
   User
 } from './models';
 import type {
+  AdminLoginInput,
   AnswerInput,
   AppExchangeInput,
   AvatarUploadInput,
@@ -59,6 +60,7 @@ import type {
   GameAccountInput,
   HelpfulInput,
   HideInput,
+  ListAdminSupportMessagesParams,
   ListChatMessagesParams,
   ListConversationsParams,
   ListNotificationsParams,
@@ -83,6 +85,154 @@ import type {
 } from './models';
 
 import { apiFetch } from '../http';
+export const getGetAdminSessionUrl = () => {
+
+
+
+
+  return `/api/admin/auth/session`
+}
+
+export const getAdminSession = async ( options?: Parameters<typeof apiFetch>[1]): Promise<Session> => {
+
+  return apiFetch<Session>(getGetAdminSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: Session
+  }
+);}
+
+
+
+export const getAdminLoginUrl = () => {
+
+
+
+
+  return `/api/admin/auth/login`
+}
+
+export const adminLogin = async (adminLoginInput: AdminLoginInput, options?: Parameters<typeof apiFetch>[1]): Promise<Session> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<Session>(getAdminLoginUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminLoginInput),
+    schema: Session
+  }
+);}
+
+
+
+export const getAdminLogoutUrl = () => {
+
+
+
+
+  return `/api/admin/auth/logout`
+}
+
+export const adminLogout = async ( options?: Parameters<typeof apiFetch>[1]): Promise<Ok> => {
+
+  return apiFetch<Ok>(getAdminLogoutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+    ,
+    schema: Ok
+  }
+);}
+
+
+
+export const getListAdminSupportMessagesUrl = (id: string,
+    params?: ListAdminSupportMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/support/${encodeURIComponent(String(id))}/messages?${stringifiedParams}` : `/api/admin/support/${encodeURIComponent(String(id))}/messages`
+}
+
+export const listAdminSupportMessages = async (id: string,
+    params?: ListAdminSupportMessagesParams, options?: Parameters<typeof apiFetch>[1]): Promise<ChatMessageList> => {
+
+  return apiFetch<ChatMessageList>(getListAdminSupportMessagesUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: ChatMessageList
+  }
+);}
+
+
+
+export const getSendAdminSupportMessageUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/support/${encodeURIComponent(String(id))}/messages`
+}
+
+export const sendAdminSupportMessage = async (id: string,
+    chatMessageInput: ChatMessageInput, options?: Parameters<typeof apiFetch>[1]): Promise<ChatMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<ChatMessage>(getSendAdminSupportMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatMessageInput),
+    schema: ChatMessage
+  }
+);}
+
+
+
 export const getRequestPostMediaUploadUrl = () => {
 
 

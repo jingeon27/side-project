@@ -9,6 +9,7 @@ export type RequestIdentity = {
 // Internal reads are shared by every visitor's cache misses, so they get a larger budget than one address.
 export const INTERNAL_READ_LIMIT = 3000;
 const authAttempts = new Set([
+  '/api/admin/auth/login',
   '/api/auth/demo',
   '/api/auth/test-login',
   '/api/auth/test-token',

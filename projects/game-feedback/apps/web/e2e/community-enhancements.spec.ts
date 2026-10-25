@@ -295,6 +295,14 @@ test('verification opens a private admin chat and an administrator reviews user 
       true,
     );
     expect((await page.request.get('/ko/admin')).status()).toBe(404);
+    expect((await page.request.get('/api/admin/auth/session')).status()).toBe(404);
+    expect(
+      (
+        await page.request.post('/api/admin/auth/login', {
+          data: { username: 'admin', password: 'not-a-real-password' },
+        })
+      ).status(),
+    ).toBe(404);
     expect((await page.request.get('/api/admin/support')).status()).toBe(403);
   } finally {
     await adminContext.close();

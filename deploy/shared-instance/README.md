@@ -266,11 +266,9 @@ bash "$deployment_release_dir/host/proxy.sh" sync "$deployment_release_dir/Caddy
 bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback status
 bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback rollback
 bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback prune
-bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback operator grant USER_ID
-bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback operator session USER_ID
 ```
 
-`prune`은 GF의 고아 미디어 정리다. PC의 파일·세션 정리는 기존 scheduler가 담당한다. operator session 명령의 출력은 로그인 토큰이므로 공유 로그에 붙이지 않는다. GF 관리자 UI는 로컬에서 실행하고 SSH 터널(`ssh -L 4300:127.0.0.1:4300 ...`)로 API에 연결한다.
+`prune`은 GF의 고아 미디어 정리다. PC의 파일·세션 정리는 기존 scheduler가 담당한다. GF 관리자는 일반 사용자와 별도인 ID·비밀번호 계정이다. 서버의 `operator create <admin-id>`·`operator reset-password <admin-id>`에 비밀번호를 stdin으로 전달한다(비밀번호 8–128자). 관리자 UI는 로컬에서 실행하며 `ssh -N -L 14300:127.0.0.1:4300 ...`로 API에 연결한 뒤 로그인한다. 절차는 [Admin README](../../projects/game-feedback/apps/admin/README.md)를 따른다. 로그인은 전용 HttpOnly 쿠키를 쓰며 공개 사용자 세션과 분리된다.
 
 새 배포의 readiness가 실패하면 이전 API/Web 이미지로 복구한다. SQL은 되돌리지 않으므로 이전 앱과 호환되는 추가형 migration이 필요하다. 첫 배포 실패 시 그 서비스의 API/Web만 멈춘다. Caddy·외부 DB·S3는 유지한다. 여러 복제 API에 걸친 SSE 분배는 현재 범위에 포함하지 않으며 GF SSE는 프로세스 재시작 후 재연결한다.
 
@@ -280,7 +278,7 @@ bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedb
 python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 ```
 
-외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다.
+외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. Web은 교체 직전 drain 파일이 생기면 503으로 전환하여 Caddy가 새 요청을 보류하게 하고, 3초 뒤 SIGTERM으로 처리 중 요청을 마친다. 새 컨테이너에서는 tmpfs의 drain 파일이 사라진다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다.
 
 최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
 

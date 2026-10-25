@@ -24,6 +24,13 @@ import { ChatEvents } from './chat.events';
     ChatAttachmentUploadService,
     ChatAttachmentGuard,
   ],
-  exports: [ChatEvents, ChatLifecycleMiddleware, ChatAccessService, ChatConversationService],
+  exports: [
+    ChatAttachmentService,
+    ChatMessageService,
+    ChatEvents,
+    ChatLifecycleMiddleware,
+    ChatAccessService,
+    ChatConversationService,
+  ],
 })
 export class ChatModule {}

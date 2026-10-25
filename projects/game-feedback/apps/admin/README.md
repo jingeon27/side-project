@@ -9,12 +9,25 @@
 저장소 루트에서 Node 24와 Yarn 4를 사용한다.
 
 ```sh
-corepack yarn workspace @side/game-feedback dev:test
+ssh -N -L 14300:127.0.0.1:4300 ubuntu@<IP>
 # 별도 터미널
 corepack yarn workspace @side/game-feedback admin:dev
 ```
 
-http://127.0.0.1:3303 에서 로컬 관리자 로그인을 누른다. 이 버튼은 기존 `POST /api/auth/test-token`으로 관리자 테스트 계정을 발급한다. API는 `GF_TEST_AUTH_ENABLED=true`와 준비된 테스트 계정이 필요하다. 일반 사용자의 세션은 API에서 403으로 거부한다. HttpOnly 세션 쿠키를 사용하며 access token을 저장하지 않는다.
+http://127.0.0.1:3303 에서 관리자 전용 ID와 비밀번호로 로그인한다. 기본 연결은 운영 SSH 터널 `127.0.0.1:14300`, 서비스 Origin `https://game.bambyul.com`이다. 테스트 로그인 버튼이나 로컬/운영 모드 구분은 없다. 다른 격리된 API를 확인할 때만 `GF_ADMIN_API_ORIGIN`, `GF_ADMIN_WEB_ORIGIN`을 명시한다.
+
+관리자는 `AdminAccount`로 관리하며 일반 이용자를 승격하지 않는다. 연결된 내부 User는 문의 대화·감사 기록의 발신자 용도다. 관리자 비밀번호는 salt를 포함한 scrypt 해시로 저장하며 가입 API는 제공하지 않는다. `/api/admin/auth/*`와 문의 답변 API 모두 공개 Caddy에서 차단하고 SSH 터널로만 접근한다. 로그인 쿠키 `gamefeedback_admin_session`은 HttpOnly·SameSite=Strict·Path=/api/admin이며 유효기간은 1시간이다. 로컬 HTTP 프록시를 통해 사용하므로 Secure 속성을 붙이지 않는다. 공개 사용자 쿠키·Bearer 세션과 분리하며 브라우저 storage에 토큰을 저장하지 않는다.
+
+계정 생성·비밀번호 변경은 서버에서 실행한다. 비밀번호는 인자나 환경변수 대신 stdin으로 전달한다. 다음 Bash 명령은 비밀번호를 화면이나 셸 기록에 남기지 않는다.
+
+```bash
+read -r -s -p 'Admin password (8–128 chars): ' admin_password; echo
+printf '%s' "$admin_password" | bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback operator create admin
+unset admin_password
+# 비밀번호 변경 시 create를 reset-password로 바꾼다. 기존 관리자 세션도 모두 폐기된다.
+```
+
+로컬 전용 API를 쓰는 경우 프로젝트의 `db:sync` 후 API 디렉터리에서 Node 24로 `node --env-file=../../.env --require tsx/cjs scripts/operator.mjs create admin`을 실행하고 같은 방식으로 stdin을 전달한다. 기존 개발 DB를 초기화하지 않는다. 계정을 만들면 프로필 인증 신청의 VERIFICATION 문의가 그 관리자의 문의함으로 배정된다.
 
 문의함에서 문의 채팅 답변/처리 완료/재개, 신고함에서 검토/반려/콘텐츠 숨김, 사용자 관리에서 ID 조회/프로필 인증 승인·해제/사유를 입력한 밴·해제를 제공한다. 문의 메시지는 5초 주기로 갱신하며 실패한 답변 초안과 재전송 ID를 유지한다. 감사 기록과 권한은 API가 관리한다.
 
@@ -22,9 +35,7 @@ http://127.0.0.1:3303 에서 로컬 관리자 로그인을 누른다. 이 버튼
 
 Zod 4.6.7의 설명 주석에 들어 있던 최적화 표시 문구는 루트 Yarn patch로 고쳤다. 실행 코드와 실제 최적화 지시문은 유지한다. 버전을 갱신할 때는 patch 적용 여부와 Admin build의 주석·번들 크기 경고를 확인한다.
 
-서버는 `127.0.0.1`에만 바인딩한다. 기본 프록시는 API `localhost:4300`, 서비스 Origin `localhost:3300`이다. 다른 로컬 실행 조합은 `GF_ADMIN_API_ORIGIN`, `GF_ADMIN_WEB_ORIGIN`, `GF_ADMIN_PORT`로 지정한다. 프록시는 실제 로컬 관리자 Origin을 확인한 뒤 API의 설정된 서비스 Origin으로 전달한다.
-
-운영 API에는 SSH 터널과 SSH에서 발급한 실제 ADMIN 계정의 한 시간짜리 세션으로 연결한다. `GF_ADMIN_ACCESS_TOKEN`은 로컬 Vite 서버만 사용하고 브라우저에 전달하지 않는다. 이 모드에서는 테스트 로그인 버튼이 숨겨진다. `.env.example`과 [운영 Admin 절차](../../../../deploy/shared-instance/README.md)를 따른다. Admin 자체는 공개 배포하지 않으며 운영 테스트 인증은 켜지 않는다.
+서버는 `127.0.0.1`에만 바인딩한다. 프록시는 실제 관리자 페이지 Origin을 확인한 뒤 API의 서비스 Origin으로 전달한다. iframe 방지 헤더, loopback 주소 제한과 API의 관리자 권한 검사를 유지한다. Admin 자체는 공개 배포하지 않는다.
 
 ## 검증
 

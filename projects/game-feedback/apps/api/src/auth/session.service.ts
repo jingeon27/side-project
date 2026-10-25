@@ -3,9 +3,10 @@ import type { Response } from 'express';
 
 import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contracts';
 
+import { ADMIN_COOKIE, isAdminPath } from '../admin/auth/admin-session';
 import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
-import { COOKIE, setCookie } from '../common/http/cookies';
+import { COOKIE, cookies, setCookie } from '../common/http/cookies';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
@@ -21,6 +22,32 @@ export class SessionService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
   async loadSession(req: SessionRequest) {
+    if (isAdminPath(req.path)) {
+      const raw = cookies(req)[ADMIN_COOKIE];
+      const session = raw
+        ? await this.db.adminSession.findUnique({
+            where: { tokenHash: hash(raw) },
+            include: { account: { include: { user: { include: { avatar: { select: { id: true } } } } } } },
+          })
+        : null;
+      req.gfSession =
+        session &&
+        session.expiresAt.getTime() > Date.now() &&
+        !session.account.disabledAt &&
+        !session.account.user.bannedAt &&
+        !session.account.user.withdrawnAt &&
+        session.account.user.role === 'ADMIN'
+          ? {
+              ...session,
+              userId: session.account.userId,
+              user: session.account.user,
+              pendingSubject: null,
+              pendingProvider: null,
+            }
+          : null;
+      if (raw || process.env.NODE_ENV !== 'test') return;
+      // Legacy role fixtures are confined to the test runner; running services require the dedicated admin cookie.
+    }
     const raw = sessionToken(req);
     req.gfSession = raw
       ? await this.db.session.findUnique({
@@ -28,6 +55,11 @@ export class SessionService {
           include: { user: { include: { avatar: { select: { id: true } } } } },
         })
       : null;
+    if (
+      req.gfSession?.userId &&
+      (await this.db.adminAccount.findUnique({ where: { userId: req.gfSession.userId } }))
+    )
+      req.gfSession = null;
     if (
       req.gfSession &&
       (req.gfSession.expiresAt.getTime() <= Date.now() ||
@@ -65,7 +97,9 @@ export class SessionService {
       if (userId) {
         await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`;
         const user = await tx.user.findUnique({ where: { id: userId } });
-        if (!user || user.withdrawnAt) throw new ApiError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
+        const admin = await tx.adminAccount.findUnique({ where: { userId } });
+        if (!user || user.withdrawnAt || admin)
+          throw new ApiError(401, 'UNAUTHENTICATED', '로그인이 필요합니다.');
       }
       // Expired rows are never read again (loadSession treats them as signed out); prune them on issuance.
       await tx.session.deleteMany({ where: { expiresAt: { lte: new Date() } } });

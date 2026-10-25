@@ -51,13 +51,13 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 - `AdminUsersService.ban`: 대상 행 `FOR UPDATE`, ADMIN 대상은 400 `ADMIN_PROTECTED`, AuditLog `BAN_USER`/`UNBAN_USER`, 커밋 뒤 `ChatEvents.closeUser`.
 - 밴 회피 방지(`src/auth/banned-identity.ts`): 밴하면 사용자의 모든 로그인 식별자를 `BannedIdentity(provider, sha256(subject))`에 남기고 해제하면 지운다. 밴 사용자의 탈퇴도 같은 트랜잭션에서 기록한다. 계정이 없는 식별자는 social callback(웹 403 `USER_BANNED`, 앱 `?error=login_failed`), `/api/auth/app/exchange`, `onboard`에서 거부된다. 계정이 남은 밴 사용자는 문의를 위해 로그인할 수 있다.
 
-- `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). 일반 가입·소셜 로그인은 관리자 권한을 부여하지 않는다. 운영 SSH의 `scripts/operator.mjs grant`(`src/admin/operator-session.ts`, AuditLog `GRANT_ADMIN`)로 권한을 부여한다. 테스트 ADMIN은 격리 픽스처만 사용하며 HTTP 승격 경로는 만들지 않는다.
+- `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). 일반 가입·소셜 로그인은 관리자 권한을 부여하지 않는다. 운영 SSH의 `scripts/operator.mjs create <id>`는 전용 AdminAccount와 문의용 내부 User를 함께 생성하며 비밀번호를 stdin으로 받는다. 일반 사용자를 승격하지 않는다. 관리자 ID·비밀번호 로그인은 공개 Caddy에서 차단한 `/api/admin/auth/*`에서만 제공하며 AdminSession 쿠키는 `/api/admin`에만 적용한다. 공개 API는 관리자 쿠키나 전용 계정의 일반 Session을 허용하지 않는다. 테스트 ADMIN은 격리 픽스처만 사용하며 HTTP 승격 경로는 만들지 않는다.
 
 ## 건드리면 있어야 하는 테스트
 
 - unit: `src/security.test.ts`(Origin·DB URL), `src/rate-limit.test.ts`·`src/rate-limit.spec.ts`, `src/common/http/forwarded-client.spec.ts`, `src/common/http/api-access.middleware.test.ts`(대소문자 경로), `src/common/http/banned-access.test.ts`, `src/auth/providers/oauth-identity.provider.test.ts`(`fetch` stub), `src/config/production.config.spec.ts`(앱 로그인 콜백 포함), `src/config/app-auth-callback.test.ts`(커스텀 스킴·다른 origin 거부 회귀).
 - DB를 쓰지 않는 integration: `src/common/http/api-access.middleware.integration.test.ts`(SSR 방문자 버킷·위조 헤더), `src/common/http/configure-http.integration.test.ts`(대소문자 경로 404).
-- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 세 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피, 앱 시도는 https 콜백 `?error=login_failed`), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/media-storage/media-storage.service.integration.spec.ts`(운영자 세션).
+- integration: `src/auth/auth.controller.integration.test.ts`(Bearer 발급·폐기, 잘못된 Bearer 401, 테스트 인증 꺼짐 404, 세 제공자 subject 분리, state-provider 결합), `src/auth/app-auth.service.integration.test.ts`(PKCE 1회 교환·동시 교환·만료·잘못된 challenge), `src/auth/banned-identity.integration.test.ts`(밴 회피, 앱 시도는 https 콜백 `?error=login_failed`), `src/app.integration.test.ts`(`rejects CSRF and anonymous mutations`, 온보딩 동의), `src/support/support.controller.integration.test.ts`(밴·해제가 기존 세션에 적용되고 문의는 유지), `src/admin/auth/admin-auth.integration.spec.ts`(전용 계정·쿠키 격리·문의·인증·비밀번호 변경).
 
 ## 명령 (side 루트)
 

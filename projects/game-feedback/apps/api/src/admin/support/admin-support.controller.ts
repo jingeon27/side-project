@@ -1,7 +1,10 @@
-import { Controller, Get, Inject, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 
 import type { SessionRequest } from '../../auth/session.types';
-import { ValidatedBody } from '../../common/http/request-validation';
+import { SendMessageDto } from '../../chat/chat-input.dto';
+import { ListQueryDto } from '../../common/http/list-query.dto';
+import { ValidatedBody, ValidatedQuery } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminSupportService } from './admin-support.service';
 import { SupportStatusDto } from './support-input.dto';
@@ -13,6 +16,32 @@ export class AdminSupportController {
   @Get()
   list(@Req() req: SessionRequest) {
     return this.support.list(req);
+  }
+  @Get(':id/messages')
+  messages(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedQuery(ListQueryDto) query: ListQueryDto,
+  ) {
+    return this.support.messages(req, id, query);
+  }
+  @Get(':id/attachments/:attachmentId')
+  download(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @Param('attachmentId') attachmentId: string,
+    @Res() res: Response,
+  ) {
+    return this.support.download(req, id, attachmentId, res);
+  }
+  @Post(':id/messages')
+  @HttpCode(200)
+  send(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedBody(SendMessageDto) body: SendMessageDto,
+  ) {
+    return this.support.send(req, id, body);
   }
   @Patch(':id')
   status(

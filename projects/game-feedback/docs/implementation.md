@@ -1349,3 +1349,13 @@ RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에�
 웹 E2E 스킬에 따라 별도 3353/4353과 `.next/remove-x-e2e`의 production build/start에서 로그인·hover 브라우저 사양 5개가 통과했다. 모바일·데스크톱의 세 로그인 버튼, 로고·색상, 언어 전환·원래 목적지 복귀·사용 불가능한 제공자 처리를 확인하고 393px 로그인 캡처를 직접 검토했다. 기존 3301/4301 서버는 변경하지 않았다.
 
 DB는 같은 Game Feedback의 55444 테스트 DB와 실행별 gf_test_ 스키마만 사용했다. API 통합 테스트는 다른 worktree가 소유한 DB의 자동 기동만 생략한 임시 실행기로 가짜 제공자 환경과 URL 가드를 유지했다. 테스트가 만든 스키마만 정리했고 기존 DB 프로세스는 유지했다. 실제 외부 제공자 인증·실기기·배포는 수행하지 않았다.
+
+# 2026-10-25 관리자 전용 ID·비밀번호와 CI 재배포 검사 수정
+
+관리자는 일반 이용자를 승격하지 않고 AdminAccount와 문의용 내부 User를 CLI로 함께 생성한다. 비밀번호는 salt를 포함한 scrypt 해시, 세션은 AdminSession의 토큰 해시로 저장한다. Admin은 ID·비밀번호 로그인으로 통일하고 기본 연결을 운영 SSH 터널 14300으로 맞췄다. 테스트 로그인 버튼과 Vite Bearer 토큰 모드를 제거했다. 생성·비밀번호 변경은 stdin으로만 입력받는 신뢰된 CLI이며 변경 시 모든 관리자 세션을 폐기한다. 로그인 중 비밀번호 변경 경쟁도 행 잠금과 해시 재확인으로 막는다.
+
+관리자 쿠키는 HttpOnly·SameSite=Strict·Path=/api/admin·1시간이며 공개 사용자 세션을 바꾸지 않는다. 공개 API는 관리자 쿠키/전용 계정의 일반 Session을 인증에 사용하지 않는다. 공개 Caddy와 Web 프록시는 관리자 API를 404로 막고 Admin의 loopback 프록시만 사용한다. 문의 메시지·첨부 자료는 담당 관리자 확인을 거치는 비공개 API로 처리한다. 별도 계정을 만들면 VERIFICATION 신청을 담당 관리자 문의함으로 보낸다. 일반 프로필/새 일반 대화에서는 관리자 내부 계정을 노출하지 않는다. 새 migration은 전용 테이블만 추가한다.
+
+CI에서 제거된 mediaUpload.mode를 기대하던 shared smoke를 S3 양식 계약에 맞추고, 공개 미디어/채팅 검증은 일반 사용자 세션으로 수행한다. 공유 배포는 Web의 drain 파일 → Caddy 활성 health 제외 → SIGTERM → API/Web 교체 순서로 바꿨다. 두 서비스가 같은 호스트 프록시/배포 스크립트를 사용하므로 공용 deploy 파일과 안내를 함께 수정했다. Photo Contest의 WebKit 캡처는 viewport를 CSS 해상도로 저장하며 기존 overflow 검사를 유지한다. Playwright production build의 NODE_ENV도 명시한다.
+
+검증: API unit 174개, 새 관리자 통합 4개(전용 migration·로그인·쿠키 분리·문의/첨부·인증·폐기), 관련 탈퇴 통합 7개, SDK 72개, Admin unit 19개와 실제 ID·비밀번호를 쓰는 브라우저 E2E 5개가 통과했다. 전체 API integration은 197개 중 기존 관리자 fixture 하나가 실패해 새 계정 fixture로 고친 뒤 해당 파일을 재검증했다. Admin production build 최대 JS 청크는 488.45 kB이며 타입·lint를 확인했다. 실제 Caddy/GF production build 교체 중 28개 요청 오류 0건, 배포 스크립트 unit 8개, PC responsive Chromium/WebKit/desktop 3개가 통과했다. GF 모바일은 320·393·430·760px 홈/가이드/설정에서 Chromium/WebKit 8개 검사를 통과해 좌우 대칭과 가로 넘침이 없음을 확인했다. 테스트는 55444/55434의 격리 스키마를 사용했다. Docker 공유 배포 전체 검사는 GitHub CI에서 확인하며 실제 운영 배포는 실행하지 않았다.

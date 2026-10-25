@@ -280,6 +280,16 @@ export const NotificationListSchema = z.object({
   unreadCount: ResponseCountSchema,
   nextCursor: z.string().min(1).nullable(),
 });
+export const AdminLoginInputSchema = z
+  .object({
+    username: z
+      .string()
+      .trim()
+      .regex(/^[a-zA-Z0-9._-]{3,64}$/),
+    password: z.string().min(8).max(128),
+  })
+  .strict();
+
 export const SessionSchema = z.object({
   socialProviders: z.array(z.object({ provider: SocialProviderSchema, configured: z.boolean() })).optional(),
   user: UserSchema.nullable(),
@@ -469,6 +479,7 @@ export const SupportThreadSchema = z.object({
 export type TSupportThread = z.infer<typeof SupportThreadSchema>;
 
 export const schemas = {
+  AdminLoginInput: AdminLoginInputSchema,
   UserBanInput: UserBanInputSchema,
   ReportReviewInput: ReportReviewInputSchema,
   SupportInput: SupportInputSchema,
@@ -538,6 +549,29 @@ export type OperationSpec = {
   query?: boolean;
 };
 export const operations: OperationSpec[] = [
+  { method: 'get', path: '/api/admin/auth/session', id: 'getAdminSession', response: SessionSchema },
+  {
+    method: 'post',
+    path: '/api/admin/auth/login',
+    id: 'adminLogin',
+    body: AdminLoginInputSchema,
+    response: SessionSchema,
+  },
+  { method: 'post', path: '/api/admin/auth/logout', id: 'adminLogout', response: OkSchema },
+  {
+    method: 'get',
+    path: '/api/admin/support/{id}/messages',
+    id: 'listAdminSupportMessages',
+    query: true,
+    response: ChatMessageListSchema,
+  },
+  {
+    method: 'post',
+    path: '/api/admin/support/{id}/messages',
+    id: 'sendAdminSupportMessage',
+    body: ChatMessageInputSchema,
+    response: ChatMessageSchema,
+  },
   {
     method: 'post',
     path: '/api/post-media/uploads',

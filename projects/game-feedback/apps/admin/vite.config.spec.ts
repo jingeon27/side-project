@@ -5,8 +5,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import config, { adminServerSettings, localAdminGuard } from './vite.config';
 
-const token = 'operatortokencheck_0123456789abcdefghijklmn';
-
 function call(method: string, url: string, origin?: string) {
   const req = new IncomingMessage(new Socket());
   req.method = method;
@@ -53,46 +51,30 @@ describe('로컬 Admin 프록시 Origin 가드', () => {
   });
 });
 
-describe('운영 토큰 주입', () => {
-  it('로컬 모드는 API가 허용하는 Origin만 바꾸고 Authorization을 붙이지 않는다', () => {
-    const settings = adminServerSettings({ GF_ADMIN_API_ORIGIN: 'http://127.0.0.1:4304' });
-    expect(settings.operator).toBe(false);
-    expect(settings.proxy['/api']).toMatchObject({ target: 'http://127.0.0.1:4304', changeOrigin: true });
-    expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'http://localhost:3300' });
+describe('관리자 전용 프록시', () => {
+  it('기본 설정은 운영 SSH 터널이고 브라우저 쿠키를 그대로 사용한다', () => {
+    const settings = adminServerSettings({});
+    expect(settings.proxy['/api']).toMatchObject({ target: 'http://127.0.0.1:14300', changeOrigin: true });
+    expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'https://game.bambyul.com' });
   });
-
-  it('운영 모드는 프록시 요청에만 Bearer 토큰과 HTTPS 웹 Origin을 붙인다', () => {
+  it('격리된 API와 Origin을 명시할 수 있다', () => {
     const settings = adminServerSettings({
-      GF_ADMIN_ACCESS_TOKEN: token,
-      GF_ADMIN_WEB_ORIGIN: 'https://feedback.example',
-      GF_ADMIN_API_ORIGIN: 'http://127.0.0.1:14300',
+      GF_ADMIN_API_ORIGIN: 'http://127.0.0.1:4304',
+      GF_ADMIN_WEB_ORIGIN: 'http://127.0.0.1:3304',
     });
-    expect(settings.operator).toBe(true);
-    expect(settings.proxy['/api']?.headers).toEqual({
-      Origin: 'https://feedback.example',
-      Authorization: `Bearer ${token}`,
-    });
+    expect(settings.proxy['/api']?.headers).toEqual({ Origin: 'http://127.0.0.1:3304' });
   });
-
   it.each([
-    [{ GF_ADMIN_ACCESS_TOKEN: 'short', GF_ADMIN_WEB_ORIGIN: 'https://feedback.example' }, 'is invalid'],
-    [{ GF_ADMIN_ACCESS_TOKEN: token, GF_ADMIN_WEB_ORIGIN: 'http://127.0.0.1:3303' }, 'HTTPS'],
-    [{ GF_ADMIN_API_ORIGIN: 'http://10.0.0.5:4300' }, 'local Game Feedback API'],
-    [{ GF_ADMIN_API_ORIGIN: 'https://127.0.0.1:4300' }, 'local Game Feedback API'],
-    [{ GF_ADMIN_API_ORIGIN: 'http://127.0.0.1:4300/api' }, 'local Game Feedback API'],
-    [{ GF_ADMIN_API_ORIGIN: 'http://user:secret@127.0.0.1:4300' }, 'local Game Feedback API'],
-  ])('잘못된 운영 설정으로 시작하지 않는다: %j', (env, message) => {
-    expect(() => adminServerSettings(env)).toThrow(message);
+    'http://10.0.0.5:4300',
+    'https://127.0.0.1:4300',
+    'http://127.0.0.1:4300/api',
+    'http://user:secret@127.0.0.1:4300',
+  ])('loopback HTTP origin 외에는 연결하지 않는다: %s', (target) => {
+    expect(() => adminServerSettings({ GF_ADMIN_API_ORIGIN: target })).toThrow('local Game Feedback API');
   });
-
-  it('브라우저 번들에는 운영 모드 표시만 넘기고 토큰은 넘기지 않는다', () => {
-    vi.stubEnv('GF_ADMIN_ACCESS_TOKEN', token);
-    vi.stubEnv('GF_ADMIN_WEB_ORIGIN', 'https://feedback.example');
-    vi.stubEnv('GF_ADMIN_API_ORIGIN', 'http://127.0.0.1:14300');
-    vi.stubEnv('GF_ADMIN_PORT', '3303');
+  it('브라우저에 자격 증명을 주입하지 않고 framing 방지를 유지한다', () => {
     const resolved = config({ command: 'build', mode: 'production' });
-    expect(resolved.define).toEqual({ 'import.meta.env.VITE_GF_ADMIN_OPERATOR': '"true"' });
-    expect(JSON.stringify(resolved.define)).not.toContain(token);
+    expect(resolved.define).toBeUndefined();
     expect(resolved.server?.headers).toMatchObject({ 'X-Frame-Options': 'DENY' });
     expect(resolved.preview?.proxy).toBe(resolved.server?.proxy);
   });

@@ -90,7 +90,10 @@ export class ChatConversationService {
     const { recipientId } = input;
     if (recipientId === user.id)
       throw new ApiError(400, 'CANNOT_CHAT_SELF', '자신에게 메시지를 보낼 수 없습니다.');
-    const peer = await this.db.user.findUnique({ where: { id: recipientId }, select: userSelect });
+    const peer = await this.db.user.findUnique({
+      where: { id: recipientId, adminAccount: { is: null } },
+      select: userSelect,
+    });
     if (
       !peer ||
       peer.withdrawnAt ||

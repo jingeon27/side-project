@@ -1,8 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
+import { ChatAttachmentService } from '../../chat/chat-attachment.service';
+import type { SendMessageDto } from '../../chat/chat-input.dto';
+import { ChatMessageService } from '../../chat/chat-message.service';
 import { ApiError } from '../../common/http/api-error';
+import type { ListQueryDto } from '../../common/http/list-query.dto';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../../generated/prisma';
 import { authorDto, authorSelect } from '../../users/user.presenter';
@@ -29,8 +34,39 @@ function supportThread(row: Prisma.SupportConversationGetPayload<{ include: type
 export class AdminSupportService {
   constructor(
     @Inject(PrismaClient) private readonly db: PrismaClient,
+    @Inject(ChatAttachmentService) private readonly attachments: ChatAttachmentService,
+    @Inject(ChatMessageService) private readonly chat: ChatMessageService,
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
   ) {}
+  private async requireThread(req: SessionRequest, conversationId: string) {
+    const admin = requireAdmin(req);
+    const thread = await this.db.supportConversation.findFirst({
+      where: { conversationId, adminId: admin.id },
+    });
+    if (!thread) throw new ApiError(404, 'SUPPORT_NOT_FOUND', '문의를 찾을 수 없습니다.');
+  }
+  async messages(req: SessionRequest, id: string, query: ListQueryDto) {
+    await this.requireThread(req, id);
+    const messages = await this.chat.messages(req, id, query);
+    return {
+      ...messages,
+      items: messages.items.map((message) => ({
+        ...message,
+        attachments: message.attachments?.map((file) => ({
+          ...file,
+          url: `/api/admin/support/${encodeURIComponent(id)}/attachments/${encodeURIComponent(file.id)}`,
+        })),
+      })),
+    };
+  }
+  async download(req: SessionRequest, id: string, attachmentId: string, res: Response) {
+    await this.requireThread(req, id);
+    return this.attachments.download(req, id, attachmentId, res);
+  }
+  async send(req: SessionRequest, id: string, body: SendMessageDto) {
+    await this.requireThread(req, id);
+    return this.chat.send(req, id, body);
+  }
   async list(req: SessionRequest) {
     const admin = requireAdmin(req);
     const rows = await this.db.supportConversation.findMany({

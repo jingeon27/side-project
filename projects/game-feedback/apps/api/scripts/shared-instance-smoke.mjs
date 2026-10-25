@@ -742,8 +742,16 @@ try {
     'game_feedback',
     `INSERT INTO "User" (id,nickname,"termsVersion","ageConfirmed") VALUES ('shared-operator','운영 확인','v1',true),('shared-peer','대화 상대','v1',true)`,
   );
-  operate('game-feedback', ['operator', 'grant', 'shared-operator']);
-  const token = operate('game-feedback', ['operator', 'session', 'shared-operator']).trim();
+  const createdAdmin = JSON.parse(
+    operate('game-feedback', ['operator', 'create', 'smoke-admin'], { input: 'isolated-smoke-password\n' }),
+  );
+  assert.equal(createdAdmin.username, 'smoke-admin');
+  assert.notEqual(createdAdmin.userId, 'shared-operator');
+  const token = randomBytes(32).toString('base64url');
+  sql(
+    'game_feedback',
+    `INSERT INTO "Session" (id,"tokenHash","userId","expiresAt") VALUES ('shared-public-session','${createHash('sha256').update(token).digest('hex')}','shared-operator',NOW()+INTERVAL '1 hour')`,
+  );
   assert.match(token, /^[A-Za-z0-9_-]{43}$/);
   const requestedMedia = await gf.post(
     '/api/post-media/uploads',
@@ -756,7 +764,7 @@ try {
   );
   assert.equal(requestedMedia.status, 200, requestedMedia.text());
   const mediaUpload = requestedMedia.json();
-  assert.equal(mediaUpload.mode, 'DIRECT');
+  assert.deepEqual(Object.keys(mediaUpload).sort(), ['expiresAt', 'fields', 'id', 'url']);
   assert.equal(new URL(mediaUpload.url).hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
   uploadForm('game-feedback', mediaUpload, png);
   const mediaResponse = await gf.post(
