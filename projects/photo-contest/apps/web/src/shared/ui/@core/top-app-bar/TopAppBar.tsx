@@ -29,9 +29,9 @@ function DesktopNavigation() {
         <Link
           href={ROUTES.HOME}
           aria-label="별사대 홈"
-          className="mb-8 flex min-h-touch items-center gap-2 px-3 text-title-lg tracking-tighter text-ink active:opacity-60"
+          className="mb-8 flex min-h-touch items-center gap-2.5 px-3 text-title-lg font-extrabold tracking-tighter text-ink active:opacity-60"
         >
-          <BrandIcon />
+          <BrandIcon className="size-8" />
           별사대
         </Link>
         <NavigationLink href={ROUTES.HOME} active={pathname === ROUTES.HOME}>
@@ -66,8 +66,10 @@ function NavigationLink({ href, active, children }: { href: string; active: bool
       href={href}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex min-h-touch items-center gap-4 rounded-control px-3 py-3 text-body transition-colors hover:bg-sunken active:bg-neutral-soft',
-        active ? 'font-bold text-ink' : 'text-ink',
+        'flex min-h-touch items-center gap-4 rounded-full px-4 py-3 text-body transition-[background-color,color,transform] active:scale-[0.98]',
+        active
+          ? 'bg-accent-soft font-bold text-accent-ink hover:bg-accent/20 active:bg-accent/25'
+          : 'text-muted hover:bg-sunken hover:text-ink active:bg-neutral-soft',
       )}
     >
       {children}
@@ -83,6 +85,7 @@ interface ITopAppBarProps {
   /** 오른쪽 아이콘 버튼들(공유 등) */
   actions?: ReactNode;
   className?: string;
+  showBrand?: boolean;
 }
 
 function BackButton({ href }: { href: string }) {
@@ -95,15 +98,28 @@ function BackButton({ href }: { href: string }) {
 }
 
 /** 화면 상단 앱바(60px). 뒤로 가기 + 제목 + 오른쪽 행동. */
-export function TopAppBar({ title, backHref, actions, className }: ITopAppBarProps) {
+export function TopAppBar({ title, backHref, actions, className, showBrand = false }: ITopAppBarProps) {
   return (
     <>
       <DesktopNavigation />
       <header className={cn(APP_BAR_CLASS_NAME, className)}>
         <div className="flex h-app-bar items-center gap-1 px-2 desktop:gap-4 desktop:px-6">
           {backHref ? <BackButton href={backHref} /> : null}
-          <h1 className={cn('line-clamp-1 min-w-0 flex-1 text-title text-ink', backHref ? 'px-1' : 'px-3')}>
-            {title}
+          <h1
+            aria-label={showBrand ? title : undefined}
+            className={cn('min-w-0 flex-1 text-title text-ink', backHref ? 'px-1' : 'px-3')}
+          >
+            {showBrand ? (
+              <span
+                aria-hidden
+                className="flex items-center gap-2 text-title-lg font-extrabold tracking-tighter"
+              >
+                <BrandIcon className="size-7" />
+                별사대
+              </span>
+            ) : (
+              <span className="line-clamp-1">{title}</span>
+            )}
           </h1>
           {actions ? <div className="flex shrink-0 items-center">{actions}</div> : null}
         </div>
@@ -113,5 +129,5 @@ export function TopAppBar({ title, backHref, actions, className }: ITopAppBarPro
 }
 
 export function HomeAppBar({ actions, className }: { actions?: ReactNode; className?: string }) {
-  return <TopAppBar title="홈" className={className} actions={actions} />;
+  return <TopAppBar title="홈" showBrand className={className} actions={actions} />;
 }

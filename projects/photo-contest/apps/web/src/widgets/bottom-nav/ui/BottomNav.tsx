@@ -25,11 +25,18 @@ function NavItem({
       href={href}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'flex h-full flex-col items-center justify-center gap-1 text-micro transition-colors active:bg-sunken',
-        isActive ? 'font-bold text-ink' : 'text-muted hover:text-ink',
+        'group flex h-full flex-col items-center justify-center gap-1 text-micro transition-colors active:bg-sunken',
+        isActive ? 'font-bold text-accent-ink' : 'text-muted hover:text-ink',
       )}
     >
-      {icon}
+      <span
+        className={cn(
+          'flex h-8 w-16 items-center justify-center rounded-full transition-[background-color,transform] group-active:scale-90',
+          isActive ? 'bg-accent-soft' : 'group-hover:bg-sunken',
+        )}
+      >
+        {icon}
+      </span>
       {label}
     </Link>
   );
