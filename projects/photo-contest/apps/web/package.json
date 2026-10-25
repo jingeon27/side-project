@@ -4,9 +4,9 @@
   "type": "module",
   "version": "0.0.0",
   "scripts": {
-    "dev": "next dev -p 3200",
-    "build": "next build",
-    "start": "next start -p 3200",
+    "dev": "node ../../../../scripts/run-next.ts dev -p 3200",
+    "build": "node ../../../../scripts/run-next.ts build",
+    "start": "node ../../../../scripts/run-next.ts start -p 3200",
     "typecheck": "tsc7 --noEmit",
     "lint": "eslint .",
     "codegen": "graphql-codegen --config codegen.ts",
@@ -15,7 +15,8 @@
     "test:api": "node scripts/test.mjs --project api",
     "test:e2e": "playwright test",
     "test:deploy": "playwright test --config playwright.deploy.config.ts",
-    "test:cache": "playwright test --config playwright.cache.config.ts"
+    "test:cache": "playwright test --config playwright.cache.config.ts",
+    "monitoring:check": "playwright test --config playwright.monitoring.config.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.47.4",
