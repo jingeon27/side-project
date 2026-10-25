@@ -10,7 +10,9 @@ import { CreateGroupBottomSheet } from './CreateGroupBottomSheet';
 export function CreateGroupButton() {
   return (
     <Button
+      variant="accent"
       size="md"
+      className="rounded-full"
       onClick={() =>
         overlay.open(({ isOpen, close: onClose, unmount }) => (
           <CreateGroupBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} />

@@ -7,6 +7,7 @@ export { DiscoverGroupCard } from './ui/DiscoverGroupCard';
 export { GroupCard } from './ui/GroupCard';
 export { GroupCategoryManager } from './ui/GroupCategoryManager';
 export { GroupContentFrame } from './ui/GroupContentFrame';
+export { GroupDiscoveryIntro } from './ui/GroupDiscoveryIntro';
 export { GroupJoinRequests } from './ui/GroupJoinRequests';
 export { GroupMembershipButton } from './ui/GroupMembershipButton';
 export { GroupNavigation } from './ui/GroupNavigation';

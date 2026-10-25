@@ -8,6 +8,7 @@ import { Heart, Link2, Play } from 'lucide-react';
 
 import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
+import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
 
 export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
@@ -20,13 +21,18 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
     <article aria-label={post.title} className="min-w-0">
       <Link
         href={ROUTES.GROUP(post.groupId)}
-        className="flex min-w-0 items-center gap-3 rounded-card transition-opacity hover:opacity-75 active:opacity-60"
+        className="group flex min-w-0 items-center gap-3 rounded-card transition-opacity hover:opacity-75 active:opacity-60"
       >
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-badge bg-ink text-caption font-semibold text-on-brand">
+        <span
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center rounded-badge text-caption font-bold',
+            rank === 1 ? 'bg-accent text-on-accent' : 'bg-neutral-soft text-muted',
+          )}
+        >
           {rank}
           <span className="sr-only">위</span>
         </span>
-        <span className="relative size-16 shrink-0 overflow-hidden rounded-control bg-sunken">
+        <span className="relative size-16 shrink-0 overflow-hidden rounded-card bg-sunken transition-transform group-hover:scale-105">
           {post.kind === PostKind.Photo && post.mediaUrl ? (
             <Image src={post.mediaUrl} alt="" fill unoptimized sizes="64px" className="object-cover" />
           ) : (
@@ -43,7 +49,7 @@ export function PopularPostCard({ id, rank }: { id: string; rank: number }) {
           <span className="truncate text-label text-ink">{post.title}</span>
           <span className="truncate text-caption text-muted">{post.groupName}</span>
           <span className="flex items-center gap-1 text-caption text-muted">
-            <Heart aria-hidden className="size-3" />
+            <Heart aria-hidden className="size-3 text-danger" />
             좋아요 {formatCount(post.likeCount)}개
           </span>
         </span>

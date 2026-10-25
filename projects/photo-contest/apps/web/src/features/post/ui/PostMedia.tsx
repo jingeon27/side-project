@@ -8,7 +8,15 @@ import { match } from 'ts-pattern';
 import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 
-export function PostMedia({ postId, detail = false }: { postId: string; detail?: boolean }) {
+export function PostMedia({
+  postId,
+  detail = false,
+  edgeToEdge = false,
+}: {
+  postId: string;
+  detail?: boolean;
+  edgeToEdge?: boolean;
+}) {
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
@@ -17,7 +25,8 @@ export function PostMedia({ postId, detail = false }: { postId: string; detail?:
   const mediaUrl = post.mediaUrl;
   if (!mediaUrl) return null;
   const frameClassName = cn(
-    'w-full overflow-hidden rounded-card bg-sunken object-contain',
+    'w-full overflow-hidden bg-sunken object-contain',
+    edgeToEdge ? 'rounded-none' : 'rounded-card',
     detail ? 'min-h-56 flex-1' : 'aspect-square desktop:aspect-4/3 desktop:max-h-[60dvh]',
   );
   return match(post.kind)

@@ -14,8 +14,8 @@ function GroupLink({ href, children }: { href: string; children: ReactNode }) {
       href={href}
       aria-current={pathname === href ? 'page' : undefined}
       className={cn(
-        'flex min-h-touch flex-1 items-center justify-center border-b-2 px-3 text-label transition-colors',
-        pathname === href ? 'border-ink text-ink' : 'border-transparent text-muted hover:text-ink',
+        'flex min-h-touch flex-1 items-center justify-center border-b-2 px-3 text-label transition-colors active:bg-sunken',
+        pathname === href ? 'border-ink font-bold text-ink' : 'border-transparent text-muted hover:text-ink',
       )}
     >
       {children}

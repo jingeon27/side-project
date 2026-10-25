@@ -27,8 +27,9 @@ export function GroupCategoryFilter({
       {group.categories.length ? (
         <nav aria-label="게시물 카테고리" className="mx-auto flex w-full max-w-5xl flex-wrap gap-2">
           <Button
-            variant={categoryId ? 'secondary' : 'primary'}
+            variant={categoryId ? 'secondary' : 'accent'}
             size="sm"
+            className="rounded-full"
             aria-pressed={!categoryId}
             onClick={() => replaceSearchParams({ category: null })}
           >
@@ -37,8 +38,9 @@ export function GroupCategoryFilter({
           {group.categories.map((category) => (
             <Button
               key={category.id}
-              variant={categoryId === category.id ? 'primary' : 'secondary'}
+              variant={categoryId === category.id ? 'accent' : 'secondary'}
               size="sm"
+              className="rounded-full"
               aria-pressed={categoryId === category.id}
               onClick={() => {
                 replaceSearchParams({ category: category.id });
