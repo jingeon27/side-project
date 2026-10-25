@@ -46,19 +46,17 @@ it('upgrades existing comments to root comments without losing their text', asyn
       filter: (source) => !(/^\d{14}_/.test(basename(source)) && basename(source) >= migrationName),
     });
     deploy();
-    const user = await db.user.create({
-      data: { nickname: '기존 댓글 작성자', termsVersion: '2026-10', ageConfirmed: true },
-      // 업그레이드 전 DB에는 이후 추가된 User 컬럼이 없으므로 fixture의 키만 읽는다.
-      select: { id: true },
-    });
-    const category = await db.category.create({ data: { slug: 'legacy-comment-game', name: '기존 게임' } });
-    const post = await db.post.create({
-      data: { authorId: user.id, categoryId: category.id, title: '기존 게시글', body: '기존 본문' },
-    });
+    // 최신 Prisma의 기본값도 INSERT에 포함되므로 과거 스키마의 fixture는 SQL로 만든다.
+    const userId = `legacy-user-${randomBytes(8).toString('hex')}`;
+    const categoryId = `legacy-category-${randomBytes(8).toString('hex')}`;
+    const postId = `legacy-post-${randomBytes(8).toString('hex')}`;
+    await db.$executeRaw`INSERT INTO "User" ("id", "nickname", "termsVersion", "ageConfirmed") VALUES (${userId}, '기존 댓글 작성자', '2026-10', true)`;
+    await db.$executeRaw`INSERT INTO "Category" ("id", "slug", "name") VALUES (${categoryId}, 'legacy-comment-game', '기존 게임')`;
+    await db.$executeRaw`INSERT INTO "Post" ("id", "authorId", "categoryId", "title", "body", "updatedAt") VALUES (${postId}, ${userId}, ${categoryId}, '기존 게시글', '기존 본문', NOW())`;
     const id = `legacy-${randomBytes(8).toString('hex')}`;
-    await db.$executeRaw`INSERT INTO "Comment" ("id", "postId", "authorId", "body", "updatedAt") VALUES (${id}, ${post.id}, ${user.id}, ${'업그레이드 전 댓글'}, NOW())`;
+    await db.$executeRaw`INSERT INTO "Comment" ("id", "postId", "authorId", "body", "updatedAt") VALUES (${id}, ${postId}, ${userId}, ${'업그레이드 전 댓글'}, NOW())`;
     const notificationId = `legacy-notification-${randomBytes(8).toString('hex')}`;
-    await db.$executeRaw`INSERT INTO "Notification" ("id", "postId", "userId", "type", "message") VALUES (${notificationId}, ${post.id}, ${user.id}, 'COMMENT', '기존 댓글 알림')`;
+    await db.$executeRaw`INSERT INTO "Notification" ("id", "postId", "userId", "type", "message") VALUES (${notificationId}, ${postId}, ${userId}, 'COMMENT', '기존 댓글 알림')`;
     cpSync(join(prismaDir, 'migrations'), join(fixture, 'migrations'), { recursive: true });
     deploy();
     expect(await db.comment.findUniqueOrThrow({ where: { id } })).toMatchObject({
