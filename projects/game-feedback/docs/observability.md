@@ -36,6 +36,15 @@ corepack yarn workspace @side/game-feedback dev:test
 2. Sentry 브라우저 초기화 확인은 개발자 도구 Console에서 `setTimeout(() => { throw new Error('local-sentry-check'); }, 0)`을 실행한다. 수집 요청의 성공 여부와 Issues의 최근 이벤트를 확인한다. 개인정보 제거 정책으로 오류 메시지는 일반 문구로 바뀔 수 있으므로 발생 시간과 환경으로 찾는다.
 3. API는 처리하지 못한 500 오류만 전송한다. 입력 오류·권한 거부 같은 4xx는 Sentry 확인용 오류가 아니다. API 단위 검사는 가짜 transport로 500 수집과 정보 제거를 검증하며 실제 콘솔 수신을 대신하지 않는다.
 
+API 설정으로 실제 수집 서버에 확인용 이벤트 1건을 보내려면 다음 명령을 실행한다. DB·개발 서버를 시작하지 않고 정상 오류 보고와 같은 개인정보 제거 함수를 사용한다. 값은 출력하지 않으며 수집 응답이 2xx인 경우에만 성공한다. Sentry Issues에서 `verification:configuration-check`, `service:game-feedback` 태그와 출력된 eventId로 찾는다.
+
+```sh
+corepack yarn workspace @side/game-feedback sentry:check
+corepack yarn workspace @side/photo-contest sentry:check
+```
+
+이 검사는 API DSN 연결을 확인한다. 브라우저 번들 반영과 Sentry UI의 이슈 생성은 별도로 확인한다. 운영 웹의 공개 키는 로컬 `.env`가 아니라 GitHub 빌드 Variables에서 들어가므로 값 변경 후 웹 이미지를 다시 빌드해야 한다. 부하 측정은 [부하테스트 안내](load-testing.md)를 따른다.
+
 로컬 오류 수집에는 `SENTRY_AUTH_TOKEN`이 필요하지 않다. 소스맵 업로드는 CI용 인증 토큰을 사용하는 별도 작업이며 현재 자동 업로드는 구현되지 않았다. 현재 tracing은 꺼져 있어 키를 넣어도 Web Vitals나 성능 span은 수집되지 않는다. Game Feedback 네이티브 셸에 별도 관측 SDK는 없으며 WebView 안의 웹 이벤트가 위 웹 키로 전송된다.
 
 Photo Contest는 `projects/photo-contest/.env`에 해당 웹/API 키를 넣고 `corepack yarn workspace @side/photo-contest dev`로 시작한다. 그 서비스의 Expo 앱은 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY`를 `projects/photo-contest/apps/mobile/.env` 또는 모바일 실행/빌드 환경에서 별도로 전달한다. Game Feedback 키와 프로젝트를 혼용하지 않는다.
