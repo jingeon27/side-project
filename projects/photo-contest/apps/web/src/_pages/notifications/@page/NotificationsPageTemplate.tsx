@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 import { useBackgroundQuery, useMutation, type QueryRef } from '@apollo/client/react';
 import { Heart } from 'lucide-react';
 import { overlay } from 'overlay-kit';
@@ -119,9 +121,12 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
 function NotificationFeed({ viewerId }: { viewerId: string }) {
   const [queryRef, { refetch }] = useBackgroundQuery(MyNotificationsDocument, {
     variables: { offset: 0, limit: PAGE_SIZE },
-    fetchPolicy: 'cache-and-network',
     refetchWritePolicy: 'overwrite',
   });
+  // 사전 조회한 값으로 SSR·hydration을 맞춘 뒤 최신 알림을 받는다.
+  useEffect(() => {
+    void refetch().catch(() => undefined);
+  }, [refetch]);
   return (
     <AsyncBoundary
       resetKey={viewerId}
