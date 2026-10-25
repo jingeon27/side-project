@@ -48,7 +48,7 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
   return (
     <article
       id={`post-${id}`}
-      className="min-w-0 rounded-card border border-line bg-surface p-4 shadow-card desktop:p-5"
+      className="min-w-0 overflow-hidden rounded-sheet border border-line bg-surface p-4 shadow-card desktop:p-5"
       aria-label={post.title}
     >
       <div className="flex items-center gap-3 pb-4">
@@ -70,24 +70,26 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
       {post.contest ? (
         <Link
           href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
-          className="mb-3 inline-flex min-h-touch items-center rounded-control bg-sunken px-3 text-caption text-ink"
+          className="mb-3 inline-flex min-h-touch items-center rounded-full bg-accent-soft px-3 text-caption text-accent-ink transition-colors hover:bg-accent/20 active:bg-accent/25"
         >
           대회 참여 · {post.contest.title} · 좋아요 1인 {post.contest.likeLimit}개
         </Link>
       ) : null}
       {post.category ? (
-        <p className="mb-2 text-caption text-muted">
+        <p className="mb-2 text-caption text-accent-ink">
           {post.category.name}
           {post.category.archivedAt ? ' · 보관됨' : ''}
         </p>
       ) : null}
-      <h3 className="mb-4 wrap-break-word text-title leading-snug text-ink">{post.title}</h3>
-      <PostAttachments postId={id} />
+      <h3 className="mb-4 wrap-break-word text-title leading-snug text-ink desktop:text-title-lg">
+        {post.title}
+      </h3>
+      <PostAttachments postId={id} edgeToEdge />
       {post.body ? (
         <p className="pt-4 text-body whitespace-pre-wrap wrap-break-word text-ink">{post.body}</p>
       ) : null}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-line pt-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line pt-2">
+        <div className="flex flex-wrap items-center gap-1">
           {preview ? (
             <ButtonLink href={ROUTES.GROUP(post.groupId)} variant="secondary" size="md">
               그룹 보기
@@ -97,7 +99,7 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
               <Button
                 variant="ghost"
                 size="md"
-                className="gap-2 rounded-full px-3"
+                className="gap-1.5 rounded-full px-2 aria-pressed:bg-danger-soft aria-pressed:text-danger"
                 aria-label={`${post.title} 좋아요`}
                 aria-pressed={post.likedByMe}
                 loading={likeState.loading || unlikeState.loading}
@@ -116,14 +118,14 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
                 <Heart
                   aria-hidden
                   strokeWidth={1.7}
-                  className={post.likedByMe ? 'size-4 fill-danger text-danger' : 'size-4'}
+                  className={post.likedByMe ? 'size-5 fill-danger text-danger' : 'size-5'}
                 />
                 <span className="text-caption">좋아요 {formatCount(post.likeCount)}개</span>
               </Button>
               <Button
                 variant="ghost"
                 size="md"
-                className="gap-2 px-3 text-muted"
+                className="gap-1.5 rounded-full px-2 text-muted"
                 aria-label={`${post.title} 댓글 ${formatCount(post.commentCount)}개`}
                 onClick={() =>
                   overlay.open(({ isOpen, close: onClose, unmount }) => (
@@ -136,7 +138,7 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
                   ))
                 }
               >
-                <MessageCircle aria-hidden className="size-4" />
+                <MessageCircle aria-hidden className="size-5" />
                 <span className="text-caption">댓글 {formatCount(post.commentCount)}개</span>
               </Button>
             </>

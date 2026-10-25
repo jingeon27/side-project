@@ -36,7 +36,7 @@ export function GalleryFeed({
           />
         </div>
         <div className="contents desktop:sticky desktop:top-24 desktop:order-2 desktop:block desktop:max-h-[calc(100dvh-112px)] desktop:min-w-0 desktop:overflow-y-auto desktop:overscroll-contain">
-          <aside className="order-1 mx-auto w-full min-w-0 max-w-app border-b border-line pb-5 desktop:max-w-none desktop:rounded-card desktop:border desktop:bg-surface desktop:p-4 wide:p-5">
+          <aside className="order-1 mx-auto w-full min-w-0 max-w-app rounded-sheet border border-accent/20 bg-accent-soft/40 p-4 desktop:max-w-none wide:p-5">
             <GalleryBoard groupId={groupId} popular clientOnly={clientOnly} />
           </aside>
           {sidebar ? (

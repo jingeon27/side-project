@@ -43,7 +43,7 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
         error={form.formState.errors.q?.message}
         {...form.register('q')}
       />
-      <Button type="submit" loading={pending} className="shrink-0">
+      <Button type="submit" variant="accent" size="lg" loading={pending} className="shrink-0 rounded-full">
         <Search aria-hidden className="mr-1 size-4" />
         검색
       </Button>

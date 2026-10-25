@@ -92,11 +92,11 @@ export function GalleryBoard({
     >
       <h2
         className={cn(
-          'flex min-h-touch items-center gap-2 text-subtitle text-ink',
-          !popular && 'border-b border-line pb-3',
+          'flex min-h-touch items-center gap-2 text-ink',
+          popular ? 'text-subtitle' : 'text-title-lg',
         )}
       >
-        {popular ? <Sparkles aria-hidden className="size-4 text-muted" /> : null}
+        {popular ? <Sparkles aria-hidden className="size-5 text-accent-ink" /> : null}
         {popular ? '이달의 인기' : '최신 게시물'}
       </h2>
       <AsyncBoundary onRetry={() => refetch()} fallback={fallback}>
