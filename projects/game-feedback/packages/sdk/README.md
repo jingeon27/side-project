@@ -5,9 +5,9 @@
 ## 생성과 사용
 
 ```sh
-corepack yarn workspace @side/game-feedback codegen
-corepack yarn workspace @game-feedback/sdk typecheck
-corepack yarn workspace @game-feedback/sdk test
+yarn workspace @side/game-feedback codegen
+yarn workspace @game-feedback/sdk typecheck
+yarn workspace @game-feedback/sdk test
 ```
 
 프로젝트의 개발 실행·setup·check/typecheck·test/E2E·build는 시작할 때 계약 빌드와 OpenAPI/SDK 생성을 자동으로 수행한다. 실행 중 계약을 수정하면 위 `codegen` 명령을 다시 실행한다. 앱별 명령을 직접 실행할 때는 먼저 생성해야 한다. `apps/api/openapi.json`은 Git에서 제외한 중간 파일이며 준비 단계에서 생성한다. SDK 생성 코드만 Git에 포함하고 CI가 재생성 diff와 operation별 응답 검증을 검사한다. 규격이 같으면 SDK diff는 생기지 않는다.
