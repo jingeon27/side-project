@@ -1,4 +1,4 @@
-import type { ShareAction, ShareContent, ShareOptions } from 'react-native';
+import type { Share, ShareContent, ShareOptions } from 'react-native';
 
 import { BRIDGE_ERROR_CODE, type TPushRegistration } from '@photo-contest/bridge';
 import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/bridge/native';
@@ -25,7 +25,10 @@ export interface ICapabilityDependencies {
   platform: 'ios' | 'android';
   /** 예: https://contest.example/backend */
   /** 검증된 App Link·Universal Link 콜백. 예: https://contest.example/app-auth/callback */
-  share: (content: ShareContent, options: ShareOptions) => Promise<ShareAction>;
+  share: (
+    content: ShareContent,
+    options: ShareOptions,
+  ) => Promise<Pick<Awaited<ReturnType<typeof Share.share>>, 'action'>>;
   /** 복사에 실패하면 false */
   copyText: (text: string) => Promise<boolean>;
   impact: (style: TImpactStyle) => Promise<void>;
