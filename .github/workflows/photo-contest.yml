@@ -9,7 +9,8 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
-      - 'scripts/check-migrations.mjs'
+      - 'scripts/**'
+      - 'tsconfig.scripts.json'
       - '.yarnrc.yml'
       - '.nvmrc'
       - '.prettierrc.json'
@@ -24,7 +25,8 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
-      - 'scripts/check-migrations.mjs'
+      - 'scripts/**'
+      - 'tsconfig.scripts.json'
       - '.yarnrc.yml'
       - '.nvmrc'
       - '.prettierrc.json'
@@ -102,12 +104,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 24 }
       - name: Reject incompatible new migrations
         env:
           MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
-        run: node scripts/check-migrations.mjs
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with: { node-version: 24 }
+        run: node scripts/check-migrations.ts
       - run: corepack enable
       - id: install
         run: yarn install --immutable
@@ -116,9 +118,9 @@ jobs:
       - name: Check deployment scripts
         run: shellcheck -x deploy/shared-instance/scripts/*.sh projects/photo-contest/deploy/scripts/*.sh projects/photo-contest/apps/web/test/deployment/containers.sh
       - run: yarn format:check
-      - run: yarn workspace @side/eslint-config check
-      - run: yarn workspace @side/push-notifications check
-      - run: yarn workspace @side/migration-check check
+      - run: yarn typecheck:scripts
+      - run: yarn workspace @side/config check
+      - run: yarn workspace @side/toolkit check
       - run: yarn workspace @side/design-system check
       - run: yarn workspace @side/photo-contest check
       - run: yarn workspace @photo-contest/web lint && yarn workspace @photo-contest/mobile lint

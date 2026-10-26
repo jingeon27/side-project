@@ -356,7 +356,7 @@ docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
   -t "side-shared-pc-web:$deployment_test_sha" .
 ```
 
-Linux 호스트에 `flock` 등 위 운영 도구가 있으면 `SIDE_SMOKE_TAG="$deployment_test_sha" node projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs`로 실행한다. macOS에는 Linux `flock`이 없으므로 Dockerfile의 기존 `smoke-tools` stage를 사용한다. Colima의 Linux Docker VM에서는 아래 host network로 검증할 수 있다. Docker Desktop은 [host networking 지원 설정](https://docs.docker.com/engine/network/drivers/host/#docker-desktop)을 먼저 활성화해야 한다. 이 도구 컨테이너는 테스트 중 Docker socket을 사용하며 운영 서비스로 배포하지 않는다.
+Linux 호스트에 `flock` 등 위 운영 도구가 있으면 `SIDE_SMOKE_TAG="$deployment_test_sha" node projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`로 실행한다. macOS에는 Linux `flock`이 없으므로 Dockerfile의 기존 `smoke-tools` stage를 사용한다. Colima의 Linux Docker VM에서는 아래 host network로 검증할 수 있다. Docker Desktop은 [host networking 지원 설정](https://docs.docker.com/engine/network/drivers/host/#docker-desktop)을 먼저 활성화해야 한다. 이 도구 컨테이너는 테스트 중 Docker socket을 사용하며 운영 서비스로 배포하지 않는다.
 
 ```bash
 deployment_test_root="$(pwd)"
@@ -368,12 +368,12 @@ docker run --rm --network host \
   --workdir "$deployment_test_root" \
   --env "SIDE_SMOKE_TAG=$deployment_test_sha" \
   "side-shared-smoke-tools:$deployment_test_sha" \
-  projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs
+  projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts
 ```
 
 성공 기준은 마지막 `Shared-instance smoke passed` 출력이다. runner는 임의 Docker project/network/volume과 loopback의 임의 포트를 사용하고 종료 시 자신이 만든 테스트 자원을 정리한다. 빌드 이미지와 Docker VM의 정리는 검증자가 소유한 것만 대상으로 한다. 전역 prune, 기존 서비스 중지, 기존 volume 삭제는 하지 않는다.
 
-API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs`는 실제 두 API/Web 이미지·Caddy·PostgreSQL TLS를 실행한다. S3 HTTP 경계, RDS Describe 응답과 registry 매핑만 fixture로 대체한다. 버킷 분리, DML/DDL 분리, TLS 실패 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 오래된 PITR 거부, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 AWS의 IAM/S3/PITR을 검증했다는 뜻은 아니다.
+API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`는 실제 두 API/Web 이미지·Caddy·PostgreSQL TLS를 실행한다. S3 HTTP 경계, RDS Describe 응답과 registry 매핑만 fixture로 대체한다. 버킷 분리, DML/DDL 분리, TLS 실패 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 오래된 PITR 거부, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 AWS의 IAM/S3/PITR을 검증했다는 뜻은 아니다.
 
 ### 2026-10-20 로컬 실행 기록
 
@@ -413,7 +413,7 @@ service.sh는 같은 이미지도 실제로 재생성한다. API의 SSE는 종�
 
 ## 확장 → 배포 → 정리
 
-SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 컬럼 추가와 이중 쓰기, (2) 새 컬럼 읽는 앱 배포와 이전 앱 종료 확인, (3) 보관 기간 후 옛 컬럼 정리로 나눈다. `node scripts/check-migrations.mjs`(구현 `packages/migration-check`)는 기준 ref 이후 새로 추가된 migration.sql을 검사하고, 이미 있던 migration.sql의 수정·삭제·디렉터리 이동은 거부한다. 기존 migration의 위험 SQL을 다시 검사하지는 않는다. 실패하는 문장은 DROP TABLE/COLUMN/CONSTRAINT/INDEX와 VIEW·MATERIALIZED VIEW·TYPE·FUNCTION·PROCEDURE·SEQUENCE·SCHEMA·TRIGGER·EXTENSION·DOMAIN 삭제, DROP DEFAULT/IDENTITY/EXPRESSION, 컬럼 타입·NOT NULL 변경, RENAME(`ALTER INDEX ... RENAME TO` 제외), 기본값 없는 ADD COLUMN NOT NULL, TRUNCATE, WHERE 없는 DELETE·UPDATE, CONCURRENTLY 없는 CREATE INDEX, CREATE UNIQUE INDEX, ADD UNIQUE·PRIMARY KEY(`USING INDEX` 제외), NOT VALID 없는 ADD FOREIGN KEY·CHECK, 동적 SQL(EXECUTE, 작은따옴표 DO 본문)이다. DO 블록과 함수 본문 안의 문장도 같은 규칙으로 검사한다. 같은 migration에서 만든 테이블에 거는 인덱스·제약·컬럼은 빈 테이블이라 허용한다. Prisma가 넣은 `/* Warnings: ... */` 주석이 남아 있으면 실패하므로 검토하고 지운다. 정리 단계는 해당 문장 바로 앞 줄에 `-- migration-lint: allow DROP COLUMN — 이전 읽기 앱 종료 후 2주 경과`처럼 정확한 규칙명과 검토 가능한 사유를 쓴다. 허용 표시는 연속한 주석 줄로 쌓을 수 있고 바로 다음 문장 하나에만 적용한다. CI에서는 PR base SHA 또는 push의 before SHA를 기준으로 사용한다. before가 HEAD의 조상이 아니면(강제 push·새 브랜치 첫 push) `origin/develop`과의 merge-base(HEAD와 다를 때), 그다음 `origin/main`과의 merge-base를 기준으로 삼아 기능 브랜치는 develop에서 갈라진 뒤 더한 migration만 검사한다. 어느 기준도 HEAD와 다르지 않은 push는 실패한다. develop 자체를 강제 push하면 `origin/main` 기준으로 아직 배포되지 않은 migration 전체를 다시 검사하므로, main이 develop을 따라오기 전에는 강화한 규칙 이전의 기존 migration 때문에 실패할 수 있다.
+SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 컬럼 추가와 이중 쓰기, (2) 새 컬럼 읽는 앱 배포와 이전 앱 종료 확인, (3) 보관 기간 후 옛 컬럼 정리로 나눈다. `node scripts/check-migrations.ts`(구현 `packages/toolkit`)는 기준 ref 이후 새로 추가된 migration.sql을 검사하고, 이미 있던 migration.sql의 수정·삭제·디렉터리 이동은 거부한다. 기존 migration의 위험 SQL을 다시 검사하지는 않는다. 실패하는 문장은 DROP TABLE/COLUMN/CONSTRAINT/INDEX와 VIEW·MATERIALIZED VIEW·TYPE·FUNCTION·PROCEDURE·SEQUENCE·SCHEMA·TRIGGER·EXTENSION·DOMAIN 삭제, DROP DEFAULT/IDENTITY/EXPRESSION, 컬럼 타입·NOT NULL 변경, RENAME(`ALTER INDEX ... RENAME TO` 제외), 기본값 없는 ADD COLUMN NOT NULL, TRUNCATE, WHERE 없는 DELETE·UPDATE, CONCURRENTLY 없는 CREATE INDEX, CREATE UNIQUE INDEX, ADD UNIQUE·PRIMARY KEY(`USING INDEX` 제외), NOT VALID 없는 ADD FOREIGN KEY·CHECK, 동적 SQL(EXECUTE, 작은따옴표 DO 본문)이다. DO 블록과 함수 본문 안의 문장도 같은 규칙으로 검사한다. 같은 migration에서 만든 테이블에 거는 인덱스·제약·컬럼은 빈 테이블이라 허용한다. Prisma가 넣은 `/* Warnings: ... */` 주석이 남아 있으면 실패하므로 검토하고 지운다. 정리 단계는 해당 문장 바로 앞 줄에 `-- migration-lint: allow DROP COLUMN — 이전 읽기 앱 종료 후 2주 경과`처럼 정확한 규칙명과 검토 가능한 사유를 쓴다. 허용 표시는 연속한 주석 줄로 쌓을 수 있고 바로 다음 문장 하나에만 적용한다. CI에서는 PR base SHA 또는 push의 before SHA를 기준으로 사용한다. before가 HEAD의 조상이 아니면(강제 push·새 브랜치 첫 push) `origin/develop`과의 merge-base(HEAD와 다를 때), 그다음 `origin/main`과의 merge-base를 기준으로 삼아 기능 브랜치는 develop에서 갈라진 뒤 더한 migration만 검사한다. 어느 기준도 HEAD와 다르지 않은 push는 실패한다. develop 자체를 강제 push하면 `origin/main` 기준으로 아직 배포되지 않은 migration 전체를 다시 검사하므로, main이 develop을 따라오기 전에는 강화한 규칙 이전의 기존 migration 때문에 실패할 수 있다.
 
 ## Next 컴파일 캐시
 

@@ -18,11 +18,13 @@ projects/game-feedback/
   packages/contracts/ # Zod 서버 검증 · OpenAPI 계약
   packages/sdk/    # Orval API Client · 응답 검증 스키마
   docs/
-packages/design-system/ # 두 웹이 공유하는 Base UI·토큰·스타일·cn, 자체 Vitest
-packages/migration-check/ # Prisma migration의 파괴적 DDL 검사, 자체 Vitest
-packages/typescript-config/
-packages/eslint-config/ # 공용 lint·FSD 규칙, RuleTester fixture + 자체 Vitest
+packages/design-system/ # 공유 UI·토큰·스타일
+packages/config/        # ESLint 규칙·프리셋, TypeScript 설정·tsc7
+packages/toolkit/       # 공유 푸시 알림·migration 검사·Sentry 검사
+scripts/                # 저장소 Git hook·worktree 도구
 ```
+
+저장소의 Node 스크립트는 Node.js 24의 TypeScript 타입 제거로 실행합니다. Next.js가 TypeScript PostCSS 설정을 탐색하지 않아 세 웹 앱의 PostCSS 옵션은 각 `package.json`의 `postcss` 필드에 둡니다.
 
 루트·프로젝트의 검사 명령은 앱과 패키지에 위임합니다. 테스트 러너·설정·파일·의존성은 각 앱 또는 패키지가 소유합니다. 화면 없는 API의 e2e는 Vitest·supertest로 실행하며, 공용 e2e 워크스페이스는 없습니다.
 
@@ -87,10 +89,10 @@ corepack yarn prettier --write packages/design-system/src/index.ts
 
 ## Git hook
 
-`yarn install`이 루트 `postinstall`([`scripts/install-git-hooks.mjs`](scripts/install-git-hooks.mjs))로 [husky](https://typicode.github.io/husky/) hook을 설치합니다. Yarn 4는 `prepare`를 실행하지 않아 husky 문서의 Yarn 방식을 따릅니다. `HUSKY=0`, CI, `.git`이 없는 Docker 빌드, husky가 없는 production 설치에서는 조용히 건너뜁니다.
+`yarn install`이 루트 `postinstall`([`scripts/install-git-hooks.ts`](scripts/install-git-hooks.ts))로 [husky](https://typicode.github.io/husky/) hook을 설치합니다. Yarn 4는 `prepare`를 실행하지 않아 husky 문서의 Yarn 방식을 따릅니다. `HUSKY=0`, CI, `.git`이 없는 Docker 빌드, husky가 없는 production 설치에서는 조용히 건너뜁니다.
 
 - `pre-commit`: lint-staged가 스테이징된 파일만 루트 설정으로 `prettier --write`합니다. `.prettierignore` 대상과 Prettier가 모르는 파일은 건드리지 않습니다. lint는 각 프로젝트의 검사 명령으로 실행합니다.
-- `commit-msg`: 커밋 스킬의 `<type>(<scope>): <내용>` 형식을 검사합니다. type은 `feat`·`fix`·`refactor`·`test`·`docs`·`chore`·`perf`·`ci`·`build`·`style`·`revert`·`merge`이고 scope는 선택입니다. Git이 만드는 merge·revert·fixup·squash 메시지는 통과합니다. 검사 구현과 Vitest는 `@side/commit-message-check`가 소유합니다.
+- `commit-msg`: 커밋 스킬의 `<type>(<scope>): <내용>` 형식을 검사합니다. type은 `feat`·`fix`·`refactor`·`test`·`docs`·`chore`·`perf`·`ci`·`build`·`style`·`revert`·`merge`이고 scope는 선택입니다. Git이 만드는 merge·revert·fixup·squash 메시지는 통과합니다. 검사 구현은 루트 `scripts/check-commit-message.ts`에 두며, 옆의 테스트는 `@side/config` 러너가 실행합니다.
 
 새 worktree는 다음 명령으로 만들면 기본 worktree의 로컬 `.env*`도 함께 복사합니다. 루트와 환경변수 예제가 있는 프로젝트·앱 디렉터리만 대상으로 하며, 기존 대상 파일과 예제 파일은 보존합니다. 복사본 권한은 `600`이며 값은 출력하지 않습니다.
 
@@ -114,7 +116,7 @@ git commit --no-verify          # 비상시에만 사용한다
 별도 터미널에서 `corepack yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.
 
 ```sh
-corepack yarn workspace @side/eslint-config check
+corepack yarn workspace @side/config check
 corepack yarn workspace @side/photo-contest check
 corepack yarn workspace @photo-contest/web lint
 corepack yarn workspace @photo-contest/mobile lint
@@ -132,7 +134,7 @@ corepack yarn format:check
 
 ## TypeScript와 테스트 파일 규칙
 
-웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/typescript-config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
+웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
 
 새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.
 
@@ -150,4 +152,4 @@ corepack yarn format:check
 
 웹·WebView는 각 웹 origin의 `/api` 또는 `/backend` 프록시를 사용한다. API 공개 도메인과 서버 간 내부 upstream 주소를 구분하며, 별사대의 API GraphQL도 Next 프록시를 거쳐 공개 캐시를 무효화한다. DNS·TLS·호스팅 연결은 [공통 배포 안내](deploy/shared-instance/README.md)와 [블로그 배포 안내](projects/blog/docs/deployment.md)를 따른다.
 
-두 서비스의 RN 푸시는 각 API가 세션·권한·DB 큐를 소유하고, [`@side/push-notifications`](packages/push-notifications/README.md)만 Expo HTTP 전송·재시도·영수증 처리를 공유한다. 같은 제공자의 오류·부분 성공을 두 번 구현하지 않기 위한 공통 패키지이며 사용자 데이터와 인증 설정은 공유하지 않는다.
+두 서비스의 RN 푸시는 각 API가 세션·권한·DB 큐를 소유하고, [`@side/toolkit/push-notifications`](packages/toolkit/src/push-notifications/README.md)만 Expo HTTP 전송·재시도·영수증 처리를 공유한다. 같은 제공자의 오류·부분 성공을 두 번 구현하지 않기 위한 공통 패키지이며 사용자 데이터와 인증 설정은 공유하지 않는다.

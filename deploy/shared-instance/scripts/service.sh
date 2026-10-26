@@ -118,7 +118,7 @@ if [[ "$ACTION" == deploy ]]; then
     compose "$directory" pull api web ops migrate
   fi
   # Runtime checks never receive the DDL credential. The migration container is one-shot.
-  compose "$directory" run --rm --no-deps -T ops scripts/verify-services.mjs
+  compose "$directory" run --rm --no-deps -T ops scripts/verify-services.ts
   python3 "$directory/host/rds-receipt.py" "$ROOT" "$directory/rds-pitr.json"
   compose "$directory" run --rm --no-deps -T migrate
   if activate "$directory"; then
@@ -148,9 +148,9 @@ case "$ACTION" in
   status) compose "$current" ps ;;
   operator)
     [[ "$SERVICE" == game-feedback ]]
-    compose "$current" run --rm --no-deps -T ops scripts/operator.mjs "$@" ;;
+    compose "$current" run --rm --no-deps -T ops scripts/operator.ts "$@" ;;
   prune)
     [[ "$SERVICE" == game-feedback ]]
-    compose "$current" run --rm --no-deps -T ops scripts/maintenance.mjs ;;
+    compose "$current" run --rm --no-deps -T ops scripts/maintenance.ts ;;
   *) echo 'Usage: service.sh <game-feedback|photo-contest> deploy <sha> <api-digest> <web-digest> | rollback | status | operator <args> | prune' >&2; exit 2 ;;
 esac

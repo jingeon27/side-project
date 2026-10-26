@@ -77,9 +77,9 @@ Terraform이 관리하는 버킷의 로컬 CORS는 `game_feedback_cors_origins`�
 
 ```sh
 yarn workspace @game-feedback/api build
-yarn workspace @game-feedback/api exec node scripts/migrate-media.mjs
+yarn workspace @game-feedback/api exec node scripts/migrate-media.ts
 # 대상과 백업을 확인한 뒤 실행
-yarn workspace @game-feedback/api exec node scripts/migrate-media.mjs --apply
+yarn workspace @game-feedback/api exec node scripts/migrate-media.ts --apply
 # 기존 파일 저장소가 있는 경우 --source-directory=/absolute/media/path 추가
 ```
 

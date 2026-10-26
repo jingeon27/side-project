@@ -107,7 +107,7 @@ jobs:
           cache-from: type=gha,scope=photo-contest-web-amd64
           cache-to: type=gha,mode=max,scope=photo-contest-web-amd64
       - name: Verify both services behind one HTTPS proxy with external database and object storage boundaries
-        run: node projects/game-feedback/apps/api/scripts/shared-instance-smoke.mjs "$GITHUB_SHA"
+        run: node projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts "$GITHUB_SHA"
       - name: Archive the exact images verified together
         run: |
           docker save "side-shared-gf-api:$GITHUB_SHA" "side-shared-gf-web:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/game-feedback.tar.gz"
