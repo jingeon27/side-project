@@ -88,7 +88,7 @@ const [, , directory, project] = process.argv;
 writeFileSync('projects/photo-contest/apps/web/.data/deployment-smoke.json', JSON.stringify({directory, project}), {flag:'wx', mode:0o600});
 JS
 WEB_ORIGIN=https://localhost:3382 S3_ENDPOINT=http://storage.localhost:3383 \
-  corepack yarn workspace @photo-contest/web test:deploy
+  yarn workspace @photo-contest/web test:deploy
 
 # 실제 custom-format 백업을 별도 DB에 복원해 댓글까지 읽는다.
 # shellcheck disable=SC2016

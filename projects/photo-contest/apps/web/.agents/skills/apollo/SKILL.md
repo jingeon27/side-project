@@ -9,7 +9,7 @@ description: 웹(apps/web)에서 GraphQL 문서를 쓰고 codegen하거나, Apol
 
 - 문서는 `src/features/<domain>/api/<domain>.graphql`에만 둔다(codegen documents). 연산 이름은 앱 전체에서 유일하다: `query Contest` → `ContestDocument`·`ContestQuery`·`ContestQueryVariables`, `fragment X on T` → `XFragment`·`XFragmentDoc`.
 - 모든 객체 선택에 `id`를 넣는다. 정규화·낙관적 갱신·`cache.identify`가 id로 이어진다.
-- `corepack yarn workspace @photo-contest/web codegen` → `src/shared/api/generated.ts`. 손으로 고치지 않고 문서 변경과 같은 커밋에 넣는다.
+- `yarn workspace @photo-contest/web codegen` → `src/shared/api/generated.ts`. 손으로 고치지 않고 문서 변경과 같은 커밋에 넣는다.
 - `onlyOperationTypes`라 `Submission` 같은 스키마 객체 타입은 생성되지 않는다. props 타입은 `ContestQuery['contest']`나 `XFragment`로, enum은 as const 객체(`SubmissionSort.MostLiked`, `Phase.Voting`)로 쓴다.
 - 훅과 `skipToken`은 `@apollo/client/react`에서 import한다(`@apollo/client` 루트는 core라 훅이 없다). `useQuery`·`useMutation`·`useFragment`를 한 번 감쌀 뿐인 훅은 만들지 않고 컴포넌트에서 Document로 바로 부른다.
 
@@ -54,10 +54,10 @@ description: 웹(apps/web)에서 GraphQL 문서를 쓰고 codegen하거나, Apol
 ## 확인 (side 루트)
 
 ```sh
-corepack yarn workspace @photo-contest/web codegen
-corepack yarn workspace @photo-contest/web typecheck
-corepack yarn workspace @photo-contest/web test       # 캐시 정책·helper spec
-corepack yarn workspace @photo-contest/web test:api   # src/**/*.api.spec.ts: 앱 문서를 격리 API(:4321)에 실행
+yarn workspace @photo-contest/web codegen
+yarn workspace @photo-contest/web typecheck
+yarn workspace @photo-contest/web test       # 캐시 정책·helper spec
+yarn workspace @photo-contest/web test:api   # src/**/*.api.spec.ts: 앱 문서를 격리 API(:4321)에 실행
 ```
 
 ## 공개 서버 캐시

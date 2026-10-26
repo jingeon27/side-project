@@ -37,7 +37,7 @@ description: 웹(apps/web)의 Tailwind 4·디자인 토큰, 휴대폰·태블릿
 
 ## 확인
 
-- `corepack yarn workspace @side/design-system check`와 `corepack yarn workspace @photo-contest/web test`(기존 UI·`cn` 통합 spec), `corepack yarn workspace @photo-contest/web lint`(side 루트).
+- `yarn workspace @side/design-system check`와 `yarn workspace @photo-contest/web test`(기존 UI·`cn` 통합 spec), `yarn workspace @photo-contest/web lint`(side 루트).
 - 이미 떠 있는 개발 서버(http://localhost:3200)를 휴대폰 폭(360~430px)과 데스크톱 폭에서 본다. 서버를 끄거나 다시 띄우지 않는다. 가로 스크롤이 생기면 안 된다.
 
 데스크톱 글쓰기는 2열 안에서 미디어·내용을 함께 보고, 댓글은 게시물 미디어·대화를 나란히 본다. 그룹의 글쓰기는 상단바에 두며 초대·멤버 정보는 인기 목록 아래에 둔다. GalleryFeed의 sidebar 슬롯은 모바일에서 피드 아래로 내려가며 DOM을 복제하지 않는다.

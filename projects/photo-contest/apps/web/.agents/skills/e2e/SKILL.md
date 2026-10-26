@@ -34,11 +34,11 @@ description: 웹(apps/web)의 Playwright e2e를 작성·실행할 때(휴대폰 
 ## 실행 (side 루트)
 
 ```sh
-corepack yarn workspace @photo-contest/web exec playwright install chromium webkit   # 처음 한 번
-corepack yarn workspace @photo-contest/web test:e2e                                  # 모든 프로젝트
-corepack yarn workspace @photo-contest/web test:e2e e2e/<이름>.spec.ts --project=mobile-chrome
-corepack yarn workspace @photo-contest/web test:e2e --project=mobile-chrome -g "<테스트 이름 일부>"
-corepack yarn workspace @photo-contest/web exec playwright show-report
+yarn workspace @photo-contest/web exec playwright install chromium webkit   # 처음 한 번
+yarn workspace @photo-contest/web test:e2e                                  # 모든 프로젝트
+yarn workspace @photo-contest/web test:e2e e2e/<이름>.spec.ts --project=mobile-chrome
+yarn workspace @photo-contest/web test:e2e --project=mobile-chrome -g "<테스트 이름 일부>"
+yarn workspace @photo-contest/web exec playwright show-report
 ```
 
 - test-kit이 `TEST_DATABASE_URL`(loopback 전용 테스트 DB, 기본 55434)에 실행마다 격리 스키마를 만들고 끝나면 지운다. API 코드를 바꾸지 않았고 이전 `apps/api/.e2e-build`가 있으면 명령 앞에 `PC_E2E_SKIP_API_BUILD=true`를 붙여 API 빌드를 건너뛴다.
