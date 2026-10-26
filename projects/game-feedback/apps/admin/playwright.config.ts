@@ -32,7 +32,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'corepack yarn workspace @side/game-feedback db:test:sync && corepack yarn workspace @game-feedback/api db:seed --fixtures && node --require tsx/cjs projects/game-feedback/apps/admin/e2e/seed-admin.ts && corepack yarn workspace @game-feedback/api test:server',
+        'yarn workspace @side/game-feedback db:test:sync && yarn workspace @game-feedback/api db:seed --fixtures && node --require tsx/cjs projects/game-feedback/apps/admin/e2e/seed-admin.ts && yarn workspace @game-feedback/api test:server',
       cwd: rootDir,
       url: 'http://127.0.0.1:4304/api/session',
       env,
@@ -40,7 +40,7 @@ export default defineConfig({
       timeout: 90_000,
     },
     {
-      command: 'corepack yarn workspace @game-feedback/admin dev --port 3304',
+      command: 'yarn workspace @game-feedback/admin dev --port 3304',
       cwd: rootDir,
       url: 'http://127.0.0.1:3304',
       env: {
