@@ -88,4 +88,39 @@ describe('OS 푸시 등록', () => {
     expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
     expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
   });
+  it('동시 등록 요청은 권한 확인과 설치 ID 생성 결과를 공유해야 한다', async () => {
+    const permission = Promise.withResolvers<Notifications.NotificationPermissionsStatus>();
+    vi.mocked(Notifications.getPermissionsAsync).mockReturnValueOnce(permission.promise);
+    const { getPushRegistration } = await import('./native-push');
+    const first = getPushRegistration(true);
+    expect(getPushRegistration(false)).toBe(first);
+    permission.resolve({
+      status: 'undetermined',
+      granted: false,
+      canAskAgain: true,
+      expires: 'never',
+    } as Notifications.NotificationPermissionsStatus);
+    expect(await first).toMatchObject({ installationId, status: 'granted' });
+    expect(AsyncStorage.setItem).toHaveBeenCalledOnce();
+    expect(Notifications.getPermissionsAsync).toHaveBeenCalledOnce();
+    expect(Notifications.requestPermissionsAsync).toHaveBeenCalledOnce();
+    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledOnce();
+  });
+  it('설치 ID 조회 실패 후 다음 등록에서 저장소를 다시 읽어야 한다', async () => {
+    vi.mocked(AsyncStorage.getItem).mockRejectedValueOnce(new Error('설치 ID 조회 실패'));
+    const { getPushRegistration } = await import('./native-push');
+    await expect(getPushRegistration(true)).rejects.toThrow('설치 ID 조회 실패');
+    expect(await getPushRegistration(true)).toMatchObject({ installationId, status: 'granted' });
+    expect(AsyncStorage.getItem).toHaveBeenCalledTimes(2);
+    expect(AsyncStorage.setItem).toHaveBeenCalledOnce();
+  });
+  it('토큰 조회 실패 후 등록은 다시 시도하고 설치 ID는 유지해야 한다', async () => {
+    vi.mocked(Notifications.getExpoPushTokenAsync).mockRejectedValueOnce(new Error('푸시 토큰 조회 실패'));
+    const { getPushRegistration } = await import('./native-push');
+    await expect(getPushRegistration(true)).rejects.toThrow('푸시 토큰 조회 실패');
+    expect(await getPushRegistration(true)).toMatchObject({ installationId, status: 'granted' });
+    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledTimes(2);
+    expect(AsyncStorage.getItem).toHaveBeenCalledOnce();
+    expect(AsyncStorage.setItem).toHaveBeenCalledOnce();
+  });
 });
