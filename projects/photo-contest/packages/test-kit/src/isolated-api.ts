@@ -36,7 +36,7 @@ async function waitForHealth(url: string, isAlive: () => boolean, timeoutMs: num
   throw new Error(`격리 API가 ${timeoutMs / 1000}초 안에 준비되지 않았습니다.`);
 }
 
-/** vitest globalSetup에서 쓴다. 격리 스키마로 API를 띄우고 stop()에서 스키마와 S3 대역 폴더까지 지운다. */
+/** vitest globalSetup에서 쓴다. 격리 스키마로 API를 띄우고 stop()에서 스키마와 실제 S3의 실행별 객체를 지운다. */
 export async function startIsolatedApi({
   port,
   webOrigin,

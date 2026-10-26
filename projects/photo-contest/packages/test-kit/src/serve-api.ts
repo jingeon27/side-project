@@ -1,5 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
@@ -12,8 +11,8 @@ import {
   resolveTestDatabaseUrl,
 } from './database';
 import { loadProjectEnv } from './env';
-import { FAKE_S3_DEFAULTS, startFakeS3 } from './fake-s3';
 import { API_ROOT, PROJECT_ROOT } from './paths';
+import { cleanupS3TestObjects, s3TestEnvironment, verifyS3TestAccess } from './s3';
 
 interface IFixtureApp {
   listen(port: number, host: string): Promise<unknown>;
@@ -27,26 +26,23 @@ async function main() {
   const schema = assertTestSchemaName(new URL(baseUrl).searchParams.get('schema') ?? '');
   const port = Number(new URL(process.env.API_URL ?? '').port);
   if (!Number.isInteger(port) || port < 4300 || port > 4399) throw new Error('Invalid isolated API port.');
-  const storageDir = resolve(PROJECT_ROOT, '.data', schema);
+  const s3Env = s3TestEnvironment(process.env, schema);
+  await verifyS3TestAccess(s3Env);
   const outDir = resolve(API_ROOT, '.e2e-build');
   execFileSync('yarn', ['workspace', '@photo-contest/api', 'build', '--outDir', outDir], {
     cwd: PROJECT_ROOT,
     stdio: 'inherit',
   });
   const url = await createIsolatedDatabase(baseUrl, schema);
-  const state: { app?: IFixtureApp; s3?: Awaited<ReturnType<typeof startFakeS3>> } = {};
+  const state: { app?: IFixtureApp } = {};
   const cleanup = once(async () => {
     try {
       await state.app?.close();
     } finally {
       try {
-        await state.s3?.stop();
+        await cleanupS3TestObjects(s3Env);
       } finally {
-        try {
-          await dropIsolatedDatabase(baseUrl, schema);
-        } finally {
-          await rm(storageDir, { recursive: true, force: true });
-        }
+        await dropIsolatedDatabase(baseUrl, schema);
       }
     }
   });
@@ -58,14 +54,7 @@ async function main() {
   process.once('SIGTERM', stop);
   process.once('SIGINT', stop);
   try {
-    await mkdir(storageDir, { recursive: true });
-    const s3 = await startFakeS3({
-      ...FAKE_S3_DEFAULTS,
-      directory: storageDir,
-      corsOrigins: process.env.WEB_ORIGIN ? [new URL(process.env.WEB_ORIGIN).origin] : [],
-    });
-    state.s3 = s3;
-    Object.assign(process.env, s3.env, {
+    Object.assign(process.env, s3Env, {
       NODE_ENV: 'test',
       DATABASE_URL: url,
       SENTRY_DSN: '',
