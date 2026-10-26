@@ -7,12 +7,12 @@
 | `@side/game-feedback`      | 안전한 로컬 DB·실행·검증 명령                                                          |
 | `@game-feedback/web`       | Next.js App Router, React, 공통 디자인 시스템·Base UI, TanStack Query, React Hook Form |
 | `@game-feedback/api`       | NestJS + Express, Zod 검증, Prisma, 외부 제공자 인터페이스                             |
-| `@game-feedback/mobile`    | Expo 57·React Native WebView 셸, 앱 탐색·인증·연결 복구                                |
+| `@game-feedback/mobile`    | Expo 58·React Native WebView 셸, 앱 탐색·인증·연결 복구                                |
 | `@game-feedback/bridge`    | Web/Mobile 메시지의 Zod 계약·bootstrap·dispatch                                        |
 | `@game-feedback/contracts` | 서버 요청 검증 및 공유 데이터 계약                                                     |
 | `@game-feedback/sdk`       | OpenAPI에서 Orval로 생성한 클라이언트 및 스키마                                        |
 
-집계 패키지는 `test`, `build`, `typecheck`, `check`를 앱·패키지 명령에 위임한다. API가 DB URL 가드·단위·PostgreSQL 통합 테스트를 소유하고 Web이 캐시 경계 Vitest와 Playwright를 소유한다. 테스트 러너와 파일을 루트 또는 프로젝트 집계에 두지 않는다. 실행기는 Corepack이 선택한 저장소 Yarn을 사용하며 버전별 `.yarn/releases` 경로를 가정하지 않는다.
+집계 패키지는 `test`, `build`, `typecheck`, `check`를 앱·패키지 명령에 위임한다. API가 DB URL 가드·단위·PostgreSQL 통합 테스트를 소유하고 Web이 캐시 경계 Vitest와 Playwright를 소유한다. 테스트 러너와 파일을 루트 또는 프로젝트 집계에 두지 않는다. 실행기는 `packageManager`와 같은 버전으로 직접 설치한 Yarn CLI를 사용하며 버전별 `.yarn/releases` 경로를 가정하지 않는다.
 
 브라우저는 같은 출처의 `/api`를 호출하고 Next의 rewrite가 API로 전달한다. 이 구조로 HttpOnly 세션 쿠키와 OAuth callback이 Web 출처에 머문다. 로컬 Web은 3300, API는 4300이다. 비공개 알파에서는 한국어 콘텐츠를 우선하고 다른 locale의 준비 상태를 안내한다.
 
@@ -155,4 +155,4 @@ Topbar는 Root, Brand, Title, Back, Breadcrumb, Actions를 제공한다. Next `@
 
 NativeHost와 NativeBridgeChannel은 각 환경의 수명과 연결 상태를 클래스로 관리한다. instrumentation-client가 브라우저 이벤트 구독을 한 번 설치하고 React NativeBridge는 최신 router/session/overlay 어댑터만 bind/unbind한다. 경로와 메시지 분기는 ts-pattern, 쿼리 조합과 마지막 overlay 선택은 es-toolkit을 사용한다. sitemap은 24시간 뒤 요청 시 재검증하며 게시글 lastmod는 updatedAt을 사용한다. 정해진 시각에 실행하는 스케줄러는 아니다.
 
-API의 AdminModule은 공개 도메인 서비스와 별개로 관리자 카테고리/사용자/신고/문의의 controller와 service를 소유한다. 같은 Prisma 테이블을 사용해도 권한과 업무 흐름을 공개 service에 섞지 않는다. JSON Body/Query는 도메인별 class-validator DTO와 명시적인 ValidationPipe parameter decorator로 받으며 Guard → DTO 검증 → Service 순서다. tsx에서도 DTO class를 expectedType으로 직접 전달한다. Zod의 계약 정규화와 중첩 JSON 규칙은 HTTP 경계에서 검사해 OpenAPI와 SDK의 단일 계약을 보존하며 Service의 입력 parse를 제거한다. Response Zod 검증과 fallback은 SDK가 계속 소유한다. [Nest ValidationPipe](https://docs.nestjs.com/application/validation)를 기반으로 한다.
+API의 AdminModule은 공개 도메인 서비스와 별개로 관리자 카테고리/사용자/신고/문의의 controller와 service를 소유한다. 같은 Prisma 테이블을 사용해도 권한과 업무 흐름을 공개 service에 섞지 않는다. JSON Body/Query는 Zod 스키마를 명시한 parameter decorator로 받고 NestJS 12.2의 전역 StandardSchemaValidationPipe가 검증한다. Guard → Zod 검증 → Service 순서를 유지하며 DTO 타입은 스키마에서 추론한다. schema 메타데이터를 직접 지정하므로 tsx의 design:paramtypes 생성 여부에 의존하지 않는다. Zod의 계약 정규화와 중첩 JSON 규칙은 HTTP 경계에서 검사해 OpenAPI와 SDK의 단일 계약을 보존하며 Service의 입력 parse를 제거한다. Response Zod 검증과 fallback은 SDK가 계속 소유한다. [Nest ValidationPipe](https://docs.nestjs.com/application/validation)를 기반으로 한다.

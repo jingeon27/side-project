@@ -14,7 +14,7 @@
 - 공통 파일은 루트 `README.md`, `package.json`, `yarn.lock`, scripts, CI만 필요한 이유를 기록하고 수정한다. 기존 Workspace 경로, Yarn 4.17.0, `nodeLinker: node-modules`를 유지한다.
 - 의존성을 변경하면 해당 manifest와 루트 lockfile을 함께 검토한다. 루트 Node·Yarn이나 기존 프로젝트 버전 업그레이드를 이 작업에 섞지 않는다.
 - Node.js 24를 사용한다. 프로젝트 `.nvmrc`에서 `nvm use`를 실행한다.
-- `corepack yarn`으로 저장소의 packageManager를 사용한다. 특정 `.yarn/releases` 파일이나 PnP 경로를 가정하지 않는다.
+- `packageManager`와 같은 버전의 Yarn CLI를 직접 설치하고 `yarn`으로 실행한다. 특정 `.yarn/releases` 파일이나 PnP 경로를 가정하지 않는다.
 - Yarn의 패키지 최소 배포 기간 제한을 끄지 않는다. 격리된 신규 버전 대신 기존 게이트를 통과한 버전을 선택한다.
 
 ## DB 및 외부 서비스

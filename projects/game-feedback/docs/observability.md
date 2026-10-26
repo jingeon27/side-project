@@ -27,10 +27,10 @@ Sentry의 Insights → Frontend → Web Vitals에서 프로젝트 `game-feedback
 다음 명령은 **설정한 실제 수집 서버에 이벤트를 전송한다**. 전용 테스트 PostgreSQL(55444의 game_feedback_test)이 실행 중이어야 한다. 처음 만든 worktree에서는 contracts 빌드와 Prisma 생성을 먼저 한다.
 
 ```sh
-corepack yarn workspace @game-feedback/contracts build
-corepack yarn workspace @game-feedback/api db:generate
-corepack yarn workspace @side/game-feedback sentry:check
-corepack yarn workspace @game-feedback/web monitoring:check
+yarn workspace @game-feedback/contracts build
+yarn workspace @game-feedback/api db:generate
+yarn workspace @side/game-feedback sentry:check
+yarn workspace @game-feedback/web monitoring:check
 ```
 
 `sentry:check`는 개발 서버·DB 없이 API 확인 오류 1건을 보낸다. `verification:configuration-check`, `service:game-feedback`, `layer:api`와 출력된 eventId로 찾는다.

@@ -291,13 +291,13 @@ Node.js 24, Yarn 4.17.0과 기존 `node-modules` linker를 사용한다. 루트 
 
 ```sh
 nvm use
-corepack yarn install --immutable
-corepack yarn workspace @side/game-feedback codegen
-corepack yarn workspace @side/game-feedback typecheck
-corepack yarn workspace @side/game-feedback test
-corepack yarn workspace @side/game-feedback test:e2e
-corepack yarn workspace @side/game-feedback build
-corepack yarn format:check
+yarn install --immutable
+yarn workspace @side/game-feedback codegen
+yarn workspace @side/game-feedback typecheck
+yarn workspace @side/game-feedback test
+yarn workspace @side/game-feedback test:e2e
+yarn workspace @side/game-feedback build
+yarn format:check
 ```
 
 실제 Google·Supercell을 호출하지 않도록 테스트는 가짜 제공자를 강제한다. 통합 테스트는 Migration 이전에 URL을 검증하고 실행별 `gf_test_` 스키마만 생성·정리한다. 브라우저 테스트는 API 4301·Web 3301을 사용해 개발 서버와 분리한다.
@@ -1311,10 +1311,10 @@ Quill이 한글 IME 조합 중 문서 갱신을 모아서 처리해 첫 글자�
 
 검증 결과:
 
-- `corepack yarn workspace @game-feedback/web test`: 47개 파일, 192개 단위/UI 테스트 통과.
-- `corepack yarn workspace @game-feedback/web typecheck`, `lint`: 통과. 변경 파일 Prettier와 `git diff --check` 통과.
+- `yarn workspace @game-feedback/web test`: 47개 파일, 192개 단위/UI 테스트 통과.
+- `yarn workspace @game-feedback/web typecheck`, `lint`: 통과. 변경 파일 Prettier와 `git diff --check` 통과.
 - `test:e2e`의 guide·editor-placeholder·compose·language·theme·navigation·error-boundary·seo·motion 30개, login·onboarding 7개가 통과했다. detail-profile·localized-info와 관련 guide·language·navigation 20개도 통과했다. 중복을 제외한 기본 Playwright 검증은 43개다.
-- `corepack yarn workspace @game-feedback/web test:prefetch`: production build/start에서 12개 통과. 피드·다섯 게시판의 제목과 컨트롤, 가이드 프리패치, 미방문 상세의 헤더/본문 streaming과 no-JS 공개 문서를 확인했다. 기본 검증과 합쳐 서로 다른 브라우저 사양 55개가 통과했다.
+- `yarn workspace @game-feedback/web test:prefetch`: production build/start에서 12개 통과. 피드·다섯 게시판의 제목과 컨트롤, 가이드 프리패치, 미방문 상세의 헤더/본문 streaming과 no-JS 공개 문서를 확인했다. 기본 검증과 합쳐 서로 다른 브라우저 사양 55개가 통과했다.
 - 320px 모바일과 1440px 데스크톱 가이드 스크린샷을 직접 확인했다. 영어·일본어 모바일 및 JavaScript 없는 안내·정책 본문, 메타데이터·canonical도 검증했다.
 - 프로젝트 `codegen`을 실행해 Prisma·계약·OpenAPI·SDK 준비를 완료했고 추적된 계약·SDK 생성 코드와 의존성 변경은 없다.
 
