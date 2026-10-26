@@ -4,18 +4,18 @@ import json
 import os
 import pathlib
 import sys
-import datetime
 
 args = sys.argv[1:]
 if args[:1] == ['run'] and any(arg.startswith(('amazon/aws-cli:', 'amazon/aws-cli@')) for arg in args):
-    point = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    if os.environ.get('SIDE_SMOKE_NO_PITR') == '1': point = '2000-01-01T00:00:00+00:00'
-    print(json.dumps({'DBInstances': [{
-        'Engine': 'postgres', 'Endpoint': {'Address': 'side.abcdef.ap-northeast-2.rds.amazonaws.com'},
-        'BackupRetentionPeriod': 7, 'StorageEncrypted': True, 'PubliclyAccessible': False,
-        'DeletionProtection': True, 'LatestRestorableTime': point,
-        'DBInstanceArn': 'arn:aws:rds:ap-northeast-2:000000000000:db:side-smoke',
-    }]}))
+    # The backup bucket is the only AWS call. Check the mounted dump, then record the upload instead of sending it.
+    if os.environ.get('SIDE_SMOKE_BACKUP_FAIL') == '1':
+        print('upload: AccessDenied (smoke fixture)', file=sys.stderr)
+        sys.exit(1)
+    dump = pathlib.Path(args[args.index('--volume') + 1].split(':')[0])
+    if dump.read_bytes()[:5] != b'PGDMP':
+        sys.exit('The backup fixture expects a custom-format pg_dump archive.')
+    with open(os.environ['SIDE_SMOKE_UPLOAD_LOG'], 'a') as log:
+        log.write(' '.join(args) + '\n')
     sys.exit(0)
 images = json.loads(pathlib.Path(os.environ['SIDE_SMOKE_IMAGE_MAP']).read_text())
 if args[:1] == ['compose']:

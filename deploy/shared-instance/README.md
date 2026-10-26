@@ -1,6 +1,6 @@
 # 공통 EC2 배포
 
-Photo Contest와 Game Feedback을 서울 리전의 **EC2 한 대 + 외부 RDS PostgreSQL 한 인스턴스 + 서비스별 비공개 S3 버킷**으로 운영한다. 두 서비스의 API 프로토콜은 각각 GraphQL과 REST를 유지한다. 운영 이미지는 모두 `linux/amd64`다.
+Photo Contest와 Game Feedback을 서울 리전의 **EC2 한 대(PostgreSQL 컨테이너 포함) + 서비스별 비공개 S3 버킷**으로 운영한다. 두 서비스의 API 프로토콜은 각각 GraphQL과 REST를 유지한다. 운영 이미지는 모두 `linux/amd64`다.
 
 ```text
 game.bambyul.com         ─┐              ┌─ GF Web
@@ -14,45 +14,45 @@ api.contest.bambyul.com  ─┘              └─ PC API ─ photo_contest DB 
 
 웹·WebView의 세션은 기존 웹 호스트의 host-only 쿠키를 유지한다. 브라우저는 같은 origin의 `/api`·`/backend`를 사용한다. 공개 API 호스트에서도 내부·관리자·테스트 경로는 막고, 별사대 `/graphql`은 PC Web의 `/backend/graphql`로 전달하여 mutation 후 Next 캐시를 만료한다. PC Web의 `API_URL`은 `http://pc-api:4200` 같은 내부 API 주소를 유지해야 순환 프록시가 생기지 않는다. API 호스트에는 `X-Robots-Tag: noindex, nofollow`를 적용한다.
 
-Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. DB·원본 미디어는 EC2 볼륨에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스가 함께 중단되는 구조다.
+Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를 사용하고 Caddy만 두 네트워크에 연결한다. GF API의 4300은 로컬 관리자 연결을 위해 EC2 loopback에만 바인딩한다. PostgreSQL은 같은 EC2의 컨테이너로 실행하고, 데이터는 루트 볼륨과 분리한 EBS 볼륨(`/srv/side-postgres`)에 둔다. 각 서비스의 API·ops·migrate만 서비스별 내부(`--internal`) DB 네트워크에 연결하며 Web과 Caddy는 DB에 닿지 않는다. 원본 미디어는 EC2에 저장하지 않는다. 이 구성은 EC2 장애 시 두 서비스와 DB가 함께 중단되는 구조다.
 
 ## 최초 배포 순서와 설정 화면
 
 절차는 2026-10-25의 shared-instance 코드 기준이다. 아래 콘솔 링크는 본인 계정으로 로그인해서 사용한다. 리소스 이름·도메인 예시는 실제 소유 값으로 바꾼다. 이 문서의 명령은 저장소 루트에서 실행하며, 서버 명령과 로컬 검증 명령을 구분한다.
 
-| 순서 | 열 화면                                                                                                                                                                                                                                                    | 실행할 행동                                                                                                                                                                                          | 완료 확인                                            |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1    | [EC2 인스턴스](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Instances:)                                                                                                                                                                   | 서울 리전에서 Ubuntu 24.04 **x86_64** 인스턴스를 만든다. 운영 컨테이너 한도 합계가 약 2.7GiB이므로 메모리 4GiB 이상을 시작점으로 검증한다. 디스크에는 이미지 4개와 이전 릴리스가 들어갈 여유를 둔다. | 아키텍처 x86_64, 상태 검사 통과, SSH 접속 성공       |
-| 2    | [Elastic IP](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Addresses:)                                                                                                                                                                     | 고정 IP를 할당하고 위 EC2에 연결한다.                                                                                                                                                                | 인스턴스에 연결된 공인 IP를 기록                     |
-| 3    | [EC2 보안 그룹](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#SecurityGroups:)                                                                                                                                                             | 80/443을 허용하고 관리·배포용 SSH 접속 경로를 정한다. 아래 SSH 설명을 먼저 읽는다. 앱 포트 3200/3300/4200/4300과 DB 포트는 인터넷에 열지 않는다.                                                     | 운영자와 배포 러너가 SSH로 접속 가능                 |
-| 4    | [RDS 데이터베이스](https://console.aws.amazon.com/rds/home?region=ap-northeast-2#databases:)                                                                                                                                                               | 표준 생성 → PostgreSQL → EC2와 같은 VPC → 퍼블릭 액세스 없음. 백업 7일 이상, 암호화, 삭제 방지를 켠다. RDS 보안 그룹 5432의 소스는 EC2 보안 그룹으로 지정한다.                                       | 상태 Available, endpoint·instance ID 기록            |
-| 5    | [RDS 파라미터 그룹](https://console.aws.amazon.com/rds/home?region=ap-northeast-2#parameter-groups:)                                                                                                                                                       | 선택한 PostgreSQL 버전과 맞는 파라미터 그룹에서 `rds.force_ssl=1`을 설정하고 인스턴스에 연결한다. 적용 상태에 따라 재부팅한다.                                                                       | 적용 완료, TLS 접속 성공                             |
-| 6    | [S3 버킷](https://console.aws.amazon.com/s3/home?region=ap-northeast-2)                                                                                                                                                                                    | 서울 리전에 서비스별 일반 목적 버킷 2개를 만든다. 모든 퍼블릭 액세스 차단, 기본 암호화, Versioning을 켜고 아래 lifecycle JSON을 등록한다.                                                            | 서로 다른 버킷 이름 2개, 비공개·버전 관리 활성화     |
-| 7    | [IAM 정책](https://console.aws.amazon.com/iam/home#/policies) / [역할](https://console.aws.amazon.com/iam/home#/roles)                                                                                                                                     | 아래 RDS 조회 JSON으로 EC2용 역할을 만든다. EC2 → 작업 → 보안 → IAM 역할 수정에서 연결한다. 메타데이터는 IMDSv2 필수, hop limit 1로 설정한다.                                                        | EC2 역할로 서울 RDS 인스턴스 조회 성공               |
-| 8    | [IAM 사용자](https://console.aws.amazon.com/iam/home#/users)                                                                                                                                                                                               | 콘솔 로그인 없는 앱 자격 증명을 서비스별로 준비한다. 아래 S3 JSON의 버킷 이름을 바꾸어 각자 자기 버킷에만 권한을 준다.                                                                               | 각 버킷 읽기·쓰기 성공, 상대 버킷 요청 거부          |
-| 9    | [Route 53 호스팅 영역](https://console.aws.amazon.com/route53/v2/hostedzones) 또는 도메인을 관리하는 DNS 화면                                                                                                                                              | 네 서비스 호스트의 A 레코드를 같은 Elastic IP로 연결한다. Route 53 사용은 필수가 아니다.                                                                                                             | `dig +short`로 네 호스트가 고정 IP를 반환            |
-| 10   | [Docker Ubuntu 설치 안내](https://docs.docker.com/engine/install/ubuntu/)                                                                                                                                                                                  | 아래 서버 준비, 환경 파일 입력, 최초 DB 초기화를 수행한다.                                                                                                                                           | Docker/Compose 실행, 서비스별 DB와 역할 생성         |
-| 11   | 아래 소셜 로그인 설정 화면                                                                                                                                                                                                                                 | 사용할 제공자의 앱과 콜백 주소를 등록하고 서버 환경 파일에 키를 넣는다. GF는 제공자 하나 이상이 필수다.                                                                                              | 실제 도메인과 콜백 주소가 정확히 일치                |
-| 12   | [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments) / [Variables](https://github.com/jingeon27/side-project/settings/variables/actions) / [Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions) | 두 Environment와 아래 이름의 변수·SSH Secret을 등록한다. 배포 활성화 값은 준비가 끝날 때까지 `false`로 둔다.                                                                                         | Environment 2개와 필수 값 등록                       |
-| 13   | 아래 프록시 명령                                                                                                                                                                                                                                           | DNS 확인 후 Caddy를 시작한다.                                                                                                                                                                        | 인증서 발급 성공. 앱 배포 전 502는 가능              |
-| 14   | [RDS 복원 안내](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html)                                                                                                                                                                      | RDS의 최신 복원 가능 시각이 준비됐는지 확인한다. 첫 배포 후 검증 데이터를 만들고 별도 RDS로 복구 연습한다.                                                                                           | 최근 20분 이내 복구 가능 시각 확보                   |
-| 15   | [develop → main 비교](https://github.com/jingeon27/side-project/compare/main...develop?expand=1) / [Actions](https://github.com/jingeon27/side-project/actions)                                                                                            | 배포 활성화 값을 `true`로 바꾸고 검토한 변경을 main에 반영해 초기 검증 배포를 한다. 아래 운영 검증과 복구 연습 후 공개한다.                                                                          | 두 서비스 workflow의 deploy 성공, 아래 공개 URL 확인 |
+| 순서 | 열 화면                                                                                                                                                                                                                                                    | 실행할 행동                                                                                                                                                                                                                                                                        | 완료 확인                                            |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1    | [EC2 인스턴스](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Instances:)                                                                                                                                                                   | 서울 리전에서 Ubuntu 24.04 **x86_64** 인스턴스를 만든다. 운영 컨테이너 한도 합계는 약 3.1GiB지만 상한일 뿐이므로 사용자가 적은 동안은 2GiB(t3.small)와 swap으로 시작하고, swap이 계속 늘거나 OOM이 생기면 4GiB로 올린다. 디스크에는 이미지 4개와 이전 릴리스가 들어갈 여유를 둔다. | 아키텍처 x86_64, 상태 검사 통과, SSH 접속 성공       |
+| 2    | [Elastic IP](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Addresses:)                                                                                                                                                                     | 고정 IP를 할당하고 위 EC2에 연결한다.                                                                                                                                                                                                                                              | 인스턴스에 연결된 공인 IP를 기록                     |
+| 3    | [EC2 보안 그룹](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#SecurityGroups:)                                                                                                                                                             | 80/443을 허용하고 관리·배포용 SSH 접속 경로를 정한다. 아래 SSH 설명을 먼저 읽는다. 앱 포트 3200/3300/4200/4300과 DB 포트는 인터넷에 열지 않는다.                                                                                                                                   | 운영자와 배포 러너가 SSH로 접속 가능                 |
+| 4    | [EBS 볼륨](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Volumes:)                                                                                                                                                                         | EC2와 같은 AZ에 PostgreSQL 데이터용 암호화 gp3 볼륨을 만들고 `SnapshotPolicy` 태그를 붙여 EC2에 연결한다. 아래 2의 마운트를 수행한다.                                                                                                                                              | `/srv/side-postgres` 마운트와 표시 파일 확인         |
+| 5    | [Data Lifecycle Manager](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Lifecycle:)                                                                                                                                                         | 위 태그의 볼륨을 매일 스냅샷하고 7개를 보존하는 정책을 만든다.                                                                                                                                                                                                                     | 정책 Enabled, 다음 날 첫 스냅샷 생성                 |
+| 6    | [S3 버킷](https://console.aws.amazon.com/s3/home?region=ap-northeast-2)                                                                                                                                                                                    | 서울 리전에 서비스별 일반 목적 버킷 2개와 DB 덤프용 backup 버킷 1개를 만든다. 모든 퍼블릭 액세스 차단, 기본 암호화, Versioning을 켜고 아래 lifecycle 규칙을 등록한다.                                                                                                              | 서로 다른 버킷 이름 3개, 비공개·버전 관리 활성화     |
+| 7    | [IAM 정책](https://console.aws.amazon.com/iam/home#/policies) / [역할](https://console.aws.amazon.com/iam/home#/roles)                                                                                                                                     | 아래 backup 쓰기 JSON으로 EC2용 역할을 만든다. EC2 → 작업 → 보안 → IAM 역할 수정에서 연결한다. 메타데이터는 IMDSv2 필수, hop limit 1로 설정한다.                                                                                                                                   | EC2 역할로 backup 버킷 `postgres/` 업로드 성공       |
+| 8    | [IAM 사용자](https://console.aws.amazon.com/iam/home#/users)                                                                                                                                                                                               | 콘솔 로그인 없는 앱 자격 증명을 서비스별로 준비한다. 아래 S3 JSON의 버킷 이름을 바꾸어 각자 자기 버킷에만 권한을 준다.                                                                                                                                                             | 각 버킷 읽기·쓰기 성공, 상대 버킷 요청 거부          |
+| 9    | [Route 53 호스팅 영역](https://console.aws.amazon.com/route53/v2/hostedzones) 또는 도메인을 관리하는 DNS 화면                                                                                                                                              | 네 서비스 호스트의 A 레코드를 같은 Elastic IP로 연결한다. Route 53 사용은 필수가 아니다.                                                                                                                                                                                           | `dig +short`로 네 호스트가 고정 IP를 반환            |
+| 10   | [Docker Ubuntu 설치 안내](https://docs.docker.com/engine/install/ubuntu/)                                                                                                                                                                                  | 아래 서버 준비, 환경 파일 입력, PostgreSQL 시작과 최초 DB 초기화를 수행한다.                                                                                                                                                                                                       | Docker/Compose 실행, 서비스별 DB와 역할 생성         |
+| 11   | 아래 소셜 로그인 설정 화면                                                                                                                                                                                                                                 | 사용할 제공자의 앱과 콜백 주소를 등록하고 서버 환경 파일에 키를 넣는다. GF는 제공자 하나 이상이 필수다.                                                                                                                                                                            | 실제 도메인과 콜백 주소가 정확히 일치                |
+| 12   | [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments) / [Variables](https://github.com/jingeon27/side-project/settings/variables/actions) / [Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions) | 두 Environment와 아래 이름의 변수·SSH Secret을 등록한다. 배포 활성화 값은 준비가 끝날 때까지 `false`로 둔다.                                                                                                                                                                       | Environment 2개와 필수 값 등록                       |
+| 13   | 아래 프록시 명령                                                                                                                                                                                                                                           | DNS 확인 후 Caddy를 시작한다.                                                                                                                                                                                                                                                      | 인증서 발급 성공. 앱 배포 전 502는 가능              |
+| 14   | [EBS 스냅샷](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Snapshots:)                                                                                                                                                                     | 첫 일일 스냅샷이 생겼는지 확인한다. 첫 배포 후 검증 데이터를 만들고 아래 절차로 덤프·스냅샷 복원을 연습한다.                                                                                                                                                                       | 스냅샷과 backup 버킷의 배포 전 덤프 확인             |
+| 15   | [develop → main 비교](https://github.com/jingeon27/side-project/compare/main...develop?expand=1) / [Actions](https://github.com/jingeon27/side-project/actions)                                                                                            | 배포 활성화 값을 `true`로 바꾸고 검토한 변경을 main에 반영해 초기 검증 배포를 한다. 아래 운영 검증과 복구 연습 후 공개한다.                                                                                                                                                        | 두 서비스 workflow의 deploy 성공, 아래 공개 URL 확인 |
 
 기본 CD는 GitHub `ubuntu-latest`에서 서버로 SSH 접속한다. **SSH를 본인 IP에만 허용하면 CD는 연결할 수 없다.** 현재 코드에는 VPN 가입이나 SSM 전송 단계가 없으며, OIDC용 AWS 역할을 등록해도 SSH 접속을 대신하지 않는다. 제한된 SSH 소스 정책을 쓰려면 VPN을 연결하는 단계 또는 고정 IP 배포 러너를 추가하고 실제 접속을 먼저 확인해야 한다. 일반 GitHub 호스트 러너의 전체 IP 대역을 고정 허용 목록으로 취급하지 않는다. [GitHub 공식 네트워크 안내](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#ip-addresses)를 따른다.
 
-준비할 공개 값은 EC2 IP·instance ID·보안 그룹 ID, 네 호스트 이름, RDS endpoint·instance ID, 두 버킷 이름, 배포 SSH 사용자·포트·확인한 host key다. 비밀번호·비밀 키·OAuth secret은 서버 환경 파일이나 지정한 GitHub Secret에 직접 입력하며 이 문서나 이슈에 적지 않는다.
+준비할 공개 값은 EC2 IP·instance ID·보안 그룹 ID, 네 호스트 이름, PostgreSQL 볼륨 ID, 세 버킷 이름(서비스 2개와 backup), 배포 SSH 사용자·포트·확인한 host key다. 비밀번호·비밀 키·OAuth secret은 서버 환경 파일이나 지정한 GitHub Secret에 직접 입력하며 이 문서나 이슈에 적지 않는다.
 
 ## AWS에서 먼저 준비할 것
 
 새 환경은 [Terraform 구성](terraform/README.md)으로 아래 1~5의 리소스를 만들 수 있다.
 
 1. 서울 리전에 x86_64 Linux EC2, 고정 공인 IP와 네 호스트의 DNS를 준비한다. Docker Engine 25 이상/Compose plugin 2.20.2 이상, Bash, Python 3, curl, OpenSSL, tar, util-linux의 `flock`·`setsid`가 필요하다. 배포는 SSH 세션이 끝나도 계속 돌아야 하므로 systemd-logind `KillUserProcesses=no`(Ubuntu·Amazon Linux 기본값)를 유지한다. SSH는 운영자·배포 runner가 접속할 수 있도록 설정하고 앱 포트와 Docker API는 외부에 열지 않는다.
-2. 같은 VPC의 **비공개 RDS PostgreSQL**을 만든다. 스토리지 암호화, 삭제 방지, 자동 백업 보존 기간 7일 이상을 설정한다. RDS 보안 그룹의 5432는 EC2 보안 그룹에서만 허용한다. `rds.force_ssl`을 활성화한 파라미터 그룹을 사용한다. 실제 RDS PostgreSQL 버전과 마이그레이션 호환성은 배포 전 별도 확인한다.
-3. EC2 인스턴스 역할에 [RDS 조회 정책](rds-read-policy.json)을 붙인다. 배포 전 `DescribeDBInstances`로 복구 가능 시각을 확인한다. 이 역할에는 DB 비밀번호·S3 공통 쓰기 권한을 넣지 않는다. IMDSv2를 필수로 하고 metadata 응답 hop limit은 1로 둔다. PITR 확인용 aws-cli만 `--network host`로 역할을 읽고, bridge 네트워크의 앱 컨테이너는 IMDS에 닿지 않는다.
-4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. [수명 주기](s3-lifecycle.json)는 오래된 이전 버전과 미완료 multipart만 정리하며 현재 객체를 만료시키지 않는다. Game Feedback 게시글·채팅 첨부는 presigned POST로 직접 전송하므로 해당 버킷에 [CORS 예시](../../projects/game-feedback/deploy/shared-instance/s3-cors.json)의 origin을 실제 도메인으로 바꿔 적용한다. Photo Contest는 모든 사진·동영상을 presigned POST로 올리고 60초 presigned GET으로 읽으므로 해당 버킷에 [PC CORS](../../projects/photo-contest/deploy/shared-instance/s3-cors.json)의 실제 웹 origin(POST)을 적용한다. 수명 주기는 위 공통 규칙을 그대로 쓰며 staging 접두사 규칙은 필요 없다. 완료하지 않은 업로드는 API 정리 작업이 지운다. 버킷 공개 접근은 계속 차단한다. [Game Feedback 업로드와 조회 검증](../../projects/game-feedback/docs/media-upload.md), [Photo Contest 배포 순서](../../projects/photo-contest/docs/deployment.md)를 확인한다.
-5. [S3 앱 정책](s3-app-policy.json)의 `SERVICE_BUCKET_NAME`을 각 버킷으로 바꾸고 서비스별 IAM 자격 증명을 발급한다. 각 계정은 자기 버킷만 읽고 쓸 수 있어야 한다. 한쪽 자격 증명으로 다른 버킷을 읽거나 쓰는 요청이 거부되는지 AWS에서 직접 확인한다. RDS 복구 지점 조회용 EC2 역할과 이 두 자격 증명을 구분한다.
+2. EC2와 같은 AZ에 **PostgreSQL 데이터용 암호화 gp3 EBS 볼륨**을 붙이고 ext4로 포맷해 `/srv/side-postgres`에 `nofail`로 마운트한다. 볼륨 루트에 `.side-postgres-volume` 표시 파일, `data`(0755), 배포 사용자 소유 `dumps`(0700)를 만든다. 표시 파일이 없으면 `database.sh`·`pg-backup.sh`가 멈추고 `data`가 없으면 컨테이너가 시작하지 않으므로, 마운트가 빠져도 루트 디스크에 빈 DB가 생기지 않는다. [Data Lifecycle Manager](https://docs.aws.amazon.com/ebs/latest/userguide/snapshot-lifecycle.html)로 이 볼륨을 매일 스냅샷하고 7개를 보존한다. Terraform은 볼륨·스냅샷 정책과 첫 부팅의 포맷·마운트를 함께 처리한다.
+3. EC2 인스턴스 역할에 [backup 쓰기 정책](backup-write-policy.json)을 붙인다. `BACKUP_BUCKET_NAME`을 backup 버킷 이름으로 바꾼다. 이 역할은 `postgres/` 아래에 덤프를 올리기만 하며 읽기·목록·삭제 권한이 없다. DB 비밀번호와 서비스 버킷 권한은 넣지 않는다. IMDSv2를 필수로 하고 metadata 응답 hop limit은 1로 둔다. 덤프 업로드용 aws-cli만 `--network host`로 역할을 읽고, bridge 네트워크의 앱 컨테이너는 IMDS에 닿지 않는다.
+4. 서울 리전에 서로 다른 S3 버킷 두 개를 만든다. [퍼블릭 접근 차단](s3-public-access.json), 기본 암호화, **Versioning**을 활성화한다. [수명 주기](s3-lifecycle.json)는 오래된 이전 버전과 미완료 multipart만 정리하며 현재 객체를 만료시키지 않는다. Game Feedback 게시글·채팅 첨부는 presigned POST로 직접 전송하므로 해당 버킷에 [CORS 예시](../../projects/game-feedback/deploy/shared-instance/s3-cors.json)의 origin을 실제 도메인으로 바꿔 적용한다. Photo Contest는 모든 사진·동영상을 presigned POST로 올리고 60초 presigned GET으로 읽으므로 해당 버킷에 [PC CORS](../../projects/photo-contest/deploy/shared-instance/s3-cors.json)의 실제 웹 origin(POST)을 적용한다. 수명 주기는 위 공통 규칙을 그대로 쓰며 staging 접두사 규칙은 필요 없다. 완료하지 않은 업로드는 API 정리 작업이 지운다. 버킷 공개 접근은 계속 차단한다. [Game Feedback 업로드와 조회 검증](../../projects/game-feedback/docs/media-upload.md), [Photo Contest 배포 순서](../../projects/photo-contest/docs/deployment.md)를 확인한다. DB 덤프용 backup 버킷은 서비스 버킷과 따로 만들고 같은 차단·암호화·Versioning을 켠다. `postgres/` 객체는 30일 뒤 만료하고 CORS는 두지 않는다.
+5. [S3 앱 정책](s3-app-policy.json)의 `SERVICE_BUCKET_NAME`을 각 버킷으로 바꾸고 서비스별 IAM 자격 증명을 발급한다. 각 계정은 자기 버킷만 읽고 쓸 수 있어야 한다. 한쪽 자격 증명으로 다른 버킷을 읽거나 쓰는 요청이 거부되는지 AWS에서 직접 확인한다. 덤프 업로드용 EC2 역할과 이 두 자격 증명을 구분한다.
 
-상시 컨테이너 메모리 한도 합계는 약 2.7GiB이며 운영 도구·OS·업로드 처리에는 추가 메모리가 필요하다. 실제 인스턴스 크기와 RDS 연결 수는 업로드·동시 채팅·SSR 부하를 측정해 결정한다. 호스트에서 운영 이미지를 빌드하지 않는다.
+상시 컨테이너 메모리 한도 합계는 약 3.1GiB(PostgreSQL 512M 포함)이며 운영 도구·OS·업로드 처리에는 추가 메모리가 필요하다. 실제 인스턴스 크기와 DB 연결 수(`max_connections=40`)는 업로드·동시 채팅·SSR 부하를 측정해 결정한다. 호스트에서 운영 이미지를 빌드하지 않는다.
 
 [AWS CLI 설치 안내](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)에 따라 운영자 로컬 환경 또는 AWS CloudShell에서 AWS CLI를 준비한다. 아래 명령은 저장소를 받은 디렉터리에서 `YOUR_BUCKET_NAME`을 실제 버킷 이름으로 바꾸고 서비스별로 한 번씩 실행한다. 앱 자격 증명에는 버킷 관리 권한을 추가하지 않는다. [S3 수명 주기 CLI 안내](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-bucket-lifecycle-configuration.html)를 참고한다.
 
@@ -67,7 +67,7 @@ aws s3api put-bucket-lifecycle-configuration \
 
 서버에 저장소를 체크아웃한 뒤 배포 사용자 소유 디렉터리를 준비한다. 다음 작업은 AWS 리소스를 생성하지 않는다.
 
-Ubuntu에서 `git`, `python3`, `curl`, `openssl`, `postgresql-client`, `util-linux`를 설치하고 [공식 Docker 저장소 설치 절차](https://docs.docker.com/engine/install/ubuntu/#install-using-the-apt-repository)로 Docker Engine과 `docker-compose-plugin`을 설치한다. 배포 사용자에게 Docker 실행 권한을 부여한 뒤 새 SSH 세션에서 확인한다. 이후 CD도 동일 사용자를 쓴다. [Docker 그룹 설정](https://docs.docker.com/engine/install/linux-postinstall/)은 호스트 관리 권한을 주는 설정이다.
+Ubuntu에서 `git`, `python3`, `curl`, `openssl`, `e2fsprogs`, `util-linux`를 설치하고 [공식 Docker 저장소 설치 절차](https://docs.docker.com/engine/install/ubuntu/#install-using-the-apt-repository)로 Docker Engine과 `docker-compose-plugin`을 설치한다. 배포 사용자에게 Docker 실행 권한을 부여한 뒤 새 SSH 세션에서 확인한다. 이후 CD도 동일 사용자를 쓴다. [Docker 그룹 설정](https://docs.docker.com/engine/install/linux-postinstall/)은 호스트 관리 권한을 주는 설정이다.
 
 ```sh
 git clone --branch main https://github.com/jingeon27/side-project.git
@@ -75,7 +75,6 @@ cd side-project
 docker version
 docker compose version
 python3 --version
-psql --version
 ```
 
 ```sh
@@ -85,22 +84,23 @@ bash deploy/shared-instance/scripts/prepare.sh
 
 다음 파일을 서버에서 편집한다. Git이나 Actions 로그에 실제 값을 올리지 않는다. Compose가 읽는 파일이므로 `source`하지 않는다.
 
-| 파일                                            | 설정                                                                   |
-| ----------------------------------------------- | ---------------------------------------------------------------------- |
-| `/srv/side-project/.env`                        | 네 호스트 이름, ACME 메일, RDS 실제 endpoint·instance ID, 두 버킷 이름 |
-| `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정    |
-| `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정      |
+| 파일                                            | 설정                                                                |
+| ----------------------------------------------- | ------------------------------------------------------------------- |
+| `/srv/side-project/.env`                        | 네 호스트 이름, ACME 메일, 두 서비스 버킷과 backup 버킷 이름        |
+| `/srv/side-project/services/game-feedback/.env` | GF runtime/migrator DB URL, GF 버킷 자격 증명, OAuth·Supercell 설정 |
+| `/srv/side-project/services/photo-contest/.env` | PC runtime/migrator DB URL, PC 버킷 자격 증명, 선택적 Sentry 설정   |
+| `/srv/side-project/database/.env`               | initdb용 superuser 비밀번호. `prepare.sh`가 만들며 편집하지 않는다  |
 
 원본 예시는 [호스트 환경 파일](host.env.example), [GF 환경 파일](../../projects/game-feedback/deploy/shared-instance/service.env.example), [PC 환경 파일](../../projects/photo-contest/deploy/shared-instance/service.env.example)이다. `GAME_FEEDBACK_DOMAIN`, `GAME_FEEDBACK_API_DOMAIN`, `PHOTO_CONTEST_DOMAIN`, `PHOTO_CONTEST_API_DOMAIN`에는 `https://`나 경로를 붙이지 않는다. GitHub의 `*_SITE_URL`에는 `https://`를 포함하고 마지막 `/`는 붙이지 않는다. 호스트의 버킷 이름과 각 서비스 자격 증명의 권한 대상이 일치해야 한다. GF는 ENVIRONMENT=production인 HTTPS 운영 환경에서 검색 수집을 허용한다.
 
-`prepare.sh`는 AWS 공식 [RDS CA 번들](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)을 내려받아 `/srv/side-project/certs/rds-ca.pem`에 둔다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 처음 한 번 현재 저장소 버전으로 복사한다. 이후 변경은 아래 [공용 Caddyfile 동기화](#공용-caddyfile-동기화)를 따른다.
+`prepare.sh`는 프록시 파일과 DB 구성(`database/compose.yaml`, `pg_hba.conf`, `bootstrap.sql`)을 복사하고, 처음 한 번 initdb용 superuser 비밀번호를 `database/.env`에 만든다. 이미 존재하는 환경변수 파일은 덮어쓰지 않는다. 프록시 파일은 처음 한 번 현재 저장소 버전으로 복사한다. 이후 변경은 아래 [공용 Caddyfile 동기화](#공용-caddyfile-동기화)를 따른다.
 
-새 RDS에만 관리자 계정으로 다음 SQL을 **한 번** 적용한다. 각 `\password` 프롬프트에 서로 다른 32자 이상의 비밀번호를 입력한다. `psql` 클라이언트가 필요하다. DB URL 비밀번호는 URL 인코딩한다.
+PostgreSQL 볼륨이 마운트됐는지 확인한 뒤 DB를 시작하고, 새 클러스터에 [부트스트랩 SQL](database/bootstrap.sql)을 **한 번** 적용한다. `start`는 서비스별 내부 DB 네트워크를 만들고 healthcheck가 통과할 때까지 기다린다. 각 `\password` 프롬프트에 서로 다른 32자 이상의 비밀번호를 입력한다. DB URL 비밀번호는 URL 인코딩한다.
 
 ```sh
-PGSSLMODE=verify-full PGSSLROOTCERT=/srv/side-project/certs/rds-ca.pem \
-  psql -h YOUR_RDS_ENDPOINT -U YOUR_RDS_ADMIN -d postgres -W \
-  -v ON_ERROR_STOP=1 -f deploy/shared-instance/rds-bootstrap.sql
+mountpoint /srv/side-postgres && cat /srv/side-postgres/.side-postgres-volume
+bash deploy/shared-instance/scripts/database.sh start
+bash deploy/shared-instance/scripts/database.sh bootstrap
 ```
 
 | 서비스        | Database        | 실행 중 DML 계정 | 일회성 DDL 계정          |
@@ -108,11 +108,11 @@ PGSSLMODE=verify-full PGSSLROOTCERT=/srv/side-project/certs/rds-ca.pem \
 | Game Feedback | `game_feedback` | `game_feedback`  | `game_feedback_migrator` |
 | Photo Contest | `photo_contest` | `photo_contest`  | `photo_contest_migrator` |
 
-각 DB와 `postgres`·`template1`의 PUBLIC 접속 권한을 회수하고 자기 서비스만 접속하도록 설정한다. 이 회수가 들어가기 전에 부트스트랩한 RDS라면 관리자 계정으로 `REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;`와 `REVOKE CONNECT ON DATABASE template1 FROM PUBLIC;`만 실행한다. runtime 계정은 schema 생성, role 생성, DB 생성, superuser 권한을 갖지 않는다. migration 실행 후 앱 테이블의 DML 권한을 부여하고 `_prisma_migrations` 접근은 회수한다. DDL 비밀번호는 일회성 migrate 컨테이너에만 전달한다. 관리자 DB URL을 runtime에 넣지 않는다.
+각 DB와 `postgres`·`template1`의 PUBLIC 접속 권한을 회수하고 자기 서비스만 접속하도록 설정한다. [`pg_hba.conf`](database/pg_hba.conf)도 서비스 role을 자기 DB로만 받고, superuser는 컨테이너 Unix socket(`database.sh psql`)에서만 받으며 네트워크 로그인을 거부한다. runtime 계정은 schema 생성, role 생성, DB 생성, superuser 권한을 갖지 않는다. migration 실행 후 앱 테이블의 DML 권한을 부여하고 `_prisma_migrations` 접근은 회수한다. DDL 비밀번호는 일회성 migrate 컨테이너에만 전달한다. 관리자 DB URL을 runtime에 넣지 않는다.
 
-현재 Prisma PostgreSQL 연결 URL은 `sslmode=require&sslaccept=strict&sslcert=/run/rds/ca.pem`을 사용한다. 각 서비스의 `PrismaService`는 이 옵션을 `@prisma/adapter-pg`의 CA·인증서 검증 설정으로 변환한다. 이 설정은 `psql`의 `verify-full` 설정과 다르다. URL의 endpoint, DB, role, CA 경로, 연결·풀 대기 한도를 시작 시 검사한다. 각 API의 기본 풀은 5개이며 migrator는 2개다.
+현재 Prisma PostgreSQL 연결 URL은 `shared-postgres:5432`와 `sslmode=disable`을 사용한다. DB 트래픽은 같은 호스트의 내부 Docker 네트워크를 벗어나지 않으므로 TLS를 쓰지 않는다. URL의 호스트(`shared-postgres`), DB, role, 인증서 설정 부재, 연결·풀 대기 한도를 시작 시 검사한다. 각 API의 기본 풀은 5개이며 migrator는 2개다.
 
-CA를 갱신하면 기존 bind mount가 이전 파일을 유지할 수 있으므로 API 컨테이너를 다시 생성한 뒤 TLS 연결을 확인한다. 인증서 회전은 기존 CA가 만료되기 전에 수행한다.
+DB 구성 파일을 바꾸면 `prepare.sh`로 다시 복사한 뒤 `database.sh start`를 실행한다. 설정이 바뀌었으면 Compose가 PostgreSQL 컨테이너만 다시 만들고 데이터 볼륨은 그대로 둔다. 볼륨을 늘리면 Terraform 또는 콘솔에서 크기를 바꾼 뒤 서버에서 `sudo resize2fs "$(findmnt -no SOURCE /srv/side-postgres)"`로 파일 시스템을 넓힌다.
 
 ## 소셜 로그인과 선택적 외부 서비스
 
@@ -235,9 +235,9 @@ ssh-keygen -t ed25519 -f ~/.ssh/side-project-deploy -C side-project-actions
 
 공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. DB·S3·OAuth 비밀은 서버의 서비스별 환경 파일에만 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
 
-설정과 최근 RDS 복구 가능 시각 확인을 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 별도 RDS로 복구 연습을 마친 뒤 공개한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
+설정과 DB 초기화를 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 아래 덤프·스냅샷 복원 연습을 마친 뒤 공개한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
 
-Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime RDS/S3 접근 검사 → 최신 PITR 확인·기록 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
+Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime DB/S3 접근 검사 → 서비스 DB 덤프·backup 버킷 업로드 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
 
 배포 job은 먼저 `ci-superseded.sh`로 이 커밋 뒤에 같은 서비스의 경로 필터에 걸리는 커밋이 배포 브랜치에 있는지 본다. 있으면 그 커밋의 실행이 새 릴리스를 배포하므로 job summary에 이유를 남기고 생략한다. 다른 서비스나 문서만 바꾼 커밋은 검증한 릴리스를 생략시키지 않는다.
 
@@ -268,9 +268,17 @@ bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedb
 bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedback prune
 ```
 
+공용 DB는 저장소 체크아웃의 `database.sh`로 다룬다. `backup`은 배포 전 덤프와 같은 방식으로 수동 덤프를 올린다.
+
+```sh
+bash deploy/shared-instance/scripts/database.sh status
+bash deploy/shared-instance/scripts/database.sh backup game-feedback
+bash deploy/shared-instance/scripts/database.sh psql -d game_feedback
+```
+
 `prune`은 GF의 고아 미디어 정리다. PC의 파일·세션 정리는 기존 scheduler가 담당한다. GF 관리자는 일반 사용자와 별도인 ID·비밀번호 계정이다. 서버의 `operator create <admin-id>`·`operator reset-password <admin-id>`에 비밀번호를 stdin으로 전달한다(비밀번호 8–128자). 관리자 UI는 로컬에서 실행하며 `ssh -N -L 14300:127.0.0.1:4300 ...`로 API에 연결한 뒤 로그인한다. 절차는 [Admin README](../../projects/game-feedback/apps/admin/README.md)를 따른다. 로그인은 전용 HttpOnly 쿠키를 쓰며 공개 사용자 세션과 분리된다.
 
-새 배포의 readiness가 실패하면 이전 API/Web 이미지로 복구한다. SQL은 되돌리지 않으므로 이전 앱과 호환되는 추가형 migration이 필요하다. 첫 배포 실패 시 그 서비스의 API/Web만 멈춘다. Caddy·외부 DB·S3는 유지한다. 여러 복제 API에 걸친 SSE 분배는 현재 범위에 포함하지 않으며 GF SSE는 프로세스 재시작 후 재연결한다.
+새 배포의 readiness가 실패하면 이전 API/Web 이미지로 복구한다. SQL은 되돌리지 않으므로 이전 앱과 호환되는 추가형 migration이 필요하다. 첫 배포 실패 시 그 서비스의 API/Web만 멈춘다. Caddy·공용 DB·S3는 유지한다. 여러 복제 API에 걸친 SSE 분배는 현재 범위에 포함하지 않으며 GF SSE는 프로세스 재시작 후 재연결한다.
 
 오래된 이미지는 두 서비스가 모두 한 번 이상 성공한 뒤 아래 명령으로 정리한다. 네 서비스 이미지 저장소만 대상으로 하고 두 서비스의 current/previous digest, 최근 7일 이미지와 실행 중 컨테이너 이미지를 보존한다. 전역 `docker system prune`을 실행하지 않는다.
 
@@ -278,7 +286,7 @@ bash /srv/side-project/services/game-feedback/current/host/service.sh game-feedb
 python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 ```
 
-외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. Web은 교체 직전 drain 파일이 생기면 503으로 전환하여 Caddy가 새 요청을 보류하게 하고, 3초 뒤 SIGTERM으로 처리 중 요청을 마친다. 새 컨테이너에서는 tmpfs의 drain 파일이 사라진다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다.
+외부 모니터링은 GF `/api/health/ready`, PC `/backend/health/ready`를 확인한다. API `/health/live`(GF `/api/health/live`)와 각 Web `/health-check/live`는 DB 장애에서도 프로세스 생존을 확인한다. Web은 교체 직전 drain 파일이 생기면 503으로 전환하여 Caddy가 새 요청을 보류하게 하고, 3초 뒤 SIGTERM으로 처리 중 요청을 마친다. 새 컨테이너에서는 tmpfs의 drain 파일이 사라진다. 외부 readiness 모니터링과 알림 수신자를 별도로 등록해야 한다. 호스트가 멈추면 Sentry도 신호를 보내지 못하므로, Terraform은 인스턴스 상태 검사가 3분 연속 실패하면 재부팅하는 CloudWatch 알람과 CPU 크레딧 부족 알람을 함께 만든다(`alarm_email`로 메일 알림). 수동으로 구성했다면 [EC2 알람 동작 안내](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/UsingAlarmActions.html)대로 같은 알람을 만든다.
 
 최초 배포 후 [GF workflow](https://github.com/jingeon27/side-project/actions/workflows/game-feedback.yml)와 [PC workflow](https://github.com/jingeon27/side-project/actions/workflows/photo-contest.yml)의 deploy 결과를 확인한다. 두 실제 도메인에서 홈, 공개 목록·상세, 로그인·로그아웃, 글 등록, 사진·영상 업로드, GF 채팅 송수신·재연결을 확인한다. 건강 상태는 아래 주소가 200인지 확인한다. DB 접속 장애를 운영에서 임의로 만들지 않는다.
 
@@ -291,20 +299,27 @@ python3 /srv/side-project/services/game-feedback/current/host/prune-images.py
 
 ## 백업·복구 연습
 
-배포 도구는 RDS의 `LatestRestorableTime`이 최근 20분 이내이고 암호화·비공개·삭제 방지·백업 보존 7일 이상인지 확인한다. 이 기록은 **공급자가 제공하는 복구 지점 확인**이며 DB 복원 연습을 대신하지 않는다. RDS 자동 백업의 [보존 기간](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.BackupRetention.html)은 생성 방법에 따라 기본값이 다르므로 명시적으로 설정한다.
+DB 백업은 두 겹이다.
 
-RDS를 만든 직후 복구 가능 시각이 아직 없으면 배포를 활성화하지 않고 자동 백업 상태와 RDS → 해당 DB → 유지 관리 및 백업의 최신 복원 가능 시간을 확인한다. `LatestRestorableTime`이 준비된 뒤 배포 검사를 통과해야 한다. 이 검사를 끄거나 오래된 시각으로 대체하지 않는다.
+| 백업                     | 만드는 시점                                        | 보존                                | 위치                                                    |
+| ------------------------ | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| 논리 덤프(`pg_dump -Fc`) | 서비스 배포의 migration 직전, `database.sh backup` | backup 버킷 30일, 볼륨 `dumps/` 7일 | `s3://<backup>/postgres/<서비스>/<UTC 시각>-<sha>.dump` |
+| EBS 스냅샷(DLM)          | 매일 02:00 KST                                     | 7개                                 | EC2 스냅샷                                              |
 
-1. 운영과 분리한 새 RDS 인스턴스로 원하는 시각의 PITR을 수행한다. 원래 DB를 덮어쓰지 않는다. [AWS PITR 안내](https://docs.aws.amazon.com/AmazonRDS/latest/gettingstartedguide/managing-backup-restore.html)를 따른다.
-2. 별도 앱 환경에서 복원된 두 DB의 사용자·권한·게시물·댓글·채팅·첨부 참조가 맞는지 확인한다. DB 시점과 S3 버전을 맞춰 필요한 객체를 별도 검증 버킷에 복구한다.
-3. 실제 소요 시간과 복구 가능한 마지막 시각, S3 객체 일치 여부를 기록한다. 검증용 RDS는 별도 요금이 발생하므로 확인 후 정리한다.
-4. 실제 장애 전환은 대상 RDS의 host/instance ID와 두 서비스 URL을 함께 갱신하고 TLS·권한·객체 읽기를 확인한 뒤 진행한다. EC2 복구 시 같은 역할·버킷 접근, 환경 파일, Caddy 인증서 볼륨과 SSH/DNS 설정도 복원한다.
+배포 도구는 덤프가 custom 형식(PGDMP)인지 확인하고 backup 버킷에 올린 뒤에만 migration을 시작한다. 업로드에 실패하면 배포를 멈춘다. 객체 위치·크기·SHA-256은 릴리스의 `pg-backup.json`에 남는다. 이 기록은 **백업 생성 확인**이며 복원 연습을 대신하지 않는다. EC2 역할은 덤프를 읽거나 지울 수 없으므로 복원용 다운로드는 운영자 자격 증명으로 한다.
 
-자동화가 RDS·버킷·유료 스냅샷을 생성하거나 운영 DB를 삭제하지 않는다. 실제 AWS IAM, 네트워크, 인증서 발급, PITR 복원은 운영 리소스에서 확인해야 한다.
+스냅샷은 실행 중인 볼륨의 crash-consistent 사본이다. 데이터와 WAL이 같은 볼륨에 있어 복원하면 PostgreSQL이 WAL로 복구한다. 두 백업 사이의 변경은 최대 하루까지 잃을 수 있으며, RDS PITR처럼 임의 시각으로 되돌리는 기능은 없다.
+
+1. 덤프 복원: 운영과 분리한 PostgreSQL 18(로컬 Docker 등)에 backup 버킷의 덤프를 `pg_restore --no-owner --dbname <검증 DB>`로 복원한다. 운영 DB를 덮어쓰지 않는다. [pg_restore 안내](https://www.postgresql.org/docs/18/app-pgrestore.html)를 따른다.
+2. 스냅샷 복원: 최근 스냅샷으로 새 볼륨을 만들어 별도 인스턴스에 붙이고 PostgreSQL이 WAL 복구 후 시작하는지 확인한다. [스냅샷 볼륨 생성 안내](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-restoring-volume.html)를 따른다. 검증용 볼륨·인스턴스는 별도 요금이 발생하므로 확인 후 정리한다.
+3. 별도 앱 환경에서 복원된 두 DB의 사용자·권한·게시물·댓글·채팅·첨부 참조가 맞는지 확인한다. DB 시점과 S3 버전을 맞춰 필요한 객체를 별도 검증 버킷에 복구한다. 실제 소요 시간, 복구 가능한 마지막 시각, S3 객체 일치 여부를 기록한다.
+4. EC2만 교체할 때는 Terraform이 같은 데이터 볼륨을 새 인스턴스에 붙이고 첫 부팅이 포맷 없이 마운트한다. 볼륨이 손상됐다면 스냅샷에서 만든 볼륨으로 바꾼다. 같은 역할·버킷 접근, 환경 파일(`database/.env` 포함), Caddy 인증서 볼륨과 SSH/DNS 설정도 복원한다.
+
+자동화가 버킷을 만들거나 운영 DB를 삭제하지 않는다. 스냅샷은 DLM 정책이 만들고 보존 개수를 넘으면 지운다. 실제 AWS IAM, 네트워크, 인증서 발급, 스냅샷·덤프 복원은 운영 리소스에서 확인해야 한다.
 
 ## 로컬 검증 범위와 이전 구성
 
-로컬에서는 Node.js 24와 저장소의 Yarn을 사용한다. 기존 개발 서버·개발 DB를 대상으로 테스트하지 않는다. 최초 설치는 `yarn install --immutable`, 브라우저 준비는 각 앱 workspace에서 `exec playwright install chromium webkit`으로 수행한다. RDS·S3·OAuth 운영 키는 로컬 테스트에 넣지 않는다.
+로컬에서는 Node.js 24와 저장소의 Yarn을 사용한다. 기존 개발 서버·개발 DB를 대상으로 테스트하지 않는다. 최초 설치는 `yarn install --immutable`, 브라우저 준비는 각 앱 workspace에서 `exec playwright install chromium webkit`으로 수행한다. 운영 DB·S3·OAuth 키는 로컬 테스트에 넣지 않는다.
 
 공통 UI 검증은 `yarn workspace @side/design-system check`로 실행한다. 두 서비스의 UI가 함께 사용하는 lint·타입 검사·primitive 테스트를 확인한다.
 
@@ -373,7 +388,7 @@ docker run --rm --network host \
 
 성공 기준은 마지막 `Shared-instance smoke passed` 출력이다. runner는 임의 Docker project/network/volume과 loopback의 임의 포트를 사용하고 종료 시 자신이 만든 테스트 자원을 정리한다. 빌드 이미지와 Docker VM의 정리는 검증자가 소유한 것만 대상으로 한다. 전역 prune, 기존 서비스 중지, 기존 volume 삭제는 하지 않는다.
 
-API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`는 실제 두 API/Web 이미지·Caddy·PostgreSQL TLS를 실행한다. S3 HTTP 경계, RDS Describe 응답과 registry 매핑만 fixture로 대체한다. 버킷 분리, DML/DDL 분리, TLS 실패 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 오래된 PITR 거부, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 AWS의 IAM/S3/PITR을 검증했다는 뜻은 아니다.
+API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`는 실제 두 API/Web 이미지·Caddy와 `prepare.sh`·`database.sh`로 띄운 공용 PostgreSQL 컨테이너를 실행한다. S3 HTTP 경계, backup 버킷 업로드와 registry 매핑만 fixture로 대체한다. 버킷 분리, DML/DDL 분리, Web의 DB 네트워크 차단, 배포 전 덤프와 업로드 실패 시 migration 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 AWS의 IAM/S3/스냅샷을 검증했다는 뜻은 아니다.
 
 ### 2026-10-20 로컬 실행 기록
 
@@ -397,7 +412,7 @@ API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instanc
 
 컨테이너 검증은 macOS의 별도 Colima profile과 기존 `smoke-tools` 컨테이너에서 실행했다. 검증이 만든 Docker container/network/volume을 정리하고 전용 VM도 삭제했다. PC 테스트 DB는 임시 디렉터리·임의 비밀번호를 사용하는 별도 55434 인스턴스에서 실행한 뒤 종료·정리했고, GF 소유 55444 테스트 DB도 종료했다. 기존 GF 개발 서버/API와 55442 개발 DB를 재시작하지 않았다.
 
-실제 AWS 리소스 생성, 운영 IAM 권한, RDS의 실제 PITR 복원, 공인 DNS/인증서, 외부 OAuth 제공자의 로그인과 실제 운영 SSH 전송은 이번 로컬 실행 범위에 포함되지 않는다. 위 최초 배포 절차에서 계정 소유자가 리소스를 준비한 뒤 확인해야 한다.
+실제 AWS 리소스 생성, 운영 IAM 권한, EBS 스냅샷·덤프의 실제 복원, 공인 DNS/인증서, 외부 OAuth 제공자의 로그인과 실제 운영 SSH 전송은 이번 로컬 실행 범위에 포함되지 않는다. 위 최초 배포 절차에서 계정 소유자가 리소스를 준비한 뒤 확인해야 한다.
 
 `projects/photo-contest/deploy/compose.yaml`은 별도 컨테이너 회귀 테스트용이다. Actions CD는 이 문서의 shared-instance 구성과 `projects/game-feedback/deploy/shared-instance/Dockerfile`을 사용한다.
 

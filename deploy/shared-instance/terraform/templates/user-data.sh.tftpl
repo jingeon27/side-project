@@ -13,10 +13,10 @@ apt_get() {
 }
 
 # 공용 배포 스크립트의 호스트 요구사항: Bash, Python 3, curl, OpenSSL, tar, flock(util-linux).
-# git은 저장소 체크아웃, postgresql-client(psql)는 rds-bootstrap.sql 적용에 쓴다.
+# git은 저장소 체크아웃, e2fsprogs·blkid는 PostgreSQL 볼륨 포맷·마운트에 쓴다. psql은 컨테이너 안의 것을 쓴다.
 apt_get update
 apt_get install -y --no-install-recommends \
-  ca-certificates curl git gnupg openssl postgresql-client python3 tar util-linux
+  ca-certificates curl e2fsprogs git gnupg openssl python3 tar util-linux
 
 # Docker Engine 25+와 Compose plugin 2.20.2+는 Docker 공식 apt 저장소에서 설치하고 서명 키 지문을 확인한다.
 install -m 0755 -d /etc/apt/keyrings
@@ -69,7 +69,7 @@ if ! printf '%s\n' 2.20.2 "$compose_version" | sort --check=quiet --version-sort
   echo "Docker Compose plugin 2.20.2+ is required, found $compose_version" >&2
   exit 1
 fi
-for tool in bash python3 curl openssl tar flock git psql; do
+for tool in bash python3 curl openssl tar flock git blkid mkfs.ext4; do
   command -v "$tool" >/dev/null || { echo "Missing required tool: $tool" >&2; exit 1; }
 done
 
@@ -88,6 +88,41 @@ if [[ ! -e /swapfile ]]; then
   sysctl --quiet --load=/etc/sysctl.d/90-side-project-swap.conf
 fi
 %{ endif ~}
+
+# PostgreSQL 데이터 볼륨(database.tf). Terraform이 인스턴스를 만든 뒤 붙이므로 나타날 때까지 기다린다.
+# 이미 파일 시스템이 있으면(인스턴스 교체) 포맷하지 않고 그대로 마운트한다.
+postgres_root='${postgres_root}'
+postgres_volume='${postgres_volume_id}'
+postgres_device=''
+for _ in $(seq 1 120); do
+  for candidate in "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_$${postgres_volume//-/}" /dev/xvdf; do
+    if [[ -b "$candidate" ]]; then
+      postgres_device=$(readlink -f "$candidate")
+      break 2
+    fi
+  done
+  sleep 5
+done
+if [[ -z "$postgres_device" ]]; then
+  echo "PostgreSQL volume $postgres_volume was not attached within 10 minutes" >&2
+  exit 1
+fi
+if ! blkid "$postgres_device" >/dev/null; then
+  mkfs.ext4 -q -L side-postgres "$postgres_device"
+fi
+postgres_uuid=$(blkid -s UUID -o value "$postgres_device")
+install -d -m 0755 "$postgres_root"
+if ! grep -q "^UUID=$postgres_uuid " /etc/fstab; then
+  # nofail: 볼륨이 없어도 부팅은 계속한다. 그때는 표시 파일·data 디렉터리가 없어 database.sh와 컨테이너가 시작을 거부한다.
+  echo "UUID=$postgres_uuid $postgres_root ext4 defaults,nofail,x-systemd.before=docker.service 0 2" >>/etc/fstab
+  systemctl daemon-reload
+fi
+mountpoint -q "$postgres_root" || mount "$postgres_root"
+if [[ ! -f "$postgres_root/.side-postgres-volume" ]]; then
+  printf 'volume=%s\n' "$postgres_volume" >"$postgres_root/.side-postgres-volume"
+fi
+install -d -m 0755 "$postgres_root/data"
+install -d -m 0700 -o "$deploy_user" -g "$(id -gn "$deploy_user")" "$postgres_root/dumps"
 
 install -m 0755 -d /var/lib/side-project
 printf 'docker=%s\ncompose=%s\n' "$docker_version" "$compose_version" >/var/lib/side-project/host-bootstrap.done

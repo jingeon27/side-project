@@ -1,8 +1,11 @@
-# 공용 EC2 호스트. Caddy와 두 서비스의 API·Web 컨테이너를 실행한다(DB·원본 미디어는 저장하지 않는다).
+# 공용 EC2 호스트. Caddy, PostgreSQL과 두 서비스의 API·Web 컨테이너를 실행한다.
+# DB 데이터는 루트 볼륨이 아닌 별도 EBS 볼륨(database.tf)에 두고, 원본 미디어는 S3에만 둔다.
 
 locals {
   # Canonical Ubuntu AMI의 기본 사용자. 배포 사용자(SIDE_DEPLOY_SSH_USER)로도 쓴다.
   ssh_user = "ubuntu"
+  # PostgreSQL 볼륨의 마운트 위치. database.sh·pg-backup.sh의 SIDE_POSTGRES_ROOT 기본값과 같다.
+  postgres_root = "/srv/side-postgres"
 }
 
 data "aws_ssm_parameter" "host_ami" {
@@ -58,8 +61,10 @@ resource "aws_instance" "host" {
   key_name             = one(aws_key_pair.operator[*].key_name)
 
   user_data = templatefile("${path.module}/templates/user-data.sh.tftpl", {
-    deploy_user   = local.ssh_user
-    swap_size_gib = var.swap_size_gib
+    deploy_user        = local.ssh_user
+    swap_size_gib      = var.swap_size_gib
+    postgres_root      = local.postgres_root
+    postgres_volume_id = aws_ebs_volume.postgres.id
   })
   user_data_replace_on_change = false
 

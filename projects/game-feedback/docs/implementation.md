@@ -1,3 +1,23 @@
+## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
+
+사용자 결정으로 외부 RDS를 만들지 않고 공통 EC2 안의 PostgreSQL 18 컨테이너 하나를 두 서비스가 함께 쓴다. RDS는 만든 적이 없어 옮길 데이터는 없다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이며 아래 2026-10-19 기록의 RDS·PITR 내용을 대신한다.
+
+- 서비스별 DB와 DML/DDL role 분리는 유지한다. DB는 `shared-postgres` 별칭으로 서비스별 내부 Docker 네트워크에서만 보이고 Web은 연결하지 않는다. 같은 호스트 안의 연결이므로 `sslmode=disable`을 요구하고 RDS 호스트·CA 검사를 제거했다. `verify-services.ts`의 `rds_superuser` 검사도 뺐다.
+- 데이터는 별도 EBS 볼륨(`/srv/side-postgres`)에 두고 DLM 일일 스냅샷을 7개 보존한다. 배포마다 migration 직전에 `pg_dump`를 backup 버킷에 올리고, 실패하면 배포를 멈춘다(이전 PITR 검사 대체).
+- 기본 EC2를 `t3.small`로 낮췄다. 메모리가 모자라면 `t3.medium`으로 올린다.
+- 호스트가 멈추면 Sentry도 신호를 보내지 못하므로 CloudWatch 알람을 추가했다. 인스턴스 상태 검사가 3분 연속 실패하면 재부팅하고, CPU 크레딧 부족을 알린다(`alarm_email`이 있을 때 메일).
+
+| 실제 로컬 실행      | 결과                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| GF API unit 레인    | 186개 통과(공용 DB URL 검사 포함)                                                          |
+| PC API unit 레인    | 127개 통과(공용 DB URL 검사 포함)                                                          |
+| PC 배포 도구 Vitest | 50개 통과: 배포 전 덤프·업로드 실패 시 migration 차단, 볼륨 미마운트·backup 버킷 설정 거부 |
+| 타입 검사           | GF API, PC API, PC Web 통과                                                                |
+| Terraform 1.16.6    | fmt, backend 비활성 init, validate, mock provider plan 13개 통과                           |
+| shellcheck 0.11.0   | 공용 배포 스크립트와 렌더링한 user-data 통과                                               |
+
+실제 Docker로 두 서비스와 공용 DB를 띄우는 shared-instance smoke(`apps/api/scripts/shared-instance-smoke.ts`)는 로컬에 Docker가 없어 실행하지 않았으며 CI에서 확인해야 한다. 실제 AWS apply, 첫 부팅의 볼륨 포맷·마운트, 스냅샷·덤프 복원은 미검증이다.
+
 ## 2026-10-25 환경 설정 통일과 Sentry release·MCP 검증
 
 ## 2026-10-25 루트 .env만 사용하는 설정 계약

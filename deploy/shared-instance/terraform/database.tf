@@ -1,82 +1,63 @@
-# 두 서비스가 함께 쓰는 비공개 RDS PostgreSQL 한 인스턴스.
-# 서비스별 DB·role은 Terraform으로 만들지 않는다. 생성 후 deploy/shared-instance/rds-bootstrap.sql을 한 번 적용한다.
+# 두 서비스가 함께 쓰는 PostgreSQL 컨테이너의 데이터 볼륨. EC2 루트 볼륨과 분리해 인스턴스를 교체해도 남긴다.
+# 첫 부팅의 user_data가 포맷·마운트하고, 컨테이너·서비스별 DB·role은 deploy/shared-instance/scripts/database.sh가 만든다.
+# 백업은 두 겹이다: DLM 일일 스냅샷(이 파일)과 배포마다 migration 직전의 논리 덤프(pg-backup.sh → backup 버킷).
 
 locals {
-  rds_identifier                = "${local.name}-postgres"
-  rds_major_version             = split(".", var.rds_engine_version)[0]
-  rds_final_snapshot_identifier = var.rds_final_snapshot_identifier != "" ? var.rds_final_snapshot_identifier : "${local.rds_identifier}-final"
+  postgres_name = "${local.name}-postgres"
 }
 
-resource "aws_db_subnet_group" "this" {
-  name        = local.rds_identifier
-  description = "Private subnets for the shared PostgreSQL instance"
-  subnet_ids  = aws_subnet.private[*].id
+resource "aws_ebs_volume" "postgres" {
+  availability_zone = var.availability_zone
+  type              = "gp3"
+  size              = var.postgres_volume_size_gib
+  encrypted         = true
+  # 교체·파기로 볼륨이 지워질 때 마지막 스냅샷을 남긴다.
+  final_snapshot = true
 
-  tags = { Name = local.rds_identifier }
-}
-
-# 메이저 업그레이드 때 새 family 그룹을 먼저 만들고 바꿀 수 있도록 name_prefix와 create_before_destroy를 쓴다.
-resource "aws_db_parameter_group" "this" {
-  name_prefix = "${local.rds_identifier}-pg${local.rds_major_version}-"
-  family      = "postgres${local.rds_major_version}"
-  description = "Shared PostgreSQL ${local.rds_major_version}: TLS required"
-
-  parameter {
-    name         = "rds.force_ssl"
-    value        = "1"
-    apply_method = "immediate"
-  }
-
-  tags = { Name = local.rds_identifier }
-
-  lifecycle {
-    create_before_destroy = true
+  tags = {
+    Name           = local.postgres_name
+    SnapshotPolicy = local.postgres_name
   }
 }
 
-resource "aws_db_instance" "this" {
-  identifier = local.rds_identifier
+resource "aws_volume_attachment" "postgres" {
+  # Nitro 인스턴스에서는 /dev/nvme*n1로 보이므로 user_data는 볼륨 ID(by-id)로 장치를 찾는다.
+  device_name = "/dev/sdf"
+  volume_id   = aws_ebs_volume.postgres.id
+  instance_id = aws_instance.host.id
+  # 떼어야 할 때(교체·파기) 인스턴스를 먼저 멈춰 PostgreSQL이 쓰는 도중에 분리하지 않는다.
+  stop_instance_before_detaching = true
+}
 
-  engine                      = "postgres"
-  engine_version              = var.rds_engine_version
-  engine_lifecycle_support    = var.rds_engine_lifecycle_support
-  auto_minor_version_upgrade  = true
-  allow_major_version_upgrade = var.rds_allow_major_version_upgrade
-  instance_class              = var.rds_instance_class
-  parameter_group_name        = aws_db_parameter_group.this.name
+# 실행 중인 볼륨의 crash-consistent 스냅샷이다. 데이터와 WAL이 같은 볼륨에 있으므로 복원하면 PostgreSQL이 WAL로 복구한다.
+resource "aws_dlm_lifecycle_policy" "postgres" {
+  description        = "Daily snapshots of the shared PostgreSQL volume"
+  execution_role_arn = aws_iam_role.dlm.arn
+  state              = "ENABLED"
 
-  storage_type          = "gp3"
-  allocated_storage     = var.rds_allocated_storage_gib
-  max_allocated_storage = var.rds_max_allocated_storage_gib
-  storage_encrypted     = true
+  policy_details {
+    resource_types = ["VOLUME"]
+    target_tags    = { SnapshotPolicy = local.postgres_name }
 
-  # 비밀번호는 RDS가 Secrets Manager에 만들고 회전한다. Terraform state에는 비밀의 ARN만 남는다.
-  username                    = var.rds_master_username
-  manage_master_user_password = true
+    schedule {
+      name      = "daily"
+      copy_tags = true
 
-  port                   = 5432
-  db_subnet_group_name   = aws_db_subnet_group.this.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  publicly_accessible    = false
-  network_type           = "IPV4"
-  multi_az               = var.rds_multi_az
-  # Single-AZ면 EC2와 같은 AZ에 두어 AZ 간 전송 요금을 피한다. Multi-AZ에서는 지정할 수 없다.
-  availability_zone = var.rds_multi_az ? null : var.availability_zones[0]
+      create_rule {
+        interval      = 24
+        interval_unit = "HOURS"
+        times         = [var.postgres_snapshot_time]
+      }
 
-  backup_retention_period  = var.rds_backup_retention_days
-  backup_window            = var.rds_backup_window
-  maintenance_window       = var.rds_maintenance_window
-  copy_tags_to_snapshot    = true
-  delete_automated_backups = false
+      retain_rule {
+        count = var.postgres_snapshot_retention_count
+      }
 
-  deletion_protection       = var.rds_deletion_protection
-  skip_final_snapshot       = false
-  final_snapshot_identifier = local.rds_final_snapshot_identifier
-  apply_immediately         = var.rds_apply_immediately
+      tags_to_add = { SnapshotCreator = "dlm" }
+    }
+  }
 
-  # 유료 모니터링 기능은 기본으로 켜지 않는다.
-  performance_insights_enabled = false
-  monitoring_interval          = 0
+  tags = { Name = local.postgres_name }
 
-  tags = { Name = local.rds_identifier }
+  depends_on = [aws_iam_role_policy_attachment.dlm]
 }

@@ -38,16 +38,13 @@ const runtimeRoleSchema = z.object({
   elevated: z.boolean(),
   schema_create: z.boolean(),
   database_create: z.boolean(),
-  rds_admin: z.boolean(),
 });
 try {
   const [role] = z.tuple([runtimeRoleSchema]).parse(
     await db.$queryRawUnsafe(`SELECT current_database() AS database,
     rolsuper OR rolcreatedb OR rolcreaterole AS elevated,
     has_schema_privilege(current_user, 'public', 'CREATE') AS schema_create,
-    has_database_privilege(current_user, current_database(), 'CREATE') AS database_create,
-    EXISTS (SELECT 1 FROM pg_roles r WHERE r.rolname = 'rds_superuser'
-      AND pg_has_role(current_user, r.oid, 'member')) AS rds_admin
+    has_database_privilege(current_user, current_database(), 'CREATE') AS database_create
     FROM pg_roles WHERE rolname = current_user`),
   );
   if (
@@ -55,16 +52,15 @@ try {
     role.database !== 'game_feedback' ||
     role.elevated ||
     role.schema_create ||
-    role.database_create ||
-    role.rds_admin
+    role.database_create
   )
     throw new Error('The runtime role must have DML-only access to its dedicated database.');
   await storage.send(new HeadBucketCommand({ Bucket: process.env.GF_S3_BUCKET }), {
     abortSignal: AbortSignal.timeout(10000),
   });
-  console.log('Verified runtime RDS role and S3 bucket access.');
+  console.log('Verified runtime database role and S3 bucket access.');
 } catch {
-  console.error('RDS role/TLS or private S3 access verification failed.');
+  console.error('Database role or private S3 access verification failed.');
   process.exitCode = 1;
 } finally {
   await db.$disconnect();

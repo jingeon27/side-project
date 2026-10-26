@@ -2,6 +2,7 @@
 # - 퍼블릭 접근 차단: s3-public-access.json
 # - 수명 주기: s3-lifecycle.json(이전 버전·미완료 multipart만 정리, 현재 객체는 만료하지 않음)
 # - CORS: projects/<service>/deploy/shared-instance/s3-cors.json(origin만 변수)
+# DB 덤프용 backup 버킷은 파일 끝에 따로 둔다(CORS·서비스 IAM 사용자 없음).
 
 locals {
   services = {
@@ -127,7 +128,7 @@ resource "aws_s3_bucket_cors_configuration" "service" {
 }
 
 data "aws_iam_policy_document" "bucket_tls_only" {
-  for_each = aws_s3_bucket.service
+  for_each = merge(aws_s3_bucket.service, { database-backup = aws_s3_bucket.backup })
 
   statement {
     sid       = "DenyInsecureTransport"
@@ -156,4 +157,86 @@ resource "aws_s3_bucket_policy" "service" {
 
   # 퍼블릭 정책 차단을 먼저 켠 뒤 정책을 붙인다. 이 정책은 Deny만 담으므로 차단에 걸리지 않는다.
   depends_on = [aws_s3_bucket_public_access_block.service]
+}
+
+# PostgreSQL 배포 전 덤프 버킷(pg-backup.sh). EC2 역할은 postgres/ 아래에 PutObject만 한다(iam.tf).
+# 덤프는 postgres_dump_retention_days가 지나면 지우고, 덮어쓴 이전 버전은 서비스 버킷과 같은 기간 보존한다.
+resource "aws_s3_bucket" "backup" {
+  bucket        = var.backup_bucket_name
+  force_destroy = false
+
+  tags = {
+    Name    = var.backup_bucket_name
+    Service = "database-backup"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "backup" {
+  bucket                  = aws_s3_bucket.backup.id
+  block_public_acls       = true
+  ignore_public_acls      = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_ownership_controls" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  rule {
+    blocked_encryption_types = ["SSE-C"]
+
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backup" {
+  bucket = aws_s3_bucket.backup.id
+
+  rule {
+    id     = "expire-database-dumps"
+    status = "Enabled"
+
+    filter {
+      prefix = "postgres/"
+    }
+
+    expiration {
+      days = var.postgres_dump_retention_days
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = var.s3_noncurrent_version_retention_days
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.backup]
+}
+
+resource "aws_s3_bucket_policy" "backup" {
+  bucket = aws_s3_bucket.backup.id
+  policy = data.aws_iam_policy_document.bucket_tls_only["database-backup"].json
+
+  depends_on = [aws_s3_bucket_public_access_block.backup]
 }

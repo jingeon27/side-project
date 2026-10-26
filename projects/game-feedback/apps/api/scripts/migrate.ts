@@ -13,6 +13,7 @@ const {
 }: typeof import('../src/database/database-url') = require('../dist/database/database-url.js');
 const {
   sharedDatabaseUrl,
+  usesSharedDatabase,
 }: typeof import('../src/config/shared-instance.config') = require('../dist/config/shared-instance.config.js');
 const {
   PrismaClient,
@@ -21,7 +22,7 @@ const { seed }: typeof import('../src/seed') = require('../dist/seed.js');
 if (process.env.ENVIRONMENT !== 'production')
   throw new Error('Production migration requires NODE_ENV=production.');
 validateProductionEnvironment(process.env, true);
-const shared = Boolean(URL.parse(process.env.DATABASE_URL ?? '')?.hostname.endsWith('.rds.amazonaws.com'));
+const shared = usesSharedDatabase(process.env);
 const databaseUrl = shared
   ? sharedDatabaseUrl(process.env, true)
   : assertDatabaseUrl(process.env.DATABASE_URL);

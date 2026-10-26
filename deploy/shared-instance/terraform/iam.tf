@@ -1,4 +1,4 @@
-# EC2 인스턴스 역할은 RDS 복구 지점 조회(rds-read-policy.json)만 한다. DB 비밀번호·S3 권한은 넣지 않는다.
+# EC2 인스턴스 역할은 배포 전 DB 덤프를 backup 버킷에 올리기만 한다(backup-write-policy.json). DB 비밀번호·서비스 버킷 권한은 넣지 않는다.
 # 서비스별 IAM 사용자는 자기 버킷만 읽고 쓴다(s3-app-policy.json).
 # 액세스 키는 만들지 않는다. Terraform으로 만들면 비밀 키가 state에 평문으로 남는다. README의 발급 절차를 따른다.
 
@@ -18,32 +18,26 @@ data "aws_iam_policy_document" "host_assume_role" {
 
 resource "aws_iam_role" "host" {
   name                 = "${local.name}-host"
-  description          = "Shared EC2 host: RDS recovery point checks"
+  description          = "Shared EC2 host: database dump uploads"
   assume_role_policy   = data.aws_iam_policy_document.host_assume_role.json
   max_session_duration = 3600
 
   tags = { Name = "${local.name}-host" }
 }
 
-# rds-read-policy.json과 같은 권한을 이 RDS 인스턴스로 좁힌다.
-data "aws_iam_policy_document" "host_rds_read" {
+# backup-write-policy.json과 같은 권한. 호스트가 침해돼도 기존 덤프를 읽거나 지우지 못하고, 덮어쓴 객체는 버전 관리로 되돌린다.
+data "aws_iam_policy_document" "host_backup_write" {
   statement {
-    sid       = "DescribeSharedDatabase"
-    actions   = ["rds:DescribeDBInstances"]
-    resources = [aws_db_instance.this.arn]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:RequestedRegion"
-      values   = [var.region]
-    }
+    sid       = "UploadDatabaseDumps"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.backup.arn}/postgres/*"]
   }
 }
 
-resource "aws_iam_role_policy" "host_rds_read" {
-  name   = "rds-recovery-point-read"
+resource "aws_iam_role_policy" "host_backup_write" {
+  name   = "database-dump-upload"
   role   = aws_iam_role.host.id
-  policy = data.aws_iam_policy_document.host_rds_read.json
+  policy = data.aws_iam_policy_document.host_backup_write.json
 }
 
 resource "aws_iam_role_policy_attachment" "host_ssm" {
@@ -58,6 +52,32 @@ resource "aws_iam_instance_profile" "host" {
   role = aws_iam_role.host.name
 
   tags = { Name = "${local.name}-host" }
+}
+
+# Data Lifecycle Manager가 PostgreSQL 볼륨 스냅샷을 만들고 보존 개수를 넘은 스냅샷을 지운다.
+data "aws_iam_policy_document" "dlm_assume_role" {
+  statement {
+    sid     = "DLMAssumeRole"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["dlm.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "dlm" {
+  name               = "${local.name}-dlm"
+  description        = "Data Lifecycle Manager: PostgreSQL volume snapshots"
+  assume_role_policy = data.aws_iam_policy_document.dlm_assume_role.json
+
+  tags = { Name = "${local.name}-dlm" }
+}
+
+resource "aws_iam_role_policy_attachment" "dlm" {
+  role       = aws_iam_role.dlm.name
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
 }
 
 resource "aws_iam_user" "s3" {

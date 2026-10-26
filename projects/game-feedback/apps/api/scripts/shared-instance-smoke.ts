@@ -35,7 +35,8 @@ import {
 } from './shared-instance/response.ts';
 import { assertAnonymousSession } from './shared-instance/session-check.ts';
 
-// API-owned integration runner. RDS/registry/S3 boundaries are isolated fixtures, not AWS resources.
+// API-owned integration runner. Registry, S3 and backup-bucket boundaries are isolated fixtures, not AWS resources;
+// the shared database is the real deploy/shared-instance/database container started by database.sh.
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../../../..');
 const source = join(repo, 'deploy/shared-instance');
@@ -46,7 +47,7 @@ const prefix = `side-shared-smoke-${id}`;
 const scratch = join(repo, 'projects/game-feedback/.data');
 mkdirSync(scratch, { recursive: true });
 const root = mkdtempSync(join(scratch, 'shared-instance-'));
-const host = 'side.abcdef.ap-northeast-2.rds.amazonaws.com';
+const host = 'shared-postgres';
 const gfDomain = 'game.bambyul.com';
 const pcDomain = 'contest.bambyul.com';
 const gfApiDomain = `api.${gfDomain}`;
@@ -61,6 +62,8 @@ const baseEnv = {
   SIDE_LOCAL_IMAGES: '1',
   SIDE_REAL_DOCKER: realDocker,
   SIDE_SMOKE_IMAGE_MAP: join(root, 'images.json'),
+  SIDE_SMOKE_UPLOAD_LOG: join(root, 'uploads.log'),
+  SIDE_POSTGRES_ROOT: join(root, 'postgres'),
 };
 const images: Record<string, string> = {};
 const createdImages: string[] = [];
@@ -72,11 +75,10 @@ const proxyEnv = {
   PHOTO_CONTEST_DOMAIN: pcDomain,
   PHOTO_CONTEST_API_DOMAIN: pcApiDomain,
   ACME_EMAIL: 'operator@example.test',
-  RDS_REGION: 'ap-northeast-2',
-  RDS_INSTANCE_ID: 'side-smoke',
-  RDS_HOST: host,
   GAME_FEEDBACK_S3_BUCKET: 'gf-smoke-private',
   PHOTO_CONTEST_S3_BUCKET: 'pc-smoke-private',
+  BACKUP_BUCKET: 'side-smoke-backup',
+  BACKUP_REGION: 'ap-northeast-2',
   SIDE_BIND_ADDRESS: '127.0.0.1',
   SIDE_HTTP_PORT: '0',
   SIDE_HTTPS_PORT: '0',
@@ -125,6 +127,22 @@ const dependenciesFile = join(root, 'dependencies.json');
 function dependency(args: string[]) {
   return compose(`${prefix}-dependencies`, dependenciesFile, args);
 }
+function databaseCompose(args: string[], options: Omit<SpawnSyncOptionsWithStringEncoding, 'encoding'> = {}) {
+  return run(
+    'docker',
+    [
+      'compose',
+      '--project-name',
+      `${prefix}-database`,
+      '--env-file',
+      join(root, 'database/.env'),
+      '-f',
+      join(root, 'database/compose.yaml'),
+      ...args,
+    ],
+    options,
+  );
+}
 function serviceCompose(service: string, args: string[], revision = sha) {
   return run('docker', [
     'compose',
@@ -170,10 +188,10 @@ function uploadForm(
   assert.equal(stored.status, 204, stored.body);
 }
 function sql(database: string, text: string) {
-  return dependency([
+  return databaseCompose([
     'exec',
     '-T',
-    'db',
+    'postgres',
     'psql',
     '-U',
     'postgres',
@@ -189,13 +207,9 @@ function sql(database: string, text: string) {
 function release(service: string, revision: string) {
   const directory = join(root, `services/${service}/releases/${revision}`);
   mkdirSync(directory, { recursive: true });
-  const file = readFileSync(join(repo, `projects/${service}/deploy/shared-instance/compose.yaml`), 'utf8');
-  writeFileSync(
+  cpSync(
+    join(repo, `projects/${service}/deploy/shared-instance/compose.yaml`),
     join(directory, 'compose.yaml'),
-    file.replace(
-      '\n  NODE_ENV: production',
-      '\n  NODE_ENV: production\n  NODE_EXTRA_CA_CERTS: /run/rds/ca.pem',
-    ),
   );
   mkdirSync(join(directory, 'host'));
   readdirSync(join(source, 'scripts')).forEach((file) =>
@@ -214,12 +228,40 @@ function operate(
     options,
   );
 }
-function reference(service: string, app: string) {
-  const tag = `side-shared-${service === 'game-feedback' ? 'gf' : 'pc'}-${app}:${sha}`;
+function reference(
+  service: string,
+  app: string,
+  tag = `side-shared-${service === 'game-feedback' ? 'gf' : 'pc'}-${app}:${sha}`,
+) {
   const image = run('docker', ['image', 'inspect', '--format', '{{.Id}}', tag]).trim();
   const ref = `ghcr.io/jingeon27/side-project-${service}-${app}@sha256:${createHash('sha256').update(image).digest('hex')}`;
   images[ref] = tag;
   return ref;
+}
+/** The S3 fixture serves the smoke CA; API, ops and migrate trust it through one extra image layer. */
+function trustingApi(service: string) {
+  const short = service === 'game-feedback' ? 'gf' : 'pc';
+  const tag = `${prefix}-${short}-api:${sha}`;
+  createdImages.push(tag);
+  run(
+    'docker',
+    [
+      'build',
+      '--builder',
+      'default',
+      '--platform',
+      'linux/amd64',
+      '--tag',
+      tag,
+      '-f',
+      '-',
+      join(root, 'trust'),
+    ],
+    {
+      input: `FROM side-shared-${short}-api:${sha}\nCOPY ca.pem /etc/side-smoke/ca.pem\nENV NODE_EXTRA_CA_CERTS=/etc/side-smoke/ca.pem\n`,
+    },
+  );
+  return tag;
 }
 async function retry<T>(fn: () => Promise<T> | T, left = 30): Promise<T> {
   try {
@@ -336,7 +378,11 @@ class EventReader {
 try {
   mkdirSync(join(root, 'certs'));
   mkdirSync(join(root, 'bin'));
-  mkdirSync(join(root, 'proxy'));
+  mkdirSync(join(root, 'trust'));
+  mkdirSync(join(root, 'postgres/data'), { recursive: true });
+  // user-data writes this marker when it formats the EBS volume; database.sh refuses to start without it.
+  writeFileSync(join(root, 'postgres/.side-postgres-volume'), 'volume=smoke\n');
+  run('bash', [join(source, 'scripts/prepare.sh')]);
   saveEnv(join(root, '.env'), proxyEnv);
   writeFileSync(baseEnv.SIDE_SMOKE_IMAGE_MAP, '{}');
   cpSync(join(source, 'compose.yaml'), proxyFile);
@@ -346,7 +392,7 @@ try {
   );
   cpSync(join(here, 'shared-instance/docker-fixture.py'), join(root, 'bin/docker'));
   run('chmod', ['700', join(root, 'bin/docker')]);
-  const ca = join(root, 'certs/rds-ca.pem');
+  const ca = join(root, 'certs/ca.pem');
   run('openssl', [
     'req',
     '-x509',
@@ -368,7 +414,7 @@ try {
     'rsa:2048',
     '-nodes',
     '-subj',
-    `/CN=${host}`,
+    '/CN=Shared smoke storage',
     '-keyout',
     join(root, 'certs/server.key'),
     '-out',
@@ -376,7 +422,7 @@ try {
   ]);
   writeFileSync(
     join(root, 'certs/extensions'),
-    `subjectAltName=DNS:${host},DNS:gf-smoke-private.s3.ap-northeast-2.amazonaws.com,DNS:pc-smoke-private.s3.ap-northeast-2.amazonaws.com\n`,
+    'subjectAltName=DNS:gf-smoke-private.s3.ap-northeast-2.amazonaws.com,DNS:pc-smoke-private.s3.ap-northeast-2.amazonaws.com\n',
   );
   run('openssl', [
     'x509',
@@ -395,41 +441,25 @@ try {
     '-out',
     join(root, 'certs/server.crt'),
   ]);
+  cpSync(ca, join(root, 'trust/ca.pem'));
   projects.push('proxy');
   run('bash', [join(source, 'scripts/proxy.sh'), 'validate']);
   baseEnv.PATH = `${root}/bin:${process.env.PATH}`;
-  const init = readFileSync(join(source, 'rds-bootstrap.sql'), 'utf8').replace(
-    /^\\password (\w+)$/gm,
-    (_match: string, role: string) =>
-      `ALTER ROLE ${role} PASSWORD '${role.endsWith('_migrator') ? schemaPassword : password}';`,
-  );
-  writeFileSync(join(root, 'init.sql'), init);
+  projects.push('database');
+  run('bash', [join(source, 'scripts/database.sh'), 'start']);
+  // database.sh bootstrap prompts for passwords on a terminal; the smoke feeds the same SQL with fixed passwords.
+  databaseCompose(['exec', '-T', 'postgres', 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-f', '-'], {
+    input: readFileSync(join(source, 'database/bootstrap.sql'), 'utf8').replace(
+      /^\\password (\w+)$/gm,
+      (_match: string, role: string) =>
+        `ALTER ROLE ${role} PASSWORD '${role.endsWith('_migrator') ? schemaPassword : password}';`,
+    ),
+  });
   cpSync(join(here, 'shared-instance/object-storage.ts'), join(root, 'object-storage.ts'));
   writeFileSync(
     dependenciesFile,
     JSON.stringify({
       services: {
-        db: {
-          image: 'postgres:18-bookworm',
-          environment: { POSTGRES_PASSWORD: randomBytes(32).toString('hex') },
-          entrypoint: [
-            'bash',
-            '-ceu',
-            'install -d -m 700 -o postgres -g postgres /tmp/certs; cp /certs/server.* /tmp/certs/; chown postgres:postgres /tmp/certs/*; chmod 600 /tmp/certs/*; exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/tmp/certs/server.crt -c ssl_key_file=/tmp/certs/server.key',
-          ],
-          volumes: [
-            'data:/var/lib/postgresql',
-            `${root}/certs:/certs:ro`,
-            `${root}/init.sql:/docker-entrypoint-initdb.d/10-shared.sql:ro`,
-          ],
-          networks: { gf: { aliases: [host] }, pc: { aliases: [host] } },
-          healthcheck: {
-            test: ['CMD-SHELL', 'pg_isready -U postgres -d photo_contest'],
-            interval: '3s',
-            timeout: '3s',
-            retries: 30,
-          },
-        },
         storage: {
           image: 'node:24-bookworm-slim',
           command: ['node', '/fixture/object-storage.ts'],
@@ -444,13 +474,12 @@ try {
         gf: { external: true, name: `${prefix}-game-feedback-edge` },
         pc: { external: true, name: `${prefix}-photo-contest-edge` },
       },
-      volumes: { data: {} },
     }),
   );
   projects.push('dependencies');
   dependency(['up', '-d', '--wait', '--wait-timeout', '120']);
   const runtimeUrl = (database: string, migration = false) =>
-    `postgresql://${database}${migration ? '_migrator' : ''}:${migration ? schemaPassword : password}@${host}:5432/${database}?schema=public&sslmode=require&sslaccept=strict&sslcert=/run/rds/ca.pem&connection_limit=${migration ? 2 : 5}&pool_timeout=10&connect_timeout=5`;
+    `postgresql://${database}${migration ? '_migrator' : ''}:${migration ? schemaPassword : password}@${host}:5432/${database}?schema=public&sslmode=disable&connection_limit=${migration ? 2 : 5}&pool_timeout=10&connect_timeout=5`;
   const refs: Record<string, [string, string]> = {};
   const references = (service: string) => {
     const value = refs[service];
@@ -480,53 +509,38 @@ try {
           }),
     };
     saveEnv(join(root, `services/${service}/.env`), environment);
-    refs[service] = [reference(service, 'api'), reference(service, 'web')];
+    refs[service] = [reference(service, 'api', trustingApi(service)), reference(service, 'web')];
   }
   writeFileSync(baseEnv.SIDE_SMOKE_IMAGE_MAP, JSON.stringify(images));
-  const validCa = readFileSync(ca);
-  run('openssl', [
-    'req',
-    '-x509',
-    '-newkey',
-    'rsa:2048',
-    '-nodes',
-    '-days',
-    '1',
-    '-subj',
-    '/CN=Wrong CA',
-    '-keyout',
-    join(root, 'certs/wrong.key'),
-    '-out',
-    join(root, 'certs/wrong.pem'),
-  ]);
-  writeFileSync(ca, readFileSync(join(root, 'certs/wrong.pem')));
-  try {
-    const rejected = spawnSync(
-      'bash',
-      [
-        join(root, `services/game-feedback/releases/${sha}/host/service.sh`),
-        'game-feedback',
-        'deploy',
-        sha,
-        ...references('game-feedback'),
-      ],
-      { env: baseEnv, encoding: 'utf8' },
-    );
-    assert.notEqual(rejected.status, 0, 'An untrusted database CA must block deployment');
-    assert.equal(existsSync(join(root, 'services/game-feedback/current')), false);
-    assert.equal(
-      sql(
-        'game_feedback',
-        "SELECT count(*) FROM information_schema.tables WHERE table_name = '_prisma_migrations'",
-      ),
-      '0',
-    );
-  } finally {
-    writeFileSync(ca, validCa);
-  }
+  // A dump that cannot reach the backup bucket stops the first deployment before the DDL role creates any table.
+  const refused = spawnSync(
+    'bash',
+    [
+      join(root, `services/game-feedback/releases/${sha}/host/service.sh`),
+      'game-feedback',
+      'deploy',
+      sha,
+      ...references('game-feedback'),
+    ],
+    { env: { ...baseEnv, SIDE_SMOKE_BACKUP_FAIL: '1' }, encoding: 'utf8' },
+  );
+  assert.notEqual(refused.status, 0, 'A failed backup upload must block deployment');
+  assert.equal(existsSync(join(root, 'services/game-feedback/current')), false);
+  assert.equal(
+    sql(
+      'game_feedback',
+      "SELECT count(*) FROM information_schema.tables WHERE table_name = '_prisma_migrations'",
+    ),
+    '0',
+  );
   for (const service of ['game-feedback', 'photo-contest']) {
     projects.push(service);
     operate(service, ['deploy', sha, ...references(service)]);
+    const receipt = readFileSync(join(root, `services/${service}/releases/${sha}/pg-backup.json`), 'utf8');
+    assert.match(
+      receipt,
+      new RegExp(`"object": "s3://side-smoke-backup/postgres/${service}/\\d{8}T\\d{6}Z-${sha}\\.dump"`),
+    );
   }
   run('bash', [join(source, 'scripts/proxy.sh'), 'start']);
   const port = Number(
@@ -683,11 +697,33 @@ try {
     sql('photo_contest', "SELECT has_database_privilege('photo_contest','game_feedback','CONNECT')"),
     'f',
   );
-  const tls = sql(
-    'game_feedback',
-    "SELECT bool_and(ssl) FROM pg_stat_ssl JOIN pg_stat_activity USING(pid) WHERE usename IN ('game_feedback','photo_contest')",
+  // Only API-side containers join the internal db network; the web tier cannot even resolve the database.
+  for (const service of ['game-feedback', 'photo-contest']) {
+    const lookup = (app: string) =>
+      serviceCompose(service, [
+        'exec',
+        '-T',
+        app,
+        'node',
+        '-e',
+        "require('node:dns').lookup('shared-postgres', (error) => console.log(error ? 'unresolved' : 'resolved'))",
+      ]).trim();
+    assert.equal(lookup('api'), 'resolved');
+    assert.equal(lookup('web'), 'unresolved');
+  }
+  // The redeploy dumped the migrated schema before touching it; the archive must be restorable.
+  const dumps = join(root, 'postgres/dumps/photo-contest');
+  const latestDump = readdirSync(dumps)
+    .filter((file) => file.endsWith('.dump'))
+    .sort()
+    .at(-1);
+  assert.ok(latestDump, 'Photo Contest must have a pre-migration dump');
+  assert.match(
+    databaseCompose(['exec', '-T', 'postgres', 'pg_restore', '--list'], {
+      input: readFileSync(join(dumps, latestDump)),
+    }),
+    /_prisma_migrations/,
   );
-  assert.equal(tls, 't');
   assert.equal(
     sql('game_feedback', `SELECT has_table_privilege('game_feedback','"_prisma_migrations"','UPDATE')`),
     'f',
@@ -907,9 +943,13 @@ try {
       badSha,
       ...references('game-feedback'),
     ],
-    { encoding: 'utf8', env: { ...baseEnv, SIDE_SMOKE_NO_PITR: '1' } },
+    { encoding: 'utf8', env: { ...baseEnv, SIDE_SMOKE_BACKUP_FAIL: '1' } },
   );
-  assert.notEqual(stale.status, 0, 'Stale PITR must block migrations and application replacement');
+  assert.notEqual(
+    stale.status,
+    0,
+    'A failed backup upload must block migrations and application replacement',
+  );
   assert.equal(
     readlinkSync(join(root, 'services/game-feedback/current')),
     join(root, `services/game-feedback/releases/${sha}`),
@@ -965,16 +1005,16 @@ try {
   serviceCompose('photo-contest', ['restart', 'api', 'web']);
   serviceCompose('photo-contest', ['up', '-d', '--wait', 'api', 'web']);
   assert.equal((await pc.http(post.mediaUrl)).status, 307);
-  dependency(['stop', 'db']);
+  databaseCompose(['stop', 'postgres']);
   assert.equal((await gf.http('/api/health/live')).status, 200);
   assert.equal((await pc.http('/backend/health/live')).status, 200);
   assert.equal((await gf.http('/api/health/ready')).status, 503);
   assert.equal((await pc.http('/backend/health/ready')).status, 503);
   assert.equal((await gf.http('/health-check/live')).status, 200);
   assert.equal((await pc.http('/health-check/live')).status, 200);
-  dependency(['up', '-d', '--wait', '--wait-timeout', '120', 'db']);
+  run('bash', [join(source, 'scripts/database.sh'), 'start']);
   console.log(
-    'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, presigned POST/S3 Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
+    'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and buckets, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
   for (const project of [...projects].reverse()) {
@@ -982,6 +1022,20 @@ try {
       if (project === 'proxy')
         compose(`${prefix}-proxy`, proxyFile, ['down', '--volumes', '--remove-orphans']);
       if (project === 'dependencies') dependency(['down', '--volumes', '--remove-orphans']);
+      if (project === 'database') {
+        databaseCompose(['down', '--remove-orphans']);
+        // The cluster files belong to the container's postgres user; only a container can remove them.
+        databaseCompose([
+          'run',
+          '--rm',
+          '--no-deps',
+          '--entrypoint',
+          'rm',
+          'postgres',
+          '-rf',
+          '/var/lib/postgresql/18',
+        ]);
+      }
       if (['game-feedback', 'photo-contest'].includes(project))
         serviceCompose(project, ['down', '--remove-orphans']);
     } catch {
@@ -990,7 +1044,11 @@ try {
     }
   }
   for (const service of ['game-feedback', 'photo-contest'])
-    spawnSync(realDocker, ['network', 'rm', `${prefix}-${service}-edge`], { env: baseEnv, stdio: 'ignore' });
+    for (const network of ['edge', 'db'])
+      spawnSync(realDocker, ['network', 'rm', `${prefix}-${service}-${network}`], {
+        env: baseEnv,
+        stdio: 'ignore',
+      });
   for (const image of createdImages)
     spawnSync(realDocker, ['image', 'rm', image], { env: baseEnv, stdio: 'ignore' });
   if (!cleanupState.failed) rmSync(root, { recursive: true });
