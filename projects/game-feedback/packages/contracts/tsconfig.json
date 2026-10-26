@@ -1,5 +1,5 @@
 {
-  "extends": "@side/typescript-config/base",
+  "extends": "@side/config/typescript",
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
     "module": "Node16",

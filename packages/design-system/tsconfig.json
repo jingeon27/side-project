@@ -1,5 +1,5 @@
 {
-  "extends": "@side/typescript-config/base",
+  "extends": "@side/config/typescript",
   "compilerOptions": {
     "types": ["vite/client"],
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -8,6 +8,6 @@
     "jsx": "react-jsx",
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "*.mts", ".storybook/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "*.mts", ".storybook/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules"]
 }

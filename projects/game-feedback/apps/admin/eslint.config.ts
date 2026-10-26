@@ -2,9 +2,9 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'eslint/config';
 
-import { testOverrides, tsconfigRootDir } from '@side/eslint-config/base';
-import { fsdBoundaries } from '@side/eslint-config/fsd-boundaries';
-import { reactDomConfig } from '@side/eslint-config/react-dom';
+import { testOverrides, tsconfigRootDir } from '@side/config/eslint/base';
+import { fsdBoundaries } from '@side/config/eslint/fsd-boundaries';
+import { reactDomConfig } from '@side/config/eslint/react-dom';
 
 export default defineConfig([
   ...reactDomConfig,
