@@ -3,11 +3,16 @@ import { Args, Mutation, Resolver } from '@nestjs/graphql';
 import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
+import { createInputValidationPipe } from '../common/input-validation';
 import {
-  CompleteOnboardingDto,
-  CompleteProfileAvatarUploadDto,
-  RequestProfileAvatarUploadDto,
-  UpdateMyProfileDto,
+  CompleteOnboardingSchema,
+  CompleteProfileAvatarUploadSchema,
+  RequestProfileAvatarUploadSchema,
+  UpdateMyProfileSchema,
+  type TCompleteOnboardingDto,
+  type TCompleteProfileAvatarUploadDto,
+  type TRequestProfileAvatarUploadDto,
+  type TUpdateMyProfileDto,
 } from './profile.dto';
 import { ProfileService } from './profile.service';
 
@@ -18,7 +23,7 @@ export class ProfileResolver {
   @Mutation()
   requestProfileAvatarUpload(
     @OptionalViewer() viewer: IViewer | null,
-    @Args() input: RequestProfileAvatarUploadDto,
+    @Args(createInputValidationPipe(RequestProfileAvatarUploadSchema)) input: TRequestProfileAvatarUploadDto,
   ) {
     return this.profiles.requestUpload(
       viewer ?? fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED),
@@ -29,7 +34,8 @@ export class ProfileResolver {
   @Mutation()
   completeProfileAvatarUpload(
     @OptionalViewer() viewer: IViewer | null,
-    @Args() input: CompleteProfileAvatarUploadDto,
+    @Args(createInputValidationPipe(CompleteProfileAvatarUploadSchema))
+    input: TCompleteProfileAvatarUploadDto,
   ) {
     return this.profiles.completeUpload(
       viewer ?? fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED),
@@ -38,7 +44,10 @@ export class ProfileResolver {
   }
 
   @Mutation()
-  completeOnboarding(@OptionalViewer() viewer: IViewer | null, @Args() input: CompleteOnboardingDto) {
+  completeOnboarding(
+    @OptionalViewer() viewer: IViewer | null,
+    @Args(createInputValidationPipe(CompleteOnboardingSchema)) input: TCompleteOnboardingDto,
+  ) {
     return this.profiles.update(
       viewer ?? fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED),
       input,
@@ -47,7 +56,10 @@ export class ProfileResolver {
   }
 
   @Mutation()
-  updateMyProfile(@Viewer() viewer: IViewer, @Args() input: UpdateMyProfileDto) {
+  updateMyProfile(
+    @Viewer() viewer: IViewer,
+    @Args(createInputValidationPipe(UpdateMyProfileSchema)) input: TUpdateMyProfileDto,
+  ) {
     return this.profiles.update(viewer, input);
   }
 }

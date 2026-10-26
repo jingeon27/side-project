@@ -15,7 +15,7 @@ import { mobilePushSettings } from '../config/env';
 import { PUSH_DEVICE_LIMIT, PUSH_INTERVAL_MS, PUSH_QUEUE_BATCH_SIZE } from '../config/limits';
 import { Database } from '../database/database.service';
 import { NotificationService } from '../notification/notification.service';
-import type { RegisterPushDeviceDto } from './push.dto';
+import { type TRegisterPushDeviceDto } from './push.dto';
 
 @Injectable()
 export class PushService implements OnModuleInit, OnModuleDestroy {
@@ -48,7 +48,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     await this.running;
   }
 
-  async register(req: Request, input: RegisterPushDeviceDto) {
+  async register(req: Request, input: TRegisterPushDeviceDto) {
     const { userId, key } = await this.sessions.requireSessionKey(req);
     await this.db.atomic(async (tx) => {
       const previous = await tx.pushDevice.findUnique({ where: { id: input.installationId } });

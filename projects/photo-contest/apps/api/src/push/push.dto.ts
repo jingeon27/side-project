@@ -1,13 +1,14 @@
-import { IsIn, IsUUID, Matches } from 'class-validator';
+import { z } from 'zod';
 
 import { EXPO_PUSH_TOKEN_PATTERN } from '@side/toolkit/push-notifications';
 
-export class RegisterPushDeviceDto {
-  @IsUUID('4') installationId!: string;
-  @Matches(EXPO_PUSH_TOKEN_PATTERN) token!: string;
-  @IsIn(['ios', 'android']) platform!: 'ios' | 'android';
-  @IsIn(['ko', 'en', 'ja']) locale!: 'ko' | 'en' | 'ja';
-}
-export class UnregisterPushDeviceDto {
-  @IsUUID('4') installationId!: string;
-}
+export const RegisterPushDeviceSchema = z.strictObject({
+  installationId: z.uuidv4(),
+  token: z.string().regex(EXPO_PUSH_TOKEN_PATTERN),
+  platform: z.enum(['ios', 'android']),
+  locale: z.enum(['ko', 'en', 'ja']),
+});
+export type TRegisterPushDeviceDto = z.output<typeof RegisterPushDeviceSchema>;
+
+export const UnregisterPushDeviceSchema = RegisterPushDeviceSchema.pick({ installationId: true });
+export type TUnregisterPushDeviceDto = z.output<typeof UnregisterPushDeviceSchema>;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createInputValidationPipe } from '../common/input-validation';
-import { LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
+import { LoginWithPasswordSchema, RegisterWithPasswordSchema } from './auth.dto';
 
 const pipe = createInputValidationPipe();
 
@@ -12,7 +12,7 @@ describe('인증 DTO', () => {
       { loginId: '  MY_ID ', password, nickname: '  친구  ' },
       {
         type: 'custom',
-        metatype: RegisterWithPasswordDto,
+        schema: RegisterWithPasswordSchema,
       },
     );
     expect(result).toMatchObject({ loginId: 'my_id', password, nickname: '친구' });
@@ -21,12 +21,12 @@ describe('인증 DTO', () => {
   it('가입 비밀번호는 8자를 허용하고 7자는 거절해야 한다', async () => {
     const input = { loginId: 'eight_id', nickname: '경계 확인', password: 'pass1234' };
     await expect(
-      pipe.transform(input, { type: 'custom', metatype: RegisterWithPasswordDto }),
+      pipe.transform(input, { type: 'custom', schema: RegisterWithPasswordSchema }),
     ).resolves.toMatchObject(input);
     await expect(
       pipe.transform(
         { ...input, password: 'pass123' },
-        { type: 'custom', metatype: RegisterWithPasswordDto },
+        { type: 'custom', schema: RegisterWithPasswordSchema },
       ),
     ).rejects.toMatchObject({
       message: '비밀번호는 8자 이상 입력해 주세요.',
@@ -40,7 +40,9 @@ describe('인증 DTO', () => {
       { loginId: 'valid', password: '' },
     ]) {
       await expect(
-        pipe.transform(value, { type: 'custom', metatype: LoginWithPasswordDto }),
+        createInputValidationPipe(LoginWithPasswordSchema, 'UNAUTHENTICATED').transform(value, {
+          type: 'custom',
+        }),
       ).rejects.toMatchObject({
         message: '아이디 또는 비밀번호를 확인해 주세요.',
         extensions: { code: 'UNAUTHENTICATED' },
@@ -51,7 +53,7 @@ describe('인증 DTO', () => {
   it('REST 본문의 미등록 필드·배열·숫자는 DTO에 들어오지 않아야 한다', async () => {
     for (const value of [{ nickname: '친구', role: 'ADMIN' }, { nickname: 123 }, [], null]) {
       await expect(
-        pipe.transform(value, { type: 'body', metatype: RegisterWithPasswordDto }),
+        pipe.transform(value, { type: 'body', schema: RegisterWithPasswordSchema }),
       ).rejects.toMatchObject({
         extensions: { code: 'BAD_USER_INPUT' },
       });

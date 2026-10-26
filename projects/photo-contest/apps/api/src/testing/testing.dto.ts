@@ -1,26 +1,22 @@
-import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsOptional, IsString, IsUrl, Length } from 'class-validator';
+import { z } from 'zod';
 
-import { trimValue } from '../common/input-validation';
 import { TEXT_LIMIT } from '../config/limits';
-import { PHASE, type TPhase } from '../contest/contest.policy';
+import { PHASE } from '../contest/contest.policy';
 
-export class CreateTestUserDto {
-  @Transform(trimValue)
-  @IsString()
-  @Length(1, TEXT_LIMIT.NICKNAME)
-  nickname = '';
+export const CreateTestUserSchema = z.strictObject({
+  nickname: z.string().trim().min(1).max(TEXT_LIMIT.NICKNAME),
+  needsOnboarding: z
+    .boolean()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  avatar: z
+    .url({ protocol: /^https$/ })
+    .nullish()
+    .transform((value) => value ?? undefined),
+});
+export type TCreateTestUserDto = z.output<typeof CreateTestUserSchema>;
 
-  @IsOptional()
-  @IsBoolean()
-  needsOnboarding?: boolean;
-
-  @IsOptional()
-  @IsUrl({ protocols: ['https'], require_protocol: true })
-  avatar?: string;
-}
-
-export class MoveTestContestDto {
-  @IsIn(Object.values(PHASE), { message: '테스트 입력을 확인해 주세요.' })
-  declare phase: TPhase;
-}
+export const MoveTestContestSchema = z.strictObject({
+  phase: z.enum(PHASE, { error: '테스트 입력을 확인해 주세요.' }),
+});
+export type TMoveTestContestDto = z.output<typeof MoveTestContestSchema>;

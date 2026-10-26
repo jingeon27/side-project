@@ -12,7 +12,7 @@ import {
   AUTH_REGISTER_IP_LIMIT,
 } from '../config/limits';
 import { Database } from '../database/database.service';
-import type { LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
+import { type TLoginWithPasswordDto, type TRegisterWithPasswordDto } from './auth.dto';
 import { hashPassword, verifyPassword } from './password';
 import { SessionService } from './session.service';
 import { USER_VIEW_SELECT } from './user-view';
@@ -40,7 +40,7 @@ export class PasswordAuthService {
     private readonly sessions: SessionService,
   ) {}
 
-  async register(input: RegisterWithPasswordDto, req: Request, res: Response) {
+  async register(input: TRegisterWithPasswordDto, req: Request, res: Response) {
     const { loginId, password, nickname } = input;
     const passwordHash = await hashPassword(password);
     const viewer = await this.sessions.viewer(req);
@@ -71,7 +71,7 @@ export class PasswordAuthService {
     return user;
   }
 
-  async login(input: LoginWithPasswordDto, req: Request, res: Response) {
+  async login(input: TLoginWithPasswordDto, req: Request, res: Response) {
     const { loginId, password } = input;
     // 아이디 버킷은 실패만 센다. 성공한 로그인이 한도를 쓰거나 남이 성공 횟수로 계정을 잠그지 못한다.
     const idKey = `login:id:${loginId}`;

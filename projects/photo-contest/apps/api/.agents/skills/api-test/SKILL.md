@@ -39,11 +39,11 @@ description: API(apps/api)의 구현 파일 옆 unit 테스트나 실제 Postgre
 ## 명령 (side 루트)
 
 ```sh
-corepack yarn workspace @photo-contest/api test                     # unit
-corepack yarn workspace @photo-contest/api test:integration         # 격리 스키마 + supertest
-corepack yarn workspace @photo-contest/api test:integration <파일 이름 일부> -t '<it 이름>'
-corepack yarn workspace @photo-contest/api typecheck                # test/ 포함
-corepack yarn workspace @side/photo-contest exec eslint apps/api
+yarn workspace @photo-contest/api test                     # unit
+yarn workspace @photo-contest/api test:integration         # 격리 스키마 + supertest
+yarn workspace @photo-contest/api test:integration <파일 이름 일부> -t '<it 이름>'
+yarn workspace @photo-contest/api typecheck                # test/ 포함
+yarn workspace @side/photo-contest exec eslint apps/api
 ```
 
 - `test:integration`은 포트를 열지 않으므로 개발 서버(:4200)가 떠 있어도 그대로 돌린다. 기존 `test:e2e` 명령도 같은 integration 레인을 실행한다. DB가 응답하지 않으면 띄우거나 재시작하지 말고 사용자에게 알린다.

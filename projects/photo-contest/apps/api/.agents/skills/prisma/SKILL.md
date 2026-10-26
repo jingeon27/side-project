@@ -25,20 +25,20 @@ side 루트에서 실행한다. `exec`는 apps/api에서 돌므로 prisma 인자
 git show HEAD:projects/photo-contest/apps/api/prisma/schema.prisma > <스크래치 폴더>/schema.before.prisma
 M=projects/photo-contest/apps/api/prisma/migrations/$(date -u +%Y%m%d%H%M%S)_<snake_case_이름>
 mkdir -p "$M"
-corepack yarn workspace @photo-contest/api exec prisma migrate diff \
+yarn workspace @photo-contest/api exec prisma migrate diff \
   --from-schema <스크래치 폴더>/schema.before.prisma \
   --to-schema prisma/schema.prisma --script > "$M/migration.sql"
-corepack yarn workspace @photo-contest/api db:generate
+yarn workspace @photo-contest/api db:generate
 ```
 
 - `--from`은 마지막 마이그레이션까지 반영된 스키마다(보통 HEAD). 출력이 `-- This is an empty migration.`이면 폴더를 지운다.
 - 폴더는 현재 마지막 마이그레이션 폴더보다 뒤에 정렬돼야 한다. 커밋된 `migration.sql`은 고치지 않고 새 폴더를 더한다 — 아직 어느 DB에도 적용하지 않았다고 사용자가 확인한 마이그레이션만 예외다. `migration_lock.toml`은 그대로 둔다.
 - 만든 SQL에서 `DROP`, DEFAULT 없는 `NOT NULL`, `ALTER COLUMN … TYPE`, 새 `UNIQUE INDEX`를 찾아 의도한 것인지 확인한다.
-- 실행하지 않는다: `prisma migrate dev`·`migrate reset`·`db push`·`db:migrate`(개발 DB의 public 스키마를 바꾼다). 개발 DB 적용은 사용자에게 `corepack yarn workspace @side/photo-contest db:migrate`를 요청한다. `db:generate`는 사용자의 개발 서버가 쓰는 client도 바꿔 서버가 새 client로 다시 뜨고, 사용자가 적용하기 전까지 새 열을 쓰는 요청은 실패하므로 함께 알린다.
+- 실행하지 않는다: `prisma migrate dev`·`migrate reset`·`db push`·`db:migrate`(개발 DB의 public 스키마를 바꾼다). 개발 DB 적용은 사용자에게 `yarn workspace @side/photo-contest db:migrate`를 요청한다. `db:generate`는 사용자의 개발 서버가 쓰는 client도 바꿔 서버가 새 client로 다시 뜨고, 사용자가 적용하기 전까지 새 열을 쓰는 요청은 실패하므로 함께 알린다.
 
 ## 검증
 
-- `corepack yarn workspace @photo-contest/api test:integration`: globalSetup이 테스트 DB에 새 `api_test_*` 스키마를 만들고 모든 마이그레이션을 `prisma migrate deploy`로 적용한다. client는 schema.prisma 기준이라 SQL이 빠뜨린 열·제약은 그것을 쓰는 테스트에서만 드러난다 — 새 열·제약을 쓰는 api 테스트를 같이 더한다. 이어서 `typecheck`.
+- `yarn workspace @photo-contest/api test:integration`: globalSetup이 테스트 DB에 새 `api_test_*` 스키마를 만들고 모든 마이그레이션을 `prisma migrate deploy`로 적용한다. client는 schema.prisma 기준이라 SQL이 빠뜨린 열·제약은 그것을 쓰는 테스트에서만 드러난다 — 새 열·제약을 쓰는 api 테스트를 같이 더한다. 이어서 `typecheck`.
 
 ## `Database.atomic()` (`src/database/database.service.ts`)
 
