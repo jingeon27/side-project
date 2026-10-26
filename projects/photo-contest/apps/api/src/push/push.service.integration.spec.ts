@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { ExpoPushTransport, type IPushMessage } from '@side/push-notifications';
+import { ExpoPushTransport, type IPushMessage } from '@side/toolkit/push-notifications';
 
 import { createTestApp, TEST_WEB_ORIGIN, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';

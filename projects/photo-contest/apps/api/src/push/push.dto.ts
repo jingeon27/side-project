@@ -1,6 +1,6 @@
 import { IsIn, IsUUID, Matches } from 'class-validator';
 
-import { EXPO_PUSH_TOKEN_PATTERN } from '@side/push-notifications';
+import { EXPO_PUSH_TOKEN_PATTERN } from '@side/toolkit/push-notifications';
 
 export class RegisterPushDeviceDto {
   @IsUUID('4') installationId!: string;

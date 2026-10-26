@@ -2,10 +2,14 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { createPrismaAdapter } = require('../dist/database/prisma-adapter.js');
-const { assertProductionConfig } = require('../dist/config/env.js');
-const { sharedDatabaseUrl } = require('../dist/config/shared-instance.js');
-const { PrismaClient } = require('../generated/prisma/index.js');
+const {
+  createPrismaAdapter,
+}: typeof import('../src/database/prisma-adapter') = require('../dist/database/prisma-adapter.js');
+const { assertProductionConfig }: typeof import('../src/config/env') = require('../dist/config/env.js');
+const {
+  sharedDatabaseUrl,
+}: typeof import('../src/config/shared-instance') = require('../dist/config/shared-instance.js');
+const { PrismaClient }: typeof import('../generated/prisma/index') = require('../generated/prisma/index.js');
 if (process.env.NODE_ENV !== 'production')
   throw new Error('Shared-instance production configuration is required.');
 assertProductionConfig(process.argv[2] === 'migrate');

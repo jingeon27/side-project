@@ -3,17 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "sentry:check": "node --env-file-if-exists=../../.env --import tsx scripts/check-sentry.mjs",
+    "sentry:check": "node --env-file-if-exists=../../.env --import tsx scripts/check-sentry.ts",
     "dev": "yarn build && concurrently -k 'tsc7 -w -p tsconfig.build.json' 'node --watch --env-file-if-exists=../../.env dist/main.js'",
-    "build": "yarn workspace @side/push-notifications build && tsc7 -p tsconfig.build.json",
+    "build": "yarn workspace @side/toolkit build && tsc7 -p tsconfig.build.json",
     "start": "node --env-file-if-exists=../../.env dist/main.js",
-    "typecheck": "yarn workspace @side/push-notifications build && tsc7 --noEmit",
+    "typecheck": "yarn workspace @side/toolkit build && tsc7 --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "test": "yarn workspace @side/push-notifications build && vitest run --project unit",
-    "test:unit": "yarn workspace @side/push-notifications build && vitest run --project unit",
+    "test": "yarn workspace @side/toolkit build && vitest run --project unit",
+    "test:unit": "yarn workspace @side/toolkit build && vitest run --project unit",
     "test:e2e": "yarn test:integration",
-    "test:integration": "yarn workspace @side/push-notifications build && vitest run --project integration"
+    "test:integration": "yarn workspace @side/toolkit build && vitest run --project integration"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",

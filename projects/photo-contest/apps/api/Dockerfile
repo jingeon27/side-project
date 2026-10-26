@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 WORKDIR /app/projects/photo-contest/apps/api
 ENV NODE_ENV=production API_HOST=0.0.0.0 PORT=4200
 COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/packages/push-notifications /app/packages/push-notifications
+COPY --from=build /app/packages/toolkit /app/packages/toolkit
 COPY --from=build /app/projects/photo-contest/apps/api/package.json ./package.json
 COPY --from=build /app/projects/photo-contest/apps/api/dist ./dist
 COPY --from=build /app/graphql-schema/src ./src
