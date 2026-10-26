@@ -2,20 +2,20 @@
 FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl \
     && rm -rf /var/lib/apt/lists/* \
-    && corepack enable && corepack prepare yarn@4.17.0 --activate
+    && npm install --global @yarnpkg/cli-dist@4.17.0 --force
 WORKDIR /app
 
 FROM base AS build
 COPY . .
-RUN YARN_ENABLE_IMMUTABLE_INSTALLS=true corepack yarn workspaces focus @game-feedback/api @game-feedback/web
-RUN corepack yarn workspace @game-feedback/contracts build \
-    && corepack yarn workspace @game-feedback/api db:generate \
-    && corepack yarn workspace @game-feedback/api openapi \
-    && corepack yarn workspace @game-feedback/sdk codegen
+RUN YARN_ENABLE_IMMUTABLE_INSTALLS=true yarn workspaces focus @game-feedback/api @game-feedback/web
+RUN yarn workspace @game-feedback/contracts build \
+    && yarn workspace @game-feedback/api db:generate \
+    && yarn workspace @game-feedback/api openapi \
+    && yarn workspace @game-feedback/sdk codegen
 
 FROM build AS api-build
-RUN corepack yarn workspace @game-feedback/api build \
-    && YARN_ENABLE_IMMUTABLE_INSTALLS=true corepack yarn workspaces focus @game-feedback/api --production
+RUN yarn workspace @game-feedback/api build \
+    && YARN_ENABLE_IMMUTABLE_INSTALLS=true yarn workspaces focus @game-feedback/api --production
 
 FROM build AS web-build
 ARG NEXT_PUBLIC_SENTRY_DSN=
@@ -31,7 +31,7 @@ ENV NODE_ENV=production ENVIRONMENT=production NEXT_TELEMETRY_DISABLED=1 \
     GAME_FEEDBACK_CONTACT_EMAIL=${GAME_FEEDBACK_CONTACT_EMAIL}
 RUN --mount=type=cache,id=gf-next-cache,target=/app/projects/game-feedback/apps/web/.next/cache \
     mkdir -p projects/game-feedback/apps/web/public \
-    && corepack yarn workspace @game-feedback/web build
+    && yarn workspace @game-feedback/web build
 
 FROM base AS api
 ENV NODE_ENV=production ENVIRONMENT=production
