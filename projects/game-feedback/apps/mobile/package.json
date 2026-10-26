@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "bundle:check": "node scripts/bundle-check.mjs"
+    "bundle:check": "node scripts/bundle-check.ts"
   },
   "dependencies": {
     "@game-feedback/bridge": "workspace:*",

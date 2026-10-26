@@ -14,8 +14,8 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile android   
 APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     # 설치된 dev client용 Metro 8082
 ```
 
-- 개발 origin 기본값은 `http://localhost:3300`(`parseWebOrigin`, `__DEV__`에서 값이 없을 때)이다. API `WEB_ORIGIN`도 `../../scripts/env.mjs` 기본이 같은 값이라 쿠키·Origin 검사가 맞는다. Android 에뮬레이터는 `adb reverse`로 이 localhost를 유지한다. 실기기는 닿을 수 있는 origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API `WEB_ORIGIN`에 같은 값으로 준다.
-- `dev:test`는 3300·4300이 사용 중이면 실패한다(`../../scripts/dev.mjs` `assertPortFree`). 사용자의 개발 서버를 끄거나 다시 띄우지 않는다.
+- 개발 origin 기본값은 `http://localhost:3300`(`parseWebOrigin`, `__DEV__`에서 값이 없을 때)이다. API `WEB_ORIGIN`도 `../../scripts/env.ts` 기본이 같은 값이라 쿠키·Origin 검사가 맞는다. Android 에뮬레이터는 `adb reverse`로 이 localhost를 유지한다. 실기기는 닿을 수 있는 origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API `WEB_ORIGIN`에 같은 값으로 준다.
+- `dev:test`는 3300·4300이 사용 중이면 실패한다(`../../scripts/dev.ts` `assertPortFree`). 사용자의 개발 서버를 끄거나 다시 띄우지 않는다.
 - `app.config.ts`·`APP_VARIANT`·네이티브 패키지가 바뀌면 dev client를 다시 빌드한다. `expo run:*`은 `android/`·`ios/`가 이미 있으면 prebuild를 건너뛰므로(@expo/cli `ensureNativeProject`) 커밋하지 않는 이 생성 폴더를 새로 만든 뒤 빌드해야 설정이 반영된다.
 
 ## 두 스위치: `APP_VARIANT`와 `__DEV__`
@@ -70,6 +70,6 @@ EXPO_PUBLIC_WEB_ORIGIN=https://game.example MOBILE_APPLE_TEAM_ID=ABCDE12345 MOBI
   corepack yarn workspace @game-feedback/mobile exec expo config --type introspect --json   # associated domains·autoVerify intent filter·17.4
 ```
 
-- `bundle:check`(`scripts/bundle-check.mjs`)는 `expo export --platform android`, 이어서 `ios`를 `.expo-export-check/<platform>`에 만들고 첫 실패에서 멈춘 뒤 폴더를 항상 지운다. 프로젝트 `build`도 이것을 실행한다.
+- `bundle:check`(`scripts/bundle-check.ts`)는 `expo export --platform android`, 이어서 `ios`를 `.expo-export-check/<platform>`에 만들고 첫 실패에서 멈춘 뒤 폴더를 항상 지운다. 프로젝트 `build`도 이것을 실행한다.
 - origin 규칙을 바꾸면 `src/shared/config/web-origin.spec.ts`(unit)에 release HTTP·경로·userinfo·`javascript:` 거부 사례를 유지하고, 정규화 회귀(`web-origin.test.ts`, `navigation-policy.test.ts`, `native-host.test.ts`)도 함께 돌린다.
 - Metro export·Playwright 통과는 서명된 네이티브 빌드나 dev client 실기기 확인을 대신하지 않는다. 보고할 때 따로 적는다.

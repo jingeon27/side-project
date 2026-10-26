@@ -6,7 +6,7 @@ Expo 57 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글�
 
 - `_app/App.tsx`는 Provider 조합만 둔다. `_pages/web-shell`은 WebView UI·이벤트, `features/bridge`는 네이티브 메시지·Google 인증, `features/navigation`은 URL 정책, `shared/config`는 origin·색을 소유한다. slice 간 import는 named export `index.ts`를 통한다. 공유 Expo/FSD lint를 유지한다.
 - `@game-feedback/bridge`는 앱·웹이 함께 쓰는 메시지 계약이다. Photo Contest 전용 bridge를 참조하거나 변경하지 않는다. API는 REST `/api`이고 앱에 별도 API origin·인증 토큰을 두지 않는다.
-- 푸시 설치 UUID만 AsyncStorage에 보존한다. Expo token은 브리지로 웹에 전달해 현재 쿠키 세션에 등록하며, 제공자 비밀키·로그인 토큰을 네이티브에 저장하지 않는다. 기능과 운영 준비는 루트 `packages/push-notifications/README.md`를 따른다.
+- 푸시 설치 UUID만 AsyncStorage에 보존한다. Expo token은 브리지로 웹에 전달해 현재 쿠키 세션에 등록하며, 제공자 비밀키·로그인 토큰을 네이티브에 저장하지 않는다. 기능과 운영 준비는 루트 `packages/toolkit/src/push-notifications/README.md`를 따른다.
 - 쿠키는 WebView의 HttpOnly 세션이다. 네이티브에는 일회용 OAuth 코드와 PKCE verifier만 잠시 존재한다. 세션·코드·verifier를 저장하거나 로그에 남기지 않는다.
 - Expo Go 대신 dev client를 사용한다. Metro 8082, 개발 Web 3300/API 4300이다. Android는 `adb reverse tcp:3300 tcp:3300`으로 같은 localhost origin을 유지한다.
 - 소셜 로그인 코드는 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback`으로만 받는다(iOS associated domains `applinks`·`webcredentials`, Android `autoVerify` intent filter, 웹 AASA·assetlinks). 최소 iOS는 17.4(`ASWebAuthenticationSession` https 콜백)이고 `openAuthSessionAsync(…, { preferUniversalLinks: true })`로 연다. 딥링크 처리기는 콜백 경로를 열지 않는다. `gamefeedback://`는 로그인 밖 딥링크용이다.
