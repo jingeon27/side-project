@@ -25,7 +25,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 아이디·비밀번호 가입/로그인은 RHF/Zod 폼과 GraphQL useMutation을 쓰며 구글·카카오 OAuth도 제공한다. 신규 소셜 가입의 약관·닉네임 설정 화면은 받은 이름·사진을 기본값으로 표시하고 사진 제거·직접 선택을 허용한다. MY에서도 프로필을 편집한다. 설정을 못 불러와도 직접 로그인 폼은 사용할 수 있다. 게시물 업로드는 requestPostUpload → shared/api의 uploadToStorage helper(FormData POST, 세션 쿠키 제외) → completePostUpload → createPost를 쓰고 컴포넌트에서 fetch를 호출하지 않는다. 저장소 전송 실패는 RHF 미디어 오류로 표시한다. 업로드 티켓 mutation은 `fetchPolicy: 'no-cache'`로 정규화 캐시에 남기지 않고, 저장소 전송은 티켓 만료(1~15분)까지만 기다린다. 업로드하는 시트는 `useAbortOnClose`로 닫히면 전송을 끊고 게시·저장 직전에 `throwIfClosed`로 멈추며 `notifyClosedSubmit` 토스트로 알린다. 기존 대회 제출도 requestUploadUrl(contentType, byteSize) → 같은 helper → completeSubmissionUpload → createSubmission으로 전송한다. Apollo HttpLink는 JSON 메타데이터만 보내며 GraphQL Upload는 제공하지 않는다.
 
-eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저장소 `packages/eslint-config/src/base.ts`·`next.ts`·`expo.ts`가 관리한다. 앱 설정은 preset과 경로만 조합하고, 커스텀 규칙은 `src/rules/<분류>/<규칙>/` 폴더에 구현·`<규칙>.spec.ts`·그 규칙만 읽는 `__fixtures__`를 함께 둔다. FSD 공통 분석은 `src/rules/fsd/fsd.helper.ts`가 맡는다. else 없이 가드·조기 반환·ts-pattern으로 분기하며, 한 번 쓰는 이벤트는 JSX에 인라인으로 선언한다.
+eslint.config.ts도 앱의 타입 검사에 포함한다. 공용 preset은 저장소 `packages/config/eslint/src/base.ts`·`next.ts`·`expo.ts`가 관리한다. 앱 설정은 preset과 경로만 조합하고, 커스텀 규칙은 `src/rules/<분류>/<규칙>/` 폴더에 구현·`<규칙>.spec.ts`·그 규칙만 읽는 `__fixtures__`를 함께 둔다. FSD 공통 분석은 `src/rules/fsd/fsd.helper.ts`가 맡는다. else 없이 가드·조기 반환·ts-pattern으로 분기하며, 한 번 쓰는 이벤트는 JSX에 인라인으로 선언한다.
 
 서버 상태는 Apollo 캐시, 입력은 RHF·Zod, 오버레이는 overlay-kit이다. mutation 오류·시트 열림을 useState로 복제하지 않는다. RSC Cookie는 서버 API 모듈에서만 읽어 요청 헤더에 보내고 클라이언트에 넘기지 않는다. 같은 모듈이 들어온 X-Forwarded-For도 API로 넘겨 운영 API의 주소별 요청 제한이 웹 서버 주소가 아니라 사용자에게 걸리게 한다(쿠키 없는 `publicQuery`는 넘기지 않는다).
 

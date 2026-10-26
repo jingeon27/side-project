@@ -10,9 +10,9 @@
     "typecheck": "tsc7 --noEmit",
     "lint": "eslint .",
     "codegen": "graphql-codegen --config codegen.ts",
-    "test": "node scripts/test.mjs --project unit --project ui",
-    "test:unit": "node scripts/test.mjs --project unit",
-    "test:api": "node scripts/test.mjs --project api",
+    "test": "node scripts/test.ts --project unit --project ui",
+    "test:unit": "node scripts/test.ts --project unit",
+    "test:api": "node scripts/test.ts --project api",
     "test:e2e": "playwright test",
     "test:deploy": "playwright test --config playwright.deploy.config.ts",
     "test:cache": "playwright test --config playwright.cache.config.ts",
@@ -64,5 +64,10 @@
     "tailwindcss": "^4.1.0",
     "typescript": "6.0.2",
     "vitest": "^4.1.0"
+  },
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
   }
 }
