@@ -4,7 +4,7 @@ import type { SessionRequest } from '../../auth/session.types';
 import { ValidatedBody } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminCategoriesService } from './admin-categories.service';
-import { CreateCategoryDto } from './category-input.dto';
+import { CategoryInputSchema, type TCreateCategoryDto } from './category-input.dto';
 
 @UseGuards(AdminGuard)
 @Controller('api/admin/categories')
@@ -12,7 +12,7 @@ export class AdminCategoriesController {
   constructor(@Inject(AdminCategoriesService) private readonly categories: AdminCategoriesService) {}
   @Post()
   @HttpCode(200)
-  create(@Req() req: SessionRequest, @ValidatedBody(CreateCategoryDto) body: CreateCategoryDto) {
+  create(@Req() req: SessionRequest, @ValidatedBody(CategoryInputSchema) body: TCreateCategoryDto) {
     return this.categories.create(req, body);
   }
 }

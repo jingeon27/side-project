@@ -6,7 +6,7 @@ import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { CacheInvalidationService } from '../../cache-invalidation/cache-invalidation.service';
 import { PrismaClient } from '../../generated/prisma';
-import type { CreateCategoryDto } from './category-input.dto';
+import { type TCreateCategoryDto } from './category-input.dto';
 
 @Injectable()
 export class AdminCategoriesService {
@@ -14,7 +14,7 @@ export class AdminCategoriesService {
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
-  async create(req: SessionRequest, input: CreateCategoryDto) {
+  async create(req: SessionRequest, input: TCreateCategoryDto) {
     const u = requireAdmin(req);
     return this.cache.change(
       async (tx) => {

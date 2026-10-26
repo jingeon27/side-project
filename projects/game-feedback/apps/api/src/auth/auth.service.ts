@@ -16,7 +16,7 @@ import { seed, TEST_ACCOUNT_FIXTURES } from '../seed';
 import { authorDto, userDto } from '../users/user.presenter';
 import { AccountWithdrawalService } from './account-withdrawal.service';
 import { AppAuthService } from './app-auth.service';
-import { type DemoLoginDto, type OnboardDto, type TestLoginDto } from './auth-input.dto';
+import { type TDemoLoginDto, type TOnboardDto, type TTestLoginDto } from './auth-input.dto';
 import { bannedIdentityError, isBannedIdentity } from './banned-identity';
 import {
   loginRedirect,
@@ -49,7 +49,7 @@ export class AuthService {
     @Inject(SocialIdentityService) private readonly identities: SocialIdentityService,
     @Inject(GameProfilesService) private readonly gameProfiles: GameProfilesService,
   ) {}
-  async demo(req: SessionRequest, res: Response, input: DemoLoginDto) {
+  async demo(req: SessionRequest, res: Response, input: TDemoLoginDto) {
     if (!this.config.demoMode) throw new ApiError(404, 'NOT_FOUND', '존재하지 않는 기능입니다.');
     const user = await this.db.user.upsert({
       where: { demoKey: `demo:${input.nickname.toLocaleLowerCase()}` },
@@ -86,7 +86,7 @@ export class AuthService {
     };
   }
 
-  async testLogin(req: SessionRequest, res: Response, body: TestLoginDto) {
+  async testLogin(req: SessionRequest, res: Response, body: TTestLoginDto) {
     this.requireTestAuth();
     const { accountId } = body;
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === accountId);
@@ -98,7 +98,7 @@ export class AuthService {
     return this.sessions.session(req);
   }
 
-  async testToken(req: SessionRequest, res: Response, body: TestLoginDto) {
+  async testToken(req: SessionRequest, res: Response, body: TTestLoginDto) {
     this.requireTestAuth();
     const { accountId } = body;
     const fixture = TEST_ACCOUNT_FIXTURES.find((account) => account.id === accountId);
@@ -210,7 +210,7 @@ export class AuthService {
     res.redirect(loginRedirect(this.config.webOrigin, returnPath, user ? undefined : 'onboarding'));
   }
 
-  async onboard(req: SessionRequest, res: Response, input: OnboardDto) {
+  async onboard(req: SessionRequest, res: Response, input: TOnboardDto) {
     const subject = req.gfSession?.pendingSubject;
     if (!subject) throw new ApiError(401, 'ONBOARDING_REQUIRED', '소셜 로그인 후 가입을 완료해주세요.');
     const provider = parse(SocialProviderSchema, req.gfSession?.pendingProvider ?? 'google');

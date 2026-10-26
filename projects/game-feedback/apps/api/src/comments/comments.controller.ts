@@ -12,10 +12,15 @@ import {
 } from '@nestjs/common';
 
 import type { SessionRequest } from '../auth/session.types';
-import { ListQueryDto } from '../common/http/list-query.dto';
+import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
+import {
+  CommentInputSchema,
+  CreateCommentInputSchema,
+  type TCommentBodyDto,
+  type TCreateCommentBodyDto,
+} from './comment-input.dto';
 import { CommentsService } from './comments.service';
 
 @Controller('api')
@@ -25,7 +30,7 @@ export class CommentsController {
   comments(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedQuery(ListQueryDto) query: ListQueryDto,
+    @ValidatedQuery(ListQuerySchema) query: TListQueryDto,
   ) {
     return this.service.page(req, id, query);
   }
@@ -35,7 +40,7 @@ export class CommentsController {
   comment(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(CreateCommentBodyDto) body: CreateCommentBodyDto,
+    @ValidatedBody(CreateCommentInputSchema) body: TCreateCommentBodyDto,
   ) {
     return this.service.createComment(req, id, body);
   }
@@ -44,7 +49,7 @@ export class CommentsController {
   editComment(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(CommentBodyDto) body: CommentBodyDto,
+    @ValidatedBody(CommentInputSchema) body: TCommentBodyDto,
   ) {
     return this.service.updateComment(req, id, body);
   }

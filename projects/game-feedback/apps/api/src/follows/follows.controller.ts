@@ -3,7 +3,7 @@ import { Controller, Delete, Get, Inject, Param, Put, Req, UseGuards } from '@ne
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { FollowUserDto } from './follow-input.dto';
+import { FollowInputSchema, type TFollowUserDto } from './follow-input.dto';
 import { FollowsService } from './follows.service';
 
 @Controller('api/users/:id/follow')
@@ -21,7 +21,7 @@ export class FollowsController {
   follow(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(FollowUserDto) body: FollowUserDto,
+    @ValidatedBody(FollowInputSchema) body: TFollowUserDto,
   ) {
     return this.follows.follow(req, id, body);
   }

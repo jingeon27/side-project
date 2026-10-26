@@ -1,51 +1,42 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   Inject,
-  Injectable,
   Param,
   Patch,
   Post,
   Req,
   Res,
   UseGuards,
-  type CanActivate,
-  type ExecutionContext,
 } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
-import { AvatarUploadDto } from './avatar-upload.dto';
+import { UserGuard } from '../common/http/session.guard';
+import { AvatarUploadInputSchema, type TAvatarUploadDto } from './avatar-upload.dto';
+import { UpdateProfileInputSchema, type TUpdateProfileDto } from './profile-input.dto';
 import { ProfileService } from './profile.service';
 
-@Injectable()
-class ProfileUploadGuard implements CanActivate {
-  canActivate(context: ExecutionContext) {
-    requireUser(context.switchToHttp().getRequest<SessionRequest>());
-    return true;
-  }
-}
 @Controller('api')
 export class ProfileController {
   constructor(@Inject(ProfileService) private readonly profile: ProfileService) {}
   @Patch('profile')
-  update(@Req() req: SessionRequest, @Body() body: unknown) {
+  @UseGuards(UserGuard)
+  update(@Req() req: SessionRequest, @ValidatedBody(UpdateProfileInputSchema) body: TUpdateProfileDto) {
     return this.profile.update(req, body);
   }
   @Post('profile/avatar/uploads')
   @HttpCode(200)
-  @UseGuards(ProfileUploadGuard)
-  requestUpload(@Req() req: SessionRequest, @ValidatedBody(AvatarUploadDto) body: AvatarUploadDto) {
+  @UseGuards(UserGuard)
+  requestUpload(@Req() req: SessionRequest, @ValidatedBody(AvatarUploadInputSchema) body: TAvatarUploadDto) {
     return this.profile.requestUpload(req, body);
   }
   @Post('profile/avatar/uploads/:id/complete')
   @HttpCode(200)
-  @UseGuards(ProfileUploadGuard)
+  @UseGuards(UserGuard)
   completeUpload(@Req() req: SessionRequest, @Param('id') id: string) {
     return this.profile.completeUpload(req, id);
   }

@@ -62,7 +62,7 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 ## 명령 (side 루트)
 
 ```sh
-corepack yarn workspace @game-feedback/api test:unit
-corepack yarn workspace @game-feedback/api test:integration src/auth src/app.integration.test.ts src/support
-corepack yarn workspace @game-feedback/api typecheck
+yarn workspace @game-feedback/api test:unit
+yarn workspace @game-feedback/api test:integration src/auth src/app.integration.test.ts src/support
+yarn workspace @game-feedback/api typecheck
 ```

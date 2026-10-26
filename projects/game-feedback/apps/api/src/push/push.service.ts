@@ -14,7 +14,7 @@ import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient } from '../generated/prisma';
 import { NotificationsService } from '../notifications/notifications.service';
-import type { RegisterPushDeviceDto } from './push.dto';
+import { type TRegisterPushDeviceDto } from './push.dto';
 
 const PUSH_DEVICE_LIMIT = 10;
 const PUSH_INTERVAL_MS = 15_000;
@@ -51,7 +51,7 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     await this.running;
   }
 
-  async register(req: SessionRequest, input: RegisterPushDeviceDto) {
+  async register(req: SessionRequest, input: TRegisterPushDeviceDto) {
     const userId = requireUser(req).id;
     const key = req.gfSession?.id;
     if (!key) throw new ApiError(401, 'AUTH_REQUIRED', '로그인이 필요합니다.');

@@ -2,17 +2,18 @@ import { randomUUID } from 'node:crypto';
 
 import { Inject, Injectable } from '@nestjs/common';
 
-import { AvatarUploadInputSchema, POSTS_CACHE_TAG, UpdateProfileInputSchema } from '@game-feedback/contracts';
+import { POSTS_CACHE_TAG } from '@game-feedback/contracts';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ApiError } from '../common/http/api-error';
-import { parse } from '../common/validation';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { MEDIA_UPLOAD_TTL_SECONDS } from '../media-storage/media-storage.policy';
 import { MediaStorage } from '../media-storage/media-storage.service';
+import type { TAvatarUploadDto } from './avatar-upload.dto';
+import type { TUpdateProfileDto } from './profile-input.dto';
 import { UserVisibilityService } from './user-visibility.service';
 import { UsersService } from './users.service';
 
@@ -27,9 +28,9 @@ export class ProfileService {
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
-  async update(req: SessionRequest, input: unknown) {
+  async update(req: SessionRequest, input: TUpdateProfileDto) {
     const user = requireUser(req);
-    const { links, nickname, bio } = parse(UpdateProfileInputSchema, input);
+    const { links, nickname, bio } = input;
     await this.cache.change(
       (tx) =>
         tx.user.update({
@@ -44,9 +45,8 @@ export class ProfileService {
     );
     return this.users.profile(req, user.id);
   }
-  async requestUpload(req: SessionRequest, input: unknown) {
+  async requestUpload(req: SessionRequest, data: TAvatarUploadDto) {
     const user = requireUser(req);
-    const data = parse(AvatarUploadInputSchema, input);
     const upload = await this.storage.reserveUpload(data.mimeType, data.size);
     const ticket = await this.transactions.run(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE`;

@@ -6,7 +6,7 @@ import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { authorDto, authorSelect } from '../users/user.presenter';
-import type { BlockUserDto } from './block-input.dto';
+import { type TBlockUserDto } from './block-input.dto';
 
 @Injectable()
 export class BlocksService {
@@ -23,7 +23,7 @@ export class BlocksService {
       })
     ).map((b) => authorDto(b.blockedUser));
   }
-  async block(req: SessionRequest, input: BlockUserDto) {
+  async block(req: SessionRequest, input: TBlockUserDto) {
     const u = requireUser(req);
     if (input.blockedUserId === u.id)
       throw new ApiError(400, 'CANNOT_BLOCK_SELF', '자신은 차단할 수 없습니다.');

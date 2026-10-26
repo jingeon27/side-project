@@ -19,7 +19,7 @@ import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { mediaRange } from '../common/media-file';
-import { MediaUploadDto } from '../common/media-upload.dto';
+import { MediaUploadInputSchema, type TMediaUploadDto } from '../common/media-upload.dto';
 import { PostMediaUploadService } from './post-media-upload.service';
 import { PostMediaService } from './post-media.service';
 
@@ -40,7 +40,7 @@ export class PostMediaController {
   @Post('uploads')
   @HttpCode(200)
   @UseGuards(PostMediaUploadGuard)
-  request(@Req() req: SessionRequest, @ValidatedBody(MediaUploadDto) input: MediaUploadDto) {
+  request(@Req() req: SessionRequest, @ValidatedBody(MediaUploadInputSchema) input: TMediaUploadDto) {
     return this.uploads.request(req, input);
   }
   @Post(':id/complete')

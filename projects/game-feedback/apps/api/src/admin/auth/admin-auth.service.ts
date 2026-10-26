@@ -7,7 +7,7 @@ import { hash, token } from '../../common/crypto';
 import { ApiError } from '../../common/http/api-error';
 import { cookies } from '../../common/http/cookies';
 import { PrismaClient } from '../../generated/prisma';
-import type { AdminLoginDto } from './admin-auth-input.dto';
+import { type TAdminLoginDto } from './admin-auth-input.dto';
 import { verifyAdminPassword } from './admin-password';
 import { ADMIN_COOKIE, ADMIN_SESSION_MS, setAdminCookie } from './admin-session';
 
@@ -19,7 +19,7 @@ export class AdminAuthService {
     @Inject(PrismaClient) private readonly db: PrismaClient,
     @Inject(SessionService) private readonly sessions: SessionService,
   ) {}
-  async login(req: SessionRequest, res: Response, input: AdminLoginDto) {
+  async login(req: SessionRequest, res: Response, input: TAdminLoginDto) {
     const account = await this.db.adminAccount.findUnique({
       where: { username: input.username },
       include: { user: true },

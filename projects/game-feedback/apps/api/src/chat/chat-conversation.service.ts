@@ -5,13 +5,13 @@ import { type Conversation } from '@game-feedback/contracts';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
-import type { ListQueryDto } from '../common/http/list-query.dto';
+import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, encodeCursor, nextPageAnchor } from '../common/pagination';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { authorDto } from '../users/user.presenter';
 import { ChatAccessService } from './chat-access.service';
-import { type CreateConversationDto } from './chat-input.dto';
+import { type TCreateConversationDto } from './chat-input.dto';
 import { unreadMessageSql, visibleMessageSql } from './chat-read.policy';
 import { ChatEvents } from './chat.events';
 import {
@@ -83,7 +83,7 @@ export class ChatConversationService {
     const user = requireUser(req);
     return this.present(await this.access.visible(user.id, id), user.id);
   }
-  async create(req: SessionRequest, input: CreateConversationDto) {
+  async create(req: SessionRequest, input: TCreateConversationDto) {
     const user = requireUser(req);
     if (user.bannedAt)
       throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
@@ -138,7 +138,7 @@ export class ChatConversationService {
     void this.events.publish([user.id, recipientId], row.id);
     return this.present(row, user.id);
   }
-  async list(req: SessionRequest, query: ListQueryDto) {
+  async list(req: SessionRequest, query: TListQueryDto) {
     const user = requireUser(req);
 
     const cursor = decodeCursor(query.cursor);

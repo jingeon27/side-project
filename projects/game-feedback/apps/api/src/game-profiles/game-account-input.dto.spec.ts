@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { PlayerTagSchema } from '@game-feedback/contracts';
 
 import { RequestValidationPipe } from '../common/http/request-validation';
-import { GameAccountDto } from './game-account-input.dto';
+import { GameAccountInputSchema } from './game-account-input.dto';
 
 describe('player tags with variable lengths', () => {
   it.each([
@@ -18,7 +18,7 @@ describe('player tags with variable lengths', () => {
   ])('normalizes %s consistently for lookup and registration', async (input, expected) => {
     expect(PlayerTagSchema.parse(input)).toBe(expected);
     await expect(
-      new RequestValidationPipe(GameAccountDto).transform({ playerTag: input }, { type: 'body' }),
+      new RequestValidationPipe(GameAccountInputSchema).transform({ playerTag: input }, { type: 'body' }),
     ).resolves.toEqual({ playerTag: expected });
   });
 
@@ -27,7 +27,7 @@ describe('player tags with variable lengths', () => {
     async (input) => {
       expect(PlayerTagSchema.safeParse(input).success).toBe(false);
       await expect(
-        new RequestValidationPipe(GameAccountDto).transform({ playerTag: input }, { type: 'body' }),
+        new RequestValidationPipe(GameAccountInputSchema).transform({ playerTag: input }, { type: 'body' }),
       ).rejects.toThrow();
     },
   );

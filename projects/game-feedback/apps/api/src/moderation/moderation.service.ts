@@ -8,7 +8,7 @@ import { CommentsService } from '../comments/comments.service';
 import { ApiError } from '../common/http/api-error';
 import { PrismaClient } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
-import type { CreateReportDto } from './report-input.dto';
+import { type TCreateReportDto } from './report-input.dto';
 
 @Injectable()
 export class ModerationService {
@@ -18,7 +18,7 @@ export class ModerationService {
     @Inject(AnswersService) private readonly answers: AnswersService,
     @Inject(CommentsService) private readonly comments: CommentsService,
   ) {}
-  async report(req: SessionRequest, input: CreateReportDto) {
+  async report(req: SessionRequest, input: TCreateReportDto) {
     const u = requireUser(req);
     await match(input.targetType)
       .with('POST', () => this.posts.visiblePost(req, input.targetId))

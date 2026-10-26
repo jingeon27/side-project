@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
-import type { ListQueryDto } from '../common/http/list-query.dto';
+import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { UnitOfWork } from '../database/unit-of-work';
 import { Prisma, PrismaClient } from '../generated/prisma';
@@ -11,7 +11,7 @@ import { enqueuePush } from '../push/push.writer';
 import { ChatAccessService } from './chat-access.service';
 import { ChatConversationService } from './chat-conversation.service';
 import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
-import { type SendMessageDto } from './chat-input.dto';
+import { type TSendMessageDto } from './chat-input.dto';
 import { ChatEvents } from './chat.events';
 import { messageDto, messageInclude } from './chat.presenter';
 
@@ -24,7 +24,7 @@ export class ChatMessageService {
     @Inject(ChatAccessService) private readonly access: ChatAccessService,
     @Inject(ChatConversationService) private readonly conversations: ChatConversationService,
   ) {}
-  async messages(req: SessionRequest, id: string, query: ListQueryDto) {
+  async messages(req: SessionRequest, id: string, query: TListQueryDto) {
     const user = requireUser(req);
     const conversation = await this.access.visible(user.id, id);
 
@@ -52,7 +52,7 @@ export class ChatMessageService {
       nextCursor: nextCursor(rows, query.limit),
     };
   }
-  async send(req: SessionRequest, id: string, input: SendMessageDto) {
+  async send(req: SessionRequest, id: string, input: TSendMessageDto) {
     const user = requireUser(req);
     const body = input;
     // Authorization precedes idempotency lookup so UUID reuse cannot reveal another conversation.

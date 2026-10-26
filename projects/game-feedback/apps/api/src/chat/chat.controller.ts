@@ -1,12 +1,21 @@
 import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Sse, UseGuards } from '@nestjs/common';
 
 import type { SessionRequest } from '../auth/session.types';
-import { ListQueryDto } from '../common/http/list-query.dto';
+import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { ChatConversationService } from './chat-conversation.service';
 import { ChatHistoryService } from './chat-history.service';
-import { ClearHistoryDto, CreateConversationDto, ReadMessageDto, SendMessageDto } from './chat-input.dto';
+import {
+  ChatMessageInputSchema,
+  ChatReadInputSchema,
+  ClearChatHistoryInputSchema,
+  ConversationInputSchema,
+  type TClearHistoryDto,
+  type TCreateConversationDto,
+  type TReadMessageDto,
+  type TSendMessageDto,
+} from './chat-input.dto';
 import { ChatMessageService } from './chat-message.service';
 import { ChatEvents } from './chat.events';
 
@@ -20,13 +29,13 @@ export class ChatController {
   ) {}
   @Get('conversations')
   @UseGuards(UserGuard)
-  list(@Req() req: SessionRequest, @ValidatedQuery(ListQueryDto) query: ListQueryDto) {
+  list(@Req() req: SessionRequest, @ValidatedQuery(ListQuerySchema) query: TListQueryDto) {
     return this.conversations.list(req, query);
   }
   @Post('conversations')
   @HttpCode(200)
   @UseGuards(UserGuard)
-  create(@Req() req: SessionRequest, @ValidatedBody(CreateConversationDto) body: CreateConversationDto) {
+  create(@Req() req: SessionRequest, @ValidatedBody(ConversationInputSchema) body: TCreateConversationDto) {
     return this.conversations.create(req, body);
   }
   @Get('conversations/:id/messages')
@@ -34,7 +43,7 @@ export class ChatController {
   messages(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedQuery(ListQueryDto) query: ListQueryDto,
+    @ValidatedQuery(ListQuerySchema) query: TListQueryDto,
   ) {
     return this.messagesService.messages(req, id, query);
   }
@@ -43,7 +52,7 @@ export class ChatController {
   clearHistory(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(ClearHistoryDto) body: ClearHistoryDto,
+    @ValidatedBody(ClearChatHistoryInputSchema) body: TClearHistoryDto,
   ) {
     return this.history.clearHistory(req, id, body);
   }
@@ -53,7 +62,7 @@ export class ChatController {
   send(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(SendMessageDto) body: SendMessageDto,
+    @ValidatedBody(ChatMessageInputSchema) body: TSendMessageDto,
   ) {
     return this.messagesService.send(req, id, body);
   }
@@ -63,7 +72,7 @@ export class ChatController {
   read(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(ReadMessageDto) body: ReadMessageDto,
+    @ValidatedBody(ChatReadInputSchema) body: TReadMessageDto,
   ) {
     return this.history.read(req, id, body);
   }

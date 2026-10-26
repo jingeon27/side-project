@@ -3,7 +3,7 @@ import { Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, UseGuards 
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { BlockUserDto } from './block-input.dto';
+import { BlockInputSchema, type TBlockUserDto } from './block-input.dto';
 import { BlocksService } from './blocks.service';
 
 @Controller('api')
@@ -19,7 +19,7 @@ export class BlocksController {
   @HttpCode(200)
   @Post('blocks')
   @UseGuards(UserGuard)
-  block(@Req() req: SessionRequest, @ValidatedBody(BlockUserDto) body: BlockUserDto) {
+  block(@Req() req: SessionRequest, @ValidatedBody(BlockInputSchema) body: TBlockUserDto) {
     return this.blocks.block(req, body);
   }
 

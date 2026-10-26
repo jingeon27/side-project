@@ -7,7 +7,7 @@ import { ChatAccessService } from '../chat/chat-access.service';
 import { activeCommentWhere } from '../comments/comment-visibility';
 import { ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import type { ListQueryDto } from '../common/http/list-query.dto';
+import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
@@ -52,7 +52,7 @@ export class NotificationsService {
     ]);
     return row ? { badge: postUnread + chatUnread } : null;
   }
-  async notifications(req: SessionRequest, query: ListQueryDto) {
+  async notifications(req: SessionRequest, query: TListQueryDto) {
     const u = requireUser(req),
       q = query,
       cursor = decodeCursor(q.cursor),

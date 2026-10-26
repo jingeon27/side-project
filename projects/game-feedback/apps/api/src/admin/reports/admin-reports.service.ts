@@ -11,7 +11,11 @@ import { ApiError } from '../../common/http/api-error';
 import { decodeCursor, nextCursor } from '../../common/pagination';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient } from '../../generated/prisma';
-import { type AdminReportListQueryDto, type HideContentDto, type ReviewReportDto } from './report-input.dto';
+import {
+  type TAdminReportListQueryDto,
+  type THideContentDto,
+  type TReviewReportDto,
+} from './report-input.dto';
 import { hiddenNotificationScope } from './report.policy';
 
 @Injectable()
@@ -21,7 +25,7 @@ export class AdminReportsService {
     @Inject(UnitOfWork) private readonly transactions: UnitOfWork,
     @Inject(CacheInvalidationService) private readonly cache: CacheInvalidationService,
   ) {}
-  async hide(req: SessionRequest, input: HideContentDto) {
+  async hide(req: SessionRequest, input: THideContentDto) {
     const u = requireAdmin(req);
     await this.cache.change(
       async (tx) => {
@@ -52,7 +56,7 @@ export class AdminReportsService {
     );
     return { ok: true };
   }
-  async reports(req: SessionRequest, query: AdminReportListQueryDto) {
+  async reports(req: SessionRequest, query: TAdminReportListQueryDto) {
     requireAdmin(req);
     const cursor = decodeCursor(query.cursor);
     const page = await this.db.report.findMany({
@@ -111,7 +115,7 @@ export class AdminReportsService {
       nextCursor: nextCursor(page, query.limit),
     };
   }
-  async review(req: SessionRequest, id: string, body: ReviewReportDto) {
+  async review(req: SessionRequest, id: string, body: TReviewReportDto) {
     const admin = requireAdmin(req);
     const { status } = body;
     await this.transactions.run(async (tx) => {

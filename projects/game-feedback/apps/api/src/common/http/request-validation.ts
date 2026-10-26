@@ -1,55 +1,39 @@
 import {
   Body,
   Query,
-  ValidationPipe,
+  StandardSchemaValidationPipe,
   type ArgumentMetadata,
   type PipeTransform,
-  type Type,
 } from '@nestjs/common';
-import { Transform } from 'class-transformer';
 import type { z } from 'zod';
 
 import { parse } from '../validation';
 import { ApiError } from './api-error';
 
-interface IRequestDto extends Type<object> {
-  readonly contract: z.ZodType;
-}
-
-// Explicit expectedType also works in tsx, which does not emit design:paramtypes.
-export class RequestValidationPipe implements PipeTransform<unknown, Promise<unknown>> {
-  private readonly validator: ValidationPipe;
-  constructor(
-    private readonly dto: IRequestDto,
-    query = false,
-  ) {
-    this.validator = new ValidationPipe({
-      expectedType: dto,
-      transform: true,
-      transformOptions: { enableImplicitConversion: false },
-      whitelist: true,
-      forbidNonWhitelisted: !query,
-      forbidUnknownValues: true,
-      validationError: { target: false, value: false },
-      exceptionFactory: () => new ApiError(400, 'VALIDATION_ERROR', '입력값을 확인해주세요.'),
+export class RequestValidationPipe extends StandardSchemaValidationPipe {
+  constructor(private readonly schema?: z.ZodType) {
+    super({
+      exceptionFactory: (issues) =>
+        new ApiError(400, 'VALIDATION_ERROR', issues[0]?.message ?? '입력값을 확인해주세요.'),
     });
   }
-  async transform(value: unknown, metadata: ArgumentMetadata) {
-    // Validate the original object before Nest strips prototype keys; also preserve
-    // the contract's JSON refinements and normalization used by OpenAPI/SDK.
-    const input = parse(this.dto.contract, value);
-    await this.validator.transform(input, metadata);
-    return input;
+
+  override transform<T>(value: T, metadata: ArgumentMetadata): Promise<T> {
+    return super.transform(value, { ...metadata, schema: this.schema ?? metadata.schema });
+  }
+
+  protected override stripProtoKeys(_value: unknown): void {
+    // Strict contracts must reject forbidden JSON keys before anything removes them.
+    // Zod returns the validated payload without changing the original request object.
   }
 }
-export function ValidatedBody(dto: IRequestDto): ParameterDecorator {
-  return Body(new RequestValidationPipe(dto));
+
+export function ValidatedBody(schema: z.ZodType): ParameterDecorator {
+  return Body({ schema });
 }
-export function ValidatedQuery(dto: IRequestDto): ParameterDecorator {
-  return Query(new RequestValidationPipe(dto, true));
-}
-export function Trim(): PropertyDecorator {
-  return Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value));
+
+export function ValidatedQuery(schema: z.ZodType): ParameterDecorator {
+  return Query({ schema });
 }
 
 export class ContractValuePipe<T> implements PipeTransform<unknown, T> {

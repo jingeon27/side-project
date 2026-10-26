@@ -6,7 +6,7 @@ import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
-import type { FollowUserDto } from './follow-input.dto';
+import { type TFollowUserDto } from './follow-input.dto';
 
 @Injectable()
 export class FollowsService {
@@ -35,7 +35,7 @@ export class FollowsService {
     return { following: !!follow, notifyNewPosts: follow?.notifyNewPosts ?? false };
   }
 
-  async follow(req: SessionRequest, id: string, input: FollowUserDto) {
+  async follow(req: SessionRequest, id: string, input: TFollowUserDto) {
     const user = requireUser(req);
     if (user.id === id) throw new ApiError(400, 'CANNOT_FOLLOW_SELF', '자신을 팔로우할 수 없습니다.');
     await this.target(req, id);

@@ -2,12 +2,12 @@ import { Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, Res, UseGua
 import type { Response } from 'express';
 
 import type { SessionRequest } from '../../auth/session.types';
-import { SendMessageDto } from '../../chat/chat-input.dto';
-import { ListQueryDto } from '../../common/http/list-query.dto';
+import { ChatMessageInputSchema, type TSendMessageDto } from '../../chat/chat-input.dto';
+import { ListQuerySchema, type TListQueryDto } from '../../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminSupportService } from './admin-support.service';
-import { SupportStatusDto } from './support-input.dto';
+import { SupportStatusInputSchema, type TSupportStatusDto } from './support-input.dto';
 
 @UseGuards(AdminGuard)
 @Controller('api/admin/support')
@@ -21,7 +21,7 @@ export class AdminSupportController {
   messages(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedQuery(ListQueryDto) query: ListQueryDto,
+    @ValidatedQuery(ListQuerySchema) query: TListQueryDto,
   ) {
     return this.support.messages(req, id, query);
   }
@@ -39,7 +39,7 @@ export class AdminSupportController {
   send(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(SendMessageDto) body: SendMessageDto,
+    @ValidatedBody(ChatMessageInputSchema) body: TSendMessageDto,
   ) {
     return this.support.send(req, id, body);
   }
@@ -47,7 +47,7 @@ export class AdminSupportController {
   status(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(SupportStatusDto) body: SupportStatusDto,
+    @ValidatedBody(SupportStatusInputSchema) body: TSupportStatusDto,
   ) {
     return this.support.status(req, id, body);
   }

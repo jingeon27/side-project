@@ -10,7 +10,7 @@ import { ChatEvents } from '../../chat/chat.events';
 import { ApiError } from '../../common/http/api-error';
 import { PrismaClient } from '../../generated/prisma';
 import { userDto } from '../../users/user.presenter';
-import { type UserBanDto, type VerificationDto } from './user-input.dto';
+import { type TUserBanDto, type TVerificationDto } from './user-input.dto';
 
 @Injectable()
 export class AdminUsersService {
@@ -25,7 +25,7 @@ export class AdminUsersService {
     if (!user) throw new ApiError(404, 'USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
     return userDto(user);
   }
-  async setVerification(req: SessionRequest, id: string, input: VerificationDto) {
+  async setVerification(req: SessionRequest, id: string, input: TVerificationDto) {
     const admin = requireAdmin(req);
     const user = await this.cache.change(
       async (tx) => {
@@ -53,7 +53,7 @@ export class AdminUsersService {
     );
     return userDto(user);
   }
-  async ban(req: SessionRequest, id: string, input: UserBanDto) {
+  async ban(req: SessionRequest, id: string, input: TUserBanDto) {
     const admin = requireAdmin(req);
     const user = await this.cache.change(
       async (tx) => {

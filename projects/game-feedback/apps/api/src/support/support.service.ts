@@ -8,7 +8,7 @@ import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
-import type { StartSupportDto } from './support-input.dto';
+import { type TStartSupportDto } from './support-input.dto';
 
 @Injectable()
 export class SupportService {
@@ -18,7 +18,7 @@ export class SupportService {
     @Inject(ChatConversationService) private readonly chat: ChatConversationService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
-  async start(req: SessionRequest, body: StartSupportDto) {
+  async start(req: SessionRequest, body: TStartSupportDto) {
     const user = requireUser(req);
     const { topic } = body;
     const availableAdmin = {
