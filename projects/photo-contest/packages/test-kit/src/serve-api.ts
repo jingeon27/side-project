@@ -76,9 +76,10 @@ async function main() {
     });
     const require = createRequire(import.meta.url);
     const { createApp } = require(resolve(outDir, 'bootstrap.js')) as {
-      createApp(options: { logger: false; testFixtures: true }): Promise<IFixtureApp>;
+      createApp(options: { logger: false; testFixtures: true; shutdownHooks: false }): Promise<IFixtureApp>;
     };
-    const app = await createApp({ logger: false, testFixtures: true });
+    // Nest의 신호 재전송보다 스키마·저장소 정리가 먼저 끝나야 한다.
+    const app = await createApp({ logger: false, testFixtures: true, shutdownHooks: false });
     state.app = app;
     // 격리 브라우저 레인도 운영과 같은 웹 프록시 한 단계를 거친다.
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
