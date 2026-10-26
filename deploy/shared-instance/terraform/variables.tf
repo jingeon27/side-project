@@ -315,6 +315,30 @@ variable "instance_termination_protection" {
   default     = true
 }
 
+# 모니터링(CloudWatch)
+
+variable "alarm_email" {
+  description = "CloudWatch 알람(상태 검사 재부팅·CPU 크레딧 부족)을 받을 메일 주소. 비워 두면 SNS를 만들지 않고 상태 검사 실패 시 재부팅만 한다. 적용 후 받은 확인 메일의 링크를 눌러야 구독이 시작된다."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.alarm_email == "" || can(regex("^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$", var.alarm_email))
+    error_message = "비워 두거나 메일 주소여야 한다."
+  }
+}
+
+variable "cpu_credit_alarm_threshold" {
+  description = "CPU 크레딧 잔액이 15분 동안 이 값보다 낮으면 알린다. t3.small·t3.medium은 시간당 24크레딧을 쌓으므로 기본 30은 한두 시간치 여유다. 버스터블(T) 타입이 아니면 알람을 만들지 않는다."
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = var.cpu_credit_alarm_threshold >= 1 && floor(var.cpu_credit_alarm_threshold) == var.cpu_credit_alarm_threshold
+    error_message = "1 이상의 정수여야 한다."
+  }
+}
+
 # DNS(선택)
 
 variable "route53_zone_id" {

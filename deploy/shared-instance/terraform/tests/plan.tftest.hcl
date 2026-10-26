@@ -85,7 +85,15 @@ run "defaults" {
     error_message = "DNS records must not exist without a zone"
   }
 
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.host_instance_check.metric_name == "StatusCheckFailed_Instance" && aws_cloudwatch_metric_alarm.host_instance_check.evaluation_periods == 3 && aws_cloudwatch_metric_alarm.host_instance_check.dimensions["InstanceId"] == aws_instance.host.id && aws_cloudwatch_metric_alarm.host_instance_check.alarm_actions == toset(["arn:aws:automate:ap-northeast-2:ec2:reboot"])
+    error_message = "Reboot the host after three failed instance status checks, without notifications by default"
+  }
 
+  assert {
+    condition     = length(aws_cloudwatch_metric_alarm.host_cpu_credits) == 1 && length(aws_sns_topic.alarms) == 0 && output.alarm_topic_arn == null
+    error_message = "CPU credit alarm for burstable hosts; no SNS topic without an alarm email"
+  }
 
   assert {
     condition     = length(aws_key_pair.operator) == 0
@@ -166,6 +174,7 @@ run "dns_and_ssh" {
     route53_zone_id   = "Z0123456789ABCDEFGHIJ"
     ssh_allowed_cidrs = ["203.0.113.10/32", "198.51.100.0/24"]
     ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleExampleExampleExampleExampleExample operator"
+    alarm_email       = "operator@example.com"
   }
 
   assert {
@@ -178,6 +187,10 @@ run "dns_and_ssh" {
     error_message = "SSH rules and key pair"
   }
 
+  assert {
+    condition     = length(aws_sns_topic_subscription.alarm_email) == 1 && aws_sns_topic_subscription.alarm_email[0].endpoint == "operator@example.com"
+    error_message = "Alarm email subscription"
+  }
 }
 
 run "zone_mismatch" {
@@ -258,6 +271,16 @@ run "bad_snapshot_time_rejected" {
   }
 
   expect_failures = [var.postgres_snapshot_time]
+}
+
+run "bad_alarm_email_rejected" {
+  command = plan
+
+  variables {
+    alarm_email = "operator"
+  }
+
+  expect_failures = [var.alarm_email]
 }
 
 run "bad_cors_origin_rejected" {

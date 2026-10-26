@@ -27,6 +27,13 @@ output "postgres_snapshot_policy_id" {
   value       = aws_dlm_lifecycle_policy.postgres.id
 }
 
+# 모니터링
+
+output "alarm_topic_arn" {
+  description = "CloudWatch 알람 SNS 주제 ARN. alarm_email이 비어 있으면 null이다."
+  value       = one(aws_sns_topic.alarms[*].arn)
+}
+
 # S3
 
 output "s3_bucket_names" {
