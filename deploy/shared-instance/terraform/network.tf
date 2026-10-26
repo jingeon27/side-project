@@ -1,10 +1,8 @@
-# 새 VPC: 공개 서브넷 1개(EC2), 서로 다른 AZ의 비공개 서브넷 2개(RDS).
-# NAT 게이트웨이는 만들지 않는다. 비공개 서브넷의 RDS는 인터넷으로 나가지 않는다.
+# 새 VPC: 공개 서브넷 1개(EC2). PostgreSQL은 EC2 안의 컨테이너라 VPC에 따로 노출할 서브넷이 없다.
+# NAT 게이트웨이는 만들지 않는다.
 
 locals {
-  subnet_newbits       = 24 - tonumber(split("/", var.vpc_cidr)[1])
-  public_subnet_cidr   = cidrsubnet(var.vpc_cidr, local.subnet_newbits, 0)
-  private_subnet_cidrs = [for index in range(2) : cidrsubnet(var.vpc_cidr, local.subnet_newbits, 10 + index)]
+  public_subnet_cidr = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 0)
 }
 
 resource "aws_vpc" "this" {
@@ -31,26 +29,13 @@ resource "aws_internet_gateway" "this" {
 resource "aws_subnet" "public" {
   vpc_id            = aws_vpc.this.id
   cidr_block        = local.public_subnet_cidr
-  availability_zone = var.availability_zones[0]
+  availability_zone = var.availability_zone
   # EC2는 탄력적 IP를 연결한 네트워크 인터페이스로만 공개한다.
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "${local.name}-public-${var.availability_zones[0]}"
+    Name = "${local.name}-public-${var.availability_zone}"
     Tier = "public"
-  }
-}
-
-resource "aws_subnet" "private" {
-  count = 2
-
-  vpc_id            = aws_vpc.this.id
-  cidr_block        = local.private_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
-
-  tags = {
-    Name = "${local.name}-private-${var.availability_zones[count.index]}"
-    Tier = "private"
   }
 }
 
@@ -69,18 +54,4 @@ resource "aws_route" "public_internet" {
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
-}
-
-# VPC 내부 경로만 있는 라우팅 테이블. 기본(main) 라우팅 테이블에 기대지 않고 명시한다.
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.this.id
-
-  tags = { Name = "${local.name}-private" }
-}
-
-resource "aws_route_table_association" "private" {
-  count = 2
-
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
 }

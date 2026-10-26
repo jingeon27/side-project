@@ -1,7 +1,7 @@
 # 공통
 
 variable "region" {
-  description = "AWS 리전. 공용 배포 스크립트(rds-receipt.py)가 서울 리전(ap-northeast-2)을 전제로 하므로 바꾸려면 스크립트도 함께 바꾼다."
+  description = "AWS 리전. 두 서비스가 운영 S3 리전을 ap-northeast-2로 검사하므로 바꾸려면 앱 설정 검사도 함께 바꾼다."
   type        = string
   default     = "ap-northeast-2"
 
@@ -23,7 +23,7 @@ variable "allowed_account_ids" {
 }
 
 variable "name_prefix" {
-  description = "리소스 이름 접두사. RDS 식별자(<prefix>-postgres), 보안 그룹·IAM 이름에 쓰인다. 만든 뒤 바꾸면 대부분의 리소스가 교체되므로 처음에 정한다."
+  description = "리소스 이름 접두사. PostgreSQL 볼륨·스냅샷 정책 태그(<prefix>-postgres), 보안 그룹·IAM 이름에 쓰인다. 만든 뒤 바꾸면 대부분의 리소스가 교체되므로 처음에 정한다."
   type        = string
   default     = "side-shared"
 
@@ -42,7 +42,7 @@ variable "tags" {
 # 네트워크
 
 variable "vpc_cidr" {
-  description = "새 VPC의 IPv4 CIDR(/16~/20). 서브넷은 이 범위를 /24로 나눠 공개 0번, 비공개 10·11번을 쓴다."
+  description = "새 VPC의 IPv4 CIDR(/16~/20). 공개 서브넷은 이 범위의 첫 /24를 쓴다."
   type        = string
   default     = "10.40.0.0/16"
 
@@ -52,14 +52,14 @@ variable "vpc_cidr" {
   }
 }
 
-variable "availability_zones" {
-  description = "서로 다른 AZ 두 개. 비공개 서브넷(RDS subnet group)을 하나씩 두고, 첫 번째 AZ에 공개 서브넷(EC2)과 Single-AZ RDS를 둔다. EC2와 RDS를 같은 AZ에 두면 AZ 간 전송 요금이 생기지 않는다. 바꾸면 서브넷과 그 안의 리소스가 교체된다."
-  type        = list(string)
-  default     = ["ap-northeast-2a", "ap-northeast-2c"]
+variable "availability_zone" {
+  description = "EC2와 PostgreSQL EBS 볼륨을 둘 AZ. EBS 볼륨은 같은 AZ의 인스턴스에만 붙는다. 바꾸면 서브넷·EC2·볼륨이 교체되므로 처음에 정한다(교체된 볼륨은 최종 스냅샷에서 복원한다)."
+  type        = string
+  default     = "ap-northeast-2a"
 
   validation {
-    condition     = length(var.availability_zones) == 2 && length(distinct(var.availability_zones)) == 2 && alltrue([for az in var.availability_zones : startswith(az, var.region)])
-    error_message = "region에 속한 서로 다른 AZ 두 개를 지정한다."
+    condition     = can(regex("^[a-z]{2}(-[a-z]+)+-[0-9][a-z]$", var.availability_zone)) && startswith(var.availability_zone, var.region)
+    error_message = "region에 속한 AZ 이름이어야 한다(예: ap-northeast-2a)."
   }
 }
 
@@ -77,143 +77,49 @@ variable "ssh_allowed_cidrs" {
   }
 }
 
-# RDS PostgreSQL
+# PostgreSQL(EC2 컨테이너)
 
-variable "rds_engine_version" {
-  description = <<-EOT
-    RDS PostgreSQL 엔진 버전. 메이저만 쓰면(예: 18) RDS가 그 메이저의 기본 마이너를 고르고 auto minor upgrade로 올린다.
-    기본값 18은 로컬 개발·CI가 쓰는 메이저(embedded-postgres 18.4, postgres:18 이미지)와 같다. RDS는 2025-11-14부터 18을 지원하며 표준 지원은 2031-02-28까지다.
-    파라미터 그룹 family(postgres<메이저>)도 이 값에서 정한다. 메이저 업그레이드는 rds_allow_major_version_upgrade를 함께 켠다.
-  EOT
-  type        = string
-  default     = "18"
-
-  validation {
-    condition     = can(regex("^(1[6-9]|[2-9][0-9])(\\.[0-9]+)?$", var.rds_engine_version))
-    error_message = "16 이상의 메이저(예: 18) 또는 메이저.마이너(예: 18.6)여야 한다."
-  }
-}
-
-variable "rds_allow_major_version_upgrade" {
-  description = "rds_engine_version의 메이저를 올릴 때만 true로 둔다. 복구 지점 확인과 migration 호환성 검토를 먼저 한다."
-  type        = bool
-  default     = false
-}
-
-variable "rds_engine_lifecycle_support" {
-  description = "메이저 버전 표준 지원이 끝난 뒤의 처리. 기본값은 유료 Extended Support에 자동 가입하지 않는다(그 시점에 RDS가 메이저 업그레이드를 진행한다). 가입하려면 open-source-rds-extended-support로 바꾼다."
-  type        = string
-  default     = "open-source-rds-extended-support-disabled"
-
-  validation {
-    condition     = contains(["open-source-rds-extended-support", "open-source-rds-extended-support-disabled"], var.rds_engine_lifecycle_support)
-    error_message = "open-source-rds-extended-support 또는 open-source-rds-extended-support-disabled여야 한다."
-  }
-}
-
-variable "rds_instance_class" {
-  description = "RDS 인스턴스 클래스. 두 API 풀(각 5) + migrator(각 2) + 관리자 연결은 db.t4g.micro(1GiB)의 기본 max_connections 안에 들어가지만 메모리가 작다. 부하를 측정해 db.t4g.small 이상으로 올린다. RDS의 T 클래스는 항상 Unlimited 크레딧 모드라 기준 성능을 넘겨 오래 쓰면 추가 요금이 붙는다."
-  type        = string
-  default     = "db.t4g.micro"
-
-  validation {
-    condition     = can(regex("^db\\.[a-z0-9]+\\.[a-z0-9]+$", var.rds_instance_class))
-    error_message = "db.<family>.<size> 형식이어야 한다(예: db.t4g.micro)."
-  }
-}
-
-variable "rds_multi_az" {
-  description = "Multi-AZ 대기 인스턴스. 켜면 인스턴스·스토리지 요금이 약 두 배가 된다. 기본은 Single-AZ이며 첫 번째 AZ(EC2와 같은 AZ)에 둔다."
-  type        = bool
-  default     = false
-}
-
-variable "rds_allocated_storage_gib" {
-  description = "gp3 스토리지 초기 크기(GiB). RDS gp3 최소값은 20이다. 늘릴 수는 있어도 줄일 수 없다."
+variable "postgres_volume_size_gib" {
+  description = "PostgreSQL 데이터와 배포 전 덤프(최근 7일)를 담는 암호화 gp3 EBS 볼륨 크기(GiB). EC2를 교체해도 남는다. 늘릴 수는 있어도 줄일 수 없고, 늘린 뒤에는 서버에서 resize2fs로 파일 시스템을 넓힌다."
   type        = number
   default     = 20
 
   validation {
-    condition     = var.rds_allocated_storage_gib >= 20 && var.rds_allocated_storage_gib <= 65536 && floor(var.rds_allocated_storage_gib) == var.rds_allocated_storage_gib
-    error_message = "20~65536 사이의 정수여야 한다."
+    condition     = var.postgres_volume_size_gib >= 8 && var.postgres_volume_size_gib <= 16384 && floor(var.postgres_volume_size_gib) == var.postgres_volume_size_gib
+    error_message = "8~16384 사이의 정수여야 한다."
   }
 }
 
-variable "rds_max_allocated_storage_gib" {
-  description = "스토리지 자동 확장 상한(GiB). 0이면 자동 확장을 끈다. 자동 확장된 용량은 줄어들지 않으며 그만큼 요금이 붙는다."
-  type        = number
-  default     = 100
-
-  validation {
-    condition     = var.rds_max_allocated_storage_gib == 0 || (var.rds_max_allocated_storage_gib > var.rds_allocated_storage_gib && var.rds_max_allocated_storage_gib <= 65536)
-    error_message = "0이거나 rds_allocated_storage_gib보다 크고 65536 이하여야 한다."
-  }
-}
-
-variable "rds_master_username" {
-  description = "RDS 관리자 사용자 이름. 비밀번호는 RDS가 Secrets Manager에 만들고 관리한다(state에 남지 않는다). 관리자 URL을 앱 runtime에 넣지 않는다."
+variable "postgres_snapshot_time" {
+  description = "DLM 일일 스냅샷 시작 시각(UTC, hh:mm). 기본값은 한국 시간 02:00이다. 스냅샷은 시작 후 한 시간 안에 만들어진다."
   type        = string
-  default     = "side_admin"
+  default     = "17:00"
 
   validation {
-    condition     = can(regex("^[a-z][a-z0-9_]{0,62}$", var.rds_master_username)) && !contains(["rdsadmin", "rdsrepladmin", "postgres", "admin"], var.rds_master_username)
-    error_message = "소문자로 시작하는 63자 이하의 소문자·숫자·밑줄이어야 하며 rdsadmin·rdsrepladmin·postgres·admin은 쓰지 않는다."
+    condition     = can(regex("^([01][0-9]|2[0-3]):[0-5][0-9]$", var.postgres_snapshot_time))
+    error_message = "hh:mm 형식(UTC)이어야 한다."
   }
 }
 
-variable "rds_backup_retention_days" {
-  description = "자동 백업(PITR) 보존 기간(일). 공용 배포 스크립트가 7일 미만을 거부하므로 7~35만 허용한다. DB 크기를 넘는 백업 스토리지는 요금이 붙는다."
+variable "postgres_snapshot_retention_count" {
+  description = "보존할 일일 스냅샷 수. 최소 일주일(7개)을 남긴다. 스냅샷은 증분이라 바뀐 블록만큼 요금이 붙는다."
   type        = number
   default     = 7
 
   validation {
-    condition     = var.rds_backup_retention_days >= 7 && var.rds_backup_retention_days <= 35 && floor(var.rds_backup_retention_days) == var.rds_backup_retention_days
+    condition     = var.postgres_snapshot_retention_count >= 7 && var.postgres_snapshot_retention_count <= 35 && floor(var.postgres_snapshot_retention_count) == var.postgres_snapshot_retention_count
     error_message = "7~35 사이의 정수여야 한다."
   }
 }
 
-variable "rds_backup_window" {
-  description = "자동 백업 시간대(UTC, hh24:mi-hh24:mi). 기본값은 한국 시간 02:00~02:30이다. 유지 관리 시간대와 겹치면 안 된다."
-  type        = string
-  default     = "17:00-17:30"
+variable "postgres_dump_retention_days" {
+  description = "backup 버킷의 배포 전 덤프(postgres/)를 보존할 기간(일). 지나면 수명 주기 규칙이 삭제한다."
+  type        = number
+  default     = 30
 
   validation {
-    condition     = can(regex("^([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]$", var.rds_backup_window))
-    error_message = "hh24:mi-hh24:mi 형식(UTC)이어야 한다."
-  }
-}
-
-variable "rds_maintenance_window" {
-  description = "유지 관리 시간대(UTC, ddd:hh24:mi-ddd:hh24:mi). 기본값은 한국 시간 월요일 03:00~04:00이다. auto minor upgrade도 이때 적용된다."
-  type        = string
-  default     = "sun:18:00-sun:19:00"
-
-  validation {
-    condition     = can(regex("^(mon|tue|wed|thu|fri|sat|sun):([01][0-9]|2[0-3]):[0-5][0-9]-(mon|tue|wed|thu|fri|sat|sun):([01][0-9]|2[0-3]):[0-5][0-9]$", var.rds_maintenance_window))
-    error_message = "ddd:hh24:mi-ddd:hh24:mi 형식(UTC)이어야 한다."
-  }
-}
-
-variable "rds_deletion_protection" {
-  description = "RDS 삭제 방지. 공용 배포 스크립트(rds-receipt.py)가 false인 인스턴스로의 배포를 거부한다. 파기할 때만 false로 apply한 뒤 destroy한다."
-  type        = bool
-  default     = true
-}
-
-variable "rds_apply_immediately" {
-  description = "RDS 변경을 즉시 적용할지 여부. false면 클래스·스토리지 등 재시작이 필요한 변경은 다음 유지 관리 시간대에 적용된다."
-  type        = bool
-  default     = false
-}
-
-variable "rds_final_snapshot_identifier" {
-  description = "RDS를 삭제할 때 남길 최종 스냅샷 이름. 비워 두면 <name_prefix>-postgres-final을 쓴다. 같은 이름의 스냅샷이 이미 있으면 삭제가 실패하므로 두 번째 파기부터는 새 이름을 넣는다."
-  type        = string
-  default     = ""
-
-  validation {
-    condition     = var.rds_final_snapshot_identifier == "" || (can(regex("^[a-z][a-z0-9-]{0,254}$", var.rds_final_snapshot_identifier)) && !strcontains(var.rds_final_snapshot_identifier, "--") && !endswith(var.rds_final_snapshot_identifier, "-"))
-    error_message = "소문자로 시작하는 소문자·숫자·하이픈이어야 하고, 하이픈으로 끝나거나 하이픈을 연속으로 쓸 수 없다."
+    condition     = var.postgres_dump_retention_days >= 7 && floor(var.postgres_dump_retention_days) == var.postgres_dump_retention_days
+    error_message = "7 이상의 정수여야 한다."
   }
 }
 
@@ -258,6 +164,16 @@ variable "photo_contest_bucket_name" {
   validation {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.photo_contest_bucket_name)) && !startswith(var.photo_contest_bucket_name, "xn--") && !startswith(var.photo_contest_bucket_name, "sthree-") && var.photo_contest_bucket_name != var.game_feedback_bucket_name
     error_message = "game_feedback_bucket_name과 다른 3~63자의 소문자·숫자·하이픈이어야 하고 xn--, sthree-로 시작할 수 없다."
+  }
+}
+
+variable "backup_bucket_name" {
+  description = "PostgreSQL 배포 전 덤프를 받는 비공개 S3 버킷 이름(전역 고유). 두 서비스 버킷과 달라야 한다. EC2 역할은 이 버킷의 postgres/ 아래에 쓰기만 할 수 있다."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.backup_bucket_name)) && !startswith(var.backup_bucket_name, "xn--") && !startswith(var.backup_bucket_name, "sthree-") && !contains([var.game_feedback_bucket_name, var.photo_contest_bucket_name], var.backup_bucket_name)
+    error_message = "두 서비스 버킷과 다른 3~63자의 소문자·숫자·하이픈이어야 하고 xn--, sthree-로 시작할 수 없다."
   }
 }
 
@@ -306,12 +222,13 @@ variable "enable_ssm_session_manager" {
 
 variable "instance_type" {
   description = <<-EOT
-    EC2 인스턴스 타입(x86_64). 상시 컨테이너 메모리 한도 합계는 약 2.7GiB(Caddy 128M, GF API 512M·Web 640M, PC API 768M·Web 640M)이고,
-    배포 중 일회성 ops·migrate(각 256M)와 OS·Docker가 더 필요하다. 기본 t3.medium(2 vCPU, 4GiB)에 swap(swap_size_gib)을 더한다.
-    업로드·SSR 부하에서 메모리가 모자라면 t3.large(8GiB)로 올린다(요금 약 두 배).
+    EC2 인스턴스 타입(x86_64). 상시 컨테이너 메모리 한도 합계는 약 3.1GiB(Caddy 128M, PostgreSQL 512M, GF API 512M·Web 640M, PC API 768M·Web 640M)다.
+    한도는 상한일 뿐 예약이 아니므로, 사용자가 적은 동안은 기본 t3.small(2 vCPU, 2GiB)에 swap(swap_size_gib)을 더해 시작한다.
+    swap 사용이 계속 늘거나 컨테이너가 OOMKilled로 끝나면 t3.medium(4GiB)으로 올린다. t3.small과 t3.medium의 CPU 기준 성능은 같고 메모리만 다르다.
+    타입만 바꾸면 인스턴스를 멈췄다 켜며 바뀌고 PostgreSQL 볼륨은 그대로 남는다.
   EOT
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 
   validation {
     condition     = can(regex("^[a-z][a-z0-9-]*\\.[a-z0-9]+$", var.instance_type))
@@ -345,7 +262,7 @@ variable "ami_ssm_parameter" {
 }
 
 variable "root_volume_size_gib" {
-  description = "암호화된 gp3 루트 볼륨 크기(GiB). 네 서비스 이미지의 current/previous와 최근 7일 이미지, 컨테이너 로그, swap을 담는다. 늘릴 수는 있어도 줄일 수 없다."
+  description = "암호화된 gp3 루트 볼륨 크기(GiB). 네 서비스 이미지의 current/previous와 최근 7일 이미지, 컨테이너 로그, swap을 담는다. PostgreSQL 데이터는 별도 볼륨(postgres_volume_size_gib)에 둔다. 늘릴 수는 있어도 줄일 수 없다."
   type        = number
   default     = 30
 
@@ -358,9 +275,8 @@ variable "root_volume_size_gib" {
 variable "metadata_hop_limit" {
   description = <<-EOT
     IMDSv2 PUT 응답 hop limit. 기본 1이면 호스트 네트워크의 프로세스만 인스턴스 역할 자격 증명을 읽고 bridge 네트워크의 컨테이너는 읽지 못한다.
-    현재 rds-receipt.py는 aws-cli 컨테이너를 host 네트워크(--network host)로 실행하므로 기본 1에서 RDS 복구 지점 조회가 동작한다.
-    이전 bridge 네트워크 버전의 스크립트를 배포할 때만 2가 필요하다.
-    2로 올리면 같은 호스트의 모든 bridge 컨테이너가 인스턴스 역할(RDS 조회·SSM)을 쓸 수 있다는 점을 감안한다.
+    pg-backup.sh는 aws-cli 컨테이너를 host 네트워크(--network host)로 실행하므로 기본 1에서 덤프 업로드가 동작한다.
+    2로 올리면 같은 호스트의 모든 bridge 컨테이너가 인스턴스 역할(backup 버킷 쓰기·SSM)을 쓸 수 있다는 점을 감안한다.
   EOT
   type        = number
   default     = 1

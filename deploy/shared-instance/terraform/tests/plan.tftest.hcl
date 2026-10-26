@@ -41,11 +41,15 @@ mock_provider "aws" {
     }
   }
 
-  mock_resource "aws_db_instance" {
+  mock_resource "aws_iam_role" {
     defaults = {
-      arn                = "arn:aws:rds:ap-northeast-2:123456789012:db:side-shared-postgres"
-      address            = "side-shared-postgres.abc.ap-northeast-2.rds.amazonaws.com"
-      master_user_secret = [{ kms_key_id = "k", secret_arn = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:rds!db-x", secret_status = "active" }]
+      arn = "arn:aws:iam::123456789012:role/side-shared-mock"
+    }
+  }
+
+  mock_resource "aws_ebs_volume" {
+    defaults = {
+      id = "vol-0123456789abcdef0"
     }
   }
 
@@ -65,6 +69,7 @@ mock_provider "aws" {
 variables {
   game_feedback_bucket_name = "example-side-game-feedback"
   photo_contest_bucket_name = "example-side-photo-contest"
+  backup_bucket_name        = "example-side-database-backup"
 }
 
 run "defaults" {
@@ -79,6 +84,8 @@ run "defaults" {
     condition     = length(aws_route53_record.service) == 0 && output.dns_managed_by_terraform == false
     error_message = "DNS records must not exist without a zone"
   }
+
+
 
   assert {
     condition     = length(aws_key_pair.operator) == 0
@@ -101,23 +108,28 @@ run "defaults" {
   }
 
   assert {
-    condition     = aws_instance.host.credit_specification[0].cpu_credits == "standard"
-    error_message = "Standard CPU credits by default"
+    condition     = aws_instance.host.credit_specification[0].cpu_credits == "standard" && aws_instance.host.instance_type == "t3.small"
+    error_message = "Standard CPU credits on t3.small by default"
   }
 
   assert {
-    condition     = aws_db_instance.this.engine_version == "18" && aws_db_parameter_group.this.family == "postgres18"
-    error_message = "PostgreSQL 18 family"
+    condition     = aws_ebs_volume.postgres.encrypted && aws_ebs_volume.postgres.type == "gp3" && aws_ebs_volume.postgres.size == 20 && aws_ebs_volume.postgres.final_snapshot
+    error_message = "Encrypted gp3 PostgreSQL volume that leaves a final snapshot"
   }
 
   assert {
-    condition     = aws_db_instance.this.availability_zone == "ap-northeast-2a" && !aws_db_instance.this.multi_az
-    error_message = "Single-AZ RDS in the EC2 AZ"
+    condition     = aws_ebs_volume.postgres.availability_zone == aws_subnet.public.availability_zone && aws_volume_attachment.postgres.instance_id == aws_instance.host.id && aws_volume_attachment.postgres.stop_instance_before_detaching
+    error_message = "PostgreSQL volume attaches to the host in its AZ and never detaches from a running host"
   }
 
   assert {
-    condition     = aws_db_instance.this.final_snapshot_identifier == "side-shared-postgres-final" && aws_db_instance.this.deletion_protection && !aws_db_instance.this.publicly_accessible && aws_db_instance.this.storage_encrypted && aws_db_instance.this.manage_master_user_password
-    error_message = "RDS safety defaults"
+    condition     = aws_dlm_lifecycle_policy.postgres.policy_details[0].target_tags["SnapshotPolicy"] == aws_ebs_volume.postgres.tags["SnapshotPolicy"] && one(aws_dlm_lifecycle_policy.postgres.policy_details[0].schedule[0].create_rule[0].times) == "17:00" && aws_dlm_lifecycle_policy.postgres.policy_details[0].schedule[0].retain_rule[0].count == 7
+    error_message = "Daily snapshots of the PostgreSQL volume, seven kept"
+  }
+
+  assert {
+    condition     = aws_s3_bucket_versioning.backup.versioning_configuration[0].status == "Enabled" && one(aws_s3_bucket_lifecycle_configuration.backup.rule).expiration[0].days == 30 && aws_s3_bucket_public_access_block.backup.restrict_public_buckets
+    error_message = "Private, versioned backup bucket that expires dumps after 30 days"
   }
 
   assert {
@@ -131,12 +143,12 @@ run "defaults" {
   }
 
   assert {
-    condition     = aws_subnet.public.cidr_block == "10.40.0.0/24" && aws_subnet.private[0].cidr_block == "10.40.10.0/24" && aws_subnet.private[1].cidr_block == "10.40.11.0/24"
-    error_message = "Subnet CIDRs"
+    condition     = aws_subnet.public.cidr_block == "10.40.0.0/24" && aws_subnet.public.availability_zone == "ap-northeast-2a"
+    error_message = "Public subnet CIDR and AZ"
   }
 
   assert {
-    condition     = strcontains(output.host_env, "RDS_INSTANCE_ID=side-shared-postgres") && strcontains(output.host_env, "PHOTO_CONTEST_S3_BUCKET=example-side-photo-contest") && strcontains(output.host_env, "GAME_FEEDBACK_API_DOMAIN=api.game.bambyul.com")
+    condition     = strcontains(output.host_env, "BACKUP_BUCKET=example-side-database-backup") && strcontains(output.host_env, "PHOTO_CONTEST_S3_BUCKET=example-side-photo-contest") && strcontains(output.host_env, "GAME_FEEDBACK_API_DOMAIN=api.game.bambyul.com") && !strcontains(output.host_env, "RDS_")
     error_message = "host_env output"
   }
 
@@ -154,7 +166,6 @@ run "dns_and_ssh" {
     route53_zone_id   = "Z0123456789ABCDEFGHIJ"
     ssh_allowed_cidrs = ["203.0.113.10/32", "198.51.100.0/24"]
     ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleExampleExampleExampleExampleExample operator"
-    rds_multi_az      = true
   }
 
   assert {
@@ -167,10 +178,6 @@ run "dns_and_ssh" {
     error_message = "SSH rules and key pair"
   }
 
-  assert {
-    condition     = aws_db_instance.this.multi_az
-    error_message = "Multi-AZ RDS"
-  }
 }
 
 run "zone_mismatch" {
@@ -213,14 +220,24 @@ run "same_bucket_rejected" {
   expect_failures = [var.photo_contest_bucket_name]
 }
 
-run "short_backup_rejected" {
+run "short_snapshot_retention_rejected" {
   command = plan
 
   variables {
-    rds_backup_retention_days = 6
+    postgres_snapshot_retention_count = 6
   }
 
-  expect_failures = [var.rds_backup_retention_days]
+  expect_failures = [var.postgres_snapshot_retention_count]
+}
+
+run "backup_bucket_reuse_rejected" {
+  command = plan
+
+  variables {
+    backup_bucket_name = "example-side-photo-contest"
+  }
+
+  expect_failures = [var.backup_bucket_name]
 }
 
 run "hop_limit_rejected" {
@@ -233,14 +250,14 @@ run "hop_limit_rejected" {
   expect_failures = [var.metadata_hop_limit]
 }
 
-run "storage_autoscaling_rejected" {
+run "bad_snapshot_time_rejected" {
   command = plan
 
   variables {
-    rds_max_allocated_storage_gib = 20
+    postgres_snapshot_time = "24:00"
   }
 
-  expect_failures = [var.rds_max_allocated_storage_gib]
+  expect_failures = [var.postgres_snapshot_time]
 }
 
 run "bad_cors_origin_rejected" {
@@ -267,8 +284,8 @@ run "az_outside_region_rejected" {
   command = plan
 
   variables {
-    availability_zones = ["us-east-1a", "us-east-1b"]
+    availability_zone = "us-east-1a"
   }
 
-  expect_failures = [var.availability_zones]
+  expect_failures = [var.availability_zone]
 }

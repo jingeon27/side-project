@@ -1,9 +1,10 @@
 # terraform.tfvars로 복사해 값을 넣는다(terraform.tfvars는 .gitignore 대상). 비밀은 넣지 않는다.
 # 주석 처리한 값은 기본값이다. 각 변수의 설명과 검증 규칙은 variables.tf에 있다.
 
-# 필수: 전역에서 고유한 서비스별 비공개 버킷 이름(만든 뒤 바꾸면 버킷이 교체된다)
+# 필수: 전역에서 고유한 비공개 버킷 이름(만든 뒤 바꾸면 버킷이 교체된다). backup은 배포 전 DB 덤프용이다.
 game_feedback_bucket_name = "your-game-feedback-private-bucket"
 photo_contest_bucket_name = "your-photo-contest-private-bucket"
+backup_bucket_name        = "your-database-backup-bucket"
 
 # 권장: 운영 계정에서만 적용되게 한다.
 # allowed_account_ids = ["123456789012"]
@@ -22,27 +23,21 @@ photo_contest_bucket_name = "your-photo-contest-private-bucket"
 # ssh_allowed_cidrs = ["203.0.113.10/32"]
 # ssh_public_key    = "ssh-ed25519 AAAA... operator@example"
 
-# 현재 rds-receipt.py는 --network host를 사용하므로 기본 1로 RDS 복구 지점을 조회할 수 있다.
-# 이전 --network bridge 스크립트를 배포할 때만 2가 필요하다(variables.tf 설명 참고).
+# pg-backup.sh는 --network host로 aws-cli를 실행하므로 기본 1로 덤프를 올릴 수 있다(variables.tf 설명 참고).
 # metadata_hop_limit = 1
-
 # 비용에 영향을 주는 값
-# instance_type                 = "t3.medium"
-# instance_cpu_credits          = "standard"
-# root_volume_size_gib          = 30
-# swap_size_gib                 = 2
-# rds_instance_class            = "db.t4g.micro"
-# rds_multi_az                  = false
-# rds_allocated_storage_gib     = 20
-# rds_max_allocated_storage_gib = 100
-# rds_backup_retention_days     = 7
-# rds_engine_lifecycle_support  = "open-source-rds-extended-support-disabled"
+# 메모리가 모자라면(swap 증가·OOMKilled) t3.medium으로 올린다. PostgreSQL 볼륨은 그대로 남는다.
+# instance_type                        = "t3.small"
+# instance_cpu_credits                 = "standard"
+# root_volume_size_gib                 = 30
+# swap_size_gib                        = 2
+# postgres_volume_size_gib             = 20
+# postgres_snapshot_time               = "17:00"
+# postgres_snapshot_retention_count    = 7
+# postgres_dump_retention_days         = 30
 # s3_noncurrent_version_retention_days = 30
-
-# RDS 메이저 업그레이드는 rds_allow_major_version_upgrade = true와 함께 바꾼다.
-# rds_engine_version = "18"
 
 # 처음 만든 뒤 바꾸지 않는 값(바꾸면 리소스가 교체된다)
 # name_prefix        = "side-shared"
 # vpc_cidr           = "10.40.0.0/16"
-# availability_zones = ["ap-northeast-2a", "ap-northeast-2c"]
+# availability_zone  = "ap-northeast-2a"

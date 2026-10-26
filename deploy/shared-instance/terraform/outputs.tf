@@ -10,51 +10,21 @@ output "public_subnet_id" {
   value       = aws_subnet.public.id
 }
 
-output "private_subnet_ids" {
-  description = "RDS subnet group의 비공개 서브넷 ID."
-  value       = aws_subnet.private[*].id
-}
-
 output "host_security_group_id" {
   description = "EC2 보안 그룹 ID(80/443 공개, 22는 ssh_allowed_cidrs만)."
   value       = aws_security_group.host.id
 }
 
-output "rds_security_group_id" {
-  description = "RDS 보안 그룹 ID(5432는 EC2 보안 그룹에서만)."
-  value       = aws_security_group.rds.id
+# PostgreSQL
+
+output "postgres_volume_id" {
+  description = "PostgreSQL 데이터 EBS 볼륨 ID. 첫 부팅에 /srv/side-postgres로 포맷·마운트된다."
+  value       = aws_ebs_volume.postgres.id
 }
 
-# RDS
-
-output "rds_instance_id" {
-  description = "RDS 인스턴스 식별자. /srv/side-project/.env의 RDS_INSTANCE_ID."
-  value       = aws_db_instance.this.identifier
-}
-
-output "rds_endpoint" {
-  description = "RDS 엔드포인트 호스트(포트 제외). /srv/side-project/.env의 RDS_HOST이자 서비스 DB URL의 호스트."
-  value       = aws_db_instance.this.address
-}
-
-output "rds_port" {
-  description = "RDS 포트."
-  value       = aws_db_instance.this.port
-}
-
-output "rds_engine_version_actual" {
-  description = "RDS가 실제로 고른 PostgreSQL 버전."
-  value       = aws_db_instance.this.engine_version_actual
-}
-
-output "rds_master_username" {
-  description = "RDS 관리자 사용자 이름. rds-bootstrap.sql을 적용할 때만 쓴다."
-  value       = aws_db_instance.this.username
-}
-
-output "rds_master_user_secret_arn" {
-  description = "RDS 관리자 비밀번호가 든 Secrets Manager 비밀의 ARN. 비밀번호 자체는 출력하지 않는다."
-  value       = aws_db_instance.this.master_user_secret[0].secret_arn
+output "postgres_snapshot_policy_id" {
+  description = "PostgreSQL 볼륨의 DLM 일일 스냅샷 정책 ID."
+  value       = aws_dlm_lifecycle_policy.postgres.id
 }
 
 # S3
@@ -62,6 +32,11 @@ output "rds_master_user_secret_arn" {
 output "s3_bucket_names" {
   description = "서비스별 비공개 S3 버킷 이름. /srv/side-project/.env의 GAME_FEEDBACK_S3_BUCKET·PHOTO_CONTEST_S3_BUCKET."
   value       = { for service, bucket in aws_s3_bucket.service : service => bucket.bucket }
+}
+
+output "backup_bucket_name" {
+  description = "배포 전 PostgreSQL 덤프 버킷. /srv/side-project/.env의 BACKUP_BUCKET."
+  value       = aws_s3_bucket.backup.bucket
 }
 
 output "s3_cors_origins" {
@@ -77,7 +52,7 @@ output "s3_iam_user_names" {
 }
 
 output "host_iam_role_name" {
-  description = "EC2 인스턴스 역할 이름(RDS DescribeDBInstances, 선택적으로 SSM)."
+  description = "EC2 인스턴스 역할 이름(backup 버킷 postgres/ 쓰기, 선택적으로 SSM)."
   value       = aws_iam_role.host.name
 }
 
@@ -129,11 +104,10 @@ output "host_env" {
     GAME_FEEDBACK_API_DOMAIN=api.${var.game_feedback_domain}
     PHOTO_CONTEST_DOMAIN=${var.photo_contest_domain}
     PHOTO_CONTEST_API_DOMAIN=api.${var.photo_contest_domain}
-    RDS_REGION=${var.region}
-    RDS_INSTANCE_ID=${aws_db_instance.this.identifier}
-    RDS_HOST=${aws_db_instance.this.address}
     GAME_FEEDBACK_S3_BUCKET=${aws_s3_bucket.service["game-feedback"].bucket}
     PHOTO_CONTEST_S3_BUCKET=${aws_s3_bucket.service["photo-contest"].bucket}
+    BACKUP_BUCKET=${aws_s3_bucket.backup.bucket}
+    BACKUP_REGION=${var.region}
   EOT
 }
 
