@@ -39,8 +39,8 @@ function stop(code = 0) {
 
 function launch(name: string) {
   const child = spawn(
-    'corepack',
-    ['yarn', 'workspace', `@game-feedback/${name}`, 'dev', ...(name === 'api' ? process.argv.slice(2) : [])],
+    'yarn',
+    ['workspace', `@game-feedback/${name}`, 'dev', ...(name === 'api' ? process.argv.slice(2) : [])],
     {
       cwd: rootDir,
       env,
