@@ -55,7 +55,7 @@ Photo Contest의 `AlertDialog`·바텀시트는 앱에 남는다. 그 앱은 `di
 저장소 루트에서 실행한다.
 
 ```sh
-corepack yarn storybook
+yarn storybook
 ```
 
 `http://localhost:6006`에서 공통 토큰과 UI의 기본·오류·로딩·비활성 상태를 확인한다. Controls로 props를 바꾸고 테마 툴바에서 light·dark·system을 전환할 수 있다. Accessibility 패널은 각 예제의 접근성 점검 결과를 보여 주며 `a11y.test`는 `'error'`라 위반을 실패로 다룬다. `yarn test`의 `src/stories/stories-a11y.spec.tsx`가 모든 스토리를 jsdom에서 axe로 검사한다. jsdom은 스타일을 계산하지 않으므로 색 대비는 토큰 대비 테스트(`color-contrast.test.ts`, `Badge.test.tsx`)가 맡는다.
@@ -65,7 +65,7 @@ React + Vite와 Tailwind 4를 사용하며 앱과 같은 `src/styles.css`를 가
 스토리는 컴포넌트 옆의 `*.stories.tsx`에 CSF 형식으로 추가한다. 자동 문서와 타입 검사를 공통 적용하며 상태가 필요한 예제는 이름 있는 함수 컴포넌트로 작성한다.
 
 ```sh
-corepack yarn build:storybook
+yarn build:storybook
 ```
 
 정적 결과는 `packages/design-system/dist/storybook`에 생성된다. 기존 `check`에도 정적 빌드를 포함해 CI에서 설정과 스토리 빌드를 함께 검증한다.
@@ -75,7 +75,7 @@ corepack yarn build:storybook
 저장소 루트에서 Node.js 24와 저장소 Yarn을 사용한다.
 
 ```sh
-corepack yarn workspace @side/design-system check
+yarn workspace @side/design-system check
 ```
 
 패키지가 Vitest·jsdom 테스트를 소유한다. 실제 Base UI와 RHF를 사용해 loading 중 포커스, 검증 오류와 첫 오류 포커스, native ref와 ARIA 연결, 클래스 병합, 중첩 대화상자와 필수 확인 동작을 확인한다. 각 앱의 history·오버레이·도메인 통합 검사는 앱에 남긴다.
