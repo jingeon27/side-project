@@ -11,20 +11,21 @@ beforeEach(() => {
   delete window.__blogAnalyticsLastPath;
 });
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
-describe('optional consent-based analytics', () => {
-  it('makes no script or event without explicit consent', async () => {
+describe('opt-out visit statistics', () => {
+  it('makes no script or event without a measurement ID', async () => {
+    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', '');
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.initializeAnalytics();
-    analytics.trackPageView('/ko/blog?query=private');
-    analytics.trackEvent('search_performed', { has_query: true });
+    analytics.trackPageView('/ko');
+    expect(analytics.analyticsConfigured).toBe(false);
     expect(document.querySelector('#blog-google-analytics')).toBeNull();
-    expect(window.dataLayer).toBeUndefined();
   });
-  it('initializes once and sends one sanitized pageview per route', async () => {
+  it('sends one sanitized pageview per route without asking first', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.setAnalyticsConsent(true);
     analytics.initializeAnalytics();
     analytics.initializeAnalytics();
     const gtag = vi.fn();
@@ -42,23 +43,34 @@ describe('optional consent-based analytics', () => {
     analytics.trackPageView('/ko/about');
     expect(gtag).toHaveBeenCalledTimes(2);
   });
-  it('drops unapproved event properties and stops after consent withdrawal', async () => {
+  it('drops unapproved event properties and stops after the visitor turns collection off', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.setAnalyticsConsent(true);
     const gtag = vi.fn();
     window.gtag = gtag;
     analytics.trackEvent('search_performed', { has_query: true, query: 'private' } as { has_query: boolean });
     expect(gtag).toHaveBeenCalledWith('event', 'search_performed', { has_query: true });
-    analytics.setAnalyticsConsent(false);
+    document.cookie = '_ga=GA1.1.fixture; path=/';
+    analytics.setAnalyticsOptOut(true);
+    expect(gtag).toHaveBeenCalledWith('consent', 'update', { analytics_storage: 'denied' });
+    expect(document.cookie).not.toContain('_ga=');
     gtag.mockClear();
     analytics.trackEvent('search_performed', { has_query: true });
     analytics.trackPageView('/ko');
     expect(gtag).not.toHaveBeenCalled();
-    expect(analytics.hasAnalyticsConsent()).toBe(false);
+    expect(analytics.analyticsOptedOut()).toBe(true);
+    analytics.setAnalyticsOptOut(false);
+    expect(localStorage.getItem('blog:analytics-consent')).toBeNull();
+    expect(analytics.statisticsAllowed()).toBe(true);
   });
-  it('tolerates SDK and local storage failures', async () => {
+  it('keeps measuring browsers that allowed analytics in the earlier consent banner', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.setAnalyticsConsent(true);
+    for (const value of ['granted', 'statistics']) {
+      localStorage.setItem('blog:analytics-consent', value);
+      expect(analytics.statisticsAllowed()).toBe(true);
+    }
+  });
+  it('collects nothing when storage is blocked because the opt-out cannot be remembered', async () => {
+    const analytics = await import('@/shared/lib/analytics/events');
     window.gtag = () => {
       throw new Error('blocked');
     };
@@ -66,7 +78,8 @@ describe('optional consent-based analytics', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked storage');
     });
-    expect(analytics.hasAnalyticsConsent()).toBe(false);
+    expect(analytics.analyticsOptedOut()).toBe(true);
+    expect(analytics.statisticsAllowed()).toBe(false);
     expect(() => analytics.trackPageView('/ko')).not.toThrow();
   });
 });

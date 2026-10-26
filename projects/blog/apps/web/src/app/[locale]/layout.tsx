@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 
-import { AnalyticsConsent } from '@/features/analytics-consent/ui/analytics-consent';
 import { AnalyticsTracker } from '@/features/analytics-consent/ui/analytics-tracker';
 import { isLocale, locales } from '@/i18n/routing';
 import { siteUrl } from '@/shared/config/site';
@@ -40,7 +39,6 @@ export default async function LocaleLayout({
           <Header locale={locale} />
           {children}
           <Footer locale={locale} />
-          <AnalyticsConsent locale={locale} />
           <AnalyticsTracker />
         </NextIntlClientProvider>
         <script

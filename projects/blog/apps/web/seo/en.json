@@ -16,6 +16,10 @@
     "about": {
       "title": "About",
       "description": "Email and GitHub for software engineer Jingeon Kim."
+    },
+    "privacy": {
+      "title": "Privacy notice",
+      "description": "What visit statistics this blog collects and how to turn them off."
     }
   },
   "posts": {

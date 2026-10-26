@@ -24,12 +24,24 @@ export const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
 const googleAnalyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
 export const analyticsConfigured = googleAnalyticsConfigured || heatmapsConfigured;
 
-export function hasAnalyticsConsent(): boolean {
+/**
+ * 방문 통계와 히트맵은 개인정보 처리 안내에서 끄기 전까지 수집한다(opt-out). 저장소가 막히면 끄기 선택을 기억할 수 없으므로
+ * 끈 것으로 본다. 이전 배너가 저장한 granted·statistics는 켜짐으로 읽는다.
+ */
+export function analyticsOptedOut(): boolean {
   try {
-    return typeof window !== 'undefined' && window.localStorage.getItem(consentKey) === 'granted';
+    return typeof window === 'undefined' || window.localStorage.getItem(consentKey) === 'denied';
   } catch {
-    return false;
+    return true;
   }
+}
+
+export function statisticsAllowed(): boolean {
+  return googleAnalyticsConfigured && !analyticsOptedOut();
+}
+
+export function heatmapsAllowed(): boolean {
+  return heatmapsConfigured && !analyticsOptedOut();
 }
 
 function safeUrl(value: string): string {
@@ -41,22 +53,31 @@ function safeUrl(value: string): string {
   }
 }
 
-export function setAnalyticsConsent(granted: boolean): void {
+export function setAnalyticsOptOut(optedOut: boolean): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(consentKey, granted ? 'granted' : 'denied');
+    if (optedOut) window.localStorage.setItem(consentKey, 'denied');
+    else window.localStorage.removeItem(consentKey);
   } catch {
     /* Storage can be blocked. */
   }
-  (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = !granted;
-  if (!granted) stopHeatmaps();
+  applyAnalyticsConsent();
+  window.dispatchEvent(new Event(consentChangedEvent));
+}
+
+/** 저장된 선택을 현재 탭에 반영한다. 다른 탭의 변경(storage 이벤트)에도 같은 함수를 쓴다. */
+export function applyAnalyticsConsent(): void {
+  if (typeof window === 'undefined') return;
+  const statistics = statisticsAllowed();
+  (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = !statistics;
+  if (!heatmapsAllowed()) stopHeatmaps();
   try {
-    window.gtag?.('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
+    window.gtag?.('consent', 'update', { analytics_storage: statistics ? 'granted' : 'denied' });
   } catch {
     /* The SDK can be blocked. */
   }
   try {
-    if (!granted) {
+    if (!statistics) {
       window.__blogAnalyticsLastPath = undefined;
       // Remove cookies on the current host and its parent-domain scopes.
       for (const cookie of document.cookie.split(';')) {
@@ -73,13 +94,11 @@ export function setAnalyticsConsent(granted: boolean): void {
   } catch {
     // A blocked storage/analytics API must never prevent reading the blog.
   }
-  window.dispatchEvent(new Event(consentChangedEvent));
 }
 
 export function initializeAnalytics(): void {
-  if (!analyticsConfigured || !hasAnalyticsConsent()) return;
-  initializeHeatmaps();
-  if (!googleAnalyticsConfigured) return;
+  if (heatmapsAllowed()) initializeHeatmaps();
+  if (!statisticsAllowed()) return;
   try {
     (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = false;
     if (window.__blogAnalyticsInitialized) return;
@@ -115,9 +134,10 @@ export function initializeAnalytics(): void {
 }
 
 export function trackPageView(pathname: string): void {
-  if (!analyticsConfigured || !hasAnalyticsConsent()) return;
+  if (!analyticsConfigured) return;
   try {
     initializeAnalytics();
+    if (!statisticsAllowed()) return;
     const path = safeUrl(pathname);
     if (!window.gtag || window.__blogAnalyticsLastPath === path) return;
     window.__blogAnalyticsLastPath = path;
@@ -143,10 +163,10 @@ export function trackEvent<K extends keyof AnalyticsEventMap>(
   name: K,
   properties: AnalyticsEventMap[K],
 ): void {
-  if (!analyticsConfigured || !hasAnalyticsConsent()) return;
+  if (!analyticsConfigured) return;
   try {
-    if (heatmapsConfigured) window.clarity?.('event', name);
-    if (!window.gtag) return;
+    if (heatmapsAllowed()) window.clarity?.('event', name);
+    if (!statisticsAllowed() || !window.gtag) return;
     const filtered = Object.fromEntries(
       Object.entries(properties).filter(
         ([key, value]) => eventProperties[name].includes(key) && ['string', 'boolean'].includes(typeof value),

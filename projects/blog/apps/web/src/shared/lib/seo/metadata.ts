@@ -48,7 +48,7 @@ export function withDefaultLanguage(languages: Record<string, string>): Record<s
 
 export function pageMetadata(
   locale: Locale,
-  page: 'home' | 'blog' | 'about',
+  page: 'home' | 'blog' | 'about' | 'privacy',
   path = page === 'home' ? '' : `/${page}`,
   title = seo[locale].pages[page].title,
   description = seo[locale].pages[page].description,

@@ -48,6 +48,24 @@ test('browse home, search articles, open detail, and visit About', async ({ page
   await expect(page.getByRole('main')).not.toContainText('경력 타임라인');
 });
 
+test('privacy notice is linked from the footer in both locales', async ({ page }) => {
+  for (const [locale, messages] of [
+    ['ko', ko],
+    ['en', en],
+  ] as const) {
+    await page.goto(`/${locale}`);
+    await page
+      .getByRole('contentinfo')
+      .getByRole('link', { name: messages.privacy.title, exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}/privacy$`));
+    await expect(page.getByRole('heading', { level: 1, name: messages.privacy.title })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(
+      messages.privacy.sections.length + 2,
+    );
+  }
+});
+
 test('cover and SVG thumbnails load without breaking title links or mobile layout', async ({ page }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });

@@ -15,6 +15,7 @@ export function Footer({ locale }: { locale: Locale }) {
             GitHub
           </a>
           <a href={`mailto:${author.email}`}>{t.common.email}</a>
+          <a href={`/${locale}/privacy`}>{t.privacy.title}</a>
         </div>
       </div>
     </footer>

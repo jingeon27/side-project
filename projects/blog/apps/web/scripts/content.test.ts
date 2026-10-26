@@ -21,7 +21,7 @@ async function fixture() {
     writeFile(path.join(root, file), JSON.stringify(value));
   const seo = (posts: object) => ({
     site: { ...base, keywords: [] },
-    pages: { home: base, blog: base, about: base },
+    pages: { home: base, blog: base, about: base, privacy: base },
     posts,
   });
   await write('content/posts/cache/meta.json', {

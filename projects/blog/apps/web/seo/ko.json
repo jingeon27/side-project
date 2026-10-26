@@ -16,6 +16,10 @@
     "about": {
       "title": "소개",
       "description": "소프트웨어 엔지니어 김진건의 이메일과 GitHub입니다."
+    },
+    "privacy": {
+      "title": "개인정보 처리 안내",
+      "description": "이 블로그의 방문 통계 수집 범위와 끄는 방법입니다."
     }
   },
   "posts": {

@@ -44,7 +44,7 @@ export const metaSchema = z
 const seoBase = z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1) });
 export const seoSchema = z.object({
   site: seoBase.extend({ keywords: z.array(z.string().trim().min(1)) }),
-  pages: z.object({ home: seoBase, blog: seoBase, about: seoBase }),
+  pages: z.object({ home: seoBase, blog: seoBase, about: seoBase, privacy: seoBase }),
   posts: z.record(
     z.string(),
     seoBase.extend({ slug: slugSchema, keywords: z.array(z.string().trim().min(1)) }),
