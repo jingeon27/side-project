@@ -6,7 +6,11 @@
 
 ## 기본 로컬 실행
 
-`yarn workspace @side/game-feedback dev:test`와 `yarn workspace @side/game-feedback admin:dev`를 사용한다. S3 버킷을 지정하지 않으면 개발 실행기가 loopback 4310의 S3 대역을 시작하고 파일을 프로젝트 `.data/s3`에 보관한다. 이 대역은 로컬 전용 가짜 자격 증명을 사용하고 실제 AWS로 전송하지 않는다. 테스트도 실제 AWS SDK와 서명 POST 정책을 사용하는 S3 대역에서 수행한다.
+`yarn workspace @side/game-feedback dev:test`와 `yarn workspace @side/game-feedback admin:dev`를 사용한다. 로컬 개발도 프로젝트 `.env`에 설정한 실제 AWS S3 버킷과 자격 증명을 사용한다. 버킷이 비어 있어도 로컬 저장소 서버를 시작하거나 가짜 자격 증명을 채우지 않는다.
+
+통합·브라우저 테스트는 같은 버킷의 `<GF_S3_KEY_PREFIX>/tests/<실행 ID>/` 아래에서만 객체를 만들고 종료 시 그 경로만 정리한다. 버킷 생성·삭제는 하지 않는다. 테스트 계정에는 해당 경로의 GetObject·PutObject·DeleteObject와 `s3:prefix` 조건으로 제한한 ListBucket 권한이 필요하다. 단위 테스트는 AWS에 접속하지 않고 설정·서명 정책만 확인한다. 강제 종료로 정리가 중단되면 실패한 실행 ID의 경로만 확인해 정리한다.
+
+브라우저 테스트를 실행하려면 버킷 CORS에 실제 사용하는 웹 origin(기본 `http://127.0.0.1:3301`, `http://127.0.0.1:3302`, `http://127.0.0.1:3304`, 관측 레인 `http://127.0.0.1:3353`, `http://127.0.0.1:3354`)을 허용한다. CI는 Repository Variables의 `GF_S3_BUCKET`·`GF_S3_KEY_PREFIX`와 Secrets의 `GF_S3_ACCESS_KEY_ID`·`GF_S3_SECRET_ACCESS_KEY`를 사용한다. 공유 배포 검증에는 Photo Contest의 S3 설정도 필요하다. 설정이 없는 통합 검사는 대역으로 대체하거나 성공 처리하지 않고 실패한다. 외부 fork PR처럼 Secrets가 제공되지 않는 실행도 동일하다.
 
 관리자 화면은 http://127.0.0.1:3303 이며 로컬 관리자 로그인을 사용한다. 개발 API의 테스트 인증이 켜져 있어야 테스트 관리자가 문의 담당자가 된다. 일반 개발 모드에서 실제 ADMIN 계정이 없으면 관리자·프로필 인증 문의 모두 SUPPORT_UNAVAILABLE을 반환한다.
 
@@ -42,7 +46,7 @@ aws configure --profile game-feedback-local
 aws sts get-caller-identity --profile game-feedback-local
 ```
 
-5. Git에서 제외된 `projects/game-feedback/.env`에 아래를 지정한다. 기존 로컬 S3 대역의 키를 넣었다면 GF_S3_ACCESS_KEY_ID·GF_S3_SECRET_ACCESS_KEY는 비운다. 두 값이 비어 있으면 AWS SDK가 AWS_PROFILE 또는 EC2 역할의 자격 증명을 사용한다. 직접 키를 쓰는 경우에도 두 값은 서버 전용이다.
+5. Git에서 제외된 `projects/game-feedback/.env`에 아래를 지정한다. GF_S3_ACCESS_KEY_ID·GF_S3_SECRET_ACCESS_KEY가 비어 있으면 AWS SDK가 AWS_PROFILE 또는 EC2 역할의 자격 증명을 사용한다. 직접 키를 쓰는 경우에도 두 값은 서버 전용이다. 컨테이너 smoke는 호스트의 AWS_PROFILE을 공유하지 않으므로 직접 키를 지정한다.
 
 ```dotenv
 AWS_PROFILE=game-feedback-local

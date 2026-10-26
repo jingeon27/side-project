@@ -35,7 +35,7 @@ yarn workspace @game-feedback/web monitoring:check
 
 `sentry:check`는 개발 서버·DB 없이 API 확인 오류 1건을 보낸다. `verification:configuration-check`, `service:game-feedback`, `layer:api`와 출력된 eventId로 찾는다.
 
-`monitoring:check`는 3354/4354 포트에 전용 API와 **운영 빌드 웹**을 띄운다. DB는 실행마다 만든 gf_test_web 스키마만 쓰고 종료 시 지운다. API의 OAuth·S3·게임 제공자는 대역이며 실제 Sentry·Amplitude 전송은 브라우저에서만 켠다. 다른 서버가 포트를 쓰고 있으면 실패하며 재사용하거나 종료하지 않는다. 재시도는 하지 않는다.
+`monitoring:check`는 3354/4354 포트에 전용 API와 **운영 빌드 웹**을 띄운다. DB는 실행마다 만든 gf_test_web 스키마만 쓰고 종료 시 지운다. API의 OAuth·게임 제공자는 대역이고 S3는 실제 버킷의 실행별 격리 경로를 사용하며 실제 Sentry·Amplitude 전송은 브라우저에서만 켠다. 다른 서버가 포트를 쓰고 있으면 실패하며 재사용하거나 종료하지 않는다. 재시도는 하지 않는다.
 
 검사는 쿠키·검색어·오류에 무해한 확인 문자열을 넣어 실제 전송 본문에 남지 않는지, Sentry의 서비스/실행 위치, Amplitude 페이지뷰의 screen/client, 양쪽 수집 응답을 확인한다. trace·영상·화면 캡처를 남기지 않는다. 결과는 프로젝트 `.data/monitoring-web-verification.json`에 상태·eventId·이벤트 이름만 저장한다. 키나 쿠키는 보고서에 쓰지 않는다.
 

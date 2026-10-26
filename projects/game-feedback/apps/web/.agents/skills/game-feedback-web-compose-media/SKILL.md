@@ -25,7 +25,7 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 `uploadMediaFile(file, { reserve, complete, remove })`(`shared/api/media-upload.ts`)가 게시글·채팅 공용이다.
 
 1. `MediaUploadInputSchema`로 형식(JPEG/PNG/GIF/WebP/MP4/WebM)·25MB를 먼저 검사한다(`INVALID_MEDIA`).
-2. `reserve` → `{ id, url, fields, expiresAt }` 계획을 받는다. 로컬 개발·테스트도 S3 대역을 사용하고 저장소 모드 분기는 없다.
+2. `reserve` → `{ id, url, fields, expiresAt }` 계획을 받는다. 로컬 개발·통합 테스트도 실제 AWS S3를 사용하고 저장소 모드 분기는 없다.
 3. `plan.fields`를 FormData에 넣고 `file`을 마지막에 추가해 `plan.url`로 POST한다. `credentials: 'omit'`, `redirect: 'error'`, `referrerPolicy: 'no-referrer'`이며 Content-Type 헤더를 직접 넣지 않는다.
 4. 성공하면 `complete(id)`로 확정한다. S3 전송 실패·확정 실패는 모두 `remove(id)`로 예약을 정리하고 원래 오류를 던진다.
 5. 프로필은 `features/user/api/avatar.api.ts`에서 `prepareAvatar`로 방향·중앙 자르기·512px JPEG 변환 후 같은 전송 함수를 사용한다. 5MB JPEG/PNG/WebP만 받으며 변환 오류는 초안을 보존한다.
@@ -43,7 +43,7 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 ## 테스트
 
 - 단위: `src/shared/ui/rich-text/rich-text.spec.tsx`(허용·거부 embed, 붙여넣은 HTML, 실행 가능한 URL), `src/features/post-media/api/post-media.api.spec.ts`·`src/features/chat/api/chat.api.spec.ts`(S3 전송·예약 정리, `fetch` mock).
-- e2e: `e2e/compose.spec.ts`(분류 전환 중 초안 유지), `e2e/community-enhancements.spec.ts`(사진·동영상 삽입, 실패 후 재시도, `page.waitForEvent('filechooser')`), `e2e/chat-media.spec.ts`(`getByLabel('이미지 또는 동영상 첨부').setInputFiles`). e2e API는 loopback S3 대역을 사용하며 브라우저도 직접 전송한다. 실제 AWS 권한·CORS 수신은 로컬 성공으로 기록하지 않는다.
+- e2e: `e2e/compose.spec.ts`(분류 전환 중 초안 유지), `e2e/community-enhancements.spec.ts`(사진·동영상 삽입, 실패 후 재시도, `page.waitForEvent('filechooser')`), `e2e/chat-media.spec.ts`(`getByLabel('이미지 또는 동영상 첨부').setInputFiles`). e2e API는 실제 AWS S3의 실행별 tests/ 객체 경로를 사용하며 브라우저도 직접 전송한다. 실제 AWS 권한·CORS 수신은 로컬 성공으로 기록하지 않는다.
 
 ```sh
 yarn workspace @game-feedback/web test src/shared/ui/rich-text src/features/post-media src/features/chat/api

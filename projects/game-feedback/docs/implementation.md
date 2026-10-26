@@ -1415,3 +1415,11 @@ Dockerfile과 Compose에서 기본 false인 데모·테스트 인증 플래그�
 문의 대화 상단에 게임 태그와 인증 상태, 인증·미인증 선택을 추가했다. 사용자 관리와 같은 인증 컨트롤과 mutation 정책을 재사용하며, 담당 관리자 권한/감사 기록/공개 캐시 무효화는 기존 API가 처리한다. 성공하면 사용자 정보와 문의 목록을 갱신하고 실패하면 기존 상태를 유지한다. Admin E2E에서 실패→재시도→인증→미인증과 일반 사용자 세션/문의 목록의 즉시 반영을 확인했다. Admin unit 19개·E2E 5개·타입·lint·production build가 통과했다.
 
 공개 Web의 관리자 API 차단에 맞춰 기존 웹 E2E의 관리자 데이터 준비·조치를 격리 API에 직접 연결했다. 네 사양이 공유하는 URL helper를 두고 공개 관리자 경로 404 검사는 유지했다. 테스트 전용 일반 관리자 role fixture는 test 실행기에서만 허용하며 실제 Admin은 전용 ID·비밀번호 세션으로 검증한다. 별도 3302/4302와 격리 DB에서 캐시 무효화·프로필 인증/신고/제재·게임 생성·게시판 필터 브라우저 사양 5개가 통과했다.
+
+## 2026-10-26 로컬·자동 테스트 S3 대역 제거
+
+개발 실행기의 가짜 S3 기본값·로컬 서버 기동, API/E2E S3 대역과 공유 배포 검증의 저장소 컨테이너·전용 TLS/DNS 설정을 제거했다. 개발과 통합·브라우저 검사는 기존 AWS S3 설정을 사용하며 테스트 객체만 tests/<실행 ID>/로 격리·정리한다. 기존 버킷·객체·.data/s3·개발 서버·DB는 변경하지 않았다. 공용 CI와 배포 검증은 두 서비스가 같은 대역을 공유했기 때문에 함께 수정했다.
+
+검증: `yarn workspace @game-feedback/api test:unit` 187개, API·프로젝트 스크립트 TypeScript 검사와 변경 파일 ESLint가 통과했다. Photo Contest API unit 127개·test-kit 34개, 관련 타입 검사·ESLint, shellcheck·actionlint도 통과했다. 단위 테스트는 실제 AWS에 접속하지 않는다.
+
+실제 AWS에는 두 프로젝트의 새 실행 prefix로 ListObjectsV2(MaxKeys=1)만 요청했고 둘 다 AccessDenied였다. 객체는 생성·삭제하지 않았다. 테스트 데이터 쓰기 전에 필요한 ListBucket 권한을 확인하고 실패하는 가드를 추가했다. 실제 S3 통합·브라우저 검증은 해당 prefix의 권한과 CORS를 준비한 뒤 실행해야 한다. 현재 환경에는 Docker 실행기도 없어 컨테이너 검증·공개 배포는 실행하지 않았다. IAM·버킷 정책·GitHub Variables/Secrets는 변경하지 않았다.
