@@ -1,5 +1,4 @@
 import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
-import { requiresOptIn } from './region';
 
 type AnalyticsEventMap = {
   language_changed: { from_locale: string; to_locale: string };
@@ -19,37 +18,30 @@ declare global {
   }
 }
 
-/** granted: 방문 통계와 히트맵, statistics: 방문 통계만, denied: 모두 끔. 저장된 값이 없으면 unknown이다. */
-export type TAnalyticsChoice = 'granted' | 'statistics' | 'denied';
-export type TAnalyticsConsent = TAnalyticsChoice | 'unknown';
-
 export const consentKey = 'blog:analytics-consent';
 export const consentChangedEvent = 'blog:analytics-consent-changed';
 export const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
 const googleAnalyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
 export const analyticsConfigured = googleAnalyticsConfigured || heatmapsConfigured;
 
-/** 저장소가 막히면 끄기 선택을 기억할 수 없으므로 아무것도 수집하지 않는다. */
-export function analyticsConsent(): TAnalyticsConsent {
+/**
+ * 방문 통계와 히트맵은 개인정보 처리 안내에서 끄기 전까지 수집한다(opt-out). 저장소가 막히면 끄기 선택을 기억할 수 없으므로
+ * 끈 것으로 본다. 이전 배너가 저장한 granted·statistics는 켜짐으로 읽는다.
+ */
+export function analyticsOptedOut(): boolean {
   try {
-    if (typeof window === 'undefined') return 'denied';
-    const value = window.localStorage.getItem(consentKey);
-    return value === 'granted' || value === 'statistics' || value === 'denied' ? value : 'unknown';
+    return typeof window === 'undefined' || window.localStorage.getItem(consentKey) === 'denied';
   } catch {
-    return 'denied';
+    return true;
   }
 }
 
-/** 유럽(동의 대상) 방문자는 고르기 전까지 끄고, 그 밖의 방문자는 끄기 전까지 GA4 방문 통계를 보낸다(opt-out). */
 export function statisticsAllowed(): boolean {
-  if (!googleAnalyticsConfigured) return false;
-  const consent = analyticsConsent();
-  return consent === 'unknown' ? !requiresOptIn() : consent !== 'denied';
+  return googleAnalyticsConfigured && !analyticsOptedOut();
 }
 
-/** 클릭·스크롤 히트맵과 세션 재생은 지역과 관계없이 명시적으로 허용했을 때만 켠다(opt-in). */
 export function heatmapsAllowed(): boolean {
-  return heatmapsConfigured && analyticsConsent() === 'granted';
+  return heatmapsConfigured && !analyticsOptedOut();
 }
 
 function safeUrl(value: string): string {
@@ -61,10 +53,11 @@ function safeUrl(value: string): string {
   }
 }
 
-export function setAnalyticsConsent(choice: TAnalyticsChoice): void {
+export function setAnalyticsOptOut(optedOut: boolean): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(consentKey, choice);
+    if (optedOut) window.localStorage.setItem(consentKey, 'denied');
+    else window.localStorage.removeItem(consentKey);
   } catch {
     /* Storage can be blocked. */
   }

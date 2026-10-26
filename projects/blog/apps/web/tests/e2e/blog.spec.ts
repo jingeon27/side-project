@@ -61,7 +61,7 @@ test('privacy notice is linked from the footer in both locales', async ({ page }
     await expect(page).toHaveURL(new RegExp(`/${locale}/privacy$`));
     await expect(page.getByRole('heading', { level: 1, name: messages.privacy.title })).toBeVisible();
     await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(
-      messages.privacy.sections.length,
+      messages.privacy.sections.length + 2,
     );
   }
 });

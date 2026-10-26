@@ -87,27 +87,23 @@
     "home": "Back to home"
   },
   "analytics": {
-    "title": "Visitor analytics",
-    "message": "To improve articles, this blog collects visit statistics with Google Analytics. Click and scroll heatmaps and session replay (Microsoft Clarity) run only if you allow them. You can change this anytime in analytics settings.",
-    "optInMessage": "With your permission, this blog collects visit statistics with Google Analytics and, if you also allow heatmaps, click and scroll heatmaps and session replay with Microsoft Clarity to improve articles. Nothing is collected before you choose, and you can change this anytime in analytics settings.",
-    "allow": "Allow heatmaps too",
-    "statistics": "Statistics only",
-    "deny": "Turn off all",
-    "preferences": "Analytics settings",
-    "close": "Close"
+    "on": "Visit statistics and heatmaps are being collected in this browser.",
+    "off": "Visit statistics and heatmaps are not collected in this browser.",
+    "disable": "Turn off",
+    "enable": "Turn back on"
   },
   "privacy": {
     "title": "Privacy notice",
     "updated": "Effective October 26, 2026",
-    "intro": "This blog is read without an account or comments, and collects visit statistics to improve its articles and usability. If your browser time zone is in Europe (including the EEA, UK and Switzerland) or cannot be determined, nothing is collected until you choose; for other visitors, visit statistics are collected unless turned off in analytics settings.",
+    "intro": "This blog is read without an account or comments, and collects visit statistics and heatmaps to improve its articles and usability. If you prefer not to be measured, turn collection off for this browser under ‘Turn off collection’ below.",
     "sections": [
       {
         "heading": "Visit statistics (Google Analytics)",
-        "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga. Visitors in European time zones are measured only if they allow it; other visitors are measured unless they turn it off in analytics settings."
+        "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga."
       },
       {
         "heading": "Heatmaps and session replay (Microsoft Clarity)",
-        "body": "Only if you choose ‘Allow heatmaps too’ in analytics settings, the blog records click and scroll positions and page movement to build heatmaps and session replays. The search field is masked. Clarity stores cookies such as _clck and _clsk."
+        "body": "The blog records click and scroll positions and page movement to build heatmaps and session replays. The search field is masked. Clarity stores cookies such as _clck and _clsk, and does not set cookies for visitors from the EEA, UK and Switzerland without a consent signal."
       },
       {
         "heading": "Processors and international transfer",
@@ -116,15 +112,15 @@
       {
         "heading": "Retention",
         "body": "Data is kept for the retention period configured in each service and is then deleted by that service."
-      },
-      {
-        "heading": "Opting out and changing your choice",
-        "body": "Use ‘Analytics settings’ at the bottom right to choose ‘Statistics only’ or ‘Turn off all’. ‘Turn off all’ deletes the Google Analytics cookies and stops sending data; turning off heatmaps also stops Clarity. Your choice is stored only in this browser."
-      },
-      {
-        "heading": "Contact",
-        "body": "Send questions about this notice to the email address below."
       }
-    ]
+    ],
+    "optOut": {
+      "heading": "Turn off collection",
+      "body": "Use the button below to turn visit statistics and heatmaps off or back on for this browser. Turning them off deletes the Google Analytics cookies, stops sending data and stops Clarity. Your choice is stored only in this browser."
+    },
+    "contact": {
+      "heading": "Contact",
+      "body": "Send questions about this notice to the email address below."
+    }
   }
 }

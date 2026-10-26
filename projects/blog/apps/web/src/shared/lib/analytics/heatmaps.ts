@@ -15,16 +15,19 @@ export function initializeHeatmaps(): void {
   if (!heatmapsConfigured || typeof window === 'undefined') return;
   try {
     if (window.__blogHeatmapsInitialized) {
-      if (window.__blogHeatmapsStopped) window.clarity?.('start');
+      // 끄기를 되돌린 경우뿐이다. 방문자가 직접 다시 켰으므로 동의 신호를 보내고 수집을 재개한다.
+      if (window.__blogHeatmapsStopped) {
+        window.clarity?.('consentv2', { ad_Storage: 'denied', analytics_Storage: 'granted' });
+        window.clarity?.('start');
+      }
       window.__blogHeatmapsStopped = false;
-      window.clarity?.('consentv2', { ad_Storage: 'denied', analytics_Storage: 'granted' });
       return;
     }
     const queue: ClarityCommand = (...args) => {
       (queue.q ??= []).push(args);
     };
     window.clarity ??= queue;
-    window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: 'granted' });
+    // 처음에는 동의 신호를 보내지 않는다. Clarity가 EEA·영국·스위스 방문자에게는 기본 동의 모드로 쿠키를 만들지 않는다.
     const script = document.createElement('script');
     script.id = 'blog-clarity';
     script.async = true;

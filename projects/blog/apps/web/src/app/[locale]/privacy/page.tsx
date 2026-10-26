@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { AnalyticsOptOut } from '@/features/analytics-consent/ui/analytics-opt-out';
 import { labels } from '@/shared/config/labels';
 import { author } from '@/shared/config/site';
 import { pageMetadata } from '@/shared/lib/seo/metadata';
@@ -25,9 +26,18 @@ export default async function PrivacyPage({ params }: Props) {
           <p>{section.body}</p>
         </section>
       ))}
-      <p>
-        <a href={`mailto:${author.email}`}>{author.email}</a>
-      </p>
+      <section>
+        <h2>{t.optOut.heading}</h2>
+        <p>{t.optOut.body}</p>
+        <AnalyticsOptOut locale={locale} />
+      </section>
+      <section>
+        <h2>{t.contact.heading}</h2>
+        <p>{t.contact.body}</p>
+        <p>
+          <a href={`mailto:${author.email}`}>{author.email}</a>
+        </p>
+      </section>
     </main>
   );
 }
