@@ -88,11 +88,11 @@
   },
   "analytics": {
     "title": "방문 통계",
-    "message": "방문 통계와 클릭·스크롤 히트맵, 세션 재생으로 글과 사용성을 개선합니다. 동의할 때만 Google Analytics와 Microsoft Clarity를 사용하며 언제든 철회할 수 있습니다.",
-    "allow": "동의",
-    "deny": "거부",
+    "message": "글을 개선하려고 Google Analytics로 방문 통계를 수집합니다. 클릭·스크롤 히트맵과 세션 재생(Microsoft Clarity)은 허용할 때만 켜지며, 통계 설정에서 언제든 바꿀 수 있습니다.",
+    "allow": "히트맵까지 허용",
+    "statistics": "방문 통계만",
+    "deny": "모두 끄기",
     "preferences": "통계 설정",
-    "revoke": "동의 철회",
     "close": "닫기"
   },
   "privacy": {

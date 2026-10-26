@@ -1,4 +1,5 @@
 import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
+import { isTrackedRegion } from './region';
 
 type AnalyticsEventMap = {
   language_changed: { from_locale: string; to_locale: string };
@@ -18,18 +19,35 @@ declare global {
   }
 }
 
+/** granted: 방문 통계와 히트맵, statistics: 방문 통계만, denied: 모두 끔. 저장된 값이 없으면 unknown이다. */
+export type TAnalyticsChoice = 'granted' | 'statistics' | 'denied';
+export type TAnalyticsConsent = TAnalyticsChoice | 'unknown';
+
 export const consentKey = 'blog:analytics-consent';
 export const consentChangedEvent = 'blog:analytics-consent-changed';
 export const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
 const googleAnalyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
 export const analyticsConfigured = googleAnalyticsConfigured || heatmapsConfigured;
 
-export function hasAnalyticsConsent(): boolean {
+/** 저장소가 막히면 끄기 선택을 기억할 수 없으므로 아무것도 수집하지 않는다. */
+export function analyticsConsent(): TAnalyticsConsent {
   try {
-    return typeof window !== 'undefined' && window.localStorage.getItem(consentKey) === 'granted';
+    if (typeof window === 'undefined') return 'denied';
+    const value = window.localStorage.getItem(consentKey);
+    return value === 'granted' || value === 'statistics' || value === 'denied' ? value : 'unknown';
   } catch {
-    return false;
+    return 'denied';
   }
+}
+
+/** 한국 방문자는 끄기 전까지 GA4 방문 통계를 보낸다(opt-out). */
+export function statisticsAllowed(): boolean {
+  return googleAnalyticsConfigured && isTrackedRegion() && analyticsConsent() !== 'denied';
+}
+
+/** 클릭·스크롤 히트맵과 세션 재생은 한국 방문자가 명시적으로 허용했을 때만 켠다(opt-in). */
+export function heatmapsAllowed(): boolean {
+  return heatmapsConfigured && isTrackedRegion() && analyticsConsent() === 'granted';
 }
 
 function safeUrl(value: string): string {
@@ -41,22 +59,30 @@ function safeUrl(value: string): string {
   }
 }
 
-export function setAnalyticsConsent(granted: boolean): void {
+export function setAnalyticsConsent(choice: TAnalyticsChoice): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(consentKey, granted ? 'granted' : 'denied');
+    window.localStorage.setItem(consentKey, choice);
   } catch {
     /* Storage can be blocked. */
   }
-  (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = !granted;
-  if (!granted) stopHeatmaps();
+  applyAnalyticsConsent();
+  window.dispatchEvent(new Event(consentChangedEvent));
+}
+
+/** 저장된 선택을 현재 탭에 반영한다. 다른 탭의 변경(storage 이벤트)에도 같은 함수를 쓴다. */
+export function applyAnalyticsConsent(): void {
+  if (typeof window === 'undefined') return;
+  const statistics = statisticsAllowed();
+  (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = !statistics;
+  if (!heatmapsAllowed()) stopHeatmaps();
   try {
-    window.gtag?.('consent', 'update', { analytics_storage: granted ? 'granted' : 'denied' });
+    window.gtag?.('consent', 'update', { analytics_storage: statistics ? 'granted' : 'denied' });
   } catch {
     /* The SDK can be blocked. */
   }
   try {
-    if (!granted) {
+    if (!statistics) {
       window.__blogAnalyticsLastPath = undefined;
       // Remove cookies on the current host and its parent-domain scopes.
       for (const cookie of document.cookie.split(';')) {
@@ -73,13 +99,11 @@ export function setAnalyticsConsent(granted: boolean): void {
   } catch {
     // A blocked storage/analytics API must never prevent reading the blog.
   }
-  window.dispatchEvent(new Event(consentChangedEvent));
 }
 
 export function initializeAnalytics(): void {
-  if (!analyticsConfigured || !hasAnalyticsConsent()) return;
-  initializeHeatmaps();
-  if (!googleAnalyticsConfigured) return;
+  if (heatmapsAllowed()) initializeHeatmaps();
+  if (!statisticsAllowed()) return;
   try {
     (window as unknown as Record<string, unknown>)[`ga-disable-${measurementId}`] = false;
     if (window.__blogAnalyticsInitialized) return;
@@ -115,9 +139,10 @@ export function initializeAnalytics(): void {
 }
 
 export function trackPageView(pathname: string): void {
-  if (!analyticsConfigured || !hasAnalyticsConsent()) return;
+  if (!analyticsConfigured) return;
   try {
     initializeAnalytics();
+    if (!statisticsAllowed()) return;
     const path = safeUrl(pathname);
     if (!window.gtag || window.__blogAnalyticsLastPath === path) return;
     window.__blogAnalyticsLastPath = path;
@@ -143,10 +168,10 @@ export function trackEvent<K extends keyof AnalyticsEventMap>(
   name: K,
   properties: AnalyticsEventMap[K],
 ): void {
-  if (!analyticsConfigured || !hasAnalyticsConsent()) return;
+  if (!analyticsConfigured) return;
   try {
-    if (heatmapsConfigured) window.clarity?.('event', name);
-    if (!window.gtag) return;
+    if (heatmapsAllowed()) window.clarity?.('event', name);
+    if (!statisticsAllowed() || !window.gtag) return;
     const filtered = Object.fromEntries(
       Object.entries(properties).filter(
         ([key, value]) => eventProperties[name].includes(key) && ['string', 'boolean'].includes(typeof value),

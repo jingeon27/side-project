@@ -1,8 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const resolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+function useTimeZone(timeZone: string) {
+  vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockImplementation(function (
+    this: Intl.DateTimeFormat,
+  ) {
+    return { ...resolvedOptions.call(this), timeZone };
+  });
+}
+
 beforeEach(() => {
   vi.resetModules();
   vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', 'G-TEST123');
+  useTimeZone('Asia/Seoul');
   localStorage.clear();
   document.head.querySelector('#blog-google-analytics')?.remove();
   delete window.gtag;
@@ -11,20 +21,25 @@ beforeEach(() => {
   delete window.__blogAnalyticsLastPath;
 });
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
-describe('optional consent-based analytics', () => {
-  it('makes no script or event without explicit consent', async () => {
+describe('Korea-only opt-out visit statistics', () => {
+  it('makes no script or event for visitors outside the Korean time zone', async () => {
+    useTimeZone('Europe/Berlin');
     const analytics = await import('@/shared/lib/analytics/events');
     analytics.initializeAnalytics();
     analytics.trackPageView('/ko/blog?query=private');
     analytics.trackEvent('search_performed', { has_query: true });
+    expect(analytics.statisticsAllowed()).toBe(false);
     expect(document.querySelector('#blog-google-analytics')).toBeNull();
     expect(window.dataLayer).toBeUndefined();
   });
-  it('initializes once and sends one sanitized pageview per route', async () => {
+  it('sends one sanitized pageview per route before the visitor makes a choice', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.setAnalyticsConsent(true);
+    expect(analytics.analyticsConsent()).toBe('unknown');
     analytics.initializeAnalytics();
     analytics.initializeAnalytics();
     const gtag = vi.fn();
@@ -42,23 +57,31 @@ describe('optional consent-based analytics', () => {
     analytics.trackPageView('/ko/about');
     expect(gtag).toHaveBeenCalledTimes(2);
   });
-  it('drops unapproved event properties and stops after consent withdrawal', async () => {
+  it('drops unapproved event properties and stops when the visitor turns everything off', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.setAnalyticsConsent(true);
     const gtag = vi.fn();
     window.gtag = gtag;
     analytics.trackEvent('search_performed', { has_query: true, query: 'private' } as { has_query: boolean });
     expect(gtag).toHaveBeenCalledWith('event', 'search_performed', { has_query: true });
-    analytics.setAnalyticsConsent(false);
+    document.cookie = '_ga=GA1.1.fixture; path=/';
+    analytics.setAnalyticsConsent('denied');
+    expect(gtag).toHaveBeenCalledWith('consent', 'update', { analytics_storage: 'denied' });
+    expect(document.cookie).not.toContain('_ga=');
     gtag.mockClear();
     analytics.trackEvent('search_performed', { has_query: true });
     analytics.trackPageView('/ko');
     expect(gtag).not.toHaveBeenCalled();
-    expect(analytics.hasAnalyticsConsent()).toBe(false);
+    expect(analytics.analyticsConsent()).toBe('denied');
+    expect(analytics.statisticsAllowed()).toBe(false);
   });
-  it('tolerates SDK and local storage failures', async () => {
+  it('keeps statistics on when only heatmaps are declined', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
-    analytics.setAnalyticsConsent(true);
+    analytics.setAnalyticsConsent('statistics');
+    expect(analytics.statisticsAllowed()).toBe(true);
+    expect(analytics.heatmapsAllowed()).toBe(false);
+  });
+  it('collects nothing when storage is blocked because the opt-out cannot be remembered', async () => {
+    const analytics = await import('@/shared/lib/analytics/events');
     window.gtag = () => {
       throw new Error('blocked');
     };
@@ -66,7 +89,8 @@ describe('optional consent-based analytics', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked storage');
     });
-    expect(analytics.hasAnalyticsConsent()).toBe(false);
+    expect(analytics.analyticsConsent()).toBe('denied');
+    expect(analytics.statisticsAllowed()).toBe(false);
     expect(() => analytics.trackPageView('/ko')).not.toThrow();
   });
 });

@@ -1271,8 +1271,16 @@ html:not([data-theme='dark']) .code-block span {
   line-height: 1.85;
   margin-top: 10px;
 }
+.analytics-consent-privacy {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: underline;
+}
 .analytics-consent-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   margin-top: 20px;
 }
@@ -1281,7 +1289,7 @@ html:not([data-theme='dark']) .code-block span {
   padding: 7px 14px;
   font-size: 11px;
 }
-.analytics-consent-actions button:first-child {
+.analytics-consent-actions button[aria-pressed='true'] {
   background: var(--accent);
   color: var(--background);
   border-color: var(--accent);

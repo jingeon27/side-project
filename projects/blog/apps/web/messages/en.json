@@ -88,11 +88,11 @@
   },
   "analytics": {
     "title": "Visitor analytics",
-    "message": "With your consent, Google Analytics and Microsoft Clarity help improve articles using visit statistics, click and scroll heatmaps, and session replay. You can withdraw consent at any time.",
-    "allow": "Allow",
-    "deny": "Decline",
+    "message": "To improve articles, this blog collects visit statistics with Google Analytics. Click and scroll heatmaps and session replay (Microsoft Clarity) run only if you allow them. You can change this anytime in analytics settings.",
+    "allow": "Allow heatmaps too",
+    "statistics": "Statistics only",
+    "deny": "Turn off all",
     "preferences": "Analytics settings",
-    "revoke": "Withdraw consent",
     "close": "Close"
   },
   "privacy": {
