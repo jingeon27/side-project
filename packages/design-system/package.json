@@ -32,9 +32,9 @@
     "tailwind-merge": "^3.6.0"
   },
   "peerDependencies": {
-    "next": "^16.4.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "next": "^16.4.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "peerDependenciesMeta": {
     "next": {
@@ -54,15 +54,15 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.0",
     "@types/node": "^24.0.0",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
+    "@types/react": "~19.3.0",
+    "@types/react-dom": "~19.3.0",
     "axe-core": "^4.10.0",
     "eslint": "^9.39.0",
     "jiti": "^2.6.1",
     "jsdom": "^29.0.0",
-    "next": "16.4.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "next": "16.4.3",
+    "react": "~19.3.1",
+    "react-dom": "~19.3.1",
     "react-hook-form": "^7.81.0",
     "storybook": "10.6.3",
     "tailwindcss": "^4.3.3",
