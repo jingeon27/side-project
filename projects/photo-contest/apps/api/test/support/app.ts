@@ -147,7 +147,7 @@ export async function openStorageRedirect(response: IRedirectResponse, headers: 
  */
 export async function createTestApp(
   env: Record<string, string> = {},
-  options: { testFixtures?: boolean; trustProxy?: number } = {},
+  options: { testFixtures?: boolean; trustProxy?: number; shutdownHooks?: boolean } = {},
 ): Promise<ITestApi> {
   const restoreEnv = applyEnv({
     ...inject('s3Env'),
@@ -159,6 +159,7 @@ export async function createTestApp(
   const app = await createApp({
     logger: false,
     testFixtures: options.testFixtures ?? process.env.NODE_ENV === 'test',
+    shutdownHooks: options.shutdownHooks,
   }).catch((error: unknown) => {
     restoreEnv();
     throw error;

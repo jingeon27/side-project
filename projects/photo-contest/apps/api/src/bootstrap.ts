@@ -22,6 +22,8 @@ export interface ICreateAppOptions {
   testFixtures?: boolean;
   /** 지정하지 않으면 NODE_ENV=test에서만 로그를 끈다. */
   logger?: false | LogLevel[];
+  /** 외부 실행기가 종료와 자원 정리를 맡으면 false로 지정한다. */
+  shutdownHooks?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export interface ICreateAppOptions {
 export async function createApp({
   logger,
   testFixtures = false,
+  shutdownHooks = true,
 }: ICreateAppOptions = {}): Promise<INestApplication> {
   assertProductionConfig();
   if (testFixtures && !isTest()) throw new Error('Test fixtures require NODE_ENV=test.');
@@ -49,7 +52,7 @@ export async function createApp({
   app.use(bodyParserErrorHandler);
   app.useGlobalPipes(createInputValidationPipe());
   app.useGlobalFilters(new ApiExceptionFilter(app.getHttpAdapter()));
-  app.enableShutdownHooks();
+  if (shutdownHooks) app.enableShutdownHooks();
   await app.init();
   return app;
 }
