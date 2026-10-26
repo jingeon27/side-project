@@ -42,7 +42,7 @@ I revised the design from the running screens too. I changed layouts that obscur
 
 As features grew, I organized the implementation conventions. Uploads used mutations to manage request state and failure handling together. Event handlers used only once stayed where they were used, while UI with a separate context, such as photo and video selection, became separate components.
 
-I moved [custom ESLint rules](https://github.com/jingeon27/side-project/tree/develop/packages/eslint-config) into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
+I moved [custom ESLint rules](https://github.com/jingeon27/side-project/tree/develop/packages/config/eslint) into a shared package so projects could use the same conventions. I wrote the rules in TypeScript and checked them with RuleTester and fixtures. Separating rules from framework presets let each app compose the configuration it needed.
 
 When game feedback joined the repository, I also worked on [a design system](https://github.com/jingeon27/side-project/tree/f0e64fcc40baf01ca50cc2add07416cf5203e5f9/packages/design-system) shared with the photo service. Buttons, inputs, and dialogs could be maintained together, while game information and feed composition stayed in their apps. Shared packages grew as another project created a reason to share code.
 

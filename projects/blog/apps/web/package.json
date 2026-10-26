@@ -68,5 +68,10 @@
   },
   "installConfig": {
     "hoistingLimits": "workspaces"
+  },
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
   }
 }

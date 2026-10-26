@@ -85,12 +85,8 @@ const files = new Map(
 );
 if (check) {
   for (const [file, expected] of files) {
-    let actual = '';
-    try {
-      actual = await readFile(file, 'utf8');
-    } catch {
-      /* Missing generated file is stale. */
-    }
+    // Missing generated file is stale.
+    const actual = await readFile(file, 'utf8').catch(() => '');
     if (actual !== expected)
       throw new Error(`Stale generated content: ${path.relative(root, file)}. Run yarn content:generate.`);
   }

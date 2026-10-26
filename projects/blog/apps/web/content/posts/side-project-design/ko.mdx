@@ -42,7 +42,7 @@ packages/
 
 기능을 늘리면서 구현 방식도 정리했어요. 파일 업로드는 mutation으로 처리해 요청 상태와 실패 처리를 함께 관리했어요. 한 번만 쓰는 이벤트 핸들러는 사용하는 곳에서 읽을 수 있게 두고, 사진과 동영상을 고르는 UI처럼 맥락이 다른 부분은 컴포넌트로 나눴어요.
 
-여러 프로젝트에 같은 기준을 적용할 수 있도록 [커스텀 ESLint 규칙](https://github.com/jingeon27/side-project/tree/develop/packages/eslint-config)을 공통 패키지로 옮겼어요. 규칙은 TypeScript로 작성하고 RuleTester와 fixture로 확인했어요. 규칙 파일과 프레임워크별 preset을 나눠 각 앱에서 필요한 설정을 조합하게 했어요.
+여러 프로젝트에 같은 기준을 적용할 수 있도록 [커스텀 ESLint 규칙](https://github.com/jingeon27/side-project/tree/develop/packages/config/eslint)을 공통 패키지로 옮겼어요. 규칙은 TypeScript로 작성하고 RuleTester와 fixture로 확인했어요. 규칙 파일과 프레임워크별 preset을 나눠 각 앱에서 필요한 설정을 조합하게 했어요.
 
 게임 피드백을 추가하면서는 사진 서비스와 공통으로 사용할 [디자인 시스템](https://github.com/jingeon27/side-project/tree/f0e64fcc40baf01ca50cc2add07416cf5203e5f9/packages/design-system)도 작업했어요. 버튼과 입력, 모달 같은 UI는 함께 관리하고, 게임 정보나 피드 구성처럼 서비스에 속한 것은 각 앱에 남겼어요. 새 프로젝트를 붙이면서 공유할 이유가 생긴 부분부터 공통 패키지가 늘어났어요.
 
