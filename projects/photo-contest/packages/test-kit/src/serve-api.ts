@@ -29,7 +29,7 @@ async function main() {
   if (!Number.isInteger(port) || port < 4300 || port > 4399) throw new Error('Invalid isolated API port.');
   const storageDir = resolve(PROJECT_ROOT, '.data', schema);
   const outDir = resolve(API_ROOT, '.e2e-build');
-  execFileSync('corepack', ['yarn', 'workspace', '@photo-contest/api', 'build', '--outDir', outDir], {
+  execFileSync('yarn', ['workspace', '@photo-contest/api', 'build', '--outDir', outDir], {
     cwd: PROJECT_ROOT,
     stdio: 'inherit',
   });
