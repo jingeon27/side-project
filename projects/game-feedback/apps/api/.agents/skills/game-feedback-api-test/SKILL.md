@@ -1,6 +1,6 @@
 ---
 name: game-feedback-api-test
-description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 PostgreSQL(gf_test_ 스키마) + Supertest integration 테스트를 추가·수정·실행할 때, 가짜 OAuth·게임 프로필·S3 제공자나 SSE·연결 풀 검증을 꾸밀 때, 또는 scripts/test.mjs·vitest.config.mts 레인 설정을 고칠 때 사용한다.
+description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 PostgreSQL(gf_test_ 스키마) + Supertest integration 테스트를 추가·수정·실행할 때, 가짜 OAuth·게임 프로필·S3 제공자나 SSE·연결 풀 검증을 꾸밀 때, 또는 scripts/test.ts·vitest.config.mts 레인 설정을 고칠 때 사용한다.
 ---
 
 실행 범위와 완료 보고는 프로젝트 `game-feedback-test` 스킬, 접미사(`*.spec.ts` 새 사양, `*.test.ts` 확인된 버그 회귀)와 배치는 루트·프로젝트 `AGENTS.md`를 따른다. 경로는 apps/api 기준이다.
@@ -8,13 +8,13 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 ## 레인 (`vitest.config.mts`)
 
 - `unit`: `src/**/*.{spec,test}.ts` + 프로젝트 `../../scripts/**/*.{spec,test}.ts`(`database-guard.test.ts`)에서 integration 파일을 뺀 것. DB·Nest 앱 없이 도는 정책·검증이다(`src/common/http/request-validation.spec.ts`, `src/rate-limit.*`, `src/chat/chat-history.spec.ts`, `src/admin/reports/report.policy.spec.ts`, `src/common/pagination.spec.ts`, `src/config/production.config.spec.ts`).
-- `integration`: `src/**/*.integration.{spec,test}.ts`, `globalSetup: ./scripts/integration-setup.mjs`(`TEST_DATABASE_URL`이 없거나 가드를 못 넘으면 실패). 파일은 병렬로 돌고 각자 스키마를 만든다. 새 파일은 `describe.skipIf`를 두지 않는다 — DB가 없으면 건너뛴 성공이 아니라 실패여야 한다.
+- `integration`: `src/**/*.integration.{spec,test}.ts`, `globalSetup: ./scripts/integration-setup.ts`(`TEST_DATABASE_URL`이 없거나 가드를 못 넘으면 실패). 파일은 병렬로 돌고 각자 스키마를 만든다. 새 파일은 `describe.skipIf`를 두지 않는다 — DB가 없으면 건너뛴 성공이 아니라 실패여야 한다.
 - SWC 플러그인이 없어 데코레이터 메타데이터가 없다. 테스트에서 만드는 provider·서비스도 `@Inject(Token)`을 명시해야 주입된다.
 - `typecheck`는 테스트를 포함한 `tsconfig.json`(Vitest처럼 `module: Preserve`·Bundler, `import.meta` 허용)과 빌드 전용 `tsconfig.build.json`(Node16 CJS 출력, 테스트·`src/testing/**` 제외)을 모두 검사한다. 공통 하네스는 `src/testing/`에 두고 운영 코드에서 import하지 않는다. 테스트의 `Location`·`Set-Cookie`는 `src/testing/http-response.ts`의 `responseLocation`·`responseCookies`로 읽는다.
 
-## 실행기 (`scripts/test.mjs`)
+## 실행기 (`scripts/test.ts`)
 
-- `NODE_ENV=test`, `DATABASE_URL=TEST_DATABASE_URL`, 데모·테스트 인증·OAuth·Supercell·관측 키를 비운 env로 contracts build → `db:generate` → (unit만이 아니면) `../../scripts/db.mjs start --test` → `vitest run <인자>`.
+- `NODE_ENV=test`, `DATABASE_URL=TEST_DATABASE_URL`, 데모·테스트 인증·OAuth·Supercell·관측 키를 비운 env로 contracts build → `db:generate` → (unit만이 아니면) `../../scripts/db.ts start --test` → `vitest run <인자>`.
 
 - Vitest를 직접 부르지 않는다(위 env가 빠진다). 테스트 DB는 loopback 55444에 남아 다음 실행이 재사용한다. 띄우지 못하면 실패로 보고하고 포트 사용자를 종료하지 않는다.
 

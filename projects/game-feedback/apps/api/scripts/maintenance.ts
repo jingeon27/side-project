@@ -1,9 +1,13 @@
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { createApp } = require('../dist/app.js');
-const { MediaStorage } = require('../dist/media-storage/media-storage.service.js');
-const { validateProductionEnvironment } = require('../dist/config/production.config.js');
+const { createApp }: typeof import('../src/app') = require('../dist/app.js');
+const {
+  MediaStorage,
+}: typeof import('../src/media-storage/media-storage.service') = require('../dist/media-storage/media-storage.service.js');
+const {
+  validateProductionEnvironment,
+}: typeof import('../src/config/production.config') = require('../dist/config/production.config.js');
 validateProductionEnvironment(process.env);
 if (process.env.ENVIRONMENT !== 'production') throw new Error('Maintenance requires NODE_ENV=production.');
 const app = await createApp();

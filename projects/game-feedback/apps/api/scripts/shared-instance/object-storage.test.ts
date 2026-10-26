@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { handleObjectStorage } from './object-storage.mjs';
+import { handleObjectStorage } from './object-storage';
 
 describe('공유 배포 S3 대역의 직접 업로드 확정', () => {
   const server = createServer(handleObjectStorage);

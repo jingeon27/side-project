@@ -49,7 +49,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 
 ## 설정값
 
-- 실행 설정은 `src/config/app.config.ts`의 `AppOptions`/`resolveAppConfig`에 둔다(테스트가 옵션으로 덮는다). 운영 필수 값은 `src/config/production.config.ts`의 `validateProductionEnvironment`, 키는 프로젝트 `.env.example`에 더한다. 외부 자격 증명이면 `scripts/test.mjs` env에서 비운다.
+- 실행 설정은 `src/config/app.config.ts`의 `AppOptions`/`resolveAppConfig`에 둔다(테스트가 옵션으로 덮는다). 운영 필수 값은 `src/config/production.config.ts`의 `validateProductionEnvironment`, 키는 프로젝트 `.env.example`에 더한다. 외부 자격 증명이면 `scripts/test.ts` env에서 비운다.
 
 ## 체크리스트
 

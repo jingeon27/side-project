@@ -4,14 +4,22 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const prefix = process.env.ENVIRONMENT === 'production' ? '../dist' : '../src';
 const extension = process.env.ENVIRONMENT === 'production' ? 'js' : 'ts';
-const { createPrismaAdapter } = require(`${prefix}/database/prisma-adapter.${extension}`);
-const { PrismaClient } = require(`${prefix}/generated/prisma/index.js`);
-const { assertDatabaseUrl } = require(`${prefix}/database/database-url.${extension}`);
-const { createAdminAccount, resetAdminPassword } = require(`${prefix}/admin/auth/admin-account.${extension}`);
+const { createPrismaAdapter }: typeof import('../src/database/prisma-adapter') = require(
+  `${prefix}/database/prisma-adapter.${extension}`,
+);
+const { PrismaClient }: typeof import('../src/generated/prisma/index') = require(
+  `${prefix}/generated/prisma/index.js`,
+);
+const { assertDatabaseUrl }: typeof import('../src/database/database-url') = require(
+  `${prefix}/database/database-url.${extension}`,
+);
+const { createAdminAccount, resetAdminPassword }: typeof import('../src/admin/auth/admin-account') = require(
+  `${prefix}/admin/auth/admin-account.${extension}`,
+);
 
 const [command, username] = process.argv.slice(2);
-if (!['create', 'reset-password'].includes(command) || !username)
-  throw new Error('Usage: operator.mjs create <admin-id> | reset-password <admin-id> (password on stdin)');
+if (!command || !['create', 'reset-password'].includes(command) || !username)
+  throw new Error('Usage: operator.ts create <admin-id> | reset-password <admin-id> (password on stdin)');
 // Read only from stdin: passwords never enter process arguments, shell history, or command output.
 const password = readFileSync(0, 'utf8').replace(/\r?\n$/, '');
 const db = new PrismaClient({ adapter: createPrismaAdapter(assertDatabaseUrl(process.env.DATABASE_URL)) });

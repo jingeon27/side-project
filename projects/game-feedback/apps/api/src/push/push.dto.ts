@@ -1,7 +1,7 @@
 import { IsIn, IsUUID, Matches } from 'class-validator';
 
 import { RegisterPushDeviceSchema, UnregisterPushDeviceSchema } from '@game-feedback/contracts';
-import { EXPO_PUSH_TOKEN_PATTERN } from '@side/push-notifications';
+import { EXPO_PUSH_TOKEN_PATTERN } from '@side/toolkit/push-notifications';
 
 export class RegisterPushDeviceDto {
   static readonly contract = RegisterPushDeviceSchema;

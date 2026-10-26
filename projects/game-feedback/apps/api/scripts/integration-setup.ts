@@ -1,4 +1,4 @@
-import { guardDatabaseUrl } from '../../../scripts/database-guard.mjs';
+import { guardDatabaseUrl } from '../../../scripts/database-guard.ts';
 
 export default function setup() {
   if (!process.env.DATABASE_URL)

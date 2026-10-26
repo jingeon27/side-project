@@ -7,7 +7,7 @@ import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { ChatMessageSchema, ConversationSchema, SessionSchema } from '@game-feedback/contracts';
-import { ExpoPushTransport, type IPushMessage } from '@side/push-notifications';
+import { ExpoPushTransport, type IPushMessage } from '@side/toolkit/push-notifications';
 
 import { createApp } from '../app';
 import { assertDatabaseUrl } from '../database/database-url';

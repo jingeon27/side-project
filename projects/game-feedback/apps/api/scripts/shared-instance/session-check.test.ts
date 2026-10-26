@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { assertAnonymousSession } from './session-check.mjs';
+import { assertAnonymousSession } from './session-check';
 
 function response(status: number, body: object, retryAfter = '1') {
   return {

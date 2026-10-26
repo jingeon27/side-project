@@ -3,8 +3,8 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { guardDatabaseUrl } from '../../../scripts/database-guard.mjs';
-import { assertNode, environment, projectDir, testDatabaseUrl, yarn } from '../../../scripts/env.mjs';
+import { guardDatabaseUrl } from '../../../scripts/database-guard.ts';
+import { assertNode, environment, projectDir, testDatabaseUrl, yarn } from '../../../scripts/env.ts';
 import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../src/testing/s3-fixture.ts';
 
 const require = createRequire(import.meta.url);
@@ -37,8 +37,8 @@ const env = {
   EXPO_ACCESS_TOKEN: '',
 };
 
-async function run(script, args) {
-  await new Promise((resolve, reject) => {
+async function run(script: string, args: string[]) {
+  await new Promise<void>((resolve, reject) => {
     const child = spawn(process.execPath, [script, ...args], { cwd: apiDir, env, stdio: 'inherit' });
     child.once('error', reject);
     child.once('exit', (code) =>
@@ -61,10 +61,10 @@ try {
     GF_S3_KEY_PREFIX: '',
   });
   if (!unitOnly) guardDatabaseUrl(env.DATABASE_URL, { test: true });
-  await yarn(['workspace', '@side/push-notifications', 'build'], env);
+  await yarn(['workspace', '@side/toolkit', 'build'], env);
   await yarn(['workspace', '@game-feedback/contracts', 'build'], env);
   await yarn(['workspace', '@game-feedback/api', 'db:generate'], env);
-  if (!unitOnly && !useRunningDatabase) await run(join(projectDir, 'scripts/db.mjs'), ['start', '--test']);
+  if (!unitOnly && !useRunningDatabase) await run(join(projectDir, 'scripts/db.ts'), ['start', '--test']);
   const cli = join(dirname(require.resolve('vitest/package.json')), 'vitest.mjs');
   await run(cli, ['run', ...args]);
 } catch (error) {

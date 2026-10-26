@@ -9,7 +9,7 @@ rmSync(outputDir, { recursive: true, force: true });
 const result = spawnSync(
   process.execPath,
   [
-    require.resolve('@side/typescript-config/compiler'),
+    require.resolve('@side/config/typescript/compiler'),
     '-p',
     fileURLToPath(new URL('../tsconfig.build.json', import.meta.url)),
   ],

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync, type SpawnSyncOptionsWithStringEncoding } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   cpSync,
@@ -12,18 +12,34 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import type { IncomingMessage, OutgoingHttpHeaders } from 'node:http';
 import { request } from 'node:https';
 import { dirname, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
-import { assertAnonymousSession } from './shared-instance/session-check.mjs';
+import {
+  adminResponse,
+  completedUploadResponse,
+  conversationResponse,
+  mediaResponse as decodeMediaResponse,
+  groupResponse,
+  invalidationResponse,
+  mediaPlanResponse,
+  parseJson,
+  postResponse,
+  postUploadResponse,
+  readObject,
+  signedContentResponse,
+  storageResponse,
+} from './shared-instance/response.ts';
+import { assertAnonymousSession } from './shared-instance/session-check.ts';
 
 // API-owned integration runner. RDS/registry/S3 boundaries are isolated fixtures, not AWS resources.
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../../../..');
 const source = join(repo, 'deploy/shared-instance');
-const [, , sha] = process.argv;
+const [, , sha = ''] = process.argv;
 assert.match(sha ?? '', /^[a-f0-9]{40}$/);
 const id = randomBytes(5).toString('hex');
 const prefix = `side-shared-smoke-${id}`;
@@ -38,6 +54,7 @@ const pcApiDomain = `api.${pcDomain}`;
 const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf8' }).stdout.trim();
 const baseEnv = {
   ...process.env,
+  PATH: process.env.PATH ?? '',
   SIDE_DEPLOY_ROOT: root,
   SIDE_PROJECT_PREFIX: prefix,
   SIDE_NETWORK_PREFIX: prefix,
@@ -45,8 +62,8 @@ const baseEnv = {
   SIDE_REAL_DOCKER: realDocker,
   SIDE_SMOKE_IMAGE_MAP: join(root, 'images.json'),
 };
-const images = {};
-const createdImages = [];
+const images: Record<string, string> = {};
+const createdImages: string[] = [];
 const password = randomBytes(32).toString('hex');
 const schemaPassword = randomBytes(32).toString('hex');
 const proxyEnv = {
@@ -64,10 +81,14 @@ const proxyEnv = {
   SIDE_HTTP_PORT: '0',
   SIDE_HTTPS_PORT: '0',
 };
-const projects = [];
+const projects: string[] = [];
 const cleanupState = { failed: false };
 
-function run(binary, args, options = {}) {
+function run(
+  binary: string,
+  args: string[],
+  options: Omit<SpawnSyncOptionsWithStringEncoding, 'encoding'> = {},
+) {
   const result = spawnSync(binary, args, {
     encoding: 'utf8',
     maxBuffer: 8 * 1024 * 1024,
@@ -78,7 +99,7 @@ function run(binary, args, options = {}) {
     throw new Error(`${binary} failed (${result.status}): ${result.stderr || result.stdout}`);
   return result.stdout;
 }
-function saveEnv(file, values) {
+function saveEnv(file: string, values: Record<string, string | undefined>) {
   writeFileSync(
     file,
     Object.entries(values)
@@ -87,7 +108,7 @@ function saveEnv(file, values) {
     { mode: 0o600 },
   );
 }
-function compose(project, file, args) {
+function compose(project: string, file: string, args: string[]) {
   return run('docker', [
     'compose',
     '--project-name',
@@ -101,10 +122,10 @@ function compose(project, file, args) {
 }
 const proxyFile = join(root, 'proxy/compose.yaml');
 const dependenciesFile = join(root, 'dependencies.json');
-function dependency(args) {
+function dependency(args: string[]) {
   return compose(`${prefix}-dependencies`, dependenciesFile, args);
 }
-function serviceCompose(service, args, revision = sha) {
+function serviceCompose(service: string, args: string[], revision = sha) {
   return run('docker', [
     'compose',
     '--project-name',
@@ -120,11 +141,15 @@ function serviceCompose(service, args, revision = sha) {
     ...args,
   ]);
 }
-function uploadForm(service, upload, bytes) {
+function uploadForm(
+  service: string,
+  upload: { url: string; fields: Record<string, string> | { name: string; value: string }[] },
+  bytes: Buffer,
+) {
   const fields = Array.isArray(upload.fields)
     ? upload.fields
     : Object.entries(upload.fields).map(([name, value]) => ({ name, value }));
-  const stored = JSON.parse(
+  const stored = parseJson(
     serviceCompose(service, [
       'exec',
       '-T',
@@ -140,10 +165,11 @@ function uploadForm(service, upload, bytes) {
      console.log(JSON.stringify({status: response.status, body: await response.text()}));`,
       JSON.stringify([upload.url, fields, bytes.toString('base64')]),
     ]),
+    storageResponse,
   );
   assert.equal(stored.status, 204, stored.body);
 }
-function sql(database, text) {
+function sql(database: string, text: string) {
   return dependency([
     'exec',
     '-T',
@@ -160,7 +186,7 @@ function sql(database, text) {
     text,
   ]).trim();
 }
-function release(service, revision) {
+function release(service: string, revision: string) {
   const directory = join(root, `services/${service}/releases/${revision}`);
   mkdirSync(directory, { recursive: true });
   const file = readFileSync(join(repo, `projects/${service}/deploy/shared-instance/compose.yaml`), 'utf8');
@@ -177,21 +203,25 @@ function release(service, revision) {
   );
   return directory;
 }
-function operate(service, args, options) {
+function operate(
+  service: string,
+  args: string[],
+  options: Omit<SpawnSyncOptionsWithStringEncoding, 'encoding'> = {},
+) {
   return run(
     'bash',
     [join(root, `services/${service}/releases/${sha}/host/service.sh`), service, ...args],
     options,
   );
 }
-function reference(service, app) {
+function reference(service: string, app: string) {
   const tag = `side-shared-${service === 'game-feedback' ? 'gf' : 'pc'}-${app}:${sha}`;
   const image = run('docker', ['image', 'inspect', '--format', '{{.Id}}', tag]).trim();
   const ref = `ghcr.io/jingeon27/side-project-${service}-${app}@sha256:${createHash('sha256').update(image).digest('hex')}`;
   images[ref] = tag;
   return ref;
 }
-async function retry(fn, left = 30) {
+async function retry<T>(fn: () => Promise<T> | T, left = 30): Promise<T> {
   try {
     return await fn();
   } catch (error) {
@@ -200,15 +230,24 @@ async function retry(fn, left = 30) {
     return retry(fn, left - 1);
   }
 }
+interface IHttpOptions {
+  method?: string;
+  headers?: OutgoingHttpHeaders;
+  body?: string | Buffer;
+}
+
 class Client {
-  cookie = '';
-  constructor(domain, port, ca) {
+  cookie: string | undefined = '';
+  domain: string;
+  port: number;
+  ca: string | Buffer;
+  constructor(domain: string, port: number, ca: string | Buffer) {
     this.domain = domain;
     this.port = port;
     this.ca = ca;
   }
-  open(path, { method = 'GET', headers, body } = {}) {
-    return new Promise((accept, reject) => {
+  open(path: string, { method = 'GET', headers, body }: IHttpOptions = {}) {
+    return new Promise<IncomingMessage>((accept, reject) => {
       const req = request(
         {
           hostname: '127.0.0.1',
@@ -231,40 +270,45 @@ class Client {
       req.end(body);
     });
   }
-  async http(path, options) {
+  async http(path: string, options: IHttpOptions = {}) {
     const response = await this.open(path, options);
-    const chunks = [];
-    for await (const chunk of response) chunks.push(chunk);
+    const chunks: Buffer[] = [];
+    const stream: AsyncIterable<unknown> = response;
+    for await (const chunk of stream) {
+      assert.ok(Buffer.isBuffer(chunk), 'Expected an HTTP byte chunk');
+      chunks.push(chunk);
+    }
     const body = Buffer.concat(chunks);
     return {
       status: response.statusCode,
       headers: response.headers,
       body,
       text: () => body.toString(),
-      json: () => JSON.parse(body.toString()),
+      json: <T>(decode: (value: unknown) => T) => parseJson(body.toString(), decode),
     };
   }
-  post(path, data, headers) {
+  post(path: string, data: unknown, headers: OutgoingHttpHeaders = {}) {
     return this.http(path, {
       method: 'POST',
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json', ...headers },
     });
   }
-  async graphql(query, variables = {}) {
+  async graphql(query: string, variables: Record<string, unknown> = {}) {
     const response = await this.post('/backend/graphql', { query, variables });
     assert.equal(response.status, 200, response.text());
-    assert.equal(response.json().errors, undefined, response.text());
+    assert.equal(response.json(readObject).errors, undefined, response.text());
     return response;
   }
 }
 
 class EventReader {
   buffer = '';
-  constructor(stream) {
+  iterator: AsyncIterator<unknown>;
+  constructor(stream: IncomingMessage) {
     this.iterator = stream[Symbol.asyncIterator]();
   }
-  async invalidate() {
+  async invalidate(): Promise<ReturnType<typeof invalidationResponse>> {
     const boundary = this.buffer.indexOf('\n\n');
     if (boundary >= 0) {
       const frame = this.buffer.slice(0, boundary);
@@ -277,10 +321,13 @@ class EventReader {
           .trim() !== 'invalidate'
       )
         return this.invalidate();
-      return JSON.parse(lines.find((line) => line.startsWith('data:')).slice(5));
+      const data = lines.find((line) => line.startsWith('data:'));
+      assert.ok(data, 'SSE invalidation must contain data');
+      return parseJson(data.slice(5), invalidationResponse);
     }
     const chunk = await this.iterator.next();
     assert.equal(chunk.done, false, 'SSE ended before invalidation');
+    assert.ok(Buffer.isBuffer(chunk.value) || typeof chunk.value === 'string', 'Expected an SSE byte chunk');
     this.buffer += chunk.value.toString().replaceAll('\r\n', '\n');
     return this.invalidate();
   }
@@ -353,10 +400,11 @@ try {
   baseEnv.PATH = `${root}/bin:${process.env.PATH}`;
   const init = readFileSync(join(source, 'rds-bootstrap.sql'), 'utf8').replace(
     /^\\password (\w+)$/gm,
-    (_, role) => `ALTER ROLE ${role} PASSWORD '${role.endsWith('_migrator') ? schemaPassword : password}';`,
+    (_match: string, role: string) =>
+      `ALTER ROLE ${role} PASSWORD '${role.endsWith('_migrator') ? schemaPassword : password}';`,
   );
   writeFileSync(join(root, 'init.sql'), init);
-  cpSync(join(here, 'shared-instance/object-storage.mjs'), join(root, 'object-storage.mjs'));
+  cpSync(join(here, 'shared-instance/object-storage.ts'), join(root, 'object-storage.ts'));
   writeFileSync(
     dependenciesFile,
     JSON.stringify({
@@ -384,8 +432,8 @@ try {
         },
         storage: {
           image: 'node:24-bookworm-slim',
-          command: ['node', '/fixture/object-storage.mjs'],
-          volumes: [`${root}/certs:/certs:ro`, `${root}/object-storage.mjs:/fixture/object-storage.mjs:ro`],
+          command: ['node', '/fixture/object-storage.ts'],
+          volumes: [`${root}/certs:/certs:ro`, `${root}/object-storage.ts:/fixture/object-storage.ts:ro`],
           networks: {
             gf: { aliases: ['gf-smoke-private.s3.ap-northeast-2.amazonaws.com'] },
             pc: { aliases: ['pc-smoke-private.s3.ap-northeast-2.amazonaws.com'] },
@@ -401,9 +449,14 @@ try {
   );
   projects.push('dependencies');
   dependency(['up', '-d', '--wait', '--wait-timeout', '120']);
-  const runtimeUrl = (database, migration = false) =>
+  const runtimeUrl = (database: string, migration = false) =>
     `postgresql://${database}${migration ? '_migrator' : ''}:${migration ? schemaPassword : password}@${host}:5432/${database}?schema=public&sslmode=require&sslaccept=strict&sslcert=/run/rds/ca.pem&connection_limit=${migration ? 2 : 5}&pool_timeout=10&connect_timeout=5`;
-  const refs = {};
+  const refs: Record<string, [string, string]> = {};
+  const references = (service: string) => {
+    const value = refs[service];
+    assert.ok(value);
+    return value;
+  };
   for (const service of ['game-feedback', 'photo-contest']) {
     release(service, sha);
     const database = service.replaceAll('-', '_');
@@ -455,7 +508,7 @@ try {
         'game-feedback',
         'deploy',
         sha,
-        ...refs['game-feedback'],
+        ...references('game-feedback'),
       ],
       { env: baseEnv, encoding: 'utf8' },
     );
@@ -473,7 +526,7 @@ try {
   }
   for (const service of ['game-feedback', 'photo-contest']) {
     projects.push(service);
-    operate(service, ['deploy', sha, ...refs[service]]);
+    operate(service, ['deploy', sha, ...references(service)]);
   }
   run('bash', [join(source, 'scripts/proxy.sh'), 'start']);
   const port = Number(
@@ -525,14 +578,20 @@ try {
   const beforeIds = ['game-feedback', 'photo-contest'].map((service) =>
     serviceCompose(service, ['ps', '-q', 'api', 'web']).trim(),
   );
-  const availability = { running: true, samples: [], failures: [] };
-  const deploymentLogs = [];
-  const probes = [
-    [gf, '/api/health/live'],
-    [gf, '/ko'],
-    [pc, '/backend/health/live'],
-    [pc, '/sign'],
-  ].map(async ([client, path]) => {
+  const availability: {
+    running: boolean;
+    samples: { endpoint: string; milliseconds: number }[];
+    failures: { endpoint: string; milliseconds: number; error: string }[];
+  } = { running: true, samples: [], failures: [] };
+  const deploymentLogs: { service: string; milliseconds: number; output: string }[] = [];
+  const probes = (
+    [
+      [gf, '/api/health/live'],
+      [gf, '/ko'],
+      [pc, '/backend/health/live'],
+      [pc, '/sign'],
+    ] satisfies [Client, string][]
+  ).map(async ([client, path]) => {
     while (availability.running) {
       const started = performance.now();
       try {
@@ -556,7 +615,7 @@ try {
     await delay(300);
     for (const service of ['game-feedback', 'photo-contest']) {
       const started = performance.now();
-      await new Promise((accept, reject) => {
+      await new Promise<void>((accept, reject) => {
         const child = spawn(
           'bash',
           [
@@ -564,22 +623,26 @@ try {
             service,
             'deploy',
             sha,
-            ...refs[service],
+            ...references(service),
           ],
           { env: baseEnv, stdio: ['ignore', 'pipe', 'pipe'] },
         );
-        let output = '';
-        child.stdout.on('data', (chunk) => {
-          output = (output + chunk).slice(-32768);
+        const log = { output: '' };
+        child.stdout.on('data', (chunk: Buffer) => {
+          log.output = (log.output + chunk).slice(-32768);
         });
-        child.stderr.on('data', (chunk) => {
-          output = (output + chunk).slice(-32768);
+        child.stderr.on('data', (chunk: Buffer) => {
+          log.output = (log.output + chunk).slice(-32768);
         });
         child.on('error', reject);
         child.on('exit', (code) => {
-          deploymentLogs.push({ service, milliseconds: Math.ceil(performance.now() - started), output });
+          deploymentLogs.push({
+            service,
+            milliseconds: Math.ceil(performance.now() - started),
+            output: log.output,
+          });
           if (code === 0) return accept();
-          reject(new Error(`Redeploy failed: ${output}`));
+          reject(new Error(`Redeploy failed: ${log.output}`));
         });
       });
     }
@@ -601,7 +664,7 @@ try {
     const nextIds = serviceCompose(service, ['ps', '-q', 'api', 'web']).trim().split('\n');
     assert.equal(nextIds.length, 2);
     for (const nextId of nextIds)
-      assert.ok(!beforeIds[index].split('\n').includes(nextId), 'Both containers must actually be replaced');
+      assert.ok(!beforeIds[index]?.split('\n').includes(nextId), 'Both containers must actually be replaced');
   }
   assert.equal(new Set(availability.samples.map((sample) => sample.endpoint)).size, 4);
   console.log(
@@ -637,22 +700,30 @@ try {
     'mutation { registerWithPassword(loginId:"shared_owner",password:"shared smoke password 2026",nickname:"공통 배포 회원") { id } }',
   );
   const setCookie = cookie.headers['set-cookie'];
+  assert.ok(setCookie, 'Registration must return a session cookie');
   assert.ok(
     setCookie?.some(
       (value) => value.includes('HttpOnly') && value.includes('Secure') && !/domain=/i.test(value),
     ),
   );
   // A login expires the previous cookie and then sets its replacement, as a browser cookie jar does.
-  pc.cookie = [...new Map(setCookie.map((value) => value.split(';')[0].split('='))).entries()]
+  pc.cookie = [
+    ...new Map(
+      setCookie.map((value): [string, string] => {
+        const [name = '', token = ''] = (value.split(';')[0] ?? '').split('=');
+        return [name, token];
+      }),
+    ).entries(),
+  ]
     .map(([name, value]) => `${name}=${value}`)
     .join('; ');
   const group = (
     await pc.graphql('mutation { createGroup(name:"공통 배포 그룹",visibility:PUBLIC) { id } }')
-  ).json().data.createGroup;
+  ).json(groupResponse);
   const publicPc = new Client(pcDomain, port, publicCa);
   const gatedGroup = await publicPc.http(`/groups/${group.id}`);
   assert.equal(gatedGroup.status, 307, gatedGroup.text());
-  const signLocation = new URL(gatedGroup.headers.location, `https://${pcDomain}`);
+  const signLocation = new URL(gatedGroup.headers.location ?? '', `https://${pcDomain}`);
   assert.equal(signLocation.pathname, '/sign');
   assert.equal(signLocation.searchParams.get('next'), `/groups/${group.id}`);
   const anonymousSession = await publicPc.graphql('mutation { startAnonymousSession { id } }');
@@ -678,7 +749,7 @@ try {
       'mutation($id:ID!,$size:Int!) { requestPostUpload(groupId:$id,contentType:"image/png",byteSize:$size) { id url fields { name value } } }',
       { id: group.id, size: png.length },
     )
-  ).json().data.requestPostUpload;
+  ).json(postUploadResponse);
   assert.equal(new URL(upload.url).hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
   // Browsers POST the signed form straight to the bucket; the host resolves the bucket alias only on the service network.
   uploadForm('photo-contest', upload, png);
@@ -688,7 +759,7 @@ try {
       id: upload.id,
     },
   );
-  assert.deepEqual(completed.json().data.completePostUpload, { id: upload.id, byteSize: png.length });
+  assert.deepEqual(completed.json(completedUploadResponse), { id: upload.id, byteSize: png.length });
   pcApi.cookie = pc.cookie;
   const posted = await pcApi.post(
     '/graphql',
@@ -700,17 +771,18 @@ try {
     { Origin: `https://${pcDomain}` },
   );
   assert.equal(posted.status, 200, posted.text());
-  assert.equal(posted.json().errors, undefined, posted.text());
-  const post = posted.json().data.createPost;
+  assert.equal(posted.json(readObject).errors, undefined, posted.text());
+  const post = posted.json(postResponse);
   assert.match((await publicPc.http(`/groups/${group.id}`)).text(), /S3 파일 보존/);
   // The stable media path checks access and redirects to a 60-second signed GET; storage serves Range.
   const redirected = await pc.http(post.mediaUrl, { headers: { Range: 'bytes=0-7' } });
   assert.equal(redirected.status, 307, redirected.text());
   assert.equal(redirected.headers['cache-control'], 'private, no-store');
+  assert.ok(redirected.headers.location, 'Media response must include a signed URL');
   const pcSigned = new URL(redirected.headers.location);
   assert.equal(pcSigned.hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
   assert.equal(pcSigned.searchParams.get('X-Amz-Expires'), '60');
-  const pcContent = JSON.parse(
+  const pcContent = parseJson(
     serviceCompose('photo-contest', [
       'exec',
       '-T',
@@ -722,6 +794,7 @@ try {
        console.log(JSON.stringify({status: response.status, cache: response.headers.get('cache-control'), bytes: Buffer.from(await response.arrayBuffer()).toString('base64')}));`,
       pcSigned.toString(),
     ]),
+    signedContentResponse,
   );
   assert.equal(pcContent.status, 206);
   assert.equal(pcContent.cache, 'private, no-store');
@@ -731,8 +804,9 @@ try {
     'game_feedback',
     `INSERT INTO "User" (id,nickname,"termsVersion","ageConfirmed") VALUES ('shared-operator','운영 확인','v1',true),('shared-peer','대화 상대','v1',true)`,
   );
-  const createdAdmin = JSON.parse(
+  const createdAdmin = parseJson(
     operate('game-feedback', ['operator', 'create', 'smoke-admin'], { input: 'isolated-smoke-password\n' }),
+    adminResponse,
   );
   assert.equal(createdAdmin.username, 'smoke-admin');
   assert.notEqual(createdAdmin.userId, 'shared-operator');
@@ -752,7 +826,7 @@ try {
     { Authorization: `Bearer ${token}` },
   );
   assert.equal(requestedMedia.status, 200, requestedMedia.text());
-  const mediaUpload = requestedMedia.json();
+  const mediaUpload = requestedMedia.json(mediaPlanResponse);
   assert.deepEqual(Object.keys(mediaUpload).sort(), ['expiresAt', 'fields', 'id', 'url']);
   assert.equal(new URL(mediaUpload.url).hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
   uploadForm('game-feedback', mediaUpload, png);
@@ -762,18 +836,19 @@ try {
     { Authorization: `Bearer ${token}` },
   );
   assert.equal(mediaResponse.status, 200, mediaResponse.text());
-  const media = mediaResponse.json();
+  const media = mediaResponse.json(decodeMediaResponse);
   assert.equal((await gf.http(media.url)).status, 404);
   const signed = await gf.http(media.url, {
     headers: { Authorization: `Bearer ${token}`, Range: 'bytes=0-7' },
   });
   assert.equal(signed.status, 307, signed.text());
   assert.equal(signed.headers['cache-control'], 'private, no-store');
+  assert.ok(signed.headers.location, 'Media response must include a signed URL');
   const signedUrl = new URL(signed.headers.location);
   assert.equal(signedUrl.hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
   assert.equal(signedUrl.searchParams.get('X-Amz-Expires'), '60');
   // API 컨테이너의 격리 네트워크에서 S3 fixture를 읽으며 서비스 인증은 전달하지 않는다.
-  const content = JSON.parse(
+  const content = parseJson(
     serviceCompose('game-feedback', [
       'exec',
       '-T',
@@ -785,6 +860,7 @@ try {
        console.log(JSON.stringify({status: response.status, cache: response.headers.get('cache-control'), bytes: Buffer.from(await response.arrayBuffer()).toString('base64')}));`,
       signedUrl.toString(),
     ]),
+    signedContentResponse,
   );
   assert.equal(content.status, 206);
   assert.equal(content.cache, 'private, no-store');
@@ -813,7 +889,7 @@ try {
       'game-feedback',
       'deploy',
       sha,
-      refs['game-feedback'][0],
+      references('game-feedback')[0],
       `ghcr.io/jingeon27/side-project-game-feedback-web@sha256:${'f'.repeat(64)}`,
     ],
     { encoding: 'utf8', env: baseEnv },
@@ -829,7 +905,7 @@ try {
       'game-feedback',
       'deploy',
       badSha,
-      ...refs['game-feedback'],
+      ...references('game-feedback'),
     ],
     { encoding: 'utf8', env: { ...baseEnv, SIDE_SMOKE_NO_PITR: '1' } },
   );
@@ -853,7 +929,7 @@ try {
       'game-feedback',
       'deploy',
       badSha,
-      refs['game-feedback'][0],
+      references('game-feedback')[0],
       brokenRef,
     ],
     { encoding: 'utf8', env: { ...baseEnv, SIDE_WAIT_SECONDS: '35' } },
@@ -869,7 +945,7 @@ try {
   assert.deepEqual(await resumed.invalidate(), { conversationId: null });
   const next = resumed.invalidate();
   const sent = await gf.post(
-    `/api/conversations/${conversation.json().id}/messages`,
+    `/api/conversations/${conversation.json(conversationResponse).id}/messages`,
     { body: '공통 프록시 SSE 확인', clientMessageId: randomUUID() },
     { Authorization: `Bearer ${token}` },
   );
@@ -883,7 +959,7 @@ try {
         }),
       ])
     ).conversationId,
-    conversation.json().id,
+    conversation.json(conversationResponse).id,
   );
   reconnected.destroy();
   serviceCompose('photo-contest', ['restart', 'api', 'web']);
@@ -901,7 +977,7 @@ try {
     'Shared-instance smoke passed: two real apps, one HTTPS proxy, verified database TLS, separate DML/DDL roles and buckets, presigned POST/S3 Range, secure host-only cookies, SSE, stale-PITR refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
-  for (const project of projects.toReversed()) {
+  for (const project of [...projects].reverse()) {
     try {
       if (project === 'proxy')
         compose(`${prefix}-proxy`, proxyFile, ['down', '--volumes', '--remove-orphans']);

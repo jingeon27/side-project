@@ -24,7 +24,7 @@ export default defineConfig({
           name: 'integration',
           environment: 'node',
           include: integrationFiles,
-          globalSetup: ['./scripts/integration-setup.mjs'],
+          globalSetup: ['./scripts/integration-setup.ts'],
         },
       },
     ],

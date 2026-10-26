@@ -13,7 +13,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 - 프로필은 `AvatarUpload` 예약 테이블과 `/api/profile/avatar/uploads`, `/:id/complete`, DELETE `/:id`를 사용한다. 5MB JPEG·PNG·WebP만 허용하며 웹에서 512px JPEG로 변환한다. 서버는 헤더를 검사하고 전체 이미지 디코딩·메타데이터 제거를 보장하지 않는다. 교체와 캐시 무효화는 같은 트랜잭션이다.
 - 조회는 공개 범위·소유권·차단·대화 참여/기록 경계를 확인한 뒤 private/no-store, no-referrer 307로 60초 S3 GET 주소를 발급한다. 유효한 Range는 S3가 처리하며 범위 초과는 API 416이다. HEAD는 DB 메타데이터만 반환한다.
 - `prune`는 24시간 지난 초안/예약 → 참조 없는 객체 retire → 14일 뒤 객체 삭제 순서다. 모든 파일 및 AvatarUpload 참조를 확인한다. 운영자 유지보수만 호출하며 HTTP 경로를 만들지 않는다.
-- 기존 bytes·FILESYSTEM 참조는 오프라인 `migrate-legacy-media.ts`/`scripts/migrate-media.mjs`에서만 읽는다. 기본은 dry-run, `--apply`는 한 파일씩 S3 전송·HEAD·SHA-256 재확인 후 조건부 DB 참조 교체다. 이행 전에 백업하며 원본 파일은 지우지 않는다.
+- 기존 bytes·FILESYSTEM 참조는 오프라인 `migrate-legacy-media.ts`/`scripts/migrate-media.ts`에서만 읽는다. 기본은 dry-run, `--apply`는 한 파일씩 S3 전송·HEAD·SHA-256 재확인 후 조건부 DB 참조 교체다. 이행 전에 백업하며 원본 파일은 지우지 않는다.
 - rate-limit: 게시글·채팅·프로필 예약은 `upload:` 분당 20, 완료는 `upload-complete:` 분당 20을 공유한다.
 
 ## 채팅 (`src/chat/`)
