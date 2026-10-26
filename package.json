@@ -13,16 +13,16 @@
     "packages/*"
   ],
   "scripts": {
-    "worktree:add": "node scripts/create-worktree.mjs",
-    "postinstall": "node scripts/install-git-hooks.mjs",
+    "worktree:add": "node scripts/create-worktree.ts",
+    "postinstall": "node scripts/install-git-hooks.ts",
     "dev:photo-contest": "yarn workspace @side/photo-contest dev",
     "build": "yarn workspaces foreach -A --include \"@side/*\" run build",
     "build:photo-contest": "yarn workspace @side/photo-contest build",
-    "typecheck": "yarn workspaces foreach -A --include \"@side/*\" run typecheck",
+    "typecheck": "yarn typecheck:scripts && yarn workspaces foreach -A --include \"@side/*\" run typecheck",
     "test": "yarn workspaces foreach -A --include \"@side/*\" run test",
     "test:photo-contest": "yarn workspace @side/photo-contest test",
     "test:photo-contest:e2e": "yarn workspace @side/photo-contest test:e2e",
-    "check": "yarn workspaces foreach -A --include \"@side/*\" run check",
+    "check": "yarn typecheck:scripts && yarn workspaces foreach -A --include \"@side/*\" run check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "storybook": "yarn workspace @side/design-system storybook",
@@ -34,13 +34,16 @@
     "setup:game-feedback": "yarn workspace @side/game-feedback setup",
     "build:game-feedback": "yarn workspace @side/game-feedback build",
     "test:game-feedback": "yarn workspace @side/game-feedback test",
-    "check:game-feedback": "yarn workspace @side/game-feedback check"
+    "check:game-feedback": "yarn workspace @side/game-feedback check",
+    "typecheck:scripts": "tsc7 -p tsconfig.scripts.json"
   },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@side/config": "workspace:*",
+    "@types/node": "^24.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.0"

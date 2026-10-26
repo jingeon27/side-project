@@ -17,7 +17,7 @@
     "zod": "^4.4.0"
   },
   "devDependencies": {
-    "@side/typescript-config": "workspace:*",
+    "@side/config": "workspace:*",
     "jsdom": "^29.0.0",
     "typescript": "6.0.2",
     "vitest": "^4.1.0"

@@ -1,0 +1,16 @@
+{
+  "extends": "./typescript/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "include": [
+    "eslint/src/**/*.ts",
+    "eslint.config.ts",
+    "vitest.config.ts",
+    "../../scripts/check-commit-message*.ts"
+  ],
+  "exclude": ["node_modules", "eslint/src/**/__fixtures__"]
+}

@@ -31,7 +31,7 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 - 계약 `SocialProviderSchema`(`kakao`·`discord`·`google`, `../../packages/contracts/src/index.ts`)와 인터페이스 `IdentityProvider { authorizationUrl({ state, nonce, challenge }), exchange(code, verifier, nonce) → subject }`(`src/auth/providers/identity-provider.ts`).
 - 구현: Google은 `GoogleIdentityProvider`(scope `openid`, PKCE, id_token 검증). Discord는 `identify`, 카카오는 scope 없이 ID만 조회한다. 나머지는 `src/auth/providers/oauth-identity.provider.ts`의 `createKakaoIdentityProvider`·`createDiscordIdentityProvider`이며 `subject`를 Zod로 좁히고 실패는 502 `OAUTH_FAILED`.
 - 연결: `resolveIdentityProviders`(`src/config/identity-providers.ts`)가 `<PREFIX>_CLIENT_ID`·`_CLIENT_SECRET`·`_REDIRECT_URI`를 읽는다. 기본 redirect는 `${webOrigin}/api/auth/social/<p>/callback`(Google은 `/api/auth/google/callback`) — Web origin의 `/api` rewrite를 거쳐야 state 쿠키가 돌아온다.
-- 제공자 추가 순서: `SocialProviderSchema` → 어댑터 팩토리 → `identity-providers.ts` → `production.config.ts`의 `providers` → 프로젝트 `.env.example` → `scripts/test.mjs`에서 키 비우기 → `oauth-identity.provider.test.ts` 케이스 → `codegen`. `GET /api/session`의 `socialProviders`는 enum에서 자동으로 만들어진다.
+- 제공자 추가 순서: `SocialProviderSchema` → 어댑터 팩토리 → `identity-providers.ts` → `production.config.ts`의 `providers` → 프로젝트 `.env.example` → `scripts/test.ts`에서 키 비우기 → `oauth-identity.provider.test.ts` 케이스 → `codegen`. `GET /api/session`의 `socialProviders`는 enum에서 자동으로 만들어진다.
 
 ## OAuth 흐름 불변식 (`AuthService.social`·`socialCallback`)
 
@@ -51,7 +51,7 @@ description: Game Feedback API의 세션 쿠키·Bearer 토큰 해석, Origin �
 - `AdminUsersService.ban`: 대상 행 `FOR UPDATE`, ADMIN 대상은 400 `ADMIN_PROTECTED`, AuditLog `BAN_USER`/`UNBAN_USER`, 커밋 뒤 `ChatEvents.closeUser`.
 - 밴 회피 방지(`src/auth/banned-identity.ts`): 밴하면 사용자의 모든 로그인 식별자를 `BannedIdentity(provider, sha256(subject))`에 남기고 해제하면 지운다. 밴 사용자의 탈퇴도 같은 트랜잭션에서 기록한다. 계정이 없는 식별자는 social callback(웹 403 `USER_BANNED`, 앱 `?error=login_failed`), `/api/auth/app/exchange`, `onboard`에서 거부된다. 계정이 남은 밴 사용자는 문의를 위해 로그인할 수 있다.
 
-- `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). 일반 가입·소셜 로그인은 관리자 권한을 부여하지 않는다. 운영 SSH의 `scripts/operator.mjs create <id>`는 전용 AdminAccount와 문의용 내부 User를 함께 생성하며 비밀번호를 stdin으로 받는다. 일반 사용자를 승격하지 않는다. 관리자 ID·비밀번호 로그인은 공개 Caddy에서 차단한 `/api/admin/auth/*`에서만 제공하며 AdminSession 쿠키는 `/api/admin`에만 적용한다. 공개 API는 관리자 쿠키나 전용 계정의 일반 Session을 허용하지 않는다. 테스트 ADMIN은 격리 픽스처만 사용하며 HTTP 승격 경로는 만들지 않는다.
+- `User.role`은 문자열이다(`userDto`는 모르는 값을 `USER`로). 일반 가입·소셜 로그인은 관리자 권한을 부여하지 않는다. 운영 SSH의 `scripts/operator.ts create <id>`는 전용 AdminAccount와 문의용 내부 User를 함께 생성하며 비밀번호를 stdin으로 받는다. 일반 사용자를 승격하지 않는다. 관리자 ID·비밀번호 로그인은 공개 Caddy에서 차단한 `/api/admin/auth/*`에서만 제공하며 AdminSession 쿠키는 `/api/admin`에만 적용한다. 공개 API는 관리자 쿠키나 전용 계정의 일반 Session을 허용하지 않는다. 테스트 ADMIN은 격리 픽스처만 사용하며 HTTP 승격 경로는 만들지 않는다.
 
 ## 건드리면 있어야 하는 테스트
 

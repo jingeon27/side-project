@@ -122,7 +122,7 @@ cloud-init 실패 시 `/var/log/cloud-init-output.log`를 본다. SSM 세션은 
 | 배포용 SSH 키                  | `ssh-keygen -t ed25519 -N '' -C github-actions-deploy -f side-deploy`                  | 공개 키는 호스트 `/home/ubuntu/.ssh/authorized_keys`, 개인 키는 9단계 GitHub Secret               |
 | OAuth·Supercell·Sentry         | 각 공급자 콘솔                                                                         | 서비스별 `.env`                                                                                   |
 
-액세스 키는 출력이 로그·공유 화면에 남지 않는 단말에서 발급해 서버 파일에 바로 옮긴다. 키를 Terraform으로 만들지 않는 이유는 비밀 키가 state에 평문으로 남기 때문이다. 배포 시 `verify-services.mjs`는 자기 버킷 접근(HeadBucket)과 두 버킷 이름이 다른지만 확인하므로, 한쪽 키로 다른 버킷이 거부되는지는 직접 확인한다.
+액세스 키는 출력이 로그·공유 화면에 남지 않는 단말에서 발급해 서버 파일에 바로 옮긴다. 키를 Terraform으로 만들지 않는 이유는 비밀 키가 state에 평문으로 남기 때문이다. 배포 시 `verify-services.ts`는 자기 버킷 접근(HeadBucket)과 두 버킷 이름이 다른지만 확인하므로, 한쪽 키로 다른 버킷이 거부되는지는 직접 확인한다.
 
 ```sh
 # 예: GF 키로 PC 버킷 접근이 거부되는지(403 기대). 키는 셸 기록에 남기지 않도록 프롬프트로 읽는다.

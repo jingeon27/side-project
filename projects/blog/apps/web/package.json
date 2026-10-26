@@ -39,7 +39,7 @@
   "devDependencies": {
     "@mdx-js/mdx": "^3.1.1",
     "@playwright/test": "^1.64.0",
-    "@side/typescript-config": "workspace:*",
+    "@side/config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.0",
@@ -68,5 +68,10 @@
   },
   "installConfig": {
     "hoistingLimits": "workspaces"
+  },
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
   }
 }

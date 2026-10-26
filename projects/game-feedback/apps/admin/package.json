@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc7 --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/test.mjs",
+    "test": "node scripts/test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -28,8 +28,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.0",
-    "@side/eslint-config": "workspace:*",
-    "@side/typescript-config": "workspace:*",
+    "@side/config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.16",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",

@@ -109,7 +109,7 @@ GraphQL IDE는 제공하지 않고 운영에서는 introspection과 오류 stack
 
 키가 없으면 전송하지 않습니다. 요청·쿠키·사용자 정보를 제거하고 분석 속성에 닉네임·설명·초대 토큰을 넣지 않습니다. 앱과 웹은 브리지의 기기 ID로 분석 사용자를 연결합니다. 실제 Sentry·Amplitude 프로젝트 수신은 별도 확인이 필요합니다.
 
-공용 ESLint 설정은 저장소 `packages/eslint-config`에 있습니다. `corepack yarn workspace @side/eslint-config check`로 else·컴포넌트 fetch·오버레이 상태 금지와 FSD·인라인 핸들러 규칙의 RuleTester fixture를 검증합니다.
+공용 ESLint 설정은 저장소 `packages/config/eslint`에 있습니다. `corepack yarn workspace @side/config check`로 else·컴포넌트 fetch·오버레이 상태 금지와 FSD·인라인 핸들러 규칙의 RuleTester fixture를 검증합니다.
 
 ## 앱별 테스트
 

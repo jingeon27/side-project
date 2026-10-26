@@ -102,7 +102,7 @@ services:
     profiles: [tools]
     image: ${API_IMAGE:?Set API_IMAGE digest}
     init: true
-    command: [node, scripts/production.mjs, migrate]
+    command: [node, scripts/production.ts, migrate]
     environment:
       <<: *api
       DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}

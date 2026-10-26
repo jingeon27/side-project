@@ -237,7 +237,7 @@ Expo WebView는 네이티브 로그인·공유·클립보드·햅틱·딥링크�
 
 ## 공용 린트와 오버레이
 
-저장소 packages/eslint-config의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<분류>/<규칙>/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 같은 폴더의 <규칙>.spec.ts가 그 규칙의 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/rules/fsd/fsd.helper.ts가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
+저장소 packages/config/eslint의 base·next·expo preset이 공통·프레임워크 규칙과 테스트 예외를 관리한다. 앱별 eslint.config.ts는 preset과 경로만 조합한다. 커스텀 규칙은 src/rules/<분류>/<규칙>/<규칙>.ts의 표준 TSESLint.RuleModule로 구현하고, 같은 폴더의 <규칙>.spec.ts가 그 규칙의 **fixtures** 파일을 읽어 RuleTester로 검증한다. FSD 규칙은 각각 분리하고 공통 import·경로 분석은 src/rules/fsd/fsd.helper.ts가 맡는다. 웹의 오버레이·오류 useState 금지도 독립 규칙이며 앱 설정에 긴 selector나 안내문을 넣지 않는다. 규칙·설정은 TypeScript이고 Jiti로 로드한다. 프로젝트 루트 설정도 tsconfig.lint.json으로 검사한다. 한 번 쓰는 이벤트는 JSX에서 선언하며 재사용 핸들러만 분리한다.
 
 시트는 overflow-hidden으로 데스크톱 하단 모서리까지 자르고, 본문만 스크롤하며 Footer는 고정한다. 모바일 Chrome에서 입력 → 제출 포커스 전환 때 하단 메뉴가 클릭을 가로채는 문제를 실제 브라우저로 확인했다. 메뉴 공간을 유지하고 폼 안에 포커스가 있는 동안 숨겨 첫 클릭부터 제출되게 했다. 휴대폰·데스크톱에서 짧은 화면, 스크롤, 닫기·재열기·포커스 복귀와 실제 가입 흐름을 검증한다.
 
@@ -306,7 +306,7 @@ Node 24.18.0에서 immutable install, Web·API·test-kit typecheck, Web·API·te
 
 활동 알림은 내 글 댓글·내 댓글 답글·대회 시작/종료·가입 승인/거절·관리자 가입 신청이다. 개인 팔로우·1:1 채팅은 추가하지 않는다. 관리자 신청 알림은 현재 OWNER/MODERATOR에게만 보이며 처리 시 사라진다. 숨긴 콘텐츠·삭제·탈퇴·권한 변경은 목록/배지/푸시에서 다시 확인하고 본인/반복 요청 알림은 제외한다. 홈/MY 벨과 알림함은 실제 미읽음 수·무한 목록·개별/전체 읽음을 연결했다. 원댓글 작성자 멘션은 공통 Mention 테두리 UI를 사용한다.
 
-웹 화면 모드는 system/light/dark를 쿠키와 SSR에 반영하고, 브리지로 RN 안전 영역·WebView·오류 화면·상태 표시줄도 동기화한다. RN 푸시는 설치 UUID와 Expo token을 현재 WebView 세션에 등록하며 OS 권한은 알림함의 켜기에서 요청한다. 알림 트랜잭션의 큐 기록, DB 임대, 전송 전 가시성/만료/읽음 확인, 재시도와 티켓/영수증 구분, 로그아웃·계정 전환 정리를 구현했다. 개인정보 없는 잠금화면 안내·앱 배지·foreground 갱신·중복 탭 제거·문서 준비 후 알림함 이동을 지원한다. [공통 패키지와 운영 설정](../../../packages/push-notifications/README.md)에 실제 EAS/FCM/APNs 준비 과정을 기록했다. 기본 API 발송은 false이고 앱 기능이 준비되지 않으면 권한 지원을 광고하지 않는다.
+웹 화면 모드는 system/light/dark를 쿠키와 SSR에 반영하고, 브리지로 RN 안전 영역·WebView·오류 화면·상태 표시줄도 동기화한다. RN 푸시는 설치 UUID와 Expo token을 현재 WebView 세션에 등록하며 OS 권한은 알림함의 켜기에서 요청한다. 알림 트랜잭션의 큐 기록, DB 임대, 전송 전 가시성/만료/읽음 확인, 재시도와 티켓/영수증 구분, 로그아웃·계정 전환 정리를 구현했다. 개인정보 없는 잠금화면 안내·앱 배지·foreground 갱신·중복 탭 제거·문서 준비 후 알림함 이동을 지원한다. [공통 패키지와 운영 설정](../../../packages/toolkit/src/push-notifications/README.md)에 실제 EAS/FCM/APNs 준비 과정을 기록했다. 기본 API 발송은 false이고 앱 기능이 준비되지 않으면 권한 지원을 광고하지 않는다.
 
 API 전체 DB 통합 369개, Web unit/UI 446개, Mobile unit/UI 162개, Bridge 37개, native host Android/iOS E2E 전체 26개가 통과했다. 댓글·대회·가입 신청 알림과 익명 세션·비공개 차단·회원 전환은 API 검증에 포함된다. Web은 전체 117개 사양을 전 실행에서 확인했고 기존 홈 벨 선택자 3개를 현재 링크로 고쳐 별도 재검증했다. 최신 develop의 다크모드 모달 검증을 보존해 충돌을 해결했다. 이번 푸시 경계는 실제 세션·트랜잭션·권한·로그아웃·부분 실패 테스트와 실제 웹/API·네이티브 호스트 왕복으로 검증했다. 실제 원격 푸시 수신은 자격 증명과 dev client 실기기가 필요하며 로컬 브라우저 성공으로 대체하지 않는다.
 

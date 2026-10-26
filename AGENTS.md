@@ -15,7 +15,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 - 커밋은 작게 나눈다. 프로젝트의 `commit` 스킬을 따른다.
 - husky hook: `pre-commit`은 스테이징된 파일만 Prettier로 정리하고 `commit-msg`는 `<type>(<scope>): <내용>` 형식을 검사한다. 새 worktree는 `yarn install` 후 hook이 생긴다. 실패하면 고쳐서 다시 커밋한다. hook이 필요 없는 자동화는 `HUSKY=0`을 쓰고 `--no-verify`는 비상시에만 쓴다.
 
-- TypeScript CLI는 공통 `@side/typescript-config`의 `tsc7`(7.0.2)을 사용한다. JavaScript compiler API 의존 도구는 `typescript` 6.0.2를 사용하며, `typescript/bin/tsc` 경로를 직접 가정하지 않는다.
+- TypeScript CLI는 공통 `@side/config`의 `tsc7`(7.0.2)을 사용한다. JavaScript compiler API 의존 도구는 `typescript` 6.0.2를 사용하며, `typescript/bin/tsc` 경로를 직접 가정하지 않는다.
 - 설정 파일도 도구가 지원하면 `.ts`를 우선한다. 설치된 로더가 TypeScript 설정을 지원하지 않는 경우에만 `.mjs` 등 지원 형식을 유지한다.
 - 테스트 접미사는 새 기능 사양 `*.spec.ts(x)`, 확인한 버그 회귀 `*.test.ts(x)`로 쓴다. 기존 혼합 파일은 보존하고 Vitest는 둘 다 수집한다. 러너는 파일 위치와 앱 설정이 결정하며 API는 Vitest+Supertest다.
 - unit·integration 테스트는 대상 구현 파일과 같은 디렉터리에 둔다. DB·HTTP 통합 테스트는 `*.integration.spec.ts` 또는 `*.integration.test.ts`로 구분하고 앱의 unit 레인에서 제외한다. 공통 하네스·fixture와 브라우저 E2E는 앱의 별도 테스트 디렉터리에 둘 수 있다.

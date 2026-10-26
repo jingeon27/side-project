@@ -6,7 +6,7 @@ set -euo pipefail
 SERVICE=${1:-}
 case "$SERVICE" in
   photo-contest | game-feedback)
-    paths=("projects/$SERVICE/**" 'packages/**' 'package.json' 'yarn.lock' 'scripts/check-migrations.mjs'
+    paths=("projects/$SERVICE/**" 'packages/**' 'package.json' 'yarn.lock' 'scripts/**' 'tsconfig.scripts.json'
       '.yarnrc.yml' '.nvmrc' '.prettierrc.json' '.prettierignore' '.dockerignore'
       ".github/workflows/$SERVICE.yml" '.github/workflows/shared-instance.yml' 'deploy/shared-instance/**')
     ;;

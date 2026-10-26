@@ -6,7 +6,7 @@ import {
   type IPushJob,
   type IPushJobUpdate,
   type IPushMessage,
-} from '@side/push-notifications';
+} from '@side/toolkit/push-notifications';
 
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';

@@ -47,12 +47,8 @@ export function assertTestSchemaName(schema: string, prefix?: TTestSchemaPrefix)
  * 개발 DB(55432)나 원격 DB에는 스키마를 만들거나 지우지 않는다.
  */
 export function assertTestDatabaseUrl(databaseUrl: string) {
-  let url: URL;
-  try {
-    url = new URL(databaseUrl);
-  } catch {
-    throw new Error('TEST_DATABASE_URL은 올바른 PostgreSQL URL이어야 합니다.');
-  }
+  const url = URL.parse(databaseUrl);
+  if (!url) throw new Error('TEST_DATABASE_URL은 올바른 PostgreSQL URL이어야 합니다.');
   const port = testDatabasePort();
   if (url.protocol !== 'postgresql:' && url.protocol !== 'postgres:')
     throw new Error('테스트 DB는 PostgreSQL URL만 허용합니다.');

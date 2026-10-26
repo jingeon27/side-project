@@ -18,7 +18,7 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc7 --noEmit",
-    "test": "node scripts/test.mjs",
+    "test": "node scripts/test.ts",
     "check": "yarn lint && yarn typecheck && yarn test && yarn build-storybook",
     "storybook": "storybook dev --port 6006 --no-open",
     "build-storybook": "storybook build --output-dir dist/storybook"
@@ -43,8 +43,7 @@
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.4.0",
-    "@side/eslint-config": "workspace:*",
-    "@side/typescript-config": "workspace:*",
+    "@side/config": "workspace:*",
     "@storybook/addon-a11y": "10.6.3",
     "@storybook/addon-docs": "10.6.3",
     "@storybook/addon-themes": "10.6.3",

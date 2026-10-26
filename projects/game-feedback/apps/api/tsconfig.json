@@ -1,5 +1,5 @@
 {
-  "extends": "@side/typescript-config/base",
+  "extends": "@side/config/typescript",
   "compilerOptions": {
     "lib": ["ES2022"],
     "module": "Preserve",
@@ -7,8 +7,9 @@
     "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node"]
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "*.mts"],
+  "include": ["src/**/*.ts", "*.mts", "scripts/**/*.ts", "../../scripts/**/*.ts"],
   "exclude": ["src/generated"]
 }

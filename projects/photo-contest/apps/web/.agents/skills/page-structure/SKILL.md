@@ -50,7 +50,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 | `fsd/slice-public-api` | 다른 slice 내부 파일 import, 또는 자기 slice 배럴 import | 그 slice `index.ts`에 export를 더한다(예외 `types/`·`mocks/`·`*.schema`·`*.server`). 같은 slice 안은 상대 경로 |
 | `fsd/no-cross-page` | 화면 slice끼리 import | 도메인이면 `features`, 아니면 `shared`로 내린다 |
 
-- `shared`·`_app`은 slice가 없어 `@/shared/ui/@core/button`처럼 깊게 import한다. FSD 규칙은 저장소 `packages/eslint-config/src/rules`에 구현하며 규칙 옆의 RuleTester spec을 함께 관리한다.
+- `shared`·`_app`은 slice가 없어 `@/shared/ui/@core/button`처럼 깊게 import한다. FSD 규칙은 저장소 `packages/config/eslint/src/rules`에 구현하며 규칙 옆의 RuleTester spec을 함께 관리한다.
 
 ## 확인 (side 루트)
 

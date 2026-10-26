@@ -37,7 +37,7 @@ FROM base AS api
 ENV NODE_ENV=production ENVIRONMENT=production
 COPY --from=api-build /app/node_modules ./node_modules
 COPY --from=api-build /app/package.json ./package.json
-COPY --from=api-build /app/packages/push-notifications ./packages/push-notifications
+COPY --from=api-build /app/packages/toolkit ./packages/toolkit
 COPY --from=api-build /app/projects/game-feedback/packages/contracts ./projects/game-feedback/packages/contracts
 COPY --from=api-build /app/projects/game-feedback/apps/api/package.json ./projects/game-feedback/apps/api/package.json
 COPY --from=api-build /app/projects/game-feedback/apps/api/dist ./projects/game-feedback/apps/api/dist

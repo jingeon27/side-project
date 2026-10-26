@@ -7,7 +7,8 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
-      - 'scripts/check-migrations.mjs'
+      - 'scripts/**'
+      - 'tsconfig.scripts.json'
       - '.yarnrc.yml'
       - '.nvmrc'
       - '.prettierrc.json'
@@ -23,7 +24,8 @@ on:
       - 'packages/**'
       - 'package.json'
       - 'yarn.lock'
-      - 'scripts/check-migrations.mjs'
+      - 'scripts/**'
+      - 'tsconfig.scripts.json'
       - '.yarnrc.yml'
       - '.nvmrc'
       - '.prettierrc.json'
@@ -50,24 +52,25 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
-      - name: Reject incompatible new migrations
-        env:
-          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
-        run: node scripts/check-migrations.mjs
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
+      - name: Reject incompatible new migrations
+        env:
+          MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
+        run: node scripts/check-migrations.ts
       - run: corepack enable
       - id: install
         run: yarn install --immutable
       - run: yarn format:check
+      - run: yarn typecheck:scripts
       - run: yarn workspace @side/game-feedback codegen
       - name: Check generated SDK
         run: git diff --exit-code -- projects/game-feedback/packages/sdk/src/generated
       - run: yarn workspace @side/design-system check
       - run: yarn check:game-feedback
-      - run: yarn workspace @side/push-notifications check
-      - run: yarn workspace @side/migration-check check
+      - run: yarn workspace @side/config check
+      - run: yarn workspace @side/toolkit check
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
       - name: Install browsers for end-to-end and telemetry checks

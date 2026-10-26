@@ -107,7 +107,7 @@ describe('최신 커밋 배포 판정', () => {
   });
 
   it('서비스마다 자기 경로만 본다', () => {
-    const release = commit('packages/eslint-config/src/base.ts');
+    const release = commit('packages/config/eslint/src/base.ts');
     commit('.github/workflows/game-feedback.yml');
     expect(decide('photo-contest', release).output).toBe('deploy=true');
     expect(decide('game-feedback', release).output).toBe('deploy=false');

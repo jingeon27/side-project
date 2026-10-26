@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'projects/blog/**'
-      - 'packages/typescript-config/**'
+      - 'packages/config/**'
       - 'package.json'
       - 'yarn.lock'
       - '.yarnrc.yml'
@@ -13,7 +13,7 @@ on:
   pull_request:
     paths:
       - 'projects/blog/**'
-      - 'packages/typescript-config/**'
+      - 'packages/config/**'
       - 'package.json'
       - 'yarn.lock'
       - '.yarnrc.yml'

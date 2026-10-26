@@ -7,7 +7,7 @@ import {
   type IPushJob,
   type IPushJobUpdate,
   type IPushMessage,
-} from '@side/push-notifications';
+} from '@side/toolkit/push-notifications';
 
 import { SessionService } from '../auth/session.service';
 import { ERROR_CODE, fail } from '../common/errors';

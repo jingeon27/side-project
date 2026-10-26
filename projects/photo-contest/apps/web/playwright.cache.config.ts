@@ -26,7 +26,7 @@ export default defineConfig({
     apiWebServer({ port: CACHE_API_PORT, webOrigin: CACHE_WEB_ORIGIN, database }),
     {
       command:
-        'yarn workspace @photo-contest/web build && yarn workspace @photo-contest/web exec node scripts/serve-cache-build.mjs',
+        'yarn workspace @photo-contest/web build && yarn workspace @photo-contest/web exec node scripts/serve-cache-build.ts',
       url: `${CACHE_WEB_ORIGIN}/health-check/live`,
       reuseExistingServer: false,
       timeout: 180_000,

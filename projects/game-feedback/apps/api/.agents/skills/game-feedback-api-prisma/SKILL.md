@@ -1,13 +1,13 @@
 ---
 name: game-feedback-api-prisma
-description: Game Feedback API의 prisma/schema.prisma에 모델·컬럼·인덱스·제약을 더하거나 바꾸고 migration SQL을 만들 때, 로컬 db:sync와 운영 migrate deploy(scripts/migrate.mjs) 경로를 판단할 때, 또는 서비스 쓰기 코드에서 UnitOfWork.run 트랜잭션·행 잠금을 쓸 때 사용한다.
+description: Game Feedback API의 prisma/schema.prisma에 모델·컬럼·인덱스·제약을 더하거나 바꾸고 migration SQL을 만들 때, 로컬 db:sync와 운영 migrate deploy(scripts/migrate.ts) 경로를 판단할 때, 또는 서비스 쓰기 코드에서 UnitOfWork.run 트랜잭션·행 잠금을 쓸 때 사용한다.
 ---
 
 DB·포트 격리와 금지 옵션은 프로젝트 `AGENTS.md`, 커밋 범위는 `game-feedback-commit` 스킬, 테스트 하네스는 `game-feedback-api-test` 스킬을 따른다. 경로는 apps/api 기준이다.
 
 ## 스키마 편집 (`prisma/schema.prisma`)
 
-- client는 `src/generated/prisma`로 생성되고 gitignore다(손대지 않는다). 서비스는 `../generated/prisma`에서 `PrismaClient`·`Prisma`·모델 타입을 import하고, `scripts/build.mjs`가 이 폴더를 `dist/generated/prisma`로 복사한다.
+- client는 `src/generated/prisma`로 생성되고 gitignore다(손대지 않는다). 서비스는 `../generated/prisma`에서 `PrismaClient`·`Prisma`·모델 타입을 import하고, `scripts/build.ts`가 이 폴더를 `dist/generated/prisma`로 복사한다.
 - 파일은 `prisma format` 정렬 상태가 아니다(열 정렬 없음, `@relation(fields:[…])`처럼 공백 없는 줄이 섞여 있다). 포맷터를 돌리면 전체가 바뀌므로 바꾼 줄만 주변 형식대로 쓴다.
 - 역할·상태·게시판·신고 대상은 Prisma enum이 아니라 `String`이다(`User.role`, `Post.board`, `Report.status`·`targetType`, `SupportConversation.topic`·`status`). 허용 값은 계약 Zod가 HTTP 경계에서 정한다. `ACTIVE_POST`(`src/common/content.ts`)가 `board in BoardKindSchema.options`로 거르므로 계약에서 게시판을 빼면 기존 행은 남고 모든 공개 화면에서 사라진다.
 - JSON 열(`Post.document`·`coaching`·`friendSale`·`battle`·`gameProfile`, `User.profileLinks`, `GameAccount.profile`)의 모양은 계약 Zod만 보장한다. 값을 비울 때는 `Prisma.DbNull`.
@@ -37,14 +37,14 @@ corepack yarn workspace @game-feedback/api db:generate
 
 - `exec`는 apps/api에서 돌므로 prisma 인자는 앱 기준, `mkdir`·`>`는 side 루트 기준이다. `--from`은 마지막 migration까지 반영된 스키마(보통 HEAD)다. 빈 결과면 폴더를 지운다. CHECK 같은 수동 제약은 기존 migration처럼 SQL에 직접 더한다.
 - 커밋된 `migration.sql`은 고치지 않고 새 폴더를 더한다.
-- side 루트 `scripts/check-migrations.mjs`(CI 첫 단계)가 base 대비 **새로 추가된** migration에서 삭제·이름 변경·타입/NOT NULL 변경, 기본값 없는 `ADD COLUMN NOT NULL`, `TRUNCATE`, WHERE 없는 `DELETE`·`UPDATE`, CONCURRENTLY 없는 `CREATE INDEX`, `CREATE UNIQUE INDEX`, NOT VALID 없는 FK·CHECK 추가 등을 거부하고 기존 migration.sql 수정·삭제도 거부한다(전체 목록은 side 루트 `deploy/shared-instance/README.md`의 확장 → 배포 → 정리). 같은 migration에서 만든 테이블의 인덱스·제약은 통과한다. `prisma migrate diff`가 넣은 `/* Warnings: */` 주석은 검토 후 지운다. 기본은 expand → 배포 → contract로 나눈다. 의도한 경우만 그 문장 바로 윗줄에 `-- migration-lint: allow <규칙> — <5자 이상 이유>`를 단다(바로 다음 문장 하나에만 적용).
+- side 루트 `scripts/check-migrations.ts`(CI 첫 단계)가 base 대비 **새로 추가된** migration에서 삭제·이름 변경·타입/NOT NULL 변경, 기본값 없는 `ADD COLUMN NOT NULL`, `TRUNCATE`, WHERE 없는 `DELETE`·`UPDATE`, CONCURRENTLY 없는 `CREATE INDEX`, `CREATE UNIQUE INDEX`, NOT VALID 없는 FK·CHECK 추가 등을 거부하고 기존 migration.sql 수정·삭제도 거부한다(전체 목록은 side 루트 `deploy/shared-instance/README.md`의 확장 → 배포 → 정리). 같은 migration에서 만든 테이블의 인덱스·제약은 통과한다. `prisma migrate diff`가 넣은 `/* Warnings: */` 주석은 검토 후 지운다. 기본은 expand → 배포 → contract로 나눈다. 의도한 경우만 그 문장 바로 윗줄에 `-- migration-lint: allow <규칙> — <5자 이상 이유>`를 단다(바로 다음 문장 하나에만 적용).
 - 새 열은 `?`이거나 기본값을 둔다(`profileLinks`의 `NOT NULL DEFAULT '[]'`처럼). 기존 데이터에 새 unique를 걸면 중복 행 때문에 실패할 수 있다.
 
 ## 적용 경로 — 에이전트는 실행하지 않는다
 
-- 로컬 개발 DB: `corepack yarn workspace @side/game-feedback db:sync` → `../../scripts/db.mjs sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
+- 로컬 개발 DB: `corepack yarn workspace @side/game-feedback db:sync` → `../../scripts/db.ts sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
 - API `prisma:sync`를 직접 부르지 않는다 — URL 가드가 없다. `prisma migrate dev`·`migrate reset`·`--accept-data-loss`·`--force-reset`도 쓰지 않는다.
-- 운영: `scripts/migrate.mjs`(빌드된 `dist`와 `NODE_ENV=production` 필요)가 `validateProductionEnvironment` → `prisma migrate deploy` → `seed(db, false)`(카테고리) → shared-instance면 권한 GRANT/REVOKE 순서로 돈다. `../../../../deploy/shared-instance/scripts/service.sh`가 `../../deploy/shared-instance/compose.yaml`의 `migrate` 서비스를 실행한다. 로컬에서 돌리지 않는다.
+- 운영: `scripts/migrate.ts`(빌드된 `dist`와 `NODE_ENV=production` 필요)가 `validateProductionEnvironment` → `prisma migrate deploy` → `seed(db, false)`(카테고리) → shared-instance면 권한 GRANT/REVOKE 순서로 돈다. `../../../../deploy/shared-instance/scripts/service.sh`가 `../../deploy/shared-instance/compose.yaml`의 `migrate` 서비스를 실행한다. 로컬에서 돌리지 않는다.
 - `db:generate`(API `test` 스크립트와 `codegen`도 실행)는 사용자의 개발 서버가 쓰는 `src/generated/prisma`를 다시 쓴다. 개발 DB에 적용되기 전까지 새 열을 쓰는 요청은 실패한다고 알린다.
 
 ## UnitOfWork (`src/database/unit-of-work.ts`)
@@ -63,5 +63,5 @@ corepack yarn workspace @game-feedback/api db:generate
 corepack yarn workspace @game-feedback/api db:generate
 corepack yarn workspace @game-feedback/api typecheck
 corepack yarn workspace @game-feedback/api test:integration
-MIGRATION_BASE_REF=origin/develop node scripts/check-migrations.mjs   # side 루트, git diff만 읽는다
+MIGRATION_BASE_REF=origin/develop node scripts/check-migrations.ts   # side 루트, git diff만 읽는다
 ```

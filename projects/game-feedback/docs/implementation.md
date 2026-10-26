@@ -2,7 +2,7 @@
 
 ## 2026-10-25 루트 .env만 사용하는 설정 계약
 
-설정 파일은 도구가 지원하면 TypeScript를 우선한다. Game Feedback의 Next 설정과 Vite Admin의 PostCSS, 블로그의 ESLint 설정을 `.ts`로 바꿨다. 블로그는 독립 설치에서도 TypeScript ESLint 설정을 읽도록 기존 저장소에서 사용 중인 jiti를 개발 의존성에 선언했다. 설치된 Next의 PostCSS 설정 탐색은 `.ts`를 지원하지 않으므로 Next 웹들의 `postcss.config.mjs`는 유지한다. 설정 값은 바꾸지 않았다.
+설정 파일은 도구가 지원하면 TypeScript를 우선한다. Game Feedback의 Next 설정과 Vite Admin의 PostCSS, 블로그의 ESLint 설정을 `.ts`로 바꿨다. 블로그는 독립 설치에서도 TypeScript ESLint 설정을 읽도록 기존 저장소에서 사용 중인 jiti를 개발 의존성에 선언했다. 설치된 Next의 PostCSS 설정 탐색은 `.ts`를 지원하지 않으므로 Next 웹들의 PostCSS 설정은 각 앱의 `package.json` `postcss` 필드에 둔다. 설정 값은 바꾸지 않았다.
 
 설정 변환 검증: Web·Admin·Blog 타입/린트, Web 205개·Admin 19개 기존 테스트, Admin production 빌드와 Next production 설정 로더를 통과했다.
 
@@ -130,7 +130,7 @@ PR #50 충돌 해소: 작업 도중 반영된 원격 rebase(`c0401942`)를 보�
 
 프로젝트 루트 `eslint.config.ts`가 Web·Admin·Mobile을 제외한 `apps/api`, `packages/{contracts,sdk,bridge}`, 프로젝트·API 스크립트를 공용 `baseConfig`로 검사하고 집계 `check`가 실행한다. 생성 코드(`src/generated`, SDK `generated`)와 `dist`는 산출물 제외로 빠진다. 위반 44건(`side/no-else` 19, `no-unused-vars` 16, `no-explicit-any` 6, `no-require-imports` 3)을 고쳤다. 루트 `migration-check`에도 `baseConfig`와 `check`를 연결해 `side/no-else` 1건을 고쳤고, game-feedback·photo-contest CI가 `test` 대신 `check`를 실행한다.
 
-API·contracts·bridge·sdk tsconfig는 `@side/typescript-config/base`를 상속한다. 서버 API와 React Native 공용 bridge는 `lib`를 ES2022로 명시해 DOM을 뺐고, Web·API 공용 contracts는 `URL` 때문에 DOM만, 브라우저 SDK는 기존 DOM·DOM.Iterable을 유지한다. `noUncheckedIndexedAccess` 오류는 목록 커서(`nextPageAnchor`·`nextCursor`)·대화 쌍(`conversationPair`) 도우미와 명시적 검사로 any·non-null 없이 고쳤다.
+API·contracts·bridge·sdk tsconfig는 `@side/config/typescript`를 상속한다. 서버 API와 React Native 공용 bridge는 `lib`를 ES2022로 명시해 DOM을 뺐고, Web·API 공용 contracts는 `URL` 때문에 DOM만, 브라우저 SDK는 기존 DOM·DOM.Iterable을 유지한다. `noUncheckedIndexedAccess` 오류는 목록 커서(`nextPageAnchor`·`nextCursor`)·대화 쌍(`conversationPair`) 도우미와 명시적 검사로 any·non-null 없이 고쳤다.
 
 API는 빌드 전용 `tsconfig.build.json`(Node16 CJS, 테스트·`src/testing/**` 제외)과 테스트를 포함한 `tsconfig.json`(Vitest와 같은 `module: Preserve`·Bundler)으로 나눴고 `typecheck`가 둘 다 검사한다. 운영 seed가 쓰는 데모 커뮤니티 글은 `src/seed-community-posts.ts`로 옮겨 dist에는 S3 fixture·E2E 서버가 들어가지 않는다. Dockerfile·운영 스크립트의 `dist/main.js`·`dist/seed.js` 경로는 그대로다. 테스트 타입 오류 40건(실제 오류 2곳, `Location`·`Set-Cookie`·배열 색인)을 고쳤다.
 
@@ -386,7 +386,7 @@ features는 auth·user·game-profile·post·answer·comment·category·notificat
 
 TanStack Query options factory를 조회·무효화의 키 단일 출처로 사용한다. 사용자별 private 조회를 scope로 나누고 불완전한 인자에는 skipToken을 사용한다. RHF/Zod와 useWatch, overlay-kit을 실제 폼·모달에 적용했다. 서버 상태를 별도 store로 복제하지 않고 mutation의 pending/error를 직접 쓴다. FSD 분리 단계에서는 기존 Radix Dialog와 Orval REST SDK·HttpOnly 쿠키·SSE 계약을 유지했다. 이후 아래 공통 디자인 시스템 작업에서 Dialog를 Base UI로 통합한다.
 
-Web에 공유 `@side/eslint-config/next`·`fsd-boundaries`, `@side/typescript-config/base`를 연결했다. 레이어 방향·public barrel·페이지 교차 import·직접 fetch·overlay 상태 복제·컴포넌트/핸들러 규칙과 함께, 앱 로컬 lint가 raw query-key·enum·타입 이름을 검사한다. 집계 check에 Web lint, 집계 test에 Web 소유 Vitest를 연결해 기존 CI에서도 실행한다.
+Web에 공유 `@side/config/eslint/next`·`fsd-boundaries`, `@side/config/typescript`를 연결했다. 레이어 방향·public barrel·페이지 교차 import·직접 fetch·overlay 상태 복제·컴포넌트/핸들러 규칙과 함께, 앱 로컬 lint가 raw query-key·enum·타입 이름을 검사한다. 집계 check에 Web lint, 집계 test에 Web 소유 Vitest를 연결해 기존 CI에서도 실행한다.
 
 세션 전환은 진행 중 query 취소 → 이전 계정 cache 제거 → 새 세션 저장 순서를 유지한다. 로그아웃·탈퇴 후 private cache를 즉시 비우며 SSE는 사용자 ID별로 종료한다. 메시지 실패 초안과 재시도 UUID, 화면에 표시된 메시지까지의 읽음 경계도 보존한다. 최종 교차 검토에서 OverlayProvider가 계정별 수명 밖에 있던 문제를 발견해 사용자 ID별 Provider로 변경했다. 다른 탭에서 계정을 바꿔도 이전 계정의 모달·초안·탈퇴 확인 입력은 남지 않는다.
 
@@ -720,7 +720,7 @@ E2E 최초 실행은 피드의 같은 제목을 먼저 찾는 새 모바일 테�
 
 사용자 요청에 따라 중간 생성물인 apps/api/openapi.json을 Git 추적에서 제거하고 프로젝트 .gitignore에 등록했다. 기존 자동 생성 준비 경로는 유지하며 파일이 없는 초기 체크아웃에서도 Zod와 경로 정의로 다시 생성한다. 생성 SDK는 계속 추적한다. 루트 공통 파일 중 .github/workflows/game-feedback.yml 변경은 추적하지 않는 JSON diff를 제거하고 생성 SDK diff를 검사하도록 이름/범위를 맞추기 위해 필요했다. SDK의 모든 JSON operation에 응답 검증이 연결되는 검사도 유지한다. 위 친추판매 후속 기록의 생성 JSON 추적 정책은 이 요청으로 대체한다.
 
-API에는 Vitest/Supertest 의존성과 HTTP 통합 테스트가 있었으나 API 워크스페이스 test를 직접 실행하면 TEST_DATABASE_URL이 없을 때 DB 통합 테스트를 skip할 수 있었다. API 소유 scripts/test.mjs와 vitest.config.mts를 추가해 API 단독 명령도 Node 24/전용 DB URL 확인 → 계약 빌드 → 전용 Prisma → 소유 테스트 DB 시작 → Vitest/Supertest 실행을 준비한다. 외부 제공자 인증정보를 비우고 개발 DB 연결은 거부한다. Vitest 원시 호출의 테스트 URL 누락도 설정 단계에서 실패한다. 루트 test는 같은 API 명령을 호출하며 중복 DB 시작 코드를 제거했다. API 실행 방법과 격리/정리 범위는 apps/api/README.md에 정리했다. 런타임 API 계약/데이터베이스/새 라이브러리 의존성은 변경하지 않았다.
+API에는 Vitest/Supertest 의존성과 HTTP 통합 테스트가 있었으나 API 워크스페이스 test를 직접 실행하면 TEST_DATABASE_URL이 없을 때 DB 통합 테스트를 skip할 수 있었다. API 소유 scripts/test.ts와 vitest.config.mts를 추가해 API 단독 명령도 Node 24/전용 DB URL 확인 → 계약 빌드 → 전용 Prisma → 소유 테스트 DB 시작 → Vitest/Supertest 실행을 준비한다. 외부 제공자 인증정보를 비우고 개발 DB 연결은 거부한다. Vitest 원시 호출의 테스트 URL 누락도 설정 단계에서 실패한다. 루트 test는 같은 API 명령을 호출하며 중복 DB 시작 코드를 제거했다. API 실행 방법과 격리/정리 범위는 apps/api/README.md에 정리했다. 런타임 API 계약/데이터베이스/새 라이브러리 의존성은 변경하지 않았다.
 
 이번 변경의 검증 결과는 다음과 같다.
 
@@ -1344,7 +1344,7 @@ Next가 보존한 이전 화면까지 중복 선택하던 community E2E 선택�
 
 채팅은 새 메시지마다 상대방 ChatNotification을 본문 트랜잭션에 한 번 기록하고 게시물 알림과 같은 목록·커서·미읽음 합계로 조회한다. 실제 대화 읽기와 기록 삭제는 해당 경계까지 알림에도 반영한다. 알림함 모두 읽음은 실제 메시지의 읽음 여부를 조작하지 않는다. SSE 수신은 현재 사용자의 대화·알림 조회를 함께 갱신하며 차단·숨김·밴·관리자 문의 규칙을 공통 ChatAccessService로 유지한다.
 
-RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에만 푸시 기능을 광고한다. 기기 등록은 쿠키 세션에 묶고 로그아웃·세션 교체·탈퇴·기기 계정 변경 시 이전 전송을 제거한다. 알림·기기별 큐를 같은 트랜잭션에 쓰고 발송 직전 읽음·세션·권한을 다시 확인한다. 알림함에서만 OS 권한을 요청하고 OS 배지, foreground 무효화, 준비 전 탭 보관, 안전한 알림함 이동을 연결했다. 서버 기능이 꺼져 있으면 설정 완료로 표시하지 않는다. [공통 전송 정책과 실제 기기 설정](../../../packages/push-notifications/README.md)을 따른다. 공통 패키지는 두 API의 Expo 부분 성공·재시도·영수증 처리를 공유하기 위해 추가했으며 서비스별 인증·DB는 분리했다.
+RN에는 expo-notifications와 물리 기기/EAS project ID가 있는 경우에만 푸시 기능을 광고한다. 기기 등록은 쿠키 세션에 묶고 로그아웃·세션 교체·탈퇴·기기 계정 변경 시 이전 전송을 제거한다. 알림·기기별 큐를 같은 트랜잭션에 쓰고 발송 직전 읽음·세션·권한을 다시 확인한다. 알림함에서만 OS 권한을 요청하고 OS 배지, foreground 무효화, 준비 전 탭 보관, 안전한 알림함 이동을 연결했다. 서버 기능이 꺼져 있으면 설정 완료로 표시하지 않는다. [공통 전송 정책과 실제 기기 설정](../../../packages/toolkit/src/push-notifications/README.md)을 따른다. 공통 패키지는 두 API의 Expo 부분 성공·재시도·영수증 처리를 공유하기 위해 추가했으며 서비스별 인증·DB는 분리했다.
 
 최신 develop cf62aaac(#67~#70 포함)을 merge했다. 가입용 GameProfileLookup과 가입 후 등록용 BottomSheet를 보존하고 게임 프로필·닉네임·약관 가입 흐름을 유지했다. 중복으로 들어온 알림·테마 변경을 기존 develop 위에 통합하고, 탈퇴의 Session 삭제가 새 기기·큐에도 cascade되는지 확인했다. 원격 develop을 덮어쓰거나 강제 push하지 않는다.
 
