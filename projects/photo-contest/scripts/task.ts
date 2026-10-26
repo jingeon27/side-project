@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 
 const [workspace, task] = process.argv.slice(2);
 if (!workspace || !task) throw new Error('Usage: task.ts <workspace> <task>');
-const child = spawn('corepack', ['yarn', 'workspace', workspace, task], {
+const child = spawn('yarn', ['workspace', workspace, task], {
   stdio: 'inherit',
   env: { ...process.env, ...(task === 'build' ? { NODE_ENV: 'production' } : {}) },
 });
