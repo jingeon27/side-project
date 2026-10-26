@@ -13,8 +13,6 @@ x-api: &api
   AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY}
   SENTRY_DSN: ${SENTRY_DSN:-}
   NODE_OPTIONS: --max-old-space-size=384
-x-ca: &ca
-  - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro
 x-logging: &logging
   driver: json-file
   options: { max-size: 10m, max-file: '3' }
@@ -25,8 +23,8 @@ services:
     restart: unless-stopped
     init: true
     environment: *api
-    volumes: *ca
-    networks: { edge: { aliases: [pc-api] } }
+    # The database alias shared-postgres resolves only on the service's internal db network; web never joins it.
+    networks: { edge: { aliases: [pc-api] }, db: {} }
     read_only: true
     tmpfs: ['/tmp:size=128m,mode=1777']
     healthcheck:
@@ -90,8 +88,7 @@ services:
     init: true
     entrypoint: [node]
     environment: *api
-    volumes: *ca
-    networks: [edge]
+    networks: [edge, db]
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
@@ -106,8 +103,7 @@ services:
     environment:
       <<: *api
       DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
-    volumes: *ca
-    networks: [edge]
+    networks: [edge, db]
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
@@ -116,3 +112,4 @@ services:
     logging: *logging
 networks:
   edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-photo-contest-edge' }
+  db: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-photo-contest-db' }
