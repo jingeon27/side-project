@@ -9,13 +9,13 @@ import { CacheInvalidationService } from '../cache-invalidation/cache-invalidati
 import { COMMENT_THREAD_PAGE, commentThreadPage } from '../comments/comment-page';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import type { ListQueryDto } from '../common/http/list-query.dto';
+import { type TListQueryDto } from '../common/http/list-query.dto';
 import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
-import { type CreatePostDto, type UpdatePostDto } from './post-input.dto';
+import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
 import { PostMediaService } from './post-media.service';
 import { postInclude, responsePost } from './post.presenter';
 
@@ -42,7 +42,7 @@ export class PostsService {
     if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
     return post;
   }
-  async listPosts(req: SessionRequest, query: ListQueryDto) {
+  async listPosts(req: SessionRequest, query: TListQueryDto) {
     const q = query,
       excluded = await this.visibility.excluded(req);
     if (q.battleMode && q.board !== 'FRIENDLY')
@@ -78,7 +78,7 @@ export class PostsService {
       commentsCursor: comments.nextCursor,
     };
   }
-  async createPost(req: SessionRequest, input: CreatePostDto) {
+  async createPost(req: SessionRequest, input: TCreatePostDto) {
     const u = requireUser(req);
     if (input.document && richTextToPlainText(input.document) !== input.body)
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
@@ -145,7 +145,7 @@ export class PostsService {
     );
     return responsePost(p);
   }
-  async updatePost(req: SessionRequest, id: string, input: UpdatePostDto) {
+  async updatePost(req: SessionRequest, id: string, input: TUpdatePostDto) {
     const u = requireUser(req),
       p = await this.visiblePost(req, id);
     if (p.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
@@ -258,7 +258,7 @@ export class PostsService {
     return { ok: true };
   }
 
-  private listVisiblePosts(q: ListQueryDto, excluded: string[]) {
+  private listVisiblePosts(q: TListQueryDto, excluded: string[]) {
     const cursor = decodeCursor(q.cursor);
     const visibleAnswers = { ...ACTIVE_CONTENT, authorId: { notIn: excluded } };
     const answerFilter =

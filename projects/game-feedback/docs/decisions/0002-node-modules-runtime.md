@@ -8,7 +8,7 @@
 
 ## 결정
 
-- Corepack을 통해 저장소의 `packageManager`에 지정한 Yarn을 실행한다. 특정 Yarn release 파일이나 PnP loader를 하드코딩하지 않는다.
+- 저장소의 `packageManager`에 지정한 버전의 Yarn CLI를 직접 설치하고 실행한다. 특정 Yarn release 파일이나 PnP loader를 하드코딩하지 않는다.
 - 기존 Workspace 경로와 `@side/*` 집계를 유지한다. Game Feedback은 자체 `test`, `build`, `typecheck`, `check`를 제공한다.
 - API/Web과 각 패키지가 테스트 러너·설정·파일을 소유한다. 프로젝트 집계의 DB URL 가드 테스트도 API로 이동한다.
 - Prisma Client는 API 전용 경로에 생성하고 API build에 Client와 엔진을 함께 포함한다. 다른 프로젝트의 Client 또는 DB 설정을 공유하지 않는다.

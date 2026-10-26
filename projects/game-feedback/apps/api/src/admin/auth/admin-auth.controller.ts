@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { SessionService } from '../../auth/session.service';
 import type { SessionRequest } from '../../auth/session.types';
 import { ValidatedBody } from '../../common/http/request-validation';
-import { AdminLoginDto } from './admin-auth-input.dto';
+import { AdminLoginInputSchema, type TAdminLoginDto } from './admin-auth-input.dto';
 import { AdminAuthService } from './admin-auth.service';
 
 @Controller('api/admin/auth')
@@ -22,7 +22,7 @@ export class AdminAuthController {
   login(
     @Req() req: SessionRequest,
     @Res({ passthrough: true }) res: Response,
-    @ValidatedBody(AdminLoginDto) input: AdminLoginDto,
+    @ValidatedBody(AdminLoginInputSchema) input: TAdminLoginDto,
   ) {
     return this.auth.login(req, res, input);
   }

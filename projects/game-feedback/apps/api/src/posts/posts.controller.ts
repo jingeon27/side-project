@@ -12,10 +12,17 @@ import {
 } from '@nestjs/common';
 
 import type { SessionRequest } from '../auth/session.types';
-import { ListQueryDto } from '../common/http/list-query.dto';
+import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
 import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { CreatePostDto, PostViewDto, UpdatePostDto } from './post-input.dto';
+import {
+  PostInputSchema,
+  PostPatchSchema,
+  PostViewInputSchema,
+  type TCreatePostDto,
+  type TPostViewDto,
+  type TUpdatePostDto,
+} from './post-input.dto';
 import { PostViewsService } from './post-views.service';
 import { PostsService } from './posts.service';
 
@@ -27,17 +34,21 @@ export class PostsController {
   ) {}
   @HttpCode(200)
   @Post('posts/:id/views')
-  view(@Req() req: SessionRequest, @Param('id') id: string, @ValidatedBody(PostViewDto) body: PostViewDto) {
+  view(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedBody(PostViewInputSchema) body: TPostViewDto,
+  ) {
     return this.views.record(req, id, body);
   }
   @Get('posts')
-  posts(@Req() req: SessionRequest, @ValidatedQuery(ListQueryDto) query: ListQueryDto) {
+  posts(@Req() req: SessionRequest, @ValidatedQuery(ListQuerySchema) query: TListQueryDto) {
     return this.service.listPosts(req, query);
   }
   @HttpCode(200)
   @Post('posts')
   @UseGuards(UserGuard)
-  createPost(@Req() req: SessionRequest, @ValidatedBody(CreatePostDto) body: CreatePostDto) {
+  createPost(@Req() req: SessionRequest, @ValidatedBody(PostInputSchema) body: TCreatePostDto) {
     return this.service.createPost(req, body);
   }
   @Get('posts/:id')
@@ -49,7 +60,7 @@ export class PostsController {
   updatePost(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(UpdatePostDto) body: UpdatePostDto,
+    @ValidatedBody(PostPatchSchema) body: TUpdatePostDto,
   ) {
     return this.service.updatePost(req, id, body);
   }

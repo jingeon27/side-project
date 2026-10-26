@@ -4,7 +4,12 @@ import type { SessionRequest } from '../../auth/session.types';
 import { ValidatedBody } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminUsersService } from './admin-users.service';
-import { UserBanDto, VerificationDto } from './user-input.dto';
+import {
+  UserBanInputSchema,
+  VerificationInputSchema,
+  type TUserBanDto,
+  type TVerificationDto,
+} from './user-input.dto';
 
 @UseGuards(AdminGuard)
 @Controller('api/admin/users')
@@ -18,12 +23,16 @@ export class AdminUsersController {
   setVerification(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(VerificationDto) body: VerificationDto,
+    @ValidatedBody(VerificationInputSchema) body: TVerificationDto,
   ) {
     return this.users.setVerification(req, id, body);
   }
   @Patch(':id/ban')
-  ban(@Req() req: SessionRequest, @Param('id') id: string, @ValidatedBody(UserBanDto) body: UserBanDto) {
+  ban(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedBody(UserBanInputSchema) body: TUserBanDto,
+  ) {
     return this.users.ban(req, id, body);
   }
 }

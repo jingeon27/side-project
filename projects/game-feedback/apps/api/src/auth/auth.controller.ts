@@ -6,7 +6,16 @@ import { SocialProviderSchema, type TSocialProvider } from '@game-feedback/contr
 import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
 import { DemoAuthGuard, TestAuthGuard } from '../common/http/session.guard';
 import { AppAuthService } from './app-auth.service';
-import { AppExchangeDto, DemoLoginDto, OnboardDto, TestLoginDto } from './auth-input.dto';
+import {
+  AppExchangeInputSchema,
+  DemoInputSchema,
+  OnboardInputSchema,
+  TestLoginInputSchema,
+  type TAppExchangeDto,
+  type TDemoLoginDto,
+  type TOnboardDto,
+  type TTestLoginDto,
+} from './auth-input.dto';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
@@ -30,7 +39,7 @@ export class AuthController {
   demo(
     @Req() req: SessionRequest,
     @Res({ passthrough: true }) res: Response,
-    @ValidatedBody(DemoLoginDto) body: DemoLoginDto,
+    @ValidatedBody(DemoInputSchema) body: TDemoLoginDto,
   ) {
     return this.auth.demo(req, res, body);
   }
@@ -46,7 +55,7 @@ export class AuthController {
   testLogin(
     @Req() req: SessionRequest,
     @Res({ passthrough: true }) res: Response,
-    @ValidatedBody(TestLoginDto) body: TestLoginDto,
+    @ValidatedBody(TestLoginInputSchema) body: TTestLoginDto,
   ) {
     return this.auth.testLogin(req, res, body);
   }
@@ -80,7 +89,7 @@ export class AuthController {
   testToken(
     @Req() req: SessionRequest,
     @Res({ passthrough: true }) res: Response,
-    @ValidatedBody(TestLoginDto) body: TestLoginDto,
+    @ValidatedBody(TestLoginInputSchema) body: TTestLoginDto,
   ) {
     return this.auth.testToken(req, res, body);
   }
@@ -95,7 +104,7 @@ export class AuthController {
   exchangeAppLogin(
     @Req() req: SessionRequest,
     @Res({ passthrough: true }) res: Response,
-    @ValidatedBody(AppExchangeDto) body: AppExchangeDto,
+    @ValidatedBody(AppExchangeInputSchema) body: TAppExchangeDto,
   ) {
     return this.appAuth.exchange(req, res, body);
   }
@@ -105,7 +114,7 @@ export class AuthController {
   onboard(
     @Req() req: SessionRequest,
     @Res({ passthrough: true }) res: Response,
-    @ValidatedBody(OnboardDto) body: OnboardDto,
+    @ValidatedBody(OnboardInputSchema) body: TOnboardDto,
   ) {
     return this.auth.onboard(req, res, body);
   }

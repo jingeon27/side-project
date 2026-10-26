@@ -25,7 +25,7 @@
 - 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 게시물·그룹 대회·기존 대회·기존 사진처럼 하위 리소스 ID로 묻는 접근은 비멤버(비로그인 포함)에게 없는 ID와 같은 NOT_FOUND를 준다(비공개 그룹의 하위 리소스, 그리고 공개 그룹이어도 멤버 전용인 기존 대회·사진). 그룹 메타데이터는 공개이므로 그룹 ID로 묻는 조회는 UNAUTHENTICATED·FORBIDDEN으로 가입을 안내하고, 공개 그룹 게시물에 대한 비멤버의 쓰기는 FORBIDDEN이다. 새 하위 리소스 접근에는 `requireMemberOf`·`readableGroup(…, concealAs)`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
-- 요청 DTO는 class-transformer/class-validator와 전역 ValidationPipe로 검증한다. 인증 반복 시도는 DTO보다 먼저 guard에서 센다. 도메인 규칙과 권한 검사는 서비스에 둔다.
+- 요청 스키마는 strict Zod 객체로 정의하고 DTO 타입은 z.output으로 추론한다. REST는 @Body({ schema })와 전역 StandardSchemaValidationPipe, GraphQL은 @Args(createInputValidationPipe(schema))로 같은 스키마를 명시한다. GraphQL Args는 Nest의 schema 메타데이터를 전달하지 않으므로 파이프에 스키마를 직접 결합한다. 인증 반복 시도는 검증보다 먼저 guard에서 센다. 도메인 규칙과 권한 검사는 서비스에 둔다.
 - 환경변수는 `config/env.ts` getter로만 읽는다. 숫자 한도는 `config/limits.ts`에만 둔다.
 - 닫힌 집합 분기는 ts-pattern `exhaustive()`, 일반 유틸은 es-toolkit.
 - GraphQL 검증 규칙은 depth 8, 조각을 펼친 연산당 필드 300개·alias 10개(`query-cost.rule.ts`)를 넘는 요청을 실행 전에 거절한다. 웹 문서를 늘려 상한에 가까워지면 상한과 근거를 함께 고친다.

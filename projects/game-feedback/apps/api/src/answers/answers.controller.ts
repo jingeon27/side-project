@@ -3,7 +3,12 @@ import { Controller, Delete, HttpCode, Inject, Param, Patch, Post, Req, UseGuard
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { AnswerBodyDto, HelpfulDto } from './answer-input.dto';
+import {
+  AnswerInputSchema,
+  HelpfulInputSchema,
+  type TAnswerBodyDto,
+  type THelpfulDto,
+} from './answer-input.dto';
 import { AnswersService } from './answers.service';
 
 @Controller('api')
@@ -15,7 +20,7 @@ export class AnswersController {
   answer(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(AnswerBodyDto) body: AnswerBodyDto,
+    @ValidatedBody(AnswerInputSchema) body: TAnswerBodyDto,
   ) {
     return this.service.createAnswer(req, id, body);
   }
@@ -24,7 +29,7 @@ export class AnswersController {
   editAnswer(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(AnswerBodyDto) body: AnswerBodyDto,
+    @ValidatedBody(AnswerInputSchema) body: TAnswerBodyDto,
   ) {
     return this.service.updateAnswer(req, id, body);
   }
@@ -36,7 +41,11 @@ export class AnswersController {
   @HttpCode(200)
   @Post('answers/:id/helpful')
   @UseGuards(UserGuard)
-  helpful(@Req() req: SessionRequest, @Param('id') id: string, @ValidatedBody(HelpfulDto) body: HelpfulDto) {
+  helpful(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedBody(HelpfulInputSchema) body: THelpfulDto,
+  ) {
     return this.service.helpful(req, id, body);
   }
 }

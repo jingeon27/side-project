@@ -55,7 +55,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 ## 확인 (side 루트)
 
 ```sh
-corepack yarn workspace @photo-contest/web lint
-corepack yarn workspace @photo-contest/web typecheck
-corepack yarn workspace @photo-contest/web test
+yarn workspace @photo-contest/web lint
+yarn workspace @photo-contest/web typecheck
+yarn workspace @photo-contest/web test
 ```

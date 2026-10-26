@@ -8,13 +8,13 @@ import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
-import type { ListQueryDto } from '../common/http/list-query.dto';
+import { type TListQueryDto } from '../common/http/list-query.dto';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
-import type { CommentBodyDto, CreateCommentBodyDto } from './comment-input.dto';
+import { type TCommentBodyDto, type TCreateCommentBodyDto } from './comment-input.dto';
 import { commentThreadPage } from './comment-page';
 import { activeCommentWhere } from './comment-visibility';
 import { responseComment } from './comment.presenter';
@@ -27,7 +27,7 @@ export class CommentsService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostsService) private readonly posts: PostsService,
   ) {}
-  async createComment(req: SessionRequest, postId: string, input: CreateCommentBodyDto) {
+  async createComment(req: SessionRequest, postId: string, input: TCreateCommentBodyDto) {
     const u = requireUser(req);
     const c = await this.cache.change(
       async (tx) => {
@@ -76,7 +76,7 @@ export class CommentsService {
     return responseComment(c);
   }
   /** 상세 첫 페이지보다 이전의 원댓글 스레드. 게시글 가시성과 차단 관계는 상세와 같다. */
-  async page(req: SessionRequest, postId: string, query: ListQueryDto) {
+  async page(req: SessionRequest, postId: string, query: TListQueryDto) {
     await this.posts.visiblePost(req, postId);
     return commentThreadPage(this.db, postId, await this.visibility.excluded(req), {
       cursor: query.cursor,
@@ -93,7 +93,7 @@ export class CommentsService {
     await this.posts.visiblePost(req, c.postId);
     return c;
   }
-  async updateComment(req: SessionRequest, id: string, input: CommentBodyDto) {
+  async updateComment(req: SessionRequest, id: string, input: TCommentBodyDto) {
     const u = requireUser(req),
       c = await this.visibleComment(req, id);
     if (c.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');

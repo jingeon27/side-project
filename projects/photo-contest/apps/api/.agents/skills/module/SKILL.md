@@ -46,5 +46,5 @@ description: API(apps/api)에 GraphQL 쿼리·뮤테이션·필드나 REST 엔�
 - [ ] 쓰기와 같은 트랜잭션에 `recordEvent`, 개인정보 없음
 - [ ] env getter·`limits.ts` 상수·`.env.example`
 - [ ] 구현 파일 옆 `*.integration.spec.ts`에 권한·오류 code·HTTP 상태 테스트(`api-test` 스킬)
-- [ ] `corepack yarn workspace @photo-contest/web codegen`(웹 문서가 없는 필드를 쓰면 실패) → `corepack yarn workspace @photo-contest/web typecheck` → `corepack yarn workspace @photo-contest/web test:api`. 생성된 `../web/src/shared/api/generated.ts`는 `commit` 스킬대로 다룬다
-- [ ] `corepack yarn workspace @photo-contest/api typecheck`·`test`·`test:integration`, `corepack yarn workspace @side/photo-contest exec eslint apps/api`
+- [ ] `yarn workspace @photo-contest/web codegen`(웹 문서가 없는 필드를 쓰면 실패) → `yarn workspace @photo-contest/web typecheck` → `yarn workspace @photo-contest/web test:api`. 생성된 `../web/src/shared/api/generated.ts`는 `commit` 스킬대로 다룬다
+- [ ] `yarn workspace @photo-contest/api typecheck`·`test`·`test:integration`, `yarn workspace @side/photo-contest exec eslint apps/api`

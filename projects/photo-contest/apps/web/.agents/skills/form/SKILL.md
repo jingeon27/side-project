@@ -69,4 +69,4 @@ try {
 ## 테스트
 
 - 목 없이 실제 RHF·Base UI로 검증한다(본보기 `src/shared/ui/@core/text-field/TextField.spec.tsx`, `src/shared/model/form/form.hook.spec.tsx`): 레이블로 찾아 `user.type` → 제출 → 안내문·`aria-invalid`·포커스, 통과하면 스키마 output 값으로 제출됐는지.
-- `corepack yarn workspace @photo-contest/web test <spec 경로>`(side 루트).
+- `yarn workspace @photo-contest/web test <spec 경로>`(side 루트).

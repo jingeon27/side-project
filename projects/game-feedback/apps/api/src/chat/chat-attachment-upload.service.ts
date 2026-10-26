@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
-import type { MediaUploadDto } from '../common/media-upload.dto';
+import { type TMediaUploadDto } from '../common/media-upload.dto';
 import { PrismaClient } from '../generated/prisma';
 import { MEDIA_UPLOAD_TTL_SECONDS } from '../media-storage/media-storage.policy';
 import { MediaStorage } from '../media-storage/media-storage.service';
@@ -18,7 +18,7 @@ export class ChatAttachmentUploadService {
     @Inject(ChatAttachmentService) private readonly attachments: ChatAttachmentService,
   ) {}
 
-  async request(req: SessionRequest, conversationId: string, input: MediaUploadDto) {
+  async request(req: SessionRequest, conversationId: string, input: TMediaUploadDto) {
     const user = requireUser(req);
     const upload = await this.storage.reserveUpload(input.mimeType, input.size);
     const row = await this.attachments.register(user.id, conversationId, input, {

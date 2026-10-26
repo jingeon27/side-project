@@ -8,12 +8,12 @@ Expo Go를 쓰지 않는 이유와 `10.0.2.2` 대신 `adb reverse`를 쓰는 이
 ## 실행
 
 ```sh
-APP_VARIANT=development corepack yarn workspace @photo-contest/mobile android   # 또는 ios — dev client 빌드·설치
-APP_VARIANT=development corepack yarn workspace @photo-contest/mobile start      # Metro
+APP_VARIANT=development yarn workspace @photo-contest/mobile android   # 또는 ios — dev client 빌드·설치
+APP_VARIANT=development yarn workspace @photo-contest/mobile start      # Metro
 adb reverse tcp:3200 tcp:3200                                                     # 에뮬레이터·USB 기기를 다시 연결할 때마다
 ```
 
-- JS만 바뀌면 리로드로 충분하다. `app.config.ts`·`APP_VARIANT`·네이티브 패키지·플러그인·`version`이 바뀌면 `corepack yarn workspace @photo-contest/mobile exec expo prebuild --clean` 뒤 다시 빌드한다. `expo run:*`은 `android/`·`ios/`(커밋하지 않는 생성물)가 있으면 prebuild를 건너뛴다.
+- JS만 바뀌면 리로드로 충분하다. `app.config.ts`·`APP_VARIANT`·네이티브 패키지·플러그인·`version`이 바뀌면 `yarn workspace @photo-contest/mobile exec expo prebuild --clean` 뒤 다시 빌드한다. `expo run:*`은 `android/`·`ios/`(커밋하지 않는 생성물)가 있으면 prebuild를 건너뛴다.
 - 웹·API는 사용자의 개발 서버(3200/4200)를 그대로 쓰고 끄거나 다시 띄우지 않는다. iOS 실기기에서는 `localhost`가 Mac이 아니므로, 기기가 닿는 origin을 쓰려면 웹·API의 `WEB_ORIGIN`도 같은 값이어야 한다.
 
 ## EXPO_PUBLIC_* (빌드 때 번들에 박히는 공개 값)
@@ -57,8 +57,8 @@ adb reverse tcp:3200 tcp:3200                                                   
 
 ## Expo SDK·네이티브 패키지
 
-1. 버전은 설치된 `node_modules/expo/bundledNativeModules.json`이 정한다. 추가·변경은 `corepack yarn workspace @photo-contest/mobile exec expo install <패키지>`, 확인은 `… exec expo install --check`. `typescript` 줄(SDK 기대 ~6.0.3)은 무시하고 저장소 공통 버전을 유지한다 — 그래서 `--fix`를 쓰지 않는다.
-2. `All versions satisfying … are quarantined`(Yarn `npmMinimalAgeGate` 24시간)가 나오면 게이트를 끄지 말고 `corepack yarn npm info <패키지> --fields time --json`으로 24시간이 지난 버전을 고른다.
+1. 버전은 설치된 `node_modules/expo/bundledNativeModules.json`이 정한다. 추가·변경은 `yarn workspace @photo-contest/mobile exec expo install <패키지>`, 확인은 `… exec expo install --check`. `typescript` 줄(SDK 기대 ~6.0.3)은 무시하고 저장소 공통 버전을 유지한다 — 그래서 `--fix`를 쓰지 않는다.
+2. `All versions satisfying … are quarantined`(Yarn `npmMinimalAgeGate` 24시간)가 나오면 게이트를 끄지 말고 `yarn npm info <패키지> --fields time --json`으로 24시간이 지난 버전을 고른다.
 3. React는 이 워크스페이스 것만 바꾼다(`installConfig.hoistingLimits: "workspaces"`). `react`·`react-dom`은 SDK 값 그대로(범위 없이), `@types/react`는 같은 minor로 맞추고 웹의 React를 따르지 않는다. 확인: `node -p "require('./projects/photo-contest/apps/mobile/node_modules/react/package.json').version"`.
 4. 의존성 변경은 `chore(deps)` 커밋으로 먼저 둔다(`commit` 스킬). `metro.config.js`는 만들지 않는다.
 5. `prebuild --clean` → dev client 재빌드 → 아래 검사 → 실기기 확인.
@@ -66,15 +66,15 @@ adb reverse tcp:3200 tcp:3200                                                   
 ## 검사
 
 ```sh
-corepack yarn workspace @photo-contest/mobile typecheck
-corepack yarn workspace @photo-contest/mobile lint
-corepack yarn workspace @photo-contest/mobile bundle:check   # Metro android 번들(워크스페이스 브리지·zod 해석), 결과 폴더는 지운다
-APP_VARIANT=development corepack yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c usesCleartextTraffic   # 1
+yarn workspace @photo-contest/mobile typecheck
+yarn workspace @photo-contest/mobile lint
+yarn workspace @photo-contest/mobile bundle:check   # Metro android 번들(워크스페이스 브리지·zod 해석), 결과 폴더는 지운다
+APP_VARIANT=development yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c usesCleartextTraffic   # 1
 EXPO_PUBLIC_WEB_ORIGIN=https://contest.example MOBILE_APPLE_TEAM_ID=ABCDE12345 MOBILE_IOS_BUNDLE_ID=com.example.contest MOBILE_ANDROID_PACKAGE=com.example.contest \
-  corepack yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c 'usesCleartextTraffic\|NSAllowsLocalNetworking'   # 0
+  yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c 'usesCleartextTraffic\|NSAllowsLocalNetworking'   # 0
 EXPO_PUBLIC_WEB_ORIGIN=https://contest.example MOBILE_APPLE_TEAM_ID=ABCDE12345 MOBILE_IOS_BUNDLE_ID=com.example.contest MOBILE_ANDROID_PACKAGE=com.example.contest \
-  corepack yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c 'applinks:contest.example'   # 운영 설정: associated domains·intent filter·17.4
-corepack yarn workspace @photo-contest/mobile exec expo config   # 운영 값 없이 실행하면 빠진 이름을 담은 오류로 멈춰야 한다
+  yarn workspace @photo-contest/mobile exec expo config --type introspect --json | grep -c 'applinks:contest.example'   # 운영 설정: associated domains·intent filter·17.4
+yarn workspace @photo-contest/mobile exec expo config   # 운영 값 없이 실행하면 빠진 이름을 담은 오류로 멈춰야 한다
 ```
 
 ## Sentry 빌드

@@ -62,4 +62,4 @@ onConfirm={async () => {
 ## 테스트 (ui 레인)
 
 - `render(<OverlayProvider>…</OverlayProvider>)`, `afterEach(() => act(() => overlay.unmountAll()))`. `findByRole('dialog' | 'alertdialog', { name: 제목 })`로 찾고, "닫기" 버튼·Esc·`act(() => window.history.back())`로 닫은 뒤 연 버튼 포커스와 `hasOpenOverlay() === false`를 단언한다. 본보기: `src/shared/ui/@core/bottom-sheet/BottomSheet.spec.tsx`.
-- 한 파일만: `corepack yarn workspace @photo-contest/web test <spec 경로>`(side 루트).
+- 한 파일만: `yarn workspace @photo-contest/web test <spec 경로>`(side 루트).

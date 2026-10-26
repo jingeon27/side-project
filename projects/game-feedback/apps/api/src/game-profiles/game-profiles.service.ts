@@ -8,7 +8,7 @@ import { CacheInvalidationService } from '../cache-invalidation/cache-invalidati
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient, type Prisma } from '../generated/prisma';
-import type { GameAccountDto } from './game-account-input.dto';
+import { type TGameAccountDto } from './game-account-input.dto';
 import { ProfileLookupCache } from './profile-lookup-cache';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class GameProfilesService {
     ).map((a) => a.profile);
   }
 
-  async saveGameAccount(req: SessionRequest, input: GameAccountDto) {
+  async saveGameAccount(req: SessionRequest, input: TGameAccountDto) {
     const u = requireUser(req),
       profile = await this.lookup(input.playerTag);
     await this.cache.change(

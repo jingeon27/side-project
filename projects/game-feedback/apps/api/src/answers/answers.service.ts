@@ -12,7 +12,7 @@ import { PostsService } from '../posts/posts.service';
 import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
-import { type AnswerBodyDto, type HelpfulDto } from './answer-input.dto';
+import { type TAnswerBodyDto, type THelpfulDto } from './answer-input.dto';
 import { responseAnswer } from './answer.presenter';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class AnswersService {
     @Inject(UserVisibilityService) private readonly visibility: UserVisibilityService,
     @Inject(PostsService) private readonly posts: PostsService,
   ) {}
-  async createAnswer(req: SessionRequest, postId: string, input: AnswerBodyDto) {
+  async createAnswer(req: SessionRequest, postId: string, input: TAnswerBodyDto) {
     const u = requireUser(req);
     const a = await this.cache.change(
       async (tx) => {
@@ -86,7 +86,7 @@ export class AnswersService {
     });
     if (!visible) throw new ApiError(404, 'ANSWER_NOT_FOUND', '답변을 찾을 수 없습니다.');
   }
-  async updateAnswer(req: SessionRequest, id: string, input: AnswerBodyDto) {
+  async updateAnswer(req: SessionRequest, id: string, input: TAnswerBodyDto) {
     const u = requireUser(req),
       a = await this.visibleAnswer(req, id);
     if (a.authorId !== u.id) throw new ApiError(403, 'FORBIDDEN', '작성자만 수정할 수 있습니다.');
@@ -144,7 +144,7 @@ export class AnswersService {
       ? new ApiError(403, 'FORBIDDEN', '작성자만 삭제할 수 있습니다.')
       : new ApiError(404, 'ANSWER_NOT_FOUND', '답변을 찾을 수 없습니다.');
   }
-  async helpful(req: SessionRequest, id: string, input: HelpfulDto) {
+  async helpful(req: SessionRequest, id: string, input: THelpfulDto) {
     const u = requireUser(req),
       a = await this.visibleAnswer(req, id),
       p = await this.posts.visiblePost(req, a.postId);

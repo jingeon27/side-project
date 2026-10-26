@@ -7,7 +7,7 @@ import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { ChatAccessService } from './chat-access.service';
 import { advancesBoundary, historyBoundary, historyWhere } from './chat-history';
-import { type ClearHistoryDto, type ReadMessageDto } from './chat-input.dto';
+import { type TClearHistoryDto, type TReadMessageDto } from './chat-input.dto';
 import { readBoundary } from './chat-read.policy';
 import { ChatEvents } from './chat.events';
 
@@ -19,7 +19,7 @@ export class ChatHistoryService {
     @Inject(ChatEvents) private readonly events: ChatEvents,
     @Inject(ChatAccessService) private readonly access: ChatAccessService,
   ) {}
-  async clearHistory(req: SessionRequest, id: string, input: ClearHistoryDto) {
+  async clearHistory(req: SessionRequest, id: string, input: TClearHistoryDto) {
     const user = requireUser(req);
     const { throughMessageId } = input;
     await this.transactions.run(async (tx) => {
@@ -66,7 +66,7 @@ export class ChatHistoryService {
     void this.events.publish([user.id], id);
     return { ok: true };
   }
-  async read(req: SessionRequest, id: string, input: ReadMessageDto) {
+  async read(req: SessionRequest, id: string, input: TReadMessageDto) {
     const user = requireUser(req);
     const { messageId } = input;
     const result = await this.transactions.run(async (tx) => {

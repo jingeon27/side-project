@@ -59,7 +59,7 @@ jobs:
         env:
           MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/develop' }}
         run: node scripts/check-migrations.ts
-      - run: corepack enable
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
       - id: install
         run: yarn install --immutable
       - run: yarn format:check

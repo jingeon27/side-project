@@ -41,13 +41,13 @@ description: Admin(apps/admin)의 Vitest 단위 테스트(`scripts/test.ts`)나 
 ## 실행 (side 루트)
 
 ```sh
-corepack yarn workspace @side/game-feedback codegen        # 처음, 또는 contracts·Prisma 변경 뒤
-corepack yarn workspace @side/game-feedback db:test:start
-corepack yarn workspace @game-feedback/admin test
-corepack yarn workspace @game-feedback/admin test src/shared/lib/admin-route.spec.ts
-corepack yarn workspace @game-feedback/admin test:e2e
-corepack yarn workspace @game-feedback/admin test:e2e -g "<테스트 이름 일부>"
-corepack yarn workspace @side/game-feedback db:test:stop   # 필요할 때만. 이 프로젝트가 띄운 DB만 멈춘다
+yarn workspace @side/game-feedback codegen        # 처음, 또는 contracts·Prisma 변경 뒤
+yarn workspace @side/game-feedback db:test:start
+yarn workspace @game-feedback/admin test
+yarn workspace @game-feedback/admin test src/shared/lib/admin-route.spec.ts
+yarn workspace @game-feedback/admin test:e2e
+yarn workspace @game-feedback/admin test:e2e -g "<테스트 이름 일부>"
+yarn workspace @side/game-feedback db:test:stop   # 필요할 때만. 이 프로젝트가 띄운 DB만 멈춘다
 ```
 
 - 실패한 테스트의 trace는 `test-results/`(Git 제외)에 남는다.

@@ -8,21 +8,22 @@
 
 ## 실행
 
-Node.js 24(`.nvmrc`)·Corepack·Yarn 4.17을 사용합니다. 저장소 루트에서 실행하세요.
+Node.js 24(`.nvmrc`)와 Yarn 4.17.0 CLI를 직접 설치해 사용합니다. 저장소 루트에서 실행하세요.
 
 ```sh
-corepack yarn install --immutable
+npm install --global @yarnpkg/cli-dist@4.17.0 --force
+yarn install --immutable
 cp projects/photo-contest/.env.example projects/photo-contest/.env
-corepack yarn workspace @side/photo-contest db:generate
-corepack yarn workspace @side/photo-contest codegen
-corepack yarn workspace @side/photo-contest db:local
+yarn workspace @side/photo-contest db:generate
+yarn workspace @side/photo-contest codegen
+yarn workspace @side/photo-contest db:local
 ```
 
 별도 터미널에서 해당 개발 DB에 마이그레이션을 적용하고 서버를 시작합니다.
 
 ```sh
-corepack yarn workspace @side/photo-contest db:migrate
-corepack yarn dev:photo-contest
+yarn workspace @side/photo-contest db:migrate
+yarn dev:photo-contest
 ```
 
 - 웹: http://localhost:3200
@@ -38,7 +39,7 @@ corepack yarn dev:photo-contest
 | ------------------- | ------------------------------------------------------------------------------------------------ |
 | `apps/api`          | NestJS 12 schema-first GraphQL·인증/업로드 REST, Prisma 7·PostgreSQL                             |
 | `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 통합 게시물 피드·MY 그룹 관리·반응형 웹 |
-| `apps/mobile`       | Expo SDK 57 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                         |
+| `apps/mobile`       | Expo SDK 58 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                         |
 | `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                                 |
 | `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·MP4·fixture 준비, 로컬 개발·테스트용 S3 호환 대역                 |
 
@@ -77,10 +78,10 @@ corepack yarn dev:photo-contest
 Expo Go 대신 dev client 또는 스토어 빌드를 사용합니다.
 
 ```sh
-corepack yarn workspace @photo-contest/mobile android
-corepack yarn workspace @photo-contest/mobile ios
-corepack yarn workspace @photo-contest/mobile start
-corepack yarn workspace @photo-contest/mobile bundle:check
+yarn workspace @photo-contest/mobile android
+yarn workspace @photo-contest/mobile ios
+yarn workspace @photo-contest/mobile start
+yarn workspace @photo-contest/mobile bundle:check
 ```
 
 `WEB_ORIGIN`을 웹 주소로 설정하고 Android 에뮬레이터에서는 `adb reverse tcp:3200 tcp:3200`을 사용합니다. 쿠키는 WebView가 보관합니다. 최소 버전 확인 실패는 시작을 막지 않습니다. 모바일도 프로젝트 루트 `.env`의 공개 Sentry·Amplitude 키를 사용합니다.
@@ -95,7 +96,7 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 
 모든 사진·동영상은 S3 presigned URL로만 오갑니다. 웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost, 기존 대회 제출은 requestUploadUrl → POST → completeSubmissionUpload → createSubmission, 그룹 대표 사진은 requestGroupAvatarUpload → POST → completeGroupAvatarUpload → updateGroupProfile 순서이며 저장소에 세션 쿠키를 보내지 않습니다. POST 정책이 최종 키·형식·정확한 크기를 고정하고 완료는 HEAD로 확인합니다. API는 파일을 받거나 읽거나 변환·중계하지 않으며 메타데이터도 제거하지 않으므로 공개 전에 확인해야 합니다. 게시물·대회 사진·대표 사진의 고정 경로는 매 요청 권한을 확인하고 `private, no-store` 307로 60초 서명 GET에 보냅니다. 서버 HTML·공개 캐시에는 만료되는 주소 대신 고정 경로만 남습니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
 
-로컬 개발과 테스트는 Docker 없이 `@photo-contest/test-kit`의 S3 호환 대역을 씁니다(MinIO로 옮기기 전까지의 임시 대역). `.env.example`의 `S3_*`·`AWS_*` 값을 `.env`에 옮기면 `dev`가 대역을 4210 포트로 함께 띄우고 객체는 `.data/s3`에 저장합니다. 따로 띄우려면 `corepack yarn workspace @photo-contest/test-kit s3`를 실행합니다. 예전 `STORAGE_BACKEND`·`STORAGE_DIR`은 쓰지 않으며, 기존 로컬 사진(`.data/photos`)을 계속 보려면 `.data/s3/photo-contest-dev/`로 옮깁니다. Android 에뮬레이터에서 사진을 보려면 `adb reverse tcp:4210 tcp:4210`도 추가합니다. 테스트 레인은 빈 포트에 대역을 자동으로 띄우고 끝나면 지웁니다.
+로컬 개발과 테스트는 Docker 없이 `@photo-contest/test-kit`의 S3 호환 대역을 씁니다(MinIO로 옮기기 전까지의 임시 대역). `.env.example`의 `S3_*`·`AWS_*` 값을 `.env`에 옮기면 `dev`가 대역을 4210 포트로 함께 띄우고 객체는 `.data/s3`에 저장합니다. 따로 띄우려면 `yarn workspace @photo-contest/test-kit s3`를 실행합니다. 예전 `STORAGE_BACKEND`·`STORAGE_DIR`은 쓰지 않으며, 기존 로컬 사진(`.data/photos`)을 계속 보려면 `.data/s3/photo-contest-dev/`로 옮깁니다. Android 에뮬레이터에서 사진을 보려면 `adb reverse tcp:4210 tcp:4210`도 추가합니다. 테스트 레인은 빈 포트에 대역을 자동으로 띄우고 끝나면 지웁니다.
 
 | 앱     | 오류 수집                                               | 사용자 행동 측정                |
 | ------ | ------------------------------------------------------- | ------------------------------- |
@@ -103,20 +104,20 @@ corepack yarn workspace @photo-contest/mobile bundle:check
 | 웹     | `NEXT_PUBLIC_SENTRY_DSN`, 서버는 `SENTRY_DSN` 우선      | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
 | 모바일 | `NEXT_PUBLIC_SENTRY_DSN`                                | `NEXT_PUBLIC_AMPLITUDE_API_KEY` |
 
-API Sentry의 실제 수집 확인은 `corepack yarn workspace @side/photo-contest sentry:check`로 한다. 설정한 DSN으로 확인용 이벤트 1건을 보내고 2xx 응답과 eventId를 출력한다. Sentry에서 `verification:configuration-check`, `service:photo-contest` 태그로 찾는다. 브라우저 키는 개발 서버 재시작 또는 운영 웹 재빌드가 필요하다. 웹의 실제 전송·개인정보 제거 검사는 `corepack yarn workspace @photo-contest/web monitoring:check`로 실행한다([모니터링 안내](docs/observability.md)). [부하테스트 예제와 지표](docs/load-testing.md)도 참고한다.
+API Sentry의 실제 수집 확인은 `yarn workspace @side/photo-contest sentry:check`로 한다. 설정한 DSN으로 확인용 이벤트 1건을 보내고 2xx 응답과 eventId를 출력한다. Sentry에서 `verification:configuration-check`, `service:photo-contest` 태그로 찾는다. 브라우저 키는 개발 서버 재시작 또는 운영 웹 재빌드가 필요하다. 웹의 실제 전송·개인정보 제거 검사는 `yarn workspace @photo-contest/web monitoring:check`로 실행한다([모니터링 안내](docs/observability.md)). [부하테스트 예제와 지표](docs/load-testing.md)도 참고한다.
 
 GraphQL IDE는 제공하지 않고 운영에서는 introspection과 오류 stacktrace도 차단한다. 개발에서만 스키마 조회를 허용하며 API의 운영 모드 HTTP 통합 테스트로 확인한다.
 
 키가 없으면 전송하지 않습니다. 요청·쿠키·사용자 정보를 제거하고 분석 속성에 닉네임·설명·초대 토큰을 넣지 않습니다. 앱과 웹은 브리지의 기기 ID로 분석 사용자를 연결합니다. 실제 Sentry·Amplitude 프로젝트 수신은 별도 확인이 필요합니다.
 
-공용 ESLint 설정은 저장소 `packages/config/eslint`에 있습니다. `corepack yarn workspace @side/config check`로 else·컴포넌트 fetch·오버레이 상태 금지와 FSD·인라인 핸들러 규칙의 RuleTester fixture를 검증합니다.
+공용 ESLint 설정은 저장소 `packages/config/eslint`에 있습니다. `yarn workspace @side/config check`로 else·컴포넌트 fetch·오버레이 상태 금지와 FSD·인라인 핸들러 규칙의 RuleTester fixture를 검증합니다.
 
 ## 앱별 테스트
 
 로컬에서는 별도 터미널에서 테스트 DB를 시작합니다. `db:test:local`은 `.data/test-postgres`·55434·`photo_contest_test`를 사용해 개발 DB와 분리합니다. 포트를 바꾸면 `.env`의 `LOCAL_TEST_POSTGRES_PORT`와 `TEST_DATABASE_URL`도 함께 바꾸세요.
 
 ```sh
-corepack yarn workspace @side/photo-contest db:test:local
+yarn workspace @side/photo-contest db:test:local
 ```
 
 | 앱     | `test`                     | `test:api`                                | `test:e2e`                                                                                                                |
@@ -127,17 +128,17 @@ corepack yarn workspace @side/photo-contest db:test:local
 | bridge | 자체 Vitest                | 없음                                      | 없음                                                                                                                      |
 
 ```sh
-corepack yarn workspace @side/photo-contest check
-corepack yarn workspace @photo-contest/web lint
-corepack yarn workspace @photo-contest/mobile lint
-corepack yarn workspace @photo-contest/api test:integration
-corepack yarn workspace @side/photo-contest test:api
-corepack yarn workspace @photo-contest/web exec playwright install chromium webkit
-corepack yarn workspace @side/photo-contest test:e2e
-corepack yarn workspace @photo-contest/web test:cache
-corepack yarn workspace @photo-contest/test-kit check:cleanup
-corepack yarn build:photo-contest
-corepack yarn format:check
+yarn workspace @side/photo-contest check
+yarn workspace @photo-contest/web lint
+yarn workspace @photo-contest/mobile lint
+yarn workspace @photo-contest/api test:integration
+yarn workspace @side/photo-contest test:api
+yarn workspace @photo-contest/web exec playwright install chromium webkit
+yarn workspace @side/photo-contest test:e2e
+yarn workspace @photo-contest/web test:cache
+yarn workspace @photo-contest/test-kit check:cleanup
+yarn build:photo-contest
+yarn format:check
 ```
 
 모든 DB 레인은 `TEST_DATABASE_URL`만 사용합니다. loopback·전용 포트(`LOCAL_TEST_POSTGRES_PORT`, 기본 55434)·`photo_contest_test`가 아니면 거부하고 개발 DB로 대신하지 않습니다. 격리 스키마에 마이그레이션을 적용하고 종료 시 스키마·사진 폴더를 제거합니다. 웹 브라우저 E2E는 실제 production build/standalone 서버를 실행합니다. 검증용 API는 `.e2e-build`, Next는 `.next/e2e`·`.next/e2e-mobile`을 써 개발 서버와 겹치지 않습니다.

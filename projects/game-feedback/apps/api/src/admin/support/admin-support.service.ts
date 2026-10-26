@@ -4,14 +4,14 @@ import type { Response } from 'express';
 import { requireAdmin } from '../../auth/session-access';
 import type { SessionRequest } from '../../auth/session.types';
 import { ChatAttachmentService } from '../../chat/chat-attachment.service';
-import type { SendMessageDto } from '../../chat/chat-input.dto';
+import { type TSendMessageDto } from '../../chat/chat-input.dto';
 import { ChatMessageService } from '../../chat/chat-message.service';
 import { ApiError } from '../../common/http/api-error';
-import type { ListQueryDto } from '../../common/http/list-query.dto';
+import { type TListQueryDto } from '../../common/http/list-query.dto';
 import { UnitOfWork } from '../../database/unit-of-work';
 import { PrismaClient, type Prisma } from '../../generated/prisma';
 import { authorDto, authorSelect } from '../../users/user.presenter';
-import type { SupportStatusDto } from './support-input.dto';
+import { type TSupportStatusDto } from './support-input.dto';
 
 const include = {
   requester: { select: authorSelect },
@@ -45,7 +45,7 @@ export class AdminSupportService {
     });
     if (!thread) throw new ApiError(404, 'SUPPORT_NOT_FOUND', '문의를 찾을 수 없습니다.');
   }
-  async messages(req: SessionRequest, id: string, query: ListQueryDto) {
+  async messages(req: SessionRequest, id: string, query: TListQueryDto) {
     await this.requireThread(req, id);
     const messages = await this.chat.messages(req, id, query);
     return {
@@ -63,7 +63,7 @@ export class AdminSupportService {
     await this.requireThread(req, id);
     return this.attachments.download(req, id, attachmentId, res);
   }
-  async send(req: SessionRequest, id: string, body: SendMessageDto) {
+  async send(req: SessionRequest, id: string, body: TSendMessageDto) {
     await this.requireThread(req, id);
     return this.chat.send(req, id, body);
   }
@@ -77,7 +77,7 @@ export class AdminSupportService {
     });
     return rows.map(supportThread);
   }
-  async status(req: SessionRequest, id: string, body: SupportStatusDto) {
+  async status(req: SessionRequest, id: string, body: TSupportStatusDto) {
     const admin = requireAdmin(req);
     const { status } = body;
     const row = await this.transactions.run(async (tx) => {

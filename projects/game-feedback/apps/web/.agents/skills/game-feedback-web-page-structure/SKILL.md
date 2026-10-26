@@ -48,9 +48,9 @@ description: Game Feedback 웹(apps/web)에 새 화면·라우트를 추가하�
 ## 확인 (side 루트)
 
 ```sh
-corepack yarn workspace @game-feedback/web typecheck
-corepack yarn workspace @game-feedback/web lint
-corepack yarn workspace @game-feedback/web test src/shared/seo src/_app/seo
-corepack yarn workspace @game-feedback/web test:e2e e2e/seo.spec.ts e2e/error-boundary.spec.ts
-corepack yarn workspace @game-feedback/web test:prefetch   # 피드·게시판·안내 이동 셸을 바꿨을 때
+yarn workspace @game-feedback/web typecheck
+yarn workspace @game-feedback/web lint
+yarn workspace @game-feedback/web test src/shared/seo src/_app/seo
+yarn workspace @game-feedback/web test:e2e e2e/seo.spec.ts e2e/error-boundary.spec.ts
+yarn workspace @game-feedback/web test:prefetch   # 피드·게시판·안내 이동 셸을 바꿨을 때
 ```

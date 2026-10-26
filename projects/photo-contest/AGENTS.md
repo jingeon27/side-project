@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | `apps/api` | `@photo-contest/api` | NestJS 12 schema-first GraphQL + REST(인증·업로드·사진·헬스), Prisma 7 + PostgreSQL |
 | `apps/web` | `@photo-contest/web` | Next.js 16 App Router, 모바일 우선 반응형 웹(최대 1440px), Apollo Client 4, Base UI |
-| `apps/mobile` | `@photo-contest/mobile` | Expo SDK 57 WebView 셸. 웹을 감싸고 브리지로 네이티브 기능을 제공 |
+| `apps/mobile` | `@photo-contest/mobile` | Expo SDK 58 WebView 셸. 웹을 감싸고 브리지로 네이티브 기능을 제공 |
 | `packages/bridge` | `@photo-contest/bridge` | 웹 ↔ 앱 메시지 계약(zod). web·mobile만 쓴다 |
 | `packages/test-kit` | `@photo-contest/test-kit` | 격리 DB 스키마·테스트용 API 기동·테스트 이미지, 로컬 개발·테스트용 S3 호환 대역. 운영 코드에서 쓰지 않는다 |
 

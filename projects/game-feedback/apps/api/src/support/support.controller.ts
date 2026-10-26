@@ -3,7 +3,7 @@ import { Controller, HttpCode, Inject, Post, Req, UseGuards } from '@nestjs/comm
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
-import { StartSupportDto } from './support-input.dto';
+import { SupportInputSchema, type TStartSupportDto } from './support-input.dto';
 import { SupportService } from './support.service';
 
 @Controller('api')
@@ -12,7 +12,7 @@ export class SupportController {
   @Post('support/conversations')
   @HttpCode(200)
   @UseGuards(UserGuard)
-  start(@Req() req: SessionRequest, @ValidatedBody(StartSupportDto) body: StartSupportDto) {
+  start(@Req() req: SessionRequest, @ValidatedBody(SupportInputSchema) body: TStartSupportDto) {
     return this.service.start(req, body);
   }
 }

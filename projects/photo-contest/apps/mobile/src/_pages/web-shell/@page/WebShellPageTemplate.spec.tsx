@@ -129,7 +129,7 @@ describe('WebShellPageTemplate', () => {
   });
 
   it('공유·소셜 로그인 결과를 분석 이벤트로 남겨야 한다', async () => {
-    vi.spyOn(Share, 'share').mockResolvedValue({ action: 'dismissedAction' });
+    vi.spyOn(Share, 'share').mockResolvedValue({ action: 'dismissedAction', activityType: undefined });
     renderShell();
 
     postFromWeb(webRequest('share-1', 'share.open', { url: `${WEB_ORIGIN}/invite/abc` }));

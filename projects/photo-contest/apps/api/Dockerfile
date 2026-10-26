@@ -3,7 +3,7 @@ FROM node:24-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054f
 WORKDIR /app
 ENV YARN_ENABLE_IMMUTABLE_INSTALLS=true
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
-    && rm -rf /var/lib/apt/lists/* && corepack enable
+    && rm -rf /var/lib/apt/lists/* && npm install --global @yarnpkg/cli-dist@4.17.0 --force
 COPY . .
 RUN yarn workspaces focus @photo-contest/api
 RUN yarn workspace @photo-contest/api db:generate \

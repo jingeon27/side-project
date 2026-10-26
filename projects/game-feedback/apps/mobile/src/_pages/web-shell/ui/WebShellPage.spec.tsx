@@ -80,7 +80,7 @@ describe('mobile WebView shell', () => {
     expect(props.webviewDebuggingEnabled).toBe(true);
   });
   it('applies the same synchronous policy to normal and new-window navigation', () => {
-    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     render(<WebShellPage />);
     expect(
       currentWebViewProps().onShouldStartLoadWithRequest?.({
@@ -98,7 +98,7 @@ describe('mobile WebView shell', () => {
     expect(currentWebViewProps().source).toEqual({ uri: 'https://feedback.example/ko/guide' });
   });
   it('does not open external apps or app screens from an iOS subframe navigation', () => {
-    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     render(<WebShellPage />);
     act(() => currentWebViewProps().onMessage?.(event({ data: JSON.stringify({ type: 'ready' }) })));
     fakeWebView.handle.injectJavaScript.mockClear();

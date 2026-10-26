@@ -47,9 +47,9 @@ FSD 레이어·명명·폼·React Query 일반 규칙은 프로젝트 `game-feed
 ## 확인 (side 루트)
 
 ```sh
-corepack yarn workspace @side/game-feedback codegen   # contracts·API를 바꿨을 때
-corepack yarn workspace @game-feedback/admin typecheck
-corepack yarn workspace @game-feedback/admin lint
-corepack yarn workspace @game-feedback/admin test
-corepack yarn workspace @game-feedback/admin build
+yarn workspace @side/game-feedback codegen   # contracts·API를 바꿨을 때
+yarn workspace @game-feedback/admin typecheck
+yarn workspace @game-feedback/admin lint
+yarn workspace @game-feedback/admin test
+yarn workspace @game-feedback/admin build
 ```

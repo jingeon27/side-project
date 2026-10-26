@@ -20,33 +20,42 @@
   "dependencies": {
     "@game-feedback/bridge": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~57.0.28",
-    "expo-build-properties": "~57.0.22",
-    "expo-constants": "~57.0.21",
-    "expo-crypto": "~57.0.4",
-    "expo-dev-client": "~57.0.20",
-    "expo-device": "~57.0.2",
-    "expo-linking": "~57.0.12",
-    "expo-notifications": "~57.0.22",
-    "expo-status-bar": "~57.0.1",
-    "expo-web-browser": "~57.0.3",
-    "react": "19.2.3",
-    "react-native": "0.86.3",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-webview": "13.16.1"
+    "es-toolkit": "^1.52.0",
+    "expo": "~58.0.19",
+    "expo-build-properties": "~58.0.11",
+    "expo-constants": "~58.0.13",
+    "expo-crypto": "~58.0.7",
+    "expo-dev-client": "~58.0.15",
+    "expo-device": "~58.0.5",
+    "expo-linking": "~58.0.14",
+    "expo-notifications": "~58.1.6",
+    "expo-status-bar": "~58.0.4",
+    "expo-system-ui": "~58.0.6",
+    "expo-web-browser": "~58.0.6",
+    "react": "19.3.0",
+    "react-native": "0.88.0",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-webview": "patch:react-native-webview@npm%3A14.0.1#~/.yarn/patches/react-native-webview-npm-14.0.1-5188b52144.patch"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
     "@side/config": "workspace:*",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
-    "@types/react": "~19.2.0",
+    "@types/react": "~19.3.0",
     "eslint": "^9.39.0",
     "jiti": "^2.6.1",
     "jsdom": "^29.0.0",
-    "react-dom": "19.2.3",
-    "react-native-web": "~0.21.0",
+    "react-dom": "19.3.0",
+    "react-native-web": "~0.21.4",
     "typescript": "6.0.2",
     "vitest": "^4.1.0"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "typescript"
+      ]
+    }
   }
 }

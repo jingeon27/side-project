@@ -304,31 +304,31 @@ RDS를 만든 직후 복구 가능 시각이 아직 없으면 배포를 활성�
 
 ## 로컬 검증 범위와 이전 구성
 
-로컬에서는 Node.js 24와 저장소의 Yarn을 사용한다. 기존 개발 서버·개발 DB를 대상으로 테스트하지 않는다. 최초 설치는 `corepack yarn install --immutable`, 브라우저 준비는 각 앱 workspace에서 `exec playwright install chromium webkit`으로 수행한다. RDS·S3·OAuth 운영 키는 로컬 테스트에 넣지 않는다.
+로컬에서는 Node.js 24와 저장소의 Yarn을 사용한다. 기존 개발 서버·개발 DB를 대상으로 테스트하지 않는다. 최초 설치는 `yarn install --immutable`, 브라우저 준비는 각 앱 workspace에서 `exec playwright install chromium webkit`으로 수행한다. RDS·S3·OAuth 운영 키는 로컬 테스트에 넣지 않는다.
 
-공통 UI 검증은 `corepack yarn workspace @side/design-system check`로 실행한다. 두 서비스의 UI가 함께 사용하는 lint·타입 검사·primitive 테스트를 확인한다.
+공통 UI 검증은 `yarn workspace @side/design-system check`로 실행한다. 두 서비스의 UI가 함께 사용하는 lint·타입 검사·primitive 테스트를 확인한다.
 
 GF는 자체 55444 테스트 DB와 임의 `gf_test_` 스키마를 사용한다. 다른 서비스용 `TEST_DATABASE_URL`을 설정하지 않은 터미널에서 순서대로 실행한다.
 
 ```sh
-corepack yarn workspace @side/game-feedback check
-corepack yarn workspace @side/game-feedback test
-corepack yarn workspace @side/game-feedback test:e2e
-corepack yarn workspace @side/game-feedback db:test:stop
+yarn workspace @side/game-feedback check
+yarn workspace @side/game-feedback test
+yarn workspace @side/game-feedback test:e2e
+yarn workspace @side/game-feedback db:test:stop
 ```
 
-PC는 별도 터미널에서 `corepack yarn workspace @side/photo-contest db:test:local`로 전용 55434 DB를 시작한다. 다음 명령은 **PC 검증용 터미널에서만** 실행하고, 마치면 DB 터미널에서 Ctrl+C로 해당 DB만 종료한다. 앱별 임의 스키마는 테스트 teardown이 정리한다. API 빌드는 Docker 또는 test-kit의 `.e2e-build`에서 수행하므로 실행 중인 개발 서버의 `dist`를 바꾸지 않는다.
+PC는 별도 터미널에서 `yarn workspace @side/photo-contest db:test:local`로 전용 55434 DB를 시작한다. 다음 명령은 **PC 검증용 터미널에서만** 실행하고, 마치면 DB 터미널에서 Ctrl+C로 해당 DB만 종료한다. 앱별 임의 스키마는 테스트 teardown이 정리한다. API 빌드는 Docker 또는 test-kit의 `.e2e-build`에서 수행하므로 실행 중인 개발 서버의 `dist`를 바꾸지 않는다.
 
 ```sh
 export TEST_DATABASE_URL='postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public'
-corepack yarn workspace @side/photo-contest db:generate
-corepack yarn workspace @side/photo-contest lint
-corepack yarn workspace @side/photo-contest typecheck
-corepack yarn workspace @side/photo-contest test
-corepack yarn workspace @photo-contest/api test:e2e
-corepack yarn workspace @photo-contest/web test:api
-corepack yarn workspace @photo-contest/web test:e2e
-corepack yarn workspace @photo-contest/test-kit check:cleanup
+yarn workspace @side/photo-contest db:generate
+yarn workspace @side/photo-contest lint
+yarn workspace @side/photo-contest typecheck
+yarn workspace @side/photo-contest test
+yarn workspace @photo-contest/api test:e2e
+yarn workspace @photo-contest/web test:api
+yarn workspace @photo-contest/web test:e2e
+yarn workspace @photo-contest/test-kit check:cleanup
 ```
 
 공통 배포 검증은 Docker Engine/Compose와 amd64 실행 지원이 필요하다. macOS에서는 [Docker Desktop 설치](https://docs.docker.com/desktop/setup/install/mac-install/) 또는 [Colima 설치](https://github.com/abiosoft/colima#installation) 중 하나로 별도 검증 환경을 준비한다. 작업할 Docker context를 확인한 뒤 저장소 루트의 **Bash**에서 아래 명령을 실행한다. `test:e2e`의 개발 서버 검증과 별개로 실제 운영 Dockerfile의 이미지 4개를 빌드한다.

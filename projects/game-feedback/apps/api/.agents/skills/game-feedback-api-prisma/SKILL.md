@@ -29,10 +29,10 @@ DB·포트 격리와 금지 옵션은 프로젝트 `AGENTS.md`, 커밋 범위는
 git show HEAD:projects/game-feedback/apps/api/prisma/schema.prisma > <스크래치>/schema.before.prisma
 M=projects/game-feedback/apps/api/prisma/migrations/$(date -u +%Y%m%d%H%M%S)_<이름>
 mkdir -p "$M"
-corepack yarn workspace @game-feedback/api exec prisma migrate diff \
+yarn workspace @game-feedback/api exec prisma migrate diff \
   --from-schema <스크래치>/schema.before.prisma \
   --to-schema prisma/schema.prisma --script > "$M/migration.sql"
-corepack yarn workspace @game-feedback/api db:generate
+yarn workspace @game-feedback/api db:generate
 ```
 
 - `exec`는 apps/api에서 돌므로 prisma 인자는 앱 기준, `mkdir`·`>`는 side 루트 기준이다. `--from`은 마지막 migration까지 반영된 스키마(보통 HEAD)다. 빈 결과면 폴더를 지운다. CHECK 같은 수동 제약은 기존 migration처럼 SQL에 직접 더한다.
@@ -42,7 +42,7 @@ corepack yarn workspace @game-feedback/api db:generate
 
 ## 적용 경로 — 에이전트는 실행하지 않는다
 
-- 로컬 개발 DB: `corepack yarn workspace @side/game-feedback db:sync` → `../../scripts/db.ts sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
+- 로컬 개발 DB: `yarn workspace @side/game-feedback db:sync` → `../../scripts/db.ts sync`가 `guardDatabaseUrl`로 loopback 55442·`game_feedback`·`public`을 확인한 뒤 API `prisma:sync`(`prisma db push`)를 부른다. 프로젝트 `dev`·`setup`도 시작할 때 이것을 실행한다. 사용자에게 요청하고, CHECK 제약은 여기서 생기지 않는다고 함께 알린다.
 - API `prisma:sync`를 직접 부르지 않는다 — URL 가드가 없다. `prisma migrate dev`·`migrate reset`·`--accept-data-loss`·`--force-reset`도 쓰지 않는다.
 - 운영: `scripts/migrate.ts`(빌드된 `dist`와 `NODE_ENV=production` 필요)가 `validateProductionEnvironment` → `prisma migrate deploy` → `seed(db, false)`(카테고리) → shared-instance면 권한 GRANT/REVOKE 순서로 돈다. `../../../../deploy/shared-instance/scripts/service.sh`가 `../../deploy/shared-instance/compose.yaml`의 `migrate` 서비스를 실행한다. 로컬에서 돌리지 않는다.
 - `db:generate`(API `test` 스크립트와 `codegen`도 실행)는 사용자의 개발 서버가 쓰는 `src/generated/prisma`를 다시 쓴다. 개발 DB에 적용되기 전까지 새 열을 쓰는 요청은 실패한다고 알린다.
@@ -60,8 +60,8 @@ corepack yarn workspace @game-feedback/api db:generate
 - `test:integration`에서 `db push` 하네스 파일은 schema.prisma만 쓰고, `migrate deploy` 하네스 파일(`src/database/unit-of-work.integration.spec.ts`, `src/users/profile.service.integration.spec.ts`, `src/media-storage/media-storage.service.integration.spec.ts`, `src/posts/post-media-upload.service.integration.spec.ts`, `src/chat/chat-attachment-upload.service.integration.spec.ts`)은 모든 migration을 새 `gf_test_` 스키마에 적용한다. migration이 빠뜨린 열·제약은 그것을 쓰는 migrate-deploy 테스트에서만 드러나므로 새 열·제약을 쓰는 spec을 같이 더한다.
 
 ```sh
-corepack yarn workspace @game-feedback/api db:generate
-corepack yarn workspace @game-feedback/api typecheck
-corepack yarn workspace @game-feedback/api test:integration
+yarn workspace @game-feedback/api db:generate
+yarn workspace @game-feedback/api typecheck
+yarn workspace @game-feedback/api test:integration
 MIGRATION_BASE_REF=origin/develop node scripts/check-migrations.ts   # side 루트, git diff만 읽는다
 ```

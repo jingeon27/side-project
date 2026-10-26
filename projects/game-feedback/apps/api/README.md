@@ -7,13 +7,13 @@ NestJS REST API이며 입력과 응답 계약은 `@game-feedback/contracts`의 Z
 저장소 루트에서 Node.js 24와 설치된 의존성을 사용한다.
 
 ```sh
-corepack yarn workspace @game-feedback/api test
+yarn workspace @game-feedback/api test
 # DB 없이 순수 정책·검증 단위 테스트
-corepack yarn workspace @game-feedback/api test:unit
+yarn workspace @game-feedback/api test:unit
 # 격리 PostgreSQL + Supertest 통합 테스트
-corepack yarn workspace @game-feedback/api test:integration
+yarn workspace @game-feedback/api test:integration
 # 특정 HTTP 통합 테스트만 실행
-corepack yarn workspace @game-feedback/api test src/posts/posts.controller.integration.test.ts
+yarn workspace @game-feedback/api test src/posts/posts.controller.integration.test.ts
 ```
 
 모든 API 명령은 계약 빌드와 전용 Prisma 생성을 준비한다. `test:unit`은 DB를 시작하거나 연결하지 않는다. `test:integration`과 전체 `test`는 소유 테스트 PostgreSQL을 준비한다. 별도 환경변수 없이 전용 loopback 55444의 `game_feedback_test`를 사용하며 각 통합 테스트가 고유 `gf_test_` 스키마를 만들고 종료 후 해당 스키마만 정리한다. DB를 준비하지 못하면 실패하며 통합 테스트를 건너뛴 성공으로 처리하지 않는다. 통합 레인을 Vitest로 직접 호출할 때도 `TEST_DATABASE_URL` 검증을 통과해야 한다.
@@ -25,7 +25,7 @@ corepack yarn workspace @game-feedback/api test src/posts/posts.controller.integ
 루트 `yarn workspace @side/game-feedback test`와 CI도 같은 API 명령을 호출한다. 테스트 DB는 재사용할 수 있도록 유지되며 작업 후 소유 DB만 종료한다.
 
 ```sh
-corepack yarn workspace @side/game-feedback db:test:stop
+yarn workspace @side/game-feedback db:test:stop
 ```
 
 `openapi.json`은 Git에 포함하지 않는 중간 생성 파일이다. 프로젝트 개발/검사/테스트/빌드의 준비 단계 또는 `yarn workspace @side/game-feedback codegen`이 Zod/경로 정의에서 생성한다. Orval이 이 규격으로 REST SDK와 응답 검증 코드를 생성한다.
@@ -42,7 +42,7 @@ DB 구조와 최초 운영 migration을 함께 관리한다. 로컬 db:sync는 �
 
 서버 테스트 계정은 명시적 `dev:test` 또는 `GF_TEST_AUTH_ENABLED=true`에서 `POST /api/auth/test-token`으로 발급한다. `{ "accountId": "sample-user-0" }`를 보내면 1시간 `accessToken`, `tokenType: "Bearer"`, `expiresAt`, 사용자 정보를 받는다. 같은 origin의 HttpOnly 쿠키도 설정하며 Bearer로 보호 API를 호출할 수 있다. 일반 실행에서는 404이고 production에서는 테스트 인증을 활성화할 수 없다.
 
-관리자 HTTP 업무는 `src/admin/{categories,users,reports,support}`의 독립 controller/service와 AdminModule이 소유한다. 공개 카테고리 조회와 관리자 생성은 같은 테이블을 쓰되 service를 공유하지 않는다. 요청 DTO의 class-validator decorator와 class-transformer/Nest ValidationPipe를 controller에서 적용하고 Service에는 검증된 입력을 전달한다. Guard가 먼저 권한을 확인하며 Zod 계약의 정규화/중첩 JSON 규칙은 HTTP 파이프에서 보존한다. 응답 Zod 검증과 OpenAPI/Orval 생성 방식은 유지한다.
+관리자 HTTP 업무는 `src/admin/{categories,users,reports,support}`의 독립 controller/service와 AdminModule이 소유한다. 공개 카테고리 조회와 관리자 생성은 같은 테이블을 쓰되 service를 공유하지 않는다. NestJS 12.2의 StandardSchemaValidationPipe가 요청에 지정한 Zod 스키마를 검증하고 Service에는 파싱된 입력을 전달한다. DTO 타입은 z.output으로 추론하며 데코레이터로 검증 규칙을 중복 선언하지 않는다. Guard가 먼저 권한을 확인하며 Zod 계약의 정규화/중첩 JSON 규칙은 HTTP 파이프에서 보존한다. 응답 Zod 검증과 OpenAPI/Orval 생성 방식은 유지한다.
 
 ### Prisma 7
 

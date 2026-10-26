@@ -13,7 +13,7 @@ export default defineConfig({
     ...(index === 1
       ? {
           command:
-            'corepack yarn workspace @game-feedback/web build && NEXT_PUBLIC_SENTRY_DSN= NEXT_PUBLIC_AMPLITUDE_API_KEY= corepack yarn workspace @game-feedback/web exec next start --port 3301 --hostname 127.0.0.1',
+            'yarn workspace @game-feedback/web build && NEXT_PUBLIC_SENTRY_DSN= NEXT_PUBLIC_AMPLITUDE_API_KEY= yarn workspace @game-feedback/web exec next start --port 3301 --hostname 127.0.0.1',
           timeout: 180_000,
         }
       : {}),

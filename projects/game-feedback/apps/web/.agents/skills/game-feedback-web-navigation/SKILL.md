@@ -46,7 +46,7 @@ description: Game Feedback 웹(apps/web)에서 링크·뒤로 가기·탭 이동
 ## 확인 (side 루트)
 
 ```sh
-corepack yarn workspace @game-feedback/web test src/shared/navigation src/shared/i18n src/shared/native
-corepack yarn workspace @game-feedback/bridge test
-corepack yarn workspace @game-feedback/web test:e2e e2e/navigation.spec.ts e2e/language.spec.ts
+yarn workspace @game-feedback/web test src/shared/navigation src/shared/i18n src/shared/native
+yarn workspace @game-feedback/bridge test
+yarn workspace @game-feedback/web test:e2e e2e/navigation.spec.ts e2e/language.spec.ts
 ```

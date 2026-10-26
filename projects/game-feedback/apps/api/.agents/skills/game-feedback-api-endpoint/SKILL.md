@@ -10,8 +10,8 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 1. **계약** `../../packages/contracts/src/index.ts`: 입력은 `.strict()` Zod 객체로 쓴다(trim·정규화·한국어 오류 문장이 여기 있다). 응답의 시각은 `ResponseTimestampSchema`(ISO 문자열), ID는 `ResponseIdSchema`. 이름 있는 모델이 필요하면 `schemas`에 더하고 `operations`에 `{ method, path: '/api/x/{id}', id, body?, response, query?, contentType? }`를 더한다. `id`가 SDK 함수 이름이 된다.
 2. **OpenAPI 한계** (`src/openapi.ts`): 성공 응답은 항상 `'200'`만 기록한다. `query: true`는 `cursor`·`limit`만 만들고, 그 밖의 쿼리는 `listPosts`·`listReports`(status) 분기처럼 이 파일에 직접 적는다. SSE(`/api/chat/events`)와 바이너리 GET(`/api/post-media/:id`, `/api/users/:id/avatar`, 채팅 첨부 GET)은 `operations`에 넣지 않는다.
 3. **계약 빌드**: API는 `@game-feedback/contracts`의 `dist`를 import한다. 계약을 고친 뒤 `codegen`(또는 contracts `build`) 전에는 API `typecheck`가 옛 타입을 본다. API `test` 스크립트는 빌드를 먼저 한다.
-4. **DTO** `src/<domain>/<name>-input.dto.ts`: `static readonly contract = XInputSchema`, 필드는 `declare f: z.output<typeof XInputSchema>['f']` + Zod와 같은 범위의 class-validator 데코레이터, trim은 `Trim()`. `RequestValidationPipe`(`src/common/http/request-validation.ts`)는 Zod parse(정규화, 첫 issue 문장) → class-validator(body는 `forbidNonWhitelisted`, query는 모르는 키 허용) → **Zod 결과 plain object**를 넘긴다. DTO 인스턴스가 아니다. 실패는 400 `VALIDATION_ERROR`.
-5. **Controller** `src/<domain>/<domain>.controller.ts`: `@Controller('api')` 또는 `'api/<prefix>'`. 본문 `@ValidatedBody(Dto)`, 쿼리 `@ValidatedQuery(Dto)`(목록은 `ListQueryDto`), enum 경로 값 `@Param('x', new ContractValuePipe(Schema))`. `@Req() req: SessionRequest`를 서비스로 넘기고 규칙은 서비스에 둔다. `PATCH /api/profile`의 `@Body() body: unknown` + 서비스 `parse()`는 남은 예외다 — 따라 하지 않는다.
+4. **DTO** `src/<domain>/<name>-input.dto.ts`: contracts의 입력 스키마를 공개하고 `T<Name>Dto = z.output<typeof XInputSchema>`로 타입을 추론한다. Controller는 `@ValidatedBody(XInputSchema)`·`@ValidatedQuery(XQuerySchema)`로 Nest 12 schema 메타데이터를 지정한다. 전역 `RequestValidationPipe`는 내장 `StandardSchemaValidationPipe`를 통해 Zod를 한 번 실행하고 정규화된 plain object를 전달한다. strict body와 query의 알 수 없는 키 처리는 각 스키마가 소유한다. 원본 JSON의 금지된 키도 스키마가 거부하며 실패는 400 `VALIDATION_ERROR`다.
+5. **Controller** `src/<domain>/<domain>.controller.ts`: `@Controller('api')` 또는 `'api/<prefix>'`. 본문 `@ValidatedBody(XInputSchema)`, 쿼리 `@ValidatedQuery(XQuerySchema)`(목록은 `ListQuerySchema`), enum 경로 값 `@Param('x', new ContractValuePipe(Schema))`. `@Req() req: SessionRequest`를 서비스로 넘기고 규칙은 서비스에 둔다. `PATCH /api/profile`도 UserGuard와 UpdateProfileInputSchema를 거쳐 검증한 입력만 Service로 전달한다.
 6. **POST는 `@HttpCode(200)`**: 계약이 200만 선언하므로 기존 POST가 모두 붙인다. 쿠키를 쓰면서 JSON을 돌려주면 `@Res({ passthrough: true })`.
 7. **주입은 항상 `@Inject(Token)`**: `dev`(tsx)와 Vitest가 `design:paramtypes`를 만들지 않아 타입만으로는 주입되지 않는다(`request-validation.ts` 주석). 서비스는 `@Inject(PrismaClient)`, `@Inject(UnitOfWork)`, `@Inject(APP_CONFIG)`를 쓴다. Repository 계층은 없다.
 8. **Module**: 도메인 module의 `controllers`·`providers`에 등록하고 새 module은 `src/app.module.ts` `imports`에 더한다. 다른 도메인 서비스는 그 module의 `exports`로 받는다(`PostsModule` → `UsersModule`의 `UserVisibilityService`). `DatabaseModule`(PrismaClient·UnitOfWork·APP_CONFIG)과 `MediaStorageModule`은 `@Global`이다.
@@ -53,7 +53,7 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 
 ## 체크리스트
 
-- [ ] 계약 operation·스키마, DTO `contract`, POST `@HttpCode(200)`, `@Inject` 명시
+- [ ] 계약 operation·스키마, Zod 스키마·추론 DTO 타입, POST `@HttpCode(200)`, `@Inject` 명시
 - [ ] Guard + 서비스 `requireUser`/`requireAdmin`, 가시성 필터, 관리자 AuditLog
 - [ ] 하드코딩 경로 목록과 SDK `index.ts` export
 - [ ] DTO 경계는 `src/common/http/request-validation.spec.ts`, 동작은 대상 옆 `*.integration.spec.ts`(Origin 403, 401, 403, 404, 400 코드 포함)
@@ -62,10 +62,10 @@ description: Game Feedback API(apps/api)에 REST 엔드포인트를 추가·변�
 ## 명령 (side 루트)
 
 ```sh
-corepack yarn workspace @side/game-feedback codegen        # contracts build → db:generate → openapi → Orval
+yarn workspace @side/game-feedback codegen        # contracts build → db:generate → openapi → Orval
 git diff --stat -- projects/game-feedback/packages/sdk/src/generated   # CI는 재생성 뒤 diff가 있으면 실패한다
-corepack yarn workspace @game-feedback/sdk test            # 모든 operation이 응답 스키마를 넘기는지
-corepack yarn workspace @game-feedback/api typecheck       # 테스트 포함 tsconfig.json + 빌드 전용 tsconfig.build.json
-corepack yarn workspace @game-feedback/api test:integration
-corepack yarn workspace @side/game-feedback check          # 전체 typecheck + API·패키지 lint(프로젝트 루트) + web·mobile·admin lint
+yarn workspace @game-feedback/sdk test            # 모든 operation이 응답 스키마를 넘기는지
+yarn workspace @game-feedback/api typecheck       # 테스트 포함 tsconfig.json + 빌드 전용 tsconfig.build.json
+yarn workspace @game-feedback/api test:integration
+yarn workspace @side/game-feedback check          # 전체 typecheck + API·패키지 lint(프로젝트 루트) + web·mobile·admin lint
 ```

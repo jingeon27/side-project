@@ -5,7 +5,7 @@ import { PlayerTagSchema } from '@game-feedback/contracts';
 import type { SessionRequest } from '../auth/session.types';
 import { ContractValuePipe, ValidatedBody } from '../common/http/request-validation';
 import { ProfileLookupGuard, UserGuard } from '../common/http/session.guard';
-import { GameAccountDto } from './game-account-input.dto';
+import { GameAccountInputSchema, type TGameAccountDto } from './game-account-input.dto';
 import { GameProfilesService } from './game-profiles.service';
 
 @Controller('api')
@@ -30,7 +30,7 @@ export class GameProfilesController {
   @Post('me/game-accounts')
   @HttpCode(200)
   @UseGuards(UserGuard)
-  saveGameAccount(@Req() req: SessionRequest, @ValidatedBody(GameAccountDto) body: GameAccountDto) {
+  saveGameAccount(@Req() req: SessionRequest, @ValidatedBody(GameAccountInputSchema) body: TGameAccountDto) {
     return this.profiles.saveGameAccount(req, body);
   }
 }

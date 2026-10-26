@@ -67,7 +67,7 @@ export function assertNode() {
 
 export function yarn(args: string[], env: NodeJS.ProcessEnv = environment(), options: SpawnOptions = {}) {
   return new Promise<void>((resolve, reject) => {
-    const child = spawn('corepack', ['yarn', ...args], {
+    const child = spawn('yarn', args, {
       cwd: rootDir,
       env,
       stdio: 'inherit',

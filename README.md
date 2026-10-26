@@ -32,19 +32,23 @@ scripts/                # 저장소 Git hook·worktree 도구
 
 ## 시작
 
+Node.js 24를 선택한 뒤 `packageManager`에 고정한 Yarn 4.17.0 CLI를 직접 설치합니다.
+
 ```sh
-corepack yarn install --immutable
+npm install --global @yarnpkg/cli-dist@4.17.0 --force
+yarn --version # 4.17.0
+yarn install --immutable
 cp projects/photo-contest/.env.example projects/photo-contest/.env
-corepack yarn workspace @side/photo-contest db:generate
-corepack yarn workspace @side/photo-contest codegen
-corepack yarn workspace @side/photo-contest db:local
+yarn workspace @side/photo-contest db:generate
+yarn workspace @side/photo-contest codegen
+yarn workspace @side/photo-contest db:local
 ```
 
 별도 터미널에서 마이그레이션과 개발 서버를 실행합니다.
 
 ```sh
-corepack yarn workspace @side/photo-contest db:migrate
-corepack yarn dev:photo-contest
+yarn workspace @side/photo-contest db:migrate
+yarn dev:photo-contest
 ```
 
 웹은 http://localhost:3200, API는 http://127.0.0.1:4200입니다. 기존 DB의 포트는 해당 프로젝트 `.env`를 따릅니다. [웃긴순간 실행·운영 문서](projects/photo-contest/README.md)를 참고하세요.
@@ -55,7 +59,7 @@ corepack yarn dev:photo-contest
 
 ```sh
 cp projects/game-feedback/.env.example projects/game-feedback/.env
-corepack yarn workspace @side/game-feedback dev:demo
+yarn workspace @side/game-feedback dev:demo
 ```
 
 웹은 http://localhost:3300/ko, API는 http://127.0.0.1:4300입니다. [모바일 앱](projects/game-feedback/apps/mobile/README.md)은 이 웹을 Expo WebView로 열며 Metro 8082를 사용합니다. 전용 개발 DB는 55442, 테스트 DB는 55444를 사용합니다. 실행·검증·외부 연동의 준비 상태는 [Game Feedback 문서](projects/game-feedback/README.md)와 [검증 기록](projects/game-feedback/docs/implementation.md)을 참고하세요.
@@ -69,9 +73,9 @@ corepack yarn workspace @side/game-feedback dev:demo
 [설계와 사용법](packages/design-system/README.md)은 `@side/design-system`이 관리합니다. Photo Contest·Game Feedback 웹이 같은 색·타이포·간격·컨트롤·모달 스타일을 사용합니다. 공통 UI는 `@side/design-system`, Next 링크는 `@side/design-system/next`, Tailwind 진입점에서는 `@side/design-system/styles.css`를 가져옵니다. 도메인 화면·라우팅·서버 상태·앱별 overlay 수명은 각 프로젝트가 소유합니다.
 
 ```sh
-corepack yarn workspace @side/design-system check
-corepack yarn storybook
-corepack yarn build:storybook
+yarn workspace @side/design-system check
+yarn storybook
+yarn build:storybook
 ```
 
 ## 코드 포맷과 import 순서
@@ -79,10 +83,10 @@ corepack yarn build:storybook
 루트 Prettier와 `@ianvs/prettier-plugin-sort-imports`가 모든 워크스페이스의 포맷과 import 순서를 관리합니다. [`.prettierrc.json`](.prettierrc.json)의 `importOrder`에서 Node.js 내장 모듈 → React·Next.js → 외부 패키지 → 워크스페이스 패키지 → `@/`·`~/` 별칭 → 상대 경로 순서를 설정하며 그룹 사이에는 빈 줄을 둡니다. 새 프로젝트의 패키지 scope를 만들면 워크스페이스 정규식에도 추가하세요. CSS나 `server-only`처럼 값 없이 가져오는 import는 실행 순서를 유지합니다.
 
 ```sh
-corepack yarn format:check
-corepack yarn format
+yarn format:check
+yarn format
 # 수정한 파일만 정리할 때
-corepack yarn prettier --write packages/design-system/src/index.ts
+yarn prettier --write packages/design-system/src/index.ts
 ```
 
 편집기에서는 저장소에 설치된 Prettier와 루트 설정을 사용하세요. NestJS의 legacy decorator와 TypeScript 6.0.2 import 문법도 지원하도록 설정했습니다.
@@ -97,9 +101,9 @@ corepack yarn prettier --write packages/design-system/src/index.ts
 새 worktree는 다음 명령으로 만들면 기본 worktree의 로컬 `.env*`도 함께 복사합니다. 루트와 환경변수 예제가 있는 프로젝트·앱 디렉터리만 대상으로 하며, 기존 대상 파일과 예제 파일은 보존합니다. 복사본 권한은 `600`이며 값은 출력하지 않습니다.
 
 ```sh
-corepack yarn worktree:add ../side-project-feature -b feat/feature origin/develop
+yarn worktree:add ../side-project-feature -b feat/feature origin/develop
 cd ../side-project-feature
-corepack yarn install --immutable
+yarn install --immutable
 ```
 
 직접 `git worktree add`를 사용해도 새 worktree의 `yarn install`이 빠진 로컬 설정을 복사합니다. CI·Docker 설치에서는 복사하지 않습니다. `.env`는 Git에 포함되지 않으므로 다른 컴퓨터나 운영 서버에는 별도로 설정합니다. 복사한 설정에는 기존 DB·포트도 들어 있으므로 동시에 서버를 띄울 때는 프로젝트의 격리 규칙에 맞게 바꿉니다.
@@ -113,19 +117,19 @@ git commit --no-verify          # 비상시에만 사용한다
 
 ## 검증
 
-별도 터미널에서 `corepack yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.
+별도 터미널에서 `yarn workspace @side/photo-contest db:test:local`로 테스트 DB(55434)를 시작합니다. `.env`의 `TEST_DATABASE_URL`은 이 전용 DB를 가리킵니다.
 
 ```sh
-corepack yarn workspace @side/config check
-corepack yarn workspace @side/photo-contest check
-corepack yarn workspace @photo-contest/web lint
-corepack yarn workspace @photo-contest/mobile lint
-corepack yarn test:photo-contest:api
-corepack yarn workspace @photo-contest/web exec playwright install chromium webkit
-corepack yarn test:photo-contest:e2e
-corepack yarn workspace @photo-contest/test-kit check:cleanup
-corepack yarn build:photo-contest
-corepack yarn format:check
+yarn workspace @side/config check
+yarn workspace @side/photo-contest check
+yarn workspace @photo-contest/web lint
+yarn workspace @photo-contest/mobile lint
+yarn test:photo-contest:api
+yarn workspace @photo-contest/web exec playwright install chromium webkit
+yarn test:photo-contest:e2e
+yarn workspace @photo-contest/test-kit check:cleanup
+yarn build:photo-contest
+yarn format:check
 ```
 
 `test:api`는 웹·모바일이 소비하는 실제 API 계약을, API의 `test:integration`은 실제 DB+supertest를 실행하며 기존 `test:e2e`는 호환 위임입니다. 웹·모바일의 `test:e2e`는 Playwright를 실행합니다. 새 단위·통합 사양은 `.spec.ts(x)`를 사용합니다. `TEST_DATABASE_URL`을 우선 사용하고 실행마다 임시 스키마를 만든 뒤 제거합니다. 개발 서버의 포트·빌드 폴더·데이터를 재사용하지 않습니다.
@@ -134,7 +138,15 @@ corepack yarn format:check
 
 ## TypeScript와 테스트 파일 규칙
 
-웹 앱의 Next.js와 관련 도구는 16.4.2를 사용합니다. 공통 `@side/config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. Node·Yarn·모바일 Expo 버전은 유지합니다.
+웹 앱의 Next.js와 관련 도구는 16.4.3을 사용하고 React·React DOM은 19.3.1을 사용합니다. 공통 `@side/config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. 모바일은 Expo SDK 58·React Native 0.88.0과 SDK가 지정한 React·React DOM 19.3.0을 사용합니다. Node·Yarn 버전은 유지합니다. Expo의 TypeScript 권장 버전 검사는 저장소에서 고정한 6.0.2를 유지하기 위해 `expo.install.exclude`에 명시하고, 앱의 실제 타입 검사는 `tsc7`으로 실행합니다.
+
+두 API는 NestJS 12.2.0을 사용하고 입력 검증은 내장 StandardSchemaValidationPipe와 Zod 스키마로 처리합니다. DTO 타입은 스키마에서 추론하며 GraphQL 입력도 스키마를 명시적으로 연결합니다.
+
+Photo Contest의 Amplitude가 의존하는 AsyncStorage 1.x는 Expo SDK 58에서 사용하는 2.2.0으로 통일해 네이티브 모듈 중복을 막습니다.
+
+Photo Contest의 Expo Doctor는 API 테스트 도구를 따라 탐색한 웹용 React 19.3.1과 Amplitude의 New Architecture 미검증 메타데이터를 경고합니다. Android/iOS 번들의 소스맵은 앱의 React 19.3.0 한 개만 포함하는지 확인합니다. 네이티브 SDK 변경 뒤에는 dev client를 다시 빌드하고 실기기에서 확인해야 합니다.
+
+WebView 14.0.1의 선언에서 추가 props의 기본값이 `undefined`라 props 전체가 `never`가 되는 문제는 Yarn 패치로 `unknown`을 사용해 보정합니다.
 
 새 기능의 사양은 `*.spec.ts(x)`, 확인한 버그의 회귀 검사는 `*.test.ts(x)`로 작성합니다. 기존 기능과 회귀 검사가 섞인 파일은 보존하며 Vitest가 두 접미사를 모두 수집합니다. API 통합 테스트도 Vitest와 Supertest가 소유합니다. Playwright는 화면 앱의 e2e 경로만 수집하며 파일명의 spec/test만으로 러너를 결정하지 않습니다. Photo Contest의 `*.api.spec.ts`와 `*.api.test.ts`는 unit에서 제외하고 격리 API 레인에서 실행합니다.
 

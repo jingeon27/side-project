@@ -1,32 +1,25 @@
-import { ValidationPipe } from '@nestjs/common';
+import { StandardSchemaValidationPipe, type ArgumentMetadata } from '@nestjs/common';
 import { GraphQLError } from 'graphql';
+import type { z } from 'zod';
 
-import { ERROR_CODE, isErrorCode } from './errors';
+import { ERROR_CODE, type TErrorCode } from './errors';
 
-export function createInputValidationPipe() {
-  return new ValidationPipe({
-    transform: true,
+class InputValidationPipe extends StandardSchemaValidationPipe {
+  protected override stripProtoKeys(_value: unknown): void {
+    // Strict Zod schemas reject forbidden keys without mutating the request before validation.
+  }
+}
+
+export function createInputValidationPipe(schema?: z.ZodType, code: TErrorCode = ERROR_CODE.BAD_USER_INPUT) {
+  const pipe = new InputValidationPipe({
     validateCustomDecorators: true,
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    forbidUnknownValues: true,
-    stopAtFirstError: true,
-    validationError: { target: false, value: false },
-    exceptionFactory: (errors) => {
-      const error = errors[0];
-      const constraint = Object.keys(error?.constraints ?? {})[0];
-      const code: unknown = constraint ? error?.contexts?.[constraint]?.code : undefined;
-      return new GraphQLError(Object.values(error?.constraints ?? {})[0] ?? '입력 내용을 확인해 주세요.', {
-        extensions: { code: isErrorCode(code) ? code : ERROR_CODE.BAD_USER_INPUT },
-      });
-    },
+    exceptionFactory: (issues) =>
+      new GraphQLError(issues[0]?.message ?? '입력 내용을 확인해 주세요.', { extensions: { code } }),
   });
-}
-
-export function trimValue({ value }: { value: unknown }): unknown {
-  return typeof value === 'string' ? value.trim() : value;
-}
-
-export function loginIdValue({ value }: { value: unknown }): unknown {
-  return typeof value === 'string' ? value.trim().toLowerCase() : value;
+  return {
+    transform(value: unknown, metadata: ArgumentMetadata) {
+      // GraphQL Args does not yet propagate Standard Schema metadata; bind its schema explicitly.
+      return pipe.transform(value, { ...metadata, schema: schema ?? metadata.schema });
+    },
+  };
 }

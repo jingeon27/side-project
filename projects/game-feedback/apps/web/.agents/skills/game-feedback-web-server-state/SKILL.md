@@ -60,8 +60,8 @@ description: Game Feedback 웹(apps/web)에서 REST 조회·mutation을 추가�
 ## 확인 (side 루트)
 
 ```sh
-corepack yarn workspace @game-feedback/web lint
-corepack yarn workspace @game-feedback/web test --project unit
-corepack yarn workspace @game-feedback/web test src/features/chat src/features/auth src/shared/api
-corepack yarn workspace @side/game-feedback codegen   # 계약·SDK가 바뀌었을 때
+yarn workspace @game-feedback/web lint
+yarn workspace @game-feedback/web test --project unit
+yarn workspace @game-feedback/web test src/features/chat src/features/auth src/shared/api
+yarn workspace @side/game-feedback codegen   # 계약·SDK가 바뀌었을 때
 ```

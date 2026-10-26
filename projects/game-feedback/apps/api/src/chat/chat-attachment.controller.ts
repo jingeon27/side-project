@@ -18,7 +18,7 @@ import type { Response } from 'express';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ValidatedBody } from '../common/http/request-validation';
-import { MediaUploadDto } from '../common/media-upload.dto';
+import { MediaUploadInputSchema, type TMediaUploadDto } from '../common/media-upload.dto';
 import { ChatAccessService } from './chat-access.service';
 import { ChatAttachmentUploadService } from './chat-attachment-upload.service';
 import { ChatAttachmentService } from './chat-attachment.service';
@@ -44,7 +44,7 @@ export class ChatAttachmentController {
   request(
     @Req() req: SessionRequest,
     @Param('id') id: string,
-    @ValidatedBody(MediaUploadDto) input: MediaUploadDto,
+    @ValidatedBody(MediaUploadInputSchema) input: TMediaUploadDto,
   ) {
     return this.uploads.request(req, id, input);
   }

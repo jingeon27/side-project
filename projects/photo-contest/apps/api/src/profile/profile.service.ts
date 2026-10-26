@@ -12,7 +12,7 @@ import {
 import { Database } from '../database/database.service';
 import { STORAGE_QUOTA_EXCEEDED } from '../media-upload/media-upload.service';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
-import type { RequestProfileAvatarUploadDto, UpdateMyProfileDto } from './profile.dto';
+import { type TRequestProfileAvatarUploadDto, type TUpdateMyProfileDto } from './profile.dto';
 
 const EXTENSION = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as const;
 const REJECTED = '프로필 사진 업로드가 만료되었거나 사용할 수 없습니다.';
@@ -24,8 +24,8 @@ export class ProfileService {
     private readonly storage: MediaStorage,
   ) {}
 
-  async requestUpload(viewer: IViewer, input: RequestProfileAvatarUploadDto) {
-    const extension = EXTENSION[input.contentType as keyof typeof EXTENSION];
+  async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto) {
+    const extension = EXTENSION[input.contentType];
     if (!extension) fail('JPEG·PNG·WebP 사진을 선택해 주세요.');
     const upload = await this.db.atomic(async (tx) => {
       const now = new Date();
@@ -91,7 +91,7 @@ export class ProfileService {
     return { id: uploadId };
   }
 
-  update(viewer: IViewer, input: UpdateMyProfileDto, completeOnboarding = false) {
+  update(viewer: IViewer, input: TUpdateMyProfileDto, completeOnboarding = false) {
     if (input.avatarId && input.removeAvatar) fail('사진 선택과 삭제 중 하나만 골라 주세요.');
     return this.db.atomic(async (tx) => {
       if (input.avatarId) {

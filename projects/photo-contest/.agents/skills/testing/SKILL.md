@@ -39,7 +39,7 @@ description: 웃긴순간의 앱별 테스트 레인(Vitest unit·ui·api·integ
 - 개발 서버 대상은 workers 1. 선택자는 역할·레이블로 찾고, 앱 e2e의 웹 선택자는 `e2e/support/web-screens.ts`에만 둔다.
 - 화면 캡처는 `.data/`에 남기되 픽셀 비교 단언은 하지 않는다. 휴대폰 화면에서 가로 넘침이 없는지 확인한다.
 
-## 명령 (side 루트, `corepack yarn`)
+## 명령 (side 루트, `yarn`)
 
 ```sh
 yarn workspace @photo-contest/api test        # unit

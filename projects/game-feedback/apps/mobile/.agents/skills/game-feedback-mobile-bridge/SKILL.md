@@ -55,7 +55,7 @@ description: Game Feedback 앱과 웹 사이의 `@game-feedback/bridge` 메시�
 | 실제 제공자 인증 뒤 https 앱 링크 복귀 | dev client·TestFlight/내부 테스트 실기기 |
 
 ```sh
-corepack yarn workspace @game-feedback/bridge test
-corepack yarn workspace @game-feedback/mobile test src/features/bridge src/_pages/web-shell
-corepack yarn workspace @game-feedback/web test src/shared/native
+yarn workspace @game-feedback/bridge test
+yarn workspace @game-feedback/mobile test src/features/bridge src/_pages/web-shell
+yarn workspace @game-feedback/web test src/shared/native
 ```

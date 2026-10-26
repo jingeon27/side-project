@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Inject, Param, Post, Req, UseGuards } from '@nestjs/common';
 
 import type { SessionRequest } from '../auth/session.types';
-import { ListQueryDto } from '../common/http/list-query.dto';
+import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
 import { ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import { NotificationsService } from './notifications.service';
@@ -11,7 +11,7 @@ export class NotificationsController {
   constructor(@Inject(NotificationsService) private readonly service: NotificationsService) {}
   @Get('notifications')
   @UseGuards(UserGuard)
-  notifications(@Req() req: SessionRequest, @ValidatedQuery(ListQueryDto) query: ListQueryDto) {
+  notifications(@Req() req: SessionRequest, @ValidatedQuery(ListQuerySchema) query: TListQueryDto) {
     return this.service.notifications(req, query);
   }
   @HttpCode(200)

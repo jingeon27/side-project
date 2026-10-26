@@ -32,7 +32,8 @@
 
 ```sh
 nvm use
-corepack yarn workspace @side/game-feedback dev
+npm install --global @yarnpkg/cli-dist@4.17.0 --force
+yarn workspace @side/game-feedback dev
 ```
 
 이 집계 명령이 프로젝트 `.env`를 읽어 API와 웹에 전달합니다. 앱만 직접 실행하는 `@game-feedback/web dev`는 이 로더를 거치지 않습니다. API의 OAuth 제공자는 시작할 때 구성되고, 웹의 공개 설정은 번들에 들어가므로 두 프로세스를 다시 시작한 뒤 화면을 새로고침합니다. 부모 셸에 같은 환경변수를 이미 export했다면 그 값이 `.env`보다 우선하므로 함께 확인합니다.
@@ -53,7 +54,7 @@ Google callback은 `WEB_ORIGIN`에서 자동으로 정합니다. Google Cloud의
 
 설정의 **프로필 인증 문의**와 문의 페이지의 **관리자에게 문의하기**는 담당 관리자와 기존 **비공개 1:1 채팅**을 연다. 같은 사용자의 문의 대화는 재사용하고 사용자는 채팅으로 문의 내용과 답변을 확인한다. 실제 관리자가 없는 환경은 문의 불가 오류를 표시하며 가짜 답변을 만들지 않는다. 미인증 사용자는 글쓰기 화면과 작성한 글 상세에서도 인증을 신청할 수 있고, 인증 없이도 글을 작성할 수 있다.
 
-사용자 프로필과 채팅 상단의 **사용자 신고** 버튼에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. 관리자는 별도 React/Vite 서비스 `apps/admin`에서 실행한다. `corepack yarn workspace @side/game-feedback admin:dev`로 http://127.0.0.1:3303 에서 열며 공개 Web/WebView에는 관리자 화면이나 메뉴가 없다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
+사용자 프로필과 채팅 상단의 **사용자 신고** 버튼에서 신고를 접수한다. **대화내역 삭제**는 확인한 마지막 메시지까지만 내 계정에서 제거하며 상대방 기록과 이후 새 메시지는 유지한다. 관리자는 별도 React/Vite 서비스 `apps/admin`에서 실행한다. `yarn workspace @side/game-feedback admin:dev`로 http://127.0.0.1:3303 에서 열며 공개 Web/WebView에는 관리자 화면이나 메뉴가 없다. 관리자 REST API는 별도로 기존 관리자 권한 검증을 유지한다. 문의함의 채팅/처리 상태와 프로필 인증 승인/해제, 신고함의 검토/반려/콘텐츠 숨김, 사용자 밴/해제를 제공한다. 밴은 기존 세션에도 글쓰기/댓글/일반 채팅/업로드 제한을 적용하며 관리자 문의 채팅은 유지한다. 제재 사유와 관리자 조치는 감사 기록에 남긴다.
 
 관리자는 일반 사용자와 별도 계정을 CLI로 생성하고 Admin 서비스에서 ID·비밀번호로 로그인한다. 기본 연결은 운영 SSH 터널이며 관리자 전용 쿠키는 공개 사용자 세션과 분리된다. 계정 생성·접속 절차는 [Admin README](apps/admin/README.md)를 따른다. 관리자 인증 표시는 수동 서비스 검토 결과이며 Supercell API의 계정 소유권 검증과 구분한다.
 
@@ -63,18 +64,18 @@ Google callback은 `WEB_ORIGIN`에서 자동으로 정합니다. Google Cloud의
 
 ```sh
 nvm use
-corepack yarn install --immutable
+yarn install --immutable
 cp projects/game-feedback/.env.example projects/game-feedback/.env
-corepack yarn workspace @side/game-feedback dev:test
+yarn workspace @side/game-feedback dev:test
 ```
 
 테스트 실행은 일반 서비스 UI에 예시 콘텐츠를 준비하고, 서버 API로 고정 계정의 테스트 토큰을 발급한다. 화면에 데모 가입 폼이나 계정 선택기, 테스트 배지는 표시하지 않는다. Web 진입점은 <http://localhost:3300/>, API는 <http://localhost:4300>이다. 첫 방문 언어는 브라우저 설정을 따른다. 한국어로 바로 보려면 <http://localhost:3300/ko>를 사용한다. Ctrl+C는 이 실행이 시작한 API와 Web을 종료한다. 로컬 PostgreSQL 데이터와 소유 프로세스는 유지되며 다음 명령으로 중지한다.
 
 ```sh
-corepack yarn workspace @side/game-feedback db:stop
+yarn workspace @side/game-feedback db:stop
 ```
 
-실제 소셜 로그인과 Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `corepack yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Prisma 스키마 동기화, 카테고리 seed를 준비한다. 예시 콘텐츠는 명시적인 테스트 또는 기존 데모 실행에서만 추가한다.
+실제 소셜 로그인과 Supercell 제공자를 사용하려면 프로젝트 `.env`에 발급받은 값을 설정한 뒤 `yarn workspace @side/game-feedback dev`를 실행한다. 일반 실행의 데모 모드는 꺼져 있다. 개발 실행은 계약 빌드, 전용 Prisma 생성, OpenAPI·SDK 자동 생성, 소유 DB 시작, Prisma 스키마 동기화, 카테고리 seed를 준비한다. 예시 콘텐츠는 명시적인 테스트 또는 기존 데모 실행에서만 추가한다.
 
 로컬 Sentry·Amplitude 키는 같은 `projects/game-feedback/.env`에 넣는다. 앱별 실행 명령 대신 위 집계 명령으로 시작해야 Web/API에 함께 전달된다. [관측 설정과 수신 확인](docs/observability.md#로컬에서-먼저-확인하기)을 따른다. S3 직접 업로드를 확인하려면 같은 파일에 서버 전용 S3 설정을 넣고 [게시글·채팅 첨부 설정](docs/media-upload.md)에 따라 버킷 CORS를 적용한다.
 
@@ -145,19 +146,19 @@ curl --fail --silent --show-error http://localhost:4300/api/auth/test-token \
 
 모든 명령은 저장소 루트에서 실행한다.
 
-| 명령 뒤의 작업                                                                   | 실행 내용                                                                         |
-| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `corepack yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 현재 Prisma 스키마 적용, 카테고리 seed         |
-| `corepack yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile/Admin 타입, API·패키지·스크립트와 각 앱 lint 위임  |
-| `corepack yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트     |
-| `corepack yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 데모/테스트 토큰/프로덕션 프리패칭·Mobile Playwright 테스트 |
-| `corepack yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                       |
-| `corepack yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
-| `corepack yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
-| `corepack yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
-| `corepack yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push`                                              |
+| 명령 뒤의 작업                                                          | 실행 내용                                                                         |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `yarn workspace @side/game-feedback setup`                              | 계약 및 Prisma 준비, 개발 DB 시작, 현재 Prisma 스키마 적용, 카테고리 seed         |
+| `yarn workspace @side/game-feedback typecheck` / `check`                | 계약/API/SDK/Bridge/Web/Mobile/Admin 타입, API·패키지·스크립트와 각 앱 lint 위임  |
+| `yarn workspace @side/game-feedback test`                               | API Vitest+Supertest, SDK 응답 검증, Web Vitest, Mobile Vitest 단위·UI 테스트     |
+| `yarn workspace @side/game-feedback test:e2e`                           | 테스트 DB 시작 및 Web 데모/테스트 토큰/프로덕션 프리패칭·Mobile Playwright 테스트 |
+| `yarn workspace @side/game-feedback build`                              | API/Web production build 및 Mobile Android/iOS Metro export                       |
+| `yarn workspace @side/game-feedback codegen`                            | 서버 계약 → OpenAPI → Orval Client 생성                                           |
+| `yarn workspace @side/game-feedback db:start` / `db:stop` / `db:status` | 개발 DB 소유 프로세스 관리                                                        |
+| `yarn workspace @side/game-feedback db:test:start` / `db:test:stop`     | 테스트 DB 관리                                                                    |
+| `yarn workspace @side/game-feedback db:sync`                            | 개발 DB URL 검증 후 `prisma db push`                                              |
 
-API만 검증하려면 `corepack yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
+API만 검증하려면 `yarn workspace @game-feedback/api test`를 실행한다. API가 전용 테스트 DB와 Prisma를 준비한 뒤 Vitest + Supertest 통합 테스트까지 실행한다. 자세한 명령과 격리 정책은 [API 테스트 가이드](apps/api/README.md)를 따른다.
 
 ## API 규격 자동 생성
 
@@ -176,9 +177,9 @@ OpenAPI JSON과 Swagger UI를 제공하는 HTTP 엔드포인트는 등록하지 
 ```sh
 # 웹 실행 후 별도 터미널에서
 adb reverse tcp:3300 tcp:3300
-corepack yarn workspace @side/game-feedback mobile:android
+yarn workspace @side/game-feedback mobile:android
 # iOS
-corepack yarn workspace @side/game-feedback mobile:ios
+yarn workspace @side/game-feedback mobile:ios
 ```
 
 [모바일 실행·테스트 가이드](apps/mobile/README.md)에 origin 설정, 시스템 브라우저 Google 로그인, 뒤로 가기·딥링크·연결 복구와 실기기 확인 범위를 정리했다.
@@ -215,19 +216,19 @@ DB 소유 프로세스가 실행 중이어도 PostgreSQL이 예기치 않게 종
 
 ## Next.js와 프리패칭 검증
 
-Game Feedback Web은 Next.js 16.4.2를 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
+Game Feedback Web은 Next.js 16.4.3과 React 19.3.1을 사용한다. Cache Components와 Partial Prefetching을 활성화하고 URL 조회와 라우트 모션/알림 위치를 Suspense로 분리했다. 세션·언어·화면 모드의 private cache는 production 서버에서 요청 간 공유하지 않는다. 공개 글/프로필의 첫 HTML은 JavaScript 없이 본문과 SEO를 제공하며 클라이언트 이동에서는 본문을 스트리밍한다. 문서 접근 검사를 통해 없는 글과 차단된 사용자의 공개 경로는 HTML을 보내기 전에 404로 처리한다.
 
 공개 게시글 상세는 `cacheTag`와 `cacheLife`를 사용한다. NestJS가 변경을 커밋하면 Next의 `POST /internal/cache/revalidate`가 `revalidateTag(tag, { expire: 0 })`를 호출하고, 실패는 DB 큐에서 재시도한다. API가 `.data/cache-revalidation.key`를 권한 600으로 원자적으로 생성하고 Next가 같은 파일을 읽는다. 운영 Compose는 API 쓰기·Web 읽기 전용 볼륨을 공유한다. 콜백 주소는 WEB_ORIGIN(운영은 내부 gf-web 주소)에서 정하며 별도 환경변수를 요구하지 않는다.
 
-`corepack yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `ENVIRONMENT=test`에서 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
+`yarn workspace @game-feedback/web test:prefetch`는 격리된 테스트 DB와 3353/4353 포트에서 production 빌드 + `@next/playwright`의 `instant()`를 검증한다. 테스트 빌드에만 `ENVIRONMENT=test`에서 Next testing API를 포함하고 일반 build에는 포함하지 않는다. 실행 중인 다른 서비스나 포트는 재사용하거나 종료하지 않는다.
 
-테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `corepack yarn workspace @game-feedback/web test:test-auth`를 실행한다. 테스트 실행기가 createApp 옵션으로 인증을 켠 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
+테스트 토큰만 켠 실제 개발 모드의 채팅을 검증하려면 `yarn workspace @game-feedback/web test:test-auth`를 실행한다. 테스트 실행기가 createApp 옵션으로 인증을 켠 별도 설정에서 플레이어 채팅과 일반/인증 문의의 전송·응답·목록/새로고침을 검사하며 프로젝트 `test:e2e`와 CI에도 포함한다.
 
 관리자 실행·로그인·검증 절차는 [Admin README](apps/admin/README.md)를 참고한다. 운영 배포 준비 요청 이후 최초 migration을 포함하며 운영은 `migrate deploy`, 로컬은 전용 URL 가드를 거친 `db:sync`를 사용한다. 기존 로컬 DB를 초기화하거나 최초 migration을 중복 적용하지 않는다.
 
 Photo Contest와 서울 EC2 한 대·Caddy를 공유하고 외부 AWS RDS PostgreSQL과 서비스별 S3 버킷을 사용한다. Docker/HTTPS, GitHub Actions CD, DB 권한 분리와 복구 절차는 [공통 운영 가이드](../../deploy/shared-instance/README.md)에 정리했다. 실제 AWS 생성과 공개 배포는 이 코드를 추가하는 것만으로 실행되지 않는다.
 
-API의 JSON 요청 DTO는 class-validator/class-transformer와 controller의 ValidationPipe가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. Zod 계약의 정규화와 중첩 JSON 규칙도 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
+API의 JSON 요청은 NestJS 12.2의 StandardSchemaValidationPipe와 명시한 Zod 스키마가 검증하며 공개 도메인과 관리자 도메인의 controller/service를 분리한다. DTO 타입은 Zod에서 추론하며 계약의 정규화와 중첩 JSON 규칙을 HTTP 경계에서 유지하고 응답 검증과 OpenAPI/SDK 생성은 기존 Zod 계약을 사용한다.
 
 일반 Web Playwright·테스트 토큰·모바일 WebView 검사는 격리 API와 실제 production build/start를 사용한다. 프리패칭은 별도 test:prefetch에서 검증한다. 관측 검사는 production build/start로 실행한다. 일반 dev 명령은 유지한다.
 

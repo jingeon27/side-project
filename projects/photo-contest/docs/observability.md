@@ -9,10 +9,10 @@
 전용 테스트 PostgreSQL과 루트 TEST_DATABASE_URL을 준비한다. 다른 개발 서버는 종료하거나 재사용하지 않는다. 처음 만든 worktree에서는 Prisma와 GraphQL 문서를 생성한다.
 
 ```sh
-corepack yarn workspace @photo-contest/api db:generate
-corepack yarn workspace @photo-contest/web codegen
-corepack yarn workspace @side/photo-contest sentry:check
-corepack yarn workspace @photo-contest/web monitoring:check
+yarn workspace @photo-contest/api db:generate
+yarn workspace @photo-contest/web codegen
+yarn workspace @side/photo-contest sentry:check
+yarn workspace @photo-contest/web monitoring:check
 ```
 
 `sentry:check`는 DB 없이 실제 API DSN으로 확인 오류 1건을 보낸다. 수집 응답과 eventId를 출력한다. `verification:configuration-check`, `service:photo-contest`, `layer:api`로 찾는다.
@@ -27,7 +27,7 @@ corepack yarn workspace @photo-contest/web monitoring:check
 
 Sentry의 Insights → Frontend → Web Vitals에서 `photo-contest-web` 프로젝트를 선택한다. 성능 span은 `service=photo-contest`, `layer=browser`, `client=web|app`으로 구분한다. 지표는 브라우저 지원에 따라 달라지며 INP에는 실제 상호작용이 필요하고 LCP·CLS는 화면을 떠나거나 숨길 때 최종 보고될 수 있다.
 
-`corepack yarn workspace @photo-contest/web test:observability`는 3337 포트의 운영 빌드에서 실제 Chromium 측정값 5종을 수집 경계에서 가로챈다. 공개 약관 화면만 사용해 DB·실제 API가 필요하지 않다. 웹 CI에도 같은 검사가 포함된다. 실제 수신은 `monitoring:check --grep LCP`로 확인한다. `web-vitals-receipt` 첨부에는 측정값·응답 상태·trace ID만 저장하며 MCP로 재조회할 수 있다.
+`yarn workspace @photo-contest/web test:observability`는 3337 포트의 운영 빌드에서 실제 Chromium 측정값 5종을 수집 경계에서 가로챈다. 공개 약관 화면만 사용해 DB·실제 API가 필요하지 않다. 웹 CI에도 같은 검사가 포함된다. 실제 수신은 `monitoring:check --grep LCP`로 확인한다. `web-vitals-receipt` 첨부에는 측정값·응답 상태·trace ID만 저장하며 MCP로 재조회할 수 있다.
 
 2026-10-26 격리한 로컬 운영 빌드에서 실제 수집 응답 200과 [LCP·CLS·INP span 수신](https://photo-content.sentry.io/explore/traces/trace/a0661ed8327b4d2b9e65d9fc97ca4d11)을 MCP로 확인했다. 테스트용 클릭을 사용한 수집 검증이며 운영 배포는 별도다.
 

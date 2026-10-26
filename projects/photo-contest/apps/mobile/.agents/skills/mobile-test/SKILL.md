@@ -39,9 +39,9 @@ description: 모바일 앱의 Vitest unit·ui·api 테스트나 Playwright nativ
 - e2e는 `useWebShell`의 WebView prop·핸들러, 탐색 정책 적용(브라우저 페이지라 `onShouldStartLoadWithRequest`가 없다), BackHandler·AppState·스플래시·오프라인 화면을 보지 않는다 — ui 레인에서 검증한다.
 
 ```sh
-corepack yarn workspace @photo-contest/mobile test src/_pages/web-shell                 # unit·ui를 경로로 거른다
-corepack yarn workspace @photo-contest/mobile test:e2e --project android-webview social-login
-corepack yarn workspace @photo-contest/mobile exec playwright install chromium webkit   # 브라우저가 없을 때
+yarn workspace @photo-contest/mobile test src/_pages/web-shell                 # unit·ui를 경로로 거른다
+yarn workspace @photo-contest/mobile test:e2e --project android-webview social-login
+yarn workspace @photo-contest/mobile exec playwright install chromium webkit   # 브라우저가 없을 때
 ```
 
 ## 실기기로만 확인한다

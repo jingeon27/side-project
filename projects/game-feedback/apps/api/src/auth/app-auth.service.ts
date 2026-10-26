@@ -9,7 +9,7 @@ import { hash, token } from '../common/crypto';
 import { ApiError } from '../common/http/api-error';
 import { parse } from '../common/validation';
 import { PrismaClient } from '../generated/prisma';
-import type { AppExchangeDto } from './auth-input.dto';
+import { type TAppExchangeDto } from './auth-input.dto';
 import { assertIdentityNotBanned } from './banned-identity';
 import { SessionService } from './session.service';
 import type { SessionRequest } from './session.types';
@@ -36,7 +36,7 @@ export class AppAuthService {
     });
     return code;
   }
-  async exchange(req: SessionRequest, res: Response, body: AppExchangeDto) {
+  async exchange(req: SessionRequest, res: Response, body: TAppExchangeDto) {
     const { code, verifier } = body;
     const codeHash = hash(code);
     const challenge = createHash('sha256').update(verifier).digest('base64url');

@@ -38,7 +38,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'corepack yarn workspace @side/game-feedback db:test:sync && corepack yarn workspace @game-feedback/api db:seed --fixtures && corepack yarn workspace @game-feedback/api test:server',
+        'yarn workspace @side/game-feedback db:test:sync && yarn workspace @game-feedback/api db:seed --fixtures && yarn workspace @game-feedback/api test:server',
       cwd: rootDir,
       url: 'http://127.0.0.1:4301/api/session',
       env: apiEnv,
@@ -47,7 +47,7 @@ export default defineConfig({
     },
     {
       command:
-        'corepack yarn workspace @game-feedback/web build && corepack yarn workspace @game-feedback/web exec next start --port 3301 --hostname 127.0.0.1',
+        'yarn workspace @game-feedback/web build && yarn workspace @game-feedback/web exec next start --port 3301 --hostname 127.0.0.1',
       cwd: rootDir,
       url: 'http://127.0.0.1:3301/ko',
       env: {

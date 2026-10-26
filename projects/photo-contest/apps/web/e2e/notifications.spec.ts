@@ -28,9 +28,10 @@ test(
     const dialog = page.getByRole('dialog', { name: '댓글', exact: true });
     await expect(dialog.getByText('알림을 눌러 이 댓글을 확인해 주세요')).toBeVisible();
     await dialog.getByRole('button', { name: '닫기', exact: true }).click();
-    await expect(page.getByText('읽지 않은 알림 0개')).toBeVisible();
+    const unreadCount = page.getByRole('main').getByText('읽지 않은 알림 0개', { exact: true });
+    await expect(unreadCount).toBeVisible();
     await page.reload();
-    await expect(page.getByText('읽지 않은 알림 0개')).toBeVisible();
+    await expect(unreadCount).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   },
 );

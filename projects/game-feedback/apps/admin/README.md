@@ -11,7 +11,7 @@
 ```sh
 ssh -N -L 14300:127.0.0.1:4300 ubuntu@<IP>
 # 별도 터미널
-corepack yarn workspace @side/game-feedback admin:dev
+yarn workspace @side/game-feedback admin:dev
 ```
 
 http://127.0.0.1:3303 에서 관리자 전용 ID와 비밀번호로 로그인한다. 기본 연결은 운영 SSH 터널 `127.0.0.1:14300`, 서비스 Origin `https://game.bambyul.com`이다. 테스트 로그인 버튼이나 로컬/운영 모드 구분은 없다. 다른 격리된 API를 확인할 때만 `GAME_FEEDBACK_API_URL`, `WEB_ORIGIN`을 셸에 명시한다. Admin은 공개 Web의 개발용 `.env` 주소를 자동으로 읽지 않는다.
@@ -40,12 +40,12 @@ Zod 4.6.7의 설명 주석에 들어 있던 최적화 표시 문구는 루트 Ya
 ## 검증
 
 ```sh
-corepack yarn workspace @game-feedback/admin typecheck
-corepack yarn workspace @game-feedback/admin lint
-corepack yarn workspace @game-feedback/admin test
-corepack yarn workspace @side/game-feedback db:test:start
-corepack yarn workspace @game-feedback/admin test:e2e
-corepack yarn workspace @game-feedback/admin build
+yarn workspace @game-feedback/admin typecheck
+yarn workspace @game-feedback/admin lint
+yarn workspace @game-feedback/admin test
+yarn workspace @side/game-feedback db:test:start
+yarn workspace @game-feedback/admin test:e2e
+yarn workspace @game-feedback/admin build
 ```
 
 Playwright는 개발 서버와 별개인 Admin 3304/API 4304와 테스트 DB 55444의 고유 `gf_test_admin_*` 스키마를 생성하고 해당 스키마만 정리한다.

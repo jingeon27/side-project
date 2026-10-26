@@ -1,10 +1,17 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 
+import { ERROR_CODE } from '../common/errors';
 import type { IGraphqlContext } from '../common/graphql/graphql-context';
+import { createInputValidationPipe } from '../common/input-validation';
 import { AnonymousAuthService } from './anonymous-auth.service';
 import { PasswordAttemptGuard } from './auth-attempt.guard';
-import { LoginWithPasswordDto, RegisterWithPasswordDto } from './auth.dto';
+import {
+  LoginWithPasswordSchema,
+  RegisterWithPasswordSchema,
+  type TLoginWithPasswordDto,
+  type TRegisterWithPasswordDto,
+} from './auth.dto';
 import { PasswordAuthService } from './password-auth.service';
 import type { IViewer } from './session.service';
 import { OptionalViewer } from './viewer.decorator';
@@ -23,13 +30,20 @@ export class AuthResolver {
 
   @Mutation()
   @UseGuards(PasswordAttemptGuard)
-  registerWithPassword(@Args() input: RegisterWithPasswordDto, @Context() { req, res }: IGraphqlContext) {
+  registerWithPassword(
+    @Args(createInputValidationPipe(RegisterWithPasswordSchema)) input: TRegisterWithPasswordDto,
+    @Context() { req, res }: IGraphqlContext,
+  ) {
     return this.passwords.register(input, req, res);
   }
 
   @Mutation()
   @UseGuards(PasswordAttemptGuard)
-  loginWithPassword(@Args() input: LoginWithPasswordDto, @Context() { req, res }: IGraphqlContext) {
+  loginWithPassword(
+    @Args(createInputValidationPipe(LoginWithPasswordSchema, ERROR_CODE.UNAUTHENTICATED))
+    input: TLoginWithPasswordDto,
+    @Context() { req, res }: IGraphqlContext,
+  ) {
     return this.passwords.login(input, req, res);
   }
 
