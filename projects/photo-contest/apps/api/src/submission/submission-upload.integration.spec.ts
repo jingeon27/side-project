@@ -90,7 +90,7 @@ describe('사진 업로드와 열람', () => {
       include: { mediaUpload: true },
     });
     expect(upload.imageKey).toBe(upload.mediaUpload?.storageKey);
-    expect(upload.imageKey).toMatch(/^[a-f0-9-]{36}\.png$/);
+    expect(upload.imageKey?.startsWith(`${inject('s3Env').S3_KEY_PREFIX}/`)).toBe(true);
     expect(await api.storage.head(upload.imageKey ?? '')).toEqual({
       byteSize: bytes.length,
       contentType: 'image/png',
@@ -160,11 +160,12 @@ describe('사진 업로드와 열람', () => {
     const contestId = await createContest(api, owner, group.id, '직접 업로드 계약');
     const bytes = await createTestImage();
     const ticket = await requestUpload(api, friend.cookie, contestId, bytes);
-    expect(ticket.url).toBe(`${inject('s3Env').S3_ENDPOINT}/${inject('s3Env').S3_BUCKET}`);
+    expect(new URL(ticket.url).protocol).toBe('https:');
+    expect(new URL(ticket.url).hostname).toContain(inject('s3Env').S3_BUCKET);
     const ttl = Date.parse(ticket.expiresAt) - Date.now();
     expect(ttl).toBeGreaterThan(4.5 * 60_000);
     expect(ttl).toBeLessThanOrEqual(5 * 60_000);
-    expect((await postPhoto(ticket, Buffer.concat([bytes, Buffer.from('extra')]))).status).toBe(400);
+    expect((await postPhoto(ticket, Buffer.concat([bytes, Buffer.from('extra')]))).ok).toBe(false);
     expect(
       await api.gqlFail(friend.cookie, CREATE_SUBMISSION, {
         contestId,

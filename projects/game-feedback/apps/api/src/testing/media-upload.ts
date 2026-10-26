@@ -28,7 +28,7 @@ export async function presignedUpload(
     .expect(200);
   const plan = MediaUploadPlanSchema.parse(reserved.body);
   const transferred = await transferMedia(plan, bytes, mimeType, name);
-  if (transferred.status !== 204) throw new Error(`Fixture upload failed: ${transferred.status}`);
+  if (transferred.status !== 204) throw new Error(`S3 upload failed: ${transferred.status}`);
   return agent
     .post(`${path}/${plan.id}/complete`)
     .set('Origin', 'http://localhost:3300')

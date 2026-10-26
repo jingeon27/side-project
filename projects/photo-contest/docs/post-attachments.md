@@ -20,7 +20,7 @@ staging 복사는 하지 않는다. 서버가 파일 내용을 검사하지 않�
 
 브라우저가 사진을 다시 그리면 JPEG로 전송하지만 디코딩·변환을 할 수 없는 지원 형식은 원본을 보낸다. 서버는 사진·동영상의 EXIF·GPS 등 메타데이터를 제거하지 않는다. 공개 그룹의 다운로드에도 업로드된 파일의 위치·촬영 정보가 남을 수 있다. 게시자는 공유 전에 파일 내용을 확인한다.
 
-API는 항상 S3 호환 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S3_FORCE_PATH_STYLE`·`S3_KEY_PREFIX`, 자격 증명은 AWS SDK 기본 체인). 로컬 개발과 테스트는 `@photo-contest/test-kit`의 S3 호환 대역을 가리킨다. 대역은 서명 POST 정책(키·형식·크기·만료·서명), 서명 GET(Range·응답 헤더 덮어쓰기), HEAD·DELETE와 웹 origin의 CORS를 실제 AWS SDK와 같은 SigV4로 처리하는 임시 구현이다. 로컬에서 실제 S3를 시험하려면 `.env`의 `S3_ENDPOINT`를 비우고 `S3_BUCKET=jingeon-side-project`, `S3_REGION=ap-northeast-2`, `S3_FORCE_PATH_STYLE=false`와 실제 자격 증명을 넣는다. `game-feedback/*`로 제한한 IAM 정책을 쓰면 `S3_KEY_PREFIX=game-feedback/photo-contest`로 새 객체를 그 아래에 둔다. DB에는 전체 키를 기록하므로 prefix 이전의 파일도 계속 읽는다. 이 설정은 실제 AWS 권한이나 버킷 정책을 바꾸지 않는다.
+API는 항상 S3 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S3_FORCE_PATH_STYLE`·`S3_KEY_PREFIX`, 자격 증명은 AWS SDK 기본 체인). 로컬 개발·통합 테스트도 기존 AWS 버킷을 사용하며 `S3_ENDPOINT`는 비우고 `S3_REGION=ap-northeast-2`, `S3_FORCE_PATH_STYLE=false`와 실제 자격 증명을 설정한다. 대역 서버나 테스트 버킷을 만들지 않는다. `S3_KEY_PREFIX`는 계정에 허용된 프로젝트 전용 경로를 사용한다. DB에는 전체 키를 기록하므로 prefix 이전의 파일도 계속 읽는다. 이 설정은 실제 AWS 권한이나 버킷 정책을 바꾸지 않는다.
 
 완료하지 않고 만료된 티켓의 키와 쓰지 않은 완료 파일, 삭제 실패 파일은 DB 정리 작업이 재시도해 지운다. 모든 업로드 정리는 만료 시각에서 5분 유예가 지난 뒤에 실행해 만료 직전에 시작한 완료 확정과 겹치지 않게 한다. 발급할 때 POST 정책의 만료 시각을 `PostUpload.policyExpiresAt`에 따로 기록한다. 완료하면 `expiresAt`은 게시 유효기간으로 바뀌기 때문이다. 정책이 끝나기 전에 게시물을 지우면 파일은 바로 지우지만 업로드 행은 남기고(다시 게시에는 쓰지 못한다) 정책 만료 5분 뒤 정리 작업이 같은 키를 한 번 더 지운다. 그래서 그 사이 업로더가 같은 키에 다시 올린 파일도 버킷에 남지 않는다. 정책이 끝난 뒤에는 그 키에 늦은 전송이 다시 쓰이지 않는다.
 
@@ -51,6 +51,10 @@ API는 항상 S3 호환 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGI
 
 ## 검증
 
-API 단위 사양은 test-kit S3 대역에 실제 AWS SDK로 POST 정책(최종 키·형식·크기·만료)과 HEAD·DELETE를 확인한다. 통합 사양은 발급 권한, 정책을 벗어난 크기·형식·키·추가 필드 거부, HEAD 불일치 거부, 완료 재시도·동시 완료·커밋 응답 유실, 고정 경로의 307·60초 서명·Range·한글 파일명과 공개·비공개·숨김 권한을 확인한다. test-kit 사양은 대역이 변조·만료된 정책과 서명 GET을 거부하는지 확인한다. 운영 S3 객체·IAM·CORS는 접속하지 않으며 별도로 확인한다.
+API 단위 사양은 네트워크 없이 SDK의 POST 서명 정책(최종 키·형식·크기·만료)과 설정 검증을 확인한다. 통합 사양은 실제 S3에서 HEAD·DELETE, 발급 권한, 정책을 벗어난 크기·형식·키·추가 필드 거부, HEAD 불일치 거부, 완료 재시도·동시 완료·커밋 응답 유실, 고정 경로의 307·60초 서명·Range·한글 파일명과 공개·비공개·숨김 권한을 확인한다.
+
+test-kit은 `<S3_KEY_PREFIX>/tests/<격리 스키마 또는 실행 ID>/`만 사용하고 종료 시 그 경로의 객체만 정리한다. 버킷과 기존 객체는 생성·삭제하지 않는다. 테스트 계정에는 해당 객체의 GetObject·PutObject·DeleteObject와 그 경로로 `s3:prefix`를 제한한 ListBucket 권한이 필요하다. 강제 종료로 정리가 중단되면 해당 실행 ID 경로만 확인해 정리한다. 버킷 CORS에는 로컬 웹과 브라우저 레인 origin(`http://localhost:3320`, `http://localhost:3330`, 캐시·관측 레인의 설정된 origin, 컨테이너 검사 `https://localhost:3382`)을 허용한다.
+
+CI는 Repository Variables의 `S3_BUCKET`·`S3_KEY_PREFIX`와 Secrets의 `AWS_ACCESS_KEY_ID`·`AWS_SECRET_ACCESS_KEY`(임시 키라면 `AWS_SESSION_TOKEN`도)를 사용한다. 공유 배포 검증에는 Game Feedback의 S3 설정도 필요하다. 설정이 없거나 Secrets를 받지 못하는 외부 fork PR의 통합 검사는 대역으로 대체하거나 건너뛴 성공으로 처리하지 않고 실패한다. 운영 객체·IAM 정책 변경과 배포는 별도 작업이다.
 
 웹 API 레인은 생성 문서를 실제 격리 API와 대역에 실행한다. Playwright는 Chrome·iPhone WebKit·데스크톱에서 저장소 POST 실패 후 재시도, 고정 경로의 307과 Range, 사진과 동영상의 실제 파일 저장을 확인한다. test:cache는 프로덕션 프록시가 307과 캐시 금지를 그대로 넘기는지 확인한다.

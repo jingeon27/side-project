@@ -17,13 +17,13 @@ import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { responseLocation } from '../testing/http-response';
 import { transferMedia } from '../testing/media-upload';
-import { S3Fixture } from '../testing/s3-fixture';
+import { S3TestStorage } from '../testing/s3';
 
 const require = createRequire(import.meta.url);
 const schema = `gf_test_profile_${randomBytes(8).toString('hex')}`;
 const origin = 'http://localhost:3300';
 describe('프로필 링크와 사진 HTTP 통합', () => {
-  const s3 = new S3Fixture();
+  const s3 = new S3TestStorage();
   const state = {} as {
     app: INestApplication;
     db: PrismaClient;
@@ -44,7 +44,6 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
     );
     if (result.status !== 0) throw new Error(result.stdout + result.stderr);
     state.db = new PrismaClient({ adapter: createPrismaAdapter(url) });
-    await s3.start();
     state.app = await createApp({
       databaseUrl: url,
       prisma: state.db,

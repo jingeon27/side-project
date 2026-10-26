@@ -14,7 +14,7 @@ import { PrismaClient } from '../generated/prisma';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
-import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
+import { S3TestStorage } from '../testing/s3';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
@@ -32,7 +32,7 @@ interface IState {
 
 describe('채팅 S3 직접 업로드와 권한 조회', () => {
   const state = {} as IState;
-  const s3 = new S3Fixture();
+  const s3 = new S3TestStorage();
   beforeAll(async () => {
     const target = new URL(process.env.DATABASE_URL ?? '');
     target.searchParams.set('schema', schema);
@@ -45,20 +45,13 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
     if (result.status !== 0) throw new Error(`Isolated migration failed: ${result.stdout}\n${result.stderr}`);
     state.db = new PrismaClient({ adapter: createPrismaAdapter(state.databaseUrl) });
     await seed(state.db, false);
-    await s3.start();
     state.app = await createApp({
       databaseUrl: state.databaseUrl,
       prisma: state.db,
       webOrigin: origin,
       demoMode: true,
       rateLimit: false,
-      mediaStorage: {
-        bucket: 'media-test',
-        region: 'ap-northeast-2',
-        endpoint: s3.endpoint,
-        forcePathStyle: true,
-        ...S3_FIXTURE_CREDENTIALS,
-      },
+      mediaStorage: s3.config,
     });
     state.owner = supertest.agent(state.app.getHttpServer());
     state.outsider = supertest.agent(state.app.getHttpServer());

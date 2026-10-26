@@ -2,13 +2,12 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 
 import { assertNode, environment, rootDir } from './env.ts';
-import { startLocalS3 } from './local-s3.ts';
 
 const demo = process.argv.includes('--demo');
 const testAuth = process.argv.includes('--test-auth');
 const env = environment();
 const children = new Set<ChildProcess>();
-const state: { stopping: boolean; localS3?: Awaited<ReturnType<typeof startLocalS3>> } = { stopping: false };
+const state = { stopping: false };
 
 async function assertPortFree(port: number) {
   await new Promise<void>((resolve, reject) => {
@@ -33,7 +32,6 @@ function stop(code = 0) {
       if (child.pid) process.kill(-child.pid, 'SIGTERM');
     } catch {}
   }
-  void state.localS3?.close();
   process.exitCode = code;
 }
 
@@ -68,7 +66,6 @@ try {
   await Promise.all([assertPortFree(3300), assertPortFree(4300)]);
   // Propagate explicit demo mode before importing setup's environment snapshot.
   const { setup } = await import('./tasks.ts');
-  state.localS3 = await startLocalS3(env);
   await setup({ fixtures: demo || testAuth });
   if (!state.stopping) {
     console.log(`Game Feedback ${demo ? 'explicit local demo' : 'development'}: http://localhost:3300/ko`);

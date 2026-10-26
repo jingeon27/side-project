@@ -89,5 +89,5 @@ DB 복원은 먼저 별도 DB에 pg_restore로 검증하고, 쓰기를 멈춘 �
 - Caddy는 `/backend/*`를 API로 직접 전달하고 나머지는 웹으로 보낸다. 파일은 브라우저가 버킷에 직접 올리므로 프록시를 지나지 않는다. 형식·크기는 API가 발급할 때 정하고 서명 POST 정책과 완료 시 HEAD로 제한한다.
 - Next.js는 monorepo root를 tracing root로 둔 standalone 산출물과 static/public 파일만 실행한다. API 이미지는 GraphQL schema·Prisma client·migrate CLI를 포함하며 미디어 처리 런타임(sharp·MediaInfo)은 없다.
 - 운영 환경에는 OAuth·Sentry·Amplitude 키를 넣지 않는다. 현재 기존 아이디·비밀번호 가입/로그인을 사용한다. 게스트 자동 계정은 별도 기능이며 이번 배포 설정에서 추가하지 않는다.
-- 컨테이너 검증은 자체 인증서를 쓰는 격리한 localhost와 같은 네트워크의 test-kit S3 대역(`storage.localhost:3383`)에서 실행한다. 실제 도메인 인증서, Oracle 네트워크, GHCR 서버 접근, R2 버킷 권한·CORS는 서버·계정 설정 후 확인할 항목이다.
+- 컨테이너 검증은 자체 인증서를 쓰는 격리한 localhost와 기존 AWS S3 버킷의 실행별 tests/ 객체 경로에서 실행한다. 실제 도메인 인증서, Oracle 네트워크, GHCR 서버 접근, R2 버킷 권한·CORS는 서버·계정 설정 후 확인할 항목이다.
 - 개인정보 처리방침·보관 기간은 실제 사용하는 호스팅·저장소와 백업 정책에 맞게 공개 전에 확정한다.

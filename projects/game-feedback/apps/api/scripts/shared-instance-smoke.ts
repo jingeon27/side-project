@@ -35,10 +35,38 @@ import {
 } from './shared-instance/response.ts';
 import { assertAnonymousSession } from './shared-instance/session-check.ts';
 
-// API-owned integration runner. Registry, S3 and backup-bucket boundaries are isolated fixtures, not AWS resources;
+// API-owned integration runner. Registry and backup-bucket boundaries are isolated; media uses configured AWS S3;
 // the shared database is the real deploy/shared-instance/database container started by database.sh.
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../../../..');
+for (const project of ['game-feedback', 'photo-contest']) {
+  const file = join(repo, 'projects', project, '.env');
+  if (existsSync(file)) process.loadEnvFile(file);
+}
+const required = (name: string) => {
+  const value = process.env[name];
+  assert.ok(value, `Configure ${name} for the real S3 smoke test.`);
+  return value;
+};
+assert.ok(!process.env.GF_S3_ENDPOINT && !process.env.S3_ENDPOINT, 'Smoke tests require AWS S3.');
+const storageRunId = randomBytes(16).toString('hex');
+const storage = {
+  'game-feedback': {
+    GF_S3_BUCKET: required('GF_S3_BUCKET'),
+    GF_S3_REGION: 'ap-northeast-2',
+    GF_S3_KEY_PREFIX: [process.env.GF_S3_KEY_PREFIX, 'tests', storageRunId].filter(Boolean).join('/'),
+    GF_S3_ACCESS_KEY_ID: required('GF_S3_ACCESS_KEY_ID'),
+    GF_S3_SECRET_ACCESS_KEY: required('GF_S3_SECRET_ACCESS_KEY'),
+  },
+  'photo-contest': {
+    S3_BUCKET: required('S3_BUCKET'),
+    S3_REGION: 'ap-northeast-2',
+    S3_KEY_PREFIX: [process.env.S3_KEY_PREFIX, 'tests', storageRunId].filter(Boolean).join('/'),
+    AWS_ACCESS_KEY_ID: required('AWS_ACCESS_KEY_ID'),
+    AWS_SECRET_ACCESS_KEY: required('AWS_SECRET_ACCESS_KEY'),
+    ...(process.env.AWS_SESSION_TOKEN ? { AWS_SESSION_TOKEN: process.env.AWS_SESSION_TOKEN } : {}),
+  },
+};
 const source = join(repo, 'deploy/shared-instance');
 const [, , sha = ''] = process.argv;
 assert.match(sha ?? '', /^[a-f0-9]{40}$/);
@@ -75,8 +103,8 @@ const proxyEnv = {
   PHOTO_CONTEST_DOMAIN: pcDomain,
   PHOTO_CONTEST_API_DOMAIN: pcApiDomain,
   ACME_EMAIL: 'operator@example.test',
-  GAME_FEEDBACK_S3_BUCKET: 'gf-smoke-private',
-  PHOTO_CONTEST_S3_BUCKET: 'pc-smoke-private',
+  GAME_FEEDBACK_S3_BUCKET: storage['game-feedback'].GF_S3_BUCKET,
+  PHOTO_CONTEST_S3_BUCKET: storage['photo-contest'].S3_BUCKET,
   BACKUP_BUCKET: 'side-smoke-backup',
   BACKUP_REGION: 'ap-northeast-2',
   SIDE_BIND_ADDRESS: '127.0.0.1',
@@ -123,10 +151,6 @@ function compose(project: string, file: string, args: string[]) {
   ]);
 }
 const proxyFile = join(root, 'proxy/compose.yaml');
-const dependenciesFile = join(root, 'dependencies.json');
-function dependency(args: string[]) {
-  return compose(`${prefix}-dependencies`, dependenciesFile, args);
-}
 function databaseCompose(args: string[], options: Omit<SpawnSyncOptionsWithStringEncoding, 'encoding'> = {}) {
   return run(
     'docker',
@@ -159,11 +183,46 @@ function serviceCompose(service: string, args: string[], revision = sha) {
     ...args,
   ]);
 }
+function checkStorage(service: string, cleanup = false) {
+  serviceCompose(service, [
+    'exec',
+    '-T',
+    'api',
+    'node',
+    '--input-type=module',
+    '-e',
+    `
+    const { S3Client, ListObjectsV2Command, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+    const gf = process.argv[1] === 'game-feedback';
+    const bucket = process.env[gf ? 'GF_S3_BUCKET' : 'S3_BUCKET'];
+    const prefix = process.env[gf ? 'GF_S3_KEY_PREFIX' : 'S3_KEY_PREFIX'];
+    if (!prefix?.endsWith('/tests/' + process.argv[2])) throw new Error('Unowned S3 test prefix');
+    const cleanup = process.argv[3] === 'cleanup';
+    const client = new S3Client({region:'ap-northeast-2', ...(gf ? {credentials:{accessKeyId:process.env.GF_S3_ACCESS_KEY_ID,secretAccessKey:process.env.GF_S3_SECRET_ACCESS_KEY}} : {})});
+    const state = {};
+    try {
+      do {
+        const page = await client.send(new ListObjectsV2Command({Bucket:bucket,Prefix:prefix+'/',ContinuationToken:state.token,MaxKeys:cleanup?1000:1}), {abortSignal:AbortSignal.timeout(15000)});
+        if (!cleanup) break;
+        for (const object of page.Contents ?? []) {
+          if (!object.Key?.startsWith(prefix+'/')) throw new Error('Unowned S3 test object');
+          await client.send(new DeleteObjectCommand({Bucket:bucket,Key:object.Key}), {abortSignal:AbortSignal.timeout(15000)});
+        }
+        state.token = page.NextContinuationToken;
+      } while (state.token);
+    } finally { client.destroy(); }
+  `,
+    service,
+    storageRunId,
+    cleanup ? 'cleanup' : 'verify',
+  ]);
+}
 function uploadForm(
   service: string,
   upload: { url: string; fields: Record<string, string> | { name: string; value: string }[] },
   bytes: Buffer,
 ) {
+  checkStorage(service);
   const fields = Array.isArray(upload.fields)
     ? upload.fields
     : Object.entries(upload.fields).map(([name, value]) => ({ name, value }));
@@ -237,31 +296,6 @@ function reference(
   const ref = `ghcr.io/jingeon27/side-project-${service}-${app}@sha256:${createHash('sha256').update(image).digest('hex')}`;
   images[ref] = tag;
   return ref;
-}
-/** The S3 fixture serves the smoke CA; API, ops and migrate trust it through one extra image layer. */
-function trustingApi(service: string) {
-  const short = service === 'game-feedback' ? 'gf' : 'pc';
-  const tag = `${prefix}-${short}-api:${sha}`;
-  createdImages.push(tag);
-  run(
-    'docker',
-    [
-      'build',
-      '--builder',
-      'default',
-      '--platform',
-      'linux/amd64',
-      '--tag',
-      tag,
-      '-f',
-      '-',
-      join(root, 'trust'),
-    ],
-    {
-      input: `FROM side-shared-${short}-api:${sha}\nCOPY ca.pem /etc/side-smoke/ca.pem\nENV NODE_EXTRA_CA_CERTS=/etc/side-smoke/ca.pem\n`,
-    },
-  );
-  return tag;
 }
 async function retry<T>(fn: () => Promise<T> | T, left = 30): Promise<T> {
   try {
@@ -376,9 +410,7 @@ class EventReader {
 }
 
 try {
-  mkdirSync(join(root, 'certs'));
   mkdirSync(join(root, 'bin'));
-  mkdirSync(join(root, 'trust'));
   mkdirSync(join(root, 'postgres/data'), { recursive: true });
   // user-data writes this marker when it formats the EBS volume; database.sh refuses to start without it.
   writeFileSync(join(root, 'postgres/.side-postgres-volume'), 'volume=smoke\n');
@@ -392,56 +424,6 @@ try {
   );
   cpSync(join(here, 'shared-instance/docker-fixture.py'), join(root, 'bin/docker'));
   run('chmod', ['700', join(root, 'bin/docker')]);
-  const ca = join(root, 'certs/ca.pem');
-  run('openssl', [
-    'req',
-    '-x509',
-    '-newkey',
-    'rsa:2048',
-    '-nodes',
-    '-days',
-    '1',
-    '-subj',
-    '/CN=Shared smoke CA',
-    '-keyout',
-    join(root, 'certs/ca.key'),
-    '-out',
-    ca,
-  ]);
-  run('openssl', [
-    'req',
-    '-newkey',
-    'rsa:2048',
-    '-nodes',
-    '-subj',
-    '/CN=Shared smoke storage',
-    '-keyout',
-    join(root, 'certs/server.key'),
-    '-out',
-    join(root, 'certs/server.csr'),
-  ]);
-  writeFileSync(
-    join(root, 'certs/extensions'),
-    'subjectAltName=DNS:gf-smoke-private.s3.ap-northeast-2.amazonaws.com,DNS:pc-smoke-private.s3.ap-northeast-2.amazonaws.com\n',
-  );
-  run('openssl', [
-    'x509',
-    '-req',
-    '-days',
-    '1',
-    '-in',
-    join(root, 'certs/server.csr'),
-    '-CA',
-    ca,
-    '-CAkey',
-    join(root, 'certs/ca.key'),
-    '-CAcreateserial',
-    '-extfile',
-    join(root, 'certs/extensions'),
-    '-out',
-    join(root, 'certs/server.crt'),
-  ]);
-  cpSync(ca, join(root, 'trust/ca.pem'));
   projects.push('proxy');
   run('bash', [join(source, 'scripts/proxy.sh'), 'validate']);
   baseEnv.PATH = `${root}/bin:${process.env.PATH}`;
@@ -455,29 +437,6 @@ try {
         `ALTER ROLE ${role} PASSWORD '${role.endsWith('_migrator') ? schemaPassword : password}';`,
     ),
   });
-  cpSync(join(here, 'shared-instance/object-storage.ts'), join(root, 'object-storage.ts'));
-  writeFileSync(
-    dependenciesFile,
-    JSON.stringify({
-      services: {
-        storage: {
-          image: 'node:24-bookworm-slim',
-          command: ['node', '/fixture/object-storage.ts'],
-          volumes: [`${root}/certs:/certs:ro`, `${root}/object-storage.ts:/fixture/object-storage.ts:ro`],
-          networks: {
-            gf: { aliases: ['gf-smoke-private.s3.ap-northeast-2.amazonaws.com'] },
-            pc: { aliases: ['pc-smoke-private.s3.ap-northeast-2.amazonaws.com'] },
-          },
-        },
-      },
-      networks: {
-        gf: { external: true, name: `${prefix}-game-feedback-edge` },
-        pc: { external: true, name: `${prefix}-photo-contest-edge` },
-      },
-    }),
-  );
-  projects.push('dependencies');
-  dependency(['up', '-d', '--wait', '--wait-timeout', '120']);
   const runtimeUrl = (database: string, migration = false) =>
     `postgresql://${database}${migration ? '_migrator' : ''}:${migration ? schemaPassword : password}@${host}:5432/${database}?schema=public&sslmode=disable&connection_limit=${migration ? 2 : 5}&pool_timeout=10&connect_timeout=5`;
   const refs: Record<string, [string, string]> = {};
@@ -494,22 +453,18 @@ try {
       DATABASE_MIGRATION_URL: runtimeUrl(database, true),
       ...(service === 'game-feedback'
         ? {
-            GF_S3_ACCESS_KEY_ID: 'gf-smoke-access',
-            GF_S3_SECRET_ACCESS_KEY: 'gf-private-secret',
+            ...storage['game-feedback'],
             GAME_FEEDBACK_CONTACT_EMAIL: 'operator@example.test',
-            GF_S3_BUCKET: 'gf-smoke-private',
             GOOGLE_CLIENT_ID: 'smoke-oauth-client',
             GOOGLE_CLIENT_SECRET: 'smoke-oauth-secret',
             GF_API_BIND_PORT: '0',
           }
         : {
-            S3_BUCKET: 'pc-smoke-private',
-            AWS_ACCESS_KEY_ID: 'pc-smoke-access',
-            AWS_SECRET_ACCESS_KEY: 'pc-private-secret',
+            ...storage['photo-contest'],
           }),
     };
     saveEnv(join(root, `services/${service}/.env`), environment);
-    refs[service] = [reference(service, 'api', trustingApi(service)), reference(service, 'web')];
+    refs[service] = [reference(service, 'api'), reference(service, 'web')];
   }
   writeFileSync(baseEnv.SIDE_SMOKE_IMAGE_MAP, JSON.stringify(images));
   // A dump that cannot reach the backup bucket stops the first deployment before the DDL role creates any table.
@@ -786,8 +741,11 @@ try {
       { id: group.id, size: png.length },
     )
   ).json(postUploadResponse);
-  assert.equal(new URL(upload.url).hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
-  // Browsers POST the signed form straight to the bucket; the host resolves the bucket alias only on the service network.
+  assert.equal(
+    new URL(upload.url).hostname,
+    `${storage['photo-contest'].S3_BUCKET}.s3.ap-northeast-2.amazonaws.com`,
+  );
+  // Browsers POST the signed form straight to the configured AWS bucket.
   uploadForm('photo-contest', upload, png);
   const completed = await pc.graphql(
     'mutation($id:ID!) { completePostUpload(uploadId:$id) { id byteSize } }',
@@ -816,7 +774,7 @@ try {
   assert.equal(redirected.headers['cache-control'], 'private, no-store');
   assert.ok(redirected.headers.location, 'Media response must include a signed URL');
   const pcSigned = new URL(redirected.headers.location);
-  assert.equal(pcSigned.hostname, 'pc-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(pcSigned.hostname, `${storage['photo-contest'].S3_BUCKET}.s3.ap-northeast-2.amazonaws.com`);
   assert.equal(pcSigned.searchParams.get('X-Amz-Expires'), '60');
   const pcContent = parseJson(
     serviceCompose('photo-contest', [
@@ -864,7 +822,10 @@ try {
   assert.equal(requestedMedia.status, 200, requestedMedia.text());
   const mediaUpload = requestedMedia.json(mediaPlanResponse);
   assert.deepEqual(Object.keys(mediaUpload).sort(), ['expiresAt', 'fields', 'id', 'url']);
-  assert.equal(new URL(mediaUpload.url).hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(
+    new URL(mediaUpload.url).hostname,
+    `${storage['game-feedback'].GF_S3_BUCKET}.s3.ap-northeast-2.amazonaws.com`,
+  );
   uploadForm('game-feedback', mediaUpload, png);
   const mediaResponse = await gf.post(
     `/api/post-media/${mediaUpload.id}/complete`,
@@ -881,9 +842,12 @@ try {
   assert.equal(signed.headers['cache-control'], 'private, no-store');
   assert.ok(signed.headers.location, 'Media response must include a signed URL');
   const signedUrl = new URL(signed.headers.location);
-  assert.equal(signedUrl.hostname, 'gf-smoke-private.s3.ap-northeast-2.amazonaws.com');
+  assert.equal(
+    signedUrl.hostname,
+    `${storage['game-feedback'].GF_S3_BUCKET}.s3.ap-northeast-2.amazonaws.com`,
+  );
   assert.equal(signedUrl.searchParams.get('X-Amz-Expires'), '60');
-  // API 컨테이너의 격리 네트워크에서 S3 fixture를 읽으며 서비스 인증은 전달하지 않는다.
+  // API 컨테이너에서 실제 S3를 읽으며 서비스 인증은 전달하지 않는다.
   const content = parseJson(
     serviceCompose('game-feedback', [
       'exec',
@@ -1017,11 +981,21 @@ try {
     'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and buckets, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
+  for (const service of ['game-feedback', 'photo-contest']) {
+    try {
+      if (!serviceCompose(service, ['ps', '-q', 'api']).trim()) continue;
+      checkStorage(service, true);
+    } catch {
+      cleanupState.failed = true;
+      console.error(
+        `Real S3 cleanup failed for ${service}; inspect this run's tests/${storageRunId}/ prefix.`,
+      );
+    }
+  }
   for (const project of [...projects].reverse()) {
     try {
       if (project === 'proxy')
         compose(`${prefix}-proxy`, proxyFile, ['down', '--volumes', '--remove-orphans']);
-      if (project === 'dependencies') dependency(['down', '--volumes', '--remove-orphans']);
       if (project === 'database') {
         databaseCompose(['down', '--remove-orphans']);
         // The cluster files belong to the container's postgres user; only a container can remove them.

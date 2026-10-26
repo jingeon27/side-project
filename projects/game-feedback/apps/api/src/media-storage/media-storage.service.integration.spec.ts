@@ -16,7 +16,7 @@ import { assertDatabaseUrl, hash, token } from '../security';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
 import { presignedUpload } from '../testing/media-upload';
-import { S3Fixture } from '../testing/s3-fixture';
+import { S3TestStorage } from '../testing/s3';
 import { MediaStorage } from './media-storage.service';
 import { migrateLegacyMedia } from './migrate-legacy-media';
 
@@ -27,7 +27,7 @@ const target = new URL(process.env.DATABASE_URL ?? 'http://unused');
 target.searchParams.set('schema', schema);
 
 describe('persistent private media with a regular user session', () => {
-  const s3 = new S3Fixture();
+  const s3 = new S3TestStorage();
   const state = {} as {
     db: PrismaClient;
     app: INestApplication;
@@ -49,7 +49,6 @@ describe('persistent private media with a regular user session', () => {
       throw new Error(`Isolated production migration failed: ${migration.stdout}\n${migration.stderr}`);
     state.db = new PrismaClient({ adapter: createPrismaAdapter(databaseUrl) });
     await seed(state.db, false);
-    await s3.start();
     state.app = await createApp({
       databaseUrl,
       prisma: state.db,
@@ -85,7 +84,7 @@ describe('persistent private media with a regular user session', () => {
     });
     expect(file.bytes).toBeNull();
     expect(file.object?.backend).toBe('S3');
-    expect(s3.objects.get(`/media-test/${file.object?.key}`)?.bytes).toEqual(bytes);
+    expect(await s3.read(file.object?.key ?? '')).toEqual(bytes);
     await request.get(upload.body.url).expect(404);
     const partial = await request
       .get(upload.body.url)
@@ -108,13 +107,13 @@ describe('persistent private media with a regular user session', () => {
     });
     expect(await storage.prune()).toEqual({ removed: 0, failed: 0 });
     // Seven-day backups can still restore a deleted object during the fourteen-day grace period.
-    expect(s3.objects.get(`/media-test/${file.object?.key}`)?.bytes).toEqual(bytes);
+    expect(await s3.read(file.object?.key ?? '')).toEqual(bytes);
     await state.db.mediaObject.update({
       where: { id: file.objectId ?? 'missing' },
       data: { retiredAt: new Date(Date.now() - 15 * 86400000) },
     });
     expect(await storage.prune()).toEqual({ removed: 1, failed: 0 });
-    expect(s3.objects.has(`/media-test/${file.object?.key}`)).toBe(false);
+    expect(await s3.exists(file.object?.key ?? '')).toBe(false);
   });
   it('migrates database and filesystem files only after S3 verification and can be rerun safely', async () => {
     const bytes = Buffer.from('legacy-file-content');
@@ -177,13 +176,11 @@ describe('persistent private media with a regular user session', () => {
       expect(
         (await state.db.userAvatar.findUniqueOrThrow({ where: { userId: state.userId } })).bytes,
       ).not.toBeNull();
-      expect(
-        await migrateLegacyMedia(
-          state.db,
-          { ...s3.config, keyPrefix: 'game-feedback/local' },
-          { apply: true, directory },
-        ),
-      ).toEqual({ found: 4, migrated: 4, changed: 0 });
+      expect(await migrateLegacyMedia(state.db, s3.config, { apply: true, directory })).toEqual({
+        found: 4,
+        migrated: 4,
+        changed: 0,
+      });
       const rows = [
         ...(await state.db.postMedia.findMany({
           where: { id: { in: files.map((file) => file.id) } },
@@ -201,8 +198,8 @@ describe('persistent private media with a regular user session', () => {
       for (const row of rows) {
         expect(row.bytes).toBeNull();
         expect(row.object?.backend).toBe('S3');
-        expect(row.object?.key).toMatch(/^game-feedback\/local\/objects\//);
-        expect(s3.objects.get(`/media-test/${row.object?.key}`)?.bytes).toEqual(bytes);
+        expect(row.object?.key.startsWith(`${s3.config.keyPrefix}/objects/`)).toBe(true);
+        expect(await s3.read(row.object?.key ?? '')).toEqual(bytes);
       }
       expect(await migrateLegacyMedia(state.db, s3.config, { apply: true, directory })).toEqual({
         found: 0,

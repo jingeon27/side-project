@@ -39,24 +39,7 @@ export function environment(overrides: NodeJS.ProcessEnv = {}) {
     process.env,
     overrides,
   );
-  const storage = merged.GF_S3_BUCKET
-    ? {
-        GF_S3_BUCKET: merged.GF_S3_BUCKET,
-        GF_S3_REGION: merged.GF_S3_REGION,
-        GF_S3_ENDPOINT: merged.GF_S3_ENDPOINT,
-        GF_S3_FORCE_PATH_STYLE: merged.GF_S3_FORCE_PATH_STYLE,
-        GF_S3_ACCESS_KEY_ID: merged.GF_S3_ACCESS_KEY_ID,
-        GF_S3_SECRET_ACCESS_KEY: merged.GF_S3_SECRET_ACCESS_KEY,
-      }
-    : {
-        GF_S3_BUCKET: 'game-feedback-dev',
-        GF_S3_REGION: 'us-east-1',
-        GF_S3_ENDPOINT: 'http://127.0.0.1:4310',
-        GF_S3_FORCE_PATH_STYLE: 'true',
-        GF_S3_ACCESS_KEY_ID: 'local-test-access-key',
-        GF_S3_SECRET_ACCESS_KEY: 'local-test-secret-key',
-      };
-  return Object.assign(merged, storage, resolveEnvironment(overrides, process.env, fileEnv));
+  return Object.assign(merged, resolveEnvironment(overrides, process.env, fileEnv));
 }
 
 export function assertNode() {

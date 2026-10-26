@@ -1,6 +1,5 @@
 import {
   createTestImage,
-  FAKE_S3_DEFAULTS,
   graphqlRequest,
   uploadTestPostMedia,
   uploadTestSubmissionMedia,
@@ -8,9 +7,16 @@ import {
 
 import { API_URL, WEB_ORIGIN } from './env';
 
-/** 브라우저가 서명 POST로 S3 대역 버킷에 직접 올리는 요청. 객체 조회(/버킷/키)와 구분한다. */
+/** 브라우저가 서명 POST로 실제 S3 버킷에 직접 올리는 요청. 객체 조회(/버킷/키)와 구분한다. */
 export function isStorageUpload(url: URL) {
-  return url.origin !== WEB_ORIGIN && url.pathname === `/${FAKE_S3_DEFAULTS.bucket}`;
+  const bucket = process.env.S3_BUCKET;
+  const region = process.env.S3_REGION;
+  return (
+    url.origin !== WEB_ORIGIN &&
+    Boolean(bucket && region) &&
+    ((url.hostname === `${bucket}.s3.${region}.amazonaws.com` && url.pathname === '/') ||
+      (url.hostname === `s3.${region}.amazonaws.com` && url.pathname === `/${bucket}`))
+  );
 }
 
 export async function productRequest<T>(

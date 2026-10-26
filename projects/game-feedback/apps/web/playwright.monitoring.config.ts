@@ -52,7 +52,7 @@ export default defineConfig({
       env: apiEnv,
       reuseExistingServer: false,
       timeout: 90_000,
-      gracefulShutdown: { signal: 'SIGTERM', timeout: 20_000 },
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 60_000 },
     },
     {
       command: 'yarn build && yarn exec node ../../../../scripts/serve-monitoring-build.ts',

@@ -50,4 +50,4 @@ Prisma CLI·Client·PostgreSQL 어댑터는 7.10.1로 맞춘다. 앱의 `prisma.
 
 기존 CommonJS 빌드·운영 스크립트·생성 경로와 호환되도록 `prisma-client-js` 생성기를 유지한다. 런타임은 `createPrismaAdapter`를 통해 Rust 쿼리 엔진 없이 pg를 사용한다. URL의 `schema`는 ORM과 raw SQL 양쪽에, `connection_limit`은 pg 풀의 최대 연결 수에 전달한다. pg는 풀 대기와 연결에 같은 timeout을 쓰므로 `pool_timeout`을 우선하고 없으면 `connect_timeout`(기본 5초)을 쓴다. 운영 URL의 `sslcert`는 서버 CA로 읽고 인증서 검증을 유지한다.
 
-게시글·채팅·프로필 파일은 모두 S3 직접 업로드를 사용한다. 로컬 S3 대역, 실제 AWS 자격 증명, 기존 파일 이행은 [파일 업로드 가이드](../../docs/media-upload.md)를 따른다. 이미 다른 worktree가 테스트 DB를 실행 중이면 `test:integration --use-running-database`로 DB를 시작/종료하지 않고 격리 스키마만 사용한다.
+게시글·채팅·프로필 파일은 로컬·통합 테스트까지 모두 실제 S3 직접 업로드를 사용한다. AWS 자격 증명, 테스트 객체 격리·정리와 기존 파일 이행은 [파일 업로드 가이드](../../docs/media-upload.md)를 따른다. 이미 다른 worktree가 테스트 DB를 실행 중이면 `test:integration --use-running-database`로 DB를 시작/종료하지 않고 격리 스키마만 사용한다.

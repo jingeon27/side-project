@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { guardDatabaseUrl } from '../../../scripts/database-guard.ts';
 import { assertNode, environment, projectDir, testDatabaseUrl, yarn } from '../../../scripts/env.ts';
-import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../src/testing/s3-fixture.ts';
+import { S3TestStorage } from '../src/testing/s3.ts';
 
 const require = createRequire(import.meta.url);
 const apiDir = fileURLToPath(new URL('../', import.meta.url));
@@ -35,6 +35,16 @@ const env = {
   SUPERCELL_API_TOKEN: '',
   PUSH_NOTIFICATIONS_ENABLED: 'false',
   EXPO_ACCESS_TOKEN: '',
+  ...(unitOnly
+    ? {
+        GF_S3_BUCKET: 'unit-signing-only',
+        GF_S3_REGION: 'ap-northeast-2',
+        GF_S3_ENDPOINT: '',
+        GF_S3_KEY_PREFIX: '',
+        GF_S3_ACCESS_KEY_ID: 'unit-signing-key',
+        GF_S3_SECRET_ACCESS_KEY: 'unit-signing-secret',
+      }
+    : {}),
 };
 
 async function run(script: string, args: string[]) {
@@ -46,20 +56,17 @@ async function run(script: string, args: string[]) {
     );
   });
 }
-const s3 = new S3Fixture();
+const storage: { s3?: S3TestStorage } = {};
 
 try {
   assertNode();
-  await s3.start();
-  Object.assign(env, {
-    GF_S3_BUCKET: 'media-test',
-    GF_S3_ENDPOINT: s3.endpoint,
-    GF_S3_REGION: 'us-east-1',
-    GF_S3_FORCE_PATH_STYLE: 'true',
-    GF_S3_ACCESS_KEY_ID: S3_FIXTURE_CREDENTIALS.accessKeyId,
-    GF_S3_SECRET_ACCESS_KEY: S3_FIXTURE_CREDENTIALS.secretAccessKey,
-    GF_S3_KEY_PREFIX: '',
-  });
+  if (!unitOnly) {
+    Object.assign(process.env, configured);
+    const s3 = new S3TestStorage();
+    await s3.verifyAccess();
+    storage.s3 = s3;
+    env.GF_S3_KEY_PREFIX = s3.config.keyPrefix ?? '';
+  }
   if (!unitOnly) guardDatabaseUrl(env.DATABASE_URL, { test: true });
   await yarn(['workspace', '@side/toolkit', 'build'], env);
   await yarn(['workspace', '@game-feedback/contracts', 'build'], env);
@@ -71,5 +78,5 @@ try {
   console.error(error instanceof Error ? error.message : 'API tests failed.');
   process.exitCode = 1;
 } finally {
-  await s3.close();
+  await storage.s3?.close();
 }

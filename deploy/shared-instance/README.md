@@ -388,7 +388,7 @@ docker run --rm --network host \
 
 성공 기준은 마지막 `Shared-instance smoke passed` 출력이다. runner는 임의 Docker project/network/volume과 loopback의 임의 포트를 사용하고 종료 시 자신이 만든 테스트 자원을 정리한다. 빌드 이미지와 Docker VM의 정리는 검증자가 소유한 것만 대상으로 한다. 전역 prune, 기존 서비스 중지, 기존 volume 삭제는 하지 않는다.
 
-API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`는 실제 두 API/Web 이미지·Caddy와 `prepare.sh`·`database.sh`로 띄운 공용 PostgreSQL 컨테이너를 실행한다. S3 HTTP 경계, backup 버킷 업로드와 registry 매핑만 fixture로 대체한다. 버킷 분리, DML/DDL 분리, Web의 DB 네트워크 차단, 배포 전 덤프와 업로드 실패 시 migration 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 AWS의 IAM/S3/스냅샷을 검증했다는 뜻은 아니다.
+API 소유 통합 runner `projects/game-feedback/apps/api/scripts/shared-instance-smoke.ts`는 실제 두 API/Web 이미지·Caddy와 `prepare.sh`·`database.sh`로 띄운 공용 PostgreSQL 컨테이너를 실행한다. 미디어는 기존 AWS S3 버킷의 `<프로젝트 prefix>/tests/<실행 ID>/`에 직접 전송하며 S3 대역 컨테이너·인증서·DNS 별칭은 만들지 않는다. 업로드 전에 해당 prefix의 ListBucket 접근을 확인하고 종료 시 그 실행의 객체만 정리한다. backup 버킷 업로드와 registry 매핑은 계속 CLI fixture로 검사한다. 버킷 분리, DML/DDL 분리, Web의 DB 네트워크 차단, 배포 전 덤프와 업로드 실패 시 migration 차단, S3 파일/Range, 안전한 세션 쿠키, SSE 재연결, 한 서비스 실패 시 독립 롤백, 재시작 후 파일·DB 보존, liveness/readiness를 검사한다. 실제 운영 IAM 정책 변경·backup 버킷 전송·스냅샷을 검증했다는 뜻은 아니다. 필요한 실제 S3 키·CI Variables/Secrets·CORS·정리 권한은 [Game Feedback](../../projects/game-feedback/docs/media-upload.md#기본-로컬-실행)과 [Photo Contest](../../projects/photo-contest/docs/post-attachments.md#검증)의 테스트 설정을 따른다.
 
 ### 2026-10-20 로컬 실행 기록
 

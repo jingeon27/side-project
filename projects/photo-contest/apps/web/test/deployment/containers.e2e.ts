@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 
 import { expect, test } from '@playwright/test';
 
-import { createTestImage, createTestVideo } from '@photo-contest/test-kit';
+import { createTestImage, createTestVideo, loadProjectEnv } from '@photo-contest/test-kit';
 
 import { deploymentContext } from './context';
 
@@ -12,8 +12,8 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   request,
 }) => {
   const origin = new URL(process.env.WEB_ORIGIN ?? 'https://localhost:3382').origin;
-  // 미디어는 서버 volume이 아니라 S3 호환 버킷(검증에서는 test-kit 대역)으로 브라우저가 직접 오간다.
-  const storage = new URL(process.env.S3_ENDPOINT ?? 'http://storage.localhost:3383').origin;
+  loadProjectEnv();
+  const storage = `https://${process.env.S3_BUCKET}.s3.${process.env.S3_REGION}.amazonaws.com`;
   await page.route('**/*', (route) =>
     [origin, storage].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort(),
   );
@@ -29,7 +29,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const home = await page.goto('/');
-  // 운영 이미지가 프레임워크를 알리지 않고, CSP를 지킨 채 http 저장소 대역으로 업로드·조회까지 이어지는지 본다.
+  // 운영 이미지가 프레임워크를 알리지 않고, CSP를 지킨 채 실제 S3로 업로드·조회까지 이어지는지 본다.
   expect(home?.headers()['x-powered-by']).toBeUndefined();
   expect(home?.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
   await expect(page.getByRole('link', { name: /구글|카카오/ })).toHaveCount(0);
@@ -145,7 +145,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   await page.goto(groupPath);
 
   const { directory, project } = deploymentContext();
-  const files = ['-f', `${directory}/compose.yaml`, '-f', `${directory}/storage.yaml`];
+  const files = ['-f', `${directory}/compose.yaml`];
   await promisify(execFile)('docker', [
     'compose',
     '--project-name',
