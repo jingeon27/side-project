@@ -13,7 +13,7 @@
 저장소 루트에서 Node.js 24와 Yarn 4를 사용합니다.
 
 ```bash
-corepack enable
+npm install --global @yarnpkg/cli-dist@4.17.0 --force
 yarn install --immutable
 cp projects/blog/apps/web/.env.example projects/blog/apps/web/.env.local
 yarn workspace @blog/web dev
