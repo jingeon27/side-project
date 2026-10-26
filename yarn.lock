@@ -4818,6 +4818,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/eslint-plugin-next@npm:16.4.3":
+  version: 16.4.3
+  resolution: "@next/eslint-plugin-next@npm:16.4.3"
+  dependencies:
+    "@eslint-community/eslint-utils": "npm:4.9.1"
+    fast-glob: "npm:3.3.1"
+  checksum: 10c0/0e97b976d593838f76d8354a39936f2deb6c2d7efd901a43ab60d4718aceb7db03120fb96f6733a63abdc15be623ea86e62d8fd7f7030cba4277af3d6bba35c6
+  languageName: node
+  linkType: hard
+
 "@next/mdx@npm:16.4.2":
   version: 16.4.2
   resolution: "@next/mdx@npm:16.4.2"
@@ -8027,8 +8037,8 @@ __metadata:
     "@typescript-eslint/utils": "npm:8.71.1"
     "@typescript/native": "npm:typescript@7.0.2"
     eslint: "npm:^9.39.0"
-    eslint-config-expo: "npm:~57.0.2"
-    eslint-config-next: "npm:16.4.2"
+    eslint-config-expo: "npm:~58.0.4"
+    eslint-config-next: "npm:16.4.3"
     eslint-plugin-jsx-a11y: "npm:6.10.2"
     eslint-plugin-react: "npm:7.37.5"
     jiti: "npm:^2.6.1"
@@ -12876,21 +12886,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-expo@npm:~57.0.2":
-  version: 57.0.2
-  resolution: "eslint-config-expo@npm:57.0.2"
+"eslint-config-expo@npm:~58.0.4":
+  version: 58.0.4
+  resolution: "eslint-config-expo@npm:58.0.4"
   dependencies:
     "@typescript-eslint/eslint-plugin": "npm:^8.59.0"
     "@typescript-eslint/parser": "npm:^8.59.0"
     eslint-import-resolver-typescript: "npm:^3.6.3"
-    eslint-plugin-expo: "npm:^1.1.0"
+    eslint-plugin-expo: "npm:^1.2.1"
     eslint-plugin-import: "npm:^2.30.0"
     eslint-plugin-react: "npm:^7.37.3"
     eslint-plugin-react-hooks: "npm:^7.0.0"
     globals: "npm:^16.0.0"
   peerDependencies:
     eslint: ">=8.10"
-  checksum: 10c0/6473cd9c083335a37ca0dd406fa9b3b99bf4bfe25d7321ed09f65ce146319efbefa8db3d8c9df98eddae5352b5ae1181070504676b242373d971ab1ff520e431
+  checksum: 10c0/d9a4234b3f8e2e8d7cb535ab7347288d11862a1eb331921b32fdac19b196cd8665a7d0e10cde246e9a48964a80c981dc20dc5ca89775cdc37dddb67c04749d9f
   languageName: node
   linkType: hard
 
@@ -12914,6 +12924,29 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/b3119b8eec1e1991f91f539e590322084ec5f1d8ea3099842c1e7a99fd19a7258649d00b1d5cc2f99961c94c8c77032e8903a9d35447c760c9bbd9be5de3d9e8
+  languageName: node
+  linkType: hard
+
+"eslint-config-next@npm:16.4.3":
+  version: 16.4.3
+  resolution: "eslint-config-next@npm:16.4.3"
+  dependencies:
+    "@next/eslint-plugin-next": "npm:16.4.3"
+    eslint-import-resolver-node: "npm:^0.3.6"
+    eslint-import-resolver-typescript: "npm:^3.5.2"
+    eslint-plugin-import: "npm:^2.32.0"
+    eslint-plugin-jsx-a11y: "npm:^6.10.0"
+    eslint-plugin-react: "npm:^7.37.0"
+    eslint-plugin-react-hooks: "npm:^7.1.0"
+    globals: "npm:16.4.0"
+    typescript-eslint: "npm:^8.56.0"
+  peerDependencies:
+    eslint: ">=9.0.0"
+    typescript: ">=3.3.1"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/ccedc28ab6b608406a09406fc5d36a5c7d0b95ad0b10b69842342cf480887b50f7b7c03dc549d48a4a542e354bd2ebfa60a29fe493349976e724a213ebc68699
   languageName: node
   linkType: hard
 
@@ -12964,7 +12997,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-expo@npm:^1.1.0":
+"eslint-plugin-expo@npm:^1.2.1":
   version: 1.2.1
   resolution: "eslint-plugin-expo@npm:1.2.1"
   dependencies:
