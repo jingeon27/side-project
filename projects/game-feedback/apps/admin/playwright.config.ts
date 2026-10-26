@@ -35,6 +35,7 @@ export default defineConfig({
         'yarn workspace @side/game-feedback db:test:sync && yarn workspace @game-feedback/api db:seed --fixtures && node --require tsx/cjs projects/game-feedback/apps/admin/e2e/seed-admin.ts && yarn workspace @game-feedback/api test:server',
       cwd: rootDir,
       url: 'http://127.0.0.1:4304/api/session',
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 60_000 },
       env,
       reuseExistingServer: false,
       timeout: 90_000,
