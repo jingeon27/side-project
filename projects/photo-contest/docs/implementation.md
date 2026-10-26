@@ -24,7 +24,7 @@ MY에 참여 그룹과 내가 올린 게시물을 표시하고 전체·참여 �
 
 인증·프로필·테스트 fixture 입력은 class-transformer/class-validator DTO와 전역 ValidationPipe로 변환·검증한다. 비밀번호 원문 공백은 보존하고 기존 로그인 오류 코드·Origin 검사·DB 반복 시도 제한을 유지한다. 가입·로그인 횟수는 DTO 검증 전에 guard에서 센다. 20261023040000_profile_uploads_and_onboarding migration은 새 테이블과 nullable 열·기본 false 플래그를 추가하며 기존 계정을 재가입 상태로 바꾸지 않는다. Prisma client와 GraphQL 문서는 정식 생성 명령으로 갱신했다.
 
-검증: API unit 120개, 격리 PostgreSQL/S3 대역의 API integration 350개, Web unit/UI 421개와 실제 API 문서 20개가 통과했다. production build/start의 Chrome·WebKit·데스크톱 E2E 9개가 최종 한 번에 통과했다(아이디 가입·로그인 회귀, 소셜 기본값·동의·닉네임 변경·사진 제거, S3 업로드·재조회·삭제). 프로젝트 전체 타입 검사·lint도 통과했다. 제공자 응답과 S3 경계는 테스트 대역이며 실제 OAuth·AWS 송수신·운영 배포 성공을 주장하지 않는다. 개발 DB/서버는 변경하지 않았다. 적용할 개발 환경에서는 프로젝트 환경변수를 준비한 뒤 `corepack yarn workspace @side/photo-contest db:migrate`가 필요하다.
+검증: API unit 120개, 격리 PostgreSQL/S3 대역의 API integration 350개, Web unit/UI 421개와 실제 API 문서 20개가 통과했다. production build/start의 Chrome·WebKit·데스크톱 E2E 9개가 최종 한 번에 통과했다(아이디 가입·로그인 회귀, 소셜 기본값·동의·닉네임 변경·사진 제거, S3 업로드·재조회·삭제). 프로젝트 전체 타입 검사·lint도 통과했다. 제공자 응답과 S3 경계는 테스트 대역이며 실제 OAuth·AWS 송수신·운영 배포 성공을 주장하지 않는다. 개발 DB/서버는 변경하지 않았다. 적용할 개발 환경에서는 프로젝트 환경변수를 준비한 뒤 `yarn workspace @side/photo-contest db:migrate`가 필요하다.
 
 ## 2026-10-22 서버 파일 처리 제거와 test-kit S3 대역
 
