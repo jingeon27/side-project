@@ -36,10 +36,9 @@ case "$1" in
     if [[ "$*" == *'.State.Status'* ]]; then echo "\${FAKE_WEB_STATE:-running}"; exit 0; fi
     echo 'Web shutdown: exit=0 oom=false' ;;
   network) if [[ "$*" == *--format* ]]; then echo "$SIDE_DEPLOY_ROOT"; fi ;;
-  run)
-    printf '{"DBInstances":[{"Engine":"postgres","Endpoint":{"Address":"shared.abcdef.ap-northeast-2.rds.amazonaws.com"},"BackupRetentionPeriod":7,"StorageEncrypted":true,"PubliclyAccessible":false,"DeletionProtection":true,"LatestRestorableTime":"%s","DBInstanceArn":"arn:aws:rds:ap-northeast-2:123456789012:db:shared"}]}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ;;
   compose)
     if [[ "$*" == *" ps -q web" ]]; then echo old-web; fi
+    if [[ "$*" == *" pg_dump "* ]]; then printf 'PGDMP fixture'; fi
     if [[ "$*" == *" -T migrate" && -n "\${FAKE_MIGRATE_SECONDS:-}" ]]; then sleep "$FAKE_MIGRATE_SECONDS"; fi ;;
 esac
 `;
@@ -69,7 +68,7 @@ fcntl.flock(int(sys.argv[-1]), fcntl.LOCK_EX)
 beforeEach(() => {
   state.root = mkdtempSync(join(tmpdir(), 'shared-deploy-root-'));
   state.tools = mkdtempSync(join(tmpdir(), 'shared-deploy-tools-'));
-  for (const directory of ['certs', 'proxy', 'services/photo-contest'])
+  for (const directory of ['database', 'postgres', 'proxy', 'services/photo-contest'])
     mkdirSync(join(state.root, directory), { recursive: true });
   writeFileSync(
     join(state.root, '.env'),
@@ -80,14 +79,15 @@ beforeEach(() => {
       'PHOTO_CONTEST_API_DOMAIN=api.contest.example.test',
       'GAME_FEEDBACK_S3_BUCKET=gf-private',
       'PHOTO_CONTEST_S3_BUCKET=pc-private',
-      'RDS_REGION=ap-northeast-2',
-      'RDS_INSTANCE_ID=shared',
-      'RDS_HOST=shared.abcdef.ap-northeast-2.rds.amazonaws.com',
+      'BACKUP_BUCKET=side-db-backup',
+      'BACKUP_REGION=ap-northeast-2',
       '',
     ].join('\n'),
   );
   writeFileSync(join(state.root, 'services/photo-contest/.env'), 'DATABASE_URL=fixture\n');
-  writeFileSync(join(state.root, 'certs/rds-ca.pem'), 'fixture\n');
+  writeFileSync(join(state.root, 'database/compose.yaml'), 'services: {}\n');
+  writeFileSync(join(state.root, 'database/.env'), 'POSTGRES_SUPERUSER_PASSWORD=fixture\n');
+  writeFileSync(join(state.root, 'postgres/.side-postgres-volume'), 'volume=vol-fixture\n');
   cpSync(join(repo, 'deploy/shared-instance/Caddyfile'), join(state.root, 'proxy/Caddyfile'));
   cpSync(join(repo, 'deploy/shared-instance/compose.yaml'), join(state.root, 'proxy/compose.yaml'));
   const tools = { docker: FAKE_DOCKER, ssh: FAKE_SSH, flock: FAKE_FLOCK, setsid: '#!/bin/sh\nexec "$@"\n' };
@@ -105,6 +105,7 @@ const environment = (extra: Record<string, string> = {}) => ({
   PATH: `${state.tools}:${process.env.PATH}`,
   FAKE_REMOTE_ROOT: state.root,
   FAKE_DOCKER_LOG: join(state.root, 'docker.log'),
+  SIDE_POSTGRES_ROOT: join(state.root, 'postgres'),
   ...extra,
 });
 const dockerCalls = () =>
@@ -170,6 +171,11 @@ describe('공유 호스트 원격 배포', () => {
     expect(index('login ghcr.io')).toBeGreaterThanOrEqual(0);
     expect(index(`pull --quiet ${apiImage}`)).toBeGreaterThan(index('login ghcr.io'));
     expect(index('-T migrate')).toBeGreaterThan(index(`pull --quiet ${webImage}`));
+    // 실행 계정 검사 → 덤프 → 백업 버킷 업로드가 끝나야 DDL 계정이 migration을 시작한다.
+    expect(index('pg_dump')).toBeGreaterThan(index('scripts/verify-services.ts'));
+    expect(index(' s3 cp ')).toBeGreaterThan(index('pg_dump'));
+    expect(index('-T migrate')).toBeGreaterThan(index(' s3 cp '));
+    expect(existsSync(join(releaseDirectory(), 'pg-backup.json'))).toBe(true);
     expect(index('side-web-draining')).toBeGreaterThan(index('-T migrate'));
     expect(index(' stop web')).toBeGreaterThan(index('side-web-draining'));
     // 분리된 작업은 레지스트리를 다시 부르지 않고 미리 받은 digest만 쓴다.
@@ -186,6 +192,16 @@ describe('공유 호스트 원격 배포', () => {
     expect(result.status).not.toBe(0);
     expect(result.stdout).toContain('fake docker failure');
     expect(result.stderr).toContain('failed');
+    expect(existsSync(join(state.root, 'services/photo-contest/current'))).toBe(false);
+  }, 60_000);
+
+  it('백업 업로드가 실패하면 migration과 교체 전에 배포를 멈춰야 한다', () => {
+    const result = upload({ FAKE_DOCKER_FAIL: ' s3 cp ' });
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).toContain('fake docker failure');
+    expect(dockerCalls().some((call) => call.includes('-T migrate') || call.includes(' stop web'))).toBe(
+      false,
+    );
     expect(existsSync(join(state.root, 'services/photo-contest/current'))).toBe(false);
   }, 60_000);
 

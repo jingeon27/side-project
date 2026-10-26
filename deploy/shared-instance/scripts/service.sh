@@ -9,7 +9,7 @@ ACTION=${2:-}
 shift 2
 export SIDE_DEPLOY_ROOT="$ROOT"
 SERVICE_ROOT="$ROOT/services/$SERVICE"
-[[ -f "$ROOT/.env" && -f "$SERVICE_ROOT/.env" && -s "$ROOT/certs/rds-ca.pem" ]]
+[[ -f "$ROOT/.env" && -f "$SERVICE_ROOT/.env" && -f "$ROOT/database/compose.yaml" ]]
 chmod 600 "$ROOT/.env" "$SERVICE_ROOT/.env"
 exec 9>"$ROOT/.host-operations.lock"
 flock -x 9
@@ -119,7 +119,8 @@ if [[ "$ACTION" == deploy ]]; then
   fi
   # Runtime checks never receive the DDL credential. The migration container is one-shot.
   compose "$directory" run --rm --no-deps -T ops scripts/verify-services.ts
-  python3 "$directory/host/rds-receipt.py" "$ROOT" "$directory/rds-pitr.json"
+  # Migrations are forward-only: a fresh dump must reach the backup bucket before any DDL runs.
+  bash "$directory/host/pg-backup.sh" "$SERVICE" "$1" "$directory/pg-backup.json"
   compose "$directory" run --rm --no-deps -T migrate
   if activate "$directory"; then
     mark "$directory" "$old"
@@ -132,7 +133,7 @@ if [[ "$ACTION" == deploy ]]; then
     exit 1
   fi
   compose "$directory" stop api web
-  echo 'First deployment failed; external RDS/S3 and the shared proxy are preserved.' >&2
+  echo 'First deployment failed; the shared database, S3 and the shared proxy are preserved.' >&2
   exit 1
 fi
 current=$(previous current)
