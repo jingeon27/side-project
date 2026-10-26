@@ -1,9 +1,9 @@
 import { join } from 'node:path';
 
 import { S3Fixture } from '../apps/api/src/testing/s3-fixture.ts';
-import { projectDir } from './env.mjs';
+import { projectDir } from './env.ts';
 
-export async function startLocalS3(env) {
+export async function startLocalS3(env: NodeJS.ProcessEnv) {
   if (!env.GF_S3_ENDPOINT || !/^http:\/\/(?:127\.0\.0\.1|localhost):4310\/?$/.test(env.GF_S3_ENDPOINT))
     return null;
   if (

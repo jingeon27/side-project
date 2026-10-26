@@ -1,13 +1,9 @@
-import { developmentDatabaseUrl, testDatabaseUrl } from './env.mjs';
+import { developmentDatabaseUrl, testDatabaseUrl } from './env.ts';
 
 /** Never include the source URL in errors: it can contain credentials. */
-export function guardDatabaseUrl(value, { test = false, allowTestSchema = false } = {}) {
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error('DATABASE_URL must be a valid PostgreSQL URL.');
-  }
+export function guardDatabaseUrl(value: string | undefined, { test = false, allowTestSchema = false } = {}) {
+  const url = URL.parse(value ?? '');
+  if (!url) throw new Error('DATABASE_URL must be a valid PostgreSQL URL.');
   const expected = new URL(test ? testDatabaseUrl : developmentDatabaseUrl);
   if (!['postgres:', 'postgresql:'].includes(url.protocol))
     throw new Error('Only PostgreSQL URLs are allowed.');

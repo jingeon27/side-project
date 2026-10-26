@@ -1,18 +1,20 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
-import { assertNode, environment, projectDir, resolveEnvironment, yarn } from './env.mjs';
+import { match } from 'ts-pattern';
+
+import { assertNode, environment, projectDir, resolveEnvironment, yarn } from './env.ts';
 
 const env = environment();
 const action = process.argv[2];
-const workspace = (name, script, overrides = {}, args = []) =>
+const workspace = (name: string, script: string, overrides: NodeJS.ProcessEnv = {}, args: string[] = []) =>
   yarn(['workspace', `@game-feedback/${name}`, script, ...args], {
     ...env,
     ...overrides,
     ...resolveEnvironment(overrides, env),
   });
-function local(script, args = []) {
-  return new Promise((resolve, reject) => {
+function local(script: string, args: string[] = []) {
+  return new Promise<void>((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(projectDir, 'scripts', script), ...args], {
       cwd: projectDir,
       env,
@@ -32,8 +34,8 @@ export async function prerequisites() {
 
 export async function setup({ fixtures = false } = {}) {
   await prerequisites();
-  await local('db.mjs', ['start']);
-  await local('db.mjs', ['sync']);
+  await local('db.ts', ['start']);
+  await local('db.ts', ['sync']);
   await workspace('api', 'db:seed', {}, fixtures ? ['--fixtures'] : []);
 }
 
@@ -60,13 +62,13 @@ async function test() {
 
 async function mobileEndToEnd() {
   await prerequisites();
-  await local('db.mjs', ['start', '--test']);
+  await local('db.ts', ['start', '--test']);
   await workspace('mobile', 'test:e2e');
 }
 
 async function endToEnd() {
   await prerequisites();
-  await local('db.mjs', ['start', '--test']);
+  await local('db.ts', ['start', '--test']);
   await workspace('web', 'test:e2e');
   await workspace('web', 'test:test-auth');
   await workspace('web', 'test:prefetch');
@@ -82,21 +84,19 @@ async function build() {
   await workspace('admin', 'build');
 }
 
-const tasks = {
-  setup,
-  codegen: prerequisites,
-  check,
-  test,
-  'test:e2e': endToEnd,
-  'test:mobile:e2e': mobileEndToEnd,
-  build,
-};
-
-export async function runTask(task) {
+export async function runTask(task: string | undefined) {
   assertNode();
-  if (!Object.hasOwn(tasks, task))
-    throw new Error('Usage: tasks.mjs setup|codegen|check|test|test:e2e|test:mobile:e2e|build');
-  await tasks[task]();
+  await match(task)
+    .with('setup', () => setup())
+    .with('codegen', prerequisites)
+    .with('check', check)
+    .with('test', test)
+    .with('test:e2e', endToEnd)
+    .with('test:mobile:e2e', mobileEndToEnd)
+    .with('build', build)
+    .otherwise(() => {
+      throw new Error('Usage: tasks.ts setup|codegen|check|test|test:e2e|test:mobile:e2e|build');
+    });
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
