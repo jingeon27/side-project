@@ -39,7 +39,7 @@ description: Game Feedback API(apps/api)의 대상 옆 unit 테스트나 격리 
 
 - OAuth: `createApp({ identityProviders })`에 `authorizationUrl`·`exchange`만 가진 객체를 넘긴다(`SocialProviderSchema.options`로 네 개를 만드는 예: `auth.controller.integration.test.ts`). 어댑터 unit 테스트는 `vi.stubGlobal('fetch', …)` + `afterEach(() => vi.unstubAllGlobals())`.
 - 게임 프로필: `profileProvider: new DemoProfileProvider()`. 실제 `SupercellProfileProvider`를 부르지 않는다.
-- S3: `new S3Fixture().start()`(`src/testing/s3-fixture.ts`, 실제 AWS SDK 서명·POST 정책을 검사) + `mediaStorage: { driver: 'S3', bucket, region, endpoint: s3.endpoint, forcePathStyle: true, ...S3_FIXTURE_CREDENTIALS }`, `afterAll`에서 `s3.close()`. 파일 시스템은 `mkdtemp` 폴더로 `{ driver: 'FILESYSTEM', directory }`.
+- S3: `new S3TestStorage()`(`src/testing/s3.ts`)와 `mediaStorage: s3.config`로 프로젝트 `.env`의 실제 AWS 버킷을 쓴다. 객체는 `<GF_S3_KEY_PREFIX>/tests/<실행 ID>/`에만 만들고 `afterAll`의 `s3.close()`로 해당 경로만 정리한다. 버킷 생성·삭제와 로컬 대역 서버는 없다. 단위 테스트의 설정·서명 검사는 오프라인이며 실제 전송은 integration 레인이다. 정리에는 테스트 prefix로 제한한 ListBucket 권한도 필요하다.
 - 앱 내부 서비스는 바꾸지 않는다. 시각은 DB 행을 직접 고친다(세션 만료 `session.updateMany({ data: { expiresAt: 과거 } })`).
 
 ## 특수 검증

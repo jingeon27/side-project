@@ -1,9 +1,10 @@
+import { environment } from '../../../../scripts/env.ts';
 import { createApp } from '../app';
 import { ApiError } from '../common/http/api-error';
 import { ensureRuntimeSecret } from '../config/runtime-secret';
 import { assertDatabaseUrl } from '../database/database-url';
 import { DemoProfileProvider } from '../game-profiles/providers/demo-profile.provider';
-import { S3Fixture } from './s3-fixture';
+import { S3TestStorage } from './s3';
 
 async function main() {
   if (process.env.ENVIRONMENT !== 'test') throw new Error('E2E server requires NODE_ENV=test.');
@@ -16,7 +17,16 @@ async function main() {
     throw new Error('E2E server requires the owned browser-test ports.');
   if (process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_SECRET || process.env.SUPERCELL_API_TOKEN)
     throw new Error('E2E server must not use external provider credentials.');
-  const s3 = await new S3Fixture({ corsOrigin: process.env.WEB_ORIGIN }).start();
+  Object.assign(
+    process.env,
+    Object.fromEntries(
+      Object.entries(environment()).filter(
+        ([name, value]) => value !== undefined && (name.startsWith('GF_S3_') || name.startsWith('AWS_')),
+      ),
+    ),
+  );
+  const s3 = new S3TestStorage();
+  await s3.verifyAccess();
   const app = await createApp({
     mediaStorage: s3.config,
     cacheRevalidation: {
@@ -42,10 +52,28 @@ async function main() {
       },
     },
   });
-  app.getHttpServer().once('close', () => {
-    void s3.close();
+  const stopping = { value: false };
+  const stop = async () => {
+    if (stopping.value) return;
+    stopping.value = true;
+    try {
+      try {
+        await app.close();
+      } finally {
+        await s3.close();
+      }
+      process.exit(0);
+    } catch {
+      console.error('E2E shutdown or real S3 test cleanup failed.');
+      process.exit(1);
+    }
+  };
+  process.once('SIGINT', () => {
+    void stop();
   });
-  app.enableShutdownHooks();
+  process.once('SIGTERM', () => {
+    void stop();
+  });
   await app.listen(port, '127.0.0.1');
 }
 main().catch((error: unknown) => {

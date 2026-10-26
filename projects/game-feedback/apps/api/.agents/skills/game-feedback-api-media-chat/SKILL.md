@@ -3,7 +3,7 @@ name: game-feedback-api-media-chat
 description: Game Feedback API의 게시글 본문 미디어·채팅 첨부·프로필 사진 저장(S3 presigned 직접 업로드 예약·완료, prune 정리)이나 1:1 채팅의 멱등 전송·읽음·기록 삭제 경계, /api/chat/events SSE 무효화 이벤트를 추가·변경·검토할 때 사용한다.
 ---
 
-S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-upload.md`, 엔드포인트 배치는 `game-feedback-api-endpoint`, 하네스(`S3Fixture`, SSE 읽기)는 `game-feedback-api-test` 스킬을 따른다. 경로는 apps/api 기준이다.
+S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-upload.md`, 엔드포인트 배치는 `game-feedback-api-endpoint`, 하네스(`S3TestStorage`, SSE 읽기)는 `game-feedback-api-test` 스킬을 따른다. 경로는 apps/api 기준이다.
 
 ## 저장소 (`src/media-storage/`)
 

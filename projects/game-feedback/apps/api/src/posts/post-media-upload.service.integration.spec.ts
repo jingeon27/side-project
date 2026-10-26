@@ -15,7 +15,7 @@ import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
-import { S3_FIXTURE_CREDENTIALS, S3Fixture } from '../testing/s3-fixture';
+import { S3TestStorage } from '../testing/s3';
 
 const require = createRequire(import.meta.url);
 const origin = 'http://localhost:3300';
@@ -33,7 +33,7 @@ interface IState {
 
 describe('게시글 S3 직접 업로드', () => {
   const state = {} as IState;
-  const s3 = new S3Fixture();
+  const s3 = new S3TestStorage();
   beforeAll(async () => {
     const target = new URL(process.env.DATABASE_URL ?? '');
     target.searchParams.set('schema', schema);
@@ -46,21 +46,15 @@ describe('게시글 S3 직접 업로드', () => {
     if (result.status !== 0) throw new Error(`Isolated migration failed: ${result.stdout}\n${result.stderr}`);
     state.db = new PrismaClient({ adapter: createPrismaAdapter(state.databaseUrl) });
     await seed(state.db, false);
-    await s3.start();
     state.app = await createApp({
       databaseUrl: state.databaseUrl,
       prisma: state.db,
       webOrigin: origin,
       demoMode: true,
       rateLimit: false,
-      mediaStorage: {
-        bucket: 'media-test',
-        region: 'ap-northeast-2',
-        endpoint: s3.endpoint,
-        forcePathStyle: true,
-        ...S3_FIXTURE_CREDENTIALS,
-      },
+      mediaStorage: s3.config,
     });
+    s3.observe(state.app.get(MediaStorage));
     state.owner = supertest.agent(state.app.getHttpServer());
     state.outsider = supertest.agent(state.app.getHttpServer());
     await state.owner
@@ -161,7 +155,7 @@ describe('게시글 S3 직접 업로드', () => {
     const policy = JSON.parse(Buffer.from(plan.fields.Policy ?? '', 'base64').toString());
     expect(policy.conditions).toContainEqual(['content-length-range', png.length, png.length]);
     expect(Date.parse(plan.expiresAt) - Date.now()).toBeGreaterThan(290_000);
-    expect((await transfer(plan, Buffer.concat([png, Buffer.from('extra')]))).status).toBe(403);
+    expect((await transfer(plan, Buffer.concat([png, Buffer.from('extra')]))).ok).toBe(false);
     expect((await transfer(plan)).status).toBe(204);
     const replies = await Promise.all([
       state.owner.post(`/api/post-media/${plan.id}/complete`).set('Origin', origin),
@@ -175,17 +169,17 @@ describe('게시글 S3 직접 업로드', () => {
     });
     expect(file.uploadedAt).not.toBeNull();
     expect(file.bytes).toBeNull();
-    expect(file.object?.key).toMatch(/^objects\//);
+    expect(file.object?.key.startsWith(`${s3.config.keyPrefix}/objects/`)).toBe(true);
     // 확정은 앞부분 Range 읽기와 서버 쪽 복사로만 한다. 임시 객체 전체를 API로 내려받지 않는다.
-    const staged = `/media-test/${plan.fields.key}`;
+    const staged = `/${s3.config.bucket}/${plan.fields.key}`;
     const reads = s3.requests.filter((request) => request.method === 'GET' && request.path === staged);
     expect(reads.length).toBeGreaterThan(0);
     expect(reads.every((request) => request.range === `bytes=0-${png.length - 1}`)).toBe(true);
     expect(s3.requests).toContainEqual(
-      expect.objectContaining({ method: 'PUT', path: `/media-test/${file.object?.key}` }),
+      expect.objectContaining({ method: 'PUT', path: `/${s3.config.bucket}/${file.object?.key}` }),
     );
     expect(
-      s3.requests.find((request) => request.path === `/media-test/${file.object?.key}`)?.copySource,
+      s3.requests.find((request) => request.path === `/${s3.config.bucket}/${file.object?.key}`)?.copySource,
     ).toContain(plan.fields.key);
     expect((await transfer(plan, Buffer.alloc(png.length, 120))).status).toBe(204);
     const redirected = await state.owner.get(`/api/post-media/${plan.id}`).expect(307);
@@ -228,7 +222,7 @@ describe('게시글 S3 직접 업로드', () => {
     const result = await state.app.get(MediaStorage).prune();
     expect(result.failed).toBe(0);
     expect(result.removed).toBe(1);
-    expect(s3.objects.has(`/media-test/${invalid.fields.key}`)).toBe(false);
+    expect(await s3.exists(invalid.fields.key ?? '')).toBe(false);
   });
 
   it('S3 배포는 multipart 수신을 막고 검증 뒤 바뀐 임시 객체를 확정하지 않아야 한다', async () => {
@@ -239,10 +233,7 @@ describe('게시글 S3 직접 업로드', () => {
       .expect(404);
     const plan = await reserve();
     expect((await transfer(plan)).status).toBe(204);
-    s3.beforeCopy = (source) => {
-      const object = s3.objects.get(source);
-      if (object) s3.objects.set(source, { ...object, bytes: Buffer.alloc(png.length, 120) });
-    };
+    s3.beforeCopy = (source) => s3.write(source, Buffer.alloc(png.length, 120), 'image/png');
     try {
       const changed = await state.owner
         .post(`/api/post-media/${plan.id}/complete`)
