@@ -1,0 +1,53 @@
+name: side-database
+services:
+  postgres:
+    image: postgres:18-bookworm@sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc
+    restart: unless-stopped
+    # Only initdb reads the superuser password: pg_hba.conf admits the superuser on the container socket alone.
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Set POSTGRES_SUPERUSER_PASSWORD}
+    command:
+      [
+        postgres,
+        -c,
+        hba_file=/etc/side-postgres/pg_hba.conf,
+        -c,
+        password_encryption=scram-sha-256,
+        -c,
+        max_connections=40,
+        -c,
+        shared_buffers=128MB,
+      ]
+    volumes:
+      # The data directory exists only on the mounted EBS volume. A missing mount fails the container instead of
+      # starting an empty cluster on the root disk.
+      - type: bind
+        source: ${SIDE_POSTGRES_ROOT:-/srv/side-postgres}/data
+        target: /var/lib/postgresql
+        bind: { create_host_path: false }
+      - ./pg_hba.conf:/etc/side-postgres/pg_hba.conf:ro
+      - ./bootstrap.sql:/etc/side-postgres/bootstrap.sql:ro
+    # Each service reaches the database only on its own internal network, under the same alias.
+    networks:
+      game-feedback: { aliases: [shared-postgres] }
+      photo-contest: { aliases: [shared-postgres] }
+    shm_size: 128m
+    stop_grace_period: 60s
+    read_only: true
+    tmpfs: ['/var/run/postgresql:size=1m', '/tmp:size=64m']
+    healthcheck:
+      test: [CMD, pg_isready, -q, -U, postgres, -d, postgres]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+      start_interval: 1s
+    mem_limit: 512m
+    cap_drop: [ALL]
+    # docker-entrypoint.sh fixes data directory ownership as root, then drops to the postgres user.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: '3' } }
+networks:
+  game-feedback: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-db' }
+  photo-contest: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-photo-contest-db' }
