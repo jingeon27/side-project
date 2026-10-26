@@ -1,6 +1,4 @@
-import { describe, expect, it } from 'vitest';
-
-import { checkCommitMessage, commitSubject } from './check-commit-message.mjs';
+import { checkCommitMessage, commitSubject } from './check-commit-message';
 
 describe('커밋 메시지 형식 검사', () => {
   it.each([

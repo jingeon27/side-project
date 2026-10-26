@@ -3,7 +3,7 @@
 // and installs that skip root devDependencies (`yarn workspaces focus … --production`).
 import { existsSync } from 'node:fs';
 
-import { copyWorktreeEnv } from './copy-worktree-env.mjs';
+import { copyWorktreeEnv } from './copy-worktree-env.ts';
 
 const { CI, HUSKY } = process.env;
 const ci = Boolean(CI) && CI !== '0' && CI !== 'false';
@@ -16,8 +16,8 @@ if (!ci && existsSync('.git')) {
 if (HUSKY !== '0' && !ci && existsSync('.git')) {
   const husky = await import('husky').then(
     (module) => module.default,
-    (error) => {
-      if (error?.code === 'ERR_MODULE_NOT_FOUND') return null;
+    (error: unknown) => {
+      if (error instanceof Error && 'code' in error && error.code === 'ERR_MODULE_NOT_FOUND') return null;
       throw error;
     },
   );

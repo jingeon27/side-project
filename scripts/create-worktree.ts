@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { copyWorktreeEnv } from './copy-worktree-env.mjs';
+import { copyWorktreeEnv } from './copy-worktree-env.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const worktrees = () =>

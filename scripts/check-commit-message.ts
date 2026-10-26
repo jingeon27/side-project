@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // Types from the project commit skills plus the ones already used in history.
 export const COMMIT_TYPES = [
@@ -28,7 +30,7 @@ const GIT_GENERATED = /^(?:Merge |Revert "|Reapply "|(?:fixup|squash|amend)! )/;
 const SCISSORS = /^# -+ >8 -+$/;
 
 /** First line Git keeps after its default cleanup, without trailing whitespace. */
-export function commitSubject(message) {
+export function commitSubject(message: string) {
   for (const line of message.split(/\r?\n/)) {
     if (SCISSORS.test(line)) break;
     if (line.startsWith('#') || !line.trim()) continue;
@@ -38,7 +40,7 @@ export function commitSubject(message) {
 }
 
 /** Returns a message describing the problem, or null when the commit message is acceptable. */
-export function checkCommitMessage(message) {
+export function checkCommitMessage(message: string) {
   const subject = commitSubject(message);
   // Git itself aborts an empty message, so there is nothing to add.
   if (!subject || GIT_GENERATED.test(subject) || HEADER.test(subject)) return null;
@@ -57,7 +59,7 @@ export function checkCommitMessage(message) {
 
 export function main(file = process.argv[2]) {
   if (!file) {
-    console.error('사용법: node scripts/check-commit-message.mjs <커밋 메시지 파일>');
+    console.error('사용법: node scripts/check-commit-message.ts <커밋 메시지 파일>');
     process.exitCode = 2;
     return;
   }
@@ -67,3 +69,5 @@ export function main(file = process.argv[2]) {
     process.exitCode = 1;
   }
 }
+
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) main();

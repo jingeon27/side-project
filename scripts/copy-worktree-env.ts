@@ -3,9 +3,9 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /** 기본 worktree의 로컬 설정만 복사한다. 기존 설정과 버전 관리하는 예제는 보존한다. */
-export function copyWorktreeEnv(targetRoot) {
+export function copyWorktreeEnv(targetRoot: string) {
   if (!existsSync(path.join(targetRoot, '.git'))) return [];
-  const git = (args) => execFileSync('git', args, { cwd: targetRoot, encoding: 'utf8' });
+  const git = (args: string[]) => execFileSync('git', args, { cwd: targetRoot, encoding: 'utf8' });
   const sourceRoot = git(['worktree', 'list', '--porcelain', '-z'])
     .split('\0')
     .find((field) => field.startsWith('worktree '))
@@ -22,7 +22,7 @@ export function copyWorktreeEnv(targetRoot) {
     .split('\0')
     .filter(Boolean);
   const directories = new Set(['.', ...templates.map((file) => path.dirname(file))]);
-  const copied = [];
+  const copied: string[] = [];
   for (const directory of directories) {
     const source = path.join(sourceRoot, directory);
     if (!existsSync(source) || !existsSync(path.join(targetRoot, directory))) continue;
@@ -41,7 +41,7 @@ export function copyWorktreeEnv(targetRoot) {
         });
         copied.push(relative);
       } catch (error) {
-        if (error.code !== 'EEXIST') throw error;
+        if (!(error instanceof Error && 'code' in error && error.code === 'EEXIST')) throw error;
       }
     }
   }
