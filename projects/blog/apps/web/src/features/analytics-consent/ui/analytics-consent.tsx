@@ -12,7 +12,7 @@ import {
   setAnalyticsConsent,
   type TAnalyticsChoice,
 } from '@/shared/lib/analytics/events';
-import { isTrackedRegion } from '@/shared/lib/analytics/region';
+import { requiresOptIn } from '@/shared/lib/analytics/region';
 
 export function AnalyticsConsent({ locale }: { locale: Locale }) {
   const [opened, setOpened] = useState(false);
@@ -21,8 +21,9 @@ export function AnalyticsConsent({ locale }: { locale: Locale }) {
   const visible = opened || (status === 'unknown' && !dismissed);
   const text = labels(locale);
 
-  // 해외 방문자·서버 렌더링·막힌 저장소에서는 설정 버튼도 내보내지 않는다.
+  // 서버 렌더링과 막힌 저장소에서는 설정 버튼도 내보내지 않는다.
   if (!analyticsConfigured || status === 'unavailable') return null;
+  const optIn = requiresOptIn();
   function close() {
     setOpened(false);
     setDismissed(true);
@@ -31,8 +32,8 @@ export function AnalyticsConsent({ locale }: { locale: Locale }) {
     setAnalyticsConsent(choice);
     close();
   }
-  // 고르지 않은 방문자도 방문 통계는 켜져 있으므로 그 상태를 그대로 표시한다.
-  const current = status === 'unknown' ? 'statistics' : status;
+  // 고르기 전에는 유럽 방문자는 모두 꺼져 있고 그 밖의 방문자는 방문 통계가 켜져 있으므로 실제 상태를 표시한다.
+  const current = status === 'unknown' ? (optIn ? 'denied' : 'statistics') : status;
 
   return (
     <>
@@ -42,7 +43,7 @@ export function AnalyticsConsent({ locale }: { locale: Locale }) {
       {visible && (
         <aside className="analytics-consent" aria-label={text.analytics.title}>
           <strong>{text.analytics.title}</strong>
-          <p>{text.analytics.message}</p>
+          <p>{optIn ? text.analytics.optInMessage : text.analytics.message}</p>
           <a className="analytics-consent-privacy" href={`/${locale}/privacy`}>
             {text.privacy.title}
           </a>
@@ -71,7 +72,6 @@ export function AnalyticsConsent({ locale }: { locale: Locale }) {
 }
 
 function getConsentStatus() {
-  if (!isTrackedRegion()) return 'unavailable';
   try {
     localStorage.getItem(consentKey);
   } catch {

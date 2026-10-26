@@ -29,17 +29,27 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('Korea-only analytics notice', () => {
-  it('renders neither the notice nor the settings button outside the Korean time zone', async () => {
+describe('analytics notice', () => {
+  it('asks visitors in European time zones first and shows everything off until they choose', async () => {
     useTimeZone('Europe/Paris');
     await renderConsent();
-    expect(screen.queryByRole('button', { name: text.analytics.preferences })).not.toBeInTheDocument();
-    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    const notice = screen.getByRole('complementary', { name: text.analytics.title });
+    expect(notice).toHaveTextContent(text.analytics.optInMessage);
+    expect(within(notice).getByRole('button', { name: text.analytics.deny })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(notice).getByRole('button', { name: text.analytics.statistics })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 
-  it('shows visit statistics as already on and links to the privacy notice before any choice', async () => {
+  it('shows visit statistics as already on outside Europe and links to the privacy notice', async () => {
+    useTimeZone('America/New_York');
     await renderConsent();
     const notice = screen.getByRole('complementary', { name: text.analytics.title });
+    expect(notice).toHaveTextContent(text.analytics.message);
     expect(within(notice).getByRole('link', { name: text.privacy.title })).toHaveAttribute(
       'href',
       '/ko/privacy',

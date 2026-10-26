@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe('opt-in behavior analytics', () => {
-  it('loads no heatmap SDK until a Korean visitor allows it and supports Clarity without GA4', async () => {
+  it('loads no heatmap SDK until the visitor allows it and supports Clarity without GA4', async () => {
     const analytics = await import('./events');
     expect(analytics.analyticsConfigured).toBe(true);
     analytics.trackPageView('/ko');
@@ -47,14 +47,18 @@ describe('opt-in behavior analytics', () => {
     ]);
     expect(document.querySelector('#blog-google-analytics')).toBeNull();
   });
-  it('ignores a stored allowance outside the Korean time zone', async () => {
-    localStorage.setItem('blog:analytics-consent', 'granted');
-    useTimeZone('America/New_York');
-    const analytics = await import('./events');
-    analytics.trackPageView('/en');
-    expect(analytics.heatmapsAllowed()).toBe(false);
-    expect(document.querySelector('#blog-clarity')).toBeNull();
-  });
+  it.each(['America/New_York', 'Europe/Paris'])(
+    'requires an explicit allowance for heatmaps in %s too',
+    async (timeZone) => {
+      useTimeZone(timeZone);
+      const analytics = await import('./events');
+      analytics.trackPageView('/en');
+      expect(document.querySelector('#blog-clarity')).toBeNull();
+      analytics.setAnalyticsConsent('granted');
+      analytics.trackPageView('/en');
+      expect(document.querySelectorAll('#blog-clarity')).toHaveLength(1);
+    },
+  );
   it('stops collection when heatmaps are declined and sends only approved event names', async () => {
     const analytics = await import('./events');
     analytics.setAnalyticsConsent('granted');

@@ -26,17 +26,31 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('Korea-only opt-out visit statistics', () => {
-  it('makes no script or event for visitors outside the Korean time zone', async () => {
-    useTimeZone('Europe/Berlin');
-    const analytics = await import('@/shared/lib/analytics/events');
-    analytics.initializeAnalytics();
-    analytics.trackPageView('/ko/blog?query=private');
-    analytics.trackEvent('search_performed', { has_query: true });
-    expect(analytics.statisticsAllowed()).toBe(false);
-    expect(document.querySelector('#blog-google-analytics')).toBeNull();
-    expect(window.dataLayer).toBeUndefined();
-  });
+describe('visit statistics: opt-in in Europe, opt-out elsewhere', () => {
+  it.each(['Europe/Berlin', 'Europe/London', 'Atlantic/Reykjavik', 'UTC'])(
+    'makes no script or event in %s until the visitor allows statistics',
+    async (timeZone) => {
+      useTimeZone(timeZone);
+      const analytics = await import('@/shared/lib/analytics/events');
+      analytics.initializeAnalytics();
+      analytics.trackPageView('/ko/blog?query=private');
+      analytics.trackEvent('search_performed', { has_query: true });
+      expect(analytics.statisticsAllowed()).toBe(false);
+      expect(document.querySelector('#blog-google-analytics')).toBeNull();
+      expect(window.dataLayer).toBeUndefined();
+      analytics.setAnalyticsConsent('statistics');
+      expect(analytics.statisticsAllowed()).toBe(true);
+    },
+  );
+  it.each(['Asia/Seoul', 'America/New_York', 'Asia/Tokyo'])(
+    'measures visitors in %s until they turn statistics off',
+    async (timeZone) => {
+      useTimeZone(timeZone);
+      const analytics = await import('@/shared/lib/analytics/events');
+      expect(analytics.statisticsAllowed()).toBe(true);
+      expect(analytics.heatmapsAllowed()).toBe(false);
+    },
+  );
   it('sends one sanitized pageview per route before the visitor makes a choice', async () => {
     const analytics = await import('@/shared/lib/analytics/events');
     expect(analytics.analyticsConsent()).toBe('unknown');

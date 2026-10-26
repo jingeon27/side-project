@@ -89,6 +89,7 @@
   "analytics": {
     "title": "Visitor analytics",
     "message": "To improve articles, this blog collects visit statistics with Google Analytics. Click and scroll heatmaps and session replay (Microsoft Clarity) run only if you allow them. You can change this anytime in analytics settings.",
+    "optInMessage": "With your permission, this blog collects visit statistics with Google Analytics and, if you also allow heatmaps, click and scroll heatmaps and session replay with Microsoft Clarity to improve articles. Nothing is collected before you choose, and you can change this anytime in analytics settings.",
     "allow": "Allow heatmaps too",
     "statistics": "Statistics only",
     "deny": "Turn off all",
@@ -98,11 +99,11 @@
   "privacy": {
     "title": "Privacy notice",
     "updated": "Effective October 26, 2026",
-    "intro": "This blog is read without an account or comments, and collects visit statistics to improve its articles and usability. Analytics tools are loaded only in browsers set to the Korean time zone (Asia/Seoul); they are not loaded for other visitors.",
+    "intro": "This blog is read without an account or comments, and collects visit statistics to improve its articles and usability. If your browser time zone is in Europe (including the EEA, UK and Switzerland) or cannot be determined, nothing is collected until you choose; for other visitors, visit statistics are collected unless turned off in analytics settings.",
     "sections": [
       {
         "heading": "Visit statistics (Google Analytics)",
-        "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga. It is on unless you turn it off in analytics settings."
+        "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga. Visitors in European time zones are measured only if they allow it; other visitors are measured unless they turn it off in analytics settings."
       },
       {
         "heading": "Heatmaps and session replay (Microsoft Clarity)",
@@ -110,7 +111,7 @@
       },
       {
         "heading": "Processors and international transfer",
-        "body": "Collected information is processed by Google LLC and Microsoft Corporation and may be stored on servers outside Korea, including in the United States. Advertising storage and ad personalization signals are not used."
+        "body": "Collected information is processed by Google LLC and Microsoft Corporation and may be stored on servers in other countries, including the United States. Advertising storage and ad personalization signals are not used."
       },
       {
         "heading": "Retention",

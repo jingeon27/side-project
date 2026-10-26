@@ -1,5 +1,5 @@
 import { heatmapsConfigured, initializeHeatmaps, stopHeatmaps } from './heatmaps';
-import { isTrackedRegion } from './region';
+import { requiresOptIn } from './region';
 
 type AnalyticsEventMap = {
   language_changed: { from_locale: string; to_locale: string };
@@ -40,14 +40,16 @@ export function analyticsConsent(): TAnalyticsConsent {
   }
 }
 
-/** 한국 방문자는 끄기 전까지 GA4 방문 통계를 보낸다(opt-out). */
+/** 유럽(동의 대상) 방문자는 고르기 전까지 끄고, 그 밖의 방문자는 끄기 전까지 GA4 방문 통계를 보낸다(opt-out). */
 export function statisticsAllowed(): boolean {
-  return googleAnalyticsConfigured && isTrackedRegion() && analyticsConsent() !== 'denied';
+  if (!googleAnalyticsConfigured) return false;
+  const consent = analyticsConsent();
+  return consent === 'unknown' ? !requiresOptIn() : consent !== 'denied';
 }
 
-/** 클릭·스크롤 히트맵과 세션 재생은 한국 방문자가 명시적으로 허용했을 때만 켠다(opt-in). */
+/** 클릭·스크롤 히트맵과 세션 재생은 지역과 관계없이 명시적으로 허용했을 때만 켠다(opt-in). */
 export function heatmapsAllowed(): boolean {
-  return heatmapsConfigured && isTrackedRegion() && analyticsConsent() === 'granted';
+  return heatmapsConfigured && analyticsConsent() === 'granted';
 }
 
 function safeUrl(value: string): string {
