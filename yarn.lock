@@ -3074,7 +3074,7 @@ __metadata:
     "@game-feedback/sdk": "workspace:*"
     "@hookform/resolvers": "npm:^5.2.2"
     "@microsoft/fetch-event-source": "npm:2.0.1"
-    "@next/playwright": "npm:16.4.2"
+    "@next/playwright": "npm:16.4.3"
     "@playwright/test": "npm:^1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
     "@side/config": "workspace:*"
@@ -3084,8 +3084,8 @@ __metadata:
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/react": "npm:^16.3.0"
     "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:^19.2.0"
-    "@types/react-dom": "npm:^19.2.0"
+    "@types/react": "npm:~19.3.0"
+    "@types/react-dom": "npm:~19.3.0"
     dayjs: "npm:1.11.18"
     es-toolkit: "npm:^1.52.0"
     eslint: "npm:^9.39.0"
@@ -3095,11 +3095,11 @@ __metadata:
     linkify-react: "npm:4.3.3"
     linkifyjs: "npm:4.3.3"
     lucide-react: "npm:^0.468.0"
-    next: "npm:16.4.2"
+    next: "npm:16.4.3"
     overlay-kit: "npm:^1.9.0"
     quill: "npm:2.0.3"
-    react: "npm:^19.2.0"
-    react-dom: "npm:^19.2.0"
+    react: "npm:~19.3.1"
+    react-dom: "npm:~19.3.1"
     react-hook-form: "npm:^7.65.0"
     tailwindcss: "npm:^4.1.16"
     ts-pattern: "npm:^5.9.0"
@@ -4842,15 +4842,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/playwright@npm:16.4.2":
-  version: 16.4.2
-  resolution: "@next/playwright@npm:16.4.2"
+"@next/playwright@npm:16.4.3":
+  version: 16.4.3
+  resolution: "@next/playwright@npm:16.4.3"
   peerDependencies:
     "@playwright/test": ">=1.0.0"
   peerDependenciesMeta:
     "@playwright/test":
       optional: true
-  checksum: 10c0/6a9180bfb38f849a966515e2751338553947340c36d08eba98650a5dc699f52a37472b4ba1f0cb083923a326425c2f6e3a7296026f73b676d17687e1b017de51
+  checksum: 10c0/25032a772d5fbed66e2ab2c2e5a2caeeb9fe9c6d170c2bafe27d4a3348fe45adf3416b8a723f6128946e1782b86b8632af995dad82f36bc2af23b580694607d2
   languageName: node
   linkType: hard
 
