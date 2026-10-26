@@ -38,6 +38,6 @@ description: 웃긴순간의 Sentry 오류 수집(API·웹·앱)과 Amplitude �
 
 ## 실제 서비스 확인
 
-- `@photo-contest/web monitoring:check`는 일반 테스트와 분리한 실제 전송 검사다. 3336/4336·web_e2e 격리 스키마·S3 대역·운영 빌드를 사용하며 수집 응답과 개인정보 제거를 단언한다. 확인 오류 종류는 MonitoringVerificationError다. 실제 수신은 MCP에서 eventId·페이지뷰 집계를 재조회한다.
+- `@photo-contest/web monitoring:check`는 일반 테스트와 분리한 실제 전송 검사다. 3336/4336·web_e2e 격리 스키마·실제 S3의 격리 객체 경로·운영 빌드를 사용하며 수집 응답과 개인정보 제거를 단언한다. 확인 오류 종류는 MonitoringVerificationError다. 실제 수신은 MCP에서 eventId·페이지뷰 집계를 재조회한다.
 - 자동 페이지뷰와 별개인 pageUrlEnrichment/customEnrichment도 꺼서 검색어가 보강되지 않게 한다. StrictMode에서 중복 방문을 집계하지 않는다.
 - Sentry는 contexts.nextjs에도 원본 경로가 들어가므로 request만 지우지 않는다. service/layer로 API·Next 서버·브라우저를 구분한다.

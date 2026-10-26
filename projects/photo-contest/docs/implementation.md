@@ -338,3 +338,11 @@ API 전체 DB 통합 369개, Web unit/UI 446개, Mobile unit/UI 162개, Bridge 3
 콘솔 확인 요청에 따라 upload-verification/2026-10-25T11-41-50-004Z.png 한 개(525바이트)는 별도로 남겼다. 실제 AWS 업로드 204·HEAD 200·서명 GET 200과 원본 일치를 확인했다. 기존 개발 서버는 재시작하지 않았으므로 해당 프로세스의 새 업로드 설정은 다음 시작 때 반영된다. IAM·Terraform·버킷 정책·CORS는 변경하지 않았다.
 
 검증: API 환경 설정 단위 11개와 웹 저장소 업로드 helper 7개, 검증용 API 빌드가 통과했다. 미정의 환경변수의 코드 참조를 어디까지 제거할지는 운영·모바일·테스트 내부 설정의 범위를 확인 중이다.
+
+## 2026-10-26 로컬·자동 테스트 S3 대역 제거
+
+개발 실행기의 S3 동시 기동, test-kit S3 서버·CLI·대역 전용 사양과 컨테이너 검증의 storage 서비스를 제거했다. API·웹·모바일 테스트는 기존 AWS S3 설정을 사용하고 tests/<격리 스키마 또는 실행 ID>/ 객체만 정리한다. 버킷은 만들거나 지우지 않는다. 네트워크 없는 서명 정책 단위 사양은 유지하고 HEAD·POST·DELETE 검증은 integration 레인으로 옮겼다. 실제 임시 AWS 자격 증명의 session token도 SDK·컨테이너에 전달한다. 공용 CI·공유 배포 smoke는 Game Feedback과 함께 사용하므로 관련 설정만 함께 수정했다.
+
+검증: API unit 127개와 test-kit 34개, API·test-kit·웹 TypeScript 검사, 변경 파일 ESLint, shellcheck·actionlint가 통과했다. Game Feedback API unit도 187개 통과했다. `yarn install --immutable --mode=skip-build`는 성공했고 기존 peer dependency 경고는 남아 있다.
+
+실제 AWS의 새 실행 prefix에 ListObjectsV2(MaxKeys=1)만 요청했으나 AccessDenied였고 객체는 쓰거나 지우지 않았다. 통합 실행기는 데이터 쓰기 전 해당 경로의 ListBucket 접근을 확인하도록 했다. 실제 S3·브라우저·컨테이너 통합 검사는 필요한 경로별 권한·CORS와 Docker가 준비된 환경에서 별도로 실행해야 한다. 기존 버킷·객체·로컬 파일·.env 자격 증명·개발 서버·DB·IAM·GitHub 설정은 변경하지 않았다.

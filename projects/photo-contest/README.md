@@ -41,7 +41,7 @@ yarn dev:photo-contest
 | `apps/web`          | Next.js 16 App Router, Apollo Client 4, Base UI·RHF·Zod, 통합 게시물 피드·MY 그룹 관리·반응형 웹 |
 | `apps/mobile`       | Expo SDK 58 WebView 셸, 시스템 브라우저 로그인·공유·클립보드·햅틱·딥링크                         |
 | `packages/bridge`   | zod로 검사하는 앱↔웹 메시지 계약                                                                 |
-| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·MP4·fixture 준비, 로컬 개발·테스트용 S3 호환 대역                 |
+| `packages/test-kit` | 테스트 DB 격리·API 기동·이미지·MP4·fixture 준비, 실제 S3 테스트 객체 경로 격리·정리              |
 
 누구나 로그인 후 공개·비공개 그룹을 만들 수 있습니다. `/explore`에서 이름으로 탐색하며 초대 링크 없이도 그룹에 들어갑니다. `/sign`에서 익명으로 시작하거나 로그인·회원가입한 뒤 공개 그룹의 사진·동영상·댓글을 보고 바로 가입할 수 있습니다. 세션 없는 콘텐츠 진입은 `/sign`으로 이동합니다. 기존 익명 사용자는 로그인 화면의 익명으로 계속하기로 같은 세션을 유지합니다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인합니다. 비공개 그룹은 관리자·부관리자가 가입 신청을 수락해야 내용을 볼 수 있으며, 초대 링크도 승인을 우회하지 않습니다. 기존 그룹은 비공개로 유지합니다. 모든 멤버가 초대 링크를 공유하고 관리자만 재발급할 수 있습니다. 홈은 가입한 모든 그룹의 사진·동영상을 최신순으로 모읍니다. MY에서 내 그룹을 보고 새 그룹을 만듭니다. `/groups/[id]/write`에서 제목·내용과 파일을 올리며, 게시물은 작성자와 관리자·부관리자가 삭제할 수 있습니다.
 
@@ -96,7 +96,7 @@ yarn workspace @photo-contest/mobile bundle:check
 
 모든 사진·동영상은 S3 presigned URL로만 오갑니다. 웹 게시물은 requestPostUpload → 저장소 FormData POST → completePostUpload → createPost, 기존 대회 제출은 requestUploadUrl → POST → completeSubmissionUpload → createSubmission, 그룹 대표 사진은 requestGroupAvatarUpload → POST → completeGroupAvatarUpload → updateGroupProfile 순서이며 저장소에 세션 쿠키를 보내지 않습니다. POST 정책이 최종 키·형식·정확한 크기를 고정하고 완료는 HEAD로 확인합니다. API는 파일을 받거나 읽거나 변환·중계하지 않으며 메타데이터도 제거하지 않으므로 공개 전에 확인해야 합니다. 게시물·대회 사진·대표 사진의 고정 경로는 매 요청 권한을 확인하고 `private, no-store` 307로 60초 서명 GET에 보냅니다. 서버 HTML·공개 캐시에는 만료되는 주소 대신 고정 경로만 남습니다. 실제 S3 객체·CORS·IAM 검증은 운영 환경에서 별도로 진행합니다.
 
-로컬 개발과 테스트는 Docker 없이 `@photo-contest/test-kit`의 S3 호환 대역을 씁니다(MinIO로 옮기기 전까지의 임시 대역). `.env.example`의 `S3_*`·`AWS_*` 값을 `.env`에 옮기면 `dev`가 대역을 4210 포트로 함께 띄우고 객체는 `.data/s3`에 저장합니다. 따로 띄우려면 `yarn workspace @photo-contest/test-kit s3`를 실행합니다. 예전 `STORAGE_BACKEND`·`STORAGE_DIR`은 쓰지 않으며, 기존 로컬 사진(`.data/photos`)을 계속 보려면 `.data/s3/photo-contest-dev/`로 옮깁니다. Android 에뮬레이터에서 사진을 보려면 `adb reverse tcp:4210 tcp:4210`도 추가합니다. 테스트 레인은 빈 포트에 대역을 자동으로 띄우고 끝나면 지웁니다.
+로컬 개발과 통합·브라우저 테스트도 `.env`의 실제 AWS S3 버킷을 사용합니다. `S3_ENDPOINT`는 비우고 버킷·리전·자격 증명을 설정합니다. 별도 S3 서버나 테스트 버킷은 만들지 않습니다. 테스트는 `<S3_KEY_PREFIX>/tests/<실행 ID>/` 경로만 사용하고 종료 시 그 객체만 지웁니다. 단위 테스트는 AWS에 접속하지 않습니다. 필요한 권한·CORS·CI 설정은 [첨부·저장 안내](docs/post-attachments.md#검증)를 따릅니다. 기존 `.data/s3` 파일과 실제 버킷의 기존 데이터는 자동 삭제하거나 이행하지 않습니다.
 
 | 앱     | 오류 수집                                               | 사용자 행동 측정                |
 | ------ | ------------------------------------------------------- | ------------------------------- |

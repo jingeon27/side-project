@@ -31,7 +31,7 @@ description: 웃긴순간의 앱별 테스트 레인(Vitest unit·ui·api·integ
 - 테스트 API는 test-kit이 `apps/api/.e2e-build`로 빌드해 띄운다(개발 서버가 보는 `dist`를 건드리지 않는다). 웹 e2e의 Next dev는 `NEXT_DIST_DIR=.next/e2e`(모바일 e2e는 `.next/e2e-mobile`)로 띄워 개발 서버의 `.next/dev` 잠금과 겹치지 않게 한다.
 - 개발 서버 포트(웹 3200, API 4200, DB 55432)는 테스트에 쓰지 않고, 실행 중인 서버를 재사용하거나 끄지 않는다(`reuseExistingServer: false`).
 - `.env`는 설정 파일이 `process.loadEnvFile`로 읽는다. 테스트에 필요한 환경변수는 설정에서 명시한다.
-- 미디어는 test-kit S3 대역(`startFakeS3`)을 쓴다. API 통합은 globalSetup이, 웹·모바일 레인은 테스트 API 실행기가 빈 포트에 띄우고 끝나면 객체 폴더까지 지운다. 개발자 `.env`의 실제 S3·AWS 값은 테스트 API에 넘기지 않는다.
+- 미디어는 프로젝트 `.env`의 실제 AWS S3를 쓴다. test-kit `s3TestEnvironment`가 기존 버킷의 `<S3_KEY_PREFIX>/tests/<실행 ID>/`로 객체 경로를 격리하고 `cleanupS3TestObjects`가 그 경로만 정리한다. 버킷 생성·삭제나 S3 대역 서버 기동은 하지 않는다. 단위 테스트는 설정·서명만 오프라인으로 확인하고 실제 전송은 integration 레인에 둔다. 정리용 ListBucket도 `s3:prefix`로 테스트 경로만 허용한다.
 
 ## Playwright
 
