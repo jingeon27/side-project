@@ -15,6 +15,28 @@ const response = (body: unknown, status = 200, headers: Record<string, string> =
   new Response(JSON.stringify(body), { status, headers });
 
 describe('Expo push HTTP transport', () => {
+  it.each([null, [], { status: 'ok', id: '' }, { status: 'ok', id: 1 }, { status: 'unknown' }])(
+    '잘못된 티켓 응답은 재시도 가능한 제공자 오류로 처리해야 한다: %j',
+    async (ticket) => {
+      const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response({ data: [ticket] }));
+      await expect(new ExpoPushTransport({ fetch: fetcher }).send([message])).rejects.toMatchObject({
+        status: 502,
+        retryable: true,
+      });
+    },
+  );
+
+  it.each([null, undefined, new Error('offline')])(
+    '어떤 네트워크 거부 값도 재시도 가능한 오류로 처리해야 한다: %j',
+    async (error) => {
+      const fetcher = vi.fn<typeof fetch>().mockRejectedValue(error);
+      await expect(new ExpoPushTransport({ fetch: fetcher }).send([message])).rejects.toMatchObject({
+        status: 503,
+        retryable: true,
+      });
+    },
+  );
+
   it('메시지 순서와 기기별 오류를 보존하고 설정한 서버 키만 전송해야 한다', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       response({

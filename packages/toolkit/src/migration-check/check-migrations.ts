@@ -2,6 +2,23 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+interface IScanResult {
+  masked: string;
+  opaqueBodies: number[];
+}
+interface IViolation {
+  index: number;
+  rule: string;
+}
+interface IMigrationBaseOptions {
+  requested?: string | null;
+  event?: string;
+  head?: string;
+  deployRef?: string;
+  fallback?: string;
+  cwd?: string;
+}
+
 const MIGRATION_PATHSPEC = 'projects/*/apps/api/prisma/migrations/*/migration.sql';
 // 식별자를 잇는 글자 뒤의 $·E·U&는 달러 인용이나 접두 문자열이 아니라 식별자의 일부다(`a$$`, `nameE`).
 const IDENTIFIER_CHAR = /[\w$]/;
@@ -10,119 +27,118 @@ const DOLLAR_TAG = /^\$(?:[A-Za-z_\u0080-￿][\w\u0080-￿]*)?\$/;
 const CODE_BODY_PREFIX = /\b(?:AS|DO|DO\s+LANGUAGE\s+[A-Za-z_][\w$]*)\s*$/i;
 const DO_PREFIX = /\bDO(?:\s+LANGUAGE\s+[A-Za-z_][\w$]*)?\s*$/i;
 
-function scanSql(sql) {
+function scanSql(sql: string): IScanResult {
   const output = sql.split('');
   // 작은따옴표 DO 본문은 이스케이프 때문에 위치를 보존한 채 다시 검사할 수 없어 따로 표시한다.
-  const opaqueBodies = [];
-  let cursor = 0;
-  const fill = (start, end, char) => {
-    for (let index = start; index < end; index++) if (sql[index] !== '\n') output[index] = char;
+  const opaqueBodies: number[] = [];
+  const position = { cursor: 0 };
+  const fill = (start: number, end: number, char: string) => {
+    for (const [offset, value] of sql.slice(start, end).split('').entries())
+      if (value !== '\n') output[start + offset] = char;
   };
-  const quotedEnd = (quoteIndex, backslashEscapes) => {
+  const quotedEnd = (quoteIndex: number, backslashEscapes: boolean) => {
     const quote = sql[quoteIndex];
-    let end = quoteIndex + 1;
-    while (end < sql.length) {
-      if (backslashEscapes && sql[end] === '\\') {
-        end += 2;
+    const position = { end: quoteIndex + 1 };
+    while (position.end < sql.length) {
+      if (backslashEscapes && sql[position.end] === '\\') {
+        position.end += 2;
         continue;
       }
-      if (sql[end] !== quote) {
-        end++;
+      if (sql[position.end] !== quote) {
+        position.end++;
         continue;
       }
-      if (sql[end + 1] === quote) {
-        end += 2;
+      if (sql[position.end + 1] === quote) {
+        position.end += 2;
         continue;
       }
-      return end + 1;
+      return position.end + 1;
     }
     return sql.length;
   };
-  const maskedBefore = (index) => output.slice(Math.max(0, index - 80), index).join('');
-  while (cursor < sql.length) {
-    const previous = cursor > 0 ? sql[cursor - 1] : '';
+  const maskedBefore = (index: number) => output.slice(Math.max(0, index - 80), index).join('');
+  while (position.cursor < sql.length) {
+    const previous = position.cursor > 0 ? (sql[position.cursor - 1] ?? '') : '';
     const prefixAllowed = !IDENTIFIER_CHAR.test(previous);
-    if (sql.startsWith('--', cursor)) {
-      const newline = sql.indexOf('\n', cursor);
+    if (sql.startsWith('--', position.cursor)) {
+      const newline = sql.indexOf('\n', position.cursor);
       const end = newline < 0 ? sql.length : newline;
-      fill(cursor, end, ' ');
-      cursor = end;
+      fill(position.cursor, end, ' ');
+      position.cursor = end;
       continue;
     }
-    if (sql.startsWith('/*', cursor)) {
-      let depth = 1;
-      let end = cursor + 2;
-      while (end < sql.length && depth) {
-        if (sql.startsWith('/*', end)) {
-          depth++;
-          end += 2;
+    if (sql.startsWith('/*', position.cursor)) {
+      const comment = { depth: 1, end: position.cursor + 2 };
+      while (comment.end < sql.length && comment.depth) {
+        if (sql.startsWith('/*', comment.end)) {
+          comment.depth++;
+          comment.end += 2;
           continue;
         }
-        if (sql.startsWith('*/', end)) {
-          depth--;
-          end += 2;
+        if (sql.startsWith('*/', comment.end)) {
+          comment.depth--;
+          comment.end += 2;
           continue;
         }
-        end++;
+        comment.end++;
       }
-      fill(cursor, end, ' ');
-      cursor = end;
+      fill(position.cursor, comment.end, ' ');
+      position.cursor = comment.end;
       continue;
     }
-    if (prefixAllowed && /^[uU]&["']/.test(sql.slice(cursor, cursor + 3))) {
-      const end = quotedEnd(cursor + 2, false);
-      fill(cursor, end, sql[cursor + 2] === '"' ? '_' : ' ');
-      cursor = end;
+    if (prefixAllowed && /^[uU]&["']/.test(sql.slice(position.cursor, position.cursor + 3))) {
+      const end = quotedEnd(position.cursor + 2, false);
+      fill(position.cursor, end, sql[position.cursor + 2] === '"' ? '_' : ' ');
+      position.cursor = end;
       continue;
     }
-    if (prefixAllowed && /^[eE]'/.test(sql.slice(cursor, cursor + 2))) {
-      if (DO_PREFIX.test(maskedBefore(cursor))) opaqueBodies.push(cursor);
-      const end = quotedEnd(cursor + 1, true);
-      fill(cursor, end, ' ');
-      cursor = end;
+    if (prefixAllowed && /^[eE]'/.test(sql.slice(position.cursor, position.cursor + 2))) {
+      if (DO_PREFIX.test(maskedBefore(position.cursor))) opaqueBodies.push(position.cursor);
+      const end = quotedEnd(position.cursor + 1, true);
+      fill(position.cursor, end, ' ');
+      position.cursor = end;
       continue;
     }
-    const char = sql[cursor];
+    const char = sql[position.cursor];
     if (char === "'" || char === '"') {
-      if (char === "'" && DO_PREFIX.test(maskedBefore(cursor))) opaqueBodies.push(cursor);
-      const end = quotedEnd(cursor, false);
-      fill(cursor, end, char === '"' ? '_' : ' ');
-      cursor = end;
+      if (char === "'" && DO_PREFIX.test(maskedBefore(position.cursor))) opaqueBodies.push(position.cursor);
+      const end = quotedEnd(position.cursor, false);
+      fill(position.cursor, end, char === '"' ? '_' : ' ');
+      position.cursor = end;
       continue;
     }
-    const tag = char === '$' && prefixAllowed ? sql.slice(cursor).match(DOLLAR_TAG)?.[0] : undefined;
+    const tag = char === '$' && prefixAllowed ? sql.slice(position.cursor).match(DOLLAR_TAG)?.[0] : undefined;
     if (tag) {
-      const bodyStart = cursor + tag.length;
+      const bodyStart = position.cursor + tag.length;
       const closing = sql.indexOf(tag, bodyStart);
       const bodyEnd = closing < 0 ? sql.length : closing;
       const end = closing < 0 ? sql.length : closing + tag.length;
-      if (!CODE_BODY_PREFIX.test(maskedBefore(cursor))) {
-        fill(cursor, end, ' ');
-        cursor = end;
+      if (!CODE_BODY_PREFIX.test(maskedBefore(position.cursor))) {
+        fill(position.cursor, end, ' ');
+        position.cursor = end;
         continue;
       }
       const inner = scanSql(sql.slice(bodyStart, bodyEnd));
-      fill(cursor, bodyStart, ' ');
-      for (let index = 0; index < inner.masked.length; index++)
-        output[bodyStart + index] = inner.masked[index];
+      fill(position.cursor, bodyStart, ' ');
+      for (const [index, value] of inner.masked.split('').entries()) output[bodyStart + index] = value;
       opaqueBodies.push(...inner.opaqueBodies.map((index) => bodyStart + index));
       fill(bodyEnd, end, ' ');
-      cursor = end;
+      position.cursor = end;
       continue;
     }
-    cursor++;
+    position.cursor++;
   }
   return { masked: output.join(''), opaqueBodies };
 }
 
 // Preserve positions/newlines while ignoring comments, quoted identifiers and SQL literals.
 // Nested comments and plain dollar-quoted literals are hidden; DO blocks and routine bodies stay visible.
-export function maskSql(sql) {
+export function maskSql(sql: string) {
   return scanSql(sql).masked;
 }
 
 const IDENT = String.raw`[A-Za-z_][\w$]*(?:\s*\.\s*[A-Za-z_][\w$]*)*`;
-const KEYWORD_RULES = [
+const KEYWORD_RULES: [string, RegExp][] = [
   ['DROP TABLE', /\bDROP\s+TABLE\b/gi],
   ['DROP COLUMN', /\bDROP\s+COLUMN\b/gi],
   ['SET NOT NULL', /\bSET\s+NOT\s+NULL\b/gi],
@@ -165,7 +181,7 @@ const ALLOWANCE = /^\s*--\s*migration-lint:\s*allow\s+(.+?)\s+[—–]\s+(.+?)\s
 export const PRISMA_WARNINGS = 'PRISMA WARNINGS';
 
 // 따옴표 식별자는 대소문자를 보존하고, 따옴표 없는 식별자는 PostgreSQL처럼 소문자로 접는다. 스키마는 무시한다.
-function identifierKey(raw) {
+function identifierKey(raw: string) {
   const last = raw.match(/(?:U&)?"(?:[^"]|"")*"|[^."\s]+/g)?.at(-1) ?? raw;
   if (last.startsWith('"')) return last.slice(1, -1).replaceAll('""', '"');
   if (/^U&"/i.test(last)) return last;
@@ -173,49 +189,47 @@ function identifierKey(raw) {
 }
 
 // 괄호 안을 비워 컬럼 정의의 최상위 키워드만 남긴다(CHECK (x IS NOT NULL)의 NOT NULL을 무시).
-function topLevel(text) {
-  let depth = 0;
+function topLevel(text: string) {
+  const state = { depth: 0 };
   return text.replace(/[\s\S]/g, (char) => {
-    if (char === '(') depth++;
-    const visible = depth === 0 ? char : char === '\n' ? '\n' : ' ';
-    if (char === ')') depth = Math.max(0, depth - 1);
+    if (char === '(') state.depth++;
+    const visible = state.depth === 0 ? char : char === '\n' ? '\n' : ' ';
+    if (char === ')') state.depth = Math.max(0, state.depth - 1);
     return visible;
   });
 }
 
-function splitTopLevel(text, separator) {
-  const parts = [];
-  let depth = 0;
-  let begin = 0;
-  for (let index = 0; index <= text.length; index++) {
-    const char = text[index];
-    if (char === '(') depth++;
-    if (char === ')') depth = Math.max(0, depth - 1);
-    if (index === text.length || (char === separator && depth === 0)) {
-      parts.push({ offset: begin, text: text.slice(begin, index) });
-      begin = index + 1;
+function splitTopLevel(text: string, separator: string) {
+  const parts: { offset: number; text: string }[] = [];
+  const state = { depth: 0, begin: 0 };
+  for (const [index, char] of (text + '\0').split('').entries()) {
+    if (char === '(') state.depth++;
+    if (char === ')') state.depth = Math.max(0, state.depth - 1);
+    if (index === text.length || (char === separator && state.depth === 0)) {
+      parts.push({ offset: state.begin, text: text.slice(state.begin, index) });
+      state.begin = index + 1;
     }
   }
   return parts;
 }
 
-function hasTopLevelWhere(text, from) {
-  let depth = 0;
+function hasTopLevelWhere(text: string, from: number) {
+  const state = { depth: 0 };
   const pattern = /[()]|\bWHERE\b/gi;
   pattern.lastIndex = from;
-  for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
-    if (match[0] === '(') depth++;
-    if (match[0] === ')') depth--;
-    if (depth === 0 && match[0].toUpperCase() === 'WHERE') return true;
-    if (depth < 0) return false;
+  for (const match of text.matchAll(pattern)) {
+    if (match[0] === '(') state.depth++;
+    if (match[0] === ')') state.depth--;
+    if (state.depth === 0 && match[0].toUpperCase() === 'WHERE') return true;
+    if (state.depth < 0) return false;
   }
   return false;
 }
 
-function alterTableViolations(action, isNewTable) {
+function alterTableViolations(action: string, isNewTable: boolean): IViolation[] {
   const trimmed = action.trimStart();
   const lead = action.length - trimmed.length;
-  const at = (rule) => [{ index: lead, rule }];
+  const at = (rule: string) => [{ index: lead, rule }];
   if (
     /^DROP\s+(?!(?:COLUMN|CONSTRAINT|NOT|DEFAULT|IDENTITY|EXPRESSION|TABLE|INDEX)\b)(?:IF\s+EXISTS\s+)?[A-Za-z_]/i.test(
       trimmed,
@@ -236,7 +250,7 @@ function alterTableViolations(action, isNewTable) {
       return at('ADD PRIMARY KEY');
     return [];
   }
-  const violations = [];
+  const violations: IViolation[] = [];
   const hasDefault = /\b(?:DEFAULT|GENERATED|(?:SMALL|BIG)?SERIAL[248]?)\b/i.test(body);
   if (/\b(?:NOT\s+NULL|PRIMARY\s+KEY)\b/i.test(body) && !hasDefault)
     violations.push(...at('ADD COLUMN NOT NULL'));
@@ -247,12 +261,19 @@ function alterTableViolations(action, isNewTable) {
   return violations;
 }
 
-function statementViolations(text, keyOf, newTables) {
-  const violations = [];
+function statementViolations(
+  text: string,
+  keyOf: (start: number, length: number) => string,
+  newTables: Set<string>,
+): IViolation[] {
+  const violations: IViolation[] = [];
   for (const [rule, pattern] of KEYWORD_RULES)
     for (const match of text.matchAll(pattern)) violations.push({ index: match.index, rule });
   for (const match of text.matchAll(DROP_OBJECT))
-    violations.push({ index: match.index, rule: `DROP ${match[1].toUpperCase().replace(/\s+/g, ' ')}` });
+    violations.push({
+      index: match.index,
+      rule: `DROP ${(match[1] ?? '').toUpperCase().replace(/\s+/g, ' ')}`,
+    });
   for (const match of text.matchAll(/\bRENAME\b/gi)) {
     const alter = [...text.slice(0, match.index).matchAll(/\bALTER\s+([A-Za-z]+)/gi)].at(-1);
     if (alter?.[1]?.toUpperCase() === 'INDEX') continue;
@@ -267,7 +288,9 @@ function statementViolations(text, keyOf, newTables) {
     if (!match[1] && !match[2]) violations.push({ index: match.index, rule: 'CREATE INDEX' });
   }
   for (const match of text.matchAll(ALTER_TABLE)) {
-    const [tableStart, tableEnd] = match.indices[1];
+    const span = match.indices?.[1];
+    if (!span) continue;
+    const [tableStart, tableEnd] = span;
     const isNewTable = newTables.has(keyOf(tableStart, tableEnd - tableStart));
     const actionsStart = match.index + match[0].length;
     for (const action of splitTopLevel(text.slice(actionsStart), ','))
@@ -283,43 +306,42 @@ function statementViolations(text, keyOf, newTables) {
   return violations;
 }
 
-export function checkMigration(sql) {
+export function checkMigration(sql: string) {
   const { masked, opaqueBodies } = scanSql(sql);
   const lines = sql.split('\n');
-  const lineStarts = [0];
-  for (let index = 0; index < sql.length; index++) if (sql[index] === '\n') lineStarts.push(index + 1);
-  const lineOf = (index) => {
-    let line = 0;
-    while (line + 1 < lineStarts.length && lineStarts[line + 1] <= index) line++;
-    return line + 1;
+  const lineStarts = [0, ...[...sql.matchAll(/\n/g)].map((match) => match.index + 1)];
+  const lineOf = (index: number) => {
+    const next = lineStarts.findIndex((start) => start > index);
+    return next < 0 ? lineStarts.length : next;
   };
-  const keyOf = (start, length) => identifierKey(sql.slice(start, start + length));
+  const keyOf = (start: number, length: number) => identifierKey(sql.slice(start, start + length));
   const newTables = new Set(
-    [...masked.matchAll(CREATE_TABLE)].map(({ indices: [, [tableStart, tableEnd]] }) =>
-      keyOf(tableStart, tableEnd - tableStart),
-    ),
+    [...masked.matchAll(CREATE_TABLE)].flatMap(({ indices }) => {
+      const span = indices?.[1];
+      return span ? [keyOf(span[0], span[1] - span[0])] : [];
+    }),
   );
-  const errors = [];
+  const errors: { line: number; rule: string }[] = [];
   // Prisma는 데이터 손실·실패 가능성이 있는 migration 맨 위에 Warnings 주석을 넣는다. 검토 후 지워야 한다.
   const warnings = /\/\*\s*Warnings:/.exec(sql);
   if (warnings) errors.push({ line: lineOf(warnings.index), rule: PRISMA_WARNINGS });
-  let begin = 0;
-  for (let end = 0; end <= masked.length; end++) {
-    if (end < masked.length && masked[end] !== ';') continue;
-    const segment = masked.slice(begin, end);
+  const position = { begin: 0 };
+  const ends = [...masked.matchAll(/;/g)].map((match) => match.index).concat(masked.length);
+  for (const end of ends) {
+    const segment = masked.slice(position.begin, end);
     const offset = segment.search(/\S/);
-    const start = begin + offset;
-    begin = end + 1;
+    const start = position.begin + offset;
+    position.begin = end + 1;
     if (offset < 0) continue;
     // 허용 표시는 문장 시작 줄 바로 위에 붙은 주석 줄들이고, 그 뒤 첫 문장 하나에만 적용한다.
     const line = lineOf(start);
     const allowed = new Set();
     if (!masked.slice(lineStarts[line - 1], start).trim())
-      for (let index = line - 2; index >= 0; index--) {
-        const allowance = lines[index]?.match(ALLOWANCE);
+      for (const comment of lines.slice(0, line - 1).reverse()) {
+        const allowance = comment.match(ALLOWANCE);
         if (!allowance) break;
         if ((allowance[2]?.trim().length ?? 0) >= 5)
-          allowed.add(allowance[1].trim().toUpperCase().replace(/\s+/g, ' '));
+          allowed.add((allowance[1] ?? '').trim().toUpperCase().replace(/\s+/g, ' '));
       }
     const violations = statementViolations(
       segment.slice(offset),
@@ -336,16 +358,24 @@ export function checkMigration(sql) {
   return errors.sort((left, right) => left.line - right.line);
 }
 
-const STATUS_LABELS = { M: 'modified', D: 'deleted', T: 'changed type' };
+const STATUS_LABELS: Record<string, string> = { M: 'modified', D: 'deleted', T: 'changed type' };
 
 // 이동한 migration을 새 파일로 보도록 rename 감지를 끈다. 이미 있던 migration.sql은 고치거나 지우지 않는다.
-export function migrationChanges({ base, head = 'HEAD', cwd = process.cwd() }) {
+export function migrationChanges({
+  base,
+  head = 'HEAD',
+  cwd = process.cwd(),
+}: {
+  base: string;
+  head?: string;
+  cwd?: string;
+}) {
   const args = ['diff', '--name-status', '--no-renames', '-z', `${base}...${head}`, '--', MIGRATION_PATHSPEC];
   const fields = execFileSync('git', args, { cwd, encoding: 'utf8' }).split('\0');
-  const added = [];
-  const changed = [];
-  for (let index = 0; index + 1 < fields.length; index += 2) {
-    const status = fields[index];
+  const added: string[] = [];
+  const changed: { file: string; status: string }[] = [];
+  for (const [index, status] of fields.entries()) {
+    if (index % 2 !== 0) continue;
     const file = fields[index + 1];
     if (!status || !file) continue;
     if (status === 'A') added.push(file);
@@ -354,16 +384,16 @@ export function migrationChanges({ base, head = 'HEAD', cwd = process.cwd() }) {
   return { added, changed };
 }
 
-function git(args, cwd) {
+function git(args: string[], cwd: string) {
   try {
     return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
     return null;
   }
 }
-const commitOf = (ref, cwd) =>
+const commitOf = (ref: string | null | undefined, cwd: string) =>
   ref && !/^0+$/.test(ref) ? git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], cwd) : null;
-const isAncestor = (ancestor, descendant, cwd) =>
+const isAncestor = (ancestor: string, descendant: string, cwd: string) =>
   git(['merge-base', '--is-ancestor', ancestor, descendant], cwd) !== null;
 
 // 기준은 HEAD와 다른 조상 중 (1) PR base·push before, (2) fallback(origin/develop)과의 merge-base,
@@ -377,17 +407,17 @@ export function migrationBase({
   deployRef = 'origin/main',
   fallback = 'origin/develop',
   cwd = process.cwd(),
-}) {
+}: IMigrationBaseOptions) {
   const headCommit = commitOf(head, cwd);
   if (!headCommit) throw new Error(`Migration compatibility: cannot resolve ${head}.`);
-  const mergeBase = (ref) => {
+  const mergeBase = (ref: string) => {
     const commit = commitOf(ref, cwd);
     return commit ? git(['merge-base', commit, headCommit], cwd) : null;
   };
   const deployCommit = commitOf(deployRef, cwd);
   for (const candidate of [requested, mergeBase(fallback), mergeBase(deployRef)]) {
     const commit = commitOf(candidate, cwd);
-    if (commit && commit !== headCommit && isAncestor(commit, headCommit, cwd)) return candidate;
+    if (commit && commit !== headCommit && isAncestor(commit, headCommit, cwd) && candidate) return candidate;
   }
   // HEAD가 이미 배포 브랜치에 있으면 새로 배포될 migration이 없다. push는 새 커밋을 가져오므로 빈 비교를 허용하지 않는다.
   if (event !== 'push' && deployCommit && isAncestor(headCommit, deployCommit, cwd)) return headCommit;
@@ -397,21 +427,27 @@ export function migrationBase({
   );
 }
 
-function explain(rule) {
+function explain(rule: string) {
   if (rule === PRISMA_WARNINGS)
     return `${rule}: review the Prisma warning, split risky steps, then delete the Warnings comment.`;
   return `${rule} requires expand/deploy/contract or a reviewed migration-lint allowance.`;
 }
 
-export function main({ env = process.env, cwd = process.cwd() } = {}) {
-  let base;
-  try {
-    base = migrationBase({ requested: env.MIGRATION_BASE_REF, event: env.GITHUB_EVENT_NAME, cwd });
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exitCode = 1;
-    return;
-  }
+export function main({
+  env = process.env,
+  cwd = process.cwd(),
+}: { env?: NodeJS.ProcessEnv; cwd?: string } = {}) {
+  const resolveBase = () => {
+    try {
+      return migrationBase({ requested: env.MIGRATION_BASE_REF, event: env.GITHUB_EVENT_NAME, cwd });
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+      return null;
+    }
+  };
+  const base = resolveBase();
+  if (!base) return;
   const { added, changed } = migrationChanges({ base, cwd });
   const errors = [
     ...changed.map(

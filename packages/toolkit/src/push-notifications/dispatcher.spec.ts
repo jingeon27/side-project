@@ -1,3 +1,4 @@
+import { range } from 'es-toolkit';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -106,7 +107,7 @@ describe('durable Expo dispatch', () => {
     const state = setup();
     state.add('1');
     state.fetch.mockResolvedValue(new Response('provider detail must not leak', { status: 503 }));
-    for (let attempt = 0; attempt < 6; attempt++)
+    for (const attempt of range(6))
       await state.dispatcher.run(new Date(now.getTime() + attempt * 2 * 60 * 60_000));
     expect(state.jobs.get('1')).toMatchObject({ status: 'FAILED', attempts: 6 });
     state.add('old');

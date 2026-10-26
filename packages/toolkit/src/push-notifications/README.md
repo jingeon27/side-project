@@ -20,6 +20,6 @@ Game Feedback와 Photo Contest가 같은 Expo HTTP 전송·티켓·영수증 경
 
 Game Feedback는 팔로우 새 글·답변/댓글/대댓글·채팅, Photo Contest는 내 글 댓글·내 댓글 답글·대회 시작/종료·가입 승인/거절·관리자 가입 신청 알림을 보낸다. Photo Contest에 개인 팔로우/1:1 채팅을 추가하지 않는다.
 
-검사: `yarn workspace @side/push-notifications check` 및 각 API의 격리 DB 통합 테스트·bridge/mobile/web 테스트. 공통 패키지의 빌드는 각 API 명령과 Docker 빌드에서 먼저 실행하고 런타임 이미지에도 포함한다.
+검사: `yarn workspace @side/toolkit check` 및 각 API의 격리 DB 통합 테스트·bridge/mobile/web 테스트. 공통 패키지의 빌드는 각 API 명령과 Docker 빌드에서 먼저 실행하고 런타임 이미지에도 포함한다.
 
 제공자 문서: [Expo setup](https://docs.expo.dev/push-notifications/push-notifications-setup/), [티켓·영수증](https://docs.expo.dev/push-notifications/sending-notifications/), [OS API](https://docs.expo.dev/versions/latest/sdk/notifications/).

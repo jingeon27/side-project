@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { checkMigration, migrationBase, migrationChanges } from './check-migrations.mjs';
+import { checkMigration, migrationBase, migrationChanges } from './check-migrations';
 import { MIGRATIONS, withGitRepo } from './test/git-repo';
 
 const rules = (sql: string) => checkMigration(sql).map((error) => error.rule);

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import { match, P } from 'ts-pattern';
+
 import { ExpoPushTransport, PushProviderError, type IPushMessage } from './index';
 
 export interface IPushJob {
@@ -80,13 +82,13 @@ export class PushDispatcher {
           await this.retry(item, now, ticket?.status === 'error' && ticket.code === 'MessageRateExceeded');
         }
       } catch (error) {
-        for (const item of pending)
-          await this.retry(
-            item,
-            now,
-            error instanceof PushProviderError && error.retryable,
-            error instanceof PushProviderError ? error.retryAfterMs : undefined,
-          );
+        const failure = match(error)
+          .with(P.instanceOf(PushProviderError), ({ retryable, retryAfterMs }) => ({
+            retryable,
+            delay: retryAfterMs,
+          }))
+          .otherwise(() => ({ retryable: false, delay: undefined }));
+        for (const item of pending) await this.retry(item, now, failure.retryable, failure.delay);
       }
     }
     if (receipts.length) {
