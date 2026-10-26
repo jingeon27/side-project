@@ -94,5 +94,36 @@
     "preferences": "Analytics settings",
     "revoke": "Withdraw consent",
     "close": "Close"
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "updated": "Effective October 26, 2026",
+    "intro": "This blog is read without an account or comments, and collects visit statistics to improve its articles and usability. Analytics tools are loaded only in browsers set to the Korean time zone (Asia/Seoul); they are not loaded for other visitors.",
+    "sections": [
+      {
+        "heading": "Visit statistics (Google Analytics)",
+        "body": "The blog sends the visited page address (without search terms or hash), the previous page address, the page title, and events such as language changes, shares, category and tag selections, and whether a search was made. Search terms themselves are never sent. Google Analytics also processes device and browser information and an approximate location derived from the IP address, and stores cookies starting with _ga. It is on unless you turn it off in analytics settings."
+      },
+      {
+        "heading": "Heatmaps and session replay (Microsoft Clarity)",
+        "body": "Only if you choose ‘Allow heatmaps too’ in analytics settings, the blog records click and scroll positions and page movement to build heatmaps and session replays. The search field is masked. Clarity stores cookies such as _clck and _clsk."
+      },
+      {
+        "heading": "Processors and international transfer",
+        "body": "Collected information is processed by Google LLC and Microsoft Corporation and may be stored on servers outside Korea, including in the United States. Advertising storage and ad personalization signals are not used."
+      },
+      {
+        "heading": "Retention",
+        "body": "Data is kept for the retention period configured in each service and is then deleted by that service."
+      },
+      {
+        "heading": "Opting out and changing your choice",
+        "body": "Use ‘Analytics settings’ at the bottom right to choose ‘Statistics only’ or ‘Turn off all’. ‘Turn off all’ deletes the Google Analytics cookies and stops sending data; turning off heatmaps also stops Clarity. Your choice is stored only in this browser."
+      },
+      {
+        "heading": "Contact",
+        "body": "Send questions about this notice to the email address below."
+      }
+    ]
   }
 }
