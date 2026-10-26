@@ -46,6 +46,6 @@ description: Game Feedback 웹(apps/web)에서 글쓰기·수정 폼(widgets/pos
 - e2e: `e2e/compose.spec.ts`(분류 전환 중 초안 유지), `e2e/community-enhancements.spec.ts`(사진·동영상 삽입, 실패 후 재시도, `page.waitForEvent('filechooser')`), `e2e/chat-media.spec.ts`(`getByLabel('이미지 또는 동영상 첨부').setInputFiles`). e2e API는 loopback S3 대역을 사용하며 브라우저도 직접 전송한다. 실제 AWS 권한·CORS 수신은 로컬 성공으로 기록하지 않는다.
 
 ```sh
-corepack yarn workspace @game-feedback/web test src/shared/ui/rich-text src/features/post-media src/features/chat/api
-corepack yarn workspace @game-feedback/web test:e2e e2e/compose.spec.ts e2e/community-enhancements.spec.ts e2e/chat-media.spec.ts
+yarn workspace @game-feedback/web test src/shared/ui/rich-text src/features/post-media src/features/chat/api
+yarn workspace @game-feedback/web test:e2e e2e/compose.spec.ts e2e/community-enhancements.spec.ts e2e/chat-media.spec.ts
 ```

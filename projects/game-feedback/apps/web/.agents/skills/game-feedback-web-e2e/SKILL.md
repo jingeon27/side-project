@@ -43,18 +43,18 @@ description: Game Feedback 웹(apps/web)의 Playwright e2e를 작성·실행할 
 ## 실행 (side 루트)
 
 ```sh
-corepack yarn workspace @game-feedback/web exec playwright install chromium   # 처음 한 번
-corepack yarn workspace @side/game-feedback codegen
-corepack yarn workspace @side/game-feedback db:test:start
-corepack yarn workspace @game-feedback/web test:e2e e2e/compose.spec.ts
-corepack yarn workspace @game-feedback/web test:e2e e2e/chat.spec.ts -g "<테스트 이름 일부>"
-corepack yarn workspace @game-feedback/web test:test-auth
-corepack yarn workspace @game-feedback/web test:prefetch
-GF_OBSERVABILITY_PRODUCTION=true corepack yarn workspace @game-feedback/web test:observability
-corepack yarn workspace @side/game-feedback db:test:stop
+yarn workspace @game-feedback/web exec playwright install chromium   # 처음 한 번
+yarn workspace @side/game-feedback codegen
+yarn workspace @side/game-feedback db:test:start
+yarn workspace @game-feedback/web test:e2e e2e/compose.spec.ts
+yarn workspace @game-feedback/web test:e2e e2e/chat.spec.ts -g "<테스트 이름 일부>"
+yarn workspace @game-feedback/web test:test-auth
+yarn workspace @game-feedback/web test:prefetch
+GF_OBSERVABILITY_PRODUCTION=true yarn workspace @game-feedback/web test:observability
+yarn workspace @side/game-feedback db:test:stop
 ```
 
-- 실패한 테스트의 trace는 `test-results/` 또는 `.e2e-build/*-results/`에 남는다(`corepack yarn workspace @game-feedback/web exec playwright show-trace <trace.zip>`).
+- 실패한 테스트의 trace는 `test-results/` 또는 `.e2e-build/*-results/`에 남는다(`yarn workspace @game-feedback/web exec playwright show-trace <trace.zip>`).
 
 ## 실제 모니터링 전송 검사
 
