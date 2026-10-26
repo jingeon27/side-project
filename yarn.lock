@@ -1656,7 +1656,7 @@ __metadata:
     "@mdx-js/loader": "npm:^3.1.1"
     "@mdx-js/mdx": "npm:^3.1.1"
     "@mdx-js/react": "npm:^3.1.1"
-    "@next/mdx": "npm:16.4.2"
+    "@next/mdx": "npm:16.4.3"
     "@playwright/test": "npm:^1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
     "@side/config": "workspace:*"
@@ -1667,22 +1667,22 @@ __metadata:
     "@testing-library/user-event": "npm:^14.6.0"
     "@types/mdx": "npm:^2.0.13"
     "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:^19.2.0"
-    "@types/react-dom": "npm:^19.2.0"
+    "@types/react": "npm:~19.3.0"
+    "@types/react-dom": "npm:~19.3.0"
     "@vitejs/plugin-react": "npm:^5.0.0"
     cmdk: "npm:^1.1.1"
     eslint: "npm:^9.39.0"
-    eslint-config-next: "npm:16.4.2"
+    eslint-config-next: "npm:16.4.3"
     github-slugger: "npm:^2.0.0"
     image-size: "npm:^2.0.2"
     jiti: "npm:^2.6.1"
     jsdom: "npm:^29.0.0"
     mdast-util-to-string: "npm:^4.0.0"
-    next: "npm:16.4.2"
+    next: "npm:16.4.3"
     next-intl: "npm:^4.14.9"
     prettier: "npm:^3.9.0"
-    react: "npm:^19.2.4"
-    react-dom: "npm:^19.2.4"
+    react: "npm:~19.3.1"
+    react-dom: "npm:~19.3.1"
     rehype-pretty-code: "npm:^0.14.5"
     rehype-slug: "npm:^6.0.0"
     remark-gfm: "npm:^4.0.1"
@@ -4815,16 +4815,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/eslint-plugin-next@npm:16.4.2":
-  version: 16.4.2
-  resolution: "@next/eslint-plugin-next@npm:16.4.2"
-  dependencies:
-    "@eslint-community/eslint-utils": "npm:4.9.1"
-    fast-glob: "npm:3.3.1"
-  checksum: 10c0/369123319cba8a05d0b9985beb8d6dec27cf333749eaa714b7c8cdc01c2df88d77c0adf3c51b7f541341a53dccf0271ff3a5ac434d1c99862602809a1038f563
-  languageName: node
-  linkType: hard
-
 "@next/eslint-plugin-next@npm:16.4.3":
   version: 16.4.3
   resolution: "@next/eslint-plugin-next@npm:16.4.3"
@@ -4835,9 +4825,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/mdx@npm:16.4.2":
-  version: 16.4.2
-  resolution: "@next/mdx@npm:16.4.2"
+"@next/mdx@npm:16.4.3":
+  version: 16.4.3
+  resolution: "@next/mdx@npm:16.4.3"
   dependencies:
     source-map: "npm:^0.7.0"
   peerDependencies:
@@ -4848,7 +4838,7 @@ __metadata:
       optional: true
     "@mdx-js/react":
       optional: true
-  checksum: 10c0/a2931b14c875d91d5d5c984e8552ab7e467f0f7032a839bd677a28d372d8b78ba3a9933910814deb4aafbfa2852dc01e70767230e49f92475d3329d837109d7b
+  checksum: 10c0/a76ab81f586bebe972b7e0e2cdf353068d49212871999c8980d38d2ad71326c6dc377c71a858a7146a455046d2a6e0aceda57505b257794e8a192e6dca4018e1
   languageName: node
   linkType: hard
 
@@ -12964,29 +12954,6 @@ __metadata:
   peerDependencies:
     eslint: ">=8.10"
   checksum: 10c0/d9a4234b3f8e2e8d7cb535ab7347288d11862a1eb331921b32fdac19b196cd8665a7d0e10cde246e9a48964a80c981dc20dc5ca89775cdc37dddb67c04749d9f
-  languageName: node
-  linkType: hard
-
-"eslint-config-next@npm:16.4.2":
-  version: 16.4.2
-  resolution: "eslint-config-next@npm:16.4.2"
-  dependencies:
-    "@next/eslint-plugin-next": "npm:16.4.2"
-    eslint-import-resolver-node: "npm:^0.3.6"
-    eslint-import-resolver-typescript: "npm:^3.5.2"
-    eslint-plugin-import: "npm:^2.32.0"
-    eslint-plugin-jsx-a11y: "npm:^6.10.0"
-    eslint-plugin-react: "npm:^7.37.0"
-    eslint-plugin-react-hooks: "npm:^7.1.0"
-    globals: "npm:16.4.0"
-    typescript-eslint: "npm:^8.56.0"
-  peerDependencies:
-    eslint: ">=9.0.0"
-    typescript: ">=3.3.1"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/b3119b8eec1e1991f91f539e590322084ec5f1d8ea3099842c1e7a99fd19a7258649d00b1d5cc2f99961c94c8c77032e8903a9d35447c760c9bbd9be5de3d9e8
   languageName: node
   linkType: hard
 
