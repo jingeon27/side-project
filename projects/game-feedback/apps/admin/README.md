@@ -27,7 +27,7 @@ unset admin_password
 # 비밀번호 변경 시 create를 reset-password로 바꾼다. 기존 관리자 세션도 모두 폐기된다.
 ```
 
-로컬 전용 API를 쓰는 경우 프로젝트의 `db:sync` 후 API 디렉터리에서 Node 24로 `node --env-file=../../.env --require tsx/cjs scripts/operator.mjs create admin`을 실행하고 같은 방식으로 stdin을 전달한다. 기존 개발 DB를 초기화하지 않는다. 계정을 만들면 프로필 인증 신청의 VERIFICATION 문의가 그 관리자의 문의함으로 배정된다.
+로컬 전용 API를 쓰는 경우 프로젝트의 `db:sync` 후 API 디렉터리에서 Node 24로 `node --env-file=../../.env --require tsx/cjs scripts/operator.ts create admin`을 실행하고 같은 방식으로 stdin을 전달한다. 기존 개발 DB를 초기화하지 않는다. 계정을 만들면 프로필 인증 신청의 VERIFICATION 문의가 그 관리자의 문의함으로 배정된다.
 
 문의함의 채팅 상단에서 게임 태그와 현재 프로필 인증 상태를 확인하고 인증·미인증을 바로 선택한다. 성공하면 문의 목록과 사용자 관리에 반영하며 실패하면 기존 상태와 재시도 버튼을 유지한다. 문의 채팅 답변/처리 완료/재개, 신고함에서 검토/반려/콘텐츠 숨김, 사용자 관리에서 ID 조회/프로필 인증 승인·해제/사유를 입력한 밴·해제를 제공한다. 문의 메시지는 5초 주기로 갱신하며 실패한 답변 초안과 재전송 ID를 유지한다. 감사 기록과 권한은 API가 관리한다.
 
