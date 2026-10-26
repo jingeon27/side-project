@@ -24,7 +24,7 @@ updates:
     groups:
       base-images:
         patterns: ['*']
-    # 런타임 메이저는 .nvmrc(Node 24 LTS)와 함께 직접 올린다. Node 25부터 corepack이 빠져 이미지 빌드가 깨진다.
+    # 런타임 메이저는 .nvmrc(Node 24 LTS)와 함께 호환성을 검증한 뒤 직접 올린다.
     ignore:
       - dependency-name: node
         update-types: ['version-update:semver-major']
