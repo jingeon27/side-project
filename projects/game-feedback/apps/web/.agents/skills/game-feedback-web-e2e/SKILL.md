@@ -18,7 +18,7 @@ description: Game Feedback 웹(apps/web)의 Playwright e2e를 작성·실행할 
 - API 서버 명령은 `@side/game-feedback db:test:sync` → `@game-feedback/api db:seed` → `@game-feedback/api test:server`다. `test:server`는 PORT 4301·4302·4304·4353·4354와 `WEB_ORIGIN=http://127.0.0.1:<PORT-1000>`만 받고, Google·Supercell 키가 있으면 시작하지 않는다. 새 설정은 이 포트 중 하나를 쓴다(3302/4302는 mobile, 3304/4304는 admin e2e).
 - DB URL은 `TEST_DATABASE_URL`(기본 `postgresql://game_feedback:game_feedback_local@127.0.0.1:55444/game_feedback_test`)만 허용하며 실행마다 `gf_test_web_<uuid>` 스키마를 만든다(`GF_E2E_SCHEMA`로 지정 가능, `gf_test_` 접두 필수). `e2e/teardown.ts`가 그 스키마만 DROP한다.
 - 기본 설정은 Sentry·Amplitude 키를 빈 값으로 덮는다(`telemetry-disabled.spec.ts`). observability 설정만 가짜 키(`observability-test-key`, `https://test@sentry.invalid/1`)를 넣고 `context.route`로 가로챈다. `GAME_FEEDBACK_SITE_URL=https://feedback.example`, `ENVIRONMENT=test`.
-- `GF_PREFETCH_TESTING=true`는 `next.config.mjs`의 `exposeTestingApiInProductionBuild`를 켠다. 일반 build에 넣지 않는다.
+- `GF_PREFETCH_TESTING=true`는 `next.config.ts`의 `exposeTestingApiInProductionBuild`를 켠다. 일반 build에 넣지 않는다.
 - 모든 설정이 실행마다 web production build를 한다(observability dev 모드 제외). 개발 오버레이 같은 dev 동작은 기본 e2e에 없다.
 
 ## 실행 전

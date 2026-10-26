@@ -9,7 +9,7 @@
     "typecheck": "next typegen && tsc7 --noEmit",
     "test:e2e": "playwright test",
     "lint": "eslint .",
-    "test": "node scripts/test.mjs",
+    "test": "node scripts/test.ts",
     "test:prefetch": "playwright test --config playwright.prefetch.config.ts",
     "test:test-auth": "playwright test --config playwright.test-auth.config.ts",
     "test:observability": "playwright test --config playwright.observability.config.ts",
@@ -57,5 +57,10 @@
     "typescript": "6.0.2",
     "vitest": "^4.1.0"
   },
-  "type": "module"
+  "type": "module",
+  "postcss": {
+    "plugins": {
+      "@tailwindcss/postcss": {}
+    }
+  }
 }
