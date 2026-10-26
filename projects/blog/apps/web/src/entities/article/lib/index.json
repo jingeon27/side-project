@@ -1,16 +1,21 @@
 [
   {
     "category": "engineering",
-    "tags": ["side-project", "product", "architecture", "nextjs"],
+    "tags": ["side-project", "product", "architecture", "nextjs", "ai-workflow", "observability", "testing"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-25T13:43:48.284Z",
-    "title": "사이드 프로젝트 저장소를 만들고 서비스를 늘려 간 과정",
-    "description": "여러 서비스를 병렬로 만들면서 모노레포와 공통 패키지를 구성한 과정, 사진 서비스와 게임 피드백, 블로그의 설계 경험을 정리했어요.",
+    "updatedAt": "2026-10-26T20:03:00+09:00",
+    "title": "AI와 사이드 프로젝트를 만들며 바꾼 것들",
+    "description": "사진 커뮤니티와 Game Mate, 블로그를 만들며 제품 범위와 UI를 바꿨어요. AI 결과 검토, 캐시와 S3 업로드, Sentry와 Amplitude MCP 수신 검증까지 정리했어요.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
-    "keywords": ["사이드 프로젝트", "제품 설계", "게임 피드백", "REST", "캐시", "MDX", "모노레포"],
+    "keywords": ["사이드 프로젝트", "AI workflow", "캐시", "S3", "Sentry", "MCP", "모노레포"],
     "id": "side-project-design",
     "locale": "ko",
     "toc": [
+      {
+        "id": "에이전트가-준-완성본을-검토해요",
+        "title": "에이전트가 준 완성본을 검토해요",
+        "level": 2
+      },
       {
         "id": "처음에는-비공개-사진-대회였어요",
         "title": "처음에는 비공개 사진 대회였어요",
@@ -19,6 +24,11 @@
       {
         "id": "홈-화면에서-바로-사진을-볼-수-있게-했어요",
         "title": "홈 화면에서 바로 사진을 볼 수 있게 했어요",
+        "level": 2
+      },
+      {
+        "id": "가입과-프로필-화면도-다시-다듬었어요",
+        "title": "가입과 프로필 화면도 다시 다듬었어요",
         "level": 2
       },
       {
@@ -47,6 +57,16 @@
         "level": 2
       },
       {
+        "id": "파일은-api-서버를-거치지-않고-올리게-했어요",
+        "title": "파일은 API 서버를 거치지 않고 올리게 했어요",
+        "level": 2
+      },
+      {
+        "id": "수집-설정-뒤에-실제로-들어온-데이터도-확인했어요",
+        "title": "수집 설정 뒤에 실제로 들어온 데이터도 확인했어요",
+        "level": 2
+      },
+      {
         "id": "게임-프로필-조회와-계정-소유-확인을-나눴어요",
         "title": "게임 프로필 조회와 계정 소유 확인을 나눴어요",
         "level": 2
@@ -67,7 +87,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 11,
+    "readingMinutes": 16,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -75,16 +95,21 @@
   },
   {
     "category": "engineering",
-    "tags": ["side-project", "product", "architecture", "nextjs"],
+    "tags": ["side-project", "product", "architecture", "nextjs", "ai-workflow", "observability", "testing"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-25T13:43:48.284Z",
-    "title": "How My Side Project Repository Grew Beyond the First Service",
-    "description": "Why I began planning several services in parallel, and how I organized a monorepo, shared packages, a photo service, game feedback, and a personal blog.",
+    "updatedAt": "2026-10-26T20:03:00+09:00",
+    "title": "What I Changed While Building Side Projects with AI",
+    "description": "Revising the scope and UI of a photo community, Game Mate, and a blog: reviewing AI work, designing caching and S3 uploads, and verifying Sentry and Amplitude data through MCP.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
-    "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"],
+    "keywords": ["side projects", "AI workflow", "caching", "S3", "Sentry", "MCP", "monorepo"],
     "id": "side-project-design",
     "locale": "en",
     "toc": [
+      {
+        "id": "reviewing-the-agents-completed-work",
+        "title": "Reviewing the agent's completed work",
+        "level": 2
+      },
       {
         "id": "the-first-service-was-a-private-photo-contest",
         "title": "The first service was a private photo contest",
@@ -93,6 +118,11 @@
       {
         "id": "showing-photos-as-soon-as-the-home-screen-opens",
         "title": "Showing photos as soon as the home screen opens",
+        "level": 2
+      },
+      {
+        "id": "revising-signup-and-profile-editing",
+        "title": "Revising signup and profile editing",
         "level": 2
       },
       {
@@ -121,6 +151,16 @@
         "level": 2
       },
       {
+        "id": "uploading-files-without-passing-through-the-api-server",
+        "title": "Uploading files without passing through the API server",
+        "level": 2
+      },
+      {
+        "id": "checking-what-the-collection-services-actually-received",
+        "title": "Checking what the collection services actually received",
+        "level": 2
+      },
+      {
         "id": "i-separated-profile-lookup-from-account-ownership",
         "title": "I separated profile lookup from account ownership",
         "level": 2
@@ -141,7 +181,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 10,
+    "readingMinutes": 14,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"

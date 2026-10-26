@@ -109,6 +109,33 @@ test('edited article covers load in the body and match the social preview image'
   }
 });
 
+test('side-project screenshots and monitoring diagram load in both article languages', async ({ page }) => {
+  for (const locale of ['ko', 'en'] as const) {
+    const entry = index.find(
+      (candidate) => candidate.id === 'side-project-design' && candidate.locale === locale,
+    )!;
+    await page.goto(`/${locale}/blog/${encodeURIComponent(entry.slug)}`);
+    await expect(page.getByRole('heading', { level: 1, name: entry.title })).toBeVisible();
+
+    for (const name of ['01-service-screens', '09-product-interactions', '08-monitoring-mcp']) {
+      const image = page.locator(`.article-prose img[src*="${name}.png"]`);
+      await image.scrollIntoViewIfNeeded();
+      await expect(image).toBeVisible();
+      await expect(image).toHaveAttribute('alt', /\S/);
+      await expect
+        .poll(() =>
+          image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+        )
+        .toBe(true);
+      const source = new URL((await image.getAttribute('src'))!, page.url());
+      expect(source.searchParams.get('url') || source.pathname).toBe(
+        `/images/posts/side-project-design/${name}.png`,
+      );
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    }
+  }
+});
+
 test('unified suggestions apply an exact tag without requiring it in the title', async ({ page }) => {
   await page.goto('/ko/blog');
   const search = page.getByRole('combobox', { name: ko.common.search });

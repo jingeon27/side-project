@@ -42,4 +42,22 @@ describe('edited article contracts', () => {
       expect(source).toContain(`](${workflowPath})`);
     },
   );
+
+  it.each(editions)(
+    'keeps implementation evidence and current screenshots in the side-project article in $locale',
+    async ({ locale }) => {
+      const source = await readFile(path.join(contentRoot, 'side-project-design', `${locale}.mdx`), 'utf8');
+
+      for (const image of ['01-service-screens', '09-product-interactions', '08-monitoring-mcp']) {
+        expect(source).toContain(`/images/posts/side-project-design/${image}.png`);
+      }
+      for (const evidence of [
+        'projects/game-feedback/apps/api/src/cache-invalidation',
+        'projects/game-feedback/docs/observability.md',
+        'projects/photo-contest/docs/observability.md',
+      ]) {
+        expect(source).toContain(evidence);
+      }
+    },
+  );
 });

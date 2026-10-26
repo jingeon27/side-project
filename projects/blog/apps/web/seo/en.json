@@ -24,10 +24,10 @@
   },
   "posts": {
     "side-project-design": {
-      "title": "How My Side Project Repository Grew Beyond the First Service",
+      "title": "What I Changed While Building Side Projects with AI",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
-      "description": "Why I began planning several services in parallel, and how I organized a monorepo, shared packages, a photo service, game feedback, and a personal blog.",
-      "keywords": ["side projects", "product design", "game feedback", "REST", "caching", "MDX", "monorepo"]
+      "description": "Revising the scope and UI of a photo community, Game Mate, and a blog: reviewing AI work, designing caching and S3 uploads, and verifying Sentry and Amplitude data through MCP.",
+      "keywords": ["side projects", "AI workflow", "caching", "S3", "Sentry", "MCP", "monorepo"]
     },
     "puppeteer-event-lifecycle": {
       "title": "Waiting for Puppeteer requests and responses without leaking listeners",
