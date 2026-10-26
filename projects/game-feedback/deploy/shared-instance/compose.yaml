@@ -23,8 +23,6 @@ x-api: &api
   SENTRY_DSN: ${SENTRY_DSN:-}
   SENTRY_RELEASE: ${RELEASE_SHA:-}
   NODE_OPTIONS: --max-old-space-size=256
-x-ca: &ca
-  - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro
 x-logging: &logging
   driver: json-file
   options: { max-size: 10m, max-file: '3' }
@@ -35,11 +33,10 @@ services:
     restart: unless-stopped
     init: true
     environment: *api
-    volumes:
-      - ${SIDE_DEPLOY_ROOT:-/srv/side-project}/certs/rds-ca.pem:/run/rds/ca.pem:ro
-      - runtime:/app/projects/game-feedback/.data
+    volumes: [runtime:/app/projects/game-feedback/.data]
     ports: ['127.0.0.1:${GF_API_BIND_PORT:-4300}:4300']
-    networks: { edge: { aliases: [gf-api] } }
+    # The database alias shared-postgres resolves only on the service's internal db network; web never joins it.
+    networks: { edge: { aliases: [gf-api] }, db: {} }
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     healthcheck:
@@ -107,8 +104,7 @@ services:
     init: true
     entrypoint: [node]
     environment: *api
-    volumes: *ca
-    networks: [edge]
+    networks: [edge, db]
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
@@ -123,8 +119,7 @@ services:
     environment:
       <<: *api
       DATABASE_URL: ${DATABASE_MIGRATION_URL:?Set DATABASE_MIGRATION_URL}
-    volumes: *ca
-    networks: [edge]
+    networks: [edge, db]
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']
     mem_limit: 256m
@@ -133,6 +128,7 @@ services:
     logging: *logging
 networks:
   edge: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-edge' }
+  db: { external: true, name: '${SIDE_NETWORK_PREFIX:-side}-game-feedback-db' }
 volumes:
   runtime:
     name: ${SIDE_NETWORK_PREFIX:-side}-game-feedback-runtime
