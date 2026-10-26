@@ -40,11 +40,19 @@ permissions:
 jobs:
   shared-contract:
     uses: ./.github/workflows/shared-instance.yml
+    secrets: inherit
 
   containers:
     needs: shared-contract
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      S3_REGION: ap-northeast-2
+      S3_KEY_PREFIX: ${{ vars.S3_KEY_PREFIX || 'photo-contest/ci' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
@@ -101,6 +109,12 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      S3_REGION: ap-northeast-2
+      S3_KEY_PREFIX: ${{ vars.S3_KEY_PREFIX || 'photo-contest/ci' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
@@ -149,6 +163,12 @@ jobs:
     env:
       CI: 'true'
       TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      S3_REGION: ap-northeast-2
+      S3_KEY_PREFIX: ${{ vars.S3_KEY_PREFIX || 'photo-contest/ci' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }

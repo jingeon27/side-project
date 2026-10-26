@@ -49,6 +49,12 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      GF_S3_BUCKET: ${{ vars.GF_S3_BUCKET }}
+      GF_S3_REGION: ap-northeast-2
+      GF_S3_KEY_PREFIX: ${{ vars.GF_S3_KEY_PREFIX || 'game-feedback/ci' }}
+      GF_S3_ACCESS_KEY_ID: ${{ secrets.GF_S3_ACCESS_KEY_ID }}
+      GF_S3_SECRET_ACCESS_KEY: ${{ secrets.GF_S3_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
@@ -102,6 +108,7 @@ jobs:
 
   shared-contract:
     uses: ./.github/workflows/shared-instance.yml
+    secrets: inherit
 
   # Publishes the exact image archive verified by the shared-instance contract.
   publish:
