@@ -38,12 +38,12 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 1. GA4 속성과 웹 데이터 스트림을 만들고 측정 ID를 `NEXT_PUBLIC_GA_MEASUREMENT_ID`에 지정합니다.
 2. **향상된 측정의 Page views → 고급 설정 → 브라우저 방문 기록 이벤트에 기반한 페이지 변경을 끕니다.** 앱은 `send_page_view: false`로 초기화하고 경로 변경마다 수동 `page_view`를 한 번 전송합니다. GA4의 이 설정이 켜져 있으면 중복 페이지뷰가 발생할 수 있습니다. [공식 페이지뷰 문서](https://developers.google.com/analytics/devguides/collection/ga4/views?hl=ko)
 3. 향상된 측정의 사이트 검색 수집도 끕니다. 앱 검색은 로컬 제목·태그 필터이며 `search_performed`에는 `has_query`만 보냅니다. 외부 링크 측정은 링크 URL에 민감한 정보가 포함되지 않는지 확인한 뒤 활성화합니다.
-4. 브라우저 시간대가 유럽(EEA·영국·스위스를 포함한 `Europe/*`, 대서양·북극의 EEA 지역)이거나 UTC처럼 지역을 알 수 없으면 고르기 전까지 Google·Microsoft script를 로드하지 않습니다(opt-in). 그 밖의 방문자에게는 배너로 한 번 안내하고 고르기 전에도 GA4 방문 통계를 보냅니다(opt-out). ‘모두 끄기’를 고르면 GA 쿠키를 지우고 전송을 멈추며, 하단의 통계 설정 버튼으로 다시 고를 수 있습니다.
+4. 동의 배너는 두지 않습니다. 모든 방문자에게서 GA4 방문 통계와 Clarity를 수집하고(opt-out), 방문자는 `/ko/privacy`·`/en/privacy`의 ‘수집 끄기’로 이 브라우저의 수집을 끄거나 다시 켭니다. 끄면 GA 쿠키를 지우고 전송을 멈추며 Clarity도 멈춥니다.
 5. DebugView·실시간 보고서에서 첫 진입과 클라이언트 경로 전환마다 한 번만 `page_view`가 발생하는지 확인합니다.
 
 페이지 URL과 referrer는 query·fragment를 제거해 전송합니다. 광고 관련 저장·개인화·Google signals는 비활성화합니다. 커스텀 이벤트는 `language_changed`, `article_shared`, `category_selected`, `tag_selected`, `search_performed`이며 이벤트별 허용 속성만 전송합니다. 브라우저 차단이나 SDK 실패가 글 읽기 기능을 막지 않도록 처리합니다.
 
-수집 범위, 처리 위탁과 국외 이전, 끄는 방법은 `/ko/privacy`·`/en/privacy`의 개인정보 처리 안내에 있고 푸터와 배너에서 연결합니다. 보관 기간은 GA4·Clarity의 실제 데이터 보관 설정을 확인해 문구에 반영합니다. 이 안내는 법률 검토를 거친 문서가 아니므로 운영 전에 검토합니다.
+수집 범위, 처리 위탁과 국외 이전, 끄는 방법은 푸터에서 연결한 개인정보 처리 안내에 있습니다. 보관 기간은 GA4·Clarity의 실제 데이터 보관 설정을 확인해 문구에 반영합니다. GA4는 유럽(EEA·영국·스위스) 방문자에게도 사전 동의 없이 쿠키를 쓰므로 해당 지역 규정상 위반 소지가 남습니다. 이 안내는 법률 검토를 거친 문서가 아니므로 운영 전에 검토합니다.
 
 ## Search Console
 
@@ -74,8 +74,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 - `/ko`, `/en`, 글·카테고리·태그·About, 없는 주소의 404
 - Canonical, `hreflang`, OG 이미지, JSON-LD, sitemap, 두 언어의 RSS
 - 모바일 가로 넘침, 테마 유지, 검색, 목차, 공유와 코드 복사
-- 유럽 밖 시간대: 첫 방문부터 단일 페이지뷰, ‘히트맵까지 허용’ 뒤에만 Clarity 로드, ‘모두 끄기’ 뒤 전송 중단
-- 유럽·UTC 시간대: 고르기 전 외부 분석 요청 없음, ‘방문 통계만’ 뒤 GA만 로드
+- 첫 방문부터 단일 페이지뷰와 Clarity 로드, 개인정보 처리 안내의 ‘수집 끄기’ 뒤 전송 중단, ‘다시 켜기’ 뒤 재개
 - Sentry 테스트 이벤트와 source map, Search Console 소유권·sitemap 접수
 
 확인한 날짜·배포 URL·commit·실제 결과를 배포 기록에 남깁니다.
@@ -86,11 +85,11 @@ Vercel 프로젝트에 `blog.bambyul.com`을 추가하고 콘솔에서 안내하
 
 ## 클릭·스크롤 히트맵과 글 이탈 분석
 
-행동 분포는 Microsoft Clarity, 참여·이탈 지표는 기존 GA4를 사용한다. Clarity의 Settings → Setup에서 받은 공개 project ID를 Vercel 빌드 환경 `NEXT_PUBLIC_CLARITY_PROJECT_ID`에 넣고 다시 빌드한다. ID를 비우거나 방문자가 ‘히트맵까지 허용’을 고르지 않으면 지역과 관계없이 스크립트를 로드하지 않는다. 광고 저장 동의는 항상 denied, 분석 저장 동의만 전달한다. ‘방문 통계만’이나 ‘모두 끄기’로 바꾸면 consentv2 denied와 stop으로 수집을 종료하고 다른 탭의 동의 변경도 반영한다. 검색 입력은 명시적으로 마스킹하고 검색어·사용자 ID·개인 속성을 커스텀 이벤트로 보내지 않는다. SDK 설치 성공을 실제 대시보드 수신으로 취급하지 않는다.
+행동 분포는 Microsoft Clarity, 참여·이탈 지표는 기존 GA4를 사용한다. Clarity의 Settings → Setup에서 받은 공개 project ID를 Vercel 빌드 환경 `NEXT_PUBLIC_CLARITY_PROJECT_ID`에 넣고 다시 빌드한다. ID를 비우거나 방문자가 개인정보 처리 안내에서 수집을 끄면 스크립트를 로드하지 않는다. 처음에는 동의 신호를 보내지 않아 EEA·영국·스위스 방문자에게는 Clarity의 기본 동의 모드가 쿠키를 만들지 않으며, 끄기를 되돌릴 때만 동의 신호와 함께 재개한다. 동의 신호를 보낼 때 광고 저장은 항상 denied로 보낸다. 수집을 끄면 consentv2 denied와 stop으로 수집을 종료하고 다른 탭의 동의 변경도 반영한다. 검색 입력은 명시적으로 마스킹하고 검색어·사용자 ID·개인 속성을 커스텀 이벤트로 보내지 않는다. SDK 설치 성공을 실제 대시보드 수신으로 취급하지 않는다.
 
 1. Clarity Heatmaps에서 글 URL별 클릭·스크롤·attention 분포를 모바일/데스크톱으로 나누어 본다. Recordings의 방문·진입·이탈 URL 필터로 중단한 지점을 확인한다.
 2. GA4의 페이지/화면 보고서에서 글별 참여 시간·참여율·이탈률을 추가한다. 이탈률은 참여하지 않은 세션 비율이며, 글을 다 읽고 닫은 정상 방문까지 무조건 실패로 해석하지 않는다.
-3. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교한다. 적은 표본과 측정 범위(히트맵은 허용한 방문자, 방문 통계는 유럽에서는 허용한 방문자와 그 밖에서는 끄지 않은 방문자)를 함께 기록한다.
-4. Preview에서 유럽 시간대의 고르기 전 외부 요청 없음, 그 밖의 시간대의 GA 한 번 로드, 허용 뒤 Clarity 한 번 로드, SPA 이동, 끄기 뒤 중단을 검사하고 운영 대시보드에서 실제 세션을 확인한다. 계정·실제 project ID·운영 데이터가 없으므로 외부 수신과 실제 글의 이탈 원인은 아직 검증하지 않았다.
+3. 제목·첫 문단·목차·예제 위치 중 한 요소씩 수정하고, 같은 글·기기·유입 경로·비슷한 기간의 지표로 비교한다. 적은 표본과 측정 범위(수집을 끄지 않은 방문자, Clarity는 동의 신호가 없는 EEA·영국·스위스 방문자 제외)를 함께 기록한다.
+4. Preview에서 첫 방문의 GA·Clarity 한 번 로드, SPA 이동, ‘수집 끄기’ 뒤 중단과 ‘다시 켜기’ 뒤 재개를 검사하고 운영 대시보드에서 실제 세션을 확인한다. 계정·실제 project ID·운영 데이터가 없으므로 외부 수신과 실제 글의 이탈 원인은 아직 검증하지 않았다.
 
 공식 문서: [히트맵](https://learn.microsoft.com/en-us/clarity/heatmaps/heatmaps-overview), [설치](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-setup), [Consent V2](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-consent-api-v2), [수집 모듈 stop](https://github.com/microsoft/clarity/blob/master/packages/clarity-js/src/clarity.ts), [GA4 참여율과 이탈률](https://support.google.com/analytics/answer/12195621).
