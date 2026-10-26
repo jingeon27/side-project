@@ -7,12 +7,12 @@
     ".": "./src/index.ts"
   },
   "bin": {
-    "photo-contest-test-api": "./bin/serve-test-api.mjs"
+    "photo-contest-test-api": "./bin/serve-test-api.ts"
   },
   "scripts": {
     "typecheck": "tsc7 --noEmit",
     "test": "vitest run",
-    "s3": "node --disable-warning=ExperimentalWarning bin/fake-s3.mjs",
+    "s3": "node --disable-warning=ExperimentalWarning bin/fake-s3.ts",
     "check:cleanup": "node --import tsx scripts/check-cleanup.ts"
   },
   "dependencies": {

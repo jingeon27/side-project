@@ -7,7 +7,7 @@ const projectRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const envFile = `${projectRoot}.env`;
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
-const required = (name) => {
+const required = (name: string) => {
   const value = process.env[name];
   if (!value) throw new Error(`${name}이 필요합니다. projects/photo-contest/.env.example을 확인하세요.`);
   return value;

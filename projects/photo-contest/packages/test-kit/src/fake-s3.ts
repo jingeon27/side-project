@@ -141,31 +141,45 @@ function xmlEscape(value: string) {
 }
 
 function decodeAwsChunked(body: Buffer) {
-  const chunks: Buffer[] = [];
-  let offset = 0;
-  while (offset < body.length) {
+  const chunks: { bytes: Buffer; end: number }[] = [];
+  for (;;) {
+    const offset = chunks.at(-1)?.end ?? 0;
+    if (offset >= body.length) break;
     const lineEnd = body.indexOf('\r\n', offset);
     if (lineEnd < 0) throw new S3Error(400, 'IncompleteBody', 'aws-chunked 본문이 끝나지 않았습니다.');
     const size = Number.parseInt(body.subarray(offset, lineEnd).toString('ascii').split(';')[0] ?? '', 16);
     if (!Number.isSafeInteger(size))
       throw new S3Error(400, 'InvalidRequest', 'aws-chunked 크기를 읽을 수 없습니다.');
-    if (size === 0) return Buffer.concat(chunks);
-    chunks.push(body.subarray(lineEnd + 2, lineEnd + 2 + size));
-    offset = lineEnd + 2 + size + 2;
+    if (size === 0) break;
+    chunks.push({ bytes: body.subarray(lineEnd + 2, lineEnd + 2 + size), end: lineEnd + 2 + size + 2 });
   }
-  return Buffer.concat(chunks);
+  return Buffer.concat(chunks.map(({ bytes }) => bytes));
 }
 
 async function readBody(req: IncomingMessage) {
   const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of req) {
-    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    size += bytes.length;
-    if (size > MAX_BODY_BYTES) throw new S3Error(400, 'EntityTooLarge', '본문이 너무 큽니다.');
-    chunks.push(bytes);
-  }
+  await req.reduce((size, chunk: unknown) => {
+    if (!Buffer.isBuffer(chunk)) throw new S3Error(400, 'InvalidRequest', '바이너리 본문이 필요합니다.');
+    const nextSize = size + chunk.length;
+    if (nextSize > MAX_BODY_BYTES) throw new S3Error(400, 'EntityTooLarge', '본문이 너무 큽니다.');
+    chunks.push(chunk);
+    return nextSize;
+  }, 0);
   return Buffer.concat(chunks);
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function postPolicy(policy: string) {
+  try {
+    const document: unknown = JSON.parse(Buffer.from(policy, 'base64').toString('utf8'));
+    if (!isObject(document)) throw new Error('Expected a policy object');
+    return document;
+  } catch {
+    throw new S3Error(400, 'InvalidPolicyDocument', '정책을 읽을 수 없습니다.');
+  }
 }
 
 /**
@@ -331,23 +345,19 @@ export async function startFakeS3(options: IFakeS3Options): Promise<IFakeS3> {
       throw new S3Error(400, 'MalformedPOSTRequest', 'multipart 본문을 읽을 수 없습니다.');
     });
     const fields = new Map<string, string>();
-    let file: IFormFile | undefined;
     // 앱마다 다른 DOM 타입 설정(React Native 포함)에서도 같은 순서로 읽도록 forEach로 꺼낸다.
     const entries: Array<[string, string | IFormFile]> = [];
     (form as unknown as IFormEntries).forEach((value, name) => entries.push([name, value]));
-    for (const [name, value] of entries) {
+    const fileIndex = entries.findIndex(([name]) => name.toLowerCase() === 'file');
+    // S3는 file 뒤의 필드를 무시한다.
+    for (const [name, value] of entries.slice(0, fileIndex < 0 ? entries.length : fileIndex)) {
       const lower = name.toLowerCase();
-      if (lower === 'file') {
-        if (typeof value === 'string')
-          throw new S3Error(400, 'InvalidArgument', 'file 필드는 파일이어야 합니다.');
-        file = value;
-        // S3는 file 뒤의 필드를 무시한다.
-        break;
-      }
       if (typeof value !== 'string' || fields.has(lower))
         throw new S3Error(400, 'InvalidArgument', `${name} 필드가 올바르지 않습니다.`);
       fields.set(lower, value);
     }
+    const file = entries[fileIndex]?.[1];
+    if (typeof file === 'string') throw new S3Error(400, 'InvalidArgument', 'file 필드는 파일이어야 합니다.');
     const policy = fields.get('policy');
     const signature = fields.get('x-amz-signature');
     const credential = fields.get('x-amz-credential');
@@ -359,43 +369,40 @@ export async function startFakeS3(options: IFakeS3Options): Promise<IFakeS3> {
     const { date } = assertCredential(credential, amzDate);
     if (!sameSignature(signature, hmac(signingKey(date), policy).toString('hex')))
       throw new S3Error(403, 'SignatureDoesNotMatch', '정책 서명이 일치하지 않습니다.');
-    let document: { expiration?: unknown; conditions?: unknown };
-    try {
-      document = JSON.parse(Buffer.from(policy, 'base64').toString('utf8'));
-    } catch {
-      throw new S3Error(400, 'InvalidPolicyDocument', '정책을 읽을 수 없습니다.');
-    }
+    const document = postPolicy(policy);
     if (typeof document.expiration !== 'string' || !(Date.parse(document.expiration) > Date.now()))
       throw new S3Error(403, 'AccessDenied', 'Invalid according to Policy: Policy expired.');
     if (!Array.isArray(document.conditions))
       throw new S3Error(400, 'InvalidPolicyDocument', '정책 조건이 없습니다.');
     const covered = new Set<string>();
-    let lengthRange: [number, number] | undefined;
     const fieldValue = (name: string) =>
       name === 'bucket' ? (fields.get('bucket') ?? options.bucket) : (fields.get(name) ?? '');
     const failed = (condition: unknown) =>
       new S3Error(403, 'AccessDenied', `Invalid according to Policy: ${JSON.stringify(condition)}`);
-    for (const condition of document.conditions) {
+    const conditions: unknown[] = document.conditions;
+    const ranges = conditions.flatMap((condition) => {
       if (Array.isArray(condition)) {
-        const [operator, target, expected] = condition;
+        const parts: unknown[] = condition;
+        const [operator, target, expected] = parts;
         if (operator === 'content-length-range') {
-          lengthRange = [Number(target), Number(expected)];
-          continue;
+          return [[Number(target), Number(expected)] as const];
         }
         const name = String(target).replace(/^\$/, '').toLowerCase();
         covered.add(name);
         const actual = fieldValue(name);
-        if (operator === 'eq' && actual === expected) continue;
+        if (operator === 'eq' && actual === expected) return [];
         if (operator === 'starts-with' && typeof expected === 'string' && actual.startsWith(expected))
-          continue;
+          return [];
         throw failed(condition);
       }
-      if (typeof condition !== 'object' || condition === null) throw failed(condition);
+      if (!isObject(condition)) throw failed(condition);
       for (const [name, expected] of Object.entries(condition)) {
         covered.add(name.toLowerCase());
         if (fieldValue(name.toLowerCase()) !== expected) throw failed(condition);
       }
-    }
+      return [];
+    });
+    const lengthRange = ranges.at(-1);
     if (fields.has('bucket') && fields.get('bucket') !== options.bucket)
       throw failed({ bucket: fields.get('bucket') });
     for (const name of fields.keys()) {

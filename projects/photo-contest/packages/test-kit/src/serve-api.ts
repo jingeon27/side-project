@@ -3,6 +3,8 @@ import { mkdir, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
+import { once } from 'es-toolkit';
+
 import {
   assertTestSchemaName,
   createIsolatedDatabase,
@@ -32,26 +34,22 @@ async function main() {
     stdio: 'inherit',
   });
   const url = await createIsolatedDatabase(baseUrl, schema);
-  const state: { app?: IFixtureApp; s3?: Awaited<ReturnType<typeof startFakeS3>>; cleanup?: Promise<void> } =
-    {};
-  const cleanup = () => {
-    state.cleanup ??= (async () => {
+  const state: { app?: IFixtureApp; s3?: Awaited<ReturnType<typeof startFakeS3>> } = {};
+  const cleanup = once(async () => {
+    try {
+      await state.app?.close();
+    } finally {
       try {
-        await state.app?.close();
+        await state.s3?.stop();
       } finally {
         try {
-          await state.s3?.stop();
+          await dropIsolatedDatabase(baseUrl, schema);
         } finally {
-          try {
-            await dropIsolatedDatabase(baseUrl, schema);
-          } finally {
-            await rm(storageDir, { recursive: true, force: true });
-          }
+          await rm(storageDir, { recursive: true, force: true });
         }
       }
-    })();
-    return state.cleanup;
-  };
+    }
+  });
   const stop = () =>
     void cleanup().then(
       () => process.exit(0),

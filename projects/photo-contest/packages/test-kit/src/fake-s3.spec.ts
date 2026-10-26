@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 
 import {
   DeleteObjectCommand,
@@ -11,20 +12,17 @@ import {
 } from '@aws-sdk/client-s3';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { once } from 'es-toolkit';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { FAKE_S3_DEFAULTS, startFakeS3, type IFakeS3 } from './fake-s3';
+import { FAKE_S3_DEFAULTS, startFakeS3 } from './fake-s3';
 
 const ORIGIN = 'http://localhost:3999';
 const KEY = 'prefix/11111111-2222-3333-4444-555555555555.png';
-let directory: string;
-let s3: IFakeS3;
-let client: S3Client;
-
-beforeAll(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'fake-s3-'));
-  s3 = await startFakeS3({ ...FAKE_S3_DEFAULTS, directory, corsOrigins: [ORIGIN] });
-  client = new S3Client({
+const storage = once(async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'fake-s3-'));
+  const s3 = await startFakeS3({ ...FAKE_S3_DEFAULTS, directory, corsOrigins: [ORIGIN] });
+  const client = new S3Client({
     region: FAKE_S3_DEFAULTS.region,
     endpoint: s3.endpoint,
     forcePathStyle: true,
@@ -33,8 +31,13 @@ beforeAll(async () => {
       secretAccessKey: FAKE_S3_DEFAULTS.secretAccessKey,
     },
   });
+  return { directory, s3, client };
+});
+beforeAll(async () => {
+  await storage();
 });
 afterAll(async () => {
+  const { directory, s3, client } = await storage();
   client.destroy();
   await s3.stop();
   await rm(directory, { recursive: true, force: true });
@@ -42,6 +45,7 @@ afterAll(async () => {
 afterEach(() => vi.useRealTimers());
 
 async function presignedPost(key: string, body: Uint8Array, contentType = 'image/png', expires = 60) {
+  const { s3, client } = await storage();
   return createPresignedPost(client, {
     Bucket: s3.bucket,
     Key: key,
@@ -66,7 +70,27 @@ function postForm(
 }
 
 describe('S3 대역 서명 POST', () => {
+  it('파일 뒤의 필드는 무시하고 앞에서 서명한 키로 저장해야 한다', async () => {
+    const { s3, client } = await storage();
+    const body = new TextEncoder().encode('file-last');
+    const key = 'prefix/file-last.png';
+    const plan = await presignedPost(key, body);
+    const form = new FormData();
+    for (const [name, value] of Object.entries(plan.fields)) form.append(name, value);
+    form.append('file', new Blob([body]), 'photo.png');
+    form.append('key', 'prefix/ignored.png');
+    const response = await fetch(plan.url, { method: 'POST', body: form });
+    expect(response.status).toBe(204);
+    expect(await client.send(new HeadObjectCommand({ Bucket: s3.bucket, Key: key }))).toMatchObject({
+      ContentLength: body.byteLength,
+    });
+    await expect(
+      client.send(new HeadObjectCommand({ Bucket: s3.bucket, Key: 'prefix/ignored.png' })),
+    ).rejects.toMatchObject({ $metadata: { httpStatusCode: 404 } });
+  });
+
   it('정책이 고정한 키·형식·정확한 크기의 파일만 저장하고 HEAD로 확인할 수 있어야 한다', async () => {
+    const { s3, client } = await storage();
     const body = new TextEncoder().encode('png-bytes');
     const form = await presignedPost(KEY, body);
     const response = await postForm(form, body);
@@ -77,6 +101,7 @@ describe('S3 대역 서명 POST', () => {
   });
 
   it('정책을 바꾸거나 다른 크기·형식·키·추가 필드를 보내면 저장하지 않아야 한다', async () => {
+    const { s3, client } = await storage();
     const body = new TextEncoder().encode('exact-size');
     const key = 'prefix/22222222-2222-3333-4444-555555555555.png';
     const form = await presignedPost(key, body);
@@ -98,6 +123,7 @@ describe('S3 대역 서명 POST', () => {
   });
 
   it('만료된 정책과 다른 자격 증명으로 서명한 정책을 거부해야 한다', async () => {
+    const { s3 } = await storage();
     const body = new TextEncoder().encode('late');
     const form = await presignedPost('prefix/33333333-2222-3333-4444-555555555555.png', body, 'image/png', 1);
     vi.useFakeTimers({ now: Date.now() + 5_000, toFake: ['Date'] });
@@ -116,7 +142,26 @@ describe('S3 대역 서명 POST', () => {
 });
 
 describe('S3 대역 서명 GET', () => {
+  it('여러 청크로 전송한 본문을 원래 바이트 순서와 크기로 저장해야 한다', async () => {
+    const { s3, client } = await storage();
+    const key = 'prefix/streamed.mp4';
+    const chunks = [Buffer.alloc(64 * 1024, 1), Buffer.alloc(64 * 1024, 2), Buffer.alloc(64 * 1024, 3)];
+    const body = Buffer.concat(chunks);
+    await client.send(
+      new PutObjectCommand({
+        Bucket: s3.bucket,
+        Key: key,
+        Body: Readable.from(chunks),
+        ContentLength: body.length,
+      }),
+    );
+    const result = await client.send(new GetObjectCommand({ Bucket: s3.bucket, Key: key }));
+    expect(result.ContentLength).toBe(body.length);
+    expect(await result.Body?.transformToByteArray()).toEqual(new Uint8Array(body));
+  });
+
   it('서명한 주소만 Range·다운로드 이름·캐시 헤더를 반영해 읽고 변조·만료·익명 요청은 거부해야 한다', async () => {
+    const { s3, client } = await storage();
     const key = 'prefix/44444444-2222-3333-4444-555555555555.mp4';
     const bytes = new TextEncoder().encode('0123456789');
     await client.send(
@@ -150,6 +195,7 @@ describe('S3 대역 서명 GET', () => {
   });
 
   it('삭제한 객체는 HEAD에서 찾을 수 없고 키로 저장 폴더 밖을 가리킬 수 없어야 한다', async () => {
+    const { s3, client } = await storage();
     const key = 'prefix/66666666-2222-3333-4444-555555555555.webp';
     await client.send(new PutObjectCommand({ Bucket: s3.bucket, Key: key, Body: new Uint8Array([1, 2, 3]) }));
     await client.send(new DeleteObjectCommand({ Bucket: s3.bucket, Key: key }));
@@ -166,6 +212,7 @@ describe('S3 대역 서명 GET', () => {
 
 describe('S3 대역 CORS', () => {
   it('허용한 웹 origin의 사전 요청만 허락해야 한다', async () => {
+    const { s3 } = await storage();
     const preflight = (origin: string) =>
       fetch(`${s3.endpoint}/${s3.bucket}`, {
         method: 'OPTIONS',
