@@ -19,7 +19,7 @@ export const TEST_WEB_ORIGIN = 'http://web.test';
 /** 한 테스트가 한꺼번에 보내는 요청 수의 상한 */
 const CONCURRENT_REQUESTS_MAX = 32;
 
-// 개발자 .env의 실제 키(OAuth·Sentry·S3·AWS)가 테스트 요청으로 새지 않도록 앱을 만들기 전에 지운다.
+// 개발자 관측 키를 지우고 S3·AWS 설정은 실행별 격리 설정으로 적용한다.
 const CLEARED_ENV = [
   'PUSH_NOTIFICATIONS_ENABLED',
   'EXPO_ACCESS_TOKEN',
@@ -71,7 +71,7 @@ export interface ITestApi {
   app: INestApplication;
   /** 격리 스키마를 직접 준비·확인하는 클라이언트. 앱과 다른 연결이다. */
   db: TTestDatabase;
-  /** S3 대역을 가리키는 앱의 저장소. 테스트에서 HEAD·DELETE로 객체를 확인한다. */
+  /** 실제 S3의 격리 경로를 사용하는 앱의 저장소. 테스트에서 HEAD·DELETE로 객체를 확인한다. */
   storage: MediaStorage;
   /** supertest 요청. 포트를 직접 열지 않고 Nest HTTP 서버에 보낸다. */
   http: () => ReturnType<typeof request>;
@@ -105,7 +105,7 @@ export interface ITestApi {
 // 브라우저 역할의 저장소 전송은 API의 외부 요청을 대체하는 stubExternalFetch와 섞이지 않게 원래 fetch를 쓴다.
 const browserFetch = globalThis.fetch;
 
-/** 브라우저처럼 서명 POST 필드를 먼저, 파일을 마지막에 넣어 S3 대역에 직접 올린다(쿠키 없음). */
+/** 브라우저처럼 서명 POST 필드를 먼저, 파일을 마지막에 넣어 실제 S3에 직접 올린다(쿠키 없음). */
 export function uploadToStorage(form: IStorageForm, body: Buffer | Uint8Array, contentType: string) {
   const multipart = new FormData();
   for (const field of form.fields) multipart.append(field.name, field.value);

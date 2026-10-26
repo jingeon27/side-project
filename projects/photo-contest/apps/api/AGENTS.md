@@ -46,8 +46,8 @@
 
 | 스크립트 | 내용 |
 | --- | --- |
-| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, S3 대역에 대한 저장소 서명 등) |
-| `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마(`api_test_*`)와 test-kit S3 대역을 하나씩 만들고 끝나면 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
+| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, 네트워크 없는 S3 서명 정책 등) |
+| `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마(`api_test_*`)와 기존 AWS S3 버킷의 실행별 tests/ 객체 경로를 준비하고 끝나면 해당 스키마·객체만 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
 
@@ -66,7 +66,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
 
-Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 60초 presigned GET을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·테스트는 test-kit S3 대역을 가리킨다.
+Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 60초 presigned GET을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·통합 테스트도 실제 AWS S3를 사용하며 테스트 객체는 tests/<실행 ID>/로 격리한다.
 
 GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
 

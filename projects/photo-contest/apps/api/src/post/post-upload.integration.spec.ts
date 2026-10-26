@@ -86,12 +86,13 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
       byteSize: image.length,
       storageKey: null,
     });
-    expect(row.stagingKey).toMatch(/^[a-f0-9-]{36}\.png$/);
-    const { S3_ENDPOINT, S3_BUCKET } = inject('s3Env');
-    expect(grant.url).toBe(`${S3_ENDPOINT}/${S3_BUCKET}`);
+    expect(row.stagingKey?.startsWith(`${inject('s3Env').S3_KEY_PREFIX}/`)).toBe(true);
+    const { S3_BUCKET } = inject('s3Env');
+    const policy = JSON.parse(Buffer.from(field(grant, 'Policy') ?? '', 'base64').toString());
+    expect(policy.conditions).toContainEqual({ bucket: S3_BUCKET });
+    expect(new URL(grant.url).protocol).toBe('https:');
     expect(field(grant, 'key')).toBe(row.stagingKey);
     expect(field(grant, 'Content-Type')).toBe('image/png');
-    const policy = JSON.parse(Buffer.from(field(grant, 'Policy') ?? '', 'base64').toString());
     expect(policy.conditions).toEqual(
       expect.arrayContaining([
         ['content-length-range', image.length, image.length],
@@ -182,7 +183,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     const image = await createTestImage();
     const grant = await ticket(image);
     const key = field(grant, 'key') ?? '';
-    expect((await uploadToStorage(grant, image.subarray(0, image.length - 1), 'image/png')).status).toBe(400);
+    expect((await uploadToStorage(grant, image.subarray(0, image.length - 1), 'image/png')).ok).toBe(false);
     expect(
       (await uploadToStorage(grant, Buffer.concat([image, Buffer.from('extra')]), 'image/png')).status,
     ).toBe(400);
@@ -215,11 +216,16 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     const client = new S3Client({
       region: env.S3_REGION,
       endpoint: env.S3_ENDPOINT,
-      forcePathStyle: true,
-      credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY_ID ?? '',
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? '',
-      },
+      forcePathStyle: env.S3_FORCE_PATH_STYLE === 'true',
+      ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
+        ? {
+            credentials: {
+              accessKeyId: env.AWS_ACCESS_KEY_ID ?? '',
+              secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? '',
+              ...(env.AWS_SESSION_TOKEN ? { sessionToken: env.AWS_SESSION_TOKEN } : {}),
+            },
+          }
+        : {}),
     });
     try {
       // 정책을 따르지 않는 저장소 쓰기를 흉내 낸다.

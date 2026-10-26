@@ -7,7 +7,7 @@ description: API(apps/api)의 구현 파일 옆 unit 테스트나 실제 Postgre
 
 ## 어느 레인인가
 
-- `unit`(`src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외, 대상 옆): DB·Nest 앱 없이 도는 순수 함수(단계·순위, 쿠키 파서, PKCE 벡터, 입력 검증, env getter, 저장소 서명 — 저장소는 test-kit S3 대역을 띄워 실제 AWS SDK로 확인). env는 `vi.stubEnv` + `afterEach(vi.unstubAllEnvs)`(`src/config/env.spec.ts`).
+- `unit`(`src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외, 대상 옆): DB·Nest 앱 없이 도는 순수 함수(단계·순위, 쿠키 파서, PKCE 벡터, 입력 검증, env getter, 저장소 서명 — 네트워크 없이 실제 AWS SDK로 서명 정책만 확인). env는 `vi.stubEnv` + `afterEach(vi.unstubAllEnvs)`(`src/config/env.spec.ts`).
 - `integration`(`src/**/<대상 구현 파일>.integration.spec.ts`, 대상 옆): 권한, DB 제약, 상태 코드·헤더·쿠키·Origin·CSRF, 동시성, 주기 작업. 확인된 버그의 재발 방지는 `*.integration.test.ts`. 여러 모듈을 함께 검증하면 주 대상 옆에 둔다(`src/database/unit-of-work.integration.spec.ts`, `src/bootstrap.integration.spec.ts`).
 
 ## 레인 설정
@@ -17,7 +17,7 @@ description: API(apps/api)의 구현 파일 옆 unit 테스트나 실제 Postgre
 
 ## 하네스 (`test/support/`)
 
-- env를 먼저 맞추고 앱을 만든다: `DATABASE_URL=inject('databaseUrl')`, `NODE_ENV=development`, `ENABLE_DEV_LOGIN=true`, `WEB_ORIGIN`, globalSetup이 띄운 S3 대역의 `inject('s3Env')`(격리 스키마 이름의 `.data` 폴더 아래 객체). `loadProjectEnv()`가 읽어 온 개발자 키(OAuth·Sentry·S3·AWS)는 지우고, 필요한 테스트만 `vi.stubEnv`로 넣는다. 브라우저 역할의 저장소 POST는 `uploadToStorage`, 고정 경로의 307 확인과 서명 GET은 `openStorageRedirect`, 객체 확인은 `api.storage.head`를 쓴다.
+- env를 먼저 맞추고 앱을 만든다: `DATABASE_URL=inject('databaseUrl')`, `NODE_ENV=development`, `ENABLE_DEV_LOGIN=true`, `WEB_ORIGIN`, globalSetup이 기존 AWS 버킷의 tests/<격리 스키마>/로 객체 경로를 분리한 `inject('s3Env')`. `loadProjectEnv()`가 읽어 온 개발자 관측 키는 지우고 S3·AWS 값은 해당 격리 설정으로 적용하며, 필요한 테스트만 `vi.stubEnv`로 넣는다. 브라우저 역할의 저장소 POST는 `uploadToStorage`, 고정 경로의 307 확인과 서명 GET은 `openStorageRedirect`, 객체 확인은 `api.storage.head`를 쓴다.
 - `createApp({ logger: false })`(`src/bootstrap.ts`)만 하고 `listen()`하지 않는다. 파일마다 `beforeAll`에서 만들고 `afterAll`에서 `app.close()`. 요청은 `request(app.getHttpServer())`.
 - `app.get(SchedulerService).stop()`으로 주기 실행을 끄고, 정리·대회 종료 기록은 `runOnce()`를 직접 await 한다.
 - `login(nickname)`은 `POST /auth/dev`로 받은 `contest_session=…` Cookie 문자열(운영 모드로 만든 앱의 세션 쿠키는 `__Host-contest_session`이고 개발 로그인이 닫혀 있다), `gql(cookie, query, variables)`는 `Origin`·`Apollo-Require-Preflight: true`를 붙여 `{ data, errors }`를 돌려준다. 그룹·대회·사진 준비와 GraphQL 문자열은 공용 헬퍼에 모으고 파일마다 복사하지 않는다.

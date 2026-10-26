@@ -111,9 +111,8 @@ describe('링크 게시물과 미디어 저장', () => {
         id: post.id,
       });
       const url = new URL(download.url);
-      expect(`${url.origin}/${url.pathname.split('/')[1]}`).toBe(
-        `${inject('s3Env').S3_ENDPOINT}/${inject('s3Env').S3_BUCKET}`,
-      );
+      expect(url.protocol).toBe('https:');
+      expect(decodeURIComponent(url.pathname).includes(`${inject('s3Env').S3_KEY_PREFIX}/`)).toBe(true);
       expect(url.searchParams.get('X-Amz-Expires')).toBe('60');
       expect(Date.parse(download.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
       expect(download.filename).toBe(video ? '저장할 동영상.mp4' : '저장할 한글 사진.png');
