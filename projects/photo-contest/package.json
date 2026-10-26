@@ -21,8 +21,7 @@
     "check": "yarn lint && yarn typecheck && yarn test"
   },
   "devDependencies": {
-    "@side/eslint-config": "workspace:*",
-    "@side/typescript-config": "workspace:*",
+    "@side/config": "workspace:*",
     "@types/node": "^24.0.0",
     "concurrently": "^9.2.0",
     "embedded-postgres": "18.4.0-beta.17",

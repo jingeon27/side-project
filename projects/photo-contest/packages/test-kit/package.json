@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@photo-contest/api": "workspace:*",
-    "@side/typescript-config": "workspace:*",
+    "@side/config": "workspace:*",
+    "es-toolkit": "^1.52.0",
     "prisma": "7.10.1",
     "sharp": "^0.35.5",
     "tsx": "^4.20.0",

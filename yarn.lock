@@ -1659,7 +1659,7 @@ __metadata:
     "@next/mdx": "npm:16.4.2"
     "@playwright/test": "npm:^1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.1.0"
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/jest-dom": "npm:^6.9.0"
@@ -2933,9 +2933,8 @@ __metadata:
     "@game-feedback/sdk": "workspace:*"
     "@hookform/resolvers": "npm:^5.2.2"
     "@playwright/test": "npm:^1.64.0"
+    "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.1.16"
     "@tanstack/react-query": "npm:^5.90.0"
     "@types/node": "npm:^24.0.0"
@@ -2972,8 +2971,8 @@ __metadata:
     "@prisma/adapter-pg": "npm:7.10.1"
     "@prisma/client": "npm:7.10.1"
     "@sentry/node": "npm:11.7.0"
-    "@side/push-notifications": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
+    "@side/toolkit": "workspace:*"
     "@types/express": "npm:^5.0.3"
     "@types/node": "npm:^24.0.0"
     "@types/supertest": "npm:^6.0.3"
@@ -2998,7 +2997,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/bridge@workspace:projects/game-feedback/packages/bridge"
   dependencies:
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     es-toolkit: "npm:^1.52.0"
     ts-pattern: "npm:^5.9.0"
     typescript: "npm:6.0.2"
@@ -3011,7 +3010,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/contracts@workspace:projects/game-feedback/packages/contracts"
   dependencies:
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     typescript: "npm:6.0.2"
     zod: "npm:^4.1.12"
   languageName: unknown
@@ -3024,8 +3023,7 @@ __metadata:
     "@game-feedback/bridge": "workspace:*"
     "@playwright/test": "npm:1.64.0"
     "@react-native-async-storage/async-storage": "npm:2.2.0"
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/react": "npm:^16.3.0"
     "@types/react": "npm:~19.2.0"
@@ -3057,7 +3055,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/sdk@workspace:projects/game-feedback/packages/sdk"
   dependencies:
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@types/node": "npm:^24.0.0"
     orval: "npm:8.43.0"
     typescript: "npm:6.0.2"
@@ -3079,9 +3077,8 @@ __metadata:
     "@next/playwright": "npm:16.4.2"
     "@playwright/test": "npm:^1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
+    "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.1.16"
     "@tanstack/react-query": "npm:^5.90.0"
     "@testing-library/dom": "npm:^10.4.1"
@@ -5825,8 +5822,8 @@ __metadata:
     "@prisma/client": "npm:7.10.1"
     "@prisma/driver-adapter-utils": "npm:7.10.1"
     "@sentry/node": "npm:^10.0.0"
-    "@side/push-notifications": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
+    "@side/toolkit": "workspace:*"
     "@swc/core": "npm:^1.16.0"
     "@types/express": "npm:^5.0.0"
     "@types/graphql-depth-limit": "npm:^1.1.6"
@@ -5855,7 +5852,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@photo-contest/bridge@workspace:projects/photo-contest/packages/bridge"
   dependencies:
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     jsdom: "npm:^29.0.0"
     typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
@@ -5873,8 +5870,7 @@ __metadata:
     "@playwright/test": "npm:1.64.0"
     "@react-native-async-storage/async-storage": "npm:2.2.0"
     "@sentry/react-native": "npm:~7.11.0"
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/react": "npm:^16.3.0"
     "@types/node": "npm:^24.0.0"
@@ -5917,15 +5913,16 @@ __metadata:
     "@aws-sdk/s3-presigned-post": "npm:3.1149.0"
     "@aws-sdk/s3-request-presigner": "npm:3.1149.0"
     "@photo-contest/api": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@types/node": "npm:^24.0.0"
+    es-toolkit: "npm:^1.52.0"
     prisma: "npm:7.10.1"
     sharp: "npm:^0.35.5"
     tsx: "npm:^4.20.0"
     typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
   bin:
-    photo-contest-test-api: ./bin/serve-test-api.mjs
+    photo-contest-test-api: ./bin/serve-test-api.ts
   languageName: unknown
   linkType: soft
 
@@ -5947,9 +5944,8 @@ __metadata:
     "@photo-contest/test-kit": "workspace:*"
     "@playwright/test": "npm:^1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
+    "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.1.0"
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/jest-dom": "npm:^6.9.0"
@@ -8022,11 +8018,25 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@side/commit-message-check@workspace:packages/commit-message-check":
+"@side/config@workspace:*, @side/config@workspace:packages/config":
   version: 0.0.0-use.local
-  resolution: "@side/commit-message-check@workspace:packages/commit-message-check"
+  resolution: "@side/config@workspace:packages/config"
   dependencies:
+    "@types/node": "npm:^24.0.0"
+    "@typescript-eslint/rule-tester": "npm:8.71.1"
+    "@typescript-eslint/utils": "npm:8.71.1"
+    "@typescript/native": "npm:typescript@7.0.2"
+    eslint: "npm:^9.39.0"
+    eslint-config-expo: "npm:~57.0.2"
+    eslint-config-next: "npm:16.4.2"
+    eslint-plugin-jsx-a11y: "npm:6.10.2"
+    eslint-plugin-react: "npm:7.37.5"
+    jiti: "npm:^2.6.1"
+    typescript: "npm:6.0.2"
+    typescript-eslint: "npm:^8.50.0"
     vitest: "npm:^4.1.0"
+  bin:
+    tsc7: ./typescript/bin/tsc7.cjs
   languageName: unknown
   linkType: soft
 
@@ -8036,8 +8046,7 @@ __metadata:
   dependencies:
     "@base-ui/react": "npm:^1.9.0"
     "@hookform/resolvers": "npm:^5.4.0"
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@storybook/addon-a11y": "npm:10.6.3"
     "@storybook/addon-docs": "npm:10.6.3"
     "@storybook/addon-themes": "npm:10.6.3"
@@ -8079,49 +8088,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@side/eslint-config@workspace:*, @side/eslint-config@workspace:packages/eslint-config":
-  version: 0.0.0-use.local
-  resolution: "@side/eslint-config@workspace:packages/eslint-config"
-  dependencies:
-    "@side/typescript-config": "workspace:*"
-    "@types/node": "npm:^24.0.0"
-    "@typescript-eslint/rule-tester": "npm:8.71.1"
-    "@typescript-eslint/utils": "npm:8.71.1"
-    eslint: "npm:^9.39.0"
-    eslint-config-expo: "npm:~57.0.2"
-    eslint-config-next: "npm:16.4.2"
-    eslint-plugin-jsx-a11y: "npm:6.10.2"
-    eslint-plugin-react: "npm:7.37.5"
-    jiti: "npm:^2.6.1"
-    typescript: "npm:6.0.2"
-    typescript-eslint: "npm:^8.50.0"
-    vitest: "npm:^4.1.0"
-  peerDependencies:
-    eslint: ^9.39.0
-  languageName: unknown
-  linkType: soft
-
 "@side/game-feedback@workspace:projects/game-feedback":
   version: 0.0.0-use.local
   resolution: "@side/game-feedback@workspace:projects/game-feedback"
   dependencies:
-    "@side/eslint-config": "workspace:*"
+    "@side/config": "workspace:*"
     embedded-postgres: "npm:18.4.0-beta.17"
     eslint: "npm:^9.39.0"
     jiti: "npm:^2.6.1"
+    ts-pattern: "npm:^5.9.0"
     typescript: "npm:6.0.2"
-  languageName: unknown
-  linkType: soft
-
-"@side/migration-check@workspace:packages/migration-check":
-  version: 0.0.0-use.local
-  resolution: "@side/migration-check@workspace:packages/migration-check"
-  dependencies:
-    "@side/eslint-config": "workspace:*"
-    eslint: "npm:^9.39.0"
-    jiti: "npm:^2.6.1"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
+    zod: "npm:^4.1.12"
   languageName: unknown
   linkType: soft
 
@@ -8129,8 +8106,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@side/photo-contest@workspace:projects/photo-contest"
   dependencies:
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@types/node": "npm:^24.0.0"
     concurrently: "npm:^9.2.0"
     embedded-postgres: "npm:18.4.0-beta.17"
@@ -8141,27 +8117,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@side/push-notifications@workspace:*, @side/push-notifications@workspace:packages/push-notifications":
+"@side/toolkit@workspace:*, @side/toolkit@workspace:packages/toolkit":
   version: 0.0.0-use.local
-  resolution: "@side/push-notifications@workspace:packages/push-notifications"
+  resolution: "@side/toolkit@workspace:packages/toolkit"
   dependencies:
-    "@side/eslint-config": "workspace:*"
-    "@side/typescript-config": "workspace:*"
+    "@side/config": "workspace:*"
     "@types/node": "npm:^24.0.0"
+    es-toolkit: "npm:^1.52.0"
     eslint: "npm:^9.39.0"
     jiti: "npm:^2.6.1"
+    ts-pattern: "npm:^5.9.0"
     typescript: "npm:6.0.2"
     vitest: "npm:^4.1.0"
-  languageName: unknown
-  linkType: soft
-
-"@side/typescript-config@workspace:*, @side/typescript-config@workspace:packages/typescript-config":
-  version: 0.0.0-use.local
-  resolution: "@side/typescript-config@workspace:packages/typescript-config"
-  dependencies:
-    "@typescript/native": "npm:typescript@7.0.2"
-  bin:
-    tsc7: ./bin/tsc7.cjs
   languageName: unknown
   linkType: soft
 
@@ -21048,6 +21015,8 @@ __metadata:
   resolution: "side@workspace:."
   dependencies:
     "@ianvs/prettier-plugin-sort-imports": "npm:^4.7.1"
+    "@side/config": "workspace:*"
+    "@types/node": "npm:^24.0.0"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.4.0"
     prettier: "npm:^3.9.0"
