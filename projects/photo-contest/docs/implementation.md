@@ -1,3 +1,22 @@
+## 2026-10-26 공통 EC2의 PostgreSQL 컨테이너 전환
+
+외부 RDS 대신 공통 EC2 안의 PostgreSQL 18 컨테이너를 Game Feedback과 함께 쓴다. RDS는 만든 적이 없어 옮길 데이터는 없다. [공통 배포 가이드](../../../deploy/shared-instance/README.md)가 현재 기준이며 아래 2026-10-19 기록의 RDS·PITR 내용을 대신한다.
+
+- `photo_contest` DB와 `photo_contest`/`photo_contest_migrator` role 분리는 유지한다. API·ops·migrate만 내부 DB 네트워크에서 `shared-postgres`로 연결하고 Web은 연결하지 않는다. 운영 URL은 `sslmode=disable`이어야 하며 RDS 호스트·CA 검사를 제거했다.
+- 배포마다 migration 직전에 `pg_dump`를 backup 버킷에 올리고 실패하면 멈춘다. 데이터 볼륨은 DLM 일일 스냅샷 7개를 보존한다. 배포 도구 테스트는 `test/deployment/database-backup.spec.ts`로 옮겼다.
+- 호스트가 멈추면 Sentry도 신호를 보내지 못하므로 CloudWatch 알람을 추가했다. 인스턴스 상태 검사가 3분 연속 실패하면 재부팅하고, CPU 크레딧 부족을 알린다(`alarm_email`이 있을 때 메일).
+
+| 실제 로컬 실행      | 결과                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| GF API unit 레인    | 186개 통과(공용 DB URL 검사 포함)                                                          |
+| PC API unit 레인    | 127개 통과(공용 DB URL 검사 포함)                                                          |
+| PC 배포 도구 Vitest | 50개 통과: 배포 전 덤프·업로드 실패 시 migration 차단, 볼륨 미마운트·backup 버킷 설정 거부 |
+| 타입 검사           | GF API, PC API, PC Web 통과                                                                |
+| Terraform 1.16.6    | fmt, backend 비활성 init, validate, mock provider plan 13개 통과                           |
+| shellcheck 0.11.0   | 공용 배포 스크립트와 렌더링한 user-data 통과                                               |
+
+실제 Docker로 두 서비스와 공용 DB를 띄우는 shared-instance smoke(Game Feedback API의 `scripts/shared-instance-smoke.ts`)는 로컬에 Docker가 없어 실행하지 않았으며 CI에서 확인해야 한다. 실제 AWS apply, 첫 부팅의 볼륨 포맷·마운트, 스냅샷·덤프 복원은 미검증이다.
+
 ## 2026-10-24 MY 게시물과 공통 추가 조회
 
 ## 2026-10-25 루트 .env만 사용하는 설정 계약

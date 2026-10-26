@@ -1,6 +1,6 @@
 # 운영 배포
 
-현재 구성은 Game Feedback과 공유하는 **서울 EC2 한 대, 외부 AWS RDS PostgreSQL, 서비스별 비공개 S3**다. 준비·CD·IAM·DB role·TLS·PITR 복구·롤백 명령은 [공통 배포 가이드](../../../deploy/shared-instance/README.md)를 따른다.
+현재 구성은 Game Feedback과 공유하는 **서울 EC2 한 대(PostgreSQL 컨테이너와 데이터 EBS 볼륨 포함), 서비스별 비공개 S3**다. 준비·CD·IAM·DB role·배포 전 덤프·스냅샷 복구·롤백 명령은 [공통 배포 가이드](../../../deploy/shared-instance/README.md)를 따른다.
 
 Photo Contest의 실제 운영 Compose는 [`projects/photo-contest/deploy/shared-instance/compose.yaml`](../deploy/shared-instance/compose.yaml)이고, 공용 프록시는 [`deploy/shared-instance/compose.yaml`](../../../deploy/shared-instance/compose.yaml)·[`Caddyfile`](../../../deploy/shared-instance/Caddyfile)이다. Web·API 이미지는 `linux/amd64`이며, public origin은 `PHOTO_CONTEST_SITE_URL`로 빌드하고 runtime의 `PHOTO_CONTEST_DOMAIN`과 맞춘다. `/backend/graphql`은 공통 Caddy가 Web의 Next Route Handler로 보내 캐시 무효화와 JSON·쿠키 전달을 처리하고, 나머지 `/backend/*`는 API로 직접 전달한다. runtime은 `photo_contest`, migration은 `photo_contest_migrator`를 사용하고 다른 서비스의 DB·버킷에는 접근하지 않는다.
 
