@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { randomUUID } from 'expo-crypto';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance, AndroidNotificationVisibility, IosAuthorizationStatus } from 'expo-notifications';
 
 import type { TPushRegistration } from '@game-feedback/bridge';
 
@@ -45,16 +46,15 @@ async function register(requestPermission: boolean): Promise<TPushRegistration> 
   if (Platform.OS === 'android')
     await Notifications.setNotificationChannelAsync('activity', {
       name: '활동 알림',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+      importance: AndroidImportance.DEFAULT,
+      lockscreenVisibility: AndroidNotificationVisibility.PRIVATE,
     });
   let permission = await Notifications.getPermissionsAsync();
   if (requestPermission && !permission.granted && permission.canAskAgain)
     permission = await Notifications.requestPermissionsAsync({
       ios: { allowAlert: true, allowBadge: true, allowSound: true },
     });
-  const granted =
-    permission.granted || permission.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+  const granted = permission.granted || permission.ios?.status === IosAuthorizationStatus.PROVISIONAL;
   if (!granted)
     return { ...base, status: permission.status === 'denied' ? 'denied' : 'undetermined', token: null };
   const token = (await Notifications.getExpoPushTokenAsync({ projectId: project })).data;

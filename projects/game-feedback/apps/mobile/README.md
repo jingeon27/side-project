@@ -1,21 +1,21 @@
 # Game Feedback Mobile
 
-기존 웹을 여는 Expo 57 + React Native 0.86 WebView 앱이다. 게시글·댓글·1:1 채팅·소셜 로그인·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다.
+기존 웹을 여는 Expo 58 + React Native 0.88 WebView 앱이다. 게시글·댓글·1:1 채팅·소셜 로그인·공통 디자인 시스템은 웹과 동일하다. 앱 화면을 별도로 복제하지 않는다.
 
 ## 개발 실행
 
 저장소 루트에서 Node 24와 Yarn 4.17을 사용한다. Xcode 또는 Android SDK가 설치된 환경에서 dev client를 만든다. Expo Go는 사용하지 않는다.
 
 ```sh
-corepack yarn install --immutable
-corepack yarn workspace @side/game-feedback dev:test
+yarn install --immutable
+yarn workspace @side/game-feedback dev:test
 # 다른 터미널: Android 에뮬레이터가 같은 localhost 웹 origin을 사용하도록 연결
 adb reverse tcp:3300 tcp:3300
-corepack yarn workspace @side/game-feedback mobile:android
+yarn workspace @side/game-feedback mobile:android
 # 또는 iOS 시뮬레이터
-corepack yarn workspace @side/game-feedback mobile:ios
+yarn workspace @side/game-feedback mobile:ios
 # 이미 설치된 dev client에서 Metro만 실행
-corepack yarn workspace @side/game-feedback mobile:start
+yarn workspace @side/game-feedback mobile:start
 ```
 
 Metro 포트는 8082다. 기본 웹 주소는 `http://localhost:3300`이다. 웹 브라우저에서는 카카오·Discord·Google 로그인을 제공하고 테스트 계정은 격리 API로 발급한다. 실기기는 접근 가능한 Web origin을 `WEB_ORIGIN`과 API의 `WEB_ORIGIN`에 동일하게 설정한다. 인증·채팅 요청은 모두 Web origin의 `/api` rewrite를 통한다.
@@ -63,12 +63,12 @@ ShellLifecycle이 OS 전환, back 대기와 해제를 관리한다. 늦은 초�
 ## 검증
 
 ```sh
-corepack yarn workspace @game-feedback/mobile typecheck
-corepack yarn workspace @game-feedback/mobile lint
-corepack yarn workspace @game-feedback/mobile test
-corepack yarn workspace @game-feedback/mobile exec playwright install chromium webkit
-corepack yarn workspace @side/game-feedback test:mobile:e2e
-corepack yarn workspace @game-feedback/mobile bundle:check
+yarn workspace @game-feedback/mobile typecheck
+yarn workspace @game-feedback/mobile lint
+yarn workspace @game-feedback/mobile test
+yarn workspace @game-feedback/mobile exec playwright install chromium webkit
+yarn workspace @side/game-feedback test:mobile:e2e
+yarn workspace @game-feedback/mobile bundle:check
 ```
 
 Vitest는 순수 URL·프로토콜·PKCE 판단과 RN Web으로 그린 실제 셸 이벤트를 검증한다. Playwright의 `android-webview`·`ios-webview`는 Chromium/WebKit 모바일 환경에 실제 앱 host·URL 정책·인증 로직을 붙이고 OS 인증창만 대역으로 바꾼다. Google 버튼 취소 테스트에서는 실제 session 응답의 제공자 사용 가능 여부만 켜며 나머지 API·DB는 격리된 실제 서버를 사용한다. API의 일회용 코드 교환·쿠키·재사용·만료·경쟁·Origin·가입 동의는 API 소유 Vitest+Supertest로 검사한다.

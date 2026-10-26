@@ -2,7 +2,7 @@
 
 사용자가 루트 `.env`만 사용하도록 지정했다. 모바일은 루트 WEB_ORIGIN·공개 관측 키를 읽고 ENVIRONMENT=production이면 HTTPS를 요구한다. 별도 모바일 env 템플릿·App Link/Universal Link 배포 설정·시스템 브라우저 소셜 로그인은 제거했다. 관련 스킬의 이전 모바일 환경변수·인증서 설정 지침은 적용하지 않는다. 서버 자격 증명은 Expo extra에 넣지 않는다.
 
-Expo 57 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글·채팅·디자인 시스템은 Web이 소유한다. 네이티브는 안전 영역, 탐색·뒤로 가기·딥링크, 연결 복구, 시스템 브라우저 인증, OS 푸시 권한·토큰·배지·알림 탭을 담당한다.
+Expo 58 + React Native WebView 셸이다. 제품 화면·폼·게시글·댓글·채팅·디자인 시스템은 Web이 소유한다. 네이티브는 안전 영역, 탐색·뒤로 가기·딥링크, 연결 복구, 시스템 브라우저 인증, OS 푸시 권한·토큰·배지·알림 탭을 담당한다.
 
 - `_app/App.tsx`는 Provider 조합만 둔다. `_pages/web-shell`은 WebView UI·이벤트, `features/bridge`는 네이티브 메시지·Google 인증, `features/navigation`은 URL 정책, `shared/config`는 origin·색을 소유한다. slice 간 import는 named export `index.ts`를 통한다. 공유 Expo/FSD lint를 유지한다.
 - `@game-feedback/bridge`는 앱·웹이 함께 쓰는 메시지 계약이다. Photo Contest 전용 bridge를 참조하거나 변경하지 않는다. API는 REST `/api`이고 앱에 별도 API origin·인증 토큰을 두지 않는다.

@@ -8,10 +8,10 @@ Expo Go 금지·포트·HTTPS 원칙은 `apps/mobile/AGENTS.md`와 `README.md`, 
 ## dev client 실행
 
 ```sh
-corepack yarn workspace @side/game-feedback dev:test     # Web 3300 / API 4300, 이미 떠 있으면 그대로 쓴다
+yarn workspace @side/game-feedback dev:test     # Web 3300 / API 4300, 이미 떠 있으면 그대로 쓴다
 adb reverse tcp:3300 tcp:3300                            # 에뮬레이터·USB 기기를 연결할 때마다
-APP_VARIANT=development corepack yarn workspace @game-feedback/mobile android   # 또는 ios: dev client 빌드·설치
-APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     # 설치된 dev client용 Metro 8082
+APP_VARIANT=development yarn workspace @game-feedback/mobile android   # 또는 ios: dev client 빌드·설치
+APP_VARIANT=development yarn workspace @game-feedback/mobile start     # 설치된 dev client용 Metro 8082
 ```
 
 - 개발 origin 기본값은 `http://localhost:3300`(`parseWebOrigin`, `__DEV__`에서 값이 없을 때)이다. API `WEB_ORIGIN`도 `../../scripts/env.ts` 기본이 같은 값이라 쿠키·Origin 검사가 맞는다. Android 에뮬레이터는 `adb reverse`로 이 localhost를 유지한다. 실기기는 닿을 수 있는 origin을 `EXPO_PUBLIC_WEB_ORIGIN`과 API `WEB_ORIGIN`에 같은 값으로 준다.
@@ -61,13 +61,13 @@ APP_VARIANT=development corepack yarn workspace @game-feedback/mobile start     
 ## 검사
 
 ```sh
-corepack yarn workspace @game-feedback/mobile typecheck      # tsc7 --noEmit
-corepack yarn workspace @game-feedback/mobile lint           # 공유 expo 설정 + FSD 경계
-corepack yarn workspace @game-feedback/mobile test src/shared/config
-corepack yarn workspace @game-feedback/mobile bundle:check
-APP_VARIANT=development corepack yarn workspace @game-feedback/mobile exec expo config --type public --json   # 개발 식별자, 앱 링크 없음
+yarn workspace @game-feedback/mobile typecheck      # tsc7 --noEmit
+yarn workspace @game-feedback/mobile lint           # 공유 expo 설정 + FSD 경계
+yarn workspace @game-feedback/mobile test src/shared/config
+yarn workspace @game-feedback/mobile bundle:check
+APP_VARIANT=development yarn workspace @game-feedback/mobile exec expo config --type public --json   # 개발 식별자, 앱 링크 없음
 EXPO_PUBLIC_WEB_ORIGIN=https://game.example MOBILE_APPLE_TEAM_ID=ABCDE12345 MOBILE_IOS_BUNDLE_ID=com.example.game MOBILE_ANDROID_PACKAGE=com.example.game \
-  corepack yarn workspace @game-feedback/mobile exec expo config --type introspect --json   # associated domains·autoVerify intent filter·17.4
+  yarn workspace @game-feedback/mobile exec expo config --type introspect --json   # associated domains·autoVerify intent filter·17.4
 ```
 
 - `bundle:check`(`scripts/bundle-check.ts`)는 `expo export --platform android`, 이어서 `ios`를 `.expo-export-check/<platform>`에 만들고 첫 실패에서 멈춘 뒤 폴더를 항상 지운다. 프로젝트 `build`도 이것을 실행한다.

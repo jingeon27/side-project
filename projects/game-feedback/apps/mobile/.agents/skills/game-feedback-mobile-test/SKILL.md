@@ -49,12 +49,12 @@ description: Game Feedback 모바일 앱의 Vitest unit·ui 테스트나 Playwri
 ## 명령 (side 루트)
 
 ```sh
-corepack yarn workspace @game-feedback/mobile test                                      # unit + ui
-corepack yarn workspace @game-feedback/mobile test --project unit src/features         # 레인·경로로 거른다
-corepack yarn workspace @game-feedback/mobile exec playwright install chromium webkit  # 브라우저가 없을 때
-corepack yarn workspace @side/game-feedback test:mobile:e2e                            # codegen·테스트 DB 시작 후 e2e
-corepack yarn workspace @game-feedback/mobile test:e2e --project ios-webview app-shell # 준비된 상태에서 단독 실행
-corepack yarn workspace @side/game-feedback db:test:stop
+yarn workspace @game-feedback/mobile test                                      # unit + ui
+yarn workspace @game-feedback/mobile test --project unit src/features         # 레인·경로로 거른다
+yarn workspace @game-feedback/mobile exec playwright install chromium webkit  # 브라우저가 없을 때
+yarn workspace @side/game-feedback test:mobile:e2e                            # codegen·테스트 DB 시작 후 e2e
+yarn workspace @game-feedback/mobile test:e2e --project ios-webview app-shell # 준비된 상태에서 단독 실행
+yarn workspace @side/game-feedback db:test:stop
 ```
 
 - 단독 `test:e2e`는 55444 테스트 DB(`@side/game-feedback db:test:start`)와 codegen 산출물(`@side/game-feedback codegen` — API Prisma client는 teardown도 쓴다)이 있어야 한다. 프로젝트 `test:mobile:e2e`는 둘 다 준비한다.
