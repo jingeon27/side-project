@@ -13,11 +13,11 @@
     "android": "expo run:android",
     "typecheck": "tsc7 --noEmit",
     "lint": "eslint .",
-    "test": "node scripts/test.mjs --project unit --project ui",
-    "test:unit": "node scripts/test.mjs --project unit",
-    "test:api": "node scripts/test.mjs --project api",
+    "test": "node scripts/test.ts --project unit --project ui",
+    "test:unit": "node scripts/test.ts --project unit",
+    "test:api": "node scripts/test.ts --project api",
     "test:e2e": "playwright test",
-    "bundle:check": "node scripts/bundle-check.mjs"
+    "bundle:check": "node scripts/bundle-check.ts"
   },
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.12.2",
