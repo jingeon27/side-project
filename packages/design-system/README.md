@@ -28,7 +28,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 
 ## 공개 UI
 
-- `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. 세 입력은 같은 공통 토큰 상자(`input/input.styles.ts`)를 쓴다. Textarea는 내용에 맞춰 늘고 세로로만 크기를 바꾼다. NativeSelect는 모바일 OS 선택창을 사용한다.
+- `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. 세 입력은 같은 공통 토큰 상자(`input/input.styles.ts`)를 쓴다. Textarea는 내용에 맞춰 늘고 세로로만 크기를 바꾼다. NativeSelect는 모바일 OS 선택창을 사용한다.
 - `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`: Base UI의 키보드 선택/포털/포커스 복귀를 사용하는 shadcn 드롭다운이다. 트리거와 옵션은 44px 한 크기다.
 - `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`: 작업 메뉴. 삭제·차단 같은 항목은 `variant="danger"`다.
 

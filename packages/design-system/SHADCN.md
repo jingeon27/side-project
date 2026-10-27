@@ -3,7 +3,7 @@
 공식 shadcn/ui의 **Base UI / base-nova** registry 소스를 수동 설치하고 저장소의 공통 토큰·컴포넌트 이름·공개 API에 맞게 조정했다. shadcn/ui는 런타임 패키지를 추가하는 방식이 아니라 컴포넌트 소스를 프로젝트가 소유하는 방식으로 사용한다.
 
 - 공식 registry: `https://ui.shadcn.com/r/styles/base-nova/<component>.json`
-- 설치 구성: Button, Input, Textarea, NativeSelect, Label, Checkbox, Tabs, Dialog, Select, DropdownMenu, Sonner
+- 설치 구성: Button, Input, Textarea, NativeSelect, Checkbox, Tabs, Dialog, Select, DropdownMenu, Sonner. 소비자가 없던 Label은 지웠다. 레이블은 FormField·TextField가 연결한다.
 - 원본/라이선스: [shadcn-ui/ui](https://github.com/shadcn-ui/ui), [보존한 MIT 라이선스](SHADCN-LICENSE.md)
 - [공식 모노레포 가이드](https://ui.shadcn.com/docs/monorepo), [Base UI Button](https://ui.shadcn.com/docs/components/base/button), [Native Select](https://ui.shadcn.com/docs/components/base/native-select)
 

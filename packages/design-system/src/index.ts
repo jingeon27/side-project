@@ -31,7 +31,6 @@ export type { IMentionProps } from './ui/mention/Mention';
 export { Input } from './ui/input/Input';
 export { Textarea } from './ui/textarea/Textarea';
 export { NativeSelect, NativeSelectOption, NativeSelectOptGroup } from './ui/native-select/NativeSelect';
-export { Label } from './ui/label/Label';
 export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants } from './ui/tabs/Tabs';
 export { Checkbox } from './ui/checkbox/Checkbox';
 export {
