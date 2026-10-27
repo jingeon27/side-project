@@ -4,7 +4,8 @@ import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
-import { PrismaClient, type Prisma } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma';
+import { lockUserRelationship } from '../users/relationship-lock';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { type TFollowUserDto } from './follow-input.dto';
 
@@ -40,7 +41,7 @@ export class FollowsService {
     if (user.id === id) throw new ApiError(400, 'CANNOT_FOLLOW_SELF', '자신을 팔로우할 수 없습니다.');
     await this.target(req, id);
     const follow = await this.transactions.run(async (tx) => {
-      await this.lockRelationship(user.id, id, tx);
+      await lockUserRelationship(tx, user.id, id);
       const blocked = await (tx ?? this.db).block.findFirst({
         where: {
           OR: [
@@ -63,14 +64,9 @@ export class FollowsService {
   async unfollow(req: SessionRequest, id: string) {
     const user = requireUser(req);
     await this.transactions.run(async (tx) => {
-      await this.lockRelationship(user.id, id, tx);
+      await lockUserRelationship(tx, user.id, id);
       await (tx ?? this.db).userFollow.deleteMany({ where: { followerId: user.id, followingId: id } });
     });
     return { ok: true };
-  }
-
-  private lockRelationship(first: string, second: string, client: Prisma.TransactionClient) {
-    const key = `user-relationship:${[first, second].sort().join(':')}`;
-    return client.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))::text`;
   }
 }
