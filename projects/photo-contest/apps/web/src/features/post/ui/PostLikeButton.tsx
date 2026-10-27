@@ -1,7 +1,6 @@
 'use client';
 
 import { useFragment, useMutation } from '@apollo/client/react';
-import { Heart } from 'lucide-react';
 
 import {
   GalleryPostCardFragmentDoc,
@@ -12,7 +11,7 @@ import {
 import { formatCount } from '@/shared/lib/format.helper';
 import { useHaptics } from '@/shared/model/bridge';
 import { toast } from '@/shared/model/toast';
-import { Button } from '@/shared/ui/@core/button';
+import { LikeToggle } from '@/shared/ui/@core/like-toggle';
 
 import { refreshMonthlyPopular } from '../model/post.cache';
 
@@ -38,13 +37,10 @@ export function PostLikeButton({ postId }: { postId: string }) {
   if (!complete) return null;
   const pending = likeState.loading || unlikeState.loading;
   return (
-    <Button
-      variant="ghost"
-      size="md"
-      className="gap-1.5 rounded-full px-2 aria-pressed:bg-danger-soft aria-pressed:text-danger"
-      aria-label={`${post.title} 좋아요`}
-      aria-pressed={post.likedByMe}
-      aria-busy={pending || undefined}
+    <LikeToggle
+      density="card"
+      liked={post.likedByMe}
+      label={`${post.title} 좋아요`}
       onClick={async () => {
         if (!post.canInteract) {
           toast.info('그룹에 가입하면 좋아요를 남길 수 있어요.');
@@ -83,12 +79,7 @@ export function PostLikeButton({ postId }: { postId: string }) {
         }
       }}
     >
-      <Heart
-        aria-hidden
-        strokeWidth={1.7}
-        className={post.likedByMe ? 'size-5 fill-danger text-danger' : 'size-5'}
-      />
-      <span className="text-caption">좋아요 {formatCount(post.likeCount)}개</span>
-    </Button>
+      좋아요 {formatCount(post.likeCount)}개
+    </LikeToggle>
   );
 }

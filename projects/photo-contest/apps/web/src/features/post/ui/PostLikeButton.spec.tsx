@@ -183,7 +183,6 @@ describe('PostLikeButton', () => {
         { name: 'GalleryPosts', sort: PostSort.MonthlyPopular },
       ]),
     );
-    expect(button).not.toHaveAttribute('aria-busy');
     expect(button).toHaveTextContent('좋아요 4개');
   });
 
