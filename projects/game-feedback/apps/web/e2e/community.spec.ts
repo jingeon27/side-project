@@ -137,7 +137,7 @@ test('every game contains five shared boards on desktop and mobile and retired b
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   }
 });
-test('category chips support direct links, keyboard navigation, short viewports and Quill context', async ({
+test('category chips wrap without horizontal scrolling and support keyboard navigation, short viewports and Quill context', async ({
   page,
   baseURL,
 }) => {
@@ -153,7 +153,8 @@ test('category chips support direct links, keyboard navigation, short viewports 
   const friendly = chips.locator('a[href="/ja/boards/friendly"]');
   await expect(friendly).toHaveAttribute('aria-current', 'page');
   await expect(friendly).toBeInViewport({ ratio: 1 });
-  expect(await chips.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+  expect(await chips.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  for (const chip of await chips.getByRole('link').all()) await expect(chip).toBeInViewport({ ratio: 1 });
   const length = await page.evaluate(() => history.length);
   await friendly.focus();
   await page.keyboard.press('Tab');
@@ -178,7 +179,7 @@ test('category chips support direct links, keyboard navigation, short viewports 
       .evaluateAll(
         (links) => new Set(links.map((link) => Math.round(link.getBoundingClientRect().top))).size,
       ),
-  ).toBe(1);
+  ).toBeGreaterThan(1);
   await chips.getByRole('link').first().focus();
   await expect(chips.getByRole('link').first()).toBeInViewport({ ratio: 1 });
   await page.setViewportSize({ width: 760, height: 844 });
