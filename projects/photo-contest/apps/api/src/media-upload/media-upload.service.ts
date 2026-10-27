@@ -165,15 +165,18 @@ export class MediaUploadService {
       await this.assertAccess(viewer, current, tx);
       if (current.storageKey) return current;
       if (current.stagingKey !== key) fail(USED, ERROR_CODE.CONFLICT);
+      // 대회 사진·대표 사진은 각자의 기한으로 사용과 정리를 판단하므로 게시 기한과 함께 늘린다.
+      const expiresAt = new Date(Date.now() + COMPLETED_POST_UPLOAD_TTL_MS);
       if (current.submissionUpload)
-        await tx.upload.update({ where: { id: current.submissionUpload.id }, data: { imageKey: key } });
+        await tx.upload.update({
+          where: { id: current.submissionUpload.id },
+          data: { imageKey: key, expiresAt },
+        });
+      if (current.groupAvatar)
+        await tx.groupAvatar.update({ where: { id: current.groupAvatar.id }, data: { expiresAt } });
       await tx.postUpload.update({
         where: { id: current.id },
-        data: {
-          storageKey: key,
-          stagingKey: null,
-          expiresAt: new Date(Date.now() + COMPLETED_POST_UPLOAD_TTL_MS),
-        },
+        data: { storageKey: key, stagingKey: null, expiresAt },
       });
       return { ...current, storageKey: key };
     });
