@@ -71,6 +71,22 @@ AWS 공식 자료: [IAM 사용자 키 발급과 CLI 설정](https://docs.aws.ama
 
 버킷 CORS는 Terraform이 관리하지 않는다. 콘솔에서 같은 버킷의 규칙 배열에 운영 도메인, `http://localhost:3300`, 브라우저 테스트 origin을 둔다. 앱 키는 Terraform apply 권한이나 state 버킷 권한을 받을 필요가 없다.
 
+## staging 업로드 수명 주기
+
+예약한 업로드는 `<GF_S3_KEY_PREFIX>/staging/<uuid>`에 올라오고 완료 시 `objects/`의 새 키로 복사된다. 완료하지 않은 staging 객체는 운영자 `prune`(`deploy/shared-instance/scripts/service.sh game-feedback prune`)이 24시간 뒤 지운다. `prune`이 멈추거나 실행되지 않아도 버킷에 쌓이지 않도록 S3 수명 주기가 staging 접두사만 2일 뒤 만료한다. 완료 가능 시간(서명 5분 + 완료 유예)보다 충분히 길고, 최종 객체(`objects/`)와 다른 서비스 폴더의 현재 객체는 만료하지 않는다.
+
+`put-bucket-lifecycle-configuration`은 버킷의 규칙 전체를 바꾼다. 공용 버킷에는 공통 [`s3-lifecycle.json`](../../../deploy/shared-instance/s3-lifecycle.json) 대신 공통 규칙을 그대로 포함한 [GF 수명 주기](../deploy/shared-instance/s3-lifecycle.json)를 적용한다. 공통 규칙이 바뀌면 이 파일도 함께 바꾼다(`src/media-storage/s3-lifecycle.spec.ts`가 포함 여부를 검사한다). 버킷 관리 권한이 있는 운영자 자격 증명으로 저장소 루트에서 실행한다.
+
+```sh
+aws s3api put-bucket-lifecycle-configuration \
+  --region ap-northeast-2 \
+  --bucket YOUR_BUCKET_NAME \
+  --lifecycle-configuration file://projects/game-feedback/deploy/shared-instance/s3-lifecycle.json
+aws s3api get-bucket-lifecycle-configuration --region ap-northeast-2 --bucket YOUR_BUCKET_NAME
+```
+
+Versioning이 켜진 버킷에서 만료는 삭제 마커를 남기고, staging의 이전 버전은 1일 뒤 지운다. 로컬 개발 폴더(`game-feedback/local/staging/`)에도 같은 규칙을 둔다. 통합·브라우저 테스트의 `tests/<실행 ID>/`는 테스트가 직접 정리한다.
+
 ## 기존 파일 이행과 배포
 
 기존 DB의 bytes와 FILESYSTEM 객체는 자동 삭제하지 않는다. 별도 이행 도구로 참조 파일을 S3에 복사하고 크기·내용을 확인한 뒤 DB 참조를 바꾼다. 이미 S3에 있는 참조와 고정 조회 URL은 유지한다. 이전 컬럼은 이행·롤백이 끝날 때까지 남긴다. 개발 데이터와 운영 데이터는 각각 해당 저장소에 이행한다.
