@@ -1,4 +1,5 @@
 # Actions and base images are pinned by digest/SHA; Dependabot proposes the updates as reviewable PRs.
+# Commit messages follow `<type>(deps): …` so the Commits check accepts them (PRs land with merge commits).
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -8,6 +9,9 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
     groups:
       github-actions:
         patterns: ['*']
@@ -21,6 +25,9 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: build
+      include: scope
     groups:
       base-images:
         patterns: ['*']
@@ -35,6 +42,9 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    commit-message:
+      prefix: build
+      include: scope
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
