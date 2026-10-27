@@ -159,7 +159,7 @@ bash deploy/shared-instance/scripts/database.sh bootstrap
 
 ### 9. GitHub Environment 변수·비밀
 
-`production`(Game Feedback)과 `photo-contest-production`(Photo Contest) Environment는 이미 있고 배포 브랜치는 `main`이다. 두 Environment에 같은 값을 넣는다. 기준은 [`.github/workflows/game-feedback.yml`](../../../.github/workflows/game-feedback.yml)·[`photo-contest.yml`](../../../.github/workflows/photo-contest.yml)의 `vars.*`·`secrets.*`다.
+`game-feedback-production`(Game Feedback)과 `photo-contest-production`(Photo Contest) Environment는 이미 있고 배포 브랜치는 `main`이다. 두 Environment에 같은 값을 넣는다. 기준은 [`.github/workflows/game-feedback.yml`](../../../.github/workflows/game-feedback.yml)·[`photo-contest.yml`](../../../.github/workflows/photo-contest.yml)의 `vars.*`·`secrets.*`다.
 
 | 종류     | 이름                          | 값                                                                                  |
 | -------- | ----------------------------- | ----------------------------------------------------------------------------------- |
@@ -176,7 +176,7 @@ aws ec2 get-console-output --region ap-northeast-2 --instance-id "$(terraform ou
   | sed -n '/BEGIN SSH HOST KEY KEYS/,/END SSH HOST KEY KEYS/p' \
   | awk -v host="$HOST" '$1 ~ /^(ssh-ed25519|ecdsa-sha2-nistp256)$/ { print host, $1, $2 }' >known_hosts
 # SSM 세션에서 ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub 지문과 비교한 뒤 등록한다.
-for env in production photo-contest-production; do
+for env in game-feedback-production photo-contest-production; do
   gh variable set SIDE_DEPLOY_HOST --env "$env" --body "$HOST"
   gh variable set SIDE_DEPLOY_SSH_USER --env "$env" --body ubuntu
   gh variable set SIDE_DEPLOY_SSH_PORT --env "$env" --body 22
