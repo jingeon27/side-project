@@ -9,7 +9,7 @@ import { PrismaClient } from '../generated/prisma';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { type TPostViewDto } from './post-input.dto';
 
-/** 같은 IP·User-Agent에서 한 글에 24시간 동안 세는 익명 방문자 수의 상한. */
+/** 같은 IP에서 한 글에 24시간 동안 세는 익명 방문자 수의 상한. */
 export const ANONYMOUS_VIEWS_PER_NETWORK = 5;
 
 @Injectable()
@@ -27,8 +27,8 @@ export class PostViewsService {
   async record(req: SessionRequest, id: string, body: TPostViewDto) {
     const user = req.gfSession?.user;
     const visitorHash = hash(user ? `user:${user.id}` : `visitor:${body.visitorId}`);
-    // 익명 visitorId는 클라이언트가 정하므로 서버가 본 IP·User-Agent로 같은 출처의 집계 수를 묶는다.
-    const networkHash = user ? null : hash(`network:${req.ip ?? ''}:${req.get('user-agent') ?? ''}`);
+    // 익명 visitorId와 User-Agent는 클라이언트가 마음대로 바꾸므로 서버가 본 IP로만 같은 출처의 집계 수를 묶는다.
+    const networkHash = user ? null : hash(`network:${req.ip ?? ''}`);
     const excluded = await this.visibility.excluded(req);
     const viewCount = await this.transactions.run(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
