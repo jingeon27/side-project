@@ -1,8 +1,10 @@
 import { ApiError } from '@/shared/api';
 
+import { isAvatarFile } from './avatar-file';
+
 /** 업로드 전에 크기와 방향을 정리하고 촬영 메타데이터를 제거한다. */
 export async function prepareAvatar(file: File): Promise<File> {
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)
+  if (!isAvatarFile(file))
     throw new ApiError(400, 'INVALID_AVATAR', '5MB 이하의 JPEG, PNG, WebP 사진을 선택해주세요.');
   const image = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
   if (!image) throw new ApiError(400, 'INVALID_AVATAR', '사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.');

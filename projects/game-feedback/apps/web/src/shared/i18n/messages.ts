@@ -807,7 +807,7 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '직접 정한 닉네임으로 시작하기': ['Choose your own nickname', '好きなニックネームではじめる'],
   '서비스 닉네임': ['Nickname', 'ニックネーム'],
-  '2~20자로 입력해 주세요': ['Enter 2–20 characters', '2〜20文字で入力してください'],
+  '{min}~{max}자로 입력해 주세요': ['Enter {min}–{max} characters', '{min}〜{max}文字で入力してください'],
   이용약관: ['Terms of service', '利用規約'],
   '서비스 이용약관': ['Terms of service', '利用規約'],
   '서비스 안내': ['Service information', 'サービス案内'],

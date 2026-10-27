@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFieldArray } from 'react-hook-form';
 
+import { ProfileLinkSchema } from '@game-feedback/contracts';
 import { Button, Input } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
@@ -10,6 +11,8 @@ import { ErrorNotice } from '@/shared/ui';
 
 import type { TProfileLinksForm } from '../model/profile-edit.schema';
 import { updateProfileMutationOptions } from '../model/profile.mutation-options';
+
+const { label, url } = ProfileLinkSchema.shape;
 
 export function ProfileLinksEditor({ form }: { form: TProfileLinksForm }) {
   const { t } = useI18n();
@@ -28,14 +31,18 @@ export function ProfileLinksEditor({ form }: { form: TProfileLinksForm }) {
           <legend>{t('링크 {number}', { number: index + 1 })}</legend>
           <label>
             {t('이름')} <span aria-hidden>*</span>
-            <Input required maxLength={40} {...form.register(`links.${index}.label`)} />
+            <Input
+              required
+              maxLength={label.maxLength ?? undefined}
+              {...form.register(`links.${index}.label`)}
+            />
           </label>
           <label>
             {t('주소')} <span aria-hidden>*</span>
             <Input
               required
               type="url"
-              maxLength={2048}
+              maxLength={url.maxLength ?? undefined}
               placeholder="https://"
               {...form.register(`links.${index}.url`)}
             />

@@ -3,16 +3,13 @@ import { z, type ZodObject } from 'zod';
 
 import { ProfileDetailsInputSchema, UpdateProfileInputSchema } from '@game-feedback/contracts';
 
+import { isAvatarFile } from '../lib/avatar-file';
+
 export const profileDetailsSchema = ProfileDetailsInputSchema;
 export const profileLinksSchema = UpdateProfileInputSchema;
 export const profilePhotoSchema = z.object({
   file: z.custom<File>(
-    (value) =>
-      typeof File !== 'undefined' &&
-      value instanceof File &&
-      value.size > 0 &&
-      value.size <= 5 * 1024 * 1024 &&
-      ['image/jpeg', 'image/png', 'image/webp'].includes(value.type),
+    (value) => typeof File !== 'undefined' && value instanceof File && isAvatarFile(value),
     '5MB 이하의 JPEG, PNG, WebP 사진을 선택해주세요.',
   ),
 });

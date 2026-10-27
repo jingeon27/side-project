@@ -7,11 +7,16 @@ import { Controller, useWatch } from 'react-hook-form';
 
 import { Button, Checkbox, Input } from '@side/design-system';
 
+import { nicknameLength } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field } from '@/shared/ui';
 
-import { accountSetupSchema, type TAccountSetupValues } from '../model/account-setup.schema';
+import {
+  accountSetupSchema,
+  NICKNAME_LENGTH_MESSAGE,
+  type TAccountSetupValues,
+} from '../model/account-setup.schema';
 
 interface IAccountSetupFormProps {
   children?: ReactNode;
@@ -51,16 +56,18 @@ export function AccountSetupForm({
           <Field
             label={t('서비스 닉네임')}
             error={
-              form.formState.errors.nickname?.message ? t(form.formState.errors.nickname.message) : undefined
+              form.formState.errors.nickname?.message
+                ? t(form.formState.errors.nickname.message, nicknameLength)
+                : undefined
             }
           >
             <Input
               {...form.register('nickname')}
-              minLength={2}
-              maxLength={20}
+              minLength={nicknameLength.min}
+              maxLength={nicknameLength.max}
               required
               disabled={pending}
-              placeholder={t('2~20자로 입력해 주세요')}
+              placeholder={t(NICKNAME_LENGTH_MESSAGE, nicknameLength)}
               autoComplete="nickname"
             />
           </Field>

@@ -12,6 +12,7 @@ import {
 } from '@/features/chat';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import { ApiError } from '@/shared/api';
+import { isUploadableMediaSize, isUploadableMediaType } from '@/shared/lib/media-types';
 import { useZodForm } from '@/shared/model/form';
 
 import { useDesktopKeyboard } from './use-desktop-keyboard';
@@ -113,13 +114,11 @@ export function useChatComposer({
   }
   async function handleFile(file?: File) {
     if (!file || busy || unavailable) return;
-    if (file.size > 25 * 1024 * 1024 || file.size === 0) {
+    if (!isUploadableMediaSize(file.size)) {
       form.setError('root.attachment', { message: '파일은 25MB 이하로 선택해주세요.' });
       return;
     }
-    if (
-      !['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'].includes(file.type)
-    ) {
+    if (!isUploadableMediaType(file.type)) {
       form.setError('root.attachment', { message: '지원하는 이미지나 동영상 파일을 선택해주세요.' });
       return;
     }

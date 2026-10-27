@@ -11,6 +11,7 @@ import { Button, Input, Textarea } from '@side/design-system';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice, Field, useNotify } from '@/shared/ui';
 
+import { nicknameLength } from '../model/nickname-length';
 import type { TProfileDetailsForm } from '../model/profile-edit.schema';
 import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 
@@ -38,17 +39,17 @@ export function ProfileDetailsEditor({ form }: { form: TProfileDetailsForm }) {
     >
       <Field
         label={t('서비스 닉네임')}
-        hint={t('2~24자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.')}
+        hint={t('{min}~{max}자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.', nicknameLength)}
         error={
           form.formState.errors.nickname
-            ? t('닉네임은 2~24자의 문자, 숫자, 공백과 _ . -로 입력해주세요.')
+            ? t('닉네임은 {min}~{max}자의 문자, 숫자, 공백과 _ . -로 입력해주세요.', nicknameLength)
             : undefined
         }
       >
         <Input
           {...form.register('nickname')}
-          minLength={2}
-          maxLength={24}
+          minLength={nicknameLength.min}
+          maxLength={nicknameLength.max}
           required
           autoComplete="nickname"
           disabled={mutation.isPending}
@@ -57,7 +58,11 @@ export function ProfileDetailsEditor({ form }: { form: TProfileDetailsForm }) {
       <Field
         label={t('자기소개')}
         hint={t('웹 주소를 입력하면 프로필에서 클릭 가능한 링크로 표시돼요.')}
-        error={form.formState.errors.bio ? t('자기소개는 500자 이하로 입력해주세요.') : undefined}
+        error={
+          form.formState.errors.bio
+            ? t('자기소개는 {max}자 이하로 입력해주세요.', { max: PROFILE_BIO_MAX_LENGTH })
+            : undefined
+        }
       >
         <Textarea
           {...form.register('bio')}

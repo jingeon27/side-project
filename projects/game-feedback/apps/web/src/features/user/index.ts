@@ -8,3 +8,4 @@ export { profileOptions } from './model/user.options';
 export { unblockUserMutationOptions } from './model/user.mutation-options';
 
 export { ProfileEditSheet } from './ui/ProfileEditSheet';
+export { nicknameLength } from './model/nickname-length';

@@ -8,6 +8,7 @@ import { Button } from '@side/design-system';
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice } from '@/shared/ui';
 
+import { avatarAccept } from '../lib/avatar-file';
 import type { TProfilePhotoForm } from '../model/profile-edit.schema';
 import { deleteAvatarMutationOptions, uploadAvatarMutationOptions } from '../model/profile.mutation-options';
 
@@ -52,7 +53,7 @@ export function ProfilePhotoEditor({ form, hasPhoto }: { form: TProfilePhotoForm
             <input
               ref={field.ref}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept={avatarAccept}
               aria-label={t('프로필 사진 선택')}
               disabled={pending}
               onBlur={() => field.onBlur()}
