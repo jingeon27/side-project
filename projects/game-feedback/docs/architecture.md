@@ -50,7 +50,7 @@ React 경계는 렌더·라이프사이클 오류를 담당한다. REST 응답 �
 
 `packages/design-system`의 `@side/design-system`을 Photo Contest 웹과 함께 사용한다. 색·타이포·간격·모서리·그림자·포커스·터치 영역과 `cn` 충돌 규칙은 이 패키지가 소유한다. Photo Contest의 흑백 기본 UI와 오렌지 강조색을 공통 토큰으로 사용하며 앱 이름·게임 정보·화면 레이아웃은 각 앱에 남긴다.
 
-공통 Button·IconButton·TextField·TextArea·FormField·Avatar·Badge·Spinner·Dialog를 named export로 제공한다. Next 전용 ButtonLink는 `/next`, CSS는 `/styles.css`로 공개한다. 공유 CSS는 자체 UI 소스의 Tailwind 검색도 선언해 소비 앱에서 패키지 클래스가 누락되지 않도록 한다. 프레임워크별 라우팅·서버 상태·인증·오버레이 수명은 공통 패키지에 넣지 않는다.
+공통 Button·IconButton·TextField·TextAreaField·FormField·Avatar·Badge·Spinner·Dialog를 named export로 제공한다. Next 전용 ButtonLink는 `/next`, CSS는 `/styles.css`로 공개한다. 공유 CSS는 자체 UI 소스의 Tailwind 검색도 선언해 소비 앱에서 패키지 클래스가 누락되지 않도록 한다. 프레임워크별 라우팅·서버 상태·인증·오버레이 수명은 공통 패키지에 넣지 않는다.
 
 Game Feedback은 `shared/ui` 어댑터에서 기존 화면 API를 유지하고, CSS 진입점은 `src/_app/styles/tailwind.css`다. 앱별 CSS는 화면 도메인별로 분리하고 공통 색·버튼·입력·모달 스타일을 재정의하지 않는다. Photo Contest는 기존 public UI 경로에서 공통 구현을 re-export하고, 브라우저 뒤로 가기·WebView·portal 위치가 결합된 시트·확인창 동작은 앱에서 유지한다.
 
