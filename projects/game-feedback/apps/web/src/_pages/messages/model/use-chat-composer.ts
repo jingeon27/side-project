@@ -1,4 +1,4 @@
-import { useEffect, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
+import { useEffect, useEffectEvent, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
@@ -45,12 +45,12 @@ export function useChatComposer({
   const fileError = form.formState.errors.root?.attachment?.message ?? null;
   const desktopKeyboard = useDesktopKeyboard();
   const busy = mutation.isPending || upload.isPending || remove.isPending;
-  useEffect(() => {
+  // 보냈거나 지운 첨부는 upload.reset()으로 비운다. 대화를 떠날 때 아직 남은 미전송 첨부만 정리한다.
+  const handleLeave = useEffectEvent((leftConversationId: string) => {
     const attachment = upload.data;
-    return () => {
-      if (attachment) void discardChatAttachment(conversationId, attachment.id).catch(() => {});
-    };
-  }, [conversationId, upload.data]);
+    if (attachment) void discardChatAttachment(leftConversationId, attachment.id).catch(() => {});
+  });
+  useEffect(() => () => handleLeave(conversationId), [conversationId]);
 
   async function handleSend({ body }: z.output<typeof messageSchema>) {
     if (
