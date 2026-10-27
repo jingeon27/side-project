@@ -5,7 +5,11 @@ import { Heart } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
-import { NotificationItem } from '@/features/notification';
+import {
+  markAllNotificationsReadInCache,
+  markNotificationReadInCache,
+  NotificationItem,
+} from '@/features/notification';
 import { PostCommentsBottomSheet } from '@/features/post';
 import { PushNotificationSettings } from '@/features/push-notifications';
 import {
@@ -13,7 +17,6 @@ import {
   MarkNotificationReadDocument,
   MyNotificationsDocument,
   NotificationContestFormat,
-  NotificationUnreadCountDocument,
   type MyNotificationsQuery,
   type NotificationCardFragment,
 } from '@/shared/api/generated';
@@ -34,21 +37,27 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
     pageSize: PAGE_SIZE,
     canFetchMore: (page) => page.myNotifications.hasMore,
   });
+  // 목록을 다시 받으면 첫 페이지 응답이 더 읽은 알림을 지우므로 읽음은 캐시에서 바로 고친다.
+  // 서버가 거절하면 Apollo가 낙관적 변경을 되돌리고 ErrorLink가 알린다.
   const [read] = useMutation(MarkNotificationReadDocument, {
-    refetchQueries: [MyNotificationsDocument, NotificationUnreadCountDocument],
-    awaitRefetchQueries: true,
+    optimisticResponse: { markNotificationRead: true },
   });
   const [readAll, { loading }] = useMutation(MarkAllNotificationsReadDocument, {
-    refetchQueries: [MyNotificationsDocument, NotificationUnreadCountDocument],
-    awaitRefetchQueries: true,
+    optimisticResponse: { markAllNotificationsRead: true },
+    update: (cache, { data }) => {
+      if (data?.markAllNotificationsRead) markAllNotificationsReadInCache(cache, new Date().toISOString());
+    },
   });
-  async function handleOpen(notice: NotificationCardFragment) {
+  function handleOpen(notice: NotificationCardFragment) {
     if (!notice.readAt) {
-      try {
-        await read({ variables: { id: notice.id } });
-      } catch {
-        /* 읽음 저장 실패는 알림 내용 열기를 막지 않는다. */
-      }
+      const readAt = new Date().toISOString();
+      // 읽음 저장을 기다리지 않고 바로 연다. 실패해도 알림 내용 열기는 막지 않는다.
+      void read({
+        variables: { id: notice.id },
+        update: (cache, { data }) => {
+          if (data?.markNotificationRead) markNotificationReadInCache(cache, notice.id, readAt);
+        },
+      }).catch(() => undefined);
     }
     const postId = notice.postId;
     if (postId) {
