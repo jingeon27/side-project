@@ -3,14 +3,9 @@ import { Injectable } from '@nestjs/common';
 import type { IViewer } from '../auth/session.service';
 import { USER_VIEW_SELECT } from '../auth/user-view';
 import { ERROR_CODE, fail } from '../common/errors';
-import {
-  COMPLETED_POST_UPLOAD_TTL_MS,
-  MAX_PENDING_UPLOADS,
-  UPLOAD_TICKET_TTL_MS,
-  USER_STORAGE_QUOTA_BYTES,
-} from '../config/limits';
+import { COMPLETED_POST_UPLOAD_TTL_MS, MAX_PENDING_UPLOADS, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
-import { STORAGE_QUOTA_EXCEEDED } from '../media-upload/media-upload.service';
+import { assertStorageQuota } from '../media-upload/storage-quota';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { type TRequestProfileAvatarUploadDto, type TUpdateMyProfileDto } from './profile.dto';
 
@@ -34,15 +29,7 @@ export class ProfileService {
       });
       if (pending >= MAX_PENDING_UPLOADS)
         fail('업로드 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.', ERROR_CODE.RATE_LIMITED);
-      const [profiles, posts] = await Promise.all([
-        tx.profileUpload.aggregate({ where: { userId: viewer.id }, _sum: { byteSize: true } }),
-        tx.postUpload.aggregate({ where: { userId: viewer.id }, _sum: { byteSize: true } }),
-      ]);
-      if (
-        (profiles._sum.byteSize ?? 0) + (posts._sum.byteSize ?? 0) + input.byteSize >
-        USER_STORAGE_QUOTA_BYTES
-      )
-        fail(STORAGE_QUOTA_EXCEEDED, ERROR_CODE.RATE_LIMITED);
+      await assertStorageQuota(tx, viewer, input.byteSize);
       const expiresAt = new Date(now.getTime() + UPLOAD_TICKET_TTL_MS);
       return tx.profileUpload.create({
         data: {

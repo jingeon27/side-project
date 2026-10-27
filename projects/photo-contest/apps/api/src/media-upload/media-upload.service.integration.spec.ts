@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
 import { USER_STORAGE_QUOTA_BYTES } from '../config/limits';
-import { STORAGE_QUOTA_EXCEEDED } from './media-upload.service';
+import { STORAGE_QUOTA_EXCEEDED } from './storage-quota';
 
 const REQUEST =
   'mutation($group:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$group,contentType:$type,byteSize:$size){id}}';

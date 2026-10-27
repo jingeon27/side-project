@@ -9,7 +9,6 @@ import {
   MAX_UPLOAD_BYTES,
   POST_UPLOAD_TTL_SECONDS,
   UPLOAD_TICKET_TTL_MS,
-  USER_STORAGE_QUOTA_BYTES,
 } from '../config/limits';
 import { phase, PHASE } from '../contest/contest.policy';
 import { Database, type TDatabaseClient } from '../database/database.service';
@@ -17,6 +16,7 @@ import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
 import { postUploadPolicy } from '../post/post-upload.policy';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { assertStorageQuota } from './storage-quota';
 
 type TUploadPurpose = { kind: 'POST' } | { kind: 'SUBMISSION'; contestId: string } | { kind: 'GROUP_AVATAR' };
 type TCompletionPurpose = { submissionId: string } | { avatarId: string };
@@ -37,8 +37,6 @@ interface IUploadTicket {
 
 const REJECTED = '업로드 요청이 만료되었거나 유효하지 않습니다.';
 const USED = '이미 사용했거나 만료된 업로드입니다.';
-export const STORAGE_QUOTA_EXCEEDED =
-  '올릴 수 있는 저장 공간(5GB)을 모두 썼습니다. 쓰지 않는 게시물을 지운 뒤 다시 시도해 주세요.';
 
 /**
  * 게시물·대회 사진·그룹 대표 사진의 공용 업로드. 발급할 때 형식·크기를 정하고 최종 키에 POST 정책을 서명한다.
@@ -74,17 +72,7 @@ export class MediaUploadService {
           fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
       }
       const now = new Date();
-      // 계정 하나가 버킷을 무한히 채우지 못하게 지금까지 맡긴 원본 크기(지우는 중인 파일 포함)를 함께 센다.
-      const stored = await tx.postUpload.aggregate({
-        where: { userId: viewer.id },
-        _sum: { byteSize: true },
-      });
-      const profiles = await tx.profileUpload.aggregate({
-        where: { userId: viewer.id },
-        _sum: { byteSize: true },
-      });
-      if ((stored._sum.byteSize ?? 0) + (profiles._sum.byteSize ?? 0) + byteSize > USER_STORAGE_QUOTA_BYTES)
-        fail(STORAGE_QUOTA_EXCEEDED, ERROR_CODE.RATE_LIMITED);
+      await assertStorageQuota(tx, viewer, byteSize);
       const pending = contestId
         ? await tx.upload.count({
             where: { userId: viewer.id, contestId, expiresAt: { gt: now }, submission: null },
