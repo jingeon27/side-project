@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Bell, CheckCheck, LoaderCircle } from 'lucide-react';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 
@@ -79,7 +80,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           </span>
           <h3>{t('아직 도착한 소식이 없어요')}</h3>
           <p>{t('피드백 요청을 남기고 새로운 이야기를 만나보세요.')}</p>
-          <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
+          <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button outline">
             {t('피드 둘러보기')}
           </ButtonLink>
         </div>

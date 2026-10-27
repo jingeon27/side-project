@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { resolveAppRoute } from '@game-feedback/bridge';
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 import { useSession } from '@/features/auth';
 import { conversationBadgeOptions } from '@/features/chat';
@@ -32,7 +32,7 @@ export function CommunityShell({ children, locale }: ICommunityShellProps) {
     refetchInterval: connection === 'live' ? false : 10_000,
   });
   const chatUnread = conversations?.unreadCount ?? 0;
-  const home = `/${locale}`;
+  const home = appRoutes.feed(locale);
   const userKey = session?.user?.id ?? 'anonymous';
   return (
     <div className="community-shell">

@@ -82,7 +82,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
                 date: formatDate(session.user.createdAt, textLocale),
               })}
             </p>
-            <Link className="text-action" href={`/${locale}/users/${session.user.id}`}>
+            <Link className="text-action" href={appRoutes.profile(locale, session.user.id)}>
               {t('공개 프로필 보기 →')}
             </Link>
           </div>

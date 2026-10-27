@@ -5,6 +5,7 @@ import { useId, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Controller, useWatch } from 'react-hook-form';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { Button, Checkbox, Input } from '@side/design-system';
 
 import { nicknameLength } from '@/features/user';
@@ -88,11 +89,11 @@ export function AccountSetupForm({
               )}
             />
             <span>
-              <a href={`/${locale}/terms`} target="_blank" rel="noreferrer">
+              <a href={appRoutes.terms(locale)} target="_blank" rel="noreferrer">
                 {t('이용약관')}
               </a>{' '}
               {t('및')}{' '}
-              <a href={`/${locale}/privacy`} target="_blank" rel="noreferrer">
+              <a href={appRoutes.privacy(locale)} target="_blank" rel="noreferrer">
                 {t('개인정보 처리방침')}
               </a>
               {t('에 동의합니다.')}

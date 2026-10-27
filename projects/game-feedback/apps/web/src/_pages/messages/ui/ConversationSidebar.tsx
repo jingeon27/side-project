@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, MessageCircle } from 'lucide-react';
 
+import { appRoutes } from '@game-feedback/bridge';
+
 import { conversationListOptions } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
 import { useChatConnection } from '@/widgets/chat-realtime';
@@ -57,7 +59,7 @@ export function ConversationSidebar({ userId, conversationId, locale }: IConvers
             <br />
             {t('‘채팅하기’를 눌러보세요.')}
           </p>
-          <Link href={`/${locale}`}>
+          <Link href={appRoutes.feed(locale)}>
             {t('플레이어 만나러 가기')}
             <ArrowUpRight size={13} />
           </Link>

@@ -3,7 +3,7 @@
 import { Suspense, useContext, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-import { resolveAppRoute } from '@game-feedback/bridge';
+import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 import { useSession } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
@@ -27,7 +27,7 @@ export function CommunityPage({
   const { session } = useSession();
   const chatUnread = useContext(ChatUnreadContext);
   const userKey = session.user?.id ?? 'anonymous';
-  const home = `/${locale}`;
+  const home = appRoutes.feed(locale);
   return (
     <>
       <ServiceErrorBoundary title={t('상단 메뉴')} resetKey={userKey}>

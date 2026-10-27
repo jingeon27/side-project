@@ -179,11 +179,9 @@ function ProfilePosts({
         ))}
       </div>
       <nav className="profile-pagination" aria-label={t('작성글 페이지')}>
-        {cursor && <Link href={`/${locale}/users/${id}`}>{t('처음으로')}</Link>}
+        {cursor && <Link href={appRoutes.profile(locale, id)}>{t('처음으로')}</Link>}
         {posts.data?.nextCursor && (
-          <Link href={`/${locale}/users/${id}?cursor=${encodeURIComponent(posts.data.nextCursor)}`}>
-            {t('이전 글 보기 →')}
-          </Link>
+          <Link href={appRoutes.profile(locale, id, posts.data.nextCursor)}>{t('이전 글 보기 →')}</Link>
         )}
       </nav>
     </section>
