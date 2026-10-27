@@ -234,6 +234,7 @@ model PostUpload {
   submissionUpload Upload?
   groupAvatar GroupAvatar?
   @@index([expiresAt])
+  @@index([userId])
 }
 model PostUploadAttempt {
   key String @id
@@ -270,6 +271,7 @@ model Post {
   @@unique([id, contestId])
   @@index([contestId, createdAt, id])
   @@index([groupId, createdAt, id])
+  @@index([authorId, createdAt, id])
 }
 model PostComment {
   id String @id @default(cuid())
