@@ -37,6 +37,7 @@ export function ContentEditDialog({
     form = useZodForm(type === 'ANSWER' ? answerFormSchema : commentFormSchema, { defaultValues: { body } });
   const isPending = answer.isPending || comment.isPending,
     error = answer.error || comment.error;
+  const errorMessage = error?.message || form.formState.errors.body?.message;
   return (
     <BottomSheet
       open={open}
@@ -79,7 +80,7 @@ export function ContentEditDialog({
           maxLength={type === 'ANSWER' ? 10000 : 2000}
           required
         />
-        <ErrorNotice message={error?.message || form.formState.errors.body?.message} />
+        <ErrorNotice message={errorMessage && t(errorMessage)} />
       </form>
     </BottomSheet>
   );

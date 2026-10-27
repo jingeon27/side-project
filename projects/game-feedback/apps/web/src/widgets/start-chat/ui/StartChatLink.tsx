@@ -39,7 +39,7 @@ export function StartChatLink({ source, userId, nickname, label, appearance = 't
         trackEvent(ANALYTICS_EVENT.ChatStarted, { source });
         router.push(appRoutes.conversation(locale, conversation.id));
       },
-      onError: (error) => notify(chatError(error)),
+      onError: (error) => notify(t(chatError(error))),
     });
   }
 

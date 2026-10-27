@@ -7,6 +7,8 @@ import { overlay } from 'overlay-kit';
 
 import { Button } from '@side/design-system';
 
+import { useI18n } from '@/shared/i18n';
+
 import { BottomSheet } from './BottomSheet';
 import { ErrorRecovery } from './ErrorRecovery';
 
@@ -24,25 +26,26 @@ const OverlayErrorBoundary = catchError(function OverlayErrorFallback(
   { open, onOpenChange, onOpenChangeComplete }: IOverlayControlProps,
   { reset: onReset },
 ) {
+  const { t } = useI18n();
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={onOpenChangeComplete}
-      title="창을 불러오지 못했어요"
-      description="다시 시도하거나 창을 닫고 다른 기능을 이용할 수 있어요."
+      title={t('창을 불러오지 못했어요')}
+      description={t('다시 시도하거나 창을 닫고 다른 기능을 이용할 수 있어요.')}
       footer={
         <>
           <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
-            닫기
+            {t('닫기')}
           </Button>
           <Button type="button" onClick={onReset}>
-            다시 시도하기
+            {t('다시 시도하기')}
           </Button>
         </>
       }
     >
-      <ErrorRecovery title="이 창" onRetry={onReset} showRetry={false} />
+      <ErrorRecovery title={t('이 창')} onRetry={onReset} showRetry={false} />
     </BottomSheet>
   );
 });

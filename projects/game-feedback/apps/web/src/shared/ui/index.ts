@@ -3,7 +3,6 @@ export { ErrorNotice } from './ErrorNotice';
 export { Field } from './Field';
 export { LinkifiedText } from './LinkifiedText';
 export { LoadingState } from './LoadingState';
-export { Modal } from './Modal';
 export { BottomSheet } from './BottomSheet';
 export { ToastProvider, useNotify } from './ToastProvider';
 export { ErrorRecovery } from './ErrorRecovery';

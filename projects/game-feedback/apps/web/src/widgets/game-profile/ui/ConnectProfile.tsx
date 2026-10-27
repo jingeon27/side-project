@@ -31,8 +31,12 @@ export function ConnectProfile({ open, onOpenChange, onOpenChangeComplete, onSav
   const form = useZodForm(profileTagSchema, { defaultValues: { playerTag: '' } });
   const client = useQueryClient();
   const preview = useMutation(lookupGameProfileMutationOptions(client));
-  const save = useMutation(saveGameAccountMutationOptions(client, notify));
+  const save = useMutation(
+    saveGameAccountMutationOptions(client, () => notify(t('게임 프로필이 연결되었어요.'))),
+  );
   const tagField = form.register('playerTag');
+  const errorMessage =
+    form.formState.errors.playerTag?.message ?? preview.error?.message ?? save.error?.message;
   return (
     <BottomSheet
       open={open}
@@ -108,9 +112,7 @@ export function ConnectProfile({ open, onOpenChange, onOpenChangeComplete, onSav
             />
           </div>
         </Field>
-        <ErrorNotice
-          message={form.formState.errors.playerTag?.message ?? preview.error?.message ?? save.error?.message}
-        />
+        <ErrorNotice message={errorMessage && t(errorMessage)} />
         {preview.data && (
           <div className="profile-preview">
             <ProfileSnapshot profile={preview.data} />

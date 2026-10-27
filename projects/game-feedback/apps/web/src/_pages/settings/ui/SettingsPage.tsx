@@ -41,8 +41,11 @@ function SettingsContent({ locale }: ISettingsPageProps) {
   const { session, login, loading } = useSession();
   const accounts = useQuery(gameAccountListOptions(session?.user?.id));
   const blocks = useQuery(blockListOptions(session?.user?.id));
-  const logout = useMutation(logoutMutationOptions(client, notify));
-  const unblock = useMutation(unblockUserMutationOptions(client, notify));
+  const logout = useMutation(
+    logoutMutationOptions(client, () => notify(t('로그아웃했어요. 다음 플레이에서 만나요!'))),
+  );
+  const unblock = useMutation(unblockUserMutationOptions(client, () => notify(t('차단을 해제했어요.'))));
+  const blockError = blocks.error?.message ?? unblock.error?.message;
   if (loading) return <LoadingState />;
   if (!session?.user)
     return (
@@ -104,7 +107,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
           {t('게임 계정은 내 사용자 계정에 등록됩니다. 프로필 인증은 관리자에게 문의해주세요.')}
         </p>
         {accounts.isPending && <LoadingState />}
-        <ErrorNotice message={accounts.error?.message} />
+        <ErrorNotice message={accounts.error && t(accounts.error.message)} />
         <div className="game-account-list">
           {accounts.data?.map((profile) => (
             <GameAccountCard key={profile.playerTag} profile={profile} />
@@ -122,7 +125,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
             {t('명')}
           </span>
         </div>
-        <ErrorNotice message={blocks.error?.message ?? unblock.error?.message} />
+        <ErrorNotice message={blockError && t(blockError)} />
         {blocks.data?.length === 0 && <p className="muted small">{t('차단한 사용자가 없어요.')}</p>}
         {blocks.data?.map((person) => (
           <div className="blocked-user" key={person.id}>
@@ -156,7 +159,7 @@ function SettingsContent({ locale }: ISettingsPageProps) {
       <ThemeSettings />
       <section className="settings-card account-settings">
         <h2>{t('계정 관리')}</h2>
-        <ErrorNotice message={logout.error?.message} />
+        <ErrorNotice message={logout.error && t(logout.error.message)} />
         <button className="settings-action" disabled={logout.isPending} onClick={() => logout.mutate()}>
           <LogOut size={18} />
           <span>{t('로그아웃')}</span>

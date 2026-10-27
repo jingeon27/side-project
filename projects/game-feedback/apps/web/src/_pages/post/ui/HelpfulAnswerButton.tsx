@@ -54,7 +54,7 @@ export function HelpfulAnswerButton({ answer }: IHelpfulAnswerButtonProps) {
         </m.span>
         {answer.helpful ? t('도움됨 취소') : t('도움이 됐어요')}
       </m.button>
-      <ErrorNotice message={mutation.error?.message} />
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
     </div>
   );
 }

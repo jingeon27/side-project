@@ -8,6 +8,7 @@ import { appRoutes } from '@game-feedback/bridge';
 
 import { chatMessageOptions } from '@/features/chat';
 import type { Author } from '@/shared/api';
+import { useI18n } from '@/shared/i18n';
 import { openOverlay, useNotify } from '@/shared/ui';
 import { BlockUserDialog } from '@/widgets/moderation';
 
@@ -21,6 +22,7 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
   const client = useQueryClient();
   const router = useRouter();
   const notify = useNotify();
+  const { t } = useI18n();
   const overlayId = `block-chat:${userId}:${conversationId}`;
 
   useEffect(
@@ -39,7 +41,7 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
           onBlocked={() => {
             client.removeQueries(chatMessageOptions(userId, conversationId));
             router.replace(appRoutes.messages(locale), { scroll: false });
-            notify('사용자를 차단했어요. 더 이상 메시지를 주고받을 수 없어요.');
+            notify(t('사용자를 차단했어요. 더 이상 메시지를 주고받을 수 없어요.'));
           }}
         />
       ),

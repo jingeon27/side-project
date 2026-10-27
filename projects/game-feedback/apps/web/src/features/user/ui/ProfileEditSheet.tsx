@@ -110,7 +110,7 @@ export function ProfileEditSheet({
         <p className="small muted profile-bio-count">
           {(bio ?? '').length}/{PROFILE_BIO_MAX_LENGTH}
         </p>
-        <ErrorNotice message={mutation.error?.message} />
+        <ErrorNotice message={mutation.error && t(mutation.error.message)} />
       </form>
       <section className="profile-edit-section">
         <h3>{t('프로필 사진')}</h3>

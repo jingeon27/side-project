@@ -32,6 +32,7 @@ description: Game Feedback 웹(apps/web)에서 링크·뒤로 가기·탭 이동
 - 지원 locale `ko`·`en`·`ja`는 여러 곳에 고정돼 있다: `shared/i18n/locale.ts`, `[locale]/layout.tsx`의 `generateStaticParams`, `proxy.ts`(matcher·admin 정규식), `_app/seo/document-access.server.ts`, `_app/seo/discovery.server.ts`, `shared/seo/config.ts`·`metadata.ts`, bridge `routes.ts`. 하나만 바꾸지 않는다.
 - 첫 진입 언어는 `gf_language` 쿠키(`LANGUAGE_COOKIE`) → `Accept-Language` → en(`preferredLocale`)이다. 선택은 `setLanguagePreference`, 경로 전환은 `localePath(path, locale)`로 상세 경로·query·cursor를 보존한다.
 - 문구는 `useI18n().t('<한국어 원문>', { name })`이다. 한국어 원문이 키이며 `shared/i18n/messages.ts`(안내 `info-messages.ts`, 프로필 `profile-messages.ts`)에 `[en, ja]`를 더한다. 빠지면 한국어로 보인다. 서버 메타데이터는 `translate(locale, …)`(`@/shared/i18n/index.server`). 닉네임·글·메시지 원문은 번역하지 않는다.
+- 공통 UI(`BottomSheet`의 title·description, `ErrorNotice`, `LoadingState`, `ErrorRecovery`·경계의 title, `useNotify()`)는 받은 문구를 그대로 그린다. 문구 키는 호출부가 `t()`로 한 번만 번역한다. 오류는 `message={error && t(error.message)}`처럼 표시하는 곳에서 번역하고, 파일 이름·닉네임 같은 사용자 콘텐츠는 `t()`에 넣지 않는다. 계정 전환 뒤 알림은 mutation options의 `afterSuccess`로 호출부가 번역한 문구를 넘긴다.
 - e2e는 한국어 접근성 이름으로 찾는다. 원문을 바꾸면 `e2e/*.spec.ts`와 `apps/mobile/e2e/*.spec.ts`(같은 웹 화면을 연다)를 함께 고친다.
 
 ## 앱 WebView 연동

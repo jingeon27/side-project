@@ -17,6 +17,7 @@ interface IAccountSetupFormProps {
   children?: ReactNode;
   submitLabel: string;
   pending: boolean;
+  /** 번역을 마친 제출 오류 문구 */
   error?: string;
   onSubmit: (values: TAccountSetupValues) => void | Promise<void>;
 }
@@ -34,6 +35,8 @@ export function AccountSetupForm({
     defaultValues: { nickname: '', acceptedTerms: false, ageConfirmed: false },
   });
   const [agreed, ageConfirmed] = useWatch({ control: form.control, name: ['acceptedTerms', 'ageConfirmed'] });
+  const agreementError =
+    form.formState.errors.acceptedTerms?.message ?? form.formState.errors.ageConfirmed?.message;
   return (
     <div className="account-setup-layout">
       <div className="account-setup-scroll">
@@ -106,13 +109,7 @@ export function AccountSetupForm({
             />
             <span>{t('만 14세 이상입니다.')}</span>
           </label>
-          <ErrorNotice
-            message={
-              form.formState.errors.acceptedTerms?.message ??
-              form.formState.errors.ageConfirmed?.message ??
-              error
-            }
-          />
+          <ErrorNotice message={agreementError ? t(agreementError) : error} />
         </form>
       </div>
       <div className="account-setup-actions">

@@ -25,6 +25,7 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
   const client = useQueryClient();
   const preview = useMutation(lookupGameProfileMutationOptions(client));
   const tagField = form.register('playerTag');
+  const errorMessage = form.formState.errors.playerTag?.message ?? preview.error?.message;
   return (
     <form
       className="connect-profile"
@@ -64,7 +65,7 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
           </Button>
         </div>
       </Field>
-      <ErrorNotice message={form.formState.errors.playerTag?.message ?? preview.error?.message} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
       {preview.data && (
         <div className="profile-preview">
           <ProfileSnapshot profile={preview.data} />

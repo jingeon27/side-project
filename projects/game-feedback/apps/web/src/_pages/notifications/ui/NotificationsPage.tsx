@@ -71,7 +71,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           {t('모두 읽음')}
         </button>
       </div>
-      <ErrorNotice message={mutation.error?.message} />
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
       {!items.length && (
         <div className="empty-feed">
           <span>

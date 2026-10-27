@@ -9,7 +9,7 @@ import { Button } from '@side/design-system';
 
 import { clearChatHistoryMutationOptions } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Modal, useNotify, type IOverlayControlProps } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
 interface IClearConversationDialogProps extends IOverlayControlProps {
   userId: string;
@@ -40,7 +40,7 @@ export function ClearConversationDialog({
     }
   }
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={onOpenChangeComplete}
@@ -70,7 +70,7 @@ export function ClearConversationDialog({
         </>
       }
     >
-      <ErrorNotice message={mutation.error?.message} />
-    </Modal>
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
+    </BottomSheet>
   );
 }

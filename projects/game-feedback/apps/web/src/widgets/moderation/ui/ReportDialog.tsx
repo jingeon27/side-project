@@ -36,6 +36,7 @@ export function ReportDialog({
         detail: '',
       },
     });
+  const errorMessage = mutation.error?.message || form.formState.errors.detail?.message;
   return (
     <BottomSheet
       open={open}
@@ -86,7 +87,7 @@ export function ReportDialog({
         <Field label={t('추가 설명 (선택)')}>
           <Textarea {...form.register('detail')} rows={4} maxLength={1000} />
         </Field>
-        <ErrorNotice message={mutation.error?.message || form.formState.errors.detail?.message} />
+        <ErrorNotice message={errorMessage && t(errorMessage)} />
       </form>
     </BottomSheet>
   );

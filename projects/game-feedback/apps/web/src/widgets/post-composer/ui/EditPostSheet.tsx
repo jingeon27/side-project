@@ -55,6 +55,7 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
       /* Keep the edited draft and errors. */
     }
   });
+  const errorMessage = update.error?.message ?? upload.error?.message;
   return (
     <BottomSheet
       open={open}
@@ -85,7 +86,7 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
           <Input readOnly value={post.category.name} aria-label={t('선택한 게임')} />
         </Field>
         <PostContentFields form={form} disabled={pending} onUploadMedia={handleUpload} />
-        <ErrorNotice message={update.error?.message ?? upload.error?.message} />
+        <ErrorNotice message={errorMessage && t(errorMessage)} />
       </form>
     </BottomSheet>
   );

@@ -67,7 +67,7 @@ function FollowControlContent({ userId, viewerId }: { userId: string; viewerId: 
           </Button>
         )}
       </div>
-      <ErrorNotice message={mutation.error?.message} />
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
     </div>
   );
 }

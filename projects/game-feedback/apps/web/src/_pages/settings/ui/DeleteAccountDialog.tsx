@@ -21,7 +21,10 @@ export function DeleteAccountDialog({ open, onOpenChange, onOpenChangeComplete }
   const formId = useId();
   const form = useZodForm(deleteAccountSchema, { defaultValues: { confirmation: '' } });
   const confirmation = useWatch({ control: form.control, name: 'confirmation' });
-  const deletion = useMutation(deleteAccountMutationOptions(client, notify));
+  const deletion = useMutation(
+    deleteAccountMutationOptions(client, () => notify(t('회원 탈퇴가 완료되었어요.'))),
+  );
+  const deleteError = form.formState.errors.confirmation?.message ?? deletion.error?.message;
   return (
     <BottomSheet
       open={open}
@@ -63,7 +66,7 @@ export function DeleteAccountDialog({ open, onOpenChange, onOpenChangeComplete }
         <Field label={t("계속하려면 '탈퇴'를 입력해 주세요")}>
           <Input {...form.register('confirmation')} placeholder={t('탈퇴')} required />
         </Field>
-        <ErrorNotice message={form.formState.errors.confirmation?.message ?? deletion.error?.message} />
+        <ErrorNotice message={deleteError && t(deleteError)} />
       </form>
     </BottomSheet>
   );

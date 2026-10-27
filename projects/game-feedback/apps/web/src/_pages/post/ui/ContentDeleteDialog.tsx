@@ -13,7 +13,7 @@ import { deleteAnswerMutationOptions } from '@/features/answer';
 import { deleteCommentMutationOptions } from '@/features/comment';
 import { deletePostMutationOptions } from '@/features/post';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Modal, useNotify, type IOverlayControlProps } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
 interface IContentDeleteDialogProps extends IOverlayControlProps {
   type: 'POST' | 'ANSWER' | 'COMMENT';
@@ -41,7 +41,7 @@ export function ContentDeleteDialog({
   const isPending = post.isPending || answer.isPending || comment.isPending,
     error = post.error || answer.error || comment.error;
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={onOpenChangeComplete}
@@ -82,8 +82,8 @@ export function ContentDeleteDialog({
           }
         }}
       >
-        <ErrorNotice message={error?.message} />
+        <ErrorNotice message={error && t(error.message)} />
       </form>
-    </Modal>
+    </BottomSheet>
   );
 }

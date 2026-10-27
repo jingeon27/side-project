@@ -7,7 +7,7 @@ import { Button } from '@side/design-system';
 import { blockUserMutationOptions } from '@/features/moderation';
 import type { Author } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Modal, type IOverlayControlProps } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, type IOverlayControlProps } from '@/shared/ui';
 
 interface IBlockUserDialogProps extends IOverlayControlProps {
   author: Author;
@@ -35,7 +35,7 @@ export function BlockUserDialog({
     );
   }
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={onOpenChangeComplete}
@@ -60,7 +60,7 @@ export function BlockUserDialog({
         </>
       }
     >
-      <ErrorNotice message={mutation.error?.message} />
-    </Modal>
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
+    </BottomSheet>
   );
 }

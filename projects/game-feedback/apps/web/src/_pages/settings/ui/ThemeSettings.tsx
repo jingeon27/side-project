@@ -20,7 +20,7 @@ export function ThemeSettings() {
   function handleChange(value: string | null) {
     if (!value || value === preference) return;
     setThemePreference(themePreference(value));
-    notify('화면 모드를 변경했어요');
+    notify(t('화면 모드를 변경했어요'));
   }
   return (
     <section className="settings-card theme-settings" aria-labelledby="theme-title">

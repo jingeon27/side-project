@@ -23,6 +23,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
     notify = useNotify(),
     mutation = useMutation(createAnswerMutationOptions(client)),
     form = useZodForm(answerFormSchema, { defaultValues: { body: '' } });
+  const errorMessage = mutation.error?.message || form.formState.errors.body?.message;
   return (
     <div className="answer-compose">
       <div className="row-between">
@@ -65,7 +66,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
               {t('피드백 남기기')}
             </Button>
           </div>
-          <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
+          <ErrorNotice message={errorMessage && t(errorMessage)} />
         </form>
       ) : (
         <div className="login-prompt">
