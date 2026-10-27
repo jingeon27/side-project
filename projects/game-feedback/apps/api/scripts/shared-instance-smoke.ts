@@ -81,8 +81,16 @@ const pcDomain = 'contest.bambyul.com';
 const gfApiDomain = `api.${gfDomain}`;
 const pcApiDomain = `api.${pcDomain}`;
 const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf8' }).stdout.trim();
+// Compose prefers shell variables over --env-file values. Drop the runner's S3 settings so each service .env decides
+// the bucket, credentials and run-scoped prefix, as on the host.
+const storageNames = new Set([
+  ...Object.values(storage).flatMap((values) => Object.keys(values)),
+  'AWS_SESSION_TOKEN',
+  'GF_S3_ENDPOINT',
+  'S3_ENDPOINT',
+]);
 const baseEnv = {
-  ...process.env,
+  ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !storageNames.has(name))),
   PATH: process.env.PATH ?? '',
   SIDE_DEPLOY_ROOT: root,
   SIDE_PROJECT_PREFIX: prefix,
@@ -978,7 +986,7 @@ try {
   assert.equal((await pc.http('/health-check/live')).status, 200);
   run('bash', [join(source, 'scripts/database.sh'), 'start']);
   console.log(
-    'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and buckets, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
+    'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and service S3 folders, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
   for (const service of ['game-feedback', 'photo-contest']) {

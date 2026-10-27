@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { z } from 'zod';
 
 const require = createRequire(import.meta.url);
@@ -19,7 +19,7 @@ const {
   resolveMediaStorageConfig,
 }: typeof import('../src/media-storage/media-storage.config') = require('../dist/media-storage/media-storage.config.js');
 validateProductionEnvironment(process.env);
-resolveMediaStorageConfig(process.env);
+const mediaStorage = resolveMediaStorageConfig(process.env);
 const {
   sharedDatabaseUrl,
 }: typeof import('../src/config/shared-instance.config') = require('../dist/config/shared-instance.config.js');
@@ -55,10 +55,16 @@ try {
     role.database_create
   )
     throw new Error('The runtime role must have DML-only access to its dedicated database.');
-  await storage.send(new HeadBucketCommand({ Bucket: process.env.GF_S3_BUCKET }), {
-    abortSignal: AbortSignal.timeout(10000),
-  });
-  console.log('Verified runtime database role and S3 bucket access.');
+  // The shared bucket only grants ListBucket on the service folder, so HeadBucket would be denied.
+  await storage.send(
+    new ListObjectsV2Command({
+      Bucket: mediaStorage.bucket,
+      Prefix: mediaStorage.keyPrefix ? `${mediaStorage.keyPrefix}/` : undefined,
+      MaxKeys: 1,
+    }),
+    { abortSignal: AbortSignal.timeout(10000) },
+  );
+  console.log('Verified runtime database role and S3 folder access.');
 } catch {
   console.error('Database role or private S3 access verification failed.');
   process.exitCode = 1;

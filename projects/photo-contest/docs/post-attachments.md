@@ -20,7 +20,7 @@ staging 복사는 하지 않는다. 서버가 파일 내용을 검사하지 않�
 
 브라우저가 사진을 다시 그리면 JPEG로 전송하지만 디코딩·변환을 할 수 없는 지원 형식은 원본을 보낸다. 서버는 사진·동영상의 EXIF·GPS 등 메타데이터를 제거하지 않는다. 공개 그룹의 다운로드에도 업로드된 파일의 위치·촬영 정보가 남을 수 있다. 게시자는 공유 전에 파일 내용을 확인한다.
 
-API는 항상 S3 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S3_FORCE_PATH_STYLE`·`S3_KEY_PREFIX`, 자격 증명은 AWS SDK 기본 체인). 로컬 개발·통합 테스트도 기존 AWS 버킷을 사용하며 `S3_ENDPOINT`는 비우고 `S3_REGION=ap-northeast-2`, `S3_FORCE_PATH_STYLE=false`와 실제 자격 증명을 설정한다. 대역 서버나 테스트 버킷을 만들지 않는다. `S3_KEY_PREFIX`는 계정에 허용된 프로젝트 전용 경로를 사용한다. DB에는 전체 키를 기록하므로 prefix 이전의 파일도 계속 읽는다. 이 설정은 실제 AWS 권한이나 버킷 정책을 바꾸지 않는다.
+API는 항상 S3 저장소를 쓴다(`S3_BUCKET`·`S3_ENDPOINT`·`S3_REGION`·`S3_FORCE_PATH_STYLE`·`S3_KEY_PREFIX`, 자격 증명은 AWS SDK 기본 체인). 로컬 개발·통합 테스트도 기존 AWS 버킷을 사용하며 `S3_ENDPOINT`는 비우고 `S3_REGION=ap-northeast-2`, `S3_FORCE_PATH_STYLE=false`와 실제 자격 증명을 설정한다. 대역 서버나 테스트 버킷을 만들지 않는다. `S3_KEY_PREFIX`는 계정에 허용된 프로젝트 전용 경로를 사용한다. 두 서비스가 버킷 하나를 나눠 쓰므로 운영은 `photo-contest/production`, 로컬은 `photo-contest/local`, CI는 `photo-contest/ci`이고, 공용 EC2 운영 앱은 `photo-contest/<폴더>`가 아니면 시작하지 않는다. DB에는 전체 키를 기록하므로 prefix 이전의 파일도 계속 읽는다. 이 설정은 실제 AWS 권한이나 버킷 정책을 바꾸지 않는다.
 
 완료하지 않고 만료된 티켓의 키와 쓰지 않은 완료 파일, 삭제 실패 파일은 DB 정리 작업이 재시도해 지운다. 모든 업로드 정리는 만료 시각에서 5분 유예가 지난 뒤에 실행해 만료 직전에 시작한 완료 확정과 겹치지 않게 한다. 발급할 때 POST 정책의 만료 시각을 `PostUpload.policyExpiresAt`에 따로 기록한다. 완료하면 `expiresAt`은 게시 유효기간으로 바뀌기 때문이다. 정책이 끝나기 전에 게시물을 지우면 파일은 바로 지우지만 업로드 행은 남기고(다시 게시에는 쓰지 못한다) 정책 만료 5분 뒤 정리 작업이 같은 키를 한 번 더 지운다. 그래서 그 사이 업로더가 같은 키에 다시 올린 파일도 버킷에 남지 않는다. 정책이 끝난 뒤에는 그 키에 늦은 전송이 다시 쓰이지 않는다.
 

@@ -40,8 +40,8 @@ beforeEach(() => {
   writeFileSync(
     join(state.root, '.env'),
     [
-      'GAME_FEEDBACK_S3_BUCKET=gf-private',
-      'PHOTO_CONTEST_S3_BUCKET=pc-private',
+      'GAME_FEEDBACK_S3_BUCKET=side-media',
+      'PHOTO_CONTEST_S3_BUCKET=side-media',
       'BACKUP_BUCKET=side-db-backup',
       'BACKUP_REGION=ap-northeast-2',
       '',
@@ -124,7 +124,7 @@ describe('배포 전 PostgreSQL 덤프', () => {
     ['볼륨이 마운트되지 않았으면', () => rmSync(join(state.data, '.side-postgres-volume')), 'not mounted'],
     [
       '백업 버킷이 없으면',
-      () => writeFileSync(join(state.root, '.env'), 'PHOTO_CONTEST_S3_BUCKET=pc-private\n'),
+      () => writeFileSync(join(state.root, '.env'), 'PHOTO_CONTEST_S3_BUCKET=side-media\n'),
       'BACKUP_BUCKET',
     ],
     [
@@ -132,7 +132,7 @@ describe('배포 전 PostgreSQL 덤프', () => {
       () =>
         writeFileSync(
           join(state.root, '.env'),
-          'PHOTO_CONTEST_S3_BUCKET=pc-private\nBACKUP_BUCKET=pc-private\nBACKUP_REGION=ap-northeast-2\n',
+          'PHOTO_CONTEST_S3_BUCKET=side-media\nBACKUP_BUCKET=side-media\nBACKUP_REGION=ap-northeast-2\n',
         ),
       'BACKUP_BUCKET',
     ],

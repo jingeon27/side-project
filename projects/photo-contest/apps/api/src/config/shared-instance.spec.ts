@@ -8,7 +8,8 @@ const url = (role: string) =>
 const valid = {
   DATABASE_URL: url('photo_contest'),
   S3_REGION: 'ap-northeast-2',
-  S3_BUCKET: 'pc-private',
+  S3_BUCKET: 'side-media',
+  S3_KEY_PREFIX: 'photo-contest/production',
 };
 
 describe('공통 EC2 운영 환경', () => {
@@ -44,4 +45,17 @@ describe('공통 EC2 운영 환경', () => {
     expect(() => assertSharedInstanceConfig({ ...valid, S3_REGION: 'us-east-1' })).toThrow();
     expect(() => assertSharedInstanceConfig({ ...valid, S3_ENDPOINT: 'https://storage.test' })).toThrow();
   });
+  it('공용 버킷에서는 CI 테스트 폴더를 포함해 photo-contest 폴더 안에서만 써야 한다', () => {
+    expect(() =>
+      assertSharedInstanceConfig({ ...valid, S3_KEY_PREFIX: 'photo-contest/ci/tests/run1' }),
+    ).not.toThrow();
+  });
+  it.each([undefined, '', 'photo-contest', 'game-feedback/production', 'photo-contest/../game-feedback'])(
+    '버킷 최상위·서비스 최상위·다른 서비스 경로 %s를 거부해야 한다',
+    (prefix) => {
+      expect(() => assertSharedInstanceConfig({ ...valid, S3_KEY_PREFIX: prefix })).toThrow(
+        'photo-contest/<folder>',
+      );
+    },
+  );
 });

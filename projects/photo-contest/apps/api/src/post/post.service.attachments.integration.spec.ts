@@ -161,8 +161,14 @@ describe('링크 게시물과 미디어 저장', () => {
       id: post.id,
     });
     const url = new URL(postDownload.url);
+    // 저장 키는 실행 전용 S3 경로(<prefix>/tests/<실행 ID>/)를 포함하므로 서명 URL은 저장된 전체 키를 가리켜야 한다.
+    const { upload } = await api.db.post.findUniqueOrThrow({
+      where: { id: post.id },
+      select: { upload: { select: { storageKey: true } } },
+    });
+    expect(upload?.storageKey).toMatch(/(?:^|\/)[a-f0-9-]{36}\.png$/);
     expect(url.origin).toBe('https://s3.example.test');
-    expect(url.pathname).toMatch(/^\/attachments\/[a-f0-9-]{36}\.png$/);
+    expect(url.pathname).toBe(`/attachments/${upload?.storageKey}`);
     expect(url.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(url.searchParams.get('X-Amz-Signature')).toMatch(/^[a-f0-9]{64}$/);
     expect(url.searchParams.get('response-content-disposition')).toContain('attachment;');

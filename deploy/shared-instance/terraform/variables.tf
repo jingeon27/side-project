@@ -126,7 +126,7 @@ variable "postgres_dump_retention_days" {
 # 서비스 도메인과 S3
 
 variable "game_feedback_domain" {
-  description = "Game Feedback(Game Mate) 웹 도메인. API는 api.<이 도메인>이다(proxy.sh 규칙). S3 CORS 기본 origin과 DNS 레코드에 쓴다."
+  description = "Game Feedback(Game Mate) 웹 도메인. API는 api.<이 도메인>이다(proxy.sh 규칙). DNS 레코드와 host_env 출력에 쓴다."
   type        = string
   default     = "game.bambyul.com"
 
@@ -137,7 +137,7 @@ variable "game_feedback_domain" {
 }
 
 variable "photo_contest_domain" {
-  description = "Photo Contest(별사대) 웹 도메인. API는 api.<이 도메인>이다(proxy.sh 규칙). S3 CORS 기본 origin과 DNS 레코드에 쓴다."
+  description = "Photo Contest(별사대) 웹 도메인. API는 api.<이 도메인>이다(proxy.sh 규칙). DNS 레코드와 host_env 출력에 쓴다."
   type        = string
   default     = "contest.bambyul.com"
 
@@ -147,60 +147,28 @@ variable "photo_contest_domain" {
   }
 }
 
-variable "game_feedback_bucket_name" {
-  description = "Game Feedback 비공개 S3 버킷 이름(전역 고유). 만든 뒤 바꾸면 버킷이 교체되므로 처음에 정한다. 가상 호스트 TLS를 위해 점(.)은 쓰지 않는다."
+variable "media_bucket_name" {
+  description = "두 서비스가 서비스 폴더(<서비스>/production/)로 나눠 쓰는 기존 비공개 S3 버킷 이름. Terraform은 이 버킷을 만들거나 설정하지 않고 서비스 IAM 사용자에게 자기 폴더 권한만 준다. 가상 호스트 TLS를 위해 점(.)은 쓰지 않는다."
   type        = string
 
   validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.game_feedback_bucket_name)) && !startswith(var.game_feedback_bucket_name, "xn--") && !startswith(var.game_feedback_bucket_name, "sthree-")
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.media_bucket_name)) && !startswith(var.media_bucket_name, "xn--") && !startswith(var.media_bucket_name, "sthree-")
     error_message = "3~63자의 소문자·숫자·하이픈이어야 하고 xn--, sthree-로 시작할 수 없다."
   }
 }
 
-variable "photo_contest_bucket_name" {
-  description = "Photo Contest 비공개 S3 버킷 이름(전역 고유). game_feedback_bucket_name과 달라야 한다. 만든 뒤 바꾸면 버킷이 교체되므로 처음에 정한다."
-  type        = string
-
-  validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.photo_contest_bucket_name)) && !startswith(var.photo_contest_bucket_name, "xn--") && !startswith(var.photo_contest_bucket_name, "sthree-") && var.photo_contest_bucket_name != var.game_feedback_bucket_name
-    error_message = "game_feedback_bucket_name과 다른 3~63자의 소문자·숫자·하이픈이어야 하고 xn--, sthree-로 시작할 수 없다."
-  }
-}
-
 variable "backup_bucket_name" {
-  description = "PostgreSQL 배포 전 덤프를 받는 비공개 S3 버킷 이름(전역 고유). 두 서비스 버킷과 달라야 한다. EC2 역할은 이 버킷의 postgres/ 아래에 쓰기만 할 수 있다."
+  description = "PostgreSQL 배포 전 덤프를 받는 비공개 S3 버킷 이름(전역 고유). 공용 미디어 버킷과 달라야 한다. EC2 역할은 이 버킷의 postgres/ 아래에 쓰기만 할 수 있다."
   type        = string
 
   validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.backup_bucket_name)) && !startswith(var.backup_bucket_name, "xn--") && !startswith(var.backup_bucket_name, "sthree-") && !contains([var.game_feedback_bucket_name, var.photo_contest_bucket_name], var.backup_bucket_name)
-    error_message = "두 서비스 버킷과 다른 3~63자의 소문자·숫자·하이픈이어야 하고 xn--, sthree-로 시작할 수 없다."
-  }
-}
-
-variable "game_feedback_cors_origins" {
-  description = "Game Feedback 버킷 CORS의 AllowedOrigins. 비워 두면 https://<game_feedback_domain> 하나를 쓴다. 로컬 개발 origin(http://localhost:3300 등)을 운영 버킷에 넣지 않는 것을 기본으로 한다."
-  type        = list(string)
-  default     = []
-
-  validation {
-    condition     = alltrue([for origin in var.game_feedback_cors_origins : can(regex("^(https://[a-z0-9]([a-z0-9.-]*[a-z0-9])?|http://(localhost|127\\.0\\.0\\.1))(:[0-9]{1,5})?$", origin))])
-    error_message = "https://<host>[:port] 또는 http://localhost·127.0.0.1[:port] 형식이어야 하며 경로·끝 슬래시·와일드카드는 쓰지 않는다."
-  }
-}
-
-variable "photo_contest_cors_origins" {
-  description = "Photo Contest 버킷 CORS의 AllowedOrigins. 비워 두면 https://<photo_contest_domain> 하나를 쓴다."
-  type        = list(string)
-  default     = []
-
-  validation {
-    condition     = alltrue([for origin in var.photo_contest_cors_origins : can(regex("^(https://[a-z0-9]([a-z0-9.-]*[a-z0-9])?|http://(localhost|127\\.0\\.0\\.1))(:[0-9]{1,5})?$", origin))])
-    error_message = "https://<host>[:port] 또는 http://localhost·127.0.0.1[:port] 형식이어야 하며 경로·끝 슬래시·와일드카드는 쓰지 않는다."
+    condition     = can(regex("^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$", var.backup_bucket_name)) && !startswith(var.backup_bucket_name, "xn--") && !startswith(var.backup_bucket_name, "sthree-") && var.backup_bucket_name != var.media_bucket_name
+    error_message = "공용 미디어 버킷과 다른 3~63자의 소문자·숫자·하이픈이어야 하고 xn--, sthree-로 시작할 수 없다."
   }
 }
 
 variable "s3_noncurrent_version_retention_days" {
-  description = "이전 객체 버전을 보존할 기간(일). s3-lifecycle.json과 같은 30일이 기본이다. 복구 가능 기간과 스토리지 요금이 함께 늘어난다."
+  description = "backup 버킷이 덮어쓴 이전 객체 버전을 보존할 기간(일). s3-lifecycle.json과 같은 30일이 기본이다. 복구 가능 기간과 스토리지 요금이 함께 늘어난다."
   type        = number
   default     = 30
 

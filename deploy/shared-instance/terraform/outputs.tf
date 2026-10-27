@@ -36,19 +36,19 @@ output "alarm_topic_arn" {
 
 # S3
 
-output "s3_bucket_names" {
-  description = "서비스별 비공개 S3 버킷 이름. /srv/side-project/.env의 GAME_FEEDBACK_S3_BUCKET·PHOTO_CONTEST_S3_BUCKET."
-  value       = { for service, bucket in aws_s3_bucket.service : service => bucket.bucket }
+output "media_bucket_name" {
+  description = "두 서비스가 함께 쓰는 기존 비공개 버킷. /srv/side-project/.env의 GAME_FEEDBACK_S3_BUCKET·PHOTO_CONTEST_S3_BUCKET과 서비스 환경 파일의 버킷 이름."
+  value       = var.media_bucket_name
+}
+
+output "s3_key_prefixes" {
+  description = "서비스별 운영 S3 폴더. 서비스 환경 파일의 GF_S3_KEY_PREFIX·S3_KEY_PREFIX이며 IAM 사용자의 권한 범위와 같다."
+  value       = local.media_prefixes
 }
 
 output "backup_bucket_name" {
   description = "배포 전 PostgreSQL 덤프 버킷. /srv/side-project/.env의 BACKUP_BUCKET."
   value       = aws_s3_bucket.backup.bucket
-}
-
-output "s3_cors_origins" {
-  description = "서비스별 버킷에 적용한 CORS AllowedOrigins."
-  value       = { for service, config in local.services : service => config.cors.allowed_origins }
 }
 
 # IAM
@@ -111,8 +111,8 @@ output "host_env" {
     GAME_FEEDBACK_API_DOMAIN=api.${var.game_feedback_domain}
     PHOTO_CONTEST_DOMAIN=${var.photo_contest_domain}
     PHOTO_CONTEST_API_DOMAIN=api.${var.photo_contest_domain}
-    GAME_FEEDBACK_S3_BUCKET=${aws_s3_bucket.service["game-feedback"].bucket}
-    PHOTO_CONTEST_S3_BUCKET=${aws_s3_bucket.service["photo-contest"].bucket}
+    GAME_FEEDBACK_S3_BUCKET=${var.media_bucket_name}
+    PHOTO_CONTEST_S3_BUCKET=${var.media_bucket_name}
     BACKUP_BUCKET=${aws_s3_bucket.backup.bucket}
     BACKUP_REGION=${var.region}
   EOT

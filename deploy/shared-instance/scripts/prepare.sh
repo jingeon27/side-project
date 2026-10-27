@@ -20,4 +20,4 @@ for service in game-feedback photo-contest; do
     cp "$directory/../../projects/$service/deploy/shared-instance/service.env.example" "$ROOT/services/$service/.env"
   fi
 done
-echo 'Host files prepared. Start and bootstrap the database (database.sh), configure private S3 buckets and both service environments before starting the proxy.'
+echo 'Host files prepared. Start and bootstrap the database (database.sh), configure the shared private S3 bucket folders and both service environments before starting the proxy.'

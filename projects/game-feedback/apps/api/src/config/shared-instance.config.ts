@@ -51,9 +51,14 @@ export function sharedDatabaseUrl(env: NodeJS.ProcessEnv, migration = false) {
   }
 }
 
+/** Both services share one private bucket; the service IAM user only reaches its own game-feedback/<folder>/. */
+const keyPrefix = /^game-feedback(?:\/[A-Za-z0-9_-]+)+\/?$/;
+
 export function validateSharedInstanceEnvironment(env: NodeJS.ProcessEnv, migration = false) {
   if (!usesSharedDatabase(env)) return;
   sharedDatabaseUrl(env, migration);
   if (!env.GF_S3_BUCKET || env.GF_S3_REGION !== 'ap-northeast-2' || env.GF_S3_ENDPOINT)
     throw new Error('Shared-instance production requires AWS S3 in ap-northeast-2.');
+  if (!keyPrefix.test((env.GF_S3_KEY_PREFIX ?? '').trim()))
+    throw new Error('Shared-instance production requires a game-feedback/<folder> S3 key prefix.');
 }

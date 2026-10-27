@@ -4,18 +4,18 @@
 
 ## 만드는 리소스
 
-| 영역       | 리소스                                                                                                                                                                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 네트워크   | VPC, 인터넷 게이트웨이, 공개 서브넷 1개(EC2), 라우팅 테이블. NAT 게이트웨이는 없다                                                                                              |
-| 보안       | EC2 보안 그룹(80/443 전체, 22는 `ssh_allowed_cidrs`만, PostgreSQL 5432는 열지 않는다), 규칙을 비운 기본 보안 그룹                                                               |
-| EC2        | Ubuntu 24.04 LTS x86_64, 암호화 gp3 루트 볼륨, IMDSv2 필수, 네트워크 인터페이스 + 탄력적 IP, cloud-init(Docker·Compose·도구, `/srv/side-project`, PostgreSQL 볼륨 포맷·마운트)  |
-| PostgreSQL | EC2와 같은 AZ의 암호화 gp3 EBS 볼륨(교체·파기 시 최종 스냅샷), 인스턴스를 멈춘 뒤에만 분리하는 attachment, DLM 일일 스냅샷(7개 보존). 컨테이너·DB·role은 `database.sh`가 만든다 |
-| S3         | 서비스별 버킷 2개와 DB 덤프용 backup 버킷 1개: 퍼블릭 접근 차단, BucketOwnerEnforced, SSE-S3, Versioning, 수명 주기, TLS 아닌 요청 거부 정책. CORS는 서비스 버킷에만 둔다       |
-| IAM        | EC2 역할·인스턴스 프로파일(backup 버킷 `postgres/`의 PutObject, 선택적으로 SSM), DLM 서비스 역할, 서비스별 S3 사용자 2개(자기 버킷만). **액세스 키는 만들지 않는다**            |
-| 모니터링   | 인스턴스 상태 검사가 1분 단위 3번 연속 실패하면 재부팅하는 CloudWatch 알람, CPU 크레딧 부족 알람, 선택적으로 SNS 메일 알림(`alarm_email`)                                       |
-| DNS        | `route53_zone_id`가 있을 때만 네 호스트의 A 레코드                                                                                                                              |
+| 영역       | 리소스                                                                                                                                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 네트워크   | VPC, 인터넷 게이트웨이, 공개 서브넷 1개(EC2), 라우팅 테이블. NAT 게이트웨이는 없다                                                                                                                                            |
+| 보안       | EC2 보안 그룹(80/443 전체, 22는 `ssh_allowed_cidrs`만, PostgreSQL 5432는 열지 않는다), 규칙을 비운 기본 보안 그룹                                                                                                             |
+| EC2        | Ubuntu 24.04 LTS x86_64, 암호화 gp3 루트 볼륨, IMDSv2 필수, 네트워크 인터페이스 + 탄력적 IP, cloud-init(Docker·Compose·도구, `/srv/side-project`, PostgreSQL 볼륨 포맷·마운트)                                                |
+| PostgreSQL | EC2와 같은 AZ의 암호화 gp3 EBS 볼륨(교체·파기 시 최종 스냅샷), 인스턴스를 멈춘 뒤에만 분리하는 attachment, DLM 일일 스냅샷(7개 보존). 컨테이너·DB·role은 `database.sh`가 만든다                                               |
+| S3         | DB 덤프용 backup 버킷 1개: 퍼블릭 접근 차단, BucketOwnerEnforced, SSE-S3, Versioning, 수명 주기, TLS 아닌 요청 거부 정책. 두 서비스가 함께 쓰는 미디어 버킷은 **만들거나 설정하지 않고** 이름(`media_bucket_name`)만 참조한다 |
+| IAM        | EC2 역할·인스턴스 프로파일(backup 버킷 `postgres/`의 PutObject, 선택적으로 SSM), DLM 서비스 역할, 서비스별 S3 사용자 2개(공용 버킷의 자기 `<서비스>/production/` 폴더만). **액세스 키는 만들지 않는다**                       |
+| 모니터링   | 인스턴스 상태 검사가 1분 단위 3번 연속 실패하면 재부팅하는 CloudWatch 알람, CPU 크레딧 부족 알람, 선택적으로 SNS 메일 알림(`alarm_email`)                                                                                     |
+| DNS        | `route53_zone_id`가 있을 때만 네 호스트의 A 레코드                                                                                                                                                                            |
 
-설정은 [`s3-public-access.json`](../s3-public-access.json), [`s3-lifecycle.json`](../s3-lifecycle.json), [`s3-app-policy.json`](../s3-app-policy.json), [`backup-write-policy.json`](../backup-write-policy.json)과 두 프로젝트의 `s3-cors.json`을 HCL로 옮긴 것이다. JSON을 바꾸면 같은 커밋에서 여기도 맞춘다. backup 버킷 수명 주기는 서비스 버킷과 달리 `postgres/` 덤프를 `postgres_dump_retention_days` 뒤 만료한다.
+설정은 [`s3-public-access.json`](../s3-public-access.json), [`s3-lifecycle.json`](../s3-lifecycle.json), [`s3-app-policy.json`](../s3-app-policy.json), [`backup-write-policy.json`](../backup-write-policy.json)을 backup 버킷과 서비스 IAM 사용자용 HCL로 옮긴 것이다. JSON을 바꾸면 같은 커밋에서 여기도 맞춘다. 공용 미디어 버킷의 차단·수명 주기·CORS(두 프로젝트의 `s3-cors.json`)는 Terraform이 아니라 콘솔에서 적용한다. backup 버킷 수명 주기는 공용 버킷과 달리 `postgres/` 덤프를 `postgres_dump_retention_days` 뒤 만료한다.
 
 ## 비용에 영향을 주는 기본값
 
@@ -74,7 +74,7 @@ cp terraform.tfvars.example terraform.tfvars  # 버킷 이름 세 개와 필요�
 
 결정할 것:
 
-- **버킷 이름**: 전역 고유, 점(.) 없이. 서비스 버킷 2개와 backup 버킷은 서로 달라야 한다. 만든 뒤 바꾸면 버킷이 교체된다.
+- **버킷 이름**: 점(.) 없이. `media_bucket_name`은 이미 있는 공용 비공개 버킷이고 퍼블릭 접근 차단·암호화·Versioning·수명 주기·CORS를 [공통 운영 가이드](../README.md)대로 콘솔에서 관리한다. Terraform이 만드는 `backup_bucket_name`은 전역 고유하고 공용 버킷과 달라야 하며, 만든 뒤 바꾸면 버킷이 교체된다.
 - **AZ**: `availability_zone`에 EC2와 PostgreSQL 볼륨을 함께 둔다. EBS 볼륨은 같은 AZ의 인스턴스에만 붙으므로 만든 뒤 바꾸지 않는다.
 - **`metadata_hop_limit`**: `scripts/pg-backup.sh`는 aws-cli를 `--network host`로 실행하므로 기본 `1`로 덤프를 올린다. `2`로 올리면 bridge 네트워크의 앱 컨테이너도 인스턴스 역할을 쓸 수 있다.
 - **SSH와 배포 runner**: Actions CD(`ci-upload.sh`)는 SSH로 접속한다. 기본값(`ssh_allowed_cidrs = []`)은 22번을 열지 않으므로 배포 runner의 접속 경로를 별도로 준비해야 한다. self-hosted·고정 IP runner의 출구 IP를 CIDR로 허용하거나 사설 네트워크 접속 경로를 구성한다. 일반 GitHub-hosted runner는 IP가 바뀌므로 운영자의 로컬 IP만 허용해서는 배포할 수 없다. 운영자 셸은 SSM으로도 접속할 수 있다.
@@ -124,12 +124,13 @@ cloud-init 실패 시 `/var/log/cloud-init-output.log`를 본다. 볼륨 연결�
 
 PostgreSQL superuser 비밀번호는 `prepare.sh`가 `/srv/side-project/database/.env`에 만들며 initdb에만 쓰인다. `pg_hba.conf`가 네트워크의 superuser 로그인을 거부하므로 따로 발급하거나 보관하지 않는다.
 
-액세스 키는 출력이 로그·공유 화면에 남지 않는 단말에서 발급해 서버 파일에 바로 옮긴다. 키를 Terraform으로 만들지 않는 이유는 비밀 키가 state에 평문으로 남기 때문이다. 배포 시 `verify-services.ts`는 자기 버킷 접근(HeadBucket)과 두 버킷 이름이 다른지만 확인하므로, 한쪽 키로 다른 버킷이 거부되는지는 직접 확인한다.
+액세스 키는 출력이 로그·공유 화면에 남지 않는 단말에서 발급해 서버 파일에 바로 옮긴다. 키를 Terraform으로 만들지 않는 이유는 비밀 키가 state에 평문으로 남기 때문이다. 배포 시 `verify-services.ts`는 자기 폴더 목록 조회(ListObjectsV2)만 확인하므로, 한쪽 키로 다른 서비스 폴더가 거부되는지는 직접 확인한다.
 
 ```sh
-# 예: GF 키로 PC 버킷 접근이 거부되는지(403 기대). 키는 셸 기록에 남기지 않도록 프롬프트로 읽는다.
+# 예: GF 키로 PC 폴더 목록이 거부되는지(AccessDenied 기대). 키는 셸 기록에 남기지 않도록 프롬프트로 읽는다.
 read -rs AWS_ACCESS_KEY_ID; read -rs AWS_SECRET_ACCESS_KEY; export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
-aws s3api head-bucket --bucket "$(terraform output -json s3_bucket_names | python3 -c 'import json,sys; print(json.load(sys.stdin)["photo-contest"])')"
+aws s3api list-objects-v2 --max-items 1 --bucket "$(terraform output -raw media_bucket_name)" \
+  --prefix "$(terraform output -json s3_key_prefixes | python3 -c 'import json,sys; print(json.load(sys.stdin)["photo-contest"])')/"
 unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 ```
 
@@ -203,13 +204,13 @@ done
 
 [공통 EC2 배포](../README.md)의 "AWS에서 먼저 준비할 것" 1~5를 이 구성이 대신한다.
 
-| 수동 절차                                         | Terraform                                               | 남는 수동 작업                                            |
-| ------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------- |
-| 1. EC2·고정 IP·DNS·Docker 등 도구·SSH             | `compute.tf`, `security.tf`, `dns.tf`(선택), cloud-init | Route 53 밖 DNS, SSH 공개 범위 결정, 배포 키 등록         |
-| 2. PostgreSQL 볼륨·마운트·일일 스냅샷             | `database.tf`, cloud-init                               | `database.sh start`·`bootstrap`, 마이그레이션 호환성 확인 |
-| 3. EC2 역할의 backup 쓰기 정책, hop limit         | `iam.tf`, `metadata_hop_limit`                          | 없음                                                      |
-| 4. 버킷 3개·차단·암호화·Versioning·수명 주기·CORS | `storage.tf`                                            | 없음(origin은 변수)                                       |
-| 5. 서비스별 IAM 자격 증명                         | `iam.tf`의 사용자·정책                                  | 액세스 키 발급과 교차 접근 거부 확인                      |
+| 수동 절차                                                       | Terraform                                               | 남는 수동 작업                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------- |
+| 1. EC2·고정 IP·DNS·Docker 등 도구·SSH                           | `compute.tf`, `security.tf`, `dns.tf`(선택), cloud-init | Route 53 밖 DNS, SSH 공개 범위 결정, 배포 키 등록         |
+| 2. PostgreSQL 볼륨·마운트·일일 스냅샷                           | `database.tf`, cloud-init                               | `database.sh start`·`bootstrap`, 마이그레이션 호환성 확인 |
+| 3. EC2 역할의 backup 쓰기 정책, hop limit                       | `iam.tf`, `metadata_hop_limit`                          | 없음                                                      |
+| 4. backup 버킷·차단·암호화·Versioning·수명 주기, 공용 버킷 참조 | `storage.tf`                                            | 공용 버킷 설정·CORS는 콘솔                                |
+| 5. 서비스별 IAM 자격 증명                                       | `iam.tf`의 사용자·정책                                  | 액세스 키 발급과 교차 접근 거부 확인                      |
 
 ## 운영 중 변경
 
@@ -225,7 +226,7 @@ done
 1. `bash deploy/shared-instance/scripts/database.sh backup <서비스>`로 두 서비스의 마지막 덤프를 backup 버킷에 남긴다.
 2. `instance_termination_protection = false`로 apply한다. 종료 방지가 켜져 있으면 destroy가 실패한다.
 3. PostgreSQL 볼륨은 `final_snapshot = true`라 삭제 전에 최종 스냅샷을 남긴다. DLM 정책을 지워도 그 정책이 만든 일일 스냅샷은 남는다. 둘 다 요금이 붙으므로 필요 없어지면 직접 지운다.
-4. S3 버킷은 `force_destroy = false`라 객체가 남아 있으면 지우지 않는다(backup 버킷 포함). Versioning 버킷은 모든 이전 버전과 삭제 마커까지 비워야 삭제된다(복구 불가). 버킷을 남기려면 `terraform state rm 'aws_s3_bucket.service["…"]'`·`terraform state rm aws_s3_bucket.backup` 등으로 관리 대상에서 먼저 뺀다.
+4. S3 버킷은 `force_destroy = false`라 객체가 남아 있으면 지우지 않는다(backup 버킷 포함). Versioning 버킷은 모든 이전 버전과 삭제 마커까지 비워야 삭제된다(복구 불가). 버킷을 남기려면 `terraform state rm aws_s3_bucket.backup` 등으로 관리 대상에서 먼저 뺀다. 공용 미디어 버킷은 Terraform이 관리하지 않으므로 destroy에 영향을 받지 않는다.
 5. 서비스 IAM 사용자에 콘솔·CLI로 발급한 액세스 키가 있으면 삭제가 실패한다. 키를 먼저 비활성화·삭제한다.
 6. 탄력적 IP가 해제되면 같은 주소를 다시 받을 수 없다. DNS와 `SIDE_DEPLOY_HOST`·known_hosts를 갱신한다.
 7. state 버킷은 이 구성 밖이므로 남는다.
@@ -236,18 +237,18 @@ RDS를 EC2 안의 PostgreSQL 컨테이너로 바꾼 뒤 Terraform 1.16.6에서 f
 
 새 배포 전 운영자가 준비할 값은 다음과 같다. 리소스 생성 후 얻는 값과 직접 정해야 할 값을 구분한다.
 
-| 준비할 것                         | 입력 또는 출력                                                                                                                                                                                                                                       | 용도                                                                       |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 단기 AWS 자격 증명·12자리 계정 ID | AWS profile, allowed_account_ids                                                                                                                                                                                                                     | 운영 계정 고정·Terraform 실행                                              |
-| 별도 state 버킷                   | backend.hcl의 bucket                                                                                                                                                                                                                                 | 암호화·버전 관리·use_lockfile; 서비스 미디어 버킷과 별개                   |
-| 고유한 버킷 이름 세 개            | game_feedback_bucket_name, photo_contest_bucket_name, backup_bucket_name                                                                                                                                                                             | Terraform이 private S3, 서비스 CORS·IAM 사용자와 backup 버킷을 생성        |
-| 웹 도메인·DNS 권한                | game_feedback_domain, photo_contest_domain, 선택 route53_zone_id                                                                                                                                                                                     | 웹·API 네 A 레코드를 public_ip로 연결                                      |
-| 운영자·배포 키와 접속 경로        | ssh_public_key, ssh_allowed_cidrs, SSM                                                                                                                                                                                                               | 기본 ssh_allowed_cidrs=[]이면 현재 SSH 기반 Actions CD는 접속할 수 없음    |
-| DB 초기화·서비스 비밀번호         | postgres_volume_id; `database.sh start`·`bootstrap`(database/bootstrap.sql)                                                                                                                                                                          | 서비스별 runtime/migrator 자격 증명 분리, superuser는 컨테이너 socket 전용 |
-| 서비스별 S3 키·캐시 비밀          | s3_iam_user_names, 별도 create-access-key, GF_CACHE_REVALIDATION_SECRET                                                                                                                                                                              | 앱의 서버 환경 파일에 저장; Terraform은 액세스 키를 만들지 않음            |
-| 앱 링크 식별값                    | MOBILE_APPLE_TEAM_ID, MOBILE_IOS_BUNDLE_ID, MOBILE_ANDROID_PACKAGE, MOBILE_ANDROID_SHA256_FINGERPRINTS                                                                                                                                               | 현재 production 웹은 이 값이 없으면 시작 검증에서 실패                     |
-| 외부 서비스 설정                  | OAuth 제공자 키·callback, 선택 Supercell·Amplitude·Sentry                                                                                                                                                                                            | 해당 기능을 사용할 때만 설정; Supercell 허용 IP에는 서버의 public_ip 사용  |
-| GitHub 배포 설정                  | Environment의 `SIDE_DEPLOY_HOST`, `SIDE_DEPLOY_SSH_*`; repository의 `GAME_FEEDBACK_SITE_URL`, `GAME_FEEDBACK_CONTACT_EMAIL`, `PHOTO_CONTEST_SITE_URL`, `PHOTO_CONTEST_DEPLOY_BRANCH`, `GAME_FEEDBACK_DEPLOY_ENABLED`, `PHOTO_CONTEST_DEPLOY_ENABLED` | 위 단계와 복구 검증 후 활성화                                              |
+| 준비할 것                         | 입력 또는 출력                                                                                                                                                                                                                                       | 용도                                                                        |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 단기 AWS 자격 증명·12자리 계정 ID | AWS profile, allowed_account_ids                                                                                                                                                                                                                     | 운영 계정 고정·Terraform 실행                                               |
+| 별도 state 버킷                   | backend.hcl의 bucket                                                                                                                                                                                                                                 | 암호화·버전 관리·use_lockfile; 서비스 미디어 버킷과 별개                    |
+| 공용 버킷과 backup 버킷 이름      | media_bucket_name(기존 버킷), backup_bucket_name                                                                                                                                                                                                     | Terraform이 서비스 폴더 IAM 사용자와 backup 버킷을 생성(공용 버킷은 참조만) |
+| 웹 도메인·DNS 권한                | game_feedback_domain, photo_contest_domain, 선택 route53_zone_id                                                                                                                                                                                     | 웹·API 네 A 레코드를 public_ip로 연결                                       |
+| 운영자·배포 키와 접속 경로        | ssh_public_key, ssh_allowed_cidrs, SSM                                                                                                                                                                                                               | 기본 ssh_allowed_cidrs=[]이면 현재 SSH 기반 Actions CD는 접속할 수 없음     |
+| DB 초기화·서비스 비밀번호         | postgres_volume_id; `database.sh start`·`bootstrap`(database/bootstrap.sql)                                                                                                                                                                          | 서비스별 runtime/migrator 자격 증명 분리, superuser는 컨테이너 socket 전용  |
+| 서비스별 S3 키·캐시 비밀          | s3_iam_user_names, 별도 create-access-key, GF_CACHE_REVALIDATION_SECRET                                                                                                                                                                              | 앱의 서버 환경 파일에 저장; Terraform은 액세스 키를 만들지 않음             |
+| 앱 링크 식별값                    | MOBILE_APPLE_TEAM_ID, MOBILE_IOS_BUNDLE_ID, MOBILE_ANDROID_PACKAGE, MOBILE_ANDROID_SHA256_FINGERPRINTS                                                                                                                                               | 현재 production 웹은 이 값이 없으면 시작 검증에서 실패                      |
+| 외부 서비스 설정                  | OAuth 제공자 키·callback, 선택 Supercell·Amplitude·Sentry                                                                                                                                                                                            | 해당 기능을 사용할 때만 설정; Supercell 허용 IP에는 서버의 public_ip 사용   |
+| GitHub 배포 설정                  | Environment의 `SIDE_DEPLOY_HOST`, `SIDE_DEPLOY_SSH_*`; repository의 `GAME_FEEDBACK_SITE_URL`, `GAME_FEEDBACK_CONTACT_EMAIL`, `PHOTO_CONTEST_SITE_URL`, `PHOTO_CONTEST_DEPLOY_BRANCH`, `GAME_FEEDBACK_DEPLOY_ENABLED`, `PHOTO_CONTEST_DEPLOY_ENABLED` | 위 단계와 복구 검증 후 활성화                                               |
 
 로컬 개발은 AWS 자격 증명 없이 실행할 수 있다. Photo Contest는 .env.example의 로컬 S3 대역과 개발 DB를 사용하고 새 migration을 적용한다. Game Feedback의 dev:test는 테스트 계정으로 확인하며 일반 개발에서는 실제 로그인 제공자 설정이 선택이다. 모바일 앱 링크 식별값과 분석 키는 development에서 비워 둘 수 있다. 실제 AWS 계정 권한·리소스 가용성과 애플리케이션 환경 파일은 mock test가 검증하지 않는다.
 
