@@ -8,9 +8,9 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 | 폴더 | 역할 | import 별칭 |
 | --- | --- | --- |
 | `src/app` | Next 라우트 파일만. 화면은 slice 배럴에서 가져온다 | — |
-| `src/_app` | providers(Apollo·Bridge·Toast·overlay-kit), styles(tailwind.css·theme.css·globals.css) | `@/_app/…` |
+| `src/_app` | providers(Apollo·Bridge·Toast·overlay-kit), shell(레이아웃이 감싸는 공통 틀), styles(tailwind.css·theme.css·globals.css) | `@/_app/…` |
 | `src/_pages` | 화면 하나 = slice 하나 | `@/_pages/…` |
-| `src/widgets` | 모든 화면에 붙는 UI만(하단 탭) | `@/widgets/…` |
+| `src/widgets` | 모든 화면에 붙는 UI만(하단 탭·데스크톱 고정 메뉴) | `@/widgets/…` |
 | `src/features` | 서버 도메인 slice(group, contest, submission, like, vote, moderation, invite, share…) | `@/features/…` |
 | `src/shared` | 도메인 없는 기반(api, ui/@core, model, lib, constants) | `@/shared/…` |
 

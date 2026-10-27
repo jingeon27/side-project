@@ -16,8 +16,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - `app`: 라우트·레이아웃·로딩/오류·proxy. 화면은 `@/_pages/<화면>` 배럴로만 가져온다.
 - `_pages`: sign·home·explore·me·group·group-write·group-contests·group-contest·invite·contest·legal. `@page`가 feature를 조립하고 화면 전용 feed/results/model은 그 아래에 둔다.
-- `_app`: Apollo·Bridge·Analytics·Toast·Overlay·기록 providers, 전역 스타일.
-- `widgets/bottom-nav`: 모바일·태블릿의 홈·탐색·MY 하단 탭. 데스크톱은 왼쪽 고정 메뉴를 쓴다.
+- `_app`: Apollo·Bridge·Analytics·Toast·Overlay·기록 providers, 루트 레이아웃이 감싸는 `shell`(데스크톱 고정 메뉴), 전역 스타일.
+- `widgets/bottom-nav`: 모바일·태블릿의 홈·탐색·MY 하단 탭. `widgets/desktop-nav`: 데스크톱 왼쪽 고정 메뉴로, `_app/shell`이 레이아웃에서 한 번만 그려 화면 전환·로딩 중에도 남는다(`/sign` 제외). `TopAppBar`는 화면 머리만 그린다.
 - `features`: 인증·그룹·post(상시 게시물·영상·인기·삭제)·초대·공유와 기존 대회 호환 기능.
 - `shared`: 생성 GraphQL 문서·API 링크·router/error/form/bridge 기반·UI.
 
