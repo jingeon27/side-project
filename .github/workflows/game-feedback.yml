@@ -153,7 +153,7 @@ jobs:
     # Covers waiting for the other service on the host lock plus one deployment and its rollback.
     # The deployment itself runs detached on the host, so a timeout only stops following it.
     timeout-minutes: 45
-    environment: production
+    environment: game-feedback-production
     concurrency:
       # Per service: the host flock serializes the two services without cancelling each other's queued job.
       group: shared-instance-deploy-game-feedback
