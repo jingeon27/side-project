@@ -31,6 +31,12 @@ export default defineConfig([
             "CallExpression[callee.type='MemberExpression'][callee.property.name=/^(invalidateQueries|refetchQueries|cancelQueries|removeQueries|resetQueries|getQueriesData|setQueriesData)$/] > ObjectExpression.arguments > Property[key.name='queryKey'] > ArrayExpression.value",
           message: '캐시 작업에는 도메인 query options의 queryKey를 재사용하세요.',
         },
+        {
+          selector:
+            "JSXAttribute[name.name='className'] > JSXExpressionContainer > TemplateLiteral[expressions.length>0]",
+          message:
+            'className에 상태 class를 문자열로 이어 붙이지 마세요. 켜짐/꺼짐 상태는 data-*·aria-* 속성과 CSS 속성 선택자로, class 조합은 cn()으로 표현하세요.',
+        },
       ],
     },
   },
