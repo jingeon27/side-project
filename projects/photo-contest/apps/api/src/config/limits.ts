@@ -44,6 +44,10 @@ export const GRAPHQL_MAX_ALIASES = 10;
 // 운영의 주소별 GraphQL 요청 수. 화면 하나가 SSR·브라우저를 합쳐 10번 안팎을 부르므로 분당 60화면을 넘는 양이다.
 export const GRAPHQL_RATE_LIMIT_WINDOW_MS = MINUTE_MS;
 export const GRAPHQL_RATE_LIMIT_PER_WINDOW = 600;
+// 운영의 주소별 고정 미디어 경로(게시물 파일·대회 사진·그룹/프로필 대표 사진) 요청 수. 요청마다 읽기 권한을 DB에서 확인한다.
+// 피드 한 화면(48개)이 게시물·대표 사진을 합쳐 70번 안팎을 부르므로 분당 15화면을 넘는 양이다.
+export const MEDIA_RATE_LIMIT_WINDOW_MS = MINUTE_MS;
+export const MEDIA_RATE_LIMIT_PER_WINDOW = 1200;
 
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 export const POST_TITLE_LIMIT = 80;
