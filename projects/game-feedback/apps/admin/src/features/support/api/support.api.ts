@@ -5,7 +5,7 @@ import {
   setSupportStatus,
 } from '@game-feedback/sdk';
 
-export const fetchThreads = () => listSupportThreads();
+export const fetchThreads = () => listSupportThreads().then((page) => page.items);
 export const fetchMessages = (id: string, cursor: string) =>
   listAdminSupportMessages(id, { limit: 30, ...(cursor ? { cursor } : {}) });
 export const updateStatus = ({ id, status }: { id: string; status: 'OPEN' | 'CLOSED' }) =>

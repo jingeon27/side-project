@@ -500,37 +500,87 @@ export const StartSupportConversationResponse = zod.object({
 })
 
 
-export const listSupportThreadsResponseIdMax = 100;
-
-export const listSupportThreadsResponseConversationIdMax = 100;
-
-export const listSupportThreadsResponseRequesterIdMax = 100;
+export const listSupportThreadsQueryLimitDefault = 12;
+export const listSupportThreadsQueryLimitMax = 50;
 
 
-export const listSupportThreadsResponseAdminIdMax = 100;
 
-export const listSupportThreadsResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
-export const listSupportThreadsResponseUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const ListSupportThreadsQueryParams = zod.object({
+  "cursor": zod.string().optional(),
+  "limit": zod.int().min(1).max(listSupportThreadsQueryLimitMax).default(listSupportThreadsQueryLimitDefault),
+  "status": zod.enum(['OPEN', 'CLOSED']).optional()
+})
+
+export const listSupportThreadsResponseItemsItemIdMax = 100;
+
+export const listSupportThreadsResponseItemsItemConversationIdMax = 100;
+
+export const listSupportThreadsResponseItemsItemRequesterIdMax = 100;
 
 
-export const ListSupportThreadsResponseItem = zod.object({
-  "id": zod.string().min(1).max(listSupportThreadsResponseIdMax),
-  "conversationId": zod.string().min(1).max(listSupportThreadsResponseConversationIdMax),
+export const listSupportThreadsResponseItemsItemAdminIdMax = 100;
+
+export const listSupportThreadsResponseItemsItemCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const listSupportThreadsResponseItemsItemUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+
+export const ListSupportThreadsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(listSupportThreadsResponseItemsItemIdMax),
+  "conversationId": zod.string().min(1).max(listSupportThreadsResponseItemsItemConversationIdMax),
   "requester": zod.object({
-  "id": zod.string().min(1).max(listSupportThreadsResponseRequesterIdMax),
+  "id": zod.string().min(1).max(listSupportThreadsResponseItemsItemRequesterIdMax),
   "nickname": zod.string().min(1),
   "isVerified": zod.boolean(),
   "supercellTag": zod.string().nullable(),
   "isTestAccount": zod.boolean(),
   "avatarUrl": zod.string().nullish()
 }),
-  "adminId": zod.string().min(1).max(listSupportThreadsResponseAdminIdMax),
+  "adminId": zod.string().min(1).max(listSupportThreadsResponseItemsItemAdminIdMax),
   "topic": zod.enum(['GENERAL', 'VERIFICATION']),
   "status": zod.enum(['OPEN', 'CLOSED']),
-  "createdAt": zod.iso.datetime({"offset":true}).regex(listSupportThreadsResponseCreatedAtRegExp),
-  "updatedAt": zod.iso.datetime({"offset":true}).regex(listSupportThreadsResponseUpdatedAtRegExp)
+  "createdAt": zod.iso.datetime({"offset":true}).regex(listSupportThreadsResponseItemsItemCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(listSupportThreadsResponseItemsItemUpdatedAtRegExp)
+})),
+  "nextCursor": zod.union([zod.string().min(1),zod.null()])
 })
-export const ListSupportThreadsResponse = zod.array(ListSupportThreadsResponseItem)
+
+
+export const GetSupportThreadParams = zod.object({
+  "id": zod.string()
+})
+
+export const getSupportThreadResponseIdMax = 100;
+
+export const getSupportThreadResponseConversationIdMax = 100;
+
+export const getSupportThreadResponseRequesterIdMax = 100;
+
+
+export const getSupportThreadResponseAdminIdMax = 100;
+
+export const getSupportThreadResponseCreatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+export const getSupportThreadResponseUpdatedAtRegExp = new RegExp('^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$');
+
+
+export const GetSupportThreadResponse = zod.object({
+  "id": zod.string().min(1).max(getSupportThreadResponseIdMax),
+  "conversationId": zod.string().min(1).max(getSupportThreadResponseConversationIdMax),
+  "requester": zod.object({
+  "id": zod.string().min(1).max(getSupportThreadResponseRequesterIdMax),
+  "nickname": zod.string().min(1),
+  "isVerified": zod.boolean(),
+  "supercellTag": zod.string().nullable(),
+  "isTestAccount": zod.boolean(),
+  "avatarUrl": zod.string().nullish()
+}),
+  "adminId": zod.string().min(1).max(getSupportThreadResponseAdminIdMax),
+  "topic": zod.enum(['GENERAL', 'VERIFICATION']),
+  "status": zod.enum(['OPEN', 'CLOSED']),
+  "createdAt": zod.iso.datetime({"offset":true}).regex(getSupportThreadResponseCreatedAtRegExp),
+  "updatedAt": zod.iso.datetime({"offset":true}).regex(getSupportThreadResponseUpdatedAtRegExp)
+})
 
 
 export const SetSupportStatusParams = zod.object({

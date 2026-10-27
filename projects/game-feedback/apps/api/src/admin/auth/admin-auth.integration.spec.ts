@@ -139,7 +139,7 @@ describe('dedicated administrator credentials and private sessions', () => {
       .expect(200);
     const cookie = adminCookie(await login());
     const threads = await request().get('/api/admin/support').set('Cookie', cookie).expect(200);
-    expect(threads.body).toEqual(
+    expect(threads.body.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           conversationId: created.body.id,

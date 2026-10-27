@@ -216,7 +216,7 @@ test('verification opens a private admin chat and an administrator reviews user 
       headers: { Origin: origin },
       data: { accountId: 'sample-test-admin' },
     });
-    const threads = await (await adminContext.request.get(adminApi('/api/admin/support'))).json();
+    const threads = (await (await adminContext.request.get(adminApi('/api/admin/support'))).json()).items;
     const thread = threads.find((item: { requester: { id: string } }) => item.requester.id === userId);
     expect(thread).toBeTruthy();
     const reply = `인증 확인 완료 ${suffix}`;

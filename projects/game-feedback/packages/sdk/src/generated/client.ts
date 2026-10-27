@@ -27,7 +27,6 @@ import {
   ListBlocks200Item,
   ListCategories200Item,
   ListGameAccounts200Item,
-  ListSupportThreads200Item,
   MediaUploadPlan,
   NotificationList,
   Ok,
@@ -40,6 +39,7 @@ import {
   RegisterPushDevice200,
   Session,
   SupportThread,
+  SupportThreadList,
   TestAccountList,
   User
 } from './models';
@@ -69,6 +69,7 @@ import type {
   ListPostCommentsParams,
   ListPostsParams,
   ListReportsParams,
+  ListSupportThreadsParams,
   MediaUploadInput,
   OnboardInput,
   PostInput,
@@ -447,23 +448,52 @@ return apiFetch<Conversation>(getStartSupportConversationUrl(),
 
 
 
-export const getListSupportThreadsUrl = () => {
+export const getListSupportThreadsUrl = (params?: ListSupportThreadsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/support`
+  return stringifiedParams.length > 0 ? `/api/admin/support?${stringifiedParams}` : `/api/admin/support`
 }
 
-export const listSupportThreads = async ( options?: Parameters<typeof apiFetch>[1]): Promise<ListSupportThreads200Item[]> => {
+export const listSupportThreads = async (params?: ListSupportThreadsParams, options?: Parameters<typeof apiFetch>[1]): Promise<SupportThreadList> => {
 
-  return apiFetch<ListSupportThreads200Item[]>(getListSupportThreadsUrl(),
+  return apiFetch<SupportThreadList>(getListSupportThreadsUrl(params),
   {
     ...options,
     method: 'GET'
 
     ,
-    schema: zod.array(ListSupportThreads200Item)
+    schema: SupportThreadList
+  }
+);}
+
+
+
+export const getGetSupportThreadUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/support/${encodeURIComponent(String(id))}`
+}
+
+export const getSupportThread = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<SupportThread> => {
+
+  return apiFetch<SupportThread>(getGetSupportThreadUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: SupportThread
   }
 );}
 

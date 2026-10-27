@@ -14,6 +14,7 @@ export {
   reviewReport,
   startSupportConversation,
   listSupportThreads,
+  getSupportThread,
   setSupportStatus,
   exchangeAppLogin,
   getHealth,
