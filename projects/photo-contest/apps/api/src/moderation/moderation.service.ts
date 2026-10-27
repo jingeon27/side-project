@@ -39,13 +39,13 @@ export class ModerationService {
     return true;
   }
 
-  /** 관리자만. 사진·투표·좋아요·신고를 보존한 채 목록·결과에서 뺀다. */
+  /** 관리자만. 사진·투표·좋아요·신고를 보존한 채 목록·결과에서 뺀다. 이관된 게시물도 같은 상태로 맞춘다. */
   async hide(viewer: IViewer, submissionId: string): Promise<boolean> {
     await this.membership.accessibleSubmission(viewer.id, submissionId, { owner: true });
-    const updated = await this.db.submission.updateMany({
-      where: { id: submissionId },
-      data: { hidden: true },
-    });
+    const [updated] = await this.transactions.run([
+      this.db.submission.updateMany({ where: { id: submissionId }, data: { hidden: true } }),
+      this.db.post.updateMany({ where: { legacySubmissionId: submissionId }, data: { hidden: true } }),
+    ]);
     if (updated.count !== 1) fail(ERROR_MESSAGE.SUBMISSION_NOT_FOUND, ERROR_CODE.NOT_FOUND);
     return true;
   }
