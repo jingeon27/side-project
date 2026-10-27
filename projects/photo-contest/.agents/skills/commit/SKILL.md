@@ -12,3 +12,4 @@ description: 웃긴순간(side 저장소) 작업을 커밋할 때 커밋 단위�
 - 메시지: `<type>(<scope>): <무엇을 ~한다>` 한국어. type은 feat·fix·refactor·test·docs·chore, scope는 api·web·mobile·bridge·test-kit·deps·photo-contest. 필요하면 빈 줄 뒤 본문에 '왜'를 한두 줄.
   - 예: `feat(web): 사진 좋아요 버튼을 추가한다`, `refactor(api): 투표와 신고·숨김·삭제를 각 모듈로 분리한다`, `chore(deps): API에 es-toolkit과 ts-pattern을 추가한다`
 - 커밋 전에 그 단위의 검사(typecheck·lint·관련 test)가 통과하는지 확인한다. 큰 리팩터링 중간이라 앱 전체가 아직 통과하지 않으면 본문에 무엇이 다음 커밋에서 이어지는지 적는다.
+- PR은 merge commit으로 합쳐 브랜치 커밋이 그대로 남는다. push 전에 fixup·WIP 커밋을 원래 커밋과 합치고(`git rebase --autosquash <base>`), `Co-Authored-By` trailer는 넣지 않는다(루트 AGENTS.md, PR `Commits` 검사).
