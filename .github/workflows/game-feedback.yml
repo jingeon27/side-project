@@ -50,11 +50,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      GF_S3_BUCKET: ${{ vars.GF_S3_BUCKET }}
+      GF_S3_BUCKET: ${{ vars.GAME_FEEDBACK_S3_BUCKET }}
       GF_S3_REGION: ap-northeast-2
-      GF_S3_KEY_PREFIX: ${{ vars.GF_S3_KEY_PREFIX || 'game-feedback/ci' }}
-      GF_S3_ACCESS_KEY_ID: ${{ secrets.GF_S3_ACCESS_KEY_ID }}
-      GF_S3_SECRET_ACCESS_KEY: ${{ secrets.GF_S3_SECRET_ACCESS_KEY }}
+      GF_S3_KEY_PREFIX: ${{ vars.GAME_FEEDBACK_S3_KEY_PREFIX || 'game-feedback/ci' }}
+      GF_S3_ACCESS_KEY_ID: ${{ secrets.GAME_FEEDBACK_S3_ACCESS_KEY_ID }}
+      GF_S3_SECRET_ACCESS_KEY: ${{ secrets.GAME_FEEDBACK_S3_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
@@ -113,7 +113,7 @@ jobs:
   # Publishes the exact image archive verified by the shared-instance contract.
   publish:
     needs: [verify, shared-contract]
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -148,7 +148,7 @@ jobs:
 
   deploy:
     needs: publish
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GF_DEPLOY_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.GAME_FEEDBACK_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     # Covers waiting for the other service on the host lock plus one deployment and its rollback.
     # The deployment itself runs detached on the host, so a timeout only stops following it.

@@ -10,7 +10,7 @@
 
 통합·브라우저 테스트는 같은 버킷의 `<GF_S3_KEY_PREFIX>/tests/<실행 ID>/` 아래에서만 객체를 만들고 종료 시 그 경로만 정리한다. 버킷 생성·삭제는 하지 않는다. 테스트 계정에는 해당 경로의 GetObject·PutObject·DeleteObject와 `s3:prefix` 조건으로 제한한 ListBucket 권한이 필요하다. 단위 테스트는 AWS에 접속하지 않고 설정·서명 정책만 확인한다. 강제 종료로 정리가 중단되면 실패한 실행 ID의 경로만 확인해 정리한다.
 
-브라우저 테스트를 실행하려면 버킷 CORS에 실제 사용하는 웹 origin(기본 `http://127.0.0.1:3301`, `http://127.0.0.1:3302`, `http://127.0.0.1:3304`, 관측 레인 `http://127.0.0.1:3353`, `http://127.0.0.1:3354`)을 허용한다. CI는 Repository Variables의 `GF_S3_BUCKET`·`GF_S3_KEY_PREFIX`와 Secrets의 `GF_S3_ACCESS_KEY_ID`·`GF_S3_SECRET_ACCESS_KEY`를 사용한다. 공유 배포 검증에는 Photo Contest의 S3 설정도 필요하다. 설정이 없는 통합 검사는 대역으로 대체하거나 성공 처리하지 않고 실패한다. 외부 fork PR처럼 Secrets가 제공되지 않는 실행도 동일하다.
+브라우저 테스트를 실행하려면 버킷 CORS에 실제 사용하는 웹 origin(기본 `http://127.0.0.1:3301`, `http://127.0.0.1:3302`, `http://127.0.0.1:3304`, 관측 레인 `http://127.0.0.1:3353`, `http://127.0.0.1:3354`)을 허용한다. CI는 Repository Variables의 `GAME_FEEDBACK_S3_BUCKET`·`GAME_FEEDBACK_S3_KEY_PREFIX`와 Secrets의 `GAME_FEEDBACK_S3_ACCESS_KEY_ID`·`GAME_FEEDBACK_S3_SECRET_ACCESS_KEY`를 앱의 `GF_S3_*` 환경변수로 전달한다. 공유 배포 검증에는 Photo Contest의 S3 설정도 필요하다. 설정이 없는 통합 검사는 대역으로 대체하거나 성공 처리하지 않고 실패한다. 외부 fork PR처럼 Secrets가 제공되지 않는 실행도 동일하다.
 
 관리자 화면은 http://127.0.0.1:3303 이며 로컬 관리자 로그인을 사용한다. 개발 API의 테스트 인증이 켜져 있어야 테스트 관리자가 문의 담당자가 된다. 일반 개발 모드에서 실제 ADMIN 계정이 없으면 관리자·프로필 인증 문의 모두 SUPPORT_UNAVAILABLE을 반환한다.
 
