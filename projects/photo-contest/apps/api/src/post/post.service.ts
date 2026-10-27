@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { GraphQLError } from 'graphql';
 
 import type { Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
@@ -13,7 +14,7 @@ import {
   POST_TITLE_LIMIT,
 } from '../config/limits';
 import { assertContestParticipation } from '../contest/group-contest.policy';
-import { Database } from '../database/database.service';
+import { Database, type TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { GroupCategoryService } from '../group/group-category.service';
 import { MembershipService } from '../group/membership.service';
@@ -130,58 +131,80 @@ export class PostService {
     const linkUrl = postLink(input.linkUrl);
     if (!input.uploadId && !linkUrl) fail('사진·동영상 또는 링크를 첨부해 주세요.');
     await this.limits.consume('POST_CREATE', { userId: viewer.id, address });
-    const row = await this.transactions.atomic(async (tx) => {
-      await this.membership.requireMember(viewer.id, input.groupId, tx);
-      const upload = input.uploadId
-        ? await (tx ?? this.db).postUpload.findUnique({
-            where: { id: input.uploadId },
-            include: { submissionUpload: true, groupAvatar: true },
-          })
-        : null;
-      if (
-        input.uploadId &&
-        (!upload ||
-          upload.submissionUpload !== null ||
-          upload.groupAvatar !== null ||
-          upload.userId !== viewer.id ||
-          upload.groupId !== input.groupId ||
-          !upload.storageKey ||
-          upload.expiresAt <= new Date())
-      )
-        fail('업로드가 완료되지 않았거나 만료되었습니다.');
-      if (input.contestId) {
-        const contest = await (tx ?? this.db).contest.findUnique({ where: { id: input.contestId } });
-        if (!contest) fail('대회를 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
-        assertContestParticipation(contest, input.groupId);
-      }
-      if (input.categoryId) await this.categories.requireActive(input.groupId, input.categoryId, tx);
-      const created = await (tx ?? this.db).post.create({
-        data: {
-          groupId: input.groupId,
-          categoryId: input.categoryId ?? null,
-          authorId: viewer.id,
-          uploadId: upload?.id ?? null,
-          linkUrl,
-          title,
-          body,
-          contestId: input.contestId ?? null,
-        },
-        include: postInclude(viewer.id),
+    const row = await this.transactions
+      .atomic(async (tx) => {
+        await this.membership.requireMember(viewer.id, input.groupId, tx);
+        // 응답을 받지 못해 다시 보낸 게시 요청은 새 글 없이 처음 만든 글을 돌려준다.
+        const existing = await this.postOfUpload(viewer, input, tx);
+        if (existing) return existing;
+        const upload = input.uploadId
+          ? await tx.postUpload.findUnique({
+              where: { id: input.uploadId },
+              include: { submissionUpload: true, groupAvatar: true, post: { select: { id: true } } },
+            })
+          : null;
+        if (upload?.post) fail(ERROR_MESSAGE.UPLOAD_ALREADY_USED, ERROR_CODE.CONFLICT);
+        if (
+          input.uploadId &&
+          (!upload ||
+            upload.submissionUpload !== null ||
+            upload.groupAvatar !== null ||
+            upload.userId !== viewer.id ||
+            upload.groupId !== input.groupId ||
+            !upload.storageKey ||
+            upload.expiresAt <= new Date())
+        )
+          fail('업로드가 완료되지 않았거나 만료되었습니다.');
+        if (input.contestId) {
+          const contest = await tx.contest.findUnique({ where: { id: input.contestId } });
+          if (!contest) fail('대회를 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+          assertContestParticipation(contest, input.groupId);
+        }
+        if (input.categoryId) await this.categories.requireActive(input.groupId, input.categoryId, tx);
+        const created = await tx.post.create({
+          data: {
+            groupId: input.groupId,
+            categoryId: input.categoryId ?? null,
+            authorId: viewer.id,
+            uploadId: upload?.id ?? null,
+            linkUrl,
+            title,
+            body,
+            contestId: input.contestId ?? null,
+          },
+          include: postInclude(viewer.id),
+        });
+        await recordEvent(tx, {
+          id: `post:${created.id}`,
+          type: ANALYTICS_EVENT.POST_CREATED,
+          userId: viewer.id,
+          properties: {
+            groupId: input.groupId,
+            postId: created.id,
+            kind: upload?.kind ?? 'LINK',
+            categoryId: input.categoryId ?? null,
+          },
+        });
+        return created;
+      })
+      .catch(async (error: unknown) => {
+        // 같은 업로드로 동시에 보낸 요청이 unique에 걸리면 먼저 커밋한 글을 돌려준다.
+        const conflict = error instanceof GraphQLError && error.extensions.code === ERROR_CODE.CONFLICT;
+        const existing = conflict ? await this.postOfUpload(viewer, input, this.db) : null;
+        if (!existing) throw error;
+        return existing;
       });
-      await recordEvent(tx ?? this.db, {
-        id: `post:${created.id}`,
-        type: ANALYTICS_EVENT.POST_CREATED,
-        userId: viewer.id,
-        properties: {
-          groupId: input.groupId,
-          postId: created.id,
-          kind: upload?.kind ?? 'LINK',
-          categoryId: input.categoryId ?? null,
-        },
-      });
-      return created;
-    });
     return presentPost(row, viewer.id);
+  }
+
+  /** 같은 사용자가 같은 그룹에 같은 업로드로 이미 만든 글 */
+  private async postOfUpload(viewer: IViewer, input: IPostInput, client: TDatabaseClient) {
+    if (!input.uploadId) return null;
+    const post = await client.post.findUnique({
+      where: { uploadId: input.uploadId },
+      include: postInclude(viewer.id),
+    });
+    return post?.authorId === viewer.id && post.groupId === input.groupId ? post : null;
   }
   async update(
     viewer: IViewer,
