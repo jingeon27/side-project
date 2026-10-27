@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import { z } from 'zod';
 
 const require = createRequire(import.meta.url);
@@ -10,7 +10,10 @@ const {
 const { PrismaClient }: typeof import('../generated/prisma/index') = require('../generated/prisma/index.js');
 if (process.env.NODE_ENV !== 'production')
   throw new Error('Shared-instance production configuration is required.');
-const { assertProductionConfig }: typeof import('../src/config/env') = require('../dist/config/env.js');
+const {
+  assertProductionConfig,
+  s3KeyPrefix,
+}: typeof import('../src/config/env') = require('../dist/config/env.js');
 assertProductionConfig();
 const {
   sharedDatabaseUrl,
@@ -47,10 +50,16 @@ try {
     role.database_create
   )
     throw new Error('The runtime role must have DML-only access to its dedicated database.');
-  await storage.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET }), {
-    abortSignal: AbortSignal.timeout(10000),
-  });
-  console.log('Verified runtime database role and S3 bucket access.');
+  // 공용 버킷은 서비스 폴더의 목록 권한만 주므로 버킷 전체를 확인하는 HeadBucket은 거부된다.
+  await storage.send(
+    new ListObjectsV2Command({
+      Bucket: process.env.S3_BUCKET,
+      Prefix: s3KeyPrefix() || undefined,
+      MaxKeys: 1,
+    }),
+    { abortSignal: AbortSignal.timeout(10000) },
+  );
+  console.log('Verified runtime database role and S3 folder access.');
 } catch {
   console.error('Database role or private S3 access verification failed.');
   process.exitCode = 1;
