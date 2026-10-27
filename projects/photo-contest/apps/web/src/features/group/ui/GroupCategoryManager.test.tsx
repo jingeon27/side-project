@@ -89,3 +89,48 @@ it('카테고리 목록을 다시 받는 동안 이어서 입력한 다음 이�
   await waitFor(() => expect(screen.getByRole('button', { name: '카테고리 만들기' })).toBeEnabled());
   expect(input).toHaveValue('순간포착');
 });
+
+it('카테고리 이름을 바꿔도 같은 입력을 유지하고 포커스를 잃지 않아야 한다', async () => {
+  const categories = [row('category-1', '합성', 0)];
+  const operations: string[] = [];
+  const link = new ApolloLink(
+    (operation) =>
+      new Observable((sink) => {
+        operations.push(operation.operationName ?? '');
+        const respond = (data: Record<string, unknown>) =>
+          queueMicrotask(() => {
+            sink.next({ data });
+            sink.complete();
+          });
+        if (operation.operationName === 'RenameGroupCategory') {
+          categories.splice(0, 1, row('category-1', operation.variables.name, 0));
+          respond({ renameGroupCategory: categories[0] });
+          return;
+        }
+        respond({
+          group: { __typename: 'Group', id: 'group-1', role: GroupRole.Owner, categories: [...categories] },
+        });
+      }),
+  );
+  const client = new ApolloClient({ cache: new InMemoryCache(), link });
+  const user = userEvent.setup();
+  await act(async () => {
+    render(
+      <ApolloProvider client={client}>
+        <OverlayProvider>
+          <GroupCategoryManager groupId="group-1" />
+        </OverlayProvider>
+      </ApolloProvider>,
+    );
+  });
+  await user.click(screen.getByText('카테고리 관리'));
+  const input = await screen.findByRole('textbox', { name: /합성 이름/ });
+  await user.clear(input);
+  await user.type(input, '순간포착{Enter}');
+
+  const renamed = await screen.findByRole('textbox', { name: /순간포착 이름/ });
+  await waitFor(() => expect(operations.filter((name) => name === 'GroupCategories')).toHaveLength(2));
+  expect(renamed).toBe(input);
+  expect(renamed).toHaveFocus();
+  expect(renamed).toHaveValue('순간포착');
+});
