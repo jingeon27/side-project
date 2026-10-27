@@ -1,7 +1,6 @@
 'use client';
 
 import { useId } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
@@ -12,22 +11,20 @@ import { Button, Input, Textarea } from '@side/design-system';
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { Avatar, ErrorNotice, Field, useNotify } from '@/shared/ui';
 
 import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 import { profileOptions } from '../model/user.options';
 import { ProfileLinksEditor } from './ProfileLinksEditor';
 import { ProfilePhotoEditor } from './ProfilePhotoEditor';
 
-interface IProfileEditSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IProfileEditFormProps {
+  onSaved: () => void;
   profile: PublicProfile;
 }
 
-export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSheetProps) {
+export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const { t } = useI18n();
-  const router = useRouter();
   const notify = useNotify();
   const formId = useId();
   const form = useZodForm(ProfileDetailsInputSchema, {
@@ -37,27 +34,11 @@ export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSh
   const current = useQuery({ ...profileOptions(profile.author.id), initialData: profile });
   const mutation = useMutation(updateProfileMutationOptions(useQueryClient()));
   return (
-    <BottomSheet
-      open={open}
-      onOpenChange={onOpenChange}
-      title={t('프로필 수정')}
-      dismissible={!mutation.isPending}
-      footer={
-        <>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={mutation.isPending}
-            onClick={() => onOpenChange(false)}
-          >
-            {t('취소')}
-          </Button>
-          <Button type="submit" form={formId} disabled={!form.formState.isDirty} loading={mutation.isPending}>
-            {t('프로필 저장')}
-          </Button>
-        </>
-      }
-    >
+    <div className="settings-card profile-edit-page">
+      <div className="settings-profile profile-editor-identity">
+        <Avatar src={current.data.author.avatarUrl} name={current.data.author.nickname} size="large" />
+        <strong>{current.data.author.nickname}</strong>
+      </div>
       <form
         id={formId}
         noValidate
@@ -67,8 +48,7 @@ export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSh
           mutation.mutate(input, {
             onSuccess: () => {
               notify(t('프로필을 수정했어요.'));
-              onOpenChange(false);
-              router.refresh();
+              onSaved();
             },
           }),
         )}
@@ -106,6 +86,9 @@ export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSh
         <p className="small muted profile-bio-count">
           {(bio ?? '').length}/{PROFILE_BIO_MAX_LENGTH}
         </p>
+        <Button type="submit" disabled={!form.formState.isDirty} loading={mutation.isPending}>
+          {t('프로필 저장')}
+        </Button>
         <ErrorNotice message={mutation.error?.message} />
       </form>
       <section className="profile-edit-section">
@@ -116,6 +99,6 @@ export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSh
         <h3>{t('프로필 링크')}</h3>
         <ProfileLinksEditor links={current.data.links} />
       </section>
-    </BottomSheet>
+    </div>
   );
 }

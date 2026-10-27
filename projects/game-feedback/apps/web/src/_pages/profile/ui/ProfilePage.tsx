@@ -6,17 +6,18 @@ import { useQuery } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
-import { Button } from '@side/design-system';
+import { ButtonLink } from '@side/design-system/next';
 
 import { useSession } from '@/features/auth';
 import { FollowControls } from '@/features/follow';
+import { ProfileSnapshot } from '@/features/game-profile';
 import { PostCard, userPostListOptions } from '@/features/post';
-import { AuthorLink, ProfileEditSheet, profileOptions, UserBadges } from '@/features/user';
+import { AuthorLink, profileOptions, UserBadges } from '@/features/user';
 import type { PostList, PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
 import { BackLink } from '@/shared/navigation';
-import { Avatar, LinkifiedText, LoadingState, openOverlay, ServiceErrorBoundary } from '@/shared/ui';
+import { Avatar, LinkifiedText, LoadingState, ServiceErrorBoundary } from '@/shared/ui';
 import { ReportUserButton } from '@/widgets/moderation';
 import { StartChatLink } from '@/widgets/start-chat';
 
@@ -27,19 +28,6 @@ interface IProfilePageProps {
   initialProfile: PublicProfile;
   initialPosts: PostList;
   initialViewerId?: string;
-}
-function openProfileEdit(profile: PublicProfile) {
-  openOverlay(({ isOpen, close, unmount }) => (
-    <ProfileEditSheet
-      profile={profile}
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (open) return;
-        close();
-        unmount();
-      }}
-    />
-  ));
 }
 export function ProfilePage(props: IProfilePageProps) {
   const { t } = useI18n();
@@ -75,9 +63,6 @@ function ProfileContent({
   const { links, bio, author, joinedAt, postCount, answerCount, helpfulCount } = profile.data;
   return (
     <>
-      <BackLink className="back-link" href={appRoutes.feed(locale)}>
-        {t('← 피드')}
-      </BackLink>
       <section className="settings-card public-profile" aria-label={t('플레이어 프로필')}>
         <div className="settings-profile">
           <Avatar src={author.avatarUrl} name={author.nickname} size="large" />
@@ -91,16 +76,15 @@ function ProfileContent({
             </p>
           </div>
           {author.id === session.user?.id && (
-            <Button
-              type="button"
+            <ButtonLink
+              href={appRoutes.editProfile(locale)}
               variant="secondary"
               size="sm"
               className="profile-edit-trigger"
-              onClick={() => openProfileEdit(profile.data)}
             >
               <Pencil size={15} aria-hidden />
               {t('프로필 수정')}
-            </Button>
+            </ButtonLink>
           )}
         </div>
         {bio && <LinkifiedText text={bio} className="profile-bio" />}
@@ -130,16 +114,29 @@ function ProfileContent({
             <dd>{helpfulCount}</dd>
           </div>
         </dl>
-        {author.supercellTag && (
-          <p className="small muted">
-            {t('게임 계정 소유권은 인증되지 않았습니다. 서비스 인증 표시와는 별개입니다.')}
-          </p>
+        {author.id !== session.user?.id && (
+          <div className="public-profile-actions">
+            <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => requireLogin()} />
+            <StartChatLink
+              source="profile"
+              userId={author.id}
+              nickname={author.nickname}
+              appearance="button"
+            />
+            <ReportUserButton userId={author.id} />
+          </div>
         )}
-        {author.id !== session?.user?.id && (
-          <StartChatLink source="profile" userId={author.id} nickname={author.nickname} />
+      </section>
+      <section className="settings-card" aria-label={t('게임 계정')}>
+        <h2>{t('게임 계정')}</h2>
+        {(profile.data.gameAccounts ?? []).length === 0 && (
+          <p className="muted">{t('등록한 게임 계정이 없어요.')}</p>
         )}
-        <FollowControls userId={author.id} viewerId={session.user?.id} onLogin={() => requireLogin()} />
-        <ReportUserButton userId={author.id} />
+        <div className="game-account-list">
+          {(profile.data.gameAccounts ?? []).map((account) => (
+            <ProfileSnapshot key={account.playerTag} profile={account} />
+          ))}
+        </div>
       </section>
       <ServiceErrorBoundary title={t('작성한 게시글')} resetKey={`${id}:${cursor}`}>
         <ProfilePosts
