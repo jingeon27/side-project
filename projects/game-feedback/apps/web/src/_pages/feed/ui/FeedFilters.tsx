@@ -8,12 +8,15 @@ import { MotionButton } from '@/shared/ui';
 import { useFeedFilters } from '../model/use-feed-filters';
 
 interface IFeedFiltersProps {
+  locale: string;
+  /** 서버 snapshot의 검색 문자열. 첫 HTML과 hydration이 URL과 같은 탭을 표시한다. */
+  initialSearch: string;
   onCompose: () => void;
 }
 
-export function FeedFilters({ onCompose }: IFeedFiltersProps) {
+export function FeedFilters({ locale, initialSearch, onCompose }: IFeedFiltersProps) {
   const { t } = useI18n();
-  const { tab, handleTabChange } = useFeedFilters();
+  const { tab, handleTabChange } = useFeedFilters(locale, initialSearch);
   const unanswered = tab === 'unanswered';
   return (
     <div className="feed-heading">

@@ -1,7 +1,9 @@
+import { appRoutes } from '@game-feedback/bridge';
+
 import { useBrowserSearch } from '@/shared/navigation';
 
-export function useFeedFilters() {
-  const params = new URLSearchParams(useBrowserSearch());
+export function useFeedFilters(locale: string, initialSearch: string) {
+  const params = new URLSearchParams(useBrowserSearch(initialSearch, appRoutes.feed(locale)));
   const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';
 
   function handleTabChange(nextTab: string) {
