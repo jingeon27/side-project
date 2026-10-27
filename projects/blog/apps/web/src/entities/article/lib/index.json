@@ -191,49 +191,44 @@
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "testing", "reflection"],
     "publishedAt": "2026-10-05T12:01:45+09:00",
-    "updatedAt": "2026-10-25T13:43:48.284Z",
+    "updatedAt": "2026-10-27T17:05:00+09:00",
     "coverImage": "/images/covers/reading-ai-code.png",
     "sourceUrl": "https://jingeon27.tistory.com/35",
     "title": "저는 코드를 읽어요",
-    "description": "동작 확인만으로 작업을 마쳤다가 핫픽스가 많았던 스프린트가 있었어요. 이후에는 완성본의 코드와 테스트를 읽고, 실제 화면의 상호작용도 따로 확인해요.",
+    "description": "블랙박스 테스트만으로 작업을 마쳤다가 핫픽스가 많았던 스프린트가 있었어요. 지금은 코드 내부를 읽는 화이트박스 테스트를 함께 하고, 그러려고 코드를 읽기 쉽게 관리해요.",
     "slug": "저는-코드를-읽어요",
     "keywords": ["ai-workflow", "code-review", "testing", "reflection"],
     "id": "reading-ai-code",
     "locale": "ko",
     "toc": [
       {
-        "id": "기계적인-변경까지-한-줄씩-다시-읽지는-않아요",
-        "title": "기계적인 변경까지 한 줄씩 다시 읽지는 않아요",
+        "id": "블랙박스-테스트와-화이트박스-테스트",
+        "title": "블랙박스 테스트와 화이트박스 테스트",
         "level": 2
       },
       {
-        "id": "손댈-코드가-없는-결과도-나오기-시작했어요",
-        "title": "손댈 코드가 없는 결과도 나오기 시작했어요",
+        "id": "블랙박스-테스트만으로는-검증됐다고-말하기-어려워요",
+        "title": "블랙박스 테스트만으로는 검증됐다고 말하기 어려워요",
         "level": 2
       },
       {
-        "id": "작은-변경과-큰-기능에서-고민이-달라요",
-        "title": "작은 변경과 큰 기능에서 고민이 달라요",
+        "id": "화이트박스-테스트만으로도-부족했어요",
+        "title": "화이트박스 테스트만으로도 부족했어요",
         "level": 2
       },
       {
-        "id": "화면을-눌러-보기-전에-코드에서-찾는-문제",
-        "title": "화면을 눌러 보기 전에 코드에서 찾는 문제",
+        "id": "에이전트와-일하면서-화이트박스-테스트를-하는-방식",
+        "title": "에이전트와 일하면서 화이트박스 테스트를 하는 방식",
         "level": 2
       },
       {
-        "id": "읽는-시간을-구현-시간과-겹쳐-써요",
-        "title": "읽는 시간을 구현 시간과 겹쳐 써요",
+        "id": "화이트박스-테스트를-하려면-코드를-관리해야-해요",
+        "title": "화이트박스 테스트를 하려면 코드를 관리해야 해요",
         "level": 2
       },
       {
-        "id": "큰-구조-변경도-덜-부담스러워졌어요",
-        "title": "큰 구조 변경도 덜 부담스러워졌어요",
-        "level": 2
-      },
-      {
-        "id": "읽기-쉬운-구조를-유지하려는-이유",
-        "title": "읽기 쉬운 구조를 유지하려는 이유",
+        "id": "마치며",
+        "title": "마치며",
         "level": 2
       },
       {
@@ -252,49 +247,44 @@
     "category": "perspectives",
     "tags": ["ai-workflow", "code-review", "testing", "reflection"],
     "publishedAt": "2026-10-05T12:01:45+09:00",
-    "updatedAt": "2026-10-25T13:43:48.284Z",
+    "updatedAt": "2026-10-27T17:05:00+09:00",
     "coverImage": "/images/covers/reading-ai-code.png",
     "sourceUrl": "https://jingeon27.tistory.com/35",
     "title": "Why I still read the code",
-    "description": "After a sprint with many hotfixes, I returned to reading finished changes and tests as well as checking interactions in the running UI.",
+    "description": "Black-box checks alone led to a sprint full of hotfixes. I now pair them with white-box testing that starts from reading the code, and keep the code manageable enough to read.",
     "slug": "reading-ai-code",
     "keywords": ["ai-workflow", "code-review", "testing", "reflection"],
     "id": "reading-ai-code",
     "locale": "en",
     "toc": [
       {
-        "id": "i-do-not-reread-every-mechanical-change-line-by-line",
-        "title": "I do not reread every mechanical change line by line",
+        "id": "black-box-and-white-box-testing",
+        "title": "Black-box and white-box testing",
         "level": 2
       },
       {
-        "id": "some-results-no-longer-need-my-edits",
-        "title": "Some results no longer need my edits",
+        "id": "black-box-testing-alone-cannot-call-a-product-verified",
+        "title": "Black-box testing alone cannot call a product verified",
         "level": 2
       },
       {
-        "id": "small-changes-and-large-features-need-different-attention",
-        "title": "Small changes and large features need different attention",
+        "id": "white-box-testing-alone-was-not-enough-either",
+        "title": "White-box testing alone was not enough either",
         "level": 2
       },
       {
-        "id": "finding-conditions-before-clicking-through-the-screen",
-        "title": "Finding conditions before clicking through the screen",
+        "id": "how-i-do-white-box-testing-while-working-with-agents",
+        "title": "How I do white-box testing while working with agents",
         "level": 2
       },
       {
-        "id": "review-can-overlap-implementation",
-        "title": "Review can overlap implementation",
+        "id": "white-box-testing-requires-managed-code",
+        "title": "White-box testing requires managed code",
         "level": 2
       },
       {
-        "id": "larger-structural-changes-have-become-easier",
-        "title": "Larger structural changes have become easier",
-        "level": 2
-      },
-      {
-        "id": "why-i-maintain-readable-structure",
-        "title": "Why I maintain readable structure",
+        "id": "closing",
+        "title": "Closing",
         "level": 2
       },
       {
@@ -303,7 +293,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 8,
     "translations": {
       "ko": "저는-코드를-읽어요",
       "en": "reading-ai-code"
