@@ -20,7 +20,10 @@ export default defineConfig({
           name: 'git-hooks',
           environment: 'node',
           globals: true,
-          include: ['../../scripts/check-commit-message.spec.ts'],
+          include: [
+            '../../scripts/check-commit-message.spec.ts',
+            '../../scripts/check-branch-commits.spec.ts',
+          ],
         },
       },
     ],
