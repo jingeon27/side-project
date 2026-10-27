@@ -36,7 +36,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 
 - `Toaster`, `toast`: Sonner 알림. 공통 색/폰트/모서리/닫기 크기를 적용하며 theme과 번역/위치는 앱이 전달한다.
 - `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다. 보이는 상자는 16px이고 누르는 영역은 44×44px이다.
-- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 제어형 탭이다. 선택값과 URL은 앱이 소유한다.
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 탭이다. 선택값과 URL은 앱이 소유한다. `TabsList variant="default"`는 채운 칸(segmented), `"line"`은 밑줄 탭이며 공통 토큰(`text-label`, `text-muted`→활성 `text-ink`, `bg-sunken`·`bg-surface`·`shadow-card`, `border-ink`)으로 그린다. 보이는 칸이 36px이어도 누르는 영역은 44px이다.
 - `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogPortal`, `DialogOverlay`: shadcn 조합 API다. 기존 `Dialog`는 이를 조합하며 호출부의 props를 유지한다.
 
 - `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm|icon|icon-lg"`, `fullWidth`, `loading`, `icon`. 진행 중 재클릭을 막으면서 포커스를 유지하고 `aria-busy`를 알린다. 글자 앞 아이콘은 `icon`으로 넘기면 진행 중에 같은 자리를 진행 표시가 대신하므로 `{!pending && <Icon />}` 분기가 필요 없다. children 안에 직접 넣은 아이콘은 진행 중에도 남고 진행 표시는 그 앞에 붙는다. `buttonVariants`와 `IButtonProps`도 공개한다.
