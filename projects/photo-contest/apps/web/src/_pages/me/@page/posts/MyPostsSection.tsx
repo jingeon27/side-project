@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 
 import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-import { GalleryPostList } from '@/features/post';
+import { PostCard, PostCardList } from '@/features/post';
 import {
   MyGalleryPostsDocument,
   MyGroupsDocument,
@@ -55,7 +55,11 @@ function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQ
     );
   return (
     <div className="flex min-w-0 flex-col gap-5">
-      <GalleryPostList posts={items} />
+      <PostCardList>
+        {items.map(({ id }) => (
+          <PostCard key={id} id={id} />
+        ))}
+      </PostCardList>
       {hasNextPage ? (
         <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
           게시물 더 보기

@@ -8,13 +8,7 @@ import { NotificationBell } from '@/widgets/notification-bell';
 
 import { MemberHome } from './ui/MemberHome';
 
-export function HomePageTemplate({
-  memberFeedPreloaded = false,
-  initialHasGroups,
-}: {
-  memberFeedPreloaded?: boolean;
-  initialHasGroups?: boolean;
-}) {
+export function HomePageTemplate({ initialHasGroups }: { initialHasGroups?: boolean }) {
   return (
     <div className="flex flex-1 flex-col">
       <HomeAppBar actions={<NotificationBell />} />
@@ -23,7 +17,7 @@ export function HomePageTemplate({
           guest={<Skeleton className="h-32 w-full" />}
           fallback={<Skeleton className="h-32 w-full" />}
         >
-          {() => <MemberHome feedPreloaded={memberFeedPreloaded} initialHasGroups={initialHasGroups} />}
+          {() => <MemberHome initialHasGroups={initialHasGroups} />}
         </ViewerBoundary>
       </div>
       <BottomNav />

@@ -13,7 +13,7 @@ import { match } from 'ts-pattern';
 
 import { GroupContestVoteButton, PhaseBadge } from '@/features/contest';
 import { GroupContentFrame, GroupMembershipButton } from '@/features/group';
-import { CreatePostButton, GalleryBoard, PostCard } from '@/features/post';
+import { CreatePostButton, LatestPosts, PostCard, PostsEmptyState } from '@/features/post';
 import {
   GroupContestDocument,
   GroupContestResultsDocument,
@@ -147,9 +147,11 @@ function ContestContent({
       {match(contest.phase)
         .with(Phase.Completed, () => <ResultQuery id={contest.id} preloaded={resultsPreloaded} />)
         .with(Phase.Upcoming, Phase.Submission, Phase.Voting, () => (
-          <GalleryBoard
+          <LatestPosts
             groupId={groupId}
             contestId={contest.id}
+            title="참여 게시물"
+            empty={<PostsEmptyState title="아직 대회에 참여한 게시물이 없어요" />}
             postAction={(postId) => <GroupContestVoteButton contestId={contest.id} postId={postId} />}
           />
         ))

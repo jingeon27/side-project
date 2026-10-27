@@ -1,6 +1,8 @@
-export { GalleryBoard } from './ui/GalleryBoard';
 export { GalleryFeed } from './ui/GalleryFeed';
-export { GalleryPostList } from './ui/GalleryPostList';
+export { LatestPosts } from './ui/LatestPosts';
+export { PopularPosts } from './ui/PopularPosts';
+export { PostCardList } from './ui/PostCardList';
+export { PostsEmptyState } from './ui/PostsEmptyState';
 export { CreatePostButton } from './ui/CreatePostButton';
 export { CreatePostForm } from './ui/CreatePostForm';
 export { postTypePolicies } from './model/post.type-policies';
