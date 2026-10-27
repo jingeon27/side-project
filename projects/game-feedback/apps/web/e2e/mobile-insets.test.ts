@@ -105,7 +105,7 @@ for (const width of [320, 393, 557, 760, 768, 1024, 1440]) {
   test(`${width}px 하단 메뉴로 홈·프로필·채팅을 오가도 가로 스크롤이 생기지 않는다`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/ko');
-    for (const path of ['/ko/settings', '/ko/messages', '/ko']) {
+    for (const path of ['/ko/settings', '/ko/messages', '/ko', '/ko/settings', '/ko/messages', '/ko']) {
       if (width <= 760) {
         await page.locator(`.mobile-nav:visible a[href="${path}"]`).click();
         await expect(page).toHaveURL(path);
@@ -115,6 +115,15 @@ for (const width of [320, 393, 557, 760, 768, 1024, 1440]) {
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth))
         .toBeLessThanOrEqual(1);
+      if (width <= 760)
+        await expect
+          .poll(() =>
+            page.getByRole('main').evaluate((element) => {
+              const rect = element.getBoundingClientRect();
+              return Math.abs(rect.left - (document.documentElement.clientWidth - rect.right));
+            }),
+          )
+          .toBeLessThanOrEqual(1);
     }
   });
 }
