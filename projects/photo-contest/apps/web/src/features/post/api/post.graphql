@@ -126,6 +126,12 @@ query PostDownload($postId: ID!) {
   }
 }
 
+fragment GalleryPostAuthor on GalleryPost {
+  id
+  author {
+    id
+  }
+}
 fragment PostCommentCard on PostComment {
   parentId
   replyCount
