@@ -2,6 +2,7 @@ import { Args, Mutation, Resolver } from '@nestjs/graphql';
 
 import type { IViewer } from '../auth/session.service';
 import { Viewer } from '../auth/viewer.decorator';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
 import { GroupProfileService } from './group-profile.service';
 
 @Resolver()
@@ -13,8 +14,9 @@ export class GroupProfileResolver {
     @Args('groupId') groupId: string,
     @Args('contentType') contentType: string,
     @Args('byteSize') byteSize: number,
+    @ClientAddress() address: string | null,
   ) {
-    return this.profiles.requestUpload(viewer, groupId, contentType, byteSize);
+    return this.profiles.requestUpload(viewer, groupId, contentType, byteSize, address);
   }
   @Mutation()
   completeGroupAvatarUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {

@@ -16,7 +16,7 @@ description: API의 세션 쿠키 파싱·발급·삭제와 @Viewer() 조회자 
 ## 익명 세션
 
 - `startAnonymousSession` mutation(`AnonymousAuthService.start`): 이미 세션이 있으면 그 사용자를 그대로 돌려주고, 없을 때만 `provider: 'anonymous'` 사용자와 세션을 만든다. 만들 때마다 가입과 같은 IP 버킷(`AUTH_REGISTER_IP_LIMIT`, 15분)을 센다.
-- 조회자의 `provider === 'anonymous'`가 익명 여부다(`User.isAnonymous`). 익명 계정은 공개 그룹만 즉시 가입하고, 비공개 그룹 생성·가입 신청은 로그인(회원 가입)을 안내한다.
+- 조회자의 `provider === 'anonymous'`가 익명 여부다(`User.isAnonymous`). 익명 계정은 공개 그룹만 즉시 가입하고, 비공개 그룹 생성·가입 신청은 로그인(회원 가입)을 안내한다. 업로드는 익명 계정용 저장 용량 한도(500MB)를 쓰고, 운영에서는 주소별 하루 업로드 용량도 센다(`media-upload/storage-quota.ts`, `RateLimitService.consumeUploadBytes`).
 - 익명 상태에서 `registerWithPassword`로 가입하면 같은 사용자 행을 회원으로 바꿔 가입한 그룹·작성한 콘텐츠를 이어 간다.
 
 ## 아이디·비밀번호 로그인

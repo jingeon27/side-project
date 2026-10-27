@@ -112,8 +112,14 @@ export class PostService {
     });
     return rows.map((row) => presentPost(row, viewer?.id ?? null));
   }
-  requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {
-    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize);
+  requestUpload(
+    viewer: IViewer,
+    groupId: string,
+    contentType: string,
+    byteSize: number,
+    address: string | null = null,
+  ) {
+    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'POST' }, address);
   }
   completeUpload(viewer: IViewer, uploadId: string) {
     return this.uploads.completeUpload(viewer, uploadId);

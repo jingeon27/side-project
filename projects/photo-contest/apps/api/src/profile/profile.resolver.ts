@@ -4,6 +4,7 @@ import type { IViewer } from '../auth/session.service';
 import { OptionalViewer, Viewer } from '../auth/viewer.decorator';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { createInputValidationPipe } from '../common/input-validation';
+import { ClientAddress } from '../rate-limit/client-address.decorator';
 import {
   CompleteOnboardingSchema,
   CompleteProfileAvatarUploadSchema,
@@ -24,10 +25,12 @@ export class ProfileResolver {
   requestProfileAvatarUpload(
     @OptionalViewer() viewer: IViewer | null,
     @Args(createInputValidationPipe(RequestProfileAvatarUploadSchema)) input: TRequestProfileAvatarUploadDto,
+    @ClientAddress() address: string | null,
   ) {
     return this.profiles.requestUpload(
       viewer ?? fail(ERROR_MESSAGE.LOGIN_REQUIRED, ERROR_CODE.UNAUTHENTICATED),
       input,
+      address,
     );
   }
 

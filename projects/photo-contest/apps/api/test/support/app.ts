@@ -67,6 +67,11 @@ export interface ITestUser {
   cookie: string;
 }
 
+export interface ITestLoginOptions {
+  /** startAnonymousSession으로 만든 것과 같은 익명 계정. 가입 IP 한도를 쓰지 않도록 DB에 바로 만든다. */
+  anonymous?: boolean;
+}
+
 export interface ITestApi {
   app: INestApplication;
   /** 격리 스키마를 직접 준비·확인하는 클라이언트. 앱과 다른 연결이다. */
@@ -75,10 +80,10 @@ export interface ITestApi {
   storage: MediaStorage;
   /** supertest 요청. 포트를 직접 열지 않고 Nest HTTP 서버에 보낸다. */
   http: () => ReturnType<typeof request>;
-  /** 개발 로그인으로 세션 Cookie 헤더 값을 받는다. */
-  login: (nickname: string) => Promise<string>;
-  /** 개발 로그인 후 사용자 ID까지 확인한다. */
-  signIn: (nickname: string) => Promise<ITestUser>;
+  /** 격리 DB에 사용자(같은 닉네임이면 같은 사용자)와 세션을 만들고 Cookie 헤더 값을 받는다. */
+  login: (nickname: string, options?: ITestLoginOptions) => Promise<string>;
+  /** login 후 사용자 ID까지 확인한다. */
+  signIn: (nickname: string, options?: ITestLoginOptions) => Promise<ITestUser>;
   /** 브라우저처럼 Origin과 CSRF preflight 헤더를 붙여 GraphQL을 호출한다. cookie가 없으면 비로그인 */
   gql: <TData>(
     cookie: string | undefined,
@@ -178,10 +183,11 @@ export async function createTestApp(
   server.setMaxListeners(CONCURRENT_REQUESTS_MAX);
   const http = () => request(server);
 
-  async function login(nickname: string) {
+  async function login(nickname: string, options: ITestLoginOptions = {}) {
+    const provider = options.anonymous ? 'anonymous' : 'testing';
     const user = await db.user.upsert({
-      where: { provider_providerId: { provider: 'testing', providerId: nickname } },
-      create: { provider: 'testing', providerId: nickname, nickname },
+      where: { provider_providerId: { provider, providerId: nickname } },
+      create: { provider, providerId: nickname, nickname },
       update: {},
     });
     const raw = randomToken();
@@ -227,8 +233,8 @@ export async function createTestApp(
     return { code: error.extensions?.code, message: error.message };
   }
 
-  async function signIn(nickname: string): Promise<ITestUser> {
-    const cookie = await login(nickname);
+  async function signIn(nickname: string, options: ITestLoginOptions = {}): Promise<ITestUser> {
+    const cookie = await login(nickname, options);
     const { me } = await gqlOk<{ me: { id: string } }>(cookie, '{ me { id } }');
     return { id: me.id, nickname, cookie };
   }

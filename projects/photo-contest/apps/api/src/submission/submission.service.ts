@@ -70,13 +70,23 @@ export class SubmissionService {
     return presentSubmission(row, { completed: phase(contest) === PHASE.COMPLETED, admin });
   }
 
-  async requestUploadUrl(viewer: IViewer, contestId: string, contentType: string, byteSize: number) {
+  async requestUploadUrl(
+    viewer: IViewer,
+    contestId: string,
+    contentType: string,
+    byteSize: number,
+    address: string | null = null,
+  ) {
     const { contest } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-    return this.uploads.requestUpload(viewer, contest.groupId, contentType, byteSize, {
-      kind: 'SUBMISSION',
-      contestId,
-    });
+    return this.uploads.requestUpload(
+      viewer,
+      contest.groupId,
+      contentType,
+      byteSize,
+      { kind: 'SUBMISSION', contestId },
+      address,
+    );
   }
 
   async completeUpload(viewer: IViewer, uploadId: string) {

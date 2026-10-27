@@ -15,6 +15,7 @@ import { Database, type TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
 import { MembershipService } from '../group/membership.service';
 import { postUploadPolicy } from '../post/post-upload.policy';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { assertStorageQuota } from './storage-quota';
 
@@ -49,20 +50,24 @@ export class MediaUploadService {
     private readonly transactions: UnitOfWork,
     private readonly membership: MembershipService,
     private readonly storage: MediaStorage,
+    private readonly limits: RateLimitService,
   ) {}
 
+  /** @param address 요청 주소(`@ClientAddress()`). 운영에서 주소별 하루 업로드 용량을 센다. */
   async requestUpload(
     viewer: IViewer,
     groupId: string,
     contentType: string,
     byteSize: number,
     purpose: TUploadPurpose = { kind: 'POST' },
+    address: string | null = null,
   ) {
     const contestId = purpose.kind === 'SUBMISSION' ? purpose.contestId : undefined;
     const avatar = purpose.kind === 'GROUP_AVATAR';
     const policy = postUploadPolicy(contentType, byteSize);
     if ((contestId || avatar) && (policy.kind !== 'PHOTO' || byteSize > MAX_UPLOAD_BYTES))
       fail('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.');
+    await this.limits.consumeUploadBytes(address, byteSize);
     const { upload, id, expiresAt } = await this.transactions.atomic(async (tx) => {
       if (avatar) await this.membership.requireAdmin(viewer.id, groupId, tx);
       if (!avatar) await this.membership.requireMember(viewer.id, groupId, tx);

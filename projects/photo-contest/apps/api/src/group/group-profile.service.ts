@@ -86,8 +86,21 @@ export class GroupProfileService {
     return group.avatar.storageKey;
   }
 
-  requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {
-    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'GROUP_AVATAR' });
+  requestUpload(
+    viewer: IViewer,
+    groupId: string,
+    contentType: string,
+    byteSize: number,
+    address: string | null = null,
+  ) {
+    return this.uploads.requestUpload(
+      viewer,
+      groupId,
+      contentType,
+      byteSize,
+      { kind: 'GROUP_AVATAR' },
+      address,
+    );
   }
 
   /** 배경도 공개 그룹 메타데이터이며 현재 지정된 사진만 읽을 수 있다. */

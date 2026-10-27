@@ -92,6 +92,11 @@ export const WRITE_RATE_LIMIT = {
 } as const;
 // 사용자 한 명이 올린 원본(게시물·대회·대표 사진, 지우는 중인 파일 포함)의 합. 100MB 동영상 50개 분량이다.
 export const USER_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
+// 익명 계정은 IP당 15분 5개까지 바로 만들 수 있어 계정 하나의 몫을 작게 둔다. 100MB 동영상 5개 분량이다.
+export const ANONYMOUS_STORAGE_QUOTA_BYTES = 500 * 1024 * 1024;
+// 운영에서 주소 하나가 하루(UTC 고정 창) 동안 발급받을 수 있는 업로드 크기의 합. 계정을 바꿔 가며 버킷을 채우지 못하게 한다.
+// 회원 두 명이 한도를 모두 채울 만큼 넉넉히 두며, DB에는 KiB 단위로 센다(RateLimitBucket.count는 Int).
+export const UPLOAD_ADDRESS_BUDGET = { windowMs: DAY_MS, bytes: 10 * 1024 * 1024 * 1024 } as const;
 
 export const GROUP_CATEGORY_LIMIT = 20;
 export const GROUP_CATEGORY_NAME_LIMIT = 20;

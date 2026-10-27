@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestApp, type ITestApi, type ITestUser } from '../../test/support/app';
 import { createGroup } from '../../test/support/fixtures';
-import { USER_STORAGE_QUOTA_BYTES } from '../config/limits';
-import { STORAGE_QUOTA_EXCEEDED } from './storage-quota';
+import { ANONYMOUS_STORAGE_QUOTA_BYTES, USER_STORAGE_QUOTA_BYTES } from '../config/limits';
+import { ANONYMOUS_STORAGE_QUOTA_EXCEEDED, STORAGE_QUOTA_EXCEEDED } from './storage-quota';
 
 const REQUEST =
   'mutation($group:ID!,$type:String!,$size:Int!){requestPostUpload(groupId:$group,contentType:$type,byteSize:$size){id}}';
@@ -53,5 +53,47 @@ describe('사용자별 저장 용량 상한', () => {
       { group: groupId, type: 'video/mp4', size: LEFT_BYTES },
     );
     expect(requestPostUpload.id).toEqual(expect.any(String));
+  });
+
+  it('익명 계정은 더 작은 한도까지만 발급하고 회원으로 가입하라고 안내해야 한다', async () => {
+    const anonymous = await api.signIn('저장용량-익명', { anonymous: true });
+    await api.gqlOk(anonymous.cookie, 'mutation($id:ID!){requestGroupMembership(groupId:$id){id}}', {
+      id: groupId,
+    });
+    await api.db.postUpload.create({
+      data: {
+        userId: anonymous.id,
+        groupId,
+        tokenHash: randomUUID(),
+        expiresAt: new Date(0),
+        kind: 'VIDEO',
+        contentType: 'video/mp4',
+        byteSize: ANONYMOUS_STORAGE_QUOTA_BYTES - LEFT_BYTES,
+      },
+    });
+    expect(
+      await api.gqlFail(anonymous.cookie, REQUEST, {
+        group: groupId,
+        type: 'video/mp4',
+        size: LEFT_BYTES + 1,
+      }),
+    ).toEqual({ code: 'RATE_LIMITED', message: ANONYMOUS_STORAGE_QUOTA_EXCEEDED });
+    expect(
+      (
+        await api.gqlOk<{ requestPostUpload: { id: string } }>(anonymous.cookie, REQUEST, {
+          group: groupId,
+          type: 'video/mp4',
+          size: LEFT_BYTES,
+        })
+      ).requestPostUpload.id,
+    ).toEqual(expect.any(String));
+    // 프로필 사진도 같은 합계·한도를 쓴다.
+    expect(
+      await api.gqlFail(
+        anonymous.cookie,
+        'mutation($size:Int!){requestProfileAvatarUpload(contentType:"image/png",byteSize:$size){id}}',
+        { size: 1 },
+      ),
+    ).toEqual({ code: 'RATE_LIMITED', message: ANONYMOUS_STORAGE_QUOTA_EXCEEDED });
   });
 });

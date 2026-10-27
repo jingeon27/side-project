@@ -6,6 +6,7 @@ import { ERROR_CODE, fail } from '../common/errors';
 import { COMPLETED_POST_UPLOAD_TTL_MS, MAX_PENDING_UPLOADS, UPLOAD_TICKET_TTL_MS } from '../config/limits';
 import { Database } from '../database/database.service';
 import { assertStorageQuota } from '../media-upload/storage-quota';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
 import { type TRequestProfileAvatarUploadDto, type TUpdateMyProfileDto } from './profile.dto';
 
@@ -17,11 +18,13 @@ export class ProfileService {
   constructor(
     private readonly db: Database,
     private readonly storage: MediaStorage,
+    private readonly limits: RateLimitService,
   ) {}
 
-  async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto) {
+  async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto, address: string | null = null) {
     const extension = EXTENSION[input.contentType];
     if (!extension) fail('JPEG·PNG·WebP 사진을 선택해 주세요.');
+    await this.limits.consumeUploadBytes(address, input.byteSize);
     const upload = await this.db.atomic(async (tx) => {
       const now = new Date();
       const pending = await tx.profileUpload.count({
