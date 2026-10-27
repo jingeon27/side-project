@@ -13,7 +13,7 @@ vi.mock('@/features/user', () => ({
   AuthorLink: ({ author }: { author: { nickname: string } }) => <span>{author.nickname}</span>,
   UserBadges: () => null,
 }));
-vi.mock('./ContentActions', () => ({ ContentActions: () => null }));
+vi.mock('./CommentActions', () => ({ CommentActions: () => null }));
 
 const author = {
   id: 'author',
@@ -56,7 +56,7 @@ describe('답글 버튼 접근성', () => {
   it('닫힌 상태에서 없는 폼을 가리키거나 바뀌지 않는 펼침 상태를 알리지 않아야 한다', () => {
     const { container } = render(
       <QueryClientProvider client={new QueryClient()}>
-        <PostCommentThread thread={{ comment, replies: [] }} post={post} locale="ko" />
+        <PostCommentThread thread={{ comment, replies: [] }} postAuthorId={post.author.id} locale="ko" />
       </QueryClientProvider>,
     );
     const reply = screen.getByRole('button', { name: '답글' });

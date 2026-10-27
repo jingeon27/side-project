@@ -2,57 +2,63 @@
 
 import { useId } from 'react';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
 import { LoaderCircle } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
 
-import { updateAnswerMutationOptions } from '@/features/answer';
-import { updateCommentMutationOptions } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { BottomSheet, ErrorNotice, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
-import { answerFormSchema, commentFormSchema } from '../model/content.schema';
+import type { answerFormSchema, commentFormSchema } from '../model/content.schema';
 
-interface IContentEditDialogProps extends IOverlayControlProps {
-  type: 'ANSWER' | 'COMMENT';
+interface IContentEditDialogProps<TData> extends IOverlayControlProps {
+  /** 번역을 마친 제목 */
+  title: string;
   id: string;
   body: string;
+  /** 본문 길이 제한도 이 계약 스키마에서 읽는다. */
+  schema: typeof answerFormSchema | typeof commentFormSchema;
+  options: UseMutationOptions<TData, Error, { id: string; body: { body: string } }>;
 }
-export function ContentEditDialog({
+export function ContentEditDialog<TData>({
   open,
   onOpenChange,
   onOpenChangeComplete,
-  type,
+  title,
   id,
   body,
-}: IContentEditDialogProps) {
-  const client = useQueryClient();
+  schema,
+  options,
+}: IContentEditDialogProps<TData>) {
   const { t } = useI18n();
   const formId = useId();
-  const answer = useMutation(updateAnswerMutationOptions(client)),
-    comment = useMutation(updateCommentMutationOptions(client)),
-    notify = useNotify(),
-    form = useZodForm(type === 'ANSWER' ? answerFormSchema : commentFormSchema, { defaultValues: { body } });
-  const isPending = answer.isPending || comment.isPending,
-    error = answer.error || comment.error;
-  const errorMessage = error?.message || form.formState.errors.body?.message;
+  const mutation = useMutation(options);
+  const notify = useNotify();
+  const form = useZodForm(schema, { defaultValues: { body } });
+  const { minLength, maxLength } = schema.shape.body;
+  const errorMessage = mutation.error?.message || form.formState.errors.body?.message;
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={onOpenChangeComplete}
-      dismissible={!isPending}
-      title={type === 'ANSWER' ? t('피드백 수정') : t('댓글 수정')}
+      dismissible={!mutation.isPending}
+      title={title}
       description={t('나누고 싶은 내용을 다듬어주세요.')}
       footer={
         <>
-          <Button variant="secondary" type="button" disabled={isPending} onClick={() => onOpenChange(false)}>
+          <Button
+            variant="secondary"
+            type="button"
+            disabled={mutation.isPending}
+            onClick={() => onOpenChange(false)}
+          >
             {t('취소')}
           </Button>
-          <Button variant="primary" size="lg" type="submit" form={formId} disabled={isPending}>
-            {isPending && <LoaderCircle className="spin" size={16} />}
+          <Button variant="primary" size="lg" type="submit" form={formId} disabled={mutation.isPending}>
+            {mutation.isPending && <LoaderCircle className="spin" size={16} />}
             {t('수정 완료')}
           </Button>
         </>
@@ -63,8 +69,7 @@ export function ContentEditDialog({
         className="form-stack"
         onSubmit={form.handleSubmit(async (values) => {
           try {
-            if (type === 'ANSWER') await answer.mutateAsync({ id, body: values });
-            if (type === 'COMMENT') await comment.mutateAsync({ id, body: values });
+            await mutation.mutateAsync({ id, body: values });
             onOpenChange(false);
             notify(t('수정했어요.'));
           } catch {
@@ -76,8 +81,8 @@ export function ContentEditDialog({
           aria-label={t('수정 내용')}
           {...form.register('body')}
           rows={6}
-          minLength={type === 'ANSWER' ? 10 : 1}
-          maxLength={type === 'ANSWER' ? 10000 : 2000}
+          minLength={minLength ?? undefined}
+          maxLength={maxLength ?? undefined}
           required
         />
         <ErrorNotice message={errorMessage && t(errorMessage)} />

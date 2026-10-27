@@ -3,22 +3,24 @@
 import { MessageSquare } from 'lucide-react';
 
 import { AnswerCard } from '@/features/answer';
+import { useSession } from '@/features/auth';
 import { AuthorLink, UserBadges } from '@/features/user';
-import type { Answer, Post } from '@/shared/api';
+import type { Answer } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 
+import { AnswerActions } from './AnswerActions';
 import { AnswerComposer } from './AnswerComposer';
-import { ContentActions } from './ContentActions';
 import { HelpfulAnswerButton } from './HelpfulAnswerButton';
 
 interface IPostAnswersSectionProps {
-  post: Post;
+  postId: string;
+  postAuthorId: string;
   answers: Answer[];
-  userId?: string;
   locale: string;
 }
-export function PostAnswersSection({ post, answers, userId, locale }: IPostAnswersSectionProps) {
+export function PostAnswersSection({ postId, postAuthorId, answers, locale }: IPostAnswersSectionProps) {
   const { t } = useI18n();
+  const userId = useSession().session.user?.id;
   return (
     <section className="answers-section">
       <div className="section-title-row">
@@ -41,24 +43,15 @@ export function PostAnswersSection({ post, answers, userId, locale }: IPostAnswe
           answer={answer}
           authorName={<AuthorLink author={answer.author} locale={locale} />}
           authorContent={<UserBadges author={answer.author} />}
-          actions={
-            <ContentActions
-              type="ANSWER"
-              id={answer.id}
-              author={answer.author}
-              body={answer.body}
-              post={post}
-              locale={locale}
-            />
-          }
+          actions={<AnswerActions answer={answer} />}
           helpfulControl={
-            post.author.id === userId && answer.author.id !== userId ? (
+            postAuthorId === userId && answer.author.id !== userId ? (
               <HelpfulAnswerButton answer={answer} />
             ) : undefined
           }
         />
       ))}
-      <AnswerComposer postId={post.id} />
+      <AnswerComposer postId={postId} />
     </section>
   );
 }
