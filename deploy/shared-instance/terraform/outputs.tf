@@ -119,7 +119,7 @@ output "host_env" {
 }
 
 output "github_environment_variables" {
-  description = "GitHub Environment production·photo-contest-production에 넣을 Variable. SIDE_DEPLOY_SSH_KNOWN_HOSTS(ssh_host_keys_command로 확인)와 Secret SIDE_DEPLOY_SSH_KEY는 따로 등록한다."
+  description = "GitHub Environment game-feedback-production·photo-contest-production에 넣을 Variable. SIDE_DEPLOY_SSH_KNOWN_HOSTS(ssh_host_keys_command로 확인)와 Secret SIDE_DEPLOY_SSH_KEY는 따로 등록한다."
   value = {
     SIDE_DEPLOY_HOST     = aws_eip.host.public_ip
     SIDE_DEPLOY_SSH_USER = local.ssh_user
