@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { expect, test, type Locator } from '@playwright/test';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 async function bottomGap(log: Locator) {
   return log.evaluate((node) => node.scrollHeight - node.clientHeight - node.scrollTop);
@@ -50,6 +50,22 @@ for (const width of [400, 1440]) {
         );
       }
       await page.setViewportSize({ width, height: 844 });
+      await page.goto('/ko/messages');
+      const workspace = page.locator('.chat-workspace');
+      await expect(workspace).toBeVisible();
+      await expect(page.locator('main').getByRole('heading', { name: '채팅', exact: true })).toHaveCount(0);
+      expect((await workspace.boundingBox())?.height).toBeLessThanOrEqual(480);
+      const snippet = page.getByTestId(`conversation-${room.id}`).locator('.conversation-preview p');
+      await expect(snippet).toHaveCSS('text-overflow', 'ellipsis');
+      await expect(snippet).toHaveCSS('white-space', 'nowrap');
+      const size = await snippet.evaluate((node) => ({
+        height: node.getBoundingClientRect().height,
+        line: parseFloat(getComputedStyle(node).lineHeight),
+        clipped: node.scrollWidth > node.clientWidth,
+      }));
+      expect(size.height).toBeLessThanOrEqual(size.line + 1);
+      expect(size.clipped).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.goto(`/ko/messages/${room.id}`);
       const log = page.getByRole('log', { name: '대화 메시지' });
       const input = page.getByRole('textbox', { name: '메시지 내용' });
