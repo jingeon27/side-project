@@ -18,7 +18,8 @@ export interface IDialogProps {
   description?: ReactNode;
   children: ReactNode;
   dismissible?: boolean;
-  closeLabel?: string;
+  /** 닫기 버튼 이름. 번역은 소비 앱이 맡고 패키지는 기본값을 두지 않는다. */
+  closeLabel: string;
   container?: ComponentProps<typeof DialogPortal>['container'];
   onOpenChangeComplete?: (open: boolean) => void;
   className?: string;
@@ -32,7 +33,7 @@ export function Dialog({
   description,
   children,
   dismissible = true,
-  closeLabel = '닫기',
+  closeLabel,
   container,
   onOpenChangeComplete,
   className,
@@ -53,8 +54,7 @@ export function Dialog({
       <DialogContent
         container={container}
         className={className}
-        showCloseButton={dismissible}
-        closeLabel={closeLabel}
+        {...(dismissible ? { closeLabel } : { showCloseButton: false })}
       >
         <DialogHeader className={dismissible ? 'pr-12' : undefined}>
           <DialogTitle>{title}</DialogTitle>

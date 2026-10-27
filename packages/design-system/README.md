@@ -46,8 +46,8 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `TextField`, `TextAreaField`: `FormField`에 `Input`·`Textarea`를 넣은 조합이다. `label`, `description`, `error`, `labelSuffix`, native input/textarea props와 ref를 받고 `className`은 필드 전체에 붙는다. labelSuffix는 앱이 제공하는 필수/선택 등 보조 표시이며 접근성 이름에서 빠진다. `TextAreaField`는 내용에 따라 늘지 않고 `rows`(기본 4줄) 높이를 유지한다. RHF의 `{...register('name')}`를 그대로 전달한다.
 - `FormField`: native `<label>` 폼용 `label`, `children`, `description`, `error`, `labelSuffix`. 도움말 prop은 TextField와 같은 `description` 하나다. `Input`·`Textarea`·`NativeSelect`는 context로 연결하므로 memo·래퍼·서버 컴포넌트를 거쳐도 레이블·도움말·오류가 붙는다. native `input`·`textarea`·`select`는 직접 자식일 때만 연결한다. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 유지하고 `aria-describedby`에는 도움말·오류를 덧붙이며 ref는 그대로 전달한다. label 안에 들어가므로 NativeSelect 래퍼는 `span`이다. 직접 자식인 native 요소에는 스타일을 입히지 않으므로 공통 모양은 Input·Textarea·NativeSelect로 얻는다.
 - `Badge`, `Avatar`, `Spinner`, `Mention`: 상태 글자·이름 fallback·진행 표시·@멘션을 제공한다. 각 요소의 native props(`id`·`title`·`aria-*`·`data-*`)와 ref를 그대로 전달한다. `Avatar`는 이름 옆 장식이며 스크린 리더에서 숨긴다. `Spinner`에 `label`을 주면 `role="status"` 안의 숨긴 글자로 넣어 live region이 진행 상태를 읽는다(aria-label만으로는 읽히지 않는다).
-- `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
-- `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 기본은 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·PageUp·PageDown·Home·End·Enter·Space 조작도 지원하며 현재 높이를 `aria-valuetext`(60%·100%)로 알린다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 소비 앱에서 번역한다. `snapPoints`로 높이 단계를 바꿀 수 있고 나머지 제어 props는 Dialog와 동일하다. `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 제스처가 없는 `Dialog placement="bottom"`은 없앴으므로 하단 시트는 BottomSheet만 쓴다.
+- `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `closeLabel`(필수), `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
+- `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 기본은 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·PageUp·PageDown·Home·End·Enter·Space 조작도 지원하며 현재 높이를 `aria-valuetext`(60%·100%)로 알린다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 필수이며 소비 앱에서 번역한다. `snapPoints`로 높이 단계를 바꿀 수 있고 나머지 제어 props는 Dialog와 동일하다. `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 제스처가 없는 `Dialog placement="bottom"`은 없앴으므로 하단 시트는 BottomSheet만 쓴다.
 
 `BottomSheet`의 `footer`는 스크롤 본문 밖 하단에 작업 버튼을 가로로 배치한다. 본문 폼에 `id`를 주고 제출 버튼의 `form`에 연결하면 기본 폼 검증·Enter 제출도 유지된다. `responsive`를 켜면 CSS 미디어쿼리로 768px부터 같은 팝업을 중앙 모달로 표시한다. 화면 크기가 바뀌어도 입력과 포커스는 같은 인스턴스에 남는다. `showCloseButton={false}`는 상단 X를 숨기며, Esc·바깥 클릭의 허용 여부는 `dismissible`로 정한다. Game Feedback은 반응형 표시와 하단 작업 버튼을 쓰고 상단 X를 숨긴다.
 
@@ -75,6 +75,8 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `Content`·`Footer`: 스크롤 본문과 고정 하단 영역. 기본 여백은 `className`으로 바꾼다.
 
 뒤로 가기로 닫기(history), overlay unmount 같은 앱 흐름은 `onOpenChange`·`onOpenChangeComplete`에 앱이 연결한다.
+
+패키지는 여러 언어 앱이 함께 쓰므로 접근성 이름에 한국어 기본값을 두지 않는다. Dialog·DialogContent·BottomSheet의 `closeLabel`, BottomSheet의 `resizeLabel`, BottomSheet.Handle·Close의 `label`은 필수이고 빠지면 타입 오류다. 닫기 버튼을 숨긴 `DialogContent showCloseButton={false}`만 이름 없이 쓸 수 있다.
 
 컴포넌트는 모두 `className`을 지원한다. 클래스 병합은 공통 `cn`을 사용하며 뒤의 같은 종류 값이 우선한다. 공개 props 타입은 `I` 접두사, 배지 tone 타입은 `TBadgeTone`으로 내보낸다. 루트 진입점의 값은 `@side/design-system/ui/<폴더>` 하위 경로에서도 같은 객체로 가져올 수 있으며 모든 `src/ui/*` 폴더는 `index.ts`를 둔다(`package-exports.spec.ts`).
 

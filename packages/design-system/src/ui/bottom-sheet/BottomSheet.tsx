@@ -291,8 +291,10 @@ export interface IBottomSheetProps extends Omit<IBottomSheetRootProps, 'children
   children: ReactNode;
   footer?: ReactNode;
   showCloseButton?: boolean;
-  closeLabel?: string;
-  resizeLabel?: string;
+  /** 닫기 버튼 이름. 번역은 소비 앱이 맡고 패키지는 기본값을 두지 않는다. */
+  closeLabel: string;
+  /** 높이 조절 손잡이 이름. 번역은 소비 앱이 맡는다. */
+  resizeLabel: string;
 }
 
 /**
@@ -305,8 +307,8 @@ export function BottomSheet({
   children,
   footer,
   showCloseButton = true,
-  closeLabel = '닫기',
-  resizeLabel = '시트 높이 조절',
+  closeLabel,
+  resizeLabel,
   snapPoints = defaultSnapPoints,
   ...rootProps
 }: IBottomSheetProps) {

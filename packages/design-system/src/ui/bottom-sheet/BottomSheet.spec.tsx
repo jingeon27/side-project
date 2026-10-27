@@ -19,6 +19,8 @@ function SheetExample({ dismissible = true }: { dismissible?: boolean }) {
         title="게임 계정"
         description="플레이어 태그를 입력하세요."
         dismissible={dismissible}
+        closeLabel="닫기"
+        resizeLabel="시트 높이 조절"
       >
         <TextField label="플레이어 태그" />
         <Button onClick={() => setOpen(false)}>완료</Button>
@@ -36,6 +38,8 @@ function FooterSheetExample({ onSave }: { onSave: (value: FormDataEntryValue | n
       title="프로필 수정"
       responsive
       showCloseButton={false}
+      closeLabel="닫기"
+      resizeLabel="시트 높이 조절"
       footer={
         <>
           <Button type="button" onClick={() => setOpen(false)}>
