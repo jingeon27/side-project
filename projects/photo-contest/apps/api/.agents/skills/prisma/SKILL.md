@@ -42,10 +42,10 @@ yarn workspace @photo-contest/api db:generate
 
 ## `Database.atomic()` (`src/database/database.service.ts`)
 
-- Serializable 트랜잭션이다. 직렬화 실패(P2034 또는 pg 어댑터의 TransactionWriteConflict)면 콜백 전체를 `SERIALIZABLE_ATTEMPTS`(4)번까지 다시 실행하고, 끝내 겹치면 CONFLICT `ERROR_MESSAGE.REQUEST_CONFLICT`. unique 위반(P2002)은 재시도 없이 CONFLICT `ERROR_MESSAGE.ALREADY_DONE`('이미 제출하거나 투표했습니다.'). 그 밖의 오류는 그대로 던진다.
+- Serializable 트랜잭션이다. 직렬화 실패(P2034 또는 pg 어댑터의 TransactionWriteConflict)면 콜백 전체를 `SERIALIZABLE_ATTEMPTS`(4)번까지 다시 실행하고, 끝내 겹치면 CONFLICT `ERROR_MESSAGE.REQUEST_CONFLICT`. unique 위반(P2002)은 재시도 없이 CONFLICT이고, 문장은 `transaction.policy.ts`의 `UNIQUE_CONFLICT_MESSAGE`가 위반한 제약 이름(Prisma 기본 `<모델>_<필드…>_key`)으로 고른다(투표 `ALREADY_VOTED`, 제출 `ALREADY_SUBMITTED`, 업로드 재사용 `UPLOAD_ALREADY_USED`, 그 밖은 `ALREADY_DONE`). 새 unique를 atomic 안에서 쓰면 그 표에 문장을 더한다. 그 밖의 오류는 그대로 던진다.
 - 쓰는 곳: 확인(단계·권한·소유)과 쓰기가 한 스냅샷이어야 할 때(`VoteService.castVote`, `SubmissionService.create`), 여러 행을 함께 바꾸며 이벤트를 남길 때(`GroupService.createGroup`). 콜백 안에서는 `tx`만 쓴다 — 권한 확인도 `{ client: tx }`로 넘기고, `this.db`는 트랜잭션 밖이다.
 - 콜백은 다시 실행되므로 저장소 HEAD·삭제(`MediaStorage`)·fetch를 넣지 않는다. 업로드 완료는 트랜잭션 밖에서 HEAD로 확인한 뒤 확정하고(`MediaUploadService.completeUpload`), 삭제는 커밋 뒤에 한다(`ModerationService.remove`).
-- 쓰지 않는 곳: 두 번 보내도 성공해야 하는 생성은 `createMany({ data: [row], skipDuplicates: true })`, 동시 요청이 모두 성공해야 하면 Serializable 없이 `this.db.$transaction`(`LikeService.like`). atomic 안의 P2002는 모두 ALREADY_DONE 문장이 되므로 다른 unique 충돌은 미리 확인하거나 skipDuplicates로 피한다.
+- 쓰지 않는 곳: 두 번 보내도 성공해야 하는 생성은 `createMany({ data: [row], skipDuplicates: true })`, 동시 요청이 모두 성공해야 하면 Serializable 없이 `this.db.$transaction`(`LikeService.like`). 표에 없는 P2002는 일반 문장(ALREADY_DONE)이 되므로 예상한 충돌은 미리 확인하거나 skipDuplicates로 피한다. 재시도해도 같은 결과여야 하는 생성은 먼저 기존 행을 찾아 돌려준다(`PostService.create`의 같은 업로드 재요청).
 - 확인 직후 지워진 행의 FK 위반(P2003)은 필요한 곳에서 NOT_FOUND로 바꾼다(`LikeService.like`).
 
 Service는 Database.atomic 또는 UnitOfWork.atomic을 호출하고 권한 검사와 Prisma 조회·쓰기·이벤트에 같은 tx를 사용한다. 새 PostContestVote는 (contestId,voterId) unique와 Post(id,contestId)의 복합 FK를 유지한다. Contest.format default LEGACY와 nullable Post.contestId로 기존 데이터를 보존한다.

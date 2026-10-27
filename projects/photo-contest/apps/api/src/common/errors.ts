@@ -23,7 +23,10 @@ export const ERROR_MESSAGE = {
   INVALID_INVITE: '유효하지 않은 초대 링크입니다.',
   NOT_SUBMISSION_PHASE: '사진 제출 기간이 아닙니다.',
   REQUEST_CONFLICT: '요청이 겹쳤습니다. 다시 시도해 주세요.',
-  ALREADY_DONE: '이미 제출하거나 투표했습니다.',
+  ALREADY_DONE: '이미 처리된 요청입니다.',
+  ALREADY_VOTED: '이미 이 대회에 투표했습니다.',
+  ALREADY_SUBMITTED: '이미 이 대회에 사진을 제출했습니다.',
+  UPLOAD_ALREADY_USED: '이미 다른 곳에 사용한 업로드입니다. 파일을 다시 올려 주세요.',
   FORBIDDEN_ORIGIN: '허용되지 않은 요청 출처입니다.',
   INTERNAL: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
 } as const;
