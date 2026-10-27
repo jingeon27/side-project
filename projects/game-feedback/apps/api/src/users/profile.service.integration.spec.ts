@@ -13,6 +13,7 @@ import { createApp } from '../app';
 import { hash, token } from '../common/crypto';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
+import { MEDIA_COMPLETE_GRACE_SECONDS } from '../media-storage/media-storage.policy';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { responseLocation } from '../testing/http-response';
@@ -229,10 +230,22 @@ describe('프로필 링크와 사진 HTTP 통합', () => {
       .set('Origin', origin)
       .expect(200);
     expect(retried.body.author.avatarUrl).toBe(completed.body.author.avatarUrl);
+    // 서명 만료 뒤에 끝난 전송도 유예 시간 안이면 확정한다.
+    const late = await reserve();
+    expect((await transferMedia(late, state.photo, 'image/jpeg')).status).toBe(204);
+    await state.db.avatarUpload.update({
+      where: { id: late.id },
+      data: { expiresAt: new Date(Date.now() - 1000) },
+    });
+    await http()
+      .post(`/api/profile/avatar/uploads/${late.id}/complete`)
+      .set('Authorization', `Bearer ${state.accessToken}`)
+      .set('Origin', origin)
+      .expect(200);
     const expired = await reserve();
     await state.db.avatarUpload.update({
       where: { id: expired.id },
-      data: { expiresAt: new Date(Date.now() - 1000) },
+      data: { expiresAt: new Date(Date.now() - (MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000) },
     });
     await http()
       .post(`/api/profile/avatar/uploads/${expired.id}/complete`)

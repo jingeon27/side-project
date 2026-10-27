@@ -11,6 +11,10 @@ import { MediaUploadPlanSchema } from '@game-feedback/contracts';
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
+import {
+  MEDIA_COMPLETE_GRACE_SECONDS,
+  MEDIA_UPLOAD_TTL_SECONDS,
+} from '../media-storage/media-storage.policy';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
 import { responseLocation } from '../testing/http-response';
@@ -197,10 +201,21 @@ describe('채팅 S3 직접 업로드와 권한 조회', () => {
     const invalid = await reserve(conversation.id);
     expect((await transfer(invalid, Buffer.alloc(png.length, 120))).status).toBe(204);
     await state.owner.post(`${path}/${invalid.id}/complete`).set('Origin', origin).expect(400);
+    const late = await reserve(conversation.id);
+    expect((await transfer(late)).status).toBe(204);
+    await state.db.chatAttachment.update({
+      where: { id: late.id },
+      data: { createdAt: new Date(Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + 1) * 1000) },
+    });
+    await state.owner.post(`${path}/${late.id}/complete`).set('Origin', origin).expect(200);
     const expired = await reserve(conversation.id);
     await state.db.chatAttachment.update({
       where: { id: expired.id },
-      data: { createdAt: new Date(Date.now() - 301_000) },
+      data: {
+        createdAt: new Date(
+          Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000,
+        ),
+      },
     });
     await state.owner.post(`${path}/${expired.id}/complete`).set('Origin', origin).expect(409);
     await state.owner.get(`${path}/${invalid.id}`).expect(404);
