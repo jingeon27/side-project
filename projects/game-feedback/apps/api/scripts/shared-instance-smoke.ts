@@ -978,7 +978,7 @@ try {
   assert.equal((await pc.http('/health-check/live')).status, 200);
   run('bash', [join(source, 'scripts/database.sh'), 'start']);
   console.log(
-    'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and buckets, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
+    'Shared-instance smoke passed: two real apps, one HTTPS proxy, the host database on internal networks only, separate DML/DDL roles and service S3 folders, pre-migration dumps, presigned POST/S3 Range, secure host-only cookies, SSE, failed-backup refusal, isolated failed-deploy rollback, restart persistence and liveness/readiness separation.',
   );
 } finally {
   for (const service of ['game-feedback', 'photo-contest']) {

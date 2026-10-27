@@ -12,7 +12,8 @@ const url = (role: string) =>
 const valid = {
   DATABASE_URL: url('game_feedback'),
   GF_S3_REGION: 'ap-northeast-2',
-  GF_S3_BUCKET: 'gf-private',
+  GF_S3_BUCKET: 'side-media',
+  GF_S3_KEY_PREFIX: 'game-feedback/production',
 };
 
 describe('shared EC2 deployment', () => {
@@ -57,4 +58,17 @@ describe('shared EC2 deployment', () => {
       validateSharedInstanceEnvironment({ ...valid, GF_S3_ENDPOINT: 'https://storage.test' }),
     ).toThrow();
   });
+  it('keeps the shared bucket inside a game-feedback folder, including CI test folders', () => {
+    expect(() =>
+      validateSharedInstanceEnvironment({ ...valid, GF_S3_KEY_PREFIX: 'game-feedback/ci/tests/run1' }),
+    ).not.toThrow();
+  });
+  it.each([undefined, '', 'game-feedback', 'photo-contest/production', 'game-feedback/../photo-contest'])(
+    'rejects a bucket-root, service-root or foreign prefix (%s)',
+    (prefix) => {
+      expect(() => validateSharedInstanceEnvironment({ ...valid, GF_S3_KEY_PREFIX: prefix })).toThrow(
+        'game-feedback/<folder>',
+      );
+    },
+  );
 });
