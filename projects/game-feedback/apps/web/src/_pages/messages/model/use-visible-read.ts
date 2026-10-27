@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -11,6 +11,18 @@ interface IVisibleReadOptions {
   unavailable: boolean;
 }
 
+function subscribeVisibility(onChange: () => void) {
+  document.addEventListener('visibilitychange', onChange);
+  window.addEventListener('focus', onChange);
+  return () => {
+    document.removeEventListener('visibilitychange', onChange);
+    window.removeEventListener('focus', onChange);
+  };
+}
+const pageVisible = () => document.visibilityState === 'visible';
+// 서버 HTML에는 읽음 경계를 보내지 않는다.
+const serverPageVisible = () => false;
+
 export function useVisibleRead({
   userId,
   conversationId,
@@ -18,22 +30,9 @@ export function useVisibleRead({
   unavailable,
 }: IVisibleReadOptions) {
   const client = useQueryClient();
-  const [active, setActive] = useState(true);
+  const active = useSyncExternalStore(subscribeVisibility, pageVisible, serverPageVisible);
   const mutation = useMutation(readConversationMutationOptions(client, userId, conversationId));
   const { mutate, variables } = mutation;
-
-  useEffect(() => {
-    function handleVisibility() {
-      setActive(document.visibilityState === 'visible');
-    }
-    handleVisibility();
-    document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('focus', handleVisibility);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('focus', handleVisibility);
-    };
-  }, []);
 
   useEffect(() => {
     if (!active || !visibleBoundary || unavailable || variables === visibleBoundary) return;

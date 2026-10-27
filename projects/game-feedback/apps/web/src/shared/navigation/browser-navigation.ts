@@ -2,8 +2,13 @@ import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
 const stateKey = '__game_feedback_navigation';
 const logicalParents = new Map<string, { parent: string }>();
-// 링크가 다음 push로 여는 화면의 논리적 상위(링크를 누른 화면). push된 기록 항목에 남긴다.
-let pendingParent: { target: string; parent: string } | null = null;
+export type TNavigationDirection = 'forward' | 'back' | 'replace';
+interface INavigationState {
+  /** 링크가 다음 push로 여는 화면의 논리적 상위(링크를 누른 화면). push된 기록 항목에 남긴다. */
+  pendingParent: { target: string; parent: string } | null;
+  direction: TNavigationDirection;
+}
+const navigation: INavigationState = { pendingParent: null, direction: 'replace' };
 const locationListeners = new Set<() => void>();
 export function subscribeBrowserLocation(listener: () => void) {
   locationListeners.add(listener);
@@ -23,8 +28,6 @@ interface INavigationEntry {
   feed?: string;
   parent?: string;
 }
-export type TNavigationDirection = 'forward' | 'back' | 'replace';
-let direction: TNavigationDirection = 'replace';
 function entry(state: unknown): INavigationEntry | null {
   if (!state || typeof state !== 'object' || !(stateKey in state)) return null;
   const value: unknown = state[stateKey];
@@ -59,14 +62,14 @@ function routeOf(url: string | URL | null | undefined) {
   return resolveAppRoute(next.pathname + next.search);
 }
 export function getNavigationDirection() {
-  return direction;
+  return navigation.direction;
 }
 export function installBrowserNavigation() {
   const history = window.history;
   const push = history.pushState;
   const replace = history.replaceState;
-  let current = entry(history.state) ?? { index: 0, previous: null };
-  let active = true;
+  // 이 설치의 현재 기록 항목. 해제 뒤에는 원래 history 함수로만 넘긴다.
+  const installation = { current: entry(history.state) ?? { index: 0, previous: null }, active: true };
   function stateWithEntry(data: unknown, next: INavigationEntry) {
     return { ...(data && typeof data === 'object' ? data : {}), [stateKey]: next };
   }
@@ -74,46 +77,46 @@ export function installBrowserNavigation() {
     const route = resolveAppRoute(currentPath());
     return route?.screen === 'feed' ? { ...next, feed: route.path } : next;
   }
-  current = rememberFeed(current);
-  replace.call(history, stateWithEntry(history.state, current), '', window.location.href);
+  installation.current = rememberFeed(installation.current);
+  replace.call(history, stateWithEntry(history.state, installation.current), '', window.location.href);
   const handlePush: History['pushState'] = function (data, unused, url) {
-    if (!active) return push.call(history, data, unused, url);
+    if (!installation.active) return push.call(history, data, unused, url);
     const previous = resolveAppRoute(currentPath())?.path ?? null;
-    const parent =
-      pendingParent && pendingParent.target === routeOf(url)?.path ? pendingParent.parent : undefined;
-    pendingParent = null;
-    current = rememberFeed({
-      ...withoutParent(current),
-      index: current.index + 1,
+    const pending = navigation.pendingParent;
+    const parent = pending && pending.target === routeOf(url)?.path ? pending.parent : undefined;
+    navigation.pendingParent = null;
+    installation.current = rememberFeed({
+      ...withoutParent(installation.current),
+      index: installation.current.index + 1,
       previous,
       ...(parent ? { parent } : {}),
     });
-    direction = 'forward';
-    push.call(history, stateWithEntry(data, current), unused, url);
+    navigation.direction = 'forward';
+    push.call(history, stateWithEntry(data, installation.current), unused, url);
     notifyLocation();
   };
   const handleReplace: History['replaceState'] = function (data, unused, url) {
-    if (!active) return replace.call(history, data, unused, url);
+    if (!installation.active) return replace.call(history, data, unused, url);
     // 등록한 상위는 그 화면(같은 경로의 필터 변경 포함)에만 둔다. 다른 화면으로 바꾸면 버린다.
     const samePath = !url || routeOf(url)?.pathname === resolveAppRoute(currentPath())?.pathname;
-    const next = entry(data) ?? current;
-    current = rememberFeed(samePath ? next : withoutParent(next));
-    direction = 'replace';
-    replace.call(history, stateWithEntry(data, current), unused, url);
+    const next = entry(data) ?? installation.current;
+    installation.current = rememberFeed(samePath ? next : withoutParent(next));
+    navigation.direction = 'replace';
+    replace.call(history, stateWithEntry(data, installation.current), unused, url);
     notifyLocation();
   };
   function handlePop(event: PopStateEvent) {
-    pendingParent = null;
+    navigation.pendingParent = null;
     const next = entry(event.state) ?? { index: 0, previous: null };
-    direction = next.index < current.index ? 'back' : 'forward';
-    current = next;
+    navigation.direction = next.index < installation.current.index ? 'back' : 'forward';
+    installation.current = next;
     notifyLocation();
   }
   history.pushState = handlePush;
   history.replaceState = handleReplace;
   window.addEventListener('popstate', handlePop);
   return () => {
-    active = false;
+    installation.active = false;
     if (history.pushState === handlePush) history.pushState = push;
     if (history.replaceState === handleReplace) history.replaceState = replace;
     window.removeEventListener('popstate', handlePop);
@@ -162,7 +165,7 @@ export function registerLogicalParent(parent: string) {
 export function registerNextLogicalParent(href: string) {
   const route = resolveAppRoute(currentPath());
   const destination = resolveAppRoute(href);
-  pendingParent =
+  navigation.pendingParent =
     route && destination && route.locale === destination.locale
       ? { target: destination.path, parent: route.path }
       : null;

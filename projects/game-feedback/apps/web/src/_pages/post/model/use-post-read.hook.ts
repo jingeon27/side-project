@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -9,28 +9,19 @@ import type { PostDetail } from '@/shared/api';
 
 export function usePostRead(detail: PostDetail | undefined, userId?: string) {
   const client = useQueryClient();
-  const mutation = useMutation(readPostMutationOptions(client)),
-    read = useRef('');
+  const { mutate, variables } = useMutation(readPostMutationOptions(client));
   const id = detail?.post.id,
     isOwner = !!userId && detail?.post.author.id === userId;
-  const unreadAnswers =
+  const unreadAnswerIds =
     detail?.answers
       .filter((answer) => !answer.readAt && answer.author.id !== userId)
       .map((answer) => answer.id)
       .sort()
       .join(',') || '';
-  const mutate = mutation.mutate;
   useEffect(() => {
-    const stamp = `${id}:${userId}:${unreadAnswers}`;
-    if (!id || !isOwner || !unreadAnswers || read.current === stamp) return;
-    read.current = stamp;
-    mutate(
-      { id },
-      {
-        onError: () => {
-          read.current = '';
-        },
-      },
-    );
-  }, [id, userId, isOwner, unreadAnswers, mutate]);
+    if (!id || !isOwner || !unreadAnswerIds) return;
+    // 같은 글의 같은 미확인 답변 묶음은 한 번만 보낸다. 실패하면 묶음이 바뀔 때 다시 보낸다.
+    if (variables?.id === id && variables.unreadAnswerIds === unreadAnswerIds) return;
+    mutate({ id, unreadAnswerIds });
+  }, [id, isOwner, unreadAnswerIds, mutate, variables]);
 }

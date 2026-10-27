@@ -48,10 +48,15 @@ export function deletePostMutationOptions(client: QueryClient) {
   });
 }
 
+interface IReadPostInput {
+  id: string;
+  /** 요청할 때 읽지 않은 답변 id 묶음. 호출부가 같은 묶음을 다시 보내지 않도록 mutation 변수로 비교한다. */
+  unreadAnswerIds: string;
+}
 export function readPostMutationOptions(client: QueryClient) {
   return mutationOptions({
     mutationKey: ['post', 'read-post'],
-    mutationFn: postPostRead,
+    mutationFn: ({ id }: IReadPostInput) => postPostRead({ id }),
     onSuccess: async (_, { id }) => {
       await Promise.all([
         client.invalidateQueries(postDetailOptions(id)),
