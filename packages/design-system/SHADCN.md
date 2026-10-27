@@ -11,7 +11,7 @@ Web과 이 패키지의 components.json은 base-nova/neutral/lucide 설정을 �
 
 ## 공통 적용
 
-- Button의 공식 CVA/포커스/invalid/disabled 기반에 기존 primary/secondary/danger/accent, fullWidth/loading props를 연결한다. 기존 서비스의 API와 loading 중 포커스 동작을 유지한다. IconButton과 Next ButtonLink도 이 기반을 사용한다.
+- Button의 공식 CVA/invalid/disabled 기반에 기존 primary/secondary/ghost/danger/accent, fullWidth/loading/icon props를 연결한다. registry의 default/outline/destructive/link variant와 default/icon-sm size는 같은 뜻의 이름이 겹쳐 지웠다. 기존 서비스의 API와 loading 중 포커스 동작을 유지한다. IconButton과 Next ButtonLink도 이 기반을 사용한다.
 - Dialog는 공식 Root/Trigger/Portal/Close/Content/Header/Footer/Title/Description 구성을 제공한다. 기존 Dialog props는 이를 조합한다. Base UI Viewport, 포털 컨테이너, 중첩 모달, dismissible 정책과 앱이 정한 번역된 닫기 레이블을 유지한다.
 - Input, Textarea, NativeSelect는 ref와 native 이벤트를 전달하고 registry 원본의 색 대신 공통 입력 상자(`input.styles.ts`)를 공유한다. TextField·TextAreaField는 FormField에 이 컨트롤을 넣어 조립한다. FormField는 context로 이 컨트롤의 레이블/설명/오류를 연결하므로 RHF register를 그대로 사용할 수 있다. NativeSelect 래퍼는 label 안에 둘 수 있게 원본의 div 대신 span을 쓴다. Checkbox의 boolean 필드는 RHF Controller로 연결한다.
 - Tabs는 Base UI의 방향키/포커스/ARIA 동작을 제공한다. 피드의 선택값은 앱 URL에서 제어한다.

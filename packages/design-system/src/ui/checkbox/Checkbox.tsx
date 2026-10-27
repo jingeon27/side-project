@@ -13,7 +13,7 @@ function Checkbox({ className, ...props }: TStyledProps<CheckboxPrimitive.Root.P
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        'peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input-border transition-colors group-has-disabled/field:opacity-50 after:absolute after:-inset-3.5 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground',
+        'peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input-border transition-colors group-has-disabled/field:opacity-50 after:absolute after:-inset-3.5 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground',
         className,
       )}
       {...props}

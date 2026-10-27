@@ -19,19 +19,9 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: [
-        'primary',
-        'secondary',
-        'ghost',
-        'danger',
-        'accent',
-        'default',
-        'outline',
-        'destructive',
-        'link',
-      ],
+      options: ['primary', 'secondary', 'ghost', 'danger', 'accent'],
     },
-    size: { control: 'select', options: ['lg', 'md', 'sm', 'default', 'icon', 'icon-sm', 'icon-lg'] },
+    size: { control: 'select', options: ['lg', 'md', 'sm', 'icon', 'icon-lg'] },
     children: { control: 'text' },
     icon: { control: false },
   },

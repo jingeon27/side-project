@@ -53,7 +53,8 @@ function DropdownMenuItem({
   ...props
 }: TStyledProps<MenuPrimitive.Item.Props> & {
   inset?: boolean;
-  variant?: 'default' | 'destructive';
+  /** danger는 삭제·차단처럼 되돌리기 어려운 행동이다(Button의 danger와 같은 이름). */
+  variant?: 'default' | 'danger';
 }) {
   return (
     <MenuPrimitive.Item
@@ -61,7 +62,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/dropdown-menu-item relative flex min-h-touch cursor-default items-center gap-1.5 rounded-control px-3 py-2 text-input outline-hidden select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive",
+        "group/dropdown-menu-item relative flex min-h-touch cursor-default items-center gap-1.5 rounded-control px-3 py-2 text-input outline-hidden select-none data-highlighted:bg-neutral-soft data-highlighted:text-ink data-inset:pl-7 data-[variant=danger]:text-danger data-[variant=danger]:data-highlighted:bg-danger-soft data-[variant=danger]:data-highlighted:text-danger data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=danger]:*:[svg]:text-danger",
         className,
       )}
       {...props}

@@ -29,7 +29,7 @@ function DropdownMenuExample({ align, side, sideOffset, ...args }: TDropdownMenu
             <Download aria-hidden="true" />
             다운로드 준비 중
           </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => setLastAction('삭제를 선택했어요.')}>
+          <DropdownMenuItem variant="danger" onClick={() => setLastAction('삭제를 선택했어요.')}>
             <Trash2 aria-hidden="true" />
             삭제
           </DropdownMenuItem>

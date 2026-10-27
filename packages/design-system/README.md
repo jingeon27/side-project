@@ -29,13 +29,17 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 ## 공개 UI
 
 - `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. 세 입력은 같은 공통 토큰 상자(`input/input.styles.ts`)를 쓴다. Textarea는 내용에 맞춰 늘고 세로로만 크기를 바꾼다. NativeSelect는 모바일 OS 선택창을 사용한다.
-- `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`: Base UI의 키보드 선택/포털/포커스 복귀를 사용하는 shadcn 드롭다운이다. 기본 트리거와 옵션은 44px이다.
+- `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`: Base UI의 키보드 선택/포털/포커스 복귀를 사용하는 shadcn 드롭다운이다. 트리거와 옵션은 44px 한 크기다.
+- `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`: 작업 메뉴. 삭제·차단 같은 항목은 `variant="danger"`다.
+
+이름은 한 개념에 하나만 쓴다. 되돌리기 어려운 행동은 Button·DropdownMenuItem의 `variant="danger"`, 배지의 `tone="danger"`이고 주 행동 색은 Button·IconButton 모두 `primary`다. registry 원본의 `default`·`outline`·`destructive`·`link` variant와 같은 크기를 두 번 정의한 `default`·`icon-sm` size는 쓰지 않는다.
+
 - `Toaster`, `toast`: Sonner 알림. 공통 색/폰트/모서리/닫기 크기를 적용하며 theme과 번역/위치는 앱이 전달한다.
 - `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다. 보이는 상자는 16px이고 누르는 영역은 44×44px이다.
 - `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 제어형 탭이다. 선택값과 URL은 앱이 소유한다.
 - `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogPortal`, `DialogOverlay`: shadcn 조합 API다. 기존 `Dialog`는 이를 조합하며 호출부의 props를 유지한다.
 
-- `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm"`, `fullWidth`, `loading`, `icon`. 진행 중 재클릭을 막으면서 포커스를 유지하고 `aria-busy`를 알린다. 글자 앞 아이콘은 `icon`으로 넘기면 진행 중에 같은 자리를 진행 표시가 대신하므로 `{!pending && <Icon />}` 분기가 필요 없다. children 안에 직접 넣은 아이콘은 진행 중에도 남고 진행 표시는 그 앞에 붙는다. `buttonVariants`와 `IButtonProps`도 공개한다.
+- `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm|icon|icon-lg"`, `fullWidth`, `loading`, `icon`. 진행 중 재클릭을 막으면서 포커스를 유지하고 `aria-busy`를 알린다. 글자 앞 아이콘은 `icon`으로 넘기면 진행 중에 같은 자리를 진행 표시가 대신하므로 `{!pending && <Icon />}` 분기가 필요 없다. children 안에 직접 넣은 아이콘은 진행 중에도 남고 진행 표시는 그 앞에 붙는다. `buttonVariants`와 `IButtonProps`도 공개한다.
 - `ButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다. 이동에는 링크, 제출·조작에는 버튼을 사용한다.
 - `IconButton`: `label`이 필수이며 `variant="ghost|soft|primary|accent"`와 `loading`을 지원한다. 진행 중에는 아이콘 자리를 진행 표시가 대신하고 포커스를 유지한다. 링크 등 다른 요소에 같은 모양을 입힐 때는 `iconButtonVariants({ variant })`를 쓴다.
 - `IconButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다(`label` 필수).

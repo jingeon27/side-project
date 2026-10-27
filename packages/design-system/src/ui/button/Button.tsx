@@ -1,4 +1,4 @@
-// Adapted from shadcn/ui base-nova; semantic aliases and loading are shared extensions.
+// Adapted from shadcn/ui base-nova; house variants, sizes and loading replace the registry variants.
 import type { ComponentProps, ReactNode } from 'react';
 
 import { Button as BaseButton } from '@base-ui/react/button';
@@ -9,17 +9,13 @@ import { Spinner } from '../spinner/Spinner';
 
 export const buttonVariants = cva(
   [
-    "relative group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-control border border-transparent bg-clip-padding text-button whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "relative group/button inline-flex shrink-0 items-center justify-center gap-2 rounded-control border border-transparent bg-clip-padding text-button whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     'transition-[background-color,border-color,color,transform] duration-150 active:not-data-disabled:scale-[0.98]',
     'data-disabled:cursor-not-allowed data-disabled:opacity-45',
   ],
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
-        outline: 'border-border bg-background text-foreground hover:bg-neutral-soft',
-        destructive: 'bg-destructive/10 text-destructive hover:bg-destructive/20',
-        link: 'text-primary underline-offset-4 hover:underline',
         primary: 'bg-brand text-on-brand hover:bg-brand-strong active:not-data-disabled:bg-brand-strong',
         secondary:
           'border border-line-strong bg-surface text-ink hover:bg-sunken active:not-data-disabled:bg-sunken',
@@ -28,9 +24,9 @@ export const buttonVariants = cva(
         accent: 'bg-accent text-on-accent hover:brightness-95 active:not-data-disabled:brightness-90',
       },
       size: {
-        default: 'h-touch gap-2 px-4',
+        /** 44×44 아이콘만 있는 버튼. 이름은 aria-label로 준다(IconButton 권장). */
         icon: 'size-touch',
-        'icon-sm': 'size-touch',
+        /** 50×50 아이콘 버튼 */
         'icon-lg': 'size-cta',
         /** 50px. 화면의 주 행동(하단 CTA, 시트 제출) */
         lg: 'h-cta px-5',
