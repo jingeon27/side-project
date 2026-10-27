@@ -49,7 +49,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 - Contest.format=POST인 새 대회는 groupContest·groupContests·groupContestResults 계약을 쓴다. LEGACY는 기존 API만 사용하고 새 대회는 이전 제출 API로 접근하지 못하게 막는다.
 - OWNER·MODERATOR만 같은 그룹에서 개최한다. Post.contestId는 선택이며 접수 중 같은 그룹 POST 대회만 허용한다. 일반 게시물과 사진·동영상·복수 참여작을 구분한다.
-- 공개 대회·결과는 익명 읽기, 비공개는 멤버만. 투표는 VOTING 중 멤버만, 본인·숨긴 글은 거부한다. (contestId,voterId) unique와 (postId,contestId) 복합 FK로 대회당 1표·다른 대회 투표를 DB에서도 보장한다.
+- 공개 대회·결과는 익명 읽기, 비공개는 멤버만. 투표는 VOTING 중 회원 멤버만, 본인·숨긴 글은 거부한다. 익명 계정은 IP당 여러 개를 바로 만들 수 있어 멤버여도 그룹 대회·기존 대회 모두 투표하지 못한다(UNAUTHENTICATED `ERROR_MESSAGE.ANONYMOUS_VOTE_FORBIDDEN`, `canVote` false). 좋아요는 익명도 그대로 누른다. (contestId,voterId) unique와 (postId,contestId) 복합 FK로 대회당 1표·다른 대회 투표를 DB에서도 보장한다.
 - 종료 후 보이는 참여작으로 득표수 경쟁 순위(1,1,3)를 계산한다. 동률 표시는 작성 시각 asc·id asc이며 일반 좋아요가 수상 순위를 바꾸지 않는다. 최다 득표 > 0이면 공동 우승, 0표는 우승 없음이다. 완료 이벤트는 형식에 맞는 참여작·투표를 집계한다.
 - removeGroupMember는 OWNER·MODERATOR만: OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. leaveGroup은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 남긴 게시물·댓글은 지우지 않는다.
 - OWNER만 setGroupModerator·transferGroupOwnership을 실행한다. 대상은 같은 그룹의 멤버이고 OWNER 역할은 임명 API로 바꾸지 않는다. 양도는 원 OWNER→MEMBER와 대상→OWNER를 하나의 Serializable 트랜잭션에서 처리한다.

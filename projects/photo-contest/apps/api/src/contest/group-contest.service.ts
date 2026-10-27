@@ -5,6 +5,7 @@ import { match } from 'ts-pattern';
 import type { Contest, GroupMember, Prisma } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
+import { isAnonymous } from '../auth/anonymous';
 import type { IViewer } from '../auth/session.service';
 import { siblingLoader } from '../common/batch';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
@@ -125,6 +126,8 @@ export class GroupContestService {
   }
 
   async vote(viewer: IViewer, contestId: string, postId: string) {
+    // 익명 계정은 IP당 바로 여러 개 만들 수 있어 1인 1표를 지키지 못한다.
+    if (isAnonymous(viewer)) fail(ERROR_MESSAGE.ANONYMOUS_VOTE_FORBIDDEN, ERROR_CODE.UNAUTHENTICATED);
     await this.transactions.atomic(async (tx) => {
       const contest = await (tx ?? this.db).contest.findUnique({ where: { id: contestId } });
       if (!contest || contest.format !== CONTEST_FORMAT.POST)
@@ -214,7 +217,8 @@ export class GroupContestService {
         phase: currentPhase,
         isAdmin: Boolean(member && isAdmin(member)),
         canParticipate: Boolean(member) && currentPhase === PHASE.SUBMISSION,
-        canVote: Boolean(member) && currentPhase === PHASE.VOTING && !row.postVotes.length,
+        canVote:
+          Boolean(member) && !isAnonymous(viewer) && currentPhase === PHASE.VOTING && !row.postVotes.length,
         votedPostId: row.postVotes[0]?.postId ?? null,
         entryCount: row._count.posts,
         loadResults: () => (currentPhase === PHASE.COMPLETED ? loadResults(row.id) : Promise.resolve([])),

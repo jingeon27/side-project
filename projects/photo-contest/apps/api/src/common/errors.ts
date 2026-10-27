@@ -25,6 +25,8 @@ export const ERROR_MESSAGE = {
   REQUEST_CONFLICT: '요청이 겹쳤습니다. 다시 시도해 주세요.',
   ALREADY_DONE: '이미 처리된 요청입니다.',
   ALREADY_VOTED: '이미 이 대회에 투표했습니다.',
+  ANONYMOUS_VOTE_FORBIDDEN:
+    '익명 계정은 대회에 투표할 수 없어요. 회원으로 가입하거나 로그인한 뒤 투표해 주세요.',
   ALREADY_SUBMITTED: '이미 이 대회에 사진을 제출했습니다.',
   UPLOAD_ALREADY_USED: '이미 다른 곳에 사용한 업로드입니다. 파일을 다시 올려 주세요.',
   FORBIDDEN_ORIGIN: '허용되지 않은 요청 출처입니다.',
