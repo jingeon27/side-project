@@ -34,6 +34,9 @@ for (const width of [390, 1440]) {
     await expect(details.getByRole('textbox', { name: '서비스 닉네임', exact: true })).toHaveValue(nickname);
     await page.unroute('**/api/profile');
     await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
+    // 영역마다 따로 저장하므로 시트는 열린 채로 남고, 저장이 끝나면 확인 없이 닫힌다.
+    await expect(page.getByRole('button', { name: '프로필 저장', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
     await expect(page.getByRole('dialog', { name: '프로필 수정', exact: true })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: nickname, exact: true })).toBeVisible();
     const bioLink = page.getByRole('link', { name: 'https://example.com/player', exact: true });
@@ -49,6 +52,12 @@ for (const width of [390, 1440]) {
     await links.getByRole('button', { name: '링크 추가' }).click();
     await links.getByRole('textbox', { name: /이름/ }).fill('나의 방송');
     await links.getByRole('textbox', { name: /주소/ }).fill('https://video.example/@player');
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
+    await expect(
+      page.getByRole('dialog', { name: '프로필 수정', exact: true }).getByRole('alert'),
+    ).toHaveText('저장하지 않은 변경이 있어요. 닫으면 입력한 내용이 사라져요.');
+    await page.getByRole('button', { name: '계속 편집', exact: true }).click();
+    await expect(links.getByRole('textbox', { name: /이름/ })).toHaveValue('나의 방송');
     await links.getByRole('button', { name: '링크 저장' }).click();
     await expect(page.locator('.profile-links a').filter({ hasText: '나의 방송' })).toHaveAttribute(
       'href',

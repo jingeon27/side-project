@@ -2,26 +2,15 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useWatch } from 'react-hook-form';
-import { z } from 'zod';
 
 import { Button } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
-import { useZodForm } from '@/shared/model/form';
+import { ErrorNotice } from '@/shared/ui';
 
+import type { TProfilePhotoForm } from '../model/profile-edit.schema';
 import { deleteAvatarMutationOptions, uploadAvatarMutationOptions } from '../model/profile.mutation-options';
 
-const photoSchema = z.object({
-  file: z.custom<File>(
-    (value) =>
-      typeof File !== 'undefined' &&
-      value instanceof File &&
-      value.size > 0 &&
-      value.size <= 5 * 1024 * 1024 &&
-      ['image/jpeg', 'image/png', 'image/webp'].includes(value.type),
-    '5MB 이하의 JPEG, PNG, WebP 사진을 선택해주세요.',
-  ),
-});
 function PhotoPreview({ file }: { file: File }) {
   const { t } = useI18n();
   // Blob 미리보기는 서버 이미지 최적화 경로로 보낼 수 없다.
@@ -39,14 +28,15 @@ function PhotoPreview({ file }: { file: File }) {
     />
   );
 }
-export function ProfilePhotoEditor({ hasPhoto }: { hasPhoto: boolean }) {
+export function ProfilePhotoEditor({ form, hasPhoto }: { form: TProfilePhotoForm; hasPhoto: boolean }) {
   const { t } = useI18n();
   const client = useQueryClient();
   const upload = useMutation(uploadAvatarMutationOptions(client));
   const remove = useMutation(deleteAvatarMutationOptions(client));
-  const form = useZodForm(photoSchema);
   const file = useWatch({ control: form.control, name: 'file' });
   const pending = upload.isPending || remove.isPending;
+  const fileError = form.formState.errors.file?.message;
+  const requestError = upload.error ?? remove.error;
   return (
     <form
       aria-label={t('프로필 사진 편집')}
@@ -58,7 +48,7 @@ export function ProfilePhotoEditor({ hasPhoto }: { hasPhoto: boolean }) {
         render={({ field }) => (
           <label className="profile-photo-picker">
             {file && <PhotoPreview file={file} />}
-            <span>{t(file ? '사진 다시 선택' : '프로필 사진 선택')}</span>
+            <span>{file ? t('사진 다시 선택') : t('프로필 사진 선택')}</span>
             <input
               ref={field.ref}
               type="file"
@@ -76,7 +66,7 @@ export function ProfilePhotoEditor({ hasPhoto }: { hasPhoto: boolean }) {
         )}
       />
       <p className="small muted">{t('JPEG, PNG, WebP / 최대 5MB. 사진은 정사각형으로 잘립니다.')}</p>
-      {form.formState.errors.file && <p role="alert">{t(String(form.formState.errors.file.message))}</p>}
+      <ErrorNotice message={fileError && t(fileError)} />
       <div className="profile-edit-actions">
         {file && (
           <Button type="submit" disabled={pending}>
@@ -89,7 +79,7 @@ export function ProfilePhotoEditor({ hasPhoto }: { hasPhoto: boolean }) {
           </Button>
         )}
       </div>
-      {(upload.error || remove.error) && <p role="alert">{upload.error?.message ?? remove.error?.message}</p>}
+      <ErrorNotice message={requestError && t(requestError.message)} />
     </form>
   );
 }

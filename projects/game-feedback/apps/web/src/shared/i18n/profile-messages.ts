@@ -66,5 +66,11 @@ export const profileMessages: Record<string, readonly [string, string]> = {
     '5MB以下のJPEG・PNG・WebP写真を選択してください。',
   ],
   '사진 저장': ['Save photo', '写真を保存'],
+  '저장하지 않은 변경이 있어요. 닫으면 입력한 내용이 사라져요.': [
+    'You have unsaved changes. Closing will discard them.',
+    '保存していない変更があります。閉じると入力内容が失われます。',
+  ],
+  '계속 편집': ['Keep editing', '編集を続ける'],
+  '저장하지 않고 닫기': ['Close without saving', '保存せずに閉じる'],
   '프로필 사진 삭제': ['Remove profile photo', 'プロフィール写真を削除'],
 };
