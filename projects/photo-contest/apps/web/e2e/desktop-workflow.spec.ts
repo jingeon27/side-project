@@ -34,7 +34,9 @@ test(
       if (!feed || !popular) throw new Error('피드와 인기 목록이 보여야 한다');
       expect(popular.x).toBeGreaterThan(feed.x + feed.width);
       expect(feed.width).toBeLessThanOrEqual(680);
-      expect((await page.locator('#pc-main').boundingBox())?.width).toBeLessThanOrEqual(1440);
+      const shell = await page.locator('#pc-main').boundingBox();
+      expect(shell?.x).toBe(0);
+      expect(shell?.width).toBe(width);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
     await page.setViewportSize({ width: 1440, height: 960 });

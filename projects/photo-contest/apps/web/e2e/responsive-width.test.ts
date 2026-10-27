@@ -40,3 +40,40 @@ test(
     }
   },
 );
+
+test(
+  '데스크톱 셸과 목록은 넓은 화면의 양끝까지 채워야 한다',
+  { tag: ['@desktop'] },
+  async ({ page, signIn }, testInfo) => {
+    await signIn('전체 화면 사용자');
+    const owner = await createTestUser(API_URL, { nickname: '넓은 화면 그룹장', origin: WEB_ORIGIN });
+    const group = await seedGroup(owner, '전체 화면 공개 그룹', 'PUBLIC');
+    for (const path of ['/', '/explore', '/me', '/notifications', `/groups/${group.id}`]) {
+      await page.goto(path);
+      await expect(page.getByRole('navigation', { name: '주요 메뉴', exact: true })).toBeVisible();
+      for (const width of [1024, 1440, 1920, 2560]) {
+        await page.setViewportSize({ width, height: 1000 });
+        const main = await page.locator('#pc-main').boundingBox();
+        const sidebar = await page.locator('[data-desktop-nav]').boundingBox();
+        const header = await page.locator('header').first().boundingBox();
+        if (!main || !sidebar || !header) throw new Error('셸과 메뉴, 헤더가 보여야 한다');
+        expect(main.x).toBe(0);
+        expect(main.width).toBe(width);
+        expect(main.height).toBeGreaterThanOrEqual(1000);
+        expect(sidebar.x).toBe(0);
+        expect(header.x).toBe(sidebar.width);
+        expect(header.x + header.width).toBe(width);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        if (['/', '/explore', '/me'].includes(path)) {
+          const regionName =
+            path === '/' ? '공개 그룹 목록' : path === '/explore' ? '탐색할 그룹' : '참여 그룹';
+          const region = await page.getByRole('region', { name: regionName, exact: true }).boundingBox();
+          if (!region) throw new Error('목록 영역이 보여야 한다');
+          expect(region.x + region.width).toBe(width - 32);
+        }
+        if (width === 1920 && path === '/me')
+          await page.screenshot({ path: testInfo.outputPath('desktop-full-width-my.png'), fullPage: false });
+      }
+    }
+  },
+);
