@@ -29,18 +29,29 @@ const GIT_GENERATED = /^(?:Merge |Revert "|Reapply "|(?:fixup|squash|amend)! )/;
 // `git commit -v` appends the diff below this line; Git drops it together with comment lines.
 const SCISSORS = /^# -+ >8 -+$/;
 
+// The repository does not record co-authors. Git trailer keys are case-insensitive.
+const CO_AUTHOR_TRAILER = /^co-authored-by:/i;
+
+/** Lines Git keeps after its default cleanup: no comment lines and nothing below the scissors line. */
+function keptLines(message: string) {
+  const lines = message.split(/\r?\n/);
+  const scissors = lines.findIndex((line) => SCISSORS.test(line));
+  return (scissors === -1 ? lines : lines.slice(0, scissors)).filter((line) => !line.startsWith('#'));
+}
+
 /** First line Git keeps after its default cleanup, without trailing whitespace. */
 export function commitSubject(message: string) {
-  for (const line of message.split(/\r?\n/)) {
-    if (SCISSORS.test(line)) break;
-    if (line.startsWith('#') || !line.trim()) continue;
-    return line.trimEnd();
-  }
-  return '';
+  return (
+    keptLines(message)
+      .find((line) => line.trim())
+      ?.trimEnd() ?? ''
+  );
 }
 
 /** Returns a message describing the problem, or null when the commit message is acceptable. */
 export function checkCommitMessage(message: string) {
+  if (keptLines(message).some((line) => CO_AUTHOR_TRAILER.test(line.trimStart())))
+    return 'Co-Authored-By trailer는 넣지 않습니다. 커밋 메시지에서 그 줄을 지운 뒤 다시 커밋합니다.';
   const subject = commitSubject(message);
   // Git itself aborts an empty message, so there is nothing to add.
   if (!subject || GIT_GENERATED.test(subject) || HEADER.test(subject)) return null;
