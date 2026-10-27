@@ -15,7 +15,7 @@ import {
   RequestProfileAvatarUploadDocument,
   type MeQuery,
 } from '@/shared/api/generated';
-import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { StorageUploadError, uploadWithTicket } from '@/shared/api/upload-to-storage.helper';
 import { ROUTES } from '@/shared/constants/routes';
 import { getSafeNextPath } from '@/shared/lib/auth-gate.helper';
 import { navigateDocument } from '@/shared/lib/document-navigation.helper';
@@ -57,19 +57,15 @@ function OnboardingForm({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
       className="flex flex-col gap-6"
       onSubmit={form.handleSubmit(async ({ avatar, ...values }) => {
         try {
-          let avatarId: string | undefined;
-          if (avatar) {
-            const { data: ticket } = await requestUpload({
-              variables: { contentType: avatar.type, byteSize: avatar.size },
-            });
-            if (!ticket) return;
-            await uploadToStorage(ticket.requestProfileAvatarUpload, avatar);
-            const { data: completed } = await completeUpload({
-              variables: { uploadId: ticket.requestProfileAvatarUpload.id },
-            });
-            if (!completed) return;
-            avatarId = completed.completeProfileAvatarUpload.id;
-          }
+          const avatarId = avatar
+            ? await uploadWithTicket(avatar, {
+                request: async () =>
+                  (await requestUpload({ variables: { contentType: avatar.type, byteSize: avatar.size } }))
+                    .data?.requestProfileAvatarUpload,
+                complete: async (uploadId) =>
+                  (await completeUpload({ variables: { uploadId } })).data?.completeProfileAvatarUpload.id,
+              })
+            : undefined;
           await finish({ variables: { ...values, avatarId } });
           navigateDocument(nextPath);
         } catch (error) {

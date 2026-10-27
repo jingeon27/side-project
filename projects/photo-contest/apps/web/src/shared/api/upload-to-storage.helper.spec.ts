@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { StorageUploadError, uploadToStorage } from './upload-to-storage.helper';
+import { StorageUploadError, uploadToStorage, uploadWithTicket } from './upload-to-storage.helper';
 
 const EXPIRES_AT = '2026-10-22T00:15:00.000Z';
 
@@ -47,4 +47,57 @@ describe('저장소 직접 업로드', () => {
       ).rejects.toThrow(StorageUploadError);
     },
   );
+});
+
+describe('업로드 티켓 단계', () => {
+  const ticket = { id: 'upload-1', url: 'https://storage.example', fields: [], expiresAt: EXPIRES_AT };
+
+  it('티켓을 받아 저장소에 올리고 완료한 업로드 id를 돌려줘야 한다', async () => {
+    const send = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', send);
+    const complete = vi.fn(async (uploadId: string) => `${uploadId}-done`);
+    await expect(
+      uploadWithTicket(new Blob(['image']), { request: async () => ticket, complete }),
+    ).resolves.toBe('upload-1-done');
+    expect(send).toHaveBeenCalledOnce();
+    expect(complete).toHaveBeenCalledWith('upload-1');
+  });
+
+  it('티켓을 받지 못하면 저장소로 보내지 않고 실패해야 한다', async () => {
+    const send = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', send);
+    const complete = vi.fn(async () => 'never');
+    await expect(
+      uploadWithTicket(new Blob(['image']), { request: async () => undefined, complete }),
+    ).rejects.toThrow();
+    expect(send).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+  });
+
+  it('티켓을 받는 동안 시트가 닫혔으면 올리지 않고 멈춰야 한다', async () => {
+    const send = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', send);
+    const controller = new AbortController();
+    const complete = vi.fn(async () => 'never');
+    const upload = uploadWithTicket(new Blob(['image']), {
+      signal: controller.signal,
+      request: async () => {
+        controller.abort();
+        return ticket;
+      },
+      complete,
+    });
+    await expect(upload).rejects.toMatchObject({ name: 'AbortError' });
+    expect(send).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+  });
+
+  it('저장소 전송이 실패하면 완료하지 않고 폼에 표시할 오류를 던져야 한다', async () => {
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 403 })));
+    const complete = vi.fn(async () => 'never');
+    await expect(
+      uploadWithTicket(new Blob(['image']), { request: async () => ticket, complete }),
+    ).rejects.toThrow(StorageUploadError);
+    expect(complete).not.toHaveBeenCalled();
+  });
 });

@@ -12,7 +12,7 @@ import {
   UpdateMyProfileDocument,
   type MeQuery,
 } from '@/shared/api/generated';
-import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { StorageUploadError, uploadWithTicket } from '@/shared/api/upload-to-storage.helper';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
@@ -58,21 +58,20 @@ function ProfileForm({
           onSubmit={form.handleSubmit(async ({ avatar, nickname, removeAvatar }) => {
             const signal = beginSubmit();
             try {
-              let avatarId: string | undefined;
-              if (avatar) {
-                const { data: ticket } = await requestUpload({
-                  variables: { contentType: avatar.type, byteSize: avatar.size },
-                });
-                if (!ticket) return;
-                throwIfClosed(signal);
-                await uploadToStorage(ticket.requestProfileAvatarUpload, avatar, { signal });
-                throwIfClosed(signal);
-                const { data: completed } = await completeUpload({
-                  variables: { uploadId: ticket.requestProfileAvatarUpload.id },
-                });
-                if (!completed) return;
-                avatarId = completed.completeProfileAvatarUpload.id;
-              }
+              const avatarId = avatar
+                ? await uploadWithTicket(avatar, {
+                    signal,
+                    request: async () =>
+                      (
+                        await requestUpload({
+                          variables: { contentType: avatar.type, byteSize: avatar.size },
+                        })
+                      ).data?.requestProfileAvatarUpload,
+                    complete: async (uploadId) =>
+                      (await completeUpload({ variables: { uploadId } })).data?.completeProfileAvatarUpload
+                        .id,
+                  })
+                : undefined;
               throwIfClosed(signal);
               await save({ variables: { nickname, removeAvatar, avatarId } });
               toast.success('프로필을 수정했어요');

@@ -1,3 +1,5 @@
+import { throwIfClosed } from '../model/form';
+
 export class StorageUploadError extends Error {}
 
 const MIN_UPLOAD_TIMEOUT_MS = 60_000;
@@ -50,4 +52,38 @@ export async function uploadToStorage(
     clearTimeout(timer);
     signal?.removeEventListener('abort', cancel);
   }
+}
+
+interface IUploadTicket {
+  id: string;
+  url: string;
+  fields: ReadonlyArray<{ name: string; value: string }>;
+  expiresAt: string;
+}
+
+interface IUploadWithTicketOptions {
+  /** 업로드 티켓 mutation. 받은 티켓을 돌려준다. */
+  request: () => Promise<IUploadTicket | undefined>;
+  /** 완료 확인 mutation. 완료된 업로드의 id를 돌려준다. */
+  complete: (uploadId: string) => Promise<string | undefined>;
+  /** 시트가 닫히면 다음 단계를 시작하지 않고 전송을 끊는다. */
+  signal?: AbortSignal;
+}
+
+/**
+ * 티켓 발급 → 저장소 직접 전송 → 완료 확인을 차례로 하고 완료된 업로드 id를 돌려준다.
+ * 응답에 값이 없으면 저장 단계로 넘어가지 않도록 던진다(GraphQL 오류는 ErrorLink가 이미 알렸다).
+ */
+export async function uploadWithTicket(
+  file: Blob,
+  { request, complete, signal }: IUploadWithTicketOptions,
+): Promise<string> {
+  const ticket = await request();
+  if (!ticket) throw new Error('업로드 티켓을 받지 못했습니다.');
+  if (signal) throwIfClosed(signal);
+  await uploadToStorage(ticket, file, { signal });
+  if (signal) throwIfClosed(signal);
+  const uploadId = await complete(ticket.id);
+  if (!uploadId) throw new Error('업로드를 완료하지 못했습니다.');
+  return uploadId;
 }
