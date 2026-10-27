@@ -45,6 +45,12 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 공통 조각: `TopAppBar`(뒤로 가기·제목·액션), `StickyCta`(하단 고정 주 버튼, safe-bottom), `BottomNav`(홈·MY 화면에만, 입력 중 숨김), `BottomSheet`, `ConfirmDialog`, `Toast`, `Skeleton`·`EmptyState`·`ErrorState`.
 - 색·글자·그림자·z-index는 `theme.css` 토큰만 쓴다(임의 hex·`!` 유틸 금지).
 
+## 클래스 variant (class-variance-authority)
+
+- 켜짐/꺼짐 하나(좋아요·읽음·내 것)는 cva를 만들지 않고 `cn('…', liked && 'fill-current')`처럼 조건으로 쓴다. 접근성 상태가 있으면 `aria-pressed:`·`data-*:` 변형으로 꾸민다.
+- 앱 전용 컴포넌트가 variant 축이 2개 이상이거나 한 축에 값이 3개 이상이고 여러 곳에서 쓰이면 컴포넌트 옆 `*.variants.ts`에 cva로 두고 `VariantProps` 타입을 export한다. 본보기는 `shared/ui/@core/like-toggle/like-toggle.variants.ts`(자리별 density)다. 동작(mutation·낙관적 응답·진동)은 variant 컴포넌트에 넣지 않고 쓰는 쪽에 둔다.
+- 버튼·칩·배지·아이콘 버튼처럼 도메인 없는 일반 모양은 앱에서 cva로 다시 만들지 않고 `@side/design-system`에 variant를 더한다. 앱이 디자인 시스템 primitive를 갈라 쓰지 않는다.
+
 ## 인증·이동
 
 - `src/proxy.ts`가 콘텐츠 화면에서 세션 쿠키(운영 `__Host-contest_session`, 개발 `contest_session`)가 없으면 `/sign?next=<경로>`로 보낸다. AuthSessionSync는 만료된 세션도 같은 화면으로 보낸다. `/sign`은 첫 방문에 익명 시작·로그인·회원가입, 기존 익명 사용자에게는 세션을 유지해 홈으로 돌아가는 익명 계속하기를 제공한다. 비공개 그룹은 익명으로 이용할 수 없다는 모달을 확인한 뒤 로그인한다.
