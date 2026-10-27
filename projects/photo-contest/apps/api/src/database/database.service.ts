@@ -4,6 +4,7 @@ import { match } from 'ts-pattern';
 import { Prisma, PrismaClient } from '../../generated/prisma';
 import { ERROR_CODE, fail } from '../common/errors';
 import { databaseUrl } from '../config/env';
+import { TRANSACTION_MAX_WAIT_MS, TRANSACTION_TIMEOUT_MS } from '../config/limits';
 import { createPrismaAdapter } from './prisma-adapter';
 import { transactionFailure } from './transaction.policy';
 
@@ -30,7 +31,11 @@ export class Database extends PrismaClient implements OnModuleDestroy {
 
   private async attemptAtomic<T>(work: (tx: TDatabaseClient) => Promise<T>, attempt: number): Promise<T> {
     try {
-      return await this.$transaction(work, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      return await this.$transaction(work, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        maxWait: TRANSACTION_MAX_WAIT_MS,
+        timeout: TRANSACTION_TIMEOUT_MS,
+      });
     } catch (error) {
       return match(transactionFailure(error, attempt))
         .with({ action: 'retry' }, () => this.attemptAtomic(work, attempt + 1))

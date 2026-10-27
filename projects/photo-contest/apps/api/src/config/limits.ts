@@ -37,6 +37,14 @@ export const COOKIE_HEADER_MAX_LENGTH = 8 * 1024;
 export const MAINTENANCE_INTERVAL_MS = MINUTE_MS;
 export const CLEANUP_BATCH_SIZE = 100;
 export const SERIALIZABLE_ATTEMPTS = 4;
+// Prisma 대화형 트랜잭션의 연결 대기·실행 한도. 기본값(2초·5초)을 명시해 긴 작업을 트랜잭션에 넣지 않게 한다.
+export const TRANSACTION_MAX_WAIT_MS = 2 * SECOND_MS;
+export const TRANSACTION_TIMEOUT_MS = 5 * SECOND_MS;
+// 대회 시작·종료 알림은 멤버를 이만큼씩 나눠 각자의 짧은 트랜잭션에 쓴다.
+export const NOTIFICATION_FANOUT_BATCH_SIZE = 250;
+// 알림 쓰기에 실패한 대회는 1분부터 두 배씩, 최대 1시간까지 늦춰 다시 시도한다.
+export const NOTIFICATION_RETRY_BASE_MS = MINUTE_MS;
+export const NOTIFICATION_RETRY_MAX_MS = HOUR_MS;
 export const GRAPHQL_MAX_DEPTH = 8;
 // 웹 문서 중 가장 큰 연산이 필드 약 50개(Apollo가 붙이는 __typename 포함 약 70개)이고 alias는 쓰지 않는다.
 export const GRAPHQL_MAX_FIELDS = 300;
