@@ -197,7 +197,7 @@
     "reading-ai-code": {
       "title": "Why I still read the code",
       "slug": "reading-ai-code",
-      "description": "After a sprint with many hotfixes, I returned to reading finished changes and tests as well as checking interactions in the running UI.",
+      "description": "Black-box checks alone led to a sprint full of hotfixes. I now pair them with white-box testing that starts from reading the code, and keep the code manageable enough to read.",
       "keywords": ["ai-workflow", "code-review", "testing", "reflection"]
     }
   }
