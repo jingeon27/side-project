@@ -11,6 +11,7 @@ import type { IButtonProps } from '@side/design-system/ui/button';
 import type { IDialogProps } from '@side/design-system/ui/dialog';
 import type { IFormFieldProps } from '@side/design-system/ui/form-field';
 import type { IIconButtonProps } from '@side/design-system/ui/icon-button';
+import type { IMentionProps } from '@side/design-system/ui/mention';
 import type { ISpinnerProps } from '@side/design-system/ui/spinner';
 import type { ITextAreaFieldProps, ITextFieldProps } from '@side/design-system/ui/text-field';
 
@@ -35,6 +36,7 @@ export type TPublicTypes = [
   IDialogProps,
   IFormFieldProps,
   IIconButtonProps,
+  IMentionProps,
   ISpinnerProps,
   ITextAreaFieldProps,
   ITextFieldProps,

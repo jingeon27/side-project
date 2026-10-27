@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { cva, type VariantProps } from 'class-variance-authority';
 
@@ -27,12 +27,14 @@ const badgeVariants = cva(
 
 export type TBadgeTone = NonNullable<VariantProps<typeof badgeVariants>['tone']>;
 
-export interface IBadgeProps extends VariantProps<typeof badgeVariants> {
+export interface IBadgeProps
+  extends Omit<ComponentProps<'span'>, 'className' | 'children'>, VariantProps<typeof badgeVariants> {
   /** 색만으로 뜻을 전하지 않도록 글자를 꼭 넣는다(단계, 순위 등). */
   children: ReactNode;
   className?: string;
 }
 
-export function Badge({ tone, className, children }: IBadgeProps) {
-  return <span className={cn(badgeVariants({ tone }), className)}>{children}</span>;
+/** 상태 글자. native span props(id·title·aria-*·data-*·ref)는 그대로 전달한다. */
+export function Badge({ tone, className, ...props }: IBadgeProps) {
+  return <span data-slot="badge" {...props} className={cn(badgeVariants({ tone }), className)} />;
 }

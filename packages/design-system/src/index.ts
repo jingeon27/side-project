@@ -26,6 +26,7 @@ export type {
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
 export { Mention } from './ui/mention/Mention';
+export type { IMentionProps } from './ui/mention/Mention';
 
 export { Input } from './ui/input/Input';
 export { Textarea } from './ui/textarea/Textarea';
