@@ -140,27 +140,27 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 
 현재 연결 상태부터 확인한다. 콘솔에서 키를 만들었다는 것과 운영에서 이벤트가 수집된다는 것은 별도로 확인해야 한다.
 
-| 대상            | 키 입력으로 사용할 수 있는 경로                                                                                                             | 코드 보완이 필요한 부분                                                                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| PC API          | 서버 환경 파일의 `SENTRY_DSN`으로 예상하지 못한 오류 수집                                                                                   | 자동 HTTP/DB tracing은 꺼져 있다. `SENTRY_TRACES_SAMPLE_RATE`만 올려도 자동 계측이 추가되지는 않는다.    |
-| PC Web 브라우저 | repository Variables의 Sentry DSN·Amplitude API key를 이미지 빌드에 주입                                                                    | `tracesSampleRate: 0`이므로 운영 Web Vitals 수집을 완료했다고 볼 수 없다. 소스맵 업로드 연결도 필요하다. |
-| PC Next 서버    | 런타임 `SENTRY_DSN`을 우선하고, 없으면 빌드에 들어간 공개 DSN을 사용한다.                                                                   | 별도 서버 프로젝트를 쓰려면 Web Compose에 런타임 DSN을 주입해야 한다. 서버 tracing은 꺼져 있다.          |
-| PC Mobile       | Expo 빌드 환경의 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY`                                                                  | EC2 웹 배포와 별도로 앱을 새로 빌드해야 한다.                                                            |
-| GF Web/API      | Web 빌드의 `GF_WEB_SENTRY_DSN`·`GF_AMPLITUDE_API_KEY`, API 서버 환경 파일의 `SENTRY_DSN`을 사용한다. Next 서버는 공개 DSN으로 fallback한다. | tracing과 소스맵 업로드는 꺼져 있다. 실제 수신은 외부 콘솔에서 확인한다.                                 |
-| GF Mobile       | WebView 안의 웹 이벤트가 GF Web 키로 전송된다.                                                                                              | 네이티브 셸 전용 관측 SDK는 없다.                                                                        |
+| 대상            | 키 입력으로 사용할 수 있는 경로                                                                                                                                   | 코드 보완이 필요한 부분                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| PC API          | 서버 환경 파일의 `SENTRY_DSN`으로 예상하지 못한 오류 수집                                                                                                         | 자동 HTTP/DB tracing은 꺼져 있다. `SENTRY_TRACES_SAMPLE_RATE`만 올려도 자동 계측이 추가되지는 않는다.    |
+| PC Web 브라우저 | repository Variables의 Sentry DSN·Amplitude API key를 이미지 빌드에 주입                                                                                          | `tracesSampleRate: 0`이므로 운영 Web Vitals 수집을 완료했다고 볼 수 없다. 소스맵 업로드 연결도 필요하다. |
+| PC Next 서버    | 런타임 `SENTRY_DSN`을 우선하고, 없으면 빌드에 들어간 공개 DSN을 사용한다.                                                                                         | 별도 서버 프로젝트를 쓰려면 Web Compose에 런타임 DSN을 주입해야 한다. 서버 tracing은 꺼져 있다.          |
+| PC Mobile       | Expo 빌드 환경의 `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_AMPLITUDE_API_KEY`                                                                                        | EC2 웹 배포와 별도로 앱을 새로 빌드해야 한다.                                                            |
+| GF Web/API      | Web 빌드의 `GAME_FEEDBACK_WEB_SENTRY_DSN`·`GAME_FEEDBACK_AMPLITUDE_API_KEY`, API 서버 환경 파일의 `SENTRY_DSN`을 사용한다. Next 서버는 공개 DSN으로 fallback한다. | tracing과 소스맵 업로드는 꺼져 있다. 실제 수신은 외부 콘솔에서 확인한다.                                 |
+| GF Mobile       | WebView 안의 웹 이벤트가 GF Web 키로 전송된다.                                                                                                                    | 네이티브 셸 전용 관측 SDK는 없다.                                                                        |
 
 ### Sentry 프로젝트와 DSN
 
 1. [Sentry](https://sentry.io/)에 로그인하고 Organization을 준비한다. Projects → Create Project에서 `photo-contest-web`은 Next.js, `photo-contest-api`는 Node.js/NestJS 플랫폼으로 만든다. GF도 별도 `game-feedback-web`, `game-feedback-api` 프로젝트를 만든다. 네이티브 앱 오류를 수집할 때는 서비스별 React Native 프로젝트를 따로 둔다.
 2. [프로젝트 설정](https://sentry.io/settings/) → 해당 Organization → Projects → 프로젝트 → Client Keys (DSN)에서 DSN을 복사한다. **Auth Token이 아니라 DSN**을 아래 대응 위치에 입력한다. 브라우저 DSN은 공개 번들에 포함될 수 있는 값이다. [Sentry Next.js 설정 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/)를 참고한다.
-3. PC API DSN을 `/srv/side-project/services/photo-contest/.env`의 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다. GF API DSN은 `/srv/side-project/services/game-feedback/.env`의 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GF_WEB_SENTRY_DSN`에 넣는다.
+3. PC API DSN을 `/srv/side-project/services/photo-contest/.env`의 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다. GF API DSN은 `/srv/side-project/services/game-feedback/.env`의 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GAME_FEEDBACK_WEB_SENTRY_DSN`에 넣는다.
 4. 프로젝트의 알림 설정에서 예상하지 못한 오류와 새 오류 알림의 수신자를 지정한다. 운영·개발 확인을 분리하려면 테스트 환경 또는 별도 테스트 프로젝트에서 먼저 검증한다.
 
 ### Amplitude 프로젝트와 API key
 
 1. [Amplitude](https://app.amplitude.com/) → Settings → Organization settings → Projects → Create Project에서 서비스별 프로젝트 `photo-contest-production`, `game-feedback-production`을 만든다. 개발 검증용 프로젝트도 별도로 둔다. 현재 PC SDK에는 EU `serverZone` 설정이 없으므로 기본 US 수집 경로에 맞는 프로젝트를 사용한다. EU를 선택하려면 Web/Mobile SDK 설정도 함께 바꾼다. [프로젝트 생성 안내](https://amplitude.com/docs/get-started/create-project), [지역별 수집 안내](https://amplitude.com/docs/apis/analytics/http-api-quickstart)를 참고한다.
 2. Organization settings → API Keys에서 해당 프로젝트를 선택하고 API key를 확인한다. 이 키는 이벤트 수집용이며 데이터 조회·관리용 secret key와 용도가 다르다. [키 관리 안내](https://amplitude.com/docs/admin/account-management/manage-your-api-keys-and-secret-keys)를 따른다.
-3. PC Amplitude API key를 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_AMPLITUDE_API_KEY`에 넣는다. GF Amplitude API key는 repository Variable `GF_AMPLITUDE_API_KEY`에 넣는다. 한 서비스의 Web과 Mobile은 같은 Amplitude 프로젝트를 사용하고 서비스 간에는 분리한다. PC 앱을 배포할 때는 같은 키를 Expo 빌드 환경의 `EXPO_PUBLIC_AMPLITUDE_API_KEY`에도 넣는다.
+3. PC Amplitude API key를 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_AMPLITUDE_API_KEY`에 넣는다. GF Amplitude API key는 repository Variable `GAME_FEEDBACK_AMPLITUDE_API_KEY`에 넣는다. 한 서비스의 Web과 Mobile은 같은 Amplitude 프로젝트를 사용하고 서비스 간에는 분리한다. PC 앱을 배포할 때는 같은 키를 Expo 빌드 환경의 `EXPO_PUBLIC_AMPLITUDE_API_KEY`에도 넣는다.
 4. PC 코드는 `page_viewed`와 도메인 성공 이벤트를 직접 보낸다. 콘솔에서 제공하는 자동 수집 스크립트를 추가로 붙이지 않는다. 로그인한 계정의 DB 사용자 ID로 Web/Mobile을 식별하며, WebView의 기기 ID는 네이티브와 공유한다. 닉네임·채팅 본문·세션 토큰은 이벤트 속성에 넣지 않는다.
 
 ### 키를 넣는 위치와 적용 시점
@@ -169,8 +169,8 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 | -------------------------- | --------------------------------- | ----------------------------- | ---------------------- |
 | GitHub repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN`    | PC Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
 | GitHub repository Variable | `PHOTO_CONTEST_AMPLITUDE_API_KEY` | PC Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
-| GitHub repository Variable | `GF_WEB_SENTRY_DSN`               | GF Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
-| GitHub repository Variable | `GF_AMPLITUDE_API_KEY`            | GF Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
+| GitHub repository Variable | `GAME_FEEDBACK_WEB_SENTRY_DSN`    | GF Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
+| GitHub repository Variable | `GAME_FEEDBACK_AMPLITUDE_API_KEY` | GF Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
 | 서버 GF 환경 파일          | `SENTRY_DSN`                      | GF API 프로젝트 DSN           | 다음 API 배포에 적용   |
 | 서버 PC 환경 파일          | `SENTRY_DSN`                      | PC API 프로젝트 DSN           | 다음 API 배포에 적용   |
 | 서버 PC 환경 파일          | `SENTRY_TRACES_SAMPLE_RATE`       | 현재 오류 수집 경로는 `0`     | 다음 API 배포에 적용   |
@@ -209,21 +209,27 @@ SSH 접속 값과 키는 두 배포 Environment(GF `production`, PC `photo-conte
 
 [Environment 설정](https://github.com/jingeon27/side-project/settings/environments)에서 정확히 `production`, `photo-contest-production`을 만들고 운영 배포 브랜치를 허용한다. [Actions Variables](https://github.com/jingeon27/side-project/settings/variables/actions)에서 공개 설정을, [Actions Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions)에서 private key를 등록한다. 공통 SSH 설정을 repository 범위에 두면 두 Environment에 중복 입력할 필요가 없다. [GitHub Environment 안내](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)를 따른다.
 
-| 종류                | 이름                                                               | 값                                                                                        |
-| ------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-| Variable            | `SIDE_DEPLOY_HOST`                                                 | EC2 공인 IP 또는 SSH 호스트                                                               |
-| Variable            | `SIDE_DEPLOY_SSH_USER`                                             | `/srv/side-project`와 Docker 접근 권한을 가진 사용자                                      |
-| Variable            | `SIDE_DEPLOY_SSH_PORT`                                             | 보통 `22`                                                                                 |
-| Variable            | `SIDE_DEPLOY_SSH_KNOWN_HOSTS`                                      | 신뢰할 경로로 확인한 서버 host key. 검증 없는 `ssh-keyscan` 결과를 그대로 신뢰하지 않는다 |
-| Secret              | `SIDE_DEPLOY_SSH_KEY`                                              | 배포용 SSH private key                                                                    |
-| Repository Variable | `GF_SITE_URL`                                                      | `https://game.bambyul.com`                                                                |
-| Repository Variable | `GF_CONTACT_EMAIL`                                                 | `contact@bambyul.com`                                                                     |
-| Repository Variable | `PHOTO_CONTEST_SITE_URL`                                           | `https://contest.bambyul.com`                                                             |
-| Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                      | 운영 배포 브랜치. push 트리거와 Environment 제한에 맞춰 `main`                            |
-| Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택적 공개 Web 빌드 설정                                                                 |
-| Repository Variable | `GF_WEB_SENTRY_DSN` / `GF_AMPLITUDE_API_KEY`                       | 선택적 GF Web 빌드 설정                                                                   |
-| Repository Variable | `GF_DEPLOY_ENABLED`                                                | 준비 중 `false`, 공개 배포 준비 후 `true`                                                 |
-| Repository Variable | `PHOTO_CONTEST_DEPLOY_ENABLED`                                     | 준비 중 `false`, 공개 배포 준비 후 `true`                                                 |
+| 종류                | 이름                                                                                                       | 값                                                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Variable            | `SIDE_DEPLOY_HOST`                                                                                         | EC2 공인 IP 또는 SSH 호스트                                                                                             |
+| Variable            | `SIDE_DEPLOY_SSH_USER`                                                                                     | `/srv/side-project`와 Docker 접근 권한을 가진 사용자                                                                    |
+| Variable            | `SIDE_DEPLOY_SSH_PORT`                                                                                     | 보통 `22`                                                                                                               |
+| Variable            | `SIDE_DEPLOY_SSH_KNOWN_HOSTS`                                                                              | 신뢰할 경로로 확인한 서버 host key. 검증 없는 `ssh-keyscan` 결과를 그대로 신뢰하지 않는다                               |
+| Secret              | `SIDE_DEPLOY_SSH_KEY`                                                                                      | 배포용 SSH private key                                                                                                  |
+| Repository Variable | `GAME_FEEDBACK_SITE_URL`                                                                                   | `https://game.bambyul.com`                                                                                              |
+| Repository Variable | `GAME_FEEDBACK_CONTACT_EMAIL`                                                                              | `contact@bambyul.com`                                                                                                   |
+| Repository Variable | `PHOTO_CONTEST_SITE_URL`                                                                                   | `https://contest.bambyul.com`                                                                                           |
+| Repository Variable | `PHOTO_CONTEST_DEPLOY_BRANCH`                                                                              | 운영 배포 브랜치. push 트리거와 Environment 제한에 맞춰 `main`                                                          |
+| Repository Variable | `PHOTO_CONTEST_WEB_SENTRY_DSN` / `PHOTO_CONTEST_AMPLITUDE_API_KEY`                                         | 선택적 공개 Web 빌드 설정                                                                                               |
+| Repository Variable | `GAME_FEEDBACK_WEB_SENTRY_DSN` / `GAME_FEEDBACK_AMPLITUDE_API_KEY`                                         | 선택적 GF Web 빌드 설정                                                                                                 |
+| Repository Variable | `GAME_FEEDBACK_DEPLOY_ENABLED`                                                                             | 준비 중 `false`, 공개 배포 준비 후 `true`                                                                               |
+| Repository Variable | `PHOTO_CONTEST_DEPLOY_ENABLED`                                                                             | 준비 중 `false`, 공개 배포 준비 후 `true`                                                                               |
+| Repository Variable | `GAME_FEEDBACK_S3_BUCKET` / `PHOTO_CONTEST_S3_BUCKET`                                                      | CI 통합·브라우저 테스트가 쓰는 기존 버킷. 테스트는 `<prefix>/tests/<실행 ID>/`만 쓰고 끝나면 지운다                     |
+| Repository Variable | `GAME_FEEDBACK_S3_KEY_PREFIX` / `PHOTO_CONTEST_S3_KEY_PREFIX`                                              | 선택. 비우면 `game-feedback/ci`, `photo-contest/ci`                                                                     |
+| Repository Secret   | `GAME_FEEDBACK_S3_ACCESS_KEY_ID` / `GAME_FEEDBACK_S3_SECRET_ACCESS_KEY`                                    | CI 전용 IAM 키. 테스트 경로의 Get·Put·DeleteObject와 그 경로로 제한한 ListBucket만 준다. 운영 앱 키를 재사용하지 않는다 |
+| Repository Secret   | `PHOTO_CONTEST_S3_ACCESS_KEY_ID` / `PHOTO_CONTEST_S3_SECRET_ACCESS_KEY` / `PHOTO_CONTEST_S3_SESSION_TOKEN` | 위와 같다. 세션 토큰은 임시 키일 때만 넣는다                                                                            |
+
+이름은 한 서비스 전용 값이면 `GAME_FEEDBACK_`·`PHOTO_CONTEST_`, 두 서비스가 함께 쓰는 배포 값이면 `SIDE_DEPLOY_`로 시작한다. 워크플로가 이 값을 각 앱이 읽는 환경변수 이름(GF의 `GF_S3_*`, PC의 `S3_*`·`AWS_*`)으로 바꿔 전달하므로 앱 설정 이름은 바꾸지 않는다. S3 테스트 값이 없거나 Secrets를 받지 못하는 외부 fork PR에서는 통합·브라우저 검사가 실패한다.
 
 배포 키는 로컬에서 별도로 만든다. 공개키 `.pub`는 서버 배포 사용자의 `~/.ssh/authorized_keys`에 추가하고, 개인키는 `SIDE_DEPLOY_SSH_KEY` Secret에 원문 그대로 넣는다. 서버의 `/etc/ssh/ssh_host_ed25519_key.pub`를 신뢰할 수 있는 EC2 콘솔 세션에서 읽어 IP/호스트와 함께 known_hosts 형식으로 등록한다. 예를 들어 22번 포트는 `EC2_IP ssh-ed25519 공개호스트키`, 다른 포트는 `[EC2_IP]:PORT ssh-ed25519 공개호스트키`다. 이 값은 배포 사용자 로그인 공개키와 다른 **서버 host key**다.
 
@@ -233,9 +239,9 @@ ssh-keygen -t ed25519 -f ~/.ssh/side-project-deploy -C side-project-actions
 
 코드의 SSH 단계는 대화형 비밀번호 입력 없이 실행한다. 암호문이 설정된 개인키를 해제하는 단계는 없으므로 이 전용 키의 passphrase는 비워 두고 GitHub Secret으로 보관한다. 키를 등록한 뒤 배포 러너와 같은 네트워크 경로에서 `BatchMode=yes`와 등록한 known_hosts를 사용해 접속을 확인한다.
 
-공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. DB·S3·OAuth 비밀은 서버의 서비스별 환경 파일에만 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
+공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. 운영 DB·S3·OAuth 비밀은 서버의 서비스별 환경 파일에만 두고, GitHub에는 CI 테스트 전용 S3 키만 repository secret으로 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
 
-설정과 DB 초기화를 마친 뒤 `GF_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 아래 덤프·스냅샷 복원 연습을 마친 뒤 공개한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
+설정과 DB 초기화를 마친 뒤 `GAME_FEEDBACK_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 아래 덤프·스냅샷 복원 연습을 마친 뒤 공개한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
 
 Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime DB/S3 접근 검사 → 서비스 DB 덤프·backup 버킷 업로드 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
 
@@ -359,8 +365,8 @@ docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
   -t "side-shared-gf-api:$deployment_test_sha" .
 docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
   -f projects/game-feedback/deploy/shared-instance/Dockerfile --target web \
-  --build-arg GF_SITE_URL=https://game-feedback.test \
-  --build-arg GF_CONTACT_EMAIL=contact@bambyul.com \
+  --build-arg WEB_ORIGIN=https://game-feedback.test \
+  --build-arg GAME_FEEDBACK_CONTACT_EMAIL=contact@bambyul.com \
   -t "side-shared-gf-web:$deployment_test_sha" .
 docker build --platform linux/amd64 "${deployment_image_labels[@]}" \
   -f projects/photo-contest/apps/api/Dockerfile \
@@ -438,5 +444,5 @@ SQL은 되돌리지 않는다. 예를 들어 이름 변경은 (1) nullable 새 �
 
 - `game.bambyul.com`, `api.game.bambyul.com`, `contest.bambyul.com`, `api.contest.bambyul.com`의 A/AAAA 레코드를 같은 EC2 고정 주소로 연결한다. Caddy가 각 호스트의 TLS 인증서를 발급한다.
 - `host.env.example`의 네 DOMAIN 값을 복사하고 `proxy.sh validate` 후 시작한다. API 주소는 `api.<웹 도메인>` 규칙이며 네 호스트는 서로 달라야 한다.
-- GitHub Variables의 `GF_SITE_URL`은 `https://game.bambyul.com`, `PHOTO_CONTEST_SITE_URL`은 `https://contest.bambyul.com`으로 지정한다. 빌드·통합 검사의 기본 운영 origin도 이 값이다. CI HTTPS 요청은 loopback·테스트 CA를 사용하므로 실제 DNS나 운영 서버에 연결하지 않는다.
+- GitHub Variables의 `GAME_FEEDBACK_SITE_URL`은 `https://game.bambyul.com`, `PHOTO_CONTEST_SITE_URL`은 `https://contest.bambyul.com`으로 지정한다. 빌드·통합 검사의 기본 운영 origin도 이 값이다. CI HTTPS 요청은 loopback·테스트 CA를 사용하므로 실제 DNS나 운영 서버에 연결하지 않는다.
 - 모바일 release의 `EXPO_PUBLIC_WEB_ORIGIN`은 각 앱의 `.env.production.example`을 참고한다. 앱 이름·홈 화면 아이콘은 네이티브 앱을 새로 빌드해야 반영된다.

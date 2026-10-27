@@ -2,11 +2,16 @@ import { randomUUID } from 'node:crypto';
 
 import { DeleteObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 
+// 실행 ID는 격리 스키마 이름(<레인 접두사>_<uuid>)이거나 uuid다. web_e2e처럼 접두사에 숫자가 들어간다.
+const runIdPattern = '(?:[a-z][a-z0-9_]*_)?[a-f0-9]{32}';
+const runIdFormat = new RegExp(`^${runIdPattern}$`);
+const ownedPrefixFormat = new RegExp(`(?:^|/)tests/${runIdPattern}$`);
+
 export function s3TestEnvironment(
   env: NodeJS.ProcessEnv = process.env,
   runId = randomUUID().replaceAll('-', ''),
 ): Record<string, string> {
-  if (!/^(?:[a-z][a-z_]*_)?[a-f0-9]{32}$/.test(runId)) throw new Error('Invalid S3 test run identifier.');
+  if (!runIdFormat.test(runId)) throw new Error('Invalid S3 test run identifier.');
   if (!env.S3_BUCKET || !env.S3_REGION) throw new Error('S3 tests require S3_BUCKET and S3_REGION.');
   if (env.S3_ENDPOINT) throw new Error('S3 tests require AWS S3, not a custom endpoint.');
   const prefix = (env.S3_KEY_PREFIX ?? '').trim().replace(/\/$/, '');
@@ -32,8 +37,7 @@ export function s3TestEnvironment(
 
 function testS3Client(env: Record<string, string>) {
   const prefix = env.S3_KEY_PREFIX ?? '';
-  if (!/(?:^|\/)tests\/(?:[a-z][a-z_]*_)?[a-f0-9]{32}$/.test(prefix))
-    throw new Error('Unowned S3 test prefix.');
+  if (!ownedPrefixFormat.test(prefix)) throw new Error('Unowned S3 test prefix.');
   return new S3Client({
     region: env.S3_REGION,
     profile: env.AWS_PROFILE,

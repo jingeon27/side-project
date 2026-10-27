@@ -55,6 +55,6 @@ API 단위 사양은 네트워크 없이 SDK의 POST 서명 정책(최종 키·�
 
 test-kit은 `<S3_KEY_PREFIX>/tests/<격리 스키마 또는 실행 ID>/`만 사용하고 종료 시 그 경로의 객체만 정리한다. 버킷과 기존 객체는 생성·삭제하지 않는다. 테스트 계정에는 해당 객체의 GetObject·PutObject·DeleteObject와 그 경로로 `s3:prefix`를 제한한 ListBucket 권한이 필요하다. 강제 종료로 정리가 중단되면 해당 실행 ID 경로만 확인해 정리한다. 버킷 CORS에는 로컬 웹과 브라우저 레인 origin(`http://localhost:3320`, `http://localhost:3330`, 캐시·관측 레인의 설정된 origin, 컨테이너 검사 `https://localhost:3382`)을 허용한다.
 
-CI는 Repository Variables의 `S3_BUCKET`·`S3_KEY_PREFIX`와 Secrets의 `AWS_ACCESS_KEY_ID`·`AWS_SECRET_ACCESS_KEY`(임시 키라면 `AWS_SESSION_TOKEN`도)를 사용한다. 공유 배포 검증에는 Game Feedback의 S3 설정도 필요하다. 설정이 없거나 Secrets를 받지 못하는 외부 fork PR의 통합 검사는 대역으로 대체하거나 건너뛴 성공으로 처리하지 않고 실패한다. 운영 객체·IAM 정책 변경과 배포는 별도 작업이다.
+CI는 Repository Variables의 `PHOTO_CONTEST_S3_BUCKET`·`PHOTO_CONTEST_S3_KEY_PREFIX`와 Secrets의 `PHOTO_CONTEST_S3_ACCESS_KEY_ID`·`PHOTO_CONTEST_S3_SECRET_ACCESS_KEY`(임시 키라면 `PHOTO_CONTEST_S3_SESSION_TOKEN`도)를 앱의 `S3_BUCKET`·`S3_KEY_PREFIX`·`AWS_*` 환경변수로 전달한다. 공유 배포 검증에는 Game Feedback의 S3 설정도 필요하다. 설정이 없거나 Secrets를 받지 못하는 외부 fork PR의 통합 검사는 대역으로 대체하거나 건너뛴 성공으로 처리하지 않고 실패한다. 운영 객체·IAM 정책 변경과 배포는 별도 작업이다.
 
 웹 API 레인은 생성 문서를 실제 격리 API와 대역에 실행한다. Playwright는 Chrome·iPhone WebKit·데스크톱에서 저장소 POST 실패 후 재시도, 고정 경로의 307과 Range, 사진과 동영상의 실제 파일 저장을 확인한다. test:cache는 프로덕션 프록시가 307과 캐시 금지를 그대로 넘기는지 확인한다.

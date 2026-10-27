@@ -46,7 +46,7 @@ GAME_FEEDBACK_CONTACT_EMAIL=contact@bambyul.com
 
 Google callback은 `WEB_ORIGIN`에서 자동으로 정합니다. Google Cloud의 승인된 리디렉션 URI에 로컬은 `http://localhost:3300/api/auth/google/callback`, 운영은 `https://game.bambyul.com/api/auth/google/callback`을 등록합니다. 별도 포트로 띄웠다면 해당 웹 포트를 사용합니다. API 서브도메인으로 바꾸지 않으며, Google 키를 브라우저용 `NEXT_PUBLIC_*` 변수에 넣지 않습니다.
 
-운영의 로컬 개발 `.env`는 서버에 자동 반영되지 않습니다. 공유 배포의 `/srv/side-project/services/game-feedback/.env`에서 Google 설정을 바꾸고 컨테이너를 재생성해야 하며, 문의 주소 등 웹 번들 값은 GitHub Variable `GF_CONTACT_EMAIL` 변경 후 새 웹 이미지 빌드·배포가 필요합니다. 서비스의 기존 설정·검증된 이미지·DB를 유지하는 절차는 [공유 배포 문서](../../deploy/shared-instance/README.md)를 따릅니다.
+운영의 로컬 개발 `.env`는 서버에 자동 반영되지 않습니다. 공유 배포의 `/srv/side-project/services/game-feedback/.env`에서 Google 설정을 바꾸고 컨테이너를 재생성해야 하며, 문의 주소 등 웹 번들 값은 GitHub Variable `GAME_FEEDBACK_CONTACT_EMAIL` 변경 후 새 웹 이미지 빌드·배포가 필요합니다. 서비스의 기존 설정·검증된 이미지·DB를 유지하는 절차는 [공유 배포 문서](../../deploy/shared-instance/README.md)를 따릅니다.
 
 ## 계정 등록, 인증과 관리자 문의
 
