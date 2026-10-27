@@ -21,7 +21,7 @@ function Composer({ onSubmit }: { onSubmit: (values: TValues) => void }) {
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { title: '', board: '', body: '' } });
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-      <FormField label="제목" hint="글의 제목" error={form.formState.errors.title?.message}>
+      <FormField label="제목" description="글의 제목" error={form.formState.errors.title?.message}>
         <Input {...form.register('title')} />
       </FormField>
       <FormField label="분류">

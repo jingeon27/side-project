@@ -1,6 +1,8 @@
 // Adapted from shadcn/ui base-nova. See SHADCN.md for source and license.
 'use client';
 
+import { createContext, useContext } from 'react';
+
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
 
@@ -13,53 +15,74 @@ function Tabs({ className, orientation = 'horizontal', ...props }: TStyledProps<
       data-slot="tabs"
       orientation={orientation}
       data-orientation={orientation}
-      className={cn('group/tabs flex gap-2 data-[orientation=horizontal]:flex-col', className)}
+      className={cn('group/tabs flex gap-3 data-[orientation=horizontal]:flex-col', className)}
       {...props}
     />
   );
 }
 
+/** default는 Photo Contest SegmentedControl과 같은 채운 칸, line은 밑줄 탭이다. */
 const tabsListVariants = cva(
-  'group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:min-h-touch group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none',
+  'group/tabs-list inline-flex items-center text-muted group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col group-data-[orientation=vertical]/tabs:items-stretch',
   {
     variants: {
       variant: {
-        default: 'bg-neutral-soft',
-        line: 'gap-1 bg-transparent',
+        default: 'w-fit gap-1 rounded-control bg-sunken p-1',
+        line: 'w-full gap-1 border-line group-data-[orientation=horizontal]/tabs:border-b group-data-[orientation=vertical]/tabs:w-fit group-data-[orientation=vertical]/tabs:border-l',
       },
     },
-    defaultVariants: {
-      variant: 'default',
-    },
+    defaultVariants: { variant: 'default' },
   },
 );
+
+type TTabsListVariant = NonNullable<VariantProps<typeof tabsListVariants>['variant']>;
+
+const tabsTriggerVariants = cva(
+  [
+    'relative inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 px-3 text-label whitespace-nowrap text-muted transition-colors select-none',
+    'hover:text-ink data-active:text-ink data-disabled:pointer-events-none data-disabled:opacity-45',
+    'data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start',
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  ],
+  {
+    variants: {
+      variant: {
+        /** 보이는 칸은 36px이고 누르는 영역은 44px로 넓힌다. */
+        default:
+          "h-9 rounded-badge before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] data-active:bg-surface data-active:shadow-card",
+        line: 'min-h-touch border-transparent active:bg-sunken data-active:border-ink data-[orientation=horizontal]:-mb-px data-[orientation=horizontal]:border-b-2 data-[orientation=vertical]:-ml-px data-[orientation=vertical]:border-l-2',
+      },
+    },
+    defaultVariants: { variant: 'default' },
+  },
+);
+
+const TabsListVariantContext = createContext<TTabsListVariant>('default');
 
 function TabsList({
   className,
   variant = 'default',
   ...props
 }: TStyledProps<TabsPrimitive.List.Props> & VariantProps<typeof tabsListVariants>) {
+  const listVariant = variant ?? 'default';
   return (
-    <TabsPrimitive.List
-      data-slot="tabs-list"
-      data-variant={variant}
-      className={cn(tabsListVariants({ variant }), className)}
-      {...props}
-    />
+    <TabsListVariantContext.Provider value={listVariant}>
+      <TabsPrimitive.List
+        data-slot="tabs-list"
+        data-variant={listVariant}
+        className={cn(tabsListVariants({ variant: listVariant }), className)}
+        {...props}
+      />
+    </TabsListVariantContext.Provider>
   );
 }
 
 function TabsTrigger({ className, ...props }: TStyledProps<TabsPrimitive.Tab.Props>) {
+  const variant = useContext(TabsListVariantContext);
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
-      className={cn(
-        "relative inline-flex min-h-touch flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 aria-disabled:pointer-events-none aria-disabled:opacity-50 group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        'group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent ',
-        'data-active:bg-background data-active:text-foreground ',
-        'after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100',
-        className,
-      )}
+      className={cn(tabsTriggerVariants({ variant }), className)}
       {...props}
     />
   );
@@ -69,8 +92,8 @@ function TabsContent({ className, ...props }: TStyledProps<TabsPrimitive.Panel.P
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"
-      // 포커스할 내용이 없으면 패널 자체가 Tab 순서에 들어가므로 키보드 포커스를 보이게 한다.
-      className={cn('flex-1 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50', className)}
+      // 포커스할 내용이 없으면 패널 자체가 Tab 순서에 들어간다. 전역 :focus-visible outline이 링을 그린다.
+      className={cn('flex-1 text-body text-ink', className)}
       {...props}
     />
   );

@@ -11,12 +11,12 @@ const meta = {
   tags: ['autodocs'],
   args: {
     label: '이메일',
-    hint: '답변을 받을 이메일 주소를 입력해 주세요.',
+    description: '답변을 받을 이메일 주소를 입력해 주세요.',
     children: <Input type="email" placeholder="hello@example.com" />,
   },
   argTypes: {
     label: { control: 'text' },
-    hint: { control: 'text' },
+    description: { control: 'text' },
     error: { control: 'text' },
     children: { control: false },
   },
@@ -39,14 +39,14 @@ export const WithError: Story = {
 export const WithTextarea: Story = {
   args: {
     label: '피드백',
-    hint: '좋았던 점과 개선할 점을 자유롭게 적어 주세요.',
+    description: '좋았던 점과 개선할 점을 자유롭게 적어 주세요.',
     children: <Textarea placeholder="피드백을 남겨 주세요" rows={4} />,
   },
 };
 export const WithNativeSelect: Story = {
   args: {
     label: '관심 분야',
-    hint: '가장 관심 있는 분야를 골라 주세요.',
+    description: '가장 관심 있는 분야를 골라 주세요.',
     children: (
       <NativeSelect defaultValue="design">
         <NativeSelectOption value="design">디자인</NativeSelectOption>

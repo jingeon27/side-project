@@ -1,3 +1,3 @@
 export { TextArea, TextField } from './TextField';
 export { FieldRequirement } from './FieldRequirement';
-export type { ITextAreaProps, ITextFieldProps } from './TextField';
+export type { ITextAreaFieldProps, ITextFieldProps } from './TextField';

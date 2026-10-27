@@ -1,9 +1,9 @@
 export { Button, buttonVariants } from './ui/button/Button';
 export type { IButtonProps } from './ui/button/Button';
-export { IconButton } from './ui/icon-button/IconButton';
+export { IconButton, iconButtonVariants } from './ui/icon-button/IconButton';
 export type { IIconButtonProps } from './ui/icon-button/IconButton';
-export { TextField, TextArea } from './ui/text-field/TextField';
-export type { ITextFieldProps, ITextAreaProps } from './ui/text-field/TextField';
+export { TextField, TextAreaField } from './ui/text-field/TextField';
+export type { ITextFieldProps, ITextAreaFieldProps } from './ui/text-field/TextField';
 export { FormField } from './ui/form-field/FormField';
 export type { IFormFieldProps } from './ui/form-field/FormField';
 export { Badge } from './ui/badge/Badge';
@@ -15,15 +15,22 @@ export type { ISpinnerProps } from './ui/spinner/Spinner';
 export { Dialog } from './ui/dialog/Dialog';
 export type { IDialogProps } from './ui/dialog/Dialog';
 export { BottomSheet } from './ui/bottom-sheet/BottomSheet';
-export type { IBottomSheetProps } from './ui/bottom-sheet/BottomSheet';
+export type {
+  IBottomSheetCloseProps,
+  IBottomSheetHandleProps,
+  IBottomSheetHeaderProps,
+  IBottomSheetProps,
+  IBottomSheetRootProps,
+  TBottomSheetSnapPoint,
+} from './ui/bottom-sheet/BottomSheet';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
 export { Mention } from './ui/mention/Mention';
+export type { IMentionProps } from './ui/mention/Mention';
 
 export { Input } from './ui/input/Input';
 export { Textarea } from './ui/textarea/Textarea';
 export { NativeSelect, NativeSelectOption, NativeSelectOptGroup } from './ui/native-select/NativeSelect';
-export { Label } from './ui/label/Label';
 export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants } from './ui/tabs/Tabs';
 export { Checkbox } from './ui/checkbox/Checkbox';
 export {

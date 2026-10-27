@@ -10,7 +10,7 @@ function ChatMenu({ onReport }: { onReport: () => void }) {
       <DropdownMenuTrigger>대화 메뉴</DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem onClick={onReport}>신고하기</DropdownMenuItem>
-        <DropdownMenuItem variant="destructive">대화 내역 삭제</DropdownMenuItem>
+        <DropdownMenuItem variant="danger">대화 내역 삭제</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -28,7 +28,8 @@ it('키보드로 열고 이동하며 Escape로 닫으면 트리거로 포커스�
   await waitFor(() => expect(report).toHaveFocus());
   await user.keyboard('{ArrowDown}');
   expect(remove).toHaveFocus();
-  expect(remove).toHaveAttribute('data-variant', 'destructive');
+  expect(remove).toHaveAttribute('data-variant', 'danger');
+  expect(remove).toHaveClass('data-[variant=danger]:text-danger');
 
   await user.keyboard('{Escape}');
   await waitFor(() => expect(menu).not.toBeInTheDocument());

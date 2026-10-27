@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Bell, Heart, Plus } from 'lucide-react';
+import { Bell, Heart, Plus, Share2 } from 'lucide-react';
 import { fn } from 'storybook/test';
 
 import { IconButton } from './IconButton';
@@ -17,7 +17,7 @@ const meta = {
   },
   argTypes: {
     label: { control: 'text' },
-    variant: { control: 'select', options: ['ghost', 'soft', 'brand'] },
+    variant: { control: 'select', options: ['ghost', 'soft', 'primary', 'accent'] },
     children: { control: false },
   },
 } satisfies Meta<typeof IconButton>;
@@ -35,10 +35,15 @@ export const Variants: Story = {
       <IconButton {...args} variant="soft" label="좋아요">
         <Heart aria-hidden="true" />
       </IconButton>
-      <IconButton {...args} variant="brand" label="추가하기">
+      <IconButton {...args} variant="primary" label="추가하기">
         <Plus aria-hidden="true" />
+      </IconButton>
+      <IconButton {...args} variant="accent" label="공유하기">
+        <Share2 aria-hidden="true" />
       </IconButton>
     </div>
   ),
 };
 export const Disabled: Story = { args: { disabled: true } };
+/** 진행 중에는 아이콘 자리에 진행 표시가 들어가고 포커스는 남는다. */
+export const Loading: Story = { args: { loading: true, variant: 'soft' } };
