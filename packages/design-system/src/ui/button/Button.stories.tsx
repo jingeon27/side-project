@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Plus } from 'lucide-react';
+import { Plus, Send } from 'lucide-react';
 import { fn } from 'storybook/test';
 
 import { Button } from './Button';
@@ -33,6 +33,7 @@ const meta = {
     },
     size: { control: 'select', options: ['lg', 'md', 'sm', 'default', 'icon', 'icon-sm', 'icon-lg'] },
     children: { control: 'text' },
+    icon: { control: false },
   },
 } satisfies Meta<typeof Button>;
 
@@ -81,13 +82,9 @@ export const Sizes: Story = {
 
 export const Loading: Story = { args: { children: '저장 중', loading: true } };
 export const Disabled: Story = { args: { disabled: true } };
-export const WithIcon: Story = {
-  args: {
-    children: (
-      <>
-        <Plus aria-hidden="true" />새 글 작성
-      </>
-    ),
-  },
+export const WithIcon: Story = { args: { icon: <Plus aria-hidden="true" />, children: '새 글 작성' } };
+/** 진행 중에는 앞 아이콘 자리에 진행 표시가 들어간다. */
+export const LoadingWithIcon: Story = {
+  args: { variant: 'secondary', icon: <Send aria-hidden="true" />, children: '보내는 중', loading: true },
 };
 export const FullWidth: Story = { args: { fullWidth: true } };

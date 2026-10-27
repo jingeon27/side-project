@@ -1,5 +1,5 @@
 // Adapted from shadcn/ui base-nova; semantic aliases and loading are shared extensions.
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { Button as BaseButton } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -50,6 +50,11 @@ export interface IButtonProps
   className?: string;
   /** 요청이 끝날 때까지 누르지 못하게 하고 진행 표시를 보여 준다. mutation의 loading을 그대로 넘긴다. */
   loading?: boolean;
+  /**
+   * 글자 앞 아이콘(lucide 아이콘은 aria-hidden). loading이면 같은 자리에 진행 표시를 대신 보여 주므로
+   * `{!pending && <Icon />}`처럼 분기하지 않는다. children 안에 직접 넣은 아이콘은 진행 중에도 남는다.
+   */
+  icon?: ReactNode;
 }
 
 /** 기본 버튼. 크기를 정하지 않으면 primary는 50px(lg), 나머지는 44px(md)이다. */
@@ -58,6 +63,7 @@ export function Button({
   size,
   fullWidth,
   loading = false,
+  icon,
   disabled,
   className,
   children,
@@ -80,7 +86,7 @@ export function Button({
         className,
       )}
     >
-      {loading ? <Spinner className="size-4" /> : null}
+      {loading ? <Spinner className="size-4" /> : icon}
       {children}
     </BaseButton>
   );

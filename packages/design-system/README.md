@@ -35,7 +35,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: 방향키·포커스·ARIA를 포함한 제어형 탭이다. 선택값과 URL은 앱이 소유한다.
 - `DialogRoot`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose`, `DialogPortal`, `DialogOverlay`: shadcn 조합 API다. 기존 `Dialog`는 이를 조합하며 호출부의 props를 유지한다.
 
-- `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm"`, `fullWidth`, `loading`. 진행 중 재클릭을 막으면서 포커스를 유지한다. `buttonVariants`와 `IButtonProps`도 공개한다.
+- `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm"`, `fullWidth`, `loading`, `icon`. 진행 중 재클릭을 막으면서 포커스를 유지하고 `aria-busy`를 알린다. 글자 앞 아이콘은 `icon`으로 넘기면 진행 중에 같은 자리를 진행 표시가 대신하므로 `{!pending && <Icon />}` 분기가 필요 없다. children 안에 직접 넣은 아이콘은 진행 중에도 남고 진행 표시는 그 앞에 붙는다. `buttonVariants`와 `IButtonProps`도 공개한다.
 - `ButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다. 이동에는 링크, 제출·조작에는 버튼을 사용한다.
 - `IconButton`: `label`이 필수이며 `variant="ghost|soft|brand"`를 지원한다.
 - `TextField`, `TextAreaField`: `FormField`에 `Input`·`Textarea`를 넣은 조합이다. `label`, `description`, `error`, `labelSuffix`, native input/textarea props와 ref를 받고 `className`은 필드 전체에 붙는다. labelSuffix는 앱이 제공하는 필수/선택 등 보조 표시이며 접근성 이름에서 빠진다. `TextAreaField`는 내용에 따라 늘지 않고 `rows`(기본 4줄) 높이를 유지한다. RHF의 `{...register('name')}`를 그대로 전달한다.
