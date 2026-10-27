@@ -1,6 +1,8 @@
 'use client';
 
-import { useReadQuery } from '@apollo/client/react';
+import { useTransition } from 'react';
+
+import { useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
 import { LockKeyhole } from 'lucide-react';
 
 import { GroupMembershipButton } from '@/features/group';
@@ -8,14 +10,11 @@ import { Button } from '@/shared/ui/@core/button';
 
 import type { TGroupQueryRef } from '../model/group-query.type';
 
-export function PrivateGroupNotice({
-  groupRef,
-  onRefresh,
-}: {
-  groupRef: TGroupQueryRef;
-  onRefresh: () => Promise<unknown>;
-}) {
+export function PrivateGroupNotice({ groupRef }: { groupRef: TGroupQueryRef }) {
   const { data } = useReadQuery(groupRef);
+  const { refetch } = useQueryRefHandlers(groupRef);
+  // 확인하는 동안 그룹 화면 전체가 로딩으로 바뀌지 않게 transition으로 다시 받는다.
+  const [checking, startTransition] = useTransition();
   if (!data) return null;
   const { group } = data;
   return (
@@ -30,13 +29,16 @@ export function PrivateGroupNotice({
       {group.joinRequestPending ? (
         <Button
           variant="ghost"
-          onClick={async () => {
-            try {
-              await onRefresh();
-            } catch {
-              /* 조회 경계가 실패를 보여 준다. */
-            }
-          }}
+          loading={checking}
+          onClick={() =>
+            startTransition(async () => {
+              try {
+                await refetch();
+              } catch {
+                /* 조회 경계가 실패를 보여 준다. */
+              }
+            })
+          }
         >
           승인 상태 확인
         </Button>

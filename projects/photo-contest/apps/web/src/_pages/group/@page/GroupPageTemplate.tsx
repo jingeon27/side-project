@@ -101,7 +101,7 @@ function GroupContent({
       {group.canViewPosts ? (
         <GroupFeed groupRef={groupRef} sidebar={<GroupSidebar groupRef={groupRef} />} />
       ) : (
-        <PrivateGroupNotice groupRef={groupRef} onRefresh={onRefresh} />
+        <PrivateGroupNotice groupRef={groupRef} />
       )}
     </GroupFrame>
   );

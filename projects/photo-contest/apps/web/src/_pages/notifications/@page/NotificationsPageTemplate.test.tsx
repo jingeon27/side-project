@@ -17,8 +17,27 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
 }));
 
+const notification = {
+  __typename: 'ActivityNotification' as const,
+  id: 'notification-1',
+  type: NotificationType.JoinRequested,
+  groupId: 'group-1',
+  groupName: '함께할 친구',
+  postId: null,
+  postTitle: null,
+  commentId: null,
+  parentCommentId: null,
+  contestId: null,
+  contestTitle: null,
+  contestFormat: null,
+  joinRequestId: 'request-1',
+  actorNickname: '새로 온 친구',
+  readAt: null,
+  createdAt: '2026-10-25T00:00:00.000Z',
+};
+
 describe('알림 화면 SSR·hydration', () => {
-  it('사전 조회한 알림은 서버에서 다시 요청하지 않고 브라우저에서 최신 목록을 받아야 한다', async () => {
+  it('사전 조회한 알림은 서버에서 다시 요청하지 않고 hydration 뒤에도 다시 받지 않아야 한다', async () => {
     const server = createServerClient((cache) => {
       cache.writeQuery({
         query: MeDocument,
@@ -37,48 +56,29 @@ describe('알림 화면 SSR·hydration', () => {
         query: MyNotificationsDocument,
         variables: { offset: 0, limit: 20 },
         data: {
-          myNotifications: { __typename: 'NotificationPage', items: [], unreadCount: 0, hasMore: false },
+          myNotifications: {
+            __typename: 'NotificationPage',
+            items: [notification],
+            unreadCount: 1,
+            hasMore: false,
+          },
         },
       });
     });
     const { html, errors } = await renderOnServer(server, <NotificationsPageTemplate />);
     expect(errors).toEqual([]);
-    expect(html).toContain('아직 새 알림이 없어요');
+    expect(html).toContain('새 그룹 가입 신청이 있어요');
 
-    const browser = createBrowserClient(server, () => ({
-      myNotifications: {
-        __typename: 'NotificationPage',
-        items: [
-          {
-            __typename: 'ActivityNotification',
-            id: 'notification-1',
-            type: NotificationType.JoinRequested,
-            groupId: 'group-1',
-            groupName: '함께할 친구',
-            postId: null,
-            postTitle: null,
-            commentId: null,
-            parentCommentId: null,
-            contestId: null,
-            contestTitle: null,
-            contestFormat: null,
-            joinRequestId: 'request-1',
-            actorNickname: '새로 온 친구',
-            readAt: null,
-            createdAt: '2026-10-25T00:00:00.000Z',
-          },
-        ],
-        unreadCount: 1,
-        hasMore: false,
-      },
-    }));
+    // 라우트의 PreloadQuery가 이동할 때마다 최신 알림을 받으므로 브라우저는 같은 목록을 다시 요청하지 않는다.
+    const browser = createBrowserClient(server, () => ({}));
     const view = await hydrateOnClient(html, browser.client, <NotificationsPageTemplate />);
     try {
-      expect(await within(view.container).findByText('읽지 않은 알림 1개')).toBeVisible();
+      expect(within(view.container).getByText('읽지 않은 알림 1개')).toBeVisible();
       expect(
         within(view.container).getByRole('button', { name: /새 그룹 가입 신청이 있어요/ }),
       ).toBeVisible();
-      expect(browser.operations).toEqual(['MyNotifications']);
+      expect(within(view.container).queryByRole('status')).not.toBeInTheDocument();
+      expect(browser.operations).toEqual([]);
       expect(view.recoverableErrors).toEqual([]);
     } finally {
       view.unmount();
