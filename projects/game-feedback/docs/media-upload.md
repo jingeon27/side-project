@@ -65,11 +65,11 @@ AWS 공식 자료: [IAM 사용자 키 발급과 CLI 설정](https://docs.aws.ama
 
 ## Terraform과의 관계
 
-앱의 S3 전환은 버킷·IAM 리소스나 Terraform state를 바꾸지 않는다. 현재 Terraform은 서비스별 별도 버킷과 전용 IAM 사용자를 생성하고 액세스 키는 관리하지 않는다. 이미 적용한 구성은 `terraform output -json s3_bucket_names`와 `terraform output -json s3_iam_user_names`의 해당 서비스 값을 사용한다. 기본 사용자 이름은 `side-shared-game-feedback-s3`이며 발급 절차는 위와 같다.
+앱의 S3 전환은 버킷·IAM 리소스나 Terraform state를 바꾸지 않는다. 두 서비스는 기존 비공개 버킷 하나(`jingeon-side-project`)를 서비스 폴더로 나눠 쓰고, Terraform은 이 버킷을 만들거나 설정하지 않은 채 `game-feedback/production/`만 다루는 전용 IAM 사용자를 만든다. 액세스 키는 관리하지 않는다. 적용한 구성은 `terraform output -raw media_bucket_name`, `terraform output -json s3_key_prefixes`, `terraform output -json s3_iam_user_names`의 해당 서비스 값을 사용한다. 기본 사용자 이름은 `side-shared-game-feedback-s3`이며 발급 절차는 위와 같다.
 
-기존 `jingeon-side-project` 공유 버킷은 로컬 테스트 예시이며 Terraform의 두 버킷 구성과 별개다. 기존 버킷 이름을 신규 생성 변수에 넣고 apply하지 않는다. 기존 리소스를 Terraform으로 관리하려면 별도로 import·plan을 검토해야 한다. 운영 버킷 이름이나 name_prefix를 바꾸면 리소스 교체가 계획될 수 있다.
+같은 버킷에서 운영은 `game-feedback/production/`, 로컬은 `game-feedback/local/`, CI는 `game-feedback/ci/`를 쓴다. 로컬·CI 키에는 자기 폴더 권한만 주어 운영 파일에 닿지 않게 한다. 운영 앱은 `GF_S3_KEY_PREFIX`가 `game-feedback/<폴더>`가 아니면 시작하지 않는다. name_prefix를 바꾸면 IAM 사용자 교체가 계획될 수 있다.
 
-Terraform이 관리하는 버킷의 로컬 CORS는 `game_feedback_cors_origins`에 운영 도메인과 `http://localhost:3300`을 함께 설정한다. 콘솔에서만 바꾸면 다음 apply가 코드의 값으로 되돌릴 수 있다. 앱 키는 Terraform apply 권한이나 state 버킷 권한을 받을 필요가 없다.
+버킷 CORS는 Terraform이 관리하지 않는다. 콘솔에서 같은 버킷의 규칙 배열에 운영 도메인, `http://localhost:3300`, 브라우저 테스트 origin을 둔다. 앱 키는 Terraform apply 권한이나 state 버킷 권한을 받을 필요가 없다.
 
 ## 기존 파일 이행과 배포
 
