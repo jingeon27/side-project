@@ -32,15 +32,10 @@ export function useChatBlock({ userId, conversationId, locale }: IChatBlockOptio
 
   function handleBlock(author: Author) {
     openOverlay(
-      ({ isOpen, close, unmount }) => (
+      (control) => (
         <BlockUserDialog
+          {...control}
           author={author}
-          open={isOpen}
-          onOpenChange={(nextOpen) => {
-            if (nextOpen) return;
-            close();
-            unmount();
-          }}
           onBlocked={() => {
             client.removeQueries(chatMessageOptions(userId, conversationId));
             router.replace(appRoutes.messages(locale), { scroll: false });

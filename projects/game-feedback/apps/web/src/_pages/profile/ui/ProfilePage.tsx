@@ -29,17 +29,7 @@ interface IProfilePageProps {
   initialViewerId?: string;
 }
 function openProfileEdit(profile: PublicProfile) {
-  openOverlay(({ isOpen, close, unmount }) => (
-    <ProfileEditSheet
-      profile={profile}
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (open) return;
-        close();
-        unmount();
-      }}
-    />
-  ));
+  openOverlay((control) => <ProfileEditSheet {...control} profile={profile} />);
 }
 export function ProfilePage(props: IProfilePageProps) {
   const { t } = useI18n();

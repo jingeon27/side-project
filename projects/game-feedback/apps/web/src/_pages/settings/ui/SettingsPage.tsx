@@ -29,31 +29,10 @@ interface ISettingsPageProps {
   locale: string;
 }
 function openProfileConnection() {
-  openOverlay(({ isOpen, close, unmount }) => (
-    <ConnectProfile
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (open) return;
-        close();
-        unmount();
-      }}
-      onSaved={() => {
-        close();
-        unmount();
-      }}
-    />
-  ));
+  openOverlay((control) => <ConnectProfile {...control} onSaved={() => control.onOpenChange(false)} />);
 }
 function openAccountDeletion() {
-  openOverlay(({ isOpen, close, unmount }) => (
-    <DeleteAccountDialog
-      open={isOpen}
-      onClose={() => {
-        close();
-        unmount();
-      }}
-    />
-  ));
+  openOverlay((control) => <DeleteAccountDialog {...control} />);
 }
 function SettingsContent({ locale }: ISettingsPageProps) {
   const client = useQueryClient();

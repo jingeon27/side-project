@@ -37,23 +37,9 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         <button
           className="text-action"
           onClick={() =>
-            openOverlay(({ isOpen, close, unmount }) => {
-              const onOpenChange = (next: boolean) => {
-                if (next) return;
-                close();
-                unmount();
-              };
-              if (type === 'POST')
-                return <EditPostSheet open={isOpen} onOpenChange={onOpenChange} post={post} />;
-              return (
-                <ContentEditDialog
-                  open={isOpen}
-                  onOpenChange={onOpenChange}
-                  type={type}
-                  id={id}
-                  body={body}
-                />
-              );
+            openOverlay((control) => {
+              if (type === 'POST') return <EditPostSheet {...control} post={post} />;
+              return <ContentEditDialog {...control} type={type} id={id} body={body} />;
             })
           }
         >
@@ -63,19 +49,8 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
         <button
           className="text-action danger-text"
           onClick={() =>
-            openOverlay(({ isOpen, close, unmount }) => (
-              <ContentDeleteDialog
-                open={isOpen}
-                onOpenChange={(next) => {
-                  if (next) return;
-                  close();
-                  unmount();
-                }}
-                type={type}
-                id={id}
-                postId={post.id}
-                locale={locale}
-              />
+            openOverlay((control) => (
+              <ContentDeleteDialog {...control} type={type} id={id} postId={post.id} locale={locale} />
             ))
           }
         >
@@ -94,18 +69,7 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
             requireLogin();
             return;
           }
-          openOverlay(({ isOpen, close, unmount }) => (
-            <ReportDialog
-              open={isOpen}
-              onOpenChange={(next) => {
-                if (next) return;
-                close();
-                unmount();
-              }}
-              targetType={type}
-              targetId={id}
-            />
-          ));
+          openOverlay((control) => <ReportDialog {...control} targetType={type} targetId={id} />);
         }}
       >
         <Flag size={13} />
@@ -118,15 +82,10 @@ export function ContentActions({ type, id, author, body = '', post, locale }: IC
             requireLogin();
             return;
           }
-          openOverlay(({ isOpen, close, unmount }) => (
+          openOverlay((control) => (
             <BlockUserDialog
+              {...control}
               author={author}
-              open={isOpen}
-              onOpenChange={(next) => {
-                if (next) return;
-                close();
-                unmount();
-              }}
               onBlocked={() => {
                 notify(t('사용자를 차단했어요. 설정에서 해제할 수 있어요.'));
                 if (author.id === post.author.id) router.replace(appRoutes.feed(locale));

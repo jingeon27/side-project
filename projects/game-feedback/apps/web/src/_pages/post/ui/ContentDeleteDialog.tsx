@@ -13,11 +13,9 @@ import { deleteAnswerMutationOptions } from '@/features/answer';
 import { deleteCommentMutationOptions } from '@/features/comment';
 import { deletePostMutationOptions } from '@/features/post';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Modal, useNotify } from '@/shared/ui';
+import { ErrorNotice, Modal, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
-interface IContentDeleteDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IContentDeleteDialogProps extends IOverlayControlProps {
   type: 'POST' | 'ANSWER' | 'COMMENT';
   id: string;
   postId: string;
@@ -26,6 +24,7 @@ interface IContentDeleteDialogProps {
 export function ContentDeleteDialog({
   open,
   onOpenChange,
+  onOpenChangeComplete,
   type,
   id,
   postId,
@@ -45,6 +44,7 @@ export function ContentDeleteDialog({
     <Modal
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       dismissible={!isPending}
       title={t('정말 삭제할까요?')}
       description={t(

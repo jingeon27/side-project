@@ -11,15 +11,19 @@ import { Button, NativeSelect, NativeSelectOption, Textarea } from '@side/design
 import { reportMutationOptions, reportReasons } from '@/features/moderation';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
-interface IReportDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IReportDialogProps extends IOverlayControlProps {
   targetType: ReportInput['targetType'];
   targetId: string;
 }
-export function ReportDialog({ open, onOpenChange, targetType, targetId }: IReportDialogProps) {
+export function ReportDialog({
+  open,
+  onOpenChange,
+  onOpenChangeComplete,
+  targetType,
+  targetId,
+}: IReportDialogProps) {
   const { t } = useI18n();
   const formId = useId();
   const mutation = useMutation(reportMutationOptions()),
@@ -36,6 +40,7 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId }: IRepo
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       dismissible={!mutation.isPending}
       title={t('어떤 문제가 있나요?')}
       description={t('신고 내용은 커뮤니티 운영 검토에 사용됩니다.')}

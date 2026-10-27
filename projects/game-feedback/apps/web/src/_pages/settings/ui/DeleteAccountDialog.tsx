@@ -10,15 +10,11 @@ import { Button, Input } from '@side/design-system';
 import { deleteAccountMutationOptions } from '@/features/auth';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
 import { deleteAccountSchema } from '../model/settings.schema';
 
-interface IDeleteAccountDialogProps {
-  open: boolean;
-  onClose: () => void;
-}
-export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps) {
+export function DeleteAccountDialog({ open, onOpenChange, onOpenChangeComplete }: IOverlayControlProps) {
   const client = useQueryClient();
   const notify = useNotify();
   const { t } = useI18n();
@@ -29,15 +25,20 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
   return (
     <BottomSheet
       open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) onClose();
-      }}
+      onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       title={t('Game Mate를 떠나시겠어요?')}
       description={t('계정과 연결된 게임 프로필, 작성한 콘텐츠가 삭제됩니다. 이 작업은 되돌릴 수 없어요.')}
       dismissible={!deletion.isPending}
       footer={
         <>
-          <Button variant="secondary" size="lg" type="button" onClick={onClose} disabled={deletion.isPending}>
+          <Button
+            variant="secondary"
+            size="lg"
+            type="button"
+            onClick={() => onOpenChange(false)}
+            disabled={deletion.isPending}
+          >
             {t('계속 함께하기')}
           </Button>
           <Button
@@ -55,7 +56,9 @@ export function DeleteAccountDialog({ open, onClose }: IDeleteAccountDialogProps
       <form
         id={formId}
         className="form-stack"
-        onSubmit={form.handleSubmit(() => deletion.mutate(undefined, { onSuccess: onClose }))}
+        onSubmit={form.handleSubmit(() =>
+          deletion.mutate(undefined, { onSuccess: () => onOpenChange(false) }),
+        )}
       >
         <Field label={t("계속하려면 '탈퇴'를 입력해 주세요")}>
           <Input {...form.register('confirmation')} placeholder={t('탈퇴')} required />

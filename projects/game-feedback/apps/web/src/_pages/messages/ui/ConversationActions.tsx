@@ -49,17 +49,12 @@ export function ConversationActions({
   function handleClear() {
     if (!throughMessageId) return;
     openOverlay(
-      ({ isOpen, close, unmount }) => (
+      (control) => (
         <ClearConversationDialog
-          open={isOpen}
+          {...control}
           userId={userId}
           conversationId={conversationId}
           throughMessageId={throughMessageId}
-          onOpenChange={(next) => {
-            if (next) return;
-            close();
-            unmount();
-          }}
         />
       ),
       { overlayId: clearOverlayId },

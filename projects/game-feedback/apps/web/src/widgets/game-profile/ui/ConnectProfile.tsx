@@ -17,16 +17,14 @@ import {
 import type { GameProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
-interface IConnectProfileProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IConnectProfileProps extends IOverlayControlProps {
   onSaved?: (profile: GameProfile) => void;
 }
 const profileTagSchema = z.object({ playerTag: PlayerTagSchema });
 
-export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileProps) {
+export function ConnectProfile({ open, onOpenChange, onOpenChangeComplete, onSaved }: IConnectProfileProps) {
   const notify = useNotify();
   const { t } = useI18n();
   const formId = useId();
@@ -39,6 +37,7 @@ export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileP
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       title={t('게임 계정 등록')}
       description={t('플레이어 태그로 트로피와 아레나를 확인해요.')}
       dismissible={!preview.isPending && !save.isPending}

@@ -12,20 +12,23 @@ import { Button, Input, Textarea } from '@side/design-system';
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
 import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 import { profileOptions } from '../model/user.options';
 import { ProfileLinksEditor } from './ProfileLinksEditor';
 import { ProfilePhotoEditor } from './ProfilePhotoEditor';
 
-interface IProfileEditSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IProfileEditSheetProps extends IOverlayControlProps {
   profile: PublicProfile;
 }
 
-export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSheetProps) {
+export function ProfileEditSheet({
+  open,
+  onOpenChange,
+  onOpenChangeComplete,
+  profile,
+}: IProfileEditSheetProps) {
   const { t } = useI18n();
   const router = useRouter();
   const notify = useNotify();
@@ -40,6 +43,7 @@ export function ProfileEditSheet({ open, onOpenChange, profile }: IProfileEditSh
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       title={t('프로필 수정')}
       dismissible={!mutation.isPending}
       footer={

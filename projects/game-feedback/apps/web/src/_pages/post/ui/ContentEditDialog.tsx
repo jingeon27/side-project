@@ -11,18 +11,23 @@ import { updateAnswerMutationOptions } from '@/features/answer';
 import { updateCommentMutationOptions } from '@/features/comment';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
 import { answerFormSchema, commentFormSchema } from '../model/content.schema';
 
-interface IContentEditDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IContentEditDialogProps extends IOverlayControlProps {
   type: 'ANSWER' | 'COMMENT';
   id: string;
   body: string;
 }
-export function ContentEditDialog({ open, onOpenChange, type, id, body }: IContentEditDialogProps) {
+export function ContentEditDialog({
+  open,
+  onOpenChange,
+  onOpenChangeComplete,
+  type,
+  id,
+  body,
+}: IContentEditDialogProps) {
   const client = useQueryClient();
   const { t } = useI18n();
   const formId = useId();
@@ -36,6 +41,7 @@ export function ContentEditDialog({ open, onOpenChange, type, id, body }: IConte
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       dismissible={!isPending}
       title={type === 'ANSWER' ? t('피드백 수정') : t('댓글 수정')}
       description={t('나누고 싶은 내용을 다듬어주세요.')}

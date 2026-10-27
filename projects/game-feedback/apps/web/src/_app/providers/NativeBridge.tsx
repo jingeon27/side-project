@@ -28,8 +28,8 @@ export function NativeBridge() {
       onActive: refreshSession,
       onDismissOverlay: () => {
         if (!open) return;
+        // 시트가 닫기 전환을 마친 뒤 openOverlay가 제거한다.
         overlay.close(open.id);
-        overlay.unmount(open.id);
       },
       onBack: () =>
         match(backNavigation())

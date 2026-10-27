@@ -10,6 +10,7 @@ export { ErrorRecovery } from './ErrorRecovery';
 export { ServiceErrorBoundary } from './ServiceErrorBoundary';
 export { AsyncBoundary } from './AsyncBoundary';
 export { openOverlay } from './open-overlay';
+export type { IOverlayControlProps } from './open-overlay';
 export { MotionButton } from './MotionButton';
 export { RichTextEditor } from './rich-text/RichTextEditor';
 export { RichTextBody } from './rich-text/RichTextBody';

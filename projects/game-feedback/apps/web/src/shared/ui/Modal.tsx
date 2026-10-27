@@ -9,6 +9,7 @@ import { BottomSheet } from './BottomSheet';
 interface IModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenChangeComplete?: (open: boolean) => void;
   title: string;
   description: string;
   children: ReactNode;
@@ -18,6 +19,7 @@ interface IModalProps {
 export function Modal({
   open,
   onOpenChange,
+  onOpenChangeComplete,
   title,
   description,
   children,
@@ -29,6 +31,7 @@ export function Modal({
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       title={t(title)}
       description={t(description)}
       dismissible={dismissible}

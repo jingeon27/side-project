@@ -26,17 +26,8 @@ export function ChatAttachmentView({ attachment }: { attachment: TChatAttachment
       className="chat-image-open"
       aria-label={`${t('이미지 크게 보기')}: ${attachment.name}`}
       onClick={() =>
-        openOverlay(({ isOpen, close, unmount }) => (
-          <BottomSheet
-            open={isOpen}
-            onOpenChange={(open) => {
-              if (open) return;
-              close();
-              unmount();
-            }}
-            title={attachment.name}
-            description={t('이미지 크게 보기')}
-          >
+        openOverlay((control) => (
+          <BottomSheet {...control} title={attachment.name} description={t('이미지 크게 보기')}>
             <Image
               className="chat-media-viewer"
               src={attachment.url}

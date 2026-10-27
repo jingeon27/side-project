@@ -39,22 +39,15 @@ export function SessionProvider({ children, onLogin }: ISessionProviderProps) {
   const notify = useNotify();
   function handleRequireLogin() {
     openOverlay(
-      ({ isOpen, close, unmount }) => {
-        function handleClose() {
-          close();
-          unmount();
-        }
-        return (
-          <LoginRequiredDialog
-            open={isOpen}
-            onClose={handleClose}
-            onLogin={() => {
-              handleClose();
-              onLogin();
-            }}
-          />
-        );
-      },
+      (control) => (
+        <LoginRequiredDialog
+          {...control}
+          onLogin={() => {
+            control.onOpenChange(false);
+            onLogin();
+          }}
+        />
+      ),
       { overlayId: 'login-required-dialog' },
     );
   }
