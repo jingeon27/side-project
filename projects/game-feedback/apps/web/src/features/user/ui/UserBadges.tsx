@@ -13,7 +13,7 @@ interface IUserBadgesProps {
 export function UserBadges({ author, compact = false, showTag = true }: IUserBadgesProps) {
   const { t } = useI18n();
   return (
-    <span className={`user-badges ${compact ? 'compact' : ''}`}>
+    <span className="user-badges" data-compact={compact || undefined}>
       {author.isVerified && (
         <span
           className="verified-user-badge"

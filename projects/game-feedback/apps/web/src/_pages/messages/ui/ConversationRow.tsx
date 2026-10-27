@@ -24,7 +24,7 @@ export function ConversationRow({ conversation, selected, locale, replace }: ICo
       href={appRoutes.conversation(locale, conversation.id)}
       replace={replace}
       scroll={false}
-      className={`conversation-row ${selected ? 'selected' : ''}`}
+      className="conversation-row"
       data-testid={`conversation-${conversation.id}`}
       aria-label={`${t('{name}님과의 대화', { name: conversation.peer.nickname })}${conversation.unreadCount ? `, ${t('읽지 않은 메시지 {count}개', { count: conversation.unreadCount })}` : ''}`}
       aria-current={selected ? 'page' : undefined}

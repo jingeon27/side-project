@@ -90,7 +90,8 @@ export function ChatComposer({
       )}
       <form className="chat-compose" onSubmit={handleSubmit}>
         <label
-          className={`chat-attach-button${busy ? ' disabled' : ''}`}
+          className="chat-attach-button"
+          data-disabled={busy || undefined}
           title={t('이미지 또는 동영상 첨부')}
         >
           {upload.isPending ? <LoaderCircle size={20} className="spin" /> : <Paperclip size={20} />}

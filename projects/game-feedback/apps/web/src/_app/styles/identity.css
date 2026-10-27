@@ -45,23 +45,23 @@
     font-weight: 500;
     white-space: nowrap;
   }
-  .user-badges.compact {
+  .user-badges[data-compact] {
     gap: 4px;
   }
-  .user-badges.compact .verified-user-badge {
+  .user-badges[data-compact] .verified-user-badge {
     font-size: var(--text-micro);
     padding: 1px 4px;
     gap: 2px;
   }
-  .user-badges.compact .verified-user-badge > svg {
+  .user-badges[data-compact] .verified-user-badge > svg {
     width: 10px;
     height: 10px;
   }
-  .user-badges.compact .test-user-badge {
+  .user-badges[data-compact] .test-user-badge {
     font-size: var(--text-micro);
     padding: 1px 4px;
   }
-  .user-badges.compact .supercell-user-tag {
+  .user-badges[data-compact] .supercell-user-tag {
     font-size: var(--text-micro);
     padding: 0 3px;
   }
@@ -293,7 +293,7 @@
     .supercell-user-tag {
       font-size: var(--text-micro);
     }
-    .user-badges.compact .verified-user-badge {
+    .user-badges[data-compact] .verified-user-badge {
       font-size: var(--text-micro);
     }
     .post-author {
@@ -356,28 +356,28 @@
       font-size: var(--text-micro);
       padding: 1px 4px;
     }
-    .user-badges.compact .verified-user-badge {
+    .user-badges[data-compact] .verified-user-badge {
       font-size: var(--text-micro);
       padding: 1px 3px;
     }
-    .user-badges.compact .verified-user-badge > svg {
+    .user-badges[data-compact] .verified-user-badge > svg {
       height: 8px;
       width: 8px;
     }
-    .user-badges.compact .test-user-badge {
+    .user-badges[data-compact] .test-user-badge {
       font-size: var(--text-micro);
       padding: 1px 3px;
     }
-    .user-badges.compact .supercell-user-tag {
+    .user-badges[data-compact] .supercell-user-tag {
       font-size: var(--text-micro);
     }
-    .conversation-row .user-badges.compact .verified-user-badge {
+    .conversation-row .user-badges[data-compact] .verified-user-badge {
       font-size: var(--text-micro);
     }
-    .conversation-row .user-badges.compact .test-user-badge {
+    .conversation-row .user-badges[data-compact] .test-user-badge {
       font-size: var(--text-micro);
     }
-    .conversation-row .user-badges.compact .supercell-user-tag {
+    .conversation-row .user-badges[data-compact] .supercell-user-tag {
       font-size: var(--text-micro);
     }
     .post-author {
@@ -455,13 +455,13 @@
     .test-account-action {
       font-size: var(--text-micro);
     }
-    .test-account-picker .user-badges.compact .verified-user-badge {
+    .test-account-picker .user-badges[data-compact] .verified-user-badge {
       font-size: var(--text-micro);
     }
-    .test-account-picker .user-badges.compact .test-user-badge {
+    .test-account-picker .user-badges[data-compact] .test-user-badge {
       font-size: var(--text-micro);
     }
-    .test-account-picker .user-badges.compact .supercell-user-tag {
+    .test-account-picker .user-badges[data-compact] .supercell-user-tag {
       font-size: var(--text-micro);
     }
     .settings-profile > div > .user-badges {

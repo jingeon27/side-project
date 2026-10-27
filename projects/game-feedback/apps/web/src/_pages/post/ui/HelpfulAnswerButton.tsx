@@ -23,7 +23,7 @@ export function HelpfulAnswerButton({ answer }: IHelpfulAnswerButtonProps) {
       <m.button
         type="button"
         tabIndex={0}
-        className={`helpful-button ${answer.helpful ? 'selected' : ''}`}
+        className="helpful-button"
         aria-pressed={answer.helpful}
         disabled={mutation.isPending}
         whileTap={reducedMotion || mutation.isPending ? undefined : { scale: 0.96 }}

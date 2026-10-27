@@ -47,7 +47,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
         </div>
         <ChatConnectionStatus />
       </div>
-      <div className={`chat-workspace ${conversationId ? 'has-conversation' : ''}`}>
+      <div className="chat-workspace" data-has-conversation={!!conversationId || undefined}>
         <AsyncBoundary
           clientOnly
           title={t('대화 목록')}

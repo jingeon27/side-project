@@ -47,7 +47,8 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
   return (
     <Link
       href={href}
-      className={`notification-item ${notification.readAt ? '' : 'unread'}`}
+      className="notification-item"
+      data-unread={!notification.readAt || undefined}
       onClick={() => {
         if (!notification.readAt) onRead();
       }}

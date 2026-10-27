@@ -71,7 +71,7 @@ export function PostCard({ post, href, authorContent, authorName, showBoardLabel
           {authorContent}
           <span className="post-author-game">{post.category.name}</span>
         </span>
-        <span className={`answer-count ${post.answerCount > 0 ? 'has-answers' : ''}`}>
+        <span className="answer-count" data-has-answers={post.answerCount > 0 || undefined}>
           <MessageSquare size={15} />
           {t(post.board === 'COACHING' ? '코칭 보기' : isFeedback ? '답변' : '게시글 보기')}
           {isFeedback && <strong>{post.answerCount}</strong>}
