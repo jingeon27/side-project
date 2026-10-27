@@ -1,6 +1,6 @@
 ---
 name: contest-api
-description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진·좋아요·투표·신고 규칙, 쿠키 헤더 인증과 소셜 로그인(앱 핸드오프 포함), 오류 매핑을 구현하거나 검토할 때 사용한다.
+description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진·좋아요·투표·신고 규칙, 쿠키 헤더 인증과 익명·아이디 로그인, 오류 매핑을 구현하거나 검토할 때 사용한다.
 ---
 
 ## 구조
@@ -19,12 +19,13 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 ## 인증
 
-- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. OAuth state 쿠키도 같은 원칙(`__Host-contest_oauth_state`)이다. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
+- 세션은 HttpOnly 쿠키 하나(43자 base64url)이며 이름은 `auth/auth-cookie.ts`가 정한다: 운영(https)은 `__Host-contest_session`, 개발·테스트(http)는 `contest_session`. cookie-parser 없이 `common/http/cookie-header.ts`가 `Cookie` 헤더 원문을 파싱한다: 같은 이름은 첫 값, 8KB 초과·깨진 형식·잘못된 길이는 비로그인. DB에는 해시만 저장한다.
 - `session.service`가 요청당 한 번만 조회한다(WeakMap). GraphQL·REST 모두 `@Viewer()`/`@OptionalViewer()`를 쓴다. Authorization 헤더는 보지 않는다.
 - GET·HEAD·OPTIONS가 아닌 요청은 Origin이 WEB_ORIGIN이어야 한다(인증보다 먼저 403). GraphQL은 csrfPrevention.
 - 아이디·비밀번호는 `PasswordCredential`에 scrypt 해시만 저장하고 `registerWithPassword`·`loginWithPassword` mutation으로 가입·로그인한다. 기존 세션을 교체하며 DB 기반 반복 시도 제한과 일반화된 로그인 실패 문구를 유지한다. 자세한 규칙은 API auth 스킬.
-- OAuth(Google·카카오): state + PKCE, 시도 10분, 콜백은 항상 302. 다른 provider의 이메일로 계정을 합치지 않는다. 개발 로그인은 NODE_ENV=development && ENABLE_DEV_LOGIN=true에서만, 운영은 fail-closed.
-- 앱 핸드오프: `/auth/<provider>?app_challenge=<43자>`면 콜백에서 세션 쿠키를 만들지 않고 2분짜리 AppLoginTicket(코드 해시·challenge) 후 검증된 https 앱 링크 `<WEB_ORIGIN>/app-auth/callback?code=`(`MOBILE_AUTH_CALLBACK_URL`)로만 보낸다. 커스텀 스킴으로는 보내지 않는다. 운영은 `MOBILE_AUTH_CALLBACK_URL`이 WEB_ORIGIN과 같은 origin의 그 경로가 아니면 시작하지 않는다. `POST /auth/app/exchange {code, verifier}`는 base64url(SHA-256(verifier))를 timingSafeEqual로 비교하고 한 번만 소비한다. 실패는 모두 403 같은 메시지. 틀린 verifier는 티켓을 소비하지 않는다.
+- 익명 세션은 `startAnonymousSession` mutation으로만 만든다. 세션이 있으면 그 사용자를 돌려주고, 새로 만들 때는 가입과 같은 IP 한도를 센다. 익명 계정은 공개 그룹만 즉시 가입하고 비공개 그룹 생성·가입 신청은 로그인을 안내한다. 익명 상태에서 가입하면 같은 사용자 행을 회원으로 바꾼다.
+- 로그아웃은 `POST /auth/logout`이다. 개발 로그인 엔드포인트는 없고, 격리 테스트만 NODE_ENV=test·ENABLE_TEST_API=true의 `POST /testing/users`로 사용자·세션을 만든다.
+- 현재 API에는 소셜(OAuth) 로그인과 앱 로그인 교환(`/auth/<provider>`, `/auth/app/exchange`)이 없다. OAuthAttempt·AppLoginTicket 테이블은 이전 앱 호환을 위해 남아 있을 뿐 쓰지 않는다. 다시 들일 때는 프로젝트 AGENTS.md의 앱 소셜 로그인 결정과 `auth` 스킬을 함께 고친다.
 
 ## 상시 그룹 게시물
 
