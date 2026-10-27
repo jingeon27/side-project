@@ -14,6 +14,7 @@ import {
   SubmissionsDocument,
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/shared/lib/image.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
@@ -21,7 +22,6 @@ import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bo
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea } from '@/shared/ui/@core/text-field';
 
-import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '../lib/image.helper';
 import { markContestSubmitted } from '../model/submission.cache';
 import { uploadPhotoSchema } from '../model/submission.schema';
 

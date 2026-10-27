@@ -4,7 +4,6 @@ import { useId } from 'react';
 
 import { useMutation } from '@apollo/client/react';
 
-import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/features/submission';
 import {
   CompletePostUploadDocument,
   CreatePostDocument,
@@ -13,6 +12,7 @@ import {
   RequestPostUploadDocument,
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/shared/lib/image.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
