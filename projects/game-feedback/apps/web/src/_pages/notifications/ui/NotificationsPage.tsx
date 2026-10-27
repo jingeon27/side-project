@@ -35,7 +35,7 @@ function NotificationsContent({ locale }: INotificationsPageProps) {
         </span>
         <h1>{t('당신의 플레이에 도착한 소식')}</h1>
         <p>{t('로그인하면 새로운 피드백과 댓글을 확인할 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
+        <Button variant="primary" size="md" type="button" className="button" onClick={() => login()}>
           {t('로그인하고 확인하기')}
           <ArrowUpRight size={16} />
         </Button>
@@ -79,7 +79,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           </span>
           <h3>{t('아직 도착한 소식이 없어요')}</h3>
           <p>{t('피드백 요청을 남기고 새로운 이야기를 만나보세요.')}</p>
-          <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button outline">
+          <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button">
             {t('피드 둘러보기')}
           </ButtonLink>
         </div>
@@ -99,8 +99,8 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           variant="secondary"
           size="lg"
           fullWidth
-          type="submit"
-          className="button outline full"
+          type="button"
+          className="button"
           disabled={query.isFetchingNextPage}
           onClick={() => query.fetchNextPage()}
         >

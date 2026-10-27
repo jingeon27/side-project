@@ -59,7 +59,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
               variant="primary"
               size="md"
               type="submit"
-              className="button primary"
+              className="button"
               disabled={mutation.isPending}
             >
               {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
@@ -71,13 +71,7 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
       ) : (
         <div className="login-prompt">
           <p>{t('로그인하고 함께 플레이를 이야기해요.')}</p>
-          <Button
-            variant="primary"
-            size="md"
-            type="submit"
-            className="button dark"
-            onClick={() => requireLogin()}
-          >
+          <Button variant="primary" size="md" type="button" onClick={() => requireLogin()}>
             {t('로그인하고 피드백 남기기')}
             <ArrowUpRight size={16} />
           </Button>

@@ -172,8 +172,8 @@ function FeedResults({
           variant="secondary"
           size="lg"
           fullWidth
-          type="submit"
-          className="button outline full load-more"
+          type="button"
+          className="load-more"
           disabled={feed.isFetchingNextPage}
           onClick={() => feed.fetchNextPage()}
         >

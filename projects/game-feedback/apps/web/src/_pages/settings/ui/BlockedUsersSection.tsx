@@ -63,8 +63,8 @@ function BlockedUserList({ userId }: { userId: string }) {
           <Button
             variant="secondary"
             size="sm"
-            type="submit"
-            className="button outline small-button"
+            type="button"
+            className="button"
             disabled={unblock.isPending}
             onClick={() => unblock.mutate({ userId: person.id })}
           >

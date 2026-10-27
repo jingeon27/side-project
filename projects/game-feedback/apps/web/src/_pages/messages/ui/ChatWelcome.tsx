@@ -25,7 +25,7 @@ export function ChatWelcome({ locale }: IChatWelcomeProps) {
         <br />
         {t('피드에서 함께 이야기할 플레이어를 찾아보세요.')}
       </p>
-      <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button outline">
+      <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button">
         {t('피드 둘러보기')}
         <ArrowUpRight size={16} />
       </ButtonLink>

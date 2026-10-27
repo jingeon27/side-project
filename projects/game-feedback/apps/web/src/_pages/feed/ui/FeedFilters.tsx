@@ -31,7 +31,7 @@ export function FeedFilters({ locale, initialSearch, onCompose }: IFeedFiltersPr
         >
           {t('답변 대기')}
         </MotionButton>
-        <MotionButton variant="accent" size="md" type="button" className="button primary" onClick={onCompose}>
+        <MotionButton variant="accent" size="md" type="button" className="button" onClick={onCompose}>
           <Plus size={17} />
           {t('글쓰기')}
         </MotionButton>

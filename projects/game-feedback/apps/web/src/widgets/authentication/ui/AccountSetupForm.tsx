@@ -127,7 +127,6 @@ export function AccountSetupForm({
           fullWidth
           type="submit"
           form={formId}
-          className="button primary full"
           disabled={!agreed || !ageConfirmed}
           loading={pending}
         >

@@ -119,7 +119,6 @@ export function ChatComposer({
         <MotionButton
           variant="primary"
           size="icon"
-          className="button dark"
           type="submit"
           disabled={busy || unavailable || (!draft.trim() && !upload.data)}
           aria-label={mutation.isError ? t('다시 보내기') : t('보내기')}

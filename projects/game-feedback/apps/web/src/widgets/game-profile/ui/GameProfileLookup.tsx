@@ -53,13 +53,7 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
             required
             disabled={disabled || preview.isPending}
           />
-          <Button
-            variant="primary"
-            size="md"
-            className="button dark"
-            type="submit"
-            disabled={disabled || preview.isPending}
-          >
+          <Button variant="primary" size="md" type="submit" disabled={disabled || preview.isPending}>
             {preview.isPending ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
             {t('조회')}
           </Button>
