@@ -57,7 +57,7 @@ describe('PostService 회귀', () => {
     expect(await api.gqlOk(owner.cookie, DELETE, { id: post.id })).toEqual({ deletePost: true });
     await expect(api.storage.head(key)).rejects.toThrow();
     const retained = await api.db.postUpload.findUniqueOrThrow({ where: { id: ticket.id } });
-    expect(retained.expiresAt.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(retained.expiresAt?.getTime()).toBeLessThanOrEqual(Date.now());
     expect(retained.policyExpiresAt?.getTime()).toBeGreaterThan(Date.now());
     // 지운 업로드는 다시 게시에 쓰지 못한다.
     expect((await api.gqlFail(owner.cookie, CREATE, { group: groupId, upload: ticket.id })).code).toBe(

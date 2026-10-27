@@ -109,6 +109,9 @@ export class SubmissionService {
         data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
         include: submissionInclude(viewer.id, isAdmin(member)),
       });
+      // 제출한 사진의 원본 업로드는 제출이 남아 있는 동안 만료가 없다.
+      if (upload.mediaUploadId)
+        await tx.postUpload.update({ where: { id: upload.mediaUploadId }, data: { expiresAt: null } });
       const properties = { contestId: contest.id, groupId: contest.groupId };
       await recordEvent(tx ?? this.db, {
         id: `submission:${created.id}`,

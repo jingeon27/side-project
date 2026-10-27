@@ -24,7 +24,8 @@ interface IUploadTicket {
   id: string;
   userId: string;
   groupId: string;
-  expiresAt: Date;
+  /** null이면 게시물·대회 사진·대표 사진에 붙어 만료가 없다. */
+  expiresAt: Date | null;
   storageKey: string | null;
   stagingKey: string | null;
   kind: string;
@@ -64,7 +65,7 @@ export class MediaUploadService {
     const policy = postUploadPolicy(contentType, byteSize);
     if ((contestId || avatar) && (policy.kind !== 'PHOTO' || byteSize > MAX_UPLOAD_BYTES))
       fail('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.');
-    const { upload, id } = await this.transactions.atomic(async (tx) => {
+    const { upload, id, expiresAt } = await this.transactions.atomic(async (tx) => {
       if (avatar) await this.membership.requireAdmin(viewer.id, groupId, tx);
       if (!avatar) await this.membership.requireMember(viewer.id, groupId, tx);
       if (contestId) {
@@ -127,26 +128,21 @@ export class MediaUploadService {
               contestId,
               tokenHash: sha256Hex(randomToken()),
               mediaUploadId: upload.id,
-              expiresAt: upload.expiresAt,
+              expiresAt,
             },
           })
         : null;
       const groupAvatar = avatar
         ? await tx.groupAvatar.create({
-            data: { groupId, mediaUploadId: upload.id, storageKey: key, expiresAt: upload.expiresAt },
+            data: { groupId, mediaUploadId: upload.id, storageKey: key, expiresAt },
           })
         : null;
-      return { upload, id: submission?.id ?? groupAvatar?.id ?? upload.id };
+      return { upload, id: submission?.id ?? groupAvatar?.id ?? upload.id, expiresAt };
     });
-    const form = await this.storage.presignUpload(
-      upload.stagingKey ?? '',
-      contentType,
-      byteSize,
-      upload.expiresAt,
-    );
+    const form = await this.storage.presignUpload(upload.stagingKey ?? '', contentType, byteSize, expiresAt);
     return {
       id,
-      expiresAt: upload.expiresAt,
+      expiresAt,
       url: form.url,
       fields: Object.entries(form.fields).map(([name, value]) => ({ name, value })),
     };
@@ -209,7 +205,7 @@ export class MediaUploadService {
     if (
       !ticket ||
       ticket.userId !== viewer.id ||
-      ticket.expiresAt <= new Date() ||
+      (ticket.expiresAt && ticket.expiresAt <= new Date()) ||
       ticket.submissionUpload?.id !== submissionId ||
       ticket.groupAvatar?.id !== avatarId
     )

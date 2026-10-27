@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import type { Prisma } from '../../generated/prisma';
 import { CLEANUP_BATCH_SIZE, UPLOAD_TICKET_TTL_MS } from '../config/limits';
-import { Database } from '../database/database.service';
+import { Database, type TDatabaseClient } from '../database/database.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { MediaStorage } from '../storage/media-storage.service';
 
@@ -39,8 +39,11 @@ export class MaintenanceService {
     for (const avatar of avatars) {
       await this.attempt(async () => {
         await this.media.delete(avatar.storageKey);
-        await this.db.groupAvatar.deleteMany({
-          where: { id: avatar.id, currentGroups: { none: {} }, coverGroups: { none: {} } },
+        await this.db.$transaction(async (tx) => {
+          const removed = await tx.groupAvatar.deleteMany({
+            where: { id: avatar.id, currentGroups: { none: {} }, coverGroups: { none: {} } },
+          });
+          if (removed.count) await this.releaseUpload(tx, avatar.mediaUploadId);
         });
       });
     }
@@ -88,14 +91,29 @@ export class MaintenanceService {
   private async removeAbandonedUploads(now: Date) {
     const abandoned = await this.db.upload.findMany({
       where: { expiresAt: { lt: new Date(now.getTime() - UPLOAD_TICKET_TTL_MS) }, submission: null },
-      select: { id: true, imageKey: true },
+      select: { id: true, imageKey: true, mediaUploadId: true },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const upload of abandoned) {
       await this.attempt(async () => {
         if (upload.imageKey) await this.media.delete(upload.imageKey);
-        await this.db.upload.deleteMany({ where: { id: upload.id, submission: null } });
+        await this.db.$transaction(async (tx) => {
+          const removed = await tx.upload.deleteMany({ where: { id: upload.id, submission: null } });
+          if (removed.count) await this.releaseUpload(tx, upload.mediaUploadId);
+        });
       });
     }
+  }
+
+  /**
+   * 대회 사진·대표 사진 행을 지웠으면 그 원본 PostUpload를 지난 만료로 돌려 일반 정리(쓰지 않은 업로드)가 지우게 한다.
+   * 붙어 있는 동안 만료를 비워 두므로 되돌리지 않으면 행과 용량이 남는다.
+   */
+  private async releaseUpload(tx: TDatabaseClient, mediaUploadId: string | null) {
+    if (!mediaUploadId) return;
+    await tx.postUpload.updateMany({
+      where: { id: mediaUploadId, post: null, submissionUpload: null, groupAvatar: null },
+      data: { expiresAt: new Date(0) },
+    });
   }
 }

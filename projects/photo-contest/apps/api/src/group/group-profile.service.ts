@@ -53,6 +53,9 @@ export class GroupProfileService {
           (avatar.mediaUploadId && avatar.mediaUpload?.storageKey !== avatar.storageKey)
         )
           fail('그룹 사진 업로드가 만료되었거나 사용할 수 없습니다.');
+        // 대표·배경 사진으로 쓰는 동안 원본 업로드의 수명은 GroupAvatar가 정한다. 교체 뒤 정리 작업이 되돌린다.
+        if (avatar.mediaUploadId)
+          await tx.postUpload.update({ where: { id: avatar.mediaUploadId }, data: { expiresAt: null } });
       }
       await tx.group.update({
         where: { id: input.groupId },

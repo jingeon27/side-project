@@ -147,6 +147,7 @@ export class PostService {
             upload.userId !== viewer.id ||
             upload.groupId !== input.groupId ||
             !upload.storageKey ||
+            !upload.expiresAt ||
             upload.expiresAt <= new Date())
         )
           fail('업로드가 완료되지 않았거나 만료되었습니다.');
@@ -169,6 +170,8 @@ export class PostService {
           },
           include: postInclude(viewer.id),
         });
+        // 게시한 업로드는 만료가 없다. 정리 작업의 만료 범위에서 빠져 지난 업로드를 매번 다시 읽지 않는다.
+        if (upload) await tx.postUpload.update({ where: { id: upload.id }, data: { expiresAt: null } });
         await recordEvent(tx, {
           id: `post:${created.id}`,
           type: ANALYTICS_EVENT.POST_CREATED,

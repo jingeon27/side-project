@@ -218,7 +218,8 @@ model PostUpload {
   tokenHash String @unique
   userId String
   groupId String
-  expiresAt DateTime
+  // 게시물·제출한 대회 사진·현재 그룹 대표·배경 사진에 붙으면 null(만료 없음)이다. 떼면 지난 시각으로 돌려 정리한다.
+  expiresAt DateTime?
   policyExpiresAt DateTime?
   storageKey String? @unique
   stagingKey String? @unique
