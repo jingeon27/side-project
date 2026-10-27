@@ -1,6 +1,6 @@
 export { Button, buttonVariants } from './ui/button/Button';
 export type { IButtonProps } from './ui/button/Button';
-export { IconButton } from './ui/icon-button/IconButton';
+export { IconButton, iconButtonVariants } from './ui/icon-button/IconButton';
 export type { IIconButtonProps } from './ui/icon-button/IconButton';
 export { TextField, TextAreaField } from './ui/text-field/TextField';
 export type { ITextFieldProps, ITextAreaFieldProps } from './ui/text-field/TextField';

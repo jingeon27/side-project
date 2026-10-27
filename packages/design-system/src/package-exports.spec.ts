@@ -64,9 +64,11 @@ describe('package exports', () => {
     }
   });
 
-  it('Next 전용 ButtonLink는 /next에만 있어야 한다', async () => {
-    const [root, next] = await Promise.all([importSubpath('ui'), importSubpath('next')]);
-    expect(root).not.toHaveProperty('ButtonLink');
-    expect(next).toHaveProperty('ButtonLink');
+  it.each(['ButtonLink', 'IconButtonLink'])('Next 전용 %s는 /next에만 있어야 한다', async (name) => {
+    const [next, ...frameworkFree] = await Promise.all(
+      ['next', 'ui', ...uiFolders.map((folder) => `ui/${folder}`)].map(importSubpath),
+    );
+    expect(next).toHaveProperty(name);
+    for (const module of frameworkFree) expect(module).not.toHaveProperty(name);
   });
 });
