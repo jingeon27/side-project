@@ -12,7 +12,7 @@ import type { IDialogProps } from '@side/design-system/ui/dialog';
 import type { IFormFieldProps } from '@side/design-system/ui/form-field';
 import type { IIconButtonProps } from '@side/design-system/ui/icon-button';
 import type { ISpinnerProps } from '@side/design-system/ui/spinner';
-import type { ITextAreaProps, ITextFieldProps } from '@side/design-system/ui/text-field';
+import type { ITextAreaFieldProps, ITextFieldProps } from '@side/design-system/ui/text-field';
 
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(srcDir, '../package.json'), 'utf8')) as {
@@ -36,7 +36,7 @@ export type TPublicTypes = [
   IFormFieldProps,
   IIconButtonProps,
   ISpinnerProps,
-  ITextAreaProps,
+  ITextAreaFieldProps,
   ITextFieldProps,
 ];
 

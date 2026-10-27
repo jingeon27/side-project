@@ -28,7 +28,7 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 
 ## 공개 UI
 
-- `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. NativeSelect는 모바일 OS 선택창을 사용한다.
+- `Input`, `Textarea`, `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `Label`: shadcn 폼 컨트롤. native ref/event/aria를 전달하며 입력은 16px을 유지한다. 세 입력은 같은 공통 토큰 상자(`input/input.styles.ts`)를 쓴다. Textarea는 내용에 맞춰 늘고 세로로만 크기를 바꾼다. NativeSelect는 모바일 OS 선택창을 사용한다.
 - `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`, `SelectGroup`, `SelectLabel`, `SelectSeparator`: Base UI의 키보드 선택/포털/포커스 복귀를 사용하는 shadcn 드롭다운이다. 기본 트리거와 옵션은 44px이다.
 - `Toaster`, `toast`: Sonner 알림. 공통 색/폰트/모서리/닫기 크기를 적용하며 theme과 번역/위치는 앱이 전달한다.
 - `Checkbox`: checked/onCheckedChange를 사용하며 RHF Controller의 boolean 필드를 연결한다. 보이는 상자는 16px이고 누르는 영역은 44×44px이다.
@@ -38,8 +38,8 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `Button`: `variant="primary|secondary|ghost|danger|accent"`, `size="lg|md|sm"`, `fullWidth`, `loading`. 진행 중 재클릭을 막으면서 포커스를 유지한다. `buttonVariants`와 `IButtonProps`도 공개한다.
 - `ButtonLink`: 같은 표현 API와 Next `Link` props를 `/next`에서 제공한다. 이동에는 링크, 제출·조작에는 버튼을 사용한다.
 - `IconButton`: `label`이 필수이며 `variant="ghost|soft|brand"`를 지원한다.
-- `TextField`, `TextArea`: `label`, `description`, `error`, `labelSuffix`, native input/textarea props와 ref를 받는다. labelSuffix는 앱이 제공하는 필수/선택 등 보조 표시다. RHF의 `{...register('name')}`를 그대로 전달한다.
-- `FormField`: 기존 native `<label>` 폼용 `label`, `children`, `hint`, `error`. `Input`·`Textarea`·`NativeSelect`는 context로 연결하므로 memo·래퍼·서버 컴포넌트를 거쳐도 레이블·도움말·오류가 붙는다. native `input`·`textarea`·`select`는 직접 자식일 때만 연결한다. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 유지하고 `aria-describedby`에는 도움말·오류를 덧붙이며 ref는 그대로 전달한다. label 안에 들어가므로 NativeSelect 래퍼는 `span`이다. 단독 native 입력은 `.ds-input`, `.ds-textarea`, `.ds-select`로 같은 공통 스타일을 사용할 수 있다.
+- `TextField`, `TextAreaField`: `FormField`에 `Input`·`Textarea`를 넣은 조합이다. `label`, `description`, `error`, `labelSuffix`, native input/textarea props와 ref를 받고 `className`은 필드 전체에 붙는다. labelSuffix는 앱이 제공하는 필수/선택 등 보조 표시이며 접근성 이름에서 빠진다. `TextAreaField`는 내용에 따라 늘지 않고 `rows`(기본 4줄) 높이를 유지한다. RHF의 `{...register('name')}`를 그대로 전달한다.
+- `FormField`: native `<label>` 폼용 `label`, `children`, `description`, `error`, `labelSuffix`. 도움말 prop은 TextField와 같은 `description` 하나다. `Input`·`Textarea`·`NativeSelect`는 context로 연결하므로 memo·래퍼·서버 컴포넌트를 거쳐도 레이블·도움말·오류가 붙는다. native `input`·`textarea`·`select`는 직접 자식일 때만 연결한다. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 유지하고 `aria-describedby`에는 도움말·오류를 덧붙이며 ref는 그대로 전달한다. label 안에 들어가므로 NativeSelect 래퍼는 `span`이다. 직접 자식인 native 요소에는 스타일을 입히지 않으므로 공통 모양은 Input·Textarea·NativeSelect로 얻는다.
 - `Badge`, `Avatar`, `Spinner`: 상태 글자·이름 fallback·진행 표시를 제공한다. `Avatar`는 이름 옆 장식이며 스크린 리더에서 숨긴다. `Spinner`에 `label`을 주면 `role="status"` 안의 숨긴 글자로 넣어 live region이 진행 상태를 읽는다(aria-label만으로는 읽히지 않는다).
 - `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
 - `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·PageUp·PageDown·Home·End·Enter·Space 조작도 지원하며 현재 높이를 `aria-valuetext`(60%·100%)로 알린다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 소비 앱에서 번역한다. 나머지 제어 props는 Dialog와 동일하며, `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 기존 `Dialog placement="bottom"`은 제스처가 없는 하단 배치 API로 유지한다.
