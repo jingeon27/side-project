@@ -2,7 +2,7 @@
 
 import { useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-import { CreateGroupButton, DiscoverGroupCard, GroupDiscoveryIntro, GroupSearchForm } from '@/features/group';
+import { CreateGroupButton, DiscoverGroupCard, GroupSearchForm } from '@/features/group';
 import { PublicGalleryBoard } from '@/features/post';
 import { DiscoverGroupsDocument, GroupVisibility, type DiscoverGroupsQuery } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -28,7 +28,6 @@ export function NoGroupHome({ signedIn = false }: { signedIn?: boolean }) {
   });
   return (
     <div className="mx-auto flex w-full max-w-5xl desktop:max-w-none flex-col gap-8">
-      <GroupDiscoveryIntro />
       <GroupSearchForm />
       <section aria-label="공개 그룹 목록" className="flex min-w-0 flex-col gap-4">
         <div className="flex items-center justify-between">

@@ -35,19 +35,16 @@ export function MyProfile({ viewerRef }: { viewerRef: QueryRef<MeQuery> }) {
         </div>
       </div>
       {viewer.isAnonymous ? (
-        <div className="space-y-2 text-caption text-muted">
-          <p>익명 프로필은 이 브라우저의 세션으로 유지돼요.</p>
-          <p>
-            다른 기기에서도 프로필과 기록을 이어가고 싶다면{' '}
-            <Link
-              href={`${ROUTES.SIGN}?${new URLSearchParams({ next: ROUTES.ME, mode: 'register' })}`}
-              className="font-semibold text-ink underline underline-offset-4"
-            >
-              회원가입
-            </Link>
-            해 주세요.
-          </p>
-        </div>
+        <p className="text-caption text-muted">
+          다른 기기에서도 프로필과 기록을 이어가고 싶다면{' '}
+          <Link
+            href={`${ROUTES.SIGN}?${new URLSearchParams({ next: ROUTES.ME, mode: 'register' })}`}
+            className="font-semibold text-ink underline underline-offset-4"
+          >
+            회원가입
+          </Link>
+          해 주세요.
+        </p>
       ) : null}
       <div className="flex flex-wrap gap-2">
         <Button
