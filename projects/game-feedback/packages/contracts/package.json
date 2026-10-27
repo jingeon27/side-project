@@ -16,10 +16,10 @@
     "typecheck": "tsc7 --noEmit"
   },
   "dependencies": {
-    "zod": "^4.1.12"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@side/config": "workspace:*",
-    "typescript": "6.0.2"
+    "typescript": "catalog:"
   }
 }

@@ -14,12 +14,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "^4.4.0"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@side/config": "workspace:*",
-    "jsdom": "^29.0.0",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.0"
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
