@@ -81,8 +81,16 @@ const pcDomain = 'contest.bambyul.com';
 const gfApiDomain = `api.${gfDomain}`;
 const pcApiDomain = `api.${pcDomain}`;
 const realDocker = spawnSync('sh', ['-c', 'command -v docker'], { encoding: 'utf8' }).stdout.trim();
+// Compose prefers shell variables over --env-file values. Drop the runner's S3 settings so each service .env decides
+// the bucket, credentials and run-scoped prefix, as on the host.
+const storageNames = new Set([
+  ...Object.values(storage).flatMap((values) => Object.keys(values)),
+  'AWS_SESSION_TOKEN',
+  'GF_S3_ENDPOINT',
+  'S3_ENDPOINT',
+]);
 const baseEnv = {
-  ...process.env,
+  ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !storageNames.has(name))),
   PATH: process.env.PATH ?? '',
   SIDE_DEPLOY_ROOT: root,
   SIDE_PROJECT_PREFIX: prefix,
