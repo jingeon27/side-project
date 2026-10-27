@@ -1,19 +1,17 @@
 # terraform.tfvars로 복사해 값을 넣는다(terraform.tfvars는 .gitignore 대상). 비밀은 넣지 않는다.
 # 주석 처리한 값은 기본값이다. 각 변수의 설명과 검증 규칙은 variables.tf에 있다.
 
-# 필수: 전역에서 고유한 비공개 버킷 이름(만든 뒤 바꾸면 버킷이 교체된다). backup은 배포 전 DB 덤프용이다.
-game_feedback_bucket_name = "your-game-feedback-private-bucket"
-photo_contest_bucket_name = "your-photo-contest-private-bucket"
-backup_bucket_name        = "your-database-backup-bucket"
+# 필수: media는 두 서비스가 폴더로 나눠 쓰는 기존 비공개 버킷이다(Terraform이 만들지 않는다).
+# backup은 배포 전 DB 덤프용으로 Terraform이 새로 만든다(전역 고유, 만든 뒤 바꾸면 버킷이 교체된다).
+media_bucket_name  = "your-existing-private-media-bucket"
+backup_bucket_name = "your-database-backup-bucket"
 
 # 권장: 운영 계정에서만 적용되게 한다.
 # allowed_account_ids = ["123456789012"]
 
-# 서비스 도메인. API는 api.<도메인>이고 S3 CORS 기본 origin은 https://<도메인>이다.
+# 서비스 도메인. API는 api.<도메인>이다.
 # game_feedback_domain = "game.bambyul.com"
 # photo_contest_domain = "contest.bambyul.com"
-# game_feedback_cors_origins = []
-# photo_contest_cors_origins = []
 
 # Route 53 호스팅 영역이 있으면 네 호스트의 A 레코드를 만든다. 비우면 dns_records 출력대로 직접 만든다.
 # route53_zone_id = "Z0123456789ABCDEFGHIJ"

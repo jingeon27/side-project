@@ -81,7 +81,7 @@ resource "aws_iam_role_policy_attachment" "dlm" {
 }
 
 resource "aws_iam_user" "s3" {
-  for_each = aws_s3_bucket.service
+  for_each = local.media_prefixes
 
   name = "${local.name}-${each.key}-s3"
   path = "/side-project/"
@@ -94,26 +94,33 @@ resource "aws_iam_user" "s3" {
   }
 }
 
+# 공용 버킷에서 자기 서비스의 운영 폴더만 읽고 쓴다. 다른 서비스 폴더와 로컬·CI 폴더는 목록도 볼 수 없다.
 data "aws_iam_policy_document" "s3_app" {
-  for_each = aws_s3_bucket.service
+  for_each = local.media_prefixes
 
   statement {
-    sid       = "ListOwnBucket"
+    sid       = "ListOwnPrefix"
     actions   = ["s3:ListBucket"]
-    resources = [each.value.arn]
+    resources = [local.media_bucket_arn]
+
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["${each.value}/*"]
+    }
   }
 
   statement {
     sid       = "ReadWriteOwnObjects"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${each.value.arn}/*"]
+    resources = ["${local.media_bucket_arn}/${each.value}/*"]
   }
 }
 
 resource "aws_iam_user_policy" "s3_app" {
   for_each = aws_iam_user.s3
 
-  name   = "s3-app-own-bucket"
+  name   = "s3-app-own-prefix"
   user   = each.value.name
   policy = data.aws_iam_policy_document.s3_app[each.key].json
 }

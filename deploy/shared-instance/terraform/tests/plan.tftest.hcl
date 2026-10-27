@@ -67,9 +67,8 @@ mock_provider "aws" {
 }
 
 variables {
-  game_feedback_bucket_name = "example-side-game-feedback"
-  photo_contest_bucket_name = "example-side-photo-contest"
-  backup_bucket_name        = "example-side-database-backup"
+  media_bucket_name  = "example-side-media"
+  backup_bucket_name = "example-side-database-backup"
 }
 
 run "defaults" {
@@ -141,13 +140,13 @@ run "defaults" {
   }
 
   assert {
-    condition     = one(aws_s3_bucket_cors_configuration.service["game-feedback"].cors_rule).allowed_origins == toset(["https://game.bambyul.com"])
-    error_message = "GF CORS origin defaults to the web domain"
+    condition     = length(aws_iam_user.s3) == 2 && data.aws_iam_policy_document.s3_app["photo-contest"].statement[1].resources == toset(["arn:aws:s3:::example-side-media/photo-contest/production/*"]) && data.aws_iam_policy_document.s3_app["game-feedback"].statement[0].resources == toset(["arn:aws:s3:::example-side-media"]) && toset(one(data.aws_iam_policy_document.s3_app["game-feedback"].statement[0].condition).values) == toset(["game-feedback/production/*"])
+    error_message = "Each service S3 user reads, writes and lists only its production folder of the shared bucket"
   }
 
   assert {
-    condition     = one(aws_s3_bucket_cors_configuration.service["photo-contest"].cors_rule).allowed_methods == toset(["POST"])
-    error_message = "PC CORS allows POST only"
+    condition     = output.s3_key_prefixes == { game-feedback = "game-feedback/production", photo-contest = "photo-contest/production" }
+    error_message = "Production S3 folders match the compose defaults"
   }
 
   assert {
@@ -156,7 +155,7 @@ run "defaults" {
   }
 
   assert {
-    condition     = strcontains(output.host_env, "BACKUP_BUCKET=example-side-database-backup") && strcontains(output.host_env, "PHOTO_CONTEST_S3_BUCKET=example-side-photo-contest") && strcontains(output.host_env, "GAME_FEEDBACK_API_DOMAIN=api.game.bambyul.com") && !strcontains(output.host_env, "RDS_")
+    condition     = strcontains(output.host_env, "BACKUP_BUCKET=example-side-database-backup") && strcontains(output.host_env, "GAME_FEEDBACK_S3_BUCKET=example-side-media") && strcontains(output.host_env, "PHOTO_CONTEST_S3_BUCKET=example-side-media") && strcontains(output.host_env, "GAME_FEEDBACK_API_DOMAIN=api.game.bambyul.com") && !strcontains(output.host_env, "RDS_")
     error_message = "host_env output"
   }
 
@@ -223,14 +222,14 @@ run "arm_instance_rejected" {
   expect_failures = [aws_instance.host]
 }
 
-run "same_bucket_rejected" {
+run "bad_media_bucket_rejected" {
   command = plan
 
   variables {
-    photo_contest_bucket_name = "example-side-game-feedback"
+    media_bucket_name = "example.side.media"
   }
 
-  expect_failures = [var.photo_contest_bucket_name]
+  expect_failures = [var.media_bucket_name]
 }
 
 run "short_snapshot_retention_rejected" {
@@ -247,7 +246,7 @@ run "backup_bucket_reuse_rejected" {
   command = plan
 
   variables {
-    backup_bucket_name = "example-side-photo-contest"
+    backup_bucket_name = "example-side-media"
   }
 
   expect_failures = [var.backup_bucket_name]
@@ -281,16 +280,6 @@ run "bad_alarm_email_rejected" {
   }
 
   expect_failures = [var.alarm_email]
-}
-
-run "bad_cors_origin_rejected" {
-  command = plan
-
-  variables {
-    game_feedback_cors_origins = ["https://game.bambyul.com/"]
-  }
-
-  expect_failures = [var.game_feedback_cors_origins]
 }
 
 run "bad_vpc_cidr_rejected" {
