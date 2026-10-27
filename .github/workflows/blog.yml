@@ -30,6 +30,10 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # Browsers and their system libraries are preinstalled, so the job skips apt. Keep the tag equal to @playwright/test.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
     timeout-minutes: 25
     env:
       CI: 'true'
@@ -51,7 +55,6 @@ jobs:
       - run: yarn workspace @blog/web lint
       - run: yarn workspace @blog/web test
       - run: yarn workspace @blog/web build
-      - run: yarn workspace @blog/web exec playwright install --with-deps chromium
       - run: yarn workspace @blog/web test:e2e
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

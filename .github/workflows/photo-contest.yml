@@ -147,6 +147,10 @@ jobs:
         run: yarn workspace @photo-contest/test-kit check:cleanup
   browser:
     runs-on: ubuntu-latest
+    # Browsers and their system libraries are preinstalled, so the job skips apt. Keep the tag equal to @playwright/test.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -156,13 +160,14 @@ jobs:
       postgres:
         image: postgres:18-alpine
         env: { POSTGRES_USER: contest, POSTGRES_PASSWORD: contest, POSTGRES_DB: photo_contest_test }
-        ports: ['55434:5432']
         options: >-
           --health-cmd "pg_isready -U contest -d photo_contest_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       CI: 'true'
-      TEST_DATABASE_URL: postgresql://contest:contest@127.0.0.1:55434/photo_contest_test?schema=public
+      # The job container reaches the service by name; test-kit accepts this host only on GitHub Actions.
+      LOCAL_TEST_POSTGRES_PORT: '5432'
+      TEST_DATABASE_URL: postgresql://contest:contest@postgres:5432/photo_contest_test?schema=public
       S3_BUCKET: ${{ vars.PHOTO_CONTEST_S3_BUCKET }}
       S3_REGION: ap-northeast-2
       S3_KEY_PREFIX: ${{ vars.PHOTO_CONTEST_S3_KEY_PREFIX || 'photo-contest/ci' }}
@@ -178,7 +183,6 @@ jobs:
       - run: yarn install --immutable
       - run: yarn workspace @side/photo-contest db:generate
       - run: yarn workspace @side/photo-contest codegen
-      - run: yarn workspace @photo-contest/${{ matrix.app }} exec playwright install --with-deps chromium webkit
       - run: yarn workspace @photo-contest/${{ matrix.app }} test:e2e
       - name: Verify Web Vitals with intercepted SDK requests
         if: matrix.app == 'web'
