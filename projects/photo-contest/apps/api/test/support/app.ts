@@ -12,7 +12,7 @@ import { createApp } from '../../src/bootstrap';
 import { randomToken, sha256Hex } from '../../src/common/crypto';
 import { SESSION_TTL_MS } from '../../src/config/limits';
 import { SchedulerService } from '../../src/maintenance/scheduler.service';
-import { MediaStorage } from '../../src/storage/media-storage.service';
+import { MediaStorage, mediaUrlTtlSeconds } from '../../src/storage/media-storage.service';
 
 /** 테스트 요청이 보내는 Origin. API는 listen하지 않으므로 실제 웹 서버와 겹치지 않는다. */
 export const TEST_WEB_ORIGIN = 'http://web.test';
@@ -129,14 +129,16 @@ function applyEnv(values: Record<string, string>) {
 
 /**
  * 고정 미디어 경로의 응답이 캐시 금지 307인지 확인하고 브라우저처럼 서명 GET을 따라간다.
- * 서명 주소는 1분 안에 만료되므로 테스트 안에서 바로 연다.
+ * 서명 주소는 사진 1분·동영상 10분 안에 만료되므로 테스트 안에서 바로 연다.
  */
 export async function openStorageRedirect(response: IRedirectResponse, headers: Record<string, string> = {}) {
   if (response.status !== 307) throw new Error(`저장소로 보내는 307이어야 한다 (${response.status})`);
   if (response.headers['cache-control'] !== 'private, no-store')
     throw new Error(`서명 주소 이동은 캐시하면 안 된다 (${response.headers['cache-control']})`);
   const location = new URL(response.headers.location ?? '');
-  if (location.searchParams.get('X-Amz-Expires') !== '60') throw new Error('서명 GET은 60초여야 한다');
+  const expected = String(mediaUrlTtlSeconds(decodeURIComponent(location.pathname).split('/').at(-1) ?? ''));
+  if (location.searchParams.get('X-Amz-Expires') !== expected)
+    throw new Error(`서명 GET은 ${expected}초여야 한다`);
   return browserFetch(location, { headers });
 }
 

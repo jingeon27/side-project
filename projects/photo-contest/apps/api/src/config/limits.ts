@@ -50,7 +50,8 @@ export const POST_TITLE_LIMIT = 80;
 export const POST_BODY_LIMIT = 5000;
 export const POST_LINK_LIMIT = 2048;
 // 고정 경로가 매 요청 권한을 확인한 뒤 넘겨 주는 서명 GET의 수명. 공개 캐시에는 고정 경로만 남긴다.
-export const MEDIA_URL_TTL_SECONDS = 60;
+// 최대 100MB인 동영상은 느린 연결에서도 재생·탐색(Range)이 서명 만료로 끊기지 않게 10분으로 둔다.
+export const MEDIA_URL_TTL_SECONDS = { PHOTO: 60, VIDEO: 10 * 60 } as const;
 export const POST_UPLOAD_TTL_SECONDS = 15 * 60;
 export const COMPLETED_POST_UPLOAD_TTL_MS = 60 * MINUTE_MS;
 export const MEDIA_IO_TIMEOUT_MS = 10 * SECOND_MS;

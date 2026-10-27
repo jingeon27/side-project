@@ -31,6 +31,12 @@ export function mediaContentType(key: string) {
   const extension = mediaKey(key).split('.').at(-1) as TMediaExtension;
   return MEDIA_TYPES[extension];
 }
+/** 서명 GET의 수명(초). 동영상만 길게, 사진은 짧게 둔다. */
+export function mediaUrlTtlSeconds(key: string) {
+  return mediaContentType(key).startsWith('video/')
+    ? MEDIA_URL_TTL_SECONDS.VIDEO
+    : MEDIA_URL_TTL_SECONDS.PHOTO;
+}
 export function createMediaKey(extension: TMediaExtension) {
   return `${s3KeyPrefix()}${randomUUID()}.${extension}`;
 }
@@ -89,7 +95,7 @@ export class MediaStorage {
         ResponseCacheControl: NO_STORE,
         ...(disposition ? { ResponseContentDisposition: disposition } : {}),
       }),
-      { expiresIn: MEDIA_URL_TTL_SECONDS },
+      { expiresIn: mediaUrlTtlSeconds(key) },
     );
   }
 

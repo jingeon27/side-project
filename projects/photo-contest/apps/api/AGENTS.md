@@ -13,7 +13,7 @@
 | `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·익명 세션·로그아웃, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `profile/`은 개인 사진 S3 업로드·프로필 편집·가입 설정 완료, `@Viewer()`/`@OptionalViewer()` |
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·presigned 대회 업로드 발급·완료·사진 조회(`GET /photos/:id` 307) |
 | `media-upload/` | 게시물·대회·대표 사진의 최종 키 서명 발급, 소유권·만료·용도 확인, HEAD로 크기·형식을 본 뒤 완료 |
-| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 60초 서명 GET으로 보내는 `/media/:id` 307 |
+| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 서명 GET(사진 60초·동영상 10분)으로 보내는 `/media/:id` 307 |
 | `feed/` | `myPhotoFeed`: 가입한 모든 그룹의 공개 사진을 전체 최신순(createdAt·id desc)으로 offset 조회. 홈에는 관리자도 숨긴 사진·신고 정보를 받지 않는다 |
 | `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·인증 시도·요청 제한 버킷) — 테스트는 `SchedulerService.runOnce()` |
 | `testing/` | NODE_ENV=test에서 createApp({ testFixtures: true })로 등록한 경우에만 사용자·세션·단계 fixture를 만든다 |
@@ -66,7 +66,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
 
-Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 60초 presigned GET을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·통합 테스트도 실제 AWS S3를 사용하며 테스트 객체는 tests/<실행 ID>/로 격리한다.
+Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 presigned GET(사진 60초, 동영상 10분 — `MEDIA_URL_TTL_SECONDS`, 키의 확장자로 고른다)을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·통합 테스트도 실제 AWS S3를 사용하며 테스트 객체는 tests/<실행 ID>/로 격리한다.
 
 GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
 

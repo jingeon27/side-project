@@ -34,7 +34,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 작성자와 OWNER·MODERATOR만 삭제한다. 파일도 매 요청 공개 범위·멤버십을 확인한다. 이관된 사진은 기존 Submission의 숨김도 검사한다.
 - 게시물 업로드는 requestPostUpload(groupId, contentType, byteSize) → 저장소 FormData POST → completePostUpload → createPost다. 발급할 때 멤버십·허용 형식·크기를 확인하고 최종 키에 키·Content-Type·정확한 크기·만료를 POST 정책으로 고정한다. 완료는 티켓 소유·만료·용도를 확인하고 HEAD로 크기·형식만 본 뒤 같은 트랜잭션에서 권한을 다시 확인해 stagingKey를 storageKey로 옮긴다. 완료한 storageKey만 게시에 쓴다. uploadPostMedia와 /post-uploads는 제공하지 않는다.
 - 게시물 POST 티켓은 15분, 완료 후 등록은 1시간이다. 사진 JPEG/PNG/WebP 10MB, 동영상 MP4/WebM 100MB만 발급한다. 서버는 파일 내용을 읽거나 변환·메타데이터 제거를 하지 않는다(사용자 결정). 동영상 길이는 웹이 올리기 전에만 확인한다. staging 복사가 없으므로 정책 만료 전에는 같은 크기·형식으로 다시 올릴 수 있다. 정리 작업은 만료된 미완료 키와 쓰지 않은 파일을 재시도하며 지운다.
-- /media/:id·/media/:id/download는 readablePost로 권한을 확인한 뒤 `private, no-store` 307로 60초 서명 GET에 보낸다(Range·다운로드 이름은 저장소가 처리). 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
+- /media/:id·/media/:id/download는 readablePost로 권한을 확인한 뒤 `private, no-store` 307로 서명 GET에 보낸다(사진 60초, 최대 100MB 동영상은 재생·탐색이 끊기지 않게 10분. Range·다운로드 이름은 저장소가 처리). 저장소 I/O는 트랜잭션 밖에서 한다. 파일 삭제 실패 시 만료 PostUpload를 남겨 maintenance가 재시도한다.
 - 댓글 읽기는 readablePost, 쓰기·삭제는 accessiblePost로 공개 범위·멤버십·숨김 규칙을 적용한다. 본문은 trim 후 1~1000자, 최신순(createdAt·id desc) offset 목록이다. 작성자·관리자만 삭제하며 개수는 게시물 조회의 _count로 함께 구한다. 댓글 내용은 이벤트에 넣지 않는다.
 - 생성·좋아요·삭제 도메인 이벤트는 같은 DB 트랜잭션에 ID·종류만 기록한다.
 
@@ -81,4 +81,4 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 
 Service에서 Database(Prisma)를 직접 사용한다. Repository 전달 계층을 만들지 않으며 UnitOfWork.atomic의 tx를 모든 권한·읽기·쓰기·이벤트에 전달한다.
 
-게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 60초 presigned GET(attachment)을 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.
+게시물은 파일 또는 linkUrl 중 하나 이상을 요구한다. uploadId가 없는 링크 글도 반응·댓글·대회·삭제 권한은 동일하며 파일 정리를 실행하지 않는다. postDownload는 기존 읽기 권한을 먼저 검사하고 같은 수명(사진 60초, 동영상 10분)의 presigned GET(attachment)을 돌려준다. URL·파일명·만료를 반환하고 다운로드 주소를 공개 SEO·영구 상태에 넣지 않는다.

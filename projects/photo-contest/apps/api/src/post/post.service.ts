@@ -7,12 +7,7 @@ import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { pageRange, textValue } from '../common/validation';
-import {
-  MEDIA_URL_TTL_SECONDS,
-  PAGE_SIZE_DEFAULT,
-  POST_BODY_LIMIT,
-  POST_TITLE_LIMIT,
-} from '../config/limits';
+import { PAGE_SIZE_DEFAULT, POST_BODY_LIMIT, POST_TITLE_LIMIT } from '../config/limits';
 import { assertContestParticipation } from '../contest/group-contest.policy';
 import { Database, type TDatabaseClient } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
@@ -21,7 +16,7 @@ import { MembershipService } from '../group/membership.service';
 import { MediaUploadService } from '../media-upload/media-upload.service';
 import { reportUnexpectedError } from '../monitoring/sentry';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
-import { MediaStorage } from '../storage/media-storage.service';
+import { MediaStorage, mediaUrlTtlSeconds } from '../storage/media-storage.service';
 import { mediaDownloadDisposition, mediaDownloadFilename } from './media-download.policy';
 import { postLink } from './post-link.policy';
 import { koreanMonth } from './post-order';
@@ -322,6 +317,7 @@ export class PostService {
   async download(viewer: IViewer | null, postId: string) {
     const file = await this.file(viewer, postId);
     const url = await this.storage.presignRead(file.key, mediaDownloadDisposition(file.filename));
-    return { url, filename: file.filename, expiresAt: new Date(Date.now() + MEDIA_URL_TTL_SECONDS * 1000) };
+    const expiresAt = new Date(Date.now() + mediaUrlTtlSeconds(file.key) * 1000);
+    return { url, filename: file.filename, expiresAt };
   }
 }
