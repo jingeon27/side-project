@@ -47,7 +47,7 @@
     "@graphql-codegen/typed-document-node": "^7.2.0",
     "@graphql-codegen/typescript-operations": "^6.1.10",
     "@photo-contest/test-kit": "workspace:*",
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "1.64.0",
     "@side/config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.0",
     "@testing-library/dom": "^10.4.1",

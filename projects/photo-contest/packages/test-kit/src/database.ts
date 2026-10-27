@@ -19,6 +19,8 @@ export type TTestSchemaPrefix = (typeof TEST_SCHEMA_PREFIXES)[number];
 
 const OWNED_SCHEMA = new RegExp(`^(?:${TEST_SCHEMA_PREFIXES.join('|')})_[0-9a-f]{32}$`);
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+/** GitHub Actions의 Playwright 컨테이너 job은 같은 job의 서비스 컨테이너 이름으로만 테스트 DB에 닿는다. */
+const CI_SERVICE_HOST = 'postgres';
 const TEST_DATABASE_NAME = 'photo_contest_test';
 const DEFAULT_TEST_PORT = '55434';
 const DEFAULT_DEVELOPMENT_PORT = '55432';
@@ -42,8 +44,15 @@ export function assertTestSchemaName(schema: string, prefix?: TTestSchemaPrefix)
   return schema;
 }
 
+function isTestDatabaseHost(hostname: string) {
+  return (
+    LOOPBACK_HOSTS.has(hostname) || (process.env.GITHUB_ACTIONS === 'true' && hostname === CI_SERVICE_HOST)
+  );
+}
+
 /**
  * 테스트 DB는 loopback의 전용 포트(기본 55434, LOCAL_TEST_POSTGRES_PORT)·photo_contest_test만 허용한다.
+ * GitHub Actions에서는 서비스 컨테이너 postgres도 허용하며 포트·DB 이름 조건은 같다.
  * 개발 DB(55432)나 원격 DB에는 스키마를 만들거나 지우지 않는다.
  */
 export function assertTestDatabaseUrl(databaseUrl: string) {
@@ -52,8 +61,10 @@ export function assertTestDatabaseUrl(databaseUrl: string) {
   const port = testDatabasePort();
   if (url.protocol !== 'postgresql:' && url.protocol !== 'postgres:')
     throw new Error('테스트 DB는 PostgreSQL URL만 허용합니다.');
-  if (!LOOPBACK_HOSTS.has(url.hostname))
-    throw new Error('테스트 DB는 loopback 주소(127.0.0.1·localhost·[::1])만 허용합니다.');
+  if (!isTestDatabaseHost(url.hostname))
+    throw new Error(
+      '테스트 DB는 loopback 주소(127.0.0.1·localhost·[::1])만 허용합니다. GitHub Actions에서는 서비스 컨테이너 postgres도 허용합니다.',
+    );
   if (url.port !== port) throw new Error(`테스트 DB는 전용 포트 ${port}만 허용합니다.`);
   if (url.pathname !== `/${TEST_DATABASE_NAME}`)
     throw new Error(`테스트 DB는 ${TEST_DATABASE_NAME} 데이터베이스만 허용합니다.`);

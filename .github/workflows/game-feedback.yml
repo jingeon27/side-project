@@ -48,6 +48,11 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # Browsers and their system libraries are preinstalled, so the job skips apt. Keep the tag equal to @playwright/test.
+    # User 1001 is the image's pwuser, so the embedded test PostgreSQL does not start as root.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
     timeout-minutes: 35
     env:
       GF_S3_BUCKET: ${{ vars.GAME_FEEDBACK_S3_BUCKET }}
@@ -79,13 +84,9 @@ jobs:
       - run: yarn workspace @side/toolkit check
       - run: yarn test:game-feedback
       - run: yarn build:game-feedback
-      - name: Install browsers for end-to-end and telemetry checks
-        id: browsers
-        if: always() && !cancelled() && steps.install.outcome == 'success'
-        run: yarn workspace @game-feedback/web exec playwright install --with-deps chromium webkit
       - run: yarn workspace @side/game-feedback test:e2e
       - name: Verify telemetry with intercepted SDK requests
-        if: always() && !cancelled() && steps.browsers.outcome == 'success'
+        if: always() && !cancelled() && steps.install.outcome == 'success'
         env:
           GF_OBSERVABILITY_PRODUCTION: 'true'
         run: yarn workspace @game-feedback/web test:observability
