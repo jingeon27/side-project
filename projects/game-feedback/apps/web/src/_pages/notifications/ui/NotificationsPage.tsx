@@ -16,7 +16,7 @@ import {
 } from '@/features/notification';
 import { PushNotificationSettings } from '@/features/push-notifications';
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
+import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { NotificationsTopbar } from './NotificationsTopbar';
@@ -26,8 +26,7 @@ interface INotificationsPageProps {
 }
 function NotificationsContent({ locale }: INotificationsPageProps) {
   const { t } = useI18n();
-  const { session, login, loading } = useSession();
-  if (loading) return <LoadingState />;
+  const { session, login } = useSession();
   if (!session?.user)
     return (
       <div className="empty-feed">

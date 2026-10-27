@@ -23,9 +23,8 @@ interface IMessagesPageProps {
 
 export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
   const { t } = useI18n();
-  const { session, loading, login } = useSession();
+  const { session, login } = useSession();
   const userId = session?.user?.id;
-  if (loading) return <LoadingState text={t('메시지 공간을 준비하고 있어요')} />;
   if (!userId)
     return (
       <div className="empty-feed">

@@ -1,13 +1,22 @@
 import { queryOptions, skipToken } from '@tanstack/react-query';
-import { compact } from 'es-toolkit';
 
 import { fetchGameAccounts, fetchGameProfile } from '../api/game-profile.api';
 
-export function gameAccountListOptions(userId?: string) {
+function accountScope() {
+  return queryOptions({ queryKey: ['accounts'], queryFn: skipToken });
+}
+function createGameAccountListOptions(userId: string) {
   return queryOptions({
-    queryKey: compact(['accounts', userId]),
-    queryFn: userId ? ({ signal }) => fetchGameAccounts({ signal }) : skipToken,
+    queryKey: [...accountScope().queryKey, userId],
+    queryFn: ({ signal }) => fetchGameAccounts({ signal }),
   });
+}
+export function gameAccountListOptions(userId: string): ReturnType<typeof createGameAccountListOptions>;
+export function gameAccountListOptions(
+  userId?: string,
+): ReturnType<typeof createGameAccountListOptions> | ReturnType<typeof accountScope>;
+export function gameAccountListOptions(userId?: string) {
+  return userId ? createGameAccountListOptions(userId) : accountScope();
 }
 function profileScope() {
   return queryOptions({ queryKey: ['game-profile'], queryFn: skipToken });

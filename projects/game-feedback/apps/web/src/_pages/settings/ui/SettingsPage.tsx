@@ -2,24 +2,24 @@
 
 import Link from 'next/link';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, Gamepad2, LogOut, Plus, ShieldBan, Trash2 } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpRight, Gamepad2, LogOut, Trash2 } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 
 import { logoutMutationOptions, useSession } from '@/features/auth';
-import { gameAccountListOptions } from '@/features/game-profile';
-import { blockListOptions, unblockUserMutationOptions, UserBadges } from '@/features/user';
+import { UserBadges } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { formatDate } from '@/shared/lib/date';
 import { ChildLink } from '@/shared/navigation';
-import { Avatar, ErrorNotice, LoadingState, openOverlay, useNotify } from '@/shared/ui';
+import { Avatar, ErrorNotice, openOverlay, useNotify } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
-import { ConnectProfile, GameAccountCard } from '@/widgets/game-profile';
 import { SupportChatButton } from '@/widgets/support';
 
+import { BlockedUsersSection } from './BlockedUsersSection';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { GameAccountsSection } from './GameAccountsSection';
 import { LanguageSettings } from './LanguageSettings';
 import { MyPosts } from './MyPosts';
 import { SettingsTopbar } from './SettingsTopbar';
@@ -28,9 +28,6 @@ import { ThemeSettings } from './ThemeSettings';
 interface ISettingsPageProps {
   locale: string;
 }
-function openProfileConnection() {
-  openOverlay((control) => <ConnectProfile {...control} onSaved={() => control.onOpenChange(false)} />);
-}
 function openAccountDeletion() {
   openOverlay((control) => <DeleteAccountDialog {...control} />);
 }
@@ -38,15 +35,10 @@ function SettingsContent({ locale }: ISettingsPageProps) {
   const client = useQueryClient();
   const notify = useNotify();
   const { t, locale: textLocale } = useI18n();
-  const { session, login, loading } = useSession();
-  const accounts = useQuery(gameAccountListOptions(session?.user?.id));
-  const blocks = useQuery(blockListOptions(session?.user?.id));
+  const { session, login } = useSession();
   const logout = useMutation(
     logoutMutationOptions(client, () => notify(t('로그아웃했어요. 다음 플레이에서 만나요!'))),
   );
-  const unblock = useMutation(unblockUserMutationOptions(client, () => notify(t('차단을 해제했어요.'))));
-  const blockError = blocks.error?.message ?? unblock.error?.message;
-  if (loading) return <LoadingState />;
   if (!session?.user)
     return (
       <>
@@ -92,59 +84,8 @@ function SettingsContent({ locale }: ISettingsPageProps) {
         </div>
       </section>
       <MyPosts locale={locale} userId={session.user.id} />
-      <section className="settings-card game-accounts" aria-labelledby="game-accounts-title">
-        <div className="section-title-row game-accounts-heading">
-          <h2 id="game-accounts-title">
-            <Gamepad2 size={20} aria-hidden />
-            {t('게임 계정')}
-          </h2>
-          <Button type="button" variant="secondary" size="sm" onClick={() => openProfileConnection()}>
-            <Plus size={16} aria-hidden />
-            {t('계정 등록')}
-          </Button>
-        </div>
-        <p className="muted small">
-          {t('게임 계정은 내 사용자 계정에 등록됩니다. 프로필 인증은 관리자에게 문의해주세요.')}
-        </p>
-        {accounts.isPending && <LoadingState />}
-        <ErrorNotice message={accounts.error && t(accounts.error.message)} />
-        <div className="game-account-list">
-          {accounts.data?.map((profile) => (
-            <GameAccountCard key={profile.playerTag} profile={profile} />
-          ))}
-        </div>
-      </section>
-      <section className="settings-card">
-        <div className="section-title-row">
-          <h2>
-            <ShieldBan size={19} />
-            {t('차단한 사용자')}
-          </h2>
-          <span className="small muted">
-            {blocks.data?.length ?? 0}
-            {t('명')}
-          </span>
-        </div>
-        <ErrorNotice message={blockError && t(blockError)} />
-        {blocks.data?.length === 0 && <p className="muted small">{t('차단한 사용자가 없어요.')}</p>}
-        {blocks.data?.map((person) => (
-          <div className="blocked-user" key={person.id}>
-            <Avatar src={person.avatarUrl} name={person.nickname} size="small" />
-            <strong>{person.nickname}</strong>
-            <UserBadges author={person} compact />
-            <Button
-              variant="secondary"
-              size="sm"
-              type="submit"
-              className="button outline small-button"
-              disabled={unblock.isPending}
-              onClick={() => unblock.mutate({ userId: person.id })}
-            >
-              {t('차단 해제')}
-            </Button>
-          </div>
-        ))}
-      </section>
+      <GameAccountsSection userId={session.user.id} />
+      <BlockedUsersSection userId={session.user.id} />
       <section className="settings-card form-stack">
         <h2>{t('인증과 문의')}</h2>
         {session.user.bannedAt && (
