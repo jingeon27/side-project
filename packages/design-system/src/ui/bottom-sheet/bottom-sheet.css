@@ -24,7 +24,8 @@
     background: var(--color-surface);
     color: var(--color-ink);
     box-shadow: var(--shadow-sheet);
-    outline: none;
+    /* 포커스를 받는 컨테이너라 링은 숨기되 forced-colors에서는 Tailwind outline-hidden처럼 보이게 둔다. */
+    outline-style: none;
     overflow: hidden;
     transform: translateY(calc(var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px)));
     transition: transform 250ms var(--ease-sheet);
@@ -32,6 +33,11 @@
   .ds-sheet-popup[data-starting-style],
   .ds-sheet-popup[data-ending-style] {
     transform: translateY(100%);
+  }
+  @media (forced-colors: active) {
+    .ds-sheet-popup {
+      outline: 2px solid transparent;
+    }
   }
   .ds-sheet-popup[data-swiping] {
     transition: none;

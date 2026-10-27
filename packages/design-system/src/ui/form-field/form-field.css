@@ -12,7 +12,6 @@
     font-size: var(--text-input);
     line-height: var(--text-input--line-height);
     letter-spacing: var(--text-input--letter-spacing);
-    outline: none;
     transition:
       border-color 150ms,
       background-color 150ms;

@@ -19,5 +19,6 @@ it('포커스할 내용이 없는 패널도 Tab으로 들어가면 포커스 링
   await user.tab();
   const panel = screen.getByRole('tabpanel', { name: '최신 글' });
   expect(panel).toHaveFocus();
-  expect(panel).toHaveClass('focus-visible:ring-3', 'focus-visible:ring-ring/50');
+  // 패널은 전역 :focus-visible outline을 그대로 쓴다(outline-none·ring으로 바꾸면 forced-colors에서 사라진다).
+  expect(panel.className).not.toMatch(/outline-(none|hidden)|focus-visible:ring/);
 });

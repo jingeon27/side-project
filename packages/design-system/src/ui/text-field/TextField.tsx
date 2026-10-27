@@ -5,7 +5,7 @@ import { Field } from '@base-ui/react/field';
 import { cn } from '../../lib/cn.helper';
 
 const CONTROL_CLASS_NAME = cn(
-  'w-full rounded-control border border-line-strong bg-surface px-3.5 text-input text-ink outline-none transition-colors',
+  'w-full rounded-control border border-line-strong bg-surface px-3.5 text-input text-ink transition-colors',
   'placeholder:text-subtle focus:border-brand data-disabled:bg-sunken data-disabled:text-muted data-invalid:border-danger',
 );
 

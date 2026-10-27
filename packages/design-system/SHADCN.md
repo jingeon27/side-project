@@ -16,6 +16,7 @@ Web과 이 패키지의 components.json은 base-nova/neutral/lucide 설정을 �
 - Input, Textarea, NativeSelect는 ref와 native 이벤트를 전달한다. FormField는 context로 이 컨트롤의 레이블/설명/오류를 연결하므로 RHF register를 그대로 사용할 수 있다. NativeSelect 래퍼는 label 안에 둘 수 있게 원본의 div 대신 span을 쓴다. Checkbox의 boolean 필드는 RHF Controller로 연결한다.
 - Tabs는 Base UI의 방향키/포커스/ARIA 동작을 제공한다. 피드의 선택값은 앱 URL에서 제어한다.
 - 스타일은 공통 theme.css에서 파생한 shadcn.css가 primary/ring/border/input-border/foreground/popover 토큰을 연결한다. 기존 text-input 글자 크기와 text-input 색상 유틸리티가 충돌하지 않게 input 색 토큰은 input-border로 사용한다. 기존 muted 글자색을 배경색으로 재해석하지 않고 muted surface는 neutral-soft에 연결한다.
+- registry 원본의 `outline-none` + `focus-visible:ring-*` 포커스 표시는 쓰지 않는다. 포커스는 base.css의 `:focus-visible` outline(`focus-ring` 토큰)이 그리고, 팝업 컨테이너만 forced-colors에서 보이는 `outline-hidden`을 쓴다(`focus-ring.test.ts`).
 - registry 원본의 tw-animate-css 클래스(`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*`)와 정의 없는 `accent-foreground`는 쓰지 않는다. 팝업 전환은 Base UI의 `data-starting-style`·`data-ending-style`로 만들고 `tailwind-utilities.test.ts`가 ui 클래스가 모두 생성되는지 확인한다.
 - 입력은 16px, 기본 조작 영역은 44px 이상을 유지한다. NativeSelect는 모바일 OS 선택창을 사용하며 WYSIWYG와 파일 업로드의 전용 DOM은 앱이 소유한다.
 
