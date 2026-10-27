@@ -170,6 +170,7 @@ model Post {
   @@index([createdAt,id])
   @@index([categoryId,createdAt])
   @@index([board,createdAt,id])
+  @@index([authorId,createdAt])
 }
 model PostView {
   postId String
@@ -194,6 +195,7 @@ model Answer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([postId,createdAt])
+  @@index([authorId])
 }
 model Comment {
   id String @id @default(cuid())
@@ -239,6 +241,8 @@ model Notification {
   createdAt DateTime @default(now())
   @@index([userId,createdAt,id])
   @@index([commentId])
+  @@index([postId])
+  @@index([answerId])
 }
 model Report {
   id String @id @default(cuid())
@@ -261,6 +265,7 @@ model Block {
   blockedUser User @relation("blocked",fields:[blockedUserId],references:[id],onDelete:Cascade)
   createdAt DateTime @default(now())
   @@unique([userId,blockedUserId])
+  @@index([blockedUserId])
 }
 model AuditLog {
   id String @id @default(cuid())
