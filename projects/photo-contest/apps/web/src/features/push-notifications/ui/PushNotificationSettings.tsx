@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useBridge, useNativeApp } from '@/shared/model/bridge';
 import { Button } from '@/shared/ui/@core/button';
 
-import { synchronizePush } from './push-registration';
+import { synchronizePush } from '../lib/push-registration.helper';
 
 export function PushNotificationSettings() {
   const bridge = useBridge();
