@@ -2,46 +2,26 @@
 
 import Link from 'next/link';
 
-import { useFragment, useMutation } from '@apollo/client/react';
-import { Heart, MessageCircle, Video } from 'lucide-react';
+import { useFragment } from '@apollo/client/react';
+import { MessageCircle, Video } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
-import {
-  GalleryPostCardFragmentDoc,
-  GalleryPostsDocument,
-  LikePostDocument,
-  PostKind,
-  UnlikePostDocument,
-} from '@/shared/api/generated';
+import { GalleryPostCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatCount, formatDateTime } from '@/shared/lib/format.helper';
-import { useHaptics } from '@/shared/model/bridge';
-import { toast } from '@/shared/model/toast';
 import { Avatar } from '@/shared/ui/@core/avatar';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 
-import { refreshMonthlyPopular } from '../model/post.cache';
 import { PostActionsMenu } from './PostActionsMenu';
 import { PostAttachments } from './PostAttachments';
 import { PostCommentsBottomSheet } from './PostCommentsBottomSheet';
 import { PostDownloadButton } from './PostDownloadButton';
+import { PostLikeButton } from './PostLikeButton';
 
 export function PostCard({ id, preview = false }: { id: string; preview?: boolean }) {
-  const haptics = useHaptics();
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id },
-  });
-  const [like, likeState] = useMutation(LikePostDocument, {
-    refetchQueries: [GalleryPostsDocument],
-    onQueryUpdated: refreshMonthlyPopular,
-    awaitRefetchQueries: true,
-    onCompleted: () => haptics.impact('light'),
-  });
-  const [unlike, unlikeState] = useMutation(UnlikePostDocument, {
-    refetchQueries: [GalleryPostsDocument],
-    onQueryUpdated: refreshMonthlyPopular,
-    awaitRefetchQueries: true,
   });
   if (!complete) return null;
 
@@ -96,32 +76,7 @@ export function PostCard({ id, preview = false }: { id: string; preview?: boolea
             </ButtonLink>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="md"
-                className="gap-1.5 rounded-full px-2 aria-pressed:bg-danger-soft aria-pressed:text-danger"
-                aria-label={`${post.title} 좋아요`}
-                aria-pressed={post.likedByMe}
-                loading={likeState.loading || unlikeState.loading}
-                onClick={async () => {
-                  if (!post.canInteract) {
-                    toast.info('그룹에 가입하면 좋아요를 남길 수 있어요.');
-                    return;
-                  }
-                  try {
-                    await (post.likedByMe ? unlike : like)({ variables: { postId: id } });
-                  } catch {
-                    /* ErrorLink가 알린다. */
-                  }
-                }}
-              >
-                <Heart
-                  aria-hidden
-                  strokeWidth={1.7}
-                  className={post.likedByMe ? 'size-5 fill-danger text-danger' : 'size-5'}
-                />
-                <span className="text-caption">좋아요 {formatCount(post.likeCount)}개</span>
-              </Button>
+              <PostLikeButton postId={id} />
               <Button
                 variant="ghost"
                 size="md"

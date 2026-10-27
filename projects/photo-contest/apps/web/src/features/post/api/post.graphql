@@ -93,12 +93,16 @@ mutation CreatePost(
 }
 mutation LikePost($postId: ID!) {
   likePost(postId: $postId) {
-    ...GalleryPostCard
+    id
+    likeCount
+    likedByMe
   }
 }
 mutation UnlikePost($postId: ID!) {
   unlikePost(postId: $postId) {
-    ...GalleryPostCard
+    id
+    likeCount
+    likedByMe
   }
 }
 mutation DeletePost($postId: ID!) {
