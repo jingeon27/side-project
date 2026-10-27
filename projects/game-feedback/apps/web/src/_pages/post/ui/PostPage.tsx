@@ -105,7 +105,13 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
       {post.author.id === session.user?.id && <VerificationPrompt />}
       {isFeedback && (
         <ServiceErrorBoundary title={t('답변')} resetKey={id}>
-          <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
+          <PostAnswersSection
+            post={post}
+            answers={answers}
+            cursor={detail.data.answersCursor}
+            userId={session?.user?.id}
+            locale={locale}
+          />
         </ServiceErrorBoundary>
       )}
       <ServiceErrorBoundary title={t('댓글')} resetKey={id}>

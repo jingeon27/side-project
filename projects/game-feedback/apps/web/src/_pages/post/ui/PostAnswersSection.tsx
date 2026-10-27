@@ -1,8 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { uniqBy } from 'es-toolkit';
 import { MessageSquare } from 'lucide-react';
 
-import { AnswerCard } from '@/features/answer';
+import { Button } from '@side/design-system';
+
+import { AnswerCard, laterAnswerOptions } from '@/features/answer';
 import { AuthorLink, UserBadges } from '@/features/user';
 import type { Answer, Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -14,28 +20,51 @@ import { HelpfulAnswerButton } from './HelpfulAnswerButton';
 interface IPostAnswersSectionProps {
   post: Post;
   answers: Answer[];
+  /** 상세 첫 페이지 다음 답변의 커서. 없으면 모두 받은 상태다. */
+  cursor: string | null;
   userId?: string;
   locale: string;
 }
-export function PostAnswersSection({ post, answers, userId, locale }: IPostAnswersSectionProps) {
+export function PostAnswersSection({ post, answers, cursor, userId, locale }: IPostAnswersSectionProps) {
   const { t } = useI18n();
+  const [showLater, setShowLater] = useState(false);
+  const later = useInfiniteQuery({ ...laterAnswerOptions(post.id, cursor), enabled: showLater && !!cursor });
+  // 페이지는 도움됨 → 오래된 순으로 이어지므로 받은 순서대로 뒤에 붙인다.
+  const loaded = uniqBy(
+    [...answers, ...(later.data?.pages ?? []).flatMap((page) => page.items)],
+    (answer) => answer.id,
+  );
+  const hasLater = !!cursor && (!showLater || later.isPending || later.isError || later.hasNextPage);
+
+  function handleShowLater() {
+    if (!showLater) {
+      setShowLater(true);
+      return;
+    }
+    if (!later.data) {
+      void later.refetch();
+      return;
+    }
+    void later.fetchNextPage();
+  }
+
   return (
     <section className="answers-section">
       <div className="section-title-row">
         <h2>
           {t('함께 나눈 피드백')}
-          <span>{answers.length}</span>
+          <span>{Math.max(post.answerCount, loaded.length)}</span>
         </h2>
         <span className="small muted">{t('플레이를 이야기하고, 서로를 존중해요')}</span>
       </div>
-      {answers.length === 0 && (
+      {loaded.length === 0 && !hasLater && (
         <div className="empty-answers">
           <MessageSquare size={26} />
           <strong>{t('첫 번째 피드백을 기다리고 있어요')}</strong>
           <p>{t('비슷한 경험이나 작은 팁부터 나눠주세요.')}</p>
         </div>
       )}
-      {answers.map((answer) => (
+      {loaded.map((answer) => (
         <AnswerCard
           key={answer.id}
           answer={answer}
@@ -58,6 +87,22 @@ export function PostAnswersSection({ post, answers, userId, locale }: IPostAnswe
           }
         />
       ))}
+      {hasLater && (
+        <div className="answers-later">
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            disabled={later.isFetching}
+            onClick={handleShowLater}
+          >
+            {later.isFetching ? t('답변을 더 불러오고 있어요') : t('답변 더 보기')}
+          </Button>
+          {later.isError && !later.isFetching && (
+            <p role="alert">{t('답변을 더 불러오지 못했어요. 다시 시도해주세요.')}</p>
+          )}
+        </div>
+      )}
       <AnswerComposer postId={post.id} />
     </section>
   );

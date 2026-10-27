@@ -1,4 +1,5 @@
 export { AnswerCard } from './ui/AnswerCard';
+export { laterAnswerOptions } from './model/answer.options';
 export {
   createAnswerMutationOptions,
   updateAnswerMutationOptions,
