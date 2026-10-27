@@ -1699,7 +1699,7 @@ __metadata:
     "@mdx-js/mdx": "npm:^3.1.1"
     "@mdx-js/react": "npm:^3.1.1"
     "@next/mdx": "npm:16.4.3"
-    "@playwright/test": "npm:^1.64.0"
+    "@playwright/test": "npm:1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
     "@side/config": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.1.0"
@@ -3006,7 +3006,7 @@ __metadata:
     "@game-feedback/contracts": "workspace:*"
     "@game-feedback/sdk": "workspace:*"
     "@hookform/resolvers": "npm:^5.2.2"
-    "@playwright/test": "npm:^1.64.0"
+    "@playwright/test": "npm:1.64.0"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.1.16"
@@ -3149,7 +3149,7 @@ __metadata:
     "@hookform/resolvers": "npm:^5.2.2"
     "@microsoft/fetch-event-source": "npm:2.0.1"
     "@next/playwright": "npm:16.4.3"
-    "@playwright/test": "npm:^1.64.0"
+    "@playwright/test": "npm:1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
@@ -6010,7 +6010,7 @@ __metadata:
     "@hookform/resolvers": "npm:^5.4.0"
     "@photo-contest/bridge": "workspace:*"
     "@photo-contest/test-kit": "workspace:*"
-    "@playwright/test": "npm:^1.64.0"
+    "@playwright/test": "npm:1.64.0"
     "@sentry/nextjs": "npm:^11.7.0"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
@@ -6042,7 +6042,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@playwright/test@npm:1.64.0, @playwright/test@npm:^1.64.0":
+"@playwright/test@npm:1.64.0":
   version: 1.64.0
   resolution: "@playwright/test@npm:1.64.0"
   dependencies:
