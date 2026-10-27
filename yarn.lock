@@ -33,7 +33,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@amplitude/analytics-browser@npm:^2.47.4":
+"@amplitude/analytics-browser@npm:2.47.4":
   version: 2.47.4
   resolution: "@amplitude/analytics-browser@npm:2.47.4"
   dependencies:
@@ -546,7 +546,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:3.1149.0, @aws-sdk/client-s3@npm:^3.0.0":
+"@aws-sdk/client-s3@npm:3.1149.0":
   version: 3.1149.0
   resolution: "@aws-sdk/client-s3@npm:3.1149.0"
   dependencies:
@@ -1646,7 +1646,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@base-ui/react@npm:^1.9.0":
+"@base-ui/react@npm:1.9.0":
   version: 1.9.0
   resolution: "@base-ui/react@npm:1.9.0"
   dependencies:
@@ -1698,47 +1698,47 @@ __metadata:
     "@mdx-js/loader": "npm:^3.1.1"
     "@mdx-js/mdx": "npm:^3.1.1"
     "@mdx-js/react": "npm:^3.1.1"
-    "@next/mdx": "npm:16.4.3"
-    "@playwright/test": "npm:1.64.0"
-    "@sentry/nextjs": "npm:^11.7.0"
+    "@next/mdx": "catalog:"
+    "@playwright/test": "catalog:"
+    "@sentry/nextjs": "catalog:"
     "@side/config": "workspace:*"
-    "@tailwindcss/postcss": "npm:^4.1.0"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/jest-dom": "npm:^6.9.0"
-    "@testing-library/react": "npm:^16.3.0"
-    "@testing-library/user-event": "npm:^14.6.0"
+    "@tailwindcss/postcss": "catalog:"
+    "@testing-library/dom": "catalog:"
+    "@testing-library/jest-dom": "catalog:"
+    "@testing-library/react": "catalog:"
+    "@testing-library/user-event": "catalog:"
     "@types/mdx": "npm:^2.0.13"
-    "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:~19.3.0"
-    "@types/react-dom": "npm:~19.3.0"
-    "@vitejs/plugin-react": "npm:^5.0.0"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    "@vitejs/plugin-react": "catalog:"
     cmdk: "npm:^1.1.1"
-    eslint: "npm:^9.39.0"
-    eslint-config-next: "npm:16.4.3"
+    eslint: "catalog:"
+    eslint-config-next: "catalog:"
     github-slugger: "npm:^2.0.0"
     image-size: "npm:^2.0.2"
-    jiti: "npm:^2.6.1"
-    jsdom: "npm:^29.0.0"
+    jiti: "catalog:"
+    jsdom: "catalog:"
     mdast-util-to-string: "npm:^4.0.0"
-    next: "npm:16.4.3"
+    next: "catalog:"
     next-intl: "npm:^4.14.9"
-    prettier: "npm:^3.9.0"
-    react: "npm:~19.3.1"
-    react-dom: "npm:~19.3.1"
+    prettier: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
     rehype-pretty-code: "npm:^0.14.5"
     rehype-slug: "npm:^6.0.0"
     remark-gfm: "npm:^4.0.1"
     remark-mdx: "npm:^3.1.1"
     remark-parse: "npm:^11.0.0"
     shiki: "npm:^4.5.0"
-    tailwindcss: "npm:^4.1.0"
-    tsx: "npm:^4.20.0"
-    typescript: "npm:6.0.2"
+    tailwindcss: "catalog:"
+    tsx: "catalog:"
+    typescript: "catalog:"
     unified: "npm:^11.0.5"
     unist-util-visit: "npm:^5.0.0"
-    vite: "npm:^7.0.0"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.4.0"
+    vite: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3005,29 +3005,29 @@ __metadata:
   dependencies:
     "@game-feedback/contracts": "workspace:*"
     "@game-feedback/sdk": "workspace:*"
-    "@hookform/resolvers": "npm:^5.2.2"
-    "@playwright/test": "npm:1.64.0"
+    "@hookform/resolvers": "catalog:"
+    "@playwright/test": "catalog:"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
-    "@tailwindcss/postcss": "npm:^4.1.16"
-    "@tanstack/react-query": "npm:^5.90.0"
-    "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:~19.3.0"
-    "@types/react-dom": "npm:~19.3.0"
-    "@vitejs/plugin-react": "npm:^5.0.0"
-    dayjs: "npm:1.11.18"
-    es-toolkit: "npm:^1.52.0"
-    eslint: "npm:^9.39.0"
-    jiti: "npm:^2.6.1"
-    react: "npm:~19.3.1"
-    react-dom: "npm:~19.3.1"
-    react-hook-form: "npm:^7.65.0"
-    tailwindcss: "npm:^4.1.16"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
-    vite: "npm:^7.0.0"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.1.12"
+    "@tailwindcss/postcss": "catalog:"
+    "@tanstack/react-query": "catalog:"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    "@vitejs/plugin-react": "catalog:"
+    dayjs: "catalog:"
+    es-toolkit: "catalog:"
+    eslint: "catalog:"
+    jiti: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
+    react-hook-form: "catalog:"
+    tailwindcss: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vite: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3035,33 +3035,33 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/api@workspace:projects/game-feedback/apps/api"
   dependencies:
-    "@aws-sdk/client-s3": "npm:3.1149.0"
-    "@aws-sdk/s3-presigned-post": "npm:3.1149.0"
-    "@aws-sdk/s3-request-presigner": "npm:3.1149.0"
+    "@aws-sdk/client-s3": "catalog:"
+    "@aws-sdk/s3-presigned-post": "catalog:"
+    "@aws-sdk/s3-request-presigner": "catalog:"
     "@game-feedback/contracts": "workspace:*"
-    "@nestjs/common": "npm:^12.2.0"
-    "@nestjs/core": "npm:^12.2.0"
-    "@nestjs/platform-express": "npm:^12.2.0"
-    "@prisma/adapter-pg": "npm:7.10.1"
-    "@prisma/client": "npm:7.10.1"
-    "@sentry/node": "npm:11.7.0"
+    "@nestjs/common": "catalog:"
+    "@nestjs/core": "catalog:"
+    "@nestjs/platform-express": "catalog:"
+    "@prisma/adapter-pg": "catalog:"
+    "@prisma/client": "catalog:"
+    "@sentry/node": "catalog:"
     "@side/config": "workspace:*"
     "@side/toolkit": "workspace:*"
-    "@types/express": "npm:^5.0.3"
-    "@types/node": "npm:^24.0.0"
-    "@types/supertest": "npm:^6.0.3"
-    es-toolkit: "npm:^1.52.0"
-    express: "npm:^5.1.0"
-    prisma: "npm:7.10.1"
-    reflect-metadata: "npm:^0.2.2"
-    rxjs: "npm:^7.8.2"
-    sharp: "npm:^0.35.5"
-    supertest: "npm:^7.1.4"
-    ts-pattern: "npm:^5.9.0"
-    tsx: "npm:^4.20.6"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.0.0"
-    zod: "npm:^4.1.12"
+    "@types/express": "catalog:"
+    "@types/node": "catalog:"
+    "@types/supertest": "catalog:"
+    es-toolkit: "catalog:"
+    express: "catalog:"
+    prisma: "catalog:"
+    reflect-metadata: "catalog:"
+    rxjs: "catalog:"
+    sharp: "catalog:"
+    supertest: "catalog:"
+    ts-pattern: "catalog:"
+    tsx: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3070,11 +3070,11 @@ __metadata:
   resolution: "@game-feedback/bridge@workspace:projects/game-feedback/packages/bridge"
   dependencies:
     "@side/config": "workspace:*"
-    es-toolkit: "npm:^1.52.0"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.1.12"
+    es-toolkit: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3083,8 +3083,8 @@ __metadata:
   resolution: "@game-feedback/contracts@workspace:projects/game-feedback/packages/contracts"
   dependencies:
     "@side/config": "workspace:*"
-    typescript: "npm:6.0.2"
-    zod: "npm:^4.1.12"
+    typescript: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3093,35 +3093,35 @@ __metadata:
   resolution: "@game-feedback/mobile@workspace:projects/game-feedback/apps/mobile"
   dependencies:
     "@game-feedback/bridge": "workspace:*"
-    "@playwright/test": "npm:1.64.0"
-    "@react-native-async-storage/async-storage": "npm:2.2.0"
+    "@playwright/test": "catalog:"
+    "@react-native-async-storage/async-storage": "catalog:"
     "@side/config": "workspace:*"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/react": "npm:^16.3.0"
-    "@types/react": "npm:~19.3.0"
-    es-toolkit: "npm:^1.52.0"
-    eslint: "npm:^9.39.0"
-    expo: "npm:~58.0.19"
-    expo-build-properties: "npm:~58.0.11"
-    expo-constants: "npm:~58.0.13"
-    expo-crypto: "npm:~58.0.7"
-    expo-dev-client: "npm:~58.0.15"
-    expo-device: "npm:~58.0.5"
-    expo-linking: "npm:~58.0.14"
-    expo-notifications: "npm:~58.1.6"
-    expo-status-bar: "npm:~58.0.4"
-    expo-system-ui: "npm:~58.0.6"
-    expo-web-browser: "npm:~58.0.6"
-    jiti: "npm:^2.6.1"
-    jsdom: "npm:^29.0.0"
-    react: "npm:19.3.0"
-    react-dom: "npm:19.3.0"
-    react-native: "npm:0.88.0"
-    react-native-safe-area-context: "npm:~5.10.1"
-    react-native-web: "npm:~0.21.4"
+    "@testing-library/dom": "catalog:"
+    "@testing-library/react": "catalog:"
+    "@types/react": "catalog:"
+    es-toolkit: "catalog:"
+    eslint: "catalog:"
+    expo: "catalog:"
+    expo-build-properties: "catalog:"
+    expo-constants: "catalog:"
+    expo-crypto: "catalog:"
+    expo-dev-client: "catalog:"
+    expo-device: "catalog:"
+    expo-linking: "catalog:"
+    expo-notifications: "catalog:"
+    expo-status-bar: "catalog:"
+    expo-system-ui: "catalog:"
+    expo-web-browser: "catalog:"
+    jiti: "catalog:"
+    jsdom: "catalog:"
+    react: "catalog:expo"
+    react-dom: "catalog:expo"
+    react-native: "catalog:"
+    react-native-safe-area-context: "catalog:"
+    react-native-web: "catalog:"
     react-native-webview: "patch:react-native-webview@npm%3A14.0.1#~/.yarn/patches/react-native-webview-npm-14.0.1-5188b52144.patch"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
+    typescript: "catalog:"
+    vitest: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3130,11 +3130,11 @@ __metadata:
   resolution: "@game-feedback/sdk@workspace:projects/game-feedback/packages/sdk"
   dependencies:
     "@side/config": "workspace:*"
-    "@types/node": "npm:^24.0.0"
+    "@types/node": "catalog:"
     orval: "npm:8.43.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.1.12"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3142,44 +3142,44 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@game-feedback/web@workspace:projects/game-feedback/apps/web"
   dependencies:
-    "@amplitude/analytics-browser": "npm:^2.47.4"
+    "@amplitude/analytics-browser": "catalog:"
     "@game-feedback/bridge": "workspace:*"
     "@game-feedback/contracts": "workspace:*"
     "@game-feedback/sdk": "workspace:*"
-    "@hookform/resolvers": "npm:^5.2.2"
+    "@hookform/resolvers": "catalog:"
     "@microsoft/fetch-event-source": "npm:2.0.1"
-    "@next/playwright": "npm:16.4.3"
-    "@playwright/test": "npm:1.64.0"
-    "@sentry/nextjs": "npm:^11.7.0"
+    "@next/playwright": "catalog:"
+    "@playwright/test": "catalog:"
+    "@sentry/nextjs": "catalog:"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
-    "@tailwindcss/postcss": "npm:^4.1.16"
-    "@tanstack/react-query": "npm:^5.90.0"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/react": "npm:^16.3.0"
-    "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:~19.3.0"
-    "@types/react-dom": "npm:~19.3.0"
-    dayjs: "npm:1.11.18"
-    es-toolkit: "npm:^1.52.0"
-    eslint: "npm:^9.39.0"
+    "@tailwindcss/postcss": "catalog:"
+    "@tanstack/react-query": "catalog:"
+    "@testing-library/dom": "catalog:"
+    "@testing-library/react": "catalog:"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    dayjs: "catalog:"
+    es-toolkit: "catalog:"
+    eslint: "catalog:"
     framer-motion: "npm:14.3.0"
-    jiti: "npm:^2.6.1"
-    jsdom: "npm:^29.0.0"
+    jiti: "catalog:"
+    jsdom: "catalog:"
     linkify-react: "npm:4.3.3"
     linkifyjs: "npm:4.3.3"
-    lucide-react: "npm:^0.468.0"
-    next: "npm:16.4.3"
-    overlay-kit: "npm:^1.9.0"
+    lucide-react: "catalog:"
+    next: "catalog:"
+    overlay-kit: "catalog:"
     quill: "npm:2.0.3"
-    react: "npm:~19.3.1"
-    react-dom: "npm:~19.3.1"
-    react-hook-form: "npm:^7.65.0"
-    tailwindcss: "npm:^4.1.16"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.1.12"
+    react: "catalog:"
+    react-dom: "catalog:"
+    react-hook-form: "catalog:"
+    tailwindcss: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -3814,7 +3814,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hookform/resolvers@npm:^5.2.2, @hookform/resolvers@npm:^5.4.0":
+"@hookform/resolvers@npm:5.9.1":
   version: 5.9.1
   resolution: "@hookform/resolvers@npm:5.9.1"
   dependencies:
@@ -4684,7 +4684,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/common@npm:^12.2.0":
+"@nestjs/common@npm:12.2.0":
   version: 12.2.0
   resolution: "@nestjs/common@npm:12.2.0"
   dependencies:
@@ -4708,7 +4708,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/core@npm:^12.2.0":
+"@nestjs/core@npm:12.2.0":
   version: 12.2.0
   resolution: "@nestjs/core@npm:12.2.0"
   dependencies:
@@ -4793,7 +4793,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/platform-express@npm:^12.2.0":
+"@nestjs/platform-express@npm:12.2.0":
   version: 12.2.0
   resolution: "@nestjs/platform-express@npm:12.2.0"
   dependencies:
@@ -5008,89 +5008,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/api-logs@npm:0.220.0":
-  version: 0.220.0
-  resolution: "@opentelemetry/api-logs@npm:0.220.0"
-  dependencies:
-    "@opentelemetry/api": "npm:^1.3.0"
-  checksum: 10c0/0189cb2e610b64f75509724721b8b3ed31869a21a94254106330647eccc2a56dc13024a2aa93f4e07e1758b0af8f21952e65b4d7b3bbe9dc380f03810253ede6
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/api@npm:^1.3.0, @opentelemetry/api@npm:^1.9.1":
+"@opentelemetry/api@npm:^1.9.1":
   version: 1.9.1
   resolution: "@opentelemetry/api@npm:1.9.1"
   checksum: 10c0/c608485fc8b5a91e1f7e05e843b45b509307456b31cd2ad365933d90813e40ebfedf179f1451c762037e82d7c76aa8500e95d2da3609f640a1206cde5322cd14
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/core@npm:2.12.0":
-  version: 2.12.0
-  resolution: "@opentelemetry/core@npm:2.12.0"
-  dependencies:
-    "@opentelemetry/semantic-conventions": "npm:^1.29.0"
-  peerDependencies:
-    "@opentelemetry/api": ">=1.0.0 <1.10.0"
-  checksum: 10c0/e0d0338d314ca827b4395acf8c7eb8f88a58fd63f1effc6068ba4dd8e3443e02e5796333ae6723fb926a7e6c18dd6d2102f5cc7e531b185618562dadbf6cad71
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/instrumentation@npm:^0.220.0":
-  version: 0.220.0
-  resolution: "@opentelemetry/instrumentation@npm:0.220.0"
-  dependencies:
-    "@opentelemetry/api-logs": "npm:0.220.0"
-    import-in-the-middle: "npm:^3.0.0"
-    require-in-the-middle: "npm:^8.0.0"
-  peerDependencies:
-    "@opentelemetry/api": ^1.3.0
-  checksum: 10c0/4328e7a4c1be13b1aea9d266984bbc5cb1417aa2f95bc60f9b81596504cc6cd95f66f7dbb7bcda13cbdb2b3d1f1b8701d794c8a3f4b46544d1b5d4bfafbf7390
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/resources@npm:2.12.0":
-  version: 2.12.0
-  resolution: "@opentelemetry/resources@npm:2.12.0"
-  dependencies:
-    "@opentelemetry/core": "npm:2.12.0"
-    "@opentelemetry/semantic-conventions": "npm:^1.29.0"
-  peerDependencies:
-    "@opentelemetry/api": ">=1.3.0 <1.10.0"
-  checksum: 10c0/ef3f8470b9ada8406fa4e4a0f002ca31537c1b7fe61f06102fb9023c97a56b0d978c687dd392539f1e005c20f0467f6a1c66f9c43e8d31c2900023164529f2bc
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/sdk-trace-base@npm:^2.9.0":
-  version: 2.12.0
-  resolution: "@opentelemetry/sdk-trace-base@npm:2.12.0"
-  dependencies:
-    "@opentelemetry/core": "npm:2.12.0"
-    "@opentelemetry/resources": "npm:2.12.0"
-    "@opentelemetry/sdk-trace": "npm:2.12.0"
-    "@opentelemetry/semantic-conventions": "npm:^1.29.0"
-  peerDependencies:
-    "@opentelemetry/api": ">=1.3.0 <1.10.0"
-  checksum: 10c0/cd1de7e881f60a98047d662915b74b7b39cde69a51e9fc146fb4f02af4df4441a785af57e7ad267ea22bbc6ac19c5497684b51d7407573c2aef51f9e402aea4b
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/sdk-trace@npm:2.12.0":
-  version: 2.12.0
-  resolution: "@opentelemetry/sdk-trace@npm:2.12.0"
-  dependencies:
-    "@opentelemetry/core": "npm:2.12.0"
-    "@opentelemetry/resources": "npm:2.12.0"
-    "@opentelemetry/semantic-conventions": "npm:^1.29.0"
-  peerDependencies:
-    "@opentelemetry/api": ">=1.3.0 <1.10.0"
-  checksum: 10c0/bc36d6c3c0a007e0e1f928a7e3c9e6e6d130e157efab8da36a07a624000c2fd25309c0a3d42d4e58f6b30ae233cddfbc6270c2a8566c9f611b9d964f5b7ea8a6
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/semantic-conventions@npm:^1.29.0":
-  version: 1.43.0
-  resolution: "@opentelemetry/semantic-conventions@npm:1.43.0"
-  checksum: 10c0/ea4b4b07c9414b0c5e7ce7349f608cb2572d16922d96077fb0882b59f173ec9b94aada74896bd5dd4aeb1759924503bd5a34b6dc2847a84c36f71626a0578ec4
   languageName: node
   linkType: hard
 
@@ -5880,40 +5801,40 @@ __metadata:
   dependencies:
     "@apollo/server": "npm:^5.0.0"
     "@as-integrations/express5": "npm:^1.1.0"
-    "@aws-sdk/client-s3": "npm:^3.0.0"
-    "@aws-sdk/s3-presigned-post": "npm:3.1149.0"
-    "@aws-sdk/s3-request-presigner": "npm:3.1149.0"
+    "@aws-sdk/client-s3": "catalog:"
+    "@aws-sdk/s3-presigned-post": "catalog:"
+    "@aws-sdk/s3-request-presigner": "catalog:"
     "@nestjs/apollo": "npm:^14.0.3"
-    "@nestjs/common": "npm:^12.2.0"
-    "@nestjs/core": "npm:^12.2.0"
+    "@nestjs/common": "catalog:"
+    "@nestjs/core": "catalog:"
     "@nestjs/graphql": "npm:^14.0.3"
-    "@nestjs/platform-express": "npm:^12.2.0"
+    "@nestjs/platform-express": "catalog:"
     "@photo-contest/test-kit": "workspace:*"
-    "@prisma/adapter-pg": "npm:7.10.1"
-    "@prisma/client": "npm:7.10.1"
+    "@prisma/adapter-pg": "catalog:"
+    "@prisma/client": "catalog:"
     "@prisma/driver-adapter-utils": "npm:7.10.1"
-    "@sentry/node": "npm:^10.0.0"
+    "@sentry/node": "catalog:"
     "@side/config": "workspace:*"
     "@side/toolkit": "workspace:*"
     "@swc/core": "npm:^1.16.0"
-    "@types/express": "npm:^5.0.0"
+    "@types/express": "catalog:"
     "@types/graphql-depth-limit": "npm:^1.1.6"
-    "@types/node": "npm:^24.0.0"
-    "@types/supertest": "npm:^6.0.3"
-    concurrently: "npm:^9.2.0"
-    es-toolkit: "npm:^1.52.0"
-    express: "npm:^5.1.0"
-    graphql: "npm:^16.11.0"
+    "@types/node": "catalog:"
+    "@types/supertest": "catalog:"
+    concurrently: "catalog:"
+    es-toolkit: "catalog:"
+    express: "catalog:"
+    graphql: "catalog:"
     graphql-depth-limit: "npm:^1.1.0"
-    prisma: "npm:7.10.1"
-    reflect-metadata: "npm:^0.2.2"
-    rxjs: "npm:^7.8.2"
-    supertest: "npm:^7.3.1"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
+    prisma: "catalog:"
+    reflect-metadata: "catalog:"
+    rxjs: "catalog:"
+    supertest: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
     unplugin-swc: "npm:^2.0.0"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.4.0"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -5922,10 +5843,10 @@ __metadata:
   resolution: "@photo-contest/bridge@workspace:projects/photo-contest/packages/bridge"
   dependencies:
     "@side/config": "workspace:*"
-    jsdom: "npm:^29.0.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.4.0"
+    jsdom: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -5936,42 +5857,42 @@ __metadata:
     "@amplitude/analytics-react-native": "npm:^1.12.2"
     "@photo-contest/bridge": "workspace:*"
     "@photo-contest/test-kit": "workspace:*"
-    "@playwright/test": "npm:1.64.0"
-    "@react-native-async-storage/async-storage": "npm:2.2.0"
+    "@playwright/test": "catalog:"
+    "@react-native-async-storage/async-storage": "catalog:"
     "@sentry/react-native": "npm:~8.28.0"
     "@side/config": "workspace:*"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/react": "npm:^16.3.0"
-    "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:~19.3.0"
-    es-toolkit: "npm:^1.52.0"
-    eslint: "npm:^9.39.0"
-    expo: "npm:~58.0.19"
+    "@testing-library/dom": "catalog:"
+    "@testing-library/react": "catalog:"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    es-toolkit: "catalog:"
+    eslint: "catalog:"
+    expo: "catalog:"
     expo-application: "npm:~58.1.2"
-    expo-build-properties: "npm:~58.0.11"
+    expo-build-properties: "catalog:"
     expo-clipboard: "npm:~58.0.4"
-    expo-constants: "npm:~58.0.13"
-    expo-crypto: "npm:~58.0.7"
-    expo-dev-client: "npm:~58.0.15"
-    expo-device: "npm:~58.0.5"
+    expo-constants: "catalog:"
+    expo-crypto: "catalog:"
+    expo-dev-client: "catalog:"
+    expo-device: "catalog:"
     expo-haptics: "npm:~58.0.7"
-    expo-linking: "npm:~58.0.14"
-    expo-notifications: "npm:~58.1.6"
+    expo-linking: "catalog:"
+    expo-notifications: "catalog:"
     expo-splash-screen: "npm:~58.0.11"
-    expo-status-bar: "npm:~58.0.4"
-    expo-system-ui: "npm:~58.0.6"
-    expo-web-browser: "npm:~58.0.6"
-    jiti: "npm:^2.6.1"
-    jsdom: "npm:^29.0.0"
-    react: "npm:19.3.0"
-    react-dom: "npm:19.3.0"
-    react-native: "npm:0.88.0"
-    react-native-safe-area-context: "npm:~5.10.1"
-    react-native-web: "npm:~0.21.4"
+    expo-status-bar: "catalog:"
+    expo-system-ui: "catalog:"
+    expo-web-browser: "catalog:"
+    jiti: "catalog:"
+    jsdom: "catalog:"
+    react: "catalog:expo"
+    react-dom: "catalog:expo"
+    react-native: "catalog:"
+    react-native-safe-area-context: "catalog:"
+    react-native-web: "catalog:"
     react-native-webview: "patch:react-native-webview@npm%3A14.0.1#~/.yarn/patches/react-native-webview-npm-14.0.1-5188b52144.patch"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.4.0"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -5979,16 +5900,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@photo-contest/test-kit@workspace:projects/photo-contest/packages/test-kit"
   dependencies:
-    "@aws-sdk/client-s3": "npm:^3.0.0"
+    "@aws-sdk/client-s3": "catalog:"
     "@photo-contest/api": "workspace:*"
     "@side/config": "workspace:*"
-    "@types/node": "npm:^24.0.0"
-    es-toolkit: "npm:^1.52.0"
-    prisma: "npm:7.10.1"
-    sharp: "npm:^0.35.5"
-    tsx: "npm:^4.20.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
+    "@types/node": "catalog:"
+    es-toolkit: "catalog:"
+    prisma: "catalog:"
+    sharp: "catalog:"
+    tsx: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
   bin:
     photo-contest-test-api: ./bin/serve-test-api.ts
   languageName: unknown
@@ -5998,47 +5919,47 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@photo-contest/web@workspace:projects/photo-contest/apps/web"
   dependencies:
-    "@amplitude/analytics-browser": "npm:^2.47.4"
+    "@amplitude/analytics-browser": "catalog:"
     "@apollo/client": "npm:^4.0.0"
     "@apollo/client-integration-nextjs": "npm:^0.14.5"
     "@apollo/client-react-streaming": "patch:@apollo/client-react-streaming@npm%3A0.14.5#~/.yarn/patches/@apollo-client-react-streaming-npm-0.14.5-7738a89319.patch"
-    "@base-ui/react": "npm:^1.9.0"
+    "@base-ui/react": "catalog:"
     "@graphql-codegen/cli": "npm:^7.4.6"
     "@graphql-codegen/typed-document-node": "npm:^7.2.0"
     "@graphql-codegen/typescript-operations": "npm:^6.1.10"
     "@graphql-typed-document-node/core": "npm:^3.2.0"
-    "@hookform/resolvers": "npm:^5.4.0"
+    "@hookform/resolvers": "catalog:"
     "@photo-contest/bridge": "workspace:*"
     "@photo-contest/test-kit": "workspace:*"
-    "@playwright/test": "npm:1.64.0"
-    "@sentry/nextjs": "npm:^11.7.0"
+    "@playwright/test": "catalog:"
+    "@sentry/nextjs": "catalog:"
     "@side/config": "workspace:*"
     "@side/design-system": "workspace:*"
-    "@tailwindcss/postcss": "npm:^4.1.0"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/jest-dom": "npm:^6.9.0"
-    "@testing-library/react": "npm:^16.3.0"
-    "@testing-library/user-event": "npm:^14.6.0"
-    "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:~19.3.0"
-    "@types/react-dom": "npm:~19.3.0"
-    es-toolkit: "npm:^1.52.0"
-    eslint: "npm:^9.39.0"
-    graphql: "npm:^16.11.0"
-    jiti: "npm:^2.6.1"
-    jsdom: "npm:^29.0.0"
-    lucide-react: "npm:^1.23.0"
-    next: "npm:16.4.3"
-    overlay-kit: "npm:^1.9.0"
-    react: "npm:~19.3.1"
-    react-dom: "npm:~19.3.1"
-    react-hook-form: "npm:^7.81.0"
-    rxjs: "npm:^7.8.2"
-    tailwindcss: "npm:^4.1.0"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.4.0"
+    "@tailwindcss/postcss": "catalog:"
+    "@testing-library/dom": "catalog:"
+    "@testing-library/jest-dom": "catalog:"
+    "@testing-library/react": "catalog:"
+    "@testing-library/user-event": "catalog:"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
+    es-toolkit: "catalog:"
+    eslint: "catalog:"
+    graphql: "catalog:"
+    jiti: "catalog:"
+    jsdom: "catalog:"
+    lucide-react: "catalog:"
+    next: "catalog:"
+    overlay-kit: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
+    react-hook-form: "catalog:"
+    rxjs: "catalog:"
+    tailwindcss: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -7811,15 +7732,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/core@npm:10.76.2":
-  version: 10.76.2
-  resolution: "@sentry/core@npm:10.76.2"
-  dependencies:
-    "@sentry/conventions": "npm:^0.16.0"
-  checksum: 10c0/9f5cd89e38b59d164e8b93c8776498a2deba484cf14aa7de37b5c504d57a10b18627f1c5fbf34fd055108d953673facdfd5f956077a433aab1a0c5e324946bac
-  languageName: node
-  linkType: hard
-
 "@sentry/core@npm:11.7.0":
   version: 11.7.0
   resolution: "@sentry/core@npm:11.7.0"
@@ -7866,7 +7778,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/nextjs@npm:^11.7.0":
+"@sentry/nextjs@npm:11.7.0":
   version: 11.7.0
   resolution: "@sentry/nextjs@npm:11.7.0"
   dependencies:
@@ -7891,35 +7803,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/node-core@npm:10.76.2":
-  version: 10.76.2
-  resolution: "@sentry/node-core@npm:10.76.2"
-  dependencies:
-    "@sentry/conventions": "npm:^0.16.0"
-    "@sentry/core": "npm:10.76.2"
-    "@sentry/opentelemetry": "npm:10.76.2"
-    import-in-the-middle: "npm:^3.0.0"
-  peerDependencies:
-    "@opentelemetry/api": ^1.9.0
-    "@opentelemetry/core": ^1.30.1 || ^2.1.0
-    "@opentelemetry/exporter-trace-otlp-http": ">=0.57.0 <1"
-    "@opentelemetry/instrumentation": ">=0.57.1 <1"
-    "@opentelemetry/sdk-trace-base": ^1.30.1 || ^2.1.0
-  peerDependenciesMeta:
-    "@opentelemetry/api":
-      optional: true
-    "@opentelemetry/core":
-      optional: true
-    "@opentelemetry/exporter-trace-otlp-http":
-      optional: true
-    "@opentelemetry/instrumentation":
-      optional: true
-    "@opentelemetry/sdk-trace-base":
-      optional: true
-  checksum: 10c0/b87c86c1a32ccdfd565c7c54b54e0825ce4eb4d093c8906664aa0b0d5667bc24dcb6e0d922df11a4446d04fef5b0527ed7dec177a262e46fcbcbcc4466f57b58
-  languageName: node
-  linkType: hard
-
 "@sentry/node@npm:11.7.0":
   version: 11.7.0
   resolution: "@sentry/node@npm:11.7.0"
@@ -7932,37 +7815,6 @@ __metadata:
     "@sentry/server-runtime-injection": "npm:11.7.0"
     "@sentry/server-utils": "npm:11.7.0"
   checksum: 10c0/56356001a0db00e371cafa284403de2d6f3b3e18282027d91bfcee4e99dc526f13eff9de1e545d69040189dbd8386b92f4672c23386324ae3ae8229e2016210d
-  languageName: node
-  linkType: hard
-
-"@sentry/node@npm:^10.0.0":
-  version: 10.76.2
-  resolution: "@sentry/node@npm:10.76.2"
-  dependencies:
-    "@opentelemetry/api": "npm:^1.9.1"
-    "@opentelemetry/instrumentation": "npm:^0.220.0"
-    "@opentelemetry/sdk-trace-base": "npm:^2.9.0"
-    "@sentry/conventions": "npm:^0.16.0"
-    "@sentry/core": "npm:10.76.2"
-    "@sentry/node-core": "npm:10.76.2"
-    "@sentry/opentelemetry": "npm:10.76.2"
-    "@sentry/server-utils": "npm:10.76.2"
-    import-in-the-middle: "npm:^3.0.0"
-  checksum: 10c0/565970f986da0bbc0a77b638a3008b19d894a2c62f9b3f9ecb6b7754d0864ba029ad01cb59cbc59010ba41065290f90129af8b30664e01ad5ef1dd87789bf8d0
-  languageName: node
-  linkType: hard
-
-"@sentry/opentelemetry@npm:10.76.2":
-  version: 10.76.2
-  resolution: "@sentry/opentelemetry@npm:10.76.2"
-  dependencies:
-    "@sentry/conventions": "npm:^0.16.0"
-    "@sentry/core": "npm:10.76.2"
-  peerDependencies:
-    "@opentelemetry/api": ^1.9.0
-    "@opentelemetry/core": ^1.30.1 || ^2.1.0
-    "@opentelemetry/sdk-trace-base": ^1.30.1 || ^2.1.0
-  checksum: 10c0/d358209303b33d7a74a804298539d1fc00f185e66f208ee8742d57a9917ad31f91cbfdb22901c764486bbe7fd91a6acfec13f5db7f5fa338b71235591e26469e
   languageName: node
   linkType: hard
 
@@ -8123,16 +7975,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/server-utils@npm:10.76.2":
-  version: 10.76.2
-  resolution: "@sentry/server-utils@npm:10.76.2"
-  dependencies:
-    "@sentry/conventions": "npm:^0.16.0"
-    "@sentry/core": "npm:10.76.2"
-  checksum: 10c0/9cc1c1a7843689839e514fb10c2fb58cf5b217535b8de9f7850512e94cbc25f261f16e6e35f23e1f996a450efa36ae6fba1e6d6bb3e90768a521f0a38e6ba7fd
-  languageName: node
-  linkType: hard
-
 "@sentry/server-utils@npm:11.7.0":
   version: 11.7.0
   resolution: "@sentry/server-utils@npm:11.7.0"
@@ -8245,19 +8087,19 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@side/config@workspace:packages/config"
   dependencies:
-    "@types/node": "npm:^24.0.0"
+    "@types/node": "catalog:"
     "@typescript-eslint/rule-tester": "npm:8.71.1"
     "@typescript-eslint/utils": "npm:8.71.1"
     "@typescript/native": "npm:typescript@7.0.2"
-    eslint: "npm:^9.39.0"
+    eslint: "catalog:"
     eslint-config-expo: "npm:~58.0.4"
-    eslint-config-next: "npm:16.4.3"
+    eslint-config-next: "catalog:"
     eslint-plugin-jsx-a11y: "npm:6.10.2"
     eslint-plugin-react: "npm:7.37.5"
-    jiti: "npm:^2.6.1"
-    typescript: "npm:6.0.2"
+    jiti: "catalog:"
+    typescript: "catalog:"
     typescript-eslint: "npm:^8.50.0"
-    vitest: "npm:^4.1.0"
+    vitest: "catalog:"
   bin:
     tsc7: ./typescript/bin/tsc7.cjs
   languageName: unknown
@@ -8267,40 +8109,40 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@side/design-system@workspace:packages/design-system"
   dependencies:
-    "@base-ui/react": "npm:^1.9.0"
-    "@hookform/resolvers": "npm:^5.4.0"
+    "@base-ui/react": "catalog:"
+    "@hookform/resolvers": "catalog:"
     "@side/config": "workspace:*"
     "@storybook/addon-a11y": "npm:10.6.3"
     "@storybook/addon-docs": "npm:10.6.3"
     "@storybook/addon-themes": "npm:10.6.3"
     "@storybook/react-vite": "npm:10.6.3"
     "@tailwindcss/vite": "npm:^4.3.3"
-    "@testing-library/dom": "npm:^10.4.1"
-    "@testing-library/jest-dom": "npm:^6.9.0"
-    "@testing-library/react": "npm:^16.3.0"
-    "@testing-library/user-event": "npm:^14.6.0"
-    "@types/node": "npm:^24.0.0"
-    "@types/react": "npm:~19.3.0"
-    "@types/react-dom": "npm:~19.3.0"
+    "@testing-library/dom": "catalog:"
+    "@testing-library/jest-dom": "catalog:"
+    "@testing-library/react": "catalog:"
+    "@testing-library/user-event": "catalog:"
+    "@types/node": "catalog:"
+    "@types/react": "catalog:"
+    "@types/react-dom": "catalog:"
     axe-core: "npm:^4.10.0"
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
-    eslint: "npm:^9.39.0"
-    jiti: "npm:^2.6.1"
-    jsdom: "npm:^29.0.0"
-    lucide-react: "npm:^0.468.0"
-    next: "npm:16.4.3"
-    react: "npm:~19.3.1"
-    react-dom: "npm:~19.3.1"
-    react-hook-form: "npm:^7.81.0"
+    eslint: "catalog:"
+    jiti: "catalog:"
+    jsdom: "catalog:"
+    lucide-react: "catalog:"
+    next: "catalog:"
+    react: "catalog:"
+    react-dom: "catalog:"
+    react-hook-form: "catalog:"
     sonner: "npm:2.0.8"
     storybook: "npm:10.6.3"
     tailwind-merge: "npm:^3.6.0"
-    tailwindcss: "npm:^4.3.3"
-    typescript: "npm:6.0.2"
-    vite: "npm:^7.0.0"
-    vitest: "npm:^4.1.0"
-    zod: "npm:^4.4.0"
+    tailwindcss: "catalog:"
+    typescript: "catalog:"
+    vite: "catalog:"
+    vitest: "catalog:"
+    zod: "catalog:"
   peerDependencies:
     next: ^16.4.3
     react: ^19.3.0
@@ -8316,12 +8158,12 @@ __metadata:
   resolution: "@side/game-feedback@workspace:projects/game-feedback"
   dependencies:
     "@side/config": "workspace:*"
-    embedded-postgres: "npm:18.4.0-beta.17"
-    eslint: "npm:^9.39.0"
-    jiti: "npm:^2.6.1"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
-    zod: "npm:^4.1.12"
+    embedded-postgres: "catalog:"
+    eslint: "catalog:"
+    jiti: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    zod: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -8330,13 +8172,13 @@ __metadata:
   resolution: "@side/photo-contest@workspace:projects/photo-contest"
   dependencies:
     "@side/config": "workspace:*"
-    "@types/node": "npm:^24.0.0"
-    concurrently: "npm:^9.2.0"
-    embedded-postgres: "npm:18.4.0-beta.17"
-    eslint: "npm:^9.39.0"
-    jiti: "npm:^2.6.1"
-    tsx: "npm:^4.20.0"
-    typescript: "npm:6.0.2"
+    "@types/node": "catalog:"
+    concurrently: "catalog:"
+    embedded-postgres: "catalog:"
+    eslint: "catalog:"
+    jiti: "catalog:"
+    tsx: "catalog:"
+    typescript: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -8345,13 +8187,13 @@ __metadata:
   resolution: "@side/toolkit@workspace:packages/toolkit"
   dependencies:
     "@side/config": "workspace:*"
-    "@types/node": "npm:^24.0.0"
-    es-toolkit: "npm:^1.52.0"
-    eslint: "npm:^9.39.0"
-    jiti: "npm:^2.6.1"
-    ts-pattern: "npm:^5.9.0"
-    typescript: "npm:6.0.2"
-    vitest: "npm:^4.1.0"
+    "@types/node": "catalog:"
+    es-toolkit: "catalog:"
+    eslint: "catalog:"
+    jiti: "catalog:"
+    ts-pattern: "catalog:"
+    typescript: "catalog:"
+    vitest: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -8900,7 +8742,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tailwindcss/postcss@npm:^4.1.0, @tailwindcss/postcss@npm:^4.1.16":
+"@tailwindcss/postcss@npm:4.3.3":
   version: 4.3.3
   resolution: "@tailwindcss/postcss@npm:4.3.3"
   dependencies:
@@ -8933,7 +8775,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/react-query@npm:^5.90.0":
+"@tanstack/react-query@npm:5.104.3":
   version: 5.104.3
   resolution: "@tanstack/react-query@npm:5.104.3"
   dependencies:
@@ -8944,7 +8786,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/dom@npm:^10.4.1":
+"@testing-library/dom@npm:10.4.2, @testing-library/dom@npm:^10.4.1":
   version: 10.4.2
   resolution: "@testing-library/dom@npm:10.4.2"
   dependencies:
@@ -8960,7 +8802,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/jest-dom@npm:6.9.1, @testing-library/jest-dom@npm:^6.9.0":
+"@testing-library/jest-dom@npm:6.9.1":
   version: 6.9.1
   resolution: "@testing-library/jest-dom@npm:6.9.1"
   dependencies:
@@ -8974,7 +8816,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/react@npm:^16.3.0":
+"@testing-library/react@npm:16.3.3":
   version: 16.3.3
   resolution: "@testing-library/react@npm:16.3.3"
   dependencies:
@@ -8994,7 +8836,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@npm:^14.6.0":
+"@testing-library/user-event@npm:14.6.7":
   version: 14.6.7
   resolution: "@testing-library/user-event@npm:14.6.7"
   peerDependencies:
@@ -9272,7 +9114,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/express@npm:^5.0.0, @types/express@npm:^5.0.3":
+"@types/express@npm:5.0.6":
   version: 5.0.6
   resolution: "@types/express@npm:5.0.6"
   dependencies:
@@ -9407,7 +9249,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^24.0.0":
+"@types/node@npm:24.19.2":
   version: 24.19.2
   resolution: "@types/node@npm:24.19.2"
   dependencies:
@@ -9441,7 +9283,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:^19.0.0, @types/react-dom@npm:~19.3.0":
+"@types/react-dom@npm:19.3.0, @types/react-dom@npm:^19.0.0":
   version: 19.3.0
   resolution: "@types/react-dom@npm:19.3.0"
   peerDependencies:
@@ -9450,7 +9292,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:~19.3.0":
+"@types/react@npm:*, @types/react@npm:19.3.0":
   version: 19.3.0
   resolution: "@types/react@npm:19.3.0"
   dependencies:
@@ -9497,7 +9339,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/supertest@npm:^6.0.3":
+"@types/supertest@npm:6.0.3":
   version: 6.0.3
   resolution: "@types/supertest@npm:6.0.3"
   dependencies:
@@ -10208,7 +10050,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitejs/plugin-react@npm:^5.0.0":
+"@vitejs/plugin-react@npm:5.2.0":
   version: 5.2.0
   resolution: "@vitejs/plugin-react@npm:5.2.0"
   dependencies:
@@ -11534,13 +11376,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cjs-module-lexer@npm:^2.2.0":
-  version: 2.3.0
-  resolution: "cjs-module-lexer@npm:2.3.0"
-  checksum: 10c0/9a6b9ca6f3c4734e108afa7a9cdf9ebf180329e1f94729a8a054102b2d66f5bbd62beb6a7b25ed8b0feca561c96542f34583fe5f0a72691751ff3ab718f5690f
-  languageName: node
-  linkType: hard
-
 "class-variance-authority@npm:^0.7.1":
   version: 0.7.1
   resolution: "class-variance-authority@npm:0.7.1"
@@ -11814,7 +11649,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"concurrently@npm:^9.2.0":
+"concurrently@npm:9.2.5":
   version: 9.2.5
   resolution: "concurrently@npm:9.2.5"
   dependencies:
@@ -12809,13 +12644,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-module-lexer@npm:^3.0.2":
-  version: 3.0.3
-  resolution: "es-module-lexer@npm:3.0.3"
-  checksum: 10c0/9c040aca427aa06683b5746d3156f512b5f7ee7cfd18eccb31756bac74605e6432ae04e77b4bc153b7295b0feb907343b127dce1e7723941db27890838c8b5a4
-  languageName: node
-  linkType: hard
-
 "es-object-atoms@npm:^1.0.0, es-object-atoms@npm:^1.1.1, es-object-atoms@npm:^1.1.2":
   version: 1.1.2
   resolution: "es-object-atoms@npm:1.1.2"
@@ -12860,7 +12688,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:1.52.0, es-toolkit@npm:^1.52.0":
+"es-toolkit@npm:1.52.0":
   version: 1.52.0
   resolution: "es-toolkit@npm:1.52.0"
   dependenciesMeta:
@@ -13251,7 +13079,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint@npm:^9.24.0, eslint@npm:^9.39.0":
+"eslint@npm:9.39.5, eslint@npm:^9.24.0":
   version: 9.39.5
   resolution: "eslint@npm:9.39.5"
   dependencies:
@@ -13499,7 +13327,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-build-properties@npm:~58.0.11":
+"expo-build-properties@npm:58.0.11":
   version: 58.0.11
   resolution: "expo-build-properties@npm:58.0.11"
   dependencies:
@@ -13523,7 +13351,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-constants@npm:~58.0.13":
+"expo-constants@npm:58.0.13, expo-constants@npm:~58.0.13":
   version: 58.0.13
   resolution: "expo-constants@npm:58.0.13"
   dependencies:
@@ -13536,7 +13364,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-crypto@npm:~58.0.7":
+"expo-crypto@npm:58.0.7":
   version: 58.0.7
   resolution: "expo-crypto@npm:58.0.7"
   peerDependencies:
@@ -13545,7 +13373,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-dev-client@npm:~58.0.15":
+"expo-dev-client@npm:58.0.15":
   version: 58.0.15
   resolution: "expo-dev-client@npm:58.0.15"
   dependencies:
@@ -13595,7 +13423,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-device@npm:~58.0.5":
+"expo-device@npm:58.0.5":
   version: 58.0.5
   resolution: "expo-device@npm:58.0.5"
   dependencies:
@@ -13653,7 +13481,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-linking@npm:~58.0.14":
+"expo-linking@npm:58.0.14":
   version: 58.0.14
   resolution: "expo-linking@npm:58.0.14"
   dependencies:
@@ -13753,7 +13581,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-notifications@npm:~58.1.6":
+"expo-notifications@npm:58.1.6":
   version: 58.1.6
   resolution: "expo-notifications@npm:58.1.6"
   dependencies:
@@ -13790,7 +13618,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-status-bar@npm:~58.0.4":
+"expo-status-bar@npm:58.0.4":
   version: 58.0.4
   resolution: "expo-status-bar@npm:58.0.4"
   peerDependencies:
@@ -13801,7 +13629,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-system-ui@npm:~58.0.6":
+"expo-system-ui@npm:58.0.6":
   version: 58.0.6
   resolution: "expo-system-ui@npm:58.0.6"
   dependencies:
@@ -13827,7 +13655,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-web-browser@npm:~58.0.6":
+"expo-web-browser@npm:58.0.6":
   version: 58.0.6
   resolution: "expo-web-browser@npm:58.0.6"
   peerDependencies:
@@ -13837,7 +13665,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo@npm:~58.0.19":
+"expo@npm:58.0.19":
   version: 58.0.19
   resolution: "expo@npm:58.0.19"
   dependencies:
@@ -13901,7 +13729,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express@npm:5.3.0, express@npm:^5.1.0":
+"express@npm:5.3.0":
   version: 5.3.0
   resolution: "express@npm:5.3.0"
   dependencies:
@@ -14737,19 +14565,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"graphql@npm:16.14.2":
+  version: 16.14.2
+  resolution: "graphql@npm:16.14.2"
+  checksum: 10c0/a95a96961eaff55cc9fe9d31fae6f33499ac988b972d07ea5085024cb1333f515b902f376e7393a5489aa82200a8aff3eb96580e4d1b69d702ed19b6eb1ce97a
+  languageName: node
+  linkType: hard
+
 "graphql@npm:^14.5.3":
   version: 14.7.0
   resolution: "graphql@npm:14.7.0"
   dependencies:
     iterall: "npm:^1.2.2"
   checksum: 10c0/7f8085d4d8f4cd20bde0a2c327d21a0beaf2d0539775dc4fc093d2193c51f3c268ab43d11d539ce0ef26ffea227de7c7bd47788636bd66c5a944c95ad0870727
-  languageName: node
-  linkType: hard
-
-"graphql@npm:^16.11.0":
-  version: 16.14.2
-  resolution: "graphql@npm:16.14.2"
-  checksum: 10c0/a95a96961eaff55cc9fe9d31fae6f33499ac988b972d07ea5085024cb1333f515b902f376e7393a5489aa82200a8aff3eb96580e4d1b69d702ed19b6eb1ce97a
   languageName: node
   linkType: hard
 
@@ -15151,17 +14979,6 @@ __metadata:
   version: 4.0.0
   resolution: "import-from@npm:4.0.0"
   checksum: 10c0/7fd98650d555e418c18341fef49ae11afc833f5ae70b7043e99684187cba6ac6b52e4118a491bd9f856045495bef5bdda7321095e65bcb2ef70ce2adf9f0d8d1
-  languageName: node
-  linkType: hard
-
-"import-in-the-middle@npm:^3.0.0":
-  version: 3.5.2
-  resolution: "import-in-the-middle@npm:3.5.2"
-  dependencies:
-    cjs-module-lexer: "npm:^2.2.0"
-    es-module-lexer: "npm:^3.0.2"
-    module-details-from-path: "npm:^1.0.4"
-  checksum: 10c0/45fecbfca0be8951256741d7532cb95a11f116b3e6e47ac0227c51becd0a0802f7b676ce34f247c1525011b0cded81d154308c1846bc88180fae6c318c642a5e
   languageName: node
   linkType: hard
 
@@ -15812,7 +15629,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jiti@npm:^2.0.0, jiti@npm:^2.3.0, jiti@npm:^2.6.1, jiti@npm:^2.7.0":
+"jiti@npm:2.7.0, jiti@npm:^2.0.0, jiti@npm:^2.3.0, jiti@npm:^2.6.1, jiti@npm:^2.7.0":
   version: 2.7.0
   resolution: "jiti@npm:2.7.0"
   bin:
@@ -15846,7 +15663,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsdom@npm:^29.0.0":
+"jsdom@npm:29.1.1":
   version: 29.1.1
   resolution: "jsdom@npm:29.1.1"
   dependencies:
@@ -16532,16 +16349,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.468.0":
-  version: 0.468.0
-  resolution: "lucide-react@npm:0.468.0"
-  peerDependencies:
-    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc
-  checksum: 10c0/da7640e4ad09d8987716e9124fd85c4a0c49b7658dbbf45db64547fc0f155f7e8b2d7f68115ada3e24012f3e1a4f209d7a87762ba4de5ca3dd753f6b68d8e622
-  languageName: node
-  linkType: hard
-
-"lucide-react@npm:^1.23.0":
+"lucide-react@npm:1.55.0":
   version: 1.55.0
   resolution: "lucide-react@npm:1.55.0"
   peerDependencies:
@@ -17717,13 +17525,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"module-details-from-path@npm:^1.0.3, module-details-from-path@npm:^1.0.4":
-  version: 1.0.4
-  resolution: "module-details-from-path@npm:1.0.4"
-  checksum: 10c0/10863413e96dab07dee917eae07afe46f7bf853065cc75a7d2a718adf67574857fb64f8a2c0c9af12ac733a9a8cf652db7ed39b95f7a355d08106cb9cc50c83b
-  languageName: node
-  linkType: hard
-
 "motion-dom@npm:14.3.0":
   version: 14.3.0
   resolution: "motion-dom@npm:14.3.0"
@@ -18423,7 +18224,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"overlay-kit@npm:^1.9.0":
+"overlay-kit@npm:1.9.0":
   version: 1.9.0
   resolution: "overlay-kit@npm:1.9.0"
   peerDependencies:
@@ -19123,7 +18924,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.9.0":
+"prettier@npm:3.9.10":
   version: 3.9.10
   resolution: "prettier@npm:3.9.10"
   bin:
@@ -19420,7 +19221,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0, react-dom@npm:~19.3.1":
+"react-dom@npm:19.3.1, react-dom@npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0":
   version: 19.3.1
   resolution: "react-dom@npm:19.3.1"
   dependencies:
@@ -19431,7 +19232,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-hook-form@npm:^7.65.0, react-hook-form@npm:^7.81.0":
+"react-hook-form@npm:7.90.0":
   version: 7.90.0
   resolution: "react-hook-form@npm:7.90.0"
   peerDependencies:
@@ -19465,7 +19266,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-safe-area-context@npm:~5.10.1":
+"react-native-safe-area-context@npm:5.10.1":
   version: 5.10.1
   resolution: "react-native-safe-area-context@npm:5.10.1"
   peerDependencies:
@@ -19475,7 +19276,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-web@npm:~0.21.4":
+"react-native-web@npm:0.21.4":
   version: 0.21.4
   resolution: "react-native-web@npm:0.21.4"
   dependencies:
@@ -19637,7 +19438,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0, react@npm:~19.3.1":
+"react@npm:19.3.1, react@npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0":
   version: 19.3.1
   resolution: "react@npm:19.3.1"
   checksum: 10c0/f0ed036d1223562c09c8347858ca712733ea6e27a30db709ee9c3f3f176d3e9e767afce735d59956addf3d030102e256bba82dea635fc1bdb0e01107e98fef10
@@ -19731,7 +19532,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"reflect-metadata@npm:^0.2.2":
+"reflect-metadata@npm:0.2.2":
   version: 0.2.2
   resolution: "reflect-metadata@npm:0.2.2"
   checksum: 10c0/1cd93a15ea291e420204955544637c264c216e7aac527470e393d54b4bb075f10a17e60d8168ec96600c7e0b9fcc0cb0bb6e91c3fbf5b0d8c9056f04e6ac1ec2
@@ -19998,16 +19799,6 @@ __metadata:
   version: 2.0.2
   resolution: "require-from-string@npm:2.0.2"
   checksum: 10c0/aaa267e0c5b022fc5fd4eef49d8285086b15f2a1c54b28240fdf03599cbd9c26049fee3eab894f2e1f6ca65e513b030a7c264201e3f005601e80c49fb2937ce2
-  languageName: node
-  linkType: hard
-
-"require-in-the-middle@npm:^8.0.0":
-  version: 8.0.1
-  resolution: "require-in-the-middle@npm:8.0.1"
-  dependencies:
-    debug: "npm:^4.3.5"
-    module-details-from-path: "npm:^1.0.3"
-  checksum: 10c0/4b3d29adfff873585dceffa9ddb8f33bb6599001ddff758503e0e5ade2ae6d20d691314125bb13679fa75a19893338e11953d4702dd2fea181e95c0f8316b29b
   languageName: node
   linkType: hard
 
@@ -20441,7 +20232,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:7.8.2, rxjs@npm:^7.8.2":
+"rxjs@npm:7.8.2":
   version: 7.8.2
   resolution: "rxjs@npm:7.8.2"
   dependencies:
@@ -20710,7 +20501,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.35.5":
+"sharp@npm:0.35.5, sharp@npm:^0.35.5":
   version: 0.35.5
   resolution: "sharp@npm:0.35.5"
   dependencies:
@@ -20893,10 +20684,10 @@ __metadata:
   dependencies:
     "@ianvs/prettier-plugin-sort-imports": "npm:^4.7.1"
     "@side/config": "workspace:*"
-    "@types/node": "npm:^24.0.0"
+    "@types/node": "catalog:"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.4.0"
-    prettier: "npm:^3.9.0"
+    prettier: "catalog:"
   dependenciesMeta:
     "@embedded-postgres/darwin-arm64":
       built: true
@@ -21459,7 +21250,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supertest@npm:^7.1.4, supertest@npm:^7.3.1":
+"supertest@npm:7.3.1":
   version: 7.3.1
   resolution: "supertest@npm:7.3.1"
   dependencies:
@@ -21553,7 +21344,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwindcss@npm:4.3.3, tailwindcss@npm:^4.1.0, tailwindcss@npm:^4.1.16, tailwindcss@npm:^4.3.3":
+"tailwindcss@npm:4.3.3":
   version: 4.3.3
   resolution: "tailwindcss@npm:4.3.3"
   checksum: 10c0/7e9cd7553cd890ffa5350efb0ca8971ba5435257d0f98bf0714994ac8f1fee5c7cdf9a9da47fe83e8ac995d728410837ac49d3ef5ea66b5afe1db312086ffae2
@@ -21820,7 +21611,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-pattern@npm:^5.9.0":
+"ts-pattern@npm:5.9.0":
   version: 5.9.0
   resolution: "ts-pattern@npm:5.9.0"
   checksum: 10c0/7640db25c39d29b287471b2b82d4f7b4674a02098c6ba4d10fed180adfb07d0e0c71930d9e59dc0d90654145e02fd320af63cf0df3c41e100d4154658a612a0a
@@ -21857,7 +21648,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsx@npm:^4.20.0, tsx@npm:^4.20.6":
+"tsx@npm:4.23.15":
   version: 4.23.15
   resolution: "tsx@npm:4.23.15"
   dependencies:
@@ -22528,6 +22319,61 @@ __metadata:
   languageName: node
   linkType: hard
 
+"vite@npm:7.3.7":
+  version: 7.3.7
+  resolution: "vite@npm:7.3.7"
+  dependencies:
+    esbuild: "npm:^0.27.0 || ^0.28.0"
+    fdir: "npm:^6.5.0"
+    fsevents: "npm:~2.3.3"
+    picomatch: "npm:^4.0.3"
+    postcss: "npm:^8.5.6"
+    rollup: "npm:^4.43.0"
+    tinyglobby: "npm:^0.2.15"
+  peerDependencies:
+    "@types/node": ^20.19.0 || >=22.12.0
+    jiti: ">=1.21.0"
+    less: ^4.0.0
+    lightningcss: ^1.21.0
+    sass: ^1.70.0
+    sass-embedded: ^1.70.0
+    stylus: ">=0.54.8"
+    sugarss: ^5.0.0
+    terser: ^5.16.0
+    tsx: ^4.8.1
+    yaml: ^2.4.2
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  peerDependenciesMeta:
+    "@types/node":
+      optional: true
+    jiti:
+      optional: true
+    less:
+      optional: true
+    lightningcss:
+      optional: true
+    sass:
+      optional: true
+    sass-embedded:
+      optional: true
+    stylus:
+      optional: true
+    sugarss:
+      optional: true
+    terser:
+      optional: true
+    tsx:
+      optional: true
+    yaml:
+      optional: true
+  bin:
+    vite: bin/vite.js
+  checksum: 10c0/6a3f868a33b849383e29c4e39550155563cf0522b5b6504ab60ff5e44dd07ad472ff87a4d5d2c08f1f70cc6602357f95c38d27371b7612d84801cb790f325a7e
+  languageName: node
+  linkType: hard
+
 "vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0":
   version: 8.3.4
   resolution: "vite@npm:8.3.4"
@@ -22585,62 +22431,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^7.0.0":
-  version: 7.3.7
-  resolution: "vite@npm:7.3.7"
-  dependencies:
-    esbuild: "npm:^0.27.0 || ^0.28.0"
-    fdir: "npm:^6.5.0"
-    fsevents: "npm:~2.3.3"
-    picomatch: "npm:^4.0.3"
-    postcss: "npm:^8.5.6"
-    rollup: "npm:^4.43.0"
-    tinyglobby: "npm:^0.2.15"
-  peerDependencies:
-    "@types/node": ^20.19.0 || >=22.12.0
-    jiti: ">=1.21.0"
-    less: ^4.0.0
-    lightningcss: ^1.21.0
-    sass: ^1.70.0
-    sass-embedded: ^1.70.0
-    stylus: ">=0.54.8"
-    sugarss: ^5.0.0
-    terser: ^5.16.0
-    tsx: ^4.8.1
-    yaml: ^2.4.2
-  dependenciesMeta:
-    fsevents:
-      optional: true
-  peerDependenciesMeta:
-    "@types/node":
-      optional: true
-    jiti:
-      optional: true
-    less:
-      optional: true
-    lightningcss:
-      optional: true
-    sass:
-      optional: true
-    sass-embedded:
-      optional: true
-    stylus:
-      optional: true
-    sugarss:
-      optional: true
-    terser:
-      optional: true
-    tsx:
-      optional: true
-    yaml:
-      optional: true
-  bin:
-    vite: bin/vite.js
-  checksum: 10c0/6a3f868a33b849383e29c4e39550155563cf0522b5b6504ab60ff5e44dd07ad472ff87a4d5d2c08f1f70cc6602357f95c38d27371b7612d84801cb790f325a7e
-  languageName: node
-  linkType: hard
-
-"vitest@npm:^4.0.0, vitest@npm:^4.1.0":
+"vitest@npm:4.1.11":
   version: 4.1.11
   resolution: "vitest@npm:4.1.11"
   dependencies:
@@ -23209,7 +23000,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.25.0 || ^4.0.0, zod@npm:^4.4.0":
+"zod@npm:^3.25.0 || ^4.0.0":
   version: 4.6.5
   resolution: "zod@npm:4.6.5"
   checksum: 10c0/32eb6c5e98becbe045675b2141c3611451c16ba567f9779231d79af41c4d651ca1c22f154aef7e6c6e77b929f23e43f1154ca05b82e119e922353725d6776af5

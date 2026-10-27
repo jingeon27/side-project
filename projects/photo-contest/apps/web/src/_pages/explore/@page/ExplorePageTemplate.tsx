@@ -3,7 +3,7 @@
 import { useBackgroundQuery } from '@apollo/client/react';
 
 import { ViewerBoundary } from '@/features/auth';
-import { CreateGroupButton, GroupDiscoveryIntro, GroupSearchForm } from '@/features/group';
+import { CreateGroupButton, GroupSearchForm } from '@/features/group';
 import { DiscoverGroupsDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { buildLoginRedirectPath } from '@/shared/lib/auth-gate.helper';
@@ -22,22 +22,22 @@ export function ExplorePageTemplate({ search }: { search: string }) {
   });
   return (
     <div className="flex flex-1 flex-col">
-      <TopAppBar title="그룹 탐색" />
+      <TopAppBar
+        title="그룹 탐색"
+        actions={
+          <ViewerBoundary
+            guest={
+              <ButtonLink href={buildLoginRedirectPath(ROUTES.EXPLORE)} size="md">
+                로그인하고 그룹 만들기
+              </ButtonLink>
+            }
+            fallback={<Skeleton className="h-11 w-28" />}
+          >
+            {() => <CreateGroupButton />}
+          </ViewerBoundary>
+        }
+      />
       <div className="mx-auto flex w-full max-w-5xl desktop:max-w-none flex-1 flex-col gap-7 px-4 py-6 tablet:px-8 desktop:py-10">
-        <GroupDiscoveryIntro
-          action={
-            <ViewerBoundary
-              guest={
-                <ButtonLink href={buildLoginRedirectPath(ROUTES.EXPLORE)} size="md">
-                  로그인하고 그룹 만들기
-                </ButtonLink>
-              }
-              fallback={<Skeleton className="h-11 w-28" />}
-            >
-              {() => <CreateGroupButton />}
-            </ViewerBoundary>
-          }
-        />
         <GroupSearchForm key={search} search={search} />
         <section aria-label="탐색할 그룹" className="flex flex-col gap-4">
           <h2 className="text-title-lg text-ink">

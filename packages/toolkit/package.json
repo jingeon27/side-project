@@ -20,14 +20,14 @@
   },
   "devDependencies": {
     "@side/config": "workspace:*",
-    "@types/node": "^24.0.0",
-    "eslint": "^9.39.0",
-    "jiti": "^2.6.1",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.0"
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "dependencies": {
-    "es-toolkit": "^1.52.0",
-    "ts-pattern": "^5.9.0"
+    "es-toolkit": "catalog:",
+    "ts-pattern": "catalog:"
   }
 }

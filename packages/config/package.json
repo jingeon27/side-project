@@ -24,20 +24,20 @@
   },
   "dependencies": {
     "@typescript/native": "npm:typescript@7.0.2",
-    "eslint": "^9.39.0",
+    "eslint": "catalog:",
     "eslint-config-expo": "~58.0.4",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "catalog:",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react": "7.37.5",
     "typescript-eslint": "^8.50.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "catalog:",
     "@typescript-eslint/rule-tester": "8.71.1",
     "@typescript-eslint/utils": "8.71.1",
-    "jiti": "^2.6.1",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.0"
+    "jiti": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "installConfig": {
     "hoistingLimits": "workspaces"

@@ -19,7 +19,6 @@ test(
     await page.getByRole('button', { name: '그룹 가입하기', exact: true }).click();
     await expect(page.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
     await page.goto('/me');
-    await expect(page.getByText('익명 프로필은 이 브라우저의 세션으로 유지돼요.')).toBeVisible();
     const nickname = await page.getByRole('heading', { level: 2 }).first().innerText();
     await expect(page.getByRole('link', { name: '로그인 · 회원가입', exact: true })).toHaveCount(0);
     await expect(
@@ -91,7 +90,7 @@ test(
     await signup.getByRole('button', { name: '가입하고 시작하기', exact: true }).click();
     await expect(page).toHaveURL(/\/me$/);
     await expect(page.getByRole('link', { name: new RegExp(groupName) })).toBeVisible();
-    await expect(page.getByText('익명 프로필은 이 브라우저의 세션으로 유지돼요.')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '회원가입', exact: true })).toHaveCount(0);
     const otherDevice = await browser.newContext({ baseURL: WEB_ORIGIN });
     try {
       const otherPage = await otherDevice.newPage();

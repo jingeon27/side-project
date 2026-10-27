@@ -12,7 +12,7 @@ description: 웃긴순간의 Sentry 오류 수집(API·웹·앱)과 Amplitude �
 | mobile | `@sentry/react-native`(Expo 플러그인) | `@amplitude/analytics-react-native` |
 
 - 키·DSN이 없으면 init하지 않고 아무것도 보내지 않는다(로컬·테스트 기본값). 키는 환경변수로만: API `SENTRY_DSN`, 웹 `NEXT_PUBLIC_SENTRY_DSN`·`NEXT_PUBLIC_AMPLITUDE_API_KEY`, 앱도 프로젝트 루트의 공개 키를 Expo extra로 읽는다. 별도 모바일 env 키는 만들지 않는다.
-- `sendDefaultPii: false`, `beforeSend`에서 request·cookies·user·breadcrumbs를 지운다. 쿠키·세션·요청 본문은 어디에도 보내지 않는다.
+- API·웹의 Sentry 11은 `dataCollection`에서 사용자·쿠키·헤더·본문·쿼리·GraphQL 문서와 변수 수집을 끈다. 이전 SDK를 사용하는 모바일은 `sendDefaultPii: false`를 유지한다. `beforeSend`에서 request·cookies·user·breadcrumbs를 지운다. 쿠키·세션·요청 본문은 어디에도 보내지 않는다.
 - API는 4xx 업무 오류를 보내지 않는다. GraphQL 내부 오류(operationName 태그)와 REST 5xx(라우트 태그)만.
 - 웹 Sentry 태그: `client=app|web`, 앱 WebView면 `app_version`(`buildSentryClientTags`). 트랜잭션 이름(`event.transaction`)은 보내기 전에 `path_template`(`/invite/:token`)로 바꾼다(오류·트랜잭션 이벤트 모두 `scrubSentryEvent`).
 - 앱 Sentry는 공통 태그 없이 경고마다 태그를 붙인다: `webview_load_failed`는 `status`·`error_code`·`error_domain`, `webview_process_terminated`는 `process`·`did_crash`. 트레이싱·라우팅 계측이 없어 트랜잭션 이름을 만들지 않는다.

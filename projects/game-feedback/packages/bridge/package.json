@@ -11,13 +11,13 @@
     "typecheck": "tsc7 --noEmit"
   },
   "dependencies": {
-    "es-toolkit": "^1.52.0",
-    "ts-pattern": "^5.9.0",
-    "zod": "^4.1.12"
+    "es-toolkit": "catalog:",
+    "ts-pattern": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@side/config": "workspace:*",
-    "typescript": "6.0.2",
-    "vitest": "^4.1.0"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
