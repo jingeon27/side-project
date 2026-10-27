@@ -42,9 +42,34 @@ html에 `data-theme="system|light|dark"`를 지정하면 공통 색상 토큰이
 - `FormField`: native `<label>` 폼용 `label`, `children`, `description`, `error`, `labelSuffix`. 도움말 prop은 TextField와 같은 `description` 하나다. `Input`·`Textarea`·`NativeSelect`는 context로 연결하므로 memo·래퍼·서버 컴포넌트를 거쳐도 레이블·도움말·오류가 붙는다. native `input`·`textarea`·`select`는 직접 자식일 때만 연결한다. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 유지하고 `aria-describedby`에는 도움말·오류를 덧붙이며 ref는 그대로 전달한다. label 안에 들어가므로 NativeSelect 래퍼는 `span`이다. 직접 자식인 native 요소에는 스타일을 입히지 않으므로 공통 모양은 Input·Textarea·NativeSelect로 얻는다.
 - `Badge`, `Avatar`, `Spinner`: 상태 글자·이름 fallback·진행 표시를 제공한다. `Avatar`는 이름 옆 장식이며 스크린 리더에서 숨긴다. `Spinner`에 `label`을 주면 `role="status"` 안의 숨긴 글자로 넣어 live region이 진행 상태를 읽는다(aria-label만으로는 읽히지 않는다).
 - `Dialog`: `open`, `onOpenChange`, `title`, `description`, `children`, `dismissible`, `container`, `onOpenChangeComplete`, `className`. Base UI가 포커스와 중첩 대화상자를 관리한다. `dismissible={false}`는 닫기 버튼·Esc·바깥 클릭을 막으며 앱이 명시적인 완료 동작으로 `open`을 바꾼다.
-- `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·PageUp·PageDown·Home·End·Enter·Space 조작도 지원하며 현재 높이를 `aria-valuetext`(60%·100%)로 알린다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 소비 앱에서 번역한다. 나머지 제어 props는 Dialog와 동일하며, `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 기존 `Dialog placement="bottom"`은 제스처가 없는 하단 배치 API로 유지한다.
+- `BottomSheet`: Base UI [Drawer](https://base-ui.com/react/components/drawer)를 사용하는 입력 시트다. 기본은 위쪽 핸들을 끌어 화면의 60%와 전체 높이 사이를 이동하고 아래로 끌어 닫는다. 핸들의 방향키·PageUp·PageDown·Home·End·Enter·Space 조작도 지원하며 현재 높이를 `aria-valuetext`(60%·100%)로 알린다. 제목과 핸들은 고정되고 본문은 별도로 스크롤하며 소프트 키보드는 `VirtualKeyboardProvider`로 처리한다. `resizeLabel`·`closeLabel`은 소비 앱에서 번역한다. `snapPoints`로 높이 단계를 바꿀 수 있고 나머지 제어 props는 Dialog와 동일하다. `onOpenChangeComplete(false)` 뒤 unmount하면 닫힘 전환도 유지된다. 제스처가 없는 `Dialog placement="bottom"`은 없앴으므로 하단 시트는 BottomSheet만 쓴다.
 
 `BottomSheet`의 `footer`는 스크롤 본문 밖 하단에 작업 버튼을 가로로 배치한다. 본문 폼에 `id`를 주고 제출 버튼의 `form`에 연결하면 기본 폼 검증·Enter 제출도 유지된다. `responsive`를 켜면 CSS 미디어쿼리로 768px부터 같은 팝업을 중앙 모달로 표시한다. 화면 크기가 바뀌어도 입력과 포커스는 같은 인스턴스에 남는다. `showCloseButton={false}`는 상단 X를 숨기며, Esc·바깥 클릭의 허용 여부는 `dismissible`로 정한다. Game Feedback은 반응형 표시와 하단 작업 버튼을 쓰고 상단 X를 숨긴다.
+
+배치·슬롯을 바꿔야 하면 같은 부품을 조합한다. 위의 `BottomSheet`도 이 조합이다.
+
+```tsx
+<BottomSheet.Root
+  open={open}
+  onOpenChange={setOpen}
+  onOpenChangeComplete={(next) => !next && unmount()}
+  snapPoints={[0.75, 1]}
+>
+  <BottomSheet.Handle label={t('시트 높이 조절')} />
+  <BottomSheet.Header title={title} description={description}>
+    <BottomSheet.Close label={t('닫기')} />
+  </BottomSheet.Header>
+  <BottomSheet.Content className="px-5">{children}</BottomSheet.Content>
+  <BottomSheet.Footer>{actions}</BottomSheet.Footer>
+</BottomSheet.Root>
+```
+
+- `Root`: `open`, `onOpenChange`, `onOpenChangeComplete`, `snapPoints`, `snapPoint`·`onSnapPointChange`(생략하면 내부 상태이고 닫힌 뒤 첫 값으로 돌아간다), `dismissible`, `responsive`, `container`, `className`. `snapPoints`는 작은 값부터 적는 화면 비율(0~1)이나 px이며 첫 값으로 연다. 생략하면 내용 높이로 열고 넘치면 본문만 스크롤한다. 값이 하나면 그 높이에 고정한다. 고정 높이 시트에는 Root가 장식용 손잡이를 그린다.
+- `Handle`: `label` 필수. `snapPoints`가 둘 이상일 때만 높이 조절 slider로 그린다. 모두 비율이면 높이 %를, px가 섞이면 단계(1~n)를 값으로 알린다.
+- `Header`: `title`(ReactNode), `description`, 제목 옆에 둘 `children`. `Close`: `label` 필수인 X 버튼이며 `dismissible={false}`이면 그리지 않는다.
+- `Content`·`Footer`: 스크롤 본문과 고정 하단 영역. 기본 여백은 `className`으로 바꾼다.
+
+뒤로 가기로 닫기(history), overlay unmount 같은 앱 흐름은 `onOpenChange`·`onOpenChangeComplete`에 앱이 연결한다.
 
 컴포넌트는 모두 `className`을 지원한다. 클래스 병합은 공통 `cn`을 사용하며 뒤의 같은 종류 값이 우선한다. 공개 props 타입은 `I` 접두사, 배지 tone 타입은 `TBadgeTone`으로 내보낸다. 루트 진입점의 값은 `@side/design-system/ui/<폴더>` 하위 경로에서도 같은 객체로 가져올 수 있으며 모든 `src/ui/*` 폴더는 `index.ts`를 둔다(`package-exports.spec.ts`).
 

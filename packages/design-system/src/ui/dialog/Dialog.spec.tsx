@@ -73,38 +73,6 @@ describe('Dialog', () => {
     expect(onComplete).toHaveBeenCalledWith(false);
   });
 
-  it('placement="bottom"은 하단 시트 배치로 열고 포커스 관리와 닫기는 그대로 유지해야 한다', async () => {
-    const user = userEvent.setup();
-    function BottomDialog() {
-      const [open, setOpen] = useState(false);
-      return (
-        <>
-          <Button onClick={() => setOpen(true)}>신고하기</Button>
-          <Dialog
-            open={open}
-            onOpenChange={(nextOpen) => setOpen(nextOpen)}
-            title="신고 사유"
-            placement="bottom"
-          >
-            <TextField label="추가 설명" />
-          </Dialog>
-        </>
-      );
-    }
-    render(<BottomDialog />);
-    const opener = screen.getByRole('button', { name: '신고하기' });
-    await user.click(opener);
-
-    const dialog = await screen.findByRole('dialog', { name: '신고 사유' });
-    expect(dialog).toHaveClass('rounded-t-card', 'max-h-[calc(100%_-_16px)]');
-    expect(dialog.parentElement).toHaveClass('items-end', 'h-[var(--visual-viewport-height,100dvh)]');
-    await user.type(within(dialog).getByRole('textbox', { name: '추가 설명' }), '광고 글');
-    expect(within(dialog).getByRole('textbox', { name: '추가 설명' })).toHaveValue('광고 글');
-    await user.click(within(dialog).getByRole('button', { name: '닫기' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await waitFor(() => expect(opener).toHaveFocus());
-  });
-
   it('필수 확인은 Esc로 닫히지 않고 명시적인 완료 동작으로 닫혀야 한다', async () => {
     const user = userEvent.setup();
     render(<RequiredDialog />);

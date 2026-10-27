@@ -22,7 +22,6 @@ export interface IDialogProps {
   container?: ComponentProps<typeof DialogPortal>['container'];
   onOpenChangeComplete?: (open: boolean) => void;
   className?: string;
-  placement?: 'center' | 'bottom';
 }
 
 /** 열림 상태와 업무 흐름은 앱이 소유하고 공통 UI는 포커스·접근성을 맡는다. */
@@ -37,7 +36,6 @@ export function Dialog({
   container,
   onOpenChangeComplete,
   className,
-  placement = 'center',
 }: IDialogProps) {
   return (
     <DialogRoot
@@ -57,7 +55,6 @@ export function Dialog({
         className={className}
         showCloseButton={dismissible}
         closeLabel={closeLabel}
-        placement={placement}
       >
         <DialogHeader className={dismissible ? 'pr-12' : undefined}>
           <DialogTitle>{title}</DialogTitle>

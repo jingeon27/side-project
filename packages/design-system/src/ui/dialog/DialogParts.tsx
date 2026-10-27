@@ -36,7 +36,6 @@ type TDialogContentProps = TStyledProps<DialogPrimitive.Popup.Props> & {
   container?: ComponentProps<typeof DialogPortal>['container'];
   showCloseButton?: boolean;
   closeLabel?: string;
-  placement?: 'center' | 'bottom';
 };
 export function DialogContent({
   className,
@@ -44,19 +43,16 @@ export function DialogContent({
   container,
   showCloseButton = true,
   closeLabel = '닫기',
-  placement = 'center',
   ...props
 }: TDialogContentProps) {
   return (
     <DialogPortal container={container}>
       <DialogOverlay />
-      <DialogPrimitive.Viewport
-        className={placement === 'bottom' ? dialogStyles.sheetViewport : dialogStyles.viewport}
-      >
+      <DialogPrimitive.Viewport className={dialogStyles.viewport}>
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
-            placement === 'bottom' ? dialogStyles.sheetPopup : dialogStyles.popup,
+            dialogStyles.popup,
             'border border-border bg-popover text-popover-foreground',
             className,
           )}

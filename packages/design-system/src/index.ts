@@ -15,7 +15,14 @@ export type { ISpinnerProps } from './ui/spinner/Spinner';
 export { Dialog } from './ui/dialog/Dialog';
 export type { IDialogProps } from './ui/dialog/Dialog';
 export { BottomSheet } from './ui/bottom-sheet/BottomSheet';
-export type { IBottomSheetProps } from './ui/bottom-sheet/BottomSheet';
+export type {
+  IBottomSheetCloseProps,
+  IBottomSheetHandleProps,
+  IBottomSheetHeaderProps,
+  IBottomSheetProps,
+  IBottomSheetRootProps,
+  TBottomSheetSnapPoint,
+} from './ui/bottom-sheet/BottomSheet';
 export { dialogStyles } from './ui/dialog/dialog.styles';
 export { cn } from './lib/cn.helper';
 export { Mention } from './ui/mention/Mention';

@@ -43,14 +43,36 @@
     transition: none;
     user-select: none;
   }
+  /* snapPoints가 없으면 내용 높이로 열고 화면을 넘으면 본문만 스크롤한다. */
+  .ds-sheet-popup[data-fit-content] {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: calc(100% - 16px);
+  }
   .ds-sheet-frame {
     display: flex;
     flex-direction: column;
     height: calc(100% - var(--sheet-visible-offset, 0px));
   }
+  .ds-sheet-popup[data-fit-content] > .ds-sheet-frame {
+    flex: 0 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+  .ds-sheet-popup[data-fit-content] .ds-sheet-body {
+    flex: 1 1 auto;
+  }
   .ds-sheet-header {
-    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     flex-shrink: 0;
+    padding: 0 24px 20px;
+  }
+  .ds-sheet-heading {
+    flex: 1;
+    min-width: 0;
   }
   .ds-sheet-handle {
     display: flex;
@@ -62,6 +84,9 @@
     border-radius: var(--radius-control);
     touch-action: none;
     cursor: grab;
+  }
+  .ds-sheet-handle[data-decorative] {
+    height: 24px;
   }
   .ds-sheet-handle:active {
     cursor: grabbing;
@@ -119,7 +144,7 @@
     .ds-sheet-popup[data-responsive] .ds-sheet-handle {
       display: none;
     }
-    .ds-sheet-popup[data-responsive] .ds-sheet-heading {
+    .ds-sheet-popup[data-responsive] .ds-sheet-header {
       padding-top: 24px;
     }
   }
