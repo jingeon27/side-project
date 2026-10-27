@@ -254,9 +254,17 @@ export const CommentPageSchema = z.object({
   items: z.array(CommentSchema),
   nextCursor: z.string().min(1).nullable(),
 });
+/** 도움됨 → 오래된 순으로 나눈 답변 한 페이지. */
+export const AnswerPageSchema = z.object({
+  items: z.array(AnswerSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
+  /** 첫 답변 페이지. 전체 개수는 `post.answerCount`다. */
   answers: z.array(AnswerSchema),
+  /** 상세에 싣지 않은 다음 답변을 `listPostAnswers`로 받는 커서. 없으면 null. */
+  answersCursor: z.string().min(1).nullable(),
   comments: z.array(CommentSchema),
   /** 상세에 싣지 않은 이전 원댓글 스레드를 `listPostComments`로 받는 커서. 없으면 null. */
   commentsCursor: z.string().min(1).nullable(),
@@ -462,6 +470,7 @@ export type Session = z.infer<typeof SessionSchema>;
 export type PostList = z.infer<typeof PostListSchema>;
 export type PostDetail = z.infer<typeof PostDetailSchema>;
 export type CommentPage = z.infer<typeof CommentPageSchema>;
+export type AnswerPage = z.infer<typeof AnswerPageSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -530,6 +539,7 @@ export const schemas = {
   PostList: PostListSchema,
   PostDetail: PostDetailSchema,
   CommentPage: CommentPageSchema,
+  AnswerPage: AnswerPageSchema,
   NotificationList: NotificationListSchema,
   Session: SessionSchema,
   OnboardInput: OnboardInputSchema,
@@ -770,6 +780,13 @@ export const operations: OperationSpec[] = [
   { method: 'get', path: '/api/posts/{id}', id: 'getPost', response: PostDetailSchema },
   { method: 'patch', path: '/api/posts/{id}', id: 'updatePost', body: PostPatchSchema, response: PostSchema },
   { method: 'delete', path: '/api/posts/{id}', id: 'deletePost', response: OkSchema },
+  {
+    method: 'get',
+    path: '/api/posts/{id}/answers',
+    id: 'listPostAnswers',
+    response: AnswerPageSchema,
+    query: true,
+  },
   {
     method: 'post',
     path: '/api/posts/{id}/answers',

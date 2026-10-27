@@ -1,7 +1,19 @@
-import { Controller, Delete, HttpCode, Inject, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 
 import type { SessionRequest } from '../auth/session.types';
-import { ValidatedBody } from '../common/http/request-validation';
+import { ListQuerySchema, type TListQueryDto } from '../common/http/list-query.dto';
+import { ValidatedBody, ValidatedQuery } from '../common/http/request-validation';
 import { UserGuard } from '../common/http/session.guard';
 import {
   AnswerInputSchema,
@@ -14,6 +26,14 @@ import { AnswersService } from './answers.service';
 @Controller('api')
 export class AnswersController {
   constructor(@Inject(AnswersService) private readonly service: AnswersService) {}
+  @Get('posts/:id/answers')
+  answers(
+    @Req() req: SessionRequest,
+    @Param('id') id: string,
+    @ValidatedQuery(ListQuerySchema) query: TListQueryDto,
+  ) {
+    return this.service.page(req, id, query);
+  }
   @HttpCode(200)
   @Post('posts/:id/answers')
   @UseGuards(UserGuard)

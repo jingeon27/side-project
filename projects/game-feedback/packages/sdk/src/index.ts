@@ -34,6 +34,7 @@ export {
   getPost,
   updatePost,
   deletePost,
+  listPostAnswers,
   createAnswer,
   updateAnswer,
   deleteAnswer,

@@ -11,6 +11,7 @@ import {
 import {
   AdminReportList,
   Answer,
+  AnswerPage,
   Category,
   ChatAttachment,
   ChatMessage,
@@ -64,6 +65,7 @@ import type {
   ListChatMessagesParams,
   ListConversationsParams,
   ListNotificationsParams,
+  ListPostAnswersParams,
   ListPostCommentsParams,
   ListPostsParams,
   ListReportsParams,
@@ -1475,6 +1477,37 @@ export const deletePost = async (id: string, options?: Parameters<typeof apiFetc
 
     ,
     schema: Ok
+  }
+);}
+
+
+
+export const getListPostAnswersUrl = (id: string,
+    params?: ListPostAnswersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/posts/${encodeURIComponent(String(id))}/answers?${stringifiedParams}` : `/api/posts/${encodeURIComponent(String(id))}/answers`
+}
+
+export const listPostAnswers = async (id: string,
+    params?: ListPostAnswersParams, options?: Parameters<typeof apiFetch>[1]): Promise<AnswerPage> => {
+
+  return apiFetch<AnswerPage>(getListPostAnswersUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+    ,
+    schema: AnswerPage
   }
 );}
 

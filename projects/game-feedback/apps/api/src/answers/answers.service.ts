@@ -7,12 +7,14 @@ import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
 import { ACTIVE_CONTENT, ACTIVE_POST } from '../common/content';
 import { ApiError } from '../common/http/api-error';
+import { type TListQueryDto } from '../common/http/list-query.dto';
 import { PrismaClient, type Prisma } from '../generated/prisma';
 import { PostsService } from '../posts/posts.service';
 import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
 import { type TAnswerBodyDto, type THelpfulDto } from './answer-input.dto';
+import { answerPage } from './answer-page';
 import { responseAnswer } from './answer.presenter';
 
 @Injectable()
@@ -54,6 +56,14 @@ export class AnswersService {
       (row) => [postCacheTag(row.postId)],
     );
     return responseAnswer(a);
+  }
+  /** 상세 첫 페이지 다음의 답변. 게시글 가시성과 차단 관계는 상세와 같다. */
+  async page(req: SessionRequest, postId: string, query: TListQueryDto) {
+    await this.posts.visiblePost(req, postId);
+    return answerPage(this.db, postId, await this.visibility.excluded(req), {
+      cursor: query.cursor,
+      limit: query.limit,
+    });
   }
   async visibleAnswer(req: SessionRequest, id: string) {
     const a = await this.db.answer.findFirst({

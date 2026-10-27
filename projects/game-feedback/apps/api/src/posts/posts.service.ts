@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
 
-import { responseAnswer } from '../answers/answer.presenter';
+import { ANSWER_PAGE, answerPage } from '../answers/answer-page';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { CacheInvalidationService } from '../cache-invalidation/cache-invalidation.service';
@@ -14,7 +14,6 @@ import { decodeCursor, nextCursor } from '../common/pagination';
 import { Prisma, PrismaClient } from '../generated/prisma';
 import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
-import { authorSelect } from '../users/user.presenter';
 import { answerCounts, NO_ANSWERS } from './post-answer-counts';
 import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
 import { PostMediaService } from './post-media.service';
@@ -65,17 +64,14 @@ export class PostsService {
     const p = await this.visiblePost(req, id),
       excluded = await this.visibility.excluded(req);
     const [answers, counts, comments] = await Promise.all([
-      this.db.answer.findMany({
-        where: { postId: id, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-        include: { author: { select: authorSelect } },
-        orderBy: [{ helpful: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
-      }),
+      answerPage(this.db, id, excluded, { limit: ANSWER_PAGE }),
       answerCounts(this.db, [id], excluded),
       commentThreadPage(this.db, id, excluded, { limit: COMMENT_THREAD_PAGE }),
     ]);
     return {
       post: responsePost(p, counts.get(id)),
-      answers: answers.map(responseAnswer),
+      answers: answers.items,
+      answersCursor: answers.nextCursor,
       comments: comments.items,
       commentsCursor: comments.nextCursor,
     };
