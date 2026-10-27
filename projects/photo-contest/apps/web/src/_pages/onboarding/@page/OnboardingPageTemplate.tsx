@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 
 import { LoginPanel } from '@/features/auth';
-import { onboardingSchema, ProfileAvatarField } from '@/features/profile';
+import { onboardingSchema, profileSchema } from '@/features/profile';
 import {
   CompleteOnboardingDocument,
   CompleteProfileAvatarUploadDocument,
@@ -22,6 +22,7 @@ import { navigateDocument } from '@/shared/lib/document-navigation.helper';
 import { useZodForm } from '@/shared/model/form';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
+import { ImageFileField } from '@/shared/ui/@core/image-file-field';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
@@ -82,7 +83,15 @@ function OnboardingForm({ queryRef }: { queryRef: QueryRef<MeQuery> }) {
           소셜 계정의 이름과 사진을 가져왔어요. 닉네임을 바꾸거나 사진을 제거할 수 있어요.
         </p>
       </div>
-      <ProfileAvatarField form={form} currentUrl={data.me.avatar} />
+      <ImageFileField
+        control={form.control}
+        trigger={form.trigger}
+        name="avatar"
+        removeName="removeAvatar"
+        label="프로필 사진"
+        currentUrl={data.me.avatar}
+        fileSchema={profileSchema.shape.avatar}
+      />
       <TextField
         label="닉네임"
         required
