@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { appRoutes, resolveAppRoute, WebPathSchema } from './routes';
 
 describe('community board navigation', () => {
+  it('프로필 수정은 프로필 탭 안의 독립 화면으로 이동한다', () => {
+    for (const locale of ['ko', 'en', 'ja']) {
+      expect(resolveAppRoute(appRoutes.editProfile(locale))).toMatchObject({
+        screen: 'profile-edit',
+        tab: 'settings',
+        parent: appRoutes.settings(locale),
+      });
+    }
+  });
   it('가이드는 프로필 안내 아래의 화면이며 별도 탭을 만들지 않아야 한다', () => {
     for (const locale of ['ko', 'en', 'ja'])
       expect(resolveAppRoute(appRoutes.guide(locale))).toMatchObject({

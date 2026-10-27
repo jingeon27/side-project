@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import type { PostDetail } from '@game-feedback/contracts';
 
-const origin = 'http://127.0.0.1:3301';
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
 for (const reducedMotion of ['no-preference', 'reduce'] as const) {
   test(`interactions preserve keyboard controls, confirmed feedback and toast placement (${reducedMotion})`, async ({
@@ -44,10 +44,7 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
         await page.emulateMedia({ reducedMotion: 'no-preference' });
       }
 
-      const unanswered = page.getByRole('button', { name: '답변 대기' });
-      await unanswered.click();
-      await expect(unanswered).toHaveAttribute('aria-pressed', 'true');
-      await expect(page).toHaveURL(/tab=unanswered/);
+      await expect(page.getByRole('button', { name: '답변 대기', exact: true })).toHaveCount(0);
 
       const compose = page.getByRole('button', { name: '글쓰기' });
       await compose.focus();

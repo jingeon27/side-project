@@ -14,6 +14,7 @@ export type TAppScreen =
   | 'search'
   | 'post'
   | 'compose'
+  | 'profile-edit'
   | 'profile'
   | 'conversation'
   | 'guide'
@@ -123,6 +124,7 @@ export const appRoutes = {
   messages: (locale: string) => `${root(locale)}/messages`,
   conversation: (locale: string, id: string) => `${root(locale)}/messages/${RouteIdSchema.parse(id)}`,
   notifications: (locale: string) => `${root(locale)}/notifications`,
+  editProfile: (locale: string) => `${root(locale)}/settings/profile`,
   settings: (locale: string) => `${root(locale)}/settings`,
   contact: (locale: string) => `${root(locale)}/contact`,
   guide: (locale: string) => `${root(locale)}/guide`,
@@ -150,7 +152,7 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   if (extra !== undefined) return null;
   const pathname = rawPath.replace(/\/$/, '');
   const segments =
-    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|onboarding|search|boards|write|messages|notifications|settings|guide|terms|privacy|contact))?$/.exec(
+    /^\/(ko|en|ja)(?:\/(posts|users|messages|boards)\/([A-Za-z0-9_-]{1,100})|\/(login|onboarding|search|boards|write|messages|notifications|settings\/profile|settings|guide|terms|privacy|contact))?$/.exec(
       pathname,
     );
   if (!segments) return null;
@@ -167,6 +169,14 @@ export function resolveAppRoute(path: string): IAppRoute | null {
   const context = { pathname, locale, home, query, game: game.data, id, feedback: feedback.data };
   return match(kind)
     .with('login', 'onboarding', (screen) => resolveAuthRoute(context, screen))
+    .with('settings/profile', () => ({
+      path: appRoutes.editProfile(locale),
+      pathname,
+      locale,
+      screen: 'profile-edit' as const,
+      tab: 'settings' as const,
+      parent: appRoutes.settings(locale),
+    }))
     .with('search', () => resolveSearchRoute(context))
     .with('write', () => resolveComposeRoute(context))
     .with('posts', () => resolvePostRoute(context))

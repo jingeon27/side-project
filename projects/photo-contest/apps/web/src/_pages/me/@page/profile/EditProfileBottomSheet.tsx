@@ -50,7 +50,7 @@ function ProfileForm({
   if (!data.me) return <BottomSheet.Content>다시 로그인해 주세요.</BottomSheet.Content>;
   return (
     <>
-      <BottomSheet.Content>
+      <BottomSheet.Content className="px-0">
         <form
           id={formId}
           noValidate
@@ -98,16 +98,12 @@ function ProfileForm({
           />
         </form>
       </BottomSheet.Content>
-      <BottomSheet.Footer>
-        <Button
-          type="submit"
-          form={formId}
-          fullWidth
-          loading={form.formState.isSubmitting}
-          className="mx-auto max-w-app"
-        >
-          프로필 저장하기
-        </Button>
+      <BottomSheet.Footer className="px-0">
+        <div className="mx-auto w-full max-w-app">
+          <Button type="submit" form={formId} fullWidth loading={form.formState.isSubmitting}>
+            프로필 저장하기
+          </Button>
+        </div>
       </BottomSheet.Footer>
     </>
   );
@@ -116,8 +112,12 @@ function ProfileForm({
 export function EditProfileBottomSheet(controls: IBottomSheetControlProps) {
   const [queryRef, { refetch }] = useBackgroundQuery(MeDocument, { fetchPolicy: 'network-only' });
   return (
-    <BottomSheet.Root {...controls}>
-      <BottomSheet.Header title="프로필 수정" />
+    <BottomSheet.Root {...controls} className="px-5">
+      <BottomSheet.Header
+        title="프로필 수정"
+        description="사진과 닉네임을 원하는 모습으로 바꿔 보세요."
+        className="mx-auto w-full max-w-app px-0"
+      />
       <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="mx-5 h-64" />}>
         <ProfileForm queryRef={queryRef} isOpen={controls.isOpen} onClose={() => controls.onClose()} />
       </AsyncBoundary>

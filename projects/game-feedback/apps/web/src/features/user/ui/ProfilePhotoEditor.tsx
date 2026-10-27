@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button } from '@side/design-system';
+import { Button, buttonVariants, cn } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
@@ -58,9 +58,9 @@ export function ProfilePhotoEditor({ hasPhoto }: { hasPhoto: boolean }) {
         render={({ field }) => (
           <label className="profile-photo-picker">
             {file && <PhotoPreview file={file} />}
-            <span>{t(file ? '사진 다시 선택' : '프로필 사진 선택')}</span>
             <input
               ref={field.ref}
+              className="peer sr-only"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               aria-label={t('프로필 사진 선택')}
@@ -72,6 +72,14 @@ export function ProfilePhotoEditor({ hasPhoto }: { hasPhoto: boolean }) {
                 event.target.value = '';
               }}
             />
+            <span
+              className={cn(
+                buttonVariants({ variant: 'secondary' }),
+                'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current',
+              )}
+            >
+              {t(file ? '사진 다시 선택' : '프로필 사진 선택')}
+            </span>
           </label>
         )}
       />

@@ -63,6 +63,12 @@ beforeEach(() => {
 });
 
 describe('LoginPanel', () => {
+  it('기록 유지 안내의 회원가입 링크는 회원가입 탭을 바로 열어야 한다', async () => {
+    navigation.search = '?mode=register&next=%2Fme';
+    renderPanel();
+    expect(await screen.findByRole('tab', { name: '회원가입', selected: true })).toBeVisible();
+    expect(screen.getByRole('button', { name: '가입하고 시작하기' })).toBeVisible();
+  });
   it('닉네임 입력 없이 익명 세션을 시작하고 화면이 넘긴 경로로 돌아가야 한다', async () => {
     const { user } = renderPanel({ nextPath: '/invite/token-1' });
     await user.click(screen.getByRole('button', { name: '익명으로 시작하기' }));

@@ -1,11 +1,13 @@
 import { expect, test } from '@playwright/test';
 
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+
 test('composer examples follow the classification, battle type, coaching role and fee while keeping drafts', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 400, height: 844 });
   await page.request.post('/api/auth/test-login', {
-    headers: { Origin: 'http://127.0.0.1:3301' },
+    headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
   });
   await page.goto('/ko/write?board=friend-sale');
@@ -35,7 +37,7 @@ test('composer examples follow the classification, battle type, coaching role an
   await classification.selectOption('COACHING');
   await expect(title).toHaveAttribute('placeholder', '예: 수비와 운영을 함께 연습할 수강생 모집');
   await form.getByLabel('모집 유형', { exact: true }).selectOption('STUDENT');
-  await expect(title).toHaveAttribute('placeholder', '예: 목표 점수 달성까지 도와줄 코치 구해요');
+  await expect(title).toHaveAttribute('placeholder', '예: 목표 달성까지 도와줄 코치 구해요');
   await expect(body).toHaveAttribute(
     'data-placeholder',
     '현재 실력과 목표, 배우고 싶은 내용, 가능한 시간과 예산을 알려주세요.',
@@ -45,7 +47,7 @@ test('composer examples follow the classification, battle type, coaching role an
     '예: 30000',
   );
   await form.getByLabel('수강료 기준', { exact: true }).selectOption('MONTHLY');
-  await expect(form.getByLabel('월 희망 수강료 (원)', { exact: true })).toHaveAttribute(
+  await expect(form.getByLabel('기간 희망 수강료 (원)', { exact: true })).toHaveAttribute(
     'placeholder',
     '예: 200000',
   );
@@ -70,7 +72,7 @@ for (const width of [320, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.request.post('/api/auth/test-login', {
-      headers: { Origin: 'http://127.0.0.1:3301' },
+      headers: { Origin: origin },
       data: { accountId: 'sample-user-0' },
     });
     await page.goto('/ko?q=hog&tab=unanswered');

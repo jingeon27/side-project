@@ -15,15 +15,18 @@ export function createShareImage() {
       }}
     >
       <svg width="130" height="130" viewBox="0 0 64 64">
-        <g transform="translate(0 -3)">
-          <path
-            d="M22 21h20c5 0 8.6 3.2 10 8.2l3.5 13.5c1.4 5.4-4.7 9-8.6 5.5L40 42H24l-6.9 6.2c-3.9 3.5-10-.1-8.6-5.5L12 29.2C13.4 24.2 17 21 22 21Z"
-            fill="#f4fff9"
-          />
-          <path d="M19 32h10M24 27v10" fill="none" stroke="#147d64" strokeWidth="3.5" strokeLinecap="round" />
-          <circle cx="41" cy="29.5" r="2.5" fill="#147d64" />
-          <circle cx="47" cy="35.5" r="2.5" fill="#147d64" />
-        </g>
+        <path
+          d="M18 13h28a6 6 0 0 1 6 6v18a6 6 0 0 1-6 6H31L20 52v-9h-2a6 6 0 0 1-6-6V19a6 6 0 0 1 6-6Z"
+          fill="#f4fff9"
+        />
+        <path
+          d="M41 23H27v12h14v-6h-6"
+          fill="none"
+          stroke="#147d64"
+          strokeWidth="4"
+          strokeLinejoin="round"
+          strokeLinecap="square"
+        />
       </svg>
       <div style={{ display: 'flex', color: '#d0f2e6', fontSize: 30, marginBottom: 32 }}>BAMBYUL</div>
       <div style={{ display: 'flex', fontSize: 92, fontWeight: 700 }}>Game Mate</div>

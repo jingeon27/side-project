@@ -40,6 +40,9 @@
     padding: 0 40px;
     gap: 24px;
   }
+  .topbar-inner:has(> .post-header-back) {
+    gap: 4px;
+  }
   .brand {
     display: flex;
     gap: 9px;

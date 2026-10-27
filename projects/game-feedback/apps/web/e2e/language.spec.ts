@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
+
 test('first visits use the browser region without JavaScript and retain feed filters', async ({
   browser,
 }) => {
@@ -11,7 +13,7 @@ test('first visits use the browser region without JavaScript and retain feed fil
     const context = await browser.newContext({
       locale,
       javaScriptEnabled: false,
-      baseURL: 'http://127.0.0.1:3301',
+      baseURL: origin,
     });
     try {
       const page = await context.newPage();
@@ -28,7 +30,7 @@ test('first visits use the browser region without JavaScript and retain feed fil
 test('signed-out users can save a manual language, reload and resume automatic selection', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ locale: 'ja-JP', baseURL: 'http://127.0.0.1:3301' });
+  const context = await browser.newContext({ locale: 'ja-JP', baseURL: origin });
   try {
     const page = await context.newPage();
     await page.goto('/ja/settings');
@@ -63,7 +65,7 @@ test('signed-out users can save a manual language, reload and resume automatic s
 test('the header dropdown preserves the current page, filters and hash while sharing the saved preference', async ({
   browser,
 }) => {
-  const context = await browser.newContext({ locale: 'ja-JP', baseURL: 'http://127.0.0.1:3301' });
+  const context = await browser.newContext({ locale: 'ja-JP', baseURL: origin });
   try {
     const page = await context.newPage();
     await page.goto('/ja?q=hog&tab=unanswered#feed');
@@ -80,10 +82,7 @@ test('the header dropdown preserves the current page, filters and hash while sha
       'href',
       '/en/search?q=hog&tab=unanswered',
     );
-    await expect(page.getByRole('button', { name: 'Unanswered', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    await expect(page.getByRole('button', { name: 'Unanswered', exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => Reflect.get(window, '__languageDocument'))).toBe('kept');
     expect(await page.evaluate(() => history.length)).toBe(length);
     expect((await context.cookies()).find((cookie) => cookie.name === 'gf_language')?.value).toBe('en');

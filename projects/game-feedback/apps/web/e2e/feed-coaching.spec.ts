@@ -47,8 +47,7 @@ test('the feed combines general posts and paid coaching and connects a student t
   await expect(page.locator('.post-card:visible')).toHaveCount(2);
   await expect(page.locator('.post-list:visible')).toContainText(generalTitle);
   await expect(page.locator('.post-list:visible')).toContainText(coachingTitle);
-  await page.getByRole('button', { name: '답변 대기' }).click();
-  await expect(page.locator('.post-card:visible')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '답변 대기', exact: true })).toHaveCount(0);
   await page.request.post('/api/auth/test-login', {
     headers: { Origin: origin },
     data: { accountId: 'sample-user-0' },
