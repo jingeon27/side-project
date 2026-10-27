@@ -25,7 +25,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 ## SSE (`src/chat/chat.events.ts`, `GET /api/chat/events`)
 
 - 프로세스 메모리 구독이다(다중 인스턴스는 미지원). 이벤트는 `invalidate { conversationId }`와 `heartbeat`뿐 — 본문·발신자를 싣지 않고 클라이언트가 REST로 다시 읽는다. 연결 직후 `conversationId: null` 무효화를 한 번 보낸다.
-- 5초마다 세션(존재·같은 사용자·만료·테스트 계정 규칙)을 다시 확인해 아니면 닫는다. 세션당 4개를 넘으면 가장 오래된 스트림을 닫는다. 수신자마다 `canAccess`(= `ChatAccessService.visible`)를 다시 본다.
+- 5초마다 하나의 타이머가 열린 모든 스트림의 세션(존재·같은 사용자·만료·테스트 계정 규칙)을 `session.findMany` 한 번으로 다시 확인해 아니면 닫고, 나머지에 heartbeat를 보낸다. 세션당 4개, 사용자당 8개(`MAX_STREAMS_PER_SESSION`·`MAX_STREAMS_PER_USER`)를 넘으면 가장 오래된 스트림을 닫는다. 단위 사양은 `src/chat/chat.events.spec.ts`. 수신자마다 `canAccess`(= `ChatAccessService.visible`)를 다시 본다.
 - `publish`는 트랜잭션이 끝난 뒤 `void this.events.publish([...userIds], conversationId)`로 부른다. 세션 회전·로그아웃·탈퇴·차단·해제는 `chat-lifecycle.middleware.ts`가 200 응답 뒤 처리하고, 밴은 `AdminUsersService.ban`이 `closeUser`를 부른다.
 
 ## 건드리면 있어야 하는 테스트
