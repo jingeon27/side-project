@@ -11,9 +11,9 @@ for (const scenario of [
     width: 1440,
     type: 'MONTHLY',
     role: 'COACH',
-    label: '월 수강료 (원)',
+    label: '기간 수강료 (원)',
     amount: '250000',
-    summary: '월 ₩250,000',
+    summary: '기간 총 ₩250,000',
   },
   {
     width: 320,
