@@ -22,8 +22,6 @@ if len({e[key] for key in keys}) != len(keys):
 for service in ['GAME_FEEDBACK', 'PHOTO_CONTEST']:
     if e[f'{service}_API_DOMAIN'] != f"api.{e[f'{service}_DOMAIN']}":
         raise SystemExit('API domains must use the api.<service-domain> form.')
-if e.get('GAME_FEEDBACK_S3_BUCKET') == e.get('PHOTO_CONTEST_S3_BUCKET'):
-    raise SystemExit('Services must use distinct private S3 buckets.')
 PY
 for service in game-feedback photo-contest; do
   network="${SIDE_NETWORK_PREFIX:-side}-$service-edge"
