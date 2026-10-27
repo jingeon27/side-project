@@ -37,6 +37,7 @@
 
 - 인증: HttpOnly 세션 쿠키 하나. 운영(https)은 `__Host-contest_session`(Secure·Path=/·Domain 없음), 개발·테스트(http)는 `contest_session`이다. API는 cookie-parser 없이 요청 `Cookie` 헤더를 직접 파싱하고 요청당 한 번만 조회한다. 웹 `proxy.ts`는 요청 쿠키로 멤버 전용 화면을 막고, SSR은 요청의 Cookie 헤더를 API로만 넘긴다. 앱 WebView도 같은 쿠키를 쓰고 토큰을 네이티브로 넘기지 않는다.
 - 신규 소셜 가입은 제공자의 이름·사진을 기본값으로 `/onboarding`에서 편집·제거하고 약관 동의 후 완료한다. 이후 로그인은 사용자가 선택한 프로필을 덮어쓰지 않는다. 개인 사진 업로드도 S3 presigned POST·HEAD 확인·고정 경로의 짧은 서명 GET을 쓴다.
+- 미디어 결정: 사진·동영상의 위치(GPS)·EXIF 메타데이터는 지우지 않는다. 위치 공유는 올리는 사람이 촬영·공유 설정으로 정하므로 개인정보 문제로 다시 지적하지 않는다. API는 파일 바이트를 읽거나 변환하지 않으므로 서버 이미지·동영상 처리(sharp 리사이즈, image-size·mediainfo 검증, ffmpeg remux, 메타데이터 제거)를 다시 넣지 않는다. 검증은 presigned 조건(형식·정확한 크기)과 완료 시 HEAD로 한다. API의 해당 import는 ESLint가 막는다.
 - 앱 소셜 로그인: Google이 WebView 로그인을 막으므로 시스템 브라우저 + PKCE + 일회용 코드 교환(`/auth/app/exchange`). 코드는 검증된 https App Link·Universal Link(`<WEB_ORIGIN>/app-auth/callback`)로만 받는다. 커스텀 스킴은 로그인 밖의 딥링크에만 쓴다(같은 스킴을 등록한 앱이 자기 challenge로 시작한 흐름의 코드를 가로챌 수 있다). 웹이 `/.well-known/apple-app-site-association`·`assetlinks.json`을 배포 환경변수로 제공하고, iOS 최소 버전은 17.4다.
 - 모니터링: API는 Sentry만(도메인 이벤트는 DB에만 기록), 웹·모바일은 Sentry + Amplitude. 키가 없으면 아무것도 보내지 않는다.
 - 좋아요 수는 항상 공개. 초대 링크는 모든 멤버가 공유하고 재발급은 OWNER만. 게시물은 작성자와 관리자만 삭제한다. 새 대회와 기존 대회의 득표수는 종료 후 공개한다. OWNER·MODERATOR는 개최·게시물/댓글 삭제·가입 승인·멤버 내보내기(MODERATOR는 MEMBER만)를 하고, OWNER만 부관리자 임명/해제·관리자 양도·초대 재발급을 한다. OWNER는 내보낼 수 없고 양도한 뒤에만 그룹을 나간다. 양도한 OWNER는 MEMBER가 된다.
