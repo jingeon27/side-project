@@ -15,6 +15,7 @@ import { Prisma, PrismaClient } from '../generated/prisma';
 import { writePostNotifications } from '../push/post-notification.writer';
 import { UserVisibilityService } from '../users/user-visibility.service';
 import { authorSelect } from '../users/user.presenter';
+import { answerCounts, NO_ANSWERS } from './post-answer-counts';
 import { type TCreatePostDto, type TUpdatePostDto } from './post-input.dto';
 import { PostMediaService } from './post-media.service';
 import { postInclude, responsePost } from './post.presenter';
@@ -31,13 +32,7 @@ export class PostsService {
     const excluded = await this.visibility.excluded(req);
     const post = await this.db.post.findFirst({
       where: { id, ...ACTIVE_POST, authorId: { notIn: excluded } },
-      include: {
-        ...postInclude,
-        answers: {
-          where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-          select: { id: true, helpful: true },
-        },
-      },
+      include: postInclude,
     });
     if (!post) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
     return post;
@@ -55,24 +50,31 @@ export class PostsService {
     )
       throw new ApiError(400, 'INVALID_FEEDBACK_FILTER', '피드백의 답변 상태를 확인해주세요.');
     const rows = await this.listVisiblePosts(q, excluded);
+    const page = rows.slice(0, q.limit);
+    const counts = await answerCounts(
+      this.db,
+      page.map((post) => post.id),
+      excluded,
+    );
     return {
-      items: rows.slice(0, q.limit).map(responsePost),
+      items: page.map((post) => responsePost(post, counts.get(post.id))),
       nextCursor: nextCursor(rows, q.limit),
     };
   }
   async detail(req: SessionRequest, id: string) {
     const p = await this.visiblePost(req, id),
       excluded = await this.visibility.excluded(req);
-    const [answers, comments] = await Promise.all([
+    const [answers, counts, comments] = await Promise.all([
       this.db.answer.findMany({
         where: { postId: id, ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
         include: { author: { select: authorSelect } },
         orderBy: [{ helpful: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
       }),
+      answerCounts(this.db, [id], excluded),
       commentThreadPage(this.db, id, excluded, { limit: COMMENT_THREAD_PAGE }),
     ]);
     return {
-      post: responsePost({ ...p, answers }),
+      post: responsePost(p, counts.get(id)),
       answers: answers.map(responseAnswer),
       comments: comments.items,
       commentsCursor: comments.nextCursor,
@@ -143,7 +145,7 @@ export class PostsService {
       },
       (created) => [postCacheTag(created.id), DISCOVERY_CACHE_TAG],
     );
-    return responsePost(p);
+    return responsePost(p, NO_ANSWERS);
   }
   async updatePost(req: SessionRequest, id: string, input: TUpdatePostDto) {
     const u = requireUser(req),
@@ -159,41 +161,32 @@ export class PostsService {
     if (input.document && (!input.body || richTextToPlainText(input.document) !== input.body))
       throw new ApiError(400, 'INVALID_DOCUMENT', '본문과 편집 내용을 확인해주세요.');
     const excluded = await this.visibility.excluded(req);
-    return responsePost(
-      await this.cache.change(
-        async (tx) => {
-          await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
-          // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
-          const current = await tx.post.findFirst({
-            where: { id, ...ACTIVE_POST, authorId: u.id },
-            select: { id: true },
-          });
-          if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
-          if (input.body !== undefined || document !== undefined)
-            await this.media.sync(tx, u.id, id, document);
-          return (tx ?? this.db).post.update({
-            where: { id },
-            data: {
-              ...data,
-              ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
-              ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
-              ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
-              ...(input.body !== undefined || document === null
-                ? { document: document ?? Prisma.DbNull }
-                : {}),
-            },
-            include: {
-              ...postInclude,
-              answers: {
-                where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-                select: { id: true, helpful: true },
-              },
-            },
-          });
-        },
-        [postCacheTag(id), DISCOVERY_CACHE_TAG],
-      ),
+    const updated = await this.cache.change(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Post" WHERE "id" = ${id} FOR UPDATE`;
+        // 잠금 뒤 다시 확인해 그 사이 숨김·삭제된 글을 고치지 않게 한다.
+        const current = await tx.post.findFirst({
+          where: { id, ...ACTIVE_POST, authorId: u.id },
+          select: { id: true },
+        });
+        if (!current) throw new ApiError(404, 'POST_NOT_FOUND', '게시글을 찾을 수 없습니다.');
+        if (input.body !== undefined || document !== undefined) await this.media.sync(tx, u.id, id, document);
+        const post = await (tx ?? this.db).post.update({
+          where: { id },
+          data: {
+            ...data,
+            ...(coaching !== undefined ? { coaching: coaching ?? Prisma.DbNull } : {}),
+            ...(friendSale !== undefined ? { friendSale: friendSale ?? Prisma.DbNull } : {}),
+            ...(battle !== undefined ? { battle: battle ?? Prisma.DbNull } : {}),
+            ...(input.body !== undefined || document === null ? { document: document ?? Prisma.DbNull } : {}),
+          },
+          include: postInclude,
+        });
+        return { post, counts: await answerCounts(tx, [id], excluded) };
+      },
+      [postCacheTag(id), DISCOVERY_CACHE_TAG],
     );
+    return responsePost(updated.post, updated.counts.get(id));
   }
   async deletePost(req: SessionRequest, id: string) {
     const u = requireUser(req);
@@ -297,13 +290,7 @@ export class PostsService {
       where,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: q.limit + 1,
-      include: {
-        ...postInclude,
-        answers: {
-          where: { ...ACTIVE_CONTENT, authorId: { notIn: excluded } },
-          select: { id: true, helpful: true },
-        },
-      },
+      include: postInclude,
     });
   }
 }
