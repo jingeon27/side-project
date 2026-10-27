@@ -10,11 +10,14 @@ import type { GameProfile } from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
+import { MAX_GAME_ACCOUNTS_PER_USER } from '../game-profiles/game-profiles.service';
 import { PrismaClient } from '../generated/prisma';
 import {
   ApiError,
   assertDatabaseUrl,
   DemoProfileProvider,
+  hash,
+  token,
   type IdentityProvider,
   type ProfileProvider,
 } from '../security';
@@ -498,6 +501,37 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await account.get('/api/me/game-accounts')).body).toEqual(
         expect.arrayContaining([expect.objectContaining({ playerTag: tag })]),
       );
+    });
+
+    it('keeps only the most recent game accounts instead of one row per looked-up tag', async () => {
+      // 다른 사례가 쓰는 고정 계정의 대표 태그를 바꾸지 않도록 전용 사용자를 만든다.
+      const user = await db.user.create({
+        data: { nickname: '계정상한확인', termsVersion: '2026-10', ageConfirmed: true },
+      });
+      const raw = token();
+      await db.session.create({
+        data: { tokenHash: hash(raw), userId: user.id, expiresAt: new Date(Date.now() + 3_600_000) },
+      });
+      const save = (playerTag: string) =>
+        supertest(app.getHttpServer())
+          .post('/api/me/game-accounts')
+          .set('Origin', origin)
+          .set('Authorization', `Bearer ${raw}`)
+          .send({ playerTag })
+          .expect(200);
+      const tags = Array.from({ length: MAX_GAME_ACCOUNTS_PER_USER + 2 }, (_, index) => `#CAP${index}`);
+      for (const playerTag of tags) await save(playerTag);
+      // 예전 태그를 다시 저장하면 가장 최근 계정으로 남는다.
+      await save('#CAP0');
+      const saved = (
+        await supertest(app.getHttpServer())
+          .get('/api/me/game-accounts')
+          .set('Authorization', `Bearer ${raw}`)
+          .expect(200)
+      ).body as Array<{ playerTag: string }>;
+      expect(saved.map(({ playerTag }) => playerTag)).toEqual(['#CAP0', ...tags.slice(-4).reverse()]);
+      expect(await db.gameAccount.count({ where: { userId: user.id } })).toBe(MAX_GAME_ACCOUNTS_PER_USER);
+      expect((await db.user.findUniqueOrThrow({ where: { id: user.id } })).supercellTag).toBe('#CAP0');
     });
 
     it('registers the user tag on the account while posts use the current author identity', async () => {

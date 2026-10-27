@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest';
 
-import { coarseRateBucket, INTERNAL_READ_LIMIT, requestRateBucket, RequestRateLimiter } from './rate-limit';
+import {
+  coarseRateBucket,
+  GAME_PROFILE_LOOKUP_LIMIT,
+  INTERNAL_READ_LIMIT,
+  requestRateBucket,
+  requestRateBuckets,
+  RequestRateLimiter,
+} from './rate-limit';
 
 it('게시글·채팅·프로필 예약은 제한을 공유하고 완료 검증은 별도 예산을 사용해야 한다', () => {
   const limiter = new RequestRateLimiter();
@@ -52,4 +59,24 @@ it('게임 프로필 조회는 서버 토큰을 쓰므로 사용자별 전용 �
   };
   expect(requestRateBucket(lookup)).toEqual({ key: 'game-profile:user:owner', limit: 10 });
   expect(requestRateBucket({ ...lookup, path: '/api/me/game-accounts' }).key).toBe('read:user:owner');
+});
+
+it('Supercell을 부를 수 있는 계정 저장·온보딩도 미리보기와 같은 게임 프로필 예산을 함께 써야 한다', () => {
+  const user = { ip: '203.0.113.7', userId: 'owner', method: 'POST' };
+  expect(requestRateBuckets({ ...user, path: '/api/me/game-accounts' })).toEqual([
+    { key: 'write:user:owner', limit: 60 },
+    { key: 'game-profile:user:owner', limit: GAME_PROFILE_LOOKUP_LIMIT },
+  ]);
+  // 온보딩 대기 세션에는 사용자가 없으므로 미리보기와 같은 주소 예산을 쓴다.
+  const pending = { ip: '203.0.113.7', method: 'POST', path: '/api/auth/onboard/' };
+  expect(requestRateBuckets(pending)).toEqual([
+    { key: 'auth:ip:203.0.113.7', limit: 30 },
+    { key: 'game-profile:ip:203.0.113.7', limit: GAME_PROFILE_LOOKUP_LIMIT },
+  ]);
+  expect(requestRateBuckets({ ...pending, method: 'GET', path: '/api/game-profiles/%23P0LYQ829' })).toEqual([
+    { key: 'game-profile:ip:203.0.113.7', limit: GAME_PROFILE_LOOKUP_LIMIT },
+  ]);
+  expect(requestRateBuckets({ ...user, method: 'GET', path: '/api/me/game-accounts' })).toEqual([
+    { key: 'read:user:owner', limit: 240 },
+  ]);
 });
