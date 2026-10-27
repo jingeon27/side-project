@@ -5,8 +5,12 @@ import { userEvent } from '@testing-library/user-event';
 import { OverlayProvider } from 'overlay-kit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { installFakeNativeApp } from '@photo-contest/bridge/test';
+import { createWebBridge } from '@photo-contest/bridge/web';
+
 import { notificationTypePolicies } from '@/features/notification';
 import { MeDocument, MyNotificationsDocument, NotificationType } from '@/shared/api/generated';
+import { BridgeContext } from '@/shared/model/bridge';
 
 import {
   createBrowserClient,
@@ -201,5 +205,56 @@ describe('알림 읽음 회귀', () => {
     expect(within(list).getByRole('button', { name: /알림 그룹 23번/ })).not.toHaveTextContent('읽지 않음');
     expect(screen.getByText('읽지 않은 알림 24개')).toBeVisible();
     expect(operations.filter((name) => name === 'MyNotifications')).toHaveLength(2);
+  });
+});
+
+describe('앱 알림 설정 회귀', () => {
+  it('알림 목록을 불러오는 동안에도 앱 알림 설정을 보여줘야 한다', async () => {
+    const fake = installFakeNativeApp(window, {
+      capabilities: {
+        'notifications.registration': async () => ({
+          installationId: '4b0f6a8e-3c1d-4e2f-9a7b-1c2d3e4f5a6b',
+          platform: 'android',
+          status: 'undetermined',
+          token: null,
+        }),
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ ok: true })),
+    );
+    const bridge = createWebBridge(window);
+    // 목록 조회는 끝나지 않는다.
+    const link = new ApolloLink(
+      (operation) =>
+        new Observable((sink) => {
+          if (operation.operationName !== 'Me') return;
+          queueMicrotask(() => {
+            sink.next({ data: { me: viewer } });
+            sink.complete();
+          });
+        }),
+    );
+    const client = new ApolloClient({ cache: new InMemoryCache(), link });
+    try {
+      await act(async () => {
+        render(
+          <ApolloProvider client={client}>
+            <BridgeContext value={bridge}>
+              <NotificationsPageTemplate />
+            </BridgeContext>
+          </ApolloProvider>,
+        );
+      });
+      const settings = await screen.findByRole('region', { name: '앱 알림' });
+      expect(await within(settings).findByRole('button', { name: '알림 켜기' })).toBeVisible();
+      expect(screen.queryByRole('list', { name: '활동 알림' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/읽지 않은 알림/)).not.toBeInTheDocument();
+    } finally {
+      bridge.dispose();
+      fake.uninstall();
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -81,8 +81,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
     router.push(ROUTES.GROUP(notice.groupId));
   }
   return (
-    <div className="mx-auto flex w-full max-w-feed flex-col gap-4">
-      <PushNotificationSettings />
+    <>
       <div className="flex items-center justify-between gap-3">
         <p className="text-caption text-muted">읽지 않은 알림 {data.myNotifications.unreadCount}개</p>
         <Button
@@ -121,7 +120,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
           알림 더 보기
         </Button>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -130,14 +129,18 @@ function NotificationFeed({ viewerId }: { viewerId: string }) {
     variables: { offset: 0, limit: PAGE_SIZE },
     refetchWritePolicy: 'overwrite',
   });
+  // 앱 알림 설정은 목록 조회와 상관없으므로 목록 경계 밖에 두어 불러오는 중·실패에도 남긴다.
   return (
-    <AsyncBoundary
-      resetKey={viewerId}
-      onRetry={() => refetch()}
-      fallback={<Skeleton className="h-48 w-full" />}
-    >
-      <NotificationList queryRef={queryRef} />
-    </AsyncBoundary>
+    <div className="mx-auto flex w-full max-w-feed flex-col gap-4">
+      <PushNotificationSettings />
+      <AsyncBoundary
+        resetKey={viewerId}
+        onRetry={() => refetch()}
+        fallback={<Skeleton className="h-48 w-full" />}
+      >
+        <NotificationList queryRef={queryRef} />
+      </AsyncBoundary>
+    </div>
   );
 }
 
