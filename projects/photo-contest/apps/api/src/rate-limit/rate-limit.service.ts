@@ -17,7 +17,7 @@ export interface IWriteActor {
 export const WRITE_RATE_LIMITED = '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
 
 /**
- * 그룹 생성·게시·댓글·가입 신청·신고·OAuth 시작의 남용을 운영에서 사용자·주소마다 막는다.
+ * 그룹 생성·게시·댓글·가입 신청·신고의 남용을 운영에서 사용자·주소마다 막는다.
  * 고정 창 버킷을 DB에 upsert로 세어 API 인스턴스가 여럿이어도 같은 한도를 쓴다. 만료 행은 maintenance가 지운다.
  */
 @Injectable()

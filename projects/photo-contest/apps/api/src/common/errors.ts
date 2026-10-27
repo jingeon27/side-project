@@ -24,7 +24,6 @@ export const ERROR_MESSAGE = {
   NOT_SUBMISSION_PHASE: '사진 제출 기간이 아닙니다.',
   REQUEST_CONFLICT: '요청이 겹쳤습니다. 다시 시도해 주세요.',
   ALREADY_DONE: '이미 제출하거나 투표했습니다.',
-  APP_LOGIN_REJECTED: '앱 로그인 요청을 확인할 수 없습니다.',
   FORBIDDEN_ORIGIN: '허용되지 않은 요청 출처입니다.',
   INTERNAL: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
 } as const;

@@ -104,15 +104,6 @@ describe('Sentry 오류 보고', () => {
           api.http().post('/uploads/bad-token').set('Origin', TEST_WEB_ORIGIN).set('Cookie', member.cookie),
       ],
       [
-        404,
-        () =>
-          api
-            .http()
-            .post('/auth/app/exchange')
-            .set('Origin', TEST_WEB_ORIGIN)
-            .send({ code: 'x', verifier: 'y' }),
-      ],
-      [
         400,
         () =>
           api
@@ -124,8 +115,6 @@ describe('Sentry 오류 보고', () => {
       ],
     ] as const;
     for (const [status, send] of restFailures) expect((await send()).status).toBe(status);
-    // state가 맞지 않는 OAuth 콜백도 예상한 실패다.
-
     expect(captureException).not.toHaveBeenCalled();
   });
 

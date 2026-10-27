@@ -4,9 +4,7 @@ const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
 export const SESSION_TTL_MS = 30 * DAY_MS;
-export const OAUTH_ATTEMPT_TTL_MS = 10 * MINUTE_MS;
 export const UPLOAD_TICKET_TTL_MS = 5 * MINUTE_MS;
-export const APP_LOGIN_TICKET_TTL_MS = 2 * MINUTE_MS;
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const MAX_JSON_BODY = '64kb';
@@ -35,15 +33,9 @@ export const TEXT_LIMIT = {
 // Cookie 헤더 상한. 같은 사이트의 다른 쿠키가 많아도 로그인이 풀리지 않게 RFC 6265 최소(4096)의 두 배로 두고,
 // Node의 전체 요청 헤더 상한(16KB) 안에 머문다. 넘으면 조작된 요청으로 보고 비로그인으로 처리한다.
 export const COOKIE_HEADER_MAX_LENGTH = 8 * 1024;
-// RFC 7636: verifier는 43~128자, S256 challenge는 base64url 43자
-export const PKCE_VERIFIER_MIN_LENGTH = 43;
-export const PKCE_VERIFIER_MAX_LENGTH = 128;
-export const PKCE_CHALLENGE_LENGTH = 43;
-export const APP_LOGIN_CODE_MAX_LENGTH = 256;
 
 export const MAINTENANCE_INTERVAL_MS = MINUTE_MS;
 export const CLEANUP_BATCH_SIZE = 100;
-export const OAUTH_PROVIDER_TIMEOUT_MS = 10 * SECOND_MS;
 export const SERIALIZABLE_ATTEMPTS = 4;
 export const GRAPHQL_MAX_DEPTH = 8;
 // 웹 문서 중 가장 큰 연산이 필드 약 50개(Apollo가 붙이는 __typename 포함 약 70개)이고 alias는 쓰지 않는다.
@@ -84,8 +76,6 @@ export const WRITE_RATE_LIMIT = {
   COMMENT_CREATE: { windowMs: 10 * MINUTE_MS, perUser: 60, perAddress: 180 },
   JOIN_REQUEST: { windowMs: HOUR_MS, perUser: 30, perAddress: 90 },
   REPORT: { windowMs: HOUR_MS, perUser: 30, perAddress: 90 },
-  // 로그인 전이라 주소로만 센다. 시작할 때마다 OAuthAttempt 행이 생긴다.
-  OAUTH_START: { windowMs: 10 * MINUTE_MS, perUser: null, perAddress: 30 },
 } as const;
 // 사용자 한 명이 올린 원본(게시물·대회·대표 사진, 지우는 중인 파일 포함)의 합. 100MB 동영상 50개 분량이다.
 export const USER_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
