@@ -27,7 +27,7 @@ export function NoGroupHome({ signedIn = false }: { signedIn?: boolean }) {
     variables: { visibility: GroupVisibility.Public, offset: 0, limit: 6 },
   });
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-5xl desktop:max-w-none flex-col gap-8">
       <GroupDiscoveryIntro />
       <GroupSearchForm />
       <section aria-label="공개 그룹 목록" className="flex min-w-0 flex-col gap-4">

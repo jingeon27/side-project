@@ -23,7 +23,7 @@ export function ExplorePageTemplate({ search }: { search: string }) {
   return (
     <div className="flex flex-1 flex-col">
       <TopAppBar title="그룹 탐색" />
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-7 px-4 py-6 tablet:px-8 desktop:py-10">
+      <div className="mx-auto flex w-full max-w-5xl desktop:max-w-none flex-1 flex-col gap-7 px-4 py-6 tablet:px-8 desktop:py-10">
         <GroupDiscoveryIntro
           action={
             <ViewerBoundary

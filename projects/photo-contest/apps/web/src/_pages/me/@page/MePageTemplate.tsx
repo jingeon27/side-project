@@ -25,7 +25,7 @@ export function MePageTemplate() {
           fallback={<Skeleton className="h-32 w-full" />}
         >
           {(_viewerId, viewerRef) => (
-            <div className="mx-auto grid w-full max-w-5xl items-start gap-8 desktop:grid-cols-[240px_minmax(0,1fr)]">
+            <div className="mx-auto grid w-full max-w-5xl desktop:max-w-none items-start gap-8 desktop:grid-cols-[240px_minmax(0,1fr)] wide:grid-cols-[280px_minmax(0,1fr)]">
               <div className="contents desktop:sticky desktop:top-24 desktop:flex desktop:flex-col desktop:gap-6">
                 <MyProfile viewerRef={viewerRef} />
                 <ThemeSettings />
