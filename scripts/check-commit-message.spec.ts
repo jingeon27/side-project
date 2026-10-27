@@ -73,4 +73,18 @@ describe('커밋 메시지 형식 검사', () => {
     expect(checkCommitMessage('')).toBeNull();
     expect(checkCommitMessage('# 주석만 남은 메시지\n\n')).toBeNull();
   });
+
+  it.each([
+    'feat(web): 버튼을 추가한다\n\nCo-Authored-By: Claude <noreply@anthropic.com>\n',
+    'fix(api): 오류를 고친다\n\nco-authored-by: someone <a@example.com>',
+    "Merge branch 'develop'\n\n  Co-authored-by: someone <a@example.com>",
+  ])('Co-Authored-By trailer를 거부한다: %#', (message) =>
+    expect(checkCommitMessage(message)).toContain('Co-Authored-By'),
+  );
+
+  it('주석이나 diff 아래의 Co-Authored-By는 Git이 지우므로 막지 않는다', () => {
+    const scissors = '# ------------------------ >8 ------------------------';
+    expect(checkCommitMessage('feat(web): 버튼을 추가한다\n# Co-Authored-By: 예시\n')).toBeNull();
+    expect(checkCommitMessage(`feat(web): 버튼을 추가한다\n${scissors}\nCo-Authored-By: x\n`)).toBeNull();
+  });
 });
