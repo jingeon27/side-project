@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set +x
 set -euo pipefail
 umask 077
 SERVICE=${1:-}
@@ -9,6 +10,10 @@ SERVICE=${1:-}
 : "${DEPLOY_KNOWN_HOSTS:?Set verified known_hosts}"
 : "${REGISTRY_TOKEN:?Set short-lived registry token}"
 : "${REGISTRY_USER:?Set registry user}"
+: "${SERVICE_ENV:?Set the SERVICE_ENV Environment Secret}"
+[[ "$SERVICE_ENV" =~ [^[:space:]] ]] || { echo 'SERVICE_ENV must not be blank.' >&2; exit 2; }
+environment_bytes=$(printf '%s' "$SERVICE_ENV" | wc -c | tr -d '[:space:]')
+((environment_bytes <= 65536)) || { echo 'SERVICE_ENV exceeds the transfer limit.' >&2; exit 2; }
 [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ && "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
 [[ "$DEPLOY_USER" =~ ^[a-z_][a-z0-9_-]*$ && "${DEPLOY_PORT:-22}" =~ ^[0-9]{1,5}$ ]]
 [[ "$API_IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]]
@@ -46,7 +51,8 @@ printf -v remote_command 'install -d -m 700 %q && tar -xzf - -C %q' "$remote_dir
 ssh "${options[@]}" "$destination" "$remote_command" <"$temporary/release.tar.gz"
 printf -v remote_command 'bash %q %q %q %q %q %q' "$remote_dir/host/receive.sh" "$SERVICE" "$RELEASE_SHA" "$API_IMAGE" "$WEB_IMAGE" "$REGISTRY_USER"
 # shellcheck disable=SC2029
-job=$(printf '%s\n' "$REGISTRY_TOKEN" | ssh "${options[@]}" "$destination" "$remote_command")
+job=$({ printf '%s\n%s\n' "$REGISTRY_TOKEN" "$environment_bytes"; printf '%s' "$SERVICE_ENV"; } | ssh "${options[@]}" "$destination" "$remote_command")
+unset SERVICE_ENV
 [[ "$job" =~ ^run-[A-Za-z0-9]{8}$ ]] || {
   echo 'The remote deployment did not start.' >&2
   exit 1

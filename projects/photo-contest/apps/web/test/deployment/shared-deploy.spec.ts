@@ -5,9 +5,12 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   readlinkSync,
   rmSync,
+  statSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -23,6 +26,7 @@ const sha = 'a'.repeat(40);
 const apiImage = `ghcr.io/jingeon27/side-project-photo-contest-api@sha256:${'b'.repeat(64)}`;
 const webImage = `ghcr.io/jingeon27/side-project-photo-contest-web@sha256:${'c'.repeat(64)}`;
 const token = 'registry-token-fixture-only';
+const serviceEnv = "DATABASE_URL=fixture-new\nENV_SECRET='secret:$literal ${unexpanded} 한글'\n";
 const state = {} as { root: string; tools: string };
 
 // 원격 호스트·Docker·SSH만 대역으로 바꾸고 배포 스크립트는 그대로 실행한다.
@@ -37,6 +41,7 @@ case "$1" in
     echo 'Web shutdown: exit=0 oom=false' ;;
   network) if [[ "$*" == *--format* ]]; then echo "$SIDE_DEPLOY_ROOT"; fi ;;
   compose)
+    if [[ "$*" == *" config --quiet" && -n "\${FAKE_CONFIG_ERROR:-}" ]]; then echo "$FAKE_CONFIG_ERROR" >&2; exit 1; fi
     if [[ "$*" == *" ps -q web" ]]; then echo old-web; fi
     if [[ "$*" == *" pg_dump "* ]]; then printf 'PGDMP fixture'; fi
     if [[ "$*" == *" -T migrate" && -n "\${FAKE_MIGRATE_SECONDS:-}" ]]; then sleep "$FAKE_MIGRATE_SECONDS"; fi ;;
@@ -133,6 +138,7 @@ function upload(extra: Record<string, string> = {}) {
       WEB_IMAGE: webImage,
       REGISTRY_TOKEN: token,
       REGISTRY_USER: 'jingeon27',
+      SERVICE_ENV: serviceEnv,
       DEPLOY_HOST: 'deploy.example.test',
       DEPLOY_USER: 'deploy',
       DEPLOY_SSH_KEY: 'fixture-key',
@@ -169,6 +175,91 @@ function jobStatus(job: string, offset = 0) {
 }
 
 describe('공유 호스트 원격 배포', () => {
+  it('SERVICE_ENV를 그대로 권한 600으로 반영하고 릴리스·로그·임시 파일에 남기지 않아야 한다', () => {
+    const argumentsFile = join(state.root, 'ssh-arguments');
+    const result = upload({ FAKE_SSH_ARGS: argumentsFile });
+    expect(result.status, result.stderr).toBe(0);
+    const environmentFile = join(state.root, 'services/photo-contest/.env');
+    expect(readFileSync(environmentFile, 'utf8')).toBe(serviceEnv);
+    expect(statSync(environmentFile).mode & 0o777).toBe(0o600);
+    expect(readdirSync(join(state.root, 'services/photo-contest/.env-requests'))).toEqual([]);
+    expect(
+      readdirSync(join(state.root, 'services/photo-contest')).some((name) =>
+        name.startsWith('.env-previous-'),
+      ),
+    ).toBe(false);
+    const files = readdirSync(releaseDirectory(), { recursive: true }).map(String);
+    for (const file of files) {
+      const path = join(releaseDirectory(), file);
+      if (statSync(path).isFile()) expect(readFileSync(path, 'utf8')).not.toContain('secret:$literal');
+    }
+    expect(`${result.stdout}${result.stderr}${readFileSync(argumentsFile, 'utf8')}`).not.toContain(
+      'secret:$literal',
+    );
+  }, 60_000);
+
+  it.each(['', ' \n\t'])('빈 SERVICE_ENV는 원격 업로드 전에 거부해야 한다', (value) => {
+    const result = upload({ SERVICE_ENV: value });
+    expect(result.status).not.toBe(0);
+    expect(existsSync(releaseDirectory())).toBe(false);
+    expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
+      'DATABASE_URL=fixture\n',
+    );
+  });
+
+  it('Compose 설정 오류에 Secret이 포함돼도 출력하지 않고 기존 환경을 보존해야 한다', () => {
+    const result = upload({ FAKE_CONFIG_ERROR: serviceEnv });
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).toContain('configuration is invalid');
+    expect(`${result.stdout}${result.stderr}`).not.toContain('secret:$literal');
+    expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
+      'DATABASE_URL=fixture\n',
+    );
+    expect(readdirSync(join(state.root, 'services/photo-contest/.env-requests'))).toEqual([]);
+    expect(dockerCalls().some((call) => call.includes('-T migrate'))).toBe(false);
+  }, 60_000);
+
+  it('끊긴 Secret 전송은 적용하지 않고 수신 임시 파일을 지워야 한다', () => {
+    prepareRelease();
+    const result = spawnSync(
+      'bash',
+      [join(releaseDirectory(), 'host/receive.sh'), 'photo-contest', sha, apiImage, webImage, 'jingeon27'],
+      {
+        encoding: 'utf8',
+        env: environment({ SIDE_DEPLOY_ROOT: state.root }),
+        input: `${token}\n${Buffer.byteLength(serviceEnv) + 10}\n${serviceEnv}`,
+      },
+    );
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('Incomplete SERVICE_ENV transfer');
+    expect(`${result.stdout}${result.stderr}`).not.toContain('secret:$literal');
+    expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
+      'DATABASE_URL=fixture\n',
+    );
+    expect(readdirSync(join(state.root, 'services/photo-contest/.env-requests'))).toEqual([]);
+    expect(dockerCalls()).toEqual([]);
+  });
+
+  it('새 앱 교체에 실패하면 이전 환경을 복원한 뒤 이전 이미지를 다시 실행해야 한다', () => {
+    const previous = join(state.root, 'services/photo-contest/releases', 'd'.repeat(40));
+    mkdirSync(previous, { recursive: true });
+    cpSync(
+      join(repo, 'projects/photo-contest/deploy/shared-instance/compose.yaml'),
+      join(previous, 'compose.yaml'),
+    );
+    symlinkSync(previous, join(state.root, 'services/photo-contest/current'));
+    const result = upload({ FAKE_DOCKER_FAIL: `${sha}/compose.yaml up -d` });
+    expect(result.status).not.toBe(0);
+    expect(result.stdout).toContain('Previous application images restored');
+    expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
+      'DATABASE_URL=fixture\n',
+    );
+    expect(readlinkSync(join(state.root, 'services/photo-contest/current'))).toBe(previous);
+    expect(dockerCalls().some((call) => call.includes(`${previous}/compose.yaml up -d`))).toBe(true);
+    expect(readdirSync(join(state.root, 'services/photo-contest/.env-requests'))).toEqual([]);
+    expect(`${result.stdout}${result.stderr}`).not.toContain('secret:$literal');
+  }, 60_000);
+
   it('SSM 터널에서도 호스트 키를 검사하고 같은 원격 배포를 끝까지 따라가야 한다', () => {
     const argumentsFile = join(state.root, 'ssh-arguments');
     const result = upload({
@@ -230,6 +321,10 @@ describe('공유 호스트 원격 배포', () => {
     expect(result.stdout).toContain('fake docker failure');
     expect(result.stderr).toContain('failed');
     expect(existsSync(join(state.root, 'services/photo-contest/current'))).toBe(false);
+    expect(readFileSync(join(state.root, 'services/photo-contest/.env'), 'utf8')).toBe(
+      'DATABASE_URL=fixture\n',
+    );
+    expect(readdirSync(join(state.root, 'services/photo-contest/.env-requests'))).toEqual([]);
   }, 60_000);
 
   it('백업 업로드가 실패하면 migration과 교체 전에 배포를 멈춰야 한다', () => {
@@ -294,7 +389,7 @@ describe('공유 호스트 원격 배포', () => {
     );
     let output = '';
     receive.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
-    receive.stdin.end(`${token}\n`);
+    receive.stdin.end(`${token}\n${Buffer.byteLength(serviceEnv)}\n${serviceEnv}`);
     const [code] = await once(receive, 'close');
     expect(code).toBe(0);
     const job = output.trim();

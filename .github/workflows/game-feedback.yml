@@ -198,5 +198,6 @@ jobs:
           DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
           DEPLOY_KNOWN_HOSTS: ${{ vars.SIDE_DEPLOY_SSH_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.SIDE_DEPLOY_SSH_KEY }}
+          SERVICE_ENV: ${{ secrets.SERVICE_ENV }}
           DEPLOY_WAIT_SECONDS: '2400'
         run: bash deploy/shared-instance/scripts/ci-upload.sh game-feedback
