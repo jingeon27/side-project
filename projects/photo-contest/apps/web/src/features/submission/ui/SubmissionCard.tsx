@@ -80,7 +80,7 @@ export function SubmissionCard({
             <Avatar name={submission.author.nickname} src={submission.author.avatar} size="sm" />
             <span className="line-clamp-1">
               {submission.author.nickname}
-              {isMine ? ' · 내 사진' : ''}
+              {isMine ? ' (내 사진)' : ''}
             </span>
           </p>
         </div>

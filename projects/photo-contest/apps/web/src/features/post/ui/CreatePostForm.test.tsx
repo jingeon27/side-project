@@ -56,7 +56,7 @@ async function openForm() {
     </StrictMode>,
   );
   await screen.findByRole('form', { name: '그룹에 글쓰기' });
-  return { user, ...view, input: screen.getByLabelText('사진·동영상 선택') };
+  return { user, ...view, input: screen.getByLabelText('사진 또는 동영상 선택') };
 }
 
 describe('선택한 게시물 파일 미리보기', () => {
@@ -82,7 +82,7 @@ describe('선택한 게시물 파일 미리보기', () => {
     expect(pause).toHaveBeenCalled();
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-2');
     await user.click(screen.getByRole('button', { name: '선택한 파일 제거' }));
-    expect(await screen.findByText('사진·동영상 또는 링크를 첨부해 주세요.')).toBeVisible();
+    expect(await screen.findByText('사진이나 동영상, 링크를 하나 이상 첨부해 주세요.')).toBeVisible();
     expect(screen.queryByRole('figure', { name: '선택한 파일 미리보기' })).not.toBeInTheDocument();
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview-3');
   });
@@ -116,7 +116,7 @@ describe('선택한 게시물 파일 미리보기', () => {
   it('지원하지 않는 형식과 큰 파일은 선택 즉시 알리고 미리보기를 만들지 않아야 한다', async () => {
     const { user, input } = await openForm();
     await user.upload(input, new File(['text'], 'note.txt', { type: 'text/plain' }));
-    expect(await screen.findByText('사진 또는 MP4·WebM 동영상을 선택해 주세요.')).toBeVisible();
+    expect(await screen.findByText('사진이나 MP4, WebM 형식의 동영상을 선택해 주세요.')).toBeVisible();
     expect(createUrl).not.toHaveBeenCalled();
     const large = photo();
     Object.defineProperty(large, 'size', { value: 100 * 1024 * 1024 + 1 });
@@ -193,7 +193,7 @@ async function fillUploadForm({
     </ApolloProvider>,
   );
   await screen.findByRole('form', { name: '그룹에 글쓰기' });
-  await user.upload(screen.getByLabelText('사진·동영상 선택'), photo());
+  await user.upload(screen.getByLabelText('사진 또는 동영상 선택'), photo());
   await user.type(screen.getByLabelText('제목', { exact: false }), '웃긴 순간');
   await user.click(screen.getByRole('checkbox', { name: /공유할 권리/ }));
   return { user, client, operationNames, ...view };

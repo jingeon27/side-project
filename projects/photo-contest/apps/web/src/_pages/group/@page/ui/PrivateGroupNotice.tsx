@@ -29,7 +29,7 @@ export function PrivateGroupNotice({
     >
       <LockKeyhole aria-hidden className="size-8 text-muted" />
       <h2 className="text-title text-ink">비공개 그룹이에요</h2>
-      <p className="text-body text-muted">그룹장이 가입 신청을 수락하면 사진·동영상과 댓글을 볼 수 있어요.</p>
+      <p className="text-body text-muted">그룹장이 가입 신청을 수락하면 게시물과 댓글을 볼 수 있어요.</p>
       <GroupMembershipButton groupId={group.id} />
       {group.joinRequestPending ? (
         <Button

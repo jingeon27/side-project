@@ -24,7 +24,7 @@ test(
     const opener = page.getByRole('link', { name: '글쓰기', exact: true });
     await opener.click();
     const sheet = page.getByRole('form', { name: '그룹에 글쓰기' });
-    const picker = sheet.getByLabel('사진·동영상 선택', { exact: true });
+    const picker = sheet.getByLabel('사진 또는 동영상 선택', { exact: true });
     const image = sheet.getByRole('img', { name: '선택한 사진 미리보기', exact: true });
     const fileChooser = page.waitForEvent('filechooser');
     await sheet.getByRole('button', { name: '파일 선택', exact: true }).click();
@@ -74,7 +74,7 @@ test(
     await (await selectionChooser).setFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '선택한 파일 제거' }).click();
-    await expect(sheet.getByText('사진·동영상 또는 링크를 첨부해 주세요.')).toBeVisible();
+    await expect(sheet.getByText('사진이나 동영상, 링크를 하나 이상 첨부해 주세요.')).toBeVisible();
     await picker.setInputFiles(first);
     await expect(image).toBeVisible();
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();

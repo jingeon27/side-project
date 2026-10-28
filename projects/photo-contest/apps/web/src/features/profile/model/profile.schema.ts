@@ -9,7 +9,7 @@ export const profileSchema = z.object({
     .refine((file) => !file || file.size <= 10 * 1024 * 1024, '10MB 이하의 사진을 선택해 주세요.')
     .refine(
       (file) => !file || ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
-      'JPEG·PNG·WebP 사진을 선택해 주세요.',
+      'JPEG, PNG, WebP 형식의 사진을 선택해 주세요.',
     ),
   removeAvatar: z.boolean(),
 });

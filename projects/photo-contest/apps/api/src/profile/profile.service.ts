@@ -27,7 +27,7 @@ export class ProfileService {
 
   async requestUpload(viewer: IViewer, input: TRequestProfileAvatarUploadDto, address: string | null = null) {
     const extension = EXTENSION[input.contentType];
-    if (!extension) fail('JPEG·PNG·WebP 사진을 선택해 주세요.');
+    if (!extension) fail('JPEG, PNG, WebP 형식의 사진을 선택해 주세요.');
     await this.limits.consumeUploadBytes(address, input.byteSize);
     const upload = await this.db.atomic(async (tx) => {
       const now = new Date();

@@ -17,7 +17,7 @@ export async function generateMetadata({
     origin: getWebOrigin(),
     path: ROUTES.EXPLORE,
     title: '그룹 탐색',
-    description: '공개 그룹에서 사진·동영상·합성을 둘러보고, 취향이 맞는 그룹을 찾거나 직접 만들어 보세요.',
+    description: '공개 그룹의 게시물을 둘러보고, 마음에 드는 그룹에 가입하거나 직접 만들어 보세요.',
     index: !(typeof q === 'string' && q.trim()),
   });
 }

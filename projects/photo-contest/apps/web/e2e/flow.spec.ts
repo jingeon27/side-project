@@ -8,7 +8,7 @@ async function writePost(page: Page, title: string, video = false) {
   await page.getByRole('link', { name: '글쓰기', exact: true }).click();
   const sheet = page.getByRole('form', { name: '그룹에 글쓰기' });
   await sheet.getByLabel('제목', { exact: true }).fill(title);
-  await sheet.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+  await sheet.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
     name: video ? 'clip.mp4' : 'photo.png',
     mimeType: video ? 'video/mp4' : 'image/png',
     buffer: video ? await createTestVideo() : await createTestImage(),

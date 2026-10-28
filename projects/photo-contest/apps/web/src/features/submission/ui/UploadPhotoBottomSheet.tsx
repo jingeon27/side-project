@@ -152,7 +152,9 @@ export function UploadPhotoBottomSheet({
                         사진 선택
                         <FieldRequirement required />
                       </span>
-                      <span className="text-caption">JPEG, PNG, WebP, HEIC · 큰 사진은 줄여서 올려요</span>
+                      <span className="text-caption">
+                        JPEG, PNG, WebP, HEIC 파일을 올릴 수 있어요. 큰 사진은 크기를 줄여서 올려요.
+                      </span>
                     </>
                   )}
                   {previewUrl ? (

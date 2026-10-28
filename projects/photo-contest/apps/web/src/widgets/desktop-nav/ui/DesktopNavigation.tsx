@@ -72,7 +72,7 @@ export function DesktopNavigation() {
         </NavigationLink>
         <div className="mt-auto px-3 text-caption text-subtle">
           <p className="text-label text-muted">가볍게 올리고, 같이 웃어요.</p>
-          <p className="mt-2">사진 · 동영상 · 합성</p>
+          <p className="mt-2">웃긴 순간을 나누는 곳</p>
           <LegalLinks className="mt-3 gap-x-2" />
           <p className="mt-6 text-micro">© 별사대</p>
         </div>

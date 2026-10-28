@@ -13,7 +13,7 @@ const DATES = {
 describe('phase.helper', () => {
   it.each([
     [Phase.Upcoming, '시작 예정', 'neutral'],
-    [Phase.Submission, '사진 모집 중', 'brand'],
+    [Phase.Submission, '접수 중', 'brand'],
     [Phase.Voting, '투표 진행 중', 'accent'],
     [Phase.Completed, '대회 종료', 'info'],
   ])('%s 단계는 "%s" 배지여야 한다', (phase, label, tone) => {
@@ -24,7 +24,7 @@ describe('phase.helper', () => {
   it('단계마다 기다리는 시각을 골라야 한다', () => {
     expect(getPhaseDeadline(Phase.Upcoming, DATES)).toEqual({ label: '시작', at: DATES.startsAt });
     expect(getPhaseDeadline(Phase.Submission, DATES)).toEqual({
-      label: '사진 마감',
+      label: '접수 마감',
       at: DATES.submissionEndsAt,
     });
     expect(getPhaseDeadline(Phase.Voting, DATES)).toEqual({ label: '투표 마감', at: DATES.endsAt });

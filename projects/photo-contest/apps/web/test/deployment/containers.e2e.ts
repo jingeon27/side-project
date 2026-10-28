@@ -67,7 +67,7 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     await page.getByRole('link', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await form.getByLabel('제목', { exact: true }).fill(title);
-    await form.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+    await form.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
       name: video ? 'smoke.mp4' : 'smoke.png',
       mimeType: video ? 'video/mp4' : 'image/png',
       buffer: video ? await createTestVideo() : await createTestImage(),

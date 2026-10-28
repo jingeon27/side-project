@@ -30,8 +30,8 @@ export function groupContestMetadata(data: IGroupContestSeoData, contestId: stri
   return createPageMetadata({
     origin,
     path,
-    title: `${data.contest.title} · ${data.group.name}`,
-    description: `${data.group.name}의 ${data.contest.title}. 사진·동영상 참여작과 대회 일정, 투표 결과를 확인하세요.`,
+    title: `${data.contest.title} - ${data.group.name}`,
+    description: `${data.group.name}의 ${data.contest.title}. 참여작과 대회 일정, 투표 결과를 확인하세요.`,
     ...(images.length ? { images } : {}),
   });
 }
@@ -70,7 +70,7 @@ export function groupContestJsonLd(data: IGroupContestSeoData, origin: string) {
         url,
         startDate: contest.startsAt,
         endDate: contest.endsAt,
-        description: `${group.name}에서 사진·동영상·합성으로 참여하는 온라인 대회입니다.`,
+        description: `${group.name}에서 열리는 온라인 대회입니다. 사진이나 동영상, 합성한 이미지로 참여할 수 있습니다.`,
         eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
         location: { '@type': 'VirtualLocation', url },
         ...(postImageUrls(posts, origin).length ? { image: postImageUrls(posts, origin).slice(0, 3) } : {}),

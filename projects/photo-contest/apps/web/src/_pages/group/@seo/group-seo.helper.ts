@@ -27,7 +27,7 @@ export function groupMetadata(data: IGroupSeoData, origin: string) {
     title: group.name,
     description:
       group.description ||
-      `${group.name}에서 ${group.memberCount}명의 멤버와 사진·동영상·합성으로 웃긴 순간을 나눠보세요. 누구나 둘러보고 가입할 수 있는 공개 그룹입니다.`,
+      `${group.name}에서 ${group.memberCount}명의 멤버와 사진이나 동영상으로 웃긴 순간을 나눠보세요. 합성한 이미지도 올릴 수 있어요. 누구나 둘러보고 가입할 수 있는 공개 그룹입니다.`,
     ...(images.length ? { images } : {}),
   });
 }

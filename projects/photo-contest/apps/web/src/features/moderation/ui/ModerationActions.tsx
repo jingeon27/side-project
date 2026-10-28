@@ -78,7 +78,7 @@ export function ModerationActions({
         unmount={unmount}
         tone="danger"
         title="사진을 삭제할까요?"
-        description="사진과 연결된 투표·좋아요·신고가 함께 삭제돼요. 되돌릴 수 없어요."
+        description="사진에 달린 투표, 좋아요, 신고도 함께 삭제돼요. 삭제한 사진은 복구할 수 없어요."
         confirmLabel="사진 삭제하기"
         onConfirm={() => deleteSubmission()}
       />

@@ -66,9 +66,10 @@ function LeaderboardContent({
                   {entry.user.nickname}
                   {entry.user.id === viewerId ? <span className="text-muted"> (나)</span> : null}
                 </span>
-                <span className="text-caption text-muted">
-                  우승 {formatCount(entry.wins)}회 · 받은 표 {formatCount(entry.votesReceived)} · 좋아요{' '}
-                  {formatCount(entry.likesReceived)}
+                <span className="flex flex-wrap gap-x-2 text-caption text-muted">
+                  <span>우승 {formatCount(entry.wins)}회</span>
+                  <span>받은 표 {formatCount(entry.votesReceived)}표</span>
+                  <span>좋아요 {formatCount(entry.likesReceived)}개</span>
                 </span>
               </span>
             </li>

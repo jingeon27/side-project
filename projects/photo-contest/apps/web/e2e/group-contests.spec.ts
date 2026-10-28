@@ -44,7 +44,7 @@ test(
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).toBeChecked();
     await expect(sheet.getByLabel('참여할 대회')).toHaveValue(contestId);
     await sheet
-      .getByLabel('사진·동영상 선택')
+      .getByLabel('사진 또는 동영상 선택')
       .setInputFiles({ name: 'winner.png', mimeType: 'image/png', buffer: await createTestImage() });
     await sheet.getByLabel('제목', { exact: true }).fill('우승할 웃긴 순간');
     await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();
@@ -58,7 +58,7 @@ test(
     await sheet.getByRole('checkbox', { name: /대회에 참여하기/ }).check();
     await sheet.getByLabel('참여할 대회').selectOption(contestId);
     await sheet
-      .getByLabel('사진·동영상 선택')
+      .getByLabel('사진 또는 동영상 선택')
       .setInputFiles({ name: 'entry.mp4', mimeType: 'video/mp4', buffer: await createTestVideo() });
     await sheet.getByLabel('제목', { exact: true }).fill('동영상으로도 참여');
     await sheet.getByRole('checkbox', { name: /공유할 권리/ }).check();

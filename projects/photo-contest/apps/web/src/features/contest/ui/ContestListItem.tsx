@@ -31,7 +31,7 @@ export function ContestListItem({ contest }: { contest: ContestListItemFragment 
         <span className="line-clamp-2 text-subtitle text-ink">{contest.title}</span>
         <span className="text-caption text-muted">
           {completed
-            ? `${formatDate(contest.endsAt)} 종료 · 결과 보기`
+            ? `${formatDate(contest.endsAt)} 종료. 결과 보기`
             : `${deadline.label} ${formatDateTime(deadline.at)}`}
         </span>
       </span>

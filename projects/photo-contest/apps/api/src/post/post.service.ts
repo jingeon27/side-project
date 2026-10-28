@@ -130,7 +130,7 @@ export class PostService {
     const body = input.body?.trim() ?? '';
     if (body.length > POST_BODY_LIMIT) fail('내용은 5000자 이하로 입력해 주세요.');
     const linkUrl = postLink(input.linkUrl);
-    if (!input.uploadId && !linkUrl) fail('사진·동영상 또는 링크를 첨부해 주세요.');
+    if (!input.uploadId && !linkUrl) fail('사진이나 동영상, 링크를 하나 이상 첨부해 주세요.');
     await this.limits.consume('POST_CREATE', { userId: viewer.id, address });
     const row = await this.transactions
       .atomic(async (tx) => {

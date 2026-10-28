@@ -58,7 +58,7 @@ test(
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
       await form.getByLabel('제목', { exact: true }).fill(title ?? '');
       await form.getByLabel('첨부 링크', { exact: true }).fill(link ?? '');
-      await expect(form.getByLabel('사진·동영상 선택')).toHaveAttribute('aria-required', 'false');
+      await expect(form.getByLabel('사진 또는 동영상 선택')).toHaveAttribute('aria-required', 'false');
       await form.getByRole('checkbox', { name: /공유할 권리/ }).check();
       await form.getByRole('button', { name: '게시물 올리기', exact: true }).click();
       await expect(form).toHaveCount(0);

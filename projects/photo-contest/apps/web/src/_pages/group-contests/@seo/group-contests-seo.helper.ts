@@ -26,10 +26,10 @@ export function groupContestsMetadata(data: IGroupContestsSeoData, hallOfFame: b
   return createPageMetadata({
     origin,
     path,
-    title: `${data.group.name} · ${hallOfFame ? '명예의 전당' : '그룹 대회'}`,
+    title: `${data.group.name} - ${hallOfFame ? '명예의 전당' : '그룹 대회'}`,
     description: hallOfFame
       ? `${data.group.name}에서 함께 뽑은 지난 대회 우승작과 최종 결과를 만나보세요.`
-      : `${data.group.name}의 사진·동영상 대회를 둘러보고 웃긴 순간으로 참여하세요.`,
+      : `${data.group.name}에서 열리는 대회를 둘러보고, 사진이나 동영상으로 참여해 보세요.`,
     ...(images.length ? { images } : {}),
   });
 }
@@ -60,7 +60,7 @@ export function groupContestsJsonLd(data: IGroupContestsSeoData, hallOfFame: boo
         '@type': 'CollectionPage',
         '@id': url,
         url,
-        name: `${data.group.name} · ${title}`,
+        name: `${data.group.name} - ${title}`,
         inLanguage: 'ko-KR',
         breadcrumb: { '@id': `${url}#breadcrumb` },
         mainEntity: {

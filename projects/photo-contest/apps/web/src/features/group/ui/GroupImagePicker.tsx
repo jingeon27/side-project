@@ -73,7 +73,7 @@ export function GroupImagePicker({
         )}
       </label>
       <div className="flex min-h-touch items-center justify-between gap-3">
-        <p className="text-caption text-muted">JPEG·PNG·WebP · 최대 10MB</p>
+        <p className="text-caption text-muted">JPEG, PNG, WebP 형식의 사진을 최대 10MB까지 올릴 수 있어요.</p>
         {src ? (
           <Button type="button" variant="ghost" size="sm" disabled={disabled} onClick={() => choose(null)}>
             {label} 삭제

@@ -4,7 +4,7 @@ import { MAX_UPLOAD_BYTES, TEXT_LIMIT } from '../config/limits';
 
 export const RequestProfileAvatarUploadSchema = z.strictObject({
   contentType: z.enum(['image/jpeg', 'image/png', 'image/webp'], {
-    error: 'JPEG·PNG·WebP 사진을 선택해 주세요.',
+    error: 'JPEG, PNG, WebP 형식의 사진을 선택해 주세요.',
   }),
   byteSize: z
     .int({ error: '파일 크기를 확인해 주세요.' })
