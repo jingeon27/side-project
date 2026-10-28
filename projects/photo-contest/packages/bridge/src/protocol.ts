@@ -283,6 +283,18 @@ const kindSchema = z.object({
   v: z.literal(PROTOCOL_VERSION),
   kind: z.enum(['request', 'event', 'response']),
 });
+type TMessageKind = z.output<typeof kindSchema>['kind'];
+
+const WEB_MESSAGE_SCHEMA = {
+  request: webRequestSchema,
+  event: webEventSchema,
+  response: responseSchema,
+} satisfies Record<TMessageKind, z.ZodType>;
+const NATIVE_MESSAGE_SCHEMA = {
+  request: nativeRequestSchema,
+  event: nativeEventSchema,
+  response: responseSchema,
+} satisfies Record<TMessageKind, z.ZodType>;
 
 function parseJson(raw: unknown): unknown {
   if (typeof raw !== 'string' || raw.length > 20_000) return undefined;
@@ -298,13 +310,7 @@ export function decodeWebMessage(raw: unknown): TWebMessage | null {
   const value = parseJson(raw);
   const kind = kindSchema.safeParse(value);
   if (!kind.success) return null;
-  const schema =
-    kind.data.kind === 'request'
-      ? webRequestSchema
-      : kind.data.kind === 'event'
-        ? webEventSchema
-        : responseSchema;
-  const parsed = schema.safeParse(value);
+  const parsed = WEB_MESSAGE_SCHEMA[kind.data.kind].safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
@@ -313,13 +319,7 @@ export function decodeNativeMessage(raw: unknown): TNativeMessage | null {
   const value = parseJson(raw);
   const kind = kindSchema.safeParse(value);
   if (!kind.success) return null;
-  const schema =
-    kind.data.kind === 'request'
-      ? nativeRequestSchema
-      : kind.data.kind === 'event'
-        ? nativeEventSchema
-        : responseSchema;
-  const parsed = schema.safeParse(value);
+  const parsed = NATIVE_MESSAGE_SCHEMA[kind.data.kind].safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 
