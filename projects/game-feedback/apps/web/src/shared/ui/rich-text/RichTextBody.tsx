@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 
+import { match } from 'ts-pattern';
+
 import type { TRichTextAttributes, TRichTextDocument, TRichTextEmbed } from '@game-feedback/contracts';
 
 interface ISegment {
@@ -95,14 +97,12 @@ export function RichTextBody({ body, document }: { body: string; document?: TRic
           );
         }
         const line = group.lines[0];
-        const Tag =
-          line?.attributes?.header === 2
-            ? 'h2'
-            : line?.attributes?.header === 3
-              ? 'h3'
-              : line?.attributes?.blockquote
-                ? 'blockquote'
-                : 'p';
+        // 블록 속성은 선택 플래그 묶음이라 지정이 없으면 문단으로 둔다.
+        const Tag = match(line?.attributes)
+          .with({ header: 2 }, () => 'h2' as const)
+          .with({ header: 3 }, () => 'h3' as const)
+          .with({ blockquote: true }, () => 'blockquote' as const)
+          .otherwise(() => 'p' as const);
         return <Tag key={index}>{line?.segments.length ? line.segments.map(segmentNode) : <br />}</Tag>;
       })}
     </div>
