@@ -33,6 +33,15 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 객체 타입은 타입 추론을 유지하는 `satisfies`를 우선한다. 상태를 가진 외부 채널·수명 관리는 가변 let 클로저 대신 class로 캡슐화한다. UI 데이터 변환을 위해 class를 추가하지 않는다.
 - 버튼·입력·모달·토큰은 `@side/design-system`의 shadcn + Base UI를 사용한다. 앱에서 기본 컨트롤과 타이포를 다시 정의하지 않는다. 고정 메뉴·상태 선택지는 JSX로 명시하고 서버 목록은 map으로 렌더링한다.
 
+## satisfies와 ts-pattern
+
+이 절은 Web·Admin과 함께 API·contracts·SDK·bridge를 포함한 Game Feedback TypeScript 전체에 적용한다.
+
+- `satisfies`는 설정·조회표로 쓰는 모듈 수준 상수(라우트·게시판·메뉴 정의, 라벨·상태 문구 표, 제한값, 선택지 목록, variant 표)에 쓴다. 리터럴을 넓히는 `const X: T = { … }`는 `const X = { … } satisfies T`로 바꾸고, 모양 검사 없는 `as const`에는 `as const satisfies readonly IBoardConfig[]`처럼 의도한 모양을 붙인다. `as const`는 리터럴 타입을 쓰는 곳이 있을 때만 남긴다. 유니온을 키로 쓰는 표는 `satisfies Record<TUnion, V>`(일부러 일부만 두면 `Partial<…>`)로 빠지거나 남는 키를 타입 검사에서 막는다.
+- 타입이 있는 매개변수에 바로 넘기는 객체, JSX props, 테스트 fixture, 임의 문자열로 조회하는 `Record<string, …>` 사전처럼 선언 타입이 일부러 넓은 값, 프레임워크가 선언 타입으로 검사하는 export(Next `metadata`·`viewport`·`config`)는 바꾸지 않는다. 내보낸 타입이 좁아져 호출부가 깨지면 호출부를 고치거나 그대로 둔다.
+- 같은 판별 값(상태 유니온, `kind`·`type`·`board`, 오류 코드)에 대한 3갈래 이상의 if 나열·삼항, 중첩 삼항, exhaustiveness 없는 switch는 `match(x).with(…).exhaustive()`로 쓰고 남은 값은 `P.union(…)`으로 명시한다. `.otherwise()`는 서버 오류 코드 같은 열린 문자열·unknown 입력에만 쓴다. 반환 타입 추론이 string으로 넓어져 otherwise가 필요해 보이면 먼저 타입을 유니온으로 좁힌다.
+- 단순한 가드·이른 반환, 조건 하나인 if, 두 상태 삼항, 뜨거운 반복문은 일반 코드로 둔다. 판별 값이 아닌 불리언 조건이 겹친 삼항은 이른 반환으로 풀고, 게시판별 필터처럼 서로 독립된 조건부 JSX 영역은 JSX에 명시한다.
+
 ## 상태 스타일과 variant
 
 - 화면은 주로 CSS 파일과 class 이름으로 꾸민다. 도움됨·읽지 않음·내 글·답변 있음처럼 켜짐/꺼짐 하나인 상태는 modifier class를 문자열로 이어 붙이지 않고 `data-*` 속성(뜻이 맞으면 `aria-current`·`aria-pressed` 같은 `aria-*`)으로 표시해 CSS 속성 선택자(`.comment[data-mine]`, `.side-link[aria-current='page']`)로 꾸민다. 꺼짐은 `undefined`로 속성을 빼고(`data-mine={mine || undefined}`), 값이 여럿인 상태는 `data-connection={connection}`처럼 값을 넣는다. Web lint가 `className`의 표현식 template literal을 막는다.
