@@ -30,7 +30,7 @@ S3 버킷·CORS·IAM 설정과 외부 확인 범위는 프로젝트 `docs/media-
 
 ## 건드리면 있어야 하는 테스트
 
-- unit: `src/chat/chat-history.spec.ts`, `src/chat/chat-file.test.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
+- unit: `src/chat/chat-history.spec.ts`, `src/common/media-file.spec.ts`(파일명·Range·위장 타입), `src/rate-limit.spec.ts`.
 - integration: `src/posts/post-media-upload.service.integration.spec.ts`·`src/chat/chat-attachment-upload.service.integration.spec.ts`(예약·전송·완료·만료·위장 파일·주소 재사용·정리), `src/media-storage/media-storage.service.integration.spec.ts`(S3 저장·초안 소유·Range·기존 파일 이행), `src/posts/posts.controller.integration.test.ts`(본문 미디어의 원자적 연결·숨김·차단), `src/chat/chat.controller.integration.test.ts`(멱등 전송·페이지·읽음·기록 삭제·차단·SSE), `src/users/profile.service.integration.spec.ts`(프로필 직접 업로드·소유권·만료·정리).
 - 로컬 fixture 성공을 실제 AWS 버킷·CORS·브라우저 업로드 확인으로 기록하지 않는다.
 

@@ -4,11 +4,11 @@ import type { Response } from 'express';
 import { requireUser } from '../auth/session-access';
 import type { SessionRequest } from '../auth/session.types';
 import { ApiError } from '../common/http/api-error';
+import { mediaRange } from '../common/media-file';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { attachmentSelect } from './chat-attachment.presenter';
-import { mediaRange } from './chat-file';
 import { historyWhere } from './chat-history';
 
 @Injectable()

@@ -21,7 +21,6 @@ import type { TUpdateProfileDto } from './profile-input.dto';
 import { UserVisibilityService } from './user-visibility.service';
 import { UsersService } from './users.service';
 
-export const AVATAR_LIMIT = 5 * 1024 * 1024;
 @Injectable()
 export class ProfileService {
   constructor(
