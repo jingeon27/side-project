@@ -7,7 +7,7 @@ import { parseCoachingRole } from '@/features/coaching';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 
-import { BoardFilterLink } from './BoardFilterLink';
+import { BoardFilterLink } from '../board/BoardFilterLink';
 
 interface ICoachingFiltersProps {
   locale: string;

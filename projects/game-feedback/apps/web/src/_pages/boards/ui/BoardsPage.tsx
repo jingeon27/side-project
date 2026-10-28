@@ -22,11 +22,11 @@ import { CommunityPage } from '@/widgets/community-shell';
 
 import { boardSnapshotSearch, readBoardFilters, type TBoardFilters } from '../model/board-filters';
 import type { IBoardSnapshot } from '../model/board-snapshot.type';
-import { BattleFilters } from './BattleFilters';
-import { BoardEmptyState } from './BoardEmptyState';
+import { BattleFilters } from './battle/BattleFilters';
+import { BoardEmptyState } from './board/BoardEmptyState';
 import { BoardsTopbar } from './BoardsTopbar';
-import { CoachingFilters } from './CoachingFilters';
-import { FeedbackFilters } from './FeedbackFilters';
+import { CoachingFilters } from './coaching/CoachingFilters';
+import { FeedbackFilters } from './feedback/FeedbackFilters';
 
 interface IBoardsPageProps {
   locale: string;
