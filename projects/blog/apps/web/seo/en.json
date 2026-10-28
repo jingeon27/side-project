@@ -26,7 +26,7 @@
     "side-project-design": {
       "title": "How my side project plans and screens changed",
       "slug": "what-i-kept-changing-while-planning-my-side-projects",
-      "description": "A private photo contest became an ongoing community. I chose a first game for Game Mate and changed the home, signup, and profile screens as I tried them.",
+      "description": "Building a photo community and Game Mate meant deciding what happens to anonymous activity, group access, contest deadlines, and message retries—not just their successful paths.",
       "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"]
     },
     "puppeteer-event-lifecycle": {

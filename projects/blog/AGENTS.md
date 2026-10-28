@@ -4,6 +4,7 @@
 - Use the parent Yarn 4 workspace and Node.js 24. Commands delegate to `@blog/web`.
 - Follow FSD: app → widgets → features → entities → shared. Never add a `components/` directory.
 - Content is Git-managed MDX. Public metadata lives in `content/posts/<id>/meta.json`; translated titles, slugs, and SEO live in `seo/<locale>.json`. Only publish locales with real MDX.
+- For article writing or prose edits, read [blog-writer](.agents/skills/blog-writer/SKILL.md) and [writing feedback](docs/writing-feedback.md). Keep new reusable user feedback in that document, with its scope and concrete examples. The dedicated `blog_writer` agent is defined in [the repository agent file](../../.codex/agents/blog_writer.toml).
 - Generate and validate the static registry before building. Keep generated files deterministic; no runtime file-path imports.
 - Migration includes only public Tistory posts matched to local blog entries; unpublished resume drafts stay private. The initial import used public text. Subsequent user-requested editorial changes live in MDX; preserve code examples, original image archives and source provenance. Record image replacements in `apps/web/content/image-replacements.json`. Do not rerun the importer over edited content without reviewing the diff. See `docs/migration.md`.
 - UI translations are in messages; article prose is in MDX; SEO translations are in seo JSON.

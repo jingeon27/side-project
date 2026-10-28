@@ -96,7 +96,7 @@ I kept the backup bucket separate from media. The EC2 role can upload under `pos
 
 Since R2 is S3-compatible, I asked whether it could handle the current upload flow. Both services use presigned POST policies with file size limits.
 
-The [R2 documentation](https://developers.cloudflare.com/r2/api/s3/presigned-urls/) supports GET, HEAD, PUT, and DELETE, but not HTML form POST uploads. That is the documented behavior as of October 28, 2026.
+The [R2 documentation](https://developers.cloudflare.com/r2/api/s3/presigned-urls/) supports GET, HEAD, PUT, and DELETE, but not HTML form POST uploads.
 
 Moving would mean switching to PUT and checking the upload conditions and completion checks again. I kept S3 for now. If media transfer becomes a large expense, I will compare them again. Changing storage would not require moving off EC2 at the same time.
 

@@ -12,7 +12,7 @@ The photo community and Game Mate live in the same repository. They share a web 
 
 Using the same stack everywhere would make configuration easier to reuse. I also wanted to work through different problems. In the photo service, I used Apollo's normalized cache. In Game Mate, I wanted to define the relationships between list and detail queries myself.
 
-I covered the [changes to the product plans and screens](/en/blog/what-i-kept-changing-while-planning-my-side-projects) in an earlier post. This one is about the code and runtime structure behind those features, based on the implementation as of October 28, 2026.
+I covered the [changes to the product plans and screens](/en/blog/what-i-kept-changing-while-planning-my-side-projects) in an earlier post. This one is about the code and runtime structure behind those features.
 
 ## Build the web screens first, then share them with the app
 
@@ -38,17 +38,17 @@ In both applications, server state stays in the query library rather than being 
 
 The photo service's updates can now be found in its Apollo domain helpers; Game Mate's updates are expressed through query keys and invalidation options. I have kept those approaches visible rather than wrapping both in a common API hook.
 
-## Keep business rules in the API server
+## Let NestJS check permissions and save data
 
-Both servers use NestJS with Express, Prisma, and PostgreSQL. Next.js handles the screens, server rendering, and same-origin API forwarding. NestJS checks rules such as group access, post deletion, and voting periods.
+Both servers use NestJS with Express, Prisma, and PostgreSQL. Next.js renders the screens and forwards API requests through the same origin. NestJS checks who can join a group, delete a post, or vote at a given time.
 
-Hiding a button in the web application cannot be the permission check. The same rule must hold when someone calls the API directly. Whether someone may read a private group's posts or remove a member is decided in the API.
+Someone can call the API directly even when the screen hides a button. The API therefore checks whether that person may read a private group's posts or remove a member.
 
-In NestJS, controllers receive requests, services handle business rules, and modules connect dependencies. OAuth and game APIs sit behind replaceable providers, so tests can connect substitutes. This gives new features a place for their rules and makes the dependencies being replaced visible.
+In NestJS, controllers receive requests, services check permissions and save data, and modules register the services and external connections each feature uses. Calls to OAuth providers and game APIs live separately, so tests can use prepared responses instead of calling real external servers. I wanted the code handling a request and the code calling an external API to remain easy to find as features grew.
 
-The modules follow features such as authentication, groups, posts, and chat. Changes that need to be saved together use a transaction. Each service has its own API application, database, and account data. Sharing NestJS did not give me a reason to put their user models in a common package.
+Modules follow features such as authentication, groups, posts, and chat. Data that needs to be saved together goes into a transaction. Each application has its own server, database, and accounts. Using NestJS for both did not mean their user models needed to be combined.
 
-Prisma also did not remove the need to inspect database constraints and locks. Getting models and typed queries was useful; ensuring that simultaneous requests saved the right result required separate attention.
+Prisma made queries and types easier to work with. I still had to check how duplicate writes were prevented and how simultaneous requests were handled. I inspected database constraints and locks, then tested whether requests arriving together saved the intended result.
 
 ## Generate API types from one source and check actual responses
 
@@ -65,7 +65,7 @@ Generated TypeScript types cannot guarantee the actual response. The server and 
 
 I avoided filling every unexpected response with defaults. A few display fields have an explicit fallback policy, but invalid IDs, permissions, sessions, bodies, and lists surface as errors. I did not want the screen to keep rendering by silently changing important data. That boundary lives in the [SDK response handling](https://github.com/jingeon27/side-project/blob/96e33d77/projects/game-feedback/packages/sdk/src/http.ts).
 
-The photo service generates types and Documents from the API's GraphQL schema and the web application's operations. CI regenerates them and checks for differences, including when someone changes a query but forgets its generated output. Input validation and permission checks still belong on the server. A GraphQL type does not enforce the business rules for it.
+The photo service generates types and Documents from the API's GraphQL schema and the web application's operations. CI regenerates them and checks for differences, including when someone changes a query but forgets its generated output. Input validation and permission checks still belong on the server. A GraphQL type does not check who may join a group or when voting is allowed.
 
 ## Enforce duplicate-request rules in the database
 

@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "test": "yarn content:generate && vitest run",
     "test:e2e": "playwright test",
-    "check": "yarn content:validate && yarn typecheck && yarn lint && yarn test"
+    "check": "yarn content:validate && yarn typecheck && yarn lint && yarn test",
+    "test:e2e:dev": "playwright test --config playwright.dev.config.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",
