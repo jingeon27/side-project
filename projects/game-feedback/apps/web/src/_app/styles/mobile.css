@@ -232,9 +232,6 @@
     font-size: var(--text-caption);
     box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
   }
-  .preference-progress svg {
-    flex-shrink: 0;
-  }
   .preference-option {
     display: inline-flex;
     align-items: center;

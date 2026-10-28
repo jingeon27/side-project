@@ -1,8 +1,8 @@
 'use client';
 
-import { LoaderCircle, Paperclip, Send, X } from 'lucide-react';
+import { Paperclip, Send, X } from 'lucide-react';
 
-import { Textarea } from '@side/design-system';
+import { Spinner, Textarea } from '@side/design-system';
 
 import { chatError } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
@@ -94,7 +94,7 @@ export function ChatComposer({
           data-disabled={busy || undefined}
           title={t('이미지 또는 동영상 첨부')}
         >
-          {upload.isPending ? <LoaderCircle size={20} className="spin" /> : <Paperclip size={20} />}
+          {upload.isPending ? <Spinner className="size-5" /> : <Paperclip size={20} />}
           <input
             type="file"
             accept={mediaAccept.all}

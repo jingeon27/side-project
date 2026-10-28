@@ -1,8 +1,8 @@
 'use client';
 
-import { Globe2, LoaderCircle } from 'lucide-react';
+import { Globe2 } from 'lucide-react';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@side/design-system';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from '@side/design-system';
 
 import { useI18n } from './LanguageProvider';
 import { languagePreference } from './locale';
@@ -40,9 +40,7 @@ export function LanguageSelect({ id, compact = false }: ILanguageSelectProps) {
       >
         {compact ? (
           <>
-            <span aria-hidden>
-              {pending ? <LoaderCircle size={20} className="spin" /> : <Globe2 size={20} />}
-            </span>
+            <span aria-hidden>{pending ? <Spinner className="size-5" /> : <Globe2 size={20} />}</span>
             <SelectValue className="sr-only" />
           </>
         ) : (

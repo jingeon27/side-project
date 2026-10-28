@@ -14,7 +14,7 @@ export function ChatConnectionStatus() {
     .with('offline', () => ({ label: t('오프라인입니다. 연결을 기다려요'), icon: <WifiOff size={13} /> }))
     .otherwise(() => ({
       label: t('재연결 중입니다. 자동으로 새로고침해요'),
-      icon: <RefreshCw size={12} className="spin" />,
+      icon: <RefreshCw size={12} className="animate-spin" />,
     }));
   return (
     <div className="chat-connection" data-connection={connection} role="status">
