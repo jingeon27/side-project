@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+type TRobots = Exclude<NonNullable<Metadata['robots']>, string>;
+
 export const SITE_NAME = '별사대';
 export const SITE_DESCRIPTION = '사진·동영상·합성으로 웃긴 순간을 함께 나누는 그룹 커뮤니티.';
 export const PUBLIC_ROBOTS = {
@@ -12,12 +14,12 @@ export const PUBLIC_ROBOTS = {
     'max-snippet': -1,
     'max-video-preview': -1,
   },
-} as const;
+} as const satisfies TRobots;
 export const PRIVATE_ROBOTS = {
   index: false,
   follow: false,
   googleBot: { index: false, follow: false, noimageindex: true },
-} as const;
+} as const satisfies TRobots;
 
 export function siteUrl(path: string, origin: string) {
   return new URL(path, origin).href;

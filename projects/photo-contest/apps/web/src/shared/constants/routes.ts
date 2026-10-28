@@ -18,7 +18,7 @@ export const ROUTES = {
     `/groups/${encodeURIComponent(groupId)}/contests/${encodeURIComponent(id)}`,
   CONTEST: (id: string) => `/contests/${encodeURIComponent(id)}`,
   INVITE: (token: string) => `/invite/${encodeURIComponent(token)}`,
-} as const;
+} as const satisfies Record<string, `/${string}` | ((...args: never[]) => string)>;
 
 /** 같은 origin의 `/backend/*` 프록시(next.config rewrites)로 부르는 API 경로 */
 export const BACKEND_ROUTES = {
@@ -29,10 +29,14 @@ export const BACKEND_ROUTES = {
   AUTH_PROVIDER: (provider: 'google' | 'kakao') => `/backend/auth/${provider}`,
   PUSH_DEVICE_REGISTER: '/backend/push/devices/register',
   PUSH_DEVICE_UNREGISTER: '/backend/push/devices/unregister',
-} as const;
+} as const satisfies Record<string, `/backend/${string}` | ((...args: never[]) => string)>;
 
 /** 익명 또는 회원 세션이 필요한 화면. proxy.ts matcher와 같은 목록이다. */
-export const SESSION_PATH_PREFIXES = ['/groups/', '/invite/', '/contests/'] as const;
+export const SESSION_PATH_PREFIXES = [
+  '/groups/',
+  '/invite/',
+  '/contests/',
+] as const satisfies readonly `/${string}/`[];
 export const SESSION_PATHS = [
   '/',
   '/explore',
@@ -42,4 +46,4 @@ export const SESSION_PATHS = [
   '/me',
   '/notifications',
   '/onboarding',
-] as const;
+] as const satisfies readonly `/${string}`[];
