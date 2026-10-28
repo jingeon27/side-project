@@ -6,15 +6,17 @@ The first idea was a service where friends could share photos and vote on them. 
 
 ![An illustration of revising wireframes, a photo feed, and a game conversation screen](/images/covers/side-project-design.png)
 
-*An illustration of revising the screens.*
+_An illustration of revising the screens._
 
 I wanted to turn ideas I cared about into services. I am building a photo community, Game Mate, and a personal blog. I ask AI to implement things, try the resulting screens myself, and send back changes.
 
-The first project was `photo-contest`: invite friends to a group, submit photos, then vote. It had separate submission and voting periods, with rules for ties and contests without votes.
+The first project was `photo-contest`. The idea came from a streamer's segment called a “Yeongdo contest.” It made me think it would be fun to have a service where close friends could share funny photos within their own group.
+
+I started with inviting friends to a group, submitting photos, and voting. It had separate submission and voting periods, with rules for ties and contests without votes.
 
 ![Game Mate feed and signup alongside the photo community group discovery screen](/images/posts/side-project-design/01-service-screens.png)
 
-*Development screens with test data.*
+_Development screens with test data._
 
 ## I came to see photos and got a group list
 
@@ -26,9 +28,15 @@ Running the screens brought up design changes. I changed layouts that covered ph
 
 The entry screen brings login, signup, and “Start anonymously” together. Anonymous sessions can browse public groups. Private groups require login and membership approval.
 
+Preserving anonymity was part of the plan too. I chose not to add social login so people could use the service without linking an external social account.
+
 ## Game Mate starts with Clash Royale
 
-I wanted to bring people to a service and try operating it. The idea was for someone stuck in a game to post their situation and receive advice from other players. I chose Clash Royale because I thought I could reach the first users through its communities.
+Game Mate grew out of watching Clash Royale communities. The overseas players I saw used Twitter, while Korean players used KakaoTalk, DC Inside, and Naver Cafe.
+
+Getting added as a friend by top-ranked players overseas was difficult, and I also came across posts looking for someone to teach the game. Posting across several platforms and checking each one looked inconvenient. That made me consider building a service where people could make these requests and find each other in one place.
+
+I also wanted someone stuck in a game to be able to describe their situation and receive advice from other players. I chose Clash Royale first because I thought I could reach its initial users through communities I knew.
 
 I considered Brawl Stars and League of Legends too, but decided against supporting several games at the start. I made five boards under Clash Royale: feedback, friend-add sales, friendly matches, coaching, and general discussion. More games could use those boards later. I left account trading out because of the risk.
 
@@ -71,7 +79,7 @@ I also disliked editing a profile through an expandable section. I changed it to
 
 ![Photo community group posts and the Game Mate profile editing screen](/images/posts/side-project-design/09-product-interactions.png)
 
-*Group posts and profile editing, also checked with test data.*
+_Group posts and profile editing, also checked with test data._
 
 Buttons, inputs, and dialogs come from a shared [design system](https://github.com/jingeon27/side-project/tree/65c3d13a/packages/design-system). The photo service needed room for the photos. Game Mate needed the game and the author's situation to be easy to read. I still adjusted layout and spacing separately for each screen.
 
@@ -85,9 +93,11 @@ Language routes are in place, but translation features and running the service f
 
 ## The blog's about page did not need my resume too
 
-I started the blog because maintaining the same articles in a repository and on Tistory was cumbersome. I wanted to edit and publish from an editor I already used.
+I originally kept my blog posts in a separate repository. Moving them over to Tistory to publish was cumbersome. Building a blog of my own had also become less expensive, so I decided to make one.
 
-I considered putting my resume and project introductions on the about page. That felt like too much to put in a place for reading articles, so I kept contact information. Korean and English editions only appear where an actual translation exists.
+During implementation, the AI agent went beyond what I had asked for and built a resume too. I removed it and kept only contact information on the about page.
+
+Korean and English editions only appear where an actual translation exists.
 
 I am still trying the screens and revising them. For Game Mate, I need to find people who will ask and people who will answer. I want to see whether someone receives a reply and comes back to read it.
 
