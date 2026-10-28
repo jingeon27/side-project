@@ -66,7 +66,7 @@ yarn workspace @side/game-feedback dev:demo
 
 ## 공통 운영 배포
 
-두 서비스는 서울 EC2 한 대에서 공통 Caddy를 사용하고, 외부 RDS PostgreSQL의 서비스별 DB·role과 서로 다른 비공개 S3 버킷을 사용합니다. [설정·CD·백업 복구 안내](deploy/shared-instance/README.md)를 따르세요. 운영 이미지는 AMD64이며 DB는 애플리케이션 Compose에 포함하지 않습니다.
+두 서비스는 서울 EC2 한 대에서 공통 Caddy와 PostgreSQL 18 컨테이너를 사용합니다. DB는 [별도 Compose](deploy/shared-instance/database/compose.yaml)로 실행하고, 데이터는 루트 볼륨과 분리한 EBS 볼륨(`/srv/side-postgres`)에 저장합니다. 서비스별 DB·role과 내부 Docker 네트워크로 접근을 분리하며, 미디어는 비공개 S3 버킷 하나의 서비스별 폴더에 저장합니다. [설정·CD·백업 복구 안내](deploy/shared-instance/README.md)를 따르세요. 운영 이미지는 AMD64입니다.
 
 ## 공통 디자인 시스템
 
