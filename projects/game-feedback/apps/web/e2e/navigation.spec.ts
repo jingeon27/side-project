@@ -94,11 +94,7 @@ test('detail back and tab replacement restore the filtered feed without a tab hi
   await expect(page.locator('.post-card').first()).toBeVisible();
   await page.locator('.post-card').first().getByRole('heading').click();
   await expect(page).toHaveURL(/\/ko\/posts\//);
-  await page
-    .getByRole('link', { name: '홈', exact: true })
-    .filter({ has: page.locator('svg') })
-    .first()
-    .click();
+  await page.getByRole('banner').getByRole('link', { name: '돌아가기', exact: true }).click();
   await expect(page).toHaveURL(/\/ko\?q=%ED%98%B8%EA%B7%B8$/);
   await expect(page.getByRole('banner').getByRole('link', { name: '검색', exact: true })).toHaveAttribute(
     'href',
