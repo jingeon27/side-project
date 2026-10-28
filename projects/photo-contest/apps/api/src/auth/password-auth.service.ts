@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { match } from 'ts-pattern';
 
 import { Prisma } from '../../generated/prisma';
 import { sha256Hex } from '../common/crypto';
@@ -60,11 +61,13 @@ export class PasswordAuthService {
           })
         : this.db.user.create({ data, select: USER_VIEW_SELECT });
     const user = await registration.catch((error: unknown) => {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
-        fail('이미 사용 중인 아이디입니다.', ERROR_CODE.CONFLICT);
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025')
-        fail('계정 상태가 변경됐습니다. 다시 로그인해 주세요.', ERROR_CODE.CONFLICT);
-      throw error;
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError)) throw error;
+      return match(error.code)
+        .with('P2002', () => fail('이미 사용 중인 아이디입니다.', ERROR_CODE.CONFLICT))
+        .with('P2025', () => fail('계정 상태가 변경됐습니다. 다시 로그인해 주세요.', ERROR_CODE.CONFLICT))
+        .otherwise(() => {
+          throw error;
+        });
     });
     await this.sessions.end(req, res);
     await this.sessions.start(res, user.id);
