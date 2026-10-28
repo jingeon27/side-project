@@ -1,3 +1,4 @@
+import { match, P } from 'ts-pattern';
 import type { z } from 'zod';
 
 import type { postComposerSchema } from './post-composer.schema';
@@ -7,8 +8,11 @@ export function postContentInput(values: z.output<typeof postComposerSchema>) {
     title: values.title,
     body: values.body,
     document: values.document ?? null,
-    ...(values.board === 'COACHING' ? { coaching: values.coaching } : {}),
-    ...(values.board === 'FRIEND_SALE' ? { friendSale: values.friendSale } : {}),
-    ...(values.board === 'FRIENDLY' ? { battle: values.battle } : {}),
+    ...match(values.board)
+      .with('COACHING', () => ({ coaching: values.coaching }))
+      .with('FRIEND_SALE', () => ({ friendSale: values.friendSale }))
+      .with('FRIENDLY', () => ({ battle: values.battle }))
+      .with(P.union('FEEDBACK', 'FREE', undefined), () => ({}))
+      .exhaustive(),
   };
 }

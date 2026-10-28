@@ -1,4 +1,4 @@
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 import { BRIDGE_EVENT, parseNativeMessage, WebPathSchema } from '@game-feedback/bridge';
 
@@ -109,7 +109,10 @@ export class NativeBridgeChannel {
         this.binding.onActive();
       })
       .with({ type: 'back' }, ({ id }) => this.handleBack(id))
-      .otherwise(() => undefined);
+      // 로그인·알림 결과와 푸시 수신은 각 기능의 리스너가 따로 받는다.
+      .with({ type: P.union('auth-result', 'push-result', 'push-received') }, () => undefined)
+      .with({ type: 'state', state: 'background' }, () => undefined)
+      .exhaustive();
   };
 }
 

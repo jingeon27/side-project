@@ -1,3 +1,5 @@
+import { match } from 'ts-pattern';
+
 import {
   BRIDGE_EVENT,
   parseNativeMessage,
@@ -40,15 +42,11 @@ export function requestNativeLogin(
       const message = parseNativeMessage((event as CustomEvent<unknown>).detail);
       if (message?.type !== 'auth-result' || message.id !== id) return;
       cleanup();
-      if (message.status === 'cancelled') {
-        resolve(null);
-        return;
-      }
-      if (message.status === 'failed') {
-        reject(new Error('로그인하지 못했습니다. 다시 시도해 주세요.'));
-        return;
-      }
-      if (message.status === 'success') resolve({ code: message.code, verifier: message.verifier });
+      match(message)
+        .with({ status: 'cancelled' }, () => resolve(null))
+        .with({ status: 'failed' }, () => reject(new Error('로그인하지 못했습니다. 다시 시도해 주세요.')))
+        .with({ status: 'success' }, ({ code, verifier }) => resolve({ code, verifier }))
+        .exhaustive();
     }
     window.addEventListener(BRIDGE_EVENT, handleMessage);
     postToNative({ type: 'auth-request', id, provider });

@@ -20,6 +20,9 @@ interface IPageMetadata {
   isTestAccount?: boolean;
   locale?: TLocale;
 }
+interface IStaticPageContent extends Pick<IPageMetadata, 'title' | 'description' | 'privatePage'> {
+  keywords: readonly string[];
+}
 export function createPageMetadata({
   title,
   description,
@@ -159,7 +162,7 @@ export const pageContent = {
     keywords: ['계정 설정', '게임 프로필 연결'],
     privatePage: true,
   },
-} as const;
+} as const satisfies Record<string, IStaticPageContent>;
 export type TStaticPage = keyof typeof pageContent;
 export function staticPagePath(kind: TStaticPage, locale: string) {
   return `/${locale}${kind === 'feed' ? '' : `/${kind}`}`;

@@ -2,9 +2,9 @@
 
 import { Globe2 } from 'lucide-react';
 
-import { LanguageSelect, useI18n } from '@/shared/i18n';
+import { LanguageSelect, useI18n, type TLocale } from '@/shared/i18n';
 
-const languageNames = { ko: '한국어', en: 'English', ja: '日本語' } as const;
+const languageNames = { ko: '한국어', en: 'English', ja: '日本語' } satisfies Record<TLocale, string>;
 export function LanguageSettings() {
   const { t, automaticLocale, preference } = useI18n();
   return (

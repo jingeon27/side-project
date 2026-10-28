@@ -1,7 +1,7 @@
 'use client';
 
 import { RefreshCw, WifiOff } from 'lucide-react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 import { useI18n } from '@/shared/i18n';
 import { useChatConnection } from '@/widgets/chat-realtime';
@@ -12,10 +12,11 @@ export function ChatConnectionStatus() {
   if (connection === 'live') return null;
   const status = match(connection)
     .with('offline', () => ({ label: t('오프라인입니다. 연결을 기다려요'), icon: <WifiOff size={13} /> }))
-    .otherwise(() => ({
+    .with(P.union('connecting', 'retrying'), () => ({
       label: t('재연결 중입니다. 자동으로 새로고침해요'),
       icon: <RefreshCw size={12} className="animate-spin" />,
-    }));
+    }))
+    .exhaustive();
   return (
     <div className="chat-connection" data-connection={connection} role="status">
       {status.icon}

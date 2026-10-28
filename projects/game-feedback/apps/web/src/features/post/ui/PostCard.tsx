@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 import { ArrowUpRight, Eye, MessageSquare } from 'lucide-react';
+import { match, P } from 'ts-pattern';
 
 import { BattleSummary } from '@/features/battle';
 import { boardByKind } from '@/features/board';
@@ -29,6 +30,11 @@ export function PostCard({ post, href, authorContent, authorName, showBoardLabel
   const reducedMotion = useMotionPreference();
   const board = boardByKind(post.board);
   const isFeedback = board?.kind === 'FEEDBACK';
+  const answerLabel = match(board?.kind)
+    .with('COACHING', () => t('코칭 보기'))
+    .with('FEEDBACK', () => t('답변'))
+    .with(P.union('FRIEND_SALE', 'FRIENDLY', 'FREE', undefined), () => t('게시글 보기'))
+    .exhaustive();
   return (
     <m.article
       className="post-card"
@@ -73,7 +79,7 @@ export function PostCard({ post, href, authorContent, authorName, showBoardLabel
         </span>
         <span className="answer-count" data-has-answers={post.answerCount > 0 || undefined}>
           <MessageSquare size={15} />
-          {t(post.board === 'COACHING' ? '코칭 보기' : isFeedback ? '답변' : '게시글 보기')}
+          {answerLabel}
           {isFeedback && <strong>{post.answerCount}</strong>}
           <ArrowUpRight size={15} />
         </span>

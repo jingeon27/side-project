@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { ArrowUpRight, FileText, MessageSquare, ThumbsUp } from 'lucide-react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 import type { Notification } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -14,14 +14,14 @@ interface INotificationItemProps {
   href: string;
   onRead: () => void;
 }
-const notificationTitles: Record<Notification['type'], string> = {
+const notificationTitles = {
   ANSWER: '새로운 피드백이 도착했어요',
   HELPFUL: '당신의 피드백이 도움이 됐어요',
   COMMENT: '새로운 댓글이 달렸어요',
   COMMENT_REPLY: '새로운 답글이 달렸어요',
   FOLLOWED_POST: '팔로우한 사용자의 새 글',
   CHAT_MESSAGE: '새로운 채팅이 도착했어요',
-};
+} satisfies Record<Notification['type'], string>;
 export function NotificationItem({ notification, href, onRead }: INotificationItemProps) {
   const { t, locale: textLocale } = useI18n();
   // 서버는 문구를 저장하지 않는다. 현재 닉네임·제목으로 화면 언어의 문구를 만든다.
@@ -44,6 +44,11 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
     )
     .with({ type: 'CHAT_MESSAGE' }, () => t('{name}님이 메시지를 보냈어요.', { name }))
     .exhaustive();
+  const icon = match(notification.type)
+    .with('FOLLOWED_POST', () => <FileText size={22} />)
+    .with('HELPFUL', () => <ThumbsUp size={22} />)
+    .with(P.union('ANSWER', 'COMMENT', 'COMMENT_REPLY', 'CHAT_MESSAGE'), () => <MessageSquare size={22} />)
+    .exhaustive();
   return (
     <Link
       href={href}
@@ -53,15 +58,7 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
         if (!notification.readAt) onRead();
       }}
     >
-      <span className="notification-type">
-        {notification.type === 'FOLLOWED_POST' ? (
-          <FileText size={22} />
-        ) : notification.type === 'HELPFUL' ? (
-          <ThumbsUp size={22} />
-        ) : (
-          <MessageSquare size={22} />
-        )}
-      </span>
+      <span className="notification-type">{icon}</span>
       <div>
         <strong>{t(notificationTitles[notification.type])}</strong>
         <p>{message}</p>

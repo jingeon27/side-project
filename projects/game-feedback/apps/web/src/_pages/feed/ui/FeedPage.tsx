@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowUpRight, MessageSquare, Plus } from 'lucide-react';
+import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
@@ -86,7 +87,7 @@ function FeedResults({
   onCompose: handleCompose,
 }: {
   locale: string;
-  tab: string;
+  tab: 'latest' | 'unanswered';
   q: string;
   initial: IFeedSnapshot;
   onCompose: () => void;
@@ -122,6 +123,11 @@ function FeedResults({
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
   const posts = feed.data?.pages.flatMap((page) => page.items) ?? [];
+  const emptyTitle = match({ q, tab })
+    .with({ q: P.string.minLength(1) }, () => t('일치하는 게시글이 없어요'))
+    .with({ tab: 'unanswered' }, () => t('지금은 모든 요청에 답변이 있어요'))
+    .with({ tab: 'latest' }, () => t('첫 번째 이야기를 기다려요'))
+    .exhaustive();
   if (feed.error && !feed.isFetching) throw feed.error;
   if (!feed.data) return <PostListSkeleton />;
   return (
@@ -131,13 +137,7 @@ function FeedResults({
           <span>
             <MessageSquare size={30} />
           </span>
-          <h3>
-            {q
-              ? t('일치하는 게시글이 없어요')
-              : tab === 'unanswered'
-                ? t('지금은 모든 요청에 답변이 있어요')
-                : t('첫 번째 이야기를 기다려요')}
-          </h3>
+          <h3>{emptyTitle}</h3>
           <p>
             {q
               ? t('다른 단어로 검색하거나 새로운 글을 남겨보세요.')

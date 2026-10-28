@@ -11,7 +11,7 @@ export const ANALYTICS_EVENT = {
   Interaction: 'ui_interaction',
   ScrollDepth: 'scroll_depth',
   PageEngagement: 'page_engagement',
-} as const;
+} as const satisfies Record<string, keyof TAnalyticsProperties>;
 export type TAnalyticsEventName = (typeof ANALYTICS_EVENT)[keyof typeof ANALYTICS_EVENT];
 export type TAnalyticsProperties = {
   login_opened: Record<string, never>;
