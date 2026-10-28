@@ -53,7 +53,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 - 종료 후 보이는 참여작으로 득표수 경쟁 순위(1,1,3)를 계산한다. 동률 표시는 작성 시각 asc·id asc이며 일반 좋아요가 수상 순위를 바꾸지 않는다. 최다 득표 > 0이면 공동 우승, 0표는 우승 없음이다. 완료 이벤트는 형식에 맞는 참여작·투표를 집계한다.
 - removeGroupMember는 OWNER·MODERATOR만: OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. leaveGroup은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 남긴 게시물·댓글은 지우지 않는다.
 - OWNER만 setGroupModerator·transferGroupOwnership을 실행한다. 대상은 같은 그룹의 멤버이고 OWNER 역할은 임명 API로 바꾸지 않는다. 양도는 원 OWNER→MEMBER와 대상→OWNER를 하나의 Serializable 트랜잭션에서 처리한다.
-- publicGroupContests·publicGroupContestCount는 PUBLIC/POST만 포함한다. winners는 siblingLoader로 묶어 읽고 private 결과·미디어를 SEO에 섞지 않는다.
+- publicGroupContests·publicGroupContestCount는 PUBLIC/POST만 포함한다. winners는 siblingLoader로 묶어 득표 집계(groupBy)로 우승작만 읽고(참여작 전체를 불러오지 않는다) private 결과·미디어를 SEO에 섞지 않는다.
 
 ## 기존 대회 호환 규칙
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { groupBy } from 'es-toolkit';
+import { groupBy, maxBy } from 'es-toolkit';
 import { match } from 'ts-pattern';
 
 import type { Contest, GroupMember, Prisma } from '../../generated/prisma';
@@ -47,6 +47,7 @@ export interface IGroupContestNode extends Contest {
   votedPostId: string | null;
   entryCount: number;
   loadResults: () => Promise<TGroupContestResult[]>;
+  loadWinners: () => Promise<TGroupContestResult[]>;
 }
 
 @Injectable()
@@ -210,6 +211,11 @@ export class GroupContestService {
       },
       [] as TGroupContestResult[],
     );
+    const loadWinners = siblingLoader(
+      rows.filter((row) => phase(row) === PHASE.COMPLETED).map((row) => row.id),
+      (ids) => this.winnersOf(ids, viewer?.id ?? null),
+      [] as TGroupContestResult[],
+    );
     return rows.map((row): IGroupContestNode => {
       const currentPhase = phase(row);
       return {
@@ -222,7 +228,45 @@ export class GroupContestService {
         votedPostId: row.postVotes[0]?.postId ?? null,
         entryCount: row._count.posts,
         loadResults: () => (currentPhase === PHASE.COMPLETED ? loadResults(row.id) : Promise.resolve([])),
+        loadWinners: () => (currentPhase === PHASE.COMPLETED ? loadWinners(row.id) : Promise.resolve([])),
       };
     });
+  }
+
+  /**
+   * 종료 대회들의 우승작만 구한다. 득표는 DB가 참여작별로 세고(숨긴 참여작 제외) 대회마다 최다 득표인 글만 읽는다.
+   * 결과 순위(rankResults)와 같은 규칙이다: 최다 득표 > 0이면 공동 우승, 0표 대회는 우승 없음, 표시는 작성 시각·id 순.
+   * 공개 목록(publicGroupContests, 최대 48개)에서도 모든 참여작을 불러오지 않는다.
+   */
+  private async winnersOf(ids: readonly string[], viewerId: string | null) {
+    const counts = await this.db.postContestVote.groupBy({
+      by: ['contestId', 'postId'],
+      where: { contestId: { in: [...ids] }, post: { hidden: false } },
+      _count: { _all: true },
+    });
+    const winning = Object.values(groupBy(counts, (count) => count.contestId)).flatMap((entries) => {
+      const top = maxBy(entries, (entry) => entry._count._all)?._count._all ?? 0;
+      return entries.filter((entry) => entry._count._all === top);
+    });
+    const votes = new Map(winning.map((entry) => [entry.postId, entry._count._all]));
+    const posts = votes.size
+      ? await this.db.post.findMany({
+          where: { id: { in: [...votes.keys()] } },
+          include: postInclude(viewerId),
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        })
+      : [];
+    const byContest = groupBy(posts, (post) => post.contestId ?? '');
+    return new Map(
+      ids.map((id) => [
+        id,
+        (byContest[id] ?? []).map((post): TGroupContestResult => ({
+          rank: 1,
+          winner: true,
+          voteCount: votes.get(post.id) ?? 0,
+          post: presentPost(post, viewerId),
+        })),
+      ]),
+    );
   }
 }

@@ -63,7 +63,7 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 
 `test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
 
-그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 회원 멤버 전용(익명 계정 제외)·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 묶어 읽는다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다. `removeGroupMember`는 OWNER·MODERATOR가 실행하며 OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. `leaveGroup`은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 내보내거나 나간 멤버의 게시물·댓글은 남기고, 다시 가입하면 공개·비공개 가입 규칙을 그대로 따른다. 가입 이벤트는 다시 가입할 수 있으므로 가입마다 새 id를 쓴다.
+그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 회원 멤버 전용(익명 계정 제외)·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 목록의 종료 대회를 묶어 득표 groupBy로 우승작만 읽는다(참여작 전체를 싣지 않는다). groupContestResults만 한 대회의 전체 순위를 계산한다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다. `removeGroupMember`는 OWNER·MODERATOR가 실행하며 OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. `leaveGroup`은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 내보내거나 나간 멤버의 게시물·댓글은 남기고, 다시 가입하면 공개·비공개 가입 규칙을 그대로 따른다. 가입 이벤트는 다시 가입할 수 있으므로 가입마다 새 id를 쓴다.
 
 publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
 
