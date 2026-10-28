@@ -8,6 +8,7 @@ import { AnalyticsTracker } from '@/features/analytics-consent/ui/analytics-trac
 import { isLocale, locales } from '@/i18n/routing';
 import { siteUrl } from '@/shared/config/site';
 import { serializeJsonLd, websiteJsonLd } from '@/shared/lib/seo/structured-data';
+import { ThemeInitializer } from '@/shared/ui/theme-initializer';
 import { Footer } from '@/widgets/footer/ui/footer';
 import { Header } from '@/widgets/header/ui/header';
 
@@ -17,7 +18,6 @@ export const metadata: Metadata = { metadataBase: siteUrl };
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
-const initialTheme = `(function(){try{var t=localStorage.getItem('blog-theme');document.documentElement.dataset.theme=t==='dark'||t==='light'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}})()`;
 export default async function LocaleLayout({
   children,
   params,
@@ -31,10 +31,8 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   return (
     <html lang={locale} suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: initialTheme }} />
-      </head>
       <body id="top">
+        <ThemeInitializer />
         <NextIntlClientProvider messages={messages}>
           <Header locale={locale} />
           {children}
