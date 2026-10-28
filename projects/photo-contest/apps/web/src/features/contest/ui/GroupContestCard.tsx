@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { useFragment } from '@apollo/client/react';
 import { Link2, Trophy, Video } from 'lucide-react';
+import { match, P } from 'ts-pattern';
 
 import { GroupContestCardFragmentDoc, PostKind } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -58,20 +59,24 @@ export function GroupContestCard({ id, hallOfFame = false }: { id: string; hallO
                   {rank}
                 </span>
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-control bg-sunken">
-                  {post.kind === PostKind.Photo && post.mediaUrl ? (
-                    <Image
-                      unoptimized
-                      fill
-                      sizes="64px"
-                      src={post.mediaUrl}
-                      alt={post.title}
-                      className="object-cover"
-                    />
-                  ) : post.kind === PostKind.Link ? (
-                    <Link2 aria-label="링크 우승작" className="m-auto h-full w-6 text-muted" />
-                  ) : (
-                    <Video aria-label="동영상 우승작" className="m-auto h-full w-6 text-muted" />
-                  )}
+                  {match(post)
+                    .with({ kind: PostKind.Photo, mediaUrl: P.string.minLength(1) }, ({ mediaUrl }) => (
+                      <Image
+                        unoptimized
+                        fill
+                        sizes="64px"
+                        src={mediaUrl}
+                        alt={post.title}
+                        className="object-cover"
+                      />
+                    ))
+                    .with({ kind: PostKind.Link }, () => (
+                      <Link2 aria-label="링크 우승작" className="m-auto h-full w-6 text-muted" />
+                    ))
+                    .with({ kind: P.union(PostKind.Photo, PostKind.Video) }, () => (
+                      <Video aria-label="동영상 우승작" className="m-auto h-full w-6 text-muted" />
+                    ))
+                    .exhaustive()}
                 </div>
                 <div className="min-w-0">
                   <p className="line-clamp-2 text-label text-ink">{post.title}</p>

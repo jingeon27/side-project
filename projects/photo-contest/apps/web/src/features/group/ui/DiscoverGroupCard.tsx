@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { useFragment, useQuery } from '@apollo/client/react';
 import { ArrowUpRight, Users } from 'lucide-react';
+import { match, P } from 'ts-pattern';
 
 import { useLoginPrompt } from '@/features/auth';
 import { DiscoverGroupFragmentDoc, GroupVisibility, MeDocument } from '@/shared/api/generated';
@@ -58,7 +59,11 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
             멤버 {formatCount(group.memberCount)}명
           </span>
           <span className="flex items-center gap-1.5 text-label text-ink">
-            {group.role ? '그룹으로 가기' : group.joinRequestPending ? '신청 상태 보기' : '둘러보기'}
+            {match(group)
+              .with({ role: P.nonNullable }, () => '그룹으로 가기')
+              .with({ joinRequestPending: true }, () => '신청 상태 보기')
+              .with({ joinRequestPending: false }, () => '둘러보기')
+              .exhaustive()}
             <ArrowUpRight aria-hidden className="size-3.5" />
           </span>
         </div>

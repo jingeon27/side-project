@@ -1,6 +1,7 @@
 'use client';
 
 import { useFragment, useMutation, useQuery } from '@apollo/client/react';
+import { match } from 'ts-pattern';
 
 import {
   CastGroupContestVoteDocument,
@@ -63,13 +64,12 @@ export function GroupContestVoteButton({ contestId, postId }: { contestId: strin
       }}
       aria-label={`${post.title} 대회 투표`}
     >
-      {selected
-        ? '내가 투표한 참여작'
-        : mine
-          ? '내가 올린 참여작'
-          : contest.votedPostId
-            ? '투표 완료'
-            : '이 참여작에 투표하기'}
+      {match({ selected, mine, voted: Boolean(contest.votedPostId) })
+        .with({ selected: true }, () => '내가 투표한 참여작')
+        .with({ mine: true }, () => '내가 올린 참여작')
+        .with({ voted: true }, () => '투표 완료')
+        .with({ voted: false }, () => '이 참여작에 투표하기')
+        .exhaustive()}
     </Button>
   );
 }
