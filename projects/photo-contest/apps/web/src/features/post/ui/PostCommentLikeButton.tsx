@@ -1,16 +1,14 @@
 'use client';
 
 import { useFragment, useMutation } from '@apollo/client/react';
-import { Heart } from 'lucide-react';
 
 import {
   LikePostCommentDocument,
   PostCommentCardFragmentDoc,
   UnlikePostCommentDocument,
 } from '@/shared/api/generated';
-import { cn } from '@/shared/lib/cn.helper';
 import { formatCount } from '@/shared/lib/format.helper';
-import { Button } from '@/shared/ui/@core/button';
+import { LikeCount, LikeToggle } from '@/shared/ui/@core/like-toggle';
 
 export function PostCommentLikeButton({ id }: { id: string }) {
   const { data: comment, complete } = useFragment({
@@ -21,28 +19,19 @@ export function PostCommentLikeButton({ id }: { id: string }) {
   const [unlike, unlikeState] = useMutation(UnlikePostCommentDocument);
   if (!complete) return null;
   const label = `댓글 좋아요 ${formatCount(comment.likeCount)}개`;
-  const heart = (
-    <Heart aria-hidden className={cn('size-4', comment.likedByMe && 'fill-current')} strokeWidth={1.5} />
-  );
   if (!comment.canInteract)
     return (
-      <span
-        aria-label={label}
-        className="inline-flex min-h-touch items-center gap-1.5 px-2 text-micro text-muted"
-      >
-        {heart}
+      <LikeCount density="inline" liked={comment.likedByMe} label={label}>
         {formatCount(comment.likeCount)}
-      </span>
+      </LikeCount>
     );
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      aria-label={label}
-      aria-pressed={comment.likedByMe}
+    <LikeToggle
+      density="inline"
+      liked={comment.likedByMe}
+      label={label}
       disabled={likeState.loading || unlikeState.loading}
-      className={cn('gap-1.5 px-2 text-micro', comment.likedByMe ? 'text-danger' : 'text-muted')}
       onClick={async () => {
         if (likeState.loading || unlikeState.loading) return;
         try {
@@ -76,8 +65,7 @@ export function PostCommentLikeButton({ id }: { id: string }) {
         }
       }}
     >
-      {heart}
       {formatCount(comment.likeCount)}
-    </Button>
+    </LikeToggle>
   );
 }

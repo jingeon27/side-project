@@ -4,7 +4,7 @@ import { useId } from 'react';
 
 import { useBackgroundQuery, useMutation, useReadQuery, type QueryRef } from '@apollo/client/react';
 
-import { ProfileAvatarField, profileSchema } from '@/features/profile';
+import { profileSchema } from '@/features/profile';
 import {
   CompleteProfileAvatarUploadDocument,
   MeDocument,
@@ -12,12 +12,13 @@ import {
   UpdateMyProfileDocument,
   type MeQuery,
 } from '@/shared/api/generated';
-import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { StorageUploadError, uploadWithTicket } from '@/shared/api/upload-to-storage.helper';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
+import { ImageFileField } from '@/shared/ui/@core/image-file-field';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextField } from '@/shared/ui/@core/text-field';
 
@@ -36,7 +37,6 @@ function ProfileForm({
       nickname: data.me?.nickname ?? '',
       avatar: null,
       removeAvatar: false,
-      acceptedTerms: false,
     },
   });
   const formId = useId();
@@ -58,21 +58,20 @@ function ProfileForm({
           onSubmit={form.handleSubmit(async ({ avatar, nickname, removeAvatar }) => {
             const signal = beginSubmit();
             try {
-              let avatarId: string | undefined;
-              if (avatar) {
-                const { data: ticket } = await requestUpload({
-                  variables: { contentType: avatar.type, byteSize: avatar.size },
-                });
-                if (!ticket) return;
-                throwIfClosed(signal);
-                await uploadToStorage(ticket.requestProfileAvatarUpload, avatar, { signal });
-                throwIfClosed(signal);
-                const { data: completed } = await completeUpload({
-                  variables: { uploadId: ticket.requestProfileAvatarUpload.id },
-                });
-                if (!completed) return;
-                avatarId = completed.completeProfileAvatarUpload.id;
-              }
+              const avatarId = avatar
+                ? await uploadWithTicket(avatar, {
+                    signal,
+                    request: async () =>
+                      (
+                        await requestUpload({
+                          variables: { contentType: avatar.type, byteSize: avatar.size },
+                        })
+                      ).data?.requestProfileAvatarUpload,
+                    complete: async (uploadId) =>
+                      (await completeUpload({ variables: { uploadId } })).data?.completeProfileAvatarUpload
+                        .id,
+                  })
+                : undefined;
               throwIfClosed(signal);
               await save({ variables: { nickname, removeAvatar, avatarId } });
               toast.success('프로필을 수정했어요');
@@ -86,7 +85,15 @@ function ProfileForm({
             }
           })}
         >
-          <ProfileAvatarField form={form} currentUrl={data.me.avatar} />
+          <ImageFileField
+            control={form.control}
+            trigger={form.trigger}
+            name="avatar"
+            removeName="removeAvatar"
+            label="프로필 사진"
+            currentUrl={data.me.avatar}
+            fileSchema={profileSchema.shape.avatar}
+          />
           <p className="text-caption text-muted">직접 올린 프로필 사진과 닉네임은 작성자 정보에 표시돼요.</p>
           <TextField
             label="닉네임"

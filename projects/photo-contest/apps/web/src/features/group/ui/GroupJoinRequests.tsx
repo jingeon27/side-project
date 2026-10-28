@@ -1,5 +1,7 @@
 'use client';
 
+import { useTransition } from 'react';
+
 import { skipToken, useBackgroundQuery, useFragment, useMutation, type QueryRef } from '@apollo/client/react';
 
 import {
@@ -130,6 +132,8 @@ export function GroupJoinRequests({ groupId }: { groupId: string }) {
           fetchPolicy: 'network-only',
         },
   );
+  // 새로고침은 transition으로 보내 받는 동안 기존 목록을 그대로 둔다(밖에서 부르면 목록이 다시 Suspense된다).
+  const [refreshing, startTransition] = useTransition();
   const fallback = <Skeleton className="mt-4 h-24 w-full" />;
   return (
     <section
@@ -143,13 +147,16 @@ export function GroupJoinRequests({ groupId }: { groupId: string }) {
           size="md"
           variant="ghost"
           disabled={!queryRef}
-          onClick={async () => {
-            try {
-              await refetch();
-            } catch {
-              /* 조회 경계에서 재시도한다. */
-            }
-          }}
+          loading={refreshing}
+          onClick={() =>
+            startTransition(async () => {
+              try {
+                await refetch();
+              } catch {
+                /* 조회 경계에서 재시도한다. */
+              }
+            })
+          }
         >
           신청 새로고침
         </Button>

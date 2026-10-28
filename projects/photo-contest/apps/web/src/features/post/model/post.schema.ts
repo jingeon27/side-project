@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { isImageFile } from '@/features/submission';
+import { isImageFile } from '@/shared/lib/image.helper';
 
 import { validPostLink } from './post-link.helper';
 

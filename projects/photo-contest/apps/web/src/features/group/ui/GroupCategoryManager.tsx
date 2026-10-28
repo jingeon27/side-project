@@ -65,21 +65,25 @@ function CategoryRow({
         onSubmit={form.handleSubmit(async ({ name }) => {
           try {
             await rename({ variables: { categoryId: category.id, name } });
+            // 행을 다시 만들지 않으므로 저장한 이름을 새 기준값으로 삼는다.
+            form.reset({ name });
           } catch {
             /* ErrorLink가 알린다. */
           }
         })}
       >
+        {/* 이름을 저장하는 동안 disabled로 바꾸면 브라우저가 포커스를 빼므로 읽기 전용·진행 표시로 막는다. */}
         <TextField
           required
           label={`${category.name} 이름`}
           maxLength={20}
-          disabled={disabled}
+          disabled={busy || archiving}
+          readOnly={renaming}
           className="min-w-0 flex-1"
           error={form.formState.errors.name?.message}
           {...form.register('name')}
         />
-        <Button type="submit" variant="secondary" size="sm" disabled={disabled}>
+        <Button type="submit" variant="secondary" size="sm" loading={renaming} disabled={busy || archiving}>
           이름 변경
         </Button>
       </form>
@@ -160,7 +164,7 @@ function CategoryManagement({ queryRef }: { queryRef: QueryRef<GroupCategoriesQu
       <ul className="flex flex-col gap-4">
         {group.categories.map((category, index) => (
           <CategoryRow
-            key={`${category.id}:${category.name}`}
+            key={category.id}
             category={category}
             first={index === 0}
             last={index === group.categories.length - 1}

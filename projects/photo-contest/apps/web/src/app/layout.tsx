@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers';
 import { parseAppUserAgent } from '@photo-contest/bridge';
 
 import { AppProviders } from '@/_app/providers';
+import { AppShell } from '@/_app/shell';
 
 import '@/_app/styles/tailwind.css';
 
@@ -46,7 +47,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             id={APP_MAIN_ID}
             className="relative flex min-h-dvh w-full min-w-0 flex-col bg-surface desktop:bg-sunken desktop:has-[[data-desktop-nav]]:pl-48 wide:has-[[data-desktop-nav]]:pl-56"
           >
-            <AppProviders themePreference={preference}>{children}</AppProviders>
+            <AppProviders themePreference={preference}>
+              <AppShell>{children}</AppShell>
+            </AppProviders>
           </main>
         </div>
       </body>

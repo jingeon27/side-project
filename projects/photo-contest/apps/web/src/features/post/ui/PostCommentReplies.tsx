@@ -12,13 +12,9 @@ import { PostCommentRow } from './PostCommentRow';
 
 function ReplyList({
   queryRef,
-  viewerId,
-  postAuthorId,
   replyToName,
 }: {
   queryRef: QueryRef<PostCommentsQuery>;
-  viewerId?: string;
-  postAuthorId?: string;
   replyToName: string;
 }) {
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery(queryRef, {
@@ -31,12 +27,7 @@ function ReplyList({
       <ul aria-label="답글" className="flex flex-col gap-4">
         {data.postComments.map(({ id }) => (
           <li key={id}>
-            <PostCommentRow
-              id={id}
-              viewerId={viewerId}
-              postAuthorId={postAuthorId}
-              replyToName={replyToName}
-            />
+            <PostCommentRow id={id} replyToName={replyToName} />
           </li>
         ))}
       </ul>
@@ -58,14 +49,10 @@ function ReplyList({
 export function PostCommentReplies({
   postId,
   parentId,
-  viewerId,
-  postAuthorId,
   replyToName,
 }: {
   postId: string;
   parentId: string;
-  viewerId?: string;
-  postAuthorId?: string;
   replyToName: string;
 }) {
   const [queryRef, { refetch }] = useBackgroundQuery(PostCommentsDocument, {
@@ -75,12 +62,7 @@ export function PostCommentReplies({
   });
   return (
     <AsyncBoundary onRetry={() => refetch()} fallback={<Skeleton className="h-20 w-full" />}>
-      <ReplyList
-        queryRef={queryRef}
-        viewerId={viewerId}
-        postAuthorId={postAuthorId}
-        replyToName={replyToName}
-      />
+      <ReplyList queryRef={queryRef} replyToName={replyToName} />
     </AsyncBoundary>
   );
 }

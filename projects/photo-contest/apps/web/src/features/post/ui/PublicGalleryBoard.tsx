@@ -8,7 +8,9 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
-import { GalleryPostList } from './GalleryPostList';
+import { PostCardList } from './PostCardList';
+import { PostPreviewCard } from './PostPreviewCard';
+import { PostsEmptyState } from './PostsEmptyState';
 
 function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery> }) {
   const pagination = useInfiniteQuery(queryRef, {
@@ -18,7 +20,15 @@ function PublicPosts({ queryRef }: { queryRef: QueryRef<PublicGalleryPostsQuery>
   const posts = pagination.items;
   return (
     <>
-      <GalleryPostList posts={posts} preview />
+      {posts.length ? (
+        <PostCardList>
+          {posts.map(({ id }) => (
+            <PostPreviewCard key={id} id={id} />
+          ))}
+        </PostCardList>
+      ) : (
+        <PostsEmptyState />
+      )}
       {pagination.hasNextPage ? (
         <Button
           variant="secondary"

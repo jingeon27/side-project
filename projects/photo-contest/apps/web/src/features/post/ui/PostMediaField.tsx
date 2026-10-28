@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef } from 'react';
 
 import { ImagePlus } from 'lucide-react';
 import { useController, useWatch, type Control, type UseFormTrigger } from 'react-hook-form';
 
+import { useObjectUrl } from '@/shared/model/object-url.hook';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
 import { postSchema, type TPostInput, type TPostValues } from '../model/post.schema';
@@ -25,23 +26,12 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
     fieldState: { error },
     formState: { isSubmitting },
   } = useController({ control, name: 'media' });
-  const previewUrlRef = useRef<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // 형식·크기가 맞지 않는 파일은 미리 보여 주지 않고 오류만 보여 준다.
+  const previewUrl = useObjectUrl(media && postSchema.shape.media.safeParse(media).success ? media : null);
   const linkUrl = useWatch({ control, name: 'linkUrl' });
   const required = !linkUrl?.trim();
 
-  useEffect(
-    () => () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    },
-    [],
-  );
-
   const handleMediaChange = (file: File | null) => {
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    const nextUrl = file && postSchema.shape.media.safeParse(file).success ? URL.createObjectURL(file) : null;
-    previewUrlRef.current = nextUrl;
-    setPreviewUrl(nextUrl);
     onChange(file);
     void trigger('media');
   };

@@ -12,11 +12,12 @@ export const profileSchema = z.object({
       'JPEG·PNG·WebP 사진을 선택해 주세요.',
     ),
   removeAvatar: z.boolean(),
-  acceptedTerms: z.boolean(),
 });
-export type TProfileInput = z.input<typeof profileSchema>;
 
-export const onboardingSchema = profileSchema.refine((values) => values.acceptedTerms, {
-  message: '이용약관과 개인정보 처리방침을 확인하고 동의해 주세요.',
-  path: ['acceptedTerms'],
-});
+/** 처음 가입할 때만 약관 동의를 함께 받는다. MY의 프로필 수정에는 동의 칸이 없다. */
+export const onboardingSchema = profileSchema
+  .extend({ acceptedTerms: z.boolean() })
+  .refine((values) => values.acceptedTerms, {
+    message: '이용약관과 개인정보 처리방침을 확인하고 동의해 주세요.',
+    path: ['acceptedTerms'],
+  });

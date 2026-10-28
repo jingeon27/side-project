@@ -1,13 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
 import { match } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
 import { GroupMembershipButton, GroupNavigation } from '@/features/group';
-import { CreatePostButton } from '@/features/post';
+import { CreatePostButton, GalleryFeed, LatestPosts, PopularPosts, PostsEmptyState } from '@/features/post';
 import { GalleryDocument, GroupVisibility } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { ERROR_CODE, getErrorCode, getErrorMessage } from '@/shared/model/error';
@@ -17,6 +18,7 @@ import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
 import { NotificationBell } from '@/widgets/notification-bell';
 
+import { parseGroupCategory } from './model/category-search.schema';
 import type { TGroupQueryRef } from './model/group-query.type';
 import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
 import { GroupIdentity } from './ui/GroupIdentity';
@@ -101,21 +103,36 @@ function GroupContent({
       {group.canViewPosts ? (
         <GroupFeed groupRef={groupRef} sidebar={<GroupSidebar groupRef={groupRef} />} />
       ) : (
-        <PrivateGroupNotice groupRef={groupRef} onRefresh={onRefresh} />
+        <PrivateGroupNotice groupRef={groupRef} />
       )}
     </GroupFrame>
   );
 }
 function GroupFeed({ groupRef, sidebar }: { groupRef: TGroupQueryRef; sidebar?: ReactNode }) {
   const { data } = useReadQuery(groupRef);
+  const search = useSearchParams();
   if (!data) return null;
+  const { group } = data;
+  const categoryId = parseGroupCategory(search.get('category'), group.categories);
   // 비공개 그룹의 게시물은 라우트가 사전 조회하지 않는다.
+  const preloaded = group.visibility !== GroupVisibility.Private;
   return (
-    <GroupCategoryFilter
-      group={data.group}
-      sidebar={sidebar}
-      clientOnly={data.group.visibility === GroupVisibility.Private}
-    />
+    <div className="flex flex-col gap-5">
+      <GroupCategoryFilter group={group} categoryId={categoryId} />
+      <GalleryFeed
+        latest={
+          <LatestPosts
+            groupId={group.id}
+            categoryId={categoryId ?? undefined}
+            title="최신 게시물"
+            empty={<PostsEmptyState />}
+            preloaded={preloaded}
+          />
+        }
+        popular={<PopularPosts groupId={group.id} preloaded={preloaded} />}
+        sidebar={sidebar}
+      />
+    </div>
   );
 }
 function GroupQuerySection({ id }: { id: string }) {

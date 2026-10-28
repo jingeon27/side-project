@@ -41,6 +41,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 - 정렬 같은 화면 상태는 `replaceSearchParams({ sort })`로 주소에 남긴다(기록을 쌓지 않고 열린 시트 표시를 지킨다). 읽을 때는 `useSearchParams` 값을 `@page/model/*.schema.ts`로 파싱해 잘못된 값은 기본값으로 바꾼다.
 - 기록 깊이는 `RouteHistoryTracker`(`src/_app/providers/navigation`)만 센다. 화면에서 `routeHistoryStore`를 바꾸지 않는다.
 - `BottomNav`(`@/widgets/bottom-nav`)는 홈·탐색·MY 템플릿에만 마지막 자식으로 둔다(레이아웃에 두지 않는다). 키보드가 열리면 스스로 숨는다. 한 화면에 `StickyCta`와 함께 두지 않는다.
+- 데스크톱 고정 메뉴(`@/widgets/desktop-nav`)는 루트 레이아웃의 `_app/shell` `AppShell`이 한 번만 그린다. 화면·`loading.tsx`·`TopAppBar`에 다시 두지 않아야 로딩 중에도 메뉴와 본문 위치가 유지된다.
 
 ## FSD lint 오류 고치기
 

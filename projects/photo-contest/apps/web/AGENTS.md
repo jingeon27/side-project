@@ -16,8 +16,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - `app`: 라우트·레이아웃·로딩/오류·proxy. 화면은 `@/_pages/<화면>` 배럴로만 가져온다.
 - `_pages`: sign·home·explore·me·group·group-write·group-contests·group-contest·invite·contest·legal. `@page`가 feature를 조립하고 화면 전용 feed/results/model은 그 아래에 둔다.
-- `_app`: Apollo·Bridge·Analytics·Toast·Overlay·기록 providers, 전역 스타일.
-- `widgets/bottom-nav`: 모바일·태블릿의 홈·탐색·MY 하단 탭. 데스크톱은 왼쪽 고정 메뉴를 쓴다.
+- `_app`: Apollo·Bridge·Analytics·Toast·Overlay·기록 providers, 루트 레이아웃이 감싸는 `shell`(데스크톱 고정 메뉴), 전역 스타일.
+- `widgets/bottom-nav`: 모바일·태블릿의 홈·탐색·MY 하단 탭. `widgets/desktop-nav`: 데스크톱 왼쪽 고정 메뉴로, `_app/shell`이 레이아웃에서 한 번만 그려 화면 전환·로딩 중에도 남는다(`/sign` 제외). `TopAppBar`는 화면 머리만 그린다.
 - `features`: 인증·그룹·post(상시 게시물·영상·인기·삭제)·초대·공유와 기존 대회 호환 기능.
 - `shared`: 생성 GraphQL 문서·API 링크·router/error/form/bridge 기반·UI.
 
@@ -67,4 +67,4 @@ PostMediaField와 PostLinkField는 파일 또는 링크 하나 이상을 RHF/Zod
 
 게시물의 수정·숨기기·삭제는 PostActionsMenu의 Base UI Menu에서 JSX로 직접 선언한다. 작성자·관리자에게만 메뉴를 보이고 숨기기는 관리자 전용이다. EditPostBottomSheet가 RHF/Zod와 카테고리 QueryRef·AsyncBoundary를 소유하며 제목·내용·분류를 함께 저장한다. 댓글은 PostCommentRow·ReplySection·Replies·Composer로 맥락을 나눈다. 원댓글과 한 단계 답글은 PostCommentsDocument의 parentId로 나누고 postCommentCount로 각 목록의 끝을 판단한다. replyCount는 펼침 버튼에, GalleryPost.commentCount는 답글 포함 전체 개수에 쓴다. 답글은 오래된 순이며 캐시 keyArgs에 postId·parentId를 포함한다. 원댓글 삭제 확인창은 답글도 함께 삭제됨을 알린다.
 
-그룹 프로필 편집은 EditGroupProfileBottomSheet의 QueryRef·AsyncBoundary·RHF가 소유하고 대표 사진은 GroupAvatarField, 배경 사진은 GroupImagePicker가 선택·미리보기·교체·삭제를 맡는다. 대표 사진은 원본 그대로 RequestGroupAvatarUpload → uploadToStorage → CompleteGroupAvatarUpload로 준비하고, 그 id를 UpdateGroupProfile JSON mutation으로 지정해 공개 Next 캐시 무효화를 유지한다. 사진·소개는 그룹 상단·탐색·MY, 공개 그룹의 SEO에 반영한다. 비공개 그룹에서도 프로필은 탐색에 보인다는 안내를 표시한다. 그룹 대회 개최의 좋아요 한도는 기본 1, 1~100 정수이며 게시물의 대회 라벨·상세 안내에 한도를 표시한다. 좋아요 취소 후 재선택과 별도 최종 투표를 구분한다.
+그룹 프로필 편집은 EditGroupProfileBottomSheet의 QueryRef·AsyncBoundary·RHF가 소유하고 대표 사진은 프로필 사진과 함께 쓰는 `shared/ui/@core/image-file-field`의 ImageFileField(control·필드 이름을 받는다), 배경 사진은 GroupImagePicker가 선택·미리보기·교체·삭제를 맡는다. 대표 사진은 원본 그대로 RequestGroupAvatarUpload → uploadToStorage → CompleteGroupAvatarUpload로 준비하고(그룹 대표·배경 사진과 프로필·가입 사진은 이 세 단계를 `shared/api`의 `uploadWithTicket`으로 묶어 완료된 id를 받는다), 그 id를 UpdateGroupProfile JSON mutation으로 지정해 공개 Next 캐시 무효화를 유지한다. 사진·소개는 그룹 상단·탐색·MY, 공개 그룹의 SEO에 반영한다. 비공개 그룹에서도 프로필은 탐색에 보인다는 안내를 표시한다. 그룹 대회 개최의 좋아요 한도는 기본 1, 1~100 정수이며 게시물의 대회 라벨·상세 안내에 한도를 표시한다. 좋아요 취소 후 재선택과 별도 최종 투표를 구분한다.

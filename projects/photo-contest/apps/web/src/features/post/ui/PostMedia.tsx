@@ -11,11 +11,12 @@ import { cn } from '@/shared/lib/cn.helper';
 export function PostMedia({
   postId,
   detail = false,
-  edgeToEdge = false,
+  className,
 }: {
   postId: string;
   detail?: boolean;
-  edgeToEdge?: boolean;
+  /** 놓이는 자리에 맞춘 모서리 등. 카드는 너비를 채우려고 모서리를 없앤다. */
+  className?: string;
 }) {
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
@@ -25,9 +26,9 @@ export function PostMedia({
   const mediaUrl = post.mediaUrl;
   if (!mediaUrl) return null;
   const frameClassName = cn(
-    'w-full overflow-hidden bg-sunken object-contain',
-    edgeToEdge ? 'rounded-none' : 'rounded-card',
+    'w-full overflow-hidden rounded-card bg-sunken object-contain',
     detail ? 'min-h-56 flex-1' : 'aspect-square desktop:aspect-4/3 desktop:max-h-[60dvh]',
+    className,
   );
   return match(post.kind)
     .with(PostKind.Video, () => (
