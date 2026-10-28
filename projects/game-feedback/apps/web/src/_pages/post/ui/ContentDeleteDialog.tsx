@@ -3,7 +3,6 @@
 import { useId } from 'react';
 
 import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
-import { LoaderCircle } from 'lucide-react';
 
 import { Button } from '@side/design-system';
 
@@ -49,8 +48,7 @@ export function ContentDeleteDialog<TData, TVariables>({
           >
             {t('돌아가기')}
           </Button>
-          <Button variant="danger" size="lg" type="submit" form={formId} disabled={mutation.isPending}>
-            {mutation.isPending && <LoaderCircle className="spin" size={16} />}
+          <Button variant="danger" size="lg" type="submit" form={formId} loading={mutation.isPending}>
             {t('삭제하기')}
           </Button>
         </>

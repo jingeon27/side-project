@@ -129,8 +129,8 @@ export function AccountSetupForm({
           form={formId}
           disabled={!agreed || !ageConfirmed}
           loading={pending}
+          icon={<ArrowRight aria-hidden />}
         >
-          {!pending && <ArrowRight aria-hidden size={18} />}
           {submitLabel}
         </Button>
       </div>

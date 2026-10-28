@@ -3,7 +3,6 @@
 import { useId } from 'react';
 
 import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
-import { LoaderCircle } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
 
@@ -57,8 +56,7 @@ export function ContentEditDialog<TData>({
           >
             {t('취소')}
           </Button>
-          <Button variant="primary" size="lg" type="submit" form={formId} disabled={mutation.isPending}>
-            {mutation.isPending && <LoaderCircle className="spin" size={16} />}
+          <Button variant="primary" size="lg" type="submit" form={formId} loading={mutation.isPending}>
             {t('수정 완료')}
           </Button>
         </>

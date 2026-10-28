@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Bell, CheckCheck, LoaderCircle } from 'lucide-react';
+import { ArrowUpRight, Bell, CheckCheck } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
@@ -101,10 +101,9 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           fullWidth
           type="button"
           className="button"
-          disabled={query.isFetchingNextPage}
+          loading={query.isFetchingNextPage}
           onClick={() => query.fetchNextPage()}
         >
-          {query.isFetchingNextPage && <LoaderCircle className="spin" size={16} />}
           {t('이전 알림 보기')}
         </Button>
       )}

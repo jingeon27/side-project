@@ -122,10 +122,10 @@ export function ChatComposer({
           size="icon"
           type="submit"
           disabled={busy || unavailable || (!draft.trim() && !upload.data)}
+          loading={mutation.isPending}
+          icon={<Send aria-hidden />}
           aria-label={mutation.isError ? t('다시 보내기') : t('보내기')}
-        >
-          {mutation.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
-        </MotionButton>
+        />
       </form>
       {draft.length >= 1800 && <p className="chat-compose-count">{draft.length.toLocaleString()} / 2,000</p>}
     </div>

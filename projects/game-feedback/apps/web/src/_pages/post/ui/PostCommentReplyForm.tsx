@@ -71,10 +71,9 @@ export function PostCommentReplyForm({
           variant="primary"
           size="sm"
           type="submit"
-          disabled={mutation.isPending}
           loading={mutation.isPending}
+          icon={<Send aria-hidden />}
         >
-          {!mutation.isPending && <Send size={14} aria-hidden="true" />}
           {t('답글 등록')}
         </Button>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircle, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { z } from 'zod';
 
 import { PlayerTagSchema } from '@game-feedback/contracts';
@@ -53,8 +53,14 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
             required
             disabled={disabled || preview.isPending}
           />
-          <Button variant="primary" size="md" type="submit" disabled={disabled || preview.isPending}>
-            {preview.isPending ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
+          <Button
+            variant="primary"
+            size="md"
+            type="submit"
+            disabled={disabled}
+            loading={preview.isPending}
+            icon={<Search aria-hidden />}
+          >
             {t('조회')}
           </Button>
         </div>
