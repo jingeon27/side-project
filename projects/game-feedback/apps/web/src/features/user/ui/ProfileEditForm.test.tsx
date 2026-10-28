@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError, type PublicProfile } from '@/shared/api';
-import { confirmNavigation } from '@/shared/navigation';
+import { confirmNavigation, NavigationGuardProvider } from '@/shared/navigation';
 
 import { ProfileEditForm } from './ProfileEditForm';
 
@@ -48,7 +48,9 @@ function renderForm() {
   });
   render(
     <QueryClientProvider client={client}>
-      <ProfileEditForm onSaved={onSaved} profile={profile} />
+      <NavigationGuardProvider>
+        <ProfileEditForm onSaved={onSaved} profile={profile} />
+      </NavigationGuardProvider>
     </QueryClientProvider>,
   );
   return onSaved;

@@ -36,16 +36,17 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const links = useZodForm(profileLinksSchema, { defaultValues: { links: current.data.links ?? [] } });
   const photo = useZodForm(profilePhotoSchema, { defaultValues: { file: undefined } });
   const hasOtherDrafts = links.formState.isDirty || photo.formState.isDirty;
-  useUnsavedChanges(
-    details.formState.isDirty || hasOtherDrafts,
-    t('저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?'),
-    () => {
+  useUnsavedChanges({
+    hasChanges: details.formState.isDirty || hasOtherDrafts,
+    confirm: () =>
+      window.confirm(t('저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?')),
+    onDiscard: () => {
       // Next가 떠난 화면의 폼 상태를 보관해도 버리기로 한 초안이 다시 나타나지 않게 한다.
       details.reset();
       links.reset();
       photo.reset();
     },
-  );
+  });
 
   function handleDetailsSaved() {
     if (!hasOtherDrafts) {
