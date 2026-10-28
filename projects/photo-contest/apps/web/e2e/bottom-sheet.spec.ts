@@ -31,14 +31,13 @@ test(
             : Math.abs(box.x) < 2 &&
               Math.abs(box.width - viewport.width) < 2 &&
               Math.abs(box.y + box.height - viewport.height) < 2;
-        return { layout, rowGap: Math.abs(left.y - right.y), widthGap: Math.abs(left.width - right.width) };
+        return {
+          layout,
+          rowAligned: Math.abs(left.y - right.y) < 2,
+          equalWidth: Math.abs(left.width - right.width) < 2,
+        };
       })
-      .toMatchObject({ layout: true, rowGap: expect.any(Number), widthGap: expect.any(Number) });
-    const [left, right] = await Promise.all([cancel.boundingBox(), save.boundingBox()]);
-    expect(left).not.toBeNull();
-    expect(right).not.toBeNull();
-    expect(Math.abs(left!.y - right!.y)).toBeLessThan(2);
-    expect(Math.abs(left!.width - right!.width)).toBeLessThan(2);
+      .toEqual({ layout: true, rowAligned: true, equalWidth: true });
     await cancel.click();
     await expect(sheet).toHaveCount(0);
     await expect(opener).toBeFocused();
