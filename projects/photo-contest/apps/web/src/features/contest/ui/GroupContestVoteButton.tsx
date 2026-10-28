@@ -10,6 +10,7 @@ import {
   Phase,
 } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
+import { buildLoginRedirectPath } from '@/shared/lib/auth-gate.helper';
 import { toast } from '@/shared/model/toast';
 import { Button, ButtonLink } from '@/shared/ui/@core/button';
 
@@ -32,6 +33,17 @@ export function GroupContestVoteButton({ contestId, postId }: { contestId: strin
     return (
       <ButtonLink href={ROUTES.GROUP(contest.groupId)} variant="secondary" fullWidth>
         그룹 가입 후 투표하기
+      </ButtonLink>
+    );
+  // 익명 계정은 API가 대회 투표를 받지 않는다(canVote false). 회원 로그인으로 안내한다.
+  if (viewer.me.isAnonymous)
+    return (
+      <ButtonLink
+        href={buildLoginRedirectPath(ROUTES.GROUP_CONTEST(contest.groupId, contestId))}
+        variant="secondary"
+        fullWidth
+      >
+        로그인하고 투표하기
       </ButtonLink>
     );
   const mine = post.author.id === viewer.me.id;

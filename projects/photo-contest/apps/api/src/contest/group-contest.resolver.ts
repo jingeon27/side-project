@@ -44,7 +44,7 @@ export class GroupContestResolver {
     return this.contests.vote(viewer, contestId, postId);
   }
   @ResolveField()
-  async winners(@Parent() contest: IGroupContestNode) {
-    return (await contest.loadResults()).filter((entry) => entry.winner);
+  winners(@Parent() contest: IGroupContestNode) {
+    return contest.loadWinners();
   }
 }

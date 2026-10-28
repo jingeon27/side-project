@@ -75,8 +75,12 @@ export class GroupResolver {
   }
 
   @ResolveField()
-  members(@Parent() group: IGroupNode) {
-    return group.loadMembers();
+  members(
+    @Parent() group: IGroupNode,
+    @Args('offset') offset?: number | null,
+    @Args('limit') limit?: number | null,
+  ) {
+    return group.loadMembers(offset, limit);
   }
 
   @ResolveField()

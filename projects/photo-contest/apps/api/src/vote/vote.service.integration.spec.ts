@@ -82,7 +82,7 @@ describe('투표', () => {
     await api.gqlOk(voter.cookie, CAST_VOTE, { contestId, submissionId: ownerPhoto });
     expect(await api.gqlFail(voter.cookie, CAST_VOTE, { contestId, submissionId: friendPhoto })).toEqual({
       code: 'CONFLICT',
-      message: '이미 제출하거나 투표했습니다.',
+      message: '이미 이 대회에 투표했습니다.',
     });
     expect(
       await api.gqlOk(voter.cookie, 'query($id: ID!) { contest(id: $id) { votedSubmissionId } }', {

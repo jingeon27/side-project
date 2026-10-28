@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { authCookieOptions, oauthStateCookieName, sessionCookieName } from './auth-cookie';
+import { authCookieOptions, sessionCookieName } from './auth-cookie';
 
 describe('인증 쿠키 이름', () => {
   afterEach(() => {
@@ -10,7 +10,6 @@ describe('인증 쿠키 이름', () => {
   it('운영(https)에서는 __Host- 접두사와 Secure·Path=/를 함께 써야 한다', () => {
     vi.stubEnv('NODE_ENV', 'production');
     expect(sessionCookieName()).toBe('__Host-contest_session');
-    expect(oauthStateCookieName()).toBe('__Host-contest_oauth_state');
     expect(authCookieOptions()).toMatchObject({ secure: true, path: '/' });
     expect(authCookieOptions()).not.toHaveProperty('domain');
   });
@@ -19,7 +18,6 @@ describe('인증 쿠키 이름', () => {
     for (const env of ['development', 'test']) {
       vi.stubEnv('NODE_ENV', env);
       expect(sessionCookieName()).toBe('contest_session');
-      expect(oauthStateCookieName()).toBe('contest_oauth_state');
       expect(authCookieOptions().secure).toBe(false);
     }
   });

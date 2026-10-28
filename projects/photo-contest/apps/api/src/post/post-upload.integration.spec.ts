@@ -144,7 +144,7 @@ describe('게시물 presigned POST 발급·직접 전송·완료 검증', () => 
     });
     const row = await api.db.postUpload.findUniqueOrThrow({ where: { id: grant.id } });
     expect(row).toMatchObject({ storageKey: pending.stagingKey, stagingKey: null });
-    expect(row.expiresAt.getTime() - Date.now()).toBeGreaterThan(59 * 60_000);
+    expect((row.expiresAt?.getTime() ?? 0) - Date.now()).toBeGreaterThan(59 * 60_000);
     expect(await api.storage.head(row.storageKey ?? '')).toEqual({
       byteSize: image.length,
       contentType: 'image/png',

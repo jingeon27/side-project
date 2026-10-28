@@ -13,16 +13,16 @@
 | `auth/` | `me`, 아이디·비밀번호 가입/로그인(scrypt)·익명 세션·로그아웃, `session.service`(쿠키 헤더 → 조회자, 요청당 한 번), `profile/`은 개인 사진 S3 업로드·프로필 편집·가입 설정 완료, `@Viewer()`/`@OptionalViewer()` |
 | `group/` · `contest/` · `submission/` · `like/` · `vote/` · `moderation/` | 각 `.graphql`이 계약. `group`은 멤버십 권한(`membership.service`)과 그룹 순위, `contest`는 단계·결과 순위, `submission`은 목록·정렬·presigned 대회 업로드 발급·완료·사진 조회(`GET /photos/:id` 307) |
 | `media-upload/` | 게시물·대회·대표 사진의 최종 키 서명 발급, 소유권·만료·용도 확인, HEAD로 크기·형식을 본 뒤 완료 |
-| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 60초 서명 GET으로 보내는 `/media/:id` 307 |
+| `post/` | 상시 그룹 사진·동영상 게시물, 공개 범위에 따른 댓글 조회·멤버 전용 작성·실제 개수·작성자/관리자 삭제, KST 이달의 인기, 좋아요·작성자/관리자 삭제, presigned POST 업로드 발급·완료, 공개 범위를 확인한 뒤 서명 GET(사진 60초·동영상 10분)으로 보내는 `/media/:id` 307 |
 | `feed/` | `myPhotoFeed`: 가입한 모든 그룹의 공개 사진을 전체 최신순(createdAt·id desc)으로 offset 조회. 홈에는 관리자도 숨긴 사진·신고 정보를 받지 않는다 |
-| `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·OAuth 시도·앱 로그인 티켓) — 테스트는 `SchedulerService.runOnce()` |
+| `analytics/` · `maintenance/` | 도메인 이벤트 DB 기록과 대회 종료 기록, 겹치지 않는 주기 정리(업로드·세션·인증 시도·요청 제한 버킷) — 테스트는 `SchedulerService.runOnce()` |
 | `testing/` | NODE_ENV=test에서 createApp({ testFixtures: true })로 등록한 경우에만 사용자·세션·단계 fixture를 만든다 |
 | `health/` | `GET /health`(DB), `GET /app/config`(모바일 최소·최신 버전) |
 | `monitoring/` | Sentry 옵션(DSN 없으면 init 안 함, PII 제거 `beforeSend`)과 `reportUnexpectedError()`(원문 대신 오류 종류·code·호출 위치 + 태그) |
 
 ## 규칙
 
-- 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 게시물·그룹 대회·기존 대회·기존 사진처럼 하위 리소스 ID로 묻는 접근은 비멤버(비로그인 포함)에게 없는 ID와 같은 NOT_FOUND를 준다(비공개 그룹의 하위 리소스, 그리고 공개 그룹이어도 멤버 전용인 기존 대회·사진). 그룹 메타데이터는 공개이므로 그룹 ID로 묻는 조회는 UNAUTHENTICATED·FORBIDDEN으로 가입을 안내하고, 공개 그룹 게시물에 대한 비멤버의 쓰기는 FORBIDDEN이다. 새 하위 리소스 접근에는 `requireMemberOf`·`readableGroup(…, concealAs)`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
+- 상시 게시물은 Post 도메인에 둔다. Contest.format=POST는 그룹의 선택 참여 대회이고 format=LEGACY·Submission은 기존 호환 계약이다. 새 기능은 모듈 하나(`<name>.graphql` + module + resolver + service)로 추가하고 `app.module.ts`에 등록한다. resolver·controller는 얇게, 권한은 `membership.service`로만. 공개 Post·미디어·댓글 읽기는 `readableGroup`·`readablePost`, 쓰기·좋아요·삭제는 `requireMember`·`accessiblePost`를 쓴다. 게시물·그룹 대회·기존 대회·기존 사진처럼 하위 리소스 ID로 묻는 접근은 비멤버(비로그인 포함)에게 없는 ID와 같은 NOT_FOUND를 준다(비공개 그룹의 하위 리소스, 그리고 공개 그룹이어도 멤버 전용인 기존 대회·사진). 그룹 메타데이터는 공개이므로 그룹 ID로 묻는 조회는 UNAUTHENTICATED·FORBIDDEN으로 가입을 안내하고, 공개 그룹 게시물에 대한 비멤버의 쓰기는 FORBIDDEN이다. 새 하위 리소스 접근에는 `requireMemberOf`·`readableGroup(…, concealAs)`를 쓴다. 기존 Contest·Submission은 공개 그룹이어도 멤버 전용이다. 그룹 메타데이터는 탐색 가능하지만 비멤버의 role·inviteToken은 null, members는 빈 배열이다. members는 멤버에게도 한 페이지(offset·limit, 기본·최대 48, 그룹장·부관리자 먼저·가입 순)만 주며 목록의 그룹들을 창 함수 쿼리 하나로 자른다. 전체 수가 필요한 화면은 memberCount를 쓴다. 가입 신청은 `(groupId,userId)` unique + Serializable이며 수락·거절은 OWNER·MODERATOR가 한다.
 - GraphQL을 바꾸면 웹 `codegen`과 웹 계약 테스트를 같이 돌린다. 오류 메시지를 바꾸면 웹·테스트도 바꾼다.
 - 세션 쿠키는 `cookie-header.ts`로만 읽는다(cookie-parser 없음). GET·HEAD·OPTIONS 밖의 요청은 인증보다 먼저 Origin을 검사한다.
 - 요청 스키마는 strict Zod 객체로 정의하고 DTO 타입은 z.output으로 추론한다. REST는 @Body({ schema })와 전역 StandardSchemaValidationPipe, GraphQL은 @Args(createInputValidationPipe(schema))로 같은 스키마를 명시한다. GraphQL Args는 Nest의 schema 메타데이터를 전달하지 않으므로 파이프에 스키마를 직접 결합한다. 인증 반복 시도는 검증보다 먼저 guard에서 센다. 도메인 규칙과 권한 검사는 서비스에 둔다.
@@ -38,15 +38,16 @@
 
 - `build`·`dev`는 `tsconfig.build.json`(src만, `*.spec.ts`·`*.test.ts` 제외)으로 `dist`에 낸다. `tsconfig.json`은 타입 검사 전용(noEmit, 테스트 포함).
 - 사용자의 개발 서버는 `dist/main.js`를 본다(`node --watch`). 검증용 빌드는 다른 outDir로 하고, 테스트 API는 test-kit이 `.e2e-build`로 빌드한다.
-- 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client도 포함한다. 미디어 처리 런타임(sharp·MediaInfo)은 없다. TRUST_PROXY_HOPS는 기본 0, 비공개 API 앞의 Caddy 한 단계만 있을 때 1이다. 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
-- 운영(NODE_ENV=production)에서만 GraphQL을 주소별 분당 600회로 제한한다(`graphql-rate-limit.middleware.ts`, 프로세스 메모리). 주소는 Express가 TRUST_PROXY_HOPS로 확인한 `req.ip`를 `rateLimitAddress()`로 묶은 값(IPv6 /64)이다. 브라우저 GraphQL은 Caddy → 웹 `/backend/graphql` 프록시 → API로 오며 프록시가 Caddy의 X-Forwarded-For를 그대로 넘기고(Next는 없을 때만 채운다), 웹 SSR도 들어온 X-Forwarded-For를 넘긴다. 프록시를 신뢰하는데 X-Forwarded-For가 없는 요청은 웹 서버의 공개 캐시 조회·헬스 체크이므로 제한하지 않는다(웹 컨테이너 주소 하나로 묶으면 한 사용자가 사이트 전체 SSR을 막는다).
-- 운영에서 그룹 생성·게시물·댓글·가입 신청(초대 가입 포함)·신고·OAuth 시작은 `RateLimitService.consume()`이 사용자·주소마다 DB 고정 창 버킷(`RateLimitBucket`)으로 센다. 한도는 `limits.ts`의 `WRITE_RATE_LIMIT`, 주소는 리졸버·컨트롤러의 `@ClientAddress()`가 넘긴다. 업로드 발급은 사용자가 맡긴 원본 합계를 `USER_STORAGE_QUOTA_BYTES`(5GB)까지 허용한다(모든 환경).
+- 운영 이미지는 Dockerfile로 빌드한다. prisma CLI는 migrate deploy를 위해 production dependency이며 GraphQL src·Prisma schema/client도 포함한다. 미디어 처리 런타임(sharp·MediaInfo)은 없다. 신뢰하는 프록시 단계 수는 환경변수가 아니라 `config/env.ts`의 `trustedProxyHops()`가 정한다: 운영(NODE_ENV=production)은 비공개 API 앞의 Caddy 한 단계라 1, 개발·테스트는 0이다(테스트는 `createTestApp(…, { trustProxy })`로 바꾼다). 전달 헤더를 무조건 신뢰하거나 API·DB 포트를 외부에 열지 않는다.
+- 운영(NODE_ENV=production)에서만 GraphQL을 주소별 분당 600회로 제한한다(`graphql-rate-limit.middleware.ts`, 프로세스 메모리). 주소는 Express가 `trustedProxyHops()`로 확인한 `req.ip`를 `rateLimitAddress()`로 묶은 값(IPv6 /64)이다. 브라우저 GraphQL은 Caddy → 웹 `/backend/graphql` 프록시 → API로 오며 프록시가 Caddy의 X-Forwarded-For를 그대로 넘기고(Next는 없을 때만 채운다), 웹 SSR도 들어온 X-Forwarded-For를 넘긴다. 프록시를 신뢰하는데 X-Forwarded-For가 없는 요청은 웹 서버의 공개 캐시 조회·헬스 체크이므로 제한하지 않는다(웹 컨테이너 주소 하나로 묶으면 한 사용자가 사이트 전체 SSR을 막는다).
+- 같은 주소 규칙으로 운영의 고정 미디어 경로(`/media/:id`·`/media/:id/download`·`/photos/:id`·`/groups/:id/avatar/:avatarId`·`/profiles/:id/avatar/:avatarId`)를 합쳐 주소별 분당 1200회로 제한한다(`media-rate-limit.middleware.ts`, GraphQL과 별도 카운터, 429 `{ message }`·Retry-After). 요청마다 읽기 권한을 DB에서 확인하고 서명하므로 GraphQL 제한만으로는 막히지 않는다.
+- 운영에서 그룹 생성·게시물·댓글·가입 신청(초대 가입 포함)·신고는 `RateLimitService.consume()`이 사용자·주소마다 DB 고정 창 버킷(`RateLimitBucket`)으로 센다. 한도는 `limits.ts`의 `WRITE_RATE_LIMIT`, 주소는 리졸버·컨트롤러의 `@ClientAddress()`가 넘긴다. 업로드 발급은 사용자가 맡긴 원본 합계를 `USER_STORAGE_QUOTA_BYTES`(5GB), 익명 계정은 `ANONYMOUS_STORAGE_QUOTA_BYTES`(500MB)까지 허용한다(모든 환경, `media-upload/storage-quota.ts` 한 곳에서 계산). 운영에서는 여기에 더해 주소마다 하루(UTC 고정 창) 발급 크기 합을 `UPLOAD_ADDRESS_BUDGET`(10GB)까지 센다(`RateLimitService.consumeUploadBytes`, KiB 단위, 넘친 요청분은 되돌린다) — 익명 계정을 바꿔 가며 계정별 한도를 피하지 못하게 한다.
 
 ## 테스트
 
 | 스크립트 | 내용 |
 | --- | --- |
-| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, PKCE 벡터, 네트워크 없는 S3 서명 정책 등) |
+| `test` · `test:unit` | Vitest `unit`: 대상 구현 파일 옆 `src/**/*.{spec,test}.ts` 중 `*.integration.{spec,test}.ts` 제외(순수 규칙, 쿠키 파서, 토큰·해시, 네트워크 없는 S3 서명 정책 등) |
 | `test:integration` · `test:e2e` | Vitest `integration`: 대상 구현 파일 옆 `src/**/*.integration.spec.ts`(확인된 버그 회귀는 `*.integration.test.ts`). globalSetup이 격리 스키마(`api_test_*`)와 기존 AWS S3 버킷의 실행별 tests/ 객체 경로를 준비하고 끝나면 해당 스키마·객체만 지운다. 하네스가 `createApp()`만 하고 supertest(`request(app.getHttpServer())`)로 요청한다 — 포트를 열지 않는다. 파일끼리 스키마를 공유하므로 닉네임·그룹 이름을 고유하게 만든다. |
 
 Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를 직접 테스트한다. API에는 Playwright가 없다.
@@ -54,19 +55,19 @@ Vitest는 unplugin-swc로 데코레이터 메타데이터를 살려 TS 소스를
 ## 앱 스킬
 
 - `.agents/skills/module/SKILL.md`: 모듈·resolver·권한·schema/codegen 계약.
-- `.agents/skills/auth/SKILL.md`: Cookie·Origin·OAuth·앱 PKCE 교환.
+- `.agents/skills/auth/SKILL.md`: Cookie·Origin·익명 세션·아이디 로그인·로그아웃.
 - `.agents/skills/prisma/SKILL.md`: 스키마·마이그레이션·Serializable.
 - `.agents/skills/api-test/SKILL.md`: unit·실제 DB/supertest integration·하네스.
 
-테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계·외부 성공 콜백 티켓을 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
+테스트용 /testing API는 NODE_ENV=test·ENABLE_TEST_API=true에서만 동작한다. 개발·운영에서 true이면 createApp이 시작을 거부한다. 사용자+세션·대회 단계를 준비하며 운영 제품 API에 fixture 분기를 넣지 않는다.
 
 `test:integration`은 실제 PostgreSQL·Supertest 통합 레인이다. 기존 `test:e2e`는 같은 명령으로 위임하는 호환 스크립트이며 API에는 브라우저 e2e가 없다. 새 기능 사양은 단위·통합 모두 `.spec.ts`를 쓴다.
 
-그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 멤버 전용·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 묶어 읽는다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다. `removeGroupMember`는 OWNER·MODERATOR가 실행하며 OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. `leaveGroup`은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 내보내거나 나간 멤버의 게시물·댓글은 남기고, 다시 가입하면 공개·비공개 가입 규칙을 그대로 따른다. 가입 이벤트는 다시 가입할 수 있으므로 가입마다 새 id를 쓴다.
+그룹 대회는 `contest/group-contest.*`가 맡고 공개 읽기는 readableGroup으로 검사한다. 접수 중 같은 그룹의 Post만 참여하며 투표는 회원 멤버 전용(익명 계정 제외)·본인/숨긴 글 제외·대회당 한 표다. PostContestVote의 복합 FK와 unique, UnitOfWork의 Serializable이 동시 요청을 막는다. 결과는 종료 후 공개하고 동률은 공동 우승, 0표는 우승 없음이다. winners는 siblingLoader로 목록의 종료 대회를 묶어 득표 groupBy로 우승작만 읽는다(참여작 전체를 싣지 않는다). groupContestResults만 한 대회의 전체 순위를 계산한다. 운영 역할은 `group-administration.*`가 맡고 OWNER만 MODERATOR 임명/해제·소유권 양도를 한다. 양도 시 기존 OWNER는 MEMBER가 된다. `removeGroupMember`는 OWNER·MODERATOR가 실행하며 OWNER는 내보낼 수 없고 MODERATOR는 MEMBER만, OWNER는 MODERATOR도 내보낸다. `leaveGroup`은 본인 탈퇴이며 OWNER는 양도한 뒤에만 나간다. 내보내거나 나간 멤버의 게시물·댓글은 남기고, 다시 가입하면 공개·비공개 가입 규칙을 그대로 따른다. 가입 이벤트는 다시 가입할 수 있으므로 가입마다 새 id를 쓴다.
 
 publicQueryCachePlugin은 Next의 쿠키 없는 공개 캐시 요청(x-photo-contest-public-query:true)에서 실행 오류만 HTTP 400으로 구분한다. 일반 GraphQL 실행 오류는 HTTP 200이다. Nest의 자동 상태 복원은 끄고 같은 플러그인에서 정상 계약을 유지하므로 공개 오류 응답을 성공 데이터로 캐시하지 않는다. 이 헤더로 권한을 넓히지 않는다.
 
-Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 60초 presigned GET을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·통합 테스트도 실제 AWS S3를 사용하며 테스트 객체는 tests/<실행 ID>/로 격리한다.
+Post.uploadId·upload은 nullable이며 파일 또는 linkUrl 중 하나는 필수다. kind=LINK의 mediaUrl은 null이다. 링크는 HTTP·HTTPS 절대 주소만 허용하고 서버 메타데이터 fetch를 하지 않는다. postDownload query는 readablePost로 권한·숨김·파일 유무를 검사한 후 presigned GET(사진 60초, 동영상 10분 — `MEDIA_URL_TTL_SECONDS`, 키의 확장자로 고른다)을 반환한다. `/media/:id`·`/media/:id/download`·`/photos/:id`·대표 사진 경로도 권한 확인 뒤 `private, no-store` 307로 같은 서명 GET에 보낸다. attachment·UTF-8 파일명·응답 형식·no-store를 서명에 넣고 이미 발급한 URL은 만료 전까지 읽기 권한이 있음을 docs/post-attachments.md에 명시한다. API는 항상 S3 설정을 쓰며 로컬·통합 테스트도 실제 AWS S3를 사용하며 테스트 객체는 tests/<실행 ID>/로 격리한다.
 
 GroupCategory는 그룹 모듈이 관리한다. 활성 카테고리는 그룹당 20개·이름 20자, 이름은 그룹 안에서 대소문자 무시 unique다. 관리 권한은 같은 Serializable tx에서 다시 확인한다. Post.categoryId는 선택이며 같은 그룹 복합 FK·NoAction을 유지한다. 보관은 기존 글의 라벨을 보존하고 새 선택에서 제외한다. 대회 참여 글도 분류를 선택할 수 있으며 작성자·관리자가 변경한다. 새 통합 사양은 대상 옆의 *.integration.spec.ts에 둔다.
 

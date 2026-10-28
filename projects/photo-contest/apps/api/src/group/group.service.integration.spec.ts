@@ -179,7 +179,7 @@ describe('그룹과 초대', () => {
       );
       expect(myGroups.map(({ id }) => id)).toEqual([second.id, first.id]);
       expect(internals.membersOf).toHaveBeenCalledTimes(1);
-      expect(internals.membersOf).toHaveBeenCalledWith([second.id, first.id]);
+      expect(internals.membersOf).toHaveBeenCalledWith([second.id, first.id], { offset: 0, limit: 48 });
       expect(internals.contestsOfGroup).toHaveBeenCalledTimes(2);
       expect(internals.leaderboard).toHaveBeenCalledTimes(2);
 

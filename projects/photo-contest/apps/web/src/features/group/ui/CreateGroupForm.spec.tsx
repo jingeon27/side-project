@@ -21,7 +21,7 @@ const group = (id: string): GroupCardFragment => ({
   description: '',
   avatarUrl: null,
   role: GroupRole.Owner,
-  members: [],
+  memberCount: 1,
 });
 function renderForm(mocks: MockLink.MockedResponse[] = []) {
   const client = new ApolloClient({ cache: new InMemoryCache(), link: new MockLink(mocks) });

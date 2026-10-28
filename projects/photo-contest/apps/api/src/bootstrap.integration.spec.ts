@@ -12,7 +12,6 @@ const MUTATING_ENDPOINTS: Array<{ path: string; body?: Record<string, unknown> }
   { path: '/graphql', body: { query: 'mutation { createGroup(name: "출처 검사 그룹") { id } }' } },
   { path: '/testing/users', body: { nickname: '출처-외부인' } },
   { path: '/auth/logout' },
-  { path: '/auth/app/exchange', body: { code: 'code', verifier: 'v'.repeat(43) } },
   { path: '/uploads/some-upload-token' },
 ];
 

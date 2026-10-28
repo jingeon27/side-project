@@ -19,10 +19,9 @@ description: 웃긴순간의 앱별 테스트 레인(Vitest unit·ui·api·integ
 ## 규칙
 
 - 새 동작은 `*.spec.ts(x)`, 확인된 버그의 재발 방지는 `*.test.ts(x)`. `describe`는 대상 이름, `it`은 `~해야 한다`. unit·integration 테스트는 모두 대상 구현 파일 바로 옆에 두고 별도 테스트 디렉터리로 모으지 않는다. API의 실제 DB·supertest 테스트는 `*.integration.spec.ts`·`*.integration.test.ts`로 구분하고 공용 하네스는 `test/support/`에 둔다.
-- 목은 마지막 수단이다. 폼은 실제 RHF·Base UI로, 캐시는 실제 InMemoryCache로, API는 실제 PostgreSQL로 검증한다. 외부 OAuth provider·Amplitude·Sentry 전송처럼 밖으로 나가는 경계만 대체한다(supertest는 fetch를 쓰지 않으므로 provider용 `vi.stubGlobal('fetch')`와 섞이지 않는다).
+- 목은 마지막 수단이다. 폼은 실제 RHF·Base UI로, 캐시는 실제 InMemoryCache로, API는 실제 PostgreSQL로 검증한다. Expo 푸시·Amplitude·Sentry 전송처럼 밖으로 나가는 경계만 대체한다(supertest는 fetch를 쓰지 않으므로 외부 제공자용 `vi.stubGlobal('fetch')`와 섞이지 않는다).
 - 의미 없는 호출 횟수 대신 사용자 동작과 서버·DB 결과를 단언한다. 기다리지 않고 `queryBy… not.toBeInTheDocument()`만 확인하는 '초록인데 빈' 테스트를 만들지 않는다.
 - 권한·동시성은 실제 요청으로 확인한다(예: 같은 사용자의 동시 투표 8건 → 정확히 1건).
-- 외부 OAuth는 credentials 없이 실제 성공을 주장하지 않는다.
 
 ## DB·서버 격리
 
@@ -57,8 +56,8 @@ yarn test:photo-contest                       # 프로젝트 전체 unit
 
 ## 테스트 fixture API
 
-- 격리 API는 NODE_ENV=test·ENABLE_TEST_API=true, 개발 로그인 false로 시작한다. 실제 OAuth·Sentry 키는 기본값에서 지우고 필요한 경계 테스트만 가짜 값을 지정한다.
-- 웹·모바일 준비는 test-kit의 createTestUser·moveTestContest·createTestAppLoginTicket와 제품 GraphQL·업로드 API를 쓴다. DB를 직접 고치지 않는다.
+- 격리 API는 NODE_ENV=test·ENABLE_TEST_API=true로 시작한다. 실제 Sentry·푸시 키는 기본값에서 지우고 필요한 경계 테스트만 가짜 값을 지정한다.
+- 웹·모바일 준비는 test-kit의 createTestUser·moveTestContest와 제품 GraphQL·업로드 API를 쓴다. DB를 직접 고치지 않는다.
 - API integration은 제약·만료·실패 조건을 위해 test/support에서 격리 DB를 준비하고 결과를 확인할 수 있다.
 - 모든 레인이 끝난 뒤 `yarn workspace @photo-contest/test-kit check:cleanup`으로 스키마 정리를 확인한다. 실행 중인 레인의 스키마는 정리 대상이 아니다.
 

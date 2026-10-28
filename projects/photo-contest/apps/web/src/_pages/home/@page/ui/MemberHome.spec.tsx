@@ -30,9 +30,7 @@ function seedMyGroups(cache: InMemoryCache) {
           id: 'group-1',
           name: '우리 웃음',
           role: GroupRole.Member,
-          members: [
-            { __typename: 'Member', role: GroupRole.Member, user: { __typename: 'User', id: 'viewer' } },
-          ],
+          memberCount: 1,
         },
       ],
     },

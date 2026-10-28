@@ -53,6 +53,9 @@ export class GroupProfileService {
           (avatar.mediaUploadId && avatar.mediaUpload?.storageKey !== avatar.storageKey)
         )
           fail('그룹 사진 업로드가 만료되었거나 사용할 수 없습니다.');
+        // 대표·배경 사진으로 쓰는 동안 원본 업로드의 수명은 GroupAvatar가 정한다. 교체 뒤 정리 작업이 되돌린다.
+        if (avatar.mediaUploadId)
+          await tx.postUpload.update({ where: { id: avatar.mediaUploadId }, data: { expiresAt: null } });
       }
       await tx.group.update({
         where: { id: input.groupId },
@@ -83,8 +86,21 @@ export class GroupProfileService {
     return group.avatar.storageKey;
   }
 
-  requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {
-    return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'GROUP_AVATAR' });
+  requestUpload(
+    viewer: IViewer,
+    groupId: string,
+    contentType: string,
+    byteSize: number,
+    address: string | null = null,
+  ) {
+    return this.uploads.requestUpload(
+      viewer,
+      groupId,
+      contentType,
+      byteSize,
+      { kind: 'GROUP_AVATAR' },
+      address,
+    );
   }
 
   /** 배경도 공개 그룹 메타데이터이며 현재 지정된 사진만 읽을 수 있다. */

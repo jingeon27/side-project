@@ -364,8 +364,9 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
       ).createPost;
       expect(post.kind).toBe(video ? 'VIDEO' : 'PHOTO');
       const { postDownload } = await ok(PostDownloadDocument, member, { postId: post.id });
-      expect(new URL(postDownload.url).searchParams.get('X-Amz-Expires')).toBe('60');
-      expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(55_000);
+      // 동영상 서명은 재생·저장이 끊기지 않게 10분, 사진은 60초다.
+      expect(new URL(postDownload.url).searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
+      expect(Date.parse(postDownload.expiresAt ?? '') - Date.now()).toBeGreaterThan(video ? 595_000 : 55_000);
       expect(postDownload.filename).toMatch(video ? /\.mp4$/ : /\.png$/);
       const saved = await fetch(postDownload.url);
       expect(saved.headers.get('content-disposition')).toContain('attachment;');

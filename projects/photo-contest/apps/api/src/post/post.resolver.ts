@@ -54,8 +54,9 @@ export class PostResolver {
     @Args('groupId') groupId: string,
     @Args('contentType') contentType: string,
     @Args('byteSize') byteSize: number,
+    @ClientAddress() address: string | null,
   ) {
-    return this.posts.requestUpload(viewer, groupId, contentType, byteSize);
+    return this.posts.requestUpload(viewer, groupId, contentType, byteSize, address);
   }
   @Mutation()
   completePostUpload(@Viewer() viewer: IViewer, @Args('uploadId') uploadId: string) {

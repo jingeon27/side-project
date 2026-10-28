@@ -162,31 +162,15 @@ describe('주기 작업', () => {
     expect((await api.http().get(`/photos/${submitted}`).set('Cookie', ara.cookie)).status).toBe(307);
   });
 
-  it('만료된 세션·OAuth 시도·앱 로그인 티켓만 지워야 한다', async () => {
+  it('만료된 세션만 지워야 한다', async () => {
     const user = await api.signIn('정리-세션');
     const expiredSession = await api.db.session.create({
       data: { tokenHash: randomHash(), userId: user.id, expiresAt: minutesAgo(1) },
-    });
-    const expiredAttempt = await api.db.oAuthAttempt.create({
-      data: { stateHash: randomHash(), provider: 'google', verifier: 'verifier', expiresAt: minutesAgo(1) },
-    });
-    const validAttempt = await api.db.oAuthAttempt.create({
-      data: { stateHash: randomHash(), provider: 'kakao', verifier: 'verifier', expiresAt: minutesAgo(-10) },
-    });
-    const expiredTicket = await api.db.appLoginTicket.create({
-      data: { codeHash: randomHash(), userId: user.id, challenge: 'challenge', expiresAt: minutesAgo(1) },
-    });
-    const validTicket = await api.db.appLoginTicket.create({
-      data: { codeHash: randomHash(), userId: user.id, challenge: 'challenge', expiresAt: minutesAgo(-2) },
     });
 
     await api.runScheduledWork();
 
     expect(await api.db.session.count({ where: { tokenHash: expiredSession.tokenHash } })).toBe(0);
-    expect(await api.db.oAuthAttempt.count({ where: { stateHash: expiredAttempt.stateHash } })).toBe(0);
-    expect(await api.db.oAuthAttempt.count({ where: { stateHash: validAttempt.stateHash } })).toBe(1);
-    expect(await api.db.appLoginTicket.count({ where: { codeHash: expiredTicket.codeHash } })).toBe(0);
-    expect(await api.db.appLoginTicket.count({ where: { codeHash: validTicket.codeHash } })).toBe(1);
     // 로그인해 받은 유효한 세션은 그대로 쓸 수 있다.
     expect(await api.gqlOk(user.cookie, '{ me { id } }')).toEqual({ me: { id: user.id } });
   });

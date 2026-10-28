@@ -70,13 +70,23 @@ export class SubmissionService {
     return presentSubmission(row, { completed: phase(contest) === PHASE.COMPLETED, admin });
   }
 
-  async requestUploadUrl(viewer: IViewer, contestId: string, contentType: string, byteSize: number) {
+  async requestUploadUrl(
+    viewer: IViewer,
+    contestId: string,
+    contentType: string,
+    byteSize: number,
+    address: string | null = null,
+  ) {
     const { contest } = await this.membership.accessibleContest(viewer.id, contestId);
     if (phase(contest) !== PHASE.SUBMISSION) fail(ERROR_MESSAGE.NOT_SUBMISSION_PHASE);
-    return this.uploads.requestUpload(viewer, contest.groupId, contentType, byteSize, {
-      kind: 'SUBMISSION',
-      contestId,
-    });
+    return this.uploads.requestUpload(
+      viewer,
+      contest.groupId,
+      contentType,
+      byteSize,
+      { kind: 'SUBMISSION', contestId },
+      address,
+    );
   }
 
   async completeUpload(viewer: IViewer, uploadId: string) {
@@ -109,6 +119,9 @@ export class SubmissionService {
         data: { authorId: viewer.id, contestId: contest.id, uploadId: upload.id, caption },
         include: submissionInclude(viewer.id, isAdmin(member)),
       });
+      // 제출한 사진의 원본 업로드는 제출이 남아 있는 동안 만료가 없다.
+      if (upload.mediaUploadId)
+        await tx.postUpload.update({ where: { id: upload.mediaUploadId }, data: { expiresAt: null } });
       const properties = { contestId: contest.id, groupId: contest.groupId };
       await recordEvent(tx ?? this.db, {
         id: `submission:${created.id}`,

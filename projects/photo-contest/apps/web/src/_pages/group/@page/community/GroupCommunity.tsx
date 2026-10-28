@@ -12,7 +12,7 @@ export function GroupCommunity({ groupRef, viewerId }: { groupRef: TGroupQueryRe
   const { group } = data;
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-title text-ink">함께하는 친구 {group.members.length}명</h2>
+      <h2 className="text-title text-ink">함께하는 친구 {group.memberCount}명</h2>
       <MemberList groupId={group.id} viewerRole={group.role} members={group.members} viewerId={viewerId} />
       {canLeaveGroup(group.role) ? (
         <div className="flex justify-end">

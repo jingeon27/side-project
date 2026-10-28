@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
+import { isAnonymous } from '../auth/anonymous';
 import type { IViewer } from '../auth/session.service';
-import { fail } from '../common/errors';
+import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
 import { phase, PHASE } from '../contest/contest.policy';
 import { Database } from '../database/database.service';
 import { UnitOfWork } from '../database/unit-of-work';
@@ -29,6 +30,7 @@ export class VoteService {
    * 동시에 여러 번 보내도 한 요청만 성공한다(나머지는 CONFLICT).
    */
   async castVote(viewer: IViewer, contestId: string, submissionId: string): Promise<IVoteView> {
+    if (isAnonymous(viewer)) fail(ERROR_MESSAGE.ANONYMOUS_VOTE_FORBIDDEN, ERROR_CODE.UNAUTHENTICATED);
     return this.transactions.atomic(async (tx) => {
       const { contest } = await this.membership.accessibleContest(viewer.id, contestId, { client: tx });
       if (phase(contest) !== PHASE.VOTING) fail('투표 기간이 아닙니다.');
