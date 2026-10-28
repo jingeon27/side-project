@@ -80,19 +80,6 @@
       flex-shrink: 0;
       gap: 6px;
     }
-    .feed-topbar .header-actions .icon-button {
-      color: var(--color-ink);
-    }
-    .feed-topbar .header-actions .icon-button > svg {
-      width: 22px;
-      height: 22px;
-    }
-    .header-actions .icon-button {
-      width: 44px;
-      height: 44px;
-      padding: 10px;
-      flex-shrink: 0;
-    }
     .header-actions .header-notification-count,
     .header-actions .header-account {
       display: none;

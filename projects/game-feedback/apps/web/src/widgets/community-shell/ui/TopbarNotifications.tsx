@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
 
+import { iconButtonVariants } from '@side/design-system';
+
 import { useSession } from '@/features/auth';
 import { notificationSummaryOptions } from '@/features/notification';
 import { useI18n } from '@/shared/i18n';
@@ -14,12 +16,8 @@ export function TopbarNotifications({ href }: { href: string }) {
   const { data } = useQuery(notificationSummaryOptions(session.user?.id));
   const unread = data?.unreadCount ?? 0;
   return (
-    <TabLink
-      className="icon-button notification-button"
-      aria-label={t('알림 {count}개', { count: unread })}
-      href={href}
-    >
-      <Bell size={21} />
+    <TabLink className={iconButtonVariants()} aria-label={t('알림 {count}개', { count: unread })} href={href}>
+      <Bell className="size-5" aria-hidden />
       {unread > 0 && (
         <>
           <span className="header-notification-count" aria-hidden="true">

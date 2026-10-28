@@ -6,11 +6,11 @@ import { Flag, Menu, ShieldBan, Trash2 } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  IconButton,
 } from '@side/design-system';
 
 import type { Author } from '@/shared/api';
@@ -62,21 +62,16 @@ export function ConversationActions({
   }
   return (
     <div className="conversation-actions" role="group" aria-label={t('대화 관리')}>
-      <Button
-        variant="ghost"
-        size="icon"
+      <IconButton
         type="button"
-        aria-label={t('사용자 신고')}
-        title={t('사용자 신고')}
+        label={t('사용자 신고')}
         onClick={() => openUserReport(peer.id, reportOverlayId)}
       >
-        <Flag size={18} aria-hidden="true" />
-      </Button>
+        <Flag aria-hidden />
+      </IconButton>
       <DropdownMenu>
-        <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon" type="button" aria-label={t('대화 메뉴')} />}
-        >
-          <Menu size={19} aria-hidden="true" />
+        <DropdownMenuTrigger render={<IconButton type="button" label={t('대화 메뉴')} />}>
+          <Menu aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem variant="danger" disabled={!throughMessageId} onClick={handleClear}>

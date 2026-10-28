@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 import { ArrowLeft } from 'lucide-react';
 
-import { cn } from '@side/design-system';
+import { cn, iconButtonVariants } from '@side/design-system';
 
 import { LanguageSelect, useI18n } from '@/shared/i18n';
 import { BackLink, TabLink } from '@/shared/navigation';
@@ -44,12 +44,12 @@ function TopbarBack({ href, logicalParent }: { href: string; logicalParent?: str
   const { t } = useI18n();
   return (
     <BackLink
-      className="icon-button back-link post-header-back"
+      className={cn(iconButtonVariants(), 'back-link post-header-back')}
       href={href}
       logicalParent={logicalParent}
       aria-label={t('돌아가기')}
     >
-      <ArrowLeft size={20} />
+      <ArrowLeft className="size-5" aria-hidden />
     </BackLink>
   );
 }

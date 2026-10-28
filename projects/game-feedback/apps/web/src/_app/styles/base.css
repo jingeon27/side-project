@@ -26,10 +26,6 @@
   }
 
   /* 앱 조합용 보조 스타일. 컨트롤과 초기화는 공통 디자인 시스템이 소유한다. */
-  .icon-button {
-    min-width: var(--spacing-touch);
-    min-height: var(--spacing-touch);
-  }
   ::selection {
     background: var(--color-accent-soft);
     color: var(--color-ink);

@@ -2,7 +2,7 @@
 
 import { Paperclip, Send, X } from 'lucide-react';
 
-import { Spinner, Textarea } from '@side/design-system';
+import { IconButton, Spinner, Textarea } from '@side/design-system';
 
 import { chatError } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
@@ -77,15 +77,9 @@ export function ChatComposer({
         <div className="chat-attachment-preview">
           <ChatAttachmentView attachment={upload.data} />
           <span>{upload.data.name}</span>
-          <button
-            type="button"
-            className="icon-button"
-            disabled={busy}
-            onClick={handleRemoveFile}
-            aria-label={t('첨부파일 제거')}
-          >
-            <X size={16} />
-          </button>
+          <IconButton type="button" disabled={busy} onClick={handleRemoveFile} label={t('첨부파일 제거')}>
+            <X aria-hidden />
+          </IconButton>
         </div>
       )}
       <form className="chat-compose" onSubmit={handleSubmit}>
