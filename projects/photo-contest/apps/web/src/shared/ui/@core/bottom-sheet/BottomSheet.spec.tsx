@@ -1,7 +1,7 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { overlay, OverlayProvider } from 'overlay-kit';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { hasOpenOverlay } from '../../../model/router';
@@ -34,13 +34,21 @@ function CreateGroupBottomSheet({
   );
 }
 
-function Opener({ resizable }: { resizable?: boolean }) {
+function Opener({ resizable, onUnmount }: { resizable?: boolean; onUnmount?: () => void }) {
   return (
     <button
       type="button"
       onClick={() =>
         overlay.open(({ isOpen, close: onClose, unmount }) => (
-          <CreateGroupBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} resizable={resizable} />
+          <CreateGroupBottomSheet
+            isOpen={isOpen}
+            onClose={onClose}
+            unmount={() => {
+              onUnmount?.();
+              unmount();
+            }}
+            resizable={resizable}
+          />
         ))
       }
     >
@@ -49,11 +57,11 @@ function Opener({ resizable }: { resizable?: boolean }) {
   );
 }
 
-async function openSheet() {
+async function openSheet({ onUnmount }: { onUnmount?: () => void } = {}) {
   const user = userEvent.setup();
   render(
     <OverlayProvider>
-      <Opener />
+      <Opener onUnmount={onUnmount} />
     </OverlayProvider>,
   );
   const opener = screen.getByRole('button', { name: '그룹 만들기 열기' });
@@ -84,6 +92,29 @@ describe('BottomSheet', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
+  it('크기 조절 시트는 손잡이를 키보드로 움직여 75%와 전체 높이를 오가야 한다', async () => {
+    const user = userEvent.setup();
+    render(
+      <OverlayProvider>
+        <Opener resizable />
+      </OverlayProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: '그룹 만들기 열기' }));
+    const sheet = await screen.findByRole('dialog', { name: '그룹 만들기' });
+    const handle = within(sheet).getByRole('slider', { name: '시트 높이 조절' });
+    expect(handle).toHaveAttribute('aria-valuetext', '75%');
+    handle.focus();
+    await user.keyboard('{ArrowUp}');
+    expect(handle).toHaveAttribute('aria-valuetext', '100%');
+    await user.keyboard('{Home}');
+    expect(handle).toHaveAttribute('aria-valuetext', '75%');
+  });
+
+  it('높이가 정해지지 않은 시트는 높이 조절 손잡이를 그리지 않아야 한다', async () => {
+    const { sheet } = await openSheet();
+    expect(within(sheet).queryByRole('slider')).not.toBeInTheDocument();
+  });
+
   it('제목을 이름으로 가진 대화상자로 열리고 본문과 하단 버튼을 보여 줘야 한다', async () => {
     const { sheet, user } = await openSheet();
     expect(sheet).toHaveAccessibleDescription('친구들과 함께할 그룹 이름을 정해요.');
@@ -95,12 +126,15 @@ describe('BottomSheet', () => {
   });
 
   it('취소 버튼으로 닫으면 시트를 연 버튼으로 포커스가 돌아가고 history 항목을 걷어야 한다', async () => {
-    const { user, opener } = await openSheet();
+    const onUnmount = vi.fn();
+    const { user, opener } = await openSheet({ onUnmount });
     await user.click(screen.getByRole('button', { name: '취소' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await waitFor(() => expect(opener).toHaveFocus());
     expect(hasOpenOverlay()).toBe(false);
+    // 닫힘 전환이 끝난 뒤 overlay-kit에서도 지워야 닫힌 시트가 쌓이지 않는다.
+    await waitFor(() => expect(onUnmount).toHaveBeenCalledOnce());
   });
 
   it('Esc로 닫을 수 있어야 한다', async () => {

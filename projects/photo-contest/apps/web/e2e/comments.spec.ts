@@ -131,6 +131,12 @@ test(
       await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-expanded.png` });
       await dragComments(page, browserName, isMobile, viewport.height * 0.3);
       await expectCompact();
+      const handle = sheet.getByRole('slider', { name: '시트 높이 조절', exact: true });
+      await handle.press('ArrowUp');
+      await expect(handle).toHaveAttribute('aria-valuetext', '100%');
+      await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
+      await handle.press('Home');
+      await expectCompact();
     }
     if (viewport.width >= 768) {
       const box = await sheet.boundingBox();
