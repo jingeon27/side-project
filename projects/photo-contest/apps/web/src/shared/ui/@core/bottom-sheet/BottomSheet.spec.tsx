@@ -3,6 +3,7 @@ import { userEvent } from '@testing-library/user-event';
 import { overlay, OverlayProvider } from 'overlay-kit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { APP_MAIN_ID } from '../../../constants/layout';
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { hasOpenOverlay } from '../../../model/router';
 import { BottomSheet } from './BottomSheet';
@@ -73,7 +74,9 @@ async function openSheet({ onUnmount }: { onUnmount?: () => void } = {}) {
   const user = userEvent.setup();
   render(
     <OverlayProvider>
-      <Opener onUnmount={onUnmount} />
+      <main id={APP_MAIN_ID}>
+        <Opener onUnmount={onUnmount} />
+      </main>
     </OverlayProvider>,
   );
   const opener = screen.getByRole('button', { name: '그룹 만들기 열기' });
@@ -129,6 +132,7 @@ describe('BottomSheet', () => {
 
   it('제목을 이름으로 가진 대화상자로 열리고 본문과 하단 버튼을 보여 줘야 한다', async () => {
     const { sheet, user } = await openSheet();
+    expect(screen.getByRole('main')).toContainElement(sheet);
     expect(sheet).toHaveAccessibleDescription('친구들과 함께할 그룹 이름을 정해요.');
     expect(screen.getByLabelText('그룹 이름')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '만들기' })).toBeInTheDocument();

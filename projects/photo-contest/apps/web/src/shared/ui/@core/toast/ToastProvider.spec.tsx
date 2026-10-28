@@ -17,7 +17,7 @@ describe('ToastProvider', () => {
     act(() => {
       toast.success('초대 링크를 복사했어요');
     });
-    const region = screen.getByRole('region', { name: '알림' });
+    const region = await screen.findByRole('region', { name: '알림' });
     expect(await within(region).findByText('초대 링크를 복사했어요')).toBeInTheDocument();
 
     // 닫기 버튼은 알림 영역에 들어오기(F6) 전까지 보조기기에서 숨겨져 있어 레이블로 찾는다.
@@ -31,7 +31,7 @@ describe('ToastProvider', () => {
       toast.error('네트워크 연결을 확인하고 다시 시도해 주세요.');
       toast.error('네트워크 연결을 확인하고 다시 시도해 주세요.');
     });
-    const region = screen.getByRole('region', { name: '알림' });
+    const region = await screen.findByRole('region', { name: '알림' });
     await within(region).findByText('네트워크 연결을 확인하고 다시 시도해 주세요.');
     expect(within(region).getAllByText('네트워크 연결을 확인하고 다시 시도해 주세요.')).toHaveLength(1);
   });
@@ -44,7 +44,7 @@ describe('ToastProvider', () => {
       toast.info('투표가 시작됐어요');
     });
     expect(main).toContainElement(
-      await within(screen.getByRole('region', { name: '알림' })).findByText('투표가 시작됐어요'),
+      await within(await screen.findByRole('region', { name: '알림' })).findByText('투표가 시작됐어요'),
     );
     main.remove();
   });

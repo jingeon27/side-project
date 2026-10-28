@@ -5,9 +5,9 @@ import type { ReactNode } from 'react';
 import { BottomSheet as Sheet, type TBottomSheetSnapPoint } from '@side/design-system';
 
 import { cn } from '../../../lib/cn.helper';
-import { getOverlayContainer } from '../../../lib/overlay-container.helper';
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { useOverlayHistory } from '../../../model/router';
+import { OverlayPortal } from '../overlay-portal';
 
 interface IBottomSheetRootProps extends IOverlayControlProps {
   children: ReactNode;
@@ -22,22 +22,26 @@ interface IBottomSheetRootProps extends IOverlayControlProps {
 function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBottomSheetRootProps) {
   useOverlayHistory(isOpen, onClose);
   return (
-    <Sheet.Root
-      open={isOpen}
-      responsive
-      snapPoints={snapPoints}
-      container={getOverlayContainer()}
-      className={cn('max-tablet:max-w-none', className)}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-      onOpenChangeComplete={(open) => {
-        if (!open) unmount?.();
-      }}
-    >
-      <Sheet.Handle label="시트 높이 조절" />
-      {children}
-    </Sheet.Root>
+    <OverlayPortal>
+      {(container) => (
+        <Sheet.Root
+          open={isOpen}
+          responsive
+          snapPoints={snapPoints}
+          container={container}
+          className={cn('max-tablet:max-w-none', className)}
+          onOpenChange={(open) => {
+            if (!open) onClose();
+          }}
+          onOpenChangeComplete={(open) => {
+            if (!open) unmount?.();
+          }}
+        >
+          <Sheet.Handle label="시트 높이 조절" />
+          {children}
+        </Sheet.Root>
+      )}
+    </OverlayPortal>
   );
 }
 

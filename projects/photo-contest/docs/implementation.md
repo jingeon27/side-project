@@ -349,6 +349,6 @@ API 전체 DB 통합 369개, Web unit/UI 446개, Mobile unit/UI 162개, Bridge 3
 
 ## 2026-10-28 게시물 메뉴의 Portal 경계
 
-PostActionsMenu는 Trigger를 서버 HTML에 유지하고 useIsSSR 분기를 제거했다. DOM selector로 컨테이너를 정하는 PostActionsPortal만 dynamic의 ssr:false 경계에서 렌더하며, selector 호출도 그 컴포넌트 안에 둔다. 이 패턴은 overlay 스킬에 기록했다.
+PostActionsMenu는 Trigger를 서버 HTML에 유지하고 useIsSSR 분기를 제거했다. DOM selector로 컨테이너를 정하는 메뉴·확인창·바텀시트·토스트 네 곳은 공통 OverlayPortal로 감쌌다. 컨테이너 선택과 Portal 생성은 래퍼의 dynamic ssr:false 경계 안에서만 실행하며, 바텀시트처럼 Portal을 내장한 컴포넌트도 같은 콜백에서 생성한다. 이 패턴은 overlay 스킬에 기록했다.
 
-검증: 카드 UI 테스트 3개, Web typecheck와 변경 파일 ESLint 통과. 서버 버튼 렌더, hydration 후 지정된 컨테이너에서 Enter로 메뉴 열기와 Escape 후 포커스 복귀를 확인했다.
+검증: Portal·오버레이·카드 관련 단위·UI 테스트 20개와 업로드·대회 생성·알림 설정·댓글·알림 화면의 관련 테스트 22개, Web typecheck와 변경 파일 ESLint 통과. DOM이 없는 서버에서 래퍼가 주변 콘텐츠만 렌더하는지, hydration 후 지정된 컨테이너에서 Enter로 메뉴가 열리는지, 시트·확인창·토스트의 컨테이너와 닫기·포커스 복귀가 유지되는지 확인했다.

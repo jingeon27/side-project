@@ -7,10 +7,10 @@ import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { dialogStyles } from '@side/design-system';
 
 import { cn } from '../../../lib/cn.helper';
-import { getOverlayContainer } from '../../../lib/overlay-container.helper';
 import type { IOverlayControlProps } from '../../../lib/overlay.type';
 import { useOverlayHistory } from '../../../model/router';
 import { Button } from '../button';
+import { OverlayPortal } from '../overlay-portal';
 
 export interface IConfirmDialogProps extends IOverlayControlProps {
   title: string;
@@ -62,38 +62,48 @@ export function ConfirmDialog({
         if (!open) unmount?.();
       }}
     >
-      <AlertDialog.Portal container={getOverlayContainer()}>
-        <AlertDialog.Backdrop className={dialogStyles.backdrop} />
-        <AlertDialog.Viewport className={dialogStyles.viewport}>
-          <AlertDialog.Popup className={cn(dialogStyles.popup, 'max-w-sm')}>
-            <AlertDialog.Title className={dialogStyles.title}>{title}</AlertDialog.Title>
-            {description ? (
-              <AlertDialog.Description className={dialogStyles.description}>
-                {description}
-              </AlertDialog.Description>
-            ) : null}
-            <div className="mt-6 flex gap-2">
-              <AlertDialog.Close
-                render={
-                  <Button variant="secondary" size="lg" fullWidth className="flex-1" disabled={isPending} />
-                }
-              >
-                {cancelLabel}
-              </AlertDialog.Close>
-              <Button
-                variant={tone === 'danger' ? 'danger' : 'primary'}
-                size="lg"
-                fullWidth
-                className="flex-1"
-                loading={isPending}
-                onClick={handleConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </div>
-          </AlertDialog.Popup>
-        </AlertDialog.Viewport>
-      </AlertDialog.Portal>
+      <OverlayPortal>
+        {(container) => (
+          <AlertDialog.Portal container={container}>
+            <AlertDialog.Backdrop className={dialogStyles.backdrop} />
+            <AlertDialog.Viewport className={dialogStyles.viewport}>
+              <AlertDialog.Popup className={cn(dialogStyles.popup, 'max-w-sm')}>
+                <AlertDialog.Title className={dialogStyles.title}>{title}</AlertDialog.Title>
+                {description ? (
+                  <AlertDialog.Description className={dialogStyles.description}>
+                    {description}
+                  </AlertDialog.Description>
+                ) : null}
+                <div className="mt-6 flex gap-2">
+                  <AlertDialog.Close
+                    render={
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        fullWidth
+                        className="flex-1"
+                        disabled={isPending}
+                      />
+                    }
+                  >
+                    {cancelLabel}
+                  </AlertDialog.Close>
+                  <Button
+                    variant={tone === 'danger' ? 'danger' : 'primary'}
+                    size="lg"
+                    fullWidth
+                    className="flex-1"
+                    loading={isPending}
+                    onClick={handleConfirm}
+                  >
+                    {confirmLabel}
+                  </Button>
+                </div>
+              </AlertDialog.Popup>
+            </AlertDialog.Viewport>
+          </AlertDialog.Portal>
+        )}
+      </OverlayPortal>
     </AlertDialog.Root>
   );
 }
