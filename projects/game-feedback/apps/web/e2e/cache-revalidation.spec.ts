@@ -1,8 +1,7 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
-
 import { AnswerSchema, CommentSchema, PostSchema } from '@game-feedback/contracts';
 
 import { adminApi } from './admin-api';
+import { expect, test, type APIRequestContext } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 const headers = { Origin: origin };

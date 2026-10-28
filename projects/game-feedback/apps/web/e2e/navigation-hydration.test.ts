@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const width of [390, 1280]) {
   test(`game navigation is present in the initial HTML at ${width}px`, async ({ browser, baseURL }) => {

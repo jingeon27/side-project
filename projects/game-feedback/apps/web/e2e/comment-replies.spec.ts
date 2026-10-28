@@ -1,6 +1,6 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
-
 import { CommentSchema, NotificationListSchema, PostSchema, SessionSchema } from '@game-feedback/contracts';
+
+import { expect, test, type APIRequestContext } from './support/test';
 
 async function signIn(request: APIRequestContext, nickname: string, origin: string) {
   const response = await request.post('/api/auth/demo', { headers: { Origin: origin }, data: { nickname } });

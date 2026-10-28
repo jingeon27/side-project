@@ -28,7 +28,7 @@ description: Game Feedback 웹(apps/web)의 Playwright e2e를 작성·실행할 
 
 ## 쓰는 법
 
-- 공용 fixture 파일은 없다. spec이 `@playwright/test`에서 직접 import하고 필요한 로그인 helper를 파일 안에 둔다.
+- 기본 e2e spec은 `e2e/support/test.ts`의 `test`·`expect`를 사용한다. 각 테스트의 기본 브라우저 context는 같은 origin의 게시글·프로필 문서·RSC 요청에 문서용 IPv6 대역 `2001:db8::/32`의 별도 방문자 주소를 `X-Forwarded-For`로 전달해 Caddy 뒤의 방문자를 재현한다. 외부 업로드에는 헤더를 추가하지 않는다. HTTP 캐시를 사용하는 prefetch와 별도 test-auth·observability 레인은 기존 `@playwright/test`를 사용한다. 테스트들이 loopback 하나의 예산을 소진해 무관한 화면이 429가 되는 것을 막으며 운영 요청 제한값은 유지한다. 로그인 helper는 필요한 파일 안에 둔다.
 - 로그인: `page.request.post('/api/auth/test-login', { headers: { Origin: 'http://127.0.0.1:3301' }, data: { accountId } })`(쿠키 전환) 또는 `/api/auth/test-token`(Bearer 토큰 + 쿠키). 새 닉네임 사용자는 `/api/auth/demo`(`{ nickname }`)이며 demo가 켜진 기본 설정에서만 된다. 쓰기 요청에는 Origin 헤더를 붙인다(`playwright.request.newContext({ extraHTTPHeaders: { Origin } })`).
 - 시드(`apps/api/src/seed.ts`): `sample-user-0`(새벽의호그), `sample-user-3`(덱연구소, 인증), `sample-test-admin`(운영테스터), 게시글 `sample-post-0`, 대화 `sample-conversation-0-3`. 다른 계정은 `browser.newContext({ baseURL })`로 나눈다. 한 실행의 spec이 같은 스키마를 공유하므로 만든 데이터 이름에 `Date.now().toString(36)` 같은 접미사를 붙인다.
 - 경로는 `/ko/...`처럼 locale을 명시한다. `/`는 Accept-Language로 리다이렉트된다(`language.spec.ts`는 `locale: 'ja-JP'` 컨텍스트). 프로젝트가 Desktop Chrome 하나이므로 모바일 배치는 `page.setViewportSize({ width: 400, height: 844 })`나 컨텍스트 `viewport`로 본다(`compose.spec.ts`, `test-token-chat.spec.ts`).

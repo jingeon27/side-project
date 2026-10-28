@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const width of [320, 1440]) {
   test(`the first Korean character hides the placeholder during IME composition at ${width}px`, async ({

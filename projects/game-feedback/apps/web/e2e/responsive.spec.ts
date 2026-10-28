@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const width of [320, 390, 768, 1440]) {
   test(`responsive screens and chat stay within a ${width}px viewport`, async ({ page }) => {

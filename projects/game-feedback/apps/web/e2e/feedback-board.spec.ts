@@ -1,8 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
-
 import { appRoutes } from '@game-feedback/bridge';
 
 import { adminApi } from './admin-api';
+import { expect, test, type Page } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 

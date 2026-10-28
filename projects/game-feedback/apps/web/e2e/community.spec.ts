@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('community boards publish and edit Quill formatting, stay separate from feedback and render without JavaScript', async ({
   page,

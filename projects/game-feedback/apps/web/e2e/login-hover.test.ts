@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('소셜 로그인 버튼은 hover에도 제공자 배경과 읽을 수 있는 문구를 유지해야 한다', async ({ page }) => {
   await page.route('**/api/session', async (route) => {

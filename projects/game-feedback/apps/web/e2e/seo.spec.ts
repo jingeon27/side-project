@@ -1,6 +1,6 @@
-import { expect, test, type BrowserContext } from '@playwright/test';
-
 import type { PostDetail } from '@game-feedback/contracts';
+
+import { expect, test, type BrowserContext } from './support/test';
 
 const origin = 'http://127.0.0.1:3301';
 async function choose(context: BrowserContext, accountId: string) {

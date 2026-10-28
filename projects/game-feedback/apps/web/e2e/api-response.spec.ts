@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
-
 import type { PostList } from '@game-feedback/contracts';
+
+import { expect, test } from './support/test';
 
 const postsRoute = /\/api\/posts(?:\?.*)?$/;
 

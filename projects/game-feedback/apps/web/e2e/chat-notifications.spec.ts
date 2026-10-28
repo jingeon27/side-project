@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
-import { expect, test } from '@playwright/test';
-
 import { NotificationListSchema } from '@game-feedback/contracts';
+
+import { expect, test } from './support/test';
 
 test('새 채팅의 실제 메시지 개수를 탭에 표시하고 알림에서 대화를 읽으면 두 배지를 갱신해야 한다', async ({
   page,

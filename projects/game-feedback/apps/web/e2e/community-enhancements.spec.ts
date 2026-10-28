@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-import { expect, test } from '@playwright/test';
-
 import { adminApi } from './admin-api';
+import { expect, test } from './support/test';
 
 const origin = process.env.WEB_ORIGIN ?? 'http://127.0.0.1:3301';
 
