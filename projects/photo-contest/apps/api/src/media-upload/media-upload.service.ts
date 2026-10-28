@@ -228,12 +228,9 @@ export class MediaUploadService {
 
   /** 정책이 막지만 저장소가 다른 크기·형식을 받아도 확정하지 않는다. */
   private async assertUploadedObject(key: string, expected: { byteSize: number; contentType: string }) {
-    let actual;
-    try {
-      actual = await this.storage.head(key);
-    } catch {
-      return fail('파일 전송을 완료한 뒤 다시 시도해 주세요.');
-    }
+    const actual = await this.storage
+      .head(key)
+      .catch(() => fail('파일 전송을 완료한 뒤 다시 시도해 주세요.'));
     if (actual.byteSize !== expected.byteSize || actual.contentType !== expected.contentType)
       fail('업로드한 파일의 크기와 형식을 확인해 주세요.');
   }
