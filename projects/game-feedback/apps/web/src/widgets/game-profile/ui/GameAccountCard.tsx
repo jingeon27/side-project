@@ -26,11 +26,11 @@ export function GameAccountCard({ profile }: { profile: GameProfile }) {
           type="button"
           variant="ghost"
           size="sm"
-          disabled={latest.isFetching}
+          loading={latest.isFetching}
+          icon={<RefreshCw aria-hidden />}
           onClick={() => void latest.refetch()}
           aria-label={t('{name} 게임 정보 새로고침', { name: profile.name })}
         >
-          <RefreshCw size={14} aria-hidden className={latest.isFetching ? 'spin' : undefined} />
           {t('새로고침')}
         </Button>
       </div>

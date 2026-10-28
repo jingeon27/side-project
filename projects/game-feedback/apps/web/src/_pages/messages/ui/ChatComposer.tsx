@@ -1,8 +1,8 @@
 'use client';
 
-import { LoaderCircle, Paperclip, Send, X } from 'lucide-react';
+import { Paperclip, Send, X } from 'lucide-react';
 
-import { Textarea } from '@side/design-system';
+import { IconButton, Spinner, Textarea } from '@side/design-system';
 
 import { chatError } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
@@ -77,15 +77,9 @@ export function ChatComposer({
         <div className="chat-attachment-preview">
           <ChatAttachmentView attachment={upload.data} />
           <span>{upload.data.name}</span>
-          <button
-            type="button"
-            className="icon-button"
-            disabled={busy}
-            onClick={handleRemoveFile}
-            aria-label={t('첨부파일 제거')}
-          >
-            <X size={16} />
-          </button>
+          <IconButton type="button" disabled={busy} onClick={handleRemoveFile} label={t('첨부파일 제거')}>
+            <X aria-hidden />
+          </IconButton>
         </div>
       )}
       <form className="chat-compose" onSubmit={handleSubmit}>
@@ -94,7 +88,7 @@ export function ChatComposer({
           data-disabled={busy || undefined}
           title={t('이미지 또는 동영상 첨부')}
         >
-          {upload.isPending ? <LoaderCircle size={20} className="spin" /> : <Paperclip size={20} />}
+          {upload.isPending ? <Spinner className="size-5" /> : <Paperclip size={20} />}
           <input
             type="file"
             accept={mediaAccept.all}
@@ -122,10 +116,10 @@ export function ChatComposer({
           size="icon"
           type="submit"
           disabled={busy || unavailable || (!draft.trim() && !upload.data)}
+          loading={mutation.isPending}
+          icon={<Send aria-hidden />}
           aria-label={mutation.isError ? t('다시 보내기') : t('보내기')}
-        >
-          {mutation.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
-        </MotionButton>
+        />
       </form>
       {draft.length >= 1800 && <p className="chat-compose-count">{draft.length.toLocaleString()} / 2,000</p>}
     </div>

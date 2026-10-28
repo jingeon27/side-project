@@ -2,7 +2,9 @@
 
 import type { RefCallback } from 'react';
 
-import { LoaderCircle, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+
+import { Spinner } from '@side/design-system';
 
 import type { ChatMessage, Conversation } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -47,7 +49,7 @@ export function ChatHistory({
       <div className="chat-message-list">
         {hasOlder && (
           <button className="chat-older" disabled={fetchingOlder} onClick={onLoadOlder}>
-            {fetchingOlder ? <LoaderCircle className="spin" size={13} /> : <RefreshCw size={12} />}
+            {fetchingOlder ? <Spinner className="size-3" /> : <RefreshCw size={12} />}
             {t('이전 메시지 불러오기')}
           </button>
         )}

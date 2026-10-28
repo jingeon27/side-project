@@ -113,20 +113,6 @@
     align-items: center;
     gap: 21px;
   }
-  .icon-button {
-    padding: 7px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-control);
-    color: var(--color-muted);
-  }
-  .icon-button:hover {
-    background: var(--color-sunken);
-  }
-  .notification-button {
-    position: relative;
-  }
   .header-notification-count {
     position: absolute;
     right: -4px;
@@ -388,12 +374,6 @@
     }
     .header-actions .small-button svg {
       width: 12px;
-    }
-    .header-actions .notification-button {
-      padding: 4px;
-    }
-    .header-actions .notification-button > svg {
-      width: 19px;
     }
     .user-button > span:last-child {
       display: none;

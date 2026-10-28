@@ -26,10 +26,6 @@
   }
 
   /* 앱 조합용 보조 스타일. 컨트롤과 초기화는 공통 디자인 시스템이 소유한다. */
-  .icon-button {
-    min-width: var(--spacing-touch);
-    min-height: var(--spacing-touch);
-  }
   ::selection {
     background: var(--color-accent-soft);
     color: var(--color-ink);
@@ -84,9 +80,6 @@
     line-height: 1.7;
     margin: 10px 0;
   }
-  .spin {
-    animation: spin 1s linear infinite;
-  }
   .standalone-state {
     display: flex;
     align-items: center;
@@ -103,11 +96,6 @@
   .standalone-state p {
     color: var(--color-muted);
     font-size: var(--text-body);
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
   @keyframes shimmer {
     to {

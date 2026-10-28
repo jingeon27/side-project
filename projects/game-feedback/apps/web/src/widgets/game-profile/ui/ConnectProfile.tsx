@@ -3,7 +3,7 @@
 import { useId } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, LoaderCircle, Search } from 'lucide-react';
+import { Check, Search } from 'lucide-react';
 import { z } from 'zod';
 
 import { PlayerTagSchema } from '@game-feedback/contracts';
@@ -73,14 +73,20 @@ export function ConnectProfile({ open, onOpenChange, onOpenChangeComplete, onSav
                   },
                 );
               }}
-              disabled={save.isPending}
+              loading={save.isPending}
+              icon={<Check aria-hidden />}
             >
-              {save.isPending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
               {t('내 계정에 등록')}
             </Button>
           ) : (
-            <Button variant="primary" size="lg" type="submit" form={formId} disabled={preview.isPending}>
-              {preview.isPending ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
+            <Button
+              variant="primary"
+              size="lg"
+              type="submit"
+              form={formId}
+              loading={preview.isPending}
+              icon={<Search aria-hidden />}
+            >
               {t('조회')}
             </Button>
           )}

@@ -4,7 +4,7 @@ import { use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, LoaderCircle, MessageSquare, Plus } from 'lucide-react';
+import { ArrowUpRight, MessageSquare, Plus } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
@@ -169,10 +169,10 @@ function FeedResults({
           fullWidth
           type="button"
           className="load-more"
-          disabled={feed.isFetchingNextPage}
+          loading={feed.isFetchingNextPage}
+          icon={<Plus aria-hidden />}
           onClick={() => feed.fetchNextPage()}
         >
-          {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
           {t('더 많은 글 보기')}
         </Button>
       )}

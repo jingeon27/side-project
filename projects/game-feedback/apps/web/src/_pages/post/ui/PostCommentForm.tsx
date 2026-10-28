@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 
-import { Button, Textarea } from '@side/design-system';
+import { Button, IconButton, Textarea } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { createCommentMutationOptions } from '@/features/comment';
@@ -56,15 +56,9 @@ export function PostCommentForm({ postId }: { postId: string }) {
           disabled={mutation.isPending}
           required
         />
-        <Button
-          variant="primary"
-          size="icon"
-          type="submit"
-          loading={mutation.isPending}
-          aria-label={t('댓글 등록')}
-        >
-          {!mutation.isPending && <Send size={18} aria-hidden="true" />}
-        </Button>
+        <IconButton variant="primary" type="submit" loading={mutation.isPending} label={t('댓글 등록')}>
+          <Send aria-hidden />
+        </IconButton>
       </div>
       <ErrorNotice message={errorMessage && t(errorMessage)} />
     </form>

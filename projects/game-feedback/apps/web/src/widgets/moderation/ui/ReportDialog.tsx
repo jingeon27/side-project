@@ -3,7 +3,7 @@
 import { useId } from 'react';
 
 import { useMutation } from '@tanstack/react-query';
-import { Flag, LoaderCircle } from 'lucide-react';
+import { Flag } from 'lucide-react';
 
 import { ReportInputSchema, type ReportInput } from '@game-feedback/contracts';
 import { Button, NativeSelect, NativeSelectOption, Textarea } from '@side/design-system';
@@ -55,8 +55,14 @@ export function ReportDialog({
           >
             {t('취소')}
           </Button>
-          <Button variant="primary" size="lg" type="submit" form={formId} disabled={mutation.isPending}>
-            {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Flag size={16} />}
+          <Button
+            variant="primary"
+            size="lg"
+            type="submit"
+            form={formId}
+            loading={mutation.isPending}
+            icon={<Flag aria-hidden />}
+          >
             {t('신고 접수')}
           </Button>
         </>

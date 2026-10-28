@@ -4,7 +4,7 @@ import { useId } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, LoaderCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 import { Button, Input } from '@side/design-system';
 
@@ -69,8 +69,14 @@ export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }
           <Button variant="secondary" type="button" disabled={pending} onClick={() => onOpenChange(false)}>
             {t('취소')}
           </Button>
-          <Button variant="accent" size="lg" type="submit" form={formId} disabled={pending}>
-            {pending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+          <Button
+            variant="accent"
+            size="lg"
+            type="submit"
+            form={formId}
+            loading={pending}
+            icon={<Check aria-hidden />}
+          >
             {t('수정 완료')}
           </Button>
         </>

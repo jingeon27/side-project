@@ -6,7 +6,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { ArrowLeft, Search, X } from 'lucide-react';
 
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
-import { Button, Input } from '@side/design-system';
+import { Button, IconButton, iconButtonVariants, Input } from '@side/design-system';
 
 import { useSession } from '@/features/auth';
 import { PostCard, postListOptions, PostListSkeleton } from '@/features/post';
@@ -42,9 +42,9 @@ function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps)
         <BackLink
           href={route?.parent ?? appRoutes.feed(locale)}
           aria-label={t('돌아가기')}
-          className="icon-button"
+          className={iconButtonVariants()}
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft className="size-5" aria-hidden />
         </BackLink>
         <h1 className="max-[760px]:sr-only">{t('검색')}</h1>
       </div>
@@ -59,19 +59,13 @@ function SearchContent({ locale, initialPath, initialSearch }: ISearchPageProps)
           placeholder={t('제목이나 내용으로 검색')}
         />
         {draft && (
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            aria-label={t('검색어 지우기')}
-            onClick={handleClear}
-          >
-            <X size={18} />
-          </Button>
+          <IconButton type="button" label={t('검색어 지우기')} onClick={handleClear}>
+            <X aria-hidden />
+          </IconButton>
         )}
-        <Button variant="accent" size="icon" type="submit" aria-label={t('검색')}>
-          <Search size={20} />
-        </Button>
+        <IconButton variant="accent" type="submit" label={t('검색')}>
+          <Search aria-hidden />
+        </IconButton>
       </form>
       <p className="search-scope">
         {t('검색 범위')}: {t(board?.name ?? '전체')}

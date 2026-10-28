@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, LoaderCircle, MessageSquare, Send } from 'lucide-react';
+import { ArrowUpRight, MessageSquare, Send } from 'lucide-react';
 
 import { Button, Textarea } from '@side/design-system';
 
@@ -60,9 +60,9 @@ export function AnswerComposer({ postId }: IAnswerComposerProps) {
               size="md"
               type="submit"
               className="button"
-              disabled={mutation.isPending}
+              loading={mutation.isPending}
+              icon={<Send aria-hidden />}
             >
-              {mutation.isPending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
               {t('피드백 남기기')}
             </Button>
           </div>
