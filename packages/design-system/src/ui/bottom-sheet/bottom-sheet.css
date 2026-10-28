@@ -11,7 +11,8 @@
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    overflow: hidden;
+    /* 포커스 이동이 viewport를 스크롤해 시트의 스냅 위치까지 바꾸지 않게 한다. */
+    overflow: clip;
   }
   .ds-sheet-popup {
     /* Drawer의 고빈도 CSS 변수는 상속되지 않으므로 본문에는 계산된 별칭을 전달한다. */
