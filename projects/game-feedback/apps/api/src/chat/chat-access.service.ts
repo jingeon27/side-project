@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ApiError } from '../common/http/api-error';
 import { APP_CONFIG, type AppConfig } from '../config/app.config';
 import { PrismaClient, type Prisma } from '../generated/prisma';
+import { hiddenUserIds } from '../users/hidden-users';
 import { ChatEvents } from './chat.events';
 import { conversationInclude, type ConversationRow } from './chat.presenter';
 
@@ -22,20 +23,8 @@ export class ChatAccessService {
       }
     };
   }
-  async excluded(userId: string) {
-    const demoAuthors =
-      this.config.demoMode || this.config.testAuthEnabled
-        ? []
-        : await this.db.user.findMany({ where: { demoKey: { not: null } }, select: { id: true } });
-    const blocks = await this.db.block.findMany({
-      where: { OR: [{ userId }, { blockedUserId: userId }] },
-    });
-    return [
-      ...new Set([
-        ...demoAuthors.map((user) => user.id),
-        ...blocks.map((block) => (block.userId === userId ? block.blockedUserId : block.userId)),
-      ]),
-    ];
+  excluded(userId: string) {
+    return hiddenUserIds(this.db, this.config, userId);
   }
   async listWhere(userId: string, excluded?: string[]): Promise<Prisma.ChatConversationWhereInput> {
     const hidden = excluded ?? (await this.excluded(userId));

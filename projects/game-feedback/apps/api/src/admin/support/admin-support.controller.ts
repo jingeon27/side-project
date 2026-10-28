@@ -7,15 +7,27 @@ import { ListQuerySchema, type TListQueryDto } from '../../common/http/list-quer
 import { ValidatedBody, ValidatedQuery } from '../../common/http/request-validation';
 import { AdminGuard } from '../../common/http/session.guard';
 import { AdminSupportService } from './admin-support.service';
-import { SupportStatusInputSchema, type TSupportStatusDto } from './support-input.dto';
+import {
+  AdminSupportListQuerySchema,
+  SupportStatusInputSchema,
+  type TAdminSupportListQueryDto,
+  type TSupportStatusDto,
+} from './support-input.dto';
 
 @UseGuards(AdminGuard)
 @Controller('api/admin/support')
 export class AdminSupportController {
   constructor(@Inject(AdminSupportService) private readonly support: AdminSupportService) {}
   @Get()
-  list(@Req() req: SessionRequest) {
-    return this.support.list(req);
+  list(
+    @Req() req: SessionRequest,
+    @ValidatedQuery(AdminSupportListQuerySchema) query: TAdminSupportListQueryDto,
+  ) {
+    return this.support.list(req, query);
+  }
+  @Get(':id')
+  thread(@Req() req: SessionRequest, @Param('id') id: string) {
+    return this.support.thread(req, id);
   }
   @Get(':id/messages')
   messages(

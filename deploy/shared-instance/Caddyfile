@@ -26,15 +26,10 @@
 	}
 }
 
-# Media is uploaded to S3 with presigned forms, so bodies are JSON (PC 64KB, GF 256KB at the apps).
-# Only the GF avatar endpoint still takes a multipart file (5MB).
+# Media, including GF avatars, is uploaded to S3 with presigned forms, so bodies are JSON
+# (PC 64KB, GF 256KB at the apps).
 (gf_request_body) {
-	@avatar path /api/profile/avatar /api/profile/avatar/
-	request_body @avatar {
-		max_size 6MB
-	}
-	@not_avatar not path /api/profile/avatar /api/profile/avatar/
-	request_body @not_avatar {
+	request_body {
 		max_size 1MB
 	}
 }

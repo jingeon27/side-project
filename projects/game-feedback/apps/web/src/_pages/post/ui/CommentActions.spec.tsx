@@ -71,7 +71,13 @@ function renderActions(value: Extract<Comment, { isDeleted: false }>) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  const detail: PostDetail = { post, answers: [], comments: [value], commentsCursor: null };
+  const detail: PostDetail = {
+    post,
+    answers: [],
+    answersCursor: null,
+    comments: [value],
+    commentsCursor: null,
+  };
   client.setQueryData(postDetailOptions(post.id).queryKey, detail);
   render(
     <QueryClientProvider client={client}>

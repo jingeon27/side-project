@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MEDIA_FILE_LIMIT, MEDIA_SIGNATURE_BYTES, validateMediaHeader } from './media-file';
+import { MEDIA_FILE_LIMIT, MEDIA_SIGNATURE_BYTES, mediaRange, validateMediaHeader } from './media-file';
 
 const png = Buffer.concat([
   Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
@@ -40,5 +40,15 @@ describe('stored media signature checks', () => {
     expect(() =>
       validateMediaHeader({ name: 'x.png', mimeType, size, header: png.subarray(0, length) }),
     ).toThrow();
+  });
+});
+
+describe('media byte ranges', () => {
+  it('supports full, open-ended and suffix ranges and rejects invalid ranges', () => {
+    expect(mediaRange(undefined, 100)).toEqual({ start: 0, end: 99, partial: false });
+    expect(mediaRange('bytes=10-', 100)).toEqual({ start: 10, end: 99, partial: true });
+    expect(mediaRange('bytes=-10', 100)).toEqual({ start: 90, end: 99, partial: true });
+    for (const value of ['bytes=100-', 'bytes=20-10', 'bytes=0-1,2-3', 'bytes=-0', 'bytes=-'])
+      expect(mediaRange(value, 100)).toBeNull();
   });
 });

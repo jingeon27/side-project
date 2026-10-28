@@ -2,7 +2,7 @@
 
 게시글·채팅 첨부와 프로필 사진은 모두 서명 발급 → 브라우저 S3 POST → 완료 확인으로 처리한다. API는 JSON 메타데이터만 받는다. 저장소를 선택하는 DATABASE·FILESYSTEM 모드와 프록시 multipart 업로드는 제거한다. 조회는 사용자·공개 범위·차단·대화 접근을 확인한 뒤 60초 presigned GET으로 307 이동한다.
 
-완료는 HEAD의 크기·타입·ETag와 앞 4KB의 파일 서명을 확인하고 같은 ETag를 조건으로 별도 최종 키에 CopyObject한다. 발급한 주소를 다시 써도 게시된 파일은 덮어쓰지 못한다. 프로필 사진은 웹에서 방향·중앙 자르기·최대 512px JPEG 변환으로 촬영 메타데이터를 제거한다. 서버의 파일 헤더 검사는 이미지 전체 디코딩이나 제3자 클라이언트의 메타데이터 제거를 보장하지 않는다.
+업로드 서명은 5분 동안 유효하고, 완료는 느린 전송을 위해 서명 만료 뒤 30분까지 받는다. 완료는 HEAD의 크기·타입·ETag와 앞 4KB의 파일 서명을 확인하고 같은 ETag를 조건으로 별도 최종 키에 CopyObject한다. 발급한 주소를 다시 써도 게시된 파일은 덮어쓰지 못한다. 프로필 사진은 웹에서 방향·중앙 자르기·최대 512px JPEG 변환으로 촬영 메타데이터를 제거한다. 서버의 파일 헤더 검사는 이미지 전체 디코딩이나 제3자 클라이언트의 메타데이터 제거를 보장하지 않는다.
 
 ## 기본 로컬 실행
 
@@ -70,6 +70,22 @@ AWS 공식 자료: [IAM 사용자 키 발급과 CLI 설정](https://docs.aws.ama
 같은 버킷에서 운영은 `game-feedback/production/`, 로컬은 `game-feedback/local/`, CI는 `game-feedback/ci/`를 쓴다. 로컬·CI 키에는 자기 폴더 권한만 주어 운영 파일에 닿지 않게 한다. 운영 앱은 `GF_S3_KEY_PREFIX`가 `game-feedback/<폴더>`가 아니면 시작하지 않는다. name_prefix를 바꾸면 IAM 사용자 교체가 계획될 수 있다.
 
 버킷 CORS는 Terraform이 관리하지 않는다. 콘솔에서 같은 버킷의 규칙 배열에 운영 도메인, `http://localhost:3300`, 브라우저 테스트 origin을 둔다. 앱 키는 Terraform apply 권한이나 state 버킷 권한을 받을 필요가 없다.
+
+## staging 업로드 수명 주기
+
+예약한 업로드는 `<GF_S3_KEY_PREFIX>/staging/<uuid>`에 올라오고 완료 시 `objects/`의 새 키로 복사된다. 완료하지 않은 staging 객체는 운영자 `prune`(`deploy/shared-instance/scripts/service.sh game-feedback prune`)이 24시간 뒤 지운다. `prune`이 멈추거나 실행되지 않아도 버킷에 쌓이지 않도록 S3 수명 주기가 staging 접두사만 2일 뒤 만료한다. 완료 가능 시간(서명 5분 + 완료 유예)보다 충분히 길고, 최종 객체(`objects/`)와 다른 서비스 폴더의 현재 객체는 만료하지 않는다.
+
+`put-bucket-lifecycle-configuration`은 버킷의 규칙 전체를 바꾼다. 공용 버킷에는 공통 [`s3-lifecycle.json`](../../../deploy/shared-instance/s3-lifecycle.json) 대신 공통 규칙을 그대로 포함한 [GF 수명 주기](../deploy/shared-instance/s3-lifecycle.json)를 적용한다. 공통 규칙이 바뀌면 이 파일도 함께 바꾼다(`src/media-storage/s3-lifecycle.spec.ts`가 포함 여부를 검사한다). 버킷 관리 권한이 있는 운영자 자격 증명으로 저장소 루트에서 실행한다.
+
+```sh
+aws s3api put-bucket-lifecycle-configuration \
+  --region ap-northeast-2 \
+  --bucket YOUR_BUCKET_NAME \
+  --lifecycle-configuration file://projects/game-feedback/deploy/shared-instance/s3-lifecycle.json
+aws s3api get-bucket-lifecycle-configuration --region ap-northeast-2 --bucket YOUR_BUCKET_NAME
+```
+
+Versioning이 켜진 버킷에서 만료는 삭제 마커를 남기고, staging의 이전 버전은 1일 뒤 지운다. 로컬 개발 폴더(`game-feedback/local/staging/`)에도 같은 규칙을 둔다. 통합·브라우저 테스트의 `tests/<실행 ID>/`는 테스트가 직접 정리한다.
 
 ## 기존 파일 이행과 배포
 

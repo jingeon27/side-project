@@ -102,7 +102,7 @@ describe.skipIf(!target)('admin support, user reports and bans with isolated Pos
       .items;
     expect(messages.map((row: { body: string }) => row.body)).toContain(message);
     await stranger.get(`/api/conversations/${conversation.id}/messages`).expect(404);
-    const threads = (await admin.get('/api/admin/support').expect(200)).body;
+    const threads = (await admin.get('/api/admin/support').expect(200)).body.items;
     const thread = threads.find((row: { requester: { id: string } }) => row.requester.id === me.id);
     expect(thread).toMatchObject({
       topic: 'VERIFICATION',

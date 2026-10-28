@@ -268,7 +268,8 @@
     font-size: var(--text-caption);
     color: var(--color-muted);
   }
-  .comments-older {
+  .comments-older,
+  .answers-later {
     display: grid;
     justify-items: start;
     gap: 6px;

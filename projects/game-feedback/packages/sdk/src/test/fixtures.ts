@@ -61,6 +61,7 @@ export function postFixture(): PostDetail {
         updatedAt: timestamp,
       },
     ],
+    answersCursor: null,
     comments: [],
     commentsCursor: null,
   };

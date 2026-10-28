@@ -21,7 +21,7 @@ export function AdminRouter() {
     <AdminShell nickname={session.user.nickname} tab={route.tab}>
       <AsyncBoundary key={route.tab}>
         {match(route.tab)
-          .with('support', () => <SupportPage threadId={route.threadId} />)
+          .with('support', () => <SupportPage threadId={route.threadId} status={route.supportStatus} />)
           .with('reports', () => <ReportsPage status={route.reportStatus} />)
           .with('users', () => <UsersPage userId={route.userId} />)
           .exhaustive()}

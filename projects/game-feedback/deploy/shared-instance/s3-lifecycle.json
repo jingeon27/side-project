@@ -1,0 +1,25 @@
+{
+  "Rules": [
+    {
+      "ID": "retain-recoverable-versions",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "" },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 }
+    },
+    {
+      "ID": "game-feedback-production-expire-staging",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "game-feedback/production/staging/" },
+      "Expiration": { "Days": 2 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    },
+    {
+      "ID": "game-feedback-local-expire-staging",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "game-feedback/local/staging/" },
+      "Expiration": { "Days": 2 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 }
+    }
+  ]
+}
