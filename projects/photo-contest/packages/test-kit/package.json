@@ -21,6 +21,7 @@
     "es-toolkit": "catalog:",
     "prisma": "catalog:",
     "sharp": "catalog:",
+    "ts-pattern": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   },

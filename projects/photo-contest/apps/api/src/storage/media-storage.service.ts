@@ -15,7 +15,7 @@ const MEDIA_TYPES = {
   webp: 'image/webp',
   mp4: 'video/mp4',
   webm: 'video/webm',
-} as const;
+} as const satisfies Record<string, `${'image' | 'video'}/${string}`>;
 export type TMediaExtension = keyof typeof MEDIA_TYPES;
 const MEDIA_KEY = /^(?:[A-Za-z0-9_-]+\/)*[a-f0-9-]{36}\.(jpg|png|webp|mp4|webm)$/;
 // 이전 staging 업로드는 확장자 없는 키로 남아 있을 수 있어 정리할 때만 허용한다.

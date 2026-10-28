@@ -17,7 +17,7 @@ import { assertProductionConfig, isTest, trustedProxyHops } from './config/env';
 import { MAX_JSON_BODY } from './config/limits';
 import { TestingModule } from './testing/testing.module';
 
-const LOG_LEVELS: LogLevel[] = ['error', 'warn', 'log'];
+const LOG_LEVELS = ['error', 'warn', 'log'] satisfies LogLevel[];
 
 export interface ICreateAppOptions {
   testFixtures?: boolean;

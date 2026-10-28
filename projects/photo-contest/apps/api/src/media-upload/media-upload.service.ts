@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import type { IViewer } from '../auth/session.service';
 import { randomToken, sha256Hex } from '../common/crypto';
@@ -62,8 +63,12 @@ export class MediaUploadService {
     purpose: TUploadPurpose = { kind: 'POST' },
     address: string | null = null,
   ) {
-    const contestId = purpose.kind === 'SUBMISSION' ? purpose.contestId : undefined;
-    const avatar = purpose.kind === 'GROUP_AVATAR';
+    const { contestId, avatar } = match(purpose)
+      .returnType<{ contestId: string | undefined; avatar: boolean }>()
+      .with({ kind: 'POST' }, () => ({ contestId: undefined, avatar: false }))
+      .with({ kind: 'SUBMISSION' }, (submission) => ({ contestId: submission.contestId, avatar: false }))
+      .with({ kind: 'GROUP_AVATAR' }, () => ({ contestId: undefined, avatar: true }))
+      .exhaustive();
     const policy = postUploadPolicy(contentType, byteSize);
     if ((contestId || avatar) && (policy.kind !== 'PHOTO' || byteSize > MAX_UPLOAD_BYTES))
       fail('10MB 이하의 JPEG, PNG, WebP 사진을 선택해 주세요.');
