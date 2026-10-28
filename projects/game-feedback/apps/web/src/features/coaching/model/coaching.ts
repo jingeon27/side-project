@@ -1,4 +1,16 @@
-import { CoachingRoleSchema } from '@game-feedback/contracts';
+import { CoachingRoleSchema, type TCoachingPricingType, type TCoachingRole } from '@game-feedback/contracts';
+
+interface ICoachingRoleOption {
+  value: TCoachingRole;
+  label: string;
+}
+interface ICoachingPricingOption {
+  value: TCoachingPricingType;
+  label: string;
+  feeLabel: string;
+  budgetLabel: string;
+  priceLabel: string;
+}
 
 export function parseCoachingRole(value: unknown) {
   const result = CoachingRoleSchema.safeParse(value);
@@ -8,7 +20,7 @@ export function parseCoachingRole(value: unknown) {
 export const coachingRoles = [
   { value: 'COACH', label: '수강생 모집' },
   { value: 'STUDENT', label: '코치 구함' },
-] as const;
+] as const satisfies readonly ICoachingRoleOption[];
 
 export const coachingPricingTypes = [
   {
@@ -32,4 +44,4 @@ export const coachingPricingTypes = [
     budgetLabel: '목표 달성 희망 총 수강료 (원)',
     priceLabel: '목표 달성까지 총 {price}',
   },
-] as const;
+] as const satisfies readonly ICoachingPricingOption[];

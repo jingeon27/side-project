@@ -14,14 +14,14 @@ interface INotificationItemProps {
   href: string;
   onRead: () => void;
 }
-const notificationTitles: Record<Notification['type'], string> = {
+const notificationTitles = {
   ANSWER: '새로운 피드백이 도착했어요',
   HELPFUL: '당신의 피드백이 도움이 됐어요',
   COMMENT: '새로운 댓글이 달렸어요',
   COMMENT_REPLY: '새로운 답글이 달렸어요',
   FOLLOWED_POST: '팔로우한 사용자의 새 글',
   CHAT_MESSAGE: '새로운 채팅이 도착했어요',
-};
+} satisfies Record<Notification['type'], string>;
 export function NotificationItem({ notification, href, onRead }: INotificationItemProps) {
   const { t, locale: textLocale } = useI18n();
   // 서버는 문구를 저장하지 않는다. 현재 닉네임·제목으로 화면 언어의 문구를 만든다.
