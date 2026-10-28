@@ -135,6 +135,14 @@ test(
       await handle.press('ArrowUp');
       await expect(handle).toHaveAttribute('aria-valuetext', '100%');
       await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
+      // 전체 높이에서도 보이는 화면이 줄면(키보드) 시트가 그 높이에 맞춰 제목·닫기·입력창을 함께 보여야 한다.
+      const heading = sheet.getByRole('heading', { name: '댓글', exact: true });
+      await page.setViewportSize({ width: viewport.width, height: 500 });
+      await expect.poll(async () => (await sheet.boundingBox())?.y ?? -1).toBeGreaterThanOrEqual(0);
+      await expect(heading).toBeInViewport();
+      await expect(sheet.getByRole('button', { name: '닫기', exact: true })).toBeInViewport();
+      await expect(sheet.getByRole('textbox', { name: '댓글', exact: true })).toBeInViewport();
+      await page.setViewportSize(viewport);
       await handle.press('Home');
       await expectCompact();
     }
