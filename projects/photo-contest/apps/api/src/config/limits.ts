@@ -41,6 +41,7 @@ export const COOKIE_HEADER_MAX_LENGTH = 8 * 1024;
 export const MAINTENANCE_INTERVAL_MS = MINUTE_MS;
 export const CLEANUP_BATCH_SIZE = 100;
 export const SERIALIZABLE_ATTEMPTS = 4;
+export const TRANSACTION_RETRY_DELAY_MS = 50;
 // Prisma 대화형 트랜잭션의 연결 대기·실행 한도. 기본값(2초·5초)을 명시해 긴 작업을 트랜잭션에 넣지 않게 한다.
 export const TRANSACTION_MAX_WAIT_MS = 2 * SECOND_MS;
 export const TRANSACTION_TIMEOUT_MS = 5 * SECOND_MS;
