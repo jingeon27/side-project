@@ -16,17 +16,41 @@ type MigratedPost = {
 };
 
 describe('published Tistory migration artifacts', () => {
-  it('preserves every published code example exactly when other files are formatted', async () => {
+  it('preserves published code apart from explicitly recorded comment punctuation edits', async () => {
     const manifest = JSON.parse(
       await readFile(path.join(root, '../../docs/migration-manifest.json'), 'utf8'),
     ) as { posts: MigratedPost[] };
+    const commentEdits = JSON.parse(
+      await readFile(path.join(root, 'content/code-comment-edits.json'), 'utf8'),
+    ) as Record<string, { before: string; after: string }[]>;
+    for (const contentId of Object.keys(commentEdits)) {
+      expect(
+        manifest.posts.some((post) => post.contentId === contentId),
+        contentId,
+      ).toBe(true);
+    }
     for (const post of manifest.posts) {
       const source = await readFile(path.join(root, 'content/posts', post.contentId, 'ko.mdx'), 'utf8');
       const { tree } = analyzeMdx(source);
-      const hashes: string[] = [];
+      const edits = commentEdits[post.contentId] ?? [];
+      const blocks: string[] = [];
       visit(tree, 'code', (node) => {
-        hashes.push(createHash('sha256').update(node.value).digest('hex'));
+        blocks.push(node.value);
       });
+      for (const { before, after } of edits) {
+        expect(before).toMatch(/^(?:\/\/|#) /);
+        expect(after).not.toBe(before);
+        expect(after).toBe(before.replaceAll(' — ', ': '));
+        expect(
+          blocks.some((block) => block.includes(after)),
+          post.contentId,
+        ).toBe(true);
+      }
+      const hashes: string[] = [];
+      for (const block of blocks) {
+        const original = edits.reduce((value, { before, after }) => value.replaceAll(after, before), block);
+        hashes.push(createHash('sha256').update(original).digest('hex'));
+      }
       expect(hashes, post.sourceUrl).toEqual(post.codeSha256);
     }
   });

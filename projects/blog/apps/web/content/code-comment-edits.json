@@ -1,0 +1,30 @@
+{
+  "chatbot-message-layer": [
+    {
+      "before": "// 초기 — AI 응답 스트림을 직접 파싱해 화면에 흘림",
+      "after": "// 초기: AI 응답 스트림을 직접 파싱해 화면에 흘림"
+    },
+    {
+      "before": "// 상담사 연결이 '버튼'이던 시절 — EventSource 로 세션 SSE 구독",
+      "after": "// 상담사 연결이 '버튼'이던 시절: EventSource 로 세션 SSE 구독"
+    },
+    {
+      "before": "// 30s 상한 — 생성이 오래 걸릴 수 있어 넉넉히",
+      "after": "// 30s 상한: 생성이 오래 걸릴 수 있어 넉넉히"
+    }
+  ],
+  "cross-domain-token-handoff": [
+    {
+      "before": "# 정산 — 별도 레이아웃, 같은 코드베이스",
+      "after": "# 정산: 별도 레이아웃, 같은 코드베이스"
+    },
+    {
+      "before": "// middleware.ts (분리 8일 차 버전 — 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)",
+      "after": "// middleware.ts (분리 8일 차 버전: 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)"
+    },
+    {
+      "before": "// middleware.ts (1단계 — 지금은 제거된 버전)",
+      "after": "// middleware.ts (1단계: 지금은 제거된 버전)"
+    }
+  ]
+}

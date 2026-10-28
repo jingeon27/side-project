@@ -233,7 +233,7 @@ export function parseApiResponse<T>(schema: z.ZodType, response: AxiosResponse<T
 
 The schema deliberately is not constrained to `z.ZodType<T>`. It is an approximate validation schema with optional fields opened to nullish, rather than an exact response type. The returned type still trusts the Axios generic, though, so the compiler cannot catch a completely unrelated schema.
 
-Invalid values still reach callers, so this is not complete runtime type safety. It let the three deployed apps—global admin as a PoC—collect real differences while introducing validation together. Three days later, logged nulls, missing enum members, and decimal strings informed schema changes in 20 files.
+Invalid values still reach callers, so this is not complete runtime type safety. It let the three deployed apps (with global admin as a PoC) collect real differences while introducing validation together. Three days later, logged nulls, missing enum members, and decimal strings informed schema changes in 20 files.
 
 New features and inputs that cannot accept bad values use blocking validation. [Another article](/en/blog/zod-assertion-boundaries) explains observation, recovery, and blocking by source.
 
@@ -371,5 +371,5 @@ Errors have not disappeared. Their impact has narrowed from an app to a route bo
 - [Zod: safeParse and errors](https://zod.dev/basics?id=handling-errors)
 - [Zod: .catch()](https://zod.dev/api?id=catch)
 - [Next.js: productionBrowserSourceMaps](https://nextjs.org/docs/app/api-reference/config/next-config-js/productionBrowserSourceMaps)
-- Related: [How I write declarative code](/en/blog/declarative-code) — compound search filters
-- Related: [Runtime validation beyond type assertions](/en/blog/zod-assertion-boundaries) — response observation and validation by source
+- Related: [How I write declarative code](/en/blog/declarative-code): compound search filters
+- Related: [Runtime validation beyond type assertions](/en/blog/zod-assertion-boundaries): response observation and validation by source

@@ -209,9 +209,9 @@ INP처럼 transaction에 속하지 않고 따로 전송되는 span은 beforeSend
 
 개인정보 정화 함수만 테스트해서는 부족했어요. 함수가 맞더라도 Sentry.init에 연결하지 않으면 원본이 그대로 나가니까요. 테스트를 세 층으로 나눴어요.
 
-1. **정책 객체** — dataCollection의 모든 키와 값이 닫혀 있는지 전체 비교
-2. **정화 함수** — URL, 본문, 쿠키, Referer, breadcrumb, span 속성 처리
-3. **초기화 배선** — client, server, edge 모두에 정책과 훅이 실제로 전달되는지 확인
+1. **정책 객체**: dataCollection의 모든 키와 값이 닫혀 있는지 전체 비교
+2. **정화 함수**: URL, 본문, 쿠키, Referer, breadcrumb, span 속성 처리
+3. **초기화 배선**: client, server, edge 모두에 정책과 훅이 실제로 전달되는지 확인
 
 SDK가 수집 키를 추가하면 타입 검사가, 정책 값이나 배선이 바뀌면 단위 테스트가 먼저 깨지게 했어요. SDK가 새 URL, span 속성을 추가하는 경우는 이 테스트로 잡히지 않아서, SDK를 올릴 때 직접 확인해야 해요.
 
@@ -287,8 +287,8 @@ MSW 서비스 워커가 요청을 넘겨받으면 page.route가 envelope를 잡�
 
 MCP용 토큰과 소스맵 업로드용 토큰도 나눴어요.
 
-- **MCP 토큰** — 이슈, 이벤트, 프로젝트를 조회하는 user auth token
-- **빌드 토큰** — 릴리스와 소스맵 artifact를 올리는 org token
+- **MCP 토큰**: 이슈, 이벤트, 프로젝트를 조회하는 user auth token
+- **빌드 토큰**: 릴리스와 소스맵 artifact를 올리는 org token
 
 MCP 토큰에는 project:releases 권한이 없어 빌드 업로드에 다시 쓸 수 없었어요. 같은 Sentry 토큰처럼 보여도 목적과 권한이 달랐어요.
 
@@ -344,14 +344,14 @@ Turbopack 빌드라서 처음에는 업로드가 동작하지 않는다고 생�
 
 | 요청 | 5xx | 4xx |
 | --- | --- | --- |
-| GET — 화면을 채우는 호출 | fatal | error |
-| 그 외 — 사용자가 다시 시도할 수 있는 호출 | error | warning |
+| GET: 화면을 채우는 호출 | fatal | error |
+| 그 외: 사용자가 다시 시도할 수 있는 호출 | error | warning |
 
 이 앱에서는 화면을 채우는 조회가 막힌 경우와 화면이 남아 있어 다시 시도할 수 있는 경우를 나누려고 이 기본 분류를 정했어요. 메서드만으로 영향을 모두 알 수는 없어서 핵심 동작이 막히거나 대체 흐름이 있는지는 별도로 봐요.
 
-- fatal — 화면이 뜨지 않거나 핵심 조회 결과를 쓸 수 없는 경우
-- error — 화면은 남아 있지만 사용자가 하려던 작업이 막힌 경우
-- warning — 예상 가능한 실패이며 다시 시도하거나 대체 흐름으로 넘어갈 수 있는 경우
+- fatal: 화면이 뜨지 않거나 핵심 조회 결과를 쓸 수 없는 경우
+- error: 화면은 남아 있지만 사용자가 하려던 작업이 막힌 경우
+- warning: 예상 가능한 실패이며 다시 시도하거나 대체 흐름으로 넘어갈 수 있는 경우
 
 401도 전부 같은 방식으로 다루지 않았어요. 액세스 토큰 갱신으로 복구된 401은 보내지 않고, 토큰 갱신 요청 자체가 실패한 경우는 별도 fingerprint로 남겼는데요. 갱신 토큰이 수명대로 만료된 401은 돌아오는 사용자마다 나는 정상적인 세션 종료라 warning, 그 밖의 갱신 실패는 error로 나눴어요.
 
@@ -410,10 +410,10 @@ Web Vitals는 envelope, MCP는 API 호출, 릴리스는 artifact bundle까지 �
 
 ## 참고
 
-- [우아한형제들 기술블로그 , 선제적 장애 대응을 위한 Sentry 최적화 적용기](https://techblog.woowahan.com/21604/) — 영향도별 레벨과 잡음 필터링의 출발점
-- [Next.js , instrumentation.js](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation) — register()와 onRequestError
-- [Next.js , instrumentation-client.js](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client) — 브라우저 초기화와 onRouterTransitionStart
-- [getsentry/sentry-javascript](https://github.com/getsentry/sentry-javascript) — @sentry/core의 requestDataIntegration과 sendDefaultPii 기본값 변환, fetch, xhr span 속성
-- [getsentry/sentry-mcp](https://github.com/getsentry/sentry-mcp) — @sentry/mcp-server의 -host 옵션
+- [우아한형제들 기술블로그 , 선제적 장애 대응을 위한 Sentry 최적화 적용기](https://techblog.woowahan.com/21604/): 영향도별 레벨과 잡음 필터링의 출발점
+- [Next.js , instrumentation.js](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation): register()와 onRequestError
+- [Next.js , instrumentation-client.js](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client): 브라우저 초기화와 onRouterTransitionStart
+- [getsentry/sentry-javascript](https://github.com/getsentry/sentry-javascript): @sentry/core의 requestDataIntegration과 sendDefaultPii 기본값 변환, fetch, xhr span 속성
+- [getsentry/sentry-mcp](https://github.com/getsentry/sentry-mcp): @sentry/mcp-server의 -host 옵션
 - 관련 글: [Sentry로 추적한 Bottom Sheet 드래그 크래시](/ko/blog/sentry가-잡아-준-bottom-sheet-드래그-크래시-원인-경로가-사라진-버전으로-올리기까지)
 - 관련 글: [오류가 난 영역만 다시 시도하도록 Error Boundary 나누기](/ko/blog/오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편)
