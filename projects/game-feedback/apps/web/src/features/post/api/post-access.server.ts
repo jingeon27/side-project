@@ -2,7 +2,7 @@ import 'server-only';
 
 import { ApiError, getPost } from '@game-feedback/sdk';
 
-import { publicServerOptions } from '@/shared/api/server';
+import { publicServerOptions, visitorLookupOptions } from '@/shared/api/server';
 
 import { requestExcludedAuthors } from './excluded-authors.server';
 import { POST_ID_PATTERN } from './post-cache';
@@ -27,7 +27,7 @@ export class PublicPostAccessCache {
   private readonly entries = new Map<string, IPublicPostAccessEntry>();
 
   constructor(
-    private readonly lookup: (id: string) => Promise<TPublicPostAccess>,
+    private readonly lookup: (id: string, visitor: string | null) => Promise<TPublicPostAccess>,
     private readonly options: IPublicPostAccessCacheOptions = {
       ttlMs: 30_000,
       maxEntries: 500,
@@ -35,12 +35,13 @@ export class PublicPostAccessCache {
     },
   ) {}
 
-  get(id: string) {
+  /** 기억하지 않은 글만 조회하며, 그 조회는 처음 요청한 방문자의 API 예산을 쓴다. */
+  get(id: string, visitor: string | null = null) {
     const now = this.options.now();
     const cached = this.entries.get(id);
     if (cached && cached.expiresAt > now) return cached.value;
     this.entries.delete(id);
-    const value = this.lookup(id);
+    const value = this.lookup(id, visitor);
     this.entries.set(id, { expiresAt: now + this.options.ttlMs, value });
     // API 장애는 기억하지 않는다. 다음 요청이 다시 조회한다.
     value.catch(() => {
@@ -54,9 +55,9 @@ export class PublicPostAccessCache {
   }
 }
 
-async function lookupPublicPost(id: string): Promise<TPublicPostAccess> {
+async function lookupPublicPost(id: string, visitor: string | null): Promise<TPublicPostAccess> {
   try {
-    const { post } = await getPost(id, publicServerOptions());
+    const { post } = await getPost(id, visitorLookupOptions(visitor));
     return { authorId: post.author.id };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
@@ -69,10 +70,10 @@ const publicPosts = new PublicPostAccessCache(lookupPublicPost);
  * 첫 문서가 404여야 하는 게시글인지 판정한다. 렌더의 `getServerPost`와 같은 규칙(공개 상세 + 차단 관계)이며
  * 비로그인 요청은 공개 조회만, 로그인 요청은 차단 목록만 추가로 받는다. API 장애는 404로 바꾸지 않는다.
  */
-export async function isPostDocumentUnavailable(id: string, session?: string) {
+export async function isPostDocumentUnavailable(id: string, session?: string, visitor: string | null = null) {
   if (!POST_ID_PATTERN.test(id)) return true;
   try {
-    const post = await publicPosts.get(id);
+    const post = await publicPosts.get(id, visitor);
     if (!post) return true;
     if (!session) return false;
     const excluded = await requestExcludedAuthors({
