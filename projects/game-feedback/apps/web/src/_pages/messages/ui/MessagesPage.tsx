@@ -23,9 +23,8 @@ interface IMessagesPageProps {
 
 export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
   const { t } = useI18n();
-  const { session, loading, login } = useSession();
+  const { session, login } = useSession();
   const userId = session?.user?.id;
-  if (loading) return <LoadingState text={t('메시지 공간을 준비하고 있어요')} />;
   if (!userId)
     return (
       <div className="empty-feed">
@@ -34,7 +33,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
         </span>
         <h1>{t('플레이 이야기를, 조금 더 가까이')}</h1>
         <p>{t('로그인하면 다른 플레이어와 1:1 메시지를 나눌 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
+        <Button variant="primary" size="md" type="button" className="button" onClick={() => login()}>
           {t('로그인하고 대화하기')}
           <ArrowUpRight size={16} />
         </Button>
@@ -45,7 +44,7 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
       <div className="page-heading chat-page-heading">
         <ChatConnectionStatus />
       </div>
-      <div className={`chat-workspace ${conversationId ? 'has-conversation' : ''}`}>
+      <div className="chat-workspace" data-has-conversation={!!conversationId || undefined}>
         <AsyncBoundary
           clientOnly
           title={t('대화 목록')}

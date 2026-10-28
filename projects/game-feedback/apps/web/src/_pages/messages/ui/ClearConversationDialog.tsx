@@ -9,11 +9,9 @@ import { Button } from '@side/design-system';
 
 import { clearChatHistoryMutationOptions } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Modal, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
-interface IClearConversationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IClearConversationDialogProps extends IOverlayControlProps {
   userId: string;
   conversationId: string;
   throughMessageId: string;
@@ -21,6 +19,7 @@ interface IClearConversationDialogProps {
 export function ClearConversationDialog({
   open,
   onOpenChange,
+  onOpenChangeComplete,
   userId,
   conversationId,
   throughMessageId,
@@ -41,9 +40,10 @@ export function ClearConversationDialog({
     }
   }
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       dismissible={!mutation.isPending}
       title={t('대화내역 삭제')}
       description={t(
@@ -70,7 +70,7 @@ export function ClearConversationDialog({
         </>
       }
     >
-      <ErrorNotice message={mutation.error?.message} />
-    </Modal>
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
+    </BottomSheet>
   );
 }

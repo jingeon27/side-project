@@ -5,18 +5,25 @@ import { useId, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Controller, useWatch } from 'react-hook-form';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { Button, Checkbox, Input } from '@side/design-system';
 
+import { nicknameLength } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
 import { ErrorNotice, Field } from '@/shared/ui';
 
-import { accountSetupSchema, type TAccountSetupValues } from '../model/account-setup.schema';
+import {
+  accountSetupSchema,
+  NICKNAME_LENGTH_MESSAGE,
+  type TAccountSetupValues,
+} from '../model/account-setup.schema';
 
 interface IAccountSetupFormProps {
   children?: ReactNode;
   submitLabel: string;
   pending: boolean;
+  /** 번역을 마친 제출 오류 문구 */
   error?: string;
   onSubmit: (values: TAccountSetupValues) => void | Promise<void>;
 }
@@ -34,6 +41,8 @@ export function AccountSetupForm({
     defaultValues: { nickname: '', acceptedTerms: false, ageConfirmed: false },
   });
   const [agreed, ageConfirmed] = useWatch({ control: form.control, name: ['acceptedTerms', 'ageConfirmed'] });
+  const agreementError =
+    form.formState.errors.acceptedTerms?.message ?? form.formState.errors.ageConfirmed?.message;
   return (
     <div className="account-setup-layout">
       <div className="account-setup-scroll">
@@ -48,16 +57,18 @@ export function AccountSetupForm({
           <Field
             label={t('서비스 닉네임')}
             error={
-              form.formState.errors.nickname?.message ? t(form.formState.errors.nickname.message) : undefined
+              form.formState.errors.nickname?.message
+                ? t(form.formState.errors.nickname.message, nicknameLength)
+                : undefined
             }
           >
             <Input
               {...form.register('nickname')}
-              minLength={2}
-              maxLength={20}
+              minLength={nicknameLength.min}
+              maxLength={nicknameLength.max}
               required
               disabled={pending}
-              placeholder={t('2~20자로 입력해 주세요')}
+              placeholder={t(NICKNAME_LENGTH_MESSAGE, nicknameLength)}
               autoComplete="nickname"
             />
           </Field>
@@ -78,11 +89,11 @@ export function AccountSetupForm({
               )}
             />
             <span>
-              <a href={`/${locale}/terms`} target="_blank" rel="noreferrer">
+              <a href={appRoutes.terms(locale)} target="_blank" rel="noreferrer">
                 {t('이용약관')}
               </a>{' '}
               {t('및')}{' '}
-              <a href={`/${locale}/privacy`} target="_blank" rel="noreferrer">
+              <a href={appRoutes.privacy(locale)} target="_blank" rel="noreferrer">
                 {t('개인정보 처리방침')}
               </a>
               {t('에 동의합니다.')}
@@ -106,13 +117,7 @@ export function AccountSetupForm({
             />
             <span>{t('만 14세 이상입니다.')}</span>
           </label>
-          <ErrorNotice
-            message={
-              form.formState.errors.acceptedTerms?.message ??
-              form.formState.errors.ageConfirmed?.message ??
-              error
-            }
-          />
+          <ErrorNotice message={agreementError ? t(agreementError) : error} />
         </form>
       </div>
       <div className="account-setup-actions">
@@ -122,11 +127,10 @@ export function AccountSetupForm({
           fullWidth
           type="submit"
           form={formId}
-          className="button primary full"
           disabled={!agreed || !ageConfirmed}
           loading={pending}
+          icon={<ArrowRight aria-hidden />}
         >
-          {!pending && <ArrowRight aria-hidden size={18} />}
           {submitLabel}
         </Button>
       </div>

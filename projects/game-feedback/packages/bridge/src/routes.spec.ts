@@ -20,6 +20,17 @@ describe('community board navigation', () => {
         parent: appRoutes.settings(locale),
       });
   });
+  it.each(['terms', 'privacy', 'contact'] as const)(
+    '안내 화면 %s는 피드 아래의 고정 화면이어야 한다',
+    (screen) => {
+      for (const locale of ['ko', 'en', 'ja'])
+        expect(resolveAppRoute(appRoutes[screen](locale))).toMatchObject({
+          path: `/${locale}/${screen}`,
+          screen,
+          parent: appRoutes.feed(locale),
+        });
+    },
+  );
   it.each(['login', 'onboarding'] as const)(
     '인증 화면 %s는 같은 언어의 안전한 복귀 경로만 보존해야 한다',
     (screen) => {

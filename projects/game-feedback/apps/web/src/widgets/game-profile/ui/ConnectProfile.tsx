@@ -3,7 +3,7 @@
 import { useId } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, LoaderCircle, Search } from 'lucide-react';
+import { Check, Search } from 'lucide-react';
 import { z } from 'zod';
 
 import { PlayerTagSchema } from '@game-feedback/contracts';
@@ -17,28 +17,31 @@ import {
 import type { GameProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
-interface IConnectProfileProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IConnectProfileProps extends IOverlayControlProps {
   onSaved?: (profile: GameProfile) => void;
 }
 const profileTagSchema = z.object({ playerTag: PlayerTagSchema });
 
-export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileProps) {
+export function ConnectProfile({ open, onOpenChange, onOpenChangeComplete, onSaved }: IConnectProfileProps) {
   const notify = useNotify();
   const { t } = useI18n();
   const formId = useId();
   const form = useZodForm(profileTagSchema, { defaultValues: { playerTag: '' } });
   const client = useQueryClient();
   const preview = useMutation(lookupGameProfileMutationOptions(client));
-  const save = useMutation(saveGameAccountMutationOptions(client, notify));
+  const save = useMutation(
+    saveGameAccountMutationOptions(client, () => notify(t('게임 프로필이 연결되었어요.'))),
+  );
   const tagField = form.register('playerTag');
+  const errorMessage =
+    form.formState.errors.playerTag?.message ?? preview.error?.message ?? save.error?.message;
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       title={t('게임 계정 등록')}
       description={t('플레이어 태그로 트로피와 아레나를 확인해요.')}
       dismissible={!preview.isPending && !save.isPending}
@@ -70,14 +73,20 @@ export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileP
                   },
                 );
               }}
-              disabled={save.isPending}
+              loading={save.isPending}
+              icon={<Check aria-hidden />}
             >
-              {save.isPending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
               {t('내 계정에 등록')}
             </Button>
           ) : (
-            <Button variant="primary" size="lg" type="submit" form={formId} disabled={preview.isPending}>
-              {preview.isPending ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
+            <Button
+              variant="primary"
+              size="lg"
+              type="submit"
+              form={formId}
+              loading={preview.isPending}
+              icon={<Search aria-hidden />}
+            >
               {t('조회')}
             </Button>
           )}
@@ -109,9 +118,7 @@ export function ConnectProfile({ open, onOpenChange, onSaved }: IConnectProfileP
             />
           </div>
         </Field>
-        <ErrorNotice
-          message={form.formState.errors.playerTag?.message ?? preview.error?.message ?? save.error?.message}
-        />
+        <ErrorNotice message={errorMessage && t(errorMessage)} />
         {preview.data && (
           <div className="profile-preview">
             <ProfileSnapshot profile={preview.data} />

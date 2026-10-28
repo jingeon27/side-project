@@ -2,6 +2,7 @@
 
 import { ArrowUpRight } from 'lucide-react';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { ButtonLink } from '@side/design-system/next';
 
 import { useI18n } from '@/shared/i18n';
@@ -24,7 +25,7 @@ export function ChatWelcome({ locale }: IChatWelcomeProps) {
         <br />
         {t('피드에서 함께 이야기할 플레이어를 찾아보세요.')}
       </p>
-      <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
+      <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button">
         {t('피드 둘러보기')}
         <ArrowUpRight size={16} />
       </ButtonLink>

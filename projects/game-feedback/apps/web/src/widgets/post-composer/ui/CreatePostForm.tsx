@@ -4,7 +4,7 @@ import type { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, LoaderCircle } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 
 import { appRoutes } from '@game-feedback/bridge';
@@ -77,6 +77,7 @@ export function CreatePostForm({
       /* Keep the draft and mutation errors. */
     }
   });
+  const errorMessage = create.error?.message ?? upload.error?.message;
   return (
     <form className="form-stack" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
       <Field label={t('분류')}>
@@ -124,9 +125,16 @@ export function CreatePostForm({
         )}
       </Field>
       <PostContentFields form={form} disabled={pending} onUploadMedia={handleUpload} />
-      <ErrorNotice message={create.error?.message ?? upload.error?.message} />
-      <Button variant="accent" size="lg" fullWidth type="submit" disabled={pending || !categories.length}>
-        {pending ? <LoaderCircle className="spin" size={17} /> : <ArrowUpRight size={17} />}
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
+      <Button
+        variant="accent"
+        size="lg"
+        fullWidth
+        type="submit"
+        disabled={!categories.length}
+        loading={pending}
+        icon={<ArrowUpRight aria-hidden />}
+      >
         {t(board === 'COACHING' ? '코칭 등록' : board === 'FEEDBACK' ? '피드백 요청 올리기' : '게시글 등록')}
       </Button>
     </form>

@@ -10,5 +10,5 @@ export function Avatar({
   size?: 'small' | 'normal' | 'large';
 }) {
   const sizes = { small: 'sm', normal: 'md', large: 'lg' } as const;
-  return <DesignSystemAvatar src={src} name={name} size={sizes[size]} className={`avatar avatar-${size}`} />;
+  return <DesignSystemAvatar src={src} name={name} size={sizes[size]} className="avatar" />;
 }

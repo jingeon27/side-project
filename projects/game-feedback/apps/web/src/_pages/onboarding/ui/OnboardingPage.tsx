@@ -28,7 +28,9 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
     ...sessionOptions(),
     refetchOnMount: 'always',
   });
-  const onboarding = useMutation(completeOnboardingMutationOptions(client, notify));
+  const onboarding = useMutation(
+    completeOnboardingMutationOptions(client, () => notify(t('반가워요! 함께 플레이를 나눠봐요.'))),
+  );
   useEffect(() => {
     if (isFetching || error || session.needsOnboarding) return;
     router.replace(session.user ? returnTo : appRoutes.login(locale, returnTo));
@@ -54,7 +56,7 @@ export function OnboardingPage({ locale, returnTo }: { locale: string; returnTo:
         <AccountSetupForm
           submitLabel={t('가입 완료하기')}
           pending={onboarding.isPending || isFetching}
-          error={onboarding.error?.message}
+          error={onboarding.error ? t(onboarding.error.message) : undefined}
           onSubmit={handleSubmit}
         >
           <div className="login-page-heading">

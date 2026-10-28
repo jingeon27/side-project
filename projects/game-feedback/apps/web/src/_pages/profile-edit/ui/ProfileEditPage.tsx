@@ -10,7 +10,7 @@ import { Button } from '@side/design-system';
 import { useSession } from '@/features/auth';
 import { ProfileEditForm, profileOptions } from '@/features/user';
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, LoadingState } from '@/shared/ui';
+import { AsyncBoundary } from '@/shared/ui';
 import { CommunityPage, Topbar } from '@/widgets/community-shell';
 
 function ProfileEditor({ userId, locale }: { userId: string; locale: string }) {
@@ -29,7 +29,7 @@ function ProfileEditor({ userId, locale }: { userId: string; locale: string }) {
 
 export function ProfileEditPage({ locale }: { locale: string }) {
   const { t } = useI18n();
-  const { session, loading, login } = useSession();
+  const { session, login } = useSession();
   const userId = session.user?.id;
   return (
     <CommunityPage
@@ -44,9 +44,7 @@ export function ProfileEditPage({ locale }: { locale: string }) {
         </Topbar.Root>
       }
     >
-      {loading ? (
-        <LoadingState />
-      ) : userId ? (
+      {userId ? (
         <AsyncBoundary clientOnly title={t('프로필 수정')} resetKey={userId}>
           <ProfileEditor key={userId} userId={userId} locale={locale} />
         </AsyncBoundary>

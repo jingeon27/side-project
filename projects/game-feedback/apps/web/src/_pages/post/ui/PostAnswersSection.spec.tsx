@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Answer, Post } from '@/shared/api';
+import type { Answer } from '@/shared/api';
 
 import { PostAnswersSection } from './PostAnswersSection';
 
@@ -20,7 +20,8 @@ vi.mock('@/features/user', () => ({
   UserBadges: () => null,
 }));
 vi.mock('./AnswerComposer', () => ({ AnswerComposer: () => null }));
-vi.mock('./ContentActions', () => ({ ContentActions: () => null }));
+vi.mock('./AnswerActions', () => ({ AnswerActions: () => null }));
+vi.mock('@/features/auth', () => ({ useSession: () => ({ session: { user: { id: 'viewer' } } }) }));
 vi.mock('./HelpfulAnswerButton', () => ({ HelpfulAnswerButton: () => null }));
 
 const author = {
@@ -30,23 +31,6 @@ const author = {
   supercellTag: null,
   isTestAccount: false,
 };
-function post(answerCount: number): Post {
-  return {
-    id: 'post',
-    title: '피드백 부탁해요',
-    body: '게시글 본문',
-    board: 'FEEDBACK',
-    categoryId: 'category',
-    category: { id: 'category', slug: 'game', name: '게임', active: true },
-    author: { ...author, id: 'requester' },
-    gameProfile: null,
-    viewCount: 0,
-    answerCount,
-    helpfulCount: 0,
-    createdAt: '2026-10-20T00:00:00Z',
-    updatedAt: '2026-10-20T00:00:00Z',
-  };
-}
 function answer(id: string): Answer {
   return {
     id,
@@ -59,11 +43,17 @@ function answer(id: string): Answer {
     updatedAt: '2026-10-20T00:00:00Z',
   };
 }
-function renderAnswers(answers: Answer[], cursor: string | null, total = answers.length) {
+function renderAnswers(answers: Answer[], cursor: string | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <PostAnswersSection post={post(total)} answers={answers} cursor={cursor} locale="ko" />
+      <PostAnswersSection
+        postId="post"
+        postAuthorId="requester"
+        answers={answers}
+        cursor={cursor}
+        locale="ko"
+      />
     </QueryClientProvider>,
   );
 }
@@ -71,14 +61,14 @@ function renderAnswers(answers: Answer[], cursor: string | null, total = answers
 beforeEach(() => state.later.mockReset());
 
 describe('later answer pages', () => {
-  it('shows the total count and appends later answers page by page until the last one', async () => {
+  it('appends later answers page by page until the last one and then shows the exact count', async () => {
     state.later.mockImplementation(async (cursor: string) =>
       cursor === 'cursor-1'
         ? { items: [answer('second')], nextCursor: 'cursor-2' }
         : { items: [answer('third')], nextCursor: null },
     );
-    renderAnswers([answer('first')], 'cursor-1', 3);
-    expect(screen.getByRole('heading', { name: '함께 나눈 피드백3' })).toBeTruthy();
+    renderAnswers([answer('first')], 'cursor-1');
+    expect(screen.getByRole('heading', { name: '함께 나눈 피드백1개 이상' })).toBeTruthy();
     expect(state.later).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: '답변 더 보기' }));
     await waitFor(() => expect(screen.getByText('second 본문')).toBeTruthy());
@@ -91,6 +81,7 @@ describe('later answer pages', () => {
       'third 본문',
     ]);
     expect(screen.queryByRole('button', { name: '답변 더 보기' })).toBeNull();
+    expect(screen.getByRole('heading', { name: '함께 나눈 피드백3' })).toBeTruthy();
   });
 
   it('keeps the button for a retry when a later page fails', async () => {
@@ -98,7 +89,7 @@ describe('later answer pages', () => {
       items: [answer('later')],
       nextCursor: null,
     });
-    renderAnswers([answer('first')], 'cursor-1', 2);
+    renderAnswers([answer('first')], 'cursor-1');
     fireEvent.click(screen.getByRole('button', { name: '답변 더 보기' }));
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toBe('답변을 더 불러오지 못했어요. 다시 시도해주세요.'),

@@ -4,7 +4,7 @@ import { useId } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, LoaderCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 import { Button, Input } from '@side/design-system';
 
@@ -13,19 +13,17 @@ import { updatePostMutationOptions } from '@/features/post';
 import type { Post } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { BottomSheet, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, Field, useNotify, type IOverlayControlProps } from '@/shared/ui';
 
 import { postComposerSchema } from '../model/post-composer.schema';
 import { postContentInput } from '../model/post-content-input';
 import { usePostMediaUpload } from '../model/use-post-media-upload';
 import { PostContentFields } from './PostContentFields';
 
-interface IEditPostSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IEditPostSheetProps extends IOverlayControlProps {
   post: Post;
 }
-export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps) {
+export function EditPostSheet({ open, onOpenChange, onOpenChangeComplete, post }: IEditPostSheetProps) {
   const client = useQueryClient();
   const { t } = useI18n();
   const formId = useId();
@@ -57,10 +55,12 @@ export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps)
       /* Keep the edited draft and errors. */
     }
   });
+  const errorMessage = update.error?.message ?? upload.error?.message;
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       dismissible={!pending}
       title={t(post.board === 'FEEDBACK' ? '피드백 요청 수정' : '게시글 수정')}
       description={t('나누고 싶은 내용을 다듬어주세요.')}
@@ -69,8 +69,14 @@ export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps)
           <Button variant="secondary" type="button" disabled={pending} onClick={() => onOpenChange(false)}>
             {t('취소')}
           </Button>
-          <Button variant="accent" size="lg" type="submit" form={formId} disabled={pending}>
-            {pending ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+          <Button
+            variant="accent"
+            size="lg"
+            type="submit"
+            form={formId}
+            loading={pending}
+            icon={<Check aria-hidden />}
+          >
             {t('수정 완료')}
           </Button>
         </>
@@ -86,7 +92,7 @@ export function EditPostSheet({ open, onOpenChange, post }: IEditPostSheetProps)
           <Input readOnly value={post.category.name} aria-label={t('선택한 게임')} />
         </Field>
         <PostContentFields form={form} disabled={pending} onUploadMedia={handleUpload} />
-        <ErrorNotice message={update.error?.message ?? upload.error?.message} />
+        <ErrorNotice message={errorMessage && t(errorMessage)} />
       </form>
     </BottomSheet>
   );

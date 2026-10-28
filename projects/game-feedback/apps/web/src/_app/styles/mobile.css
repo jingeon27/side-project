@@ -56,7 +56,7 @@
     .conversation-row {
       border-inline-start: 0;
     }
-    .conversation-row.selected {
+    .conversation-row[aria-current='page'] {
       box-shadow: inset 3px 0 0 var(--color-accent);
     }
     .header-actions {
@@ -79,19 +79,6 @@
     .feed-topbar .header-actions {
       flex-shrink: 0;
       gap: 6px;
-    }
-    .feed-topbar .header-actions .icon-button {
-      color: var(--color-ink);
-    }
-    .feed-topbar .header-actions .icon-button > svg {
-      width: 22px;
-      height: 22px;
-    }
-    .header-actions .icon-button {
-      width: 44px;
-      height: 44px;
-      padding: 10px;
-      flex-shrink: 0;
     }
     .header-actions .header-notification-count,
     .header-actions .header-account {
@@ -139,7 +126,7 @@
       line-height: 15px;
       white-space: nowrap;
     }
-    .mobile-nav > a.active {
+    .mobile-nav > a[aria-current='page'] {
       color: var(--color-ink);
       font-weight: 700;
     }
@@ -149,10 +136,6 @@
       flex-wrap: wrap;
       gap: 12px;
     }
-    input.ds-input,
-    select.ds-input,
-    textarea.ds-input,
-    textarea.ds-textarea,
     .chat-compose textarea {
       font-size: 16px;
     }
@@ -161,7 +144,7 @@
     .community-shell:has(> .shell-route[data-screen='conversation']) .chat-page-heading {
       display: none;
     }
-    .chat-workspace.has-conversation {
+    .chat-workspace[data-has-conversation] {
       position: fixed;
       top: var(--visual-viewport-top, 0px);
       left: 0;
@@ -231,9 +214,6 @@
     color: var(--color-ink);
     font-size: var(--text-caption);
     box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
-  }
-  .preference-progress svg {
-    flex-shrink: 0;
   }
   .preference-option {
     display: inline-flex;

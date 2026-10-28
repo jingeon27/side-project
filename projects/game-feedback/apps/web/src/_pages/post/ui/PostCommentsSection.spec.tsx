@@ -31,8 +31,10 @@ vi.mock('@/shared/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/shared/ui')>()),
   useNotify: () => state.notify,
 }));
-vi.mock('./ContentActions', () => ({
-  ContentActions: ({ id }: { id: string }) => <button type="button">{id} 수정·삭제</button>,
+vi.mock('./CommentActions', () => ({
+  CommentActions: ({ comment }: { comment: { id: string } }) => (
+    <button type="button">{comment.id} 수정·삭제</button>
+  ),
 }));
 
 const author = {
@@ -76,7 +78,13 @@ function renderComments(comments: Comment[], cursor: string | null = null) {
   });
   return render(
     <QueryClientProvider client={client}>
-      <PostCommentsSection post={post} comments={comments} cursor={cursor} locale="ko" />
+      <PostCommentsSection
+        postId={post.id}
+        postAuthorId={post.author.id}
+        comments={comments}
+        cursor={cursor}
+        locale="ko"
+      />
     </QueryClientProvider>,
   );
 }

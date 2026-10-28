@@ -24,7 +24,7 @@ export function TopbarAccount({ href }: { href: string }) {
           variant="primary"
           size="sm"
           type="button"
-          className="button dark small-button"
+          className="small-button"
           onClick={handleLogin}
           aria-label={t('로그인 / 시작하기')}
         >

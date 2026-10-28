@@ -17,19 +17,13 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
   const tab = resolveAppRoute(path)?.tab;
   return (
     <nav className="mobile-nav" aria-label={t('모바일 메뉴')}>
-      <Link
-        href={home}
-        replace
-        className={tab === 'feed' || tab === 'boards' ? 'active' : ''}
-        aria-current={tab === 'feed' || tab === 'boards' ? 'page' : undefined}
-      >
+      <Link href={home} replace aria-current={tab === 'feed' || tab === 'boards' ? 'page' : undefined}>
         <Home size={20} />
         <span>{t('홈')}</span>
       </Link>
       <Link
         href={`${home}/messages`}
         replace
-        className={tab === 'messages' ? 'active' : ''}
         aria-current={tab === 'messages' ? 'page' : undefined}
         aria-label={chatUnread > 0 ? t('채팅 {count}개', { count: chatUnread }) : t('채팅')}
       >
@@ -41,12 +35,7 @@ export function MobileNav({ home, path, chatUnread }: IMobileNavProps) {
         </span>
         <span>{t('채팅')}</span>
       </Link>
-      <Link
-        href={`${home}/settings`}
-        replace
-        className={tab === 'settings' ? 'active' : ''}
-        aria-current={tab === 'settings' ? 'page' : undefined}
-      >
+      <Link href={`${home}/settings`} replace aria-current={tab === 'settings' ? 'page' : undefined}>
         <UserRound size={20} />
         <span>{t('프로필')}</span>
       </Link>

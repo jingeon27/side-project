@@ -4,7 +4,7 @@ import { use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, LoaderCircle, MessageSquare, Plus } from 'lucide-react';
+import { ArrowUpRight, MessageSquare, Plus } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
@@ -17,6 +17,7 @@ import { useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
+import { feedSnapshotSearch } from '../model/feed-snapshot-search';
 import type { IFeedSnapshot } from '../model/feed-snapshot.type';
 import { FeedFilters } from './FeedFilters';
 import { FeedTopbar } from './FeedTopbar';
@@ -67,8 +68,7 @@ function FeedResultsRegion({
   const { t } = useI18n();
   const { session } = useSession();
   const initial = 'then' in initialFeed ? use(initialFeed) : initialFeed;
-  const initialSearch = new URLSearchParams({ q: initial.q, tab: initial.tab }).toString();
-  const search = useBrowserSearch(`?${initialSearch}`, `/${locale}`);
+  const search = useBrowserSearch(feedSnapshotSearch(initial), appRoutes.feed(locale));
   const params = new URLSearchParams(search);
   const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';
   const q = params.get('q')?.trim().slice(0, 100) ?? '';
@@ -167,12 +167,12 @@ function FeedResults({
           variant="secondary"
           size="lg"
           fullWidth
-          type="submit"
-          className="button outline full load-more"
-          disabled={feed.isFetchingNextPage}
+          type="button"
+          className="load-more"
+          loading={feed.isFetchingNextPage}
+          icon={<Plus aria-hidden />}
           onClick={() => feed.fetchNextPage()}
         >
-          {feed.isFetchingNextPage ? <LoaderCircle className="spin" size={17} /> : <Plus size={16} />}
           {t('더 많은 글 보기')}
         </Button>
       )}

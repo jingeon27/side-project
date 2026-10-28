@@ -207,7 +207,7 @@
     font-weight: 600;
     color: var(--color-muted);
   }
-  .answer-count.has-answers {
+  .answer-count[data-has-answers] {
     color: var(--color-muted);
   }
   .answer-count > svg:last-child {

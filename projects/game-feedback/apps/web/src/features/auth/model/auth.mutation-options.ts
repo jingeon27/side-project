@@ -2,7 +2,7 @@ import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 
 import type { TLoginProvider } from '@game-feedback/bridge';
 
-import { ApiError } from '@/shared/api';
+import { ApiError, type Session } from '@/shared/api';
 import { requestNativeLogin } from '@/shared/native';
 
 import {
@@ -16,18 +16,27 @@ import {
 } from '../api/auth.api';
 import { clearAuthenticatedSession, refreshSession, replaceSession } from './session-cache';
 
-export function demoLoginMutationOptions(client: QueryClient, notify: (text: string) => void) {
+/**
+ * 계정 전환 뒤 실행할 호출부의 후속 처리(번역한 알림 등).
+ * 세션을 바꾸면 OverlayProvider가 다시 마운트되어 `mutate`의 콜백이 사라지므로 options의 onSuccess에서 부른다.
+ */
+type TAfterSuccess<TData = unknown> = (data: TData) => void;
+
+export function demoLoginMutationOptions(client: QueryClient, afterSuccess?: TAfterSuccess<Session>) {
   return mutationOptions({
     mutationKey: ['auth', 'demo-login'],
     mutationFn: postDemoLogin,
     onSuccess: async (session) => {
       await replaceSession(client, session);
-      notify('반가워요! 함께 플레이를 나눠봐요.');
+      afterSuccess?.(session);
     },
   });
 }
 
-export function completeOnboardingMutationOptions(client: QueryClient, notify: (text: string) => void) {
+export function completeOnboardingMutationOptions(
+  client: QueryClient,
+  afterSuccess?: TAfterSuccess<Session>,
+) {
   return mutationOptions({
     mutationKey: ['auth', 'complete-onboarding'],
     mutationFn: postOnboarding,
@@ -37,40 +46,40 @@ export function completeOnboardingMutationOptions(client: QueryClient, notify: (
     },
     onSuccess: async (session) => {
       await replaceSession(client, session);
-      notify('반가워요! 함께 플레이를 나눠봐요.');
+      afterSuccess?.(session);
     },
   });
 }
 
-export function testAccountLoginMutationOptions(client: QueryClient, notify: (text: string) => void) {
+export function testAccountLoginMutationOptions(client: QueryClient, afterSuccess?: TAfterSuccess<Session>) {
   return mutationOptions({
     mutationKey: ['auth', 'test-account-login'],
     mutationFn: postTestLogin,
     onSuccess: async (session) => {
       await replaceSession(client, session);
-      notify(`${session.user?.nickname ?? '테스트 계정'} 계정으로 시작했어요.`);
+      afterSuccess?.(session);
     },
   });
 }
 
-export function logoutMutationOptions(client: QueryClient, notify: (text: string) => void) {
+export function logoutMutationOptions(client: QueryClient, afterSuccess?: TAfterSuccess) {
   return mutationOptions({
     mutationKey: ['auth', 'logout'],
     mutationFn: postLogout,
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await clearAuthenticatedSession(client);
-      notify('로그아웃했어요. 다음 플레이에서 만나요!');
+      afterSuccess?.(result);
     },
   });
 }
 
-export function deleteAccountMutationOptions(client: QueryClient, notify: (text: string) => void) {
+export function deleteAccountMutationOptions(client: QueryClient, afterSuccess?: TAfterSuccess) {
   return mutationOptions({
     mutationKey: ['auth', 'delete-account'],
     mutationFn: deleteMembership,
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await clearAuthenticatedSession(client);
-      notify('회원 탈퇴가 완료되었어요.');
+      afterSuccess?.(result);
     },
   });
 }

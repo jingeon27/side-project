@@ -1,4 +1,4 @@
-import { useEffect, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
+import { useEffect, useEffectEvent, type BaseSyntheticEvent, type KeyboardEvent } from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useWatch } from 'react-hook-form';
@@ -12,6 +12,7 @@ import {
 } from '@/features/chat';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/analytics';
 import { ApiError } from '@/shared/api';
+import { isUploadableMediaSize, isUploadableMediaType } from '@/shared/lib/media-types';
 import { useZodForm } from '@/shared/model/form';
 
 import { useDesktopKeyboard } from './use-desktop-keyboard';
@@ -44,12 +45,12 @@ export function useChatComposer({
   const fileError = form.formState.errors.root?.attachment?.message ?? null;
   const desktopKeyboard = useDesktopKeyboard();
   const busy = mutation.isPending || upload.isPending || remove.isPending;
-  useEffect(() => {
+  // 보냈거나 지운 첨부는 upload.reset()으로 비운다. 대화를 떠날 때 아직 남은 미전송 첨부만 정리한다.
+  const handleLeave = useEffectEvent((leftConversationId: string) => {
     const attachment = upload.data;
-    return () => {
-      if (attachment) void discardChatAttachment(conversationId, attachment.id).catch(() => {});
-    };
-  }, [conversationId, upload.data]);
+    if (attachment) void discardChatAttachment(leftConversationId, attachment.id).catch(() => {});
+  });
+  useEffect(() => () => handleLeave(conversationId), [conversationId]);
 
   async function handleSend({ body }: z.output<typeof messageSchema>) {
     if (
@@ -113,13 +114,11 @@ export function useChatComposer({
   }
   async function handleFile(file?: File) {
     if (!file || busy || unavailable) return;
-    if (file.size > 25 * 1024 * 1024 || file.size === 0) {
+    if (!isUploadableMediaSize(file.size)) {
       form.setError('root.attachment', { message: '파일은 25MB 이하로 선택해주세요.' });
       return;
     }
-    if (
-      !['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'].includes(file.type)
-    ) {
+    if (!isUploadableMediaType(file.type)) {
       form.setError('root.attachment', { message: '지원하는 이미지나 동영상 파일을 선택해주세요.' });
       return;
     }

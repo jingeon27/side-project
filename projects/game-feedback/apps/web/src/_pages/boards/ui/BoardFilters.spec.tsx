@@ -52,7 +52,7 @@ describe('고정 게시판 필터 링크', () => {
   it('코칭 역할의 활성 표시를 URL 변경에 맞춰 갱신해야 한다', async () => {
     mount(
       '/ko/boards/coaching?q=lesson&game=brawl-stars&coachingRole=STUDENT',
-      <CoachingFilters locale="ko" slug="coaching" />,
+      <CoachingFilters locale="ko" slug="coaching" initialSearch="" />,
     );
     expect(screen.getByRole('link', { name: '코치 구함' }).getAttribute('aria-current')).toBe('page');
     const coach = hrefOf('수강생 모집');
@@ -68,7 +68,7 @@ describe('고정 게시판 필터 링크', () => {
   it('전투 유형 링크에서 게임과 검색어를 유지하고 잘못된 유형은 전체로 표시해야 한다', () => {
     mount(
       '/ko/boards/friendly?q=battle&game=brawl-stars&battleMode=invalid',
-      <BattleFilters locale="ko" slug="friendly" />,
+      <BattleFilters locale="ko" slug="friendly" initialSearch="" />,
     );
     expect(screen.getByRole('link', { name: '전체' }).getAttribute('aria-current')).toBe('page');
     expect(Object.fromEntries(hrefOf('1:1').searchParams)).toEqual({

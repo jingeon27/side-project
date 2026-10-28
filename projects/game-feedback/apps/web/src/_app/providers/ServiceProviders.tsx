@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { LanguageProvider, type TLocale } from '@/shared/i18n';
+import { LanguageProvider, translate, type TLocale } from '@/shared/i18n';
 import { ThemeProvider } from '@/shared/theme';
 import { ServiceErrorBoundary } from '@/shared/ui';
 
@@ -17,7 +17,7 @@ export function ServiceProviders({
   context: Awaited<ReturnType<typeof serviceContext>>;
 }) {
   return (
-    <ServiceErrorBoundary title="서비스 연결" refreshOnRetry>
+    <ServiceErrorBoundary title={translate(locale, '서비스 연결')} refreshOnRetry>
       <LanguageProvider
         initialLocale={locale}
         initialPreference={context.language}

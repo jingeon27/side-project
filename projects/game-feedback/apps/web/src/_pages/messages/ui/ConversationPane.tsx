@@ -6,6 +6,7 @@ import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowLeft } from 'lucide-react';
 
 import { appRoutes } from '@game-feedback/bridge';
+import { cn, iconButtonVariants } from '@side/design-system';
 
 import { chatMessageOptions } from '@/features/chat';
 import { UserBadges } from '@/features/user';
@@ -68,10 +69,10 @@ export function ConversationPane({ conversationId, userId, locale }: IConversati
           href={appRoutes.messages(locale)}
           parentOnly
           scroll={false}
-          className="icon-button chat-back"
+          className={cn(iconButtonVariants(), 'min-[761px]:hidden')}
           aria-label={t('대화 목록으로 돌아가기')}
         >
-          <ArrowLeft size={19} />
+          <ArrowLeft className="size-5" aria-hidden />
         </BackLink>
         <Link
           className="conversation-peer-profile"

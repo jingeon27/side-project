@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircle, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { z } from 'zod';
 
 import { PlayerTagSchema } from '@game-feedback/contracts';
@@ -25,6 +25,7 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
   const client = useQueryClient();
   const preview = useMutation(lookupGameProfileMutationOptions(client));
   const tagField = form.register('playerTag');
+  const errorMessage = form.formState.errors.playerTag?.message ?? preview.error?.message;
   return (
     <form
       className="connect-profile"
@@ -55,16 +56,16 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
           <Button
             variant="primary"
             size="md"
-            className="button dark"
             type="submit"
-            disabled={disabled || preview.isPending}
+            disabled={disabled}
+            loading={preview.isPending}
+            icon={<Search aria-hidden />}
           >
-            {preview.isPending ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
             {t('조회')}
           </Button>
         </div>
       </Field>
-      <ErrorNotice message={form.formState.errors.playerTag?.message ?? preview.error?.message} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
       {preview.data && (
         <div className="profile-preview">
           <ProfileSnapshot profile={preview.data} />

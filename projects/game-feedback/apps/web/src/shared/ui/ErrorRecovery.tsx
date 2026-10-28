@@ -8,6 +8,7 @@ import { getContactEmail } from '@/shared/config';
 import { useI18n } from '@/shared/i18n';
 
 interface IErrorRecoveryProps {
+  /** 번역을 마친 영역 이름 */
   title: string;
   onRetry: () => void;
   pending?: boolean;
@@ -30,7 +31,7 @@ export function ErrorRecovery({
     <section
       className={cn('error-recovery', className)}
       role="alert"
-      aria-label={`${t(title)} ${t('오류')}`}
+      aria-label={`${title} ${t('오류')}`}
       aria-busy={pending}
     >
       <h2>

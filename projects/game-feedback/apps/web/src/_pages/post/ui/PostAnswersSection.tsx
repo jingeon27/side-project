@@ -9,26 +9,34 @@ import { MessageSquare } from 'lucide-react';
 import { Button } from '@side/design-system';
 
 import { AnswerCard, laterAnswerOptions } from '@/features/answer';
+import { useSession } from '@/features/auth';
 import { AuthorLink, UserBadges } from '@/features/user';
-import type { Answer, Post } from '@/shared/api';
+import type { Answer } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 
+import { AnswerActions } from './AnswerActions';
 import { AnswerComposer } from './AnswerComposer';
-import { ContentActions } from './ContentActions';
 import { HelpfulAnswerButton } from './HelpfulAnswerButton';
 
 interface IPostAnswersSectionProps {
-  post: Post;
+  postId: string;
+  postAuthorId: string;
   answers: Answer[];
   /** 상세 첫 페이지 다음 답변의 커서. 없으면 모두 받은 상태다. */
   cursor: string | null;
-  userId?: string;
   locale: string;
 }
-export function PostAnswersSection({ post, answers, cursor, userId, locale }: IPostAnswersSectionProps) {
+export function PostAnswersSection({
+  postId,
+  postAuthorId,
+  answers,
+  cursor,
+  locale,
+}: IPostAnswersSectionProps) {
   const { t } = useI18n();
+  const userId = useSession().session.user?.id;
   const [showLater, setShowLater] = useState(false);
-  const later = useInfiniteQuery({ ...laterAnswerOptions(post.id, cursor), enabled: showLater && !!cursor });
+  const later = useInfiniteQuery({ ...laterAnswerOptions(postId, cursor), enabled: showLater && !!cursor });
   // 페이지는 도움됨 → 오래된 순으로 이어지므로 받은 순서대로 뒤에 붙인다.
   const loaded = uniqBy(
     [...answers, ...(later.data?.pages ?? []).flatMap((page) => page.items)],
@@ -53,7 +61,7 @@ export function PostAnswersSection({ post, answers, cursor, userId, locale }: IP
       <div className="section-title-row">
         <h2>
           {t('함께 나눈 피드백')}
-          <span>{Math.max(post.answerCount, loaded.length)}</span>
+          <span>{hasLater ? t('{count}개 이상', { count: loaded.length }) : loaded.length}</span>
         </h2>
         <span className="small muted">{t('플레이를 이야기하고, 서로를 존중해요')}</span>
       </div>
@@ -70,18 +78,9 @@ export function PostAnswersSection({ post, answers, cursor, userId, locale }: IP
           answer={answer}
           authorName={<AuthorLink author={answer.author} locale={locale} />}
           authorContent={<UserBadges author={answer.author} />}
-          actions={
-            <ContentActions
-              type="ANSWER"
-              id={answer.id}
-              author={answer.author}
-              body={answer.body}
-              post={post}
-              locale={locale}
-            />
-          }
+          actions={<AnswerActions answer={answer} />}
           helpfulControl={
-            post.author.id === userId && answer.author.id !== userId ? (
+            postAuthorId === userId && answer.author.id !== userId ? (
               <HelpfulAnswerButton answer={answer} />
             ) : undefined
           }
@@ -103,7 +102,7 @@ export function PostAnswersSection({ post, answers, cursor, userId, locale }: IP
           )}
         </div>
       )}
-      <AnswerComposer postId={post.id} />
+      <AnswerComposer postId={postId} />
     </section>
   );
 }

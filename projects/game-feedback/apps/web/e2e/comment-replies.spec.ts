@@ -226,7 +226,7 @@ test('a reply notifies both authors, updates unread counts and opens the exact r
     await inboxPage.goto('/ko/notifications');
     const row = inboxPage.locator('.notification-item').filter({ hasText: replyName });
     await expect(row).toContainText('새로운 답글이 달렸어요');
-    await expect(row).toHaveClass(/unread/);
+    await expect(row).toHaveAttribute('data-unread');
     await expect(row).toHaveAttribute('href', `/ko/posts/${post.id}#comment-${notification.commentId}`);
     await row.click();
     await expect(inboxPage).toHaveURL(

@@ -40,6 +40,8 @@ function BoardsContent(props: IBoardsPageProps) {
   const { session, requireLogin } = useSession();
   const router = useRouter();
   if (!board) return null;
+  // RSC 이동은 snapshot이 Promise라 브라우저 URL을 그대로 읽는다.
+  const filterSearch = 'then' in initialBoard ? '' : boardSnapshotSearch(initialBoard);
   function handleCompose() {
     if (!session.user) {
       requireLogin();
@@ -63,14 +65,13 @@ function BoardsContent(props: IBoardsPageProps) {
           {t(board.kind === 'COACHING' ? '코칭 등록' : '글쓰기')}
         </Button>
       </div>
-      {board.kind === 'FEEDBACK' && (
-        <FeedbackFilters
-          locale={locale}
-          initialSearch={'then' in initialBoard ? '' : boardSnapshotSearch(initialBoard)}
-        />
+      {board.kind === 'FEEDBACK' && <FeedbackFilters locale={locale} initialSearch={filterSearch} />}
+      {board.kind === 'FRIENDLY' && (
+        <BattleFilters locale={locale} slug={slug} initialSearch={filterSearch} />
       )}
-      {board.kind === 'FRIENDLY' && <BattleFilters locale={locale} slug={slug} />}
-      {board.kind === 'COACHING' && <CoachingFilters locale={locale} slug={slug} />}
+      {board.kind === 'COACHING' && (
+        <CoachingFilters locale={locale} slug={slug} initialSearch={filterSearch} />
+      )}
       <AsyncBoundary
         title={t('게시판')}
         resetKey={`${session.user?.id}:${slug}`}
@@ -85,7 +86,7 @@ function BoardsContent(props: IBoardsPageProps) {
 }
 function BoardPostsRegion({ locale, slug, initialBoard }: IBoardsPageProps) {
   const initial = 'then' in initialBoard ? use(initialBoard) : initialBoard;
-  const search = useBrowserSearch(boardSnapshotSearch(initial), `/${locale}/boards/${slug}`);
+  const search = useBrowserSearch(boardSnapshotSearch(initial), appRoutes.boards(locale, slug));
   const filters = readBoardFilters(search);
   const { session } = useSession();
   const { t } = useI18n();

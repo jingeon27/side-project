@@ -8,7 +8,7 @@ import { uniqBy } from 'es-toolkit';
 import { Button } from '@side/design-system';
 
 import { olderCommentOptions } from '@/features/comment';
-import type { Comment, Post } from '@/shared/api';
+import type { Comment } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 
 import { commentThreads } from '../model/comment-threads';
@@ -16,17 +16,24 @@ import { PostCommentForm } from './PostCommentForm';
 import { PostCommentThread } from './PostCommentThread';
 
 interface IPostCommentsSectionProps {
-  post: Post;
+  postId: string;
+  postAuthorId: string;
   comments: Comment[];
   /** 상세 첫 페이지보다 이전 원댓글 스레드의 커서. 없으면 모두 받은 상태다. */
   cursor: string | null;
   locale: string;
 }
-export function PostCommentsSection({ post, comments, cursor, locale }: IPostCommentsSectionProps) {
+export function PostCommentsSection({
+  postId,
+  postAuthorId,
+  comments,
+  cursor,
+  locale,
+}: IPostCommentsSectionProps) {
   const { t } = useI18n();
   const headingId = useId();
   const [showOlder, setShowOlder] = useState(false);
-  const older = useInfiniteQuery({ ...olderCommentOptions(post.id, cursor), enabled: showOlder && !!cursor });
+  const older = useInfiniteQuery({ ...olderCommentOptions(postId, cursor), enabled: showOlder && !!cursor });
   // 페이지는 최근 스레드부터 이어 받으므로 뒤 페이지일수록 오래된 댓글이다.
   const olderComments = [...(older.data?.pages ?? [])].reverse().flatMap((page) => page.items);
   const loaded = uniqBy([...olderComments, ...comments], (comment) => comment.id);
@@ -71,10 +78,15 @@ export function PostCommentsSection({ post, comments, cursor, locale }: IPostCom
       {threads.length === 0 && !hasOlder && <p className="comments-empty">{t('아직 댓글이 없어요.')}</p>}
       <ol className="comment-list" aria-label={t('댓글')}>
         {threads.map((thread) => (
-          <PostCommentThread key={thread.comment.id} thread={thread} post={post} locale={locale} />
+          <PostCommentThread
+            key={thread.comment.id}
+            thread={thread}
+            postAuthorId={postAuthorId}
+            locale={locale}
+          />
         ))}
       </ol>
-      <PostCommentForm postId={post.id} />
+      <PostCommentForm postId={postId} />
     </section>
   );
 }

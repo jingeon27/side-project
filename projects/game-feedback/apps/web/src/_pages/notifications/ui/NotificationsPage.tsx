@@ -1,8 +1,9 @@
 'use client';
 
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Bell, CheckCheck, LoaderCircle } from 'lucide-react';
+import { ArrowUpRight, Bell, CheckCheck } from 'lucide-react';
 
+import { appRoutes } from '@game-feedback/bridge';
 import { Button } from '@side/design-system';
 import { ButtonLink } from '@side/design-system/next';
 
@@ -15,7 +16,7 @@ import {
 } from '@/features/notification';
 import { PushNotificationSettings } from '@/features/push-notifications';
 import { useI18n } from '@/shared/i18n';
-import { AsyncBoundary, ErrorNotice, LoadingState } from '@/shared/ui';
+import { AsyncBoundary, ErrorNotice } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
 import { NotificationsTopbar } from './NotificationsTopbar';
@@ -25,8 +26,7 @@ interface INotificationsPageProps {
 }
 function NotificationsContent({ locale }: INotificationsPageProps) {
   const { t } = useI18n();
-  const { session, login, loading } = useSession();
-  if (loading) return <LoadingState />;
+  const { session, login } = useSession();
   if (!session?.user)
     return (
       <div className="empty-feed">
@@ -35,7 +35,7 @@ function NotificationsContent({ locale }: INotificationsPageProps) {
         </span>
         <h1>{t('당신의 플레이에 도착한 소식')}</h1>
         <p>{t('로그인하면 새로운 피드백과 댓글을 확인할 수 있어요.')}</p>
-        <Button variant="primary" size="md" type="submit" className="button dark" onClick={() => login()}>
+        <Button variant="primary" size="md" type="button" className="button" onClick={() => login()}>
           {t('로그인하고 확인하기')}
           <ArrowUpRight size={16} />
         </Button>
@@ -60,7 +60,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
         <h1>{t('새로운 시선이 도착했어요')}</h1>
         <p>{t('플레이를 함께 고민해 준 사람들의 이야기를 확인하세요.')}</p>
       </div>
-      <PushNotificationSettings />
+      <PushNotificationSettings userId={userId} />
       <div className="section-title-row">
         <h2>
           {t('내 알림')}
@@ -71,7 +71,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           {t('모두 읽음')}
         </button>
       </div>
-      <ErrorNotice message={mutation.error?.message} />
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
       {!items.length && (
         <div className="empty-feed">
           <span>
@@ -79,7 +79,7 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           </span>
           <h3>{t('아직 도착한 소식이 없어요')}</h3>
           <p>{t('피드백 요청을 남기고 새로운 이야기를 만나보세요.')}</p>
-          <ButtonLink variant="secondary" size="md" href={`/${locale}`} className="button outline">
+          <ButtonLink variant="secondary" size="md" href={appRoutes.feed(locale)} className="button">
             {t('피드 둘러보기')}
           </ButtonLink>
         </div>
@@ -99,12 +99,11 @@ function NotificationInbox({ userId, locale }: INotificationsPageProps & { userI
           variant="secondary"
           size="lg"
           fullWidth
-          type="submit"
-          className="button outline full"
-          disabled={query.isFetchingNextPage}
+          type="button"
+          className="button"
+          loading={query.isFetchingNextPage}
           onClick={() => query.fetchNextPage()}
         >
-          {query.isFetchingNextPage && <LoaderCircle className="spin" size={16} />}
           {t('이전 알림 보기')}
         </Button>
       )}

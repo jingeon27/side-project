@@ -33,6 +33,12 @@ Game Feedback의 공개 Web과 별도 Admin에 같은 코드 품질 기준을 �
 - 객체 타입은 타입 추론을 유지하는 `satisfies`를 우선한다. 상태를 가진 외부 채널·수명 관리는 가변 let 클로저 대신 class로 캡슐화한다. UI 데이터 변환을 위해 class를 추가하지 않는다.
 - 버튼·입력·모달·토큰은 `@side/design-system`의 shadcn + Base UI를 사용한다. 앱에서 기본 컨트롤과 타이포를 다시 정의하지 않는다. 고정 메뉴·상태 선택지는 JSX로 명시하고 서버 목록은 map으로 렌더링한다.
 
+## 상태 스타일과 variant
+
+- 화면은 주로 CSS 파일과 class 이름으로 꾸민다. 도움됨·읽지 않음·내 글·답변 있음처럼 켜짐/꺼짐 하나인 상태는 modifier class를 문자열로 이어 붙이지 않고 `data-*` 속성(뜻이 맞으면 `aria-current`·`aria-pressed` 같은 `aria-*`)으로 표시해 CSS 속성 선택자(`.comment[data-mine]`, `.side-link[aria-current='page']`)로 꾸민다. 꺼짐은 `undefined`로 속성을 빼고(`data-mine={mine || undefined}`), 값이 여럿인 상태는 `data-connection={connection}`처럼 값을 넣는다. Web lint가 `className`의 표현식 template literal을 막는다.
+- class-variance-authority는 앱 전용 컴포넌트가 variant 축 2개 이상이거나 값 3개 이상을 여러 곳에서 다시 쓸 때만 쓴다. 컴포넌트 옆 `*.variants.ts`에 두고 `VariantProps` 타입을 함께 export한다.
+- 버튼·칩·배지·아이콘 버튼 같은 범용 모양은 `@side/design-system`의 variant로 더한다. 앱에 복제본을 만들지 않는다.
+
 ## 완료 확인
 
 - 대상 앱의 lint·typecheck·기존 테스트를 실행한다. 탐색·캐시·폼 동작을 변경했다면 사용자 동작을 검증하는 테스트를 추가하고 관련 E2E를 실행한다. 코드 배치나 문구를 그대로 복사하는 테스트는 만들지 않는다.
