@@ -35,7 +35,7 @@ GitHub Actions의 `Blog / verify`는 콘텐츠 검증, 타입, lint, Vitest, pro
 
 ## GA4
 
-1. GA4 속성과 웹 데이터 스트림을 만들고 측정 ID를 `NEXT_PUBLIC_GA_MEASUREMENT_ID`에 지정합니다.
+1. 운영 빌드는 기본 측정 ID `G-7ZET0K4PSC`를 사용합니다. 다른 스트림을 쓰려면 `NEXT_PUBLIC_GA_MEASUREMENT_ID`에 지정하고 재빌드합니다. 빈 문자열을 명시하면 GA4를 끕니다. 개발·테스트에서는 ID를 지정하지 않으면 수집하지 않습니다. Vercel Preview는 production 빌드이므로 운영 통계에 포함하지 않으려면 Preview 환경에 빈 문자열을 지정합니다.
 2. **향상된 측정의 Page views → 고급 설정 → 브라우저 방문 기록 이벤트에 기반한 페이지 변경을 끕니다.** 앱은 `send_page_view: false`로 초기화하고 경로 변경마다 수동 `page_view`를 한 번 전송합니다. GA4의 이 설정이 켜져 있으면 중복 페이지뷰가 발생할 수 있습니다. [공식 페이지뷰 문서](https://developers.google.com/analytics/devguides/collection/ga4/views?hl=ko)
 3. 향상된 측정의 사이트 검색 수집도 끕니다. 앱 검색은 로컬 제목·태그 필터이며 `search_performed`에는 `has_query`만 보냅니다. 외부 링크 측정은 링크 URL에 민감한 정보가 포함되지 않는지 확인한 뒤 활성화합니다.
 4. 동의 배너는 두지 않습니다. 모든 방문자에게서 GA4 방문 통계와 Clarity를 수집하고(opt-out), 방문자는 `/ko/privacy`·`/en/privacy`의 ‘수집 끄기’로 이 브라우저의 수집을 끄거나 다시 켭니다. 끄면 GA 쿠키를 지우고 전송을 멈추며 Clarity도 멈춥니다.

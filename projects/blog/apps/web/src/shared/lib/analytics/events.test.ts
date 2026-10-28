@@ -17,6 +17,35 @@ afterEach(() => {
 });
 
 describe('opt-out visit statistics', () => {
+  it('loads the blog stream in production without automatic pageviews', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', undefined);
+    const analytics = await import('@/shared/lib/analytics/events');
+    analytics.initializeAnalytics();
+    expect(document.querySelector('#blog-google-analytics')).toHaveAttribute(
+      'src',
+      'https://www.googletagmanager.com/gtag/js?id=G-7ZET0K4PSC',
+    );
+    expect(window.dataLayer).toContainEqual([
+      'config',
+      'G-7ZET0K4PSC',
+      expect.objectContaining({ send_page_view: false }),
+    ]);
+  });
+  it.each(['development', 'test'] as const)('does not load the production stream in %s', async (mode) => {
+    vi.stubEnv('NODE_ENV', mode);
+    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', undefined);
+    const analytics = await import('@/shared/lib/analytics/events');
+    analytics.initializeAnalytics();
+    expect(document.querySelector('#blog-google-analytics')).toBeNull();
+  });
+  it('allows production previews to disable the default stream with an empty ID', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', '');
+    const analytics = await import('@/shared/lib/analytics/events');
+    analytics.initializeAnalytics();
+    expect(document.querySelector('#blog-google-analytics')).toBeNull();
+  });
   it('makes no script or event without a measurement ID', async () => {
     vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', '');
     const analytics = await import('@/shared/lib/analytics/events');
