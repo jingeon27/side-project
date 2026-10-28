@@ -17,7 +17,7 @@ const MESSAGE = {
   REMOVE_OWNER: '그룹장은 내보낼 수 없습니다.',
   MODERATOR_REMOVES_MEMBERS_ONLY: '부관리자는 일반 멤버만 내보낼 수 있습니다.',
   OWNER_CANNOT_LEAVE: '그룹장은 다른 멤버에게 관리자를 양도한 뒤 나갈 수 있습니다.',
-} as const;
+} as const satisfies Record<string, string>;
 
 @Injectable()
 export class GroupAdministrationService {
