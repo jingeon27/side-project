@@ -26,14 +26,14 @@ app/
 ├── (auth)/login/*              # 로그인
 ├── (main)/                     # 메인 기능
 ├── finance/
-│   └── (secondaryLayout)/*     # 정산 — 별도 레이아웃, 같은 코드베이스
+│   └── (secondaryLayout)/*     # 정산: 별도 레이아웃, 같은 코드베이스
 └── api/                        # API Routes (BFF)
 ```
 
 The (secondaryLayout) route group under finance gives settlement a separate layout. middleware.ts enforces hosts by path: /finance/* on the main host redirects to settlement; non-settlement paths on settlement redirect to main.
 
 ```typescript
-// middleware.ts (분리 8일 차 버전 — 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
+// middleware.ts (분리 8일 차 버전: 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
 function routeToRequiredHost(request: NextRequest, domain: string | undefined) {
   if (!domain) return NextResponse.next();
   const host = domain.replace(/^https?:\/\//, '');
@@ -86,7 +86,7 @@ The initial proposal was a two-stage middleware redirect.
 2. Store those tokens in settlement cookies and redirect again to remove the parameters.
 
 ```typescript
-// middleware.ts (1단계 — 지금은 제거된 버전)
+// middleware.ts (1단계: 지금은 제거된 버전)
 if (request.nextUrl.pathname.startsWith('/finance')) {
   const secondaryHost = secondaryOrigin?.replace(/^https?:\/\//, '');
 
@@ -436,9 +436,9 @@ React turned the string none into empty crossorigin. It affected only client com
 
 I found matching upstream reports and a proposed fix.
 
-- [Next.js #96831](https://github.com/vercel/next.js/issues/96831) — reproduction and symptoms
-- [Next.js #96834](https://github.com/vercel/next.js/pull/96834) — an initial proposal closed without merging
-- [Next.js #97164](https://github.com/vercel/next.js/pull/97164) — the merged fix omitting the field for CrossOrigin::None
+- [Next.js #96831](https://github.com/vercel/next.js/issues/96831): reproduction and symptoms
+- [Next.js #96834](https://github.com/vercel/next.js/pull/96834): an initial proposal closed without merging
+- [Next.js #97164](https://github.com/vercel/next.js/pull/97164): the merged fix omitting the field for CrossOrigin::None
 
 The matching report and proposed fix narrowed the cause to a 16.3.0 serialization regression. Checked on October 28, 2026, #96834 was closed without merging; the actual fix, #97164, had merged into canary on August 12. [The Next.js upgrade article](/en/blog/nextjs-server-client-issues) records the later build-output check confirming the field was absent after the benefits portal upgraded to 16.3.6.
 

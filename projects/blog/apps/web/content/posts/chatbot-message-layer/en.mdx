@@ -34,7 +34,7 @@ src/modules/entities/chat/chatbot/
 The initial requirement was to send a question and display the answer. We neither designed nor controlled the API. POST /chat/stream supplied SSE, which we parsed directly into live tokens.
 
 ```tsx
-// 초기 — AI 응답 스트림을 직접 파싱해 화면에 흘림
+// 초기: AI 응답 스트림을 직접 파싱해 화면에 흘림
 async function* parseSSEStream(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -76,7 +76,7 @@ These were separate externally controlled services, not two channels of one API.
 The first UI mirrored them: AiChatPanel for the AI stream and CounselingPanel for session SSE, switching modes with a counselor button.
 
 ```typescript
-// 상담사 연결이 '버튼'이던 시절 — EventSource 로 세션 SSE 구독
+// 상담사 연결이 '버튼'이던 시절: EventSource 로 세션 SSE 구독
 const subscribeSse = useCallback((sid: string) => {
   const es = fetchCounselingSubscribe(sid);
   es.addEventListener('status', (e) => {
@@ -91,7 +91,7 @@ const subscribeSse = useCallback((sid: string) => {
 }, []);
 ```
 
-But moving from AI to a counselor continues the same conversation. Splitting panels separated the message list, scroll, and session at the transition. Creation functions—createUserMessage, createCounselorMessage, and createSystemMessage—also gave the same concept different types by source.
+But moving from AI to a counselor continues the same conversation. Splitting panels separated the message list, scroll, and session at the transition. Creation functions (createUserMessage, createCounselorMessage, and createSystemMessage) also gave the same concept different types by source.
 
 ---
 
@@ -115,7 +115,7 @@ Combining behavior still had to happen on the client because neither backend cou
 const response = await chatClient.post('/chat/stream', body, {
   adapter: 'fetch',
   responseType: 'stream',
-  timeout: 30_000, // 30s 상한 — 생성이 오래 걸릴 수 있어 넉넉히
+  timeout: 30_000, // 30s 상한: 생성이 오래 걸릴 수 있어 넉넉히
 });
 const reader = (response.data as ReadableStream<Uint8Array>).getReader();
 try {
@@ -195,7 +195,7 @@ export class ChatStore {
 }
 ```
 
-React Query in the hook owns network actions—ending AI, sending messages, and the AI stream. The store owns SSE subscriptions and transitions. The external payloads were not fully documented either. I defensively parsed single items, arrays, and `{ messages: [] }` wrappers with Zod `.catch()` so one broken item did not discard everything.
+React Query in the hook owns network actions: ending AI, sending messages, and the AI stream. The store owns SSE subscriptions and transitions. The external payloads were not fully documented either. I defensively parsed single items, arrays, and `{ messages: [] }` wrappers with Zod `.catch()` so one broken item did not discard everything.
 
 This version worked, but I replaced it anyway.
 

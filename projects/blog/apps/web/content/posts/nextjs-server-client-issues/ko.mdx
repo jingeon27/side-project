@@ -236,14 +236,14 @@ CORS도 폼 초기화도 결정 하나가 잘못돼서가 아니라, 각각 맞�
 
 ## 참고
 
-- [vercel/next.js #92187](https://github.com/vercel/next.js/issues/92187), [#91658](https://github.com/vercel/next.js/issues/91658) — 검색 파라미터가 라우터 캐시에 잘못 저장되는 증상
-- [vercel/next.js PR #94144](https://github.com/vercel/next.js/pull/94144) — 캐시 키를 요청 URL의 검색 문자열로 바꾼 수정(16.3.0)
-- [vercel/next.js #96831](https://github.com/vercel/next.js/issues/96831), [PR #97164](https://github.com/vercel/next.js/pull/97164) — client reference manifest의 crossOrigin 직렬화
+- [vercel/next.js #92187](https://github.com/vercel/next.js/issues/92187), [#91658](https://github.com/vercel/next.js/issues/91658): 검색 파라미터가 라우터 캐시에 잘못 저장되는 증상
+- [vercel/next.js PR #94144](https://github.com/vercel/next.js/pull/94144): 캐시 키를 요청 URL의 검색 문자열로 바꾼 수정(16.3.0)
+- [vercel/next.js #96831](https://github.com/vercel/next.js/issues/96831), [PR #97164](https://github.com/vercel/next.js/pull/97164): client reference manifest의 crossOrigin 직렬화
 - [Next.js 문서: Linking and Navigating의 window.history.pushState](https://nextjs.org/docs/app/getting-started/linking-and-navigating#windowhistorypushstate)
 - [Next.js 문서: Server Actions의 Deployment considerations](https://nextjs.org/docs/app/guides/server-actions#deployment-considerations)
 - [Next.js 문서: Self-hosting의 Version Skew(deploymentId)](https://nextjs.org/docs/app/guides/self-hosting#version-skew)
 - [Next.js 문서: Preserving UI state](https://nextjs.org/docs/app/guides/preserving-ui-state)
 - [Next.js 문서: useRouter의 bfcacheId](https://nextjs.org/docs/app/api-reference/functions/use-router#bfcacheid)
-- 관련 글: [예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정](/ko/blog/예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정) — 공용 폼 훅을 쓰는 예약 폼
-- 관련 글: [동적 사이트맵에서 공개 API와 인증 API의 경계를 나눈 과정](/ko/blog/동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정) — Cache Components를 켠 계기
-- 관련 글: [오류가 난 영역만 다시 시도하도록 Error Boundary 나누기](/ko/blog/오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편) — 주소로 여는 Drawer와 Error Boundary
+- 관련 글: [예약 폼의 작성 상태를 Zustand에서 React Hook Form으로 옮긴 과정](/ko/blog/예약-폼의-작성-상태를-zustand에서-react-hook-form으로-옮긴-과정): 공용 폼 훅을 쓰는 예약 폼
+- 관련 글: [동적 사이트맵에서 공개 API와 인증 API의 경계를 나눈 과정](/ko/blog/동적-사이트맵을-만들며-공개-api와-인증-api의-경계를-나눈-과정): Cache Components를 켠 계기
+- 관련 글: [오류가 난 영역만 다시 시도하도록 Error Boundary 나누기](/ko/blog/오류는-남기고-화면은-덜-잃게-만든-에러-처리-개편): 주소로 여는 Drawer와 Error Boundary

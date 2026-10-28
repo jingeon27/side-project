@@ -26,14 +26,14 @@ app/
 ├── (auth)/login/*              # 로그인
 ├── (main)/                     # 메인 기능
 ├── finance/
-│   └── (secondaryLayout)/*     # 정산 — 별도 레이아웃, 같은 코드베이스
+│   └── (secondaryLayout)/*     # 정산: 별도 레이아웃, 같은 코드베이스
 └── api/                        # API Routes (BFF)
 ```
 
 가상 경로인 finance 아래의 (secondaryLayout) 라우트 그룹으로 정산 화면에 별도 레이아웃을 입히고, middleware.ts가 **경로에 따라 호스트를 강제**한다. 메인 호스트의 /finance/\* 요청은 정산 호스트로, 정산 호스트의 비-정산 경로는 메인 호스트로 리다이렉트한다.
 
 ```typescript
-// middleware.ts (분리 8일 차 버전 — 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
+// middleware.ts (분리 8일 차 버전: 첫날에는 matcher가 없었다. 현재는 proxy.ts이며 9장에서 다시 다룬다.)
 function routeToRequiredHost(request: NextRequest, domain: string | undefined) {
   if (!domain) return NextResponse.next();
   const host = domain.replace(/^https?:\/\//, '');
@@ -86,7 +86,7 @@ export const BASE_AUTH_COOKIE_SETTINGS: AuthCookieSettings = {
 2. 정산 호스트에서 토큰을 쿠키로 옮긴 뒤, 쿼리 문자열을 제거한 URL로 다시 리다이렉트
 
 ```typescript
-// middleware.ts (1단계 — 지금은 제거된 버전)
+// middleware.ts (1단계: 지금은 제거된 버전)
 if (request.nextUrl.pathname.startsWith('/finance')) {
   const secondaryHost = secondaryOrigin?.replace(/^https?:\/\//, '');
 
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-- **Origin 정확 일치 검증** — 메인 호스트의 POST만 허용하고, Origin이 없거나 null이면 거부한다
+- **Origin 정확 일치 검증**: 메인 호스트의 POST만 허용하고, Origin이 없거나 null이면 거부한다
 - 폼 HTML의 **Cache-Control: no-store\*와 secondaryOrigin 조기 반환은 유지한다
 
 수신 코드만 추가해서는 동작하지 않는다. 현재 핸드오프 응답의 Referrer-Policy: no-referrer는 교차 출처 폼 POST의 Origin을 null로 만들 수 있다. Origin 검증을 적용하려면 Referrer-Policy: origin으로 함께 바꾸거나 서명된 상태값 또는 CSRF 토큰을 써야 한다.
@@ -223,7 +223,7 @@ const openFinanceApp = (args: { key: string }) => {
 
 핸드오프 라우트에 경로 정규화와 응답 헤더를 추가했다. 아래는 **검토 시점의 작업 브랜치 구현**이며, Origin 검증과 nonce 기반 CSP는 아직 없다.
 
-**(1) 목적지 파라미터 정규화** — 이동 경로를 그대로 쓰면 오픈 리다이렉트나 제어문자 삽입에 취약하다. new URL로 파싱한 뒤 **경로명(pathname)만 추출**하고, /finance로 시작하지 않으면 기본 경로를 쓴다. 핸드오프 라우트와 BFF에 같은 함수를 적용했다.
+**(1) 목적지 파라미터 정규화**: 이동 경로를 그대로 쓰면 오픈 리다이렉트나 제어문자 삽입에 취약하다. new URL로 파싱한 뒤 **경로명(pathname)만 추출**하고, /finance로 시작하지 않으면 기본 경로를 쓴다. 핸드오프 라우트와 BFF에 같은 함수를 적용했다.
 
 ```typescript
 // 정산 경로 유틸리티
@@ -239,7 +239,7 @@ export function resolveDestination(destination: string | null) {
 
 http://x는 상대 경로 파싱에 쓰는 유효한 기준 URL이다. 외부 URL도 호스트와 쿼리를 버리고 경로명(pathname)만 남긴다. 그러나 현재 접두어 검사는 /finance-evil도 허용한다. 완전한 허용 목록이 되려면 pathname === '/finance' || pathname.startsWith('/finance/')처럼 경로 경계를 확인해야 한다.
 
-**(2) 현재 응답 보안 헤더** — 토큰 전달 폼의 캐시, 아이프레임 삽입, 외부 제출을 제한한다.
+**(2) 현재 응답 보안 헤더**: 토큰 전달 폼의 캐시, 아이프레임 삽입, 외부 제출을 제한한다.
 
 ```tsx
 // 핸드오프 BFF
@@ -436,9 +436,9 @@ React 수신 코드는 문자열 "none"을 빈 문자열로 바꿨고, HTML에�
 
 같은 원인을 다룬 Next.js 공식 이슈와 수정안도 확인했다.
 
-- [vercel/next.js#96831](https://github.com/vercel/next.js/issues/96831) — 재현과 증상 보고
-- [vercel/next.js#96834](https://github.com/vercel/next.js/pull/96834) — merge되지 않고 닫힌 초기 수정안
-- [vercel/next.js#97164](https://github.com/vercel/next.js/pull/97164) — CrossOrigin::None일 때 필드를 생략하는 실제 수정
+- [vercel/next.js#96831](https://github.com/vercel/next.js/issues/96831): 재현과 증상 보고
+- [vercel/next.js#96834](https://github.com/vercel/next.js/pull/96834): merge되지 않고 닫힌 초기 수정안
+- [vercel/next.js#97164](https://github.com/vercel/next.js/pull/97164): CrossOrigin::None일 때 필드를 생략하는 실제 수정
 
 같은 증상의 보고와 수정안을 통해 원인을 16.3.0의 직렬화 회귀로 좁혔다. 2026년 10월 28일 다시 확인했을 때 #96834는 merge되지 않고 닫혀 있었고, 실제 수정 #97164는 8월 12일 canary에 merge돼 있었다. 복지몰을 16.3.6으로 올린 뒤 필드가 빠진 빌드 산출물을 확인한 내용은 [Next.js 업그레이드 글](/ko/blog/nextjs를-사용하면서-겪었던-이슈들)에 덧붙였다.
 

@@ -108,17 +108,17 @@ Browsers still use same-origin `/api` or `/backend` paths, with the existing hos
 
 Web traffic enters through Caddy on ports 80 and 443. Web and API containers have service-specific Docker networks. Only API, operations, and migration containers join the database networks. Caddy and the web containers have no need to connect directly to the database. The [proxy and network settings](https://github.com/jingeon27/side-project/tree/65c3d13a/deploy/shared-instance) are in the deployment directory.
 
-## I also got mixed up about Terraform and CI permissions
+## I used Terraform to manage infrastructure as code
 
-After adding Terraform, I asked which AWS permissions I needed to run it. Signing into the console and authenticating local Terraform needed separate setup.
+I introduced Terraform to define the EC2 instance, network, EBS volume for PostgreSQL data, IAM policies, and backup bucket in code. I wanted the infrastructure configuration and its change history in the repository rather than having to remember which settings I had changed in the console. That became the infrastructure-as-code approach for the services.
 
-When CI failed on S3, I also wondered whether putting values in the deployment Environment would fix it. I had to check the S3 configuration for PR tests, environment files on the production server, and SSH deployment settings separately to understand what went where.
+I considered Lightsail at first too. After choosing EC2 as the deployment target, I removed the standalone Lightsail deployment configuration, leftover scripts, and documentation references. I kept the configuration aligned with the deployment approach I had chosen.
 
-In this setup I run Terraform locally. GitHub Actions builds images and delivers deployment work to the server over SSH. It does not need infrastructure administrator credentials. It does need an SSH key and a working network path from the runner. My being able to connect through SSM does not provide that path.
+I also corrected variable names that did not make their purpose clear. I renamed them to show what each value was for and updated the example files and guides to use the same names.
 
-The deployment Environment names were inconsistent too: `production` for one service and `photo-contest-production` for the other. After asking why, I aligned them as `game-feedback-production` and `photo-contest-production`.
+Terraform manages the underlying server and network. GitHub Actions builds the images and delivers deployment work to the existing EC2 instance over SSH. An application deployment replaces the containers on that server with the new versions.
 
-Terraform creates resources and policies. Service keys are issued separately and placed in server environment files. It leaves the existing media bucket configuration alone and manages a separate backup bucket for database dumps. I recorded the initial server setup steps in the [Terraform guide](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/README.md).
+The existing media bucket stays outside Terraform management, while a separate backup bucket holds database dumps. I recorded the initial server setup steps in the [Terraform guide](https://github.com/jingeon27/side-project/blob/65c3d13a/deploy/shared-instance/terraform/README.md).
 
 ## What I still need to check on the server
 

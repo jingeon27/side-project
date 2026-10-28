@@ -42,8 +42,8 @@
         "level": 2
       },
       {
-        "id": "terraform-권한과-ci-권한도-헷갈렸어요",
-        "title": "Terraform 권한과 CI 권한도 헷갈렸어요",
+        "id": "terraform으로-인프라도-코드로-관리했어요",
+        "title": "Terraform으로 인프라도 코드로 관리했어요",
         "level": 2
       },
       {
@@ -101,8 +101,8 @@
         "level": 2
       },
       {
-        "id": "i-also-got-mixed-up-about-terraform-and-ci-permissions",
-        "title": "I also got mixed up about Terraform and CI permissions",
+        "id": "i-used-terraform-to-manage-infrastructure-as-code",
+        "title": "I used Terraform to manage infrastructure as code",
         "level": 2
       },
       {
@@ -304,7 +304,7 @@
         "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 7,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"

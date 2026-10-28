@@ -17,7 +17,7 @@ import { parseThemePreference, THEME_COOKIE } from '@/shared/model/theme/theme-p
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL(getWebOrigin()),
-    title: { default: '별사대 — 별난 사진 대회', template: '%s - 별사대' },
+    title: { default: '별사대: 별난 사진 대회', template: '%s - 별사대' },
     description: SITE_DESCRIPTION,
     robots: PRIVATE_ROBOTS,
   };
