@@ -74,7 +74,9 @@ test(
     await (await selectionChooser).setFiles(first);
     await expect(image).toBeVisible();
     await sheet.getByRole('button', { name: '선택한 파일 제거' }).click();
-    await expect(sheet.getByText('사진이나 동영상, 링크를 하나 이상 첨부해 주세요.')).toBeVisible();
+    await expect(
+      sheet.getByRole('alert').filter({ hasText: '사진이나 동영상, 링크를 하나 이상 첨부해 주세요.' }),
+    ).toBeVisible();
     await picker.setInputFiles(first);
     await expect(image).toBeVisible();
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
