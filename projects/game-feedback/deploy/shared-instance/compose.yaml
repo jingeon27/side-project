@@ -104,6 +104,8 @@ services:
     init: true
     entrypoint: [node]
     environment: *api
+    # Maintenance boots the API module, which reads the cache revalidation key the API created.
+    volumes: [runtime:/app/projects/game-feedback/.data:ro]
     networks: [edge, db]
     read_only: true
     tmpfs: ['/tmp:size=64m,mode=1777']

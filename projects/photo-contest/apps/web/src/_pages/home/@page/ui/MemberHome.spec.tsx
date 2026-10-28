@@ -52,14 +52,14 @@ const respondEmptyFeed = (name: string) => (name === 'GalleryPosts' ? { galleryP
 describe('홈의 개인 피드 SSR·hydration', () => {
   it('사전 조회하지 않은 피드는 틀만 서버 HTML에 그리고 hydration 뒤 브라우저에서 받아야 한다', async () => {
     const server = createServerClient(seedMyGroups);
-    const { html, errors } = await renderOnServer(server, <MemberHome feedPreloaded={false} />);
+    const { html, errors } = await renderOnServer(server, <MemberHome />);
     expect(errors).toEqual([]);
     expect(html).toContain('최신 게시물');
     expect(html).toContain('이달의 인기');
     expect(html).not.toContain('첫 사진을 올려보세요');
 
     const browser = createBrowserClient(server, respondEmptyFeed);
-    const view = await hydrateOnClient(html, browser.client, <MemberHome feedPreloaded={false} />);
+    const view = await hydrateOnClient(html, browser.client, <MemberHome />);
     try {
       expect(await within(view.container).findByText('첫 사진을 올려보세요')).toBeVisible();
       expect(browser.operations).toEqual(['GalleryPosts', 'GalleryPosts']);
@@ -74,12 +74,12 @@ describe('홈의 개인 피드 SSR·hydration', () => {
       seedMyGroups(cache);
       seedFeeds(cache);
     });
-    const { html, errors } = await renderOnServer(server, <MemberHome feedPreloaded />);
+    const { html, errors } = await renderOnServer(server, <MemberHome initialHasGroups />);
     expect(errors).toEqual([]);
     expect(html).toContain('첫 사진을 올려보세요');
 
     const browser = createBrowserClient(server, respondEmptyFeed);
-    const view = await hydrateOnClient(html, browser.client, <MemberHome feedPreloaded />);
+    const view = await hydrateOnClient(html, browser.client, <MemberHome initialHasGroups />);
     try {
       expect(within(view.container).getByText('첫 사진을 올려보세요')).toBeVisible();
       expect(browser.operations).toEqual([]);

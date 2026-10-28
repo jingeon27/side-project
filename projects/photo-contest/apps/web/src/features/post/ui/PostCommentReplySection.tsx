@@ -12,15 +12,7 @@ import { Button } from '@/shared/ui/@core/button';
 import { PostCommentComposer } from './PostCommentComposer';
 import { PostCommentReplies } from './PostCommentReplies';
 
-export function PostCommentReplySection({
-  parentId,
-  viewerId,
-  postAuthorId,
-}: {
-  parentId: string;
-  viewerId?: string;
-  postAuthorId?: string;
-}) {
+export function PostCommentReplySection({ parentId }: { parentId: string }) {
   const { data: comment, complete } = useFragment({
     fragment: PostCommentCardFragmentDoc,
     from: { __typename: 'PostComment', id: parentId },
@@ -77,8 +69,6 @@ export function PostCommentReplySection({
           <PostCommentReplies
             postId={comment.postId}
             parentId={parentId}
-            viewerId={viewerId}
-            postAuthorId={postAuthorId}
             replyToName={comment.author.nickname}
           />
         </div>

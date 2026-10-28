@@ -1,25 +1,12 @@
 import { z } from 'zod';
 
 import { ApiError } from './http/api-error';
-import { parse } from './validation';
 
 export const MEDIA_FILE_LIMIT = 25 * 1024 * 1024;
-const uploadSchema = z.object({
-  originalname: z.string().min(1).max(1000),
-  mimetype: z.string(),
-  size: z.number().int().positive().max(MEDIA_FILE_LIMIT),
-  buffer: z.instanceof(Buffer),
-});
+const sizeSchema = z.number().int().positive().max(MEDIA_FILE_LIMIT);
+/** 업로드 예약의 JSON 이름에서 경로 구분자·제어 문자를 바꾸고 100자로 자른다. */
 function fileName(value: string) {
-  const decoded = () => {
-    if (/[^\u0000-\u00ff]/.test(value)) return value;
-    try {
-      return new TextDecoder('utf-8', { fatal: true }).decode(Buffer.from(value, 'latin1'));
-    } catch {
-      return value;
-    }
-  };
-  return Array.from(decoded().replace(/[\\/\u0000-\u001f\u007f]/g, '_'))
+  return Array.from(value.replace(/[\\/\u0000-\u001f\u007f]/g, '_'))
     .slice(0, 100)
     .join('');
 }
@@ -44,24 +31,12 @@ function detectMediaType(bytes: Buffer) {
 function invalidMedia() {
   return new ApiError(400, 'INVALID_ATTACHMENT', '지원하는 이미지나 동영상 파일을 선택해주세요.');
 }
-export function validateMediaFile(input: unknown) {
-  const file = parse(uploadSchema, input);
-  const bytes = file.buffer;
-  const detected = detectMediaType(bytes);
-  if (!detected || detected !== file.mimetype || bytes.length !== file.size) throw invalidMedia();
-  return {
-    bytes,
-    mimeType: detected,
-    size: file.size,
-    name: fileName(file.originalname),
-  };
-}
 /**
  * 저장소에 이미 올라간 파일은 앞부분만 읽어 판별한다. 전체 크기는 호출자가 저장소 메타데이터로 확인한다.
  * `header`는 파일 앞 `min(size, MEDIA_SIGNATURE_BYTES)` 바이트여야 한다.
  */
 export function validateMediaHeader(input: { name: string; mimeType: string; size: number; header: Buffer }) {
-  const size = uploadSchema.shape.size.safeParse(input.size);
+  const size = sizeSchema.safeParse(input.size);
   if (!size.success || input.header.length !== Math.min(input.size, MEDIA_SIGNATURE_BYTES))
     throw invalidMedia();
   if (detectMediaType(input.header) !== input.mimeType) throw invalidMedia();

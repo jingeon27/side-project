@@ -14,17 +14,17 @@ import {
   UpdateGroupProfileDocument,
   type GroupProfileQuery,
 } from '@/shared/api/generated';
-import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { StorageUploadError, uploadWithTicket } from '@/shared/api/upload-to-storage.helper';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
 import { toast } from '@/shared/model/toast';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
+import { ImageFileField } from '@/shared/ui/@core/image-file-field';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { groupProfileSchema } from '../model/group-profile.schema';
-import { GroupAvatarField } from './GroupAvatarField';
 import { GroupImagePicker } from './GroupImagePicker';
 
 function ProfileForm({
@@ -65,19 +65,21 @@ function ProfileForm({
           onSubmit={form.handleSubmit(async ({ avatar, cover, ...values }) => {
             const signal = beginSubmit();
             try {
-              const uploadImage = async (image?: File | null) => {
-                if (!image) return undefined;
-                const { data } = await requestUpload({
-                  variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
-                });
-                if (!data) throw new Error('사진 업로드를 시작하지 못했어요.');
-                await uploadToStorage(data.requestGroupAvatarUpload, image, { signal });
-                const { data: completed } = await completeUpload({
-                  variables: { uploadId: data.requestGroupAvatarUpload.id },
-                });
-                if (!completed) throw new Error('사진 업로드를 마치지 못했어요.');
-                return completed.completeGroupAvatarUpload.id;
-              };
+              const uploadImage = (image: File | null) =>
+                image
+                  ? uploadWithTicket(image, {
+                      signal,
+                      request: async () =>
+                        (
+                          await requestUpload({
+                            variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
+                          })
+                        ).data?.requestGroupAvatarUpload,
+                      complete: async (uploadId) =>
+                        (await completeUpload({ variables: { uploadId } })).data?.completeGroupAvatarUpload
+                          .id,
+                    })
+                  : Promise.resolve(undefined);
               const [avatarId, coverId] = await Promise.all([uploadImage(avatar), uploadImage(cover)]);
               // 닫힌 시트에서는 저장하지 않는다. 저장 요청을 보낸 뒤에는 결과를 토스트로 알린다.
               throwIfClosed(signal);
@@ -106,7 +108,15 @@ function ProfileForm({
               form.setValue('removeCover', !file);
             }}
           />
-          <GroupAvatarField form={form} currentUrl={group.avatarUrl} />
+          <ImageFileField
+            control={form.control}
+            trigger={form.trigger}
+            name="avatar"
+            removeName="removeAvatar"
+            label="그룹 사진"
+            currentUrl={group.avatarUrl}
+            fileSchema={groupProfileSchema.shape.avatar}
+          />
           <p className="text-caption text-muted">
             그룹 사진과 소개는 공개 범위와 관계없이 탐색 화면에서도 보여요.
           </p>

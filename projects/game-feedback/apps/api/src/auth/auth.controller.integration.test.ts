@@ -5,9 +5,12 @@ import { createRequire } from 'node:module';
 import type { INestApplication } from '@nestjs/common';
 import supertest from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { z } from 'zod';
 
-import { NotificationListSchema, SocialProviderSchema, SupportThreadSchema } from '@game-feedback/contracts';
+import {
+  NotificationListSchema,
+  SocialProviderSchema,
+  SupportThreadListSchema,
+} from '@game-feedback/contracts';
 
 import { createApp } from '../app';
 import { hash } from '../common/crypto';
@@ -286,10 +289,10 @@ describe.skipIf(!target)('public community, test tokens, follows and social iden
     expect((await requester.get('/api/conversations').expect(200)).body.items).toContainEqual(
       expect.objectContaining({ id: general.id }),
     );
-    // 관리자 문의 목록은 계약(SupportThreadSchema)의 requester로 요청자를 알린다.
-    const threads = z
-      .array(SupportThreadSchema)
-      .parse((await admin.get('/api/admin/support').expect(200)).body);
+    // 관리자 문의 목록은 계약(SupportThreadListSchema)의 requester로 요청자를 알린다.
+    const threads = SupportThreadListSchema.parse(
+      (await admin.get('/api/admin/support').expect(200)).body,
+    ).items;
     expect(threads).toContainEqual(
       expect.objectContaining({
         conversationId: general.id,

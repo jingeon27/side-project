@@ -31,14 +31,14 @@ description: 웹(apps/web)에서 바텀시트·확인 대화상자를 만들거�
 <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
   <BottomSheet.Header title="사진 신고하기" description="…" /> {/* title = 대화상자 이름, 필수 */}
   <BottomSheet.Content>{/* 이 부분만 스크롤된다 */}</BottomSheet.Content>
-  <BottomSheet.Footer>{/* 주 버튼. 하단 안전 영역이 들어 있다 */}</BottomSheet.Footer>
+  <BottomSheet.Footer>{/* 주 버튼. 같은 행의 "취소"와 하단 안전 영역은 Footer가 넣는다 */}</BottomSheet.Footer>
 </BottomSheet.Root>
 ```
 
 - 오버레이는 `OverlayProvider` 자리(`src/_app/providers/AppProviders.tsx`, Apollo·Bridge·Toast 안쪽)에서 그려진다. Apollo 훅과 `toast`는 쓸 수 있지만 화면 안에서 만든 Context는 닿지 않으니 필요한 값은 props로 넘긴다.
 - `OverlayProvider`는 레이아웃에 있어 화면이 바뀌어도 열린 시트가 남는다. 시트 안에서 이동할 때는 `useAppRouter().push(href)`를 부르고 같은 핸들러에서 `onClose()`한다. 열린 시트의 history 항목을 replace해 뒤로 가기에 빈 항목이 남지 않는다. `<Link>`로 옮기면 시트가 새 화면 위에 남는다.
 - 폼이 든 시트는 `form` 스킬을 따른다.
-- 높이를 조절하는 시트는 `BottomSheet.Root`에 `snapPoints`(예: `[0.75, 1]`)와 충분한 기본 높이(`className="h-dvh"`)를 준다. 첫 스냅으로 열리고 헤더 드래그로 크기를 조절하고 별도의 확대·축소 버튼은 두지 않는다. 공통 Root의 스냅 오프셋·하단 패딩이 입력창을 화면 안에 유지하므로 화면에서 드래그 상태나 고정 footer를 따로 구현하지 않는다. 댓글은 75%와 전체 높이를 사용한다.
+- `snapPoints`가 없으면 시트는 내용 높이로 열리고 넘치면 본문만 스크롤한다. 높이를 조절하는 시트는 `BottomSheet.Root`에 `snapPoints`(예: `[0.75, 1]`)만 준다. 공통 시트가 보이는 화면(visual viewport, 키보드 제외)에서 16px을 뺀 높이를 가지므로 `h-dvh`로 높이를 덮지 않는다. 768px부터의 중앙 모달을 화면 높이로 고정할 때만 `tablet:h-full`을 쓴다. 첫 스냅으로 열리고, 앱 Root가 넣은 높이 조절 손잡이(`BottomSheet.Handle`, 이름 "시트 높이 조절")를 끌거나 방향키·PageUp·PageDown·Home·End·Enter·Space로 크기를 바꾼다. 별도의 확대·축소 버튼은 두지 않는다. 공통 Root가 스냅 오프셋만큼 시트 안쪽 높이를 줄여 Footer의 입력창을 보이는 화면 안에 두므로 화면에서 드래그 상태나 고정 footer를 따로 구현하지 않는다. 768px 미만 시트는 앱 Root가 공통 최대 폭(540px)을 풀어 화면 너비를 채운다. 댓글은 75%와 전체 높이를 사용한다.
 
 ## 확인 대화상자
 
@@ -56,10 +56,10 @@ onConfirm={async () => {
 
 ## 새 종류의 오버레이
 
-- Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 오버레이가 앱의 provider와 기록 안에서 동작한다. 바텀시트는 공통 디자인 시스템의 `responsive` Root를 사용한다. 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 768px부터는 중앙 모달로 보여 준다. 헤더에는 X를 두지 않고 입력 폼의 Footer에 취소와 제출 버튼을 같은 너비의 가로 행으로 둔다. 댓글 입력 Footer처럼 제출 폼의 취소가 아닌 영역은 `cancelLabel={false}`로 둔다. z-index는 `z-sheet`·`z-dialog` 토큰.
+- Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 오버레이가 앱의 provider와 기록 안에서 동작한다. 바텀시트는 공통 디자인 시스템의 `responsive` Root를 사용한다. 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 768px부터는 중앙 모달로 보여 준다. 헤더에는 X를 두지 않고 입력 폼의 Footer에 취소와 제출 버튼을 같은 너비의 가로 행으로 둔다. 댓글 입력 Footer처럼 제출 폼의 취소가 아닌 영역은 `cancelLabel={false}`로 두고, 하단에 취소가 없으니 Header에 `closeLabel="닫기"`를 주어 제목 옆에 보이는 닫기 버튼을 둔다. z-index는 `z-sheet`·`z-dialog` 토큰.
 - 포커스는 닫힐 때 Base UI가 열기 전 포커스 요소로 돌려준다. 그러니 effect가 아니라 연 버튼의 클릭 핸들러에서 연다.
 
 ## 테스트 (ui 레인)
 
-- `render(<OverlayProvider>…</OverlayProvider>)`, `afterEach(() => act(() => overlay.unmountAll()))`. `findByRole('dialog' | 'alertdialog', { name: 제목 })`로 찾고, 하단 "취소" 버튼·Esc·`act(() => window.history.back())`로 닫은 뒤 연 버튼 포커스와 `hasOpenOverlay() === false`를 단언한다. 본보기: `src/shared/ui/@core/bottom-sheet/BottomSheet.spec.tsx`.
+- `render(<OverlayProvider>…</OverlayProvider>)`, `afterEach(() => act(() => overlay.unmountAll()))`. `findByRole('dialog' | 'alertdialog', { name: 제목 })`로 찾고, 하단 "취소"(취소가 없는 시트는 제목 옆 "닫기") 버튼·Esc·`act(() => window.history.back())`로 닫은 뒤 연 버튼 포커스와 `hasOpenOverlay() === false`를 단언한다. 본보기: `src/shared/ui/@core/bottom-sheet/BottomSheet.spec.tsx`.
 - 한 파일만: `yarn workspace @photo-contest/web test <spec 경로>`(side 루트).

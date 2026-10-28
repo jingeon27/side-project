@@ -27,6 +27,8 @@ export const BACKEND_ROUTES = {
   AUTH_LOGOUT: '/backend/auth/logout',
   AUTH_APP_EXCHANGE: '/backend/auth/app/exchange',
   AUTH_PROVIDER: (provider: 'google' | 'kakao') => `/backend/auth/${provider}`,
+  PUSH_DEVICE_REGISTER: '/backend/push/devices/register',
+  PUSH_DEVICE_UNREGISTER: '/backend/push/devices/unregister',
 } as const;
 
 /** 익명 또는 회원 세션이 필요한 화면. proxy.ts matcher와 같은 목록이다. */

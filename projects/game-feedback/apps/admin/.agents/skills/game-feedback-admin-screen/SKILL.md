@@ -15,7 +15,7 @@ FSD 레이어·명명·폼·React Query 일반 규칙은 프로젝트 `game-feed
 ## hash 경로 (`src/shared/lib/admin-route.ts`)
 
 - 형식은 `#<tab>?<param>=<id>`다. `tabSchema`(`.catch('support')`)는 모르는 탭을 문의함으로, `idSchema`(`^[A-Za-z0-9_-]{1,100}$`, 실패 시 `''`)는 잘못된 ID를 빈 값으로 바꾼다. hash 값을 이 검증 없이 SDK 인자로 넘기지 않는다.
-- 선택 상태(문의 `thread`, 사용자 `user`)의 단일 출처는 hash다. 링크는 `adminSupportPath(id)`·`adminUserPath(id)`, 폼 제출 이동은 `window.location.hash = adminUserPath(id)`(`src/_pages/users/ui/UserSearchForm.tsx`)로 한다. `useAdminRoute()`가 `useSyncExternalStore`로 `hashchange`를 구독하므로 라우터 라이브러리나 선택 상태 useState를 더하지 않는다.
+- 선택 상태(문의 `thread`, 사용자 `user`)와 필터(신고 `status`, 문의 `status`: `ALL`·`OPEN`·`CLOSED`)의 단일 출처는 hash다. 문의함 목록은 `threadListOptions(status)` 커서 페이지, 선택한 문의는 목록과 무관하게 `threadOptions(id)`(`GET /api/admin/support/:id`)로 받는다. 링크는 `adminSupportPath(id)`·`adminUserPath(id)`, 폼 제출 이동은 `window.location.hash = adminUserPath(id)`(`src/_pages/users/ui/UserSearchForm.tsx`)로 한다. `useAdminRoute()`가 `useSyncExternalStore`로 `hashchange`를 구독하므로 라우터 라이브러리나 선택 상태 useState를 더하지 않는다.
 - 새로고침 복원은 hash 값을 초기값으로 받고 `key`로 다시 마운트한다(`UsersPage`의 `<UserSearchForm key={userId} initialUserId={userId} />`).
 
 ## 새 관리자 화면 순서

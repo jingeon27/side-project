@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId } from 'react';
 import Image from 'next/image';
 
 import { useMutation } from '@apollo/client/react';
 import { ImagePlus } from 'lucide-react';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 
 import {
   CompleteSubmissionUploadDocument,
@@ -14,14 +14,15 @@ import {
   SubmissionsDocument,
 } from '@/shared/api/generated';
 import { StorageUploadError, uploadToStorage } from '@/shared/api/upload-to-storage.helper';
+import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '@/shared/lib/image.helper';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
 import { notifyClosedSubmit, throwIfClosed, useAbortOnClose, useZodForm } from '@/shared/model/form';
+import { useObjectUrl } from '@/shared/model/object-url.hook';
 import { toast } from '@/shared/model/toast';
 import { BottomSheet, type IBottomSheetControlProps } from '@/shared/ui/@core/bottom-sheet';
 import { Button } from '@/shared/ui/@core/button';
 import { FieldRequirement, TextArea } from '@/shared/ui/@core/text-field';
 
-import { browserImageCodec, ImagePrepareError, prepareUploadImage } from '../lib/image.helper';
 import { markContestSubmitted } from '../model/submission.cache';
 import { uploadPhotoSchema } from '../model/submission.schema';
 
@@ -45,11 +46,11 @@ export function UploadPhotoBottomSheet({
 }: IUploadPhotoBottomSheetProps) {
   const photoErrorId = useId();
   const rightsErrorId = useId();
-  const previewUrlRef = useRef<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const form = useZodForm(uploadPhotoSchema, {
     defaultValues: { photo: null, caption: '', rightsConfirmed: false },
   });
+  // 시트가 사라지거나 다른 사진을 고르면 이전 미리보기 주소를 풀어 준다.
+  const previewUrl = useObjectUrl(useWatch({ control: form.control, name: 'photo' }));
   const [completeUpload] = useMutation(CompleteSubmissionUploadDocument);
   // 서명된 업로드 정책은 한 번만 쓰는 값이라 정규화 캐시에 남기지 않는다.
   const [requestUpload] = useMutation(RequestUploadDocument, { fetchPolicy: 'no-cache' });
@@ -67,19 +68,6 @@ export function UploadPhotoBottomSheet({
     },
   });
   const beginSubmit = useAbortOnClose(isOpen);
-
-  useEffect(
-    () => () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    },
-    [],
-  );
-
-  const handlePhotoPicked = (file: File) => {
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    previewUrlRef.current = URL.createObjectURL(file);
-    setPreviewUrl(previewUrlRef.current);
-  };
 
   const { errors, isSubmitting } = form.formState;
   return (
@@ -144,7 +132,6 @@ export function UploadPhotoBottomSheet({
                       event.currentTarget.value = '';
                       if (!file) return;
                       field.onChange(file);
-                      handlePhotoPicked(file);
                       void form.trigger('photo');
                     }}
                   />

@@ -4,11 +4,13 @@ import { ApiError } from '@game-feedback/sdk';
 
 import { documentUnavailable } from './document-access.server';
 
-const { getPost, getPublicProfile, listCategories } = vi.hoisted(() => ({
+const { getPost, getPublicProfile, listCategories, runtime } = vi.hoisted(() => ({
   getPost: vi.fn(),
   getPublicProfile: vi.fn(),
   listCategories: vi.fn(),
+  runtime: { secret: undefined as string | undefined },
 }));
+vi.mock('@/shared/config/runtime-secret.server', () => ({ readRuntimeSecret: () => runtime.secret }));
 vi.mock('@game-feedback/sdk', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@game-feedback/sdk')>()),
   getPost,
@@ -27,6 +29,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.resetAllMocks();
+  runtime.secret = undefined;
 });
 
 describe('proxy 문서 접근 판정', () => {
@@ -72,6 +75,36 @@ describe('proxy 문서 접근 판정', () => {
     await expect(documentUnavailable('/ko/boards/free', undefined, ['a', 'b'])).resolves.toBe(true);
     listCategories.mockRejectedValueOnce(new Error('network down'));
     await expect(documentUnavailable('/ko/boards/free')).resolves.toBe(false);
+  });
+
+  it('요청마다 도는 판정 조회는 공유 내부 예산 대신 방문자 주소로 서명해 보낸다', async () => {
+    runtime.secret = 'test-only-forwarded-client-secret-'.repeat(2);
+    const visitor = { 'x-gf-client-ip': '203.0.113.7', 'x-gf-client-signature': expect.any(String) };
+    listCategories.mockResolvedValue([{ slug: 'clash-royale', active: true }]);
+    getPublicProfile.mockResolvedValue({});
+    getPost.mockResolvedValue({ post: { id: 'p', author: { id: 'writer' } }, answers: [], comments: [] });
+    await documentUnavailable('/ko/boards/free', undefined, [], '203.0.113.7');
+    // 회귀: 비로그인 프로필 판정은 서명 헤더 없이 보내 웹 컨테이너 주소 하나의 예산을 함께 썼다.
+    await documentUnavailable('/ko/users/user-1', undefined, [], '203.0.113.7');
+    await documentUnavailable(`/ko/posts/visitor-${crypto.randomUUID()}`, undefined, [], '203.0.113.7');
+    expect(listCategories).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: expect.objectContaining(visitor) }),
+    );
+    expect(getPublicProfile).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ headers: expect.objectContaining(visitor) }),
+    );
+    expect(getPost).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: expect.objectContaining(visitor) }),
+    );
+    await documentUnavailable('/ko/users/user-1', 'test-only-session', [], '203.0.113.7');
+    expect(getPublicProfile).toHaveBeenLastCalledWith(
+      'user-1',
+      expect.objectContaining({
+        headers: expect.objectContaining({ ...visitor, Cookie: 'gamefeedback_session=test-only-session' }),
+      }),
+    );
   });
 
   it('상세가 아닌 문서는 API를 부르지 않는다', async () => {

@@ -1,2 +1,2 @@
-export { synchronizePush } from './push-registration';
-export { PushNotificationSettings } from './PushNotificationSettings';
+export { synchronizePush } from './lib/push-registration.helper';
+export { PushNotificationSettings } from './ui/PushNotificationSettings';

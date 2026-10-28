@@ -15,6 +15,7 @@ export function PostCommentsHeader({ postId }: { postId: string }) {
       <div className="mx-auto w-full max-w-3xl desktop:max-w-6xl">
         <BottomSheet.Header
           title="댓글"
+          closeLabel="닫기"
           className="pb-2"
           description={
             complete ? <span className="block truncate text-caption">{post.title}</span> : undefined

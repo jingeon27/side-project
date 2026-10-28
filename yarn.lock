@@ -5943,6 +5943,7 @@ __metadata:
     "@types/node": "catalog:"
     "@types/react": "catalog:"
     "@types/react-dom": "catalog:"
+    class-variance-authority: "catalog:"
     es-toolkit: "catalog:"
     eslint: "catalog:"
     graphql: "catalog:"
@@ -11376,7 +11377,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"class-variance-authority@npm:^0.7.1":
+"class-variance-authority@npm:0.7.1, class-variance-authority@npm:^0.7.1":
   version: 0.7.1
   resolution: "class-variance-authority@npm:0.7.1"
   dependencies:

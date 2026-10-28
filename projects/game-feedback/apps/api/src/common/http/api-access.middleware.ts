@@ -4,7 +4,7 @@ import type { NextFunction, Response } from 'express';
 import { SessionService } from '../../auth/session.service';
 import type { SessionRequest } from '../../auth/session.types';
 import { APP_CONFIG, type AppConfig } from '../../config/app.config';
-import { coarseRateBucket, isHealthProbe, requestRateBucket, RequestRateLimiter } from '../../rate-limit';
+import { coarseRateBucket, isHealthProbe, requestRateBuckets, RequestRateLimiter } from '../../rate-limit';
 import { ApiError } from './api-error';
 import { bannedUserMayWrite } from './banned-access';
 import { INTERNAL_CLIENT, verifiedForwardedClient } from './forwarded-client';
@@ -50,15 +50,13 @@ export class ApiAccessMiddleware implements NestMiddleware {
       )
         throw new ApiError(403, 'USER_BANNED', '이용이 제한된 계정입니다. 관리자 문의를 이용해주세요.');
       if (this.config.rateLimit)
-        this.enforceLimit(
-          res,
-          requestRateBucket({
-            ...client,
-            userId: req.gfSession?.user?.id,
-            path: req.path,
-            method: req.method,
-          }),
-        );
+        for (const bucket of requestRateBuckets({
+          ...client,
+          userId: req.gfSession?.user?.id,
+          path: req.path,
+          method: req.method,
+        }))
+          this.enforceLimit(res, bucket);
       next();
     } catch (error) {
       if (!(error instanceof ApiError)) return next(error);

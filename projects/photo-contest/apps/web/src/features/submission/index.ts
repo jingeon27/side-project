@@ -5,4 +5,3 @@ export { resetSubmissionFeeds } from './model/submission.cache';
 export { FeedLoadMore } from './ui/FeedLoadMore';
 export { SubmissionCard } from './ui/SubmissionCard';
 export { UploadPhotoBottomSheet } from './ui/UploadPhotoBottomSheet';
-export { ImagePrepareError, browserImageCodec, prepareUploadImage, isImageFile } from './lib/image.helper';

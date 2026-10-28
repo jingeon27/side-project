@@ -8,6 +8,12 @@ export type RequestIdentity = {
 };
 // Internal reads are shared by every visitor's cache misses, so they get a larger budget than one address.
 export const INTERNAL_READ_LIMIT = 3000;
+// Cached detail fills keyed by a URL id (any visitor can pick a new id) get their own internal bucket, so a
+// flood of unknown ids cannot starve the anonymous session, categories and sitemap reads. The web proxy
+// also limits these page routes per visitor before the cache (`apps/web/src/proxy.ts`).
+const internalLookupPaths = [/^\/api\/posts\/[^/]+$/, /^\/api\/users\/[^/]+$/];
+/** Supercell lookups per minute and identity, shared by preview, account saving and onboarding. */
+export const GAME_PROFILE_LOOKUP_LIMIT = 10;
 const authAttempts = new Set([
   '/api/admin/auth/login',
   '/api/auth/demo',
@@ -48,7 +54,7 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
     return { key: `upload:${identity}`, limit: 20 };
   // Each preview may call the Supercell API with the server token.
   if (request.method === 'GET' && /^\/api\/game-profiles\/[^/]+$/.test(path))
-    return { key: `game-profile:${identity}`, limit: 10 };
+    return gameProfileBucket(identity);
   if (
     request.method === 'POST' &&
     (/^\/api\/profile\/avatar\/uploads\/[^/]+\/complete$/.test(path) ||
@@ -57,7 +63,26 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
   )
     return { key: `upload-complete:${identity}`, limit: 20 };
   if (action === 'write') return { key: `write:${identity}`, limit: 60 };
+  if (identity === 'internal' && internalLookupPaths.some((pattern) => pattern.test(path)))
+    return { key: 'lookup:internal', limit: INTERNAL_READ_LIMIT };
   return { key: `read:${identity}`, limit: identity === 'internal' ? INTERNAL_READ_LIMIT : 240 };
+}
+
+function gameProfileBucket(identity: string) {
+  return { key: `game-profile:${identity}`, limit: GAME_PROFILE_LOOKUP_LIMIT };
+}
+// Saving a game account and onboarding with a player tag also look the tag up upstream.
+const upstreamLookupWrites = new Set(['/api/me/game-accounts', '/api/auth/onboard']);
+
+/**
+ * Every bucket one request consumes: its route bucket plus, for writes that may call the Supercell API, the
+ * same `game-profile:` bucket as the preview so a client cannot bypass the lookup budget through them.
+ */
+export function requestRateBuckets(request: RequestIdentity): Array<{ key: string; limit: number }> {
+  const primary = requestRateBucket(request);
+  const path = request.path.replace(/\/+$/, '');
+  if (request.method !== 'POST' || !upstreamLookupWrites.has(path)) return [primary];
+  return [primary, gameProfileBucket(request.userId ? `user:${request.userId}` : network(request))];
 }
 
 export class RequestRateLimiter {

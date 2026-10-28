@@ -11,6 +11,10 @@ import { MediaUploadPlanSchema } from '@game-feedback/contracts';
 import { createApp } from '../app';
 import { createPrismaAdapter } from '../database/prisma-adapter';
 import { PrismaClient } from '../generated/prisma';
+import {
+  MEDIA_COMPLETE_GRACE_SECONDS,
+  MEDIA_UPLOAD_TTL_SECONDS,
+} from '../media-storage/media-storage.policy';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import { assertDatabaseUrl } from '../security';
 import { seed } from '../seed';
@@ -210,10 +214,22 @@ describe('게시글 S3 직접 업로드', () => {
     await state.owner.post(`/api/post-media/${invalid.id}/complete`).set('Origin', origin).expect(400);
     expect((await state.db.postMedia.findUniqueOrThrow({ where: { id: invalid.id } })).uploadedAt).toBeNull();
     await state.owner.get(`/api/post-media/${invalid.id}`).expect(404);
+    // 서명이 만료된 직후에 끝난 전송은 유예 시간 안이라 확정한다.
+    const late = await reserve();
+    expect((await transfer(late)).status).toBe(204);
+    await state.db.postMedia.update({
+      where: { id: late.id },
+      data: { createdAt: new Date(Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + 1) * 1000) },
+    });
+    await state.owner.post(`/api/post-media/${late.id}/complete`).set('Origin', origin).expect(200);
     const expired = await reserve();
     await state.db.postMedia.update({
       where: { id: expired.id },
-      data: { createdAt: new Date(Date.now() - 301_000) },
+      data: {
+        createdAt: new Date(
+          Date.now() - (MEDIA_UPLOAD_TTL_SECONDS + MEDIA_COMPLETE_GRACE_SECONDS + 1) * 1000,
+        ),
+      },
     });
     await state.owner.post(`/api/post-media/${expired.id}/complete`).set('Origin', origin).expect(409);
     const old = new Date(Date.now() - 2 * 86_400_000);

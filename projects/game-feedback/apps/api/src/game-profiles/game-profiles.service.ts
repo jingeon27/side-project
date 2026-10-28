@@ -11,6 +11,9 @@ import { PrismaClient, type Prisma } from '../generated/prisma';
 import { type TGameAccountDto } from './game-account-input.dto';
 import { ProfileLookupCache } from './profile-lookup-cache';
 
+/** 사용자마다 남기는 최근 게임 계정 조회 결과 수. 대표 태그는 User.supercellTag가 따로 가진다. */
+export const MAX_GAME_ACCOUNTS_PER_USER = 5;
+
 @Injectable()
 export class GameProfilesService {
   private readonly lookups = new ProfileLookupCache();
@@ -57,6 +60,15 @@ export class GameProfilesService {
             profile: profile as unknown as Prisma.InputJsonValue,
           },
         });
+        // 조회할 때마다 새 태그 행이 쌓이지 않도록 가장 최근에 저장한 계정만 남긴다.
+        const stale = await tx.gameAccount.findMany({
+          where: { userId: u.id },
+          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+          skip: MAX_GAME_ACCOUNTS_PER_USER,
+          select: { id: true },
+        });
+        if (stale.length)
+          await tx.gameAccount.deleteMany({ where: { id: { in: stale.map((account) => account.id) } } });
         await (tx ?? this.db).user.update({
           where: { id: u.id },
           data: {

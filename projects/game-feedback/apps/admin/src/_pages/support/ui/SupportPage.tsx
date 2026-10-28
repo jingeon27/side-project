@@ -1,26 +1,49 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-
-import { threadOptions } from '@/features/support';
+import { adminSupportListPath, type TSupportStatusFilter } from '@/shared/lib';
 import { AsyncBoundary } from '@/shared/ui';
-import { SupportConversation } from '@/widgets/support-conversation';
 
-import { SupportThreadCard } from './SupportThreadCard';
+import { SelectedSupportThread } from './SelectedSupportThread';
+import { SupportThreadList } from './SupportThreadList';
 
-export function SupportPage({ threadId }: { threadId: string }) {
-  const { data: threads } = useSuspenseQuery(threadOptions());
-  const selected = threads.find((thread) => thread.id === threadId);
+interface ISupportStatusLinkProps {
+  status: TSupportStatusFilter;
+  current: TSupportStatusFilter;
+  children: string;
+}
+
+function SupportStatusLink({ status, current, children }: ISupportStatusLinkProps) {
+  return (
+    <a href={adminSupportListPath(status)} aria-current={status === current ? 'page' : undefined}>
+      {children}
+    </a>
+  );
+}
+
+interface ISupportPageProps {
+  threadId: string;
+  status: TSupportStatusFilter;
+}
+
+export function SupportPage({ threadId, status }: ISupportPageProps) {
   return (
     <section aria-label="문의함" className="form-stack">
       <h1>문의함</h1>
-      {!threads.length && <p>접수된 문의가 없습니다.</p>}
-      <div className="admin-inbox">
-        {threads.map((thread) => (
-          <SupportThreadCard key={thread.id} thread={thread} />
-        ))}
-      </div>
-      {selected && (
-        <AsyncBoundary key={selected.id}>
-          <SupportConversation thread={selected} />
+      <nav aria-label="문의 상태" className="admin-actions">
+        <SupportStatusLink status="ALL" current={status}>
+          전체
+        </SupportStatusLink>
+        <SupportStatusLink status="OPEN" current={status}>
+          상담 중
+        </SupportStatusLink>
+        <SupportStatusLink status="CLOSED" current={status}>
+          처리 완료
+        </SupportStatusLink>
+      </nav>
+      <AsyncBoundary key={status}>
+        <SupportThreadList status={status} />
+      </AsyncBoundary>
+      {threadId && (
+        <AsyncBoundary key={threadId}>
+          <SelectedSupportThread id={threadId} />
         </AsyncBoundary>
       )}
     </section>

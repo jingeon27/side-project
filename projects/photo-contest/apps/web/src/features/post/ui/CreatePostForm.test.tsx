@@ -95,7 +95,8 @@ describe('선택한 게시물 파일 미리보기', () => {
     fireEvent.change(input, { target: { files: [] } });
     expect(image).toHaveAttribute('src', 'blob:preview-1');
     expect(revokeUrl).not.toHaveBeenCalled();
-    await user.upload(input, file);
+    // 브라우저는 같은 파일을 다시 골라도 새 File 객체를 준다.
+    await user.upload(input, photo());
     await waitFor(() =>
       expect(screen.getByRole('img', { name: '선택한 사진 미리보기' })).toHaveAttribute(
         'src',

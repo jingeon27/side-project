@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readRuntimeSecret } from '@/shared/config/runtime-secret.server';
 
-import { forwardedClientHeaders, publicServerOptions, serverRequestOptions } from './server';
+import {
+  forwardedClientHeaders,
+  publicServerOptions,
+  serverRequestOptions,
+  visitorLookupOptions,
+} from './server';
 
 vi.mock('@/shared/config/runtime-secret.server', () => ({ readRuntimeSecret: vi.fn() }));
 
@@ -47,6 +52,11 @@ describe('server-side API request options', () => {
   it('marks cookie-free shared reads as internal so they do not use one visitor budget', () => {
     expect(publicServerOptions().headers).toMatchObject({ 'x-gf-client-ip': 'internal' });
     expect(publicServerOptions().headers).not.toHaveProperty('Cookie');
+  });
+  it('signs per-request proxy lookups with the visitor and falls back to internal without one', () => {
+    expect(visitorLookupOptions('203.0.113.7').headers).toMatchObject({ 'x-gf-client-ip': '203.0.113.7' });
+    expect(visitorLookupOptions(null).headers).toMatchObject({ 'x-gf-client-ip': 'internal' });
+    expect(visitorLookupOptions('203.0.113.7').headers).not.toHaveProperty('Cookie');
   });
   it('signs exactly like the API verifier and stays unsigned without the shared secret', () => {
     // apps/api/src/common/http/forwarded-client.spec.ts pins the same values.

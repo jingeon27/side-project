@@ -40,7 +40,6 @@ import {
   LoginWithPasswordDocument,
   MeDocument,
   MyGroupsDocument,
-  MyPhotoFeedDocument,
   PostCommentsDocument,
   PostDownloadDocument,
   PostSort,
@@ -328,47 +327,6 @@ describe('웹 GraphQL 문서의 실제 API 계약', () => {
     );
   });
 
-  it('홈 피드 문서는 가입한 모든 그룹의 공개 사진을 최신순으로 이어 받아야 한다', async () => {
-    const groups = [];
-    for (const name of ['홈 피드 첫 그룹', '홈 피드 둘째 그룹']) {
-      const group = (await ok(CreateGroupDocument, owner, { name })).createGroup;
-      const token = (await ok(GroupDocument, owner, { id: group.id })).group.inviteToken;
-      if (!token) throw new Error('그룹장의 초대 토큰이 있어야 한다');
-      await ok(JoinGroupDocument, member, { token });
-      const now = Date.now();
-      const contest = (
-        await ok(CreateContestDocument, owner, {
-          groupId: group.id,
-          title: name + ' 대회',
-          startsAt: new Date(now).toISOString(),
-          submissionEndsAt: new Date(now + 3_600_000).toISOString(),
-          endsAt: new Date(now + 7_200_000).toISOString(),
-        })
-      ).createContest;
-      const photo = await submit(owner, contest.id, name + ' 사진');
-      groups.push({ group, photo });
-    }
-    const newer = groups[1];
-    const older = groups[0];
-    if (!newer || !older) throw new Error('피드 준비 실패');
-    const first = await ok(MyPhotoFeedDocument, member, { offset: 0, limit: 1 });
-    const second = await ok(MyPhotoFeedDocument, member, { offset: 1, limit: 1 });
-    expect(first.myPhotoFeed[0]).toMatchObject({
-      groupId: newer.group.id,
-      submission: { id: newer.photo.id },
-    });
-    expect(second.myPhotoFeed[0]).toMatchObject({
-      groupId: older.group.id,
-      submission: { id: older.photo.id },
-    });
-    expect((await ok(MyPhotoFeedDocument, outsider, { offset: 0, limit: 24 })).myPhotoFeed).toEqual([]);
-    await ok(HideSubmissionDocument, owner, { submissionId: newer.photo.id });
-    expect(
-      (await ok(MyPhotoFeedDocument, owner, { offset: 0, limit: 24 })).myPhotoFeed.some(
-        ({ id }) => id === newer.photo.id,
-      ),
-    ).toBe(false);
-  });
   it('기간 없는 사진·동영상 게시물과 이달의 인기·관리자 삭제 문서가 실행돼야 한다', async () => {
     expect((await ok(GalleryDocument, member, { id: groupId })).group.name).toBe('문서 계약 그룹');
     const variables = { groupId, sort: PostSort.Newest, offset: 0, limit: 24 };

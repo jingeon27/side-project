@@ -254,9 +254,17 @@ export const CommentPageSchema = z.object({
   items: z.array(CommentSchema),
   nextCursor: z.string().min(1).nullable(),
 });
+/** 도움됨 → 오래된 순으로 나눈 답변 한 페이지. */
+export const AnswerPageSchema = z.object({
+  items: z.array(AnswerSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
 export const PostDetailSchema = z.object({
   post: PostSchema,
+  /** 첫 답변 페이지. 전체 개수는 `post.answerCount`다. */
   answers: z.array(AnswerSchema),
+  /** 상세에 싣지 않은 다음 답변을 `listPostAnswers`로 받는 커서. 없으면 null. */
+  answersCursor: z.string().min(1).nullable(),
   comments: z.array(CommentSchema),
   /** 상세에 싣지 않은 이전 원댓글 스레드를 `listPostComments`로 받는 커서. 없으면 null. */
   commentsCursor: z.string().min(1).nullable(),
@@ -462,6 +470,7 @@ export type Session = z.infer<typeof SessionSchema>;
 export type PostList = z.infer<typeof PostListSchema>;
 export type PostDetail = z.infer<typeof PostDetailSchema>;
 export type CommentPage = z.infer<typeof CommentPageSchema>;
+export type AnswerPage = z.infer<typeof AnswerPageSchema>;
 export type NotificationList = z.infer<typeof NotificationListSchema>;
 export type PostInput = z.input<typeof PostInputSchema>;
 export type ReportInput = z.infer<typeof ReportInputSchema>;
@@ -471,18 +480,31 @@ export const UserBanInputSchema = z
   .strict();
 export const ReportReviewInputSchema = z.object({ status: z.enum(['REVIEWED', 'DISMISSED']) }).strict();
 export const SupportInputSchema = z.object({ topic: SupportTopicSchema }).strict();
-export const SupportStatusInputSchema = z.object({ status: z.enum(['OPEN', 'CLOSED']) }).strict();
+export const SupportStatusSchema = z.enum(['OPEN', 'CLOSED']);
+export type TSupportStatus = z.infer<typeof SupportStatusSchema>;
+export const SupportStatusInputSchema = z.object({ status: SupportStatusSchema }).strict();
 export const SupportThreadSchema = z.object({
   id: ResponseIdSchema,
   conversationId: ResponseIdSchema,
   requester: AuthorSchema,
   adminId: ResponseIdSchema,
   topic: SupportTopicSchema,
-  status: z.enum(['OPEN', 'CLOSED']),
+  status: SupportStatusSchema,
   createdAt: ResponseTimestampSchema,
   updatedAt: ResponseTimestampSchema,
 });
 export type TSupportThread = z.infer<typeof SupportThreadSchema>;
+/** 최근 대화 순(대화 updatedAt → id 내림차순)으로 나눈 관리자 문의 한 페이지. */
+export const SupportThreadListSchema = z.object({
+  items: z.array(SupportThreadSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+/** 상태를 비우면 모든 문의를 본다. */
+export const AdminSupportListQuerySchema = z.object({
+  status: SupportStatusSchema.optional(),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+});
 
 export const schemas = {
   AdminLoginInput: AdminLoginInputSchema,
@@ -491,6 +513,7 @@ export const schemas = {
   SupportInput: SupportInputSchema,
   SupportStatusInput: SupportStatusInputSchema,
   SupportThread: SupportThreadSchema,
+  SupportThreadList: SupportThreadListSchema,
   PostMedia: PostMediaSchema,
   MediaUploadInput: MediaUploadInputSchema,
   AvatarUploadInput: AvatarUploadInputSchema,
@@ -530,6 +553,7 @@ export const schemas = {
   PostList: PostListSchema,
   PostDetail: PostDetailSchema,
   CommentPage: CommentPageSchema,
+  AnswerPage: AnswerPageSchema,
   NotificationList: NotificationListSchema,
   Session: SessionSchema,
   OnboardInput: OnboardInputSchema,
@@ -618,7 +642,14 @@ export const operations: OperationSpec[] = [
     method: 'get',
     path: '/api/admin/support',
     id: 'listSupportThreads',
-    response: z.array(SupportThreadSchema),
+    response: SupportThreadListSchema,
+    query: true,
+  },
+  {
+    method: 'get',
+    path: '/api/admin/support/{id}',
+    id: 'getSupportThread',
+    response: SupportThreadSchema,
   },
   {
     method: 'patch',
@@ -770,6 +801,13 @@ export const operations: OperationSpec[] = [
   { method: 'get', path: '/api/posts/{id}', id: 'getPost', response: PostDetailSchema },
   { method: 'patch', path: '/api/posts/{id}', id: 'updatePost', body: PostPatchSchema, response: PostSchema },
   { method: 'delete', path: '/api/posts/{id}', id: 'deletePost', response: OkSchema },
+  {
+    method: 'get',
+    path: '/api/posts/{id}/answers',
+    id: 'listPostAnswers',
+    response: AnswerPageSchema,
+    query: true,
+  },
   {
     method: 'post',
     path: '/api/posts/{id}/answers',

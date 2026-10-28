@@ -8,9 +8,9 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 | 폴더 | 역할 | import 별칭 |
 | --- | --- | --- |
 | `src/app` | Next 라우트 파일만. 화면은 slice 배럴에서 가져온다 | — |
-| `src/_app` | providers(Apollo·Bridge·Toast·overlay-kit), styles(tailwind.css·theme.css·globals.css) | `@/_app/…` |
+| `src/_app` | providers(Apollo·Bridge·Toast·overlay-kit), shell(레이아웃이 감싸는 공통 틀), styles(tailwind.css·theme.css·globals.css) | `@/_app/…` |
 | `src/_pages` | 화면 하나 = slice 하나 | `@/_pages/…` |
-| `src/widgets` | 모든 화면에 붙는 UI만(하단 탭) | `@/widgets/…` |
+| `src/widgets` | 모든 화면에 붙는 UI만(하단 탭·데스크톱 고정 메뉴) | `@/widgets/…` |
 | `src/features` | 서버 도메인 slice(group, contest, submission, like, vote, moderation, invite, share…) | `@/features/…` |
 | `src/shared` | 도메인 없는 기반(api, ui/@core, model, lib, constants) | `@/shared/…` |
 
@@ -44,6 +44,12 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 누를 영역 44px 이상(주 버튼 50px), 탭 피드백은 `active:`. 입력 글자 16px 이상(iOS 확대 방지). 확대(pinch)는 막지 않는다.
 - 공통 조각: `TopAppBar`(뒤로 가기·제목·액션), `StickyCta`(하단 고정 주 버튼, safe-bottom), `BottomNav`(홈·MY 화면에만, 입력 중 숨김), `BottomSheet`, `ConfirmDialog`, `Toast`, `Skeleton`·`EmptyState`·`ErrorState`.
 - 색·글자·그림자·z-index는 `theme.css` 토큰만 쓴다(임의 hex·`!` 유틸 금지).
+
+## 클래스 variant (class-variance-authority)
+
+- 켜짐/꺼짐 하나(좋아요·읽음·내 것)는 cva를 만들지 않고 `cn('…', liked && 'fill-current')`처럼 조건으로 쓴다. 접근성 상태가 있으면 `aria-pressed:`·`data-*:` 변형으로 꾸민다.
+- 앱 전용 컴포넌트가 variant 축이 2개 이상이거나 한 축에 값이 3개 이상이고 여러 곳에서 쓰이면 컴포넌트 옆 `*.variants.ts`에 cva로 두고 `VariantProps` 타입을 export한다. 본보기는 `shared/ui/@core/like-toggle/like-toggle.variants.ts`(자리별 density)다. 동작(mutation·낙관적 응답·진동)은 variant 컴포넌트에 넣지 않고 쓰는 쪽에 둔다.
+- 버튼·칩·배지·아이콘 버튼처럼 도메인 없는 일반 모양은 앱에서 cva로 다시 만들지 않고 `@side/design-system`에 variant를 더한다. 앱이 디자인 시스템 primitive를 갈라 쓰지 않는다.
 
 ## 인증·이동
 

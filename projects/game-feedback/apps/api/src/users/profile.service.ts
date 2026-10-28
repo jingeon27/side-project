@@ -10,14 +10,17 @@ import { CacheInvalidationService } from '../cache-invalidation/cache-invalidati
 import { ApiError } from '../common/http/api-error';
 import { UnitOfWork } from '../database/unit-of-work';
 import { PrismaClient } from '../generated/prisma';
-import { MEDIA_UPLOAD_TTL_SECONDS } from '../media-storage/media-storage.policy';
+import {
+  completionDeadline,
+  MEDIA_COMPLETE_GRACE_SECONDS,
+  presignExpiry,
+} from '../media-storage/media-storage.policy';
 import { MediaStorage } from '../media-storage/media-storage.service';
 import type { TAvatarUploadDto } from './avatar-upload.dto';
 import type { TUpdateProfileDto } from './profile-input.dto';
 import { UserVisibilityService } from './user-visibility.service';
 import { UsersService } from './users.service';
 
-export const AVATAR_LIMIT = 5 * 1024 * 1024;
 @Injectable()
 export class ProfileService {
   constructor(
@@ -65,7 +68,7 @@ export class ProfileService {
           ...data,
           userId: user.id,
           objectId: upload.objectId,
-          expiresAt: new Date(Date.now() + MEDIA_UPLOAD_TTL_SECONDS * 1000),
+          expiresAt: presignExpiry(new Date()),
         },
       });
     });
@@ -79,13 +82,19 @@ export class ProfileService {
     });
     if (!ticket) throw new ApiError(404, 'UPLOAD_NOT_FOUND', '프로필 사진 업로드 요청을 찾을 수 없습니다.');
     if (ticket.completedAt) return this.users.profile(req, user.id);
-    if (ticket.expiresAt <= new Date())
+    if (completionDeadline(ticket.expiresAt) <= new Date())
       throw new ApiError(409, 'UPLOAD_EXPIRED', '프로필 사진 업로드가 만료되었습니다.');
     const stored = await this.storage.completeUpload(ticket);
     await this.cache.change(
       async (tx) => {
         const changed = await tx.avatarUpload.updateMany({
-          where: { id, userId: user.id, completedAt: null, expiresAt: { gt: new Date() } },
+          where: {
+            id,
+            userId: user.id,
+            completedAt: null,
+            // expiresAt은 서명 만료다. 완료는 그 뒤 유예 시간까지 받는다.
+            expiresAt: { gt: new Date(Date.now() - MEDIA_COMPLETE_GRACE_SECONDS * 1000) },
+          },
           data: { completedAt: new Date(), objectId: stored.objectId },
         });
         if (!changed.count) {

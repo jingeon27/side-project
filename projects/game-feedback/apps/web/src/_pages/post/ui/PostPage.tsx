@@ -107,6 +107,7 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
             postId={post.id}
             postAuthorId={post.author.id}
             answers={answers}
+            cursor={detail.data.answersCursor}
             locale={locale}
           />
         </ServiceErrorBoundary>

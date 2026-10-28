@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import { useBackgroundQuery, useMutation, type QueryRef } from '@apollo/client/react';
 import { Heart } from 'lucide-react';
 import { overlay } from 'overlay-kit';
 
 import { LoginPanel, ViewerBoundary } from '@/features/auth';
-import { NotificationItem } from '@/features/notification';
+import {
+  markAllNotificationsReadInCache,
+  markNotificationReadInCache,
+  NotificationItem,
+} from '@/features/notification';
 import { PostCommentsBottomSheet } from '@/features/post';
 import { PushNotificationSettings } from '@/features/push-notifications';
 import {
@@ -15,7 +17,6 @@ import {
   MarkNotificationReadDocument,
   MyNotificationsDocument,
   NotificationContestFormat,
-  NotificationUnreadCountDocument,
   type MyNotificationsQuery,
   type NotificationCardFragment,
 } from '@/shared/api/generated';
@@ -36,21 +37,27 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
     pageSize: PAGE_SIZE,
     canFetchMore: (page) => page.myNotifications.hasMore,
   });
+  // 목록을 다시 받으면 첫 페이지 응답이 더 읽은 알림을 지우므로 읽음은 캐시에서 바로 고친다.
+  // 서버가 거절하면 Apollo가 낙관적 변경을 되돌리고 ErrorLink가 알린다.
   const [read] = useMutation(MarkNotificationReadDocument, {
-    refetchQueries: [MyNotificationsDocument, NotificationUnreadCountDocument],
-    awaitRefetchQueries: true,
+    optimisticResponse: { markNotificationRead: true },
   });
   const [readAll, { loading }] = useMutation(MarkAllNotificationsReadDocument, {
-    refetchQueries: [MyNotificationsDocument, NotificationUnreadCountDocument],
-    awaitRefetchQueries: true,
+    optimisticResponse: { markAllNotificationsRead: true },
+    update: (cache, { data }) => {
+      if (data?.markAllNotificationsRead) markAllNotificationsReadInCache(cache, new Date().toISOString());
+    },
   });
-  async function handleOpen(notice: NotificationCardFragment) {
+  function handleOpen(notice: NotificationCardFragment) {
     if (!notice.readAt) {
-      try {
-        await read({ variables: { id: notice.id } });
-      } catch {
-        /* 읽음 저장 실패는 알림 내용 열기를 막지 않는다. */
-      }
+      const readAt = new Date().toISOString();
+      // 읽음 저장을 기다리지 않고 바로 연다. 실패해도 알림 내용 열기는 막지 않는다.
+      void read({
+        variables: { id: notice.id },
+        update: (cache, { data }) => {
+          if (data?.markNotificationRead) markNotificationReadInCache(cache, notice.id, readAt);
+        },
+      }).catch(() => undefined);
     }
     const postId = notice.postId;
     if (postId) {
@@ -74,8 +81,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
     router.push(ROUTES.GROUP(notice.groupId));
   }
   return (
-    <div className="mx-auto flex w-full max-w-feed flex-col gap-4">
-      <PushNotificationSettings />
+    <>
       <div className="flex items-center justify-between gap-3">
         <p className="text-caption text-muted">읽지 않은 알림 {data.myNotifications.unreadCount}개</p>
         <Button
@@ -114,7 +120,7 @@ function NotificationList({ queryRef }: { queryRef: QueryRef<MyNotificationsQuer
           알림 더 보기
         </Button>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -123,18 +129,18 @@ function NotificationFeed({ viewerId }: { viewerId: string }) {
     variables: { offset: 0, limit: PAGE_SIZE },
     refetchWritePolicy: 'overwrite',
   });
-  // 사전 조회한 값으로 SSR·hydration을 맞춘 뒤 최신 알림을 받는다.
-  useEffect(() => {
-    void refetch().catch(() => undefined);
-  }, [refetch]);
+  // 앱 알림 설정은 목록 조회와 상관없으므로 목록 경계 밖에 두어 불러오는 중·실패에도 남긴다.
   return (
-    <AsyncBoundary
-      resetKey={viewerId}
-      onRetry={() => refetch()}
-      fallback={<Skeleton className="h-48 w-full" />}
-    >
-      <NotificationList queryRef={queryRef} />
-    </AsyncBoundary>
+    <div className="mx-auto flex w-full max-w-feed flex-col gap-4">
+      <PushNotificationSettings />
+      <AsyncBoundary
+        resetKey={viewerId}
+        onRetry={() => refetch()}
+        fallback={<Skeleton className="h-48 w-full" />}
+      >
+        <NotificationList queryRef={queryRef} />
+      </AsyncBoundary>
+    </div>
   );
 }
 

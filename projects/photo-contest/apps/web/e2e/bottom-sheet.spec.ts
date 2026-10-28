@@ -50,3 +50,21 @@ test(
     await expect(page.getByRole('heading', { name: '수정된 프로필', exact: true })).toBeVisible();
   },
 );
+
+test('768px보다 좁은 태블릿 폭에서도 시트는 화면 너비를 채워야 한다', async ({ page, signIn }) => {
+  await page.setViewportSize({ width: 700, height: 900 });
+  await signIn('태블릿 시트 회원');
+  await page.goto('/me');
+  await page.getByRole('button', { name: '프로필 수정', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: '프로필 수정', exact: true });
+  await expect(sheet).toBeVisible();
+  // 공통 시트의 기본 최대 폭(540px)이 남으면 가운데 좁은 시트가 된다.
+  await expect
+    .poll(async () => {
+      const box = await sheet.boundingBox();
+      return Boolean(
+        box && Math.abs(box.x) < 2 && Math.abs(box.width - 700) < 2 && Math.abs(box.y + box.height - 900) < 2,
+      );
+    })
+    .toBe(true);
+});

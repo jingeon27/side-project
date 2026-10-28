@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation } from '@apollo/client/react';
-import { Tabs } from '@base-ui/react/tabs';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@side/design-system';
 
 import { LoginWithPasswordDocument, RegisterWithPasswordDocument } from '@/shared/api/generated';
 import { ANALYTICS_EVENT, trackEvent } from '@/shared/model/analytics';
@@ -137,27 +138,17 @@ export function PasswordAuthForms({
   defaultTab?: 'login' | 'register';
 }) {
   return (
-    <Tabs.Root defaultValue={defaultTab} className="flex flex-col gap-4">
-      <Tabs.List aria-label="아이디 로그인 방식" className="flex border-b border-line">
-        <Tabs.Tab
-          value="login"
-          className="min-h-touch flex-1 border-b-2 border-transparent text-label text-muted data-active:border-ink data-active:text-ink active:bg-sunken"
-        >
-          로그인
-        </Tabs.Tab>
-        <Tabs.Tab
-          value="register"
-          className="min-h-touch flex-1 border-b-2 border-transparent text-label text-muted data-active:border-ink data-active:text-ink active:bg-sunken"
-        >
-          회원가입
-        </Tabs.Tab>
-      </Tabs.List>
-      <Tabs.Panel value="login">
+    <Tabs defaultValue={defaultTab} className="gap-4">
+      <TabsList variant="line" aria-label="아이디 로그인 방식">
+        <TabsTrigger value="login">로그인</TabsTrigger>
+        <TabsTrigger value="register">회원가입</TabsTrigger>
+      </TabsList>
+      <TabsContent value="login">
         <PasswordLoginForm nextPath={nextPath} />
-      </Tabs.Panel>
-      <Tabs.Panel value="register">
+      </TabsContent>
+      <TabsContent value="register">
         <PasswordRegisterForm nextPath={nextPath} />
-      </Tabs.Panel>
-    </Tabs.Root>
+      </TabsContent>
+    </Tabs>
   );
 }

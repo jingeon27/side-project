@@ -92,26 +92,27 @@ describe('post view counting', () => {
     expect(await state.db.cacheInvalidation.count()).toBe(0);
   });
 
-  it('limits anonymous visitor ids from one IP and user agent but counts other agents and members', async () => {
+  it('limits anonymous visitor ids from one IP even when the user agent changes but counts members', async () => {
     const created = await post();
-    for (let index = 1; index <= ANONYMOUS_VIEWS_PER_NETWORK; index += 1)
-      expect(await view(created.id, 'same-browser')).toBe(index);
+    for (const index of Array.from({ length: ANONYMOUS_VIEWS_PER_NETWORK }, (_, offset) => offset + 1))
+      expect(await view(created.id, `rotated-browser-${index}`)).toBe(index);
+    // 회귀: User-Agent만 바꿔 새 익명 visitorId를 보내면 상한을 건너뛰어 조회수를 부풀릴 수 있었다.
     expect(await view(created.id, 'same-browser')).toBe(ANONYMOUS_VIEWS_PER_NETWORK);
-    expect(await view(created.id, 'another-browser')).toBe(ANONYMOUS_VIEWS_PER_NETWORK + 1);
+    expect(await view(created.id, 'another-browser')).toBe(ANONYMOUS_VIEWS_PER_NETWORK);
     const member = await state.author
       .post(`/api/posts/${created.id}/views`)
       .set('Origin', origin)
       .set('User-Agent', 'same-browser')
       .send({ visitorId: randomUUID() })
       .expect(200);
-    expect(PostViewSchema.parse(member.body).viewCount).toBe(ANONYMOUS_VIEWS_PER_NETWORK + 2);
+    expect(PostViewSchema.parse(member.body).viewCount).toBe(ANONYMOUS_VIEWS_PER_NETWORK + 1);
     expect(await state.db.postView.count({ where: { postId: created.id, networkHash: { not: null } } })).toBe(
-      ANONYMOUS_VIEWS_PER_NETWORK + 1,
+      ANONYMOUS_VIEWS_PER_NETWORK,
     );
     await state.db.postView.updateMany({
       where: { postId: created.id },
       data: { lastViewedAt: new Date(Date.now() - 25 * 60 * 60 * 1000) },
     });
-    expect(await view(created.id, 'same-browser')).toBe(ANONYMOUS_VIEWS_PER_NETWORK + 3);
+    expect(await view(created.id, 'same-browser')).toBe(ANONYMOUS_VIEWS_PER_NETWORK + 2);
   });
 });

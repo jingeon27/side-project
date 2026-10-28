@@ -11,6 +11,7 @@ import {
   operations,
   ReportStatusSchema,
   schemas,
+  SupportStatusSchema,
 } from '@game-feedback/contracts';
 
 export function createOpenApi() {
@@ -66,6 +67,9 @@ export function createOpenApi() {
                   },
                 },
               ]
+            : []),
+          ...(operation.id === 'listSupportThreads'
+            ? [{ name: 'status', in: 'query', schema: { type: 'string', enum: SupportStatusSchema.options } }]
             : []),
           ...(operation.id === 'listReports'
             ? [

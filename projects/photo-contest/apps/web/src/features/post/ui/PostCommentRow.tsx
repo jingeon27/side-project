@@ -1,12 +1,14 @@
 'use client';
 
-import { useFragment, useMutation } from '@apollo/client/react';
+import { useFragment, useMutation, useQuery } from '@apollo/client/react';
 import { overlay } from 'overlay-kit';
 
 import { Mention } from '@side/design-system';
 
 import {
   DeletePostCommentDocument,
+  GalleryPostAuthorFragmentDoc,
+  MeDocument,
   PostCommentCardFragmentDoc,
   PostCommentsDocument,
   RefreshPostDocument,
@@ -19,27 +21,24 @@ import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 
 import { PostCommentLikeButton } from './PostCommentLikeButton';
 
-export function PostCommentRow({
-  id,
-  viewerId,
-  postAuthorId,
-  replyToName,
-}: {
-  id: string;
-  viewerId?: string;
-  postAuthorId?: string;
-  replyToName?: string;
-}) {
+export function PostCommentRow({ id, replyToName }: { id: string; replyToName?: string }) {
   const { data: comment, complete } = useFragment({
     fragment: PostCommentCardFragmentDoc,
     from: { __typename: 'PostComment', id },
+  });
+  // '나'·'작성자' 표시는 이 행만 쓰므로 목록에서 내려받지 않고 같은 캐시에서 읽는다.
+  const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
+  const post = useFragment({
+    fragment: GalleryPostAuthorFragmentDoc,
+    from: complete ? { __typename: 'GalleryPost', id: comment.postId } : null,
   });
   const [remove] = useMutation(DeletePostCommentDocument, {
     refetchQueries: [PostCommentsDocument],
     awaitRefetchQueries: true,
   });
   if (!complete) return null;
-  const isMine = comment.author.id === viewerId;
+  const isMine = comment.author.id === viewer?.me?.id;
+  const isPostAuthor = post.complete && comment.author.id === post.data.author.id;
   return (
     <div id={`comment-${id}`} className="flex scroll-mt-6 items-start gap-3">
       <Avatar name={comment.author.nickname} src={comment.author.avatar} size="sm" />
@@ -47,9 +46,7 @@ export function PostCommentRow({
         <p className="flex flex-wrap items-center gap-1.5 text-caption font-semibold text-ink">
           <span className="min-w-0 truncate">{comment.author.nickname}</span>
           {isMine ? <span className="text-micro font-normal text-muted">나</span> : null}
-          {comment.author.id === postAuthorId ? (
-            <span className="text-micro font-normal text-muted">작성자</span>
-          ) : null}
+          {isPostAuthor ? <span className="text-micro font-normal text-muted">작성자</span> : null}
         </p>
         <p
           className={cn(

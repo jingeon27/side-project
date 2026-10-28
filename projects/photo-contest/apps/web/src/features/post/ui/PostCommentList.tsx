@@ -1,9 +1,9 @@
 'use client';
 
-import { useFragment, useQuery, type QueryRef } from '@apollo/client/react';
+import { useFragment, type QueryRef } from '@apollo/client/react';
 import { MessageCircle } from 'lucide-react';
 
-import { GalleryPostCardFragmentDoc, MeDocument, type PostCommentsQuery } from '@/shared/api/generated';
+import { GalleryPostCardFragmentDoc, type PostCommentsQuery } from '@/shared/api/generated';
 import { useInfiniteQuery } from '@/shared/api/infinite-query.hook';
 import { formatCount } from '@/shared/lib/format.helper';
 import { Button } from '@/shared/ui/@core/button';
@@ -22,7 +22,6 @@ export function PostCommentList({
     pageSize: 24,
     canFetchMore: (data) => data.postComments.length < data.postCommentCount,
   });
-  const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
@@ -42,12 +41,7 @@ export function PostCommentList({
       {data.postComments.length ? (
         <ul aria-label="게시물 댓글" className="flex flex-col gap-5">
           {data.postComments.map(({ id }) => (
-            <PostCommentCard
-              key={id}
-              id={id}
-              viewerId={viewer?.me?.id}
-              postAuthorId={complete ? post.author.id : undefined}
-            />
+            <PostCommentCard key={id} id={id} />
           ))}
         </ul>
       ) : (

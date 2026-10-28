@@ -3,20 +3,11 @@
 import { PostLink } from './PostLink';
 import { PostMedia } from './PostMedia';
 
-export function PostAttachments({
-  postId,
-  detail = false,
-  edgeToEdge = false,
-}: {
-  postId: string;
-  detail?: boolean;
-  edgeToEdge?: boolean;
-}) {
+/** 카드 밖(댓글 시트의 원본 게시물)에서 미디어와 첨부 링크를 함께 보여 준다. */
+export function PostAttachments({ postId, detail = false }: { postId: string; detail?: boolean }) {
   return (
     <>
-      <div className={edgeToEdge ? '-mx-4 desktop:-mx-5' : 'contents'}>
-        <PostMedia postId={postId} detail={detail} edgeToEdge={edgeToEdge} />
-      </div>
+      <PostMedia postId={postId} detail={detail} />
       <PostLink postId={postId} />
     </>
   );
