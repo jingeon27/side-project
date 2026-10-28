@@ -132,7 +132,13 @@ export function CreateGroupForm({
         </p>
       ) : null}
       <div className="flex flex-row gap-3 border-t border-line pt-5 [&>*]:min-w-0 [&>*]:flex-1">
-        <Button type="button" variant="secondary" disabled={form.formState.isSubmitting} onClick={onCancel}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          disabled={form.formState.isSubmitting}
+          onClick={onCancel}
+        >
           취소
         </Button>
         <Button type="submit" loading={form.formState.isSubmitting}>
