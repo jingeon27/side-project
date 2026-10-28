@@ -5,7 +5,9 @@ for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 844 });
     for (const path of ['/en', '/ja/settings', '/en/posts/sample-post-0', '/en/users/sample-user-0']) {
       await page.goto(path);
-      await expect(page.locator('main')).toBeVisible();
+      const main = page.getByRole('main');
+      await expect(main).toHaveCount(1);
+      await expect(main).toBeVisible();
       await expect
         .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth), {
           message: `${path} must fit the ${width}px viewport after rendering`,

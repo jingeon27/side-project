@@ -18,13 +18,14 @@ export const test = base.extend({
     // 방문자 예산을 테스트별로 분리한다. 외부 업로드에는 CORS 허용 밖의 헤더를 추가하지 않는다.
     await context.route(detailPage, async (route) =>
       route.continue({
-        headers: { ...(await route.request().allHeaders()), 'X-Forwarded-For': address },
+        headers: { ...route.request().headers(), 'X-Forwarded-For': address },
       }),
     );
     try {
       await run(context);
     } finally {
-      await context.unroute(detailPage);
+      // 남아 있는 prefetch 처리까지 끝낸 뒤 context를 닫는다.
+      await context.unrouteAll({ behavior: 'wait' });
     }
   },
 });
