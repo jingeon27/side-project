@@ -207,9 +207,9 @@ bash deploy/shared-instance/scripts/proxy.sh validate
 bash deploy/shared-instance/scripts/proxy.sh start
 ```
 
-SSH 접속 값과 키는 두 배포 Environment(GF `game-feedback-production`, PC `photo-contest-production`, 둘 다 배포 브랜치 `main`으로 제한)에 각각 등록하고 repository secret에는 두지 않는다. 나머지는 repository variable이다.
+SSM 연결 값과 SSH 인증 키는 두 배포 Environment(GF `game-feedback-production`, PC `photo-contest-production`, 둘 다 **main 브랜치만 허용**)에 각각 등록한다. 웹 빌드 설정은 repository variable이다.
 
-[Environment 설정](https://github.com/jingeon27/side-project/settings/environments)에서 정확히 `game-feedback-production`, `photo-contest-production`을 만들고 운영 배포 브랜치를 허용한다. [Actions Variables](https://github.com/jingeon27/side-project/settings/variables/actions)에서 공개 설정을, [Actions Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions)에서 private key를 등록한다. 공통 SSH 설정을 repository 범위에 두면 두 Environment에 중복 입력할 필요가 없다. [GitHub Environment 안내](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)를 따른다.
+[Environment 설정](https://github.com/jingeon27/side-project/settings/environments)에서 정확히 `game-feedback-production`, `photo-contest-production`을 만들고 운영 배포 브랜치를 허용한다. [Actions Variables](https://github.com/jingeon27/side-project/settings/variables/actions)에서 공개 설정을, [Actions Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions)에서 private key를 등록한다. 배포용 SSH Secret과 SSM 역할 설정은 각 Environment에 두어 main 브랜치 제한을 적용한다. [GitHub Environment 안내](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)를 따른다.
 
 | 종류                | 이름                                                                                                       | 값                                                                                                                                   |
 | ------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -265,6 +265,23 @@ bash "$deployment_release_dir/host/proxy.sh" sync "$deployment_release_dir/Caddy
 ```
 
 두 서비스의 릴리스는 같은 Caddyfile을 가져야 하므로 두 배포 브랜치를 같게(`main`) 둔다. 요청 본문 상한은 모든 경로에서 1MB다. GF 프로필 사진을 포함한 미디어는 브라우저가 presigned 양식으로 S3에 직접 올린다.
+
+### 외부 SSH를 열지 않는 SSM CD
+
+[Terraform SSM CD 연결](terraform/README.md#ssm-cd-연결)로 OIDC 역할을 준비한다. 두 운영 Environment에 `SIDE_DEPLOY_AWS_ROLE_ARN`, `SIDE_DEPLOY_AWS_ACCOUNT_ID`, `SIDE_DEPLOY_SSM_INSTANCE_ID`를 추가하면 runner가 임시 자격증명과 SSM 터널로 기존 SSH 배포를 실행한다. `SIDE_DEPLOY_HOST`는 SSH host key 검증에 쓰는 고정 공인 IP이며, 접속 대상은 `SIDE_DEPLOY_SSM_INSTANCE_ID`다. 서버 보안 그룹의 22번 인바운드는 필요 없다. SSM 값을 비우면 기존 직접 SSH 방식으로 실행하므로, 직접 SSH를 쓰지 않는 운영 환경에서는 instance ID를 반드시 설정한다.
+
+### 운영 환경 파일의 위치
+
+로컬 프로젝트 `.env`를 커밋하거나 GitHub에 파일로 업로드하지 않는다. 다음 파일이 EC2 운영 설정의 원본이며 `ubuntu` 소유·권한 `600`으로 관리한다.
+
+| 파일                                            | 내용                                                    |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `/srv/side-project/.env`                        | 도메인, 공용 미디어 버킷, 백업 버킷, ACME 메일          |
+| `/srv/side-project/services/game-feedback/.env` | GF DB URL, 운영 S3 키, OAuth, API Sentry                |
+| `/srv/side-project/services/photo-contest/.env` | PC DB URL, 운영 S3 키, API Sentry                       |
+| `/srv/side-project/database/.env`               | 최초 준비 시 자동 생성한 PostgreSQL superuser 초기화 값 |
+
+API 환경 파일을 바꿔도 실행 중인 컨테이너에는 자동 적용되지 않는다. 다음 서비스 배포에서 Compose가 새 설정을 적용한다. 웹의 공개 Sentry·Amplitude 키는 위 파일이 아니라 repository Variables에서 바꾸고 새 이미지를 빌드한다. DB 비밀번호 변경은 URL 파일 편집뿐 아니라 해당 PostgreSQL role의 비밀번호도 함께 변경해야 한다.
 
 ## 운영·롤백
 

@@ -44,6 +44,7 @@ esac
 `;
 // 고정된 원격 경로를 테스트 루트로 바꿔 같은 기기에서 실행한다. 일부 상태 조회는 연결 실패로 흉내 낸다.
 const FAKE_SSH = `#!/usr/bin/env bash
+if [[ -n "\${FAKE_SSH_ARGS:-}" ]]; then printf '%s\\n' "$@" >>"$FAKE_SSH_ARGS"; fi
 while (($#)); do
   case "$1" in
     -i|-p|-o) shift 2 ;;
@@ -90,7 +91,14 @@ beforeEach(() => {
   writeFileSync(join(state.root, 'postgres/.side-postgres-volume'), 'volume=vol-fixture\n');
   cpSync(join(repo, 'deploy/shared-instance/Caddyfile'), join(state.root, 'proxy/Caddyfile'));
   cpSync(join(repo, 'deploy/shared-instance/compose.yaml'), join(state.root, 'proxy/compose.yaml'));
-  const tools = { docker: FAKE_DOCKER, ssh: FAKE_SSH, flock: FAKE_FLOCK, setsid: '#!/bin/sh\nexec "$@"\n' };
+  const tools = {
+    docker: FAKE_DOCKER,
+    ssh: FAKE_SSH,
+    flock: FAKE_FLOCK,
+    setsid: '#!/bin/sh\nexec "$@"\n',
+    aws: '#!/bin/sh\nexit 0\n',
+    'session-manager-plugin': '#!/bin/sh\nexit 0\n',
+  };
   for (const [name, source] of Object.entries(tools))
     writeFileSync(join(state.tools, name), source, { mode: 0o700 });
 });
@@ -161,6 +169,35 @@ function jobStatus(job: string, offset = 0) {
 }
 
 describe('공유 호스트 원격 배포', () => {
+  it('SSM 터널에서도 호스트 키를 검사하고 같은 원격 배포를 끝까지 따라가야 한다', () => {
+    const argumentsFile = join(state.root, 'ssh-arguments');
+    const result = upload({
+      DEPLOY_SSM_INSTANCE_ID: 'i-0123456789abcdef0',
+      DEPLOY_AWS_REGION: 'ap-northeast-2',
+      FAKE_SSH_ARGS: argumentsFile,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(readlinkSync(join(state.root, 'services/photo-contest/current'))).toBe(releaseDirectory());
+    const argumentsText = readFileSync(argumentsFile, 'utf8');
+    expect(argumentsText).toContain('StrictHostKeyChecking=yes');
+    expect(argumentsText).toContain('UserKnownHostsFile=');
+    expect(argumentsText).toContain(
+      'ProxyCommand=aws ssm start-session --region ap-northeast-2 --target i-0123456789abcdef0 --document-name AWS-StartSSHSession --parameters portNumber=%p',
+    );
+    expect(`${result.stdout}${result.stderr}${argumentsText}`).not.toContain(token);
+  }, 60_000);
+
+  it.each([
+    { DEPLOY_SSM_INSTANCE_ID: 'i-0123456789abcdef0;touch injected', DEPLOY_AWS_REGION: 'ap-northeast-2' },
+    { DEPLOY_SSM_INSTANCE_ID: 'i-0123456789abcdef0', DEPLOY_AWS_REGION: 'ap-northeast-2;touch injected' },
+    { DEPLOY_SSM_INSTANCE_ID: 'i-0123456789abcdef0', DEPLOY_AWS_REGION: '' },
+  ])('잘못된 SSM 연결 값은 SSH 접속 전에 거부해야 한다: %j', (settings) => {
+    const result = upload(settings);
+    expect(result.status).not.toBe(0);
+    expect(existsSync(releaseDirectory())).toBe(false);
+    expect(dockerCalls()).toEqual([]);
+  });
+
   it('SSH 세션과 분리한 원격 배포를 끝까지 따라가 성공을 보고해야 한다', () => {
     const result = upload({ FAKE_SSH_DROPPED_POLLS: '2' });
     expect(result.status, result.stderr).toBe(0);

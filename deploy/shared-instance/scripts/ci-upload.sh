@@ -31,6 +31,14 @@ tar -czf "$temporary/release.tar.gz" -C "$temporary/release" compose.yaml Caddyf
 options=(-i "$temporary/key" -p "${DEPLOY_PORT:-22}" -o BatchMode=yes -o ConnectTimeout=15 \
   -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
   -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$temporary/known_hosts")
+if [[ -n "${DEPLOY_SSM_INSTANCE_ID:-}" ]]; then
+  # 터널 대상은 검증한 인스턴스 하나로 고정하고 SSH 인증·호스트 키 검사는 그대로 유지한다.
+  [[ "$DEPLOY_SSM_INSTANCE_ID" =~ ^i-([a-f0-9]{8}|[a-f0-9]{17})$ ]] || { echo 'Invalid SSM instance ID.' >&2; exit 2; }
+  [[ "${DEPLOY_AWS_REGION:-}" =~ ^[a-z]{2}(-[a-z]+)+-[0-9]$ ]] || { echo 'Invalid SSM region.' >&2; exit 2; }
+  command -v aws >/dev/null
+  command -v session-manager-plugin >/dev/null
+  options+=(-o "ProxyCommand=aws ssm start-session --region $DEPLOY_AWS_REGION --target $DEPLOY_SSM_INSTANCE_ID --document-name AWS-StartSSHSession --parameters portNumber=%p")
+fi
 destination="$DEPLOY_USER@$DEPLOY_HOST"
 remote_dir="/srv/side-project/services/$SERVICE/releases/$RELEASE_SHA"
 printf -v remote_command 'install -d -m 700 %q && tar -xzf - -C %q' "$remote_dir" "$remote_dir"
