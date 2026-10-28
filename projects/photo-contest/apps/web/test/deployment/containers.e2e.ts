@@ -18,12 +18,15 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     [origin, storage].includes(new URL(route.request().url()).origin) ? route.continue() : route.abort(),
   );
   /** 고정 경로는 권한만 확인하고 캐시 금지 307로 짧은 서명 GET에 보낸다. */
-  const expectStorageRedirect = async (response: { status(): number; headers(): Record<string, string> }) => {
+  const expectStorageRedirect = async (
+    response: { status(): number; headers(): Record<string, string> },
+    expiresIn = '60',
+  ) => {
     expect(response.status()).toBe(307);
     expect(response.headers()['cache-control']).toBe('private, no-store');
     const signed = new URL(response.headers()['location'] ?? '');
     expect(signed.origin).toBe(storage);
-    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+    expect(signed.searchParams.get('X-Amz-Expires')).toBe(expiresIn);
     return signed.toString();
   };
   const errors: string[] = [];
@@ -53,10 +56,11 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
   await page.goto('/me');
   await expect(page.getByRole('heading', { name: '배포 검증 회원', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  const groupForm = page.getByRole('dialog');
+  await expect(page).toHaveURL(/\/groups\/new$/);
+  const groupForm = page.getByRole('form', { name: '그룹 만들기', exact: true });
   await groupForm.getByLabel('그룹 이름').fill('운영 이미지 그룹');
   await groupForm.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+  await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
 
   const groupPath = new URL(page.url()).pathname;
   const createMediaPost = async (title: string, video = false) => {
@@ -89,7 +93,10 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
     .locator('video')
     .getAttribute('src');
   if (!videoUrl) throw new Error('영상 주소가 있어야 한다');
-  const signedVideo = await expectStorageRedirect(await page.request.get(videoUrl, { maxRedirects: 0 }));
+  const signedVideo = await expectStorageRedirect(
+    await page.request.get(videoUrl, { maxRedirects: 0 }),
+    '600',
+  );
   // 브라우저처럼 서명 GET에 Range를 보내 저장소가 구간을 돌려주는지 확인한다.
   const range = await page.evaluate(async (url) => {
     const response = await fetch(url, { headers: { Range: 'bytes=0-31' } });
@@ -121,11 +128,12 @@ test('운영 이미지에서 가입·저장소 직접 전송 사진/영상·댓�
 
   await page.goto('/explore');
   await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  const privateForm = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+  await expect(page).toHaveURL(/\/groups\/new$/);
+  const privateForm = page.getByRole('form', { name: '그룹 만들기', exact: true });
   await privateForm.getByLabel('그룹 이름').fill('운영 비공개 그룹');
   await privateForm.getByRole('radio', { name: /^비공개 그룹/ }).check();
   await privateForm.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-  await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+  await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
   const privatePath = new URL(page.url()).pathname;
   await createMediaPost('운영 비공개 사진');
   const privateUrl = await page

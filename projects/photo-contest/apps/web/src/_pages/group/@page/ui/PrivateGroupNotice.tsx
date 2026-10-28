@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 
-import { useQueryRefHandlers, useReadQuery } from '@apollo/client/react';
+import { useReadQuery } from '@apollo/client/react';
 import { LockKeyhole } from 'lucide-react';
 
 import { GroupMembershipButton } from '@/features/group';
@@ -10,10 +10,15 @@ import { Button } from '@/shared/ui/@core/button';
 
 import type { TGroupQueryRef } from '../model/group-query.type';
 
-export function PrivateGroupNotice({ groupRef }: { groupRef: TGroupQueryRef }) {
+export function PrivateGroupNotice({
+  groupRef,
+  onRefresh,
+}: {
+  groupRef: TGroupQueryRef;
+  onRefresh: () => Promise<unknown>;
+}) {
   const { data } = useReadQuery(groupRef);
-  const { refetch } = useQueryRefHandlers(groupRef);
-  // 확인하는 동안 그룹 화면 전체가 로딩으로 바뀌지 않게 transition으로 다시 받는다.
+  // 부모가 조회 참조를 갱신해야 안내 밖의 피드·글쓰기·멤버 수도 같은 승인 결과를 읽는다.
   const [checking, startTransition] = useTransition();
   if (!data) return null;
   const { group } = data;
@@ -33,7 +38,7 @@ export function PrivateGroupNotice({ groupRef }: { groupRef: TGroupQueryRef }) {
           onClick={() =>
             startTransition(async () => {
               try {
-                await refetch();
+                await onRefresh();
               } catch {
                 /* 조회 경계가 실패를 보여 준다. */
               }
