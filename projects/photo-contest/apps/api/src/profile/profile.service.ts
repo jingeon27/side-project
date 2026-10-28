@@ -7,10 +7,14 @@ import { COMPLETED_POST_UPLOAD_TTL_MS, MAX_PENDING_UPLOADS, UPLOAD_TICKET_TTL_MS
 import { Database } from '../database/database.service';
 import { assertStorageQuota } from '../media-upload/storage-quota';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
-import { createMediaKey, MediaStorage } from '../storage/media-storage.service';
+import { createMediaKey, MediaStorage, type TMediaExtension } from '../storage/media-storage.service';
 import { type TRequestProfileAvatarUploadDto, type TUpdateMyProfileDto } from './profile.dto';
 
-const EXTENSION = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as const;
+const EXTENSION = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+} as const satisfies Record<TRequestProfileAvatarUploadDto['contentType'], TMediaExtension>;
 const REJECTED = '프로필 사진 업로드가 만료되었거나 사용할 수 없습니다.';
 
 @Injectable()
