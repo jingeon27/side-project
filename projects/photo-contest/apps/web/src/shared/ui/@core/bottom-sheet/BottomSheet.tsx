@@ -15,7 +15,10 @@ interface IBottomSheetRootProps extends IOverlayControlProps {
   snapPoints?: TBottomSheetSnapPoint[];
 }
 
-/** 같은 DOM을 모바일에서는 시트로, 768px부터는 중앙 모달로 보여 준다. */
+/**
+ * 같은 DOM을 모바일에서는 시트로, 768px부터는 중앙 모달로 보여 준다.
+ * 이 앱의 화면은 전체 폭을 쓰므로 768px 미만 시트는 공통 기본 최대 폭(540px)을 풀어 화면 너비를 채운다.
+ */
 function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBottomSheetRootProps) {
   useOverlayHistory(isOpen, onClose);
   return (
@@ -24,7 +27,7 @@ function Root({ isOpen, onClose, unmount, children, className, snapPoints }: IBo
       responsive
       snapPoints={snapPoints}
       container={getOverlayContainer()}
-      className={className}
+      className={cn('max-tablet:max-w-none', className)}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
