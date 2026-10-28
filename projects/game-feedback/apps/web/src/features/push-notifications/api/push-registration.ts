@@ -1,9 +1,13 @@
+import type { TPushRegistration } from '@game-feedback/bridge';
 import { registerPushDevice, unregisterPushDevice } from '@game-feedback/sdk';
 
 import type { TLocale } from '@/shared/i18n';
 import { requestNativePush } from '@/shared/native';
 
-export async function synchronizePush(requestPermission: boolean, locale: TLocale) {
+export async function synchronizePush(
+  requestPermission: boolean,
+  locale: TLocale,
+): Promise<TPushRegistration['status']> {
   const registration = await requestNativePush(requestPermission);
   if (!registration) throw new Error('앱 알림 설정을 확인하지 못했어요.');
   const { installationId, token, platform, status } = registration;

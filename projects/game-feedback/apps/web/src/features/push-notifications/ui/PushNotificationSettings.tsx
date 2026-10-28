@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 import { Button } from '@side/design-system';
 
@@ -23,11 +23,13 @@ export function PushNotificationSettings({ userId }: { userId: string }) {
     .with('unavailable', () => t('앱 알림을 준비하고 있어요. 잠시 후 다시 확인해 주세요.'))
     .with('granted', () => t('앱 알림이 켜져 있어요.'))
     .with('denied', () => t('기기 설정에서 알림을 허용해 주세요.'))
-    .otherwise(() => t('새로운 소식을 앱 알림으로 받아보세요.'));
+    .with(P.union('undetermined', undefined), () => t('새로운 소식을 앱 알림으로 받아보세요.'))
+    .exhaustive();
   const actionLabel = match({ pending: enable.isPending, status })
     .with({ pending: true }, () => t('확인 중…'))
     .with({ status: 'denied' }, () => t('기기 설정 열기'))
-    .otherwise(() => t('알림 켜기'));
+    .with({ pending: false }, () => t('알림 켜기'))
+    .exhaustive();
   function handleAction() {
     if (status === 'denied') {
       postToNative({ type: 'push-settings' });
