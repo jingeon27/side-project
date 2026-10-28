@@ -53,6 +53,8 @@ test(
       await expect(page.getByRole('navigation', { name: '주요 메뉴', exact: true })).toBeVisible();
       for (const width of [1024, 1440, 1920, 2560]) {
         await page.setViewportSize({ width, height: 1000 });
+        await expect(page.locator('[data-desktop-nav]')).toBeVisible();
+        await expect(page.locator('#pc-main header').first()).toBeVisible();
         const main = await page.locator('#pc-main').boundingBox();
         const sidebar = await page.locator('[data-desktop-nav]').boundingBox();
         const header = await page.locator('header').first().boundingBox();
@@ -67,7 +69,9 @@ test(
         if (['/', '/explore', '/me'].includes(path)) {
           const regionName =
             path === '/' ? '공개 그룹 목록' : path === '/explore' ? '탐색할 그룹' : '참여 그룹';
-          const region = await page.getByRole('region', { name: regionName, exact: true }).boundingBox();
+          const list = page.getByRole('region', { name: regionName, exact: true });
+          await expect(list).toBeVisible();
+          const region = await list.boundingBox();
           if (!region) throw new Error('목록 영역이 보여야 한다');
           expect(region.x + region.width).toBe(width - 32);
         }
