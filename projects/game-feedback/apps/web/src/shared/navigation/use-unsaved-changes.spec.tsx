@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installBrowserNavigation } from './browser-navigation';
@@ -35,7 +35,9 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
   it('Provider를 해제하면 이전 등록이 다음 Provider에 남지 않아야 한다', () => {
     const confirm = vi.fn(() => false);
     const previous = renderHook(useNavigationGuardRegistry, { wrapper: NavigationGuardProvider });
-    previous.result.current.register({ confirm });
+    act(() => {
+      previous.result.current.register({ confirm });
+    });
     expect(confirmNavigation()).toBe(false);
     previous.unmount();
     renderHook(useNavigationGuardRegistry, { wrapper: NavigationGuardProvider });
@@ -100,6 +102,29 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
     hook.rerender({ dirty: true });
     hook.unmount();
     expect(confirmNavigation()).toBe(true);
+  });
+
+  it('같은 Provider의 마지막 초안이 해제될 때까지 문서 닫기를 확인해야 한다', () => {
+    const hook = renderHook(
+      ({ first, second }) => {
+        useUnsavedChanges({ hasChanges: first, confirm: () => true });
+        useUnsavedChanges({ hasChanges: second, confirm: () => true });
+      },
+      { initialProps: { first: true, second: true }, wrapper: NavigationGuardProvider },
+    );
+    const beforeSave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(beforeSave);
+    expect(beforeSave.defaultPrevented).toBe(true);
+
+    hook.rerender({ first: false, second: true });
+    const afterFirstSave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(afterFirstSave);
+    expect(afterFirstSave.defaultPrevented).toBe(true);
+
+    hook.rerender({ first: false, second: false });
+    const afterLastSave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(afterLastSave);
+    expect(afterLastSave.defaultPrevented).toBe(false);
   });
 
   it('같은 탭의 링크를 취소하면 라우터에 전달하지 않고 새 탭·다운로드는 방해하지 않아야 한다', () => {

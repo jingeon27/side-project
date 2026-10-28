@@ -1439,3 +1439,9 @@ Dockerfile과 Compose에서 기본 false인 데모·테스트 인증 플래그�
 게임패드 모양 로고는 말풍선과 각진 G 모노그램으로 교체했다. Web·Admin SVG, 웹 Apple 아이콘, 모바일 기본·Android adaptive 아이콘, 공유 이미지에 같은 형태를 사용한다. PNG는 SVG에서 기존 크기(180·1024px)와 투명 배경 규칙을 유지해 내보냈다.
 
 검증: Web lint·타입 검사, 320·400·1440px 비회원/회원의 프로필 동작 높이·간격·신고·팔로잉 알림, 헤더 간격, 로그인 안내와 뒤로 가기 관련 브라우저 테스트 13개가 통과했다. 실제 3300 홈과 공유 이미지에서 새 로고 렌더링을 확인했다. 모바일 설치·스토어 빌드는 실행하지 않았다.
+
+## 2026-10-28 초안 가드 외부 저장소 구독
+
+NavigationGuardRegistry의 등록 여부를 useSyncExternalStore로 구독하고, beforeunload 등록·해제는 Provider 한곳에서 관리한다. 폼은 가드만 등록하며 확인 함수 갱신, 모든 승인 후 초안 폐기, Provider별 격리는 유지한다.
+
+검증: navigation 관련 단위·UI 테스트 23개, Web typecheck와 변경 파일 ESLint 통과. 같은 Provider의 마지막 초안이 해제될 때까지 문서 닫기 확인이 유지되는 사양을 포함한다.
