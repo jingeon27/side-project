@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import {
   ExpoPushTransport,
@@ -149,15 +150,14 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
     if (!device || device.session.userId !== device.userId) return null;
     const status = await this.notifications.pushStatus(device.userId, job.eventId);
     if (!status) return null;
+    // 기기 언어는 DB 문자열이라 모르는 값은 한국어 문구를 쓴다.
+    const copy = match(device.locale)
+      .with('en', () => ({ title: 'New activity', body: 'You have a new notification.' }))
+      .with('ja', () => ({ title: '新しいお知らせ', body: '新しいお知らせが届きました。' }))
+      .otherwise(() => ({ title: '새 알림', body: '새로운 알림이 도착했어요.' }));
     return {
       to: device.token,
-      title: device.locale === 'en' ? 'New activity' : device.locale === 'ja' ? '新しいお知らせ' : '새 알림',
-      body:
-        device.locale === 'en'
-          ? 'You have a new notification.'
-          : device.locale === 'ja'
-            ? '新しいお知らせが届きました。'
-            : '새로운 알림이 도착했어요.',
+      ...copy,
       data: { path: `/${device.locale}/notifications`, notificationId: job.eventId },
       badge: Math.min(9999, status.badge),
       sound: 'default',
