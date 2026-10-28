@@ -5,7 +5,6 @@ import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared
 import { describe, expect, it, vi } from 'vitest';
 
 import { BattleFilters } from './BattleFilters';
-import { CoachingFilters } from './CoachingFilters';
 
 const router = {
   bfcacheId: 'board-filter-server-test',
@@ -36,7 +35,7 @@ function link(container: HTMLElement, name: string) {
 }
 
 describe('board filter chips in the first HTML', () => {
-  // 전투·코칭 칩은 빈 검색으로 서버 렌더해 JavaScript 전 HTML이 항상 '전체'를 표시하고 game·q를 잃었다.
+  // 전투 칩은 빈 검색으로 서버 렌더해 JavaScript 전 HTML이 항상 '전체'를 표시하고 game·q를 잃었다.
   it('marks the snapshot battle mode and keeps the game and search query', () => {
     const container = serverHtml(
       <BattleFilters
@@ -51,23 +50,6 @@ describe('board filter chips in the first HTML', () => {
       game: 'brawl-stars',
       q: 'battle',
       battleMode: 'DUEL',
-    });
-  });
-
-  it('marks the snapshot coaching role and keeps the game and search query', () => {
-    const container = serverHtml(
-      <CoachingFilters
-        locale="ko"
-        slug="coaching"
-        initialSearch="?game=brawl-stars&q=lesson&coachingRole=STUDENT"
-      />,
-    );
-    expect(link(container, '코치 구함').current).toBe('page');
-    expect(link(container, '전체').current).toBeNull();
-    expect(Object.fromEntries(link(container, '수강생 모집').query)).toEqual({
-      game: 'brawl-stars',
-      q: 'lesson',
-      coachingRole: 'COACH',
     });
   });
 });

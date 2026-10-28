@@ -7,7 +7,7 @@ import { parseBattleMode } from '@/features/battle';
 import { useI18n } from '@/shared/i18n';
 import { useBrowserSearch } from '@/shared/navigation';
 
-import { BoardFilterLink } from './BoardFilterLink';
+import { BoardFilterLink } from '../board/BoardFilterLink';
 
 interface IBattleFiltersProps {
   locale: string;
