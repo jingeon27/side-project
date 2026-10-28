@@ -26,7 +26,7 @@
 - 주석은 코드가 말하지 못하는 '왜'만 짧게 한국어로.
 - 생성 파일은 손으로 고치지 않는다: GraphQL 타입은 `codegen`, Prisma client는 `db:generate`.
 - 계약은 한 곳에서 바꾼다: GraphQL은 `apps/api/src/**/*.graphql`(web codegen의 입력), 웹 ↔ 앱 메시지는 `packages/bridge`, DB는 Prisma 마이그레이션.
-- 패키지를 추가하면 Yarn 24시간 격리 게이트를 통과한 버전인지 확인한다. 모바일은 Expo가 고정한 버전(`expo install` 기준)을 따른다.
+- 패키지를 추가하면 Yarn 24시간 격리 게이트를 통과한 버전인지 확인한다. Expo 네이티브 모듈은 `expo install` 권장값을 따르고, React·React DOM 패치는 루트 공통 catalog를 사용한다. 권장 패치와 다르면 React Native peer 범위를 확인하고 명시적 제외 설정·타입·테스트·두 플랫폼 번들을 검증한다.
 - Next.js API는 설치된 `node_modules/next/dist/docs`에서 확인한다. Expo·React Native 라이브러리는 설치된 타입 정의를 기준으로 한다.
 
 ## 제품 방향

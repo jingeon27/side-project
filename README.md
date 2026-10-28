@@ -138,17 +138,17 @@ yarn format:check
 
 ## TypeScript와 테스트 파일 규칙
 
-여러 워크스페이스에서 쓰는 외부 패키지의 정확한 버전은 [`.yarnrc.yml`](.yarnrc.yml)의 Yarn catalog에서 관리합니다. 각 앱·패키지의 `dependencies`·`devDependencies`는 `catalog:`를 참조합니다. Expo 앱의 React·React DOM은 SDK 호환 버전을 담은 `catalog:expo`를 참조하고, `peerDependencies`는 소비자가 사용할 수 있는 호환 범위를 유지합니다. 한 워크스페이스만 쓰는 패키지는 해당 manifest에서 관리합니다.
+여러 워크스페이스에서 쓰는 외부 패키지의 정확한 버전은 [`.yarnrc.yml`](.yarnrc.yml)의 Yarn catalog에서 관리합니다. 각 앱·패키지의 `dependencies`·`devDependencies`는 `catalog:`를 참조합니다. 웹과 Expo 앱의 React·React DOM도 공통 catalog를 참조하고, `peerDependencies`는 소비자가 사용할 수 있는 호환 범위를 유지합니다. 한 워크스페이스만 쓰는 패키지는 해당 manifest에서 관리합니다.
 
 공통 버전을 올릴 때는 catalog를 수정하고 `yarn install`로 `yarn.lock`을 함께 갱신한 뒤 `yarn install --immutable`과 영향을 받는 앱의 검사를 실행합니다. Next.js와 관련 `@next/*`·`eslint-config-next`는 같은 버전을 사용합니다. 의존성 설치 후에는 해당 개발 서버를 재시작하세요. 이전 Next.js 프로세스와 새 설치 파일이 섞이면 `routeModule.ensureInstrumentation` 오류가 발생할 수 있습니다. 재시작 후에도 이전 개발 캐시가 남으면 서버를 중지한 상태에서 해당 앱의 `.next/dev`를 비우고 다시 시작합니다.
 
-웹 앱의 Next.js와 관련 도구는 16.4.3을 사용하고 React·React DOM은 19.3.1을 사용합니다. 공통 `@side/config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. 모바일은 Expo SDK 58·React Native 0.88.0과 SDK가 지정한 React·React DOM 19.3.0을 사용합니다. Node·Yarn 버전은 유지합니다. Expo의 TypeScript 권장 버전 검사는 저장소에서 고정한 6.0.2를 유지하기 위해 `expo.install.exclude`에 명시하고, 앱의 실제 타입 검사는 `tsc7`으로 실행합니다.
+웹 앱의 Next.js와 관련 도구는 16.4.3을 사용하고 React·React DOM은 19.3.1을 사용합니다. 공통 `@side/config`의 `tsc7`은 안정 버전 TypeScript 7.0.2를 실행합니다. 각 앱의 타입 검사와 API 빌드도 이 명령을 사용합니다. Next 빌드, ESLint와 코드 생성 도구가 사용하는 JavaScript 컴파일러 API는 `typescript` 6.0.2로 유지합니다. TypeScript 7에는 안정된 컴파일러 API가 없으며, 공식 호환 shim은 Yarn 4.17 내장 패치에서 설치 오류가 발생해 직접 API 패키지와 네이티브 실행기를 분리했습니다. 모바일은 Expo SDK 58·React Native 0.88.0을 사용하고 React·React DOM은 웹과 같은 19.3.1을 사용합니다. React Native의 peer 범위 `^19.3.0` 안의 패치 업데이트입니다. Node·Yarn 버전은 유지합니다. Expo의 권장 버전 표는 React·React DOM 19.3.0과 TypeScript ~6.0.3을 가리키므로 의도적으로 고정한 세 패키지는 공식 `expo.install.exclude`에 명시합니다. 다른 네이티브 모듈 검사는 유지하고 앱의 타입 검사는 `tsc7`으로 실행합니다. `EXPO_OFFLINE=1 CI=1 yarn workspace @game-feedback/mobile exec expo install --check`는 설치된 SDK의 버전 표로 확인합니다. 온라인 최신 버전 표는 저장소의 24시간 배포 게이트를 아직 통과하지 못한 새 패치를 권장할 수 있습니다.
 
 두 API는 NestJS 12.2.0을 사용하고 입력 검증은 내장 StandardSchemaValidationPipe와 Zod 스키마로 처리합니다. DTO 타입은 스키마에서 추론하며 GraphQL 입력도 스키마를 명시적으로 연결합니다.
 
 Photo Contest의 Amplitude가 의존하는 AsyncStorage 1.x는 Expo SDK 58에서 사용하는 2.2.0으로 통일해 네이티브 모듈 중복을 막습니다.
 
-Photo Contest의 Expo Doctor는 API 테스트 도구를 따라 탐색한 웹용 React 19.3.1과 Amplitude의 New Architecture 미검증 메타데이터를 경고합니다. Android/iOS 번들의 소스맵은 앱의 React 19.3.0 한 개만 포함하는지 확인합니다. 네이티브 SDK 변경 뒤에는 dev client를 다시 빌드하고 실기기에서 확인해야 합니다.
+Photo Contest의 Expo Doctor는 Amplitude의 New Architecture 미검증 메타데이터를 경고할 수 있습니다. Android/iOS 번들에는 공통 catalog의 React 19.3.1 한 개만 포함하는지 확인합니다. 네이티브 SDK 변경 뒤에는 dev client를 다시 빌드하고 실기기에서 확인해야 합니다.
 
 WebView 14.0.1의 선언에서 추가 props의 기본값이 `undefined`라 props 전체가 `never`가 되는 문제는 Yarn 패치로 `unknown`을 사용해 보정합니다.
 

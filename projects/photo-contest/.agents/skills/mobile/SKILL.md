@@ -5,8 +5,8 @@ description: 웃긴순간 모바일 앱(apps/mobile, Expo React Native WebView �
 
 - 앱은 웹(`apps/web`)을 WebView 하나로 감싸는 얇은 셸이다. 화면·기능은 웹에 만들고, 앱에는 웹이 할 수 없는 네이티브 기능(공유 시트, 클립보드, 햅틱, 시스템 브라우저, 소셜 로그인 핸드오프)만 둔다. overlay-kit·ts-pattern 같은 UI·분기 라이브러리를 앱에 넣지 않는다.
 - 레이어는 `src/_app`, `src/_pages`(web-shell, update-required), `src/features`(bridge, navigation, app-config, analytics), `src/shared`. `modules` 단계는 없다.
-- 버전은 Expo SDK 57이 고정한 값(`bundledNativeModules`)을 따른다. 모바일 워크스페이스는 `hoistingLimits: workspaces`라 자기 React(19.2.3)를 따로 가진다 — 웹의 React 버전에 맞추지 않는다. 패키지를 추가하면 `expo install` 기준 버전 + Yarn 24시간 격리 게이트를 확인하고 `bundle:check`로 Metro 번들을 확인한다.
-- 라이브러리 API는 `apps/mobile/node_modules`의 설치된 타입 정의를 기준으로 한다(react-native-webview 13.16 등).
+- Expo SDK 58의 네이티브 모듈은 설치된 `bundledNativeModules`를 따른다. React·React DOM은 웹과 같은 공통 catalog의 19.3.1을 쓰며, React Native의 peer 범위 `^19.3.0` 안의 패치다. SDK 권장 패치와 달라 `expo.install.exclude`에 명시한다. `hoistingLimits: workspaces`는 유지하고 버전을 바꾸면 타입·단위 검사와 Android/iOS Metro 번들을 검증한다. 새 Expo 패치는 Yarn 24시간 격리 게이트를 통과해야 한다.
+- 라이브러리 API는 `apps/mobile/node_modules`의 설치된 타입 정의를 기준으로 한다(버전 번호를 과거 문서에서 복사하지 않는다).
 
 ## 동작 규칙
 

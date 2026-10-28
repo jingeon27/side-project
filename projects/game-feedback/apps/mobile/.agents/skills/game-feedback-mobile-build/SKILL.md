@@ -53,8 +53,8 @@ APP_VARIANT=development yarn workspace @game-feedback/mobile start     # 설치�
 
 ## Expo SDK·네이티브 패키지
 
-- 버전 기준은 설치된 `node_modules/expo/bundledNativeModules.json`이다. 현재 `react`·`react-native`·`react-native-webview`·`react-native-safe-area-context`·`react-native-web`·`react-dom`·`expo-*`가 이 값과 같다. `typescript`는 저장소 공통 6.0.2, typecheck는 `tsc7`을 유지한다.
-- `installConfig.hoistingLimits: "workspaces"`로 이 앱의 React가 Web과 분리된다. React 버전을 Web에 맞추지 않는다.
+- 버전 기준은 설치된 `node_modules/expo/bundledNativeModules.json`이다. React·React DOM은 React Native의 peer 범위 `^19.3.0` 안의 19.3.1 패치로 통일한다. 나머지 네이티브 패키지는 이 값을 따른다. `typescript`는 저장소 공통 6.0.2, typecheck는 `tsc7`을 유지한다.
+- `installConfig.hoistingLimits: "workspaces"`로 이 앱의 React가 Web과 분리된다. React·React DOM은 공통 catalog의 19.3.1을 사용한다. SDK의 정확한 권장 패치와 달라 `expo.install.exclude`에 명시하고 typecheck·테스트·Android/iOS 번들을 검증한다.
 - `metro.config.js`는 없다. `@game-feedback/bridge`는 TS 소스(`exports` → `./src/index.ts`)를 Metro가 직접 해석하므로 브리지 의존성(`zod`·`ts-pattern`·`es-toolkit`)이나 export 형식을 바꾸면 `bundle:check`를 돌린다.
 - 네이티브 모듈을 더하면 `vitest.setup.ts` 대역(`game-feedback-mobile-test`)과 dev client 재빌드가 함께 필요하다.
 
