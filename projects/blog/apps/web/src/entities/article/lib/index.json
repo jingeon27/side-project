@@ -341,8 +341,8 @@
         "level": 2
       },
       {
-        "id": "기능을-부탁할-때-예외-상황도-같이-적으려고-해요",
-        "title": "기능을 부탁할 때 예외 상황도 같이 적으려고 해요",
+        "id": "만들고-나서-다시-정한-게-많았어요",
+        "title": "만들고 나서 다시 정한 게 많았어요",
         "level": 2
       }
     ],
@@ -436,12 +436,12 @@
         "level": 2
       },
       {
-        "id": "i-want-to-request-the-exceptions-along-with-the-feature",
-        "title": "I want to request the exceptions along with the feature",
+        "id": "many-decisions-came-after-i-had-built-the-feature",
+        "title": "Many decisions came after I had built the feature",
         "level": 2
       }
     ],
-    "readingMinutes": 15,
+    "readingMinutes": 14,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"

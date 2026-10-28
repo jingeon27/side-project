@@ -181,20 +181,10 @@ Korean and English editions only appear where an actual translation exists.
 
 The language button needed more than a change of text. I also had to check that a chosen dark theme survives switching languages, and that opening a URL directly behaves correctly alongside navigating within the site. I fixed a warning caused by rendering the theme initialization script again during a language change. Checking only the first page load would have missed it.
 
-## I want to request the exceptions along with the feature
+## Many decisions came after I had built the feature
 
-Looking back, I mostly described the screens and successful outcomes. Only after implementation did I ask, “What if they log out?”, “What if this form stays open past the deadline?”, or “What if the same request arrives twice?” Having AI implement the feature did not remove my responsibility to decide which result was right.
+I wish I had included these cases in the original requests. When asking for an anonymous start, I could have also specified how someone would return to their history after logging out. When asking for chat, I could have included retrying a message after a failed send.
 
-When adding a feature now, I want to include these questions:
-
-- Who can view or change it, and does it require login or approval?
-- What happens if permissions or the relevant period change after the screen opens?
-- What input and saved results should survive a failure or retry?
-- How do deletion and account withdrawal affect other people's contributions?
-- Where should someone return after cancelling or logging in?
-
-I do not want every condition displayed as instructions on the screen. I want less copy covering the posts and photos, and the necessary explanation at the moment it informs a decision, such as just before logout. Tests still need to check that the same conditions hold behind the screen.
-
-I am still trying the screens and revising them. For Game Mate, I need to find people who will ask and people who will answer. I want to see whether someone receives a reply and comes back to read it.
+At first, a screen appearing and a button working seemed enough. Trying them myself brought up more decisions. Some, like transferring group ownership before leaving, could have been made earlier. Others only became obvious when I clicked through the screens: an explanation covered the photos, or Back took me somewhere unexpected. Each time, I went back and changed what I had already built.
 
 I wrote about deployment in [Starting with one EC2 instance](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).
