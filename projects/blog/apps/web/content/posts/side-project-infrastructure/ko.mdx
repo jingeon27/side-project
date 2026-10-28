@@ -96,7 +96,7 @@ backup-bucket/
 
 R2도 S3 호환이라고 해서 현재 업로드를 그대로 쓸 수 있는지 물어봤어요. 두 서비스는 presigned POST 정책에 크기 제한을 넣어서 파일을 올리고 있었어요.
 
-[R2 공식 문서](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)에는 GET·HEAD·PUT·DELETE는 지원하지만 HTML 폼 방식의 POST는 지원하지 않는다고 나와 있어요. 2026년 10월 28일 기준이에요.
+[R2 공식 문서](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)에는 GET, HEAD, PUT, DELETE는 지원하지만 HTML 폼 방식의 POST는 지원하지 않는다고 나와 있어요.
 
 옮기려면 PUT으로 바꾸고 업로드 조건과 완료 검사를 다시 확인해야 했어요. 우선은 S3를 유지하기로 했어요. 나중에 미디어 전송 비용이 많이 나오면 그때 다시 비교하려고 해요. 저장소를 바꾼다고 EC2까지 같이 옮길 필요는 없으니까요.
 
