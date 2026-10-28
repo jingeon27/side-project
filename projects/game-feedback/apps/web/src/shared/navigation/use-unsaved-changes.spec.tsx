@@ -17,6 +17,21 @@ function start() {
 }
 
 describe('저장하지 않은 변경의 이탈 확인', () => {
+  it('모든 이탈 확인을 승인했을 때만 초안을 버려야 한다', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const discardProfile = vi.fn();
+    const discardLinks = vi.fn();
+    renderHook(() => useUnsavedChanges(true, '프로필 초안을 버릴까요?', discardProfile));
+    renderHook(() => useUnsavedChanges(true, '링크 초안을 버릴까요?', discardLinks));
+    expect(confirmNavigation()).toBe(false);
+    expect(discardProfile).not.toHaveBeenCalled();
+    expect(discardLinks).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true);
+    expect(confirmNavigation()).toBe(true);
+    expect(discardProfile).toHaveBeenCalledOnce();
+    expect(discardLinks).toHaveBeenCalledOnce();
+  });
+
   it('변경이 있을 때만 이동·문서 닫기를 확인하고 저장하거나 언마운트하면 해제해야 한다', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const hook = renderHook(({ dirty }) => useUnsavedChanges(dirty, '초안을 버릴까요?'), {

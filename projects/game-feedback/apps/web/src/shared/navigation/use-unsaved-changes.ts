@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 import { registerNavigationGuard } from './navigation-guard';
 
-export function useUnsavedChanges(hasChanges: boolean, message: string) {
+export function useUnsavedChanges(hasChanges: boolean, message: string, onDiscard?: () => void) {
+  const handleDiscard = useEffectEvent(() => onDiscard?.());
   useEffect(() => {
     if (!hasChanges) return;
-    const release = registerNavigationGuard(() => window.confirm(message));
+    const release = registerNavigationGuard(
+      () => window.confirm(message),
+      () => handleDiscard(),
+    );
     const handleUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
