@@ -122,6 +122,7 @@ describe.skipIf(!testDatabaseUrl)(
         'answerCount',
         'author',
         'bio',
+        'gameAccounts',
         'helpfulCount',
         'joinedAt',
         'links',
@@ -137,6 +138,14 @@ describe.skipIf(!testDatabaseUrl)(
       ]);
       expect(profile.joinedAt).toBeTypeOf('string');
       expect(profile.bio).toBe('');
+      const accounts = await db.gameAccount.findMany({
+        where: { userId: coachId },
+        orderBy: { updatedAt: 'desc' },
+      });
+      expect(accounts).toHaveLength(1);
+      expect(profile.gameAccounts).toEqual(accounts.map((account) => account.profile));
+      expect(profile.gameAccounts[0]).not.toHaveProperty('userId');
+      expect(profile.gameAccounts[0]).not.toHaveProperty('id');
       await supertest(normalApp.getHttpServer()).get(`/api/users/${coachId}`).expect(404);
       await supertest(app.getHttpServer()).get('/api/users/missing-user').expect(404);
     });
