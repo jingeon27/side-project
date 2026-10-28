@@ -175,7 +175,11 @@ test(
       await expect(list.getByRole('button', { name: `${nickname} 댓글 삭제` })).toHaveCount(0);
     }
     await expect(sheet.getByText('첫 댓글을 남겨보세요.')).toBeVisible();
-    await page.keyboard.press('Escape');
+    // 하단 취소가 없는 댓글 시트도 보이는 닫기 버튼을 제목 옆에 둔다.
+    const close = sheet.getByRole('button', { name: '닫기', exact: true });
+    await expect(close).toBeInViewport();
+    await close.click();
+    await expect(sheet).toHaveCount(0);
     await expect(post.getByRole('button', { name: '댓글이 있는 순간 댓글 0개' })).toBeVisible();
     await page.reload();
     await expect(post.getByRole('button', { name: '댓글이 있는 순간 댓글 0개' })).toBeVisible();

@@ -34,6 +34,18 @@ function CreateGroupBottomSheet({
   );
 }
 
+function CommentsLikeBottomSheet({ isOpen, onClose, unmount }: IOverlayControlProps) {
+  return (
+    <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount} snapPoints={[0.75, 1]}>
+      <BottomSheet.Header title="댓글" closeLabel="닫기" />
+      <BottomSheet.Content>첫 댓글</BottomSheet.Content>
+      <BottomSheet.Footer cancelLabel={false}>
+        <button type="button">댓글 올리기</button>
+      </BottomSheet.Footer>
+    </BottomSheet.Root>
+  );
+}
+
 function Opener({ resizable, onUnmount }: { resizable?: boolean; onUnmount?: () => void }) {
   return (
     <button
@@ -120,6 +132,8 @@ describe('BottomSheet', () => {
     expect(sheet).toHaveAccessibleDescription('친구들과 함께할 그룹 이름을 정해요.');
     expect(screen.getByLabelText('그룹 이름')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '만들기' })).toBeInTheDocument();
+    // 하단 취소가 있는 시트는 제목 옆에 닫기 버튼을 따로 두지 않는다.
+    expect(within(sheet).queryByRole('button', { name: '닫기' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '취소' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -135,6 +149,36 @@ describe('BottomSheet', () => {
     expect(hasOpenOverlay()).toBe(false);
     // 닫힘 전환이 끝난 뒤 overlay-kit에서도 지워야 닫힌 시트가 쌓이지 않는다.
     await waitFor(() => expect(onUnmount).toHaveBeenCalledOnce());
+  });
+
+  it('하단 취소가 없는 시트는 제목 옆 닫기 버튼으로 닫고 연 버튼으로 포커스를 돌려야 한다', async () => {
+    const user = userEvent.setup();
+    render(
+      <OverlayProvider>
+        <button
+          type="button"
+          onClick={() =>
+            overlay.open(({ isOpen, close: onClose, unmount }) => (
+              <CommentsLikeBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} />
+            ))
+          }
+        >
+          댓글 열기
+        </button>
+      </OverlayProvider>,
+    );
+    const opener = screen.getByRole('button', { name: '댓글 열기' });
+    await user.click(opener);
+    const sheet = await screen.findByRole('dialog', { name: '댓글' });
+    await waitFor(() => expect(hasOpenOverlay()).toBe(true));
+    expect(within(sheet).queryByRole('button', { name: '취소' })).not.toBeInTheDocument();
+    const close = within(sheet).getByRole('button', { name: '닫기' });
+    expect(close.closest('[data-slot="bottom-sheet-header"]')).not.toBeNull();
+
+    await user.click(close);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(opener).toHaveFocus());
+    expect(hasOpenOverlay()).toBe(false);
   });
 
   it('Esc로 닫을 수 있어야 한다', async () => {
