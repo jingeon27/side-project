@@ -1,6 +1,6 @@
 # 공용 배포 환경 Terraform
 
-[공통 EC2 배포](../README.md)가 요구하는 AWS 리소스(서울 리전의 EC2 한 대 + PostgreSQL 데이터 EBS 볼륨과 일일 스냅샷 + 서비스별·DB 덤프용 비공개 S3 버킷)를 **새로** 만든다. 기존 리소스를 import하지 않는다. PostgreSQL 컨테이너와 서비스별 DB·role, 서버 환경 파일, 프록시, GitHub 설정은 Terraform 밖의 기존 절차를 그대로 따른다.
+[공통 EC2 배포](../README.md)가 요구하는 AWS 리소스(서울 리전의 EC2 한 대 + PostgreSQL 데이터 EBS 볼륨과 일일 스냅샷 + DB 덤프용 비공개 S3 버킷)를 **새로** 만든다. 기존 리소스를 import하지 않는다. PostgreSQL 컨테이너와 서비스별 DB·role, 서버 환경 파일, 프록시, GitHub 설정은 Terraform 밖의 기존 절차를 그대로 따른다.
 
 ## 만드는 리소스
 
@@ -77,7 +77,7 @@ cp terraform.tfvars.example terraform.tfvars  # 버킷 이름 세 개와 필요�
 - **버킷 이름**: 점(.) 없이. `media_bucket_name`은 이미 있는 공용 비공개 버킷이고 퍼블릭 접근 차단·암호화·Versioning·수명 주기·CORS를 [공통 운영 가이드](../README.md)대로 콘솔에서 관리한다. Terraform이 만드는 `backup_bucket_name`은 전역 고유하고 공용 버킷과 달라야 하며, 만든 뒤 바꾸면 버킷이 교체된다.
 - **AZ**: `availability_zone`에 EC2와 PostgreSQL 볼륨을 함께 둔다. EBS 볼륨은 같은 AZ의 인스턴스에만 붙으므로 만든 뒤 바꾸지 않는다.
 - **`metadata_hop_limit`**: `scripts/pg-backup.sh`는 aws-cli를 `--network host`로 실행하므로 기본 `1`로 덤프를 올린다. `2`로 올리면 bridge 네트워크의 앱 컨테이너도 인스턴스 역할을 쓸 수 있다.
-- **SSH와 배포 runner**: Actions CD(`ci-upload.sh`)는 SSH로 접속한다. 기본값(`ssh_allowed_cidrs = []`)은 22번을 열지 않으므로 배포 runner의 접속 경로를 별도로 준비해야 한다. self-hosted·고정 IP runner의 출구 IP를 CIDR로 허용하거나 사설 네트워크 접속 경로를 구성한다. 일반 GitHub-hosted runner는 IP가 바뀌므로 운영자의 로컬 IP만 허용해서는 배포할 수 없다. 운영자 셸은 SSM으로도 접속할 수 있다.
+- **SSM 배포 runner**: `github_oidc_subjects`에 정확한 두 운영 Environment의 subject를 넣으면 GitHub OIDC provider와 CD 역할, 이 EC2의 `AWS-StartSSHSession`만 허용하는 정책을 만든다(리소스 3개 추가). GitHub Environment의 배포 브랜치는 반드시 `main`만 허용한다. runner는 OIDC 임시 자격증명으로 SSM 터널을 열고 기존 SSH 인증·호스트 키 검증으로 배포한다. `ssh_allowed_cidrs = []`를 유지해 외부 22번을 열지 않는다. 이 계정에 GitHub OIDC provider가 이미 있다면 새로 만들지 말고 `aws_iam_openid_connect_provider.github[0]`로 import한 뒤 계획을 검토한다. 직접 SSH 배포도 계속 지원하며 이 경우에만 고정 IP runner의 출구 CIDR을 따로 허용한다.
 - **알람 메일**: `alarm_email`을 넣으면 상태 검사 재부팅과 CPU 크레딧 부족을 메일로 받는다. 비워 두면 재부팅만 하고 알리지 않는다.
 - **DNS**: Route 53 호스팅 영역이 있으면 `route53_zone_id`를 넣는다. 같은 이름의 레코드가 이미 있으면 덮어쓰지 않고 실패한다.
 - **계정 고정**: `allowed_account_ids`에 운영 계정 ID를 넣어 다른 계정에 만드는 사고를 막는다.
@@ -91,7 +91,7 @@ terraform apply tfplan
 terraform output
 ```
 
-기본값의 plan은 52개 리소스를 만든다(SSH 규칙·키 페어·DNS 레코드·알람 메일 SNS 제외). `alarm_email`을 넣었다면 적용 뒤 AWS Notifications가 보낸 확인 메일의 링크를 눌러야 알림이 온다. `aws_instance`·`aws_ebs_volume`·`aws_s3_bucket` 속성을 검토한다.
+기본값의 plan은 36개 리소스를 만든다(SSH 규칙·키 페어·DNS 레코드·알람 메일 SNS 제외). `alarm_email`을 넣었다면 적용 뒤 AWS Notifications가 보낸 확인 메일의 링크를 눌러야 알림이 온다. `aws_instance`·`aws_ebs_volume`·`aws_s3_bucket` 속성을 검토한다.
 
 ### 3. 호스트 확인
 
@@ -262,3 +262,15 @@ aws ec2 describe-instance-type-offerings --region ap-northeast-2 --location-type
 ```
 
 관련 공식 문서: [EBS 볼륨 연결](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-attaching-volume.html), [Data Lifecycle Manager 스냅샷 정책](https://docs.aws.amazon.com/ebs/latest/userguide/snapshot-lifecycle.html), [S3 CORS](https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html), [Terraform S3 backend 잠금](https://developer.hashicorp.com/terraform/language/backend/s3), [EC2 Elastic IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html).
+
+## SSM CD 연결
+
+1. `terraform.tfvars.example`의 `github_oidc_subjects`를 채운다. GitHub API `GET /repos/<owner>/<repo>/actions/oidc/customization/sub`의 `sub_claim_prefix` 뒤에 `:environment:game-feedback-production`와 `:environment:photo-contest-production`을 각각 붙인다. 와일드카드는 허용하지 않는다.
+2. GitHub의 두 운영 Environment에서 배포 브랜치 정책을 **main 브랜치 하나**로 제한한다. Environment subject에는 브랜치가 없으므로 이 제한이 필수다.
+3. Terraform plan에서 기존 EC2·볼륨 교체가 없는지 확인하고 apply한다. CD 역할에는 이 인스턴스의 SSH 세션과 `side-cd-` 이름의 세션 채널만 허용하며 SendCommand, 일반 SSM 셸, S3, DB 권한은 주지 않는다.
+4. `github_cd_role_arn`을 두 GitHub Environment의 `SIDE_DEPLOY_AWS_ROLE_ARN`에, `github_cd_instance_id`를 `SIDE_DEPLOY_SSM_INSTANCE_ID`에, AWS 계정 ID를 `SIDE_DEPLOY_AWS_ACCOUNT_ID`에 넣는다. 기존 `SIDE_DEPLOY_HOST`에는 고정 공인 IP, `SIDE_DEPLOY_SSH_USER`에는 `ubuntu`를 유지한다.
+5. 별도의 배포용 SSH 키를 만들고 공개 키를 서버 `ubuntu`의 `~/.ssh/authorized_keys`에 추가한다. 비밀키는 두 Environment의 Secret `SIDE_DEPLOY_SSH_KEY`에만 저장한다. 서버의 SSH 공개 host key를 SSM으로 읽고 고정 IP를 붙여 Variable `SIDE_DEPLOY_SSH_KNOWN_HOSTS`에 넣는다. SSM 터널에서도 이 검증을 생략하지 않는다.
+6. CI는 SHA로 고정한 AWS credentials action과 버전·SHA256으로 고정한 Session Manager plugin을 사용한다. 장기 AWS access key를 CD Secret으로 추가하지 않는다. 운영 `.env`는 서버에 남고 workflow가 업로드하지 않는다.
+7. 로컬에서 SSM 터널의 SSH 접속을 확인한 뒤 두 서비스의 `*_DEPLOY_ENABLED=true`를 설정한다. main 반영은 운영자가 수행한다. main push 후 전체 서비스 검사와 이미지 검증이 통과해야 CD가 실행된다.
+
+GitHub OIDC의 실제 토큰 교환과 최초 앱 배포는 main 실행에서 확인한다. 로컬 접속 성공이 GitHub의 OIDC 실행 성공을 대신하지 않는다.

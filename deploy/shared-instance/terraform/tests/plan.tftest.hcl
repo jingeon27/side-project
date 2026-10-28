@@ -67,12 +67,18 @@ mock_provider "aws" {
 }
 
 variables {
-  media_bucket_name  = "example-side-media"
-  backup_bucket_name = "example-side-database-backup"
+  media_bucket_name    = "example-side-media"
+  backup_bucket_name   = "example-side-database-backup"
+  github_oidc_subjects = []
 }
 
 run "defaults" {
   command = apply
+
+  assert {
+    condition     = length(aws_iam_role.github_cd) == 0 && output.github_cd_role_arn == null
+    error_message = "GitHub CD must be opt-in"
+  }
 
   assert {
     condition     = length(aws_vpc_security_group_ingress_rule.host_ssh) == 0
@@ -163,6 +169,36 @@ run "defaults" {
     condition     = output.github_environment_variables.SIDE_DEPLOY_HOST == "203.0.113.10" && output.github_environment_variables.SIDE_DEPLOY_SSH_USER == "ubuntu"
     error_message = "GitHub environment variables output"
   }
+}
+
+run "github_ssm_cd" {
+  command = apply
+  variables {
+    github_oidc_subjects = [
+      "repo:example/side-project:environment:game-feedback-production",
+      "repo:example/side-project:environment:photo-contest-production",
+    ]
+  }
+  assert {
+    condition     = length(aws_vpc_security_group_ingress_rule.host_ssh) == 0
+    error_message = "SSM CD must not open inbound SSH"
+  }
+  assert {
+    condition     = toset(jsondecode(aws_iam_role.github_cd[0].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"]) == var.github_oidc_subjects && jsondecode(aws_iam_role.github_cd[0].assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:aud"] == "sts.amazonaws.com"
+    error_message = "Trust only the exact deployment Environment subjects and STS audience"
+  }
+  assert {
+    condition     = toset(jsondecode(aws_iam_role_policy.github_cd[0].policy).Statement[0].Resource) == toset([aws_instance.host.arn, "arn:aws:ssm:ap-northeast-2::document/AWS-StartSSHSession"])
+    error_message = "CD may start only SSH sessions on this host, not arbitrary SSM commands or shell sessions"
+  }
+}
+
+run "github_subject_wildcard_rejected" {
+  command = plan
+  variables {
+    github_oidc_subjects = ["repo:example/side-project:*"]
+  }
+  expect_failures = [var.github_oidc_subjects]
 }
 
 run "dns_and_ssh" {
