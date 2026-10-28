@@ -1,6 +1,6 @@
 <Summary>
 
-After a sprint that ended with black-box checks of product behavior alone, many hotfixes followed. I now pair them with white-box testing, which starts from reading and understanding the code, and I keep the code manageable so that reading stays practical.
+A sprint I finished by checking screens alone led to many hotfixes. I now read diffs to find missed branches, test those paths, and keep the code readable enough to do that.
 
 </Summary>
 
@@ -10,7 +10,7 @@ After a sprint that ended with black-box checks of product behavior alone, many 
 
 Two sprints ago, I tried focusing on screen behavior without reading the code an agent produced. I thought working behavior would be enough, but many hotfixes followed. A screen that works only meant that the paths I clicked through worked.
 
-Since then, I think about testing in two parts: **black-box testing**, which checks how the product behaves from the outside, and **white-box testing**, which reads the code to find which paths exist. This article explains why I do not treat black-box testing alone as finished verification, and how I manage code so that white-box testing stays possible.
+Since then, I consider both **black-box testing**, based on requirements and user behavior, and **white-box testing**, which selects and exercises paths based on internal structure. Conditions I discover while reading become test cases, and I check the screen as well.
 
 ## Black-box and white-box testing
 
@@ -21,7 +21,7 @@ White-box testing uses knowledge of the code to choose which paths to check. I l
 | Aspect | Black-box testing | White-box testing |
 | --- | --- | --- |
 | Basis | Requirements and screen behavior | Branches, condition order, state and data flow |
-| Activities | Screen checks, E2E, QA scenarios | Reading diffs and tests, writing per-path tests |
+| Activities | Screen checks, E2E, QA scenarios | Selecting internal paths, writing and running per-path tests |
 | Easy to miss | Inputs I did not think of, internal branches | Real screen behavior that code does not reveal |
 
 Neither replaces the other. Black-box testing shows how the product looks to users. White-box testing shows why it behaves that way and whether unchecked paths remain.
@@ -38,7 +38,7 @@ Both kinds of testing sit in my workflow:
 → QA 더블 체크 요청
 ```
 
-My diff review is the white-box step; the dev screen check and the QA double check are the black-box steps. I do not finish a task when only one side has passed.
+Diff review helps me find internal paths to test. Review itself is not white-box testing; writing and running tests based on those branches and conditions is the white-box approach. Dev screen checks and QA then check behavior against requirements.
 
 ## Black-box testing alone cannot call a product verified
 
@@ -59,7 +59,7 @@ return !isTemporarilyClosed(day);
 
 All the conditions exist, but their order is wrong.
 
-Returning `false` for the usual day off prevents the temporary-opening condition from ever running on that day. A black-box check that sets a temporary opening on a regular opening day passes. Only reading the code reveals a path where the temporary-opening check can never be reached.
+Returning `false` for the usual day off prevents the temporary-opening condition from running on that day. Checking only regular opening days could miss it. Reading the code helped me identify the overlapping weekly-closure and temporary-opening case to test.
 
 ```typescript
 if (isPastDate(day)) return false;
@@ -74,13 +74,13 @@ This was a potential bug while adding a feature, not a report of temporary-openi
 
 Checking only whether a new condition exists misses its interaction with old conditions and data meanings. Reading the code identifies the paths to check before tests and screen verification. That is why I consider white-box testing an inexpensive form of verification.
 
-## White-box testing alone was not enough either
+## Reading the code still missed screen behavior
 
 The opposite also happened. When converting the benefits portal's Bottom Sheet into a compound structure, I trusted the generated code and existing review process. The header ended up in the body's scroll region, so scrolling moved the title too. Later, while upgrading the library to address a drag crash, I carried that structure forward. I read the diff and checked heights and snap positions, but missed whether the title stayed fixed while scrolling.
 
 Reading code had still missed incorrect screen behavior. Interactions such as scrolling and dragging come from the browser and the library working together, and code alone rarely reveals them. Since then I check those interactions on the actual screen and leave browser tests to catch recurrences. [The detailed fix is in another article.](/en/blog/bottom-sheet-drag-crash)
 
-Passing tests, code review, and actual screen checks therefore remain separate steps. White-box testing finds the paths; black-box testing confirms what users experience.
+Passing tests, code review, and screen checks remain separate steps. I test the paths found in code, then exercise scrolling and dragging in the browser.
 
 ## How I do white-box testing while working with agents
 
@@ -112,10 +112,11 @@ Code hygiene is not only about leaving good-looking code. It is the preparation 
 
 At first, I thought better generated code might remove the need to read it. Now I see it as reducing my editing time. It has not removed the need to understand it.
 
-Black-box testing tells me how the product behaves for users; white-box testing tells me which paths produce that behavior. I consider a product verified only when it passes both. I delegate implementation, then read the code as part of verification.
+I read code to find missed cases, then check them with tests and on screen. That still cannot guarantee the absence of bugs. It does let me explain what I checked and what remains, more clearly than when I finished after clicking through a few screens.
 
 ## References
 
+- [ISTQB: White-box test technique](https://glossary.istqb.org/en_US/term/white-box-test-technique)
 - [Every: Compound Engineering](https://every.to/guides/compound-engineering)
 - Related: [The development workflow I refined with coding agents](/en/blog/plan-gated-ai-workflow)
 - Related: [The standards I developed while introducing tests](/en/blog/testing-standards)

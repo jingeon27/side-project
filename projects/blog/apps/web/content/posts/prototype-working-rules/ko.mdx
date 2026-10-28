@@ -4,6 +4,10 @@
 
 </Summary>
 
+![프로토타입에서 반복한 판단을 공통 작업 규칙으로 옮기는 모습을 그린 일러스트](/images/covers/prototype-working-rules.png)
+
+*글의 주제를 설명하려고 만든 일러스트예요. 실제 제품 화면이나 정확한 구성도는 아니에요.*
+
 검증용 SPA 프로토타입을 실사용 서비스로 옮기면서 SSR, SEO, 다국어, 폼 검증과 관리자 화면을 붙여야 했다. 비슷한 페이지와 폼을 반복해서 만들게 될 것 같아, Claude Code에 작업을 맡기기 전에 계획부터 검증까지의 순서를 정리했다.
 
 여기서 규칙은 "항상 hook을 써라" 같은 취향 목록이 아니었다. Jira task를 읽고 plan을 세우는 단계부터 구현, 검증, code review, commit까지 반복되는 판단을 문서화한 것이었다.
@@ -150,8 +154,6 @@ AI가 코드를 생성한 속도보다 같은 종류의 지적이 다음 작업�
 
 ## 다음 작업에도 적용할 규칙
 
-프로토타입을 실사용 단계로 옮길 때 가장 효과가 컸던 것은 command를 많이 만든 일이 아니었다. Jira task를 plan으로 바꾸는 순서, codebase pattern을 찾는 기준, 구현 뒤 검증과 review를 거치는 흐름을 skill로 고정한 일이었다.
-
-좋은 규칙은 짧고 강한 구호가 아니라 적용 조건과 예외를 함께 가진다. Suspense, props, mutation state도 항상 한쪽이 옳은 문제가 아니었다. 작업 중 발견한 판단을 다음 작업이 재사용할 수 있는 형태로 남기되, 실제 결과는 build와 화면 검증으로 다시 확인하는 것이 이 프로젝트에서 정리한 AI 협업 방식이다.
+다음 route를 옮길 때도 기존 패턴을 먼저 찾고, SEO와 streaming 조건을 plan에 적으려고 한다. 이번에 추가한 규칙 중 실제로 지적을 줄인 것은 남기고, 계속 예외가 생기는 규칙은 다시 고칠 생각이다. skill을 보강한 뒤에도 build와 화면 확인은 같은 순서로 진행한다.
 
 참고: [Next.js useSearchParams와 Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)

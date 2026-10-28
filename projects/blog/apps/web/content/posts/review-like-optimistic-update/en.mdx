@@ -4,6 +4,10 @@ A review like appears in both list and detail caches. I updated them together an
 
 </Summary>
 
+![An illustration of a like action updating list and detail caches together.](/images/covers/review-like-optimistic-update.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 > This article uses TanStack Query v5, the version used in the project.
 
 The same hospital review appeared in lists and on its detail screen, but each ReviewItem held its own like state. It copied `isLiked` and `likeCount` from the server response into local state, then changed only the component whose button was pressed.
@@ -284,11 +288,7 @@ Failures and overlapping caches matter more here than the success path alone.
 
 ## A shared source for the UI
 
-This work changed more than the speed of the like count. Screens showing the same review now subscribe to TanStack Query's cache instead of keeping independent local states.
-
-The cache does not replace the server as the final authority. An optimistic update projects the user's intent early. It needs an explicit rollback on failure and revalidation against server data at the end.
-
-The review like flow is therefore:
+List and detail views subscribe to the same cache updates and return to their own snapshots if the request fails. A final server fetch reconciles the like state and count.
 
 ```text
 사용자 입력

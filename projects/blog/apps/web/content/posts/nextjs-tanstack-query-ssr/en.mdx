@@ -4,6 +4,10 @@ I gave server requests and the browser different QueryClient lifetimes, then con
 
 </Summary>
 
+![An illustration of initial data moving between separate server and browser caches.](/images/covers/nextjs-tanstack-query-ssr.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 > This article uses Next.js 15 App Router and TanStack Query v5.
 
 When server prefetching and browser queries share QueryClient creation code, the first question is when to create and reuse an instance. I separated their lifetimes to prevent caches from leaking across requests or disappearing on every render.

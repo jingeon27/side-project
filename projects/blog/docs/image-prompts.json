@@ -11,6 +11,121 @@
       "articleId": "side-project-infrastructure",
       "path": "projects/blog/apps/web/public/images/covers/side-project-infrastructure.png",
       "prompt": "Use case: illustration-story. Asset type: a 16:9 landscape cover illustration for a bilingual independent software developer's blog article titled 'Starting with one EC2 instance'. Create a quiet, thoughtfully composed editorial illustration of one modest compact server hosting two small applications, with a separate database storage drive and an archive of backup files nearby. Show the deliberate small scale of a side project through a single server and two simple application panels; no huge cloud infrastructure. Use flat screen-print-style shapes, precise restrained linework, slight paper grain, a pale off-white background with dark slate, muted blue and teal accents. The subjects should remain readable as a small thumbnail and leave comfortable margins. This is an illustrative cover, not a technical architecture diagram. No text, letters, numbers, logos, brand marks, watermarks, people, glossy 3D, neon, gradients, AI sparkles, decorative circuitry or unrelated objects. All background opaque. Wide 16:9 image."
+    },
+    {
+      "articleId": "side-project-technology",
+      "path": "projects/blog/apps/web/public/images/covers/side-project-technology.png",
+      "prompt": "Use case: illustration-story. Asset type: a wide 16:9 editorial cover for a bilingual independent developer's blog about choosing the frontend, backend, API contracts, database consistency, testing and module boundaries for two side projects. Show a developer's quiet workbench with a few simple rectangular application panels, two distinct small pipelines connecting those panels to an API card and a sturdy database cylinder, plus a small stack of checked test cards. Show a deliberate, understandable assembly of software parts, with the two pipelines sharing a few building blocks but keeping their own shape. The image is an illustration, not an exact architecture diagram. Use flat screen-print-style shapes, precise restrained linework, slight paper grain, pale off-white background, dark slate, muted blue and teal with a tiny warm ochre accent. Match a calm technical blog cover, clear silhouette at thumbnail size, ample margins and an uncluttered composition. No text, letters, numbers, logos, brand marks, people, robots, watermarks, neon, glossy 3D, AI sparkles or decorative circuitry. All background opaque."
+    },
+    {
+      "articleId": "chatbot-message-layer",
+      "path": "projects/blog/apps/web/public/images/covers/chatbot-message-layer.png",
+      "prompt": "Use case: illustration-story. A wide 16:9 editorial cover for a developer's article about connecting an AI conversation stream and a human support session stream into one chat timeline. Two distinct, simple blue and teal streams made of small speech-bubble tiles pass through a modest adapter block and become one orderly vertical conversation panel. Calm, clear composition, no exact technical notation, no robot or person. Flat screen-print-style shapes, restrained precise linework, subtle paper grain, pale off-white background, dark slate, muted blue and teal with tiny ochre accents. Clear at thumbnail size and generous margins. No text, letters, numbers, logos, watermarks, glossy 3D, neon, sparkles or decorative circuitry. Opaque background."
+    },
+    {
+      "articleId": "cross-domain-token-handoff",
+      "path": "projects/blog/apps/web/public/images/covers/cross-domain-token-handoff.png",
+      "prompt": "Use case: illustration-story. A wide 16:9 editorial cover for a developer's article about moving a signed-in user between two distinct web hosts. Show two simple browser-window panels with a small closed envelope traveling through a narrow gateway between them, with a modest lock shape on the envelope. Convey a carefully limited handoff, not a claim of perfect security. Flat screen-print-style shapes, restrained precise linework, subtle paper grain, pale off-white background, dark slate, muted blue and teal with tiny ochre accents. Clear at thumbnail size and generous margins. No text, letters, numbers, logos, people, watermarks, glossy 3D, neon, sparkles or decorative circuitry. Opaque background."
+    },
+    {
+      "articleId": "health-check-program",
+      "path": "projects/blog/apps/web/public/images/covers/health-check-program.png",
+      "prompt": "Use case: illustration-story. A wide 16:9 editorial cover for a developer's article about adding health-check reservations to an existing service. Show a calm arrangement of three simple application panels: a list of examination options, a calendar with a single selected cell, and a confirmation card with a few checkmarks. A subtle connecting line suggests choosing, reserving and confirming. This is a software illustration, no medical advice, doctors or patients. Flat screen-print-style shapes, restrained precise linework, subtle paper grain, pale off-white background, dark slate, muted blue and teal with tiny ochre accents. Clear at thumbnail size and generous margins. No text, letters, numbers, logos, watermarks, glossy 3D, neon, sparkles or decorative circuitry. Opaque background."
+    },
+    {
+      "articleId": "error-boundary-recovery",
+      "path": "projects/blog/apps/web/public/images/covers/error-boundary-recovery.png",
+      "prompt": "Create a refined editorial cover illustration for a Korean software engineering blog post about containing UI failures with React error boundaries and allowing focused retries. Wide landscape 16:9, 1672x941 if possible. Warm ivory background with subtle paper grain. Flat geometric vector-like illustration, restrained slate blue, muted teal and a small terracotta accent, crisp edges with gentle shadows. Show one large abstract application window with a blue header and a slim left navigation rail that remain intact. Inside the content area are three independent rounded panels separated by space: two healthy teal panels with simple neutral content lines, and one small terracotta panel showing a broken connection symbol and a circular retry arrow. Thin blue boundary outlines isolate each panel. The key visual is a localized failure leaving navigation and neighboring content usable. No people, mascots, text, letters, digits, logos, watermark, real product screenshot, or complex 3D. Spacious composition with clear silhouette that remains readable as a small thumbnail; match a calm technical editorial series."
+    },
+    {
+      "articleId": "bottom-sheet-drag-crash",
+      "path": "projects/blog/apps/web/public/images/covers/bottom-sheet-drag-crash.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a mobile bottom sheet whose header stays fixed while its separate content scrolls, with a short curved drag gesture and a small repaired hinge, conveying a corrected drag crash. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "declarative-code",
+      "path": "projects/blog/apps/web/public/images/covers/declarative-code.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a dense tangle of small branching paths resolving into three clear readable aligned blocks, conveying extracting implementation details behind declarative calls. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "electron-module-boundaries",
+      "path": "projects/blog/apps/web/public/images/covers/electron-module-boundaries.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a desktop application window divided into three distinct zones: a small main-process hub, a narrow secure bridge, and a renderer panel, connected with simple controlled message arrows. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "fsd-layer-boundaries",
+      "path": "projects/blog/apps/web/public/images/covers/fsd-layer-boundaries.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: four horizontal shelves of modular colored blocks, with simple arrows flowing downward between layers and a narrow public doorway on each module, conveying frontend layer boundaries. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "low-effort-success",
+      "path": "projects/blog/apps/web/public/images/covers/low-effort-success.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a simple workbench where reusable shaped tools and a short checklist make a repeated assembly task easier, a completed small structure beside a second in progress, conveying reducing effort for the next success. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "nextjs-seo-prefetch",
+      "path": "projects/blog/apps/web/public/images/covers/nextjs-seo-prefetch.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: two abstract browser pages connected by a thin path, with a small content card traveling ahead of a cursor toward the next page and a subtle loading placeholder turning into content, conveying route prefetch readiness. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "nextjs-tanstack-query-ssr",
+      "path": "projects/blog/apps/web/public/images/covers/nextjs-tanstack-query-ssr.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a server rack on the left and a browser window on the right, each holding a separate small cache box, with a single sealed initial-data packet crossing between them, conveying server and browser QueryClient lifetimes. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "payment-coupon-branches",
+      "path": "projects/blog/apps/web/public/images/covers/payment-coupon-branches.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: two distinct payment tokens, one ordinary circular coin and one rectangular coupon, feeding through a single modest sorting hub into a clean receipt panel, conveying consolidating payment-kind branches. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "prototype-working-rules",
+      "path": "projects/blog/apps/web/public/images/covers/prototype-working-rules.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: rough penciled application cards on the left gradually becoming consistent blue and teal components on the right, with a compact reusable stencil and checklist at the center, conveying turning prototype decisions into working rules. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "puppeteer-event-lifecycle",
+      "path": "projects/blog/apps/web/public/images/covers/puppeteer-event-lifecycle.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a single browser page with two parallel thin tracks, one outbound request marker and one inbound response marker, meeting at a synchronization gate before a checkmark, conveying registering listeners before triggering navigation. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "query-key-factory",
+      "path": "projects/blog/apps/web/public/images/covers/query-key-factory.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a nested arrangement of colored index cards connected to three matching cache drawers, conveying one consistent naming scheme for related software queries; use abstract geometric tags rather than physical keys or locks. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "reservation-form-state",
+      "path": "projects/blog/apps/web/public/images/covers/reservation-form-state.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a reservation form with three participant rows and a shared calendar card above, selected checkboxes and small time indicators, clear visual separation from a remote source list, conveying form-owned drafts synchronized by participant identity. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "review-form-funnel",
+      "path": "projects/blog/apps/web/public/images/covers/review-form-funnel.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: three sequential review-writing panels, first a rating star and choices, second short review lines and an image placeholder, third a confirmation checkmark, connected by understated progress dots, conveying a multi-step form. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "review-like-optimistic-update",
+      "path": "projects/blog/apps/web/public/images/covers/review-like-optimistic-update.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a heart toggle connected to both a list card and a detail card, with a small immediate teal pulse and a subtle return arrow for rollback, conveying optimistic updates across two cached views. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "sitemap-api-boundaries",
+      "path": "projects/blog/apps/web/public/images/covers/sitemap-api-boundaries.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: a public sitemap tree branching toward small page cards, separated from a locked private data box by a clear narrow boundary, conveying public API data separated from authenticated API data. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "typed-program-form",
+      "path": "projects/blog/apps/web/public/images/covers/typed-program-form.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: two distinct administrator browser windows using one shared central form blueprint, each with a small local configuration tab, conveying shared typed forms with app-specific assembly. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "typescript-patterns",
+      "path": "projects/blog/apps/web/public/images/covers/typescript-patterns.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: several mismatched geometric pieces guided through a precise type-shaped stencil, with the matching pieces forming a clear function call and one mismatched piece held aside, conveying catching caller mistakes with TypeScript. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
+    },
+    {
+      "articleId": "zod-assertion-boundaries",
+      "path": "projects/blog/apps/web/public/images/covers/zod-assertion-boundaries.png",
+      "prompt": "Wide 16:9 editorial illustration for a software engineer's blog cover. Subject: incoming small data packets reaching three different modest gates: one observation magnifier, one repair loop, and one closed validation gate, conveying observation, recovery, and rejection at different data boundaries. Restrained flat screen-print geometry, precise linework, subtle paper grain, warm ivory background, slate blue and muted teal with tiny terracotta accents. Clear at thumbnail size, ample margins, calm practical visual. Abstract illustration, not a real product screenshot or exact technical diagram. No text, letters, numbers, code, logos, people, robots, watermark, glossy 3D, neon or sparkles. Opaque background."
     }
   ]
 }

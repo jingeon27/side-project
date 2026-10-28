@@ -4,6 +4,10 @@ Adding a family member could disturb the selected reservation date. I separated 
 
 </Summary>
 
+![An illustration of participant rows and shared dates managed within a reservation form.](/images/covers/reservation-form-state.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 Adding a family member to a reservation form left date selection behaving as though the old number of family members still applied. The screen only selected dates, times, and participants, yet three places held copies of the same values.
 
 - React Query cached the family list from the server.
@@ -204,7 +208,7 @@ The server list determines membership. The form preserves existing selections an
 
 *Four branches synchronize the form with the server list. Length chooses the operation; memberId identifies which people to retain or add. New entries receive the form's common preferred date/time.*
 
-Equal lengths leave the array unchanged. Handlers within the form, rather than the synchronization hook, directly update selections and preferred dates.
+Equal lengths leave the array unchanged. This does not synchronize a replaced memberId at the same count or a name-only edit. The implementation handles length changes from additions and removals; same-length replacements and refreshed server fields still need verification. Handlers within the form directly update selections and preferred dates.
 
 ## Apply a common date inside the form
 

@@ -214,6 +214,22 @@
         "infrastructure",
         "backups"
       ]
+    },
+    "side-project-technology": {
+      "title": "GraphQL for the photo service, REST for Game Mate",
+      "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
+      "description": "Why the services use different APIs and caches, how their contracts and database writes work, and how ESLint rules and fixtures check module boundaries.",
+      "keywords": [
+        "side projects",
+        "Next.js",
+        "NestJS",
+        "GraphQL",
+        "TanStack Query",
+        "PostgreSQL",
+        "testing",
+        "architecture",
+        "ESLint"
+      ]
     }
   }
 }

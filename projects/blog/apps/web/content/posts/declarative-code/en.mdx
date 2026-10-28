@@ -4,6 +4,10 @@ I separate UI, data, and behavior by context and keep each section at a consiste
 
 </Summary>
 
+![An illustration of tangled processing paths organized into blocks with distinct roles.](/images/covers/declarative-code.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 Finding missing conditions or duplicated state in code review first requires understanding a screen's structure and where its values come from. Query sequencing and detailed calculations mixed into JSX make that take longer.
 
 That is why I prefer declarative code. Opening a component should show the screen's composition first. I can then open the relevant part for its detailed behavior. A screen is harder to understand if I must first reconstruct fetching and state synchronization.

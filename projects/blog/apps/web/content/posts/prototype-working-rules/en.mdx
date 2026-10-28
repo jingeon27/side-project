@@ -4,6 +4,10 @@ While moving a prototype into a Next.js proof of concept, I recorded repeated de
 
 </Summary>
 
+![An illustration of turning repeated prototype decisions into reusable working rules.](/images/covers/prototype-working-rules.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 Moving an SPA prototype into a usable service meant adding SSR, SEO, multiple languages, form validation, and admin screens. I expected to build similar pages and forms repeatedly, so before giving the work to Claude Code, I wrote down the sequence from planning to verification.
 
 These rules documented recurring decisions from reading a Jira task through planning, implementation, validation, code review, and committing. They were more specific than preferences such as “always use a hook.”
@@ -150,8 +154,6 @@ I looked for fewer repeated review findings in the next task, rather than measur
 
 ## Rules to carry into the next task
 
-For this prototype, the useful work was fixing how a Jira task becomes a plan, how existing patterns are found, and how implementation passes through validation and review.
-
-Rules need conditions and exceptions. Suspense, props, and mutation state each depend on context. I record decisions in a form the next task can reuse, then still check the result with a build and the actual screen. That is the AI collaboration process I settled on in this project.
+For the next route, I will find the existing pattern first and record SEO and streaming requirements in the plan. I will keep rules that reduced repeated review comments and revise those that keep needing exceptions. Builds and screen checks still follow the same sequence after the skill changes.
 
 References: [Next.js useSearchParams and Suspense](https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout), [React Suspense](https://react.dev/reference/react/Suspense)

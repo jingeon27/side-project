@@ -2,6 +2,7 @@
   "category": "engineering",
   "tags": ["fsd", "architecture", "refactoring", "nextjs"],
   "publishedAt": "2026-07-01T19:35:43+09:00",
-  "updatedAt": "2026-10-25T13:43:48.284Z",
-  "sourceUrl": "https://jingeon27.tistory.com/23"
+  "updatedAt": "2026-10-28T18:15:00+09:00",
+  "sourceUrl": "https://jingeon27.tistory.com/23",
+  "coverImage": "/images/covers/fsd-layer-boundaries.png"
 }
