@@ -1,5 +1,7 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+
 import { useFragment, useMutation } from '@apollo/client/react';
 import { Menu } from '@base-ui/react/menu';
 import { Ellipsis, EyeOff, Pencil, Trash2 } from 'lucide-react';
@@ -15,8 +17,6 @@ import {
   SetPostHiddenDocument,
 } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
-import { getOverlayContainer } from '@/shared/lib/overlay-container.helper';
-import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { toast } from '@/shared/model/toast';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { IconButton } from '@/shared/ui/@core/icon-button';
@@ -24,11 +24,17 @@ import { IconButton } from '@/shared/ui/@core/icon-button';
 import { POST_FEED_QUERIES, resetGalleryPosts } from '../model/post.cache';
 import { EditPostBottomSheet } from './EditPostBottomSheet';
 
+const PostActionsPortal = dynamic(
+  () => import('./PostActionsPortal').then((module) => module.PostActionsPortal),
+  {
+    ssr: false,
+  },
+);
+
 const ITEM_CLASS =
   'flex min-h-touch cursor-pointer items-center gap-3 rounded-control px-3 text-label text-ink outline-none data-highlighted:bg-sunken data-disabled:opacity-45 active:bg-neutral-soft';
 
 export function PostActionsMenu({ postId }: { postId: string }) {
-  const isSSR = useIsSSR();
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
@@ -54,11 +60,11 @@ export function PostActionsMenu({ postId }: { postId: string }) {
         render={
           <IconButton label={`${post.title} 더보기`} className="rounded-full text-muted hover:bg-sunken" />
         }
-        disabled={isSSR || hideState.loading || removeState.loading}
+        disabled={hideState.loading || removeState.loading}
       >
         <Ellipsis aria-hidden className="size-5" />
       </Menu.Trigger>
-      <Menu.Portal container={getOverlayContainer()}>
+      <PostActionsPortal>
         <Menu.Positioner align="end" sideOffset={8} className="z-dialog">
           <Menu.Popup className="w-48 origin-(--transform-origin) rounded-card border border-line bg-surface p-1.5 shadow-toast outline-none transition-[transform,opacity] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
             <Menu.Item
@@ -124,7 +130,7 @@ export function PostActionsMenu({ postId }: { postId: string }) {
             </Menu.Item>
           </Menu.Popup>
         </Menu.Positioner>
-      </Menu.Portal>
+      </PostActionsPortal>
     </Menu.Root>
   );
 }

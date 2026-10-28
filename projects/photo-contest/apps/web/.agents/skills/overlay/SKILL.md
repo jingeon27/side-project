@@ -56,6 +56,8 @@ onConfirm={async () => {
 
 ## 새 종류의 오버레이
 
+- `getOverlayContainer()`처럼 DOM selector로 컨테이너를 찾는 Portal은 해당 부분만 별도 Client Component로 분리해 `dynamic(..., { ssr: false })`로 불러온다. selector 호출도 그 컴포넌트 안에 두고, Trigger와 주변 화면은 SSR을 유지한다. 이 용도로 `useIsSSR` 분기를 추가하지 않는다.
+
 - Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 오버레이가 앱의 provider와 기록 안에서 동작한다. 바텀시트는 공통 디자인 시스템의 `responsive` Root를 사용한다. 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 768px부터는 중앙 모달로 보여 준다. 헤더에는 X를 두지 않고 입력 폼의 Footer에 취소와 제출 버튼을 같은 너비의 가로 행으로 둔다. 댓글 입력 Footer처럼 제출 폼의 취소가 아닌 영역은 `cancelLabel={false}`로 두고, 하단에 취소가 없으니 Header에 `closeLabel="닫기"`를 주어 제목 옆에 보이는 닫기 버튼을 둔다. z-index는 `z-sheet`·`z-dialog` 토큰.
 - 포커스는 닫힐 때 Base UI가 열기 전 포커스 요소로 돌려준다. 그러니 effect가 아니라 연 버튼의 클릭 핸들러에서 연다.
 
