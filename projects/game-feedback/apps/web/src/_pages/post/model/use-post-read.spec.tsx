@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Answer, PostDetail } from '@/shared/api';
 
@@ -34,7 +34,7 @@ function answer(id: string): Answer {
     updatedAt: '2026-10-20T00:00:00Z',
   };
 }
-function detail(answers: Answer[]) {
+function detail(answers: Answer[], answersCursor: string | null = null) {
   return {
     post: {
       id: 'post-1',
@@ -51,13 +51,14 @@ function detail(answers: Answer[]) {
       updatedAt: '2026-10-20T00:00:00Z',
     },
     answers,
-    answersCursor: null,
+    answersCursor,
     comments: [],
     commentsCursor: null,
   } satisfies PostDetail;
 }
 
 describe('post answer read receipts', () => {
+  beforeEach(() => api.read.mockClear());
   it('marks each unread answer set once and again only when a new answer arrives', async () => {
     const client = new QueryClient();
     const { rerender } = renderHook(({ value }: { value: PostDetail }) => usePostRead(value, owner.id), {
@@ -73,5 +74,21 @@ describe('post answer read receipts', () => {
     rerender({ value: detail([answer('a1'), answer('a2')]) });
     await waitFor(() => expect(api.read).toHaveBeenCalledTimes(2));
     expect(api.read).toHaveBeenLastCalledWith({ id: 'post-1' });
+  });
+
+  it('also marks answers on pages not loaded yet once while the first page is already read', async () => {
+    const client = new QueryClient();
+    const read = { ...answer('a1'), readAt: '2026-10-20T01:00:00Z' };
+    const { rerender } = renderHook(({ value }: { value: PostDetail }) => usePostRead(value, owner.id), {
+      initialProps: { value: detail([read], 'later-answers') },
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    });
+    await waitFor(() => expect(api.read).toHaveBeenCalledOnce());
+    rerender({ value: detail([read], 'later-answers') });
+    expect(api.read).toHaveBeenCalledOnce();
+    rerender({ value: detail([read]) });
+    expect(api.read).toHaveBeenCalledOnce();
   });
 });
