@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
+import { useUnsavedChanges } from '@/shared/navigation';
 import { Avatar } from '@/shared/ui';
 
 import { profileDetailsSchema, profileLinksSchema, profilePhotoSchema } from '../model/profile-edit.schema';
@@ -35,6 +36,10 @@ export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const links = useZodForm(profileLinksSchema, { defaultValues: { links: current.data.links ?? [] } });
   const photo = useZodForm(profilePhotoSchema);
   const hasOtherDrafts = links.formState.isDirty || photo.formState.isDirty;
+  useUnsavedChanges(
+    details.formState.isDirty || hasOtherDrafts,
+    t('저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?'),
+  );
 
   function handleDetailsSaved() {
     if (!hasOtherDrafts) {

@@ -1,8 +1,8 @@
-import { queryOptions, skipToken } from '@tanstack/react-query';
+import { queryOptions } from '@tanstack/react-query';
 
 import type { Session } from '@/shared/api';
 
-import { fetchSession, fetchTestAccounts } from '../api/auth.api';
+import { fetchSession } from '../api/auth.api';
 import { clearSessionDependentQueries } from './private-cache';
 
 export function sessionOptions() {
@@ -21,12 +21,5 @@ export function sessionOptions() {
       if (latest && latest !== previous) return latest;
       return next;
     },
-  });
-}
-export function testAccountListOptions(demoMode = true) {
-  return queryOptions({
-    queryKey: ['test-accounts'],
-    queryFn: demoMode ? ({ signal }) => fetchTestAccounts({ signal }) : skipToken,
-    retry: false,
   });
 }

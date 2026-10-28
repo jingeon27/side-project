@@ -5,6 +5,10 @@ export const profileMessages: Record<string, readonly [string, string]> = {
     'ニックネーム、自己紹介、プロフィール写真とリンクを編集してください。',
   ],
   '프로필 수정': ['Edit profile', 'プロフィールを編集'],
+  '저장하지 않은 변경이 있어요. 이 화면을 나가면 입력한 내용이 사라져요. 계속할까요?': [
+    'You have unsaved changes. Leaving this page will discard them. Continue?',
+    '保存していない変更があります。この画面を離れると入力内容が失われます。続けますか？',
+  ],
   '프로필 저장': ['Save profile', 'プロフィールを保存'],
   '프로필을 수정했어요.': ['Profile updated.', 'プロフィールを更新しました。'],
   '프로필 사진': ['Profile photo', 'プロフィール写真'],
