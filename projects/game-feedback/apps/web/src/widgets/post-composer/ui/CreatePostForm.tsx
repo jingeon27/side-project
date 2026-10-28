@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
+import { match, P } from 'ts-pattern';
 
 import { appRoutes } from '@game-feedback/bridge';
 import type { TBattleMode, TBoardKind, TCoachingRole } from '@game-feedback/contracts';
@@ -78,6 +79,11 @@ export function CreatePostForm({
     }
   });
   const errorMessage = create.error?.message ?? upload.error?.message;
+  const submitLabel = match(board)
+    .with('COACHING', () => t('코칭 등록'))
+    .with('FEEDBACK', () => t('피드백 요청 올리기'))
+    .with(P.union('FRIEND_SALE', 'FRIENDLY', 'FREE'), () => t('게시글 등록'))
+    .exhaustive();
   return (
     <form className="form-stack" aria-label={t('글쓰기')} onSubmit={handleSubmit}>
       <Field label={t('분류')}>
@@ -135,7 +141,7 @@ export function CreatePostForm({
         loading={pending}
         icon={<ArrowUpRight aria-hidden />}
       >
-        {t(board === 'COACHING' ? '코칭 등록' : board === 'FEEDBACK' ? '피드백 요청 올리기' : '게시글 등록')}
+        {submitLabel}
       </Button>
     </form>
   );

@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 
 import { useWatch } from 'react-hook-form';
+import { match, P } from 'ts-pattern';
 
 import { POST_TITLE_MAX_LENGTH, type TRichTextDocument } from '@game-feedback/contracts';
 import { Input } from '@side/design-system';
@@ -28,6 +29,12 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
   const copy = postComposerCopy(board, role, mode);
   const body = useWatch({ control: form.control, name: 'body' });
   const document = useWatch({ control: form.control, name: 'document' });
+  const bodyHint = match(board)
+    .with('FEEDBACK', () => t('사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.'))
+    .with('COACHING', () => t('코칭 분야, 대상, 진행 방식, 시간과 비용을 구체적으로 적어주세요.'))
+    .with('FREE', () => t('게임 이야기나 나누고 싶은 내용을 자유롭게 적어주세요.'))
+    .with(P.union('FRIEND_SALE', 'FRIENDLY'), () => t('거래 조건이나 모집 내용을 구체적으로 적어주세요.'))
+    .exhaustive();
   const { setValue } = form;
   const handleBodyChange = useCallback(
     (value: { body: string; document: TRichTextDocument | null; valid: boolean }) => {
@@ -81,17 +88,7 @@ export function PostContentFields({ form, disabled, onUploadMedia }: IPostConten
             placeholder={t(copy.body)}
           />
         </ServiceErrorBoundary>
-        <small>
-          {t(
-            board === 'FEEDBACK'
-              ? '사용 중인 덱, 어려웠던 상황, 시도해 본 방법을 함께 적어주세요.'
-              : board === 'COACHING'
-                ? '코칭 분야, 대상, 진행 방식, 시간과 비용을 구체적으로 적어주세요.'
-                : board === 'FREE'
-                  ? '게임 이야기나 나누고 싶은 내용을 자유롭게 적어주세요.'
-                  : '거래 조건이나 모집 내용을 구체적으로 적어주세요.',
-          )}
-        </small>
+        <small>{bodyHint}</small>
         <span className="field-error">
           {form.formState.errors.body && t('내용을 입력해주세요. 최대 10,000자까지 작성할 수 있어요.')}
           {form.formState.errors.editorValid &&
