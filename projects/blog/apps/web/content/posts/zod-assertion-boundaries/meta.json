@@ -2,6 +2,7 @@
   "category": "engineering",
   "tags": ["zod", "typescript", "validation", "error-handling"],
   "publishedAt": "2026-09-05T20:01:00+09:00",
-  "updatedAt": "2026-10-25T13:43:48.284Z",
-  "sourceUrl": "https://jingeon27.tistory.com/32"
+  "updatedAt": "2026-10-28T18:15:00+09:00",
+  "sourceUrl": "https://jingeon27.tistory.com/32",
+  "coverImage": "/images/covers/zod-assertion-boundaries.png"
 }

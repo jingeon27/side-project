@@ -2,6 +2,7 @@
   "category": "engineering",
   "tags": ["nextjs", "tanstack-query", "seo", "ssr"],
   "publishedAt": "2025-11-20T02:01:55+09:00",
-  "updatedAt": "2026-10-25T13:43:48.284Z",
-  "sourceUrl": "https://jingeon27.tistory.com/14"
+  "updatedAt": "2026-10-28T18:15:00+09:00",
+  "sourceUrl": "https://jingeon27.tistory.com/14",
+  "coverImage": "/images/covers/nextjs-seo-prefetch.png"
 }

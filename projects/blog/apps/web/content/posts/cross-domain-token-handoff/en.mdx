@@ -4,6 +4,10 @@ Moving settlement pages to another host required an authentication handoff. I co
 
 </Summary>
 
+![An illustration of an authentication handoff between two separate web hosts](/images/covers/cross-domain-token-handoff.png)
+
+*An illustration made for this article, rather than a screenshot of the service.*
+
 ## Settlement needed a separate host
 
 The business admin SaaS I worked on, called admin-app here, handled products, reservations, and settlement. Settlement had different authorization and audit requirements and needed its own host.
@@ -115,7 +119,7 @@ if (request.nextUrl.pathname.startsWith('/finance')) {
 It worked. The token URL was an intermediate server redirect and did not remain in the final address or history, but it still traveled through the network.
 
 - Reverse proxies, CDNs, and web servers could log the complete token-bearing URL.
-- Referer could propagate it during redirects.
+- Reusing the intermediate URL as a document or in another request creates further exposure to check. A server-side 3xx URL does not automatically become the next request's Referer; [Fetch's redirect algorithm](https://fetch.spec.whatwg.org/#http-redirect-fetch) handles those separately.
 
 Cleaning history did not clean network-path logs, so tokens needed to leave the URL.
 
@@ -129,7 +133,7 @@ A GET redirect cannot carry the needed body, so I inserted an auto-submitting HT
 - The form immediately posts to settlement's /api/finance BFF.
 - The BFF reads formData, stores cookies, and redirects to the destination.
 
-This reduces query-string, Referer, and ordinary URL access-log exposure. A body is still not secure storage: WAF, APM, or debug middleware can record it. Body collection and retention on this path need checking.
+This reduces query-string and ordinary URL access-log exposure. A body is still not secure storage: WAF, APM, or debug middleware can record it. Body collection and retention on this path need checking.
 
 ```typescript
 // 토큰 수신 BFF
@@ -378,7 +382,7 @@ The BFF therefore lives in frontend-owned /api/finance/bridge and /api/finance h
 
 The accepted risks are:
 
-- Tokens still pass through the browser in readable form. Reduced URL, Referer, and ordinary log exposure does not prevent body collection or XSS.
+- Tokens still pass through the browser in readable form. Reduced URL and ordinary log exposure does not prevent body collection or XSS.
 - HTTPS and short access-token lifetimes reduce some risks but do not remove the cost of transferring long-lived refresh tokens.
 - Both hosts share one refresh token and need coordinated rotation/logout. Sending only the access token in the form POST and repeating handoff on expiry remains follow-up work.
 - The form lacks TTL, nonce, one-time consumption, session binding, and incoming Origin validation. It is not replay-proof.
@@ -433,9 +437,10 @@ React turned the string none into empty crossorigin. It affected only client com
 I found matching upstream reports and a proposed fix.
 
 - [Next.js #96831](https://github.com/vercel/next.js/issues/96831) — reproduction and symptoms
-- [Next.js #96834](https://github.com/vercel/next.js/pull/96834) — routing none back through the null path
+- [Next.js #96834](https://github.com/vercel/next.js/pull/96834) — an initial proposal closed without merging
+- [Next.js #97164](https://github.com/vercel/next.js/pull/97164) — the merged fix omitting the field for CrossOrigin::None
 
-Both were open at the article's review point. This narrowed the cause to a 16.3.0 serialization regression rather than a specification change across all of Next.js 16.
+The matching report and proposed fix narrowed the cause to a 16.3.0 serialization regression. Checked on October 28, 2026, #96834 was closed without merging; the actual fix, #97164, had merged into canary on August 12. [The Next.js upgrade article](/en/blog/nextjs-server-client-issues) records the later build-output check confirming the field was absent after the benefits portal upgraded to 16.3.6.
 
 ### Applied changes
 
@@ -477,8 +482,8 @@ Comments alone cannot prevent recurrence. Configuration, browser request mode, a
 
 | Stage | Transfer channel | Result |
 | --- | --- | --- |
-| 1 | URL query, two middleware redirects | Clean final history, but intermediate URLs remain in logs, Referer, and proxies |
-| 2 | Form POST to BFF | Less URL/Referer/access-log exposure; body-recording risk remains |
+| 1 | URL query, two middleware redirects | A clean final address, but intermediate URLs remain subject to access and proxy logging |
+| 2 | Form POST to BFF | Less URL/access-log exposure; body-recording risk remains |
 | 3 | Exact Origin validation | Proposed, not implemented; requires changing no-referrer too |
 | 4 | Dedicated handoff route | Middleware only routes; handoff generation is centralized |
 | 5 | CSP, X-Frame-Options, resolveDestination | Current unsafe-inline and prefix checks; nonce and path-boundary hardening remain |

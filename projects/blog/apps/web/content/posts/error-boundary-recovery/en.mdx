@@ -4,6 +4,10 @@ I split error boundaries so a failed query would not replace the whole screen, a
 
 </Summary>
 
+![An illustration of retrying one failed panel while navigation and two neighboring panels remain available.](/images/covers/error-boundary-recovery.png)
+
+*An illustration of recovery scope, rather than an actual admin screen.*
+
 When one list API failed in hospital admin, the side menu and header disappeared too. A single app-root Error Boundary caught every query error. Users could neither navigate to working menus nor retry only the failed query.
 
 During maintenance, I also encountered three mismatches between response types and actual values. A new enum member or null passed TypeScript assumptions and failed during rendering. Logs contained only message and stack, making the responsible app and screen difficult to locate.
@@ -159,7 +163,7 @@ Three details opened from row data stayed beside their lists. Moving them upward
 />
 ```
 
-Filters were entries in a filters array, while the list was children of the same object. Wrapping the entire layout would also remove the list. There was no filter subtree exposed as JSX.
+Filters were entries in a filters array, while the list was children of the same object. The existing renderer exposed no way for callers to assign a boundary per filter. Wrapping the entire layout also removed the list. A configuration-array renderer could be changed to support per-filter boundaries; I chose JSX so queries could move into each filter and callers could see the recovery scope.
 
 Filters whose options came from APIs were worse: options were props, so the page did the query. An option failure originated above the filter and replaced the whole page.
 

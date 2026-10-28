@@ -4,6 +4,10 @@ I kept query keys and query functions together so callers could choose whether t
 
 </Summary>
 
+![An illustration of related query keys produced from one shared structure.](/images/covers/query-key-factory.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 After editing an applicant's memo, I searched the entire repository for strings to find the queries that needed updating. Only the first element of each query key came from an enum. Each call site appended its own detail ID and memo hierarchy. I moved these definitions together so the query function and invalidation scope could be found in the same place.
 
 ```text

@@ -4,6 +4,10 @@ Answer generation and final messages arrived through separate SSE streams. I spl
 
 </Summary>
 
+![An illustration of two SSE message streams passing through an adapter into one conversation](/images/covers/chatbot-message-layer.png)
+
+*An illustration made for this article, rather than a screenshot of the service.*
+
 I added an AI support chatbot to a shopping service. The frontend team could not modify its backends and had to connect two separate services.
 
 - **AI chat service:** streams AI answers token by token over SSE.
@@ -171,7 +175,7 @@ Transitions became clearer, but effects still imperatively opened and closed SSE
 
 > Connection = subscribers exist ∧ session exists ∧ session is not finished.
 
-`syncConnection()` reconciles the connection whenever those inputs change, preventing that mismatch and restoring it after remounting. useSyncExternalStore fits a model where the store owns SSE lifetime and React subscribes to snapshots.
+`syncConnection()` reconciles the connection in one place when those inputs change. React subscribes to snapshots with useSyncExternalStore. Reconnection and events arriving during unsubscribe still need separate checks.
 
 ```tsx
 export class ChatStore {
@@ -267,7 +271,7 @@ const [status, setStatus] = useState<ChatStatus>(/* 히스토리 마지막 statu
 const connection = useMemo(() => makeSessionConnection({ sessionId, onStatus: setStatus }), [sessionId]);
 ```
 
-The keyword handler directly sets connecting. The server callback onStatus accepts only ServerStatus, so that path cannot supply the client's optimistic connecting value. The distinction is expressed through types rather than additional runtime state.
+The original comment above overstates what the types guarantee. The keyword handler sets connecting on the client. Since onStatus accepts only ServerStatus, a call supplying connecting through that path fails type checking. A live or done event can still replace the current connecting state. The types distinguish the allowed values; they do not enforce the order of transitions.
 
 ### Message deduplication still needed verification
 
@@ -292,23 +296,10 @@ Other debt remains.
 
 ---
 
-## Looking back at my decisions and the external constraints
+## Work still ahead
 
-### Decisions I made
+The session SSE supplies messages for display; sends go to the AI or session service depending on the conversation state. Giving each channel a role reduced the screen code that had to distinguish their sources.
 
-- Replace separate panels with one continuous timeline.
-- Use a connection keyword instead of a mode button.
-- Derive SSE connection from state rather than scattered imperative effects.
-- Keep one status value while separating ServerStatus and ChatStatus types.
-- Move a working store to a standard framework in preparation for streaming, tools, and parts.
+Retransmitted message IDs and cancellation while the queue is empty still need checks. The adapter example's finally block alone does not make a pending await end immediately. Cancellation must reach the subscription and wake the waiting queue before I can establish that the connection closes. The example is a shortened view of the integration structure.
 
-### Constraints imposed by the two external backends
-
-- No shared backend owner could merge them, so coordination stayed on the client.
-- Session SSE became the display source, separating send and receive and leaving send as asyncNoop.
-- The AI stream became a drain-only keep-alive pump with a 30-second cap.
-- Bearer authentication required fetch-event-source instead of EventSource.
-- Undocumented payloads needed defensive Zod parsing.
-- Nonstandard SSE needed a SubscribeConnectionAdapter.
-
-Across five rewrites, most of the code's shape came from boundaries I could not change. My work was to understand those boundaries, choose a workable integration, and record why it looks this way so the next person does not have to rediscover the constraints.
+Next I want to render UIMessage.parts directly and reproduce a message appearing in both history and SSE. Moving to the library still leaves those cases to verify.

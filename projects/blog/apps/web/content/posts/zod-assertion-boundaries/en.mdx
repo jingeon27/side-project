@@ -4,6 +4,10 @@ Removing type assertions led me to separate failure handling for API responses, 
 
 </Summary>
 
+![An illustration of observing, recovering, or rejecting external values at different boundaries.](/images/covers/zod-assertion-boundaries.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 My first rule for reducing type assertions was simple: put a Zod schema wherever `as` becomes necessary. Changing actual code showed that rule was only partly right.
 
 Some values already had known types but were reasserted because a library callback was loosely typed. Others, such as API responses and URLs, were unknown at runtime. The first group needed repaired type flow; the second needed runtime validation. Wrapping both in Zod would add unnecessary work.

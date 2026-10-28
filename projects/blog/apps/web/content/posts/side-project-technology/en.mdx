@@ -1,6 +1,6 @@
 <Summary>
 
-The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. Here is how I chose their API contracts, database safeguards, tests, and boundaries for shared code.
+The photo community uses GraphQL and Apollo; Game Mate uses REST and TanStack Query. How I chose their API contracts, database safeguards and tests, then added ESLint rules for code boundaries.
 
 </Summary>
 
@@ -36,7 +36,7 @@ For Game Mate, I chose REST and TanStack Query. I wanted to decide which queries
 
 In both applications, server state stays in the query library rather than being copied into another `useState`. The form owns the draft input; Apollo or TanStack Query owns the value returned by the server. When several places can change copies of the same value, finding the latest one becomes another job after every save.
 
-Working with both made me pay more attention to the scope of an update than the library's name. The photo service keeps Apollo, and Game Mate keeps TanStack Query. I have not put a common API-hook wrapper around them.
+The photo service's updates can now be found in its Apollo domain helpers; Game Mate's updates are expressed through query keys and invalidation options. I have kept those approaches visible rather than wrapping both in a common API hook.
 
 ## Keep business rules in the API server
 
@@ -101,16 +101,30 @@ Checking that a title exists in server HTML also differs from clicking a button 
 
 I care more about covering those boundaries than increasing the test count. Duplicate votes, retried chat messages, exposure of private content, and failed cache delivery after a save are cases I want to retain because they are easy to overlook while reading a happy path.
 
-## Share code after a second use appears
+## Turn recurring review comments into ESLint rules
 
-The web applications follow FSD's dependency direction. Screen composition, features used on several screens, and domain-independent UI have separate places. Lint rules prevent imports reaching into another feature's internal files.
+Splitting screens into folders did not help much when one feature reached straight into another feature's internals. Repeating the same import corrections in reviews became tedious. I moved the checks for folder and import boundaries into ESLint.
 
-Moving everything into `shared` would make the effects of a change harder to follow. Code used on one screen stays with that screen. When the same feature is needed on more screens, it moves into a feature slice. Configuration, buttons, inputs, and other primitives used by both projects go into repository-wide packages.
+The configuration lives in `packages/config/eslint`. It separates common TypeScript rules, React, DOM accessibility, Next.js, and Expo presets. A web label rule should not apply to React Native. Each app combines the presets it needs with its own paths.
 
-Game information, photo-post policies, server state, and the business flow around overlays remain in their applications. Sharing a button does not make the work after deletion identical. The unsaved-profile navigation guard also belongs to the React tree that uses it. State that should disappear with a screen is harder to follow when it lives at module scope.
+Rule implementations have their own folders under `rules/fsd`, `rules/web`, and `rules/common`, with tests and fixtures beside each rule. The [ESLint package](https://github.com/jingeon27/side-project/tree/96e33d77/packages/config/eslint/src) contains both the presets and their rules.
 
-Repeating these comments in reviews became tedious, so recurring guidance went into `AGENTS.md` and skills. Rules that can be checked statically went into ESLint. I use them to keep problems already found in review from coming back.
+The FSD checks use three rules:
+
+- `layer-imports` checks imports from a lower layer into a higher one.
+- `slice-public-api` checks imports into another slice's internals and imports through a slice's own barrel.
+- `no-cross-page` checks dependencies between page slices.
+
+They share path handling in `fsd.helper.ts`. It resolves the `@/` alias and relative paths, then compares the source and target layers and slices. It also identifies the allowed paths for types, mocks, schemas, and server files.
+
+I also needed to check whether the rules were running at all. A wrong `srcDir` could leave nothing to inspect while lint still reported success. The rules now report a configuration error if that path does not exist or contains no recognized layer directories. A green CI result still needed a check of what it had actually covered.
+
+RuleTester fixtures include imports that should pass and imports that should fail. They check both alias and relative paths, so changing the spelling of an import does not bypass the boundary. Both forms appear in the [barrel-boundary tests](https://github.com/jingeon27/side-project/blob/96e33d77/packages/config/eslint/src/rules/fsd/slice-public-api/slice-public-api.spec.ts).
+
+Direct `fetch` references in component files and duplicate overlay-open state also have rules. Sharing the presets introduced another detail: ESLint flat config rejects two different plugin objects registered under the same name. The common and web rules therefore use one `sidePlugin` object, with each preset enabling its relevant rules.
+
+CI can catch these import and implementation patterns before review. I still read the code and tests to check where permissions are enforced and which writes belong in a transaction.
 
 For infrastructure, the initial cost led me to choose one EC2 instance for the two services and PostgreSQL. That gives failures a wider impact and leaves backups and recovery to manage. Files go directly to S3 to reduce the API paths that receive large uploads. The cost and operational choices are covered in the [infrastructure article](/en/blog/why-i-chose-one-ec2-instance-for-my-side-projects).
 
-These are decisions based on what I have implemented and tested so far. Load, operating costs, and whether people find the services useful enough to return are still to be checked. When those problems appear, I want to see whether these boundaries help me find what needs to change.
+I have not made these choices from production traffic or cost measurements yet. For now, I am building a structure I can follow and change myself. Once people start using the services, slow queries and expensive requests will give me the next things to inspect.

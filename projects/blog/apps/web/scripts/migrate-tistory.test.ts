@@ -54,14 +54,20 @@ describe('published Tistory migration artifacts', () => {
       visit(tree, 'image', (node) => {
         images.push(node);
       });
+      const meta = JSON.parse(
+        await readFile(path.join(root, 'content/posts', post.contentId, 'meta.json'), 'utf8'),
+      ) as { coverImage?: string };
+      const archivedImages = post.images.map((image) =>
+        Object.hasOwn(replacements, image.path) ? replacements[image.path] : image.path,
+      );
+      const expectedImages =
+        meta.coverImage && !archivedImages.includes(meta.coverImage)
+          ? [meta.coverImage, ...archivedImages]
+          : archivedImages;
       expect(
         images.map((image) => image.url),
         post.sourceUrl,
-      ).toEqual(
-        post.images.map((image) =>
-          Object.hasOwn(replacements, image.path) ? replacements[image.path] : image.path,
-        ),
-      );
+      ).toEqual(expectedImages);
       for (const image of images) {
         // Regression: data-alt="조회&middot;화면" became literal "&middot;"
         // after Markdown decoded the importer-generated "&amp;middot;".

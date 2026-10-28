@@ -4,6 +4,10 @@ I separated the shared workflow from platform-specific code in an Electron data-
 
 </Summary>
 
+![An illustration separating a desktop application's main process, bridge, and renderer.](/images/covers/electron-module-boundaries.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 When I joined, our Electron collection app retrieved applicant information from several recruiting platforms. This was applicant data the company was authorized to access through its corporate accounts. Login methods and DOM structures differed, but the overall sequence was the same: log in, check duplicates, save applicants, and upload resumes. Each platform file owned the entire sequence, so changing a shared behavior meant editing several files.
 
 ## Every platform file repeated the same workflow

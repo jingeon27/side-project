@@ -7,17 +7,89 @@
     "width": 1520,
     "height": 1982
   },
+  "/images/covers/bottom-sheet-drag-crash.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/chatbot-message-layer.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/cross-domain-token-handoff.png": {
+    "width": 1672,
+    "height": 940
+  },
+  "/images/covers/declarative-code.png": {
+    "width": 1672,
+    "height": 940
+  },
+  "/images/covers/electron-module-boundaries.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/error-boundary-recovery.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/fsd-layer-boundaries.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/health-check-program.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/low-effort-success.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/nextjs-seo-prefetch.png": {
+    "width": 1672,
+    "height": 941
+  },
   "/images/covers/nextjs-server-client-issues.png": {
     "width": 1280,
     "height": 720
+  },
+  "/images/covers/nextjs-tanstack-query-ssr.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/payment-coupon-branches.png": {
+    "width": 1672,
+    "height": 941
   },
   "/images/covers/plan-gated-ai-workflow.png": {
     "width": 1280,
     "height": 720
   },
+  "/images/covers/prototype-working-rules.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/puppeteer-event-lifecycle.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/query-key-factory.png": {
+    "width": 1672,
+    "height": 941
+  },
   "/images/covers/reading-ai-code.png": {
     "width": 1280,
     "height": 720
+  },
+  "/images/covers/reservation-form-state.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/review-form-funnel.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/review-like-optimistic-update.png": {
+    "width": 1672,
+    "height": 941
   },
   "/images/covers/sentry-observability.png": {
     "width": 1280,
@@ -35,9 +107,25 @@
     "width": 1672,
     "height": 941
   },
+  "/images/covers/sitemap-api-boundaries.png": {
+    "width": 1672,
+    "height": 941
+  },
   "/images/covers/testing-standards.png": {
     "width": 1280,
     "height": 720
+  },
+  "/images/covers/typed-program-form.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/typescript-patterns.png": {
+    "width": 1672,
+    "height": 941
+  },
+  "/images/covers/zod-assertion-boundaries.png": {
+    "width": 1672,
+    "height": 941
   },
   "/images/posts/health-check-program/01.png": {
     "width": 1520,

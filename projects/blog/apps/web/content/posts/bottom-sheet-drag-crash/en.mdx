@@ -4,6 +4,10 @@ I traced a drag-release crash into the sheet library, preserved snap positions t
 
 </Summary>
 
+![An illustration of a bottom sheet with a fixed header, scrolling content, and a drag gesture.](/images/covers/bottom-sheet-drag-crash.png)
+
+*An illustration of the topic, rather than an actual product screenshot or exact architecture diagram.*
+
 Production Sentry captured a crash when users released a dragged sheet. At the first check, two error groups attributed to the same cause contained 23 events affecting 17 users. I had never encountered it during development, but every stack led to react-modal-sheet's drag-end handler.
 
 I initially suspected the app's closing logic. Several paths could close a sheet, and perhaps one cleared its ref first. Following the stack led one layer below the app.

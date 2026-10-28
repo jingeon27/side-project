@@ -64,11 +64,10 @@ describe('published article thumbnail assets', () => {
 
   it('uses an explicit cover image ahead of any article-specific artwork', () => {
     const covered = articles.find((article) => article.coverImage);
-    const other = articles.find((article) => !article.coverImage);
-    expect(covered?.coverImage).toBeTruthy();
-    expect(other).toBeDefined();
-    expect(getArticleThumbnail({ id: other!.id, coverImage: covered!.coverImage! })).toEqual({
-      src: covered!.coverImage!,
+    const [mappedId] = Object.keys(articleThumbnails);
+    if (!covered?.coverImage || !mappedId) throw new Error('Cover and mapped artwork fixtures are required.');
+    expect(getArticleThumbnail({ id: mappedId, coverImage: covered.coverImage })).toEqual({
+      src: covered.coverImage,
       fit: 'cover',
     });
   });
