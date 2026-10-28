@@ -109,7 +109,9 @@ test('edited article covers load in the body and match the social preview image'
   }
 });
 
-test('side-project screenshots and monitoring diagram load in both article languages', async ({ page }) => {
+test('product screenshots load and the separate infrastructure article opens in both languages', async ({
+  page,
+}) => {
   for (const locale of ['ko', 'en'] as const) {
     const entry = index.find(
       (candidate) => candidate.id === 'side-project-design' && candidate.locale === locale,
@@ -117,7 +119,7 @@ test('side-project screenshots and monitoring diagram load in both article langu
     await page.goto(`/${locale}/blog/${encodeURIComponent(entry.slug)}`);
     await expect(page.getByRole('heading', { level: 1, name: entry.title })).toBeVisible();
 
-    for (const name of ['01-service-screens', '09-product-interactions', '08-monitoring-mcp']) {
+    for (const name of ['01-service-screens', '09-product-interactions']) {
       const image = page.locator(`.article-prose img[src*="${name}.png"]`);
       await image.scrollIntoViewIfNeeded();
       await expect(image).toBeVisible();
@@ -133,6 +135,17 @@ test('side-project screenshots and monitoring diagram load in both article langu
       );
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     }
+
+    const infrastructure = index.find(
+      (candidate) => candidate.id === 'side-project-infrastructure' && candidate.locale === locale,
+    )!;
+    await page
+      .locator('.article-prose')
+      .getByRole('link', { name: infrastructure.title, exact: true })
+      .click();
+    await expect(page.getByRole('heading', { level: 1, name: infrastructure.title })).toBeVisible();
+    const productPath = `/${locale}/blog/${encodeURIComponent(entry.slug)}`;
+    await expect(page.locator(`.article-prose a[href="${productPath}"]`)).toHaveCount(1);
   }
 });
 

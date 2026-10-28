@@ -44,20 +44,15 @@ describe('edited article contracts', () => {
   );
 
   it.each(editions)(
-    'keeps implementation evidence and current screenshots in the side-project article in $locale',
+    'keeps product screenshots and a separate infrastructure article link in $locale',
     async ({ locale }) => {
       const source = await readFile(path.join(contentRoot, 'side-project-design', `${locale}.mdx`), 'utf8');
 
-      for (const image of ['01-service-screens', '09-product-interactions', '08-monitoring-mcp']) {
+      for (const image of ['01-service-screens', '09-product-interactions']) {
         expect(source).toContain(`/images/posts/side-project-design/${image}.png`);
       }
-      for (const evidence of [
-        'projects/game-feedback/apps/api/src/cache-invalidation',
-        'projects/game-feedback/docs/observability.md',
-        'projects/photo-contest/docs/observability.md',
-      ]) {
-        expect(source).toContain(evidence);
-      }
+      const seo = locale === 'ko' ? koSeo : enSeo;
+      expect(source).toContain(`](/${locale}/blog/${seo.posts['side-project-infrastructure'].slug})`);
     },
   );
 });
