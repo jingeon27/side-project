@@ -6,24 +6,21 @@ import { usePathname } from 'next/navigation';
 import { resolveAppRoute } from '@game-feedback/bridge';
 import { toast, Toaster } from '@side/design-system';
 
-import { translate, useI18n } from '@/shared/i18n';
+import { useI18n } from '@/shared/i18n';
 import { useThemePreference } from '@/shared/theme';
 
 const toasterId = 'game-feedback';
 const NotifyContext = createContext<(text: string) => void>(() => {});
 
+/** 번역을 마친 문구를 알림으로 보인다. 문구 키는 호출부가 `t()`로 번역해서 넘긴다. */
 export function useNotify() {
   return useContext(NotifyContext);
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const { locale } = useI18n();
-  const notify = useCallback(
-    (text: string) => {
-      toast(translate(locale, text), { id: 'game-feedback-notice', toasterId });
-    },
-    [locale],
-  );
+  const notify = useCallback((text: string) => {
+    toast(text, { id: 'game-feedback-notice', toasterId });
+  }, []);
   return (
     <NotifyContext.Provider value={notify}>
       {children}

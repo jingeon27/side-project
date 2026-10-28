@@ -7,15 +7,9 @@ import { ErrorNotice } from '@/shared/ui';
 import type { TAdminUser } from '../api/moderation.api';
 import { verifyMutationOptions } from '../model/moderation.mutation-options';
 
-export function UserVerificationControls({
-  user,
-  onVerified,
-}: {
-  user: Pick<TAdminUser, 'id' | 'isVerified'>;
-  onVerified?: () => Promise<void>;
-}) {
+export function UserVerificationControls({ user }: { user: Pick<TAdminUser, 'id' | 'isVerified'> }) {
   const client = useQueryClient();
-  const verify = useMutation(verifyMutationOptions(client, onVerified));
+  const verify = useMutation(verifyMutationOptions(client));
   return (
     <div role="group" aria-label="프로필 인증" className="form-stack">
       <p role="status">{user.isVerified ? '인증된 사용자' : '미인증 사용자'}</p>

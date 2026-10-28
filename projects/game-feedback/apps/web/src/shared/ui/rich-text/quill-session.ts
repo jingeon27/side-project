@@ -2,6 +2,8 @@ import type Quill from 'quill';
 
 import { RichTextDocumentSchema, type TPostMedia, type TRichTextDocument } from '@game-feedback/contracts';
 
+import { mediaAccept } from '@/shared/lib/media-types';
+
 export interface IEditorValue {
   body: string;
   document: TRichTextDocument | null;
@@ -126,7 +128,7 @@ class QuillSession {
     const index = this.editor.getSelection(true)?.index ?? this.editor.getLength() - 1;
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = kind === 'image' ? 'image/jpeg,image/png,image/gif,image/webp' : 'video/mp4,video/webm';
+    input.accept = mediaAccept[kind];
     input.hidden = true;
     this.root.append(input);
     input.addEventListener('cancel', () => input.remove(), { once: true, signal: this.lifetime.signal });

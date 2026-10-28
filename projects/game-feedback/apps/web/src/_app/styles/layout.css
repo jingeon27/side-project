@@ -193,7 +193,7 @@
     margin-left: auto;
     color: var(--color-muted);
   }
-  .side-link.selected {
+  .side-link[aria-current='page'] {
     background: var(--color-accent-soft);
     color: var(--color-ink);
   }
@@ -421,7 +421,7 @@
       min-width: 44px;
       flex: 1;
     }
-    .mobile-nav > a.active {
+    .mobile-nav > a[aria-current='page'] {
       color: var(--color-muted);
     }
     .language-banner {

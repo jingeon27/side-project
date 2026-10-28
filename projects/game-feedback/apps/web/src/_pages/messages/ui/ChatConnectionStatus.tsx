@@ -17,7 +17,7 @@ export function ChatConnectionStatus() {
       icon: <RefreshCw size={12} className="spin" />,
     }));
   return (
-    <div className={`chat-connection ${connection}`} role="status">
+    <div className="chat-connection" data-connection={connection} role="status">
       {status.icon}
       <span>{status.label}</span>
     </div>

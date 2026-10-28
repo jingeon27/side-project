@@ -69,7 +69,7 @@ function FollowControlContent({ userId, viewerId }: { userId: string; viewerId: 
           {t(notifyNewPosts ? '새 글 알림 켜짐' : '새 글 알림 꺼짐')}
         </Button>
       )}
-      <ErrorNotice message={mutation.error?.message} />
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
     </>
   );
 }

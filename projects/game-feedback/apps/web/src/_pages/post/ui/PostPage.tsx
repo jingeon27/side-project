@@ -19,7 +19,7 @@ import { StartChatLink } from '@/widgets/start-chat';
 import { VerificationPrompt } from '@/widgets/support';
 
 import { usePostRead } from '../model/use-post-read.hook';
-import { ContentActions } from './ContentActions';
+import { PostActions } from './PostActions';
 import { PostAnswersSection } from './PostAnswersSection';
 import { PostCommentsSection } from './PostCommentsSection';
 
@@ -97,20 +97,24 @@ function PostContent({ id, locale, initialDetail, initialViewerId }: IPostPagePr
               />
             )
           }
-          actions={
-            <ContentActions type="POST" id={post.id} author={post.author} post={post} locale={locale} />
-          }
+          actions={<PostActions post={post} />}
         />
       </ServiceErrorBoundary>
       {post.author.id === session.user?.id && <VerificationPrompt />}
       {isFeedback && (
         <ServiceErrorBoundary title={t('답변')} resetKey={id}>
-          <PostAnswersSection post={post} answers={answers} userId={session?.user?.id} locale={locale} />
+          <PostAnswersSection
+            postId={post.id}
+            postAuthorId={post.author.id}
+            answers={answers}
+            locale={locale}
+          />
         </ServiceErrorBoundary>
       )}
       <ServiceErrorBoundary title={t('댓글')} resetKey={id}>
         <PostCommentsSection
-          post={post}
+          postId={post.id}
+          postAuthorId={post.author.id}
           comments={comments}
           cursor={detail.data.commentsCursor}
           locale={locale}

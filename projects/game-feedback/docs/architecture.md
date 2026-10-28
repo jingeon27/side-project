@@ -41,7 +41,7 @@ Web의 `shared/ui/ServiceErrorBoundary`는 설치된 Next 16.4의 `catchError`�
 
 - `CommunityShell`의 본문·상단/하단 메뉴·양쪽 사이드바를 독립 경계로 나눈다. 본문은 계정·경로로 reset하며 Server Component도 포함하므로 재시도에 route refresh를 사용한다. `[locale]/error.tsx`는 셸 안쪽 라우트의 마지막 복구 경계이며 예약 라우트 파일은 `_app/errors`를 재수출한다.
 - 피드 카드, 게시글·답변·댓글, 채팅 목록·대화창은 각각 실패한 영역만 재생성한다. 계정·대화 ID가 바뀌면 이전 오류 상태를 폐기한다. 대화 목록 실패 시 건강한 대화창의 초안과 상태는 유지된다. 채팅 오류 화면도 기존 반응형 레이아웃과 목록/대화창 표시 규칙을 따른다.
-- 모든 overlay controller는 `openOverlay`로 연다. provider 아래에 그려지는 포털도 별도 경계로 감싸며 controller 렌더 자체의 오류도 잡는다. 실패한 창은 공통 Dialog에서 재시도·닫기를 제공하고 본문과 다른 창을 유지한다. NativeBridge·가입 안내도 각각 경계를 두며 세션 Provider에는 서비스 복구 경계를 둔다.
+- 모든 overlay controller는 `openOverlay`로 연다. controller는 받은 `{ open, onOpenChange, onOpenChangeComplete }`를 시트·대화상자에 그대로 넘기고 닫을 때는 `onOpenChange(false)`만 부른다. overlay는 닫기 전환이 끝난 `onOpenChangeComplete(false)`에서 제거된다. provider 아래에 그려지는 포털도 별도 경계로 감싸며 controller 렌더 자체의 오류도 잡는다. 실패한 창은 공통 Dialog에서 재시도·닫기를 제공하고 본문과 다른 창을 유지한다. NativeBridge·가입 안내도 각각 경계를 두며 세션 Provider에는 서비스 복구 경계를 둔다.
 - Mobile은 SafeAreaProvider 안에서 WebShellPage를 네이티브 경계로 감싼다. 렌더 오류 시 셸을 unmount해 OS listener·host를 정리하고 재시도에 서비스 초기 화면으로 재생성한다. 쿠키 저장소를 삭제하지 않는다. 문서 연결·renderer/content process 오류는 기존 WebView 복구가 별도로 처리한다.
 
 React 경계는 렌더·라이프사이클 오류를 담당한다. REST 응답 검증·조회·mutation·폼 제출·SSE 연결의 예상 가능한 오류는 기존 도메인 처리에 남기며 전역 `throwOnError`로 바꾸지 않는다. 복구 callback이 실패하면 같은 오류 화면 안에서 재시도할 수 있고 다른 cache를 일괄 삭제하지 않는다.

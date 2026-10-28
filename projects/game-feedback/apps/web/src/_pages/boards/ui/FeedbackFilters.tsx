@@ -11,7 +11,7 @@ import { BoardFilterLink } from './BoardFilterLink';
 
 export function FeedbackFilters({ locale, initialSearch }: { locale: string; initialSearch: string }) {
   const { t } = useI18n();
-  const params = new URLSearchParams(useBrowserSearch(initialSearch, `/${locale}/boards/feedback`));
+  const params = new URLSearchParams(useBrowserSearch(initialSearch, appRoutes.boards(locale, 'feedback')));
   const status = parseFeedbackStatus(params.get('feedbackStatus'));
   const hrefFor = (value?: TFeedbackStatus) =>
     appRoutes.boards(locale, 'feedback', params.get('q') ?? undefined, params.get('game') ?? undefined, {

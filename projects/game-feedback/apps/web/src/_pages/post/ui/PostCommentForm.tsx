@@ -30,6 +30,7 @@ export function PostCommentForm({ postId }: { postId: string }) {
       </div>
     );
 
+  const errorMessage = mutation.error?.message || form.formState.errors.body?.message;
   return (
     <form
       className="comment-form"
@@ -65,7 +66,7 @@ export function PostCommentForm({ postId }: { postId: string }) {
           {!mutation.isPending && <Send size={18} aria-hidden="true" />}
         </Button>
       </div>
-      <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
     </form>
   );
 }

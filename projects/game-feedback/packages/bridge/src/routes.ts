@@ -128,6 +128,8 @@ export const appRoutes = {
   settings: (locale: string) => `${root(locale)}/settings`,
   contact: (locale: string) => `${root(locale)}/contact`,
   guide: (locale: string) => `${root(locale)}/guide`,
+  terms: (locale: string) => `${root(locale)}/terms`,
+  privacy: (locale: string) => `${root(locale)}/privacy`,
 };
 function readQuery(search: string): Record<string, string> | null {
   const values: Record<string, string> = Object.create(null);

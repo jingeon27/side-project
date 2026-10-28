@@ -16,7 +16,7 @@ test('public comments identify the post author and remain readable on mobile and
   const comments = page.getByRole('region', { name: /^댓글/ });
   await expect(comments.getByRole('heading', { level: 2 })).toHaveText(`댓글${detail.comments.length}`);
   await expect(comments.getByRole('listitem')).toHaveCount(detail.comments.length);
-  await expect(comments.locator('article.mine')).toHaveCount(0);
+  await expect(comments.locator('article[data-mine]')).toHaveCount(0);
   const authorComment = comments.locator('article').filter({ hasText: ownComment.body });
   await expect(authorComment.locator('.comment-author-label')).toHaveText('작성자');
   await expect(authorComment.locator('time')).toHaveAttribute('datetime', ownComment.createdAt);
@@ -98,7 +98,7 @@ test('comment drafts support line breaks and author chat opens the correct conve
   await page.unroute(commentEndpoint);
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
   await expect(page.locator('.comment-content > p')).toHaveText('첫 번째 줄\n두 번째 줄');
-  await expect(page.locator('article.comment.mine')).toHaveCount(1);
+  await expect(page.locator('article.comment[data-mine]')).toHaveCount(1);
   await expect(page.locator('.comment-author-label')).toHaveText('작성자');
   await expect(page.getByText('아직 댓글이 없어요.', { exact: true })).toHaveCount(0);
   await expect(input).toHaveValue('');
@@ -108,12 +108,12 @@ test('comment drafts support line breaks and author chat opens the correct conve
   await page.request.post('/api/auth/test-login', { headers, data: { accountId: 'sample-user-3' } });
   await page.reload();
   const comments = page.getByRole('region', { name: /^댓글/ });
-  await expect(comments.locator('article.mine')).toHaveCount(0);
+  await expect(comments.locator('article[data-mine]')).toHaveCount(0);
   const reply = `내 댓글 ${'abcdefghij'.repeat(20)}`;
   await input.fill(reply);
   await page.getByRole('button', { name: '댓글 등록', exact: true }).click();
-  const mine = comments.locator('article.mine .comment-bubble');
-  const theirs = comments.locator('article:not(.mine) .comment-bubble');
+  const mine = comments.locator('article[data-mine] .comment-bubble');
+  const theirs = comments.locator('article:not([data-mine]) .comment-bubble');
   await expect(mine).toHaveText(reply);
   await expect(theirs).toHaveText('첫 번째 줄\n두 번째 줄');
   expect(await mine.evaluate((node) => getComputedStyle(node).backgroundColor)).not.toBe(

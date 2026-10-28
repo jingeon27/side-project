@@ -56,7 +56,7 @@
     .conversation-row {
       border-inline-start: 0;
     }
-    .conversation-row.selected {
+    .conversation-row[aria-current='page'] {
       box-shadow: inset 3px 0 0 var(--color-accent);
     }
     .header-actions {
@@ -139,7 +139,7 @@
       line-height: 15px;
       white-space: nowrap;
     }
-    .mobile-nav > a.active {
+    .mobile-nav > a[aria-current='page'] {
       color: var(--color-ink);
       font-weight: 700;
     }
@@ -161,7 +161,7 @@
     .community-shell:has(> .shell-route[data-screen='conversation']) .chat-page-heading {
       display: none;
     }
-    .chat-workspace.has-conversation {
+    .chat-workspace[data-has-conversation] {
       position: fixed;
       top: var(--visual-viewport-top, 0px);
       left: 0;

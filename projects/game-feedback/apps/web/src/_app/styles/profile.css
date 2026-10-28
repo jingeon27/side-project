@@ -99,7 +99,7 @@
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
   }
-  .snapshot-stats .snapshot-rank-unavailable {
+  .snapshot-stats [data-unavailable] {
     font-size: var(--text-caption);
     font-weight: 400;
     color: var(--color-muted);

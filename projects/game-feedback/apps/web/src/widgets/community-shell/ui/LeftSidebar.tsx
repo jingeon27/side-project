@@ -29,17 +29,12 @@ export function LeftSidebar({ home, path, chatUnread }: ILeftSidebarProps) {
     <aside className="left-sidebar">
       <div className="sidebar-label">{t('둘러보기')}</div>
       <nav aria-label={t('주 메뉴')}>
-        <Link
-          className={`side-link ${tab === 'feed' ? 'selected' : ''}`}
-          href={home}
-          replace
-          aria-current={tab === 'feed' ? 'page' : undefined}
-        >
+        <Link className="side-link" href={home} replace aria-current={tab === 'feed' ? 'page' : undefined}>
           <Home size={19} />
           {t('홈')}
         </Link>
         <Link
-          className={`side-link ${tab === 'messages' ? 'selected' : ''}`}
+          className="side-link"
           href={`${home}/messages`}
           replace
           aria-current={tab === 'messages' ? 'page' : undefined}
@@ -118,7 +113,7 @@ function SidebarBoardLink({ kind, locale, game, selected }: ISidebarBoardLinkPro
     <Link
       href={gameBoardPath(locale, kind, game)}
       replace
-      className={`side-link ${active ? 'selected' : ''}`}
+      className="side-link"
       aria-current={active ? 'page' : undefined}
     >
       {t(board.name)}

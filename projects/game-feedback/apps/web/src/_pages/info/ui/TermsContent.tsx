@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { appRoutes } from '@game-feedback/bridge';
+
 import { translate, type TLocale } from '@/shared/i18n/index.server';
 
 export function TermsContent({ locale }: { locale: TLocale }) {
@@ -37,7 +39,7 @@ export function TermsContent({ locale }: { locale: TLocale }) {
       </p>
       <h2>{t('5. 운영 안내')}</h2>
       <p>{t('공개 운영자 정보와 문의 창구, 확정된 약관 시행일은 공개 서비스 전에 안내합니다.')}</p>
-      <Link href={`/${locale}/contact`}>{t('문의 및 운영 안내')}</Link>
+      <Link href={appRoutes.contact(locale)}>{t('문의 및 운영 안내')}</Link>
       <p className="muted small">{t('초안 작성 기준: 2026년 10월 16일')}</p>
     </>
   );

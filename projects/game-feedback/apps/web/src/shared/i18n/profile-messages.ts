@@ -9,21 +9,21 @@ export const profileMessages: Record<string, readonly [string, string]> = {
   '프로필을 수정했어요.': ['Profile updated.', 'プロフィールを更新しました。'],
   '프로필 사진': ['Profile photo', 'プロフィール写真'],
   자기소개: ['Bio', '自己紹介'],
-  '2~24자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.': [
-    'Use 2–24 letters, numbers, spaces or _ . -.',
-    '2〜24文字の文字・数字・スペース・_ . -が使えます。',
+  '{min}~{max}자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.': [
+    'Use {min}–{max} letters, numbers, spaces or _ . -.',
+    '{min}〜{max}文字の文字・数字・スペース・_ . -が使えます。',
   ],
-  '닉네임은 2~24자의 문자, 숫자, 공백과 _ . -로 입력해주세요.': [
-    'Enter a nickname with 2–24 letters, numbers, spaces or _ . -.',
-    'ニックネームは2〜24文字の文字・数字・スペース・_ . -で入力してください。',
+  '닉네임은 {min}~{max}자의 문자, 숫자, 공백과 _ . -로 입력해주세요.': [
+    'Enter a nickname with {min}–{max} letters, numbers, spaces or _ . -.',
+    'ニックネームは{min}〜{max}文字の文字・数字・スペース・_ . -で入力してください。',
   ],
   '웹 주소를 입력하면 프로필에서 클릭 가능한 링크로 표시돼요.': [
     'Web addresses become clickable links on your profile.',
     '入力したウェブアドレスはプロフィールでクリックできるリンクになります。',
   ],
-  '자기소개는 500자 이하로 입력해주세요.': [
-    'Keep your bio within 500 characters.',
-    '自己紹介は500文字以内で入力してください。',
+  '자기소개는 {max}자 이하로 입력해주세요.': [
+    'Keep your bio within {max} characters.',
+    '自己紹介は{max}文字以内で入力してください。',
   ],
   '최고 트로피': ['Best trophies', '最高トロフィー'],
   '현재 세계 순위': ['Current global rank', '現在の世界順位'],
@@ -71,5 +71,11 @@ export const profileMessages: Record<string, readonly [string, string]> = {
     '5MB以下のJPEG・PNG・WebP写真を選択してください。',
   ],
   '사진 저장': ['Save photo', '写真を保存'],
+  '저장하지 않은 변경이 있어요. 닫으면 입력한 내용이 사라져요.': [
+    'You have unsaved changes. Closing will discard them.',
+    '保存していない変更があります。閉じると入力内容が失われます。',
+  ],
+  '계속 편집': ['Keep editing', '編集を続ける'],
+  '저장하지 않고 닫기': ['Close without saving', '保存せずに閉じる'],
   '프로필 사진 삭제': ['Remove profile photo', 'プロフィール写真を削除'],
 };

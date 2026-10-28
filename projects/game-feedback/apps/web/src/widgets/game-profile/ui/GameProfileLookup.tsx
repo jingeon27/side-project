@@ -25,6 +25,7 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
   const client = useQueryClient();
   const preview = useMutation(lookupGameProfileMutationOptions(client));
   const tagField = form.register('playerTag');
+  const errorMessage = form.formState.errors.playerTag?.message ?? preview.error?.message;
   return (
     <form
       className="connect-profile"
@@ -52,19 +53,13 @@ export function GameProfileLookup({ onSelectionChange, disabled = false }: IGame
             required
             disabled={disabled || preview.isPending}
           />
-          <Button
-            variant="primary"
-            size="md"
-            className="button dark"
-            type="submit"
-            disabled={disabled || preview.isPending}
-          >
+          <Button variant="primary" size="md" type="submit" disabled={disabled || preview.isPending}>
             {preview.isPending ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
             {t('조회')}
           </Button>
         </div>
       </Field>
-      <ErrorNotice message={form.formState.errors.playerTag?.message ?? preview.error?.message} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
       {preview.data && (
         <div className="profile-preview">
           <ProfileSnapshot profile={preview.data} />

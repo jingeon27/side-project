@@ -1,103 +1,64 @@
 'use client';
 
-import { useId } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useWatch } from 'react-hook-form';
-
-import { PROFILE_BIO_MAX_LENGTH, ProfileDetailsInputSchema } from '@game-feedback/contracts';
-import { Button, Input, Textarea } from '@side/design-system';
+import { useQuery } from '@tanstack/react-query';
 
 import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { useZodForm } from '@/shared/model/form';
-import { Avatar, ErrorNotice, Field, useNotify } from '@/shared/ui';
+import { Avatar } from '@/shared/ui';
 
-import { updateProfileMutationOptions } from '../model/profile.mutation-options';
+import { profileDetailsSchema, profileLinksSchema, profilePhotoSchema } from '../model/profile-edit.schema';
 import { profileOptions } from '../model/user.options';
+import { ProfileDetailsEditor } from './ProfileDetailsEditor';
 import { ProfileLinksEditor } from './ProfileLinksEditor';
 import { ProfilePhotoEditor } from './ProfilePhotoEditor';
 
 interface IProfileEditFormProps {
+  /** 정보를 저장했고 저장하지 않은 사진·링크 초안이 없을 때 부른다. */
   onSaved: () => void;
   profile: PublicProfile;
 }
 
+/**
+ * 정보·사진·링크는 각자 저장한다. 이 폼이 세 영역의 초안을 소유해, 정보를 저장할 때
+ * 저장하지 않은 사진·링크 초안이 있으면 화면을 떠나지 않고 초안을 남긴다.
+ */
 export function ProfileEditForm({ onSaved, profile }: IProfileEditFormProps) {
   const { t } = useI18n();
-  const notify = useNotify();
-  const formId = useId();
-  const form = useZodForm(ProfileDetailsInputSchema, {
+  const router = useRouter();
+  const current = useQuery({ ...profileOptions(profile.author.id), initialData: profile });
+  const details = useZodForm(profileDetailsSchema, {
     defaultValues: { nickname: profile.author.nickname, bio: profile.bio ?? '' },
   });
-  const bio = useWatch({ control: form.control, name: 'bio' });
-  const current = useQuery({ ...profileOptions(profile.author.id), initialData: profile });
-  const mutation = useMutation(updateProfileMutationOptions(useQueryClient()));
+  const links = useZodForm(profileLinksSchema, { defaultValues: { links: current.data.links ?? [] } });
+  const photo = useZodForm(profilePhotoSchema);
+  const hasOtherDrafts = links.formState.isDirty || photo.formState.isDirty;
+
+  function handleDetailsSaved() {
+    if (!hasOtherDrafts) {
+      onSaved();
+      return;
+    }
+    // 바뀐 닉네임이 서버가 그린 화면에도 보이도록 현재 경로만 다시 받는다.
+    router.refresh();
+  }
+
   return (
     <div className="settings-card profile-edit-page">
       <div className="settings-profile profile-editor-identity">
         <Avatar src={current.data.author.avatarUrl} name={current.data.author.nickname} size="large" />
         <strong>{current.data.author.nickname}</strong>
       </div>
-      <form
-        id={formId}
-        noValidate
-        className="form-stack"
-        aria-label={t('프로필 수정')}
-        onSubmit={form.handleSubmit((input) =>
-          mutation.mutate(input, {
-            onSuccess: () => {
-              notify(t('프로필을 수정했어요.'));
-              onSaved();
-            },
-          }),
-        )}
-      >
-        <Field
-          label={t('서비스 닉네임')}
-          hint={t('2~24자의 문자, 숫자, 공백과 _ . -를 사용할 수 있어요.')}
-          error={
-            form.formState.errors.nickname
-              ? t('닉네임은 2~24자의 문자, 숫자, 공백과 _ . -로 입력해주세요.')
-              : undefined
-          }
-        >
-          <Input
-            {...form.register('nickname')}
-            minLength={2}
-            maxLength={24}
-            required
-            autoComplete="nickname"
-            disabled={mutation.isPending}
-          />
-        </Field>
-        <Field
-          label={t('자기소개')}
-          hint={t('웹 주소를 입력하면 프로필에서 클릭 가능한 링크로 표시돼요.')}
-          error={form.formState.errors.bio ? t('자기소개는 500자 이하로 입력해주세요.') : undefined}
-        >
-          <Textarea
-            {...form.register('bio')}
-            rows={5}
-            maxLength={PROFILE_BIO_MAX_LENGTH}
-            disabled={mutation.isPending}
-          />
-        </Field>
-        <p className="small muted profile-bio-count">
-          {(bio ?? '').length}/{PROFILE_BIO_MAX_LENGTH}
-        </p>
-        <Button type="submit" disabled={!form.formState.isDirty} loading={mutation.isPending}>
-          {t('프로필 저장')}
-        </Button>
-        <ErrorNotice message={mutation.error?.message} />
-      </form>
+      <ProfileDetailsEditor form={details} onSaved={handleDetailsSaved} />
       <section className="profile-edit-section">
         <h3>{t('프로필 사진')}</h3>
-        <ProfilePhotoEditor hasPhoto={!!current.data.author.avatarUrl} />
+        <ProfilePhotoEditor form={photo} hasPhoto={!!current.data.author.avatarUrl} />
       </section>
       <section className="profile-edit-section">
         <h3>{t('프로필 링크')}</h3>
-        <ProfileLinksEditor links={current.data.links} />
+        <ProfileLinksEditor form={links} />
       </section>
     </div>
   );

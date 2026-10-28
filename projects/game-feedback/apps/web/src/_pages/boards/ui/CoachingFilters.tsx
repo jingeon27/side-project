@@ -9,9 +9,16 @@ import { useBrowserSearch } from '@/shared/navigation';
 
 import { BoardFilterLink } from './BoardFilterLink';
 
-export function CoachingFilters({ locale, slug }: { locale: string; slug: string }) {
+interface ICoachingFiltersProps {
+  locale: string;
+  slug: string;
+  /** 서버 snapshot의 검색 문자열. 첫 HTML과 hydration이 URL과 같은 칩을 표시한다. */
+  initialSearch: string;
+}
+
+export function CoachingFilters({ locale, slug, initialSearch }: ICoachingFiltersProps) {
   const { t } = useI18n();
-  const params = new URLSearchParams(useBrowserSearch('', `/${locale}/boards/${slug}`));
+  const params = new URLSearchParams(useBrowserSearch(initialSearch, appRoutes.boards(locale, slug)));
   const role = parseCoachingRole(params.get('coachingRole'));
   const hrefFor = (value?: TCoachingRole) =>
     appRoutes.boards(locale, slug, params.get('q') ?? undefined, params.get('game') ?? undefined, {

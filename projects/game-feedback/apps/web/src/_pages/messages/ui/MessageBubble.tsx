@@ -26,7 +26,8 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
   const read = mine && isAtOrBefore(message.createdAt, peerLastReadAt);
   return (
     <div
-      className={`chat-message ${mine ? 'mine' : 'theirs'}`}
+      className="chat-message"
+      data-mine={mine || undefined}
       data-testid={`message-${message.id}`}
       data-message-id={message.id}
       data-message-index={index}
@@ -50,7 +51,7 @@ export function MessageBubble({ message, mine, index, peerLastReadAt }: IMessage
         <div className="chat-message-meta">
           <time dateTime={message.createdAt}>{formatTime(message.createdAt, textLocale)}</time>
           {mine && (
-            <span className={read ? 'message-read' : ''}>
+            <span data-read={read || undefined}>
               {read ? (
                 <>
                   <Check size={10} />

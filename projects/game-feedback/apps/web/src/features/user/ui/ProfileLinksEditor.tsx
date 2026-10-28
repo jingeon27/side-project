@@ -3,18 +3,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFieldArray } from 'react-hook-form';
 
-import { UpdateProfileInputSchema } from '@game-feedback/contracts';
+import { ProfileLinkSchema } from '@game-feedback/contracts';
 import { Button, Input } from '@side/design-system';
 
-import type { PublicProfile } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
-import { useZodForm } from '@/shared/model/form';
+import { ErrorNotice } from '@/shared/ui';
 
+import type { TProfileLinksForm } from '../model/profile-edit.schema';
 import { updateProfileMutationOptions } from '../model/profile.mutation-options';
 
-export function ProfileLinksEditor({ links }: { links: PublicProfile['links'] }) {
+const { label, url } = ProfileLinkSchema.shape;
+
+export function ProfileLinksEditor({ form }: { form: TProfileLinksForm }) {
   const { t } = useI18n();
-  const form = useZodForm(UpdateProfileInputSchema, { defaultValues: { links: links ?? [] } });
   const fields = useFieldArray({ control: form.control, name: 'links' });
   const mutation = useMutation(updateProfileMutationOptions(useQueryClient()));
   return (
@@ -30,14 +31,18 @@ export function ProfileLinksEditor({ links }: { links: PublicProfile['links'] })
           <legend>{t('링크 {number}', { number: index + 1 })}</legend>
           <label>
             {t('이름')} <span aria-hidden>*</span>
-            <Input required maxLength={40} {...form.register(`links.${index}.label`)} />
+            <Input
+              required
+              maxLength={label.maxLength ?? undefined}
+              {...form.register(`links.${index}.label`)}
+            />
           </label>
           <label>
             {t('주소')} <span aria-hidden>*</span>
             <Input
               required
               type="url"
-              maxLength={2048}
+              maxLength={url.maxLength ?? undefined}
               placeholder="https://"
               {...form.register(`links.${index}.url`)}
             />
@@ -68,7 +73,7 @@ export function ProfileLinksEditor({ links }: { links: PublicProfile['links'] })
           {t('링크 저장')}
         </Button>
       </div>
-      {mutation.error && <p role="alert">{mutation.error.message}</p>}
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
       {mutation.isSuccess && !form.formState.isDirty && <p role="status">{t('프로필 링크를 저장했어요.')}</p>}
     </form>
   );

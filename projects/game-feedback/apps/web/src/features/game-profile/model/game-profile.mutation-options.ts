@@ -7,7 +7,8 @@ import { postDetailOptions, postListOptions } from '@/features/post';
 import { postGameAccount } from '../api/game-profile.api';
 import { gameAccountListOptions, gameProfileOptions } from './game-profile.options';
 
-export function saveGameAccountMutationOptions(client: QueryClient, notify: (text: string) => void) {
+/** `afterSuccess`는 캐시 갱신이 끝난 뒤 부른다(호출부의 번역한 알림 등). */
+export function saveGameAccountMutationOptions(client: QueryClient, afterSuccess?: () => void) {
   return mutationOptions({
     mutationKey: ['game-profile', 'save-game-account'],
     mutationFn: postGameAccount,
@@ -19,7 +20,7 @@ export function saveGameAccountMutationOptions(client: QueryClient, notify: (tex
         client.invalidateQueries(postDetailOptions()),
         client.invalidateQueries(chatScopeOptions()),
       ]);
-      notify('게임 프로필이 연결되었어요.');
+      afterSuccess?.();
     },
   });
 }

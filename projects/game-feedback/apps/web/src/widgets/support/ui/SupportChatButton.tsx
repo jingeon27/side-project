@@ -45,7 +45,7 @@ export function SupportChatButton({
       >
         {label ?? t(topic === 'VERIFICATION' ? '프로필 인증 문의' : '관리자에게 문의하기')}
       </Button>
-      <ErrorNotice message={mutation.error?.message} />
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
     </div>
   );
 }

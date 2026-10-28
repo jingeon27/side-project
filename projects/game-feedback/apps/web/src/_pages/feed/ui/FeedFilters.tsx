@@ -15,7 +15,7 @@ export function FeedFilters({ onCompose }: IFeedFiltersProps) {
     <div className="feed-heading">
       <h1 className="max-[760px]:sr-only">{t('홈')}</h1>
       <div className="feed-actions">
-        <MotionButton variant="accent" size="md" type="button" className="button primary" onClick={onCompose}>
+        <MotionButton variant="accent" size="md" type="button" className="button" onClick={onCompose}>
           <Plus size={17} />
           {t('글쓰기')}
         </MotionButton>

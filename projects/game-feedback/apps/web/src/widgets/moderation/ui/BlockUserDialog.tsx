@@ -7,15 +7,19 @@ import { Button } from '@side/design-system';
 import { blockUserMutationOptions } from '@/features/moderation';
 import type { Author } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
-import { ErrorNotice, Modal } from '@/shared/ui';
+import { BottomSheet, ErrorNotice, type IOverlayControlProps } from '@/shared/ui';
 
-interface IBlockUserDialogProps {
+interface IBlockUserDialogProps extends IOverlayControlProps {
   author: Author;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onBlocked: () => void;
 }
-export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBlockUserDialogProps) {
+export function BlockUserDialog({
+  author,
+  open,
+  onOpenChange,
+  onOpenChangeComplete,
+  onBlocked,
+}: IBlockUserDialogProps) {
   const client = useQueryClient();
   const { t } = useI18n();
   const mutation = useMutation(blockUserMutationOptions(client));
@@ -31,9 +35,10 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
     );
   }
   return (
-    <Modal
+    <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
       dismissible={!mutation.isPending}
       title={t('{name}님을 차단할까요?', { name: author.nickname })}
       description={t(
@@ -55,7 +60,7 @@ export function BlockUserDialog({ author, open, onOpenChange, onBlocked }: IBloc
         </>
       }
     >
-      <ErrorNotice message={mutation.error?.message} />
-    </Modal>
+      <ErrorNotice message={mutation.error && t(mutation.error.message)} />
+    </BottomSheet>
   );
 }

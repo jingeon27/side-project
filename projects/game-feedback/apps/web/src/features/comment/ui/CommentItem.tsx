@@ -38,7 +38,7 @@ export function CommentItem({
       </article>
     );
   return (
-    <article id={`comment-${comment.id}`} className={`comment${mine ? ' mine' : ''}`}>
+    <article id={`comment-${comment.id}`} className="comment" data-mine={mine || undefined}>
       {!mine && <Avatar src={comment.author.avatarUrl} name={comment.author.nickname} size="small" />}
       <div className="comment-content">
         <div className="comment-heading">

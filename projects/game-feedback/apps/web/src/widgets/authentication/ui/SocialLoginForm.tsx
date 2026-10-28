@@ -47,12 +47,13 @@ export function SocialLoginForm({ providers, returnTo, onSuccess }: ISocialLogin
   }
   const common = { pending, selected, returnTo, onSubmit: handleSubmit };
   if (isNativeApp()) return <p className="login-unavailable">로그인은 웹 브라우저에서 이용해 주세요.</p>;
+  const errorMessage = nativeLogin.error?.message ?? browserLogin.error?.message;
   return (
     <div className="social-login-methods">
       <SocialLoginButton {...common} provider="google" configured={configured('google')} />
       <SocialLoginButton {...common} provider="kakao" configured={configured('kakao')} />
       <SocialLoginButton {...common} provider="discord" configured={configured('discord')} />
-      <ErrorNotice message={nativeLogin.error?.message ?? browserLogin.error?.message} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
       {!providers.some((item) => item.configured) && (
         <p className="login-unavailable">{t('로그인 방법을 준비하고 있어요.')}</p>
       )}

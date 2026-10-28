@@ -34,7 +34,7 @@ export function GameAccountCard({ profile }: { profile: GameProfile }) {
           {t('새로고침')}
         </Button>
       </div>
-      <ErrorNotice message={latest.error?.message} />
+      <ErrorNotice message={latest.error && t(latest.error.message)} />
     </div>
   );
 }

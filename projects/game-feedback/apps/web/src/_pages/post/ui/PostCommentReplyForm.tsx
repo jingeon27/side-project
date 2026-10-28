@@ -33,6 +33,7 @@ export function PostCommentReplyForm({
   const notify = useNotify();
   const form = useZodForm(commentFormSchema, { defaultValues: { body: '' } });
 
+  const errorMessage = mutation.error?.message || form.formState.errors.body?.message;
   return (
     <form
       className="comment-reply-form"
@@ -61,7 +62,7 @@ export function PostCommentReplyForm({
         disabled={mutation.isPending}
         required
       />
-      <ErrorNotice message={mutation.error?.message || form.formState.errors.body?.message} />
+      <ErrorNotice message={errorMessage && t(errorMessage)} />
       <div className="comment-reply-controls">
         <Button variant="ghost" size="sm" type="button" disabled={mutation.isPending} onClick={onCancel}>
           {t('취소')}

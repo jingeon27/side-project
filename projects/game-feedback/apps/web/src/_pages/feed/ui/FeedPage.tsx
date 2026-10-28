@@ -17,6 +17,7 @@ import { useBrowserSearch } from '@/shared/navigation';
 import { AsyncBoundary, ServiceErrorBoundary } from '@/shared/ui';
 import { CommunityPage } from '@/widgets/community-shell';
 
+import { feedSnapshotSearch } from '../model/feed-snapshot-search';
 import type { IFeedSnapshot } from '../model/feed-snapshot.type';
 import { FeedFilters } from './FeedFilters';
 import { FeedTopbar } from './FeedTopbar';
@@ -67,8 +68,7 @@ function FeedResultsRegion({
   const { t } = useI18n();
   const { session } = useSession();
   const initial = 'then' in initialFeed ? use(initialFeed) : initialFeed;
-  const initialSearch = new URLSearchParams({ q: initial.q, tab: initial.tab }).toString();
-  const search = useBrowserSearch(`?${initialSearch}`, `/${locale}`);
+  const search = useBrowserSearch(feedSnapshotSearch(initial), appRoutes.feed(locale));
   const params = new URLSearchParams(search);
   const tab = params.get('tab') === 'unanswered' ? 'unanswered' : 'latest';
   const q = params.get('q')?.trim().slice(0, 100) ?? '';
@@ -167,8 +167,8 @@ function FeedResults({
           variant="secondary"
           size="lg"
           fullWidth
-          type="submit"
-          className="button outline full load-more"
+          type="button"
+          className="load-more"
           disabled={feed.isFetchingNextPage}
           onClick={() => feed.fetchNextPage()}
         >

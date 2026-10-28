@@ -6,6 +6,7 @@ import { Textarea } from '@side/design-system';
 
 import { chatError } from '@/features/chat';
 import { useI18n } from '@/shared/i18n';
+import { mediaAccept } from '@/shared/lib/media-types';
 import { MotionButton } from '@/shared/ui';
 
 import { useChatComposer } from '../model/use-chat-composer';
@@ -89,13 +90,14 @@ export function ChatComposer({
       )}
       <form className="chat-compose" onSubmit={handleSubmit}>
         <label
-          className={`chat-attach-button${busy ? ' disabled' : ''}`}
+          className="chat-attach-button"
+          data-disabled={busy || undefined}
           title={t('이미지 또는 동영상 첨부')}
         >
           {upload.isPending ? <LoaderCircle size={20} className="spin" /> : <Paperclip size={20} />}
           <input
             type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm"
+            accept={mediaAccept.all}
             aria-label={t('이미지 또는 동영상 첨부')}
             disabled={busy || unavailable}
             onChange={(event) => {
@@ -118,7 +120,6 @@ export function ChatComposer({
         <MotionButton
           variant="primary"
           size="icon"
-          className="button dark"
           type="submit"
           disabled={busy || unavailable || (!draft.trim() && !upload.data)}
           aria-label={mutation.isError ? t('다시 보내기') : t('보내기')}

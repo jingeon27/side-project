@@ -53,6 +53,12 @@ for (const width of [390, 1440]) {
     await links.getByRole('button', { name: '링크 추가' }).click();
     await links.getByRole('textbox', { name: /이름/ }).fill('나의 방송');
     await links.getByRole('textbox', { name: /주소/ }).fill('https://video.example/@player');
+    // 저장하지 않은 링크 초안이 있으면 정보를 저장해도 이 화면에 남아 초안을 지킨다.
+    await details.getByRole('textbox', { name: '자기소개', exact: true }).fill('링크를 정리하고 있어요.');
+    await page.getByRole('button', { name: '프로필 저장', exact: true }).click();
+    await expect(page.getByRole('button', { name: '프로필 저장', exact: true })).toBeDisabled();
+    await expect(page).toHaveURL('/ko/settings/profile');
+    await expect(links.getByRole('textbox', { name: /이름/ })).toHaveValue('나의 방송');
     await links.getByRole('button', { name: '링크 저장' }).click();
     await expect
       .poll(async () => (await (await page.request.get(`/api/users/${userId}`)).json()).links)

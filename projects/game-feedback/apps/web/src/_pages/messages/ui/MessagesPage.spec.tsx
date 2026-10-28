@@ -5,7 +5,7 @@ import { MessagesPage } from './MessagesPage';
 
 const failures = vi.hoisted(() => ({ list: false, pane: false }));
 vi.mock('@/features/auth', () => ({
-  useSession: () => ({ session: { user: { id: 'viewer' } }, loading: false }),
+  useSession: () => ({ session: { user: { id: 'viewer' } } }),
 }));
 vi.mock('./ChatConnectionStatus', () => ({ ChatConnectionStatus: () => <p>연결 상태 유지</p> }));
 vi.mock('./ConversationSidebar', () => ({

@@ -19,7 +19,7 @@ interface IAnswerCardProps {
 export function AnswerCard({ answer, authorContent, authorName, actions, helpfulControl }: IAnswerCardProps) {
   const { t, locale: textLocale } = useI18n();
   return (
-    <article className={`answer-card ${answer.helpful ? 'helpful-answer' : ''}`}>
+    <article className="answer-card" data-helpful={answer.helpful || undefined}>
       {answer.helpful && (
         <div className="helpful-ribbon">
           <Check size={14} />
