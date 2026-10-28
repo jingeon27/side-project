@@ -32,7 +32,7 @@ const MESSAGE = {
   RIGHTS_REQUIRED: '사진 사용 권리와 촬영된 사람의 동의를 확인해 주세요.',
   UPLOAD_INCOMPLETE: '사진 업로드가 완료되지 않았거나 만료되었습니다.',
   UPLOAD_REJECTED: '업로드 요청이 만료되었거나 유효하지 않습니다.',
-} as const;
+} as const satisfies Record<string, string>;
 
 @Injectable()
 export class SubmissionService {
