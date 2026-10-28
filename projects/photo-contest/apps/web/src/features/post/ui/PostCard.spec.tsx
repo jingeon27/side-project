@@ -1,13 +1,17 @@
 import type { ReactElement } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { MockLink } from '@apollo/client/testing';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { GalleryPostCardFragmentDoc, PostKind, type GalleryPostCardFragment } from '@/shared/api/generated';
 
+import { PostActionsMenu } from './PostActionsMenu';
 import { PostCard } from './PostCard';
 import { PostPreviewCard } from './PostPreviewCard';
 
@@ -39,15 +43,38 @@ const post: GalleryPostCardFragment = {
   author: { __typename: 'User', id: 'author', nickname: '작성자', avatar: null },
 };
 
-function renderCard(ui: ReactElement) {
+function cardTree({ ui }: { ui: ReactElement }) {
   const cache = new InMemoryCache();
   cache.writeFragment({ fragment: GalleryPostCardFragmentDoc, data: post });
-  return render(
-    <ApolloProvider client={new ApolloClient({ cache, link: new MockLink([]) })}>{ui}</ApolloProvider>,
-  );
+  return <ApolloProvider client={new ApolloClient({ cache, link: new MockLink([]) })}>{ui}</ApolloProvider>;
+}
+
+function renderCard(ui: ReactElement) {
+  return render(cardTree({ ui }));
 }
 
 describe('게시물 카드', () => {
+  it('서버 메뉴는 준비 전 비활성화하고 hydration 후 Enter로 열어야 한다', async () => {
+    const ui = cardTree({ ui: <PostActionsMenu postId="post-1" /> });
+    const container = document.body.appendChild(document.createElement('div'));
+    container.innerHTML = renderToString(ui);
+    const trigger = within(container).getByRole('button', { name: '점심의 순간 더보기' });
+    expect(trigger).toBeDisabled();
+    const root = hydrateRoot(container, ui);
+    try {
+      await waitFor(() => expect(trigger).toBeEnabled());
+      const user = userEvent.setup();
+      trigger.focus();
+      await user.keyboard('{Enter}');
+      expect(await screen.findByRole('menuitem', { name: '수정' })).toBeVisible();
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(trigger).toHaveFocus());
+    } finally {
+      await act(async () => root.unmount());
+      container.remove();
+    }
+  });
+
   it('멤버 카드는 제목·사진·본문과 메뉴·좋아요·댓글을 함께 보여줘야 한다', () => {
     renderCard(<PostCard id="post-1" />);
     const card = screen.getByRole('article', { name: '점심의 순간' });

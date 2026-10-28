@@ -16,6 +16,7 @@ import {
 } from '@/shared/api/generated';
 import { cn } from '@/shared/lib/cn.helper';
 import { getOverlayContainer } from '@/shared/lib/overlay-container.helper';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { toast } from '@/shared/model/toast';
 import { ConfirmDialog } from '@/shared/ui/@core/confirm-dialog';
 import { IconButton } from '@/shared/ui/@core/icon-button';
@@ -27,6 +28,7 @@ const ITEM_CLASS =
   'flex min-h-touch cursor-pointer items-center gap-3 rounded-control px-3 text-label text-ink outline-none data-highlighted:bg-sunken data-disabled:opacity-45 active:bg-neutral-soft';
 
 export function PostActionsMenu({ postId }: { postId: string }) {
+  const isSSR = useIsSSR();
   const { data: post, complete } = useFragment({
     fragment: GalleryPostCardFragmentDoc,
     from: { __typename: 'GalleryPost', id: postId },
@@ -52,7 +54,7 @@ export function PostActionsMenu({ postId }: { postId: string }) {
         render={
           <IconButton label={`${post.title} 더보기`} className="rounded-full text-muted hover:bg-sunken" />
         }
-        disabled={hideState.loading || removeState.loading}
+        disabled={isSSR || hideState.loading || removeState.loading}
       >
         <Ellipsis aria-hidden className="size-5" />
       </Menu.Trigger>

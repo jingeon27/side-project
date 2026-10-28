@@ -23,6 +23,7 @@ test(
     const post = latest.getByRole('article', { name: '우연히 찍힌 완벽한 순간', exact: true });
     const trigger = post.getByRole('button', { name: '우연히 찍힌 완벽한 순간 더보기', exact: true });
     await expect(post.getByRole('button', { name: /숨기기|분류 변경|삭제/ })).toHaveCount(0);
+    await expect(trigger).toBeEnabled();
     await trigger.press('Enter');
     const menu = page.getByRole('menu');
     await expect(menu.getByRole('menuitem', { name: '수정', exact: true })).toBeVisible();
