@@ -99,4 +99,29 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
     await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
     await waitFor(() => expect(window.location.pathname).toBe('/ko/settings'));
   });
+
+  it('다른 URL이 같은 기록 번호를 갖더라도 취소한 뒤로 가기를 복구해야 한다', async () => {
+    start();
+    window.history.replaceState(
+      { __game_feedback_navigation: { index: 0, previous: '/ko/users/me' } },
+      '',
+      '/ko/settings/profile',
+    );
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderHook(() => useUnsavedChanges(true, '초안을 버릴까요?'));
+    window.history.back();
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.location.pathname).toBe('/ko/settings/profile'));
+  });
+
+  it('기록 추적을 설치하기 전의 화면으로 돌아갈 때도 초안을 확인해야 한다', async () => {
+    window.history.replaceState({ __NA: true }, '', '/ko/users/me');
+    window.history.pushState({ __NA: true }, '', '/ko/settings/profile');
+    cleanups.push(installBrowserNavigation());
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderHook(() => useUnsavedChanges(true, '초안을 버릴까요?'));
+    window.history.back();
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.location.pathname).toBe('/ko/settings/profile'));
+  });
 });
