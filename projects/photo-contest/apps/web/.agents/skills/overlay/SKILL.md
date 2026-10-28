@@ -56,10 +56,10 @@ onConfirm={async () => {
 
 ## 새 종류의 오버레이
 
-- Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 오버레이가 앱의 provider와 기록 안에서 동작한다. 바텀시트는 모든 화면에서 아래에 붙고 브라우저 너비를 채운다. z-index는 `z-sheet`·`z-dialog` 토큰.
+- Base UI로 직접 만들 때(사진 크게 보기 등)는 `useOverlayHistory(isOpen, onClose)`(`@/shared/model/router`)와 `Portal container={getOverlayContainer()}`(`src/shared/lib/overlay-container.helper.ts`)를 함께 쓴다. 그래야 브라우저·안드로이드 뒤로 가기(`navigation.back`)가 화면보다 오버레이를 먼저 닫고, 오버레이가 앱의 provider와 기록 안에서 동작한다. 바텀시트는 공통 디자인 시스템의 `responsive` Root를 사용한다. 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 768px부터는 중앙 모달로 보여 준다. 헤더에는 X를 두지 않고 입력 폼의 Footer에 취소와 제출 버튼을 같은 너비의 가로 행으로 둔다. 댓글 입력 Footer처럼 제출 폼의 취소가 아닌 영역은 `cancelLabel={false}`로 둔다. z-index는 `z-sheet`·`z-dialog` 토큰.
 - 포커스는 닫힐 때 Base UI가 열기 전 포커스 요소로 돌려준다. 그러니 effect가 아니라 연 버튼의 클릭 핸들러에서 연다.
 
 ## 테스트 (ui 레인)
 
-- `render(<OverlayProvider>…</OverlayProvider>)`, `afterEach(() => act(() => overlay.unmountAll()))`. `findByRole('dialog' | 'alertdialog', { name: 제목 })`로 찾고, "닫기" 버튼·Esc·`act(() => window.history.back())`로 닫은 뒤 연 버튼 포커스와 `hasOpenOverlay() === false`를 단언한다. 본보기: `src/shared/ui/@core/bottom-sheet/BottomSheet.spec.tsx`.
+- `render(<OverlayProvider>…</OverlayProvider>)`, `afterEach(() => act(() => overlay.unmountAll()))`. `findByRole('dialog' | 'alertdialog', { name: 제목 })`로 찾고, 하단 "취소" 버튼·Esc·`act(() => window.history.back())`로 닫은 뒤 연 버튼 포커스와 `hasOpenOverlay() === false`를 단언한다. 본보기: `src/shared/ui/@core/bottom-sheet/BottomSheet.spec.tsx`.
 - 한 파일만: `yarn workspace @photo-contest/web test <spec 경로>`(side 루트).
