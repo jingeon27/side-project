@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { match, P } from 'ts-pattern';
 
 import { type Conversation } from '@game-feedback/contracts';
 
@@ -70,7 +71,12 @@ export class ChatConversationService {
       const peerReadAt = row.firstUserId === userId ? row.secondReadAt : row.firstReadAt;
       return {
         id: row.id,
-        supportTopic: row.support?.topic === 'VERIFICATION' ? 'VERIFICATION' : row.support ? 'GENERAL' : null,
+        // 문의 주제는 DB 문자열이라 인증 문의만 구분하고 나머지 문의는 일반으로 본다.
+        supportTopic: match(row.support)
+          .returnType<Conversation['supportTopic']>()
+          .with(P.nullish, () => null)
+          .with({ topic: 'VERIFICATION' }, () => 'VERIFICATION')
+          .otherwise(() => 'GENERAL'),
         peer: authorDto(peer),
         lastMessage: last ? messageDto(last) : null,
         unreadCount: summary?.unreadCount ?? 0,
