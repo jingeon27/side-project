@@ -57,8 +57,7 @@ function ContestHeader({ id }: { id: string }) {
           .with(Phase.Upcoming, () => '접수 시작을 기다리고 있어요.')
           .with(
             Phase.Submission,
-            () =>
-              '사진이나 동영상을 올려 참여해 보세요. 합성한 이미지도 올릴 수 있고, 여러 번 참여할 수 있어요.',
+            () => '사진이나 동영상, 합성한 이미지를 게시해 보세요. 게시물을 여러 개 올릴 수 있어요.',
           )
           .with(Phase.Voting, () => '가장 웃긴 참여작에 한 표를 보내세요.')
           .with(Phase.Completed, () => '함께 뽑은 우승작과 최종 결과를 확인하세요.')
@@ -83,11 +82,9 @@ function ContestHeader({ id }: { id: string }) {
       ) : (
         <GroupMembershipButton groupId={contest.groupId} />
       )}
-      <div className="space-y-1 text-caption text-muted">
-        <p>좋아요는 한 사람당 최대 {contest.likeLimit}개 작품에 누를 수 있어요.</p>
-        <p>대회 투표는 좋아요와 별개로 한 사람당 한 표예요. 본인 참여작에는 투표할 수 없어요.</p>
-        <p>득표수가 같으면 공동 우승이에요.</p>
-      </div>
+      <p className="text-caption text-muted">
+        좋아요는 한 사람당 최대 {contest.likeLimit}개 작품에 누를 수 있어요.
+      </p>
       <ContestPhaseSync id={id} phase={contest.phase} />
     </section>
   );
