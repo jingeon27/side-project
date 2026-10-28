@@ -37,6 +37,15 @@ description: 웃긴순간 웹(apps/web)의 화면·기능 slice 배치, 모바�
 - 폼은 `useZodForm(schema)` + `model/*.schema.ts`. 렌더에서 값을 읽을 때는 `useWatch`, 핸들러에서는 `getValues`.
 - 단계(Phase)처럼 닫힌 집합 분기는 ts-pattern `match(...).exhaustive()`, nil 검사는 es-toolkit.
 
+## 상수 표와 분기 (satisfies · ts-pattern)
+
+- 설정·조회 표로 쓰는 모듈 상수(경로, 메뉴, 상태·단계 → 문구, 한도, 선택지, Apollo type policy, cva 옆 표)는 `const X: T = { … }` 대신 `const X = { … } satisfies T`로 모양만 검사하고 선언한 타입을 남긴다. 리터럴 타입이 필요하면 `as const satisfies T`, `as const`만 있는 상수에도 의도한 모양을 붙인다.
+- 유니온·enum을 키로 하는 표는 `satisfies Record<TUnion, V>`로 두어 빠지거나 남는 키가 타입 검사에서 걸리게 한다(예: `MEDAL_CLASS_NAME`, `PHOTO_SORT`).
+- 타입 있는 인자·JSX prop에 바로 넘기는 객체, 테스트 fixture, 호출자가 기대는 export 타입(넓은 키로 색인하는 `Record<number, …>`, 상태 초기값)은 그대로 둔다. Next가 읽는 라우트 export(`config`, `metadata`, `viewport`)도 프레임워크 타입 주석을 유지한다.
+- 같은 판별값(대회 단계·역할·공개 범위·상태·종류·오류 코드)으로 3갈래 이상 나누는 if·삼항, 중첩 삼항, 닫힌 유니온의 switch는 `match(x).with(…).exhaustive()`로 쓴다. 우선순위가 있는 여러 조건은 `match({ selected, mine })`처럼 객체 패턴을 위에서부터 고르고 마지막 갈래까지 패턴으로 적는다. `.otherwise()`는 문자열·숫자·배열 같은 열린 입력이나 '나머지 전부'가 의도일 때만 쓴다.
+- 단순 가드·조기 반환, 조건 하나짜리 if, 터치 이동처럼 매 프레임 도는 경로, 루프 안 `continue`·`return` 흐름은 일반 코드로 둔다.
+- 앱(`apps/mobile`)과 앱 번들에 함께 들어가는 `packages/bridge`에는 ts-pattern을 넣지 않는다(mobile 스킬). 그쪽 닫힌 분기는 `satisfies Record<…>` 표나 판별 유니온 좁히기로 검사한다.
+
 ## 모바일 레이아웃
 
 - 화면은 `#pc-root` > `main#pc-main`의 화면 전체 폭을 사용하는 반응형 웹 영역에 그린다. 데스크톱 셸에 `max-w-web`을 적용하지 않으며 홈·탐색·MY 목록은 남은 콘텐츠 폭을 채운다. 상시 게시물은 모바일·태블릿 최대 540px, 데스크톱 최대 680px의 1열 피드다. `desktop:`(1024px)부터 왼쪽 고정 메뉴·중앙 피드·오른쪽 인기 사진을 쓰며, 그보다 좁으면 하단 탭과 피드 위의 인기 목록을 쓴다. 인기 목록은 모든 기기에서 순위·64px 사진·내용 순서로 한 줄씩 표시한다. 이전 대회 피드의 격자는 유지한다. 오버레이 portal은 `#pc-main`에 둔다. 입력 오버레이는 같은 DOM을 CSS 미디어 쿼리로 768px 미만에서는 하단 시트, 그 이상에서는 중앙 모달로 표시한다. 헤더 X 대신 하단에 취소·제출 버튼을 같은 너비의 가로 행으로 둔다. 일반 화면의 로그인 폼은 `max-w-app`(540px)을 쓴다.

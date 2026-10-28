@@ -7,19 +7,24 @@ import { openBrowserAsync } from 'expo-web-browser';
 import { COLORS } from '@/shared/config/theme';
 import { getPushRegistration, openPushSettings, setPushBadge, supportsNativePush } from '@/shared/lib/push';
 
-import { createCapabilities, type ICapabilityDependencies } from '../lib/create-capabilities';
+import {
+  createCapabilities,
+  type ICapabilityDependencies,
+  type TImpactStyle,
+  type TNotificationType,
+} from '../lib/create-capabilities';
 
 const IMPACT_STYLE = {
   light: ImpactFeedbackStyle.Light,
   medium: ImpactFeedbackStyle.Medium,
   heavy: ImpactFeedbackStyle.Heavy,
-} as const;
+} as const satisfies Record<TImpactStyle, ImpactFeedbackStyle>;
 
 const NOTIFICATION_TYPE = {
   success: NotificationFeedbackType.Success,
   warning: NotificationFeedbackType.Warning,
   error: NotificationFeedbackType.Error,
-} as const;
+} as const satisfies Record<TNotificationType, NotificationFeedbackType>;
 
 /** expo 모듈로 실제 플랫폼 기능을 만든다. 판단 로직은 createCapabilities가 가진다. */
 export function createNativeDependencies(): ICapabilityDependencies {

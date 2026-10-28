@@ -24,7 +24,7 @@ export const ANALYTICS_EVENT = {
   ResultShared: 'result_shared',
   ContestShared: 'contest_shared',
   PhotoReported: 'photo_reported',
-} as const;
+} as const satisfies Record<string, string>;
 export type TAnalyticsEventName = (typeof ANALYTICS_EVENT)[keyof typeof ANALYTICS_EVENT];
 
 /** 공유·복사를 어떤 방법으로 했는지: 앱 기능, Web Share API, 클립보드 */
@@ -32,7 +32,7 @@ export const SHARE_METHOD = {
   Native: 'native',
   WebShare: 'web_share',
   Clipboard: 'clipboard',
-} as const;
+} as const satisfies Record<string, string>;
 export type TShareMethod = (typeof SHARE_METHOD)[keyof typeof SHARE_METHOD];
 
 /** dev는 개발 서버의 닉네임 로그인 */

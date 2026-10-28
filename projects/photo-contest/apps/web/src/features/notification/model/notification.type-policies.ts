@@ -6,7 +6,7 @@ interface INotificationPageStore {
   hasMore: boolean;
 }
 
-export const notificationTypePolicies: TypePolicies = {
+export const notificationTypePolicies = {
   Query: {
     fields: {
       myNotifications: {
@@ -25,4 +25,4 @@ export const notificationTypePolicies: TypePolicies = {
       },
     },
   },
-};
+} satisfies TypePolicies;

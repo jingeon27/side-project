@@ -5,8 +5,8 @@ import { NativeCapabilityError, type TNativeCapabilities } from '@photo-contest/
 
 type TSocialProvider = 'google' | 'kakao';
 
-type TImpactStyle = 'light' | 'medium' | 'heavy';
-type TNotificationType = 'success' | 'warning' | 'error';
+export type TImpactStyle = 'light' | 'medium' | 'heavy';
+export type TNotificationType = 'success' | 'warning' | 'error';
 
 /** 분석에 남길 기능 결과. 어떤 도구로 보낼지는 기능을 쓰는 화면이 정한다. */
 export type TCapabilityOutcome =

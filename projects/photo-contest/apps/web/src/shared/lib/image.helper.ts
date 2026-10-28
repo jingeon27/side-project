@@ -12,7 +12,7 @@ export const IMAGE_MESSAGE = {
   HeicUnsupported: '이 기기에서는 HEIC 사진을 바로 올릴 수 없어요. JPEG/PNG/WebP로 바꿔 주세요.',
   Unsupported: 'JPEG, PNG, WebP 사진만 올릴 수 있어요.',
   TooLarge: '10MB 이하의 사진을 선택해 주세요.',
-} as const;
+} as const satisfies Record<string, string>;
 
 /** 사진을 올릴 수 있는 모양으로 바꾸지 못했을 때. message를 사진 칸 오류로 보여 준다. */
 export class ImagePrepareError extends Error {

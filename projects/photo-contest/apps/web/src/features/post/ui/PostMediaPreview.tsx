@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
+import { match } from 'ts-pattern';
+
 import { Button } from '@/shared/ui/@core/button';
 
 interface IPostMediaPreviewProps {
@@ -26,38 +28,42 @@ export function PostMediaPreview({ file, src, disabled, onReplace, onRemove }: I
   return (
     <figure aria-label="선택한 파일 미리보기" className="flex flex-col gap-2">
       <div className="relative aspect-video max-h-80 overflow-hidden rounded-card bg-sunken desktop:aspect-square desktop:max-h-[40dvh]">
-        {status === 'unavailable' ? (
-          <p
-            role="status"
-            className="flex h-full items-center justify-center px-5 text-center text-body text-muted"
-          >
-            미리보기를 열 수 없어요. 이 기기에서 재생할 수 있는 다른 사진이나 동영상을 선택해 주세요.
-          </p>
-        ) : file.type.startsWith('video/') ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption -- 올리기 전에 고른 파일을 확인하는 미리보기라 자막 파일이 없다.
-          <video
-            ref={videoRef}
-            src={src}
-            controls
-            playsInline
-            preload="auto"
-            aria-label="선택한 동영상 미리보기"
-            onLoadedData={handleLoaded}
-            onError={handleUnavailable}
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <Image
-            src={src}
-            alt="선택한 사진 미리보기"
-            fill
-            unoptimized
-            sizes="(min-width: 1024px) 540px, calc(100vw - 40px)"
-            onLoad={handleLoaded}
-            onError={handleUnavailable}
-            className="object-contain"
-          />
-        )}
+        {match({ status, video: file.type.startsWith('video/') })
+          .with({ status: 'unavailable' }, () => (
+            <p
+              role="status"
+              className="flex h-full items-center justify-center px-5 text-center text-body text-muted"
+            >
+              미리보기를 열 수 없어요. 이 기기에서 재생할 수 있는 다른 사진이나 동영상을 선택해 주세요.
+            </p>
+          ))
+          .with({ video: true }, () => (
+            // eslint-disable-next-line jsx-a11y/media-has-caption -- 올리기 전에 고른 파일을 확인하는 미리보기라 자막 파일이 없다.
+            <video
+              ref={videoRef}
+              src={src}
+              controls
+              playsInline
+              preload="auto"
+              aria-label="선택한 동영상 미리보기"
+              onLoadedData={handleLoaded}
+              onError={handleUnavailable}
+              className="h-full w-full object-contain"
+            />
+          ))
+          .with({ video: false }, () => (
+            <Image
+              src={src}
+              alt="선택한 사진 미리보기"
+              fill
+              unoptimized
+              sizes="(min-width: 1024px) 540px, calc(100vw - 40px)"
+              onLoad={handleLoaded}
+              onError={handleUnavailable}
+              className="object-contain"
+            />
+          ))
+          .exhaustive()}
       </div>
       <figcaption className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <span className="min-w-0 text-caption wrap-break-word text-muted">{file.name}</span>

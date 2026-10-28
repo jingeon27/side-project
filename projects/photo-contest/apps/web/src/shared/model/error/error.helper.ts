@@ -12,7 +12,7 @@ export const ERROR_CODE = {
   RateLimited: 'RATE_LIMITED',
   Unavailable: 'UNAVAILABLE',
   Internal: 'INTERNAL_SERVER_ERROR',
-} as const;
+} as const satisfies Record<string, string>;
 export type TErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
 
 export const DEFAULT_ERROR_MESSAGE = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.';

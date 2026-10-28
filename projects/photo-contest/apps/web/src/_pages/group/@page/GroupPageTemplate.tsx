@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useBackgroundQuery, useReadQuery } from '@apollo/client/react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 import { LoginPanel } from '@/features/auth';
 import { GroupMembershipButton, GroupNavigation } from '@/features/group';
@@ -90,13 +90,11 @@ function GroupContent({
   return (
     <GroupFrame
       title={group.name}
-      actions={
-        group.role ? (
-          <CreatePostButton groupId={group.id} />
-        ) : group.canViewPosts ? (
-          <GroupMembershipButton groupId={group.id} />
-        ) : undefined
-      }
+      actions={match(group)
+        .with({ role: P.nonNullable }, () => <CreatePostButton groupId={group.id} />)
+        .with({ canViewPosts: true }, () => <GroupMembershipButton groupId={group.id} />)
+        .with({ canViewPosts: false }, () => undefined)
+        .exhaustive()}
     >
       <GroupIdentity groupRef={groupRef} />
       {group.canViewPosts ? <GroupNavigation groupId={group.id} /> : null}

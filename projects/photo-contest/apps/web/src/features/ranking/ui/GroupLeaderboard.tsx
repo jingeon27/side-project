@@ -14,13 +14,13 @@ import { Avatar } from '@/shared/ui/@core/avatar';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 
-import { countByRank, getMedalTone, getRankLabel } from '../lib/ranking.helper';
+import { countByRank, getMedalTone, getRankLabel, type TMedalTone } from '../lib/ranking.helper';
 
 const MEDAL_CLASS_NAME = {
   gold: 'bg-gold text-ink',
   silver: 'bg-silver text-ink',
   bronze: 'bg-bronze text-ink',
-} as const;
+} as const satisfies Record<TMedalTone, string>;
 
 function LeaderboardContent({
   rankingRef,
