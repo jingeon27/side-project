@@ -260,6 +260,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0, persist-credentials: false }
@@ -269,7 +270,19 @@ jobs:
           RELEASE_SHA: ${{ github.sha }}
           DEPLOY_BRANCH: ${{ vars.PHOTO_CONTEST_DEPLOY_BRANCH }}
         run: bash deploy/shared-instance/scripts/ci-superseded.sh photo-contest "$DEPLOY_BRANCH"
-      - name: Deploy verified digests over SSH
+      - name: Authenticate the SSM deployment with GitHub OIDC
+        if: steps.latest.outputs.deploy == 'true' && vars.SIDE_DEPLOY_SSM_INSTANCE_ID != ''
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          role-to-assume: ${{ vars.SIDE_DEPLOY_AWS_ROLE_ARN }}
+          role-session-name: side-cd-${{ github.run_id }}
+          role-duration-seconds: 3600
+          aws-region: ap-northeast-2
+          allowed-account-ids: ${{ vars.SIDE_DEPLOY_AWS_ACCOUNT_ID }}
+      - name: Install the pinned Session Manager plugin
+        if: steps.latest.outputs.deploy == 'true' && vars.SIDE_DEPLOY_SSM_INSTANCE_ID != ''
+        run: bash deploy/shared-instance/scripts/ci-session-manager.sh
+      - name: Deploy verified digests over SSH or SSM
         if: steps.latest.outputs.deploy == 'true'
         env:
           RELEASE_SHA: ${{ github.sha }}
@@ -277,6 +290,8 @@ jobs:
           WEB_IMAGE: ${{ needs.publish.outputs.web_image }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
+          DEPLOY_SSM_INSTANCE_ID: ${{ vars.SIDE_DEPLOY_SSM_INSTANCE_ID }}
+          DEPLOY_AWS_REGION: ap-northeast-2
           DEPLOY_HOST: ${{ vars.SIDE_DEPLOY_HOST }}
           DEPLOY_USER: ${{ vars.SIDE_DEPLOY_SSH_USER }}
           DEPLOY_PORT: ${{ vars.SIDE_DEPLOY_SSH_PORT }}
