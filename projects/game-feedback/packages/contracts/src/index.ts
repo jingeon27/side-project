@@ -569,7 +569,7 @@ export const schemas = {
   BlockInput: BlockInputSchema,
   CategoryInput: CategoryInputSchema,
   HideInput: HideInputSchema,
-};
+} satisfies Record<string, z.ZodType>;
 export type OperationSpec = {
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
   path: string;
