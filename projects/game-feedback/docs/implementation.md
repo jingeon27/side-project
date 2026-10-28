@@ -1444,4 +1444,6 @@ Dockerfile과 Compose에서 기본 false인 데모·테스트 인증 플래그�
 
 NavigationGuardRegistry의 등록 여부를 useSyncExternalStore로 구독하고, beforeunload 등록·해제는 Provider 한곳에서 관리한다. 폼은 가드만 등록하며 확인 함수 갱신, 모든 승인 후 초안 폐기, Provider별 격리는 유지한다.
 
+사용자 지정에 따라 Registry의 비공개 필드·메서드는 `#` 대신 `private`로 명시했다. 이 표기 기준은 저장소 공통 규칙인 루트 AGENTS.md에 한 번만 기록했다.
+
 검증: navigation 관련 단위·UI 테스트 23개, Web typecheck와 변경 파일 ESLint 통과. 같은 Provider의 마지막 초안이 해제될 때까지 문서 닫기 확인이 유지되는 사양을 포함한다.
