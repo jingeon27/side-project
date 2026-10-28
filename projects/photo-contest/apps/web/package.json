@@ -29,6 +29,7 @@
     "@photo-contest/bridge": "workspace:*",
     "@sentry/nextjs": "catalog:",
     "@side/design-system": "workspace:*",
+    "class-variance-authority": "catalog:",
     "es-toolkit": "catalog:",
     "graphql": "catalog:",
     "lucide-react": "catalog:",
