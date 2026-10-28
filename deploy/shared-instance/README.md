@@ -33,7 +33,7 @@ Caddy만 80/443을 공개한다. API·Web은 서비스별 Docker 네트워크를
 | 9    | [Route 53 호스팅 영역](https://console.aws.amazon.com/route53/v2/hostedzones) 또는 도메인을 관리하는 DNS 화면                                                                                                                                              | 네 서비스 호스트의 A 레코드를 같은 Elastic IP로 연결한다. Route 53 사용은 필수가 아니다.                                                                                                                                                                                           | `dig +short`로 네 호스트가 고정 IP를 반환            |
 | 10   | [Docker Ubuntu 설치 안내](https://docs.docker.com/engine/install/ubuntu/)                                                                                                                                                                                  | 아래 서버 준비, 환경 파일 입력, PostgreSQL 시작과 최초 DB 초기화를 수행한다.                                                                                                                                                                                                       | Docker/Compose 실행, 서비스별 DB와 역할 생성         |
 | 11   | 아래 소셜 로그인 설정 화면                                                                                                                                                                                                                                 | 사용할 제공자의 앱과 콜백 주소를 등록하고 서버 환경 파일에 키를 넣는다. GF는 제공자 하나 이상이 필수다.                                                                                                                                                                            | 실제 도메인과 콜백 주소가 정확히 일치                |
-| 12   | [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments) / [Variables](https://github.com/jingeon27/side-project/settings/variables/actions) / [Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions) | 두 Environment와 아래 이름의 변수·SSH Secret을 등록한다. 배포 활성화 값은 준비가 끝날 때까지 `false`로 둔다.                                                                                                                                                                       | Environment 2개와 필수 값 등록                       |
+| 12   | [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments) / [Variables](https://github.com/jingeon27/side-project/settings/variables/actions) / [Secrets](https://github.com/jingeon27/side-project/settings/secrets/actions) | 두 Environment와 아래 이름의 변수·SSH Secret·`SERVICE_ENV`를 등록한다. 배포 활성화 값은 준비가 끝날 때까지 `false`로 둔다.                                                                                                                                                         | Environment 2개와 필수 값 등록                       |
 | 13   | 아래 프록시 명령                                                                                                                                                                                                                                           | DNS 확인 후 Caddy를 시작한다.                                                                                                                                                                                                                                                      | 인증서 발급 성공. 앱 배포 전 502는 가능              |
 | 14   | [EBS 스냅샷](https://console.aws.amazon.com/ec2/home?region=ap-northeast-2#Snapshots:)                                                                                                                                                                     | 첫 일일 스냅샷이 생겼는지 확인한다. 첫 배포 후 검증 데이터를 만들고 아래 절차로 덤프·스냅샷 복원을 연습한다.                                                                                                                                                                       | 스냅샷과 backup 버킷의 배포 전 덤프 확인             |
 | 15   | [develop → main 비교](https://github.com/jingeon27/side-project/compare/main...develop?expand=1) / [Actions](https://github.com/jingeon27/side-project/actions)                                                                                            | 배포 활성화 값을 `true`로 바꾸고 검토한 변경을 main에 반영해 초기 검증 배포를 한다. 아래 운영 검증과 복구 연습 후 공개한다.                                                                                                                                                        | 두 서비스 workflow의 deploy 성공, 아래 공개 URL 확인 |
@@ -118,7 +118,7 @@ DB 구성 파일을 바꾸면 `prepare.sh`로 다시 복사한 뒤 `database.sh 
 
 ## 소셜 로그인과 선택적 외부 서비스
 
-서비스별로 별도 OAuth 앱·클라이언트를 만들고, 발급한 ID/secret을 **해당 서비스 서버 환경 파일**에 넣는다. GF는 ID와 secret 한 쌍을 하나 이상 설정해야 시작한다. 운영에서는 데모 로그인과 테스트 토큰 발급 API가 비활성화된다. PC는 아이디·비밀번호 로그인도 제공한다.
+서비스별로 별도 OAuth 앱·클라이언트를 만들고, 발급한 ID/secret을 **해당 서비스 Environment의 `SERVICE_ENV`**에 넣는다. GF는 ID와 secret 한 쌍을 하나 이상 설정해야 시작한다. 운영에서는 데모 로그인과 테스트 토큰 발급 API가 비활성화된다. PC는 아이디·비밀번호 로그인도 제공한다.
 
 | 제공자  | 설정 화면과 행동                                                                                                                                                                                                                                                                                                                                               | GF 콜백                                                     | PC 콜백                                                    |
 | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------- |
@@ -155,7 +155,7 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 
 1. [Sentry](https://sentry.io/)에 로그인하고 Organization을 준비한다. Projects → Create Project에서 `photo-contest-web`은 Next.js, `photo-contest-api`는 Node.js/NestJS 플랫폼으로 만든다. GF도 별도 `game-feedback-web`, `game-feedback-api` 프로젝트를 만든다. 네이티브 앱 오류를 수집할 때는 서비스별 React Native 프로젝트를 따로 둔다.
 2. [프로젝트 설정](https://sentry.io/settings/) → 해당 Organization → Projects → 프로젝트 → Client Keys (DSN)에서 DSN을 복사한다. **Auth Token이 아니라 DSN**을 아래 대응 위치에 입력한다. 브라우저 DSN은 공개 번들에 포함될 수 있는 값이다. [Sentry Next.js 설정 안내](https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/)를 참고한다.
-3. PC API DSN을 `/srv/side-project/services/photo-contest/.env`의 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다. GF API DSN은 `/srv/side-project/services/game-feedback/.env`의 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GAME_FEEDBACK_WEB_SENTRY_DSN`에 넣는다.
+3. PC API DSN을 `photo-contest-production`의 `SERVICE_ENV`에 있는 `SENTRY_DSN`에, PC Web DSN을 [GitHub Variables](https://github.com/jingeon27/side-project/settings/variables/actions)의 `PHOTO_CONTEST_WEB_SENTRY_DSN`에 넣는다. PC API는 기본 `SENTRY_TRACES_SAMPLE_RATE=0`을 유지하면 오류 수집 경로를 사용한다. GF API DSN은 `game-feedback-production`의 `SERVICE_ENV`에 있는 `SENTRY_DSN`에, GF Web DSN은 repository Variable `GAME_FEEDBACK_WEB_SENTRY_DSN`에 넣는다.
 4. 프로젝트의 알림 설정에서 예상하지 못한 오류와 새 오류 알림의 수신자를 지정한다. 운영·개발 확인을 분리하려면 테스트 환경 또는 별도 테스트 프로젝트에서 먼저 검증한다.
 
 ### Amplitude 프로젝트와 API key
@@ -173,9 +173,9 @@ Clash Royale API 조회를 사용할 때는 [Supercell 개발자 포털](https:/
 | GitHub repository Variable | `PHOTO_CONTEST_AMPLITUDE_API_KEY` | PC Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
 | GitHub repository Variable | `GAME_FEEDBACK_WEB_SENTRY_DSN`    | GF Web 프로젝트 DSN           | Web 이미지 재빌드·배포 |
 | GitHub repository Variable | `GAME_FEEDBACK_AMPLITUDE_API_KEY` | GF Amplitude 프로젝트 API key | Web 이미지 재빌드·배포 |
-| 서버 GF 환경 파일          | `SENTRY_DSN`                      | GF API 프로젝트 DSN           | 다음 API 배포에 적용   |
-| 서버 PC 환경 파일          | `SENTRY_DSN`                      | PC API 프로젝트 DSN           | 다음 API 배포에 적용   |
-| 서버 PC 환경 파일          | `SENTRY_TRACES_SAMPLE_RATE`       | 현재 오류 수집 경로는 `0`     | 다음 API 배포에 적용   |
+| GF `SERVICE_ENV`           | `SENTRY_DSN`                      | GF API 프로젝트 DSN           | 다음 API 배포에 적용   |
+| PC `SERVICE_ENV`           | `SENTRY_DSN`                      | PC API 프로젝트 DSN           | 다음 API 배포에 적용   |
+| PC `SERVICE_ENV`           | `SENTRY_TRACES_SAMPLE_RATE`       | 현재 오류 수집 경로는 `0`     | 다음 API 배포에 적용   |
 | Expo 빌드 환경             | `EXPO_PUBLIC_SENTRY_DSN`          | PC Mobile 프로젝트 DSN        | 앱 새 빌드·배포        |
 | Expo 빌드 환경             | `EXPO_PUBLIC_AMPLITUDE_API_KEY`   | PC Amplitude 프로젝트 API key | 앱 새 빌드·배포        |
 
@@ -217,6 +217,7 @@ SSM 연결 값과 SSH 인증 키는 두 배포 Environment(GF `game-feedback-pro
 | Variable            | `SIDE_DEPLOY_SSH_USER`                                                                                     | `/srv/side-project`와 Docker 접근 권한을 가진 사용자                                                                                 |
 | Variable            | `SIDE_DEPLOY_SSH_PORT`                                                                                     | 보통 `22`                                                                                                                            |
 | Variable            | `SIDE_DEPLOY_SSH_KNOWN_HOSTS`                                                                              | 신뢰할 경로로 확인한 서버 host key. 검증 없는 `ssh-keyscan` 결과를 그대로 신뢰하지 않는다                                            |
+| Secret              | `SERVICE_ENV`                                                                                              | 해당 서비스 운영 `.env` 전체 내용. 각 production Environment에 따로 등록한다                                                         |
 | Secret              | `SIDE_DEPLOY_SSH_KEY`                                                                                      | 배포용 SSH private key                                                                                                               |
 | Repository Variable | `GAME_FEEDBACK_SITE_URL`                                                                                   | `https://game.bambyul.com`                                                                                                           |
 | Repository Variable | `GAME_FEEDBACK_CONTACT_EMAIL`                                                                              | `contact@bambyul.com`                                                                                                                |
@@ -241,11 +242,11 @@ ssh-keygen -t ed25519 -f ~/.ssh/side-project-deploy -C side-project-actions
 
 코드의 SSH 단계는 대화형 비밀번호 입력 없이 실행한다. 암호문이 설정된 개인키를 해제하는 단계는 없으므로 이 전용 키의 passphrase는 비워 두고 GitHub Secret으로 보관한다. 키를 등록한 뒤 배포 러너와 같은 네트워크 경로에서 `BatchMode=yes`와 등록한 known_hosts를 사용해 접속을 확인한다.
 
-공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. 운영 DB·S3·OAuth 비밀은 서버의 서비스별 환경 파일에만 두고, GitHub에는 CI 테스트 전용 S3 키만 repository secret으로 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
+공개 Web 빌드 변수는 재사용 workflow의 빌드 시 읽으므로 **repository variable**에 둔다. 운영 DB·S3·OAuth 비밀은 각 production Environment의 `SERVICE_ENV` Secret에 두고, CI 테스트 전용 S3 키는 repository secret으로 둔다. GHCR은 Actions의 단기 `GITHUB_TOKEN`으로 로그인하며 서버에 토큰을 남기지 않는다.
 
 설정과 DB 초기화를 마친 뒤 `GAME_FEEDBACK_DEPLOY_ENABLED=true`, `PHOTO_CONTEST_DEPLOY_ENABLED=true`를 repository variable로 설정해 초기 검증 배포를 수행한다. 첫 배포 후 검증 데이터를 준비하고 아래 덤프·스냅샷 복원 연습을 마친 뒤 공개한다. GF는 main의 push와 main에서 실행한 workflow_dispatch, PC는 `PHOTO_CONTEST_DEPLOY_BRANCH` push(태그 push 제외)에서만 배포한다. PR은 테스트만 실행한다. 기능 브랜치의 PR 대상 `develop`은 이 배포 브랜치 설정과 별개다.
 
-Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime DB/S3 접근 검사 → 서비스 DB 덤프·backup 버킷 업로드 → migration → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
+Actions는 공통 환경에서 네 운영 이미지를 한 번 빌드·검증한 뒤 아카이브한다. 각 서비스의 추가 검사와 필수 테스트가 성공하면 **그 이미지**를 GHCR로 push하고 digest로 배포한다. 배포 job의 GitHub concurrency group은 서비스별이라 한 서비스의 대기 배포가 다른 서비스 때문에 취소되지 않는다. 두 서비스의 배포·롤백·이미지 정리·프록시 갱신은 서버의 공통 `flock`이 직렬화한다. 배포 순서는 Caddyfile 일치 확인 → runtime DB/S3 접근 검사 → 서비스 DB 덤프·backup 버킷 업로드 → migration → 서비스 환경 파일 원자 교체 → API/Web readiness → current/previous 갱신이다. 호스트의 공통 Caddy와 다른 서비스는 교체하지 않는다.
 
 배포 job은 먼저 `ci-superseded.sh`로 이 커밋 뒤에 같은 서비스의 경로 필터에 걸리는 커밋이 배포 브랜치에 있는지 본다. 있으면 그 커밋의 실행이 새 릴리스를 배포하므로 job summary에 이유를 남기고 생략한다. 다른 서비스나 문서만 바꾼 커밋은 검증한 릴리스를 생략시키지 않는다.
 
@@ -272,7 +273,14 @@ bash "$deployment_release_dir/host/proxy.sh" sync "$deployment_release_dir/Caddy
 
 ### 운영 환경 파일의 위치
 
-로컬 프로젝트 `.env`를 커밋하거나 GitHub에 파일로 업로드하지 않는다. 다음 파일이 EC2 운영 설정의 원본이며 `ubuntu` 소유·권한 `600`으로 관리한다.
+로컬 프로젝트 `.env`를 커밋하지 않는다. [GitHub Environments](https://github.com/jingeon27/side-project/settings/environments)에서 다음 두 Environment에 각각 이름이 `SERVICE_ENV`인 **Environment Secret**을 만들고 해당 서비스 운영 `.env` 전체 내용을 붙여 넣는다. GitHub Secret 크기 제한(48 KB) 이내의 UTF-8 dotenv 형식이며 shell 스크립트로 실행하지 않는다.
+
+| Environment                | Secret        | 반영할 서버 파일                                |
+| -------------------------- | ------------- | ----------------------------------------------- |
+| `game-feedback-production` | `SERVICE_ENV` | `/srv/side-project/services/game-feedback/.env` |
+| `photo-contest-production` | `SERVICE_ENV` | `/srv/side-project/services/photo-contest/.env` |
+
+처음 등록할 때는 이미 초기화한 DB role 비밀번호가 포함된 기존 운영 파일을 기준으로 한다. 개발용 `.env`를 그대로 넣거나 비밀번호를 새로 생성하지 않는다. 이 두 Secret이 서비스 설정의 원본이며 서버 파일은 CD가 반영한 사본이다. 공통 호스트·DB 초기화 설정은 계속 서버에서 관리한다. 서버의 파일은 배포 사용자 소유·권한 `600`으로 관리한다.
 
 | 파일                                            | 내용                                                    |
 | ----------------------------------------------- | ------------------------------------------------------- |
@@ -281,7 +289,9 @@ bash "$deployment_release_dir/host/proxy.sh" sync "$deployment_release_dir/Caddy
 | `/srv/side-project/services/photo-contest/.env` | PC DB URL, 운영 S3 키, API Sentry                       |
 | `/srv/side-project/database/.env`               | 최초 준비 시 자동 생성한 PostgreSQL superuser 초기화 값 |
 
-API 환경 파일을 바꿔도 실행 중인 컨테이너에는 자동 적용되지 않는다. 다음 서비스 배포에서 Compose가 새 설정을 적용한다. 웹의 공개 Sentry·Amplitude 키는 위 파일이 아니라 repository Variables에서 바꾸고 새 이미지를 빌드한다. DB 비밀번호 변경은 URL 파일 편집뿐 아니라 해당 PostgreSQL role의 비밀번호도 함께 변경해야 한다.
+Secret을 저장하는 것만으로 배포가 시작되지는 않는다. 다음 CD가 SSH/SSM의 암호화된 표준입력으로 전달하고 서비스별 임시 파일에 저장한다. 빈 Secret·전송 중단·Compose 설정 오류는 배포를 중단한다. runtime 접근 검사·백업·migration을 통과한 뒤 호스트 잠금 안에서 `.env`를 원자 교체하고 새 컨테이너를 시작한다. 앱 시작 실패 시 이전 환경 파일을 복원한 뒤 이전 이미지로 되돌린다. 임시 파일과 이전 환경 파일 사본은 작업 종료 시 지우며 릴리스 아카이브에는 넣지 않는다.
+
+서버에서 서비스 파일만 직접 수정하면 다음 CD가 Secret 값으로 덮어쓴다. 환경 설정을 바꾸려면 해당 Environment의 `SERVICE_ENV` 전체 내용을 갱신한다. 수동 이미지 rollback은 현재 서버 환경 파일을 사용하며 과거 Secret 버전을 보관하지 않는다. DB migration은 기존과 같이 되돌리지 않는다. 웹의 공개 Sentry·Amplitude 키는 위 파일이 아니라 repository Variables에서 바꾸고 새 이미지를 빌드한다. DB 비밀번호 변경은 URL 파일 편집뿐 아니라 해당 PostgreSQL role의 비밀번호도 함께 변경해야 한다.
 
 ## 운영·롤백
 

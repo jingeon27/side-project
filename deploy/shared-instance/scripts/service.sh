@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set +x
 set -euo pipefail
 umask 077
 ROOT=${SIDE_DEPLOY_ROOT:-/srv/side-project}
@@ -9,13 +10,36 @@ ACTION=${2:-}
 shift 2
 export SIDE_DEPLOY_ROOT="$ROOT"
 SERVICE_ROOT="$ROOT/services/$SERVICE"
-[[ -f "$ROOT/.env" && -f "$SERVICE_ROOT/.env" && -f "$ROOT/database/compose.yaml" ]]
-chmod 600 "$ROOT/.env" "$SERVICE_ROOT/.env"
+[[ -f "$ROOT/.env" && -f "$ROOT/database/compose.yaml" ]] || exit 2
+chmod 600 "$ROOT/.env"
+if [[ -f "$SERVICE_ROOT/.env" ]]; then chmod 600 "$SERVICE_ROOT/.env"; fi
 exec 9>"$ROOT/.host-operations.lock"
 flock -x 9
 PROJECT="${SIDE_PROJECT_PREFIX:-side}-$SERVICE"
 WAIT=${SIDE_WAIT_SECONDS:-180}
 [[ "$WAIT" =~ ^[1-9][0-9]{0,2}$ && "$PROJECT" =~ ^[a-z0-9-]+$ ]]
+environment_file="$SERVICE_ROOT/.env"
+pending_environment=''
+previous_environment=''
+environment_applied=0
+environment_committed=0
+restore_environment() {
+  if [[ "$environment_applied" == 1 ]]; then
+    if [[ -n "$previous_environment" ]]; then
+      mv -f "$previous_environment" "$SERVICE_ROOT/.env"
+    else
+      rm -f "$SERVICE_ROOT/.env"
+    fi
+    environment_applied=0
+  fi
+  environment_file="$SERVICE_ROOT/.env"
+}
+cleanup_environment() {
+  if [[ "$environment_committed" != 1 ]]; then restore_environment; fi
+  [[ -z "$previous_environment" ]] || rm -f "$previous_environment"
+  [[ -z "$pending_environment" ]] || rm -f "$pending_environment"
+}
+trap cleanup_environment EXIT
 
 release() {
   [[ "$1" =~ ^[a-f0-9]{40}$ && -f "$SERVICE_ROOT/releases/$1/compose.yaml" ]]
@@ -24,7 +48,7 @@ release() {
 compose() {
   local directory=$1
   shift
-  docker compose --project-name "$PROJECT" --env-file "$ROOT/.env" --env-file "$SERVICE_ROOT/.env" \
+  docker compose --project-name "$PROJECT" --env-file "$ROOT/.env" --env-file "$environment_file" \
     --env-file "$directory/.release.env" -f "$directory/compose.yaml" "$@"
 }
 activate() {
@@ -78,7 +102,13 @@ if [[ "$ACTION" == deploy || "$ACTION" == rollback ]]; then
 fi
 
 if [[ "$ACTION" == deploy ]]; then
-  [[ $# == 3 ]]
+  [[ $# == 3 || $# == 4 ]] || exit 2
+  if [[ $# == 4 ]]; then
+    [[ "$4" == "$SERVICE_ROOT/.env-requests/"* && "$(basename "$4")" =~ ^request-[A-Za-z0-9]{8}$ && -f "$4" && ! -L "$4" ]] || exit 2
+    pending_environment=$4
+    chmod 600 "$pending_environment"
+    environment_file=$pending_environment
+  fi
   directory=$(release "$1")
   api=$2 web=$3
   [[ "$api" =~ ^ghcr\.io/[a-z0-9._/-]+-$SERVICE-api@sha256:[a-f0-9]{64}$ ]]
@@ -110,7 +140,11 @@ if [[ "$ACTION" == deploy ]]; then
     }
   fi
   printf 'RELEASE_SHA=%s\nAPI_IMAGE=%s\nWEB_IMAGE=%s\n' "$1" "$api" "$web" >"$directory/.release.env"
-  compose "$directory" config --quiet
+  # Compose가 잘못된 값 자체를 오류에 포함할 수 있으므로 설정 진단은 출력하지 않는다.
+  if ! compose "$directory" config --quiet >/dev/null 2>&1; then
+    echo 'Service environment or Compose configuration is invalid.' >&2
+    exit 1
+  fi
   if [[ "${SIDE_LOCAL_IMAGES:-0}" == 1 ]]; then
     # Already local: receive.sh pulled them with the short-lived token before detaching (or a smoke built them).
     docker image inspect --format '{{.Id}}' "$api" "$web" >/dev/null
@@ -122,12 +156,25 @@ if [[ "$ACTION" == deploy ]]; then
   # Migrations are forward-only: a fresh dump must reach the backup bucket before any DDL runs.
   bash "$directory/host/pg-backup.sh" "$SERVICE" "$1" "$directory/pg-backup.json"
   compose "$directory" run --rm --no-deps -T migrate
+  if [[ -n "$pending_environment" ]]; then
+    if [[ -f "$SERVICE_ROOT/.env" ]]; then
+      previous_environment=$(mktemp "$SERVICE_ROOT/.env-previous-XXXXXXXX")
+      cp "$SERVICE_ROOT/.env" "$previous_environment"
+      chmod 600 "$previous_environment"
+    fi
+    # 호스트 잠금 안에서 검사·migration을 통과한 파일만 같은 파일시스템에서 원자 교체한다.
+    environment_applied=1
+    mv -f "$pending_environment" "$SERVICE_ROOT/.env"
+    environment_file="$SERVICE_ROOT/.env"
+  fi
   if activate "$directory"; then
     mark "$directory" "$old"
+    environment_committed=1
     printf 'Deployment complete: %s %s\n' "$SERVICE" "$1"
     exit 0
   fi
   if [[ -n "$old" ]]; then
+    restore_environment
     activate "$old"
     echo 'Previous application images restored. Database migrations remain forward-only.' >&2
     exit 1

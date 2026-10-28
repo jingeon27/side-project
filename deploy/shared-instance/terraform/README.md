@@ -150,7 +150,7 @@ bash deploy/shared-instance/scripts/database.sh bootstrap
 ### 7. 서버 환경 파일
 
 - `/srv/side-project/.env`: `terraform output -raw host_env`의 값(`BACKUP_BUCKET`·`BACKUP_REGION` 포함)으로 바꾸고 `ACME_EMAIL`은 확인해 둔다.
-- 서비스별 `.env`: `DATABASE_URL`·`DATABASE_MIGRATION_URL`의 `REPLACE`(URL 인코딩한 비밀번호), S3 키, 나머지 비밀을 채운다. 호스트는 `shared-postgres`를 그대로 둔다. 모두 `chmod 600`이며 Git·Actions 로그에 올리지 않는다.
+- 서비스별 `.env` 초안: `DATABASE_URL`·`DATABASE_MIGRATION_URL`의 `REPLACE`(URL 인코딩한 비밀번호), S3 키, 나머지 비밀을 채운다. 호스트는 `shared-postgres`를 그대로 둔다. 모두 `chmod 600`이며 Git·Actions 로그에 올리지 않는다.
 
 이어서 [공통 EC2 배포](../README.md#프록시와-github-actions)대로 `proxy.sh validate` → `proxy.sh start`를 실행한다.
 
@@ -198,7 +198,7 @@ done
 | `PHOTO_CONTEST_WEB_SENTRY_DSN`·`PHOTO_CONTEST_AMPLITUDE_API_KEY` | 선택                                          |
 | `GAME_FEEDBACK_DEPLOY_ENABLED`·`PHOTO_CONTEST_DEPLOY_ENABLED`    | 마지막에 `true`                               |
 
-`*_DEPLOY_ENABLED`는 프록시·환경 파일·복구 연습을 마친 뒤에 켠다. DB·S3·OAuth 비밀은 GitHub에 넣지 않고 서버의 서비스별 환경 파일에만 둔다.
+`*_DEPLOY_ENABLED`는 프록시·환경 파일·복구 연습을 마친 뒤에 켠다. DB·S3·OAuth 비밀은 각 production Environment의 `SERVICE_ENV` Secret에 해당 서비스 운영 `.env` 전체 내용으로 등록한다. 기존 DB role 비밀번호를 유지하며, CD가 서버 파일에 반영한다. [운영 환경 파일 관리](../README.md#운영-환경-파일의-위치)를 따른다.
 
 ## 기존 수동 절차와의 관계
 
@@ -270,7 +270,7 @@ aws ec2 describe-instance-type-offerings --region ap-northeast-2 --location-type
 3. Terraform plan에서 기존 EC2·볼륨 교체가 없는지 확인하고 apply한다. CD 역할에는 이 인스턴스의 SSH 세션과 `side-cd-` 이름의 세션 채널만 허용하며 SendCommand, 일반 SSM 셸, S3, DB 권한은 주지 않는다.
 4. `github_cd_role_arn`을 두 GitHub Environment의 `SIDE_DEPLOY_AWS_ROLE_ARN`에, `github_cd_instance_id`를 `SIDE_DEPLOY_SSM_INSTANCE_ID`에, AWS 계정 ID를 `SIDE_DEPLOY_AWS_ACCOUNT_ID`에 넣는다. 기존 `SIDE_DEPLOY_HOST`에는 고정 공인 IP, `SIDE_DEPLOY_SSH_USER`에는 `ubuntu`를 유지한다.
 5. 별도의 배포용 SSH 키를 만들고 공개 키를 서버 `ubuntu`의 `~/.ssh/authorized_keys`에 추가한다. 비밀키는 두 Environment의 Secret `SIDE_DEPLOY_SSH_KEY`에만 저장한다. 서버의 SSH 공개 host key를 SSM으로 읽고 고정 IP를 붙여 Variable `SIDE_DEPLOY_SSH_KNOWN_HOSTS`에 넣는다. SSM 터널에서도 이 검증을 생략하지 않는다.
-6. CI는 SHA로 고정한 AWS credentials action과 버전·SHA256으로 고정한 Session Manager plugin을 사용한다. 장기 AWS access key를 CD Secret으로 추가하지 않는다. 운영 `.env`는 서버에 남고 workflow가 업로드하지 않는다.
+6. CI는 SHA로 고정한 AWS credentials action과 버전·SHA256으로 고정한 Session Manager plugin을 사용한다. 장기 AWS access key를 CD Secret으로 추가하지 않는다. 서비스 운영 `.env`는 각 Environment의 `SERVICE_ENV` Secret에서 SSH/SSM 표준입력으로 전달한다. 검사·migration 후 서버 파일을 원자 교체하며 시작 실패 시 이전 파일을 복원한다. 공통 호스트·DB 초기화 `.env`는 서버에서 관리한다.
 7. 로컬에서 SSM 터널의 SSH 접속을 확인한 뒤 두 서비스의 `*_DEPLOY_ENABLED=true`를 설정한다. main 반영은 운영자가 수행한다. main push 후 전체 서비스 검사와 이미지 검증이 통과해야 CD가 실행된다.
 
 GitHub OIDC의 실제 토큰 교환과 최초 앱 배포는 main 실행에서 확인한다. 로컬 접속 성공이 GitHub의 OIDC 실행 성공을 대신하지 않는다.
