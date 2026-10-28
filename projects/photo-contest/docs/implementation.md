@@ -346,3 +346,9 @@ API 전체 DB 통합 369개, Web unit/UI 446개, Mobile unit/UI 162개, Bridge 3
 검증: API unit 127개와 test-kit 34개, API·test-kit·웹 TypeScript 검사, 변경 파일 ESLint, shellcheck·actionlint가 통과했다. Game Feedback API unit도 187개 통과했다. `yarn install --immutable --mode=skip-build`는 성공했고 기존 peer dependency 경고는 남아 있다.
 
 실제 AWS의 새 실행 prefix에 ListObjectsV2(MaxKeys=1)만 요청했으나 AccessDenied였고 객체는 쓰거나 지우지 않았다. 통합 실행기는 데이터 쓰기 전 해당 경로의 ListBucket 접근을 확인하도록 했다. 실제 S3·브라우저·컨테이너 통합 검사는 필요한 경로별 권한·CORS와 Docker가 준비된 환경에서 별도로 실행해야 한다. 기존 버킷·객체·로컬 파일·.env 자격 증명·개발 서버·DB·IAM·GitHub 설정은 변경하지 않았다.
+
+## 2026-10-28 게시물 메뉴의 Portal 경계
+
+PostActionsMenu는 Trigger를 서버 HTML에 유지하고 useIsSSR 분기를 제거했다. DOM selector로 컨테이너를 정하는 메뉴·확인창·바텀시트·토스트 네 곳은 공통 OverlayPortal로 감쌌다. 컨테이너 선택과 Portal 생성은 래퍼의 dynamic ssr:false 경계 안에서만 실행하며, 바텀시트처럼 Portal을 내장한 컴포넌트도 같은 콜백에서 생성한다. 이 패턴은 overlay 스킬에 기록했다.
+
+검증: Portal·오버레이·카드 관련 단위·UI 테스트 20개와 업로드·대회 생성·알림 설정·댓글·알림 화면의 관련 테스트 22개, Web typecheck와 변경 파일 ESLint 통과. DOM이 없는 서버에서 래퍼가 주변 콘텐츠만 렌더하는지, hydration 후 지정된 컨테이너에서 Enter로 메뉴가 열리는지, 시트·확인창·토스트의 컨테이너와 닫기·포커스 복귀가 유지되는지 확인했다.

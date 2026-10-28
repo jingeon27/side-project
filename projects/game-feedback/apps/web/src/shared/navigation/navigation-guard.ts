@@ -5,17 +5,34 @@ export interface INavigationGuard {
 
 /** 한 Provider가 등록한 초안만 소유한다. 브라우저 전체의 모듈 상태로 공유하지 않는다. */
 export class NavigationGuardRegistry {
-  readonly #guards = new Set<INavigationGuard>();
+  private readonly guards = new Set<INavigationGuard>();
+  private readonly listeners = new Set<() => void>();
+
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  getSnapshot = () => this.guards.size > 0;
+
+  getServerSnapshot = () => false;
+
+  private emit() {
+    for (const listener of this.listeners) listener();
+  }
 
   register(guard: INavigationGuard) {
-    this.#guards.add(guard);
+    this.guards.add(guard);
+    this.emit();
     return () => {
-      this.#guards.delete(guard);
+      if (this.guards.delete(guard)) this.emit();
     };
   }
 
   prepare() {
-    const active = [...this.#guards];
+    const active = [...this.guards];
     if (!active.every((guard) => guard.confirm())) return null;
     return () => {
       for (const guard of active) guard.onDiscard?.();

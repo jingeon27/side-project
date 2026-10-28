@@ -10,6 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { GalleryPostCardFragmentDoc, PostKind, type GalleryPostCardFragment } from '@/shared/api/generated';
+import { APP_MAIN_ID } from '@/shared/constants/layout';
 
 import { PostActionsMenu } from './PostActionsMenu';
 import { PostCard } from './PostCard';
@@ -54,19 +55,22 @@ function renderCard(ui: ReactElement) {
 }
 
 describe('게시물 카드', () => {
-  it('서버 메뉴는 준비 전 비활성화하고 hydration 후 Enter로 열어야 한다', async () => {
+  it('서버에서는 메뉴 버튼을 그리고 hydration 후 지정된 컨테이너에서 Enter로 열어야 한다', async () => {
     const ui = cardTree({ ui: <PostActionsMenu postId="post-1" /> });
     const container = document.body.appendChild(document.createElement('div'));
+    container.id = APP_MAIN_ID;
     container.innerHTML = renderToString(ui);
     const trigger = within(container).getByRole('button', { name: '점심의 순간 더보기' });
-    expect(trigger).toBeDisabled();
-    const root = hydrateRoot(container, ui);
+    expect(trigger).toBeEnabled();
+    expect(within(container).queryByRole('menu')).not.toBeInTheDocument();
+    const root = await act(async () => hydrateRoot(container, ui));
     try {
       await waitFor(() => expect(trigger).toBeEnabled());
       const user = userEvent.setup();
       trigger.focus();
       await user.keyboard('{Enter}');
       expect(await screen.findByRole('menuitem', { name: '수정' })).toBeVisible();
+      expect(container).toContainElement(screen.getByRole('menu'));
       await user.keyboard('{Escape}');
       await waitFor(() => expect(trigger).toHaveFocus());
     } finally {

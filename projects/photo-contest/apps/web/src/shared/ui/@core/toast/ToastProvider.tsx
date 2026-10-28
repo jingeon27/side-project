@@ -7,8 +7,8 @@ import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { match } from 'ts-pattern';
 
 import { cn } from '../../../lib/cn.helper';
-import { getOverlayContainer } from '../../../lib/overlay-container.helper';
 import { TOAST_TYPE, toastManager } from '../../../model/toast';
+import { OverlayPortal } from '../overlay-portal';
 
 const TOAST_TIMEOUT_MS = 4_000;
 
@@ -59,14 +59,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <Toast.Provider toastManager={toastManager} limit={3} timeout={TOAST_TIMEOUT_MS}>
       {children}
-      <Toast.Portal container={getOverlayContainer()}>
-        <Toast.Viewport
-          aria-label="알림"
-          className="fixed inset-x-0 bottom-(--toast-bottom,16px) z-toast mx-auto w-[calc(100%-32px)] max-w-[calc(var(--max-width-app)-32px)]"
-        >
-          <ToastList />
-        </Toast.Viewport>
-      </Toast.Portal>
+      <OverlayPortal>
+        {(container) => (
+          <Toast.Portal container={container}>
+            <Toast.Viewport
+              aria-label="알림"
+              className="fixed inset-x-0 bottom-(--toast-bottom,16px) z-toast mx-auto w-[calc(100%-32px)] max-w-[calc(var(--max-width-app)-32px)]"
+            >
+              <ToastList />
+            </Toast.Viewport>
+          </Toast.Portal>
+        )}
+      </OverlayPortal>
     </Toast.Provider>
   );
 }
