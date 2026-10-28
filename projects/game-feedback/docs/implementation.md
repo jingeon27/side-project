@@ -1447,3 +1447,9 @@ NavigationGuardRegistry의 등록 여부를 useSyncExternalStore로 구독하고
 사용자 지정에 따라 Registry의 비공개 필드·메서드는 `#` 대신 `private`로 명시했다. 이 표기 기준은 저장소 공통 규칙인 루트 AGENTS.md에 한 번만 기록했다.
 
 검증: navigation 관련 단위·UI 테스트 23개, Web typecheck와 변경 파일 ESLint 통과. 같은 Provider의 마지막 초안이 해제될 때까지 문서 닫기 확인이 유지되는 사양을 포함한다.
+
+## 2026-10-28 문서 닫기 확인의 deprecated API 제거
+
+`beforeunload`에서 deprecated인 `returnValue` 대입을 제거하고 `preventDefault()`를 사용한다. Chrome/Edge 119 미만을 위한 호환 처리는 두지 않는다. 초안이 있을 때만 리스너를 등록하고 마지막 초안이 저장되면 해제하는 동작은 유지한다.
+
+검증: 초안 가드 단위·UI 테스트 10개와 변경 파일 ESLint, Web typecheck 통과. 별도 Playwright 페이지에서 사용자 클릭 후 Chromium·WebKit을 새로고침했을 때 `preventDefault()`만으로 실제 `beforeunload` 확인창이 뜨는 것을 확인했다. 실제 모바일 앱 종료 동작은 검증 범위에 포함하지 않는다.

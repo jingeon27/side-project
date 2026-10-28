@@ -91,11 +91,24 @@ test('a production navigation shows the prefetched guide with its own page heade
   const guidePrefetched = page.waitForResponse(async (response) => {
     const headers = response.request().headers();
     if (new URL(response.url()).pathname !== '/ko/guide') return false;
-    if (headers['next-router-segment-prefetch'] !== '/_tree') return false;
-    return response.ok() && (await response.finished()) === null;
+    if (!headers['next-router-prefetch'] && !headers['next-router-segment-prefetch']) return false;
+    // 경로 트리가 아니라 본문 완료를 기다린다. CDP의 문자 디코딩과 무관한 ASCII 표식을 쓴다.
+    return (
+      response.ok() &&
+      (await response.finished()) === null &&
+      (await response.text()).includes('guide-sections')
+    );
   });
   await page.goto('/ko');
   await expect(page.locator('.feed-heading:visible')).toBeVisible();
+  await expect(page.locator('.post-card:visible').first()).toBeVisible();
+  // 무한 목록이 늘면 푸터가 화면 밖으로 밀려 prefetch가 취소된다. fixture 목록을 끝까지 읽는다.
+  await expect
+    .poll(async () => {
+      await page.locator('.feed-sentinel:visible').scrollIntoViewIfNeeded();
+      return page.locator('.feed-end:visible').count();
+    })
+    .toBe(1);
   const guide = page.locator('.site-footer').getByRole('link', { name: '이용 가이드', exact: true });
   await guide.hover();
   await guidePrefetched;

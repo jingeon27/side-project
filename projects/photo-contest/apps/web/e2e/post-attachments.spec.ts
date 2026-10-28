@@ -14,7 +14,11 @@ test(
     await page.goto(`/groups/${group.id}`);
     await page.getByRole('link', { name: '글쓰기', exact: true }).click();
     const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
-    await form.getByLabel('사진·동영상 선택').setInputFiles({
+    const chooser = page.waitForEvent('filechooser');
+    await form.getByRole('button', { name: '파일 선택', exact: true }).click();
+    await (
+      await chooser
+    ).setFiles({
       name: 'retry.png',
       mimeType: 'image/png',
       buffer: await createTestImage(),
@@ -123,7 +127,11 @@ for (const video of [false, true]) {
       await page.goto(`/groups/${group.id}`);
       await page.getByRole('link', { name: '글쓰기', exact: true }).click();
       const form = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
-      await form.getByLabel('사진·동영상 선택').setInputFiles({
+      const chooser = page.waitForEvent('filechooser');
+      await form.getByRole('button', { name: '파일 선택', exact: true }).click();
+      await (
+        await chooser
+      ).setFiles({
         name: video ? 'clip.mp4' : 'photo.png',
         mimeType: video ? 'video/mp4' : 'image/png',
         buffer: video ? await createTestVideo() : await createTestImage(),

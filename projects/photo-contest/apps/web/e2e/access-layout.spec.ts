@@ -51,7 +51,10 @@ test(
           const document = new DOMParser().parseFromString(html, 'text/html');
           return {
             text: Array.from(document.querySelectorAll('h1,h2,h3,p')).map((element) => element.textContent),
-            errors: document.querySelectorAll('template[data-dgst]').length,
+            // Next 16의 browser bailout은 빈 digest를 남긴다. 실제 서버 오류 digest는 계속 검사한다.
+            errors: document.querySelectorAll(
+              'template[data-dgst]:not([data-dgst=""]):not([data-dgst="BAILOUT_TO_CLIENT_SIDE_RENDERING"])',
+            ).length,
           };
         },
         await response.text(),

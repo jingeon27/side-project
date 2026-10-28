@@ -61,7 +61,7 @@ describe('게시물 카드', () => {
     container.id = APP_MAIN_ID;
     container.innerHTML = renderToString(ui);
     const trigger = within(container).getByRole('button', { name: '점심의 순간 더보기' });
-    expect(trigger).toBeEnabled();
+    expect(trigger).toBeDisabled();
     expect(within(container).queryByRole('menu')).not.toBeInTheDocument();
     const root = await act(async () => hydrateRoot(container, ui));
     try {

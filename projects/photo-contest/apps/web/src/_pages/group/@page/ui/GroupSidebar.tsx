@@ -6,11 +6,13 @@ import { GroupCategoryManager, GroupJoinRequests, isGroupAdmin, isGroupOwner } f
 import { InviteCard } from '@/features/invite';
 import { HiddenPostManager } from '@/features/post';
 import { GroupVisibility, MeDocument } from '@/shared/api/generated';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 
 import { GroupCommunity } from '../community/GroupCommunity';
 import type { TGroupQueryRef } from '../model/group-query.type';
 
 export function GroupSidebar({ groupRef }: { groupRef: TGroupQueryRef }) {
+  const isSSR = useIsSSR();
   const { data } = useReadQuery(groupRef);
   const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   if (!data) return null;
@@ -18,7 +20,7 @@ export function GroupSidebar({ groupRef }: { groupRef: TGroupQueryRef }) {
   if (!group.role || !group.inviteToken) return null;
   return (
     <div className="flex flex-col gap-5">
-      <details className="rounded-card border border-line bg-surface p-4">
+      <details inert={isSSR} className="rounded-card border border-line bg-surface p-4">
         <summary className="min-h-touch cursor-pointer content-center text-label text-ink">
           초대와 그룹 멤버
         </summary>

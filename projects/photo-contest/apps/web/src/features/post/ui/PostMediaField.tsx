@@ -5,6 +5,7 @@ import { useId, useRef } from 'react';
 import { ImagePlus } from 'lucide-react';
 import { useController, useWatch, type Control, type UseFormTrigger } from 'react-hook-form';
 
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { useObjectUrl } from '@/shared/model/object-url.hook';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
@@ -17,6 +18,7 @@ interface IPostMediaFieldProps {
 }
 
 export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
+  const isSSR = useIsSSR();
   const inputId = useId();
   const errorId = useId();
   const helpId = useId();
@@ -54,7 +56,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         }}
         name={name}
         onBlur={onBlur}
-        disabled={isSubmitting}
+        disabled={isSSR || isSubmitting}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${helpId} ${errorId}` : helpId}
         onChange={(event) => {
@@ -70,7 +72,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
           key={previewUrl}
           file={media}
           src={previewUrl}
-          disabled={isSubmitting}
+          disabled={isSSR || isSubmitting}
           onReplace={() => fileInputRef.current?.click()}
           onRemove={() => handleMediaChange(null)}
         />
@@ -78,7 +80,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         <button
           type="button"
           aria-label="파일 선택"
-          disabled={isSubmitting}
+          disabled={isSSR || isSubmitting}
           onClick={() => fileInputRef.current?.click()}
           className="flex min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-sunken p-5 text-label text-ink transition-colors hover:bg-neutral-soft active:bg-neutral-soft disabled:cursor-not-allowed disabled:opacity-45 desktop:aspect-square desktop:max-h-[40dvh]"
         >

@@ -1,10 +1,16 @@
+import { setTimeout as delay } from 'node:timers/promises';
+
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { match } from 'ts-pattern';
 
 import { Prisma, PrismaClient } from '../../generated/prisma';
 import { ERROR_CODE, fail } from '../common/errors';
 import { databaseUrl } from '../config/env';
-import { TRANSACTION_MAX_WAIT_MS, TRANSACTION_TIMEOUT_MS } from '../config/limits';
+import {
+  TRANSACTION_MAX_WAIT_MS,
+  TRANSACTION_RETRY_DELAY_MS,
+  TRANSACTION_TIMEOUT_MS,
+} from '../config/limits';
 import { createPrismaAdapter } from './prisma-adapter';
 import { transactionFailure } from './transaction.policy';
 
@@ -38,7 +44,11 @@ export class Database extends PrismaClient implements OnModuleDestroy {
       });
     } catch (error) {
       return match(transactionFailure(error, attempt))
-        .with({ action: 'retry' }, () => this.attemptAtomic(work, attempt + 1))
+        .with({ action: 'retry' }, async () => {
+          // 즉시 재시도하면 상대 트랜잭션이 끝나기 전에 같은 충돌로 한도를 소진할 수 있다.
+          await delay(TRANSACTION_RETRY_DELAY_MS * 2 ** (attempt - 1));
+          return this.attemptAtomic(work, attempt + 1);
+        })
         .with({ action: 'conflict' }, ({ message }) => fail(message, ERROR_CODE.CONFLICT))
         .with({ action: 'rethrow' }, ({ error: original }) => {
           throw original;

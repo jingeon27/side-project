@@ -50,6 +50,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
     .getByRole('dialog', { name: '정말 삭제할까요?' })
     .getByRole('button', { name: '돌아가기' })
     .click();
+  await expect(page.getByRole('dialog', { name: '정말 삭제할까요?' })).toHaveCount(0);
   await expect(editedComment).toBeVisible();
   await editedComment.getByRole('button', { name: '삭제', exact: true }).click();
   await page
@@ -57,6 +58,7 @@ test('post and comment forms edit, cancel deletion, and delete through their ove
     .getByRole('button', { name: '삭제하기' })
     .click();
   await expect(editedComment).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '정말 삭제할까요?' })).toHaveCount(0);
 
   await page.locator('.detail-card').getByRole('button', { name: '삭제', exact: true }).click();
   // 삭제한 글을 다시 받으면 404가 오류 경계로 잠깐 보인다.

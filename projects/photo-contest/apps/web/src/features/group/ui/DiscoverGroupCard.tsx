@@ -10,12 +10,14 @@ import { useLoginPrompt } from '@/features/auth';
 import { DiscoverGroupFragmentDoc, GroupVisibility, MeDocument } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
 import { formatCount } from '@/shared/lib/format.helper';
+import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { Avatar } from '@/shared/ui/@core/avatar';
 
 import { GroupMembershipButton } from './GroupMembershipButton';
 import { GroupVisibilityBadge } from './GroupVisibilityBadge';
 
 export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinable?: boolean }) {
+  const isSSR = useIsSSR();
   const promptLogin = useLoginPrompt();
   const { data: viewer } = useQuery(MeDocument, { fetchPolicy: 'cache-only' });
   const { data: group, complete } = useFragment({
@@ -30,9 +32,16 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
       <Link
         href={ROUTES.GROUP(id)}
         aria-label={group.name}
+        aria-disabled={privateGroup && (isSSR || !viewer?.me)}
+        inert={privateGroup && (isSSR || !viewer?.me)}
         className="flex min-w-0 flex-1 flex-col gap-3 rounded-card p-4 transition-colors hover:bg-sunken active:bg-neutral-soft"
         onClick={(event) => {
-          if (!privateGroup || !viewer?.me?.isAnonymous) return;
+          if (!privateGroup) return;
+          if (isSSR || !viewer?.me) {
+            event.preventDefault();
+            return;
+          }
+          if (!viewer.me.isAnonymous) return;
           event.preventDefault();
           promptLogin(ROUTES.GROUP(id));
         }}

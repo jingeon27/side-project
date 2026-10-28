@@ -7,3 +7,5 @@
 여러 조회·변경을 묶을 때 Service에서 `UnitOfWork.run(async (client) => …)`을 사용한다. 내부의 모든 Repository와 권한·미디어 helper에 **같은 client를 전달**한다. client를 생략하면 평소의 연결 풀을 쓰므로 트랜잭션 중에 생략하지 않는다. 트랜잭션 밖으로 client를 저장하지 않는다. 배열형 run은 lazy PrismaPromise를 받아 전체를 커밋·롤백한다.
 
 Photo Contest의 `UnitOfWork.atomic`은 기존 Serializable 재시도·unique 충돌 정책을 유지한다. 이벤트도 Repository를 통해 같은 트랜잭션에 기록한다. 파일 저장·삭제와 외부 fetch는 재시도되는 트랜잭션 밖에서 수행한다.
+
+직렬화 충돌의 재시도는 50·100·200ms 간격을 두고 최대 4회 시도한다. 같은 시점에 사진 업로드 두 건을 완료할 때 상대 트랜잭션이 끝나기도 전에 재시도 한도를 모두 쓰지 않도록 한다. unique 충돌과 일반 오류에는 이 재시도를 적용하지 않는다.

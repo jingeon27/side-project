@@ -15,7 +15,9 @@ export function CommunityFooter({ home }: { home: string }) {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <nav className="site-footer-links" aria-label={t('서비스 안내')}>
-          <ChildLink href={appRoutes.guide(locale)}>{t('이용 가이드')}</ChildLink>
+          <ChildLink href={appRoutes.guide(locale)} prefetch>
+            {t('이용 가이드')}
+          </ChildLink>
           <TabLink href={`${home}/terms`}>{t('서비스 이용약관')}</TabLink>
           <TabLink href={`${home}/privacy`}>{t('개인정보 처리방침')}</TabLink>
           <TabLink href={`${home}/contact`}>{t('문의')}</TabLink>
