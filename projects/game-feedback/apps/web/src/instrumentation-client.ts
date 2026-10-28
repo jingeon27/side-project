@@ -13,7 +13,10 @@ import {
   SENTRY_DATA_COLLECTION,
 } from '@/shared/lib/monitoring/sentry.helper';
 import { isNativeApp, nativeBridgeChannel } from '@/shared/native';
+import { installBrowserNavigation } from '@/shared/navigation';
 
+// Next의 popstate 처리보다 먼저 초안 이탈을 확인해야 화면과 guard가 먼저 해제되지 않는다.
+installBrowserNavigation();
 nativeBridgeChannel.start();
 const dsn = resolveClientSentryDsn({ NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN });
 if (dsn)

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installBrowserNavigation } from './browser-navigation';
 import { confirmNavigation } from './navigation-guard';
+import { NavigationGuardProvider, useNavigationGuardRegistry } from './NavigationGuardProvider';
 import { useUnsavedChanges } from './use-unsaved-changes';
 
 const cleanups: Array<() => void> = [];
@@ -17,11 +18,72 @@ function start() {
 }
 
 describe('저장하지 않은 변경의 이탈 확인', () => {
+  it('변경 여부가 같아도 새로 전달한 확인 함수를 사용해야 한다', () => {
+    const reject = vi.fn(() => false);
+    const approve = vi.fn(() => true);
+    const hook = renderHook(({ confirm }) => useUnsavedChanges({ hasChanges: true, confirm }), {
+      initialProps: { confirm: reject },
+      wrapper: NavigationGuardProvider,
+    });
+    expect(confirmNavigation()).toBe(false);
+    hook.rerender({ confirm: approve });
+    expect(confirmNavigation()).toBe(true);
+    expect(reject).toHaveBeenCalledOnce();
+    expect(approve).toHaveBeenCalledOnce();
+  });
+
+  it('Provider를 해제하면 이전 등록이 다음 Provider에 남지 않아야 한다', () => {
+    const confirm = vi.fn(() => false);
+    const previous = renderHook(useNavigationGuardRegistry, { wrapper: NavigationGuardProvider });
+    previous.result.current.register({ confirm });
+    expect(confirmNavigation()).toBe(false);
+    previous.unmount();
+    renderHook(useNavigationGuardRegistry, { wrapper: NavigationGuardProvider });
+    expect(confirmNavigation()).toBe(true);
+    expect(confirm).toHaveBeenCalledOnce();
+  });
+
+  it('모든 이탈 확인을 승인했을 때만 초안을 버려야 한다', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const discardProfile = vi.fn();
+    const discardLinks = vi.fn();
+    renderHook(
+      () =>
+        useUnsavedChanges({
+          hasChanges: true,
+          confirm: () => window.confirm('프로필 초안을 버릴까요?'),
+          onDiscard: discardProfile,
+        }),
+      { wrapper: NavigationGuardProvider },
+    );
+    renderHook(
+      () =>
+        useUnsavedChanges({
+          hasChanges: true,
+          confirm: () => window.confirm('링크 초안을 버릴까요?'),
+          onDiscard: discardLinks,
+        }),
+      { wrapper: NavigationGuardProvider },
+    );
+    expect(confirmNavigation()).toBe(false);
+    expect(discardProfile).not.toHaveBeenCalled();
+    expect(discardLinks).not.toHaveBeenCalled();
+    confirm.mockReturnValue(true);
+    expect(confirmNavigation()).toBe(true);
+    expect(discardProfile).toHaveBeenCalledOnce();
+    expect(discardLinks).toHaveBeenCalledOnce();
+  });
+
   it('변경이 있을 때만 이동·문서 닫기를 확인하고 저장하거나 언마운트하면 해제해야 한다', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    const hook = renderHook(({ dirty }) => useUnsavedChanges(dirty, '초안을 버릴까요?'), {
-      initialProps: { dirty: false },
-    });
+    const hook = renderHook(
+      ({ dirty }) =>
+        useUnsavedChanges({ hasChanges: dirty, confirm: () => window.confirm('초안을 버릴까요?') }),
+      {
+        initialProps: { dirty: false },
+        wrapper: NavigationGuardProvider,
+      },
+    );
     expect(confirmNavigation()).toBe(true);
     expect(confirm).not.toHaveBeenCalled();
     hook.rerender({ dirty: true });
@@ -43,7 +105,10 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
   it('같은 탭의 링크를 취소하면 라우터에 전달하지 않고 새 탭·다운로드는 방해하지 않아야 한다', () => {
     start();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    renderHook(() => useUnsavedChanges(true, '초안을 버릴까요?'));
+    renderHook(
+      () => useUnsavedChanges({ hasChanges: true, confirm: () => window.confirm('초안을 버릴까요?') }),
+      { wrapper: NavigationGuardProvider },
+    );
     const link = document.createElement('a');
     link.href = '/ko/messages';
     const navigate = vi.fn((event: MouseEvent) => event.preventDefault());
@@ -72,7 +137,10 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
   it('브라우저 뒤로 가기를 취소하면 URL·기록·화면을 복구하고 확인하면 한 번만 이동해야 한다', async () => {
     start();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    renderHook(() => useUnsavedChanges(true, '초안을 버릴까요?'));
+    renderHook(
+      () => useUnsavedChanges({ hasChanges: true, confirm: () => window.confirm('초안을 버릴까요?') }),
+      { wrapper: NavigationGuardProvider },
+    );
     const nextRouter = vi.fn();
     window.addEventListener('popstate', nextRouter);
     cleanups.push(() => window.removeEventListener('popstate', nextRouter));
@@ -94,9 +162,43 @@ describe('저장하지 않은 변경의 이탈 확인', () => {
     start();
     window.history.pushState({}, '', '/ko/settings');
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    renderHook(() => useUnsavedChanges(true, '초안을 버릴까요?'));
+    renderHook(
+      () => useUnsavedChanges({ hasChanges: true, confirm: () => window.confirm('초안을 버릴까요?') }),
+      { wrapper: NavigationGuardProvider },
+    );
     window.history.go(-2);
     await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
     await waitFor(() => expect(window.location.pathname).toBe('/ko/settings'));
+  });
+
+  it('다른 URL이 같은 기록 번호를 갖더라도 취소한 뒤로 가기를 복구해야 한다', async () => {
+    start();
+    window.history.replaceState(
+      { __game_feedback_navigation: { index: 0, previous: '/ko/users/me' } },
+      '',
+      '/ko/settings/profile',
+    );
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderHook(
+      () => useUnsavedChanges({ hasChanges: true, confirm: () => window.confirm('초안을 버릴까요?') }),
+      { wrapper: NavigationGuardProvider },
+    );
+    window.history.back();
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.location.pathname).toBe('/ko/settings/profile'));
+  });
+
+  it('기록 추적을 설치하기 전의 화면으로 돌아갈 때도 초안을 확인해야 한다', async () => {
+    window.history.replaceState({ __NA: true }, '', '/ko/users/me');
+    window.history.pushState({ __NA: true }, '', '/ko/settings/profile');
+    cleanups.push(installBrowserNavigation());
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderHook(
+      () => useUnsavedChanges({ hasChanges: true, confirm: () => window.confirm('초안을 버릴까요?') }),
+      { wrapper: NavigationGuardProvider },
+    );
+    window.history.back();
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.location.pathname).toBe('/ko/settings/profile'));
   });
 });

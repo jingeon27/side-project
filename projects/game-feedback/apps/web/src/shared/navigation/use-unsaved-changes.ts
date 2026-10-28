@@ -1,13 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
-import { registerNavigationGuard } from './navigation-guard';
+import { useNavigationGuardRegistry } from './NavigationGuardProvider';
 
-export function useUnsavedChanges(hasChanges: boolean, message: string) {
+interface IUnsavedChangesOptions {
+  hasChanges: boolean;
+  confirm: () => boolean;
+  onDiscard?: () => void;
+}
+
+export function useUnsavedChanges({ hasChanges, confirm, onDiscard }: IUnsavedChangesOptions) {
+  const registry = useNavigationGuardRegistry();
+  const handleConfirm = useEffectEvent(confirm);
+  const handleDiscard = useEffectEvent(() => onDiscard?.());
   useEffect(() => {
     if (!hasChanges) return;
-    const release = registerNavigationGuard(() => window.confirm(message));
+    const release = registry.register({
+      confirm: () => handleConfirm(),
+      onDiscard: () => handleDiscard(),
+    });
     const handleUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
@@ -17,5 +29,5 @@ export function useUnsavedChanges(hasChanges: boolean, message: string) {
       release();
       window.removeEventListener('beforeunload', handleUnload);
     };
-  }, [hasChanges, message]);
+  }, [hasChanges, registry]);
 }

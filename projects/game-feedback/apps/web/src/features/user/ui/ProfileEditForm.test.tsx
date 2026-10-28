@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError, type PublicProfile } from '@/shared/api';
-import { confirmNavigation } from '@/shared/navigation';
+import { confirmNavigation, NavigationGuardProvider } from '@/shared/navigation';
 
 import { ProfileEditForm } from './ProfileEditForm';
 
@@ -48,7 +48,9 @@ function renderForm() {
   });
   render(
     <QueryClientProvider client={client}>
-      <ProfileEditForm onSaved={onSaved} profile={profile} />
+      <NavigationGuardProvider>
+        <ProfileEditForm onSaved={onSaved} profile={profile} />
+      </NavigationGuardProvider>
     </QueryClientProvider>,
   );
   return onSaved;
@@ -103,6 +105,28 @@ describe('profile edit form', () => {
     if (section === 'links') addLinkDraft();
     expect(confirmNavigation()).toBe(false);
     expect(confirm).toHaveBeenCalledOnce();
+  });
+
+  it('discards all drafts only after confirming departure even if Next retains the form', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderForm();
+    const bio = screen.getByRole('textbox', { name: '자기소개' });
+    fireEvent.change(bio, { target: { value: '버릴 소개' } });
+    const photo = choosePhoto();
+    const links = addLinkDraft();
+
+    await act(async () => expect(confirmNavigation()).toBe(false));
+    expect(bio).toHaveProperty('value', '버릴 소개');
+    expect(within(photo).getByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeTruthy();
+    expect(within(links).getByRole('textbox', { name: /이름/ })).toHaveProperty('value', '나의 방송');
+
+    confirm.mockReturnValue(true);
+    await act(async () => expect(confirmNavigation()).toBe(true));
+    expect(bio).toHaveProperty('value', '');
+    expect(within(photo).queryByRole('img', { name: '선택한 프로필 사진 미리보기' })).toBeNull();
+    expect(within(links).queryByRole('textbox', { name: /이름/ })).toBeNull();
+    expect(confirmNavigation()).toBe(true);
+    expect(confirm).toHaveBeenCalledTimes(2);
   });
 
   // 정보 저장이 곧바로 화면을 떠나(예전에는 시트를 닫아) 고르던 사진·링크 초안이 말없이 사라졌다.

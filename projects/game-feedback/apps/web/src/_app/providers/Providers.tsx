@@ -11,6 +11,7 @@ import { AnalyticsIdentity, InteractionTracker } from '@/shared/analytics';
 import type { Category, Session } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
 import { MotionProvider } from '@/shared/motion';
+import { NavigationGuardProvider } from '@/shared/navigation';
 import { AsyncBoundary, ServiceErrorBoundary, ToastProvider } from '@/shared/ui';
 import { AuthOnboarding, useLoginNavigation } from '@/widgets/authentication';
 import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
@@ -18,7 +19,6 @@ import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 import { MobileViewport } from './MobileViewport';
 import { NativeBridge } from './NativeBridge';
 import { NativePushSync } from './NativePushSync';
-import { NavigationHistory } from './NavigationHistory';
 
 export function Providers({
   children,
@@ -43,15 +43,16 @@ export function Providers({
   return (
     <QueryClientProvider client={client}>
       <ServiceErrorBoundary title={t('서비스 연결')}>
-        <MotionProvider>
-          <NavigationHistory />
-          <MobileViewport />
-          <ToastProvider>
-            <SessionProvider onLogin={handleLogin}>
-              <SessionContent>{children}</SessionContent>
-            </SessionProvider>
-          </ToastProvider>
-        </MotionProvider>
+        <NavigationGuardProvider>
+          <MotionProvider>
+            <MobileViewport />
+            <ToastProvider>
+              <SessionProvider onLogin={handleLogin}>
+                <SessionContent>{children}</SessionContent>
+              </SessionProvider>
+            </ToastProvider>
+          </MotionProvider>
+        </NavigationGuardProvider>
       </ServiceErrorBoundary>
     </QueryClientProvider>
   );

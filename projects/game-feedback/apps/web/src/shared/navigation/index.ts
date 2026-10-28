@@ -11,3 +11,4 @@ export {
 export { useBrowserSearch } from './use-browser-search';
 export { confirmNavigation } from './navigation-guard';
 export { useUnsavedChanges } from './use-unsaved-changes';
+export { NavigationGuardProvider } from './NavigationGuardProvider';

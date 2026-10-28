@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const width of [320, 393, 430, 760]) {
   test(`${width}px 전체 화면의 본문·상단바·하단 안내는 좌우 여백을 맞춰야 한다`, async ({

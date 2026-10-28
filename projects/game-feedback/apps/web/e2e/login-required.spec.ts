@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const width of [320, 1440]) {
   test(`${width}px 비회원 액션은 로그인 안내를 먼저 표시하고 취소하면 현재 화면을 유지한다`, async ({

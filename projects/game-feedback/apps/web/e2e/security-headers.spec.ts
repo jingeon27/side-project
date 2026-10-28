@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('public documents refuse framing and send conservative browser security headers', async ({ page }) => {
   for (const path of ['/ko', '/ko/guide', '/ko/posts/sample-post-0', '/ko/posts/missing-document']) {

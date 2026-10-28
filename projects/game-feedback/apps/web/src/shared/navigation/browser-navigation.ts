@@ -58,6 +58,10 @@ function withoutParent({ index, previous, feed }: INavigationEntry): INavigation
 function currentPath() {
   return window.location.pathname + window.location.search;
 }
+function browserHistoryIndex() {
+  const browser = window as Window & { navigation?: { currentEntry?: { index: number } } };
+  return browser.navigation?.currentEntry?.index;
+}
 function routeOf(url: string | URL | null | undefined) {
   if (url === null || url === undefined) return null;
   const next = new URL(url, window.location.href);
@@ -75,6 +79,8 @@ export function installBrowserNavigation() {
     current: entry(history.state) ?? { index: 0, previous: null },
     active: true,
     restoring: false,
+    path: currentPath(),
+    browserIndex: browserHistoryIndex(),
   };
   function stateWithEntry(data: unknown, next: INavigationEntry) {
     return { ...(data && typeof data === 'object' ? data : {}), [stateKey]: next };
@@ -99,6 +105,8 @@ export function installBrowserNavigation() {
     });
     navigation.direction = 'forward';
     push.call(history, stateWithEntry(data, installation.current), unused, url);
+    installation.path = currentPath();
+    installation.browserIndex = browserHistoryIndex();
     notifyLocation();
   };
   const handleReplace: History['replaceState'] = function (data, unused, url) {
@@ -109,6 +117,8 @@ export function installBrowserNavigation() {
     installation.current = rememberFeed(samePath ? next : withoutParent(next));
     navigation.direction = 'replace';
     replace.call(history, stateWithEntry(data, installation.current), unused, url);
+    installation.path = currentPath();
+    installation.browserIndex = browserHistoryIndex();
     notifyLocation();
   };
   function handlePop(event: PopStateEvent) {
@@ -118,18 +128,29 @@ export function installBrowserNavigation() {
       return;
     }
     const target = entry(event.state);
-    if (target && target.index !== installation.current.index && !confirmNavigation()) {
+    const nextBrowserIndex = browserHistoryIndex();
+    if (currentPath() !== installation.path && !confirmNavigation()) {
       // Next가 화면을 바꾸기 전에 멈추고, 기록을 늘리지 않고 원래 항목으로 돌아간다.
       event.stopImmediatePropagation();
       installation.restoring = true;
-      history.go(installation.current.index - target.index);
+      history.go(restorationDelta(target, nextBrowserIndex));
       return;
     }
     navigation.pendingParent = null;
     const next = target ?? { index: 0, previous: null };
     navigation.direction = next.index < installation.current.index ? 'back' : 'forward';
     installation.current = next;
+    installation.path = currentPath();
+    installation.browserIndex = nextBrowserIndex;
     notifyLocation();
+  }
+  function restorationDelta(target: INavigationEntry | null, nextBrowserIndex: number | undefined) {
+    if (installation.browserIndex !== undefined && nextBrowserIndex !== undefined)
+      return installation.browserIndex - nextBrowserIndex;
+    if (target && target.index !== installation.current.index)
+      return installation.current.index - target.index;
+    // 초기 hydration 이전 기록이나 Next가 다시 쓴 같은 번호도 이탈 확인을 생략하지 않는다.
+    return target?.previous === installation.path ? -1 : 1;
   }
   function handleClick(event: MouseEvent) {
     if (

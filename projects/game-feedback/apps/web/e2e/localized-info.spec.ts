@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const locale of ['en', 'ja'] as const) {
   test(`guide and policy content, metadata and canonical links are localized in ${locale} without JavaScript`, async ({

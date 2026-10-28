@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('320px 홈은 폭이 넓은 대체 글꼴에서도 제목과 글쓰기 동작을 화면 안에 표시한다', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });

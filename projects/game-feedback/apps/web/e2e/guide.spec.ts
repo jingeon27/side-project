@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const { width, locale } of [
   { width: 320, locale: 'ko' },
