@@ -3,4 +3,4 @@ export const POLICY = {
   updatedLabel: '2026년 10월 22일',
   operatorName: '김진건',
   contactEmail: 'contact@bambyul.com',
-} as const;
+} as const satisfies Record<string, string>;

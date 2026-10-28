@@ -2,7 +2,7 @@ import type { TLoginMethod } from '@/shared/model/analytics';
 
 const PENDING_LOGIN_KEY = 'photo-contest:pending-login';
 const NOTIFIED_USER_KEY = 'photo-contest:auth-notified-user';
-const LOGIN_METHODS = new Set<string>(['google', 'kakao', 'password', 'anonymous']);
+const LOGIN_METHODS = new Set<string>(['google', 'kakao', 'password', 'anonymous'] satisfies TLoginMethod[]);
 
 export interface IPendingLogin {
   method: TLoginMethod;
