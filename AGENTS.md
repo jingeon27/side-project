@@ -15,6 +15,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 - 프로젝트의 DB·환경변수·스토리지·생성 Prisma client는 서로 격리한다.
 - 다른 프로젝트(또는 사용자의 개발 서버)의 실행 중인 프로세스와 데이터를 바꾸지 않는다. 테스트는 개발 서버와 다른 포트, 격리된 DB 스키마를 쓴다.
 - Yarn 4.17은 24시간이 지나지 않은 패키지 버전을 격리한다(`All versions satisfying … are quarantined`). 게이트를 통과한 직전 버전을 고르고 `npmMinimalAgeGate`를 끄지 않는다.
+- 공통 미사용 검사는 `yarn knip`, 전체 현황은 `yarn knip:report`다. 새 문제를 `knip-baseline.json`에 추가해 숨기지 않는다. 기존 항목을 정리하면 기준선에서도 지운다. 값·타입·namespace의 `export *` 대신 필요한 이름을 명시하며 공통 ESLint 규칙이 검사한다.
 - 커밋은 작게 나눈다. 프로젝트의 `commit` 스킬을 따른다.
 - husky hook: `pre-commit`은 스테이징된 파일만 Prettier로 정리하고 `commit-msg`는 `<type>(<scope>): <내용>` 형식과 `Co-Authored-By` trailer 금지를 검사한다. 새 worktree는 `yarn install` 후 hook이 생긴다. 실패하면 고쳐서 다시 커밋한다. hook이 필요 없는 자동화는 `HUSKY=0`을 쓰고 `--no-verify`는 비상시에만 쓴다.
 - PR은 squash가 아니라 merge commit으로 합친다(#94까지는 squash였으므로 그 이전 이력은 `gh pr view <번호> --json commits`로 본다). 브랜치 커밋이 develop 이력에 그대로 남으므로 PR을 올리기 전에 fixup·squash·WIP 커밋을 원래 커밋과 합친다(`git commit --fixup <sha>` 후 `git rebase --autosquash <base>`). 커밋 메시지에 `Co-Authored-By` trailer를 넣지 않는다. PR의 `Commits` 검사(`scripts/check-branch-commits.ts`)가 브랜치의 모든 커밋을 확인한다.

@@ -10,7 +10,8 @@
     "eslint/src/**/*.ts",
     "eslint.config.ts",
     "vitest.config.ts",
-    "../../scripts/check-commit-message*.ts"
+    "../../scripts/check-commit-message*.ts",
+    "../../scripts/knip-baseline*.ts"
   ],
   "exclude": ["node_modules", "eslint/src/**/__fixtures__"]
 }

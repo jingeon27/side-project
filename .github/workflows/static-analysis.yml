@@ -1,0 +1,43 @@
+name: Static analysis
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: static-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  knip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      NODE_ENV: test
+      ENVIRONMENT: test
+      APP_VARIANT: development
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm install --global @yarnpkg/cli-dist@4.17.0 --force
+      - run: yarn install --immutable
+      # DB와 앱 서버를 띄우지 않고 import 대상만 준비한다.
+      - run: yarn workspace @side/toolkit build
+      - run: yarn workspace @photo-contest/api db:generate
+      - run: yarn workspace @game-feedback/api db:generate
+      - run: yarn workspace @photo-contest/web codegen
+      - run: yarn workspace @blog/web content:generate
+      - run: yarn workspace @side/config check
+      - run: yarn typecheck:scripts
+      - name: Reject new unused files, dependencies and exports
+        run: yarn knip

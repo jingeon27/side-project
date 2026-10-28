@@ -59,7 +59,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "eslint": "catalog:",
-    "graphql": "catalog:",
     "jiti": "catalog:",
     "jsdom": "catalog:",
     "tailwindcss": "catalog:",

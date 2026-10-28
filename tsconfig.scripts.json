@@ -7,6 +7,6 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts"],
+  "include": ["scripts/**/*.ts", "knip.ts"],
   "exclude": ["scripts/**/*.spec.ts", "scripts/**/*.test.ts"]
 }

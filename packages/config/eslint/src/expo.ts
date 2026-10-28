@@ -38,7 +38,6 @@ export const expoConfig: Linter.Config[] = [
       ],
       'no-restricted-syntax': [
         'error',
-        { selector: 'ExportAllDeclaration', message: 'export * 대신 필요한 이름만 내보낸다.' },
         { selector: 'TSEnumDeclaration', message: 'enum 대신 as const 객체를 쓴다.' },
       ],
     },

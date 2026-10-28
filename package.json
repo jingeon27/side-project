@@ -22,7 +22,7 @@
     "test": "yarn workspaces foreach -A --include \"@side/*\" run test",
     "test:photo-contest": "yarn workspace @side/photo-contest test",
     "test:photo-contest:e2e": "yarn workspace @side/photo-contest test:e2e",
-    "check": "yarn typecheck:scripts && yarn workspaces foreach -A --include \"@side/*\" run check",
+    "check": "yarn knip && yarn typecheck:scripts && yarn workspaces foreach -A --include \"@side/*\" run check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "storybook": "yarn workspace @side/design-system storybook",
@@ -35,7 +35,9 @@
     "build:game-feedback": "yarn workspace @side/game-feedback build",
     "test:game-feedback": "yarn workspace @side/game-feedback test",
     "check:game-feedback": "yarn workspace @side/game-feedback check",
-    "typecheck:scripts": "tsc7 -p tsconfig.scripts.json"
+    "typecheck:scripts": "tsc7 -p tsconfig.scripts.json",
+    "knip": "knip --preprocessor ./scripts/knip-baseline.ts",
+    "knip:report": "knip"
   },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown"
@@ -45,6 +47,7 @@
     "@side/config": "workspace:*",
     "@types/node": "catalog:",
     "husky": "^9.1.7",
+    "knip": "6.43.0",
     "lint-staged": "^16.4.0",
     "prettier": "catalog:"
   },

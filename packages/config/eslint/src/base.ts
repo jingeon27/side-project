@@ -34,6 +34,7 @@ export const baseConfig: Linter.Config[] = [
     // common 규칙만 켠다. web 규칙은 reactConfig·nextConfig가 켠다.
     rules: {
       'side/no-else': 'error',
+      'side/no-wildcard-exports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
