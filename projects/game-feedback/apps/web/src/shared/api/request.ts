@@ -1,8 +1,6 @@
 import { ApiError, ApiResponseValidationError } from '@game-feedback/sdk';
 
 export { ApiError };
-export type * from '@game-feedback/contracts';
-export type { PostList as PostPage } from '@game-feedback/contracts';
 const errorMessages: Record<string, string> = {
   INVALID_API_RESPONSE: '서버 응답을 확인하지 못했어요. 새로고침 후 내용을 확인해 주세요.',
   AUTH_REQUIRED: '로그인 후 이용할 수 있어요.',
