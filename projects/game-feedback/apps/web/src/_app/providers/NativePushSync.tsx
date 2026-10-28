@@ -32,24 +32,24 @@ export function NativePushSync() {
     if (!supported || !userId) return;
     requestPushSync(locale);
   }, [supported, userId, locale]);
-  // 수신 처리는 그 시점의 locale·client를 읽는다. 언어가 바뀌어도 브리지 구독을 다시 걸지 않는다.
-  const handleNativeMessage = useEffectEvent((event: Event, activeUserId: string) => {
+  // 수신 처리는 그 시점의 사용자·locale·client를 읽는다. 언어가 바뀌어도 브리지 구독을 다시 걸지 않는다.
+  const handleNativeMessage = useEffectEvent((event: Event) => {
+    if (!supported || !userId) return;
     const message = parseNativeMessage((event as CustomEvent<unknown>).detail);
     if (message?.type === 'state' && message.state === 'active') requestPushSync(locale);
     if (message?.type !== 'push-received') return;
     requestPushSync(locale);
-    void client.invalidateQueries(notificationListOptions(activeUserId));
+    void client.invalidateQueries(notificationListOptions(userId));
     void client.invalidateQueries({
       predicate: (query) =>
-        query.queryKey.includes(activeUserId) &&
+        query.queryKey.includes(userId) &&
         query.queryKey.some((key) => typeof key === 'string' && /conversation|chat/i.test(key)),
     });
   });
   useEffect(() => {
     if (!supported || !userId) return;
-    const receive = (event: Event) => handleNativeMessage(event, userId);
-    window.addEventListener(BRIDGE_EVENT, receive);
-    return () => window.removeEventListener(BRIDGE_EVENT, receive);
+    window.addEventListener(BRIDGE_EVENT, handleNativeMessage);
+    return () => window.removeEventListener(BRIDGE_EVENT, handleNativeMessage);
   }, [supported, userId]);
   return null;
 }
