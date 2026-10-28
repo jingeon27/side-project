@@ -30,6 +30,15 @@ test(
     const contestId = contestPath.split('/').at(-1);
     if (!contestId) throw new Error('대회 ID가 있어야 한다');
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: `대회 그룹-${testInfo.project.name} > ${title}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole('navigation', { name: '그룹 메뉴' })).toHaveCount(0);
+    await expect(page.locator('header').getByRole('link', { name: /알림/ })).toBeVisible();
     await page.getByRole('link', { name: '글쓰기', exact: true }).click();
     const sheet = page.getByRole('form', { name: '그룹에 글쓰기', exact: true });
     await expect(sheet.getByRole('checkbox', { name: /대회에 참여하기/ })).toBeChecked();

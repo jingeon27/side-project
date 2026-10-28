@@ -10,6 +10,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { NotificationBell } from '@/widgets/notification-bell';
 
 function ContestList({
   queryRef,
@@ -74,6 +75,7 @@ export function GroupContestsPageTemplate({
   return (
     <GroupContentFrame
       groupId={groupId}
+      headerActions={<NotificationBell />}
       title={hallOfFame ? '지난 대회 명예의 전당' : '그룹 대회'}
       actions={!hallOfFame ? <CreateGroupContestButton groupId={groupId} /> : undefined}
     >

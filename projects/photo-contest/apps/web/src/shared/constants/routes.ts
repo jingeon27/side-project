@@ -3,6 +3,7 @@ export const ROUTES = {
   HOME: '/',
   SIGN: '/sign',
   ME: '/me',
+  GROUP_CREATE: '/groups/new',
   NOTIFICATIONS: '/notifications',
   ONBOARDING: '/onboarding',
   EXPLORE: '/explore',

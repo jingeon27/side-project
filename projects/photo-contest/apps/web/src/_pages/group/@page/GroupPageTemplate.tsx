@@ -15,6 +15,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { TopAppBar } from '@/shared/ui/@core/top-app-bar';
+import { NotificationBell } from '@/widgets/notification-bell';
 
 import type { TGroupQueryRef } from './model/group-query.type';
 import { GroupCategoryFilter } from './ui/GroupCategoryFilter';
@@ -33,7 +34,16 @@ function GroupFrame({
 }) {
   return (
     <>
-      <TopAppBar title={title} backHref={ROUTES.EXPLORE} actions={actions} />
+      <TopAppBar
+        title={title}
+        backHref={ROUTES.EXPLORE}
+        actions={
+          <>
+            {actions}
+            <NotificationBell />
+          </>
+        }
+      />
       <div className="flex flex-col gap-8 px-4 py-6 tablet:px-8">{children}</div>
     </>
   );

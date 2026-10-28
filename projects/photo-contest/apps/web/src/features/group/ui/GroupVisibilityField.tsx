@@ -5,9 +5,15 @@ import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
 import type { TCreateGroupInput } from '../model/group.schema';
 
-export function GroupVisibilityField({ form }: { form: UseFormReturn<TCreateGroupInput> }) {
+export function GroupVisibilityField({
+  form,
+  disabled,
+}: {
+  form: UseFormReturn<TCreateGroupInput>;
+  disabled?: boolean;
+}) {
   return (
-    <fieldset className="flex flex-col gap-3">
+    <fieldset disabled={disabled} className="flex flex-col gap-3">
       <legend className="mb-3 flex items-center text-label text-ink">
         공개 범위
         <FieldRequirement required />

@@ -1,23 +1,19 @@
 'use client';
 
 import { Plus } from 'lucide-react';
-import { overlay } from 'overlay-kit';
 
+import { ROUTES } from '@/shared/constants/routes';
+import { useAppRouter } from '@/shared/model/router';
 import { Button } from '@/shared/ui/@core/button';
 
-import { CreateGroupBottomSheet } from './CreateGroupBottomSheet';
-
 export function CreateGroupButton() {
+  const router = useAppRouter();
   return (
     <Button
       variant="accent"
       size="md"
       className="rounded-full"
-      onClick={() =>
-        overlay.open(({ isOpen, close: onClose, unmount }) => (
-          <CreateGroupBottomSheet isOpen={isOpen} onClose={onClose} unmount={unmount} />
-        ))
-      }
+      onClick={() => router.push(ROUTES.GROUP_CREATE)}
     >
       <Plus aria-hidden className="mr-1 size-4" />
       그룹 만들기

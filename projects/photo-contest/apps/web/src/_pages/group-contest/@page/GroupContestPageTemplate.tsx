@@ -28,6 +28,7 @@ import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { EmptyState } from '@/shared/ui/@core/empty-state';
 import { ErrorState } from '@/shared/ui/@core/error-state';
 import { Skeleton } from '@/shared/ui/@core/skeleton';
+import { NotificationBell } from '@/widgets/notification-bell';
 
 function ContestPhaseSync({ id, phase }: { id: string; phase: Phase }) {
   useQuery(
@@ -175,14 +176,27 @@ function ContestQuery({
 export function GroupContestPageTemplate({
   id,
   groupId,
+  initialTitle = '대회',
   resultsPreloaded = false,
 }: {
   id: string;
   groupId: string;
+  initialTitle?: string;
   resultsPreloaded?: boolean;
 }) {
+  const isSSR = useIsSSR();
+  const { data: contest, complete } = useFragment({
+    fragment: GroupContestSummaryFragmentDoc,
+    from: { __typename: 'GroupContest', id },
+  });
   return (
-    <GroupContentFrame groupId={groupId} title="그룹 대회">
+    <GroupContentFrame
+      groupId={groupId}
+      title={!isSSR && complete && contest.groupId === groupId ? contest.title : initialTitle}
+      showNavigation={false}
+      breadcrumb
+      headerActions={<NotificationBell />}
+    >
       <ContestQuery id={id} groupId={groupId} resultsPreloaded={resultsPreloaded} />
     </GroupContentFrame>
   );

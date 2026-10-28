@@ -41,9 +41,12 @@ test(
     await signIn('통합 관리자');
     await page.goto('/me');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await page.getByRole('dialog').getByLabel('그룹 이름').fill('언제나 웃긴 그룹');
-    await page.getByRole('dialog').getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await page.getByRole('form', { name: '그룹 만들기' }).getByLabel('그룹 이름').fill('언제나 웃긴 그룹');
+    await page
+      .getByRole('form', { name: '그룹 만들기' })
+      .getByRole('button', { name: '그룹 만들기', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     const galleryUrl = page.url();
     await expect(page.getByRole('button', { name: '대회 만들기', exact: true })).toHaveCount(0);
     await page.getByText('초대와 그룹 멤버', { exact: true }).click();

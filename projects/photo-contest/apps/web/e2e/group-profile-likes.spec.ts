@@ -29,7 +29,7 @@ test(
     await expect
       .poll(() => preview.evaluate((image: HTMLImageElement) => image.naturalWidth))
       .toBeGreaterThan(0);
-    const name = `밤별의 순간-${testInfo.project.name}`;
+    const name = `밤별의 순간-${testInfo.project.name}-${testInfo.repeatEachIndex}`;
     const description = '우연히 담은 별난 순간들을 함께 나눠요.';
     await editor.getByLabel('그룹 이름').fill(name);
     await editor.getByLabel('그룹 소개').fill(description);

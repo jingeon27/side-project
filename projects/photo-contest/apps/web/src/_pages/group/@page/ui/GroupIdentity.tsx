@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 import { useReadQuery } from '@apollo/client/react';
 
 import { EditGroupProfileButton, GroupVisibilityBadge } from '@/features/group';
@@ -13,6 +15,18 @@ export function GroupIdentity({ groupRef }: { groupRef: TGroupQueryRef }) {
   const { group } = data;
   return (
     <section className="mx-auto grid w-full max-w-5xl grid-cols-[auto_minmax(0,1fr)] items-center gap-4 border-b border-line pb-6 tablet:gap-6 desktop:grid-cols-[auto_minmax(0,1fr)_auto]">
+      {group.coverUrl ? (
+        <div className="relative col-span-full aspect-[3/1] w-full overflow-hidden rounded-card bg-sunken">
+          <Image
+            src={group.coverUrl}
+            alt={`${group.name} 배경 사진`}
+            fill
+            unoptimized
+            className="object-cover"
+            sizes="(min-width: 1024px) 900px, 100vw"
+          />
+        </div>
+      ) : null}
       <Avatar
         name={group.name}
         src={group.avatarUrl}

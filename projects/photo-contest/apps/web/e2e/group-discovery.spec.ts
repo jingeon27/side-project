@@ -12,11 +12,11 @@ test(
     const name = `공개-${testInfo.project.name}-${Date.now()}`;
     await page.goto('/explore');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    const form = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+    const form = page.getByRole('form', { name: '그룹 만들기', exact: true });
     await expect(form.getByRole('radio', { name: /^공개 그룹/ })).toBeChecked();
     await form.getByLabel('그룹 이름').fill(name);
     await form.getByLabel('그룹 이름').press('Enter');
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     const groupPath = new URL(page.url()).pathname;
     const groupId = groupPath.split('/').at(-1);
     if (!groupId) throw new Error('그룹 주소가 있어야 한다');
@@ -60,7 +60,7 @@ test(
     await expect(comments.getByText('공개 사진 이야기', { exact: true })).toBeVisible();
     await expect(comments.getByRole('link', { name: '그룹에 가입하고 댓글 남기기' })).toBeVisible();
     await expect(comments.getByRole('textbox', { name: '댓글', exact: true })).toHaveCount(0);
-    await comments.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     expect(await page.evaluate(() => '__seoXss' in window)).toBe(false);
 
     const response = await page.request.get(`${groupPath}?utm_source=duplicate`, {
@@ -164,11 +164,11 @@ test(
     const owner = await signIn(`비공개-${testInfo.project.name}`);
     await page.goto('/explore');
     await page.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    const form = page.getByRole('dialog', { name: '그룹 만들기', exact: true });
+    const form = page.getByRole('form', { name: '그룹 만들기', exact: true });
     await form.getByLabel('그룹 이름').fill(`승인-${testInfo.project.name}-${Date.now()}`);
     await form.getByRole('radio', { name: /^비공개 그룹/ }).check();
     await form.getByRole('button', { name: '그룹 만들기', exact: true }).click();
-    await expect(page).toHaveURL(/\/groups\/[^/]+$/);
+    await expect(page).toHaveURL(/\/groups\/(?!new$)[^/]+$/);
     const groupPath = new URL(page.url()).pathname;
     const groupId = groupPath.split('/').at(-1);
     if (!groupId) throw new Error('그룹 주소가 있어야 한다');

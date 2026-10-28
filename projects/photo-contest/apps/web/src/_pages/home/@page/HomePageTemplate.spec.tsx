@@ -113,10 +113,11 @@ describe('홈의 가입 그룹 분기', () => {
     expect(await screen.findByRole('button', { name: '그룹 가입하기' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: '이달의 인기' })).not.toBeInTheDocument();
   });
-  it('그룹은 있지만 게시물이 없으면 내 피드와 글쓰기 동작을 보여 줘야 한다', async () => {
+  it('그룹은 있지만 게시물이 없으면 내 피드와 가입 그룹 목록을 보여 줘야 한다', async () => {
     await openHome({ hasGroup: true });
     expect(await screen.findByRole('region', { name: '최신 게시물' })).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: '글쓰기' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: '참여한 그룹' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '글쓰기' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: '공개 그룹 목록' })).not.toBeInTheDocument();
   });
   it('공개 그룹 가입 성공 후 그룹 목록에서 내 그룹 피드로 즉시 바뀌어야 한다', async () => {

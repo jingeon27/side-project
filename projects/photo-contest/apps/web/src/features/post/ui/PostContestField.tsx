@@ -3,7 +3,7 @@
 import { useId } from 'react';
 import Link from 'next/link';
 
-import { skipToken, useBackgroundQuery, type QueryRef } from '@apollo/client/react';
+import { skipToken, useBackgroundQuery, useReadQuery, type QueryRef } from '@apollo/client/react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 
 import { GroupContestFilter, GroupContestsDocument, type GroupContestsQuery } from '@/shared/api/generated';
@@ -12,7 +12,6 @@ import { ROUTES } from '@/shared/constants/routes';
 import { useIsSSR } from '@/shared/model/is-ssr.hook';
 import { AsyncBoundary } from '@/shared/ui/@core/async-boundary';
 import { Button } from '@/shared/ui/@core/button';
-import { Skeleton } from '@/shared/ui/@core/skeleton';
 import { FieldRequirement } from '@/shared/ui/@core/text-field';
 
 import type { TPostInput, TPostValues } from '../model/post.schema';
@@ -76,7 +75,7 @@ function ContestSelection({
     </div>
   );
 }
-function OpenContests({ form, groupId }: { form: TPostForm; groupId: string }) {
+export function PostContestField({ form, groupId }: { form: TPostForm; groupId: string }) {
   const isSSR = useIsSSR();
   const [queryRef, { refetch }] = useBackgroundQuery(
     GroupContestsDocument,
@@ -87,15 +86,25 @@ function OpenContests({ form, groupId }: { form: TPostForm; groupId: string }) {
           fetchPolicy: 'network-only',
         },
   );
-  if (!queryRef) return <Skeleton className="h-14 w-full" />;
+  if (!queryRef) return null;
   return (
-    <AsyncBoundary fallback={<Skeleton className="h-14 w-full" />} onRetry={() => refetch()}>
-      <ContestSelection form={form} groupId={groupId} queryRef={queryRef} />
+    <AsyncBoundary fallback={null} onRetry={() => refetch()}>
+      <AvailableContests form={form} groupId={groupId} queryRef={queryRef} />
     </AsyncBoundary>
   );
 }
-export function PostContestField({ form, groupId }: { form: TPostForm; groupId: string }) {
+function AvailableContests({
+  form,
+  groupId,
+  queryRef,
+}: {
+  form: TPostForm;
+  groupId: string;
+  queryRef: QueryRef<GroupContestsQuery>;
+}) {
   const participating = useWatch({ control: form.control, name: 'participateInContest' });
+  const { data } = useReadQuery(queryRef);
+  if (!data.groupContests.length) return null;
   return (
     <section className="flex flex-col gap-3 rounded-control border border-line p-4">
       <label className="flex min-h-touch cursor-pointer items-center gap-3 text-label text-ink">
@@ -108,7 +117,7 @@ export function PostContestField({ form, groupId }: { form: TPostForm; groupId: 
         대회에 참여하기 <span className="text-caption text-muted">선택</span>
       </label>
       {participating ? (
-        <OpenContests form={form} groupId={groupId} />
+        <ContestSelection form={form} groupId={groupId} queryRef={queryRef} />
       ) : (
         <p className="text-caption text-muted">선택하지 않으면 일반 그룹 게시물로 올라가요.</p>
       )}

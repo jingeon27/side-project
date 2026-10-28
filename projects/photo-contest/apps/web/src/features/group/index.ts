@@ -1,7 +1,6 @@
 export { canLeaveGroup, isGroupAdmin, isGroupOwner, splitContests } from './lib/group.helper';
 export { prependMyGroup } from './model/group.cache';
 export { groupTypePolicies } from './model/group.type-policies';
-export { CreateGroupBottomSheet } from './ui/CreateGroupBottomSheet';
 export { CreateGroupButton } from './ui/CreateGroupButton';
 export { DiscoverGroupCard } from './ui/DiscoverGroupCard';
 export { GroupCard } from './ui/GroupCard';
@@ -16,3 +15,5 @@ export { LeaveGroupButton } from './ui/LeaveGroupButton';
 export { MemberList } from './ui/MemberList';
 
 export { EditGroupProfileButton } from './ui/EditGroupProfileButton';
+
+export { CreateGroupForm } from './ui/CreateGroupForm';
