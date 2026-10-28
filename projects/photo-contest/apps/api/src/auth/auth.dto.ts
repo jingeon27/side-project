@@ -20,7 +20,7 @@ export const RegisterWithPasswordSchema = z.strictObject({
     .string({ error: '아이디를 입력해 주세요.' })
     .trim()
     .toLowerCase()
-    .regex(LOGIN_ID_PATTERN, '아이디는 영문·숫자·밑줄 3~24자로 입력해 주세요.'),
+    .regex(LOGIN_ID_PATTERN, '아이디는 영문, 숫자, 밑줄(_)을 사용해 3~24자로 입력해 주세요.'),
   password: z
     .string({ error: '비밀번호를 입력해 주세요.' })
     .min(PASSWORD_MIN_LENGTH, '비밀번호는 8자 이상 입력해 주세요.')
