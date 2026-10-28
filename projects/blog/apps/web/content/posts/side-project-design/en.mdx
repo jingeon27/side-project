@@ -1,6 +1,6 @@
 <Summary>
 
-The first idea was a service where friends could share photos and vote on them. Trying it led me to change the photo feed and signup screens. I also started building Game Mate and a personal blog.
+The first idea was a service where friends could share photos and vote. Trying it revealed more than layout problems: anonymous account recovery, group permissions, contest deadlines, and message retries all needed decisions. These are the changes I made while building the photo community, Game Mate, and my blog.
 
 </Summary>
 
@@ -9,6 +9,10 @@ The first idea was a service where friends could share photos and vote on them. 
 _An illustration of revising the screens._
 
 I wanted to turn ideas I cared about into services. I am building a photo community, Game Mate, and a personal blog. I ask AI to implement things, try the resulting screens myself, and send back changes.
+
+At first I thought in terms of features: upload a photo, join a group, send a message. If a button produced the expected result, it was easy to consider the feature finished. But I had left many decisions open: what happens if someone logs out halfway through, a deadline passes, or the response to a request never arrives?
+
+I should have considered those situations when requesting the feature. Trying the screens and revisiting issues from other development work showed me that describing only the successful path was not enough.
 
 The first project was `photo-contest`. The idea came from a streamer's segment called a “Yeongdo contest.” It made me think it would be fun to have a service where close friends could share funny photos within their own group.
 
@@ -30,6 +34,46 @@ The entry screen brings login, signup, and “Start anonymously” together. Ano
 
 Preserving anonymity was part of the plan too. I chose not to add social login so people could use the service without linking an external social account.
 
+## What happens to activity after an anonymous start?
+
+When I added “Start anonymously,” I focused on entering without signing up. But what if someone posts and joins a group, then wants to continue on another device? Could they return to the same profile after logging out? Those needed answers too.
+
+Signing up while using an anonymous profile now converts that profile into an account, preserving public-group memberships and authored content. Creating an unrelated account would defeat the purpose for someone signing up to keep their activity.
+
+Logging out before signing up means losing access to that anonymous profile and its history. Saying “your history will be deleted” would also be inaccurate. Removing posts that others can see and losing the ability to return as their author are different things.
+
+I changed where the explanation appears. “Your anonymous profile is maintained through a browser session” was familiar to a developer, but not helpful wording for everyone else. A confirmation before logout can explain the consequence directly: you will lose access, so sign up first if you want to continue. Signing up also gives people a way to continue on other devices.
+
+## An invitation must not bypass a private group's approval
+
+Groups started with a link for inviting friends. Once I introduced public and private groups, knowing the link and having permission to read the posts had to become separate things.
+
+Public groups can be browsed before joining. Private groups require an account and membership approval, including when someone arrives through an invitation. Forwarding a link should not expose private posts. I made the server check access as well as hiding content on the screen.
+
+One administrator role was not enough either. I separated the group owner from moderators. Moderators can remove ordinary members, while the owner must transfer ownership before leaving. I needed to account for a group being left with nobody able to manage it.
+
+Removing a member also raised a question about their posts and comments. I kept leaving a group separate from erasing its past conversations. Leaving or being removed does not automatically delete that content, and returning to a private group requires approval again.
+
+## When should the contest entry button disappear?
+
+A contest has upcoming, submission, voting, and completed phases. I made “Enter the contest” appear only during submissions, but hiding a button was not enough. Someone could leave the form open and publish after the deadline. Submissions could also close during an upload, so the server needed to check the time again when saving the entry.
+
+Requests arriving exactly at a deadline needed a clear answer too. The submission deadline belongs to the voting phase, and the voting deadline belongs to the completed phase. Server time determines the phase so different device clocks do not produce different decisions.
+
+Being allowed to publish several entries does not mean being allowed several votes. Contest voting is limited to one vote per account, with no votes for one's own or hidden entries. The database also prevents duplicate votes when requests arrive together or someone presses the button twice. Anonymous profiles are easy to recreate, so contest voting requires a registered account. That alone does not solve the problem of one person creating several accounts.
+
+I kept likes separate from contest votes and set a per-person limit on how many contest entries could receive a like. Results also needed to distinguish a tie for first place from a contest with no votes. Calling every zero-vote entry a joint winner was not what I wanted. A contest only has winners when its highest vote count is greater than zero.
+
+None of this required a long explanation covering the contest screen. People came to see photos. I shortened the visible guidance to the actions currently available and the limits people need, while still enforcing the restrictions on the server.
+
+## What if someone cancels a selection or the upload fails?
+
+Selecting and uploading a photo has intermediate states too. I checked whether cancelling the file picker preserves the existing selection, whether the same file can be selected again, and what appears when a preview fails. Supporting video also brought decisions about file types, sizes, and duration limits.
+
+Storing a file and publishing a post are separate steps. Someone might submit before the upload finishes, the upload could expire, or the author could leave the group in the meantime. Publishing also needs checks that the file is ready and the author still has permission.
+
+Losing everything typed after a failure would make me reluctant to try again. Explaining which step failed and allowing a retry needed to be part of uploading. Checking only whether a successfully uploaded photo appears would miss these cases.
+
 ## Game Mate starts with Clash Royale
 
 Game Mate grew out of watching Clash Royale communities. The overseas players I saw used Twitter, while Korean players used KakaoTalk, DC Inside, and Naver Cafe.
@@ -40,7 +84,11 @@ I also wanted someone stuck in a game to be able to describe their situation and
 
 I considered Brawl Stars and League of Legends too, but decided against supporting several games at the start. I made five boards under Clash Royale: feedback, friend-add sales, friendly matches, coaching, and general discussion. More games could use those boards later. I left account trading out because of the risk.
 
-Friend-add sales have a price field. Coaching posts can list hourly, monthly, or target-rating fees, and either students or coaches can post. People can read the terms and talk through chat. I decided not to add payments inside the service.
+Friend-add sales have a price field. Coaching posts can list an hourly fee, a fee for a fixed period, or a total fee until a goal is reached. Either students or coaches can post. People can read the terms and talk through chat. I decided not to add payments inside the service.
+
+A missing price needed a meaning too. Displaying an empty field as zero could imply that coaching was free, so it appears as “Fee negotiable.” Goal-based coaching asks for the target rating and the total fee until it is reached. “Fixed period” expresses the option better than “Monthly,” and “Until the goal is reached” makes the coaching arrangement clearer than “Target rating achieved.”
+
+Leaving payments out also defined the service's scope. Letting people discuss terms in chat is a different promise from handling payments and refunds. The screens should not suggest that an unbuilt service is available.
 
 I kept the photo service and Game Mate's accounts and data separate. Both involve other people's opinions, but that did not give people viewing photos and people asking for game advice a reason to share an account.
 
@@ -61,6 +109,26 @@ First, I want to see how many requests receive at least one reply marked helpful
 
 I plan to find five to ten people willing to answer and manually connect them with questions in existing communities. I have not started recruiting yet.
 
+## A failed send could still have reached the other person
+
+Chat seemed complete once a message was saved and displayed to its recipient. But a connection could drop after saving, before the sender received a response. Their screen could show a failure even though the message had arrived. Retrying could then deliver it twice.
+
+Retries of the same message now use the same request identifier. If the server has already saved it, it returns that result. Reusing the identifier for another conversation or different content is rejected. “Try again” should not quietly create another copy of the message.
+
+Read status needed more precision too. Entering a conversation should not mark everything as read because new messages could arrive while the person is viewing it. Read receipts advance only through the message the client has confirmed. Clearing a conversation also distinguishes what disappears from my view from what remains in the other person's history.
+
+I checked logging out and entering with another account as well. Changing the server's login state could still leave the previous account's fetched lists or a late response on screen. Switching accounts also needed to cancel active queries and clear their previous results.
+
+## Deleting and blocking affect other people's screens
+
+Deleting a post looks simple if I only consider its author. If other people have replied or commented, should their contributions disappear too? I did not want deleting a comment to erase someone else's reply.
+
+In Game Mate, replies by other people remain when the original comment is deleted. Account withdrawal also separates clearing the departing author's content and personal information from preserving other people's answers and comments. Another case was allowing authors to delete their own content even after a moderator had hidden it.
+
+Blocking started with a button on a profile, but it also needed to govern starting a new conversation and sending messages in an existing one. Chat restrictions apply when the other participant sends the request too, including direct API calls. Adding a report button was also separate from deciding who reviews reports and what action follows.
+
+These safeguards do not mean I have solved every operational problem. How well they prevent abuse and which standards should guide report handling still need ongoing review as the service is used.
+
 ## Looking up a game profile did not prove ownership
 
 Connecting a game account starts with entering a Player Tag and loading the profile. But someone can enter another player's tag. A successful lookup should not produce an ownership verification label.
@@ -69,19 +137,31 @@ I decided connected profiles should start with ownership unverified. I also trea
 
 The early plan included saving a snapshot of the deck and game information with each post. During implementation, I moved game profiles to the user account and removed deck attachments from the writing screen. Profile verification requests now start a one-to-one chat with an administrator.
 
+Changing the primary game tag after verification was another case. A status checked for the previous tag should not automatically carry over to a new one, so changing the primary tag clears the existing verification and requires another review. An unavailable game API or a tag that cannot be looked up also needs handling separately from signup with a nickname alone.
+
 ## Things people do not have to do during signup
 
 Connecting a game profile is optional at signup. People who want to connect immediately can look up their tag. Others can join with a nickname and the required agreements, then connect later.
 
 As the form grew, I made the body scroll while keeping the completion button at the bottom. I checked short viewports to make sure the inputs and button did not overlap.
 
-I also disliked editing a profile through an expandable section. I changed it to an Edit Profile button that opens a Bottom Sheet, with the nickname and bio in one place. Web addresses in the bio became clickable on the profile too.
+I also disliked editing a profile through an expandable section. I first changed it to an Edit Profile button that opened a Bottom Sheet. Later, I moved Game Mate's profile editor to a separate page so editing could happen in one place. Web addresses in the bio became clickable on the profile too.
+
+The editor needed a clear way to cancel as well as save. For sheets that slide up on mobile, I changed the controls from an X button to Cancel and Save next to each other. Long forms needed scrolling, with the last input and action buttons still reachable on small devices.
 
 ![Photo community group posts and the Game Mate profile editing screen](/images/posts/side-project-design/09-product-interactions.png)
 
 _Group posts and profile editing, also checked with test data._
 
 Buttons, inputs, and dialogs come from a shared [design system](https://github.com/jingeon27/side-project/tree/65c3d13a/packages/design-system). The photo service needed room for the photos. Game Mate needed the game and the author's situation to be easy to read. I still adjusted layout and spacing separately for each screen.
+
+## Where should Back take someone?
+
+Back navigation seems straightforward when I only consider clicking through screens in order. Someone opening a post directly or arriving from a shared link might have no previous screen inside the service. Following browser history alone could take them away from it.
+
+For a contest opened inside a group, I asked for the header to show the group and contest names, with Back returning to the group. Keeping the group's Posts, Contests, and Hall of Fame tabs on the detail screen made the current location confusing. Public profiles also moved navigation into the header, leaving the body for the profile itself.
+
+Actions requiring login needed to explain why and offer a choice. Cancelling should keep someone on the current screen; logging in should return them to what they were viewing. Stopping an action or returning after an intermediate step needed planning alongside completing it.
 
 ## If the post is translated, what about the reply?
 
@@ -98,6 +178,22 @@ I originally kept my blog posts in a separate repository. Moving them over to Ti
 During implementation, the AI agent went beyond what I had asked for and built a resume too. I removed it and kept only contact information on the about page.
 
 Korean and English editions only appear where an actual translation exists.
+
+The language button needed more than a change of text. I also had to check that a chosen dark theme survives switching languages, and that opening a URL directly behaves correctly alongside navigating within the site. I fixed a warning caused by rendering the theme initialization script again during a language change. Checking only the first page load would have missed it.
+
+## I want to request the exceptions along with the feature
+
+Looking back, I mostly described the screens and successful outcomes. Only after implementation did I ask, “What if they log out?”, “What if this form stays open past the deadline?”, or “What if the same request arrives twice?” Having AI implement the feature did not remove my responsibility to decide which result was right.
+
+When adding a feature now, I want to include these questions:
+
+- Who can view or change it, and does it require login or approval?
+- What happens if permissions or the relevant period change after the screen opens?
+- What input and saved results should survive a failure or retry?
+- How do deletion and account withdrawal affect other people's contributions?
+- Where should someone return after cancelling or logging in?
+
+I do not want every condition displayed as instructions on the screen. I want less copy covering the posts and photos, and the necessary explanation at the moment it informs a decision, such as just before logout. Tests still need to check that the same conditions hold behind the screen.
 
 I am still trying the screens and revising them. For Game Mate, I need to find people who will ask and people who will answer. I want to see whether someone receives a reply and comes back to read it.
 

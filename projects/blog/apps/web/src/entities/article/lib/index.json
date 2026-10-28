@@ -121,6 +121,7 @@
     "category": "engineering",
     "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint"],
     "publishedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-technology.png",
     "title": "사진 서비스는 GraphQL, 게임 서비스는 REST로 만들었어요",
     "description": "두 서비스의 API와 캐시를 다르게 골랐어요. 계약 생성과 응답 검증, DB 동시성, 테스트, ESLint 규칙과 fixture로 구조를 검사한 과정을 적었어요.",
@@ -150,8 +151,8 @@
         "level": 2
       },
       {
-        "id": "서버의-업무-규칙은-nextjs-밖에-두었어요",
-        "title": "서버의 업무 규칙은 Next.js 밖에 두었어요",
+        "id": "권한-확인과-데이터-처리는-nestjs에서-맡았어요",
+        "title": "권한 확인과 데이터 처리는 NestJS에서 맡았어요",
         "level": 2
       },
       {
@@ -190,6 +191,7 @@
     "category": "engineering",
     "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing", "eslint"],
     "publishedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-technology.png",
     "title": "GraphQL for the photo service, REST for Game Mate",
     "description": "Why the services use different APIs and caches, how their contracts and database writes work, and how ESLint rules and fixtures check module boundaries.",
@@ -219,8 +221,8 @@
         "level": 2
       },
       {
-        "id": "keep-business-rules-in-the-api-server",
-        "title": "Keep business rules in the API server",
+        "id": "let-nestjs-check-permissions-and-save-data",
+        "title": "Let NestJS check permissions and save data",
         "level": 2
       },
       {
@@ -259,10 +261,10 @@
     "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "사이드 프로젝트를 만들며 바뀐 기획과 화면",
-    "description": "사진 대회로 시작했다가 상시 사진 커뮤니티를 만들었어요. Game Mate의 첫 게임을 고르고, 직접 써보며 홈과 가입·프로필 화면을 고친 이야기예요.",
+    "description": "사진 커뮤니티와 Game Mate를 만들며 익명 기록, 그룹 권한, 대회 마감, 채팅 재전송 같은 예외 상황을 정리했어요. 기능과 화면을 고치면서 어떤 정책을 결정했는지 적었어요.",
     "slug": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
     "keywords": ["사이드 프로젝트", "서비스 기획", "제품 설계", "UI", "UX", "디자인 시스템"],
     "id": "side-project-design",
@@ -271,6 +273,26 @@
       {
         "id": "사진을-보러-왔는데-그룹-목록부터-나왔어요",
         "title": "사진을 보러 왔는데 그룹 목록부터 나왔어요",
+        "level": 2
+      },
+      {
+        "id": "익명으로-시작한-뒤의-기록도-생각해야-했어요",
+        "title": "익명으로 시작한 뒤의 기록도 생각해야 했어요",
+        "level": 2
+      },
+      {
+        "id": "초대받았다고-비공개-그룹에-바로-들어가면-안-됐어요",
+        "title": "초대받았다고 비공개 그룹에 바로 들어가면 안 됐어요",
+        "level": 2
+      },
+      {
+        "id": "대회-참여-버튼은-언제-사라져야-할까",
+        "title": "대회 참여 버튼은 언제 사라져야 할까",
+        "level": 2
+      },
+      {
+        "id": "사진을-고른-뒤-취소하거나-업로드가-실패한다면",
+        "title": "사진을 고른 뒤 취소하거나 업로드가 실패한다면",
         "level": 2
       },
       {
@@ -284,6 +306,16 @@
         "level": 2
       },
       {
+        "id": "전송-실패라고-떠도-메시지는-도착했을-수-있었어요",
+        "title": "전송 실패라고 떠도 메시지는 도착했을 수 있었어요",
+        "level": 2
+      },
+      {
+        "id": "삭제와-차단은-다른-사람의-화면에도-영향을-줬어요",
+        "title": "삭제와 차단은 다른 사람의 화면에도 영향을 줬어요",
+        "level": 2
+      },
+      {
         "id": "게임-프로필을-불러왔다고-본인-계정은-아니었어요",
         "title": "게임 프로필을 불러왔다고 본인 계정은 아니었어요",
         "level": 2
@@ -291,6 +323,11 @@
       {
         "id": "가입할-때-안-해도-되는-것들",
         "title": "가입할 때 안 해도 되는 것들",
+        "level": 2
+      },
+      {
+        "id": "뒤로-가면-어디로-돌아가야-할까",
+        "title": "뒤로 가면 어디로 돌아가야 할까",
         "level": 2
       },
       {
@@ -302,9 +339,14 @@
         "id": "블로그-소개에-이력서까지-넣을-필요는-없었어요",
         "title": "블로그 소개에 이력서까지 넣을 필요는 없었어요",
         "level": 2
+      },
+      {
+        "id": "기능을-부탁할-때-예외-상황도-같이-적으려고-해요",
+        "title": "기능을 부탁할 때 예외 상황도 같이 적으려고 해요",
+        "level": 2
       }
     ],
-    "readingMinutes": 7,
+    "readingMinutes": 16,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
@@ -314,10 +356,10 @@
     "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
-    "updatedAt": "2026-10-28",
+    "updatedAt": "2026-10-29",
     "coverImage": "/images/covers/side-project-design.png",
     "title": "How my side project plans and screens changed",
-    "description": "A private photo contest became an ongoing community. I chose a first game for Game Mate and changed the home, signup, and profile screens as I tried them.",
+    "description": "Building a photo community and Game Mate meant deciding what happens to anonymous activity, group access, contest deadlines, and message retries—not just their successful paths.",
     "slug": "what-i-kept-changing-while-planning-my-side-projects",
     "keywords": ["side projects", "product planning", "product design", "UI", "UX", "design system"],
     "id": "side-project-design",
@@ -326,6 +368,26 @@
       {
         "id": "i-came-to-see-photos-and-got-a-group-list",
         "title": "I came to see photos and got a group list",
+        "level": 2
+      },
+      {
+        "id": "what-happens-to-activity-after-an-anonymous-start",
+        "title": "What happens to activity after an anonymous start?",
+        "level": 2
+      },
+      {
+        "id": "an-invitation-must-not-bypass-a-private-groups-approval",
+        "title": "An invitation must not bypass a private group's approval",
+        "level": 2
+      },
+      {
+        "id": "when-should-the-contest-entry-button-disappear",
+        "title": "When should the contest entry button disappear?",
+        "level": 2
+      },
+      {
+        "id": "what-if-someone-cancels-a-selection-or-the-upload-fails",
+        "title": "What if someone cancels a selection or the upload fails?",
         "level": 2
       },
       {
@@ -339,6 +401,16 @@
         "level": 2
       },
       {
+        "id": "a-failed-send-could-still-have-reached-the-other-person",
+        "title": "A failed send could still have reached the other person",
+        "level": 2
+      },
+      {
+        "id": "deleting-and-blocking-affect-other-peoples-screens",
+        "title": "Deleting and blocking affect other people's screens",
+        "level": 2
+      },
+      {
         "id": "looking-up-a-game-profile-did-not-prove-ownership",
         "title": "Looking up a game profile did not prove ownership",
         "level": 2
@@ -346,6 +418,11 @@
       {
         "id": "things-people-do-not-have-to-do-during-signup",
         "title": "Things people do not have to do during signup",
+        "level": 2
+      },
+      {
+        "id": "where-should-back-take-someone",
+        "title": "Where should Back take someone?",
         "level": 2
       },
       {
@@ -357,9 +434,14 @@
         "id": "the-blogs-about-page-did-not-need-my-resume-too",
         "title": "The blog's about page did not need my resume too",
         "level": 2
+      },
+      {
+        "id": "i-want-to-request-the-exceptions-along-with-the-feature",
+        "title": "I want to request the exceptions along with the feature",
+        "level": 2
       }
     ],
-    "readingMinutes": 6,
+    "readingMinutes": 15,
     "translations": {
       "ko": "사이드-프로젝트를-설계하면서-계속-바꾼-것들",
       "en": "what-i-kept-changing-while-planning-my-side-projects"
