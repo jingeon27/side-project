@@ -20,7 +20,8 @@ declare global {
 
 export const consentKey = 'blog:analytics-consent';
 export const consentChangedEvent = 'blog:analytics-consent-changed';
-export const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
+export const measurementId =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? (process.env.NODE_ENV === 'production' ? 'G-7ZET0K4PSC' : '');
 const googleAnalyticsConfigured = /^G-[A-Z0-9]+$/.test(measurementId);
 export const analyticsConfigured = googleAnalyticsConfigured || heatmapsConfigured;
 
