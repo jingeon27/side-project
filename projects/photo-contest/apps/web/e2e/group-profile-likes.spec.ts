@@ -125,10 +125,13 @@ test(
     await second.click();
     await expect(second).toHaveAttribute('aria-pressed', 'true');
     await third.click();
-    await expect(
-      page.getByRole('region', { name: '알림', exact: true }).getByText(/이 대회에서는 2개 작품까지만/),
-    ).toBeVisible();
+    const notifications = page.getByRole('region', { name: '알림', exact: true });
+    const limitError = notifications.getByText(/이 대회에서는 2개 작품까지만/);
+    await expect(limitError).toBeVisible();
     await expect(third).toHaveAttribute('aria-pressed', 'false');
+    // 작은 화면에서는 오류 알림이 다음 좋아요 버튼을 덮으므로 닫고 계속한다.
+    await notifications.getByLabel('알림 닫기', { exact: true }).click();
+    await expect(limitError).toHaveCount(0);
     await first.click();
     await expect(first).toHaveAttribute('aria-pressed', 'false');
     await third.click();
