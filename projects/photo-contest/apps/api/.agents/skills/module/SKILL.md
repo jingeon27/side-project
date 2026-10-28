@@ -38,6 +38,12 @@ description: API(apps/api)에 GraphQL 쿼리·뮤테이션·필드나 REST 엔�
 - POST 기본 상태는 201 — 계약이 200이면 `@HttpCode(HttpStatus.OK)`. 쿠키를 쓰면서 JSON을 돌려주면 `@Res({ passthrough: true })`. 고정 경로를 파라미터 경로보다 먼저 선언한다(`@Get('config')` → `@Get(':provider')`).
 - 상태를 바꾸는 요청을 GET으로 만들지 않는다(Origin 검사가 GET을 통과시킨다). JSON 본문은 `MAX_JSON_BODY`(64kb)까지이며 파일 본문을 받는 경로는 두지 않는다(저장소 서명 POST). `Cache-Control: private, no-store`를 덮어쓰지 않는다.
 
+## 설정 표·닫힌 분기
+
+- 모듈 최상위의 설정·조회 표(한도, 쓰기 제한 규칙, 메시지 표, 역할·단계별 표, 저장소·미디어 형식 표)는 `const X: T = …` 대신 `satisfies`로 모양을 검사한다. 리터럴 타입이 필요하면 `as const satisfies T`(`WRITE_RATE_LIMIT`), 닫힌 집합을 키로 쓰면 `satisfies Record<TUnion, V>`로 빠진 키·남는 키를 막는다(`submission-sort.ts`의 `ORDER_BY`, 프로필 `EXTENSION`).
+- 그대로 두는 것: 유니온의 출처인 enum 대용 객체(`GROUP_ROLE`·`PHASE`·`ERROR_CODE`), Prisma 인자·Nest/GraphQL 데코레이터·zod 스키마로 바로 넘기는 객체, 테스트 fixture, 호출자가 기대는 공개 타입.
+- 같은 판별값(단계·역할·공개 범위·알림 종류·업로드 용도·오류 코드)으로 세 갈래 이상 나뉘는 if/삼항·switch는 ts-pattern `match(x).with(…).exhaustive()`로 쓴다. 저장된 문자열·Prisma 오류 코드 같은 열린 입력만 `.otherwise()`(`toGroupRole`, `transactionFailure`). 권한 가드·`if (!row) fail(…)` 같은 조기 반환, 조건 하나짜리 분기, 요청마다 많이 도는 루프(`query-cost.rule.ts`)는 일반 코드로 둔다.
+
 ## 체크리스트
 
 - [ ] `app.module.ts`에 등록했고 resolver·controller는 조회자 + 위임만 한다
