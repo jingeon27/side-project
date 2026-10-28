@@ -18,8 +18,9 @@ test('mobile OAuth opens a signup page, permits reading terms, and completes bac
   await expect(page).toHaveURL(origin + signup);
   await expect(page.getByRole('heading', { name: '회원가입', exact: true })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.locator('.mobile-nav')).toBeHidden();
-  await expect(page.locator('.shell-left-sidebar')).toBeHidden();
+  // 스트리밍의 숨김 세그먼트가 함께 있어도 화면에 드러난 메뉴가 없는지 검사한다.
+  await expect(page.locator('.mobile-nav:visible')).toHaveCount(0);
+  await expect(page.locator('.shell-left-sidebar:visible')).toHaveCount(0);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   await page.reload();
   await expect(nicknameField(page)).toBeVisible();
