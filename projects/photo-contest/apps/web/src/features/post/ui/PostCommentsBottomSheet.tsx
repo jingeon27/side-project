@@ -25,7 +25,7 @@ export function PostCommentsBottomSheet({
     refetchWritePolicy: 'overwrite',
   });
   return (
-    <BottomSheet.Root {...controls} snapPoints={SNAP_POINTS} className="h-dvh">
+    <BottomSheet.Root {...controls} snapPoints={SNAP_POINTS} className="h-dvh desktop:max-w-6xl">
       <PostCommentsHeader postId={postId} />
       <div className="flex min-h-0 flex-1 desktop:mx-auto desktop:grid desktop:w-full desktop:max-w-6xl desktop:grid-cols-2">
         <PostCommentContext postId={postId} />
@@ -37,7 +37,7 @@ export function PostCommentsBottomSheet({
               </AsyncBoundary>
             </div>
           </BottomSheet.Content>
-          <BottomSheet.Footer className="pt-2 pb-[calc(12px+var(--safe-bottom))]">
+          <BottomSheet.Footer cancelLabel={false} className="pt-2 pb-[calc(12px+var(--safe-bottom))]">
             <PostCommentComposer postId={postId} />
           </BottomSheet.Footer>
         </div>

@@ -69,7 +69,7 @@ afterEach(() => {
 });
 
 describe('BottomSheet', () => {
-  it('크기 조절 시트도 확대·축소 버튼 없이 닫기 버튼만 보여야 한다', async () => {
+  it('크기 조절 시트는 상단 X 없이 하단 취소로 닫아야 한다', async () => {
     const user = userEvent.setup();
     render(
       <OverlayProvider>
@@ -80,7 +80,7 @@ describe('BottomSheet', () => {
     const sheet = await screen.findByRole('dialog', { name: '그룹 만들기' });
     expect(sheet).toHaveAccessibleDescription('친구들과 함께할 그룹 이름을 정해요.');
     expect(screen.queryByRole('button', { name: /시트.*확장|시트 축소/ })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: '닫기' }));
+    await user.click(screen.getByRole('button', { name: '취소' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
@@ -90,13 +90,13 @@ describe('BottomSheet', () => {
     expect(screen.getByLabelText('그룹 이름')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '만들기' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '닫기' }));
+    await user.click(screen.getByRole('button', { name: '취소' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  it('닫기 버튼으로 닫으면 시트를 연 버튼으로 포커스가 돌아가고 history 항목을 걷어야 한다', async () => {
+  it('취소 버튼으로 닫으면 시트를 연 버튼으로 포커스가 돌아가고 history 항목을 걷어야 한다', async () => {
     const { user, opener } = await openSheet();
-    await user.click(screen.getByRole('button', { name: '닫기' }));
+    await user.click(screen.getByRole('button', { name: '취소' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await waitFor(() => expect(opener).toHaveFocus());

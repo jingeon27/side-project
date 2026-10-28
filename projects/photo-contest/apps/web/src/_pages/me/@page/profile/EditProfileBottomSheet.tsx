@@ -99,11 +99,9 @@ function ProfileForm({
         </form>
       </BottomSheet.Content>
       <BottomSheet.Footer className="px-0">
-        <div className="mx-auto w-full max-w-app">
-          <Button type="submit" form={formId} fullWidth loading={form.formState.isSubmitting}>
-            프로필 저장하기
-          </Button>
-        </div>
+        <Button type="submit" form={formId} loading={form.formState.isSubmitting}>
+          프로필 저장하기
+        </Button>
       </BottomSheet.Footer>
     </>
   );

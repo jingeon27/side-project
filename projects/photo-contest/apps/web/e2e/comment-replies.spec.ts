@@ -40,7 +40,7 @@ test(
       'true',
     );
     await expect(replies.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toBeEnabled();
-    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     await latest.getByRole('button', { name: '우연히 찍힌 완벽한 순간 댓글 2개' }).click();
     await sheet.getByRole('button', { name: '답글 1개 보기', exact: true }).click();
     await expect(replies.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toHaveAttribute(
@@ -62,7 +62,7 @@ test(
     await page.getByRole('alertdialog').getByRole('button', { name: '댓글 삭제하기' }).click();
     await expect(replies).toHaveCount(0);
     await expect(sheet.getByText('이 타이밍은 다시 못 찍겠는데요!')).toBeVisible();
-    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     await expect(latest.getByRole('button', { name: '우연히 찍힌 완벽한 순간 댓글 1개' })).toBeVisible();
     expect(
       (
