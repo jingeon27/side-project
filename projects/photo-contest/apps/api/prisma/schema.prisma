@@ -61,6 +61,8 @@ model Group {
   description String @default("")
   avatarId String?
   avatar GroupAvatar? @relation("CurrentGroupAvatar", fields: [avatarId, id], references: [id, groupId], onDelete: NoAction, onUpdate: NoAction)
+  coverId String?
+  cover GroupAvatar? @relation("CurrentGroupCover", fields: [coverId, id], references: [id, groupId], onDelete: NoAction, onUpdate: NoAction)
   avatarUploads GroupAvatar[] @relation("GroupAvatarUploads")
   visibility String @default("PRIVATE")
   inviteHash String @unique
@@ -83,6 +85,7 @@ model GroupAvatar {
   expiresAt DateTime
   group Group @relation("GroupAvatarUploads", fields: [groupId], references: [id], onDelete: Cascade)
   currentGroups Group[] @relation("CurrentGroupAvatar")
+  coverGroups Group[] @relation("CurrentGroupCover")
   @@unique([id, groupId])
   @@index([expiresAt])
 }

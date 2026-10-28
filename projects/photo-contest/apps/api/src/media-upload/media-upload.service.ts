@@ -95,7 +95,7 @@ export class MediaUploadService {
               post: null,
               submissionUpload: null,
               ...(avatar
-                ? { groupId, groupAvatar: { is: { currentGroups: { none: {} } } } }
+                ? { groupId, groupAvatar: { is: { currentGroups: { none: {} }, coverGroups: { none: {} } } } }
                 : { groupAvatar: null }),
             },
           });

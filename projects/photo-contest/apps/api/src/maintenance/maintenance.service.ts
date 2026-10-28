@@ -33,13 +33,15 @@ export class MaintenanceService {
       });
     }
     const avatars = await this.db.groupAvatar.findMany({
-      where: { expiresAt: { lt: cutoff }, currentGroups: { none: {} } },
+      where: { expiresAt: { lt: cutoff }, currentGroups: { none: {} }, coverGroups: { none: {} } },
       take: CLEANUP_BATCH_SIZE,
     });
     for (const avatar of avatars) {
       await this.attempt(async () => {
         await this.media.delete(avatar.storageKey);
-        await this.db.groupAvatar.deleteMany({ where: { id: avatar.id, currentGroups: { none: {} } } });
+        await this.db.groupAvatar.deleteMany({
+          where: { id: avatar.id, currentGroups: { none: {} }, coverGroups: { none: {} } },
+        });
       });
     }
     // 완료하지 않은 티켓의 최종 키다.
