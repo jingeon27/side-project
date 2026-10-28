@@ -145,7 +145,7 @@ for (const video of [false, true]) {
       expect(redirect.headers()['cache-control']).toBe('private, no-store');
       const signed = new URL(redirect.headers()['location'] ?? '');
       expect(signed.origin).not.toBe(new URL(page.url()).origin);
-      expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
+      expect(signed.searchParams.get('X-Amz-Expires')).toBe(video ? '600' : '60');
       const range = await page.request.get(signed.toString(), { headers: { Range: 'bytes=0-31' } });
       expect(range.status()).toBe(206);
       expect((await range.body()).length).toBe(32);
