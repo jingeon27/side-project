@@ -214,6 +214,21 @@
         "infrastructure",
         "backups"
       ]
+    },
+    "side-project-technology": {
+      "title": "GraphQL for the photo service, REST for Game Mate",
+      "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
+      "description": "The services share Next.js and NestJS but use different APIs and caches. How I chose contracts, response validation, database safeguards, tests, and shared-code boundaries.",
+      "keywords": [
+        "side projects",
+        "Next.js",
+        "NestJS",
+        "GraphQL",
+        "TanStack Query",
+        "PostgreSQL",
+        "testing",
+        "architecture"
+      ]
     }
   }
 }

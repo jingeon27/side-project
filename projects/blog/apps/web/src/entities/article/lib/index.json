@@ -119,6 +119,142 @@
   },
   {
     "category": "engineering",
+    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing"],
+    "publishedAt": "2026-10-28",
+    "coverImage": "/images/covers/side-project-technology.png",
+    "title": "사진 서비스는 GraphQL, 게임 서비스는 REST로 만들었어요",
+    "description": "Next.js와 NestJS를 함께 쓰면서 API와 캐시는 다르게 골랐어요. 계약 생성과 응답 검증, DB 동시성, 테스트와 공통 코드의 범위를 정한 과정을 적었어요.",
+    "slug": "두-사이드-프로젝트에서-기술을-선택한-기준",
+    "keywords": [
+      "사이드 프로젝트",
+      "Next.js",
+      "NestJS",
+      "GraphQL",
+      "TanStack Query",
+      "PostgreSQL",
+      "테스트",
+      "아키텍처"
+    ],
+    "id": "side-project-technology",
+    "locale": "ko",
+    "toc": [
+      {
+        "id": "웹-화면을-먼저-만들고-앱에서도-같이-쓰기로-했어요",
+        "title": "웹 화면을 먼저 만들고 앱에서도 같이 쓰기로 했어요",
+        "level": 2
+      },
+      {
+        "id": "브라우저-캐시는-서로-다르게-골랐어요",
+        "title": "브라우저 캐시는 서로 다르게 골랐어요",
+        "level": 2
+      },
+      {
+        "id": "서버의-업무-규칙은-nextjs-밖에-두었어요",
+        "title": "서버의 업무 규칙은 Next.js 밖에 두었어요",
+        "level": 2
+      },
+      {
+        "id": "api-타입은-한곳에서-만들고-실제-응답도-검사해요",
+        "title": "API 타입은 한곳에서 만들고 실제 응답도 검사해요",
+        "level": 2
+      },
+      {
+        "id": "두-번-들어온-요청은-db에서도-막아야-했어요",
+        "title": "두 번 들어온 요청은 DB에서도 막아야 했어요",
+        "level": 2
+      },
+      {
+        "id": "저장-성공과-캐시-전달-실패를-나눴어요",
+        "title": "저장 성공과 캐시 전달 실패를 나눴어요",
+        "level": 2
+      },
+      {
+        "id": "테스트는-각-앱에서-필요한-경계를-확인해요",
+        "title": "테스트는 각 앱에서 필요한 경계를 확인해요",
+        "level": 2
+      },
+      {
+        "id": "공통-코드는-두-번째-사용처가-생긴-뒤에-옮겨요",
+        "title": "공통 코드는 두 번째 사용처가 생긴 뒤에 옮겨요",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 10,
+    "translations": {
+      "ko": "두-사이드-프로젝트에서-기술을-선택한-기준",
+      "en": "choosing-the-stack-and-boundaries-for-two-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
+    "tags": ["side-project", "architecture", "react", "nestjs", "graphql", "testing"],
+    "publishedAt": "2026-10-28",
+    "coverImage": "/images/covers/side-project-technology.png",
+    "title": "GraphQL for the photo service, REST for Game Mate",
+    "description": "The services share Next.js and NestJS but use different APIs and caches. How I chose contracts, response validation, database safeguards, tests, and shared-code boundaries.",
+    "slug": "choosing-the-stack-and-boundaries-for-two-side-projects",
+    "keywords": [
+      "side projects",
+      "Next.js",
+      "NestJS",
+      "GraphQL",
+      "TanStack Query",
+      "PostgreSQL",
+      "testing",
+      "architecture"
+    ],
+    "id": "side-project-technology",
+    "locale": "en",
+    "toc": [
+      {
+        "id": "build-the-web-screens-first-then-share-them-with-the-app",
+        "title": "Build the web screens first, then share them with the app",
+        "level": 2
+      },
+      {
+        "id": "use-different-browser-caches",
+        "title": "Use different browser caches",
+        "level": 2
+      },
+      {
+        "id": "keep-business-rules-in-the-api-server",
+        "title": "Keep business rules in the API server",
+        "level": 2
+      },
+      {
+        "id": "generate-api-types-from-one-source-and-check-actual-responses",
+        "title": "Generate API types from one source and check actual responses",
+        "level": 2
+      },
+      {
+        "id": "enforce-duplicate-request-rules-in-the-database",
+        "title": "Enforce duplicate-request rules in the database",
+        "level": 2
+      },
+      {
+        "id": "separate-a-successful-save-from-failed-cache-delivery",
+        "title": "Separate a successful save from failed cache delivery",
+        "level": 2
+      },
+      {
+        "id": "let-each-app-own-tests-for-its-boundaries",
+        "title": "Let each app own tests for its boundaries",
+        "level": 2
+      },
+      {
+        "id": "share-code-after-a-second-use-appears",
+        "title": "Share code after a second use appears",
+        "level": 2
+      }
+    ],
+    "readingMinutes": 9,
+    "translations": {
+      "ko": "두-사이드-프로젝트에서-기술을-선택한-기준",
+      "en": "choosing-the-stack-and-boundaries-for-two-side-projects"
+    }
+  },
+  {
+    "category": "engineering",
     "tags": ["side-project", "product", "design", "ux"],
     "publishedAt": "2026-10-17",
     "updatedAt": "2026-10-28",

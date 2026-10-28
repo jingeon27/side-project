@@ -60,6 +60,8 @@ const loaders = {
     import('../../../../content/posts/side-project-infrastructure/ko.mdx'),
   'side-project-infrastructure/en': () =>
     import('../../../../content/posts/side-project-infrastructure/en.mdx'),
+  'side-project-technology/ko': () => import('../../../../content/posts/side-project-technology/ko.mdx'),
+  'side-project-technology/en': () => import('../../../../content/posts/side-project-technology/en.mdx'),
   'sitemap-api-boundaries/ko': () => import('../../../../content/posts/sitemap-api-boundaries/ko.mdx'),
   'sitemap-api-boundaries/en': () => import('../../../../content/posts/sitemap-api-boundaries/en.mdx'),
   'testing-standards/ko': () => import('../../../../content/posts/testing-standards/ko.mdx'),

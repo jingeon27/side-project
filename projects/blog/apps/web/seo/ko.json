@@ -206,6 +206,21 @@
       "slug": "사이드-프로젝트-인프라를-ec2-한-대로-시작하기로-한-이유",
       "description": "비용을 보다가 RDS를 빼고 EC2 small에 PostgreSQL을 같이 넣기로 했어요. 서버리스와 R2도 알아보고 S3 권한 때문에 CI가 실패하던 부분도 고쳤어요.",
       "keywords": ["사이드 프로젝트", "AWS", "EC2", "PostgreSQL", "S3", "Terraform", "인프라", "백업"]
+    },
+    "side-project-technology": {
+      "title": "사진 서비스는 GraphQL, 게임 서비스는 REST로 만들었어요",
+      "slug": "두-사이드-프로젝트에서-기술을-선택한-기준",
+      "description": "Next.js와 NestJS를 함께 쓰면서 API와 캐시는 다르게 골랐어요. 계약 생성과 응답 검증, DB 동시성, 테스트와 공통 코드의 범위를 정한 과정을 적었어요.",
+      "keywords": [
+        "사이드 프로젝트",
+        "Next.js",
+        "NestJS",
+        "GraphQL",
+        "TanStack Query",
+        "PostgreSQL",
+        "테스트",
+        "아키텍처"
+      ]
     }
   }
 }
