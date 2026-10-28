@@ -14,6 +14,8 @@ export const PAGE_SIZE_DEFAULT = 24;
 export const PAGE_SIZE_MAX = 48;
 // 무한 스크롤 약 400쪽, 공개 사이트맵 약 200쪽(48개씩)까지 덮는다.
 export const PAGE_OFFSET_MAX = 10_000;
+// Group.members 한 페이지. 관리자를 먼저 주므로 첫 페이지에 그룹장·부관리자가 들어간다.
+export const MEMBER_PAGE_SIZE_DEFAULT = PAGE_SIZE_MAX;
 export const GROUP_CONTEST_HISTORY = 50;
 export const LEADERBOARD_LIMIT = 100;
 

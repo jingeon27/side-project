@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { groupBy, keyBy, mapValues, uniq } from 'es-toolkit';
 
-import type { Group, GroupCategory, Prisma } from '../../generated/prisma';
+import { Prisma, type Group, type GroupCategory } from '../../generated/prisma';
 import { ANALYTICS_EVENT } from '../analytics/analytics-event';
 import { recordEvent } from '../analytics/analytics-event.writer';
 import type { IViewer } from '../auth/session.service';
@@ -11,11 +11,12 @@ import { USER_VIEW_SELECT, type IUserView } from '../auth/user-view';
 import { siblingLoader } from '../common/batch';
 import { randomToken, sha256Hex } from '../common/crypto';
 import { ERROR_CODE, ERROR_MESSAGE, fail } from '../common/errors';
-import { pageRange, textValue } from '../common/validation';
+import { pageRange, textValue, type IPageRange } from '../common/validation';
 import {
   GROUP_CONTEST_HISTORY,
   GROUP_DESCRIPTION_LIMIT,
   LEADERBOARD_LIMIT,
+  MEMBER_PAGE_SIZE_DEFAULT,
   PAGE_SIZE_DEFAULT,
   TEXT_LIMIT,
 } from '../config/limits';
@@ -61,8 +62,8 @@ export interface IGroupNode {
   canViewPosts: boolean;
   joinRequestPending: boolean;
   inviteToken: string | null;
-  /** 같은 목록(myGroups)의 그룹들과 한 번에 불러온다. */
-  loadMembers: () => Promise<IMemberView[]>;
+  /** 한 페이지만, 같은 목록(myGroups)의 그룹들과 한 번에 불러온다. */
+  loadMembers: (offset?: number | null, limit?: number | null) => Promise<IMemberView[]>;
   /** 게시물을 볼 수 있는 그룹만, 같은 목록의 그룹들과 한 번에 불러온다. */
   loadCategories: () => Promise<GroupCategory[]>;
 }
@@ -340,15 +341,39 @@ export class GroupService {
     return group;
   }
 
-  private async membersOf(groupIds: readonly string[]): Promise<Map<string, IMemberView[]>> {
-    const rows = await this.db.groupMember.findMany({
-      where: { groupId: { in: [...groupIds] } },
-      select: { groupId: true, role: true, user: { select: USER_VIEW_SELECT } },
-      orderBy: [{ joinedAt: 'asc' }, { userId: 'asc' }],
-    });
+  /**
+   * 그룹마다 관리자 먼저·가입 순의 한 페이지만 읽는다. 그룹 수만큼 쿼리하지 않도록 창 함수로 한 번에 자른다.
+   * 멤버가 많은 그룹도 목록 하나가 모든 멤버를 싣지 않는다(전체 수는 memberCount).
+   */
+  private async membersOf(
+    groupIds: readonly string[],
+    range: IPageRange,
+  ): Promise<Map<string, IMemberView[]>> {
+    if (!groupIds.length) return new Map();
+    const rows = await this.db.$queryRaw<{ groupId: string; userId: string; role: string }[]>`
+      SELECT "groupId", "userId", "role" FROM (
+        SELECT "groupId", "userId", "role", ROW_NUMBER() OVER (
+          PARTITION BY "groupId"
+          ORDER BY CASE "role" WHEN 'OWNER' THEN 0 WHEN 'MODERATOR' THEN 1 ELSE 2 END, "joinedAt", "userId"
+        ) AS "position"
+        FROM "GroupMember" WHERE "groupId" IN (${Prisma.join([...groupIds])})
+      ) AS "ranked"
+      WHERE "position" > ${range.offset} AND "position" <= ${range.offset + range.limit}
+      ORDER BY "groupId", "position"`;
+    const users = keyBy(
+      await this.db.user.findMany({
+        where: { id: { in: uniq(rows.map((row) => row.userId)) } },
+        select: USER_VIEW_SELECT,
+      }),
+      (user) => user.id,
+    );
     const membersByGroup = mapValues(
       groupBy(rows, (row) => row.groupId),
-      (members) => members.map((member) => ({ user: member.user, role: toGroupRole(member.role) })),
+      (members) =>
+        members.flatMap((member) => {
+          const user = users[member.userId];
+          return user ? [{ user, role: toGroupRole(member.role) }] : [];
+        }),
     );
     return new Map(Object.entries(membersByGroup));
   }
@@ -362,12 +387,17 @@ export class GroupService {
     return rows.map((row) => this.node(row, loaders));
   }
 
+  /** 멤버만 볼 수 있으므로 역할이 있는 그룹만 모은다. 페이지 범위마다 따로 묶는다. */
   private membersLoader(rows: readonly IGroupWithRole[]) {
-    return siblingLoader(
-      rows.map((row) => row.group.id),
-      (ids) => this.membersOf(ids),
-      [],
-    );
+    const ids = rows.filter((row) => row.role).map((row) => row.group.id);
+    const loaders = new Map<string, (groupId: string) => Promise<IMemberView[]>>();
+    return (groupId: string, offset?: number | null, limit?: number | null) => {
+      const range = pageRange(offset ?? 0, limit ?? MEMBER_PAGE_SIZE_DEFAULT);
+      const key = `${range.offset}:${range.limit}`;
+      const loader = loaders.get(key) ?? siblingLoader(ids, (keys) => this.membersOf(keys, range), []);
+      loaders.set(key, loader);
+      return loader(groupId);
+    };
   }
 
   // 익명 discoverGroups(limit 48)에서도 그룹마다 카테고리를 따로 조회하지 않도록 목록 단위로 묶는다.
@@ -382,7 +412,7 @@ export class GroupService {
   private node(
     row: IGroupWithRole,
     loaders: {
-      members: (groupId: string) => Promise<IMemberView[]>;
+      members: (groupId: string, offset?: number | null, limit?: number | null) => Promise<IMemberView[]>;
       categories: (groupId: string) => Promise<GroupCategory[]>;
     },
   ): IGroupNode {
@@ -400,7 +430,7 @@ export class GroupService {
       canViewPosts: viewable,
       joinRequestPending,
       inviteToken: role ? group.inviteToken : null,
-      loadMembers: () => (role ? loaders.members(group.id) : Promise.resolve([])),
+      loadMembers: (offset, limit) => (role ? loaders.members(group.id, offset, limit) : Promise.resolve([])),
       loadCategories: () => (viewable ? loaders.categories(group.id) : Promise.resolve([])),
     };
   }

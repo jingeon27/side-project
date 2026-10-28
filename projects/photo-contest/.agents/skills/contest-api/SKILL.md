@@ -41,7 +41,7 @@ description: 웃긴순간 API(apps/api)의 모듈 구조, 그룹·대회·사진
 ## 그룹 탐색·가입
 
 - createGroup은 PUBLIC/PRIVATE 선택이며 생략하면 PUBLIC이다. DB default PRIVATE는 기존 그룹의 공개 전환을 막기 위한 값이다.
-- group·discoverGroups는 익명 메타데이터 조회를 허용한다. 비멤버의 role·inviteToken은 null, members는 빈 배열이다. discoverGroups의 공개 범위 필터와 publicGroupCount는 공개 사이트맵을 지원한다.
+- group·discoverGroups는 익명 메타데이터 조회를 허용한다. 비멤버의 role·inviteToken은 null, members는 빈 배열이다. members는 멤버에게도 페이지(기본·최대 48, 관리자 먼저)로만 주고, 수만 필요하면 memberCount를 쓴다. discoverGroups의 공개 범위 필터와 publicGroupCount는 공개 사이트맵을 지원한다.
 - requestGroupMembership과 joinGroup은 같은 규칙: 공개 그룹은 즉시 가입, 비공개 그룹은 GroupJoinRequest만 만든다. 기존 멤버의 역할을 유지하고 동시 신청·가입은 DB unique와 Serializable 재시도로 한 행만 남긴다.
 - 신청 목록·수락·거절은 OWNER·MODERATOR만. 수락은 멤버 생성·가입 이벤트·신청 삭제를 한 트랜잭션으로 처리한다.
 

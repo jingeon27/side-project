@@ -37,7 +37,8 @@ type Group {
   joinRequestPending: Boolean!
   "그룹 멤버 누구나 공유할 수 있는 초대 토큰"
   inviteToken: String
-  members: [Member!]!
+  "승인된 멤버에게만 준다. 그룹장·부관리자 먼저, 같은 역할은 가입 순. limit 1~48(기본 48). 전체 수는 memberCount"
+  members(offset: Int = 0, limit: Int = 48): [Member!]!
   "최근 대회 50개, 최신순"
   contests: [Contest!]!
   leaderboard: [LeaderboardEntry!]!
