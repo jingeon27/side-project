@@ -1,3 +1,5 @@
+import { match, P } from 'ts-pattern';
+
 import type { IdentityProvider, TIdentityProviders } from '../auth/providers/identity-provider';
 import {
   resolveCacheRevalidationConfig,
@@ -89,14 +91,20 @@ export function resolveAppConfig(options: AppOptions): AppConfig {
     mediaStorage: options.mediaStorage ?? resolveMediaStorageConfig(process.env),
     identityProvider: identityProviders.google,
     identityProviders,
-    profileProvider:
-      options.profileProvider ??
-      (demoMode
-        ? new DemoProfileProvider()
-        : process.env.SUPERCELL_API_TOKEN
-          ? new SupercellProfileProvider(process.env.SUPERCELL_API_TOKEN)
-          : testAuthEnabled
-            ? new DemoProfileProvider()
-            : undefined),
+    profileProvider: options.profileProvider ?? resolveProfileProvider(demoMode, testAuthEnabled),
   };
+}
+
+/** 데모 모드는 가짜 제공자, 아니면 Supercell 토큰을 쓰고, 토큰 없이 테스트 인증만 켜졌으면 가짜 제공자를 쓴다. */
+function resolveProfileProvider(demoMode: boolean, testAuthEnabled: boolean) {
+  return match({ demoMode, testAuthEnabled, supercellToken: process.env.SUPERCELL_API_TOKEN })
+    .returnType<ProfileProvider | undefined>()
+    .with({ demoMode: true }, () => new DemoProfileProvider())
+    .with(
+      { supercellToken: P.string.minLength(1) },
+      ({ supercellToken }) => new SupercellProfileProvider(supercellToken),
+    )
+    .with({ testAuthEnabled: true }, () => new DemoProfileProvider())
+    .with({ testAuthEnabled: false }, () => undefined)
+    .exhaustive();
 }

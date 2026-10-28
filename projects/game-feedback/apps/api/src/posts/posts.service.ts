@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { match } from 'ts-pattern';
 
 import { DISCOVERY_CACHE_TAG, postCacheTag, richTextToPlainText } from '@game-feedback/contracts';
 
@@ -250,12 +251,12 @@ export class PostsService {
   private listVisiblePosts(q: TListQueryDto, excluded: string[]) {
     const cursor = decodeCursor(q.cursor);
     const visibleAnswers = { ...ACTIVE_CONTENT, authorId: { notIn: excluded } };
-    const answerFilter =
-      q.feedbackStatus === 'ANSWERED'
-        ? { some: visibleAnswers }
-        : q.feedbackStatus === 'WAITING' || q.unanswered === 'true'
-          ? { none: visibleAnswers }
-          : undefined;
+    // 답변 상태가 우선하고, 상태가 없으면 `unanswered=true`가 답변 대기 글만 고른다.
+    const answerFilter = match({ status: q.feedbackStatus, unanswered: q.unanswered })
+      .with({ status: 'ANSWERED' }, () => ({ some: visibleAnswers }))
+      .with({ status: 'WAITING' }, { unanswered: 'true' }, () => ({ none: visibleAnswers }))
+      .with({ status: undefined }, () => undefined)
+      .exhaustive();
     const where: Prisma.PostWhereInput = {
       ...ACTIVE_POST,
       ...(q.board === 'ALL' || (!q.board && q.authorId) ? {} : { board: q.board ?? 'FEEDBACK' }),

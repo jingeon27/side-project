@@ -46,13 +46,16 @@ interface IRecruitmentFilters {
 interface IBoardFilters extends IRecruitmentFilters {
   feedbackStatus?: z.infer<typeof feedbackStatusSchema>;
 }
-const boardSlugs: Record<string, string> = {
+type TBoardKind = 'FEEDBACK' | 'COACHING' | 'FREE' | 'FRIEND_SALE' | 'FRIENDLY';
+type TBoardSlug = z.infer<typeof boardSlugSchema>;
+// 호출자가 넘기는 게시판 종류는 열린 문자열이라 조회 타입은 넓히고, 표는 모든 종류를 slug로 잇는지 검사한다.
+const boardSlugs: Record<string, TBoardSlug> = {
   FEEDBACK: 'feedback',
   COACHING: 'coaching',
   FREE: 'free',
   FRIEND_SALE: 'friend-sale',
   FRIENDLY: 'friendly',
-};
+} satisfies Record<TBoardKind, TBoardSlug>;
 function queryPath(path: string, values: Record<string, string | undefined>) {
   const query = compact(
     Object.entries(values).map(([key, value]) =>
@@ -356,8 +359,10 @@ function resolveStaticRoute({ pathname, locale, home }: IRouteContext, kind: str
     .otherwise(() => null);
   if (!screen) return null;
   const tab = match(screen)
-    .with('notifications', () => 'notifications' as const)
-    .otherwise(() => 'settings' as const);
+    .returnType<TAppTab>()
+    .with('notifications', () => 'notifications')
+    .with('settings', 'guide', 'terms', 'privacy', 'contact', () => 'settings')
+    .exhaustive();
   return {
     path: pathname,
     pathname,
