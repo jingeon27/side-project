@@ -29,6 +29,10 @@ test(
     await expect(page.getByRole('heading', { name: '최신 게시물' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '참여 그룹', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '그룹 만들기', exact: true })).toHaveCount(0);
+    const joined = page.getByRole('region', { name: '참여한 그룹', exact: true });
+    await expect(joined.getByRole('link', { name: /동네 친구들/ })).toBeVisible();
+    await expect(joined.getByRole('link', { name: /회사 친구들/ })).toBeVisible();
+    await expect(joined.getByRole('link', { name: '글쓰기', exact: true })).toHaveCount(0);
     const latest = page.getByRole('region', { name: '최신 게시물', exact: true });
     await expect(latest.getByRole('article')).toHaveCount(3);
     await expect(latest.getByRole('article').getByRole('heading')).toHaveText([

@@ -110,7 +110,7 @@ test(
     await comments.getByRole('button', { name: '댓글 올리기', exact: true }).click();
     await expect(list.getByRole('listitem')).toHaveCount(2);
     await page.screenshot({ path: '.data/screens/desktop-comments-wide.png' });
-    await comments.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     await expect(comments).toHaveCount(0);
   },
 );

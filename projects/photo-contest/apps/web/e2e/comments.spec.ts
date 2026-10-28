@@ -90,7 +90,8 @@ test(
       'true',
     );
     await expect(friendComment.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toBeEnabled();
-    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
     await post.getByRole('button', { name: '댓글이 있는 순간 댓글 1개' }).click();
     await expect(friendComment.getByRole('button', { name: '댓글 좋아요 1개', exact: true })).toHaveAttribute(
       'aria-pressed',
@@ -113,21 +114,31 @@ test(
       await expect(sheet.getByRole('textbox', { name: '댓글', exact: true })).toBeInViewport();
       await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
     };
-    await expectCompact();
-    const backdrop = page.locator('[data-bottom-sheet-backdrop]');
-    const opacity = () => backdrop.evaluate((element) => Number(getComputedStyle(element).opacity));
-    await expect.poll(opacity).toBeGreaterThan(0);
-    const compactOpacity = await opacity();
-    expect(compactOpacity).toBeLessThan(0.5);
     await mkdir('.data/screens', { recursive: true });
-    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-peek.png` });
-    await dragComments(page, browserName, isMobile, -viewport.height * 0.3);
-    await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
-    await expect.poll(opacity).toBeGreaterThan(compactOpacity);
-    expect(await opacity()).toBeLessThan(1);
-    await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-expanded.png` });
-    await dragComments(page, browserName, isMobile, viewport.height * 0.3);
-    await expectCompact();
+    if (viewport.width < 768) {
+      await expectCompact();
+      const backdrop = page.locator('[data-slot="bottom-sheet-backdrop"]');
+      const opacity = () => backdrop.evaluate((element) => Number(getComputedStyle(element).opacity));
+      await expect.poll(opacity).toBeGreaterThan(0);
+      const compactOpacity = await opacity();
+      expect(compactOpacity).toBeLessThan(0.5);
+      await mkdir('.data/screens', { recursive: true });
+      await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-peek.png` });
+      await dragComments(page, browserName, isMobile, -viewport.height * 0.3);
+      await expect.poll(async () => (await sheet.boundingBox())?.y ?? 100).toBeLessThan(48);
+      await expect.poll(opacity).toBeGreaterThan(compactOpacity);
+      expect(await opacity()).toBeLessThan(1);
+      await page.screenshot({ path: `.data/screens/${testInfo.project.name}-comments-expanded.png` });
+      await dragComments(page, browserName, isMobile, viewport.height * 0.3);
+      await expectCompact();
+    }
+    if (viewport.width >= 768) {
+      const box = await sheet.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThan(0);
+      expect(box!.y).toBeGreaterThan(0);
+      await expect(sheet.getByRole('textbox', { name: '댓글', exact: true })).toBeInViewport();
+    }
     await sheet.getByRole('button', { name: '댓글 올리기' }).click();
     await expect(sheet.getByText('댓글을 입력해 주세요.')).toBeVisible();
     const input = sheet.getByRole('textbox', { name: '댓글', exact: true });
@@ -140,14 +151,14 @@ test(
     await expect(list.getByRole('listitem')).toHaveCount(2);
     await expect(list.getByRole('listitem').first()).toContainText('이 순간은 저장!');
     await expect(input).toHaveValue('');
-    await sheet.locator('[data-bottom-sheet-content]').evaluate((element) => {
+    await sheet.locator('[data-slot="bottom-sheet-body"]').evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
     await expect(input).toBeInViewport();
     await expect(sheet.getByRole('button', { name: '댓글 올리기' })).toBeInViewport();
     expect(await sheet.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await page.setViewportSize(viewport);
-    await sheet.locator('[data-bottom-sheet-content]').evaluate((element) => {
+    await sheet.locator('[data-slot="bottom-sheet-body"]').evaluate((element) => {
       element.scrollTop = 0;
     });
     await mkdir('.data/screens', { recursive: true });
@@ -158,7 +169,7 @@ test(
       await expect(list.getByRole('button', { name: `${nickname} 댓글 삭제` })).toHaveCount(0);
     }
     await expect(sheet.getByText('첫 댓글을 남겨보세요.')).toBeVisible();
-    await sheet.getByRole('button', { name: '닫기', exact: true }).click();
+    await page.keyboard.press('Escape');
     await expect(post.getByRole('button', { name: '댓글이 있는 순간 댓글 0개' })).toBeVisible();
     await page.reload();
     await expect(post.getByRole('button', { name: '댓글이 있는 순간 댓글 0개' })).toBeVisible();

@@ -25,6 +25,7 @@ import { TextArea, TextField } from '@/shared/ui/@core/text-field';
 
 import { groupProfileSchema } from '../model/group-profile.schema';
 import { GroupAvatarField } from './GroupAvatarField';
+import { GroupImagePicker } from './GroupImagePicker';
 
 function ProfileForm({
   queryRef,
@@ -61,26 +62,27 @@ function ProfileForm({
           id={formId}
           noValidate
           className="mx-auto flex w-full max-w-app flex-col gap-6 py-3"
-          onSubmit={form.handleSubmit(async ({ avatar, ...values }) => {
+          onSubmit={form.handleSubmit(async ({ avatar, cover, ...values }) => {
             const signal = beginSubmit();
             try {
-              let avatarId: string | undefined;
-              if (avatar) {
+              const uploadImage = async (image?: File | null) => {
+                if (!image) return undefined;
                 const { data } = await requestUpload({
-                  variables: { groupId: group.id, contentType: avatar.type, byteSize: avatar.size },
+                  variables: { groupId: group.id, contentType: image.type, byteSize: image.size },
                 });
-                if (!data) return;
-                await uploadToStorage(data.requestGroupAvatarUpload, avatar, { signal });
+                if (!data) throw new Error('사진 업로드를 시작하지 못했어요.');
+                await uploadToStorage(data.requestGroupAvatarUpload, image, { signal });
                 const { data: completed } = await completeUpload({
                   variables: { uploadId: data.requestGroupAvatarUpload.id },
                 });
-                if (!completed) return;
-                avatarId = completed.completeGroupAvatarUpload.id;
-              }
+                if (!completed) throw new Error('사진 업로드를 마치지 못했어요.');
+                return completed.completeGroupAvatarUpload.id;
+              };
+              const [avatarId, coverId] = await Promise.all([uploadImage(avatar), uploadImage(cover)]);
               // 닫힌 시트에서는 저장하지 않는다. 저장 요청을 보낸 뒤에는 결과를 토스트로 알린다.
               throwIfClosed(signal);
               await save({
-                variables: { groupId: group.id, ...values, avatarId },
+                variables: { groupId: group.id, ...values, avatarId, coverId },
               });
               toast.success('그룹 프로필을 수정했어요');
               onClose();
@@ -93,6 +95,17 @@ function ProfileForm({
             }
           })}
         >
+          <GroupImagePicker
+            label="그룹 배경 사진"
+            cover
+            currentUrl={group.coverUrl}
+            disabled={isSubmitting}
+            error={errors.cover?.message}
+            onChange={(file) => {
+              form.setValue('cover', file, { shouldValidate: true });
+              form.setValue('removeCover', !file);
+            }}
+          />
           <GroupAvatarField form={form} currentUrl={group.avatarUrl} />
           <p className="text-caption text-muted">
             그룹 사진과 소개는 공개 범위와 관계없이 탐색 화면에서도 보여요.

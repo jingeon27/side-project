@@ -53,6 +53,7 @@ export interface IGroupNode {
   name: string;
   description: string;
   avatarUrl: string | null;
+  coverUrl: string | null;
   /** 조회한 사용자의 역할 */
   role: TGroupRole | null;
   visibility: TGroupVisibility;
@@ -392,6 +393,7 @@ export class GroupService {
       name: group.name,
       description: group.description,
       avatarUrl: group.avatarId ? `/backend/groups/${group.id}/avatar/${group.avatarId}` : null,
+      coverUrl: group.coverId ? `/backend/groups/${group.id}/cover/${group.coverId}` : null,
       role: role ? toGroupRole(role) : null,
       visibility: toGroupVisibility(group.visibility),
       memberCount: group._count.members,

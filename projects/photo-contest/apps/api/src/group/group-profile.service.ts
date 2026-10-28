@@ -19,6 +19,8 @@ interface IGroupProfileInput {
   description: string;
   avatarId?: string | null;
   removeAvatar?: boolean;
+  coverId?: string | null;
+  removeCover?: boolean;
 }
 
 @Injectable()
@@ -35,12 +37,13 @@ export class GroupProfileService {
     const description = input.description.trim();
     if (description.length > GROUP_DESCRIPTION_LIMIT) fail('그룹 소개는 500자 이하로 입력해 주세요.');
     if (input.avatarId != null && input.removeAvatar) fail('사진 선택과 삭제 중 하나만 골라 주세요.');
+    if (input.coverId != null && input.removeCover) fail('배경 사진 선택과 삭제 중 하나만 골라 주세요.');
     await this.membership.requireAdmin(viewer.id, input.groupId);
     await this.db.atomic(async (tx) => {
       await this.membership.requireAdmin(viewer.id, input.groupId, tx);
-      if (input.avatarId != null) {
+      for (const imageId of [input.avatarId, input.coverId].filter((id) => id != null)) {
         const avatar = await tx.groupAvatar.findUnique({
-          where: { id: input.avatarId },
+          where: { id: imageId },
           include: { mediaUpload: true },
         });
         if (
@@ -58,6 +61,8 @@ export class GroupProfileService {
           description,
           ...(input.removeAvatar ? { avatarId: null } : {}),
           ...(input.avatarId != null ? { avatarId: input.avatarId } : {}),
+          ...(input.removeCover ? { coverId: null } : {}),
+          ...(input.coverId != null ? { coverId: input.coverId } : {}),
         },
       });
       await recordEvent(tx, {
@@ -80,6 +85,14 @@ export class GroupProfileService {
 
   requestUpload(viewer: IViewer, groupId: string, contentType: string, byteSize: number) {
     return this.uploads.requestUpload(viewer, groupId, contentType, byteSize, { kind: 'GROUP_AVATAR' });
+  }
+
+  /** 배경도 공개 그룹 메타데이터이며 현재 지정된 사진만 읽을 수 있다. */
+  async coverKey(groupId: string, coverId: string) {
+    const group = await this.db.group.findUnique({ where: { id: groupId }, include: { cover: true } });
+    if (!group?.cover || group.coverId !== coverId)
+      fail('그룹 배경 사진을 찾을 수 없습니다.', ERROR_CODE.NOT_FOUND);
+    return group.cover.storageKey;
   }
 
   async completeUpload(viewer: IViewer, avatarId: string) {

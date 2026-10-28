@@ -27,6 +27,8 @@ const owner = {
 };
 
 function respond(name: string) {
+  if (name === 'Me') return { me: null };
+  if (name === 'NotificationUnreadCount') return { notificationUnreadCount: 0 };
   if (name === 'GalleryPosts') return { galleryPosts: [] };
   if (name === 'GroupCategories')
     return { group: { __typename: 'Group', id: 'group-1', role: GroupRole.Owner, categories: [] } };
@@ -47,6 +49,7 @@ describe('비공개 그룹 화면 SSR·hydration', () => {
             __typename: 'Group',
             description: '',
             avatarUrl: null,
+            coverUrl: null,
             id: 'group-1',
             name: '비공개 웃음',
             visibility: GroupVisibility.Private,
@@ -78,6 +81,7 @@ describe('비공개 그룹 화면 SSR·hydration', () => {
         'GalleryPosts',
         'GroupJoinRequests',
         'HiddenGalleryPosts',
+        'Me',
       ]);
       expect(view.recoverableErrors).toEqual([]);
     } finally {

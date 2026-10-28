@@ -5,7 +5,7 @@ Yarn 4 workspaces(nodeLinker node-modules), Node.js 24(`.nvmrc`), 22.12 이상 �
 
 - 각 프로젝트의 `AGENTS.md`와 `.agents/skills`를 따른다.
 - `packageManager`에 고정한 Yarn 4.17.0 CLI를 직접 설치하고 `yarn`으로 실행한다. 최초 설치는 `npm install --global @yarnpkg/cli-dist@4.17.0 --force`를 사용한다.
-- 여러 워크스페이스가 사용하는 외부 의존성은 루트 `.yarnrc.yml`의 `catalog`에 정확한 버전을 두고 각 `dependencies`·`devDependencies`에서 `catalog:`로 참조한다. Expo 앱의 React·React DOM은 SDK 호환성을 위해 `catalog:expo`를 사용한다. `peerDependencies`는 호환 범위를 유지한다. 버전을 바꾸면 catalog와 `yarn.lock`을 함께 갱신하고, 실행 중인 해당 개발 서버를 재시작한다.
+- 여러 워크스페이스가 사용하는 외부 의존성은 루트 `.yarnrc.yml`의 `catalog`에 정확한 버전을 두고 각 `dependencies`·`devDependencies`에서 `catalog:`로 참조한다. React·React DOM도 웹·Expo 앱이 같은 catalog를 사용한다. Expo 권장 버전과 다른 패치는 React Native의 peer 범위를 확인하고 모바일 검사·두 플랫폼 번들을 검증한다. `peerDependencies`는 호환 범위를 유지한다. 버전을 바꾸면 catalog와 `yarn.lock`을 함께 갱신하고, 실행 중인 해당 개발 서버를 재시작한다.
 - 변수는 `const`로 선언하고 `let`은 쓰지 않는다. 단계별 결과는 함수 반환값으로 전달한다.
 - 새 worktree는 `yarn worktree:add <경로> -b <브랜치> origin/develop`로 만든다. 기본 worktree의 로컬 `.env*`가 복사되며 기존 대상 파일과 `.env*.example`은 보존한다. 직접 `git worktree add`를 썼다면 새 worktree에서 `yarn install --immutable`로 설정 복사와 hook 설치를 완료한다. 환경변수 값은 로그·커밋에 남기지 않고, 복사된 DB·포트로 다른 개발 서버를 동시에 실행하지 않는다.
 - 워크스페이스 이름: 프로젝트 집계는 `@side/<project>`, 앱과 프로젝트 패키지는 `@<project>/<name>`.

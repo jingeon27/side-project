@@ -31,6 +31,7 @@ const GROUP: GalleryQuery['group'] = {
   name: '웃음 모임',
   description: '',
   avatarUrl: null,
+  coverUrl: null,
   inviteToken: null,
   visibility: GroupVisibility.Public,
   role: null,

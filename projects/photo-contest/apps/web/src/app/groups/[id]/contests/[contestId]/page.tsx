@@ -57,7 +57,12 @@ export default async function Page({ params }: IPageProps) {
                         variables={{ contestId }}
                         errorPolicy="all"
                       >
-                        <GroupContestPageTemplate id={contestId} groupId={id} resultsPreloaded />
+                        <GroupContestPageTemplate
+                          id={contestId}
+                          groupId={id}
+                          initialTitle={contest.title}
+                          resultsPreloaded
+                        />
                       </PreloadQuery>
                     ))
                     .with(Phase.Upcoming, Phase.Submission, Phase.Voting, () => (
@@ -66,7 +71,7 @@ export default async function Page({ params }: IPageProps) {
                         variables={{ groupId: id, contestId, sort: PostSort.Newest, offset: 0, limit: 24 }}
                         errorPolicy="all"
                       >
-                        <GroupContestPageTemplate id={contestId} groupId={id} />
+                        <GroupContestPageTemplate id={contestId} groupId={id} initialTitle={contest.title} />
                       </PreloadQuery>
                     ))
                     .exhaustive()}

@@ -49,6 +49,7 @@ mutation CreateGroup($name: String!, $visibility: GroupVisibility! = PUBLIC, $de
 
 query Gallery($id: ID!) {
   group(id: $id) {
+    coverUrl
     ...GroupCategories
     description
     avatarUrl
@@ -224,6 +225,7 @@ query GroupProfile($id: ID!) {
     name
     description
     avatarUrl
+    coverUrl
     role
   }
 }
@@ -231,6 +233,8 @@ mutation UpdateGroupProfile(
   $groupId: ID!
   $name: String!
   $description: String!
+  $coverId: ID
+  $removeCover: Boolean! = false
   $avatarId: ID
   $removeAvatar: Boolean! = false
 ) {
@@ -238,6 +242,8 @@ mutation UpdateGroupProfile(
     groupId: $groupId
     name: $name
     description: $description
+    coverId: $coverId
+    removeCover: $removeCover
     avatarId: $avatarId
     removeAvatar: $removeAvatar
   ) {

@@ -227,4 +227,37 @@ describe('그룹 사진과 소개', () => {
       });
     }
   });
+  it('그룹 배경 사진은 현재 지정된 사진만 공개하고 사용 중에는 만료 정리에서 보존해야 한다', async () => {
+    const response = await upload(owner.cookie);
+    const coverId = response.body.data!.completeGroupAvatarUpload.id;
+    const update =
+      'mutation($groupId:ID!,$name:String!,$description:String!,$coverId:ID,$removeCover:Boolean! = false){updateGroupProfile(groupId:$groupId,name:$name,description:$description,coverId:$coverId,removeCover:$removeCover){id avatarUrl coverUrl}}';
+    const endpoint = `/groups/${groupId}/cover/${coverId}`;
+    expect((await api.http().get(endpoint)).status).toBe(404);
+    expect((await api.gqlFail(member.cookie, update, values({ coverId }))).code).toBe('FORBIDDEN');
+    const another = await createGroup(api, owner, '배경 소유권 검증');
+    expect((await api.gqlFail(owner.cookie, update, values({ groupId: another.id, coverId }))).code).toBe(
+      'BAD_USER_INPUT',
+    );
+    const { updateGroupProfile: saved } = await api.gqlOk<{ updateGroupProfile: { coverUrl: string } }>(
+      owner.cookie,
+      update,
+      values({ coverId }),
+    );
+    expect(saved.coverUrl).toBe(`/backend${endpoint}`);
+    const publicRead = await api.gqlOk<{ group: { coverUrl: string } }>(
+      undefined,
+      'query($id:ID!){group(id:$id){coverUrl}}',
+      { id: groupId },
+    );
+    expect(publicRead.group.coverUrl).toBe(saved.coverUrl);
+    expect((await api.http().get(endpoint)).status).toBe(307);
+    await api.db.groupAvatar.update({ where: { id: coverId }, data: { expiresAt: new Date(0) } });
+    await api.app.get(MaintenanceService).cleanup();
+    expect(await api.db.groupAvatar.findUnique({ where: { id: coverId } })).not.toBeNull();
+    await api.gqlOk(owner.cookie, update, values({ removeCover: true }));
+    expect((await api.http().get(endpoint)).status).toBe(404);
+    await api.app.get(MaintenanceService).cleanup();
+    expect(await api.db.groupAvatar.findUnique({ where: { id: coverId } })).toBeNull();
+  });
 });

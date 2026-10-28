@@ -16,4 +16,9 @@ export class GroupProfileController {
     const key = await this.profiles.avatarKey(groupId, avatarId);
     redirectToStorage(res, await this.storage.presignRead(key));
   }
+  @Get(':groupId/cover/:coverId')
+  async cover(@Param('groupId') groupId: string, @Param('coverId') coverId: string, @Res() res: Response) {
+    const key = await this.profiles.coverKey(groupId, coverId);
+    redirectToStorage(res, await this.storage.presignRead(key));
+  }
 }

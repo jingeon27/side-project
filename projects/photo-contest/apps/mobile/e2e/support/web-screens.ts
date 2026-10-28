@@ -20,7 +20,8 @@ export const webScreens = {
   inviteCopyButton: (page: Page) => page.getByRole('button', { name: /링크 복사|복사/ }).first(),
   likeButton: (page: Page) => page.getByRole('button', { name: / 좋아요$/ }).first(),
   toast: (page: Page) => page.getByRole('status').or(page.getByRole('alert')),
-  /** 마이페이지에서 그룹 생성 시트를 여는 버튼 */
+  /** 마이페이지에서 그룹 생성 페이지로 이동하는 버튼 */
   createGroupButton: (page: Page) => page.getByRole('button', { name: /그룹 만들기/ }).first(),
+  profileEditButton: (page: Page) => page.getByRole('button', { name: '프로필 수정', exact: true }),
   dialog: (page: Page) => page.getByRole('dialog'),
 };

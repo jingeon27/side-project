@@ -117,12 +117,12 @@ describe('CreateContestBottomSheet', () => {
     expect(await screen.findByText('사진 제출 마감은 시작보다 뒤여야 해요.')).toBeVisible();
   });
 
-  it('닫기 버튼으로 닫으면 시트를 연 버튼으로 포커스가 돌아가야 한다', async () => {
+  it('취소 버튼으로 닫으면 시트를 연 버튼으로 포커스가 돌아가야 한다', async () => {
     const { user, opener } = renderSheet();
     await user.click(opener);
     await screen.findByRole('dialog', { name: '새 사진 대회 열기' });
 
-    await user.click(screen.getByRole('button', { name: '닫기' }));
+    await user.click(screen.getByRole('button', { name: '취소' }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await waitFor(() => expect(opener).toHaveFocus());

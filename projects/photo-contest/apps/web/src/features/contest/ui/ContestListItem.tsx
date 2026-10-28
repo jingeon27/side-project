@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { ChevronRight, Trophy } from 'lucide-react';
+import { ArrowUpRight, Trophy } from 'lucide-react';
 
 import { Phase, type ContestListItemFragment } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -35,7 +35,7 @@ export function ContestListItem({ contest }: { contest: ContestListItemFragment 
             : `${deadline.label} ${formatDateTime(deadline.at)}`}
         </span>
       </span>
-      <ChevronRight aria-hidden className="size-5 shrink-0 text-subtle" />
+      <ArrowUpRight aria-hidden className="size-5 shrink-0 text-subtle" />
     </Link>
   );
 }

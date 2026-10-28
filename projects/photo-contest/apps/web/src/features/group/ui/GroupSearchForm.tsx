@@ -36,6 +36,7 @@ export function GroupSearchForm({ search = '' }: { search?: string }) {
     >
       <TextField
         label="그룹 검색"
+        labelSuffix={null}
         placeholder="이름으로 그룹을 찾아보세요"
         maxLength={40}
         autoComplete="off"

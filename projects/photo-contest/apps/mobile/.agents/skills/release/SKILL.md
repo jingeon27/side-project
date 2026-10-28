@@ -59,7 +59,7 @@ adb reverse tcp:3200 tcp:3200                                                   
 
 1. 버전은 설치된 `node_modules/expo/bundledNativeModules.json`이 정한다. 추가·변경은 `yarn workspace @photo-contest/mobile exec expo install <패키지>`, 확인은 `… exec expo install --check`. `typescript` 줄(SDK 기대 ~6.0.3)은 무시하고 저장소 공통 버전을 유지한다 — 그래서 `--fix`를 쓰지 않는다.
 2. `All versions satisfying … are quarantined`(Yarn `npmMinimalAgeGate` 24시간)가 나오면 게이트를 끄지 말고 `yarn npm info <패키지> --fields time --json`으로 24시간이 지난 버전을 고른다.
-3. React는 이 워크스페이스 것만 바꾼다(`installConfig.hoistingLimits: "workspaces"`). `react`·`react-dom`은 SDK 값 그대로(범위 없이), `@types/react`는 같은 minor로 맞추고 웹의 React를 따르지 않는다. 확인: `node -p "require('./projects/photo-contest/apps/mobile/node_modules/react/package.json').version"`.
+3. React는 이 워크스페이스 것만 바꾼다(`installConfig.hoistingLimits: "workspaces"`). `react`·`react-dom`은 공통 catalog의 19.3.1을 사용하고 `@types/react`는 같은 minor로 맞춘다. React Native의 peer 범위 `^19.3.0` 안의 패치지만 SDK의 정확한 권장값과 달라 `expo.install.exclude`에 명시한다. 변경 뒤 typecheck·테스트·Android/iOS 번들을 검증한다. 확인: `node -p "require('./projects/photo-contest/apps/mobile/node_modules/react/package.json').version"`.
 4. 의존성 변경은 `chore(deps)` 커밋으로 먼저 둔다(`commit` 스킬). `metro.config.js`는 만들지 않는다.
 5. `prebuild --clean` → dev client 재빌드 → 아래 검사 → 실기기 확인.
 

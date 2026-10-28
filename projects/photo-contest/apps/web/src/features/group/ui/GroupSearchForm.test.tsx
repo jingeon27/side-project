@@ -15,6 +15,7 @@ describe('검색 폼 hydration', () => {
     container.innerHTML = renderToString(<GroupSearchForm />);
     document.body.append(container);
     const input = within(container).getByRole('textbox', { name: '그룹 검색' }) as HTMLInputElement;
+    expect(within(container).queryByText('선택')).not.toBeInTheDocument();
     if (before) input.value = '상자 복어';
     const root = hydrateRoot(container, <GroupSearchForm />);
     try {

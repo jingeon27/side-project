@@ -10,11 +10,10 @@ import {
 } from 'react';
 
 import { Drawer } from '@base-ui/react/drawer';
-import { XIcon } from 'lucide-react';
 
 import { cn } from '../../lib/cn.helper';
+import { Button } from '../button/Button';
 import { dialogStyles } from '../dialog/dialog.styles';
-import { IconButton } from '../icon-button/IconButton';
 
 export type TBottomSheetSnapPoint = Drawer.Root.SnapPoint;
 
@@ -119,7 +118,12 @@ function BottomSheetRoot({
     >
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal container={container}>
-          <Drawer.Backdrop className={dialogStyles.backdrop} />
+          <Drawer.Backdrop
+            className={cn(dialogStyles.backdrop, 'ds-sheet-backdrop')}
+            data-slot="bottom-sheet-backdrop"
+            data-responsive={responsive || undefined}
+            data-resizable={resizable || undefined}
+          />
           <Drawer.Viewport className="ds-sheet-viewport" data-responsive={responsive || undefined}>
             <Drawer.Popup
               className={cn('ds-sheet-popup', className)}
@@ -252,13 +256,13 @@ export interface IBottomSheetCloseProps {
   className?: string;
 }
 
-/** 제목 옆 X 버튼. dismissible={false}인 시트에서는 그리지 않는다. */
+/** 하단 작업 행에 놓는 글자 버튼. dismissible={false}인 시트에서는 그리지 않는다. */
 function BottomSheetClose({ label, className }: IBottomSheetCloseProps) {
   const { dismissible } = useBottomSheet('Close');
   if (!dismissible) return null;
   return (
-    <Drawer.Close render={<IconButton label={label} className={cn('-mt-2.5 -mr-3', className)} />}>
-      <XIcon aria-hidden="true" />
+    <Drawer.Close render={<Button type="button" variant="secondary" size="lg" className={className} />}>
+      {label}
     </Drawer.Close>
   );
 }
@@ -306,7 +310,7 @@ export function BottomSheet({
   description,
   children,
   footer,
-  showCloseButton = true,
+  showCloseButton = false,
   closeLabel,
   resizeLabel,
   snapPoints = defaultSnapPoints,

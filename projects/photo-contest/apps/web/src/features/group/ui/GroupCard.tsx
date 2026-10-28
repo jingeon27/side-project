@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { ChevronRight, Users } from 'lucide-react';
+import { ArrowUpRight, Users } from 'lucide-react';
 
 import type { GroupCardFragment } from '@/shared/api/generated';
 import { ROUTES } from '@/shared/constants/routes';
@@ -40,7 +40,7 @@ export function GroupCard({ group }: IGroupCardProps) {
           {group.description || '사진·동영상으로 나누는 웃긴 순간'}
         </span>
       </span>
-      <ChevronRight aria-hidden className="size-5 shrink-0 text-subtle" />
+      <ArrowUpRight aria-hidden className="size-5 shrink-0 text-subtle" />
     </Link>
   );
 }

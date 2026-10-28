@@ -1,4 +1,7 @@
 @layer components {
+  .ds-sheet-backdrop[data-resizable] {
+    opacity: calc(0.3 + 0.4 * (1 - var(--drawer-swipe-progress, 0)));
+  }
   .ds-sheet-viewport {
     position: fixed;
     inset-inline: 0;
@@ -117,6 +120,9 @@
   }
 
   @media (min-width: 768px) {
+    .ds-sheet-backdrop[data-responsive] {
+      opacity: 1;
+    }
     .ds-sheet-viewport[data-responsive] {
       align-items: center;
       padding: 24px;

@@ -29,6 +29,9 @@ interface IGroupContentFrameProps {
   title: string;
   children: ReactNode;
   actions?: ReactNode;
+  headerActions?: ReactNode;
+  showNavigation?: boolean;
+  breadcrumb?: boolean;
 }
 type TGalleryRef = QueryRef<GalleryQuery, GalleryQueryVariables, 'empty' | 'complete' | 'streaming'>;
 
@@ -45,11 +48,13 @@ function GroupContent({
   onRefresh,
   children,
   actions,
+  showNavigation = true,
 }: {
   groupRef: TGalleryRef;
   onRefresh: () => Promise<unknown>;
   children: ReactNode;
   actions?: ReactNode;
+  showNavigation?: boolean;
 }) {
   const { data, error } = useReadQuery(groupRef);
   if (!data)
@@ -84,7 +89,7 @@ function GroupContent({
     );
   return (
     <>
-      <GroupNavigation groupId={group.id} />
+      {showNavigation ? <GroupNavigation groupId={group.id} /> : null}
       {actions ? <div className="flex justify-end">{actions}</div> : null}
       {group.visibility === GroupVisibility.Private ? (
         <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>{children}</ClientOnly>
@@ -95,21 +100,67 @@ function GroupContent({
   );
 }
 
-export function GroupContentFrame({ groupId, title, children, actions }: IGroupContentFrameProps) {
+function GroupHeader({
+  groupRef,
+  title,
+  actions,
+}: {
+  groupRef: TGalleryRef;
+  title: string;
+  actions?: ReactNode;
+}) {
+  const { data } = useReadQuery(groupRef);
+  return (
+    <TopAppBar
+      title={data ? `${data.group.name} > ${title}` : title}
+      backHref={data ? ROUTES.GROUP_CONTESTS(data.group.id) : ROUTES.EXPLORE}
+      actions={actions}
+    />
+  );
+}
+
+export function GroupContentFrame({
+  groupId,
+  title,
+  children,
+  actions,
+  headerActions,
+  showNavigation = true,
+  breadcrumb = false,
+}: IGroupContentFrameProps) {
   const [groupRef, { refetch }] = useBackgroundQuery(GalleryDocument, {
     variables: { id: groupId },
     errorPolicy: 'all',
   });
   return (
     <div className="flex flex-1 flex-col">
-      <TopAppBar title={title} backHref={ROUTES.GROUP(groupId)} />
+      {breadcrumb ? (
+        <AsyncBoundary
+          onRetry={() => refetch()}
+          fallback={
+            <TopAppBar title={title} backHref={ROUTES.GROUP_CONTESTS(groupId)} actions={headerActions} />
+          }
+          renderError={() => (
+            <TopAppBar title={title} backHref={ROUTES.GROUP_CONTESTS(groupId)} actions={headerActions} />
+          )}
+        >
+          <GroupHeader groupRef={groupRef} title={title} actions={headerActions} />
+        </AsyncBoundary>
+      ) : (
+        <TopAppBar title={title} backHref={ROUTES.GROUP(groupId)} actions={headerActions} />
+      )}
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 tablet:px-8">
         <AsyncBoundary
           fallback={<Skeleton className="h-64 w-full" />}
           onRetry={() => refetch()}
           renderError={(error, onRetry) => <GroupContentFailure error={error} onRetry={onRetry} />}
         >
-          <GroupContent groupRef={groupRef} onRefresh={() => refetch()} actions={actions}>
+          <GroupContent
+            groupRef={groupRef}
+            onRefresh={() => refetch()}
+            actions={actions}
+            showNavigation={showNavigation}
+          >
             {children}
           </GroupContent>
         </AsyncBoundary>

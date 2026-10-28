@@ -35,6 +35,7 @@ function seedCompletedContest(cache: InMemoryCache) {
         __typename: 'Group',
         description: '',
         avatarUrl: null,
+        coverUrl: null,
         id: 'group-1',
         name: '공개 웃음',
         visibility: GroupVisibility.Public,
@@ -72,22 +73,25 @@ function seedCompletedContest(cache: InMemoryCache) {
   });
 }
 const respondEmptyResults = (name: string) =>
-  name === 'GroupContestResults' ? { groupContestResults: [] } : {};
+  name === 'Me' ? { me: null } : name === 'GroupContestResults' ? { groupContestResults: [] } : {};
 
 describe('종료된 그룹 대회의 결과 SSR·hydration', () => {
   it('사전 조회하지 않은 결과는 서버에서 건너뛰고 hydration 뒤 브라우저에서 받아야 한다', async () => {
     const server = createServerClient(seedCompletedContest);
-    const ui = <GroupContestPageTemplate id="contest-1" groupId="group-1" />;
+    const ui = (
+      <GroupContestPageTemplate id="contest-1" groupId="group-1" initialTitle="서버에서 받은 대회 제목" />
+    );
     const { html, errors } = await renderOnServer(server, ui);
     expect(errors).toEqual([]);
     expect(html).toContain('가을 웃음 대회');
+    expect(html).toContain('공개 웃음 &gt; 서버에서 받은 대회 제목');
     expect(html).not.toContain('참여작이 없는 대회예요');
 
     const browser = createBrowserClient(server, respondEmptyResults);
     const view = await hydrateOnClient(html, browser.client, ui);
     try {
       expect(await within(view.container).findByText('참여작이 없는 대회예요')).toBeVisible();
-      expect(browser.operations).toEqual(['GroupContestResults']);
+      expect([...browser.operations].sort()).toEqual(['GroupContestResults', 'Me']);
       expect(view.recoverableErrors).toEqual([]);
     } finally {
       view.unmount();
@@ -112,7 +116,7 @@ describe('종료된 그룹 대회의 결과 SSR·hydration', () => {
     const view = await hydrateOnClient(html, browser.client, ui);
     try {
       expect(within(view.container).getByText('참여작이 없는 대회예요')).toBeVisible();
-      expect(browser.operations).toEqual([]);
+      expect(browser.operations).toEqual(['Me']);
       expect(view.recoverableErrors).toEqual([]);
     } finally {
       view.unmount();
