@@ -5,15 +5,7 @@ import type { TLoginProvider } from '@game-feedback/bridge';
 import { ApiError, type Session } from '@/shared/api';
 import { requestNativeLogin } from '@/shared/native';
 
-import {
-  deleteMembership,
-  fetchSession,
-  postAppExchange,
-  postDemoLogin,
-  postLogout,
-  postOnboarding,
-  postTestLogin,
-} from '../api/auth.api';
+import { deleteMembership, fetchSession, postAppExchange, postLogout, postOnboarding } from '../api/auth.api';
 import { clearAuthenticatedSession, refreshSession, replaceSession } from './session-cache';
 
 /**
@@ -21,17 +13,6 @@ import { clearAuthenticatedSession, refreshSession, replaceSession } from './ses
  * 세션을 바꾸면 OverlayProvider가 다시 마운트되어 `mutate`의 콜백이 사라지므로 options의 onSuccess에서 부른다.
  */
 type TAfterSuccess<TData = unknown> = (data: TData) => void;
-
-export function demoLoginMutationOptions(client: QueryClient, afterSuccess?: TAfterSuccess<Session>) {
-  return mutationOptions({
-    mutationKey: ['auth', 'demo-login'],
-    mutationFn: postDemoLogin,
-    onSuccess: async (session) => {
-      await replaceSession(client, session);
-      afterSuccess?.(session);
-    },
-  });
-}
 
 export function completeOnboardingMutationOptions(
   client: QueryClient,
@@ -44,17 +25,6 @@ export function completeOnboardingMutationOptions(
       if (error instanceof ApiError && error.errorCode === 'AUTH_REQUIRED')
         await clearAuthenticatedSession(client);
     },
-    onSuccess: async (session) => {
-      await replaceSession(client, session);
-      afterSuccess?.(session);
-    },
-  });
-}
-
-export function testAccountLoginMutationOptions(client: QueryClient, afterSuccess?: TAfterSuccess<Session>) {
-  return mutationOptions({
-    mutationKey: ['auth', 'test-account-login'],
-    mutationFn: postTestLogin,
     onSuccess: async (session) => {
       await replaceSession(client, session);
       afterSuccess?.(session);
