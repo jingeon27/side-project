@@ -18,6 +18,10 @@ test.describe('Android 뒤로 가기', () => {
     await expect(page).toHaveURL('/me');
     await expect(page.getByRole('heading', { name: '마이페이지', exact: true })).toBeVisible();
     await webScreens.createGroupButton(page).click();
+    await expect(page).toHaveURL('/groups/new');
+    await expect(nativeHost.requestBack()).resolves.toEqual({ handled: true });
+    await expect(page).toHaveURL('/me');
+    await webScreens.profileEditButton(page).click();
     await expect(webScreens.dialog(page)).toBeVisible();
 
     await expect(nativeHost.requestBack()).resolves.toEqual({ handled: true });
