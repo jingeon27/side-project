@@ -1,16 +1,11 @@
-# MY 그룹 카드: 이름, 내 역할, 멤버 수
+# MY 그룹 카드: 이름, 내 역할, 멤버 수(멤버 명단은 받지 않는다)
 fragment GroupCard on Group {
   description
   avatarUrl
   id
   name
   role
-  members {
-    role
-    user {
-      id
-    }
-  }
+  memberCount
 }
 
 query MyGroups {

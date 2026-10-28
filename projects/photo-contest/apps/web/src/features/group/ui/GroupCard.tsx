@@ -34,7 +34,7 @@ export function GroupCard({ group }: IGroupCardProps) {
         </span>
         <span className="flex items-center gap-1 text-caption text-muted">
           <Users aria-hidden className="size-3.5" />
-          {formatCount(group.members.length)}명의 친구
+          {formatCount(group.memberCount)}명의 친구
         </span>
         <span className="line-clamp-2 text-caption text-muted">
           {group.description || '사진·동영상으로 나누는 웃긴 순간'}

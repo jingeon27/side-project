@@ -24,7 +24,7 @@ const card = (id: string, name: string): MyGroupsQuery['myGroups'][number] => ({
   description: '',
   avatarUrl: null,
   role: GroupRole.Member,
-  members: [],
+  memberCount: 0,
 });
 
 beforeEach(() => {
