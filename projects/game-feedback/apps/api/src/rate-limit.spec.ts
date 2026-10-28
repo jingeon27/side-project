@@ -80,3 +80,18 @@ it('Supercell을 부를 수 있는 계정 저장·온보딩도 미리보기와 �
     { key: 'read:user:owner', limit: 240 },
   ]);
 });
+
+it('URL id로 고르는 내부 상세 조회는 세션·분류 같은 나머지 내부 조회와 예산을 나눠야 한다', () => {
+  const internal = { ip: 'internal', internal: true, method: 'GET' };
+  expect(requestRateBucket({ ...internal, path: '/api/posts/random-id' })).toEqual({
+    key: 'lookup:internal',
+    limit: INTERNAL_READ_LIMIT,
+  });
+  expect(requestRateBucket({ ...internal, path: '/api/users/random-id/' }).key).toBe('lookup:internal');
+  for (const path of ['/api/session', '/api/categories', '/api/posts', '/api/posts/post-1/comments'])
+    expect(requestRateBucket({ ...internal, path }).key).toBe('read:internal');
+  // 서명된 방문자 주소의 상세 조회는 그 방문자의 읽기 예산을 쓴다.
+  expect(requestRateBucket({ ip: '203.0.113.7', method: 'GET', path: '/api/posts/random-id' }).key).toBe(
+    'read:ip:203.0.113.7',
+  );
+});

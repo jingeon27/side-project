@@ -8,6 +8,10 @@ export type RequestIdentity = {
 };
 // Internal reads are shared by every visitor's cache misses, so they get a larger budget than one address.
 export const INTERNAL_READ_LIMIT = 3000;
+// Cached detail fills keyed by a URL id (any visitor can pick a new id) get their own internal bucket, so a
+// flood of unknown ids cannot starve the anonymous session, categories and sitemap reads. The web proxy
+// also limits these page routes per visitor before the cache (`apps/web/src/proxy.ts`).
+const internalLookupPaths = [/^\/api\/posts\/[^/]+$/, /^\/api\/users\/[^/]+$/];
 /** Supercell lookups per minute and identity, shared by preview, account saving and onboarding. */
 export const GAME_PROFILE_LOOKUP_LIMIT = 10;
 const authAttempts = new Set([
@@ -59,6 +63,8 @@ export function requestRateBucket(request: RequestIdentity): { key: string; limi
   )
     return { key: `upload-complete:${identity}`, limit: 20 };
   if (action === 'write') return { key: `write:${identity}`, limit: 60 };
+  if (identity === 'internal' && internalLookupPaths.some((pattern) => pattern.test(path)))
+    return { key: 'lookup:internal', limit: INTERNAL_READ_LIMIT };
   return { key: `read:${identity}`, limit: identity === 'internal' ? INTERNAL_READ_LIMIT : 240 };
 }
 
