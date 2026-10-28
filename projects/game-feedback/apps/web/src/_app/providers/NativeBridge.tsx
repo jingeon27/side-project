@@ -10,7 +10,7 @@ import { match } from 'ts-pattern';
 
 import { refreshSessionMutationOptions } from '@/features/auth';
 import { nativeBridgeChannel } from '@/shared/native';
-import { backNavigation } from '@/shared/navigation';
+import { backNavigation, confirmNavigation } from '@/shared/navigation';
 
 export function NativeBridge() {
   const client = useQueryClient();
@@ -21,10 +21,13 @@ export function NativeBridge() {
   const overlays = useOverlayData();
   useEffect(() => {
     const open = last(Object.values(overlays).filter((item) => item.isOpen));
+    const currentPath = pathname + (search ? `?${search}` : '');
     return nativeBridgeChannel.bind({
-      path: pathname + (search ? `?${search}` : ''),
+      path: currentPath,
       overlayOpen: !!open,
-      onOpen: (path) => router.push(path),
+      onOpen: (path) => {
+        if (path === currentPath || confirmNavigation()) router.push(path);
+      },
       onActive: refreshSession,
       onDismissOverlay: () => {
         if (!open) return;
@@ -38,7 +41,7 @@ export function NativeBridge() {
             return { handled: true };
           })
           .with({ action: 'replace' }, ({ path }) => {
-            router.replace(path);
+            if (confirmNavigation()) router.replace(path);
             return { handled: true };
           })
           .with({ action: 'root' }, () => ({ handled: false, atRoot: true }))

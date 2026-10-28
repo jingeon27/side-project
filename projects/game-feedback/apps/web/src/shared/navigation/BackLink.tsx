@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { match, P } from 'ts-pattern';
 
 import { backNavigation, registerLogicalParent } from './browser-navigation';
+import { confirmNavigation } from './navigation-guard';
 
 export function BackLink({
   parentOnly = false,
@@ -18,12 +19,17 @@ export function BackLink({
   return (
     <Link
       {...props}
+      data-navigation-back
       onNavigate={(event) => {
         event.preventDefault();
         match(backNavigation(parentOnly))
           .with({ action: 'back' }, () => router.back())
-          .with({ action: 'replace' }, ({ path }) => router.replace(path))
-          .with({ action: P.union('root', 'unhandled') }, () => router.replace(String(props.href)))
+          .with({ action: 'replace' }, ({ path }) => {
+            if (confirmNavigation()) router.replace(path);
+          })
+          .with({ action: P.union('root', 'unhandled') }, () => {
+            if (confirmNavigation()) router.replace(String(props.href));
+          })
           .exhaustive();
       }}
     />

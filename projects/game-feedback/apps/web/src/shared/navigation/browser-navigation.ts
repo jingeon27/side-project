@@ -1,5 +1,7 @@
 import { appRoutes, resolveAppRoute } from '@game-feedback/bridge';
 
+import { confirmNavigation } from './navigation-guard';
+
 const stateKey = '__game_feedback_navigation';
 const logicalParents = new Map<string, { parent: string }>();
 export type TNavigationDirection = 'forward' | 'back' | 'replace';
@@ -69,7 +71,11 @@ export function installBrowserNavigation() {
   const push = history.pushState;
   const replace = history.replaceState;
   // 이 설치의 현재 기록 항목. 해제 뒤에는 원래 history 함수로만 넘긴다.
-  const installation = { current: entry(history.state) ?? { index: 0, previous: null }, active: true };
+  const installation = {
+    current: entry(history.state) ?? { index: 0, previous: null },
+    active: true,
+    restoring: false,
+  };
   function stateWithEntry(data: unknown, next: INavigationEntry) {
     return { ...(data && typeof data === 'object' ? data : {}), [stateKey]: next };
   }
@@ -106,20 +112,55 @@ export function installBrowserNavigation() {
     notifyLocation();
   };
   function handlePop(event: PopStateEvent) {
+    if (installation.restoring) {
+      installation.restoring = false;
+      event.stopImmediatePropagation();
+      return;
+    }
+    const target = entry(event.state);
+    if (target && target.index !== installation.current.index && !confirmNavigation()) {
+      // Next가 화면을 바꾸기 전에 멈추고, 기록을 늘리지 않고 원래 항목으로 돌아간다.
+      event.stopImmediatePropagation();
+      installation.restoring = true;
+      history.go(installation.current.index - target.index);
+      return;
+    }
     navigation.pendingParent = null;
-    const next = entry(event.state) ?? { index: 0, previous: null };
+    const next = target ?? { index: 0, previous: null };
     navigation.direction = next.index < installation.current.index ? 'back' : 'forward';
     installation.current = next;
     notifyLocation();
   }
+  function handleClick(event: MouseEvent) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    const link = event.target instanceof Element ? event.target.closest('a') : null;
+    if (!link || link.hasAttribute('download') || link.hasAttribute('data-navigation-back')) return;
+    if (link.target && link.target !== '_self') return;
+    const destination = new URL(link.href, window.location.href);
+    if (destination.origin !== window.location.origin) return;
+    const path = destination.pathname + destination.search;
+    if (path === currentPath() || !resolveAppRoute(path) || confirmNavigation()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
   history.pushState = handlePush;
   history.replaceState = handleReplace;
-  window.addEventListener('popstate', handlePop);
+  window.addEventListener('popstate', handlePop, true);
+  document.addEventListener('click', handleClick, true);
   return () => {
     installation.active = false;
     if (history.pushState === handlePush) history.pushState = push;
     if (history.replaceState === handleReplace) history.replaceState = replace;
-    window.removeEventListener('popstate', handlePop);
+    window.removeEventListener('popstate', handlePop, true);
+    document.removeEventListener('click', handleClick, true);
   };
 }
 export function backNavigation(parentOnly = false) {

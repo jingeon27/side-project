@@ -9,3 +9,5 @@ export {
   subscribeBrowserLocation,
 } from './browser-navigation';
 export { useBrowserSearch } from './use-browser-search';
+export { confirmNavigation } from './navigation-guard';
+export { useUnsavedChanges } from './use-unsaved-changes';

@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError, type PublicProfile } from '@/shared/api';
+import { confirmNavigation } from '@/shared/navigation';
 
 import { ProfileEditForm } from './ProfileEditForm';
 
@@ -89,6 +90,21 @@ beforeEach(() => {
 });
 
 describe('profile edit form', () => {
+  it.each(['details', 'photo', 'links'])('confirms leaving with an unsaved %s draft', (section) => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderForm();
+    expect(confirmNavigation()).toBe(true);
+    if (section === 'details') {
+      fireEvent.change(screen.getByRole('textbox', { name: '자기소개' }), {
+        target: { value: '저장하지 않은 소개' },
+      });
+    }
+    if (section === 'photo') choosePhoto();
+    if (section === 'links') addLinkDraft();
+    expect(confirmNavigation()).toBe(false);
+    expect(confirm).toHaveBeenCalledOnce();
+  });
+
   // 정보 저장이 곧바로 화면을 떠나(예전에는 시트를 닫아) 고르던 사진·링크 초안이 말없이 사라졌다.
   it('saves the profile details without leaving or dropping photo and link drafts', async () => {
     const onSaved = renderForm();
@@ -105,10 +121,13 @@ describe('profile edit form', () => {
   });
 
   it('finishes editing after saving the details when nothing else is unsaved', async () => {
+    const confirm = vi.spyOn(window, 'confirm');
     const onSaved = renderForm();
     saveNickname('새닉네임');
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
     expect(state.refresh).not.toHaveBeenCalled();
+    expect(confirmNavigation()).toBe(true);
+    expect(confirm).not.toHaveBeenCalled();
   });
 
   it('shows a failed photo upload as a translated error notice and keeps the selected photo', async () => {
