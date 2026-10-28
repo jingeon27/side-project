@@ -75,7 +75,7 @@ const meta = {
     docs: {
       description: {
         component:
-          '앱이 열림 상태를 관리하는 대화상자입니다. 버튼으로 열어 포커스 이동과 Esc, 배경 클릭, 닫기 동작을 확인할 수 있습니다.',
+          '앱이 열림 상태를 관리하는 대화상자입니다. 버튼으로 열어 포커스 이동과 Esc, 배경 클릭, 닫기 동작을 확인할 수 있습니다. 하단 입력 시트는 BottomSheet를 씁니다.',
       },
     },
   },
@@ -86,7 +86,6 @@ const meta = {
     description: '다른 사람에게 표시할 이름을 입력해 주세요.',
     dismissible: true,
     closeLabel: '닫기',
-    placement: 'center',
     children: <TextField label="닉네임" defaultValue="산책하는 고양이" />,
   },
   argTypes: {
@@ -97,7 +96,6 @@ const meta = {
     description: { control: 'text' },
     dismissible: { control: 'boolean' },
     closeLabel: { control: 'text' },
-    placement: { control: 'inline-radio', options: ['center', 'bottom'] },
     children: { control: false },
     container: { control: false },
     className: { control: false },
@@ -109,16 +107,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Center: Story = { name: '가운데 대화상자' };
-
-export const BottomSheet: Story = {
-  name: '하단 시트',
-  args: {
-    placement: 'bottom',
-    title: '알림 설정',
-    description: '작은 화면에서도 하단에서 설정을 확인할 수 있어요.',
-    children: <p className="text-body text-muted">알림은 언제든 설정에서 변경할 수 있어요.</p>,
-  },
-};
 
 export const RequiredConfirmation: Story = {
   name: '필수 확인',

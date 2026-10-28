@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useWatch } from 'react-hook-form';
 
-import { Button } from '@side/design-system';
+import { Button, buttonVariants, cn } from '@side/design-system';
 
 import { useI18n } from '@/shared/i18n';
 import { ErrorNotice } from '@/shared/ui';
@@ -49,9 +49,9 @@ export function ProfilePhotoEditor({ form, hasPhoto }: { form: TProfilePhotoForm
         render={({ field }) => (
           <label className="profile-photo-picker">
             {file && <PhotoPreview file={file} />}
-            <span>{file ? t('사진 다시 선택') : t('프로필 사진 선택')}</span>
             <input
               ref={field.ref}
+              className="peer sr-only"
               type="file"
               accept={avatarAccept}
               aria-label={t('프로필 사진 선택')}
@@ -63,6 +63,14 @@ export function ProfilePhotoEditor({ form, hasPhoto }: { form: TProfilePhotoForm
                 event.target.value = '';
               }}
             />
+            <span
+              className={cn(
+                buttonVariants({ variant: 'secondary' }),
+                'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-current',
+              )}
+            >
+              {t(file ? '사진 다시 선택' : '프로필 사진 선택')}
+            </span>
           </label>
         )}
       />

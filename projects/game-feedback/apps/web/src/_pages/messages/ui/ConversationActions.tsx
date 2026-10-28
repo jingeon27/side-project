@@ -79,11 +79,11 @@ export function ConversationActions({
           <Menu size={19} aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem variant="destructive" disabled={!throughMessageId} onClick={handleClear}>
+          <DropdownMenuItem variant="danger" disabled={!throughMessageId} onClick={handleClear}>
             <Trash2 aria-hidden="true" />
             {t('대화내역 삭제')}
           </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => handleBlock(peer)}>
+          <DropdownMenuItem variant="danger" onClick={() => handleBlock(peer)}>
             <ShieldBan aria-hidden="true" />
             {t('차단')}
           </DropdownMenuItem>

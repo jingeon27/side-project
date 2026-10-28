@@ -1,4 +1,20 @@
 @layer components {
+  .profile-topbar .mobile-page-title {
+    display: block;
+    min-width: 0;
+    font-size: var(--text-title);
+    font-weight: 700;
+  }
+
+  .profile-edit-page {
+    width: 100%;
+    max-width: 680px;
+    margin-inline: auto;
+  }
+
+  .profile-editor-identity {
+    margin-bottom: 24px;
+  }
   .support-action {
     display: grid;
     gap: 8px;
@@ -480,6 +496,34 @@
   }
   .public-profile h1 {
     font-size: var(--text-title-lg);
+  }
+  .public-profile-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: 8px;
+  }
+  .public-profile-actions :is(.profile-follow-toggle, .chat-author-link) {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 6px;
+    gap: 6px;
+    grid-row: 1;
+  }
+  .public-profile-actions .profile-follow-toggle {
+    grid-column: 1;
+  }
+  .public-profile-actions .chat-author-link {
+    grid-column: 2;
+  }
+  .public-profile-actions .profile-report-action {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .public-profile-actions .profile-follow-notifications,
+  .public-profile-actions > [role='alert'] {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
   .public-profile-stats {
     display: flex;

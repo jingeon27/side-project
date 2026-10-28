@@ -48,10 +48,10 @@ export const infoMessages: Record<string, readonly [string, string]> = {
       'Teachers choose Recruiting students, and learners choose Looking for a coach. The coaching list can be filtered by these same roles.',
       '教える側は受講生募集、学ぶ側はコーチ募集を選びます。ゲームコーチ一覧も同じ募集タイプで絞り込めます。',
     ],
-  '수강료는 시간당, 월 단위, 목표 점수 달성까지 중에서 선택합니다. 목표 달성형에는 목표 점수와 달성까지의 총수강료를 적습니다. 금액을 비워두면 수강료 협의로 표시됩니다.':
+  '수강료는 시간당, 기간 단위, 목표 달성까지 중에서 선택합니다. 목표 달성형에는 목표 점수와 달성까지의 총수강료를 적습니다. 금액을 비워두면 수강료 협의로 표시됩니다.':
     [
-      'Choose hourly, monthly or a total fee until a target score is reached. For a target-based course, enter the target score and total price. Leave the amount empty to negotiate the fee.',
-      '料金は時間単位、月単位、目標スコア達成までから選びます。目標達成型では目標スコアと達成までの総額を記載してください。金額を空欄にすると料金相談と表示されます。',
+      'Choose hourly, for a fixed period or a total fee until a target score is reached. For a target-based course, enter the target score and total price. Leave the amount empty to negotiate the fee.',
+      '料金は時間単位、期間単位、目標達成までから選びます。目標達成型では目標スコアと達成までの総額を記載してください。金額を空欄にすると料金相談と表示されます。',
     ],
   '코칭 상담 버튼으로 상대와 1:1 채팅을 시작하고 수업 방식, 일정과 비용을 정하세요. 서비스에서는 결제와 정산을 처리하지 않습니다.':
     [

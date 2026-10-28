@@ -1,4 +1,9 @@
 export const profileMessages: Record<string, readonly [string, string]> = {
+  '등록한 게임 계정이 없어요.': ['No game accounts registered.', '登録したゲームアカウントはありません。'],
+  '닉네임, 자기소개, 프로필 사진과 링크를 수정하세요.': [
+    'Edit your nickname, bio, profile photo and links.',
+    'ニックネーム、自己紹介、プロフィール写真とリンクを編集してください。',
+  ],
   '프로필 수정': ['Edit profile', 'プロフィールを編集'],
   '프로필 저장': ['Save profile', 'プロフィールを保存'],
   '프로필을 수정했어요.': ['Profile updated.', 'プロフィールを更新しました。'],

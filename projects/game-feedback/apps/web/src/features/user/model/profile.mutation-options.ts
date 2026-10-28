@@ -12,8 +12,8 @@ import { withApiError, type PublicProfile } from '@/shared/api';
 import { uploadAvatar } from '../api/avatar.api';
 import { profileOptions } from './user.options';
 
-/** 프로필 수정 시트의 모든 저장(정보·링크·사진)이 공유하는 key 접두사. 진행 중이면 시트를 닫지 않는다. */
-export const profileMutationKey = ['user', 'profile'] as const;
+/** 프로필 수정의 모든 저장(정보·링크·사진)이 공유하는 key 접두사. */
+const profileMutationKey = ['user', 'profile'] as const;
 
 async function saveProfile(client: QueryClient, profile: PublicProfile) {
   client.setQueryData(profileOptions(profile.author.id).queryKey, profile);

@@ -132,16 +132,6 @@ export type TFollowInput = z.infer<typeof FollowInputSchema>;
 export type TFollowStatus = z.infer<typeof FollowStatusSchema>;
 export type TestAccount = z.infer<typeof TestAccountSchema>;
 export type TestAccountList = z.infer<typeof TestAccountListSchema>;
-export const PublicProfileSchema = z.object({
-  author: AuthorSchema,
-  bio: z.string().optional(),
-  links: ProfileLinksSchema.optional(),
-  joinedAt: ResponseTimestampSchema,
-  postCount: ResponseCountSchema,
-  answerCount: ResponseCountSchema,
-  helpfulCount: ResponseCountSchema,
-});
-export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 export const CategorySchema = z.object({
   id: ResponseIdSchema,
   slug: z.string().min(1),
@@ -168,6 +158,17 @@ export const GameProfileSchema = z.object({
   source: z.enum(['SUPERCELL', 'DEMO']),
   fetchedAt: ResponseTimestampSchema,
 });
+export const PublicProfileSchema = z.object({
+  author: AuthorSchema,
+  gameAccounts: z.array(GameProfileSchema).optional(),
+  bio: z.string().optional(),
+  links: ProfileLinksSchema.optional(),
+  joinedAt: ResponseTimestampSchema,
+  postCount: ResponseCountSchema,
+  answerCount: ResponseCountSchema,
+  helpfulCount: ResponseCountSchema,
+});
+export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 export const PostSchema = z.object({
   id: ResponseIdSchema,
   title: z.string().min(1),

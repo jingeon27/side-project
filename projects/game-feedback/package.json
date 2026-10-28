@@ -34,11 +34,11 @@
   },
   "devDependencies": {
     "@side/config": "workspace:*",
-    "embedded-postgres": "18.4.0-beta.17",
-    "eslint": "^9.39.0",
-    "jiti": "^2.6.1",
-    "ts-pattern": "^5.9.0",
-    "typescript": "6.0.2",
-    "zod": "^4.1.12"
+    "embedded-postgres": "catalog:",
+    "eslint": "catalog:",
+    "jiti": "catalog:",
+    "ts-pattern": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
   }
 }

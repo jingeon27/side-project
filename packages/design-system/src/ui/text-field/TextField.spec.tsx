@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 import { Button } from '../button/Button';
 import { FormField } from '../form-field/FormField';
-import { TextArea, TextField } from './TextField';
+import { TextAreaField, TextField } from './TextField';
 
 const contentSchema = z.object({
   title: z.string().trim().min(1, '제목을 입력해 주세요.'),
@@ -29,13 +29,13 @@ function ContentForm({ onSubmit }: { onSubmit: () => void }) {
         error={form.formState.errors.title?.message}
         {...form.register('title')}
       />
-      <TextArea label="내용" error={form.formState.errors.body?.message} {...form.register('body')} />
+      <TextAreaField label="내용" error={form.formState.errors.body?.message} {...form.register('body')} />
       <Button type="submit">등록하기</Button>
     </form>
   );
 }
 
-describe('TextField / TextArea', () => {
+describe('TextField / TextAreaField', () => {
   it('검증 오류를 입력과 연결하고 첫 오류 입력으로 포커스를 옮겨야 한다', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
@@ -53,13 +53,42 @@ describe('TextField / TextArea', () => {
     await user.click(screen.getByRole('button', { name: '등록하기' }));
     await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
   });
+
+  it('FormField와 같은 Input·Textarea로 조립하고 labelSuffix는 이름에서 빼야 한다', () => {
+    const inputRef = createRef<HTMLInputElement>();
+    const textareaRef = createRef<HTMLTextAreaElement>();
+    render(
+      <>
+        <TextField
+          ref={inputRef}
+          label="닉네임"
+          description="2~12자"
+          labelSuffix={<span aria-hidden="true">필수</span>}
+          required
+        />
+        <TextAreaField ref={textareaRef} label="소개" description="자유롭게 적어 주세요" />
+      </>,
+    );
+    const nickname = screen.getByRole('textbox', { name: '닉네임' });
+    expect(nickname).toHaveAttribute('data-slot', 'input');
+    expect(nickname).toHaveAccessibleDescription('2~12자');
+    expect(nickname).toBeRequired();
+    expect(inputRef.current).toBe(nickname);
+    expect(screen.getByText('필수')).toBeVisible();
+
+    const intro = screen.getByRole('textbox', { name: '소개' });
+    expect(intro).toHaveAttribute('data-slot', 'textarea');
+    expect(intro).toHaveAttribute('rows', '4');
+    expect(intro).toHaveClass('field-sizing-fixed', 'resize-none');
+    expect(textareaRef.current).toBe(intro);
+  });
 });
 
 describe('FormField', () => {
   it('native 입력의 ref와 명시적 이름을 유지하며 도움말과 오류를 연결해야 한다', () => {
     const ref = createRef<HTMLInputElement>();
     render(
-      <FormField label="플레이어 태그" hint="#으로 시작해요" error="태그를 확인해 주세요">
+      <FormField label="플레이어 태그" description="#으로 시작해요" error="태그를 확인해 주세요">
         <input ref={ref} aria-label="연결할 태그" />
       </FormField>,
     );

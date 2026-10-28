@@ -75,6 +75,12 @@ export function createPageMetadata({
   };
 }
 export const pageContent = {
+  profileEdit: {
+    title: '프로필 수정',
+    description: '닉네임, 자기소개, 프로필 사진과 링크를 수정하세요.',
+    keywords: ['프로필 수정'],
+    privatePage: true,
+  },
   onboarding: {
     title: '회원가입',
     description: '사용할 닉네임을 정하고 필수 항목에 동의해 주세요.',

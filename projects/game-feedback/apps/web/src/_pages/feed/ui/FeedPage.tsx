@@ -42,12 +42,7 @@ function FeedContent({
 
   return (
     <section className="feed-section">
-      <FeedFilters
-        locale={locale}
-        // RSC 이동은 snapshot이 Promise라 브라우저 URL을 그대로 읽는다.
-        initialSearch={'then' in initialFeed ? '' : feedSnapshotSearch(initialFeed)}
-        onCompose={handleCompose}
-      />
+      <FeedFilters onCompose={handleCompose} />
       <AsyncBoundary
         title={t('최신 글')}
         resetKey={session.user?.id}

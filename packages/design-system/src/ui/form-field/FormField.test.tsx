@@ -24,14 +24,14 @@ describe('FormField', () => {
   it('memo·래퍼·lazy를 거친 입력도 레이블·도움말·오류를 연결해야 한다', async () => {
     render(
       <>
-        <FormField label="닉네임" hint="2~12자">
+        <FormField label="닉네임" description="2~12자">
           <MemoInput />
         </FormField>
         <FormField label="판매 금액" error="금액을 확인해주세요">
           <PriceInput />
         </FormField>
         <Suspense fallback={null}>
-          <FormField label="소개" hint="자유롭게 적어 주세요">
+          <FormField label="소개" description="자유롭게 적어 주세요">
             <LazyTextarea />
           </FormField>
         </Suspense>
@@ -52,7 +52,7 @@ describe('FormField', () => {
       <>
         <span id="external-label">외부 레이블</span>
         <span id="external-hint">외부 도움말</span>
-        <FormField label="필드 레이블" hint="필드 도움말">
+        <FormField label="필드 레이블" description="필드 도움말">
           <Input aria-labelledby="external-label" aria-describedby="external-hint" />
         </FormField>
         <FormField label="게임">
@@ -73,7 +73,7 @@ describe('FormField', () => {
         <FormField label="이메일" error="형식을 확인해주세요">
           <input type="email" />
         </FormField>
-        <FormField label="분류" hint="하나를 고르세요">
+        <FormField label="분류" description="하나를 고르세요">
           <NativeSelect defaultValue="FREE">
             <NativeSelectOption value="FREE">자유게시판</NativeSelectOption>
           </NativeSelect>

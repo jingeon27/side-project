@@ -15,7 +15,7 @@ export const profilePhotoSchema = z.object({
 });
 
 type TZodForm<TSchema extends ZodObject> = UseFormReturn<z.input<TSchema>, unknown, z.output<TSchema>>;
-/** 프로필 수정 시트가 세 영역의 초안을 함께 소유해 저장하지 않은 변경을 닫기 전에 확인한다. */
+/** 프로필 수정 폼이 세 영역의 초안을 함께 소유해, 한 영역을 저장해도 다른 영역의 초안을 지킨다. */
 export type TProfileDetailsForm = TZodForm<typeof profileDetailsSchema>;
 export type TProfileLinksForm = TZodForm<typeof profileLinksSchema>;
 export type TProfilePhotoForm = TZodForm<typeof profilePhotoSchema>;

@@ -32,31 +32,28 @@ export function DialogOverlay({ className, ...props }: TStyledProps<DialogPrimit
     />
   );
 }
+/** 닫기 버튼을 그리면 소비 앱이 번역한 이름(closeLabel)이 꼭 필요하다. 패키지는 언어별 기본값을 두지 않는다. */
+type TDialogCloseButtonProps =
+  { showCloseButton?: true; closeLabel: string } | { showCloseButton: false; closeLabel?: undefined };
 type TDialogContentProps = TStyledProps<DialogPrimitive.Popup.Props> & {
   container?: ComponentProps<typeof DialogPortal>['container'];
-  showCloseButton?: boolean;
-  closeLabel?: string;
-  placement?: 'center' | 'bottom';
-};
+} & TDialogCloseButtonProps;
 export function DialogContent({
   className,
   children,
   container,
   showCloseButton = true,
-  closeLabel = '닫기',
-  placement = 'center',
+  closeLabel,
   ...props
 }: TDialogContentProps) {
   return (
     <DialogPortal container={container}>
       <DialogOverlay />
-      <DialogPrimitive.Viewport
-        className={placement === 'bottom' ? dialogStyles.sheetViewport : dialogStyles.viewport}
-      >
+      <DialogPrimitive.Viewport className={dialogStyles.viewport}>
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
-            placement === 'bottom' ? dialogStyles.sheetPopup : dialogStyles.popup,
+            dialogStyles.popup,
             'border border-border bg-popover text-popover-foreground',
             className,
           )}

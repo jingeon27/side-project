@@ -24,6 +24,8 @@
   @media (max-width: 760px) {
     :root {
       --mobile-page-inset: 16px;
+      --mobile-page-inset-start: max(var(--mobile-page-inset), env(safe-area-inset-left));
+      --mobile-page-inset-end: max(var(--mobile-page-inset), env(safe-area-inset-right));
       --site-header-height: 60px;
     }
     .site-grid {
@@ -32,8 +34,30 @@
     .site-grid,
     .topbar-inner,
     .site-footer-inner {
-      padding-inline: max(var(--mobile-page-inset), env(safe-area-inset-left))
-        max(var(--mobile-page-inset), env(safe-area-inset-right));
+      padding-inline: var(--mobile-page-inset-start) var(--mobile-page-inset-end);
+    }
+    .post-card,
+    .skeleton-card,
+    .empty-feed,
+    .settings-card {
+      padding-inline: var(--mobile-page-inset);
+    }
+    .game-board-chips {
+      flex-wrap: wrap;
+      overflow: visible;
+      padding-inline: 0;
+    }
+    .conversation-list-heading,
+    .conversation-row,
+    .chat-message-scroll,
+    .chat-compose-area {
+      padding-inline: var(--mobile-page-inset);
+    }
+    .conversation-row {
+      border-inline-start: 0;
+    }
+    .conversation-row[aria-current='page'] {
+      box-shadow: inset 3px 0 0 var(--color-accent);
     }
     .header-actions {
       gap: 2px;

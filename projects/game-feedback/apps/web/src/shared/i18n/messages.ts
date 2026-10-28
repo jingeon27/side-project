@@ -96,7 +96,7 @@ const messages: Record<string, readonly [string, string]> = {
     'Share your availability, battle rules and the opponents you want to practice with.',
     '参加できる時間、対戦ルール、希望する相手の条件を書いてください。',
   ],
-  '예: 목표 점수 달성까지 도와줄 코치 구해요': [
+  '예: 목표 달성까지 도와줄 코치 구해요': [
     'e.g. Looking for a coach to help reach my target score',
     '例：目標スコア達成を手伝ってくれるコーチを募集',
   ],
@@ -260,10 +260,10 @@ const messages: Record<string, readonly [string, string]> = {
   ],
   '수강료 기준': ['Fee basis', '料金の基準'],
   시간당: ['Per hour', '1時間ごと'],
-  '월 단위': ['Monthly', '月単位'],
-  '목표 점수 달성까지': ['Until the target score', '目標スコア達成まで'],
-  '월 수강료 (원)': ['Monthly fee (KRW)', '月額受講料（ウォン）'],
-  '월 희망 수강료 (원)': ['Monthly budget (KRW)', '月額希望受講料（ウォン）'],
+  '기간 단위': ['Fixed period', '期間単位'],
+  '목표 달성까지': ['Until the goal is reached', '目標達成まで'],
+  '기간 수강료 (원)': ['Fee for the period (KRW)', '期間受講料（ウォン）'],
+  '기간 희망 수강료 (원)': ['Budget for the period (KRW)', '期間希望受講料（ウォン）'],
   '목표 달성 총 수강료 (원)': ['Total fee for reaching the target (KRW)', '目標達成までの総受講料（ウォン）'],
   '목표 달성 희망 총 수강료 (원)': [
     'Total budget for reaching the target (KRW)',
@@ -275,7 +275,7 @@ const messages: Record<string, readonly [string, string]> = {
     'Enter a target score using 1–100 characters.',
     '目標スコアは1〜100文字で入力してください。',
   ],
-  '월 {price}': ['{price} per month', '月額 {price}'],
+  '기간 총 {price}': ['{price} for the period', '期間合計 {price}'],
   '목표 달성까지 총 {price}': ['{price} total until the target is reached', '目標達成まで合計 {price}'],
   '{basis} 수강료 협의': ['{basis}, fee negotiable', '{basis}、受講料は相談'],
   '목표 {target}까지': ['Target: {target}', '目標：{target}'],

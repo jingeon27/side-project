@@ -14,7 +14,7 @@ export function Field({
   error?: string;
 }) {
   return (
-    <FormField label={label} hint={hint} error={error} className="field">
+    <FormField label={label} description={hint} error={error} className="field">
       {children}
     </FormField>
   );

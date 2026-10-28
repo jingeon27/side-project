@@ -46,8 +46,8 @@ export function CoachingFields({ form }: { form: TPostComposerForm }) {
           }}
         >
           <NativeSelectOption value="HOURLY">{t('시간당')}</NativeSelectOption>
-          <NativeSelectOption value="MONTHLY">{t('월 단위')}</NativeSelectOption>
-          <NativeSelectOption value="GOAL">{t('목표 점수 달성까지')}</NativeSelectOption>
+          <NativeSelectOption value="MONTHLY">{t('기간 단위')}</NativeSelectOption>
+          <NativeSelectOption value="GOAL">{t('목표 달성까지')}</NativeSelectOption>
         </NativeSelect>
       </Field>
       {pricingType === 'GOAL' && (

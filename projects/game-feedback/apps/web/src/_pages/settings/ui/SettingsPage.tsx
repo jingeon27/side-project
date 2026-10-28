@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowUpRight, Gamepad2, LogOut, Trash2 } from 'lucide-react';
 
@@ -74,9 +72,9 @@ function SettingsContent({ locale }: ISettingsPageProps) {
                 date: formatDate(session.user.createdAt, textLocale),
               })}
             </p>
-            <Link className="text-action" href={appRoutes.profile(locale, session.user.id)}>
+            <ChildLink className="text-action" href={appRoutes.profile(locale, session.user.id)}>
               {t('공개 프로필 보기 →')}
-            </Link>
+            </ChildLink>
           </div>
           <span className="status-pill resolved">
             {session.user.role === 'ADMIN' ? t('운영자') : t('플레이어')}

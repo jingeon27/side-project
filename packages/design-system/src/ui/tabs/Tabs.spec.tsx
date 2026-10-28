@@ -33,3 +33,21 @@ it.each(['horizontal', 'vertical'] as const)(
     expect(screen.getByRole('tabpanel', { name: '답변 대기' })).toHaveTextContent('피드백 요청 목록');
   },
 );
+
+it.each([
+  ['default', ['h-9', 'rounded-badge', 'data-active:bg-surface', 'data-active:shadow-card']],
+  ['line', ['min-h-touch', 'data-active:border-ink', 'data-[orientation=horizontal]:border-b-2']],
+] as const)('%s 목록의 탭은 공통 토큰으로 그 모양을 따라야 한다', (variant, classes) => {
+  render(
+    <Tabs defaultValue="latest">
+      <TabsList variant={variant} aria-label="피드 분류">
+        <TabsTrigger value="latest">최신 글</TabsTrigger>
+      </TabsList>
+      <TabsContent value="latest">전체 글 목록</TabsContent>
+    </Tabs>,
+  );
+  const tab = screen.getByRole('tab', { name: '최신 글' });
+  expect(tab).toHaveClass('text-label', 'text-muted', 'data-active:text-ink', ...classes);
+  // registry 원본의 shadcn 글자·그림자 클래스는 쓰지 않는다.
+  expect(tab.className).not.toMatch(/foreground|shadow-sm|text-sm|font-medium/);
+});

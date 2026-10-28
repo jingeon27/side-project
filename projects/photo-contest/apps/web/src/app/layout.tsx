@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <div id={APP_ROOT_ID} className="flex min-h-dvh justify-center bg-canvas desktop:bg-sunken">
           <main
             id={APP_MAIN_ID}
-            className="relative flex min-h-dvh w-full min-w-0 max-w-web flex-col bg-surface desktop:bg-sunken desktop:has-[[data-desktop-nav]]:pl-48 wide:has-[[data-desktop-nav]]:pl-56"
+            className="relative flex min-h-dvh w-full min-w-0 flex-col bg-surface desktop:bg-sunken desktop:has-[[data-desktop-nav]]:pl-48 wide:has-[[data-desktop-nav]]:pl-56"
           >
             <AppProviders themePreference={preference}>{children}</AppProviders>
           </main>

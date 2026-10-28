@@ -129,9 +129,15 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
   );
 }
 
-export function PasswordAuthForms({ nextPath }: { nextPath: string }) {
+export function PasswordAuthForms({
+  nextPath,
+  defaultTab = 'login',
+}: {
+  nextPath: string;
+  defaultTab?: 'login' | 'register';
+}) {
   return (
-    <Tabs.Root defaultValue="login" className="flex flex-col gap-4">
+    <Tabs.Root defaultValue={defaultTab} className="flex flex-col gap-4">
       <Tabs.List aria-label="아이디 로그인 방식" className="flex border-b border-line">
         <Tabs.Tab
           value="login"

@@ -4,7 +4,7 @@ import { createContext, useContext, type AriaAttributes } from 'react';
 
 export interface IFormFieldContext {
   labelId: string;
-  hintId?: string;
+  descriptionId?: string;
   errorId?: string;
   invalid: boolean;
 }
@@ -18,7 +18,9 @@ type TControlAria = Pick<
 
 /** 레이블·도움말·오류 연결. 소비자가 넘긴 `aria-labelledby`·`aria-label`은 덮어쓰지 않고 설명은 뒤에 덧붙인다. */
 export function getFieldAria(field: IFormFieldContext, props: TControlAria): TControlAria {
-  const describedBy = [props['aria-describedby'], field.hintId, field.errorId].filter(Boolean).join(' ');
+  const describedBy = [props['aria-describedby'], field.descriptionId, field.errorId]
+    .filter(Boolean)
+    .join(' ');
   return {
     'aria-labelledby': props['aria-labelledby'] ?? (props['aria-label'] ? undefined : field.labelId),
     'aria-describedby': describedBy || undefined,

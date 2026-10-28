@@ -1,21 +1,13 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { __unstable__loadDesignSystem as loadDesignSystem } from 'tailwindcss';
 import { describe, expect, it } from 'vitest';
 
-const srcDir = join(dirname(fileURLToPath(import.meta.url)), '..');
-const tailwindDir = dirname(createRequire(import.meta.url).resolve('tailwindcss/package.json'));
+import { sourceFiles, srcDir, uiDir } from '../test/ui-sources';
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) return sourceFiles(path);
-    return /\.tsx?$/.test(entry.name) && !/\.(spec|test|stories)\.tsx?$/.test(entry.name) ? [path] : [];
-  });
-}
+const tailwindDir = dirname(createRequire(import.meta.url).resolve('tailwindcss/package.json'));
 
 // 클래스 문자열로 보이는 리터럴(공백으로 나뉜 유틸리티 3개 이상)만 고른다. CSS 값(`min(360px, ...)`)은 괄호가 맞지 않아 빠진다.
 const utilityPattern = /^!?-?[a-z*[][a-z0-9\-:[\]()=/.%,'*&>_@#!]*$/;
@@ -55,9 +47,7 @@ function loadTheme() {
 describe('Tailwind 유틸리티', () => {
   it('ui 컴포넌트의 클래스는 모두 패키지 테마에서 생성되어야 한다', async () => {
     const candidates = [
-      ...new Set(
-        sourceFiles(join(srcDir, 'ui')).flatMap((file) => classCandidates(readFileSync(file, 'utf8'))),
-      ),
+      ...new Set(sourceFiles(uiDir).flatMap((file) => classCandidates(readFileSync(file, 'utf8')))),
     ].sort();
     expect(candidates.length).toBeGreaterThan(100);
     const theme = await loadTheme();

@@ -85,7 +85,10 @@ export function LoginPanel({
         <p className="mt-1 text-body text-muted">그룹에 참여해 사진과 동영상을 나눠보세요.</p>
       </div>
       {allowAnonymous ? <AnonymousStartButton nextPath={next} continuing={continuingAnonymously} /> : null}
-      <PasswordAuthForms nextPath={next} />
+      <PasswordAuthForms
+        nextPath={next}
+        defaultTab={searchParams.get('mode') === 'register' ? 'register' : 'login'}
+      />
       <div className="border-t border-line pt-3">
         <p className="text-caption text-muted">서비스 이용에 관한 안내를 확인해 주세요.</p>
         <LegalLinks />

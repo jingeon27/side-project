@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { TextArea } from './TextField';
+import { TextAreaField } from './TextField';
 
 const meta = {
   title: 'Forms/TextAreaField',
-  component: TextArea,
+  component: TextAreaField,
   tags: ['autodocs'],
   args: {
     label: '소개',
@@ -27,7 +27,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof TextArea>;
+} satisfies Meta<typeof TextAreaField>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

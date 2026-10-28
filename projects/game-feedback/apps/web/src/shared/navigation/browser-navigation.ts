@@ -130,7 +130,15 @@ export function backNavigation(parentOnly = false) {
   const previous = currentEntry?.previous;
   const authScreen = ['login', 'onboarding'].includes(route.screen);
   const previousRoute = previous ? resolveAppRoute(previous) : null;
-  const detail = ['post', 'compose', 'profile', 'conversation', 'login', 'onboarding'].includes(route.screen);
+  const detail = [
+    'post',
+    'compose',
+    'profile',
+    'profile-edit',
+    'conversation',
+    'login',
+    'onboarding',
+  ].includes(route.screen);
   const previousAuthScreen = previousRoute && ['login', 'onboarding'].includes(previousRoute.screen);
   if (
     previous &&

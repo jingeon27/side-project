@@ -42,9 +42,6 @@ export function MessagesPage({ locale, conversationId }: IMessagesPageProps) {
   return (
     <>
       <div className="page-heading chat-page-heading">
-        <div>
-          <h1>{t('채팅')}</h1>
-        </div>
         <ChatConnectionStatus />
       </div>
       <div className="chat-workspace" data-has-conversation={!!conversationId || undefined}>

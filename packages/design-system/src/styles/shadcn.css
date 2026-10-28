@@ -12,7 +12,6 @@
   --color-border: var(--color-line);
   --color-input-border: var(--color-line-strong);
   --color-ring: var(--color-brand);
-  --color-destructive: var(--color-danger);
   --radius-sm: var(--radius-badge);
   --radius-md: var(--radius-control);
   --radius-lg: var(--radius-control);

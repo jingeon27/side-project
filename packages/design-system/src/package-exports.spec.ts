@@ -11,8 +11,9 @@ import type { IButtonProps } from '@side/design-system/ui/button';
 import type { IDialogProps } from '@side/design-system/ui/dialog';
 import type { IFormFieldProps } from '@side/design-system/ui/form-field';
 import type { IIconButtonProps } from '@side/design-system/ui/icon-button';
+import type { IMentionProps } from '@side/design-system/ui/mention';
 import type { ISpinnerProps } from '@side/design-system/ui/spinner';
-import type { ITextAreaProps, ITextFieldProps } from '@side/design-system/ui/text-field';
+import type { ITextAreaFieldProps, ITextFieldProps } from '@side/design-system/ui/text-field';
 
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const packageJson = JSON.parse(readFileSync(join(srcDir, '../package.json'), 'utf8')) as {
@@ -35,8 +36,9 @@ export type TPublicTypes = [
   IDialogProps,
   IFormFieldProps,
   IIconButtonProps,
+  IMentionProps,
   ISpinnerProps,
-  ITextAreaProps,
+  ITextAreaFieldProps,
   ITextFieldProps,
 ];
 
@@ -64,9 +66,11 @@ describe('package exports', () => {
     }
   });
 
-  it('Next 전용 ButtonLink는 /next에만 있어야 한다', async () => {
-    const [root, next] = await Promise.all([importSubpath('ui'), importSubpath('next')]);
-    expect(root).not.toHaveProperty('ButtonLink');
-    expect(next).toHaveProperty('ButtonLink');
+  it.each(['ButtonLink', 'IconButtonLink'])('Next 전용 %s는 /next에만 있어야 한다', async (name) => {
+    const [next, ...frameworkFree] = await Promise.all(
+      ['next', 'ui', ...uiFolders.map((folder) => `ui/${folder}`)].map(importSubpath),
+    );
+    expect(next).toHaveProperty(name);
+    for (const module of frameworkFree) expect(module).not.toHaveProperty(name);
   });
 });

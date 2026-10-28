@@ -47,6 +47,11 @@ function RouteMotion({
   const localPrevious = useRef<string | null>(null);
   const previous = useContext(RoutePathContext) ?? localPrevious;
   useEffect(() => {
+    const target = scope.current;
+    if (!target) return;
+    // 캐시된 화면이 다시 보여도 이전 애니메이션 값으로 본문이 밀리지 않게 한다.
+    target.style.removeProperty('transform');
+    target.style.removeProperty('opacity');
     const route = resolveAppRoute(pathname);
     const key = route?.tab === 'messages' ? appRoutes.messages(route.locale) : pathname;
     const before = previous.current;
@@ -72,17 +77,19 @@ function RouteMotion({
       !window.location.hash
     )
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    if (!before || before === key || reducedMotion || !scope.current) return;
+    if (!before || before === key || reducedMotion) return;
     if (route?.screen === 'conversation' && window.matchMedia('(max-width: 760px)').matches) return;
     const controls = animate(
-      scope.current,
+      target,
       {
         opacity: [0.85, 1],
-        x: getNavigationDirection() === 'back' ? [-8, 0] : [8, 0],
       },
       { duration: 0.18, ease: 'easeOut' },
     );
-    return () => controls.complete();
+    return () => {
+      controls.stop();
+      target.style.removeProperty('opacity');
+    };
   }, [pathname, reducedMotion, animate, scope, previous]);
   return null;
 }

@@ -18,11 +18,11 @@ export interface IDialogProps {
   description?: ReactNode;
   children: ReactNode;
   dismissible?: boolean;
-  closeLabel?: string;
+  /** 닫기 버튼 이름. 번역은 소비 앱이 맡고 패키지는 기본값을 두지 않는다. */
+  closeLabel: string;
   container?: ComponentProps<typeof DialogPortal>['container'];
   onOpenChangeComplete?: (open: boolean) => void;
   className?: string;
-  placement?: 'center' | 'bottom';
 }
 
 /** 열림 상태와 업무 흐름은 앱이 소유하고 공통 UI는 포커스·접근성을 맡는다. */
@@ -33,11 +33,10 @@ export function Dialog({
   description,
   children,
   dismissible = true,
-  closeLabel = '닫기',
+  closeLabel,
   container,
   onOpenChangeComplete,
   className,
-  placement = 'center',
 }: IDialogProps) {
   return (
     <DialogRoot
@@ -55,9 +54,7 @@ export function Dialog({
       <DialogContent
         container={container}
         className={className}
-        showCloseButton={dismissible}
-        closeLabel={closeLabel}
-        placement={placement}
+        {...(dismissible ? { closeLabel } : { showCloseButton: false })}
       >
         <DialogHeader className={dismissible ? 'pr-12' : undefined}>
           <DialogTitle>{title}</DialogTitle>
