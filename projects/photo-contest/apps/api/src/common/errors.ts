@@ -31,7 +31,7 @@ export const ERROR_MESSAGE = {
   UPLOAD_ALREADY_USED: '이미 다른 곳에 사용한 업로드입니다. 파일을 다시 올려 주세요.',
   FORBIDDEN_ORIGIN: '허용되지 않은 요청 출처입니다.',
   INTERNAL: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
-} as const;
+} as const satisfies Record<string, string>;
 
 export function fail(message: string, code: TErrorCode = ERROR_CODE.BAD_USER_INPUT): never {
   throw new GraphQLError(message, { extensions: { code } });
