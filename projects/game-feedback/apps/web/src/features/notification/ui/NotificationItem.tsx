@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { ArrowUpRight, FileText, MessageSquare, ThumbsUp } from 'lucide-react';
-import { match } from 'ts-pattern';
+import { match, P } from 'ts-pattern';
 
 import type { Notification } from '@/shared/api';
 import { useI18n } from '@/shared/i18n';
@@ -44,6 +44,11 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
     )
     .with({ type: 'CHAT_MESSAGE' }, () => t('{name}님이 메시지를 보냈어요.', { name }))
     .exhaustive();
+  const icon = match(notification.type)
+    .with('FOLLOWED_POST', () => <FileText size={22} />)
+    .with('HELPFUL', () => <ThumbsUp size={22} />)
+    .with(P.union('ANSWER', 'COMMENT', 'COMMENT_REPLY', 'CHAT_MESSAGE'), () => <MessageSquare size={22} />)
+    .exhaustive();
   return (
     <Link
       href={href}
@@ -53,15 +58,7 @@ export function NotificationItem({ notification, href, onRead }: INotificationIt
         if (!notification.readAt) onRead();
       }}
     >
-      <span className="notification-type">
-        {notification.type === 'FOLLOWED_POST' ? (
-          <FileText size={22} />
-        ) : notification.type === 'HELPFUL' ? (
-          <ThumbsUp size={22} />
-        ) : (
-          <MessageSquare size={22} />
-        )}
-      </span>
+      <span className="notification-type">{icon}</span>
       <div>
         <strong>{t(notificationTitles[notification.type])}</strong>
         <p>{message}</p>
