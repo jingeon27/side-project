@@ -18,7 +18,6 @@ import { ChatRealtimeProvider } from '@/widgets/chat-realtime';
 import { MobileViewport } from './MobileViewport';
 import { NativeBridge } from './NativeBridge';
 import { NativePushSync } from './NativePushSync';
-import { NavigationHistory } from './NavigationHistory';
 
 export function Providers({
   children,
@@ -44,7 +43,6 @@ export function Providers({
     <QueryClientProvider client={client}>
       <ServiceErrorBoundary title={t('서비스 연결')}>
         <MotionProvider>
-          <NavigationHistory />
           <MobileViewport />
           <ToastProvider>
             <SessionProvider onLogin={handleLogin}>

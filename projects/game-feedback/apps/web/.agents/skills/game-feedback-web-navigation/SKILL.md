@@ -14,7 +14,7 @@ description: Game Feedback 웹(apps/web)에서 링크·뒤로 가기·탭 이동
 
 ## 뒤로 가기·탭
 
-- `_app/providers/NavigationHistory.tsx`가 `installBrowserNavigation()`으로 `history.pushState`/`replaceState`를 감싸 `{ index, previous, feed, parent? }`를 state에 남긴다. 화면에서 history state를 직접 만지지 않는다.
+- `instrumentation-client.ts`가 hydration 전에 `installBrowserNavigation()`을 동기 실행한다. Next의 `popstate` 처리보다 먼저 초안 이탈을 확인해야 하므로 Provider effect로 옮기지 않는다. `history.pushState`/`replaceState`를 감싸 `{ index, previous, feed, parent? }`를 state에 남긴다. 화면에서 history state를 직접 만지지 않는다.
 - 화면의 돌아가기는 `BackLink`(`@/shared/navigation`)다. `backNavigation()`은 상세류(`post`·`compose`·`profile`·`conversation`)에 앱 안 이전 기록이 있으면 `router.back()`, 없으면(콜드 링크) `parent`로 `router.replace`한다. 피드로 돌아갈 때는 `feedDestination`이 마지막 피드 필터를 복원한다.
 - 라우트 정의보다 정확한 상위(글쓰기를 연 게시판·필터)는 `<BackLink logicalParent={parent}>`로 등록한다(`registerLogicalParent`, 언마운트 때 해제). `parentOnly`는 이전 기록이 그 parent일 때만 back한다.
 - 링크를 누른 화면이 상위인 목적지(프로필 → 가이드)는 `ChildLink`로 연다. `registerNextLogicalParent`가 다음 push 기록에 `parent`를 남겨, 상세가 아닌 화면도 뒤로 가기(브라우저·앱)가 그 기록으로 돌아간다(`back`). 같은 경로의 replace(필터)는 `parent`를 유지하고 다른 화면으로 replace하면 버린다. 이후 push한 기록은 물려받지 않는다.
