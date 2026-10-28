@@ -48,7 +48,7 @@ describe('CreatePostForm', () => {
     );
     const dialog = await screen.findByRole('form', { name: '그룹에 글쓰기' });
     await user.upload(
-      screen.getByLabelText('사진·동영상 선택'),
+      screen.getByLabelText('사진 또는 동영상 선택'),
       new File(['video'], 'long.mp4', { type: 'video/mp4' }),
     );
     await user.type(screen.getByLabelText('제목', { exact: false }), '긴 영상');

@@ -43,7 +43,7 @@ export function CreateGroupContestBottomSheet({
     <BottomSheet.Root isOpen={isOpen} onClose={onClose} unmount={unmount}>
       <BottomSheet.Header
         title="그룹 대회 개최"
-        description="멤버가 사진·동영상으로 참여하고, 접수 마감 뒤 대회당 한 표를 투표해요. 동점은 공동 우승입니다."
+        description="멤버들이 사진이나 동영상을 올려 참여해요. 접수가 끝나면 한 사람당 한 작품에 투표할 수 있어요. 득표수가 같으면 공동 우승이에요."
       />
       <BottomSheet.Content>
         <form

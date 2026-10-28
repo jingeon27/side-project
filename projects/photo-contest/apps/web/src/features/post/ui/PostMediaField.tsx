@@ -41,7 +41,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
   return (
     <div className="flex flex-col gap-2 rounded-card has-focus-visible:outline-3 has-focus-visible:outline-accent">
       <label htmlFor={inputId} className="text-label text-ink">
-        사진·동영상 선택
+        사진 또는 동영상 선택
         <FieldRequirement required={required} />
       </label>
       <input
@@ -49,7 +49,7 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         type="file"
         aria-required={required}
         accept="image/*,.heic,.heif,video/mp4,video/webm"
-        aria-label="사진·동영상 선택"
+        aria-label="사진 또는 동영상 선택"
         ref={(element) => {
           fileInputRef.current = element;
           inputRef(element);
@@ -86,11 +86,11 @@ export function PostMediaField({ control, trigger }: IPostMediaFieldProps) {
         >
           <ImagePlus aria-hidden className="size-7" />
           파일 선택
-          <span className="text-caption text-muted">사진·동영상을 선택하거나 링크를 첨부해 주세요</span>
+          <span className="text-caption text-muted">사진이나 동영상을 선택해 주세요</span>
         </button>
       )}
       <p id={helpId} className="text-caption text-muted">
-        사진은 자동으로 줄여요. 동영상 MP4·WebM · 100MB · 5분 이하
+        큰 사진은 크기를 줄여서 올려요. 동영상은 MP4, WebM 형식으로 100MB, 5분까지 올릴 수 있어요.
       </p>
       {error ? (
         <p id={errorId} role="alert" className="text-caption text-danger">

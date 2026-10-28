@@ -50,7 +50,7 @@ function MyPostList({ queryRef, filtered }: { queryRef: QueryRef<MyGalleryPostsQ
     return (
       <EmptyState
         title={filtered ? '이 그룹에 올린 게시물이 없어요' : '아직 올린 게시물이 없어요'}
-        description="참여한 그룹에서 사진·동영상·링크로 순간을 나눠보세요."
+        description="가입한 그룹에 사진이나 동영상, 링크를 올려보세요."
       />
     );
   return (

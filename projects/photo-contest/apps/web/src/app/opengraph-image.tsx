@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = '별사대 — 사진·동영상·합성을 나누는 그룹';
+export const alt = '별사대 - 웃긴 순간을 함께 나누는 그룹';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -33,7 +33,7 @@ export default function Image() {
       </svg>
       <div style={{ display: 'flex', fontSize: 72, fontWeight: 700, marginTop: 30 }}>별사대</div>
       <div style={{ display: 'flex', fontSize: 26, marginTop: 22, color: '#fff0e9', letterSpacing: 7 }}>
-        PHOTO · VIDEO · REMIX
+        웃긴 순간을 함께 나눠요
       </div>
     </div>,
     size,

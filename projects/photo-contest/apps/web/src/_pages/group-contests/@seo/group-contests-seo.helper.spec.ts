@@ -54,7 +54,7 @@ describe('그룹 대회·명예의 전당 SEO', () => {
       expect.arrayContaining([
         expect.objectContaining({
           '@type': 'CollectionPage',
-          name: '웃음 그룹 · 명예의 전당',
+          name: '웃음 그룹 - 명예의 전당',
           mainEntity: expect.objectContaining({ numberOfItems: 1 }),
         }),
       ]),

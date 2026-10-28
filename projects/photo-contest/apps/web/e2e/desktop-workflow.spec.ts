@@ -78,7 +78,7 @@ test(
     const titleBox = await title.boundingBox();
     if (!picker || !titleBox) throw new Error('미디어와 제목 입력이 보여야 한다');
     expect(titleBox.x).toBeGreaterThan(picker.x + picker.width);
-    await composer.getByLabel('사진·동영상 선택', { exact: true }).setInputFiles({
+    await composer.getByLabel('사진 또는 동영상 선택', { exact: true }).setInputFiles({
       name: 'desktop-moment.png',
       mimeType: 'image/png',
       buffer: await createTestImage({ width: 360, height: 240 }),

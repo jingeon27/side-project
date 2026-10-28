@@ -15,7 +15,7 @@ test(
     await expect(form).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(form.getByLabel('제목', { exact: true })).toHaveAttribute('required', '');
-    await expect(form.getByLabel('사진·동영상 선택')).toHaveAttribute('aria-required', 'true');
+    await expect(form.getByLabel('사진 또는 동영상 선택')).toHaveAttribute('aria-required', 'true');
     await expect(form.getByLabel('내용', { exact: true })).not.toHaveAttribute('required');
     await page.getByRole('button', { name: '뒤로 가기', exact: true }).click();
     await expect(page).toHaveURL(path);

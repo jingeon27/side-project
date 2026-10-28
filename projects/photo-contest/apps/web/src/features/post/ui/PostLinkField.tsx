@@ -18,7 +18,7 @@ export function PostLinkField({ form }: { form: UseFormReturn<TPostInput, unknow
       required={!media}
       maxLength={2048}
       placeholder="https://youtu.be/… 또는 공유할 링크"
-      description="사진·동영상이나 링크 중 하나를 첨부해 주세요. 파일과 링크를 함께 올려도 좋아요."
+      description="사진이나 동영상, 링크를 하나 이상 첨부해 주세요. 파일과 링크를 함께 올려도 좋아요."
       error={form.formState.errors.linkUrl?.message}
       {...form.register('linkUrl', {
         onChange: () => {

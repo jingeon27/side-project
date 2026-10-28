@@ -56,15 +56,17 @@ export function PostCardFrame({ id, menu, actions }: { id: string; menu?: ReactN
         {post.contest ? (
           <Link
             href={ROUTES.GROUP_CONTEST(post.groupId, post.contest.id)}
-            className="mb-3 inline-flex min-h-touch items-center rounded-full bg-accent-soft px-3 text-caption text-accent-ink transition-colors hover:bg-accent/20 active:bg-accent/25"
+            className="mb-3 inline-flex min-h-touch max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-card bg-accent-soft px-3 py-2 text-caption text-accent-ink transition-colors hover:bg-accent/20 active:bg-accent/25"
           >
-            대회 참여 · {post.contest.title} · 좋아요 1인 {post.contest.likeLimit}개
+            <span>대회 참여</span>
+            <span className="min-w-0 wrap-break-word">{post.contest.title}</span>
+            <span>좋아요는 한 사람당 최대 {post.contest.likeLimit}개</span>
           </Link>
         ) : null}
         {post.category ? (
           <p className="mb-2 text-caption text-accent-ink">
             {post.category.name}
-            {post.category.archivedAt ? ' · 보관됨' : ''}
+            {post.category.archivedAt ? ' (보관됨)' : ''}
           </p>
         ) : null}
         <h3 className="mb-4 wrap-break-word text-title leading-snug text-ink desktop:text-title-lg">

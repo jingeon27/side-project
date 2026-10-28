@@ -31,7 +31,7 @@ const HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<title>앱에서 로그인을 계속해 주세요 · ${SITE_NAME}</title>
+<title>앱에서 로그인을 계속해 주세요 - ${SITE_NAME}</title>
 <script>${STRIP_QUERY_SCRIPT}</script>
 <style>${STYLE}</style>
 </head>

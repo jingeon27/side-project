@@ -14,7 +14,7 @@ interface IPhaseDates {
 export function getPhaseLabel(phase: Phase) {
   return match(phase)
     .with(Phase.Upcoming, () => '시작 예정')
-    .with(Phase.Submission, () => '사진 모집 중')
+    .with(Phase.Submission, () => '접수 중')
     .with(Phase.Voting, () => '투표 진행 중')
     .with(Phase.Completed, () => '대회 종료')
     .exhaustive();
@@ -34,7 +34,7 @@ export function getPhaseTone(phase: Phase): TPhaseTone {
 export function getPhaseDeadline(phase: Phase, dates: IPhaseDates) {
   return match(phase)
     .with(Phase.Upcoming, () => ({ label: '시작', at: dates.startsAt }))
-    .with(Phase.Submission, () => ({ label: '사진 마감', at: dates.submissionEndsAt }))
+    .with(Phase.Submission, () => ({ label: '접수 마감', at: dates.submissionEndsAt }))
     .with(Phase.Voting, () => ({ label: '투표 마감', at: dates.endsAt }))
     .with(Phase.Completed, () => ({ label: '종료', at: dates.endsAt }))
     .exhaustive();

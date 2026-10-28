@@ -22,7 +22,7 @@ it('파일 선택은 ref와 이벤트가 연결된 뒤 첫 클릭으로 실제 i
   const root = await act(async () => hydrateRoot(container, <MediaField />));
   try {
     await waitFor(() => expect(button).toBeEnabled());
-    const input = within(container).getByLabelText('사진·동영상 선택');
+    const input = within(container).getByLabelText('사진 또는 동영상 선택');
     const click = vi.spyOn(input, 'click');
     await userEvent.setup().click(button);
     expect(click).toHaveBeenCalledOnce();

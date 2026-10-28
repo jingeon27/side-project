@@ -56,7 +56,7 @@ function EditPostForm({
   if (!complete) return null;
   const categories =
     post.category && !data.group.categories.some(({ id }) => id === post.category?.id)
-      ? [...data.group.categories, { id: post.category.id, name: `${post.category.name} · 보관됨` }]
+      ? [...data.group.categories, { id: post.category.id, name: `${post.category.name} (보관됨)` }]
       : data.group.categories;
   const { errors, isSubmitting } = form.formState;
   return (

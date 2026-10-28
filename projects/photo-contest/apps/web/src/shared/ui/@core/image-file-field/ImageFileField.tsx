@@ -107,7 +107,9 @@ export function ImageFileField<TInput extends FieldValues, TOutput>({
         </label>
         <div className="min-w-0">
           <p className="text-caption text-muted">사진을 눌러 선택하거나 바꿔 주세요.</p>
-          <p className="mt-1 text-micro text-muted">JPEG·PNG·WebP · 최대 10MB</p>
+          <p className="mt-1 text-micro text-muted">
+            JPEG, PNG, WebP 형식의 사진을 최대 10MB까지 올릴 수 있어요.
+          </p>
           {src ? (
             <Button
               variant="ghost"

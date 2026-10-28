@@ -60,7 +60,7 @@ export function DiscoverGroupCard({ id, joinable = false }: { id: string; joinab
           {group.description ||
             (privateGroup
               ? '그룹장의 수락 후 함께 나눌 수 있어요.'
-              : '사진·동영상·합성, 누구나 구경할 수 있어요.')}
+              : '사진과 동영상, 합성한 이미지를 함께 나눠요.')}
         </p>
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-caption">
           <span className="flex items-center gap-1.5 text-muted">

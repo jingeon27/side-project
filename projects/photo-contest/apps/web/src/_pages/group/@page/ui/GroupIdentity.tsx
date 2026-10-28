@@ -40,7 +40,7 @@ export function GroupIdentity({ groupRef }: { groupRef: TGroupQueryRef }) {
         </div>
         <p className="mt-1 text-caption text-muted">{group.memberCount}명이 함께하는 그룹</p>
         <p className="mt-2 text-caption whitespace-pre-wrap wrap-break-word text-muted">
-          {group.description || '사진도 동영상도, 합성도 환영해요.'}
+          {group.description || '사진과 동영상으로 웃긴 순간을 나눠보세요.'}
         </p>
       </div>
       <EditGroupProfileButton groupId={group.id} className="col-span-2 w-fit desktop:col-span-1" />

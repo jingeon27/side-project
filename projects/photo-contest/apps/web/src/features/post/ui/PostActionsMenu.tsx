@@ -109,7 +109,7 @@ export function PostActionsMenu({ postId }: { postId: string }) {
                         onClose={onClose}
                         unmount={unmount}
                         title="게시물을 삭제할까요?"
-                        description="첨부 파일·댓글·답글과 좋아요가 함께 삭제됩니다."
+                        description="첨부 파일, 댓글, 답글과 좋아요도 함께 삭제돼요."
                         confirmLabel="게시물 삭제하기"
                         tone="danger"
                         onConfirm={async () => {

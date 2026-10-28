@@ -90,7 +90,7 @@ export function GroupContestsPageTemplate({
           <p className="mt-2 text-body text-muted">
             {hallOfFame
               ? '종료된 대회의 우승작과 결과를 모았어요.'
-              : '게시물을 올릴 때 접수 중인 대회를 골라 참여하세요. 사진·동영상 모두 환영해요.'}
+              : '접수 중인 대회를 골라 사진이나 동영상을 올려보세요.'}
           </p>
         </div>
         <ContestQuery groupId={groupId} hallOfFame={hallOfFame} />

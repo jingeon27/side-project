@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 type TRobots = Exclude<NonNullable<Metadata['robots']>, string>;
 
 export const SITE_NAME = '별사대';
-export const SITE_DESCRIPTION = '사진·동영상·합성으로 웃긴 순간을 함께 나누는 그룹 커뮤니티.';
+export const SITE_DESCRIPTION =
+  '사진과 동영상으로 웃긴 순간을 나누는 그룹 커뮤니티. 합성한 이미지도 함께 나눠보세요.';
 export const PUBLIC_ROBOTS = {
   index: true,
   follow: true,
@@ -50,12 +51,12 @@ export function createPageMetadata({
       type: 'website',
       locale: 'ko_KR',
       siteName: SITE_NAME,
-      title: `${title} · ${SITE_NAME}`,
+      title: `${title} - ${SITE_NAME}`,
       description,
       url,
       images,
     },
-    twitter: { card: 'summary_large_image', title: `${title} · ${SITE_NAME}`, description, images },
+    twitter: { card: 'summary_large_image', title: `${title} - ${SITE_NAME}`, description, images },
   };
 }
 

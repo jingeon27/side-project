@@ -160,7 +160,9 @@ function CategoryManagement({ queryRef }: { queryRef: QueryRef<GroupCategoriesQu
   if (!isGroupAdmin(group.role)) return null;
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-caption text-muted">카테고리 {group.categories.length}/20 · 선택은 자유예요.</p>
+      <p className="text-caption text-muted">
+        카테고리 {group.categories.length}/20개. 게시물을 쓸 때 선택할 수 있어요.
+      </p>
       <ul className="flex flex-col gap-4">
         {group.categories.map((category, index) => (
           <CategoryRow

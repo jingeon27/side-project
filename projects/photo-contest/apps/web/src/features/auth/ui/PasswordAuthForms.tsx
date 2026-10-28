@@ -92,7 +92,7 @@ function PasswordRegisterForm({ nextPath }: { nextPath: string }) {
       <TextField
         required
         label="아이디"
-        description="영문·숫자·밑줄 3~24자. 대소문자는 구분하지 않아요."
+        description="영문, 숫자, 밑줄(_)을 사용해 3~24자로 입력해 주세요. 대소문자는 구분하지 않아요."
         autoComplete="username"
         autoCapitalize="none"
         spellCheck={false}

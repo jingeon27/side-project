@@ -80,8 +80,9 @@ export function GroupContestCard({ id, hallOfFame = false }: { id: string; hallO
                 </div>
                 <div className="min-w-0">
                   <p className="line-clamp-2 text-label text-ink">{post.title}</p>
-                  <p className="mt-1 text-caption text-muted">
-                    {post.author.nickname} · {voteCount}표
+                  <p className="mt-1 flex flex-wrap gap-x-2 text-caption text-muted">
+                    <span className="min-w-0 wrap-break-word">{post.author.nickname}</span>
+                    <span>{voteCount}표</span>
                   </p>
                 </div>
                 <Trophy aria-label="우승" className="ml-auto size-5 shrink-0 text-muted" />

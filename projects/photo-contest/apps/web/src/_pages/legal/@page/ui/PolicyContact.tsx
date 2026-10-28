@@ -4,7 +4,7 @@ export function PolicyContact() {
   return (
     <dl className="grid gap-3 rounded-card border border-line bg-sunken p-4 text-body">
       <div className="flex flex-wrap gap-x-4 gap-y-1">
-        <dt className="text-muted">운영자·개인정보 문의 담당자</dt>
+        <dt className="text-muted">운영자 및 개인정보 문의 담당자</dt>
         <dd className="text-ink">{POLICY.operatorName}</dd>
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
