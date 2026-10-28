@@ -1,7 +1,7 @@
 import type { TypePolicies } from '@apollo/client/cache';
 import { offsetLimitPagination } from '@apollo/client/utilities';
 
-export const postTypePolicies: TypePolicies = {
+export const postTypePolicies = {
   Query: {
     fields: {
       galleryPosts: offsetLimitPagination(['groupId', 'contestId', 'categoryId', 'sort']),
@@ -11,4 +11,4 @@ export const postTypePolicies: TypePolicies = {
       postComments: offsetLimitPagination(['postId', 'parentId']),
     },
   },
-};
+} satisfies TypePolicies;
