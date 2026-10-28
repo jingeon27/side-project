@@ -42,4 +42,9 @@ describe('Amplitude 공통 속성', () => {
       provider: 'google',
     });
   });
+  it('웹 주소가 아닌 위치 값은 비워야 한다', () => {
+    expect(scrubAnalyticsProperties({ destination: 'mailto:player@example.com?subject=private' })).toEqual({
+      destination: '',
+    });
+  });
 });
