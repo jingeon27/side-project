@@ -262,7 +262,7 @@ deployment_release_dir=/srv/side-project/services/YOUR_SERVICE/releases/YOUR_REL
 bash "$deployment_release_dir/host/proxy.sh" sync "$deployment_release_dir/Caddyfile"
 ```
 
-두 서비스의 릴리스는 같은 Caddyfile을 가져야 하므로 두 배포 브랜치를 같게(`main`) 둔다. 요청 본문 상한은 GF 아바타 업로드(5MB 파일)만 6MB, 나머지는 1MB다. 미디어는 브라우저가 presigned 양식으로 S3에 직접 올린다.
+두 서비스의 릴리스는 같은 Caddyfile을 가져야 하므로 두 배포 브랜치를 같게(`main`) 둔다. 요청 본문 상한은 모든 경로에서 1MB다. GF 프로필 사진을 포함한 미디어는 브라우저가 presigned 양식으로 S3에 직접 올린다.
 
 ## 운영·롤백
 
